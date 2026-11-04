@@ -9,6 +9,10 @@ Follows the chain from the Simulation page, which is the structure tested.
 
 from __future__ import annotations
 
+import itertools
+import math
+from dataclasses import dataclass
+
 import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
@@ -26,12 +30,15 @@ from ..core.model_updating import (
     Update,
     correlate,
     frequency_sensitivity,
+    mac,
     measure,
+    pair,
     parameters,
     update,
 )
+from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from .layouts import ColumnScroll, FlowLayout, group, plot_height
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .modal_extraction import MacPlot, colored
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -166,6 +173,302 @@ TRIALS = (
     ),
 )
 
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+TAB_FREQUENCIES, TAB_SHAPES, TAB_AUTO, TAB_COMAC, TAB_UPDATING, TAB_SENSITIVITY = range(6)
+
+
+@dataclass(frozen=True)
+class UpdatingSetup:
+    """A practice problem's setup: the structure (a chain; none: the one there is), the test, the sensors (0-based;
+    none: every mass), the model's error factors (none: all 1) and the tab to show."""
+
+    masses: tuple[float, ...] = ()
+    springs: tuple[float, ...] = ()
+    dampers: tuple[float, ...] = ()
+    source: Source = Source.EXACT
+    sensors: tuple[int, ...] = ()
+    mass_factors: tuple[float, ...] = ()
+    spring_factors: tuple[float, ...] = ()
+    damper_factors: tuple[float, ...] = ()
+    tab: int = TAB_FREQUENCIES
+
+    def system(self) -> ChainSystem | None:
+        if not self.masses:
+            return None
+        return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
+
+    def errors(self, n: int) -> Errors:
+        def factors(given: tuple[float, ...]) -> np.ndarray:
+            return np.array(given, dtype=float) if given else np.ones(n)
+
+        return Errors(factors(self.mass_factors), factors(self.spring_factors), factors(self.damper_factors))
+
+
+PRACTICE_SETUP = UpdatingSetup  # what a practice problem's setup and the page's practice_state are
+
+
+def _uniform(n: int) -> dict:
+    """The uniform chain of n masses, as a setup's structure."""
+    s = ChainSystem.uniform(n)
+    return dict(masses=tuple(s.masses), springs=tuple(s.stiffness), dampers=tuple(s.damping))
+
+
+def _one_factor(n: int, element: int, factor: float) -> tuple[float, ...]:
+    f = [1.0] * n
+    f[element] = factor
+    return tuple(f)
+
+
+def _mac(rng: np.random.Generator) -> Question:
+    while True:
+        a, b = pick(rng, (0.5, 0.8, 1.2, 1.5)), pick(rng, (-1, -0.5, 0.5, 1, 1.5))
+        c, d = pick(rng, (0.4, 0.8, 1, 1.5)), pick(rng, (-1.2, -0.6, 0.3, 0.9, 2))
+        psi, phi = np.array([1.0, a, b]), np.array([1.0, c, d])
+        value = float(mac(psi[:, None], phi[:, None])[0, 0])
+        if 0.2 < value < 0.95:
+            break
+    dot, pp, ff = float(psi @ phi), float(psi @ psi), float(phi @ phi)
+    return Question(
+        f"A test shape ψ = (1, {a:g}, {b:g}) and a model shape φ = (1, {c:g}, {d:g}), at three sensors. What is their "
+        "MAC?",
+        value,
+        f"MAC = (ψᵀφ)²/(ψᵀψ φᵀφ) = {number(dot)}²/({number(pp)} × {number(ff)}) = {number(value)}.",
+        tolerance=0.01,
+    )
+
+
+def _uniform_error(rng: np.random.Generator) -> Question:
+    springs = rng.integers(2) == 0
+    factor = pick(rng, (0.8, 0.9, 1.1, 1.2, 1.44) if springs else (0.8, 0.9, 1.1, 1.25))
+    ratio = math.sqrt(factor) if springs else 1 / math.sqrt(factor)
+    what = "spring" if springs else "mass"
+    way = "high" if ratio > 1 else "low"
+    return Question(
+        f"Every {what} of a model is {factor:g} times the structure's. By how many percent are all its frequencies "
+        f"too {way}?",
+        100 * abs(ratio - 1),
+        f"f ∝ √(k/m), and scaling every {what} scales every mode's frequency alike: "
+        f"{'√' if springs else '1/√'}{factor:g} = {number(ratio, 4)}, {number(100 * abs(ratio - 1))} % {way}. The shapes "
+        "don't change at all.",
+        unit="%",
+        tolerance=0.01,
+        setup=dict(
+            **_uniform(4),
+            spring_factors=(factor,) * 4 if springs else (),
+            mass_factors=() if springs else (factor,) * 4,
+        ),
+    )
+
+
+def _spring_share(rng: np.random.Generator) -> Question:
+    share, change = pick(rng, (10, 20, 30, 40, 60)), pick(rng, (5, 10, 20))
+    mode, spring = int(pick(rng, (1, 2, 3))), int(pick(rng, (1, 2, 3, 4)))
+    rise = share / 100 / 2 * change
+    return Question(
+        f"Spring k{spring} holds {share:g} % of mode {mode}'s strain energy. Made {change:g} % stiffer, by how many "
+        f"percent does mode {mode}'s frequency rise, to first order?",
+        rise,
+        f"∂ln f/∂ln k is half the spring's share of the strain energy: {share / 200:g}. So Δf/f ≈ {share / 200:g} × "
+        f"{change:g} % = {number(rise)} %.",
+        unit="%",
+        tolerance=0.01,
+    )
+
+
+def _mass_share(rng: np.random.Generator) -> Question:
+    share, change = pick(rng, (10, 20, 30, 50)), pick(rng, (5, 10, 20))
+    mode, mass_ = int(pick(rng, (1, 2, 3))), int(pick(rng, (1, 2, 3, 4)))
+    fall = share / 100 / 2 * change
+    return Question(
+        f"Mass m{mass_} carries {share:g} % of mode {mode}'s kinetic energy. Made {change:g} % heavier, by how many "
+        f"percent does mode {mode}'s frequency fall, to first order?",
+        fall,
+        f"∂ln f/∂ln m is minus half the mass's share of the kinetic energy: −{share / 200:g}. So Δf/f ≈ "
+        f"−{share / 200:g} × {change:g} % = −{number(fall)} %.",
+        unit="%",
+        tolerance=0.01,
+    )
+
+
+def _gauss_newton(rng: np.random.Generator) -> Question:
+    f_test = pick(rng, (5, 8, 10, 12))
+    off = pick(rng, (-6, -4, -3, 3, 4, 6))
+    f_model = round(f_test * (1 + off / 100), 2)
+    S = pick(rng, (0.2, 0.3, 0.4, 0.5))
+    residual = math.log(f_test / f_model)
+    step = residual / S
+    r, d = (number(v).replace("-", "−") for v in (residual, step))
+    factor = math.exp(step)
+    return Question(
+        f"A model's mode is at {f_model:g} Hz, the test's at {f_test:g} Hz, and ∂ln f/∂ln k = {S:g} for the one spring "
+        "being updated. By what factor does one Gauss–Newton step on ln k multiply that spring?",
+        factor,
+        f"The residual is ln(f<sub>test</sub>/f<sub>model</sub>) = ln({f_test:g}/{f_model:g}) = {r}; the step is that "
+        f"over the slope, Δln k = {r}/{S:g} = {d}, so k is multiplied by e<sup>{d}</sup> = {number(factor, 4)}.",
+        tolerance=0.005,
+    )
+
+
+def _pairing(rng: np.random.Generator) -> Question:
+    """A 3 × 3 MAC table where one test mode's best match is taken by a better pair first."""
+    perm = rng.permutation(3)
+    M = rng.uniform(0.02, 0.3, (3, 3))
+    for i in range(3):
+        M[i, perm[i]] = rng.uniform(0.86, 0.99)
+    t = int(rng.integers(3))  # the test mode asked about
+    other = (t + 1 + int(rng.integers(2))) % 3  # a test mode that takes t's second choice first
+    M[t, perm[other]] = M[other, perm[other]] - 0.03  # t matches it well too, just not as well
+    M[t, perm[t]] = min(M[t, perm[t]], M[t, perm[other]] - 0.05)  # and its own a little less: the greedy trap
+    M = np.round(M, 2)
+    pairs = pair(M, [1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
+    found = {p.test: p.model for p in pairs}
+    answer = found.get(t, 3)
+    rows = "; ".join(f"test {i + 1}: " + ", ".join(f"{v:.2f}" for v in M[i]) for i in range(3))
+    return Question(
+        f"A MAC table, each test mode's row against model modes 1, 2 and 3: {rows}. Pairing best MAC first (none "
+        f"under 0.5), which model mode does test mode {t + 1} pair with?",
+        answer,
+        f"The best MAC in the table, {M.max():.2f}, pairs first, then the best left, and so on. Test mode {t + 1}'s "
+        f"highest MAC is with model mode {perm[other] + 1}, but test mode {other + 1} matches that one better and "
+        f"takes it; test mode {t + 1} goes with "
+        + (f"model mode {answer + 1}." if answer < 3 else "none: what's left is under 0.5."),
+        choices=("Model mode 1", "Model mode 2", "Model mode 3", "None"),
+    )
+
+
+def _uniform_shapes(rng: np.random.Generator) -> Question:
+    return Question(
+        "Every spring of the model is 10 % too soft. What do the MACs between the test's shapes and the model's say?",
+        0,
+        "Nothing: they stay at 1 (the test's noise aside), since scaling every spring scales every frequency by "
+        "√0.9 and leaves every shape exactly as it was. Only the frequencies, all 5.1 % low (the test's noise aside), "
+        "show the error.",
+        choices=(
+            "Nothing: they stay at about 1",
+            "They drop most for the highest modes",
+            "They drop evenly to about 0.9",
+        ),
+        setup=dict(**_uniform(4), spring_factors=(0.9,) * 4),
+        predict=True,
+    )
+
+
+def _dampers(rng: np.random.Generator) -> Question:
+    return Question(
+        "The model's dampers are twice the structure's. What happens to its frequencies against the test's?",
+        0,
+        "They don't move (the paired frequencies agree to the test's noise): the undamped frequencies don't depend on "
+        "the dampers, and light damping hardly moves the damped ones. Only the damping ratios, doubled, show it.",
+        choices=("They don't move", "They all fall", "They all rise", "The higher modes' fall most"),
+        setup=dict(**_uniform(4), damper_factors=(2.0,) * 4),
+        predict=True,
+    )
+
+
+def _two_sensors(rng: np.random.Generator) -> Question:
+    return Question(
+        "Four modes measured with sensors on m1 and m4 only. What does the test's auto-MAC show?",
+        0,
+        "Some modes look alike: two numbers per shape can't keep four shapes apart, and modes 2 and 4 have an "
+        "auto-MAC of 0.91 (spatial aliasing). Only their frequencies tell them apart.",
+        choices=(
+            "Some modes look alike: high off-diagonal terms",
+            "Every mode still looks distinct",
+            "Every off-diagonal term is exactly 0",
+        ),
+        setup=dict(**_uniform(4), sensors=(0, 3), tab=TAB_AUTO),
+        predict=True,
+    )
+
+
+def _least_moved(rng: np.random.Generator) -> Question:
+    return Question(
+        "The model's k3 is 30 % too stiff, on the uniform four-mass chain. Which mode's frequency is least affected?",
+        2,
+        "Mode 3, only 0.6 % high (the others 2.2, 4.1 and 6.6 %; the test's noise moves these a little): a spring "
+        "moves a mode's frequency by half its share of the strain energy, and k3 hardly stretches in mode 3.",
+        choices=("Mode 1", "Mode 2", "Mode 3", "Mode 4"),
+        setup=dict(**_uniform(4), spring_factors=_one_factor(4, 2, 1.3), tab=TAB_SENSITIVITY),
+        predict=True,
+    )
+
+
+LOOK_ALIKE = 0.1  # the spec's largest off-diagonal auto-MAC
+
+
+def _auto_mac(system: ChainSystem, sensors: tuple[int, ...], modes: int) -> float:
+    """The largest off-diagonal MAC among the structure's first `modes` undamped shapes, at the sensors."""
+    result = modal_analysis(ChainSystem(system.masses, system.stiffness, system.damping))
+    shapes = np.column_stack([m.shape for m in result.modes[:modes]])[list(sensors)]
+    if not len(sensors) or shapes.shape[1] < modes:
+        return 1.0
+    M = mac(shapes, shapes)
+    return float(np.max(M[~np.eye(modes, dtype=bool)]))
+
+
+def _sensor_spec(rng: np.random.Generator) -> Question:
+    count = int(pick(rng, (3, 4)))
+    n = int(pick(rng, (5, 6, 7, 8) if count == 3 else (6, 7, 8)))
+    chain = _uniform(n)
+    system = ChainSystem.uniform(n)
+    best = min(itertools.combinations(range(n), count), key=lambda sub: _auto_mac(system, sub, count))
+
+    def goal(t: UpdatingSetup):
+        s = t.system()
+        uniform = (
+            s is not None
+            and s.n == n
+            and all(
+                np.allclose(a, b)
+                for a, b in ((s.masses, system.masses), (s.stiffness, system.stiffness), (s.damping, system.damping))
+            )
+        )
+        sensors = t.sensors or tuple(range(len(t.masses)))
+        worst = _auto_mac(s, sensors, count) if s is not None else 1.0
+        return (
+            Requirement(f"The uniform chain of {n} masses", f"{len(t.masses)} masses", uniform),
+            Requirement(f"No more than {count} sensors", f"{len(sensors)}", len(sensors) <= count),
+            at_most(f"The largest auto-MAC between modes 1 to {count}", worst, LOOK_ALIKE),
+        )
+
+    names = ", ".join(f"m{i + 1}" for i in best)
+    return Question(
+        f"The uniform chain of {n} masses. Place no more than {count} sensors so that its first {count} modes all look "
+        f"distinct: no off-diagonal auto-MAC between them above {LOOK_ALIKE:g} (noise-free; the page's Auto-MAC tab "
+        "shows the test's, with its noise).",
+        0,
+        f"Bunched together, sensors see every low mode as nearly the same smooth curve. Spread out, and off the "
+        f"modes' nodes, they keep them apart: {names} gives {number(_auto_mac(system, best, count))}.",
+        setup=dict(**chain, sensors=tuple(range(count)), tab=TAB_AUTO),
+        goal=goal,
+        design=dict(**chain, sensors=best, tab=TAB_AUTO),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "updating_page", f"See {page_link('updating_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("mac", "A MAC", "mac", "The modal assurance criterion", _mac),
+        ("uniform-error", "A uniform error", "shapes-blind", "What the shapes don't see", _uniform_error),
+        ("spring-share", "A spring's sensitivity", "sensitivities", "Updating by sensitivities", _spring_share),
+        ("mass-share", "A mass's sensitivity", "sensitivities", "Updating by sensitivities", _mass_share),
+        ("gauss-newton", "A Gauss–Newton step", "sensitivities", "Updating by sensitivities", _gauss_newton),
+        ("pairing", "Pairing by MAC", "mac", "The modal assurance criterion", _pairing),
+        (
+            "uniform-shapes",
+            "Predict: a uniform error's MACs",
+            "shapes-blind",
+            "What the shapes don't see",
+            _uniform_shapes,
+        ),
+        ("dampers", "Predict: dampers too strong", "shapes-blind", "What the shapes don't see", _dampers),
+        ("two-sensors", "Predict: two sensors", "sensors", "Sensors", _two_sensors),
+        ("least-moved", "Predict: the mode least moved", "sensitivities", "Updating by sensitivities", _least_moved),
+        ("sensor-spec", "Spec: placing sensors", "sensors", "Sensors", _sensor_spec),
+    )
+)
+
 NOTES_HTML = """
 <!--BEFORE-->
 <h3>Correlation</h3>
@@ -175,7 +478,7 @@ compares the two mode by mode. Here the Simulation page's chain is the structure
 of it with errors set on the left: since both are known, what the correlation says can be checked against
 what is wrong.</p>
 
-<h3>The modal assurance criterion</h3>
+<h3><a name="mac"></a>The modal assurance criterion</h3>
 <p>The MAC compares two shapes, whatever their scale:</p>
 <p align="center">MAC(ψ, φ) = |ψ<sup>H</sup>φ|² / (ψ<sup>H</sup>ψ φ<sup>T</sup>φ),</p>
 <p>1 when they are the same shape, 0 when they are orthogonal. It is worked out at the sensors only: the test
@@ -184,14 +487,14 @@ and only above a MAC of 0.5. Pairing by frequency alone goes wrong once the mode
 each other; the shapes don't. A good correlation has MACs above about 0.9 on the diagonal, small ones off
 it, and frequency errors of a few per cent.</p>
 
-<h3>What the shapes don't see</h3>
+<h3><a name="shapes-blind"></a>What the shapes don't see</h3>
 <p>A model uniformly too stiff, or too heavy, has exactly the right shapes and wrong frequencies. A single
 spring 30 % too stiff barely changes the shapes either: on a chain the MAC stays near 0.99. Frequency errors
 are the sharper evidence, and the pattern of them over the modes says where the error is: a spring
 changes a mode's frequency in proportion to how much it stretches in it, a mass in proportion to how much it
 moves. That is what sensitivity-based updating uses.</p>
 
-<h3>Sensors</h3>
+<h3><a name="sensors"></a>Sensors</h3>
 <p>With too few sensors, or badly placed ones, different modes look alike: their shapes, seen at those points
 only, are nearly parallel. The test's <b>auto-MAC</b> (its shapes against each other) shows it: its
 off-diagonal terms rise. Sensors are placed to keep them small. A sensor at a node of a mode sees nothing of
@@ -279,6 +582,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
     """The test and the model's errors on the left, the MAC and the pairs in the centre, the rest on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
+    system_requested = QtCore.Signal(object)  # a practice problem's structure, for the Simulation page
     edit_parameters = QtCore.Signal()  # the user wants the Simulation page's parameter panel
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
@@ -634,6 +938,46 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.seed = 1  # the notes' numbers are this measurement's
         self._schedule(measure=again)
 
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says: its structure (through the Simulation page), then
+        the test, the sensors and the model's errors, measured with the first seed."""
+        t = UpdatingSetup(**setup)
+        system = t.system()
+        if system is not None:
+            self.system_requested.emit(system)
+            if self.system is None or not _same_chain(self.system, system):
+                self.set_system(system)  # nobody passed it back: show it here alone
+        if self.system is None:
+            return
+        n = self.system.n
+        self._set_errors(t.errors(n))
+        want = set(t.sensors) if t.sensors else set(range(n))
+        self._loading = True
+        for i, box in enumerate(self.sensors):
+            box.setChecked(i in want)
+        self.source.setCurrentIndex(self.source.findData(t.source))
+        self._set_update_settings(DEFAULT_UPDATE)
+        self._loading = False
+        self.trial_note.setText("")
+        self.tabs.setCurrentIndex(t.tab)
+        self.seed = 1
+        self._schedule(measure=True)
+
+    def practice_state(self) -> UpdatingSetup:
+        """The structure, the test and the model's errors, as a setup: what a practice spec checks."""
+        s, e = self.system, self.errors
+        return UpdatingSetup(
+            tuple(float(v) for v in s.masses) if s is not None else (),
+            tuple(float(v) for v in s.stiffness) if s is not None else (),
+            tuple(float(v) for v in s.damping) if s is not None else (),
+            self.source.currentData(),
+            tuple(i for i, box in enumerate(self.sensors) if box.isChecked()),
+            tuple(float(v) for v in e.mass) if e is not None else (),
+            tuple(float(v) for v in e.stiffness) if e is not None else (),
+            tuple(float(v) for v in e.damping) if e is not None else (),
+            self.tabs.currentIndex(),
+        )
+
     def _set_update_settings(self, settings: dict) -> None:
         loading, self._loading = self._loading, True
         for k, box in self.update_kind.items():
@@ -977,3 +1321,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             )
             text += f" Singular values {sv.max():.3g} to {sv.min():.2g}.{rank_note}"
         self.update_note.setText(text)
+
+
+def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
+    return a.n == b.n and all(
+        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
+    )
