@@ -171,6 +171,8 @@ class RandomSetup:
         return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
 
 
+PRACTICE_SETUP = RandomSetup  # what a practice problem's setup and the page's practice_state are
+
 # ------------------------------------------------------------------ practice problems
 # Each question's numbers are printed round, and its answer is worked from them as printed.
 TAB_MILES, TAB_RECORD, TAB_STATISTICS = range(3)
