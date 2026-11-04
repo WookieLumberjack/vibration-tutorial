@@ -15,6 +15,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.practice import Problem, Question, number, pick, rounded
 from ..core.sdof import (
     TWO_PI,
     Oscillator,
@@ -37,7 +38,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import course_map, takeaways
+from .links import course_map, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -120,6 +121,147 @@ TRIALS = (
         "1/cω<sub>n</sub> = 25 mm/N, crossing the imaginary axis at f<sub>n</sub>; the points (1 per "
         "0.02 Hz) are furthest apart there, which is how modal tests find f<sub>n</sub>.",
         freq_hz=3.0, tab=TAB_NYQUIST),
+)
+
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round (or to 3–4 figures), and its answer is worked from them as printed.
+
+def _natural_frequency(rng: np.random.Generator) -> Question:
+    m = pick(rng, (0.5, 1, 2, 4, 5, 10))
+    k = pick(rng, (50, 100, 200, 400, 800, 1000, 2500, 5000))
+    osc = Oscillator(m, k, 0.0)
+    return Question(
+        f"A {m:g} kg mass sits on a spring of {k:g} N/m. What is its natural frequency f<sub>n</sub>?",
+        osc.natural_hz,
+        f"ω<sub>n</sub> = √(k/m) = √({k:g}/{m:g}) = {number(osc.omega_n)} rad/s, and f<sub>n</sub> = "
+        f"ω<sub>n</sub>/2π = {number(osc.natural_hz)} Hz.",
+        unit="Hz", setup=dict(mass=m, stiffness=k, damping=rounded(0.1 * math.sqrt(k * m)), tab=TAB_PHASE))
+
+
+def _critical_damping(rng: np.random.Generator) -> Question:
+    m = pick(rng, (0.5, 1, 2, 4, 5, 10))
+    k = pick(rng, (50, 100, 200, 400, 800, 1000, 2500, 5000))
+    cc = Oscillator(m, k, 0.0).critical
+    return Question(
+        f"A {m:g} kg mass on a spring of {k:g} N/m. What damping coefficient c makes it critically damped?",
+        cc,
+        f"c<sub>c</sub> = 2√(km) = 2√({k:g} × {m:g}) = {number(cc)} N·s/m (that is, 2mω<sub>n</sub>).",
+        unit="N·s/m", setup=dict(mass=m, stiffness=k, damping=rounded(cc), compare=True, tab=TAB_POLES))
+
+
+def _log_decrement(rng: np.random.Generator) -> Question:
+    k = pick(rng, (100, 400, 900, 1600))
+    zeta = pick(rng, (0.01, 0.02, 0.03, 0.05, 0.08, 0.1))
+    n = int(pick(rng, (1, 2, 3, 5)))
+    x0 = pick(rng, (5, 10, 20))
+    delta = TWO_PI * zeta / math.sqrt(1.0 - zeta * zeta)
+    xn = rounded(x0 * math.exp(-n * delta))
+    d = math.log(x0 / xn) / n  # from the printed peaks
+    answer = d / math.sqrt(TWO_PI ** 2 + d * d)
+    cycles = "the next peak" if n == 1 else f"the peak {n} cycles later"
+    return Question(
+        f"A mass released from rest rings down. One peak is {x0:g} mm and {cycles} is {number(xn)} mm. What is "
+        "its damping ratio ζ?",
+        answer,
+        f"The log decrement is δ = (1/{n}) ln({x0:g}/{number(xn)}) = {number(d)}, and ζ = δ/√(4π² + δ²) = "
+        f"{number(answer)} (δ/2π = {number(d / TWO_PI)} is near enough when ζ is small).",
+        tolerance=0.03,
+        setup=dict(mass=1.0, stiffness=k, damping=rounded(2.0 * zeta * math.sqrt(k)), x0_mm=x0, tab=TAB_PHASE))
+
+
+def _resonant_amplitude(rng: np.random.Generator) -> Question:
+    m = pick(rng, (1, 2, 5))
+    k = pick(rng, (200, 400, 800, 2000))
+    c = rounded(pick(rng, (0.02, 0.05, 0.1)) * 2.0 * math.sqrt(k * m))
+    force = pick(rng, (0.5, 1, 2, 5))
+    osc = Oscillator(m, k, c)
+    x = force / (c * osc.omega_n)
+    return Question(
+        f"m = {m:g} kg, k = {k:g} N/m and c = {number(c)} N·s/m, driven by {force:g} N at exactly its natural "
+        "frequency. What is the steady amplitude?",
+        1e3 * x,
+        f"At ω<sub>n</sub> = {number(osc.omega_n)} rad/s the spring and the mass cancel, and only the damper "
+        f"holds the force: X = F/(cω<sub>n</sub>) = {force:g}/({number(c)} × {number(osc.omega_n)}) = "
+        f"{number(1e3 * x)} mm. That's (F/k)/2ζ: Q = 1/2ζ = {number(1.0 / (2.0 * osc.zeta))} times the static "
+        f"{number(1e3 * force / k)} mm.",
+        unit="mm", setup=dict(mass=m, stiffness=k, damping=c, amplitude=force, tune=True, tab=TAB_FRF))
+
+
+def _half_power(rng: np.random.Generator) -> Question:
+    k = pick(rng, (400, 1000, 2500, 10000))
+    zeta = pick(rng, (0.02, 0.03, 0.05, 0.08, 0.1))
+    osc = Oscillator(1.0, k, 2.0 * zeta * math.sqrt(k))
+    lo, hi = (rounded(f, 4) for f in osc.half_power_hz())
+    estimate = (hi - lo) / (hi + lo)
+    return Question(
+        f"A receptance's peak has its half-power points at {number(lo, 4)} Hz and {number(hi, 4)} Hz. What is "
+        "the damping ratio ζ?",
+        zeta,
+        f"ζ ≈ Δf/2f<sub>n</sub>, with f<sub>n</sub> ≈ ({number(lo, 4)} + {number(hi, 4)})/2 = "
+        f"{number((lo + hi) / 2, 4)} Hz and Δf = {number(hi - lo)} Hz: ζ ≈ {number(estimate)}. (Exactly, "
+        f"ζ = {number(zeta)}.)",
+        tolerance=0.03,
+        setup=dict(mass=1.0, stiffness=k, damping=rounded(2.0 * zeta * math.sqrt(k)), freq_hz=rounded(osc.natural_hz),
+                   tab=TAB_FRF))
+
+
+def _more_damping(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (2, 3, 5)))
+    return Question(
+        f"An oscillator driven at its natural frequency has settled to its steady swing. Its damper is made {n} "
+        "times stronger. What happens to the steady amplitude?",
+        0,
+        f"At resonance the spring's and the mass's forces cancel, so only the damper holds the force: X = "
+        f"F/(cω<sub>n</sub>), and {n} times the c gives 1/{n} of the swing. (Off resonance damping matters far "
+        "less.)",
+        choices=(f"It falls to 1/{n}", f"It falls to 1/√{n}", "It stays the same", f"It grows {n} times"),
+        setup=dict(damping=2.0 * n, tune=True, tab=TAB_FRF), predict=True)
+
+
+def _heavier(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (4, 9)))
+    root = int(math.isqrt(n))
+    return Question(
+        f"The mass on a spring is made {n} times heavier, the spring the same. What happens to its natural "
+        "frequency?",
+        0,
+        f"f<sub>n</sub> = √(k/m)/2π: {n} times the mass gives 1/√{n} = 1/{root} of the frequency.",
+        choices=(f"It falls to 1/{root}", f"It falls to 1/{n}", "It stays the same", f"It rises {root} times"),
+        setup=dict(mass=float(n), tab=TAB_PHASE), predict=True)
+
+
+def _quickest_return(rng: np.random.Generator) -> Question:
+    return Question(
+        "The same mass and spring, released from the same place, once critically damped (ζ = 1) and once with "
+        "twice that damping (ζ = 2). Which settles back to rest sooner?",
+        0,
+        "Critical damping. More damping slows the return: ζ = 2's slow root at −0.27ω<sub>n</sub> holds it back "
+        "(a time constant of 0.19 s here, against critical's 0.05 s).",
+        choices=("ζ = 1", "ζ = 2", "They settle together"),
+        setup=dict(damping=40.0, compare=True, tab=TAB_POLES), predict=True)
+
+
+PROBLEMS = (
+    Problem("natural-frequency", "Natural frequency", "sdof_page",
+            f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}: ω<sub>n</sub> = √(k/m), in rad/s.",
+            _natural_frequency),
+    Problem("critical-damping", "Critical damping", "sdof_page",
+            f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.", _critical_damping),
+    Problem("log-decrement", "Damping from a decay", "sdof_page",
+            f"See {page_link('sdof_page', 'log-decrement', 'Measuring damping from a decay')}: over n cycles, "
+            "δ = (1/n) ln(x<sub>0</sub>/x<sub>n</sub>).", _log_decrement),
+    Problem("resonant-amplitude", "Amplitude at resonance", "sdof_page",
+            f"See {page_link('sdof_page', 'forced-response', 'Forced response')}: what's left of k − ω²m + iωc "
+            "at ω<sub>n</sub>?", _resonant_amplitude),
+    Problem("half-power", "Damping from the half-power points", "sdof_page",
+            f"See {page_link('sdof_page', 'half-power', 'The half-power bandwidth')}.", _half_power),
+    Problem("more-damping", "Predict: more damping at resonance", "sdof_page",
+            f"See {page_link('sdof_page', 'forced-response', 'Forced response')}.", _more_damping),
+    Problem("heavier", "Predict: a heavier mass", "sdof_page",
+            f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}.", _heavier),
+    Problem("quickest-return", "Predict: the quickest return", "sdof_page",
+            f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.", _quickest_return),
 )
 
 TIPS = {
@@ -471,7 +613,13 @@ class SdofPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(SdofTrial("", "", **setup))
+
+    def apply_trial(self, t: SdofTrial) -> None:
         for box, value in ((self.mass, t.mass), (self.stiffness, t.stiffness), (self.damping, t.damping),
                            (self.x0, t.x0_mm), (self.v0, t.v0_mms), (self.compare, t.compare), (self.kind, t.kind),
                            (self.amplitude, t.amplitude), (self.freq, t.freq_hz)):

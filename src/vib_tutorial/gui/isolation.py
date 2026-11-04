@@ -16,6 +16,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.practice import Problem, Question, number, pick, rounded
 from ..core.isolation import G, Isolator, Mount, deflection_for, start_up
 from ..core.sdof import TWO_PI
 from . import settle_plots
@@ -31,7 +32,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -104,6 +105,102 @@ TRIALS = (
         "moves a quarter as much (±27 µm instead of ±109 µm): a block steadies the machine, it doesn't "
         "isolate better.",
         block=300.0),
+)
+
+
+# ------------------------------------------------------------------ practice problems
+# The page's machine: 100 kg with a 0.01 kg·m unbalance (the trials and the problems keep it).
+
+def _mount_frequency(rng: np.random.Generator) -> Question:
+    sag = pick(rng, (0.5, 1, 2, 3, 5, 8, 10, 20))
+    fn = Isolator(deflection=1e-3 * sag).natural_hz
+    return Question(
+        f"A machine sags {sag:g} mm on its mounts. What is its natural frequency on them?",
+        fn,
+        f"k = Mg/δ, so ω<sub>n</sub> = √(k/M) = √(g/δ), whatever the machine weighs: f<sub>n</sub> = "
+        f"√(9.81/{number(1e-3 * sag)})/2π = {number(fn)} Hz (15.76/√δ with δ in mm).",
+        unit="Hz", setup=dict(deflection_mm=sag, tab=TAB_START))
+
+
+def _transmissibility(rng: np.random.Generator) -> Question:
+    sag = pick(rng, (2, 3, 5, 8, 10))
+    rpm = pick(rng, (900, 1200, 1500, 1800, 3000))
+    zeta = pick(rng, (0.02, 0.05, 0.1, 0.2))
+    iso = Isolator(rpm=rpm, deflection=1e-3 * sag, zeta=zeta)
+    r = iso.speed_hz / iso.natural_hz
+    T = iso.at_speed()[2]
+    return Question(
+        f"A machine runs at {rpm:g} rpm on mounts that sag {sag:g} mm, with ζ = {zeta:g}. What percentage of its "
+        "unbalance's force reaches the floor?",
+        100.0 * T,
+        f"f<sub>n</sub> = 15.76/√{sag:g} = {number(iso.natural_hz)} Hz and the speed is {number(iso.speed_hz)} Hz, "
+        f"so r = {number(r)}; T = √(1 + (2ζr)²)/√((1 − r²)² + (2ζr)²) = {number(T)}: {number(100.0 * T)} %.",
+        unit="%", tolerance=0.03, setup=dict(deflection_mm=sag, rpm=rpm, zeta=zeta, tab=TAB_START))
+
+
+def _sag_for(rng: np.random.Generator) -> Question:
+    rpm = pick(rng, (600, 900, 1200, 1500, 1800, 3000))
+    isolation = pick(rng, (0.8, 0.9, 0.95))
+    sag = deflection_for(rpm / 60.0, isolation)
+    T = 1.0 - isolation
+    r = math.sqrt(1.0 + 1.0 / T)
+    return Question(
+        f"Undamped mounts are to isolate {100 * isolation:g} % of a machine's unbalance at {rpm:g} rpm. How far must "
+        "they sag under it?",
+        1e3 * sag,
+        f"Undamped and above √2 f<sub>n</sub>, T = 1/(r² − 1) = {number(T)}, so r = √(1 + 1/T) = {number(r)}: "
+        f"f<sub>n</sub> = {number(rpm / 60.0)}/{number(r)} = {number(rpm / 60.0 / r)} Hz, and δ = "
+        f"g/(2πf<sub>n</sub>)² = {number(1e3 * sag)} mm.",
+        unit="mm", setup=dict(deflection_mm=rounded(1e3 * sag), rpm=rpm, zeta=0.0, tab=TAB_CHART))
+
+
+def _stiff_or_soft(rng: np.random.Generator) -> Question:
+    rpm = pick(rng, (900, 1500, 3000))
+    ratio = pick(rng, (0.6, 0.8, 1.1, 2.0, 3.0, 4.0))
+    fn = rpm / 60.0 / ratio
+    sag = rounded(1e3 * G / (TWO_PI * fn) ** 2, 2)
+    iso = Isolator(rpm=rpm, deflection=1e-3 * sag)
+    T = iso.at_speed()[2]
+    r = iso.speed_hz / iso.natural_hz
+    return Question(
+        f"A machine running at {rpm:g} rpm is put on mounts that sag {number(sag, 2)} mm (ζ = 0.05). Does more or "
+        "less force reach the floor than if it were bolted down?",
+        0 if T > 1 else 1,
+        f"f<sub>n</sub> = 15.76/√{number(sag, 2)} = {number(iso.natural_hz)} Hz, so the speed is r = {number(r)} "
+        f"times it, {'below' if r < math.sqrt(2.0) else 'above'} √2: T = {number(T)}. Only above √2 f<sub>n</sub> "
+        "does a mount isolate.",
+        choices=("More: the mounts amplify it", "Less: the mounts isolate it", "The same"),
+        setup=dict(deflection_mm=sag, rpm=rpm, tab=TAB_START), predict=True)
+
+
+def _damping_above(rng: np.random.Generator) -> Question:
+    zeta = pick(rng, (0.2, 0.3, 0.5))
+    before_, after = (Isolator(zeta=z).at_speed()[2] for z in (0.05, zeta))
+    return Question(
+        f"A machine at 1500 rpm on mounts that sag 5 mm (f<sub>n</sub> = 7 Hz, well below its 25 Hz) has ζ = 0.05. "
+        f"The mounts are changed for ones that sag the same but have ζ = {zeta:g}. What happens to the force on "
+        "the floor while it runs?",
+        0,
+        f"It rises: T goes from {number(100 * before_)} % to {number(100 * after)} %. Above √2 f<sub>n</sub> the "
+        "damper pushes on the floor in proportion to the speed; damping only helps near resonance, at start-up.",
+        choices=("It rises", "It falls", "It stays the same"),
+        setup=dict(zeta=zeta, tab=TAB_START), predict=True)
+
+
+PROBLEMS = (
+    Problem("mount-frequency", "Natural frequency from the sag", "isolation_page",
+            f"See {page_link('isolation_page', 'static-deflection', 'Static deflection')}.", _mount_frequency),
+    Problem("transmissibility", "Force on the floor", "isolation_page",
+            f"See {page_link('isolation_page', 'transmissibility', 'Transmissibility')}: first r = f/f<sub>n</sub>.",
+            _transmissibility),
+    Problem("sag-for", "Mounts for an isolation", "isolation_page",
+            f"See {page_link('isolation_page', 'static-deflection', 'Static deflection')}: undamped, T = 1/(r² − 1).",
+            _sag_for),
+    Problem("stiff-or-soft", "Predict: isolate or amplify?", "isolation_page",
+            f"See {page_link('isolation_page', 'transmissibility', 'Transmissibility')}: where does T cross 1?",
+            _stiff_or_soft),
+    Problem("damping-above", "Predict: more damping, running", "isolation_page",
+            f"See {page_link('isolation_page', 'damping-trade-off', 'The damping trade-off')}.", _damping_above),
 )
 
 TIPS = {
@@ -362,7 +459,13 @@ class IsolationPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(IsolationTrial("", "", **setup))
+
+    def apply_trial(self, t: IsolationTrial) -> None:
         for box, value in ((self.mass, 100.0), (self.rpm, t.rpm), (self.unbalance, 0.01), (self.block, t.block),
                            (self.mount, MOUNTS.index(t.mount)), (self.deflection, t.deflection_mm),
                            (self.zeta, t.zeta), (self.stiffness_ratio, t.stiffness_ratio),

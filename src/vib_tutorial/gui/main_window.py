@@ -42,6 +42,7 @@ from . import frame_stats, settle_plots, theming
 from .style import SYSTEM, colors
 
 if TYPE_CHECKING:
+    from .practice import PracticeWindow
     from .theory_window import TheoryWindow
 
 FRAME_MS = 16  # ~60 fps
@@ -265,6 +266,10 @@ THEORY_TIP = (
 THEORY_WINDOW_TIP = (
     "<p>Every page's Theory in a window of its own, with the pages and their sections listed: it keeps "
     "its place as you move between pages, or follows them. (Ctrl+F1)</p>"
+)
+PRACTICE_TIP = (
+    "<p>Practice problems on the pages, with new numbers every time: work out a number, or predict what "
+    "happens and then see it on the page. (Ctrl+F2)</p>"
 )
 ABOUT_HTML = """<h3>Vibration Tutorial {version}</h3>
 <p>An interactive teaching tool for mechanical vibration: a chain of masses, springs and dampers, and the
@@ -520,8 +525,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.theory_window_button.setToolTip(THEORY_WINDOW_TIP)
         self.theory_window_button.clicked.connect(self.open_theory_window)
         self.theory_window: TheoryWindow | None = None  # built when first opened
+        self.practice_button = QtWidgets.QToolButton()
+        self.practice_button.setText("Practice")
+        self.practice_button.setToolTip(PRACTICE_TIP)
+        self.practice_button.clicked.connect(self.open_practice_window)
+        self.practice_window: PracticeWindow | None = None  # built when first opened
         cl.addWidget(self.theory_button)
         cl.addWidget(self.theory_window_button)
+        cl.addWidget(self.practice_button)
         cl.addWidget(about)
         cl.addSpacing(8)
         cl.addWidget(theme_label)
@@ -531,6 +542,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(1700, 900)
         QtGui.QShortcut(QtGui.QKeySequence("F1"), self, self.show_theory)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F1"), self, self.open_theory_window)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         for i in range(len(PAGE_GROUPS)):  # Ctrl+1 … Ctrl+6: a group, at the page it last showed
             QtGui.QShortcut(QtGui.QKeySequence(f"Ctrl+{i + 1}"), self,
                             lambda i=i: self.pages.groups.setCurrentIndex(i))
@@ -651,6 +663,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.theory_window.activateWindow()
         return self.theory_window
 
+    def open_practice_window(self) -> PracticeWindow:
+        """Show the Practice window (at the page showing's problems, the first time, if it has any)."""
+        from .practice import PracticeWindow
+
+        if self.practice_window is None:
+            self.practice_window = PracticeWindow(self.set_up_page, self._read_theory, self)
+        if self.practice_window.problem is None:
+            self.practice_window.show_page(self.page_name(self.pages.currentWidget()) or "")
+        self.practice_window.show()
+        self.practice_window.raise_()
+        self.practice_window.activateWindow()
+        return self.practice_window
+
+    def set_up_page(self, name: str, setup: dict) -> None:
+        """Show page `name` set up as a practice problem's `setup` says."""
+        self.show_page(name)
+        self._page(name).load_setup(setup)
+
+    def _read_theory(self, name: str, anchor: str) -> None:
+        """A hint's link: the Theory window at page `name`'s `anchor`."""
+        self.open_theory_window().show_page(name, anchor)
+
     def show_theory(self) -> QtWidgets.QTextBrowser | None:
         """Bring the page showing's Theory tab to the front (and any group of tabs it sits in); its browser."""
         page = self.pages.currentWidget()
@@ -691,8 +725,9 @@ class MainWindow(QtWidgets.QMainWindow):
         box.exec()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802 (Qt's name)
-        if self.theory_window is not None:
-            self.theory_window.close()  # it closes with this window
+        for window in (self.theory_window, self.practice_window):
+            if window is not None:
+                window.close()  # it closes with this window
         super().closeEvent(event)
 
     def _on_page_changed(self, index: int) -> None:
@@ -704,10 +739,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
                 QtCore.QTimer.singleShot(0, QtWidgets.QApplication.restoreOverrideCursor)
                 self._page(name)
-        if self.theory_window is not None and self.theory_window.isVisible():
-            name = self.page_name(self.pages.currentWidget())
-            if name is not None:
-                self.theory_window.follow_page(name)
+        name = self.page_name(self.pages.currentWidget())
+        if name is not None:
+            for window in (self.theory_window, self.practice_window):
+                if window is not None and window.isVisible():
+                    window.follow_page(name)
 
     # --------------------------------------------------------------- theme
     def set_theme(self, name: str) -> None:
@@ -734,8 +770,9 @@ class MainWindow(QtWidgets.QMainWindow):
         for w in (self.chain, self.time_plot, self.mode_plot, self.phasor_plot.plot, self.frf_plot,
                   self.params, self.energy, *self._built.values()):
             w.apply_theme()
-        if self.theory_window is not None:
-            self.theory_window.apply_theme()
+        for window in (self.theory_window, self.practice_window):
+            if window is not None:
+                window.apply_theme()
         self.force_panel.refresh()
         self._refresh_modal_views()  # mode colours: table, shapes, time and FRF curves
 
