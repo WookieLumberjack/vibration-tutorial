@@ -5,6 +5,8 @@ question is a number typed in its unit, or a choice. *Check* marks it (and says 
 the usual slips), *Hint* points into the page's notes (its links open the Theory window there), *Solution* shows
 the working, *New numbers* asks it again. *Show on the page* sets the page up as the question describes; for a
 prediction it's offered only once answered, and checking a prediction runs it on the page: predict, then see.
+A spec is answered on the page itself: tune its controls, and *Check* reads them (the page's `practice_state`)
+and lists each requirement, met or not; once the solution shows, *Show on the page* loads a design that meets it.
 
 The problems are each page module's `PROBLEMS` (core.practice.Problem), so a page needn't be built to practise;
 `PAGES` lists the pages that have them. The problems solved are kept in the settings.
@@ -15,6 +17,7 @@ from __future__ import annotations
 import random
 import sys
 from collections.abc import Callable
+from typing import Any
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -49,22 +52,24 @@ class PracticeWindow(QtWidgets.QWidget):
     """Practice problems in a window of their own.
 
     `set_up(page, setup)` shows a page in the main window set up as a question says; `read(page, anchor)` opens
-    the Theory window at a hint's link.
+    the Theory window at a hint's link; `state(page)` is the page's settings, which a spec checks.
     """
 
     def __init__(
         self,
         set_up: Callable[[str, dict], None],
         read: Callable[[str, str], None],
+        state: Callable[[str], Any],
         parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent, QtCore.Qt.WindowType.Window)
         self.setWindowTitle("Practice")
         self._set_up = set_up
+        self._state = state
         self.problem: Problem | None = None
         self.question: Question | None = None
         self.seed = 0
-        self._verdict = self._hint = self._solution = ""
+        self._verdict = self._details = self._hint = self._solution = ""
         self._answered = False
 
         self.follow = QtWidgets.QCheckBox("Follow the page")
@@ -188,7 +193,7 @@ class PracticeWindow(QtWidgets.QWidget):
         self.problem = next(p for p in problems(page) if p.key == key)
         self.seed = random.randrange(2**32) if seed is None else seed
         self.question = self.problem.question(self.seed)
-        self._verdict = self._hint = self._solution = ""
+        self._verdict = self._details = self._hint = self._solution = ""
         self._answered = False
         self.number.clear()
         for b in self._choices:
@@ -242,7 +247,9 @@ class PracticeWindow(QtWidgets.QWidget):
         q = self.question
         if q is None:
             return
-        if q.is_choice:
+        if q.is_spec:
+            verdict = check(q, self._state(self.problem.page))
+        elif q.is_choice:
             picked = self._choice_group.checkedId()
             if picked < 0:
                 self._verdict = "<p><i>Pick one first.</i></p>"
@@ -253,6 +260,7 @@ class PracticeWindow(QtWidgets.QWidget):
             verdict = check(q, self.number.text())
         colour = "good" if verdict.right else "bad"
         self._verdict = f'<p><b class="{colour}">{verdict.message}</b></p>'
+        self._details = verdict.details
         if verdict.right and not self._solution:
             _mark_solved(self.problem)
             self._show_ticks()
@@ -275,8 +283,16 @@ class PracticeWindow(QtWidgets.QWidget):
             self._render()
 
     def show_on_page(self) -> None:
-        if self.question is not None and self.question.setup is not None:
-            self._set_up(self.problem.page, self.question.setup)
+        """The question's setup, or a spec's design once its solution shows."""
+        q = self.question
+        if q is None:
+            return
+        setup = q.design if self._shows_design() else q.setup
+        if setup is not None:
+            self._set_up(self.problem.page, setup)
+
+    def _shows_design(self) -> bool:
+        return self.question is not None and self.question.design is not None and bool(self._solution)
 
     # --------------------------------------------------------------- drawing
     def _render(self) -> None:
@@ -292,7 +308,13 @@ class PracticeWindow(QtWidgets.QWidget):
             parts = [f"<p>{q.prompt}</p>"]
             if q.predict:
                 parts.append("<p><i>Predict it first: once you've answered, the page shows it.</i></p>")
+            if q.is_spec:
+                parts.append(
+                    "<p><i>Start from <b>Show on the page</b>, tune the page's controls until it meets the spec, "
+                    "then <b>Check</b>: it reads the page as it stands.</i></p>"
+                )
             parts.append(self._verdict)
+            parts.append(self._details)
             if self._hint:
                 parts.append(f"<p><i>Hint:</i> {self._hint}</p>")
             if self._solution:
@@ -303,7 +325,8 @@ class PracticeWindow(QtWidgets.QWidget):
         for b in (self.check_button, self.hint_button, self.solution_button, self.new_button):
             b.setEnabled(asked)
         self.page_button.setEnabled(asked and q.setup is not None and (not q.predict or self._answered))
-        self.answer_area.setVisible(asked)
+        self.page_button.setText("Show a design on the page" if self._shows_design() else "Show on the page")
+        self.answer_area.setVisible(asked and not q.is_spec)
 
     def _show_ticks(self) -> None:
         solved = _solved()

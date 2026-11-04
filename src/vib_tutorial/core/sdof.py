@@ -13,6 +13,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.optimize import brentq
 
 from .simulator import foh_discretize
 
@@ -165,6 +166,25 @@ def free_response(osc: Oscillator, x0: float, v0: float, t: np.ndarray) -> tuple
     a2 = (s1 * x0 - v0) / (s1 - s2)
     e1, e2 = np.exp(s1 * t), np.exp(s2 * t)
     return a1 * e1 + a2 * e2, a1 * s1 * e1 + a2 * s2 * e2
+
+
+def settling_time(osc: Oscillator, band: float = 0.02, points: int = 20000) -> float:
+    """How long a release from rest takes to stay within `band` of where it was let go (inf with no damping).
+
+    The last time |x| leaves the band, sampled over the decay and refined by `brentq`.
+    """
+    if osc.damping == 0:
+        return math.inf
+    span = osc.time_constant * (math.log(1.0 / band) + 5.0) + 2.0 * osc.period
+    t = np.linspace(0.0, span, points)
+    x, _ = free_response(osc, 1.0, 0.0, t)
+    out = np.flatnonzero(np.abs(x) > band)
+    if not out.size:
+        return 0.0
+    i = int(out[-1])
+    if i + 1 == t.size:
+        return math.inf
+    return float(brentq(lambda s: abs(free_response(osc, 1.0, 0.0, np.array([s]))[0][0]) - band, t[i], t[i + 1]))
 
 
 def impulse_response(osc: Oscillator, t: np.ndarray) -> np.ndarray:

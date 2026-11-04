@@ -78,13 +78,30 @@ def test_the_pages_with_problems_are_listed():
     assert all(p.page in PAGES for p in ALL)
 
 
+def _trial_class(page: str):
+    """The page's trial class, which its setups (and its `practice_state`) are made of."""
+    import sys
+
+    from vib_tutorial.gui.main_window import _page_class
+
+    module = sys.modules[_page_class(page).__module__]
+    return type(module.TRIALS[0])
+
+
 @pytest.mark.parametrize("problem", ALL, ids=lambda p: f"{p.page}/{p.key}")
 def test_every_question_marks_its_own_answer(problem):
     for seed in SEEDS:
         q = problem.question(seed)
         assert q.prompt and q.solution
         assert problem.question(seed) == q  # the seed sets the numbers
-        if q.is_choice:
+        if q.is_spec:
+            assert q.setup is not None and q.design is not None and not q.is_choice
+            # The design meets the spec and the start doesn't (the page's own round trip is checked below).
+            trial = _trial_class(problem.page)
+            assert check(q, trial("", "", **q.design)).right
+            start = check(q, trial("", "", **q.setup))
+            assert not start.right and "✗" in start.details
+        elif q.is_choice:
             assert 0 <= q.answer < len(q.choices) and len(set(q.choices)) == len(q.choices)
             assert check(q, q.answer).right
             assert not any(check(q, i).right for i in range(len(q.choices)) if i != q.answer)
@@ -93,6 +110,19 @@ def test_every_question_marks_its_own_answer(problem):
             assert check(q, repr(q.answer)).right and check(q, number(q.answer)).right
             assert not check(q, repr(q.answer * (1 + 2 * q.tolerance))).right
         assert not q.predict or (q.is_choice and q.setup is not None)
+
+
+def test_check_a_spec():
+    from vib_tutorial.core.practice import Requirement, at_least, at_most, kept
+
+    q = Question("Tune it.", 0, "", goal=lambda x: (at_most("x", x, 2.0, "mm"), kept("y", 5.0, 5.01, "kg")))
+    assert q.is_spec and not q.is_choice
+    v = check(q, 1.5)
+    assert v.right and v.message == "It meets the spec." and v.details.count("✓") == 2
+    v = check(q, 2.5)
+    assert not v.right and "1 of 2" in v.message and "x ≤ 2.00 mm" in v.details and "now 2.50 mm" in v.details
+    assert not kept("y", 5.0, 5.1).met and at_least("z", 3.0, 2.0).met
+    assert isinstance(at_most("x", 1, 2), Requirement)
 
 
 def test_choices_are_shuffled():
@@ -150,6 +180,10 @@ def test_every_setup_loads_on_its_page(app):
                 q = problem.question(seed)
                 if q.setup is not None:
                     page.load_setup(q.setup)
+                if q.is_spec:  # through the page's own boxes: the design still meets it, the start doesn't
+                    assert not check(q, page.practice_state()).right, (problem.key, seed)
+                    page.load_setup(q.design)
+                    assert check(q, page.practice_state()).right, (problem.key, seed)
         page.close()
 
 
@@ -201,9 +235,29 @@ def test_practice_window(app):
     assert w.isolation_page.zeta.value() == pytest.approx(p.question.setup["zeta"])
     assert p.page_button.isEnabled() and "Solution" in p.text.toPlainText()
 
+    # A spec: Check reads the page, the solution offers a design that meets it.
+    p.show_problem("isolation_page", "isolate-spec", seed=2)
+    assert p.page_button.isEnabled() and not p.answer_area.isVisible()
+    p.page_button.click()
+    assert w.isolation_page.rpm.value() == p.question.setup["rpm"]
+    p.check()
+    assert "Not yet" in p.text.toPlainText() and "✗" in p.text.toPlainText()
+    p.show_solution()
+    assert p.page_button.text() == "Show a design on the page"
+    p.page_button.click()
+    assert w.isolation_page.deflection.value() == pytest.approx(p.question.design["deflection_mm"])
+    p.check()
+    assert "It meets the spec" in p.text.toPlainText()
+    assert not p._problem_items["isolation_page", "isolate-spec"].text(0).startswith(TICK)  # shown, not solved
+    p.show_problem("isolation_page", "isolate-spec", seed=2)
+    p.page_button.click()
+    w.isolation_page.deflection.setValue(p.question.design["deflection_mm"])  # tuned by hand
+    p.check()
+    assert p._problem_items["isolation_page", "isolate-spec"].text(0).startswith(TICK)
+
     # New numbers ask again; following the page turns to its problems.
     p.new_numbers()
-    assert p.problem.key == "damping-above" and "Solution" not in p.text.toPlainText()
+    assert p.problem.key == "isolate-spec" and "Solution" not in p.text.toPlainText()
     p.follow.setChecked(True)
     w.pages.setCurrentWidget(w.sdof_page)
     assert p.problem.page == "sdof_page" and p.problem.key != "natural-frequency"  # the first one unsolved

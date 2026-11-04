@@ -4,7 +4,9 @@ A `Problem` belongs to a page and makes a `Question` from a random generator, so
 Its answer is worked out by the page's own `core` function from the numbers as the question prints them, so the
 key can't drift from what the page shows. A question is either a number, typed in its `unit` and right within a
 relative `tolerance`, or a choice among `choices`. A *prediction* is a choice whose `setup` (the page's settings
-that show the answer, as its trials take them) is held back until it's answered: predict, then run it.
+that show the answer, as its trials take them) is held back until it's answered: predict, then run it. A *spec*
+has a `goal` instead: the reader tunes the page's own controls until its settings (the page's `practice_state`,
+its trial's fields) meet every `Requirement`, and `design` is settings that do.
 
 `check` marks an answer and, when a number is wrong, says if it's off by one of the usual slips (2π: rad/s for
 Hz; 1000: a unit's prefix; 2: amplitude for peak to peak). No Qt here: the Practice window shows them.
@@ -15,6 +17,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from typing import Any
 
 import numpy as np
 
@@ -26,14 +29,26 @@ SLIPS = (  # (factor, what it suggests) for a number that's out by a factor, eit
     (math.sqrt(2.0), "a factor of √2: the half-power points are where |H| falls to 1/√2 of the peak."),
 )
 SLIP_BAND = 0.03  # how close the ratio has to come to a slip's factor for the hint
+KEEP = 0.005  # how near a spec's given number has to stay to what it says (the page's boxes round)
+
+
+@dataclass(frozen=True)
+class Requirement:
+    """One condition of a spec: what's wanted, what the page has now, and whether that meets it (rich text)."""
+
+    wanted: str
+    now: str
+    met: bool
 
 
 @dataclass(frozen=True)
 class Question:
     """One problem's question, with its numbers filled in.
 
-    `answer` is the number (in `unit`) or the index into `choices`. `setup` is the page's settings that show the
-    situation (keyword arguments for its trials), or None; with `predict` it's offered only once answered.
+    `answer` is the number (in `unit`) or the index into `choices` (unused by a spec). `setup` is the page's
+    settings that show the situation (keyword arguments for its trials), or None; with `predict` it's offered
+    only once answered. A spec's `goal` takes the page's settings (its trial) and says what they meet; its
+    `setup` is where the tuning starts and `design` settings that meet it.
     """
 
     prompt: str  # rich text
@@ -44,10 +59,16 @@ class Question:
     tolerance: float = TOLERANCE
     setup: dict | None = None
     predict: bool = False
+    goal: Callable[[Any], tuple[Requirement, ...]] | None = field(default=None, compare=False, repr=False)
+    design: dict | None = None
 
     @property
     def is_choice(self) -> bool:
         return bool(self.choices)
+
+    @property
+    def is_spec(self) -> bool:
+        return self.goal is not None
 
 
 @dataclass(frozen=True)
@@ -74,6 +95,7 @@ class Problem:
 class Verdict:
     right: bool
     message: str  # rich text
+    details: str = ""  # rich text: a spec's requirements, each met or not
 
 
 def parse_number(text: str) -> float | None:
@@ -91,8 +113,18 @@ def is_close(value: float, answer: float, tolerance: float) -> bool:
     return abs(value - answer) <= tolerance * abs(answer)
 
 
-def check(question: Question, response: str | int) -> Verdict:
-    """Mark `response`: the typed text for a number, the choice's index for a choice."""
+def check(question: Question, response: Any) -> Verdict:
+    """Mark `response`: the typed text for a number, the choice's index for a choice, the page's settings for a
+    spec."""
+    if question.goal is not None:
+        found = question.goal(response)
+        missed = sum(not r.met for r in found)
+        rows = "".join(
+            f"<tr><td>{'✓' if r.met else '✗'}&nbsp;</td><td>{r.wanted}</td><td>&nbsp;&nbsp;now {r.now}</td></tr>"
+            for r in found
+        )
+        message = "It meets the spec." if not missed else f"Not yet: {missed} of {len(found)} not met."
+        return Verdict(not missed, message, f"<table>{rows}</table>")
     if question.is_choice:
         right = int(response) == question.answer
         return Verdict(right, "Right." if right else "Not that one.")
@@ -112,6 +144,26 @@ def check(question: Question, response: str | int) -> Verdict:
             if value * question.answer < 0 and is_close(-value, question.answer, question.tolerance):
                 message = "Not quite: check the sign."
     return Verdict(False, message)
+
+
+def _with_unit(value: float, unit: str, digits: int = 3) -> str:
+    return f"{number(value, digits)} {unit}".strip()
+
+
+def at_most(what: str, value: float, limit: float, unit: str = "") -> Requirement:
+    """`what` (now `value`) no more than `limit`, both in `unit`."""
+    return Requirement(f"{what} ≤ {_with_unit(limit, unit)}", _with_unit(value, unit), value <= limit)
+
+
+def at_least(what: str, value: float, limit: float, unit: str = "") -> Requirement:
+    return Requirement(f"{what} ≥ {_with_unit(limit, unit)}", _with_unit(value, unit), value >= limit)
+
+
+def kept(what: str, value: float, given: float, unit: str = "") -> Requirement:
+    """A number the spec gives, left as it is (within `KEEP`)."""
+    return Requirement(
+        f"{what} kept at {_with_unit(given, unit, 4)}", _with_unit(value, unit, 4), is_close(value, given, KEEP)
+    )
 
 
 def number(value: float, digits: int = 3) -> str:
