@@ -22,7 +22,7 @@ from .style import colors
 
 @dataclass(frozen=True)
 class CmsTrial:
-    """An 8-mass chain for the Simulation page, and how this page cuts and reduces it."""
+    """A uniform chain (8 masses unless `n` says) for the Simulation page, and how this page cuts and reduces it."""
 
     name: str
     note: str
@@ -34,9 +34,11 @@ class CmsTrial:
     tune: int = 0  # harmonic force at this mode (1-based) of the full chain
     floating: bool = False  # k1 = k2 = 0
     mode: int = 0  # the comparison table's row to select (1-based), 0 to leave it
+    n: int = 8  # masses in the uniform chain
+    changed: bool = False  # the chain isn't this uniform one (a practice spec's state: edited on the Simulation page)
 
     def system(self) -> ChainSystem:
-        system = ChainSystem.uniform(8)
+        system = ChainSystem.uniform(self.n)
         if self.floating:
             system.stiffness[:2] = 0.0
         return system

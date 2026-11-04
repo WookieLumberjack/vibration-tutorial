@@ -11,6 +11,8 @@ methods, and walks through the matrices.
 
 from __future__ import annotations
 
+import functools
+import itertools
 import math
 
 import numpy as np
@@ -33,13 +35,15 @@ from ..core import (
     modal_analysis,
     reduced_frf,
 )
+from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from ..core.substructure import METHOD_SHORT, SUBSTRUCTURE_NAMES
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
-from .cms_notes import THEORY_HTML, TRIALS, matrices_html
+from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
 from .cms_recovery import BackExpansionView
 from .cms_time import CMSTimeView
 from .layouts import ColumnScroll
+from .links import page_link
 from .style import MAX_DOF, colors, current, text_on
 from .theming import add_legend, mute, restyle_plot_item
 
@@ -790,6 +794,229 @@ class MethodComparison(QtWidgets.QWidget):
         )
 
 
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed. The chain is the
+# course's uniform one: 1 kg masses on 400 N/m springs, so √(k/m) = 20 rad/s.
+TWO_PI = 2.0 * math.pi
+ROOT = 20.0  # √(k/m), rad/s
+CB = "craig-bampton"
+
+
+def _kept_list(t: CmsTrial, count: int) -> list[int]:
+    """The modes kept in each of `count` substructures, as the page reads a trial's (the last repeated)."""
+    return [t.kept[min(s, len(t.kept) - 1)] for s in range(count)]
+
+
+def _reduced_dofs(rng: np.random.Generator) -> Question:
+    cuts = sorted(int(c) for c in rng.choice(np.arange(1, 7), size=int(pick(rng, (1, 2))), replace=False))
+    system = ChainSystem.uniform(8)
+    ranges = kept_ranges(system, cuts, CB)
+    kept = [int(rng.integers(0, hi + 1)) for _, hi in ranges]
+    model = component_mode_synthesis(system, cuts, kept, CB)
+    where = " and ".join(f"m{c + 1}" for c in cuts)
+    each = ", ".join(f"{k} in {SUB_NAMES[s]}" for s, k in enumerate(kept))
+    return Question(
+        f"The 8-mass chain is cut at {where} and reduced by Craig–Bampton, keeping {each}. How many coordinates "
+        "has the reduced model?",
+        model.n_red,
+        f"The boundary DOFs stay: the {len(cuts)} interface{'s' if len(cuts) > 1 else ''} and the tip, "
+        f"{len(cuts) + 1}; each kept fixed-interface mode adds one modal coordinate, {sum(kept)}: "
+        f"{model.n_red} in all, against 8.",
+        unit="coordinates",
+        tolerance=0.01,
+        setup=dict(interfaces=tuple(cuts), kept=tuple(kept)),
+    )
+
+
+def _guyan(n: int) -> float:
+    """The uniform chain's Guyan frequency (Hz) with only the tip kept: k/n over Σ m(i/n)²."""
+    return math.sqrt((400.0 / n) / ((n + 1) * (2 * n + 1) / (6 * n))) / TWO_PI
+
+
+def _guyan_frequency(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (3, 4, 5, 6, 8)))
+    f = _guyan(n)
+    mass = (n + 1) * (2 * n + 1) / (6 * n)
+    return Question(
+        f"A chain of {n} masses of 1 kg on {n} springs of 400 N/m, fixed at the ground, is reduced by Guyan to its tip "
+        "alone (no cut, no modes kept). At what frequency is its one mode?",
+        f,
+        f"The constraint mode is the static shape under a tip force, a straight line x<sub>i</sub> = i/{n}: the tip "
+        f"sees the springs in series, k/{n} = {number(400 / n)} N/m, and a mass Σ m(i/{n})² = (n + 1)(2n + 1)/6n = "
+        f"{number(mass)} kg. f = √({number(400 / n)}/{number(mass)})/2π = {number(f)} Hz: Rayleigh's quotient with "
+        "a straight line.",
+        unit="Hz",
+        setup=dict(n=n, kept=(0,), tab=4),
+    )
+
+
+def _guyan_error(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (3, 4, 5, 6, 8)))
+    f = _guyan(n)
+    true = 2 * ROOT * math.sin(math.pi / (2 * (2 * n + 1))) / TWO_PI
+    error = 100 * (f / true - 1)
+    return Question(
+        f"The same chain of {n} masses (1 kg, 400 N/m), reduced by Guyan to its tip. By how many percent is its "
+        "frequency above the chain's first mode?",
+        error,
+        f"Guyan gives {number(f)} Hz (k/{n} over Σ m(i/{n})²). A uniform fixed–free chain's modes are "
+        f"ω<sub>j</sub> = 2√(k/m) sin((2j − 1)π/2(2n + 1)), so f<sub>1</sub> = 40 sin(π/{2 * (2 * n + 1)})/2π = "
+        f"{number(true)} Hz: Guyan is {number(error)} % high, and never low.",
+        unit="%",
+        tolerance=0.03,
+        setup=dict(n=n, kept=(0,)),
+    )
+
+
+def _fixed_mode(rng: np.random.Generator) -> Question:
+    cut = int(pick(rng, (3, 4, 5, 6)))  # the interface mass, 1-based
+    side = int(pick(rng, (0, 1)))
+    inner = cut - 1 if side == 0 else 7 - cut
+    w = 2 * ROOT * math.sin(math.pi / (2 * (inner + 1)))
+    held = f"the ground and m{cut}" if side == 0 else f"m{cut} and the tip"
+    return Question(
+        f"The 8-mass chain (1 kg, 400 N/m) is cut at m{cut} for Craig–Bampton. At what frequency is substructure "
+        f"{SUB_NAMES[side]}'s first fixed-interface mode?",
+        w / TWO_PI,
+        f"{SUB_NAMES[side]}'s interior is the {inner} mass{'es' if inner > 1 else ''} between {held}, both held: a "
+        f"fixed–fixed chain, ω<sub>j</sub> = 2√(k/m) sin(jπ/2(p + 1)) with p = {inner}: ω₁ = 40 sin(π/{2 * (inner + 1)}) "
+        f"= {number(w)} rad/s, {number(w / TWO_PI)} Hz.",
+        unit="Hz",
+        setup=dict(interfaces=(cut - 1,), kept=(1,)),
+    )
+
+
+def _upper_bound(rng: np.random.Generator) -> Question:
+    return Question(
+        "The 8-mass chain cut at m4, one fixed-interface mode kept in each half. How do the reduced model's "
+        "frequencies compare with the chain's?",
+        0,
+        "Each is at or above the true one (0.02 % up to 7 % here): Craig–Bampton is a Rayleigh–Ritz projection, so "
+        "it can only stiffen.",
+        choices=("Each at or above the true one", "Each at or below", "Some above, some below"),
+        setup=dict(interfaces=(3,), kept=(1,)),
+        predict=True,
+    )
+
+
+def _all_modes(rng: np.random.Generator) -> Question:
+    return Question(
+        "Cut at m4, Craig–Bampton keeps every fixed-interface mode of both halves. How far off are its frequencies?",
+        0,
+        "Not at all: the basis then spans every motion the chain has, so it's the same model in other coordinates, "
+        "however different its matrices look.",
+        choices=("They're exact", "Within a percent", "A few percent high"),
+        setup=dict(interfaces=(3,), kept=(8,), tab=5),
+        predict=True,
+    )
+
+
+def _macneal_all(rng: np.random.Generator) -> Question:
+    return Question(
+        "Cut at m4, MacNeal's method keeps every free-interface mode of both halves. Is the reduced model exact?",
+        0,
+        "No: MacNeal's residual flexibility has no mass, so the boundary DOFs carry no inertia, and the model has only "
+        "six modes (mode 5 is 3.9 % high, mode 6 66 %). Rubin, which keeps the residual mass, is exact here.",
+        choices=("No: it drops the boundary's inertia", "Yes, as Craig–Bampton would be"),
+        setup=dict(interfaces=(3,), kept=(8,), method="macneal"),
+        predict=True,
+    )
+
+
+def _late_cut(rng: np.random.Generator) -> Question:
+    return Question(
+        "The interface moves to m7 (B is just the last spring), and A keeps only one fixed-interface mode. How good "
+        "is mode 3?",
+        0,
+        "Badly off, 51 % high (MAC 0.27): B has no interior, so all the reduction is in A, and one mode can't describe "
+        "the third mode across A's six interior masses. Keep three in A and modes 1 to 4 are within 0.2 %.",
+        choices=("Badly off", "Within a percent", "Exact"),
+        setup=dict(interfaces=(6,), kept=(1, 0)),
+        predict=True,
+    )
+
+
+@functools.cache
+def _fewest(modes: int, worst: float) -> tuple[int, tuple[int, ...], tuple[int, ...]]:
+    """The fewest Craig–Bampton coordinates that keep the 8-mass chain's first `modes` modes within `worst` %, up
+    to two cuts: (count, cuts, kept)."""
+    system = ChainSystem.uniform(8)
+    full = modal_analysis(system)
+    best = None
+    cutsets = [()] + [(a,) for a in range(7)] + list(itertools.combinations(range(7), 2))
+    for cuts in cutsets:
+        ranges = kept_ranges(system, list(cuts), CB)
+        for kept in itertools.product(*[range(lo, hi + 1) for lo, hi in ranges]):
+            model = component_mode_synthesis(system, list(cuts), list(kept), CB)
+            errors = [c.error for c in compare_modes(model, full)[:modes]]
+            if all(e is not None and 100 * e <= worst for e in errors) and (best is None or model.n_red < best[0]):
+                best = (model.n_red, tuple(cuts), tuple(kept))
+    assert best is not None
+    return best
+
+
+def _fewest_spec(rng: np.random.Generator) -> Question:
+    modes, worst = int(pick(rng, (2, 3, 4))), pick(rng, (0.1, 0.5, 1))
+    count, cuts, kept = _fewest(modes, worst)
+
+    def goal(t: CmsTrial):
+        system = t.system()
+        ranges = kept_ranges(system, list(t.interfaces), t.method)
+        wanted = [int(np.clip(k, lo, hi)) for k, (lo, hi) in zip(_kept_list(t, len(ranges)), ranges)]
+        model = component_mode_synthesis(system, list(t.interfaces), wanted, t.method)
+        errors = [c.error for c in compare_modes(model, modal_analysis(system))[:modes]]
+        error = math.inf if any(e is None for e in errors) else 100 * max(errors)
+        return (
+            Requirement(
+                "The 8-mass chain, as the Simulation page's trials set it",
+                f"{t.n} masses" + (", changed" if t.changed or t.floating else ""),
+                t.n == 8 and not t.changed and not t.floating,
+            ),
+            Requirement("Craig–Bampton", METHOD_NAMES[t.method], t.method == CB),
+            at_most(f"Modes 1 to {modes}'s largest error", error, worst, "%"),
+            at_most("The reduced model's coordinates", model.n_red, count),
+        )
+
+    if cuts:
+        each = ", ".join(f"{k} in {SUB_NAMES[s]}" for s, k in enumerate(kept))
+        design = f"cut at {' and '.join(f'm{c + 1}' for c in cuts)}, keeping {each},"
+    else:
+        design = f"no cut, keeping {kept[0]} modes,"
+    return Question(
+        f"Reduce the 8-mass chain by Craig–Bampton (cut it where you like, keep what modes you like) so that its first "
+        f"{modes} modes are within {worst:g} %, with no more than {count} coordinates.",
+        0,
+        f"Each cut adds a boundary coordinate that a kept mode could have used, so cutting rarely pays here: "
+        f"{design} is {count} coordinates (the fewest with up to two cuts). A cut can pay where it leaves a "
+        "substructure with no interior, as one at m7 does.",
+        setup=dict(kept=(0,)),
+        goal=goal,
+        design=dict(interfaces=cuts, kept=kept),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "cms_page", f"See {page_link('cms_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("reduced-dofs", "The reduced model's size", "boundary", "Boundary (master) and interior DOFs", _reduced_dofs),
+        ("guyan-frequency", "Guyan's frequency", "basis", "What is a basis?", _guyan_frequency),
+        ("guyan-error", "Guyan's error", "properties", "Properties worth knowing", _guyan_error),
+        ("fixed-mode", "A fixed-interface mode", "craig-bampton", "The Craig–Bampton basis", _fixed_mode),
+        ("upper-bound", "Predict: above or below", "properties", "Properties worth knowing", _upper_bound),
+        ("all-modes", "Predict: every mode kept", "properties", "Properties worth knowing", _all_modes),
+        ("macneal-all", "Predict: MacNeal, every mode", "free", "Free-interface methods", _macneal_all),
+        ("late-cut", "Predict: the interface at m7", "craig-bampton", "The Craig–Bampton basis", _late_cut),
+        (
+            "fewest-spec",
+            "Spec: the fewest coordinates",
+            "boundary",
+            "Boundary (master) and interior DOFs",
+            _fewest_spec,
+        ),
+    )
+)
+
+
 class SubstructuringPage(QtWidgets.QWidget):
     """Controls, schematic and comparison on the left; plots, matrices and theory on the right."""
 
@@ -1097,6 +1324,59 @@ class SubstructuringPage(QtWidgets.QWidget):
             if view is self.recovery:
                 view.select(1, 1)  # m2 and k2
             view.button.click()
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), cut,
+        modes kept, method and tab. Worked out now only if the page shows."""
+        t = CmsTrial("", "", **setup)
+        system = t.system()
+        self.trial_note.setVisible(False)
+        self.system_requested.emit(system)
+        if self.system is None or self.system.n != system.n or not np.allclose(self.system.stiffness, system.stiffness):
+            self.set_system(system)  # nobody passed it back: show it here alone
+        self._kept_wanted = [t.kept[min(s, len(t.kept) - 1)] for s in range(len(SUB_NAMES))]
+        self.method.blockSignals(True)
+        self.method.setCurrentIndex(self.method.findData(t.method))
+        self.method.blockSignals(False)
+        self._apply_method()
+        if len(self.cut_buttons) != system.n - 1:
+            self._build_cut_buttons(system.n)
+        for i, b in enumerate(self.cut_buttons):
+            b.blockSignals(True)
+            b.setChecked(i in t.interfaces)
+            b.blockSignals(False)
+        self._style_cut_buttons()
+        self._updating = True
+        try:
+            self._sync_controls(system.n)
+        finally:
+            self._updating = False
+        self.tabs.setCurrentIndex(t.tab)
+        self._dirty = True
+        if self.isVisible():
+            self.refresh()
+
+    def practice_state(self) -> CmsTrial:
+        """The chain, cut, modes kept and method, as a trial: what a practice spec checks."""
+        system = self.system
+        n = system.n if system is not None else 8
+        floating = system is not None and n > 2 and not system.stiffness[:2].any()
+        own = CmsTrial("", "", n=n, floating=floating).system()
+        changed = system is None or not all(
+            np.allclose(a, b)
+            for a, b in ((system.masses, own.masses), (system.stiffness, own.stiffness), (system.damping, own.damping))
+        )
+        return CmsTrial(
+            "",
+            "",
+            interfaces=tuple(self.interfaces),
+            kept=tuple(s.value() for s in self.kept),
+            method=self.method_key,
+            tab=self.tabs.currentIndex(),
+            floating=floating,
+            n=n,
+            changed=changed,
+        )
 
     def _on_trial(self, index: int) -> None:
         if index <= 0:
