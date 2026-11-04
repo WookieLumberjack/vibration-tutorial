@@ -30,6 +30,7 @@ the first sync).
 uv sync               # create .venv and install dependencies
 uv run vib-tutorial   # launch the app (or: uv run python -m vib_tutorial)
 uv run pytest         # run the tests
+uv run ruff check     # lint (and `uv run ruff format` to format)
 ```
 
 ## The window

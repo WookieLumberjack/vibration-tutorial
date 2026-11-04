@@ -410,8 +410,8 @@ impl FrictionSteps {
                 big.set(i, j, input.at(i, j));
             }
         }
-        for i in 0..n {
-            big.set(n + i, 2 * n + 2 + i, 1.0 / masses[i]);
+        for (i, mass) in masses.iter().enumerate() {
+            big.set(n + i, 2 * n + 2 + i, 1.0 / mass);
         }
         big.set(m, k, 1.0);
         Ok(FrictionSteps {

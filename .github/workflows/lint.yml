@@ -1,0 +1,44 @@
+# Style checks on every push and pull request: ruff (lint and format) on the Python, rustfmt and clippy on the
+# Rust kernels. Quick, and separate from the release builds and their tests.
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0  # no floating major tags since v8
+
+      # The dev group alone (ruff at the locked version), without building the package and its kernels.
+      - name: Ruff lint
+        run: uv run --only-group dev ruff check --output-format github
+
+      - name: Ruff format
+        run: uv run --only-group dev ruff format --check
+
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: native
+    steps:
+      - uses: actions/checkout@v7
+
+      # The runners come with rustup.
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
+
+      - name: rustfmt
+        run: cargo fmt --check
+
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
