@@ -92,6 +92,10 @@ def _state(page: str, setup: dict):
         from vib_tutorial.gui.complex_modes import ComplexSetup
 
         return ComplexSetup(**setup)
+    if page == "continuum_page":
+        from vib_tutorial.gui.continuum import ContinuumSetup
+
+        return ContinuumSetup(**setup)
     from vib_tutorial.gui.main_window import _page_class
 
     module = sys.modules[_page_class(page).__module__]
