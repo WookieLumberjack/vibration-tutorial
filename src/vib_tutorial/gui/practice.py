@@ -31,6 +31,7 @@ PAGES = (
     "sdof_page",
     "pendulum_page",
     "transient_page",
+    "periodic_page",
     "damping_page",
     "isolation_page",
     "signals_page",
