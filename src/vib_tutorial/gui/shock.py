@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import functools
 import math
+from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
@@ -21,6 +22,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.modal import TWO_PI, ModalResult, modal_analysis
 from ..core.model import ChainSystem
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..core.random_vibration import G, linear
 from ..core.shock import (
     CLASSICAL,
@@ -44,7 +46,7 @@ from ..core.shock import (
 )
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, group, plot_height
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .panels import spin
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -221,7 +223,7 @@ A component whose natural frequency is f sees that peak; its spring carries that
 <p>In the coordinate z relative to the base, z'' + 2ζω z' + ω² z = −a(t), and the oscillator's absolute
 acceleration is −2ζω z' − ω² z.</p>
 
-<h3>Three regions</h3>
+<h3><a name="regions"></a>Three regions</h3>
 <ul>
 <li><b>Stiff oscillators</b> (f T ≫ 1) follow the pulse: the spectrum tends to the pulse's peak. A pulse that
 jumps (a square, an initial-peak sawtooth) makes them overshoot, to nearly twice it.</li>
@@ -239,7 +241,7 @@ free decay after it (soft oscillators peak there); each has a <b>positive</b> an
 way and the other: a terminal-peak sawtooth's drop rings stiff oscillators backwards, so its negative spectrum
 is nearly its positive one, which is why tests use it.</p>
 
-<h3>Damping</h3>
+<h3><a name="damping"></a>Damping</h3>
 <p>The primary peak barely depends on Q: the shock is over before the damping has acted. That is unlike a
 steady sine, whose resonant response is Q times larger. The residual decays with ζ, but its first peak, which
 the spectrum counts, hardly does.</p>
@@ -257,7 +259,7 @@ SRSS of the rest. The <i>Chain</i> tab sets them against the exact response, mas
 Γ<sub>r</sub>² is the mode's effective mass (the modes' add up to the total mass): the modes that carry most of
 it carry the shock.</p>
 
-<h3>Four-way paper</h3>
+<h3><a name="tripartite"></a>Four-way paper</h3>
 <p>The relative displacement's peak |z|, times ω, is the <b>pseudo-velocity</b>, and times ω² the
 <b>pseudo-acceleration</b>, close to the SRS when damping is light. Plotted log–log against f, lines of constant
 |z| rise at 45° and lines of constant pseudo-acceleration fall at 45°, so one curve reads all three. A shock's
@@ -273,7 +275,7 @@ leaves a net velocity, so the record ends moving and the table would drift away.
 a shaker can play them. The SRS is matched only at the components' frequencies; between them it strays a
 little, and the same record at another Q no longer matches.</p>
 
-<h3>Measured shocks</h3>
+<h3><a name="measured"></a>Measured shocks</h3>
 <p>A component mounted on a structure sees the structure's response, not the base's pulse: here a mass on the
 chain, ringing at the chain's modes. Its spectrum, an in-structure shock spectrum, peaks at those modes. A
 pyrotechnic shock is a burst of high-frequency ringing with almost no net velocity change, and its spectrum
@@ -304,6 +306,263 @@ NOTES_HTML = NOTES_HTML.replace(
         "together, so ABS or NRL, not SRSS, bound the response.",
         "Tests specify an SRS; a time history that meets it is synthesized from damped sines or wavelets.",
     ),
+)
+
+
+TAB_OSCILLATOR, TAB_CHAIN, TAB_TRIPARTITE, TAB_SHAPES = range(4)
+
+
+@dataclass(frozen=True)
+class ShockSetup:
+    """A practice problem's setup: a chain (none: the one there is) and the page's settings, in the boxes' units
+    (the duration in ms, noise and offset in %). `mass` counts from the end when negative."""
+
+    masses: tuple[float, ...] = ()
+    springs: tuple[float, ...] = ()
+    dampers: tuple[float, ...] = ()
+    shape: Shape = Shape.HALF_SINE
+    peak: float = 10.0
+    duration: float = 100.0
+    knee: float = 5.0
+    mass: int = -1
+    noise: float = 0.0
+    offset: float = 0.0
+    q: float = DEFAULT_Q
+    tab: int = TAB_OSCILLATOR
+
+    def system(self) -> ChainSystem | None:
+        if not self.masses:
+            return None
+        return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
+
+
+PRACTICE_SETUP = ShockSetup  # what a practice problem's setup and the page's practice_state are
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+AREA = {Shape.HALF_SINE: 2 / math.pi, Shape.HAVERSINE: 0.5, Shape.TERMINAL_PEAK: 0.5, Shape.SQUARE: 1.0}
+UNIFORM = dict(masses=(1.0,) * 4, springs=(400.0,) * 4, dampers=(2.0,) * 4)  # the default chain
+
+
+def _peak_srs(pulse: Pulse, f: np.ndarray, q: float = DEFAULT_Q) -> np.ndarray:
+    """The maximax (g) of the pulse's SRS at f, at Q."""
+    rec = record(pulse, sample_rate(pulse, float(np.max(f))))
+    return srs(rec, f, 1 / (2 * q)).maximax / G
+
+
+@functools.cache
+def _half_sine_peak() -> tuple[float, float]:
+    """(f T, SRS over the pulse's peak) where a half-sine's spectrum peaks, at Q = 10."""
+    x = np.linspace(0.6, 1.1, 101)
+    s = _peak_srs(Pulse(Shape.HALF_SINE, 1.0, 1.0), x)
+    i = int(np.argmax(s))
+    return float(x[i]), float(s[i])
+
+
+def _velocity_change(rng: np.random.Generator) -> Question:
+    shape = (Shape.HALF_SINE, Shape.HAVERSINE, Shape.TERMINAL_PEAK, Shape.SQUARE)[int(rng.integers(4))]
+    A, T = pick(rng, (10, 20, 50, 100)), pick(rng, (5, 6, 11, 20))
+    dv = AREA[shape] * A * G * T / 1000
+    area = {Shape.HALF_SINE: "2AT/π", Shape.SQUARE: "AT"}.get(shape, "AT/2")
+    return Question(
+        f"A {shape.value.lower()} pulse, {A:g} g for {T:g} ms. What velocity change does it give the base?",
+        dv,
+        f"Δv is the pulse's area, {area}: A = {A:g} × 9.807 = {number(A * G)} m/s², T = {T / 1000:g} s, so Δv = "
+        f"{number(dv)} m/s.",
+        unit="m/s",
+        setup=dict(shape=shape, peak=A, duration=T),
+    )
+
+
+def _soft_asymptote(rng: np.random.Generator) -> Question:
+    A, T = pick(rng, (10, 20, 50)), pick(rng, (5, 10, 20))
+    f = pick(rng, (0.25, 0.5, 1)) * 10 / T  # f T = 0.0025 to 0.01
+    dv = 2 * A * G * T / 1000 / math.pi
+    peak = TWO_PI * f * dv / G
+    page = float(_peak_srs(Pulse(Shape.HALF_SINE, A, T / 1000), np.array([f]))[0])
+    return Question(
+        f"A {A:g} g, {T:g} ms half-sine. What peak acceleration does a soft oscillator at {number(f)} Hz see, by the "
+        "spectrum's low-frequency asymptote?",
+        peak,
+        f"f T = {number(f * T / 1000)} ≪ 1: it takes the pulse as an impulse, Δv = 2AT/π = {number(dv)} m/s, and "
+        f"rings at ω Δv = 2π × {number(f)} × {number(dv)} = {number(peak * G)} m/s², {number(peak)} g. (The page, "
+        f"at Q = 10, reads {number(page)} g: the damping takes e<sup>−ζπ/2</sup> off before the first peak.)",
+        unit="g",
+        setup=dict(peak=A, duration=float(T)),
+    )
+
+
+def _rattle_space(rng: np.random.Generator) -> Question:
+    A, T = pick(rng, (10, 20)), pick(rng, (5, 10, 20))
+    f = pick(rng, (1, 2)) * 10 / T  # f T = 0.01 or 0.02
+    dv = 2 * A * G * T / 1000 / math.pi
+    z = dv / (TWO_PI * f)
+    return Question(
+        f"A soft mount at {number(f)} Hz on a base given a {A:g} g, {T:g} ms half-sine. About how far does its spring "
+        "stretch?",
+        1000 * z,
+        f"The mount stays put while the base moves off at Δv = 2AT/π = {number(dv)} m/s, then rings at that speed: "
+        f"|z| = Δv/ω = {number(dv)}/(2π × {number(f)}) = {number(1000 * z)} mm, the rattle space it needs (the "
+        "tripartite plot's flat left end; at Q = 10 the damping takes a few percent off its first swing).",
+        unit="mm",
+        setup=dict(peak=A, duration=float(T), tab=TAB_TRIPARTITE),
+    )
+
+
+def _hardest_hit(rng: np.random.Generator) -> Question:
+    T = pick(rng, (2, 5, 6, 11, 20))
+    x, _ = _half_sine_peak()
+    return Question(
+        f"A {T:g} ms half-sine, Q = 10. A component of which natural frequency does it hit hardest?",
+        1000 * x / T,
+        f"A half-sine's spectrum peaks at f T ≈ {number(x)}, an oscillator whose period is a little longer than the "
+        f"pulse: f = {number(x)}/{T / 1000:g} s = {number(1000 * x / T)} Hz.",
+        unit="Hz",
+        tolerance=0.05,
+        setup=dict(duration=float(T)),
+    )
+
+
+def _component_force(rng: np.random.Generator) -> Question:
+    m, S = pick(rng, (0.2, 0.5, 2, 5)), pick(rng, (15, 30, 80, 150))
+    F = m * S * G
+    return Question(
+        f"A {m:g} kg component's natural frequency is where a shock's SRS reads {S:g} g. What peak force does its "
+        "mount carry?",
+        F,
+        f"The SRS is the mass's peak absolute acceleration, and the mount's spring and damper push it there: "
+        f"F = m × SRS = {m:g} × {S:g} × 9.807 = {number(F)} N.",
+        unit="N",
+    )
+
+
+def _combine(rng: np.random.Generator) -> Question:
+    a, b, c = pick(rng, (3, 4, 5, 6)), pick(rng, (1.5, 2, 2.5)), pick(rng, (0.5, 1))
+    rule = (Rule.ABS, Rule.SRSS, Rule.NRL)[int(rng.integers(3))]
+    value = {
+        Rule.ABS: a + b + c,
+        Rule.SRSS: math.sqrt(a * a + b * b + c * c),
+        Rule.NRL: a + math.sqrt(b * b + c * c),
+    }[rule]
+    how = {
+        Rule.ABS: f"ABS adds them: {a:g} + {b:g} + {c:g}",
+        Rule.SRSS: f"SRSS is √({a:g}² + {b:g}² + {c:g}²)",
+        Rule.NRL: f"NRL is the largest plus the root of the others' squares: {a:g} + √({b:g}² + {c:g}²)",
+    }[rule]
+    return Question(
+        f"Three modes' peak terms at a mass, φΓ times the SRS at each mode: {a:g}, {b:g} and {c:g} g. What peak "
+        f"does the {rule.value} rule give?",
+        value,
+        f"{how} = {number(value)} g.",
+        unit="g",
+        setup=dict(**UNIFORM, tab=TAB_CHAIN),
+    )
+
+
+def _more_q(rng: np.random.Generator) -> Question:
+    return Question(
+        "A half-sine's spectrum at Q = 10 peaks at 1.65 × the pulse's peak. What does it peak at with Q = 50?",
+        0,
+        "Hardly more, 1.74 ×: the shock is over before the damping has acted on the primary peak. A steady sine's "
+        "resonance would be five times higher.",
+        choices=("Hardly more", "About five times as much", "About √5 times as much", "Less"),
+        setup=dict(q=50.0),
+        predict=True,
+    )
+
+
+def _square_top(rng: np.random.Generator) -> Question:
+    return Question(
+        "A square pulse, a step up and a step down. At the top of its spectrum (stiff oscillators), how high is the "
+        "SRS against the pulse's peak?",
+        0,
+        "Nearly twice it, 1.85 × at Q = 10: a stiff oscillator overshoots a step, to 2 × undamped. A half-sine's top "
+        "falls to 1 ×.",
+        choices=("Nearly twice it", "About the same", "Far below it"),
+        setup=dict(shape=Shape.SQUARE, duration=11.0),
+        predict=True,
+    )
+
+
+def _srss_short(rng: np.random.Generator) -> Question:
+    return Question(
+        "The default chain on a base given a 10 g, 100 ms half-sine, its modes' peaks from the SRS combined by SRSS. "
+        "Against the exact peak acceleration at the last mass, the SRSS comes out…",
+        0,
+        "…short: 6.62 g against 9.14 g exactly, −28 %. A shock sets every mode off at once and they peak nearly "
+        "together, early; the SRSS assumes unrelated times. ABS gives 11.0 g, NRL 9.27 g.",
+        choices=("Short", "About right", "Over"),
+        setup=dict(**UNIFORM, duration=100.0, tab=TAB_CHAIN),
+        predict=True,
+    )
+
+
+def _zero_shift(rng: np.random.Generator) -> Question:
+    return Question(
+        "A pyrotechnic transient's record gets a 1 % offset, an accelerometer's zero shift. What happens to its "
+        "spectrum's low end?",
+        0,
+        "It rises, about ten times at 0.2 Hz: integrated over the record the offset is a velocity change the shock "
+        "didn't have, and the soft oscillators ring with it (the 2π f Δv line).",
+        choices=("It rises a lot", "It hardly changes", "It falls"),
+        setup=dict(shape=Shape.TRANSIENT, duration=100.0, noise=2.0, offset=1.0),
+        predict=True,
+    )
+
+
+def _test_spec(rng: np.random.Generator) -> Question:
+    fc = pick(rng, (50, 100, 200, 500))
+    A = pick(rng, (20, 50, 100))
+    x, top = _half_sine_peak()
+    T = round(1000 * x / fc, 2)  # ms, as the box holds it
+    reach = float(_peak_srs(Pulse(Shape.HALF_SINE, A, T / 1000), np.array([fc]))[0])
+    lowest = rounded(0.95 * reach, 2)
+    highest = rounded(1.25 * A, 2)
+    dv = AREA[Shape.HALF_SINE] * A * G * T / 1000
+    most_dv = rounded(1.1 * dv, 2)
+
+    def goal(t: ShockSetup):
+        pulse = Pulse(t.shape, t.peak, 1e-3 * t.duration)
+        rec = record(pulse, sample_rate(pulse, fc))
+        at = float(srs(rec, np.array([fc]), 1 / (2 * t.q)).maximax[0]) / G
+        return (
+            Requirement("A half-sine", t.shape.value, t.shape is Shape.HALF_SINE),
+            kept("Q", t.q, DEFAULT_Q),
+            at_least(f"The SRS at {number(fc)} Hz", at, lowest, "g"),
+            at_most("The peak", t.peak, highest, "g"),
+            at_most("The velocity change", rec.velocity_change, most_dv, "m/s"),
+        )
+
+    return Question(
+        f"A shock test on a half-sine machine must put {number(lowest, 2)} g or more (SRS, Q = 10) into a component at "
+        f"{fc:g} Hz. The machine gives at most {number(highest, 2)} g and a velocity change of at most "
+        f"{number(most_dv, 2)} m/s. Choose the pulse's peak and duration.",
+        0,
+        f"The spectrum is A times a curve in f T, highest ({number(top)} ×) at f T ≈ {number(x)}: T = "
+        f"{number(x)}/{fc:g} Hz = {T:g} ms. Then A = {A:g} g gives {number(reach)} g at {fc:g} Hz, with "
+        f"Δv = 2AT/π = {number(dv)} m/s. A shorter pulse at the peak limit does too, its Δv lower; a longer one soon "
+        "runs out of velocity change.",
+        setup=dict(peak=float(A), duration=round(10 * T, 2)),
+        goal=goal,
+        design=dict(peak=float(A), duration=T),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "shock_page", f"See {page_link('shock_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("velocity-change", "A pulse's velocity change", "regions", "Three regions", _velocity_change),
+        ("soft-asymptote", "A soft oscillator's peak", "regions", "Three regions", _soft_asymptote),
+        ("rattle-space", "A soft mount's stretch", "tripartite", "Four-way paper", _rattle_space),
+        ("hardest-hit", "Which component it hits hardest", "regions", "Three regions", _hardest_hit),
+        ("component-force", "A component's mount force", "srs", "The shock response spectrum", _component_force),
+        ("combine", "Modes' peaks combined", "chain", "The chain's peak from the spectrum", _combine),
+        ("more-q", "Predict: lighter damping", "damping", "Damping", _more_q),
+        ("square-top", "Predict: a square pulse's top", "regions", "Three regions", _square_top),
+        ("srss-short", "Predict: SRSS on a shock", "chain", "The chain's peak from the spectrum", _srss_short),
+        ("zero-shift", "Predict: a zero shift", "measured", "Measured shocks", _zero_shift),
+        ("test-spec", "Spec: a shock test's pulse", "regions", "Three regions", _test_spec),
+    )
 )
 
 
@@ -338,6 +597,12 @@ def knee_for(result: ModalResult) -> float:
     return _nice(max((m.fn_hz for m in result.modes if m.fn_hz > 0), default=5.0))
 
 
+def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
+    return a.n == b.n and all(
+        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
+    )
+
+
 def _nice(x: float) -> float:
     e = 10.0 ** math.floor(math.log10(x))
     return min((m * e for m in (1, 2, 5, 10)), key=lambda v: abs(math.log(v / x)))
@@ -347,6 +612,7 @@ class ShockPage(QtWidgets.QWidget):
     """Controls on the left, the pulse and its spectrum in the centre, the picked oscillator and notes on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
+    system_requested = QtCore.Signal(object)  # a practice problem's chain, for the Simulation page
     edit_parameters = QtCore.Signal()  # the user wants the Simulation page's parameter panel
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
@@ -636,6 +902,52 @@ class ShockPage(QtWidgets.QWidget):
         if "tab" in changes:
             self.tabs.setCurrentWidget(getattr(self, changes["tab"]))
         self._schedule(rerecord=True)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then the
+        pulse and the spectrum's Q; the seed goes back to 1."""
+        t = ShockSetup(**setup)
+        system = t.system()
+        if system is not None:
+            self.system_requested.emit(system)
+            if self.system is None or not _same_chain(self.system, system):
+                self.set_system(system)  # nobody passed it back: show it here alone
+        if self.system is None:
+            return
+        self._loading = True
+        self.shape.setCurrentIndex(self.shape.findData(t.shape))
+        self.peak.setValue(t.peak)
+        self.duration.setValue(t.duration)
+        self.knee.setValue(t.knee)
+        self.mass.setCurrentIndex(t.mass % self.system.n)
+        self.noise.setValue(t.noise)
+        self.offset.setValue(t.offset)
+        self.q.setValue(t.q)
+        self.seed = 1
+        self._loading = False
+        self._pick_peak = True
+        self._show_controls()
+        self.trial_note.setText("")
+        self.tabs.setCurrentIndex(t.tab)
+        self._schedule(rerecord=True)
+
+    def practice_state(self) -> ShockSetup:
+        """The chain and the page's settings, as a setup: what a practice spec checks."""
+        s = self.system
+        return ShockSetup(
+            tuple(float(v) for v in s.masses) if s is not None else (),
+            tuple(float(v) for v in s.stiffness) if s is not None else (),
+            tuple(float(v) for v in s.damping) if s is not None else (),
+            self.shape.currentData(),
+            self.peak.value(),
+            self.duration.value(),
+            self.knee.value(),
+            self.mass.currentIndex(),
+            self.noise.value(),
+            self.offset.value(),
+            self.q.value(),
+            self.tabs.currentIndex(),
+        )
 
     def pulse(self) -> Pulse:
         return Pulse(
