@@ -17,29 +17,28 @@ from ..core import (
     ForceKind,
     ForceSettings,
     Simulator,
+    drag_shape,
     element_forces,
     friction_zeta,
     kinetic_energy,
     modal_analysis,
     modal_coordinate_map,
     modal_energies,
-    drag_shape,
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
+from . import frame_stats, links, settle_plots, theming
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
 from .history import History
-from .layouts import FlowLayout, ColumnScroll, group
+from .layouts import ColumnScroll, FlowLayout, group
 from .modes import Method, mode_entries
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
 from .sim_trials import TRIALS as SIM_TRIALS
-from .tab_groups import PageGroups
-from . import links
-from . import frame_stats, settle_plots, theming
 from .style import SYSTEM, colors
+from .tab_groups import PageGroups
 
 if TYPE_CHECKING:
     from .practice import PracticeWindow
@@ -724,7 +723,7 @@ class MainWindow(QtWidgets.QMainWindow):
         box.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
         box.exec()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802 (Qt's name)
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         for window in (self.theory_window, self.practice_window):
             if window is not None:
                 window.close()  # it closes with this window

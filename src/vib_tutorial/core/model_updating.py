@@ -333,7 +333,8 @@ class Update:
 
 
 def update(structure: ChainSystem, errors: Errors, test: Test, params: list[Parameter],
-           what: Residuals = Residuals(), regularization: float = 0.0, iterations: int = 10) -> Update:
+           what: Residuals = Residuals(),  # noqa: B008 (frozen: one shared default is safe)
+           regularization: float = 0.0, iterations: int = 10) -> Update:
     """Gauss–Newton on ln p: each step minimizes ‖r + JΔ‖² + λ²‖θ + Δ‖², λ the regularization.
 
     The pairs are the correlation's at the start, kept fixed. J comes by finite differences. With λ = 0 and

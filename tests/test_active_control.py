@@ -118,7 +118,8 @@ def test_active_control_trials():
     tmd = tmd_for(s, 3, 0.05)
     assert tmd[1] == pytest.approx(0.116, abs=0.001)
     fgrid = np.geomspace(0.3, 12.0, 4000)
-    peak = lambda A, B, Cx: np.max(np.abs(frf(A, B, Cx, 3, 3, fgrid)))
+    def peak(A, B, Cx):
+        return np.max(np.abs(frf(A, B, Cx, 3, 3, fgrid)))
     assert peak(*closed_loop(s, None)) == pytest.approx(0.26, abs=0.005)
     assert peak(*closed_loop(s, None, tmd)) == pytest.approx(0.051, abs=0.001)
     assert peak(*closed_loop(s, Controller(3, 3, 2.3))) == pytest.approx(0.051, abs=0.002)

@@ -45,7 +45,7 @@ def test_curve_solves_the_harmonic_balance():
     """Every point of the curve has G(a^2) = F^2, and the stable flag is the sign of dG/ds."""
     for osc in (Duffing(), Duffing(damping=0.8, cubic=-2e4, force=1.25)):
         curve = response_curve(osc, 6.0)
-        for f, a, stable in curve.pieces:
+        for f, a, _stable in curve.pieces:
             w = TWO_PI * f
             G = a * a * ((osc.kappa(a) - osc.mass * w * w) ** 2 + (osc.damping * w) ** 2)
             assert G == pytest.approx(np.full_like(a, osc.force**2), rel=1e-6)
@@ -263,7 +263,7 @@ def test_parametric_curve_and_its_jump():
     assert fold.lands_at == pytest.approx(0.0387, abs=1e-4)
     _, stable = parametric_amplitudes(osc, 7.5)  # past the tongue: rest, the unstable swing, the stable one
     assert list(stable) == [True, False, True]
-    for f, amp, ok in curve.pieces:
+    for f, amp, _ok in curve.pieces:
         good = np.isfinite(amp) & (amp > 0)
         if good.any():
             w = TWO_PI * f[good]

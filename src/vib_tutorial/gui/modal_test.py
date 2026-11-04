@@ -24,9 +24,9 @@ from ..core import (
     Estimator,
     Excitation,
     FrfEstimator,
+    MeasurementSettings,
     ModalResult,
     Processing,
-    MeasurementSettings,
     Response,
     Window,
     frf,
@@ -871,7 +871,7 @@ class ModalTestPage(QtWidgets.QWidget):
         if self.isVisible():
             self.restart()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.restart()
@@ -884,7 +884,7 @@ class ModalTestPage(QtWidgets.QWidget):
         """Still measuring, or still drawing the last record."""
         return self.acq is not None and (not self.acq.done or self._shown is not None)
 
-    def hideEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def hideEvent(self, event) -> None:
         super().hideEvent(event)
         self._timer.stop()
 

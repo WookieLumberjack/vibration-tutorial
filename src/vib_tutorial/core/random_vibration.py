@@ -339,12 +339,12 @@ def simulate(system: ChainSystem, inp: RandomInput, duration: float, seed: int |
     fs = sample_rate(inp)
     fs_a = KEEP * fs
     h = 1.0 / fs_a
-    samples = int(round(duration * fs))
+    samples = round(duration * fs)
     if samples > MAX_SAMPLES:
         raise ValueError(f"the record is too long: at most {MAX_SAMPLES:,} samples ({MAX_SAMPLES / fs:.4g} s here)")
     if samples < 2:
         raise ValueError("the record is too short")
-    skip = KEEP * int(math.ceil(settle_time(result) * fs))  # analog samples before the record, whole samples
+    skip = KEEP * math.ceil(settle_time(result) * fs)  # analog samples before the record, whole samples
     total = skip + KEEP * samples
     rng = np.random.default_rng(seed)
     b = inp.patterns(lin)
@@ -570,7 +570,7 @@ def record_statistics(y: np.ndarray, fs: float) -> RecordStatistics:
 def segment_maxima(y: np.ndarray, fs: float, duration: float) -> np.ndarray:
     """The largest value in each whole stretch `duration` long, the record interpolated first."""
     fine = upsampled(y - np.mean(y))
-    per = int(round(duration * fs * UPSAMPLE))
+    per = round(duration * fs * UPSAMPLE)
     count = fine.size // per if per > 0 else 0
     if count == 0:
         return np.zeros(0)

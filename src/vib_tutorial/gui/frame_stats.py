@@ -174,7 +174,7 @@ class Overlay(QtWidgets.QLabel):
         self.inputs = InputLog(window, stats)
         self._place()
 
-    def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:  # noqa: N802 (Qt override)
+    def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
         if event.type() == QtCore.QEvent.Type.Resize:
             self._place()
         return False
@@ -273,7 +273,7 @@ class InputLog(QtCore.QObject):
         self._press: QtCore.QPointF | None = None
         QtWidgets.QApplication.instance().installEventFilter(self)
 
-    def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:  # noqa: N802 (Qt override)
+    def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
         if STATS is not self.stats:  # turned off (uninstall)
             return False
         t = event.type()

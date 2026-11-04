@@ -314,6 +314,6 @@ class PracticeWindow(QtWidgets.QWidget):
     def save_geometry(self) -> None:
         QtCore.QSettings(*SETTINGS).setValue("practice_window/geometry", self.saveGeometry())
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802 (Qt's name)
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.save_geometry()
         super().closeEvent(event)

@@ -267,7 +267,7 @@ def bank(pulse: Pulse, result: ModalResult | None = None, per_octave: int = PER_
         fn = [m.fn_hz for m in result.modes if m.fn_hz > 0]
         if fn:
             lo, hi = min(lo, min(fn) / 4.0), max(hi, 4.0 * max(fn))
-    count = int(math.ceil(per_octave * math.log2(hi / lo))) + 1
+    count = math.ceil(per_octave * math.log2(hi / lo)) + 1
     return lo * 2.0 ** (np.arange(count) / per_octave)
 
 
@@ -282,7 +282,7 @@ def record(pulse: Pulse, fs: float, system: ChainSystem | None = None, result: M
         return synthesize(pulse, fs)
     T = pulse.duration
     A = pulse.peak * G
-    k = max(2, int(math.ceil(T * fs - 1e-9)))
+    k = max(2, math.ceil(T * fs - 1e-9))
     fs = k / T
     h = 1.0 / fs
     if not pulse.shape.measured:
@@ -295,7 +295,7 @@ def record(pulse: Pulse, fs: float, system: ChainSystem | None = None, result: M
         lin = linear(system)
         result = result or modal_analysis(lin)
         f1 = min((m.fn_hz for m in result.modes if m.fn_hz > 0), default=1.0 / T)
-        n = int(round((T + RING / f1) * fs)) + 1
+        n = round((T + RING / f1) * fs) + 1
         if n > MAX_SAMPLES:
             raise ValueError(f"the record is too long: {n:,} samples, at most {MAX_SAMPLES:,}")
         base = np.zeros(n)
@@ -444,7 +444,7 @@ class Oscillator:
 
 def oscillator(rec: Record, f: float, zeta: float, tail: float) -> Oscillator:
     eta, lam = _states(rec, np.array([f]), zeta)
-    n = int(round(tail * rec.fs))
+    n = round(tail * rec.fs)
     tau = np.arange(1, n + 1) * rec.h
     eta = np.concatenate([eta[0], eta[0, -1] * np.exp(lam[0] * tau)])
     t = np.arange(eta.size) * rec.h
@@ -525,7 +525,7 @@ class Synthesis:
 
 def components(pulse: Pulse) -> np.ndarray:
     lo, hi = target_band(pulse)
-    count = int(round(SYNTH_PER_OCTAVE * math.log2(hi / lo))) + 1
+    count = round(SYNTH_PER_OCTAVE * math.log2(hi / lo)) + 1
     return lo * (hi / lo) ** (np.arange(count) / (count - 1))
 
 
@@ -536,7 +536,7 @@ def synthesize(pulse: Pulse, fs: float) -> Record:
     alternating, delays drawn from `seed`."""
     f = components(pulse)
     T = pulse.length
-    k = max(2, int(math.ceil(T * fs - 1e-9)))
+    k = max(2, math.ceil(T * fs - 1e-9))
     fs = k / T
     t = np.arange(k + 1) / fs
     w = TWO_PI * f
@@ -588,7 +588,7 @@ def base_record(rec: Record) -> Record:
     """What shakes the chain's base: the record, or for AT_A_MASS the base's half-sine that made it."""
     if rec.pulse.shape is not Shape.AT_A_MASS:
         return rec
-    k = int(round(rec.pulse.duration * rec.fs))
+    k = round(rec.pulse.duration * rec.fs)
     a = rec.pulse.peak * G * classical(Shape.HALF_SINE, np.arange(k + 1) / k)
     return Record(rec.pulse, rec.fs, a, k * rec.h)
 
@@ -642,7 +642,7 @@ def chain_peaks(system: ChainSystem, rec: Record, result: ModalResult | None = N
     base = base_record(rec)
     modes = [m for m in result.modes if m.fn_hz > 0]
     f1 = min((m.fn_hz for m in modes), default=1.0 / base.duration)
-    n = base.a.size + int(round(RING / f1 * base.fs))
+    n = base.a.size + round(RING / f1 * base.fs)
     if n > MAX_SAMPLES:
         raise ValueError(f"the chain's record is too long: {n:,} samples, at most {MAX_SAMPLES:,}")
     padded = Record(base.pulse, base.fs, np.concatenate([base.a, np.zeros(n - base.a.size)]), base.end)

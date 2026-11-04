@@ -446,7 +446,7 @@ def match_modes(modes: list[IdentifiedMode], result: ModalResult, f_max: float) 
         key=lambda t: -t[0],
     )
     used_i, used_j = set(), set()
-    for value, i, j in order:
+    for _value, i, j in order:
         if i in used_i or j in used_j:
             continue
         fe = exact[j].damped.fn_hz

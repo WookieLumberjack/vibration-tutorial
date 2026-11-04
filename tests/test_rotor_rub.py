@@ -9,8 +9,17 @@ import pytest
 import scipy.optimize
 
 from vib_tutorial.core.fluid_bearing import JournalBearing
-from vib_tutorial.core.rotor import (RPM, XD, YD, Bearing, RotorSimulator, RotorSystem, Stator, _rotating_force,
-                                     stator_force)
+from vib_tutorial.core.rotor import (
+    RPM,
+    XD,
+    YD,
+    Bearing,
+    RotorSimulator,
+    RotorSystem,
+    Stator,
+    _rotating_force,
+    stator_force,
+)
 from vib_tutorial.core.rotor_presets import rotor_presets
 
 PRESETS = {p.name: p for p in rotor_presets()}
@@ -157,7 +166,7 @@ def test_partial_rub_preset_whirls_at_half_the_speed():
 def test_full_rub_preset_flips_to_backward_whirl():
     p = PRESETS["Full rub (backward whirl)"]
     s = p.system
-    t, x, y, w, rub = run(s, p.target_rpm, 6.0)
+    t, x, y, w, _rub = run(s, p.target_rpm, 6.0)
     r = np.hypot(x, y)
     swept = x[:-1] * np.diff(y) - y[:-1] * np.diff(x)
     backward = np.flatnonzero((swept < 0) & (r[:-1] > 0.1e-3))

@@ -344,7 +344,7 @@ def test_free_interface_structure_and_assembly():
             np.testing.assert_allclose(sub.K_red[:k, :k], np.diag(sub.omegas[:k] ** 2) + Pbk.T @ Gbb_inv @ Pbk,
                                        atol=1e-8)
             np.testing.assert_allclose(sub.K_red[k:, k:], Gbb_inv, rtol=1e-9)
-        M, C, K = s.matrices()
+        M, _C, K = s.matrices()
         np.testing.assert_allclose(model.K, model.T.T @ K @ model.T, atol=1e-8)
         if residual_mass:  # Rubin is a Rayleigh-Ritz projection
             np.testing.assert_allclose(model.M, model.T.T @ M @ model.T, atol=1e-10)
@@ -645,7 +645,7 @@ def test_element_forces_carry_a_static_load_and_balance_each_mass():
     from vib_tutorial.core import element_forces
 
     s = ChainSystem([1.0, 2.0, 0.5], [400.0, 300.0, 500.0], [15.0, 2.0, 2.0])
-    M, C, K = s.matrices()
+    _M, C, K = s.matrices()
     # Static equilibrium under a tip load F: every spring carries F.
     F = 3.0
     x = np.linalg.solve(K, np.array([0.0, 0.0, F]))
@@ -796,7 +796,7 @@ def test_cms_response_matches_the_full_model_when_nothing_is_reduced():
         force = ForceController(ForceSettings(kind=ForceKind.HARMONIC, freq_hz=2.0))
         resp = CMSResponse(model, force)
         force.switch_on()
-        t, x_full, x_red, f = resp.advance(2.0)
+        _t, x_full, x_red, _f = resp.advance(2.0)
         # The full half is the ordinary simulator, sample for sample.
         ref_force = ForceController(ForceSettings(kind=ForceKind.HARMONIC, freq_hz=2.0, target=4))
         sim = Simulator(s, ref_force)

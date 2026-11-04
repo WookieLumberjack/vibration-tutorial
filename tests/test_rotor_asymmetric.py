@@ -11,8 +11,8 @@ from vib_tutorial.core.rotor import (
     XD,
     YD,
     Bearing,
-    RotorSimulator,
     RotorSamples,
+    RotorSimulator,
     RotorSystem,
     campbell,
     gravity_response,
@@ -21,7 +21,14 @@ from vib_tutorial.core.rotor import (
 )
 from vib_tutorial.core.rotor_presets import rotor_presets
 from vib_tutorial.core.rotor_stability import AsymmetryChart, growth_rate, least_damped, stability_onset
-from vib_tutorial.core.rotor_sweep import RevolutionTracker, TrackedSweep, probe, station_motion, steady_vectors, vibration
+from vib_tutorial.core.rotor_sweep import (
+    RevolutionTracker,
+    TrackedSweep,
+    probe,
+    station_motion,
+    steady_vectors,
+    vibration,
+)
 
 ANISO = Bearing(ky=8e4)
 TWO_POLE = next(p for p in rotor_presets() if p.name.startswith("Two-pole")).system

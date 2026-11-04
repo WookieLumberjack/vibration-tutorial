@@ -510,7 +510,7 @@ class PhasorPanel(QtWidgets.QWidget):
         layout.addWidget(self.plot)
         layout.addWidget(self.table, 1)
 
-    def resizeEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def resizeEvent(self, event) -> None:
         # Keep the aspect-locked plot square so the unit circle fills it.
         self.plot.setFixedHeight(max(120, min(self.width(), self.height() - 80)))
         super().resizeEvent(event)

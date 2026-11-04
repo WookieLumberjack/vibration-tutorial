@@ -28,7 +28,9 @@ PAGE_ROLE = QtCore.Qt.ItemDataRole.UserRole  # (page attribute, anchor) of a tre
 def page_html(name: str) -> str:
     """Page `name`'s Theory notes (an attribute from links.COURSE), as its Theory tab shows them."""
     if name == "sim_page":
-        from .background import BACKGROUND_HTML as html
+        from .background import BACKGROUND_HTML
+
+        html = BACKGROUND_HTML
     else:
         from .main_window import _page_class
 
@@ -223,6 +225,6 @@ class TheoryWindow(QtWidgets.QWidget):
     def save_geometry(self) -> None:
         QtCore.QSettings(*SETTINGS).setValue("theory_window/geometry", self.saveGeometry())
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802 (Qt's name)
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.save_geometry()
         super().closeEvent(event)

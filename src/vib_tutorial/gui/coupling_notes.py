@@ -474,10 +474,10 @@ def matrices_html(model: CoupledModel, full: ModalResult) -> str:
     gamma = float(part_b.sum())
     parts.append("<h3>5. Participation: project the mode on the load</h3>")
     parts.append(_side_by_side(
-        "<p><b>A{0}</b>: φ<sup>T</sup><b>e</b><sub>tip</sub></p>".format(ra + 1)
+        f"<p><b>A{ra + 1}</b>: φ<sup>T</sup><b>e</b><sub>tip</sub></p>"
         + _vec_table(["", "e<sub>tip,i</sub>", "φ<sub>i</sub>", "e<sub>tip,i</sub>φ<sub>i</sub>"],
                      [e_tip, phi_a, e_tip * phi_a], la, ["", "", f"φ<sub>tip</sub> = {_g(tip)}"], bold_row=j - 1),
-        "<p><b>B{0}</b>: Γ = φ<sup>T</sup>M<sub>B</sub><b>r</b></p>".format(rb + 1)
+        f"<p><b>B{rb + 1}</b>: Γ = φ<sup>T</sup>M<sub>B</sub><b>r</b></p>"
         + _vec_table(["", "m<sub>i</sub>", "r<sub>i</sub>", "φ<sub>i</sub>", "m<sub>i</sub>r<sub>i</sub>φ<sub>i</sub>"],
                      [mb_diag, r_vec, phi_b, part_b], lb, ["", "", "", f"Γ = {_g(gamma)}"]),
     ))

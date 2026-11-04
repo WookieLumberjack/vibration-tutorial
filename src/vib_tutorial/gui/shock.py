@@ -633,7 +633,7 @@ class ShockPage(QtWidgets.QWidget):
         else:
             self._recompute.start()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()
@@ -737,7 +737,7 @@ class ShockPage(QtWidgets.QWidget):
         p.setLabel("left", "Base acceleration (g)" if rec.pulse.shape is not Shape.AT_A_MASS
                    else f"m{rec.pulse.mass % self.system.n + 1}'s acceleration (g)")
         if rec.pulse.shape is Shape.AT_A_MASS:
-            k = int(round(rec.pulse.duration * rec.fs))
+            k = round(rec.pulse.duration * rec.fs)
             base = np.zeros(t.size)
             base[:k + 1] = rec.pulse.peak * np.sin(np.pi * np.arange(k + 1) / k)
             p.plot(t, base, pen=pg.mkPen(colors.grey, width=1))
@@ -1058,7 +1058,7 @@ class ShockPage(QtWidgets.QWidget):
         top = max(float(np.max(v)) for _, _, v in spectra.values())
         cp.setYRange(math.log10(top) - 2.5, math.log10(top) + 0.15, padding=0.0)
         rows = []
-        for shape, (scale, f, values) in spectra.items():
+        for shape, (_scale, f, values) in spectra.items():
             k = int(np.argmax(values))
             rows.append(f"{shape.value} {values[k]:.3g} (f T {f[k]:.2g}), {values[0]:.2g}, {values[-1]:.3g}")
         basis = "the same Δv as the half-sine (their peaks then differ)" if same else "the same peak A"

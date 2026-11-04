@@ -178,7 +178,7 @@ def attitude_svg() -> str:
 
 def campbell_svg() -> str:
     """A schematic Campbell diagram: forward and backward branches, the 1X line, and where they cross."""
-    fg, muted, faint = colors.foreground, colors.muted, colors.faint
+    fg, muted, _faint = colors.foreground, colors.muted, colors.faint
     forward, backward, hot = colors.mass[0], colors.mass[1], colors.force
     x0, y0, w, h = 60.0, 290.0, 420.0, 250.0
     top = 2.6  # speed and frequency, in units of the natural frequency at rest
@@ -243,7 +243,7 @@ class FigureBrowser(QtWidgets.QTextBrowser):
     The document caches each image until its HTML is set again, so set it again after a theme change.
     """
 
-    def loadResource(self, kind: int, name: QtCore.QUrl):  # noqa: N802 (Qt's name)
+    def loadResource(self, kind: int, name: QtCore.QUrl):
         build = FIGURES.get(name.toString())
         if build is not None and kind == QtGui.QTextDocument.ResourceType.ImageResource:
             return render(build())

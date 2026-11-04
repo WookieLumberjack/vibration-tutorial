@@ -267,7 +267,7 @@ class ChainView(pg.PlotWidget):
         offset = float(np.clip(pos.x() - (i + 1) * SPACING, -MAX_DRAG, MAX_DRAG))
         self.mass_dragged.emit(i, offset / self.gain)
 
-    def mousePressEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mousePressEvent(self, event) -> None:
         left = event.button() == QtCore.Qt.MouseButton.LeftButton
         i = self.mass_at(self._view_pos(event)) if left and self.draggable else None
         if i is None:
@@ -281,7 +281,7 @@ class ChainView(pg.PlotWidget):
         self._drag_to(self._view_pos(event))
         event.accept()
 
-    def mouseMoveEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mouseMoveEvent(self, event) -> None:
         pos = self._view_pos(event)
         if self.held is not None:
             self._drag_to(pos)
@@ -293,7 +293,7 @@ class ChainView(pg.PlotWidget):
             self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
         super().mouseMoveEvent(event)
 
-    def mouseReleaseEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mouseReleaseEvent(self, event) -> None:
         if self.held is None:
             super().mouseReleaseEvent(event)
             return

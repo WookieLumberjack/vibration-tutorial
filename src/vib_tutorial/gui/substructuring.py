@@ -270,7 +270,7 @@ class ComponentTable(QtWidgets.QTableWidget):
                         "(Modes & FRF tab). Click it again to clear.")
         self.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
 
-    def mousePressEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mousePressEvent(self, event) -> None:
         # Clicking the selected row again clears the overlay.
         index = self.indexAt(event.position().toPoint())
         if index.isValid() and self.selectionModel().isRowSelected(index.row()):
@@ -1069,7 +1069,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         if self.isVisible():
             self.refresh()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.refresh()

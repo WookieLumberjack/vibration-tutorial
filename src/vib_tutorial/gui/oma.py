@@ -494,7 +494,7 @@ class OmaPage(QtWidgets.QWidget):
         """Set the settings the chosen trial asks for, from the chain as it is."""
         if self.result is None:
             return
-        name, changes, note = TRIALS[self.trial.currentIndex()]
+        _name, changes, note = TRIALS[self.trial.currentIndex()]
         fs, duration, block = self._suggested()
         freqs = sorted(m.fn_hz for m in self.result.modes if m.fn_hz > 0) or [1.0]
         slow = freqs[0]
@@ -605,7 +605,7 @@ class OmaPage(QtWidgets.QWidget):
         else:
             self._recompute.start()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()
@@ -730,7 +730,7 @@ class OmaPage(QtWidgets.QWidget):
         self.sv_legend.clear()
         d = self.fdd
         f = d.freqs
-        lo, hi = self._band()
+        _lo, hi = self._band()
         keep = (f > 0) & (f <= hi)
         s = d.s[keep]
         floor = max(s[:, 0].max() * 1e-8, 1e-300)

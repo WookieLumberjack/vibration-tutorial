@@ -211,7 +211,7 @@ def free_decay(system: ChainSystem, result: ModalResult, mode: int, periods: flo
     if w <= 1e-9:
         raise ValueError("a rigid-body mode doesn't oscillate")
     dt = TWO_PI / w / per_period
-    steps = int(round(periods * per_period))
+    steps = round(periods * per_period)
     A, _ = state_space(system)
     step = scipy.linalg.expm(A * dt)
     z = np.zeros((steps + 1, 2 * n))

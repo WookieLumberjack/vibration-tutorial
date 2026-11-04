@@ -47,7 +47,7 @@ def test_two_inertias_match_the_closed_form():
 def test_a_mesh_turns_the_far_shaft_by_the_teeth_and_the_train_still_turns_freely():
     s = COMPRESSOR.speeds
     assert s == pytest.approx([1.0, 1.0, 4.0, 4.0])
-    m, c, k = COMPRESSOR.matrices()
+    _m, _c, k = COMPRESSOR.matrices()
     assert k @ s == pytest.approx(np.zeros(4), abs=1e-6 * np.abs(k).max())  # the rigid turn twists nothing
     assert np.allclose(k, k.T) and np.all(np.linalg.eigvalsh(k) > -1e-6 * np.abs(k).max())
 

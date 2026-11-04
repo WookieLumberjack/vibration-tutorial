@@ -16,8 +16,8 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.practice import Problem, Question, number, pick, rounded
 from ..core.isolation import G, Isolator, Mount, deflection_for, start_up
+from ..core.practice import Problem, Question, number, pick, rounded
 from ..core.sdof import TWO_PI
 from . import settle_plots
 from .layouts import ColumnScroll

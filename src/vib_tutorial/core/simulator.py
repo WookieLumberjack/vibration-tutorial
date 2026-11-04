@@ -599,7 +599,7 @@ class Simulator:
         if self._done is not None:
             raise RuntimeError("collect the last advance before starting another")
         h = self.step_size()
-        steps = min(MAX_STEPS_PER_ADVANCE, max(0, int(round(duration / h))))
+        steps = min(MAX_STEPS_PER_ADVANCE, max(0, round(duration / h)))
         n = self.system.n
         self.steps_time = 0.0
         base = self.force.settings.base

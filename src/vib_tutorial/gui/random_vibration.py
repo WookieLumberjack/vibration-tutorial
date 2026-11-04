@@ -482,7 +482,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
             lo, hi = changes["band"][0] * f2, changes["band"][1] * f2
         inp = RandomInput(kind, 0.01 if kind is Input.BASE else 1.0, lo, hi)
         duration = suggested_duration(inp, self.result)
-        samples = int(round(duration * sample_rate(inp)))
+        samples = round(duration * sample_rate(inp))
         block = suggested_block(inp, self.result, samples)
         if "duration" in changes:
             duration *= changes["duration"]
@@ -543,7 +543,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         else:
             self._recompute.start()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()

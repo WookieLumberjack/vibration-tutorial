@@ -221,7 +221,7 @@ def _more_damping(rng: np.random.Generator) -> Question:
 
 def _heavier(rng: np.random.Generator) -> Question:
     n = int(pick(rng, (4, 9)))
-    root = int(math.isqrt(n))
+    root = math.isqrt(n)
     return Question(
         f"The mass on a spring is made {n} times heavier, the spring the same. What happens to its natural "
         "frequency?",

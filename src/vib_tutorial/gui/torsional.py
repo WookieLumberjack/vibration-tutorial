@@ -905,11 +905,11 @@ class TorsionalPage(QtWidgets.QWidget):
         self.pause_button.setEnabled(live and (self.running or self._k > 0))
         self.pause_button.setText("Pause" if self.running else "Run")
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self._start_timer()
 
-    def hideEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def hideEvent(self, event) -> None:
         super().hideEvent(event)
         self._timer.stop()
 
@@ -1243,7 +1243,7 @@ class TorsionalPage(QtWidgets.QWidget):
         h = [0.25 + 0.75 * (d.inertia / jmax) ** 0.25 for d in t.discs]
         out = []
         x, y = 0.0, 0.0
-        for i, d in enumerate(t.discs):
+        for i, _d in enumerate(t.discs):
             if i:
                 link = t.links[i - 1]
                 if isinstance(link, Mesh):

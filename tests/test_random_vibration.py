@@ -129,7 +129,7 @@ def test_suggested_record():
     inp = RandomInput(Input.BASE, 0.01, 0.0, 10.0)
     fs = sample_rate(inp)
     duration = suggested_duration(inp, RESULT)
-    samples = int(round(duration * fs))
+    samples = round(duration * fs)
     block = suggested_block(inp, RESULT, samples)
     width = 2 * RESULT.modes[0].zeta_modal * RESULT.modes[0].fn_hz
     assert fs / block <= width / 4  # four lines across mode 1's half-power width

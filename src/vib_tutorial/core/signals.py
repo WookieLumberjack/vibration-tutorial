@@ -161,14 +161,14 @@ class Spectrum:
 
 def blocks_needed(block: int, averages: int, overlap: float) -> int:
     """Samples for `averages` blocks of `block` samples overlapping by `overlap` (0 … <1)."""
-    step = max(1, int(round(block * (1.0 - overlap))))
+    step = max(1, round(block * (1.0 - overlap)))
     return block + (averages - 1) * step
 
 
 def spectrum(x: np.ndarray, fs: float, block: int, kind: Window, overlap: float = 0.0) -> Spectrum:
     """Averaged spectra of x over blocks of `block` samples (Welch): the peak amplitude and the PSD."""
     w = window(kind, block)
-    step = max(1, int(round(block * (1.0 - overlap))))
+    step = max(1, round(block * (1.0 - overlap)))
     starts = range(0, x.size - block + 1, step)
     power = np.zeros(block // 2 + 1)
     count = 0
@@ -192,7 +192,7 @@ def spectrogram(x: np.ndarray, fs: float, block: int, kind: Window,
                 overlap: float = 0.75) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """(times of the blocks' middles, frequencies, peak amplitude in dB) of each block: a short-time spectrum."""
     w = window(kind, block)
-    step = max(1, int(round(block * (1.0 - overlap))))
+    step = max(1, round(block * (1.0 - overlap)))
     starts = np.arange(0, x.size - block + 1, step)
     frames = np.stack([w * x[s:s + block] for s in starts])
     A = 2.0 * np.abs(np.fft.rfft(frames, axis=1)) / np.sum(w)
@@ -203,7 +203,7 @@ def spectrogram(x: np.ndarray, fs: float, block: int, kind: Window,
 
 def nearest_line_reading(spec: Spectrum, freq: float) -> tuple[float, float]:
     """(the line nearest an apparent frequency, the amplitude the largest of it and its neighbours reads)."""
-    i = int(round(freq / spec.df))
+    i = round(freq / spec.df)
     i = min(max(i, 0), spec.freqs.size - 1)
     lo, hi = max(i - 1, 0), min(i + 2, spec.freqs.size)
     j = lo + int(np.argmax(spec.amplitude[lo:hi]))

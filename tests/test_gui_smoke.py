@@ -601,7 +601,7 @@ def test_substructuring_several_interfaces(app):
     assert tv._dofs == [7, 1, 3, 5] and len(tv.e_curves) == 4
     tv.button.click()
     tv.step(0.3)
-    t, y = tv.history.window(10.0)
+    _t, y = tv.history.window(10.0)
     assert y.shape[1] == 8 and "interfaces" in tv.error_note.text()
 
     # No cut: the whole chain is one substructure, with the tip its only boundary DOF.
@@ -829,7 +829,7 @@ def test_energy_time_history(app):
     for _ in range(5):
         w._sim_target = w.sim.t + 0.2
         w._tick()
-    T, V, stored, added, work, dissipated, rubbed = _energy_rows(w)
+    _, _, stored, added, work, dissipated, rubbed = _energy_rows(w)
     assert added.max() > 0 and np.abs(work).max() == 0.0 and dissipated[-1] > 0 and rubbed.max() == 0.0
     np.testing.assert_allclose(added + work, stored + dissipated, rtol=0, atol=1e-12)
     # The balance still closes across a parameter edit (T, V use the parameters of the time),
@@ -841,7 +841,7 @@ def test_energy_time_history(app):
         w._tick()
         w._collect()  # with friction the steps run beside the frame: wait for them
     assert w.sim.system.friction[1] == 0.05
-    T, V, stored, added, work, dissipated, rubbed = _energy_rows(w)
+    _T, _V, stored, added, work, dissipated, rubbed = _energy_rows(w)
     assert rubbed[-1] > 0
     np.testing.assert_allclose(added + work, stored + dissipated + rubbed, rtol=0, atol=1e-12)
     # Changing the number of masses keeps the energy curves.
@@ -1874,7 +1874,7 @@ def test_rotor_page(app):
     assert "hidden" in p.matrices.toPlainText() and f"{abs(hidden_u) * 1e6:.4g} g·mm" not in p.matrices.toPlainText()
     p.tabs.show_page(b)
     p.ramp.setValue(5000.0)
-    for i, button in enumerate(b.step_buttons):
+    for _i, button in enumerate(b.step_buttons):
         assert button.isEnabled()
         button.click()
         assert p.measurement is not None and not button.isEnabled()
@@ -2324,7 +2324,7 @@ def test_window_fits_a_1280_px_screen(app, request):
     from vib_tutorial.gui.main_window import MainWindow
     from vib_tutorial.gui.modes import Method
 
-    request.addfinalizer(lambda font=app.font(): app.setFont(font))
+    request.addfinalizer(lambda font=app.font(): app.setFont(font))  # noqa: B008 (the font now, kept)
     _windows_font(app)
     w = MainWindow()
     for i in range(w.pages.count()):
@@ -2795,7 +2795,7 @@ def test_rotor_plots_paint_once_per_frame(app):
     class Paints(QtCore.QObject):
         n = 0
 
-        def eventFilter(self, obj, event):  # noqa: N802 (Qt override)
+        def eventFilter(self, obj, event):
             if event.type() == QtCore.QEvent.Type.Paint:
                 self.n += 1
             return False
@@ -2978,7 +2978,7 @@ def test_history_keeps_every_stride_th_step_of_a_fast_chain(app):
     assert t[-1] <= w.sim.t < t[-1] + stride * h
     w.running = False
     w._tick()  # draws them
-    T, V, stored, added, work, dissipated, rubbed = _energy_rows(w)
+    _T, _V, stored, added, work, dissipated, rubbed = _energy_rows(w)
     assert rubbed[-1] > 0
     np.testing.assert_allclose(added + work, stored + dissipated + rubbed, rtol=0, atol=1e-12 * work.max())
     w.close()
@@ -3114,7 +3114,7 @@ def test_mathieu_on_the_duffing_page(app):
     vb = p.chart.getPlotItem().getViewBox()
 
     class Click:
-        def scenePos(self):  # noqa: N802 (Qt's name)
+        def scenePos(self):
             return vb.mapViewToScene(QPointF(1.0, 0.8))
 
     p._on_chart_click(Click())  # the second tongue, at the natural frequency
@@ -3203,7 +3203,7 @@ def test_torsional_page(app):
         def __init__(self, x, y):
             self.at = vb.mapViewToScene(QPointF(x, y))
 
-        def scenePos(self):  # noqa: N802 (Qt's name)
+        def scenePos(self):
             return self.at
 
     p._on_drawing_click(Click(*spots[1][:2]))
@@ -3312,7 +3312,7 @@ def test_oma_page(app):
             lo, hi = vb.viewRange()[1]
             self.at = vb.mapViewToScene(QPointF(x, 0.5 * (lo + hi)))
 
-        def scenePos(self):  # noqa: N802 (Qt's name)
+        def scenePos(self):
             return self.at
 
     first = p.fdd.freqs[p.modes[0].line]
@@ -3397,7 +3397,7 @@ def test_continuum_page(app):
         def __init__(self, x, y):
             self.at = vb.mapViewToScene(QPointF(x, y))
 
-        def scenePos(self):  # noqa: N802 (Qt's name)
+        def scenePos(self):
             return self.at
 
     p._on_errors_click(Click(3.2, 0.0))
@@ -3513,7 +3513,7 @@ def test_random_vibration_page(app):
     p.new_record.click()
     assert p.record is not record and p.seed == 2
 
-    for i, (name, _, note) in enumerate(TRIALS):
+    for i, (_name, _, note) in enumerate(TRIALS):
         p.trial.setCurrentIndex(i)
         p.recompute()
         assert p.trial_note.text() == note and p.prediction is not None and "RMS" in p.readout.text()

@@ -145,7 +145,7 @@ class CMSResponse:
     def _run(self, duration: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Step both models; per-step (t, F, full state, reduced state)."""
         h = self.step_size()
-        steps = min(MAX_STEPS_PER_ADVANCE, max(0, int(round(duration / h))))
+        steps = min(MAX_STEPS_PER_ADVANCE, max(0, round(duration / h)))
         ts, fs = np.empty(steps), np.empty(steps)
         zf = np.empty((steps, self._full.z.size))
         zr = np.empty((steps, self._red.z.size))

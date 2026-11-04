@@ -200,7 +200,7 @@ class MagnetPanel(QtWidgets.QWidget):
         self.changed.emit()
 
     # ------------------------------------------------------------- drawing
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self.catch_up()
 

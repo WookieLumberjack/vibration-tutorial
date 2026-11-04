@@ -124,7 +124,7 @@ class AmbientSettings:
 
     @property
     def samples(self) -> int:
-        return int(round(self.duration * self.fs))
+        return round(self.duration * self.fs)
 
 
 @dataclass
@@ -187,7 +187,7 @@ def ambient_record(system: ChainSystem, settings: AmbientSettings, result: Modal
     aa_zi = np.zeros((aa.shape[0], 2, n))
     out_a, out_b = A[n:], B[n:][:, cols]  # accelerations: a = A[n:] z + B[n:] f
     settle = settle_time(result)
-    skip = int(math.ceil(settle * fs_sim / R)) * R  # analog samples before the record, whole samples
+    skip = math.ceil(settle * fs_sim / R) * R  # analog samples before the record, whole samples
     total = skip + s.samples * R
     kept = []
     for start in range(0, total, CHUNK):
@@ -203,7 +203,7 @@ def ambient_record(system: ChainSystem, settings: AmbientSettings, result: Modal
             u = np.vstack([f_prev[None, :], f[:-1]]) @ b0.T + f @ b1.T  # (m, 2n)
             states = np.empty((m, 2 * n), dtype=complex)
             for r in range(2 * n):
-                states[:, r], zf = scipy.signal.lfilter([1.0], [1.0, -mu[r]], u[:, r], zi=[mu[r] * eta[r]])
+                states[:, r], _zf = scipy.signal.lfilter([1.0], [1.0, -mu[r]], u[:, r], zi=[mu[r] * eta[r]])
                 eta[r] = states[-1, r]
             zs = (states @ V.T).real
         else:
@@ -246,7 +246,7 @@ def cross_spectra(y: np.ndarray, fs: float, block: int, overlap: float = 0.5) ->
 
     N = y.shape[0]
     block = min(block, N)
-    hop = max(1, int(round(block * (1.0 - overlap))))
+    hop = max(1, round(block * (1.0 - overlap)))
     w = scipy.signal.windows.hann(block, sym=False)
     starts = range(0, N - block + 1, hop)
     G = 0.0

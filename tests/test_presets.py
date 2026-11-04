@@ -27,7 +27,7 @@ def test_undamped_absorber_holds_the_primary_still_at_its_frequency():
 
 def test_den_hartog_equal_peaks_at_the_fixed_points():
     mu = 0.05
-    ratio, zeta = den_hartog(mu)
+    ratio, _zeta = den_hartog(mu)
     assert ratio == pytest.approx(1 / 1.05)
     s = tuned_mass_damper(ChainSystem([1.0], [400.0], [0.0]), mu)
     assert s.masses[1] == pytest.approx(0.05)

@@ -709,7 +709,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         if self.isVisible():
             self.refresh()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.refresh()
@@ -896,7 +896,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         if np.isfinite(ratio) and ratio > 0:
             detune = abs(math.log(ratio))
             if detune < math.sqrt(mu):
-                tuned = (f"f<sub>B</sub>/f<sub>A</sub> is within about √μ of 1, so the modes are "
+                tuned = ("f<sub>B</sub>/f<sub>A</sub> is within about √μ of 1, so the modes are "
                          "<b>strongly coupled</b>: each coupled mode is a mix of A's and B's, and they split "
                          "apart either side.")
             else:

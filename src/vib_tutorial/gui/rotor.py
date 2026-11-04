@@ -20,26 +20,32 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ..core.fluid_bearing import JournalBearing
+from ..core.magnetic_bearing import MagneticBearing
 from ..core.rotor import (
+    CRACK_DEPTH_MAX,
+    MODE_LIMIT,
     RPM,
+    STEEL,
     XA,
     XB,
     XD,
     YA,
     YB,
     YD,
-    CRACK_DEPTH_MAX,
-    MODE_LIMIT,
-    STEEL,
     Bearing,
+    Campbell,
     Crack,
     PlaneWeight,
-    Campbell,
     RotorSimulator,
     RotorSystem,
     Stator,
     whirl_modes,
 )
+from ..core.rotor_analysis import Analysis, AnalysisWorker, analyse
+from ..core.rotor_balance import SteadyMeasurement
+from ..core.rotor_presets import rotor_presets
+from ..core.rotor_stability import AsymmetryChart, Onset, full_spectrum, least_damped
 from ..core.rotor_sweep import (
     DIRECTIONS,
     STATIONS,
@@ -48,28 +54,22 @@ from ..core.rotor_sweep import (
     lag_degrees,
     probe,
 )
-from ..core.fluid_bearing import JournalBearing
-from ..core.magnetic_bearing import MagneticBearing
-from ..core.rotor_analysis import Analysis, AnalysisWorker, analyse
-from ..core.rotor_balance import SteadyMeasurement
-from ..core.rotor_presets import rotor_presets
-from ..core.rotor_stability import AsymmetryChart, Onset, full_spectrum, least_damped
 from ..core.rotor_waterfall import Waterfall
 from . import frame_stats, settle_plots
 from .cms_time import SampleBuffer
 from .layouts import ColumnScroll, FlowLayout, group
-from .tab_groups import TabGroups
 from .panels import spin
 from .rotor_balance import BalancingPanel
 from .rotor_bearing import BearingPanel
-from .rotor_magnet import MagnetPanel
-from .rotor_rub import SPIRAL_POINTS, RubPanel
 from .rotor_bode import SWEEP_COLORS, BodePlots, PolarPlot, SweepPlots, nice_marks
 from .rotor_figures import FigureBrowser
+from .rotor_magnet import MagnetPanel
 from .rotor_notes import THEORY_HTML, matrices_html, whirl_name
+from .rotor_rub import SPIRAL_POINTS, RubPanel
 from .rotor_stability import MEASURES, AsymmetryPlot, FullSpectrum, StabilityMap
 from .rotor_waterfall import AGAINST, SCALES, WaterfallPlot, against_speed, baselines
 from .style import colors
+from .tab_groups import TabGroups
 from .theming import add_legend, mute
 
 FRAME_MS = 16
@@ -326,7 +326,7 @@ class Dot(QtWidgets.QGraphicsEllipseItem):
         self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
         self.setZValue(10)  # over the trails
 
-    def setData(self, x, y) -> None:  # noqa: N802 (pyqtgraph's name)
+    def setData(self, x, y) -> None:
         if len(x):
             self.setPos(float(x[-1]), float(y[-1]))
             self.show()
@@ -602,14 +602,14 @@ class RotorView(pg.PlotWidget):
             self.stator_ring.setData([], [])
 
     # ------------------------------------------------------------- mouse
-    def mousePressEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mousePressEvent(self, event) -> None:
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
             self._drag = event.position()
             event.accept()
         else:
             super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mouseMoveEvent(self, event) -> None:
         if self._drag is None:
             super().mouseMoveEvent(event)
             return
@@ -620,11 +620,11 @@ class RotorView(pg.PlotWidget):
         self._place_static()
         event.accept()
 
-    def mouseReleaseEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mouseReleaseEvent(self, event) -> None:
         self._drag = None
         super().mouseReleaseEvent(event)
 
-    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mouseDoubleClickEvent(self, event) -> None:
         self.yaw, self.pitch = self.YAW, self.PITCH
         self._place_static()
         event.accept()
@@ -679,7 +679,7 @@ class OrbitPlots(pg.GraphicsLayoutWidget):
         self.spans = [MIN_PEAK] * len(STATIONS)
         self._shown_spans = [0.0] * len(STATIONS)  # the ranges set, which move only past RESCALE
         self.same_scale = False
-        for i, name in enumerate(STATIONS):
+        for i, _name in enumerate(STATIONS):
             p = self.addPlot(row=0, col=i)
             p.setAspectLocked(True)
             p.setMouseEnabled(x=False, y=False)
@@ -1959,11 +1959,11 @@ class RotorPage(QtWidgets.QWidget):
             f"{top:,.0f} rpm):<br>" + ("<br>".join(lines) if lines else "none")
             + ("<br><small>The backward whirl crossings are not critical: an isotropic rotor's unbalance "
                "drives only forward whirl.</small>" if iso else "")
-            + f"<br><small>Textbook Jeffcott estimate (massless journals, no tilt"
+            + "<br><small>Textbook Jeffcott estimate (massless journals, no tilt"
             + (", rigid bearings" if system.films else "") + f"): {jeff:,.0f} rpm</small>"
             + ("<br><small>An asymmetric or cracked shaft has two critical speeds for each mode: those of a "
                "round shaft as stiff as each of its axes (on average over a turn).</small>" if system.periodic else "")
-            + (f"<br><small>With a massless shaft (the Jeffcott model, dashed): "
+            + ("<br><small>With a massless shaft (the Jeffcott model, dashed): "
                + (", ".join(f"{w * RPM:,.0f}" for w, _ in critical_speeds(massless, iso)) or "none") + " rpm</small>"
                if massless is not None else "")
             + f"<br><b>Stability:</b> {self._onset_text()}"
@@ -2421,11 +2421,11 @@ class RotorPage(QtWidgets.QWidget):
         )
 
     # ------------------------------------------------------------- loop
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self._start_timer()
 
-    def hideEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def hideEvent(self, event) -> None:
         super().hideEvent(event)
         self._timer.stop()
 
@@ -2830,7 +2830,7 @@ class PositionBox(QtWidgets.QDoubleSpinBox):
         self.setSingleStep(0.05)
         self.setKeyboardTracking(False)
 
-    def stepBy(self, steps: int) -> None:  # noqa: N802 (Qt override)
+    def stepBy(self, steps: int) -> None:
         super().stepBy(steps)
         if _off_bearing(self.value()) != self.value():
             super().stepBy(1 if steps > 0 else -1)

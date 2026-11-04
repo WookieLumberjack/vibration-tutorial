@@ -24,7 +24,7 @@ class FlowLayout(QtWidgets.QLayout):
         self._items: list[QtWidgets.QLayoutItem] = []
         self.setContentsMargins(0, 0, 0, 0)
 
-    def addItem(self, item: QtWidgets.QLayoutItem) -> None:  # noqa: N802 (Qt override)
+    def addItem(self, item: QtWidgets.QLayoutItem) -> None:
         self._items.append(item)
 
     def add(self, *items: QtWidgets.QWidget | QtWidgets.QLayout) -> None:
@@ -35,26 +35,26 @@ class FlowLayout(QtWidgets.QLayout):
     def count(self) -> int:
         return len(self._items)
 
-    def itemAt(self, index: int) -> QtWidgets.QLayoutItem | None:  # noqa: N802 (Qt override)
+    def itemAt(self, index: int) -> QtWidgets.QLayoutItem | None:
         return self._items[index] if 0 <= index < len(self._items) else None
 
-    def takeAt(self, index: int) -> QtWidgets.QLayoutItem | None:  # noqa: N802 (Qt override)
+    def takeAt(self, index: int) -> QtWidgets.QLayoutItem | None:
         return self._items.pop(index) if 0 <= index < len(self._items) else None
 
-    def expandingDirections(self) -> QtCore.Qt.Orientation:  # noqa: N802 (Qt override)
+    def expandingDirections(self) -> QtCore.Qt.Orientation:
         return QtCore.Qt.Orientation(0)
 
-    def hasHeightForWidth(self) -> bool:  # noqa: N802 (Qt override)
+    def hasHeightForWidth(self) -> bool:
         return True
 
-    def heightForWidth(self, width: int) -> int:  # noqa: N802 (Qt override)
+    def heightForWidth(self, width: int) -> int:
         return self._place(QtCore.QRect(0, 0, width, 0), move=False)
 
-    def setGeometry(self, rect: QtCore.QRect) -> None:  # noqa: N802 (Qt override)
+    def setGeometry(self, rect: QtCore.QRect) -> None:
         super().setGeometry(rect)
         self._place(rect, move=True)
 
-    def sizeHint(self) -> QtCore.QSize:  # noqa: N802 (Qt override)
+    def sizeHint(self) -> QtCore.QSize:
         """Everything on one line."""
         shown = self._shown()
         m = self.contentsMargins()
@@ -62,7 +62,7 @@ class FlowLayout(QtWidgets.QLayout):
         height = max((i.sizeHint().height() for i in shown), default=0)
         return QtCore.QSize(width + m.left() + m.right(), height + m.top() + m.bottom())
 
-    def minimumSize(self) -> QtCore.QSize:  # noqa: N802 (Qt override)
+    def minimumSize(self) -> QtCore.QSize:
         """The widest item: anything wider wraps."""
         size = QtCore.QSize()
         for item in self._shown():
@@ -141,7 +141,7 @@ class ColumnScroll(QtWidgets.QScrollArea):
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-    def minimumSizeHint(self) -> QtCore.QSize:  # noqa: N802 (Qt override)
+    def minimumSizeHint(self) -> QtCore.QSize:
         width = (self.widget().minimumSizeHint().width() + self.verticalScrollBar().sizeHint().width()
                  + 2 * self.frameWidth())
         return QtCore.QSize(width, super().minimumSizeHint().height())

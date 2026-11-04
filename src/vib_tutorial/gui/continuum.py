@@ -778,11 +778,11 @@ class ContinuumPage(QtWidgets.QWidget):
         else:
             self._timer.stop()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self._start_timer()
 
-    def hideEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def hideEvent(self, event) -> None:
         super().hideEvent(event)
         self._timer.stop()
 

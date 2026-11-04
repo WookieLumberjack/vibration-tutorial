@@ -409,7 +409,8 @@ def test_periodic_trials():
     assert 4 / (3 * math.pi) == pytest.approx(0.42, abs=0.005) and 1 / (2 * osc.omega_n) == pytest.approx(0.025)
     X = np.abs(response_coefficients(osc, third, 3))
     assert (X[3], X[1]) == pytest.approx((0.0106, 0.0036), abs=5e-5)
-    swing = lambda fo: float(np.max(periodic_steady(osc, fo, t * fo.period)))
+    def swing(fo):
+        return float(np.max(periodic_steady(osc, fo, t * fo.period)))
     assert swing(third) == pytest.approx(0.0139, abs=5e-5)
     assert swing(Forcing(Wave.SQUARE, freq_hz=osc.natural_hz / 2)) == pytest.approx(0.0050, abs=5e-5)
     blows = periodic_steady(osc, Forcing(Wave.IMPULSES, 0.1), t)

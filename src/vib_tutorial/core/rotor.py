@@ -161,6 +161,7 @@ step beside the exact update.
 
 from __future__ import annotations
 
+import itertools
 import math
 from collections import OrderedDict
 from collections.abc import Callable
@@ -575,7 +576,7 @@ class RotorSystem:
         stations.sort()
         span = stations[-1][0] - stations[0][0]
         z, node = [stations[0][0]], {stations[0][1]: 0}
-        for (z0, _), (z1, n1) in zip(stations, stations[1:]):
+        for (z0, _), (z1, n1) in itertools.pairwise(stations):
             k = max(1, round(self.elements * (z1 - z0) / span))
             z.extend(np.linspace(z0, z1, k + 1)[1:])
             node[n1] = len(z) - 1
@@ -688,7 +689,7 @@ class RotorSystem:
     @property
     def crack_opening(self) -> float:
         """How open the crack is on average over a turn: 1 held open, ½ breathing, 0 shut (or none)."""
-        if self.crack is None or not self.crack.depth and self.crack.compliance is None:
+        if self.crack is None or (not self.crack.depth and self.crack.compliance is None):
             return 0.0
         if not self.crack.breathing:
             return 1.0

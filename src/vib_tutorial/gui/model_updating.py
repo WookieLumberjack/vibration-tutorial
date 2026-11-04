@@ -622,7 +622,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         else:
             self._recompute.start()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()

@@ -296,14 +296,14 @@ class BearingPanel(QtWidgets.QWidget):
         self._show_speed()
 
     # ------------------------------------------------------------- drawing
-    def resizeEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         # The readout beside the locus when there's room for it, else under it, at the full width.
         wide = event.size().width() >= LOCUS_SIZE + READOUT_WIDTH
         self.top.setDirection(QtWidgets.QBoxLayout.Direction.LeftToRight if wide
                               else QtWidgets.QBoxLayout.Direction.TopToBottom)
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self.catch_up()
 

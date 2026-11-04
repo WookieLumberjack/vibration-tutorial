@@ -88,7 +88,7 @@ def _films_html(s: RotorSystem, omega: float) -> str:
     if not s.films:
         return ""
     parts = []
-    for name, b, w, st in zip("AB", (s.bearing_a, s.bearing_b), s.bearing_loads, s.bearing_states(omega)):
+    for name, _b, w, st in zip("AB", (s.bearing_a, s.bearing_b), s.bearing_loads, s.bearing_states(omega)):
         if st is None:
             continue
         k, c = st.k, st.c
@@ -231,7 +231,7 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         asymmetric = ""
     cracked = _crack_note(s) if s.crack is not None else ""
     if s.overhung:
-        near, far = ("B", "A") if s.a > s.length else ("A", "B")
+        near, _far = ("B", "A") if s.a > s.length else ("A", "B")
         elements = (f"Two Euler–Bernoulli beam elements: the span between the bearings (L = {s.length:.4g} m) and "
                     f"the overhang from bearing {near} to the disc (ℓ = {s.overhang:.4g} m), with EI = {s.ei:.4g} N·m². "
                     f"The disc sits at a = {s.a:.4g} m from A, outside the bearings.")
@@ -252,8 +252,8 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
             f"({freqs} Hz). Each mode's mass-normalized amplitude ξ is a DOF of its own, in both planes. "
             + elements.replace("Two Euler–Bernoulli beam elements", "Without the extra nodes, the stretches are")
         )
-        mass_text = (f"M is no longer diagonal: the shaft's mass couples the stations and its modes. The disc's "
-                     f"mass m and I<sub>d</sub>, and the journals', are added on their own DOFs.")
+        mass_text = ("M is no longer diagonal: the shaft's mass couples the stations and its modes. The disc's "
+                     "mass m and I<sub>d</sub>, and the journals', are added on their own DOFs.")
         gyro_text = (f"G has ±I<sub>p</sub> = ±{s.ip:.4g} kg·m² on the disc's slopes and the shaft's own sections' "
                      f"(twice their rotary inertia), joining each plane to the other.")
         condensed = ("The stations' block of K<sub>shaft</sub> is the shaft's exact static stiffness, as for the "
@@ -321,7 +321,7 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
             f"−m<sub>A</sub>g, −mg and −m<sub>B</sub>g on y<sub>A</sub>, y<sub>D</sub> and y<sub>B</sub> "
             f"(here {fmt(s.disc_mass * s.gravity, 1.0)} N on the disc)"
             + (f", and the shaft's own weight, {fmt(s.shaft_mass * s.gravity, 1.0)} N, spread over the stations "
-               f"and its modes" if s.density else "") + f". They hold the rotor at the static "
+               f"and its modes" if s.density else "") + ". They hold the rotor at the static "
             + ("deflection q<sub>s</sub> = (K + ΩH)<sup>−1</sup>(f<sub>g</sub> + p), p the films' load (above), "
                if s.films else "deflection q<sub>s</sub> = (K + ΩH)<sup>−1</sup>f<sub>g</sub>, ") + f"here the disc at "
             f"({qs[XD] * 1e6:.4g}, {qs[YD] * 1e6:.4g}) µm, about which it vibrates as without gravity.</p>"

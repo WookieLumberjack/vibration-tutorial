@@ -40,11 +40,11 @@ class LogAxis(pg.AxisItem):
         super().__init__(orientation, **kwargs)
         self._px_per_decade = math.inf
 
-    def setLogMode(self, *args, **kwargs) -> None:  # noqa: N802 (Qt-style override)
+    def setLogMode(self, *args, **kwargs) -> None:
         super().setLogMode(*args, **kwargs)
         self.enableAutoSIPrefix(not self.logMode)
 
-    def logTickValues(self, minVal, maxVal, size, stdTicks):  # noqa: N802, N803 (pyqtgraph API)
+    def logTickValues(self, minVal, maxVal, size, stdTicks):
         span = maxVal - minVal
         self._px_per_decade = size / span if span > 0 else math.inf
         levels = super().logTickValues(minVal, maxVal, size, stdTicks)
@@ -53,7 +53,7 @@ class LogAxis(pg.AxisItem):
         return [(spacing, values if spacing is not None else [v for v in values if round(v, 9) not in major])
                 for spacing, values in levels]
 
-    def logTickStrings(self, values, scale, spacing):  # noqa: N802 (pyqtgraph API)
+    def logTickStrings(self, values, scale, spacing):
         labelled = next((t for t in TIERS if self._room_for(t)), (1,))
         out = []
         for x in values:

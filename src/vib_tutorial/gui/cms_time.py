@@ -211,11 +211,11 @@ class CMSRunView(QtWidgets.QWidget):
             self.button.setText("Stop force" if self.force.on else "Apply force")
 
     # ------------------------------------------------------------- loop
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self._start_timer()
 
-    def hideEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def hideEvent(self, event) -> None:
         super().hideEvent(event)
         self._timer.stop()
 

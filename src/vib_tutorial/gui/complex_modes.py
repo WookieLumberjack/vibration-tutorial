@@ -646,7 +646,7 @@ class ComplexModesPage(QtWidgets.QWidget):
                                          self.ident_noise.value() / 100.0)
             self._draw_identification()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()
