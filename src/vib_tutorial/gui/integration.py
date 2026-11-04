@@ -24,8 +24,10 @@ from ..core.integration import (
     Scheme,
     exact,
     simulate,
+    spectral,
     spectral_curves,
 )
+from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from . import settle_plots
 from .lesson import (
     Form,
@@ -42,7 +44,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -66,6 +68,8 @@ class IntegrationTrial:
     schemes: tuple[Scheme, ...] = (Scheme.CENTRAL, Scheme.AVERAGE, Scheme.LINEAR, Scheme.RK4)
     alpha: float = -0.1
     tab: int = TAB_PERIOD
+    mass: float = 1.0
+    stiffness: float = 400.0
 
 
 TRIALS = (
@@ -153,6 +157,217 @@ TRIALS = (
         schemes=(Scheme.FOH, Scheme.CENTRAL, Scheme.AVERAGE, Scheme.RK4),
         tab=TAB_PERIOD,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _central_limit(rng: np.random.Generator) -> Question:
+    m, k = pick(rng, (0.5, 1, 2, 5)), pick(rng, (100, 400, 1000, 2500))
+    w = math.sqrt(k / m)
+    dt = 2 / w
+    return Question(
+        f"A {m:g} kg mass on a {k:g} N/m spring, undamped, stepped by central difference. What is the longest time "
+        "step that stays stable?",
+        1000 * dt,
+        f"Central difference is stable while ωΔt ≤ 2. ω = √(k/m) = {number(w)} rad/s, so Δt ≤ 2/ω = "
+        f"{number(1000 * dt)} ms: T/π, with T = {number(1000 * TWO_PI / w)} ms.",
+        unit="ms",
+        setup=dict(mass=m, stiffness=k, per_period=3.2, schemes=(Scheme.CENTRAL,), tab=TAB_RADIUS),
+    )
+
+
+def _average_period(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (4, 5, 8, 10, 20)))
+    O = TWO_PI / n
+    error = 100 * spectral(Scheme.AVERAGE, O).period_error
+    return Question(
+        f"Newmark's average acceleration steps an undamped oscillator with {n} steps a period. By how many percent "
+        "does the period it computes come out long?",
+        error,
+        f"Its amplification matrix turns the motion by θ = 2 arctan(Ω/2) a step, against Ω = ωΔt = 2π/{n} = "
+        f"{number(O)}: θ = {number(2 * math.atan(O / 2))}. The period is Ω/θ = {number(1 + error / 100, 4)} times "
+        f"the true one, {number(error)} % long. (About Ω²/12 = {number(100 * O * O / 12)} % for small steps.)",
+        unit="%",
+        tolerance=0.02,
+        setup=dict(per_period=float(n), schemes=(Scheme.AVERAGE,), tab=TAB_PERIOD),
+    )
+
+
+def _euler_growth(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (20, 50, 100, 200)))
+    O = TWO_PI / n
+    growth = 100 * ((1 + O * O) ** (n / 2) - 1)
+    return Question(
+        f"Explicit Euler steps an undamped oscillator with {n} steps a period. By how many percent does the "
+        "amplitude grow over one period?",
+        growth,
+        f"Its amplification matrix I + AΔt has |λ| = ρ = √(1 + Ω²), Ω = 2π/{n} = {number(O)}: ρ = "
+        f"{number(math.sqrt(1 + O * O), 5)} a step, ρ<sup>{n}</sup> = {number(1 + growth / 100, 4)} a period, "
+        f"{number(growth)} % up.",
+        unit="%",
+        tolerance=0.02,
+        setup=dict(per_period=float(n), schemes=(Scheme.EULER,), tab=TAB_RADIUS),
+    )
+
+
+def _rk4_damping(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (4, 5, 6, 8, 10)))
+    O = TWO_PI / n
+    s = spectral(Scheme.RK4, O)
+    return Question(
+        f"Classical Runge–Kutta (RK4) steps an undamped oscillator with {n} steps a period. What damping ratio does "
+        "the motion it computes have?",
+        100 * s.damping,
+        f"Its amplification matrix is the Taylor series of e<sup>AΔt</sup> to Ω⁴/24, Ω = 2π/{n} = {number(O)}; its "
+        f"eigenvalues have ρ = {number(s.radius, 5)} a step, and ζ̄ = −ln ρ / |ln λ| = {number(100 * s.damping)} %: "
+        "damping nobody put in.",
+        unit="%",
+        tolerance=0.03,
+        setup=dict(per_period=float(n), schemes=(Scheme.RK4,), tab=TAB_DAMPING),
+    )
+
+
+def _stiff_steps(rng: np.random.Generator) -> Question:
+    stiff = pick(rng, (500, 1000, 2000))
+    f = Model(stiff_hz=stiff).frequencies_hz()
+    slow, fast = rounded(f[0]), rounded(f[-1])
+    steps = math.pi * fast / slow
+    return Question(
+        f"A model's modes are at {number(slow)} Hz and {number(fast)} Hz. Stepped by central difference, how many "
+        f"steps per period of the {number(slow)} Hz mode does it need at least to stay stable?",
+        steps,
+        f"The step has to keep ωΔt ≤ 2 for the fastest mode: Δt ≤ 1/(π × {number(fast)}) = "
+        f"{number(1000 / (math.pi * fast))} ms. The slow mode's period is {number(1000 / slow)} ms, so that's "
+        f"π × {number(fast)}/{number(slow)} = {number(steps)} steps a period, though nothing that matters happens up "
+        "there.",
+        unit="steps",
+        tolerance=0.02,
+        setup=dict(stiff_hz=stiff, per_period=50.0, periods=2.0, schemes=(Scheme.CENTRAL,), tab=TAB_RADIUS),
+    )
+
+
+def _halve_step(rng: np.random.Generator) -> Question:
+    return Question(
+        "Central difference with ten steps a period gets the period 1.7 % short. What happens to that error at twenty "
+        "steps a period?",
+        0,
+        "It falls about four times, to 0.41 %: central difference is second order, its period error ≈ −(ωΔt)²/24.",
+        choices=("It falls about four times", "It halves", "It stays about the same", "It falls about sixteen times"),
+        setup=dict(per_period=20.0, schemes=(Scheme.CENTRAL,), tab=TAB_PERIOD),
+        predict=True,
+    )
+
+
+def _one_step(rng: np.random.Generator) -> Question:
+    return Question(
+        "Newmark's average acceleration steps an undamped oscillator one step a period (Δt = T). What does the motion "
+        "it computes do?",
+        0,
+        "Its amplitude holds (ρ = 1 at any step: unconditionally stable), but its period is 2.5 times too long, "
+        "nothing like the oscillator's. Stable is not accurate.",
+        choices=(
+            "It keeps its amplitude, with the period far too long",
+            "It blows up",
+            "It dies away",
+            "It follows the true motion closely",
+        ),
+        setup=dict(per_period=1.0, schemes=(Scheme.AVERAGE,), tab=TAB_RADIUS),
+        predict=True,
+    )
+
+
+def _stiff_explicit(rng: np.random.Generator) -> Question:
+    return Question(
+        "A light mass on a stiff spring adds a 1049 Hz mode beside the 3.03 Hz one. Stepped by central difference "
+        "with 50 steps per period of the slow mode, what happens?",
+        0,
+        "It blows up within a few steps: the stiff mode has ωΔt = 43, far past central difference's 2. What "
+        "limits an explicit step is the fastest mode in the model.",
+        choices=(
+            "It blows up",
+            "It runs, the slow mode accurate",
+            "It runs, the stiff mode damped out",
+            "It runs, the stiff mode's period wrong",
+        ),
+        setup=dict(per_period=50.0, periods=5.0, stiff_hz=1000.0, schemes=(Scheme.CENTRAL,), tab=TAB_RADIUS),
+        predict=True,
+    )
+
+
+def _exact_big_step(rng: np.random.Generator) -> Question:
+    return Question(
+        "The exact (FOH) update steps a free, damped oscillator with two steps a period. How far off are the values "
+        "it computes at the steps?",
+        0,
+        "Not at all, round-off aside: e<sup>AΔt</sup> is the oscillator's own free motion over a step, at any Δt. "
+        "Only a force varying between samples brings in an error.",
+        choices=("They're exact", "A few percent", "It's unstable at that step", "Its period comes out long"),
+        setup=dict(per_period=2.0, damping=0.8, schemes=(Scheme.FOH, Scheme.AVERAGE), tab=TAB_PERIOD),
+        predict=True,
+    )
+
+
+def _step_spec(rng: np.random.Generator) -> Question:
+    stiff = pick(rng, (500, 1000, 2000))
+    worst = pick(rng, (0.5, 1, 2))  # % period error
+    O = TWO_PI / np.arange(1, 1000, 0.1)
+    fewest = TWO_PI / O[np.argmax([100 * spectral(Scheme.AVERAGE, o).period_error <= worst for o in O])]
+    most = math.ceil(1.25 * fewest)
+
+    def goal(t: IntegrationTrial):
+        f = Model(t.mass, t.stiffness, t.damping, t.stiff_hz).frequencies_hz()
+        h = 1 / (f[0] * t.per_period)
+        run = [s for s in t.schemes]
+        rows = [(s, [spectral(s, TWO_PI * v * h, 0.0, t.alpha) for v in f]) for s in run]
+        radius = max((r.radius for _, sp in rows for r in sp), default=math.nan)
+        errors = [abs(sp[0].period_error) for _, sp in rows]
+        error = 100 * max((e if math.isfinite(e) else math.inf for e in errors), default=math.nan)
+        return (
+            kept("Mass", t.mass, 1.0, "kg"),
+            kept("Stiffness", t.stiffness, 400.0, "N/m"),
+            kept("Stiff mode", t.stiff_hz, stiff, "Hz"),
+            Requirement(
+                "A stepping scheme, not the exact update",
+                ", ".join(s.value for s in run) or "none",
+                bool(run) and Scheme.FOH not in run,
+            ),
+            Requirement(
+                "Every scheme run stable at both modes (ρ ≤ 1)", f"ρ = {number(radius, 4)}", radius <= 1 + 1e-9
+            ),
+            at_most("The slow mode's period error", error, worst, "%"),
+            at_most("Steps a period", t.per_period, most),
+        )
+
+    return Question(
+        f"The 1 kg, 400 N/m oscillator has a stiff {stiff:g} Hz mode hung from it. Choose the schemes and the step so "
+        f"that every scheme run is stable and gets the slow mode's period within {worst:g} %, with no more than "
+        f"{most} steps a period (not the exact update: it's a stand-in for a nonlinear model).",
+        0,
+        f"An explicit scheme needs ωΔt ≤ 2 or so at the stiff mode, hundreds of steps a period, so it has to be "
+        f"implicit. Newmark's average acceleration's period error ≈ (ωΔt)²/12 is under {worst:g} % from "
+        f"{number(fewest)} steps a period; {most} steps with it alone meet the spec (HHT-α, a little longer, may too).",
+        setup=dict(stiff_hz=stiff, per_period=50.0, periods=5.0, schemes=(Scheme.CENTRAL, Scheme.RK4)),
+        goal=goal,
+        design=dict(stiff_hz=stiff, per_period=float(most), periods=5.0, schemes=(Scheme.AVERAGE,)),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "integration_page", f"See {page_link('integration_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("central-limit", "Central difference's step", "central", "Central difference", _central_limit),
+        ("average-period", "Average acceleration's period", "newmark", "Newmark and HHT-α", _average_period),
+        ("euler-growth", "Explicit Euler's growth", "rk4", "Runge–Kutta", _euler_growth),
+        ("rk4-damping", "RK4's numerical damping", "rk4", "Runge–Kutta", _rk4_damping),
+        ("stiff-steps", "A stiff mode's toll", "central", "Central difference", _stiff_steps),
+        ("halve-step", "Predict: half the step", "central", "Central difference", _halve_step),
+        ("one-step", "Predict: one step a period", "newmark", "Newmark and HHT-α", _one_step),
+        ("stiff-explicit", "Predict: a stiff mode", "central", "Central difference", _stiff_explicit),
+        ("exact-big-step", "Predict: the exact update", "exact", "The exact update", _exact_big_step),
+        ("step-spec", "Spec: a scheme and a step", "newmark", "Newmark and HHT-α", _step_spec),
+    )
 )
 
 TIPS = {
@@ -390,10 +605,35 @@ class IntegrationPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int, note: bool = True) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index], note)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(IntegrationTrial("", "", **setup), note=False)
+
+    def practice_state(self) -> IntegrationTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return IntegrationTrial(
+            "",
+            "",
+            per_period=self.per_period.value(),
+            periods=self.periods.value(),
+            damping=self.damping.value(),
+            stiff_hz=self.stiff.value(),
+            x0=self.x0.value(),
+            force=self.force.value(),
+            freq_hz=self.freq.value(),
+            schemes=tuple(self._chosen()),
+            alpha=self.alpha.value(),
+            tab=self.tabs.currentIndex(),
+            mass=self.mass.value(),
+            stiffness=self.stiffness.value(),
+        )
+
+    def apply_trial(self, t: IntegrationTrial, note: bool = True) -> None:
         for box, value in (
-            (self.mass, 1.0),
-            (self.stiffness, 400.0),
+            (self.mass, t.mass),
+            (self.stiffness, t.stiffness),
             (self.damping, t.damping),
             (self.stiff, t.stiff_hz),
             (self.per_period, t.per_period),
