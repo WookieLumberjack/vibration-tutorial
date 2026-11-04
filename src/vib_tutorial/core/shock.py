@@ -267,7 +267,7 @@ def bank(pulse: Pulse, result: ModalResult | None = None, per_octave: int = PER_
         fn = [m.fn_hz for m in result.modes if m.fn_hz > 0]
         if fn:
             lo, hi = min(lo, min(fn) / 4.0), max(hi, 4.0 * max(fn))
-    count = int(math.ceil(per_octave * math.log2(hi / lo))) + 1
+    count = math.ceil(per_octave * math.log2(hi / lo)) + 1
     return lo * 2.0 ** (np.arange(count) / per_octave)
 
 
@@ -282,7 +282,7 @@ def record(pulse: Pulse, fs: float, system: ChainSystem | None = None, result: M
         return synthesize(pulse, fs)
     T = pulse.duration
     A = pulse.peak * G
-    k = max(2, int(math.ceil(T * fs - 1e-9)))
+    k = max(2, math.ceil(T * fs - 1e-9))
     fs = k / T
     h = 1.0 / fs
     if not pulse.shape.measured:
@@ -295,11 +295,11 @@ def record(pulse: Pulse, fs: float, system: ChainSystem | None = None, result: M
         lin = linear(system)
         result = result or modal_analysis(lin)
         f1 = min((m.fn_hz for m in result.modes if m.fn_hz > 0), default=1.0 / T)
-        n = int(round((T + RING / f1) * fs)) + 1
+        n = round((T + RING / f1) * fs) + 1
         if n > MAX_SAMPLES:
             raise ValueError(f"the record is too long: {n:,} samples, at most {MAX_SAMPLES:,}")
         base = np.zeros(n)
-        base[:k + 1] = A * classical(Shape.HALF_SINE, np.arange(k + 1) / k)
+        base[: k + 1] = A * classical(Shape.HALF_SINE, np.arange(k + 1) / k)
         mass = pulse.mass % lin.n
         a = chain_response(lin, base, fs, result).acceleration[:, mass]
     else:
@@ -369,7 +369,7 @@ def _free(eta_end: np.ndarray, lam: np.ndarray, power: int) -> np.ndarray:
     """2 Re(λ^power η e^{λτ}) over one damped period, RESIDUAL_POINTS a period: (f, points)."""
     period = TWO_PI / lam.imag
     tau = np.linspace(0.0, 1.0, RESIDUAL_POINTS + 1)[None, :] * period[:, None]
-    return 2.0 * np.real((lam ** power * eta_end)[:, None] * np.exp(lam[:, None] * tau))
+    return 2.0 * np.real((lam**power * eta_end)[:, None] * np.exp(lam[:, None] * tau))
 
 
 @dataclass(frozen=True)
@@ -444,7 +444,7 @@ class Oscillator:
 
 def oscillator(rec: Record, f: float, zeta: float, tail: float) -> Oscillator:
     eta, lam = _states(rec, np.array([f]), zeta)
-    n = int(round(tail * rec.fs))
+    n = round(tail * rec.fs)
     tau = np.arange(1, n + 1) * rec.h
     eta = np.concatenate([eta[0], eta[0, -1] * np.exp(lam[0] * tau)])
     t = np.arange(eta.size) * rec.h
@@ -461,8 +461,7 @@ class ChainResponse:
     acceleration: np.ndarray
 
 
-def chain_response(system: ChainSystem, a: np.ndarray, fs: float, result: ModalResult | None = None
-                   ) -> ChainResponse:
+def chain_response(system: ChainSystem, a: np.ndarray, fs: float, result: ModalResult | None = None) -> ChainResponse:
     """The chain from rest, its base accelerated by a (m/s², linear between samples 1/fs apart): in coordinates
     relative to the base each mass is pushed by −m a, by the exact FOH update, diagonalized (as core.oma's)."""
     import scipy.signal
@@ -525,7 +524,7 @@ class Synthesis:
 
 def components(pulse: Pulse) -> np.ndarray:
     lo, hi = target_band(pulse)
-    count = int(round(SYNTH_PER_OCTAVE * math.log2(hi / lo))) + 1
+    count = round(SYNTH_PER_OCTAVE * math.log2(hi / lo)) + 1
     return lo * (hi / lo) ** (np.arange(count) / (count - 1))
 
 
@@ -536,7 +535,7 @@ def synthesize(pulse: Pulse, fs: float) -> Record:
     alternating, delays drawn from `seed`."""
     f = components(pulse)
     T = pulse.length
-    k = max(2, int(math.ceil(T * fs - 1e-9)))
+    k = max(2, math.ceil(T * fs - 1e-9))
     fs = k / T
     t = np.arange(k + 1) / fs
     w = TWO_PI * f
@@ -588,7 +587,7 @@ def base_record(rec: Record) -> Record:
     """What shakes the chain's base: the record, or for AT_A_MASS the base's half-sine that made it."""
     if rec.pulse.shape is not Shape.AT_A_MASS:
         return rec
-    k = int(round(rec.pulse.duration * rec.fs))
+    k = round(rec.pulse.duration * rec.fs)
     a = rec.pulse.peak * G * classical(Shape.HALF_SINE, np.arange(k + 1) / k)
     return Record(rec.pulse, rec.fs, a, k * rec.h)
 
@@ -642,7 +641,7 @@ def chain_peaks(system: ChainSystem, rec: Record, result: ModalResult | None = N
     base = base_record(rec)
     modes = [m for m in result.modes if m.fn_hz > 0]
     f1 = min((m.fn_hz for m in modes), default=1.0 / base.duration)
-    n = base.a.size + int(round(RING / f1 * base.fs))
+    n = base.a.size + round(RING / f1 * base.fs)
     if n > MAX_SAMPLES:
         raise ValueError(f"the chain's record is too long: {n:,} samples, at most {MAX_SAMPLES:,}")
     padded = Record(base.pulse, base.fs, np.concatenate([base.a, np.zeros(n - base.a.size)]), base.end)
@@ -653,16 +652,21 @@ def chain_peaks(system: ChainSystem, rec: Record, result: ModalResult | None = N
     acc_s, disp_s = np.empty(f.size), np.empty(f.size)
     acc_h, disp_h = np.empty((f.size, n)), np.empty((f.size, n))
     for r in range(f.size):
-        sp = srs(base, f[r:r + 1], zeta[r])
+        sp = srs(base, f[r : r + 1], zeta[r])
         acc_s[r], disp_s[r] = sp.maximax[0], sp.displacement[0]
-        eta, lam = _states(padded, f[r:r + 1], zeta[r])
+        eta, lam = _states(padded, f[r : r + 1], zeta[r])
         acc_h[r], disp_h[r] = 2.0 * np.real(lam[0] ** 2 * eta[0]), 2.0 * np.real(eta[0])
     dphi = np.diff(phi, prepend=0.0, axis=0) * lin.stiffness[:, None]
     response = chain_response(lin, padded.a, padded.fs, result)
     springs = np.diff(response.displacement, prepend=0.0, axis=1) * lin.stiffness
     return ChainPeaks(
-        f, zeta, gamma, gamma ** 2 / float(np.sum(lin.masses)), padded.t,
+        f,
+        zeta,
+        gamma,
+        gamma**2 / float(np.sum(lin.masses)),
+        padded.t,
         {Response.ACCELERATION: acc_s, Response.SPRING: disp_s},
         {Response.ACCELERATION: phi * gamma, Response.SPRING: dphi * gamma},
         {Response.ACCELERATION: acc_h, Response.SPRING: disp_h},
-        {Response.ACCELERATION: response.acceleration, Response.SPRING: springs})
+        {Response.ACCELERATION: response.acceleration, Response.SPRING: springs},
+    )

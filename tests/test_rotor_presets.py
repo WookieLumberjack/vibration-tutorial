@@ -99,8 +99,9 @@ def test_magnetic_bearings():
     assert np.abs(q[[XA, YA, XB, YB]]).max() < 1e-15  # the integral holds the journals at the centre
     assert abs(s.bearing_loads[1]) / m.capacity < 1.0  # inside the linearized magnets' reach
     assert criticals("Magnetic bearings", forward=True) == [1542]
-    assert [round(z, 3) for w, r, z in campbell(s, p.top_rpm / RPM, n_modes=8).criticals
-            if r > 0.1 and z < 0.3] == [0.054]
+    assert [round(z, 3) for w, r, z in campbell(s, p.top_rpm / RPM, n_modes=8).criticals if r > 0.1 and z < 0.3] == [
+        0.054
+    ]
     onset = stability_onset(s, p.top_rpm / RPM)
     assert round(onset.omega * RPM) == 8894 and round(onset.freq_hz) == 739 and onset.whirl > 0.9
     assert onset.freq_hz == pytest.approx(m.damped_band()[1], rel=1e-4)

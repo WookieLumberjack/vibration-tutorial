@@ -67,46 +67,61 @@ TRIALS = (
         "A 2 Hz mode with ζ = 2 %, 20 MPa RMS, on a welded detail (S–N slope 3, 80 MPa range at two million "
         "cycles). The band is narrow (α₂ = 0.95): nearly every up-crossing is one cycle, with Rayleigh-distributed "
         "amplitudes. The narrow-band formula, Dirlik's and Miner's sum over the record's rainflow cycles agree "
-        "within 1.5 %: a life of 25 days."),
+        "within 1.5 %: a life of 25 days.",
+    ),
     FatigueTrial(
         "Two modes: the narrow-band formula is pessimistic",
         "Add a 15 Hz mode with 10 MPa RMS. The record now has small fast cycles riding on the slow ones, α₂ = "
         "0.46. The narrow-band formula counts every up-crossing (6.9 a second) as a cycle of the whole σ's "
         "Rayleigh, and overestimates the damage 1.6 times; Dirlik, fitted to rainflow counts, is 8 % under the "
         "record's.",
-        stress=Stress(sigma2=10.0)),
+        stress=Stress(sigma2=10.0),
+    ),
     FatigueTrial(
         "Rainflow pairs the ripples",
         "The same record, zoomed in. Rainflow treats the stress as rain running down a pagoda roof: each small "
         "ripple closes a small cycle, and the slow swing underneath is still counted at its full range. The "
         "Ranges tab shows the two families, many small ranges and the large ones, which Rayleigh's single hump "
         "can't describe.",
-        stress=Stress(sigma2=10.0), duration=60.0, tab=TAB_RANGES),
+        stress=Stress(sigma2=10.0),
+        duration=60.0,
+        tab=TAB_RANGES,
+    ),
     FatigueTrial(
         "A steeper S–N curve",
         "The two modes, on an S–N slope of 5 (closer to a machined part). Damage goes as S⁵, so the few largest "
         "ranges do nearly all of it (the Damage tab), and the estimates part further: the narrow-band formula is "
         "1.6 times the record's, Dirlik 18 % under (15 % under the average of twenty such records).",
-        stress=Stress(sigma2=10.0), b=5.0, tab=TAB_DAMAGE),
+        stress=Stress(sigma2=10.0),
+        b=5.0,
+        tab=TAB_DAMAGE,
+    ),
     FatigueTrial(
         "Double the stress, eight times the damage",
         "One mode at 40 MPa RMS instead of 20. With slope 3 the damage rate goes up 2³ = 8 times: the life "
         "falls from 25 days to 3.1. A load that is 10 % high costs a third of the life (1.1³ = 1.33); the RMS "
         "has to be right before anything else is.",
-        stress=Stress(sigma1=40.0), tab=TAB_SN),
+        stress=Stress(sigma1=40.0),
+        tab=TAB_SN,
+    ),
     FatigueTrial(
         "A broad peak",
         "One mode but heavily damped, ζ = 30 %: a broad band, α₂ = 0.64. The record's cycles are irregular, "
         "with peaks below zero and troughs above it, and the narrow-band formula is 15 % high, Dirlik within "
         "2 %.",
-        stress=Stress(zeta1=0.3)),
+        stress=Stress(zeta1=0.3),
+    ),
     FatigueTrial(
         "A short record scatters",
         "Two modes on slope 5, but only 20 s of record. Rainflow's damage depends on which seed made the record: "
         "over seeds 1 to 10 it runs from 0.67 to 1.53 times the 600 s record's, because a few large cycles do "
         "most of the damage and a short record may or may not catch them. The spectral methods give one number "
         "from the PSD: a long record, or an average over many, is what they stand for.",
-        stress=Stress(sigma2=10.0), b=5.0, duration=20.0, seed=1),
+        stress=Stress(sigma2=10.0),
+        b=5.0,
+        duration=20.0,
+        seed=1,
+    ),
 )
 
 TIPS = {
@@ -114,7 +129,7 @@ TIPS = {
     "zeta": "<p>Its damping ratio: the band's width.</p>",
     "sigma": "<p>Its RMS stress (0: leave this peak out).</p>",
     "b": "<p>The S–N curve's slope: N ∝ S<sup>−b</sup>. About 3 for welded joints, 5 to 10 for smooth machined "
-         "parts.</p>",
+    "parts.</p>",
     "s_ref": "<p>The stress range the detail survives for N<sub>ref</sub> cycles (a weld detail's category).</p>",
     "n_ref": "<p>The cycles that go with S<sub>ref</sub>.</p>",
     "duration": "<p>How long a record to synthesize and count.</p>",
@@ -122,10 +137,11 @@ TIPS = {
 }
 PSD_TIP = "<p>The stress PSD (one-sided, MPa²/Hz).</p>"
 RECORD_TIP = "<p>The start of the synthesized record, with the reversals rainflow counts.</p>"
-RANGES_TIP = ("<p>The record's rainflow ranges as a density (bars), Rayleigh's (narrow-band) and Dirlik's "
-              "range distributions.</p>")
-DAMAGE_TIP = ("<p>Where the damage comes from: each distribution times S<sup>b</sup>, normalized, against the "
-              "range.</p>")
+RANGES_TIP = (
+    "<p>The record's rainflow ranges as a density (bars), Rayleigh's (narrow-band) and Dirlik's "
+    "range distributions.</p>"
+)
+DAMAGE_TIP = "<p>Where the damage comes from: each distribution times S<sup>b</sup>, normalized, against the range.</p>"
 SN_TIP = "<p>The S–N curve (log–log) and the record's largest rainflow ranges against the cycles they took.</p>"
 
 NOTES_HTML = """
@@ -172,14 +188,24 @@ most of the damage.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("random_page", "statistics", "Crossings and peaks"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "Basquin's S–N curve, N S<sup>b</sup> = K, makes damage go as the stress to the power b: the RMS must be right.",
-    "Miner's rule adds n/N over the cycles; rainflow counting finds the cycles in a random record.",
-    "The narrow-band formula is exact for one narrow mode and conservative for broad or multi-modal stress.",
-    "The irregularity factor α₂ = ν₀/ν<sub>p</sub> says how narrow the band is; Dirlik's formula handles any α₂.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("random_page", "statistics", "Crossings and peaks"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Basquin's S–N curve, N S<sup>b</sup> = K, makes damage go as the stress to the power b: the RMS must be right.",
+            "Miner's rule adds n/N over the cycles; rainflow counting finds the cycles in a random record.",
+            "The narrow-band formula is exact for one narrow mode and conservative for broad or multi-modal stress.",
+            "The irregularity factor α₂ = ν₀/ν<sub>p</sub> says how narrow the band is; Dirlik's formula handles any α₂.",
+        ),
+    )
+)
 
 
 class FatiguePage(QtWidgets.QWidget):
@@ -193,9 +219,10 @@ class FatiguePage(QtWidgets.QWidget):
         self.curve = Curve()
         self.rec = None
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the stress, the S–N curve and the record to show one idea from the "
-                               "Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each sets up the stress, the S–N curve and the record to show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         st = Form("Stress PSD")
@@ -217,8 +244,10 @@ class FatiguePage(QtWidgets.QWidget):
         self.duration = rec.number("Length:", 5.0, 3600.0, 600.0, 0, " s", TIPS["duration"])
         self.seed = rec.number("Seed:", 1, 9999, 1, 0, "", TIPS["seed"])
 
-        connect_all((self.f1, self.zeta1, self.sigma1, self.f2, self.zeta2, self.sigma2, self.duration, self.seed),
-                    self._on_stress)
+        connect_all(
+            (self.f1, self.zeta1, self.sigma1, self.f2, self.zeta2, self.sigma2, self.duration, self.seed),
+            self._on_stress,
+        )
         connect_all((self.b, self.s_ref, self.n_ref), self._on_curve)
 
         # --- centre
@@ -251,8 +280,7 @@ class FatiguePage(QtWidgets.QWidget):
         self.ddirlik_item = pg.PlotDataItem(name="Dirlik")
         for item in (self.dhist_item, self.dray_item, self.ddirlik_item):
             self.dmg_plot.addItem(item)
-        self.sn_plot = plot("Stress range S", "MPa", "Cycles to failure N", None, log_x=True, log_y=True,
-                            height=200)
+        self.sn_plot = plot("Stress range S", "MPa", "Cycles to failure N", None, log_x=True, log_y=True, height=200)
         self.sn_plot.setToolTip(SN_TIP)
         add_legend(self.sn_plot.getPlotItem(), offset=(-10, 10))
         self.sn_item = pg.PlotDataItem(name="S–N curve")
@@ -274,8 +302,12 @@ class FatiguePage(QtWidgets.QWidget):
         rv.addWidget(self.tabs, 1)
         rv.addWidget(self.tab_note)
 
-        three_panes(self, column(self.trials, st, sn, rec),
-                    stack((self.psd_plot, 2), (self.rec_plot, 3), (self.readout, 0)), right)
+        three_panes(
+            self,
+            column(self.trials, st, sn, rec),
+            stack((self.psd_plot, 2), (self.rec_plot, 3), (self.readout, 0)),
+            right,
+        )
         self.apply_theme()
         self._on_stress()
 
@@ -283,17 +315,33 @@ class FatiguePage(QtWidgets.QWidget):
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
         s = t.stress
-        for box, value in ((self.f1, s.f1), (self.zeta1, s.zeta1), (self.sigma1, s.sigma1), (self.f2, s.f2),
-                           (self.zeta2, s.zeta2), (self.sigma2, s.sigma2), (self.b, t.b), (self.s_ref, 80.0),
-                           (self.n_ref, 2e6), (self.duration, t.duration), (self.seed, t.seed)):
+        for box, value in (
+            (self.f1, s.f1),
+            (self.zeta1, s.zeta1),
+            (self.sigma1, s.sigma1),
+            (self.f2, s.f2),
+            (self.zeta2, s.zeta2),
+            (self.sigma2, s.sigma2),
+            (self.b, t.b),
+            (self.s_ref, 80.0),
+            (self.n_ref, 2e6),
+            (self.duration, t.duration),
+            (self.seed, t.seed),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self._on_stress()
 
     def _on_stress(self) -> None:
-        self.stress = Stress(self.f1.value(), self.zeta1.value(), self.sigma1.value(), self.f2.value(),
-                             self.zeta2.value(), self.sigma2.value())
+        self.stress = Stress(
+            self.f1.value(),
+            self.zeta1.value(),
+            self.sigma1.value(),
+            self.f2.value(),
+            self.zeta2.value(),
+            self.sigma2.value(),
+        )
         if not self.stress.peaks():
             self.rec = None
         else:
@@ -314,8 +362,12 @@ class FatiguePage(QtWidgets.QWidget):
         for hist in (self.hist_item, self.dhist_item):
             hist.setPen(pg.mkPen(c.grey, width=1))
             hist.setBrush(pg.mkBrush(c.band_shade))
-        for item, color in ((self.ray_item, c.mass[1]), (self.dray_item, c.mass[1]), (self.dirlik_item, c.mass[2]),
-                            (self.ddirlik_item, c.mass[2])):
+        for item, color in (
+            (self.ray_item, c.mass[1]),
+            (self.dray_item, c.mass[1]),
+            (self.dirlik_item, c.mass[2]),
+            (self.ddirlik_item, c.mass[2]),
+        ):
             item.setPen(pg.mkPen(color, width=2))
         self.sn_item.setPen(pg.mkPen(c.strong, width=2))
         self.cycles_item.setPen(pg.mkPen(c.force, width=2))
@@ -340,8 +392,9 @@ class FatiguePage(QtWidgets.QWidget):
         keep = G > G.max() * 1e-8
         self.psd_item.setData(f[keep], G[keep])
         r = rates(s)
-        self.stress_info.setText(f"σ = {r.sigma:.3g} MPa; {r.nu0:.3g} up-crossings and {r.nup:.3g} peaks a second; "
-                                 f"α₂ = {r.alpha2:.2f}.")
+        self.stress_info.setText(
+            f"σ = {r.sigma:.3g} MPa; {r.nu0:.3g} up-crossings and {r.nup:.3g} peaks a second; α₂ = {r.alpha2:.2f}."
+        )
         span = min(SHOWN / min(p[0] for p in s.peaks()), rec.duration)
         n = int(np.searchsorted(rec.t, span))
         t, x = rec.t[:n], rec.x[:n]
@@ -358,7 +411,8 @@ class FatiguePage(QtWidgets.QWidget):
             f"Record: {rec.duration:.4g} s, {len(reversals(rec.x))} reversals, {cycles:.4g} rainflow cycles. "
             f"Damage a second, and the life: rainflow {rf:.3g} ({life_text(rf)}); narrow band {nb:.3g} "
             f"({life_text(nb)}, {nb / rf:.2f} × rainflow); Dirlik {dk:.3g} ({life_text(dk)}, {dk / rf:.2f} × "
-            "rainflow).")
+            "rainflow)."
+        )
 
     def _draw_tab(self) -> None:
         rec, s, c = self.rec, self.stress, self.curve
@@ -377,21 +431,25 @@ class FatiguePage(QtWidgets.QWidget):
             self.ray_item.setData(S, rayleigh_range_pdf(s, S))
             self.dirlik_item.setData(S, dirlik_range_pdf(s, S))
             self.ranges_plot.setXRange(0.0, top, padding=0)
-            self.tab_note.setText("Rayleigh's ranges are one hump at 2σ√2 (the narrow-band assumption); the "
-                                  "record's and Dirlik's have small ranges too, from the ripples.")
+            self.tab_note.setText(
+                "Rayleigh's ranges are one hump at 2σ√2 (the narrow-band assumption); the "
+                "record's and Dirlik's have small ranges too, from the ripples."
+            )
         elif i == TAB_DAMAGE:
             b = c.b
             mids = 0.5 * (edges[1:] + edges[:-1])
-            share = counts * mids ** b
+            share = counts * mids**b
             self.dhist_item.setData(edges, share / (np.sum(share) * width) if share.sum() else share)
             for item, pdf in ((self.dray_item, rayleigh_range_pdf(s, S)), (self.ddirlik_item, dirlik_range_pdf(s, S))):
-                w = pdf * S ** b
+                w = pdf * S**b
                 item.setData(S, w / np.trapezoid(w, S))
             self.dmg_plot.setXRange(0.0, top, padding=0)
             biggest = np.sort(rec.ranges[rec.ranges > 0] ** b * rec.counts[rec.ranges > 0])[::-1]
             tenth = max(1, round(0.1 * len(biggest)))
-            self.tab_note.setText(f"With b = {b:.3g}, the largest tenth of the record's cycles do "
-                                  f"{100 * biggest[:tenth].sum() / biggest.sum():.0f} % of its damage.")
+            self.tab_note.setText(
+                f"With b = {b:.3g}, the largest tenth of the record's cycles do "
+                f"{100 * biggest[:tenth].sum() / biggest.sum():.0f} % of its damage."
+            )
         else:
             N = np.logspace(3, 10, 50)
             self.sn_item.setData(N, c.s_ref * (N / c.n_ref) ** (-1 / c.b))
@@ -403,8 +461,11 @@ class FatiguePage(QtWidgets.QWidget):
             self.cycles_item.setData(above[keep] * life / rec.duration, rec.ranges[order][keep])
             high = float(np.log10(rec.ranges.max()))
             self.sn_plot.setXRange(3, 10, padding=0)
-            self.sn_plot.setYRange(high - 1.5, max(high, float(np.log10(c.s_ref * (1e3 / c.n_ref) ** (-1 / c.b)))) + 0.1,
-                                   padding=0)
-            self.tab_note.setText("Red: how many cycles at or above each range the record would put in over its "
-                                  "whole life (its spectrum of ranges). Where it crosses the S–N curve tells which "
-                                  "ranges matter.")
+            self.sn_plot.setYRange(
+                high - 1.5, max(high, float(np.log10(c.s_ref * (1e3 / c.n_ref) ** (-1 / c.b)))) + 0.1, padding=0
+            )
+            self.tab_note.setText(
+                "Red: how many cycles at or above each range the record would put in over its "
+                "whole life (its spectrum of ranges). Where it crosses the S–N curve tells which "
+                "ranges matter."
+            )

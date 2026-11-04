@@ -19,17 +19,16 @@ FONT = 13  # px, the labels' size
 SCALE = 2  # rendered at twice the size, for high-density screens
 
 
-def _text(x: float, y: float, s: str, color: str, anchor: str = "middle", italic: bool = False,
-          size: int = FONT) -> str:
+def _text(
+    x: float, y: float, s: str, color: str, anchor: str = "middle", italic: bool = False, size: int = FONT
+) -> str:
     style = " font-style='italic'" if italic else ""
-    return (f"<text x='{x:.1f}' y='{y:.1f}' fill='{color}' font-size='{size}' text-anchor='{anchor}'{style}>"
-            f"{s}</text>")
+    return f"<text x='{x:.1f}' y='{y:.1f}' fill='{color}' font-size='{size}' text-anchor='{anchor}'{style}>{s}</text>"
 
 
 def _line(x1: float, y1: float, x2: float, y2: float, color: str, width: float = 1.5, dash: str = "") -> str:
     d = f" stroke-dasharray='{dash}'" if dash else ""
-    return (f"<line x1='{x1:.1f}' y1='{y1:.1f}' x2='{x2:.1f}' y2='{y2:.1f}' stroke='{color}' "
-            f"stroke-width='{width}'{d}/>")
+    return f"<line x1='{x1:.1f}' y1='{y1:.1f}' x2='{x2:.1f}' y2='{y2:.1f}' stroke='{color}' stroke-width='{width}'{d}/>"
 
 
 def _head(x: float, y: float, angle: float, color: str, size: float = 9.0) -> str:
@@ -45,11 +44,11 @@ def _arrow(x1: float, y1: float, x2: float, y2: float, color: str, width: float 
     return _line(x1, y1, x2, y2, color, width, dash) + _head(x2, y2, math.atan2(y2 - y1, x2 - x1), color)
 
 
-def _circle(x: float, y: float, r: float, stroke: str = "none", fill: str = "none", width: float = 1.5,
-            dash: str = "") -> str:
+def _circle(
+    x: float, y: float, r: float, stroke: str = "none", fill: str = "none", width: float = 1.5, dash: str = ""
+) -> str:
     d = f" stroke-dasharray='{dash}'" if dash else ""
-    return (f"<circle cx='{x:.1f}' cy='{y:.1f}' r='{r:.1f}' stroke='{stroke}' fill='{fill}' "
-            f"stroke-width='{width}'{d}/>")
+    return f"<circle cx='{x:.1f}' cy='{y:.1f}' r='{r:.1f}' stroke='{stroke}' fill='{fill}' stroke-width='{width}'{d}/>"
 
 
 def _point(cx: float, cy: float, r: float, deg: float) -> tuple[float, float]:
@@ -58,24 +57,29 @@ def _point(cx: float, cy: float, r: float, deg: float) -> tuple[float, float]:
     return cx + r * math.cos(a), cy - r * math.sin(a)
 
 
-def _arc(cx: float, cy: float, r: float, start: float, end: float, color: str, width: float = 1.5,
-         arrow: bool = False) -> str:
+def _arc(
+    cx: float, cy: float, r: float, start: float, end: float, color: str, width: float = 1.5, arrow: bool = False
+) -> str:
     """An arc counterclockwise from `start` to `end` degrees, with an arrowhead at `end` if asked."""
     x1, y1 = _point(cx, cy, r, start)
     x2, y2 = _point(cx, cy, r, end)
     large = 1 if (end - start) % 360 > 180 else 0
-    path = (f"<path d='M {x1:.1f} {y1:.1f} A {r:.1f} {r:.1f} 0 {large} 0 {x2:.1f} {y2:.1f}' fill='none' "
-            f"stroke='{color}' stroke-width='{width}'/>")
+    path = (
+        f"<path d='M {x1:.1f} {y1:.1f} A {r:.1f} {r:.1f} 0 {large} 0 {x2:.1f} {y2:.1f}' fill='none' "
+        f"stroke='{color}' stroke-width='{width}'/>"
+    )
     if arrow:  # the tangent, counterclockwise on the page, is clockwise in SVG's axes
         path += _head(x2, y2, -math.radians(end) - math.pi / 2, color)
     return path
 
 
 def _svg(width: int, height: int, body: str) -> str:
-    return (f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
-            f"viewBox='0 0 {width} {height}' font-family='sans-serif'>"
-            f"<rect x='0.5' y='0.5' width='{width - 1}' height='{height - 1}' fill='{colors.background}' "
-            f"stroke='{colors.faint}'/>{body}</svg>")
+    return (
+        f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
+        f"viewBox='0 0 {width} {height}' font-family='sans-serif'>"
+        f"<rect x='0.5' y='0.5' width='{width - 1}' height='{height - 1}' fill='{colors.background}' "
+        f"stroke='{colors.faint}'/>{body}</svg>"
+    )
 
 
 # ------------------------------------------------------------------ the figures
@@ -90,8 +94,10 @@ def spots_svg() -> str:
     high_deg = MARK - LAG
     cx, cy = _point(ox, oy, whirl, high_deg)
     parts = [
-        _arrow(ox - 150, oy, ox + 180, oy, muted, 1.0), _text(ox + 180, oy + 18, "x", fg, italic=True),
-        _arrow(ox, oy + 140, ox, oy - 145, muted, 1.0), _text(ox + 12, oy - 135, "y", fg, italic=True),
+        _arrow(ox - 150, oy, ox + 180, oy, muted, 1.0),
+        _text(ox + 180, oy + 18, "x", fg, italic=True),
+        _arrow(ox, oy + 140, ox, oy - 145, muted, 1.0),
+        _text(ox + 12, oy - 135, "y", fg, italic=True),
         _circle(ox, oy, whirl, faint, dash="4 3"),
         _text(ox - 40, oy + 52, "whirl orbit", muted, "end"),
         _circle(cx, cy, radius, shaft, width=2.0),
@@ -148,13 +154,18 @@ def attitude_svg() -> str:
     pts = []
     for e in np.linspace(0.0, 0.999, 60):
         pts.append(_point(ox, oy, e * clear, -90.0 + math.degrees(attitude(e)) if e else 0.0))
-    parts.append("<polyline points='" + " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
-                 + f"' fill='none' stroke='{colors.mass[2]}' stroke-width='2'/>")
+    parts.append(
+        "<polyline points='"
+        + " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        + f"' fill='none' stroke='{colors.mass[2]}' stroke-width='2'/>"
+    )
     parts += [
         _arc(ox, oy, 30, -90.0, deg, fg, 1.2),
         _text(*_point(ox, oy, 54, (deg - 90.0) / 2), "χ", fg, italic=True),
-        _circle(ox, oy, 2.5, fill=muted), _circle(jx, jy, 3.5, fill=journal),
-        _arrow(jx, jy - 70, jx, jy - 5, load, 2.0), _text(jx + 8, jy - 56, "W", fg, "start", italic=True),
+        _circle(ox, oy, 2.5, fill=muted),
+        _circle(jx, jy, 3.5, fill=journal),
+        _arrow(jx, jy - 70, jx, jy - 5, load, 2.0),
+        _text(jx + 8, jy - 56, "W", fg, "start", italic=True),
         _text(tx + 6, ty + 14, "thinnest film", fg, "start"),
     ]
     # Labels down the right, each with a short leader.
@@ -167,8 +178,9 @@ def attitude_svg() -> str:
     ]
     for y, color, label, kind in legend:
         parts.append(_line(lx, y - 4, lx + 22, y - 4, color, 2.0, "4 3" if kind == "dash" else ""))
-        parts.append(_text(lx + 30, y, label.replace("radius c", "radius c<tspan font-size='10' dy='3'>r</tspan>"),
-                           fg, "start"))
+        parts.append(
+            _text(lx + 30, y, label.replace("radius c", "radius c<tspan font-size='10' dy='3'>r</tspan>"), fg, "start")
+        )
     parts += [
         _text(lx, oy + 18, f"here ε = {eps} and", muted, "start"),
         _text(lx, oy + 36, f"χ = {chi:.0f}° from the load line", muted, "start"),
@@ -178,7 +190,7 @@ def attitude_svg() -> str:
 
 def campbell_svg() -> str:
     """A schematic Campbell diagram: forward and backward branches, the 1X line, and where they cross."""
-    fg, muted, faint = colors.foreground, colors.muted, colors.faint
+    fg, muted, _faint = colors.foreground, colors.muted, colors.faint
     forward, backward, hot = colors.mass[0], colors.mass[1], colors.force
     x0, y0, w, h = 60.0, 290.0, 420.0, 250.0
     top = 2.6  # speed and frequency, in units of the natural frequency at rest
@@ -191,27 +203,35 @@ def campbell_svg() -> str:
         speeds = np.linspace(0.0, top, 80)
         pts = [at(s, fn(s)) for s in speeds if fn(s) <= top]
         d = f" stroke-dasharray='{dash}'" if dash else ""
-        return ("<polyline points='" + " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
-                + f"' fill='none' stroke='{color}' stroke-width='{width}'{d}/>")
+        return (
+            "<polyline points='"
+            + " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+            + f"' fill='none' stroke='{color}' stroke-width='{width}'{d}/>"
+        )
 
     def branch(sign: float):
         return lambda s: (sign * p * s + math.sqrt((p * s) ** 2 + 4.0)) / 2.0
 
     parts = [
-        _arrow(x0, y0, x0 + w + 20, y0, muted, 1.0), _arrow(x0, y0, x0, y0 - h - 20, muted, 1.0),
+        _arrow(x0, y0, x0 + w + 20, y0, muted, 1.0),
+        _arrow(x0, y0, x0, y0 - h - 20, muted, 1.0),
         _text(x0 + w + 16, y0 + 20, "spin speed Ω", fg, "end"),
         _text(x0 - 10, y0 - h - 26, "whirl frequency", fg, "start"),
-        curve(lambda s: s, fg, 1.5), _text(*at(2.3, 2.42), "1X", fg),
-        curve(branch(1.0), forward), _text(*at(2.55, branch(1.0)(2.55) + 0.12), "forward", fg, "end"),
-        curve(branch(-1.0), backward), _text(*at(2.55, branch(-1.0)(2.55) - 0.16), "backward", fg, "end"),
-        _circle(*at(0, 1), 3, fill=muted), _text(x0 - 8, at(0, 1)[1] + 4, "ω<tspan font-size='10' dy='3'>n</tspan>",
-                                                   fg, "end", italic=True),
+        curve(lambda s: s, fg, 1.5),
+        _text(*at(2.3, 2.42), "1X", fg),
+        curve(branch(1.0), forward),
+        _text(*at(2.55, branch(1.0)(2.55) + 0.12), "forward", fg, "end"),
+        curve(branch(-1.0), backward),
+        _text(*at(2.55, branch(-1.0)(2.55) - 0.16), "backward", fg, "end"),
+        _circle(*at(0, 1), 3, fill=muted),
+        _text(x0 - 8, at(0, 1)[1] + 4, "ω<tspan font-size='10' dy='3'>n</tspan>", fg, "end", italic=True),
     ]
     s_f, s_b = 1.0 / math.sqrt(1.0 - p), 1.0 / math.sqrt(1.0 + p)
     fx, fy = at(s_f, s_f)
     bx, by = at(s_b, s_b)
     parts += [
-        _line(fx, y0, fx, y0 - 7, muted, 1.5), _circle(fx, fy, 6, fill=hot),
+        _line(fx, y0, fx, y0 - 7, muted, 1.5),
+        _circle(fx, fy, 6, fill=hot),
         _text(fx + 12, fy + 24, "critical speed", fg, "start"),
         _circle(bx, by, 6, hot, colors.background, 2.0),
         _text(bx + 12, by + 30, "backward crossing", fg, "start"),
@@ -243,7 +263,7 @@ class FigureBrowser(QtWidgets.QTextBrowser):
     The document caches each image until its HTML is set again, so set it again after a theme change.
     """
 
-    def loadResource(self, kind: int, name: QtCore.QUrl):  # noqa: N802 (Qt's name)
+    def loadResource(self, kind: int, name: QtCore.QUrl):
         build = FIGURES.get(name.toString())
         if build is not None and kind == QtGui.QTextDocument.ResourceType.ImageResource:
             return render(build())

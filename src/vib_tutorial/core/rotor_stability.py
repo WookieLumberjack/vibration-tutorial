@@ -75,6 +75,7 @@ def stability_onset(system: RotorSystem, omega_max: float, n_speeds: int = 121) 
     Swept on a grid, then bisected to about 0.01 rpm; so is the end of the band,
     where it is stable again (an asymmetric shaft's), if that is below omega_max.
     """
+
     def unstable(w: float) -> bool:
         return least_damped(system, w)[0] < UNSTABLE
 
@@ -128,8 +129,9 @@ class AsymmetryChart:
     have passed, so a page can call it each frame; done tells when all are in.
     """
 
-    def __init__(self, system: RotorSystem, omega_max: float, delta_max: float = 0.5,
-                 n_deltas: int = 41, n_speeds: int = 121) -> None:
+    def __init__(
+        self, system: RotorSystem, omega_max: float, delta_max: float = 0.5, n_deltas: int = 41, n_speeds: int = 121
+    ) -> None:
         self.system = system
         self.asymmetries = np.linspace(0.0, delta_max, n_deltas)
         self.omegas = np.linspace(0.0, omega_max, n_speeds)
@@ -152,8 +154,9 @@ class AsymmetryChart:
             i, j = divmod(self._next, n)
             if j == 0:
                 self._row = self.system.with_(asymmetry=float(self.asymmetries[i]))
-                self.soft[i], self.stiff[i] = (_first_forward_critical(self._row.axis_system(stiff), self.omegas[-1])
-                                               for stiff in (False, True))
+                self.soft[i], self.stiff[i] = (
+                    _first_forward_critical(self._row.axis_system(stiff), self.omegas[-1]) for stiff in (False, True)
+                )
             self.growth[i, j] = growth_rate(self._row, float(self.omegas[j]))
             self._next += 1
             did = True

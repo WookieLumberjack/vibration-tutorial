@@ -487,9 +487,17 @@ class Simulator:
         if ck not in self._friction_cache:
             s = self.system
             self._friction_cache[ck] = native.module.FrictionSteps(
-                input_system(self._A, b, b_du), self._pull_rows(*inp), s.masses.tolist(), s.stiffness.tolist(),
-                s.damping.tolist(), s.friction.tolist(), s.static_friction.tolist(), key[0] == "base",
-                key[1] if key[0] == "force" else 0, EVENTS_PER_MASS)
+                input_system(self._A, b, b_du),
+                self._pull_rows(*inp),
+                s.masses.tolist(),
+                s.stiffness.tolist(),
+                s.damping.tolist(),
+                s.friction.tolist(),
+                s.static_friction.tolist(),
+                key[0] == "base",
+                key[1] if key[0] == "force" else 0,
+                EVENTS_PER_MASS,
+            )
         return self._friction_cache[ck]
 
     def _advance_friction_reference(self, h: float, steps: int) -> tuple[np.ndarray, ...]:
@@ -599,7 +607,7 @@ class Simulator:
         if self._done is not None:
             raise RuntimeError("collect the last advance before starting another")
         h = self.step_size()
-        steps = min(MAX_STEPS_PER_ADVANCE, max(0, int(round(duration / h))))
+        steps = min(MAX_STEPS_PER_ADVANCE, max(0, round(duration / h)))
         n = self.system.n
         self.steps_time = 0.0
         base = self.force.settings.base

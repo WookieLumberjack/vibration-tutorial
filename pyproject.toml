@@ -45,12 +45,34 @@ build = [
     "pyinstaller>=6.22.3",
 ]
 dev = [
+    "mypy>=2.4.1",
     "pillow>=11.0",  # scripts/readme_screenshots.py: 256-colour PNGs
     "pytest>=9.1.1",
     "pytest-xdist>=3.8.0",
+    "ruff>=0.17.3",
 ]
 
 [tool.pytest.ini_options]
 # Worker processes: the GUI tests' windows can't be freed (PySide's signal connections keep
 # them alive), and one process building all of them grew past 8 GB of address space.
 addopts = "-n auto --maxprocesses 4"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "UP", "RUF"]
+ignore = [
+    "E501",  # long lines: the formatter wraps the code; the notes' HTML strings stay as written
+    "E741",  # I (inertia), l (length): the physics' own symbols
+    "N802",  # Qt's overrides: closeEvent, showEvent, ...
+    "N803", "N806",  # M, K, C, A, H, ...: matrices are capitals, as in the notes
+    "RUF001", "RUF002", "RUF003",  # ×, −, σ, ...: the notes and comments write the maths in Unicode
+    "B905",  # zip(strict=): many zips pair arrays of one length; not yet audited
+    "RUF005",  # shape + (n,), tuple + (item,): the NumPy idiom reads better than unpacking
+    "RUF012",  # constant tables on Qt classes, never mutated
+]
+
+[tool.ruff.format]
+quote-style = "preserve"

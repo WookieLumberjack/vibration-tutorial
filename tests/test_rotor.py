@@ -194,7 +194,9 @@ def test_theory_lag_and_peak_come_just_after_the_critical():
     lag = -np.degrees(np.angle(v))
     assert np.interp(1584.0, rpm, lag) == pytest.approx(88.4, abs=0.05)
     assert round(float(np.interp(90.0, lag, rpm))) == 1586
-    assert rpm[np.abs(v).argmax()] == pytest.approx(1589.0, abs=0.5) and np.abs(v).max() * 1e6 == pytest.approx(217, abs=0.5)
+    assert rpm[np.abs(v).argmax()] == pytest.approx(1589.0, abs=0.5) and np.abs(v).max() * 1e6 == pytest.approx(
+        217, abs=0.5
+    )
     # At r = 1 the one-mass model's whirl is e/(2ζ): 215 µm with the first mode's ζ, close to the peak.
     modes = whirl_modes(RotorSystem(), 1584.0 / RPM)
     zeta = modes.zeta[np.argmin(modes.freq_hz)]
@@ -282,8 +284,7 @@ def test_overhung_shaft_flexibility_matches_the_cantilever_formulas(position):
     assert abs(flex[0, 1]) == pytest.approx(c * (2 * L + 3 * c) / (6 * EI))
     assert s.disc_stiffness == pytest.approx(1.0 / flex[0, 0])
     # The stations, and a rigid tilt along the whole shaft, overhang included.
-    np.testing.assert_allclose(s.shape_matrix([0.0, s.a, L]), [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]],
-                               atol=1e-12)
+    np.testing.assert_allclose(s.shape_matrix([0.0, s.a, L]), [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]], atol=1e-12)
     z = np.linspace(*s.extent, 13)
     np.testing.assert_allclose(s.shape_matrix(z) @ [0.0, s.a, 1.0, L], z, atol=1e-12)
 

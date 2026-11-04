@@ -56,64 +56,90 @@ PSD_UNITS = {Input.BASE: "g²/Hz", Input.FORCE_ONE: "N²/Hz", Input.FORCE_ALL: "
 
 TIPS = {
     "input": "<p><b>Force on one mass</b> or <b>on every mass</b> (independent forces, each with the PSD), or "
-             "the <b>base's acceleration</b>, as a shaker table or a vehicle's floor drives it: the chain then "
-             "moves relative to the base, each mass pushed by −m a<sub>g</sub>.</p>",
+    "the <b>base's acceleration</b>, as a shaker table or a vehicle's floor drives it: the chain then "
+    "moves relative to the base, each mass pushed by −m a<sub>g</sub>.</p>",
     "level": "<p>The input's power spectral density: its mean square per hertz, flat across the band. A force's in "
-             "N²/Hz, the base's in g²/Hz, as test specifications give it. Its RMS is √(level × bandwidth).</p>",
+    "N²/Hz, the base's in g²/Hz, as test specifications give it. Its RMS is √(level × bandwidth).</p>",
     "band": "<p>The band the input covers: nothing outside it. The response has nothing outside it either.</p>",
     "output": "<p>The response to look at: a mass's displacement (relative to the base, for a base input), its "
-              "acceleration (absolute, in g), or a spring's force (spring 1 ties m1 to the base).</p>",
+    "acceleration (absolute, in g), or a spring's force (spring 1 ties m1 to the base).</p>",
     "duration": "<p>The simulated record's length. A lightly damped mode needs a long one: Welch's lines must be "
-                "finer than its peak, and each line needs many averages.</p>",
+    "finer than its peak, and each line needs many averages.</p>",
     "block": "<p>Welch's block: its length sets the lines' spacing, f<sub>s</sub>/block, and the record's length "
-             "over it the number of averages. Long blocks resolve the peaks; short ones average more.</p>",
+    "over it the number of averages. Long blocks resolve the peaks; short ones average more.</p>",
     "new": "<p>A new record: the same spectrum, other random numbers.</p>",
 }
 INPUT_TIP = "<p>The input's PSD: the level asked for (flat over the band), and the record's input by Welch.</p>"
 PSD_TIP = (
     "<p>The response's power spectral density: exact, G<sub>y</sub> = H G<sub>u</sub> H<sup>H</sup>, and the "
-    "simulated record's by Welch's method. Each mode is a peak; the dotted lines mark them.</p>")
+    "simulated record's by Welch's method. Each mode is a peak; the dotted lines mark them.</p>"
+)
 CUMULATIVE_TIP = (
     "<p>The RMS so far, √∫<sub>0</sub><sup>f</sup> G df: each mode a step, its height its share. Dashed: the "
-    "Miles estimate (the modes' together) and the record's standard deviation.</p>")
+    "Miles estimate (the modes' together) and the record's standard deviation.</p>"
+)
 RECORD_TIP = "<p>The start of the simulated response, with ±1σ and ±3σ of the exact RMS.</p>"
 AMPLITUDE_TIP = (
     "<p>How the record's values are distributed, over σ (the exact RMS), against the Gaussian: a linear system's "
-    "response to a Gaussian input is Gaussian. Dashed: ±1, 2 and 3σ.</p>")
+    "response to a Gaussian input is Gaussian. Dashed: ±1, 2 and 3σ.</p>"
+)
 PEAKS_TIP = (
     "<p>The heights of the record's peaks (its local maxima), over σ, against Rice's distribution for the "
     "response's irregularity α = ν₀/ν<sub>p</sub>: Rayleigh for a narrow band (α = 1: one peak a cycle, all "
-    "above zero), towards Gaussian for a broad one (many small wiggles, some below zero).</p>")
+    "above zero), towards Gaussian for a broad one (many small wiggles, some below zero).</p>"
+)
 LARGEST_TIP = (
     "<p>How long a stretch to ask the largest peak of. The record is cut into stretches this long, and their "
-    "largest values averaged, to compare with Davenport's and Vanmarcke's expected largest peak.</p>")
+    "largest values averaged, to compare with Davenport's and Vanmarcke's expected largest peak.</p>"
+)
 AMPLITUDE_BINS = 60
 PEAK_BINS = 40
 
 # Things to try: (name, what it sets, note)
 TRIALS = (
-    ("Base shake", {},
-     "The base shaken flat at 0.01 g²/Hz over the chain's modes, the last mass's acceleration: each mode a "
-     "peak, and Miles' equation, mode by mode, within a few per cent of the exact RMS. The record's RMS "
-     "agrees to its scatter."),
-    ("Force on the last mass", {"input": Input.FORCE_ONE, "mass": -1},
-     "A random force on the last mass, its own acceleration: above the modes it is the force over the mass "
-     "(the mass line), not a resonance, and Miles' equation misses it: the wider the band, the more."),
-    ("Forces on every mass", {"input": Input.FORCE_ALL, "output": Quantity.DISPLACEMENT},
-     "Independent forces on every mass (wind, say), the last mass's displacement: dominated by mode 1, the "
-     "most flexible."),
-    ("The base spring's force", {"output": Quantity.SPRING, "index": 0},
-     "Spring 1, which carries the whole chain off the base: the force a fatigue check would need. Its RMS is "
-     "almost all mode 1."),
-    ("Short record", {"duration": 1 / 16},
-     "A sixteenth of the record: few blocks to average, and the Welch estimate is rough; its RMS scatters "
-     "round the exact one (press New record a few times)."),
-    ("Coarse lines", {"block": 1 / 16},
-     "Blocks a sixteenth as long: lines coarser than mode 1's peak, which comes out low and wide (the window "
-     "smears it). The RMS is still right: the area is kept."),
-    ("Narrow band on mode 2", {"band": (0.9, 1.1)},
-     "Only ±10 % round mode 2: one peak, its skirts cut off. Miles' equation, which counts the whole of a "
-     "mode's peak, now overestimates."),
+    (
+        "Base shake",
+        {},
+        "The base shaken flat at 0.01 g²/Hz over the chain's modes, the last mass's acceleration: each mode a "
+        "peak, and Miles' equation, mode by mode, within a few per cent of the exact RMS. The record's RMS "
+        "agrees to its scatter.",
+    ),
+    (
+        "Force on the last mass",
+        {"input": Input.FORCE_ONE, "mass": -1},
+        "A random force on the last mass, its own acceleration: above the modes it is the force over the mass "
+        "(the mass line), not a resonance, and Miles' equation misses it: the wider the band, the more.",
+    ),
+    (
+        "Forces on every mass",
+        {"input": Input.FORCE_ALL, "output": Quantity.DISPLACEMENT},
+        "Independent forces on every mass (wind, say), the last mass's displacement: dominated by mode 1, the "
+        "most flexible.",
+    ),
+    (
+        "The base spring's force",
+        {"output": Quantity.SPRING, "index": 0},
+        "Spring 1, which carries the whole chain off the base: the force a fatigue check would need. Its RMS is "
+        "almost all mode 1.",
+    ),
+    (
+        "Short record",
+        {"duration": 1 / 16},
+        "A sixteenth of the record: few blocks to average, and the Welch estimate is rough; its RMS scatters "
+        "round the exact one (press New record a few times).",
+    ),
+    (
+        "Coarse lines",
+        {"block": 1 / 16},
+        "Blocks a sixteenth as long: lines coarser than mode 1's peak, which comes out low and wide (the window "
+        "smears it). The RMS is still right: the area is kept.",
+    ),
+    (
+        "Narrow band on mode 2",
+        {"band": (0.9, 1.1)},
+        "Only ±10 % round mode 2: one peak, its skirts cut off. Miles' equation, which counts the whole of a "
+        "mode's peak, now overestimates.",
+    ),
 )
 
 NOTES_HTML = """
@@ -185,23 +211,27 @@ record holds 2.5 samples per period of the band's top: enough to describe it, si
 band, but not to see its peaks. It is interpolated eightfold before they are counted.</p>
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "sweeps-and-ground-motion", "Sweeps and ground motion"),
-    ("frf_page", "sum-of-modes", "Every term is a sum of modes"),
-)).replace("<!--TAKEAWAYS-->", takeaways(
-    "A random input is described by its PSD; a linear system's response PSD is H G Hᴴ, and its RMS is the "
-    "root of the area under it.",
-    "The cumulative RMS steps up at each mode: the steps say which modes matter.",
-    "Miles' equation, √((π/2) f<sub>n</sub> Q G), gives a lightly damped mode's RMS from the input at its own"
-    " frequency.",
-    "The response is Gaussian, but the largest peak in a record grows with its length: 3σ is not a maximum.",
-    "A PSD estimate trades resolution (long blocks) against scatter (many averages).",
-))
+NOTES_HTML = NOTES_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("sim_page", "sweeps-and-ground-motion", "Sweeps and ground motion"),
+        ("frf_page", "sum-of-modes", "Every term is a sum of modes"),
+    ),
+).replace(
+    "<!--TAKEAWAYS-->",
+    takeaways(
+        "A random input is described by its PSD; a linear system's response PSD is H G Hᴴ, and its RMS is the "
+        "root of the area under it.",
+        "The cumulative RMS steps up at each mode: the steps say which modes matter.",
+        "Miles' equation, √((π/2) f<sub>n</sub> Q G), gives a lightly damped mode's RMS from the input at its own"
+        " frequency.",
+        "The response is Gaussian, but the largest peak in a record grows with its length: 3σ is not a maximum.",
+        "A PSD estimate trades resolution (long blocks) against scatter (many averages).",
+    ),
+)
 
 
-
-def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = True
-          ) -> pg.PlotWidget:
+def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = True) -> pg.PlotWidget:
     p = pg.PlotWidget(axisItems=log_axes()) if log else pg.PlotWidget()
     p.setMenuEnabled(False)
     p.hideButtons()
@@ -303,8 +333,9 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.trial = QtWidgets.QComboBox()
         self.trial.addItems([name for name, _, _ in TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Settings that show something about random vibration, set from the chain as it "
-                              "is now.</p>")
+        self.trial.setToolTip(
+            "<p>Settings that show something about random vibration, set from the chain as it is now.</p>"
+        )
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -351,9 +382,11 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.miles_table = QtWidgets.QTableWidget()
         self.miles_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.miles_table.verticalHeader().setVisible(False)
-        self.miles_table.setToolTip("<p>Each mode in the band as a single-degree-of-freedom system under the input "
-                                    "at its frequency: its Q = 1/2ζ, and the RMS Miles' equation gives it. Their "
-                                    "SRSS is the Miles estimate; the share is each mode's of its square.</p>")
+        self.miles_table.setToolTip(
+            "<p>Each mode in the band as a single-degree-of-freedom system under the input "
+            "at its frequency: its Q = 1/2ζ, and the RMS Miles' equation gives it. Their "
+            "SRSS is the Miles estimate; the share is each mode's of its square.</p>"
+        )
         self.miles_note = QtWidgets.QLabel()
         self.miles_note.setWordWrap(True)
         self.miles_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
@@ -482,7 +515,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
             lo, hi = changes["band"][0] * f2, changes["band"][1] * f2
         inp = RandomInput(kind, 0.01 if kind is Input.BASE else 1.0, lo, hi)
         duration = suggested_duration(inp, self.result)
-        samples = int(round(duration * sample_rate(inp)))
+        samples = round(duration * sample_rate(inp))
         block = suggested_block(inp, self.result, samples)
         if "duration" in changes:
             duration *= changes["duration"]
@@ -505,8 +538,13 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self._schedule(measure=True)
 
     def random_input(self) -> RandomInput:
-        return RandomInput(self.kind.currentData(), self.level.value(), self.f_lo.value(), self.f_hi.value(),
-                           max(self.mass.currentIndex(), 0))
+        return RandomInput(
+            self.kind.currentData(),
+            self.level.value(),
+            self.f_lo.value(),
+            self.f_hi.value(),
+            max(self.mass.currentIndex(), 0),
+        )
 
     def output(self) -> Output:
         return Output(self.quantity.currentData(), max(self.index.currentIndex(), 0))
@@ -543,7 +581,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         else:
             self._recompute.start()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()
@@ -613,8 +651,13 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.psd_legend.addItem(welch_curve, "Record (Welch)")
         for i, m in enumerate(self.result.modes):
             if m.fn_hz > 0:
-                p.addItem(pg.InfiniteLine(math.log10(m.fn_hz), angle=90, pen=pg.mkPen(
-                    colors.mode[i % len(colors.mode)], width=1, style=QtCore.Qt.PenStyle.DotLine)))
+                p.addItem(
+                    pg.InfiniteLine(
+                        math.log10(m.fn_hz),
+                        angle=90,
+                        pen=pg.mkPen(colors.mode[i % len(colors.mode)], width=1, style=QtCore.Qt.PenStyle.DotLine),
+                    )
+                )
         top = float(np.max(pred.psd)) if pred.psd.size else 1.0
         if top > 0:
             p.setYRange(math.log10(top) - 6, math.log10(top) + 0.5, padding=0.0)
@@ -643,14 +686,18 @@ class RandomVibrationPage(QtWidgets.QWidget):
             f"<b>RMS</b>: exact {fmt(pred.rms, unit)}; the record {fmt(sim, unit)} "
             f"({100 * (sim / pred.rms - 1):+.2g} %, expected scatter ±{100 * scatter:.2g} %); Miles "
             f"{fmt(pred.miles_rms, unit)} ({100 * (pred.miles_rms / pred.rms - 1):+.2g} %)."
-            if pred.rms > 0 else "Nothing in the band reaches this response.")
+            if pred.rms > 0
+            else "Nothing in the band reaches this response."
+        )
         unit_in = "g" if inp.kind is Input.BASE else "N"
-        self.input_info.setText(f"The input's RMS: {inp.rms:.4g} {unit_in}"
-                                + (" on each mass." if inp.kind is Input.FORCE_ALL else "."))
+        self.input_info.setText(
+            f"The input's RMS: {inp.rms:.4g} {unit_in}" + (" on each mass." if inp.kind is Input.FORCE_ALL else ".")
+        )
         blocks = max(1, (y.size - block) // (block // 2) + 1) if y.size >= block else 1
         self.record_info.setText(
             f"{y.size:,} samples at {rec.fs:.4g} Hz; {blocks} blocks averaged (half overlapping), lines "
-            f"{rec.fs / block:.3g} Hz apart.")
+            f"{rec.fs / block:.3g} Hz apart."
+        )
         self._fill_miles(pred, unit)
         self._draw_record(y, rec.fs, pred.rms, unit)
         self._draw_statistics(y, rec.fs, pred, unit)
@@ -670,8 +717,14 @@ class RandomVibrationPage(QtWidgets.QWidget):
         p.clear()
         self.amplitude_legend.clear()
         h, edges = np.histogram((y - np.mean(y)) / r.sigma, bins=AMPLITUDE_BINS, range=(-5.0, 5.0), density=True)
-        bars = p.plot(edges, h, stepMode="center", fillLevel=0, pen=pg.mkPen(colors.mass[0], width=1),
-                      brush=pg.mkBrush(_alpha(colors.mass[0], 90)))
+        bars = p.plot(
+            edges,
+            h,
+            stepMode="center",
+            fillLevel=0,
+            pen=pg.mkPen(colors.mass[0], width=1),
+            brush=pg.mkBrush(_alpha(colors.mass[0], 90)),
+        )
         eta = np.linspace(-5.0, 5.0, 401)
         gauss = p.plot(eta, np.exp(-0.5 * eta * eta) / math.sqrt(2 * math.pi), pen=pg.mkPen(colors.strong, width=2))
         self.amplitude_legend.addItem(bars, "The record")
@@ -685,8 +738,14 @@ class RandomVibrationPage(QtWidgets.QWidget):
         p.clear()
         self.peaks_legend.clear()
         h, edges = np.histogram(st.peaks * st.sigma / r.sigma, bins=PEAK_BINS, range=(-3.0, 5.0), density=True)
-        bars = p.plot(edges, h, stepMode="center", fillLevel=0, pen=pg.mkPen(colors.mass[1], width=1),
-                      brush=pg.mkBrush(_alpha(colors.mass[1], 90)))
+        bars = p.plot(
+            edges,
+            h,
+            stepMode="center",
+            fillLevel=0,
+            pen=pg.mkPen(colors.mass[1], width=1),
+            brush=pg.mkBrush(_alpha(colors.mass[1], 90)),
+        )
         eta = np.linspace(-3.0, 5.0, 401)
         theory = p.plot(eta, peak_pdf(eta, r.alpha), pen=pg.mkPen(colors.strong, width=2))
         self.peaks_legend.addItem(bars, "The record's peaks")
@@ -696,15 +755,21 @@ class RandomVibrationPage(QtWidgets.QWidget):
         def row(name: str, exact: str, record: str) -> str:
             return f"<tr><td>{name}</td><td align='right'>{exact}</td><td align='right'>{record}</td></tr>"
 
-        rows = [row("σ", fmt(r.sigma, unit), fmt(st.sigma, unit)),
-                row("Upward zero crossings", f"{r.nu0:.4g} /s", f"{st.nu0:.4g} /s"),
-                row("Peaks", f"{r.nu_peak:.4g} /s", f"{st.nu_peak:.4g} /s"),
-                row("Irregularity α", f"{r.alpha:.3f}", f"{st.nu0 / st.nu_peak:.3f}" if st.nu_peak else "–")]
-        rows += [row(f"Beyond ±{k:g}σ", f"{100 * gaussian_exceedance(k):.3g} %", f"{100 * e:.3g} %")
-                 for k, e in zip(LEVELS, st.exceedance)]
+        rows = [
+            row("σ", fmt(r.sigma, unit), fmt(st.sigma, unit)),
+            row("Upward zero crossings", f"{r.nu0:.4g} /s", f"{st.nu0:.4g} /s"),
+            row("Peaks", f"{r.nu_peak:.4g} /s", f"{st.nu_peak:.4g} /s"),
+            row("Irregularity α", f"{r.alpha:.3f}", f"{st.nu0 / st.nu_peak:.3f}" if st.nu_peak else "–"),
+        ]
+        rows += [
+            row(f"Beyond ±{k:g}σ", f"{100 * gaussian_exceedance(k):.3g} %", f"{100 * e:.3g} %")
+            for k, e in zip(LEVELS, st.exceedance)
+        ]
         rows += [row("Skewness", "0", f"{st.skewness:+.3f}"), row("Kurtosis", "3", f"{st.kurtosis:.3f}")]
-        self.stats_table.setText("<table cellspacing='6'><tr><th></th><th align='right'>Rice, Gaussian</th>"
-                                 "<th align='right'>The record</th></tr>" + "".join(rows) + "</table>")
+        self.stats_table.setText(
+            "<table cellspacing='6'><tr><th></th><th align='right'>Rice, Gaussian</th>"
+            "<th align='right'>The record</th></tr>" + "".join(rows) + "</table>"
+        )
         self._show_largest()
 
     def _show_largest(self) -> None:
@@ -716,12 +781,15 @@ class RandomVibrationPage(QtWidgets.QWidget):
         dav, van = r.peak_factor(t), r.clumped_peak_factor(t)
         y = rec.output(self.output())
         maxima = segment_maxima(y, rec.fs, t)
-        text = (f"Over {t:g} s ({r.nu0 * t:.3g} cycles), the expected largest peak: Davenport {dav:.3g}σ = "
-                f"{fmt(dav * r.sigma, unit)}; Vanmarcke (δ = {r.delta:.2f}) {van:.3g}σ = {fmt(van * r.sigma, unit)}.")
+        text = (
+            f"Over {t:g} s ({r.nu0 * t:.3g} cycles), the expected largest peak: Davenport {dav:.3g}σ = "
+            f"{fmt(dav * r.sigma, unit)}; Vanmarcke (δ = {r.delta:.2f}) {van:.3g}σ = {fmt(van * r.sigma, unit)}."
+        )
         if maxima.size >= 4:
             mean = float(np.mean(maxima)) / r.sigma
-            text += (f" The record's {maxima.size} stretches of {t:g} s: their largest values average "
-                     f"<b>{mean:.3g}σ</b>.")
+            text += (
+                f" The record's {maxima.size} stretches of {t:g} s: their largest values average <b>{mean:.3g}σ</b>."
+            )
         else:
             text += f" (The record is too short for four stretches of {t:g} s to compare.)"
         self.largest_note.setText(text)
@@ -735,8 +803,15 @@ class RandomVibrationPage(QtWidgets.QWidget):
         t.setRowCount(len(rows) + 1)
         total = pred.miles_rms
         for r, (mode, fn, zeta, sigma) in enumerate(rows):
-            for c, text in enumerate((f"{mode}", f"{fn:.4g}", f"{zeta:.3g}", f"{1 / (2 * zeta):.3g}",
-                                      f"{sigma:.4g} ({100 * sigma**2 / total**2:.0f} %)" if total > 0 else "0")):
+            for c, text in enumerate(
+                (
+                    f"{mode}",
+                    f"{fn:.4g}",
+                    f"{zeta:.3g}",
+                    f"{1 / (2 * zeta):.3g}",
+                    f"{sigma:.4g} ({100 * sigma**2 / total**2:.0f} %)" if total > 0 else "0",
+                )
+            ):
                 item = QtWidgets.QTableWidgetItem(text)
                 item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
                 t.setItem(r, c, item)
@@ -746,7 +821,9 @@ class RandomVibrationPage(QtWidgets.QWidget):
         t.resizeColumnsToContents()
         self.miles_note.setText(
             f"Exact RMS {fmt(pred.rms, unit)}: Miles' estimate is {100 * (total / pred.rms - 1):+.2g} % off."
-            if pred.rms > 0 else "")
+            if pred.rms > 0
+            else ""
+        )
 
     def _draw_record(self, y: np.ndarray, fs: float, sigma: float, unit: str) -> None:
         p = self.record_plot
@@ -761,8 +838,9 @@ class RandomVibrationPage(QtWidgets.QWidget):
                 p.addItem(pg.InfiniteLine(sign * k * sigma, angle=0, pen=pg.mkPen(colors.muted, width=1, style=style)))
         p.setXRange(0.0, n / fs, padding=0.0)
         p.setYRange(-4.0 * sigma, 4.0 * sigma, padding=0.02)
-        self.record_note.setText(f"The first {n / fs:.3g} s ({SHOWN_PERIODS} periods of mode 1); dashed ±σ, "
-                                 f"dotted ±3σ, σ the exact RMS.")
+        self.record_note.setText(
+            f"The first {n / fs:.3g} s ({SHOWN_PERIODS} periods of mode 1); dashed ±σ, dotted ±3σ, σ the exact RMS."
+        )
 
 
 def _alpha(color: str, alpha: int):

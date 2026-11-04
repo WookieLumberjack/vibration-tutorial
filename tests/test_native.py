@@ -41,8 +41,13 @@ def test_pi_film_matches_the_reference():
     # Anywhere in the clearance and past the wall, centred, at rest and spinning either way.
     rng = np.random.default_rng(7)
     k, c = 2.4e3, 50e-6
-    cases = [(0.0, 0.0, 0.0, 0.0, 300.0), (0.0, 0.0, 1e-3, -2e-3, 300.0), (0.3 * c, 0.0, 0.0, 0.0, 0.0),
-             (0.0, -0.99 * c, 0.0, 0.0, 300.0), (2 * c, -c, 0.0, 0.0, 50.0)]
+    cases = [
+        (0.0, 0.0, 0.0, 0.0, 300.0),
+        (0.0, 0.0, 1e-3, -2e-3, 300.0),
+        (0.3 * c, 0.0, 0.0, 0.0, 0.0),
+        (0.0, -0.99 * c, 0.0, 0.0, 300.0),
+        (2 * c, -c, 0.0, 0.0, 50.0),
+    ]
     for _ in range(500):
         eps, angle = rng.choice([rng.uniform(0.0, 0.99), rng.uniform(1.0, 1.5)]), rng.uniform(0.0, 2 * math.pi)
         omega = rng.choice([1.0, -1.0]) * rng.uniform(1.0, 3000.0)
@@ -59,8 +64,12 @@ def test_pi_film_matches_the_reference():
         # force is good to only ~1e-3 in either, against a 50-digit evaluation, and the stiffness is noise.
         wall = math.hypot(case[0], case[1]) > 0.99 * c
         near = 1e-2 if wall else 1e-10
-        for part, tol in ((slice(0, 2), near), (slice(2, 6), None if wall else 1e-8),
-                          (slice(6, 9), near), (slice(9, 10), near)):
+        for part, tol in (
+            (slice(0, 2), near),
+            (slice(2, 6), None if wall else 1e-8),
+            (slice(6, 9), near),
+            (slice(9, 10), near),
+        ):
             if tol is not None:
                 scale = np.abs(want[part]).max()
                 np.testing.assert_allclose(got[part], want[part], rtol=0, atol=tol * scale, err_msg=str(case))
@@ -75,8 +84,9 @@ def test_full_film_damping_matches_the_reference():
         x, y = eps * c * math.cos(angle), eps * c * math.sin(angle)
         want = fluid_bearing.full_film_damping_reference(k, c, x, y)
         # At the wall it divides by (1 - ε²)^2.5 ~ 1e-15, and the platforms' pow round apart by ~1e-13 there.
-        np.testing.assert_allclose(native.module.full_film_damping(k, c, x, y), want, rtol=0,
-                                   atol=1e-12 * max(abs(v) for v in want))
+        np.testing.assert_allclose(
+            native.module.full_film_damping(k, c, x, y), want, rtol=0, atol=1e-12 * max(abs(v) for v in want)
+        )
 
 
 @needs_native
@@ -93,10 +103,10 @@ def test_expm_matches_scipy():
     n, h = 8, 1.2e-4
     k = np.diag(rng.uniform(1e6, 4e8, n))
     a = np.zeros((4 * n, 4 * n))
-    a[:n, n:2 * n] = np.eye(n) * h
-    a[n:2 * n, :n], a[n:2 * n, n:2 * n] = -k * h, -1e-3 * k * h
-    a[n:2 * n, 2 * n:3 * n] = h * np.eye(n)
-    a[2 * n:3 * n, 3 * n:] = np.eye(n)
+    a[:n, n : 2 * n] = np.eye(n) * h
+    a[n : 2 * n, :n], a[n : 2 * n, n : 2 * n] = -k * h, -1e-3 * k * h
+    a[n : 2 * n, 2 * n : 3 * n] = h * np.eye(n)
+    a[2 * n : 3 * n, 3 * n :] = np.eye(n)
     assert np.abs(a).sum(axis=0).max() > 1e3
     want = scipy.linalg.expm(a)
     np.testing.assert_allclose(native.module.expm(a), want, rtol=0, atol=1e-13 * np.abs(want).max())
@@ -107,15 +117,16 @@ def test_expm_matches_scipy():
 def test_foh_discretize_matches_the_python(density):
     # The film step's update, worked out in the augmented matrix's blocks, on the rotor's own A and B with
     # its films' damping bound: as simulator.foh_discretize's dense expm gives it.
-    system = RotorSystem(bearing_a=JOURNAL_BEARING, bearing_b=JOURNAL_BEARING, gravity=9.81, density=density,
-                         nonlinear_films=True)
+    system = RotorSystem(
+        bearing_a=JOURNAL_BEARING, bearing_b=JOURNAL_BEARING, gravity=9.81, density=density, nonlinear_films=True
+    )
     sim = RotorSimulator(system)
     sim._film_steps = sim._film_steps_reference
     sim.omega = sim.target = 6000.0 / RPM
     sim.advance(0.2)
     films, n, h = sim._films, system.n_dof, sim._films.key[0]
     a = films.A.copy()
-    a[n:2 * n, films.rates] -= system.mass_inverse[:, films.dofs] @ (films.Cb - films.Cf)
+    a[n : 2 * n, films.rates] -= system.mass_inverse[:, films.dofs] @ (films.Cb - films.Cf)
     b = system.input_matrix()
     # The kernel balances the matrix first (the rotor's A h runs from h to K/M h), so it's the more
     # accurate of the two: against a 40-digit evaluation ~1e-15 at the step, where SciPy's is ~1e-14.
@@ -126,17 +137,26 @@ def test_foh_discretize_matches_the_python(density):
 
 
 @needs_native
-@pytest.mark.parametrize("gravity, density, rpm, drifts", [
-    (9.81, 0.0, 9000.0, False),  # Journal bearings (oil whip), past the whip's onset
-    (0.0, 0.0, 3500.0, True),  # Oil whirl (vertical rotor): the journals circle past ε = 0.9, the bound retaken often
-    (9.81, 7800.0, 6000.0, False),  # a shaft with mass: more states than the stations'
-])
+@pytest.mark.parametrize(
+    "gravity, density, rpm, drifts",
+    [
+        (9.81, 0.0, 9000.0, False),  # Journal bearings (oil whip), past the whip's onset
+        (
+            0.0,
+            0.0,
+            3500.0,
+            True,
+        ),  # Oil whirl (vertical rotor): the journals circle past ε = 0.9, the bound retaken often
+        (9.81, 7800.0, 6000.0, False),  # a shaft with mass: more states than the stations'
+    ],
+)
 def test_film_steps_match_the_reference(gravity, density, rpm, drifts):
     # The kernel steps as _film_steps_reference does, taking the damping bound afresh as the journals
     # drift (with its own expm): the same motion to rounding error, while ramping and at a steady speed.
     # Its expm (balanced) is a little more accurate than SciPy's; the two part by ~1e-12 of the motion.
-    system = RotorSystem(bearing_a=JOURNAL_BEARING, bearing_b=JOURNAL_BEARING, gravity=gravity,
-                         density=density, nonlinear_films=True)
+    system = RotorSystem(
+        bearing_a=JOURNAL_BEARING, bearing_b=JOURNAL_BEARING, gravity=gravity, density=density, nonlinear_films=True
+    )
     sims = [RotorSimulator(system), RotorSimulator(system)]
     sims[1]._film_steps = sims[1]._film_steps_reference
     for sim in sims:
@@ -148,19 +168,21 @@ def test_film_steps_match_the_reference(gravity, density, rpm, drifts):
         for _ in range(2):
             got, want = sims[0].advance(0.15), sims[1].advance(0.15)
             np.testing.assert_allclose(got.q, want.q, rtol=0, atol=1e-10 * np.abs(want.q).max())
-            np.testing.assert_allclose(sims[0].state, sims[1].state, rtol=0,
-                                       atol=1e-10 * np.abs(sims[1].state).max())
+            np.testing.assert_allclose(sims[0].state, sims[1].state, rtol=0, atol=1e-10 * np.abs(sims[1].state).max())
     # At speed the kernel keeps its bound from one advance to the next, and retakes it as the journals drift.
     assert (sims[0]._films.kernel.takes > takes) == drifts
 
 
 @needs_native
-@pytest.mark.parametrize("name, density, rpm", [
-    ("Partial rub (½X)", 0.0, 4400.0),  # under gravity, hitting the ring's bottom now and then
-    ("Full rub (backward whirl)", 0.0, 2000.0),  # held against it all round, the friction's drag stiff
-    ("Full rub (backward whirl)", 7800.0, 2000.0),  # a shaft with mass: more states than the stations'
-    ("Newkirk effect (thermal bow)", 0.0, 1300.0),  # the thermal bow moving the load between chunks
-])
+@pytest.mark.parametrize(
+    "name, density, rpm",
+    [
+        ("Partial rub (½X)", 0.0, 4400.0),  # under gravity, hitting the ring's bottom now and then
+        ("Full rub (backward whirl)", 0.0, 2000.0),  # held against it all round, the friction's drag stiff
+        ("Full rub (backward whirl)", 7800.0, 2000.0),  # a shaft with mass: more states than the stations'
+        ("Newkirk effect (thermal bow)", 0.0, 1300.0),  # the thermal bow moving the load between chunks
+    ],
+)
 def test_rub_steps_match_the_reference(name, density, rpm):
     # The kernel steps as _rub_steps_reference does, Newton and all: the same motion, push and heat to
     # rounding error, while ramping and at a steady speed.
@@ -179,8 +201,7 @@ def test_rub_steps_match_the_reference(name, density, rpm):
             np.testing.assert_allclose(got.q, want.q, rtol=0, atol=1e-9 * np.abs(want.q).max())
             gap = np.abs(got.rub - want.rub).max(axis=0) / np.maximum(np.abs(want.rub).max(axis=0), 1e-300)
             assert gap.max() < 1e-9, gap  # each column: f_x, f_y, N, heat
-            np.testing.assert_allclose(sims[0].state, sims[1].state, rtol=0,
-                                       atol=1e-9 * np.abs(sims[1].state).max())
+            np.testing.assert_allclose(sims[0].state, sims[1].state, rtol=0, atol=1e-9 * np.abs(sims[1].state).max())
     assert sims[0].thermal_bow == pytest.approx(sims[1].thermal_bow, rel=1e-9)
 
 
@@ -201,8 +222,12 @@ FRICTION_CASES = {
     "eight masses": (ChainSystem([0.5] * 8, [2000.0] * 8, [0.5] * 8, [1.0] * 8), 5.0, 20.0, False),
     "stiff, 1 kHz": (ChainSystem([0.01] * 4, [1e5] * 4, [0.1] * 4, [0.5] * 4), 1000.0, 50.0, False),
     "ground motion": (ChainSystem([1.0] * 3, [400.0] * 3, [1.0] * 3, [0.3, 0.2, 0.5]), 2.0, 0.01, True),
-    "static friction, a free mass": (ChainSystem([1.0] * 3, [400.0] * 3, [1.0] * 3, [0.3, 0.0, 0.5],
-                                                 static_ratio=1.5), 2.0, 2.0, False),
+    "static friction, a free mass": (
+        ChainSystem([1.0] * 3, [400.0] * 3, [1.0] * 3, [0.3, 0.0, 0.5], static_ratio=1.5),
+        2.0,
+        2.0,
+        False,
+    ),
 }
 
 
@@ -229,16 +254,19 @@ def test_friction_steps_match_the_reference(case, monkeypatch):
 def test_friction_drive_matches_the_reference(monkeypatch):
     # The virtual modal test's path: a burst, a quiet stretch where everything sticks (skipped), a step, noise.
     rng = np.random.default_rng(1)
-    f = np.concatenate([rng.normal(scale=3.0, size=800), np.zeros(1500), np.full(300, 0.4),
-                        rng.normal(scale=1.0, size=500)])
-    for system in (ChainSystem([1.0] * 3, [400.0] * 3, [1.0] * 3, [0.3, 0.2, 0.5]),
-                   ChainSystem([0.5] * 8, [2000.0] * 8, [0.5] * 8, [1.0] * 8, static_ratio=1.3)):
+    f = np.concatenate(
+        [rng.normal(scale=3.0, size=800), np.zeros(1500), np.full(300, 0.4), rng.normal(scale=1.0, size=500)]
+    )
+    for system in (
+        ChainSystem([1.0] * 3, [400.0] * 3, [1.0] * 3, [0.3, 0.2, 0.5]),
+        ChainSystem([0.5] * 8, [2000.0] * 8, [0.5] * 8, [1.0] * 8, static_ratio=1.3),
+    ):
         got = Simulator(system).drive(f, 2.0**-11)
         with monkeypatch.context() as m:
             m.setattr(native, "module", None)
             ref = Simulator(system)
             want = ref.drive(f, 2.0**-11)
-        assert (np.abs(want[0][:, system.n:]).max(axis=1) == 0.0).sum() > 1000  # the quiet stretch stuck
+        assert (np.abs(want[0][:, system.n :]).max(axis=1) == 0.0).sum() > 1000  # the quiet stretch stuck
         for g, w in zip(got, want):
             np.testing.assert_allclose(g, w, rtol=0, atol=1e-11 * np.abs(w).max())
 

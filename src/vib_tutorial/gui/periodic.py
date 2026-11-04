@@ -76,44 +76,60 @@ TRIALS = (
         "1/k. With 5 kept, the series already looks square, but it overshoots each jump by 19 % of F. Keeping more terms "
         "only narrows the overshoot; its height settles at 18 % of F, 9 % of the jump (Gibbs). The response is "
         "smoother: the oscillator divides the k-th harmonic by about k² above f<sub>n</sub>.",
-        harmonics=5),
+        harmonics=5,
+    ),
     PeriodicTrial(
         "Resonance through the third harmonic",
         "The square wave at f<sub>n</sub>/3 = 1.06 Hz. Its fundamental is far below resonance, but its third "
         "harmonic, 4/3π = 0.42 N, sits on f<sub>n</sub>, where |H| = 1/cω<sub>n</sub> = 25 mm/N: it alone swings "
         "the mass 10.6 mm, three times the fundamental's 3.6 mm. The response rings at three times the drive: "
         "slow machines excite fast modes this way.",
-        tune=3, harmonics=7),
+        tune=3,
+        harmonics=7,
+    ),
     PeriodicTrial(
         "No even harmonics, no resonance",
         "The same square wave at f<sub>n</sub>/2. A square wave has no second harmonic, so nothing reaches "
         "f<sub>n</sub>: the response is 5.0 mm, a third of the 13.9 mm at f<sub>n</sub>/3, though the drive is "
         "closer to resonance.",
-        tune=2, harmonics=7),
+        tune=2,
+        harmonics=7,
+    ),
     PeriodicTrial(
         "Hammer blows",
         "A 0.1 N·s blow every second. An impulse train has every harmonic at the same height, 2I/T = 0.2 N, so "
         "the line spectra show H itself, sampled at 1 Hz steps. In time, each blow sets the mass ringing and "
         "the next arrives before it has died away (τ = 1 s): the steady state swings from −4.5 to 5.2 mm about the "
         "mean I/kT = 0.25 mm.",
-        wave=Wave.IMPULSES, amplitude=0.1, harmonics=20),
+        wave=Wave.IMPULSES,
+        amplitude=0.1,
+        harmonics=20,
+    ),
     PeriodicTrial(
         "A rectified sine",
         "F|sin πt/T| with F = 1 N: a mean of 2F/π = 0.64 N, which only sags the spring, 1.59 mm, and harmonics "
         "−4F/π(4k² − 1) that fall as 1/k². What a full-wave rectifier, or a cam, puts on its mounts.",
-        wave=Wave.RECTIFIED, harmonics=5),
+        wave=Wave.RECTIFIED,
+        harmonics=5,
+    ),
     PeriodicTrial(
         "Smooth waves converge faster",
         "A triangle's harmonics fall as 1/k², a square's as 1/k: with 3 harmonics the triangle's response series "
         "is within 1.9 % of the exact steady state, the square's 5.7 %; with 9, 0.10 % against 0.65 %. A jump in "
         "the force costs 1/k, a kink 1/k². The Convergence tab draws it.",
-        wave=Wave.TRIANGLE, harmonics=3, tab=TAB_CONVERGENCE),
+        wave=Wave.TRIANGLE,
+        harmonics=3,
+        tab=TAB_CONVERGENCE,
+    ),
     PeriodicTrial(
         "Starting from rest",
         "The square wave at f<sub>n</sub>/3, switched on from rest. The resonant third harmonic builds up over a "
         "few time constants (1 s), as a sine at f<sub>n</sub> would: the steady state only arrives once the start "
         "has died away.",
-        tune=3, harmonics=7, tab=TAB_REST),
+        tune=3,
+        harmonics=7,
+        tab=TAB_REST,
+    ),
 )
 
 TIPS = {
@@ -127,14 +143,20 @@ TIPS = {
     "harmonics": "<p>How many harmonics the series keeps.</p>",
     "tune": "<p>Set f₀ to f<sub>n</sub> divided by this, so that harmonic sits on resonance.</p>",
 }
-TIME_TIP = ("<p>Two periods. Grey: the true waveform; colour: its Fourier series with the harmonics kept.</p>")
-RESPONSE_TIP = ("<p>The steady response over two periods: solid, exact (one period stepped from the state that "
-                "repeats); dashed, the series Σ H(kω₀) C<sub>k</sub> e<sup>ikω₀t</sup>.</p>")
-LINES_TIP = ("<p>Each harmonic's amplitude at its frequency: the force's (top) and the response's (bottom), with "
-             "the receptance |H| (dashed, scaled to the force's largest harmonic) and f<sub>n</sub> (dotted).</p>")
+TIME_TIP = "<p>Two periods. Grey: the true waveform; colour: its Fourier series with the harmonics kept.</p>"
+RESPONSE_TIP = (
+    "<p>The steady response over two periods: solid, exact (one period stepped from the state that "
+    "repeats); dashed, the series Σ H(kω₀) C<sub>k</sub> e<sup>ikω₀t</sup>.</p>"
+)
+LINES_TIP = (
+    "<p>Each harmonic's amplitude at its frequency: the force's (top) and the response's (bottom), with "
+    "the receptance |H| (dashed, scaled to the force's largest harmonic) and f<sub>n</sub> (dotted).</p>"
+)
 REST_TIP = "<p>Switched on from rest, stepped exactly; the steady state's band dotted.</p>"
-CONVERGENCE_TIP = ("<p>The series' largest error over a period against the exact steady state, over the steady "
-                   "swing, against the number of harmonics kept. Dotted: 1/N and 1/N².</p>")
+CONVERGENCE_TIP = (
+    "<p>The series' largest error over a period against the exact steady state, over the steady "
+    "swing, against the number of harmonics kept. Dotted: 1/N and 1/N².</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -184,15 +206,25 @@ single sine; it dies away in a few time constants 1/ζω<sub>n</sub>. The <i>Fro
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sdof_page", "forced-response", "Forced response"),
-    ("transient_page", "fourier-pair", "The impulse response and the FRF"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "A periodic force is a line spectrum: its mean and harmonics at whole multiples of f₀.",
-    "Each harmonic goes through H(kω₀) on its own; a mode at any k f₀ resonates.",
-    "The harmonics fall as 1/k after a jump, 1/k² after a kink; a jump's series overshoots it by 9 % (Gibbs).",
-    "The steady state can be found exactly from one period: z₀ = (I − Φ<sub>T</sub>)<sup>−1</sup>z<sub>p</sub>.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sdof_page", "forced-response", "Forced response"),
+            ("transient_page", "fourier-pair", "The impulse response and the FRF"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "A periodic force is a line spectrum: its mean and harmonics at whole multiples of f₀.",
+            "Each harmonic goes through H(kω₀) on its own; a mode at any k f₀ resonates.",
+            "The harmonics fall as 1/k after a jump, 1/k² after a kink; a jump's series overshoots it by 9 % (Gibbs).",
+            "The steady state can be found exactly from one period: z₀ = (I − Φ<sub>T</sub>)<sup>−1</sup>z<sub>p</sub>.",
+        ),
+    )
+)
 
 
 def stems(x: np.ndarray, y: np.ndarray, floor: float) -> tuple[np.ndarray, np.ndarray]:
@@ -213,9 +245,10 @@ class PeriodicPage(QtWidgets.QWidget):
         self.osc = Oscillator()
         self.forcing = Forcing()
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the force and the oscillator to show one idea from the Theory "
-                               "tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each sets up the force and the oscillator to show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         osc = Form("Oscillator")
@@ -244,8 +277,10 @@ class PeriodicPage(QtWidgets.QWidget):
         tune_row.addWidget(self.tune_k)
         force.row(tune_row)
 
-        connect_all((self.mass, self.stiffness, self.damping, self.wave, self.amplitude, self.freq, self.duty,
-                     self.harmonics), self._on_inputs)
+        connect_all(
+            (self.mass, self.stiffness, self.damping, self.wave, self.amplitude, self.freq, self.duty, self.harmonics),
+            self._on_inputs,
+        )
 
         # --- centre
         self.force_plot = plot("Force", "N", "Time", "s", height=150)
@@ -278,8 +313,10 @@ class PeriodicPage(QtWidgets.QWidget):
         self.xstems = pg.PlotDataItem(connect="pairs")
         self.xdots = marker(6)
         self.fn_lines = [pg.InfiniteLine(angle=90), pg.InfiniteLine(angle=90)]
-        for p, items in ((self.fline_plot, (self.fn_lines[0], self.H_item, self.fstems, self.fdots)),
-                         (self.xline_plot, (self.fn_lines[1], self.xstems, self.xdots))):
+        for p, items in (
+            (self.fline_plot, (self.fn_lines[0], self.H_item, self.fstems, self.fdots)),
+            (self.xline_plot, (self.fn_lines[1], self.xstems, self.xdots)),
+        ):
             p.setToolTip(LINES_TIP)
             p.setMouseEnabled(x=True, y=False)
             for item in items:
@@ -296,8 +333,9 @@ class PeriodicPage(QtWidgets.QWidget):
             self.rest_plot.addItem(item)
         self.rest_note = note_label()
 
-        self.conv_plot = plot("Largest error / steady swing", None, "Harmonics kept N", None, log_x=True,
-                              log_y=True, height=200)
+        self.conv_plot = plot(
+            "Largest error / steady swing", None, "Harmonics kept N", None, log_x=True, log_y=True, height=200
+        )
         self.conv_plot.setToolTip(CONVERGENCE_TIP)
         self.conv_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.conv_plot.getPlotItem(), offset=(-10, 10))
@@ -316,8 +354,12 @@ class PeriodicPage(QtWidgets.QWidget):
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tab())
 
-        three_panes(self, column(self.trials, osc, force),
-                    stack((self.force_plot, 2), (self.x_plot, 3), (self.readout, 0)), self.tabs)
+        three_panes(
+            self,
+            column(self.trials, osc, force),
+            stack((self.force_plot, 2), (self.x_plot, 3), (self.readout, 0)),
+            self.tabs,
+        )
         self._on_inputs()
         self.apply_theme()
 
@@ -326,9 +368,16 @@ class PeriodicPage(QtWidgets.QWidget):
         t = TRIALS[index]
         osc = Oscillator(1.0, 400.0, t.damping)
         freq = osc.natural_hz / t.tune if t.tune else t.freq_hz
-        for box, value in ((self.mass, 1.0), (self.stiffness, 400.0), (self.damping, t.damping),
-                           (self.wave, WAVES.index(t.wave)), (self.amplitude, t.amplitude), (self.freq, freq),
-                           (self.duty, t.duty), (self.harmonics, t.harmonics)):
+        for box, value in (
+            (self.mass, 1.0),
+            (self.stiffness, 400.0),
+            (self.damping, t.damping),
+            (self.wave, WAVES.index(t.wave)),
+            (self.amplitude, t.amplitude),
+            (self.freq, freq),
+            (self.duty, t.duty),
+            (self.harmonics, t.harmonics),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -344,8 +393,10 @@ class PeriodicPage(QtWidgets.QWidget):
         self.duty.setEnabled(wave is Wave.PULSES)
         self.amplitude.setSuffix(" N·s" if wave is Wave.IMPULSES else " N")
         o = self.osc
-        self.osc_info.setText(f"f<sub>n</sub> = {o.natural_hz:.4g} Hz, ζ = {o.zeta:.3g}; f<sub>n</sub>/f₀ = "
-                              f"{o.natural_hz / self.forcing.freq_hz:.3g}.")
+        self.osc_info.setText(
+            f"f<sub>n</sub> = {o.natural_hz:.4g} Hz, ζ = {o.zeta:.3g}; f<sub>n</sub>/f₀ = "
+            f"{o.natural_hz / self.forcing.freq_hz:.3g}."
+        )
         self.redraw()
 
     # ------------------------------------------------------------- drawing
@@ -405,11 +456,14 @@ class PeriodicPage(QtWidgets.QWidget):
             self.readout.setText(
                 f"Steady state from {fmt(float(exact.min()), 'm')} to {fmt(float(exact.max()), 'm')} (mean "
                 f"{fmt(mean, 'm')}); with {n} harmonic{'s' if n > 1 else ''} the series is within "
-                f"{100 * err:.3g} % of its swing.")
+                f"{100 * err:.3g} % of its swing."
+            )
         else:
             self.exact_item.setData([], [])
-            self.readout.setText("A harmonic sits exactly on f<sub>n</sub> with no damping: there is no steady "
-                                 "state (the swing grows for ever; see From rest).")
+            self.readout.setText(
+                "A harmonic sits exactly on f<sub>n</sub> with no damping: there is no steady "
+                "state (the swing grows for ever; see From rest)."
+            )
         self.xseries_item.setData(t, np.where(np.isfinite(approx), approx, np.nan), connect="finite")
         self.force_plot.setXRange(0.0, 2 * T, padding=0)
 
@@ -448,9 +502,11 @@ class PeriodicPage(QtWidgets.QWidget):
         order = np.argsort(Xa[finite])[::-1][:3]
         ks = np.arange(n + 1)[keep][finite]
         total = float(np.sum(Xa[finite][ks > 0] ** 2)) or 1.0
-        parts = [f"k = {ks[i]} ({fmt(f[keep][finite][i], 'Hz')}): {fmt(float(Xa[finite][i]), 'm')}"
-                 + (f", {100 * Xa[finite][i] ** 2 / total:.3g} % of the swing's power" if ks[i] > 0 else " (mean)")
-                 for i in order]
+        parts = [
+            f"k = {ks[i]} ({fmt(f[keep][finite][i], 'Hz')}): {fmt(float(Xa[finite][i]), 'm')}"
+            + (f", {100 * Xa[finite][i] ** 2 / total:.3g} % of the swing's power" if ks[i] > 0 else " (mean)")
+            for i in order
+        ]
         self.lines_note.setText("Largest response harmonics: " + "; ".join(parts) + ".")
 
     def _draw_rest(self) -> None:
@@ -464,14 +520,18 @@ class PeriodicPage(QtWidgets.QWidget):
             for line, v in zip(self.band_items, (steady.min(), steady.max())):
                 line.setPos(float(v))
                 line.setVisible(True)
-            self.rest_note.setText(f"{periods:.0f} periods from rest. The steady state (dotted) swings from "
-                                   f"{fmt(float(steady.min()), 'm')} to {fmt(float(steady.max()), 'm')}; the largest "
-                                   f"swing on the way is {fmt(float(np.max(np.abs(x))), 'm')}.")
+            self.rest_note.setText(
+                f"{periods:.0f} periods from rest. The steady state (dotted) swings from "
+                f"{fmt(float(steady.min()), 'm')} to {fmt(float(steady.max()), 'm')}; the largest "
+                f"swing on the way is {fmt(float(np.max(np.abs(x))), 'm')}."
+            )
         else:
             for line in self.band_items:
                 line.setVisible(False)
-            self.rest_note.setText(f"{periods:.0f} periods from rest: with no damping and a harmonic on f<sub>n</sub> "
-                                   "the swing grows without bound.")
+            self.rest_note.setText(
+                f"{periods:.0f} periods from rest: with no damping and a harmonic on f<sub>n</sub> "
+                "the swing grows without bound."
+            )
         self.rest_plot.setXRange(0.0, t[-1], padding=0)
 
     def _draw_convergence(self) -> None:
@@ -483,7 +543,7 @@ class PeriodicPage(QtWidgets.QWidget):
         if ok.any():
             e0 = float(errs[ok][0]) * ns[ok][0]
             self.slope_items[0].setData(ns, e0 / ns)
-            self.slope_items[1].setData(ns, e0 / ns ** 2)
+            self.slope_items[1].setData(ns, e0 / ns**2)
         n = self.n_harmonics
         now = series_error(osc, fo, n, 800)
         if np.isfinite(now) and now > 0:
@@ -493,5 +553,7 @@ class PeriodicPage(QtWidgets.QWidget):
         low = math.log10(float(errs[ok].min())) if ok.any() else -6.0
         self.conv_plot.setXRange(0.0, math.log10(MOST), padding=0.02)
         self.conv_plot.setYRange(min(-4.0, math.floor(low - 0.3)), 0.5, padding=0)
-        self.conv_note.setText(f"{fo.wave.value}: with {n} harmonics kept the series is within {100 * now:.3g} % "
-                               "of the exact steady state's swing.")
+        self.conv_note.setText(
+            f"{fo.wave.value}: with {n} harmonics kept the series is within {100 * now:.3g} % "
+            "of the exact steady state's swing."
+        )

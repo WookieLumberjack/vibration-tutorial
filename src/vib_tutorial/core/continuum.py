@@ -70,8 +70,11 @@ class End(Enum):
     CLAMPED = "Clamped"  # beam: no deflection, no slope
 
 
-ENDS = {Kind.STRING: (End.FIXED, End.FREE), Kind.BAR: (End.FIXED, End.FREE),
-        Kind.BEAM: (End.CLAMPED, End.PINNED, End.FREE)}
+ENDS = {
+    Kind.STRING: (End.FIXED, End.FREE),
+    Kind.BAR: (End.FIXED, End.FREE),
+    Kind.BEAM: (End.CLAMPED, End.PINNED, End.FREE),
+}
 
 
 class Scheme(Enum):
@@ -211,8 +214,10 @@ def _beam_roots(left: End, right: End, count: int) -> np.ndarray:
     def f(b: float) -> float:
         return float(np.linalg.det(_beam_matrix(left, right, np.array([b]))[0]))
 
-    roots = [scipy.optimize.brentq(f, grid[i], grid[i + 1], xtol=1e-14)
-             for i in np.flatnonzero(np.sign(det[:-1]) * np.sign(det[1:]) < 0)]
+    roots = [
+        scipy.optimize.brentq(f, grid[i], grid[i + 1], xtol=1e-14)
+        for i in np.flatnonzero(np.sign(det[:-1]) * np.sign(det[1:]) < 0)
+    ]
     roots = np.array(roots[:count])
     if roots.size < count:
         raise RuntimeError("missed a root of the beam's frequency equation")
@@ -228,14 +233,31 @@ def element_matrices(c: Continuum, h: float, scheme: Scheme) -> tuple[np.ndarray
         beta = STENCIL[scheme]
         m = mu * h * np.array([[0.5 - beta, beta], [beta, 0.5 - beta]])
         return k, m
-    k = r / h**3 * np.array([[12, 6 * h, -12, 6 * h],
-                             [6 * h, 4 * h * h, -6 * h, 2 * h * h],
-                             [-12, -6 * h, 12, -6 * h],
-                             [6 * h, 2 * h * h, -6 * h, 4 * h * h]])
-    consistent = mu * h / 420 * np.array([[156, 22 * h, 54, -13 * h],
-                                          [22 * h, 4 * h * h, 13 * h, -3 * h * h],
-                                          [54, 13 * h, 156, -22 * h],
-                                          [-13 * h, -3 * h * h, -22 * h, 4 * h * h]])
+    k = (
+        r
+        / h**3
+        * np.array(
+            [
+                [12, 6 * h, -12, 6 * h],
+                [6 * h, 4 * h * h, -6 * h, 2 * h * h],
+                [-12, -6 * h, 12, -6 * h],
+                [6 * h, 2 * h * h, -6 * h, 4 * h * h],
+            ]
+        )
+    )
+    consistent = (
+        mu
+        * h
+        / 420
+        * np.array(
+            [
+                [156, 22 * h, 54, -13 * h],
+                [22 * h, 4 * h * h, 13 * h, -3 * h * h],
+                [54, 13 * h, 156, -22 * h],
+                [-13 * h, -3 * h * h, -22 * h, 4 * h * h],
+            ]
+        )
+    )
     lumped = mu * h / 2 * np.diag([1.0, 0.0, 1.0, 0.0])
     m = {Scheme.LUMPED: lumped, Scheme.CONSISTENT: consistent, Scheme.MIXED: 0.5 * (lumped + consistent)}[scheme]
     return k, m
@@ -340,12 +362,16 @@ class FEModel:
         if self.continuum.dofs_per_node == 1:
             return shape[e] * (1 - s) + shape[e + 1] * s
         w1, t1, w2, t2 = shape[2 * e], shape[2 * e + 1], shape[2 * e + 2], shape[2 * e + 3]
-        return (w1 * (1 - 3 * s**2 + 2 * s**3) + t1 * h * (s - 2 * s**2 + s**3)
-                + w2 * (3 * s**2 - 2 * s**3) + t2 * h * (-s**2 + s**3))
+        return (
+            w1 * (1 - 3 * s**2 + 2 * s**3)
+            + t1 * h * (s - 2 * s**2 + s**3)
+            + w2 * (3 * s**2 - 2 * s**3)
+            + t2 * h * (-(s**2) + s**3)
+        )
 
     def deflections(self, shape: np.ndarray) -> np.ndarray:
         """A shape's deflection at the nodes (the beam's slopes left out)."""
-        return shape[::self.continuum.dofs_per_node]
+        return shape[:: self.continuum.dofs_per_node]
 
 
 @lru_cache(maxsize=256)  # the convergence plot's meshes as well as the page's
@@ -369,7 +395,7 @@ def _modes(model: FEModel) -> tuple[np.ndarray, np.ndarray]:
         big = w if np.max(np.abs(w)) > 1e-9 * np.max(np.abs(shapes[:, j])) else shapes[:, j]
         shapes[:, j] /= big[np.argmax(np.abs(big))]
     hz = np.sqrt(np.clip(lam, 0.0, None)) / TWO_PI
-    hz[:model.continuum.rigid_modes] = 0.0
+    hz[: model.continuum.rigid_modes] = 0.0
     hz.setflags(write=False)
     shapes.setflags(write=False)
     return hz, shapes
@@ -377,7 +403,7 @@ def _modes(model: FEModel) -> tuple[np.ndarray, np.ndarray]:
 
 def flexible_hz(model: FEModel) -> np.ndarray:
     """The mesh's flexible modes' frequencies (Hz), the rigid ones left out."""
-    return model.modes()[0][model.continuum.rigid_modes:]
+    return model.modes()[0][model.continuum.rigid_modes :]
 
 
 def errors(model: FEModel) -> tuple[np.ndarray, np.ndarray]:
@@ -387,8 +413,9 @@ def errors(model: FEModel) -> tuple[np.ndarray, np.ndarray]:
     return exact, f / exact - 1.0
 
 
-def convergence(c: Continuum, scheme: Scheme, mode: int,
-                counts: tuple[int, ...] = CONVERGENCE_COUNTS) -> tuple[np.ndarray, np.ndarray]:
+def convergence(
+    c: Continuum, scheme: Scheme, mode: int, counts: tuple[int, ...] = CONVERGENCE_COUNTS
+) -> tuple[np.ndarray, np.ndarray]:
     """Flexible mode `mode`'s (1 the first) relative error against the number of elements: the counts that have the
     mode, and their errors. It depends only on the kind, the ends and the scheme: the rest scales out."""
     unit = Continuum(c.kind, 1.0, c.left, c.right)
@@ -405,7 +432,7 @@ def _convergence(c: Continuum, scheme: Scheme, mode: int, counts: tuple[int, ...
             continue
         err = f[mode - 1] / exact - 1.0
         # The eigensolver gets λ to round-off of the largest one: below that the error isn't the mesh's.
-        if abs(err) < NOISE * (f[-1] / f[mode - 1])**2:
+        if abs(err) < NOISE * (f[-1] / f[mode - 1]) ** 2:
             break
         ns.append(n)
         errs.append(err)
@@ -429,36 +456,44 @@ class Preset:
 
 
 PRESETS = (
-    Preset("Guitar string (low E)",
-           Continuum(Kind.STRING, 0.648, End.FIXED, End.FIXED, tension=73.0, line_density=6.40e-3),
-           12,
-           "A 648 mm scale at 73 N: 82.4 Hz, every harmonic a whole multiple. As 12 beads (lumped) the "
-           "harmonics fall flat, more the higher they go: the 6th, at two elements a half wavelength, "
-           "is 10.0 % low and the 11th 31 %."),
-    Preset("Steel bar, fixed–free",
-           Continuum(Kind.BAR, 1.0, End.FIXED, End.FREE, modulus=210e9, density=7850.0, width=0.02, depth=0.02),
-           10,
-           "A 1 m steel bar held at one end, rung lengthwise: c = 5172 m/s, so a quarter wavelength fits at "
-           "1293 Hz and the modes go 1 : 3 : 5. Ten elements: lumped is low and consistent high by the same, "
-           "and their average (mixed) far closer than either."),
-    Preset("Steel ruler, clamped–free",
-           Continuum(Kind.BEAM, 0.3, End.CLAMPED, End.FREE, modulus=210e9, density=7850.0, width=0.025,
-                     depth=0.001),
-           8,
-           "300 mm of a 1 mm steel ruler held over a desk's edge: 9.28 Hz, then 58.2 and 163 Hz, not "
-           "whole multiples (a beam's waves are dispersive, ω ∝ κ²). Consistent Hermite beams converge as "
-           "N⁻⁴, lumped masses only as N⁻²."),
-    Preset("Vibraphone bar, free–free",
-           Continuum(Kind.BEAM, 0.3, End.FREE, End.FREE, modulus=69e9, density=2700.0, width=0.04, depth=0.012),
-           12,
-           "A plain 300 × 12 mm aluminium bar on its nodes: 693 Hz, overtones 2.76 and 5.40 times that "
-           "(a real vibraphone's bars are undercut to bring them to 4 and 10). Two rigid modes: it slides "
-           "and tips."),
-    Preset("Pinned–pinned beam",
-           Continuum(Kind.BEAM, 1.0, End.PINNED, End.PINNED, modulus=210e9, density=7850.0, width=0.05,
-                     depth=0.01),
-           6,
-           "Pinned at both ends a beam's modes are sines, the endless mesh's waves exactly, so every mode "
-           "lands on the mesh's dispersion curve. Consistent masses give a second, slopes', branch: six "
-           "elements have 12 modes, and modes 6 to 12 are on it, 11 % high at the cut-off and 27 % at the top."),
+    Preset(
+        "Guitar string (low E)",
+        Continuum(Kind.STRING, 0.648, End.FIXED, End.FIXED, tension=73.0, line_density=6.40e-3),
+        12,
+        "A 648 mm scale at 73 N: 82.4 Hz, every harmonic a whole multiple. As 12 beads (lumped) the "
+        "harmonics fall flat, more the higher they go: the 6th, at two elements a half wavelength, "
+        "is 10.0 % low and the 11th 31 %.",
+    ),
+    Preset(
+        "Steel bar, fixed–free",
+        Continuum(Kind.BAR, 1.0, End.FIXED, End.FREE, modulus=210e9, density=7850.0, width=0.02, depth=0.02),
+        10,
+        "A 1 m steel bar held at one end, rung lengthwise: c = 5172 m/s, so a quarter wavelength fits at "
+        "1293 Hz and the modes go 1 : 3 : 5. Ten elements: lumped is low and consistent high by the same, "
+        "and their average (mixed) far closer than either.",
+    ),
+    Preset(
+        "Steel ruler, clamped–free",
+        Continuum(Kind.BEAM, 0.3, End.CLAMPED, End.FREE, modulus=210e9, density=7850.0, width=0.025, depth=0.001),
+        8,
+        "300 mm of a 1 mm steel ruler held over a desk's edge: 9.28 Hz, then 58.2 and 163 Hz, not "
+        "whole multiples (a beam's waves are dispersive, ω ∝ κ²). Consistent Hermite beams converge as "
+        "N⁻⁴, lumped masses only as N⁻².",
+    ),
+    Preset(
+        "Vibraphone bar, free–free",
+        Continuum(Kind.BEAM, 0.3, End.FREE, End.FREE, modulus=69e9, density=2700.0, width=0.04, depth=0.012),
+        12,
+        "A plain 300 × 12 mm aluminium bar on its nodes: 693 Hz, overtones 2.76 and 5.40 times that "
+        "(a real vibraphone's bars are undercut to bring them to 4 and 10). Two rigid modes: it slides "
+        "and tips.",
+    ),
+    Preset(
+        "Pinned–pinned beam",
+        Continuum(Kind.BEAM, 1.0, End.PINNED, End.PINNED, modulus=210e9, density=7850.0, width=0.05, depth=0.01),
+        6,
+        "Pinned at both ends a beam's modes are sines, the endless mesh's waves exactly, so every mode "
+        "lands on the mesh's dispersion curve. Consistent masses give a second, slopes', branch: six "
+        "elements have 12 modes, and modes 6 to 12 are on it, 11 % high at the cut-off and 27 % at the top.",
+    ),
 )

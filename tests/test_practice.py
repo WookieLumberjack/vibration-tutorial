@@ -173,7 +173,9 @@ def test_practice_window(app):
     q = p.question
     p.number.setText(str(q.answer * 2 * math.pi))
     p.check()
-    assert "2π" in p.text.toPlainText() and not p._problem_items["sdof_page", "natural-frequency"].text(0).startswith(TICK)
+    assert "2π" in p.text.toPlainText() and not p._problem_items["sdof_page", "natural-frequency"].text(0).startswith(
+        TICK
+    )
     p.number.setText(number(q.answer))
     p.number.returnPressed.emit()
     assert "Right" in p.text.toPlainText()

@@ -68,54 +68,86 @@ TRIALS = (
         "A blow of 0.1 N·s on the 1 kg oscillator (f<sub>n</sub> = 3.18 Hz, ζ = 0.05) starts it at "
         "0.1 m/s from where it is: the free vibration h(t) times 0.1, its first swing about I/mω<sub>n</sub> = "
         "5 mm. The h and H tab sets h(t) beside its Fourier transform, the receptance.",
-        PulseKind.IMPULSE, amplitude=0.1, at=0.4, tab=TAB_FOURIER),
+        PulseKind.IMPULSE,
+        amplitude=0.1,
+        at=0.4,
+        tab=TAB_FOURIER,
+    ),
     TransientTrial(
         "A step: overshoot and settling",
         "1 N switched on and left. The mass overshoots its static 2.5 mm by e<sup>−ζπ/√(1 − ζ²)</sup> = 85 %, "
         "to 4.64 mm, at π/ω<sub>d</sub> = 0.157 s, and settles within 2 % after 3.8 s (the rule 4/ζω<sub>n</sub> "
         "says 4 s). The Step response tab draws it.",
-        PulseKind.STEP, at=0.157, tab=TAB_STEP),
+        PulseKind.STEP,
+        at=0.157,
+        tab=TAB_STEP,
+    ),
     TransientTrial(
         "A step, critically damped",
         "c = 40 N·s/m (ζ = 1): the step response rises to 2.5 mm without overshooting, within 2 % after "
         "0.29 s, far sooner than the lightly damped one settles.",
-        PulseKind.STEP, damping=40.0, at=0.1, tab=TAB_STEP),
+        PulseKind.STEP,
+        damping=40.0,
+        at=0.1,
+        tab=TAB_STEP,
+    ),
     TransientTrial(
         "Watch the convolution build",
         "A 0.2 s rectangular pulse of 1 N. The bottom plot is the integral at the chosen instant: the force, "
         "the impulse response flipped and slid to that instant, and their product, whose signed area is the "
         "response there. Drag the slider: the area follows the response curve.",
-        PulseKind.RECTANGLE, duration=0.2, at=0.3, tab=TAB_SPECTRUM),
+        PulseKind.RECTANGLE,
+        duration=0.2,
+        at=0.3,
+        tab=TAB_SPECTRUM,
+    ),
     TransientTrial(
         "A short pulse is an impulse",
         "10 N for 0.0157 s, a twentieth of the period. Only its area, 0.157 N·s, matters: the response is "
         "that impulse's, peaking at 2 sin(π/20) = 0.31 times the static 25 mm (undamped). On the pulse spectrum "
         "the point sits on the rising, impulse-like part, where the peak is proportional to the length.",
-        PulseKind.RECTANGLE, amplitude=10.0, duration=0.0157, at=0.08, tab=TAB_SPECTRUM),
+        PulseKind.RECTANGLE,
+        amplitude=10.0,
+        duration=0.0157,
+        at=0.08,
+        tab=TAB_SPECTRUM,
+    ),
     TransientTrial(
         "Half a period or longer: twice the static",
         "A 1 N rectangle 0.16 s long, half the period. Undamped, a rectangle of half a period or more throws "
         "the mass to twice its static deflection, as a step would: the most a rectangle can do. Its "
         "pulse-spectrum curve rises to 2 at T = T<sub>n</sub>/2 and stays there.",
-        PulseKind.RECTANGLE, duration=0.157, at=0.2, tab=TAB_SPECTRUM),
+        PulseKind.RECTANGLE,
+        duration=0.157,
+        at=0.2,
+        tab=TAB_SPECTRUM,
+    ),
     TransientTrial(
         "A half-sine's worst length",
         "A 1 N half-sine 0.26 s long, about 0.8 of the period: undamped, its peak would be 1.77 times "
         "static, the half-sine curve's top; with ζ = 0.05, 1.65. Shorter, it is an impulse; much longer, "
         "the mass follows it statically.",
-        PulseKind.HALF_SINE, duration=0.26, at=0.25, tab=TAB_SPECTRUM),
+        PulseKind.HALF_SINE,
+        duration=0.26,
+        at=0.25,
+        tab=TAB_SPECTRUM,
+    ),
     TransientTrial(
         "A slow ramp is nearly static",
         "1 N reached over 0.87 s, 2.75 periods. The mass follows the ramp, lagging, and overshoots the end by "
         "only |sin πr|/πr = 8 % of the static 2.5 mm (undamped, r = T/T<sub>n</sub>; 6 % with ζ = 0.05). "
         "A ramp of a whole number of periods leaves no swing at all.",
-        PulseKind.RAMP, duration=0.864, at=0.6, tab=TAB_SPECTRUM),
+        PulseKind.RAMP,
+        duration=0.864,
+        at=0.6,
+        tab=TAB_SPECTRUM,
+    ),
 )
 
 TIPS = {
     "kind": "<p><b>Impulse:</b> a blow of impulse I (N·s), over in an instant. <b>Step:</b> F switched on and "
-            "left on. <b>Ramp, then hold:</b> F reached in a straight line over the time T. <b>Rectangular "
-            "pulse:</b> F for T. <b>Half-sine pulse:</b> F sin(πt/T) for T.</p>",
+    "left on. <b>Ramp, then hold:</b> F reached in a straight line over the time T. <b>Rectangular "
+    "pulse:</b> F for T. <b>Half-sine pulse:</b> F sin(πt/T) for T.</p>",
     "amplitude": "<p>The force F, or the impulse I = ∫F dt for an impulse.</p>",
     "duration": "<p>The ramp's rise time, or the pulse's length T.</p>",
     "at": "<p>The instant t at which the convolution integral is drawn out (bottom plot).</p>",
@@ -124,17 +156,21 @@ SPECTRUM_TIP = (
     "<p>The largest |x| over all time, over the static F/k, against the pulse's length over the natural "
     "period, for this damping ratio. Short pulses are impulses (the peak grows with the area); long ones are "
     "static, a rectangle's at twice and a ramp's at once the static deflection. The circle is this page's "
-    "pulse.</p>")
+    "pulse.</p>"
+)
 FOURIER_TIP = (
     "<p>Top: the impulse response h(t). Bottom: its Fourier transform by the FFT (dots) on the receptance "
-    "|H(f)| = 1/|k − ω²m + iωc| (line). They are one function, seen in time and in frequency.</p>")
+    "|H(f)| = 1/|k − ω²m + iωc| (line). They are one function, seen in time and in frequency.</p>"
+)
 STEP_TIP = (
     "<p>The response to a unit step over its final value 1/k, with the ±2 % band. The marks are the overshoot "
-    "and the settling time (the last time it is outside the band).</p>")
+    "and the settling time (the last time it is outside the band).</p>"
+)
 CONV_TIP = (
     "<p>The convolution x(t) = ∫₀ᵗ F(τ) h(t − τ) dτ at the chosen t: each slice F(τ)dτ of the force is a small "
     "impulse, which rings as h from then on; at t it has rung for t − τ. Their product (shaded) summed is x(t). "
-    "F and h are scaled to the plot.</p>")
+    "F and h are scaled to the plot.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -215,20 +251,30 @@ rule, to show that it gives the same.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sdof_page", "free-vibration", "Free vibration"),
-    ("sdof_page", "poles", "The poles"),
-    ("sdof_page", "forced-response", "Forced response"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "An impulse I starts the mass at I/m; the response to a unit impulse, h(t), is a free vibration.",
-    "Any response is the convolution of the force with h (Duhamel's integral): every slice of force rings "
-    "as h from its own moment on.",
-    "h(t) and H(ω) are a Fourier pair; with the Laplace transform, H(s) = 1/(ms² + cs + k) and its poles.",
-    "A step overshoots its static value by e<sup>−ζπ/√(1 − ζ²)</sup> (twice the static deflection, "
-    "undamped) and settles in about 4/ζω<sub>n</sub>.",
-    "A pulse much shorter than the period acts by its area, one much longer statically; the worst lengths "
-    "lie near half a period to a period.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sdof_page", "free-vibration", "Free vibration"),
+            ("sdof_page", "poles", "The poles"),
+            ("sdof_page", "forced-response", "Forced response"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "An impulse I starts the mass at I/m; the response to a unit impulse, h(t), is a free vibration.",
+            "Any response is the convolution of the force with h (Duhamel's integral): every slice of force rings "
+            "as h from its own moment on.",
+            "h(t) and H(ω) are a Fourier pair; with the Laplace transform, H(s) = 1/(ms² + cs + k) and its poles.",
+            "A step overshoots its static value by e<sup>−ζπ/√(1 − ζ²)</sup> (twice the static deflection, "
+            "undamped) and settles in about 4/ζω<sub>n</sub>.",
+            "A pulse much shorter than the period acts by its area, one much longer statically; the worst lengths "
+            "lie near half a period to a period.",
+        ),
+    )
+)
 
 
 class TransientPage(QtWidgets.QWidget):
@@ -243,9 +289,10 @@ class TransientPage(QtWidgets.QWidget):
         self._spectrum_key = None  # (zeta) the pulse spectrum was drawn for
         self._span = 1.0
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the oscillator and the input to show one idea from the Theory "
-                               "tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each sets up the oscillator and the input to show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         box = Form("Oscillator")
@@ -330,8 +377,9 @@ class TransientPage(QtWidgets.QWidget):
         self.spec_plot.setToolTip(SPECTRUM_TIP)
         self.spec_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.spec_plot.getPlotItem(), offset=(10, 10))
-        self.spec_items = {k: pg.PlotDataItem(name=k.value.replace(" pulse", "").replace(", then hold", ""))
-                           for k in SPECTRUM_KINDS}
+        self.spec_items = {
+            k: pg.PlotDataItem(name=k.value.replace(" pulse", "").replace(", then hold", "")) for k in SPECTRUM_KINDS
+        }
         for item in self.spec_items.values():
             self.spec_plot.addItem(item)
         self.spec_now = pg.PlotDataItem(pen=None, symbol="o", symbolSize=12)  # a scatter item ignores log axes
@@ -395,9 +443,15 @@ class TransientPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        for box, value in ((self.mass, 1.0), (self.stiffness, 400.0), (self.damping, t.damping),
-                           (self.kind, KINDS.index(t.kind)), (self.amplitude, t.amplitude),
-                           (self.duration, t.duration), (self.at, t.at)):
+        for box, value in (
+            (self.mass, 1.0),
+            (self.stiffness, 400.0),
+            (self.damping, t.damping),
+            (self.kind, KINDS.index(t.kind)),
+            (self.amplitude, t.amplitude),
+            (self.duration, t.duration),
+            (self.at, t.at),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -533,7 +587,8 @@ class TransientPage(QtWidgets.QWidget):
             self.prod_zero.setData(tau, np.zeros_like(tau))
             self.conv_note.setText(
                 f"At t = {at:.4g} s the shaded area (∫F h dτ, by the trapezium rule) is {fmt(xc, 'm')}; "
-                f"the exact response is {fmt(x_exact, 'm')}.")
+                f"the exact response is {fmt(x_exact, 'm')}."
+            )
         self.conv_plot.setXRange(0, span, padding=0)
         self.conv_plot.setYRange(-1.1, 1.1, padding=0)
 
@@ -563,9 +618,11 @@ class TransientPage(QtWidgets.QWidget):
                 self.spec_now.setData([r], [ratio])
             else:
                 self.spec_now.setData([], [])
-            self.spec_note.setText(f"This {p.kind.value.lower()}: T/T<sub>n</sub> = {r:.3g}, peak "
-                                   f"{fmt(peak, 'm')}, {ratio:.3g} times the static {fmt(p.amplitude / o.stiffness, 'm')}"
-                                   f" (ζ = {o.zeta:.3g}).")
+            self.spec_note.setText(
+                f"This {p.kind.value.lower()}: T/T<sub>n</sub> = {r:.3g}, peak "
+                f"{fmt(peak, 'm')}, {ratio:.3g} times the static {fmt(p.amplitude / o.stiffness, 'm')}"
+                f" (ζ = {o.zeta:.3g})."
+            )
         else:
             self.spec_now.setData([], [])
             self.spec_note.setText("Pick a ramp, a rectangular or a half-sine pulse to place it on the spectrum.")
@@ -575,7 +632,7 @@ class TransientPage(QtWidgets.QWidget):
         span = min(12.0 * o.time_constant, 400.0 * o.period) if o.damping > 0 else 200.0 * o.period
         t = np.linspace(0.0, min(span, 8.0 * o.time_constant if o.damping > 0 else 10 * o.period), 1500)
         self.h_item.setData(t, impulse_response(o, t))
-        n = 2 ** 16
+        n = 2**16
         f, H = impulse_spectrum(o, span, n)
         keep = (f > 0.05 * o.natural_hz) & (f < 5.0 * o.natural_hz)
         f, H = f[keep], H[keep]
@@ -587,18 +644,21 @@ class TransientPage(QtWidgets.QWidget):
         self.H_exact.setData(fe[ok], np.abs(He[ok]))
         if o.damping > 0:
             peak = 1.0 / (o.damping * o.omega_n)
-            self.fourier_note.setText(f"A ring of time constant {o.time_constant:.3g} s is a peak "
-                                      f"{2 * o.zeta * o.natural_hz:.3g} Hz wide (2ζf<sub>n</sub>), "
-                                      f"{fmt(peak, 'm/N')} high (1/cω<sub>n</sub>).")
+            self.fourier_note.setText(
+                f"A ring of time constant {o.time_constant:.3g} s is a peak "
+                f"{2 * o.zeta * o.natural_hz:.3g} Hz wide (2ζf<sub>n</sub>), "
+                f"{fmt(peak, 'm/N')} high (1/cω<sub>n</sub>)."
+            )
         else:
-            self.fourier_note.setText("Undamped, h rings for ever: its transform over a finite record has a "
-                                      "finite peak, of the record's length, where the receptance's is infinite.")
+            self.fourier_note.setText(
+                "Undamped, h rings for ever: its transform over a finite record has a "
+                "finite peak, of the record's length, where the receptance's is infinite."
+            )
 
     def _draw_step(self) -> None:
         o = self.osc
         m = step_metrics(o)
-        span = min(max(1.3 * m.settling if math.isfinite(m.settling) else 10 * o.period, 3 * o.period),
-                   60.0 * o.period)
+        span = min(max(1.3 * m.settling if math.isfinite(m.settling) else 10 * o.period, 3 * o.period), 60.0 * o.period)
         t = np.linspace(0.0, span, 3000)
         y = step_response(o, t) * o.stiffness
         self.step_item.setData(t, y)
@@ -614,13 +674,17 @@ class TransientPage(QtWidgets.QWidget):
             self.settle_line.setVisible(False)
         self.step_plot.setXRange(0, span, padding=0)
         if o.zeta < 1:
-            text = (f"Overshoot e<sup>−ζπ/√(1 − ζ²)</sup> = {100 * m.overshoot:.3g} % at π/ω<sub>d</sub> = "
-                    f"{m.peak_time:.3g} s. ")
+            text = (
+                f"Overshoot e<sup>−ζπ/√(1 − ζ²)</sup> = {100 * m.overshoot:.3g} % at π/ω<sub>d</sub> = "
+                f"{m.peak_time:.3g} s. "
+            )
         else:
             text = "No overshoot (ζ ≥ 1). "
         if math.isfinite(m.settling):
-            text += (f"Within 2 % from {m.settling:.3g} s (dashed); the rule 4/ζω<sub>n</sub> says "
-                     f"{m.settling_estimate:.3g} s.")
+            text += (
+                f"Within 2 % from {m.settling:.3g} s (dashed); the rule 4/ζω<sub>n</sub> says "
+                f"{m.settling_estimate:.3g} s."
+            )
         else:
             text += "Undamped, it never settles: it swings between 0 and twice the static deflection."
         self.step_note.setText(text)

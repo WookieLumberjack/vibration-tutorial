@@ -52,9 +52,9 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .forcing import ForceController, ForceSettings
 from .frf_matrix import MAX_EIGVEC_CONDITION
 from .modal import TWO_PI, ModalResult, modal_analysis
-from .forcing import ForceController, ForceSettings
 from .model import ChainSystem, state_space
 from .simulator import Simulator, foh_discretize
 

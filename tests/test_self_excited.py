@@ -66,7 +66,7 @@ def test_net_power_averages_the_force():
 
     F = 0.5 * g.rho * U * U * g.side * force_coefficient(v / U)
     wind = np.mean(F * v) * 2 * np.pi / g.omega
-    damper = np.pi * 2 * g.mass * g.zeta * g.omega ** 2 * a * a
+    damper = np.pi * 2 * g.mass * g.zeta * g.omega**2 * a * a
     assert g.net_power(np.array([a]), U)[0] == pytest.approx(wind - damper, rel=1e-9)
 
 

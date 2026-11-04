@@ -22,7 +22,7 @@ from vib_tutorial.core.sdof import Oscillator
 @pytest.mark.parametrize("wave", [w for w in WAVES if w is not Wave.IMPULSES])
 def test_coefficients_are_the_waves_fourier_series(wave):
     fo = Forcing(wave, 1.3, 2.0, 0.3)
-    n = 2 ** 14
+    n = 2**14
     t = np.arange(n) * fo.period / n
     f = fo.force(t + 0.5 * fo.period / n)  # midpoints: no sample on a jump
     fft = np.fft.rfft(f) / n

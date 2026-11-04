@@ -61,75 +61,103 @@ FDD, SSI = "FDD + EFDD", "SSI-cov"
 
 TIPS = {
     "input": "<p>Where the ambient forces act: independent random forces on every mass (wind, traffic, "
-             "people: what OMA assumes), or on one mass only. A mode with a node there isn't excited, and "
-             "no method finds it.</p>",
+    "people: what OMA assumes), or on one mass only. A mode with a node there isn't excited, and "
+    "no method finds it.</p>",
     "colour": "<p>The forces' spectrum. OMA assumes it is flat (white) over the modes, so the responses' "
-              "spectra are the structure's. A low-pass input tilts them, and the modes above its corner "
-              "fade into the noise.</p>",
+    "spectra are the structure's. A low-pass input tilts them, and the modes above its corner "
+    "fade into the noise.</p>",
     "response": "<p>What each sensor measures: displacement, or acceleration as accelerometers do (the "
-                "usual in OMA). The shapes and frequencies don't depend on it; the higher modes stand out "
-                "more in acceleration.</p>",
+    "usual in OMA). The shapes and frequencies don't depend on it; the higher modes stand out "
+    "more in acceleration.</p>",
     "fs": "<p>Samples per second on every channel. Set from the chain when it changes, so the highest mode "
-          f"is well inside the anti-alias filter's passband ({AA_CUTOFF:.0%} of Nyquist).</p>",
+    f"is well inside the anti-alias filter's passband ({AA_CUTOFF:.0%} of Nyquist).</p>",
     "duration": "<p>How long the structure is recorded. OMA needs long records, a thousand periods of the "
-                "slowest mode or more: the input is unknown and random, and only averaging many blocks makes "
-                "the spectra smooth. Set from the chain when it changes.</p>",
+    "slowest mode or more: the input is unknown and random, and only averaging many blocks makes "
+    "the spectra smooth. Set from the chain when it changes.</p>",
     "noise": "<p>Random noise on each sensor, as a percentage of its channel's RMS. It fills the troughs "
-             "between the peaks, and the weakest modes sink into it.</p>",
+    "between the peaks, and the weakest modes sink into it.</p>",
     "block": "<p>Samples per block in Welch's averaging. A long block resolves narrow peaks (the lines are "
-             "fs/N<sub>b</sub> apart) and leaks less, so the damping comes out right; a short one gives more "
-             "blocks to average, so the spectra are smoother. Set from the chain when it changes.</p>",
+    "fs/N<sub>b</sub> apart) and leaks less, so the damping comes out right; a short one gives more "
+    "blocks to average, so the spectra are smoother. Set from the chain when it changes.</p>",
     "mac": "<p>EFDD: the lines round a peak whose first singular vector has a MAC with the peak's above "
-           "this are the mode's bell. Higher keeps less of the bell; lower lets in the neighbours.</p>",
+    "this are the mode's bell. Higher keeps less of the bell; lower lets in the neighbours.</p>",
     "machine": "<p>A machine running on m1: a sine force at this frequency (0: none) and amplitude (the random "
-               "forces' RMS is 1 N). Its response is a sharp peak, a pole with almost no damping: it looks like "
-               "a lightly damped mode. A peak whose filtered response has a kurtosis near 1.5 (a sine's; a mode's "
-               "random response has 3) is crossed out as a harmonic.</p>",
+    "forces' RMS is 1 N). Its response is a sharp peak, a pole with almost no damping: it looks like "
+    "a lightly damped mode. A peak whose filtered response has a kurtosis near 1.5 (a sine's; a mode's "
+    "random response has 3) is crossed out as a harmonic.</p>",
     "method": "<p><b>FDD + EFDD</b>: peaks of the cross-spectral matrix's first singular value, the damping from "
-              "each peak's bell. <b>SSI-cov</b>: a state-space model fitted to the responses' correlations at "
-              "every model order; stable poles are picked from the <i>Stabilization</i> tab.</p>",
+    "each peak's bell. <b>SSI-cov</b>: a state-space model fitted to the responses' correlations at "
+    "every model order; stable poles are picked from the <i>Stabilization</i> tab.</p>",
     "rows": "<p>SSI: block rows of the correlation Toeplitz matrix, the lags it uses (1 to twice this). They "
-            "should span a period or two of the slowest mode. Set from the chain when it changes.</p>",
+    "should span a period or two of the slowest mode. Set from the chain when it changes.</p>",
     "order": "<p>SSI: the highest model order (states). Each mode takes two; the extra ones soak up noise.</p>",
     "new": "<p>Record again with fresh random forces and noise: the identified values scatter from record to "
-           "record, damping most.</p>",
+    "record, damping most.</p>",
 }
 SV_TIP = (
     "<p>The singular values of the responses' cross-spectral matrix at each frequency line, largest "
     "(s₁, bold) first. Near a mode the matrix is that mode's alone, so s₁ peaks at every mode and the "
     "rest stay low (two close modes lift s₂ too). Dotted lines: the exact natural frequencies. The "
-    "shaded bells are each mode's lines for EFDD. Click near a peak to add or drop it.</p>")
+    "shaded bells are each mode's lines for EFDD. Click near a peak to add or drop it.</p>"
+)
 
 # Things to try: (name, what it sets, note)
 TRIALS = (
-    ("Long record, every mass", {},
-     "Random forces at every mass, two thousand periods of the slowest mode: every mode found. The lightly "
-     "damped ones' damping comes out within a few per cent; on the default chain, modes 3 and 4 are close "
-     "and heavily damped, their bells overlap and cut each other short, and mode 4's damping comes out low."),
-    ("Short record", {"cycles": 100},
-     "A hundred periods: few blocks to average, so the spectra are rough and the damping scatters. "
-     "Press New record a few times."),
-    ("Short blocks", {"block": 1 / 8},
-     "Blocks an eighth as long: smooth spectra but coarse lines, and the window's leakage widens every "
-     "peak: the damping comes out too high, the lightest damped mode's most."),
-    ("Forces at m3 only", {"input": 2},
-     "On the default chain m3 sits on a node of mode 2: nothing excites it, so it is missing from s₁."),
-    ("Coloured forces", {"corner": 1.5, "response": Response.DISPLACEMENT},
-     "Forces low-passed at 1.5× the first mode, measured as displacements: the higher modes are barely "
-     "driven and sink toward the noise, and the input's slope across their bells (OMA assumes it flat) "
-     "spoils their damping, or loses the mode."),
-    ("Noisy sensors", {"noise": 200.0},
-     "Noise at twice each channel's RMS fills the troughs between the peaks: the more damped modes' bells "
-     "drown in it, and their damping comes out far too low, or the mode is lost."),
-    ("SSI on close, damped modes", {"method": SSI},
-     "SSI fits every mode at once, so close, heavily damped modes don't cut each other's bells short: on the "
-     "default chain, modes 3 and 4's damping comes out far closer than EFDD's (compare the Methods tab)."),
-    ("A machine running", {"machine": ("between", 1.0)},
-     "A sine force on m1 halfway between modes 1 and 2: a sharp peak with almost no damping, like a lightly "
-     "damped mode. Its filtered response has a kurtosis of about 1.5, a sine's, so it is crossed out."),
-    ("A machine near a mode", {"machine": ("near", 3.0)},
-     "The sine 2 % above mode 2: FDD's peak there is the sine's (kurtosis 1.5, no damping), and mode 2 hides "
-     "under it. Switch to SSI-cov: it fits mode 2 beside the sine."),
+    (
+        "Long record, every mass",
+        {},
+        "Random forces at every mass, two thousand periods of the slowest mode: every mode found. The lightly "
+        "damped ones' damping comes out within a few per cent; on the default chain, modes 3 and 4 are close "
+        "and heavily damped, their bells overlap and cut each other short, and mode 4's damping comes out low.",
+    ),
+    (
+        "Short record",
+        {"cycles": 100},
+        "A hundred periods: few blocks to average, so the spectra are rough and the damping scatters. "
+        "Press New record a few times.",
+    ),
+    (
+        "Short blocks",
+        {"block": 1 / 8},
+        "Blocks an eighth as long: smooth spectra but coarse lines, and the window's leakage widens every "
+        "peak: the damping comes out too high, the lightest damped mode's most.",
+    ),
+    (
+        "Forces at m3 only",
+        {"input": 2},
+        "On the default chain m3 sits on a node of mode 2: nothing excites it, so it is missing from s₁.",
+    ),
+    (
+        "Coloured forces",
+        {"corner": 1.5, "response": Response.DISPLACEMENT},
+        "Forces low-passed at 1.5× the first mode, measured as displacements: the higher modes are barely "
+        "driven and sink toward the noise, and the input's slope across their bells (OMA assumes it flat) "
+        "spoils their damping, or loses the mode.",
+    ),
+    (
+        "Noisy sensors",
+        {"noise": 200.0},
+        "Noise at twice each channel's RMS fills the troughs between the peaks: the more damped modes' bells "
+        "drown in it, and their damping comes out far too low, or the mode is lost.",
+    ),
+    (
+        "SSI on close, damped modes",
+        {"method": SSI},
+        "SSI fits every mode at once, so close, heavily damped modes don't cut each other's bells short: on the "
+        "default chain, modes 3 and 4's damping comes out far closer than EFDD's (compare the Methods tab).",
+    ),
+    (
+        "A machine running",
+        {"machine": ("between", 1.0)},
+        "A sine force on m1 halfway between modes 1 and 2: a sharp peak with almost no damping, like a lightly "
+        "damped mode. Its filtered response has a kurtosis of about 1.5, a sine's, so it is crossed out.",
+    ),
+    (
+        "A machine near a mode",
+        {"machine": ("near", 3.0)},
+        "The sine 2 % above mode 2: FDD's peak there is the sine's (kurtosis 1.5, no damping), and mode 2 hides "
+        "under it. Switch to SSI-cov: it fits mode 2 beside the sine.",
+    ),
 )
 
 NOTES_HTML = """
@@ -189,19 +217,24 @@ and a bell cut short by the MAC threshold rings on (too little).</li>
 </ul>
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("test_page", "estimators", "Averaging and estimators"),
-    ("test_page", "extraction", "Modal parameter extraction"),
-    ("random_page", "miles", "Miles' equation"),
-)).replace("<!--TAKEAWAYS-->", takeaways(
-    "With broadband random forces, the responses' spectra take their shape from the structure, so the modes "
-    "can be found from the responses alone.",
-    "FDD: the cross-spectral matrix's first singular value peaks at each mode, and its singular vector is the"
-    " shape; EFDD adds the damping from the bell's decay.",
-    "SSI-cov fits a state-space model to the responses' correlations, with a stabilization diagram as LSCF has.",
-    "Output-only shapes can't be scaled, a machine's sine looks like a mode, and the records must be long.",
-))
-
+NOTES_HTML = NOTES_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("test_page", "estimators", "Averaging and estimators"),
+        ("test_page", "extraction", "Modal parameter extraction"),
+        ("random_page", "miles", "Miles' equation"),
+    ),
+).replace(
+    "<!--TAKEAWAYS-->",
+    takeaways(
+        "With broadband random forces, the responses' spectra take their shape from the structure, so the modes "
+        "can be found from the responses alone.",
+        "FDD: the cross-spectral matrix's first singular value peaks at each mode, and its singular vector is the"
+        " shape; EFDD adds the damping from the bell's decay.",
+        "SSI-cov fits a state-space model to the responses' correlations, with a stabilization diagram as LSCF has.",
+        "Output-only shapes can't be scaled, a machine's sine looks like a mode, and the records must be long.",
+    ),
+)
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None) -> pg.PlotWidget:
@@ -323,9 +356,11 @@ class OmaPage(QtWidgets.QWidget):
         self.max_order.setKeyboardTracking(False)
         _form_row(form, "SSI max order:", self.max_order, TIPS["order"])
         self.auto_peaks = QtWidgets.QPushButton("Pick automatically")
-        self.auto_peaks.setToolTip("<p>Forget the peaks (FDD) or poles (SSI) clicked by hand and pick them "
-                                   "again: s₁'s most prominent peaks, at most one per mass, or one pole from "
-                                   "each column of the stabilization diagram stable over five orders.</p>")
+        self.auto_peaks.setToolTip(
+            "<p>Forget the peaks (FDD) or poles (SSI) clicked by hand and pick them "
+            "again: s₁'s most prominent peaks, at most one per mass, or one pole from "
+            "each column of the stabilization diagram stable over five orders.</p>"
+        )
         form.addRow(self.auto_peaks)
 
         trials = QtWidgets.QGroupBox("Things to try")
@@ -333,8 +368,9 @@ class OmaPage(QtWidgets.QWidget):
         self.trial = QtWidgets.QComboBox()
         self.trial.addItems([name for name, _, _ in TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Settings that show one of OMA's strengths or pitfalls, set from the chain "
-                              "as it is now.</p>")
+        self.trial.setToolTip(
+            "<p>Settings that show one of OMA's strengths or pitfalls, set from the chain as it is now.</p>"
+        )
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -360,8 +396,10 @@ class OmaPage(QtWidgets.QWidget):
         self.readout.setWordWrap(True)
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.records = _plot("Response", None, "Time", "s")
-        self.records.setToolTip("<p>The start of the record: every mass's response to the ambient forces "
-                                "(no force is measured). It looks like noise; the modes are in its spectra.</p>")
+        self.records.setToolTip(
+            "<p>The start of the record: every mass's response to the ambient forces "
+            "(no force is measured). It looks like noise; the modes are in its spectra.</p>"
+        )
         self.records.setClipToView(True)
         self.records.setDownsampling(auto=True, mode="peak")
         plot_height(self.records, 120)
@@ -380,12 +418,15 @@ class OmaPage(QtWidgets.QWidget):
         self.correlation.setToolTip(
             "<p>The chosen mode's bell transformed back to the time domain: its autocorrelation, a decaying "
             "cosine, normalized to 1 at zero lag. The circled extremes give the decay (the dashed envelope "
-            "e<sup>−ζω<sub>n</sub>τ</sup>), the zero crossings the damped frequency.</p>")
+            "e<sup>−ζω<sub>n</sub>τ</sup>), the zero crossings the damped frequency.</p>"
+        )
         plot_height(self.correlation, 180)
         self.bell_plot = _plot("s₁", None, "Frequency", "Hz")
         self.bell_plot.setLogMode(x=False, y=True)
-        self.bell_plot.setToolTip("<p>The chosen mode's bell: the lines round its peak whose first singular "
-                                  "vector looks like the peak's (MAC above the threshold).</p>")
+        self.bell_plot.setToolTip(
+            "<p>The chosen mode's bell: the lines round its peak whose first singular "
+            "vector looks like the peak's (MAC above the threshold).</p>"
+        )
         plot_height(self.bell_plot, 140)
         self.efdd_note = QtWidgets.QLabel()
         self.efdd_note.setWordWrap(True)
@@ -399,17 +440,21 @@ class OmaPage(QtWidgets.QWidget):
         ev.addWidget(self.correlation, 3)
         ev.addWidget(self.efdd_note)
         self.stab_plot = StabilizationPlot()
-        self.stab_plot.setToolTip("<p>SSI's poles at every model order, over s₁ (grey). Physical modes stay put "
-                                  "as the order rises and form columns; noise poles scatter. Click a pole to "
-                                  "add it or drop it.</p>")
+        self.stab_plot.setToolTip(
+            "<p>SSI's poles at every model order, over s₁ (grey). Physical modes stay put "
+            "as the order rises and form columns; noise poles scatter. Click a pole to "
+            "add it or drop it.</p>"
+        )
         self.methods = QtWidgets.QTableWidget(0, 5)
         self.methods.setHorizontalHeaderLabels(["Mode", "Exact", FDD, SSI, "Hammer test"])
         self.methods.verticalHeader().setVisible(False)
         self.methods.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.methods.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
         self.methods.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
-        self.methods.setToolTip("<p>Each exact mode as each method finds it: f<sub>n</sub> and ζ, coloured by the "
-                                "damping's error; hover for the frequency's error and the MAC.</p>")
+        self.methods.setToolTip(
+            "<p>Each exact mode as each method finds it: f<sub>n</sub> and ζ, coloured by the "
+            "damping's error; hover for the frequency's error and the MAC.</p>"
+        )
         self.methods_note = QtWidgets.QLabel()
         self.methods_note.setWordWrap(True)
         self.methods_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
@@ -494,7 +539,7 @@ class OmaPage(QtWidgets.QWidget):
         """Set the settings the chosen trial asks for, from the chain as it is."""
         if self.result is None:
             return
-        name, changes, note = TRIALS[self.trial.currentIndex()]
+        _name, changes, note = TRIALS[self.trial.currentIndex()]
         fs, duration, block = self._suggested()
         freqs = sorted(m.fn_hz for m in self.result.modes if m.fn_hz > 0) or [1.0]
         slow = freqs[0]
@@ -510,8 +555,7 @@ class OmaPage(QtWidgets.QWidget):
         n = self.system.n
         self.input.setCurrentIndex(changes["input"] + 1 if "input" in changes and changes["input"] < n else 0)
         self.colour.setCurrentIndex(1 if "corner" in changes else 0)
-        self.response.setCurrentIndex(
-            self.response.findData(changes.get("response", Response.ACCELERATION)))
+        self.response.setCurrentIndex(self.response.findData(changes.get("response", Response.ACCELERATION)))
         self.corner.setValue(changes.get("corner", 1.5) * slow)
         self.corner.setEnabled("corner" in changes)
         machine_hz, force = 0.0, 1.0
@@ -532,11 +576,17 @@ class OmaPage(QtWidgets.QWidget):
 
     def settings(self) -> AmbientSettings:
         i = self.input.currentIndex()
-        return AmbientSettings(fs=self.fs.value(), duration=self.duration.value(),
-                               input_dof=None if i <= 0 else i - 1, colour=self.colour.currentData(),
-                               corner_hz=self.corner.value(), response=self.response.currentData(),
-                               harmonic_hz=self.machine_hz.value(), harmonic_force=self.machine_force.value(),
-                               seed=self.seed)
+        return AmbientSettings(
+            fs=self.fs.value(),
+            duration=self.duration.value(),
+            input_dof=None if i <= 0 else i - 1,
+            colour=self.colour.currentData(),
+            corner_hz=self.corner.value(),
+            response=self.response.currentData(),
+            harmonic_hz=self.machine_hz.value(),
+            harmonic_force=self.machine_force.value(),
+            seed=self.seed,
+        )
 
     def _on_measure(self) -> None:
         if not self._loading:
@@ -605,7 +655,7 @@ class OmaPage(QtWidgets.QWidget):
         else:
             self._recompute.start()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()
@@ -702,7 +752,8 @@ class OmaPage(QtWidgets.QWidget):
         self.daq_info.setText(
             f"{s.samples:,} samples a channel; {s.duration * slow:,.0f} periods of mode 1. "
             f"{spectra.blocks} blocks of {spectra.block} averaged (half overlapping), lines "
-            f"{spectra.resolution:.3g} Hz apart.")
+            f"{spectra.resolution:.3g} Hz apart."
+        )
 
     def _fill_mode_pick(self) -> None:
         self._loading = True
@@ -730,14 +781,17 @@ class OmaPage(QtWidgets.QWidget):
         self.sv_legend.clear()
         d = self.fdd
         f = d.freqs
-        lo, hi = self._band()
+        _lo, hi = self._band()
         keep = (f > 0) & (f <= hi)
         s = d.s[keep]
         floor = max(s[:, 0].max() * 1e-8, 1e-300)
         for i in range(d.s.shape[1] - 1, -1, -1):
             first = i == 0
-            item = p.plot(f[keep], np.maximum(s[:, i], floor),
-                          pen=pg.mkPen(colors.strong if first else colors.grey, width=2 if first else 1))
+            item = p.plot(
+                f[keep],
+                np.maximum(s[:, i], floor),
+                pen=pg.mkPen(colors.strong if first else colors.grey, width=2 if first else 1),
+            )
             if i < 2:
                 self.sv_legend.addItem(item, "s₁" if first else "s₂, s₃, …")
         for k, m in enumerate(self.modes):
@@ -746,24 +800,42 @@ class OmaPage(QtWidgets.QWidget):
             c = pg.mkColor(color)
             c.setAlpha(110 if k == self.selected else 60)
             # filled down to the floor (in the view's log10 units: the plot is log in y)
-            p.plot(f[bell], np.maximum(d.s[bell, 0], floor), pen=None, fillLevel=math.log10(floor),
-                   brush=pg.mkBrush(c))
+            p.plot(f[bell], np.maximum(d.s[bell, 0], floor), pen=None, fillLevel=math.log10(floor), brush=pg.mkBrush(c))
             if self.harmonic[k]:
-                p.plot([f[m.line]], [d.s[m.line, 0]], pen=None, symbol="x", symbolSize=14,
-                       symbolPen=pg.mkPen(colors.force, width=2), symbolBrush=pg.mkBrush(colors.force))
+                p.plot(
+                    [f[m.line]],
+                    [d.s[m.line, 0]],
+                    pen=None,
+                    symbol="x",
+                    symbolSize=14,
+                    symbolPen=pg.mkPen(colors.force, width=2),
+                    symbolBrush=pg.mkBrush(colors.force),
+                )
                 right = f[m.line] > 0.6 * hi  # the label on the side with room
-                text = pg.TextItem(f"harmonic (kurtosis {self.kurt[k]:.2g})", color=colors.force,
-                                   anchor=(1 if right else 0, 1))
+                text = pg.TextItem(
+                    f"harmonic (kurtosis {self.kurt[k]:.2g})", color=colors.force, anchor=(1 if right else 0, 1)
+                )
                 text.setPos(f[m.line], math.log10(d.s[m.line, 0]))
                 p.addItem(text)
             else:
-                p.plot([f[m.line]], [d.s[m.line, 0]], pen=None, symbol="o", symbolSize=9,
-                       symbolPen=pg.mkPen(color, width=2), symbolBrush=pg.mkBrush(colors.background))
+                p.plot(
+                    [f[m.line]],
+                    [d.s[m.line, 0]],
+                    pen=None,
+                    symbol="o",
+                    symbolSize=9,
+                    symbolPen=pg.mkPen(color, width=2),
+                    symbolBrush=pg.mkBrush(colors.background),
+                )
         for md in self.result.modes:
             if md.damped is not None and md.damped.fn_hz <= hi:
-                line = pg.InfiniteLine(md.damped.fn_hz, angle=90, label=str(md.index),
-                                       labelOpts={"position": 0.95, "color": colors.muted},
-                                       pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DotLine))
+                line = pg.InfiniteLine(
+                    md.damped.fn_hz,
+                    angle=90,
+                    label=str(md.index),
+                    labelOpts={"position": 0.95, "color": colors.muted},
+                    pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DotLine),
+                )
                 p.addItem(line)
         p.setXRange(0.0, hi, padding=0)
         p.setYRange(math.log10(floor), math.log10(s[:, 0].max() * 3.0), padding=0)
@@ -796,8 +868,10 @@ class OmaPage(QtWidgets.QWidget):
             notes.append("left out as harmonics: " + ", ".join(f"{f:.4g} Hz (kurtosis {k:.2g})" for f, k in harmonics))
         failed = sum(1 for m in self.modes if not math.isfinite(m.zeta)) if method == FDD else 0
         if failed:
-            notes.append(f"{failed} bell{'s' if failed > 1 else ''} too narrow to fit a decay (the frequency is "
-                         f"the peak's line, ζ unknown)")
+            notes.append(
+                f"{failed} bell{'s' if failed > 1 else ''} too narrow to fit a decay (the frequency is "
+                f"the peak's line, ζ unknown)"
+            )
         text = "; ".join(notes) + "."
         self.results.set_results(rows, macs, text)
         exact = [m for m in self.result.modes if m.damped is not None]
@@ -812,12 +886,19 @@ class OmaPage(QtWidgets.QWidget):
             fe = abs(r.exact) / (2 * math.pi)
             ze = -r.exact.real / abs(r.exact)
             ident = r.identified
-            parts.append(f"mode {r.mode} {ident.fn_hz:.4g} Hz ({100 * (ident.fn_hz / fe - 1):+.1f} %), "
-                         f"ζ {100 * ident.zeta:.2g} % (exact {100 * ze:.2g} %)")
+            parts.append(
+                f"mode {r.mode} {ident.fn_hz:.4g} Hz ({100 * (ident.fn_hz / fe - 1):+.1f} %), "
+                f"ζ {100 * ident.zeta:.2g} % (exact {100 * ze:.2g} %)"
+            )
         text = f"{method} found: " + "; ".join(parts) + "." if parts else f"{method} found no mode."
         if harmonics:
-            text += " <b>Harmonic" + ("s" if len(harmonics) > 1 else "") + "</b> at " + ", ".join(
-                f"{f:.4g} Hz (kurtosis {k:.2g}; a mode's is 3)" for f, k in harmonics) + "."
+            text += (
+                " <b>Harmonic"
+                + ("s" if len(harmonics) > 1 else "")
+                + "</b> at "
+                + ", ".join(f"{f:.4g} Hz (kurtosis {k:.2g}; a mode's is 3)" for f, k in harmonics)
+                + "."
+            )
         return text
 
     def _draw_stabilization(self) -> None:
@@ -841,8 +922,9 @@ class OmaPage(QtWidgets.QWidget):
         f_top = self._band()[1]
         exact = [m for m in self.result.modes if m.damped is not None and m.damped.fn_hz <= f_top]
         columns = [self._found(FDD)[0], self._found(SSI)[0], self._hammer_modes()]
-        matches = [{r.mode: r for r in match_modes(modes, self.result, f_top) if r.mode is not None}
-                   for modes in columns]
+        matches = [
+            {r.mode: r for r in match_modes(modes, self.result, f_top) if r.mode is not None} for modes in columns
+        ]
         t = self.methods
         t.setRowCount(len(exact))
         for row, m in enumerate(exact):
@@ -855,7 +937,9 @@ class OmaPage(QtWidgets.QWidget):
                     continue
                 ident = r.identified
                 text, color = colored(100 * (ident.zeta / ze - 1), 10.0, 30.0, _cell(ident.fn_hz, ident.zeta))
-                tip = f"fₙ {100 * (ident.fn_hz / fe - 1):+.2f} %, ζ {100 * (ident.zeta / ze - 1):+.1f} %, MAC {r.mac:.3f}"
+                tip = (
+                    f"fₙ {100 * (ident.fn_hz / fe - 1):+.2f} %, ζ {100 * (ident.zeta / ze - 1):+.1f} %, MAC {r.mac:.3f}"
+                )
                 cells.append((text, color, tip))
             for c, (text, color, tip) in enumerate(cells):
                 item = QtWidgets.QTableWidgetItem(text)
@@ -871,7 +955,8 @@ class OmaPage(QtWidgets.QWidget):
             f"{HAMMER_AVERAGES} hits on m1, force and displacements measured, a force-exponential window, LSCF's "
             "stable poles and LSFD (on the chain alone: no machine, no ambient forces). Knowing the force, only the "
             "hammer test could scale its shapes to modal masses. Colour: the damping's error (green within 10 %, "
-            "amber 30 %).")
+            "amber 30 %)."
+        )
 
     def _draw_efdd(self) -> None:
         c, b = self.correlation, self.bell_plot
@@ -885,15 +970,22 @@ class OmaPage(QtWidgets.QWidget):
         d = self.fdd
         span = np.flatnonzero(m.bell)
         lo, hi = max(1, span[0] - span.size), min(d.freqs.size - 1, span[-1] + span.size)
-        floor = max(d.s[lo:hi + 1, 0].max() * 1e-6, 1e-300)
-        b.plot(d.freqs[lo:hi + 1], np.maximum(d.s[lo:hi + 1, 0], floor), pen=pg.mkPen(colors.grey, width=1))
+        floor = max(d.s[lo : hi + 1, 0].max() * 1e-6, 1e-300)
+        b.plot(d.freqs[lo : hi + 1], np.maximum(d.s[lo : hi + 1, 0], floor), pen=pg.mkPen(colors.grey, width=1))
         b.plot(d.freqs[m.bell], np.maximum(d.s[m.bell, 0], floor), pen=pg.mkPen(color, width=2))
         show = m.lag <= (m.lag[m.extremes[-1]] * 1.3 if m.extremes.size else m.lag[-1] * 0.1)
         c.plot(m.lag[show], m.correlation[show], pen=pg.mkPen(colors.strong, width=1.5))
         c.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
         if m.extremes.size:
-            c.plot(m.lag[m.extremes], m.correlation[m.extremes], pen=None, symbol="o", symbolSize=7,
-                   symbolPen=pg.mkPen(color, width=1.5), symbolBrush=pg.mkBrush(colors.background))
+            c.plot(
+                m.lag[m.extremes],
+                m.correlation[m.extremes],
+                pen=None,
+                symbol="o",
+                symbolSize=7,
+                symbolPen=pg.mkPen(color, width=1.5),
+                symbolBrush=pg.mkBrush(colors.background),
+            )
         if math.isfinite(m.zeta):
             sigma = m.zeta * 2 * math.pi * m.fn_hz
             t = m.lag[show]
@@ -906,8 +998,11 @@ class OmaPage(QtWidgets.QWidget):
             self.efdd_note.setText(
                 f"Bell of {int(m.bell.sum())} lines; {m.extremes.size} extremes and {m.crossings.size} zero "
                 f"crossings fitted: f<sub>n</sub> = {m.fn_hz:.4g} Hz, ζ = {100 * m.zeta:.3g} % (the peak's line: "
-                f"{m.peak_hz:.4g} Hz).")
+                f"{m.peak_hz:.4g} Hz)."
+            )
         else:
-            self.efdd_note.setText(f"Bell of {int(m.bell.sum())} lines: too few extremes to fit a decay. Lower the "
-                                   f"MAC threshold, or lengthen the blocks.")
+            self.efdd_note.setText(
+                f"Bell of {int(m.bell.sum())} lines: too few extremes to fit a decay. Lower the "
+                f"MAC threshold, or lengthen the blocks."
+            )
         c.setXRange(0.0, float(m.lag[show][-1]), padding=0)

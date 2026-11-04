@@ -8,8 +8,8 @@ from vib_tutorial.core import (
     Estimator,
     Excitation,
     FrfEstimator,
-    Processing,
     MeasurementSettings,
+    Processing,
     Response,
     Window,
     foh_discretize,
@@ -103,12 +103,17 @@ def test_accelerance_and_receptance_convert_both_ways():
 
 @pytest.mark.parametrize("excitation", [Excitation.PERIODIC_RANDOM, Excitation.STEPPED_SINE, Excitation.IMPACT])
 def test_noise_free_acceleration_measurement_recovers_the_accelerance(excitation):
-    acq = measure(SYSTEM, excitation=excitation, input_dof=3, averages=3, sine_points=30,
-                  response=Response.ACCELERATION)
+    acq = measure(
+        SYSTEM, excitation=excitation, input_dof=3, averages=3, sine_points=30, response=Response.ACCELERATION
+    )
     est = FrfEstimator(acq, Processing(window=Window.RECTANGULAR)).estimate()
     assert est.response is Response.ACCELERATION
-    err = band_error(SYSTEM, acq, Processing(window=Window.RECTANGULAR),
-                     lambda f: from_receptance(f, frf(SYSTEM, f, 3), Response.ACCELERATION))
+    err = band_error(
+        SYSTEM,
+        acq,
+        Processing(window=Window.RECTANGULAR),
+        lambda f: from_receptance(f, frf(SYSTEM, f, 3), Response.ACCELERATION),
+    )
     assert err < 5e-3
 
 
@@ -284,8 +289,9 @@ def test_friction_frf_depends_on_the_force_level():
     # peak is flattened by a light force and close to the frictionless one under a strong force.
     ratios = []
     for level in (0.2, 3.0):
-        acq = measure(FRICTION, excitation=Excitation.STEPPED_SINE, input_dof=3, fs=19.0, sine_points=6,
-                      force_level=level)
+        acq = measure(
+            FRICTION, excitation=Excitation.STEPPED_SINE, input_dof=3, fs=19.0, sine_points=6, force_level=level
+        )
         est = FrfEstimator(acq, Processing()).estimate()
         exact = frf(FRICTION, est.freqs, 3)[:, 3]  # the chain without friction
         ratios.append(np.abs(est.H[:, 3]).max() / np.abs(exact).max())

@@ -72,60 +72,83 @@ TRIALS = (
         "peak is 1.37 times the next: the log decrement δ = ln 1.37 = 0.315, and ζ = δ/2π = 0.050. The readout "
         "under the decay measures it from the curve's peaks. The dashed envelope falls by e in the time "
         "constant 1/ζω<sub>n</sub> = 1 s.",
-        tab=TAB_PHASE),
+        tab=TAB_PHASE,
+    ),
     SdofTrial(
         "Critical damping: the quickest return",
         "c = 40 N·s/m, the critical damping 2√(km), with ζ = 0.1, 1 and 2 drawn beside it. ζ = 0.1 overshoots "
         "and rings; ζ = 1 comes back without crossing zero, the fastest that does; ζ = 2 creeps back, held up "
         "by its slow root at −0.27ω<sub>n</sub> (a time constant of 0.19 s against critical's 0.05 s).",
-        damping=40.0, compare=True, tab=TAB_POLES),
+        damping=40.0,
+        compare=True,
+        tab=TAB_POLES,
+    ),
     SdofTrial(
         "Overdamped: two real poles",
         "c = 80 N·s/m, ζ = 2. The poles have left the imaginary axis for two points on the real one, at "
         "−5.4 and −74.6 s<sup>−1</sup>: two decays and no oscillation. Click in the Poles plot to put them "
         "anywhere; the page works out the k and c that put them there.",
-        damping=80.0, tab=TAB_POLES),
+        damping=80.0,
+        tab=TAB_POLES,
+    ),
     SdofTrial(
         "Resonance: a 90° lag",
         "A 1 N force at f<sub>n</sub> = 3.18 Hz. From rest the swing grows over a few time constants (1 s) to "
         "(F/k)/2ζ = 25 mm, ten times the static 2.5 mm: the quality factor Q = 1/2ζ = 10. The response lags "
         "the force by 90°, where the phase plot crosses −90°.",
-        tune=True, tab=TAB_FRF),
+        tune=True,
+        tab=TAB_FRF,
+    ),
     SdofTrial(
         "Half-power bandwidth",
         "The default oscillator's peak, with its half-power points marked: |H| falls to 1/√2 of the peak at "
         "3.01 and 3.33 Hz, 0.32 Hz apart, so ζ ≈ Δf/2f<sub>n</sub> = 0.050. Raise c and the band widens in "
         "proportion.",
-        freq_hz=3.0, tab=TAB_FRF),
+        freq_hz=3.0,
+        tab=TAB_FRF,
+    ),
     SdofTrial(
         "Beats: undamped, just off resonance",
         "c = 0, a 1 N force at 3.0 Hz, 0.18 Hz below f<sub>n</sub>. The free vibration the start sets off never "
         "dies, and it drifts in and out of step with the forced one: the swing beats at |f − f<sub>n</sub>| = "
         "0.18 Hz, every 5.5 s, between zero and twice the steady 22 mm.",
-        damping=0.0, freq_hz=3.0, tab=TAB_FRF),
+        damping=0.0,
+        freq_hz=3.0,
+        tab=TAB_FRF,
+    ),
     SdofTrial(
         "Exactly at resonance, undamped",
         "c = 0 and the force at f<sub>n</sub>. There is no steady state: the swing grows in a straight line, "
         "F/2mω<sub>n</sub> = 25 mm a second, for ever. Any damping at all bounds it.",
-        damping=0.0, tune=True, tab=TAB_FRF),
+        damping=0.0,
+        tune=True,
+        tab=TAB_FRF,
+    ),
     SdofTrial(
         "A rotating unbalance",
         "An unbalance m<sub>e</sub>e = 1×10<sup>−4</sup> kg·m (10 g at 10 mm) on a 1 kg machine. Its force "
         "grows as Ω², so the response starts at zero, peaks at resonance at (m<sub>e</sub>e/m)/2ζ = 1 mm, and "
         "levels off far above it at m<sub>e</sub>e/m = 0.1 mm, 180° out of phase: the machine turns round "
         "the shared centre of mass.",
-        kind=UNBALANCE, amplitude=1e-4, tune=True, tab=TAB_FRF),
+        kind=UNBALANCE,
+        amplitude=1e-4,
+        tune=True,
+        tab=TAB_FRF,
+    ),
     SdofTrial(
         "The Nyquist circle",
         "The receptance drawn as Im H against Re H. Near resonance it traces nearly a circle of diameter "
         "1/cω<sub>n</sub> = 25 mm/N, crossing the imaginary axis at f<sub>n</sub>; the points (1 per "
         "0.02 Hz) are furthest apart there, which is how modal tests find f<sub>n</sub>.",
-        freq_hz=3.0, tab=TAB_NYQUIST),
+        freq_hz=3.0,
+        tab=TAB_NYQUIST,
+    ),
 )
 
 
 # ------------------------------------------------------------------ practice problems
 # Each question's numbers are printed round (or to 3–4 figures), and its answer is worked from them as printed.
+
 
 def _natural_frequency(rng: np.random.Generator) -> Question:
     m = pick(rng, (0.5, 1, 2, 4, 5, 10))
@@ -136,7 +159,9 @@ def _natural_frequency(rng: np.random.Generator) -> Question:
         osc.natural_hz,
         f"ω<sub>n</sub> = √(k/m) = √({k:g}/{m:g}) = {number(osc.omega_n)} rad/s, and f<sub>n</sub> = "
         f"ω<sub>n</sub>/2π = {number(osc.natural_hz)} Hz.",
-        unit="Hz", setup=dict(mass=m, stiffness=k, damping=rounded(0.1 * math.sqrt(k * m)), tab=TAB_PHASE))
+        unit="Hz",
+        setup=dict(mass=m, stiffness=k, damping=rounded(0.1 * math.sqrt(k * m)), tab=TAB_PHASE),
+    )
 
 
 def _critical_damping(rng: np.random.Generator) -> Question:
@@ -147,7 +172,9 @@ def _critical_damping(rng: np.random.Generator) -> Question:
         f"A {m:g} kg mass on a spring of {k:g} N/m. What damping coefficient c makes it critically damped?",
         cc,
         f"c<sub>c</sub> = 2√(km) = 2√({k:g} × {m:g}) = {number(cc)} N·s/m (that is, 2mω<sub>n</sub>).",
-        unit="N·s/m", setup=dict(mass=m, stiffness=k, damping=rounded(cc), compare=True, tab=TAB_POLES))
+        unit="N·s/m",
+        setup=dict(mass=m, stiffness=k, damping=rounded(cc), compare=True, tab=TAB_POLES),
+    )
 
 
 def _log_decrement(rng: np.random.Generator) -> Question:
@@ -158,7 +185,7 @@ def _log_decrement(rng: np.random.Generator) -> Question:
     delta = TWO_PI * zeta / math.sqrt(1.0 - zeta * zeta)
     xn = rounded(x0 * math.exp(-n * delta))
     d = math.log(x0 / xn) / n  # from the printed peaks
-    answer = d / math.sqrt(TWO_PI ** 2 + d * d)
+    answer = d / math.sqrt(TWO_PI**2 + d * d)
     cycles = "the next peak" if n == 1 else f"the peak {n} cycles later"
     return Question(
         f"A mass released from rest rings down. One peak is {x0:g} mm and {cycles} is {number(xn)} mm. What is "
@@ -167,7 +194,8 @@ def _log_decrement(rng: np.random.Generator) -> Question:
         f"The log decrement is δ = (1/{n}) ln({x0:g}/{number(xn)}) = {number(d)}, and ζ = δ/√(4π² + δ²) = "
         f"{number(answer)} (δ/2π = {number(d / TWO_PI)} is near enough when ζ is small).",
         tolerance=0.03,
-        setup=dict(mass=1.0, stiffness=k, damping=rounded(2.0 * zeta * math.sqrt(k)), x0_mm=x0, tab=TAB_PHASE))
+        setup=dict(mass=1.0, stiffness=k, damping=rounded(2.0 * zeta * math.sqrt(k)), x0_mm=x0, tab=TAB_PHASE),
+    )
 
 
 def _resonant_amplitude(rng: np.random.Generator) -> Question:
@@ -185,7 +213,9 @@ def _resonant_amplitude(rng: np.random.Generator) -> Question:
         f"holds the force: X = F/(cω<sub>n</sub>) = {force:g}/({number(c)} × {number(osc.omega_n)}) = "
         f"{number(1e3 * x)} mm. That's (F/k)/2ζ: Q = 1/2ζ = {number(1.0 / (2.0 * osc.zeta))} times the static "
         f"{number(1e3 * force / k)} mm.",
-        unit="mm", setup=dict(mass=m, stiffness=k, damping=c, amplitude=force, tune=True, tab=TAB_FRF))
+        unit="mm",
+        setup=dict(mass=m, stiffness=k, damping=c, amplitude=force, tune=True, tab=TAB_FRF),
+    )
 
 
 def _half_power(rng: np.random.Generator) -> Question:
@@ -202,8 +232,14 @@ def _half_power(rng: np.random.Generator) -> Question:
         f"{number((lo + hi) / 2, 4)} Hz and Δf = {number(hi - lo)} Hz: ζ ≈ {number(estimate)}. (Exactly, "
         f"ζ = {number(zeta)}.)",
         tolerance=0.03,
-        setup=dict(mass=1.0, stiffness=k, damping=rounded(2.0 * zeta * math.sqrt(k)), freq_hz=rounded(osc.natural_hz),
-                   tab=TAB_FRF))
+        setup=dict(
+            mass=1.0,
+            stiffness=k,
+            damping=rounded(2.0 * zeta * math.sqrt(k)),
+            freq_hz=rounded(osc.natural_hz),
+            tab=TAB_FRF,
+        ),
+    )
 
 
 def _more_damping(rng: np.random.Generator) -> Question:
@@ -216,19 +252,22 @@ def _more_damping(rng: np.random.Generator) -> Question:
         f"F/(cω<sub>n</sub>), and {n} times the c gives 1/{n} of the swing. (Off resonance damping matters far "
         "less.)",
         choices=(f"It falls to 1/{n}", f"It falls to 1/√{n}", "It stays the same", f"It grows {n} times"),
-        setup=dict(damping=2.0 * n, tune=True, tab=TAB_FRF), predict=True)
+        setup=dict(damping=2.0 * n, tune=True, tab=TAB_FRF),
+        predict=True,
+    )
 
 
 def _heavier(rng: np.random.Generator) -> Question:
     n = int(pick(rng, (4, 9)))
-    root = int(math.isqrt(n))
+    root = math.isqrt(n)
     return Question(
-        f"The mass on a spring is made {n} times heavier, the spring the same. What happens to its natural "
-        "frequency?",
+        f"The mass on a spring is made {n} times heavier, the spring the same. What happens to its natural frequency?",
         0,
         f"f<sub>n</sub> = √(k/m)/2π: {n} times the mass gives 1/√{n} = 1/{root} of the frequency.",
         choices=(f"It falls to 1/{root}", f"It falls to 1/{n}", "It stays the same", f"It rises {root} times"),
-        setup=dict(mass=float(n), tab=TAB_PHASE), predict=True)
+        setup=dict(mass=float(n), tab=TAB_PHASE),
+        predict=True,
+    )
 
 
 def _quickest_return(rng: np.random.Generator) -> Question:
@@ -239,60 +278,105 @@ def _quickest_return(rng: np.random.Generator) -> Question:
         "Critical damping. More damping slows the return: ζ = 2's slow root at −0.27ω<sub>n</sub> holds it back "
         "(a time constant of 0.19 s here, against critical's 0.05 s).",
         choices=("ζ = 1", "ζ = 2", "They settle together"),
-        setup=dict(damping=40.0, compare=True, tab=TAB_POLES), predict=True)
+        setup=dict(damping=40.0, compare=True, tab=TAB_POLES),
+        predict=True,
+    )
 
 
 PROBLEMS = (
-    Problem("natural-frequency", "Natural frequency", "sdof_page",
-            f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}: ω<sub>n</sub> = √(k/m), in rad/s.",
-            _natural_frequency),
-    Problem("critical-damping", "Critical damping", "sdof_page",
-            f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.", _critical_damping),
-    Problem("log-decrement", "Damping from a decay", "sdof_page",
-            f"See {page_link('sdof_page', 'log-decrement', 'Measuring damping from a decay')}: over n cycles, "
-            "δ = (1/n) ln(x<sub>0</sub>/x<sub>n</sub>).", _log_decrement),
-    Problem("resonant-amplitude", "Amplitude at resonance", "sdof_page",
-            f"See {page_link('sdof_page', 'forced-response', 'Forced response')}: what's left of k − ω²m + iωc "
-            "at ω<sub>n</sub>?", _resonant_amplitude),
-    Problem("half-power", "Damping from the half-power points", "sdof_page",
-            f"See {page_link('sdof_page', 'half-power', 'The half-power bandwidth')}.", _half_power),
-    Problem("more-damping", "Predict: more damping at resonance", "sdof_page",
-            f"See {page_link('sdof_page', 'forced-response', 'Forced response')}.", _more_damping),
-    Problem("heavier", "Predict: a heavier mass", "sdof_page",
-            f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}.", _heavier),
-    Problem("quickest-return", "Predict: the quickest return", "sdof_page",
-            f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.", _quickest_return),
+    Problem(
+        "natural-frequency",
+        "Natural frequency",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}: ω<sub>n</sub> = √(k/m), in rad/s.",
+        _natural_frequency,
+    ),
+    Problem(
+        "critical-damping",
+        "Critical damping",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.",
+        _critical_damping,
+    ),
+    Problem(
+        "log-decrement",
+        "Damping from a decay",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'log-decrement', 'Measuring damping from a decay')}: over n cycles, "
+        "δ = (1/n) ln(x<sub>0</sub>/x<sub>n</sub>).",
+        _log_decrement,
+    ),
+    Problem(
+        "resonant-amplitude",
+        "Amplitude at resonance",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'forced-response', 'Forced response')}: what's left of k − ω²m + iωc "
+        "at ω<sub>n</sub>?",
+        _resonant_amplitude,
+    ),
+    Problem(
+        "half-power",
+        "Damping from the half-power points",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'half-power', 'The half-power bandwidth')}.",
+        _half_power,
+    ),
+    Problem(
+        "more-damping",
+        "Predict: more damping at resonance",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'forced-response', 'Forced response')}.",
+        _more_damping,
+    ),
+    Problem(
+        "heavier",
+        "Predict: a heavier mass",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}.",
+        _heavier,
+    ),
+    Problem(
+        "quickest-return",
+        "Predict: the quickest return",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.",
+        _quickest_return,
+    ),
 )
 
 TIPS = {
     "mass": "<p>The mass m.</p>",
     "stiffness": "<p>The spring's stiffness k: the force per metre of stretch.</p>",
     "damping": "<p>The viscous damper's coefficient c: the force per m/s of velocity. Its critical value "
-               "2√(km) is the least that stops the oscillator overshooting.</p>",
+    "2√(km) is the least that stops the oscillator overshooting.</p>",
     "x0": "<p>Where the mass starts the free vibration (the driven response starts from rest).</p>",
     "v0": "<p>The velocity it starts with.</p>",
     "compare": "<p>Draw the free vibration for ζ = 0.1, 1 and 2 as well, with the same mass and spring "
-               "(underdamped, critically damped, overdamped).</p>",
+    "(underdamped, critically damped, overdamped).</p>",
     "kind": "<p><b>Force:</b> F cos Ωt on the mass.<br><b>Rotating unbalance:</b> a mass m<sub>e</sub> turning "
-            "at radius e inside the machine, whose force m<sub>e</sub>eΩ² cos Ωt grows with the speed.</p>",
+    "at radius e inside the machine, whose force m<sub>e</sub>eΩ² cos Ωt grows with the speed.</p>",
     "amplitude": "<p>The force's amplitude F, or the unbalance m<sub>e</sub>e.</p>",
     "freq": "<p>The drive's frequency Ω/2π.</p>",
 }
 FRF_TIP = (
     "<p>The steady amplitude over the static one, |X|k/F (the dynamic amplification), or for the unbalance "
     "m|X|/m<sub>e</sub>e, against the drive's frequency, and the phase by which the response lags. The band "
-    "is the half-power width, the dotted line f<sub>n</sub>, the circle the drive.</p>")
+    "is the half-power width, the dotted line f<sub>n</sub>, the circle the drive.</p>"
+)
 NYQUIST_TIP = (
     "<p>The receptance H = X/F in the complex plane, Im against Re, from low frequency (near 1/k on the real "
-    "axis) round to the origin. The dots are 0.02 Hz apart; the circle is the drive.</p>")
+    "axis) round to the origin. The dots are 0.02 Hz apart; the circle is the drive.</p>"
+)
 PHASE_TIP = (
     "<p>The free vibration as a path in the phase plane: velocity over ω<sub>n</sub> against displacement. "
-    "Undamped it is a circle; damping winds it into a spiral, a turn per cycle.</p>")
+    "Undamped it is a circle; damping winds it into a spiral, a turn per cycle.</p>"
+)
 POLES_TIP = (
     "<p>The roots of m s² + c s + k in the complex plane: −ζω<sub>n</sub> ± iω<sub>d</sub>. Their distance "
     "from the origin is ω<sub>n</sub>, the angle from the imaginary axis is sin⁻¹ζ. The rays are ζ = 0.05, "
     "0.2, 0.5 and 0.8, the arc the current ω<sub>n</sub>. Click to put the upper pole there (the mass is "
-    "kept, k and c follow).</p>")
+    "kept, k and c follow).</p>"
+)
 
 NOTES_HTML = """
 <h3><a name="course-map"></a>The pages, in order</h3>
@@ -422,15 +506,22 @@ origin along the slow root's direction.</p>
 <tr><td>s</td><td>pole, root of m s² + c s + k</td><td>1/s</td></tr>
 </table>
 """
-NOTES_HTML = NOTES_HTML.replace("<!--COURSE-->", course_map()).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "One mass on a spring and a damper is set by f<sub>n</sub> = √(k/m)/2π, ζ = c/2√(km) and 1/k.",
-    "Underdamped, it rings at ω<sub>d</sub> ≈ ω<sub>n</sub> inside an envelope e<sup>−ζω<sub>n</sub>t</sup>; "
-    "critically damped it returns fastest without overshoot; overdamped it creeps.",
-    "The log decrement δ ≈ 2πζ and the half-power width Δf ≈ 2ζf<sub>n</sub> both measure damping.",
-    "Driven, it follows the force below resonance, opposes it above, and lags by 90° at resonance, where "
-    "only damping limits it to Q = 1/2ζ times the static response.",
-    "A switched-on force adds a free vibration that dies away; undamped, it beats instead.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace("<!--COURSE-->", course_map())
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "One mass on a spring and a damper is set by f<sub>n</sub> = √(k/m)/2π, ζ = c/2√(km) and 1/k.",
+            "Underdamped, it rings at ω<sub>d</sub> ≈ ω<sub>n</sub> inside an envelope e<sup>−ζω<sub>n</sub>t</sup>; "
+            "critically damped it returns fastest without overshoot; overdamped it creeps.",
+            "The log decrement δ ≈ 2πζ and the half-power width Δf ≈ 2ζf<sub>n</sub> both measure damping.",
+            "Driven, it follows the force below resonance, opposes it above, and lags by 90° at resonance, where "
+            "only damping limits it to Q = 1/2ζ times the static response.",
+            "A switched-on force adds a free vibration that dies away; undamped, it beats instead.",
+        ),
+    )
+)
 
 
 class SdofPage(QtWidgets.QWidget):
@@ -443,9 +534,10 @@ class SdofPage(QtWidgets.QWidget):
         self.osc = Oscillator()
 
         # --- left
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the oscillator and the plots to show one idea from the Theory "
-                               "tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each sets up the oscillator and the plots to show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         box = Form("Oscillator")
@@ -487,8 +579,10 @@ class SdofPage(QtWidgets.QWidget):
 
         # --- centre
         self.free_plot = plot("Displacement x", "m", "Time", "s", height=170)
-        self.free_plot.setToolTip("<p>The free vibration from x₀ and v₀, its envelope ±e<sup>−ζω<sub>n</sub>t</sup>"
-                                  " (dashed) and its peaks.</p>")
+        self.free_plot.setToolTip(
+            "<p>The free vibration from x₀ and v₀, its envelope ±e<sup>−ζω<sub>n</sub>t</sup>"
+            " (dashed) and its peaks.</p>"
+        )
         self.free_legend = add_legend(self.free_plot.getPlotItem(), offset=(-10, 10))
         self.free_item = pg.PlotDataItem(name="x")
         self.envelope_items = [pg.PlotDataItem() for _ in range(2)]
@@ -499,8 +593,10 @@ class SdofPage(QtWidgets.QWidget):
         self.free_note = readout_label()
 
         self.forced_plot = plot("Displacement x", "m", "Time", "s", height=170)
-        self.forced_plot.setToolTip("<p>The drive switched on at t = 0 with the mass at rest: the whole response, "
-                                    "and dashed the steady response it settles into.</p>")
+        self.forced_plot.setToolTip(
+            "<p>The drive switched on at t = 0 with the mass at rest: the whole response, "
+            "and dashed the steady response it settles into.</p>"
+        )
         add_legend(self.forced_plot.getPlotItem(), offset=(-10, 10))
         self.steady_item = pg.PlotDataItem(name="steady")
         self.forced_item = pg.PlotDataItem(name="from rest")
@@ -572,8 +668,7 @@ class SdofPage(QtWidgets.QWidget):
         self.plane.addItem(self.plane_item)
         self.plane.addItem(self.plane_start)
         pv.addWidget(self.plane, 1)
-        pv.addWidget(note_label("The free vibration's path: a circle undamped, a spiral damped. The dot is "
-                                "the start."))
+        pv.addWidget(note_label("The free vibration's path: a circle undamped, a spiral damped. The dot is the start."))
 
         poles = QtWidgets.QWidget()
         sv = QtWidgets.QVBoxLayout(poles)
@@ -620,9 +715,17 @@ class SdofPage(QtWidgets.QWidget):
         self.apply_trial(SdofTrial("", "", **setup))
 
     def apply_trial(self, t: SdofTrial) -> None:
-        for box, value in ((self.mass, t.mass), (self.stiffness, t.stiffness), (self.damping, t.damping),
-                           (self.x0, t.x0_mm), (self.v0, t.v0_mms), (self.compare, t.compare), (self.kind, t.kind),
-                           (self.amplitude, t.amplitude), (self.freq, t.freq_hz)):
+        for box, value in (
+            (self.mass, t.mass),
+            (self.stiffness, t.stiffness),
+            (self.damping, t.damping),
+            (self.x0, t.x0_mm),
+            (self.v0, t.v0_mms),
+            (self.compare, t.compare),
+            (self.kind, t.kind),
+            (self.amplitude, t.amplitude),
+            (self.freq, t.freq_hz),
+        ):
             set_quietly(box, value)
         self._on_kind(redraw=False)
         self.osc = Oscillator(t.mass, t.stiffness, t.damping)
@@ -722,8 +825,10 @@ class SdofPage(QtWidgets.QWidget):
         z = o.zeta
         parts = [f"f<sub>n</sub> = {o.natural_hz:.4g} Hz, ζ = {z:.4g} (c<sub>c</sub> = {o.critical:.4g} N·s/m)."]
         if 0 < z < 1:
-            parts.append(f"f<sub>d</sub> = {o.damped_hz:.4g} Hz, τ = {o.time_constant:.3g} s, δ = {o.log_decrement:.3g},"
-                         f" Q = {1 / (2 * z):.3g}.")
+            parts.append(
+                f"f<sub>d</sub> = {o.damped_hz:.4g} Hz, τ = {o.time_constant:.3g} s, δ = {o.log_decrement:.3g},"
+                f" Q = {1 / (2 * z):.3g}."
+            )
         elif z == 0:
             parts.append("Undamped: it rings for ever.")
         elif z >= 1:
@@ -745,8 +850,13 @@ class SdofPage(QtWidgets.QWidget):
         span = self._free_span()
         if self.compare.isChecked():
             # A span that shows the slowest of the compared ones settling too.
-            span = max(span, min(6.0 * Oscillator(o.mass, o.stiffness, COMPARE_ZETAS[-1] * o.critical).time_constant,
-                                 60.0 * o.period), 5.0 / (COMPARE_ZETAS[0] * o.omega_n))
+            span = max(
+                span,
+                min(
+                    6.0 * Oscillator(o.mass, o.stiffness, COMPARE_ZETAS[-1] * o.critical).time_constant, 60.0 * o.period
+                ),
+                5.0 / (COMPARE_ZETAS[0] * o.omega_n),
+            )
         t = np.linspace(0.0, span, POINTS)
         x, v = free_response(o, x0, v0, t)
         self.free_item.setData(t, x)
@@ -777,12 +887,16 @@ class SdofPage(QtWidgets.QWidget):
         lines = []
         d = measured_decrement(t, x)
         if d is not None and 0 < o.zeta < 1:
-            lines.append(f"Measured from {min(len(px), 40)} peaks: δ = {d:.4g}, so ζ = δ/√(4π² + δ²) = "
-                         f"{d / math.sqrt(4 * math.pi**2 + d * d):.4g} (the oscillator's ζ is {o.zeta:.4g}). "
-                         f"Each peak is {math.exp(d):.4g} times the next.")
+            lines.append(
+                f"Measured from {min(len(px), 40)} peaks: δ = {d:.4g}, so ζ = δ/√(4π² + δ²) = "
+                f"{d / math.sqrt(4 * math.pi**2 + d * d):.4g} (the oscillator's ζ is {o.zeta:.4g}). "
+                f"Each peak is {math.exp(d):.4g} times the next."
+            )
         elif o.zeta == 0:
-            lines.append(f"No damping: it swings at {o.natural_hz:.4g} Hz for ever, its energy "
-                         f"½kx₀² + ½mv₀² = {fmt(0.5 * o.stiffness * x0**2 + 0.5 * o.mass * v0**2, 'J')} kept.")
+            lines.append(
+                f"No damping: it swings at {o.natural_hz:.4g} Hz for ever, its energy "
+                f"½kx₀² + ½mv₀² = {fmt(0.5 * o.stiffness * x0**2 + 0.5 * o.mass * v0**2, 'J')} kept."
+            )
         elif o.zeta >= 1:
             s = o.poles().real
             lines.append(f"No oscillation: the poles are real, s = {s[0]:.4g} and {s[1]:.4g} s⁻¹.")
@@ -815,17 +929,25 @@ class SdofPage(QtWidgets.QWidget):
         if np.isfinite(h):
             X = abs(F * h)
             lag = -math.degrees(math.atan2(h.imag, h.real))
-            what = (f"Unbalance force m<sub>e</sub>eΩ² = {fmt(F, 'N')}. " if self.kind.currentIndex() == UNBALANCE
-                    else "")
-            text = (f"{what}Steady amplitude {fmt(X, 'm')} at r = f/f<sub>n</sub> = {r:.3g}, lagging the force by "
-                    f"{lag:.1f}°: {X * o.stiffness / F:.3g} times the static {fmt(F / o.stiffness, 'm')}." if F > 0
-                    else "No force.")
+            what = (
+                f"Unbalance force m<sub>e</sub>eΩ² = {fmt(F, 'N')}. " if self.kind.currentIndex() == UNBALANCE else ""
+            )
+            text = (
+                f"{what}Steady amplitude {fmt(X, 'm')} at r = f/f<sub>n</sub> = {r:.3g}, lagging the force by "
+                f"{lag:.1f}°: {X * o.stiffness / F:.3g} times the static {fmt(F / o.stiffness, 'm')}."
+                if F > 0
+                else "No force."
+            )
             if o.damping == 0 and F > 0:
-                text += (f" Undamped, the start never dies away: it beats every {1 / abs(f - o.natural_hz):.3g} s, "
-                         f"at |f − f<sub>n</sub>| = {abs(f - o.natural_hz):.3g} Hz.")
+                text += (
+                    f" Undamped, the start never dies away: it beats every {1 / abs(f - o.natural_hz):.3g} s, "
+                    f"at |f − f<sub>n</sub>| = {abs(f - o.natural_hz):.3g} Hz."
+                )
         else:
-            text = (f"At resonance with no damping there is no steady state: the swing grows by "
-                    f"F/2mω<sub>n</sub> = {fmt(F / (2 * o.mass * o.omega_n), 'm')} every second.")
+            text = (
+                f"At resonance with no damping there is no steady state: the swing grows by "
+                f"F/2mω<sub>n</sub> = {fmt(F / (2 * o.mass * o.omega_n), 'm')} every second."
+            )
         self.forced_note.setText(text)
 
     def _draw_frf(self) -> None:
@@ -871,13 +993,17 @@ class SdofPage(QtWidgets.QWidget):
             self.frf_note.setText(
                 f"Half-power points {half[0]:.4g} and {half[1]:.4g} Hz, {half[1] - half[0]:.3g} Hz apart: "
                 f"Δf/2f<sub>n</sub> = {(half[1] - half[0]) / (2 * o.natural_hz):.4g} (ζ = {o.zeta:.4g}). "
-                f"Peak {top:.4g} times static, at {o.peak_hz():.4g} Hz.")
+                f"Peak {top:.4g} times static, at {o.peak_hz():.4g} Hz."
+            )
         elif unbalance:
-            self.frf_note.setText(f"Far above resonance m|X|/m<sub>e</sub>e → 1: the machine swings by "
-                                  f"m<sub>e</sub>e/m = {fmt(self.amplitude.value() / o.mass, 'm')}.")
+            self.frf_note.setText(
+                f"Far above resonance m|X|/m<sub>e</sub>e → 1: the machine swings by "
+                f"m<sub>e</sub>e/m = {fmt(self.amplitude.value() / o.mass, 'm')}."
+            )
         elif o.damping == 0:
-            self.frf_note.setText("No damping: the peak is infinite, and the phase jumps from 0° to 180° at "
-                                  "f<sub>n</sub>.")
+            self.frf_note.setText(
+                "No damping: the peak is infinite, and the phase jumps from 0° to 180° at f<sub>n</sub>."
+            )
         else:
             self.frf_note.setText("ζ ≥ 1/√2: no resonant peak, so no half-power band.")
         # Nyquist: a 0.02 Hz grid for the dots, the fine grid for the line
@@ -896,10 +1022,13 @@ class SdofPage(QtWidgets.QWidget):
         self.nyq_drive.setData([hd.real] if np.isfinite(hd) else [], [hd.imag] if np.isfinite(hd) else [])
         if o.damping > 0:
             d = 1.0 / (o.damping * o.omega_n)
-            self.nyq_plot.setRange(xRange=(-0.65 * d, max(0.65 * d, 1.1 / o.stiffness)), yRange=(-1.1 * d, 0.1 * d),
-                                   padding=0)
-            self.nyq_note.setText(f"Diameter of the circle ≈ 1/cω<sub>n</sub> = {fmt(d, 'm/N')}; the diamond is "
-                                  f"f<sub>n</sub>, where the dots (0.02 Hz apart) are furthest apart.")
+            self.nyq_plot.setRange(
+                xRange=(-0.65 * d, max(0.65 * d, 1.1 / o.stiffness)), yRange=(-1.1 * d, 0.1 * d), padding=0
+            )
+            self.nyq_note.setText(
+                f"Diameter of the circle ≈ 1/cω<sub>n</sub> = {fmt(d, 'm/N')}; the diamond is "
+                f"f<sub>n</sub>, where the dots (0.02 Hz apart) are furthest apart."
+            )
         else:
             self.nyq_plot.autoRange()
             self.nyq_note.setText("No damping: H is real, running off to ±∞ at f<sub>n</sub>.")
@@ -912,15 +1041,22 @@ class SdofPage(QtWidgets.QWidget):
         reach = max(1.3 * wn, 1.1 * float(np.max(np.abs(s.real))))
         for ray, z in zip(self.rays, (0.05, 0.2, 0.5, 0.8)):
             a = math.asin(z)
-            ray.setData([0.0, -reach * math.sin(a), 0.0, -reach * math.sin(a)],
-                        [0.0, reach * math.cos(a), 0.0, -reach * math.cos(a)], connect="pairs")
+            ray.setData(
+                [0.0, -reach * math.sin(a), 0.0, -reach * math.sin(a)],
+                [0.0, reach * math.cos(a), 0.0, -reach * math.cos(a)],
+                connect="pairs",
+            )
         th = np.linspace(math.pi / 2, 3 * math.pi / 2, 200)
         self.arc.setData(wn * np.cos(th), wn * np.sin(th))
         self.s_plot.setRange(xRange=(-reach, 0.15 * reach), yRange=(-1.2 * wn, 1.2 * wn), padding=0.02)
         if o.zeta < 1:
-            self.pole_note.setText(f"s = {s[0].real:.4g} ± {abs(s[0].imag):.4g}i s⁻¹: decay rate ζω<sub>n</sub> = "
-                                   f"{-s[0].real:.4g} s⁻¹, frequency ω<sub>d</sub> = {abs(s[0].imag):.4g} rad/s. "
-                                   f"|s| = ω<sub>n</sub> = {wn:.4g} rad/s.")
+            self.pole_note.setText(
+                f"s = {s[0].real:.4g} ± {abs(s[0].imag):.4g}i s⁻¹: decay rate ζω<sub>n</sub> = "
+                f"{-s[0].real:.4g} s⁻¹, frequency ω<sub>d</sub> = {abs(s[0].imag):.4g} rad/s. "
+                f"|s| = ω<sub>n</sub> = {wn:.4g} rad/s."
+            )
         else:
-            self.pole_note.setText(f"Two real poles, {s[0].real:.4g} and {s[1].real:.4g} s⁻¹ (their product is "
-                                   f"ω<sub>n</sub>² = {wn * wn:.4g}).")
+            self.pole_note.setText(
+                f"Two real poles, {s[0].real:.4g} and {s[1].real:.4g} s⁻¹ (their product is "
+                f"ω<sub>n</sub>² = {wn * wn:.4g})."
+            )

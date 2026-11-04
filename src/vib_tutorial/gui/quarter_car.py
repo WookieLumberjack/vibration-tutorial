@@ -75,48 +75,58 @@ TRIALS = (
         "A quarter of a family car (300 kg of body on 20 kN/m and 1.5 kN·s/m, a 40 kg wheel on a 200 kN/m tyre) "
         "at 72 km/h on a class C road. The body bounces at 1.24 Hz and the wheel hops at 11.8 Hz. The body's "
         "acceleration is 1.48 m/s² RMS, the suspension travels 10.7 mm RMS, and the tyre's load swings by 24 % "
-        "of its static load."),
+        "of its static load.",
+    ),
     CarTrial(
         "Rougher and faster",
         "Each ISO class is four times the last's PSD, so twice its RMS, and the road's velocity is white with a "
         "PSD ∝ v, so the RMS grows as √v. Class D at 108 km/h: 3.63 m/s², and the tyre's load swings by 59 % of "
         "its static load RMS: it leaves the road 4.4 % of the time.",
-        grade="D", speed_kmh=108.0),
+        grade="D",
+        speed_kmh=108.0,
+    ),
     CarTrial(
         "Soft damper: comfort",
         "The damper at 830 N·s/m, the best for comfort on this spring (ζ = 0.17 on the body): 1.36 m/s², 8 % "
         "better. But the wheel hop is now lightly damped: the tyre's load swings by 29 %, and the suspension "
         "travels 14.4 mm.",
-        damper=830.0, tab=TAB_DAMPER),
+        damper=830.0,
+        tab=TAB_DAMPER,
+    ),
     CarTrial(
         "Firm damper: grip",
         "The damper at 2.3 kN·s/m, the best for the tyre's grip (ζ = 0.48): its load swings by 23 %, while the "
         "body's acceleration rises to 1.72 m/s². No damper is best for both: the classic conflict.",
-        damper=2340.0, tab=TAB_DAMPER),
+        damper=2340.0,
+        tab=TAB_DAMPER,
+    ),
     CarTrial(
         "A softer spring",
         "The spring halved to 10 kN/m: the body bounces at 0.90 Hz and its acceleration falls to 1.35 m/s², "
         "9 % lower at the same damper (the Trade-off tab's curves move left as the spring softens). The price is "
         "sag: the body sits 294 mm down on its spring, twice as far, so a soft car needs room to move and "
         "springs that level themselves, as luxury cars' air springs do.",
-        spring=10.0),
+        spring=10.0,
+    ),
     CarTrial(
         "A heavier wheel",
         "The unsprung mass up from 40 to 60 kg (heavier wheels, a solid axle): the wheel hops at 9.6 Hz, and "
         "the tyre's load swings by 26 % instead of 24 %. Unsprung mass costs grip, which is why racing cars "
         "chase light wheels and inboard brakes.",
-        unsprung=60.0),
+        unsprung=60.0,
+    ),
     CarTrial(
         "A drive to check the spectra",
         "A minute of class C road at 72 km/h, synthesized from the PSD, and the car stepped over it exactly "
         "(Drive tab). The record's RMS values come within a percent or two of the PSDs' areas: the frequency "
         "domain's answer is what the car feels.",
-        tab=TAB_DRIVE),
+        tab=TAB_DRIVE,
+    ),
 )
 
 TIPS = {
     "grade": "<p>ISO 8608's road class: A (very good) to H (very poor), each with four times the last's "
-             "displacement PSD.</p>",
+    "displacement PSD.</p>",
     "speed": "<p>The car's speed: the road's spatial PSD becomes a PSD in time.</p>",
     "sprung": "<p>The body's share on this wheel.</p>",
     "unsprung": "<p>The wheel, tyre, brake and part of the axle and suspension.</p>",
@@ -124,10 +134,14 @@ TIPS = {
     "damper": "<p>The suspension damper (at the wheel).</p>",
     "tyre": "<p>The tyre's vertical stiffness.</p>",
 }
-PSD_TIP = ("<p>The output's PSD over the road's: |H(f)|² G<sub>z</sub>(f). Dotted: the body-bounce and wheel-hop "
-           "frequencies.</p>")
-TRADE_TIP = ("<p>The RMS body acceleration (comfort) against the tyre load's RMS over its static load (grip): "
-             "a curve per spring, the damper rising along it. Lower left is better.</p>")
+PSD_TIP = (
+    "<p>The output's PSD over the road's: |H(f)|² G<sub>z</sub>(f). Dotted: the body-bounce and wheel-hop "
+    "frequencies.</p>"
+)
+TRADE_TIP = (
+    "<p>The RMS body acceleration (comfort) against the tyre load's RMS over its static load (grip): "
+    "a curve per spring, the damper rising along it. Lower left is better.</p>"
+)
 DAMPER_TIP = "<p>Each output's RMS against the damper, over its value at the car's damper.</p>"
 DRIVE_TIP = "<p>The road's height (top) and the body's acceleration (bottom) on the synthesized road.</p>"
 
@@ -169,15 +183,25 @@ control page's skyhook) are how to get below them.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("random_page", "psd", "The PSD and H G Hᴴ"),
-    ("isolation_page", "damping-trade-off", "Isolation's damping trade-off"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "A road is a PSD in space; at speed v its vertical velocity is white, of intensity ∝ v.",
-    "A quarter-car has body bounce (about 1 Hz) and wheel hop (about 10 Hz); each output's PSD is |H|² G<sub>z</sub>.",
-    "The best damper for comfort is lighter than the best for grip: passive suspensions trade one for the other.",
-    "Soft springs buy comfort with travel; unsprung mass costs grip.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("random_page", "psd", "The PSD and H G Hᴴ"),
+            ("isolation_page", "damping-trade-off", "Isolation's damping trade-off"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "A road is a PSD in space; at speed v its vertical velocity is white, of intensity ∝ v.",
+            "A quarter-car has body bounce (about 1 Hz) and wheel hop (about 10 Hz); each output's PSD is |H|² G<sub>z</sub>.",
+            "The best damper for comfort is lighter than the best for grip: passive suspensions trade one for the other.",
+            "Soft springs buy comfort with travel; unsprung mass costs grip.",
+        ),
+    )
+)
 
 
 class QuarterCarPage(QtWidgets.QWidget):
@@ -187,8 +211,9 @@ class QuarterCarPage(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the road and the car to show one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS], "<p>Each sets up the road and the car to show one idea from the Theory tab.</p>"
+        )
         self.trials.picked.connect(self.load_trial)
 
         road = Form("Road")
@@ -206,18 +231,22 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.car_info = note_label()
         car.row(self.car_info)
 
-        connect_all((self.grade, self.speed, self.sprung, self.unsprung, self.spring, self.damper, self.tyre),
-                    self.redraw)
+        connect_all(
+            (self.grade, self.speed, self.sprung, self.unsprung, self.spring, self.damper, self.tyre), self.redraw
+        )
 
         # --- centre
-        self.body_plot = plot("Body acceleration PSD", "(m/s²)²/Hz", "Frequency", "Hz", log_x=True, log_y=True,
-                              height=150)
+        self.body_plot = plot(
+            "Body acceleration PSD", "(m/s²)²/Hz", "Frequency", "Hz", log_x=True, log_y=True, height=150
+        )
         self.tyre_plot = plot("Tyre load PSD", "N²/Hz", "Frequency", "Hz", log_x=True, log_y=True, height=150)
         self.tyre_plot.setXLink(self.body_plot)
         self.body_item, self.tyre_item = pg.PlotDataItem(), pg.PlotDataItem()
         self.mode_lines = [[pg.InfiniteLine(angle=90), pg.InfiniteLine(angle=90)] for _ in range(2)]
-        for p, item, lines in ((self.body_plot, self.body_item, self.mode_lines[0]),
-                               (self.tyre_plot, self.tyre_item, self.mode_lines[1])):
+        for p, item, lines in (
+            (self.body_plot, self.body_item, self.mode_lines[0]),
+            (self.tyre_plot, self.tyre_item, self.mode_lines[1]),
+        ):
             p.setToolTip(PSD_TIP)
             for line in lines:
                 p.addItem(line)
@@ -263,16 +292,26 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tab())
 
-        three_panes(self, column(self.trials, road, car),
-                    stack((self.body_plot, 1), (self.tyre_plot, 1), (self.readout, 0)), self.tabs)
+        three_panes(
+            self,
+            column(self.trials, road, car),
+            stack((self.body_plot, 1), (self.tyre_plot, 1), (self.readout, 0)),
+            self.tabs,
+        )
         self.apply_theme()
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        for box, value in ((self.grade, CLASS_NAMES.index(t.grade)), (self.speed, t.speed_kmh),
-                           (self.sprung, t.sprung), (self.unsprung, t.unsprung), (self.spring, t.spring),
-                           (self.damper, t.damper), (self.tyre, t.tyre)):
+        for box, value in (
+            (self.grade, CLASS_NAMES.index(t.grade)),
+            (self.speed, t.speed_kmh),
+            (self.sprung, t.sprung),
+            (self.unsprung, t.unsprung),
+            (self.spring, t.spring),
+            (self.damper, t.damper),
+            (self.tyre, t.tyre),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -280,8 +319,13 @@ class QuarterCarPage(QtWidgets.QWidget):
 
     @property
     def car(self) -> Car:
-        return Car(self.sprung.value(), self.unsprung.value(), 1e3 * self.spring.value(), self.damper.value(),
-                   1e3 * self.tyre.value())
+        return Car(
+            self.sprung.value(),
+            self.unsprung.value(),
+            1e3 * self.spring.value(),
+            self.damper.value(),
+            1e3 * self.tyre.value(),
+        )
 
     @property
     def road(self) -> Road:
@@ -312,8 +356,9 @@ class QuarterCarPage(QtWidgets.QWidget):
     def redraw(self) -> None:
         car, road = self.car, self.road
         fb, fw = car.modes()
-        self.car_info.setText(f"Body bounce {fb:.3g} Hz, wheel hop {fw:.3g} Hz; the body's ζ on the suspension "
-                              f"{car.body_zeta():.2g}.")
+        self.car_info.setText(
+            f"Body bounce {fb:.3g} Hz, wheel hop {fw:.3g} Hz; the body's ζ on the suspension {car.body_zeta():.2g}."
+        )
         self.result = r = response(car, road)
         self.body_item.setData(r.f, r.psd[Output.BODY])
         self.tyre_item.setData(r.f, r.psd[Output.TYRE])
@@ -330,7 +375,8 @@ class QuarterCarPage(QtWidgets.QWidget):
             f"<b>{fmt(r.rms[Output.TRAVEL], 'm')}</b>, tyre load <b>{fmt(r.rms[Output.TYRE], 'N')}</b> "
             f"({100 * r.load_ratio:.3g} % of the static {fmt(r.weight, 'N')}). The tyre leaves the road "
             + (f"{100 * lift:.2g} % of the time." if lift > 1e-4 else "almost never.")
-            + f" Road: class {road.grade} at {road.speed * 3.6:.3g} km/h.")
+            + f" Road: class {road.grade} at {road.speed * 3.6:.3g} km/h."
+        )
         self._draw_tab()
         settle_plots(self)
 
@@ -360,7 +406,8 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.trade_note.setText(
             f"Dot: this car. On its spring, the most comfortable damper (triangle) is "
             f"{DAMPERS[jb]:.0f} N·s/m and the best for grip (square) {DAMPERS[jt]:.0f} N·s/m. Each curve runs "
-            "from a soft damper (top) to a firm one (right).")
+            "from a soft damper (top) to a firm one (right)."
+        )
 
     def _draw_damper(self) -> None:
         car, road, r = self.car, self.road, self.result
@@ -379,7 +426,8 @@ class QuarterCarPage(QtWidgets.QWidget):
         crit = 2 * math.sqrt(car.spring * car.sprung)
         self.damper_note.setText(
             f"Comfort is best at {DAMPERS[jb]:.0f} N·s/m (ζ = {DAMPERS[jb] / crit:.2g}), grip at {DAMPERS[jt]:.0f} "
-            f"N·s/m (ζ = {DAMPERS[jt] / crit:.2g}); travel only falls as the damper firms. Dotted: this car's.")
+            f"N·s/m (ζ = {DAMPERS[jt] / crit:.2g}); travel only falls as the damper firms. Dotted: this car's."
+        )
 
     def _draw_drive(self) -> None:
         car, road, r = self.car, self.road, self.result
@@ -389,8 +437,13 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.acc_item.setData(d.t[:n], d.body[:n])
         self.road_plot.setXRange(0.0, WINDOW_S, padding=0)
         skip = int(2.0 / (d.t[1] - d.t[0]))  # let the start settle
-        rms = {Output.BODY: float(np.std(d.body[skip:])), Output.TRAVEL: float(np.std(d.travel[skip:])),
-               Output.TYRE: float(np.std(d.tyre[skip:]))}
+        rms = {
+            Output.BODY: float(np.std(d.body[skip:])),
+            Output.TRAVEL: float(np.std(d.travel[skip:])),
+            Output.TYRE: float(np.std(d.tyre[skip:])),
+        }
         parts = [f"{o.value.lower()} {100 * (rms[o] / r.rms[o] - 1):+.2g} %" for o in Output]
-        self.drive_note.setText(f"{DRIVE_S:.0f} s of road (the first {WINDOW_S:.0f} s drawn). The record's RMS "
-                                "against the PSDs': " + ", ".join(parts) + ".")
+        self.drive_note.setText(
+            f"{DRIVE_S:.0f} s of road (the first {WINDOW_S:.0f} s drawn). The record's RMS "
+            "against the PSDs': " + ", ".join(parts) + "."
+        )

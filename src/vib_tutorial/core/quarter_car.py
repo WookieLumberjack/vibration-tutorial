@@ -24,7 +24,7 @@ TWO_PI = 2.0 * math.pi
 G = 9.80665
 N0 = 0.1  # cycles/m, ISO 8608's reference spatial frequency
 # ISO 8608 classes: G_d(n₀), the geometric mean of each class's range (m³)
-CLASSES = {c: 16e-6 * 4.0 ** i for i, c in enumerate("ABCDEFGH")}
+CLASSES = {c: 16e-6 * 4.0**i for i, c in enumerate("ABCDEFGH")}
 CLASS_NAMES = tuple(CLASSES)
 BAND = (0.05, 60.0)  # Hz, the band the RMS values are integrated over
 GRID = 3000

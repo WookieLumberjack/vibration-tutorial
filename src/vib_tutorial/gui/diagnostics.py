@@ -92,20 +92,24 @@ TRIALS = (
         "A shaft at 1797 rpm (29.95 Hz) drives a 27-tooth pinion: the mesh is at 27 × 29.95 = 808.65 Hz, with "
         "harmonics at 1617 and 2426 Hz. The spectrum has those, the shaft's 1X and 2X, and noise; round the "
         "mesh nothing stands above the floor. The record's kurtosis is 2.4, below a Gaussian's 3: a sum of "
-        "steady sines is flatter-topped than noise."),
+        "steady sines is flatter-topped than noise.",
+    ),
     DiagnosticsTrial(
         "An eccentric pinion",
         "The pinion runs out of true: once a turn the mesh grows and shrinks, and its phase swings, so lines "
         "appear at 808.65 ± 29.95 Hz, 0.23 and 0.08 m/s² beside the mesh's 1.0. Amplitude and phase "
         "modulation together make the pair unequal. One pair of sidebands is a smooth, once-a-turn change.",
-        gear=GearFault.ECCENTRIC),
+        gear=GearFault.ECCENTRIC,
+    ),
     DiagnosticsTrial(
         "A cracked tooth",
         "One tooth is cracked: once a turn, for about one tooth's mesh, the mesh kicks. A short event once a turn "
         "has a long family of sidebands, all about 0.04 m/s², spaced by the shaft's 29.95 Hz. The cepstrum "
         "(Cepstrum tab) gathers the whole family into one peak at 1/29.95 Hz = 33.4 ms, 0.12 against 0.027 "
         "for the healthy gear.",
-        gear=GearFault.CRACK, tab=TAB_CEPSTRUM),
+        gear=GearFault.CRACK,
+        tab=TAB_CEPSTRUM,
+    ),
     DiagnosticsTrial(
         "Outer race defect",
         "A spall on the bearing's outer race (a 6205: 9 balls) in a noisier machine (1 m/s² RMS): a ball "
@@ -113,19 +117,28 @@ TRIALS = (
         "resonance. The plain spectrum reads 0.049 m/s² at 107 Hz, where its floor is 0.043: lost. The "
         "record's kurtosis is 3.1, like noise, but the band round 3 kHz has 5.6, and its envelope's spectrum "
         "(Envelope tab) has 0.45 m/s² at BPFO, then 0.34 and 0.23 at its harmonics, ten times its floor.",
-        bearing=BearingFault.OUTER, noise=1.0, tab=TAB_ENVELOPE),
+        bearing=BearingFault.OUTER,
+        noise=1.0,
+        tab=TAB_ENVELOPE,
+    ),
     DiagnosticsTrial(
         "Inner race defect",
         "The defect on the inner race turns with the shaft, through the load zone once a turn, so its strikes "
         "(at BPFI = 162.2 Hz) are hard, then soft: the envelope spectrum has BPFI with sidebands at ± 1X "
         "(0.16 and 0.13 m/s² beside 0.31), the mark of a defect that turns.",
-        bearing=BearingFault.INNER, noise=1.0, tab=TAB_ENVELOPE),
+        bearing=BearingFault.INNER,
+        noise=1.0,
+        tab=TAB_ENVELOPE,
+    ),
     DiagnosticsTrial(
         "Ball defect",
         "A ball's defect strikes both races once each spin: at 2 × BSF = 141.2 Hz. The ball rides round with "
         "the cage, so its strikes swell and fade at the cage's FTF = 11.9 Hz: the envelope spectrum has 0.29 "
         "m/s² at 141 Hz, with sidebands of 0.14 and 0.135 at ± FTF.",
-        bearing=BearingFault.BALL, noise=1.0, tab=TAB_ENVELOPE),
+        bearing=BearingFault.BALL,
+        noise=1.0,
+        tab=TAB_ENVELOPE,
+    ),
     DiagnosticsTrial(
         "A run-up through a resonance",
         "The shaft runs up from 600 to 4200 rpm in 20 s, its unbalance (∝ speed²) and a misalignment (2X) "
@@ -134,13 +147,16 @@ TRIALS = (
         "tab), the 1X peaks at 209 m/s² at 2445 rpm, close to the steady curve's 211 at 2406 rpm. The 2X peaks "
         "near 1220 rpm, half the speed, but at 28.5 m/s² against its steady 33.3: it sweeps through the mode "
         "twice as fast.",
-        tab=TAB_RUNUP),
+        tab=TAB_RUNUP,
+    ),
     DiagnosticsTrial(
         "A fast run-up",
         "The same run-up in 4 s: the 1X sweeps through the mode's half-power band (2.4 Hz) in about 0.16 s, "
         "only six cycles of the mode, so the response can't build up. It peaks lower (179 m/s², 15 % under the "
         "steady 211) and later (2531 rpm), and rings after (Orders tab). Run up slowly to read a resonance.",
-        run_s=4.0, tab=TAB_ORDERS),
+        run_s=4.0,
+        tab=TAB_ORDERS,
+    ),
 )
 
 TIPS = {
@@ -163,16 +179,24 @@ TIPS = {
     "mode": "<p>The casing's mode the run-up passes through.</p>",
 }
 TIME_TIP = "<p>The casing's acceleration over the first 0.1 s.</p>"
-SPECTRUM_TIP = ("<p>The amplitude spectrum (flat-top window, averaged): each tone reads its amplitude. Dotted: the "
-                "mesh's harmonics.</p>")
-MAP_TIP = ("<p>The run-up's spectrum, each block's line against the speed then. Top: against frequency (the orders "
-           "fan out). Bottom: against order, from the record resampled at equal angles (they stand still).</p>")
+SPECTRUM_TIP = (
+    "<p>The amplitude spectrum (flat-top window, averaged): each tone reads its amplitude. Dotted: the "
+    "mesh's harmonics.</p>"
+)
+MAP_TIP = (
+    "<p>The run-up's spectrum, each block's line against the speed then. Top: against frequency (the orders "
+    "fan out). Bottom: against order, from the record resampled at equal angles (they stand still).</p>"
+)
 ORDERS_TIP = "<p>Each order's amplitude tracked through the run-up; dashed: its steady state at each speed.</p>"
 SIDEBAND_TIP = "<p>The spectrum round the mesh; dots: the lines at the mesh ± k × the shaft's speed.</p>"
-ENVELOPE_TIP = ("<p>Top: the record band-passed round the resonance, and its envelope. Bottom: the envelope's "
-                "spectrum; dotted: the defect frequency and its harmonics, dots: its sidebands.</p>")
-CEPSTRUM_TIP = ("<p>The real cepstrum: the inverse FFT of the log power spectrum. Dotted: 1/the shaft's speed and "
-                "its multiples; dashed: 1/the mesh.</p>")
+ENVELOPE_TIP = (
+    "<p>Top: the record band-passed round the resonance, and its envelope. Bottom: the envelope's "
+    "spectrum; dotted: the defect frequency and its harmonics, dots: its sidebands.</p>"
+)
+CEPSTRUM_TIP = (
+    "<p>The real cepstrum: the inverse FFT of the log power spectrum. Dotted: 1/the shaft's speed and "
+    "its multiples; dashed: 1/the mesh.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -228,17 +252,27 @@ through, which multiply in the spectrum and add in the cepstrum.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("signals_page", "spectrogram", "Time and frequency"),
-    ("torsional_page", "gears", "Gears and the tooth-pass frequency"),
-    ("rotor_page", "waterfall", "Waterfall and cascade plots"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "Each part of a machine has its own frequencies; a diagnosis reads the spectrum against them.",
-    "Under a changing speed, track orders: resample at equal angles, and each order stays on one line.",
-    "Sidebands at the mesh ± the shaft's speed point to a gear; a long flat family to a local fault.",
-    "Bearing strikes hide in the plain spectrum; band-pass round a resonance and look at the envelope's.",
-    "The cepstrum turns a family of equally spaced lines into one peak at 1/spacing.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("signals_page", "spectrogram", "Time and frequency"),
+            ("torsional_page", "gears", "Gears and the tooth-pass frequency"),
+            ("rotor_page", "waterfall", "Waterfall and cascade plots"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Each part of a machine has its own frequencies; a diagnosis reads the spectrum against them.",
+            "Under a changing speed, track orders: resample at equal angles, and each order stays on one line.",
+            "Sidebands at the mesh ± the shaft's speed point to a gear; a long flat family to a local fault.",
+            "Bearing strikes hide in the plain spectrum; band-pass round a resonance and look at the envelope's.",
+            "The cepstrum turns a family of equally spaced lines into one peak at 1/spacing.",
+        ),
+    )
+)
 
 
 class DiagnosticsPage(QtWidgets.QWidget):
@@ -248,8 +282,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the machine to show one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS], "<p>Each sets up the machine to show one idea from the Theory tab.</p>"
+        )
         self.trials.picked.connect(self.load_trial)
 
         machine = Form("Machine")
@@ -280,9 +315,25 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.run_s = run.number("Over:", 1.0, 60.0, 20.0, 1, " s", TIPS["run_s"])
         self.mode = run.number("Casing mode:", 5.0, 200.0, 40.0, 1, " Hz", TIPS["mode"])
 
-        connect_all((self.rpm, self.teeth, self.gear, self.severity, self.bearing_fault, self.impact,
-                     self.resonance, self.noise, self.balls, self.ball, self.pitch, self.contact, self.low,
-                     self.high), self.redraw)
+        connect_all(
+            (
+                self.rpm,
+                self.teeth,
+                self.gear,
+                self.severity,
+                self.bearing_fault,
+                self.impact,
+                self.resonance,
+                self.noise,
+                self.balls,
+                self.ball,
+                self.pitch,
+                self.contact,
+                self.low,
+                self.high,
+            ),
+            self.redraw,
+        )
         connect_all((self.run_from, self.run_to, self.run_s, self.mode), self._on_run)
 
         # --- centre
@@ -366,20 +417,38 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: (self._draw_tab(), settle_plots(self)))
 
-        three_panes(self, column(self.trials, machine, geometry, run),
-                    stack((self.time_plot, 1), (self.spec_plot, 2), (self.readout, 0)), self.tabs)
+        three_panes(
+            self,
+            column(self.trials, machine, geometry, run),
+            stack((self.time_plot, 1), (self.spec_plot, 2), (self.readout, 0)),
+            self.tabs,
+        )
         self._run_key = None
         self.apply_theme()
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        for box, value in ((self.rpm, t.rpm), (self.teeth, 27), (self.gear, GEAR_FAULTS.index(t.gear)),
-                           (self.severity, 30.0), (self.bearing_fault, BEARING_FAULTS.index(t.bearing)),
-                           (self.impact, 3.0), (self.resonance, 3000.0), (self.noise, t.noise), (self.balls, 9),
-                           (self.ball, 7.94), (self.pitch, 39.04), (self.contact, 0.0), (self.low, 2550.0),
-                           (self.high, 3450.0), (self.run_from, t.run_from), (self.run_to, t.run_to),
-                           (self.run_s, t.run_s), (self.mode, 40.0)):
+        for box, value in (
+            (self.rpm, t.rpm),
+            (self.teeth, 27),
+            (self.gear, GEAR_FAULTS.index(t.gear)),
+            (self.severity, 30.0),
+            (self.bearing_fault, BEARING_FAULTS.index(t.bearing)),
+            (self.impact, 3.0),
+            (self.resonance, 3000.0),
+            (self.noise, t.noise),
+            (self.balls, 9),
+            (self.ball, 7.94),
+            (self.pitch, 39.04),
+            (self.contact, 0.0),
+            (self.low, 2550.0),
+            (self.high, 3450.0),
+            (self.run_from, t.run_from),
+            (self.run_to, t.run_to),
+            (self.run_s, t.run_s),
+            (self.mode, 40.0),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -387,11 +456,20 @@ class DiagnosticsPage(QtWidgets.QWidget):
 
     @property
     def machine(self) -> Machine:
-        bearing = Bearing(int(self.balls.value()), self.ball.value() / 1e3, self.pitch.value() / 1e3,
-                          self.contact.value())
-        return Machine(self.rpm.value() / 60, int(self.teeth.value()), GEAR_FAULTS[self.gear.currentIndex()],
-                       self.severity.value() / 100, BEARING_FAULTS[self.bearing_fault.currentIndex()],
-                       self.impact.value(), bearing, self.resonance.value(), noise=self.noise.value())
+        bearing = Bearing(
+            int(self.balls.value()), self.ball.value() / 1e3, self.pitch.value() / 1e3, self.contact.value()
+        )
+        return Machine(
+            self.rpm.value() / 60,
+            int(self.teeth.value()),
+            GEAR_FAULTS[self.gear.currentIndex()],
+            self.severity.value() / 100,
+            BEARING_FAULTS[self.bearing_fault.currentIndex()],
+            self.impact.value(),
+            bearing,
+            self.resonance.value(),
+            noise=self.noise.value(),
+        )
 
     @property
     def run(self) -> RunUp:
@@ -418,8 +496,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
             line.setPen(pg.mkPen(c.fit, width=1, style=dotted))
         self.cep_mesh_line.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.mode_line.setPen(pg.mkPen(c.strong, width=1, style=dotted))
-        lut = pg.ColorMap([0.0, 0.5, 1.0], [pg.mkColor(c.background), pg.mkColor(c.mode[1]),
-                                            pg.mkColor(c.force)]).getLookupTable(nPts=256)
+        lut = pg.ColorMap(
+            [0.0, 0.5, 1.0], [pg.mkColor(c.background), pg.mkColor(c.mode[1]), pg.mkColor(c.force)]
+        ).getLookupTable(nPts=256)
         for image in (self.freq_image, self.order_image):
             image.setLookupTable(lut)
         for item, color in zip(self.track_items, (c.mass[0], c.mass[1])):
@@ -441,7 +520,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
         f = m.bearing.frequencies(m.speed)
         self.bearing_info.setText(
             f"FTF {f['FTF']:.4g} Hz, BPFO {f['BPFO']:.4g} Hz, BPFI {f['BPFI']:.4g} Hz, BSF {f['BSF']:.4g} Hz "
-            f"({f['BPFO'] / m.speed:.4g}, {f['BPFI'] / m.speed:.4g} and {f['BSF'] / m.speed:.4g} × the shaft).")
+            f"({f['BPFO'] / m.speed:.4g}, {f['BPFI'] / m.speed:.4g} and {f['BSF'] / m.speed:.4g} × the shaft)."
+        )
         n = int(SHOW_S * rec.fs)
         self.time_item.setData(rec.t[:n], rec.x[:n])
         self.time_plot.setXRange(0.0, SHOW_S, padding=0)
@@ -458,7 +538,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
             f"Shaft {m.speed:.4g} Hz, mesh <b>{m.mesh_hz:.5g} Hz</b>. Kurtosis: the record "
             f"<b>{kurtosis(rec.x):.2f}</b>, the band {low:.0f}–{high:.0f} Hz "
             f"<b>{kurtosis(band_pass(rec.x, rec.fs, (low, high))):.2f}</b> (3 for Gaussian noise). RMS "
-            f"{float(np.std(rec.x)):.3g} m/s².")
+            f"{float(np.std(rec.x)):.3g} m/s²."
+        )
         self._draw_tab()
         settle_plots(self)
 
@@ -489,8 +570,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
                 cols = m.axis <= top
                 # the order blocks are equal in angle, not in time: take the block nearest each of equally
                 # spaced speeds, so the image's columns are
-                rows = np.rint(np.interp(np.linspace(m.speed[0], m.speed[-1], m.speed.size), m.speed,
-                                         np.arange(m.speed.size))).astype(int)
+                rows = np.rint(
+                    np.interp(np.linspace(m.speed[0], m.speed[-1], m.speed.size), m.speed, np.arange(m.speed.size))
+                ).astype(int)
                 level = 20 * np.log10(np.maximum(m.amplitude[rows][:, cols].T, 1e-9))
                 peak = float(level.max())
                 image.setImage(level, autoLevels=False, levels=(peak - MAP_DB, peak))
@@ -503,7 +585,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
             self.order_map_plot.setYRange(0.0, MAP_TOP_ORDER, padding=0)
             self.map_note.setText(
                 f"{60 * run.start:.0f} to {60 * run.end:.0f} rpm in {run.duration:.3g} s; the casing's mode at "
-                f"{run.mode:.3g} Hz (dotted). Colour: dB, {MAP_DB:.0f} dB below the peak to the peak.")
+                f"{run.mode:.3g} Hz (dotted). Colour: dB, {MAP_DB:.0f} dB below the peak to the peak."
+            )
             return
         fine = np.linspace(run.start, run.end, 2000)
         tracks = [order_track(om, o) for o in (1, 2)]
@@ -518,7 +601,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.orders_note.setText(
             f"The 1X peaks at <b>{tracks[0][i]:.3g} m/s²</b> at {rpm[i]:.0f} rpm; its steady state at "
             f"{s[j]:.3g} m/s² at {60 * fine[j]:.0f} rpm. The 2X peaks at {rpm[k]:.0f} rpm. Order blocks of "
-            f"8 revolutions, half overlapping.")
+            f"8 revolutions, half overlapping."
+        )
 
     def _draw_sidebands(self) -> None:
         m, spec = self.machine, self.spec
@@ -534,7 +618,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
         pairs = ", ".join(f"±{j}: {a[SIDEBANDS - j]:.2g}/{a[SIDEBANDS + j]:.2g}" for j in (1, 2, 3))
         self.side_note.setText(
             f"The mesh at {m.mesh_hz:.5g} Hz reads {a[SIDEBANDS]:.3g} m/s²; its sidebands {m.speed:.4g} Hz apart "
-            f"(lower/upper, m/s²) {pairs}; the floor here is about {floor:.2g}.")
+            f"(lower/upper, m/s²) {pairs}; the floor here is about {floor:.2g}."
+        )
 
     def _draw_envelope(self) -> None:
         m, rec = self.machine, self.rec
@@ -560,9 +645,12 @@ class DiagnosticsPage(QtWidgets.QWidget):
             self.env_dots.setData([], [])
         if d > 0:
             parts = [f"{line_amplitude(es.freqs, es.amplitude, h * d):.2g}" for h in (1, 2, 3)]
-            text = (f"The strikes come at {d:.4g} Hz; the envelope spectrum reads " + ", ".join(parts)
-                    + f" m/s² at its first three harmonics, the plain spectrum "
-                    f"{line_amplitude(self.spec.freqs, self.spec.amplitude, d):.2g} at the first.")
+            text = (
+                f"The strikes come at {d:.4g} Hz; the envelope spectrum reads "
+                + ", ".join(parts)
+                + f" m/s² at its first three harmonics, the plain spectrum "
+                f"{line_amplitude(self.spec.freqs, self.spec.amplitude, d):.2g} at the first."
+            )
             if fm > 0:
                 text += f" Sidebands (dots) at ± {fm:.3g} Hz."
         else:
@@ -579,8 +667,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.cep_mesh_line.setPos(1 / m.mesh_hz)
         self.cep_plot.setXRange(0.0, CEPSTRUM_TOP_S, padding=0)
         i = round(rec.fs / m.speed)
-        peak = float(c[max(i - 2, 0):i + 3].max())
+        peak = float(c[max(i - 2, 0) : i + 3].max())
         self.cep_note.setText(
             f"At 1/{m.speed:.4g} Hz = {1e3 / m.speed:.3g} ms the cepstrum reaches <b>{peak:.2g}</b>; the rest "
             f"of the range is about {float(np.median(np.abs(c[keep]))):.1g}. The mesh's harmonics sit at "
-            f"{1e3 / m.mesh_hz:.3g} ms (dashed).")
+            f"{1e3 / m.mesh_hz:.3g} ms (dashed)."
+        )

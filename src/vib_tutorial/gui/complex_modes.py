@@ -45,45 +45,54 @@ SNAPSHOTS = 8  # over half a cycle, on the snapshots plot
 
 TIPS = {
     "coupling": "<p>The largest off-diagonal term of Φ<sup>T</sup>CΦ against its diagonal's, "
-                "|c<sub>rs</sub>|/√(c<sub>rr</sub>c<sub>ss</sub>): 0 when the damping is proportional, near 1 or "
-                "more when it couples the modes strongly.</p>",
+    "|c<sub>rs</sub>|/√(c<sub>rr</sub>c<sub>ss</sub>): 0 when the damping is proportional, near 1 or "
+    "more when it couples the modes strongly.</p>",
     "proportional": "<p>Set every damper in proportion to its spring, c<sub>i</sub> = βk<sub>i</sub>, so "
-                    "C = βK, which the undamped modes diagonalize. β keeps mode 1's damping ratio.</p>",
+    "C = βK, which the undamped modes diagonalize. β keeps mode 1's damping ratio.</p>",
     "mode": "<p>The mode drawn in the complex plane and the snapshots, and released in the free decay.</p>",
     "frf": "<p>The receptance from a force on one mass to another's displacement.</p>",
 }
 ARGAND_TIP = (
     "<p>The exact mode shape ψ in the complex plane: one arrow per mass. A real mode's arrows lie on one line "
-    "(the dashed best-fit line); a complex mode's spread from it, each mass with its own phase.</p>")
+    "(the dashed best-fit line); a complex mode's spread from it, each mass with its own phase.</p>"
+)
 STROBE_TIP = (
     "<p>The mode's shape at eight instants over half a cycle, Re(ψe<sup>iθ</sup>): a real mode's are one shape, "
     "scaled, and its nodes stay put (a standing wave); a complex mode's change shape as they go, and the nodes "
-    "move along the chain. Grey: ±|ψ|, the envelope.</p>")
+    "move along the chain. Grey: ±|ψ|, the envelope.</p>"
+)
 TABLE_TIP = (
     "<p>Each mode: the exact pole's frequency |λ|/2π and damping ratio, against the proportional approximation's "
     "(ζ = φ<sup>T</sup>Cφ/2ω, the undamped frequency); the exact shape's MAC with the undamped one, its MPC "
-    "(1 real, 0 spread evenly) and its mean phase deviation from the best-fit line.</p>")
+    "(1 real, 0 spread evenly) and its mean phase deviation from the best-fit line.</p>"
+)
 FRF_TIP = (
     "<p>The receptance, exact (K − ω²M + iωC)<sup>−1</sup>, and with the proportional approximation's damping "
-    "C<sub>p</sub> = MΦ diag(Φ<sup>T</sup>CΦ) Φ<sup>T</sup>M: the off-diagonal terms dropped.</p>")
+    "C<sub>p</sub> = MΦ diag(Φ<sup>T</sup>CΦ) Φ<sup>T</sup>M: the off-diagonal terms dropped.</p>"
+)
 DECAY_TIP = (
     "<p>The chain released at rest in an undamped mode's shape, its modal coordinates q<sub>s</sub> = "
     "φ<sub>s</sub><sup>T</sup>Mx over time, exact. The approximation keeps the released mode alone, decaying at "
-    "its ζ. With proportional damping the others stay at 0; otherwise the damping passes motion to them.</p>")
+    "its ζ. With proportional damping the others stay at 0; otherwise the damping passes motion to them.</p>"
+)
 SWEEP_TIP = (
     "<p>One damper (or spring) swept over a wide range, the rest of the chain as it is: each mode's exact pole "
     "(the root locus), its damping ratio, exact and approximated, and its MPD. The dotted line and the dots: the "
-    "chain's own value.</p>")
+    "chain's own value.</p>"
+)
 LOCUS_TIP = (
     "<p>The root locus: each mode's exact pole λ as the element changes, Re λ across (the decay rate), "
-    "Im λ/2π up (the damped frequency). Grey crosses: real roots, where a mode is overdamped.</p>")
+    "Im λ/2π up (the damped frequency). Grey crosses: real roots, where a mode is overdamped.</p>"
+)
 IDENT_TIP = (
     "<p>The FRF column for a force on one mass, with a little noise, fitted by LSFD on the exact poles two ways: "
     "with complex modes (any complex residues) and with real modes (A<sub>r</sub>/(ω<sub>r</sub>² − ω² + "
-    "2iζ<sub>r</sub>ω<sub>r</sub>ω), A<sub>r</sub> real), the model of a proportionally damped structure.</p>")
+    "2iζ<sub>r</sub>ω<sub>r</sub>ω), A<sub>r</sub> real), the model of a proportionally damped structure.</p>"
+)
 SCATTER_TIP = (
     "<p>Each mode's entries' angles from its best-fit line (one dot per mass, mass colours), and their mean, "
-    "weighted by size (the MPD, a bar). All on 0 for real modes.</p>")
+    "weighted by size (the MPD, a bar). All on 0 for real modes.</p>"
+)
 
 
 def _chain(damping: list[float]) -> ChainSystem:
@@ -92,27 +101,42 @@ def _chain(damping: list[float]) -> ChainSystem:
 
 # Things to try: (name, chain, note)
 TRIALS = (
-    ("A damper per spring, in proportion", ChainSystem.uniform(4),
-     "Four equal masses, springs and dampers: c<sub>i</sub> = k<sub>i</sub>/200, so C = K/200 and the damping is "
-     "proportional. Every mode is real (MPC 1, MPD 0°), the approximation is exact, and a mode released "
-     "stays alone."),
-    ("One damper, at the base", _chain([20.0, 0, 0, 0]),
-     "The same chain with a single 20 N·s/m damper, on spring 1. Mode 3 is the most complex (MPC 0.20, "
-     "MPD 29°), and the approximation puts mode 4's ζ at 0.049, twice the exact 0.023. Released in mode 2's "
-     "shape, the chain passes 45 % of it to mode 1."),
-    ("One damper, at the top", _chain([0, 0, 0, 20.0]),
-     "The damper between m3 and m4: mode 4's ζ is 0.017, not the approximation's 0.17, ten times less. "
-     "The approximation counts the damper's stretch in the undamped mode 4, but the exact mode 4 shakes m1 "
-     "and m2 and leaves m3 and m4 moving nearly together (under a third of the stretch), so the damper barely "
-     "works."),
-    ("A strong damper locks a joint", _chain([0, 200.0, 0, 0]),
-     "200 N·s/m between m1 and m2: so stiff a damper that the two move together, and it hardly works. Mode 1's "
-     "ζ is 0.050, not the approximation's 0.58; mode 3's 0.0018, not 2.6; mode 4 has become a pair of real "
-     "roots. Mode 2, where m1 and m2 already move together, is untouched."),
-    ("Tuned mass damper", tuned_mass_damper(ChainSystem.uniform(4), 0.05),
-     "The default chain with a Den Hartog damper on m4 (m5). Modes 1 and 2 are the structure's mode 1 split in "
-     "two, close together, and the damper couples them: the most complex (MPD 10° and 17°), while the "
-     "modes above, far from them, stay nearly real."),
+    (
+        "A damper per spring, in proportion",
+        ChainSystem.uniform(4),
+        "Four equal masses, springs and dampers: c<sub>i</sub> = k<sub>i</sub>/200, so C = K/200 and the damping is "
+        "proportional. Every mode is real (MPC 1, MPD 0°), the approximation is exact, and a mode released "
+        "stays alone.",
+    ),
+    (
+        "One damper, at the base",
+        _chain([20.0, 0, 0, 0]),
+        "The same chain with a single 20 N·s/m damper, on spring 1. Mode 3 is the most complex (MPC 0.20, "
+        "MPD 29°), and the approximation puts mode 4's ζ at 0.049, twice the exact 0.023. Released in mode 2's "
+        "shape, the chain passes 45 % of it to mode 1.",
+    ),
+    (
+        "One damper, at the top",
+        _chain([0, 0, 0, 20.0]),
+        "The damper between m3 and m4: mode 4's ζ is 0.017, not the approximation's 0.17, ten times less. "
+        "The approximation counts the damper's stretch in the undamped mode 4, but the exact mode 4 shakes m1 "
+        "and m2 and leaves m3 and m4 moving nearly together (under a third of the stretch), so the damper barely "
+        "works.",
+    ),
+    (
+        "A strong damper locks a joint",
+        _chain([0, 200.0, 0, 0]),
+        "200 N·s/m between m1 and m2: so stiff a damper that the two move together, and it hardly works. Mode 1's "
+        "ζ is 0.050, not the approximation's 0.58; mode 3's 0.0018, not 2.6; mode 4 has become a pair of real "
+        "roots. Mode 2, where m1 and m2 already move together, is untouched.",
+    ),
+    (
+        "Tuned mass damper",
+        tuned_mass_damper(ChainSystem.uniform(4), 0.05),
+        "The default chain with a Den Hartog damper on m4 (m5). Modes 1 and 2 are the structure's mode 1 split in "
+        "two, close together, and the damper couples them: the most complex (MPD 10° and 17°), while the "
+        "modes above, far from them, stay nearly real.",
+    ),
 )
 
 NOTES_HTML = """
@@ -237,26 +261,34 @@ a small MPD in a measurement says little.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "proportional-damping", "Proportional damping"),
-    ("sim_page", "non-proportional-damping-and-coupling", "Non-proportional damping"),
-    ("sim_page", "exact-damped-modes-are-complex", "Exact damped modes are complex"),
-)).replace("<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{name}.</b> {note}</li>" for name, _, note in TRIALS) + "</ul>"
-           ).replace("<!--TAKEAWAYS-->", takeaways(
-    "Proportional damping keeps the undamped modes: real shapes, nodes that stand still, and ζ = "
-    "φ<sup>T</sup>Cφ/2ω exactly.",
-    "A damper that isn't proportional couples the modes; the exact modes, from the 2N × 2N state matrix, are "
-    "then complex, most of all where modes are close.",
-    "The usual approximation keeps only the diagonal of Φ<sup>T</sup>CΦ: good for light damping and separated "
-    "modes, wrong (even ten times) where a damper changes the shapes.",
-    "A damper has a best size for each mode: past it, it locks its joint and damps less.",
-    "MPC and MPD measure how complex a shape is; a measured mode is always a little complex, so only a large "
-    "value means much.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sim_page", "proportional-damping", "Proportional damping"),
+            ("sim_page", "non-proportional-damping-and-coupling", "Non-proportional damping"),
+            ("sim_page", "exact-damped-modes-are-complex", "Exact damped modes are complex"),
+        ),
+    )
+    .replace("<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{name}.</b> {note}</li>" for name, _, note in TRIALS) + "</ul>")
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Proportional damping keeps the undamped modes: real shapes, nodes that stand still, and ζ = "
+            "φ<sup>T</sup>Cφ/2ω exactly.",
+            "A damper that isn't proportional couples the modes; the exact modes, from the 2N × 2N state matrix, are "
+            "then complex, most of all where modes are close.",
+            "The usual approximation keeps only the diagonal of Φ<sup>T</sup>CΦ: good for light damping and separated "
+            "modes, wrong (even ten times) where a damper changes the shapes.",
+            "A damper has a best size for each mode: past it, it locks its joint and damps less.",
+            "MPC and MPD measure how complex a shape is; a measured mode is always a little complex, so only a large "
+            "value means much.",
+        ),
+    )
+)
 
 
-def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = False
-          ) -> pg.PlotWidget:
+def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = False) -> pg.PlotWidget:
     p = pg.PlotWidget(axisItems=log_axes()) if log else pg.PlotWidget()
     p.setMenuEnabled(False)
     p.hideButtons()
@@ -321,8 +353,9 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.trial.addItem("Load a chain…")
         self.trial.addItems([name for name, _, _ in TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Chains that show something about complex modes. Loading one replaces the "
-                              "Simulation page's chain.</p>")
+        self.trial.setToolTip(
+            "<p>Chains that show something about complex modes. Loading one replaces the Simulation page's chain.</p>"
+        )
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -432,7 +465,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.scatter_plot.setToolTip(SCATTER_TIP)
         plot_height(self.scatter_plot, 200)
         self.scatter_note = QtWidgets.QLabel(
-            "Each mass's phase from its mode's best-fit line; bars: the MPD. Real modes put every dot on 0.")
+            "Each mass's phase from its mode's best-fit line; bars: the MPD. Real modes put every dot on 0."
+        )
         self.scatter_note.setWordWrap(True)
         mute(self.scatter_note)
         scatter_tab = QtWidgets.QWidget()
@@ -492,7 +526,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.ident_table.verticalHeader().setVisible(False)
         self.ident_table.setToolTip(
             "<p>Each mode's identified shape: its MAC with the exact complex shape ψ for both fits, the real "
-            "fit's MAC with the undamped shape φ, and the complex fit's MPC against the exact one.</p>")
+            "fit's MAC with the undamped shape φ, and the complex fit's MPC against the exact one.</p>"
+        )
         self.ident_note = QtWidgets.QLabel()
         self.ident_note.setWordWrap(True)
         self.ident_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
@@ -555,8 +590,12 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.dof.setValue(system.n)
         self.dof.blockSignals(False)
         if n_changed:
-            for box, default in ((self.frf_in, system.n - 1), (self.frf_out, 0), (self.ident_in, 0),
-                                 (self.ident_out, system.n - 1)):
+            for box, default in (
+                (self.frf_in, system.n - 1),
+                (self.frf_out, 0),
+                (self.ident_in, 0),
+                (self.ident_out, system.n - 1),
+            ):
                 box.blockSignals(True)
                 box.clear()
                 box.addItems([f"m{i + 1}" for i in range(system.n)])
@@ -569,8 +608,11 @@ class ComplexModesPage(QtWidgets.QWidget):
             self.mode.setCurrentIndex(current if 0 <= current < system.n else 0)
             self.mode.blockSignals(False)
             self._fill_elements()
-        if self.sweep_parameter.currentData() is Parameter.DAMPER and system.damping.any() and not (
-                system.damping[self.sweep_element.currentIndex()]):
+        if (
+            self.sweep_parameter.currentData() is Parameter.DAMPER
+            and system.damping.any()
+            and not (system.damping[self.sweep_element.currentIndex()])
+        ):
             self.sweep_element.blockSignals(True)  # sweep a damper the chain has
             self.sweep_element.setCurrentIndex(int(np.argmax(system.damping)))
             self.sweep_element.blockSignals(False)
@@ -638,15 +680,17 @@ class ComplexModesPage(QtWidgets.QWidget):
             return
         self._stale.discard(tab)
         if tab is self.sweep_tab:
-            self.sweep_result = sweep(self.system, self.sweep_parameter.currentData(),
-                                      max(self.sweep_element.currentIndex(), 0))
+            self.sweep_result = sweep(
+                self.system, self.sweep_parameter.currentData(), max(self.sweep_element.currentIndex(), 0)
+            )
             self._draw_sweep()
         elif tab is self.ident_tab:
-            self.ident_result = identify(self.system, self.result, max(self.ident_in.currentIndex(), 0),
-                                         self.ident_noise.value() / 100.0)
+            self.ident_result = identify(
+                self.system, self.result, max(self.ident_in.currentIndex(), 0), self.ident_noise.value() / 100.0
+            )
             self._draw_identification()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()
@@ -671,11 +715,15 @@ class ComplexModesPage(QtWidgets.QWidget):
     def redraw(self) -> None:
         r = self.result
         if r.is_proportional:
-            self.coupling.setText("Coupling index <b>0</b>: the damping is <b>proportional</b>, and every mode real. "
-                                  "Pick a chain under <i>Things to try</i> to see one that isn't.")
+            self.coupling.setText(
+                "Coupling index <b>0</b>: the damping is <b>proportional</b>, and every mode real. "
+                "Pick a chain under <i>Things to try</i> to see one that isn't."
+            )
         else:
-            self.coupling.setText(f"Coupling index <b>{r.coupling:.2f}</b>: the damping is <b>not proportional</b>, "
-                                  "and the modes are complex.")
+            self.coupling.setText(
+                f"Coupling index <b>{r.coupling:.2f}</b>: the damping is <b>not proportional</b>, "
+                "and the modes are complex."
+            )
         self.make_proportional.setEnabled(not r.is_proportional)
         self._fill_table()
         self._draw_mode()
@@ -691,13 +739,15 @@ class ComplexModesPage(QtWidgets.QWidget):
         over = [c.index for c in self.rows if c.exact is None and c.fn_hz > 0]
         text = ""
         if worst is not None and worst.measures.mpd > 0.05:
-            text = (f"The most complex: mode {worst.index}, MPC {worst.measures.mpc:.2f}, MPD "
-                    f"{worst.measures.mpd:.3g}°.")
+            text = f"The most complex: mode {worst.index}, MPC {worst.measures.mpc:.2f}, MPD {worst.measures.mpd:.3g}°."
         elif worst is not None:
             text = "Every mode is real: the approximation is exact."
         if over:
-            text += f" Overdamped (no oscillating pole): mode{'s' if len(over) > 1 else ''} " + \
-                    ", ".join(map(str, over)) + "."
+            text += (
+                f" Overdamped (no oscillating pole): mode{'s' if len(over) > 1 else ''} "
+                + ", ".join(map(str, over))
+                + "."
+            )
         self.readout.setText(text)
 
     def _fill_table(self) -> None:
@@ -714,8 +764,16 @@ class ComplexModesPage(QtWidgets.QWidget):
                 cells += ["overdamped", f"{c.fn_hz:.4g}", "–", f"{c.zeta_approx:.3g}", "–", "–", "–", "–"]
             else:
                 m = c.measures
-                cells += [f"{c.fn_exact:.4g}", f"{c.fn_hz:.4g}", f"{c.zeta_exact:.3g}", f"{c.zeta_approx:.3g}",
-                          _percent(c.zeta_approx, c.zeta_exact), f"{c.mac:.3f}", f"{m.mpc:.3f}", f"{m.mpd:.2f}°"]
+                cells += [
+                    f"{c.fn_exact:.4g}",
+                    f"{c.fn_hz:.4g}",
+                    f"{c.zeta_exact:.3g}",
+                    f"{c.zeta_approx:.3g}",
+                    _percent(c.zeta_approx, c.zeta_exact),
+                    f"{c.mac:.3f}",
+                    f"{m.mpc:.3f}",
+                    f"{m.mpd:.2f}°",
+                ]
             for j, text in enumerate(cells):
                 item = _cell(text)
                 if j == 0:
@@ -734,20 +792,29 @@ class ComplexModesPage(QtWidgets.QWidget):
         a.clear()
         s.clear()
         if c.shape is None:
-            self.mode_info.setText(f"Mode {c.index} has no oscillating pole: the damping has made it a pair of "
-                                   "real roots.")
+            self.mode_info.setText(
+                f"Mode {c.index} has no oscillating pole: the damping has made it a pair of real roots."
+            )
             return
         psi, m = c.shape, c.measures
         circle = np.exp(1j * np.linspace(0, 2 * np.pi, 97))
         a.plot(circle.real, circle.imag, pen=pg.mkPen(colors.faint, width=1, style=QtCore.Qt.PenStyle.DotLine))
         a.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
         a.addItem(pg.InfiniteLine(0.0, angle=90, pen=pg.mkPen(colors.faint, width=1)))
-        a.addItem(pg.InfiniteLine((0.0, 0.0), angle=math.degrees(m.angle),
-                                  pen=pg.mkPen(colors.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine)))
+        a.addItem(
+            pg.InfiniteLine(
+                (0.0, 0.0),
+                angle=math.degrees(m.angle),
+                pen=pg.mkPen(colors.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine),
+            )
+        )
         for i, z in enumerate(psi):
             a.plot([0.0, z.real], [0.0, z.imag], pen=pg.mkPen(colors.mass[i], width=2))
-        a.addItem(pg.ScatterPlotItem(psi.real, psi.imag, size=8, pen=None,
-                                     brush=[pg.mkBrush(colors.mass[i]) for i in range(n)]))
+        a.addItem(
+            pg.ScatterPlotItem(
+                psi.real, psi.imag, size=8, pen=None, brush=[pg.mkBrush(colors.mass[i]) for i in range(n)]
+            )
+        )
         a.setRange(xRange=(-1.15, 1.15), yRange=(-1.15, 1.15), padding=0)
         a.setTitle(f"Mode {c.index}: MPC {m.mpc:.3f}, MPD {m.mpd:.2f}°", size="9pt")
 
@@ -767,7 +834,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         lam = c.exact
         self.mode_info.setText(
             f"Exact: {c.fn_exact:.4g} Hz, ζ = {c.zeta_exact:.3g} (λ = {lam.real:.3g} ± {lam.imag:.4g}i). "
-            f"Approximation: {c.fn_hz:.4g} Hz, ζ = {c.zeta_approx:.3g}.")
+            f"Approximation: {c.fn_hz:.4g} Hz, ζ = {c.zeta_approx:.3g}."
+        )
 
     def _draw_frf(self) -> None:
         if not self.rows:
@@ -780,8 +848,9 @@ class ComplexModesPage(QtWidgets.QWidget):
         q.clear()
         self.frf_legend.clear()
         e = p.plot(f, np.maximum(np.abs(exact), 1e-300), pen=pg.mkPen(colors.strong, width=2))
-        ap = p.plot(f, np.maximum(np.abs(approx), 1e-300), pen=pg.mkPen(colors.fit, width=2,
-                                                                         style=QtCore.Qt.PenStyle.DashLine))
+        ap = p.plot(
+            f, np.maximum(np.abs(approx), 1e-300), pen=pg.mkPen(colors.fit, width=2, style=QtCore.Qt.PenStyle.DashLine)
+        )
         self.frf_legend.addItem(e, "Exact")
         self.frf_legend.addItem(ap, "Proportional approximation")
         q.plot(f, np.degrees(np.angle(exact)), pen=pg.mkPen(colors.strong, width=2))
@@ -794,7 +863,9 @@ class ComplexModesPage(QtWidgets.QWidget):
         err = np.abs(approx - exact) / np.max(np.abs(exact))
         self.frf_note.setText(
             f"Largest difference: <b>{100 * err.max():.3g} %</b> of the exact FRF's peak, at {f[np.argmax(err)]:.3g} Hz."
-            if err.max() > 1e-9 else "The two are the same: the damping is proportional.")
+            if err.max() > 1e-9
+            else "The two are the same: the damping is proportional."
+        )
 
     def _draw_decay(self) -> None:
         if not self.rows:
@@ -825,9 +896,10 @@ class ComplexModesPage(QtWidgets.QWidget):
         q.setYRange(-1.1 * top, 1.1 * top, padding=0)
         s = int(np.argmax(run.leak))
         self.decay_note.setText(
-            f"Released in mode {k + 1}'s undamped shape: <b>{100 * run.leak[s]:.3g} %</b> of it reaches mode "
-            f"{s + 1}." if run.leak[s] > 1e-9 else
-            f"Released in mode {k + 1}'s undamped shape, it stays there: no other mode moves.")
+            f"Released in mode {k + 1}'s undamped shape: <b>{100 * run.leak[s]:.3g} %</b> of it reaches mode {s + 1}."
+            if run.leak[s] > 1e-9
+            else f"Released in mode {k + 1}'s undamped shape, it stays there: no other mode moves."
+        )
 
     def _draw_scatter(self) -> None:
         p = self.scatter_plot
@@ -837,11 +909,21 @@ class ComplexModesPage(QtWidgets.QWidget):
             if c.measures is None:
                 continue
             dev = c.measures.deviation
-            p.addItem(pg.ScatterPlotItem(np.full(n, float(c.index)), dev, size=8, pen=None,
-                                         brush=[pg.mkBrush(colors.mass[i]) for i in range(n)]))
+            p.addItem(
+                pg.ScatterPlotItem(
+                    np.full(n, float(c.index)),
+                    dev,
+                    size=8,
+                    pen=None,
+                    brush=[pg.mkBrush(colors.mass[i]) for i in range(n)],
+                )
+            )
             for sign in (1, -1):
-                p.plot([c.index - 0.3, c.index + 0.3], [sign * c.measures.mpd] * 2,
-                       pen=pg.mkPen(colors.mode[(c.index - 1) % len(colors.mode)], width=2))
+                p.plot(
+                    [c.index - 0.3, c.index + 0.3],
+                    [sign * c.measures.mpd] * 2,
+                    pen=pg.mkPen(colors.mode[(c.index - 1) % len(colors.mode)], width=2),
+                )
         p.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
         p.setXRange(0.5, n + 0.5, padding=0)
         p.setYRange(-92, 92, padding=0)
@@ -864,12 +946,18 @@ class ComplexModesPage(QtWidgets.QWidget):
             lam = sw.poles[:, k]
             p.plot(lam.real, lam.imag / TWO_PI, pen=pg.mkPen(colour, width=2), connect="finite")
             if np.isfinite(lam[at]):
-                p.addItem(pg.ScatterPlotItem([lam[at].real], [lam[at].imag / TWO_PI], size=9, pen=None,
-                                             brush=pg.mkBrush(colour)))
+                p.addItem(
+                    pg.ScatterPlotItem(
+                        [lam[at].real], [lam[at].imag / TWO_PI], size=9, pen=None, brush=pg.mkBrush(colour)
+                    )
+                )
         real = np.concatenate(sw.roots) if sw.roots else np.zeros(0)
         if real.size:
-            p.addItem(pg.ScatterPlotItem(real, np.zeros(real.size), size=4, symbol="x", pen=None,
-                                         brush=pg.mkBrush(colors.grey)))
+            p.addItem(
+                pg.ScatterPlotItem(
+                    real, np.zeros(real.size), size=4, symbol="x", pen=None, brush=pg.mkBrush(colors.grey)
+                )
+            )
         p.addItem(pg.InfiniteLine(0.0, angle=90, pen=pg.mkPen(colors.faint, width=1)))
         finite = sw.poles[np.isfinite(sw.poles)]
         if finite.size:
@@ -885,12 +973,17 @@ class ComplexModesPage(QtWidgets.QWidget):
         for k in range(n):
             colour = colors.mode[k % len(colors.mode)]
             curve = z.plot(sw.values, sw.zeta_exact[:, k], pen=pg.mkPen(colour, width=2), connect="finite")
-            z.plot(sw.values, np.minimum(sw.zeta_approx[:, k], 2.0),
-                   pen=pg.mkPen(colour, width=1, style=QtCore.Qt.PenStyle.DashLine), connect="finite")
+            z.plot(
+                sw.values,
+                np.minimum(sw.zeta_approx[:, k], 2.0),
+                pen=pg.mkPen(colour, width=1, style=QtCore.Qt.PenStyle.DashLine),
+                connect="finite",
+            )
             self.sweep_zeta_legend.addItem(curve, f"Mode {k + 1}")
             m.plot(sw.values, sw.mpd[:, k], pen=pg.mkPen(colour, width=2), connect="finite")
-        self.sweep_zeta_legend.addItem(pg.PlotDataItem(pen=pg.mkPen(colors.grey, width=1,
-                                                                   style=QtCore.Qt.PenStyle.DashLine)), "Approx.")
+        self.sweep_zeta_legend.addItem(
+            pg.PlotDataItem(pen=pg.mkPen(colors.grey, width=1, style=QtCore.Qt.PenStyle.DashLine)), "Approx."
+        )
         for p in (z, m):
             if own > 0:
                 p.addItem(pg.InfiniteLine(math.log10(own), angle=90, pen=pg.mkPen(colors.muted, width=1, style=dot)))
@@ -905,15 +998,18 @@ class ComplexModesPage(QtWidgets.QWidget):
                 if np.isfinite(zeta):
                     lines.append(f"mode {k + 1} ζ = {zeta:.3g} at {value:.3g}")
             self.sweep_note.setText(
-                f"Each mode's damping peaks, then falls as {name} locks its joint: " + "; ".join(lines)
-                + f" N·s/m. The chain's {name} is {own:.3g} N·s/m. The approximation (dashed) rises for ever.")
+                f"Each mode's damping peaks, then falls as {name} locks its joint: "
+                + "; ".join(lines)
+                + f" N·s/m. The chain's {name} is {own:.3g} N·s/m. The approximation (dashed) rises for ever."
+            )
         else:
             mpd = np.where(np.isfinite(sw.mpd), sw.mpd, -1.0)
             v, worst = np.unravel_index(int(np.argmax(mpd)), mpd.shape)
             self.sweep_note.setText(
                 f"Mode {worst + 1} is most complex (MPD {mpd[v, worst]:.3g}°) at {name} = {sw.values[v]:.3g} N/m; "
                 f"the chain's {name} is {own:.3g} N/m. The springs move the modes; the dampers decide how much "
-                "they couple them.")
+                "they couple them."
+            )
 
     def _draw_identification(self) -> None:
         res = self.ident_result
@@ -925,8 +1021,11 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.ident_legend.clear()
         meas = p.plot(res.freqs, np.maximum(np.abs(res.H[:, out]), 1e-300), pen=pg.mkPen(colors.grey, width=1))
         cf = p.plot(res.freqs, np.maximum(np.abs(res.complex_fit.H[:, out]), 1e-300), pen=pg.mkPen(colors.fit, width=2))
-        rf = p.plot(res.freqs, np.maximum(np.abs(res.real_fit.H[:, out]), 1e-300),
-                    pen=pg.mkPen(colors.force, width=2, style=QtCore.Qt.PenStyle.DashLine))
+        rf = p.plot(
+            res.freqs,
+            np.maximum(np.abs(res.real_fit.H[:, out]), 1e-300),
+            pen=pg.mkPen(colors.force, width=2, style=QtCore.Qt.PenStyle.DashLine),
+        )
         self.ident_legend.addItem(meas, "Measured")
         self.ident_legend.addItem(cf, "Complex modes")
         self.ident_legend.addItem(rf, "Real modes")
@@ -943,9 +1042,14 @@ class ComplexModesPage(QtWidgets.QWidget):
         t.setRowCount(len(res.modes))
         for i, k in enumerate(res.modes):
             exact_mpc = self.rows[k].measures.mpc if self.rows[k].measures is not None else float("nan")
-            cells = [f"{k + 1}", f"{res.complex_fit.mac[i]:.3f}", f"{res.real_fit.mac[i]:.3f}",
-                     f"{res.real_fit.mac_undamped[i]:.3f}",
-                     f"{complexity(res.complex_fit.modes[i].shape).mpc:.3f}", f"{exact_mpc:.3f}"]
+            cells = [
+                f"{k + 1}",
+                f"{res.complex_fit.mac[i]:.3f}",
+                f"{res.real_fit.mac[i]:.3f}",
+                f"{res.real_fit.mac_undamped[i]:.3f}",
+                f"{complexity(res.complex_fit.modes[i].shape).mpc:.3f}",
+                f"{exact_mpc:.3f}",
+            ]
             for j, text in enumerate(cells):
                 item = _cell(text)
                 if j == 0:
@@ -956,8 +1060,12 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.ident_note.setText(
             f"The fits' FRFs miss the exact one by <b>{_share(res.complex_fit.error)} %</b> (complex modes) and "
             f"<b>{_share(res.real_fit.error)} %</b> (real modes). "
-            + (f"The real modes' worst shape: mode {res.modes[worst] + 1}, MAC {res.real_fit.mac[worst]:.3f} with ψ."
-               if res.modes else ""))
+            + (
+                f"The real modes' worst shape: mode {res.modes[worst] + 1}, MAC {res.real_fit.mac[worst]:.3f} with ψ."
+                if res.modes
+                else ""
+            )
+        )
 
 
 def _share(x: float) -> str:

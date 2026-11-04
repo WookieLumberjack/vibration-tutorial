@@ -67,14 +67,22 @@ def damper_path(x0: float, x1: float, y: float, rest_gap: float, h: float = 0.04
     if x1 < piston:  # ends have crossed (extreme compression): collapse the rod
         piston = x1
     nan = np.nan
-    xs = [x0, cyl0, nan,
-          cyl1, cyl0, cyl0, cyl1, nan,  # cylinder: top, back wall, bottom
-          piston, piston, nan,  # piston plate
-          piston, x1]  # rod
-    ys = [y, y, nan,
-          y + h, y + h, y - h, y - h, nan,
-          y + 0.75 * h, y - 0.75 * h, nan,
-          y, y]
+    xs = [
+        x0,
+        cyl0,
+        nan,
+        cyl1,
+        cyl0,
+        cyl0,
+        cyl1,
+        nan,  # cylinder: top, back wall, bottom
+        piston,
+        piston,
+        nan,  # piston plate
+        piston,
+        x1,
+    ]  # rod
+    ys = [y, y, nan, y + h, y + h, y - h, y - h, nan, y + 0.75 * h, y - 0.75 * h, nan, y, y]
     return np.array(xs), np.array(ys)
 
 
@@ -185,9 +193,7 @@ class ChainView(pg.PlotWidget):
             # Set both axes in one call: with the aspect ratio locked, separate
             # setXRange/setYRange calls let the second one shrink the first,
             # cropping the chain once it's wider than the widget's shape.
-            self.setRange(
-                QtCore.QRectF(-0.25, -0.6, n * SPACING + 0.85, 1.35), padding=0
-            )
+            self.setRange(QtCore.QRectF(-0.25, -0.6, n * SPACING + 0.85, 1.35), padding=0)
             self._scale_bar.setData([0.05, 0.05 + MAX_SWING], [-0.55, -0.55])
             self._scale_text.setPos(0.1 + MAX_SWING, -0.55)
 
@@ -267,7 +273,7 @@ class ChainView(pg.PlotWidget):
         offset = float(np.clip(pos.x() - (i + 1) * SPACING, -MAX_DRAG, MAX_DRAG))
         self.mass_dragged.emit(i, offset / self.gain)
 
-    def mousePressEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mousePressEvent(self, event) -> None:
         left = event.button() == QtCore.Qt.MouseButton.LeftButton
         i = self.mass_at(self._view_pos(event)) if left and self.draggable else None
         if i is None:
@@ -281,7 +287,7 @@ class ChainView(pg.PlotWidget):
         self._drag_to(self._view_pos(event))
         event.accept()
 
-    def mouseMoveEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mouseMoveEvent(self, event) -> None:
         pos = self._view_pos(event)
         if self.held is not None:
             self._drag_to(pos)
@@ -293,7 +299,7 @@ class ChainView(pg.PlotWidget):
             self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
         super().mouseMoveEvent(event)
 
-    def mouseReleaseEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mouseReleaseEvent(self, event) -> None:
         if self.held is None:
             super().mouseReleaseEvent(event)
             return

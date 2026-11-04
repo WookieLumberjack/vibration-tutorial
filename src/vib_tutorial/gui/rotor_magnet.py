@@ -46,23 +46,23 @@ EQUIVALENT_TIP = (
 )
 INPUT_TIPS = {
     "gap": "<p>Air gap s<sub>0</sub> between each magnet's poles and the journal, with the journal centred. "
-           "Half of it is the backup (touchdown) bearing's clearance: the journal lands there first.</p>",
+    "Half of it is the backup (touchdown) bearing's clearance: the journal lands there first.</p>",
     "bias": "<p>Bias current i<sub>0</sub> in every coil. The control current is added to one magnet of a "
-            "pair and taken from the other. A larger bias gives more force per ampere (k<sub>i</sub> ∝ i<sub>0</sub>) "
-            "and more load capacity, but a stronger negative stiffness (k<sub>m</sub> ∝ i<sub>0</sub>²).</p>",
+    "pair and taken from the other. A larger bias gives more force per ampere (k<sub>i</sub> ∝ i<sub>0</sub>) "
+    "and more load capacity, but a stronger negative stiffness (k<sub>m</sub> ∝ i<sub>0</sub>²).</p>",
     "area": "<p>Area A of each of a magnet's two pole faces.</p>",
     "turns": "<p>Turns N of each magnet's coil. The magnet pulls with k i²/s², k = μ<sub>0</sub>N²A/4.</p>",
     "kp": "<p>Proportional gain k<sub>p</sub>: amperes per metre the journal is off centre. "
-          "k<sub>i</sub>k<sub>p</sub> has to beat the magnets' pull k<sub>m</sub>, and what is left over is "
-          "the bearing's stiffness.</p>",
+    "k<sub>i</sub>k<sub>p</sub> has to beat the magnets' pull k<sub>m</sub>, and what is left over is "
+    "the bearing's stiffness.</p>",
     "ki": "<p>Integral gain k<sub>I</sub>: a steady load cannot hold the journal off centre, since the "
-          "current keeps growing until it is back. Its lag makes the damping negative at low frequency.</p>",
+    "current keeps growing until it is back. Its lag makes the damping negative at low frequency.</p>",
     "kd": "<p>Derivative gain k<sub>d</sub>: amperes per metre per second. k<sub>i</sub>k<sub>d</sub> is "
-          "the damping, below the filter and the amplifier.</p>",
+    "the damping, below the filter and the amplifier.</p>",
     "filter": "<p>The derivative's low-pass filter, f<sub>d</sub>: a pure derivative would amplify the "
-              "sensor's noise without limit. Above it the derivative's phase lead fades.</p>",
+    "sensor's noise without limit. Above it the derivative's phase lead fades.</p>",
     "amplifier": "<p>The power amplifier's bandwidth f<sub>a</sub>: the coils' inductance keeps the current "
-                 "from following the controller at once. Its lag eats the derivative's lead.</p>",
+    "from following the controller at once. Its lag eats the derivative's lead.</p>",
 }
 
 
@@ -90,11 +90,17 @@ class MagnetPanel(QtWidgets.QWidget):
         self.filter = spin(1.0, 1e5, m.filter_hz, 0, " Hz")
         self.amplifier = spin(1.0, 1e5, m.amplifier_hz, 0, " Hz")
         form = QtWidgets.QGridLayout()
-        boxes = (("Air gap s<sub>0</sub>:", self.gap, "gap"), ("Bias i<sub>0</sub>:", self.bias, "bias"),
-                 ("Pole area A:", self.area, "area"), ("Turns N:", self.turns, "turns"),
-                 ("k<sub>p</sub>:", self.kp, "kp"), ("k<sub>I</sub>:", self.ki, "ki"),
-                 ("k<sub>d</sub>:", self.kd, "kd"), ("Filter f<sub>d</sub>:", self.filter, "filter"),
-                 ("Amplifier f<sub>a</sub>:", self.amplifier, "amplifier"))
+        boxes = (
+            ("Air gap s<sub>0</sub>:", self.gap, "gap"),
+            ("Bias i<sub>0</sub>:", self.bias, "bias"),
+            ("Pole area A:", self.area, "area"),
+            ("Turns N:", self.turns, "turns"),
+            ("k<sub>p</sub>:", self.kp, "kp"),
+            ("k<sub>I</sub>:", self.ki, "ki"),
+            ("k<sub>d</sub>:", self.kd, "kd"),
+            ("Filter f<sub>d</sub>:", self.filter, "filter"),
+            ("Amplifier f<sub>a</sub>:", self.amplifier, "amplifier"),
+        )
         heads = ("<b>Actuator</b> (a magnet pair on each axis)", "<b>Controller</b> (on each axis)")
         for col, text in enumerate(heads):
             head = QtWidgets.QLabel(text)
@@ -127,8 +133,10 @@ class MagnetPanel(QtWidgets.QWidget):
         self.bands: list[pg.LinearRegionItem] = []  # where c_b < 0, on both plots
         self.zero_lines: list[pg.InfiniteLine] = []
         self.mode_lines: list[list[pg.InfiniteLine]] = [[], []]  # per plot
-        for p, curve, (label, unit) in ((self.k_plot, self.k_curve, ("Stiffness k<sub>b</sub>", "N/m")),
-                                        (self.c_plot, self.c_curve, ("Damping c<sub>b</sub>", "N·s/m"))):
+        for p, curve, (label, unit) in (
+            (self.k_plot, self.k_curve, ("Stiffness k<sub>b</sub>", "N/m")),
+            (self.c_plot, self.c_curve, ("Damping c<sub>b</sub>", "N·s/m")),
+        ):
             p.setMenuEnabled(False)
             p.setMouseEnabled(x=False, y=False)
             p.hideButtons()
@@ -157,16 +165,31 @@ class MagnetPanel(QtWidgets.QWidget):
     # ------------------------------------------------------------- inputs
     def bearing(self) -> MagneticBearing:
         """The bearing described by the inputs (SI)."""
-        return MagneticBearing(gap=self.gap.value() / 1e3, bias=self.bias.value(), area=self.area.value() / 1e6,
-                               turns=round(self.turns.value()), kp=self.kp.value(), ki=self.ki.value(),
-                               kd=self.kd.value(), filter_hz=self.filter.value(),
-                               amplifier_hz=self.amplifier.value())
+        return MagneticBearing(
+            gap=self.gap.value() / 1e3,
+            bias=self.bias.value(),
+            area=self.area.value() / 1e6,
+            turns=round(self.turns.value()),
+            kp=self.kp.value(),
+            ki=self.ki.value(),
+            kd=self.kd.value(),
+            filter_hz=self.filter.value(),
+            amplifier_hz=self.amplifier.value(),
+        )
 
     def set_bearing(self, m: MagneticBearing, notify: bool = True) -> None:
         """Show and use `m` (for scripts and tests); `notify` tells the rotor, if it runs on it."""
-        for box, value in ((self.gap, m.gap * 1e3), (self.bias, m.bias), (self.area, m.area * 1e6),
-                           (self.turns, m.turns), (self.kp, m.kp), (self.ki, m.ki), (self.kd, m.kd),
-                           (self.filter, m.filter_hz), (self.amplifier, m.amplifier_hz)):
+        for box, value in (
+            (self.gap, m.gap * 1e3),
+            (self.bias, m.bias),
+            (self.area, m.area * 1e6),
+            (self.turns, m.turns),
+            (self.kp, m.kp),
+            (self.ki, m.ki),
+            (self.kd, m.kd),
+            (self.filter, m.filter_hz),
+            (self.amplifier, m.amplifier_hz),
+        ):
             box.blockSignals(True)
             box.setValue(value)
             box.blockSignals(False)
@@ -200,7 +223,7 @@ class MagnetPanel(QtWidgets.QWidget):
         self.changed.emit()
 
     # ------------------------------------------------------------- drawing
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self.catch_up()
 
@@ -239,8 +262,7 @@ class MagnetPanel(QtWidgets.QWidget):
         lo_band, hi_band = m.damped_band()
         inside = (f >= lo_band) & (f <= hi_band) if math.isfinite(lo_band) else np.ones(f.size, bool)
         top_c = float(c[inside].max()) if inside.any() and c[inside].max() > 0 else float(np.abs(c).max())
-        self.c_plot.setRange(xRange=(math.log10(lo), math.log10(hi)), yRange=(-0.6 * top_c, 1.2 * top_c),
-                             padding=0)
+        self.c_plot.setRange(xRange=(math.log10(lo), math.log10(hi)), yRange=(-0.6 * top_c, 1.2 * top_c), padding=0)
         k_lo, k_hi = min(float(k.min()), 0.0), max(float(k.max()), 0.0)
         self.k_plot.setRange(yRange=(k_lo - 0.05 * (k_hi - k_lo), k_hi + 0.05 * (k_hi - k_lo)), padding=0)
         self._draw_bands(m, lo, hi)
@@ -253,8 +275,11 @@ class MagnetPanel(QtWidgets.QWidget):
 
     def _draw_bands(self, m: MagneticBearing, lo: float, hi: float) -> None:
         f_lo, f_hi = m.damped_band()
-        spans = [(lo, hi)] if not math.isfinite(f_lo) else (
-            ([(lo, f_lo)] if f_lo > lo else []) + ([(f_hi, hi)] if f_hi < hi else []))
+        spans = (
+            [(lo, hi)]
+            if not math.isfinite(f_lo)
+            else (([(lo, f_lo)] if f_lo > lo else []) + ([(f_hi, hi)] if f_hi < hi else []))
+        )
         while len(self.bands) < 2 * len(spans):
             band = pg.LinearRegionItem(movable=False)
             band.setZValue(-10)
@@ -306,26 +331,32 @@ class MagnetPanel(QtWidgets.QWidget):
         ks, ki = m.negative_stiffness, m.current_gain
         net = ki * m.kp - ks
         f_lo, f_hi = m.damped_band()
-        parts = [(
-            f"<p><b>Actuator</b>: k = μ<sub>0</sub>N²A/4 = {m.force_constant:.3g} N·m²/A²; negative stiffness "
-            f"k<sub>m</sub> = 4ki<sub>0</sub>²/s<sub>0</sub>³ = {_si(ks, 'N/m')}; current gain k<sub>i</sub> = "
-            f"4ki<sub>0</sub>/s<sub>0</sub>² = {ki:.3g} N/A; load capacity k<sub>i</sub>i<sub>0</sub> = "
-            f"{m.capacity:.3g} N; backup bearing {_si(m.touchdown, 'm')} off centre.</p>")]
+        parts = [
+            (
+                f"<p><b>Actuator</b>: k = μ<sub>0</sub>N²A/4 = {m.force_constant:.3g} N·m²/A²; negative stiffness "
+                f"k<sub>m</sub> = 4ki<sub>0</sub>²/s<sub>0</sub>³ = {_si(ks, 'N/m')}; current gain k<sub>i</sub> = "
+                f"4ki<sub>0</sub>/s<sub>0</sub>² = {ki:.3g} N/A; load capacity k<sub>i</sub>i<sub>0</sub> = "
+                f"{m.capacity:.3g} N; backup bearing {_si(m.touchdown, 'm')} off centre.</p>"
+            )
+        ]
         if net <= 0.0:
             parts.append(
                 f"<p><span style='color:{colors.force}'><b>k<sub>i</sub>k<sub>p</sub> − k<sub>m</sub> = "
                 f"{_si(net, 'N/m')}</b>: the magnets outpull the controller. The journal falls toward a magnet"
                 + (", the integral pulling it back too late, so that it swings ever wider" if m.integral else "")
-                + f". Raise k<sub>p</sub> above {ks / ki:,.0f} A/m.</span></p>")
+                + f". Raise k<sub>p</sub> above {ks / ki:,.0f} A/m.</span></p>"
+            )
         else:
             parts.append(
                 f"<p><b>Controller</b>: k<sub>i</sub>k<sub>p</sub> − k<sub>m</sub> = {_si(net, 'N/m')} of "
-                "stiffness" + (" (infinite at 0 Hz with the integral: a steady load cannot move the journal)"
-                               if m.integral else "")
-                + f", k<sub>i</sub>k<sub>d</sub> = {ki * m.kd:.3g} N·s/m of damping before the lags. ")
+                "stiffness"
+                + (" (infinite at 0 Hz with the integral: a steady load cannot move the journal)" if m.integral else "")
+                + f", k<sub>i</sub>k<sub>d</sub> = {ki * m.kd:.3g} N·s/m of damping before the lags. "
+            )
             if math.isfinite(f_lo):
-                parts[-1] += (f"It damps from {f_lo:.3g} to {f_hi:,.4g} Hz" if f_lo > 0.0 else
-                              f"It damps up to {f_hi:,.4g} Hz") + "; outside, it feeds a mode (shaded).</p>"
+                parts[-1] += (
+                    f"It damps from {f_lo:.3g} to {f_hi:,.4g} Hz" if f_lo > 0.0 else f"It damps up to {f_hi:,.4g} Hz"
+                ) + "; outside, it feeds a mode (shaded).</p>"
             else:
                 parts[-1] += "It damps nowhere: every mode is fed.</p>"
         parts.append(self._rotor_html(m))
@@ -333,8 +364,10 @@ class MagnetPanel(QtWidgets.QWidget):
         self.note.setText(
             "Linearized about the centred journal and the bias, with the sensor at the journal (collocated). "
             "Current saturation and the backup bearings' contact are left out: the page pauses when a journal "
-            "reaches its backup bearing." if self.system is not None else
-            "Choose <i>Magnetic bearings</i> under the rotor's bearing supports to run the rotor on this bearing.")
+            "reaches its backup bearing."
+            if self.system is not None
+            else "Choose <i>Magnetic bearings</i> under the rotor's bearing supports to run the rotor on this bearing."
+        )
 
     def _rotor_html(self, m: MagneticBearing) -> str:
         if self.system is None:
@@ -343,20 +376,30 @@ class MagnetPanel(QtWidgets.QWidget):
         out = ""
         if any(loads):
             share = max(abs(w) for w in loads) / m.capacity
-            out += ("<p>The weight takes a steady " + " and ".join(
-                f"{abs(w) / m.current_gain:.3g} A at {n}" for n, w in zip("AB", loads))
+            out += (
+                "<p>The weight takes a steady "
+                + " and ".join(f"{abs(w) / m.current_gain:.3g} A at {n}" for n, w in zip("AB", loads))
                 + f" of control current ({share:.0%} of the bias)"
-                + (f": <span style='color:{colors.force}'>past the bias one magnet's current would run out, "
-                   "and the linear model no longer holds</span>." if share > 1.0 else ".") + "</p>")
+                + (
+                    f": <span style='color:{colors.force}'>past the bias one magnet's current would run out, "
+                    "and the linear model no longer holds</span>."
+                    if share > 1.0
+                    else "."
+                )
+                + "</p>"
+            )
         if self.onset is None:
             return out + f"<p>The rotor on it stays stable up to {self.top_rpm:,.0f} rpm.</p>"
         if self.onset.omega == 0.0:
-            return out + ("<p>The rotor on it is unstable even at rest: its journals fall onto the magnets.</p>"
-                          if self.onset.freq_hz == 0.0 else
-                          f"<p>The rotor on it is unstable even at rest, a whirl at {self.onset.freq_hz:,.4g} Hz "
-                          "growing where the bearing's damping is negative.</p>")
+            return out + (
+                "<p>The rotor on it is unstable even at rest: its journals fall onto the magnets.</p>"
+                if self.onset.freq_hz == 0.0
+                else f"<p>The rotor on it is unstable even at rest, a whirl at {self.onset.freq_hz:,.4g} Hz "
+                "growing where the bearing's damping is negative.</p>"
+            )
         whirl = "forward" if self.onset.whirl > 0 else "backward"
-        return out + (f"<p>The rotor on it goes unstable at <b>{self.onset.omega * RPM:,.0f} rpm</b>, a {whirl} "
-                      f"whirl at {self.onset.freq_hz:,.4g} Hz ({self.onset.order:.2f}×) reaching where the "
-                      "bearing's damping turns negative (the <i>Stability</i> tab).</p>")
-
+        return out + (
+            f"<p>The rotor on it goes unstable at <b>{self.onset.omega * RPM:,.0f} rpm</b>, a {whirl} "
+            f"whirl at {self.onset.freq_hz:,.4g} Hz ({self.onset.order:.2f}×) reaching where the "
+            "bearing's damping turns negative (the <i>Stability</i> tab).</p>"
+        )

@@ -112,10 +112,15 @@ def test_simulation_holds_the_steady_state():
 def test_asymmetric_shaft_on_films_tends_to_the_round_one():
     s = ON_FILMS.with_(unbalance=50e-6)
     w = np.array([1000.0, 2500.0]) / RPM
-    np.testing.assert_allclose(synchronous_response(s.with_(asymmetry=1e-9), w), synchronous_response(s, w),
-                               rtol=1e-6, atol=1e-12)
-    np.testing.assert_allclose(s.with_(asymmetry=1e-9).static_deflection(2500.0 / RPM),
-                               s.static_deflection(2500.0 / RPM), rtol=1e-6, atol=1e-12)
+    np.testing.assert_allclose(
+        synchronous_response(s.with_(asymmetry=1e-9), w), synchronous_response(s, w), rtol=1e-6, atol=1e-12
+    )
+    np.testing.assert_allclose(
+        s.with_(asymmetry=1e-9).static_deflection(2500.0 / RPM),
+        s.static_deflection(2500.0 / RPM),
+        rtol=1e-6,
+        atol=1e-12,
+    )
 
 
 def test_stiff_shaft_whirls_at_lunds_threshold():
@@ -161,7 +166,9 @@ def test_journal_bearing_preset_splits_its_critical():
     q = synchronous_response(p.system, rpm / RPM)
     half_length = (np.abs(q[:, XA] + 1j * q[:, YA]) + np.abs(q[:, XA] - 1j * q[:, YA])) / 2
     assert rpm[half_length.argmax()] == pytest.approx(1845.0, abs=0.5)
-    assert half_length.max() * 1e6 == pytest.approx(28, abs=0.5) and half_length.max() > p.system.bearing_a.film.clearance
+    assert (
+        half_length.max() * 1e6 == pytest.approx(28, abs=0.5) and half_length.max() > p.system.bearing_a.film.clearance
+    )
     rigid = Bearing(kx=1e12, ky=1e12, cx=0.0, cy=0.0, mass=1e-3)
     on_rigid = campbell(p.system.with_(bearing_a=rigid, bearing_b=rigid), p.top_rpm / RPM)
     assert min(round(w * RPM) for w, r, _ in on_rigid.criticals if r > 0) == 1854

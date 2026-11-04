@@ -35,8 +35,7 @@ from .theming import add_legend
 
 RATIOS = np.geomspace(0.05, 20.0, 400)  # frequency over f_n on the energy and loss plots
 TAB_LOSS, TAB_FRF, TAB_DECAY = range(3)
-SHORT = {Model.VISCOUS: "Viscous", Model.HYSTERETIC: "Hysteretic", Model.COULOMB: "Coulomb",
-         Model.ZENER: "Zener"}
+SHORT = {Model.VISCOUS: "Viscous", Model.HYSTERETIC: "Hysteretic", Model.COULOMB: "Coulomb", Model.ZENER: "Zener"}
 
 
 @dataclass(frozen=True)
@@ -60,52 +59,60 @@ TRIALS = (
         "that is what matched means. Viscous, hysteretic and Zener damping make ellipses, their force a quarter "
         "cycle ahead of the motion; friction makes a rectangle, ±F<sub>f</sub> = ±0.31 N, flipping at each end "
         "of the stroke, which doesn't shrink as the motion does.",
-        tab=TAB_LOSS),
+        tab=TAB_LOSS,
+    ),
     DampingTrial(
         "Twice the frequency",
         "The same cycle at 2f<sub>n</sub>. The viscous loop is twice as fat (25.1 mJ: its force grows with "
         "the velocity), the hysteretic and friction loops are unchanged (12.6 mJ), and the Zener element's, "
         "past its loss peak, is thinner (10.7 mJ).",
-        ratio=2.0),
+        ratio=2.0,
+    ),
     DampingTrial(
         "With the spring: what a test machine draws",
         "The whole force, spring and damping together, as a test machine measures it on a sample: each loop is "
         "the spring's line kx (dashed) opened out by the damping. The tilt is the stiffness (4 N at 10 mm), "
         "the width the loss (0.4 N): a lightly damped part draws a thin loop.",
-        damping_only=False),
+        damping_only=False,
+    ),
     DampingTrial(
         "Friction can't stop a resonance",
         "1 N at every frequency. The viscous, hysteretic and Zener peaks stop at 25 mm, (F/k)/2ζ. Friction, "
         "matched to them at 10 mm, takes at most 4F<sub>f</sub>X a cycle, which grows only as X while the force "
         "puts in πFX: since F = 1 N &gt; 4F<sub>f</sub>/π = 0.4 N, the resonance runs away. Set the drive below "
         "0.4 N and friction holds the mass still (to this approximation).",
-        tab=TAB_FRF),
+        tab=TAB_FRF,
+    ),
     DampingTrial(
         "A straight-line decay",
         "Released from 10 mm. The viscous swing falls by the same fraction each cycle, e<sup>−δ</sup> = 0.73, "
         "for ever. Friction's falls by the same amount, 4F<sub>f</sub>/k = 3.1 mm, and stops dead after three "
         "cycles, 0.58 mm off centre, where the spring can no longer beat the friction.",
-        tab=TAB_DECAY),
+        tab=TAB_DECAY,
+    ),
     DampingTrial(
         "A viscoelastic loss peak",
         "The Zener element: a spring k<sub>0</sub> beside a spring k<sub>1</sub> and a dashpot in series. Slowly "
         "the dashpot gives and only k<sub>0</sub> = 364 N/m holds; fast it locks and k<sub>0</sub> + "
         "k<sub>1</sub> = 444 N/m does. In between, at its relaxation frequency (here f<sub>n</sub>), the loss "
         "factor peaks at 0.1. Rubber mounts and polymers behave like this.",
-        tab=TAB_LOSS),
+        tab=TAB_LOSS,
+    ),
     DampingTrial(
         "Relaxing well above resonance",
         "The Zener element's peak moved to 10 f<sub>n</sub>. Below it, its loss grows in proportion to "
         "frequency, as a viscous damper's does: through the oscillator's band it is a viscous damper. It "
         "needs a stiffer arm for the same damping at f<sub>n</sub>.",
-        relax=10.0, tab=TAB_LOSS),
+        relax=10.0,
+        tab=TAB_LOSS,
+    ),
 )
 
 TIPS = {
     "zeta": "<p>The damping ratio every model is matched to at f<sub>n</sub>: the same energy per cycle there as "
-            "a viscous damper c = 2ζ√(km), and friction at the amplitude X.</p>",
+    "a viscous damper c = 2ζ√(km), and friction at the amplitude X.</p>",
     "amplitude": "<p>The amplitude X of the cycle the loops trace, where friction is matched, and the release "
-                 "of the free decay.</p>",
+    "of the free decay.</p>",
     "relax": "<p>Where the Zener element's loss factor peaks, as a multiple of f<sub>n</sub>.</p>",
     "ratio": "<p>The frequency of the cycle the loops trace, over f<sub>n</sub>.</p>",
     "force": "<p>The harmonic force on the Frequency response tab.</p>",
@@ -114,21 +121,26 @@ TIPS = {
 LOOP_TIP = (
     "<p>The force the spring and the damping carry, against the displacement, over one steady cycle "
     "x = X sin Ωt. The area inside each loop is the energy it takes out per cycle. The spring alone would be the "
-    "straight line kx.</p>")
+    "straight line kx.</p>"
+)
 ENERGY_TIP = (
     "<p>The energy each model takes per cycle of amplitude X, against the frequency over f<sub>n</sub>. They "
-    "meet at f<sub>n</sub>, where they are matched.</p>")
+    "meet at f<sub>n</sub>, where they are matched.</p>"
+)
 LOSS_TIP = (
     "<p>Top: the storage stiffness K' (the in-phase part of the force per metre) over k. Bottom: the loss "
     "factor η = K''/K', the out-of-phase part over the in-phase part (2ζ at resonance for a viscous "
-    "damper).</p>")
+    "damper).</p>"
+)
 FRF_TIP = (
     "<p>The steady amplitude under the harmonic force, against frequency, for each model. Friction's is the "
-    "describing function's, which can't bound a resonance once F &gt; 4F<sub>f</sub>/π.</p>")
+    "describing function's, which can't bound a resonance once F &gt; 4F<sub>f</sub>/π.</p>"
+)
 DECAY_TIP = (
     "<p>Released from rest at X (held there long, so the Zener element's dashpot is relaxed). Hysteretic "
     "damping has no causal time-domain model: its curve is the viscous one of the same loss at "
-    "f<sub>n</sub>.</p>")
+    "f<sub>n</sub>.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -211,21 +223,31 @@ dashpot's end) by the matrix exponential.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sdof_page", "free-vibration", "Free vibration"),
-    ("sdof_page", "log-decrement", "Measuring damping from a decay"),
-    ("sdof_page", "forced-response", "Forced response"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "The area of the force–displacement loop is the energy lost per cycle; the loss factor η = K''/K' "
-    "measures it, and at resonance η = 2ζ.",
-    "Viscous damping loses energy in proportion to frequency, hysteretic damping not at all; they agree at "
-    "resonance, which is why η = 2ζ swaps between them.",
-    "Hysteretic damping is a frequency-domain model: it has no causal free decay.",
-    "Friction loses 4F<sub>f</sub>X per cycle: it decays in a straight line, stops off centre, and can't "
-    "bound a resonance driven harder than 4F<sub>f</sub>/π.",
-    "A viscoelastic material stiffens across its relaxation frequency, where its loss peaks: viscous below, "
-    "elastic above.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sdof_page", "free-vibration", "Free vibration"),
+            ("sdof_page", "log-decrement", "Measuring damping from a decay"),
+            ("sdof_page", "forced-response", "Forced response"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "The area of the force–displacement loop is the energy lost per cycle; the loss factor η = K''/K' "
+            "measures it, and at resonance η = 2ζ.",
+            "Viscous damping loses energy in proportion to frequency, hysteretic damping not at all; they agree at "
+            "resonance, which is why η = 2ζ swaps between them.",
+            "Hysteretic damping is a frequency-domain model: it has no causal free decay.",
+            "Friction loses 4F<sub>f</sub>X per cycle: it decays in a straight line, stops off centre, and can't "
+            "bound a resonance driven harder than 4F<sub>f</sub>/π.",
+            "A viscoelastic material stiffens across its relaxation frequency, where its loss peaks: viscous below, "
+            "elastic above.",
+        ),
+    )
+)
 
 
 class DampingModelsPage(QtWidgets.QWidget):
@@ -237,9 +259,10 @@ class DampingModelsPage(QtWidgets.QWidget):
         super().__init__(parent)
         self.model = Matched()
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the oscillator and the plots to show one idea from the Theory "
-                               "tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each sets up the oscillator and the plots to show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         osc = Form("Oscillator and matching")
@@ -346,8 +369,10 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.decay_plot = plot("Displacement x", "m", "Time", "s", height=200)
         self.decay_plot.setToolTip(DECAY_TIP)
         add_legend(self.decay_plot.getPlotItem(), offset=(-10, 10))
-        self.decay_items = {m: pg.PlotDataItem(name=SHORT[m] + (" (viscous equivalent)" if m is Model.HYSTERETIC else ""))
-                            for m in MODELS}
+        self.decay_items = {
+            m: pg.PlotDataItem(name=SHORT[m] + (" (viscous equivalent)" if m is Model.HYSTERETIC else ""))
+            for m in MODELS
+        }
         self.stick_band = pg.LinearRegionItem(orientation="horizontal", movable=False)
         self.decay_plot.addItem(self.stick_band)
         for item in self.decay_items.values():
@@ -379,9 +404,16 @@ class DampingModelsPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        for box, value in ((self.mass, 1.0), (self.stiffness, 400.0), (self.zeta, t.zeta),
-                           (self.amplitude, t.amplitude_mm), (self.relax, t.relax), (self.ratio, t.ratio),
-                           (self.damping_only, t.damping_only), (self.force, t.force)):
+        for box, value in (
+            (self.mass, 1.0),
+            (self.stiffness, 400.0),
+            (self.zeta, t.zeta),
+            (self.amplitude, t.amplitude_mm),
+            (self.relax, t.relax),
+            (self.ratio, t.ratio),
+            (self.damping_only, t.damping_only),
+            (self.force, t.force),
+        ):
             set_quietly(box, value)
         for box in self.shown.values():
             set_quietly(box, True)
@@ -390,8 +422,13 @@ class DampingModelsPage(QtWidgets.QWidget):
         self._on_model()
 
     def _on_model(self) -> None:
-        self.model = Matched(self.mass.value(), self.stiffness.value(), self.zeta.value(),
-                             1e-3 * self.amplitude.value(), self.relax.value())
+        self.model = Matched(
+            self.mass.value(),
+            self.stiffness.value(),
+            self.zeta.value(),
+            1e-3 * self.amplitude.value(),
+            self.relax.value(),
+        )
         self.redraw()
 
     # ------------------------------------------------------------- drawing
@@ -404,13 +441,20 @@ class DampingModelsPage(QtWidgets.QWidget):
         cols = self._colors()
         for m in MODELS:
             pen = pg.mkPen(cols[m], width=2)
-            for items in (self.loop_items, self.energy_items, self.storage_items, self.eta_items, self.frf_items,
-                          self.decay_items):
+            for items in (
+                self.loop_items,
+                self.energy_items,
+                self.storage_items,
+                self.eta_items,
+                self.frf_items,
+                self.decay_items,
+            ):
                 items[m].setPen(pen)
         for items in (self.energy_items, self.storage_items, self.eta_items):  # on the hysteretic one there
             items[Model.COULOMB].setPen(pg.mkPen(cols[Model.COULOMB], width=2, style=QtCore.Qt.PenStyle.DashLine))
-        self.decay_items[Model.HYSTERETIC].setPen(pg.mkPen(cols[Model.HYSTERETIC], width=2,
-                                                           style=QtCore.Qt.PenStyle.DashLine))
+        self.decay_items[Model.HYSTERETIC].setPen(
+            pg.mkPen(cols[Model.HYSTERETIC], width=2, style=QtCore.Qt.PenStyle.DashLine)
+        )
         self.spring_item.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.energy_now.setPen(pg.mkPen(c.muted, width=1, style=QtCore.Qt.PenStyle.DotLine))
         self.stick_band.setBrush(pg.mkBrush(*pg.mkColor(c.force).getRgb()[:3], 30))
@@ -424,9 +468,11 @@ class DampingModelsPage(QtWidgets.QWidget):
     def redraw(self) -> None:
         mm = self.model
         k0, k1, tau = mm.zener()
-        self.info.setText(f"f<sub>n</sub> = {mm.natural_hz:.4g} Hz. Matched: c = {mm.c:.4g} N·s/m, η = {mm.eta:.4g}, "
-                          f"F<sub>f</sub> = {mm.friction:.4g} N, Zener k<sub>0</sub> = {k0:.4g} N/m, "
-                          f"k<sub>1</sub> = {k1:.4g} N/m, τ = {tau:.4g} s.")
+        self.info.setText(
+            f"f<sub>n</sub> = {mm.natural_hz:.4g} Hz. Matched: c = {mm.c:.4g} N·s/m, η = {mm.eta:.4g}, "
+            f"F<sub>f</sub> = {mm.friction:.4g} N, Zener k<sub>0</sub> = {k0:.4g} N/m, "
+            f"k<sub>1</sub> = {k1:.4g} N/m, τ = {tau:.4g} s."
+        )
         self._draw_loops()
         self._draw_energy()
         self._draw_tab()
@@ -456,8 +502,11 @@ class DampingModelsPage(QtWidgets.QWidget):
             self.loop_legend.addItem(self.spring_item, "spring kx")
         self.loop_plot.setXRange(-1.1 * X, 1.1 * X, padding=0)
         self.loop_plot.enableAutoRange(axis="y")
-        self.loop_note.setText(f"Energy per cycle at {self.ratio.value():.3g} f<sub>n</sub>, X = {fmt(X, 'm')}: "
-                               + ", ".join(lines) + ". (The area inside each loop.)")
+        self.loop_note.setText(
+            f"Energy per cycle at {self.ratio.value():.3g} f<sub>n</sub>, X = {fmt(X, 'm')}: "
+            + ", ".join(lines)
+            + ". (The area inside each loop.)"
+        )
 
     def _draw_energy(self) -> None:
         mm = self.model
@@ -494,7 +543,8 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.loss_note.setText(
             f"Zener: relaxed stiffness k<sub>0</sub> = {k0:.4g} N/m, unrelaxed k<sub>0</sub> + k<sub>1</sub> = "
             f"{k0 + k1:.4g} N/m; loss peak {k1 / (2 * math.sqrt(k0 * (k0 + k1))):.3g} at {peak:.3g} f<sub>n</sub>. "
-            f"Friction's η = 4F<sub>f</sub>/πkX = {mm.eta:.3g} holds at X = {fmt(mm.amplitude, 'm')} only.")
+            f"Friction's η = 4F<sub>f</sub>/πkX = {mm.eta:.3g} holds at X = {fmt(mm.amplitude, 'm')} only."
+        )
 
     def _draw_frf(self) -> None:
         mm = self.model
@@ -517,11 +567,15 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.frf_plot.setXRange(math.log10(f[0]), math.log10(f[-1]), padding=0)
         threshold = 4.0 * mm.friction / math.pi
         if F > threshold:
-            text = (f"F = {fmt(F, 'N')} &gt; 4F<sub>f</sub>/π = {fmt(threshold, 'N')}: friction can't stop the "
-                    "resonance (its curve runs off the top). ")
+            text = (
+                f"F = {fmt(F, 'N')} &gt; 4F<sub>f</sub>/π = {fmt(threshold, 'N')}: friction can't stop the "
+                "resonance (its curve runs off the top). "
+            )
         else:
-            text = (f"F = {fmt(F, 'N')} ≤ 4F<sub>f</sub>/π = {fmt(threshold, 'N')}: friction holds the mass still "
-                    "(the describing function's answer; really it sticks and slips). ")
+            text = (
+                f"F = {fmt(F, 'N')} ≤ 4F<sub>f</sub>/π = {fmt(threshold, 'N')}: friction holds the mass still "
+                "(the describing function's answer; really it sticks and slips). "
+            )
         text += f"The others peak at (F/k)/η = {fmt(F / mm.stiffness / mm.eta, 'm')}."
         self.frf_note.setText(text)
         self.drive_note.setText(f"Friction's threshold 4F<sub>f</sub>/π = {fmt(threshold, 'N')}.")
@@ -542,6 +596,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.decay_plot.setXRange(0, span, padding=0)
         halves, stop = coulomb_stop(mm.stiffness, mm.friction, mm.amplitude)
         self.decay_note.setText(
-            f"Viscous: each peak e<sup>−δ</sup> = {math.exp(-2 * math.pi * mm.zeta / math.sqrt(1 - mm.zeta ** 2)):.3g}"
+            f"Viscous: each peak e<sup>−δ</sup> = {math.exp(-2 * math.pi * mm.zeta / math.sqrt(1 - mm.zeta**2)):.3g}"
             f" of the last. Friction: {fmt(4 * d, 'm')} less each cycle; it stops after {halves / 2:g} cycles, "
-            f"{fmt(abs(stop), 'm')} off centre, inside the band ±F<sub>f</sub>/k = ±{fmt(d, 'm')}.")
+            f"{fmt(abs(stop), 'm')} off centre, inside the band ±F<sub>f</sub>/k = ±{fmt(d, 'm')}."
+        )

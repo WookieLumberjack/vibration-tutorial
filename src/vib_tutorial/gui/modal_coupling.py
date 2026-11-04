@@ -222,7 +222,14 @@ class CouplingSchematic(pg.PlotWidget):
 class SubsystemTable(QtWidgets.QTableWidget):
     """The modes of A and of B on their own, with the masses a joint would feel. A click couples that mode."""
 
-    HEADERS = ["Mode", "fₙ [Hz]", "ζ modal", "Effective\nmass [kg]", "Share of\nits mass", "Modal mass at\ninterface [kg]"]
+    HEADERS = [
+        "Mode",
+        "fₙ [Hz]",
+        "ζ modal",
+        "Effective\nmass [kg]",
+        "Share of\nits mass",
+        "Modal mass at\ninterface [kg]",
+    ]
     TIPS = [
         "Mode r of A (grounded, tip free) or of B (its first spring and damper tied to ground). "
         "Click a row to couple that mode.",
@@ -328,20 +335,35 @@ class VeeringPlot(QtWidgets.QWidget):
         for r in range(s.full.shape[1]):
             color = colors.mode[r % len(colors.mode)]
             width = 3 if r in paired else 1.5
-            self.plot.plot(s.x, s.full[:, r], pen=pg.mkPen(color, width=width),
-                           name="chain (every mode)" if r == 0 else None)
+            self.plot.plot(
+                s.x, s.full[:, r], pen=pg.mkPen(color, width=width), name="chain (every mode)" if r == 0 else None
+            )
         for r in range(2):
-            self.plot.plot(s.x, s.two_dof[:, r], pen=pg.mkPen(colors.strong, width=2, style=DASH),
-                           name="2-DOF model" if r == 0 else None)
-        self.plot.plot(s.x, s.f_a, pen=pg.mkPen(sub_color("A"), width=2, style=DOT),
-                       name=f"A{model.mode_a + 1} alone")
-        self.plot.plot(s.x, s.f_b, pen=pg.mkPen(sub_color("B"), width=2, style=DOT),
-                       name=f"B{model.mode_b + 1} alone")
-        now = pg.InfiniteLine(pos=math.log10(s.x_now), angle=90, pen=pg.mkPen(colors.grey, width=1),
-                              label="now", labelOpts={"position": 0.95, "color": colors.muted})
+            self.plot.plot(
+                s.x,
+                s.two_dof[:, r],
+                pen=pg.mkPen(colors.strong, width=2, style=DASH),
+                name="2-DOF model" if r == 0 else None,
+            )
+        self.plot.plot(s.x, s.f_a, pen=pg.mkPen(sub_color("A"), width=2, style=DOT), name=f"A{model.mode_a + 1} alone")
+        self.plot.plot(s.x, s.f_b, pen=pg.mkPen(sub_color("B"), width=2, style=DOT), name=f"B{model.mode_b + 1} alone")
+        now = pg.InfiniteLine(
+            pos=math.log10(s.x_now),
+            angle=90,
+            pen=pg.mkPen(colors.grey, width=1),
+            label="now",
+            labelOpts={"position": 0.95, "color": colors.muted},
+        )
         self.plot.addItem(now)
-        self.plot.plot([s.x_now, s.x_now], list(model.fn_hz), pen=None, symbol="o", symbolSize=10,
-                       symbolBrush=None, symbolPen=pg.mkPen(colors.strong, width=2))
+        self.plot.plot(
+            [s.x_now, s.x_now],
+            list(model.fn_hz),
+            pen=None,
+            symbol="o",
+            symbolSize=10,
+            symbolBrush=None,
+            symbolPen=pg.mkPen(colors.strong, width=2),
+        )
         top = 1.4 * max(s.two_dof.max(), 1e-9)
         bottom = max(min(s.two_dof.min(), s.f_a.min()), 1e-9) / 1.4
         self.plot.setYRange(math.log10(bottom), math.log10(top), padding=0)
@@ -355,10 +377,13 @@ class VeeringPlot(QtWidgets.QWidget):
                 "Dashed: the 2-DOF model. Dotted: A's and B's modes on their own. Far from f<sub>B</sub> = "
                 "f<sub>A</sub> each coupled mode follows one of them. Near it the two modes <i>veer</i> "
                 "apart instead of crossing, and trade shapes: the mode splitting of a vibration absorber. "
-                + (f"At f<sub>B</sub> = f<sub>A</sub> the 2-DOF modes are {100 * gap:.3g}% of f<sub>A</sub> "
-                   f"apart; two oscillators tuned exactly are √μ = {100 * math.sqrt(model.mass_ratio):.3g}% "
-                   "apart, whatever μ. "
-                   if gap is not None else "")
+                + (
+                    f"At f<sub>B</sub> = f<sub>A</sub> the 2-DOF modes are {100 * gap:.3g}% of f<sub>A</sub> "
+                    f"apart; two oscillators tuned exactly are √μ = {100 * math.sqrt(model.mass_ratio):.3g}% "
+                    "apart, whatever μ. "
+                    if gap is not None
+                    else ""
+                )
                 + "Circles: the current parameters."
             )
         else:
@@ -415,8 +440,13 @@ class ShapePlots(pg.GraphicsLayoutWidget):
         n = model.system.n
         xs = np.arange(n + 1)
         for r, (p, c) in enumerate(zip(self.plots, comparisons)):
-            line = pg.InfiniteLine(pos=model.split + 0.5, angle=90, pen=pg.mkPen(colors.grey, width=1, style=DASH),
-                                   label="split", labelOpts={"position": 0.08, "color": colors.muted})
+            line = pg.InfiniteLine(
+                pos=model.split + 0.5,
+                angle=90,
+                pen=pg.mkPen(colors.grey, width=1, style=DASH),
+                label="split",
+                labelOpts={"position": 0.08, "color": colors.muted},
+            )
             p.addItem(line)
             p.addItem(pg.InfiniteLine(pos=0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
             true = full.modes[c.full_index - 1].shape
@@ -424,17 +454,35 @@ class ShapePlots(pg.GraphicsLayoutWidget):
             if red @ true < 0:
                 red = -red
             color = colors.mode[(c.full_index - 1) % len(colors.mode)]
-            p.plot(xs, np.concatenate([[0.0], true]), pen=pg.mkPen(color, width=3), symbol="s", symbolSize=9,
-                   symbolPen=None, symbolBrush=color, name=f"chain mode {c.full_index}: {c.fn_full:.4g} Hz")
-            p.plot(xs, np.concatenate([[0.0], red]), pen=pg.mkPen(colors.strong, width=2, style=DASH), symbol="o",
-                   symbolSize=11, symbolBrush=None, symbolPen=pg.mkPen(colors.strong, width=2),
-                   name=f"2-DOF mode {r + 1}: {c.fn:.4g} Hz")
+            p.plot(
+                xs,
+                np.concatenate([[0.0], true]),
+                pen=pg.mkPen(color, width=3),
+                symbol="s",
+                symbolSize=9,
+                symbolPen=None,
+                symbolBrush=color,
+                name=f"chain mode {c.full_index}: {c.fn_full:.4g} Hz",
+            )
+            p.plot(
+                xs,
+                np.concatenate([[0.0], red]),
+                pen=pg.mkPen(colors.strong, width=2, style=DASH),
+                symbol="o",
+                symbolSize=11,
+                symbolBrush=None,
+                symbolPen=pg.mkPen(colors.strong, width=2),
+                name=f"2-DOF mode {r + 1}: {c.fn:.4g} Hz",
+            )
             ua, ub = model.eta[:, r] / np.abs(model.eta[:, r]).max()
             phase = "in phase" if ua * ub > 0 else "in opposite phase"
             err = "—" if c.error is None else f"{100 * c.error:+.3g}%"
-            p.setTitle(f"2-DOF mode {r + 1}: m_a and m_b {phase} (u_b/u_a = {ub / ua:.3g}) · "
-                       f"error {err}, MAC {c.mac:.3f}" if abs(ua) > 1e-12 else
-                       f"2-DOF mode {r + 1}: m_a still · error {err}, MAC {c.mac:.3f}", size="10pt")
+            p.setTitle(
+                f"2-DOF mode {r + 1}: m_a and m_b {phase} (u_b/u_a = {ub / ua:.3g}) · error {err}, MAC {c.mac:.3f}"
+                if abs(ua) > 1e-12
+                else f"2-DOF mode {r + 1}: m_a still · error {err}, MAC {c.mac:.3f}",
+                size="10pt",
+            )
             p.setXRange(0, n, padding=0.05)
             p.getAxis("bottom").setTicks([[(0, "ground")] + [(i, f"m{i}") for i in range(1, n + 1)]])
 
@@ -494,17 +542,21 @@ class DrivePointFrf(QtWidgets.QWidget):
         f = np.unique(np.concatenate([np.geomspace(lo, hi, 2000), ref[(ref > lo) & (ref < hi)]]))
         x = f"x{dof + 1} / F{dof + 1}"
         p.plot(f, np.abs(frf(system, f, dof)[:, dof]), pen=pg.mkPen(colors.strong, width=2), name=f"chain: {x}")
-        p.plot(f, np.abs(coupled_frf(model, f, point)), pen=pg.mkPen(colors.force, width=2, style=DASH),
-               name=f"2-DOF: {x}" if point == "free" else "2-DOF: u_a / F")
+        p.plot(
+            f,
+            np.abs(coupled_frf(model, f, point)),
+            pen=pg.mkPen(colors.force, width=2, style=DASH),
+            name=f"2-DOF: {x}" if point == "free" else "2-DOF: u_a / F",
+        )
         n = system.n
-        for side, name in (("A", f"A alone at m{model.split} (B removed)"),
-                           ("B", f"B alone at m{n} (A removed, base on ground)")):
-            p.plot(f, np.abs(alone_frf(model, f, side)), pen=pg.mkPen(sub_color(side), width=1.5, style=DOT),
-                   name=name)
+        for side, name in (
+            ("A", f"A alone at m{model.split} (B removed)"),
+            ("B", f"B alone at m{n} (A removed, base on ground)"),
+        ):
+            p.plot(f, np.abs(alone_frf(model, f, side)), pen=pg.mkPen(sub_color(side), width=1.5, style=DOT), name=name)
         for fr in model.fn_hz:
             if lo < fr < hi:
-                p.addItem(pg.InfiniteLine(pos=math.log10(fr), angle=90,
-                                          pen=pg.mkPen(colors.grey, width=1, style=DOT)))
+                p.addItem(pg.InfiniteLine(pos=math.log10(fr), angle=90, pen=pg.mkPen(colors.grey, width=1, style=DOT)))
         where = "A's tip (the interface)" if point == "interface" else "B's tip (the free end)"
         p.setTitle(f"Force at m{dof + 1}, {where} · dotted lines: 2-DOF fₙ", size="10pt")
         p.setXRange(math.log10(lo), math.log10(hi), padding=0)
@@ -533,8 +585,10 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.trial.addItem("Pick one…")
         self.trial.addItems([t.name for t in TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Each loads a chain into the Simulation page and splits and couples it to "
-                              "show one idea from the Theory tab.</p>")
+        self.trial.setToolTip(
+            "<p>Each loads a chain into the Simulation page and splits and couples it to "
+            "show one idea from the Theory tab.</p>"
+        )
         self.trial.currentIndexChanged.connect(self._on_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
@@ -565,8 +619,9 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.mode_a = QtWidgets.QComboBox()
         self.mode_b = QtWidgets.QComboBox()
         for s, combo in enumerate((self.mode_a, self.mode_b)):
-            combo.setToolTip("The mode of this subsystem that becomes its oscillator. Or click its row "
-                             "in the table below.")
+            combo.setToolTip(
+                "The mode of this subsystem that becomes its oscillator. Or click its row in the table below."
+            )
             combo.activated.connect(lambda i, s=s: self._on_mode(s, i))
         self.mode_labels = [QtWidgets.QLabel(), QtWidgets.QLabel()]
         form.addRow(self.mode_labels[0], self.mode_a)
@@ -584,9 +639,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.residual.setToolTip(RESIDUAL_TIP)
         self.residual.toggled.connect(self.refresh)
         form.addRow(self.residual)
-        link = QtWidgets.QLabel(
-            "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
-        )
+        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.linkActivated.connect(lambda _: self.edit_parameters.emit())
         form.addRow(link)
@@ -600,29 +653,33 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.osc_title = QtWidgets.QLabel("<b>Equivalent oscillators</b>")
         self.osc_table = _table(
             ["Oscillator", "m [kg]", "k [N/m]", "c [N·s/m]", "fₙ [Hz]", "ζ"],
-            ["The mode each oscillator stands for",
-             "m_a: A's modal mass at the interface (or its effective mass), plus B's residual mass if "
-             "added. m_b: B's effective mass.",
-             "k = m ω²: the oscillator keeps its mode's natural frequency",
-             "c = m φᵀCφ = 2ζωm: the oscillator keeps its mode's modal damping ratio",
-             "Natural frequency of the oscillator on its own (without the residual mass)",
-             "Damping ratio of the oscillator on its own"],
+            [
+                "The mode each oscillator stands for",
+                "m_a: A's modal mass at the interface (or its effective mass), plus B's residual mass if "
+                "added. m_b: B's effective mass.",
+                "k = m ω²: the oscillator keeps its mode's natural frequency",
+                "c = m φᵀCφ = 2ζωm: the oscillator keeps its mode's modal damping ratio",
+                "Natural frequency of the oscillator on its own (without the residual mass)",
+                "Damping ratio of the oscillator on its own",
+            ],
         )
         self.result_title = QtWidgets.QLabel("<b>Coupled: the 2-DOF model against the whole chain</b>")
         self.result_table = _table(
             ["2-DOF\nmode", "fₙ 2-DOF\n[Hz]", "ζ 2-DOF", "Chain\nmode", "fₙ chain\n[Hz]", "ζ chain", "Error", "MAC"],
-            ["Mode of the 2-DOF model (ground – k_a – m_a – k_b – m_b)",
-             "Natural frequency of the 2-DOF model",
-             "Exact damping ratio of the 2-DOF model (from its damped eigenvalues)",
-             "The chain's mode whose shape the 2-DOF mode matches best (each 2-DOF mode a different one)",
-             "Natural frequency of that mode of the whole chain",
-             "Exact damping ratio of that mode of the whole chain",
-             "(f_2DOF − f_chain) / f_chain. With the modal mass at the interface and the residual mass "
-             "the 2-DOF model is a Rayleigh–Ritz model, so its mode 1 is never below the chain's mode 1, "
-             "nor its mode 2 below the chain's mode 2. Paired by shape with higher chain modes, the "
-             "error can be negative.",
-             "Modal assurance criterion between the chain's mode and the 2-DOF mode drawn on the chain "
-             "(Mode shapes tab). Low: the two modes are too far apart for this pairing to mean much."],
+            [
+                "Mode of the 2-DOF model (ground – k_a – m_a – k_b – m_b)",
+                "Natural frequency of the 2-DOF model",
+                "Exact damping ratio of the 2-DOF model (from its damped eigenvalues)",
+                "The chain's mode whose shape the 2-DOF mode matches best (each 2-DOF mode a different one)",
+                "Natural frequency of that mode of the whole chain",
+                "Exact damping ratio of that mode of the whole chain",
+                "(f_2DOF − f_chain) / f_chain. With the modal mass at the interface and the residual mass "
+                "the 2-DOF model is a Rayleigh–Ritz model, so its mode 1 is never below the chain's mode 1, "
+                "nor its mode 2 below the chain's mode 2. Paired by shape with higher chain modes, the "
+                "error can be negative.",
+                "Modal assurance criterion between the chain's mode and the 2-DOF mode drawn on the chain "
+                "(Mode shapes tab). Low: the two modes are too far apart for this pairing to mean much.",
+            ],
         )
         self.result_note = QtWidgets.QLabel()
         self.result_note.setWordWrap(True)
@@ -709,7 +766,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         if self.isVisible():
             self.refresh()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.refresh()
@@ -835,17 +892,23 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.result_table.setRowCount(2)
         for r, c in enumerate(comparisons):
             color = colors.mode[(c.full_index - 1) % len(colors.mode)]
-            _set_row(self.result_table, r, [
-                (str(c.index), None),
-                (_g(c.fn), None),
-                (zeta_text(c.zeta), None),
-                (f"mode {c.full_index}", color),
-                (_g(c.fn_full), None),
-                (zeta_text(c.zeta_full), None),
-                ("—" if c.error is None else f"{100 * c.error:+.3g}%",
-                 None if c.error is None else error_color(c.error)),
-                (f"{c.mac:.3f}", colors.poor if c.mac < 0.8 else None),
-            ])
+            _set_row(
+                self.result_table,
+                r,
+                [
+                    (str(c.index), None),
+                    (_g(c.fn), None),
+                    (zeta_text(c.zeta), None),
+                    (f"mode {c.full_index}", color),
+                    (_g(c.fn_full), None),
+                    (zeta_text(c.zeta_full), None),
+                    (
+                        "—" if c.error is None else f"{100 * c.error:+.3g}%",
+                        None if c.error is None else error_color(c.error),
+                    ),
+                    (f"{c.mac:.3f}", colors.poor if c.mac < 0.8 else None),
+                ],
+            )
         _fit_table(self.result_table)
         self.result_note.setText(self._result_note(model, full, comparisons))
         self.veering.set_model(model, comparisons)
@@ -876,15 +939,20 @@ class ModalCouplingPage(QtWidgets.QWidget):
         a, b = model.osc_a, model.osc_b
         res = f" + {model.m_residual:.3g}" if model.residual and model.m_residual > 1e-9 else ""
         for r, (name, mode, osc, m_text) in enumerate(
-                (("A", model.mode_a, a, _g(a.m, 3) + res), ("B", model.mode_b, b, _g(b.m, 3)))):
-            _set_row(self.osc_table, r, [
-                (f"{name}{mode + 1}", sub_color(name)),
-                (m_text, None),
-                (_g(osc.k, 4), None),
-                (_g(osc.c, 3), None),
-                (_g(osc.fn_hz), None),
-                (zeta_text(osc.zeta) if osc.k > 0 else "—", None),
-            ])
+            (("A", model.mode_a, a, _g(a.m, 3) + res), ("B", model.mode_b, b, _g(b.m, 3)))
+        ):
+            _set_row(
+                self.osc_table,
+                r,
+                [
+                    (f"{name}{mode + 1}", sub_color(name)),
+                    (m_text, None),
+                    (_g(osc.k, 4), None),
+                    (_g(osc.c, 3), None),
+                    (_g(osc.fn_hz), None),
+                    (zeta_text(osc.zeta) if osc.k > 0 else "—", None),
+                ],
+            )
         _fit_table(self.osc_table)
 
     @staticmethod
@@ -896,12 +964,16 @@ class ModalCouplingPage(QtWidgets.QWidget):
         if np.isfinite(ratio) and ratio > 0:
             detune = abs(math.log(ratio))
             if detune < math.sqrt(mu):
-                tuned = (f"f<sub>B</sub>/f<sub>A</sub> is within about √μ of 1, so the modes are "
-                         "<b>strongly coupled</b>: each coupled mode is a mix of A's and B's, and they split "
-                         "apart either side.")
+                tuned = (
+                    "f<sub>B</sub>/f<sub>A</sub> is within about √μ of 1, so the modes are "
+                    "<b>strongly coupled</b>: each coupled mode is a mix of A's and B's, and they split "
+                    "apart either side."
+                )
             else:
-                tuned = ("The two modes are far apart compared with √μ, so they are <b>weakly coupled</b>: "
-                         "each coupled mode is mostly A's or B's, shifted a little.")
+                tuned = (
+                    "The two modes are far apart compared with √μ, so they are <b>weakly coupled</b>: "
+                    "each coupled mode is mostly A's or B's, shifted a little."
+                )
         return (
             f"A (m1–m{model.split}) mode {model.mode_a + 1} at {fa:.4g} Hz and B "
             f"(m{model.split + 1}–m{model.system.n}) mode {model.mode_b + 1} at {fb:.4g} Hz, "
@@ -913,22 +985,30 @@ class ModalCouplingPage(QtWidgets.QWidget):
     @staticmethod
     def _result_note(model: CoupledModel, full: ModalResult, comparisons: list[CoupledComparison]) -> str:
         if model.rayleigh_ritz:
-            note = ("With the modal mass at the interface and B's residual mass, the 2-DOF model is a "
-                    "Rayleigh–Ritz model of the chain (A's mode shape, and B's on a fixed base), so its "
-                    "frequencies are upper bounds of the chain's lowest two")
+            note = (
+                "With the modal mass at the interface and B's residual mass, the 2-DOF model is a "
+                "Rayleigh–Ritz model of the chain (A's mode shape, and B's on a fixed base), so its "
+                "frequencies are upper bounds of the chain's lowest two"
+            )
             if model.a_mass == "effective":
-                note += (" (A is one mass, so its effective mass and its modal mass at the interface are "
-                         "the same)")
+                note += " (A is one mass, so its effective mass and its modal mass at the interface are the same)"
             if [c.full_index for c in comparisons] == [1, 2]:
                 note += ". "
             else:
-                note += (f" ({model.fn_hz[0]:.4g} ≥ {full.modes[0].fn_hz:.4g} Hz and {model.fn_hz[1]:.4g} ≥ "
-                         f"{full.modes[1].fn_hz:.4g} Hz), not of the modes they are paired with here. ")
+                note += (
+                    f" ({model.fn_hz[0]:.4g} ≥ {full.modes[0].fn_hz:.4g} Hz and {model.fn_hz[1]:.4g} ≥ "
+                    f"{full.modes[1].fn_hz:.4g} Hz), not of the modes they are paired with here. "
+                )
         else:
-            note = ("Without " + ("B's residual mass" if not model.residual else "A's modal mass at the "
-                                  "interface") + " the 2-DOF model is no longer a Rayleigh–Ritz model, so "
-                    "its errors can have either sign. ")
+            note = (
+                "Without "
+                + ("B's residual mass" if not model.residual else "A's modal mass at the interface")
+                + " the 2-DOF model is no longer a Rayleigh–Ritz model, so "
+                "its errors can have either sign. "
+            )
         if min(c.mac for c in comparisons) < 0.8:
-            note += ("A MAC well below 1: the other modes of A or B, which the 2-DOF model leaves out, "
-                     "take part in that chain mode. ")
+            note += (
+                "A MAC well below 1: the other modes of A or B, which the 2-DOF model leaves out, "
+                "take part in that chain mode. "
+            )
         return note + "The chain's other modes come from the modes of A and B that are not coupled here."

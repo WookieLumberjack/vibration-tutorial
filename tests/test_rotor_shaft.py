@@ -77,8 +77,10 @@ def test_a_light_shaft_adds_about_17_35_of_its_mass_to_the_disc():
 
 
 def test_the_long_shaft_converges_from_above_with_consistent_mass():
-    second = {lumped: [forward_criticals(LONG.with_(elements=n, lumped=lumped))[1] for n in (2, 4, 8)]
-              for lumped in (False, True)}
+    second = {
+        lumped: [forward_criticals(LONG.with_(elements=n, lumped=lumped))[1] for n in (2, 4, 8)]
+        for lumped in (False, True)
+    }
     assert second[False] == [7393, 6591, 6582]
     assert second[True] == [8187, 6733, 6620]
     # At rest and undamped, consistent mass is Rayleigh–Ritz: every frequency falls as elements are added.
@@ -100,8 +102,16 @@ def test_the_shafts_weight_and_the_sag():
 
 def test_the_shafts_gyroscopic_moment_splits_its_own_modes():
     # A shaft alone (a tiny disc with no polar inertia): its own sections' spin still splits the whirl.
-    s = RotorSystem(density=STEEL, disc_mass=1e-3, ip=1e-9, id=1e-9, elements=12, diameter=0.04,
-                    bearing_a=UNDAMPED, bearing_b=UNDAMPED)
+    s = RotorSystem(
+        density=STEEL,
+        disc_mass=1e-3,
+        ip=1e-9,
+        id=1e-9,
+        elements=12,
+        diameter=0.04,
+        bearing_a=UNDAMPED,
+        bearing_b=UNDAMPED,
+    )
     at_rest = whirl_modes(s, 0.0)
     spinning = whirl_modes(s, 20_000.0 / RPM)
     fw = spinning.freq_hz[spinning.whirl > 0.5]
@@ -112,8 +122,13 @@ def test_the_shafts_gyroscopic_moment_splits_its_own_modes():
 
 
 def test_simulation_matches_the_steady_state_and_conserves_energy():
-    s = LONG.with_(internal_damping=10.0, bearing_a=Bearing(kxy=3e3, cx=200.0, cy=200.0, mass=0.5),
-                   gravity=9.81, bow=20e-6, skew=1e-3)
+    s = LONG.with_(
+        internal_damping=10.0,
+        bearing_a=Bearing(kxy=3e3, cx=200.0, cy=200.0, mass=0.5),
+        gravity=9.81,
+        bow=20e-6,
+        skew=1e-3,
+    )
     w = 4000.0 / RPM
     sim = RotorSimulator(s)
     sim.omega = sim.target = w

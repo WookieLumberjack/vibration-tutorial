@@ -40,10 +40,13 @@ SHORT_LIMIT = 0.5  # L_b/D_b past which short-bearing theory is stretched
 THRESHOLD_TOP = 60_000.0  # rpm: the rigid rotor's threshold is looked for up to this (the page's widest range)
 AGAINST = ("Speed", "Modified Sommerfeld number")
 # The coefficients drawn: (row, column) in K or C, label, colour index into colors.mode.
-STIFFNESS = (((0, 0), "k<sub>xx</sub>", 0), ((0, 1), "k<sub>xy</sub>", 1), ((1, 0), "k<sub>yx</sub>", 3),
-             ((1, 1), "k<sub>yy</sub>", 5))
-DAMPING = (((0, 0), "c<sub>xx</sub>", 0), ((0, 1), "c<sub>xy</sub> = c<sub>yx</sub>", 1),
-           ((1, 1), "c<sub>yy</sub>", 5))
+STIFFNESS = (
+    ((0, 0), "k<sub>xx</sub>", 0),
+    ((0, 1), "k<sub>xy</sub>", 1),
+    ((1, 0), "k<sub>yx</sub>", 3),
+    ((1, 1), "k<sub>yy</sub>", 5),
+)
+DAMPING = (((0, 0), "c<sub>xx</sub>", 0), ((0, 1), "c<sub>xy</sub> = c<sub>yx</sub>", 1), ((1, 1), "c<sub>yy</sub>", 5))
 
 LOCUS_TIP = (
     "<p>Where the journal's centre sits in its clearance circle (radius c<sub>r</sub>), seen from the B end: x to "
@@ -69,13 +72,12 @@ COEFF_TIP = (
 INPUT_TIPS = {
     "diameter": "Journal diameter D<sub>b</sub>",
     "length": "<p>Bearing length L<sub>b</sub>. Short-bearing theory drops the pressure flow round the "
-              "bearing and holds for L<sub>b</sub>/D<sub>b</sub> up to about 0.5; longer bearings carry more than it says.</p>",
+    "bearing and holds for L<sub>b</sub>/D<sub>b</sub> up to about 0.5; longer bearings carry more than it says.</p>",
     "clearance": "<p>Radial clearance c<sub>r</sub>, the gap with the journal centred: typically 1/1000 to 2/1000 of "
-                 "the radius.</p>",
+    "the radius.</p>",
     "viscosity": "<p>The oil's dynamic viscosity μ. ISO VG 32 turbine oil is about 30 mPa·s at 40 °C, "
-                 "and about 10 mPa·s at 70 °C.</p>",
-    "load": "<p>The steady load W on the bearing, straight down: on a horizontal rotor, the weight it "
-            "carries.</p>",
+    "and about 10 mPa·s at 70 °C.</p>",
+    "load": "<p>The steady load W on the bearing, straight down: on a horizontal rotor, the weight it carries.</p>",
 }
 
 
@@ -113,9 +115,13 @@ class BearingPanel(QtWidgets.QWidget):
         self.against.setMinimumContentsLength(8)
         self.against.setToolTip(COEFF_TIP)
         form = QtWidgets.QGridLayout()
-        boxes = (("Diameter D<sub>b</sub>:", self.diameter, "diameter"), ("Length L<sub>b</sub>:", self.length, "length"),
-                 ("Clearance c<sub>r</sub>:", self.clearance, "clearance"), ("Viscosity μ:", self.viscosity, "viscosity"),
-                 ("Load W:", self.load, "load"))
+        boxes = (
+            ("Diameter D<sub>b</sub>:", self.diameter, "diameter"),
+            ("Length L<sub>b</sub>:", self.length, "length"),
+            ("Clearance c<sub>r</sub>:", self.clearance, "clearance"),
+            ("Viscosity μ:", self.viscosity, "viscosity"),
+            ("Load W:", self.load, "load"),
+        )
         for i, (text, box, key) in enumerate(boxes):
             label = QtWidgets.QLabel(text)
             for w in (label, box):
@@ -151,8 +157,16 @@ class BearingPanel(QtWidgets.QWidget):
         self.dot = pg.ScatterPlotItem(size=9)
         self.load_arrow = pg.ArrowItem(angle=-90, headLen=12, tailLen=26, tailWidth=2, pos=(0.0, -0.25))
         self.mark_labels: list[pg.TextItem] = []
-        for item in (self.circle, *self.axes, self.full_path, self.path, self.unstable_path, self.marks,
-                     self.dot, self.load_arrow):
+        for item in (
+            self.circle,
+            *self.axes,
+            self.full_path,
+            self.path,
+            self.unstable_path,
+            self.marks,
+            self.dot,
+            self.load_arrow,
+        ):
             lp.addItem(item)
         self.locus.setFixedSize(LOCUS_SIZE, LOCUS_SIZE)
         self.readout = QtWidgets.QLabel()
@@ -173,15 +187,16 @@ class BearingPanel(QtWidgets.QWidget):
         self.c_curves: list[tuple[pg.PlotDataItem, pg.PlotDataItem]] = []
         self.speed_lines: list[pg.InfiniteLine] = []
         self.legends: list[pg.LegendItem] = []
-        for row, p, spec, curves in ((0, self.k_plot, STIFFNESS, self.k_curves),
-                                     (2, self.c_plot, DAMPING, self.c_curves)):
+        for row, p, spec, curves in (
+            (0, self.k_plot, STIFFNESS, self.k_curves),
+            (2, self.c_plot, DAMPING, self.c_curves),
+        ):
             p.setMenuEnabled(False)
             p.setMouseEnabled(x=False, y=False)
             p.hideButtons()
             p.showGrid(x=True, y=True, alpha=0.15)
             p.getAxis("left").setWidth(AXIS_WIDTH)  # the same in both, so that their speeds line up
-            legend = pg.LegendItem(colCount=len(spec), brush=colors.legend_brush(),
-                                   labelTextColor=colors.foreground)
+            legend = pg.LegendItem(colCount=len(spec), brush=colors.legend_brush(), labelTextColor=colors.foreground)
             self.coeffs.addItem(legend, row=row, col=0)
             self.legends.append(legend)
             for _, name, _ in spec:
@@ -215,15 +230,23 @@ class BearingPanel(QtWidgets.QWidget):
         load = self.load.value() if self.loads is None else self._own_load
         if rotor and self.loads is not None:
             load = abs(self.loads[self.which.currentIndex()])
-        return JournalBearing(length=self.length.value() / 1e3, diameter=self.diameter.value() / 1e3,
-                              clearance=self.clearance.value() / 1e6, viscosity=self.viscosity.value() / 1e3,
-                              load=load)
+        return JournalBearing(
+            length=self.length.value() / 1e3,
+            diameter=self.diameter.value() / 1e3,
+            clearance=self.clearance.value() / 1e6,
+            viscosity=self.viscosity.value() / 1e3,
+            load=load,
+        )
 
     def set_bearing(self, b: JournalBearing, notify: bool = True) -> None:
         """Show and use `b` (for scripts and tests); `notify` tells the rotor, if it runs on it."""
-        for box, value in ((self.length, b.length * 1e3), (self.diameter, b.diameter * 1e3),
-                           (self.clearance, b.clearance * 1e6), (self.viscosity, b.viscosity * 1e3),
-                           (self.load, b.load if self.loads is None else self.load.value())):
+        for box, value in (
+            (self.length, b.length * 1e3),
+            (self.diameter, b.diameter * 1e3),
+            (self.clearance, b.clearance * 1e6),
+            (self.viscosity, b.viscosity * 1e3),
+            (self.load, b.load if self.loads is None else self.load.value()),
+        ):
             box.blockSignals(True)
             box.setValue(value)
             box.blockSignals(False)
@@ -285,25 +308,29 @@ class BearingPanel(QtWidgets.QWidget):
         ratio = b.length / b.diameter
         self.note.setText(
             f"L<sub>b</sub>/D<sub>b</sub> = {ratio:.2g}: past {SHORT_LIMIT:g} short-bearing theory underrates the film's load capacity, "
-            "and a finite-length solution is needed." if ratio > SHORT_LIMIT else
-            "Short-bearing (Ocvirk) theory, the film cavitating where its pressure would go below zero "
+            "and a finite-length solution is needed."
+            if ratio > SHORT_LIMIT
+            else "Short-bearing (Ocvirk) theory, the film cavitating where its pressure would go below zero "
             "(the π-film). Choose <i>Oil-film journal bearings</i> under the rotor's bearing supports to run "
-            "the rotor in it." if self.loads is None else
-            "Short-bearing (Ocvirk) theory, the film cavitating where its pressure would go below zero "
+            "the rotor in it."
+            if self.loads is None
+            else "Short-bearing (Ocvirk) theory, the film cavitating where its pressure would go below zero "
             "(the π-film). The rotor runs in it: below the speed where ε = 0.9 it takes the film as it is "
             "there, the journal nearly on its bottom. With <i>Nonlinear film</i> ticked the time response "
-            "takes the film's whole force; the coefficients here are its linearization.")
+            "takes the film's whole force; the coefficients here are its linearization."
+        )
         self._show_speed()
 
     # ------------------------------------------------------------- drawing
-    def resizeEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         # The readout beside the locus when there's room for it, else under it, at the full width.
         wide = event.size().width() >= LOCUS_SIZE + READOUT_WIDTH
-        self.top.setDirection(QtWidgets.QBoxLayout.Direction.LeftToRight if wide
-                              else QtWidgets.QBoxLayout.Direction.TopToBottom)
+        self.top.setDirection(
+            QtWidgets.QBoxLayout.Direction.LeftToRight if wide else QtWidgets.QBoxLayout.Direction.TopToBottom
+        )
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self.catch_up()
 
@@ -396,8 +423,11 @@ class BearingPanel(QtWidgets.QWidget):
             if p.ctrl.logXCheck.isChecked() != dimensionless:
                 p.setRange(xRange=(0.0, 1.0), yRange=(0.0, 1.0), padding=0)  # no 10^(4e6) on the way
                 p.setLogMode(x=dimensionless, y=dimensionless)
-        units = (("K c<sub>r</sub> / W", ""), ("C c<sub>r</sub> Ω / W", "")) if dimensionless else (("Stiffness", "N/m"),
-                                                                             ("Damping", "N·s/m"))
+        units = (
+            (("K c<sub>r</sub> / W", ""), ("C c<sub>r</sub> Ω / W", ""))
+            if dimensionless
+            else (("Stiffness", "N/m"), ("Damping", "N·s/m"))
+        )
         for p, (label, unit) in zip((self.k_plot, self.c_plot), units):
             p.setLabel("left", label, units=unit)
         self.c_plot.setLabel("bottom", "S(L<sub>b</sub>/D<sub>b</sub>)²" if dimensionless else "Spin speed (rpm)")
@@ -417,8 +447,9 @@ class BearingPanel(QtWidgets.QWidget):
             if dimensionless:
                 v = np.abs(values).reshape(-1)
                 v = np.log10(v[v > 0.0])
-                p.setRange(xRange=np.log10(SHORT_RANGE), yRange=(max(float(v.min()), -3.0), float(v.max())),
-                           padding=0.04)
+                p.setRange(
+                    xRange=np.log10(SHORT_RANGE), yRange=(max(float(v.min()), -3.0), float(v.max())), padding=0.04
+                )
             else:
                 # Scale to the curves above the lowest speeds, where the film's stiffness climbs without bound.
                 keep = x >= LOW_SPEED * self.top_rpm
@@ -427,8 +458,7 @@ class BearingPanel(QtWidgets.QWidget):
                 pad = 0.06 * (hi - lo)
                 p.setRange(xRange=(0.0, self.top_rpm), yRange=(lo - pad, hi + pad), padding=0)
         if dimensionless:
-            lo, hi = (_short_sommerfeld(b, LOW_SPEED * self.top_rpm / RPM),
-                      _short_sommerfeld(b, self.top_rpm / RPM))
+            lo, hi = (_short_sommerfeld(b, LOW_SPEED * self.top_rpm / RPM), _short_sommerfeld(b, self.top_rpm / RPM))
             self.range_band.setRegion((math.log10(lo), math.log10(hi)))
         self.range_band.setVisible(dimensionless and loaded)
         self._place_speed_lines()
@@ -453,7 +483,8 @@ class BearingPanel(QtWidgets.QWidget):
             self.dot.setData([0.0], [-1.0])
             self.readout.setText(
                 "<p>At rest the journal lies on the bottom of its clearance: there is no film to lift it, "
-                "and no coefficients to speak of. Run the rotor up to see them.</p>" + self._threshold_html(b))
+                "and no coefficients to speak of. Run the rotor up to see them.</p>" + self._threshold_html(b)
+            )
             return
         s = b.state(omega)
         px, py = s.position()
@@ -463,18 +494,27 @@ class BearingPanel(QtWidgets.QWidget):
         rows = "".join(
             f"<tr><td>{name}</td><td align='right'>{_si(k[i, j], 'N/m')}</td><td>&nbsp;&nbsp;c{name[1:]}</td>"
             f"<td align='right'>{_si(c[i, j], 'N·s/m')}</td></tr>"
-            for (i, j), name in (((0, 0), "k<sub>xx</sub>"), ((0, 1), "k<sub>xy</sub>"),
-                                 ((1, 0), "k<sub>yx</sub>"), ((1, 1), "k<sub>yy</sub>")))
+            for (i, j), name in (
+                ((0, 0), "k<sub>xx</sub>"),
+                ((0, 1), "k<sub>xy</sub>"),
+                ((1, 0), "k<sub>yx</sub>"),
+                ((1, 1), "k<sub>yy</sub>"),
+            )
+        )
         self.readout.setText(
             f"<p><b>At {self.rpm:,.0f} rpm</b>: Sommerfeld number "
-            + (f"S = {b.sommerfeld(omega):.3g} (S(L<sub>b</sub>/D<sub>b</sub>)² = {_short_sommerfeld(b, omega):.3g}), " if b.load > 0.0
-               else "S = ∞ (no load: a vertical rotor), ")
+            + (
+                f"S = {b.sommerfeld(omega):.3g} (S(L<sub>b</sub>/D<sub>b</sub>)² = {_short_sommerfeld(b, omega):.3g}), "
+                if b.load > 0.0
+                else "S = ∞ (no load: a vertical rotor), "
+            )
             + f"eccentricity ε = {s.eccentricity:.3f}, attitude angle χ = {math.degrees(s.attitude):.1f}°, "
             f"thinnest film {b.clearance * (1.0 - s.eccentricity) * 1e6:.1f} µm.</p>"
             f"<table cellspacing='0' cellpadding='1'>{rows}</table>"
             f"<p>(k<sub>xy</sub> − k<sub>yx</sub>) / Ω(c<sub>xx</sub> + c<sub>yy</sub>) = {swirl:.2f}: the "
             "swirl ratio λ of the panel's bearings, ½ at any load in short-bearing theory.</p>"
-            + self._threshold_html(b))
+            + self._threshold_html(b)
+        )
 
     def _threshold_html(self, b: JournalBearing) -> str:
         return self._rigid_html(b) + self._rotor_html()
@@ -485,24 +525,32 @@ class BearingPanel(QtWidgets.QWidget):
         if self.onset is None:
             return f"<p>The rotor running on it stays stable up to {self.top_rpm:,.0f} rpm.</p>"
         if not any(self.loads):
-            return ("<p>Unloaded (a vertical rotor), the film has no direct stiffness, only the swirl's "
-                    "cross-coupling: the rotor running on it whirls at any speed.</p>")
-        return (f"<p>The rotor running on it, its shaft flexible, goes unstable at <b>{self.onset.omega * RPM:,.0f} "
-                f"rpm</b>, whirling at {self.onset.freq_hz:.3g} Hz ({self.onset.order:.2f}×): oil whip, near "
-                "twice its first critical speed (the <i>Stability</i> tab).</p>")
+            return (
+                "<p>Unloaded (a vertical rotor), the film has no direct stiffness, only the swirl's "
+                "cross-coupling: the rotor running on it whirls at any speed.</p>"
+            )
+        return (
+            f"<p>The rotor running on it, its shaft flexible, goes unstable at <b>{self.onset.omega * RPM:,.0f} "
+            f"rpm</b>, whirling at {self.onset.freq_hz:.3g} Hz ({self.onset.order:.2f}×): oil whip, near "
+            "twice its first critical speed (the <i>Stability</i> tab).</p>"
+        )
 
     def _rigid_html(self, b: JournalBearing) -> str:
         mass = b.load / GRAVITY
         if self._threshold is None:
-            return (f"<p>A rigid rotor whose weight is the load ({mass:.3g} kg per bearing) stays stable "
-                    f"up to {max(self.top_rpm, THRESHOLD_TOP):,.0f} rpm.</p>")
+            return (
+                f"<p>A rigid rotor whose weight is the load ({mass:.3g} kg per bearing) stays stable "
+                f"up to {max(self.top_rpm, THRESHOLD_TOP):,.0f} rpm.</p>"
+            )
         s = b.state(self._threshold)
         _, nu2 = rigid_threshold(s.k, s.c)
         ratio = math.sqrt(max(nu2, 0.0)) / self._threshold
         where = " (red on the locus)" if self._threshold * RPM < self.top_rpm else ", past the page's speed range"
-        return (f"<p>A rigid rotor whose weight is the load ({mass:.3g} kg per bearing) whirls unstably "
-                f"above <b>{self._threshold * RPM:,.0f} rpm</b>{where}, at {ratio:.2f}× the "
-                f"speed: oil whirl. Past ε ≈ 0.76 it is stable at any speed.</p>")
+        return (
+            f"<p>A rigid rotor whose weight is the load ({mass:.3g} kg per bearing) whirls unstably "
+            f"above <b>{self._threshold * RPM:,.0f} rpm</b>{where}, at {ratio:.2f}× the "
+            f"speed: oil whirl. Past ε ≈ 0.76 it is stable at any speed.</p>"
+        )
 
 
 def _round_speeds(top: float) -> list[float]:

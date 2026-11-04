@@ -53,10 +53,16 @@ def reference(train, startup, t_end):
     return sol.y[:, -1]
 
 
-@pytest.mark.parametrize("train, startup", [
-    (FAN, FAN_START),
-    (COMPRESSOR, dataclasses.replace(COMPRESSOR_START, motor=dataclasses.replace(COMPRESSOR_START.motor, field=0.0))),
-])
+@pytest.mark.parametrize(
+    "train, startup",
+    [
+        (FAN, FAN_START),
+        (
+            COMPRESSOR,
+            dataclasses.replace(COMPRESSOR_START, motor=dataclasses.replace(COMPRESSOR_START.motor, field=0.0)),
+        ),
+    ],
+)
 def test_the_steps_match_an_ode_solver_and_converge_at_second_order(train, startup):
     t_end = 0.25
     ref = reference(train, startup, t_end)
@@ -122,10 +128,16 @@ def test_the_motor_torque_derivatives():
             t, a, w = 0.123, 4.5, 60.0
             _, da, dw = motor.torque(t, a, w, field)
             e = 1e-6
-            assert da == pytest.approx((motor.torque(t, a + e, w, field)[0] - motor.torque(t, a - e, w, field)[0])
-                                       / (2 * e), rel=1e-5, abs=1e-6)
-            assert dw == pytest.approx((motor.torque(t, a, w + e, field)[0] - motor.torque(t, a, w - e, field)[0])
-                                       / (2 * e), rel=1e-5, abs=1e-6)
+            assert da == pytest.approx(
+                (motor.torque(t, a + e, w, field)[0] - motor.torque(t, a - e, w, field)[0]) / (2 * e),
+                rel=1e-5,
+                abs=1e-6,
+            )
+            assert dw == pytest.approx(
+                (motor.torque(t, a, w + e, field)[0] - motor.torque(t, a, w - e, field)[0]) / (2 * e),
+                rel=1e-5,
+                abs=1e-6,
+            )
     with pytest.raises(ValueError):
         Motor(breakdown=0.0)
     with pytest.raises(ValueError):

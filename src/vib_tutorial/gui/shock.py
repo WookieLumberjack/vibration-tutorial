@@ -58,106 +58,155 @@ RULE_SYMBOLS = {Rule.ABS: "t1", Rule.SRSS: "t", Rule.NRL: "d"}
 
 TIPS = {
     "shape": "<p>The base's acceleration. <b>Classical</b> pulses, as shock tests specify them: half-sine, "
-             "haversine, the two sawtooths, a trapezoid, a square. <b>Measured at a mass</b>: the absolute "
-             "acceleration of a mass on the chain, its base given a half-sine (the shock a component mounted "
-             "there sees). <b>Measured transient</b>: damped sines at scattered frequencies, as a pyrotechnic "
-             "shock is. <b>Damped sines</b> or <b>wavelets to a spectrum</b>: a record built to meet a target SRS (a "
-             "plateau above a knee, rising 6 dB an octave below it), as a shaker test is.</p>",
+    "haversine, the two sawtooths, a trapezoid, a square. <b>Measured at a mass</b>: the absolute "
+    "acceleration of a mass on the chain, its base given a half-sine (the shock a component mounted "
+    "there sees). <b>Measured transient</b>: damped sines at scattered frequencies, as a pyrotechnic "
+    "shock is. <b>Damped sines</b> or <b>wavelets to a spectrum</b>: a record built to meet a target SRS (a "
+    "plateau above a knee, rising 6 dB an octave below it), as a shaker test is.</p>",
     "peak": "<p>The pulse's peak acceleration, in g (a measured transient is scaled to it; a measured mass's "
-            "record comes from a base half-sine this high).</p>",
+    "record comes from a base half-sine this high).</p>",
     "duration": "<p>The pulse's duration T (a measured transient's length; a measured mass's base half-sine). "
-                "The spectrum's shape depends on f T.</p>",
+    "The spectrum's shape depends on f T.</p>",
     "mass": "<p>The mass whose acceleration is the measured record.</p>",
     "noise": "<p>White noise added to a measured record, its RMS a fraction of the peak, as an accelerometer's "
-             "and its amplifier's.</p>",
+    "and its amplifier's.</p>",
     "offset": "<p>A constant added to a measured record, a fraction of the peak: an accelerometer's zero shift, "
-              "common in pyrotechnic shocks. Integrated, it is a velocity change the shock didn't have.</p>",
+    "common in pyrotechnic shocks. Integrated, it is a velocity change the shock didn't have.</p>",
     "knee": "<p>The target spectrum's knee: a plateau at the peak above it, rising 6 dB an octave below it, "
-            "from a tenth of it to ten times it.</p>",
+    "from a tenth of it to ten times it.</p>",
     "again": "<p>The same record with other noise (a synthesis: other delays between its components).</p>",
     "q": "<p>The oscillators' Q = 1/2ζ: the same for every one. Shock specifications use Q = 10 (ζ = 5 %).</p>",
     "split": "<p>Show the <b>primary</b> spectrum (the peaks while the pulse lasts) and the <b>residual</b> one "
-             "(after it, the free decay), and the <b>positive</b> and <b>negative</b> peaks apart. The maximax "
-             "is the largest of them. For a measured record, primary means within the record.</p>",
+    "(after it, the free decay), and the <b>positive</b> and <b>negative</b> peaks apart. The maximax "
+    "is the largest of them. For a measured record, primary means within the record.</p>",
     "f": "<p>The oscillator shown on the right. Drag the line on the spectrum, or click it.</p>",
 }
 PULSE_TIP = "<p>The base's acceleration (for a measured mass, the base's half-sine is grey).</p>"
-VELOCITY_TIP = ("<p>The base's velocity, ∫a dt. The change Δv over the pulse decides the spectrum's low end: a soft "
-                "oscillator takes the pulse as an impulse.</p>")
+VELOCITY_TIP = (
+    "<p>The base's velocity, ∫a dt. The change Δv over the pulse decides the spectrum's low end: a soft "
+    "oscillator takes the pulse as an impulse.</p>"
+)
 SRS_TIP = (
     "<p>The shock response spectrum: each oscillator's largest absolute acceleration, against its natural "
     "frequency. Dashed: the pulse's peak (the stiff oscillators' asymptote) and 2π f Δv (the soft ones'). "
-    "Dotted: the chain's modes.</p>")
+    "Dotted: the chain's modes.</p>"
+)
 OSC_TIP = "<p>The picked oscillator's absolute acceleration, the pulse behind it; the dot marks its largest value.</p>"
 DISP_TIP = "<p>The oscillator's displacement relative to the base: its spring's stretch.</p>"
-PEAKS_TIP = ("<p>The chain's peak at each mass (or spring) on this base: exact (bars), and from the SRS at each mode's "
-             "own frequency and damping, combined by ABS (the sum), SRSS (root of the sum of squares) and NRL (the "
-             "largest plus the root of the others' squares).</p>")
-HISTORY_TIP = ("<p>The exact response at the output picked (thick), and each mode's part of it (thin), Γ φ times "
-               "its oscillator's response; the dot marks the exact peak, the dashes each mode's peak from the SRS. "
-               "The modes peak together, early, which the SRSS doesn't allow for.</p>")
+PEAKS_TIP = (
+    "<p>The chain's peak at each mass (or spring) on this base: exact (bars), and from the SRS at each mode's "
+    "own frequency and damping, combined by ABS (the sum), SRSS (root of the sum of squares) and NRL (the "
+    "largest plus the root of the others' squares).</p>"
+)
+HISTORY_TIP = (
+    "<p>The exact response at the output picked (thick), and each mode's part of it (thin), Γ φ times "
+    "its oscillator's response; the dot marks the exact peak, the dashes each mode's peak from the SRS. "
+    "The modes peak together, early, which the SRSS doesn't allow for.</p>"
+)
 TRIPARTITE_TIP = (
     "<p>The pseudo-velocity ω |z|max against frequency, on four-way paper: the diagonals rising to the right are "
     "lines of constant relative displacement |z|max, those falling are constant pseudo-acceleration ω² |z|max "
-    "(which is close to the SRS at light damping). Dashed: the base's Δv and peak acceleration.</p>")
-SHAPES_TIP = ("<p>The classical pulses at the same peak and duration (or the same Δv), their spectra over f T at "
-              "the page's Q.</p>")
+    "(which is close to the SRS at light damping). Dashed: the base's Δv and peak acceleration.</p>"
+)
+SHAPES_TIP = (
+    "<p>The classical pulses at the same peak and duration (or the same Δv), their spectra over f T at "
+    "the page's Q.</p>"
+)
 
 # Things to try: (name, what it sets, note). The duration is set from the chain (`duration_for`).
 TRIALS = (
-    ("Half-sine", {},
-     "A 10 g half-sine. At Q = 10 the spectrum peaks at 1.65 × the pulse's peak, at f T = 0.83: an oscillator "
-     "whose period is a little longer than the pulse. Stiff oscillators follow the pulse (1 ×); soft ones take it as "
-     "an impulse and ring with ω Δv, the dashed line at the left."),
-    ("Square", {"shape": Shape.SQUARE},
-     "A square pulse: a step up and one down. Every stiff oscillator overshoots the step, to 1.85 × at Q = 10 "
-     "(2 × undamped), so the spectrum stays high across the top. Its Δv is the largest of the pulses (the area "
-     "A T), so it is highest at the left too."),
-    ("Terminal-peak sawtooth", {"shape": Shape.TERMINAL_PEAK},
-     "Rising slowly, dropping at once: the drop makes stiff oscillators ring the other way, so above f T ≈ 2 "
-     "the negative spectrum is 0.85–0.86 × the positive one. Tests like it for that: a part is loaded both ways."),
-    ("Haversine", {"shape": Shape.HAVERSINE},
-     "A smooth pulse: no corner, so stiff oscillators don't ring and the negative spectrum at the top is "
-     "nearly nothing. Its peak, 1.60 × at f T = 1.0, is close to the half-sine's."),
-    ("Light damping, Q = 50", {"q": 50.0},
-     "The half-sine at Q = 50: the spectrum hardly changes (1.74 × at the peak against 1.65 ×). A shock is over "
-     "before damping has time to act on the primary peak, unlike a steady sine, whose response grows with Q."),
-    ("A component on the last mass", {"shape": Shape.AT_A_MASS},
-     "The last mass's acceleration with the base given the half-sine: it rings at the chain's modes, and its "
-     "spectrum peaks there, 3.3 × the record's own peak at mode 1. A component tuned near the chain's mode "
-     "would be hit far harder than the record's peak suggests."),
-    ("Pyrotechnic transient", {"shape": Shape.TRANSIENT, "noise": 0.02},
-     "A burst of damped sines with a little noise: the spectrum peaks among its frequencies, at 4.5 × the "
-     "record's peak (f T ≈ 38). It ends at rest, with no net Δv, so the soft oscillators at the left feel only "
-     "their dampers' push: at f T = 0.02 the spectrum is 10⁻⁴ of the peak."),
-    ("Zero shift", {"shape": Shape.TRANSIENT, "noise": 0.02, "offset": 0.01},
-     "The same record with a 1 % offset, an accelerometer's zero shift: integrated over the record it is a "
-     "velocity change the shock didn't have, and the spectrum's low end climbs to the 2π f Δv line, ten times "
-     "what it was at f T = 0.02. A measured spectrum whose low end follows that line is suspect."),
-    ("Modes combined", {"tab": "chain_tab"},
-     "The half-sine on the chain. Each mode is an oscillator at its own f and ζ, driven by Γ times the base, so "
-     "the SRS gives each mode's peak but not when it comes. On m4, exactly 9.14 g; ABS (their sum) 11 g, +20 %; "
-     "SRSS 6.62 g, −28 %; NRL 9.27 g, +1 %. The SRSS assumes the modes peak at unrelated times, but a shock sets "
-     "them all off at once: each one's part peaks within the first 0.3 s, a third of mode 1's period."),
-    ("Four-way paper", {"tab": "tri_tab"},
-     "The half-sine's spectrum as a pseudo-velocity, read against diagonals of constant displacement and "
-     "acceleration. At the left it tends to the base's Δv = 2AT/π, 6.24 m/s; at the right it falls along the "
-     "10 g line. Between, it says how far each oscillator's spring stretches: 4.6 m at the softest, the rattle "
-     "space a soft mount would need."),
-    ("Pulse shapes compared", {"tab": "shapes_tab"},
-     "The six pulses at the same peak and duration. The square has the most area, so it is highest at the left "
-     "(0.12 × at f T = 0.02) and, overshooting, near the top (1.86 ×). The terminal-peak sawtooth rises gently "
-     "and peaks at only 1.19 ×. Tick Same velocity change: the low ends meet, and the narrower pulses, now "
-     "taller, take the top: the initial-peak sawtooth reaches 2.33 ×, the square only 1.18 ×."),
-    ("Damped sines to a spectrum", {"shape": Shape.SINES},
-     "A test is specified by its spectrum: here 10 g above a 5 Hz knee, rising 6 dB an octave below it. 28 "
-     "damped sines, scaled round by round, meet it within ±3 dB over the band, though the record's own peak is "
-     "only 4.8 g: each oscillator rings up on the sine at its frequency. But each sine carries a net velocity, so "
-     "the record ends at 0.51 m/s, 6 m from where it began, which no shaker can follow."),
-    ("Wavelets to a spectrum", {"shape": Shape.WAVELETS},
-     "The same target met by 28 wavelets, each sin(ωt/N) sin ωt over N half-cycles, N odd: each starts and ends at "
-     "rest, so the record does too, within a micrometre, and a shaker can play it: the table moves at most "
-     "0.54 m and comes back."),
+    (
+        "Half-sine",
+        {},
+        "A 10 g half-sine. At Q = 10 the spectrum peaks at 1.65 × the pulse's peak, at f T = 0.83: an oscillator "
+        "whose period is a little longer than the pulse. Stiff oscillators follow the pulse (1 ×); soft ones take it as "
+        "an impulse and ring with ω Δv, the dashed line at the left.",
+    ),
+    (
+        "Square",
+        {"shape": Shape.SQUARE},
+        "A square pulse: a step up and one down. Every stiff oscillator overshoots the step, to 1.85 × at Q = 10 "
+        "(2 × undamped), so the spectrum stays high across the top. Its Δv is the largest of the pulses (the area "
+        "A T), so it is highest at the left too.",
+    ),
+    (
+        "Terminal-peak sawtooth",
+        {"shape": Shape.TERMINAL_PEAK},
+        "Rising slowly, dropping at once: the drop makes stiff oscillators ring the other way, so above f T ≈ 2 "
+        "the negative spectrum is 0.85–0.86 × the positive one. Tests like it for that: a part is loaded both ways.",
+    ),
+    (
+        "Haversine",
+        {"shape": Shape.HAVERSINE},
+        "A smooth pulse: no corner, so stiff oscillators don't ring and the negative spectrum at the top is "
+        "nearly nothing. Its peak, 1.60 × at f T = 1.0, is close to the half-sine's.",
+    ),
+    (
+        "Light damping, Q = 50",
+        {"q": 50.0},
+        "The half-sine at Q = 50: the spectrum hardly changes (1.74 × at the peak against 1.65 ×). A shock is over "
+        "before damping has time to act on the primary peak, unlike a steady sine, whose response grows with Q.",
+    ),
+    (
+        "A component on the last mass",
+        {"shape": Shape.AT_A_MASS},
+        "The last mass's acceleration with the base given the half-sine: it rings at the chain's modes, and its "
+        "spectrum peaks there, 3.3 × the record's own peak at mode 1. A component tuned near the chain's mode "
+        "would be hit far harder than the record's peak suggests.",
+    ),
+    (
+        "Pyrotechnic transient",
+        {"shape": Shape.TRANSIENT, "noise": 0.02},
+        "A burst of damped sines with a little noise: the spectrum peaks among its frequencies, at 4.5 × the "
+        "record's peak (f T ≈ 38). It ends at rest, with no net Δv, so the soft oscillators at the left feel only "
+        "their dampers' push: at f T = 0.02 the spectrum is 10⁻⁴ of the peak.",
+    ),
+    (
+        "Zero shift",
+        {"shape": Shape.TRANSIENT, "noise": 0.02, "offset": 0.01},
+        "The same record with a 1 % offset, an accelerometer's zero shift: integrated over the record it is a "
+        "velocity change the shock didn't have, and the spectrum's low end climbs to the 2π f Δv line, ten times "
+        "what it was at f T = 0.02. A measured spectrum whose low end follows that line is suspect.",
+    ),
+    (
+        "Modes combined",
+        {"tab": "chain_tab"},
+        "The half-sine on the chain. Each mode is an oscillator at its own f and ζ, driven by Γ times the base, so "
+        "the SRS gives each mode's peak but not when it comes. On m4, exactly 9.14 g; ABS (their sum) 11 g, +20 %; "
+        "SRSS 6.62 g, −28 %; NRL 9.27 g, +1 %. The SRSS assumes the modes peak at unrelated times, but a shock sets "
+        "them all off at once: each one's part peaks within the first 0.3 s, a third of mode 1's period.",
+    ),
+    (
+        "Four-way paper",
+        {"tab": "tri_tab"},
+        "The half-sine's spectrum as a pseudo-velocity, read against diagonals of constant displacement and "
+        "acceleration. At the left it tends to the base's Δv = 2AT/π, 6.24 m/s; at the right it falls along the "
+        "10 g line. Between, it says how far each oscillator's spring stretches: 4.6 m at the softest, the rattle "
+        "space a soft mount would need.",
+    ),
+    (
+        "Pulse shapes compared",
+        {"tab": "shapes_tab"},
+        "The six pulses at the same peak and duration. The square has the most area, so it is highest at the left "
+        "(0.12 × at f T = 0.02) and, overshooting, near the top (1.86 ×). The terminal-peak sawtooth rises gently "
+        "and peaks at only 1.19 ×. Tick Same velocity change: the low ends meet, and the narrower pulses, now "
+        "taller, take the top: the initial-peak sawtooth reaches 2.33 ×, the square only 1.18 ×.",
+    ),
+    (
+        "Damped sines to a spectrum",
+        {"shape": Shape.SINES},
+        "A test is specified by its spectrum: here 10 g above a 5 Hz knee, rising 6 dB an octave below it. 28 "
+        "damped sines, scaled round by round, meet it within ±3 dB over the band, though the record's own peak is "
+        "only 4.8 g: each oscillator rings up on the sine at its frequency. But each sine carries a net velocity, so "
+        "the record ends at 0.51 m/s, 6 m from where it began, which no shaker can follow.",
+    ),
+    (
+        "Wavelets to a spectrum",
+        {"shape": Shape.WAVELETS},
+        "The same target met by 28 wavelets, each sin(ωt/N) sin ωt over N half-cycles, N odd: each starts and ends at "
+        "rest, so the record does too, within a micrometre, and a shaker can play it: the table moves at most "
+        "0.54 m and comes back.",
+    ),
 )
 
 NOTES_HTML = """
@@ -238,23 +287,27 @@ its peaks are refined between samples. The residual's largest value lies within 
 pulse's end, so that is all the free decay that is followed.</p>
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "sweeps-and-ground-motion", "Sweeps and ground motion"),
-    ("random_page", "miles", "Miles' equation"),
-)).replace("<!--TAKEAWAYS-->", takeaways(
-    "The SRS is the peak response of a bank of single oscillators on the shaken base, at one Q: it rates a "
-    "shock by what it does, not by its time history.",
-    "Stiff oscillators follow the pulse, soft ones feel only its velocity change, and those near f T ≈ 1 "
-    "amplify it, barely more with less damping.",
-    "On a chain each mode is one of the bank's oscillators, scaled by φΓ; the modes' peaks come nearly "
-    "together, so ABS or NRL, not SRSS, bound the response.",
-    "Tests specify an SRS; a time history that meets it is synthesized from damped sines or wavelets.",
-))
+NOTES_HTML = NOTES_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("sim_page", "sweeps-and-ground-motion", "Sweeps and ground motion"),
+        ("random_page", "miles", "Miles' equation"),
+    ),
+).replace(
+    "<!--TAKEAWAYS-->",
+    takeaways(
+        "The SRS is the peak response of a bank of single oscillators on the shaken base, at one Q: it rates a "
+        "shock by what it does, not by its time history.",
+        "Stiff oscillators follow the pulse, soft ones feel only its velocity change, and those near f T ≈ 1 "
+        "amplify it, barely more with less damping.",
+        "On a chain each mode is one of the bank's oscillators, scaled by φΓ; the modes' peaks come nearly "
+        "together, so ABS or NRL, not SRSS, bound the response.",
+        "Tests specify an SRS; a time history that meets it is synthesized from damped sines or wavelets.",
+    ),
+)
 
 
-
-def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = False
-          ) -> pg.PlotWidget:
+def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = False) -> pg.PlotWidget:
     p = pg.PlotWidget(axisItems=log_axes()) if log else pg.PlotWidget()
     p.setMenuEnabled(False)
     p.hideButtons()
@@ -369,8 +422,9 @@ class ShockPage(QtWidgets.QWidget):
         self.trial = QtWidgets.QComboBox()
         self.trial.addItems([name for name, _, _ in TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Pulses that show something about shock spectra, the duration set from the "
-                              "chain as it is now.</p>")
+        self.trial.setToolTip(
+            "<p>Pulses that show something about shock spectra, the duration set from the chain as it is now.</p>"
+        )
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -584,9 +638,16 @@ class ShockPage(QtWidgets.QWidget):
         self._schedule(rerecord=True)
 
     def pulse(self) -> Pulse:
-        return Pulse(self.shape.currentData(), self.peak.value(), 1e-3 * self.duration.value(),
-                     max(self.mass.currentIndex(), 0), 0.01 * self.noise.value(), 0.01 * self.offset.value(),
-                     self.seed, self.knee.value())
+        return Pulse(
+            self.shape.currentData(),
+            self.peak.value(),
+            1e-3 * self.duration.value(),
+            max(self.mass.currentIndex(), 0),
+            0.01 * self.noise.value(),
+            0.01 * self.offset.value(),
+            self.seed,
+            self.knee.value(),
+        )
 
     @property
     def zeta(self) -> float:
@@ -633,7 +694,7 @@ class ShockPage(QtWidgets.QWidget):
         else:
             self._recompute.start()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.recompute()
@@ -734,15 +795,22 @@ class ShockPage(QtWidgets.QWidget):
         t = rec.t
         p = self.pulse_plot
         p.clear()
-        p.setLabel("left", "Base acceleration (g)" if rec.pulse.shape is not Shape.AT_A_MASS
-                   else f"m{rec.pulse.mass % self.system.n + 1}'s acceleration (g)")
+        p.setLabel(
+            "left",
+            "Base acceleration (g)"
+            if rec.pulse.shape is not Shape.AT_A_MASS
+            else f"m{rec.pulse.mass % self.system.n + 1}'s acceleration (g)",
+        )
         if rec.pulse.shape is Shape.AT_A_MASS:
-            k = int(round(rec.pulse.duration * rec.fs))
+            k = round(rec.pulse.duration * rec.fs)
             base = np.zeros(t.size)
-            base[:k + 1] = rec.pulse.peak * np.sin(np.pi * np.arange(k + 1) / k)
+            base[: k + 1] = rec.pulse.peak * np.sin(np.pi * np.arange(k + 1) / k)
             p.plot(t, base, pen=pg.mkPen(colors.grey, width=1))
-        p.plot(np.concatenate([[t[0] - rec.h], t, [t[-1] + rec.h]]),
-               np.concatenate([[0.0], rec.a / G, [0.0]]), pen=pg.mkPen(colors.force, width=2))
+        p.plot(
+            np.concatenate([[t[0] - rec.h], t, [t[-1] + rec.h]]),
+            np.concatenate([[0.0], rec.a / G, [0.0]]),
+            pen=pg.mkPen(colors.force, width=2),
+        )
         p.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
         v = rec.velocity()
         p = self.velocity_plot
@@ -754,7 +822,8 @@ class ShockPage(QtWidgets.QWidget):
         self.pulse_info.setText(
             f"Δv = {_minus(f'{rec.velocity_change:.4g}')} m/s over the record ({_time(rec.duration)}); "
             f"{rec.a.size:,} samples at {rec.fs:.4g} Hz; {self.freqs.size} oscillators, {self.freqs[0]:.3g} to "
-            f"{self.freqs[-1]:.4g} Hz.")
+            f"{self.freqs[-1]:.4g} Hz."
+        )
 
     def _draw_srs(self) -> None:
         sp, rec = self.spectrum, self.record
@@ -807,8 +876,13 @@ class ShockPage(QtWidgets.QWidget):
                 p.plot(f[keep], low[keep] / G, pen=line)
         for i, m in enumerate(self.result.modes):
             if m.fn_hz > 0:
-                p.addItem(pg.InfiniteLine(math.log10(m.fn_hz), angle=90, pen=pg.mkPen(
-                    colors.mode[i % len(colors.mode)], width=1, style=dot)))
+                p.addItem(
+                    pg.InfiniteLine(
+                        math.log10(m.fn_hz),
+                        angle=90,
+                        pen=pg.mkPen(colors.mode[i % len(colors.mode)], width=1, style=dot),
+                    )
+                )
         self.pick_line.setPen(pg.mkPen(colors.force, width=2))
         self.pick_line.blockSignals(True)
         self.pick_line.setValue(math.log10(self.f_pick.value()))
@@ -820,16 +894,20 @@ class ShockPage(QtWidgets.QWidget):
 
         k = int(np.argmax(sp.maximax))
         modes = ", ".join(f"{m.fn_hz:.3g} Hz {sp.at(m.fn_hz) / G:.3g} g" for m in self.result.modes if m.fn_hz > 0)
-        text = (f"<b>Maximax</b> {sp.maximax[k] / G:.3g} g at {f[k]:.3g} Hz ({self._scaled(f[k], 2)}), "
-                f"{sp.maximax[k] / peak:.3g} × the record's peak {peak / G:.3g} g. At the chain's modes: {modes}.")
+        text = (
+            f"<b>Maximax</b> {sp.maximax[k] / G:.3g} g at {f[k]:.3g} Hz ({self._scaled(f[k], 2)}), "
+            f"{sp.maximax[k] / peak:.3g} × the record's peak {peak / G:.3g} g. At the chain's modes: {modes}."
+        )
         if synthesis is not None:
             kind = "damped sines" if rec.pulse.shape is Shape.SINES else "wavelets"
-            text += (f" <b>Synthesis</b>: {synthesis.f.size} {kind}, within "
-                     f"{synthesis.worst:.2g} dB of the target at their frequencies after {synthesis.iterations} "
-                     f"rounds, {_worst(rec, self.spectrum) if abs(sp.q - SYNTH_Q) < 1e-9 else 'n/a'} dB over the "
-                     f"bank; it ends at {_minus(f'{rec.velocity_change:.3g}')} m/s, "
-                     f"{_length(abs(rec.displacement()[-1]))} "
-                     f"from where it started.")
+            text += (
+                f" <b>Synthesis</b>: {synthesis.f.size} {kind}, within "
+                f"{synthesis.worst:.2g} dB of the target at their frequencies after {synthesis.iterations} "
+                f"rounds, {_worst(rec, self.spectrum) if abs(sp.q - SYNTH_Q) < 1e-9 else 'n/a'} dB over the "
+                f"bank; it ends at {_minus(f'{rec.velocity_change:.3g}')} m/s, "
+                f"{_length(abs(rec.displacement()[-1]))} "
+                f"from where it started."
+            )
         self.readout.setText(text)
 
     def _scaled(self, f: float, digits: int = 3) -> str:
@@ -850,14 +928,21 @@ class ShockPage(QtWidgets.QWidget):
         p.clear()
         self.osc_legend.clear()
         a = np.zeros(osc.t.size)
-        a[:rec.a.size] = rec.a
+        a[: rec.a.size] = rec.a
         base = p.plot(osc.t, a / G, pen=pg.mkPen(colors.grey, width=1))
         y = p.plot(osc.t, osc.acceleration / G, pen=pg.mkPen(colors.mass[0], width=2))
         self.osc_legend.addItem(base, "The pulse")
         self.osc_legend.addItem(y, f"The oscillator, {f:.3g} Hz")
         k = int(np.argmax(np.abs(osc.acceleration)))
-        p.plot([osc.t[k]], [osc.acceleration[k] / G], pen=None, symbol="o", symbolSize=8,
-               symbolBrush=colors.force, symbolPen=None)
+        p.plot(
+            [osc.t[k]],
+            [osc.acceleration[k] / G],
+            pen=None,
+            symbol="o",
+            symbolSize=8,
+            symbolBrush=colors.force,
+            symbolPen=None,
+        )
         end = pg.mkPen(colors.faint, width=1, style=QtCore.Qt.PenStyle.DashLine)
         p.addItem(pg.InfiniteLine(osc.end, angle=90, pen=end))
         p.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
@@ -875,7 +960,8 @@ class ShockPage(QtWidgets.QWidget):
             f"f = {f:.4g} Hz, {self._scaled(f)}, Q = {self.q.value():.3g}. During the {when}: "
             f"+{_positive(y[during].max()):.3g} / −{_positive(-y[during].min()):.3g} g; after it (residual): "
             f"+{_positive(y[~during].max()):.3g} / −{_positive(-y[~during].min()):.3g} g. The dot marks the largest, "
-            f"{abs(y[k]):.3g} g. Its spring stretches up to {_length(np.max(np.abs(osc.displacement)))}.")
+            f"{abs(y[k]):.3g} g. Its spring stretches up to {_length(np.max(np.abs(osc.displacement)))}."
+        )
 
     # ------------------------------------------------------------- the chain, the tripartite plot, the pulses
     def _draw_chain(self) -> None:
@@ -906,13 +992,21 @@ class ShockPage(QtWidgets.QWidget):
         p = self.peaks_plot
         p.setLabel("left", f"Peak ({unit})")
         p.setLabel("bottom", "Mass" if acc else "Spring")
-        bars = pg.BarGraphItem(x=x, height=exact * scale, width=0.6, brush=pg.mkBrush(colors.grey),
-                               pen=pg.mkPen(colors.grey))
+        bars = pg.BarGraphItem(
+            x=x, height=exact * scale, width=0.6, brush=pg.mkBrush(colors.grey), pen=pg.mkPen(colors.grey)
+        )
         p.addItem(bars)
         self.peaks_legend.addItem(bars, "Exact")
         for i, (rule, values) in enumerate(rules.items()):
-            item = p.plot(x, values * scale, pen=None, symbol=RULE_SYMBOLS[rule], symbolSize=11,
-                          symbolBrush=colors.mode[i % len(colors.mode)], symbolPen=None)
+            item = p.plot(
+                x,
+                values * scale,
+                pen=None,
+                symbol=RULE_SYMBOLS[rule],
+                symbolSize=11,
+                symbolBrush=colors.mode[i % len(colors.mode)],
+                symbolPen=None,
+            )
             self.peaks_legend.addItem(item, rule.value)
         p.getAxis("bottom").setTicks([[(int(i), str(i)) for i in x]])
         p.setXRange(0.4, n + 0.6, padding=0.0)
@@ -941,8 +1035,9 @@ class ShockPage(QtWidgets.QWidget):
         for item in h.getPlotItem().listDataItems():
             item.setDownsampling(auto=True, method="peak")
             item.setClipToView(True)
-        h.setXRange(0.0, min(cp.t[-1], self.record.duration + HISTORY_PERIODS / float(cp.f.min(initial=math.inf))),
-                    padding=0.0)
+        h.setXRange(
+            0.0, min(cp.t[-1], self.record.duration + HISTORY_PERIODS / float(cp.f.min(initial=math.inf))), padding=0.0
+        )
 
         t = self.chain_table
         t.setRowCount(n)
@@ -955,11 +1050,18 @@ class ShockPage(QtWidgets.QWidget):
         modes = "; ".join(
             f"{r + 1}: {cp.f[r]:.3g} Hz, ζ {cp.zeta[r]:.2g}, Γ {_minus(f'{cp.gamma[r]:.3g}')}, "
             f"{100.0 * cp.effective[r]:.0f} % of the "
-            f"mass, SRS {cp.spectrum[Response.ACCELERATION][r] / G:.3g} g" for r in range(cp.f.size))
+            f"mass, SRS {cp.spectrum[Response.ACCELERATION][r] / G:.3g} g"
+            for r in range(cp.f.size)
+        )
         self.chain_note.setText(
             f"In {unit}, the error from the exact in brackets. The SRS at each mode's own f and ζ (not the page's Q). "
-            f"<b>Modes</b>: {modes}." + ("" if self.result.is_proportional else
-                                        " The damping isn't proportional, so the modes only approximate the chain."))
+            f"<b>Modes</b>: {modes}."
+            + (
+                ""
+                if self.result.is_proportional
+                else " The damping isn't proportional, so the modes only approximate the chain."
+            )
+        )
 
     def _draw_tripartite(self) -> None:
         sp, rec = self.spectrum, self.record
@@ -992,29 +1094,38 @@ class ShockPage(QtWidgets.QWidget):
         p.plot(ends, peak / w, pen=dash)
         if rec.synthesis is not None:
             band = np.geomspace(*target_band(rec.pulse), 200)
-            p.plot(band, target(rec.pulse, band) / (TWO_PI * band),
-                   pen=pg.mkPen(colors.force, width=2, style=QtCore.Qt.PenStyle.DotLine))
+            p.plot(
+                band,
+                target(rec.pulse, band) / (TWO_PI * band),
+                pen=pg.mkPen(colors.force, width=2, style=QtCore.Qt.PenStyle.DotLine),
+            )
         p.plot(f, np.maximum(pv, bottom * 1e-3), pen=pg.mkPen(colors.strong, width=2.5))
         p.setXRange(lo, hi, padding=0.0)
         p.setYRange(y0, y1, padding=0.0)
         d = sp.displacement
         k = int(np.argmax(d))
         if abs(pv[0] / dv - 1.0) < 0.2 if dv > 0 else False:
-            left = (f"At the left the pseudo-velocity tends to the base's Δv, {dv:.3g} m/s (dashed; {pv[0]:.3g} m/s "
-                    f"at {f[0]:.3g} Hz): a soft oscillator stays put while the base moves off, then rings at about "
-                    f"that speed.")
+            left = (
+                f"At the left the pseudo-velocity tends to the base's Δv, {dv:.3g} m/s (dashed; {pv[0]:.3g} m/s "
+                f"at {f[0]:.3g} Hz): a soft oscillator stays put while the base moves off, then rings at about "
+                f"that speed."
+            )
         else:
-            left = (f"At the left it is {pv[0]:.3g} m/s at {f[0]:.3g} Hz, not the base's Δv, "
-                    f"{_minus(f'{dv:.3g}')} m/s: an oscillator that slow isn't soft next to a "
-                    f"{_time(rec.duration)} record, which moves the base and brings it back while it swings.")
+            left = (
+                f"At the left it is {pv[0]:.3g} m/s at {f[0]:.3g} Hz, not the base's Δv, "
+                f"{_minus(f'{dv:.3g}')} m/s: an oscillator that slow isn't soft next to a "
+                f"{_time(rec.duration)} record, which moves the base and brings it back while it swings."
+            )
         self.tri_note.setText(
             f"Q = {sp.q:.3g}. {left} At the right it falls along the line of the peak acceleration, "
             f"{peak / G:.3g} g (dashed): a stiff oscillator follows the base. The relative displacement is largest, "
-            f"{_length(float(d[k]))}, at {f[k]:.3g} Hz: the room a mount that soft needs.")
+            f"{_length(float(d[k]))}, at {f[k]:.3g} Hz: the room a mount that soft needs."
+        )
 
     @staticmethod
-    def _grid_label(p: pg.PlotWidget, pv: np.ndarray, ends: np.ndarray, text: str, y0: float, y1: float,
-                    rising: bool) -> None:
+    def _grid_label(
+        p: pg.PlotWidget, pv: np.ndarray, ends: np.ndarray, text: str, y0: float, y1: float, rising: bool
+    ) -> None:
         """Label a diagonal where it leaves the plot: at the top for a rising line, at the bottom for a falling one."""
         x0, x1 = np.log10(ends)
         v0, v1 = np.log10(pv)
@@ -1047,8 +1158,11 @@ class ShockPage(QtWidgets.QWidget):
         self.compare_legend.clear()
         for i, (shape, (scale, f, values)) in enumerate(spectra.items()):
             pen = pg.mkPen(colors.mass[i % len(colors.mass)], width=1.5)
-            sp.plot(np.concatenate([[-0.05, 0.0], s, [1.0, 1.05]]),
-                    np.concatenate([[0.0, 0.0], scale * classical(shape, s), [0.0, 0.0]]), pen=pen)
+            sp.plot(
+                np.concatenate([[-0.05, 0.0], s, [1.0, 1.05]]),
+                np.concatenate([[0.0, 0.0], scale * classical(shape, s), [0.0, 0.0]]),
+                pen=pen,
+            )
             item = cp.plot(f, values, pen=pg.mkPen(colors.mass[i % len(colors.mass)], width=2))
             self.compare_legend.addItem(item, shape.value)
         sp.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
@@ -1058,12 +1172,14 @@ class ShockPage(QtWidgets.QWidget):
         top = max(float(np.max(v)) for _, _, v in spectra.values())
         cp.setYRange(math.log10(top) - 2.5, math.log10(top) + 0.15, padding=0.0)
         rows = []
-        for shape, (scale, f, values) in spectra.items():
+        for shape, (_scale, f, values) in spectra.items():
             k = int(np.argmax(values))
             rows.append(f"{shape.value} {values[k]:.3g} (f T {f[k]:.2g}), {values[0]:.2g}, {values[-1]:.3g}")
         basis = "the same Δv as the half-sine (their peaks then differ)" if same else "the same peak A"
-        self.shapes_note.setText(f"Q = {q:.3g}, {basis}; over A, the half-sine's peak. Largest, at f T = "
-                                 f"{f[0]:.2g}, at the top: " + "; ".join(rows) + ".")
+        self.shapes_note.setText(
+            f"Q = {q:.3g}, {basis}; over A, the half-sine's peak. Largest, at f T = "
+            f"{f[0]:.2g}, at the top: " + "; ".join(rows) + "."
+        )
 
 
 @functools.lru_cache(maxsize=8)

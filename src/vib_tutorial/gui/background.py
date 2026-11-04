@@ -344,11 +344,13 @@ friction is a damper that weakens as the motion grows.</li>
 <tr><td>α, β</td><td>Rayleigh damping coefficients, C = αM + βK</td><td>1/s, s</td></tr>
 </table>
 """
-BACKGROUND_HTML = BACKGROUND_HTML.replace("<!--BEFORE-->", before(
-    ("sdof_page", "forced-response", "Forced response"),
-    ("damping_page", "viscous", "Viscous damping"),
-)).replace(
-    "<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in TRIALS) + "</ul>")
+BACKGROUND_HTML = BACKGROUND_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("sdof_page", "forced-response", "Forced response"),
+        ("damping_page", "viscous", "Viscous damping"),
+    ),
+).replace("<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in TRIALS) + "</ul>")
 
 
 def make_background_view() -> QtWidgets.QTextBrowser:

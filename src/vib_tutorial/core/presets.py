@@ -130,4 +130,3 @@ def presets() -> list[Preset]:
 def without_absorber(system: ChainSystem) -> ChainSystem | None:
     """The chain with its last mass (an absorber) removed, or None for a single mass."""
     return system.resized(system.n - 1) if system.n > 1 else None
-

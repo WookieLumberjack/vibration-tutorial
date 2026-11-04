@@ -45,7 +45,9 @@ STATIONS = ("Bearing A", "Disc", "Midspan", "Bearing B")
 DIRECTIONS = ("x", "y", "orbit")  # probe directions; "orbit" is the major axis
 ORDERS = (1, 2, 3)  # the harmonics of the speed tracked: 1X, 2X and 3X
 SETTLE_MAX = 2.0  # s, the longest dwell at the starting speed before a sweep is recorded
-SAG_SPEEDS = 16  # a turning (asymmetric or cracked) shaft's sag under many samples' speeds is interpolated between this many
+SAG_SPEEDS = (
+    16  # a turning (asymmetric or cracked) shaft's sag under many samples' speeds is interpolated between this many
+)
 TWO_PI = 2.0 * math.pi
 
 
@@ -147,8 +149,7 @@ class TrackedSweep:
     def arrays(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """(speed (n,) rad/s, vectors (n, 4, 2), peaks (n, 4, 3))."""
         n = len(self.speed)
-        return (np.array(self.speed), np.array(self.vectors).reshape(n, 4, 2),
-                np.array(self.peaks).reshape(n, 4, 3))
+        return (np.array(self.speed), np.array(self.vectors).reshape(n, 4, 2), np.array(self.peaks).reshape(n, 4, 3))
 
     def trace(self, station: int, direction: str, order: int = 1) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """(speed rad/s, 1X (or 2X) complex, per-revolution peak) at one station, in one direction."""
@@ -216,8 +217,9 @@ class RevolutionTracker:
             f = xy * np.exp(-1j * order * ph)[:, None, None]
             return 2.0 / span * np.sum(0.5 * (f[1:] + f[:-1]) * np.diff(ph)[:, None, None], axis=0)
 
-        peak = np.concatenate([np.abs(inside).max(axis=0), np.hypot(inside[..., 0], inside[..., 1]).max(axis=0)[:, None]],
-                              axis=1)
+        peak = np.concatenate(
+            [np.abs(inside).max(axis=0), np.hypot(inside[..., 0], inside[..., 1]).max(axis=0)[:, None]], axis=1
+        )
         self.sweep.speed.append(float(np.interp(middle, ph, om)))
         self.sweep.vectors.append(dft(1))
         self.sweep.vectors2.append(dft(2))
@@ -345,4 +347,3 @@ class RunUpCoastDown(StagedRun):
         """Run to the end (for scripts and tests); return the two legs."""
         super().run(chunk)
         return self.sweeps
-

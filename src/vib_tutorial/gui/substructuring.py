@@ -60,6 +60,8 @@ def sub_color(s: int | str) -> str:
     if isinstance(s, str):
         s = SUB_NAMES.index(s)
     return colors.sub[s % len(colors.sub)]
+
+
 CB_PEN_STYLE = QtCore.Qt.PenStyle.DashLine
 
 
@@ -109,7 +111,9 @@ class SubstructureSchematic(pg.PlotWidget):
                 if len(model.substructures) > 2:  # short, so neighbours on the same side do not collide
                     text = f"{sub.name}: keep {sub.n_kept} of {sub.ni}"
                 else:
-                    text = f"{sub.name}: {sub.ni} interior, keep {sub.n_kept} {kind} mode{'s' if sub.n_kept != 1 else ''}"
+                    text = (
+                        f"{sub.name}: {sub.ni} interior, keep {sub.n_kept} {kind} mode{'s' if sub.n_kept != 1 else ''}"
+                    )
                 above = s % 2 == 0
                 label = pg.TextItem(text, color=sub_color(s), anchor=(0.0, 1.0) if above else (1.0, 0.0))
                 label.setPos(x0 if above else x1, y1 if above else y0)
@@ -132,8 +136,11 @@ class SubstructureSchematic(pg.PlotWidget):
             name.setZValue(6)
             self._add(name)
             if model is not None:
-                role = pg.TextItem("boundary" if master else "interior", color=colors.strong if master else colors.muted,
-                                   anchor=(0.5, 0.0))
+                role = pg.TextItem(
+                    "boundary" if master else "interior",
+                    color=colors.strong if master else colors.muted,
+                    anchor=(0.5, 0.0),
+                )
                 role.setPos(xc, -0.2)
                 self._add(role)
 
@@ -165,11 +172,10 @@ class ComparisonTable(QtWidgets.QTableWidget):
     ]
     BOUNDS = {
         "craig-bampton": "Never negative: Craig–Bampton is a Rayleigh–Ritz method, so it can only "
-                         "over-estimate stiffness.",
-        "rubin": "Never negative: Rubin's method is a Rayleigh–Ritz method, so it can only "
-                 "over-estimate stiffness.",
+        "over-estimate stiffness.",
+        "rubin": "Never negative: Rubin's method is a Rayleigh–Ritz method, so it can only over-estimate stiffness.",
         "macneal": "Either sign in principle: MacNeal drops the residual mass, so it is not a "
-                   "Rayleigh–Ritz method and gives no bound.",
+        "Rayleigh–Ritz method and gives no bound.",
     }
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
@@ -227,8 +233,7 @@ class ComponentTable(QtWidgets.QTableWidget):
     TIPS = {
         False: [
             "Fixed-interface mode r of substructure A, B, ...",
-            "Natural frequency of the substructure on its own, with its boundary masses held fixed: "
-            "K_ii φ = ω² M_ii φ",
+            "Natural frequency of the substructure on its own, with its boundary masses held fixed: K_ii φ = ω² M_ii φ",
             "Exact damping ratio of the substructure on its own (boundary held), from the damped "
             "eigenvalues of M_ii, C_ii, K_ii",
             "Whether this mode is one of the fixed-interface modes kept in the reduced model",
@@ -266,11 +271,13 @@ class ComponentTable(QtWidgets.QTableWidget):
         self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.setToolTip("Click a row to draw this component mode over the coupled mode it becomes "
-                        "(Modes & FRF tab). Click it again to clear.")
+        self.setToolTip(
+            "Click a row to draw this component mode over the coupled mode it becomes "
+            "(Modes & FRF tab). Click it again to clear."
+        )
         self.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
 
-    def mousePressEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def mousePressEvent(self, event) -> None:
         # Clicking the selected row again clears the overlay.
         index = self.indexAt(event.position().toPoint())
         if index.isValid() and self.selectionModel().isRowSelected(index.row()):
@@ -365,8 +372,13 @@ class ComparisonPlots(pg.GraphicsLayoutWidget):
         n = len(comparisons[0].shape_true) if comparisons else 0
         if model is not None:
             for b in model.boundary[:-1]:  # interface masses
-                line = pg.InfiniteLine(pos=b + 1, angle=90, pen=pg.mkPen(colors.grey, width=1, style=CB_PEN_STYLE),
-                                       label="interface", labelOpts={"position": 0.08, "color": colors.muted})
+                line = pg.InfiniteLine(
+                    pos=b + 1,
+                    angle=90,
+                    pen=pg.mkPen(colors.grey, width=1, style=CB_PEN_STYLE),
+                    label="interface",
+                    labelOpts={"position": 0.08, "color": colors.muted},
+                )
                 self.shape.addItem(line)
                 self._shape_items.append(line)
         self._true_curve = self.shape.plot(symbol="s", symbolSize=9, symbolPen=None)
@@ -451,13 +463,17 @@ class ComparisonPlots(pg.GraphicsLayoutWidget):
         if model is not None:
             for fr in model.fn_hz:
                 if lo < fr < hi:
-                    line = pg.InfiniteLine(pos=math.log10(fr), angle=90,
-                                           pen=pg.mkPen(colors.grey, width=1, style=QtCore.Qt.PenStyle.DotLine))
+                    line = pg.InfiniteLine(
+                        pos=math.log10(fr),
+                        angle=90,
+                        pen=pg.mkPen(colors.grey, width=1, style=QtCore.Qt.PenStyle.DotLine),
+                    )
                     self.frf.addItem(line)
                     self._frf_items.append(line)
         short = "reduced" if model is None else model.short_name
-        self.frf.setTitle(f"Force at m{tip + 1} (tip) · solid: full model · dashed: {short} · dotted: {short} fₙ",
-                          size="10pt")
+        self.frf.setTitle(
+            f"Force at m{tip + 1} (tip) · solid: full model · dashed: {short} · dotted: {short} fₙ", size="10pt"
+        )
         self.frf.setXRange(math.log10(lo), math.log10(hi), padding=0)
 
 
@@ -526,8 +542,11 @@ class BasisPlots(QtWidgets.QWidget):
         )
         xs = np.arange(n + 1)
         ticks = [[(0, "gnd")] + [(i, f"m{i}") for i in range(1, n + 1)]]
-        freqs = {f"q_{sub.name}{k + 1}": sub.omegas[k] / (2 * math.pi)
-                 for sub in model.substructures for k in range(sub.n_kept)}
+        freqs = {
+            f"q_{sub.name}{k + 1}": sub.omegas[k] / (2 * math.pi)
+            for sub in model.substructures
+            for k in range(sub.n_kept)
+        }
         for c, label in enumerate(model.labels):
             slot = self._slot(c)
             p = slot.plot
@@ -610,7 +629,8 @@ class MethodComparison(QtWidgets.QWidget):
         for col, m in enumerate(METHODS, start=2):
             self.table.horizontalHeaderItem(col).setToolTip(
                 f"(f − f_true) / f_true for the {METHOD_NAMES[m]} model with the same interfaces and "
-                "the same number of modes kept in each substructure as on the left")
+                "the same number of modes kept in each substructure as on the left"
+            )
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
@@ -709,10 +729,14 @@ class MethodComparison(QtWidgets.QWidget):
         self.header.setText(
             "<b>Three methods, same cut, same modes kept</b> (as set on the left). "
             + ("" if n_red is None else f"Each reduced model has {n_red} coordinates. ")
-            + ("" if macneal is None else
-               f"MacNeal's boundary coordinates have no mass, so it has only {macneal.omegas.size} modes. ")
-            + "".join(f"<br><span style='color:{colors.poor}'>{METHOD_NAMES[m]}: {e}</span>"
-                      for m, e in self.errors.items())
+            + (
+                ""
+                if macneal is None
+                else f"MacNeal's boundary coordinates have no mass, so it has only {macneal.omegas.size} modes. "
+            )
+            + "".join(
+                f"<br><span style='color:{colors.poor}'>{METHOD_NAMES[m]}: {e}</span>" for m, e in self.errors.items()
+            )
         )
 
     def set_mode(self, r: int) -> None:
@@ -729,19 +753,35 @@ class MethodComparison(QtWidgets.QWidget):
             if pts:
                 xs, ys = np.array(pts).T
                 ys = 100 * np.maximum(np.abs(ys), ERROR_FLOOR)
-                self.plot.plot(xs, ys, pen=pg.mkPen(color, width=2), symbol="o", symbolSize=7,
-                               symbolBrush=color, symbolPen=None, name=METHOD_NAMES[method])
+                self.plot.plot(
+                    xs,
+                    ys,
+                    pen=pg.mkPen(color, width=2),
+                    symbol="o",
+                    symbolSize=7,
+                    symbolBrush=color,
+                    symbolPen=None,
+                    name=METHOD_NAMES[method],
+                )
             model = self.current.get(method)
             if model is not None and r < model.omegas.size:
                 err = self._errors(model)[r]
                 if not np.isnan(err):
-                    self.plot.plot([model.n_red], [100 * max(abs(err), ERROR_FLOOR)], pen=None, symbol="o",
-                                   symbolSize=15, symbolBrush=None, symbolPen=pg.mkPen(color, width=2))
+                    self.plot.plot(
+                        [model.n_red],
+                        [100 * max(abs(err), ERROR_FLOOR)],
+                        pen=None,
+                        symbol="o",
+                        symbolSize=15,
+                        symbolBrush=None,
+                        symbolPen=pg.mkPen(color, width=2),
+                    )
         sizes = [n for pts in self.sweeps.values() for n, _ in pts]
         if sizes:
             self.plot.getAxis("bottom").setTicks([[(n, str(n)) for n in range(min(sizes), max(sizes) + 1)]])
-        self.plot.setTitle(f"Mode {r + 1} ({self.full.modes[r].fn_hz:.4g} Hz): error as more modes are kept",
-                           size="10pt")
+        self.plot.setTitle(
+            f"Mode {r + 1} ({self.full.modes[r].fn_hz:.4g} Hz): error as more modes are kept", size="10pt"
+        )
         self.note.setText(
             "Each curve starts from the fewest modes (none for Craig–Bampton; B's rigid-body mode for "
             "the free-interface methods) and adds one mode at a time, taking turns between the substructures. "
@@ -775,8 +815,10 @@ class SubstructuringPage(QtWidgets.QWidget):
         self.trial.addItem("Pick one…")
         self.trial.addItems([t.name for t in TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Each loads the 8-mass chain into the Simulation page and sets the cut, the "
-                              "modes kept and the method to show one idea from the Theory tab.</p>")
+        self.trial.setToolTip(
+            "<p>Each loads the 8-mass chain into the Simulation page and sets the cut, the "
+            "modes kept and the method to show one idea from the Theory tab.</p>"
+        )
         self.trial.currentIndexChanged.connect(self._on_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
@@ -793,8 +835,14 @@ class SubstructuringPage(QtWidgets.QWidget):
         self.dof.valueChanged.connect(self.dof_requested)
         form.addRow("Number of masses:", self.dof)
         self.method = QtWidgets.QComboBox()
-        for m, text in zip(METHODS, ("Craig–Bampton (fixed interface)", "Rubin (free interface)",
-                                     "MacNeal (free interface, massless residual)")):
+        for m, text in zip(
+            METHODS,
+            (
+                "Craig–Bampton (fixed interface)",
+                "Rubin (free interface)",
+                "MacNeal (free interface, massless residual)",
+            ),
+        ):
             self.method.addItem(text, m)
         self.method.setToolTip(
             "Craig–Bampton: modes of each substructure with its boundary held, plus static constraint "
@@ -831,9 +879,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         presets.addWidget(guyan)
         presets.addWidget(exact)
         form.addRow(presets)
-        link = QtWidgets.QLabel(
-            "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
-        )
+        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.linkActivated.connect(lambda _: self.edit_parameters.emit())
         form.addRow(link)
@@ -918,20 +964,25 @@ class SubstructuringPage(QtWidgets.QWidget):
         self._style_kept_rows()
         if free:
             self.guyan_button.setText("Fewest modes")
-            self.guyan_button.setToolTip("Keep only the rigid-body modes (none in A): the residual "
-                                         "flexibility stands in for every other mode.")
+            self.guyan_button.setToolTip(
+                "Keep only the rigid-body modes (none in A): the residual flexibility stands in for every other mode."
+            )
         else:
             self.guyan_button.setText("Guyan (0 modes)")
-            self.guyan_button.setToolTip("Keep no fixed-interface modes: only the boundary DOFs remain "
-                                         "(static condensation).")
+            self.guyan_button.setToolTip(
+                "Keep no fixed-interface modes: only the boundary DOFs remain (static condensation)."
+            )
         if method == "macneal":
             self.exact_button.setText("All modes")
-            self.exact_button.setToolTip("Keep as many free-interface modes as there are interior DOFs. "
-                                         "MacNeal is still not exact: the discarded modes' mass is dropped.")
+            self.exact_button.setToolTip(
+                "Keep as many free-interface modes as there are interior DOFs. "
+                "MacNeal is still not exact: the discarded modes' mass is dropped."
+            )
         else:
             self.exact_button.setText("All modes (exact)")
-            self.exact_button.setToolTip("Keep every mode there is room for: no reduction, so the result "
-                                         "must be exact.")
+            self.exact_button.setToolTip(
+                "Keep every mode there is room for: no reduction, so the result must be exact."
+            )
         self.component_title.setText(
             f"<b>Substructures on their own</b> (boundary masses {'free' if free else 'held fixed'}), "
             "and the coupled mode each one becomes"
@@ -948,8 +999,8 @@ class SubstructuringPage(QtWidgets.QWidget):
             spin.setToolTip(
                 f"Number of free-interface modes of {name} kept in the reduced model (lowest first). "
                 "Rigid-body modes are always kept, so a floating substructure keeps at least one."
-                if free else
-                f"Number of fixed-interface normal modes of {name} kept in the reduced model "
+                if free
+                else f"Number of fixed-interface normal modes of {name} kept in the reduced model "
                 "(lowest first). 0 = Guyan (static) condensation of that substructure."
             )
 
@@ -1069,7 +1120,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         if self.isVisible():
             self.refresh()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._dirty:
             self.refresh()
@@ -1200,8 +1251,10 @@ class SubstructuringPage(QtWidgets.QWidget):
         empty = [s.name for s in model.substructures if not s.ni]
         note = ""
         if empty:
-            note = (f"{' and '.join(empty)} has no interior masses, so it is kept as its physical "
-                    "boundary DOFs, with no modes of its own. ")
+            note = (
+                f"{' and '.join(empty)} has no interior masses, so it is kept as its physical "
+                "boundary DOFs, with no modes of its own. "
+            )
         if not components:
             return note
         if model.free:
@@ -1222,31 +1275,41 @@ class SubstructuringPage(QtWidgets.QWidget):
     @staticmethod
     def _summary(model: CMSModel, comparisons) -> str:
         n = model.system.n
-        coords = ", ".join(
-            f"q<sub>{l[2:]}</sub>" if l.startswith("q_") else l for l in model.labels
-        )
+        coords = ", ".join(f"q<sub>{l[2:]}</sub>" if l.startswith("q_") else l for l in model.labels)
         fewest = model.n_modal == sum(s.n_rigid for s in model.substructures)
         if not model.free:
-            kind = ("Guyan (static) condensation: no fixed-interface modes kept." if fewest
-                    else "All fixed-interface modes kept: no reduction, so the result is exact."
-                    if model.n_red == n else "")
+            kind = (
+                "Guyan (static) condensation: no fixed-interface modes kept."
+                if fewest
+                else "All fixed-interface modes kept: no reduction, so the result is exact."
+                if model.n_red == n
+                else ""
+            )
         elif model.method == "rubin":
-            kind = (("Fewest modes: only rigid-body modes kept" if model.n_modal else "No modes kept")
-                    + "; the residual flexibility stands in for the rest." if fewest
-                    else "All the modes there is room for: no reduction, so the result is exact."
-                    if model.n_red == n else "")
+            kind = (
+                ("Fewest modes: only rigid-body modes kept" if model.n_modal else "No modes kept")
+                + "; the residual flexibility stands in for the rest."
+                if fewest
+                else "All the modes there is room for: no reduction, so the result is exact."
+                if model.n_red == n
+                else ""
+            )
         else:
-            kind = (f"The boundary DOFs have no mass and are condensed out, so the model has "
-                    f"<b>{model.omegas.size} modes</b>. ")
+            kind = (
+                f"The boundary DOFs have no mass and are condensed out, so the model has "
+                f"<b>{model.omegas.size} modes</b>. "
+            )
             if model.n_red == n:
                 kind += "Not exact even now: the mass of the discarded modes is dropped."
         if len(model.substructures) == 1:
             kind = (
                 "No cut: the whole chain is one substructure, and the tip is its only boundary DOF. "
-                + ("Its modes with the tip held, plus the static shape of a tip displacement. "
-                   if not model.free else
-                   "Its free-interface modes are the chain's own modes, so the kept ones are exact, "
-                   "and the residual flexibility adds the static response of the rest. ")
+                + (
+                    "Its modes with the tip held, plus the static shape of a tip displacement. "
+                    if not model.free
+                    else "Its free-interface modes are the chain's own modes, so the kept ones are exact, "
+                    "and the residual flexibility adds the static response of the rest. "
+                )
                 + kind
             )
         worst = max((c.error for c in comparisons if c.error is not None), key=abs, default=0.0)

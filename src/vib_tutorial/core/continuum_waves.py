@@ -129,8 +129,9 @@ class WaveRun:
         else:
             self.far = c.with_(width=c.width * q)
         h = c.length / elements
-        self.step_node = None if waves.step_at is None else int(np.clip(round(waves.step_at * elements), 1,
-                                                                          elements - 1))
+        self.step_node = (
+            None if waves.step_at is None else int(np.clip(round(waves.step_at * elements), 1, elements - 1))
+        )
         self.step_x = None if self.step_node is None else self.step_node * h
         self.transit = self._transit()
         self.tau = self.transit / (FRAMES_PER_TRANSIT * CELLS_PER_FRAME)  # the waveguide's step
@@ -222,7 +223,7 @@ class WaveRun:
         xs = []
         for i, (a, b, speed) in enumerate(sides):
             cells = max(1, round((b - a) / (speed * self.tau)))
-            xs.append(np.linspace(a, b, cells + 1)[(1 if i else 0):])
+            xs.append(np.linspace(a, b, cells + 1)[(1 if i else 0) :])
         self.guide_x = np.concatenate(xs)
         self._junction = None if self.step_x is None else len(xs[0]) - 1
         u0 = pulse(self.guide_x, waves.at * c.length, waves.width * c.length)
@@ -244,8 +245,9 @@ class WaveRun:
         x = np.linspace(0.0, c.length, REFERENCE_POINTS)
         shapes = [c.exact_shape(k, x) for k in kappa]
         omega = list(c.omega(kappa))
-        rigid = {0: [], 1: [x if c.left is End.PINNED else c.length - x],
-                 2: [np.ones_like(x), x - 0.5 * c.length]}[c.rigid_modes]
+        rigid = {0: [], 1: [x if c.left is End.PINNED else c.length - x], 2: [np.ones_like(x), x - 0.5 * c.length]}[
+            c.rigid_modes
+        ]
         shapes = rigid + shapes
         omega = [0.0] * len(rigid) + omega
         phi = np.array(shapes)
@@ -330,30 +332,43 @@ class WavePreset:
 _STRING = Continuum(Kind.STRING, 1.0, End.FIXED, End.FIXED, tension=100.0, line_density=0.01)
 
 WAVE_PRESETS = (
-    WavePreset("Waves: a pulse on 40 beads", _STRING, 40, Waves(width=0.1, at=0.25),
-               "A pulse four beads wide runs along a string at c = 100 m/s. On the string it comes back from "
-               "the fixed end upside down and whole; on the beads, after one crossing, it is down to 66 % of "
-               "its height and 5 cm behind, the ripples it sheds trailing it: the short waves it is made of go "
-               "slower on the beads. Consistent masses make them faster (53 %, ahead), mixed keep 81 %."),
-    WavePreset("Waves: a matched end",
-               Continuum(Kind.BAR, 1.0, End.FIXED, End.FIXED, modulus=210e9, density=7850.0, width=0.02,
-                         depth=0.02),
-               20, Waves(width=0.15, at=0.3, dashpot=1.0),
-               "A dashpot c = ρcA on the bar's far end is its impedance: the continuum's pulse runs into it and "
-               "is gone, as if the bar went on for ever. Matched to the long waves, it isn't to the 20 "
-               "elements' short ones, which slow down: 17 % of the mesh's energy comes back (5 % consistent)."),
-    WavePreset("Waves: a light string tied to a heavy one", _STRING, 100,
-               Waves(width=0.1, at=0.2, step_at=0.5, step_ratio=2.0),
-               "Halfway along, the string is four times heavier: twice the impedance, half the speed. The pulse "
-               "splits: a third of it comes back upside down (R = −1/3, 1/9 of the energy) and two thirds "
-               "go on (T = 2/3), at half the speed and so half as long. There it spans five elements, and the "
-               "mesh carries 0.49 of it, not 0.67."),
-    WavePreset("Waves: a bending pulse",
-               Continuum(Kind.BEAM, 1.0, End.PINNED, End.PINNED, modulus=210e9, density=7850.0, width=0.05,
-                         depth=0.01),
-               20, Waves(width=0.1, at=0.5, moving=False),
-               "A bump released on a beam splits and spreads: bending waves are dispersive (ω = aκ²), the "
-               "short ones twice as fast as waves twice as long, so ripples run ahead, on the beam itself. "
-               "Half a crossing later the beam's peak is 0.22; 20 lumped elements, slowing the short waves, "
-               "still hold 0.26 there (consistent 0.23)."),
+    WavePreset(
+        "Waves: a pulse on 40 beads",
+        _STRING,
+        40,
+        Waves(width=0.1, at=0.25),
+        "A pulse four beads wide runs along a string at c = 100 m/s. On the string it comes back from "
+        "the fixed end upside down and whole; on the beads, after one crossing, it is down to 66 % of "
+        "its height and 5 cm behind, the ripples it sheds trailing it: the short waves it is made of go "
+        "slower on the beads. Consistent masses make them faster (53 %, ahead), mixed keep 81 %.",
+    ),
+    WavePreset(
+        "Waves: a matched end",
+        Continuum(Kind.BAR, 1.0, End.FIXED, End.FIXED, modulus=210e9, density=7850.0, width=0.02, depth=0.02),
+        20,
+        Waves(width=0.15, at=0.3, dashpot=1.0),
+        "A dashpot c = ρcA on the bar's far end is its impedance: the continuum's pulse runs into it and "
+        "is gone, as if the bar went on for ever. Matched to the long waves, it isn't to the 20 "
+        "elements' short ones, which slow down: 17 % of the mesh's energy comes back (5 % consistent).",
+    ),
+    WavePreset(
+        "Waves: a light string tied to a heavy one",
+        _STRING,
+        100,
+        Waves(width=0.1, at=0.2, step_at=0.5, step_ratio=2.0),
+        "Halfway along, the string is four times heavier: twice the impedance, half the speed. The pulse "
+        "splits: a third of it comes back upside down (R = −1/3, 1/9 of the energy) and two thirds "
+        "go on (T = 2/3), at half the speed and so half as long. There it spans five elements, and the "
+        "mesh carries 0.49 of it, not 0.67.",
+    ),
+    WavePreset(
+        "Waves: a bending pulse",
+        Continuum(Kind.BEAM, 1.0, End.PINNED, End.PINNED, modulus=210e9, density=7850.0, width=0.05, depth=0.01),
+        20,
+        Waves(width=0.1, at=0.5, moving=False),
+        "A bump released on a beam splits and spreads: bending waves are dispersive (ω = aκ²), the "
+        "short ones twice as fast as waves twice as long, so ripples run ahead, on the beam itself. "
+        "Half a crossing later the beam's peak is 0.22; 20 lumped elements, slowing the short waves, "
+        "still hold 0.26 there (consistent 0.23).",
+    ),
 )

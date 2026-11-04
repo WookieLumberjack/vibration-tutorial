@@ -80,9 +80,13 @@ class CMSRunView(QtWidgets.QWidget):
         self.window.setToolTip("Plot window")
         self.freq_label, self.duration_label = QtWidgets.QLabel("at"), QtWidgets.QLabel("for")
         self.controls = FlowLayout()
-        self.controls.add(group("Force at tip:", self.kind, self.amplitude),
-                          group(self.freq_label, self.freq, self.tune), group(self.duration_label, self.duration),
-                          group(self.button, self.reset_button), group("Speed:", self.speed, "Window:", self.window))
+        self.controls.add(
+            group("Force at tip:", self.kind, self.amplitude),
+            group(self.freq_label, self.freq, self.tune),
+            group(self.duration_label, self.duration),
+            group(self.button, self.reset_button),
+            group("Speed:", self.speed, "Window:", self.window),
+        )
 
         self.kind.currentIndexChanged.connect(self._apply)
         for box in (self.amplitude, self.freq, self.duration):
@@ -211,11 +215,11 @@ class CMSRunView(QtWidgets.QWidget):
             self.button.setText("Stop force" if self.force.on else "Apply force")
 
     # ------------------------------------------------------------- loop
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self._start_timer()
 
-    def hideEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def hideEvent(self, event) -> None:
         super().hideEvent(event)
         self._timer.stop()
 
@@ -333,8 +337,11 @@ class CMSTimeView(CMSRunView):
             view.set_masses(model.system.masses)
             view.gain = 10.0
         self.full_view.setTitle(f"Full model: {n} DOFs", size="10pt")
-        self.red_view.setTitle(f"{model.name} reduced model: {model.n_red} DOF{'s' if model.n_red != 1 else ''} "
-                               f"({model.n_modal} modal + {model.boundary.size} boundary)", size="10pt")
+        self.red_view.setTitle(
+            f"{model.name} reduced model: {model.n_red} DOF{'s' if model.n_red != 1 else ''} "
+            f"({model.n_modal} modal + {model.boundary.size} boundary)",
+            size="10pt",
+        )
         self.header.setText(
             f"<b>The {model.name} model against the full chain, in time.</b> The same force acts at the "
             f"tip (m{n}) of both; each is stepped exactly, so any difference is the reduction error. "
@@ -361,8 +368,12 @@ class CMSTimeView(CMSRunView):
         k = len(self._dofs)
         xf, xr = y[:, :k], y[:, k:]
         x_now, r_now = sim.x_full, sim.x_reduced
-        peak = max(float(np.abs(x_now).max()), float(np.abs(r_now).max()),
-                   float(np.abs(xf).max()) if xf.size else 0.0, float(np.abs(xr).max()) if xr.size else 0.0)
+        peak = max(
+            float(np.abs(x_now).max()),
+            float(np.abs(r_now).max()),
+            float(np.abs(xf).max()) if xf.size else 0.0,
+            float(np.abs(xr).max()) if xr.size else 0.0,
+        )
         f = self.force.value()
         tip = sim.model.system.n - 1
         amp = abs(self.force.settings.amplitude)
@@ -393,8 +404,14 @@ class CMSTimeView(CMSRunView):
 
 def _model_key(model: CMSModel) -> tuple:
     s = model.system
-    return (tuple(s.masses), tuple(s.stiffness), tuple(s.damping), model.method,
-            tuple(int(b) for b in model.boundary), tuple(sub.n_kept for sub in model.substructures))
+    return (
+        tuple(s.masses),
+        tuple(s.stiffness),
+        tuple(s.damping),
+        model.method,
+        tuple(int(b) for b in model.boundary),
+        tuple(sub.n_kept for sub in model.substructures),
+    )
 
 
 def _fmt(meters: float) -> str:

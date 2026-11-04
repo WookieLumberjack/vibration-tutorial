@@ -31,14 +31,17 @@ def beam(left: End, right: End) -> Continuum:
     return Continuum(Kind.BEAM, 1.5, left, right, modulus=200e9, density=8000.0, width=0.03, depth=0.02)
 
 
-@pytest.mark.parametrize(("left", "right", "roots"), [
-    (End.CLAMPED, End.FREE, (1.875104, 4.694091, 7.854757)),
-    (End.CLAMPED, End.CLAMPED, (4.730041, 7.853205, 10.995608)),
-    (End.FREE, End.FREE, (4.730041, 7.853205, 10.995608)),
-    (End.PINNED, End.PINNED, (math.pi, 2 * math.pi, 3 * math.pi)),
-    (End.CLAMPED, End.PINNED, (3.926602, 7.068583, 10.210176)),
-    (End.FREE, End.PINNED, (3.926602, 7.068583, 10.210176)),
-])
+@pytest.mark.parametrize(
+    ("left", "right", "roots"),
+    [
+        (End.CLAMPED, End.FREE, (1.875104, 4.694091, 7.854757)),
+        (End.CLAMPED, End.CLAMPED, (4.730041, 7.853205, 10.995608)),
+        (End.FREE, End.FREE, (4.730041, 7.853205, 10.995608)),
+        (End.PINNED, End.PINNED, (math.pi, 2 * math.pi, 3 * math.pi)),
+        (End.CLAMPED, End.PINNED, (3.926602, 7.068583, 10.210176)),
+        (End.FREE, End.PINNED, (3.926602, 7.068583, 10.210176)),
+    ],
+)
 def test_beam_roots_match_the_tables(left, right, roots):
     c = beam(left, right)
     assert c.exact_wavenumbers(3) * c.length == pytest.approx(roots, abs=2e-6)
@@ -69,8 +72,9 @@ def test_exact_beam_shapes_meet_their_ends(left, right):
 def test_bloch_dispersion_matches_the_closed_form(scheme):
     h = 0.1
     kappa = np.linspace(0.0, math.pi / h, 41)
-    assert dispersion(BAR, h, scheme, kappa)[:, 0] == pytest.approx(string_dispersion(BAR, h, scheme, kappa),
-                                                                     rel=1e-12, abs=1e-6)
+    assert dispersion(BAR, h, scheme, kappa)[:, 0] == pytest.approx(
+        string_dispersion(BAR, h, scheme, kappa), rel=1e-12, abs=1e-6
+    )
     # long waves travel at c: ω/κ → c, lumped from below, consistent from above
     small = np.array([1e-3 / h])
     assert string_dispersion(BAR, h, scheme, small)[0] / small[0] == pytest.approx(BAR.speed, rel=1e-6)
@@ -115,10 +119,13 @@ def test_lumped_is_below_and_consistent_above():
         assert errors(FEModel(BAR, 40, scheme))[1][0] == pytest.approx(sign * kh**2 / 24, rel=1e-3)
 
 
-@pytest.mark.parametrize(("c", "rates"), [
-    (BAR, {Scheme.LUMPED: 2, Scheme.CONSISTENT: 2, Scheme.MIXED: 4}),
-    (beam(End.CLAMPED, End.FREE), {Scheme.LUMPED: 2, Scheme.CONSISTENT: 4, Scheme.MIXED: 2}),
-])
+@pytest.mark.parametrize(
+    ("c", "rates"),
+    [
+        (BAR, {Scheme.LUMPED: 2, Scheme.CONSISTENT: 2, Scheme.MIXED: 4}),
+        (beam(End.CLAMPED, End.FREE), {Scheme.LUMPED: 2, Scheme.CONSISTENT: 4, Scheme.MIXED: 2}),
+    ],
+)
 def test_convergence_rates(c, rates):
     for scheme, p in rates.items():
         counts, errs = convergence(c, scheme, 2)
@@ -131,7 +138,7 @@ def test_rigid_modes():
     for kind in Kind:
         for left in ENDS[kind]:
             for right in ENDS[kind]:
-                c = (beam(left, right) if kind is Kind.BEAM else BAR.with_(kind=kind, left=left, right=right))
+                c = beam(left, right) if kind is Kind.BEAM else BAR.with_(kind=kind, left=left, right=right)
                 hz, _ = FEModel(c, 5, Scheme.CONSISTENT).modes()
                 top = hz[-1]
                 assert np.sum(hz < 1e-6 * top) == c.rigid_modes
@@ -140,7 +147,8 @@ def test_rigid_modes():
 def test_one_element_between_held_ends_has_no_modes():
     assert flexible_hz(FEModel(BAR, 1, Scheme.LUMPED)).size == 0
     assert flexible_hz(FEModel(BAR, 2, Scheme.LUMPED)) == pytest.approx(
-        [2 * BAR.speed / (BAR.length / 2) * math.sin(math.pi / 4) / TWO_PI])  # one bead: Lagrange's formula
+        [2 * BAR.speed / (BAR.length / 2) * math.sin(math.pi / 4) / TWO_PI]
+    )  # one bead: Lagrange's formula
 
 
 def test_a_lumped_string_is_beads_on_a_string():
@@ -184,7 +192,8 @@ def test_the_presets_notes():
     assert f.size == 12
     # modes 6 to 12 on the slopes' branch, drawn in the next zone: at 2π/h − κ_n
     kappa = p.continuum.exact_wavenumbers(12)[5:]
-    assert f[5:] == pytest.approx(dispersion(p.continuum, model.h, Scheme.CONSISTENT,
-                                             2 * math.pi / model.h - kappa)[:, 1] / TWO_PI, rel=1e-9)
+    assert f[5:] == pytest.approx(
+        dispersion(p.continuum, model.h, Scheme.CONSISTENT, 2 * math.pi / model.h - kappa)[:, 1] / TWO_PI, rel=1e-9
+    )
     err = errors(model)[1]
     assert 100 * err[5] == pytest.approx(11, abs=0.5) and 100 * err[11] == pytest.approx(27, abs=0.5)

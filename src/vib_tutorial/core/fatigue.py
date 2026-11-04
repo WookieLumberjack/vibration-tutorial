@@ -61,7 +61,7 @@ class Stress:
         """m₀, m₁, m₂, m₄: ∫ fⁿ G(f) df (with f in Hz)."""
         f = self.grid()
         G = self.psd(f)
-        return np.array([np.trapezoid(f ** n * G, f) for n in (0, 1, 2, 4)])
+        return np.array([np.trapezoid(f**n * G, f) for n in (0, 1, 2, 4)])
 
 
 def _peak(fn: float, zeta: float, f: np.ndarray) -> np.ndarray:
@@ -98,7 +98,7 @@ class Curve:
     @property
     def K(self) -> float:
         """N S^b."""
-        return self.n_ref * self.s_ref ** self.b
+        return self.n_ref * self.s_ref**self.b
 
     def cycles(self, S: np.ndarray) -> np.ndarray:
         with np.errstate(divide="ignore"):
@@ -136,7 +136,7 @@ def dirlik_range_pdf(stress: Stress, S: np.ndarray) -> np.ndarray:
     D1, D2, D3, Q, R = dirlik_parameters(stress)
     s = rates(stress).sigma
     Z = np.asarray(S, dtype=float) / (2 * s)
-    p = D1 / Q * np.exp(-Z / Q) + D2 * Z / R ** 2 * np.exp(-Z * Z / (2 * R * R)) + D3 * Z * np.exp(-Z * Z / 2)
+    p = D1 / Q * np.exp(-Z / Q) + D2 * Z / R**2 * np.exp(-Z * Z / (2 * R * R)) + D3 * Z * np.exp(-Z * Z / 2)
     return p / (2 * s)
 
 
@@ -145,7 +145,7 @@ def dirlik_damage(stress: Stress, curve: Curve) -> float:
     D1, D2, D3, Q, R = dirlik_parameters(stress)
     r = rates(stress)
     b = curve.b
-    EZb = D1 * Q ** b * math.gamma(1 + b) + (math.sqrt(2) ** b) * math.gamma(1 + b / 2) * (D2 * abs(R) ** b + D3)
+    EZb = D1 * Q**b * math.gamma(1 + b) + (math.sqrt(2) ** b) * math.gamma(1 + b / 2) * (D2 * abs(R) ** b + D3)
     return r.nup * (2 * r.sigma) ** b * EZb / curve.K
 
 

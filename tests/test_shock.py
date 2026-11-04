@@ -63,8 +63,9 @@ def test_undamped_half_sine_and_square():
     stiff = f * T > 1.0
     assert sq.primary[0, stiff] / A == pytest.approx(np.full(stiff.sum(), 2.0), abs=0.01)  # a step's overshoot
     soft = f * T < 1
-    assert sq.residual[0, soft] == pytest.approx(2 * A * np.abs(np.sin(math.pi * f * T))[soft],
-                                                 abs=0.02 * A)  # undamped: 2A |sin(ωT/2)|
+    assert sq.residual[0, soft] == pytest.approx(
+        2 * A * np.abs(np.sin(math.pi * f * T))[soft], abs=0.02 * A
+    )  # undamped: 2A |sin(ωT/2)|
     # in general, undamped: ω |∫a e^{−iωt} dt|, the record's input linear between samples (its jump up a ramp)
     rec = record(Pulse(Shape.SQUARE, 1.0, T), sample_rate(Pulse(Shape.SQUARE, 1.0, T), f[-1]))
     t = np.linspace(-rec.h, rec.duration, 50 * rec.a.size)
@@ -205,8 +206,9 @@ def test_the_trials_notes():
 
     def run(name):
         changes = next(c for n, c, _ in TRIALS if n == name)
-        pulse = Pulse(changes.get("shape", Shape.HALF_SINE), 10.0, T, -1, changes.get("noise", 0.0),
-                      changes.get("offset", 0.0), 1)
+        pulse = Pulse(
+            changes.get("shape", Shape.HALF_SINE), 10.0, T, -1, changes.get("noise", 0.0), changes.get("offset", 0.0), 1
+        )
         rec, sp = _spectrum(pulse, 1.0 / (2.0 * changes.get("q", 10.0)), r, UNIFORM)
         return rec, sp, float(np.max(np.abs(rec.a)))
 
@@ -283,5 +285,7 @@ def test_the_trials_notes():
     assert top / G == pytest.approx(4.8, abs=0.05) and "only 4.8 g" in note["Damped sines to a spectrum"]
     rec, sp, top = run("Wavelets to a spectrum")
     assert rec.synthesis.f.size == 28 and abs(rec.displacement()[-1]) < 1e-6  # within a micrometre
-    assert np.max(np.abs(rec.displacement())) == pytest.approx(0.54, abs=0.005) and "0.54 m" in note[
-        "Wavelets to a spectrum"]
+    assert (
+        np.max(np.abs(rec.displacement())) == pytest.approx(0.54, abs=0.005)
+        and "0.54 m" in note["Wavelets to a spectrum"]
+    )

@@ -52,8 +52,12 @@ class PracticeWindow(QtWidgets.QWidget):
     the Theory window at a hint's link.
     """
 
-    def __init__(self, set_up: Callable[[str, dict], None], read: Callable[[str, str], None],
-                 parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(
+        self,
+        set_up: Callable[[str, dict], None],
+        read: Callable[[str, str], None],
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
         super().__init__(parent, QtCore.Qt.WindowType.Window)
         self.setWindowTitle("Practice")
         self._set_up = set_up
@@ -132,12 +136,14 @@ class PracticeWindow(QtWidgets.QWidget):
         self.answer_area.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Maximum)
 
         self.check_button = self._button("Check", "Mark your answer.", self.check)
-        self.hint_button = self._button("Hint", "Where the page's notes explain it (the links open the Theory "
-                                        "window).", self.show_hint)
+        self.hint_button = self._button(
+            "Hint", "Where the page's notes explain it (the links open the Theory window).", self.show_hint
+        )
         self.solution_button = self._button("Solution", "The working and the answer.", self.show_solution)
         self.new_button = self._button("New numbers", "The same problem with new numbers.", self.new_numbers)
-        self.page_button = self._button("Show on the page", "Set the page up as the question describes, to see "
-                                        "it for yourself.", self.show_on_page)
+        self.page_button = self._button(
+            "Show on the page", "Set the page up as the question describes, to see it for yourself.", self.show_on_page
+        )
         buttons = QtWidgets.QHBoxLayout()
         for b in (self.check_button, self.hint_button, self.solution_button, self.new_button):
             buttons.addWidget(b)
@@ -165,8 +171,9 @@ class PracticeWindow(QtWidgets.QWidget):
         if geometry is not None:
             self.restoreGeometry(geometry)
         self.follow.setChecked(QtCore.QSettings(*SETTINGS).value("practice_window/follow", "false") == "true")
-        self.follow.toggled.connect(lambda on: QtCore.QSettings(*SETTINGS).setValue(
-            "practice_window/follow", "true" if on else "false"))
+        self.follow.toggled.connect(
+            lambda on: QtCore.QSettings(*SETTINGS).setValue("practice_window/follow", "true" if on else "false")
+        )
         self._render()
 
     def _button(self, text: str, tip: str, slot: Callable[[], None]) -> QtWidgets.QPushButton:
@@ -179,7 +186,7 @@ class PracticeWindow(QtWidgets.QWidget):
     def show_problem(self, page: str, key: str, seed: int | None = None) -> None:
         """Ask page `page`'s problem `key`, with the numbers from `seed` (new ones if None)."""
         self.problem = next(p for p in problems(page) if p.key == key)
-        self.seed = random.randrange(2 ** 32) if seed is None else seed
+        self.seed = random.randrange(2**32) if seed is None else seed
         self.question = self.problem.question(self.seed)
         self._verdict = self._hint = self._solution = ""
         self._answered = False
@@ -276,8 +283,10 @@ class PracticeWindow(QtWidgets.QWidget):
         q = self.question
         if q is None:
             self.title.setText("Practice")
-            self.text.setHtml("<p>Pick a problem on the left. Each asks with new numbers every time; "
-                              "<i>New numbers</i> asks again.</p>")
+            self.text.setHtml(
+                "<p>Pick a problem on the left. Each asks with new numbers every time; "
+                "<i>New numbers</i> asks again.</p>"
+            )
         else:
             self.title.setText(self.problem.title)
             parts = [f"<p>{q.prompt}</p>"]
@@ -314,6 +323,6 @@ class PracticeWindow(QtWidgets.QWidget):
     def save_geometry(self) -> None:
         QtCore.QSettings(*SETTINGS).setValue("practice_window/geometry", self.saveGeometry())
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802 (Qt's name)
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.save_geometry()
         super().closeEvent(event)

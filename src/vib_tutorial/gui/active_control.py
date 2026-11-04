@@ -73,7 +73,8 @@ TRIALS = (
         "u = −g ẋ₄ with g = 20 N·s/m: an active damper to the ground. Every mode gains damping, mode 1 most "
         "(ζ from 1.7 % to 72 %), and the tip's resonance peak all but disappears. For light gain each mode gains "
         "Δζ = gφ<sub>r</sub>(4)²/2ω<sub>r</sub>, so the modes that move the tip most are damped most.",
-        tab=TAB_GAIN),
+        tab=TAB_GAIN,
+    ),
     ControlTrial(
         "Too much gain pins the mass",
         "Collocated feedback is stable at any gain, but more isn't better. Mode 1 turns overdamped at about "
@@ -81,28 +82,40 @@ TRIALS = (
         "holds m4 nearly still, and the chain vibrates around it as the chain with m4 fixed, three lightly "
         "damped modes (2.4, 4.5 and 5.9 Hz at 200 N·s/m). Each curve has an optimum, as a damper between two "
         "points does.",
-        gain=200.0, tab=TAB_GAIN),
+        gain=200.0,
+        tab=TAB_GAIN,
+    ),
     ControlTrial(
         "Non-collocated: spillover",
         "Sensor on m1, actuator on m4, g = 20 N·s/m. In mode 1 the two move together, so mode 1 is damped; in "
         "mode 2 they move against each other, so the feedback pushes with the motion: the estimate takes 0.17 "
         "off mode 2's ζ of 0.05, and exactly its ζ is −0.10. The chain is unstable from g = 6.1 N·s/m. Control "
         "designed for one mode spills over into the others.",
-        sensor=1, actuator=4, gain=20.0, tab=TAB_LOCUS),
+        sensor=1,
+        actuator=4,
+        gain=20.0,
+        tab=TAB_LOCUS,
+    ),
     ControlTrial(
         "Actuator lag",
         "Back to collocated, but the sensor filter and the actuator each lag by τ = 20 ms. At high frequency the "
         "two lags turn the force by 180°, and the feedback that damped now feeds the motion: the loop is unstable "
         "above 96 N·s/m (with 10 ms, 200). Every real loop has lag, so collocation alone doesn't guarantee "
         "stability.",
-        lag_ms=20.0, gain=100.0, tab=TAB_LOCUS),
+        lag_ms=20.0,
+        gain=100.0,
+        tab=TAB_LOCUS,
+    ),
     ControlTrial(
         "Active against a tuned mass damper",
         "A Den Hartog tuned mass damper at m4 with 5 % of mode 1's modal mass there (116 g) cuts the tip's "
         "receptance peak from 0.26 to 0.051 m/N. Collocated velocity feedback does the same with 2.3 N·s/m, and "
         "10 times that does much better and damps every mode, not just the one it's tuned to; but it needs "
         "power, a sensor and a stable loop.",
-        gain=2.3, tmd=True, tab=TAB_GAIN),
+        gain=2.3,
+        tmd=True,
+        tab=TAB_GAIN,
+    ),
     ControlTrial(
         "Skyhook isolation",
         "A machine on a mount over a vibrating floor (Skyhook tab). A passive damper (ζ = 0.1) trades the "
@@ -110,7 +123,10 @@ TRIALS = (
         "skyhook damper, pushing against an inertial frame through an actuator that feeds back the mass's "
         "absolute velocity, has neither problem: ζ<sub>sky</sub> = 0.5 caps the peak at 1.15 and keeps the "
         "−40 dB/decade roll-off (0.041 at 5 f<sub>n</sub>).",
-        tab=TAB_SKYHOOK, zeta_passive=0.1, zeta_sky=0.5),
+        tab=TAB_SKYHOOK,
+        zeta_passive=0.1,
+        zeta_sky=0.5,
+    ),
 )
 
 TIPS = {
@@ -119,19 +135,23 @@ TIPS = {
     "actuator": "<p>The mass the actuator pushes on (against the ground).</p>",
     "gain": "<p>u = −g ẋ<sub>sensor</sub>: the gain g, in N·s/m (a damper's units).</p>",
     "lag": "<p>The time constant of each of two first-order lags in the loop (sensor filter and actuator). 0: "
-           "ideal.</p>",
+    "ideal.</p>",
     "inp": "<p>Where the disturbing force acts, for the receptance plot.</p>",
     "out": "<p>Where the response is measured, for the receptance plot.</p>",
     "tmd": "<p>Hang a Den Hartog tuned mass damper on the actuator's mass, tuned to mode 1, instead of the "
-           "control (dashed curve).</p>",
+    "control (dashed curve).</p>",
     "ratio": "<p>The absorber's mass, as a fraction of mode 1's modal mass at that mass.</p>",
     "zp": "<p>The passive mount's damping ratio (a damper to the floor).</p>",
     "zs": "<p>The skyhook damper's ratio (a force −c ẋ against an inertial frame).</p>",
 }
 FRF_TIP = "<p>The receptance from the disturbance to the response: open loop, closed loop, and with the TMD.</p>"
-LOCUS_TIP = ("<p>The closed-loop poles as the gain rises from 0 (open dots) to 2000 N·s/m; the filled dots are at "
-             "the gain set. Right of Re = 0 is unstable.</p>")
-GAIN_TIP = "<p>Each mode's damping ratio against the gain (followed by continuity); the dotted line is the gain set.</p>"
+LOCUS_TIP = (
+    "<p>The closed-loop poles as the gain rises from 0 (open dots) to 2000 N·s/m; the filled dots are at "
+    "the gain set. Right of Re = 0 is unstable.</p>"
+)
+GAIN_TIP = (
+    "<p>Each mode's damping ratio against the gain (followed by continuity); the dotted line is the gain set.</p>"
+)
 SKY_TIP = "<p>Transmissibility from floor to machine: passive damper, skyhook, and both.</p>"
 
 NOTES_HTML = """
@@ -178,18 +198,28 @@ left).</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "vibration-absorbers-and-tuned-mass-dampers", "Absorbers and tuned mass dampers"),
-    ("isolation_page", "damping-trade-off", "Isolation's damping trade-off"),
-    ("complex_page", "state-space", "The state-space form"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "Collocated velocity feedback is an active damper: stable at any gain (ideally), with an optimal gain.",
-    "Each mode gains Δζ = gφ<sub>r</sub>(a)φ<sub>r</sub>(s)/2ω<sub>r</sub>; non-collocated, it can be negative: "
-    "spillover.",
-    "Lag in the loop limits the gain even when collocated.",
-    "A TMD damps one mode without power; active control damps many, with power and stability to look after.",
-    "Skyhook damping caps the resonance without giving up high-frequency isolation.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sim_page", "vibration-absorbers-and-tuned-mass-dampers", "Absorbers and tuned mass dampers"),
+            ("isolation_page", "damping-trade-off", "Isolation's damping trade-off"),
+            ("complex_page", "state-space", "The state-space form"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Collocated velocity feedback is an active damper: stable at any gain (ideally), with an optimal gain.",
+            "Each mode gains Δζ = gφ<sub>r</sub>(a)φ<sub>r</sub>(s)/2ω<sub>r</sub>; non-collocated, it can be negative: "
+            "spillover.",
+            "Lag in the loop limits the gain even when collocated.",
+            "A TMD damps one mode without power; active control damps many, with power and stability to look after.",
+            "Skyhook damping caps the resonance without giving up high-frequency isolation.",
+        ),
+    )
+)
 
 
 class ActiveControlPage(QtWidgets.QWidget):
@@ -204,9 +234,11 @@ class ActiveControlPage(QtWidgets.QWidget):
         self.system = ChainSystem.uniform(4)
         self._dirty = True
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each loads the uniform chain into the Simulation page and sets up the loop to "
-                               "show one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each loads the uniform chain into the Simulation page and sets up the loop to "
+            "show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         ch = Form("Chain")
@@ -236,8 +268,9 @@ class ActiveControlPage(QtWidgets.QWidget):
         plotting.row(self.tmd)
         self.ratio = plotting.number("Its mass ratio:", 0.005, 0.5, 0.05, 3, "", TIPS["ratio"])
 
-        connect_all((self.sensor, self.actuator, self.gain, self.lag, self.inp, self.out, self.tmd, self.ratio),
-                    self.redraw)
+        connect_all(
+            (self.sensor, self.actuator, self.gain, self.lag, self.inp, self.out, self.tmd, self.ratio), self.redraw
+        )
 
         # --- centre
         self.frf_plot = plot("|Receptance|", "m/N", "Frequency", "Hz", log_x=True, log_y=True, height=200)
@@ -273,12 +306,16 @@ class ActiveControlPage(QtWidgets.QWidget):
         self.zp = sf.number("Passive ζ:", 0.0, 2.0, 0.1, 3, "", TIPS["zp"])
         self.zs = sf.number("Skyhook ζ:", 0.0, 2.0, 0.5, 3, "", TIPS["zs"])
         connect_all((self.zp, self.zs), self._draw_tab)
-        self.sky_plot = plot("Transmissibility |X/Y|", None, "Frequency ratio f/f<sub>n</sub>", None, log_x=True,
-                             log_y=True, height=200)
+        self.sky_plot = plot(
+            "Transmissibility |X/Y|", None, "Frequency ratio f/f<sub>n</sub>", None, log_x=True, log_y=True, height=200
+        )
         self.sky_plot.setToolTip(SKY_TIP)
         add_legend(self.sky_plot.getPlotItem(), offset=(-10, 10))
-        self.sky_items = [pg.PlotDataItem(name="passive (damper to the floor)"),
-                          pg.PlotDataItem(name="skyhook (damper to the sky)"), pg.PlotDataItem(name="both")]
+        self.sky_items = [
+            pg.PlotDataItem(name="passive (damper to the floor)"),
+            pg.PlotDataItem(name="skyhook (damper to the sky)"),
+            pg.PlotDataItem(name="both"),
+        ]
         for item in self.sky_items:
             self.sky_plot.addItem(item)
         sv.addWidget(sf)
@@ -298,8 +335,7 @@ class ActiveControlPage(QtWidgets.QWidget):
         rv.addWidget(self.tabs, 1)
         rv.addWidget(self.tab_note)
 
-        three_panes(self, column(self.trials, ch, loop, plotting), stack((self.frf_plot, 1), (self.readout, 0)),
-                    right)
+        three_panes(self, column(self.trials, ch, loop, plotting), stack((self.frf_plot, 1), (self.readout, 0)), right)
         self.apply_theme()
         self.set_system(self.system)
 
@@ -327,12 +363,25 @@ class ActiveControlPage(QtWidgets.QWidget):
         system = ChainSystem.uniform(4)
         self.system_requested.emit(system)
         s = self.system
-        if (s.n != 4 or not np.allclose(s.masses, 1.0) or not np.allclose(s.stiffness, 400.0)
-                or not np.allclose(s.damping, 2.0)):
+        if (
+            s.n != 4
+            or not np.allclose(s.masses, 1.0)
+            or not np.allclose(s.stiffness, 400.0)
+            or not np.allclose(s.damping, 2.0)
+        ):
             self.set_system(system)
-        for box, value in ((self.sensor, t.sensor), (self.actuator, t.actuator), (self.gain, t.gain),
-                           (self.lag, t.lag_ms), (self.inp, 4), (self.out, 4), (self.tmd, t.tmd),
-                           (self.ratio, 0.05), (self.zp, t.zeta_passive), (self.zs, t.zeta_sky or 0.5)):
+        for box, value in (
+            (self.sensor, t.sensor),
+            (self.actuator, t.actuator),
+            (self.gain, t.gain),
+            (self.lag, t.lag_ms),
+            (self.inp, 4),
+            (self.out, 4),
+            (self.tmd, t.tmd),
+            (self.ratio, 0.05),
+            (self.zp, t.zeta_passive),
+            (self.zs, t.zeta_sky or 0.5),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -340,8 +389,12 @@ class ActiveControlPage(QtWidgets.QWidget):
 
     def controller(self, gain: float | None = None) -> Controller:
         n = self.system.n
-        return Controller(min(int(self.sensor.value()), n) - 1, min(int(self.actuator.value()), n) - 1,
-                          self.gain.value() if gain is None else gain, self.lag.value() / 1000.0)
+        return Controller(
+            min(int(self.sensor.value()), n) - 1,
+            min(int(self.actuator.value()), n) - 1,
+            self.gain.value() if gain is None else gain,
+            self.lag.value() / 1000.0,
+        )
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
@@ -355,9 +408,11 @@ class ActiveControlPage(QtWidgets.QWidget):
         self.locus_axis.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DotLine))
         self.gain_line.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DotLine))
         self.gain_zero.setPen(pg.mkPen(c.faint, width=1))
-        for item, color, style in zip(self.sky_items, (c.grey, c.mass[0], c.mass[1]),
-                                      (QtCore.Qt.PenStyle.SolidLine, QtCore.Qt.PenStyle.SolidLine,
-                                       QtCore.Qt.PenStyle.DashLine)):
+        for item, color, style in zip(
+            self.sky_items,
+            (c.grey, c.mass[0], c.mass[1]),
+            (QtCore.Qt.PenStyle.SolidLine, QtCore.Qt.PenStyle.SolidLine, QtCore.Qt.PenStyle.DashLine),
+        ):
             item.setPen(pg.mkPen(color, width=2, style=style))
         self._gain_built = -1
         self._dirty = True
@@ -388,7 +443,7 @@ class ActiveControlPage(QtWidgets.QWidget):
             A2, B2, C2 = closed_loop(s, None, t)
             H2 = np.abs(frf(A2, B2, C2, out, inp, f))
             self.tmd_item.setData(f, H2)
-            tmd_text = (f" TMD ({t[1] * 1e3:.3g} g on m{ctrl.actuator + 1}): peak {H2.max():.3g} m/N.")
+            tmd_text = f" TMD ({t[1] * 1e3:.3g} g on m{ctrl.actuator + 1}): peak {H2.max():.3g} m/N."
         else:
             self.tmd_item.setData([], [])
         self.frf_plot.setXRange(np.log10(f[0]), np.log10(f[-1]), padding=0)
@@ -399,20 +454,27 @@ class ActiveControlPage(QtWidgets.QWidget):
         rows = "".join(
             f"<tr><td>mode {j + 1}</td><td align='right'>{p.freq_hz:.3g} Hz</td>"
             f"<td align='right'>{100 * p.zeta:.3g} %</td><td align='right'>{100 * (p.zeta + est[j]):.3g} %</td></tr>"
-            for j, p in enumerate(open_poles))
+            for j, p in enumerate(open_poles)
+        )
         closed_rows = ", ".join(f"{p.freq_hz:.3g} Hz at {100 * p.zeta:.3g} %" for p in closed)
         self.readout.setText(
-            ("" if stable else "<b>The loop is unstable</b> (a pole in the right half plane); no closed-loop "
-             "receptance. ")
-            + f"Peak without control {H0.max():.3g} m/N" + (f", with it {H1.max():.3g} m/N." if H1 is not None
-                                                            else ".") + tmd_text
+            (
+                ""
+                if stable
+                else "<b>The loop is unstable</b> (a pole in the right half plane); no closed-loop receptance. "
+            )
+            + f"Peak without control {H0.max():.3g} m/N"
+            + (f", with it {H1.max():.3g} m/N." if H1 is not None else ".")
+            + tmd_text
             + "<table cellspacing='0' cellpadding='2'><tr><th></th><th>f</th><th>ζ open</th>"
-              "<th>ζ + gφ(a)φ(s)/2ω</th></tr>" + rows + "</table>"
-            + f"Closed loop, exactly: {closed_rows}.")
+            "<th>ζ + gφ(a)φ(s)/2ω</th></tr>" + rows + "</table>" + f"Closed loop, exactly: {closed_rows}."
+        )
         collocated = ctrl.sensor == ctrl.actuator
-        self.loop_info.setText("Collocated: a damper to the ground (ideally stable at any gain)." if collocated else
-                               "Not collocated: modes where the two masses move against each other are fed "
-                               "energy.")
+        self.loop_info.setText(
+            "Collocated: a damper to the ground (ideally stable at any gain)."
+            if collocated
+            else "Not collocated: modes where the two masses move against each other are fed energy."
+        )
         self._draw_tab()
         settle_plots(self)
 
@@ -436,12 +498,19 @@ class ActiveControlPage(QtWidgets.QWidget):
             w = undamped_modes(s)[0]
             fmax = float(w[-1]) / (2 * np.pi) * 1.3
             reals = pts.real[np.abs(pts.real) < 5 * fmax * 2 * np.pi]
-            self.locus_plot.setXRange(max(float(reals.min()), -4 * fmax * 2 * np.pi * 0.3),
-                                      max(float(reals.max()), 1.0) * 1.1, padding=0.05)
+            self.locus_plot.setXRange(
+                max(float(reals.min()), -4 * fmax * 2 * np.pi * 0.3), max(float(reals.max()), 1.0) * 1.1, padding=0.05
+            )
             self.locus_plot.setYRange(0.0, fmax, padding=0.02)
-            self.tab_note.setText("Open dots: the open-loop poles; small dots: g from 0 to 2000 N·s/m; red: the gain "
-                                  "set. " + ("All stay left of Re λ = 0." if max(pts.real) < 0 else
-                                             "Some cross into the right half plane: unstable."))
+            self.tab_note.setText(
+                "Open dots: the open-loop poles; small dots: g from 0 to 2000 N·s/m; red: the gain "
+                "set. "
+                + (
+                    "All stay left of Re λ = 0."
+                    if max(pts.real) < 0
+                    else "Some cross into the right half plane: unstable."
+                )
+            )
         elif i == TAB_GAIN:
             n = s.n
             c = colors
@@ -464,17 +533,21 @@ class ActiveControlPage(QtWidgets.QWidget):
             self.gain_line.setValue(np.log10(max(ctrl.gain, g[0])))
             self.gain_plot.setXRange(np.log10(g[0]), np.log10(g[-1]), padding=0)
             finite = z[np.isfinite(z)]
-            self.gain_plot.setYRange(100 * min(-0.05, float(finite.min())), 100 * min(1.05, float(finite.max()) + 0.05),
-                                     padding=0)
-            self.tab_note.setText("A curve that ends has stopped oscillating: its pole has reached the real "
-                                  "axis (overdamped).")
+            self.gain_plot.setYRange(
+                100 * min(-0.05, float(finite.min())), 100 * min(1.05, float(finite.max()) + 0.05), padding=0
+            )
+            self.tab_note.setText(
+                "A curve that ends has stopped oscillating: its pole has reached the real axis (overdamped)."
+            )
         elif i == TAB_SKYHOOK:
             r = np.geomspace(0.1, 10.0, 600)
             for item, y in zip(self.sky_items, skyhook(r, self.zp.value(), self.zs.value())):
                 item.setData(r, y)
             self.sky_plot.setXRange(-1, 1, padding=0)
             p, sk, _ = skyhook(np.array([1.0, 5.0]), self.zp.value(), self.zs.value())
-            self.tab_note.setText(f"At f<sub>n</sub>: passive {p[0]:.3g}, skyhook {sk[0]:.3g}. At 5 f<sub>n</sub>: "
-                                  f"passive {p[1]:.3g}, skyhook {sk[1]:.3g}.")
+            self.tab_note.setText(
+                f"At f<sub>n</sub>: passive {p[0]:.3g}, skyhook {sk[0]:.3g}. At 5 f<sub>n</sub>: "
+                f"passive {p[1]:.3g}, skyhook {sk[1]:.3g}."
+            )
         else:
             self.tab_note.setText("")

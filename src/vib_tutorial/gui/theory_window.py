@@ -28,7 +28,9 @@ PAGE_ROLE = QtCore.Qt.ItemDataRole.UserRole  # (page attribute, anchor) of a tre
 def page_html(name: str) -> str:
     """Page `name`'s Theory notes (an attribute from links.COURSE), as its Theory tab shows them."""
     if name == "sim_page":
-        from .background import BACKGROUND_HTML as html
+        from .background import BACKGROUND_HTML
+
+        html = BACKGROUND_HTML
     else:
         from .main_window import _page_class
 
@@ -80,8 +82,10 @@ class TheoryWindow(QtWidgets.QWidget):
         self.forward_button.setText("Forward ▶")
         self.forward_button.clicked.connect(self.forward)
         self.follow = QtWidgets.QCheckBox("Follow the page")
-        self.follow.setToolTip("<p>Show the notes of each page the main window turns to. Off, the notes stay "
-                               "where they are as you move between pages.</p>")
+        self.follow.setToolTip(
+            "<p>Show the notes of each page the main window turns to. Off, the notes stay "
+            "where they are as you move between pages.</p>"
+        )
         self.open_button = QtWidgets.QToolButton()
         self.open_button.setText("Open this page")
         self.open_button.setToolTip("Show the page these notes belong to in the main window.")
@@ -132,8 +136,9 @@ class TheoryWindow(QtWidgets.QWidget):
         if geometry is not None:
             self.restoreGeometry(geometry)
         self.follow.setChecked(QtCore.QSettings(*SETTINGS).value("theory_window/follow", "false") == "true")
-        self.follow.toggled.connect(lambda on: QtCore.QSettings(*SETTINGS).setValue(
-            "theory_window/follow", "true" if on else "false"))
+        self.follow.toggled.connect(
+            lambda on: QtCore.QSettings(*SETTINGS).setValue("theory_window/follow", "true" if on else "false")
+        )
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Back), self, self.back)
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Forward), self, self.forward)
         self._update_buttons()
@@ -223,6 +228,6 @@ class TheoryWindow(QtWidgets.QWidget):
     def save_geometry(self) -> None:
         QtCore.QSettings(*SETTINGS).setValue("theory_window/geometry", self.saveGeometry())
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802 (Qt's name)
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.save_geometry()
         super().closeEvent(event)

@@ -164,7 +164,7 @@ def holzer(system: ChainSystem, omega: float) -> list[HolzerRow]:
     x = 1.0
     force = k[0] * x  # the ground spring's tension
     for i in range(system.n):
-        inertia = m[i] * omega ** 2 * x
+        inertia = m[i] * omega**2 * x
         after = force - inertia  # left for the spring beyond mass i
         rows.append(HolzerRow(x, inertia, after))
         if i + 1 < system.n:
@@ -214,7 +214,7 @@ def lagrange_matrices(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
     m, k = system.masses, system.stiffness
 
     def T(v):
-        return 0.5 * float(np.sum(m * v ** 2))
+        return 0.5 * float(np.sum(m * v**2))
 
     def V(x):
         return 0.5 * float(np.sum(k * np.diff(x, prepend=0.0) ** 2))

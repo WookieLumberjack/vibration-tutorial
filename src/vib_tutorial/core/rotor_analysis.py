@@ -70,7 +70,7 @@ def _serve(conn) -> None:
             return
         try:
             reply = (ticket, analyse(system, top_rpm), None)
-        except Exception:  # noqa: BLE001 (reported on the page's side)
+        except Exception:
             reply = (ticket, None, traceback.format_exc())
         try:
             conn.send(reply)

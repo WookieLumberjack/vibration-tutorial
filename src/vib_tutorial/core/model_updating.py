@@ -71,8 +71,9 @@ class Errors:
 
     def model(self, structure: ChainSystem) -> ChainSystem:
         """The structure with these errors (friction left out: the model is linear)."""
-        return ChainSystem(structure.masses * self.mass, structure.stiffness * self.stiffness,
-                           structure.damping * self.damping)
+        return ChainSystem(
+            structure.masses * self.mass, structure.stiffness * self.stiffness, structure.damping * self.damping
+        )
 
 
 @dataclass(frozen=True)
@@ -111,8 +112,9 @@ def sample_rate(result: ModalResult) -> float:
     return math.ceil(need / scale) * scale
 
 
-def measure(structure: ChainSystem, source: Source, sensors: np.ndarray, seed: int = 1,
-            result: ModalResult | None = None) -> Test:
+def measure(
+    structure: ChainSystem, source: Source, sensors: np.ndarray, seed: int = 1, result: ModalResult | None = None
+) -> Test:
     """The structure's modes as a test sees them; correlation reads them at the sensors only."""
     linear = ChainSystem(structure.masses, structure.stiffness, structure.damping)
     result = result or modal_analysis(linear)
@@ -128,10 +130,17 @@ def measure(structure: ChainSystem, source: Source, sensors: np.ndarray, seed: i
                 continue
             psi = m.damped.shape
             noise = NOISE_SHAPE * (rng.standard_normal(psi.size) + 1j * rng.standard_normal(psi.size)) / math.sqrt(2)
-            modes.append((m.damped.fn_hz * (1 + NOISE_F * rng.standard_normal()),
-                          m.damped.zeta * (1 + NOISE_ZETA * rng.standard_normal()), psi + noise))
-    out = [TestMode(float(fn), float(zeta), np.asarray(shape, dtype=complex))
-           for fn, zeta, shape in sorted(modes, key=lambda t: t[0])]
+            modes.append(
+                (
+                    m.damped.fn_hz * (1 + NOISE_F * rng.standard_normal()),
+                    m.damped.zeta * (1 + NOISE_ZETA * rng.standard_normal()),
+                    psi + noise,
+                )
+            )
+    out = [
+        TestMode(float(fn), float(zeta), np.asarray(shape, dtype=complex))
+        for fn, zeta, shape in sorted(modes, key=lambda t: t[0])
+    ]
     return Test(source, out, sensors)
 
 
@@ -288,8 +297,9 @@ def _realized(psi: np.ndarray, phi: np.ndarray) -> np.ndarray:
     return real * float(real @ phi) / den if den > 0 else real
 
 
-def residual(structure: ChainSystem, errors: Errors, test: Test, pairs: list[tuple[int, int]],
-             what: Residuals) -> np.ndarray:
+def residual(
+    structure: ChainSystem, errors: Errors, test: Test, pairs: list[tuple[int, int]], what: Residuals
+) -> np.ndarray:
     """Test minus model, for the given (test, model) pairs: frequencies relative, then shapes, then ζ relative."""
     result = modal_analysis(errors.model(structure))
     sensors = test.sensors
@@ -332,8 +342,15 @@ class Update:
         return np.array([arrays[p.kind][p.element] for p in self.params])
 
 
-def update(structure: ChainSystem, errors: Errors, test: Test, params: list[Parameter],
-           what: Residuals = Residuals(), regularization: float = 0.0, iterations: int = 10) -> Update:
+def update(
+    structure: ChainSystem,
+    errors: Errors,
+    test: Test,
+    params: list[Parameter],
+    what: Residuals = Residuals(),  # noqa: B008 (frozen: one shared default is safe)
+    regularization: float = 0.0,
+    iterations: int = 10,
+) -> Update:
     """Gauss–Newton on ln p: each step minimizes ‖r + JΔ‖² + λ²‖θ + Δ‖², λ the regularization.
 
     The pairs are the correlation's at the start, kept fixed. J comes by finite differences. With λ = 0 and
@@ -360,8 +377,9 @@ def update(structure: ChainSystem, errors: Errors, test: Test, params: list[Para
             step *= STEP_LIMIT / biggest
         theta = theta + step
         r = r_at(theta)
-        history.append(Iteration(theta.copy(), updated_errors(errors, params, theta), float(np.linalg.norm(r)),
-                                 singular))
+        history.append(
+            Iteration(theta.copy(), updated_errors(errors, params, theta), float(np.linalg.norm(r)), singular)
+        )
         if biggest < 1e-8:
             break
     return Update(params, pairs, history)

@@ -78,7 +78,8 @@ def test_non_proportional():
     cp = proportional_damping(BASE, r)
     assert np.diag(phi.T @ cp @ phi) == pytest.approx(np.diag(phi.T @ BASE.matrices()[1] @ phi))
     assert modal_analysis(ChainSystem(BASE.masses, BASE.stiffness, np.zeros(4))).modes[0].omega_n == pytest.approx(
-        r.modes[0].omega_n)
+        r.modes[0].omega_n
+    )
     f = frf_grid(r)
     exact, approx = frf_pair(BASE, r, f, 3, 3)
     assert np.max(np.abs(approx - exact)) > 0.1 * np.max(np.abs(exact))
@@ -92,8 +93,11 @@ def test_non_proportional():
     assert run.q == pytest.approx(q, abs=1e-9)
     assert run.leak.max() > 0.3
     with pytest.raises(ValueError):
-        free_decay(ChainSystem(np.ones(2), np.array([0.0, 100.0]), np.array([1.0, 0.0])),
-                   modal_analysis(ChainSystem(np.ones(2), np.array([0.0, 100.0]), np.array([1.0, 0.0]))), 0)
+        free_decay(
+            ChainSystem(np.ones(2), np.array([0.0, 100.0]), np.array([1.0, 0.0])),
+            modal_analysis(ChainSystem(np.ones(2), np.array([0.0, 100.0]), np.array([1.0, 0.0]))),
+            0,
+        )
 
 
 def test_first_order_shapes():
@@ -104,8 +108,7 @@ def test_first_order_shapes():
     w = np.array([m.omega_n for m in r.modes])
     cm = phi.T @ light.matrices()[1] @ phi
     for k, m in enumerate(r.modes):
-        guess = phi[:, k] + sum(1j * w[k] * cm[s, k] / (w[k] ** 2 - w[s] ** 2) * phi[:, s]
-                                for s in range(4) if s != k)
+        guess = phi[:, k] + sum(1j * w[k] * cm[s, k] / (w[k] ** 2 - w[s] ** 2) * phi[:, s] for s in range(4) if s != k)
         psi = m.damped.shape
         scale = np.vdot(guess, psi) / np.vdot(guess, guess)
         assert np.max(np.abs(psi / scale - guess)) < 0.03 * np.max(np.abs(guess.imag))
@@ -173,7 +176,9 @@ def test_a_dampers_root_locus():
         assert sw.values[0] < value < sw.values[-1]
         assert k == 1 or zeta > 2 * sw.zeta_exact[-1, k]
     value, zeta = sw.peak(0)
-    assert value == pytest.approx(59.7, abs=0.5) and zeta == pytest.approx(0.147, abs=0.001)  # the notes' and the README's
+    assert value == pytest.approx(59.7, abs=0.5) and zeta == pytest.approx(
+        0.147, abs=0.001
+    )  # the notes' and the README's
     assert sw.zeta_approx[:, 0] / sw.values == pytest.approx(np.full(values.size, sw.zeta_approx[0, 0] / values[0]))
     # nearly real at both ends: barely damped, then a chain with no damping left in it
     assert np.nanmax(sw.mpd[0]) < 1.0 and np.nanmax(sw.mpd[-1]) < 1.0 and np.nanmax(sw.mpd) > 30

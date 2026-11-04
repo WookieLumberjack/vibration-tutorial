@@ -47,7 +47,7 @@ def test_two_inertias_match_the_closed_form():
 def test_a_mesh_turns_the_far_shaft_by_the_teeth_and_the_train_still_turns_freely():
     s = COMPRESSOR.speeds
     assert s == pytest.approx([1.0, 1.0, 4.0, 4.0])
-    m, c, k = COMPRESSOR.matrices()
+    _m, _c, k = COMPRESSOR.matrices()
     assert k @ s == pytest.approx(np.zeros(4), abs=1e-6 * np.abs(k).max())  # the rigid turn twists nothing
     assert np.allclose(k, k.T) and np.all(np.linalg.eigvalsh(k) > -1e-6 * np.abs(k).max())
 
@@ -88,7 +88,7 @@ def test_the_forced_response_matches_two_inertias_in_closed_form():
     w = 2.0 * rpm * TWO_PI / 60.0
     # theta2 - theta1 from J1 th1'' = -kt (th1 - th2)..., the shaft carries J1 times the motor's acceleration
     z = k + 1j * w * c
-    twist = t * j1 / (j1 * j2 * -w**2 + z * (j1 + j2))  # (th1 - th2)
+    twist = t * j1 / (j1 * j2 * -(w**2) + z * (j1 + j2))  # (th1 - th2)
     assert fr.torque[0, 0] == pytest.approx(np.abs(z * twist), rel=1e-9)
     assert fr.total()[0] == pytest.approx(fr.torque[0, 0])
 
@@ -157,6 +157,7 @@ def test_preset_notes():
     f = natural_hz(gen.train)
     assert round(f[0], 1) == 18.9 and round(f[1], 1) == 97.3
     assert modes(gen.train)[0].link == gen.train.links.index(
-        next(link for link in gen.train.links if link.name == "Flexible coupling"))
+        next(link for link in gen.train.links if link.name == "Flexible coupling")
+    )
     crits = {(c.label, c.mode): round(c.rpm) for c in criticals(gen.train, gen.top_rpm)}
     assert crits[("Firing 3×", 0)] == 378 and crits[("Firing 6×", 1)] == 973

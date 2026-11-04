@@ -71,8 +71,9 @@ def settle(ms=300):
 def write_png(grab: QtGui.QPixmap, path: Path) -> None:
     """Save a grab as a COLOURS-colour PNG (the 55 images were 16 MB in full colour, 5.6 MB this way)."""
     image = grab.toImage().convertToFormat(QtGui.QImage.Format.Format_RGB888)
-    rgb = Image.frombuffer("RGB", (image.width(), image.height()), bytes(image.constBits()), "raw", "RGB",
-                           image.bytesPerLine(), 1)
+    rgb = Image.frombuffer(
+        "RGB", (image.width(), image.height()), bytes(image.constBits()), "raw", "RGB", image.bytesPerLine(), 1
+    )
     rgb.quantize(COLOURS).save(path, optimize=True)
 
 
@@ -1019,25 +1020,88 @@ def machinery_diagnostics():
     lesson("diagnostics_page", 3, "machinery_diagnostics")  # an outer race defect by its envelope
 
 
-SHOTS = [main_window, dark_theme, pluck, chirp, base_excitation, tuned_mass_damper,
-         classical_release_nonproportional, state_space_release, modal_coordinates, energy_by_mode,
-         energy_history, element_forces, frequency_response, frf_matrix, modal_coupling,
-         substructuring_three, substructuring_time, substructuring_recovery, substructuring_compare,
-         virtual_modal_test, modal_extraction, oma, oma_ssi, random_vibration, random_statistics, complex_modes, complex_sweep, model_updating, model_updating_springs, shock_spectrum, shock_chain, shock_synthesis, jeffcott_rotor, jeffcott_run_up,
-         jeffcott_bow, jeffcott_balancing, jeffcott_two_plane, jeffcott_stability, jeffcott_oil_whirl, jeffcott_magnetic, jeffcott_rub, jeffcott_newkirk, jeffcott_overhung, jeffcott_waterfall,
-         jeffcott_shaft_mass, jeffcott_asymmetric, jeffcott_asymmetry_chart, jeffcott_cracked,
-         duffing_jump, mathieu_sweep, torsional_compressor, torsional_startup, continuum_string, continuum_beam,
-         continuum_waves, single_oscillator, transient_response, damping_models, vibration_isolation,
-         signals_spectra, pendulums, periodic_forcing, energy_methods, beams_plates,
-         numerical_integration, fatigue, quarter_car, seismic_response, variability,
-         self_excited, active_control, machinery_diagnostics]
+SHOTS = [
+    main_window,
+    dark_theme,
+    pluck,
+    chirp,
+    base_excitation,
+    tuned_mass_damper,
+    classical_release_nonproportional,
+    state_space_release,
+    modal_coordinates,
+    energy_by_mode,
+    energy_history,
+    element_forces,
+    frequency_response,
+    frf_matrix,
+    modal_coupling,
+    substructuring_three,
+    substructuring_time,
+    substructuring_recovery,
+    substructuring_compare,
+    virtual_modal_test,
+    modal_extraction,
+    oma,
+    oma_ssi,
+    random_vibration,
+    random_statistics,
+    complex_modes,
+    complex_sweep,
+    model_updating,
+    model_updating_springs,
+    shock_spectrum,
+    shock_chain,
+    shock_synthesis,
+    jeffcott_rotor,
+    jeffcott_run_up,
+    jeffcott_bow,
+    jeffcott_balancing,
+    jeffcott_two_plane,
+    jeffcott_stability,
+    jeffcott_oil_whirl,
+    jeffcott_magnetic,
+    jeffcott_rub,
+    jeffcott_newkirk,
+    jeffcott_overhung,
+    jeffcott_waterfall,
+    jeffcott_shaft_mass,
+    jeffcott_asymmetric,
+    jeffcott_asymmetry_chart,
+    jeffcott_cracked,
+    duffing_jump,
+    mathieu_sweep,
+    torsional_compressor,
+    torsional_startup,
+    continuum_string,
+    continuum_beam,
+    continuum_waves,
+    single_oscillator,
+    transient_response,
+    damping_models,
+    vibration_isolation,
+    signals_spectra,
+    pendulums,
+    periodic_forcing,
+    energy_methods,
+    beams_plates,
+    numerical_integration,
+    fatigue,
+    quarter_car,
+    seismic_response,
+    variability,
+    self_excited,
+    active_control,
+    machinery_diagnostics,
+]
 
 
 def main(names: list[str]) -> None:
     unknown = set(names) - {shot.__name__ for shot in SHOTS}
     if unknown:
-        sys.exit(f"unknown shot(s): {', '.join(sorted(unknown))}; choose from: "
-                 + ", ".join(shot.__name__ for shot in SHOTS))
+        sys.exit(
+            f"unknown shot(s): {', '.join(sorted(unknown))}; choose from: " + ", ".join(shot.__name__ for shot in SHOTS)
+        )
     for shot in SHOTS:
         if not names or shot.__name__ in names:
             shot()

@@ -75,8 +75,10 @@ def stats(frames: list[dict[str, str]]) -> str:
     paint = np.array([float(f["paint_ms"]) for f in frames])
     fps = 1000.0 / iv.mean() if iv.size else float("nan")
     late = float(np.mean(iv > LATE)) if iv.size else 0.0
-    return (f"{len(frames):6d} frames {fps:5.1f} fps  work {np.median(work):5.1f}/{np.percentile(work, 95):5.1f}"
-            f"  paint {np.median(paint):5.1f}/{np.percentile(paint, 95):5.1f} ms  late {late:4.0%}")
+    return (
+        f"{len(frames):6d} frames {fps:5.1f} fps  work {np.median(work):5.1f}/{np.percentile(work, 95):5.1f}"
+        f"  paint {np.median(paint):5.1f}/{np.percentile(paint, 95):5.1f} ms  late {late:4.0%}"
+    )
 
 
 def main() -> None:
@@ -95,8 +97,9 @@ def main() -> None:
     views: dict[str, list[dict[str, str]]] = {}
     for s in parts:
         views.setdefault(s.view, []).extend(s.frames)
-    ranked = sorted((v for v in views.items() if len(v[1]) >= 2),
-                    key=lambda v: -np.median([float(f["paint_ms"]) for f in v[1]]))
+    ranked = sorted(
+        (v for v in views.items() if len(v[1]) >= 2), key=lambda v: -np.median([float(f["paint_ms"]) for f in v[1]])
+    )
     for view, frames in ranked:
         print(f"  {stats(frames)}  {view}")
 

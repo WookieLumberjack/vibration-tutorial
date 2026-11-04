@@ -72,8 +72,9 @@ class Pulse:
     def impulse(self) -> float:
         """∫F dt over the whole pulse (N·s); infinite for a step and a ramp."""
         a, T = self.amplitude, self.duration
-        return {PulseKind.IMPULSE: a, PulseKind.RECTANGLE: a * T, PulseKind.HALF_SINE: 2.0 * a * T / math.pi
-                }.get(self.kind, math.inf)
+        return {PulseKind.IMPULSE: a, PulseKind.RECTANGLE: a * T, PulseKind.HALF_SINE: 2.0 * a * T / math.pi}.get(
+            self.kind, math.inf
+        )
 
 
 def pulse_response(osc: Oscillator, pulse: Pulse, t: np.ndarray) -> np.ndarray:
@@ -89,15 +90,16 @@ def pulse_response(osc: Oscillator, pulse: Pulse, t: np.ndarray) -> np.ndarray:
         return a * (step_response(osc, t) - step_response(osc, t - T))
     # ramp and half-sine: the FOH update on a fine grid with the pulse's corners on it, then sampled at t
     h = min(osc.period, T) / STEPS_PER_PERIOD
-    n_t = max(int(math.ceil(T / h)), 1)
+    n_t = max(math.ceil(T / h), 1)
     h = T / n_t  # T on a sample
     fine = np.arange(0.0, t[-1] + h, h) if t[-1] > 0 else np.zeros(1)
     x = response(osc, h, pulse.force(fine))
     return np.interp(t, fine, x)
 
 
-def convolution(osc: Oscillator, pulse: Pulse, at: float, points: int = 2001) -> tuple[np.ndarray, np.ndarray,
-                                                                                          np.ndarray, float]:
+def convolution(
+    osc: Oscillator, pulse: Pulse, at: float, points: int = 2001
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     """Duhamel's integral x(t) = ∫₀ᵗ F(τ) h(t − τ) dτ at t = `at`, by the trapezium rule on `points` τs.
 
     Returns (τ, F(τ), h(t − τ), x(t)). An impulse has no samples to integrate: x = I h(t).
@@ -172,7 +174,7 @@ def peak_ratio(zeta: float, kind: PulseKind, ratios: np.ndarray) -> np.ndarray:
     after = np.linspace(0.0, 1.05 * osc.period, 400)
     for i, r in enumerate(ratios):
         T = r * osc.period
-        n = max(int(math.ceil(RATIO_STEPS * max(r, 0.2))), 40)
+        n = max(math.ceil(RATIO_STEPS * max(r, 0.2)), 40)
         h = T / n
         t = np.arange(n + 1) * h
         # a rectangle is 1 all through [0, T] (its drop at T is the free vibration's start)

@@ -79,37 +79,44 @@ TRIALS = (
         "together 97 % (codes want 90 %), so a few modes are enough. The spectrum gives mode 1 S<sub>a</sub> = "
         "0.52 g, and the modes together a base shear of 229 kN (CQC or SRSS); stepped on seven records that match "
         "the spectrum, the building's base shear averages 235 kN.",
-        rule=Rule.CQC),
+        rule=Rule.CQC,
+    ),
     SeismicTrial(
         "ABS is too safe",
         "The same building by ABS: every mode's peak added as if they all arrived together, 277 kN, 18 % over "
         "the records' mean. Modes this far apart (ρ₁₂ = 0.007) peak at different moments, and SRSS (229 kN) is "
         "right.",
-        rule=Rule.ABS),
+        rule=Rule.ABS,
+    ),
     SeismicTrial(
         "Close modes need CQC",
         "A tank on the roof, 1 % of mode 1's modal mass there, tuned to mode 1, splits it into two modes "
         "0.96 and 1.06 Hz apart, with ρ = 0.50: they move together much of the time. SRSS treats them as "
         "independent: 21 % low on the base shear, and 54 % high on the tank's own swing, where the two modes "
         "nearly cancel. CQC keeps the cross term, with its sign, and is within 11 % of the records' mean on both.",
-        tank=0.01, rule=Rule.SRSS),
+        tank=0.01,
+        rule=Rule.SRSS,
+    ),
     SeismicTrial(
         "Soft soil",
         "Ground type D: S = 1.35 and the plateau runs to T<sub>C</sub> = 0.8 s, so mode 1 (0.99 s) sits near it. "
         "Its S<sub>a</sub> rises from 0.52 g to 0.82 g, and the base shear from 229 to 357 kN: a site's soil "
         "matters as much as its seismicity.",
-        ground=3),
+        ground=3,
+    ),
     SeismicTrial(
         "A taller building",
         "Eight storeys: T₁ = 1.52 s, and mode 1 carries 86 % of the mass, under the 90 % codes want, so mode 2 "
         "is needed too. Mode 1 now sits on the falling branch (0.34 g) and modes 2 to 4 on the plateau (0.86 g): "
         "mode 1 alone gives 96 % of the base shear but only 74 % of the top storey's.",
-        storeys=8),
+        storeys=8,
+    ),
     SeismicTrial(
         "More damping",
         "ζ = 10 % in every mode (dampers added): η = √(10/(5 + 10)) = 0.82 lowers the whole spectrum by 18 %, and "
         "every peak with it.",
-        zeta=10.0),
+        zeta=10.0,
+    ),
 )
 
 TIPS = {
@@ -119,11 +126,15 @@ TIPS = {
     "zeta": "<p>The damping ratio of every mode, for the spectrum (η) and the records' response.</p>",
     "rule": "<p>How the modes' peaks are combined for the readout and the bold profile.</p>",
 }
-SPECTRUM_TIP = ("<p>The design spectrum: the peak acceleration of a single oscillator of period T and damping ζ. "
-                "Dots: the building's modes.</p>")
-FLOOR_TIP = ("<p>Each floor's peak displacement relative to the ground (left) and each storey's peak shear "
-             "(right): by each combination rule, and the mean over the records (dots).</p>")
-GROUND_TIP = ("<p>One of the records (top), and every record's spectrum against the design spectrum (bottom).</p>")
+SPECTRUM_TIP = (
+    "<p>The design spectrum: the peak acceleration of a single oscillator of period T and damping ζ. "
+    "Dots: the building's modes.</p>"
+)
+FLOOR_TIP = (
+    "<p>Each floor's peak displacement relative to the ground (left) and each storey's peak shear "
+    "(right): by each combination rule, and the mean over the records (dots).</p>"
+)
+GROUND_TIP = "<p>One of the records (top), and every record's spectrum against the design spectrum (bottom).</p>"
 
 
 NOTES_HTML = """
@@ -171,22 +182,36 @@ left).</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("shock_page", "srs", "The shock response spectrum"),
-    ("shock_page", "chain", "The chain's modes on a pulse"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "A design spectrum smooths many earthquakes' spectra into a plateau and 1/T, 1/T² falls; soil and damping "
-    "scale it.",
-    "Each mode is an oscillator driven by Γ a<sub>g</sub>; its effective mass is its share of the base shear, and "
-    "the shares add up to the whole mass.",
-    "ABS adds the modes' peaks and overestimates; SRSS is right for well-separated modes.",
-    "Close modes are correlated: CQC keeps the cross terms and SRSS underestimates.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("shock_page", "srs", "The shock response spectrum"),
+            ("shock_page", "chain", "The chain's modes on a pulse"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "A design spectrum smooths many earthquakes' spectra into a plateau and 1/T, 1/T² falls; soil and damping "
+            "scale it.",
+            "Each mode is an oscillator driven by Γ a<sub>g</sub>; its effective mass is its share of the base shear, and "
+            "the shares add up to the whole mass.",
+            "ABS adds the modes' peaks and overestimates; SRSS is right for well-separated modes.",
+            "Close modes are correlated: CQC keeps the cross terms and SRSS underestimates.",
+        ),
+    )
+)
 
 
 def _same(a: ChainSystem, b: ChainSystem) -> bool:
-    return (a.n == b.n and np.allclose(a.masses, b.masses) and np.allclose(a.stiffness, b.stiffness)
-            and np.allclose(a.damping, b.damping))
+    return (
+        a.n == b.n
+        and np.allclose(a.masses, b.masses)
+        and np.allclose(a.stiffness, b.stiffness)
+        and np.allclose(a.damping, b.damping)
+    )
 
 
 class SeismicPage(QtWidgets.QWidget):
@@ -202,9 +227,11 @@ class SeismicPage(QtWidgets.QWidget):
         self.system = ChainSystem.uniform(4)
         self._dirty = True
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each loads a building into the Simulation page and sets up the spectrum to show "
-                               "one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each loads a building into the Simulation page and sets up the spectrum to show "
+            "one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         ch = Form("Building (the chain)")
@@ -212,8 +239,7 @@ class SeismicPage(QtWidgets.QWidget):
         self.dof.setRange(1, MAX_DOF)
         self.dof.valueChanged.connect(self.dof_requested)
         ch.add("Floors:", self.dof, TIPS["dof"])
-        link = QtWidgets.QLabel("Masses and storey stiffnesses are edited on the <a href='#sim'>Simulation "
-                                "page</a>.")
+        link = QtWidgets.QLabel("Masses and storey stiffnesses are edited on the <a href='#sim'>Simulation page</a>.")
         link.setWordWrap(True)
         mute(link)
         link.linkActivated.connect(lambda _: self.edit_parameters.emit())
@@ -291,8 +317,7 @@ class SeismicPage(QtWidgets.QWidget):
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tab())
 
-        three_panes(self, column(self.trials, ch, spec),
-                    stack((self.spectrum_plot, 1), (self.table, 0)), self.tabs)
+        three_panes(self, column(self.trials, ch, spec), stack((self.spectrum_plot, 1), (self.table, 0)), self.tabs)
         self.apply_theme()
         self.set_system(self.system)
 
@@ -317,8 +342,12 @@ class SeismicPage(QtWidgets.QWidget):
         self.system_requested.emit(system)
         if not _same(self.system, system):
             self.set_system(system)
-        for box, value in ((self.pga, t.pga), (self.ground, t.ground), (self.zeta, t.zeta),
-                           (self.rule, RULES.index(t.rule))):
+        for box, value in (
+            (self.pga, t.pga),
+            (self.ground, t.ground),
+            (self.zeta, t.zeta),
+            (self.rule, RULES.index(t.rule)),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -335,8 +364,12 @@ class SeismicPage(QtWidgets.QWidget):
         mark(self.mode_dots, c.force, filled=True)
         for line in self.corner_lines:
             line.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        styles = {Rule.ABS: (c.grey, QtCore.Qt.PenStyle.DashLine), Rule.SRSS: (c.mass[1], QtCore.Qt.PenStyle.SolidLine),
-                  Rule.NRL: (c.mode[2], QtCore.Qt.PenStyle.DashDotLine), Rule.CQC: (c.mass[0], QtCore.Qt.PenStyle.SolidLine)}
+        styles = {
+            Rule.ABS: (c.grey, QtCore.Qt.PenStyle.DashLine),
+            Rule.SRSS: (c.mass[1], QtCore.Qt.PenStyle.SolidLine),
+            Rule.NRL: (c.mode[2], QtCore.Qt.PenStyle.DashDotLine),
+            Rule.CQC: (c.mass[0], QtCore.Qt.PenStyle.SolidLine),
+        }
         for r, items in self.rule_items.items():
             color, style = styles[r]
             for item in items:
@@ -358,8 +391,10 @@ class SeismicPage(QtWidgets.QWidget):
         self._dirty = False
         d = self.design
         S, TB, TC, TD = d.corners
-        self.spec_info.setText(f"S = {S:g}, T<sub>B</sub> = {TB:g} s, T<sub>C</sub> = {TC:g} s, T<sub>D</sub> = "
-                               f"{TD:g} s, η = {d.eta:.3g}: a plateau of {2.5 * d.eta * S * d.pga_g:.3g} g.")
+        self.spec_info.setText(
+            f"S = {S:g}, T<sub>B</sub> = {TB:g} s, T<sub>C</sub> = {TC:g} s, T<sub>D</sub> = "
+            f"{TD:g} s, η = {d.eta:.3g}: a plateau of {2.5 * d.eta * S * d.pga_g:.3g} g."
+        )
         self.modal = modal(self.system, d)
         self.rho = correlation(self.modal.f, d.zeta)
         self._draw_spectrum()
@@ -393,15 +428,20 @@ class SeismicPage(QtWidgets.QWidget):
             f"<td align='right'>{m.gamma[r] * np.sign(m.phi[-1, r]):.3g}</td>"
             f"<td align='right'>{100 * m.mass_share[r]:.3g} %</td><td align='right'>{100 * cum[r]:.3g} %</td>"
             f"<td align='right'>{m.sa[r] / G:.3g}</td><td align='right'>{fmt(abs(m.base_shear[r]), 'N')}</td></tr>"
-            for r in range(m.f.size))
-        totals = " · ".join(f"{'<b>' if r is rule else ''}{r.value} {fmt(float(combine(m.shear, r, self.rho)[0]), 'N')}"
-                            f"{'</b>' if r is rule else ''}" for r in RULES)
+            for r in range(m.f.size)
+        )
+        totals = " · ".join(
+            f"{'<b>' if r is rule else ''}{r.value} {fmt(float(combine(m.shear, r, self.rho)[0]), 'N')}"
+            f"{'</b>' if r is rule else ''}"
+            for r in RULES
+        )
         need = int(np.searchsorted(cum, 0.9 - 1e-9)) + 1
         self.table.setText(
             "<table cellspacing='5'><tr><th>mode</th><th>f (Hz)</th><th>T (s)</th><th>Γ</th><th>M<sub>eff</sub></th>"
             f"<th>Σ M<sub>eff</sub></th><th>S<sub>a</sub> (g)</th><th>V<sub>base</sub></th></tr>{rows}</table>"
             f"Base shear: {totals}. {need} mode{'s' if need > 1 else ''} reach{'' if need > 1 else 'es'} 90 % of "
-            f"the mass ({m.total_mass / 1000:.4g} t).")
+            f"the mass ({m.total_mass / 1000:.4g} t)."
+        )
 
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
@@ -435,7 +475,8 @@ class SeismicPage(QtWidgets.QWidget):
         self.floor_note.setText(
             f"Base shear by {rule.value} {fmt(mine, 'N')}, {100 * (mine / s.base_shear - 1):+.3g} % against the "
             f"mean of {RECORDS} records ({fmt(s.base_shear, 'N')}); the top floor's displacement "
-            f"{fmt(top, 'm')}, {100 * (top / s.displacement[-1] - 1):+.3g} %.")
+            f"{fmt(top, 'm')}, {100 * (top / s.displacement[-1] - 1):+.3g} %."
+        )
 
     def _draw_correlation(self) -> None:
         rho = self.rho
@@ -445,15 +486,21 @@ class SeismicPage(QtWidgets.QWidget):
         for i in range(n):
             cells = "".join(
                 f"<td align='right'>{'<b>' if i != j and rho[i, j] > 0.1 else ''}{rho[i, j]:.3f}"
-                f"{'</b>' if i != j and rho[i, j] > 0.1 else ''}</td>" for j in range(n))
+                f"{'</b>' if i != j and rho[i, j] > 0.1 else ''}</td>"
+                for j in range(n)
+            )
             rows.append(f"<tr><th>{i + 1}</th>{cells}</tr>")
-        self.rho_label.setText(f"<p><b>ρ<sub>ij</sub></b> at ζ = {100 * self.design.zeta:.3g} %</p>"
-                               f"<table cellspacing='6'>{head}{''.join(rows)}</table>")
+        self.rho_label.setText(
+            f"<p><b>ρ<sub>ij</sub></b> at ζ = {100 * self.design.zeta:.3g} %</p>"
+            f"<table cellspacing='6'>{head}{''.join(rows)}</table>"
+        )
         off = rho - np.diag(np.diag(rho))
         i, j = np.unravel_index(int(np.argmax(off)), off.shape)
         f = self.modal.f
-        self.rho_note.setText(f"The most correlated pair: modes {i + 1} and {j + 1} ({f[i]:.3g} and {f[j]:.3g} Hz, "
-                              f"ρ = {off[i, j]:.3g}). Above about 0.1 SRSS and CQC part; bold.")
+        self.rho_note.setText(
+            f"The most correlated pair: modes {i + 1} and {j + 1} ({f[i]:.3g} and {f[j]:.3g} Hz, "
+            f"ρ = {off[i, j]:.3g}). Above about 0.1 SRSS and CQC part; bold."
+        )
 
     def _draw_ground(self) -> None:
         d = self.design
@@ -475,6 +522,8 @@ class SeismicPage(QtWidgets.QWidget):
         self.match_mean.setData(T, mean / G)
         err = mean / design_sa(d, T) - 1
         pga = np.mean([np.max(np.abs(rec.a)) for rec in recs]) / G
-        self.ground_note.setText(f"{len(recs)} synthesized records (grey); their mean spectrum is within "
-                                 f"{100 * float(np.max(np.abs(err))):.2g} % of the design one. Their peak ground "
-                                 f"acceleration averages {pga:.2g} g.")
+        self.ground_note.setText(
+            f"{len(recs)} synthesized records (grey); their mean spectrum is within "
+            f"{100 * float(np.max(np.abs(err))):.2g} % of the design one. Their peak ground "
+            f"acceleration averages {pga:.2g} g."
+        )

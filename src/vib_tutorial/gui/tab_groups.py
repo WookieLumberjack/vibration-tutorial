@@ -68,7 +68,7 @@ class PageGroups(QtWidgets.QWidget):
     order, so a caller can count, find and show a page without knowing its group.
     """
 
-    currentChanged = QtCore.Signal(int)  # the flat index of the page now showing
+    currentChanged = QtCore.Signal(int)  # noqa: N815 (QTabWidget's name) the flat index of the page now showing
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -90,7 +90,7 @@ class PageGroups(QtWidgets.QWidget):
         self._rows.append(row)
         self.groups.addTab(row, title)
 
-    def setCornerWidget(self, widget: QtWidgets.QWidget, corner=QtCore.Qt.Corner.TopRightCorner) -> None:  # noqa: N802
+    def setCornerWidget(self, widget: QtWidgets.QWidget, corner=QtCore.Qt.Corner.TopRightCorner) -> None:
         self.groups.setCornerWidget(widget, corner)
 
     # --- QTabWidget's API over the flat order
@@ -111,7 +111,7 @@ class PageGroups(QtWidgets.QWidget):
             return None
         return row.widget(i)
 
-    def tabText(self, index: int) -> str:  # noqa: N802
+    def tabText(self, index: int) -> str:
         row, i = self._locate(index)
         return row.tabText(i)
 
@@ -120,7 +120,7 @@ class PageGroups(QtWidgets.QWidget):
         row, _ = self._locate(index)
         return self.groups.tabText(self._rows.index(row))
 
-    def indexOf(self, widget: QtWidgets.QWidget) -> int:  # noqa: N802
+    def indexOf(self, widget: QtWidgets.QWidget) -> int:
         start = 0
         for row in self._rows:
             i = row.indexOf(widget)
@@ -129,22 +129,22 @@ class PageGroups(QtWidgets.QWidget):
             start += row.count()
         return -1
 
-    def currentIndex(self) -> int:  # noqa: N802
+    def currentIndex(self) -> int:
         row = self.groups.currentWidget()
         if row not in self._rows:
             return -1
         return sum(r.count() for r in self._rows[: self._rows.index(row)]) + row.currentIndex()
 
-    def currentWidget(self) -> QtWidgets.QWidget | None:  # noqa: N802
+    def currentWidget(self) -> QtWidgets.QWidget | None:
         row = self.groups.currentWidget()
         return row.currentWidget() if row is not None else None
 
-    def setCurrentIndex(self, index: int) -> None:  # noqa: N802
+    def setCurrentIndex(self, index: int) -> None:
         row, i = self._locate(index)
         row.setCurrentIndex(i)
         self.groups.setCurrentWidget(row)
 
-    def setCurrentWidget(self, widget: QtWidgets.QWidget) -> None:  # noqa: N802
+    def setCurrentWidget(self, widget: QtWidgets.QWidget) -> None:
         index = self.indexOf(widget)
         if index >= 0:
             self.setCurrentIndex(index)

@@ -30,8 +30,9 @@ def test_coefficients():
     assert r**2 + t**2 * 2.0 == pytest.approx(1.0)  # the energy: reflected R², transmitted T² Z₂/Z₁
 
 
-@pytest.mark.parametrize(("left", "right", "sign"), [(End.FIXED, End.FIXED, 1), (End.FIXED, End.FREE, -1),
-                                                      (End.FREE, End.FREE, 1)])
+@pytest.mark.parametrize(
+    ("left", "right", "sign"), [(End.FIXED, End.FIXED, 1), (End.FIXED, End.FREE, -1), (End.FREE, End.FREE, 1)]
+)
 def test_the_continuums_pulse_comes_back_whole(left, right, sign):
     """Two crossings: back where it started, upside down once for each fixed end it met."""
     run = WaveRun(BAR.with_(left=left, right=right), 20, Waves(width=0.2, at=0.3))
@@ -103,8 +104,9 @@ def test_playback_keeps_the_state():
         run.set_playback(3.0)
 
 
-@pytest.mark.parametrize(("left", "right"), [(End.PINNED, End.PINNED), (End.FREE, End.FREE),
-                                             (End.CLAMPED, End.FREE), (End.PINNED, End.FREE)])
+@pytest.mark.parametrize(
+    ("left", "right"), [(End.PINNED, End.PINNED), (End.FREE, End.FREE), (End.CLAMPED, End.FREE), (End.PINNED, End.FREE)]
+)
 def test_the_beams_modes_sum_to_the_pulse(left, right):
     beam = Continuum(Kind.BEAM, 1.0, left, right, width=0.05, depth=0.01)
     run = WaveRun(beam, 30, Waves(width=0.1, at=0.4, moving=False))

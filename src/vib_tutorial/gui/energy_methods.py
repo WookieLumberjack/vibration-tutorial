@@ -92,84 +92,112 @@ TRIALS = (
         "The uniform chain (four 1 kg masses, 400 N/m springs) sagging under its own weight, as a guess at mode "
         "1's shape. Its Rayleigh quotient xᵀKx / xᵀMx gives f₁ = 1.112 Hz against the exact 1.105 Hz: 0.55 % "
         "high. The shapes are hard to tell apart; the error in frequency is smaller still, because it is "
-        "second order in the shape's."),
+        "second order in the shape's.",
+    ),
     EnergyTrial(
         "A straight line, then one pass of iteration",
         "A straight line, x<sub>i</sub> ∝ i, is a worse guess: 5.1 % high. One pass of inverse iteration "
         "(x ← K⁻¹Mx: the static deflection under the inertia forces of the guessed motion) brings it to 0.063 % "
         "high.",
-        shape=Shape.LINEAR, iterations=1),
+        shape=Shape.LINEAR,
+        iterations=1,
+    ),
     EnergyTrial(
         "The error is second order",
         "On a uniform chain the quarter sine is mode 1 exactly. With 10 % of mode 2 mixed in (ε = 0.1) the "
         "estimate is 4.6 % high; with 20 %, 16.6 %, nearly four times as much. The Shape error tab draws the "
         "parabola: it is flat at ε = 0, which is why a rough shape still gives a good frequency, and it never "
         "dips below the exact f₁.",
-        shape=Shape.SINE, eps=0.1, tab=TAB_ERROR),
+        shape=Shape.SINE,
+        eps=0.1,
+        tab=TAB_ERROR,
+    ),
     EnergyTrial(
         "Inverse iteration from a poor guess",
         "Only the last mass moving: 3.18 Hz, 188 % high (it is the last mass on its own spring). One pass of "
         "inverse iteration: 5.1 % high; two: 0.063 %. Each pass shrinks mode r's share by ω₁²/ω<sub>r</sub>², "
         "0.12 for mode 2 here, and the frequency's error by its square.",
-        shape=Shape.TIP, iterations=1),
+        shape=Shape.TIP,
+        iterations=1,
+    ),
     EnergyTrial(
         "Dunkerley from below",
         "Dunkerley adds up each mass alone on the massless chain: 1/ω₁² ≈ Σ m<sub>i</sub>f<sub>ii</sub>, with "
         "f = K⁻¹. On the uniform chain the four alone are at 3.18, 2.25, 1.84 and 1.59 Hz and the sum gives "
         "1.007 Hz, 8.9 % low. With Rayleigh's static estimate the exact f₁ is bracketed: 1.007 ≤ 1.105 ≤ 1.112 "
-        "Hz."),
+        "Hz.",
+    ),
     EnergyTrial(
         "A heavy tip: Dunkerley does better",
         "The last mass 5 kg. It now dominates Dunkerley's sum (alone it is at 0.71 Hz), and the estimate is "
         "0.624 Hz against the exact 0.653, 4.4 % low. Rayleigh's static shape: 0.25 % high. The more one mass "
         "dominates, the closer Dunkerley comes.",
-        masses=(1.0, 1.0, 1.0, 5.0)),
+        masses=(1.0, 1.0, 1.0, 5.0),
+    ),
     EnergyTrial(
         "Rayleigh–Ritz from above",
         "Two Ritz shapes (the static deflection and one more pass of K⁻¹M) on the uniform chain: f₁ is exact to "
         "four figures, and f₂ is 3.30 Hz against 3.18, 3.6 % high. With three, f₂ is 3.184 and f₃ 5.02 Hz "
         "against 4.88. Every estimate sits above its mode and comes down as shapes are added; with all N it is "
         "exact.",
-        tab=TAB_RITZ, shapes=2),
+        tab=TAB_RITZ,
+        shapes=2,
+    ),
     EnergyTrial(
         "A poor basis: a stiff first spring",
         "k₁ = 4000 N/m, ten times the others, holds m1 nearly still. Powers of i start with a straight line, "
         "which moves m1 a quarter as far as m4, far more than the stiff spring lets it: with two of them f₁ is 1.63 Hz "
         "against 1.38, 18 % high, and f₂ 6.04 against 3.89. The Krylov shapes come from the chain itself, and "
         "one of them is already within 0.8 %.",
-        basis=Basis.POWERS, shapes=2, tab=TAB_RITZ, stiffness=(4000.0, 400.0, 400.0, 400.0)),
+        basis=Basis.POWERS,
+        shapes=2,
+        tab=TAB_RITZ,
+        stiffness=(4000.0, 400.0, 400.0, 400.0),
+    ),
     EnergyTrial(
         "Holzer's table",
         "Holzer guesses ω, sets x₁ = 1 and walks along the chain: each mass takes its inertia force m ω² x out "
         "of the spring force reaching it and passes the rest on. At 1.00 Hz, 61 N are left at the free end; the "
         "residual changes sign at 1.105 Hz, then at 3.183, 4.877 and 5.982 Hz: the four natural frequencies, "
         "found without an eigenvalue solver.",
-        tab=TAB_HOLZER, holzer_hz=1.0),
+        tab=TAB_HOLZER,
+        holzer_hz=1.0,
+    ),
 )
 
 TIPS = {
     "dof": "<p>The number of masses: the same chain as the Simulation page, so changing it here changes it there "
-           "too.</p>",
+    "too.</p>",
     "shape": "<p>The shape Rayleigh's quotient is worked out for.</p>",
     "eps": "<p>How much of mode 2's shape (its largest entry 1) is added to the trial shape: a known error in the "
-           "shape, to see what it costs in frequency.</p>",
+    "shape, to see what it costs in frequency.</p>",
     "iterations": "<p>Passes of inverse iteration, x ← K⁻¹Mx: each is the static deflection under the inertia "
-                  "forces of the shape before.</p>",
+    "forces of the shape before.</p>",
     "basis": "<p>The shapes Rayleigh–Ritz restricts the chain to.</p>",
     "shapes": "<p>How many of them it keeps (r ≤ N).</p>",
     "holzer": "<p>The trial frequency Holzer's table is worked out at.</p>",
 }
-SHAPE_TIP = ("<p>Mode 1's exact shape (dashed) and the trial shape Rayleigh's quotient is worked out for, both "
-             "scaled to a largest entry of 1; 0 is the ground.</p>")
-ESTIMATES_TIP = ("<p>Every estimate of f₁ on one axis, against the exact one (the dotted line): Dunkerley's "
-                 "below it, Rayleigh's and Rayleigh–Ritz's above.</p>")
-ERROR_TIP = ("<p>Rayleigh's f₁ for the trial shape plus ε of mode 2's, against ε. The exact f₁ is dotted; the "
-             "dot is the ε set on the left.</p>")
-RITZ_TIP = ("<p>Each mode's Rayleigh–Ritz frequency against the number of shapes kept, r; the exact frequencies "
-            "dotted. Mode j appears once r ≥ j.</p>")
-HOLZER_TIP = ("<p>The force left at the free end of Holzer's table (for x₁ = 1), against the trial frequency; "
-              "it changes sign at each natural frequency (dotted). Drawn as sign · log₁₀(1 + |R|/k₁), since "
-              "it grows as ω<sup>2N</sup>.</p>")
+SHAPE_TIP = (
+    "<p>Mode 1's exact shape (dashed) and the trial shape Rayleigh's quotient is worked out for, both "
+    "scaled to a largest entry of 1; 0 is the ground.</p>"
+)
+ESTIMATES_TIP = (
+    "<p>Every estimate of f₁ on one axis, against the exact one (the dotted line): Dunkerley's "
+    "below it, Rayleigh's and Rayleigh–Ritz's above.</p>"
+)
+ERROR_TIP = (
+    "<p>Rayleigh's f₁ for the trial shape plus ε of mode 2's, against ε. The exact f₁ is dotted; the "
+    "dot is the ε set on the left.</p>"
+)
+RITZ_TIP = (
+    "<p>Each mode's Rayleigh–Ritz frequency against the number of shapes kept, r; the exact frequencies "
+    "dotted. Mode j appears once r ≥ j.</p>"
+)
+HOLZER_TIP = (
+    "<p>The force left at the free end of Holzer's table (for x₁ = 1), against the trial frequency; "
+    "it changes sign at each natural frequency (dotted). Drawn as sign · log₁₀(1 + |R|/k₁), since "
+    "it grows as ω<sup>2N</sup>.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -230,22 +258,33 @@ found by bisection, mode by mode, with a pencil. Holzer's method was the standar
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
-    ("sim_page", "rayleigh-quotient", "Rayleigh's quotient"),
-    ("sim_page", "energy", "Energy"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "M and K are the second derivatives of the kinetic and potential energies (Lagrange).",
-    "Rayleigh's quotient is never below ω₁², and its error is second order in the shape's.",
-    "Dunkerley's sum Σ m<sub>i</sub>f<sub>ii</sub> bounds ω₁ from below; with Rayleigh's it brackets it.",
-    "Rayleigh–Ritz gives r frequencies, each from above; good shapes come from the structure itself.",
-    "Holzer's residual changes sign at each natural frequency of a chain.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
+            ("sim_page", "rayleigh-quotient", "Rayleigh's quotient"),
+            ("sim_page", "energy", "Energy"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "M and K are the second derivatives of the kinetic and potential energies (Lagrange).",
+            "Rayleigh's quotient is never below ω₁², and its error is second order in the shape's.",
+            "Dunkerley's sum Σ m<sub>i</sub>f<sub>ii</sub> bounds ω₁ from below; with Rayleigh's it brackets it.",
+            "Rayleigh–Ritz gives r frequencies, each from above; good shapes come from the structure itself.",
+            "Holzer's residual changes sign at each natural frequency of a chain.",
+        ),
+    )
+)
 
 
 def matrix_html(A: np.ndarray, digits: int = 4) -> str:
-    rows = "".join("<tr>" + "".join(f"<td align='right'>&nbsp;{v:.{digits}g}&nbsp;</td>" for v in row) + "</tr>"
-                   for row in A)
+    rows = "".join(
+        "<tr>" + "".join(f"<td align='right'>&nbsp;{v:.{digits}g}&nbsp;</td>" for v in row) + "</tr>" for row in A
+    )
     return f"<table cellspacing='0' cellpadding='1'>{rows}</table>"
 
 
@@ -261,9 +300,11 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.system = chain()
         self._dirty = True
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each loads a chain into the Simulation page and sets up the estimates to show "
-                               "one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each loads a chain into the Simulation page and sets up the estimates to show "
+            "one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         ch = Form("Chain")
@@ -365,8 +406,12 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tab())
 
-        three_panes(self, column(self.trials, ch, ray, ritz),
-                    stack((self.shape_plot, 3), (self.est_plot, 2), (self.readout, 0)), self.tabs)
+        three_panes(
+            self,
+            column(self.trials, ch, ray, ritz),
+            stack((self.shape_plot, 3), (self.est_plot, 2), (self.readout, 0)),
+            self.tabs,
+        )
         self.apply_theme()
         self.set_system(self.system)
 
@@ -389,11 +434,20 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         t = TRIALS[index]
         system = t.system()
         self.system_requested.emit(system)
-        if (self.system.n != system.n or not np.allclose(self.system.masses, system.masses)
-                or not np.allclose(self.system.stiffness, system.stiffness)):
+        if (
+            self.system.n != system.n
+            or not np.allclose(self.system.masses, system.masses)
+            or not np.allclose(self.system.stiffness, system.stiffness)
+        ):
             self.set_system(system)  # nobody passed it back: show it here alone
-        for box, value in ((self.shape, SHAPES.index(t.shape)), (self.eps, t.eps), (self.iterations, t.iterations),
-                           (self.basis, BASES.index(t.basis)), (self.r, t.shapes), (self.holzer_hz, t.holzer_hz)):
+        for box, value in (
+            (self.shape, SHAPES.index(t.shape)),
+            (self.eps, t.eps),
+            (self.iterations, t.iterations),
+            (self.basis, BASES.index(t.basis)),
+            (self.r, t.shapes),
+            (self.holzer_hz, t.holzer_hz),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -439,8 +493,11 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.f = self.w / TWO_PI
         self.held = bool(np.all(self.w > 1e-9))
         self.chain_info.setText(
-            "Exact: " + ", ".join(f"{f:.4g}" for f in self.f) + " Hz"
-            + ("" if self.held else " (a rigid-body mode at 0 Hz: the chain isn't held to the ground)"))
+            "Exact: "
+            + ", ".join(f"{f:.4g}" for f in self.f)
+            + " Hz"
+            + ("" if self.held else " (a rigid-body mode at 0 Hz: the chain isn't held to the ground)")
+        )
         self._draw_main()
         self._draw_tab()
         self._draw_lagrange()
@@ -489,12 +546,14 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.est_plot.setXRange(lo - pad, hi + pad, padding=0)
         self.est_plot.setYRange(-0.6, 2.8, padding=0)
 
-        parts = [f"Exact f₁ = {f[0]:.4g} Hz.",
-                 f"Rayleigh: {f_ray:.4g} Hz ({self._pct(f_ray)})."]
+        parts = [f"Exact f₁ = {f[0]:.4g} Hz.", f"Rayleigh: {f_ray:.4g} Hz ({self._pct(f_ray)})."]
         if self.held:
             parts.append(f"Dunkerley: {f_dunk:.4g} Hz ({self._pct(f_dunk)}).")
-        parts.append(f"Rayleigh–Ritz with {r} shape{'s' if r > 1 else ''}: " + ", ".join(
-            f"f{j + 1} = {wr[j] / TWO_PI:.4g} ({self._pct(wr[j] / TWO_PI, j)})" for j in range(r)) + ".")
+        parts.append(
+            f"Rayleigh–Ritz with {r} shape{'s' if r > 1 else ''}: "
+            + ", ".join(f"f{j + 1} = {wr[j] / TWO_PI:.4g} ({self._pct(wr[j] / TWO_PI, j)})" for j in range(r))
+            + "."
+        )
         self.readout.setText(" ".join(parts))
 
     def _pct(self, value: float, mode: int = 0) -> str:
@@ -539,8 +598,13 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.err_note.setText(
             f"At ε = {now:.3g}: {fn:.4g} Hz, {self._pct(fn)}. The lowest point of the curve is "
             f"{fs.min():.4g} Hz ({self._pct(float(fs.min()))}), never below the exact {self.f[0]:.4g} Hz."
-            + (f" After {passes} pass{'es' if passes > 1 else ''} of iteration the curve is flatter: each pass "
-               "shrinks mode 2's share." if passes else ""))
+            + (
+                f" After {passes} pass{'es' if passes > 1 else ''} of iteration the curve is flatter: each pass "
+                "shrinks mode 2's share."
+                if passes
+                else ""
+            )
+        )
 
     def _draw_ritz(self) -> None:
         s = self.system
@@ -553,8 +617,13 @@ class EnergyMethodsPage(QtWidgets.QWidget):
             for j in range(n):
                 color = c.mode[j % len(c.mode)]
                 line = pg.InfiniteLine(angle=0, pen=pg.mkPen(color, width=1, style=QtCore.Qt.PenStyle.DotLine))
-                curve = pg.PlotDataItem(pen=pg.mkPen(color, width=2), symbol="o", symbolSize=7,
-                                        symbolBrush=pg.mkBrush(color), symbolPen=None)
+                curve = pg.PlotDataItem(
+                    pen=pg.mkPen(color, width=2),
+                    symbol="o",
+                    symbolSize=7,
+                    symbolBrush=pg.mkBrush(color),
+                    symbolPen=None,
+                )
                 self.ritz_plot.addItem(line)
                 self.ritz_plot.addItem(curve)
                 self.ritz_exact.append(line)
@@ -574,8 +643,10 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.ritz_plot.getAxis("bottom").setTicks([[(int(v), str(int(v))) for v in rs]])
         row = table[r - 1, :r]
         self.ritz_note.setText(
-            f"With r = {r}: " + ", ".join(f"f{j + 1} = {row[j]:.4g} Hz ({self._pct(row[j], j)})" for j in range(r))
-            + ". Each estimate is above its mode and comes down as shapes are added.")
+            f"With r = {r}: "
+            + ", ".join(f"f{j + 1} = {row[j]:.4g} Hz ({self._pct(row[j], j)})" for j in range(r))
+            + ". Each estimate is above its mode and comes down as shapes are added."
+        )
 
     def _draw_holzer(self) -> None:
         s = self.system
@@ -601,28 +672,38 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         rows = holzer(s, TWO_PI * fh)
         body = "".join(
             f"<tr><td>m{i + 1}</td><td align='right'>{r.x:.4g}</td><td align='right'>{r.inertia:.4g}</td>"
-            f"<td align='right'>{r.spring:.4g}</td></tr>" for i, r in enumerate(rows))
+            f"<td align='right'>{r.spring:.4g}</td></tr>"
+            for i, r in enumerate(rows)
+        )
         self.holzer_table.setText(
             f"<p>Holzer's table at {fh:.4g} Hz (x₁ = 1; the ground spring pulls {s.stiffness[0]:.4g} N):</p>"
             "<table cellspacing='0' cellpadding='3'><tr><th>mass</th><th>x</th><th>m ω² x (N)</th>"
             f"<th>passed on (N)</th></tr>{body}</table>"
             f"<p>Left at the free end: {rows[-1].spring:.4g} N. Its sign changes at "
-            + ", ".join(f"{r:.4g}" for r in roots) + " Hz.</p>")
+            + ", ".join(f"{r:.4g}" for r in roots)
+            + " Hz.</p>"
+        )
 
     def _draw_lagrange(self) -> None:
         s = self.system
         terms_T = " + ".join(f"{m:.3g} ẋ{i + 1}²" for i, m in enumerate(s.masses))
-        terms_V = " + ".join(
-            f"{k:.3g} ({'x1' if i == 0 else f'x{i + 1} − x{i}'})²" for i, k in enumerate(s.stiffness))
+        terms_V = " + ".join(f"{k:.3g} ({'x1' if i == 0 else f'x{i + 1} − x{i}'})²" for i, k in enumerate(s.stiffness))
         M, _, K = s.matrices()
         self.lagrange.setHtml(
             "<p>For the chain on the Simulation page:</p>"
             f"<p>T = ½ ({terms_T})</p><p>V = ½ ({terms_V})</p>"
-            "<p>M<sub>ij</sub> = ∂²T/∂ẋ<sub>i</sub>∂ẋ<sub>j</sub> (kg):</p>" + matrix_html(M)
-            + "<p>K<sub>ij</sub> = ∂²V/∂x<sub>i</sub>∂x<sub>j</sub> (N/m):</p>" + matrix_html(K)
+            "<p>M<sub>ij</sub> = ∂²T/∂ẋ<sub>i</sub>∂ẋ<sub>j</sub> (kg):</p>"
+            + matrix_html(M)
+            + "<p>K<sub>ij</sub> = ∂²V/∂x<sub>i</sub>∂x<sub>j</sub> (N/m):</p>"
+            + matrix_html(K)
             + "<p>Each spring adds k to the two diagonal entries of the masses it joins and −k to the two entries "
-              "between them: the assembly the Simulation page's chain uses. Lagrange's equations then give "
-              "Mẍ + Kx = f.</p>"
-            + ("<p>Dunkerley's terms, each mass alone on the massless chain: "
-               + ", ".join(f"m{i + 1} {math.sqrt(v) / TWO_PI:.3g} Hz" for i, v in enumerate(dunkerley_terms(s)))
-               + ".</p>" if self.held else ""))
+            "between them: the assembly the Simulation page's chain uses. Lagrange's equations then give "
+            "Mẍ + Kx = f.</p>"
+            + (
+                "<p>Dunkerley's terms, each mass alone on the massless chain: "
+                + ", ".join(f"m{i + 1} {math.sqrt(v) / TWO_PI:.3g} Hz" for i, v in enumerate(dunkerley_terms(s)))
+                + ".</p>"
+                if self.held
+                else ""
+            )
+        )

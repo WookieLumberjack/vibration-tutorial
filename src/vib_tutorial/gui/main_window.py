@@ -17,29 +17,28 @@ from ..core import (
     ForceKind,
     ForceSettings,
     Simulator,
+    drag_shape,
     element_forces,
     friction_zeta,
     kinetic_energy,
     modal_analysis,
     modal_coordinate_map,
     modal_energies,
-    drag_shape,
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
+from . import frame_stats, links, settle_plots, theming
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
 from .history import History
-from .layouts import FlowLayout, ColumnScroll, group
+from .layouts import ColumnScroll, FlowLayout, group
 from .modes import Method, mode_entries
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
 from .sim_trials import TRIALS as SIM_TRIALS
-from .tab_groups import PageGroups
-from . import links
-from . import frame_stats, settle_plots, theming
 from .style import SYSTEM, colors
+from .tab_groups import PageGroups
 
 if TYPE_CHECKING:
     from .practice import PracticeWindow
@@ -71,93 +70,125 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
     # Plain imports, not importlib, so PyInstaller still finds these modules.
     if name == "sdof_page":
         from .sdof import SdofPage
+
         return SdofPage
     if name == "damping_page":
         from .damping_models import DampingModelsPage
+
         return DampingModelsPage
     if name == "transient_page":
         from .transient import TransientPage
+
         return TransientPage
     if name == "signals_page":
         from .signals import SignalsPage
+
         return SignalsPage
     if name == "isolation_page":
         from .isolation import IsolationPage
+
         return IsolationPage
     if name == "frf_page":
         from .frf_matrix import FrfMatrixPage
+
         return FrfMatrixPage
     if name == "shock_page":
         from .shock import ShockPage
+
         return ShockPage
     if name == "updating_page":
         from .model_updating import ModelUpdatingPage
+
         return ModelUpdatingPage
     if name == "complex_page":
         from .complex_modes import ComplexModesPage
+
         return ComplexModesPage
     if name == "coupling_page":
         from .modal_coupling import ModalCouplingPage
+
         return ModalCouplingPage
     if name == "cms_page":
         from .substructuring import SubstructuringPage
+
         return SubstructuringPage
     if name == "duffing_page":
         from .duffing import DuffingPage
+
         return DuffingPage
     if name == "torsional_page":
         from .torsional import TorsionalPage
+
         return TorsionalPage
     if name == "continuum_page":
         from .continuum import ContinuumPage
+
         return ContinuumPage
     if name == "rotor_page":
         from .rotor import RotorPage
+
         return RotorPage
     if name == "oma_page":
         from .oma import OmaPage
+
         return OmaPage
     if name == "random_page":
         from .random_vibration import RandomVibrationPage
+
         return RandomVibrationPage
     if name == "periodic_page":
         from .periodic import PeriodicPage
+
         return PeriodicPage
     if name == "energy_page":
         from .energy_methods import EnergyMethodsPage
+
         return EnergyMethodsPage
     if name == "integration_page":
         from .integration import IntegrationPage
+
         return IntegrationPage
     if name == "fatigue_page":
         from .fatigue import FatiguePage
+
         return FatiguePage
     if name == "self_excited_page":
         from .self_excited import SelfExcitedPage
+
         return SelfExcitedPage
     if name == "active_control_page":
         from .active_control import ActiveControlPage
+
         return ActiveControlPage
     if name == "pendulum_page":
         from .pendulum import PendulumPage
+
         return PendulumPage
     if name == "beams_page":
         from .beams_plates import BeamsPlatesPage
+
         return BeamsPlatesPage
     if name == "seismic_page":
         from .seismic import SeismicPage
+
         return SeismicPage
     if name == "quarter_car_page":
         from .quarter_car import QuarterCarPage
+
         return QuarterCarPage
     if name == "variability_page":
         from .variability import VariabilityPage
+
         return VariabilityPage
     if name == "diagnostics_page":
         from .diagnostics import DiagnosticsPage
+
         return DiagnosticsPage
     from .modal_test import ModalTestPage
+
     return ModalTestPage
+
+
 MODE_ANIMATION_HZ = 0.5  # visual rate for the animated mode-shape plot
 
 METHOD_TIP = (
@@ -174,8 +205,7 @@ RELEASE_TIP_COMMON = (
     "above (the first row if none is selected), then lets go.</p>"
 )
 RELEASE_TIP = {
-    Method.CLASSICAL: RELEASE_TIP_COMMON
-    + "<p>The masses start at rest in the real (undamped) shape.</p>"
+    Method.CLASSICAL: RELEASE_TIP_COMMON + "<p>The masses start at rest in the real (undamped) shape.</p>"
     "<p>With <b>proportional</b> damping only that mode responds: every mass oscillates "
     "at the mode's damped frequency f_d, keeping the same shape while the motion "
     "decays at the rate set by ζ.</p>"
@@ -198,14 +228,12 @@ COORDS_TIP_COMMON = (
     "ground moves, the modes split the motion relative to it, x − x<sub>g</sub>.</p>"
 )
 COORDS_TIP = {
-    Method.CLASSICAL: COORDS_TIP_COMMON
-    + "<p><b>Classical:</b> q = Φ<sup>T</sup>Mx with the real mode shapes, and "
+    Method.CLASSICAL: COORDS_TIP_COMMON + "<p><b>Classical:</b> q = Φ<sup>T</sup>Mx with the real mode shapes, and "
     "x = Σ φ<sub>r</sub> q<sub>r</sub> exactly. With <b>proportional</b> damping each "
     "q<sub>r</sub> is an independent damped oscillator: release a mode and only its curve "
     "moves. With <b>non-proportional</b> damping the damping couples them, so the other "
     "curves pick up motion too.</p>",
-    Method.STATE_SPACE: COORDS_TIP_COMMON
-    + "<p><b>State-space:</b> η = V<sup>−1</sup>z with the complex eigenvectors "
+    Method.STATE_SPACE: COORDS_TIP_COMMON + "<p><b>State-space:</b> η = V<sup>−1</sup>z with the complex eigenvectors "
     "V = [ψ; λψ], using velocities as well as displacements. A conjugate pair adds "
     "2 Re(ψη) to x, so its curve is 2 Re(η); a real root's curve is η. These decouple "
     "for <i>any</i> damping: release a complex mode and only its curve moves.</p>",
@@ -338,13 +366,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trial.addItem("Pick one…")
         self.trial.addItems([t.name for t in SIM_TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Sets up the chain and the controls to show one idea, and says what to look "
-                              "for. The Theory tab (F1) lists them all.</p>")
+        self.trial.setToolTip(
+            "<p>Sets up the chain and the controls to show one idea, and says what to look "
+            "for. The Theory tab (F1) lists them all.</p>"
+        )
         self.trial.activated.connect(self._on_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel(
             "New here? Press <b>Space</b> to switch the force on, or pick one of these. Then read the "
-            "<i>Theory</i> tab (F1).")
+            "<i>Theory</i> tab (F1)."
+        )
         self.trial_note.setWordWrap(True)
         theming.mute(self.trial_note)
         tv.addWidget(self.trial_note)
@@ -399,7 +430,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.method_combo.addItem(m.value, m)
         self.method_combo.setToolTip(METHOD_TIP)
         # Cut short with "…" when the pane is narrow, rather than set its width (the list shows it all).
-        self.method_combo.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.method_combo.setSizeAdjustPolicy(
+            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
         self.method_combo.setMinimumContentsLength(16)
         method_label = QtWidgets.QLabel("Method:")
         method_label.setToolTip(METHOD_TIP)
@@ -544,8 +577,7 @@ class MainWindow(QtWidgets.QMainWindow):
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F1"), self, self.open_theory_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         for i in range(len(PAGE_GROUPS)):  # Ctrl+1 … Ctrl+6: a group, at the page it last showed
-            QtGui.QShortcut(QtGui.QKeySequence(f"Ctrl+{i + 1}"), self,
-                            lambda i=i: self.pages.groups.setCurrentIndex(i))
+            QtGui.QShortcut(QtGui.QKeySequence(f"Ctrl+{i + 1}"), self, lambda i=i: self.pages.groups.setCurrentIndex(i))
 
         # --- wiring
         self.params.changed.connect(self._on_system_changed)
@@ -724,7 +756,7 @@ class MainWindow(QtWidgets.QMainWindow):
         box.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
         box.exec()
 
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802 (Qt's name)
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         for window in (self.theory_window, self.practice_window):
             if window is not None:
                 window.close()  # it closes with this window
@@ -767,8 +799,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _restyle(self) -> None:
         theming.restyle(self)
-        for w in (self.chain, self.time_plot, self.mode_plot, self.phasor_plot.plot, self.frf_plot,
-                  self.params, self.energy, *self._built.values()):
+        for w in (
+            self.chain,
+            self.time_plot,
+            self.mode_plot,
+            self.phasor_plot.plot,
+            self.frf_plot,
+            self.params,
+            self.energy,
+            *self._built.values(),
+        ):
             w.apply_theme()
         for window in (self.theory_window, self.practice_window):
             if window is not None:
@@ -818,8 +858,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if t.kind is not None:
                 settings = replace(settings, kind=t.kind)
             if t.sweep is not None:
-                settings = replace(settings, sweep_start_hz=t.sweep[0], sweep_end_hz=t.sweep[1],
-                                   sweep_time=t.sweep[2])
+                settings = replace(settings, sweep_start_hz=t.sweep[0], sweep_end_hz=t.sweep[1], sweep_time=t.sweep[2])
             if t.base is not None:
                 settings = replace(settings, base=True, base_amplitude=t.base[0] * 1e-3, freq_hz=t.base[1])
             self.force_panel.load(settings)

@@ -89,11 +89,13 @@ def test_the_hinge_is_condensed_exactly():
     K = np.zeros((n, n))
     for e, length in enumerate(np.diff(z)):
         ei = eps / c if abs(0.5 * (z[e] + z[e + 1]) - zc) < eps else s.ei
-        K[2 * e:2 * e + 4, 2 * e:2 * e + 4] += beam_stiffness(ei, length)
+        K[2 * e : 2 * e + 4, 2 * e : 2 * e + 4] += beam_stiffness(ei, length)
     node = [int(np.argmin(abs(z - x))) for x in (0.0, s.a, L)]
     kept = [2 * node[0], 2 * node[1], 2 * node[1] + 1, 2 * node[2]]
     inner = [i for i in range(n) if i not in kept]
-    Kc = K[np.ix_(kept, kept)] - K[np.ix_(kept, inner)] @ np.linalg.solve(K[np.ix_(inner, inner)], K[np.ix_(inner, kept)])
+    Kc = K[np.ix_(kept, kept)] - K[np.ix_(kept, inner)] @ np.linalg.solve(
+        K[np.ix_(inner, inner)], K[np.ix_(inner, kept)]
+    )
     ix, iy = s.plane_dofs
     K0 = s.stiffness_at(0.0, 0.0)  # mouth along +x
     bearings = np.diag([s.bearing_a.kx, 0.0, 0.0, s.bearing_b.kx])
@@ -102,8 +104,9 @@ def test_the_hinge_is_condensed_exactly():
     cy = s.with_(crack=Crack(position=0.4, compliance=(s.crack_compliances[1],) * 2, breathing=False))
     np.testing.assert_allclose(K0[np.ix_(iy, iy)], cy.stiffness(0.0)[np.ix_(iy, iy)], rtol=1e-12, atol=1e-6)
     # The massless shaft's crack does not depend on the mesh.
-    np.testing.assert_allclose(s.with_(elements=2).stiffness_at(0.0, 0.3), s.with_(elements=20).stiffness_at(0.0, 0.3),
-                               rtol=1e-9, atol=1e-6)
+    np.testing.assert_allclose(
+        s.with_(elements=2).stiffness_at(0.0, 0.3), s.with_(elements=20).stiffness_at(0.0, 0.3), rtol=1e-9, atol=1e-6
+    )
 
 
 def test_breathing():
@@ -140,7 +143,9 @@ def test_a_vanishing_crack_is_the_round_shaft():
     R0, RV = steady_harmonics(r, w)
     np.testing.assert_allclose(Q0, R0, atol=1e-12)
     np.testing.assert_allclose(V, RV, atol=1e-12)
-    np.testing.assert_allclose(whirl_modes(s, 1000 / RPM).freq_hz[:4], whirl_modes(r, 1000 / RPM).freq_hz[:4], rtol=1e-8)
+    np.testing.assert_allclose(
+        whirl_modes(s, 1000 / RPM).freq_hz[:4], whirl_modes(r, 1000 / RPM).freq_hz[:4], rtol=1e-8
+    )
 
 
 def test_hill_is_converged_and_matches_the_rotating_frame(monkeypatch):
@@ -161,15 +166,20 @@ def test_hill_is_converged_and_matches_the_rotating_frame(monkeypatch):
 
 @pytest.mark.parametrize("supports", [Bearing(), ANISO])
 def test_harmonic_balance_matches_the_time_simulation(supports):
-    s = RotorSystem(crack=Crack(position=0.4, depth=0.5, angle=0.3), gravity=9.81, unbalance=2e-6,
-                    bearing_a=supports, bearing_b=supports)
+    s = RotorSystem(
+        crack=Crack(position=0.4, depth=0.5, angle=0.3),
+        gravity=9.81,
+        unbalance=2e-6,
+        bearing_a=supports,
+        bearing_b=supports,
+    )
     for rpm in (520.0, 780.0):
         w = rpm / RPM
         Q0, V = steady_harmonics(s, [w])
         sim = RotorSimulator(s)
         sim.omega = sim.target = w
         sim.state[:] = 0.0
-        sim.state[:s.n_dof] = Q0[0].real
+        sim.state[: s.n_dof] = Q0[0].real
         run(sim, 4.0)
         r = run(sim, 0.5)
         ph = r.phase
@@ -187,7 +197,7 @@ def test_tracking_takes_the_3x_vector():
     sim = RotorSimulator(s)
     sim.omega = sim.target = w
     sim.state[:] = 0.0
-    sim.state[:s.n_dof] = s.static_deflection(w)
+    sim.state[: s.n_dof] = s.static_deflection(w)
     run(sim, 4.0)
     r = run(sim, 0.6)
     sweep = TrackedSweep(rate=0.0, up=True)
@@ -221,7 +231,10 @@ def test_cracked_preset_numbers():
     held = s.with_(crack=Crack(position=0.5, depth=0.4, breathing=False))
     assert orbit_peak(held, 2, w) == (75.3, 775) and orbit_peak(held, 3, w)[0] == 0.0
     assert [orbit_peak(s.with_(crack=Crack(position=0.5, depth=d)), 2, w)[0] for d in (0.2, 0.3, 0.5)] == [
-        9.5, 21.8, 51.5]
+        9.5,
+        21.8,
+        51.5,
+    ]
     # The asymmetric shaft's stiffness has no 3X in it, so its weight drives none.
     two_pole = next(p for p in rotor_presets() if p.name.startswith("Two-pole")).system
     assert np.abs(steady_harmonics(two_pole, w[::100])[1][:, 2]).max() == 0.0

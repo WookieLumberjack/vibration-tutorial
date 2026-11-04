@@ -75,32 +75,46 @@ TRIALS = (
         "period wrong: central difference 1.7 % short, Newmark's average acceleration 3.2 % long, linear "
         "acceleration 1.6 % long, RK4 0.11 % long. Over ten periods those errors pile up as phase: the "
         "average-acceleration solution is a third of a cycle behind. RK4's amplitude also shrinks, by "
-        "0.065 % damping that nobody put in."),
+        "0.065 % damping that nobody put in.",
+    ),
     IntegrationTrial(
         "Central difference's limit: Δt < T/π",
         "Central difference is explicit, and stable only for ωΔt ≤ 2, Δt ≤ T/π. At 3.0 steps a period "
         "(ωΔt = 2.09) its error doubles every few steps and the run stops; at 3.2 (ωΔt = 1.96) it is stable "
         "but its period is 29 % short. Newmark's average acceleration runs at any step, its period 30 % long.",
-        per_period=3.0, schemes=(Scheme.CENTRAL, Scheme.AVERAGE), tab=TAB_RADIUS),
+        per_period=3.0,
+        schemes=(Scheme.CENTRAL, Scheme.AVERAGE),
+        tab=TAB_RADIUS,
+    ),
     IntegrationTrial(
         "One step a period",
         "Δt = T. Average acceleration is unconditionally stable: the amplitude holds at 10 mm, but the motion it "
         "computes has a period 2.5 times too long, nothing like the oscillator's. Linear acceleration needs "
         "ωΔt ≤ 2√3 (Δt ≤ 0.55 T) and blows up. Stable is not the same as accurate.",
-        per_period=1.0, periods=10.0, schemes=(Scheme.AVERAGE, Scheme.LINEAR), tab=TAB_RADIUS),
+        per_period=1.0,
+        periods=10.0,
+        schemes=(Scheme.AVERAGE, Scheme.LINEAR),
+        tab=TAB_RADIUS,
+    ),
     IntegrationTrial(
         "RK4's numerical damping",
         "Five steps a period. RK4 is the most accurate here in period (1.1 % long), but it shrinks the "
         "amplitude by 2.2 % a step: numerical damping of ζ = 1.8 %, so after ten periods only 33 % is left. "
         "Average acceleration keeps the amplitude exactly, its period 12 % long.",
-        per_period=5.0, schemes=(Scheme.AVERAGE, Scheme.RK4), tab=TAB_DAMPING),
+        per_period=5.0,
+        schemes=(Scheme.AVERAGE, Scheme.RK4),
+        tab=TAB_DAMPING,
+    ),
     IntegrationTrial(
         "Explicit Euler grows",
         "Fifty steps a period, which would be plenty for any other scheme. Explicit Euler steps along the "
         "tangent, which always points outwards from the circle the motion should go round: the amplitude grows "
         "by 0.8 % a step, 48 % a period, 50 times over ten periods. Its spectral radius is above 1 at every "
         "Δt for an undamped oscillator.",
-        per_period=50.0, schemes=(Scheme.EULER, Scheme.CENTRAL), tab=TAB_RADIUS),
+        per_period=50.0,
+        schemes=(Scheme.EULER, Scheme.CENTRAL),
+        tab=TAB_RADIUS,
+    ),
     IntegrationTrial(
         "A stiff mode breaks the explicit schemes",
         "A 0.1 kg mass on a stiff spring hangs from the first: a 1049 Hz mode beside the 3.03 Hz one, as a fine "
@@ -108,16 +122,25 @@ TRIALS = (
         "seventh of a step per period. Central difference and RK4 blow up within 20 ms, although nothing that "
         "matters happens up there. Average acceleration doesn't: what limits an explicit step is the fastest mode "
         "in the model, not the one you want.",
-        per_period=50.0, periods=5.0, stiff_hz=1000.0, schemes=(Scheme.CENTRAL, Scheme.RK4, Scheme.AVERAGE),
-        tab=TAB_RADIUS),
+        per_period=50.0,
+        periods=5.0,
+        stiff_hz=1000.0,
+        schemes=(Scheme.CENTRAL, Scheme.RK4, Scheme.AVERAGE),
+        tab=TAB_RADIUS,
+    ),
     IntegrationTrial(
         "HHT-α damps what it can't resolve",
         "The same stiff mode. It is in the closed form too (let go from rest, m1 sets it ringing), but no step "
         "this long can follow it, so average acceleration turns it into jagged noise that never dies (ρ = 1 at "
         "any step). HHT-α with α = −0.3 has ρ = 0.57 a step at ωΔt = 43: the noise is gone within a few steps, "
         "and the 3.03 Hz mode loses only ζ = 0.004 %. That is what finite-element codes use it for.",
-        per_period=50.0, periods=5.0, stiff_hz=1000.0, schemes=(Scheme.AVERAGE, Scheme.HHT), alpha=-0.3,
-        tab=TAB_DAMPING),
+        per_period=50.0,
+        periods=5.0,
+        stiff_hz=1000.0,
+        schemes=(Scheme.AVERAGE, Scheme.HHT),
+        alpha=-0.3,
+        tab=TAB_DAMPING,
+    ),
     IntegrationTrial(
         "The exact update and a sine force",
         "A 1 N sine at 2 Hz from rest, ten steps a period. The first-order-hold update every other page uses is "
@@ -125,7 +148,11 @@ TRIALS = (
         "samples: 1.3 % of the swing here. RK4's error is 3 %; central difference's and average "
         "acceleration's, 41 and 61 %: the start sets the undamped mass ringing at f<sub>n</sub> as well, and their "
         "period errors put that ringing out of phase.",
-        x0=0.0, force=1.0, schemes=(Scheme.FOH, Scheme.CENTRAL, Scheme.AVERAGE, Scheme.RK4), tab=TAB_PERIOD),
+        x0=0.0,
+        force=1.0,
+        schemes=(Scheme.FOH, Scheme.CENTRAL, Scheme.AVERAGE, Scheme.RK4),
+        tab=TAB_PERIOD,
+    ),
 )
 
 TIPS = {
@@ -133,25 +160,31 @@ TIPS = {
     "stiffness": "<p>The spring k.</p>",
     "damping": "<p>The damper c.</p>",
     "stiff": "<p>A second mass, a tenth of the first, hung from it on a spring stiff enough that alone it would "
-             "vibrate at this frequency: a mode far above the first, as a fine mesh has. 0: none.</p>",
+    "vibrate at this frequency: a mode far above the first, as a fine mesh has. 0: none.</p>",
     "per_period": "<p>The time step, as steps per period of the first mode: Δt = T₁ / this.</p>",
     "periods": "<p>How long to run, in periods of the first mode.</p>",
     "x0": "<p>The first mass starts here, at rest.</p>",
     "force": "<p>A sine force F sin 2πft on the first mass.</p>",
     "freq": "<p>Its frequency.</p>",
     "alpha": "<p>HHT-α's α, from −1/3 to 0 (0 is the average acceleration scheme): the more negative, the more "
-             "it damps motion it can't resolve.</p>",
+    "it damps motion it can't resolve.</p>",
     "schemes": "<p>Which schemes to run.</p>",
 }
-TIME_TIP = ("<p>The first mass's displacement by each scheme (dots at the steps), against the closed form "
-            "(dashed). A scheme that blows up stops.</p>")
+TIME_TIP = (
+    "<p>The first mass's displacement by each scheme (dots at the steps), against the closed form "
+    "(dashed). A scheme that blows up stops.</p>"
+)
 ERROR_TIP = "<p>Each scheme's error against the closed form.</p>"
-RADIUS_TIP = ("<p>The spectral radius ρ of each scheme's one-step map of a free, undamped vibration against "
-              "Δt/T: above 1 the motion grows every step (unstable); below 1 the scheme damps it. The dotted lines "
-              "are the step set, for each mode.</p>")
+RADIUS_TIP = (
+    "<p>The spectral radius ρ of each scheme's one-step map of a free, undamped vibration against "
+    "Δt/T: above 1 the motion grows every step (unstable); below 1 the scheme damps it. The dotted lines "
+    "are the step set, for each mode.</p>"
+)
 PERIOD_TIP = "<p>The period of the motion each scheme computes, against the true one, against Δt/T.</p>"
-DAMPING_TIP = ("<p>The damping ratio of the motion each scheme computes for an undamped oscillator (numerical "
-               "damping), against Δt/T. Negative: it grows.</p>")
+DAMPING_TIP = (
+    "<p>The damping ratio of the motion each scheme computes for an undamped oscillator (numerical "
+    "damping), against Δt/T. Negative: it grows.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -209,20 +242,30 @@ small models and why big nonlinear codes still use Newmark or central difference
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sdof_page", "equation", "The equation of motion"),
-    ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
-    ("continuum_page", "dispersion", "A mesh's modes against the continuum's"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "One step of a scheme on a free oscillator is a matrix: its eigenvalues give stability (ρ ≤ 1), period error "
-    "and numerical damping, all functions of ωΔt.",
-    "Explicit schemes are conditionally stable, and the limit is set by the fastest mode in the model: "
-    "ωΔt ≤ 2 for central difference.",
-    "Newmark's average acceleration is stable at any step but lengthens the period; HHT-α adds damping that "
-    "grows with frequency, removing unresolved modes.",
-    "Stable is not accurate: resolve the modes you care about with ten or more steps a period.",
-    "For a linear model the FOH update is exact at any step, apart from the force between samples.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sdof_page", "equation", "The equation of motion"),
+            ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
+            ("continuum_page", "dispersion", "A mesh's modes against the continuum's"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "One step of a scheme on a free oscillator is a matrix: its eigenvalues give stability (ρ ≤ 1), period error "
+            "and numerical damping, all functions of ωΔt.",
+            "Explicit schemes are conditionally stable, and the limit is set by the fastest mode in the model: "
+            "ωΔt ≤ 2 for central difference.",
+            "Newmark's average acceleration is stable at any step but lengthens the period; HHT-α adds damping that "
+            "grows with frequency, removing unresolved modes.",
+            "Stable is not accurate: resolve the modes you care about with ten or more steps a period.",
+            "For a linear model the FOH update is exact at any step, apart from the force between samples.",
+        ),
+    )
+)
 
 
 class IntegrationPage(QtWidgets.QWidget):
@@ -236,9 +279,10 @@ class IntegrationPage(QtWidgets.QWidget):
         self.load = Load()
         self.T = self.h = 1.0  # set from the inputs below
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the oscillator, the step and the schemes to show one idea from "
-                               "the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each sets up the oscillator, the step and the schemes to show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         osc = Form("Oscillator")
@@ -268,8 +312,22 @@ class IntegrationPage(QtWidgets.QWidget):
         self.alpha = pick.number("HHT α:", -1 / 3, 0.0, -0.1, 3, "", TIPS["alpha"])
         self.alpha.setSingleStep(0.05)
 
-        connect_all((self.mass, self.stiffness, self.damping, self.stiff, self.per_period, self.periods, self.x0,
-                     self.force, self.freq, self.alpha, *self.checks.values()), self._on_inputs)
+        connect_all(
+            (
+                self.mass,
+                self.stiffness,
+                self.damping,
+                self.stiff,
+                self.per_period,
+                self.periods,
+                self.x0,
+                self.force,
+                self.freq,
+                self.alpha,
+                *self.checks.values(),
+            ),
+            self._on_inputs,
+        )
 
         # --- centre
         self.time_plot = plot("Displacement x₁", "m", "Time", "s", height=150)
@@ -321,17 +379,30 @@ class IntegrationPage(QtWidgets.QWidget):
         rv.addWidget(self.tabs, 1)
         rv.addWidget(self.curve_note)
 
-        three_panes(self, column(self.trials, osc, run, pick),
-                    stack((self.time_plot, 3), (self.err_plot, 2), (self.readout, 0)), right)
+        three_panes(
+            self,
+            column(self.trials, osc, run, pick),
+            stack((self.time_plot, 3), (self.err_plot, 2), (self.readout, 0)),
+            right,
+        )
         self.load_trial(0, note=False)
         self.apply_theme()
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int, note: bool = True) -> None:
         t = TRIALS[index]
-        for box, value in ((self.mass, 1.0), (self.stiffness, 400.0), (self.damping, t.damping),
-                           (self.stiff, t.stiff_hz), (self.per_period, t.per_period), (self.periods, t.periods),
-                           (self.x0, t.x0), (self.force, t.force), (self.freq, t.freq_hz), (self.alpha, t.alpha)):
+        for box, value in (
+            (self.mass, 1.0),
+            (self.stiffness, 400.0),
+            (self.damping, t.damping),
+            (self.stiff, t.stiff_hz),
+            (self.per_period, t.per_period),
+            (self.periods, t.periods),
+            (self.x0, t.x0),
+            (self.force, t.force),
+            (self.freq, t.freq_hz),
+            (self.alpha, t.alpha),
+        ):
             set_quietly(box, value)
         for s, box in self.checks.items():
             set_quietly(box, s in t.schemes)
@@ -348,10 +419,15 @@ class IntegrationPage(QtWidgets.QWidget):
         self.h = self.T / self.per_period.value()
         self.osc_info.setText(
             "Modes: " + ", ".join(f"{v:.4g} Hz" for v in f) + f"; T₁ = {fmt(self.T, 's')}, ζ = "
-            f"{self.model.damping / (2 * math.sqrt(self.model.stiffness * self.model.mass)):.3g}.")
+            f"{self.model.damping / (2 * math.sqrt(self.model.stiffness * self.model.mass)):.3g}."
+        )
         self.step_info.setText(
-            f"Δt = {fmt(self.h, 's')}: ωΔt = " + ", ".join(f"{TWO_PI * v * self.h:.3g}" for v in f)
-            + " (mode by mode); Δt/T = " + ", ".join(f"{v * self.h:.3g}" for v in f) + ".")
+            f"Δt = {fmt(self.h, 's')}: ωΔt = "
+            + ", ".join(f"{TWO_PI * v * self.h:.3g}" for v in f)
+            + " (mode by mode); Δt/T = "
+            + ", ".join(f"{v * self.h:.3g}" for v in f)
+            + "."
+        )
         self.redraw()
 
     # ------------------------------------------------------------- drawing
@@ -415,10 +491,14 @@ class IntegrationPage(QtWidgets.QWidget):
                 gone = t[np.argmin(ok)]
                 lines.append(f"{s.value}: <b>blew up</b> by t = {fmt(float(gone), 's')}")
         chosen = self._chosen()
-        self._legend(self.time_plot, [(self.exact_item, "closed form")]
-                     + [(self.run_items[s], s.value) for s in chosen])
-        errors = [item.yData for s, item in self.err_items.items() if s in chosen and item.yData is not None
-                  and item.yData.size]
+        self._legend(
+            self.time_plot, [(self.exact_item, "closed form")] + [(self.run_items[s], s.value) for s in chosen]
+        )
+        errors = [
+            item.yData
+            for s, item in self.err_items.items()
+            if s in chosen and item.yData is not None and item.yData.size
+        ]
         if errors:
             top = max(float(np.max(e)) for e in errors)
             floor = max(min(float(np.min(e)) for e in errors), 1e-7 * swing)
@@ -427,8 +507,9 @@ class IntegrationPage(QtWidgets.QWidget):
         lo, hi = float(np.min(reference)), float(np.max(reference))
         pad = 0.25 * (hi - lo or abs(hi) or 1.0)
         self.time_plot.setYRange(lo - pad, hi + pad, padding=0)
-        self.readout.setText(f"{steps} steps of {fmt(h, 's')}. " + "; ".join(lines) + "." if lines
-                             else "Pick a scheme on the left.")
+        self.readout.setText(
+            f"{steps} steps of {fmt(h, 's')}. " + "; ".join(lines) + "." if lines else "Pick a scheme on the left."
+        )
 
     def _draw_curves(self) -> None:
         i = self.tabs.currentIndex()
@@ -437,9 +518,11 @@ class IntegrationPage(QtWidgets.QWidget):
         zeta = 0.0
         alpha = self.alpha.value()
         O = TWO_PI * RATIOS
-        plot_, items, marks = ((self.radius_plot, self.radius_items, self.radius_marks),
-                               (self.period_plot, self.period_items, self.period_marks),
-                               (self.damp_plot, self.damp_items, self.damp_marks))[i]
+        plot_, items, marks = (
+            (self.radius_plot, self.radius_items, self.radius_marks),
+            (self.period_plot, self.period_items, self.period_marks),
+            (self.damp_plot, self.damp_items, self.damp_marks),
+        )[i]
         for s in SCHEMES:
             if s not in self._chosen():
                 items[s].setData([], [])
@@ -461,8 +544,8 @@ class IntegrationPage(QtWidgets.QWidget):
             plot_.setYRange(-50.0, 100.0, padding=0)
         else:
             plot_.setYRange(-10.0, 20.0, padding=0)
-        limits = [f"{s.value} ωΔt ≤ {STABLE_LIMIT[s]:.3g}" for s in self._chosen()
-                  if 0 < STABLE_LIMIT[s] < math.inf]
+        limits = [f"{s.value} ωΔt ≤ {STABLE_LIMIT[s]:.3g}" for s in self._chosen() if 0 < STABLE_LIMIT[s] < math.inf]
         self.curve_note.setText(
             "Undamped oscillator; dotted: this Δt for each mode. "
-            + ("Stable while " + ", ".join(limits) + "." if limits else ""))
+            + ("Stable while " + ", ".join(limits) + "." if limits else "")
+        )

@@ -70,13 +70,17 @@ class Source:
         """The signal at the instants t, without the noise (which only exists at the samples)."""
         t = np.asarray(t, dtype=float)
         if self.kind is Kind.TONES:
-            return (self.a1 * self.gain(self.f1, fs, filtered) * np.sin(TWO_PI * self.f1 * t)
-                    + self.a2 * self.gain(self.f2, fs, filtered) * np.sin(TWO_PI * self.f2 * t))
+            return self.a1 * self.gain(self.f1, fs, filtered) * np.sin(TWO_PI * self.f1 * t) + self.a2 * self.gain(
+                self.f2, fs, filtered
+            ) * np.sin(TWO_PI * self.f2 * t)
         if self.kind is Kind.CHIRP:
             rate = (self.f2 - self.f1) / self.sweep
             tau = np.mod(t, self.sweep)  # it sweeps again and again
-            return self.a1 * self.gain(self.f1 + rate * tau, fs, filtered) * np.sin(
-                TWO_PI * (self.f1 * tau + 0.5 * rate * tau * tau))
+            return (
+                self.a1
+                * self.gain(self.f1 + rate * tau, fs, filtered)
+                * np.sin(TWO_PI * (self.f1 * tau + 0.5 * rate * tau * tau))
+            )
         wn = TWO_PI * self.f1
         z = min(self.zeta, 0.999)
         wd = wn * math.sqrt(1.0 - z * z)
@@ -161,19 +165,19 @@ class Spectrum:
 
 def blocks_needed(block: int, averages: int, overlap: float) -> int:
     """Samples for `averages` blocks of `block` samples overlapping by `overlap` (0 … <1)."""
-    step = max(1, int(round(block * (1.0 - overlap))))
+    step = max(1, round(block * (1.0 - overlap)))
     return block + (averages - 1) * step
 
 
 def spectrum(x: np.ndarray, fs: float, block: int, kind: Window, overlap: float = 0.0) -> Spectrum:
     """Averaged spectra of x over blocks of `block` samples (Welch): the peak amplitude and the PSD."""
     w = window(kind, block)
-    step = max(1, int(round(block * (1.0 - overlap))))
+    step = max(1, round(block * (1.0 - overlap)))
     starts = range(0, x.size - block + 1, step)
     power = np.zeros(block // 2 + 1)
     count = 0
     for s in starts:
-        X = np.fft.rfft(w * x[s:s + block])
+        X = np.fft.rfft(w * x[s : s + block])
         power += np.abs(X) ** 2
         count += 1
     if count == 0:
@@ -188,13 +192,14 @@ def spectrum(x: np.ndarray, fs: float, block: int, kind: Window, overlap: float 
     return Spectrum(np.fft.rfftfreq(block, 1.0 / fs), amplitude, psd, count, fs / block)
 
 
-def spectrogram(x: np.ndarray, fs: float, block: int, kind: Window,
-                overlap: float = 0.75) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def spectrogram(
+    x: np.ndarray, fs: float, block: int, kind: Window, overlap: float = 0.75
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """(times of the blocks' middles, frequencies, peak amplitude in dB) of each block: a short-time spectrum."""
     w = window(kind, block)
-    step = max(1, int(round(block * (1.0 - overlap))))
+    step = max(1, round(block * (1.0 - overlap)))
     starts = np.arange(0, x.size - block + 1, step)
-    frames = np.stack([w * x[s:s + block] for s in starts])
+    frames = np.stack([w * x[s : s + block] for s in starts])
     A = 2.0 * np.abs(np.fft.rfft(frames, axis=1)) / np.sum(w)
     with np.errstate(divide="ignore"):
         level = 20 * np.log10(np.maximum(A, 1e-12))
@@ -203,7 +208,7 @@ def spectrogram(x: np.ndarray, fs: float, block: int, kind: Window,
 
 def nearest_line_reading(spec: Spectrum, freq: float) -> tuple[float, float]:
     """(the line nearest an apparent frequency, the amplitude the largest of it and its neighbours reads)."""
-    i = int(round(freq / spec.df))
+    i = round(freq / spec.df)
     i = min(max(i, 0), spec.freqs.size - 1)
     lo, hi = max(i - 1, 0), min(i + 2, spec.freqs.size)
     j = lo + int(np.argmax(spec.amplitude[lo:hi]))

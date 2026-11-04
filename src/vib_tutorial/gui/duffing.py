@@ -60,23 +60,23 @@ TIPS = {
     "stiffness": "<p>The spring's linear stiffness k: its stiffness at small amplitude.</p>",
     "damping": "<p>The viscous damping c.</p>",
     "cubic": "<p>The spring's cubic term k<sub>3</sub>: its force is k x + k<sub>3</sub> x³. Positive hardens "
-             "the spring (a large swing is stiffer, so faster), negative softens it, down to nothing at the "
-             "escape amplitude √(k / −k<sub>3</sub>), where the potential has a hilltop.</p>",
+    "the spring (a large swing is stiffer, so faster), negative softens it, down to nothing at the "
+    "escape amplitude √(k / −k<sub>3</sub>), where the potential has a hilltop.</p>",
     "force": "<p>The drive's amplitude F: the force is F cos φ, with φ advancing at the drive's frequency.</p>",
     "pump": "<p>The pump μ: the linear stiffness pulses as k (1 + μ cos φ), at the drive's frequency "
-            "(parametric excitation, the Mathieu equation). Near twice the natural frequency rest turns "
-            "unstable and the mass swings at half the pump's frequency.</p>",
+    "(parametric excitation, the Mathieu equation). Near twice the natural frequency rest turns "
+    "unstable and the mass swings at half the pump's frequency.</p>",
     "noise": "<p>A small random force, a fresh value each step: something for a state the pump makes "
-             "unstable to grow from. Without it a mass at rest stays at rest.</p>",
+    "unstable to grow from. Without it a mass at rest stays at rest.</p>",
     "freq": "<p>The drive's frequency. Held, it stays here; sweeping, this follows the sweep. Typing a frequency "
-            "while sweeping stops the sweep there.</p>",
+    "while sweeping stops the sweep there.</p>",
     "range": "<p>The sweep's lower and upper frequencies. A sweep up runs from the first to the second.</p>",
     "time": "<p>How long each leg of a sweep takes, in simulated time. Slower sweeps stay nearer the steady "
-            "response and leave a branch nearer its fold.</p>",
+    "response and leave a branch nearer its fold.</p>",
     "branch": "<p>Put the mass on a steady response of harmonic balance at the held frequency, at the drive's "
-              "phase now: the drive's first harmonic, or with no drive force the pump's half-harmonic swing "
-              "(the lower then is rest). Between the folds there are three: the lower and upper are stable, "
-              "the middle one is not.</p>",
+    "phase now: the drive's first harmonic, or with no drive force the pump's half-harmonic swing "
+    "(the lower then is rest). Between the folds there are three: the lower and upper are stable, "
+    "the middle one is not.</p>",
 }
 RESPONSE_TIP = (
     "<p>The amplitude of the displacement's first harmonic against the drive's frequency. Solid: harmonic "
@@ -85,18 +85,21 @@ RESPONSE_TIP = (
     "the jumps from the folds, where a branch ends. The dots are each drive cycle's measured first harmonic, "
     "coloured by the sweep's direction.</p><p>Pumped, the second colour is the half harmonic (Ω/2) the pump "
     "drives, rest included along the axis (dashed inside the tongue, where it is unstable), and the triangles "
-    "its measured amplitude.</p>")
+    "its measured amplitude.</p>"
+)
 CHART_TIP = (
     "<p>The Ince–Strutt chart: how fast the pumped linear spring's swing grows (coloured) or dies away "
     "(blank), against the pump's frequency over the natural frequency and its depth μ, at this damping. "
     "Rest is unstable inside the tongues, which reach down toward Ω = 2ω<sub>n</sub>/n: half the pump's "
     "frequency, then the pump's own, then a third... Damping lifts their tips off the axis. The dashed line "
-    "is harmonic balance's first tongue; the circle is the page's pump. Click to pump there.</p>")
+    "is harmonic balance's first tongue; the circle is the page's pump. Click to pump there.</p>"
+)
 PHASE_TIP = (
     "<p>The phase plane: velocity against displacement over the last few drive cycles. The dots are the "
     "Poincaré section, the state once per drive cycle (where the force peaks): one dot for a steady response "
     "at the drive's frequency, a few for a subharmonic, a cloud that never settles for chaos. Only while the "
-    "frequency is held: a sweep's would be a different section each cycle.</p>")
+    "frequency is held: a sweep's would be a different section each cycle.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -173,20 +176,25 @@ before (over a pair, a swing at Ω/2 doesn't leak into the first harmonic). The 
 Runge–Kutta step of every cell at once.</p>
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "start-with-one-mass", "Start with one mass"),
-    ("sim_page", "friction", "Friction"),
-)).replace("<!--TAKEAWAYS-->", takeaways(
-    "A nonlinear spring's resonance leans along its backbone, the frequency of a free swing at each "
-    "amplitude: right for a hardening spring, left for a softening one.",
-    "Where the curve folds over there are three steady states, the middle one unstable: sweeps jump at the "
-    "folds, and the two directions disagree.",
-    "Harmonic balance (one harmonic) predicts the curve well, but misses super- and subharmonic resonances "
-    "and chaos.",
-    "A spring pumped near twice its natural frequency is unstable at rest; its swing grows at half the pump's"
-    " frequency until the nonlinearity detunes it.",
-))
-
+NOTES_HTML = NOTES_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("sim_page", "start-with-one-mass", "Start with one mass"),
+        ("sim_page", "friction", "Friction"),
+    ),
+).replace(
+    "<!--TAKEAWAYS-->",
+    takeaways(
+        "A nonlinear spring's resonance leans along its backbone, the frequency of a free swing at each "
+        "amplitude: right for a hardening spring, left for a softening one.",
+        "Where the curve folds over there are three steady states, the middle one unstable: sweeps jump at the "
+        "folds, and the two directions disagree.",
+        "Harmonic balance (one harmonic) predicts the curve well, but misses super- and subharmonic resonances "
+        "and chaos.",
+        "A spring pumped near twice its natural frequency is unstable at rest; its swing grows at half the pump's"
+        " frequency until the nonlinearity detunes it.",
+    ),
+)
 
 
 def fmt_length(a: float) -> str:
@@ -212,15 +220,15 @@ class _Trace:
             t, x, v, k = t[-CAPACITY:], x[-CAPACITY:], v[-CAPACITY:], CAPACITY
         if self.n + k > self.data.shape[1]:
             keep = CAPACITY - k
-            self.data[:, :keep] = self.data[:, self.n - keep:self.n]
+            self.data[:, :keep] = self.data[:, self.n - keep : self.n]
             self.n = keep
-        self.data[:, self.n:self.n + k] = (t, x, v)
+        self.data[:, self.n : self.n + k] = (t, x, v)
         self.n += k
 
     def since(self, t0: float) -> np.ndarray:
         """(3, n) of the samples from time t0 on."""
-        t = self.data[0, :self.n]
-        return self.data[:, int(np.searchsorted(t, t0)):self.n]
+        t = self.data[0, : self.n]
+        return self.data[:, int(np.searchsorted(t, t0)) : self.n]
 
 
 def min_max(t: np.ndarray, y: np.ndarray, buckets: int) -> tuple[np.ndarray, np.ndarray]:
@@ -281,10 +289,15 @@ class DuffingPage(QtWidgets.QWidget):
         self.pump = spin(0.0, 2.0, 0.0, 3)
         self.pump.setSingleStep(0.05)
         self.noise = spin(0.0, 100.0, 0.0, 4, " N")
-        for text, box, key in (("Mass m:", self.mass, "mass"), ("Stiffness k:", self.stiffness, "stiffness"),
-                               ("Damping c:", self.damping, "damping"), ("Cubic k₃:", self.cubic, "cubic"),
-                               ("Drive F:", self.force, "force"), ("Pump μ:", self.pump, "pump"),
-                               ("Noise (rms):", self.noise, "noise")):
+        for text, box, key in (
+            ("Mass m:", self.mass, "mass"),
+            ("Stiffness k:", self.stiffness, "stiffness"),
+            ("Damping c:", self.damping, "damping"),
+            ("Cubic k₃:", self.cubic, "cubic"),
+            ("Drive F:", self.force, "force"),
+            ("Pump μ:", self.pump, "pump"),
+            ("Noise (rms):", self.noise, "noise"),
+        ):
             box.setToolTip(TIPS[key])
             box.valueChanged.connect(self._on_params)
             label = QtWidgets.QLabel(text)
@@ -301,8 +314,12 @@ class DuffingPage(QtWidgets.QWidget):
         self.start_hz = spin(0.0, 1000.0, 2.0, 3, " Hz")
         self.end_hz = spin(0.0, 1000.0, 6.0, 3, " Hz")
         self.sweep_time = spin(1.0, 1e5, 120.0, 0, " s")
-        for text, box, key in (("Frequency:", self.freq, "freq"), ("Sweep from:", self.start_hz, "range"),
-                               ("to:", self.end_hz, "range"), ("Each leg takes:", self.sweep_time, "time")):
+        for text, box, key in (
+            ("Frequency:", self.freq, "freq"),
+            ("Sweep from:", self.start_hz, "range"),
+            ("to:", self.end_hz, "range"),
+            ("Each leg takes:", self.sweep_time, "time"),
+        ):
             box.setToolTip(TIPS[key])
             label = QtWidgets.QLabel(text)
             label.setToolTip(TIPS[key])
@@ -312,8 +329,13 @@ class DuffingPage(QtWidgets.QWidget):
             box.valueChanged.connect(self._on_sweep_range)
         self.sweep_buttons: dict[Sweep, QtWidgets.QPushButton] = {}
         row = FlowLayout()
-        for mode, text in ((Sweep.UP, "Sweep up"), (Sweep.DOWN, "Sweep down"),
-                           (Sweep.UP_DOWN, "Up, then down"), (Sweep.DOWN_UP, "Down, then up"), (Sweep.HOLD, "Hold")):
+        for mode, text in (
+            (Sweep.UP, "Sweep up"),
+            (Sweep.DOWN, "Sweep down"),
+            (Sweep.UP_DOWN, "Up, then down"),
+            (Sweep.DOWN_UP, "Down, then up"),
+            (Sweep.HOLD, "Hold"),
+        ):
             b = self.sweep_buttons[mode] = QtWidgets.QPushButton(text)
             b.clicked.connect(lambda _=False, m=mode: self.start_sweep(m))
             row.add(b)
@@ -349,8 +371,9 @@ class DuffingPage(QtWidgets.QWidget):
         self.run_button = QtWidgets.QPushButton("Pause")
         self.run_button.clicked.connect(self._on_run)
         self.reset_button = QtWidgets.QPushButton("Reset")
-        self.reset_button.setToolTip("<p>Back to rest at t = 0, the measured points cleared; a sweep starts "
-                                     "again from its start.</p>")
+        self.reset_button.setToolTip(
+            "<p>Back to rest at t = 0, the measured points cleared; a sweep starts again from its start.</p>"
+        )
         self.reset_button.clicked.connect(self.reset)
         self.clear_button = QtWidgets.QPushButton("Clear points")
         self.clear_button.setToolTip("<p>Forget the measured points (a new sweep does too).</p>")
@@ -387,13 +410,24 @@ class DuffingPage(QtWidgets.QWidget):
         self.hold_item = pg.ScatterPlotItem(size=4, name="Held")
         self.p_stable_item = pg.PlotDataItem(name="Pumped, ½X", connect="finite")
         self.p_unstable_item = pg.PlotDataItem(name="… unstable", connect="finite")
-        self.half_items = {leg: pg.ScatterPlotItem(size=5, symbol="t", name=f"½X, {text}")
-                           for leg, text in (("up", "up"), ("down", "down"), ("hold", "held"))}
+        self.half_items = {
+            leg: pg.ScatterPlotItem(size=5, symbol="t", name=f"½X, {text}")
+            for leg, text in (("up", "up"), ("down", "down"), ("hold", "held"))
+        }
         self.now_item = pg.ScatterPlotItem(size=11)
         self.points = (self.up_item, self.down_item, self.hold_item, *self.half_items.values())
-        for item in (self.linear_item, self.backbone_item, self.p_unstable_item, self.p_stable_item,
-                     self.unstable_item, self.stable_item, self.jump_item, self.fold_item, *self.points,
-                     self.now_item):
+        for item in (
+            self.linear_item,
+            self.backbone_item,
+            self.p_unstable_item,
+            self.p_stable_item,
+            self.unstable_item,
+            self.stable_item,
+            self.jump_item,
+            self.fold_item,
+            *self.points,
+            self.now_item,
+        ):
             self.response.addItem(item)
         plot_height(self.response, 220)
         self.readout = QtWidgets.QLabel()
@@ -423,7 +457,8 @@ class DuffingPage(QtWidgets.QWidget):
         self.phase.addItem(self.section_item)
         self.phase_note = QtWidgets.QLabel(
             "The last few drive cycles; the dots are the Poincaré section, the state once per cycle (while the "
-            "frequency is held).")
+            "frequency is held)."
+        )
         self.phase_note.setWordWrap(True)
         mute(self.phase_note)
         phase_tab = QtWidgets.QWidget()
@@ -486,16 +521,32 @@ class DuffingPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- inputs
     def oscillator(self) -> Duffing:
         """The oscillator the boxes describe (ValueError if they don't describe one)."""
-        return Duffing(self.mass.value(), self.stiffness.value(), self.damping.value(), self.cubic.value(),
-                       self.force.value(), self.pump.value(), self.noise.value())
+        return Duffing(
+            self.mass.value(),
+            self.stiffness.value(),
+            self.damping.value(),
+            self.cubic.value(),
+            self.force.value(),
+            self.pump.value(),
+            self.noise.value(),
+        )
 
     def load_preset(self, name: str) -> None:
         p = next(p for p in PRESETS if p.name == name)
         self._loading = True
-        for box, value in ((self.mass, p.osc.mass), (self.stiffness, p.osc.stiffness),
-                           (self.damping, p.osc.damping), (self.cubic, p.osc.cubic), (self.force, p.osc.force),
-                           (self.pump, p.osc.pump), (self.noise, p.osc.noise), (self.freq, p.freq_hz),
-                           (self.start_hz, p.start_hz), (self.end_hz, p.end_hz), (self.sweep_time, p.sweep_time)):
+        for box, value in (
+            (self.mass, p.osc.mass),
+            (self.stiffness, p.osc.stiffness),
+            (self.damping, p.osc.damping),
+            (self.cubic, p.osc.cubic),
+            (self.force, p.osc.force),
+            (self.pump, p.osc.pump),
+            (self.noise, p.osc.noise),
+            (self.freq, p.freq_hz),
+            (self.start_hz, p.start_hz),
+            (self.end_hz, p.end_hz),
+            (self.sweep_time, p.sweep_time),
+        ):
             box.setValue(value)
         self.preset.blockSignals(True)
         self.preset.setCurrentText(name)
@@ -607,14 +658,16 @@ class DuffingPage(QtWidgets.QWidget):
         self.branch_buttons[1].setEnabled(a.size >= 3)
         self.branch_buttons[2].setEnabled(a.size >= 2)
         f = self.sim.drive.freq_hz
-        listed = ", ".join(f"{fmt_length(x) if x > 0 else 'rest'}{'' if ok else ' (unstable)'}"
-                           for x, ok in zip(a, stable))
+        listed = ", ".join(
+            f"{fmt_length(x) if x > 0 else 'rest'}{'' if ok else ' (unstable)'}" for x, ok in zip(a, stable)
+        )
         what = "swings at half the pump's frequency" if self.pumped_only else "steady amplitudes"
         if a.size >= 2:
             self.branch_note.setText(f"At {f:.3g} Hz, {what}: {listed}.")
         elif a.size:
-            self.branch_note.setText(f"At {f:.3g} Hz there is one steady state, {listed}: hold inside the band "
-                                     "for more.")
+            self.branch_note.setText(
+                f"At {f:.3g} Hz there is one steady state, {listed}: hold inside the band for more."
+            )
         else:
             self.branch_note.setText(f"At {f:.3g} Hz there is no steady response below the escape amplitude.")
 
@@ -646,11 +699,11 @@ class DuffingPage(QtWidgets.QWidget):
         self._draw_points()
         self._show_readout()
 
-    def showEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def showEvent(self, event) -> None:
         super().showEvent(event)
         self._start_timer()
 
-    def hideEvent(self, event) -> None:  # noqa: N802 (Qt override)
+    def hideEvent(self, event) -> None:
         super().hideEvent(event)
         self._timer.stop()
 
@@ -784,8 +837,12 @@ class DuffingPage(QtWidgets.QWidget):
             f = np.concatenate([np.append(p[0], np.nan) for p in parts])
             return f, np.concatenate([np.append(p[1], np.nan) for p in parts])
 
-        for key, item in (("stable", self.stable_item), ("unstable", self.unstable_item),
-                          ("p_stable", self.p_stable_item), ("p_unstable", self.p_unstable_item)):
+        for key, item in (
+            ("stable", self.stable_item),
+            ("unstable", self.unstable_item),
+            ("p_stable", self.p_stable_item),
+            ("p_unstable", self.p_unstable_item),
+        ):
             item.setData(*joined(pieces[key]))
         f = np.linspace(lo, hi, 600)
         if osc.force > 0:
@@ -797,13 +854,15 @@ class DuffingPage(QtWidgets.QWidget):
         backbone = osc.backbone_hz(a)
         self.backbone_item.setData(backbone if osc.force > 0 else 2 * backbone, a, connect="finite")
         folds = self.curve.folds + self.p_curve.folds
-        self.jump_item.setData(np.ravel([(j.freq_hz, j.freq_hz) for j in folds]),
-                               np.ravel([(j.amplitude, j.lands_at) for j in folds]))
+        self.jump_item.setData(
+            np.ravel([(j.freq_hz, j.freq_hz) for j in folds]), np.ravel([(j.amplitude, j.lands_at) for j in folds])
+        )
         self.fold_item.setData([j.freq_hz for j in folds], [j.amplitude for j in folds])
         self.response.setXRange(lo, hi, padding=0)
         self.response.setYRange(0.0, self._y_top, padding=0)
-        self.response.setLabel("left", "Amplitude (½X: half harmonic)" if self.pumped_only
-                               else "Amplitude (first harmonic)", units="m")
+        self.response.setLabel(
+            "left", "Amplitude (½X: half harmonic)" if self.pumped_only else "Amplitude (first harmonic)", units="m"
+        )
         if osc.cubic < 0:  # in the corner the curve leans away from
             self.legend.anchor((1, 0), (1, 0), offset=(-10, 10))
         else:
@@ -816,8 +875,12 @@ class DuffingPage(QtWidgets.QWidget):
         self.legend.clear()
         shown = []
         if osc.force > 0:
-            shown += [(self.linear_item, "Linear spring (k₃ = 0)"), (self.backbone_item, "Backbone"),
-                      (self.stable_item, "Harmonic balance"), (self.unstable_item, "… unstable")]
+            shown += [
+                (self.linear_item, "Linear spring (k₃ = 0)"),
+                (self.backbone_item, "Backbone"),
+                (self.stable_item, "Harmonic balance"),
+                (self.unstable_item, "… unstable"),
+            ]
         elif osc.pump > 0 and osc.cubic != 0:
             shown += [(self.backbone_item, "Backbone, at 2× its frequency")]
         if osc.pump > 0:
@@ -825,8 +888,11 @@ class DuffingPage(QtWidgets.QWidget):
         if osc.force > 0:
             shown += [(self.up_item, "Sweeping up"), (self.down_item, "Sweeping down"), (self.hold_item, "Held")]
         if osc.pump > 0:
-            shown += [(self.half_items["up"], "½X, up"), (self.half_items["down"], "½X, down"),
-                      (self.half_items["hold"], "½X, held")]
+            shown += [
+                (self.half_items["up"], "½X, up"),
+                (self.half_items["down"], "½X, down"),
+                (self.half_items["hold"], "½X, held"),
+            ]
         for item, name in shown:
             self.legend.addItem(item, name)
 
@@ -834,13 +900,20 @@ class DuffingPage(QtWidgets.QWidget):
         osc = self.sim.osc
         cycles = self.cycles
         top = 0.0
-        for leg, first, half in (("up", self.up_item, self.half_items["up"]),
-                                 ("down", self.down_item, self.half_items["down"]),
-                                 ("hold", self.hold_item, self.half_items["hold"])):
+        for leg, first, half in (
+            ("up", self.up_item, self.half_items["up"]),
+            ("down", self.down_item, self.half_items["down"]),
+            ("hold", self.hold_item, self.half_items["hold"]),
+        ):
             run = [c for c in cycles if c.leg == leg][-200:] if leg == "hold" else [c for c in cycles if c.leg == leg]
-            pts = np.array([(c.freq_hz, c.amplitude) for c in run]).reshape(-1, 2) if osc.force > 0 else np.empty((0, 2))
-            halves = (np.array([(c.freq_hz, c.half) for c in run if math.isfinite(c.half)]).reshape(-1, 2)
-                      if osc.pump > 0 else np.empty((0, 2)))
+            pts = (
+                np.array([(c.freq_hz, c.amplitude) for c in run]).reshape(-1, 2) if osc.force > 0 else np.empty((0, 2))
+            )
+            halves = (
+                np.array([(c.freq_hz, c.half) for c in run if math.isfinite(c.half)]).reshape(-1, 2)
+                if osc.pump > 0
+                else np.empty((0, 2))
+            )
             first.setData(pos=pts)
             half.setData(pos=halves)
             for arr in (pts, halves):
@@ -880,9 +953,14 @@ class DuffingPage(QtWidgets.QWidget):
             growth = floquet_growth(osc.zeta, CHART_RATIOS, CHART_DEPTHS, CHART_STEPS)
             self.chart_image.setImage(growth.T, levels=(-0.05, GROWTH_TOP), autoLevels=False)
             dr, dm = CHART_RATIOS[1] - CHART_RATIOS[0], CHART_DEPTHS[1] - CHART_DEPTHS[0]
-            self.chart_image.setRect(QtCore.QRectF(CHART_RATIOS[0] - dr / 2, CHART_DEPTHS[0] - dm / 2,
-                                                   CHART_RATIOS[-1] - CHART_RATIOS[0] + dr,
-                                                   CHART_DEPTHS[-1] - CHART_DEPTHS[0] + dm))
+            self.chart_image.setRect(
+                QtCore.QRectF(
+                    CHART_RATIOS[0] - dr / 2,
+                    CHART_DEPTHS[0] - dm / 2,
+                    CHART_RATIOS[-1] - CHART_RATIOS[0] + dr,
+                    CHART_DEPTHS[-1] - CHART_DEPTHS[0] + dm,
+                )
+            )
             self.chart_zero.setData(growth.T)
             # harmonic balance's first tongue: (1 - r^2/4)^2 + (zeta r)^2 = (mu/2)^2, a quadratic in r^2
             lo, hi = [], []
@@ -902,10 +980,15 @@ class DuffingPage(QtWidgets.QWidget):
         r = self.sim.drive.freq_hz / osc.natural_hz
         self.chart_now.setData(pos=np.array([[r, osc.pump]]))
         rate = float(floquet_growth(osc.zeta, [r], [osc.pump], CHART_STEPS)[0, 0])
-        verdict = (f"rest is unstable: a swing grows as e<sup>{rate:.3g} ω<sub>n</sub> t</sup>" if rate > 0 else
-                   f"rest is stable: a swing dies away as e<sup>−{-rate:.3g} ω<sub>n</sub> t</sup>")
-        self.chart_note.setText(f"ζ = {100 * osc.zeta:.2g} %. Pumping at Ω/ω<sub>n</sub> = {r:.3g} with "
-                                f"μ = {osc.pump:.3g}, {verdict} (on the linear spring). Click to pump elsewhere.")
+        verdict = (
+            f"rest is unstable: a swing grows as e<sup>{rate:.3g} ω<sub>n</sub> t</sup>"
+            if rate > 0
+            else f"rest is stable: a swing dies away as e<sup>−{-rate:.3g} ω<sub>n</sub> t</sup>"
+        )
+        self.chart_note.setText(
+            f"ζ = {100 * osc.zeta:.2g} %. Pumping at Ω/ω<sub>n</sub> = {r:.3g} with "
+            f"μ = {osc.pump:.3g}, {verdict} (on the linear spring). Click to pump elsewhere."
+        )
 
     def _on_chart_click(self, event) -> None:
         vb = self.chart.getPlotItem().getViewBox()
@@ -928,8 +1011,10 @@ class DuffingPage(QtWidgets.QWidget):
             parts.append(f"Escape amplitude {fmt_length(osc.escape)}.")
         elif osc.cubic > 0 and osc.stiffness > 0 and 0 < self.curve.tip < math.inf:
             ratio = 0.75 * osc.cubic * self.curve.tip**2 / osc.stiffness
-            parts.append(f"At the peak ({fmt_length(self.curve.tip)}) the cubic adds {100 * ratio:.3g} % "
-                         "to the spring's stiffness.")
+            parts.append(
+                f"At the peak ({fmt_length(self.curve.tip)}) the cubic adds {100 * ratio:.3g} % "
+                "to the spring's stiffness."
+            )
         self.osc_info.setText(" ".join(parts))
 
     def _show_drive_state(self) -> None:
@@ -962,7 +1047,8 @@ class DuffingPage(QtWidgets.QWidget):
                     f"({fmt_length(hi.amplitude)}) and {'drops' if hi.down else 'jumps'} to "
                     f"{fmt_length(hi.lands_at)}; sweeping down, the {'upper' if lo.down else 'lower'} ends at "
                     f"{lo.freq_hz:.3g} Hz ({fmt_length(lo.amplitude)}) and "
-                    f"{'drops' if lo.down else 'jumps'} to {fmt_length(lo.lands_at)}.")
+                    f"{'drops' if lo.down else 'jumps'} to {fmt_length(lo.lands_at)}."
+                )
                 measured = self._measured(half=False)
                 if measured:
                     lines.append(measured)
@@ -971,12 +1057,15 @@ class DuffingPage(QtWidgets.QWidget):
                 lines.append(
                     f"Harmonic balance: a branch ends at {fold.freq_hz:.3g} Hz ({fmt_length(fold.amplitude)}) and "
                     f"{'drops' if fold.down else 'jumps'} to {fmt_length(fold.lands_at)}; the other runs into the "
-                    "escape amplitude." if osc.cubic < 0 else
-                    f"Harmonic balance: a branch ends at {fold.freq_hz:.3g} Hz; the other runs off the top "
-                    "(no damping to bound it).")
+                    "escape amplitude."
+                    if osc.cubic < 0
+                    else f"Harmonic balance: a branch ends at {fold.freq_hz:.3g} Hz; the other runs off the top "
+                    "(no damping to bound it)."
+                )
             else:
-                lines.append("Harmonic balance: one steady amplitude at each frequency, so no jump: sweeps up and "
-                             "down agree.")
+                lines.append(
+                    "Harmonic balance: one steady amplitude at each frequency, so no jump: sweeps up and down agree."
+                )
         if osc.pump > 0:
             edges = tongue_hz(osc)
             if edges is None:
@@ -987,22 +1076,30 @@ class DuffingPage(QtWidgets.QWidget):
                     text += ", and there a swing at half the pump's frequency grows without bound."
                 else:
                     jumps = [f for f in self.p_curve.folds if f.lands_at > f.amplitude]
-                    text += (", where the swing at half its frequency settles on the branch"
-                             + (f"; sweeping down, rest turns unstable at {jumps[0].freq_hz:.3g} Hz and the swing "
-                                f"jumps to {fmt_length(jumps[0].lands_at)}." if jumps else "."))
+                    text += ", where the swing at half its frequency settles on the branch" + (
+                        f"; sweeping down, rest turns unstable at {jumps[0].freq_hz:.3g} Hz and the swing "
+                        f"jumps to {fmt_length(jumps[0].lands_at)}."
+                        if jumps
+                        else "."
+                    )
                 lines.append(text)
                 if osc.force == 0 and osc.cubic != 0:
                     measured = self._measured(half=True)
                     if measured:
                         lines.append(measured)
                 if osc.force > 0:
-                    lines.append("The two curves leave each other out: harmonic balance of the drive alone, "
-                                 "and of the pump alone.")
+                    lines.append(
+                        "The two curves leave each other out: harmonic balance of the drive alone, "
+                        "and of the pump alone."
+                    )
         if not lines:
             lines.append("No drive and no pump: the mass only rings down.")
         if self.sim.escaped:
-            lines.append(f"<b>The mass went over the potential's hilltop (±{fmt_length(osc.escape)}) and ran "
-                         "away.</b> Reset to start again." if osc.cubic < 0 else
-                         f"<b>The swing grew past {fmt_length(self.sim.runaway)}, without bound: a linear "
-                         "spring has nothing to stop it.</b> Reset to start again.")
+            lines.append(
+                f"<b>The mass went over the potential's hilltop (±{fmt_length(osc.escape)}) and ran "
+                "away.</b> Reset to start again."
+                if osc.cubic < 0
+                else f"<b>The swing grew past {fmt_length(self.sim.runaway)}, without bound: a linear "
+                "spring has nothing to stop it.</b> Reset to start again."
+            )
         self.readout.setText("<br>".join(lines))

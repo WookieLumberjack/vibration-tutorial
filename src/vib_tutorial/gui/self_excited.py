@@ -76,38 +76,50 @@ TRIALS = (
         "so a 0.5 mm start grows; at large amplitude it is positive. It settles where the cycle's energy in and out "
         "balance: 8.9 mm, 2x<sub>r</sub>√ε. Start it anywhere and it ends on the same closed curve in the phase "
         "plane: a limit cycle.",
-        Kind.VDP, {"vdp_eps": 0.2}),
+        Kind.VDP,
+        {"vdp_eps": 0.2},
+    ),
     SelfTrial(
         "The Hopf point",
         "ε = −0.1: positive damping everywhere near rest, and the start dies away. The Sweep tab shows the settled "
         "amplitude against ε: zero below ε = 0, then 2x<sub>r</sub>√ε, rising steeply from nothing. At ε = 0 the "
         "pair of poles crosses the imaginary axis: a (supercritical) Hopf bifurcation.",
-        Kind.VDP, {"vdp_eps": -0.1}),
+        Kind.VDP,
+        {"vdp_eps": -0.1},
+    ),
     SelfTrial(
         "Relaxation oscillations",
         "ε = 5: the nonlinearity dominates. The motion creeps, then snaps: a period of 1.84 s against 1 s for small "
         "ε, and a squared-off wave. A dripping tap, a squealing brake and a heartbeat oscillate this way.",
-        Kind.VDP, {"vdp_eps": 5.0, "vdp_periods": 20.0}),
+        Kind.VDP,
+        {"vdp_eps": 5.0, "vdp_periods": 20.0},
+    ),
     SelfTrial(
         "Galloping: Den Hartog's criterion",
         "A 100 mm square section (5 kg/m, 2 Hz, ζ = 0.5 %) across a 4.5 m/s wind. Moving up, it sees the wind "
         "come from above; for a square, the force that angle makes pushes it further up (Den Hartog: dC<sub>L</sub>/dα "
         "+ C<sub>D</sub> &lt; 0). The wind's negative damping ½ρUDA₁ beats the structure's 2mζω above "
         "U<sub>g</sub> = 3.81 m/s, so the motion grows, slowly this close to the onset.",
-        Kind.GALLOP, {"g_speed": 4.5, "g_start": 0.001, "g_periods": 300.0}),
+        Kind.GALLOP,
+        {"g_speed": 4.5, "g_start": 0.001, "g_periods": 300.0},
+    ),
     SelfTrial(
         "Galloping's hysteresis",
         "Between 4.7 and 7.0 m/s a square section has two stable motions, at 6 m/s 0.51 D and 1.28 D, with an "
         "unstable one between (Sweep tab: filled and open dots). From a small start it settles on the lower; set "
         "the start to 0.12 m and it settles on the upper. Raise the wind past 7.0 m/s and the lower one is gone: "
         "the motion jumps to the upper, and stays there until the wind drops below 4.7 m/s.",
-        Kind.GALLOP, {"g_speed": 6.0, "g_start": 0.001, "g_periods": 600.0}),
+        Kind.GALLOP,
+        {"g_speed": 6.0, "g_start": 0.001, "g_periods": 600.0},
+    ),
     SelfTrial(
         "Galloping grows with the wind",
         "At 12 m/s, three times the onset speed, the section swings 2.7 D from side to side. Unlike flutter or "
         "resonance there is no upper limit: the amplitude keeps growing with the wind. Damping only moves the "
         "onset (U<sub>g</sub> ∝ mζ, the Scruton number).",
-        Kind.GALLOP, {"g_speed": 12.0, "g_start": 0.001, "g_periods": 200.0}),
+        Kind.GALLOP,
+        {"g_speed": 12.0, "g_start": 0.001, "g_periods": 200.0},
+    ),
     SelfTrial(
         "Lock-in",
         "A 50 mm cylinder (20 kg/m, mass ratio 10) on a 1 Hz spring in a current at reduced velocity "
@@ -115,20 +127,26 @@ TRIALS = (
         "pulls the wake to its own frequency: it swings 0.21 D at f<sub>n</sub>. The Sweep tab shows lock-in, the "
         "response within 4 % of f<sub>n</sub>, from U<sub>r</sub> = 4.5 to 6.25: a band of speeds, not a single "
         "resonance.",
-        Kind.VIV, {"v_reduced": 5.5}),
+        Kind.VIV,
+        {"v_reduced": 5.5},
+    ),
     SelfTrial(
         "Out of lock-in",
         "U<sub>r</sub> = 9: the wake sheds near its own Strouhal frequency, 1.8 f<sub>n</sub>, far above the "
         "structure's (the response is at 1.7 f<sub>n</sub>), and it is a forced one: 0.019 D. Vortex-induced vibration is self-limited "
         "(about one diameter at most, in practice), unlike galloping.",
-        Kind.VIV, {"v_reduced": 9.0}),
+        Kind.VIV,
+        {"v_reduced": 9.0},
+    ),
     SelfTrial(
         "Flutter: two modes coalesce",
         "A wing section with plunge at 3 Hz and pitch at 6 Hz, its centre of mass behind the elastic axis. As the "
         "speed rises the lift couples the two modes: their frequencies close in (3 and 6.7 Hz at rest, 3.4 and "
         "5.0 Hz at 19 m/s) and the pitch-like mode's damping falls to zero at 19.1 m/s, the flutter speed, well "
         "below the 39 m/s at which the pitch spring alone would diverge.",
-        Kind.FLUTTER, {"f_speed": 15.0}),
+        Kind.FLUTTER,
+        {"f_speed": 15.0},
+    ),
     SelfTrial(
         "Mass balance",
         "Move the centre of mass ahead of the elastic axis, to x<sub>cg</sub> = −0.2 semichords: the inertia now "
@@ -136,7 +154,9 @@ TRIALS = (
         "39 m/s, where the pitch spring gives out. Mass-balancing control surfaces (lead in the leading edge) "
         "does this. The trend isn't monotonic in this quasi-steady model: with the centre of mass on the axis "
         "(x<sub>cg</sub> = 0) flutter comes earlier, at 17.7 m/s.",
-        Kind.FLUTTER, {"f_cg": -0.2, "f_speed": 15.0}),
+        Kind.FLUTTER,
+        {"f_cg": -0.2, "f_speed": 15.0},
+    ),
 )
 
 TIPS = {
@@ -216,17 +236,27 @@ unsteady aerodynamics (Theodorsen), which changes the numbers but not the coales
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sdof_page", "poles", "Poles"),
-    ("duffing_page", "jump", "The jump"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "Self-excitation is negative damping drawn from a steady source; the rest state loses stability at a Hopf "
-    "bifurcation.",
-    "A nonlinearity sets the size of the limit cycle that follows; averaging the energy per cycle finds it.",
-    "Galloping starts at U<sub>g</sub> ∝ mζ (Den Hartog: dC<sub>L</sub>/dα + C<sub>D</sub> &lt; 0) and grows with the "
-    "wind; vortex-induced vibration locks in over a band of speeds and limits itself.",
-    "Flutter is two modes coupled by the flow until one's damping crosses zero; mass balance raises its speed.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sdof_page", "poles", "Poles"),
+            ("duffing_page", "jump", "The jump"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Self-excitation is negative damping drawn from a steady source; the rest state loses stability at a Hopf "
+            "bifurcation.",
+            "A nonlinearity sets the size of the limit cycle that follows; averaging the energy per cycle finds it.",
+            "Galloping starts at U<sub>g</sub> ∝ mζ (Den Hartog: dC<sub>L</sub>/dα + C<sub>D</sub> &lt; 0) and grows with the "
+            "wind; vortex-induced vibration locks in over a band of speeds and limits itself.",
+            "Flutter is two modes coupled by the flow until one's damping crosses zero; mass balance raises its speed.",
+        ),
+    )
+)
 
 
 class SelfExcitedPage(QtWidgets.QWidget):
@@ -237,8 +267,9 @@ class SelfExcitedPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self._viv_cache: tuple | None = None
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each picks a model and sets it up to show one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS], "<p>Each picks a model and sets it up to show one idea from the Theory tab.</p>"
+        )
         self.trials.picked.connect(self.load_trial)
 
         top = Form("Model")
@@ -321,13 +352,18 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_sweep())
 
-        three_panes(self, column(self.trials, top, self.pages, self.info),
-                    stack((self.top_plot, 1), (self.bottom_plot, 1), (self.readout, 0)), self.tabs)
+        three_panes(
+            self,
+            column(self.trials, top, self.pages, self.info),
+            stack((self.top_plot, 1), (self.bottom_plot, 1), (self.readout, 0)),
+            self.tabs,
+        )
         self.apply_theme()
         self._on_inputs()
 
-    def _add(self, form: Form, key: str, label: str, lo: float, hi: float, value: float, decimals: int,
-             suffix: str, tip: str) -> None:
+    def _add(
+        self, form: Form, key: str, label: str, lo: float, hi: float, value: float, decimals: int, suffix: str, tip: str
+    ) -> None:
         self.boxes[key] = form.number(label, lo, hi, value, decimals, suffix, TIPS[tip])
 
     def v(self, key: str) -> float:
@@ -336,11 +372,31 @@ class SelfExcitedPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        defaults = {"vdp_freq": 1.0, "vdp_eps": 0.2, "vdp_ref": 0.01, "vdp_start": 0.0005, "vdp_periods": 60.0,
-                    "g_side": 0.1, "g_mass": 5.0, "g_fn": 2.0, "g_zeta": 0.005, "g_speed": 6.0, "g_start": 0.001,
-                    "g_periods": 300.0, "v_d": 0.05, "v_mass": 20.0, "v_fn": 1.0, "v_zeta": 0.005,
-                    "v_reduced": 5.5, "f_plunge": 3.0, "f_pitch": 6.0, "f_cg": 0.2, "f_e": 0.3, "f_zeta": 0.01,
-                    "f_speed": 15.0}
+        defaults = {
+            "vdp_freq": 1.0,
+            "vdp_eps": 0.2,
+            "vdp_ref": 0.01,
+            "vdp_start": 0.0005,
+            "vdp_periods": 60.0,
+            "g_side": 0.1,
+            "g_mass": 5.0,
+            "g_fn": 2.0,
+            "g_zeta": 0.005,
+            "g_speed": 6.0,
+            "g_start": 0.001,
+            "g_periods": 300.0,
+            "v_d": 0.05,
+            "v_mass": 20.0,
+            "v_fn": 1.0,
+            "v_zeta": 0.005,
+            "v_reduced": 5.5,
+            "f_plunge": 3.0,
+            "f_pitch": 6.0,
+            "f_cg": 0.2,
+            "f_e": 0.3,
+            "f_zeta": 0.01,
+            "f_speed": 15.0,
+        }
         defaults.update(t.values)
         for key, value in defaults.items():
             set_quietly(self.boxes[key], value)
@@ -358,15 +414,26 @@ class SelfExcitedPage(QtWidgets.QWidget):
         return VanDerPol(self.v("vdp_freq"), self.v("vdp_eps"), self.v("vdp_ref"), self.v("vdp_start"))
 
     def galloping(self) -> Galloping:
-        return Galloping(self.v("g_side"), self.v("g_mass"), self.v("g_fn"), self.v("g_zeta"), self.v("g_speed"),
-                         start=self.v("g_start"))
+        return Galloping(
+            self.v("g_side"),
+            self.v("g_mass"),
+            self.v("g_fn"),
+            self.v("g_zeta"),
+            self.v("g_speed"),
+            start=self.v("g_start"),
+        )
 
     def viv(self) -> Viv:
         return Viv(self.v("v_d"), self.v("v_mass"), self.v("v_fn"), self.v("v_zeta"), self.v("v_reduced"))
 
     def flutter(self) -> Flutter:
-        return Flutter(x_cg=self.v("f_cg"), e=self.v("f_e"), plunge_hz=self.v("f_plunge"),
-                       pitch_hz=self.v("f_pitch"), zeta=self.v("f_zeta"))
+        return Flutter(
+            x_cg=self.v("f_cg"),
+            e=self.v("f_e"),
+            plunge_hz=self.v("f_plunge"),
+            pitch_hz=self.v("f_pitch"),
+            zeta=self.v("f_zeta"),
+        )
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
@@ -399,13 +466,16 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.top_line.setVisible(False)
         self.bottom_line.setVisible(False)
         self.bottom_zero.setVisible(False)
-        {Kind.VDP: self._draw_vdp, Kind.GALLOP: self._draw_galloping, Kind.VIV: self._draw_viv,
-         Kind.FLUTTER: self._draw_flutter}[self.current]()
+        {
+            Kind.VDP: self._draw_vdp,
+            Kind.GALLOP: self._draw_galloping,
+            Kind.VIV: self._draw_viv,
+            Kind.FLUTTER: self._draw_flutter,
+        }[self.current]()
         self._draw_sweep()
         settle_plots(self)
 
-    def _time_and_phase(self, t: np.ndarray, x: np.ndarray, v: np.ndarray, scale: float, unit: str,
-                        name: str) -> None:
+    def _time_and_phase(self, t: np.ndarray, x: np.ndarray, v: np.ndarray, scale: float, unit: str, name: str) -> None:
         relabel(self.top_plot, "left", name, unit)
         relabel(self.top_plot, "bottom", "Time", "s")
         relabel(self.bottom_plot, "left", "Velocity", "m/s")
@@ -419,30 +489,39 @@ class SelfExcitedPage(QtWidgets.QWidget):
 
     def _periods(self) -> float:
         return {Kind.VDP: self.v("vdp_periods"), Kind.GALLOP: self.v("g_periods"), Kind.VIV: 150.0}.get(
-            self.current, 1.0)
+            self.current, 1.0
+        )
 
     def _draw_vdp(self) -> None:
         m = self.vdp()
         t, x, v = m.simulate(self.v("vdp_periods"))
         self._time_and_phase(t, x, v, 1.0, "m", "x")
         amp = float(settled_amplitude(x))
-        self.info.setText(f"Damping at rest ζ = {-m.eps / 2:.3g}; averaging's limit cycle: "
-                          f"{float(m.theory_amplitude(m.eps)) * 1e3:.3g} mm.")
+        self.info.setText(
+            f"Damping at rest ζ = {-m.eps / 2:.3g}; averaging's limit cycle: "
+            f"{float(m.theory_amplitude(m.eps)) * 1e3:.3g} mm."
+        )
         period = 1.0 / float(dominant_hz(x, t[1] - t[0])) if amp > 1e-9 else float("nan")
-        self.readout.setText(f"Settled amplitude {amp * 1e3:.3g} mm (2x<sub>r</sub>√ε = "
-                             f"{float(m.theory_amplitude(m.eps)) * 1e3:.3g} mm); period {period:.3g} s against "
-                             f"{1 / m.freq_hz:.3g} s at small ε." if m.eps > 0 else
-                             f"ε ≤ 0: the start dies away (amplitude at the end {abs(x[-1]) * 1e3:.3g} mm).")
+        self.readout.setText(
+            f"Settled amplitude {amp * 1e3:.3g} mm (2x<sub>r</sub>√ε = "
+            f"{float(m.theory_amplitude(m.eps)) * 1e3:.3g} mm); period {period:.3g} s against "
+            f"{1 / m.freq_hz:.3g} s at small ε."
+            if m.eps > 0
+            else f"ε ≤ 0: the start dies away (amplitude at the end {abs(x[-1]) * 1e3:.3g} mm)."
+        )
 
     def _draw_galloping(self) -> None:
         m = self.galloping()
         t, y, v = m.simulate(self.v("g_periods"))
         self._time_and_phase(t, y, v, m.side, None, "y / D")
         amp = float(settled_amplitude(y))
-        self.info.setText(f"Onset U<sub>g</sub> = 4mζω/(ρDA₁) = {m.onset:.3g} m/s; U/U<sub>g</sub> = "
-                          f"{m.speed / m.onset:.3g}.")
-        self.readout.setText(f"At {m.speed:.3g} m/s from {m.start * 1e3:.3g} mm: the last quarter swings "
-                             f"{amp / m.side:.3g} D ({amp * 1e3:.3g} mm).")
+        self.info.setText(
+            f"Onset U<sub>g</sub> = 4mζω/(ρDA₁) = {m.onset:.3g} m/s; U/U<sub>g</sub> = {m.speed / m.onset:.3g}."
+        )
+        self.readout.setText(
+            f"At {m.speed:.3g} m/s from {m.start * 1e3:.3g} mm: the last quarter swings "
+            f"{amp / m.side:.3g} D ({amp * 1e3:.3g} mm)."
+        )
 
     def _draw_viv(self) -> None:
         m = self.viv()
@@ -456,12 +535,16 @@ class SelfExcitedPage(QtWidgets.QWidget):
         legend.addItem(self.top_items[1], "wake q (scaled)")
         amp = float(settled_amplitude(y)) / m.diameter
         f = float(dominant_hz(y, t[1] - t[0])) / m.freq_hz
-        self.info.setText(f"Mass ratio m* = {m.mass_ratio:.3g}; shedding alone at St U/D = "
-                          f"{m.strouhal * m.reduced:.3g} f<sub>n</sub>; lock-in expected near U<sub>r</sub> = "
-                          f"{m.lock_in_at:.3g}.")
-        self.readout.setText(f"U<sub>r</sub> = {m.reduced:.3g}: settled amplitude {amp:.3g} D at {f:.3g} "
-                             f"f<sub>n</sub> (the shedding alone would be at {m.strouhal * m.reduced:.3g} "
-                             "f<sub>n</sub>).")
+        self.info.setText(
+            f"Mass ratio m* = {m.mass_ratio:.3g}; shedding alone at St U/D = "
+            f"{m.strouhal * m.reduced:.3g} f<sub>n</sub>; lock-in expected near U<sub>r</sub> = "
+            f"{m.lock_in_at:.3g}."
+        )
+        self.readout.setText(
+            f"U<sub>r</sub> = {m.reduced:.3g}: settled amplitude {amp:.3g} D at {f:.3g} "
+            f"f<sub>n</sub> (the shedding alone would be at {m.strouhal * m.reduced:.3g} "
+            "f<sub>n</sub>)."
+        )
 
     def _draw_flutter(self) -> None:
         m = self.flutter()
@@ -491,14 +574,23 @@ class SelfExcitedPage(QtWidgets.QWidget):
         lam = m.poles(self.v("f_speed"))
         up = lam[lam.imag > 0]
         self.info.setText(f"Flutter at {Uf:.3g} m/s; the pitch spring alone diverges at {Ud:.3g} m/s.")
-        self.readout.setText(f"At {self.v('f_speed'):.3g} m/s: " + ", ".join(
-            f"{abs(p) / (2 * np.pi):.3g} Hz with ζ = {-p.real / abs(p):.3g}" for p in sorted(up, key=abs)) + ".")
+        self.readout.setText(
+            f"At {self.v('f_speed'):.3g} m/s: "
+            + ", ".join(f"{abs(p) / (2 * np.pi):.3g} Hz with ζ = {-p.real / abs(p):.3g}" for p in sorted(up, key=abs))
+            + "."
+        )
 
     def _draw_sweep(self) -> None:
         if self.tabs.currentIndex() != TAB_SWEEP or not hasattr(self, "current"):
             return
-        for item in (self.sweep_curve, self.sweep_theory, self.sweep_stable, self.sweep_unstable,
-                     self.sweep2_curve, self.sweep2_ref):
+        for item in (
+            self.sweep_curve,
+            self.sweep_theory,
+            self.sweep_stable,
+            self.sweep_unstable,
+            self.sweep2_curve,
+            self.sweep2_ref,
+        ):
             item.setData([], [])
         for p in (self.sweep_plot, self.sweep2_plot):
             p.getPlotItem().legend.clear()
@@ -532,9 +624,11 @@ class SelfExcitedPage(QtWidgets.QWidget):
             relabel(self.sweep_plot, "left", "Amplitude / D")
             relabel(self.sweep_plot, "bottom", "Wind speed U (m/s)")
             self.sweep_line.setValue(m.speed)
-            self.sweep_note.setText(f"Averaging (Parkinson's polynomial). Rest is stable below U<sub>g</sub> = "
-                                    f"{m.onset:.3g} m/s; above it the amplitude grows with U, on two stable branches "
-                                    "where they overlap.")
+            self.sweep_note.setText(
+                f"Averaging (Parkinson's polynomial). Rest is stable below U<sub>g</sub> = "
+                f"{m.onset:.3g} m/s; above it the amplitude grows with U, on two stable branches "
+                "where they overlap."
+            )
         elif self.current is Kind.VIV:
             m = self.viv()
             key = (m.diameter, m.mass, m.freq_hz, m.zeta)
@@ -555,8 +649,10 @@ class SelfExcitedPage(QtWidgets.QWidget):
             self.sweep2_plot.setYRange(0.0, 3.0, padding=0)
             self.sweep_line.setValue(m.reduced)
             self.sweep2_line.setValue(m.reduced)
-            self.sweep_note.setText("Lock-in: where the response frequency stays near f<sub>n</sub> instead of "
-                                    "following the Strouhal line, the amplitude is large.")
+            self.sweep_note.setText(
+                "Lock-in: where the response frequency stays near f<sub>n</sub> instead of "
+                "following the Strouhal line, the amplitude is large."
+            )
         else:
             m = self.flutter()
             Uf = m.flutter_speed()
@@ -570,7 +666,9 @@ class SelfExcitedPage(QtWidgets.QWidget):
             relabel(self.sweep_plot, "bottom", "Re λ (1/s)")
             self.sweep_line.setValue(0.0)
             self.sweep2_plot.setVisible(False)
-            self.sweep_note.setText("The root locus: as the speed rises the two modes' poles approach, and one "
-                                    "crosses Re λ = 0 (dotted) at the flutter speed.")
+            self.sweep_note.setText(
+                "The root locus: as the speed rises the two modes' poles approach, and one "
+                "crosses Re λ = 0 (dotted) at the flutter speed."
+            )
         self.sweep_plot.enableAutoRange()
         self.sweep2_plot.enableAutoRange(axis="x")

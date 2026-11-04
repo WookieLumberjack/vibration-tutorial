@@ -28,7 +28,8 @@ def test_spectrum_corners():
     S, TB, TC, TD = d.corners
     plateau = 2.5 * 0.3 * G * S
     assert design_sa(d, np.array([0.0, TB, TC, 2 * TC, 2 * TD])) == pytest.approx(
-        [0.3 * G * S, plateau, plateau, plateau / 2, plateau * TC * TD / (4 * TD * TD)])
+        [0.3 * G * S, plateau, plateau, plateau / 2, plateau * TC * TD / (4 * TD * TD)]
+    )
 
 
 def test_rules_agree_for_one_mode_and_order():

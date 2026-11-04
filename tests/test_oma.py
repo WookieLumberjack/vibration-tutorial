@@ -15,9 +15,9 @@ from vib_tutorial.core.oma import (
     Fdd,
     ambient_record,
     compare,
+    correlations,
     cross_spectra,
     efdd,
-    correlations,
     fdd,
     hammer_modes,
     harmonic_flags,
@@ -66,7 +66,7 @@ def test_the_record_has_the_spectra_of_h_s_hh():
 
 
 def test_fdd_finds_every_mode_and_its_shape():
-    modes, rows = identified(AmbientSettings(fs=FS, duration=4000.0, seed=1), 4096)
+    _modes, rows = identified(AmbientSettings(fs=FS, duration=4000.0, seed=1), 4096)
     assert [r.mode for r in rows] == [1, 2, 3, 4]
     for r in rows:
         fe = abs(r.exact) / TWO_PI

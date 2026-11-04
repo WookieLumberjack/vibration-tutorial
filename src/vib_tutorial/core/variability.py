@@ -50,9 +50,14 @@ def samples(system: ChainSystem, scatter: Scatter, count: int, seed: int = 1) ->
     rng = np.random.default_rng(seed)
     lin = linear(system)
     n = lin.n
-    return [ChainSystem(lin.masses * lognormal(rng, scatter.mass, n),
-                        lin.stiffness * lognormal(rng, scatter.stiffness, n),
-                        lin.damping * lognormal(rng, scatter.damping, n)) for _ in range(count)]
+    return [
+        ChainSystem(
+            lin.masses * lognormal(rng, scatter.mass, n),
+            lin.stiffness * lognormal(rng, scatter.stiffness, n),
+            lin.damping * lognormal(rng, scatter.damping, n),
+        )
+        for _ in range(count)
+    ]
 
 
 def natural_hz(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
@@ -83,8 +88,9 @@ class MonteCarlo:
         return np.percentile(self.frf, low, axis=0), np.percentile(self.frf, high, axis=0)
 
 
-def monte_carlo(system: ChainSystem, scatter: Scatter, count: int, f: np.ndarray, out: int, inp: int,
-                seed: int = 1) -> MonteCarlo:
+def monte_carlo(
+    system: ChainSystem, scatter: Scatter, count: int, f: np.ndarray, out: int, inp: int, seed: int = 1
+) -> MonteCarlo:
     lin = linear(system)
     draws = samples(lin, scatter, count, seed)
     freqs = np.array([natural_hz(s)[0] for s in draws])
@@ -98,8 +104,8 @@ def sensitivity_sigma(system: ChainSystem, scatter: Scatter) -> np.ndarray:
     f, phi = natural_hz(lin)
     lam = (TWO_PI * f) ** 2
     dphi = np.diff(phi, prepend=0.0, axis=0)  # φ_i − φ_{i−1}, the ground before m1
-    var = ((dphi ** 2 * lin.stiffness[:, None] * scatter.stiffness) ** 2).sum(axis=0)
-    var += ((lam * phi ** 2 * lin.masses[:, None] * scatter.mass) ** 2).sum(axis=0)
+    var = ((dphi**2 * lin.stiffness[:, None] * scatter.stiffness) ** 2).sum(axis=0)
+    var += ((lam * phi**2 * lin.masses[:, None] * scatter.mass) ** 2).sum(axis=0)
     return f * np.sqrt(var) / (2 * lam)
 
 
@@ -150,8 +156,8 @@ def ring_modes(ring: Ring, deltas: np.ndarray | None = None) -> tuple[np.ndarray
 def participation(phi: np.ndarray) -> np.ndarray:
     """Each mode's participation number (Σφ²)²/Σφ⁴: how many blades move; N/… for a spread wave, 1 for a mode
     on one blade."""
-    p2 = (phi ** 2).sum(axis=0)
-    return p2 * p2 / (phi ** 4).sum(axis=0)
+    p2 = (phi**2).sum(axis=0)
+    return p2 * p2 / (phi**4).sum(axis=0)
 
 
 def tuned_band(ring: Ring) -> tuple[float, float]:
@@ -187,8 +193,9 @@ def whitehead(blades: int) -> float:
     return (1 + math.sqrt(blades)) / 2
 
 
-def amplification_curve(ring: Ring, engine_order: int, levels: np.ndarray, seeds: int = 20
-                        ) -> tuple[np.ndarray, np.ndarray]:
+def amplification_curve(
+    ring: Ring, engine_order: int, levels: np.ndarray, seeds: int = 20
+) -> tuple[np.ndarray, np.ndarray]:
     """(mean, largest) amplification over `seeds` mistuning patterns at each CoV."""
     mean, top = np.empty(levels.size), np.empty(levels.size)
     f = sweep_grid(Ring(ring.blades, ring.mass, ring.stiffness, ring.coupling, ring.zeta, float(levels.max())))

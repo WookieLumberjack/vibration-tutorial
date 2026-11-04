@@ -161,6 +161,7 @@ step beside the exact update.
 
 from __future__ import annotations
 
+import itertools
 import math
 from collections import OrderedDict
 from collections.abc import Callable
@@ -310,8 +311,9 @@ class Stator:
         return self.offset * math.cos(self.offset_angle), self.offset * math.sin(self.offset_angle)
 
 
-def stator_force(stator: Stator, radius: float, x: float, y: float, vx: float, vy: float,
-                 omega: float) -> tuple[float, float, float, list[float]]:
+def stator_force(
+    stator: Stator, radius: float, x: float, y: float, vx: float, vy: float, omega: float
+) -> tuple[float, float, float, list[float]]:
     """(f_x, f_y, N, J): the ring's force on the disc at (x, y) moving at (x', y'), the normal force N,
     and the force's derivatives J = d(f_x, f_y)/d(x, y, x', y') (row by row, 8 numbers).
 
@@ -344,8 +346,12 @@ def stator_force(stator: Stator, radius: float, x: float, y: float, vx: float, v
     for g, n_, t_ in ((gx, nx, tx), (gy, ny, ty)):
         # dg/dd = (t_ - μ σ n_) tᵀ/ρ + μ t_ σ' ds/dd;  dg/dv = μ t_ σ' ds/dv
         turn = (t_ - mu * sat * n_) / rho
-        dg = (turn * tx + mu * t_ * dsat * ds[0], turn * ty + mu * t_ * dsat * ds[1],
-              mu * t_ * dsat * ds[2], mu * t_ * dsat * ds[3])
+        dg = (
+            turn * tx + mu * t_ * dsat * ds[0],
+            turn * ty + mu * t_ * dsat * ds[1],
+            mu * t_ * dsat * ds[2],
+            mu * t_ * dsat * ds[3],
+        )
         J.extend(-(g * dN[i] + normal * dg[i]) for i in range(4))
     return -normal * gx, -normal * gy, normal, J
 
@@ -401,8 +407,10 @@ class Bearing:
             return np.zeros((2, 2)), np.zeros((2, 2))
         if self.magnet is not None:
             return -self.magnet.negative_stiffness * np.eye(2), np.zeros((2, 2))
-        return (np.array([[self.kx, self.kxy], [self.k_yx, self.ky]]),
-                np.array([[self.cx, self.cxy], [self.cyx, self.cy]]))
+        return (
+            np.array([[self.kx, self.kxy], [self.k_yx, self.ky]]),
+            np.array([[self.cx, self.cxy], [self.cyx, self.cy]]),
+        )
 
 
 class PlaneWeight(NamedTuple):
@@ -453,8 +461,15 @@ class RotorSystem:
     def __post_init__(self) -> None:
         if min(abs(self.position), abs(self.position - 1.0)) < MIN_GAP:
             raise ValueError("the disc cannot sit on a bearing (a/L = 0 or 1)")
-        positive = (self.length, self.diameter, self.youngs, self.disc_mass, self.id,
-                    self.bearing_a.mass, self.bearing_b.mass)
+        positive = (
+            self.length,
+            self.diameter,
+            self.youngs,
+            self.disc_mass,
+            self.id,
+            self.bearing_a.mass,
+            self.bearing_b.mass,
+        )
         if min(positive) <= 0.0:
             raise ValueError("lengths, Young's modulus, masses and Id must be positive")
         if self.internal_damping < 0.0:
@@ -503,8 +518,11 @@ class RotorSystem:
 
         Plane weights on the disc count, whatever their axial offset.
         """
-        return self.unbalance * complex(math.cos(self.unbalance_angle), math.sin(self.unbalance_angle)) + sum(
-            self.weights, 0j) + sum((p.weight for p in self.plane_weights if self.on_disc(p)), 0j)
+        return (
+            self.unbalance * complex(math.cos(self.unbalance_angle), math.sin(self.unbalance_angle))
+            + sum(self.weights, 0j)
+            + sum((p.weight for p in self.plane_weights if self.on_disc(p)), 0j)
+        )
 
     @property
     def couple_unbalance(self) -> complex:
@@ -513,7 +531,8 @@ class RotorSystem:
         Its moment on the disc's slopes is this times (Ω² - iΩ') e^{iφ}.
         """
         return (self.id - self.ip) * self.skew * np.exp(1j * self.skew_angle) + sum(
-            (p.weight * (p.z - self.a) for p in self.plane_weights if self.on_disc(p)), 0j)
+            (p.weight * (p.z - self.a) for p in self.plane_weights if self.on_disc(p)), 0j
+        )
 
     # ------------------------------------------------------------- the shaft
     @property
@@ -575,7 +594,7 @@ class RotorSystem:
         stations.sort()
         span = stations[-1][0] - stations[0][0]
         z, node = [stations[0][0]], {stations[0][1]: 0}
-        for (z0, _), (z1, n1) in zip(stations, stations[1:]):
+        for (z0, _), (z1, n1) in itertools.pairwise(stations):
             k = max(1, round(self.elements * (z1 - z0) / span))
             z.extend(np.linspace(z0, z1, k + 1)[1:])
             node[n1] = len(z) - 1
@@ -643,7 +662,8 @@ class RotorSystem:
         kept = self._station_dofs + [n]
         inner = [i for i in range(n + 1) if i not in kept]
         Kc = Kx[np.ix_(kept, kept)] - Kx[np.ix_(kept, inner)] @ np.linalg.solve(
-            Kx[np.ix_(inner, inner)], Kx[np.ix_(inner, kept)])
+            Kx[np.ix_(inner, inner)], Kx[np.ix_(inner, kept)]
+        )
         return Kc[:4, 4].copy(), float(Kc[4, 4])
 
     def _hinge_loss(self, compliance: float) -> np.ndarray:
@@ -681,14 +701,14 @@ class RotorSystem:
         length = z[e + 1] - z[e]
         # w'' of the element's cubic at its end, from its [w1, θ1, w2, θ2].
         curve = np.array([12 * end - 6, length * (6 * end - 4), 6 - 12 * end, length * (6 * end - 2)]) / length**2
-        w2 = float(curve @ u[2 * e:2 * e + 4])
-        scale = float(np.abs(curve) @ np.abs(u[2 * e:2 * e + 4])) + 1e-300
+        w2 = float(curve @ u[2 * e : 2 * e + 4])
+        scale = float(np.abs(curve) @ np.abs(u[2 * e : 2 * e + 4])) + 1e-300
         return 0 if abs(w2) <= 1e-9 * scale else (1 if w2 > 0 else -1)
 
     @property
     def crack_opening(self) -> float:
         """How open the crack is on average over a turn: 1 held open, ½ breathing, 0 shut (or none)."""
-        if self.crack is None or not self.crack.depth and self.crack.compliance is None:
+        if self.crack is None or (not self.crack.depth and self.crack.compliance is None):
             return 0.0
         if not self.crack.breathing:
             return 1.0
@@ -756,8 +776,8 @@ class RotorSystem:
     @cached_property
     def _planes(self) -> tuple[np.ndarray, np.ndarray]:
         r = self.modes_kept
-        x = np.r_[0:4, N_DOF:N_DOF + r]
-        return x, np.r_[4:8, N_DOF + r:N_DOF + 2 * r]
+        x = np.r_[0:4, N_DOF : N_DOF + r]
+        return x, np.r_[4:8, N_DOF + r : N_DOF + 2 * r]
 
     @property
     def plane_dofs(self) -> tuple[np.ndarray, np.ndarray]:
@@ -773,8 +793,9 @@ class RotorSystem:
         out[..., ix], out[..., iy] = x, y
         return out
 
-    def _blocks(self, xx: np.ndarray, yy: np.ndarray, xy: np.ndarray | None = None,
-                yx: np.ndarray | None = None) -> np.ndarray:
+    def _blocks(
+        self, xx: np.ndarray, yy: np.ndarray, xy: np.ndarray | None = None, yx: np.ndarray | None = None
+    ) -> np.ndarray:
         """An n_dof square matrix from its plane blocks: x on x, y on y, x's row on y's column, and back."""
         ix, iy = self._planes
         A = np.zeros((self.n_dof, self.n_dof), dtype=np.result_type(xx, yy))
@@ -847,8 +868,15 @@ class RotorSystem:
         if shaft:
             per_drive += np.array([p.weight for p in shaft]) @ self.shape_matrix(np.array([p.z for p in shaft]))
         # K_shaft(φ) q_bow(φ): the deviatoric part Δ k e^{2i(φ+α)} conj(·) of the bow turns with it too.
-        bow = self.shaft_stiffness() @ self.bow_shape() * self.bow * (
-            np.exp(1j * self.bow_angle) + self.asymmetry * np.exp(1j * (2.0 * self.asymmetry_angle - self.bow_angle)))
+        bow = (
+            self.shaft_stiffness()
+            @ self.bow_shape()
+            * self.bow
+            * (
+                np.exp(1j * self.bow_angle)
+                + self.asymmetry * np.exp(1j * (2.0 * self.asymmetry_angle - self.bow_angle))
+            )
+        )
         return per_drive, bow
 
     def plane_load(self, P: np.ndarray) -> np.ndarray:
@@ -900,7 +928,9 @@ class RotorSystem:
             out = np.array([np.linalg.solve(self.stiffness(w), self.gravity_load(w)) for w in flat])
             return out.reshape(omega.shape + (n,))
         K, H, f = self.matrices()[3], self._circulatory, self.gravity_load()
-        return np.linalg.solve(K + omega[..., None, None] * H, np.broadcast_to(f, omega.shape + (n,))[..., None])[..., 0]
+        return np.linalg.solve(K + omega[..., None, None] * H, np.broadcast_to(f, omega.shape + (n,))[..., None])[
+            ..., 0
+        ]
 
     @property
     def sag_varies(self) -> bool:
@@ -915,7 +945,7 @@ class RotorSystem:
         """
         if not self.gravity or not self.periodic:
             return self.static_deflection(0.0)
-        return self.static_state(0.0, phase)[:self.n_dof]
+        return self.static_state(0.0, phase)[: self.n_dof]
 
     def bow_displacement(self, phase: float) -> np.ndarray:
         """q_bow (n_dof,): the bow at shaft angle φ, as displacements in fixed coordinates."""
@@ -934,8 +964,9 @@ class RotorSystem:
         e = np.clip(np.searchsorted(nodes, z, side="right") - 1, 0, nodes.size - 2)
         length = nodes[e + 1] - nodes[e]
         s = (z - nodes[e]) / length
-        h = np.column_stack([1 - 3 * s**2 + 2 * s**3, length * (s - 2 * s**2 + s**3),
-                             3 * s**2 - 2 * s**3, length * (s**3 - s**2)])
+        h = np.column_stack(
+            [1 - 3 * s**2 + 2 * s**3, length * (s - 2 * s**2 + s**3), 3 * s**2 - 2 * s**3, length * (s**3 - s**2)]
+        )
         rows = 2 * e[:, None] + np.arange(4)
         return np.einsum("zk,zkj->zj", h, T[rows])
 
@@ -1024,8 +1055,10 @@ class RotorSystem:
     def cross_coupling(self, omega: float) -> tuple[float, float]:
         """Each bearing's cross-coupled stiffness k_xy at speed Ω (N/m), A then B: k_xy + λ c Ω, or the film's."""
         states = self.bearing_states(omega)
-        return tuple(float(st.k[0, 1]) if st is not None else b.kxy + b.swirling * b.swirl * b.damping * omega
-                     for b, st in zip((self.bearing_a, self.bearing_b), states))
+        return tuple(
+            float(st.k[0, 1]) if st is not None else b.kxy + b.swirling * b.swirl * b.damping * omega
+            for b, st in zip((self.bearing_a, self.bearing_b), states)
+        )
 
     @cached_property
     def bearing_loads(self) -> tuple[float, float]:
@@ -1048,9 +1081,16 @@ class RotorSystem:
     def bearing_states(self, omega: float) -> tuple[BearingState | None, BearingState | None]:
         """Each oil film's state at speed Ω under its share of the weight, A then B (None: springs)."""
         key = abs(float(omega))
-        return _cached(self, "_film_states", key, lambda: tuple(
-            None if b.film is None else b.film.with_load(abs(w)).on_rotor(key)
-            for b, w in zip((self.bearing_a, self.bearing_b), self.bearing_loads)), CACHE_STATES)
+        return _cached(
+            self,
+            "_film_states",
+            key,
+            lambda: tuple(
+                None if b.film is None else b.film.with_load(abs(w)).on_rotor(key)
+                for b, w in zip((self.bearing_a, self.bearing_b), self.bearing_loads)
+            ),
+            CACHE_STATES,
+        )
 
     def _film_terms(self, omega: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """(K_f, C_f, p): the films' stiffness and damping at speed Ω, and the load that holds them there.
@@ -1068,8 +1108,9 @@ class RotorSystem:
     def _new_film_terms(self, omega: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         n = self.n_dof
         Kf, Cf, p = np.zeros((n, n)), np.zeros((n, n)), np.zeros(n)
-        for j, b, w, st in zip((XA, XB), (self.bearing_a, self.bearing_b), self.bearing_loads,
-                               self.bearing_states(omega)):
+        for j, b, w, st in zip(
+            (XA, XB), (self.bearing_a, self.bearing_b), self.bearing_loads, self.bearing_states(omega)
+        ):
             if st is None:
                 continue
             d = slice(j, j + 5, 4)  # [x, y] of the journal
@@ -1199,8 +1240,15 @@ class RotorSystem:
         Then an asymmetric shaft is time-invariant in coordinates turning with it,
         so a few harmonics give its response and modes exactly (rotating_frame).
         """
-        return all(b.film is None and b.magnet is None and b.kx == b.ky and b.cx == b.cy and b.cxy == b.cyx == 0.0
-                   and b.k_yx == -b.kxy for b in (self.bearing_a, self.bearing_b))
+        return all(
+            b.film is None
+            and b.magnet is None
+            and b.kx == b.ky
+            and b.cx == b.cy
+            and b.cxy == b.cyx == 0.0
+            and b.k_yx == -b.kxy
+            for b in (self.bearing_a, self.bearing_b)
+        )
 
     def axis_system(self, stiff: bool) -> RotorSystem:
         """The same rotor with a round shaft as stiff as this one's stiff (or soft) axis: EI(1 ± Δ).
@@ -1241,8 +1289,12 @@ class RotorSystem:
     @cached_property
     def _axes(self) -> list[tuple[int, MagneticBearing]]:
         """Each magnet's axes: (the journal's DOF in q, its bearing), x then y, A then B."""
-        return [(d, b.magnet) for j, b in ((XA, self.bearing_a), (XB, self.bearing_b)) if b.magnet is not None
-                for d in (j, j + 4)]
+        return [
+            (d, b.magnet)
+            for j, b in ((XA, self.bearing_a), (XB, self.bearing_b))
+            if b.magnet is not None
+            for d in (j, j + 4)
+        ]
 
     @property
     def n_control(self) -> int:
@@ -1305,20 +1357,20 @@ class RotorSystem:
         Minv = self.mass_inverse
         n = self.n_dof
         A = np.zeros((self.n_states, self.n_states))
-        A[:n, n:2 * n] = np.eye(n)
-        A[n:2 * n, :n] = -Minv @ self.stiffness(omega)
-        A[n:2 * n, n:2 * n] = -Minv @ (self.damping(omega) + omega * G)
+        A[:n, n : 2 * n] = np.eye(n)
+        A[n : 2 * n, :n] = -Minv @ self.stiffness(omega)
+        A[n : 2 * n, n : 2 * n] = -Minv @ (self.damping(omega) + omega * G)
         if self.magnets:
             Ac, Bc, Fc = self._control
-            A[n:2 * n, 2 * n:] = Minv @ Fc
-            A[2 * n:, :n], A[2 * n:, 2 * n:] = Bc, Ac
+            A[n : 2 * n, 2 * n :] = Minv @ Fc
+            A[2 * n :, :n], A[2 * n :, 2 * n :] = Bc, Ac
         return A
 
     def input_matrix(self) -> np.ndarray:
         """B (n_states x n): the inputs u = f (n,), a force or moment on each DOF."""
         n = self.n_dof
         B = np.zeros((self.n_states, n))
-        B[n:2 * n] = self.mass_inverse
+        B[n : 2 * n] = self.mass_inverse
         return B
 
     def static_state(self, omega: float = 0.0, phase: float | None = None) -> np.ndarray:
@@ -1333,7 +1385,7 @@ class RotorSystem:
         A = self.state_matrix(omega)
         if phase is not None:
             n = self.n_dof
-            A[n:2 * n, :n] = -self.mass_inverse @ self.stiffness_at(omega, phase)
+            A[n : 2 * n, :n] = -self.mass_inverse @ self.stiffness_at(omega, phase)
         return np.linalg.solve(A, -self.input_matrix() @ self.gravity_load(omega))
 
     # ------------------------------------------------------------- checks
@@ -1357,12 +1409,18 @@ class RotorSystem:
 def beam_stiffness(ei: float, length: float) -> np.ndarray:
     """Euler–Bernoulli beam element stiffness on [w1, θ1, w2, θ2], θ = dw/dz."""
     L = length
-    return ei / L**3 * np.array([
-        [12.0, 6 * L, -12.0, 6 * L],
-        [6 * L, 4 * L * L, -6 * L, 2 * L * L],
-        [-12.0, -6 * L, 12.0, -6 * L],
-        [6 * L, 2 * L * L, -6 * L, 4 * L * L],
-    ])
+    return (
+        ei
+        / L**3
+        * np.array(
+            [
+                [12.0, 6 * L, -12.0, 6 * L],
+                [6 * L, 4 * L * L, -6 * L, 2 * L * L],
+                [-12.0, -6 * L, 12.0, -6 * L],
+                [6 * L, 2 * L * L, -6 * L, 4 * L * L],
+            ]
+        )
+    )
 
 
 def beam_mass(rho_a: float, rho_i: float, length: float, lumped: bool = False) -> tuple[np.ndarray, np.ndarray]:
@@ -1375,18 +1433,31 @@ def beam_mass(rho_a: float, rho_i: float, length: float, lumped: bool = False) -
     if lumped:
         half_a, half_i = 0.5 * rho_a * L, 0.5 * rho_i * L
         return np.diag([half_a, 0.0, half_a, 0.0]), np.diag([0.0, half_i, 0.0, half_i])
-    translation = rho_a * L / 420.0 * np.array([
-        [156.0, 22 * L, 54.0, -13 * L],
-        [22 * L, 4 * L * L, 13 * L, -3 * L * L],
-        [54.0, 13 * L, 156.0, -22 * L],
-        [-13 * L, -3 * L * L, -22 * L, 4 * L * L],
-    ])
-    rotation = rho_i / (30.0 * L) * np.array([
-        [36.0, 3 * L, -36.0, 3 * L],
-        [3 * L, 4 * L * L, -3 * L, -L * L],
-        [-36.0, -3 * L, 36.0, -3 * L],
-        [3 * L, -L * L, -3 * L, 4 * L * L],
-    ])
+    translation = (
+        rho_a
+        * L
+        / 420.0
+        * np.array(
+            [
+                [156.0, 22 * L, 54.0, -13 * L],
+                [22 * L, 4 * L * L, 13 * L, -3 * L * L],
+                [54.0, 13 * L, 156.0, -22 * L],
+                [-13 * L, -3 * L * L, -22 * L, 4 * L * L],
+            ]
+        )
+    )
+    rotation = (
+        rho_i
+        / (30.0 * L)
+        * np.array(
+            [
+                [36.0, 3 * L, -36.0, 3 * L],
+                [3 * L, 4 * L * L, -3 * L, -L * L],
+                [-36.0, -3 * L, 36.0, -3 * L],
+                [3 * L, -L * L, -3 * L, 4 * L * L],
+            ]
+        )
+    )
     return translation, rotation
 
 
@@ -1477,7 +1548,7 @@ def whirl_modes(system: RotorSystem, omega: float) -> WhirlModes:
     else:
         lam, vec = np.linalg.eig(system.state_matrix(omega))
         keep, drift = _oscillation(lam)
-        lam, vec = lam[keep], vec[:system.n_dof, keep]
+        lam, vec = lam[keep], vec[: system.n_dof, keep]
         order = np.argsort(lam.imag)
         lam, vec = lam[order], vec[:, order]
         _circularize(system, lam, vec)
@@ -1557,7 +1628,7 @@ def _rotating_modes(system: RotorSystem, omega: float) -> tuple[np.ndarray, np.n
     half = mu.imag >= -_oscillating(mu)
     mu, vec = mu[half], vec[:, half]
     ix, iy = system.plane_dofs
-    V = vec[:system.n_dof]
+    V = vec[: system.n_dof]
     a, b = V[ix] + 1j * V[iy], V[ix] - 1j * V[iy]
     mp = system.plane_mass()
     fwd = np.real(np.einsum("ik,ij,jk->k", a.conj(), mp, a))
@@ -1597,8 +1668,8 @@ def _hill_modes(system: RotorSystem, omega: float) -> tuple[np.ndarray, np.ndarr
         Ak = -system.mass_inverse @ e
         for i in range(blocks - k // p):  # A_k takes c_j to c_{j + k/p}, its conjugate back
             lo, hi = slice(i * size, (i + 1) * size), slice((i + k // p) * size, (i + k // p + 1) * size)
-            big[hi, lo][n:2 * n, :n] = Ak
-            big[lo, hi][n:2 * n, :n] = Ak.conj()
+            big[hi, lo][n : 2 * n, :n] = Ak
+            big[lo, hi][n : 2 * n, :n] = Ak.conj()
     lam, vec = np.linalg.eig(big)
     disp = vec.reshape(blocks, size, -1)[:, :n]  # (harmonic, DOF, mode)
     M = system._matrices[0]
@@ -1615,8 +1686,7 @@ def _hill_modes(system: RotorSystem, omega: float) -> tuple[np.ndarray, np.ndarr
     tol = 1e-7 * max(1.0, float(np.abs(lam).max())) if lam.size else 0.0
     single, paired = [], set()
     for i in range(lam.size):
-        mate = next((j for j in single if j not in paired and flip[j] != flip[i]
-                     and abs(lam[j] - lam[i]) <= tol), None)
+        mate = next((j for j in single if j not in paired and flip[j] != flip[i] and abs(lam[j] - lam[i]) <= tol), None)
         if mate is None:
             single.append(i)
         else:
@@ -1676,6 +1746,7 @@ def campbell(system: RotorSystem, omega_max: float, n_speeds: int = 241, n_modes
 
 def _refine_critical(system: RotorSystem, branch: int, guess: float, lo: float, hi: float) -> float:
     """A few secant steps on 2π f_branch(Ω) = Ω, kept within [lo, hi]."""
+
     def gap(w: float) -> float:
         f = whirl_modes(system, w).freq_hz
         return 2.0 * math.pi * f[branch] - w if branch < f.size else -w
@@ -1749,8 +1820,9 @@ def harmonic_orders(system: RotorSystem, odd: bool | None) -> np.ndarray:
     return np.arange(-top, top + 1, 2) if odd else np.arange(-top - 1, top + 2, 2)
 
 
-def harmonic_response(system: RotorSystem, omega: float | np.ndarray, orders: np.ndarray,
-                      loads: np.ndarray) -> np.ndarray:
+def harmonic_response(
+    system: RotorSystem, omega: float | np.ndarray, orders: np.ndarray, loads: np.ndarray
+) -> np.ndarray:
     """Harmonic balance at constant speed Ω: the periodic q = Σ Q_k e^{ikφ} under f = Σ F_k e^{ikφ}.
 
     orders (m,) are the harmonics k, in order; loads (..., m, n_dof) the F_k (F_{-k}
@@ -1771,10 +1843,10 @@ def harmonic_response(system: RotorSystem, omega: float | np.ndarray, orders: np
     out = np.empty((w.size, m * n), dtype=complex)
     chunk = max(1, 2_000_000 // (m * n) ** 2)  # speeds solved at once, to bound the memory
     for c in range(0, w.size, chunk):
-        wc = w[c:c + chunk, None, None]
+        wc = w[c : c + chunk, None, None]
         if system.films:  # the films' stiffness and damping are not linear in Ω
-            Kw = np.array([system.stiffness(x) for x in w[c:c + chunk]])
-            Cw = np.array([system.damping(x) for x in w[c:c + chunk]])
+            Kw = np.array([system.stiffness(x) for x in w[c : c + chunk]])
+            Cw = np.array([system.damping(x) for x in w[c : c + chunk]])
         else:
             Kw, Cw = K + wc * H, C
         A = np.zeros((wc.shape[0], m * n, m * n), dtype=complex)
@@ -1785,18 +1857,18 @@ def harmonic_response(system: RotorSystem, omega: float | np.ndarray, orders: np
             for j, kj in enumerate(orders):
                 gap = int(k - kj)
                 if gap and abs(gap) in E:
-                    A[:, d, j * n:(j + 1) * n] = E[gap] if gap > 0 else E[-gap].conj()
-        Fc = F[c:c + chunk].copy()
+                    A[:, d, j * n : (j + 1) * n] = E[gap] if gap > 0 else E[-gap].conj()
+        Fc = F[c : c + chunk].copy()
         if system.magnets:
             for i, k in enumerate(orders):
                 for j, x in enumerate(wc[:, 0, 0]):
                     D, pinned = system.support_stiffness(1j * k * x)
-                    A[j, i * n:(i + 1) * n, i * n:(i + 1) * n] += D
+                    A[j, i * n : (i + 1) * n, i * n : (i + 1) * n] += D
                     rows = [i * n + p for p in pinned]
                     A[j, rows] = 0.0
                     A[j, rows, rows] = 1.0
                     Fc[j, rows] = 0.0
-        out[c:c + chunk] = np.linalg.solve(A, Fc[..., None])[..., 0]
+        out[c : c + chunk] = np.linalg.solve(A, Fc[..., None])[..., 0]
     out = out.reshape(w.size, m, n)
     return out[0] if np.ndim(omega) == 0 else out
 
@@ -1825,8 +1897,9 @@ def steady_harmonics(system: RotorSystem, omegas: np.ndarray, top: int = 3) -> t
     return periodic_steady(system, omegas, gravity=True, rotating=True, top=top)
 
 
-def periodic_steady(system: RotorSystem, omegas: np.ndarray, gravity: bool, rotating: bool,
-                    top: int) -> tuple[np.ndarray, np.ndarray]:
+def periodic_steady(
+    system: RotorSystem, omegas: np.ndarray, gravity: bool, rotating: bool, top: int
+) -> tuple[np.ndarray, np.ndarray]:
     """As steady_harmonics, from gravity's load, the 1X loads, or both: (Q_0, V_k for k = 1 ... top)."""
     omegas = np.atleast_1d(np.asarray(omegas, dtype=float))
     n = system.n_dof
@@ -1893,8 +1966,9 @@ class _Films:
         self.dofs = [d for j, _ in films for d in (j, j + 4)]  # x and y of each film's journal
         self.rates = [d + n for d in self.dofs]
         # (k, c, the speed below which the film is held): per film.
-        self.films = [(b.film.film_scale, b.film.clearance, b.film.with_load(abs(loads[j])).slowest())
-                      for j, b in films]
+        self.films = [
+            (b.film.film_scale, b.film.clearance, b.film.with_load(abs(loads[j])).slowest()) for j, b in films
+        ]
         self.scale = 1.0 + max(abs(w) for w in system.bearing_loads)
         self.held = math.nan
         self.key: tuple | None = None
@@ -1929,9 +2003,9 @@ class _Films:
         self.size = max(abs(c) for b in self.taken for c in b)
         self.Cb = np.zeros((len(d), len(d)))
         for i, (cxx, cxy, cyy) in enumerate(self.taken):
-            self.Cb[2 * i:2 * i + 2, 2 * i:2 * i + 2] = ((cxx, cxy), (cxy, cyy))
+            self.Cb[2 * i : 2 * i + 2, 2 * i : 2 * i + 2] = ((cxx, cxy), (cxy, cyy))
         A = self.A.copy()
-        A[n:2 * n, self.rates] -= system.mass_inverse[:, d] @ (self.Cb - self.Cf)
+        A[n : 2 * n, self.rates] -= system.mass_inverse[:, d] @ (self.Cb - self.Cf)
         self.Phi, self.G0, self.G1 = foh_discretize(A, system.input_matrix(), h)
         self.R0, self.R1 = self.G0[:, d], self.G1[:, d]
         self.Ex, self.Ev = self.R1[d], self.R1[self.rates]  # the journals' x and x' at the step's end, per force
@@ -1947,9 +2021,20 @@ class _Films:
         if self.kernel_key != (h, self.held):
             d = self.dofs
             self.kernel = native.module.FilmSteps(
-                self.A, self.system.input_matrix(), self.system.mass_inverse[:, d], self.Cf, self.Kf, self.p, h,
-                d + self.rates, self.films, FILM_DRIFT, FILM_TOL * self.scale, FILM_CORRECTION * self.scale,
-                FILM_ITERATIONS)
+                self.A,
+                self.system.input_matrix(),
+                self.system.mass_inverse[:, d],
+                self.Cf,
+                self.Kf,
+                self.p,
+                h,
+                d + self.rates,
+                self.films,
+                FILM_DRIFT,
+                FILM_TOL * self.scale,
+                FILM_CORRECTION * self.scale,
+                FILM_ITERATIONS,
+            )
             self.kernel_key = (h, self.held)
         return self.kernel
 
@@ -1967,9 +2052,9 @@ class _Films:
         for i, (k, c, slowest) in enumerate(self.films):
             j = 2 * i
             o = pi_film(k, c, y[j], y[j + 1], y[m + j], y[m + j + 1], max(abs(omega), slowest))
-            f[j:j + 2] = o[:2]
-            D[j:j + 2, j:j + 2] = (o[2:4], o[4:6])
-            D[j:j + 2, m + j:m + j + 2] = ((o[6], o[7]), (o[7], o[8]))
+            f[j : j + 2] = o[:2]
+            D[j : j + 2, j : j + 2] = (o[2:4], o[4:6])
+            D[j : j + 2, m + j : m + j + 2] = ((o[6], o[7]), (o[7], o[8]))
             psi += o[9]
         return f, D, psi
 
@@ -2016,8 +2101,9 @@ class _Films:
         return r
 
 
-def _rub_solve(stator: Stator, radius: float, yb: np.ndarray, E: np.ndarray, r: np.ndarray, omega: float,
-               tol: float) -> tuple[np.ndarray, float]:
+def _rub_solve(
+    stator: Stator, radius: float, yb: np.ndarray, E: np.ndarray, r: np.ndarray, omega: float, tol: float
+) -> tuple[np.ndarray, float]:
     """(r, N): the ring's force on the disc at the step's end, where the disc's (x, y, x', y') = yb + E r, by
     Newton from the guess r (each step cut back until it shrinks the residual), and its normal force."""
 
@@ -2074,13 +2160,13 @@ class RotorSimulator:
             n0, n1 = old.n_dof, system.n_dof
             state = np.zeros(system.n_states)
             if n1 == n0:
-                state[:2 * n1] = self.state[:2 * n0]
+                state[: 2 * n1] = self.state[: 2 * n0]
             else:
-                state[:N_DOF], state[n1:n1 + N_DOF] = self.state[:N_DOF], self.state[n0:n0 + N_DOF]
+                state[:N_DOF], state[n1 : n1 + N_DOF] = self.state[:N_DOF], self.state[n0 : n0 + N_DOF]
             if system.n_control == old.n_control:
-                state[2 * n1:] = self.state[2 * n0:]
+                state[2 * n1 :] = self.state[2 * n0 :]
             else:
-                state[2 * n1:] = system.static_state(self.omega)[2 * n1:]
+                state[2 * n1 :] = system.static_state(self.omega)[2 * n1 :]
             self.state = state
         self.system = system
         self._cache.clear()
@@ -2102,7 +2188,7 @@ class RotorSimulator:
         q = s.bow_displacement(self.phase) + s.rest_deflection(self.phase)
         z = np.concatenate([q, np.zeros_like(q), np.zeros(s.n_control)])
         if s.magnets:  # their controllers already holding the weight
-            z[2 * s.n_dof:] = s.static_state(0.0, self.phase if s.periodic else None)[2 * s.n_dof:]
+            z[2 * s.n_dof :] = s.static_state(0.0, self.phase if s.periodic else None)[2 * s.n_dof :]
         return z
 
     def reset(self) -> None:
@@ -2115,20 +2201,20 @@ class RotorSimulator:
         """Hit the disc: an impulse (N·s) in x and y changes the velocities at once, by M^{-1} times it."""
         Minv = self.system.mass_inverse
         n = self.system.n_dof
-        self.state[n:2 * n] += Minv[:, XD] * impulse_x + Minv[:, YD] * impulse_y
+        self.state[n : 2 * n] += Minv[:, XD] * impulse_x + Minv[:, YD] * impulse_y
 
     @property
     def q(self) -> np.ndarray:
-        return self.state[:self.system.n_dof]
+        return self.state[: self.system.n_dof]
 
     @property
     def qdot(self) -> np.ndarray:
-        return self.state[self.system.n_dof:2 * self.system.n_dof]
+        return self.state[self.system.n_dof : 2 * self.system.n_dof]
 
     @property
     def control(self) -> np.ndarray:
         """The magnets' controllers' states (see RotorSystem._control); empty without magnets."""
-        return self.state[2 * self.system.n_dof:]
+        return self.state[2 * self.system.n_dof :]
 
     def energy(self) -> tuple[float, float]:
         """(kinetic, potential) energy of the vibration (J); the spin's own energy left out."""
@@ -2183,8 +2269,9 @@ class RotorSimulator:
         h = MAX_STEP if fmax <= 0 else min(MAX_STEP, 1.0 / (STEPS_PER_PERIOD * fmax))
         return 2.0 ** math.floor(math.log2(h))
 
-    def _discrete(self, h: float, omega: float, cache: bool,
-                  phase: float | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _discrete(
+        self, h: float, omega: float, cache: bool, phase: float | None = None
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """The FOH update over h at speed Ω; with `phase`, an asymmetric shaft standing still at that angle."""
         key = (h, omega, phase)
         if key in self._cache:
@@ -2192,7 +2279,7 @@ class RotorSimulator:
         A = self.system.state_matrix(omega)
         if phase is not None:
             n = self.system.n_dof
-            A[n:2 * n, :n] = -self.system.mass_inverse @ self.system.stiffness_at(omega, phase)
+            A[n : 2 * n, :n] = -self.system.mass_inverse @ self.system.stiffness_at(omega, phase)
         out = foh_discretize(A, self.system.input_matrix(), h)
         if cache:
             if len(self._cache) > 8:
@@ -2223,7 +2310,7 @@ class RotorSimulator:
         gap = self.target - self.omega
         if gap == 0.0:
             return np.full(n, self.target)
-        ramp =self.omega + math.copysign(self.accel * h, gap) * np.arange(1, n + 1)
+        ramp = self.omega + math.copysign(self.accel * h, gap) * np.arange(1, n + 1)
         return np.minimum(ramp, self.target) if gap > 0 else np.maximum(ramp, self.target)
 
     def advance(self, duration: float) -> RotorSamples:
@@ -2253,14 +2340,14 @@ class RotorSimulator:
             # A turning shaft standing still has a fixed stiffness: stepped exactly, like a round one.
             still = self.system.periodic and steady and self.omega == 0.0
             if self._films is not None:
-                z = self._film_steps(h, held, w1, u0, u, qs[k:k + n])
+                z = self._film_steps(h, held, w1, u0, u, qs[k : k + n])
             elif self.system.periodic and not still:
-                z = self._split_steps(h, held, steady, w0, w1, alpha, u0, u, qs[k:k + n])
+                z = self._split_steps(h, held, steady, w0, w1, alpha, u0, u, qs[k : k + n])
             else:
                 Phi, G0, G1 = self._discrete(h, held, steady, self.phase if still else None)
                 drive = G0 @ np.vstack([u0, u[:-1]]).T + G1 @ u.T
                 if rubs is not None:
-                    z = self._rub_steps(Phi, G0, G1, drive, w1, qs[k:k + n], rubs[k:k + n])
+                    z = self._rub_steps(Phi, G0, G1, drive, w1, qs[k : k + n], rubs[k : k + n])
                 else:
                     z = self.state
                     for j in range(n):
@@ -2268,8 +2355,8 @@ class RotorSimulator:
                         qs[k + j] = z[:n_dof]
             self.state = z
             if bows is not None:
-                bows[k:k + n] = self.thermal_bow
-                self._warm(n * h, rubs[k:k + n, 3], qs[k:k + n], phi1)
+                bows[k : k + n] = self.thermal_bow
+                self._warm(n * h, rubs[k : k + n, 3], qs[k : k + n], phi1)
             ts[k : k + n] = self.t + h * np.arange(1, n + 1)
             ws[k : k + n], phis[k : k + n] = w1, phi1
             self.t = float(ts[k + n - 1])
@@ -2290,22 +2377,46 @@ class RotorSimulator:
         decay = math.exp(-span / stator.thermal_lag)
         self.thermal_bow = self.thermal_bow * decay + stator.thermal_gain * (1.0 - decay) * complex(np.mean(hot))
 
-    def _rub_steps(self, Phi: np.ndarray, G0: np.ndarray, G1: np.ndarray, drive: np.ndarray, w1: np.ndarray,
-                   out: np.ndarray, rubs: np.ndarray) -> np.ndarray:
+    def _rub_steps(
+        self,
+        Phi: np.ndarray,
+        G0: np.ndarray,
+        G1: np.ndarray,
+        drive: np.ndarray,
+        w1: np.ndarray,
+        out: np.ndarray,
+        rubs: np.ndarray,
+    ) -> np.ndarray:
         """`_rub_steps_reference`'s steps, by the Rust kernel (`native.module.RubSteps`) where it's built."""
         if native.module is None:
             return self._rub_steps_reference(Phi, G0, G1, drive, w1, out, rubs)
         system = self.system
         stator = system.stator
         kernel = native.module.RubSteps(
-            Phi, G0, G1, system.n_dof, XD, YD,
+            Phi,
+            G0,
+            G1,
+            system.n_dof,
+            XD,
+            YD,
             (stator.clearance, stator.stiffness, stator.damping, stator.friction, *stator.centre),
-            SLIP, system.disc_radius, RUB_TOL * (1.0 + stator.stiffness * stator.clearance), RUB_ITERATIONS)
-        return np.asarray(kernel.steps(self.state, drive, np.ascontiguousarray(w1, dtype=float), self.omega,
-                                       out, rubs))
+            SLIP,
+            system.disc_radius,
+            RUB_TOL * (1.0 + stator.stiffness * stator.clearance),
+            RUB_ITERATIONS,
+        )
+        return np.asarray(kernel.steps(self.state, drive, np.ascontiguousarray(w1, dtype=float), self.omega, out, rubs))
 
-    def _rub_steps_reference(self, Phi: np.ndarray, G0: np.ndarray, G1: np.ndarray, drive: np.ndarray,
-                             w1: np.ndarray, out: np.ndarray, rubs: np.ndarray) -> np.ndarray:
+    def _rub_steps_reference(
+        self,
+        Phi: np.ndarray,
+        G0: np.ndarray,
+        G1: np.ndarray,
+        drive: np.ndarray,
+        w1: np.ndarray,
+        out: np.ndarray,
+        rubs: np.ndarray,
+    ) -> np.ndarray:
         """Steps with the disc rubbing on the stator; fills out (n, n_dof) and rubs (n, 3), returns the last state.
 
         The ring's force r on the disc goes in as a load, linear over the step as
@@ -2340,8 +2451,9 @@ class RotorSimulator:
             rubs[j] = r[0], r[1], normal, heat
         return z
 
-    def _film_steps(self, h: float, held: float, w1: np.ndarray, u0: np.ndarray, u: np.ndarray,
-                    out: np.ndarray) -> np.ndarray:
+    def _film_steps(
+        self, h: float, held: float, w1: np.ndarray, u0: np.ndarray, u: np.ndarray, out: np.ndarray
+    ) -> np.ndarray:
         """`_film_steps_reference`'s steps, by the Rust kernel (`_Films.stepper`) where it's built."""
         if native.module is None:
             return self._film_steps_reference(h, held, w1, u0, u, out)
@@ -2350,8 +2462,9 @@ class RotorSimulator:
         u0, u = np.ascontiguousarray(u0, dtype=float), np.ascontiguousarray(u, dtype=float)
         return np.asarray(films.stepper(h).steps(self.state, u0, u, w1, self.omega, out))
 
-    def _film_steps_reference(self, h: float, held: float, w1: np.ndarray, u0: np.ndarray, u: np.ndarray,
-                              out: np.ndarray) -> np.ndarray:
+    def _film_steps_reference(
+        self, h: float, held: float, w1: np.ndarray, u0: np.ndarray, u: np.ndarray, out: np.ndarray
+    ) -> np.ndarray:
         """Steps with the oil films' whole force (`whole_films`); fills out (n, n_dof), returns the last state.
 
         The film's force depends on where the journal is and how it moves, far from
@@ -2386,8 +2499,18 @@ class RotorSimulator:
             out[j] = z[:n_dof]
         return z
 
-    def _split_steps(self, h: float, held: float, steady: bool, w0: np.ndarray, w1: np.ndarray,
-                     alpha: np.ndarray, u0: np.ndarray, u: np.ndarray, out: np.ndarray) -> np.ndarray:
+    def _split_steps(
+        self,
+        h: float,
+        held: float,
+        steady: bool,
+        w0: np.ndarray,
+        w1: np.ndarray,
+        alpha: np.ndarray,
+        u0: np.ndarray,
+        u: np.ndarray,
+        out: np.ndarray,
+    ) -> np.ndarray:
         """Steps with an asymmetric or cracked shaft (Strang splitting); fills out (n, n_dof), returns the last state.
 
         Its stiffness turns with it, so no one matrix exponential steps it. Each step
@@ -2413,7 +2536,7 @@ class RotorSimulator:
         z = self.state
         for j in range(n):
             z = Phi @ z + first[:, j]
-            z[n_dof:2 * n_dof] -= weights[j] @ (S @ z[:n_dof])
+            z[n_dof : 2 * n_dof] -= weights[j] @ (S @ z[:n_dof])
             z = Phi @ z + second[:, j]
             out[j] = z[:n_dof]
         return z

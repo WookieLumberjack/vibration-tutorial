@@ -85,7 +85,13 @@ def test_sweep_stages_and_legs():
     while not run.done:
         run.advance(0.05)
         stages.append(run.stage)
-    assert [s for i, s in enumerate(stages) if i == 0 or s != stages[i - 1]] == ["approach", "settle", "out", "back", "done"]
+    assert [s for i, s in enumerate(stages) if i == 0 or s != stages[i - 1]] == [
+        "approach",
+        "settle",
+        "out",
+        "back",
+        "done",
+    ]
     up, down = run.sweeps
     assert up.up and not down.up and up.label == "Run-up 4,000 rpm/s" and down.label == "Coast-down 4,000 rpm/s"
     assert np.all(np.diff(up.speed) > 0) and np.all(np.diff(down.speed) < 0)
@@ -105,8 +111,13 @@ def test_slow_ramp_approaches_the_steady_state():
         w, v, peak = leg.trace(1, "x")
         ss = probe(steady_vectors(s, w)[:, 1], "x")
         scale = np.abs(ss).max()
-        errors.append((np.abs(v - ss).max() / scale, np.abs(peak - np.abs(ss)).max() / scale,
-                       np.abs(lag_degrees(v, lag_degrees(ss)) - lag_degrees(ss)).max()))
+        errors.append(
+            (
+                np.abs(v - ss).max() / scale,
+                np.abs(peak - np.abs(ss)).max() / scale,
+                np.abs(lag_degrees(v, lag_degrees(ss)) - lag_degrees(ss)).max(),
+            )
+        )
     slow, faster = errors
     assert slow[0] < 0.05 and slow[1] < 0.04 and slow[2] < 3.0  # within 5% and 3° throughout
     assert all(a < 0.5 * b for a, b in zip(slow, faster))  # and closer the slower the ramp

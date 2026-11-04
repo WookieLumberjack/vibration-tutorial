@@ -226,8 +226,9 @@ def _rigid_count(w2: np.ndarray) -> int:
     return int(np.sum(w2 <= 1e-9 * max(1.0, abs(float(w2[-1])))))
 
 
-def component_mode_synthesis(system: ChainSystem, interfaces: list[int], n_kept: list[int],
-                             method: str = "craig-bampton") -> CMSModel:
+def component_mode_synthesis(
+    system: ChainSystem, interfaces: list[int], n_kept: list[int], method: str = "craig-bampton"
+) -> CMSModel:
     """Reduce the chain with substructures cut at `interfaces`, by any of METHODS.
 
     interfaces: 0-based interface masses (each in 0 .. n-2; none = one substructure); n_kept: the number
@@ -255,8 +256,9 @@ def craig_bampton(system: ChainSystem, interfaces: list[int], n_kept: list[int])
     return component_mode_synthesis(system, interfaces, n_kept, "craig-bampton")
 
 
-def free_interface(system: ChainSystem, interfaces: list[int], n_kept: list[int],
-                   residual_mass: bool = True) -> CMSModel:
+def free_interface(
+    system: ChainSystem, interfaces: list[int], n_kept: list[int], residual_mass: bool = True
+) -> CMSModel:
     """Reduce the chain with free-interface modes plus residual flexibility.
 
     residual_mass=True is Rubin's method (a Rayleigh-Ritz projection);
@@ -278,10 +280,12 @@ def _assemble(system: ChainSystem, method: str, subs: list[Substructure], bounda
     nq = sum(sub.n_kept for sub in subs)
     for sub in subs:
         # Localization: where this substructure's reduced coordinates sit globally.
-        cols = np.concatenate([
-            np.arange(q0, q0 + sub.n_kept),
-            nq + np.searchsorted(boundary, sub.boundary),
-        ])
+        cols = np.concatenate(
+            [
+                np.arange(q0, q0 + sub.n_kept),
+                nq + np.searchsorted(boundary, sub.boundary),
+            ]
+        )
         q0 += sub.n_kept
         ix = np.ix_(cols, cols)
         Mr[ix] += sub.M_red
@@ -374,8 +378,24 @@ def _reduce_free(name, elements, interior, boundary, M, C, K, n_kept, residual_m
     if not ni:
         # Nothing to reduce: the substructure is its boundary DOFs, kept physical.
         T = np.eye(nb)
-        return Substructure(name, elements, interior, boundary, M, C, K, True, np.zeros(0), np.zeros((nb, 0)),
-                            0, np.zeros((0, nb)), T, M.copy(), C.copy(), K.copy())
+        return Substructure(
+            name,
+            elements,
+            interior,
+            boundary,
+            M,
+            C,
+            K,
+            True,
+            np.zeros(0),
+            np.zeros((nb, 0)),
+            0,
+            np.zeros((0, nb)),
+            T,
+            M.copy(),
+            C.copy(),
+            K.copy(),
+        )
     w2, Phi = scipy.linalg.eigh(K, M)
     # Sign: the largest entry positive (the first of them, if tied), e.g. a rigid-body mode all +.
     peak = np.argmax(np.abs(Phi) >= np.abs(Phi).max(axis=0) - 1e-9, axis=0)
@@ -491,9 +511,20 @@ def component_modes(model: CMSModel, full: ModalResult) -> list[ComponentMode]:
             shape[np.searchsorted(dofs, rows)] = sub.Phi[:, r]
             shape *= np.sign(q[r, best]) or 1.0
             shape /= np.abs(shape).max()
-            out.append(ComponentMode(sub.name, r + 1, float(sub.omegas[r] / TWO_PI), zetas[r],
-                                     r < sub.n_kept, best + 1, full.modes[best].fn_hz, float(shares[r, best]),
-                                     dofs, shape))
+            out.append(
+                ComponentMode(
+                    sub.name,
+                    r + 1,
+                    float(sub.omegas[r] / TWO_PI),
+                    zetas[r],
+                    r < sub.n_kept,
+                    best + 1,
+                    full.modes[best].fn_hz,
+                    float(shares[r, best]),
+                    dofs,
+                    shape,
+                )
+            )
     return out
 
 
@@ -541,8 +572,7 @@ def compare_modes(model: CMSModel, full: ModalResult) -> list[ModeComparison]:
             if red @ true < 0:
                 red = -red
             mac = float((red @ true) ** 2 / ((red @ red) * (true @ true)))
-            out.append(ModeComparison(r + 1, mode.fn_hz, float(model.fn_hz[r]), mac, true, red,
-                                      zeta_true, zeta_red[r]))
+            out.append(ModeComparison(r + 1, mode.fn_hz, float(model.fn_hz[r]), mac, true, red, zeta_true, zeta_red[r]))
         else:
             out.append(ModeComparison(r + 1, mode.fn_hz, None, None, true, None, zeta_true))
     return out

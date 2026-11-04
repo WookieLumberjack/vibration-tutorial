@@ -191,8 +191,9 @@ class CoupledModel:
         return self.residual and bool(np.isclose(self.osc_a.m, m_tip, rtol=1e-9))
 
 
-def coupled_model(system: ChainSystem, split: int, mode_a: int = 0, mode_b: int = 0,
-                  a_mass: str = "tip", residual: bool = True) -> CoupledModel:
+def coupled_model(
+    system: ChainSystem, split: int, mode_a: int = 0, mode_b: int = 0, a_mass: str = "tip", residual: bool = True
+) -> CoupledModel:
     """Reduce A to its mode `mode_a` and B to its mode `mode_b` (0-based), and join them."""
     if a_mass not in A_MASSES:
         raise ValueError(f"a_mass must be one of {A_MASSES}")
@@ -202,8 +203,7 @@ def coupled_model(system: ChainSystem, split: int, mode_a: int = 0, mode_b: int 
     if a_mass == "tip":
         m_a = float(A.tip_masses()[mode_a])
         if not np.isfinite(m_a):
-            raise ValueError(f"A's mode {mode_a + 1} does not move m{split} (its tip), so it cannot "
-                             "couple to B there")
+            raise ValueError(f"A's mode {mode_a + 1} does not move m{split} (its tip), so it cannot couple to B there")
     else:
         m_a = float(A.effective_masses[mode_a])
     m_b = float(B.effective_masses[mode_b])
@@ -211,8 +211,10 @@ def coupled_model(system: ChainSystem, split: int, mode_a: int = 0, mode_b: int 
     if m_a < small:
         raise ValueError(f"A's mode {mode_a + 1} has no effective mass along x")
     if m_b < small:
-        raise ValueError(f"B's mode {mode_b + 1} has (almost) no effective mass along x: a motion of its "
-                         "base does not excite it, so it cannot couple to A")
+        raise ValueError(
+            f"B's mode {mode_b + 1} has (almost) no effective mass along x: a motion of its "
+            "base does not excite it, so it cannot couple to A"
+        )
     osc_a = Oscillator(m_a, m_a * A.omegas[mode_a] ** 2, m_a * A.modal_damping[mode_a])
     osc_b = Oscillator(m_b, m_b * B.omegas[mode_b] ** 2, m_b * B.modal_damping[mode_b])
     m_res = B.total_mass - m_b
@@ -221,8 +223,26 @@ def coupled_model(system: ChainSystem, split: int, mode_a: int = 0, mode_b: int 
     C = two_dof(osc_a.c, osc_b.c)
     w2, eta = scipy.linalg.eigh(K, M)
     shapes = chain_shapes(A, B, mode_a, mode_b, eta)
-    return CoupledModel(system, split, mode_a, mode_b, a_mass, residual, A, B, osc_a, osc_b, m_res,
-                        M, C, K, np.sqrt(np.clip(w2, 0.0, None)), _zetas(M, C, K, w2), eta, shapes)
+    return CoupledModel(
+        system,
+        split,
+        mode_a,
+        mode_b,
+        a_mass,
+        residual,
+        A,
+        B,
+        osc_a,
+        osc_b,
+        m_res,
+        M,
+        C,
+        K,
+        np.sqrt(np.clip(w2, 0.0, None)),
+        _zetas(M, C, K, w2),
+        eta,
+        shapes,
+    )
 
 
 def two_dof(a: float, b: float) -> np.ndarray:
@@ -295,8 +315,17 @@ def compare_coupled(model: CoupledModel, full: ModalResult) -> list[CoupledCompa
     out = []
     for r, s in enumerate(best):
         mode = full.modes[s]
-        out.append(CoupledComparison(r + 1, float(model.fn_hz[r]), model.zetas[r], s + 1, mode.fn_hz,
-                                     mode.damped.zeta if mode.damped is not None else None, float(mac[r, s])))
+        out.append(
+            CoupledComparison(
+                r + 1,
+                float(model.fn_hz[r]),
+                model.zetas[r],
+                s + 1,
+                mode.fn_hz,
+                mode.damped.zeta if mode.damped is not None else None,
+                float(mac[r, s]),
+            )
+        )
     return out
 
 

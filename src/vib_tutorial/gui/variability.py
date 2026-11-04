@@ -80,34 +80,45 @@ TRIALS = (
         "scatters by about 1.4 % (mode 1: σ = 0.015 Hz on 1.105 Hz), and the first-order estimate from the "
         "modes' strain energies, σ<sub>f</sub>/f = σ<sub>λ</sub>/2λ, gives 1.44 % for every mode. The receptance's band is narrow "
         "between the peaks and wide at them: a sharp peak moves sideways, so near it the response can be several "
-        "times the nominal one."),
+        "times the nominal one.",
+    ),
     VariabilityTrial(
         "Masses scatter too",
         "5 % on the masses as well as the springs: the frequencies scatter by about 2 % (mode 1: σ = 0.023 Hz). "
         "Independent sources add in quadrature: √2 times the springs' alone.",
-        mass=5.0),
+        mass=5.0,
+    ),
     VariabilityTrial(
         "Damping scatter only",
         "30 % scatter on the dampers and none on the rest: the frequencies don't move at all, but the peaks "
         "do, by about the damping's scatter. The band only opens at the resonances.",
-        stiffness=0.0, damping=30.0),
+        stiffness=0.0,
+        damping=30.0,
+    ),
     VariabilityTrial(
         "A tuned bladed disc",
         "Twelve identical blades, each on a spring to the disc, joined by springs of 5 % of theirs round the "
         "ring (Modes tab). Its modes are waves round the ring: 0 to 6 nodal diameters, all but the first and "
         "last in pairs, in a band from 15.9 to 17.4 Hz. Every mode moves 6 to 12 blades.",
-        tab=TAB_MODES),
+        tab=TAB_MODES,
+    ),
     VariabilityTrial(
         "Weak coupling: 1 % mistuning localizes",
         "The coupling cut to 0.5 % and each blade's stiffness scattered by 1 %: the scatter is now twice the "
         "coupling, the waves can't get past the blades that differ, and the lowest mode moves 1.3 blades: "
         "it is one blade's. A mode localized on a few blades puts all the energy there.",
-        coupling=0.5, mistuning=1.0, tab=TAB_MODES),
+        coupling=0.5,
+        mistuning=1.0,
+        tab=TAB_MODES,
+    ),
     VariabilityTrial(
         "Strong coupling resists",
         "The same 1 % mistuning with a 20 % coupling: every mode still spreads over 6 to 12 blades. What "
         "matters is the mistuning over the coupling, not the mistuning alone.",
-        coupling=20.0, mistuning=1.0, tab=TAB_MODES),
+        coupling=20.0,
+        mistuning=1.0,
+        tab=TAB_MODES,
+    ),
     VariabilityTrial(
         "Forced response: one blade takes more",
         "Engine order 3 on the ring with a 2 % coupling (Forced tab). Tuned, every blade answers alike. With "
@@ -115,13 +126,16 @@ TRIALS = (
         "reaches 1.34 at 1 % and 1.42 at 2 %, where the mistuning matches the coupling: still below "
         "Whitehead's bound (1 + √12)/2 = 2.23. More mistuning helps again (1.28 at 10 %): the blades "
         "decouple.",
-        coupling=2.0, mistuning=1.0, tab=TAB_FORCED),
+        coupling=2.0,
+        mistuning=1.0,
+        tab=TAB_FORCED,
+    ),
 )
 
 TIPS = {
     "dof": "<p>The chain's number of masses: the Simulation page's chain is the nominal structure.</p>",
     "cov": "<p>The coefficient of variation (σ over the mean) of each mass, spring or damper, drawn "
-           "independently and lognormal.</p>",
+    "independently and lognormal.</p>",
     "count": "<p>How many scattered chains to draw.</p>",
     "blades": "<p>The number of blades round the disc.</p>",
     "coupling": "<p>The springs between neighbouring blades, as a share of each blade's own.</p>",
@@ -129,14 +143,20 @@ TIPS = {
     "eo": "<p>The engine order E: the force on blade j has phase 2πEj/N, a wave E times round the disc.</p>",
     "mode": "<p>Which of the ring's modes to draw, from the lowest.</p>",
 }
-FRF_TIP = ("<p>The receptance at the last mass from a force there: nominal (bold), the 5–95 % band of the "
-           "scattered chains (shaded), and a few of them.</p>")
+FRF_TIP = (
+    "<p>The receptance at the last mass from a force there: nominal (bold), the 5–95 % band of the "
+    "scattered chains (shaded), and a few of them.</p>"
+)
 HIST_TIP = "<p>Each mode's frequency deviation in the scattered chains, with the first-order normal curve.</p>"
-MODES_TIP = ("<p>Top: the chosen mode's blade amplitudes, tuned (outline) and mistuned (filled). Bottom: how many "
-             "blades each mode moves (participation number).</p>")
-FORCED_TIP = ("<p>Top: each blade's amplitude under the engine-order force, mistuned (thin) and tuned (dashed). "
-              "Bottom: the worst blade's peak over the tuned one against the mistuning, mean and worst of the "
-              "patterns, and Whitehead's bound.</p>")
+MODES_TIP = (
+    "<p>Top: the chosen mode's blade amplitudes, tuned (outline) and mistuned (filled). Bottom: how many "
+    "blades each mode moves (participation number).</p>"
+)
+FORCED_TIP = (
+    "<p>Top: each blade's amplitude under the engine-order force, mistuned (thin) and tuned (dashed). "
+    "Bottom: the worst blade's peak over the tuned one against the mistuning, mean and worst of the "
+    "patterns, and Whitehead's bound.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -178,15 +198,25 @@ chain into the Simulation page.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("updating_page", "sensitivities", "Updating by sensitivities"),
-    ("test_page", "measured", "A measured FRF"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "Scattered properties scatter the frequencies by less, and the response near a peak by much more.",
-    "First-order sensitivities predict the frequencies' spread from the strain and kinetic energy shares.",
-    "Weakly coupled, nearly identical parts localize their modes when the mistuning matches the coupling.",
-    "A mistuned disc's worst blade can answer up to (1 + √N)/2 times the tuned one.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("updating_page", "sensitivities", "Updating by sensitivities"),
+            ("test_page", "measured", "A measured FRF"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Scattered properties scatter the frequencies by less, and the response near a peak by much more.",
+            "First-order sensitivities predict the frequencies' spread from the strain and kinetic energy shares.",
+            "Weakly coupled, nearly identical parts localize their modes when the mistuning matches the coupling.",
+            "A mistuned disc's worst blade can answer up to (1 + √N)/2 times the tuned one.",
+        ),
+    )
+)
 
 
 class VariabilityPage(QtWidgets.QWidget):
@@ -201,8 +231,10 @@ class VariabilityPage(QtWidgets.QWidget):
         self.system = ChainSystem.uniform(4)
         self._dirty = True
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the scatter or the ring to show one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each sets up the scatter or the ring to show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         ch = Form("Chain")
@@ -210,8 +242,9 @@ class VariabilityPage(QtWidgets.QWidget):
         self.dof.setRange(1, MAX_DOF)
         self.dof.valueChanged.connect(self.dof_requested)
         ch.add("Number of masses:", self.dof, TIPS["dof"])
-        link = QtWidgets.QLabel("Its nominal masses, springs and dampers are edited on the <a href='#sim'>"
-                                "Simulation page</a>.")
+        link = QtWidgets.QLabel(
+            "Its nominal masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         link.setWordWrap(True)
         mute(link)
         link.linkActivated.connect(lambda _: self.edit_parameters.emit())
@@ -295,8 +328,7 @@ class VariabilityPage(QtWidgets.QWidget):
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tab())
 
-        three_panes(self, column(self.trials, ch, sc, ring), stack((self.frf_plot, 1), (self.readout, 0)),
-                    self.tabs)
+        three_panes(self, column(self.trials, ch, sc, ring), stack((self.frf_plot, 1), (self.readout, 0)), self.tabs)
         self.apply_theme()
         self.set_system(self.system)
 
@@ -319,12 +351,24 @@ class VariabilityPage(QtWidgets.QWidget):
             system = ChainSystem.uniform(4)
             self.system_requested.emit(system)
             s = self.system
-            if (s.n != 4 or not np.allclose(s.masses, 1.0) or not np.allclose(s.stiffness, 400.0)
-                    or not np.allclose(s.damping, 2.0)):
+            if (
+                s.n != 4
+                or not np.allclose(s.masses, 1.0)
+                or not np.allclose(s.stiffness, 400.0)
+                or not np.allclose(s.damping, 2.0)
+            ):
                 self.set_system(system)
-        for box, value in ((self.cov_m, t.mass), (self.cov_k, t.stiffness), (self.cov_c, t.damping),
-                           (self.count, 200), (self.blades, t.blades), (self.coupling, t.coupling),
-                           (self.mistuning, t.mistuning), (self.eo, t.engine_order), (self.mode, t.mode)):
+        for box, value in (
+            (self.cov_m, t.mass),
+            (self.cov_k, t.stiffness),
+            (self.cov_c, t.damping),
+            (self.count, 200),
+            (self.blades, t.blades),
+            (self.coupling, t.coupling),
+            (self.mistuning, t.mistuning),
+            (self.eo, t.engine_order),
+            (self.mode, t.mode),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -336,8 +380,9 @@ class VariabilityPage(QtWidgets.QWidget):
 
     @property
     def ring(self) -> Ring:
-        return Ring(int(self.blades.value()), coupling=self.coupling.value() / 100,
-                    mistuning=self.mistuning.value() / 100)
+        return Ring(
+            int(self.blades.value()), coupling=self.coupling.value() / 100, mistuning=self.mistuning.value() / 100
+        )
 
     def _on_scatter(self) -> None:
         self._draw_chain()
@@ -406,13 +451,15 @@ class VariabilityPage(QtWidgets.QWidget):
             f"<td align='right'>{mc.freqs[:, r].mean():.4g}</td><td align='right'>{mc.freqs[:, r].std():.3g}</td>"
             f"<td align='right'>{sigma[r]:.3g}</td>"
             f"<td align='right'>{100 * mc.freqs[:, r].std() / mc.nominal_freqs[r]:.3g} %</td></tr>"
-            for r in range(n))
+            for r in range(n)
+        )
         peak = int(np.argmax(mc.nominal_frf))
         self.readout.setText(
             "<table cellspacing='5'><tr><th>mode</th><th>nominal (Hz)</th><th>mean</th><th>σ (Monte Carlo)</th>"
             f"<th>σ (first order)</th><th>σ/f</th></tr>{rows}</table>"
             f"At the nominal peak ({f[peak]:.3g} Hz) the band spans {low[peak] / mc.nominal_frf[peak]:.2g} to "
-            f"{high[peak] / mc.nominal_frf[peak]:.2g} times the nominal receptance; {mc.freqs.shape[0]} chains.")
+            f"{high[peak] / mc.nominal_frf[peak]:.2g} times the nominal receptance; {mc.freqs.shape[0]} chains."
+        )
 
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
@@ -449,8 +496,10 @@ class VariabilityPage(QtWidgets.QWidget):
                 self.hist_items.append(curve)
         self.hist_plot.setXRange(-span, span, padding=0)
         self.hist_plot.enableAutoRange(axis="y")
-        self.hist_note.setText("Solid: the scattered chains' frequency deviations from nominal; dashed: the "
-                               "first-order normal curve. A mode with σ = 0 doesn't move.")
+        self.hist_note.setText(
+            "Solid: the scattered chains' frequency deviations from nominal; dashed: the "
+            "first-order normal curve. A mode with σ = 0 doesn't move."
+        )
 
     def _draw_modes(self) -> None:
         ring = self.ring
@@ -475,7 +524,8 @@ class VariabilityPage(QtWidgets.QWidget):
             f"Mode {mode + 1}: tuned {ft[mode]:.4g} Hz, moving {nt[mode]:.2g} blades; mistuned {fm[mode]:.4g} Hz, "
             f"moving {nm[mode]:.2g}. The tuned band runs {lo:.4g} to {hi:.4g} Hz; mistuning "
             f"{100 * ring.mistuning:.3g} % against a coupling of {100 * ring.coupling:.3g} % (ratio "
-            f"{ring.mistuning / ring.coupling:.2g}).")
+            f"{ring.mistuning / ring.coupling:.2g})."
+        )
 
     def _draw_forced(self) -> None:
         ring = self.ring
@@ -510,4 +560,5 @@ class VariabilityPage(QtWidgets.QWidget):
         self.forced_note.setText(
             f"This pattern: the worst blade peaks at {a:.3g} times the tuned ring's. Over {SEEDS} patterns per "
             f"level the worst reaches {float(top.max()):.3g} (at {levels[int(np.argmax(top))]:.3g} %); Whitehead's "
-            f"bound for {n} blades is {bound:.3g} (dotted).")
+            f"bound for {n} blades is {bound:.3g} (dotted)."
+        )

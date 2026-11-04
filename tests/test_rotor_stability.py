@@ -39,14 +39,15 @@ def cross_coupled(kxy: float, **kw) -> RotorSystem:
 
 def test_cross_coupling_and_internal_damping_enter_as_skew_stiffness():
     s = RotorSystem(bearing_a=Bearing(kxy=3e3), internal_damping=20.0, position=0.3)
-    M, C, G, K = s.matrices()
+    _M, C, _G, K = s.matrices()
     skew = 0.5 * (K - K.T)
     assert np.count_nonzero(np.abs(skew) > 1e-9) == 2 and skew[0, 4] == 3e3  # A only, x row y column
     np.testing.assert_allclose(C, C.T, atol=1e-12)
     H = s.circulatory()
     np.testing.assert_allclose(H, -H.T, atol=1e-12)
-    np.testing.assert_allclose(C[:4, :4] - np.diag(np.diag(RotorSystem().matrices()[1])[:4]),
-                               s.loss_time * s.shaft_stiffness(), atol=1e-12)
+    np.testing.assert_allclose(
+        C[:4, :4] - np.diag(np.diag(RotorSystem().matrices()[1])[:4]), s.loss_time * s.shaft_stiffness(), atol=1e-12
+    )
     np.testing.assert_allclose(s.stiffness(100.0), K + 100.0 * H)
     # None of it: K symmetric, H zero, stable at every speed.
     assert not RotorSystem().circulatory().any()

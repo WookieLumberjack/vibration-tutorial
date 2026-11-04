@@ -34,8 +34,18 @@ def test_closed_form_matches_the_ode():
     assert exact(m, load, t) == pytest.approx(ref, abs=1e-9)
 
 
-@pytest.mark.parametrize("scheme, order", [(Scheme.CENTRAL, 2), (Scheme.AVERAGE, 2), (Scheme.LINEAR, 2),
-                                           (Scheme.HHT, 2), (Scheme.RK4, 4), (Scheme.EULER, 1), (Scheme.FOH, 2)])
+@pytest.mark.parametrize(
+    "scheme, order",
+    [
+        (Scheme.CENTRAL, 2),
+        (Scheme.AVERAGE, 2),
+        (Scheme.LINEAR, 2),
+        (Scheme.HHT, 2),
+        (Scheme.RK4, 4),
+        (Scheme.EULER, 1),
+        (Scheme.FOH, 2),
+    ],
+)
 def test_each_scheme_converges_at_its_order(scheme, order):
     m, load = Model(damping=1.0), Load(0.01, 1.0, 2.0)
     T = 1 / m.frequencies_hz()[0]

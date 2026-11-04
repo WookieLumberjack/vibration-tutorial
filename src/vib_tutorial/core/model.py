@@ -207,7 +207,7 @@ def state_space(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
 
     B maps a force vector (one entry per mass) into the state derivative.
     """
-    M, C, K = system.matrices()
+    _M, C, K = system.matrices()
     n = system.n
     Minv = np.diag(1.0 / system.masses)
     A = np.zeros((2 * n, 2 * n))
