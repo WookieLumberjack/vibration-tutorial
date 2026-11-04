@@ -9,6 +9,7 @@ mistuning, and the Theory.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -16,6 +17,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.model import ChainSystem
+from ..core.practice import Problem, Question, at_least, at_most, kept, number, pick, rounded
 from ..core.random_vibration import linear
 from ..core.variability import (
     Ring,
@@ -49,11 +51,12 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
 TAB_HISTOGRAM, TAB_MODES, TAB_FORCED = range(3)
+TWO_PI = 2.0 * math.pi
 LEVELS = np.array([0.0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1])
 SEEDS = 12  # mistuning patterns per level
 
@@ -71,6 +74,15 @@ class VariabilityTrial:
     engine_order: int = 3
     mode: int = 1
     tab: int = TAB_HISTOGRAM
+    count: int = 200
+    masses: tuple[float, ...] = ()  # a chain element by element (none: the one there is)
+    springs: tuple[float, ...] = ()
+    dampers: tuple[float, ...] = ()
+
+    def system(self) -> ChainSystem | None:
+        if not self.masses:
+            return None
+        return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
 
 
 TRIALS = (
@@ -130,6 +142,216 @@ TRIALS = (
         mistuning=1.0,
         tab=TAB_FORCED,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+BLADE_HZ = Ring().blade_hz  # every ring's blade: 1 kg on 10 kN/m
+
+
+def _uniform(n: int) -> dict:
+    s = ChainSystem.uniform(n)
+    return dict(
+        masses=tuple(map(float, s.masses)), springs=tuple(map(float, s.stiffness)), dampers=tuple(map(float, s.damping))
+    )
+
+
+def _one_mass(rng: np.random.Generator) -> Question:
+    cm, ck = pick(rng, (0, 2, 3, 5)), pick(rng, (2, 4, 5, 10))
+    spread = 0.5 * math.hypot(cm, ck)
+    return Question(
+        f"A single mass on a spring: the mass scatters by {cm:g} % and the spring by {ck:g} % (coefficients of "
+        "variation, independent). By how many percent does its natural frequency scatter, to first order?",
+        spread,
+        f"f ∝ √(k/m), so δf/f = ½(δk/k − δm/m): each source's share is half its own scatter, and independent ones add "
+        f"in quadrature: ½√({ck:g}² + {cm:g}²) = {number(spread)} %.",
+        unit="%",
+        setup=dict(masses=(1.0,), springs=(400.0,), dampers=(2.0,), mass=cm, stiffness=ck),
+    )
+
+
+def _shares(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (3, 4, 5)))
+    r = int(rng.integers(n))
+    c = pick(rng, (2, 5, 10))
+    system = ChainSystem.uniform(n)
+    f, phi = natural_hz(system)
+    dphi = np.diff(phi, prepend=0.0, axis=0)
+    shares = [rounded(float(v), 3) for v in dphi[:, r] ** 2 * system.stiffness / (TWO_PI * f[r]) ** 2]
+    spread = 0.5 * c * math.sqrt(sum(v * v for v in shares))
+    listed = ", ".join(number(v) for v in shares)
+    return Question(
+        f"In one mode of a chain, its {n} springs carry these shares of the strain energy: {listed}. Every spring "
+        f"scatters by {c:g} %, independently. By how many percent does the mode's frequency scatter, to first order?",
+        spread,
+        f"A spring's δk moves λ = ω² by its share s<sub>i</sub> of λ, so σ<sub>λ</sub>/λ = c √Σs<sub>i</sub>² = "
+        f"{c:g} × √{number(sum(v * v for v in shares))} and σ<sub>f</sub>/f = σ<sub>λ</sub>/2λ = {number(spread)} %. "
+        "Less than the springs' own: the mode averages over them.",
+        unit="%",
+        setup=dict(**_uniform(n), stiffness=c),
+    )
+
+
+def _percentile(rng: np.random.Generator) -> Question:
+    c = pick(rng, (5, 10, 20, 30))
+    s2 = math.log(1 + (c / 100) ** 2)
+    top = 100 * (math.exp(-s2 / 2 + 1.645 * math.sqrt(s2)) - 1)
+    return Question(
+        f"A spring's stiffness is lognormal with mean at its nominal value and a {c:g} % coefficient of variation. "
+        "How far above nominal is its 95th percentile?",
+        top,
+        f"ln k is normal with σ² = ln(1 + {c / 100:g}²) = {number(s2)} and mean −σ²/2 (so the mean of k is "
+        f"nominal): the 95th percentile is exp(−σ²/2 + 1.645σ) = {number(1 + top / 100, 4)}, {number(top)} % above.",
+        unit="%",
+    )
+
+
+def _whitehead(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (8, 12, 16, 24, 36, 48)))
+    bound = (1 + math.sqrt(n)) / 2
+    return Question(
+        f"A bladed disc has {n} blades, lightly damped, driven by one engine order. At most how many times the tuned "
+        "response can its worst blade see once mistuned?",
+        bound,
+        f"Whitehead's bound: (1 + √N)/2 = (1 + √{n})/2 = {number(bound)}.",
+        tolerance=0.01,
+        setup=dict(blades=n, coupling=2.0, mistuning=1.0, tab=TAB_FORCED),
+    )
+
+
+def _band(rng: np.random.Generator) -> Question:
+    c = pick(rng, (1, 2, 5, 10, 20))
+    fb = rounded(BLADE_HZ)
+    top = fb * math.sqrt(1 + 4 * c / 100)
+    return Question(
+        f"A tuned ring of blades, each alone at {number(fb)} Hz, joined to its neighbours by springs of {c:g} % of "
+        "each blade's own. Where is the top of its band of modes?",
+        top,
+        f"The 0-nodal-diameter mode leaves the coupling springs unstretched, at the blade's {number(fb)} Hz; the "
+        f"highest, neighbours in opposition, stretches each by twice the motion: f√(1 + 4k<sub>c</sub>/k) = "
+        f"{number(fb)} × √{number(1 + 4 * c / 100)} = {number(top)} Hz.",
+        unit="Hz",
+        setup=dict(coupling=c, tab=TAB_MODES),
+    )
+
+
+def _participation(rng: np.random.Generator) -> Question:
+    shape = [1.0, *(pick(rng, (-0.8, -0.5, -0.2, 0.2, 0.5, 0.8)) for _ in range(3))]
+    shape[int(rng.integers(1, 4))] = pick(rng, (0.0, 0.1))
+    p2 = sum(v * v for v in shape)
+    p4 = sum(v**4 for v in shape)
+    value = float(participation(np.array(shape)[:, None])[0])
+    return Question(
+        f"A mode of a ring of four blades has amplitudes {', '.join(number(v) for v in shape)}. What is its "
+        "participation number?",
+        value,
+        f"(Σφ²)²/Σφ⁴ = {number(p2)}²/{number(p4)} = {number(value)} blades: 4 if all moved alike, 1 if only one did.",
+        unit="blades",
+    )
+
+
+def _draws(rng: np.random.Generator) -> Question:
+    e = pick(rng, (2, 5, 10))
+    count = 1 + 1 / (2 * (e / 100) ** 2)
+    return Question(
+        f"Monte Carlo estimates a frequency's standard deviation from N scattered chains. About how many chains does "
+        f"it take for that estimate's own scatter to be {e:g} %?",
+        count,
+        f"A sample standard deviation from N normal draws scatters by about 1/√(2(N − 1)): N = 1 + 1/(2 × "
+        f"{e / 100:g}²) = {number(count)}.",
+        unit="chains",
+        tolerance=0.03,
+    )
+
+
+def _damping_only(rng: np.random.Generator) -> Question:
+    return Question(
+        "Only the dampers scatter, by 30 %; the masses and springs are exact. What do the natural frequencies do?",
+        0,
+        "They don't move at all: the undamped frequencies depend only on M and K. The peaks' heights scatter, by "
+        "about the damping's scatter, and the band opens only at the resonances.",
+        choices=("They don't move", "They scatter by about 15 %", "They scatter by about 30 %", "They all drop"),
+        setup=dict(**_uniform(4), stiffness=0.0, damping=30.0),
+        predict=True,
+    )
+
+
+def _weak_coupling(rng: np.random.Generator) -> Question:
+    return Question(
+        "Twelve blades with 1 % mistuning, joined by springs of only 0.5 % of their own. How many blades does the "
+        "lowest mode move?",
+        0,
+        "About one (1.3): the mistuning is twice the coupling, the waves can't get past the blades that differ, and "
+        "the mode collapses onto one blade. Tuned, it moves all twelve.",
+        choices=("About one", "About half of them", "All twelve"),
+        setup=dict(coupling=0.5, mistuning=1.0, tab=TAB_MODES),
+        predict=True,
+    )
+
+
+def _strong_coupling(rng: np.random.Generator) -> Question:
+    return Question(
+        "The same 1 % mistuning on twelve blades, but the coupling raised to 20 %. How many blades does the lowest "
+        "mode move?",
+        0,
+        "Nearly all twelve (12.0), as tuned: what localizes a mode is the mistuning over the coupling (here 0.05), "
+        "not the mistuning alone.",
+        choices=("Nearly all twelve", "About half of them", "About one"),
+        setup=dict(coupling=20.0, mistuning=1.0, tab=TAB_MODES),
+        predict=True,
+    )
+
+
+def _spread(blades: int, coupling: float, mistuning: float) -> float:
+    """The ring's lowest mode's participation number (couplings and mistuning in %)."""
+    return float(participation(ring_modes(Ring(blades, coupling=coupling / 100, mistuning=mistuning / 100))[1])[0])
+
+
+def _ring_spec(rng: np.random.Generator) -> Question:
+    blades = int(pick(rng, (8, 12, 16)))
+    mistuning = pick(rng, (1, 2, 5))
+    ratio = pick(rng, (0.3, 0.4, 0.5))
+    coupling = round(mistuning / ratio, 2)  # %, the design
+    least = math.floor(10 * _spread(blades, 0.85 * coupling, mistuning)) / 10
+    most = rounded(1.25 * coupling, 2)
+
+    def goal(t: VariabilityTrial):
+        return (
+            kept("Blades", t.blades, blades),
+            kept("Mistuning", t.mistuning, mistuning, "%"),
+            at_least("Blades the lowest mode moves", _spread(int(t.blades), t.coupling, t.mistuning), least),
+            at_most("Coupling", t.coupling, most, "%"),
+        )
+
+    return Question(
+        f"A ring of {blades} blades with {mistuning:g} % mistuning (the page's pattern). Choose the coupling between "
+        f"them so that its lowest mode spreads over at least {number(least, 2)} blades, with the coupling springs no "
+        f"more than {number(most)} % of the blades' own.",
+        0,
+        f"Localization is set by the mistuning over the coupling: the lowest mode moves {number(_spread(blades, coupling, mistuning))} "
+        f"blades at a coupling of {number(coupling)} % (ratio {ratio:g}), and fewer as the ratio grows: about "
+        f"{number(0.85 * coupling)} % is the least that does it.",
+        setup=dict(blades=blades, coupling=0.5, mistuning=mistuning, tab=TAB_MODES),
+        goal=goal,
+        design=dict(blades=blades, coupling=coupling, mistuning=mistuning, tab=TAB_MODES),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "variability_page", f"See {page_link('variability_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("one-mass", "One mass's scatter", "scatter", "No two structures are alike", _one_mass),
+        ("shares", "A mode's scatter", "scatter", "No two structures are alike", _shares),
+        ("percentile", "A lognormal's percentile", "scatter", "No two structures are alike", _percentile),
+        ("draws", "How many chains", "scatter", "No two structures are alike", _draws),
+        ("band", "A ring's band of modes", "localization", "Mode localization", _band),
+        ("participation", "A participation number", "localization", "Mode localization", _participation),
+        ("whitehead", "Whitehead's bound", "mistuning", "Forced response of a mistuned disc", _whitehead),
+        ("damping-only", "Predict: damping scatter", "scatter", "No two structures are alike", _damping_only),
+        ("weak-coupling", "Predict: weak coupling", "localization", "Mode localization", _weak_coupling),
+        ("strong-coupling", "Predict: strong coupling", "localization", "Mode localization", _strong_coupling),
+        ("ring-spec", "Spec: a coupling that spreads", "localization", "Mode localization", _ring_spec),
+    )
 )
 
 TIPS = {
@@ -217,6 +439,11 @@ NOTES_HTML = (
         ),
     )
 )
+
+
+def _fields(t: VariabilityTrial) -> dict:
+    """A trial's settings, without its name and note."""
+    return {k: v for k, v in t.__dict__.items() if k not in ("name", "note")}
 
 
 class VariabilityPage(QtWidgets.QWidget):
@@ -326,7 +553,7 @@ class VariabilityPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.shape_plot, self.pn_plot, self.modes_note, stretch=False), "Ring modes")
         self.tabs.addTab(column(self.sweep_plot, self.amp_plot, self.forced_note, stretch=False), "Forced ring")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._on_tab)
 
         three_panes(self, column(self.trials, ch, sc, ring), stack((self.frf_plot, 1), (self.readout, 0)), self.tabs)
         self.apply_theme()
@@ -347,22 +574,52 @@ class VariabilityPage(QtWidgets.QWidget):
 
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        if index < 3:
-            system = ChainSystem.uniform(4)
+        if index < 3:  # the chain trials start from the uniform chain
+            t = VariabilityTrial(t.name, t.note, **{**_fields(t), **_uniform(4)})
+        self.apply_trial(t)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(VariabilityTrial("", "", **setup))
+
+    def practice_state(self) -> VariabilityTrial:
+        """The chain and the page's settings, as a trial: what a practice spec checks."""
+        s = self.system
+        return VariabilityTrial(
+            "",
+            "",
+            mass=self.cov_m.value(),
+            stiffness=self.cov_k.value(),
+            damping=self.cov_c.value(),
+            blades=int(self.blades.value()),
+            coupling=self.coupling.value(),
+            mistuning=self.mistuning.value(),
+            engine_order=int(self.eo.value()),
+            mode=int(self.mode.value()),
+            tab=self.tabs.currentIndex(),
+            count=int(self.count.value()),
+            masses=tuple(float(v) for v in s.masses),
+            springs=tuple(float(v) for v in s.stiffness),
+            dampers=tuple(float(v) for v in s.damping),
+        )
+
+    def apply_trial(self, t: VariabilityTrial) -> None:
+        system = t.system()
+        if system is not None:
             self.system_requested.emit(system)
             s = self.system
-            if (
-                s.n != 4
-                or not np.allclose(s.masses, 1.0)
-                or not np.allclose(s.stiffness, 400.0)
-                or not np.allclose(s.damping, 2.0)
+            if s.n != system.n or not all(
+                np.allclose(a, b)
+                for a, b in ((s.masses, system.masses), (s.stiffness, system.stiffness), (s.damping, system.damping))
             ):
-                self.set_system(system)
+                self.set_system(system)  # nobody passed it back: show it here alone
+        self.mode.setMaximum(int(t.blades))
+        self.eo.setMaximum(int(t.blades) // 2)
         for box, value in (
             (self.cov_m, t.mass),
             (self.cov_k, t.stiffness),
             (self.cov_c, t.damping),
-            (self.count, 200),
+            (self.count, t.count),
             (self.blades, t.blades),
             (self.coupling, t.coupling),
             (self.mistuning, t.mistuning),
@@ -372,7 +629,9 @@ class VariabilityPage(QtWidgets.QWidget):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
-        self.redraw()
+        self._dirty = True
+        if self.isVisible():
+            self.redraw()
 
     @property
     def scatter(self) -> Scatter:
@@ -383,6 +642,14 @@ class VariabilityPage(QtWidgets.QWidget):
         return Ring(
             int(self.blades.value()), coupling=self.coupling.value() / 100, mistuning=self.mistuning.value() / 100
         )
+
+    def _on_tab(self, _index: int) -> None:
+        if not self.isVisible():
+            self._dirty = True  # drawn when shown
+        elif self._dirty:
+            self.redraw()
+        else:
+            self._draw_tab()
 
     def _on_scatter(self) -> None:
         self._draw_chain()
