@@ -25,6 +25,7 @@ from ..core.periodic import (
     series,
     series_error,
 )
+from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import Oscillator, frequency_grid, receptance
 from . import settle_plots
 from .lesson import (
@@ -45,7 +46,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -67,6 +68,8 @@ class PeriodicTrial:
     damping: float = 2.0
     tab: int = TAB_LINES
     tune: int = 0  # set f₀ to f_n / tune when not 0
+    mass: float = 1.0
+    stiffness: float = 400.0
 
 
 TRIALS = (
@@ -130,6 +133,221 @@ TRIALS = (
         harmonics=7,
         tab=TAB_REST,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _swing(t: PeriodicTrial) -> float:
+    """The steady swing's largest |x| (m), exactly."""
+    forcing = Forcing(t.wave, t.amplitude, t.freq_hz, t.duty)
+    times = np.linspace(0.0, forcing.period, 600, endpoint=False)
+    return float(np.max(np.abs(periodic_steady(Oscillator(t.mass, t.stiffness, t.damping), forcing, times))))
+
+
+def _square_harmonic(rng: np.random.Generator) -> Question:
+    F = pick(rng, (1, 2, 5, 10))
+    k = int(pick(rng, (1, 3, 5, 7, 9)))
+    f0 = pick(rng, (0.5, 1, 2))
+    a = 4 * F / (math.pi * k)
+    return Question(
+        f"A ±{F:g} N square wave repeats at {f0:g} Hz. How large is its harmonic at {number(k * f0)} Hz?",
+        a,
+        f"That is the {k}{'st' if k == 1 else 'th'} harmonic. A square wave is (4F/π) Σ sin kω₀t / k over odd k: "
+        f"4 × {F:g}/({k}π) = {number(a)} N.",
+        unit="N",
+        setup=dict(wave=Wave.SQUARE, amplitude=float(F), freq_hz=f0, harmonics=max(k, 5)),
+    )
+
+
+def _pulse_harmonic(rng: np.random.Generator) -> Question:
+    F = pick(rng, (1, 2, 5))
+    d = pick(rng, (0.1, 0.2, 0.3, 0.4))
+    k = int(pick(rng, (1, 2, 3)))
+    a = 2 * F / (math.pi * k) * abs(math.sin(math.pi * k * d))
+    return Question(
+        f"A train of rectangular pulses of {F:g} N, each on for {100 * d:g} % of the period. How large is "
+        f"its harmonic number {k}?",
+        a,
+        f"|C<sub>k</sub>| = (2F/πk)|sin πkd| = (2 × {F:g}/{k}π) |sin({k}π × {d:g})| = {number(a)} N. (It is zero at "
+        "every multiple of 1/d.)",
+        unit="N",
+        setup=dict(wave=Wave.PULSES, amplitude=float(F), duty=d, harmonics=8),
+    )
+
+
+def _rectified_sag(rng: np.random.Generator) -> Question:
+    F = pick(rng, (1, 2, 5, 10))
+    k = pick(rng, (100, 400, 1000))
+    sag = 2 * F / (math.pi * k)
+    return Question(
+        f"A rectified sine force F|sin πt/T| with F = {F:g} N acts on a {k:g} N/m spring. About what mean deflection "
+        "does the mass swing around?",
+        1e3 * sag,
+        f"The mean of F|sin| is 2F/π = {number(2 * F / math.pi)} N, and the mean only sags the spring "
+        f"(H(0) = 1/k): {number(1e3 * sag)} mm.",
+        unit="mm",
+        setup=dict(wave=Wave.RECTIFIED, amplitude=float(F), stiffness=float(k), tab=TAB_REST),
+    )
+
+
+def _harmonic_resonance(rng: np.random.Generator) -> Question:
+    F = pick(rng, (1, 2, 5))
+    zeta = pick(rng, (0.01, 0.02, 0.05))
+    n = int(pick(rng, (3, 5)))
+    osc = Oscillator(1.0, 400.0, rounded(2 * zeta * 20.0))
+    f0 = rounded(osc.natural_hz / n)
+    H = float(abs(receptance(osc, np.array([n * f0]))[0]))
+    x = 4 * F / (math.pi * n) * H
+    ordinal = "3rd" if n == 3 else f"{n}th"
+    return Question(
+        f"A ±{F:g} N square wave at {number(f0)} Hz drives a 1 kg mass on 400 N/m with c = {number(osc.damping)} "
+        f"N·s/m (f<sub>n</sub> = {number(osc.natural_hz)} Hz). How large is the response at its {ordinal} harmonic?",
+        1e3 * x,
+        f"The {ordinal} harmonic, 4F/{n}π = {number(4 * F / (math.pi * n))} N, lands on f<sub>n</sub>, where |H| ≈ "
+        f"1/cω<sub>n</sub> = {number(H)} m/N: {number(1e3 * x)} mm. The force runs at a {n}th of the natural "
+        "frequency and still resonates it.",
+        unit="mm",
+        tolerance=0.03,
+        setup=dict(wave=Wave.SQUARE, amplitude=float(F), freq_hz=f0, damping=osc.damping, harmonics=n + 2),
+    )
+
+
+def _impulse_lines(rng: np.random.Generator) -> Question:
+    blow = pick(rng, (0.1, 0.2, 0.5, 1))
+    f0 = pick(rng, (1, 2, 5, 10))
+    a = 2 * blow * f0
+    return Question(
+        f"A hammer strikes a blow of {blow:g} N·s {f0:g} times a second. How large is each of its harmonics?",
+        a,
+        f"An impulse train is I/T + (2I/T) Σ cos kω₀t: every harmonic the same, 2I/T = 2 × {blow:g} × {f0:g} = "
+        f"{number(a)} N (the mean is half that).",
+        unit="N",
+        setup=dict(wave=Wave.IMPULSES, amplitude=blow, freq_hz=float(f0), harmonics=8),
+    )
+
+
+def _square_at_half(rng: np.random.Generator) -> Question:
+    return Question(
+        "A square wave drives an oscillator at exactly half its natural frequency. Does any harmonic resonate it?",
+        0,
+        "No: a square wave has odd harmonics only (it repeats upside down every half period), so nothing lands on "
+        "2f₀ = f<sub>n</sub>. A sawtooth there would resonate through its second harmonic.",
+        choices=("No: it has no even harmonics", "Yes: its 2nd harmonic", "Yes: every harmonic adds up"),
+        setup=dict(wave=Wave.SQUARE, tune=2, harmonics=9),
+        predict=True,
+    )
+
+
+def _fastest_falling(rng: np.random.Generator) -> Question:
+    return Question(
+        "Of these waves at the same height, which one's 9th harmonic is the smallest?",
+        0,
+        "The triangle's: it has no jump, only kinks, so its harmonics fall as 1/k² (1/81 here). The square's and "
+        "the sawtooth's jumps make theirs fall as 1/k, and an impulse train's don't fall at all.",
+        choices=("Triangle", "Square wave", "Sawtooth", "Impulse train"),
+        setup=dict(wave=Wave.TRIANGLE, harmonics=9),
+        predict=True,
+    )
+
+
+def _gibbs(rng: np.random.Generator) -> Question:
+    return Question(
+        "A square wave's Fourier series is cut at 5 harmonics, then at 50. What happens to its overshoot at the jumps?",
+        0,
+        "It stays about 9 % of the jump (Gibbs), only narrower: the series never matches a jump, it just squeezes "
+        "the ripple towards it.",
+        choices=("It stays about 9 %, only narrower", "It shrinks to nothing", "It shrinks to a tenth"),
+        setup=dict(wave=Wave.SQUARE, harmonics=50),
+        predict=True,
+    )
+
+
+def _speed_spec(rng: np.random.Generator) -> Question:
+    F = pick(rng, (1, 2, 5))
+    zeta = pick(rng, (0.01, 0.02))
+    c = rounded(2 * zeta * 20.0)
+    fn = Oscillator(1.0, 400.0, c).natural_hz
+    lo, hi = rounded(fn / 3.6), rounded(fn / 1.6)
+    design = rounded(fn / 2)
+    most = rounded(1.15 * 1e3 * _swing(PeriodicTrial("", "", amplitude=float(F), freq_hz=design, damping=c)), 2)
+
+    def goal(t: PeriodicTrial):
+        return (
+            kept("The mass", t.mass, 1.0, "kg"),
+            kept("The spring", t.stiffness, 400.0, "N/m"),
+            kept("The damper", t.damping, c, "N·s/m"),
+            Requirement(
+                f"A ±{F:g} N square wave",
+                f"{t.wave.value}, {number(t.amplitude)}",
+                t.wave is Wave.SQUARE and abs(t.amplitude - F) <= 0.005 * F,
+            ),
+            Requirement(
+                f"Its frequency between {number(lo)} and {number(hi)} Hz",
+                f"{number(t.freq_hz)} Hz",
+                lo <= t.freq_hz <= hi,
+            ),
+            at_most("The steady swing", 1e3 * _swing(t), most, "mm"),
+        )
+
+    return Question(
+        f"A machine's ±{F:g} N square-wave force can run anywhere from {number(lo)} to {number(hi)} Hz. It shakes "
+        f"a 1 kg mass on 400 N/m with c = {number(c)} N·s/m (f<sub>n</sub> = {number(fn)} Hz). Pick a speed where "
+        f"the mass's steady swing stays within ±{number(most, 2)} mm.",
+        0,
+        f"Each odd harmonic kf₀ must keep off f<sub>n</sub>. f₀ = f<sub>n</sub>/3 = {number(fn / 3)} Hz puts the 3rd "
+        "on it. Below that the jumps come slowly and each one rings the mass (the 5th, 7th, … harmonics crowd "
+        "round f<sub>n</sub>); above it the 3rd is past f<sub>n</sub>, and only the 1st matters, still below "
+        f"resonance. So anywhere from about 0.4f<sub>n</sub> up to {number(hi)} Hz does: f<sub>n</sub>/2 = "
+        f"{number(fn / 2)} Hz, say, where a square wave has no harmonic at all.",
+        setup=dict(amplitude=float(F), freq_hz=rounded(fn / 3), damping=c, harmonics=9, tab=TAB_REST),
+        goal=goal,
+        design=dict(amplitude=float(F), freq_hz=design, damping=c, harmonics=9, tab=TAB_REST),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "periodic_page", f"See {page_link('periodic_page', anchor, section)}{more}.", make)
+    for key, title, anchor, section, more, make in (
+        ("square-harmonic", "A square wave's harmonic", "shapes", "Shapes and their harmonics", "", _square_harmonic),
+        ("pulse-harmonic", "A pulse train's harmonic", "shapes", "Shapes and their harmonics", "", _pulse_harmonic),
+        ("rectified-sag", "The mean of a force", "superposition", "Each harmonic through H", "", _rectified_sag),
+        (
+            "harmonic-resonance",
+            "A harmonic on resonance",
+            "superposition",
+            "Each harmonic through H",
+            "",
+            _harmonic_resonance,
+        ),
+        ("impulse-lines", "A hammer's harmonics", "shapes", "Shapes and their harmonics", "", _impulse_lines),
+        (
+            "square-at-half",
+            "Predict: half the natural frequency",
+            "shapes",
+            "Shapes and their harmonics",
+            "",
+            _square_at_half,
+        ),
+        (
+            "fastest-falling",
+            "Predict: the smoothest wave",
+            "shapes",
+            "Shapes and their harmonics",
+            "",
+            _fastest_falling,
+        ),
+        ("gibbs", "Predict: more harmonics", "shapes", "Shapes and their harmonics", "", _gibbs),
+        (
+            "speed-spec",
+            "Spec: a running speed",
+            "superposition",
+            "Each harmonic through H",
+            ": which harmonics does a square wave have?",
+            _speed_spec,
+        ),
+    )
 )
 
 TIPS = {
@@ -365,12 +583,34 @@ class PeriodicPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
-        osc = Oscillator(1.0, 400.0, t.damping)
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(PeriodicTrial("", "", **setup))
+
+    def practice_state(self) -> PeriodicTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return PeriodicTrial(
+            "",
+            "",
+            wave=WAVES[self.wave.currentIndex()],
+            amplitude=self.amplitude.value(),
+            freq_hz=self.freq.value(),
+            duty=self.duty.value(),
+            harmonics=int(self.harmonics.value()),
+            damping=self.damping.value(),
+            tab=self.tabs.currentIndex(),
+            mass=self.mass.value(),
+            stiffness=self.stiffness.value(),
+        )
+
+    def apply_trial(self, t: PeriodicTrial) -> None:
+        osc = Oscillator(t.mass, t.stiffness, t.damping)
         freq = osc.natural_hz / t.tune if t.tune else t.freq_hz
         for box, value in (
-            (self.mass, 1.0),
-            (self.stiffness, 400.0),
+            (self.mass, t.mass),
+            (self.stiffness, t.stiffness),
             (self.damping, t.damping),
             (self.wave, WAVES.index(t.wave)),
             (self.amplitude, t.amplitude),
