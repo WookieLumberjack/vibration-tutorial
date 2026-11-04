@@ -27,7 +27,9 @@ jobs:
 
       # core/ only for now (see [tool.mypy]): the locked dependencies, still without building the package.
       - name: mypy
-        run: uv run --no-install-project mypy
+        run: |
+          uv sync --locked --no-install-project
+          uv run --no-sync mypy
 
   rust:
     runs-on: ubuntu-latest
