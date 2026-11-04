@@ -29,6 +29,7 @@ from .theming import SETTINGS
 PAGES = (
     "sim_page",
     "energy_page",
+    "frf_page",
     "sdof_page",
     "pendulum_page",
     "transient_page",
