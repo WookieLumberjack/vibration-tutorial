@@ -52,10 +52,11 @@ from ..core.identification import (
     peak_picking,
 )
 from ..core.measurement import AA_CUTOFF, FORCE_RMS, IMPACT_PEAK, SINE_AMPLITUDE
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick
 from . import frame_stats, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .modal_extraction import EXTRACTION_THEORY_HTML, ExtractionControls, ResultsView, StabilizationPlot
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -77,7 +78,8 @@ BLOCK_SIZES = [256, 512, 1024, 2048, 4096, 8192]
 
 @dataclass(frozen=True)
 class TestTrial:
-    """A test of the uniform 4-mass chain (with friction if given): what each control is set to."""
+    """A test of the uniform 4-mass chain (with friction if given), or of the chain `masses`, `springs` and
+    `dampers` give: what each control is set to."""
 
     name: str
     note: str
@@ -93,9 +95,20 @@ class TestTrial:
     method: Method = Method.LSCF
     friction: float = 0.0  # N on every mass
     tab: int = 1  # Setup, Modes, Stabilization
+    masses: tuple[float, ...] = ()  # empty: the uniform 4-mass chain
+    springs: tuple[float, ...] = ()
+    dampers: tuple[float, ...] = ()
+    averages: int = 10
+    tip: float = 50.0  # ms, the hammer's pulse
+    exp_end: float = 100.0  # %, the exponential window's value at the block's end
 
     def system(self) -> ChainSystem:
-        return ChainSystem.uniform(4, friction=self.friction)
+        if not self.masses:
+            return ChainSystem.uniform(4, friction=self.friction)
+        n = len(self.masses)
+        return ChainSystem(
+            np.array(self.masses), np.array(self.springs), np.array(self.dampers), np.full(n, self.friction)
+        )
 
 
 TRIALS = (
@@ -151,6 +164,235 @@ TRIALS = (
         "coherence drops even with no noise. See <i>Nonlinearity: friction</i>.",
         friction=0.5,
     ),
+)
+
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+TAB_SETUP, TAB_MODES, TAB_STABILIZATION = range(3)
+TWO_PI = 2.0 * math.pi
+
+
+def _half_power(rng: np.random.Generator) -> Question:
+    fn, zeta = pick(rng, (1.105, 3.183, 4.877, 5.982)), pick(rng, (0.01, 0.02, 0.025, 0.05))
+    f1, f2 = (float(number(fn * (1 + sign * zeta), 4)) for sign in (-1, 1))
+    z = (f2 - f1) / (2 * fn)
+    return Question(
+        f"A measured FRF peaks at {number(fn, 4)} Hz, and its magnitude is 1/√2 of the peak at {number(f1, 4)} Hz and "
+        f"{number(f2, 4)} Hz. What damping ratio do the half-power points give?",
+        z,
+        f"ζ ≈ (f₂ − f₁)/2f<sub>n</sub> = ({number(f2, 4)} − {number(f1, 4)})/(2 × {number(fn, 4)}) = {number(z)}.",
+    )
+
+
+def _lines(rng: np.random.Generator) -> Question:
+    fn, zeta = pick(rng, (1.105, 3.183, 4.877)), pick(rng, (0.005, 0.01, 0.02, 0.05))
+    fs, block = pick(rng, (10, 15, 20, 25)), int(pick(rng, (256, 512, 1024, 2048)))
+    width = 2 * zeta * fn
+    lines = width * block / fs
+    return Question(
+        f"A mode at {number(fn, 4)} Hz with ζ = {zeta:g}, measured at f<sub>s</sub> = {fs:g} Hz in blocks of "
+        f"N<sub>b</sub> = {block}. How many spectral lines fall across its half-power bandwidth?",
+        lines,
+        f"The lines are Δf = f<sub>s</sub>/N<sub>b</sub> = {number(fs / block)} Hz apart (the block lasts "
+        f"{number(block / fs)} s); the bandwidth is 2ζf<sub>n</sub> = {number(width)} Hz, so {number(lines)} lines. "
+        "Under two, the peak comes out too low and looks too damped.",
+        unit="lines",
+        tolerance=0.02,
+        setup=dict(fs=float(fs), block=block, tab=TAB_SETUP),
+    )
+
+
+def _exp_window(rng: np.random.Generator) -> Question:
+    fs, block = pick(rng, (10, 20, 25)), int(pick(rng, (512, 1024, 2048)))
+    end, fn = pick(rng, (1, 5, 10, 20)), pick(rng, (1.105, 3.183, 5.982))
+    T = block / fs
+    tau = T / math.log(100 / end)
+    dz = 1 / (tau * TWO_PI * fn)
+    return Question(
+        f"An impact test at f<sub>s</sub> = {fs:g} Hz, N<sub>b</sub> = {block}, with an exponential window that has "
+        f"fallen to {end:g} % at the block's end. How much damping ratio does it add to the mode at {number(fn, 4)} Hz?",
+        100 * dz,
+        f"T = N<sub>b</sub>/f<sub>s</sub> = {number(T)} s and e<sup>−T/τ<sub>w</sub></sup> = {end / 100:g}, so "
+        f"τ<sub>w</sub> = T/ln({number(100 / end)}) = {number(tau)} s. Every pole moves 1/τ<sub>w</sub> left: "
+        f"Δζ = 1/(τ<sub>w</sub>ω) = 1/({number(tau)} × {number(TWO_PI * fn)}) = {number(100 * dz)} %.",
+        unit="%",
+        tolerance=0.02,
+        setup=dict(fs=float(fs), block=block, exp_end=float(end), window=Window.FORCE_EXPONENTIAL, tab=TAB_MODES),
+    )
+
+
+def _tip(rng: np.random.Generator) -> Question:
+    tip, f = (  # u = 2fτ from 0.6 to 1.2: well down the roll-off, short of its first zero at 1.5
+        (10, 40),
+        (20, 20),
+        (20, 30),
+        (50, 6),
+        (50, 10),
+        (50, 12),
+        (100, 4),
+        (100, 6),
+        (200, 2),
+        (200, 3),
+    )[int(rng.integers(10))]
+    down = -20 * math.log10(float(impact_spectrum(tip / 1000, np.array([float(f)]))[0]))
+    u = 2 * f * tip / 1000
+    return Question(
+        f"A hammer's tip makes a {tip:g} ms half-sine pulse. How many dB below its level at 0 Hz is the force's spectrum "
+        f"at {f:g} Hz?",
+        down,
+        f"A half-sine of length τ<sub>p</sub> has |F(f)|/F(0) = |cos(πu/2)/(1 − u²)|, u = 2fτ<sub>p</sub> = {number(u)}: "
+        f"{number(10 ** (-down / 20))}, {number(down)} dB down. It first reaches zero at 1.5/τ<sub>p</sub> = "
+        f"{number(1500 / tip)} Hz.",
+        unit="dB",
+        tolerance=0.03,
+        setup=dict(tip=float(tip), tab=TAB_SETUP),
+    )
+
+
+def _coherence(rng: np.random.Generator) -> Question:
+    h1, ratio = pick(rng, (0.5, 1.2, 2.0, 3.5)), pick(rng, (1.02, 1.05, 1.1, 1.25))
+    h2 = float(number(h1 * ratio))
+    g = h1 / h2
+    return Question(
+        f"At one frequency, H1 reads {h1:g} mm/N and H2 reads {number(h2)} mm/N (same phase). What is the coherence "
+        "there?",
+        g,
+        f"γ² = |G<sub>xf</sub>|²/(G<sub>ff</sub>G<sub>xx</sub>) = H1/H2 = {h1:g}/{number(h2)} = {number(g)}.",
+    )
+
+
+def _alias(rng: np.random.Generator) -> Question:
+    f, fs = pick(rng, (4.877, 5.982)), pick(rng, (7, 8, 9))
+    seen = abs(f - fs * round(f / fs))
+    return Question(
+        f"A mode at {number(f, 4)} Hz, sampled at {fs:g} Hz with the anti-alias filter off. At what frequency does it "
+        "appear?",
+        seen,
+        f"It's above the Nyquist frequency f<sub>s</sub>/2 = {fs / 2:g} Hz, so it folds back to |f − kf<sub>s</sub>| "
+        f"= |{number(f, 4)} − {fs:g}| = {number(seen)} Hz, looking like a real mode there.",
+        unit="Hz",
+        setup=dict(fs=float(fs), anti_alias=False, tab=TAB_SETUP),
+    )
+
+
+def _node(rng: np.random.Generator) -> Question:
+    return Question(
+        "The uniform 4-mass chain is hit at m3, which doesn't move in mode 2. How many modes can the test find?",
+        0,
+        "Three: a force at a mode's node puts nothing into it, so mode 2 drops out of every FRF in the column. Hit "
+        "m4 and it's back.",
+        choices=("Three", "All four", "Two"),
+        setup=dict(input=2, tab=TAB_MODES),
+        predict=True,
+    )
+
+
+def _force_noise(rng: np.random.Generator) -> Question:
+    return Question(
+        "5 % noise on the force channel, the FRF estimated by H1. What does H1 do at the resonances?",
+        0,
+        "It reads low: noise on the force inflates G<sub>ff</sub>, most where the force is smallest, at the "
+        "resonances, and the coherence dips there. H2 leaves it out.",
+        choices=("It reads low", "It reads high", "It's unaffected"),
+        setup=dict(force_noise=5.0, tab=TAB_MODES),
+        predict=True,
+    )
+
+
+def _short_block(rng: np.random.Generator) -> Question:
+    return Question(
+        "An impact test with N<sub>b</sub> = 256 and no window: the response is still ringing when the block ends. "
+        "How does the identified damping come out?",
+        0,
+        "Too high: the block cuts the ringing off, the peaks leak, low and wide, and a wide peak looks damped.",
+        choices=("Too high", "Too low", "About right"),
+        setup=dict(block=256, window=Window.RECTANGULAR, tab=TAB_MODES),
+        predict=True,
+    )
+
+
+def _one_average(rng: np.random.Generator) -> Question:
+    return Question(
+        "A test with 5 % noise on the response, but only one average. What does the coherence read?",
+        0,
+        "1 at every frequency: with one block, |XF*|² = |X|²|F|² exactly, whatever the noise. It takes several "
+        "averages before noise can show.",
+        choices=("1 at every frequency", "Low at the antiresonances", "Low everywhere"),
+        setup=dict(averages=1, response_noise=5.0, tab=TAB_SETUP),
+        predict=True,
+    )
+
+
+def _modes_of(t: TestTrial) -> tuple[float, float, float]:
+    """The chain's narrowest half-power width and highest damped frequency (Hz), and Auto's sample rate."""
+    result = modal_analysis(t.system())
+    modes = [m.damped for m in result.modes if m.damped is not None]
+    return min(2 * d.zeta * d.fn_hz for d in modes), max(d.fd_hz for d in modes), suggested_fs(result)
+
+
+def _acquisition_spec(rng: np.random.Generator) -> Question:
+    c = pick(rng, (1.0, 2.0, 4.0))
+    chain = dict(masses=(1.0,) * 4, springs=(400.0,) * 4, dampers=(c,) * 4)
+    given = TestTrial("", "", **chain).system()
+    width, top, fs = _modes_of(TestTrial("", "", **chain))
+    block = min(b for b in BLOCK_SIZES if b >= 4 * fs / width)
+    longest = math.ceil(1.2 * 10 * block / fs / 60)  # minutes: a fifth over 10 averages of the design's blocks
+
+    def goal(t: TestTrial):
+        w, f_top, auto = _modes_of(t)
+        rate = t.fs if t.fs is not None else auto
+        band = AA_CUTOFF * rate / 2
+        return (
+            Requirement(
+                f"The uniform 4-mass chain, {c:g} N·s/m dampers",
+                f"{len(t.masses)} masses",
+                _same_chain(t.system(), given),
+            ),
+            Requirement("The anti-alias filter on", "on" if t.anti_alias else "off", t.anti_alias),
+            at_least("The usable band (80 % of Nyquist)", band, f_top, "Hz"),
+            at_least("Lines across the narrowest half-power width", w * t.block / rate, 4),
+            at_least("Averages", t.averages, 10),
+            at_most("The test's time, averages × T", t.averages * t.block / rate / 60, longest, "min"),
+        )
+
+    return Question(
+        f"The uniform 4-mass chain (1 kg, 400 N/m, {c:g} N·s/m each) is to be tested with every mode inside the usable "
+        f"band (the anti-alias filter on), four or more lines across each mode's half-power width and at least 10 "
+        f"averages, in no more than {longest:g} minutes. Choose the sample rate and the block size.",
+        0,
+        f"The top mode is at {number(top)} Hz, so f<sub>s</sub> ≥ 2 × {number(top)}/0.8 = {number(2.5 * top)} Hz. "
+        f"Mode 1 is the narrowest, 2ζf<sub>n</sub> = {number(width)} Hz, so a block must last 4/{number(width)} = "
+        f"{number(4 / width)} s or more. At Auto's {fs:g} Hz that's N<sub>b</sub> ≥ {number(4 * fs / width)}: "
+        f"{block}, {number(block / fs)} s a block, {number(10 * block / fs / 60)} minutes for 10 averages. A faster "
+        "rate needs a longer block for the same lines.",
+        setup=dict(**chain, block=256, tab=TAB_SETUP),
+        goal=goal,
+        design=dict(**chain, block=block, tab=TAB_SETUP),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "test_page", f"See {page_link('test_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("half-power", "Damping from the half-power points", "extraction", "Modal parameter extraction", _half_power),
+        ("lines", "Lines across a peak", "leakage", "Blocks, the DFT and leakage", _lines),
+        ("exp-window", "The exponential window's damping", "excitation", "Excitation", _exp_window),
+        ("tip", "A hammer tip's spectrum", "excitation", "Excitation", _tip),
+        ("coherence", "Coherence from H1 and H2", "estimators", "Averaging and estimators", _coherence),
+        ("alias", "Where a mode aliases", "sampling", "Sampling", _alias),
+        ("node", "Predict: a force at a node", "measured", "What is measured, and where", _node),
+        ("force-noise", "Predict: force noise", "estimators", "Averaging and estimators", _force_noise),
+        ("short-block", "Predict: a short block", "leakage", "Blocks, the DFT and leakage", _short_block),
+        ("one-average", "Predict: one average", "estimators", "Averaging and estimators", _one_average),
+        (
+            "acquisition-spec",
+            "Spec: a sample rate and a block",
+            "leakage",
+            "Blocks, the DFT and leakage",
+            _acquisition_spec,
+        ),
+    )
 )
 
 
@@ -224,6 +466,13 @@ HOLD_TIP = (
     "<p>For a linear chain the two agree, apart from noise. If they differ, the structure is "
     "nonlinear; friction damps the response to a light force much more than to a strong one.</p>"
 )
+
+
+def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
+    return a.n == b.n and all(
+        np.allclose(x, y)
+        for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping), (a.friction, b.friction))
+    )
 
 
 def friction_masses(system: ChainSystem) -> str:
@@ -945,8 +1194,20 @@ class ModalTestPage(QtWidgets.QWidget):
         self.system = system
         self.result = result
         self._dirty = True
+        self._fill_dofs(system.n)
         if self.isVisible():
             self.restart()
+
+    def _fill_dofs(self, n: int) -> None:
+        """One entry per mass in the force's and the response's combos (kept if they already have them)."""
+        if self.input.count() == n:
+            return
+        for combo in (self.input, self.output):
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItems([f"m{j + 1}" for j in range(n)])
+            combo.setCurrentIndex(n - 1)
+            combo.blockSignals(False)
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -1047,9 +1308,44 @@ class ModalTestPage(QtWidgets.QWidget):
 
     def load_trial(self, index: int) -> None:
         """Set up TRIALS[index]: its chain (through the Simulation page) and every control, then measure."""
-        trial = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note). It measures
+        when shown, not here."""
+        self.apply_trial(TestTrial("", "", **setup), measure_hidden=False)
+
+    def practice_state(self) -> TestTrial:
+        """The chain and every control, as a trial: what a practice spec checks (from the settings alone)."""
+        s = self.system
+        return TestTrial(
+            "",
+            "",
+            input=self.input.currentIndex(),
+            excitation=self.excitation.currentData(),
+            response=self.response.currentData(),
+            window=self.window.currentData(),
+            block=self.block.currentData(),
+            fs=None if self.fs_auto.isChecked() else self.fs.value(),
+            anti_alias=self.anti_alias.isChecked(),
+            force_noise=self.force_noise.value(),
+            response_noise=self.response_noise.value(),
+            method=self.extract.method.currentData(),
+            friction=float(s.friction.max()) if s is not None else 0.0,
+            tab=self.tabs.currentIndex(),
+            masses=tuple(float(v) for v in s.masses) if s is not None else (),
+            springs=tuple(float(v) for v in s.stiffness) if s is not None else (),
+            dampers=tuple(float(v) for v in s.damping) if s is not None else (),
+            averages=self.averages.value(),
+            tip=self.tip.value(),
+            exp_end=self.exp_end.value(),
+        )
+
+    def apply_trial(self, trial: TestTrial, measure_hidden: bool = True) -> None:
+        """Set every control as `trial` says and its chain (through the Simulation page), then measure: now, or,
+        if hidden and not `measure_hidden`, once shown."""
         self.trial_note.setText(trial.note)
-        self.trial_note.setVisible(True)
+        self.trial_note.setVisible(bool(trial.note))
         values = (
             (self.excitation, trial.excitation),
             (self.response, trial.response),
@@ -1067,6 +1363,8 @@ class ModalTestPage(QtWidgets.QWidget):
             self.response_noise,
             self.force_level,
             self.exp_end,
+            self.averages,
+            self.tip,
         ]
         for w in widgets:
             w.blockSignals(True)
@@ -1084,7 +1382,9 @@ class ModalTestPage(QtWidgets.QWidget):
         self.force_noise.setValue(trial.force_noise)
         self.response_noise.setValue(trial.response_noise)
         self.force_level.setValue(100.0)
-        self.exp_end.setValue(100.0)
+        self.exp_end.setValue(trial.exp_end)
+        self.averages.setValue(trial.averages)
+        self.tip.setValue(trial.tip)
         for w in widgets:
             w.blockSignals(False)
         if self.hold.isChecked():
@@ -1092,14 +1392,20 @@ class ModalTestPage(QtWidgets.QWidget):
         self.extract.changed.emit()
         self._show_rows()
         measured = self.acq
-        self.system_requested.emit(trial.system())
+        system = trial.system()
+        self.system_requested.emit(system)
+        if self.system is None or not _same_chain(self.system, system):
+            self.set_system(system)  # nobody passed it back: test it here alone
         if self.input.currentIndex() != trial.input:  # the chain's size changed and reset it
+            self.input.blockSignals(True)
             self.input.setCurrentIndex(trial.input)
-        elif self.acq is measured:  # the chain came back unchanged, or nobody passed it on
-            if self.system is None or not np.allclose(self.system.friction, trial.friction):
-                self.set_system(trial.system())
-            else:
+            self.input.blockSignals(False)
+            measured = self.acq  # measure again below, with the force where the trial puts it
+        if self.acq is measured:  # nothing measured since the controls changed
+            if self.isVisible() or measure_hidden:
                 self.restart()
+            else:
+                self._dirty = True
         self.tabs.setCurrentIndex(trial.tab)
 
     def _on_trial(self, index: int) -> None:
@@ -1153,13 +1459,7 @@ class ModalTestPage(QtWidgets.QWidget):
         self.dof.blockSignals(True)
         self.dof.setValue(n)
         self.dof.blockSignals(False)
-        if self.input.count() != n:
-            for combo, default in ((self.input, n - 1), (self.output, n - 1)):
-                combo.blockSignals(True)
-                combo.clear()
-                combo.addItems([f"m{j + 1}" for j in range(n)])
-                combo.setCurrentIndex(default)
-                combo.blockSignals(False)
+        self._fill_dofs(n)
         self.fs.setEnabled(not self.fs_auto.isChecked())
         if self.fs_auto.isChecked():
             self.fs.blockSignals(True)
