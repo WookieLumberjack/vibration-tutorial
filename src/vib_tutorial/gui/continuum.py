@@ -13,6 +13,7 @@ shape, the frequencies in a table, and the notes. The page has its own model
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass, field
 
 import numpy as np
 import pyqtgraph as pg
@@ -32,6 +33,7 @@ from ..core.continuum import (
     Scheme,
     convergence,
     dispersion,
+    errors,
     flexible_hz,
     order,
     string_dispersion,
@@ -45,10 +47,11 @@ from ..core.continuum_waves import (
     end_reflection,
     step_coefficients,
 )
+from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from . import frame_stats, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, group, plot_height
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
@@ -125,6 +128,241 @@ SHAPE_TIP = (
     "shape functions between them (straight for a string or bar, cubic for a beam), largest +1.</p>"
 )
 
+VIEW_DISPERSION, VIEW_ERRORS, VIEW_WAVES = range(3)
+
+
+@dataclass(frozen=True)
+class ContinuumSetup:
+    """A practice problem's setup (and the page's `practice_state`): the medium, the mesh, the view and the mode."""
+
+    continuum: Continuum = field(default_factory=lambda: PRESETS[0].continuum)
+    elements: int = 12
+    view: int = VIEW_DISPERSION
+    mode: int = 1
+
+
+def _string(length: float = 1.0, tension: float = 100.0, line_density: float = 0.01) -> Continuum:
+    return Continuum(Kind.STRING, length, End.FIXED, End.FIXED, tension=tension, line_density=line_density)
+
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _string_fundamental(rng: np.random.Generator) -> Question:
+    length = pick(rng, (0.33, 0.5, 0.65, 1))
+    tension = pick(rng, (50, 70, 100, 150))
+    mu = pick(rng, (1, 2, 5, 10))  # g/m
+    c = _string(length, tension, mu / 1e3)
+    f = float(c.exact_hz(1)[0])
+    return Question(
+        f"A string {length:g} m long, fixed at both ends, under {tension:g} N, weighing {mu:g} g/m. What is its "
+        "fundamental frequency?",
+        f,
+        f"c = √(T/μ) = √({tension:g}/{number(mu / 1e3)}) = {number(c.speed)} m/s, and half a wavelength fits: "
+        f"f<sub>1</sub> = c/2L = {number(f)} Hz, the overtones whole multiples.",
+        unit="Hz",
+        setup=ContinuumSetup(c, 12).__dict__,
+    )
+
+
+def _bar_fundamental(rng: np.random.Generator) -> Question:
+    length = pick(rng, (0.5, 1, 2, 3))
+    c = Continuum(Kind.BAR, length, End.FIXED, End.FREE, modulus=210e9, density=7850.0, width=0.02, depth=0.02)
+    f = float(c.exact_hz(1)[0])
+    return Question(
+        f"A steel bar (E = 210 GPa, ρ = 7850 kg/m³) {length:g} m long is fixed at one end and free at the other. "
+        "What is its first axial natural frequency?",
+        f,
+        f"c = √(E/ρ) = {number(c.speed)} m/s; fixed–free, a quarter wavelength fits: f<sub>1</sub> = c/4L = "
+        f"{number(f)} Hz (then 3, 5, 7 times it).",
+        unit="Hz",
+        setup=ContinuumSetup(c, 10).__dict__,
+    )
+
+
+def _cantilever_second(rng: np.random.Generator) -> Question:
+    f1 = pick(rng, (5, 10, 12, 20, 50))
+    beam = Continuum(Kind.BEAM, 1.0, End.CLAMPED, End.FREE)
+    ratio = float(beam.exact_hz(2)[1] / beam.exact_hz(1)[0])
+    return Question(
+        f"A cantilever's first bending mode is at {f1:g} Hz. Where is its second?",
+        f1 * ratio,
+        f"cos βL cosh βL = −1 gives β<sub>1</sub>L = 1.875 and β<sub>2</sub>L = 4.694, and ω ∝ β²: f<sub>2</sub> = "
+        f"(4.694/1.875)² f<sub>1</sub> = {number(ratio)} × {f1:g} = {number(f1 * ratio)} Hz. A beam's overtones are "
+        "no multiples.",
+        unit="Hz",
+        setup=ContinuumSetup(beam, 8, mode=2).__dict__,
+    )
+
+
+def _lumped_mode(rng: np.random.Generator) -> Question:
+    n_el = int(pick(rng, (4, 6, 8, 12)))
+    n = int(pick(rng, (1, 2, 3)))
+    c = _string()
+    f = float(flexible_hz(FEModel(c, n_el, Scheme.LUMPED))[n - 1])
+    exact = float(c.exact_hz(n)[-1])
+    return Question(
+        f"A string fixed at both ends (c = 100 m/s, 1 m long) is modelled as {n_el} lumped elements (beads on "
+        f"springs). Where does the model put mode {n}?",
+        f,
+        f"The mesh's modes sit on its dispersion curve at the exact κ<sub>n</sub> = nπ/L: ω = (2c/h) sin(κh/2) with "
+        f"h = {number(1 / n_el)} m, so f = (c/πh) sin(nπ/2N) = {number(f)} Hz, below the exact {number(exact)} Hz "
+        f"by {number(100 * (1 - f / exact))} %.",
+        unit="Hz",
+        tolerance=0.005,
+        setup=ContinuumSetup(c, n_el, mode=n).__dict__,
+    )
+
+
+def _cut_off(rng: np.random.Generator) -> Question:
+    n_el = int(pick(rng, (5, 10, 20, 50)))
+    speed = pick(rng, (100, 200, 343))
+    h = 1.0 / n_el
+    f = speed / (math.pi * h)
+    return Question(
+        f"A 1 m string with a wave speed of {speed:g} m/s is cut into {n_el} lumped elements. What is the highest "
+        "frequency a wave on the endless chain of such elements can have (its cut-off)?",
+        f,
+        f"ω = (2c/h) sin(κh/2) tops out at κh = π: ω = 2c/h, f = c/πh = {speed:g}/(π × {number(h)}) = {number(f)} Hz. "
+        "Nothing faster travels on the mesh.",
+        unit="Hz",
+        setup=ContinuumSetup(_string(), n_el).__dict__,
+    )
+
+
+def _matched_dashpot(rng: np.random.Generator) -> Question:
+    tension = pick(rng, (50, 100, 200))
+    mu = pick(rng, (1, 5, 10))
+    z = math.sqrt(tension * mu / 1e3)
+    return Question(
+        f"A string under {tension:g} N weighing {mu:g} g/m ends on a dashpot. What dashpot coefficient lets a wave "
+        "arrive without reflecting at all?",
+        z,
+        f"An end reflects (Z − c<sub>d</sub>)/(Z + c<sub>d</sub>) of a wave, so none when c<sub>d</sub> = Z, the "
+        f"string's impedance √(Tμ) = √({tension:g} × {number(mu / 1e3)}) = {number(z)} N·s/m: it takes the wave as "
+        "an endless string would.",
+        unit="N·s/m",
+    )
+
+
+def _consistent_side(rng: np.random.Generator) -> Question:
+    return Question(
+        "A bar is meshed with consistent masses (the finite element method's). Where do its frequencies lie?",
+        0,
+        "Above the exact ones, every one: the consistent mesh is a Rayleigh–Ritz model, and Rayleigh–Ritz frequencies "
+        "are upper bounds. (Lumped masses come out below.)",
+        choices=("Above the exact ones", "Below the exact ones", "Some above, some below"),
+        setup=ContinuumSetup(PRESETS[1].continuum, 10, VIEW_ERRORS).__dict__,
+        predict=True,
+    )
+
+
+def _halved_elements(rng: np.random.Generator) -> Question:
+    return Question(
+        "A string's lumped mesh is refined to elements half as long. What happens to its low modes' frequency errors?",
+        0,
+        "They fall to a quarter: the lumped error is −(κh)²/24 for long waves, second order in h. (The mixed mass's "
+        "falls 16 times.)",
+        choices=("They fall to a quarter", "They halve", "They fall 16 times"),
+        setup=ContinuumSetup(_string(), 24, VIEW_ERRORS).__dict__,
+        predict=True,
+    )
+
+
+def _beam_overtones(rng: np.random.Generator) -> Question:
+    return Question(
+        "A guitar string's overtones are whole multiples of its fundamental. Are a cantilever beam's?",
+        0,
+        "No: 1 : 6.27 : 17.5. Bending waves are dispersive, ω = aκ², and the clamped and free ends give a "
+        "transcendental equation for κ, not a whole number of half wavelengths.",
+        choices=("No: 1 : 6.27 : 17.5", "Yes: 1 : 2 : 3", "Yes, the odd ones: 1 : 3 : 5"),
+        setup=ContinuumSetup(Continuum(Kind.BEAM, 1.0, End.CLAMPED, End.FREE), 8).__dict__,
+        predict=True,
+    )
+
+
+def _mesh_spec(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (2, 3, 5)))
+    most = pick(rng, (0.5, 1, 2))
+    c = _string()
+    fewest = next(N for N in range(n + 1, 201) if abs(errors(FEModel(c, N, Scheme.LUMPED))[1][n - 1]) * 100 <= most)
+
+    def goal(t: ContinuumSetup):
+        m = t.continuum
+        string = m.kind is Kind.STRING and m.left is End.FIXED and m.right is End.FIXED
+        found = errors(FEModel(m, t.elements, Scheme.LUMPED))[1]
+        err = abs(found[n - 1]) * 100 if found.size >= n else 100.0
+        return (
+            Requirement("A string fixed at both ends", f"{m.kind.value}, {m.left.value}–{m.right.value}", string),
+            at_most(f"The lumped mesh's error in mode {n}", err, most, "%"),
+            at_most("Elements", t.elements, fewest),
+        )
+
+    return Question(
+        f"Mesh a string fixed at both ends with lumped masses: the fewest elements that get mode {n} within {most:g} %.",
+        0,
+        f"The lumped error is about −(κh)²/24 with κ = nπ/L and h = L/N: (nπ/N)²/24 ≤ {most / 100:g} needs N ≥ "
+        f"nπ/√(24 × {most / 100:g}) ≈ {number(n * math.pi / math.sqrt(24 * most / 100))}, so {fewest} elements "
+        "(the Frequencies tab lists the errors).",
+        setup=ContinuumSetup(c, n + 1).__dict__,
+        goal=goal,
+        design=ContinuumSetup(c, fewest).__dict__,
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "continuum_page", f"See {page_link('continuum_page', anchor, section)}{more}.", make)
+    for key, title, anchor, section, more, make in (
+        (
+            "string-fundamental",
+            "A string's fundamental",
+            "continuum-waves",
+            "The continuum's waves",
+            "",
+            _string_fundamental,
+        ),
+        ("bar-fundamental", "A bar's fundamental", "continuum-waves", "The continuum's waves", "", _bar_fundamental),
+        (
+            "cantilever-second",
+            "A cantilever's second mode",
+            "continuum-waves",
+            "The continuum's waves",
+            "",
+            _cantilever_second,
+        ),
+        ("lumped-mode", "A lumped mesh's mode", "dispersion", "The chain's waves", "", _lumped_mode),
+        ("cut-off", "The mesh's cut-off", "dispersion", "The chain's waves", "", _cut_off),
+        ("matched-dashpot", "A matched end", "reflections", "Waves and reflections", "", _matched_dashpot),
+        (
+            "consistent-side",
+            "Predict: consistent masses",
+            "mass-schemes",
+            "Lumped and consistent masses",
+            "",
+            _consistent_side,
+        ),
+        (
+            "halved-elements",
+            "Predict: half the element length",
+            "mass-schemes",
+            "Lumped and consistent masses",
+            "",
+            _halved_elements,
+        ),
+        (
+            "beam-overtones",
+            "Predict: a beam's overtones",
+            "continuum-waves",
+            "The continuum's waves",
+            "",
+            _beam_overtones,
+        ),
+        ("mesh-spec", "Spec: just enough elements", "dispersion", "The chain's waves", "", _mesh_spec),
+    )
+)
+
+
 NOTES_HTML = """
 <!--BEFORE-->
 <h3>From a chain to a continuum</h3>
@@ -159,7 +397,7 @@ travels at, falls to zero there. A wave beyond κ = π/h looks, at the nodes, ex
 nearly right, and the high ones, crowding towards κ = π/h, far too low: the lumped string's error is
 −(κh)²/24 to begin with, and −36 % at the cut-off.</p>
 
-<h3>Lumped and consistent masses</h3>
+<h3><a name="mass-schemes"></a>Lumped and consistent masses</h3>
 <p>Lumping is one way to share an element's mass out: half to each end. The finite element method's
 <b>consistent</b> mass takes it from the same straight-line shape functions as the stiffness, ρAh/6 [2 1; 1 2]:
 the mesh is then a Rayleigh–Ritz approximation, and every frequency is an upper bound. Its dispersion is</p>
@@ -174,7 +412,7 @@ halves the lumped error. With two unknowns a node the endless mesh has two waves
 and a second branch far above it in which the slopes swing against the deflections, which the continuum
 doesn't have. Lumped, the slopes carry no mass, and are condensed out exactly.</p>
 
-<h3>Waves and reflections</h3>
+<h3><a name="reflections"></a>Waves and reflections</h3>
 <p>The <i>Waves</i> tab runs a pulse along the medium and the mesh side by side. On a string or bar the
 continuum's pulse keeps its shape, u = r(x − ct) + l(x + ct), and comes back from a fixed end upside down
 (the end must stay still, so the reflection cancels it there) and from a free end upright (doubling there).
@@ -519,10 +757,26 @@ class ContinuumPage(QtWidgets.QWidget):
     def load_preset(self, name: str) -> None:
         """A preset's medium and mesh; a wave preset's pulse too, on the Waves tab, running."""
         p = next(p for p in ALL_PRESETS if p.name == name)
-        c = p.continuum
+        self._load(p.continuum, p.elements, name, p.note, p.waves if isinstance(p, WavePreset) else Waves())
+        if isinstance(p, WavePreset):
+            self.running = True
+            self.views.setCurrentWidget(self.waves_tab)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a `ContinuumSetup`'s fields)."""
+        t = ContinuumSetup(**setup)
+        self._load(t.continuum, t.elements, CUSTOM, "", Waves())
+        self.views.setCurrentIndex(t.view)
+        self.mode.setValue(t.mode)
+
+    def practice_state(self) -> ContinuumSetup:
+        """The medium, the mesh, the view and the mode: what a practice spec checks."""
+        return ContinuumSetup(self.continuum, self.elements.value(), self.views.currentIndex(), self.mode.value())
+
+    def _load(self, c: Continuum, elements: int, name: str, note: str, waves: Waves) -> None:
         self._loading = True
         self.preset.setCurrentText(name)
-        self.preset_note.setText(p.note)
+        self.preset_note.setText(note)
         self.kind.setCurrentText(c.kind.value)
         self._fill_ends(c.kind)
         self.length.setValue(c.length)
@@ -534,16 +788,13 @@ class ContinuumPage(QtWidgets.QWidget):
         self.depth.setValue(c.depth * 1e3)
         self.left_end.setCurrentText(c.left.value)
         self.right_end.setCurrentText(c.right.value)
-        self.elements.setValue(p.elements)
-        self._set_waves(p.waves if isinstance(p, WavePreset) else Waves(), c.kind)
+        self.elements.setValue(elements)
+        self._set_waves(waves, c.kind)
         self._loading = False
         self.mode.blockSignals(True)
         self.mode.setValue(1)
         self.mode.blockSignals(False)
-        self.set_continuum(c, p.elements)
-        if isinstance(p, WavePreset):
-            self.running = True
-            self.views.setCurrentWidget(self.waves_tab)
+        self.set_continuum(c, elements)
 
     def frame_context(self) -> str:
         """For the frame log (frame_stats): the preset showing."""

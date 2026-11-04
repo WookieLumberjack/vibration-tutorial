@@ -31,6 +31,7 @@ PAGES = (
     "energy_page",
     "frf_page",
     "complex_page",
+    "continuum_page",
     "sdof_page",
     "pendulum_page",
     "transient_page",
