@@ -32,6 +32,7 @@ PAGES = (
     "frf_page",
     "complex_page",
     "continuum_page",
+    "beams_page",
     "sdof_page",
     "pendulum_page",
     "transient_page",
