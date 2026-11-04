@@ -146,7 +146,7 @@ class SteadyMeasurement(StagedRun):
             self.stage, self._tracker = "done", None
             self.result = np.mean(np.array(self.sweep.vectors[: self.revs]), axis=0)
 
-    def run(self, chunk: float = 0.25) -> np.ndarray:
-        """Measure to the end (for scripts and tests); return the mean 1X vectors (4, 2)."""
+    def run(self, chunk: float = 0.25) -> np.ndarray | None:
+        """Measure to the end (for scripts and tests); return the mean 1X vectors (4, 2), None if it stalled."""
         super().run(chunk)
         return self.result

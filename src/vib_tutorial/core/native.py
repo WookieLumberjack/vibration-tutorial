@@ -7,13 +7,15 @@ the tests compare the two. VIB_NATIVE=0 runs the Python everywhere.
 
 from __future__ import annotations
 
+import importlib
 import os
 from collections.abc import Callable
+from types import ModuleType
 
-module = None
+module: ModuleType | None = None
 if os.environ.get("VIB_NATIVE", "1") != "0":
     try:
-        from vib_tutorial import _native as module
+        module = importlib.import_module("vib_tutorial._native")
     except ImportError:  # not built: the Python reference serves
         pass
 

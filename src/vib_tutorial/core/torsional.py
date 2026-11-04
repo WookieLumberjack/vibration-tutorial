@@ -298,6 +298,7 @@ def sources(train: DriveTrain) -> list[Source]:
                 out.append(Source(f"{exc.name} {order:g}×", order * s[exc.disc], disc=exc.disc, torque=amplitude))
     for i in train.meshes:
         mesh = train.links[i]
+        assert isinstance(mesh, Mesh)
         if mesh.error > 0:
             out.append(Source(f"Tooth pass ({mesh.name})", mesh.teeth_in * s[i], mesh=i, error=mesh.error))
     return out
@@ -398,12 +399,12 @@ def two_inertia_hz(j1: float, j2: float, k: float) -> float:
 def response_speeds(train: DriveTrain, top_rpm: float, points: int = 800) -> np.ndarray:
     """Motor speeds to plot the forced response at: an even spread, packed round each critical (over a
     few half-power widths), so a lightly damped peak isn't missed."""
-    rpm = [np.linspace(top_rpm / points, top_rpm, points)]
+    spans = [np.linspace(top_rpm / points, top_rpm, points)]
     ms = modes(train)
     for c in criticals(train, top_rpm, [(s.label, s.order) for s in sources(train)]):
         width = max(ms[c.mode].zeta, 1e-4)
-        rpm.append(c.rpm * (1.0 + width * np.linspace(-6.0, 6.0, 61)))
-    rpm = np.unique(np.concatenate(rpm))
+        spans.append(c.rpm * (1.0 + width * np.linspace(-6.0, 6.0, 61)))
+    rpm = np.unique(np.concatenate(spans))
     return rpm[(rpm > 0) & (rpm <= top_rpm)]
 
 

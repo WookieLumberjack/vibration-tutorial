@@ -474,7 +474,8 @@ class Rice:
 
 def spectral_moments(f: np.ndarray, psd: np.ndarray) -> tuple[float, float, float, float]:
     """m₀, m₁, m₂, m₄ = ∫ f^k G df (f in Hz)."""
-    return tuple(float(np.trapezoid(f**k * psd, f)) for k in (0, 1, 2, 4))
+    m0, m1, m2, m4 = (float(np.trapezoid(f**k * psd, f)) for k in (0, 1, 2, 4))
+    return m0, m1, m2, m4
 
 
 def rice(prediction: Prediction) -> Rice:

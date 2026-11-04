@@ -1,5 +1,5 @@
-# Style checks on every push and pull request: ruff (lint and format) on the Python, rustfmt and clippy on the
-# Rust kernels. Quick, and separate from the release builds and their tests.
+# Style checks on every push and pull request: ruff (lint and format) and mypy (core/) on the Python, rustfmt
+# and clippy on the Rust kernels. Quick, and separate from the release builds and their tests.
 name: Lint
 
 on:
@@ -24,6 +24,10 @@ jobs:
 
       - name: Ruff format
         run: uv run --only-group dev ruff format --check
+
+      # core/ only for now (see [tool.mypy]): the locked dependencies, still without building the package.
+      - name: mypy
+        run: uv run --no-install-project mypy
 
   rust:
     runs-on: ubuntu-latest

@@ -73,12 +73,12 @@ class Preset:
 def presets() -> list[Preset]:
     uniform = ChainSystem.uniform(4)
 
-    sdof = ChainSystem([1.0], [400.0], [1.0])
+    sdof = ChainSystem(np.array([1.0]), np.array([400.0]), np.array([1.0]))
     f1 = modal_analysis(sdof).modes[0].fn_hz
     absorber = with_absorber(sdof, 0.1, f1)
 
     tmd_mu = 0.05
-    tmd_primary = ChainSystem([1.0], [400.0], [0.5])
+    tmd_primary = ChainSystem(np.array([1.0]), np.array([400.0]), np.array([0.5]))
     tmd = tuned_mass_damper(tmd_primary, tmd_mu)
     tmd_ratio, tmd_zeta = den_hartog(tmd_mu)
     f_tmd = modal_analysis(tmd_primary).modes[0].fn_hz

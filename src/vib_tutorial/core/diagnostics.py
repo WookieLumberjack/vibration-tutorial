@@ -167,12 +167,12 @@ def record(machine: Machine, duration: float = DURATION, fs: float = FS) -> Reco
     t = np.arange(n) / fs
     rng = np.random.default_rng(machine.seed)
     theta = TWO_PI * machine.speed * t
-    x = SHAFT[0] * np.cos(theta + 0.3) + SHAFT[1] * np.cos(2 * theta + 1.1)
+    x: np.ndarray = SHAFT[0] * np.cos(theta + 0.3) + SHAFT[1] * np.cos(2 * theta + 1.1)
     amp, phase = gear_modulation(machine, theta)
     for h, a in enumerate(MESH_HARMONICS, start=1):
         x += a * amp * np.cos(h * (machine.teeth * theta + phase) + 0.7 * h)
-    b, a = ring_filter(machine.resonance, machine.zeta, fs)
-    x += machine.impact * scipy.signal.lfilter(b, a, impacts(machine, n, fs, rng))
+    num, den = ring_filter(machine.resonance, machine.zeta, fs)
+    x += machine.impact * scipy.signal.lfilter(num, den, impacts(machine, n, fs, rng))
     x += machine.noise * rng.standard_normal(n)
     return Record(t, x, fs, theta)
 

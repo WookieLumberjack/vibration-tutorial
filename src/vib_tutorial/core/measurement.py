@@ -48,7 +48,9 @@ from __future__ import annotations
 import enum
 import math
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -403,7 +405,7 @@ class Acquisition:
         self._settled = False
         self._chirp = self._chirp_period() if s.excitation is Excitation.CHIRP else None
         self._piece = FRICTION_PIECE if np.any(system.friction > 0) else CHUNK
-        self._pending = None  # the record being measured (a generator), if work stopped part-way
+        self._pending: Iterator[Any] | None = None  # the record being measured (a generator), if work stopped part-way
 
     # ---------------------------------------------------------- properties
     @property
@@ -448,12 +450,13 @@ class Acquisition:
 
     def work(self, budget: float) -> bool:
         """Measure for about `budget` seconds; True once the record in progress is complete."""
-        if self._pending is None:
+        pending = self._pending
+        if pending is None:
             if self.done:
                 return True
-            self._pending = self._step()
+            pending = self._pending = self._step()
         end = time.perf_counter() + budget
-        for _ in self._pending:
+        for _ in pending:
             if time.perf_counter() >= end:
                 return False
         self._pending = None
@@ -700,6 +703,7 @@ class FrfEstimator:
         p = self.processing
         F = np.array([q.force + p.force_noise * abs(q.force) * q.force_noise for q in pts])
         X = np.array([q.response + p.response_noise * np.abs(q.response) * q.response_noise for q in pts])
+        assert self.acq.last_sine is not None  # a point is measured
         t, f, x, nf, nx = self.acq.last_sine
         f, x = add_noise(f, x, nf, nx, p)
         # The fitted sines, drawn smoothly (the samples can be as few as 2.5 per cycle).

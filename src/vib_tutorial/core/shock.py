@@ -567,6 +567,7 @@ def synthesize(pulse: Pulse, fs: float) -> Record:
         if worst < SYNTH_TOLERANCE or it - best[1] >= SYNTH_PATIENCE:
             break
         amplitude = amplitude * ratio
+    assert best is not None  # at least one round
     _, it, a, amplitude, error = best
     return Record(pulse, fs, a, None, Synthesis(f, amplitude, delay, half, zeta, error, it))
 

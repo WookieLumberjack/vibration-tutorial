@@ -157,6 +157,7 @@ class AsymmetryChart:
                 self.soft[i], self.stiff[i] = (
                     _first_forward_critical(self._row.axis_system(stiff), self.omegas[-1]) for stiff in (False, True)
                 )
+            assert self._row is not None  # set at the row's first speed
             self.growth[i, j] = growth_rate(self._row, float(self.omegas[j]))
             self._next += 1
             did = True

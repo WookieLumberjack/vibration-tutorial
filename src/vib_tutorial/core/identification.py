@@ -303,7 +303,10 @@ def lscf(freqs: np.ndarray, H: np.ndarray, band: tuple[float, float], max_order:
         S_all.append(-(Om.conj().T @ (hj[:, None] * Om)).real)
         T_all.append((Om.conj().T @ ((np.abs(hj) ** 2)[:, None] * Om)).real)
 
-    orders, poles, status, runs = [], [], [], []
+    orders: list[int] = []
+    poles: list[np.ndarray] = []
+    status: list[list[Stability]] = []
+    runs: list[np.ndarray] = []
     for p in range(1, P + 1):
         k = p + 1
         R = R0[:k, :k]
@@ -330,8 +333,12 @@ def lscf(freqs: np.ndarray, H: np.ndarray, band: tuple[float, float], max_order:
     return Stabilization(orders, poles, status, runs, band)
 
 
-def _classify(lam: np.ndarray, prev: np.ndarray | None, prev_runs: np.ndarray | None):
-    status, runs = [], np.zeros(lam.size, dtype=int)
+def _classify(
+    lam: np.ndarray, prev: np.ndarray | None, prev_runs: np.ndarray | None
+) -> tuple[list[Stability], np.ndarray]:
+    """Each pole's stability against the order below's (`prev`, None at the first), and its run of them."""
+    status: list[Stability] = []
+    runs = np.zeros(lam.size, dtype=int)
     for i, l in enumerate(lam):
         if prev is None or not prev.size:
             status.append(Stability.NEW)
@@ -346,6 +353,7 @@ def _classify(lam: np.ndarray, prev: np.ndarray | None, prev_runs: np.ndarray | 
             status.append(Stability.FREQUENCY)
         else:
             status.append(Stability.STABLE)
+            assert prev_runs is not None  # given with prev
             runs[i] = prev_runs[j] + 1
     return status, runs
 
@@ -438,7 +446,7 @@ def match_modes(modes: list[IdentifiedMode], result: ModalResult, f_max: float) 
 
     Exact modes left over are missed; identified ones left over are spurious.
     """
-    exact = [m for m in result.modes if m.damped is not None]
+    exact = [(m.index, m.damped) for m in result.modes if m.damped is not None]
     macs = mac_matrix(modes, result)
     pairs: dict[int, int] = {}
     order = sorted(
@@ -449,21 +457,28 @@ def match_modes(modes: list[IdentifiedMode], result: ModalResult, f_max: float) 
     for _value, i, j in order:
         if i in used_i or j in used_j:
             continue
-        fe = exact[j].damped.fn_hz
+        fe = exact[j][1].fn_hz
         if abs(modes[i].fn_hz - fe) > MATCH_FREQ * fe:
             continue
         pairs[j] = i
         used_i.add(i)
         used_j.add(j)
     out = []
-    for j, m in enumerate(exact):
+    for j, (index, damped) in enumerate(exact):
         if j in pairs:
             i = pairs[j]
-            out.append(ModeMatch(m.index, m.damped.eigenvalue, modes[i], float(macs[i, j])))
-        elif m.damped.fn_hz <= f_max:
-            out.append(ModeMatch(m.index, m.damped.eigenvalue, None, 0.0))
-    for i, m in enumerate(modes):
+            out.append(ModeMatch(index, damped.eigenvalue, modes[i], float(macs[i, j])))
+        elif damped.fn_hz <= f_max:
+            out.append(ModeMatch(index, damped.eigenvalue, None, 0.0))
+    for i, found in enumerate(modes):
         if i not in used_i:
-            out.append(ModeMatch(None, None, m, 0.0))
-    out.sort(key=lambda r: abs(r.exact) if r.exact is not None else abs(r.identified.pole))
+            out.append(ModeMatch(None, None, found, 0.0))
+
+    def pole(r: ModeMatch) -> float:
+        if r.exact is not None:
+            return abs(r.exact)
+        assert r.identified is not None  # a spurious mode
+        return abs(r.identified.pole)
+
+    out.sort(key=pole)
     return out

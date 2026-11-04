@@ -16,6 +16,7 @@ import traceback
 import types
 from collections import OrderedDict
 from dataclasses import dataclass, replace
+from multiprocessing.connection import Connection
 
 import numpy as np
 
@@ -50,13 +51,13 @@ def analyse(system: RotorSystem, top_rpm: float) -> Analysis:
     massless = campbell(system.with_(density=0.0), top, n_modes=8) if system.density else None
     onset = stability_onset(system, top)
     # The steady-state vectors at every station, finely around each critical speed.
-    w = [np.linspace(top / STEADY_POINTS, top, STEADY_POINTS)]
+    spans = [np.linspace(top / STEADY_POINTS, top, STEADY_POINTS)]
     crits = [c for c, _, _ in result.criticals]
     if system.periodic and system.gravity:
         # Gravity's 2X peaks near half of each (and a breathing crack's 3X near a third).
         crits += [c / k for c in crits for k in ((2, 3) if system.spacing == 1 else (2,))]
-    w += [np.linspace(0.8 * c, 1.2 * c, STEADY_POINTS // max(len(crits), 1)) for c in crits]
-    w = np.unique(np.concatenate(w))
+    spans += [np.linspace(0.8 * c, 1.2 * c, STEADY_POINTS // max(len(crits), 1)) for c in crits]
+    w = np.unique(np.concatenate(spans))
     V = steady_harmonics(system, w, ORDERS)[1]
     return Analysis(result, massless, onset, w * RPM, [station_motion(system, V[:, k]) for k in range(ORDERS)])
 
@@ -68,6 +69,7 @@ def _serve(conn) -> None:
             ticket, system, top_rpm = conn.recv()
         except EOFError:  # the app is gone
             return
+        reply: tuple[int, Analysis | None, str | None]
         try:
             reply = (ticket, analyse(system, top_rpm), None)
         except Exception:
@@ -90,7 +92,7 @@ class AnalysisWorker:
 
     def __init__(self) -> None:
         self._process: multiprocessing.process.BaseProcess | None = None
-        self._conn = None
+        self._conn: Connection | None = None
         self._next = 0
         self._first = 1  # the first ticket the running process was given
         self._results: OrderedDict[int, Analysis | str] = OrderedDict()  # done: the analysis, or its error
@@ -142,7 +144,7 @@ class AnalysisWorker:
         self._next += 1
         ticket = self._next
         self.start()
-        if self.running:
+        if self.running and self._conn is not None:
             # A copy without the caches the page's simulation filled (it sends faster, and the caches stay here).
             self._conn.send((ticket, replace(system), top_rpm))
         else:
@@ -160,7 +162,7 @@ class AnalysisWorker:
                 raise RuntimeError("the rotor analysis process stopped")
             return None
         analysis = self._results.pop(ticket)
-        if type(analysis) is str:  # its traceback
+        if isinstance(analysis, str):  # its traceback
             raise RuntimeError(f"rotor analysis failed:\n{analysis}")
         return analysis
 
@@ -171,7 +173,8 @@ class AnalysisWorker:
 
     def close(self) -> None:
         if self._process is not None:
-            self._conn.close()
+            if self._conn is not None:
+                self._conn.close()
             self._process.terminate()
             self._process.join(timeout=1.0)
         self._process = self._conn = None

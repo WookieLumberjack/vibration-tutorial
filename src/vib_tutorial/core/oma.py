@@ -57,7 +57,7 @@ from __future__ import annotations
 
 import enum
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -66,6 +66,7 @@ from .identification import (
     MAX_ZETA,
     IdentifiedMode,
     ModeMatch,
+    Stability,
     Stabilization,
     _classify,
     auto_select,
@@ -249,12 +250,12 @@ def cross_spectra(y: np.ndarray, fs: float, block: int, overlap: float = 0.5) ->
     hop = max(1, round(block * (1.0 - overlap)))
     w = scipy.signal.windows.hann(block, sym=False)
     starts = range(0, N - block + 1, hop)
-    G = 0.0
+    G = np.zeros((block // 2 + 1, y.shape[1], y.shape[1]), dtype=complex)
     count = 0
     for i in starts:
         seg = y[i : i + block] - y[i : i + block].mean(axis=0)
         Y = np.fft.rfft(seg * w[:, None], axis=0)  # (lines, n)
-        G = G + Y[:, :, None] * Y[:, None, :].conj()
+        G += Y[:, :, None] * Y[:, None, :].conj()
         count += 1
     scale = 2.0 / (fs * np.sum(w**2) * count)
     G = G * scale
@@ -417,7 +418,7 @@ def harmonic_flags(y: np.ndarray, fs: float, result: Fdd, modes: list[FddMode]) 
 class SsiStabilization(Stabilization):
     """The SSI poles at every order (as LSCF's), with each pole's shape."""
 
-    shapes: list[np.ndarray] = None  # per order, (n, poles) complex
+    shapes: list[np.ndarray] = field(default_factory=list)  # per order, (n, poles) complex
 
 
 def correlations(y: np.ndarray, lags: int) -> np.ndarray:
@@ -436,7 +437,11 @@ def ssi_cov(y: np.ndarray, fs: float, rows: int, max_order: int, band: tuple[flo
     U, S, _ = np.linalg.svd(T)
     top = min(max_order, n * (rows - 1))
     lo, hi = band
-    orders, poles, status, runs, shapes = [], [], [], [], []
+    orders: list[int] = []
+    poles: list[np.ndarray] = []
+    status: list[list[Stability]] = []
+    runs: list[np.ndarray] = []
+    shapes: list[np.ndarray] = []
     for p in range(2, top + 1, 2):
         O = U[:, :p] * np.sqrt(S[:p])
         A = np.linalg.lstsq(O[:-n], O[n:], rcond=None)[0]
@@ -497,6 +502,7 @@ def hammer_modes(
     while not acq.done:
         acq.step()
     est = FrfEstimator(acq, processing).estimate()
+    assert est is not None  # every block is in
     H = to_receptance(est.freqs, est.H, settings.response)
     band = (0.0, settings.band)
     stab = lscf(est.freqs, H, band, HAMMER_ORDER)

@@ -288,13 +288,14 @@ class StagedRun:
             return sim.advance(0.0)
         return concat_samples(parts)
 
-    def run(self, chunk: float = 0.25) -> None:
-        """Run to the end (for scripts and tests)."""
+    def run(self, chunk: float = 0.25) -> object:
+        """Run to the end (for scripts and tests); a subclass returns what it found."""
         while not self.done:
             t0 = self.sim.t
             self.advance(chunk)
             if self.sim.t == t0:
                 break
+        return None
 
 
 class RunUpCoastDown(StagedRun):
