@@ -16,13 +16,15 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.sdof import Oscillator, impulse_response, receptance, step_response
+from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.sdof import TWO_PI, Oscillator, impulse_response, receptance, step_response
 from ..core.transient import (
     Pulse,
     PulseKind,
     convolution,
     impulse_spectrum,
     peak_ratio,
+    peak_ratio_undamped,
     pulse_response,
     step_metrics,
 )
@@ -38,7 +40,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -60,6 +62,8 @@ class TransientTrial:
     damping: float = 2.0
     at: float = 0.3  # s, the convolution's instant
     tab: int = TAB_SPECTRUM
+    mass: float = 1.0
+    stiffness: float = 400.0
 
 
 TRIALS = (
@@ -142,6 +146,253 @@ TRIALS = (
         at=0.6,
         tab=TAB_SPECTRUM,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _impulse_peak(rng: np.random.Generator) -> Question:
+    m = pick(rng, (0.5, 1, 2, 5))
+    k = pick(rng, (200, 400, 1000, 2500))
+    impulse = pick(rng, (0.05, 0.1, 0.2, 0.5))
+    wn = math.sqrt(k / m)
+    x = impulse / (m * wn)
+    return Question(
+        f"A {m:g} kg mass on a spring of {k:g} N/m, undamped and at rest, is struck a blow of {impulse:g} N·s. "
+        "How far does it swing?",
+        1e3 * x,
+        f"The blow leaves it at rest where it was with velocity v = I/m = {number(impulse / m)} m/s, and it "
+        f"vibrates freely from there: x = (I/mω<sub>n</sub>) sin ω<sub>n</sub>t, with ω<sub>n</sub> = "
+        f"√({k:g}/{m:g}) = {number(wn)} rad/s. It swings ±{number(1e3 * x)} mm.",
+        unit="mm",
+        setup=dict(kind=PulseKind.IMPULSE, amplitude=impulse, mass=m, stiffness=k, damping=0.0, at=0.1),
+    )
+
+
+def _step_peak(rng: np.random.Generator) -> Question:
+    m = pick(rng, (1, 2, 5))
+    k = pick(rng, (400, 1000, 2500))
+    c = rounded(2.0 * pick(rng, (0.02, 0.05, 0.1, 0.2, 0.3)) * math.sqrt(k * m))
+    force = pick(rng, (1, 2, 5, 10))
+    osc = Oscillator(m, k, c)
+    over = step_metrics(osc).overshoot
+    peak = force / k * (1.0 + over)
+    return Question(
+        f"m = {m:g} kg, k = {k:g} N/m and c = {number(c)} N·s/m, at rest. A force of {force:g} N is switched on "
+        "and left on. How far does the mass get at most?",
+        1e3 * peak,
+        f"ζ = c/2√(km) = {number(osc.zeta)}. It overshoots the static {number(1e3 * force / k)} mm by "
+        f"M<sub>p</sub> = e<sup>−ζπ/√(1 − ζ²)</sup> = {number(over)}: (F/k)(1 + M<sub>p</sub>) = "
+        f"{number(1e3 * peak)} mm.",
+        unit="mm",
+        setup=dict(kind=PulseKind.STEP, amplitude=force, mass=m, stiffness=k, damping=c, tab=TAB_STEP),
+    )
+
+
+def _peak_time(rng: np.random.Generator) -> Question:
+    m = pick(rng, (1, 2, 5))
+    k = pick(rng, (400, 1000, 2500))
+    c = rounded(2.0 * pick(rng, (0.05, 0.1, 0.2, 0.3, 0.5)) * math.sqrt(k * m))
+    osc = Oscillator(m, k, c)
+    tp = math.pi / osc.omega_d
+    return Question(
+        f"m = {m:g} kg, k = {k:g} N/m and c = {number(c)} N·s/m. A force is switched on and left on. How long "
+        "after does the mass reach its farthest?",
+        tp,
+        f"The step response peaks after half a damped period, π/ω<sub>d</sub>: ζ = {number(osc.zeta)}, "
+        f"ω<sub>n</sub> = {number(osc.omega_n)} rad/s, ω<sub>d</sub> = ω<sub>n</sub>√(1 − ζ²) = "
+        f"{number(osc.omega_d)} rad/s, so t<sub>p</sub> = {number(tp)} s.",
+        unit="s",
+        setup=dict(kind=PulseKind.STEP, mass=m, stiffness=k, damping=c, at=rounded(tp), tab=TAB_STEP),
+    )
+
+
+def _rectangle_peak(rng: np.random.Generator) -> Question:
+    k = pick(rng, (100, 400, 1000))
+    tn = TWO_PI / math.sqrt(k)
+    length = rounded(pick(rng, (0.05, 0.1, 0.2, 0.3, 0.6, 1.0, 1.5)) * tn)
+    force = pick(rng, (1, 5, 10, 20))
+    r = length / tn
+    ratio = peak_ratio_undamped(PulseKind.RECTANGLE, r)
+    rule = (
+        f"Shorter than half a period, it is nearly an impulse: 2 sin(πT/T<sub>n</sub>) = {number(ratio)} times static"
+        if r < 0.5
+        else "Half a period or longer, it throws the mass to twice the static deflection, as a step would"
+    )
+    return Question(
+        f"A 1 kg mass on a spring of {k:g} N/m, undamped and at rest, is pushed with {force:g} N for {number(length)} "
+        "s, then let go. How far does it swing at most?",
+        1e3 * force / k * ratio,
+        f"T<sub>n</sub> = 2π/√{k:g} = {number(tn)} s, so the pulse lasts r = {number(r)} periods. {rule}: "
+        f"{number(ratio)} × {number(1e3 * force / k)} mm = {number(1e3 * force / k * ratio)} mm.",
+        unit="mm",
+        setup=dict(kind=PulseKind.RECTANGLE, amplitude=force, duration=length, stiffness=k, damping=0.0),
+    )
+
+
+def _ramp_overshoot(rng: np.random.Generator) -> Question:
+    k = pick(rng, (100, 400, 1000))
+    tn = TWO_PI / math.sqrt(k)
+    rise = rounded(pick(rng, (0.5, 0.75, 1.5, 2.5, 3.25)) * tn)
+    r = rise / tn
+    over = abs(math.sin(math.pi * r)) / (math.pi * r)
+    return Question(
+        f"A 1 kg mass on a spring of {k:g} N/m, undamped, has a load ramped onto it in a straight line over "
+        f"{number(rise)} s, then held. By what percentage of the static deflection does it overshoot?",
+        100.0 * over,
+        f"T<sub>n</sub> = 2π/√{k:g} = {number(tn)} s, so the ramp takes r = {number(r)} periods, and it "
+        f"overshoots by |sin πr|/πr = {number(over)}: {number(100 * over)} %.",
+        unit="%",
+        tolerance=0.03,
+        setup=dict(kind=PulseKind.RAMP, duration=rise, stiffness=k, damping=0.0, at=rounded(rise)),
+    )
+
+
+def _sudden_load(rng: np.random.Generator) -> Question:
+    return Question(
+        "A weight is let go onto an undamped spring all at once, instead of being lowered onto it gently. How "
+        "far does the spring go at most, against how far it sags under the weight lowered gently?",
+        0,
+        "Twice as far. A force switched on suddenly overshoots its static deflection by e<sup>−ζπ/√(1 − ζ²)</sup>, "
+        "all of it with no damping: x = (F/k)(1 − cos ω<sub>n</sub>t) swings between 0 and 2F/k.",
+        choices=("Twice as far", "As far", "√2 times as far", "Half as far again"),
+        setup=dict(kind=PulseKind.STEP, damping=0.0, at=0.157, tab=TAB_STEP),
+        predict=True,
+    )
+
+
+def _short_pulse(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (2, 3)))
+    return Question(
+        f"A rectangular push lasting a twentieth of the natural period is made {n} times as long, with the same "
+        "force. What happens to the largest swing it leaves?",
+        0,
+        f"A pulse much shorter than the period is an impulse: only its area I = FT counts, and the swing grows "
+        f"with it, 2 sin(πT/T<sub>n</sub>) ≈ 2πT/T<sub>n</sub> times static. {n} times the length is about {n} "
+        f"times the swing (exactly {number(math.sin(n * math.pi / 20) / math.sin(math.pi / 20))} times, undamped).",
+        choices=(
+            f"About {n} times as large",
+            "About the same",
+            f"About 1/{n} as large",
+            f"About {n * n} times as large",
+        ),
+        setup=dict(kind=PulseKind.RECTANGLE, amplitude=10.0, duration=rounded(n * 0.0157), at=0.08),
+        predict=True,
+    )
+
+
+def _whole_periods(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (1, 2, 3)))
+    periods = "one natural period" if n == 1 else f"{n} natural periods"
+    return Question(
+        f"An undamped mass has a load ramped onto it in a straight line over exactly {periods}, then held. How "
+        "far past the static deflection does it swing?",
+        0,
+        f"Not at all. During the ramp the mass lags it and swings about it; the overshoot afterwards is "
+        f"|sin πr|/πr of the static, with r = {n} the ramp's length in periods, and sin {n}π = 0. The ramp ends "
+        "just as the mass has swung back onto it, at rest.",
+        choices=("It doesn't overshoot", f"By about 1/{n}π of the static", "To twice the static, as a step would"),
+        setup=dict(kind=PulseKind.RAMP, duration=rounded(n * TWO_PI / 20.0, 4), damping=0.0, at=0.6),
+        predict=True,
+    )
+
+
+def _ramp_spec(rng: np.random.Generator) -> Question:
+    k = pick(rng, (100, 400, 1000))
+    tn = TWO_PI / math.sqrt(k)
+    force = pick(rng, (1, 5, 10))
+    most = pick(rng, (1, 2))  # % overshoot
+    longest = rounded(pick(rng, (2.5, 3.5)) * tn, 2)
+    design = rounded(2.0 * tn, 4)
+
+    def goal(t: TransientTrial):
+        osc = Oscillator(t.mass, t.stiffness, t.damping)
+        ramp = t.kind is PulseKind.RAMP
+        over = 100.0 * (peak_ratio(osc.zeta, PulseKind.RAMP, np.array([t.duration / osc.period]))[0] - 1.0)
+        return (
+            kept("The mass", t.mass, 1.0, "kg"),
+            kept("The spring", t.stiffness, k, "N/m"),
+            Requirement("No damper", f"{number(t.damping)} N·s/m", t.damping == 0),
+            Requirement(f"A ramp up to {force:g} N", t.kind.value, ramp and abs(t.amplitude - force) <= 0.005 * force),
+            at_most("Its rise time", t.duration, longest, "s"),
+            at_most("The overshoot", max(over, 0.0) if ramp else 100.0, most, "%"),
+        )
+
+    return Question(
+        f"A crane lowers {force:g} N onto a 1 kg mass on an undamped spring of {k:g} N/m (a stand-in for a "
+        f"lightly damped structure), ramping the load on in a straight line. It must be on within {number(longest, 2)} "
+        f"s, and the structure mustn't swing more than {most:g} % past its static deflection. Choose the ramp's "
+        "rise time.",
+        0,
+        f"The overshoot is |sin πr|/πr of the static, r the rise time in periods. Its envelope 1/πr would need "
+        f"r ≥ {number(100 / (most * math.pi))}, far too slow; but it vanishes at every whole number of periods. "
+        f"T<sub>n</sub> = 2π/√{k:g} = {number(tn)} s: ramp over one, two or three periods ({number(design)} s for "
+        f"two), to within about ±{number(2 * most / 100 * tn, 2)} s of it.",
+        setup=dict(kind=PulseKind.RAMP, amplitude=force, duration=rounded(0.5 * tn, 4), stiffness=k, damping=0.0),
+        goal=goal,
+        design=dict(kind=PulseKind.RAMP, amplitude=force, duration=design, stiffness=k, damping=0.0),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "transient_page", hint, make)
+    for key, title, hint, make in (
+        (
+            "impulse-peak",
+            "Swing after a blow",
+            f"See {page_link('transient_page', 'impulse-response', 'An impulse and the impulse response')}.",
+            _impulse_peak,
+        ),
+        (
+            "step-peak",
+            "Overshoot of a step",
+            f"See {page_link('transient_page', 'step-response', 'The step response')}.",
+            _step_peak,
+        ),
+        (
+            "peak-time",
+            "When a step peaks",
+            f"See {page_link('transient_page', 'step-response', 'The step response')}: in rad/s, ω<sub>d</sub>.",
+            _peak_time,
+        ),
+        (
+            "rectangle-peak",
+            "A rectangular pulse",
+            f"See {page_link('transient_page', 'pulses', 'Pulses')}: first, its length in periods.",
+            _rectangle_peak,
+        ),
+        (
+            "ramp-overshoot",
+            "Overshoot of a ramp",
+            f"See {page_link('transient_page', 'pulses', 'Pulses')}.",
+            _ramp_overshoot,
+        ),
+        (
+            "sudden-load",
+            "Predict: a load let go",
+            f"See {page_link('transient_page', 'step-response', 'The step response')}.",
+            _sudden_load,
+        ),
+        (
+            "short-pulse",
+            "Predict: a longer short pulse",
+            f"See {page_link('transient_page', 'pulses', 'Pulses')}.",
+            _short_pulse,
+        ),
+        (
+            "whole-periods",
+            "Predict: a ramp of whole periods",
+            f"See {page_link('transient_page', 'pulses', 'Pulses')}.",
+            _whole_periods,
+        ),
+        (
+            "ramp-spec",
+            "Spec: put a load on gently",
+            f"See {page_link('transient_page', 'pulses', 'Pulses')}: where is |sin πr|/πr zero?",
+            _ramp_spec,
+        ),
+    )
 )
 
 TIPS = {
@@ -442,10 +693,31 @@ class TransientPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(TransientTrial("", "", **setup))
+
+    def practice_state(self) -> TransientTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return TransientTrial(
+            "",
+            "",
+            KINDS[self.kind.currentIndex()],
+            amplitude=self.amplitude.value(),
+            duration=self.duration.value(),
+            damping=self.damping.value(),
+            at=self.at.value(),
+            tab=self.tabs.currentIndex(),
+            mass=self.mass.value(),
+            stiffness=self.stiffness.value(),
+        )
+
+    def apply_trial(self, t: TransientTrial) -> None:
         for box, value in (
-            (self.mass, 1.0),
-            (self.stiffness, 400.0),
+            (self.mass, t.mass),
+            (self.stiffness, t.stiffness),
             (self.damping, t.damping),
             (self.kind, KINDS.index(t.kind)),
             (self.amplitude, t.amplitude),
