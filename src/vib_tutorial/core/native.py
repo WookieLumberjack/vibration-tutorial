@@ -7,7 +7,6 @@ the tests compare the two. VIB_NATIVE=0 runs the Python everywhere.
 
 from __future__ import annotations
 
-import importlib
 import os
 from collections.abc import Callable
 from types import ModuleType
@@ -15,7 +14,10 @@ from types import ModuleType
 module: ModuleType | None = None
 if os.environ.get("VIB_NATIVE", "1") != "0":
     try:
-        module = importlib.import_module("vib_tutorial._native")
+        # A plain import statement, not importlib: PyInstaller finds what the app bundles by its imports.
+        import vib_tutorial._native as _native
+
+        module = _native
     except ImportError:  # not built: the Python reference serves
         pass
 
