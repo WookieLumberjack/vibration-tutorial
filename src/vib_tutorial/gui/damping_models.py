@@ -16,6 +16,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.damping_models import MODELS, Matched, Model, coulomb_stop
+from ..core.practice import Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
 from . import settle_plots
 from .layouts import ColumnScroll, FlowLayout
@@ -29,7 +30,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -49,6 +50,13 @@ class DampingTrial:
     damping_only: bool = True
     force: float = 1.0
     tab: int = TAB_LOSS
+    mass: float = 1.0
+    stiffness: float = 400.0
+
+
+def matched(t: DampingTrial) -> Matched:
+    """The four models as a trial (or the page's `practice_state`) sets them."""
+    return Matched(t.mass, t.stiffness, t.zeta, 1e-3 * t.amplitude_mm, t.relax)
 
 
 TRIALS = (
@@ -106,6 +114,219 @@ TRIALS = (
         relax=10.0,
         tab=TAB_LOSS,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _viscous_energy(rng: np.random.Generator) -> Question:
+    c = pick(rng, (0.5, 1, 2, 5, 10))
+    f = pick(rng, (2, 5, 10, 20, 50))
+    x = pick(rng, (1, 2, 5, 10))
+    energy = math.pi * c * TWO_PI * f * (1e-3 * x) ** 2
+    return Question(
+        f"A viscous damper of {c:g} N·s/m is cycled at {f:g} Hz through ±{x:g} mm. How much energy does it take "
+        "out per cycle?",
+        1e3 * energy,
+        f"W<sub>d</sub> = πcΩX² with Ω = 2π × {f:g} = {number(TWO_PI * f)} rad/s and X = {number(1e-3 * x)} m: "
+        f"π × {c:g} × {number(TWO_PI * f)} × {number(1e-3 * x)}² = {number(1e3 * energy)} mJ.",
+        unit="mJ",
+    )
+
+
+def _friction_from_decay(rng: np.random.Generator) -> Question:
+    k = pick(rng, (200, 400, 1000, 2500))
+    drop = pick(rng, (0.5, 1, 2, 3, 4))
+    friction = k * 1e-3 * drop / 4.0
+    return Question(
+        f"A mass on a spring of {k:g} N/m rings down in a straight line, its swing falling by {drop:g} mm every "
+        "cycle. What friction force is it sliding against?",
+        friction,
+        f"Each half cycle swings about the point F<sub>f</sub>/k off centre on the side friction pushes to, so the "
+        f"swing loses 2F<sub>f</sub>/k a half cycle, 4F<sub>f</sub>/k a cycle: F<sub>f</sub> = k × drop/4 = "
+        f"{k:g} × {number(1e-3 * drop)}/4 = {number(friction)} N.",
+        unit="N",
+        setup=dict(stiffness=k, tab=TAB_DECAY),
+    )
+
+
+def _friction_swings(rng: np.random.Generator) -> Question:
+    k = pick(rng, (200, 400, 1000))
+    friction = pick(rng, (0.2, 0.5, 1, 2))
+    d = 1e3 * friction / k  # mm
+    n = int(pick(rng, (2, 3, 4, 5, 6)))
+    x0 = rounded(d * (2 * n + pick(rng, (-0.6, -0.3, 0.3, 0.6))), 2)
+    swings, _ = coulomb_stop(k, friction, 1e-3 * x0)
+    return Question(
+        f"A mass on a spring of {k:g} N/m slides against a friction force of {friction:g} N. Released from rest "
+        f"{number(x0, 2)} mm from centre, how many half cycles (swings from one turn to the next) does it make "
+        "before it sticks?",
+        swings,
+        f"F<sub>f</sub>/k = {number(d)} mm. Each swing takes 2F<sub>f</sub>/k = {number(2 * d)} mm off the distance "
+        f"from centre, and it sticks at the first turn within {number(d)} mm of it: {number(x0, 2)} mm takes "
+        f"{swings} swings.",
+        tolerance=0.01,
+    )
+
+
+def _equivalent_viscous(rng: np.random.Generator) -> Question:
+    friction = pick(rng, (0.5, 1, 2, 5))
+    f = pick(rng, (2, 5, 10, 20))
+    x = pick(rng, (1, 2, 5, 10))
+    w = TWO_PI * f
+    c = 4.0 * friction / (math.pi * w * 1e-3 * x)
+    return Question(
+        f"A friction force of {friction:g} N is cycled at {f:g} Hz through ±{x:g} mm. What viscous damper takes the "
+        "same energy per cycle?",
+        c,
+        f"Friction takes 4F<sub>f</sub>X, a viscous damper πcΩX²; equal when c<sub>eq</sub> = 4F<sub>f</sub>/πΩX = "
+        f"4 × {friction:g}/(π × {number(w)} × {number(1e-3 * x)}) = {number(c)} N·s/m. Half the amplitude, twice "
+        "the c<sub>eq</sub>: friction is heavy damping for small motions.",
+        unit="N·s/m",
+    )
+
+
+def _zener_peak(rng: np.random.Generator) -> Question:
+    k0 = pick(rng, (100, 200, 400, 1000))
+    a = pick(rng, (0.1, 0.25, 0.5, 1, 2, 3))
+    k1 = rounded(a * k0)
+    a = k1 / k0
+    eta = a / (2.0 * math.sqrt(1.0 + a))
+    return Question(
+        f"A rubber mount behaves as a Zener element: {k0:g} N/m slowly (relaxed), {number(k0 + k1)} N/m fast "
+        "(unrelaxed). What is its loss factor at its peak?",
+        eta,
+        f"k<sub>1</sub> = {number(k1)} N/m, so a = k<sub>1</sub>/k<sub>0</sub> = {number(a)}. η(Ωτ) = "
+        f"aΩτ/(1 + (1 + a)Ω²τ²) peaks at Ωτ = 1/√(1 + a), where η = a/(2√(1 + a)) = {number(eta)}. The "
+        "further apart the relaxed and unrelaxed stiffnesses, the more it can damp.",
+        setup=dict(tab=TAB_LOSS),
+    )
+
+
+def _frequency_doubled(rng: np.random.Generator) -> Question:
+    return Question(
+        "Four dampers, viscous, hysteretic, Zener (its loss peak at f<sub>n</sub>) and friction, each take the "
+        "same energy per cycle at f<sub>n</sub>. Cycled through the same amplitude at 2f<sub>n</sub>, which takes "
+        "the most?",
+        0,
+        "Viscous: its force grows with the velocity, so it takes twice as much. Hysteretic and friction take the "
+        "same as before, and the Zener element, past its peak, a little less.",
+        choices=("Viscous", "Hysteretic", "Friction", "Zener"),
+        setup=dict(ratio=2.0, tab=TAB_LOSS),
+        predict=True,
+    )
+
+
+def _amplitude_halved(rng: np.random.Generator) -> Question:
+    return Question(
+        "A friction damper is cycled through half the amplitude it was, at the same frequency. What happens to "
+        "the energy it takes per cycle?",
+        0,
+        "It halves: W<sub>d</sub> = 4F<sub>f</sub>X, the same force over half the stroke. A viscous or hysteretic "
+        "damper's (∝ X²) falls to a quarter; so friction is relatively heavier damping for small motions.",
+        choices=("It halves", "It falls to a quarter", "It stays the same", "It doubles"),
+        setup=dict(amplitude_mm=5.0, tab=TAB_LOSS),
+        predict=True,
+    )
+
+
+def _friction_resonance(rng: np.random.Generator) -> Question:
+    return Question(
+        "A mass on a spring with friction (no other damping) is driven by a harmonic force at its natural "
+        "frequency, the force larger than 4/π times the friction. What becomes of its swing?",
+        0,
+        "It grows without bound (until something else stops it). At resonance the force puts in πFX a cycle and "
+        "friction takes 4F<sub>f</sub>X: both grow as X, so if F &gt; 4F<sub>f</sub>/π the input wins at every "
+        "amplitude.",
+        choices=("It grows without bound", "It settles where friction balances the force", "It stays stuck"),
+        setup=dict(force=1.0, tab=TAB_FRF),
+        predict=True,
+    )
+
+
+def _friction_spec(rng: np.random.Generator) -> Question:
+    k = pick(rng, (200, 400, 1000))
+    x0 = pick(rng, (5, 10, 20))
+    swings = int(pick(rng, (3, 4, 5)))
+    # friction that stops it after `swings` half cycles with room either side
+    d = x0 / (2 * swings + 0.5)  # mm
+    z = rounded(2.0 * d / (math.pi * x0), 3)  # F_f = πcω_nX/4 = πζkX/2 on 1 kg
+    design = Matched(1.0, k, z, 1e-3 * x0)
+    n_d, end = coulomb_stop(k, design.friction, 1e-3 * x0)
+    off = rounded(1.25 * 1e3 * abs(end), 2)
+
+    def goal(t: DampingTrial):
+        m = matched(t)
+        n, stop = coulomb_stop(t.stiffness, m.friction, 1e-3 * t.amplitude_mm)
+        return (
+            kept("The mass", t.mass, 1.0, "kg"),
+            kept("The spring", t.stiffness, k, "N/m"),
+            kept("The release, X", t.amplitude_mm, float(x0), "mm"),
+            at_most("Swings before it sticks", n, swings),
+            at_most("Where it sticks, off centre", 1e3 * abs(stop), off, "mm"),
+        )
+
+    return Question(
+        f"A 1 kg mass on a spring of {k:g} N/m, released from {x0:g} mm, is to be stopped by friction alone (the "
+        f"Free decay tab's Coulomb curve). It must stick within {swings} swings (half cycles), no more than "
+        f"{number(off, 2)} mm off centre. The page sets the friction by matching it to ζ at the amplitude X: "
+        "choose ζ.",
+        0,
+        f"More friction stops it sooner, but further off centre (anywhere within F<sub>f</sub>/k), and too much "
+        f"never lets it move. Each swing takes 2F<sub>f</sub>/k off, so {swings} swings need about "
+        f"2F<sub>f</sub>/k ≈ {x0:g}/{swings} mm. F<sub>f</sub> = πcω<sub>n</sub>X/4 = πζkX/2 (c = 2ζ√(km), m = 1 "
+        f"kg): ζ = "
+        f"{number(z)} gives F<sub>f</sub> = {number(design.friction)} N, {n_d} swings, stuck "
+        f"{number(1e3 * abs(end))} mm off centre. Much more friction does too: with F<sub>f</sub>/k just under X/2 "
+        "it makes one swing and sticks near the centre.",
+        setup=dict(stiffness=k, amplitude_mm=float(x0), zeta=0.005, tab=TAB_DECAY),
+        goal=goal,
+        design=dict(stiffness=k, amplitude_mm=float(x0), zeta=z, tab=TAB_DECAY),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "damping_page", f"See {page_link('damping_page', anchor, section)}{more}.", make)
+    for key, title, anchor, section, more, make in (
+        ("viscous-energy", "Energy per cycle", "viscous", "Viscous damping", "", _viscous_energy),
+        ("friction-decay", "Friction from a decay", "coulomb", "Coulomb friction", "", _friction_from_decay),
+        ("friction-swings", "When friction stops it", "coulomb", "Coulomb friction", "", _friction_swings),
+        (
+            "equivalent-viscous",
+            "Equivalent viscous damping",
+            "coulomb",
+            "Coulomb friction",
+            ": equal energies per cycle",
+            _equivalent_viscous,
+        ),
+        ("zener-peak", "A rubber mount's loss peak", "viscoelastic", "The Zener element", "", _zener_peak),
+        (
+            "frequency-doubled",
+            "Predict: twice the frequency",
+            "loss-factor",
+            "The loss factor, compared",
+            "",
+            _frequency_doubled,
+        ),
+        ("amplitude-halved", "Predict: half the amplitude", "coulomb", "Coulomb friction", "", _amplitude_halved),
+        (
+            "friction-resonance",
+            "Predict: friction at resonance",
+            "coulomb",
+            "Coulomb friction",
+            "",
+            _friction_resonance,
+        ),
+        (
+            "friction-spec",
+            "Spec: stop it with friction",
+            "coulomb",
+            "Coulomb friction",
+            ": how far does each swing fall, and where can it stick?",
+            _friction_spec,
+        ),
+    )
 )
 
 TIPS = {
@@ -403,10 +624,32 @@ class DampingModelsPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(DampingTrial("", "", **setup))
+
+    def practice_state(self) -> DampingTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return DampingTrial(
+            "",
+            "",
+            zeta=self.zeta.value(),
+            amplitude_mm=self.amplitude.value(),
+            relax=self.relax.value(),
+            ratio=self.ratio.value(),
+            damping_only=self.damping_only.isChecked(),
+            force=self.force.value(),
+            tab=self.tabs.currentIndex(),
+            mass=self.mass.value(),
+            stiffness=self.stiffness.value(),
+        )
+
+    def apply_trial(self, t: DampingTrial) -> None:
         for box, value in (
-            (self.mass, 1.0),
-            (self.stiffness, 400.0),
+            (self.mass, t.mass),
+            (self.stiffness, t.stiffness),
             (self.zeta, t.zeta),
             (self.amplitude, t.amplitude_mm),
             (self.relax, t.relax),
