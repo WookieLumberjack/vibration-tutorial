@@ -10,6 +10,7 @@ sum, and the full solution.
 from __future__ import annotations
 
 import enum
+import itertools
 import math
 from dataclasses import dataclass
 
@@ -18,8 +19,9 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
+from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from .layouts import ColumnScroll
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .plots import frequency_grid
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -445,6 +447,235 @@ TRIALS = (
 )
 
 
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def static_shares(j: int, k: int) -> np.ndarray:
+    """Each mode's share of the uniform 4-mass chain's static compliance H_jk(0) = (K⁻¹)_jk, in %."""
+    system = ChainSystem.uniform(4)
+    flexibility = np.linalg.inv(system.matrices()[2])[j, k]
+    return np.array(
+        [
+            100.0 * m.shape_mass_normalized[j] * m.shape_mass_normalized[k] / m.omega_n**2 / flexibility
+            for m in modal_analysis(system).modes
+        ]
+    )
+
+
+def _static_compliance(rng: np.random.Generator) -> Question:
+    j, k = sorted(int(v) for v in rng.integers(0, 4, 2))
+    h = (j + 1) / 400.0
+    return Question(
+        f"The default chain: four 1 kg masses on four 400 N/m springs, the first to the ground. A steady force at "
+        f"m{k + 1}: how far does m{j + 1} move per newton?",
+        1e3 * h,
+        f"Statically only the springs between the ground and the force stretch, each by the whole force; m{j + 1} "
+        f"sits above {j + 1} of them: (K⁻¹)<sub>{j + 1}{k + 1}</sub> = min(j, k)/k = {j + 1}/400 = "
+        f"{number(1e3 * h)} mm/N (Maxwell: the same either way round).",
+        unit="mm/N",
+        setup=dict(output=j, inputs=(k,), quantity=Quantity.REAL),
+    )
+
+
+def _mode_share(rng: np.random.Generator) -> Question:
+    r = int(pick(rng, (1, 2, 3)))
+    j = int(pick(rng, (0, 3)))
+    share = float(static_shares(j, j)[r - 1])
+    return Question(
+        f"In the default four-mass chain, what share of m{j + 1}'s static compliance H<sub>{j + 1}{j + 1}</sub>(0) "
+        f"does mode {r} hold?",
+        share,
+        f"H<sub>jj</sub>(0) = Σ φ<sub>jr</sub>²/ω<sub>r</sub>², so mode {r}'s share is "
+        f"φ<sub>{j + 1}{r}</sub>²/ω<sub>{r}</sub>² over (K⁻¹)<sub>{j + 1}{j + 1}</sub> = {j + 1}/400: "
+        f"{number(share)} %. The large plot's header lists every mode's.",
+        unit="%",
+        setup=dict(output=j, inputs=(j,), quantity=Quantity.REAL, expansion=Expansion.CLASSICAL),
+    )
+
+
+def _accelerance_limit(rng: np.random.Generator) -> Question:
+    m = pick(rng, (0.5, 1, 2, 5, 10))
+    return Question(
+        f"A force pushes a {m:g} kg mass in a chain of springs and masses. What does its driving-point accelerance "
+        "level off at, far above every mode?",
+        1.0 / m,
+        f"Far above the modes the springs can't keep up and the mass is pushed alone: ẍ = F/m, so −ω²H<sub>jj</sub> "
+        f"→ 1/m = {number(1 / m)} 1/kg.",
+        unit="1/kg",
+    )
+
+
+def _antiresonance(rng: np.random.Generator) -> Question:
+    m2 = pick(rng, (0.5, 1, 2))
+    k2 = pick(rng, (100, 200, 400, 800))
+    f = math.sqrt(k2 / m2) / (2 * math.pi)
+    return Question(
+        f"Two masses: m<sub>1</sub> on a spring to the ground, and m<sub>2</sub> = {m2:g} kg on k<sub>2</sub> = "
+        f"{k2:g} N/m to m<sub>1</sub>. At what frequency does the driving-point FRF H<sub>11</sub> have its "
+        "antiresonance?",
+        f,
+        f"At an antiresonance m<sub>1</sub> stands still under the force: the chain beyond it vibrates on its own, "
+        f"m<sub>2</sub> on k<sub>2</sub> with m<sub>1</sub> held, √(k<sub>2</sub>/m<sub>2</sub>)/2π = {number(f)} "
+        "Hz. It's an absorber, whatever m<sub>1</sub> and k<sub>1</sub> are.",
+        unit="Hz",
+    )
+
+
+def _count_dips(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (3, 4, 5, 6)))
+    while True:
+        j, k = sorted(int(v) for v in rng.integers(1, n + 1, 2))
+        if (j - 1) + (n - k) > 0:
+            break
+    count = (j - 1) + (n - k)
+    return Question(
+        f"An undamped chain of {n} masses, the first on a spring to the ground. How many antiresonances does "
+        f"H<sub>{j}{k}</sub> have?",
+        count,
+        f"One for each mass outside the stretch from m{j} to m{k}: the pieces of chain beyond it, with m{j} and m{k} "
+        f"held, have their own natural frequencies. ({j} − 1) + ({n} − {k}) = {count}.",
+        tolerance=0.01,
+        setup=dict(output=j - 1, inputs=(k - 1,)) if n == 4 else None,
+    )
+
+
+def _mobility(rng: np.random.Generator) -> Question:
+    h = pick(rng, (0.1, 0.2, 0.5, 1, 2))
+    f = pick(rng, (2, 5, 10, 20))
+    v = 2 * math.pi * f * 1e-3 * h
+    return Question(
+        f"A receptance measures {h:g} mm/N at {f:g} Hz. What is the mobility there?",
+        v,
+        f"For harmonic motion velocity is iω times displacement: |iωH| = 2π × {f:g} × {number(1e-3 * h)} = "
+        f"{number(v)} m/(N·s).",
+        unit="m/(N·s)",
+    )
+
+
+def _reciprocity(rng: np.random.Generator) -> Question:
+    j, k = sorted(int(v) for v in rng.choice(4, 2, replace=False))
+    return Question(
+        f"m{k + 1} is pushed and m{j + 1} measured, then m{j + 1} pushed and m{k + 1} measured. How do the two FRFs "
+        "compare?",
+        0,
+        "They are identical, magnitude and phase (Maxwell–Betti): M, C and K are symmetric, so H is.",
+        choices=("Identical", "The same magnitude, phases opposite", "Different"),
+        setup=dict(output=j, inputs=(k,)),
+        predict=True,
+    )
+
+
+def _truncated_static(rng: np.random.Generator) -> Question:
+    return Question(
+        "A driving-point FRF is summed from every mode but the highest. At low frequency, how does the sum compare "
+        "with the full FRF?",
+        0,
+        "Too small: at a driving point every mode's term starts positive (φ<sub>jr</sub>²/ω<sub>r</sub>²), so leaving "
+        "one out loses its share of the static compliance, its residual flexibility.",
+        choices=("Too small", "Too large", "The same"),
+        setup=dict(output=0, inputs=(0,), quantity=Quantity.REAL, unticked=(4,), expansion=Expansion.CLASSICAL),
+        predict=True,
+    )
+
+
+def _driving_point_dips(rng: np.random.Generator) -> Question:
+    return Question(
+        "Between two neighbouring resonances of a lightly damped driving-point FRF, what is there?",
+        0,
+        "Always an antiresonance: both modes' constants φ<sub>jr</sub>² are positive, and between the peaks the "
+        "lower is already mass-like and the upper still spring-like, so they cancel somewhere.",
+        choices=("Always an antiresonance", "Sometimes one, sometimes not", "Never one"),
+        setup=dict(output=1, inputs=(1,)),
+        predict=True,
+    )
+
+
+def _truncation_spec(rng: np.random.Generator) -> Question:
+    cells = ((0, 0), (1, 1), (0, 1), (1, 3), (2, 2), (3, 3), (0, 3))
+    while True:
+        j, k = cells[int(rng.integers(len(cells)))]
+        most = pick(rng, (2, 5, 10))
+        shares = static_shares(j, k)
+        best = min(
+            (subset for size in range(1, 5) for subset in itertools.combinations(range(4), size)),
+            key=lambda c: (abs(100.0 - shares[list(c)].sum()) > most, len(c)),
+        )
+        if len(best) < 4:
+            break
+
+    def goal(t: FrfTrial):
+        kept_modes = [r for r in range(4) if r + 1 not in t.unticked]
+        error = abs(100.0 - float(shares[kept_modes].sum()))
+        return (
+            Requirement(
+                f"The cell H<sub>{j + 1}{k + 1}</sub>",
+                f"H{t.output + 1}{'+'.join(str(i + 1) for i in t.inputs)}",
+                t.output == j and t.inputs == (k,),
+            ),
+            at_most("Modes ticked", len(kept_modes), len(best)),
+            at_most("The static compliance's error", error, most, "%"),
+        )
+
+    kept_text = ", ".join(str(r + 1) for r in best)
+    return Question(
+        f"Show H<sub>{j + 1}{k + 1}</sub> of the default chain and untick as many modes as you can while the ticked "
+        f"ones' sum still gets its static compliance within {most:g} % (the large plot's header gives the error).",
+        0,
+        "Each mode holds φ<sub>jr</sub>φ<sub>kr</sub>/ω<sub>r</sub>² of it: "
+        + ", ".join(f"mode {r + 1} {number(v)} %" for r, v in enumerate(shares))
+        + f". Keeping {len(best)} (mode{'s' if len(best) > 1 else ''} {kept_text}) is the fewest that does it"
+        + (": off the diagonal the shares have signs, and some cancel." if j != k else "."),
+        setup=dict(output=j, inputs=(k,), quantity=Quantity.REAL, expansion=Expansion.CLASSICAL),
+        goal=goal,
+        design=dict(
+            output=j,
+            inputs=(k,),
+            quantity=Quantity.REAL,
+            expansion=Expansion.CLASSICAL,
+            unticked=tuple(r + 1 for r in range(4) if r not in best),
+        ),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "frf_page", f"See {page_link('frf_page', anchor, section)}{more}.", make)
+    for key, title, anchor, section, more, make in (
+        (
+            "static-compliance",
+            "Static compliance",
+            "truncation",
+            "Truncation",
+            ": the static compliance",
+            _static_compliance,
+        ),
+        ("mode-share", "A mode's share", "truncation", "Truncation", "", _mode_share),
+        ("accelerance-limit", "Accelerance far above", "three-forms", "Three forms", "", _accelerance_limit),
+        ("antiresonance", "An antiresonance", "sum-of-modes", "Every term is a sum of modes", "", _antiresonance),
+        ("count-dips", "Counting antiresonances", "sum-of-modes", "Every term is a sum of modes", "", _count_dips),
+        ("mobility", "Mobility from receptance", "three-forms", "Three forms", "", _mobility),
+        ("reciprocity", "Predict: swap force and sensor", "receptance-matrix", "The FRF matrix", "", _reciprocity),
+        ("truncated-static", "Predict: the highest mode left out", "truncation", "Truncation", "", _truncated_static),
+        (
+            "driving-point-dips",
+            "Predict: between two peaks",
+            "sum-of-modes",
+            "Every term is a sum of modes",
+            "",
+            _driving_point_dips,
+        ),
+        (
+            "truncation-spec",
+            "Spec: as few modes as will do",
+            "truncation",
+            "Truncation",
+            ": each mode's share of the static compliance",
+            _truncation_spec,
+        ),
+    )
+)
+
+
 class FrfMatrixPage(QtWidgets.QWidget):
     """Controls on the left, the N x N grid in the centre, the selected term and theory on the right."""
 
@@ -635,7 +866,26 @@ class FrfMatrixPage(QtWidgets.QWidget):
 
     def load_trial(self, index: int) -> None:
         """Load TRIALS[index]: its chain (through the Simulation page), cells, quantity and modes."""
-        trial = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(FrfTrial("", "", **setup))
+
+    def practice_state(self) -> FrfTrial:
+        """The page's cell, quantity, expansion and the modes left out, as a trial: what a practice spec checks."""
+        return FrfTrial(
+            "",
+            "",
+            self.output,
+            tuple(sorted(self.inputs)),
+            self.quantity.currentData(),
+            tuple(sorted({t.mode for t in self.terms if t.label in self._unchecked and t.mode is not None})),
+            tuple(float(c) for c in self.system.damping),
+            self.expansion.currentData(),
+        )
+
+    def apply_trial(self, trial: FrfTrial) -> None:
         self.trial_note.setText(trial.note)
         self.trial_note.setVisible(True)
         self._unchecked = set()
