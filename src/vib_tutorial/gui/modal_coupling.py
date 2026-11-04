@@ -11,6 +11,7 @@ of a vibration absorber, which happens whether or not it was intended.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
@@ -34,10 +35,12 @@ from ..core.modal_coupling import (
     subsystems,
     sweep,
 )
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
-from .coupling_notes import THEORY_HTML, TRIALS, matrices_html
+from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
 from .layouts import ColumnScroll
+from .links import page_link
 from .style import MAX_DOF, colors, text_on
 from .substructuring import error_color, zeta_text
 from .theming import add_legend, mute
@@ -84,6 +87,288 @@ FRF_POINT_TIP = (
     "removed and its base on the ground. Their peaks are the modes the oscillators stand for.</p>"
 )
 FRF_POINT_NAMES = {"interface": "A's tip (the interface)", "free": "B's tip (the free end)"}
+
+
+# ------------------------------------------------------------------ practice problems
+TAB_VEERING, TAB_SHAPES, TAB_FRF, TAB_MATRICES = range(4)
+TWO_PI = 2.0 * math.pi
+
+
+@dataclass(frozen=True)
+class CouplingSetup:
+    """A practice problem's setup: a chain (for the Simulation page) and how this page splits and couples it."""
+
+    masses: tuple[float, ...] = (1.0, 1.0, 0.1, 0.1)
+    springs: tuple[float, ...] = (400.0, 400.0, 40.0, 40.0)
+    dampers: tuple[float, ...] = (2.0, 2.0, 0.2, 0.2)
+    split: int = 2  # A is masses 1..split
+    mode_a: int = 0  # 0-based
+    mode_b: int = 0
+    a_mass: str = "tip"
+    residual: bool = True
+    tab: int = TAB_VEERING
+
+    def system(self) -> ChainSystem:
+        return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
+
+
+PRACTICE_SETUP = CouplingSetup  # what a practice problem's setup and the page's practice_state are
+
+
+def _chain(system: ChainSystem) -> dict:
+    """A chain as a setup's elements."""
+    return dict(
+        masses=tuple(float(v) for v in system.masses),
+        springs=tuple(float(v) for v in system.stiffness),
+        dampers=tuple(float(v) for v in system.damping),
+    )
+
+
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _tip_mass(rng: np.random.Generator) -> Question:
+    m1, m2 = pick(rng, (1, 2, 5)), pick(rng, (0.5, 1, 2))
+    k1, k2 = pick(rng, (400, 1000)), pick(rng, (200, 400, 1000))
+    chain = dict(masses=(m1, m2, 0.1, 0.1), springs=(k1, k2, 40.0, 40.0), dampers=(0.0,) * 4)
+    A, _ = subsystems(CouplingSetup(**chain).system(), 2)
+    psi = rounded(A.Phi[0, 0] / A.Phi[1, 0], 3)
+    m_tip = m1 * psi * psi + m2
+    return Question(
+        f"A is two masses, m1 = {m1:g} kg and m2 = {m2:g} kg (its tip). Its mode 1, scaled to 1 at the tip, is "
+        f"ψ = ({number(psi)}, 1). What is its modal mass at the interface, the mass of A's oscillator?",
+        m_tip,
+        f"m<sub>tip</sub> = 1/φ<sub>tip</sub>² = ψ<sup>T</sup>Mψ with ψ scaled to 1 at the tip: {m1:g} × "
+        f"{number(psi)}² + {m2:g} × 1² = {number(m_tip)} kg, less than A's {m1 + m2:g} kg: per unit of tip motion the "
+        "mode looks light.",
+        unit="kg",
+        setup=dict(**chain, tab=TAB_MATRICES),
+    )
+
+
+def _effective_mass(rng: np.random.Generator) -> Question:
+    m3, m4 = pick(rng, (0.1, 0.2, 0.5)), pick(rng, (0.1, 0.2, 0.5))
+    k3, k4 = pick(rng, (40, 100)), pick(rng, (20, 40, 100))
+    chain = dict(masses=(1.0, 1.0, m3, m4), springs=(400.0, 400.0, k3, k4), dampers=(0.0,) * 4)
+    _, B = subsystems(CouplingSetup(**chain).system(), 2)
+    phi = B.Phi[:, 0]
+    psi = rounded(phi[0] / phi[1], 3)
+    gamma2 = (m3 * psi + m4) ** 2 / (m3 * psi * psi + m4)
+    return Question(
+        f"B is two masses on a held base, m3 = {m3:g} kg and m4 = {m4:g} kg. Its mode 1, scaled to 1 at m4, is "
+        f"ψ = ({number(psi)}, 1). What is its effective mass, the mass of B's oscillator?",
+        gamma2,
+        f"For any scaling, Γ² = (ψ<sup>T</sup>M<b>1</b>)²/(ψ<sup>T</sup>Mψ) = ({m3:g} × {number(psi)} + {m4:g})² / "
+        f"({m3:g} × {number(psi)}² + {m4:g}) = {number((m3 * psi + m4) ** 2)}/{number(m3 * psi * psi + m4)} = "
+        f"{number(gamma2)} kg. The rest of B's {m3 + m4:g} kg, {number(m3 + m4 - gamma2)} kg, is residual mass.",
+        unit="kg",
+        setup=dict(**chain, tab=TAB_MATRICES),
+    )
+
+
+def _oscillator_stiffness(rng: np.random.Generator) -> Question:
+    m, f = pick(rng, (0.05, 0.1, 0.2, 0.5, 1.4)), pick(rng, (2, 5, 10, 20))
+    k = m * (TWO_PI * f) ** 2
+    return Question(
+        f"A mode at {f:g} Hz has an effective mass of {m:g} kg. What stiffness does its equivalent oscillator get?",
+        k,
+        f"The oscillator keeps the mode's frequency: k = mω² = {m:g} × (2π × {f:g})² = {number(k)} N/m.",
+        unit="N/m",
+    )
+
+
+def _tuned_gap(rng: np.random.Generator) -> Question:
+    fa, mu = pick(rng, (2, 5, 10, 50)), pick(rng, (0.01, 0.02, 0.05, 0.1, 0.2))
+    gap = math.sqrt(mu) * fa
+    return Question(
+        f"Two oscillators are tuned to the same {fa:g} Hz and joined, B's on A's, with a mass ratio μ = {mu:g}. How "
+        "far apart are the two modes they split into?",
+        gap,
+        f"Tuned, the roots' product is ω<sub>a</sub>⁴ and their sum (2 + μ)ω<sub>a</sub>², so (ω₂ − ω₁)² = "
+        f"μω<sub>a</sub>²: Δf = √μ f<sub>a</sub> = √{mu:g} × {fa:g} = {number(gap)} Hz, whatever μ is.",
+        unit="Hz",
+        tolerance=0.01,
+    )
+
+
+def _tuned_lower(rng: np.random.Generator) -> Question:
+    fa, mu = pick(rng, (2, 5, 10, 50)), pick(rng, (0.01, 0.05, 0.1, 0.2, 0.5))
+    lower = fa * math.sqrt(1 + mu / 2 - math.sqrt(mu + mu * mu / 4))
+    return Question(
+        f"Two oscillators are tuned to {fa:g} Hz and joined, B's on A's, with μ = {mu:g}. Where is the lower of the "
+        "two modes?",
+        lower,
+        f"Tuned, ω²/ω<sub>a</sub>² = 1 + μ/2 ± √(μ + μ²/4): with the minus, "
+        f"{number(1 + mu / 2 - math.sqrt(mu + mu * mu / 4), 4)}, so f₁ = {fa:g} × √that = {number(lower)} Hz.",
+        unit="Hz",
+        tolerance=0.01,
+    )
+
+
+LIGHT = dict(masses=(1.0, 1.0, 0.1, 0.1), springs=(400.0, 400.0, 40.0, 40.0), dampers=(2.0, 2.0, 0.2, 0.2))
+
+
+def _wrong_mass(rng: np.random.Generator) -> Question:
+    return Question(
+        "A's oscillator is given its effective mass Γ² instead of its modal mass at the interface. What happens to the "
+        "2-DOF model's frequencies against the chain's?",
+        0,
+        "They're no longer an upper bound: here mode 1 comes out 2.9 % high and mode 2 2.2 % low, against 0.2 % and "
+        "0.3 % high with the modal mass at the interface. Only that mass (with the residual mass) makes the model "
+        "Rayleigh–Ritz.",
+        choices=(
+            "Their errors grow, and can now have either sign",
+            "They stay upper bounds, just less close",
+            "Nothing: either mass will do",
+        ),
+        setup=dict(**LIGHT, a_mass="effective"),
+        predict=True,
+    )
+
+
+def _no_residual(rng: np.random.Generator) -> Question:
+    return Question(
+        "B's residual mass is left off A's oscillator. Which way do the 2-DOF model's frequencies move?",
+        0,
+        "Up: the model loses mass that does move with A's tip (B's other modes, riding rigidly on it), so both "
+        "frequencies rise, here from 0.2 % to 0.35 % high and from 0.33 % to 0.55 % high.",
+        choices=("Both up", "Both down", "They don't move"),
+        setup=dict(**LIGHT, residual=False),
+        predict=True,
+    )
+
+
+def _heavier_b(rng: np.random.Generator) -> Question:
+    return Question(
+        "B stays tuned to A, but is made four times as heavy (its masses and springs both ×4). What happens to the two "
+        "coupled modes?",
+        0,
+        "They split further apart: at tuning they're √μ f<sub>A</sub> apart, and μ grew four times, so the gap "
+        "about doubles (the chain's 1.63 and 2.35 Hz become 1.35 and 2.75 Hz).",
+        choices=("They split about twice as far apart", "They split four times as far", "They move closer", "Nothing"),
+        setup=dict(masses=(1.0, 1.0, 0.4, 0.4), springs=(400.0, 400.0, 160.0, 160.0), dampers=(2.0, 2.0, 0.8, 0.8)),
+        predict=True,
+    )
+
+
+def _detuned(rng: np.random.Generator) -> Question:
+    return Question(
+        "B is retuned to twice A's frequency (its springs ×4). What does coupling do to the two modes, against A's "
+        "and B's own frequencies?",
+        0,
+        "It pushes them apart: the lower mode, mostly A, comes out below A's 1.97 Hz (1.81 Hz); the upper, mostly B, "
+        "above B's 3.93 Hz (4.10 Hz). Far apart they don't split, each keeps its mode, shifted outwards.",
+        choices=(
+            "The lower moves below A's, the upper above B's",
+            "Both stay where they were",
+            "Both move up",
+            "They meet in the middle",
+        ),
+        setup=dict(masses=(1.0, 1.0, 0.1, 0.1), springs=(400.0, 400.0, 160.0, 160.0), dampers=(2.0, 2.0, 0.8, 0.8)),
+        predict=True,
+    )
+
+
+def _shared_damping(rng: np.random.Generator) -> Question:
+    absorber = _chain(CouplingTrial("", "", "absorber", 1).system())
+    return Question(
+        "A machine with ζ = 0.025 carries an undamped absorber tuned to it. What damping do the two coupled modes get?",
+        0,
+        "About half each, the average: at exact tuning each coupled mode is half machine and half absorber, and here "
+        "both come out at ζ = 0.012. That's how a tuned mass damper shares damping.",
+        choices=("About half the machine's each", "The machine's 0.025 and 0", "None", "0.025 each"),
+        setup=dict(**absorber, split=1),
+        predict=True,
+    )
+
+
+def _split_spec(rng: np.random.Generator) -> Question:
+    base = ChainSystem.uniform(3)
+    A, _ = subsystems(base, 2)
+    fa = float(A.fn_hz[0])
+    md = pick(rng, (0.05, 0.08, 0.1, 0.15, 0.2))
+
+    def chain(m3: float, ratio: float) -> dict:
+        k3 = round(m3 * (TWO_PI * fa * ratio) ** 2, 2)
+        return dict(masses=(1.0, 1.0, m3), springs=(400.0, 400.0, k3), dampers=(2.0, 2.0, 0.0))
+
+    def gap(t: CouplingSetup) -> float:
+        f = sorted(m.fn_hz for m in modal_analysis(t.system()).modes)
+        return (f[1] - f[0]) / fa
+
+    wanted = rounded(100 * gap(CouplingSetup(**chain(md, 1.0))) / 1.05, 2)
+    heaviest = rounded(1.25 * md, 2)
+
+    def goal(t: CouplingSetup):
+        three = len(t.masses) == 3
+        tuned = math.sqrt(t.springs[2] / t.masses[2]) / TWO_PI / fa if three else math.nan
+        return (
+            Requirement("Three masses", f"{len(t.masses)}", three),
+            *(
+                kept(what, now, given, unit)
+                for what, now, given, unit in (
+                    ("m1", t.masses[0], 1.0, "kg"),
+                    ("m2", t.masses[1] if three else math.nan, 1.0, "kg"),
+                    ("k1", t.springs[0], 400.0, "N/m"),
+                    ("k2", t.springs[1] if three else math.nan, 400.0, "N/m"),
+                )
+            ),
+            Requirement(
+                f"B tuned to A: f<sub>B</sub> within 2 % of {number(fa)} Hz",
+                f"f<sub>B</sub>/f<sub>A</sub> = {number(tuned, 4)}",
+                abs(tuned - 1) <= 0.02,
+            ),
+            at_least(
+                "The chain's modes 1 and 2 apart, over f<sub>A</sub>", 100 * gap(t) if three else 0.0, wanted, "%"
+            ),
+            at_most("B's mass m3", t.masses[2] if three else math.inf, heaviest, "kg"),
+        )
+
+    return Question(
+        f"A is the uniform chain's m1 and m2 (1 kg, 400 N/m each; its mode 1 at {number(fa)} Hz). On the Simulation "
+        f"page, choose B, a single m3 on k3, so that B is tuned to A and the chain's first two modes split at least "
+        f"{number(wanted, 2)} % of f<sub>A</sub> apart, with m3 no more than {number(heaviest, 2)} kg.",
+        0,
+        f"Tuned, the modes are √μ f<sub>A</sub> apart, μ = m3/m<sub>tip</sub> with A's modal mass at the interface "
+        f"m<sub>tip</sub> = {number(float(A.tip_masses()[0]))} kg (B has no residual mass: it is one mass). So m3 ≥ "
+        f"({number(wanted / 100, 3)})² × {number(float(A.tip_masses()[0]))} ≈ "
+        f"{number((wanted / 100) ** 2 * float(A.tip_masses()[0]))} kg, and k3 = m3 (2π × {number(fa)})² keeps it "
+        f"tuned: m3 = {md:g} kg on k3 = {number(chain(md, 1.0)['springs'][2])} N/m splits them "
+        f"{number(100 * gap(CouplingSetup(**chain(md, 1.0))))} %.",
+        setup=dict(**chain(md, 1.5), split=2),
+        goal=goal,
+        design=dict(**chain(md, 1.0), split=2),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "coupling_page", f"See {page_link('coupling_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        (
+            "tip-mass",
+            "A's modal mass at the interface",
+            "a-modal-mass",
+            "A: its modal mass at the interface",
+            _tip_mass,
+        ),
+        ("effective-mass", "B's effective mass", "effective-mass", "B: its effective mass", _effective_mass),
+        ("oscillator-stiffness", "An oscillator's spring", "masses", "Which mass?", _oscillator_stiffness),
+        ("tuned-gap", "Split by tuning", "splitting", "The 2-DOF system and mode splitting", _tuned_gap),
+        ("tuned-lower", "The lower mode", "splitting", "The 2-DOF system and mode splitting", _tuned_lower),
+        ("wrong-mass", "Predict: the wrong mass for A", "rayleigh-ritz", "Why this works", _wrong_mass),
+        ("no-residual", "Predict: no residual mass", "effective-mass", "B: its effective mass", _no_residual),
+        ("heavier-b", "Predict: a heavier B", "splitting", "The 2-DOF system and mode splitting", _heavier_b),
+        ("detuned", "Predict: B far off", "splitting", "The 2-DOF system and mode splitting", _detuned),
+        ("shared-damping", "Predict: shared damping", "damping", "Damping", _shared_damping),
+        ("split-spec", "Spec: a split to order", "splitting", "The 2-DOF system and mode splitting", _split_spec),
+    )
+)
+
+
+def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
+    return a.n == b.n and all(
+        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
+    )
 
 
 def sub_color(name: str) -> str:
@@ -790,6 +1075,43 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self._modes_wanted = [trial.mode_a, trial.mode_b]
         self.refresh()
         self.tabs.setCurrentIndex(trial.tab)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then how
+        it's split and coupled. Worked out now only if the page shows."""
+        t = CouplingSetup(**setup)
+        self.trial_note.setVisible(False)
+        system = t.system()
+        self.system_requested.emit(system)
+        if self.system is None or not _same_chain(self.system, system):
+            self.set_system(system)  # nobody passed it back: show it here alone
+        self.a_mass.blockSignals(True)
+        self.a_mass.setCurrentIndex(self.a_mass.findData(t.a_mass))
+        self.a_mass.blockSignals(False)
+        self.residual.blockSignals(True)
+        self.residual.setChecked(t.residual)
+        self.residual.blockSignals(False)
+        self._split_wanted = t.split
+        self._modes_wanted = [t.mode_a, t.mode_b]
+        self.tabs.setCurrentIndex(t.tab)
+        self._dirty = True
+        if self.isVisible():
+            self.refresh()
+
+    def practice_state(self) -> CouplingSetup:
+        """The chain and how it's split and coupled, as a setup: what a practice spec checks."""
+        s = self.system
+        n = s.n if s is not None else 0
+        split = int(np.clip(self._split_wanted or n // 2, 1, max(n - 1, 1)))
+        return CouplingSetup(
+            **(_chain(s) if s is not None else dict(masses=(), springs=(), dampers=())),
+            split=split,
+            mode_a=int(np.clip(self._modes_wanted[0], 0, max(split - 1, 0))),
+            mode_b=int(np.clip(self._modes_wanted[1], 0, max(n - split - 1, 0))),
+            a_mass=self.a_mass.currentData(),
+            residual=self.residual.isChecked(),
+            tab=self.tabs.currentIndex(),
+        )
 
     def _on_trial(self, index: int) -> None:
         if index <= 0:

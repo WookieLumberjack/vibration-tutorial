@@ -302,7 +302,7 @@ veering: the two curves stay apart over a band of f<sub>B</sub>/f<sub>A</sub> ro
 wide. The chain's own frequencies do the same, and so does every other pair
 of modes of A and B.</p>
 
-<h3>Damping</h3>
+<h3><a name="damping"></a>Damping</h3>
 <p>Each oscillator keeps its mode's modal damping ratio, and the 2-DOF damping ratios are
 exact for the 2-DOF model. Where the modes split, each coupled mode is a mix of both, and
 its damping is roughly the energy-weighted mix of the two. A lightly damped part joined to
