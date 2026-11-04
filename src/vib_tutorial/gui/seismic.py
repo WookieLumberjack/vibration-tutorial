@@ -9,6 +9,7 @@ the ground motions, and the Theory.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -16,6 +17,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.model import ChainSystem
+from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.random_vibration import G
 from ..core.seismic import (
     GROUNDS,
@@ -51,7 +53,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
@@ -70,6 +72,20 @@ class SeismicTrial:
     tank: float = 0.0  # the rooftop tank's share of mode 1's modal mass there
     rule: Rule = Rule.CQC
     tab: int = TAB_FLOORS
+    mass: float = 1e4  # each floor's (kg)
+    stiffness: float = 5e6  # each storey's (N/m)
+    masses: tuple[float, ...] = ()  # a chain element by element instead (a practice state's), its springs with it
+    springs: tuple[float, ...] = ()
+
+    def system(self) -> ChainSystem:
+        if self.masses:
+            return ChainSystem(np.array(self.masses), np.array(self.springs), np.zeros(len(self.masses)))
+        system = building(self.storeys, self.mass, self.stiffness)
+        return with_tank(system, self.tank) if self.tank else system
+
+    @property
+    def design(self) -> Design:
+        return Design(self.pga, GROUNDS[self.ground], self.zeta / 100)
 
 
 TRIALS = (
@@ -117,6 +133,240 @@ TRIALS = (
         "every peak with it.",
         zeta=10.0,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _base_shear(t: SeismicTrial, rule: Rule = Rule.CQC) -> float:
+    m = modal(t.system(), t.design)
+    return float(combine(m.shear, rule, correlation(m.f, t.design.zeta))[0])
+
+
+def _sa(rng: np.random.Generator) -> Question:
+    ground = int(pick(rng, range(len(GROUNDS))))
+    pga, T = pick(rng, (0.1, 0.2, 0.3, 0.4)), pick(rng, (0.1, 0.3, 0.6, 1.0, 1.5, 2.5))
+    d = Design(pga, GROUNDS[ground], 0.05)
+    S, TB, TC, TD = d.corners
+    sa = float(design_sa(d, np.array([T]))[0]) / G
+    if T < TB:
+        branch = "below T<sub>B</sub>: a<sub>g</sub>S[1 + T/T<sub>B</sub>(2.5η − 1)]"
+    elif T <= TC:
+        branch = "on the plateau: 2.5η a<sub>g</sub>S"
+    elif T <= TD:
+        branch = "between T<sub>C</sub> and T<sub>D</sub>: 2.5η a<sub>g</sub>S T<sub>C</sub>/T"
+    else:
+        branch = "past T<sub>D</sub>: 2.5η a<sub>g</sub>S T<sub>C</sub>T<sub>D</sub>/T²"
+    return Question(
+        f"A design spectrum for a<sub>g</sub> = {pga:g} g on ground type {GROUNDS[ground]}: S = {S:g}, "
+        f"T<sub>B</sub> = {TB:g} s, T<sub>C</sub> = {TC:g} s, T<sub>D</sub> = {TD:g} s, ζ = 5 % (η = 1). What is "
+        f"S<sub>a</sub> at T = {T:g} s?",
+        sa,
+        f"{T:g} s is {branch} = {number(sa)} g.",
+        unit="g",
+        setup=dict(pga=pga, ground=ground),
+    )
+
+
+def _eta(rng: np.random.Generator) -> Question:
+    zeta = pick(rng, (2, 3, 8, 10, 15, 20))
+    eta = Design(zeta=zeta / 100).eta
+    return Question(
+        f"Dampers bring every mode of a building to ζ = {zeta:g} %. By what factor η does that scale its design "
+        "spectrum, against 5 %?",
+        eta,
+        f"η = √(10/(5 + ζ%)) = √(10/{5 + zeta:g}) = {number(eta)}"
+        + (": the spectrum rises." if eta > 1 else f": every peak {number(100 * (1 - eta))} % lower."),
+        setup=dict(zeta=float(zeta)),
+    )
+
+
+def _period(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (3, 4, 5, 6, 8)))
+    m, k = pick(rng, (5, 10, 20)), pick(rng, (2, 5, 10, 20))
+    T = float(modal(building(n, 1000 * m, 1e6 * k), Design()).T[0])
+    w = 2 * math.sqrt(k * 1e6 / (m * 1000)) * math.sin(math.pi / (2 * (2 * n + 1)))
+    return Question(
+        f"A uniform shear building of {n} storeys: {m:g} t floors on {k:g} MN/m storeys. What is its first mode's "
+        "period?",
+        T,
+        f"A uniform chain fixed at the ground and free at the top has ω<sub>r</sub> = 2√(k/m) sin((2r − 1)π/(2(2n + "
+        f"1))): ω₁ = 2 × √({number(k * 1e6 / (m * 1000))}) × sin(π/{2 * (2 * n + 1)}) = {number(w)} rad/s, so T₁ = "
+        f"2π/ω₁ = {number(T)} s.",
+        unit="s",
+        setup=dict(storeys=n, mass=1000 * m, stiffness=1e6 * k),
+    )
+
+
+def _effective_mass(rng: np.random.Generator) -> Question:
+    m1, m2 = pick(rng, (10, 15, 20)), pick(rng, (5, 10, 15))
+    a = pick(rng, (1.3, 1.5, 1.8, 2.0))
+    num, den = m1 + m2 * a, m1 + m2 * a * a
+    meff = num * num / den
+    return Question(
+        f"A two-storey building, {m1:g} t on the first floor and {m2:g} t on the second, has a mode shaped (1, {a:g}). "
+        "What is that mode's effective mass?",
+        meff,
+        f"M<sub>eff</sub> = (φᵀM1)²/φᵀMφ = ({m1:g} + {m2:g} × {a:g})²/({m1:g} + {m2:g} × {a:g}²) = "
+        f"{number(num)}²/{number(den)} = {number(meff)} t, {number(100 * meff / (m1 + m2))} % of the "
+        f"{m1 + m2:g} t.",
+        unit="t",
+    )
+
+
+def _modal_shear(rng: np.random.Generator) -> Question:
+    meff, sa = pick(rng, (30, 44, 60, 85, 120)), pick(rng, (0.2, 0.35, 0.5, 0.8))
+    V = meff * sa * G
+    return Question(
+        f"A mode with {meff:g} t of effective mass sits at S<sub>a</sub> = {sa:g} g on the design spectrum. What base "
+        "shear does it give?",
+        V,
+        f"V = M<sub>eff</sub>S<sub>a</sub> = {meff:g} t × {sa:g} × 9.81 m/s² = {number(V)} kN.",
+        unit="kN",
+    )
+
+
+def _srss(rng: np.random.Generator) -> Question:
+    v = (pick(rng, (150, 200, 250)), pick(rng, (40, 60, 80)), pick(rng, (10, 20, 30)))
+    srss = math.sqrt(sum(x * x for x in v))
+    return Question(
+        f"Three well-separated modes give base shears of {v[0]:g}, {v[1]:g} and {v[2]:g} kN. What base shear does "
+        "SRSS combine them into?",
+        srss,
+        f"√({v[0]:g}² + {v[1]:g}² + {v[2]:g}²) = {number(srss)} kN (ABS would say {sum(v):g} kN; CQC, with the modes "
+        "this far apart, about the same as SRSS).",
+        unit="kN",
+    )
+
+
+def _rho(rng: np.random.Generator) -> Question:
+    ratio, zeta = pick(rng, (1.05, 1.1, 1.2, 1.5, 3.0)), pick(rng, (0.02, 0.05, 0.1))
+    rho = float(correlation(np.array([1.0, ratio]), zeta)[0, 1])
+    return Question(
+        f"Two modes, ζ = {100 * zeta:g} % each, their frequencies {ratio:g} times apart. What is Der Kiureghian's "
+        "correlation ρ between them?",
+        rho,
+        f"ρ = 8ζ²(1 + r)r<sup>3/2</sup> / ((1 − r²)² + 4ζ²r(1 + r)²) with r = {ratio:g}: {number(rho)}"
+        + (": well apart, SRSS will do." if rho < 0.1 else ": correlated, so CQC's cross term matters."),
+        tolerance=0.02,
+    )
+
+
+def _soft_soil(rng: np.random.Generator) -> Question:
+    return Question(
+        "The five-storey building (T₁ = 0.99 s) is moved from ground type C to D, the same a<sub>g</sub>. What does "
+        "its base shear do?",
+        0,
+        "It rises by more than half, 229 to 357 kN: S goes from 1.15 to 1.35, and the plateau now runs to "
+        "T<sub>C</sub> = 0.8 s, nearer mode 1, whose S<sub>a</sub> rises from 0.52 to 0.82 g.",
+        choices=("It rises by more than half", "It rises a little (S: 1.15 to 1.35)", "It stays the same", "It falls"),
+        setup=dict(ground=3),
+        predict=True,
+    )
+
+
+def _stiffer(rng: np.random.Generator) -> Question:
+    return Question(
+        "Every storey of the five-storey building (T₁ = 0.99 s, past T<sub>C</sub> = 0.6 s on ground C) is made twice "
+        "as stiff. What does its base shear do?",
+        0,
+        "It rises, 229 to 322 kN: T₁ falls by √2 to 0.70 s, still on the 1/T branch, so S<sub>a</sub> rises by √2. A "
+        "stiffer building attracts more force (its drifts still fall).",
+        choices=("It rises", "It falls", "It stays the same"),
+        setup=dict(stiffness=1e7),
+        predict=True,
+    )
+
+
+def _tank_srss(rng: np.random.Generator) -> Question:
+    return Question(
+        "A tank on the roof, tuned to mode 1, splits it into two close modes (0.96 and 1.06 Hz). Against CQC, what "
+        "does SRSS give for the base shear?",
+        0,
+        "Less, 165 kN against CQC's 200, which is near the records' mean: SRSS treats the two modes as independent, but with ρ = "
+        "0.50 they move together much of the time, and CQC keeps the cross term.",
+        choices=("Less", "About the same", "More"),
+        setup=dict(tank=0.01, rule=Rule.SRSS),
+        predict=True,
+    )
+
+
+def _abs(rng: np.random.Generator) -> Question:
+    return Question(
+        "Combining the five-storey building's modes by ABS (adding their peaks), against the mean of the records. "
+        "What does ABS give?",
+        0,
+        "Too much, 277 kN against the records' 235: ABS assumes every mode peaks at the same moment, and modes this "
+        "far apart (ρ₁₂ = 0.007) don't.",
+        choices=("Too much", "About the records' mean", "Too little"),
+        setup=dict(rule=Rule.ABS),
+        predict=True,
+    )
+
+
+def _damping_spec(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (4, 5, 6)))
+    ground = int(pick(rng, (1, 2, 3)))
+    pga = pick(rng, (0.2, 0.3, 0.4))
+    zd = pick(rng, (10, 12, 15, 20))  # %, the design
+    start = SeismicTrial("", "", storeys=n, pga=pga, ground=ground)
+    design = SeismicTrial("", "", storeys=n, pga=pga, ground=ground, zeta=float(zd))
+    limit = rounded(1.04 * _base_shear(design) / 1000)  # kN
+    most = float(round(1.3 * zd))
+    given = start.system()
+
+    def goal(t: SeismicTrial):
+        system = t.system()
+        same = (
+            system.n == given.n
+            and np.allclose(system.masses, given.masses)
+            and np.allclose(system.stiffness, given.stiffness)
+        )
+        return (
+            Requirement(f"The {n}-storey building as given", f"{system.n} floors", bool(same)),
+            kept("a<sub>g</sub>", t.pga, pga, "g"),
+            Requirement("Ground type", GROUNDS[t.ground], t.ground == ground),
+            Requirement("Combined by CQC", t.rule.value, t.rule is Rule.CQC),
+            at_most("Damping ζ", t.zeta, most, "%"),
+            at_most("Base shear", _base_shear(t) / 1000, limit, "kN"),
+        )
+
+    lo, hi = 5.0, float(zd)
+    for _ in range(30):
+        mid = 0.5 * (lo + hi)
+        trial = SeismicTrial("", "", storeys=n, pga=pga, ground=ground, zeta=mid)
+        lo, hi = (mid, hi) if _base_shear(trial) / 1000 > limit else (lo, mid)
+    return Question(
+        f"The uniform {n}-storey building (10 t floors, 5 MN/m storeys) on ground type {GROUNDS[ground]}, "
+        f"a<sub>g</sub> = {pga:g} g. Dampers can raise every mode's ζ, to {most:g} % at most. Choose ζ so that the "
+        f"base shear, combined by CQC, is {number(limit)} kN or less.",
+        0,
+        f"Every peak scales with η = √(10/(5 + ζ%)), down to 0.55: at 5 % the base shear is "
+        f"{number(_base_shear(start) / 1000)} kN, so η must come down to {number(limit * 1000 / _base_shear(start))}, "
+        f"ζ ≥ about {number(hi)} % (ζ = {zd:g} % gives {number(_base_shear(design) / 1000)} kN).",
+        setup=dict(storeys=n, pga=pga, ground=ground),
+        goal=goal,
+        design=dict(storeys=n, pga=pga, ground=ground, zeta=float(zd)),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "seismic_page", f"See {page_link('seismic_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("design-sa", "Reading the design spectrum", "design-spectrum", "A design spectrum", _sa),
+        ("eta", "Damping's correction", "design-spectrum", "A design spectrum", _eta),
+        ("period", "A building's period", "participation", "Participation and effective mass", _period),
+        ("effective-mass", "Effective mass", "participation", "Participation and effective mass", _effective_mass),
+        ("modal-shear", "A mode's base shear", "participation", "Participation and effective mass", _modal_shear),
+        ("srss", "SRSS", "combination", "Combining the modes", _srss),
+        ("rho", "Two modes' correlation", "combination", "Combining the modes", _rho),
+        ("soft-soil", "Predict: softer soil", "design-spectrum", "A design spectrum", _soft_soil),
+        ("stiffer", "Predict: a stiffer building", "design-spectrum", "A design spectrum", _stiffer),
+        ("tank-srss", "Predict: close modes by SRSS", "combination", "Combining the modes", _tank_srss),
+        ("abs", "Predict: ABS", "combination", "Combining the modes", _abs),
+        ("damping-spec", "Spec: damping for a base shear", "design-spectrum", "A design spectrum", _damping_spec),
+    )
 )
 
 TIPS = {
@@ -335,10 +585,30 @@ class SeismicPage(QtWidgets.QWidget):
             self.redraw()
 
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
-        system = building(t.storeys)
-        if t.tank:
-            system = with_tank(system, t.tank)
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(SeismicTrial("", "", **setup))
+
+    def practice_state(self) -> SeismicTrial:
+        """The building and the spectrum's settings, as a trial: what a practice spec checks."""
+        s = self.system
+        return SeismicTrial(
+            "",
+            "",
+            storeys=s.n,
+            pga=self.pga.value(),
+            ground=self.ground.currentIndex(),
+            zeta=self.zeta.value(),
+            rule=RULES[self.rule.currentIndex()],
+            tab=self.tabs.currentIndex(),
+            masses=tuple(float(v) for v in s.masses),
+            springs=tuple(float(v) for v in s.stiffness),
+        )
+
+    def apply_trial(self, t: SeismicTrial) -> None:
+        system = t.system()
         self.system_requested.emit(system)
         if not _same(self.system, system):
             self.set_system(system)
@@ -351,7 +621,9 @@ class SeismicPage(QtWidgets.QWidget):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
-        self.redraw()
+        self._dirty = True
+        if self.isVisible():  # the records are stepped only once it shows
+            self.redraw()
 
     @property
     def design(self) -> Design:
