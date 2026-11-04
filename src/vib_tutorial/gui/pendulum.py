@@ -30,6 +30,7 @@ from ..core.pendulum import (
     rod_period,
     swing,
 )
+from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
 from . import settle_plots
 from .lesson import (
     Form,
@@ -49,7 +50,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -143,6 +144,202 @@ TRIALS = (
         gravity=1.62,
         angle=10.0,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _simple_period(rng: np.random.Generator) -> Question:
+    length = pick(rng, (0.25, 0.5, 1, 2, 5, 10))
+    p = Pendulum(Kind.SIMPLE, length=length)
+    return Question(
+        f"A small bob hangs on a {length:g} m string (g = 9.81 m/s²). What is its period for small swings?",
+        p.period0,
+        f"Gravity is the spring: k<sub>θ</sub> = mgL, J = mL², so ω<sub>n</sub> = √(g/L) = "
+        f"{number(p.omega0)} rad/s and T = 2π/ω<sub>n</sub> = {number(p.period0)} s, whatever the bob weighs.",
+        unit="s",
+        setup=dict(kind=Kind.SIMPLE, length=length, angle=5.0),
+    )
+
+
+def _rod_period(rng: np.random.Generator) -> Question:
+    length = pick(rng, (0.5, 1, 1.5, 2))
+    d = rounded(pick(rng, (0.1, 0.2, 0.3, 0.4, 0.5)) * length)
+    p = Pendulum(Kind.ROD, length=length, pivot=d)
+    return Question(
+        f"A uniform rod {length:g} m long swings about a pivot {number(d)} m from its centre. What is its period "
+        "for small swings?",
+        p.period0,
+        f"J = m(L²/12 + d²) about the pivot (parallel axes) and k<sub>θ</sub> = mgd: T = 2π√((L²/12 + d²)/gd) = "
+        f"2π√(({number(length**2 / 12)} + {number(d * d)})/(9.81 × {number(d)})) = {number(p.period0)} s, the mass "
+        f"cancelling again. It swings like a simple pendulum {number(p.equivalent_length)} m long.",
+        unit="s",
+        setup=dict(kind=Kind.ROD, length=length, pivot=d, tab=TAB_PIVOT),
+    )
+
+
+def _large_swing(rng: np.random.Generator) -> Question:
+    degrees = pick(rng, (20, 30, 45, 60, 90, 120))
+    p = Pendulum(Kind.SIMPLE)
+    longer = 100.0 * (period(p, math.radians(degrees)) / p.period0 - 1.0)
+    a = math.radians(degrees)
+    return Question(
+        f"A simple pendulum is let go from {degrees:g}° instead of a small angle. By what percentage is its period "
+        "longer?",
+        longer,
+        f"Exactly, T = T<sub>0</sub>(2/π)K(sin²(A/2)), the energy integral: {number(longer)} % longer. The "
+        f"Duffing estimate A²/16 = {number(100 * a * a / 16)} % is good to about 30°, and falls short beyond.",
+        unit="%",
+        tolerance=0.03,
+        setup=dict(kind=Kind.SIMPLE, angle=float(degrees), tab=TAB_PERIOD),
+    )
+
+
+def _inverted_spring(rng: np.random.Generator) -> Question:
+    m = pick(rng, (0.5, 1, 2, 5))
+    length = pick(rng, (0.2, 0.5, 1))
+    least = m * 9.81 * length
+    return Question(
+        f"A {m:g} kg mass on a light arm {length:g} m long stands upright on a pivot, held up by a torsion spring. "
+        "How stiff must the spring be for upright to be stable?",
+        least,
+        f"Leaning by θ, the weight pushes it over with mgL sin θ ≈ mgLθ, so the stiffness is k<sub>θ</sub> − mgL: "
+        f"stable only if k<sub>θ</sub> &gt; mgL = {m:g} × 9.81 × {length:g} = {number(least)} N·m/rad. A weaker "
+        "spring lets it fall to a leaning balance, as a column buckles.",
+        unit="N·m/rad",
+        setup=dict(kind=Kind.INVERTED, mass=m, length=length, spring=rounded(1.2 * least)),
+    )
+
+
+def _disc_on_wire(rng: np.random.Generator) -> Question:
+    m = pick(rng, (0.5, 1, 2, 5))
+    r = pick(rng, (0.05, 0.1, 0.2))
+    k = pick(rng, (0.5, 1, 2, 5))
+    p = Pendulum(Kind.TORSION, mass=m, length=r, spring=k)
+    return Question(
+        f"A {m:g} kg disc of radius {r:g} m hangs on a wire of torsional stiffness {k:g} N·m/rad. At what frequency "
+        "does it twist back and forth?",
+        p.natural_hz,
+        f"J = mr²/2 = {number(p.inertia)} kg·m², so ω<sub>n</sub> = √(k<sub>θ</sub>/J) = {number(p.omega0)} rad/s "
+        f"and f<sub>n</sub> = {number(p.natural_hz)} Hz: the single oscillator, turned.",
+        unit="Hz",
+        setup=dict(kind=Kind.TORSION, mass=m, length=r, spring=k),
+    )
+
+
+def _end_pivot(rng: np.random.Generator) -> Question:
+    length = pick(rng, (0.3, 0.6, 0.9, 1.2, 1.5))
+    p = Pendulum(Kind.ROD, length=length, pivot=length / 2)
+    return Question(
+        f"A uniform rod {length:g} m long swings about one end. How long a simple pendulum has the same period?",
+        p.equivalent_length,
+        f"L<sub>eq</sub> = J/md with J = m(L²/12 + L²/4) = mL²/3 and d = L/2: L<sub>eq</sub> = 2L/3 = "
+        f"{number(p.equivalent_length)} m.",
+        unit="m",
+        setup=dict(kind=Kind.ROD, length=length, pivot=length / 2, tab=TAB_PIVOT),
+    )
+
+
+def _heavier_bob(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (2, 4, 10)))
+    return Question(
+        f"A simple pendulum's bob is swapped for one {n} times heavier, on the same string. What happens to its "
+        "period?",
+        0,
+        "Nothing: the restoring moment mgL and the inertia mL² grow together, so ω<sub>n</sub> = √(g/L) has no "
+        "mass in it.",
+        choices=("It stays the same", f"It grows √{n} times", f"It falls to 1/√{n}"),
+        setup=dict(kind=Kind.SIMPLE, mass=float(n)),
+        predict=True,
+    )
+
+
+def _on_the_moon(rng: np.random.Generator) -> Question:
+    return Question(
+        "A pendulum clock is taken to the Moon, where gravity is about a sixth of Earth's. What happens to its "
+        "pendulum's period?",
+        0,
+        "It grows √6 ≈ 2.4 times: gravity is the spring, ω<sub>n</sub> = √(g/L). (A disc on a torsion wire "
+        "wouldn't change: its spring isn't gravity.)",
+        choices=("It grows about 2.4 times", "It grows 6 times", "It stays the same", "It falls to a sixth"),
+        setup=dict(kind=Kind.SIMPLE, gravity=1.62),
+        predict=True,
+    )
+
+
+def _wire_large_twist(rng: np.random.Generator) -> Question:
+    return Question(
+        "A disc on a torsion wire is twisted to 90° and let go, instead of 10°. What happens to its period?",
+        0,
+        "Nothing: a wire's moment is k<sub>θ</sub>θ at any twist, so it is linear and its period doesn't depend "
+        "on the swing. Only gravity's sin θ makes a pendulum's lengthen.",
+        choices=("It stays the same", "It lengthens, as a pendulum's does", "It shortens"),
+        setup=dict(kind=Kind.TORSION, angle=90.0, tab=TAB_PERIOD),
+        predict=True,
+    )
+
+
+def _pivot_spec(rng: np.random.Generator) -> Question:
+    length = pick(rng, (0.5, 1, 1.5, 2))
+    d = rounded(pick(rng, (0.12, 0.18, 0.4, 0.45)) * length)
+    target = rounded(Pendulum(Kind.ROD, length=length, pivot=d).period0)
+    other = conjugate_pivot(length, d)
+
+    def goal(t: PendulumTrial):
+        now = Pendulum(t.kind, t.mass, t.length, max(1e-3, t.pivot), t.spring, t.zeta, t.gravity).period0
+        return (
+            Requirement("A rod on a pivot", t.kind.value, t.kind is Kind.ROD),
+            kept("Its length", t.length, length, "m"),
+            kept("Gravity", t.gravity, 9.81, "m/s²"),
+            Requirement(
+                f"Its period within ±0.5 % of {number(target)} s",
+                f"{number(now, 4)} s",
+                t.kind is Kind.ROD and abs(now / target - 1.0) <= 0.005,
+            ),
+            Requirement(
+                f"The pivot on the rod (≤ {number(length / 2)} m from its centre)",
+                f"{number(t.pivot)} m",
+                t.pivot <= length / 2,
+            ),
+        )
+
+    return Question(
+        f"A uniform rod {length:g} m long is to be a clock's pendulum with a period of {number(target)} s. Where "
+        "along it should the pivot go?",
+        0,
+        f"T = 2π√((L²/12 + d²)/gd) is least at d = L/√12 = {number(length / math.sqrt(12))} m and longer either "
+        f"side, so a longer period is reached at two pivots, d and k<sub>G</sub>²/d: here {number(d)} m and "
+        f"{number(other)} m from the centre"
+        + ("" if other <= length / 2 else " (off the rod, so only the first)")
+        + ". That is Kater's reversible pendulum: the two pivots are L<sub>eq</sub> apart.",
+        setup=dict(kind=Kind.ROD, length=length, pivot=rounded(length / math.sqrt(12)), tab=TAB_PIVOT),
+        goal=goal,
+        design=dict(kind=Kind.ROD, length=length, pivot=d, tab=TAB_PIVOT),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "pendulum_page", f"See {page_link('pendulum_page', anchor, section)}{more}.", make)
+    for key, title, anchor, section, more, make in (
+        ("simple-period", "A simple pendulum", "gravity-stiffness", "Gravity as a spring", "", _simple_period),
+        ("rod-period", "A rod on a pivot", "gravity-stiffness", "Gravity as a spring", ": parallel axes", _rod_period),
+        ("large-swing", "A large swing", "large-swings", "Large swings", "", _large_swing),
+        ("inverted-spring", "Hold it upright", "gravity-stiffness", "Gravity as a spring", "", _inverted_spring),
+        ("disc-on-wire", "A disc on a wire", "rotation", "Turning instead of sliding", "", _disc_on_wire),
+        ("end-pivot", "Equivalent length", "gravity-stiffness", "Gravity as a spring", "", _end_pivot),
+        ("heavier-bob", "Predict: a heavier bob", "gravity-stiffness", "Gravity as a spring", "", _heavier_bob),
+        ("on-the-moon", "Predict: on the Moon", "gravity-stiffness", "Gravity as a spring", "", _on_the_moon),
+        ("wire-large-twist", "Predict: a large twist", "large-swings", "Large swings", "", _wire_large_twist),
+        (
+            "pivot-spec",
+            "Spec: a clock's pendulum",
+            "gravity-stiffness",
+            "Gravity as a spring",
+            ": where is T least?",
+            _pivot_spec,
+        ),
+    )
 )
 
 TIPS = {
@@ -348,7 +545,29 @@ class PendulumPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(PendulumTrial("", "", **setup))
+
+    def practice_state(self) -> PendulumTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return PendulumTrial(
+            "",
+            "",
+            kind=KINDS[self.kind.currentIndex()],
+            mass=self.mass.value(),
+            length=self.length.value(),
+            pivot=self.pivot.value(),
+            spring=self.spring.value(),
+            gravity=self.gravity.value(),
+            zeta=self.zeta.value(),
+            angle=self.angle.value(),
+            tab=self.tabs.currentIndex(),
+        )
+
+    def apply_trial(self, t: PendulumTrial) -> None:
         for box, value in (
             (self.kind, KINDS.index(t.kind)),
             (self.mass, t.mass),

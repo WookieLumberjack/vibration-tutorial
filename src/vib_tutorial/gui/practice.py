@@ -29,6 +29,7 @@ from .theming import SETTINGS
 PAGES = (
     "sim_page",
     "sdof_page",
+    "pendulum_page",
     "transient_page",
     "damping_page",
     "isolation_page",
