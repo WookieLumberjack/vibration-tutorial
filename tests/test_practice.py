@@ -17,10 +17,10 @@ QtCore.QSettings.setPath(QtCore.QSettings.Format.NativeFormat, QtCore.QSettings.
 
 from vib_tutorial.core.practice import Question, check, number, parse_number, rounded  # noqa: E402
 from vib_tutorial.gui.links import COURSE  # noqa: E402
-from vib_tutorial.gui.practice import PAGES, problems  # noqa: E402
+from vib_tutorial.gui.practice import pages, problems  # noqa: E402
 
 SEEDS = range(50)
-ALL = [p for page in PAGES for p in problems(page)]
+ALL = [p for page in pages() for p in problems(page)]
 
 
 @pytest.fixture(scope="module")
@@ -72,11 +72,11 @@ def test_the_pages_with_problems_are_listed():
     from vib_tutorial.gui.main_window import _page_class  # noqa: F401 (the pages' modules)
     from vib_tutorial.gui.practice import problems as found
 
-    course = [name for _, pages in COURSE for name, _, _ in pages]
-    assert sorted(PAGES) == sorted(name for name in course if found(name))
+    course = [name for _, group in COURSE for name, _, _ in group]
+    assert list(pages()) == [name for name in course if found(name)] and "sim_page" in pages()
     keys = [(p.page, p.key) for p in ALL]
     assert len(keys) == len(set(keys))
-    assert all(p.page in PAGES for p in ALL)
+    assert all(p.page in pages() for p in ALL)
 
 
 def _state(page: str, setup: dict):
@@ -88,22 +88,11 @@ def _state(page: str, setup: dict):
         from vib_tutorial.gui.sim_trials import SimTrial
 
         return SimTrial("", "", **setup)
-    if page == "complex_page":
-        from vib_tutorial.gui.complex_modes import ComplexSetup
-
-        return ComplexSetup(**setup)
-    if page == "random_page":
-        from vib_tutorial.gui.random_vibration import RandomSetup
-
-        return RandomSetup(**setup)
-    if page == "continuum_page":
-        from vib_tutorial.gui.continuum import ContinuumSetup
-
-        return ContinuumSetup(**setup)
     from vib_tutorial.gui.main_window import _page_class
 
     module = sys.modules[_page_class(page).__module__]
-    return type(module.TRIALS[0])("", "", **setup)
+    setup_class = getattr(module, "PRACTICE_SETUP", None)  # where the trials aren't a class to set up
+    return setup_class(**setup) if setup_class else type(module.TRIALS[0])("", "", **setup)
 
 
 @pytest.mark.parametrize("problem", ALL, ids=lambda p: f"{p.page}/{p.key}")
@@ -190,7 +179,7 @@ def test_hints_link_to_sections_that_exist():
 def test_every_setup_loads_on_its_page(app):
     from vib_tutorial.gui.main_window import MainWindow, _page_class
 
-    for name in PAGES:
+    for name in pages():
         if name == "sim_page":  # the main window's own page: set up and read through the window
             window = MainWindow()
             load, state = partial(window.set_up_page, "sim_page"), window.sim_practice_state

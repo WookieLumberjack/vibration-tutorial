@@ -141,6 +141,9 @@ class ContinuumSetup:
     mode: int = 1
 
 
+PRACTICE_SETUP = ContinuumSetup  # what a practice problem's setup and the page's practice_state are
+
+
 def _string(length: float = 1.0, tension: float = 100.0, line_density: float = 0.01) -> Continuum:
     return Continuum(Kind.STRING, length, End.FIXED, End.FIXED, tension=tension, line_density=line_density)
 

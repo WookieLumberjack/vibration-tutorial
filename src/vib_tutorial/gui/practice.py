@@ -9,11 +9,12 @@ A spec is answered on the page itself: tune its controls, and *Check* reads them
 and lists each requirement, met or not; once the solution shows, *Show on the page* loads a design that meets it.
 
 The problems are each page module's `PROBLEMS` (core.practice.Problem), so a page needn't be built to practise;
-`PAGES` lists the pages that have them. The problems solved are kept in the settings.
+`pages()` finds the pages that have them. The problems solved are kept in the settings.
 """
 
 from __future__ import annotations
 
+import functools
 import random
 import sys
 from collections.abc import Callable
@@ -26,24 +27,6 @@ from . import links
 from .style import colors
 from .theming import SETTINGS
 
-PAGES = (
-    "sim_page",
-    "energy_page",
-    "frf_page",
-    "complex_page",
-    "continuum_page",
-    "beams_page",
-    "integration_page",
-    "random_page",
-    "fatigue_page",
-    "sdof_page",
-    "pendulum_page",
-    "transient_page",
-    "periodic_page",
-    "damping_page",
-    "isolation_page",
-    "signals_page",
-)  # the pages with PROBLEMS, any order (the tree follows the course)
 PROBLEM_ROLE = QtCore.Qt.ItemDataRole.UserRole  # (page, problem key) of a problem's item, (page, "") a page's
 TICK = "✓ "
 
@@ -57,6 +40,12 @@ def problems(name: str) -> tuple[Problem, ...]:
     from .main_window import _page_class
 
     return getattr(sys.modules[_page_class(name).__module__], "PROBLEMS", ())
+
+
+@functools.cache
+def pages() -> tuple[str, ...]:
+    """The pages that have problems, in the course's order (their modules imported, the pages not built)."""
+    return tuple(name for _, group in links.COURSE for name, _, _ in group if problems(name))
 
 
 def _solved() -> set[str]:
@@ -106,10 +95,10 @@ class PracticeWindow(QtWidgets.QWidget):
         self._problem_items: dict[tuple[str, str], QtWidgets.QTreeWidgetItem] = {}
         self._page_items: dict[str, QtWidgets.QTreeWidgetItem] = {}
         number = 1
-        for group, pages in links.COURSE:
+        for group, members in links.COURSE:
             top = None
-            for name, title, about in pages:
-                if name in PAGES:
+            for name, title, about in members:
+                if name in pages():
                     if top is None:
                         top = QtWidgets.QTreeWidgetItem([group])
                         font = top.font(0)
@@ -238,7 +227,7 @@ class PracticeWindow(QtWidgets.QWidget):
 
     def show_page(self, name: str) -> None:
         """Turn to page `name`'s problems (its first unsolved one), if it has any."""
-        if name not in PAGES or (self.problem is not None and self.problem.page == name):
+        if name not in pages() or (self.problem is not None and self.problem.page == name):
             return
         solved = _solved()
         found = problems(name)

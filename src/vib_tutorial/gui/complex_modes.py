@@ -157,6 +157,8 @@ class ComplexSetup:
         return ChainSystem(np.array(self.masses), np.array(self.stiffness), np.array(self.damping))
 
 
+PRACTICE_SETUP = ComplexSetup  # what a practice problem's setup and the page's practice_state are
+
 # ------------------------------------------------------------------ practice problems
 # Each question's numbers are printed round, and its answer is worked from them as printed.
 
