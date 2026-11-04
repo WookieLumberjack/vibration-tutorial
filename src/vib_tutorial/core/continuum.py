@@ -214,11 +214,11 @@ def _beam_roots(left: End, right: End, count: int) -> np.ndarray:
     def f(b: float) -> float:
         return float(np.linalg.det(_beam_matrix(left, right, np.array([b]))[0]))
 
-    roots = [
+    found = [
         scipy.optimize.brentq(f, grid[i], grid[i + 1], xtol=1e-14)
         for i in np.flatnonzero(np.sign(det[:-1]) * np.sign(det[1:]) < 0)
     ]
-    roots = np.array(roots[:count])
+    roots = np.array(found[:count])
     if roots.size < count:
         raise RuntimeError("missed a root of the beam's frequency equation")
     return roots

@@ -331,15 +331,15 @@ def sweep(system: ChainSystem, parameter: Parameter, element: int, values: np.nd
         rows = compare(s, r)
         for c in rows:
             fn[v, c.index - 1], za[v, c.index - 1] = c.fn_hz, c.zeta_approx
+        found: list[tuple[int, complex, np.ndarray]] = []
         if v == 0:
-            found = [(c.index - 1, c.exact, c.shape) for c in rows if c.exact is not None]
+            found = [(c.index - 1, c.exact, c.shape) for c in rows if c.exact is not None and c.shape is not None]
         else:
             pairs = [m for m in r.complex_modes if m.is_oscillatory and m.eigenvalue.imag > 0]
             known = np.flatnonzero(np.isfinite(last))
-            found = []
             if pairs and known.size:
-                lam = np.array([m.eigenvalue for m in pairs])
-                cost = np.abs(lam[:, None] - last[None, known]) / np.abs(last[None, known])
+                lams = np.array([m.eigenvalue for m in pairs])
+                cost = np.abs(lams[:, None] - last[None, known]) / np.abs(last[None, known])
                 rows_i, cols = scipy.optimize.linear_sum_assignment(cost)
                 found = [(int(known[j]), pairs[i].eigenvalue, pairs[i].shape) for i, j in zip(rows_i, cols)]
         for k, lam, psi in found:
@@ -425,12 +425,13 @@ def identify(
     freqs, H = measured_frf(system, result, inp, noise, seed)
     exact = measured_frf(system, result, inp)[1] if noise > 0 else H
     fitted = [m for m in result.modes if m.damped is not None]
-    poles = [m.damped.eigenvalue for m in fitted]
+    damped = [m.damped for m in fitted if m.damped is not None]
+    poles = [d.eigenvalue for d in damped]
     band = (freqs[0], freqs[-1])
     norm = np.linalg.norm(exact)
 
     def fit(modes: list[IdentifiedMode], Hf: np.ndarray) -> Fit:
-        macs = np.array([_mac(m.shape, e.damped.shape) for m, e in zip(modes, fitted)])
+        macs = np.array([_mac(m.shape, d.shape) for m, d in zip(modes, damped)])
         undamped = np.array([_mac(e.shape, m.shape) for m, e in zip(modes, fitted)])
         return Fit(modes, Hf, float(np.linalg.norm(Hf - exact) / norm), macs, undamped)
 

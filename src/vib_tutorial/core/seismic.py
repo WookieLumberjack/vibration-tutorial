@@ -215,6 +215,7 @@ def accelerogram(design: Design, seed: int = 1) -> Accelerogram:
         if best is None or worst < best[0]:
             best = (worst, a, sa)
         amp *= (target / sa) ** 0.8  # a little short of the full step: neighbouring sines interfere
+    assert best is not None  # at least one round
     _, a, sa = best
     return Accelerogram(t, a, fs, f, sa)
 
@@ -249,6 +250,7 @@ def time_history(system: ChainSystem, design: Design, ground: Accelerogram, tail
         part = np.outer(q, m.phi[:, r])
         u = part if u is None else u + part
         t = osc.t
+    assert u is not None  # at least one mode
     drift = np.diff(u, prepend=0.0, axis=1)
     shear = drift * lin.stiffness
     return History(

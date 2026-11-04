@@ -113,7 +113,7 @@ def _exact_terms(system: ChainSystem, result: ModalResult) -> list[ModalTerm]:
     for r, cm in enumerate(cms):
         if cm.is_oscillatory and cm.eigenvalue.imag < 0:
             continue  # added together with its partner
-        idx = [r] if not cm.is_oscillatory else [r, cm.conjugate - 1]
+        idx = [r] if cm.conjugate is None else [r, cm.conjugate - 1]
         mode = mode_of.get(cm.index)
         if mode is not None:
             label, number, fn = f"Mode {mode.index}", mode.index, cm.fn_hz

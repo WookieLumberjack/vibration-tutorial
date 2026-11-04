@@ -117,7 +117,7 @@ class Pendulum:
         """The simple pendulum with the same linear period: J / m d."""
         return self.inertia / (self.mass * self.arm) if self.arm > 0 else math.inf
 
-    def moment(self, theta: np.ndarray) -> np.ndarray:
+    def moment(self, theta: np.ndarray | float) -> np.ndarray:
         """The restoring moment k_t θ ± m g d sin θ."""
         return self.torsion * theta + self.weight_moment * np.sin(theta)
 
@@ -226,12 +226,14 @@ def orbit(p: Pendulum, energy: float, theta: np.ndarray) -> tuple[np.ndarray, np
     y[np.isin(x, turns)] = 0.0
     # pieces where the orbit exists, each drawn up and back down
     ok = np.isfinite(y)
-    xs, ys = [], []
+    xs: list[np.ndarray] = []
+    ys: list[np.ndarray] = []
+    gap = np.array([np.nan])
     edges = np.flatnonzero(np.diff(np.concatenate([[0], ok.astype(int), [0]])))
     for start, stop in zip(edges[::2], edges[1::2]):
         px, py = x[start:stop], y[start:stop]
-        xs += [px, px[::-1], [np.nan]]
-        ys += [py, -py[::-1], [np.nan]]
+        xs += [px, px[::-1], gap]
+        ys += [py, -py[::-1], gap]
     if not xs:
         return np.array([]), np.array([])
     return np.concatenate(xs), np.concatenate(ys)

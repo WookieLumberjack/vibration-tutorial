@@ -34,7 +34,8 @@ class ChainSystem:
     masses: np.ndarray
     stiffness: np.ndarray
     damping: np.ndarray
-    friction: np.ndarray | None = None  # N, Coulomb (sliding) friction on each mass; zeros if None
+    # N, Coulomb (sliding) friction on each mass: None (zeros) is made an array by __post_init__.
+    friction: np.ndarray = None  # type: ignore[assignment]
     static_ratio: float = 1.0  # static / sliding friction, the same for every mass
     _matrices: tuple[np.ndarray, np.ndarray, np.ndarray] | None = field(
         default=None, init=False, repr=False, compare=False

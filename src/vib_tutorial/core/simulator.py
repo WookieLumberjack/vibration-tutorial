@@ -52,7 +52,9 @@ from __future__ import annotations
 
 import math
 import time
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
+from typing import Any
 
 import numpy as np
 import scipy.linalg
@@ -159,15 +161,16 @@ class Simulator:
         self.t = 0.0
         # An advance `start` left running: the worker's steps, and what `collect` finishes them with.
         self._job: Future | None = None
-        self._finish = None
-        self._done: tuple[np.ndarray, ...] | None = None
+        self._finish: Callable[[], tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] | None = None
+        self._done: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None = None
         self.steps_time = 0.0  # s the worker took over the last advance's steps (0 if they ran in `start`)
         self.state = np.zeros(2 * system.n)
         self._A, self._B = state_space(system)
         self._fmax_natural = self._highest_natural_freq()
         self._cache: dict[tuple, tuple[np.ndarray, np.ndarray, np.ndarray]] = {}
         self._energy_cache: dict[tuple, tuple[np.ndarray, np.ndarray]] = {}
-        self._friction_cache: dict[tuple, np.ndarray | tuple[np.ndarray, np.ndarray]] = {}
+        # Friction's systems (Aw), sub-step updates (Φ, Γ) and Rust steppers, by kind and key.
+        self._friction_cache: dict[tuple, Any] = {}
         # The input where the last step ended, and whether it was a ground motion.
         # The next advance starts from it, so a switch or a jump in the input
         # is a ramp over one step whose work is counted, not a jump in stored energy.
@@ -303,7 +306,8 @@ class Simulator:
         key, b, b_du = self._input()
         if (h, key) not in self._energy_cache:
             Qd, Qw = self._energy_quadratics(key)
-            self._energy_cache[h, key] = tuple(foh_quadratic_integrals(self._A, b, h, [Qd, Qw], b_du))
+            Wd, Ww = foh_quadratic_integrals(self._A, b, h, [Qd, Qw], b_du)
+            self._energy_cache[h, key] = (Wd, Ww)
         return self._energy_cache[h, key]
 
     def _energy_quadratics(self, key: tuple) -> tuple[np.ndarray, np.ndarray]:
@@ -444,7 +448,8 @@ class Simulator:
         n = self.system.n
         key, b, b_du = inp
         totals = np.zeros(3)
-        left, forced = h, {}  # time left in the step, and a mass that just broke free
+        left = h  # time left in the step
+        forced: dict[int, float] = {}  # a mass that just broke free, and the way it slides
         tries = EVENTS_PER_MASS * n + 1
         for attempt in range(tries):
             stuck, e = self._slip(w, P, forced)
@@ -698,7 +703,9 @@ class Simulator:
             f0 = f1
         return ts, zs, fs
 
-    def _finish_advance(self, h, ts, zs, fs, losses, z_start, f_start, base) -> tuple[np.ndarray, ...]:
+    def _finish_advance(
+        self, h, ts, zs, fs, losses, z_start, f_start, base
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """`advance`'s samples, once its steps are done: the state, and the energy ledger at each sample."""
         n, steps = self.system.n, ts.size
         self._state = zs[-1].copy()

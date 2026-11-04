@@ -120,6 +120,7 @@ class ForceController:
         kind = self.settings.kind
         if self.on and kind in (ForceKind.HARMONIC, ForceKind.CHIRP):
             f = self.frequency(self.sweep_elapsed + 0.5 * dt)
+            assert f is not None  # a harmonic or a chirp has one
             self.phase = (self.phase + 2.0 * math.pi * f * dt) % (2.0 * math.pi)
         if self.on and kind is ForceKind.CHIRP:
             self.sweep_elapsed += dt

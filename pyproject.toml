@@ -76,3 +76,18 @@ ignore = [
 
 [tool.ruff.format]
 quote-style = "preserve"
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/vib_tutorial/core"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+module = ["vib_tutorial._native", "scipy.*"]
+ignore_missing_imports = true
+
+# gui/ isn't checked yet: read it for its types, but don't report its errors.
+[[tool.mypy.overrides]]
+module = ["vib_tutorial.gui.*", "vib_tutorial"]
+follow_imports = "silent"
