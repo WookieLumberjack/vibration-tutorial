@@ -62,6 +62,10 @@ class Question:
     goal: Callable[[Any], tuple[Requirement, ...]] | None = field(default=None, compare=False, repr=False)
     design: dict | None = None
 
+    def __post_init__(self) -> None:
+        if not self.choices:  # a plain float, whatever NumPy type the key was worked out in
+            object.__setattr__(self, "answer", float(self.answer))
+
     @property
     def is_choice(self) -> bool:
         return bool(self.choices)
