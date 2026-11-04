@@ -37,6 +37,7 @@ from ..core.energy_methods import (
     trial_shape,
 )
 from ..core.model import ChainSystem
+from ..core.practice import Problem, Question, Requirement, at_most, number, pick, rounded
 from . import settle_plots
 from .lesson import (
     Form,
@@ -55,7 +56,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
@@ -163,6 +164,179 @@ TRIALS = (
         tab=TAB_HOLZER,
         holzer_hz=1.0,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _two(rng: np.random.Generator) -> tuple[float, float, float, float]:
+    return pick(rng, (1, 2, 4)), pick(rng, (0.5, 1, 2)), pick(rng, (200, 400, 800)), pick(rng, (100, 200, 400))
+
+
+def _rigid_rayleigh(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (2, 3, 4)))
+    m = pick(rng, (0.5, 1, 2))
+    k = pick(rng, (200, 400, 1000))
+    system = chain((m,) * n, (k,) * n)
+    w2 = rayleigh(system, np.ones(n))
+    exact_hz = exact(system)[0][0] / TWO_PI
+    return Question(
+        f"A chain of {n} masses of {m:g} kg on {n} springs of {k:g} N/m (the first to the ground). Guess that mode 1 "
+        "moves every mass equally. What frequency does Rayleigh's quotient give?",
+        float(np.sqrt(w2) / TWO_PI),
+        f"Moving together, only the ground spring stretches: xᵀKx = k = {k:g}, xᵀMx = Σm = {number(n * m)}. ω² = "
+        f"{number(w2)}, f = {number(np.sqrt(w2) / TWO_PI)} Hz: above the exact {number(exact_hz)} Hz, as Rayleigh's "
+        "estimate always is, and far above, for a poor shape.",
+        unit="Hz",
+        setup=dict(shape=Shape.UNIFORM, masses=(m,) * n, stiffness=(k,) * n),
+    )
+
+
+def _dunkerley(rng: np.random.Generator) -> Question:
+    m1, m2, k1, k2 = _two(rng)
+    s = 1 / k1 * m1 + (1 / k1 + 1 / k2) * m2
+    return Question(
+        f"Two masses: m<sub>1</sub> = {m1:g} kg on k<sub>1</sub> = {k1:g} N/m to the ground, m<sub>2</sub> = {m2:g} "
+        f"kg on k<sub>2</sub> = {k2:g} N/m to m<sub>1</sub>. What lower bound on f<sub>1</sub> does Dunkerley's "
+        "sum give?",
+        float(1 / np.sqrt(s) / TWO_PI),
+        f"The flexibilities at each mass: f<sub>11</sub> = 1/k<sub>1</sub>, f<sub>22</sub> = 1/k<sub>1</sub> + "
+        f"1/k<sub>2</sub>. 1/ω² ≈ m<sub>1</sub>f<sub>11</sub> + m<sub>2</sub>f<sub>22</sub> = {number(s)} s², so "
+        f"ω = {number(1 / np.sqrt(s))} rad/s, f = {number(1 / np.sqrt(s) / TWO_PI)} Hz, below the exact "
+        f"{number(exact(chain((m1, m2), (k1, k2)))[0][0] / TWO_PI)} Hz.",
+        unit="Hz",
+        setup=dict(masses=(m1, m2), stiffness=(k1, k2), tab=TAB_ERROR),
+    )
+
+
+def _holzer_residual(rng: np.random.Generator) -> Question:
+    m1, m2, k1, k2 = _two(rng)
+    f1 = exact(chain((m1, m2), (k1, k2)))[0][0] / TWO_PI
+    f = rounded(pick(rng, (0.3, 0.5, 0.8)) * f1, 2)
+    w2 = (TWO_PI * f) ** 2
+    after = k1 - m1 * w2
+    x2 = 1 + after / k2
+    left = after - m2 * w2 * x2
+    return Question(
+        f"Holzer's table for m<sub>1</sub> = {m1:g} kg on k<sub>1</sub> = {k1:g} N/m and m<sub>2</sub> = {m2:g} kg on "
+        f"k<sub>2</sub> = {k2:g} N/m, at a trial {number(f, 2)} Hz with x<sub>1</sub> = 1. What force is left at the "
+        "free end?",
+        left,
+        f"ω² = {number(w2)}. The ground spring pulls k<sub>1</sub> = {k1:g} N; m<sub>1</sub> keeps "
+        f"m<sub>1</sub>ω² = {number(m1 * w2)} N and passes {number(after)} N, which stretches k<sub>2</sub> by "
+        f"{number(after / k2)}: x<sub>2</sub> = {number(x2)}. m<sub>2</sub> keeps {number(m2 * w2 * x2)} N, "
+        f"leaving {number(left)} N. Not zero, so not a natural frequency (and positive: below the first).",
+        unit="N",
+        setup=dict(masses=(m1, m2), stiffness=(k1, k2), holzer_hz=f, tab=TAB_HOLZER),
+    )
+
+
+def _lagrange_entry(rng: np.random.Generator) -> Question:
+    ks = tuple(pick(rng, (100, 200, 300, 400)) for _ in range(3))
+    i = int(pick(rng, (1, 2)))
+    entry = ks[i - 1] + ks[i]
+    return Question(
+        f"A chain of three masses on springs k<sub>1</sub> = {ks[0]:g}, k<sub>2</sub> = {ks[1]:g} and "
+        f"k<sub>3</sub> = {ks[2]:g} N/m (k<sub>1</sub> to the ground). What is K's diagonal entry for mass {i}?",
+        entry,
+        f"V = ½Σk<sub>j</sub>(x<sub>j</sub> − x<sub>j−1</sub>)²; mass {i} stretches the springs either side of it, so "
+        f"∂²V/∂x<sub>{i}</sub>² = k<sub>{i}</sub> + k<sub>{i + 1}</sub> = {entry:g} N/m.",
+        unit="N/m",
+        setup=dict(masses=(1.0, 1.0, 1.0), stiffness=ks, tab=TAB_LAGRANGE),
+    )
+
+
+def _rayleigh_side(rng: np.random.Generator) -> Question:
+    return Question(
+        "Rayleigh's quotient is worked out from a shape that is a little off mode 1's. Where does its estimate of "
+        "f<sub>1</sub> lie?",
+        0,
+        "Above it, always: the other modes' shares only add to xᵀKx faster than to xᵀMx. And close, since the "
+        "error is second order in the shape's.",
+        choices=("Above the exact value", "Below the exact value", "Either side, depending on the shape"),
+        setup=dict(shape=Shape.LINEAR, eps=0.2, tab=TAB_ERROR),
+        predict=True,
+    )
+
+
+def _dunkerley_side(rng: np.random.Generator) -> Question:
+    return Question(
+        "Dunkerley's sum adds up each mass alone on the massless chain. Where does its estimate of f<sub>1</sub> lie?",
+        0,
+        "Below it: Σm<sub>i</sub>f<sub>ii</sub> is the trace of FM, Σ 1/ω<sub>r</sub>², more than 1/ω₁² by the higher "
+        "modes' terms. With Rayleigh's above, the two bracket it.",
+        choices=("Below the exact value", "Above the exact value", "Either side"),
+        setup=dict(tab=TAB_ERROR),
+        predict=True,
+    )
+
+
+def _more_ritz_shapes(rng: np.random.Generator) -> Question:
+    return Question(
+        "A Rayleigh–Ritz model keeps one more shape. What happens to its estimate of mode 1?",
+        0,
+        "It falls or stays, never rising and never going below the exact value: more shapes give the motion "
+        "more freedom to find its lowest energy ratio (interlacing).",
+        choices=("It falls or stays, never below exact", "It rises", "It can go either way"),
+        setup=dict(basis=Basis.POWERS, shapes=3, tab=TAB_RITZ),
+        predict=True,
+    )
+
+
+def _dunkerley_spec(rng: np.random.Generator) -> Question:
+    most = pick(rng, (1.5, 2, 3))
+    design = (0.1, 0.1, 0.1, 3.7)
+    uniform = chain()
+    start = 100.0 * (1.0 - np.sqrt(dunkerley(uniform)) / exact(uniform)[0][0])
+
+    def goal(t: EnergyTrial):
+        system = t.system()
+        n = system.n
+        springs = n == 4 and bool(np.allclose(system.stiffness, 400.0, rtol=0.005))
+        total = float(np.sum(system.masses))
+        w = exact(system)[0][0]
+        error = 100.0 * (1.0 - np.sqrt(dunkerley(system)) / w)
+        return (
+            Requirement("Four springs of 400 N/m", f"{n} springs", springs),
+            Requirement("4 kg in all", f"{number(total)} kg", abs(total - 4.0) <= 0.02),
+            at_most("Dunkerley's estimate below the exact f<sub>1</sub> by", error, most, "%"),
+        )
+
+    return Question(
+        f"The default chain (four 1 kg masses on four 400 N/m springs) has Dunkerley's estimate {number(start)} % "
+        f"below its first frequency. Share the same 4 kg among the four masses (on the Simulation page) so that "
+        f"Dunkerley is within {most:g} %.",
+        0,
+        "Dunkerley's error is the higher modes' share of Σ1/ω<sub>r</sub>²: small when one mode's 1/ω² dominates the "
+        "trace, which a single heavy mass far from the ground does. Put almost everything at the tip: "
+        "(0.1, 0.1, 0.1, 3.7) kg leaves 0.8 %. (Heavy at the base it gets worse: one mass's own frequency there is "
+        "high, the others' light ones are spread over the modes.)",
+        setup=dict(tab=TAB_ERROR),
+        goal=goal,
+        design=dict(masses=design, tab=TAB_ERROR),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "energy_page", f"See {page_link('energy_page', anchor, section)}{more}.", make)
+    for key, title, anchor, section, more, make in (
+        ("rigid-rayleigh", "Rayleigh with a rigid shape", "rayleigh", "Rayleigh's quotient", "", _rigid_rayleigh),
+        ("dunkerley", "Dunkerley's sum", "dunkerley", "Dunkerley", "", _dunkerley),
+        ("holzer-residual", "A line of Holzer's table", "holzer", "Holzer's table", "", _holzer_residual),
+        ("lagrange-entry", "K from the energy", "lagrange", "The equations from the energies", "", _lagrange_entry),
+        ("rayleigh-side", "Predict: Rayleigh's side", "rayleigh", "Rayleigh's quotient", "", _rayleigh_side),
+        ("dunkerley-side", "Predict: Dunkerley's side", "dunkerley", "Dunkerley", "", _dunkerley_side),
+        ("more-ritz-shapes", "Predict: one more Ritz shape", "ritz", "Rayleigh–Ritz", "", _more_ritz_shapes),
+        (
+            "dunkerley-spec",
+            "Spec: make Dunkerley good",
+            "dunkerley",
+            "Dunkerley",
+            ": when is one term of the sum most of it?",
+            _dunkerley_spec,
+        ),
+    )
 )
 
 TIPS = {
@@ -431,7 +605,29 @@ class EnergyMethodsPage(QtWidgets.QWidget):
             self.redraw()
 
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(EnergyTrial("", "", **setup))
+
+    def practice_state(self) -> EnergyTrial:
+        """The page's settings and the chain it follows, as a trial: what a practice spec checks."""
+        return EnergyTrial(
+            "",
+            "",
+            shape=SHAPES[self.shape.currentIndex()],
+            eps=self.eps.value(),
+            iterations=int(self.iterations.value()),
+            basis=BASES[self.basis.currentIndex()],
+            shapes=int(self.r.value()),
+            tab=self.tabs.currentIndex(),
+            masses=tuple(float(m) for m in self.system.masses),
+            stiffness=tuple(float(k) for k in self.system.stiffness),
+            holzer_hz=self.holzer_hz.value(),
+        )
+
+    def apply_trial(self, t: EnergyTrial) -> None:
         system = t.system()
         self.system_requested.emit(system)
         if (

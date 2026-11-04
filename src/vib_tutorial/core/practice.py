@@ -182,7 +182,7 @@ def rounded(value: float, digits: int = 3) -> float:
     """`value` as `number` prints it, so an answer worked from the printed numbers matches what the reader has."""
     if value == 0 or not math.isfinite(value):
         return value
-    return round(value, digits - 1 - math.floor(math.log10(abs(value))))
+    return float(round(float(value), digits - 1 - math.floor(math.log10(abs(value)))))  # a plain float
 
 
 def pick(rng: np.random.Generator, values) -> float:
