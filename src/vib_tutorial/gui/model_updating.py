@@ -41,87 +41,129 @@ RECOMPUTE_MS = 150  # the model's errors settle this long before it is correlate
 
 TIPS = {
     "source": "<p><b>Virtual modal test</b>: a hammer on m1, every mass's displacement measured with a little "
-              "noise, H1 averaged, LSCF's stable poles and LSFD's shapes, as on the <i>Virtual modal test</i> page: "
-              "its modes carry its errors, and the weakest may be missed. <b>Exact modes + noise</b>: every mode, "
-              "with a little noise on its frequency, damping and shape.</p>",
+    "noise, H1 averaged, LSCF's stable poles and LSFD's shapes, as on the <i>Virtual modal test</i> page: "
+    "its modes carry its errors, and the weakest may be missed. <b>Exact modes + noise</b>: every mode, "
+    "with a little noise on its frequency, damping and shape.</p>",
     "sensors": "<p>The masses with a sensor. The test's shapes, and the model's, are compared there only.</p>",
     "again": "<p>Measure again: the same structure, other noise.</p>",
     "errors": "<p>The model's errors, as factors on the structure's values: 1.3 under k3 makes the model's "
-              "spring 3 30 % stiffer than the structure's. In practice they are unknown; here they are set, so "
-              "the correlation's verdict can be checked.</p>",
+    "spring 3 30 % stiffer than the structure's. In practice they are unknown; here they are set, so "
+    "the correlation's verdict can be checked.</p>",
 }
-MAC_TIP = ("<p>MAC of each test shape (rows) with each model shape (columns), at the sensors: "
-           "|ψ<sup>H</sup>φ|²/(ψ<sup>H</sup>ψ φ<sup>T</sup>φ). The pairs are outlined.</p>")
-FREQ_TIP = ("<p>Each pair's model frequency against its test frequency: on the diagonal, they agree. A model "
-            "uniformly too stiff or too heavy shifts every point the same way; a local error moves some modes more "
-            "than others.</p>")
-SHAPE_TIP = ("<p>A pair's shapes at the sensors: the test's (rotated to its best-fit line and scaled onto the "
-             "model's) and the model's.</p>")
-AUTO_TIP = ("<p>The test's shapes against each other. Distinct modes should be orthogonal-looking (small "
-            "off-diagonal MAC); with too few or badly placed sensors different modes look alike: spatial "
-            "aliasing.</p>")
-COMAC_TIP = ("<p>COMAC per sensor: how well the paired shapes agree there, over all the pairs, "
-             "(Σ|ψ<sub>i</sub>φ<sub>i</sub>|)²/(Σ|ψ<sub>i</sub>|² Σφ<sub>i</sub>²), each test shape scaled onto its "
-             "model shape first. Low where the shapes disagree.</p>")
+MAC_TIP = (
+    "<p>MAC of each test shape (rows) with each model shape (columns), at the sensors: "
+    "|ψ<sup>H</sup>φ|²/(ψ<sup>H</sup>ψ φ<sup>T</sup>φ). The pairs are outlined.</p>"
+)
+FREQ_TIP = (
+    "<p>Each pair's model frequency against its test frequency: on the diagonal, they agree. A model "
+    "uniformly too stiff or too heavy shifts every point the same way; a local error moves some modes more "
+    "than others.</p>"
+)
+SHAPE_TIP = (
+    "<p>A pair's shapes at the sensors: the test's (rotated to its best-fit line and scaled onto the "
+    "model's) and the model's.</p>"
+)
+AUTO_TIP = (
+    "<p>The test's shapes against each other. Distinct modes should be orthogonal-looking (small "
+    "off-diagonal MAC); with too few or badly placed sensors different modes look alike: spatial "
+    "aliasing.</p>"
+)
+COMAC_TIP = (
+    "<p>COMAC per sensor: how well the paired shapes agree there, over all the pairs, "
+    "(Σ|ψ<sub>i</sub>φ<sub>i</sub>|)²/(Σ|ψ<sub>i</sub>|² Σφ<sub>i</sub>²), each test shape scaled onto its "
+    "model shape first. Low where the shapes disagree.</p>"
+)
 
 UPDATE_TIP = (
     "<p>Sensitivity-based updating: the chosen parameters are changed, by Gauss–Newton steps on their logarithms, "
     "until the model's paired frequencies (and, if ticked, its shapes at the sensors and its damping ratios) "
     "match the test's as closely as they can. Each step's slopes come from the model's sensitivities. "
     "Regularization λ adds λ²‖ln p‖²: it keeps the model near where it started, and settles what the data "
-    "can't.</p>")
-FACTOR_TIP = ("<p>Each parameter's model value over the structure's, step by step: 1 is the truth, which only "
-              "this page can know. Springs solid, masses dashed, dampers dotted, in their mass's colour.</p>")
+    "can't.</p>"
+)
+FACTOR_TIP = (
+    "<p>Each parameter's model value over the structure's, step by step: 1 is the truth, which only "
+    "this page can know. Springs solid, masses dashed, dampers dotted, in their mass's colour.</p>"
+)
 SENSITIVITY_TIP = (
     "<p>∂ln f<sub>r</sub>/∂ln p: how much each model mode's frequency changes for a change in each parameter. A "
     "spring's is half its share of the mode's strain energy, a mass's minus half its share of the kinetic energy. "
-    "A parameter no mode is sensitive to can't be updated from frequencies.</p>")
+    "A parameter no mode is sensitive to can't be updated from frequencies.</p>"
+)
 DEFAULT_UPDATE = {"kinds": (Kind.SPRING,), "shapes": True, "damping": False, "weight": 0.1, "reg": 0.0}
 
 # Errors to try: (name, {"k": {element: factor}, "m": ..., "c": ..., "all_k": factor, "sensors": [...],
 # "source": Source}, note). Elements count from 0; -1 is the last.
 TRIALS = (
-    ("One spring 30 % too stiff", {"k": {2: 1.3}},
-     "The model's k3 is 1.3 times the structure's. Its frequencies are all too high, by 2.2, 4.1, 0.6 and 6.6 % "
-     "(the hammer test finds the first three; the table compares the model with that test, whose own errors "
-     "shift these a little, so mode 3 reads +0.3 % there): mode 3's least, since k3 stretches little in it. The shapes "
-     "barely change (MACs of 0.99 and up), so they are little help in finding it."),
-    ("One mass 20 % too heavy", {"m": {1: 1.2}},
-     "The model's m2 is 1.2 times the structure's: its frequencies are too low, by 1.8, 3.2, 0.5 and 3.5 %. A "
-     "mass error and a spring error both just move the frequencies; which one it is, and where, takes the "
-     "pattern of the errors over the modes."),
-    ("Every spring 10 % too soft", {"all_k": 0.9},
-     "Every frequency is √0.9 − 1 = −5.1 % off, and every shape exactly right: a uniform stiffness (or mass) "
-     "error scales the frequencies and leaves the shapes alone, so the MACs see nothing."),
-    ("Dampers twice too strong", {"all_c": 2.0},
-     "The model's dampers are twice the structure's: its damping ratios are double the test's, and its "
-     "frequencies and shapes don't move. Damping can only be checked against the measured ζ."),
-    ("Two sensors", {"k": {2: 1.3}, "sensors": [0, -1], "source": Source.EXACT},
-     "The same spring error, every mode measured, but on m1 and the last mass only. Each shape is now two "
-     "numbers, and four modes can't all look different in two: modes 2 and 4 have an auto-MAC of 0.91 without noise "
-     "(spatial aliasing), and only their frequencies tell them apart."),
-    ("No error: the test's own noise", {"source": Source.HAMMER},
-     "The model is exactly the structure. Every difference left is the test's: its frequencies within "
-     "0.3 %, and the highest mode it finds (mode 3) at a MAC of only 0.92, its curve fit's error. The model "
-     "can't be correlated more finely than that."),
-    ("Update: find the stiff spring", {"k": {2: 1.3}, "source": Source.HAMMER},
-     "The springs updated against the hammer test's three frequencies and shapes (Updating tab): k3 comes down "
-     "from 1.30 to 1.02 in a few steps, and the other springs stay within 3.5 % of the truth. What is left is "
-     "the test's: its shapes' errors pull the springs a little. Apply it to the model and correlate again."),
-    ("Update: masses too, not unique", {"k": {2: 1.3}, "source": Source.EXACT,
-                                        "update": {"kinds": (Kind.SPRING, Kind.MASS)}},
-     "Springs and masses updated together against every mode: the fit is near perfect, but every factor comes "
-     "out 2 to 4 % high instead of k3 alone coming down. Scaling every mass and spring together changes no "
-     "frequency and no shape: one singular value is 0, and the data can't fix that direction. Pin it with a "
-     "known mass (untick masses) or regularization."),
-    ("Update: regularized", {"k": {2: 1.3}, "source": Source.HAMMER, "update": {"reg": 1.0}},
-     "The same springs, regularization λ = 1: the fit is held near where it started, and k3 only comes down to "
-     "1.29. Regularization trades the fit for the smallest change; it settles what the data can't, but here "
-     "it keeps the model's error. Lower it and watch k3 come down."),
-    ("Update: the dampers", {"all_c": 2.0, "source": Source.HAMMER,
-                            "update": {"kinds": (Kind.DAMPER,), "shapes": False, "damping": True}},
-     "The model's dampers are twice the structure's; the dampers updated against the measured damping ratios. "
-     "They come back to within 15 % of the truth: the hammer test's ζ are its least accurate numbers."),
+    (
+        "One spring 30 % too stiff",
+        {"k": {2: 1.3}},
+        "The model's k3 is 1.3 times the structure's. Its frequencies are all too high, by 2.2, 4.1, 0.6 and 6.6 % "
+        "(the hammer test finds the first three; the table compares the model with that test, whose own errors "
+        "shift these a little, so mode 3 reads +0.3 % there): mode 3's least, since k3 stretches little in it. The shapes "
+        "barely change (MACs of 0.99 and up), so they are little help in finding it.",
+    ),
+    (
+        "One mass 20 % too heavy",
+        {"m": {1: 1.2}},
+        "The model's m2 is 1.2 times the structure's: its frequencies are too low, by 1.8, 3.2, 0.5 and 3.5 %. A "
+        "mass error and a spring error both just move the frequencies; which one it is, and where, takes the "
+        "pattern of the errors over the modes.",
+    ),
+    (
+        "Every spring 10 % too soft",
+        {"all_k": 0.9},
+        "Every frequency is √0.9 − 1 = −5.1 % off, and every shape exactly right: a uniform stiffness (or mass) "
+        "error scales the frequencies and leaves the shapes alone, so the MACs see nothing.",
+    ),
+    (
+        "Dampers twice too strong",
+        {"all_c": 2.0},
+        "The model's dampers are twice the structure's: its damping ratios are double the test's, and its "
+        "frequencies and shapes don't move. Damping can only be checked against the measured ζ.",
+    ),
+    (
+        "Two sensors",
+        {"k": {2: 1.3}, "sensors": [0, -1], "source": Source.EXACT},
+        "The same spring error, every mode measured, but on m1 and the last mass only. Each shape is now two "
+        "numbers, and four modes can't all look different in two: modes 2 and 4 have an auto-MAC of 0.91 without noise "
+        "(spatial aliasing), and only their frequencies tell them apart.",
+    ),
+    (
+        "No error: the test's own noise",
+        {"source": Source.HAMMER},
+        "The model is exactly the structure. Every difference left is the test's: its frequencies within "
+        "0.3 %, and the highest mode it finds (mode 3) at a MAC of only 0.92, its curve fit's error. The model "
+        "can't be correlated more finely than that.",
+    ),
+    (
+        "Update: find the stiff spring",
+        {"k": {2: 1.3}, "source": Source.HAMMER},
+        "The springs updated against the hammer test's three frequencies and shapes (Updating tab): k3 comes down "
+        "from 1.30 to 1.02 in a few steps, and the other springs stay within 3.5 % of the truth. What is left is "
+        "the test's: its shapes' errors pull the springs a little. Apply it to the model and correlate again.",
+    ),
+    (
+        "Update: masses too, not unique",
+        {"k": {2: 1.3}, "source": Source.EXACT, "update": {"kinds": (Kind.SPRING, Kind.MASS)}},
+        "Springs and masses updated together against every mode: the fit is near perfect, but every factor comes "
+        "out 2 to 4 % high instead of k3 alone coming down. Scaling every mass and spring together changes no "
+        "frequency and no shape: one singular value is 0, and the data can't fix that direction. Pin it with a "
+        "known mass (untick masses) or regularization.",
+    ),
+    (
+        "Update: regularized",
+        {"k": {2: 1.3}, "source": Source.HAMMER, "update": {"reg": 1.0}},
+        "The same springs, regularization λ = 1: the fit is held near where it started, and k3 only comes down to "
+        "1.29. Regularization trades the fit for the smallest change; it settles what the data can't, but here "
+        "it keeps the model's error. Lower it and watch k3 come down.",
+    ),
+    (
+        "Update: the dampers",
+        {"all_c": 2.0, "source": Source.HAMMER, "update": {"kinds": (Kind.DAMPER,), "shapes": False, "damping": True}},
+        "The model's dampers are twice the structure's; the dampers updated against the measured damping ratios. "
+        "They come back to within 15 % of the truth: the hammer test's ζ are its least accurate numbers.",
+    ),
 )
 
 NOTES_HTML = """
@@ -192,19 +234,24 @@ element), are better than a large λ. And the test's own errors go into the mode
 only as good as the modes they were fitted to.</p>
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("test_page", "extraction", "Modal parameter extraction"),
-    ("frf_page", "sum-of-modes", "Every term is a sum of modes"),
-)).replace("<!--TAKEAWAYS-->", takeaways(
-    "Correlation pairs test and model modes by shape (MAC), then compares their frequencies.",
-    "Shapes barely see a single stiffness or mass error; the pattern of frequency errors over the modes says "
-    "where it is.",
-    "A mode's frequency is sensitive to a spring by its share of the strain energy, to a mass by its share of"
-    " the kinetic energy.",
-    "Updating fits the parameters to the test by Gauss–Newton; directions the data can't see (all masses and "
-    "springs together) need regularization or engineering judgment.",
-))
-
+NOTES_HTML = NOTES_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("test_page", "extraction", "Modal parameter extraction"),
+        ("frf_page", "sum-of-modes", "Every term is a sum of modes"),
+    ),
+).replace(
+    "<!--TAKEAWAYS-->",
+    takeaways(
+        "Correlation pairs test and model modes by shape (MAC), then compares their frequencies.",
+        "Shapes barely see a single stiffness or mass error; the pattern of frequency errors over the modes says "
+        "where it is.",
+        "A mode's frequency is sensitive to a spring by its share of the strain energy, to a mass by its share of"
+        " the kinetic energy.",
+        "Updating fits the parameters to the test by Gauss–Newton; directions the data can't see (all masses and "
+        "springs together) need regularization or engineering judgment.",
+    ),
+)
 
 
 def _plot(left: str, bottom: str) -> pg.PlotWidget:
@@ -255,8 +302,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         form = QtWidgets.QFormLayout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip("Same chain as the Simulation page, the structure tested; changing it here changes it "
-                            "there too.")
+        self.dof.setToolTip(
+            "Same chain as the Simulation page, the structure tested; changing it here changes it there too."
+        )
         self.dof.valueChanged.connect(self.dof_requested)
         form.addRow("Number of masses:", self.dof)
         self.source = QtWidgets.QComboBox()
@@ -294,8 +342,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             h = QtWidgets.QLabel(head)
             h.setToolTip(TIPS["errors"])
             self.error_grid.addWidget(h, 0, col)
-        self.error_rows: list[tuple[QtWidgets.QLabel, QtWidgets.QDoubleSpinBox, QtWidgets.QDoubleSpinBox,
-                                    QtWidgets.QDoubleSpinBox]] = []
+        self.error_rows: list[
+            tuple[QtWidgets.QLabel, QtWidgets.QDoubleSpinBox, QtWidgets.QDoubleSpinBox, QtWidgets.QDoubleSpinBox]
+        ] = []
         mv.addLayout(self.error_grid)
         self.clear_errors = QtWidgets.QPushButton("No errors")
         self.clear_errors.setToolTip("<p>Set every factor to 1: the model is then the structure.</p>")
@@ -306,8 +355,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.trial = QtWidgets.QComboBox()
         self.trial.addItems([name for name, _, _ in TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Model errors (and tests) that show something about correlation, set on the chain "
-                              "as it is now.</p>")
+        self.trial.setToolTip(
+            "<p>Model errors (and tests) that show something about correlation, set on the chain as it is now.</p>"
+        )
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -334,8 +384,10 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         self.table.verticalHeader().setVisible(False)
-        self.table.setToolTip("<p>Each test mode, the model mode it pairs with, their frequencies and damping ratios "
-                              "and the MAC between their shapes. Select one to see its shapes.</p>")
+        self.table.setToolTip(
+            "<p>Each test mode, the model mode it pairs with, their frequencies and damping ratios "
+            "and the MAC between their shapes. Select one to see its shapes.</p>"
+        )
         self.readout = QtWidgets.QLabel()
         self.readout.setWordWrap(True)
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
@@ -394,14 +446,21 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         ov.addWidget(self.comac_plot, 1)
         ov.addWidget(self.comac_note)
 
-        self.update_kind = {k: QtWidgets.QCheckBox(name) for k, name in
-                            ((Kind.SPRING, "springs"), (Kind.MASS, "masses"), (Kind.DAMPER, "dampers"))}
+        self.update_kind = {
+            k: QtWidgets.QCheckBox(name)
+            for k, name in ((Kind.SPRING, "springs"), (Kind.MASS, "masses"), (Kind.DAMPER, "dampers"))
+        }
         self.fit_shapes = QtWidgets.QCheckBox("shapes, weight")
         self.shape_weight = spin(0.0, 10.0, 0.1, 2)
         self.fit_damping = QtWidgets.QCheckBox("damping ratios")
         self.regularization = spin(0.0, 100.0, 0.0, 3)
-        for w in (*self.update_kind.values(), self.fit_shapes, self.shape_weight, self.fit_damping,
-                  self.regularization):
+        for w in (
+            *self.update_kind.values(),
+            self.fit_shapes,
+            self.shape_weight,
+            self.fit_damping,
+            self.regularization,
+        ):
             w.setToolTip(UPDATE_TIP)
         self.apply_update = QtWidgets.QPushButton("Apply to the model")
         self.apply_update.setToolTip("<p>Set the model's errors to the updated ones, and correlate again.</p>")
@@ -437,7 +496,8 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         plot_height(self.sens_plot, 200)
         self.sens_note = QtWidgets.QLabel(
             "Colour: the size; the number: the value. A spring stiffens every mode it stretches in; a mass slows "
-            "every mode it moves in.")
+            "every mode it moves in."
+        )
         self.sens_note.setWordWrap(True)
         mute(self.sens_note)
         sens_tab = QtWidgets.QWidget()
@@ -487,8 +547,11 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         """The structure changed: measured again (now if shown); the model's errors stay as they are."""
         n_changed = self.system is None or system.n != self.system.n
         self.system = system
-        self.result = modal_analysis(ChainSystem(system.masses, system.stiffness, system.damping)) \
-            if result is None or system.friction.any() else result
+        self.result = (
+            modal_analysis(ChainSystem(system.masses, system.stiffness, system.damping))
+            if result is None or system.friction.any()
+            else result
+        )
         self._loading = True
         self.dof.blockSignals(True)
         self.dof.setValue(system.n)
@@ -659,7 +722,8 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         found = len(test.modes)
         self.test_info.setText(
             f"The test found {found} of the structure's {n_model} modes, measured at {int(test.sensors.sum())} "
-            f"sensor{'s' if test.sensors.sum() != 1 else ''}.")
+            f"sensor{'s' if test.sensors.sum() != 1 else ''}."
+        )
         rows = [f"T{i + 1}" for i in range(found)]
         cols = [f"M{j + 1}" for j in range(n_model)]
         self.mac_plot.set_matrix(c.macs, rows, cols)
@@ -668,8 +732,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.pair_boxes = []
         for p in c.pairs:
             x, y = p.model, p.test
-            box = pg.PlotDataItem([x, x + 1, x + 1, x, x], [y, y, y + 1, y + 1, y],
-                                  pen=pg.mkPen(colors.force, width=2))
+            box = pg.PlotDataItem([x, x + 1, x + 1, x, x], [y, y, y + 1, y + 1, y], pen=pg.mkPen(colors.force, width=2))
             self.mac_plot.addItem(box)
             self.pair_boxes.append(box)
         self._fill_table()
@@ -685,8 +748,14 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             self.readout.setText(
                 f"{len(c.pairs)} pairs. Largest frequency error: <b>{100 * worst.error:+.2f} %</b> (test mode "
                 f"{worst.test + 1}, model mode {worst.model + 1}); lowest MAC <b>{low.mac:.3f}</b> (test mode "
-                f"{low.test + 1})." + (f" {unpaired} test mode{'s' if unpaired > 1 else ''} unpaired (MAC under "
-                                       "0.5 with every model mode)." if unpaired else ""))
+                f"{low.test + 1})."
+                + (
+                    f" {unpaired} test mode{'s' if unpaired > 1 else ''} unpaired (MAC under "
+                    "0.5 with every model mode)."
+                    if unpaired
+                    else ""
+                )
+            )
         else:
             self.readout.setText("No pairs: no test shape matches a model shape with a MAC of 0.5 or more.")
 
@@ -711,8 +780,13 @@ class ModelUpdatingPage(QtWidgets.QWidget):
                 zeta = mode.damped.zeta if mode.damped is not None else float("nan")
                 text, colour = colored(100 * p.error, 1.0, 3.0, f"{100 * p.error:+.2f} %")
                 mtext, mcolour = colored(1 - p.mac, 0.02, 0.1, f"{p.mac:.3f}")
-                cells += [_cell(f"M{p.model + 1}", colors.mode[p.model % len(colors.mode)]),
-                          _cell(f"{p.f_model:.4g}"), _cell(f"{zeta:.3g}"), _cell(text, colour), _cell(mtext, mcolour)]
+                cells += [
+                    _cell(f"M{p.model + 1}", colors.mode[p.model % len(colors.mode)]),
+                    _cell(f"{p.f_model:.4g}"),
+                    _cell(f"{zeta:.3g}"),
+                    _cell(text, colour),
+                    _cell(mtext, mcolour),
+                ]
             for j, item in enumerate(cells):
                 t.setItem(i, j, item)
         t.resizeColumnsToContents()
@@ -763,8 +837,15 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         full_phi = np.concatenate([[0.0], c.result.modes[pr.model].shape])
         colour = colors.mode[pr.model % len(colors.mode)]
         model = p.plot(np.arange(n + 1), full_phi, pen=pg.mkPen(colour, width=2))
-        test = p.plot(sensors + 1, scale * real, pen=None, symbol="o", symbolSize=9, symbolBrush=pg.mkBrush(colors.strong),
-                      symbolPen=None)
+        test = p.plot(
+            sensors + 1,
+            scale * real,
+            pen=None,
+            symbol="o",
+            symbolSize=9,
+            symbolBrush=pg.mkBrush(colors.strong),
+            symbolPen=None,
+        )
         self.shape_legend.addItem(model, f"Model mode {pr.model + 1}")
         self.shape_legend.addItem(test, f"Test mode {pr.test + 1}")
         p.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
@@ -773,7 +854,8 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         p.getAxis("bottom").setTicks([[(i + 1, f"m{i + 1}") for i in range(n)]])
         self.shape_note.setText(
             f"Test mode {pr.test + 1} ({pr.f_test:.4g} Hz, dots at the sensors) against model mode {pr.model + 1} "
-            f"({pr.f_model:.4g} Hz, the line): MAC {pr.mac:.3f}.")
+            f"({pr.f_model:.4g} Hz, the line): MAC {pr.mac:.3f}."
+        )
 
     def _draw_auto(self) -> None:
         c = self.corr
@@ -788,8 +870,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         sensors = int(c.test.sensors.sum())
         text = f"Largest off-diagonal term: <b>{off[i, j]:.2f}</b>, test modes {i + 1} and {j + 1}."
         if off[i, j] > 0.5:
-            text += (f" At {sensors} sensor{'s' if sensors > 1 else ''} these modes look alike: add a sensor or "
-                     "move one.")
+            text += (
+                f" At {sensors} sensor{'s' if sensors > 1 else ''} these modes look alike: add a sensor or move one."
+            )
         self.auto_note.setText(text)
 
     def _draw_comac(self) -> None:
@@ -798,14 +881,19 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         p.clear()
         sensors = np.flatnonzero(c.test.sensors)
         values = np.nan_to_num(c.comac, nan=0.0)
-        p.addItem(pg.BarGraphItem(x=sensors + 1, height=values, width=0.6,
-                                  brushes=[pg.mkBrush(colors.mass[i]) for i in sensors], pen=None))
+        p.addItem(
+            pg.BarGraphItem(
+                x=sensors + 1, height=values, width=0.6, brushes=[pg.mkBrush(colors.mass[i]) for i in sensors], pen=None
+            )
+        )
         p.setRange(xRange=(0.4, self.system.n + 0.6), yRange=(min(0.8, float(values.min()) - 0.02), 1.005), padding=0)
         p.getAxis("bottom").setTicks([[(i + 1, f"m{i + 1}") for i in sensors]])
         if c.pairs and sensors.size:
             low = int(np.argmin(values))
-            self.comac_note.setText(f"Lowest at m{sensors[low] + 1}: <b>{values[low]:.3f}</b>, over {len(c.pairs)} "
-                                    "pairs. A weak locator: a stiffness error changes every shape a little.")
+            self.comac_note.setText(
+                f"Lowest at m{sensors[low] + 1}: <b>{values[low]:.3f}</b>, over {len(c.pairs)} "
+                "pairs. A weak locator: a stiffness error changes every shape a little."
+            )
         else:
             self.comac_note.setText("")
 
@@ -820,8 +908,13 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         if tab is self.sens_tab:
             sens = frequency_sensitivity(c.model, c.result, params)
             top = float(np.max(np.abs(sens))) if sens.size else 1.0
-            self.sens_plot.set_matrix(np.abs(sens) / (top or 1.0), [f"M{r + 1}" for r in range(sens.shape[0])],
-                                      [p.name for p in params], text=sens, fmt="{:+.2f}")
+            self.sens_plot.set_matrix(
+                np.abs(sens) / (top or 1.0),
+                [f"M{r + 1}" for r in range(sens.shape[0])],
+                [p.name for p in params],
+                text=sens,
+                fmt="{:+.2f}",
+            )
             return
         if self.update_result is None:
             what = Residuals(self.fit_shapes.isChecked(), self.fit_damping.isChecked(), self.shape_weight.value())
@@ -832,12 +925,16 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         q.clear()
         self.factor_legend.clear()
         steps = np.arange(len(u.history))
-        styles = {Kind.SPRING: QtCore.Qt.PenStyle.SolidLine, Kind.MASS: QtCore.Qt.PenStyle.DashLine,
-                  Kind.DAMPER: QtCore.Qt.PenStyle.DotLine}
+        styles = {
+            Kind.SPRING: QtCore.Qt.PenStyle.SolidLine,
+            Kind.MASS: QtCore.Qt.PenStyle.DashLine,
+            Kind.DAMPER: QtCore.Qt.PenStyle.DotLine,
+        }
         factors = np.array([u.factors(it.errors) for it in u.history]).reshape(len(u.history), len(u.params))
         for j, prm in enumerate(u.params):
-            curve = p.plot(steps, factors[:, j], pen=pg.mkPen(colors.mass[prm.element], width=2,
-                                                              style=styles[prm.kind]))
+            curve = p.plot(
+                steps, factors[:, j], pen=pg.mkPen(colors.mass[prm.element], width=2, style=styles[prm.kind])
+            )
             self.factor_legend.addItem(curve, prm.name)
         p.addItem(pg.InfiniteLine(1.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
         if factors.size:
@@ -845,8 +942,15 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             pad = 0.08 * (hi - lo) + 0.02
             p.setRange(xRange=(0, max(1, len(u.history) - 1)), yRange=(lo - pad, hi + pad), padding=0)
         costs = np.maximum([it.cost for it in u.history], 1e-12)
-        q.plot(steps, costs, pen=pg.mkPen(colors.strong, width=2), symbol="o", symbolSize=5,
-               symbolBrush=pg.mkBrush(colors.strong), symbolPen=None)
+        q.plot(
+            steps,
+            costs,
+            pen=pg.mkPen(colors.strong, width=2),
+            symbol="o",
+            symbolSize=5,
+            symbolBrush=pg.mkBrush(colors.strong),
+            symbolPen=None,
+        )
         q.setXRange(0, max(1, len(u.history) - 1), padding=0)
         self.apply_update.setEnabled(len(u.history) > 1)
         if not u.params or not u.pairs:
@@ -857,14 +961,19 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         start = factors[0]
         moved = int(np.argmax(np.abs(np.log(final / start))))
         sv = u.history[1].singular if len(u.history) > 1 else np.zeros(0)
-        text = (f"{len(u.history) - 1} steps; ‖residual‖ {u.history[0].cost:.3g} → <b>{u.history[-1].cost:.3g}</b>. "
-                f"Largest change: {u.params[moved].name}, {start[moved]:.3f} → <b>{final[moved]:.3f}</b> of the "
-                f"structure's. Furthest from the truth now: {u.params[worst].name} at {final[worst]:.3f}.")
+        text = (
+            f"{len(u.history) - 1} steps; ‖residual‖ {u.history[0].cost:.3g} → <b>{u.history[-1].cost:.3g}</b>. "
+            f"Largest change: {u.params[moved].name}, {start[moved]:.3f} → <b>{final[moved]:.3f}</b> of the "
+            f"structure's. Furthest from the truth now: {u.params[worst].name} at {final[worst]:.3f}."
+        )
         if sv.size:
             unseen = int(np.sum(sv < 1e-3 * sv[0]))
-            rank_note = (f" {unseen} of the {len(u.params)} directions in the parameters "
-                         f"{'changes' if unseen == 1 else 'change'} nothing the test measures (a singular value of "
-                         f"0): the data can't settle {'it' if unseen == 1 else 'them'}." if unseen else "")
+            rank_note = (
+                f" {unseen} of the {len(u.params)} directions in the parameters "
+                f"{'changes' if unseen == 1 else 'change'} nothing the test measures (a singular value of "
+                f"0): the data can't settle {'it' if unseen == 1 else 'them'}."
+                if unseen
+                else ""
+            )
             text += f" Singular values {sv.max():.3g} to {sv.min():.2g}.{rank_note}"
         self.update_note.setText(text)
-

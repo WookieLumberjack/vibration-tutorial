@@ -207,8 +207,9 @@ class SweepPlots:
         self.order = 1  # the harmonic drawn: 1X or 2X
 
     def add(self, sweep: TrackedSweep, color: int) -> None:
-        c = SweepCurves(sweep, color, self.bode.amp.plot(), pg.ScatterPlotItem(size=4),
-                        self.bode.lag.plot(), self.polar.plot())
+        c = SweepCurves(
+            sweep, color, self.bode.amp.plot(), pg.ScatterPlotItem(size=4), self.bode.lag.plot(), self.polar.plot()
+        )
         self.bode.amp.addItem(c.peaks)
         c.peaks.setVisible(self.show_peaks)
         self.curves.append(c)
@@ -216,8 +217,12 @@ class SweepPlots:
 
     def clear(self) -> None:
         for c in self.curves:
-            for plot, item in ((self.bode.amp, c.amp), (self.bode.amp, c.peaks), (self.bode.lag, c.lag),
-                               (self.polar.getPlotItem(), c.polar)):
+            for plot, item in (
+                (self.bode.amp, c.amp),
+                (self.bode.amp, c.peaks),
+                (self.bode.lag, c.lag),
+                (self.polar.getPlotItem(), c.polar),
+            ):
                 plot.removeItem(item)
         self.curves = []
 
@@ -236,8 +241,7 @@ class SweepPlots:
         for c in self.curves:
             c.peaks.setVisible(on)
 
-    def redraw(self, station: int, direction: str, steady_rpm: np.ndarray, steady_lag: np.ndarray,
-               full: bool) -> None:
+    def redraw(self, station: int, direction: str, steady_rpm: np.ndarray, steady_lag: np.ndarray, full: bool) -> None:
         """Draw each sweep's revolutions; only the sweeps with new ones unless `full`."""
         for c in self.curves:
             if not full and len(c.sweep) == c.drawn:

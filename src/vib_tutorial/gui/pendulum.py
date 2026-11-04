@@ -78,56 +78,76 @@ TRIALS = (
         "A 1 kg bob on a 1 m string, let go from 10°. Its restoring moment is mgL sin θ ≈ mgL θ, and its moment of "
         "inertia mL², so ω<sub>n</sub> = √(g/L): 0.498 Hz, a period of 2.006 s, whatever the mass (change it). "
         "At 10° the whole and the linearized swings can't be told apart.",
-        angle=10.0),
+        angle=10.0,
+    ),
     PendulumTrial(
         "Large swings are slower",
         "The same pendulum from 90°. sin θ falls below θ, so the spring softens as the swing grows: the period is "
         "2.368 s, 18 % longer than the small swing's, and the linearized swing drifts ahead (Centre). The Period "
         "tab gives the exact period (an elliptic integral), and Duffing's first approximation, "
         "T ≈ T₀(1 + A²/16), which holds to 1 % up to about 75°.",
-        angle=90.0),
+        angle=90.0,
+    ),
     PendulumTrial(
         "Nearly over the top",
         "From 170°, the bob nearly balances upside down and lingers there: the period is 2.44 times the small "
         "swing's, and it grows without bound as the start nears 180°. The Phase plane tab shows why: the orbit "
         "runs close to the separatrix, the curve through the upside-down balance that divides swinging from "
         "going round.",
-        angle=170.0, tab=TAB_PHASE),
+        angle=170.0,
+        tab=TAB_PHASE,
+    ),
     PendulumTrial(
         "A rod: where to pivot it",
         "A 1 m uniform rod pivoted 0.5 m from its centre (at its end): J = mL²/3, the weight's arm 0.5 m, so it "
         "swings as a simple pendulum 0.667 m long (1.638 s). Pivoted 0.289 m from the centre (L/√12, the radius "
         "of gyration) it swings fastest, 1.524 s; pivoted 0.167 m from the centre it swings at 1.638 s again: "
         "Kater's reversible pendulum, which measured g.",
-        kind=Kind.ROD, angle=10.0, tab=TAB_PIVOT),
+        kind=Kind.ROD,
+        angle=10.0,
+        tab=TAB_PIVOT,
+    ),
     PendulumTrial(
         "A disc on a wire: no softening",
         "A 1 kg disc of radius 0.1 m on a wire of torsional stiffness 0.5 N·m/rad: J = mr²/2, f = √(k<sub>t</sub>/J)/2π "
         "= 1.59 Hz. The wire's twist is linear, so the period is the same at 10° as at 170°: the softening above "
         "came from gravity's sin θ, not from turning.",
-        kind=Kind.TORSION, length=0.1, spring=0.5, angle=120.0),
+        kind=Kind.TORSION,
+        length=0.1,
+        spring=0.5,
+        angle=120.0,
+    ),
     PendulumTrial(
         "Inverted: gravity as a negative spring",
         "A 1 kg mass on a 1 m arm balanced upright on a 15 N·m/rad spring. Gravity now pushes it over: the "
         "stiffness is k<sub>t</sub> − mgL = 5.19 N·m/rad, f = 0.363 Hz. And it hardens: from 60° the period is "
         "10 % shorter than the small swing's.",
-        kind=Kind.INVERTED, spring=15.0, angle=60.0),
+        kind=Kind.INVERTED,
+        spring=15.0,
+        angle=60.0,
+    ),
     PendulumTrial(
         "Inverted: buckling",
         "The spring at 9 N·m/rad, under mgL = 9.81: the stiffness is negative and upright is unstable. Let go "
         "from 1° with a little damping, it falls over and settles leaning at 40.8°, where the spring's 9θ "
         "balances the weight's 9.81 sin θ. A column under a load past its buckling load does the same.",
-        kind=Kind.INVERTED, spring=9.0, angle=1.0, zeta=0.1),
+        kind=Kind.INVERTED,
+        spring=9.0,
+        angle=1.0,
+        zeta=0.1,
+    ),
     PendulumTrial(
         "On the Moon",
         "The 1 m pendulum where g = 1.62 m/s²: √(9.81/1.62) = 2.46 times slower, a period of 4.94 s. A pendulum "
         "clock is a gravimeter.",
-        gravity=1.62, angle=10.0),
+        gravity=1.62,
+        angle=10.0,
+    ),
 )
 
 TIPS = {
     "kind": "<p>Simple: a point mass on a massless string. Rod: a uniform rod on a pivot. Disc: a disc twisting on "
-            "a wire (no gravity in it). Inverted: a mass on an upright arm held by a torsion spring at its foot.</p>",
+    "a wire (no gravity in it). Inverted: a mass on an upright arm held by a torsion spring at its foot.</p>",
     "mass": "<p>The bob's, the rod's or the disc's mass.</p>",
     "length": "<p>The string's length, the rod's length, the disc's radius or the inverted arm.</p>",
     "pivot": "<p>How far from the rod's centre the pivot is (0.5 L: at its end).</p>",
@@ -137,14 +157,22 @@ TIPS = {
     "angle": "<p>The angle it is let go from, at rest.</p>",
 }
 SWING_TIP = "<p>The angle from release: the whole equation (solid) and the linearized one, sin θ ≈ θ (dashed).</p>"
-MOMENT_TIP = ("<p>The restoring moment against the angle: the whole one (solid) and its tangent at 0, the "
-              "linearized stiffness (dashed). Dotted: the swing's range.</p>")
-PERIOD_TIP = ("<p>The undamped period over the small-swing one against the amplitude: exact (by quadrature), "
-              "Duffing's first harmonic balance, and linear (1).</p>")
-PHASE_TIP = ("<p>The undamped orbits (energy curves) in the (θ, θ') plane, the separatrix bold where there is one, "
-             "and the swing from the release (colour).</p>")
-PIVOT_TIP = ("<p>A uniform rod of this length: its period against the pivot's distance from its centre. The "
-             "fastest is at the radius of gyration; every other period is reached at two distances.</p>")
+MOMENT_TIP = (
+    "<p>The restoring moment against the angle: the whole one (solid) and its tangent at 0, the "
+    "linearized stiffness (dashed). Dotted: the swing's range.</p>"
+)
+PERIOD_TIP = (
+    "<p>The undamped period over the small-swing one against the amplitude: exact (by quadrature), "
+    "Duffing's first harmonic balance, and linear (1).</p>"
+)
+PHASE_TIP = (
+    "<p>The undamped orbits (energy curves) in the (θ, θ') plane, the separatrix bold where there is one, "
+    "and the swing from the release (colour).</p>"
+)
+PIVOT_TIP = (
+    "<p>A uniform rod of this length: its period against the pivot's distance from its centre. The "
+    "fastest is at the radius of gyration; every other period is reached at two distances.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -194,16 +222,26 @@ from going round and round, and an orbit near it lingers at the top.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sdof_page", "equation", "The single oscillator"),
-    ("sdof_page", "phase-plane", "The phase plane"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "Turning is sliding with J for m, k<sub>θ</sub> for k and moments for forces.",
-    "A weight a distance d below the pivot is a spring k<sub>θ</sub> = m g d; above it, a negative one.",
-    "A simple pendulum's period, 2π√(L/g), doesn't depend on its mass; a rod's is least pivoted at its radius "
-    "of gyration.",
-    "Large swings soften a hanging pendulum (a Duffing oscillator with a negative cubic) and harden an inverted one.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sdof_page", "equation", "The single oscillator"),
+            ("sdof_page", "phase-plane", "The phase plane"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Turning is sliding with J for m, k<sub>θ</sub> for k and moments for forces.",
+            "A weight a distance d below the pivot is a spring k<sub>θ</sub> = m g d; above it, a negative one.",
+            "A simple pendulum's period, 2π√(L/g), doesn't depend on its mass; a rod's is least pivoted at its radius "
+            "of gyration.",
+            "Large swings soften a hanging pendulum (a Duffing oscillator with a negative cubic) and harden an inverted one.",
+        ),
+    )
+)
 
 
 class PendulumPage(QtWidgets.QWidget):
@@ -216,8 +254,9 @@ class PendulumPage(QtWidgets.QWidget):
         super().__init__(parent)
         self.pendulum = Pendulum()
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the pendulum to show one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS], "<p>Each sets up the pendulum to show one idea from the Theory tab.</p>"
+        )
         self.trials.picked.connect(self.load_trial)
 
         body = Form("Pendulum")
@@ -235,8 +274,10 @@ class PendulumPage(QtWidgets.QWidget):
         release = Form("Release")
         self.angle = release.number("Let go from:", 0.1, 179.0, 10.0, 1, "°", TIPS["angle"])
 
-        connect_all((self.kind, self.mass, self.length, self.pivot, self.spring, self.gravity, self.zeta,
-                     self.angle), self._on_inputs)
+        connect_all(
+            (self.kind, self.mass, self.length, self.pivot, self.spring, self.gravity, self.zeta, self.angle),
+            self._on_inputs,
+        )
 
         # --- centre
         self.swing_plot = plot("Angle θ", None, "Time", "s", height=150)
@@ -296,17 +337,28 @@ class PendulumPage(QtWidgets.QWidget):
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tab())
 
-        three_panes(self, column(self.trials, body, release),
-                    stack((self.swing_plot, 3), (self.moment_plot, 2), (self.readout, 0)), self.tabs)
+        three_panes(
+            self,
+            column(self.trials, body, release),
+            stack((self.swing_plot, 3), (self.moment_plot, 2), (self.readout, 0)),
+            self.tabs,
+        )
         self._on_inputs()
         self.apply_theme()
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        for box, value in ((self.kind, KINDS.index(t.kind)), (self.mass, t.mass), (self.length, t.length),
-                           (self.pivot, t.pivot), (self.spring, t.spring), (self.gravity, t.gravity),
-                           (self.zeta, t.zeta), (self.angle, t.angle)):
+        for box, value in (
+            (self.kind, KINDS.index(t.kind)),
+            (self.mass, t.mass),
+            (self.length, t.length),
+            (self.pivot, t.pivot),
+            (self.spring, t.spring),
+            (self.gravity, t.gravity),
+            (self.zeta, t.zeta),
+            (self.angle, t.angle),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -317,20 +369,29 @@ class PendulumPage(QtWidgets.QWidget):
         self.pivot.setEnabled(kind is Kind.ROD)
         self.spring.setEnabled(kind in (Kind.TORSION, Kind.INVERTED))
         self.gravity.setEnabled(kind is not Kind.TORSION)
-        self.pendulum = Pendulum(kind, self.mass.value(), self.length.value(),
-                                 max(1e-3, self.pivot.value()), self.spring.value(), self.zeta.value(),
-                                 self.gravity.value())
+        self.pendulum = Pendulum(
+            kind,
+            self.mass.value(),
+            self.length.value(),
+            max(1e-3, self.pivot.value()),
+            self.spring.value(),
+            self.zeta.value(),
+            self.gravity.value(),
+        )
         p = self.pendulum
         if p.stable:
-            extra = (f", L<sub>eq</sub> = {fmt(p.equivalent_length, 'm')}"
-                     if kind in (Kind.SIMPLE, Kind.ROD) else "")
-            self.info.setText(f"J = {p.inertia:.4g} kg·m², k<sub>θ</sub> = {p.stiffness:.4g} N·m/rad: "
-                              f"f<sub>n</sub> = {p.natural_hz:.4g} Hz, T₀ = {p.period0:.4g} s{extra}.")
+            extra = f", L<sub>eq</sub> = {fmt(p.equivalent_length, 'm')}" if kind in (Kind.SIMPLE, Kind.ROD) else ""
+            self.info.setText(
+                f"J = {p.inertia:.4g} kg·m², k<sub>θ</sub> = {p.stiffness:.4g} N·m/rad: "
+                f"f<sub>n</sub> = {p.natural_hz:.4g} Hz, T₀ = {p.period0:.4g} s{extra}."
+            )
         elif p.stiffness == 0:
             self.info.setText(f"J = {p.inertia:.4g} kg·m², k<sub>θ</sub> = 0: no restoring moment.")
         else:
-            self.info.setText(f"J = {p.inertia:.4g} kg·m², k<sub>θ</sub> = {p.stiffness:.4g} N·m/rad: negative, "
-                              "so it can't stay at θ = 0.")
+            self.info.setText(
+                f"J = {p.inertia:.4g} kg·m², k<sub>θ</sub> = {p.stiffness:.4g} N·m/rad: negative, "
+                "so it can't stay at θ = 0."
+            )
         self.redraw()
 
     # ------------------------------------------------------------- drawing
@@ -407,18 +468,26 @@ class PendulumPage(QtWidgets.QWidget):
             parts = [f"Small-swing period T₀ = {p.period0:.4g} s."]
             if math.isfinite(T):
                 duff = duffing_period(p, a) / p.period0 - 1
-                guess = (f" (Duffing's estimate {100 * duff:+.3g} %)" if math.isfinite(duff)
-                         else " (Duffing's estimate has no answer this far out)")
-                parts.append(f"From {self.angle.value():.3g}° the exact period is {T:.4g} s, "
-                             f"{100 * (T / p.period0 - 1):+.3g} %{guess}.")
+                guess = (
+                    f" (Duffing's estimate {100 * duff:+.3g} %)"
+                    if math.isfinite(duff)
+                    else " (Duffing's estimate has no answer this far out)"
+                )
+                parts.append(
+                    f"From {self.angle.value():.3g}° the exact period is {T:.4g} s, "
+                    f"{100 * (T / p.period0 - 1):+.3g} %{guess}."
+                )
             elif math.isfinite(measured):
-                parts.append(f"The swing's zero crossings come {measured:.4g} s apart (damped, and the swing "
-                             "shrinking).")
+                parts.append(
+                    f"The swing's zero crossings come {measured:.4g} s apart (damped, and the swing shrinking)."
+                )
             self.readout.setText(" ".join(parts))
         elif p.leaning():
-            self.readout.setText(f"Unstable upright: it falls, and with damping settles leaning at "
-                                 f"±{math.degrees(p.leaning()):.3g}° (k<sub>t</sub> θ = mgd sin θ). The linearized "
-                                 "model just runs away.")
+            self.readout.setText(
+                f"Unstable upright: it falls, and with damping settles leaning at "
+                f"±{math.degrees(p.leaning()):.3g}° (k<sub>t</sub> θ = mgd sin θ). The linearized "
+                "model just runs away."
+            )
         else:
             self.readout.setText("No restoring moment at θ = 0: nothing to oscillate about.")
 
@@ -454,8 +523,9 @@ class PendulumPage(QtWidgets.QWidget):
         self.period_plot.setYRange(lo - 0.05, max(hi, 1.0) + 0.1, padding=0)
         self.period_plot.setLabel("bottom", "Amplitude (°)")
         if p.cubic == 0:
-            self.period_note.setText("No gravity in the restoring moment, so it is linear: the period is the "
-                                     "same at any amplitude.")
+            self.period_note.setText(
+                "No gravity in the restoring moment, so it is linear: the period is the same at any amplitude."
+            )
         else:
             sense = "softens: larger swings are slower" if p.cubic < 0 else "hardens: larger swings are faster"
             self.period_note.setText(f"It {sense}. At {self.angle.value():.3g}°: T/T₀ = {now:.4g}.")
@@ -481,8 +551,9 @@ class PendulumPage(QtWidgets.QWidget):
             inside = np.linspace(-math.pi, math.pi, 801)
             y = phase_curve(p, top, inside)
             y[[0, -1]] = 0.0
-            self.separatrix.setData(np.degrees(np.concatenate([inside, inside[::-1]])),
-                                    np.degrees(np.concatenate([y, -y[::-1]])))
+            self.separatrix.setData(
+                np.degrees(np.concatenate([inside, inside[::-1]])), np.degrees(np.concatenate([y, -y[::-1]]))
+            )
         else:
             self.separatrix.setData([], [])
         t, th, _ = swing(p, a, self._duration(), 3000)
@@ -494,9 +565,11 @@ class PendulumPage(QtWidgets.QWidget):
         self.phase_plot.setLabel("bottom", "θ (°)")
         self.phase_plot.setLabel("left", "θ' (°/s)")
         if p.weight_moment > 0 and p.torsion == 0:
-            self.phase_note.setText("Grey: undamped orbits of constant energy; bold: the separatrix through the "
-                                    "upside-down balance (±180°). Inside it the pendulum swings; outside it, it "
-                                    "goes round.")
+            self.phase_note.setText(
+                "Grey: undamped orbits of constant energy; bold: the separatrix through the "
+                "upside-down balance (±180°). Inside it the pendulum swings; outside it, it "
+                "goes round."
+            )
         else:
             self.phase_note.setText("Grey: undamped orbits of constant energy. Colour: the swing from release.")
 
@@ -512,12 +585,15 @@ class PendulumPage(QtWidgets.QWidget):
         Th = float(rod_period(L, here, g))
         twin = conjugate_pivot(L, here)
         self.pivot_now.setData([here], [Th])
-        self.pivot_twin.setData([twin] if 0.02 * L <= twin <= 0.6 * L else [], [Th] if 0.02 * L <= twin <= 0.6 * L else [])
+        self.pivot_twin.setData(
+            [twin] if 0.02 * L <= twin <= 0.6 * L else [], [Th] if 0.02 * L <= twin <= 0.6 * L else []
+        )
         self.pivot_level.setPos(Th)
         self.pivot_plot.setXRange(0.0, 0.6 * L, padding=0)
         self.pivot_plot.setYRange(0.9 * float(rod_period(L, best, g)), min(float(T.max()), 2.0 * Th), padding=0)
         lead = "" if p.kind is Kind.ROD else f"(A uniform rod {fmt(L, 'm')} long, whatever the kind set.) "
-        self.pivot_note.setText(f"{lead}Pivoted {fmt(here, 'm')} from the centre: T = {Th:.4g} s. The fastest, "
-                                f"{float(rod_period(L, best, g)):.4g} s, is at L/√12 = {fmt(best, 'm')} (grey); "
-                                f"the same period again at k<sub>G</sub>²/d = {fmt(twin, 'm')} (square).")
-
+        self.pivot_note.setText(
+            f"{lead}Pivoted {fmt(here, 'm')} from the centre: T = {Th:.4g} s. The fastest, "
+            f"{float(rod_period(L, best, g)):.4g} s, is at L/√12 = {fmt(best, 'm')} (grey); "
+            f"the same period again at k<sub>G</sub>²/d = {fmt(twin, 'm')} (square)."
+        )

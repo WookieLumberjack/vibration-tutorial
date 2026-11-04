@@ -38,7 +38,7 @@ def test_a_sine_is_one_cycle_a_period():
 def test_moments_and_record_agree():
     s = Stress(sigma2=10.0)
     r = rates(s)
-    assert r.sigma == pytest.approx(math.sqrt(20 ** 2 + 10 ** 2), rel=1e-3)
+    assert r.sigma == pytest.approx(math.sqrt(20**2 + 10**2), rel=1e-3)
     _t, x = synthesize(s, 600.0, 3)
     assert np.std(x) == pytest.approx(r.sigma, rel=0.01)
     ups = np.count_nonzero((x[:-1] < 0) & (x[1:] >= 0)) / 600.0
@@ -55,6 +55,8 @@ def test_the_range_densities_integrate_to_the_damage(stress):
         assert np.trapezoid(pdf(stress, S), S) == pytest.approx(1.0, abs=1e-6)
     r = rates(stress)
     assert dirlik_damage(stress, c) == pytest.approx(
-        r.nup * np.trapezoid(S ** c.b * dirlik_range_pdf(stress, S), S) / c.K, rel=1e-6)
+        r.nup * np.trapezoid(S**c.b * dirlik_range_pdf(stress, S), S) / c.K, rel=1e-6
+    )
     assert narrow_band_damage(stress, c) == pytest.approx(
-        r.nu0 * np.trapezoid(S ** c.b * rayleigh_range_pdf(stress, S), S) / c.K, rel=1e-6)
+        r.nu0 * np.trapezoid(S**c.b * rayleigh_range_pdf(stress, S), S) / c.K, rel=1e-6
+    )

@@ -54,8 +54,9 @@ def test_contact_force_derivatives_match_finite_differences():
     checked = 0
     for _ in range(100):
         angle, rho = rng.uniform(0, 2 * math.pi), stator.clearance + rng.uniform(1e-6, 3e-5)
-        y = np.array([*(np.array(stator.centre) + rho * np.array([math.cos(angle), math.sin(angle)])),
-                      *rng.normal(0.0, 0.05, 2)])
+        y = np.array(
+            [*(np.array(stator.centre) + rho * np.array([math.cos(angle), math.sin(angle)])), *rng.normal(0.0, 0.05, 2)]
+        )
         omega = rng.uniform(-50.0, 50.0)
         fx, fy, normal, J = stator_force(stator, 0.05, *y, omega)
         if normal == 0.0:
@@ -65,8 +66,10 @@ def test_contact_force_derivatives_match_finite_differences():
         for i in range(4):
             h = np.zeros(4)
             h[i] = 1e-9 if i < 2 else 1e-7
-            numeric[:, i] = (np.array(stator_force(stator, 0.05, *(y + h), omega)[:2])
-                             - np.array(stator_force(stator, 0.05, *(y - h), omega)[:2])) / (2 * h[i])
+            numeric[:, i] = (
+                np.array(stator_force(stator, 0.05, *(y + h), omega)[:2])
+                - np.array(stator_force(stator, 0.05, *(y - h), omega)[:2])
+            ) / (2 * h[i])
         assert np.reshape(J, (2, 4)) == pytest.approx(numeric, rel=1e-6, abs=1e-6 * np.abs(numeric).max())
         checked += 1
     assert checked > 50
@@ -109,8 +112,9 @@ def test_full_rub_settles_on_the_contact_steady_state(friction, rpm):
         return abs(system.dynamic_solve(Z, f, 1j * w)[XD])
 
     st = system.stator
-    rho = scipy.optimize.brentq(lambda r: radius(st.stiffness * (1 - st.clearance / r)) - r,
-                                st.clearance * (1 + 1e-9), radius(0.0))
+    rho = scipy.optimize.brentq(
+        lambda r: radius(st.stiffness * (1 - st.clearance / r)) - r, st.clearance * (1 + 1e-9), radius(0.0)
+    )
     t, x, y, _, rub = run(system, rpm, 3.0, steady=True)
     last = t > 2.5
     assert np.hypot(x[last], y[last]) == pytest.approx(rho, rel=1e-6)

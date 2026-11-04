@@ -72,8 +72,9 @@ class Pulse:
     def impulse(self) -> float:
         """∫F dt over the whole pulse (N·s); infinite for a step and a ramp."""
         a, T = self.amplitude, self.duration
-        return {PulseKind.IMPULSE: a, PulseKind.RECTANGLE: a * T, PulseKind.HALF_SINE: 2.0 * a * T / math.pi
-                }.get(self.kind, math.inf)
+        return {PulseKind.IMPULSE: a, PulseKind.RECTANGLE: a * T, PulseKind.HALF_SINE: 2.0 * a * T / math.pi}.get(
+            self.kind, math.inf
+        )
 
 
 def pulse_response(osc: Oscillator, pulse: Pulse, t: np.ndarray) -> np.ndarray:
@@ -96,8 +97,9 @@ def pulse_response(osc: Oscillator, pulse: Pulse, t: np.ndarray) -> np.ndarray:
     return np.interp(t, fine, x)
 
 
-def convolution(osc: Oscillator, pulse: Pulse, at: float, points: int = 2001) -> tuple[np.ndarray, np.ndarray,
-                                                                                          np.ndarray, float]:
+def convolution(
+    osc: Oscillator, pulse: Pulse, at: float, points: int = 2001
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     """Duhamel's integral x(t) = ∫₀ᵗ F(τ) h(t − τ) dτ at t = `at`, by the trapezium rule on `points` τs.
 
     Returns (τ, F(τ), h(t − τ), x(t)). An impulse has no samples to integrate: x = I h(t).

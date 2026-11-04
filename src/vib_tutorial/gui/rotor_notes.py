@@ -13,8 +13,16 @@ from .cms_notes import fmt
 from .links import before, takeaways
 from .style import colors
 
-LABELS = ["x<sub>A</sub>", "x<sub>D</sub>", "θ<sub>x</sub>", "x<sub>B</sub>",
-          "y<sub>A</sub>", "y<sub>D</sub>", "θ<sub>y</sub>", "y<sub>B</sub>"]
+LABELS = [
+    "x<sub>A</sub>",
+    "x<sub>D</sub>",
+    "θ<sub>x</sub>",
+    "x<sub>B</sub>",
+    "y<sub>A</sub>",
+    "y<sub>D</sub>",
+    "θ<sub>y</sub>",
+    "y<sub>B</sub>",
+]
 assert len(LABELS) == len(DOF_NAMES)
 GROUPS = ["i"] * 4 + ["b"] * 4  # x plane, y plane: tinted as the CMS page's interior and boundary blocks
 
@@ -72,15 +80,22 @@ def _matrix(A: np.ndarray, labels: list[str], groups: list[str], title: str) -> 
 def _labels(system: RotorSystem) -> tuple[list[str], list[str]]:
     """q's labels and blocks: the stations, then each plane's shaft modal coordinates ξ."""
     r = range(1, system.modes_kept + 1)
-    return (LABELS + [f"ξ<sub>x{k}</sub>" for k in r] + [f"ξ<sub>y{k}</sub>" for k in r],
-            GROUPS + ["i"] * len(r) + ["b"] * len(r))
+    return (
+        LABELS + [f"ξ<sub>x{k}</sub>" for k in r] + [f"ξ<sub>y{k}</sub>" for k in r],
+        GROUPS + ["i"] * len(r) + ["b"] * len(r),
+    )
 
 
 def _coupling(s: RotorSystem) -> str:
     """Each bearing's constant k_xy, or that its coupling is an oil film's, or none (a magnet)."""
-    return " and ".join("the oil film's (below) at " + n if b.film is not None else
-                        "none (a magnetic bearing) at " + n if b.magnet is not None else f"{fmt(b.kxy, 1.0)} N/m at {n}"
-                        for n, b in (("A", s.bearing_a), ("B", s.bearing_b)))
+    return " and ".join(
+        "the oil film's (below) at " + n
+        if b.film is not None
+        else "none (a magnetic bearing) at " + n
+        if b.magnet is not None
+        else f"{fmt(b.kxy, 1.0)} N/m at {n}"
+        for n, b in (("A", s.bearing_a), ("B", s.bearing_b))
+    )
 
 
 def _films_html(s: RotorSystem, omega: float) -> str:
@@ -97,11 +112,22 @@ def _films_html(s: RotorSystem, omega: float) -> str:
             f"load line: k<sub>xx</sub>, k<sub>xy</sub>, k<sub>yx</sub>, k<sub>yy</sub> = {fmt(k[0, 0], 1.0)}, "
             f"{fmt(k[0, 1], 1.0)}, {fmt(k[1, 0], 1.0)}, {fmt(k[1, 1], 1.0)} N/m and c<sub>xx</sub>, "
             f"c<sub>xy</sub> = c<sub>yx</sub>, c<sub>yy</sub> = {fmt(c[0, 0], 1.0)}, {fmt(c[0, 1], 1.0)}, "
-            f"{fmt(c[1, 1], 1.0)} N·s/m")
-    held = max(abs(omega), min(b.film.with_load(abs(w)).slowest() for b, w in
-                               zip((s.bearing_a, s.bearing_b), s.bearing_loads) if b.film is not None))
-    slow = (f" Below {held * RPM:,.0f} rpm the journal is nearly on its bottom, and the film is taken as it is "
-            "there (ε = 0.9)." if held > abs(omega) else "")
+            f"{fmt(c[1, 1], 1.0)} N·s/m"
+        )
+    held = max(
+        abs(omega),
+        min(
+            b.film.with_load(abs(w)).slowest()
+            for b, w in zip((s.bearing_a, s.bearing_b), s.bearing_loads)
+            if b.film is not None
+        ),
+    )
+    slow = (
+        f" Below {held * RPM:,.0f} rpm the journal is nearly on its bottom, and the film is taken as it is "
+        "there (ε = 0.9)."
+        if held > abs(omega)
+        else ""
+    )
     return (
         "<h4>The oil films</h4><p>The journals run in plain journal bearings (short-bearing theory; see the "
         "<i>Fluid-film bearing</i> tab) in place of the springs and dampers. Each is linearized about where its "
@@ -110,9 +136,15 @@ def _films_html(s: RotorSystem, omega: float) -> str:
         "p = W + K<sub>f</sub>q<sub>J</sub> joins f, so the rotor rests with its journals at q<sub>J</sub>. "
         "Both change with the speed. K<sub>f</sub> is not symmetric, and its skew part is the oil's swirl at "
         "half the speed, k<sub>xy</sub> − k<sub>yx</sub> = ½Ω(c<sub>xx</sub> + c<sub>yy</sub>). At this speed "
-        + "; ".join(parts) + "." + slow
-        + (" The time response takes the films' whole force instead, the remainder r<sub>f</sub> beyond this "
-           "linearization stepped as a load on the journals (<i>Theory</i>, Numerics)." if s.whole_films else "")
+        + "; ".join(parts)
+        + "."
+        + slow
+        + (
+            " The time response takes the films' whole force instead, the remainder r<sub>f</sub> beyond this "
+            "linearization stepped as a load on the journals (<i>Theory</i>, Numerics)."
+            if s.whole_films
+            else ""
+        )
         + "</p>"
     )
 
@@ -125,17 +157,21 @@ def _um(x: float) -> str:
 def _state_space(s: RotorSystem) -> str:
     """The state-space form: Z = [q, q̇], or with magnetic bearings their controllers' states too."""
     if not s.magnets:
-        return ("<p>With Z = [q, q̇] the equations become Z' = A(Ω) Z + B u, u = f the force (or moment) on each "
-                "DOF, B = [0 ; M<sup>−1</sup>]:</p><p align='center'>A(Ω) = [ 0 &nbsp; I ; "
-                "−M<sup>−1</sup>(K + ΩH) &nbsp; −M<sup>−1</sup>(C + ΩG) ]</p>")
-    return ("<p>With Z = [q, q̇, x<sub>c</sub>], the magnets' controllers' states last "
-            f"({s.n_control} of them), the equations become Z' = A(Ω) Z + B u, u = f the force (or moment) on each "
-            "DOF, B = [0 ; M<sup>−1</sup> ; 0]:</p><p align='center'>A(Ω) = [ 0 &nbsp; I &nbsp; 0 ; "
-            "−M<sup>−1</sup>(K + ΩH) &nbsp; −M<sup>−1</sup>(C + ΩG) &nbsp; M<sup>−1</sup>F<sub>c</sub> ; "
-            "B<sub>c</sub> &nbsp; 0 &nbsp; A<sub>c</sub> ]</p><p>B<sub>c</sub> gives each controller its journal's "
-            "displacement, A<sub>c</sub> holds their equations (above) and F<sub>c</sub> = −k<sub>i</sub> puts each "
-            "current back on its journal. The filters and amplifiers are fast and do not oscillate, so their roots "
-            "are left out of the modes below.</p>")
+        return (
+            "<p>With Z = [q, q̇] the equations become Z' = A(Ω) Z + B u, u = f the force (or moment) on each "
+            "DOF, B = [0 ; M<sup>−1</sup>]:</p><p align='center'>A(Ω) = [ 0 &nbsp; I ; "
+            "−M<sup>−1</sup>(K + ΩH) &nbsp; −M<sup>−1</sup>(C + ΩG) ]</p>"
+        )
+    return (
+        "<p>With Z = [q, q̇, x<sub>c</sub>], the magnets' controllers' states last "
+        f"({s.n_control} of them), the equations become Z' = A(Ω) Z + B u, u = f the force (or moment) on each "
+        "DOF, B = [0 ; M<sup>−1</sup> ; 0]:</p><p align='center'>A(Ω) = [ 0 &nbsp; I &nbsp; 0 ; "
+        "−M<sup>−1</sup>(K + ΩH) &nbsp; −M<sup>−1</sup>(C + ΩG) &nbsp; M<sup>−1</sup>F<sub>c</sub> ; "
+        "B<sub>c</sub> &nbsp; 0 &nbsp; A<sub>c</sub> ]</p><p>B<sub>c</sub> gives each controller its journal's "
+        "displacement, A<sub>c</sub> holds their equations (above) and F<sub>c</sub> = −k<sub>i</sub> puts each "
+        "current back on its journal. The filters and amplifiers are fast and do not oscillate, so their roots "
+        "are left out of the modes below.</p>"
+    )
 
 
 def _magnets_html(s: RotorSystem) -> str:
@@ -146,8 +182,11 @@ def _magnets_html(s: RotorSystem) -> str:
     _, m = magnets[0]
     which = "both bearings" if len(magnets) == 2 and magnets[0][1] == magnets[1][1] else f"bearing {magnets[0][0]}"
     lo, hi = m.damped_band()
-    band = (f"It damps from {lo:.3g} to {hi:,.4g} Hz; outside that band c<sub>b</sub> &lt; 0 and it feeds a mode."
-            if math.isfinite(lo) else "It damps nowhere: c<sub>b</sub> &lt; 0 at every frequency.")
+    band = (
+        f"It damps from {lo:.3g} to {hi:,.4g} Hz; outside that band c<sub>b</sub> &lt; 0 and it feeds a mode."
+        if math.isfinite(lo)
+        else "It damps nowhere: c<sub>b</sub> &lt; 0 at every frequency."
+    )
     states = ", ".join((["∫x"] if m.integral else []) + (["x<sub>d</sub>"] if m.kd > 0.0 else []) + ["i"])
     return (
         "<h4>The magnetic bearings</h4><p>The journals float in active magnetic bearings (the <i>Magnetic "
@@ -220,10 +259,12 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
             "everything else if the supports are isotropic: M q̈<sub>r</sub> + (C + ΩG + 2ΩMJ) q̇<sub>r</sub> + "
             "(K + ΩH + ΔK(0) − Ω²M + ΩCJ + Ω²GJ) q<sub>r</sub> = R<sup>T</sup>f. The −Ω²M is the centrifugal force: between the two critical speeds it "
             "outweighs the soft axis's stiffness but not the stiff one's, and the whirl grows, locked to 1X. "
-            + ("Here the supports are isotropic, so the modes below come from that constant system."
-               if s.isotropic_supports else
-               "Here the supports are not isotropic, so the modes below come from Hill's method instead: the "
-               "periodic system's Floquet exponents, from its harmonics up to ±3 × 2Ω.")
+            + (
+                "Here the supports are isotropic, so the modes below come from that constant system."
+                if s.isotropic_supports
+                else "Here the supports are not isotropic, so the modes below come from Hill's method instead: the "
+                "periodic system's Floquet exponents, from its harmonics up to ±3 × 2Ω."
+            )
             + " The time stepping takes each step as half a step of the rest (the exact update), the kick "
             "of ΔK at mid-step on the velocities, and the other half step.</p>"
         )
@@ -232,13 +273,17 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
     cracked = _crack_note(s) if s.crack is not None else ""
     if s.overhung:
         near, _far = ("B", "A") if s.a > s.length else ("A", "B")
-        elements = (f"Two Euler–Bernoulli beam elements: the span between the bearings (L = {s.length:.4g} m) and "
-                    f"the overhang from bearing {near} to the disc (ℓ = {s.overhang:.4g} m), with EI = {s.ei:.4g} N·m². "
-                    f"The disc sits at a = {s.a:.4g} m from A, outside the bearings.")
+        elements = (
+            f"Two Euler–Bernoulli beam elements: the span between the bearings (L = {s.length:.4g} m) and "
+            f"the overhang from bearing {near} to the disc (ℓ = {s.overhang:.4g} m), with EI = {s.ei:.4g} N·m². "
+            f"The disc sits at a = {s.a:.4g} m from A, outside the bearings."
+        )
         disc_k = f"3EI/(ℓ²(L + ℓ)) = {s.disc_stiffness:,.0f} N/m for the overhung disc"
     else:
-        elements = (f"Two Euler–Bernoulli beam elements, A to the disc (a = {s.a:.4g} m) and the disc to B "
-                    f"(b = {s.b:.4g} m), with EI = {s.ei:.4g} N·m².")
+        elements = (
+            f"Two Euler–Bernoulli beam elements, A to the disc (a = {s.a:.4g} m) and the disc to B "
+            f"(b = {s.b:.4g} m), with EI = {s.ei:.4g} N·m²."
+        )
         disc_k = f"3EIL/(a²b²) = {s.disc_stiffness:,.0f} N/m"
     n_el = s.nodes.size - 1
     if s.density:
@@ -252,25 +297,38 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
             f"({freqs} Hz). Each mode's mass-normalized amplitude ξ is a DOF of its own, in both planes. "
             + elements.replace("Two Euler–Bernoulli beam elements", "Without the extra nodes, the stretches are")
         )
-        mass_text = ("M is no longer diagonal: the shaft's mass couples the stations and its modes. The disc's "
-                     "mass m and I<sub>d</sub>, and the journals', are added on their own DOFs.")
-        gyro_text = (f"G has ±I<sub>p</sub> = ±{s.ip:.4g} kg·m² on the disc's slopes and the shaft's own sections' "
-                     f"(twice their rotary inertia), joining each plane to the other.")
-        condensed = ("The stations' block of K<sub>shaft</sub> is the shaft's exact static stiffness, as for the "
-                     "massless shaft; each mode adds its ω² alone on the diagonal (mass normalized).")
+        mass_text = (
+            "M is no longer diagonal: the shaft's mass couples the stations and its modes. The disc's "
+            "mass m and I<sub>d</sub>, and the journals', are added on their own DOFs."
+        )
+        gyro_text = (
+            f"G has ±I<sub>p</sub> = ±{s.ip:.4g} kg·m² on the disc's slopes and the shaft's own sections' "
+            f"(twice their rotary inertia), joining each plane to the other."
+        )
+        condensed = (
+            "The stations' block of K<sub>shaft</sub> is the shaft's exact static stiffness, as for the "
+            "massless shaft; each mode adds its ω² alone on the diagonal (mass normalized)."
+        )
     else:
-        mass_text = ("M is diagonal: the journal masses, the disc's mass m on its displacements and its diametral "
-                     "inertia I<sub>d</sub> on its slopes.")
-        gyro_text = (f"G has just two entries, ±I<sub>p</sub> = ±{s.ip:.4g} kg·m², joining the disc's two slopes, "
-                     f"one plane to the other.")
-        condensed = ("The bearings carry no moment, so the slopes at A and B are condensed out (they follow the "
-                     "four DOFs kept).")
+        mass_text = (
+            "M is diagonal: the journal masses, the disc's mass m on its displacements and its diametral "
+            "inertia I<sub>d</sub> on its slopes."
+        )
+        gyro_text = (
+            f"G has just two entries, ±I<sub>p</sub> = ±{s.ip:.4g} kg·m², joining the disc's two slopes, "
+            f"one plane to the other."
+        )
+        condensed = (
+            "The bearings carry no moment, so the slopes at A and B are condensed out (they follow the four DOFs kept)."
+        )
     kxy_a, kxy_b = s.cross_coupling(omega)
     if s.bearing_a.swirl or s.bearing_b.swirl:
-        swirl = (f" With fluid swirl the cross-coupling grows with the speed, k<sub>xy</sub> + λcΩ (c the mean of "
-                 f"c<sub>x</sub> and c<sub>y</sub>), and that part "
-                 f"sits in ΩH (below): at this speed k<sub>xy</sub> is {fmt(kxy_a, 1.0)} N/m at A and "
-                 f"{fmt(kxy_b, 1.0)} N/m at B in all.")
+        swirl = (
+            f" With fluid swirl the cross-coupling grows with the speed, k<sub>xy</sub> + λcΩ (c the mean of "
+            f"c<sub>x</sub> and c<sub>y</sub>), and that part "
+            f"sits in ΩH (below): at this speed k<sub>xy</sub> is {fmt(kxy_a, 1.0)} N/m at A and "
+            f"{fmt(kxy_b, 1.0)} N/m at B in all."
+        )
     else:
         swirl = ""
     fb = ks @ s.bow_shape() * s.bow
@@ -285,19 +343,30 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
             + (f", and the shaft's own weight, {fmt(s.shaft_mass * s.gravity, 1.0)} N" if s.density else "")
             + ". On the turning shaft a constant force meets a stiffness that turns, so the rotor never "
             "settles: its steady state is periodic, "
-            + ("q = Q<sub>0</sub> + Re(Q<sub>1</sub>e<sup>iφ</sup> + Q<sub>2</sub>e<sup>2iφ</sup> + "
-               "Q<sub>3</sub>e<sup>3iφ</sup> + ...), found by harmonic balance (each harmonic n of the response "
-               "is tied to n ± 1, n ± 2 and n ± 3 by the breathing crack's ΔK, up to ±6X)" if breathing else
-               "q = Q<sub>0</sub> + Re(Q<sub>2</sub>e<sup>2iφ</sup>)"
-               + ("" if s.rotating_frame else " + (4X, ...)") + ", found by harmonic balance (each "
-               "harmonic n of the response is tied to n ± 2 by ΔK)")
+            + (
+                "q = Q<sub>0</sub> + Re(Q<sub>1</sub>e<sup>iφ</sup> + Q<sub>2</sub>e<sup>2iφ</sup> + "
+                "Q<sub>3</sub>e<sup>3iφ</sup> + ...), found by harmonic balance (each harmonic n of the response "
+                "is tied to n ± 1, n ± 2 and n ± 3 by the breathing crack's ΔK, up to ±6X)"
+                if breathing
+                else "q = Q<sub>0</sub> + Re(Q<sub>2</sub>e<sup>2iφ</sup>)"
+                + ("" if s.rotating_frame else " + (4X, ...)")
+                + ", found by harmonic balance (each "
+                "harmonic n of the response is tied to n ± 2 by ΔK)"
+            )
             + f". The mean sag Q<sub>0</sub> puts the disc at ({qs[XD].real * 1e6:.4g}, {qs[YD].real * 1e6:.4g}) "
             "µm; about it the disc whirls at "
-            + (", ".join(f"{k + 1}X {abs(qk[k, XD]) * 1e6:.3g} µm in x and {abs(qk[k, YD]) * 1e6:.3g} µm in y"
-                         for k in range(3)) + " at this speed (on top of the unbalance's 1X), 2X most where 2Ω "
-               "meets a natural frequency and 3X where 3Ω does." if breathing else
-               f"2X, {abs(qk[1, XD]) * 1e6:.4g} µm in x and {abs(qk[1, YD]) * 1e6:.4g} µm in y at this speed, "
-               "most where 2Ω meets a natural frequency: the gravity critical.") + "</p>"
+            + (
+                ", ".join(
+                    f"{k + 1}X {abs(qk[k, XD]) * 1e6:.3g} µm in x and {abs(qk[k, YD]) * 1e6:.3g} µm in y"
+                    for k in range(3)
+                )
+                + " at this speed (on top of the unbalance's 1X), 2X most where 2Ω "
+                "meets a natural frequency and 3X where 3Ω does."
+                if breathing
+                else f"2X, {abs(qk[1, XD]) * 1e6:.4g} µm in x and {abs(qk[1, YD]) * 1e6:.4g} µm in y at this speed, "
+                "most where 2Ω meets a natural frequency: the gravity critical."
+            )
+            + "</p>"
         )
     elif s.gravity and s.magnets:
         qs = s.static_deflection(omega)
@@ -307,9 +376,12 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
             f"(here {fmt(s.disc_mass * s.gravity, 1.0)} N on the disc)"
             + (f", and the shaft's own weight, {fmt(s.shaft_mass * s.gravity, 1.0)} N" if s.density else "")
             + ". They hold the rotor still where A Z + B f<sub>g</sub> = 0, the controllers' states included"
-            + (": with the integral the magnets hold their journals at the centre, the current growing until "
-               "they are back, so the shaft alone sags" if any(b.magnet is not None and b.magnet.integral
-                                                              for b in (s.bearing_a, s.bearing_b)) else "")
+            + (
+                ": with the integral the magnets hold their journals at the centre, the current growing until "
+                "they are back, so the shaft alone sags"
+                if any(b.magnet is not None and b.magnet.integral for b in (s.bearing_a, s.bearing_b))
+                else ""
+            )
             + f". Here the disc is at ({qs[XD] * 1e6:.4g}, {qs[YD] * 1e6:.4g}) µm and the journals at "
             f"({_um(qs[YA])}, {_um(qs[YB])}) µm vertically; the rotor vibrates about that as without "
             "gravity.</p>"
@@ -320,45 +392,71 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
             f"<h4>Gravity</h4><p>On a horizontal rotor f also holds the weights, constant: "
             f"−m<sub>A</sub>g, −mg and −m<sub>B</sub>g on y<sub>A</sub>, y<sub>D</sub> and y<sub>B</sub> "
             f"(here {fmt(s.disc_mass * s.gravity, 1.0)} N on the disc)"
-            + (f", and the shaft's own weight, {fmt(s.shaft_mass * s.gravity, 1.0)} N, spread over the stations "
-               f"and its modes" if s.density else "") + ". They hold the rotor at the static "
-            + ("deflection q<sub>s</sub> = (K + ΩH)<sup>−1</sup>(f<sub>g</sub> + p), p the films' load (above), "
-               if s.films else "deflection q<sub>s</sub> = (K + ΩH)<sup>−1</sup>f<sub>g</sub>, ") + f"here the disc at "
+            + (
+                f", and the shaft's own weight, {fmt(s.shaft_mass * s.gravity, 1.0)} N, spread over the stations "
+                f"and its modes"
+                if s.density
+                else ""
+            )
+            + ". They hold the rotor at the static "
+            + (
+                "deflection q<sub>s</sub> = (K + ΩH)<sup>−1</sup>(f<sub>g</sub> + p), p the films' load (above), "
+                if s.films
+                else "deflection q<sub>s</sub> = (K + ΩH)<sup>−1</sup>f<sub>g</sub>, "
+            )
+            + f"here the disc at "
             f"({qs[XD] * 1e6:.4g}, {qs[YD] * 1e6:.4g}) µm, about which it vibrates as without gravity.</p>"
         )
     else:
         gravity = ""
-    modal = (f", then the shaft's modal coordinates ξ, {kept} in each plane (in √kg·m: the modes are mass "
-             f"normalized, so a mode moving alone has kinetic energy ½ξ̇²)" if kept else "")
+    modal = (
+        f", then the shaft's modal coordinates ξ, {kept} in each plane (in √kg·m: the modes are mass "
+        f"normalized, so a mode moving alone has kinetic energy ½ξ̇²)"
+        if kept
+        else ""
+    )
     rigid = " (ξ = 0: a rigid motion is a static shape)" if kept else ""
     net = s.mass_unbalance
     if hidden:
         unbalance, force = "The unbalance (hidden: find it on the <i>Balancing</i> tab)", "hidden"
     else:
-        unbalance = (f"The unbalance U = m e = {s.unbalance * 1e6:.4g} g·mm at ψ = "
-                     f"{math.degrees(s.unbalance_angle):.0f}°")
+        unbalance = (
+            f"The unbalance U = m e = {s.unbalance * 1e6:.4g} g·mm at ψ = {math.degrees(s.unbalance_angle):.0f}°"
+        )
         on_disc = len(s.weights) + sum(s.on_disc(p) for p in s.plane_weights)
         if on_disc:
-            unbalance += (f", with {on_disc} balance weight{'s' if on_disc > 1 else ''}"
-                          f" (net {abs(net) * 1e6:.4g} g·mm at {math.degrees(math.atan2(net.imag, net.real)):.0f}°),")
+            unbalance += (
+                f", with {on_disc} balance weight{'s' if on_disc > 1 else ''}"
+                f" (net {abs(net) * 1e6:.4g} g·mm at {math.degrees(math.atan2(net.imag, net.real)):.0f}°),"
+            )
         force = fmt(abs(net) * omega**2, 1.0)
     on_shaft = [p for p in s.plane_weights if not s.on_disc(p)]
     if on_shaft:
-        listed = "; ".join(f"{abs(p.weight) * 1e6:.4g} g·mm at {math.degrees(cmath.phase(p.weight)) % 360:.0f}°, "
-                           f"z = {p.z * 1e3:.0f} mm" for p in on_shaft)
-        shaft_weights = (f" Balance weights on the shaft ({listed}) are point forces of the same form, shared over "
-                         f"the DOFs as a load at z is, Ψ(z)<sup>T</sup>.")
+        listed = "; ".join(
+            f"{abs(p.weight) * 1e6:.4g} g·mm at {math.degrees(cmath.phase(p.weight)) % 360:.0f}°, "
+            f"z = {p.z * 1e3:.0f} mm"
+            for p in on_shaft
+        )
+        shaft_weights = (
+            f" Balance weights on the shaft ({listed}) are point forces of the same form, shared over "
+            f"the DOFs as a load at z is, Ψ(z)<sup>T</sup>."
+        )
     else:
         shaft_weights = ""
     if "skew" in hidden:
         skew = "The disc's skew τ (hidden)"
         moment = "hidden"
     else:
-        skew = (f"The disc's skew τ = {math.degrees(s.skew):.4g}° (toward {math.degrees(s.skew_angle):.0f}° from "
-                f"the mark)")
+        skew = (
+            f"The disc's skew τ = {math.degrees(s.skew):.4g}° (toward {math.degrees(s.skew_angle):.0f}° from the mark)"
+        )
         moment = fmt(abs(s.couple_unbalance) * omega**2, 1.0) + " N·m"
-    faces = (" A balance weight U<sub>w</sub> on one of the disc's faces, Δz from its centre plane, adds U<sub>w</sub>Δz to "
-             "(I<sub>d</sub> − I<sub>p</sub>)τe<sup>iγ</sup>." if any(p.disc for p in s.plane_weights) else "")
+    faces = (
+        " A balance weight U<sub>w</sub> on one of the disc's faces, Δz from its centre plane, adds U<sub>w</sub>Δz to "
+        "(I<sub>d</sub> − I<sub>p</sub>)τe<sup>iγ</sup>."
+        if any(p.disc for p in s.plane_weights)
+        else ""
+    )
     return f"""
 <h3>Equations of motion at {rpm:,.0f} rpm (Ω = {omega:.4g} rad/s)</h3>
 <p style='font-size:large' align='center'>M q̈ + (C + Ω G) q̇ + (K + Ω H{" + ΔK(φ)" if s.periodic else ""}) q = f(t)</p>
@@ -1555,23 +1653,29 @@ settling at 5.9 µm with the bow at 2.4 µm. Set β to 0 and nothing grows below
 <tr><td>x<sub>c</sub>, A<sub>c</sub>, B<sub>c</sub>, F<sub>c</sub></td><td>the controllers' states; their equations, x<sub>c</sub>' = A<sub>c</sub>x<sub>c</sub> + B<sub>c</sub>q; their push on q, F<sub>c</sub>x<sub>c</sub></td><td>—</td></tr>
 </table>
 """
-THEORY_HTML = THEORY_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "start-with-one-mass", "Start with one mass"),
-    ("complex_page", "state-space", "The state-space form"),
-    ("complex_page", "sweep", "Sweeping a damper"),
-    ("duffing_page", "harmonic-balance", "Harmonic balance"),
-)).replace("<!--TAKEAWAYS-->", takeaways(
-    "A rotor's unbalance response peaks at the critical speeds, and the heavy spot leads the high spot by "
-    "90° there and by about 180° well above: run above a critical and the disc centres itself.",
-    "Spin splits each mode into a forward and a backward whirl (the gyroscopic effect), so the critical "
-    "speeds are where the 1X line crosses the Campbell diagram's forward branches.",
-    "Balancing measures the 1X vector with and without a trial weight; the influence coefficients then give "
-    "the weight that cancels it, plane by plane.",
-    "Gravity only moves the equilibrium on a round shaft, but on an asymmetric or cracked one it drives 2X, "
-    "with a peak at half a critical.",
-    "Cross-coupled stiffness (oil films, seals, internal damping) feeds the forward whirl and sets an "
-    "onset speed above which the rotor is unstable, whatever its balance.",
-))
+THEORY_HTML = THEORY_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("sim_page", "start-with-one-mass", "Start with one mass"),
+        ("complex_page", "state-space", "The state-space form"),
+        ("complex_page", "sweep", "Sweeping a damper"),
+        ("duffing_page", "harmonic-balance", "Harmonic balance"),
+    ),
+).replace(
+    "<!--TAKEAWAYS-->",
+    takeaways(
+        "A rotor's unbalance response peaks at the critical speeds, and the heavy spot leads the high spot by "
+        "90° there and by about 180° well above: run above a critical and the disc centres itself.",
+        "Spin splits each mode into a forward and a backward whirl (the gyroscopic effect), so the critical "
+        "speeds are where the 1X line crosses the Campbell diagram's forward branches.",
+        "Balancing measures the 1X vector with and without a trial weight; the influence coefficients then give "
+        "the weight that cancels it, plane by plane.",
+        "Gravity only moves the equilibrium on a round shaft, but on an asymmetric or cracked one it drives 2X, "
+        "with a peak at half a critical.",
+        "Cross-coupled stiffness (oil films, seals, internal damping) feeds the forward whirl and sets an "
+        "onset speed above which the rotor is unstable, whatever its balance.",
+    ),
+)
 
 
 def _crack_note(s: RotorSystem) -> str:
@@ -1579,21 +1683,31 @@ def _crack_note(s: RotorSystem) -> str:
     crack = s.crack
     c_open, c_across = s.crack_compliances
     if not s.crack_opening:
-        state = ("It is a breathing crack, but nothing opens it: with no gravity its faces stay pressed together, "
-                 "and the shaft is as if round. Untick <i>Breathing</i> to hold it open.")
+        state = (
+            "It is a breathing crack, but nothing opens it: with no gravity its faces stay pressed together, "
+            "and the shaft is as if round. Untick <i>Breathing</i> to hold it open."
+        )
     elif crack.breathing:
         down = s.crack_sign > 0
-        state = ("It breathes: the shaft's weight opens it as its mouth turns "
-                 + ("down (the shaft sags there, stretching its bottom)" if down else
-                    "up (the shaft hogs there, stretching its top)")
-                 + ", and shuts it half a turn later, open by σ(φ) = (1 "
-                 + ("−" if down else "+") + " sin(φ + β<sub>c</sub>))/2. The loss is σ(φ) times the open crack's, "
-                 "so it has the mean ½P in K and harmonics 1X, 2X and 3X: ΔK(φ) = Σ E<sub>n</sub>e<sup>inφ</sup> + "
-                 "conj. Even on isotropic supports it changes in axes turning with the shaft (the weight does "
-                 "not turn), so the modes below come from Hill's method, from harmonics up to ±3Ω.")
+        state = (
+            "It breathes: the shaft's weight opens it as its mouth turns "
+            + (
+                "down (the shaft sags there, stretching its bottom)"
+                if down
+                else "up (the shaft hogs there, stretching its top)"
+            )
+            + ", and shuts it half a turn later, open by σ(φ) = (1 "
+            + ("−" if down else "+")
+            + " sin(φ + β<sub>c</sub>))/2. The loss is σ(φ) times the open crack's, "
+            "so it has the mean ½P in K and harmonics 1X, 2X and 3X: ΔK(φ) = Σ E<sub>n</sub>e<sup>inφ</sup> + "
+            "conj. Even on isotropic supports it changes in axes turning with the shaft (the weight does "
+            "not turn), so the modes below come from Hill's method, from harmonics up to ±3Ω."
+        )
     else:
-        state = ("It is held open: the loss is P + [the deviatoric part], an asymmetric shaft's, its soft axis along "
-                 "the mouth, turning with the shaft.")
+        state = (
+            "It is held open: the loss is P + [the deviatoric part], an asymmetric shaft's, its soft axis along "
+            "the mouth, turning with the shaft."
+        )
     return (
         f"<h4>The crack</h4><p>A crack {crack.depth:.0%} of the shaft's diameter deep, at z = {s.crack_z * 1e3:.4g} mm, "
         f"its mouth at β<sub>c</sub> = {math.degrees(crack.angle):.0f}° from the mark. Open, it is a hinge whose "

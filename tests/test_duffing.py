@@ -189,8 +189,9 @@ def test_presets_show_what_their_notes_say():
     p = PRESET["Escape from the well"]
     assert p.osc.escape == pytest.approx(0.1)
     assert math.isinf(response_curve(p.osc, p.end_hz).tip)  # the upper branch runs into the escape amplitude
-    sim = DuffingSimulator(p.osc, Drive(freq_hz=p.freq_hz, start_hz=p.start_hz, end_hz=p.end_hz,
-                                        sweep_time=p.sweep_time))
+    sim = DuffingSimulator(
+        p.osc, Drive(freq_hz=p.freq_hz, start_hz=p.start_hz, end_hz=p.end_hz, sweep_time=p.sweep_time)
+    )
     sim.drive.start(p.mode)
     run(sim, p.sweep_time)
     assert sim.escaped and p.start_hz < sim.drive.freq_hz < 2.0

@@ -129,8 +129,7 @@ class ParameterPanel(QtWidgets.QGroupBox):
             self.grid.addWidget(lbl, 0, col)
         layout.addLayout(self.grid)
         note = QtWidgets.QLabel(
-            "kᵢ, cᵢ connect mᵢ₋₁ to mᵢ (k₁, c₁ connect m₁ to ground). "
-            "F<sub>f</sub>: friction between mᵢ and the floor."
+            "kᵢ, cᵢ connect mᵢ₋₁ to mᵢ (k₁, c₁ connect m₁ to ground). F<sub>f</sub>: friction between mᵢ and the floor."
         )
         note.setWordWrap(True)
         mute(note)
@@ -307,9 +306,11 @@ class ForcePanel(QtWidgets.QGroupBox):
         self.freq = spin(0.001, 1000.0, s.freq_hz, 3, " Hz")
         freq_row.addWidget(self.freq, 1)
         self.tune = QtWidgets.QComboBox()
-        self.tune.setToolTip("Set the drive frequency to an undamped natural frequency fₙ (resonance). "
-                             "The response lags the force by 90° there; the displacement peak "
-                             "is slightly lower, at fₙ√(1 − 2ζ²).")
+        self.tune.setToolTip(
+            "Set the drive frequency to an undamped natural frequency fₙ (resonance). "
+            "The response lags the force by 90° there; the displacement peak "
+            "is slightly lower, at fₙ√(1 − 2ζ²)."
+        )
         freq_row.addWidget(self.tune)
         self.freq_label = QtWidgets.QLabel("Frequency:")
         form.addRow(self.freq_label, freq_row)
@@ -336,8 +337,13 @@ class ForcePanel(QtWidgets.QGroupBox):
         self.sweep_time_label = QtWidgets.QLabel("Sweep time:")
         form.addRow(self.sweep_time_label, time_row)
         self._sweep_widgets = (
-            self.sweep_label, self.sweep_start, sweep_to, self.sweep_end,
-            self.sweep_time_label, self.sweep_time, self.sweep_log,
+            self.sweep_label,
+            self.sweep_start,
+            sweep_to,
+            self.sweep_end,
+            self.sweep_time_label,
+            self.sweep_time,
+            self.sweep_log,
         )
         for w in self._sweep_widgets:
             w.setToolTip(CHIRP_TIP)
@@ -352,8 +358,13 @@ class ForcePanel(QtWidgets.QGroupBox):
         self.target.currentIndexChanged.connect(self._apply)
         self.kind.currentIndexChanged.connect(self._apply)
         for box in (
-            self.amplitude, self.base_amplitude, self.freq, self.duration,
-            self.sweep_start, self.sweep_end, self.sweep_time,
+            self.amplitude,
+            self.base_amplitude,
+            self.freq,
+            self.duration,
+            self.sweep_start,
+            self.sweep_end,
+            self.sweep_time,
         ):
             box.valueChanged.connect(self._apply)
         self.sweep_log.toggled.connect(self._apply)
@@ -372,10 +383,17 @@ class ForcePanel(QtWidgets.QGroupBox):
         """Show the settings `s` (switching the excitation off) and apply them."""
         self.force.switch_off()
         values = (
-            (self.input, int(s.base)), (self.target, s.target), (self.kind, list(ForceKind).index(s.kind)),
-            (self.amplitude, s.amplitude), (self.base_amplitude, s.base_amplitude * 1e3),
-            (self.freq, s.freq_hz), (self.duration, s.pulse_duration), (self.sweep_start, s.sweep_start_hz),
-            (self.sweep_end, s.sweep_end_hz), (self.sweep_time, s.sweep_time), (self.sweep_log, s.sweep_log),
+            (self.input, int(s.base)),
+            (self.target, s.target),
+            (self.kind, list(ForceKind).index(s.kind)),
+            (self.amplitude, s.amplitude),
+            (self.base_amplitude, s.base_amplitude * 1e3),
+            (self.freq, s.freq_hz),
+            (self.duration, s.pulse_duration),
+            (self.sweep_start, s.sweep_start_hz),
+            (self.sweep_end, s.sweep_end_hz),
+            (self.sweep_time, s.sweep_time),
+            (self.sweep_log, s.sweep_log),
         )
         for w, v in values:
             w.blockSignals(True)
@@ -515,8 +533,10 @@ class SimControls(QtWidgets.QGroupBox):
 
         self.auto_scale = QtWidgets.QCheckBox("Auto-scale animation and plots")
         self.auto_scale.setChecked(True)
-        self.auto_scale.setToolTip("On: magnify the animation and fit the plot axes to the recent motion.\n"
-            "Off: freeze the current magnification and plot ranges (drag an axis to adjust).")
+        self.auto_scale.setToolTip(
+            "On: magnify the animation and fit the plot axes to the recent motion.\n"
+            "Off: freeze the current magnification and plot ranges (drag an axis to adjust)."
+        )
         form.addRow(self.auto_scale)
 
         self.time_label = QtWidgets.QLabel()

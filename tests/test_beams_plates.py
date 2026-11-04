@@ -38,8 +38,9 @@ def test_thin_beams_are_euler_bernoulli():
 
 def test_rayleigh_and_shear_are_timoshenkos_limits():
     stiff_shear = Beam(kappa=1e9)
-    assert beam_frequencies(stiff_shear, 8) == pytest.approx(beam_frequencies(stiff_shear, 8, Theory.RAYLEIGH),
-                                                             rel=1e-6)
+    assert beam_frequencies(stiff_shear, 8) == pytest.approx(
+        beam_frequencies(stiff_shear, 8, Theory.RAYLEIGH), rel=1e-6
+    )
     b = Beam()
     k = np.arange(1, 9) * math.pi
     # each effect lowers the frequencies, and the two together lower them most
@@ -50,7 +51,7 @@ def test_rayleigh_and_shear_are_timoshenkos_limits():
 def test_plate_frequencies_follow_the_formula():
     p = Plate(0.5, 0.3, 0.002)
     m = rect_modes(p, 1)[0]
-    w = math.pi ** 2 * (1 / 0.5 ** 2 + 1 / 0.3 ** 2) * math.sqrt(p.rigidity / p.surface_mass)
+    w = math.pi**2 * (1 / 0.5**2 + 1 / 0.3**2) * math.sqrt(p.rigidity / p.surface_mass)
     assert m.freq_hz == pytest.approx(w / (2 * math.pi))
 
 

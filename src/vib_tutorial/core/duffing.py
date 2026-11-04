@@ -166,7 +166,7 @@ def amplitudes(osc: Duffing, freq_hz: float) -> tuple[np.ndarray, np.ndarray]:
     if beta == 0:
         s = np.array([osc.force**2 / lin]) if lin > 0 else np.empty(0)
     else:
-        roots = np.roots([beta * beta, 2 * alpha * beta, lin, -osc.force**2])
+        roots = np.roots([beta * beta, 2 * alpha * beta, lin, -(osc.force**2)])
         s = np.sort(roots[(np.abs(roots.imag) <= 1e-9 * np.abs(roots).max()) & (roots.real > 0)].real)
     a = np.sqrt(s)
     a = a[a < osc.escape]
@@ -484,14 +484,19 @@ class Drive:
         """Start a sweep (from its first leg's start) or hold the frequency where it is."""
         self.mode = mode
         self.elapsed = 0.0
-        self.legs = {Sweep.HOLD: [], Sweep.UP: ["up"], Sweep.DOWN: ["down"], Sweep.UP_DOWN: ["up", "down"],
-                     Sweep.DOWN_UP: ["down", "up"]}[mode]
+        self.legs = {
+            Sweep.HOLD: [],
+            Sweep.UP: ["up"],
+            Sweep.DOWN: ["down"],
+            Sweep.UP_DOWN: ["up", "down"],
+            Sweep.DOWN_UP: ["down", "up"],
+        }[mode]
         if self.legs:
             self.freq_hz = self.start_hz if self.legs[0] == "up" else self.end_hz
 
     @property
     def leg(self) -> str:
-        """"up", "down", or "hold"."""
+        """ "up", "down", or "hold"."""
         return self.legs[0] if self.legs else "hold"
 
     @property
@@ -707,8 +712,18 @@ class DuffingSimulator:
                 half = 2.0 * math.hypot(hc + last[2], hs + last[3]) / pair if last[4] > 0 else math.nan
                 ended = t + frac * h
                 length = ended - began if ended > began else span  # the first cycle's start isn't known
-                cycles.append(Cycle(ended, 1.0 / length, 2.0 * math.hypot(pc, ps) / pair,
-                                    math.atan2(ps, pc), leg, x + frac * (x1 - x), v + frac * (v1 - v), half))
+                cycles.append(
+                    Cycle(
+                        ended,
+                        1.0 / length,
+                        2.0 * math.hypot(pc, ps) / pair,
+                        math.atan2(ps, pc),
+                        leg,
+                        x + frac * (x1 - x),
+                        v + frac * (v1 - v),
+                        half,
+                    )
+                )
                 began = ended
                 last = (sc, ss, hc, hs, span)
                 sc = ss = hc = hs = span = 0.0
@@ -732,8 +747,9 @@ class DuffingSimulator:
 
 
 # ------------------------------------------------------------------ measured jumps
-def measured_jump(cycles: list[Cycle], leg: str, span: float = 3.0, ratio: float = 1.5, half: bool = False,
-                  floor: float = 0.0) -> float | None:
+def measured_jump(
+    cycles: list[Cycle], leg: str, span: float = 3.0, ratio: float = 1.5, half: bool = False, floor: float = 0.0
+) -> float | None:
     """Where one leg of a sweep jumped (Hz), if its amplitude changed by more than `ratio` within `span` s
     (a jump up takes a few of the damping's time constants to grow); None if it changed by less.
 
@@ -755,7 +771,7 @@ def measured_jump(cycles: list[Cycle], leg: str, span: float = 3.0, ratio: float
     if abs(change[i]) < math.log(ratio):
         return None
     half = 0.5 * (a[i] + a[later[i]])
-    past = np.flatnonzero((a[i:later[i] + 1] - half) * np.sign(change[i]) >= 0)
+    past = np.flatnonzero((a[i : later[i] + 1] - half) * np.sign(change[i]) >= 0)
     return run[i + int(past[0])].freq_hz
 
 
@@ -774,48 +790,106 @@ class DuffingPreset:
 
 PRESETS = (
     DuffingPreset(
-        "Hardening spring: the jump", Duffing(), 2.0, 6.0, 120.0, Sweep.UP_DOWN, 2.0,
+        "Hardening spring: the jump",
+        Duffing(),
+        2.0,
+        6.0,
+        120.0,
+        Sweep.UP_DOWN,
+        2.0,
         "Up the upper branch past the linear resonance (3.18 Hz) and off its end at the fold (4.45 Hz), "
         "a little late as the sweep overruns it; back down along the lower branch to its fold (3.64 Hz) "
-        "and up. Between the folds both branches are stable."),
+        "and up. Between the folds both branches are stable.",
+    ),
     DuffingPreset(
-        "Softening spring: the jump", Duffing(damping=0.8, cubic=-2e4, force=1.25), 1.5, 4.5, 120.0,
-        Sweep.UP_DOWN, 1.5,
+        "Softening spring: the jump",
+        Duffing(damping=0.8, cubic=-2e4, force=1.25),
+        1.5,
+        4.5,
+        120.0,
+        Sweep.UP_DOWN,
+        1.5,
         "The curve leans the other way: up the lower branch to its fold (2.97 Hz) and a jump up, then down "
-        "along the upper branch to its fold (2.55 Hz) and a jump down."),
+        "along the upper branch to its fold (2.55 Hz) and a jump down.",
+    ),
     DuffingPreset(
-        "Linear spring: no jump", Duffing(cubic=0.0), 2.0, 6.0, 120.0, Sweep.UP_DOWN, 2.0,
+        "Linear spring: no jump",
+        Duffing(cubic=0.0),
+        2.0,
+        6.0,
+        120.0,
+        Sweep.UP_DOWN,
+        2.0,
         "k3 = 0: one amplitude at each frequency, so the two sweeps agree, apart from the ringing a sweep "
-        "leaves behind just past the resonance."),
+        "leaves behind just past the resonance.",
+    ),
     DuffingPreset(
-        "Two stable states", Duffing(), 2.0, 6.0, 120.0, Sweep.HOLD, 4.0,
+        "Two stable states",
+        Duffing(),
+        2.0,
+        6.0,
+        120.0,
+        Sweep.HOLD,
+        4.0,
         "Held at 4 Hz, inside the band: the mass settles on the lower branch from rest. Start it on the "
-        "upper branch and it stays; start it on the middle one and it falls off to one or the other."),
+        "upper branch and it stays; start it on the middle one and it falls off to one or the other.",
+    ),
     DuffingPreset(
-        "Escape from the well", Duffing(cubic=-4e4, force=1.25), 1.0, 4.5, 120.0, Sweep.DOWN, 4.5,
+        "Escape from the well",
+        Duffing(cubic=-4e4, force=1.25),
+        1.0,
+        4.5,
+        120.0,
+        Sweep.DOWN,
+        4.5,
         "A softening spring driven harder: below the resonance the upper branch leans into the escape "
-        "amplitude (0.1 m), and the mass is thrown over the potential's hilltop."),
+        "amplitude (0.1 m), and the mass is thrown over the potential's hilltop.",
+    ),
     DuffingPreset(
-        "Parametric resonance", Duffing(cubic=0.0, force=0.0, pump=0.3, noise=1e-3), 5.0, 8.0, 120.0,
-        Sweep.HOLD, 2.0 / TWO_PI * 20.0,
+        "Parametric resonance",
+        Duffing(cubic=0.0, force=0.0, pump=0.3, noise=1e-3),
+        5.0,
+        8.0,
+        120.0,
+        Sweep.HOLD,
+        2.0 / TWO_PI * 20.0,
         "No force: the stiffness pulses ±30 % at twice the natural frequency (6.37 Hz), like a swing pumped "
         "twice a swing. Rest is unstable there, and the noise grows into a swing at half the pump's "
-        "frequency, by e^(0.05 ω_n t), with nothing on a linear spring to stop it."),
+        "frequency, by e^(0.05 ω_n t), with nothing on a linear spring to stop it.",
+    ),
     DuffingPreset(
-        "Parametric resonance, hardening", Duffing(force=0.0, pump=0.3, noise=1e-3), 5.0, 8.0, 120.0,
-        Sweep.HOLD, 2.0 / TWO_PI * 20.0,
+        "Parametric resonance, hardening",
+        Duffing(force=0.0, pump=0.3, noise=1e-3),
+        5.0,
+        8.0,
+        120.0,
+        Sweep.HOLD,
+        2.0 / TWO_PI * 20.0,
         "The same pump on the hardening spring: as the swing grows its frequency rises out of the tongue, "
-        "and it settles at 27.5 mm, half the pump's frequency."),
+        "and it settles at 27.5 mm, half the pump's frequency.",
+    ),
     DuffingPreset(
-        "Parametric sweep: the jump", Duffing(force=0.0, pump=0.3, noise=1e-2), 5.0, 8.0, 180.0, Sweep.DOWN_UP,
+        "Parametric sweep: the jump",
+        Duffing(force=0.0, pump=0.3, noise=1e-2),
+        5.0,
+        8.0,
+        180.0,
+        Sweep.DOWN_UP,
         8.0,
         "Down from rest: rest stays stable down to the tongue's upper edge (6.80 Hz), then the noise grows "
         "and the swing jumps up to the branch, which it follows down to the lower edge (5.89 Hz). Back up, "
         "it grows again a little past that edge (the growth is nil at the edge itself) and rides the branch "
-        "far past the tongue: between 6.8 and 8 Hz rest and a 40–60 mm swing are both stable."),
+        "far past the tongue: between 6.8 and 8 Hz rest and a 40–60 mm swing are both stable.",
+    ),
     DuffingPreset(
-        "Chaos (Ueda)", Duffing(stiffness=0.0, damping=0.05, cubic=1.0, force=7.5), 0.05, 0.5, 120.0,
-        Sweep.HOLD, 1.0 / TWO_PI,
+        "Chaos (Ueda)",
+        Duffing(stiffness=0.0, damping=0.05, cubic=1.0, force=7.5),
+        0.05,
+        0.5,
+        120.0,
+        Sweep.HOLD,
+        1.0 / TWO_PI,
         "x'' + 0.05 x' + x^3 = 7.5 cos t: no linear spring, light damping, a big drive. The response never "
-        "repeats: once per drive cycle the Poincaré section's dot lands somewhere new on a strange attractor."),
+        "repeats: once per drive cycle the Poincaré section's dot lands somewhere new on a strange attractor.",
+    ),
 )

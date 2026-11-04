@@ -299,7 +299,7 @@ def record(pulse: Pulse, fs: float, system: ChainSystem | None = None, result: M
         if n > MAX_SAMPLES:
             raise ValueError(f"the record is too long: {n:,} samples, at most {MAX_SAMPLES:,}")
         base = np.zeros(n)
-        base[:k + 1] = A * classical(Shape.HALF_SINE, np.arange(k + 1) / k)
+        base[: k + 1] = A * classical(Shape.HALF_SINE, np.arange(k + 1) / k)
         mass = pulse.mass % lin.n
         a = chain_response(lin, base, fs, result).acceleration[:, mass]
     else:
@@ -369,7 +369,7 @@ def _free(eta_end: np.ndarray, lam: np.ndarray, power: int) -> np.ndarray:
     """2 Re(λ^power η e^{λτ}) over one damped period, RESIDUAL_POINTS a period: (f, points)."""
     period = TWO_PI / lam.imag
     tau = np.linspace(0.0, 1.0, RESIDUAL_POINTS + 1)[None, :] * period[:, None]
-    return 2.0 * np.real((lam ** power * eta_end)[:, None] * np.exp(lam[:, None] * tau))
+    return 2.0 * np.real((lam**power * eta_end)[:, None] * np.exp(lam[:, None] * tau))
 
 
 @dataclass(frozen=True)
@@ -461,8 +461,7 @@ class ChainResponse:
     acceleration: np.ndarray
 
 
-def chain_response(system: ChainSystem, a: np.ndarray, fs: float, result: ModalResult | None = None
-                   ) -> ChainResponse:
+def chain_response(system: ChainSystem, a: np.ndarray, fs: float, result: ModalResult | None = None) -> ChainResponse:
     """The chain from rest, its base accelerated by a (m/s², linear between samples 1/fs apart): in coordinates
     relative to the base each mass is pushed by −m a, by the exact FOH update, diagonalized (as core.oma's)."""
     import scipy.signal
@@ -653,16 +652,21 @@ def chain_peaks(system: ChainSystem, rec: Record, result: ModalResult | None = N
     acc_s, disp_s = np.empty(f.size), np.empty(f.size)
     acc_h, disp_h = np.empty((f.size, n)), np.empty((f.size, n))
     for r in range(f.size):
-        sp = srs(base, f[r:r + 1], zeta[r])
+        sp = srs(base, f[r : r + 1], zeta[r])
         acc_s[r], disp_s[r] = sp.maximax[0], sp.displacement[0]
-        eta, lam = _states(padded, f[r:r + 1], zeta[r])
+        eta, lam = _states(padded, f[r : r + 1], zeta[r])
         acc_h[r], disp_h[r] = 2.0 * np.real(lam[0] ** 2 * eta[0]), 2.0 * np.real(eta[0])
     dphi = np.diff(phi, prepend=0.0, axis=0) * lin.stiffness[:, None]
     response = chain_response(lin, padded.a, padded.fs, result)
     springs = np.diff(response.displacement, prepend=0.0, axis=1) * lin.stiffness
     return ChainPeaks(
-        f, zeta, gamma, gamma ** 2 / float(np.sum(lin.masses)), padded.t,
+        f,
+        zeta,
+        gamma,
+        gamma**2 / float(np.sum(lin.masses)),
+        padded.t,
         {Response.ACCELERATION: acc_s, Response.SPRING: disp_s},
         {Response.ACCELERATION: phi * gamma, Response.SPRING: dphi * gamma},
         {Response.ACCELERATION: acc_h, Response.SPRING: disp_h},
-        {Response.ACCELERATION: response.acceleration, Response.SPRING: springs})
+        {Response.ACCELERATION: response.acceleration, Response.SPRING: springs},
+    )

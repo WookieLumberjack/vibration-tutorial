@@ -37,8 +37,15 @@ from vib_tutorial.core.transient import (
 
 
 def integrate(m, c, k, force, x0, v0, t):
-    sol = solve_ivp(lambda tt, z: [z[1], (force(tt) - c * z[1] - k * z[0]) / m], (t[0], t[-1]), [x0, v0],
-                    t_eval=t, rtol=1e-11, atol=1e-14, max_step=1e-3)
+    sol = solve_ivp(
+        lambda tt, z: [z[1], (force(tt) - c * z[1] - k * z[0]) / m],
+        (t[0], t[-1]),
+        [x0, v0],
+        t_eval=t,
+        rtol=1e-11,
+        atol=1e-14,
+        max_step=1e-3,
+    )
     return sol.y[0]
 
 
@@ -62,7 +69,8 @@ def test_oscillator_numbers():
     x, _ = free_response(osc, 0.01, 0.0, t)
     assert measured_decrement(t, x) == pytest.approx(osc.log_decrement, rel=1e-4)
     assert sorted(osc.poles(), key=lambda p: p.imag) == pytest.approx(
-        sorted(np.roots([1.0, 2.0, 400.0]), key=lambda p: p.imag))
+        sorted(np.roots([1.0, 2.0, 400.0]), key=lambda p: p.imag)
+    )
 
 
 def test_harmonic_from_rest_matches_the_ode_also_at_undamped_resonance():
@@ -108,7 +116,7 @@ def test_pulse_responses_and_convolution(kind):
 
 def test_impulse_response_and_receptance_are_a_fourier_pair():
     osc = Oscillator()
-    f, H = impulse_spectrum(osc, 12.0, 2 ** 14)
+    f, H = impulse_spectrum(osc, 12.0, 2**14)
     band = (f > 1) & (f < 6)
     exact = receptance(osc, f[band])
     assert np.max(np.abs(H[band] - exact)) < 1e-4 * np.max(np.abs(exact))
@@ -117,17 +125,19 @@ def test_impulse_response_and_receptance_are_a_fourier_pair():
 def test_pulse_shock_spectrum_against_closed_forms():
     for r in (0.05, 0.25, 0.7):
         assert peak_ratio(0.0, PulseKind.RECTANGLE, np.array([r]))[0] == pytest.approx(
-            peak_ratio_undamped(PulseKind.RECTANGLE, r), rel=2e-3)
+            peak_ratio_undamped(PulseKind.RECTANGLE, r), rel=2e-3
+        )
     for r in (0.3, 1.5, 5.5):
         assert peak_ratio(0.0, PulseKind.RAMP, np.array([r]))[0] == pytest.approx(
-            peak_ratio_undamped(PulseKind.RAMP, r), rel=2e-3)
+            peak_ratio_undamped(PulseKind.RAMP, r), rel=2e-3
+        )
     r = np.linspace(0.6, 1.0, 81)
     assert np.max(peak_ratio(0.0, PulseKind.HALF_SINE, r)) == pytest.approx(1.768, abs=0.003)
 
 
 def test_step_metrics():
     m = step_metrics(Oscillator())
-    assert m.overshoot == pytest.approx(math.exp(-0.05 * math.pi / math.sqrt(1 - 0.05 ** 2)))
+    assert m.overshoot == pytest.approx(math.exp(-0.05 * math.pi / math.sqrt(1 - 0.05**2)))
     assert m.settling_estimate == pytest.approx(4.0)
     assert 3.0 < m.settling < 4.2
 
@@ -135,7 +145,7 @@ def test_step_metrics():
 def test_the_damping_models_lose_the_same_energy_at_fn():
     m = Matched()
     wn = m.omega_n
-    expect = math.pi * m.c * wn * m.amplitude ** 2
+    expect = math.pi * m.c * wn * m.amplitude**2
     for model in MODELS:
         x, force, _ = m.loop(model, wn, 20001)
         assert abs(np.trapezoid(force, x)) == pytest.approx(expect, rel=1e-3), model

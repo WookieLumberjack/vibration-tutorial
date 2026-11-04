@@ -217,7 +217,7 @@ def transfer(system: ChainSystem, inp: RandomInput, out: Output, f: np.ndarray) 
 
 def response_psd(system: ChainSystem, inp: RandomInput, out: Output, f: np.ndarray) -> np.ndarray:
     """G_y = H G_u Hᴴ, the inputs independent: Σ |H_c|² G (the output's unit squared per Hz)."""
-    return np.sum(np.abs(transfer(system, inp, out, f))**2, axis=1) * inp.psd(f)
+    return np.sum(np.abs(transfer(system, inp, out, f)) ** 2, axis=1) * inp.psd(f)
 
 
 def frequency_grid(inp: RandomInput, result: ModalResult) -> np.ndarray:
@@ -257,7 +257,9 @@ class Prediction:
         return math.sqrt(sum(s * s for *_, s in self.miles))
 
 
-def miles(system: ChainSystem, inp: RandomInput, out: Output, result: ModalResult) -> list[tuple[int, float, float, float]]:
+def miles(
+    system: ChainSystem, inp: RandomInput, out: Output, result: ModalResult
+) -> list[tuple[int, float, float, float]]:
     """Each mode in the band as a single-degree-of-freedom system under white input at its frequency (see the
     module's notes): (mode, fn, ζ, the output's RMS from it)."""
     b = inp.patterns(system)
@@ -268,7 +270,7 @@ def miles(system: ChainSystem, inp: RandomInput, out: Output, result: ModalResul
         if not (fn > 0 and math.isfinite(z) and z > 0 and inp.f_lo <= fn <= inp.f_hi):
             continue
         phi = m.shape_mass_normalized
-        g_q = float(np.sum((phi @ b)**2)) * inp.si_level
+        g_q = float(np.sum((phi @ b) ** 2)) * inp.si_level
         w = m.omega_n
         sigma_q = math.sqrt(0.5 * math.pi * fn * g_q / (2.0 * z)) / (w * w)
         sigma = abs(row @ phi) * sigma_q
@@ -296,7 +298,7 @@ def synthesize(rng: np.random.Generator, samples: int, fs: float, psd, columns: 
     FFT line a complex Gaussian of mean square G N fs / 2, divided by sinc²(f/fs) for the linear interpolation's
     sinc⁴. (samples, columns)."""
     f = np.fft.rfftfreq(samples, 1.0 / fs)
-    g = psd(f) / np.sinc(f / fs)**4
+    g = psd(f) / np.sinc(f / fs) ** 4
     g[0] = 0.0
     if samples % 2 == 0:
         g[-1] = 0.0
@@ -328,8 +330,9 @@ class RandomRecord:
         return self.x @ out.row(self.system)
 
 
-def simulate(system: ChainSystem, inp: RandomInput, duration: float, seed: int | None = None,
-             result: ModalResult | None = None) -> RandomRecord:
+def simulate(
+    system: ChainSystem, inp: RandomInput, duration: float, seed: int | None = None, result: ModalResult | None = None
+) -> RandomRecord:
     """Run the chain under the random input for `duration` s after it has settled (see the module's notes)."""
     import scipy.signal  # deferred: scipy.signal adds ~0.9 s to startup
 
@@ -362,7 +365,7 @@ def simulate(system: ChainSystem, inp: RandomInput, duration: float, seed: int |
     xs, accs = [], []
     for start in range(0, total, CHUNK):
         m = min(CHUNK, total - start)
-        fk = u[start:start + m] @ b.T  # the forces on the masses (−m a_g for the base)
+        fk = u[start : start + m] @ b.T  # the forces on the masses (−m a_g for the base)
         if modal:
             drive = np.vstack([f_prev[None, :], fk[:-1]]) @ b0.T + fk @ b1.T
             states = np.empty((m, 2 * n), dtype=complex)
@@ -380,7 +383,7 @@ def simulate(system: ChainSystem, inp: RandomInput, duration: float, seed: int |
         f_prev = fk[-1].copy()
         acc = zs @ A[n:].T + fk @ B[n:].T
         if inp.kind is Input.BASE:
-            acc = acc + u[start:start + m, :1]  # absolute: the base's own on top
+            acc = acc + u[start : start + m, :1]  # absolute: the base's own on top
         keep = np.arange(start, start + m)
         keep = keep[(keep >= skip) & ((keep - skip) % KEEP == 0)] - start
         xs.append(zs[keep, :n])
@@ -398,8 +401,11 @@ def welch(y: np.ndarray, fs: float, block: int) -> tuple[np.ndarray, np.ndarray]
 
 def narrowest(inp: RandomInput, result: ModalResult) -> float | None:
     """The narrowest half-power width 2ζf_n of the modes in the band (Hz), None if none is."""
-    widths = [2.0 * m.zeta_modal * m.fn_hz for m in result.modes
-              if inp.f_lo <= m.fn_hz <= inp.f_hi and math.isfinite(m.zeta_modal) and m.zeta_modal > 0]
+    widths = [
+        2.0 * m.zeta_modal * m.fn_hz
+        for m in result.modes
+        if inp.f_lo <= m.fn_hz <= inp.f_hi and math.isfinite(m.zeta_modal) and m.zeta_modal > 0
+    ]
     return min(widths) if widths else None
 
 
@@ -432,7 +438,6 @@ def rms_scatter(prediction: Prediction, duration: float) -> float:
     return 1.0 / (2.0 * math.sqrt(bandwidth * duration))
 
 
-
 # ------------------------------------------------------------- statistics
 UPSAMPLE = 8  # the record's samples interpolated this many times over before peaks and crossings are counted
 EULER = 0.5772156649015329
@@ -456,7 +461,7 @@ class Rice:
 
     def crossings(self, level: float) -> float:
         """Upward crossings of `level` a second."""
-        return self.nu0 * math.exp(-0.5 * (level / self.sigma)**2)
+        return self.nu0 * math.exp(-0.5 * (level / self.sigma) ** 2)
 
     def peak_factor(self, duration: float) -> float:
         """Davenport's expected largest peak over `duration`, over σ."""
@@ -476,8 +481,7 @@ def rice(prediction: Prediction) -> Rice:
     m0, m1, m2, m4 = spectral_moments(prediction.f, prediction.psd)
     if m0 <= 0 or m2 <= 0:
         return Rice(0.0, 0.0, 0.0)
-    return Rice(math.sqrt(m0), math.sqrt(m2 / m0), math.sqrt(m4 / m2),
-                math.sqrt(max(1.0 - m1 * m1 / (m0 * m2), 0.0)))
+    return Rice(math.sqrt(m0), math.sqrt(m2 / m0), math.sqrt(m4 / m2), math.sqrt(max(1.0 - m1 * m1 / (m0 * m2), 0.0)))
 
 
 def davenport(cycles: float) -> float:
@@ -495,7 +499,7 @@ def vanmarcke(cycles: float, delta: float) -> float:
         return 0.0
     r = np.linspace(1e-6, 12.0, 6001)
     x = np.exp(-0.5 * r * r)
-    clumps = 1.0 - np.exp(-math.sqrt(0.5 * math.pi) * max(delta, 1e-6)**1.2 * r)
+    clumps = 1.0 - np.exp(-math.sqrt(0.5 * math.pi) * max(delta, 1e-6) ** 1.2 * r)
     below = (1.0 - x) * np.exp(-cycles * clumps * x / (1.0 - x))
     return float(np.trapezoid(1.0 - below, r))
 
@@ -515,7 +519,7 @@ def peak_pdf(eta: np.ndarray, alpha: float) -> np.ndarray:
     if eps < 1e-9:
         return np.where(eta > 0, rayleigh, 0.0)
     phi = 0.5 * (1.0 + _erf(alpha * eta / (eps * math.sqrt(2.0))))
-    return eps / math.sqrt(2.0 * math.pi) * np.exp(-0.5 * (eta / eps)**2) + rayleigh * phi
+    return eps / math.sqrt(2.0 * math.pi) * np.exp(-0.5 * (eta / eps) ** 2) + rayleigh * phi
 
 
 def _erf(x: np.ndarray) -> np.ndarray:
@@ -574,4 +578,4 @@ def segment_maxima(y: np.ndarray, fs: float, duration: float) -> np.ndarray:
     count = fine.size // per if per > 0 else 0
     if count == 0:
         return np.zeros(0)
-    return fine[:count * per].reshape(count, per).max(axis=1)
+    return fine[: count * per].reshape(count, per).max(axis=1)

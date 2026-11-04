@@ -63,39 +63,39 @@ PAST_CUTOFF = 1.25  # the dispersion plot runs this far past the mesh's cut-off,
 
 TIPS = {
     "kind": "<p><b>String</b>: transverse waves under tension, c = √(T/μ). <b>Bar</b>: axial (lengthwise) "
-            "waves, c = √(E/ρ). Both obey the wave equation, so every wave travels at c. <b>Beam</b>: bending "
-            "(Euler–Bernoulli), ω = √(EI/ρA) κ²: short waves travel faster than long ones.</p>",
+    "waves, c = √(E/ρ). Both obey the wave equation, so every wave travels at c. <b>Beam</b>: bending "
+    "(Euler–Bernoulli), ω = √(EI/ρA) κ²: short waves travel faster than long ones.</p>",
     "length": "<p>The length between the ends.</p>",
     "tension": "<p>The string's tension T.</p>",
     "line_density": "<p>The string's mass per unit length μ.</p>",
     "modulus": "<p>Young's modulus E: steel 210 GPa, aluminium 69, wood about 10 along the grain.</p>",
     "density": "<p>The material's density ρ: steel 7850 kg/m³, aluminium 2700.</p>",
     "section": "<p>The rectangular section, width × depth. A beam bends across its depth (I = b d³/12), so its "
-               "frequencies go as the depth and don't depend on the width; nor do a bar's on either.</p>",
+    "frequencies go as the depth and don't depend on the width; nor do a bar's on either.</p>",
     "ends": "<p>How each end is held. String and bar: <b>fixed</b> (held still) or <b>free</b> (a string's end "
-            "on a ring that slides on a rod). Beam: <b>clamped</b> (no deflection, no slope), <b>pinned</b> "
-            "(no deflection, free to turn) or <b>free</b>.</p>",
+    "on a ring that slides on a rod). Beam: <b>clamped</b> (no deflection, no slope), <b>pinned</b> "
+    "(no deflection, free to turn) or <b>free</b>.</p>",
     "elements": "<p>The number of equal elements the length is cut into. Lumped, a string is then beads on a "
-                "massless string, and a bar the chain of the first page.</p>",
+    "massless string, and a bar the chain of the first page.</p>",
     "schemes": "<p>How each element's mass is shared out. <b>Lumped</b>: half to each end node (a beam's "
-               "slopes get none). <b>Consistent</b>: from the same shape functions as the stiffness: an "
-               "upper bound on every frequency. <b>Mixed</b>: their average.</p>",
+    "slopes get none). <b>Consistent</b>: from the same shape functions as the stiffness: an "
+    "upper bound on every frequency. <b>Mixed</b>: their average.</p>",
     "pulse": "<p>The pulse: a raised cosine, its full width and its centre as fractions of the length. The fewer "
-             "elements across it, the more of it is short waves the mesh gets wrong.</p>",
+    "elements across it, the more of it is short waves the mesh gets wrong.</p>",
     "moving": "<p>Start the pulse travelling right (d'Alembert's right-going wave alone), or at rest, when it "
-              "splits into two halves going opposite ways. A beam's starts at rest.</p>",
+    "splits into two halves going opposite ways. A beam's starts at rest.</p>",
     "wave_scheme": "<p>How the mesh the pulse runs on shares out its mass.</p>",
     "dashpot": "<p>Put a dashpot on the far end in place of the medium's own end, as a multiple of the "
-               "impedance Z = √(Tμ) (string) or ρcA (bar). At 1 it is matched: a wave runs into it and is "
-               "gone, as if the medium went on for ever. Reflected: (1 − r)/(1 + r) of the wave.</p>",
+    "impedance Z = √(Tμ) (string) or ρcA (bar). At 1 it is matched: a wave runs into it and is "
+    "gone, as if the medium went on for ever. Reflected: (1 − r)/(1 + r) of the wave.</p>",
     "step": "<p>A step in the medium at this point: past it the impedance is Z₂/Z₁ times as much (a string "
-            "that much heavier squared, so its waves go Z₁/Z₂ as fast; a bar of that much more section, at the "
-            "same speed). A wave reflects (Z₁ − Z₂)/(Z₁ + Z₂) of itself and passes 2Z₁/(Z₁ + Z₂). On the "
-            "mesh, at the nearest node.</p>",
+    "that much heavier squared, so its waves go Z₁/Z₂ as fast; a bar of that much more section, at the "
+    "same speed). A wave reflects (Z₁ − Z₂)/(Z₁ + Z₂) of itself and passes 2Z₁/(Z₁ + Z₂). On the "
+    "mesh, at the nearest node.</p>",
     "playback": "<p>How fast the pulse plays: at 1× it crosses the length in about four seconds.</p>",
     "mode": "<p>The flexible mode to look at (the rigid ones, at 0 Hz, are left out): its shape, where it sits on "
-            "the dispersion curves, and how its error falls with the number of elements. Or click a mode on "
-            "the error plot.</p>",
+    "the dispersion curves, and how its error falls with the number of elements. Or click a mode on "
+    "the error plot.</p>",
 }
 DISPERSION_TIP = (
     "<p>Frequency against wavenumber κ = 2π/λ. The continuum's (black) is a straight line for a string or "
@@ -103,22 +103,27 @@ DISPERSION_TIP = (
     "κ = π/h, two elements a wavelength: the shortest wave the nodes can carry. The dots are the mesh's "
     "modes, each at its exact mode's wavenumber. A beam's consistent or mixed mesh has a second branch "
     "(dashed), where the slopes swing against the deflections, drawn from π/h on to 2π/h: the mesh's modes past "
-    "π/h are on it, its nodes seeing a shorter wave's deflections as a longer one's.</p>")
+    "π/h are on it, its nodes seeing a shorter wave's deflections as a longer one's.</p>"
+)
 ERROR_TIP = (
     "<p>Each mode's frequency on the mesh against the exact one, (f<sub>mesh</sub> − f) / f. The low modes "
     "span many elements and come out nearly right; the high ones are wrong by tens of per cent. Click a "
-    "mode to choose it.</p>")
+    "mode to choose it.</p>"
+)
 CONVERGENCE_TIP = (
     "<p>The chosen mode's error against the number of elements, both logarithmic: a straight line of slope "
     "−p is an error going as N<sup>−p</sup>. The dotted line marks the mesh shown. Points stop where the "
-    "error reaches the eigensolver's round-off.</p>")
+    "error reaches the eigensolver's round-off.</p>"
+)
 WAVES_TIP = (
     "<p>The pulse on the continuum (black) and on the mesh: its nodes, and the elements' own shape functions "
     "between them. The continuum's is exact: d'Alembert's two waves, carried along and scattered at the ends "
-    "and the step in closed form (a string or bar), or the sum of its exact modes (a beam).</p>")
+    "and the step in closed form (a string or bar), or the sum of its exact modes (a beam).</p>"
+)
 SHAPE_TIP = (
     "<p>The chosen mode's shape: the exact one (black) and each mesh's, the nodes as dots and the elements' own "
-    "shape functions between them (straight for a string or bar, cubic for a beam), largest +1.</p>")
+    "shape functions between them (straight for a string or bar, cubic for a beam), largest +1.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -189,23 +194,27 @@ into ripples, the short ones running ahead at twice the speed of waves twice as 
 
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
-    ("sim_page", "rayleigh-quotient", "Estimating a frequency from a guessed shape"),
-)).replace("<!--TAKEAWAYS-->", takeaways(
-    "A mesh is a low-pass filter on the continuum: it carries the long waves correctly, its short ones too "
-    "slowly (lumped) or too fast (consistent), and nothing shorter than two elements.",
-    "Its low modes are good and its top modes are artefacts of the mesh: ten elements a wavelength (κh ≈ 0.63) "
-    "keeps a string's lumped error under 2 %, and the rule of thumb is 6 to 10.",
-    "A consistent mass makes the mesh Rayleigh–Ritz (upper bounds); mixing lumped and consistent cancels the "
-    "leading error.",
-    "Waves reflect at every change of impedance; a matched dashpot absorbs them.",
-))
+NOTES_HTML = NOTES_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
+        ("sim_page", "rayleigh-quotient", "Estimating a frequency from a guessed shape"),
+    ),
+).replace(
+    "<!--TAKEAWAYS-->",
+    takeaways(
+        "A mesh is a low-pass filter on the continuum: it carries the long waves correctly, its short ones too "
+        "slowly (lumped) or too fast (consistent), and nothing shorter than two elements.",
+        "Its low modes are good and its top modes are artefacts of the mesh: ten elements a wavelength (κh ≈ 0.63) "
+        "keeps a string's lumped error under 2 %, and the rule of thumb is 6 to 10.",
+        "A consistent mass makes the mesh Rayleigh–Ritz (upper bounds); mixing lumped and consistent cancels the "
+        "leading error.",
+        "Waves reflect at every change of impedance; a matched dashpot absorbs them.",
+    ),
+)
 
 
-
-def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None,
-          log: bool = False) -> pg.PlotWidget:
+def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = False) -> pg.PlotWidget:
     p = pg.PlotWidget(axisItems=log_axes()) if log else pg.PlotWidget()
     p.setMenuEnabled(False)
     p.hideButtons()
@@ -455,8 +464,10 @@ class ContinuumPage(QtWidgets.QWidget):
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         self.table.verticalHeader().setVisible(False)
-        self.table.setToolTip("<p>Each flexible mode's exact frequency and each mesh's, with its error. "
-                              "Pick a row to choose the mode.</p>")
+        self.table.setToolTip(
+            "<p>Each flexible mode's exact frequency and each mesh's, with its error. "
+            "Pick a row to choose the mode.</p>"
+        )
         self.table.itemSelectionChanged.connect(self._on_table_selection)
 
         self.notes = QtWidgets.QTextBrowser()
@@ -479,8 +490,7 @@ class ContinuumPage(QtWidgets.QWidget):
         # --- wiring
         self.preset.currentIndexChanged.connect(self._on_preset)
         self.kind.currentIndexChanged.connect(self._on_kind)
-        for box in (self.length, self.tension, self.line_density, self.modulus, self.density, self.width,
-                    self.depth):
+        for box in (self.length, self.tension, self.line_density, self.modulus, self.density, self.width, self.depth):
             box.valueChanged.connect(self._on_edit)
         self.left_end.currentIndexChanged.connect(self._on_edit)
         self.right_end.currentIndexChanged.connect(self._on_edit)
@@ -555,8 +565,11 @@ class ContinuumPage(QtWidgets.QWidget):
         self.material.setCurrentIndex(0 if kind is Kind.STRING else 1)
         for i in range(self.material.count()):  # only the page showing sets the height
             page = self.material.widget(i)
-            policy = QtWidgets.QSizePolicy.Policy.Preferred if i == self.material.currentIndex() else \
-                QtWidgets.QSizePolicy.Policy.Ignored
+            policy = (
+                QtWidgets.QSizePolicy.Policy.Preferred
+                if i == self.material.currentIndex()
+                else QtWidgets.QSizePolicy.Policy.Ignored
+            )
             page.setSizePolicy(policy, policy)
 
     def _on_kind(self, _index: int) -> None:
@@ -570,11 +583,18 @@ class ContinuumPage(QtWidgets.QWidget):
         self._on_edit()
 
     def _read(self) -> Continuum:
-        return Continuum(Kind(self.kind.currentText()), self.length.value(), End(self.left_end.currentText()),
-                         End(self.right_end.currentText()), tension=self.tension.value(),
-                         line_density=self.line_density.value() / 1e3, modulus=self.modulus.value() * 1e9,
-                         density=self.density.value(), width=self.width.value() / 1e3,
-                         depth=self.depth.value() / 1e3)
+        return Continuum(
+            Kind(self.kind.currentText()),
+            self.length.value(),
+            End(self.left_end.currentText()),
+            End(self.right_end.currentText()),
+            tension=self.tension.value(),
+            line_density=self.line_density.value() / 1e3,
+            modulus=self.modulus.value() * 1e9,
+            density=self.density.value(),
+            width=self.width.value() / 1e3,
+            depth=self.depth.value() / 1e3,
+        )
 
     def _on_edit(self, *_args) -> None:
         if self._loading:
@@ -620,9 +640,11 @@ class ContinuumPage(QtWidgets.QWidget):
         for s in SCHEMES:
             top = self._mesh_omega(s, np.array([cut]))[0, 0] / TWO_PI
             tops.append(f"{s.value.lower()} {fmt_hz(top)}")
-        self.mesh_info.setText(f"h = {h * 1e3:.4g} mm. Cut-off at κ = π/h = {cut:.4g} rad/m (λ = 2h), where the "
-                               f"continuum is at {fmt_hz(float(c.omega(cut)) / TWO_PI)}; the meshes top out "
-                               f"at {', '.join(tops)}.")
+        self.mesh_info.setText(
+            f"h = {h * 1e3:.4g} mm. Cut-off at κ = π/h = {cut:.4g} rad/m (λ = 2h), where the "
+            f"continuum is at {fmt_hz(float(c.omega(cut)) / TWO_PI)}; the meshes top out "
+            f"at {', '.join(tops)}."
+        )
 
     def _mesh_omega(self, scheme: Scheme, kappa: np.ndarray) -> np.ndarray:
         """A mesh's dispersion (rad/s), a column per branch: the string's and bar's in closed form."""
@@ -637,8 +659,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.table.blockSignals(True)
         self.table.clear()
         self.table.setColumnCount(2 + 2 * len(SCHEMES))
-        self.table.setHorizontalHeaderLabels(
-            ["Mode", "Exact"] + [x for s in SCHEMES for x in (s.value, "error")])
+        self.table.setHorizontalHeaderLabels(["Mode", "Exact"] + [x for s in SCHEMES for x in (s.value, "error")])
         self.table.setRowCount(exact_count)
         for i in range(exact_count):
             self.table.setItem(i, 0, _cell(f"{i + 1}"))
@@ -673,8 +694,17 @@ class ContinuumPage(QtWidgets.QWidget):
     def _set_waves(self, waves: Waves, kind: Kind) -> None:
         """Fill the wave controls (signals held), a beam's without the dashpot, the step or a moving start."""
         beam = kind is Kind.BEAM
-        boxes = (self.pulse_width, self.pulse_at, self.moving, self.wave_scheme, self.dashpot_on, self.dashpot,
-                 self.step_on, self.step_at, self.step_ratio)
+        boxes = (
+            self.pulse_width,
+            self.pulse_at,
+            self.moving,
+            self.wave_scheme,
+            self.dashpot_on,
+            self.dashpot,
+            self.step_on,
+            self.step_at,
+            self.step_ratio,
+        )
         for box in boxes:
             box.blockSignals(True)
         self.pulse_width.setValue(100 * waves.width)
@@ -701,11 +731,15 @@ class ContinuumPage(QtWidgets.QWidget):
 
     def _waves(self) -> Waves:
         beam = Kind(self.kind.currentText()) is Kind.BEAM
-        return Waves(width=self.pulse_width.value() / 100, at=self.pulse_at.value() / 100,
-                     moving=self.moving.isChecked() and not beam, scheme=Scheme(self.wave_scheme.currentText()),
-                     dashpot=self.dashpot.value() if self.dashpot_on.isChecked() and not beam else None,
-                     step_at=self.step_at.value() / 100 if self.step_on.isChecked() and not beam else None,
-                     step_ratio=self.step_ratio.value())
+        return Waves(
+            width=self.pulse_width.value() / 100,
+            at=self.pulse_at.value() / 100,
+            moving=self.moving.isChecked() and not beam,
+            scheme=Scheme(self.wave_scheme.currentText()),
+            dashpot=self.dashpot.value() if self.dashpot_on.isChecked() and not beam else None,
+            step_at=self.step_at.value() / 100 if self.step_on.isChecked() and not beam else None,
+            step_ratio=self.step_ratio.value(),
+        )
 
     def _on_waves(self, *_args) -> None:
         if self._loading:
@@ -745,11 +779,15 @@ class ContinuumPage(QtWidgets.QWidget):
             parts.append(f"Z = {z:.4g} N·s/m.")
             if w.step_at is not None:
                 r, t = step_coefficients(w.step_ratio)
-                parts.append(f"The step reflects {r:+.3g} and passes {t:.3g} of a wave from the left "
-                             f"(energy {r * r:.3g} : {t * t * w.step_ratio:.3g}).")
+                parts.append(
+                    f"The step reflects {r:+.3g} and passes {t:.3g} of a wave from the left "
+                    f"(energy {r * r:.3g} : {t * t * w.step_ratio:.3g})."
+                )
             if w.dashpot is not None:
-                parts.append(f"The dashpot ({w.dashpot:.3g} Z = {w.dashpot * z:.4g} N·s/m) reflects "
-                             f"{end_reflection(c.right, w.dashpot):+.3g} of a wave.")
+                parts.append(
+                    f"The dashpot ({w.dashpot:.3g} Z = {w.dashpot * z:.4g} N·s/m) reflects "
+                    f"{end_reflection(c.right, w.dashpot):+.3g} of a wave."
+                )
         self.wave_info.setText(" ".join(parts))
 
     def _on_play(self) -> None:
@@ -787,8 +825,13 @@ class ContinuumPage(QtWidgets.QWidget):
         self._timer.stop()
 
     def _start_timer(self) -> None:
-        if (self.isVisible() and self.running and self.run is not None
-                and self.views.currentWidget() is self.waves_tab and not self._timer.isActive()):
+        if (
+            self.isVisible()
+            and self.running
+            and self.run is not None
+            and self.views.currentWidget() is self.waves_tab
+            and not self._timer.isActive()
+        ):
             self._clock.restart()
             self._timer.start(FRAME_MS)
 
@@ -832,7 +875,8 @@ class ContinuumPage(QtWidgets.QWidget):
         self.wave_status.setText(
             f"t = {crossings:.2f} crossings ({_fmt_time(run.t)}; one crossing {_fmt_time(run.transit)}). "
             f"The mesh ({run.waves.scheme.value.lower()}) keeps <b>{100 * run.energy_left:.3g} %</b> of its "
-            "energy.")
+            "energy."
+        )
 
     def _style_waves(self) -> None:
         self.waves_zero.setPen(pg.mkPen(colors.faint, width=1))
@@ -882,17 +926,30 @@ class ContinuumPage(QtWidgets.QWidget):
                 p.plot(2 * cut - kappa, w[:, b], pen=pg.mkPen(color, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
             f = flexible_hz(self.models[s])
             if f.size:
-                p.plot(self._exact_kappa[:f.size], f, pen=None, symbol="o", symbolSize=6,
-                       symbolBrush=color, symbolPen=pg.mkPen(colors.background))
+                p.plot(
+                    self._exact_kappa[: f.size],
+                    f,
+                    pen=None,
+                    symbol="o",
+                    symbolSize=6,
+                    symbolBrush=color,
+                    symbolPen=pg.mkPen(colors.background),
+                )
             top = max(top, float(w.max()))
-        line = pg.InfiniteLine(cut, angle=90, pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine),
-                               label="π/h", labelOpts={"position": 0.95, "color": colors.muted})
+        line = pg.InfiniteLine(
+            cut,
+            angle=90,
+            pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine),
+            label="π/h",
+            labelOpts={"position": 0.95, "color": colors.muted},
+        )
         p.addItem(line)
         n = self.mode.value() if self.mode.isEnabled() else 0
         if n:
             k = self._exact_kappa[n - 1]
-            p.addItem(pg.InfiniteLine(k, angle=90, pen=pg.mkPen(colors.force, width=1,
-                                                                style=QtCore.Qt.PenStyle.DotLine)))
+            p.addItem(
+                pg.InfiniteLine(k, angle=90, pen=pg.mkPen(colors.force, width=1, style=QtCore.Qt.PenStyle.DotLine))
+            )
         p.setXRange(0.0, right, padding=0.02)
         p.setYRange(0.0, 1.1 * top, padding=0.0)
         self._show_readout()
@@ -915,7 +972,8 @@ class ContinuumPage(QtWidgets.QWidget):
         found = "; ".join(parts) if parts else "no mesh shown"
         self.readout.setText(
             f"<b>Mode {n}</b>: κ = {k:.4g} rad/m, a wavelength of {2 * math.pi / k:.4g} m, "
-            f"<b>{per:.3g} elements</b> (κh = {k * h:.3g}). Exact {fmt_hz(exact)}; {found}.")
+            f"<b>{per:.3g} elements</b> (κh = {k * h:.3g}). Exact {fmt_hz(exact)}; {found}."
+        )
 
     def _draw_errors(self) -> None:
         # Drawn only while its tab shows: the convergence study is ~2 s of eigensolves for a new
@@ -932,14 +990,22 @@ class ContinuumPage(QtWidgets.QWidget):
             f = flexible_hz(self.models[s])
             if not f.size:
                 continue
-            err = 100 * (f / exact[:f.size] - 1)
-            curve = p.plot(np.arange(1, f.size + 1), err, pen=pg.mkPen(scheme_color(s), width=1.5), symbol="o",
-                           symbolSize=5, symbolBrush=scheme_color(s), symbolPen=None)
+            err = 100 * (f / exact[: f.size] - 1)
+            curve = p.plot(
+                np.arange(1, f.size + 1),
+                err,
+                pen=pg.mkPen(scheme_color(s), width=1.5),
+                symbol="o",
+                symbolSize=5,
+                symbolBrush=scheme_color(s),
+                symbolPen=None,
+            )
             self.errors_legend.addItem(curve, s.value)
         n = self.mode.value() if self.mode.isEnabled() else 0
         if n:
-            p.addItem(pg.InfiniteLine(n, angle=90, pen=pg.mkPen(colors.force, width=1,
-                                                                style=QtCore.Qt.PenStyle.DotLine)))
+            p.addItem(
+                pg.InfiniteLine(n, angle=90, pen=pg.mkPen(colors.force, width=1, style=QtCore.Qt.PenStyle.DotLine))
+            )
         self._draw_convergence()
 
     def _draw_convergence(self) -> None:
@@ -955,18 +1021,32 @@ class ContinuumPage(QtWidgets.QWidget):
             counts, errs = convergence(self.continuum, s, n)
             if not counts.size:
                 continue
-            curve = p.plot(counts, np.abs(errs), pen=pg.mkPen(scheme_color(s), width=1.5), symbol="o", symbolSize=5,
-                           symbolBrush=scheme_color(s), symbolPen=None)
+            curve = p.plot(
+                counts,
+                np.abs(errs),
+                pen=pg.mkPen(scheme_color(s), width=1.5),
+                symbol="o",
+                symbolSize=5,
+                symbolBrush=scheme_color(s),
+                symbolPen=None,
+            )
             self.convergence_legend.addItem(curve, s.value)
             rate = order(counts, errs)
             if rate is not None:
                 rates.append(f"{s.value.lower()} N<sup>−{rate:.2g}</sup>")
-        p.addItem(pg.InfiniteLine(math.log10(self.elements.value()), angle=90,
-                                  pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DotLine)))
+        p.addItem(
+            pg.InfiniteLine(
+                math.log10(self.elements.value()),
+                angle=90,
+                pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DotLine),
+            )
+        )
         p.setXRange(0.0, math.log10(CONVERGENCE_COUNTS[-1]), padding=0.03)
         self.convergence_note.setText(
-            f"Mode {n}'s error falls as " + ", ".join(rates) + " (the three finest meshes' slopes)." if rates else
-            f"No mesh shown has a mode {n} yet.")
+            f"Mode {n}'s error falls as " + ", ".join(rates) + " (the three finest meshes' slopes)."
+            if rates
+            else f"No mesh shown has a mode {n} yet."
+        )
 
     def _draw_mode(self) -> None:
         p, c = self.shape, self.continuum
@@ -997,18 +1077,28 @@ class ContinuumPage(QtWidgets.QWidget):
             field = sign * model.field(shape, x)
             reach = max(reach, float(np.max(np.abs(field))))
             line = p.plot(x, field, pen=pg.mkPen(color, width=1.5))
-            p.plot(model.nodes, sign * nodes, pen=None, symbol="o", symbolSize=7, symbolBrush=color,
-                   symbolPen=pg.mkPen(colors.background))
+            p.plot(
+                model.nodes,
+                sign * nodes,
+                pen=None,
+                symbol="o",
+                symbolSize=7,
+                symbolBrush=color,
+                symbolPen=pg.mkPen(colors.background),
+            )
             self.shape_legend.addItem(line, s.value)
             at = c.exact_shape(k, model.nodes)
-            mac = (nodes @ at)**2 / ((nodes @ nodes) * (at @ at))
+            mac = (nodes @ at) ** 2 / ((nodes @ nodes) * (at @ at))
             notes.append(f"{s.value.lower()} {mac:.6f}")
         p.setXRange(0.0, c.length, padding=0.02)
         p.setYRange(-1.1 * reach, 1.65 * reach, padding=0.0)  # room for the legend at the top
         per = 2 * math.pi / (k * c.length / self.elements.value())
         self.shape_note.setText(
             f"Mode {n}, {per:.3g} elements a wavelength. The MAC of each mesh's nodes against the exact shape "
-            "there (1: the same shape): " + ", ".join(notes) + "." if notes else f"Mode {n}: no mesh shown has it.")
+            "there (1: the same shape): " + ", ".join(notes) + "."
+            if notes
+            else f"Mode {n}: no mesh shown has it."
+        )
 
 
 def _fmt_time(t: float) -> str:

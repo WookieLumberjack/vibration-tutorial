@@ -122,7 +122,7 @@ def number(value: float, digits: int = 3) -> str:
     if -3 <= exponent < 6:
         decimals = max(digits - 1 - exponent, 0)
         return f"{rounded(value, digits):.{decimals}f}"
-    mantissa = f"{value / 10 ** exponent:.{digits - 1}f}"
+    mantissa = f"{value / 10**exponent:.{digits - 1}f}"
     return f"{mantissa}×10<sup>{exponent}</sup>"
 
 
@@ -136,4 +136,3 @@ def rounded(value: float, digits: int = 3) -> float:
 def pick(rng: np.random.Generator, values) -> float:
     """One of `values`, at random (a plain float, not a NumPy scalar)."""
     return float(values[int(rng.integers(len(values)))])
-

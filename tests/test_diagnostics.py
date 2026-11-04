@@ -38,7 +38,7 @@ def test_ring_filter_is_the_sampled_impulse_response():
     y = scipy.signal.lfilter(b, a, x)
     t = np.arange(400) / fs
     wn = 2 * math.pi * fn
-    wd = wn * math.sqrt(1 - zeta ** 2)
+    wd = wn * math.sqrt(1 - zeta**2)
     exact = np.exp(-zeta * wn * t) * np.sin(wd * t)
     scale = y[1] / exact[1]
     assert y[1:] == pytest.approx(scale * exact[1:], abs=1e-12)
@@ -55,7 +55,7 @@ def test_mode_filter_reaches_the_steady_state():
     for f in (15.0, 39.0, 90.0):
         t = np.arange(int(20 * fs)) / fs
         y = scipy.signal.lfilter(b, a, np.cos(2 * math.pi * f * t))
-        tail = y[-int(2 * fs):]
+        tail = y[-int(2 * fs) :]
         assert np.max(np.abs(tail)) == pytest.approx(float(run.steady(2, f / 2)), rel=2e-3)
 
 

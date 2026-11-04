@@ -58,7 +58,7 @@ class Beam:
 
     @property
     def inertia(self) -> float:
-        return self.width * self.depth ** 3 / 12
+        return self.width * self.depth**3 / 12
 
     @property
     def gyration(self) -> float:
@@ -80,7 +80,7 @@ def beam_omega(beam: Beam, k: np.ndarray, theory: Theory = Theory.TIMOSHENKO, br
     m = beam.material
     A, I, E, rho = beam.area, beam.inertia, m.E, m.rho
     S = beam.kappa * m.G * A
-    EI4 = E * I * k ** 4
+    EI4 = E * I * k**4
     if theory is Theory.EULER:
         return np.sqrt(EI4 / (rho * A))
     if theory is Theory.RAYLEIGH:
@@ -108,8 +108,8 @@ def timoshenko_determinant(beam: Beam, k: float, omega: float) -> float:
     m = beam.material
     A, I = beam.area, beam.inertia
     S = beam.kappa * m.G * A
-    a11 = S * k * k - m.rho * A * omega ** 2
-    a22 = m.E * I * k * k + S - m.rho * I * omega ** 2
+    a11 = S * k * k - m.rho * A * omega**2
+    a22 = m.E * I * k * k + S - m.rho * I * omega**2
     return (a11 * a22 - (S * k) ** 2) / (S * k * k) ** 2
 
 
@@ -134,7 +134,7 @@ class Plate:
     def rigidity(self) -> float:
         """D = E h³ / 12(1 − ν²)."""
         m = self.material
-        return m.E * self.thickness ** 3 / (12 * (1 - m.nu ** 2))
+        return m.E * self.thickness**3 / (12 * (1 - m.nu**2))
 
     @property
     def surface_mass(self) -> float:
@@ -142,7 +142,7 @@ class Plate:
 
     @property
     def area(self) -> float:
-        return math.pi * self.a ** 2 if self.circular else self.a * self.b
+        return math.pi * self.a**2 if self.circular else self.a * self.b
 
     @property
     def scale(self) -> float:
@@ -161,8 +161,11 @@ class PlateMode:
 def rect_modes(plate: Plate, count: int) -> list[PlateMode]:
     """The simply supported rectangle's lowest `count` modes: ω = π² (m²/a² + n²/b²) √(D/ρh)."""
     top = math.ceil(2 * math.sqrt(count)) + 4
-    modes = [PlateMode(m, n, math.pi ** 2 * (m * m / plate.a ** 2 + n * n / plate.b ** 2) * plate.scale / TWO_PI)
-             for m in range(1, top + 1) for n in range(1, top + 1)]
+    modes = [
+        PlateMode(m, n, math.pi**2 * (m * m / plate.a**2 + n * n / plate.b**2) * plate.scale / TWO_PI)
+        for m in range(1, top + 1)
+        for n in range(1, top + 1)
+    ]
     modes.sort(key=lambda p: (p.freq_hz, p.m, p.n))
     return modes[:count]
 
@@ -200,7 +203,7 @@ def circular_modes(plate: Plate, count: int) -> list[PlateMode]:
     modes = []
     for n in range(count + 1):
         for s, lam in enumerate(circular_roots(n, count), 1):
-            modes.append(PlateMode(n, s, lam * lam * plate.scale / (plate.a ** 2 * TWO_PI), lam))
+            modes.append(PlateMode(n, s, lam * lam * plate.scale / (plate.a**2 * TWO_PI), lam))
     modes.sort(key=lambda p: (p.freq_hz, p.m))
     return modes[:count]
 

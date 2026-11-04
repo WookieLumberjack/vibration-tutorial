@@ -24,8 +24,10 @@ def chain():
 
 def onset(system, ctrl, low=0.0, high=1e4):
     """The smallest gain with a pole in the right half plane, by bisection (it must be unstable at `high`)."""
+
     def unstable(g):
         return max_real(closed_loop(system, Controller(ctrl.sensor, ctrl.actuator, g, ctrl.lag))[0]) > 0
+
     assert unstable(high)
     for _ in range(60):
         mid = 0.5 * (low + high)
@@ -37,8 +39,7 @@ def test_open_loop_matches_the_chain():
     s = chain()
     A, _, _ = closed_loop(s, None)
     M, C, K = s.matrices()
-    lam = np.linalg.eigvals(np.block([[np.zeros((4, 4)), np.eye(4)],
-                                      [-np.linalg.solve(M, K), -np.linalg.solve(M, C)]]))
+    lam = np.linalg.eigvals(np.block([[np.zeros((4, 4)), np.eye(4)], [-np.linalg.solve(M, K), -np.linalg.solve(M, C)]]))
     assert np.allclose(np.sort_complex(np.linalg.eigvals(A)), np.sort_complex(lam))
 
 
@@ -118,8 +119,10 @@ def test_active_control_trials():
     tmd = tmd_for(s, 3, 0.05)
     assert tmd[1] == pytest.approx(0.116, abs=0.001)
     fgrid = np.geomspace(0.3, 12.0, 4000)
+
     def peak(A, B, Cx):
         return np.max(np.abs(frf(A, B, Cx, 3, 3, fgrid)))
+
     assert peak(*closed_loop(s, None)) == pytest.approx(0.26, abs=0.005)
     assert peak(*closed_loop(s, None, tmd)) == pytest.approx(0.051, abs=0.001)
     assert peak(*closed_loop(s, Controller(3, 3, 2.3))) == pytest.approx(0.051, abs=0.002)

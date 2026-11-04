@@ -56,7 +56,8 @@ def test_a_script_without_a_main_guard_runs_once(tmp_path):
     """A spawned process imports the parent's main script again: the worker mustn't."""
     log = tmp_path / "runs.txt"
     script = tmp_path / "unguarded.py"
-    script.write_text(textwrap.dedent(f"""
+    script.write_text(
+        textwrap.dedent(f"""
         import time
         from vib_tutorial.core.rotor import RotorSystem
         from vib_tutorial.core.rotor_analysis import AnalysisWorker
@@ -68,6 +69,7 @@ def test_a_script_without_a_main_guard_runs_once(tmp_path):
             time.sleep(0.01)
         assert w.running
         w.close()
-    """))
+    """)
+    )
     subprocess.run([sys.executable, str(script)], check=True, timeout=120)
     assert log.read_text() == "run\n"

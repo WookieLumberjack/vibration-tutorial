@@ -175,12 +175,17 @@ def test_theory_window(app):
     t = w.theory_window
     assert t.isVisible() and t.page == "sim_page"  # opens at the page showing
     assert not w._built  # without building any page
-    pages = [t.tree.topLevelItem(g).child(i) for g in range(t.tree.topLevelItemCount())
-             for i in range(t.tree.topLevelItem(g).childCount())]
+    pages = [
+        t.tree.topLevelItem(g).child(i)
+        for g in range(t.tree.topLevelItemCount())
+        for i in range(t.tree.topLevelItem(g).childCount())
+    ]
     assert [p.data(0, QtCore.Qt.ItemDataRole.UserRole)[0] for p in pages] == [
-        name for _, group in links.COURSE for name, _, _ in group]
+        name for _, group in links.COURSE for name, _, _ in group
+    ]
     assert [t.tree.topLevelItem(g).text(0) for g in range(t.tree.topLevelItemCount())] == [
-        group for group, _ in links.COURSE]
+        group for group, _ in links.COURSE
+    ]
 
     # A page's sections, from its headings (anchored if they weren't: the Substructuring notes).
     cms = next(p for p in pages if p.data(0, QtCore.Qt.ItemDataRole.UserRole)[0] == "cms_page")
@@ -383,7 +388,9 @@ def test_decimator_cache_matches_a_fresh_pass():
             for a, b in zip(picks, fresh.index(start, len(w), w.__getitem__, 3), strict=True):
                 np.testing.assert_array_equal(a, b)
         for c, idx in enumerate(picks):
-            assert idx[0] == 0 and idx[-1] == len(w) - 1 and (len(w) <= 3000 or idx.size <= 3000 + 6)  # the edges add a few
+            assert (
+                idx[0] == 0 and idx[-1] == len(w) - 1 and (len(w) <= 3000 or idx.size <= 3000 + 6)
+            )  # the edges add a few
             assert w[idx, c].max() == w[:, c].max() and w[idx, c].min() == w[:, c].min()
 
 
@@ -577,8 +584,7 @@ def test_substructuring_several_interfaces(app):
     assert len(page.kept) == 4 and page.kept_labels[3].text().endswith("Modes kept in D:</b>")
     assert page.model.labels == ["q_A1", "q_B1", "q_C1", "q_D1", "x2", "x4", "x6", "x8"]
     assert page.kept[3].maximum() == 1  # D is m7 (interior) and m8
-    assert "A: keep 1 of 1" in [i.textItem.toPlainText() for i in page.schematic._items
-                                 if isinstance(i, pg.TextItem)]
+    assert "A: keep 1 of 1" in [i.textItem.toPlainText() for i in page.schematic._items if isinstance(i, pg.TextItem)]
     assert page.compare.current["rubin"] is not None and page.compare.current["rubin"].n_red == 8
 
     # Fewer modes in C only; the other rows keep theirs.
@@ -1391,8 +1397,9 @@ def test_switch_themes_live(app):
                 app.processEvents()
             assert w.frf_page.grid.full[0][0].opts["pen"].color().name() == colors.strong
             assert w.cms_page.plots.frf.getAxis("bottom").textPen().color().name() == colors.foreground
-            assert all(s.plot.getAxis("left").pen().color().name() == colors.foreground
-                       for s in w.cms_page.basis._slots)
+            assert all(
+                s.plot.getAxis("left").pen().color().name() == colors.foreground for s in w.cms_page.basis._slots
+            )
             assert w.coupling_page.veering.plot.getAxis("left").pen().color().name() == colors.foreground
             while not w.test_page.acq.done:
                 w.test_page._measure_some()
@@ -1476,8 +1483,9 @@ def test_substructuring_back_expansion(app):
     assert x_true.size and np.abs(x_true).max() > 1e-3
     for curve in (*v.e_curves.values(), *v.f_curves.values()):
         assert curve.yData.size == x_true.size
-    np.testing.assert_allclose(v.x_curves["from_boundary"].yData + v.x_curves["from_modes"].yData,
-                               v.x_curves["coupled"].yData, atol=1e-12)
+    np.testing.assert_allclose(
+        v.x_curves["from_boundary"].yData + v.x_curves["from_modes"].yData, v.x_curves["coupled"].yData, atol=1e-12
+    )
     assert "RMS error" in v.error_note.text() and "enhanced" in v.error_note.text()
     for i in range(v.chain_box.count()):
         v.chain_box.setCurrentIndex(i)
@@ -1527,7 +1535,9 @@ def test_modal_coupling_page(app):
     assert "Rayleigh–Ritz" in page.result_note.text() and "strongly coupled" in page.summary.text()
     assert page.veering.data is not None and page.veering.data.full.shape[1] == 4
     # The result table is laid out in full, with no scroll bar.
-    assert page.result_table.height() >= page.result_table.horizontalHeader().height() + 2 * page.result_table.rowHeight(0)
+    assert (
+        page.result_table.height() >= page.result_table.horizontalHeader().height() + 2 * page.result_table.rowHeight(0)
+    )
 
     # The step-by-step matrices follow the model: the tip modal mass is the generalized mass of
     # the tip-scaled shape, and the influence vector r comes out as ones.
@@ -1592,7 +1602,16 @@ def test_log_axis_labels(app):
     from vib_tutorial.gui.axes import LogAxis, log_label
 
     assert [log_label(v) for v in (1e-5, 3e-5, 1e-4, 0.05, 1.0, 20.0, 1000.0, 1e4, 2e6)] == [
-        "10⁻⁵", "3·10⁻⁵", "0.0001", "0.05", "1", "20", "1000", "10⁴", "2·10⁶"]
+        "10⁻⁵",
+        "3·10⁻⁵",
+        "0.0001",
+        "0.05",
+        "1",
+        "20",
+        "1000",
+        "10⁴",
+        "2·10⁶",
+    ]
     values = [math.log10(m * 0.1) for m in range(1, 10)] + [0.0]
     for orientation in ("left", "bottom"):
         axis = LogAxis(orientation)
@@ -1829,8 +1848,16 @@ def test_rotor_page(app):
     w.set_theme("Dark")
     assert p.view.shaft.opts["pen"].color().name() == colors.structure
     bearing = Bearing(kx=2e4, ky=8e4, cx=20.0, cy=20.0)
-    system = RotorSystem(position=0.4, bearing_a=bearing, bearing_b=bearing, unbalance=5e-5, bow=30e-6,
-                         bow_angle=math.radians(45.0), skew=math.radians(0.2), skew_angle=math.radians(-90.0))
+    system = RotorSystem(
+        position=0.4,
+        bearing_a=bearing,
+        bearing_b=bearing,
+        unbalance=5e-5,
+        bow=30e-6,
+        bow_angle=math.radians(45.0),
+        skew=math.radians(0.2),
+        skew_angle=math.radians(-90.0),
+    )
     p.set_system(system)
     assert p.sim.system == system and not p.isotropic.isChecked() and p.same_bearings.isChecked()
     p.reset()
@@ -2355,7 +2382,9 @@ def _windows_font(app) -> None:
 
     if QtGui.QFontInfo(app.font()).family() or sys.platform != "win32":
         return
-    QtGui.QFontDatabase.addApplicationFont(os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "segoeui.ttf"))
+    QtGui.QFontDatabase.addApplicationFont(
+        os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "segoeui.ttf")
+    )
     app.setFont(QtGui.QFont("Segoe UI", 9))
 
 
@@ -2365,10 +2394,12 @@ def _font_report(app) -> str:
     font = app.font()
     screen = app.primaryScreen()
     sample = QtGui.QFontMetrics(font).horizontalAdvance("Number of masses:")
-    return (f"font {font.family()!r} {font.pointSizeF()} pt / {font.pixelSize()} px, resolved "
-            f"{QtGui.QFontInfo(font).family()!r}; screen dpi {screen.logicalDotsPerInch()} "
-            f"(physical {screen.physicalDotsPerInch()}), ratio {screen.devicePixelRatio()}; "
-            f"'Number of masses:' {sample} px; platform {app.platformName()}, style {app.style().name()}")
+    return (
+        f"font {font.family()!r} {font.pointSizeF()} pt / {font.pixelSize()} px, resolved "
+        f"{QtGui.QFontInfo(font).family()!r}; screen dpi {screen.logicalDotsPerInch()} "
+        f"(physical {screen.physicalDotsPerInch()}), ratio {screen.devicePixelRatio()}; "
+        f"'Number of masses:' {sample} px; platform {app.platformName()}, style {app.style().name()}"
+    )
 
 
 def _least_width(widget) -> int:
@@ -2618,7 +2649,9 @@ def test_rotor_rub(app):
     assert p.sim.system.stator is not None and p.sim.system.films
     # The preset: rubbing under the sag; the push plotted while the tab shows.
     p.load_preset("Partial rub (½X)")
-    assert panel.enabled.isChecked() and panel.clearance.value() == 385.0 and p.preset.currentText() == "Partial rub (½X)"
+    assert (
+        panel.enabled.isChecked() and panel.clearance.value() == 385.0 and p.preset.currentText() == "Partial rub (½X)"
+    )
     assert "sags 378 µm" in panel.readout.text() and "leaving 7.06 µm" in panel.readout.text()
     p.tabs.show_page(panel)
     p._catch_up_tab()
@@ -2681,7 +2714,10 @@ def test_rotor_theory_figures_follow_the_theme(app):
                 assert isinstance(image, QtGui.QImage) and not image.isNull()
                 assert image.deviceIndependentSize().width() > 400
                 # Drawn, not blank: the background's colour and others.
-                assert len({image.pixel(x, y) for x in range(0, image.width(), 7) for y in range(0, image.height(), 7)}) > 5
+                assert (
+                    len({image.pixel(x, y) for x in range(0, image.width(), 7) for y in range(0, image.height(), 7)})
+                    > 5
+                )
     finally:
         style.set_theme(before)
         browser.deleteLater()
@@ -2765,14 +2801,16 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
         w.frame_overlay.refresh()
         rows = list(csv.DictReader(log.open(encoding="utf-8")))
         inputs = [r["detail"] for r in rows if r["kind"] == "input"]
-        assert inputs[0].startswith("1 m [kg]: ") and inputs[1:] == ["tab: Beyond the chain", "tab: Jeffcott rotor",
-                                                                 "Gravity: on"]
+        assert inputs[0].startswith("1 m [kg]: ") and inputs[1:] == [
+            "tab: Beyond the chain",
+            "tab: Jeffcott rotor",
+            "Gravity: on",
+        ]
         views = [r for r in rows if r["kind"] == "view"]  # a frame can land after the last view on a slow box
         assert views[-1]["detail"].startswith("Beyond the chain > Jeffcott rotor > [Custom] > ")
         # A combo alone in its group is named by its tooltip, not by a label outside the group;
         # scrolling a panel isn't an input.
-        assert frame_stats.describe_input(page.supports, "click") == ("What holds the journals",
-                                                                     "Springs and dampers")
+        assert frame_stats.describe_input(page.supports, "click") == ("What holds the journals", "Springs and dampers")
         bars = w.findChildren(QtWidgets.QScrollBar)
         assert bars and all(w.frame_overlay.inputs._control(b) is None for b in bars)
     finally:
@@ -2849,9 +2887,13 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
     w.pages.setCurrentWidget(w.cms_page)
     w.cms_page.tabs.setCurrentWidget(w.cms_page.time)
     app.processEvents()
-    for p, frame_ms in ((w.cms_page.time, cms_time.FRAME_MS), (w.rotor_page, rotor.FRAME_MS),
-                        (w.duffing_page, duffing.FRAME_MS), (w.torsional_page, torsional.FRAME_MS),
-                        (w.continuum_page, continuum.FRAME_MS)):
+    for p, frame_ms in (
+        (w.cms_page.time, cms_time.FRAME_MS),
+        (w.rotor_page, rotor.FRAME_MS),
+        (w.duffing_page, duffing.FRAME_MS),
+        (w.torsional_page, torsional.FRAME_MS),
+        (w.continuum_page, continuum.FRAME_MS),
+    ):
         w.pages.setCurrentWidget(w.cms_page if p is w.cms_page.time else p)
         app.processEvents()
         if p is w.torsional_page:
@@ -3460,7 +3502,9 @@ def test_continuum_waves_tab(app):
     p.step(2 * FRAMES_PER_TRANSIT)
     assert "keeps <b>17.3 %</b>" in p.wave_status.text()
     p.wave_scheme.setCurrentText("Consistent")
-    assert p.run.waves.scheme is Scheme.CONSISTENT and p.run.t == 0.0 and p.preset.currentText() == "Waves: a matched end"
+    assert (
+        p.run.waves.scheme is Scheme.CONSISTENT and p.run.t == 0.0 and p.preset.currentText() == "Waves: a matched end"
+    )
     p.playback.setCurrentIndex(0)
     assert p.run.playback == 0.25
 
@@ -3550,8 +3594,9 @@ def test_random_vibration_statistics(app):
     p.trial.setCurrentText("The base spring's force")
     p.recompute()
     table = p.stats_table.text()
-    assert "Upward zero crossings" in table and "31.7 %" in table and "Rice, α = 0.66" in [
-        p.peaks_legend.items[1][1].text]
+    assert (
+        "Upward zero crossings" in table and "31.7 %" in table and "Rice, α = 0.66" in [p.peaks_legend.items[1][1].text]
+    )
     assert "Davenport 3.11σ" in p.largest_note.text() and "Vanmarcke (δ = 0.25) 2.84σ" in p.largest_note.text()
     assert "43 stretches of 60 s" in p.largest_note.text()
     assert not p.cumulative.getAxis("left").autoSIPrefix
@@ -3833,11 +3878,28 @@ def test_shock_page(app):
     w.close()
 
 
-@pytest.mark.parametrize("name", ["sdof_page", "transient_page", "periodic_page", "damping_page", "isolation_page",
-                                  "energy_page", "integration_page", "fatigue_page",
-                                  "pendulum_page", "beams_page", "self_excited_page", "active_control_page",
-                                  "seismic_page", "quarter_car_page", "variability_page", "diagnostics_page",
-                                  "signals_page"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "sdof_page",
+        "transient_page",
+        "periodic_page",
+        "damping_page",
+        "isolation_page",
+        "energy_page",
+        "integration_page",
+        "fatigue_page",
+        "pendulum_page",
+        "beams_page",
+        "self_excited_page",
+        "active_control_page",
+        "seismic_page",
+        "quarter_car_page",
+        "variability_page",
+        "diagnostics_page",
+        "signals_page",
+    ],
+)
 def test_lesson_pages_trials_and_tabs(app, name):
     """Every one-click trial of the One mass and Signals pages loads, and every tab draws, in either theme."""
     from vib_tutorial.gui.main_window import MainWindow

@@ -56,7 +56,7 @@ class Pendulum:
         """J about the pivot."""
         m, L = self.mass, self.length
         if self.kind is Kind.ROD:
-            return m * L * L / 12 + m * self.pivot ** 2
+            return m * L * L / 12 + m * self.pivot**2
         if self.kind is Kind.TORSION:
             return m * L * L / 2
         return m * L * L
@@ -124,7 +124,7 @@ class Pendulum:
     def potential(self, theta: np.ndarray) -> np.ndarray:
         """V(θ) = k_t θ²/2 ± m g d (1 − cos θ)."""
         theta = np.asarray(theta, dtype=float)
-        return 0.5 * self.torsion * theta ** 2 + self.weight_moment * (1 - np.cos(theta))
+        return 0.5 * self.torsion * theta**2 + self.weight_moment * (1 - np.cos(theta))
 
     def leaning(self) -> float:
         """The inverted pendulum's tilted rest angle when the spring is too weak (k_t θ = m g d sin θ); 0
@@ -164,7 +164,7 @@ def elliptic_period(p: Pendulum, amplitude: float) -> float:
 
 def duffing_period(p: Pendulum, amplitude: float) -> float:
     """The cubic's first harmonic balance: ω² = ω₀² (1 + 3γA²/4k), so the swing softens if γ < 0."""
-    r = 1 + 0.75 * p.cubic * amplitude ** 2 / p.stiffness
+    r = 1 + 0.75 * p.cubic * amplitude**2 / p.stiffness
     return p.period0 / math.sqrt(r) if r > 0 else math.nan
 
 
@@ -172,8 +172,9 @@ def periods(p: Pendulum, amplitudes: np.ndarray) -> np.ndarray:
     return np.array([period(p, float(a)) for a in amplitudes])
 
 
-def swing(p: Pendulum, theta0: float, duration: float, points: int = 2000,
-          omega0: float = 0.0) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def swing(
+    p: Pendulum, theta0: float, duration: float, points: int = 2000, omega0: float = 0.0
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """(t, θ, θ_linear) from θ₀ (rad) and θ'₀ = `omega0`: the whole equation and the linearized one."""
     J, c = p.inertia, p.damping
 
@@ -186,10 +187,11 @@ def swing(p: Pendulum, theta0: float, duration: float, points: int = 2000,
     t = np.linspace(0.0, duration, points)
     out = []
     for f in (whole, linear):
-        sol = scipy.integrate.solve_ivp(f, (0.0, duration), [theta0, omega0], method="DOP853", t_eval=t,
-                                        rtol=1e-10, atol=1e-12)
+        sol = scipy.integrate.solve_ivp(
+            f, (0.0, duration), [theta0, omega0], method="DOP853", t_eval=t, rtol=1e-10, atol=1e-12
+        )
         y = np.full(t.size, np.nan)
-        y[:sol.y.shape[1]] = sol.y[0]
+        y[: sol.y.shape[1]] = sol.y[0]
         out.append(y)
     return t, out[0], out[1]
 
@@ -218,8 +220,7 @@ def orbit(p: Pendulum, energy: float, theta: np.ndarray) -> tuple[np.ndarray, np
     theta = np.asarray(theta, dtype=float)
     drop = energy - p.potential(theta)
     cross = np.nonzero(np.sign(drop[:-1]) * np.sign(drop[1:]) < 0)[0]
-    turns = [scipy.optimize.brentq(lambda t: energy - float(p.potential(t)), theta[i], theta[i + 1])
-             for i in cross]
+    turns = [scipy.optimize.brentq(lambda t: energy - float(p.potential(t)), theta[i], theta[i + 1]) for i in cross]
     x = np.sort(np.concatenate([theta, turns]))
     y = phase_curve(p, energy, x)
     y[np.isin(x, turns)] = 0.0
@@ -240,9 +241,9 @@ def rod_period(length: float, pivot: np.ndarray, gravity: float = G) -> np.ndarr
     """A uniform rod's linear period against the pivot's distance d from its centre: 2π √((L²/12 + d²)/(g d))."""
     d = np.asarray(pivot, dtype=float)
     with np.errstate(divide="ignore"):
-        return TWO_PI * np.sqrt((length ** 2 / 12 + d * d) / (gravity * d))
+        return TWO_PI * np.sqrt((length**2 / 12 + d * d) / (gravity * d))
 
 
 def conjugate_pivot(length: float, pivot: float) -> float:
     """The other distance on the same side with the same period (Kater): k_G² / d."""
-    return length ** 2 / 12 / pivot
+    return length**2 / 12 / pivot

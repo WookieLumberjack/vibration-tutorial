@@ -132,10 +132,10 @@ class DriveTrain:
 
     # ------------------------------------------------------------- editing
     def with_disc(self, i: int, disc: Disc) -> DriveTrain:
-        return self.with_(discs=self.discs[:i] + (disc,) + self.discs[i + 1:])
+        return self.with_(discs=self.discs[:i] + (disc,) + self.discs[i + 1 :])
 
     def with_link(self, i: int, link: Link) -> DriveTrain:
-        return self.with_(links=self.links[:i] + (link,) + self.links[i + 1:])
+        return self.with_(links=self.links[:i] + (link,) + self.links[i + 1 :])
 
     def inserted(self, i: int) -> DriveTrain:
         """A copy of disc i added after it, joined by a copy of the shaft on its far side (or near side)."""
@@ -146,8 +146,11 @@ class DriveTrain:
         exc = self.excitation
         if exc is not None and exc.disc > i:
             exc = dataclasses.replace(exc, disc=exc.disc + 1)
-        return DriveTrain(self.discs[:i + 1] + (dataclasses.replace(d, name=f"{d.name} (2)"),) + self.discs[i + 1:],
-                          self.links[:i] + (shaft,) + self.links[i:], exc)
+        return DriveTrain(
+            self.discs[: i + 1] + (dataclasses.replace(d, name=f"{d.name} (2)"),) + self.discs[i + 1 :],
+            self.links[:i] + (shaft,) + self.links[i:],
+            exc,
+        )
 
     def removed(self, i: int) -> DriveTrain:
         """Without disc i and the link on its far side (the last disc: the link on its near side)."""
@@ -155,7 +158,7 @@ class DriveTrain:
         exc = self.excitation
         if exc is not None:
             exc = None if exc.disc == i else dataclasses.replace(exc, disc=exc.disc - (exc.disc > i))
-        return DriveTrain(self.discs[:i] + self.discs[i + 1:], self.links[:j] + self.links[j + 1:], exc)
+        return DriveTrain(self.discs[:i] + self.discs[i + 1 :], self.links[:j] + self.links[j + 1 :], exc)
 
     # ------------------------------------------------------------- model
     @property
@@ -186,22 +189,24 @@ class DriveTrain:
         for i in range(n - 1):
             w, ki, ci = self.link_terms(i)
             ww = np.outer(w, w)
-            k[i:i + 2, i:i + 2] += ki * ww
-            c[i:i + 2, i:i + 2] += ci * ww
+            k[i : i + 2, i : i + 2] += ki * ww
+            c[i : i + 2, i : i + 2] += ci * ww
         return m, c, k
 
     def referred(self) -> DriveTrain:
         """The same train referred to the motor's shaft: a plain chain with the same frequencies."""
         s = self.speeds
-        discs = tuple(dataclasses.replace(d, inertia=d.inertia * s[i]**2, damping=d.damping * s[i]**2)
-                      for i, d in enumerate(self.discs))
+        discs = tuple(
+            dataclasses.replace(d, inertia=d.inertia * s[i] ** 2, damping=d.damping * s[i] ** 2)
+            for i, d in enumerate(self.discs)
+        )
         links = []
         for i, link in enumerate(self.links):
             if isinstance(link, Mesh):
                 r = link.base_radius * s[i]
                 links.append(Shaft(link.stiffness * r * r, link.damping * r * r, link.name))
             else:
-                links.append(Shaft(link.stiffness * s[i]**2, link.damping * s[i]**2, link.name))
+                links.append(Shaft(link.stiffness * s[i] ** 2, link.damping * s[i] ** 2, link.name))
         return DriveTrain(discs, tuple(links))
 
     def rigid_gears(self) -> DriveTrain:
@@ -260,7 +265,7 @@ def modes(train: DriveTrain) -> list[TorsionalMode]:
         energy = np.empty(train.n - 1)
         for i in range(train.n - 1):
             wi, ki, _ = train.link_terms(i)
-            energy[i] = ki * float(wi @ v[i:i + 2]) ** 2
+            energy[i] = ki * float(wi @ v[i : i + 2]) ** 2
         out.append(TorsionalMode(w / TWO_PI, zeta, shape, energy / energy.sum()))
     return out
 
@@ -329,7 +334,7 @@ def criticals(train: DriveTrain, top_rpm: float, lines: list[tuple[str, float]] 
     """Where each order line crosses each natural frequency, up to top_rpm of the motor, slowest first."""
     out = []
     for j, md in enumerate(modes(train)):
-        for label, order in (lines if lines is not None else order_lines(train)):
+        for label, order in lines if lines is not None else order_lines(train):
             rpm = 60.0 * md.freq_hz / order
             if rpm <= top_rpm:
                 out.append(Critical(j, label, order, rpm, md.freq_hz))
@@ -375,12 +380,12 @@ def forced_response(train: DriveTrain, rpm: np.ndarray) -> ForcedResponse:
             stretch = 0.0
             if src.mesh is not None:
                 wi, ki, ci = terms[src.mesh]
-                f[src.mesh:src.mesh + 2] += (ki + 1j * w * ci) * src.error * wi
+                f[src.mesh : src.mesh + 2] += (ki + 1j * w * ci) * src.error * wi
                 stretch = src.error
             theta = np.linalg.solve(z, f)
             angle[a, :, b] = np.abs(theta)
             for i, (wi, ki, ci) in enumerate(terms):
-                twist = wi @ theta[i:i + 2] - (stretch if i == src.mesh else 0.0)
+                twist = wi @ theta[i : i + 2] - (stretch if i == src.mesh else 0.0)
                 torque[a, i, b] = abs((ki + 1j * w * ci) * twist * wi[0])  # a mesh's force times r_in
     return ForcedResponse(rpm, srcs, torque, angle)
 
@@ -412,34 +417,56 @@ class TorsionalPreset:
     note: str
 
 
-FAN = DriveTrain((Disc("Motor", 2.0), Disc("Fan", 10.0, 2.0)), (Shaft(1.8e5, 20.0, "Coupling"),),
-                 Excitation(1, ((2.0, 50.0),), "Misalignment"))
+FAN = DriveTrain(
+    (Disc("Motor", 2.0), Disc("Fan", 10.0, 2.0)),
+    (Shaft(1.8e5, 20.0, "Coupling"),),
+    Excitation(1, ((2.0, 50.0),), "Misalignment"),
+)
 COMPRESSOR = DriveTrain(
     (Disc("Motor", 10.0), Disc("Bull gear", 3.0), Disc("Pinion", 0.05), Disc("Compressor", 0.3, 0.05)),
-    (Shaft(5e5, 20.0, "Low-speed coupling"), Mesh(120, 30, 0.3, 2e9, 2e4, 2e-6),
-     Shaft(2e4, 2.0, "High-speed coupling")),
-    Excitation(3, ((1.0, 20.0),), "Compressor"))
+    (
+        Shaft(5e5, 20.0, "Low-speed coupling"),
+        Mesh(120, 30, 0.3, 2e9, 2e4, 2e-6),
+        Shaft(2e4, 2.0, "High-speed coupling"),
+    ),
+    Excitation(3, ((1.0, 20.0),), "Compressor"),
+)
 GENSET = DriveTrain(
-    (Disc("Pulley", 0.3),) + tuple(Disc(f"Crank {i + 1}", 0.5) for i in range(6))
+    (Disc("Pulley", 0.3),)
+    + tuple(Disc(f"Crank {i + 1}", 0.5) for i in range(6))
     + (Disc("Flywheel", 10.0), Disc("Generator", 15.0, 5.0)),
-    (Shaft(3e6, 200.0, "Nose"),) + tuple(Shaft(3e6, 200.0, f"Crank {i + 1}–{i + 2}") for i in range(5))
+    (Shaft(3e6, 200.0, "Nose"),)
+    + tuple(Shaft(3e6, 200.0, f"Crank {i + 1}–{i + 2}") for i in range(5))
     + (Shaft(3e6, 200.0, "Crank–flywheel"), Shaft(1e5, 100.0, "Flexible coupling")),
-    Excitation(3, ((3.0, 3000.0), (6.0, 300.0)), "Firing"))
+    Excitation(3, ((3.0, 3000.0), (6.0, 300.0)), "Firing"),
+)
 
 PRESETS = (
     TorsionalPreset(
-        "Motor and fan: two inertias", FAN, 1480.0, 3600.0,
+        "Motor and fan: two inertias",
+        FAN,
+        1480.0,
+        3600.0,
         "One mode, the motor and the fan twisting the coupling against each other at "
         "√(k (J₁ + J₂) / J₁J₂) / 2π = 52.3 Hz. A misaligned coupling's 2× torque meets it at 1569 rpm, "
-        "6 % above the running speed: inside a 10 % margin. A softer coupling moves it below."),
+        "6 % above the running speed: inside a 10 % margin. A softer coupling moves it below.",
+    ),
     TorsionalPreset(
-        "Geared compressor", COMPRESSOR, 1490.0, 1800.0,
+        "Geared compressor",
+        COMPRESSOR,
+        1490.0,
+        1800.0,
         "A 4:1 speed-up gearbox. The two lower modes twist the couplings; the mesh's own, 2688 Hz, "
         "twists the teeth. The gears made rigid (the n² reflection) keep the lower two to within 0.1 % "
-        "but lose that one, which the tooth-pass meets at 1344 rpm, 10 % below the running speed."),
+        "but lose that one, which the tooth-pass meets at 1344 rpm, 10 % below the running speed.",
+    ),
     TorsionalPreset(
-        "Diesel generator set", GENSET, 1500.0, 1800.0,
+        "Diesel generator set",
+        GENSET,
+        1500.0,
+        1800.0,
         "A six-cylinder four-stroke engine's firing orders, 3× and 6× (lumped on crank 3), against the "
         "crankshaft's modes and the flexible coupling's (18.9 Hz). The coupling's mode is far below the "
-        "running speed, passed on the way up at 378 rpm (3×); the crankshaft's first, 97.3 Hz, at 973 rpm (6×)."),
+        "running speed, passed on the way up at 378 rpm (3×); the crankshaft's first, 97.3 Hz, at 973 rpm (6×).",
+    ),
 )

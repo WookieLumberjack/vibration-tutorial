@@ -301,14 +301,16 @@ class ModalTable(QtWidgets.QTableWidget):
         rows = []
         for r, mode in enumerate(result.modes):
             d = mode.damped
-            rows.append([
-                str(mode.index),
-                f"{mode.fn_hz:.4g}",
-                "rigid" if math.isnan(mode.zeta_modal) else f"{mode.zeta_modal:.4f}",
-                f"{d.zeta:.4f}" if d else "overdamped",
-                f"{d.fd_hz:.4g}" if d else "—",
-                "—" if friction_zeta is None or math.isnan(friction_zeta[r]) else f"{friction_zeta[r]:.4f}",
-            ])
+            rows.append(
+                [
+                    str(mode.index),
+                    f"{mode.fn_hz:.4g}",
+                    "rigid" if math.isnan(mode.zeta_modal) else f"{mode.zeta_modal:.4f}",
+                    f"{d.zeta:.4f}" if d else "overdamped",
+                    f"{d.fd_hz:.4g}" if d else "—",
+                    "—" if friction_zeta is None or math.isnan(friction_zeta[r]) else f"{friction_zeta[r]:.4f}",
+                ]
+            )
         return rows
 
     @staticmethod
@@ -318,13 +320,15 @@ class ModalTable(QtWidgets.QTableWidget):
             lam = m.eigenvalue
             if m.is_oscillatory:
                 conj = m.conjugate < m.index
-                rows.append([
-                    f"{m.index} = λ{m.conjugate}*" if conj else str(m.index),
-                    f"{lam.real:.4g} {'−' if lam.imag < 0 else '+'} {abs(lam.imag):.4g}i",
-                    f"{m.fn_hz:.4g}",
-                    f"{m.zeta:.4f}",
-                    f"{m.fd_hz:.4g}",
-                ])
+                rows.append(
+                    [
+                        f"{m.index} = λ{m.conjugate}*" if conj else str(m.index),
+                        f"{lam.real:.4g} {'−' if lam.imag < 0 else '+'} {abs(lam.imag):.4g}i",
+                        f"{m.fn_hz:.4g}",
+                        f"{m.zeta:.4f}",
+                        f"{m.fd_hz:.4g}",
+                    ]
+                )
             else:
                 rows.append([str(m.index), f"{lam.real:.4g}", "—", "real", time_constant_text(lam.real)])
         return rows
@@ -554,11 +558,13 @@ def frequency_grid(result: ModalResult, points: int) -> np.ndarray:
     # Include the damped peaks so lightly damped resonances are not clipped. An undamped mode's peak is
     # infinite and H singular on it, so it gets two points either side instead (a single undamped mass's
     # k − ω²m is exactly 0 there).
-    peaks = [m.damped.fd_hz for m in result.modes
-             if m.damped is not None and m.damped.zeta > 0 and lo < m.damped.fd_hz < hi]
+    peaks = [
+        m.damped.fd_hz for m in result.modes if m.damped is not None and m.damped.zeta > 0 and lo < m.damped.fd_hz < hi
+    ]
     on = [m.fn_hz for m in result.modes if m.fn_hz in freqs_n and m.zeta_modal > 0]
-    near = [m.fn_hz * (1 + s) for m in result.modes if m.fn_hz in freqs_n and not m.zeta_modal > 0
-            for s in (-1e-6, 1e-6)]
+    near = [
+        m.fn_hz * (1 + s) for m in result.modes if m.fn_hz in freqs_n and not m.zeta_modal > 0 for s in (-1e-6, 1e-6)
+    ]
     return np.unique(np.concatenate([f, peaks, on, near]))
 
 

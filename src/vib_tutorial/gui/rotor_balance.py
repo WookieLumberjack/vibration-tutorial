@@ -38,8 +38,13 @@ ILL_CONDITIONED = 20.0  # cond(α) above which the planes are hard to tell apart
 # The ways to balance: one weight on the disc, two in planes on the disc's faces, or two on the shaft.
 MODES = ("One plane: the disc", "Two planes: the disc's faces", "Two planes on the shaft")
 # Each reading: its symbol and the colour it is drawn in (an attribute of colors, or an index into colors.mode).
-READINGS = (("slow", "Vₛ", "grey"), ("found", "V₀", 1), ("trial", "V₁", 3), ("trial2", "V₂", 4),
-            ("verify", "V₂", "strong"))
+READINGS = (
+    ("slow", "Vₛ", "grey"),
+    ("found", "V₀", 1),
+    ("trial", "V₁", 3),
+    ("trial2", "V₂", 4),
+    ("verify", "V₂", "strong"),
+)
 TRIALS = ("trial", "trial2")  # the readings with a trial weight in plane 1, plane 2
 SECOND = "′"  # marks the second probe's readings
 
@@ -97,8 +102,10 @@ class BalancingPanel(QtWidgets.QWidget):
         self.mode.addItems(MODES)
         self.mode.setToolTip(MODE_TIP)
         self.spacing = spin(1.0, 1000.0, PLANE_SPACING, 0, " mm apart")
-        self.spacing.setToolTip("<p>The distance between the disc's two balancing planes, its faces: "
-                                "the further apart, the smaller the weights a couple needs.</p>")
+        self.spacing.setToolTip(
+            "<p>The distance between the disc's two balancing planes, its faces: "
+            "the further apart, the smaller the weights a couple needs.</p>"
+        )
         self.plane_z = [spin(0.0, 1e4, z, 0, " mm") for z in SHAFT_PLANES]
         for box in self.plane_z:
             box.setToolTip("<p>Where the plane is along the shaft, from bearing A.</p>")
@@ -155,8 +162,13 @@ class BalancingPanel(QtWidgets.QWidget):
 
         steps = FlowLayout()
         self._buttons = {key: QtWidgets.QPushButton() for key in ("slow", "found", "trial", "trial2", "verify")}
-        actions = {"slow": self.measure_slow, "found": self.measure_found, "trial": lambda: self.measure_trial(0),
-                   "trial2": lambda: self.measure_trial(1), "verify": self.measure_verify}
+        actions = {
+            "slow": self.measure_slow,
+            "found": self.measure_found,
+            "trial": lambda: self.measure_trial(0),
+            "trial2": lambda: self.measure_trial(1),
+            "verify": self.measure_verify,
+        }
         for key, b in self._buttons.items():
             b.setToolTip(STEPS_TIP)
             b.clicked.connect(actions[key])
@@ -200,8 +212,7 @@ class BalancingPanel(QtWidgets.QWidget):
                 self.arrows[key, k] = vp.plot()
                 self.tips[key, k] = pg.ScatterPlotItem(size=8, symbol="o" if k == 0 else "d")
                 # The slow roll's label goes under its tip: a bowed rotor balanced reads it again at the check.
-                self.labels[key, k] = pg.TextItem(sym + SECOND * k,
-                                                  anchor=(0.5, -0.1) if key == "slow" else (0.5, 1.1))
+                self.labels[key, k] = pg.TextItem(sym + SECOND * k, anchor=(0.5, -0.1) if key == "slow" else (0.5, 1.1))
                 vp.addItem(self.tips[key, k])
                 vp.addItem(self.labels[key, k])
         self.effects = {(key, k): vp.plot() for key in TRIALS for k in range(2)}
@@ -301,8 +312,11 @@ class BalancingPanel(QtWidgets.QWidget):
         for w in (self.second_label, self.station2, self.direction2):
             w.setVisible(two)
         self._buttons["trial2"].setVisible(two)
-        names = (["1. Slow roll", "2. As found", "3. Trial, plane 1", "4. Trial, plane 2", "5. Correct and check"]
-                 if two else ["1. Slow roll", "2. As found", "3. Trial run", "", "4. Correct and check"])
+        names = (
+            ["1. Slow roll", "2. As found", "3. Trial, plane 1", "4. Trial, plane 2", "5. Correct and check"]
+            if two
+            else ["1. Slow roll", "2. As found", "3. Trial run", "", "4. Correct and check"]
+        )
         for b, name in zip(self._buttons.values(), names):
             b.setText(name)
         for k in range(2):
@@ -504,8 +518,13 @@ class BalancingPanel(QtWidgets.QWidget):
         two = self.two_planes
         runout = self._runout()
         subtract = np.any(runout != 0)
-        names = {"slow": f"Slow roll ({self.slow_speed.value():,.0f} rpm)", "found": "As found",
-                 "trial": "Trial, plane 1" if two else "Trial run", "trial2": "Trial, plane 2", "verify": "Check"}
+        names = {
+            "slow": f"Slow roll ({self.slow_speed.value():,.0f} rpm)",
+            "found": "As found",
+            "trial": "Trial, plane 1" if two else "Trial run",
+            "trial2": "Trial, plane 2",
+            "verify": "Check",
+        }
         rows = []
         for key, sym, c in READINGS:
             v = values[key]
@@ -516,19 +535,29 @@ class BalancingPanel(QtWidgets.QWidget):
             cells = [_vec(x) for x in v]
             if subtract:
                 cells += ["" if key == "slow" else _vec(x) for x in v - runout]
-            rows.append(f"<tr><td><span style='color:{_color(c)}'><b>{sym}</b></span> {names[key]}</td>"
-                        + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
+            rows.append(
+                f"<tr><td><span style='color:{_color(c)}'><b>{sym}</b></span> {names[key]}</td>"
+                + "".join(f"<td>{cell}</td>" for cell in cells)
+                + "</tr>"
+            )
         if not rows:
-            return ("<small>Take the readings in order. The influence coefficients and the correction "
-                    "weights appear here. Try <i>Mystery unbalance</i> to balance a rotor whose heavy spot "
-                    "you cannot see.</small>")
+            return (
+                "<small>Take the readings in order. The influence coefficients and the correction "
+                "weights appear here. Try <i>Mystery unbalance</i> to balance a rotor whose heavy spot "
+                "you cannot see.</small>"
+            )
         if two:
             heads = [f"{self._probe_name(k)}{SECOND * k}" for k in range(2)]
             heads += [f"less slow roll{SECOND * k}" for k in range(2)] if subtract else []
         else:
             heads = ["1X", "less slow roll" if subtract else ""]
-        out = ("<table cellspacing='0' cellpadding='2'><tr><th align='left'>Reading</th>"
-               + "".join(f"<th>{h}</th>" for h in heads) + "</tr>" + "".join(rows) + "</table>")
+        out = (
+            "<table cellspacing='0' cellpadding='2'><tr><th align='left'>Reading</th>"
+            + "".join(f"<th>{h}</th>" for h in heads)
+            + "</tr>"
+            + "".join(rows)
+            + "</table>"
+        )
         alpha = self.influence()
         r = self.trial_radius.value() / 1e3
         if alpha is not None:
@@ -537,15 +566,19 @@ class BalancingPanel(QtWidgets.QWidget):
                 out += self._matrix_html(alpha, mass, angle)
             else:
                 a = complex(alpha[0, 0])
-                out += (f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}°: influence coefficient "
-                        f"α = (V₁ − V₀)/T = {_per_weight(a)}<br>")
+                out += (
+                    f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}°: influence coefficient "
+                    f"α = (V₁ − V₀)/T = {_per_weight(a)}<br>"
+                )
             w = self.correction_weights()
             less = "(V₀ − V<sub>s</sub>)" if subtract else "V₀"
             if w is None:
                 out += "The trial runs cannot tell the planes apart: try planes further apart."
             elif two:
                 parts = [f"W<sub>c{j + 1}</sub> = {_weight(x, r)}" for j, x in enumerate(w)]
-                out += f"<b>Correction</b> W<sub>c</sub> = −α<sup>−1</sup>{less}: <b>{'; '.join(parts)}</b> (trials off)"
+                out += (
+                    f"<b>Correction</b> W<sub>c</sub> = −α<sup>−1</sup>{less}: <b>{'; '.join(parts)}</b> (trials off)"
+                )
             else:
                 out += f"<b>Correction</b> W<sub>c</sub> = −{less}/α: <b>{_weight(complex(w[0]), r)}</b> from the mark (trial off)"
         v2 = values["verify"]
@@ -564,11 +597,17 @@ class BalancingPanel(QtWidgets.QWidget):
         """The influence matrix, a column per plane, and how well it tells the planes apart."""
         cells = [[f"{abs(a):.3g} ∠ {float(lag_degrees(np.array(a))) % 360.0:.0f}°" for a in row] for row in alpha]
         cond = np.linalg.cond(alpha)
-        note = (": the planes are hard to tell apart, so the weights come out large and small errors in the "
-                "readings swing them" if cond > ILL_CONDITIONED else "")
-        return (f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}° in each plane in turn. Influence matrix "
-                f"α (µm per g·mm ∠ lag), column j = (V<sub>j</sub> − V₀)/T: "
-                f"[{cells[0][0]}, {cells[0][1]}; {cells[1][0]}, {cells[1][1]}], condition number {cond:.3g}{note}.<br>")
+        note = (
+            ": the planes are hard to tell apart, so the weights come out large and small errors in the "
+            "readings swing them"
+            if cond > ILL_CONDITIONED
+            else ""
+        )
+        return (
+            f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}° in each plane in turn. Influence matrix "
+            f"α (µm per g·mm ∠ lag), column j = (V<sub>j</sub> − V₀)/T: "
+            f"[{cells[0][0]}, {cells[0][1]}; {cells[1][0]}, {cells[1][1]}], condition number {cond:.3g}{note}.<br>"
+        )
 
     def _draw_curves(self) -> None:
         top = max(4000.0, 2.0 * self.speed.value())

@@ -91,9 +91,11 @@ def design_sa(design: Design, T: np.ndarray) -> np.ndarray:
     ag = design.pga_g * G * S
     plateau = 2.5 * design.eta
     with np.errstate(divide="ignore", invalid="ignore"):
-        sa = np.where(T < TB, 1 + T / TB * (plateau - 1),
-                      np.where(T <= TC, plateau,
-                               np.where(T <= TD, plateau * TC / T, plateau * TC * TD / (T * T))))
+        sa = np.where(
+            T < TB,
+            1 + T / TB * (plateau - 1),
+            np.where(T <= TC, plateau, np.where(T <= TD, plateau * TC / T, plateau * TC * TD / (T * T))),
+        )
     return ag * sa
 
 
@@ -125,7 +127,7 @@ def modal(system: ChainSystem, design: Design) -> Modal:
     w2, phi = scipy.linalg.eigh(K, M)
     w = np.sqrt(np.clip(w2, 0.0, None))
     gamma = phi.T @ lin.masses  # φ mass-normalized: Γ = φᵀM1
-    meff = gamma ** 2
+    meff = gamma**2
     T = TWO_PI / w
     sa = design_sa(design, T)
     D = gamma * sa / w2  # each mode's peak modal coordinate
@@ -153,7 +155,7 @@ def correlation(f: np.ndarray, zeta: float | np.ndarray) -> np.ndarray:
     z = np.broadcast_to(np.asarray(zeta, dtype=float), f.shape)
     zi, zj = z[:, None], z[None, :]
     r = f[None, :] / f[:, None]
-    num = 8 * np.sqrt(zi * zj) * (zi + r * zj) * r ** 1.5
+    num = 8 * np.sqrt(zi * zj) * (zi + r * zj) * r**1.5
     den = (1 - r * r) ** 2 + 4 * zi * zj * r * (1 + r * r) + 4 * (zi * zi + zj * zj) * r * r
     return num / den
 
@@ -249,8 +251,9 @@ def time_history(system: ChainSystem, design: Design, ground: Accelerogram, tail
         t = osc.t
     drift = np.diff(u, prepend=0.0, axis=1)
     shear = drift * lin.stiffness
-    return History(t, u, np.max(np.abs(u), axis=0), np.max(np.abs(drift), axis=0),
-                   np.max(np.abs(shear), axis=0), shear[:, 0])
+    return History(
+        t, u, np.max(np.abs(u), axis=0), np.max(np.abs(drift), axis=0), np.max(np.abs(shear), axis=0), shear[:, 0]
+    )
 
 
 @functools.lru_cache(maxsize=8)

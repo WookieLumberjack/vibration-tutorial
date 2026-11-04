@@ -98,8 +98,16 @@ class WaterfallPlot(pg.GraphicsLayoutWidget):
             self.plot.addItem(line)
             self.lines.append(line)
 
-    def set_blocks(self, freqs: np.ndarray, blocks: list[SpectrumBlock], ys: np.ndarray, station: int,
-                   log: bool, marks: bool, y_label: tuple[str, str]) -> Tallest | None:
+    def set_blocks(
+        self,
+        freqs: np.ndarray,
+        blocks: list[SpectrumBlock],
+        ys: np.ndarray,
+        station: int,
+        log: bool,
+        marks: bool,
+        y_label: tuple[str, str],
+    ) -> Tallest | None:
         """Draw `blocks` (in time order) at baselines `ys`, the spectra at `station`; return the tallest peak."""
         p = self.plot
         p.setLabel("left", *y_label)
@@ -151,8 +159,12 @@ class WaterfallPlot(pg.GraphicsLayoutWidget):
         for item, sign in ((self.sync, 1.0), (self.sync_back, -1.0)):
             item.setData(sign * f1, ys) if marks else item.setData([], [])
         for item, forward in ((self.forward, True), (self.backward, False)):
-            pts = [(n, base[i]) for i, b in enumerate(blocks[j] for j in pick)
-                   for n in b.natural if (n > 0) == forward and abs(n) <= reach]
+            pts = [
+                (n, base[i])
+                for i, b in enumerate(blocks[j] for j in pick)
+                for n in b.natural
+                if (n > 0) == forward and abs(n) <= reach
+            ]
             if marks and pts:
                 x, y = np.array(pts).T
                 item.setData(x, y)

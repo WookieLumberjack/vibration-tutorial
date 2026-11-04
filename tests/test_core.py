@@ -182,7 +182,9 @@ def test_releasing_complex_mode_excites_only_that_mode():
 
 
 def _cb_system():
-    return ChainSystem([1.0, 2.0, 0.5, 1.5, 1.0, 0.8, 1.2], [400.0, 300.0, 500.0, 200.0, 350.0, 450.0, 250.0], [2.0] * 7)
+    return ChainSystem(
+        [1.0, 2.0, 0.5, 1.5, 1.0, 0.8, 1.2], [400.0, 300.0, 500.0, 200.0, 350.0, 450.0, 250.0], [2.0] * 7
+    )
 
 
 def test_substructures_assemble_to_full_matrices():
@@ -341,8 +343,9 @@ def test_free_interface_structure_and_assembly():
             # Residual flexibility is orthogonal to the kept modes: K^_qq = W^2 + Phi_bk^T G_bb^-1 Phi_bk.
             Gbb_inv = np.linalg.inv(sub.block(sub.G, "b", "b"))
             Pbk = sub.Phi[ni:, :k]
-            np.testing.assert_allclose(sub.K_red[:k, :k], np.diag(sub.omegas[:k] ** 2) + Pbk.T @ Gbb_inv @ Pbk,
-                                       atol=1e-8)
+            np.testing.assert_allclose(
+                sub.K_red[:k, :k], np.diag(sub.omegas[:k] ** 2) + Pbk.T @ Gbb_inv @ Pbk, atol=1e-8
+            )
             np.testing.assert_allclose(sub.K_red[k:, k:], Gbb_inv, rtol=1e-9)
         M, _C, K = s.matrices()
         np.testing.assert_allclose(model.K, model.T.T @ K @ model.T, atol=1e-8)
@@ -395,8 +398,7 @@ def test_free_interface_frf_is_exact_statically_and_with_all_modes():
     # The residual flexibility restores the static flexibility of the discarded modes.
     for residual_mass in (True, False):
         fewest = free_interface(s, [2], [0, 0], residual_mass)
-        np.testing.assert_allclose(reduced_frf(fewest, np.array([0.0]), tip), frf(s, np.array([0.0]), tip),
-                                   rtol=1e-9)
+        np.testing.assert_allclose(reduced_frf(fewest, np.array([0.0]), tip), frf(s, np.array([0.0]), tip), rtol=1e-9)
 
 
 def test_free_interface_handles_a_floating_interior():
@@ -427,7 +429,9 @@ def test_free_component_modes_share_the_kinetic_energy():
     model = free_interface(s, [3], [1, 1])
     comps = component_modes(model, modal_analysis(s))
     # Free modes are complete over the whole substructure: 4 in A, 5 in B (with its interface).
-    assert [(c.substructure, c.index) for c in comps] == [("A", i) for i in range(1, 5)] + [("B", i) for i in range(1, 6)]
+    assert [(c.substructure, c.index) for c in comps] == [("A", i) for i in range(1, 5)] + [
+        ("B", i) for i in range(1, 6)
+    ]
     b1 = comps[4]
     assert b1.fn_hz == pytest.approx(0.0, abs=1e-6) and b1.zeta is None and b1.kept  # rigid body
     assert b1.shape == pytest.approx(np.ones(5))
@@ -484,6 +488,7 @@ def test_exact_modal_terms_refuse_a_defective_eigenvalue():
     state_space = modal_module.state_space
     rng = np.random.default_rng(0)
     for _ in range(100):
+
         def noisy(system):
             A, B = state_space(system)
             return A + np.finfo(float).eps * np.abs(A).max() * rng.standard_normal(A.shape), B
@@ -858,8 +863,9 @@ def test_back_expansion_is_exact_when_nothing_is_truncated():
     from vib_tutorial.core import component_mode_synthesis
     from vib_tutorial.core.back_expansion import RecoveryResponse
 
-    s = ChainSystem([1.0, 2.0, 1.5, 1.0, 0.5, 1.2], [400.0, 300.0, 500.0, 200.0, 350.0, 250.0],
-                    [2.0, 8.0, 1.0, 0.5, 3.0, 1.0])
+    s = ChainSystem(
+        [1.0, 2.0, 1.5, 1.0, 0.5, 1.2], [400.0, 300.0, 500.0, 200.0, 350.0, 250.0], [2.0, 8.0, 1.0, 0.5, 3.0, 1.0]
+    )
     for method in ("craig-bampton", "rubin"):
         for dof in (None, 1):  # the tip, and an interior mass
             model = component_mode_synthesis(s, [2], [2, 2], method)

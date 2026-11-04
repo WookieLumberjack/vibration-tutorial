@@ -70,8 +70,9 @@ class ExtractionControls(QtWidgets.QGroupBox):
         band_row.addWidget(self.lo)
         band_row.addWidget(QtWidgets.QLabel("to"))
         band_row.addWidget(self.hi)
-        band_tip = ("Only the FRF lines in this band are fitted. Drag the green band on the FRF "
-                    "plot, or type the limits.")
+        band_tip = (
+            "Only the FRF lines in this band are fitted. Drag the green band on the FRF plot, or type the limits."
+        )
         for w in (self.lo, self.hi):
             w.setToolTip(band_tip)
         form.addRow("Fit band:", band_row)
@@ -79,17 +80,23 @@ class ExtractionControls(QtWidgets.QGroupBox):
         self.order.setRange(4, 80)
         self.order.setValue(30)
         self.order.setKeyboardTracking(False)
-        self.order.setToolTip("Highest LSCF model order. Order p gives up to p poles, so a few times "
-                              "the number of modes: the extra poles soak up noise and leakage.")
+        self.order.setToolTip(
+            "Highest LSCF model order. Order p gives up to p poles, so a few times "
+            "the number of modes: the extra poles soak up noise and leakage."
+        )
         self.order_label = QtWidgets.QLabel("Max model order:")
         form.addRow(self.order_label, self.order)
         self.auto = QtWidgets.QPushButton("Auto-select poles")
-        self.auto.setToolTip("Pick one pole from each column of the diagram that stays stable over "
-                             "at least 5 orders. Click poles in the Stabilization tab to add or remove them.")
+        self.auto.setToolTip(
+            "Pick one pole from each column of the diagram that stays stable over "
+            "at least 5 orders. Click poles in the Stabilization tab to add or remove them."
+        )
         self.auto.clicked.connect(self.auto_requested)
         self.clear = QtWidgets.QPushButton("Clear poles")
-        self.clear.setToolTip("Deselect every pole, then click poles in the Stabilization tab to add "
-                              "them one at a time and watch each mode join the fitted FRF.")
+        self.clear.setToolTip(
+            "Deselect every pole, then click poles in the Stabilization tab to add "
+            "them one at a time and watch each mode join the fitted FRF."
+        )
         self.clear.clicked.connect(self.clear_requested)
         self.pole_row = QtWidgets.QWidget()
         row = QtWidgets.QHBoxLayout(self.pole_row)
@@ -99,13 +106,17 @@ class ExtractionControls(QtWidgets.QGroupBox):
         form.addRow(self.pole_row)
         self.correct = QtWidgets.QCheckBox("Remove the exponential window's damping")
         self.correct.setChecked(True)
-        self.correct.setToolTip("The exponential window moves every pole 1/τ<sub>w</sub> to the left. Moving the "
-                                "identified poles back gives the structure's own damping.")
+        self.correct.setToolTip(
+            "The exponential window moves every pole 1/τ<sub>w</sub> to the left. Moving the "
+            "identified poles back gives the structure's own damping."
+        )
         form.addRow(self.correct)
         self.show_fit = QtWidgets.QCheckBox("Draw the fitted FRF")
         self.show_fit.setChecked(True)
-        self.show_fit.setToolTip("The FRF rebuilt from the identified modes (and residuals), drawn "
-                                 "over the fit band. Where it misses the measurement, the model does too.")
+        self.show_fit.setToolTip(
+            "The FRF rebuilt from the identified modes (and residuals), drawn "
+            "over the fit band. Where it misses the measurement, the model does too."
+        )
         form.addRow(self.show_fit)
         self.method.currentIndexChanged.connect(self._on_method)
         for w in (self.lo, self.hi):
@@ -216,7 +227,9 @@ class StabilizationPlot(pg.PlotWidget):
                 if s is st
             ]
             item.setData(spots)
-        self.selected.setData([{"pos": (abs(stab.pole(o, i)) / (2 * math.pi), o), "data": (o, i)} for o, i in selection])
+        self.selected.setData(
+            [{"pos": (abs(stab.pole(o, i)) / (2 * math.pi), o), "data": (o, i)} for o, i in selection]
+        )
         lo, hi = stab.band
         if indicator.size:
             y = np.log10(np.maximum(indicator, 1e-300))
@@ -225,8 +238,11 @@ class StabilizationPlot(pg.PlotWidget):
             self.mif.setData(freqs, y)
         for r, f in enumerate(exact_hz):
             if lo <= f <= hi:
-                line = pg.InfiniteLine(pos=f, angle=90, pen=pg.mkPen(colors.mode[r % len(colors.mode)], width=1,
-                                                                     style=QtCore.Qt.PenStyle.DotLine))
+                line = pg.InfiniteLine(
+                    pos=f,
+                    angle=90,
+                    pen=pg.mkPen(colors.mode[r % len(colors.mode)], width=1, style=QtCore.Qt.PenStyle.DotLine),
+                )
                 self.addItem(line)
                 self.lines.append(line)
         self.setRange(xRange=(lo, hi), yRange=(0, top + 1), padding=0.02)
@@ -259,8 +275,9 @@ class MacPlot(pg.PlotWidget):
         self.cmap = pg.ColorMap([0.0, 1.0], [pg.mkColor(colors.background), pg.mkColor(colors.mac_high)])
         self.image.setLookupTable(self.cmap.getLookupTable(nPts=256))
 
-    def set_matrix(self, macs: np.ndarray, rows: list[str], cols: list[str], text: np.ndarray | None = None,
-                   fmt: str = "{:.2f}") -> None:
+    def set_matrix(
+        self, macs: np.ndarray, rows: list[str], cols: list[str], text: np.ndarray | None = None, fmt: str = "{:.2f}"
+    ) -> None:
         """Colour by `macs` (0 to 1); label each cell with `text` (the MACs if None), formatted by `fmt`."""
         for t in self.labels:
             self.removeItem(t)
@@ -334,12 +351,18 @@ class ResultsView(QtWidgets.QWidget):
                 cells += [("missed", colors.poor), ("", None), (f"{ze:.4f}", None), ("", None), ("", None), ("", None)]
             else:
                 cells.append((f"{ident.fn_hz:.4g}", None))
-                cells.append(colored(100 * (ident.fn_hz / fe - 1), 0.5, 2.0, f"{100 * (ident.fn_hz / fe - 1):+.2f}%")
-                             if fe else ("", None))
+                cells.append(
+                    colored(100 * (ident.fn_hz / fe - 1), 0.5, 2.0, f"{100 * (ident.fn_hz / fe - 1):+.2f}%")
+                    if fe
+                    else ("", None)
+                )
                 cells.append((f"{ze:.4f}" if ze is not None else "—", None))
                 cells.append((f"{ident.zeta:.4f}", None))
-                cells.append(colored(100 * (ident.zeta / ze - 1), 5.0, 20.0, f"{100 * (ident.zeta / ze - 1):+.1f}%")
-                             if ze else ("", None))
+                cells.append(
+                    colored(100 * (ident.zeta / ze - 1), 5.0, 20.0, f"{100 * (ident.zeta / ze - 1):+.1f}%")
+                    if ze
+                    else ("", None)
+                )
                 cells.append(colored(1 - m.mac, 0.01, 0.1, f"{m.mac:.3f}") if m.mode else ("", None))
             for c, (text, col) in enumerate(cells):
                 item = QtWidgets.QTableWidgetItem(text)

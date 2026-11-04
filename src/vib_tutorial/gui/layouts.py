@@ -79,8 +79,11 @@ class FlowLayout(QtWidgets.QLayout):
         if gap >= 0:
             return gap
         style = self.parentWidget().style() if self.parentWidget() else QtWidgets.QApplication.style()
-        metric = (QtWidgets.QStyle.PixelMetric.PM_LayoutVerticalSpacing if vertical
-                  else QtWidgets.QStyle.PixelMetric.PM_LayoutHorizontalSpacing)
+        metric = (
+            QtWidgets.QStyle.PixelMetric.PM_LayoutVerticalSpacing
+            if vertical
+            else QtWidgets.QStyle.PixelMetric.PM_LayoutHorizontalSpacing
+        )
         return max(style.pixelMetric(metric), 6)
 
     def _place(self, rect: QtCore.QRect, move: bool) -> int:
@@ -142,8 +145,11 @@ class ColumnScroll(QtWidgets.QScrollArea):
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     def minimumSizeHint(self) -> QtCore.QSize:
-        width = (self.widget().minimumSizeHint().width() + self.verticalScrollBar().sizeHint().width()
-                 + 2 * self.frameWidth())
+        width = (
+            self.widget().minimumSizeHint().width()
+            + self.verticalScrollBar().sizeHint().width()
+            + 2 * self.frameWidth()
+        )
         return QtCore.QSize(width, super().minimumSizeHint().height())
 
 

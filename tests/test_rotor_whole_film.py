@@ -131,8 +131,11 @@ def test_oil_whip_grows_with_the_journals_inside_their_clearance():
     assert disc[1] > 1.5 * disc[0]
 
 
-@pytest.mark.parametrize("change", [{"position": 1.2}, {"density": 7850.0}, {"bearing_b": Bearing()}],
-                         ids=["overhung", "shaft mass", "one film"])
+@pytest.mark.parametrize(
+    "change",
+    [{"position": 1.2}, {"density": 7850.0}, {"bearing_b": Bearing()}],
+    ids=["overhung", "shaft mass", "one film"],
+)
 def test_whole_films_on_other_rotors(change):
     # An overhung rotor's far film is pulled up, a shaft with mass couples the journals through M, and one
     # film may run beside springs. After a small tap each moves as on its linear films.
@@ -142,7 +145,7 @@ def test_whole_films_on_other_rotors(change):
     step = round((t[1] - t[0]) / (t0[1] - t0[0]))
     qs = s.static_deflection(1500.0 / RPM)
     moved = np.abs(q0[:, :8] - qs[:8]).max()
-    np.testing.assert_allclose(q[:, :8], q0[step - 1::step, :8], atol=0.02 * moved)
+    np.testing.assert_allclose(q[:, :8], q0[step - 1 :: step, :8], atol=0.02 * moved)
 
 
 def test_vertical_rotor_whips_past_twice_its_natural_frequency():

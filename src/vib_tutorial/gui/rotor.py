@@ -122,18 +122,18 @@ ORDER_NAMES = ("1X", "2X", "3X")  # what the Bode and polar plots can track
 
 ORDER_TIPS = {
     2.0: "<p>Twice the speed. A shaft stiffer one way than the other (a two-pole rotor's slots, a "
-         "keyway, a crack) bends twice per turn under its weight, and misalignment pulls twice per turn "
-         "too. Where a forward branch meets this line, at about half its critical speed, a horizontal "
-         "rotor with such a shaft whirls at 2X: a <i>secondary critical</i> (set an asymmetry Δ or a "
-         "crack, and tick <i>Horizontal rotor</i>).</p>",
+    "keyway, a crack) bends twice per turn under its weight, and misalignment pulls twice per turn "
+    "too. Where a forward branch meets this line, at about half its critical speed, a horizontal "
+    "rotor with such a shaft whirls at 2X: a <i>secondary critical</i> (set an asymmetry Δ or a "
+    "crack, and tick <i>Horizontal rotor</i>).</p>",
     3.0: "<p>Three times the speed. A breathing crack, opened and closed by the shaft's weight once per "
-         "turn, changes the stiffness with 3X in it too, so the weight drives a 3X whirl where a forward "
-         "branch meets this line, at about a third of the critical speed. An asymmetric shaft's stiffness "
-         "changes only at 2X: no 3X.</p>",
+    "turn, changes the stiffness with 3X in it too, so the weight drives a 3X whirl where a forward "
+    "branch meets this line, at about a third of the critical speed. An asymmetric shaft's stiffness "
+    "changes only at 2X: no 3X.</p>",
     0.5: "<p>Half the speed. Oil in a plain journal bearing swirls at just under half the shaft's speed, "
-         "so its whirl starts near ½X (<i>oil whirl</i>) and, once ½X has passed the first natural "
-         "frequency, locks onto it (<i>oil whip</i>): set the bearings' swirl ratio λ to 0.5. A rub "
-         "or loose parts can also respond at ½X.</p>",
+    "so its whirl starts near ½X (<i>oil whirl</i>) and, once ½X has passed the first natural "
+    "frequency, locks onto it (<i>oil whip</i>): set the bearings' swirl ratio λ to 0.5. A rub "
+    "or loose parts can also respond at ½X.</p>",
 }
 SPEED_TIP = (
     "<p>The speed the rotor ramps toward, at the ramp rate. Drag the red line on the Campbell diagram "
@@ -374,8 +374,24 @@ class RotorView(pg.PlotWidget):
         self.triad = pg.PlotCurveItem(connect="pairs")
         self.triad_labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in ("x", "y", "z")]
         self.end_labels = [pg.TextItem(t, anchor=(0.5, 0.0)) for t in ("A", "B")]
-        for item in (self.frame, self.axis, self.supports, self.stator_ring, *self.trails, self.shaft, self.disc,
-                     self.spoke, self.stiff_axis, self.crack_mark, self.weight_dots, self.mark, self.stations, self.triad, *self.triad_labels, *self.end_labels):
+        for item in (
+            self.frame,
+            self.axis,
+            self.supports,
+            self.stator_ring,
+            *self.trails,
+            self.shaft,
+            self.disc,
+            self.spoke,
+            self.stiff_axis,
+            self.crack_mark,
+            self.weight_dots,
+            self.mark,
+            self.stations,
+            self.triad,
+            *self.triad_labels,
+            *self.end_labels,
+        ):
             plot.addItem(item)
         plot.addItem(self.heavy, ignoreBounds=True)
         self.scale_label = pg.TextItem(anchor=(1.0, 0.0))
@@ -424,8 +440,17 @@ class RotorView(pg.PlotWidget):
         walls = []
         bearings = self._z(np.array([0.0, self.system.length]))
         for zb in bearings:
-            walls.append(np.array([[-h, -0.35, zb - 0.3], [-h, 0.35, zb - 0.3], [-h, 0.35, zb + 0.3],
-                                   [-h, -0.35, zb + 0.3], [-h, -0.35, zb - 0.3]]))
+            walls.append(
+                np.array(
+                    [
+                        [-h, -0.35, zb - 0.3],
+                        [-h, 0.35, zb - 0.3],
+                        [-h, 0.35, zb + 0.3],
+                        [-h, -0.35, zb + 0.3],
+                        [-h, -0.35, zb - 0.3],
+                    ]
+                )
+            )
         self.frame.setData(*self._segments([plate, *walls]))
         self.axis.setData(*self.project(np.array([[0.0, 0.0, -half], [0.0, 0.0, half]])))
         o = np.array([w + 0.3, -h, half - 0.2])
@@ -438,8 +463,9 @@ class RotorView(pg.PlotWidget):
             label.setPos(*[float(c) for c in self.project(np.array([0.0, -h - 0.05, zb]))])
         # Range: everything the rotor can reach.
         top = SWING + self.disc_radius + 0.1
-        corners = np.array([[sx * (h + 0.2), sy, sz * half] for sx in (-1, 1) for sy in (-h - 0.15, top)
-                            for sz in (-1, 1)])
+        corners = np.array(
+            [[sx * (h + 0.2), sy, sz * half] for sx in (-1, 1) for sy in (-h - 0.15, top) for sz in (-1, 1)]
+        )
         px, py = self.project(corners)
         self.setRange(xRange=(px.min(), px.max()), yRange=(py.min(), py.max()), padding=0.02)
         vr = self.getViewBox().viewRange()
@@ -477,8 +503,9 @@ class RotorView(pg.PlotWidget):
         """Draw displacements q (n_dof,) with the keyphasor mark at angle `phase`, and each station's recent (x, y)."""
         s = self.system
         # The disc's own axis: the shaft's slope there plus the skew. Its rim's wobble counts as motion.
-        axis = np.array([q[2], q[6]]) + s.skew * np.array([math.cos(phase + s.skew_angle),
-                                                           math.sin(phase + s.skew_angle)])
+        axis = np.array([q[2], q[6]]) + s.skew * np.array(
+            [math.cos(phase + s.skew_angle), math.sin(phase + s.skew_angle)]
+        )
         peak = max(peak, float(np.hypot(*axis)) * self.disc_radius * self._metres)
         if self.ring is not None:  # the ring in view too
             peak = max(peak, math.hypot(self.ring[0], self.ring[1]) + self.ring[2])
@@ -542,8 +569,13 @@ class RotorView(pg.PlotWidget):
             else:  # on the shaft, just off its centre line
                 angle = phase + cmath.phase(p.weight)
                 centre = s.deflection(q, [p.z])[0] * g
-                dots.append([centre[0] + SHAFT_DOT * math.cos(angle), centre[1] + SHAFT_DOT * math.sin(angle),
-                             float(self._z(p.z))])
+                dots.append(
+                    [
+                        centre[0] + SHAFT_DOT * math.cos(angle),
+                        centre[1] + SHAFT_DOT * math.sin(angle),
+                        float(self._z(p.z)),
+                    ]
+                )
         if dots:
             self.weight_dots.setData(*self.project(np.array(dots)))
         else:
@@ -558,8 +590,9 @@ class RotorView(pg.PlotWidget):
             angle = phase + s.crack.angle
             centre = s.deflection(q, [s.crack_z])[0] * g
             reach = CRACK_TICK * (0.4 + 0.6 * s.crack.depth / CRACK_DEPTH_MAX)
-            tick = np.array([[centre[0], centre[1]], [centre[0] + reach * math.cos(angle),
-                                                      centre[1] + reach * math.sin(angle)]])
+            tick = np.array(
+                [[centre[0], centre[1]], [centre[0] + reach * math.cos(angle), centre[1] + reach * math.sin(angle)]]
+            )
             self.crack_mark.setData(*self.project(np.column_stack([tick, np.full(2, self._z(s.crack_z))])))
             self.crack_mark.setPen(pg.mkPen(colors.strong, width=1.5 + 3.0 * float(s.crack_open(phase))))
         else:
@@ -641,8 +674,9 @@ def _spring_and_damper(p0: np.ndarray, p1: np.ndarray) -> list[np.ndarray]:
     spring = p0 - side + s[:, None] * d + zig[:, None] * off
     rod = np.vstack([p0 + side, p0 + side + 0.55 * d])
     w = off * 1.6
-    cup = np.vstack([p0 + side + 0.45 * d + w, p0 + side + 0.7 * d + w, p0 + side + 0.7 * d - w,
-                     p0 + side + 0.45 * d - w])
+    cup = np.vstack(
+        [p0 + side + 0.45 * d + w, p0 + side + 0.7 * d + w, p0 + side + 0.7 * d - w, p0 + side + 0.45 * d - w]
+    )
     piston = np.vstack([p0 + side + 0.55 * d + 0.8 * w, p0 + side + 0.55 * d - 0.8 * w])
     tail = np.vstack([p0 + side + 0.7 * d, p1 + side])
     bar = np.vstack([p0 - side * 1.5, p0 + side * 1.5])
@@ -744,9 +778,14 @@ class OrbitPlots(pg.GraphicsLayoutWidget):
         least = self.ci.effectiveSizeHint(QtCore.Qt.SizeHint.MinimumSize).width()
         self.setMinimumWidth(math.ceil(least) + 2 * self.frameWidth())
 
-    def update_orbits(self, trails: list[np.ndarray], keys: list[np.ndarray], heavy_angle: float | None,
-                      centre: tuple[float, float] = (0.0, 0.0),
-                      ring: tuple[float, float, float] | None = None) -> None:
+    def update_orbits(
+        self,
+        trails: list[np.ndarray],
+        keys: list[np.ndarray],
+        heavy_angle: float | None,
+        centre: tuple[float, float] = (0.0, 0.0),
+        ring: tuple[float, float, float] | None = None,
+    ) -> None:
         """Each station's trail (k, 2), its keyphasor points, and the heavy spot's angle now, drawn from
         `centre` on the disc's orbit (where it whirls about: its sag, if drawn), with a stator `ring`'s
         clearance round the disc (centre x, y and radius)."""
@@ -858,8 +897,11 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
         self.points: dict[str, pg.ScatterPlotItem] = {}
         # Backward drawn first and larger: where the two branches coincide (an axisymmetric
         # rotor not spinning, or a mode the spin cannot split) both still show.
-        for key, name, size in (("bw", "backward whirl", 7), ("fw", "forward whirl", 3),
-                                ("planar", "straight-line whirl", 4)):
+        for key, name, size in (
+            ("bw", "backward whirl", 7),
+            ("fw", "forward whirl", 3),
+            ("planar", "straight-line whirl", 4),
+        ):
             self.points[key] = pg.ScatterPlotItem(size=size, name=name)
             p.addItem(self.points[key])
         self.damped = pg.ScatterPlotItem(size=3, name=f"heavily damped (ζ > {DAMPED:g})")
@@ -971,8 +1013,9 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
         for i, (rpm, names) in enumerate(groups):
             # Right of the circle and above it, unless the next one is close: then below it.
             crowded = i + 1 < len(groups) and groups[i + 1][0] - rpm < 0.3 * max_rpm
-            label = pg.TextItem(f"{rpm:,.0f} rpm ({' + '.join(names)})",
-                                anchor=(-0.05, -0.1) if crowded else (-0.05, 1.1))
+            label = pg.TextItem(
+                f"{rpm:,.0f} rpm ({' + '.join(names)})", anchor=(-0.05, -0.1) if crowded else (-0.05, 1.1)
+            )
             label.setPos(rpm, rpm / 60.0)
             p.addItem(label)
             self.crit_labels.append(label)
@@ -991,8 +1034,9 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
     def set_reference(self, result: Campbell | None) -> None:
         """Draw another Campbell diagram's lightly damped branches as dashed curves (None: none)."""
         p = self.plot
-        branches = [] if result is None else [j for j in range(result.freq_hz.shape[1])
-                                              if np.any(result.zeta[:, j] <= DAMPED)]
+        branches = (
+            [] if result is None else [j for j in range(result.freq_hz.shape[1]) if np.any(result.zeta[:, j] <= DAMPED)]
+        )
         while len(self.reference) < len(branches):
             line = p.plot()
             line.setZValue(-1)
@@ -1098,8 +1142,12 @@ class RotorPage(QtWidgets.QWidget):
         self.show_sag.setToolTip(SAG_TIP)
         self.show_sag.toggled.connect(lambda _: self._draw())
         row = FlowLayout()
-        row.add(QtWidgets.QLabel("Orbits, seen from the B end:"), self.same_scale, self.show_sag,
-                group("Strip chart:", self.station, "Window:", self.window))
+        row.add(
+            QtWidgets.QLabel("Orbits, seen from the B end:"),
+            self.same_scale,
+            self.show_sag,
+            group("Strip chart:", self.station, "Window:", self.window),
+        )
         center = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(center)
         cv.setContentsMargins(0, 0, 0, 0)
@@ -1118,7 +1166,8 @@ class RotorPage(QtWidgets.QWidget):
         self.top_speed.setSingleStep(1000.0)
         self.top_speed.setToolTip(
             "<p>The highest speed on the Campbell diagram, the stability map and the Bode plot, and the top "
-            "of the speed controls.</p>")
+            "of the speed controls.</p>"
+        )
         self.top_speed.valueChanged.connect(self.set_top_rpm)
         self.order_boxes = {}
         for order, name in ORDERS.items():
@@ -1194,13 +1243,15 @@ class RotorPage(QtWidgets.QWidget):
         self.wf_against.setToolTip(
             "<p>Against speed (a <i>cascade</i>): the latest run-up's or coast-down's spectra, each at its "
             "speed. Against time (a <i>waterfall</i>): every spectrum kept, steady running and taps "
-            "included.</p>")
+            "included.</p>"
+        )
         self.wf_scale = QtWidgets.QComboBox()
         self.wf_scale.addItems(SCALES)
         self.wf_scale.setToolTip(
             "<p>Log: each line's height is its amplitude in decades above a floor 1000 times (60 dB) "
             "below the tallest peak, so small peaks show beside the 1X one. Linear: heights in proportion "
-            "to the amplitude, as most cascades are drawn.</p>")
+            "to the amplitude, as most cascades are drawn.</p>"
+        )
         self.wf_block = spin(0.1, 2.0, 0.5, 2, " s")
         self.wf_block.setSingleStep(0.1)
         self.wf_block.setToolTip(BLOCK_TIP)
@@ -1220,8 +1271,14 @@ class RotorPage(QtWidgets.QWidget):
         waterfall_tab = QtWidgets.QWidget()
         wt = QtWidgets.QVBoxLayout(waterfall_tab)
         row = FlowLayout()
-        row.add(group("Orbit at:", self.wf_station), group("Against:", self.wf_against),
-                group("Amplitude:", self.wf_scale), group("Block:", self.wf_block), self.wf_marks, self.wf_clear)
+        row.add(
+            group("Orbit at:", self.wf_station),
+            group("Against:", self.wf_against),
+            group("Amplitude:", self.wf_scale),
+            group("Block:", self.wf_block),
+            self.wf_marks,
+            self.wf_clear,
+        )
         wt.addLayout(row)
         wt.addWidget(self.waterfall_plot, 1)
         wt.addWidget(self.waterfall_note)
@@ -1239,11 +1296,16 @@ class RotorPage(QtWidgets.QWidget):
         self.theory.setHtml(THEORY_HTML)
         self.tabs = TabGroups()
         self.tabs.add_group("Modes", (campbell_tab, "Campbell diagram"), (stability_tab, "Stability"))
-        self.tabs.add_group("Response", (bode_tab, "Bode plot"), (polar_tab, "Polar plot"), (waterfall_tab, "Waterfall"))
+        self.tabs.add_group(
+            "Response", (bode_tab, "Bode plot"), (polar_tab, "Polar plot"), (waterfall_tab, "Waterfall")
+        )
         # The panels scroll when the window is short, rather than squeeze their plots or set its height.
         self.tabs.add_group("Balancing", (ColumnScroll(self.balancing), "Balancing"))
-        self.tabs.add_group("Bearings", (ColumnScroll(self.bearing_panel), "Fluid-film bearing"),
-                            (ColumnScroll(self.magnet_panel), "Magnetic bearing"))
+        self.tabs.add_group(
+            "Bearings",
+            (ColumnScroll(self.bearing_panel), "Fluid-film bearing"),
+            (ColumnScroll(self.magnet_panel), "Magnetic bearing"),
+        )
         self.tabs.add_group("Rub", (ColumnScroll(self.rub_panel), "Rub"))
         self.tabs.add_group("Theory", (self.theory, "Theory"), (self.matrices, "Equations && matrices"))
         self.tabs.changed.connect(self._catch_up_tab)
@@ -1295,7 +1357,8 @@ class RotorPage(QtWidgets.QWidget):
         self.preset.addItems([p.name for p in self.presets] + [CUSTOM])
         self.preset.setToolTip(
             "<p>Load a rotor that shows one effect clearly, with a speed range to suit it. It starts from "
-            "rest and runs up to its target speed. Change any parameter and it becomes your own rotor.</p>")
+            "rest and runs up to its target speed. Change any parameter and it becomes your own rotor.</p>"
+        )
         self.preset.activated.connect(self._on_preset)
         self.preset_note = QtWidgets.QLabel()
         self.preset_note.setWordWrap(True)
@@ -1399,7 +1462,8 @@ class RotorPage(QtWidgets.QWidget):
             "<p>Track the 1X vector (once per revolution: the unbalance, the bow, the skew), the 2X vector "
             "(twice per revolution) or the 3X. On a round shaft nothing drives 2X or 3X; an asymmetric "
             "shaft's weight drives 2X, most near half its critical speeds, and a breathing crack's drives "
-            "2X and 3X, most near a half and a third of them.</p>")
+            "2X and 3X, most near a half and a third of them.</p>"
+        )
         for c in (self.probe_station, self.probe_direction, self.probe_order):
             c.currentIndexChanged.connect(self._on_probe)
         probe_row = QtWidgets.QHBoxLayout()
@@ -1444,9 +1508,13 @@ class RotorPage(QtWidgets.QWidget):
         )
         self.disc_mass = spin(0.01, 1000.0, s.disc_mass, 3, " kg")
         self.ip = spin(1e-6, 100.0, s.ip, 6, " kg·m²")
-        self.ip.setToolTip("Polar moment of inertia I<sub>p</sub>, about the spin axis (a thin disc of radius r<sub>d</sub>: m r<sub>d</sub>²/2)")
+        self.ip.setToolTip(
+            "Polar moment of inertia I<sub>p</sub>, about the spin axis (a thin disc of radius r<sub>d</sub>: m r<sub>d</sub>²/2)"
+        )
         self.id = spin(1e-6, 100.0, s.id, 6, " kg·m²")
-        self.id.setToolTip("Diametral moment of inertia I<sub>d</sub>, about a diameter (a thin disc: m r<sub>d</sub>²/4 = I<sub>p</sub>/2)")
+        self.id.setToolTip(
+            "Diametral moment of inertia I<sub>d</sub>, about a diameter (a thin disc: m r<sub>d</sub>²/4 = I<sub>p</sub>/2)"
+        )
         self.unbalance = spin(0.0, 1e6, s.unbalance * 1e6, 1, " g·mm")
         self.unbalance.setToolTip(
             "<p>Mass unbalance U = m e: the disc's mass times the distance e of its centre of mass from "
@@ -1497,12 +1565,13 @@ class RotorPage(QtWidgets.QWidget):
         self.crack_depth = spin(0.0, CRACK_DEPTH_MAX * 100, 0.0, 1, " %")
         self.crack_depth.setSingleStep(5.0)
         self.crack_angle = spin(-180.0, 180.0, math.degrees(crack.angle), 0, "°")
-        for size, angle, tip, label in ((self.unbalance, self.unbalance_angle, None, "Unbalance m·e:"),
-                                        (self.bow, self.bow_angle, BOW_TIP, "Shaft bow δ<sub>b</sub>:"),
-                                        (self.skew, self.skew_angle, SKEW_TIP, "Disc skew τ:"),
-                                        (self.asymmetry, self.asymmetry_angle, ASYMMETRY_TIP,
-                                         "Asymmetry ±Δ:"),
-                                        (self.crack_depth, self.crack_angle, CRACK_TIP, "Crack depth a<sub>c</sub>/d:")):
+        for size, angle, tip, label in (
+            (self.unbalance, self.unbalance_angle, None, "Unbalance m·e:"),
+            (self.bow, self.bow_angle, BOW_TIP, "Shaft bow δ<sub>b</sub>:"),
+            (self.skew, self.skew_angle, SKEW_TIP, "Disc skew τ:"),
+            (self.asymmetry, self.asymmetry_angle, ASYMMETRY_TIP, "Asymmetry ±Δ:"),
+            (self.crack_depth, self.crack_angle, CRACK_TIP, "Crack depth a<sub>c</sub>/d:"),
+        ):
             angle.setWrapping(True)
             angle.setStepType(QtWidgets.QAbstractSpinBox.StepType.DefaultStepType)
             angle.setSingleStep(15.0)
@@ -1535,10 +1604,29 @@ class RotorPage(QtWidgets.QWidget):
         self.shaft_note.setWordWrap(True)
         mute(self.shaft_note)
         form.addRow(self.shaft_note)
-        for box_ in (self.length, self.diameter, self.youngs, self.position, self.disc_mass, self.ip,
-                     self.id, self.unbalance, self.unbalance_angle, self.bow, self.bow_angle, self.skew, self.skew_angle,
-                     self.asymmetry, self.asymmetry_angle, self.crack_depth, self.crack_angle, self.crack_position,
-                     self.internal_damping, self.density, self.elements):
+        for box_ in (
+            self.length,
+            self.diameter,
+            self.youngs,
+            self.position,
+            self.disc_mass,
+            self.ip,
+            self.id,
+            self.unbalance,
+            self.unbalance_angle,
+            self.bow,
+            self.bow_angle,
+            self.skew,
+            self.skew_angle,
+            self.asymmetry,
+            self.asymmetry_angle,
+            self.crack_depth,
+            self.crack_angle,
+            self.crack_position,
+            self.internal_damping,
+            self.density,
+            self.elements,
+        ):
             box_.valueChanged.connect(self._on_params)
         return box
 
@@ -1548,13 +1636,15 @@ class RotorPage(QtWidgets.QWidget):
         grid = QtWidgets.QGridLayout(box)
         grid.setHorizontalSpacing(4)
         # Units on a second line, so that the headers are no wider than the boxes below them.
-        heads = (("k<sub>x</sub><br>[N/m]", "Horizontal support stiffness"),
-                 ("k<sub>y</sub><br>[N/m]", "Vertical support stiffness"),
-                 ("c<sub>x</sub><br>[N·s/m]", "Horizontal support damping"),
-                 ("c<sub>y</sub><br>[N·s/m]", "Vertical support damping"),
-                 ("m<br>[kg]", "Mass of the journal and whatever moves with it on the support"),
-                 ("k<sub>xy</sub><br>[N/m]", KXY_TIP),
-                 ("λ<br>&nbsp;", SWIRL_TIP))
+        heads = (
+            ("k<sub>x</sub><br>[N/m]", "Horizontal support stiffness"),
+            ("k<sub>y</sub><br>[N/m]", "Vertical support stiffness"),
+            ("c<sub>x</sub><br>[N·s/m]", "Horizontal support damping"),
+            ("c<sub>y</sub><br>[N·s/m]", "Vertical support damping"),
+            ("m<br>[kg]", "Mass of the journal and whatever moves with it on the support"),
+            ("k<sub>xy</sub><br>[N/m]", KXY_TIP),
+            ("λ<br>&nbsp;", SWIRL_TIP),
+        )
         for c, width in enumerate(BEARING_WIDTHS):
             grid.setColumnStretch(c + 1, width)
         for c, (text, tip) in enumerate(heads):
@@ -1565,9 +1655,15 @@ class RotorPage(QtWidgets.QWidget):
         self.bearing_rows: list[list[QtWidgets.QDoubleSpinBox]] = []
         for r, name in enumerate("AB"):
             grid.addWidget(QtWidgets.QLabel(f"<b>{name}</b>"), r + 1, 0)
-            row = [spin(1e2, 1e10, b.kx, 0), spin(1e2, 1e10, b.ky, 0), spin(0.0, 1e6, b.cx, 1),
-                   spin(0.0, 1e6, b.cy, 1), spin(0.001, 100.0, b.mass, 3), spin(-1e9, 1e9, b.kxy, 0),
-                   spin(0.0, 1.0, b.swirl, 2)]
+            row = [
+                spin(1e2, 1e10, b.kx, 0),
+                spin(1e2, 1e10, b.ky, 0),
+                spin(0.0, 1e6, b.cx, 1),
+                spin(0.0, 1e6, b.cy, 1),
+                spin(0.001, 100.0, b.mass, 3),
+                spin(-1e9, 1e9, b.kxy, 0),
+                spin(0.0, 1.0, b.swirl, 2),
+            ]
             row[5].setToolTip(KXY_TIP)
             row[6].setToolTip(SWIRL_TIP)
             row[6].setSingleStep(0.05)
@@ -1593,8 +1689,9 @@ class RotorPage(QtWidgets.QWidget):
         )
         self.supports = QtWidgets.QComboBox()
         self.supports.addItems(SUPPORTS)
-        self.supports.setToolTip("<p>What holds the journals: the springs and dampers in the table, or "
-                                 "these bearings at both ends.</p>")
+        self.supports.setToolTip(
+            "<p>What holds the journals: the springs and dampers in the table, or these bearings at both ends.</p>"
+        )
         self.supports.setItemData(FILMS, FILM_TIP, QtCore.Qt.ItemDataRole.ToolTipRole)
         self.supports.setItemData(MAGNETS, MAGNET_TIP, QtCore.Qt.ItemDataRole.ToolTipRole)
         self.supports.currentIndexChanged.connect(lambda _: self._on_params())
@@ -1674,22 +1771,55 @@ class RotorPage(QtWidgets.QWidget):
 
     def _crack(self) -> Crack:
         """The crack the panel describes, kept inside the shaft (and off its ends)."""
-        lo, hi = (x / self.length.value() for x in (min(0.0, self.position.value() * self.length.value()),
-                                                    max(self.length.value(), self.position.value() * self.length.value())))
+        lo, hi = (
+            x / self.length.value()
+            for x in (
+                min(0.0, self.position.value() * self.length.value()),
+                max(self.length.value(), self.position.value() * self.length.value()),
+            )
+        )
         margin = 1e-3 * (hi - lo)
-        return Crack(position=min(max(self.crack_position.value(), lo + margin), hi - margin),
-                     depth=self.crack_depth.value() / 100, angle=math.radians(self.crack_angle.value()),
-                     breathing=self.crack_breathing.isChecked())
+        return Crack(
+            position=min(max(self.crack_position.value(), lo + margin), hi - margin),
+            depth=self.crack_depth.value() / 100,
+            angle=math.radians(self.crack_angle.value()),
+            breathing=self.crack_breathing.isChecked(),
+        )
 
     def set_system(self, system: RotorSystem) -> None:
         """Show and use `system` (for scripts and tests)."""
-        boxes = (self.length, self.diameter, self.youngs, self.position, self.disc_mass, self.ip, self.id,
-                 self.unbalance, self.unbalance_angle, self.bow, self.bow_angle, self.skew, self.skew_angle,
-                 self.asymmetry, self.asymmetry_angle, self.crack_depth, self.crack_angle, self.crack_position,
-                 self.crack_breathing, self.internal_damping,
-                 self.gravity, self.isotropic, self.same_bearings, self.supports, self.nonlinear_film,
-                 self.shaft_mass, self.density,
-                 self.elements, self.mass_matrix, *(w for row in self.bearing_rows for w in row))
+        boxes = (
+            self.length,
+            self.diameter,
+            self.youngs,
+            self.position,
+            self.disc_mass,
+            self.ip,
+            self.id,
+            self.unbalance,
+            self.unbalance_angle,
+            self.bow,
+            self.bow_angle,
+            self.skew,
+            self.skew_angle,
+            self.asymmetry,
+            self.asymmetry_angle,
+            self.crack_depth,
+            self.crack_angle,
+            self.crack_position,
+            self.crack_breathing,
+            self.internal_damping,
+            self.gravity,
+            self.isotropic,
+            self.same_bearings,
+            self.supports,
+            self.nonlinear_film,
+            self.shaft_mass,
+            self.density,
+            self.elements,
+            self.mass_matrix,
+            *(w for row in self.bearing_rows for w in row),
+        )
         for w in boxes:
             w.blockSignals(True)
         self.length.setValue(system.length)
@@ -1764,8 +1894,11 @@ class RotorPage(QtWidgets.QWidget):
         self.preset.blockSignals(True)
         self.preset.setCurrentIndex(index)
         self.preset.blockSignals(False)
-        self.preset_note.setText(self.presets[index].note if index < len(self.presets)
-                                 else "Your own rotor: pick a preset to start again from one.")
+        self.preset_note.setText(
+            self.presets[index].note
+            if index < len(self.presets)
+            else "Your own rotor: pick a preset to start again from one."
+        )
 
     def set_weights(self, weights: tuple[complex, ...], plane_weights: tuple[PlaneWeight, ...] = ()) -> None:
         """Put these balance weights on the disc (kg·m each) and in these planes, in place of any there."""
@@ -1776,8 +1909,12 @@ class RotorPage(QtWidgets.QWidget):
     def _hideable(self) -> dict[str, tuple[QtWidgets.QDoubleSpinBox, float]]:
         """The boxes a balancing exercise can hide, by RotorSystem field, with the factor from SI to the box."""
         deg = 180.0 / math.pi
-        return {"unbalance": (self.unbalance, 1e6), "unbalance_angle": (self.unbalance_angle, deg),
-                "skew": (self.skew, deg), "skew_angle": (self.skew_angle, deg)}
+        return {
+            "unbalance": (self.unbalance, 1e6),
+            "unbalance_angle": (self.unbalance_angle, deg),
+            "skew": (self.skew, deg),
+            "skew_angle": (self.skew_angle, deg),
+        }
 
     def hide_unbalance(self, unbalance: float, angle: float, skew: tuple[float, float] | None = None) -> None:
         """Give the disc this unbalance (kg·m at `angle` rad) without showing it: a balancing exercise.
@@ -1854,8 +1991,12 @@ class RotorPage(QtWidgets.QWidget):
             formula = f" (48EI/L³ = {ks:,.0f} N/m at midspan)"
         self.shaft_note.setText(
             f"EI = {system.ei:.4g} N·m²; shaft stiffness at the disc (bearings rigid) "
-            f"{system.disc_stiffness:,.0f} N/m" + formula + self._asymmetry_text(system) + self._crack_text(system)
-            + self._shaft_mass_text(system) + self._sag_text(system)
+            f"{system.disc_stiffness:,.0f} N/m"
+            + formula
+            + self._asymmetry_text(system)
+            + self._crack_text(system)
+            + self._shaft_mass_text(system)
+            + self._sag_text(system)
         )
         self._analysis_timer.start()
 
@@ -1864,8 +2005,10 @@ class RotorPage(QtWidgets.QWidget):
         if not system.asymmetry:
             return ""
         d = system.asymmetry
-        return (f"<br>Asymmetric: EI = {system.ei * (1 + d):.4g} N·m² bending toward the stiff axis "
-                f"({math.degrees(system.asymmetry_angle):.0f}° from the mark), {system.ei * (1 - d):.4g} across it")
+        return (
+            f"<br>Asymmetric: EI = {system.ei * (1 + d):.4g} N·m² bending toward the stiff axis "
+            f"({math.degrees(system.asymmetry_angle):.0f}° from the mark), {system.ei * (1 - d):.4g} across it"
+        )
 
     @staticmethod
     def _crack_text(system: RotorSystem) -> str:
@@ -1875,23 +2018,34 @@ class RotorPage(QtWidgets.QWidget):
         c_open, c_across = system.crack_compliances
         soft, stiff = (system.axis_system(k).stiffness(0.0) for k in (False, True))
         loss = [1.0 - k[XD, XD] / system.with_(crack=None).stiffness(0.0)[XD, XD] for k in (soft, stiff)]
-        state = ("held open" if not crack.breathing else
-                 "breathing, opened by the weight" if system.crack_opening else
-                 "breathing, but shut: nothing opens it without gravity")
-        return (f"<br>Crack {crack.depth:.0%} deep at z = {system.crack_z * 1e3:.4g} mm ({state}): compliance "
-                f"{c_open:.3g} rad/(N·m) opening it, {c_across:.3g} across; on average over a turn it takes "
-                f"{loss[0]:.2%} and {loss[1]:.2%} off the disc's stiffness along and across its mouth")
+        state = (
+            "held open"
+            if not crack.breathing
+            else "breathing, opened by the weight"
+            if system.crack_opening
+            else "breathing, but shut: nothing opens it without gravity"
+        )
+        return (
+            f"<br>Crack {crack.depth:.0%} deep at z = {system.crack_z * 1e3:.4g} mm ({state}): compliance "
+            f"{c_open:.3g} rad/(N·m) opening it, {c_across:.3g} across; on average over a turn it takes "
+            f"{loss[0]:.2%} and {loss[1]:.2%} off the disc's stiffness along and across its mouth"
+        )
 
     @staticmethod
     def _shaft_mass_text(system: RotorSystem) -> str:
         if not system.density:
             return ""
         f = system.fixed_interface_freqs
-        held = (f"its lowest {f.size} mode{'s' if f.size != 1 else ''} with the stations held "
-                f"({', '.join(f'{x:,.0f}' for x in f)} Hz)" if f.size else
-                f"no modes with the stations held below {MODE_LIMIT:,.0f} Hz")
-        return (f"<br>Shaft {system.shaft_mass:.3g} kg ({system.shaft_mass / system.disc_mass:.0%} of the disc), "
-                f"{system.nodes.size - 1} elements, reduced to the stations and {held}")
+        held = (
+            f"its lowest {f.size} mode{'s' if f.size != 1 else ''} with the stations held "
+            f"({', '.join(f'{x:,.0f}' for x in f)} Hz)"
+            if f.size
+            else f"no modes with the stations held below {MODE_LIMIT:,.0f} Hz"
+        )
+        return (
+            f"<br>Shaft {system.shaft_mass:.3g} kg ({system.shaft_mass / system.disc_mass:.0%} of the disc), "
+            f"{system.nodes.size - 1} elements, reduced to the stations and {held}"
+        )
 
     def _refresh_analysis(self) -> None:
         """The Campbell diagram, critical speeds and steady states for the current parameters, at once."""
@@ -1956,16 +2110,30 @@ class RotorPage(QtWidgets.QWidget):
         jeff = (math.sqrt(system.disc_stiffness / system.disc_mass) if system.films else system.jeffcott_speed()) * RPM
         self.crit_label.setText(
             "<b>Critical speeds</b> (where a whirl frequency equals the spin speed, up to "
-            f"{top:,.0f} rpm):<br>" + ("<br>".join(lines) if lines else "none")
-            + ("<br><small>The backward whirl crossings are not critical: an isotropic rotor's unbalance "
-               "drives only forward whirl.</small>" if iso else "")
+            f"{top:,.0f} rpm):<br>"
+            + ("<br>".join(lines) if lines else "none")
+            + (
+                "<br><small>The backward whirl crossings are not critical: an isotropic rotor's unbalance "
+                "drives only forward whirl.</small>"
+                if iso
+                else ""
+            )
             + "<br><small>Textbook Jeffcott estimate (massless journals, no tilt"
-            + (", rigid bearings" if system.films else "") + f"): {jeff:,.0f} rpm</small>"
-            + ("<br><small>An asymmetric or cracked shaft has two critical speeds for each mode: those of a "
-               "round shaft as stiff as each of its axes (on average over a turn).</small>" if system.periodic else "")
-            + ("<br><small>With a massless shaft (the Jeffcott model, dashed): "
-               + (", ".join(f"{w * RPM:,.0f}" for w, _ in critical_speeds(massless, iso)) or "none") + " rpm</small>"
-               if massless is not None else "")
+            + (", rigid bearings" if system.films else "")
+            + f"): {jeff:,.0f} rpm</small>"
+            + (
+                "<br><small>An asymmetric or cracked shaft has two critical speeds for each mode: those of a "
+                "round shaft as stiff as each of its axes (on average over a turn).</small>"
+                if system.periodic
+                else ""
+            )
+            + (
+                "<br><small>With a massless shaft (the Jeffcott model, dashed): "
+                + (", ".join(f"{w * RPM:,.0f}" for w, _ in critical_speeds(massless, iso)) or "none")
+                + " rpm</small>"
+                if massless is not None
+                else ""
+            )
             + f"<br><b>Stability:</b> {self._onset_text()}"
         )
         self.stability_note.setText(self._stability_note())
@@ -1975,9 +2143,16 @@ class RotorPage(QtWidgets.QWidget):
             "hollow). A critical speed (circled) is where a lightly damped whirl frequency meets the 1X "
             "line: the unbalance, turning once per revolution, drives that mode at its natural "
             "frequency. An isotropic rotor's unbalance drives only its forward whirl."
-            + (" Crosses mark growing modes (ζ < 0), " + ("between the dashed lines." if math.isfinite(self.onset.end)
-                                                        else "above the onset of instability (dashed).")
-               if self.onset else "")
+            + (
+                " Crosses mark growing modes (ζ < 0), "
+                + (
+                    "between the dashed lines."
+                    if math.isfinite(self.onset.end)
+                    else "above the onset of instability (dashed)."
+                )
+                if self.onset
+                else ""
+            )
         )
         self._matrices_speed = -math.inf
         self._refresh_matrices()
@@ -1996,10 +2171,14 @@ class RotorPage(QtWidgets.QWidget):
         if o.omega == 0.0:
             return f"<b>unstable even at rest</b>: the {whirl} whirl at {o.freq_hz:.3g} Hz grows."
         if math.isfinite(o.end):
-            return (f"<b>unstable from {o.omega * RPM:,.0f} to {o.end * RPM:,.0f} rpm</b>, where the {whirl} whirl "
-                    f"at {o.freq_hz:.3g} Hz ({o.order:.2f}×) grows; stable again above.")
-        return (f"<b>unstable above {o.omega * RPM:,.0f} rpm</b>, where the {whirl} whirl at "
-                f"{o.freq_hz:.3g} Hz ({o.order:.2f}×) starts to grow.")
+            return (
+                f"<b>unstable from {o.omega * RPM:,.0f} to {o.end * RPM:,.0f} rpm</b>, where the {whirl} whirl "
+                f"at {o.freq_hz:.3g} Hz ({o.order:.2f}×) grows; stable again above."
+            )
+        return (
+            f"<b>unstable above {o.omega * RPM:,.0f} rpm</b>, where the {whirl} whirl at "
+            f"{o.freq_hz:.3g} Hz ({o.order:.2f}×) starts to grow."
+        )
 
     def _stability_note(self) -> str:
         s = self.sim.system
@@ -2016,17 +2195,24 @@ class RotorPage(QtWidgets.QWidget):
             coupled.append(f"the shaft's asymmetry Δ = {s.asymmetry:.3g}")
         if s.crack_opening:
             coupled.append(f"a {'breathing' if s.crack.breathing else 'open'} crack {s.crack.depth:.0%} deep")
-        cause = ("With " + " and ".join(coupled) + ": " if coupled else
-                 "No cross-coupling, internal damping, asymmetry or crack: every mode stays damped, however fast it "
-                 "spins. Set c<sub>i</sub>, k<sub>xy</sub>, λ or Δ to see one go unstable. ")
+        cause = (
+            "With " + " and ".join(coupled) + ": "
+            if coupled
+            else "No cross-coupling, internal damping, asymmetry or crack: every mode stays damped, however fast it "
+            "spins. Set c<sub>i</sub>, k<sub>xy</sub>, λ or Δ to see one go unstable. "
+        )
         if self.measure.currentIndex() == 2:
-            chart = (" The chart shades where the rotor is unstable against the shaft's asymmetry Δ and the speed "
-                     "(the rest of the rotor as it is), between the two axes' critical speeds (dashed).")
+            chart = (
+                " The chart shades where the rotor is unstable against the shaft's asymmetry Δ and the speed "
+                "(the rest of the rotor as it is), between the two axes' critical speeds (dashed)."
+            )
             if self.asym_chart is not None and not self.asym_chart.done:
                 chart += f" Working it out: {self.asym_chart._next / self.asym_chart.growth.size:.0%}."
         else:
             chart = f" Modes damped more than ζ = {DAMPED:g} are left off."
-        return f"<small>{cause}{self._onset_text()}{chart} Below: the full spectrum of the strip chart's station.</small>"
+        return (
+            f"<small>{cause}{self._onset_text()}{chart} Below: the full spectrum of the strip chart's station.</small>"
+        )
 
     def _on_measure(self, index: int) -> None:
         if index < 2:
@@ -2040,8 +2226,12 @@ class RotorPage(QtWidgets.QWidget):
         system = self.sim.system
         top = max(CHART_DELTA, math.ceil(system.asymmetry * 12.0) / 10.0)
         chart = self.asym_chart
-        if (chart is not None and chart.system.with_(asymmetry=0.0) == system.with_(asymmetry=0.0)
-                and chart.omegas[-1] == self.top_rpm / RPM and chart.asymmetries[-1] == top):
+        if (
+            chart is not None
+            and chart.system.with_(asymmetry=0.0) == system.with_(asymmetry=0.0)
+            and chart.omegas[-1] == self.top_rpm / RPM
+            and chart.asymmetries[-1] == top
+        ):
             return
         self.asym_chart = AsymmetryChart(system, self.top_rpm / RPM, top) if self.measure.currentIndex() == 2 else None
         self.asymmetry_plot.set_chart(self.asym_chart)
@@ -2049,8 +2239,11 @@ class RotorPage(QtWidgets.QWidget):
     def _work_asymmetry_chart(self) -> None:
         """Fill in some more of the asymmetry chart, if it shows, and draw what is new."""
         chart = self.asym_chart
-        if (chart is None or self.measure.currentIndex() != 2
-                or self.tabs.current_page() is not self.spectrum.parentWidget()):
+        if (
+            chart is None
+            or self.measure.currentIndex() != 2
+            or self.tabs.current_page() is not self.spectrum.parentWidget()
+        ):
             return
         if not chart.done:
             chart.work(CHART_BUDGET)
@@ -2381,19 +2574,23 @@ class RotorPage(QtWidgets.QWidget):
         if order > 1:
             where += f", {order}X"
             if not ss_amp:
-                return (f"<b>Steady state</b> ({where}): nothing drives {order}X"
-                        + (" on a round shaft." if not system.periodic else
-                           " on an asymmetric shaft (only a breathing crack's stiffness changes at 3X)."
-                           if order == 3 and system.spacing == 2 else
-                           " without gravity: tick <i>Horizontal rotor</i>."))
+                return f"<b>Steady state</b> ({where}): nothing drives {order}X" + (
+                    " on a round shaft."
+                    if not system.periodic
+                    else " on an asymmetric shaft (only a breathing crack's stiffness changes at 3X)."
+                    if order == 3 and system.spacing == 2
+                    else " without gravity: tick <i>Horizontal rotor</i>."
+                )
         head = f"<b>Steady state</b> ({where}): peak {_fmt_len(ss_amp)} at {ss_rpm:,.0f} rpm"
         crits = self.campbell.criticals if self.campbell else []
         zetas = [(abs(w - wc), z) for w, _, z in crits]
         near = min(crits, key=lambda c: abs(c[0] - order * wc), default=None)
         if order > 1:
             if near is not None and abs(near[0] - order * wc) < 0.15 * order * wc:
-                head += (f", about {'half' if order == 2 else 'a third of'} the critical speed "
-                         f"{near[0] * RPM:,.0f} rpm" + (": the <i>gravity critical</i>" if order == 2 else ""))
+                head += (
+                    f", about {'half' if order == 2 else 'a third of'} the critical speed "
+                    f"{near[0] * RPM:,.0f} rpm" + (": the <i>gravity critical</i>" if order == 2 else "")
+                )
         elif zetas and min(zetas)[0] < 0.05 * wc:
             z = min(zetas)[1]
             head += f"; its mode has ζ = {z:.3g}, ζ² = {z * z:.2g}"
@@ -2417,7 +2614,8 @@ class RotorPage(QtWidgets.QWidget):
         return (
             head + "<table cellspacing='0' cellpadding='2'><tr><th align='left'>Sweep</th>"
             f"<th>Ω'/ω<sub>c</sub>²</th><th>{order}X peak</th><th>of steady</th><th>at rpm</th><th>vs steady</th></tr>"
-            + "".join(rows) + "</table>"
+            + "".join(rows)
+            + "</table>"
         )
 
     # ------------------------------------------------------------- loop
@@ -2494,8 +2692,9 @@ class RotorPage(QtWidgets.QWidget):
                 if self.waterfall.feed(r.t[pick], vib[:, 0::2] + 1j * vib[:, 1::2], cols[:, OMEGA]):
                     self._waterfall_drawn = False
         touched = self._journal_touched()
-        if self.running and (touched or np.abs(self.sim.q[[XA, XD, XB, YA, YD, YB]]).max()
-                             > RUB * self.sim.system.length):
+        if self.running and (
+            touched or np.abs(self.sim.q[[XA, XD, XB, YA, YD, YB]]).max() > RUB * self.sim.system.length
+        ):
             self.stop_sweep()
             self.cancel_measurement()
             self._on_run()  # pause
@@ -2509,8 +2708,9 @@ class RotorPage(QtWidgets.QWidget):
         magnetic bearing's backup bearing, and that clearance."""
         q, s = self.sim.q, self.sim.system
         for name, (jx, jy), b in (("A", (XA, YA), s.bearing_a), ("B", (XB, YB), s.bearing_b)):
-            clearance = (b.film.clearance if b.film is not None else
-                         b.magnet.touchdown if b.magnet is not None else math.inf)
+            clearance = (
+                b.film.clearance if b.film is not None else b.magnet.touchdown if b.magnet is not None else math.inf
+            )
             if math.hypot(q[jx], q[jy]) >= clearance:
                 return name, clearance
         return None
@@ -2551,8 +2751,7 @@ class RotorPage(QtWidgets.QWidget):
 
         t, hist = self.history.window(self.window.value())
         st = self.station.currentIndex()
-        self.time.update_curves(t, self._shown(hist)[:, 2 * st : 2 * st + 2], hist[:, OMEGA] * RPM,
-                                self.window.value())
+        self.time.update_curves(t, self._shown(hist)[:, 2 * st : 2 * st + 2], hist[:, OMEGA] * RPM, self.window.value())
         if self.tabs.current_page() is self.rub_panel:
             self._draw_push(t, hist)
         self.campbell_plot.set_speed(sim.omega * RPM)
@@ -2564,7 +2763,8 @@ class RotorPage(QtWidgets.QWidget):
         self.balancing.update_status()
         self._frames += 1
         if self.tabs.current_page() is self.spectrum.parentWidget() and (
-                self._frames % SPECTRUM_FRAMES == 0 or not self.running):
+            self._frames % SPECTRUM_FRAMES == 0 or not self.running
+        ):
             self._draw_spectrum()
         if self._frames % WATERFALL_FRAMES == 0 or not self.running:
             self._draw_waterfall(only_new=True)
@@ -2592,46 +2792,64 @@ class RotorPage(QtWidgets.QWidget):
             parts.append(f"<span style='color:{colors.force}'>rubbing the stator ring</span>")
         growing = self.onset is not None and sim.omega >= self.onset.omega and least_damped(sim.system, w)[0] < 0
         # (Not where a turning shaft's weight drives 2X: the disc's position then says little of the 1X.)
-        if (heavy is not None and steady and not growing and not rubbing
-                and not (sim.system.periodic and sim.system.gravity)
-                and r_disc > 1e-3 * max(abs(sim.system.mass_unbalance) / sim.system.disc_mass, MIN_PEAK)):
+        if (
+            heavy is not None
+            and steady
+            and not growing
+            and not rubbing
+            and not (sim.system.periodic and sim.system.gravity)
+            and r_disc > 1e-3 * max(abs(sim.system.mass_unbalance) / sim.system.disc_mass, MIN_PEAK)
+        ):
             lag = math.degrees(heavy - math.atan2(here[3], here[2])) % 360.0
             parts.append(f"heavy spot leads the high spot by {lag:.0f}°")
         if growing:
             zeta, f, _ = least_damped(sim.system, w)
             if f == 0.0:  # a magnetic bearing too weak for its magnets
-                parts.append(f"<span style='color:{colors.force}'>unstable: the journals fall toward the "
-                             "magnets</span>")
+                parts.append(
+                    f"<span style='color:{colors.force}'>unstable: the journals fall toward the magnets</span>"
+                )
             elif w > 0:
                 grow = -zeta * 2 * math.pi * f / math.sqrt(max(1 - zeta * zeta, 1e-12))
                 # With the films' whole force that is only how it starts: oil whirl settles to a limit cycle.
                 what = "linearized, the equilibrium is unstable" if sim.system.whole_films else "unstable"
-                parts.append(f"<span style='color:{colors.force}'>{what}: a whirl at {f:.3g} Hz "
-                             f"({2 * math.pi * f / w:.2f}×) grows ×e every {1 / grow:.2g} s</span>")
+                parts.append(
+                    f"<span style='color:{colors.force}'>{what}: a whirl at {f:.3g} Hz "
+                    f"({2 * math.pi * f / w:.2f}×) grows ×e every {1 / grow:.2g} s</span>"
+                )
         if self.rubbed:
-            where = (f"journal {self.touched[0]} landed on its backup bearing, {_fmt_len(self.touched[1])} off "
-                     "centre (half the magnets' air gap). A real machine drops onto these when its magnetic "
-                     "bearings lose control; the model here is linear, and has no contact. "
-                     if self.touched and sim.system.magnets else
-                     f"journal {self.touched[0]} reached the wall of its bearing, a clearance of "
-                     f"{_fmt_len(self.touched[1])} off centre. "
-                     "A real oil film stiffens sharply there and keeps the journal off the wall; the film here is "
-                     "linearized (about where the journal rests), so it would let it through. Tick <i>Nonlinear "
-                     "film</i> to step the film's whole force. "
-                     if self.touched else
-                     f"the whirl passed {_fmt_len(RUB * sim.system.length)} ({RUB:.0%} of the span), "
-                     f"{_fmt_len(RUB * sim.system.length - sim.system.stator.clearance)} past the stator ring's "
-                     "clearance: its mount would have given way long before, and the machine been wrecked. "
-                     if sim.system.stator is not None else
-                     f"the whirl passed {_fmt_len(RUB * sim.system.length)} ({RUB:.0%} of the span), where a real "
-                     "rotor would rub its seals or wreck its bearings. "
-                     + ("The oil films hold the journals inside their clearance, but not the shaft's bending, so "
-                        "oil whip grows on. " if sim.system.whole_films else
-                        "The model is linear, so it would grow for ever. "))
+            where = (
+                f"journal {self.touched[0]} landed on its backup bearing, {_fmt_len(self.touched[1])} off "
+                "centre (half the magnets' air gap). A real machine drops onto these when its magnetic "
+                "bearings lose control; the model here is linear, and has no contact. "
+                if self.touched and sim.system.magnets
+                else f"journal {self.touched[0]} reached the wall of its bearing, a clearance of "
+                f"{_fmt_len(self.touched[1])} off centre. "
+                "A real oil film stiffens sharply there and keeps the journal off the wall; the film here is "
+                "linearized (about where the journal rests), so it would let it through. Tick <i>Nonlinear "
+                "film</i> to step the film's whole force. "
+                if self.touched
+                else f"the whirl passed {_fmt_len(RUB * sim.system.length)} ({RUB:.0%} of the span), "
+                f"{_fmt_len(RUB * sim.system.length - sim.system.stator.clearance)} past the stator ring's "
+                "clearance: its mount would have given way long before, and the machine been wrecked. "
+                if sim.system.stator is not None
+                else f"the whirl passed {_fmt_len(RUB * sim.system.length)} ({RUB:.0%} of the span), where a real "
+                "rotor would rub its seals or wreck its bearings. "
+                + (
+                    "The oil films hold the journals inside their clearance, but not the shaft's bending, so "
+                    "oil whip grows on. "
+                    if sim.system.whole_films
+                    else "The model is linear, so it would grow for ever. "
+                )
+            )
             parts.append(
                 f"<span style='color:{colors.force}'><b>Paused:</b> {where}"
-                + ("Set the target outside the unstable range" if self.onset is not None and math.isfinite(self.onset.end)
-                   else "Lower the target below the onset") + " and Reset.</span>")
+                + (
+                    "Set the target outside the unstable range"
+                    if self.onset is not None and math.isfinite(self.onset.end)
+                    else "Lower the target below the onset"
+                )
+                + " and Reset.</span>"
+            )
         self.readout.setText(" · ".join(parts))
 
     def _draw_push(self, t: np.ndarray | None = None, hist: np.ndarray | None = None) -> None:
@@ -2719,8 +2937,10 @@ class RotorPage(QtWidgets.QWidget):
         if not system.gravity:
             return ""
         q = system.static_deflection(0.0)
-        return (f"<br>Static sag at rest: disc {_fmt_len(-q[YD])}, journals {_fmt_len(-q[YA])} (A) and "
-                f"{_fmt_len(-q[YB])} (B)")
+        return (
+            f"<br>Static sag at rest: disc {_fmt_len(-q[YD])}, journals {_fmt_len(-q[YA])} (A) and "
+            f"{_fmt_len(-q[YB])} (B)"
+        )
 
     def _draw_spectrum(self) -> None:
         """The full spectrum at the strip chart's station over the strip chart's window."""
@@ -2728,11 +2948,18 @@ class RotorPage(QtWidgets.QWidget):
         st = self.station.currentIndex()
         freqs, amps = full_spectrum(t, self._vibration(hist)[:, 2 * st : 2 * st + 2])
         omega = self.sim.omega
-        self.spectrum.update_spectrum(freqs, amps, omega, whirl_modes(self.sim.system, omega), DAMPED,
-                                      top=(3 if self.sim.system.spacing == 1 else 2) if self.sim.system.periodic else 1)
+        self.spectrum.update_spectrum(
+            freqs,
+            amps,
+            omega,
+            whirl_modes(self.sim.system, omega),
+            DAMPED,
+            top=(3 if self.sim.system.spacing == 1 else 2) if self.sim.system.periodic else 1,
+        )
         self.spectrum_note.setText(
             f"Full spectrum of the {STATIONS[st].lower()} orbit over the last {self.window.value():g} s "
-            "(the strip chart's station and window): forward whirl on the right, backward on the left.")
+            "(the strip chart's station and window): forward whirl on the right, backward on the left."
+        )
 
     # ------------------------------------------------------------- waterfall
     def _new_waterfall(self) -> None:
@@ -2759,9 +2986,11 @@ class RotorPage(QtWidgets.QWidget):
         where = f"the {STATIONS[st].lower()} orbit"
         if tallest is None:
             if against_speed(mode):
-                text = (f"No {'run-up' if mode == 0 else 'coast-down'} since the spectra were cleared: change "
-                        "the target speed, or run up and coast down, and the spectra are drawn at each speed. "
-                        "Spectra taken at a steady speed are shown against time.")
+                text = (
+                    f"No {'run-up' if mode == 0 else 'coast-down'} since the spectra were cleared: change "
+                    "the target speed, or run up and coast down, and the spectra are drawn at each speed. "
+                    "Spectra taken at a steady speed are shown against time."
+                )
             else:
                 text = f"The first {wf.block:g} s block is being taken."
             self.waterfall_note.setText(text)
@@ -2774,8 +3003,12 @@ class RotorPage(QtWidgets.QWidget):
             f"resolution), overlapping by half. Tallest peak {_fmt_len(tallest.amp)} at "
             f"{tallest.freq:+.1f} Hz{order}, at {at}"
             + (": heights are in decades above 1/1000 of it (60 dB)." if log else ".")
-            + ("" if self.repeat_taps.isChecked() else
-               " Tap the disc, or tick <i>Tap the disc every</i>, to ring the free whirl."))
+            + (
+                ""
+                if self.repeat_taps.isChecked()
+                else " Tap the disc, or tick <i>Tap the disc every</i>, to ring the free whirl."
+            )
+        )
 
 
 def lightly_damped(result: Campbell) -> list[tuple[float, float]]:
@@ -2838,13 +3071,17 @@ class PositionBox(QtWidgets.QDoubleSpinBox):
 
 def _same_rotor(a: RotorSystem, b: RotorSystem) -> bool:
     """True if the two rotors are the same up to round-off (the panels' values pass through decimals)."""
+
     def close(u, v) -> bool:
         if u is None or v is None:
             return u is v
         if isinstance(u, (Bearing, JournalBearing, MagneticBearing, Crack, Stator)):
             # A film's own load is not used on the rotor: each bearing carries its share of the weight.
-            return type(u) is type(v) and all(close(getattr(u, f.name), getattr(v, f.name)) for f in fields(u)
-                                              if not (isinstance(u, JournalBearing) and f.name == "load"))
+            return type(u) is type(v) and all(
+                close(getattr(u, f.name), getattr(v, f.name))
+                for f in fields(u)
+                if not (isinstance(u, JournalBearing) and f.name == "load")
+            )
         if isinstance(u, tuple):
             return len(u) == len(v) and all(close(x, y) for x, y in zip(u, v))
         return cmath.isclose(u, v, rel_tol=1e-9, abs_tol=1e-15)

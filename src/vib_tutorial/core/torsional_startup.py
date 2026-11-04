@@ -231,8 +231,8 @@ class StartUpSimulator:
         self._links = np.zeros((n - 1, 2 * n))
         for i in range(n - 1):
             w, ki, ci = train.link_terms(i)
-            self._links[i, i:i + 2] = ki * w * w[0]
-            self._links[i, n + i:n + i + 2] = ci * w * w[0]
+            self._links[i, i : i + 2] = ki * w * w[0]
+            self._links[i, n + i : n + i + 2] = ci * w * w[0]
         self._load_speed = startup.motor.sync_speed * train.speeds[-1]
         self.peaks = np.zeros(n - 1)  # each link's largest |torque| so far, N·m
         self.peak_t = np.zeros(n - 1)  # and when
@@ -269,8 +269,7 @@ class StartUpSimulator:
         end); every step's samples."""
         n = self.train.n
         h = self.h
-        steps = min(round(duration / h), MAX_STEPS_PER_ADVANCE,
-                    max(0, round((self.startup.duration - self.t) / h)))
+        steps = min(round(duration / h), MAX_STEPS_PER_ADVANCE, max(0, round((self.startup.duration - self.t) / h)))
         motor = self.startup.motor
         phi, g0, g1 = self._phi, self._g0, self._g1
         rows = (0, n, 2 * n - 1)  # the motor's angle and speed, the load's speed
@@ -332,10 +331,10 @@ class StartUpPreset:
     note: str
 
 
-FAN_START = StartUp(Motor(MotorKind.INDUCTION, 50.0, 2, 1600.0, 0.2, transient=1500.0, time_constant=0.04),
-                    300.0, 4.0)
-COMPRESSOR_START = StartUp(Motor(MotorKind.SYNCHRONOUS, 50.0, 2, 6000.0, 0.2, pulsating=2000.0, field=10000.0,
-                                 field_slip=0.05), 600.0, 3.0)
+FAN_START = StartUp(Motor(MotorKind.INDUCTION, 50.0, 2, 1600.0, 0.2, transient=1500.0, time_constant=0.04), 300.0, 4.0)
+COMPRESSOR_START = StartUp(
+    Motor(MotorKind.SYNCHRONOUS, 50.0, 2, 6000.0, 0.2, pulsating=2000.0, field=10000.0, field_slip=0.05), 600.0, 3.0
+)
 
 # The start-up each torsional preset (by name) comes with; a train without one (the diesel set's
 # engine drives it) keeps the motor the page has.
@@ -344,10 +343,12 @@ STARTUPS = {
         FAN_START,
         "Direct on line: the switch-on torque rings at the line's 50 Hz, just below the coupling's 52.3 Hz "
         "mode, and the coupling's torque peaks at 6.0 kN·m in the first 0.07 s, 10× what it carries "
-        "running. A softer coupling (120 kN·m/rad: 42.7 Hz, further from 50) takes 7.0×."),
+        "running. A softer coupling (120 kN·m/rad: 42.7 Hz, further from 50) takes 7.0×.",
+    ),
     "Geared compressor": StartUpPreset(
         COMPRESSOR_START,
         "A synchronous motor's start: its poles' torque pulses at twice the slip frequency, 100 Hz at rest "
         "down to nothing at 1500 rpm, passing mode 2 (83.1 Hz) at 254 rpm and mode 1 (38.9 Hz) at 916 rpm. "
-        "The low-speed coupling's torque peaks at 11.3 kN·m just after the second, 4.5× its running torque."),
+        "The low-speed coupling's torque peaks at 11.3 kN·m just after the second, 4.5× its running torque.",
+    ),
 }

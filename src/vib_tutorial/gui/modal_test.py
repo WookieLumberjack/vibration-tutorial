@@ -64,8 +64,14 @@ from .theming import SETTINGS, add_legend, mute
 FRAME_MS = 30
 STEP_BUDGET_MS = 25  # measuring per frame, so the page stays responsive
 # Playback: how fast each record is drawn, as a multiple of real time (None: all at once).
-SPEEDS = [("Instant", None), ("100× real time", 100.0), ("30× real time", 30.0), ("10× real time", 10.0),
-          ("3× real time", 3.0), ("Real time", 1.0)]
+SPEEDS = [
+    ("Instant", None),
+    ("100× real time", 100.0),
+    ("30× real time", 30.0),
+    ("10× real time", 10.0),
+    ("3× real time", 3.0),
+    ("Real time", 1.0),
+]
 BLOCK_SIZES = [256, 512, 1024, 2048, 4096, 8192]
 
 
@@ -98,42 +104,53 @@ TRIALS = (
         "The hammer hits m3, which doesn't move in mode 2 of the uniform chain. Mode 2 isn't excited, drops "
         "out of every FRF, and no method can find it: the Modes tab lists three. Move the "
         "force to m4 and it's back.",
-        input=2),
+        input=2,
+    ),
     TestTrial(
         "Force noise: H1 against H2",
         "5% noise on the force channel. H1 reads low at the resonances, where the structure barely resists the "
         "force and the force signal is smallest, and the coherence dips there. Switch the estimator to H2: "
         "the peaks come back.",
-        force_noise=5.0),
+        force_noise=5.0,
+    ),
     TestTrial(
         "Response noise: the antiresonances",
         "5% noise on the response channels. H1 stays unbiased; switch to H2 and it reads high, most at the "
         "antiresonances, where the response is small. Look at m1's FRF (Show response of).",
-        response_noise=5.0),
+        response_noise=5.0,
+    ),
     TestTrial(
         "A short block: leakage",
         "Nb = 256 with no window: the hit is still ringing when the block ends, so the peaks leak, low and "
         "wide, and the damping comes out too high. Pick the Force + exponential window: the leakage goes, but "
         "every mode gains Δζ = 1/(τ<sub>w</sub>ω) (the dashed grey curve), which the extraction takes off "
         "again unless you untick <i>Remove the exponential window's damping</i>.",
-        block=256, window=Window.RECTANGULAR),
+        block=256,
+        window=Window.RECTANGULAR,
+    ),
     TestTrial(
         "Peak picking on coarse lines",
         "Peak picking with Nb = 256: each frequency snaps to a spectral line and ζ, from the half-power "
         "points, comes out too high. Lengthen the block, or switch to the circle fit or LSCF.",
-        block=256, method=Method.PEAK),
+        block=256,
+        method=Method.PEAK,
+    ),
     TestTrial(
         "Acceleration evens out the modes",
         "Periodic random with 2% response noise, measuring displacement: the top modes sink into the noise "
         "and LSCF can miss one. Switch the response sensor to Acceleration: every mode comes through, but "
         "the FRF below the first mode turns to noise.",
-        excitation=Excitation.PERIODIC_RANDOM, response_noise=2.0, tab=2),
+        excitation=Excitation.PERIODIC_RANDOM,
+        response_noise=2.0,
+        tab=2,
+    ),
     TestTrial(
         "Friction: the linearity check",
         "0.5 N of friction on every mass, hammer at 100%. Press <i>Hold for comparison</i>, then set the force "
         "level to 1000%: the peaks grow taller and sharper, towards the exact (frictionless) FRF, and the "
         "coherence drops even with no noise. See <i>Nonlinearity: friction</i>.",
-        friction=0.5),
+        friction=0.5,
+    ),
 )
 
 
@@ -144,6 +161,8 @@ def saved_playback() -> str:
 
 def save_playback(label: str) -> None:
     QtCore.QSettings(*SETTINGS).setValue("playback", label)
+
+
 OVERLAPS = [0.0, 0.5, 0.75]
 
 # The window each excitation is normally measured with; picked when the excitation changes.
@@ -287,8 +306,14 @@ class SignalView(pg.GraphicsLayoutWidget):
         # (as few as 2.5 per cycle at the band edge) and the fitted sine through them.
         for plot, curve, fit, y, y_fit, color in (
             (self.force, self.f_curve, self.f_fit, est.f, None if est.fit is None else est.fit[1], colors.force),
-            (self.response, self.x_curve, self.x_fit, est.x[:, j], None if est.fit is None else est.fit[2][:, j],
-             colors.mass[j]),
+            (
+                self.response,
+                self.x_curve,
+                self.x_fit,
+                est.x[:, j],
+                None if est.fit is None else est.fit[2][:, j],
+                colors.mass[j],
+            ),
         ):
             if y_fit is None:
                 curve.setData(est.t[:n], y[:n], pen=pg.mkPen(color, width=1), symbol=None)
@@ -306,21 +331,40 @@ class SignalView(pg.GraphicsLayoutWidget):
                 plot.setYRange(float(np.min(y)), float(np.max(y)))
         self.x_fit.setPen(pg.mkPen(colors.mass[j], width=1))
         self.response.setLabel("left", f"{est.response.symbol}{j + 1}", units=est.response.unit)
-        for curve, window, signal in ((self.f_window, est.force_window, est.f), (self.x_window, est.response_window, est.x[:, j])):
+        for curve, window, signal in (
+            (self.f_window, est.force_window, est.f),
+            (self.x_window, est.response_window, est.x[:, j]),
+        ):
             if window is None:
                 curve.setData([], [])
             else:
                 curve.setData(est.t, window * float(np.abs(signal).max() or 1.0))
-        what = (f"{est.freqs[-1]:.3g} Hz" if stepped else f"Block {est.count}") + (" (recording…)" if shown is not None else "")
-        self.force.setTitle(what + (": dots as measured · line: fitted sine" if stepped else
-                                    ": signals as measured · dashed: window (scaled)"), size="9pt")
+        what = (f"{est.freqs[-1]:.3g} Hz" if stepped else f"Block {est.count}") + (
+            " (recording…)" if shown is not None else ""
+        )
+        self.force.setTitle(
+            what
+            + (
+                ": dots as measured · line: fitted sine"
+                if stepped
+                else ": signals as measured · dashed: window (scaled)"
+            ),
+            size="9pt",
+        )
 
     def set_spectrum(self, est: Estimate, settings: MeasurementSettings, stepped: bool) -> None:
         spec = est.force_spectrum
         with np.errstate(divide="ignore"):
             db = 10.0 * np.log10(spec / spec.max()) if spec.size and spec.max() > 0 else spec
-        self.s_curve.setData(est.freqs, db, connect="finite", symbol="o" if stepped else None,
-                             symbolSize=4, symbolPen=None, symbolBrush=colors.force)
+        self.s_curve.setData(
+            est.freqs,
+            db,
+            connect="finite",
+            symbol="o" if stepped else None,
+            symbolSize=4,
+            symbolPen=None,
+            symbolBrush=colors.force,
+        )
         nyq = settings.fs / 2
         if settings.excitation is Excitation.IMPACT:
             f = np.linspace(0.0, nyq, 400)
@@ -331,8 +375,11 @@ class SignalView(pg.GraphicsLayoutWidget):
         self.band.setRegion((settings.band, nyq))
         self.spectrum.setXRange(0.0, nyq, padding=0)
         self.spectrum.setYRange(-60.0, 5.0, padding=0)
-        self.spectrum.setTitle("Averaged |F|² (dB re peak)" + (" · dashed: ideal hammer pulse" if
-                               settings.excitation is Excitation.IMPACT else ""), size="9pt")
+        self.spectrum.setTitle(
+            "Averaged |F|² (dB re peak)"
+            + (" · dashed: ideal hammer pulse" if settings.excitation is Excitation.IMPACT else ""),
+            size="9pt",
+        )
 
 
 class FrfView(pg.GraphicsLayoutWidget):
@@ -445,8 +492,19 @@ class FrfView(pg.GraphicsLayoutWidget):
     ) -> None:
         # The exact curves, mode lines and bands change only with the test; while it runs,
         # only the measured curves are updated.
-        key = (id(system), id(result), settings.fs, settings.input_dof, settings.response, j, stepped,
-               processing.window, processing.exp_end, processing.estimator, settings.force_level)
+        key = (
+            id(system),
+            id(result),
+            settings.fs,
+            settings.input_dof,
+            settings.response,
+            j,
+            stepped,
+            processing.window,
+            processing.exp_end,
+            processing.estimator,
+            settings.force_level,
+        )
         if key != self._key:
             self._key = key
             self._draw_reference(j, system, result, settings, processing, stepped)
@@ -500,8 +558,9 @@ class FrfView(pg.GraphicsLayoutWidget):
             h[rf.stuck[:, j]] = np.nan
             described = from_receptance(fd, h, response)
             pen = pg.mkPen(colors.strong, width=1.5, style=QtCore.Qt.PenStyle.DashDotLine)
-            self.mag.plot(fd, np.abs(described), pen=pen, connect="finite",
-                          name=f"Describing function at {amplitude:.3g} N")
+            self.mag.plot(
+                fd, np.abs(described), pen=pen, connect="finite", name=f"Describing function at {amplitude:.3g} N"
+            )
             self.phase.plot(fd, phase_deg(described), pen=pen, connect="finite")
 
         held_pen = pg.mkPen(colors.grey, width=1.5)
@@ -528,8 +587,9 @@ class FrfView(pg.GraphicsLayoutWidget):
             for p in (self.mag, self.phase, self.coh):
                 p.addItem(pg.InfiniteLine(pos=m.damped.fd_hz, angle=90, pen=pen))
         for p in (self.mag, self.phase, self.coh):
-            band = pg.LinearRegionItem((settings.band, nyq), movable=False, brush=pg.mkBrush(*colors.band_shade),
-                                       pen=pg.mkPen(None))
+            band = pg.LinearRegionItem(
+                (settings.band, nyq), movable=False, brush=pg.mkBrush(*colors.band_shade), pen=pg.mkPen(None)
+            )
             band.setZValue(-10)
             p.addItem(band)
         # An accelerance falls as ω² towards 0 Hz: range it on the band, not on the first lines.
@@ -542,9 +602,12 @@ class FrfView(pg.GraphicsLayoutWidget):
         drive = "driving-point" if j == settings.input_dof else "transfer"
         name, unit = ("H", "m/N") if response is Response.DISPLACEMENT else ("A", "(m/s²)/N")
         self.mag.setLabel("left", f"|{name}|  [{unit}]")
-        self.mag.setTitle(f"{name}<sub>{j + 1}{settings.input_dof + 1}</sub> = {response.symbol}{j + 1} / F "
-                          f"at m{settings.input_dof + 1} ({drive} {response.frf_name}) · dotted: f<sub>d</sub> of "
-                          "each mode · grey: above the passband · green: fit band (drag it)", size="9pt")
+        self.mag.setTitle(
+            f"{name}<sub>{j + 1}{settings.input_dof + 1}</sub> = {response.symbol}{j + 1} / F "
+            f"at m{settings.input_dof + 1} ({drive} {response.frf_name}) · dotted: f<sub>d</sub> of "
+            "each mode · grey: above the passband · green: fit band (drag it)",
+            size="9pt",
+        )
 
 
 class ModalTestPage(QtWidgets.QWidget):
@@ -584,8 +647,10 @@ class ModalTestPage(QtWidgets.QWidget):
         self.trial.addItem("Pick one…")
         self.trial.addItems([t.name for t in TRIALS])
         self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip("<p>Each sets up a test of the uniform 4-mass chain that shows one thing that can "
-                              "go wrong (or right). Loading one replaces the Simulation page's chain.</p>")
+        self.trial.setToolTip(
+            "<p>Each sets up a test of the uniform 4-mass chain that shows one thing that can "
+            "go wrong (or right). Loading one replaces the Simulation page's chain.</p>"
+        )
         self.trial.currentIndexChanged.connect(self._on_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
@@ -645,9 +710,11 @@ class ModalTestPage(QtWidgets.QWidget):
         for o in OVERLAPS:
             self.overlap.addItem(f"{o:.0%}", o)
         self.overlap.setCurrentIndex(1)
-        self.overlap.setToolTip("Consecutive blocks share this much data. With a Hann window, 50% "
-                                "overlap uses the data the window tapers away and gives more "
-                                "averages from the same measuring time.")
+        self.overlap.setToolTip(
+            "Consecutive blocks share this much data. With a Hann window, 50% "
+            "overlap uses the data the window tapers away and gives more "
+            "averages from the same measuring time."
+        )
         self.overlap_label = QtWidgets.QLabel("Block overlap:")
         form.addRow(self.overlap_label, self.overlap)
         self.points = QtWidgets.QSpinBox()
@@ -668,12 +735,16 @@ class ModalTestPage(QtWidgets.QWidget):
         form = QtWidgets.QFormLayout(daq)
         fs_row = QtWidgets.QHBoxLayout()
         self.fs = spin(0.5, 10000.0, 20.0, 2, " Hz")
-        self.fs.setToolTip("Samples per second on every channel. Nyquist frequency fs/2 is the "
-                           "highest frequency the samples can represent.")
+        self.fs.setToolTip(
+            "Samples per second on every channel. Nyquist frequency fs/2 is the "
+            "highest frequency the samples can represent."
+        )
         self.fs_auto = QtWidgets.QCheckBox("Auto")
         self.fs_auto.setChecked(True)
-        self.fs_auto.setToolTip("Follow the chain: choose fs so the highest mode is well inside "
-                                f"the anti-alias passband ({AA_CUTOFF:.0%} of Nyquist).")
+        self.fs_auto.setToolTip(
+            "Follow the chain: choose fs so the highest mode is well inside "
+            f"the anti-alias passband ({AA_CUTOFF:.0%} of Nyquist)."
+        )
         fs_row.addWidget(self.fs, 1)
         fs_row.addWidget(self.fs_auto)
         form.addRow("Sample rate fs:", fs_row)
@@ -681,8 +752,10 @@ class ModalTestPage(QtWidgets.QWidget):
         for b in BLOCK_SIZES:
             self.block.addItem(str(b), b)
         self.block.setCurrentIndex(BLOCK_SIZES.index(1024))
-        self.block.setToolTip("Samples per block Nb. The block lasts T = Nb/fs and the FRF lines "
-                              "are Δf = 1/T apart: longer blocks resolve narrower peaks.")
+        self.block.setToolTip(
+            "Samples per block Nb. The block lasts T = Nb/fs and the FRF lines "
+            "are Δf = 1/T apart: longer blocks resolve narrower peaks."
+        )
         self.block_label = QtWidgets.QLabel("Block size Nb:")
         form.addRow(self.block_label, self.block)
         self.averages = QtWidgets.QSpinBox()
@@ -709,9 +782,11 @@ class ModalTestPage(QtWidgets.QWidget):
         # --- noise
         noise = QtWidgets.QGroupBox("Measurement noise")
         form = QtWidgets.QFormLayout(noise)
-        noise_tip = ("Random noise added to the channel, as a percentage of the channel's peak in "
-                     "each block (the range an analyzer would set). Changing it reuses the same "
-                     "measurement, so you can compare like with like.")
+        noise_tip = (
+            "Random noise added to the channel, as a percentage of the channel's peak in "
+            "each block (the range an analyzer would set). Changing it reuses the same "
+            "measurement, so you can compare like with like."
+        )
         self.force_noise = spin(0.0, 100.0, 0.0, 2, " %")
         self.force_noise.setToolTip(noise_tip + " Noise on the force biases H1 low.")
         form.addRow("Force channel:", self.force_noise)
@@ -726,8 +801,10 @@ class ModalTestPage(QtWidgets.QWidget):
         for i, w in enumerate(Window):
             self.window.addItem(w.value, w)
             self.window.setItemData(i, WINDOW_TIPS[w], QtCore.Qt.ItemDataRole.ToolTipRole)
-        self.window.setToolTip("Multiplies each block before the FFT. Choosing an excitation picks its "
-                               "usual window; change it to see what the others do to the same data.")
+        self.window.setToolTip(
+            "Multiplies each block before the FFT. Choosing an excitation picks its "
+            "usual window; change it to see what the others do to the same data."
+        )
         form.addRow("Window:", self.window)
         self.exp_end = spin(0.1, 100.0, 100.0, 1, " %")
         self.exp_end.setToolTip(
@@ -974,11 +1051,23 @@ class ModalTestPage(QtWidgets.QWidget):
         self.trial_note.setText(trial.note)
         self.trial_note.setVisible(True)
         values = (
-            (self.excitation, trial.excitation), (self.response, trial.response), (self.block, trial.block),
-            (self.estimator_combo, Estimator.H1), (self.extract.method, trial.method),
+            (self.excitation, trial.excitation),
+            (self.response, trial.response),
+            (self.block, trial.block),
+            (self.estimator_combo, Estimator.H1),
+            (self.extract.method, trial.method),
         )
-        widgets = [w for w, _ in values] + [self.input, self.window, self.fs, self.fs_auto, self.anti_alias,
-                                            self.force_noise, self.response_noise, self.force_level, self.exp_end]
+        widgets = [w for w, _ in values] + [
+            self.input,
+            self.window,
+            self.fs,
+            self.fs_auto,
+            self.anti_alias,
+            self.force_noise,
+            self.response_noise,
+            self.force_level,
+            self.exp_end,
+        ]
         for w in widgets:
             w.blockSignals(True)
         for combo, value in values:
@@ -1223,8 +1312,9 @@ class ModalTestPage(QtWidgets.QWidget):
         if est is None or acq is None or not acq.done:
             self.stab, self.poles, self.ident = None, [], None
             self.frf_view.set_fit(None, None)
-            self.results.set_results([], np.zeros((0, 0)), "Modal parameters are extracted when the "
-                                     "measurement is complete.")
+            self.results.set_results(
+                [], np.zeros((0, 0)), "Modal parameters are extracted when the measurement is complete."
+            )
             self.stab_plot.set_data(None, [], np.zeros(0), np.zeros(0), [])
             return
         method = self.extract.current
@@ -1236,9 +1326,13 @@ class ModalTestPage(QtWidgets.QWidget):
         if not np.isfinite(H[band_mask(est.freqs, band)]).all():  # e.g. a hit shorter than a sample, unfiltered
             self.ident = None
             self.frf_view.set_fit(None, None)
-            self.results.set_results([], np.zeros((0, 0)), "No FRF to fit: the force measured nothing at "
-                                     "some lines in the band (a hammer pulse shorter than a sample, with no "
-                                     "anti-alias filter to spread it, misses every sample).")
+            self.results.set_results(
+                [],
+                np.zeros((0, 0)),
+                "No FRF to fit: the force measured nothing at "
+                "some lines in the band (a hammer pulse shorter than a sample, with no "
+                "anti-alias filter to spread it, misses every sample).",
+            )
             self.stab_plot.set_data(None, [], np.zeros(0), np.zeros(0), [])
             return
         if method is Method.PEAK:
@@ -1265,11 +1359,14 @@ class ModalTestPage(QtWidgets.QWidget):
         modes = sorted(reported.modes, key=lambda m: m.fn_hz)
         rows = match_modes(modes, acq.result, band[1])
         found = sum(1 for r in rows if r.mode and r.identified)
-        head = f"<b>{method.value}</b>: {len(modes)} mode{'s' if len(modes) != 1 else ''} identified, " \
-               f"{found} matched to exact modes."
+        head = (
+            f"<b>{method.value}</b>: {len(modes)} mode{'s' if len(modes) != 1 else ''} identified, "
+            f"{found} matched to exact modes."
+        )
         self.results.set_results(rows, mac_matrix(modes, acq.result), head + "<br>" + "<br>".join(notes))
-        self.results.mac.set_matrix(mac_matrix(modes, acq.result), [f"{m.fn_hz:.3g} Hz" for m in modes],
-                                    [str(m.index) for m in exact])
+        self.results.mac.set_matrix(
+            mac_matrix(modes, acq.result), [f"{m.fn_hz:.3g} Hz" for m in modes], [str(m.index) for m in exact]
+        )
 
         j = max(0, self.output.currentIndex())
         lo, hi = band
@@ -1279,8 +1376,9 @@ class ModalTestPage(QtWidgets.QWidget):
         else:
             self.frf_view.set_fit(None, None)
         mask = band_mask(est.freqs, band)
-        self.stab_plot.set_data(self.stab, self.poles, est.freqs[mask], mode_indicator(H[mask]),
-                                [m.damped.fn_hz for m in exact])
+        self.stab_plot.set_data(
+            self.stab, self.poles, est.freqs[mask], mode_indicator(H[mask]), [m.damped.fn_hz for m in exact]
+        )
 
     # -------------------------------------------------------------- text
     def _update_info(self) -> None:
@@ -1315,14 +1413,21 @@ class ModalTestPage(QtWidgets.QWidget):
             notes = []
             if d.fd_hz > nyq:
                 alias = abs(d.fd_hz - s.fs * round(d.fd_hz / s.fs))
-                notes.append("above Nyquist: " + ("removed by the filter" if s.anti_alias else
-                                                  f"<b>aliases to {alias:.3g} Hz</b>"))
+                notes.append(
+                    "above Nyquist: "
+                    + ("removed by the filter" if s.anti_alias else f"<b>aliases to {alias:.3g} Hz</b>")
+                )
             elif d.fd_hz > s.band:
-                notes.append("in the filter's roll-off" if s.anti_alias else
-                             f"above the usable band ({AA_CUTOFF:.0%} of Nyquist)")
+                notes.append(
+                    "in the filter's roll-off"
+                    if s.anti_alias
+                    else f"above the usable band ({AA_CUTOFF:.0%} of Nyquist)"
+                )
             if lines < 2.0 and d.fd_hz <= nyq:
-                notes.append("<b>under-resolved</b>: " + ("the peak falls between frequencies" if a.stepped
-                                                          else "peak too low, looks too damped"))
+                notes.append(
+                    "<b>under-resolved</b>: "
+                    + ("the peak falls between frequencies" if a.stepped else "peak too low, looks too damped")
+                )
             if s.excitation in (Excitation.IMPACT, Excitation.BURST_RANDOM) and left > 0.01:
                 notes.append("<b>still ringing at block end</b>: leakage unless a window is used")
             tip = ""
@@ -1341,17 +1446,28 @@ class ModalTestPage(QtWidgets.QWidget):
             )
         # Numbers and headers don't wrap (in a narrow pane they broke mid-number); a mode's notes, if
         # it has any, take a row of their own under it, across the table.
-        head = ("<tr><th style='white-space:nowrap'>Mode</th><th style='white-space:nowrap'>f<sub>d</sub><br>[Hz]</th><th style='white-space:nowrap'>ζ</th>"
-                "<th style='white-space:nowrap'>2ζf<sub>n</sub><br>[Hz]</th>"
-                + ("<th style='white-space:nowrap'>Points<br>in it</th>" if a.stepped else "<th style='white-space:nowrap'>Lines<br>in it</th><th style='white-space:nowrap'>Left<br>at T</th>")
-                + ("<th style='white-space:nowrap'>Hammer<br>level</th>" if s.excitation is Excitation.IMPACT else "") + "</tr>")
+        head = (
+            "<tr><th style='white-space:nowrap'>Mode</th><th style='white-space:nowrap'>f<sub>d</sub><br>[Hz]</th><th style='white-space:nowrap'>ζ</th>"
+            "<th style='white-space:nowrap'>2ζf<sub>n</sub><br>[Hz]</th>"
+            + (
+                "<th style='white-space:nowrap'>Points<br>in it</th>"
+                if a.stepped
+                else "<th style='white-space:nowrap'>Lines<br>in it</th><th style='white-space:nowrap'>Left<br>at T</th>"
+            )
+            + ("<th style='white-space:nowrap'>Hammer<br>level</th>" if s.excitation is Excitation.IMPACT else "")
+            + "</tr>"
+        )
         e = s.excitation
         w = self.window.currentData()
         if e is Excitation.IMPACT and not s.anti_alias and s.tip_width < 2.0 / s.fs:
-            warnings.append("The hit lasts less than 2 samples. Without the anti-alias filter to spread it "
-                            "out, the samples can miss most of it, and the measured force is wrong.")
+            warnings.append(
+                "The hit lasts less than 2 samples. Without the anti-alias filter to spread it "
+                "out, the samples can miss most of it, and the measured force is wrong."
+            )
         if e is Excitation.IMPACT and w is Window.HANN:
-            warnings.append("A Hann window is zero at the start of the block, where the hit is: it throws the force away.")
+            warnings.append(
+                "A Hann window is zero at the start of the block, where the hit is: it throws the force away."
+            )
         if e is Excitation.RANDOM and w is Window.RECTANGULAR:
             warnings.append("Continuous random is not periodic in the block: without a window it leaks.")
         if e in (Excitation.PERIODIC_RANDOM, Excitation.CHIRP) and w is not Window.RECTANGULAR:
@@ -1523,23 +1639,32 @@ the top mode is above Nyquist (untick fs Auto first). It appears at |f − f<sub
 frequency.</p>
 <!--TAKEAWAYS-->
 """
-THEORY_HTML = THEORY_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "start-with-one-mass", "Start with one mass"),
-    ("frf_page", "three-forms", "Three forms of the same FRF"),
-    ("frf_page", "sum-of-modes", "Every term is a sum of modes"),
-    ("signals_page", "leakage", "Leakage"),
-    ("signals_page", "windows", "Windows"),
-)).replace("<!--EXTRACTION-->", EXTRACTION_THEORY_HTML).replace(
-    "<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in TRIALS) + "</ul>"
-).replace("<!--TAKEAWAYS-->", takeaways(
-    "A measured FRF is an estimate: sampling, blocks, windows, noise and averaging each leave their mark, "
-    "and the coherence says how much to trust each line.",
-    "H1 for noise on the response (antiresonances), H2 for noise on the force (resonances).",
-    "Leakage and windows both widen peaks, so both read as extra damping; an exponential window's "
-    "share can be taken off exactly.",
-    "Filter before sampling, or a mode above Nyquist shows up as a false one below it.",
-    "Curve fitting turns the FRFs into poles and shapes; the stabilization diagram separates the "
-    "physical poles from the fit's.",
-    "If the FRF changes with the force level, the structure is nonlinear and its modal parameters "
-    "belong to that level.",
-))
+THEORY_HTML = (
+    THEORY_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sim_page", "start-with-one-mass", "Start with one mass"),
+            ("frf_page", "three-forms", "Three forms of the same FRF"),
+            ("frf_page", "sum-of-modes", "Every term is a sum of modes"),
+            ("signals_page", "leakage", "Leakage"),
+            ("signals_page", "windows", "Windows"),
+        ),
+    )
+    .replace("<!--EXTRACTION-->", EXTRACTION_THEORY_HTML)
+    .replace("<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in TRIALS) + "</ul>")
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "A measured FRF is an estimate: sampling, blocks, windows, noise and averaging each leave their mark, "
+            "and the coherence says how much to trust each line.",
+            "H1 for noise on the response (antiresonances), H2 for noise on the force (resonances).",
+            "Leakage and windows both widen peaks, so both read as extra damping; an exponential window's "
+            "share can be taken off exactly.",
+            "Filter before sampling, or a mode above Nyquist shows up as a false one below it.",
+            "Curve fitting turns the FRFs into poles and shapes; the stabilization diagram separates the "
+            "physical poles from the fit's.",
+            "If the FRF changes with the force level, the structure is nonlinear and its modal parameters "
+            "belong to that level.",
+        ),
+    )
+)

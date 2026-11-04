@@ -39,8 +39,9 @@ def undamped_modes(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
     return np.sqrt(np.clip(w2, 0.0, None)), phi
 
 
-def closed_loop(system: ChainSystem, ctrl: Controller | None,
-                tmd: tuple[int, float, float, float] | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def closed_loop(
+    system: ChainSystem, ctrl: Controller | None, tmd: tuple[int, float, float, float] | None = None
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """(A, B, C_x) of the chain with the loop closed: z' = A z + B f (f on each mass), x = C_x z.
 
     `tmd` is (mass index, m, k, c) of an absorber hung from that mass.
@@ -63,22 +64,22 @@ def closed_loop(system: ChainSystem, ctrl: Controller | None,
     lagged = ctrl is not None and ctrl.lag > 0
     size = 2 * m + (2 if lagged else 0)
     A = np.zeros((size, size))
-    A[:m, m:2 * m] = np.eye(m)
-    A[m:2 * m, :m] = -Mi @ K
-    A[m:2 * m, m:2 * m] = -Mi @ C
+    A[:m, m : 2 * m] = np.eye(m)
+    A[m : 2 * m, :m] = -Mi @ K
+    A[m : 2 * m, m : 2 * m] = -Mi @ C
     if ctrl is not None:
         s, a = ctrl.sensor, ctrl.actuator
         if lagged:  # τu̇₁ = −u₁ − g ẋ_s, τu̇₂ = u₁ − u₂; the force u₂ on mass a
             t = ctrl.lag
-            A[m:2 * m, 2 * m + 1] = Mi[:, a]
+            A[m : 2 * m, 2 * m + 1] = Mi[:, a]
             A[2 * m, m + s] = -ctrl.gain / t
             A[2 * m, 2 * m] = -1.0 / t
             A[2 * m + 1, 2 * m] = 1.0 / t
             A[2 * m + 1, 2 * m + 1] = -1.0 / t
         else:
-            A[m:2 * m, m + s] -= Mi[:, a] * ctrl.gain
+            A[m : 2 * m, m + s] -= Mi[:, a] * ctrl.gain
     B = np.zeros((size, n))
-    B[m:2 * m, :] = Mi[:, :n]
+    B[m : 2 * m, :] = Mi[:, :n]
     Cx = np.zeros((n, size))
     Cx[:, :n] = np.eye(n)
     return A, B, Cx
@@ -136,7 +137,7 @@ def tracked_damping(system: ChainSystem, ctrl: Controller, gains: np.ndarray) ->
             nxt[rows] = pool[cols]
             prev = nxt
         oscillating = prev.imag > 1e-9 * np.maximum(1.0, np.abs(prev))
-        out[i, :len(prev)] = np.where(oscillating, -prev.real / np.abs(prev), np.nan)
+        out[i, : len(prev)] = np.where(oscillating, -prev.real / np.abs(prev), np.nan)
     return out
 
 

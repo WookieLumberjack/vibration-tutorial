@@ -118,8 +118,9 @@ class Matched:
         K = self.dynamic_stiffness(model, omega, X)
         return math.pi * K.imag * X * X
 
-    def loop(self, model: Model, omega: float, points: int = 400,
-             amplitude: float | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def loop(
+        self, model: Model, omega: float, points: int = 400, amplitude: float | None = None
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """One steady cycle of x = X sin ωt: (x, the force the element and the spring carry, the damping part).
 
         Friction's is its true force, F_f sign(ẋ), not the describing function's ellipse; the Zener element's

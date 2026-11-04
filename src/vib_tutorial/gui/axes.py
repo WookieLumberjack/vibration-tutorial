@@ -50,8 +50,10 @@ class LogAxis(pg.AxisItem):
         levels = super().logTickValues(minVal, maxVal, size, stdTicks)
         # The minor level repeats the decades of the major levels: drawn twice, their labels look bold.
         major = {round(v, 9) for spacing, values in levels if spacing is not None for v in values}
-        return [(spacing, values if spacing is not None else [v for v in values if round(v, 9) not in major])
-                for spacing, values in levels]
+        return [
+            (spacing, values if spacing is not None else [v for v in values if round(v, 9) not in major])
+            for spacing, values in levels
+        ]
 
     def logTickStrings(self, values, scale, spacing):
         labelled = next((t for t in TIERS if self._room_for(t)), (1,))
@@ -78,4 +80,3 @@ class LogAxis(pg.AxisItem):
 def log_axes() -> dict[str, LogAxis]:
     """Left and bottom axes for a plot with a log axis: pass as axisItems to addPlot or PlotWidget."""
     return {"left": LogAxis("left"), "bottom": LogAxis("bottom")}
-

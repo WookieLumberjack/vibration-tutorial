@@ -85,9 +85,14 @@ class StabilityMap(pg.GraphicsLayoutWidget):
         p.addItem(self.region)
         self.zero = pg.InfiniteLine(pos=0.0, angle=0)
         p.addItem(self.zero)
-        self.points = {key: pg.ScatterPlotItem(size=size, name=name)
-                       for key, name, size in (("bw", "backward whirl", 6), ("fw", "forward whirl", 4),
-                                               ("planar", "straight-line whirl", 4))}
+        self.points = {
+            key: pg.ScatterPlotItem(size=size, name=name)
+            for key, name, size in (
+                ("bw", "backward whirl", 6),
+                ("fw", "forward whirl", 4),
+                ("planar", "straight-line whirl", 4),
+            )
+        }
         for item in self.points.values():
             p.addItem(item)
             self.legend.addItem(item, item.name())
@@ -178,8 +183,9 @@ class FullSpectrum(pg.PlotWidget):
         self.axis = pg.InfiniteLine(pos=0.0, angle=90)
         p.addItem(self.axis)
         self.curve = p.plot()
-        self.sync = [pg.InfiniteLine(angle=90, label=text, labelOpts={"position": 0.92})
-                     for text in ("+1X", "−1X", "+2X", "+3X")]
+        self.sync = [
+            pg.InfiniteLine(angle=90, label=text, labelOpts={"position": 0.92}) for text in ("+1X", "−1X", "+2X", "+3X")
+        ]
         for line in self.sync:
             p.addItem(line)
         self.free: list[pg.InfiniteLine] = []
@@ -195,8 +201,15 @@ class FullSpectrum(pg.PlotWidget):
         for line, forward in zip(self.free, self.free_forward):
             line.setPen(pg.mkPen(colors.mode[1] if forward else colors.mode[3], width=1, style=DASH))
 
-    def update_spectrum(self, freqs: np.ndarray, amps: np.ndarray, omega: float, modes: WhirlModes | None,
-                        damped_limit: float, top: int = 1) -> None:
+    def update_spectrum(
+        self,
+        freqs: np.ndarray,
+        amps: np.ndarray,
+        omega: float,
+        modes: WhirlModes | None,
+        damped_limit: float,
+        top: int = 1,
+    ) -> None:
         """The spectrum, ±1X at speed Ω (rad/s) and +2X, +3X up to `top`, and the lightly damped modes' frequencies."""
         f1 = omega / (2.0 * math.pi)
         for line, order, shown in zip(self.sync, (1.0, -1.0, 2.0, 3.0), (True, True, top >= 2, top >= 3)):
@@ -294,8 +307,9 @@ class AsymmetryPlot(pg.PlotWidget):
         rpm, deltas = chart.omegas * RPM, chart.asymmetries
         dw, dd = rpm[1] - rpm[0], deltas[1] - deltas[0]
         self.image.setImage(rgba, autoLevels=False)
-        self.image.setRect(QtCore.QRectF(rpm[0] - dw / 2, deltas[0] - dd / 2, rpm[-1] - rpm[0] + dw,
-                                         deltas[-1] - deltas[0] + dd))
+        self.image.setRect(
+            QtCore.QRectF(rpm[0] - dw / 2, deltas[0] - dd / 2, rpm[-1] - rpm[0] + dw, deltas[-1] - deltas[0] + dd)
+        )
         self.soft.setData(chart.soft * RPM, deltas, connect="finite")
         self.stiff.setData(chart.stiff * RPM, deltas, connect="finite")
         self.getPlotItem().setRange(xRange=(rpm[0], rpm[-1]), yRange=(deltas[0], deltas[-1]), padding=0.02)

@@ -22,8 +22,7 @@ from .layouts import FlowLayout, group
 from .style import colors
 from .theming import add_legend, mute
 
-DASH, DOT, DASH_DOT = (QtCore.Qt.PenStyle.DashLine, QtCore.Qt.PenStyle.DotLine,
-                       QtCore.Qt.PenStyle.DashDotLine)
+DASH, DOT, DASH_DOT = (QtCore.Qt.PenStyle.DashLine, QtCore.Qt.PenStyle.DotLine, QtCore.Qt.PenStyle.DashDotLine)
 SOLID = QtCore.Qt.PenStyle.SolidLine
 CAPACITY = 100_000  # samples kept for the plots
 HEADROOM = 1.6  # y range above the data, relative to below it: room for the legend
@@ -66,8 +65,11 @@ class BackExpansionView(CMSRunView):
         for key in RECOVERIES:
             self.chain_box.addItem(RECOVERY_NAMES[key], key)
         self.chain_box.setToolTip("Which recovery the lower chain shows")
-        pick.add(group("Interior mass:", self.mass_box), group("Spring:", self.spring_box),
-                 group("Lower chain:", self.chain_box))
+        pick.add(
+            group("Interior mass:", self.mass_box),
+            group("Spring:", self.spring_box),
+            group("Lower chain:", self.chain_box),
+        )
 
         self.full_view = ChainView(draggable=False)
         self.rec_view = ChainView(draggable=False)
@@ -145,7 +147,11 @@ class BackExpansionView(CMSRunView):
         cb = model is not None and not model.free
         d, e = self.mass_dof, self.spring
         m = f"x{d + 1}" if d is not None else "x"
-        parts = ("Ψ x<sub>b</sub>", "Φ<sub>k</sub> q") if cb else ("R x<sub>b</sub>", "(Φ<sub>ik</sub> − RΦ<sub>bk</sub>) q")
+        parts = (
+            ("Ψ x<sub>b</sub>", "Φ<sub>k</sub> q")
+            if cb
+            else ("R x<sub>b</sub>", "(Φ<sub>ik</sub> − RΦ<sub>bk</sub>) q")
+        )
         names = {
             "true": f"{m} true",
             "coupled": f"{m} recovered = sum of:",
@@ -157,8 +163,11 @@ class BackExpansionView(CMSRunView):
         names.update({f"f_{key}": RECOVERY_NAMES[key] for key in RECOVERIES})
         names["f_true"] = f"{k} true"
         styles["f_true"] = styles["true_force"]
-        for prefix, plot, curves in (("", self.x_plot, self.x_curves), ("e_", self.e_plot, self.e_curves),
-                                     ("f_", self.f_plot, self.f_curves)):
+        for prefix, plot, curves in (
+            ("", self.x_plot, self.x_curves),
+            ("e_", self.e_plot, self.e_curves),
+            ("f_", self.f_plot, self.f_curves),
+        ):
             for key, curve in curves.items():
                 color, style = styles.get(prefix + key, styles.get(key))
                 curve.setPen(pg.mkPen(color, width=1, style=style))
@@ -254,7 +263,9 @@ class BackExpansionView(CMSRunView):
             key = self.chain_box.currentData()
             self.rec_view.setTitle(
                 f"Back-expanded from the {self.model.short_name} coupled solve: boundary solved, "
-                f"interior recovered — {RECOVERY_NAMES[key].lower()}", size="10pt")
+                f"interior recovered — {RECOVERY_NAMES[key].lower()}",
+                size="10pt",
+            )
         self._draw()
 
     # ------------------------------------------------------------- loop
@@ -290,8 +301,9 @@ class BackExpansionView(CMSRunView):
         x_rec = now[key][0] if now[key] is not None else sim.x_reduced
         x_true = sim.x_full
         t, y = self.history.window(self.window.value())
-        peak = max(float(np.abs(x_true).max()), float(np.abs(x_rec).max()),
-                   float(np.abs(y[:, :n]).max()) if y.size else 0.0)
+        peak = max(
+            float(np.abs(x_true).max()), float(np.abs(x_rec).max()), float(np.abs(y[:, :n]).max()) if y.size else 0.0
+        )
         f = self.force.value()
         tip, amp = n - 1, abs(self.force.settings.amplitude)
         self.full_view.update_state(x_true, peak, f, tip, amp)
@@ -305,8 +317,12 @@ class BackExpansionView(CMSRunView):
         xf, r, xe = y[:, :n], y[:, n : n + nr], y[:, n + nr :]
         recs = self._recovered(r, xe)
         true_x = xf[:, d]
-        shown = {"true": true_x, "coupled": recs["coupled"][:, d],
-                 "from_boundary": rec.from_boundary(r)[:, d], "from_modes": rec.from_modes(r)[:, d]}
+        shown = {
+            "true": true_x,
+            "coupled": recs["coupled"][:, d],
+            "from_boundary": rec.from_boundary(r)[:, d],
+            "from_modes": rec.from_modes(r)[:, d],
+        }
         for k, v in shown.items():
             self.x_curves[k].setData(t, v)
         true_f = rec.spring_forces(xf)[:, e]
@@ -340,15 +356,19 @@ class BackExpansionView(CMSRunView):
                 return "–"
             return f"{100 * float(np.sqrt(np.mean(err**2))) / rms:.3g}%"
 
-        parts = [f"{RECOVERY_NAMES[k].split(' (')[0].lower()} <b>{rel(errs[k], true_x)}</b> / "
-                 f"<b>{rel(ferrs[k], true_f)}</b>" for k in RECOVERIES if k in errs]
+        parts = [
+            f"{RECOVERY_NAMES[k].split(' (')[0].lower()} <b>{rel(errs[k], true_x)}</b> / <b>{rel(ferrs[k], true_f)}</b>"
+            for k in RECOVERIES
+            if k in errs
+        ]
         b = rec.boundary
         xb_err = recs["coupled"][:, b] - xf[:, b]
         xb_rel = float(np.sqrt(np.mean(xb_err**2))) / max(float(np.sqrt(np.mean(xf[:, b] ** 2))), 1e-300)
         missing = "" if "boundary" in errs else " (no boundary-only recovery: K<sub>ii</sub> is singular)"
         self.error_note.setText(
             f"RMS error over the last {min(w, t[-1] - t[0]):.3g} s, of x{d + 1} / of the force in k{e + 1}: "
-            + ", ".join(parts) + missing
+            + ", ".join(parts)
+            + missing
             + f". Boundary motion x<sub>b</sub> from the coupled solve: {100 * xb_rel:.3g}% "
             f"(largest |error| {_fmt(float(np.abs(xb_err).max()))}): the only error left in the enhanced recovery."
             f"   t = {sim.t:.2f} s"

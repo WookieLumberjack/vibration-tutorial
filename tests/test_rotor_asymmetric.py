@@ -57,7 +57,7 @@ def steady(system: RotorSystem, omega: float, settle: float = 3.0) -> RotorSampl
     sim = RotorSimulator(system)
     sim.omega = sim.target = omega
     sim.state[:] = 0.0
-    sim.state[:system.n_dof] = system.static_deflection(omega)
+    sim.state[: system.n_dof] = system.static_deflection(omega)
     run(sim, settle)
     return run(sim, 0.5)
 
@@ -138,8 +138,9 @@ def test_harmonic_balance_closes_on_isotropic_supports():
 
 @pytest.mark.parametrize("supports", [Bearing(), ANISO])
 def test_the_split_time_step_matches_the_harmonic_balance(supports):
-    s = RotorSystem(asymmetry=0.15, asymmetry_angle=0.4, gravity=9.81, unbalance=0.0,
-                    bearing_a=supports, bearing_b=supports)
+    s = RotorSystem(
+        asymmetry=0.15, asymmetry_angle=0.4, gravity=9.81, unbalance=0.0, bearing_a=supports, bearing_b=supports
+    )
     w = 75.0  # near the gravity critical
     r = steady(s, w)
     q0, q2 = gravity_response(s, [w])
@@ -164,8 +165,9 @@ def test_rest_and_energy():
     sim.target = 0.0
     run(sim, 0.2)
     np.testing.assert_allclose(sim.q, q, atol=1e-12)
-    assert sim.energy()[1] == pytest.approx(0.5 * (q - s.static_deflection(0.0)) @ s.stiffness_at(0.0, 0.0)
-                                            @ (q - s.static_deflection(0.0)))
+    assert sim.energy()[1] == pytest.approx(
+        0.5 * (q - s.static_deflection(0.0)) @ s.stiffness_at(0.0, 0.0) @ (q - s.static_deflection(0.0))
+    )
 
 
 def test_the_bow_reads_as_runout_at_slow_roll():
@@ -179,8 +181,9 @@ def test_the_undamped_band_lies_exactly_between_the_axes_critical_speeds():
     free = Bearing(cx=0.0, cy=0.0)
     s = RotorSystem(asymmetry=0.15, bearing_a=free, bearing_b=free)
     band = stability_onset(s, 3000.0 / RPM)
-    soft, stiff = (min(w for w, r, _ in campbell(s.axis_system(k), 3000.0 / RPM).criticals if r > 0.1)
-                   for k in (False, True))
+    soft, stiff = (
+        min(w for w, r, _ in campbell(s.axis_system(k), 3000.0 / RPM).criticals if r > 0.1) for k in (False, True)
+    )
     assert band.omega == pytest.approx(soft, abs=2e-3) and band.end == pytest.approx(stiff, abs=2e-3)
     assert round(band.omega * RPM) == 1479 and round(band.end * RPM) == 1645
     # The criticals Campbell lists are the axes' too.
@@ -241,8 +244,10 @@ def test_unbalance_angle_from_the_stiff_axis():
     assert peaks(45) == [(1547, 201), (1624, 195)]
     assert peaks(0, 0.0) == [(1589, 217)]
     # Not a complex number times the unbalance: a quarter turn of the heavy spot doesn't turn the response.
-    a, b = (synchronous_response(RotorSystem(asymmetry=0.1, unbalance_angle=t), [1400 / RPM])[0, XD]
-            for t in (0.0, math.pi / 2))
+    a, b = (
+        synchronous_response(RotorSystem(asymmetry=0.1, unbalance_angle=t), [1400 / RPM])[0, XD]
+        for t in (0.0, math.pi / 2)
+    )
     assert abs(b - 1j * a) > 0.5 * abs(a)
 
 
@@ -252,7 +257,7 @@ def test_tracking_takes_the_2x_vector():
     sim = RotorSimulator(s)
     sim.omega = sim.target = w
     sim.state[:] = 0.0
-    sim.state[:s.n_dof] = s.static_deflection(w)
+    sim.state[: s.n_dof] = s.static_deflection(w)
     run(sim, 3.0)
     r = run(sim, 0.6)
     sweep = TrackedSweep(rate=0.0, up=True)

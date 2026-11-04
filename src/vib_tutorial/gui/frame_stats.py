@@ -99,14 +99,25 @@ class FrameStats:
         if self._csv is None or f is None:
             return
         sim = "" if f.sim_t is None else f"{f.sim_t:.6f}"
-        self._csv.writerow((f"{f.start - self._t0:.4f}", "frame", self.page, f"{f.interval * 1e3:.3f}",
-                            f"{f.work * 1e3:.3f}", f"{f.paint * 1e3:.3f}", sim, ""))
+        self._csv.writerow(
+            (
+                f"{f.start - self._t0:.4f}",
+                "frame",
+                self.page,
+                f"{f.interval * 1e3:.3f}",
+                f"{f.work * 1e3:.3f}",
+                f"{f.paint * 1e3:.3f}",
+                sim,
+                "",
+            )
+        )
 
     def note(self, kind: str, detail: str, page: str | None = None) -> None:
         """Log a ``view`` or ``input`` row: what changed, now (between the frames around it)."""
         if self._csv is not None:
-            self._csv.writerow((f"{time.perf_counter() - self._t0:.4f}", kind, page or self.page or "", "", "", "",
-                                "", detail))
+            self._csv.writerow(
+                (f"{time.perf_counter() - self._t0:.4f}", kind, page or self.page or "", "", "", "", "", detail)
+            )
 
     def summary(self, page: str | None = None) -> dict[str, float] | None:
         """fps, interval/work/paint medians and 95th percentiles (ms), late share, sim speed."""
@@ -206,13 +217,14 @@ class Overlay(QtWidgets.QLabel):
         self.setText("\n".join(lines))
         self._place()
 
-
     def check_view(self) -> None:
         """Log a ``view`` row if what shows changed since the last check."""
         window = self.parentWidget()
         screen = window.screen()
-        view = (f"{describe_view(window)} | {window.width()}x{window.height()} @{window.devicePixelRatioF():g}x"
-                f" {screen.refreshRate() if screen else 0:.0f} Hz")
+        view = (
+            f"{describe_view(window)} | {window.width()}x{window.height()} @{window.devicePixelRatioF():g}x"
+            f" {screen.refreshRate() if screen else 0:.0f} Hz"
+        )
         if view != self._view:
             self._view = view
             self.stats.note("view", view, page=_page_title(window))
@@ -234,8 +246,9 @@ def describe_view(window: QtWidgets.QWidget) -> str:
     parts: list[str] = []
     widget = window
     while True:
-        tabs = next((t for t in widget.findChildren(QtWidgets.QTabWidget) if t.isVisible()
-                     and _tab_parent(t, widget)), None)
+        tabs = next(
+            (t for t in widget.findChildren(QtWidgets.QTabWidget) if t.isVisible() and _tab_parent(t, widget)), None
+        )
         if tabs is None or tabs.currentWidget() is None:
             break
         parts.append(_plain(tabs.tabText(tabs.currentIndex())))
@@ -262,8 +275,15 @@ def _tab_parent(tabs: QtWidgets.QTabWidget, widget: QtWidgets.QWidget) -> bool:
 class InputLog(QtCore.QObject):
     """Logs what the user does in `window` as ``input`` rows: an application-wide event filter."""
 
-    KINDS = (QtWidgets.QAbstractButton, QtWidgets.QComboBox, QtWidgets.QAbstractSpinBox, QtWidgets.QAbstractSlider,
-             QtWidgets.QTabBar, QtWidgets.QGraphicsView, QtWidgets.QLineEdit)
+    KINDS = (
+        QtWidgets.QAbstractButton,
+        QtWidgets.QComboBox,
+        QtWidgets.QAbstractSpinBox,
+        QtWidgets.QAbstractSlider,
+        QtWidgets.QTabBar,
+        QtWidgets.QGraphicsView,
+        QtWidgets.QLineEdit,
+    )
 
     def __init__(self, window: QtWidgets.QWidget, stats: FrameStats) -> None:
         super().__init__(window)
@@ -282,9 +302,18 @@ class InputLog(QtCore.QObject):
         elif t in (QtCore.QEvent.Type.MouseButtonRelease, QtCore.QEvent.Type.KeyRelease, QtCore.QEvent.Type.Wheel):
             widget = self._control(obj)
             if widget is not None:
-                how = "key" if t == QtCore.QEvent.Type.KeyRelease else "wheel" if t == QtCore.QEvent.Type.Wheel else (
-                    "drag" if self._press is not None and (event.globalPosition() - self._press).manhattanLength()
-                    > DRAG_PX else "click")
+                how = (
+                    "key"
+                    if t == QtCore.QEvent.Type.KeyRelease
+                    else "wheel"
+                    if t == QtCore.QEvent.Type.Wheel
+                    else (
+                        "drag"
+                        if self._press is not None
+                        and (event.globalPosition() - self._press).manhattanLength() > DRAG_PX
+                        else "click"
+                    )
+                )
                 # After the widget has handled it: its value is the new one then.
                 QtCore.QTimer.singleShot(0, lambda w=widget, h=how: self._log(w, h))
         return False
@@ -296,9 +325,9 @@ class InputLog(QtCore.QObject):
             if isinstance(widget, QtWidgets.QScrollBar):
                 return None  # scrolling a panel, not a setting
             if isinstance(widget, self.KINDS):
-                if isinstance(widget, QtWidgets.QLineEdit) and isinstance(widget.parentWidget(),
-                                                                          (QtWidgets.QAbstractSpinBox,
-                                                                           QtWidgets.QComboBox)):
+                if isinstance(widget, QtWidgets.QLineEdit) and isinstance(
+                    widget.parentWidget(), (QtWidgets.QAbstractSpinBox, QtWidgets.QComboBox)
+                ):
                     widget = widget.parentWidget()
                     continue
                 return widget if widget.window() is self.window or _is_popup_of(widget, self.window) else None
@@ -311,8 +340,9 @@ class InputLog(QtCore.QObject):
         except RuntimeError:  # deleted meanwhile
             return
         key = id(widget)
-        valued = isinstance(widget, (QtWidgets.QComboBox, QtWidgets.QAbstractSpinBox, QtWidgets.QLineEdit,
-                                     QtWidgets.QAbstractSlider))
+        valued = isinstance(
+            widget, (QtWidgets.QComboBox, QtWidgets.QAbstractSpinBox, QtWidgets.QLineEdit, QtWidgets.QAbstractSlider)
+        )
         if (how in ("key", "wheel") or valued) and self._values.get(key) == value:
             return  # nothing changed (a key that moved the cursor, a click into the box)
         now = time.perf_counter()
@@ -336,7 +366,8 @@ def describe_input(widget: QtWidgets.QWidget, how: str) -> tuple[str, str]:
         text = _plain(widget.text()) or _plain(widget.toolTip())[:40]
         if widget.isCheckable() and not isinstance(widget, QtWidgets.QRadioButton):
             return _label(widget) or text, ("on" if widget.isChecked() else "off") if _label(widget) else (
-                f"{text} {'on' if widget.isChecked() else 'off'}")
+                f"{text} {'on' if widget.isChecked() else 'off'}"
+            )
         return _label(widget), text
     if isinstance(widget, QtWidgets.QComboBox):
         return _label(widget), widget.currentText()
@@ -403,7 +434,8 @@ def _form_label(form: QtWidgets.QFormLayout, widget: QtWidgets.QWidget) -> str:
             continue
         held = field.widget()
         if (held is not None and (held is widget or held.isAncestorOf(widget))) or (
-                field.layout() is not None and _in_layout(field.layout(), widget)):
+            field.layout() is not None and _in_layout(field.layout(), widget)
+        ):
             return _plain(label.widget().text()).rstrip(":")
     return ""
 

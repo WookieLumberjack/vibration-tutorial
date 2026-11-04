@@ -83,7 +83,9 @@ def test_circle_fit_beats_peak_picking_between_lines():
     peak = by_mode(peak_picking(est.freqs, est.H, band, 4).modes)
     circle = by_mode(circle_fit(est.freqs, est.H, band, 4).modes)
     exact = EXACT[1]  # mode 2: a few lines across its peak
-    err = {name: abs(found[2].identified.fn_hz / exact.fn_hz - 1) for name, found in (("peak", peak), ("circle", circle))}
+    err = {
+        name: abs(found[2].identified.fn_hz / exact.fn_hz - 1) for name, found in (("peak", peak), ("circle", circle))
+    }
     assert err["circle"] < 0.2 * err["peak"]
     assert abs(circle[2].identified.zeta / exact.zeta - 1) < 0.1  # the neighbouring modes bend the circle a little
     assert circle[2].mac > 0.99
@@ -115,10 +117,20 @@ def test_a_node_at_the_force_hides_its_mode():
 
 
 def test_match_modes_reports_missed_and_extra():
-    ident = lsfd(np.linspace(0.1, 8, 200), frf(SYSTEM, np.linspace(0.1, 8, 200), 3), (0, 8),
-                 [EXACT[0].eigenvalue, pole_from(7.0, 0.05)])
+    ident = lsfd(
+        np.linspace(0.1, 8, 200),
+        frf(SYSTEM, np.linspace(0.1, 8, 200), 3),
+        (0, 8),
+        [EXACT[0].eigenvalue, pole_from(7.0, 0.05)],
+    )
     rows = match_modes(ident.modes, RESULT, 8.0)
-    assert [(r.mode, r.identified is not None) for r in rows] == [(1, True), (2, False), (3, False), (4, False), (None, True)]
+    assert [(r.mode, r.identified is not None) for r in rows] == [
+        (1, True),
+        (2, False),
+        (3, False),
+        (4, False),
+        (None, True),
+    ]
 
 
 def test_lscf_order_is_limited_by_the_lines_in_the_band():

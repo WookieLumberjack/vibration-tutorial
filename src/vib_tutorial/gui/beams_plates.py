@@ -84,50 +84,71 @@ TRIALS = (
         "is 1.7 % too high; by the fifth mode, where a half wave is only twice the depth, it is 33 % too high "
         "(Timoshenko: 0.75 of it). Shear deflection costs more than the sections' rotary inertia (0.78 against "
         "0.91 at mode 5), and the two together cost most.",
-        mode=5),
+        mode=5,
+    ),
     BeamPlateTrial(
         "A slender beam",
         "The same beam 20 mm deep (L/h = 50): Timoshenko's first mode is 0.07 % below Euler–Bernoulli's, its "
         "tenth 6.0 %. A beam is 'thin' only for wavelengths long against its depth: every beam gets thick at "
         "high enough modes.",
-        depth=0.02, mode=10),
+        depth=0.02,
+        mode=10,
+    ),
     BeamPlateTrial(
         "Short waves stop speeding up",
         "Euler–Bernoulli's bending wave travels at c = √ω (EI/ρA)<sup>¼</sup>, faster without limit as the "
         "wavelength shortens: impossible. With shear and rotary inertia (Timoshenko) the speed levels off below "
         "the shear wave's √(κG/ρ) = 2.9 km/s (centre, bottom). Timoshenko's second branch, thickness shear, "
         "starts near 16 kHz on this beam (√(κGA/ρI)/2π: a cut-off, below which it doesn't propagate).",
-        mode=20),
+        mode=20,
+    ),
     BeamPlateTrial(
         "A plate's modes",
         "A steel plate 600 × 400 mm, 3 mm thick, simply supported. Its modes are sin(mπx/a) sin(nπy/b), at "
         "ω = π²(m²/a² + n²/b²)√(D/ρh): 66.6 Hz for (1, 1), then 128 Hz (2, 1), 205 Hz (1, 2) and 230 Hz (3, 1). Mode "
         "(3, 2), the sixth, has 2 nodal lines across and 1 along.",
-        structure=RECT, length=0.6, side=0.4, mode=6),
+        structure=RECT,
+        length=0.6,
+        side=0.4,
+        mode=6,
+    ),
     BeamPlateTrial(
         "Twin modes and Chladni's figures",
         "A square plate (400 × 400 mm): (1, 3) and (3, 1) have the same frequency, so any mix of them is a mode "
         "too. Their sum and difference have nodal lines that are neither straight across nor along: the "
         "diagonals and rings of Chladni's sand figures, which he made by bowing a plate's edge.",
-        structure=RECT, length=0.4, side=0.4, mode=5, mix=1),
+        structure=RECT,
+        length=0.4,
+        side=0.4,
+        mode=5,
+        mix=1,
+    ),
     BeamPlateTrial(
         "A drum-like plate",
         "A clamped circular plate, radius 200 mm, 3 mm thick: λ² = 10.22 for the fundamental (191 Hz), then 21.26 "
         "with one nodal diameter (397 Hz), 34.88 with two (652 Hz) and 39.77 with one nodal circle (743 Hz). A "
         "mode with nodal diameters is a pair (cos nθ and sin nθ) at one frequency.",
-        structure=CIRCLE, length=0.2, mode=4),
+        structure=CIRCLE,
+        length=0.2,
+        mode=4,
+    ),
     BeamPlateTrial(
         "How many modes per hertz",
         "Count the modes below f (Modal density tab). A plate's count grows in proportion to f, so it has as many "
         "modes in every band of a given width: S/2 √(ρh/D) = 0.026 per Hz on the 600 × 400 mm plate, a mode "
         "every 39 Hz. A beam's count grows only as √f, so its modes spread apart. This is why plates and "
         "panels are treated statistically at high frequency.",
-        structure=RECT, length=0.6, side=0.4, mode=1, tab=TAB_DENSITY),
+        structure=RECT,
+        length=0.6,
+        side=0.4,
+        mode=1,
+        tab=TAB_DENSITY,
+    ),
 )
 
 TIPS = {
     "structure": "<p>A simply supported beam of rectangular section (with shear and rotary inertia), a simply "
-                 "supported rectangular plate, or a clamped circular one.</p>",
+    "supported rectangular plate, or a clamped circular one.</p>",
     "length": "<p>The beam's length, the plate's side a, or the circular plate's radius.</p>",
     "depth": "<p>The beam's depth h (in the plane it bends).</p>",
     "side": "<p>The plate's other side b.</p>",
@@ -137,12 +158,16 @@ TIPS = {
     "nu": "<p>Poisson's ratio (the shear modulus is E/2(1 + ν)).</p>",
     "mode": "<p>Which mode, counted up from the lowest.</p>",
     "mix": "<p>On a square plate, mode (m, n) and its twin (n, m) have the same frequency: show their sum or "
-           "difference instead.</p>",
+    "difference instead.</p>",
 }
-RATIO_TIP = ("<p>Each theory's frequency over Euler–Bernoulli's, mode by mode: rotary inertia (Rayleigh), shear "
-             "deflection, and both (Timoshenko).</p>")
-SPEED_TIP = ("<p>The bending wave's phase speed against its wavelength over the depth: Euler–Bernoulli's grows "
-             "without bound as the wave shortens; Timoshenko's levels off. Dotted: √(E/ρ) and √(κG/ρ).</p>")
+RATIO_TIP = (
+    "<p>Each theory's frequency over Euler–Bernoulli's, mode by mode: rotary inertia (Rayleigh), shear "
+    "deflection, and both (Timoshenko).</p>"
+)
+SPEED_TIP = (
+    "<p>The bending wave's phase speed against its wavelength over the depth: Euler–Bernoulli's grows "
+    "without bound as the wave shortens; Timoshenko's levels off. Dotted: √(E/ρ) and √(κG/ρ).</p>"
+)
 SHAPE_TIP = "<p>The mode's shape (colour: up and down) and its nodal lines, where it doesn't move.</p>"
 DENSITY_TIP = "<p>The number of modes at or below f (steps) against its asymptote (dashed).</p>"
 
@@ -192,16 +217,26 @@ band, mode-by-mode analysis gives way to energy and statistics (statistical ener
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("continuum_page", "continuum-waves", "The continuum's waves"),
-    ("energy_page", "rayleigh", "Rayleigh's quotient"),
-)).replace("<!--TRIALS-->", trials_html(TRIALS)).replace("<!--TAKEAWAYS-->", takeaways(
-    "Shear deflection and rotary inertia lower a beam's frequencies once a wavelength nears the depth; "
-    "Timoshenko's beam keeps both.",
-    "Euler–Bernoulli's bending waves speed up without limit; Timoshenko's level off below the shear wave's speed.",
-    "A plate's modes have nodal lines in two directions; modes sharing a frequency mix into Chladni's figures.",
-    "A plate has a constant modal density, S/2 √(ρh/D) per hertz; a beam's thins out as 1/√f.",
-))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("continuum_page", "continuum-waves", "The continuum's waves"),
+            ("energy_page", "rayleigh", "Rayleigh's quotient"),
+        ),
+    )
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Shear deflection and rotary inertia lower a beam's frequencies once a wavelength nears the depth; "
+            "Timoshenko's beam keeps both.",
+            "Euler–Bernoulli's bending waves speed up without limit; Timoshenko's level off below the shear wave's speed.",
+            "A plate's modes have nodal lines in two directions; modes sharing a frequency mix into Chladni's figures.",
+            "A plate has a constant modal density, S/2 √(ρh/D) per hertz; a beam's thins out as 1/√f.",
+        ),
+    )
+)
 
 
 class BeamsPlatesPage(QtWidgets.QWidget):
@@ -212,8 +247,9 @@ class BeamsPlatesPage(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the structure to show one idea from the Theory tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS], "<p>Each sets up the structure to show one idea from the Theory tab.</p>"
+        )
         self.trials.picked.connect(self.load_trial)
 
         shape = Form("Structure")
@@ -236,15 +272,27 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         self.mix = combo(MIXES, TIPS["mix"])
         pick.add("Square plate:", self.mix, TIPS["mix"])
 
-        connect_all((self.structure, self.length, self.depth, self.side, self.thickness, self.E, self.rho, self.nu,
-                     self.mode, self.mix), self._on_inputs)
+        connect_all(
+            (
+                self.structure,
+                self.length,
+                self.depth,
+                self.side,
+                self.thickness,
+                self.E,
+                self.rho,
+                self.nu,
+                self.mode,
+                self.mix,
+            ),
+            self._on_inputs,
+        )
 
         # --- centre: the beam
         self.ratio_plot = plot("f / f<sub>Euler–Bernoulli</sub>", None, "Mode n", None, height=150)
         self.ratio_plot.setToolTip(RATIO_TIP)
         add_legend(self.ratio_plot.getPlotItem(), offset=(-10, 10))
-        self.ratio_items = {th: pg.PlotDataItem(name=th.value, symbol="o", symbolSize=5)
-                            for th in THEORIES[1:]}
+        self.ratio_items = {th: pg.PlotDataItem(name=th.value, symbol="o", symbolSize=5) for th in THEORIES[1:]}
         self.ratio_now = pg.InfiniteLine(angle=90)
         self.ratio_plot.addItem(self.ratio_now)
         for item in self.ratio_items.values():
@@ -307,9 +355,18 @@ class BeamsPlatesPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        for box, value in ((self.structure, t.structure), (self.length, t.length), (self.depth, t.depth),
-                           (self.side, t.side), (self.thickness, t.thickness), (self.E, 210.0),
-                           (self.rho, 7850.0), (self.nu, 0.3), (self.mode, t.mode), (self.mix, t.mix)):
+        for box, value in (
+            (self.structure, t.structure),
+            (self.length, t.length),
+            (self.depth, t.depth),
+            (self.side, t.side),
+            (self.thickness, t.thickness),
+            (self.E, 210.0),
+            (self.rho, 7850.0),
+            (self.nu, 0.3),
+            (self.mode, t.mode),
+            (self.mix, t.mix),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -325,8 +382,13 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         self.side.setEnabled(s == RECT)
         self.thickness.setEnabled(s != BEAM)
         self.beam = Beam(self.length.value(), self.depth.value(), 0.05, self.material)
-        self.plate = Plate(self.length.value(), self.side.value() if s == RECT else self.length.value(),
-                           self.thickness.value() / 1000, self.material, circular=s == CIRCLE)
+        self.plate = Plate(
+            self.length.value(),
+            self.side.value() if s == RECT else self.length.value(),
+            self.thickness.value() / 1000,
+            self.material,
+            circular=s == CIRCLE,
+        )
         self.centre.setCurrentIndex(0 if s == BEAM else 1)
         if s == BEAM:
             b = self.beam
@@ -356,8 +418,11 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         for line in self.speed_lines:
             line.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DotLine))
         mark(self.speed_now, c.strong, filled=True)
-        self.shape_image.setLookupTable(pg.ColorMap([0.0, 0.5, 1.0], [
-            pg.mkColor(c.mass[0]), pg.mkColor(c.background), pg.mkColor(c.force)]).getLookupTable(nPts=256))
+        self.shape_image.setLookupTable(
+            pg.ColorMap(
+                [0.0, 0.5, 1.0], [pg.mkColor(c.mass[0]), pg.mkColor(c.background), pg.mkColor(c.force)]
+            ).getLookupTable(nPts=256)
+        )
         self.nodal.setPen(pg.mkPen(c.strong, width=2))
         self.outline.setPen(pg.mkPen(c.structure, width=2))
         self.count_item.setPen(pg.mkPen(c.mass[0], width=2))
@@ -400,7 +465,8 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         self.readout.setText(
             f"Mode {n}: half wavelength {fmt(b.length / n, 'm')}, {b.length / n / b.depth:.3g} depths. "
             f"Euler–Bernoulli {fmt(fe, 'Hz')}, Timoshenko {fmt(ft, 'Hz')} ({100 * (ft / fe - 1):+.3g} %); "
-            f"Timoshenko's thickness-shear branch at this n: {fmt(thick, 'Hz')}.")
+            f"Timoshenko's thickness-shear branch at this n: {fmt(thick, 'Hz')}."
+        )
 
     def _draw_plate(self) -> None:
         p = self.plate
@@ -412,9 +478,11 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             rect = QtCore.QRectF(-p.a, -p.a, 2 * p.a, 2 * p.a)
             th = np.linspace(0, 2 * math.pi, 300)
             self.outline.setData(p.a * np.cos(th), p.a * np.sin(th))
-            what = (f"({mode.m}, {mode.n}): {mode.m} nodal diameter{'s' if mode.m != 1 else ''}, {mode.n - 1} "
-                    f"nodal circle{'s' if mode.n != 2 else ''}, λ² = {mode.root ** 2:.4g}"
-                    + ("; a pair (cos nθ, sin nθ)" if mode.m else ""))
+            what = (
+                f"({mode.m}, {mode.n}): {mode.m} nodal diameter{'s' if mode.m != 1 else ''}, {mode.n - 1} "
+                f"nodal circle{'s' if mode.n != 2 else ''}, λ² = {mode.root**2:.4g}"
+                + ("; a pair (cos nθ, sin nθ)" if mode.m else "")
+            )
         else:
             x = np.linspace(0, p.a, GRID)
             y = np.linspace(0, p.b, max(3, int(GRID * p.b / p.a)))
@@ -422,8 +490,10 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             w = rect_shape(mode, p, x, y, mix)
             rect = QtCore.QRectF(0, 0, p.a, p.b)
             self.outline.setData([0, p.a, p.a, 0, 0], [0, 0, p.b, p.b, 0])
-            what = f"({mode.m}, {mode.n}): {mode.m - 1} nodal line{'s' if mode.m != 2 else ''} across a, " \
-                   f"{mode.n - 1} across b"
+            what = (
+                f"({mode.m}, {mode.n}): {mode.m - 1} nodal line{'s' if mode.m != 2 else ''} across a, "
+                f"{mode.n - 1} across b"
+            )
             if mix:
                 what += f", {'+' if mix > 0 else '−'} its twin ({mode.n}, {mode.m})"
         top = float(np.nanmax(np.abs(w))) or 1.0
@@ -461,8 +531,10 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             for i, m in enumerate(modes):
                 lines = f"{m.m}, {m.n - 1}" if self.plate.circular else f"{m.m - 1} × {m.n - 1}"
                 style = " style='font-weight:bold'" if i + 1 == n else ""
-                rows.append(f"<tr{style}><td>{i + 1}</td><td>({m.m}, {m.n})</td><td align='right'>"
-                            f"{m.freq_hz:.5g}</td><td>{lines}</td></tr>")
+                rows.append(
+                    f"<tr{style}><td>{i + 1}</td><td>({m.m}, {m.n})</td><td align='right'>"
+                    f"{m.freq_hz:.5g}</td><td>{lines}</td></tr>"
+                )
             title = "Frequencies, lowest first"
         self.table.setHtml(f"<p><b>{title}</b></p><table cellspacing='4'>{head}{''.join(rows)}</table>")
 
@@ -474,9 +546,11 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             f = np.linspace(0.0, top, 600)
             self.count_item.setData(f, counting(freqs, f))
             self.asym_item.setData(f, beam_asymptote(b, f))
-            self.density_note.setText(f"Euler–Bernoulli's count grows as √f: N ≈ (L/π)(ρAω²/EI)<sup>¼</sup>. "
-                                      f"The gap between modes widens: {fmt(float(freqs[1] - freqs[0]), 'Hz')} between "
-                                      f"the first two, {fmt(float(freqs[60] - freqs[59]), 'Hz')} by the sixtieth.")
+            self.density_note.setText(
+                f"Euler–Bernoulli's count grows as √f: N ≈ (L/π)(ρAω²/EI)<sup>¼</sup>. "
+                f"The gap between modes widens: {fmt(float(freqs[1] - freqs[0]), 'Hz')} between "
+                f"the first two, {fmt(float(freqs[60] - freqs[59]), 'Hz')} by the sixtieth."
+            )
         else:
             p = self.plate
             modes = self._plate_modes(DENSITY_MODES)
@@ -487,9 +561,11 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             self.count_item.setData(f, counting(freqs, f, weights))
             self.asym_item.setData(f, plate_asymptote(p, f))
             per_hz = p.area / (2 * p.scale)
-            self.density_note.setText(f"A plate's count grows in proportion to f: S/2 √(ρh/D) = {per_hz:.3g} modes "
-                                      f"per Hz, a mode every {fmt(1 / per_hz, 'Hz')} on average"
-                                      + (" (each pair counted twice)" if p.circular else "")
-                                      + ". The boundary takes a few modes off the leading term.")
+            self.density_note.setText(
+                f"A plate's count grows in proportion to f: S/2 √(ρh/D) = {per_hz:.3g} modes "
+                f"per Hz, a mode every {fmt(1 / per_hz, 'Hz')} on average"
+                + (" (each pair counted twice)" if p.circular else "")
+                + ". The boundary takes a few modes off the leading term."
+            )
         self.density_plot.setXRange(0.0, top, padding=0)
         self.density_plot.enableAutoRange(axis="y")

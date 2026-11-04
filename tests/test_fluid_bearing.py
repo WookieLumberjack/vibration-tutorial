@@ -48,10 +48,14 @@ def test_closed_form_coefficients_match_the_film_force(rpm):
     d, v = 1e-5 * b.clearance, 1e-5 * b.clearance * s.omega
     for j in range(2):
         e = np.eye(2)[j]
-        k[:, j] = -(b.film_force(x0 + d * e[0], y0 + d * e[1], 0, 0, s.omega, POINTS)
-                    - b.film_force(x0 - d * e[0], y0 - d * e[1], 0, 0, s.omega, POINTS)) / (2 * d)
-        c[:, j] = -(b.film_force(x0, y0, v * e[0], v * e[1], s.omega, POINTS)
-                    - b.film_force(x0, y0, -v * e[0], -v * e[1], s.omega, POINTS)) / (2 * v)
+        k[:, j] = -(
+            b.film_force(x0 + d * e[0], y0 + d * e[1], 0, 0, s.omega, POINTS)
+            - b.film_force(x0 - d * e[0], y0 - d * e[1], 0, 0, s.omega, POINTS)
+        ) / (2 * d)
+        c[:, j] = -(
+            b.film_force(x0, y0, v * e[0], v * e[1], s.omega, POINTS)
+            - b.film_force(x0, y0, -v * e[0], -v * e[1], s.omega, POINTS)
+        ) / (2 * v)
     scale_k, scale_c = np.abs(s.k).max(), np.abs(s.c).max()
     np.testing.assert_allclose(k, s.k, atol=1e-5 * scale_k)
     np.testing.assert_allclose(c, s.c, atol=1e-5 * scale_c)
@@ -136,6 +140,7 @@ def test_short_bearing_depends_on_s_times_l_over_d_squared():
     wide, narrow = JournalBearing(), JournalBearing(length=2.5e-3)
     a, b = wide.state(wide.omega_at(1.0)), narrow.state(narrow.omega_at(4.0))
     assert a.eccentricity == pytest.approx(b.eccentricity, rel=1e-9)
+
     def dimensionless(bearing, s):
         return s.k * bearing.clearance / bearing.load, s.c * bearing.clearance * s.omega / bearing.load
 
@@ -197,10 +202,16 @@ def test_whole_force_derivatives_and_dissipation():
         Kn, Cn, grad = np.zeros((2, 2)), np.zeros((2, 2)), np.zeros(2)
         for j in range(2):
             e = np.eye(2)[j]
-            Kn[:, j] = -(b.force(x + d * e[0], y + d * e[1], vx, vy, w) - b.force(x - d * e[0], y - d * e[1], vx, vy, w)) / (2 * d)
-            Cn[:, j] = -(b.force(x, y, vx + dv * e[0], vy + dv * e[1], w) - b.force(x, y, vx - dv * e[0], vy - dv * e[1], w)) / (2 * dv)
-            grad[j] = (pi_film(k, c, x, y, vx + dv * e[0], vy + dv * e[1], w)[9]
-                       - pi_film(k, c, x, y, vx - dv * e[0], vy - dv * e[1], w)[9]) / (2 * dv)
+            Kn[:, j] = -(
+                b.force(x + d * e[0], y + d * e[1], vx, vy, w) - b.force(x - d * e[0], y - d * e[1], vx, vy, w)
+            ) / (2 * d)
+            Cn[:, j] = -(
+                b.force(x, y, vx + dv * e[0], vy + dv * e[1], w) - b.force(x, y, vx - dv * e[0], vy - dv * e[1], w)
+            ) / (2 * dv)
+            grad[j] = (
+                pi_film(k, c, x, y, vx + dv * e[0], vy + dv * e[1], w)[9]
+                - pi_film(k, c, x, y, vx - dv * e[0], vy - dv * e[1], w)[9]
+            ) / (2 * dv)
         np.testing.assert_allclose(K, Kn, atol=1e-5 * np.abs(K).max())
         np.testing.assert_allclose(C, Cn, atol=1e-5 * np.abs(C).max())
         np.testing.assert_allclose(grad, -np.array(o[:2]), atol=1e-5 * np.abs(o[:2]).max())

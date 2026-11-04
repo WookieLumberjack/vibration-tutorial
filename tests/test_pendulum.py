@@ -24,8 +24,15 @@ def test_period_matches_the_elliptic_integral(degrees):
     assert period(p, a) == pytest.approx(elliptic_period(p, a), rel=1e-9)
 
 
-@pytest.mark.parametrize("pendulum", [Pendulum(), Pendulum(Kind.ROD, pivot=0.2), Pendulum(Kind.INVERTED),
-                                      Pendulum(Kind.TORSION, length=0.1, spring=0.5)])
+@pytest.mark.parametrize(
+    "pendulum",
+    [
+        Pendulum(),
+        Pendulum(Kind.ROD, pivot=0.2),
+        Pendulum(Kind.INVERTED),
+        Pendulum(Kind.TORSION, length=0.1, spring=0.5),
+    ],
+)
 def test_period_matches_the_stepped_swing(pendulum):
     a = math.radians(100)
     t, th, _ = swing(pendulum, a, 8 * pendulum.period0, 20000)

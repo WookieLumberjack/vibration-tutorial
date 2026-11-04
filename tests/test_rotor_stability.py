@@ -45,8 +45,9 @@ def test_cross_coupling_and_internal_damping_enter_as_skew_stiffness():
     np.testing.assert_allclose(C, C.T, atol=1e-12)
     H = s.circulatory()
     np.testing.assert_allclose(H, -H.T, atol=1e-12)
-    np.testing.assert_allclose(C[:4, :4] - np.diag(np.diag(RotorSystem().matrices()[1])[:4]),
-                               s.loss_time * s.shaft_stiffness(), atol=1e-12)
+    np.testing.assert_allclose(
+        C[:4, :4] - np.diag(np.diag(RotorSystem().matrices()[1])[:4]), s.loss_time * s.shaft_stiffness(), atol=1e-12
+    )
     np.testing.assert_allclose(s.stiffness(100.0), K + 100.0 * H)
     # None of it: K symmetric, H zero, stable at every speed.
     assert not RotorSystem().circulatory().any()

@@ -40,9 +40,13 @@ def _opaque_grid_specs(self, p):
             key = (id(pen), c.alpha())
             if key not in blended:
                 opaque = QtGui.QPen(pen)
-                opaque.setColor(QtGui.QColor.fromRgbF(c.redF() * a + bg.redF() * (1 - a),
-                                                      c.greenF() * a + bg.greenF() * (1 - a),
-                                                      c.blueF() * a + bg.blueF() * (1 - a)))
+                opaque.setColor(
+                    QtGui.QColor.fromRgbF(
+                        c.redF() * a + bg.redF() * (1 - a),
+                        c.greenF() * a + bg.greenF() * (1 - a),
+                        c.blueF() * a + bg.blueF() * (1 - a),
+                    )
+                )
                 blended[key] = opaque
             pen = blended[key]
         out.append((pen, p1, p2))

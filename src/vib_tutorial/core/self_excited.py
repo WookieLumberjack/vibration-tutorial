@@ -29,8 +29,7 @@ import numpy as np
 TWO_PI = 2.0 * math.pi
 
 
-def rk4(rhs: Callable[[np.ndarray], np.ndarray], z0: np.ndarray, h: float, steps: int,
-        keep: int = 1) -> np.ndarray:
+def rk4(rhs: Callable[[np.ndarray], np.ndarray], z0: np.ndarray, h: float, steps: int, keep: int = 1) -> np.ndarray:
     """Classical RK4 of z' = rhs(z) (autonomous; z may hold many systems side by side), every `keep`-th state."""
     z = np.array(z0, dtype=float)
     out = [z.copy()]
@@ -48,14 +47,14 @@ def rk4(rhs: Callable[[np.ndarray], np.ndarray], z0: np.ndarray, h: float, steps
 def settled_amplitude(x: np.ndarray, tail: float = 0.25) -> np.ndarray:
     """Half the peak-to-peak over the last `tail` of each history (axis 0 is time)."""
     n = x.shape[0]
-    end = x[int((1 - tail) * n):]
+    end = x[int((1 - tail) * n) :]
     return 0.5 * (end.max(axis=0) - end.min(axis=0))
 
 
 def dominant_hz(x: np.ndarray, dt: float, tail: float = 0.5) -> np.ndarray:
     """The frequency of each history's largest spectral line over its last `tail` (zero-padded ×8, Hann)."""
     n = x.shape[0]
-    end = x[int((1 - tail) * n):]
+    end = x[int((1 - tail) * n) :]
     end = end - end.mean(axis=0)
     w = np.hanning(end.shape[0])[:, None] if end.ndim == 2 else np.hanning(end.shape[0])
     spec = np.abs(np.fft.rfft(end * w, 8 * end.shape[0], axis=0))
@@ -116,7 +115,7 @@ PARKINSON = (2.69, 168.0, 6270.0, 59900.0)
 def force_coefficient(alpha: np.ndarray) -> np.ndarray:
     a1, a3, a5, a7 = PARKINSON
     a = np.asarray(alpha, dtype=float)
-    return a1 * a - a3 * a ** 3 + a5 * a ** 5 - a7 * a ** 7
+    return a1 * a - a3 * a**3 + a5 * a**5 - a7 * a**7
 
 
 @dataclass(frozen=True)
@@ -166,7 +165,7 @@ class Galloping:
             return -damper
         beta = a * self.omega / speed  # the largest angle of attack
         a1, a3, a5, a7 = PARKINSON
-        avg = 0.5 * a1 * beta - 3 / 8 * a3 * beta ** 3 + 5 / 16 * a5 * beta ** 5 - 35 / 128 * a7 * beta ** 7
+        avg = 0.5 * a1 * beta - 3 / 8 * a3 * beta**3 + 5 / 16 * a5 * beta**5 - 35 / 128 * a7 * beta**7
         wind = TWO_PI / self.omega * 0.5 * self.rho * speed * speed * self.side * a * self.omega * avg
         return wind - damper
 
@@ -231,11 +230,11 @@ class Viv:
     @property
     def mass_ratio(self) -> float:
         """m* = m / (ρπD²/4)."""
-        return self.mass / (self.rho * math.pi * self.diameter ** 2 / 4)
+        return self.mass / (self.rho * math.pi * self.diameter**2 / 4)
 
     @property
     def added_mass(self) -> float:
-        return self.added * self.rho * math.pi * self.diameter ** 2 / 4
+        return self.added * self.rho * math.pi * self.diameter**2 / 4
 
     @property
     def lock_in_at(self) -> float:
@@ -248,7 +247,7 @@ class Viv:
         Wf = TWO_PI * self.strouhal * U / D
         mt = self.mass + self.added_mass
         r = 2 * mt * self.zeta * self.omega + self.gamma * Wf * rho * D * D
-        k = mt * self.omega ** 2
+        k = mt * self.omega**2
 
         def f(z: np.ndarray) -> np.ndarray:
             y, v, q, p = z
@@ -259,14 +258,16 @@ class Viv:
 
         return f
 
-    def run(self, reduced: np.ndarray, periods: float = 150.0, per_period: int = 60,
-            keep: int = 2) -> tuple[np.ndarray, np.ndarray]:
+    def run(
+        self, reduced: np.ndarray, periods: float = 150.0, per_period: int = 60, keep: int = 2
+    ) -> tuple[np.ndarray, np.ndarray]:
         """(t, z[time, state, case]) at each reduced velocity, from rest with the wake at q = 2 (all at once)."""
         reduced = np.atleast_1d(np.asarray(reduced, dtype=float))
         h = 1.0 / (self.freq_hz * max(per_period, 1) * max(1.0, float(np.max(reduced)) * self.strouhal))
         n = round(periods / self.freq_hz / h)
-        z0 = np.array([np.zeros_like(reduced), np.zeros_like(reduced), np.full_like(reduced, 2.0),
-                       np.zeros_like(reduced)])
+        z0 = np.array(
+            [np.zeros_like(reduced), np.zeros_like(reduced), np.full_like(reduced, 2.0), np.zeros_like(reduced)]
+        )
         z = rk4(self.rhs(reduced), z0, h, n, keep=keep)
         return np.arange(z.shape[0]) * h * keep, z
 
@@ -328,8 +329,11 @@ class Flutter:
             lam = self.poles(float(U))
             up = lam[lam.imag > 1e-9]
             up = up[np.argsort(up.imag)]
-            if prev is not None and up.size == 2 and (
-                    abs(up[0] - prev[1]) + abs(up[1] - prev[0]) < abs(up[0] - prev[0]) + abs(up[1] - prev[1])):
+            if (
+                prev is not None
+                and up.size == 2
+                and (abs(up[0] - prev[1]) + abs(up[1] - prev[0]) < abs(up[0] - prev[0]) + abs(up[1] - prev[1]))
+            ):
                 up = up[::-1]
             for j, p in enumerate(up[:2]):
                 f[i, j] = abs(p) / TWO_PI
@@ -340,6 +344,7 @@ class Flutter:
 
     def flutter_speed(self, top: float = 200.0) -> float:
         """The lowest speed at which a pole crosses into the right half plane (bisection), NaN if none to `top`."""
+
         def growing(U: float) -> bool:
             return bool(np.max(self.poles(U).real) > 0)
 

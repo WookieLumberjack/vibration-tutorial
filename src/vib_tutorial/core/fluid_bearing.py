@@ -144,8 +144,7 @@ class JournalBearing:
         """
         return self.state(max(abs(omega), self.slowest()))
 
-    def film_force(self, x: float, y: float, vx: float, vy: float, omega: float,
-                   points: int = 4000) -> np.ndarray:
+    def film_force(self, x: float, y: float, vx: float, vy: float, omega: float, points: int = 4000) -> np.ndarray:
         """The film's force [f_x, f_y] (N) on the journal at (x, y) moving at (vx, vy), by quadrature.
 
         The short-bearing pressure, cavitated where it would be negative, summed
@@ -240,17 +239,22 @@ def coefficients(eps: float) -> tuple[np.ndarray, np.ndarray]:
     e2 = eps * eps
     s = math.sqrt(1.0 - e2)
     h0 = 1.0 / (PI2 * (1.0 - e2) + 16.0 * e2) ** 1.5
-    a = h0 * np.array([
-        [4.0 * (PI2 * (2.0 - e2) + 16.0 * e2),
-         math.pi * (PI2 * (1.0 - e2) ** 2 - 16.0 * e2 * e2) / (eps * s)],
-        [-math.pi * (PI2 * (1.0 - e2) * (1.0 + 2.0 * e2) + 32.0 * e2 * (1.0 + e2)) / (eps * s),
-         4.0 * (PI2 * (1.0 + 2.0 * e2) + 32.0 * e2 * (1.0 + e2) / (1.0 - e2))],
-    ])
+    a = h0 * np.array(
+        [
+            [4.0 * (PI2 * (2.0 - e2) + 16.0 * e2), math.pi * (PI2 * (1.0 - e2) ** 2 - 16.0 * e2 * e2) / (eps * s)],
+            [
+                -math.pi * (PI2 * (1.0 - e2) * (1.0 + 2.0 * e2) + 32.0 * e2 * (1.0 + e2)) / (eps * s),
+                4.0 * (PI2 * (1.0 + 2.0 * e2) + 32.0 * e2 * (1.0 + e2) / (1.0 - e2)),
+            ],
+        ]
+    )
     off = -8.0 * (PI2 * (1.0 + 2.0 * e2) - 16.0 * e2)
-    b = h0 * np.array([
-        [2.0 * math.pi * s * (PI2 * (1.0 + 2.0 * e2) - 16.0 * e2) / eps, off],
-        [off, 2.0 * math.pi * (PI2 * (1.0 - e2) ** 2 + 48.0 * e2) / (eps * s)],
-    ])
+    b = h0 * np.array(
+        [
+            [2.0 * math.pi * s * (PI2 * (1.0 + 2.0 * e2) - 16.0 * e2) / eps, off],
+            [off, 2.0 * math.pi * (PI2 * (1.0 - e2) ** 2 + 48.0 * e2) / (eps * s)],
+        ]
+    )
     return a, b
 
 
@@ -311,13 +315,18 @@ def pi_film_reference(k: float, c: float, x: float, y: float, vx: float, vy: flo
     gx_e, gy_e = fr_e * cp - ft_e * sp, fr_e * sp + ft_e * cp
     gx_p, gy_p = (fr_p * cp - ft_p * sp) / e, (fr_p * sp + ft_p * cp) / e
     crr, crt, ctt = 2.0 * k * icc, 2.0 * k * isc, 2.0 * k * iss
-    return (fx, fy,
-            gx_p * sp - gx_e * cp, -gx_e * sp - gx_p * cp,
-            gy_p * sp - gy_e * cp, -gy_e * sp - gy_p * cp,
-            crr * cp * cp - 2.0 * crt * cp * sp + ctt * sp * sp,
-            (crr - ctt) * cp * sp + crt * (cp * cp - sp * sp),
-            crr * sp * sp + 2.0 * crt * cp * sp + ctt * cp * cp,
-            psi)
+    return (
+        fx,
+        fy,
+        gx_p * sp - gx_e * cp,
+        -gx_e * sp - gx_p * cp,
+        gy_p * sp - gy_e * cp,
+        -gy_e * sp - gy_p * cp,
+        crr * cp * cp - 2.0 * crt * cp * sp + ctt * sp * sp,
+        (crr - ctt) * cp * sp + crt * (cp * cp - sp * sp),
+        crr * sp * sp + 2.0 * crt * cp * sp + ctt * cp * cp,
+        psi,
+    )
 
 
 pi_film = native.kernel("pi_film", pi_film_reference)

@@ -71,9 +71,12 @@ class Bearing:
         cage), BPFO and BPFI (a ball over a point on the outer or inner race), BSF (a ball's spin: a point on it
         meets a race once a spin)."""
         r = self.ball / self.pitch * math.cos(math.radians(self.contact_deg))
-        return {"FTF": shaft_hz / 2 * (1 - r), "BPFO": self.balls * shaft_hz / 2 * (1 - r),
-                "BPFI": self.balls * shaft_hz / 2 * (1 + r),
-                "BSF": self.pitch / (2 * self.ball) * shaft_hz * (1 - r * r)}
+        return {
+            "FTF": shaft_hz / 2 * (1 - r),
+            "BPFO": self.balls * shaft_hz / 2 * (1 - r),
+            "BPFI": self.balls * shaft_hz / 2 * (1 + r),
+            "BSF": self.pitch / (2 * self.ball) * shaft_hz * (1 - r * r),
+        }
 
 
 @dataclass(frozen=True)
@@ -98,8 +101,9 @@ class Machine:
     def defect_hz(self) -> float:
         """The rate the impacts come at: BPFO, BPFI, or twice BSF (a ball defect meets both races)."""
         f = self.bearing.frequencies(self.speed)
-        return {BearingFault.OUTER: f["BPFO"], BearingFault.INNER: f["BPFI"],
-                BearingFault.BALL: 2 * f["BSF"]}.get(self.bearing_fault, 0.0)
+        return {BearingFault.OUTER: f["BPFO"], BearingFault.INNER: f["BPFI"], BearingFault.BALL: 2 * f["BSF"]}.get(
+            self.bearing_fault, 0.0
+        )
 
     def modulation_hz(self) -> float:
         """What modulates the impacts: the shaft for an inner-race defect, the cage for a ball's."""
@@ -211,11 +215,12 @@ def line_amplitude(freqs: np.ndarray, amplitude: np.ndarray, f: float) -> float:
     """The largest reading on the lines within one line of f (a tone between lines splits over two)."""
     df = freqs[1] - freqs[0]
     i = round(f / df)
-    return float(amplitude[max(i - 1, 0):i + 2].max())
+    return float(amplitude[max(i - 1, 0) : i + 2].max())
 
 
-def sidebands(freqs: np.ndarray, amplitude: np.ndarray, centre: float, spacing: float, count: int
-              ) -> tuple[np.ndarray, np.ndarray]:
+def sidebands(
+    freqs: np.ndarray, amplitude: np.ndarray, centre: float, spacing: float, count: int
+) -> tuple[np.ndarray, np.ndarray]:
     """(the orders −count … count, each line's amplitude at centre + k spacing)."""
     k = np.arange(-count, count + 1)
     return k, np.array([line_amplitude(freqs, amplitude, centre + j * spacing) for j in k])
@@ -304,7 +309,7 @@ def order_map(rec: RunRecord, per_rev: int = PER_REV, revs: int = REVS) -> Order
     block = per_rev * revs
     w = np.hanning(block)
     starts = np.arange(0, y.size - block + 1, block // 2)
-    frames = np.stack([w * y[s:s + block] for s in starts])
+    frames = np.stack([w * y[s : s + block] for s in starts])
     amp = 2 * np.abs(np.fft.rfft(frames, axis=1)) / w.sum()
     mid = np.interp(angles[starts + block // 2], rec.theta, rec.t)
     return OrderMap(np.interp(mid, rec.t, rec.speed), np.fft.rfftfreq(block, 1.0 / per_rev), amp)
@@ -314,7 +319,7 @@ def frequency_map(rec: RunRecord, block: int = 512) -> OrderMap:
     """The plain short-time spectrum (Hann, blocks of `block` samples, half overlap) against the speed."""
     w = np.hanning(block)
     starts = np.arange(0, rec.x.size - block + 1, block // 2)
-    frames = np.stack([w * rec.x[s:s + block] for s in starts])
+    frames = np.stack([w * rec.x[s : s + block] for s in starts])
     amp = 2 * np.abs(np.fft.rfft(frames, axis=1)) / w.sum()
     return OrderMap(rec.speed[starts + block // 2], np.fft.rfftfreq(block, 1.0 / rec.fs), amp)
 
@@ -332,5 +337,5 @@ def frequency_track(m: OrderMap, order: float) -> np.ndarray:
     out = np.empty(m.speed.size)
     for i, s in enumerate(m.speed):
         j = round(order * s / df)
-        out[i] = m.amplitude[i, max(j - 1, 0):j + 2].max()
+        out[i] = m.amplitude[i, max(j - 1, 0) : j + 2].max()
     return out

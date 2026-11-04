@@ -193,9 +193,9 @@ def ambient_record(system: ChainSystem, settings: AmbientSettings, result: Modal
     for start in range(0, total, CHUNK):
         m = min(CHUNK, total - start)
         f = np.zeros((m, len(cols)))
-        f[:, :len(inputs)] = rng.standard_normal((m, len(inputs)))
+        f[:, : len(inputs)] = rng.standard_normal((m, len(inputs)))
         if colour is not None:
-            f[:, :len(inputs)], colour_zi = scipy.signal.sosfilt(colour, f[:, :len(inputs)], axis=0, zi=colour_zi)
+            f[:, : len(inputs)], colour_zi = scipy.signal.sosfilt(colour, f[:, : len(inputs)], axis=0, zi=colour_zi)
         if harmonic:
             t = (start + 1 + np.arange(m)) * h
             f[:, cols.index(0)] += s.harmonic_force * np.sin(TWO_PI * s.harmonic_hz * t)
@@ -252,7 +252,7 @@ def cross_spectra(y: np.ndarray, fs: float, block: int, overlap: float = 0.5) ->
     G = 0.0
     count = 0
     for i in starts:
-        seg = y[i:i + block] - y[i:i + block].mean(axis=0)
+        seg = y[i : i + block] - y[i : i + block].mean(axis=0)
         Y = np.fft.rfft(seg * w[:, None], axis=0)  # (lines, n)
         G = G + Y[:, :, None] * Y[:, None, :].conj()
         count += 1
@@ -396,7 +396,7 @@ def kurtosis(y: np.ndarray, fs: float, shape: np.ndarray, freq_hz: float, half_w
     q = (q * np.exp(-1j * np.angle(q @ q) / 2)).real  # turned to its real direction
     sos = scipy.signal.butter(4, (lo, hi), btype="bandpass", fs=fs, output="sos")
     x = scipy.signal.sosfiltfilt(sos, q)
-    x = x[x.size // 20: -x.size // 20 or None]  # the filter's ends
+    x = x[x.size // 20 : -x.size // 20 or None]  # the filter's ends
     m2 = np.mean(x**2)
     return float(np.mean(x**4) / m2**2) if m2 > 0 else math.nan
 
@@ -424,7 +424,7 @@ def correlations(y: np.ndarray, lags: int) -> np.ndarray:
     """R_i = mean of y_{k+i} y_kᵀ for i = 0 … lags − 1: (lags, n, n)."""
     N = y.shape[0]
     y = y - y.mean(axis=0)
-    return np.stack([y[i:].T @ y[:N - i] / (N - i) for i in range(lags)])
+    return np.stack([y[i:].T @ y[: N - i] / (N - i) for i in range(lags)])
 
 
 def ssi_cov(y: np.ndarray, fs: float, rows: int, max_order: int, band: tuple[float, float]) -> SsiStabilization:
@@ -475,15 +475,23 @@ HAMMER_NOISE = 0.01  # response noise, a fraction of each channel's peak
 HAMMER_ORDER = 30
 
 
-def hammer_modes(system: ChainSystem, result: ModalResult, fs: float, seed: int | None = None
-                 ) -> tuple[list[IdentifiedMode], float]:
+def hammer_modes(
+    system: ChainSystem, result: ModalResult, fs: float, seed: int | None = None
+) -> tuple[list[IdentifiedMode], float]:
     """The virtual modal test's way to the modes, for comparison: hammer hits on m1, the force and the
     displacements measured, H1 averaged under a force-exponential window, LSCF's stable poles picked
     automatically and LSFD's residues, the window's damping taken off. The modes and the force window's
     time constant (s)."""
     linear = ChainSystem(system.masses, system.stiffness, system.damping)
-    settings = MeasurementSettings(excitation=Excitation.IMPACT, input_dof=0, response=Response.DISPLACEMENT,
-                                   fs=fs, block=HAMMER_BLOCK, averages=HAMMER_AVERAGES, seed=seed)
+    settings = MeasurementSettings(
+        excitation=Excitation.IMPACT,
+        input_dof=0,
+        response=Response.DISPLACEMENT,
+        fs=fs,
+        block=HAMMER_BLOCK,
+        averages=HAMMER_AVERAGES,
+        seed=seed,
+    )
     processing = Processing(window=Window.FORCE_EXPONENTIAL, exp_end=0.05, response_noise=HAMMER_NOISE)
     acq = Acquisition(linear, settings, result)
     while not acq.done:
@@ -500,5 +508,7 @@ def hammer_modes(system: ChainSystem, result: ModalResult, fs: float, seed: int 
 def harmonics(zetas: list[float], kurt: list[float]) -> list[bool]:
     """Which peaks (or poles) are harmonics: a kurtosis below HARMONIC_KURTOSIS and almost no damping. A sine
     inside a mode's filtered band lowers the mode's kurtosis too, but the mode keeps its damping."""
-    return [math.isfinite(k) and k < HARMONIC_KURTOSIS and not (math.isfinite(z) and z >= HARMONIC_ZETA)
-            for z, k in zip(zetas, kurt)]
+    return [
+        math.isfinite(k) and k < HARMONIC_KURTOSIS and not (math.isfinite(z) and z >= HARMONIC_ZETA)
+        for z, k in zip(zetas, kurt)
+    ]

@@ -66,42 +66,42 @@ MOTORS = (None, MotorKind.INDUCTION, MotorKind.SYNCHRONOUS)  # the motor combo's
 TIPS = {
     "inertia": "<p>The disc's polar moment of inertia J about its shaft.</p>",
     "disc_damping": "<p>A damper from the disc to ground: a fan's or pump's load, which rises with speed "
-                    "(its slope dT/dΩ), or windage. It damps every mode the disc swings in.</p>",
+    "(its slope dT/dΩ), or windage. It damps every mode the disc swings in.</p>",
     "stiffness": "<p>The shaft's (or coupling's) torsional stiffness: torque per radian of twist, GJ/L for a "
-                 "plain shaft.</p>",
+    "plain shaft.</p>",
     "shaft_damping": "<p>The shaft's damping: torque per rad/s of twist rate. A rubber coupling has a lot; "
-                     "steel very little.</p>",
+    "steel very little.</p>",
     "teeth": "<p>Teeth on the gear on the motor's side (in) and on the far side (out). The far shaft turns "
-             "at z<sub>in</sub>/z<sub>out</sub> times the near one's speed: more teeth out slows it down.</p>",
+    "at z<sub>in</sub>/z<sub>out</sub> times the near one's speed: more teeth out slows it down.</p>",
     "base_radius": "<p>The base radius of the gear on the motor's side; the far gear's is r z<sub>out</sub> / "
-                   "z<sub>in</sub>.</p>",
+    "z<sub>in</sub>.</p>",
     "mesh_stiffness": "<p>The mesh's stiffness along the line of action: the teeth bending and the contact "
-                      "flattening, about 14 N/µm per mm of face width for steel spur gears.</p>",
+    "flattening, about 14 N/µm per mm of face width for steel spur gears.</p>",
     "mesh_damping": "<p>The mesh's damping along the line of action.</p>",
     "error": "<p>The transmission error: how far the far gear lags or leads where perfect involutes would put "
-             "it, here one harmonic at the tooth-pass frequency (teeth × speed). It drives the mesh as an "
-             "imposed stretch.</p>",
+    "it, here one harmonic at the tooth-pass frequency (teeth × speed). It drives the mesh as an "
+    "imposed stretch.</p>",
     "excite": "<p>A pulsating torque on one disc, each harmonic an order of that disc's own speed: an "
-              "engine's firing (a four-stroke six's majors are 3× and 6×), a reciprocating compressor's "
-              "strokes, a misaligned coupling's 2×.</p>",
+    "engine's firing (a four-stroke six's majors are 3× and 6×), a reciprocating compressor's "
+    "strokes, a misaligned coupling's 2×.</p>",
     "operating": "<p>The motor's running speed: the interference diagram and the response mark a band of "
-                 "±10 % round it, where no torsional critical should be.</p>",
+    "±10 % round it, where no torsional critical should be.</p>",
     "top": "<p>The highest motor speed the diagram and the response show.</p>",
     "motor": "<p>The motor on the first disc that starts the train from rest: an induction motor direct on "
-             "line, or a synchronous motor started on its damper cage. None: no start-up.</p>",
+    "line, or a synchronous motor started on its damper cage. None: no start-up.</p>",
     "supply": "<p>The line frequency and the motor's pole pairs: it runs at (or, an induction motor, just "
-              "below) 60 f / p rpm.</p>",
+    "below) 60 f / p rpm.</p>",
     "breakdown": "<p>The cage's speed–torque curve (Kloss's): its peak torque, and the slip where it peaks. "
-                 "It starts the train, and an induction motor runs on it, where it meets the load.</p>",
+    "It starts the train, and an induction motor runs on it, where it meets the load.</p>",
     "transient": "<p>Switching an induction motor on gives a torque at the line frequency on top of its "
-                 "curve's, dying away with this time constant: the stator's flux starts with a DC part.</p>",
+    "curve's, dying away with this time constant: the stator's flux starts with a DC part.</p>",
     "pulsating": "<p>A salient-pole synchronous motor's torque pulses at twice the slip frequency as it starts "
-                 "(T<sub>p</sub> sin 2δ): from twice the line frequency at rest to nothing at synchronism, "
-                 "sweeping through the modes below.</p>",
+    "(T<sub>p</sub> sin 2δ): from twice the line frequency at rest to nothing at synchronism, "
+    "sweeping through the modes below.</p>",
     "field": "<p>The field's pull-out torque (T<sub>f</sub> sin δ), switched on below the slip given, which "
-             "pulls the rotor into step.</p>",
+    "pulls the rotor into step.</p>",
     "load": "<p>The load on the last disc, rising as its speed squared (a fan's, a centrifugal "
-            "compressor's) to this, on its own shaft, with the motor at its synchronous speed.</p>",
+    "compressor's) to this, on its own shaft, with the motor at its synchronous speed.</p>",
     "duration": "<p>How long the start-up runs, in simulated time.</p>",
 }
 INTERFERENCE_TIP = (
@@ -109,15 +109,18 @@ INTERFERENCE_TIP = (
     "with speed. Each line through the origin is an order: an excitation at that multiple of the motor's "
     "speed (solid: the train's own excitation and tooth-pass; dashed: 1× and 2× of each shaft's speed, which "
     "a standard asks to check). Where an order crosses a mode is a torsional critical speed; filled red "
-    "inside the band round the running speed.</p>")
+    "inside the band round the running speed.</p>"
+)
 STARTUP_TIP = (
     "<p>The start-up: the chosen link's torque (a mesh: its force times the near gear's base radius) and the "
     "motor's air-gap torque against time, the dashed line what the link carries running steadily; below, "
-    "the motor's speed, with the speeds where a synchronous motor's 2× slip pulsation meets each mode.</p>")
+    "the motor's speed, with the speeds where a synchronous motor's 2× slip pulsation meets each mode.</p>"
+)
 RESPONSE_TIP = (
     "<p>The steady dynamic torque in the chosen link (a mesh: its force times the near gear's base radius), "
     "the amplitude of each order on its own and their sum (the peak when they line up), against the motor's "
-    "speed. Each peaks where its order meets a mode the link twists in.</p>")
+    "speed. Each peaks where its order meets a mode the link twists in.</p>"
+)
 
 NOTES_HTML = """
 <!--BEFORE-->
@@ -185,20 +188,25 @@ drives get a torsional analysis of the start, and couplings sized for its peaks.
 the load and the dampers beyond it, divided by the link's speed.</p>
 <!--TAKEAWAYS-->
 """
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "equations-of-motion", "Equations of motion"),
-    ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
-    ("frf_page", "receptance-matrix", "The FRF (receptance) matrix"),
-)).replace("<!--TAKEAWAYS-->", takeaways(
-    "A drive train in torsion is the chain again, with inertias and shaft stiffnesses, free at both ends so "
-    "its first mode is rigid turning.",
-    "Gears refer to one shaft by the square of the speed ratio; a stiff mesh has its own mode, excited at "
-    "tooth-pass.",
-    "Criticals are where an excitation order's line crosses a natural frequency; keep them out of a band "
-    "round the running speed.",
-    "A start-up sweeps the excitations through the modes below running speed: a slow start lets them build up.",
-))
-
+NOTES_HTML = NOTES_HTML.replace(
+    "<!--BEFORE-->",
+    before(
+        ("sim_page", "equations-of-motion", "Equations of motion"),
+        ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
+        ("frf_page", "receptance-matrix", "The FRF (receptance) matrix"),
+    ),
+).replace(
+    "<!--TAKEAWAYS-->",
+    takeaways(
+        "A drive train in torsion is the chain again, with inertias and shaft stiffnesses, free at both ends so "
+        "its first mode is rigid turning.",
+        "Gears refer to one shaft by the square of the speed ratio; a stiff mesh has its own mode, excited at "
+        "tooth-pass.",
+        "Criticals are where an excitation order's line crosses a natural frequency; keep them out of a band "
+        "round the running speed.",
+        "A start-up sweeps the excitations through the modes below running speed: a slow start lets them build up.",
+    ),
+)
 
 
 def fmt_torque(t: float) -> str:
@@ -302,15 +310,18 @@ class TorsionalPage(QtWidgets.QWidget):
         _form_row(form, "Mesh damping:", self.mesh_damping, TIPS["mesh_damping"])
         _form_row(form, "Transmission error:", self.error, TIPS["error"])
         self.to_shaft = QtWidgets.QPushButton("Make it a shaft")
-        self.to_shaft.setToolTip("<p>Replace the gear pair by a shaft of the mesh's referred stiffness "
-                                 "(the far side then turns at the near side's speed).</p>")
+        self.to_shaft.setToolTip(
+            "<p>Replace the gear pair by a shaft of the mesh's referred stiffness "
+            "(the far side then turns at the near side's speed).</p>"
+        )
         form.addRow(self.to_shaft)
         self.editor.addWidget(mesh_page)
 
         row = FlowLayout()
         self.add_button = QtWidgets.QPushButton("Add a disc after")
-        self.add_button.setToolTip("<p>A copy of the chosen disc (or of the disc before the chosen link) after it, "
-                                   "on a copy of its shaft.</p>")
+        self.add_button.setToolTip(
+            "<p>A copy of the chosen disc (or of the disc before the chosen link) after it, on a copy of its shaft.</p>"
+        )
         self.remove_button = QtWidgets.QPushButton("Remove disc")
         self.remove_button.setToolTip("<p>Take the chosen disc off the train, with the link after it.</p>")
         row.add(self.add_button, self.remove_button)
@@ -324,16 +335,19 @@ class TorsionalPage(QtWidgets.QWidget):
         excite.setToolTip(TIPS["excite"])
         ef = QtWidgets.QFormLayout(excite)
         self.excite_disc = QtWidgets.QComboBox()
-        self.excite_disc.setSizeAdjustPolicy(
-            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.excite_disc.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.excite_name = QtWidgets.QLineEdit()
         self.orders = [spin(0.0, 500.0, 0.0, 2, "×") for _ in range(2)]
         self.amplitudes = [spin(0.0, 1e7, 0.0, 1, " N·m") for _ in range(2)]
         _form_row(ef, "Torque on:", self.excite_disc, TIPS["excite"])
         _form_row(ef, "Called:", self.excite_name, "<p>What the excitation is (its orders' label).</p>")
         for k in range(2):
-            _form_row(ef, f"Harmonic {k + 1}:", group(self.orders[k], self.amplitudes[k]),
-                      "<p>An order of the disc's own speed and its torque's amplitude (0: off).</p>")
+            _form_row(
+                ef,
+                f"Harmonic {k + 1}:",
+                group(self.orders[k], self.amplitudes[k]),
+                "<p>An order of the disc's own speed and its torque's amplitude (0: off).</p>",
+            )
 
         speeds = QtWidgets.QGroupBox("Speeds")
         sf = QtWidgets.QFormLayout(speeds)
@@ -342,9 +356,11 @@ class TorsionalPage(QtWidgets.QWidget):
         _form_row(sf, "Running speed:", self.operating, TIPS["operating"])
         _form_row(sf, "Show up to:", self.top, TIPS["top"])
         self.log_scales = QtWidgets.QCheckBox("Log scales on the interference diagram")
-        self.log_scales.setToolTip("<p>Both axes logarithmic: every order is then a parallel line, and modes "
-                                   "decades apart (a mesh's and the couplings') all show. On by itself when "
-                                   "a train loads whose modes span more than a decade.</p>")
+        self.log_scales.setToolTip(
+            "<p>Both axes logarithmic: every order is then a parallel line, and modes "
+            "decades apart (a mesh's and the couplings') all show. On by itself when "
+            "a train loads whose modes span more than a decade.</p>"
+        )
         sf.addRow(self.log_scales)
 
         start_box = QtWidgets.QGroupBox("Start-up")
@@ -390,8 +406,10 @@ class TorsionalPage(QtWidgets.QWidget):
         for x in PLAYBACK:
             self.playback.addItem(f"{x:g}× real time", x)
         self.playback.setCurrentIndex(PLAYBACK.index(0.25))
-        self.playback.setToolTip("<p>How fast the start-up plays: its first tenth of a second is what an "
-                                 "induction motor's switch-on rings in.</p>")
+        self.playback.setToolTip(
+            "<p>How fast the start-up plays: its first tenth of a second is what an "
+            "induction motor's switch-on rings in.</p>"
+        )
         row.add(self.start_button, self.pause_button, self.playback)
         stf.addRow(row)
         self.startup_info = QtWidgets.QLabel()
@@ -420,7 +438,8 @@ class TorsionalPage(QtWidgets.QWidget):
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.response_link = QtWidgets.QComboBox()
         self.response_link.setSizeAdjustPolicy(
-            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
         self.response_link.setMinimumContentsLength(18)
         self.response_link.setToolTip(RESPONSE_TIP)
         self.response = _plot("Dynamic torque", "N·m", "Motor speed", "rpm")
@@ -445,7 +464,8 @@ class TorsionalPage(QtWidgets.QWidget):
         # the start-up: a link's torque and the motor's speed against time
         self.startup_link = QtWidgets.QComboBox()
         self.startup_link.setSizeAdjustPolicy(
-            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
         self.startup_link.setMinimumContentsLength(18)
         self.startup_link.setToolTip(STARTUP_TIP)
         self.startup_torque = _plot("Torque", "N·m", "Time", "s")
@@ -498,9 +518,11 @@ class TorsionalPage(QtWidgets.QWidget):
         self.drawing.setMouseEnabled(x=False, y=False)
         self.drawing.setAspectLocked(True)
         self.drawing.scene().sigMouseClicked.connect(self._on_drawing_click)
-        self.drawing.setToolTip("<p>The train, motor on the left: discs (taller the more inertia), shafts, and "
-                                "gear pairs, the far shaft stepped down. Click a disc or a link to edit it (the list above the editor "
-                                "names the links).</p>")
+        self.drawing.setToolTip(
+            "<p>The train, motor on the left: discs (taller the more inertia), shafts, and "
+            "gear pairs, the far shaft stepped down. Click a disc or a link to edit it (the list above the editor "
+            "names the links).</p>"
+        )
         self.drawing_note = QtWidgets.QLabel()
         self.drawing_note.setWordWrap(True)
         mute(self.drawing_note)
@@ -511,9 +533,11 @@ class TorsionalPage(QtWidgets.QWidget):
 
         self.shapes = _plot("Swing (referred to the motor's shaft)", None, "Disc", None)
         self.shapes.setMouseEnabled(x=False, y=False)
-        self.shapes.setToolTip("<p>Each mode's swing at each disc, referred to the motor's shaft (θ / s, so a "
-                               "rigid turn of the whole train would be flat), largest +1. A link the curve "
-                               "crosses zero over holds a node, and twists.</p>")
+        self.shapes.setToolTip(
+            "<p>Each mode's swing at each disc, referred to the motor's shaft (θ / s, so a "
+            "rigid turn of the whole train would be flat), largest +1. A link the curve "
+            "crosses zero over holds a node, and twists.</p>"
+        )
         self.shapes_legend = add_legend(self.shapes.getPlotItem(), offset=(10, 10))
         self.mode_list = QtWidgets.QLabel()
         self.mode_list.setWordWrap(True)
@@ -549,8 +573,18 @@ class TorsionalPage(QtWidgets.QWidget):
         # --- wiring
         self.preset.currentIndexChanged.connect(self._on_preset)
         self.element.currentIndexChanged.connect(self._on_element)
-        for box in (self.inertia, self.disc_damping, self.shaft_stiffness, self.shaft_damping, self.base_radius,
-                    self.mesh_stiffness, self.mesh_damping, self.error, self.teeth_in, self.teeth_out):
+        for box in (
+            self.inertia,
+            self.disc_damping,
+            self.shaft_stiffness,
+            self.shaft_damping,
+            self.base_radius,
+            self.mesh_stiffness,
+            self.mesh_damping,
+            self.error,
+            self.teeth_in,
+            self.teeth_out,
+        ):
             box.valueChanged.connect(self._on_edit)
         for line in (self.disc_name, self.shaft_name, self.mesh_name):
             line.editingFinished.connect(self._on_edit)
@@ -567,9 +601,19 @@ class TorsionalPage(QtWidgets.QWidget):
         self.log_scales.toggled.connect(lambda _: self._draw_interference())
         self.response_link.currentIndexChanged.connect(lambda _: self._draw_response())
         self.motor_kind.currentIndexChanged.connect(self._on_startup)
-        for box in (self.line_hz, self.pole_pairs, self.breakdown, self.breakdown_slip, self.transient,
-                    self.time_constant, self.pulsating, self.field, self.field_slip, self.load_torque,
-                    self.duration):
+        for box in (
+            self.line_hz,
+            self.pole_pairs,
+            self.breakdown,
+            self.breakdown_slip,
+            self.transient,
+            self.time_constant,
+            self.pulsating,
+            self.field,
+            self.field_slip,
+            self.load_torque,
+            self.duration,
+        ):
             box.valueChanged.connect(self._on_startup)
         self.start_button.clicked.connect(self.start)
         self.pause_button.clicked.connect(self._on_pause)
@@ -608,8 +652,11 @@ class TorsionalPage(QtWidgets.QWidget):
         self.motor_on = start is not None
         if start is not None:
             self.startup = start.startup
-        self._startup_note = (start.note if start is not None else
-                              "The engine drives this train: no motor starts it. Pick one to try anyway.")
+        self._startup_note = (
+            start.note
+            if start is not None
+            else "The engine drives this train: no motor starts it. Pick one to try anyway."
+        )
         self.running = False
         self.startup_link.blockSignals(True)
         self.startup_link.setCurrentIndex(-1)  # _new_run picks the link carrying the most
@@ -664,7 +711,7 @@ class TorsionalPage(QtWidgets.QWidget):
             self.element.addItem(f"{i + 1}. {d.name}")
             if i < len(t.links):
                 link = t.links[i]
-                kind = (f"mesh {link.teeth_in}:{link.teeth_out}" if isinstance(link, Mesh) else "shaft")
+                kind = f"mesh {link.teeth_in}:{link.teeth_out}" if isinstance(link, Mesh) else "shaft"
                 self.element.addItem(f"    {link.name} ({kind})")
         self.element.setCurrentIndex(self.selected)
         link = self.response_link.currentIndex()
@@ -740,17 +787,27 @@ class TorsionalPage(QtWidgets.QWidget):
         t = self.train
         i, is_link = divmod(self.selected, 2)
         if not is_link:
-            disc = Disc(self.disc_name.text().strip() or t.discs[i].name, self.inertia.value(),
-                        self.disc_damping.value())
+            disc = Disc(
+                self.disc_name.text().strip() or t.discs[i].name, self.inertia.value(), self.disc_damping.value()
+            )
             self._try(lambda: t.with_disc(i, disc))
         elif isinstance(t.links[i], Shaft):
-            shaft = Shaft(self.shaft_stiffness.value() * 1e3, self.shaft_damping.value(),
-                          self.shaft_name.text().strip() or t.links[i].name)
+            shaft = Shaft(
+                self.shaft_stiffness.value() * 1e3,
+                self.shaft_damping.value(),
+                self.shaft_name.text().strip() or t.links[i].name,
+            )
             self._try(lambda: t.with_link(i, shaft))
         else:
-            mesh = Mesh(self.teeth_in.value(), self.teeth_out.value(), self.base_radius.value() / 1e3,
-                        self.mesh_stiffness.value() * 1e6, self.mesh_damping.value(), self.error.value() / 1e6,
-                        self.mesh_name.text().strip() or t.links[i].name)
+            mesh = Mesh(
+                self.teeth_in.value(),
+                self.teeth_out.value(),
+                self.base_radius.value() / 1e3,
+                self.mesh_stiffness.value() * 1e6,
+                self.mesh_damping.value(),
+                self.error.value() / 1e6,
+                self.mesh_name.text().strip() or t.links[i].name,
+            )
             self._try(lambda: t.with_link(i, mesh))
 
     def _make_mesh(self) -> None:
@@ -801,19 +858,34 @@ class TorsionalPage(QtWidgets.QWidget):
         loading, self._loading = self._loading, True
         m = self.startup.motor
         self.motor_kind.setCurrentIndex(MOTORS.index(m.kind) if self.motor_on else 0)
-        for box, value in ((self.line_hz, m.line_hz), (self.pole_pairs, m.pole_pairs), (self.breakdown, m.breakdown),
-                           (self.breakdown_slip, 100.0 * m.breakdown_slip), (self.transient, m.transient),
-                           (self.time_constant, 1e3 * m.time_constant), (self.pulsating, m.pulsating),
-                           (self.field, m.field), (self.field_slip, 100.0 * m.field_slip),
-                           (self.load_torque, self.startup.load), (self.duration, self.startup.duration)):
+        for box, value in (
+            (self.line_hz, m.line_hz),
+            (self.pole_pairs, m.pole_pairs),
+            (self.breakdown, m.breakdown),
+            (self.breakdown_slip, 100.0 * m.breakdown_slip),
+            (self.transient, m.transient),
+            (self.time_constant, 1e3 * m.time_constant),
+            (self.pulsating, m.pulsating),
+            (self.field, m.field),
+            (self.field_slip, 100.0 * m.field_slip),
+            (self.load_torque, self.startup.load),
+            (self.duration, self.startup.duration),
+        ):
             box.setValue(value)
         page = 0 if m.kind is MotorKind.INDUCTION else 1
         for k in range(self.motor_stack.count()):  # as tall as the page showing
             policy = QtWidgets.QSizePolicy.Policy.Preferred if k == page else QtWidgets.QSizePolicy.Policy.Ignored
             self.motor_stack.widget(k).setSizePolicy(policy, policy)
         self.motor_stack.setCurrentIndex(page)
-        for w in (self.line_hz, self.pole_pairs, self.breakdown, self.breakdown_slip, self.motor_stack,
-                  self.load_torque, self.duration):
+        for w in (
+            self.line_hz,
+            self.pole_pairs,
+            self.breakdown,
+            self.breakdown_slip,
+            self.motor_stack,
+            self.load_torque,
+            self.duration,
+        ):
             w.setEnabled(self.motor_on)
         self._loading = loading
 
@@ -822,10 +894,18 @@ class TorsionalPage(QtWidgets.QWidget):
             return
         kind = MOTORS[self.motor_kind.currentIndex()]
         try:
-            motor = Motor(kind or self.startup.motor.kind, self.line_hz.value(), self.pole_pairs.value(),
-                          self.breakdown.value(), self.breakdown_slip.value() / 100.0, self.transient.value(),
-                          self.time_constant.value() / 1e3, self.pulsating.value(), self.field.value(),
-                          self.field_slip.value() / 100.0)
+            motor = Motor(
+                kind or self.startup.motor.kind,
+                self.line_hz.value(),
+                self.pole_pairs.value(),
+                self.breakdown.value(),
+                self.breakdown_slip.value() / 100.0,
+                self.transient.value(),
+                self.time_constant.value() / 1e3,
+                self.pulsating.value(),
+                self.field.value(),
+                self.field_slip.value() / 100.0,
+            )
             startup = StartUp(motor, self.load_torque.value(), self.duration.value())
         except ValueError as e:
             self.startup_info.setText(f"<b>{e}</b>: the start-up keeps the last motor.")
@@ -874,8 +954,12 @@ class TorsionalPage(QtWidgets.QWidget):
         self._start_timer()
 
     def _add_mark(self, plot: pg.PlotWidget, pos: float, angle: int, label: str) -> None:
-        line = pg.InfiniteLine(pos, angle=angle, label=label,
-                               labelOpts={"position": 0.02 if angle == 0 else 0.95, "anchors": [(0, 1), (0, 1)]})
+        line = pg.InfiniteLine(
+            pos,
+            angle=angle,
+            label=label,
+            labelOpts={"position": 0.02 if angle == 0 else 0.95, "anchors": [(0, 1), (0, 1)]},
+        )
         plot.addItem(line)
         self._marks.append((plot, line))
         self._style_mark(line)
@@ -951,10 +1035,10 @@ class TorsionalPage(QtWidgets.QWidget):
                 if not m:
                     break
                 k = self._k
-                self._t[k:k + m] = s.t
-                self._rpm[k:k + m] = s.rpm
-                self._motor[k:k + m] = s.motor
-                self._links[:, k:k + m] = s.links
+                self._t[k : k + m] = s.t
+                self._rpm[k : k + m] = s.rpm
+                self._motor[k : k + m] = s.motor
+                self._links[:, k : k + m] = s.links
                 self._k += m
                 ahead -= m * sim.h
             if sim.t > began:
@@ -1017,7 +1101,7 @@ class TorsionalPage(QtWidgets.QWidget):
         ratios = np.where(self._running > 0, sim.peaks / np.where(self._running > 0, self._running, 1.0), 0.0)
         worst = int(np.argmax(ratios)) if np.isfinite(ratios).all() else -1
         for i, link in enumerate(self.train.links):
-            at = int(np.searchsorted(self._t[:self._k], sim.peak_t[i]))
+            at = int(np.searchsorted(self._t[: self._k], sim.peak_t[i]))
             rpm = self._rpm[min(at, self._k - 1)]
             text = f"{link.name}: {fmt_torque(sim.peaks[i])} at {sim.peak_t[i]:.3f} s ({rpm:.0f} rpm)"
             if math.isfinite(self._running[i]) and self._running[i] > 0:
@@ -1035,22 +1119,31 @@ class TorsionalPage(QtWidgets.QWidget):
         w = steady_speed(t, su)
         parts = [self._startup_note] if self._startup_note else []
         if math.isnan(w):
-            parts.append(f"Synchronous speed {m.sync_rpm:.0f} rpm: the motor can't carry the load there, and "
-                         f"stalls on the way up.")
+            parts.append(
+                f"Synchronous speed {m.sync_rpm:.0f} rpm: the motor can't carry the load there, and "
+                f"stalls on the way up."
+            )
         elif m.kind is MotorKind.INDUCTION:
-            parts.append(f"Synchronous speed {m.sync_rpm:.0f} rpm; it runs at {60 * w / (2 * math.pi):.0f} rpm "
-                         f"(slip {100 * (1 - w / m.sync_speed):.1f} %).")
+            parts.append(
+                f"Synchronous speed {m.sync_rpm:.0f} rpm; it runs at {60 * w / (2 * math.pi):.0f} rpm "
+                f"(slip {100 * (1 - w / m.sync_speed):.1f} %)."
+            )
             near = min(self._modes, key=lambda md: abs(md.freq_hz - m.line_hz), default=None)
             if near is not None:
                 j = self._modes.index(near)
-                parts.append(f"The switch-on rings at {m.line_hz:g} Hz; mode {j + 1} ({near.freq_hz:.3g} Hz) is "
-                             f"{100 * abs(near.freq_hz - m.line_hz) / m.line_hz:.0f} % from it.")
+                parts.append(
+                    f"The switch-on rings at {m.line_hz:g} Hz; mode {j + 1} ({near.freq_hz:.3g} Hz) is "
+                    f"{100 * abs(near.freq_hz - m.line_hz) / m.line_hz:.0f} % from it."
+                )
         else:
             parts.append(f"It runs at {m.sync_rpm:.0f} rpm.")
             cs = crossings(t, m)
             if cs:
-                parts.append("The poles' 2× slip pulsation meets " + ", ".join(
-                    f"mode {c.mode + 1} ({c.freq_hz:.3g} Hz) at {c.rpm:.0f} rpm" for c in cs) + ".")
+                parts.append(
+                    "The poles' 2× slip pulsation meets "
+                    + ", ".join(f"mode {c.mode + 1} ({c.freq_hz:.3g} Hz) at {c.rpm:.0f} rpm" for c in cs)
+                    + "."
+                )
             else:
                 parts.append(f"No mode below {2 * m.line_hz:g} Hz for the poles' pulsation to meet.")
         self.startup_info.setText(" ".join(parts))
@@ -1098,7 +1191,7 @@ class TorsionalPage(QtWidgets.QWidget):
         crits = criticals(t, top, lines)
         # up to the fastest mode an order reaches in the speed range (or the slowest, if none does)
         reached = max((c.mode for c in crits), default=0)
-        freqs = [md.freq_hz for md in self._modes[:reached + 1]]
+        freqs = [md.freq_hz for md in self._modes[: reached + 1]]
         y_top = (2.0 if log else 1.2) * max(freqs) if freqs else 100.0
         y_lo = 0.5 * min(freqs) if log and freqs else 0.0
         x_lo = top / 100.0 if log else 0.0
@@ -1113,14 +1206,22 @@ class TorsionalPage(QtWidgets.QWidget):
         for line in band.lines:
             line.setPen(pg.mkPen(None))
         p.addItem(band)
-        p.addItem(pg.InfiniteLine(at(self.operating.value(), 1)[0], angle=90,
-                                  pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine)))
+        p.addItem(
+            pg.InfiniteLine(
+                at(self.operating.value(), 1)[0],
+                angle=90,
+                pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine),
+            )
+        )
         n_sources = len(sources(t))  # order_lines puts them first
         for j, (label, order) in enumerate(lines):
             own = j < n_sources
             color = colors.mass[j % len(colors.mass)] if own else colors.grey
-            pen = pg.mkPen(color, width=1.5 if own else 1,
-                           style=QtCore.Qt.PenStyle.SolidLine if own else QtCore.Qt.PenStyle.DashLine)
+            pen = pg.mkPen(
+                color,
+                width=1.5 if own else 1,
+                style=QtCore.Qt.PenStyle.SolidLine if own else QtCore.Qt.PenStyle.DashLine,
+            )
             # from the bottom (or left) of the plot to its top, or the speed range's end
             start = max(x_lo, 60.0 * y_lo / order)
             end = min(top, 60.0 * y_top / order)
@@ -1143,8 +1244,15 @@ class TorsionalPage(QtWidgets.QWidget):
             p.addItem(text)
             cs = [c for c in crossings(t, motor) if c.mode < len(freqs) and c.rpm >= x_lo]
             if cs:
-                p.plot([c.rpm for c in cs], [c.freq_hz for c in cs], pen=None, symbol="d", symbolSize=10,
-                       symbolPen=pg.mkPen(colors.force, width=1.5), symbolBrush=pg.mkBrush(colors.background))
+                p.plot(
+                    [c.rpm for c in cs],
+                    [c.freq_hz for c in cs],
+                    pen=None,
+                    symbol="d",
+                    symbolSize=10,
+                    symbolPen=pg.mkPen(colors.force, width=1.5),
+                    symbolBrush=pg.mkBrush(colors.background),
+                )
         for j, f in enumerate(freqs):
             p.plot([max(x_lo, 1e-9), top], [f, f], pen=pg.mkPen(colors.strong, width=1.5))
             text = pg.TextItem(f"Mode {j + 1}, {f:.4g} Hz", color=colors.strong, anchor=(0, 1))
@@ -1153,14 +1261,30 @@ class TorsionalPage(QtWidgets.QWidget):
         inside = [c for c in crits if lo <= c.rpm <= hi]
         outside = [c for c in crits if not lo <= c.rpm <= hi and c.rpm >= x_lo]
         if outside:
-            p.plot([c.rpm for c in outside], [c.freq_hz for c in outside], pen=None, symbol="o", symbolSize=8,
-                   symbolPen=pg.mkPen(colors.strong, width=1.5), symbolBrush=pg.mkBrush(colors.background))
+            p.plot(
+                [c.rpm for c in outside],
+                [c.freq_hz for c in outside],
+                pen=None,
+                symbol="o",
+                symbolSize=8,
+                symbolPen=pg.mkPen(colors.strong, width=1.5),
+                symbolBrush=pg.mkBrush(colors.background),
+            )
         if inside:
-            p.plot([c.rpm for c in inside], [c.freq_hz for c in inside], pen=None, symbol="o", symbolSize=10,
-                   symbolPen=pg.mkPen(colors.force, width=1.5), symbolBrush=pg.mkBrush(colors.force))
-        p.getPlotItem().getViewBox().setRange(xRange=(at(x_lo or 1, 1)[0] if log else 0.0, at(top, 1)[0]),
-                                              yRange=(at(1, y_lo)[1] if log else 0.0, at(1, y_top)[1]),
-                                              padding=0)
+            p.plot(
+                [c.rpm for c in inside],
+                [c.freq_hz for c in inside],
+                pen=None,
+                symbol="o",
+                symbolSize=10,
+                symbolPen=pg.mkPen(colors.force, width=1.5),
+                symbolBrush=pg.mkBrush(colors.force),
+            )
+        p.getPlotItem().getViewBox().setRange(
+            xRange=(at(x_lo or 1, 1)[0] if log else 0.0, at(top, 1)[0]),
+            yRange=(at(1, y_lo)[1] if log else 0.0, at(1, y_top)[1]),
+            padding=0,
+        )
         self._unreached = len(self._modes) - len(freqs)
         self._show_readout(crits, inside)
 
@@ -1171,25 +1295,33 @@ class TorsionalPage(QtWidgets.QWidget):
             self.readout.setText("No flexible modes.")
             return
         if inside:
-            listed = "; ".join(f"<b>{c.label} meets mode {c.mode + 1} ({c.freq_hz:.4g} Hz) at {c.rpm:.0f} rpm</b>, "
-                               f"{100 * separation(c.rpm, op):.1f} % {'above' if c.rpm > op else 'below'}"
-                               for c in inside)
+            listed = "; ".join(
+                f"<b>{c.label} meets mode {c.mode + 1} ({c.freq_hz:.4g} Hz) at {c.rpm:.0f} rpm</b>, "
+                f"{100 * separation(c.rpm, op):.1f} % {'above' if c.rpm > op else 'below'}"
+                for c in inside
+            )
             lines.append(f"Inside ±{MARGIN:g} % of {op:.0f} rpm: {listed}.")
         else:
             near = min(crits, key=lambda c: separation(c.rpm, op), default=None)
             if near is None:
                 lines.append(f"No order meets a mode below {self.top.value():.0f} rpm.")
             else:
-                lines.append(f"No torsional critical within ±{MARGIN:g} % of {op:.0f} rpm: the nearest, {near.label} "
-                             f"on mode {near.mode + 1} ({near.freq_hz:.4g} Hz), is at {near.rpm:.0f} rpm, "
-                             f"{100 * separation(near.rpm, op):.1f} % {'above' if near.rpm > op else 'below'}.")
+                lines.append(
+                    f"No torsional critical within ±{MARGIN:g} % of {op:.0f} rpm: the nearest, {near.label} "
+                    f"on mode {near.mode + 1} ({near.freq_hz:.4g} Hz), is at {near.rpm:.0f} rpm, "
+                    f"{100 * separation(near.rpm, op):.1f} % {'above' if near.rpm > op else 'below'}."
+                )
         if self._unreached:
-            lines.append(f"{self._unreached} faster mode{'s' if self._unreached > 1 else ''} no order reaches "
-                         f"below {self.top.value():.0f} rpm (not drawn).")
+            lines.append(
+                f"{self._unreached} faster mode{'s' if self._unreached > 1 else ''} no order reaches "
+                f"below {self.top.value():.0f} rpm (not drawn)."
+            )
         below = [c for c in crits if c.rpm < op * (1 - MARGIN / 100)]
         if below:
-            lines.append(f"A start-up passes {len(below)} below it, the last {below[-1].label} on mode "
-                         f"{below[-1].mode + 1} at {below[-1].rpm:.0f} rpm.")
+            lines.append(
+                f"A start-up passes {len(below)} below it, the last {below[-1].label} on mode "
+                f"{below[-1].mode + 1} at {below[-1].rpm:.0f} rpm."
+            )
         self.readout.setText(" ".join(lines))
 
     def _draw_response(self) -> None:
@@ -1203,14 +1335,16 @@ class TorsionalPage(QtWidgets.QWidget):
         rpm = response_speeds(t, top)
         fr = forced_response(t, rpm)
         if not fr.sources:
-            self.response_note.setText("No excitation: pick a disc to put a torque on, or give a mesh a "
-                                       "transmission error.")
+            self.response_note.setText(
+                "No excitation: pick a disc to put a torque on, or give a mesh a transmission error."
+            )
             p.setXRange(0.0, top, padding=0)
             return
         p.addItem(self._band_item())
         legend = self.response_legend
-        curves = [(src.label, fr.torque[a, link], colors.mass[a % len(colors.mass)], 1.5)
-                  for a, src in enumerate(fr.sources)]
+        curves = [
+            (src.label, fr.torque[a, link], colors.mass[a % len(colors.mass)], 1.5) for a, src in enumerate(fr.sources)
+        ]
         total = fr.total()[link]
         if len(fr.sources) > 1:
             curves.append(("Sum", total, colors.strong, 2.0))
@@ -1219,8 +1353,11 @@ class TorsionalPage(QtWidgets.QWidget):
         for label, y, color, width in curves:
             item = p.plot(rpm, np.maximum(y, floor), pen=pg.mkPen(color, width=width))
             legend.addItem(item, label)
-        p.addItem(pg.InfiniteLine(self.operating.value(), angle=90,
-                                  pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine)))
+        p.addItem(
+            pg.InfiniteLine(
+                self.operating.value(), angle=90, pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine)
+            )
+        )
         p.setXRange(0.0, top, padding=0)
         y_top = peak * 3.0 if peak > 0 else 1.0
         p.setYRange(math.log10(floor), math.log10(y_top), padding=0)
@@ -1233,7 +1370,8 @@ class TorsionalPage(QtWidgets.QWidget):
         name = t.links[link].name
         self.response_note.setText(
             f"{name}: ±{fmt_torque(at_op)} at {op:.0f} rpm, up to ±{fmt_torque(worst)} within ±{MARGIN:g} %; "
-            f"the most, ±{fmt_torque(peak)}, at {rpm[i]:.0f} rpm.")
+            f"the most, ±{fmt_torque(peak)}, at {rpm[i]:.0f} rpm."
+        )
 
     def _layout(self) -> tuple[list[tuple[float, float, float]], float]:
         """Each disc's (x, axis height, half height) in the drawing, and the width of a disc."""
@@ -1270,8 +1408,15 @@ class TorsionalPage(QtWidgets.QWidget):
             chosen = self.selected == 2 * i + 1
             color = colors.force if chosen else structure
             if isinstance(t.links[i], Mesh):
-                p.plot([x0, x0], [y0 - h0, y1 + h1], pen=pg.mkPen(color, width=3 if chosen else 1.5),
-                       symbol="o", symbolSize=6, symbolBrush=pg.mkBrush(color), symbolPen=None)
+                p.plot(
+                    [x0, x0],
+                    [y0 - h0, y1 + h1],
+                    pen=pg.mkPen(color, width=3 if chosen else 1.5),
+                    symbol="o",
+                    symbolSize=6,
+                    symbolBrush=pg.mkBrush(color),
+                    symbolPen=None,
+                )
             else:
                 p.plot([x0 + width / 2, x1 - width / 2], [y0, y1], pen=pg.mkPen(color, width=4 if chosen else 2.5))
         for i, (x, y, h) in enumerate(spots):
@@ -1286,18 +1431,25 @@ class TorsionalPage(QtWidgets.QWidget):
             p.addItem(label)
         if t.excitation is not None:
             x, y, h = spots[t.excitation.disc]
-            arrow = pg.ArrowItem(angle=90, tipAngle=40, headLen=14, tailLen=12, tailWidth=3,
-                                 pen=None, brush=pg.mkBrush(colors.force))
+            arrow = pg.ArrowItem(
+                angle=90, tipAngle=40, headLen=14, tailLen=12, tailWidth=3, pen=None, brush=pg.mkBrush(colors.force)
+            )
             arrow.setPos(x, y - h)
             p.addItem(arrow)
         xs = [x for x, _, _ in spots]
         ys = [y - h for _, y, h in spots] + [y + h for _, y, h in spots]
-        p.getPlotItem().getViewBox().setRange(xRange=(min(xs) - 1.0, max(xs) + 1.0),
-                                              yRange=(min(ys) - 0.6, max(ys) + 0.4), padding=0)
+        p.getPlotItem().getViewBox().setRange(
+            xRange=(min(xs) - 1.0, max(xs) + 1.0), yRange=(min(ys) - 0.6, max(ys) + 0.4), padding=0
+        )
         s = t.speeds
         if t.meshes:
-            speeds = "Each shaft's speed over the motor's: " + ", ".join(
-                f"{d.name} {s[i]:.3g}×" for i, d in enumerate(t.discs) if i and not math.isclose(s[i], s[i - 1])) + "."
+            speeds = (
+                "Each shaft's speed over the motor's: "
+                + ", ".join(
+                    f"{d.name} {s[i]:.3g}×" for i, d in enumerate(t.discs) if i and not math.isclose(s[i], s[i - 1])
+                )
+                + "."
+            )
         else:
             speeds = "One shaft: every disc turns at the motor's speed."
         if t.excitation is not None:
@@ -1332,8 +1484,15 @@ class TorsionalPage(QtWidgets.QWidget):
         p.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
         for j, md in enumerate(self._modes[:SHAPES_SHOWN]):
             color = colors.mode[j % len(colors.mode)]
-            item = p.plot(x, md.shape, pen=pg.mkPen(color, width=2), symbol="o", symbolSize=6,
-                          symbolBrush=pg.mkBrush(color), symbolPen=None)
+            item = p.plot(
+                x,
+                md.shape,
+                pen=pg.mkPen(color, width=2),
+                symbol="o",
+                symbolSize=6,
+                symbolBrush=pg.mkBrush(color),
+                symbolPen=None,
+            )
             self.shapes_legend.addItem(item, f"Mode {j + 1}, {md.freq_hz:.4g} Hz")
         p.getAxis("bottom").setTicks([[(i, d.name) for i, d in enumerate(t.discs)]])
         p.setXRange(-0.3, t.n - 0.7, padding=0)
@@ -1341,8 +1500,10 @@ class TorsionalPage(QtWidgets.QWidget):
         rows = []
         for j, md in enumerate(self._modes):
             share = md.twist[md.link]
-            rows.append(f"Mode {j + 1}: {md.freq_hz:.4g} Hz, ζ = {100 * md.zeta:.2g} %, twisting "
-                        f"{t.links[md.link].name.lower()} ({100 * share:.0f} %)")
+            rows.append(
+                f"Mode {j + 1}: {md.freq_hz:.4g} Hz, ζ = {100 * md.zeta:.2g} %, twisting "
+                f"{t.links[md.link].name.lower()} ({100 * share:.0f} %)"
+            )
         self.mode_list.setText("<br>".join(rows) if rows else "No flexible modes.")
         self._show_check()
 
@@ -1350,25 +1511,31 @@ class TorsionalPage(QtWidgets.QWidget):
         t = self.train
         f = natural_hz(t)
         ref = natural_hz(t.referred())
-        text = ("Referred to the motor's shaft (inertias and stiffnesses × s², each mesh a shaft of "
-                "k<sub>m</sub>(r s)²): " + ", ".join(f"{v:.4g}" for v in ref) + " Hz, the same.")
+        text = (
+            "Referred to the motor's shaft (inertias and stiffnesses × s², each mesh a shaft of "
+            "k<sub>m</sub>(r s)²): " + ", ".join(f"{v:.4g}" for v in ref) + " Hz, the same."
+        )
         if t.meshes:
             try:
                 rigid = natural_hz(t.rigid_gears())
             except ValueError:
                 rigid = np.empty(0)
             lost = f.size - rigid.size
-            text += (" With the gears rigid (the n² reflection): "
-                     + (", ".join(f"{v:.4g}" for v in rigid) + " Hz" if rigid.size else "no modes")
-                     + f", {lost} mode{'s' if lost != 1 else ''} lost.")
+            text += (
+                " With the gears rigid (the n² reflection): "
+                + (", ".join(f"{v:.4g}" for v in rigid) + " Hz" if rigid.size else "no modes")
+                + f", {lost} mode{'s' if lost != 1 else ''} lost."
+            )
         self.check.setText(text)
 
     def _show_train_info(self) -> None:
         t = self.train
         ref = t.referred()
         j = sum(d.inertia for d in ref.discs)
-        self.train_info.setText(f"{t.n} discs, {len(t.meshes)} gear mesh{'es' if len(t.meshes) != 1 else ''}; "
-                                f"{j:.4g} kg·m² referred to the motor's shaft.")
+        self.train_info.setText(
+            f"{t.n} discs, {len(t.meshes)} gear mesh{'es' if len(t.meshes) != 1 else ''}; "
+            f"{j:.4g} kg·m² referred to the motor's shaft."
+        )
 
 
 def _small_font() -> QtGui.QFont:

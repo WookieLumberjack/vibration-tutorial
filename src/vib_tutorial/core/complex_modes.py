@@ -110,8 +110,7 @@ def made_proportional(system: ChainSystem, result: ModalResult | None = None) ->
     if mode is None or not np.isfinite(mode.zeta_modal):
         return system.copy()
     beta = 2 * mode.zeta_modal / mode.omega_n
-    return ChainSystem(system.masses, system.stiffness, beta * system.stiffness, system.friction,
-                       system.static_ratio)
+    return ChainSystem(system.masses, system.stiffness, beta * system.stiffness, system.friction, system.static_ratio)
 
 
 @dataclass(frozen=True)
@@ -147,15 +146,23 @@ def compare(system: ChainSystem, result: ModalResult) -> list[ModeComparison]:
     out = []
     for m in result.modes:
         d = m.damped
-        out.append(ModeComparison(
-            m.index, m.fn_hz, m.zeta_modal, d.eigenvalue if d is not None else None,
-            d.shape if d is not None else None, _mac(m.shape, d.shape) if d is not None else float("nan"),
-            complexity(d.shape) if d is not None else None))
+        out.append(
+            ModeComparison(
+                m.index,
+                m.fn_hz,
+                m.zeta_modal,
+                d.eigenvalue if d is not None else None,
+                d.shape if d is not None else None,
+                _mac(m.shape, d.shape) if d is not None else float("nan"),
+                complexity(d.shape) if d is not None else None,
+            )
+        )
     return out
 
 
-def frf_pair(system: ChainSystem, result: ModalResult, freqs_hz: np.ndarray, inp: int, out: int
-             ) -> tuple[np.ndarray, np.ndarray]:
+def frf_pair(
+    system: ChainSystem, result: ModalResult, freqs_hz: np.ndarray, inp: int, out: int
+) -> tuple[np.ndarray, np.ndarray]:
     """Receptance x_out / f_inp at each frequency: exact, and with the proportional approximation's C_p."""
     M, C, K = system.matrices()
     f = np.zeros(system.n)
@@ -200,8 +207,9 @@ class FreeDecay:
         return out
 
 
-def free_decay(system: ChainSystem, result: ModalResult, mode: int, periods: float = 12.0, per_period: int = 40
-               ) -> FreeDecay:
+def free_decay(
+    system: ChainSystem, result: ModalResult, mode: int, periods: float = 12.0, per_period: int = 40
+) -> FreeDecay:
     """Release from x = φ_mode, at rest, for `periods` of that mode, stepped exactly by expm(AΔ)."""
     m = result.modes[mode]
     n = system.n
@@ -226,8 +234,9 @@ def free_decay(system: ChainSystem, result: ModalResult, mode: int, periods: flo
         approx = np.exp(-zeta * w * t) * (np.cos(wd * t) + zeta * w / wd * np.sin(wd * t))
     else:  # the approximation's own mode overdamped: its two real roots, released at rest
         s1, s2 = (-zeta + np.array([1.0, -1.0]) * np.sqrt(zeta**2 - 1)) * w
-        approx = (s1 * np.exp(s2 * t) - s2 * np.exp(s1 * t)) / (s1 - s2) if s1 != s2 else (
-            (1 - s1 * t) * np.exp(s1 * t))
+        approx = (
+            (s1 * np.exp(s2 * t) - s2 * np.exp(s1 * t)) / (s1 - s2) if s1 != s2 else ((1 - s1 * t) * np.exp(s1 * t))
+        )
     return FreeDecay(mode, t, q, approx)
 
 
@@ -250,8 +259,7 @@ DAMPER_DECADES = 2.0  # a damper swept this many decades either side of the chai
 SPRING_SPAN = (0.05, 20.0)  # a spring swept from these times its value
 
 
-def sweep_values(system: ChainSystem, parameter: Parameter, element: int, points: int = SWEEP_POINTS
-                 ) -> np.ndarray:
+def sweep_values(system: ChainSystem, parameter: Parameter, element: int, points: int = SWEEP_POINTS) -> np.ndarray:
     """The values to sweep element `element` (0-based) over: log-spaced, and including its own value.
 
     A damper goes from 1/100 to 100 times √(k m) (the chain's mean spring and mass): ζ of a single mass
@@ -369,8 +377,9 @@ class IdentificationResult:
     real_fit: Fit
 
 
-def measured_frf(system: ChainSystem, result: ModalResult, inp: int, noise: float = 0.0, seed: int = 0
-                 ) -> tuple[np.ndarray, np.ndarray]:
+def measured_frf(
+    system: ChainSystem, result: ModalResult, inp: int, noise: float = 0.0, seed: int = 0
+) -> tuple[np.ndarray, np.ndarray]:
     """The receptance column for a force on mass `inp` (every response), on evenly spaced lines.
 
     `noise`: complex Gaussian noise on each response, its RMS this fraction of that response's peak.
@@ -388,8 +397,7 @@ def measured_frf(system: ChainSystem, result: ModalResult, inp: int, noise: floa
     return freqs, H
 
 
-def real_mode_lsfd(freqs: np.ndarray, H: np.ndarray, poles: list[complex]) -> tuple[list[IdentifiedMode],
-                                                                                     np.ndarray]:
+def real_mode_lsfd(freqs: np.ndarray, H: np.ndarray, poles: list[complex]) -> tuple[list[IdentifiedMode], np.ndarray]:
     """LSFD with real modes: each A_r/(ω_r² − ω² + 2iζ_rω_rω) = A_r/((iω − λ)(iω − λ*)), A_r real.
 
     In residue form R = A/(λ − λ*), which is purely imaginary, so only R's imaginary part is fitted
@@ -410,8 +418,9 @@ def real_mode_lsfd(freqs: np.ndarray, H: np.ndarray, poles: list[complex]) -> tu
     return modes, B @ x
 
 
-def identify(system: ChainSystem, result: ModalResult, inp: int = 0, noise: float = 0.0, seed: int = 0
-             ) -> IdentificationResult:
+def identify(
+    system: ChainSystem, result: ModalResult, inp: int = 0, noise: float = 0.0, seed: int = 0
+) -> IdentificationResult:
     """Fit the measured column with complex modes and with real ones, both on the exact poles."""
     freqs, H = measured_frf(system, result, inp, noise, seed)
     exact = measured_frf(system, result, inp)[1] if noise > 0 else H

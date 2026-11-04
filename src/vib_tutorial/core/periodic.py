@@ -158,7 +158,9 @@ def _repeat(Phi: np.ndarray, zp: np.ndarray) -> np.ndarray | None:
     return np.linalg.solve(M, zp)
 
 
-def from_rest(osc: Oscillator, forcing: Forcing, periods: float, per_period: int = 400) -> tuple[np.ndarray, np.ndarray]:
+def from_rest(
+    osc: Oscillator, forcing: Forcing, periods: float, per_period: int = 400
+) -> tuple[np.ndarray, np.ndarray]:
     """(t, x) from rest over `periods` periods, the force stepped exactly (impulses as velocity jumps)."""
     T = forcing.period
     h = T / per_period

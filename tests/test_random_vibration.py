@@ -39,12 +39,12 @@ def test_synthesized_noise_has_the_psd_asked_for():
     u = synthesize(np.random.default_rng(3), n, fs, psd)[:, 0]
     f, g = welch(u, fs, 1024)
     band = (f > 6) & (f < 29)
-    expected = level / np.sinc(f[band] / fs)**4
+    expected = level / np.sinc(f[band] / fs) ** 4
     assert np.mean(g[band] / expected) == pytest.approx(1.0, abs=0.01)
     assert np.mean(g[(f > 35) | (f < 4)]) < 1e-3 * level
     # its mean square, with the samples' sinc⁴ boost: ∫ G / sinc⁴ df
     fine = np.linspace(5.0, 30.0, 2001)
-    assert np.mean(u**2) == pytest.approx(np.trapezoid(level / np.sinc(fine / fs)**4, fine), rel=0.02)
+    assert np.mean(u**2) == pytest.approx(np.trapezoid(level / np.sinc(fine / fs) ** 4, fine), rel=0.02)
 
 
 def test_one_mass_matches_the_closed_forms():
@@ -67,7 +67,8 @@ def test_one_mass_matches_the_closed_forms():
     assert p.rms == pytest.approx(miles * math.sqrt(1 + 4 * zeta**2), rel=2e-3)
     # the spring carries k times the relative displacement
     assert predict(sdof, base, Output(Quantity.SPRING, 0), res).rms == pytest.approx(
-        k * predict(sdof, base, Output(Quantity.DISPLACEMENT, 0), res).rms, rel=1e-12)
+        k * predict(sdof, base, Output(Quantity.DISPLACEMENT, 0), res).rms, rel=1e-12
+    )
 
 
 def test_transfer_limits():
@@ -82,9 +83,14 @@ def test_transfer_limits():
     assert t[0] == pytest.approx(1.0, rel=1e-6)
 
 
-@pytest.mark.parametrize("inp", [RandomInput(Input.BASE, 0.01, 0.0, 10.0),
-                                 RandomInput(Input.FORCE_ONE, 1.0, 0.0, 10.0, mass=3),
-                                 RandomInput(Input.FORCE_ALL, 1.0, 2.0, 8.0)])
+@pytest.mark.parametrize(
+    "inp",
+    [
+        RandomInput(Input.BASE, 0.01, 0.0, 10.0),
+        RandomInput(Input.FORCE_ONE, 1.0, 0.0, 10.0, mass=3),
+        RandomInput(Input.FORCE_ALL, 1.0, 2.0, 8.0),
+    ],
+)
 def test_the_simulation_matches_h_s_hh(inp):
     duration = suggested_duration(inp, RESULT)
     rec = simulate(CHAIN, inp, duration, seed=7, result=RESULT)
@@ -116,8 +122,10 @@ def test_miles_per_mode():
         assert p.miles_rms == pytest.approx(p.rms, rel=0.01)
     # a force's own mass's acceleration has a mass line, f/m above the modes, not resonant: Miles misses it,
     # more as the band goes higher
-    short, wide = (predict(CHAIN, RandomInput(Input.FORCE_ONE, 1.0, 0.0, top, mass=3),
-                           Output(Quantity.ACCELERATION, 3), RESULT) for top in (10.0, 30.0))
+    short, wide = (
+        predict(CHAIN, RandomInput(Input.FORCE_ONE, 1.0, 0.0, top, mass=3), Output(Quantity.ACCELERATION, 3), RESULT)
+        for top in (10.0, 30.0)
+    )
     assert short.miles_rms == pytest.approx(wide.miles_rms)
     assert short.miles_rms < 0.85 * short.rms and wide.miles_rms < 0.65 * wide.rms
     # a band that leaves out modes 3 and 4: Miles counts only the modes inside it
@@ -144,8 +152,8 @@ def test_rice_peak_distribution():
     eta = np.linspace(-8, 8, 8001)
     for alpha in (0.0, 0.3, 0.7, 0.99, 1.0):
         assert np.trapezoid(peak_pdf(eta, alpha), eta) == pytest.approx(1.0, abs=1e-4)
-    assert peak_pdf(eta, 1.0) == pytest.approx(np.where(eta > 0, eta * np.exp(-eta**2 / 2), 0.0))  # Rayleigh
-    assert peak_pdf(eta, 0.0) == pytest.approx(np.exp(-eta**2 / 2) / math.sqrt(2 * math.pi))  # Gaussian
+    assert peak_pdf(eta, 1.0) == pytest.approx(np.where(eta > 0, eta * np.exp(-(eta**2) / 2), 0.0))  # Rayleigh
+    assert peak_pdf(eta, 0.0) == pytest.approx(np.exp(-(eta**2) / 2) / math.sqrt(2 * math.pi))  # Gaussian
 
 
 def test_davenport_and_vanmarcke():
@@ -154,16 +162,20 @@ def test_davenport_and_vanmarcke():
     # Davenport's formula is the Poisson crossings' expected largest value, to its asymptotic accuracy
     r = np.linspace(0, 12, 20001)
     for cycles in (1e2, 1e4, 1e6):
-        poisson = np.trapezoid(1 - np.exp(-cycles * np.exp(-r**2 / 2)), r)
+        poisson = np.trapezoid(1 - np.exp(-cycles * np.exp(-(r**2) / 2)), r)
         assert davenport(cycles) == pytest.approx(poisson, rel=0.03)
         # clumped crossings (a narrow band) give a lower largest peak; a broad band, nearly Poisson's
         assert vanmarcke(cycles, 0.1) < vanmarcke(cycles, 0.9) < poisson + 0.05
     assert davenport(1e6) == pytest.approx(5.37, abs=0.01) and davenport(1.0) == 0.0
 
 
-@pytest.mark.parametrize(("inp", "out"), [(RandomInput(Input.BASE, 0.01, 0.0, 10.0), Output(Quantity.SPRING, 0)),
-                                          (RandomInput(Input.FORCE_ONE, 1.0, 0.0, 10.0, mass=3),
-                                           Output(Quantity.ACCELERATION, 3))])
+@pytest.mark.parametrize(
+    ("inp", "out"),
+    [
+        (RandomInput(Input.BASE, 0.01, 0.0, 10.0), Output(Quantity.SPRING, 0)),
+        (RandomInput(Input.FORCE_ONE, 1.0, 0.0, 10.0, mass=3), Output(Quantity.ACCELERATION, 3)),
+    ],
+)
 def test_the_records_statistics_match_rice(inp, out):
     from vib_tutorial.core.random_vibration import (
         LEVELS,

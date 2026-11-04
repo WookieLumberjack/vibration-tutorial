@@ -147,7 +147,8 @@ def test_theory_asymmetric_shaft_needs_two_trials():
     # The two coefficients predict a third weight's effect exactly.
     other = weight(0.7e-3, 0.02, math.radians(130.0))
     assert reading(s.with_(weights=(other,)), 1200.0, DISC) - v0 == pytest.approx(
-        plus * other + minus * np.conj(other), abs=1e-15)
+        plus * other + minus * np.conj(other), abs=1e-15
+    )
     r = v0 - slow
     two = (minus * np.conj(r) - np.conj(plus) * r) / (abs(plus) ** 2 - abs(minus) ** 2)
     mass, angle = weight_parts(two, 0.02)
@@ -235,7 +236,9 @@ def test_plane_weights_on_the_disc_make_a_force_and_a_couple():
     # A weight on the shaft at the disc's plane is a weight on the disc.
     at_disc = s.with_(plane_weights=(PlaneWeight(s.a, w),))
     assert at_disc.mass_unbalance == pytest.approx(w)
-    np.testing.assert_allclose(synchronous_response(at_disc, [150.0]), synchronous_response(s.with_(weights=(w,)), [150.0]))
+    np.testing.assert_allclose(
+        synchronous_response(at_disc, [150.0]), synchronous_response(s.with_(weights=(w,)), [150.0])
+    )
     with pytest.raises(ValueError):
         RotorSystem(plane_weights=(PlaneWeight(0.6, w),))  # past the shaft's end
 
@@ -302,8 +305,10 @@ def test_planes_close_together_amplify_errors_in_the_readings():
         return v * (1 + 0.01 * (rng.standard_normal(v.shape) + 1j * rng.standard_normal(v.shape)) / math.sqrt(2))
 
     def left(apart: float) -> float:
-        out = [abs(readings(balance_two(s, 1200.0, faces(s, apart), noisy)[0], 1752.5, [(DISC, "x")])[0, 0])
-               for _ in range(1000)]
+        out = [
+            abs(readings(balance_two(s, 1200.0, faces(s, apart), noisy)[0], 1752.5, [(DISC, "x")])[0, 0])
+            for _ in range(1000)
+        ]
         return float(np.median(out)) * 1e6
 
     # A sampled median: the notes say about 18 µm and about 8 µm.

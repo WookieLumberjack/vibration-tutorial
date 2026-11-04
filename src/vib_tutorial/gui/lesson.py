@@ -18,8 +18,15 @@ from .panels import spin
 from .theming import mute
 
 
-def plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None,
-         log_x: bool = False, log_y: bool = False, height: int = 160) -> pg.PlotWidget:
+def plot(
+    left: str,
+    left_units: str | None,
+    bottom: str,
+    bottom_units: str | None,
+    log_x: bool = False,
+    log_y: bool = False,
+    height: int = 160,
+) -> pg.PlotWidget:
     """A plot with a faint grid, no menu and no auto-range button; log axes if asked."""
     p = pg.PlotWidget(axisItems=log_axes() if (log_x or log_y) else None)
     p.setMenuEnabled(False)
@@ -103,8 +110,9 @@ class Form(QtWidgets.QGroupBox):
         super().__init__(title, parent)
         self.form = QtWidgets.QFormLayout(self)
 
-    def number(self, label: str, lo: float, hi: float, value: float, decimals: int, suffix: str = "",
-               tip: str = "") -> QtWidgets.QDoubleSpinBox:
+    def number(
+        self, label: str, lo: float, hi: float, value: float, decimals: int, suffix: str = "", tip: str = ""
+    ) -> QtWidgets.QDoubleSpinBox:
         box = spin(lo, hi, value, decimals, suffix)
         self.add(label, box, tip)
         box.valueChanged.connect(self.changed)
@@ -204,8 +212,13 @@ def stack(*items: tuple[QtWidgets.QWidget, int]) -> QtWidgets.QWidget:
     return w
 
 
-def three_panes(page: QtWidgets.QWidget, left: QtWidgets.QWidget, centre: QtWidgets.QWidget,
-                right: QtWidgets.QWidget, sizes: Sequence[int] = (320, 760, 560)) -> QtWidgets.QSplitter:
+def three_panes(
+    page: QtWidgets.QWidget,
+    left: QtWidgets.QWidget,
+    centre: QtWidgets.QWidget,
+    right: QtWidgets.QWidget,
+    sizes: Sequence[int] = (320, 760, 560),
+) -> QtWidgets.QSplitter:
     """The lesson pages' layout: controls (scrolling) | the main plots | the tabs."""
     from .layouts import ColumnScroll
 

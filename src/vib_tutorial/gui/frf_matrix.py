@@ -313,29 +313,42 @@ class FrfDetail(QtWidgets.QWidget):
             p.setLabel("left", pq.axis_label)
             set_phase_ticks(p.getAxis("left"), pq is Quantity.PHASE)
             for fn, color in lines:
-                p.addItem(pg.InfiniteLine(
-                    pos=math.log10(fn), angle=90,
-                    pen=pg.mkPen(color, width=1, style=QtCore.Qt.PenStyle.DotLine),
-                ))
+                p.addItem(
+                    pg.InfiniteLine(
+                        pos=math.log10(fn),
+                        angle=90,
+                        pen=pg.mkPen(color, width=1, style=QtCore.Qt.PenStyle.DotLine),
+                    )
+                )
             if worst is not None:
                 lo_f, hi_f, peak_f = worst
                 brush = pg.mkColor(colors.force)
                 brush.setAlpha(40)
                 band = pg.LinearRegionItem(
-                    (math.log10(lo_f), math.log10(hi_f)), movable=False, brush=brush,
+                    (math.log10(lo_f), math.log10(hi_f)),
+                    movable=False,
+                    brush=brush,
                     pen=pg.mkPen(None),
                 )
                 band.setZValue(-10)
                 p.addItem(band)
-                p.addItem(pg.InfiniteLine(
-                    pos=math.log10(peak_f), angle=90,
-                    pen=pg.mkPen(colors.force, width=1.5, style=QtCore.Qt.PenStyle.DashLine),
-                ))
+                p.addItem(
+                    pg.InfiniteLine(
+                        pos=math.log10(peak_f),
+                        angle=90,
+                        pen=pg.mkPen(colors.force, width=1.5, style=QtCore.Qt.PenStyle.DashLine),
+                    )
+                )
             for name, color, values in terms:
                 p.plot(f, part(values, pq), pen=pg.mkPen(color, width=1.5), name=name, connect="finite")
             p.plot(f, part(full, pq), pen=pg.mkPen(colors.strong, width=2.5), name="Full solution", connect="finite")
-            p.plot(f, part(total, pq), pen=pg.mkPen(colors.force, width=2, style=QtCore.Qt.PenStyle.DashLine),
-                   name="Sum of the terms shown", connect="finite")
+            p.plot(
+                f,
+                part(total, pq),
+                pen=pg.mkPen(colors.force, width=2, style=QtCore.Qt.PenStyle.DashLine),
+                name="Sum of the terms shown",
+                connect="finite",
+            )
             lo, hi = y_range(pq, [part(full, pq), part(total, pq)])
             p.setYRange(lo, hi, padding=0)
         ticks = log_ticks(f[0], f[-1], (1, 2, 5))
@@ -371,44 +384,64 @@ TRIALS = (
         "climbs back at each dip. Undamped, the dips would be at 1.97 Hz and 5.15 Hz (m3 and m4 vibrating on "
         "their own with m2 held) and 4.50 Hz (m1 between the ground and m2). With the dampers the one at "
         "5.15 Hz, squeezed between the peaks at 4.88 and 5.98 Hz, is washed out to a shoulder.",
-        output=1, inputs=(1,)),
+        output=1,
+        inputs=(1,),
+    ),
     FrfTrial(
         "A force at a node (m3 in mode 2)",
         "Mode 2 has a node at m3 (its shape is 0.58, 0.58, 0, −0.58). Pushing there can't excite it, and "
         "measuring there can't see it, so H33, and the whole of row 3 and column 3, have no peak at 3.18 Hz. "
         "Click another cell in row 3: still no mode 2.",
-        output=2, inputs=(2,)),
+        output=2,
+        inputs=(2,),
+    ),
     FrfTrial(
         "End to end (H14): no antiresonances",
         "Force at m4, response at m1. Between m1 and m4 there is no chain left outside, so there are no "
         "dips, and the phase keeps falling by 180° at every peak, 720° in all. Compare H22's phase, which "
         "swings back up at each dip.",
-        output=0, inputs=(3,), quantity=Quantity.PHASE),
+        output=0,
+        inputs=(3,),
+        quantity=Quantity.PHASE,
+    ),
     FrfTrial(
         "Truncate the high modes (H11)",
         "Modes 3 and 4 unticked, the real part shown. Near modes 1 and 2 the sum is close, but below them it "
         "sits low: modes 3 and 4 hold 24% of m1's static compliance (their residual flexibility), and the "
         "header lists each mode's share. Tick mode 3 back and the offset mostly closes.",
-        output=0, inputs=(0,), quantity=Quantity.REAL, unticked=(3, 4)),
+        output=0,
+        inputs=(0,),
+        quantity=Quantity.REAL,
+        unticked=(3, 4),
+    ),
     FrfTrial(
         "Leave out mode 1 (H44)",
         "Only mode 1 unticked. Above 1.1 Hz the missing term is mass-like, −φφᵀ/ω², so the sum is off by "
         "an amount that grows towards low frequency as 1/ω²: the residual mass. At ω = 0 the error is mode "
         "1's 89% share of the static compliance.",
-        output=3, inputs=(3,), unticked=(1,)),
+        output=3,
+        inputs=(3,),
+        unticked=(1,),
+    ),
     FrfTrial(
         "Two forces at once (m3 and m4)",
         "Unit forces at m3 and m4, in phase, the response at m4: the sum of H43 and H44. At mode 1 (1.11 Hz) "
         "m3 and m4 move together in the mode, the forces help each other and m4 moves almost twice as far. "
         "At mode 3 (4.88 Hz) they move in opposite directions, the forces fight, and the sum is smaller than "
         "either term alone.",
-        output=3, inputs=(2, 3)),
+        output=3,
+        inputs=(2, 3),
+    ),
     FrfTrial(
         "Non-proportional damping: the classical sum misses",
         "c1 = 15 N·s/m, the other dampers at 2, with Modal terms → Classical. Even with every mode ticked the "
         "sum misses the full solution, most where two modes' peaks overlap, because the classical terms "
         "drop ΦᵀCΦ's coupling. Switch to Exact (complex modes): the sum lies on the full solution again.",
-        output=0, inputs=(0,), damping=(15.0, 2.0, 2.0, 2.0), expansion=Expansion.CLASSICAL),
+        output=0,
+        inputs=(0,),
+        damping=(15.0, 2.0, 2.0, 2.0),
+        expansion=Expansion.CLASSICAL,
+    ),
 )
 
 
@@ -443,8 +476,10 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self.trial = QtWidgets.QComboBox()
         self.trial.addItem("Pick one…")
         self.trial.addItems([t.name for t in TRIALS])
-        self.trial.setToolTip("<p>Each sets up the chain and the plots to show one idea from the Theory tab. "
-                              "Loading one replaces the Simulation page's chain.</p>")
+        self.trial.setToolTip(
+            "<p>Each sets up the chain and the plots to show one idea from the Theory tab. "
+            "Loading one replaces the Simulation page's chain.</p>"
+        )
         self.trial.currentIndexChanged.connect(self._on_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
@@ -484,9 +519,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         )
         self.expansion.currentIndexChanged.connect(self._recompute_terms)
         form.addRow("Modal terms:", self.expansion)
-        link = QtWidgets.QLabel(
-            "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
-        )
+        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
         link.linkActivated.connect(lambda _: self.edit_parameters.emit())
@@ -822,32 +855,42 @@ class FrfMatrixPage(QtWidgets.QWidget):
         if len(inputs) == 1:
             k = inputs[0]
             kind = "driving point" if j == k else "transfer"
-            title = (f"<b>H<sub>{j + 1}{k + 1}</sub> = x<sub>{j + 1}</sub> / F<sub>{k + 1}</sub></b> "
-                     f"({kind}): response of m{j + 1} to a force at m{k + 1}.")
-            parts = (f"Coloured: each ticked mode's term. <span style='color:{colors.force}'>Dashed red</span> = "
-                     f"Σ over the ticked modes r of mode r's ({j + 1},{k + 1}) entry only; the other cells "
-                     "are responses to other forces.")
+            title = (
+                f"<b>H<sub>{j + 1}{k + 1}</sub> = x<sub>{j + 1}</sub> / F<sub>{k + 1}</sub></b> "
+                f"({kind}): response of m{j + 1} to a force at m{k + 1}."
+            )
+            parts = (
+                f"Coloured: each ticked mode's term. <span style='color:{colors.force}'>Dashed red</span> = "
+                f"Σ over the ticked modes r of mode r's ({j + 1},{k + 1}) entry only; the other cells "
+                "are responses to other forces."
+            )
             zeros = (j if j <= k else k) + (self.system.n - 1 - max(j, k))
-            parts += (" Undamped, it has no antiresonances (see Theory)." if zeros == 0 else
-                      f" Undamped, it has {zeros} antiresonance{'s' if zeros > 1 else ''}"
-                      f"{', counting any that coincide' if zeros > 1 else ''} (see Theory).")
+            parts += (
+                " Undamped, it has no antiresonances (see Theory)."
+                if zeros == 0
+                else f" Undamped, it has {zeros} antiresonance{'s' if zeros > 1 else ''}"
+                f"{', counting any that coincide' if zeros > 1 else ''} (see Theory)."
+            )
         else:
             names = ", ".join(f"m{k + 1}" for k in inputs)
             terms = " + ".join(f"H<sub>{j + 1}{k + 1}</sub>" for k in inputs)
-            title = (f"<b>x<sub>{j + 1}</sub> for unit in-phase forces at {names}</b> = {terms}.")
+            title = f"<b>x<sub>{j + 1}</sub> for unit in-phase forces at {names}</b> = {terms}."
             cols = ", ".join(f"({j + 1},{k + 1})" for k in inputs)
-            parts = ("Coloured: each force's term (from the ticked modes). "
-                     f"<span style='color:{colors.force}'>Dashed red</span> = Σ over these forces and the "
-                     f"ticked modes r of mode r's entries {cols}: the sum along row {j + 1}.")
+            parts = (
+                "Coloured: each force's term (from the ticked modes). "
+                f"<span style='color:{colors.force}'>Dashed red</span> = Σ over these forces and the "
+                f"ticked modes r of mode r's entries {cols}: the sum along row {j + 1}."
+            )
         err = float(np.abs(partial - full).max() / max(np.abs(full).max(), 1e-300))
         color = colors.good if err < 1e-6 else colors.fair if err < 0.05 else colors.poor
         amount = "none (equal to rounding error)" if err < 1e-9 else f"{100 * err:.3g}%"
-        verdict = (f"Largest difference from the full solution: <b style='color:{color}'>"
-                   f"{amount}</b> of the peak")
+        verdict = f"Largest difference from the full solution: <b style='color:{color}'>{amount}</b> of the peak"
         if worst is not None:
-            verdict += (f", at <b>{worst[2]:.3g} Hz</b> (dashed red line). <span style='color:{colors.force}'>"
-                        f"Shaded: {worst[0]:.3g}–{worst[1]:.3g} Hz</span>, where the difference is at "
-                        f"least {WORST_FRACTION:.0%} of that.")
+            verdict += (
+                f", at <b>{worst[2]:.3g} Hz</b> (dashed red line). <span style='color:{colors.force}'>"
+                f"Shaded: {worst[0]:.3g}–{worst[1]:.3g} Hz</span>, where the difference is at "
+                f"least {WORST_FRACTION:.0%} of that."
+            )
         else:
             verdict += "."
         if int(sel.sum()) == 0:
@@ -858,8 +901,10 @@ class FrfMatrixPage(QtWidgets.QWidget):
     def _static_text(self, j: int, inputs: list[int], sel: np.ndarray) -> str:
         """Static compliance (w = 0): the ticked modes' sum vs K^-1, and each mode's share."""
         if self.static is None:
-            return ("<b>Static compliance</b> (ω = 0): none. K is singular, so the chain can move "
-                    "as a rigid body and a steady force has no static deflection.")
+            return (
+                "<b>Static compliance</b> (ω = 0): none. K is singular, so the chain can move "
+                "as a rigid body and a steady force has no static deflection."
+            )
         full = float(self.static[j, inputs].sum())
         each = self.term_static[:, j, inputs].sum(axis=1)
         partial = float(each[sel].sum())
@@ -868,8 +913,13 @@ class FrfMatrixPage(QtWidgets.QWidget):
         amount = "0% (exact)" if abs(err) < 1e-9 else f"{100 * err:+.3g}%"
         shares = []
         for t, c, value, on in zip(self.terms, self.term_colors, each, sel):
-            share = "—" if not (full and np.isfinite(value)) else "0%" if abs(value / full) < 1e-9 else (
-                f"{100 * value / full:.3g}%")  # a node's share is round-off
+            share = (
+                "—"
+                if not (full and np.isfinite(value))
+                else "0%"
+                if abs(value / full) < 1e-9
+                else (f"{100 * value / full:.3g}%")
+            )  # a node's share is round-off
             style = "" if on else f" style='color:{colors.grey}'"
             shares.append(f"<span style='color:{c}'>■</span><span{style}>{t.label} {share}</span>")
         return (
@@ -992,19 +1042,28 @@ Simulation page's chain.</p>
 <!--TRIALS-->
 <!--TAKEAWAYS-->
 """
-THEORY_HTML = THEORY_HTML.replace("<!--BEFORE-->", before(
-    ("sim_page", "start-with-one-mass", "Start with one mass"),
-    ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
-    ("sim_page", "proportional-damping", "Proportional damping"),
-)).replace("<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in TRIALS) + "</ul>"
-).replace("<!--TAKEAWAYS-->", takeaways(
-    "H(ω) = (K − ω²M + iωC)<sup>−1</sup>: term H<sub>jk</sub> is the response at m<sub>j</sub> to a unit "
-    "force at m<sub>k</sub>, and H<sub>jk</sub> = H<sub>kj</sub>.",
-    "Every term is a sum of the same N resonances, weighted by the modal constants "
-    "φ<sub>jr</sub>φ<sub>kr</sub>; a node (φ = 0) hides a mode from a whole row and column.",
-    "A driving point's peaks and dips alternate; the dips are the frequencies of the chain outside, held "
-    "at the force and the response.",
-    "A truncated sum misses the high modes as a residual flexibility and the low ones as a residual mass, "
-    "most at the dips and away from the peaks.",
-    "With non-proportional damping only the complex-mode (exact) sum is exact.",
-))
+THEORY_HTML = (
+    THEORY_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("sim_page", "start-with-one-mass", "Start with one mass"),
+            ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
+            ("sim_page", "proportional-damping", "Proportional damping"),
+        ),
+    )
+    .replace("<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in TRIALS) + "</ul>")
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "H(ω) = (K − ω²M + iωC)<sup>−1</sup>: term H<sub>jk</sub> is the response at m<sub>j</sub> to a unit "
+            "force at m<sub>k</sub>, and H<sub>jk</sub> = H<sub>kj</sub>.",
+            "Every term is a sum of the same N resonances, weighted by the modal constants "
+            "φ<sub>jr</sub>φ<sub>kr</sub>; a node (φ = 0) hides a mode from a whole row and column.",
+            "A driving point's peaks and dips alternate; the dips are the frequencies of the chain outside, held "
+            "at the force and the response.",
+            "A truncated sum misses the high modes as a residual flexibility and the low ones as a residual mass, "
+            "most at the dips and away from the peaks.",
+            "With non-proportional damping only the complex-mode (exact) sum is exact.",
+        ),
+    )
+)

@@ -61,7 +61,7 @@ def test_psd_matches_scipy_welch_and_reads_the_noise_density(w):
     assert sp.freqs == pytest.approx(f)
     assert sp.psd == pytest.approx(ref, rel=1e-9)
     assert np.mean(sp.psd[1:-1]) == pytest.approx(0.25 / (fs / 2), rel=0.05)
-    assert np.sum(sp.psd) * sp.df == pytest.approx(np.mean(x ** 2), rel=0.05)  # Parseval
+    assert np.sum(sp.psd) * sp.df == pytest.approx(np.mean(x**2), rel=0.05)  # Parseval
 
 
 def test_aliasing_and_the_filter():

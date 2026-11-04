@@ -50,8 +50,15 @@ class Waterfall:
     free whirl frequencies at the block's mean speed, for the plot to mark.
     """
 
-    def __init__(self, block: float, f_max: float, system: RotorSystem | None = None,
-                 rate: float = RATE, overlap: float = OVERLAP, max_blocks: int = MAX_BLOCKS) -> None:
+    def __init__(
+        self,
+        block: float,
+        f_max: float,
+        system: RotorSystem | None = None,
+        rate: float = RATE,
+        overlap: float = OVERLAP,
+        max_blocks: int = MAX_BLOCKS,
+    ) -> None:
         if block <= 0.0 or not 0.0 <= overlap < 1.0:
             raise ValueError("the block must be positive and the overlap in [0, 1)")
         self.block = block
@@ -114,12 +121,18 @@ class Waterfall:
             natural = self.blocks[-1].natural
         else:
             natural = whirl_lines(whirl_modes(self.system, omega), DAMPED)
-        return SpectrumBlock(t=start + 0.5 * self.block, omega=omega, rise=end - float(w[0]),
-                             amps=amps[self._keep].T.astype(np.float32), natural=natural)
+        return SpectrumBlock(
+            t=start + 0.5 * self.block,
+            omega=omega,
+            rise=end - float(w[0]),
+            amps=amps[self._keep].T.astype(np.float32),
+            natural=natural,
+        )
 
     def latest_ramp(self, up: bool, threshold: float = 0.05) -> list[SpectrumBlock]:
         """The blocks of the latest run-up (or coast-down): the last unbroken run of blocks over
         which the speed rose (fell) by more than `threshold` rad/s, in time order."""
+
         def ramping(b: SpectrumBlock) -> bool:
             return b.rise > threshold if up else b.rise < -threshold
 

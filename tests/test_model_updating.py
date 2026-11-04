@@ -48,7 +48,7 @@ def test_the_tests():
         c = correlate(CHAIN, Errors.none(4), test)
         assert [(p.test, p.model) for p in c.pairs] == [(i, i) for i in range(len(test.modes))]
         assert max(abs(p.error) for p in c.pairs) < 0.005
-        assert [m.fn_hz for m in test.modes] == pytest.approx([m.fn_hz for m in r.modes[:len(test.modes)]], rel=0.005)
+        assert [m.fn_hz for m in test.modes] == pytest.approx([m.fn_hz for m in r.modes[: len(test.modes)]], rel=0.005)
     # the sensors pick from the same measurement
     two = exact.with_sensors(np.array([1, 0, 0, 1], dtype=bool))
     assert two.shapes().shape == (2, 4) and two.modes is exact.modes
@@ -139,8 +139,13 @@ def test_updating():
     u = update(CHAIN, wrong, exact, springs, regularization=100.0)
     assert u.factors() == pytest.approx([1.0, 1.0, 1.3, 1.0], abs=0.005)
     # dampers from the damping ratios
-    u = update(CHAIN, Errors(np.ones(4), np.ones(4), np.full(4, 2.0)), exact, parameters(4, [Kind.DAMPER]),
-               Residuals(shapes=False, damping=True))
+    u = update(
+        CHAIN,
+        Errors(np.ones(4), np.ones(4), np.full(4, 2.0)),
+        exact,
+        parameters(4, [Kind.DAMPER]),
+        Residuals(shapes=False, damping=True),
+    )
     assert u.factors() == pytest.approx(np.ones(4), abs=0.1)
     assert len(update(CHAIN, wrong, exact, []).history) == 1  # nothing to update
 
@@ -163,6 +168,11 @@ def test_the_update_trials_notes():
     assert np.all((f > 1.015) & (f < 1.045)) and "2 to 4 % high" in note["Update: masses too, not unique"]
     f = update(CHAIN, wrong, hammer, springs, what, regularization=1.0).factors()
     assert f[2] == pytest.approx(1.29, abs=0.005) and "1.29" in note["Update: regularized"]
-    f = update(CHAIN, Errors(np.ones(4), np.ones(4), np.full(4, 2.0)), hammer, parameters(4, [Kind.DAMPER]),
-               Residuals(shapes=False, damping=True)).factors()
+    f = update(
+        CHAIN,
+        Errors(np.ones(4), np.ones(4), np.full(4, 2.0)),
+        hammer,
+        parameters(4, [Kind.DAMPER]),
+        Residuals(shapes=False, damping=True),
+    ).factors()
     assert np.max(np.abs(f - 1)) < 0.15 and "15 %" in note["Update: the dampers"]

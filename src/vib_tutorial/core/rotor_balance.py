@@ -105,8 +105,9 @@ class SteadyMeasurement(StagedRun):
     (4, 2) complex, as steady_vectors gives them.
     """
 
-    def __init__(self, sim: RotorSimulator, omega: float, revs: int = MEASURE_REVS,
-                 settle: float | None = None) -> None:
+    def __init__(
+        self, sim: RotorSimulator, omega: float, revs: int = MEASURE_REVS, settle: float | None = None
+    ) -> None:
         if omega <= 0.0 or revs < 1:
             raise ValueError("measure at a positive speed, over at least one revolution")
         super().__init__(sim)

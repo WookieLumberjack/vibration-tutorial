@@ -77,8 +77,7 @@ class Model:
             return np.array([[m]]), np.array([[c]]), np.array([[k]])
         m2 = 0.1 * m
         k2 = m2 * (TWO_PI * self.stiff_hz) ** 2
-        return (np.diag([m, m2]), np.array([[c, 0.0], [0.0, 0.0]]),
-                np.array([[k + k2, -k2], [-k2, k2]]))
+        return (np.diag([m, m2]), np.array([[c, 0.0], [0.0, 0.0]]), np.array([[k + k2, -k2], [-k2, k2]]))
 
     def state_space(self) -> tuple[np.ndarray, np.ndarray]:
         M, C, K = self.matrices()
@@ -141,8 +140,9 @@ def exact(model: Model, load: Load, t: np.ndarray) -> np.ndarray:
     return free + (Z[0] * np.exp(1j * w * t)).imag
 
 
-def simulate(scheme: Scheme, model: Model, load: Load, h: float, steps: int, alpha: float = -0.1,
-             limit: float = 1e6) -> np.ndarray:
+def simulate(
+    scheme: Scheme, model: Model, load: Load, h: float, steps: int, alpha: float = -0.1, limit: float = 1e6
+) -> np.ndarray:
     """The first mass's displacement at t = 0, h, …, steps·h. Once it passes `limit` times the start (the scheme
     has blown up) the rest is NaN."""
     M, C, K = model.matrices()
@@ -157,9 +157,9 @@ def simulate(scheme: Scheme, model: Model, load: Load, h: float, steps: int, alp
     a = Mi @ (f(0.0) - C @ v - K @ x)
 
     if scheme is Scheme.CENTRAL:
-        left = M / h ** 2 + C / (2 * h)
-        right_prev = M / h ** 2 - C / (2 * h)
-        mid = K - 2 * M / h ** 2
+        left = M / h**2 + C / (2 * h)
+        right_prev = M / h**2 - C / (2 * h)
+        mid = K - 2 * M / h**2
         solve = scipy.linalg.lu_factor(left)
         x_prev = x - h * v + 0.5 * h * h * a
         for i in range(1, steps + 1):
@@ -267,12 +267,16 @@ def spectral(scheme: Scheme, Omega: float, zeta: float = 0.0, alpha: float = -0.
     return Spectral(radius, period / exact_period - 1, float(-log.real / abs(log)))
 
 
-def spectral_curves(scheme: Scheme, Omegas: np.ndarray, zeta: float = 0.0,
-                    alpha: float = -0.1) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def spectral_curves(
+    scheme: Scheme, Omegas: np.ndarray, zeta: float = 0.0, alpha: float = -0.1
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """(ρ, period error, damping) at each Ω."""
     rows = [spectral(scheme, float(o), zeta, alpha) for o in Omegas]
-    return (np.array([r.radius for r in rows]), np.array([r.period_error for r in rows]),
-            np.array([r.damping for r in rows]))
+    return (
+        np.array([r.radius for r in rows]),
+        np.array([r.period_error for r in rows]),
+        np.array([r.damping for r in rows]),
+    )
 
 
 def stable_limit(scheme: Scheme, zeta: float = 0.0, alpha: float = -0.1) -> float:

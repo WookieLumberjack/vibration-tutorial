@@ -54,7 +54,7 @@ from .style import colors
 from .theming import add_legend
 
 KINDS = list(Kind)
-BLOCKS = tuple(2 ** k for k in range(6, 15))  # 64 … 16384 samples
+BLOCKS = tuple(2**k for k in range(6, 15))  # 64 … 16384 samples
 SCALES = ("Peak amplitude", "PSD")
 TAB_WINDOWS, TAB_SPECTROGRAM, TAB_SENSORS = range(3)
 ANALOG_POINTS = 20000  # most points drawn for the analog signal behind a block
@@ -94,73 +94,126 @@ TRIALS = (
         "1024 samples at 1024 Hz: a 1 s block, lines Δf = 1 Hz apart, the highest at the Nyquist frequency, "
         "512 Hz. A 50 Hz tone fits 50 whole cycles in the block, so it lands on a line and, without a window, "
         "reads its amplitude exactly, 1.000, with nothing on the other lines: no leakage.",
-        f2=120.0, a2=0.0, window=Window.RECTANGULAR),
+        f2=120.0,
+        a2=0.0,
+        window=Window.RECTANGULAR,
+    ),
     SignalsTrial(
         "Between lines: leakage",
         "The tone moved to 50.5 Hz, half-way between lines, still unwindowed. It reads 0.64 (−3.9 dB, the "
         "rectangular window's scalloping loss), and its energy leaks across the whole spectrum, falling only as "
         "1/f: at 70 Hz the leak reads 0.015, fifteen times a 0.001 tone that is there and can't be seen.",
-        f1=50.5, f2=70.0, a2=0.001, window=Window.RECTANGULAR),
+        f1=50.5,
+        f2=70.0,
+        a2=0.001,
+        window=Window.RECTANGULAR,
+    ),
     SignalsTrial(
         "A Hann window",
         "The same two tones through a Hann window. The big one reads 0.85 (−1.4 dB) and spreads over a few "
         "lines, but its skirts fall as 1/f³: the 0.001 tone at 70 Hz now stands clear, reading 0.0010.",
-        f1=50.5, f2=70.0, a2=0.001, window=Window.HANN),
+        f1=50.5,
+        f2=70.0,
+        a2=0.001,
+        window=Window.HANN,
+    ),
     SignalsTrial(
         "A flat-top window",
         "A flat-top window reads 0.999 for the 50.5 Hz tone: its scalloping loss is 0.01 dB, so a tone's "
         "amplitude is right wherever it falls. The price is a main lobe 5 lines wide each side, and a noise "
         "bandwidth of 3.8 lines. Calibrations use it; separating close tones doesn't.",
-        f1=50.5, f2=70.0, a2=0.001, window=Window.FLAT_TOP),
+        f1=50.5,
+        f2=70.0,
+        a2=0.001,
+        window=Window.FLAT_TOP,
+    ),
     SignalsTrial(
         "Aliasing",
         "A 900 Hz tone sampled at 1024 Hz with the anti-alias filter off: above Nyquist (512 Hz), it folds back "
         "and shows at 1024 − 900 = 124 Hz with its whole amplitude, indistinguishable from a real 124 Hz tone. "
         "The close-up of the first 64 samples shows why: the dots trace a slow sine through the fast one.",
-        f1=900.0, a1=1.0, a2=0.0, filtered=False, zoom=True),
+        f1=900.0,
+        a1=1.0,
+        a2=0.0,
+        filtered=False,
+        zoom=True,
+    ),
     SignalsTrial(
         "The anti-alias filter",
         "The same 900 Hz tone with the filter on: an 8-pole low-pass at f<sub>s</sub>/2.56 = 400 Hz cuts it to "
         "0.0015 (−56 dB) before it is sampled. The filter also takes 3 dB off a tone at 400 Hz, which is why only "
         "the lines up to f<sub>s</sub>/2.56 are kept (the shaded band is not to be trusted).",
-        f1=900.0, a1=1.0, a2=0.0, filtered=True, zoom=True),
+        f1=900.0,
+        a1=1.0,
+        a2=0.0,
+        filtered=True,
+        zoom=True,
+    ),
     SignalsTrial(
         "A tone in noise",
         "A 0.05 tone at 100 Hz in noise of RMS 0.5 (ten times its amplitude). As a PSD the noise reads its "
         "density, 0.5²/512 = 4.9 × 10⁻⁴ per Hz, whatever the block. As an amplitude, each line holds the noise "
         "in a band about Δf wide: in blocks of 4096 the noise sits at 0.019 and the tone stands 2.6 times above it. "
         "It falls as 1/√N: in blocks of 256 it is at 0.077 and the tone drowns.",
-        f1=100.0, a1=0.05, a2=0.0, noise=0.5, block=4096, averages=8, scale=0),
+        f1=100.0,
+        a1=0.05,
+        a2=0.0,
+        noise=0.5,
+        block=4096,
+        averages=8,
+        scale=0,
+    ),
     SignalsTrial(
         "Averaging smooths",
         "Noise alone, of RMS 0.5, as a PSD from one block of 256: each line scatters by 100 %. Raise the averages "
         "to 64 and the scatter falls to an eighth (1/√n), but the level stays at 4.9 × 10⁻⁴: averaging doesn't "
         "lower the noise, it makes its level certain. The PSD's area, 0.25, is the RMS².",
-        a1=0.0, a2=0.0, noise=0.5, block=256, averages=1, scale=1),
+        a1=0.0,
+        a2=0.0,
+        noise=0.5,
+        block=256,
+        averages=1,
+        scale=1,
+    ),
     SignalsTrial(
         "A chirp's spectrogram",
         "A sine swept from 10 to 400 Hz in 4 s, in blocks of 256 (0.25 s). The averaged spectrum is a flat "
         "smear: it can't say when each frequency was there. The spectrogram, one spectrum per block, shows the "
         "sweep as a line. A shorter block places it better in time and worse in frequency: Δf Δt ≥ 1.",
-        kind=Kind.CHIRP, f1=10.0, a1=1.0, f2=400.0, sweep=4.0, block=256, averages=31, tab=TAB_SPECTROGRAM),
+        kind=Kind.CHIRP,
+        f1=10.0,
+        a1=1.0,
+        f2=400.0,
+        sweep=4.0,
+        block=256,
+        averages=31,
+        tab=TAB_SPECTROGRAM,
+    ),
     SignalsTrial(
         "A ringing mode",
         "A mode at 50 Hz with ζ = 0.01 struck once: its half-power width is 2ζf<sub>n</sub> = 1 Hz. In a 4 s "
         "block (Δf = 0.25 Hz) it has four lines across it and its peak shows, without a window since it dies "
         "away inside the block. A Hann window here would throw away its start, where most of it is.",
-        kind=Kind.RINGING, f1=50.0, a1=1.0, zeta=0.01, block=4096, window=Window.RECTANGULAR),
+        kind=Kind.RINGING,
+        f1=50.0,
+        a1=1.0,
+        zeta=0.01,
+        block=4096,
+        window=Window.RECTANGULAR,
+    ),
     SignalsTrial(
         "An accelerometer",
         "A piezoelectric accelerometer is a seismic mass on a stiff crystal: f<sub>n</sub> = 30 kHz, ζ ≈ 0.01. "
         "Below its resonance its output follows the acceleration, within 5 % up to 0.22 f<sub>n</sub>, 6.5 kHz. "
         "A geophone is the other way round: soft, f<sub>n</sub> = 4.5 Hz, and with ζ = 0.7 it follows the "
         "displacement within 5 % from 1.7 f<sub>n</sub>, 7.6 Hz, up.",
-        tab=TAB_SENSORS),
+        tab=TAB_SENSORS,
+    ),
 )
 
 TIPS = {
     "kind": "<p><b>Two tones:</b> two sines. <b>Chirp:</b> a sine swept from f₁ to f₂, again and again. "
-            "<b>Ringing:</b> a mode at f₁ with damping ζ, struck once at t = 0.</p>",
+    "<b>Ringing:</b> a mode at f₁ with damping ζ, struck once at t = 0.</p>",
     "f1": "<p>The first tone's frequency (the chirp's start, the mode's frequency).</p>",
     "a1": "<p>Its amplitude (an acceleration, m/s²).</p>",
     "f2": "<p>The second tone's frequency (the chirp's end).</p>",
@@ -168,38 +221,41 @@ TIPS = {
     "noise": "<p>White noise added at the samples, by its RMS (spread evenly up to the Nyquist frequency).</p>",
     "zeta": "<p>The struck mode's damping ratio.</p>",
     "sweep": "<p>How long each sweep of the chirp takes.</p>",
-    "fs": "<p>The sample rate f<sub>s</sub>. Only frequencies up to f<sub>s</sub>/2 (Nyquist) can be "
-          "represented.</p>",
+    "fs": "<p>The sample rate f<sub>s</sub>. Only frequencies up to f<sub>s</sub>/2 (Nyquist) can be represented.</p>",
     "filter": "<p>An 8-pole Butterworth low-pass at f<sub>s</sub>/2.56 before the sampler, as analyzers have, so "
-              "nothing above Nyquist folds back.</p>",
+    "nothing above Nyquist folds back.</p>",
     "block": "<p>Samples per block N: the block lasts N/f<sub>s</sub> and its lines are f<sub>s</sub>/N apart.</p>",
     "window": "<p>The taper each block is multiplied by before its DFT.</p>",
     "averages": "<p>How many blocks are averaged (as power).</p>",
     "overlap": "<p>How much each block overlaps the one before.</p>",
     "scale": "<p><b>Peak amplitude:</b> scaled so a tone reads its amplitude. <b>PSD:</b> scaled so noise reads "
-             "its density (units²/Hz), whatever the block or the window.</p>",
+    "its density (units²/Hz), whatever the block or the window.</p>",
     "sensor_hz": "<p>The transducer's own natural frequency: its seismic mass on its spring.</p>",
     "sensor_zeta": "<p>Its damping ratio.</p>",
     "structure_hz": "<p>A mode of the structure being measured.</p>",
     "modal_mass": "<p>The mode's modal mass at the measuring point (scaled to a unit motion there): for a small "
-                  "part, a few grams to a kilogram.</p>",
+    "part, a few grams to a kilogram.</p>",
     "sensor_mass": "<p>The sensor's mass, mounting included.</p>",
 }
 TIME_TIP = (
     "<p>The first block: the analog signal (thin), its samples (dots, joined), and the window it is multiplied by "
-    "(dashed, scaled to the block's largest value). Drag or wheel to zoom in time.</p>")
+    "(dashed, scaled to the block's largest value). Drag or wheel to zoom in time.</p>"
+)
 SPECTRUM_TIP = (
     "<p>The averaged spectrum. Circles: each tone's true amplitude, where it should show (folded back if it is "
     "above Nyquist). Dashed: the noise's expected level. Shaded: above f<sub>s</sub>/2.56, where the anti-alias "
-    "filter cuts in.</p>")
+    "filter cuts in.</p>"
+)
 WINDOWS_TIP = (
     "<p>Each window's spectrum about a tone's line, against the offset in lines: the main lobe, how wide it is, "
-    "and the sidelobes, how far they leak. A tone between lines is read at ±0.5.</p>")
+    "and the sidelobes, how far they leak. A tone between lines is read at ±0.5.</p>"
+)
 SPECTROGRAM_TIP = "<p>One spectrum per block (the acquisition's block and window, 75 % overlap), in dB.</p>"
 SENSOR_TIP = (
     "<p>A seismic mass in a case on the structure, read by its motion relative to the case. Blue: its reading "
     "over the acceleration it should read (an accelerometer). Orange: over the displacement (a seismometer). "
-    "The band is ±5 %.</p>")
+    "The band is ±5 %.</p>"
+)
 
 
 NOTES_HTML = """
@@ -301,28 +357,41 @@ def window_table() -> str:
         f"<tr><td>{w.value}</td><td align='right'>{p.main_lobe:.0f}</td><td align='right'>{p.sidelobe_db:.0f}</td>"
         f"<td align='right'>{p.scalloping_db:.2f}</td><td align='right'>{p.enbw:.2f}</td>"
         f"<td align='right'>{p.coherent_gain:.3f}</td></tr>"
-        for w, p in ((w, window_props(w)) for w in WINDOWS))
-    return ("<table cellspacing='0' cellpadding='3' border='1'><tr><th>Window</th><th>main lobe (lines each "
-            "side)</th><th>highest sidelobe (dB)</th><th>scalloping loss (dB)</th><th>noise bandwidth (lines)</th>"
-            f"<th>coherent gain</th></tr>{rows}</table>")
+        for w, p in ((w, window_props(w)) for w in WINDOWS)
+    )
+    return (
+        "<table cellspacing='0' cellpadding='3' border='1'><tr><th>Window</th><th>main lobe (lines each "
+        "side)</th><th>highest sidelobe (dB)</th><th>scalloping loss (dB)</th><th>noise bandwidth (lines)</th>"
+        f"<th>coherent gain</th></tr>{rows}</table>"
+    )
 
 
-NOTES_HTML = NOTES_HTML.replace("<!--BEFORE-->", before(
-    ("transient_page", "fourier-pair", "The impulse response and the FRF"),
-    ("sdof_page", "half-power", "Half-power bandwidth"),
-    ("random_page", "psd", "The power spectral density"),
-    ("random_page", "welch", "Estimating it from a record"),
-)).replace("<!--WINDOW_TABLE-->", window_table()).replace("<!--TRIALS-->", trials_html(TRIALS)).replace(
-    "<!--TAKEAWAYS-->", takeaways(
-        "Sample faster than twice the highest frequency present, and filter before sampling: an alias can't be "
-        "removed afterwards.",
-        "The lines are 1/T apart: resolution comes from the block's length in time.",
-        "A tone that isn't periodic in the block leaks; a window trades a wider peak for lower leakage (Hann), or "
-        "for a true amplitude (flat top).",
-        "Read tones as amplitudes and noise as a PSD; averaging steadies a spectrum but doesn't lower its noise.",
-        "A seismic sensor reads acceleration below its own f<sub>n</sub> and displacement above it, and its mass "
-        "lowers the modes it measures.",
-    ))
+NOTES_HTML = (
+    NOTES_HTML.replace(
+        "<!--BEFORE-->",
+        before(
+            ("transient_page", "fourier-pair", "The impulse response and the FRF"),
+            ("sdof_page", "half-power", "Half-power bandwidth"),
+            ("random_page", "psd", "The power spectral density"),
+            ("random_page", "welch", "Estimating it from a record"),
+        ),
+    )
+    .replace("<!--WINDOW_TABLE-->", window_table())
+    .replace("<!--TRIALS-->", trials_html(TRIALS))
+    .replace(
+        "<!--TAKEAWAYS-->",
+        takeaways(
+            "Sample faster than twice the highest frequency present, and filter before sampling: an alias can't be "
+            "removed afterwards.",
+            "The lines are 1/T apart: resolution comes from the block's length in time.",
+            "A tone that isn't periodic in the block leaks; a window trades a wider peak for lower leakage (Hann), or "
+            "for a true amplitude (flat top).",
+            "Read tones as amplitudes and noise as a PSD; averaging steadies a spectrum but doesn't lower its noise.",
+            "A seismic sensor reads acceleration below its own f<sub>n</sub> and displacement above it, and its mass "
+            "lowers the modes it measures.",
+        ),
+    )
+)
 
 
 class SignalsPage(QtWidgets.QWidget):
@@ -336,9 +405,10 @@ class SignalsPage(QtWidgets.QWidget):
         self.source = Source()
         self.x = np.zeros(0)
 
-        self.trials = TrialBox([t.name for t in TRIALS],
-                               "<p>Each sets up the signal and its acquisition to show one idea from the Theory "
-                               "tab.</p>")
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Each sets up the signal and its acquisition to show one idea from the Theory tab.</p>",
+        )
         self.trials.picked.connect(self.load_trial)
 
         sig = Form("Signal")
@@ -374,8 +444,25 @@ class SignalsPage(QtWidgets.QWidget):
         self.acq_info = note_label()
         acq.row(self.acq_info)
 
-        connect_all((self.kind, self.f1, self.a1, self.f2, self.a2, self.zeta, self.sweep, self.noise, self.fs,
-                     self.filtered, self.block, self.window, self.averages, self.overlap), self._on_inputs)
+        connect_all(
+            (
+                self.kind,
+                self.f1,
+                self.a1,
+                self.f2,
+                self.a2,
+                self.zeta,
+                self.sweep,
+                self.noise,
+                self.fs,
+                self.filtered,
+                self.block,
+                self.window,
+                self.averages,
+                self.overlap,
+            ),
+            self._on_inputs,
+        )
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
@@ -420,8 +507,10 @@ class SignalsPage(QtWidgets.QWidget):
         cv.setContentsMargins(0, 0, 0, 0)
         cv.addWidget(self.time_plot, 2)
         self.zoom = QtWidgets.QCheckBox(f"First {ZOOM_SAMPLES} samples only")
-        self.zoom.setToolTip("<p>Show the block's first samples close up, to see what the sampler sees, rather "
-                             "than the whole block and its window.</p>")
+        self.zoom.setToolTip(
+            "<p>Show the block's first samples close up, to see what the sampler sees, rather "
+            "than the whole block and its window.</p>"
+        )
         self.zoom.toggled.connect(lambda _: self._zoom_time())
         scale_row = QtWidgets.QHBoxLayout()
         scale_row.addWidget(self.zoom)
@@ -473,13 +562,15 @@ class SignalsPage(QtWidgets.QWidget):
         self.sensor_zeta = sensor.number("Its damping ζ:", 0.0, 2.0, 0.01, 3, "", TIPS["sensor_zeta"])
         sensor.changed.connect(self._draw_tab)
         sv.addWidget(sensor)
-        self.ratio_plot = plot("Reading / truth", None, "f / fₙ (the sensor's)", None, log_x=True, log_y=True,
-                               height=150)
+        self.ratio_plot = plot(
+            "Reading / truth", None, "f / fₙ (the sensor's)", None, log_x=True, log_y=True, height=150
+        )
         self.ratio_plot.setToolTip(SENSOR_TIP)
         self.ratio_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.ratio_plot.getPlotItem(), offset=(10, 10))
-        self.flat_band = pg.LinearRegionItem((math.log10(0.95), math.log10(1.05)), orientation="horizontal",
-                                             movable=False)
+        self.flat_band = pg.LinearRegionItem(
+            (math.log10(0.95), math.log10(1.05)), orientation="horizontal", movable=False
+        )
         for line in self.flat_band.lines:
             line.setPen(pg.mkPen(None))
         self.acc_item = pg.PlotDataItem(name="accelerometer")
@@ -528,12 +619,26 @@ class SignalsPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
         t = TRIALS[index]
-        for box, value in ((self.kind, KINDS.index(t.kind)), (self.f1, t.f1), (self.a1, t.a1), (self.f2, t.f2),
-                           (self.a2, t.a2), (self.noise, t.noise), (self.zeta, t.zeta), (self.sweep, t.sweep),
-                           (self.fs, t.fs), (self.block, BLOCKS.index(t.block)),
-                           (self.window, WINDOWS.index(t.window)), (self.averages, t.averages),
-                           (self.overlap, t.overlap), (self.filtered, t.filtered), (self.scale, t.scale), (self.zoom, t.zoom),
-                           (self.sensor_hz, t.sensor_hz), (self.sensor_zeta, t.sensor_zeta)):
+        for box, value in (
+            (self.kind, KINDS.index(t.kind)),
+            (self.f1, t.f1),
+            (self.a1, t.a1),
+            (self.f2, t.f2),
+            (self.a2, t.a2),
+            (self.noise, t.noise),
+            (self.zeta, t.zeta),
+            (self.sweep, t.sweep),
+            (self.fs, t.fs),
+            (self.block, BLOCKS.index(t.block)),
+            (self.window, WINDOWS.index(t.window)),
+            (self.averages, t.averages),
+            (self.overlap, t.overlap),
+            (self.filtered, t.filtered),
+            (self.scale, t.scale),
+            (self.zoom, t.zoom),
+            (self.sensor_hz, t.sensor_hz),
+            (self.sensor_zeta, t.sensor_zeta),
+        ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
@@ -549,8 +654,16 @@ class SignalsPage(QtWidgets.QWidget):
 
     def _on_inputs(self) -> None:
         kind = KINDS[self.kind.currentIndex()]
-        self.source = Source(kind, self.f1.value(), self.a1.value(), self.f2.value(), self.a2.value(),
-                             self.noise.value(), self.zeta.value(), self.sweep.value())
+        self.source = Source(
+            kind,
+            self.f1.value(),
+            self.a1.value(),
+            self.f2.value(),
+            self.a2.value(),
+            self.noise.value(),
+            self.zeta.value(),
+            self.sweep.value(),
+        )
         self.zeta.setEnabled(kind is Kind.RINGING)
         self.sweep.setEnabled(kind is Kind.CHIRP)
         self.f2.setEnabled(kind is not Kind.RINGING)
@@ -561,10 +674,11 @@ class SignalsPage(QtWidgets.QWidget):
         self.spec = spectrum(self.x, fs, n, self.window_kind, self.overlap.value() / 100.0)
         self.acq_info.setText(
             f"Block T = {fmt(n / fs, 's')}, lines Δf = {fmt(fs / n, 'Hz')} apart up to Nyquist, "
-            f"{fmt(fs / 2, 'Hz')}" + (f"; good to f<sub>s</sub>/2.56 = {fmt(fs / FILTER_RATIO, 'Hz')}"
-                                      if self.filtered.isChecked() else "")
+            f"{fmt(fs / 2, 'Hz')}"
+            + (f"; good to f<sub>s</sub>/2.56 = {fmt(fs / FILTER_RATIO, 'Hz')}" if self.filtered.isChecked() else "")
             + f". The record: {self.n_record} samples, {fmt(self.n_record / fs, 's')}, {self.spec.blocks} "
-            f"block{'s' if self.spec.blocks > 1 else ''}.")
+            f"block{'s' if self.spec.blocks > 1 else ''}."
+        )
         self.redraw()
 
     # ------------------------------------------------------------- drawing
@@ -587,8 +701,11 @@ class SignalsPage(QtWidgets.QWidget):
             item.setPen(pg.mkPen(color, width=1.5))
         for line in self.half_lines:
             line.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        self.sgram_image.setLookupTable(pg.ColorMap([0.0, 0.5, 1.0], [
-            pg.mkColor(c.background), pg.mkColor(c.mode[1]), pg.mkColor(c.force)]).getLookupTable(nPts=256))
+        self.sgram_image.setLookupTable(
+            pg.ColorMap(
+                [0.0, 0.5, 1.0], [pg.mkColor(c.background), pg.mkColor(c.mode[1]), pg.mkColor(c.force)]
+            ).getLookupTable(nPts=256)
+        )
         self.flat_band.setBrush(pg.mkBrush(*c.band_shade))
         self.acc_item.setPen(pg.mkPen(c.mass[0], width=2))
         self.seis_item.setPen(pg.mkPen(c.mass[1], width=2))
@@ -636,7 +753,7 @@ class SignalsPage(QtWidgets.QWidget):
         noise = self.source.noise
         props = window_props(self.window_kind, n)
         if noise > 0:
-            level = noise ** 2 / nyquist if psd else 2 * noise * math.sqrt(props.enbw / n)
+            level = noise**2 / nyquist if psd else 2 * noise * math.sqrt(props.enbw / n)
             self.noise_line.setData([0.0, nyquist], [level, level])
         else:
             self.noise_line.setData([], [])
@@ -651,11 +768,13 @@ class SignalsPage(QtWidgets.QWidget):
             if psd:
                 texts.append(f"{where}: its power {a * a / 2:.3g} (m/s²)² over {fmt(spec.df, 'Hz')} lines")
             else:
-                texts.append(f"{where} (amplitude {a:.4g}): reads {reads:.4g} at {fmt(at, 'Hz')} "
-                             f"({round(db(reads / a), 2) + 0.0 if a > 0 else 0.0:+.2f} dB)")
+                texts.append(
+                    f"{where} (amplitude {a:.4g}): reads {reads:.4g} at {fmt(at, 'Hz')} "
+                    f"({round(db(reads / a), 2) + 0.0 if a > 0 else 0.0:+.2f} dB)"
+                )
         self.tone_items.setData([p[0] for p in lines], [p[1] for p in lines])
         self._legend(noise > 0, bool(lines))
-        mean_square = float(np.mean(self.x ** 2)) if self.x.size else 0.0
+        mean_square = float(np.mean(self.x**2)) if self.x.size else 0.0
         area = float(np.sum(spec.psd) * spec.df)
         texts.append(f"the record's mean square {mean_square:.4g}, the PSD's area {area:.4g}")
         text = "; ".join(texts)
@@ -705,7 +824,8 @@ class SignalsPage(QtWidgets.QWidget):
         self.window_note.setText(
             f"{current.value}: main lobe {p.main_lobe:.0f} lines each side, highest sidelobe {p.sidelobe_db:.0f} dB, "
             f"scalloping loss {p.scalloping_db:.2f} dB, noise bandwidth {p.enbw:.2f} lines "
-            f"({fmt(p.enbw * self.spec.df, 'Hz')} here).")
+            f"({fmt(p.enbw * self.spec.df, 'Hz')} here)."
+        )
 
     def _draw_spectrogram(self) -> None:
         fs, n = self.fs.value(), self.n_block
@@ -723,7 +843,8 @@ class SignalsPage(QtWidgets.QWidget):
         self.sgram_plot.setYRange(0.0, fs / 2, padding=0)
         self.sgram_note.setText(
             f"{t.size} blocks of {fmt(n / fs, 's')}, {fmt(dt, 's')} apart (75 % overlap), lines {fmt(fs / n, 'Hz')} "
-            "apart; the colour spans 60 dB below the strongest.")
+            "apart; the colour spans 60 dB below the strongest."
+        )
 
     def _draw_sensors(self) -> None:
         z = self.sensor_zeta.value()
@@ -738,10 +859,12 @@ class SignalsPage(QtWidgets.QWidget):
         up, down = usable_band(z), usable_band(z, accelerometer=False)
         self.sensor_note.setText(
             f"Within ±5 %: as an accelerometer up to r = {up:.3g} ({fmt(up * fn, 'Hz')}); as a seismometer from "
-            f"r = {down:.3g} ({fmt(down * fn, 'Hz')}) up.")
+            f"r = {down:.3g} ({fmt(down * fn, 'Hz')}) up."
+        )
 
     def _show_loading(self) -> None:
         f = self.structure_hz.value()
         loaded = mass_loaded(f, self.modal_mass.value(), self.sensor_mass.value())
-        self.loading_note.setText(f"With the sensor on, the mode is at {loaded:.4g} Hz, "
-                                  f"{100 * (loaded / f - 1):+.2f} %.")
+        self.loading_note.setText(
+            f"With the sensor on, the mode is at {loaded:.4g} Hz, {100 * (loaded / f - 1):+.2f} %."
+        )
