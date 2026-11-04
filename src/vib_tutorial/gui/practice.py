@@ -34,6 +34,7 @@ PAGES = (
     "continuum_page",
     "beams_page",
     "integration_page",
+    "random_page",
     "sdof_page",
     "pendulum_page",
     "transient_page",

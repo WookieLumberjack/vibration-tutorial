@@ -92,6 +92,10 @@ def _state(page: str, setup: dict):
         from vib_tutorial.gui.complex_modes import ComplexSetup
 
         return ComplexSetup(**setup)
+    if page == "random_page":
+        from vib_tutorial.gui.random_vibration import RandomSetup
+
+        return RandomSetup(**setup)
     if page == "continuum_page":
         from vib_tutorial.gui.continuum import ContinuumSetup
 
