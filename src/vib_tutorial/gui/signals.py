@@ -16,6 +16,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick, rounded
 from ..core.signals import (
     FILTER_RATIO,
     WINDOWS,
@@ -49,7 +50,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -209,6 +210,218 @@ TRIALS = (
         "displacement within 5 % from 1.7 f<sub>n</sub>, 7.6 Hz, up.",
         tab=TAB_SENSORS,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _alias(rng: np.random.Generator) -> Question:
+    fs = pick(rng, (500, 1000, 1024, 2000, 2048))
+    f = rounded(fs * pick(rng, (0.6, 0.7, 0.85, 1.15, 1.3, 1.6, 2.2)), 3)
+    shown = apparent(f, fs)
+    return Question(
+        f"A {number(f)} Hz tone is sampled at {fs:g} Hz with no anti-alias filter. At what frequency does it show "
+        "in the spectrum?",
+        shown,
+        f"Nyquist is f<sub>s</sub>/2 = {number(fs / 2)} Hz, below the tone, so it folds back: the samples fit a "
+        f"sine at |f − kf<sub>s</sub>| for the k that lands in 0 … f<sub>s</sub>/2, here {number(shown)} Hz.",
+        unit="Hz",
+        setup=dict(f1=f, a2=0.0, fs=float(fs), filtered=False, window=Window.HANN),
+    )
+
+
+def _line_spacing(rng: np.random.Generator) -> Question:
+    fs = pick(rng, (512, 1000, 1024, 2048, 4096, 5000))
+    n = int(pick(rng, BLOCKS[2:]))
+    return Question(
+        f"An analyzer takes blocks of {n} samples at {fs:g} Hz. How far apart are the spectrum's lines?",
+        fs / n,
+        f"The block lasts T = N/f<sub>s</sub> = {number(n / fs)} s, and the lines are Δf = 1/T = "
+        f"f<sub>s</sub>/N = {number(fs / n)} Hz apart.",
+        unit="Hz",
+        setup=dict(fs=float(fs), block=n),
+    )
+
+
+def _record_length(rng: np.random.Generator) -> Question:
+    fs = pick(rng, (1024, 2048, 4096))
+    n = int(pick(rng, (1024, 2048, 4096, 8192)))
+    averages = int(pick(rng, (4, 8, 10, 20)))
+    overlap = pick(rng, (0, 50, 75))
+    samples = blocks_needed(n, averages, overlap / 100.0)
+    return Question(
+        f"{averages} averages of {n}-sample blocks at {fs:g} Hz, overlapping by {overlap:g} %. How long a record "
+        "does that take?",
+        samples / fs,
+        f"Each new block starts {100 - overlap:g} % of a block, {round(n * (1 - overlap / 100))} samples, "
+        f"after the last: N + (n − 1) × {round(n * (1 - overlap / 100))} = {samples} samples, "
+        f"{number(samples / fs)} s.",
+        unit="s",
+        setup=dict(fs=float(fs), block=n, averages=averages, overlap=float(overlap), noise=0.5, scale=1),
+    )
+
+
+def _scalloping(rng: np.random.Generator) -> Question:
+    kind = (Window.RECTANGULAR, Window.HANN)[int(rng.integers(2))]
+    a = pick(rng, (1, 2, 5, 10))
+    loss = -window_props(kind).scalloping_db  # dB
+    reads = a * 10 ** (-loss / 20)
+    name = "no window" if kind is Window.RECTANGULAR else f"a {kind.value} window"
+    return Question(
+        f"A tone of amplitude {a:g} lies exactly half-way between two lines. With {name}, what amplitude does "
+        "the largest line read?",
+        reads,
+        f"Half-way between lines is the worst place: the window's spectrum half a line from its centre, the "
+        f"scalloping loss, is {number(loss)} dB for {name}: {a:g} × 10<sup>−{number(loss)}/20</sup> = "
+        f"{number(reads)}. (No window: 2/π, 3.92 dB; Hann 1.42 dB; a flat top, almost none: that's what it's for.)",
+        setup=dict(f1=50.5, a1=a, a2=0.0, window=kind),
+    )
+
+
+def _accelerometer_band(rng: np.random.Generator) -> Question:
+    fn = pick(rng, (10000, 20000, 30000, 50000))
+    zeta = 0.01
+    r = usable_band(zeta)
+    return Question(
+        f"A piezoelectric accelerometer resonates at {fn / 1000:g} kHz, almost undamped (ζ = 0.01). Up to what "
+        "frequency does it read the acceleration within 5 %?",
+        r * fn,
+        f"It reads 1/|1 − r² + 2iζr| of the truth; with ζ small, 1/(1 − r²) = 1.05 at r = √(1 − 1/1.05) = "
+        f"{number(r)}: {number(r * fn)} Hz, about a fifth of its f<sub>n</sub>.",
+        unit="Hz",
+        setup=dict(sensor_hz=fn, sensor_zeta=zeta, tab=TAB_SENSORS),
+    )
+
+
+def _mass_loading(rng: np.random.Generator) -> Question:
+    f = pick(rng, (100, 200, 500, 1000))
+    m = pick(rng, (0.2, 0.5, 1, 2))
+    ms = pick(rng, (0.005, 0.01, 0.03, 0.05))
+    shift = f - mass_loaded(f, m, ms)
+    return Question(
+        f"A {1000 * ms:g} g accelerometer is fixed where a {f:g} Hz mode's modal mass is {m:g} kg. How far does it "
+        "lower the mode's frequency?",
+        shift,
+        f"Its mass adds to the modal mass, the stiffness unchanged: f √(m/(m + m<sub>s</sub>)) = {f:g} × "
+        f"√({m:g}/{number(m + ms)}) = {number(f - shift, 5)} Hz, {number(shift)} Hz lower.",
+        unit="Hz",
+        tolerance=0.03,
+        setup=dict(tab=TAB_SENSORS),
+    )
+
+
+def _faster_sampling(rng: np.random.Generator) -> Question:
+    return Question(
+        "An analyzer's sample rate is doubled, its block still the same number of samples. What happens to the "
+        "spacing between lines?",
+        0,
+        "It doubles: Δf = f<sub>s</sub>/N, or 1/T with the block now half as long. A higher f<sub>s</sub> reaches "
+        "higher frequencies, but only a longer block resolves finer.",
+        choices=("It doubles (coarser)", "It halves (finer)", "It stays the same"),
+        setup=dict(fs=2048.0, f2=51.0, a2=0.5),
+        predict=True,
+    )
+
+
+def _more_averages(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (4, 16)))
+    return Question(
+        f"A noise PSD is averaged over {n} blocks instead of one. What happens to it?",
+        0,
+        f"Its level stays (the density doesn't depend on the averaging), but each line's scatter falls to "
+        f"1/√{n} of the single block's 100 %.",
+        choices=(
+            f"The level stays; the scatter falls to 1/√{n}",
+            f"The level falls to 1/{n}",
+            f"The level falls to 1/√{n}",
+            "Nothing changes",
+        ),
+        setup=dict(a1=0.0, a2=0.0, noise=1.0, averages=n, scale=1),
+        predict=True,
+    )
+
+
+def _longer_block(rng: np.random.Generator) -> Question:
+    return Question(
+        "A tone sits in white noise, read on a peak amplitude spectrum. The block is made 4 times longer (same "
+        "sample rate). What happens to the tone's line and to the noise around it?",
+        0,
+        "The tone stays at its amplitude; the noise in each line falls by half (√4), since each line now holds "
+        "the noise in a band a quarter as wide. That is how a tone is dug out of noise.",
+        choices=(
+            "The tone stays; the noise halves",
+            "Both stay the same",
+            "The tone grows 4 times; the noise stays",
+            "Both halve",
+        ),
+        setup=dict(a2=0.0, noise=2.0, block=4096),
+        predict=True,
+    )
+
+
+def _acquisition_spec(rng: np.random.Generator) -> Question:
+    top = pick(rng, (100, 200, 400))
+    gap = pick(rng, (0.5, 1, 2))
+    averages = int(pick(rng, (4, 8)))
+    fs = rounded(1.1 * FILTER_RATIO * top, 2)
+    n = next(b for b in BLOCKS if fs / b <= gap / 4)
+    longest = rounded(1.2 * blocks_needed(n, averages, 0.5) / fs, 2)
+
+    def goal(t: SignalsTrial):
+        record = blocks_needed(t.block, t.averages, t.overlap / 100.0) / t.fs
+        return (
+            Requirement("The anti-alias filter on", "on" if t.filtered else "off", t.filtered),
+            at_least("The good band, f<sub>s</sub>/2.56", t.fs / FILTER_RATIO, float(top), "Hz"),
+            at_most("The lines' spacing Δf", t.fs / t.block, gap / 4, "Hz"),
+            at_least("Averages", t.averages, averages),
+            at_most("The record", record, longest, "s"),
+        )
+
+    return Question(
+        f"Two tones {gap:g} Hz apart near {top:g} Hz are to be measured with an anti-alias filter, at least 4 lines "
+        f"apart (Δf ≤ {number(gap / 4)} Hz), averaged {averages} times, all from a record no longer than "
+        f"{number(longest, 2)} s. Set up the acquisition.",
+        0,
+        f"The filter keeps f<sub>s</sub>/2.56, so f<sub>s</sub> ≥ 2.56 × {top:g} = {number(2.56 * top, 4)} Hz; "
+        f"no higher than needed, since Δf = f<sub>s</sub>/N and the block's length T = 1/Δf ≥ {number(4 / gap)} s "
+        f"is fixed by the resolution. With f<sub>s</sub> = {number(fs, 2)} Hz, N = {n} gives Δf = "
+        f"{number(fs / n)} Hz. {averages} blocks end to end take {number(averages * n / fs)} s, too long; "
+        f"overlapping them by 50 % takes {number(blocks_needed(n, averages, 0.5) / fs)} s.",
+        setup=dict(f1=top - gap, f2=float(top), a2=0.5, filtered=False),
+        goal=goal,
+        design=dict(f1=top - gap, f2=float(top), a2=0.5, fs=fs, block=n, averages=averages, overlap=50.0),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "signals_page", f"See {page_link('signals_page', anchor, section)}{more}.", make)
+    for key, title, anchor, section, more, make in (
+        ("alias", "Where an alias shows", "aliasing", "Aliasing", "", _alias),
+        ("line-spacing", "Line spacing", "dft-lines", "Blocks and lines", "", _line_spacing),
+        (
+            "record-length",
+            "A record's length",
+            "averaging",
+            "Averaging",
+            ": how far apart do the blocks start?",
+            _record_length,
+        ),
+        ("scalloping", "Between two lines", "leakage", "Leakage", ": the scalloping loss", _scalloping),
+        ("accelerometer-band", "An accelerometer's band", "transducers", "Transducers", "", _accelerometer_band),
+        ("mass-loading", "Mass loading", "mass-loading", "Mass loading", "", _mass_loading),
+        ("faster-sampling", "Predict: a faster sample rate", "dft-lines", "Blocks and lines", "", _faster_sampling),
+        ("more-averages", "Predict: more averages", "averaging", "Averaging", "", _more_averages),
+        ("longer-block", "Predict: a longer block", "scaling", "Amplitude or density", "", _longer_block),
+        (
+            "acquisition-spec",
+            "Spec: set up an acquisition",
+            "dft-lines",
+            "Blocks and lines",
+            ", the anti-alias filter and averaging",
+            _acquisition_spec,
+        ),
+    )
 )
 
 TIPS = {
@@ -618,7 +831,39 @@ class SignalsPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(SignalsTrial("", "", **setup))
+
+    def practice_state(self) -> SignalsTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return SignalsTrial(
+            "",
+            "",
+            kind=KINDS[self.kind.currentIndex()],
+            f1=self.f1.value(),
+            a1=self.a1.value(),
+            f2=self.f2.value(),
+            a2=self.a2.value(),
+            noise=self.noise.value(),
+            zeta=self.zeta.value(),
+            sweep=self.sweep.value(),
+            fs=self.fs.value(),
+            block=self.n_block,
+            window=self.window_kind,
+            averages=int(self.averages.value()),
+            overlap=self.overlap.value(),
+            filtered=self.filtered.isChecked(),
+            scale=self.scale.currentIndex(),
+            zoom=self.zoom.isChecked(),
+            tab=self.tabs.currentIndex(),
+            sensor_hz=self.sensor_hz.value(),
+            sensor_zeta=self.sensor_zeta.value(),
+        )
+
+    def apply_trial(self, t: SignalsTrial) -> None:
         for box, value in (
             (self.kind, KINDS.index(t.kind)),
             (self.f1, t.f1),
