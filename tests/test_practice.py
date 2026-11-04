@@ -79,19 +79,23 @@ def test_the_pages_with_problems_are_listed():
     assert all(p.page in PAGES for p in ALL)
 
 
-def _trial_class(page: str):
-    """The page's trial class, which its setups (and its `practice_state`) are made of."""
+def _state(page: str, setup: dict):
+    """What the page's `practice_state` would give once set up as `setup` says: its trial (or, where its trials
+    aren't a class, its setup class) with those fields."""
     import sys
 
     if page == "sim_page":
         from vib_tutorial.gui.sim_trials import SimTrial
 
-        return SimTrial
+        return SimTrial("", "", **setup)
+    if page == "complex_page":
+        from vib_tutorial.gui.complex_modes import ComplexSetup
 
+        return ComplexSetup(**setup)
     from vib_tutorial.gui.main_window import _page_class
 
     module = sys.modules[_page_class(page).__module__]
-    return type(module.TRIALS[0])
+    return type(module.TRIALS[0])("", "", **setup)
 
 
 @pytest.mark.parametrize("problem", ALL, ids=lambda p: f"{p.page}/{p.key}")
@@ -103,9 +107,8 @@ def test_every_question_marks_its_own_answer(problem):
         if q.is_spec:
             assert q.setup is not None and q.design is not None and not q.is_choice
             # The design meets the spec and the start doesn't (the page's own round trip is checked below).
-            trial = _trial_class(problem.page)
-            assert check(q, trial("", "", **q.design)).right
-            start = check(q, trial("", "", **q.setup))
+            assert check(q, _state(problem.page, q.design)).right
+            start = check(q, _state(problem.page, q.setup))
             assert not start.right and "✗" in start.details
         elif q.is_choice:
             assert 0 <= q.answer < len(q.choices) and len(set(q.choices)) == len(q.choices)
