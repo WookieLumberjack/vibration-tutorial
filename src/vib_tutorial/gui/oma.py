@@ -14,6 +14,7 @@ test), and the notes. The page follows the chain (core/oma.py).
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
@@ -45,8 +46,9 @@ from ..core.oma import (
     ssi_cov,
     ssi_modes,
 )
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from .layouts import ColumnScroll, FlowLayout, group, plot_height
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
 from .panels import spin
@@ -160,9 +162,280 @@ TRIALS = (
     ),
 )
 
+
+@dataclass(frozen=True)
+class OmaSetup:
+    """A practice problem's setup: a chain (none: the one there is) and the page's settings. `input` is the
+    forces' box: 0 every mass, i + 1 mass i."""
+
+    masses: tuple[float, ...] = ()
+    springs: tuple[float, ...] = ()
+    dampers: tuple[float, ...] = ()
+    input: int = 0
+    colour: Colour = Colour.WHITE
+    corner_hz: float = 5.0
+    response: Response = Response.ACCELERATION
+    machine_hz: float = 0.0
+    machine_force: float = 1.0
+    fs: float = 19.0
+    duration: float = 1809.0
+    noise: float = 2.0
+    method: str = FDD
+    block: int = 4096
+    mac_min: float = MAC_MIN
+    rows: int = 34
+    max_order: int = 60
+    tab: int = 0
+
+    def system(self) -> ChainSystem | None:
+        if not self.masses:
+            return None
+        return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
+
+
+PRACTICE_SETUP = OmaSetup  # what a practice problem's setup and the page's practice_state are
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+TAB_MODES, TAB_EFDD, TAB_STABILIZATION, TAB_METHODS = range(4)
+DEFAULT = dict(masses=(1.0,) * 4, springs=(400.0,) * 4, dampers=(2.0,) * 4)  # the uniform chain: 1.11 Hz first
+
+
+def _uniform(n: int, c: float) -> dict:
+    return dict(masses=(1.0,) * n, springs=(400.0,) * n, dampers=(c,) * n)
+
+
+def _welch_blocks(samples: int, block: int) -> int:
+    """Welch's half-overlapping blocks in `samples`, as `cross_spectra` counts them."""
+    hop = max(1, round(block * 0.5))
+    return (samples - block) // hop + 1 if samples >= block else 0
+
+
+def _line_spacing(rng: np.random.Generator) -> Question:
+    fs, block = pick(rng, (10, 19, 25, 50, 100)), int(pick(rng, BLOCKS[1:]))
+    return Question(
+        f"Responses sampled at {fs:g} Hz are cut into Welch blocks of {block} samples. How far apart are the "
+        "lines of their cross-spectral matrix?",
+        1000 * fs / block,
+        f"Δf = f<sub>s</sub>/N<sub>b</sub> = {fs:g}/{block} = {number(fs / block)} Hz, {number(1000 * fs / block)} "
+        "mHz: the record's block lasts N<sub>b</sub>/f<sub>s</sub>, and the lines are its reciprocal apart.",
+        unit="mHz",
+        setup=dict(**DEFAULT, fs=19.0, block=block),
+    )
+
+
+def _blocks(rng: np.random.Generator) -> Question:
+    fs, block = pick(rng, (10, 19, 20, 50)), int(pick(rng, (1024, 2048, 4096)))
+    minutes = pick(rng, (10, 20, 30, 60))
+    samples = round(60 * minutes * fs)
+    count = _welch_blocks(samples, block)
+    return Question(
+        f"A {minutes:g}-minute record sampled at {fs:g} Hz, Welch's blocks {block} samples long, overlapping by "
+        "half. How many blocks does the estimate average?",
+        count,
+        f"{samples} samples; each block starts {block // 2} after the last, so (N − N<sub>b</sub>)/(N<sub>b</sub>/2) "
+        f"+ 1 = ({samples} − {block})/{block // 2} + 1, rounded down: {count}.",
+        unit="blocks",
+        tolerance=0.005,
+    )
+
+
+def _record_length(rng: np.random.Generator) -> Question:
+    fn, periods = pick(rng, (0.2, 0.5, 1.1, 2, 4)), pick(rng, (1000, 2000))
+    return Question(
+        f"A structure's slowest mode is at {fn:g} Hz. How many minutes of ambient record does OMA's rule of thumb, "
+        f"{periods:g} periods of the slowest mode, ask for?",
+        periods / fn / 60,
+        f"{periods:g} periods of {number(1 / fn)} s: {number(periods / fn)} s, {number(periods / fn / 60)} min. The "
+        "input is random and unknown, so only many averages make the spectra smooth.",
+        unit="min",
+    )
+
+
+def _line_error(rng: np.random.Generator) -> Question:
+    fn, fs, block = pick(rng, (1.1, 2.5, 4.0, 7.5)), pick(rng, (19, 25, 50)), int(pick(rng, (512, 1024, 2048)))
+    worst = 100 * fs / block / 2 / fn
+    return Question(
+        f"FDD picks a mode at {fn:g} Hz to the nearest line, sampling at {fs:g} Hz with {block}-sample blocks. "
+        "What is the largest error in its frequency, as a percentage of it?",
+        worst,
+        f"The lines are {number(fs / block)} Hz apart, so the nearest is at most half that, {number(fs / block / 2)} "
+        f"Hz, off: {number(worst)} % of {fn:g} Hz. (EFDD's zero crossings refine it.)",
+        unit="%",
+    )
+
+
+def _efdd_damping(rng: np.random.Generator) -> Question:
+    zeta, n = pick(rng, (0.005, 0.01, 0.02, 0.05)), int(pick(rng, (3, 5, 10)))
+    ratio = rounded(math.exp(math.tau * zeta * n / math.sqrt(1 - zeta * zeta)), 3)
+    delta = math.log(ratio) / n
+    z = delta / math.sqrt(4 * math.pi**2 + delta * delta)
+    return Question(
+        f"A mode's EFDD autocorrelation falls from one peak to the peak {n} periods later by a factor of "
+        f"{number(ratio)}. What damping ratio does that give?",
+        100 * z,
+        f"As in a free decay: δ = ln({number(ratio)})/{n} = {number(delta)} per period, and ζ = δ/√(4π² + δ²) = "
+        f"{number(100 * z)} % (δ/2π = {number(100 * delta / math.tau)} % for light damping).",
+        unit="%",
+        setup=dict(**DEFAULT, tab=TAB_EFDD),
+    )
+
+
+def _kurtosis(rng: np.random.Generator) -> Question:
+    sine, noise = pick(rng, (0.5, 1, 2, 3)), pick(rng, (0.5, 1, 2))
+    p = sine * sine / (noise * noise)
+    k = (1.5 * p * p + 6 * p + 3) / (p + 1) ** 2
+    return Question(
+        f"Filtered round a peak, the response is a sine of {sine:g} RMS plus independent Gaussian noise of {noise:g} "
+        "RMS. What is its kurtosis E[x⁴]/E[x²]²?",
+        k,
+        f"A sine's E[s⁴] is 1.5 σ<sub>s</sub>⁴ and a Gaussian's 3 σ<sub>g</sub>⁴; with the cross term 6 σ<sub>s</sub>²"
+        f"σ<sub>g</sub>², and p = σ<sub>s</sub>²/σ<sub>g</sub>² = {number(p)}: K = (1.5p² + 6p + 3)/(p + 1)² = "
+        f"{number(k)}, between the sine's 1.5 and a mode's 3.",
+        setup=dict(**DEFAULT, machine_hz=2.144, machine_force=1.0),
+    )
+
+
+def _node(rng: np.random.Generator) -> Question:
+    return Question(
+        "On the uniform four-mass chain, mode 2 has a node at m3. With the ambient forces on m3 alone, what does FDD "
+        "find of mode 2?",
+        0,
+        "Nothing: a force at a node does no work on the mode, so it isn't excited and s₁ has no peak there. "
+        "OMA needs the forces spread over the structure.",
+        choices=("Nothing: it isn't excited", "It, with too much damping", "It, as usual", "It, twice over"),
+        setup=dict(**DEFAULT, input=3),
+        predict=True,
+    )
+
+
+def _short_blocks(rng: np.random.Generator) -> Question:
+    return Question(
+        "EFDD's blocks are made short (512 samples at 19 Hz) on the uniform chain, its first mode lightly damped. "
+        "What happens to that mode's damping?",
+        0,
+        "It comes out too high (about 3.3 % against 1.7 %): the lines are coarse beside the peak, and the Hann "
+        "window's leakage widens it. Long blocks resolve it.",
+        choices=("It comes out too high", "It comes out too low", "It comes out right, only noisier"),
+        setup=dict(**DEFAULT, block=512, tab=TAB_EFDD),
+        predict=True,
+    )
+
+
+def _machine(rng: np.random.Generator) -> Question:
+    return Question(
+        "A machine runs on m1, a sine between the uniform chain's first two modes. What does FDD make of it?",
+        0,
+        "A sharp peak with almost no damping, just like a very lightly damped mode. Its filtered response's "
+        "kurtosis, about 1.5 (a sine's; a mode's is 3), gives it away, and the page crosses it out.",
+        choices=(
+            "A sharp, nearly undamped peak, like a mode",
+            "Nothing: a sine isn't random",
+            "A broad bump",
+            "It shifts the modes beside it",
+        ),
+        setup=dict(**DEFAULT, machine_hz=2.144, machine_force=1.0),
+        predict=True,
+    )
+
+
+def _harmonic_block(rng: np.random.Generator) -> Question:
+    return Question(
+        "With a machine's sine on the structure, Welch's block is doubled. What happens to the sine's peak in s₁, "
+        "against a mode's?",
+        0,
+        "The sine's about doubles (3 → 5 → 12 → 23 → 38 from 512 to 8192 samples here): its power sits in one line "
+        "however fine, so finer lines make it taller. A mode's is a density, and grows only until its peak is "
+        "resolved.",
+        choices=(
+            "The sine's grows about twice; the mode's much less",
+            "Both stay the same",
+            "Both double",
+            "The mode's grows; the sine's stays",
+        ),
+        setup=dict(**DEFAULT, machine_hz=2.144, machine_force=1.0, block=8192),
+        predict=True,
+    )
+
+
+def _acquisition_spec(rng: np.random.Generator) -> Question:
+    n, c = int(pick(rng, (2, 3, 4))), pick(rng, (0.5, 1.0, 2.0))
+    averages = int(pick(rng, (15, 31)))
+    chain = _uniform(n, c)
+    result = modal_analysis(
+        ChainSystem(np.array(chain["masses"]), np.array(chain["springs"]), np.array(chain["dampers"]))
+    )
+    slow = min(result.modes, key=lambda m: m.fn_hz)
+    fs = suggested_fs(result)
+    width = 2 * slow.zeta_modal * slow.fn_hz
+    block = min(b for b in BLOCKS if fs / b <= width / 4)
+    need = max(1000 / slow.fn_hz, (averages + 1) * (block // 2) / fs)
+    need = math.ceil(need)
+    while _welch_blocks(round(need * fs), block) < averages:
+        need += 1
+    longest = 10 * math.ceil(1.3 * need / 10)
+
+    def goal(t: OmaSetup):
+        system = t.system()
+        modes = modal_analysis(system).modes if system is not None else []
+        first = min(modes, key=lambda m: m.fn_hz) if modes else None
+        f1 = first.fn_hz if first else math.nan
+        lines = 2 * first.zeta_modal * f1 * t.block / t.fs if first else math.nan
+        return (
+            Requirement(f"{n} masses", f"{len(t.masses)}", len(t.masses) == n),
+            *(
+                kept(what, now[i] if len(now) > i else math.nan, given[i], unit)
+                for what, now, given, unit in (
+                    ("m", t.masses, chain["masses"], "kg"),
+                    ("k", t.springs, chain["springs"], "N/m"),
+                    ("c", t.dampers, chain["dampers"], "N·s/m"),
+                )
+                for i in range(n)
+            ),
+            kept("The sample rate", t.fs, fs, "Hz"),
+            at_least("Lines across mode 1's half-power width", lines, 4),
+            at_least("Periods of mode 1 recorded", t.duration * f1, 1000),
+            at_least("Welch's averages", _welch_blocks(round(t.duration * t.fs), t.block), averages),
+            at_most("The record's length", t.duration, longest, "s"),
+        )
+
+    return Question(
+        f"The uniform chain of {n} masses (1 kg, 400 N/m, {c:g} N·s/m each): its first mode is at "
+        f"{number(slow.fn_hz)} Hz with ζ = {number(100 * slow.zeta_modal)} %, sampled at {fs:g} Hz. Choose the "
+        f"block and the record's length so that four or more lines fall across that mode's half-power width, the "
+        f"record holds a thousand of its periods and {averages} or more Welch blocks, in no more than {longest:g} s.",
+        0,
+        f"The half-power width is 2ζf₁ = {number(width)} Hz, so the lines must be {number(width / 4)} Hz apart or "
+        f"closer: a block of {number(4 * fs / width)} samples or more, {block} the shortest on offer. Half "
+        f"overlapping, {averages} blocks need ({averages} + 1) × {block // 2} samples, "
+        f"{number((averages + 1) * (block // 2) / fs)} s, and a thousand periods {number(1000 / slow.fn_hz)} s: "
+        f"{need} s does both. A longer block needs twice the record.",
+        setup=dict(**chain, fs=fs, duration=float(longest), block=BLOCKS[0]),
+        goal=goal,
+        design=dict(**chain, fs=fs, duration=float(need), block=block),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "oma_page", f"See {page_link('oma_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("line-spacing", "FDD's lines", "fdd", "Frequency domain decomposition", _line_spacing),
+        ("blocks", "Welch's averages", "fdd", "Frequency domain decomposition", _blocks),
+        ("record-length", "How long a record", "limits", "What OMA can't do", _record_length),
+        ("line-error", "A frequency to the line", "fdd", "Frequency domain decomposition", _line_error),
+        ("efdd-damping", "Damping from the bell", "fdd", "Frequency domain decomposition", _efdd_damping),
+        ("kurtosis", "A sine in the noise", "harmonics", "Harmonics", _kurtosis),
+        ("node", "Predict: forces at a node", "oma", "Operational modal analysis", _node),
+        ("short-blocks", "Predict: short blocks", "limits", "What OMA can't do", _short_blocks),
+        ("machine", "Predict: a machine running", "harmonics", "Harmonics", _machine),
+        ("harmonic-block", "Predict: a longer block", "harmonics", "Harmonics", _harmonic_block),
+        ("acquisition-spec", "Spec: a record and a block", "limits", "What OMA can't do", _acquisition_spec),
+    )
+)
+
 NOTES_HTML = """
 <!--BEFORE-->
-<h3>Operational modal analysis</h3>
+<h3><a name="oma"></a>Operational modal analysis</h3>
 <p>A modal test measures the force and the response, and their ratio, the FRF, is the structure's own. A bridge
 or a running machine can't be hammered: it is shaken by traffic, wind or its own working, forces nobody
 measures. <b>Operational modal analysis</b> (OMA, output-only) identifies the modes from the responses alone,
@@ -184,7 +457,7 @@ high MAC with the peak's are that mode's single-degree-of-freedom spectrum, its 
 to the time domain it is the mode's autocorrelation function, a decaying cosine: its zero crossings give the
 damped frequency, and the logarithmic decay of its extremes the damping, as from a free decay.</p>
 
-<h3>Stochastic subspace identification</h3>
+<h3><a name="ssi"></a>Stochastic subspace identification</h3>
 <p>SSI-cov works in the time domain. The responses' correlations R<sub>i</sub> = E[y<sub>k+i</sub> y<sub>k</sub><sup>T</sup>],
 under white input, are the free decay of the sampled system, R<sub>i</sub> = C A<sup>i−1</sup> G: an impulse
 response in disguise. Stacked in a block Toeplitz matrix, they factor into the observability matrix (C, CA,
@@ -195,7 +468,7 @@ modal test, the order isn't known: the poles at every order go in a <b>stabiliza
 stable columns are the modes. It fits every mode at once, so close and heavily damped modes don't spoil each
 other as EFDD's bells do.</p>
 
-<h3>Harmonics</h3>
+<h3><a name="harmonics"></a>Harmonics</h3>
 <p>A machine running on the structure adds a sine: a sharp peak, a pole with almost no damping, just what a very
 lightly damped mode looks like. Filtered round its frequency, a mode's random response is Gaussian, with a
 kurtosis E[x⁴]/E[x²]² of 3; a sine's is 1.5. The page projects the responses on each peak's shape, band-pass
@@ -204,7 +477,7 @@ mode with a sine in its band reads low too, but keeps its damping. A sine right 
 whose peak there is the sine's. (A harmonic's peak is also one line wide
 whatever the block length: a longer block makes it taller, a mode's not.)</p>
 
-<h3>What OMA can't do</h3>
+<h3><a name="limits"></a>What OMA can't do</h3>
 <ul>
 <li>The force is unknown, so the shapes can't be <b>scaled</b>: no modal masses, no FRF. (A known mass added
 and the shift in frequency, or a measured force at one point, can scale them.)</li>
@@ -262,6 +535,7 @@ class OmaPage(QtWidgets.QWidget):
     """Controls on the left, singular values and records in the centre, results and notes on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
+    system_requested = QtCore.Signal(object)  # a practice problem's chain, for the Simulation page
     edit_parameters = QtCore.Signal()  # the user wants the Simulation page's parameter panel
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
@@ -573,6 +847,65 @@ class OmaPage(QtWidgets.QWidget):
         self.trial_note.setText(note)
         self.peaks = None
         self._schedule(measure=True)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then
+        the settings. The record is made when the page shows, not now."""
+        t = OmaSetup(**setup)
+        system = t.system()
+        if system is not None:
+            self.system_requested.emit(system)
+            if self.system is None or not _same_chain(self.system, system):
+                self.set_system(system)  # nobody passed it back: show it here alone
+        if self.system is None:
+            return
+        self._loading = True
+        self.input.setCurrentIndex(t.input if 0 <= t.input <= self.system.n else 0)
+        self.colour.setCurrentIndex(self.colour.findData(t.colour))
+        self.corner.setValue(t.corner_hz)
+        self.corner.setEnabled(t.colour is Colour.LOW_PASS)
+        self.response.setCurrentIndex(self.response.findData(t.response))
+        self.machine_hz.setValue(t.machine_hz)
+        self.machine_force.setValue(t.machine_force)
+        self.fs.setValue(t.fs)
+        self.duration.setValue(t.duration)
+        self.noise.setValue(t.noise)
+        self.method.setCurrentText(t.method)
+        self.block.setCurrentIndex(BLOCKS.index(t.block))
+        self.mac_min.setValue(t.mac_min)
+        self.rows.setValue(t.rows)
+        self.max_order.setValue(t.max_order)
+        self._loading = False
+        self._on_method(redraw=False)
+        self.trial_note.setText("")
+        self.tabs.setCurrentIndex(t.tab)
+        self.peaks = None
+        self.ssi_picked = None
+        self._schedule(measure=True)
+
+    def practice_state(self) -> OmaSetup:
+        """The chain and the page's settings, as a setup: what a practice spec checks."""
+        s = self.system
+        return OmaSetup(
+            tuple(float(v) for v in s.masses) if s is not None else (),
+            tuple(float(v) for v in s.stiffness) if s is not None else (),
+            tuple(float(v) for v in s.damping) if s is not None else (),
+            self.input.currentIndex(),
+            self.colour.currentData(),
+            self.corner.value(),
+            self.response.currentData(),
+            self.machine_hz.value(),
+            self.machine_force.value(),
+            self.fs.value(),
+            self.duration.value(),
+            self.noise.value(),
+            self.method.currentText(),
+            self.block.currentData(),
+            self.mac_min.value(),
+            self.rows.value(),
+            self.max_order.value(),
+            self.tabs.currentIndex(),
+        )
 
     def settings(self) -> AmbientSettings:
         i = self.input.currentIndex()
@@ -1006,3 +1339,9 @@ class OmaPage(QtWidgets.QWidget):
                 f"MAC threshold, or lengthen the blocks."
             )
         c.setXRange(0.0, float(m.lag[show][-1]), padding=0)
+
+
+def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
+    return a.n == b.n and all(
+        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
+    )
