@@ -15,7 +15,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.practice import Problem, Question, number, pick, rounded
+from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import (
     TWO_PI,
     Oscillator,
@@ -25,6 +25,7 @@ from ..core.sdof import (
     measured_decrement,
     peaks,
     receptance,
+    settling_time,
 )
 from . import settle_plots
 from .layouts import ColumnScroll
@@ -283,6 +284,81 @@ def _quickest_return(rng: np.random.Generator) -> Question:
     )
 
 
+def _drive_force(t: SdofTrial) -> float:
+    """The drive's force amplitude at its frequency: F, or m_e e Ω² for the unbalance."""
+    return t.amplitude * (TWO_PI * t.freq_hz) ** 2 if t.kind == UNBALANCE else t.amplitude
+
+
+def _settle_spec(rng: np.random.Generator) -> Question:
+    m = pick(rng, (1, 2, 5))
+    k = pick(rng, (100, 400, 1000, 2500))
+    c = rounded(0.8 * 2.0 * math.sqrt(k * m))  # ζ = 0.8: an overshoot that lands just inside the band
+    best = settling_time(Oscillator(m, k, c))
+    most = rounded(best * pick(rng, (1.2, 1.5)), 2)
+
+    def goal(t: SdofTrial):
+        return (
+            kept("The mass", t.mass, m, "kg"),
+            kept("The spring", t.stiffness, k, "N/m"),
+            at_most("Time to settle within 2 %", settling_time(Oscillator(t.mass, t.stiffness, t.damping)), most, "s"),
+        )
+
+    return Question(
+        f"A {m:g} kg mass on a spring of {k:g} N/m is a pointer that must come to rest quickly when released. "
+        f"Choose the damper so that, released at rest from x<sub>0</sub>, it stays within 2 % of x<sub>0</sub> "
+        f"of its rest position after {number(most, 2)} s.",
+        0,
+        f"Too little damping rings on; too much creeps back on its slow root. The quickest into a ±2 % band is "
+        f"near ζ ≈ 0.8, which overshoots just inside the band: c = 2ζ√(km) = {number(c)} N·s/m settles in "
+        f"{number(best)} s. (Critically damped, c = {number(2 * math.sqrt(k * m))} N·s/m, it takes "
+        f"{number(settling_time(Oscillator(m, k, 2 * math.sqrt(k * m))))} s.)",
+        setup=dict(mass=m, stiffness=k, damping=rounded(0.1 * math.sqrt(k * m)), tab=TAB_POLES),
+        goal=goal,
+        design=dict(mass=m, stiffness=k, damping=c, tab=TAB_POLES),
+    )
+
+
+def _detune_spec(rng: np.random.Generator) -> Question:
+    m = pick(rng, (1, 2, 5))
+    k = pick(rng, (400, 1000, 2500))
+    c = rounded(2.0 * pick(rng, (0.02, 0.05)) * math.sqrt(k * m))
+    force = pick(rng, (1, 2, 5))
+    f = rounded(Oscillator(m, k, c).natural_hz)
+    w2 = m * (TWO_PI * f) ** 2
+    stiffer = rounded(pick(rng, (1.5, 2.0)) * k)
+    most = rounded(1.1 * 1e3 * force * abs(receptance(Oscillator(m, stiffer, c), np.array([f]))[0]), 2)
+
+    def goal(t: SdofTrial):
+        osc = Oscillator(t.mass, t.stiffness, t.damping)
+        x = _drive_force(t) * abs(receptance(osc, np.array([t.freq_hz]))[0])
+        return (
+            kept("The mass", t.mass, m, "kg"),
+            kept("The damper", t.damping, c, "N·s/m"),
+            Requirement(
+                f"The drive kept at {force:g} N",
+                f"{number(_drive_force(t), 4)} N",
+                t.kind == FORCE and abs(t.amplitude - force) <= 0.005 * force,
+            ),
+            kept("Its frequency", t.freq_hz, f, "Hz"),
+            at_most("The steady amplitude", 1e3 * x, most, "mm"),
+        )
+
+    return Question(
+        f"A {m:g} kg mass on a spring of {k:g} N/m, with a {number(c)} N·s/m damper, is shaken by {force:g} N at "
+        f"{number(f)} Hz: right on its resonance. The mass, the damper and the drive can't change. Change the "
+        f"spring so the steady amplitude is no more than {number(most, 2)} mm.",
+        0,
+        f"At resonance only the damper holds the force: X = F/(cω) = {number(1e3 * force / (c * TWO_PI * f))} mm. "
+        f"Move the resonance away from the drive: X ≈ F/|k − mω²| (the damper hardly matters off resonance), so "
+        f"|k − mω²| ≥ F/X = {number(force / (1e-3 * most))} N/m with mω² = {number(w2)} N/m: k ≥ "
+        f"{number(w2 + force / (1e-3 * most))} N/m, or k ≤ {number(w2 - force / (1e-3 * most))} N/m. A spring of "
+        f"{number(stiffer)} N/m does it.",
+        setup=dict(mass=m, stiffness=k, damping=c, amplitude=force, freq_hz=f, tab=TAB_FRF),
+        goal=goal,
+        design=dict(mass=m, stiffness=stiffer, damping=c, amplitude=force, freq_hz=f, tab=TAB_FRF),
+    )
+
+
 PROBLEMS = (
     Problem(
         "natural-frequency",
@@ -341,6 +417,21 @@ PROBLEMS = (
         "sdof_page",
         f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.",
         _quickest_return,
+    ),
+    Problem(
+        "settle-spec",
+        "Spec: come to rest quickly",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}: is critical damping "
+        "really the quickest into a band?",
+        _settle_spec,
+    ),
+    Problem(
+        "detune-spec",
+        "Spec: off the resonance",
+        "sdof_page",
+        f"See {page_link('sdof_page', 'forced-response', 'Forced response')}.",
+        _detune_spec,
     ),
 )
 
@@ -734,6 +825,23 @@ class SdofPage(QtWidgets.QWidget):
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self.redraw()
+
+    def practice_state(self) -> SdofTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return SdofTrial(
+            "",
+            "",
+            mass=self.mass.value(),
+            stiffness=self.stiffness.value(),
+            damping=self.damping.value(),
+            x0_mm=self.x0.value(),
+            v0_mms=self.v0.value(),
+            compare=self.compare.isChecked(),
+            kind=self.kind.currentIndex(),
+            amplitude=self.amplitude.value(),
+            freq_hz=self.freq.value(),
+            tab=self.tabs.currentIndex(),
+        )
 
     def _on_oscillator(self) -> None:
         self.osc = Oscillator(self.mass.value(), self.stiffness.value(), self.damping.value())

@@ -296,8 +296,8 @@ THEORY_WINDOW_TIP = (
     "its place as you move between pages, or follows them. (Ctrl+F1)</p>"
 )
 PRACTICE_TIP = (
-    "<p>Practice problems on the pages, with new numbers every time: work out a number, or predict what "
-    "happens and then see it on the page. (Ctrl+F2)</p>"
+    "<p>Practice problems on the pages, with new numbers every time: work out a number, predict what happens "
+    "and then see it on the page, or tune the page until it meets a spec. (Ctrl+F2)</p>"
 )
 ABOUT_HTML = """<h3>Vibration Tutorial {version}</h3>
 <p>An interactive teaching tool for mechanical vibration: a chain of masses, springs and dampers, and the
@@ -700,7 +700,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from .practice import PracticeWindow
 
         if self.practice_window is None:
-            self.practice_window = PracticeWindow(self.set_up_page, self._read_theory, self)
+            self.practice_window = PracticeWindow(self.set_up_page, self._read_theory, self._practice_state, self)
         if self.practice_window.problem is None:
             self.practice_window.show_page(self.page_name(self.pages.currentWidget()) or "")
         self.practice_window.show()
@@ -712,6 +712,10 @@ class MainWindow(QtWidgets.QMainWindow):
         """Show page `name` set up as a practice problem's `setup` says."""
         self.show_page(name)
         self._page(name).load_setup(setup)
+
+    def _practice_state(self, name: str):
+        """Page `name`'s settings, which a practice spec checks."""
+        return self._page(name).practice_state()
 
     def _read_theory(self, name: str, anchor: str) -> None:
         """A hint's link: the Theory window at page `name`'s `anchor`."""

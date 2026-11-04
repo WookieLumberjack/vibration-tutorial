@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
+from scipy.optimize import minimize_scalar
 
 from .sdof import TWO_PI, respond
 
@@ -118,6 +119,20 @@ class Isolator:
 
     def transmissibility(self, freqs_hz: np.ndarray) -> np.ndarray:
         return np.abs(self.response(freqs_hz)[1])
+
+    def peak_transmissibility(self) -> float:
+        """The transmissibility's largest value at any speed (its resonance's, or 1 if it has none), refined by
+        a bounded search round the largest on a grid."""
+        f = self.natural_hz * np.geomspace(0.05, 20.0, 2000)
+        T = self.transmissibility(f)
+        i = int(np.argmax(T))
+        if i == 0:
+            return max(float(T[0]), 1.0)
+        lo, hi = f[i - 1], f[min(i + 1, f.size - 1)]
+        best = minimize_scalar(
+            lambda x: -float(self.transmissibility(np.array([x]))[0]), bounds=(lo, hi), method="bounded"
+        )
+        return max(float(-best.fun), float(T[i]))
 
     def at_speed(self) -> tuple[float, float, float]:
         """(the machine's amplitude, the force on the floor, the transmissibility) at its running speed."""

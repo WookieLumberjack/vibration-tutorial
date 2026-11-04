@@ -17,7 +17,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.isolation import G, Isolator, Mount, deflection_for, start_up
-from ..core.practice import Problem, Question, number, pick, rounded
+from ..core.practice import Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
 from . import settle_plots
 from .layouts import ColumnScroll
@@ -57,6 +57,23 @@ class IsolationTrial:
     rpm: float = 1500.0
     ramp: float = 2.0
     tab: int = TAB_START
+    mass: float = 100.0
+    unbalance: float = 0.01
+
+
+def isolator(t: IsolationTrial) -> Isolator:
+    """The machine on its mounts as a trial (or the page's `practice_state`) sets them."""
+    return Isolator(
+        t.mass,
+        t.rpm,
+        t.unbalance,
+        1e-3 * t.deflection_mm,
+        t.zeta,
+        t.mount,
+        t.stiffness_ratio,
+        t.stage_mass,
+        t.block,
+    )
 
 
 TRIALS = (
@@ -208,6 +225,102 @@ def _damping_above(rng: np.random.Generator) -> Question:
     )
 
 
+def _isolate_spec(rng: np.random.Generator) -> Question:
+    rpm = pick(rng, (900, 1200, 1500, 1800, 3000))
+    isolation = pick(rng, (0.8, 0.9, 0.95))
+    allowed = 100.0 * (1.0 - isolation)
+    need = 1e3 * deflection_for(rpm / 60.0, isolation)  # mm, undamped
+    design = rounded(1.2 * need, 2)
+    most = rounded(design * pick(rng, (1.3, 1.6)), 2)
+    T = 100.0 * Isolator(rpm=rpm, deflection=1e-3 * design).at_speed()[2]
+
+    def goal(t: IsolationTrial):
+        return (
+            kept("The speed", t.rpm, rpm, "rpm"),
+            at_most("The force reaching the floor, T", 100.0 * isolator(t).at_speed()[2], allowed, "%"),
+            at_most("The mounts' sag", t.deflection_mm, most, "mm"),
+        )
+
+    return Question(
+        f"The machine runs at {rpm:g} rpm and sits on stiff mounts. Choose mounts so no more than {allowed:g} % of "
+        f"its unbalance's force reaches the floor ({100 * isolation:g} % isolation), without letting it sag more "
+        f"than {number(most, 2)} mm (any more and its pipes won't line up).",
+        0,
+        f"Undamped, T = 1/(r² − 1) = {1 - isolation:g} needs r = {number(math.sqrt(1 + 1 / (1 - isolation)))}, "
+        f"so a sag of at least {number(need)} mm; damping costs a little, so take a little more: {number(design, 2)} "
+        f"mm with ζ = 0.05 lets {number(T)} % through. The Design chart's <i>Use that sag</i> gives the undamped "
+        "sag for an isolation.",
+        setup=dict(rpm=rpm, deflection_mm=rounded(0.3 * need, 2), tab=TAB_CHART),
+        goal=goal,
+        design=dict(rpm=rpm, deflection_mm=design, tab=TAB_CHART),
+    )
+
+
+def _trade_off_spec(rng: np.random.Generator) -> Question:
+    rpm = pick(rng, (1200, 1500, 1800, 3000))
+    sag = pick(rng, (3, 5, 8, 10))
+    zeta = pick(rng, (0.1, 0.15, 0.2, 0.25))
+    iso = Isolator(rpm=rpm, deflection=1e-3 * sag, zeta=zeta)
+    peak = rounded(1.1 * iso.peak_transmissibility(), 2)
+    allowed = rounded(1.15 * 100.0 * iso.at_speed()[2], 2)
+
+    def goal(t: IsolationTrial):
+        now = isolator(t)
+        return (
+            kept("The speed", t.rpm, rpm, "rpm"),
+            at_most("T's peak, at any speed", now.peak_transmissibility(), peak),
+            at_most("T at the running speed", 100.0 * now.at_speed()[2], allowed, "%"),
+            at_most("The mounts' sag", t.deflection_mm, sag, "mm"),
+        )
+
+    return Question(
+        f"The machine runs at {rpm:g} rpm on mounts that sag {sag:g} mm, with hardly any damping (ζ = 0.02): it "
+        f"shakes the floor as it runs up through their resonance. Tune the mounts so the transmissibility never "
+        f"exceeds {number(peak, 2)} at any speed, while at {rpm:g} rpm no more than {number(allowed, 2)} % of the "
+        f"force reaches the floor. The mounts may sag {sag:g} mm at most.",
+        0,
+        f"Damping lowers the peak (about 1/2ζ) but raises T at speed (the damper's force grows with the speed), "
+        f"so there's a window: ζ = {zeta:g} at {sag:g} mm gives a peak of {number(iso.peak_transmissibility())} "
+        f"and {number(100 * iso.at_speed()[2])} % at speed. Less sag (stiffer mounts) only makes T at speed worse.",
+        setup=dict(rpm=rpm, deflection_mm=float(sag), zeta=0.02, tab=TAB_START),
+        goal=goal,
+        design=dict(rpm=rpm, deflection_mm=float(sag), zeta=zeta, tab=TAB_START),
+    )
+
+
+def _block_spec(rng: np.random.Generator) -> Question:
+    rpm = pick(rng, (900, 1200, 1500, 1800))
+    sag = pick(rng, (2, 3, 5))
+    block = pick(rng, (50, 100, 200, 300))
+    iso = Isolator(rpm=rpm, deflection=1e-3 * sag, block=block)
+    most = rounded(1.1 * 1e6 * iso.at_speed()[0], 2)
+    r2 = (iso.speed_hz / iso.natural_hz) ** 2
+    least = 0.01 * r2 / ((r2 - 1.0) * 1e-6 * most) - 100.0
+
+    def goal(t: IsolationTrial):
+        return (
+            kept("The speed", t.rpm, rpm, "rpm"),
+            kept("The machine's mass", t.mass, 100.0, "kg"),
+            kept("Its unbalance", t.unbalance, 0.01, "kg·m"),
+            kept("The mounts' sag", t.deflection_mm, float(sag), "mm"),
+            at_most("The machine's motion", 1e6 * isolator(t).at_speed()[0], most, "µm"),
+        )
+
+    return Question(
+        f"The 100 kg machine (0.01 kg·m of unbalance) runs at {rpm:g} rpm on mounts that sag {sag:g} mm. It swings "
+        f"too much for the pipes bolted to it: bring its motion down to ±{number(most, 2)} µm, keeping the mounts' "
+        "sag (they're stiffened to suit whatever they carry).",
+        0,
+        f"High above resonance the mounts hardly hold the machine: it swings about its centre of mass, X = "
+        f"m<sub>e</sub>e r²/((M + B)(r² − 1)) with r² = {number(r2)} fixed by the sag. So it needs M + B ≥ "
+        f"0.01 × {number(r2)}/({number(r2 - 1)} × {number(most, 2)}×10<sup>−6</sup>): an inertia block of at least "
+        f"{number(max(least, 0.0), 2)} kg. A {block:g} kg block gives ±{number(1e6 * iso.at_speed()[0])} µm.",
+        setup=dict(rpm=rpm, deflection_mm=float(sag), tab=TAB_START),
+        goal=goal,
+        design=dict(rpm=rpm, deflection_mm=float(sag), block=float(block), tab=TAB_START),
+    )
+
+
 PROBLEMS = (
     Problem(
         "mount-frequency",
@@ -243,6 +356,28 @@ PROBLEMS = (
         "isolation_page",
         f"See {page_link('isolation_page', 'damping-trade-off', 'The damping trade-off')}.",
         _damping_above,
+    ),
+    Problem(
+        "isolate-spec",
+        "Spec: isolate the machine",
+        "isolation_page",
+        f"See {page_link('isolation_page', 'static-deflection', 'Static deflection')}: the softer the mounts, the "
+        "better they isolate.",
+        _isolate_spec,
+    ),
+    Problem(
+        "trade-off-spec",
+        "Spec: through resonance and at speed",
+        "isolation_page",
+        f"See {page_link('isolation_page', 'damping-trade-off', 'The damping trade-off')}.",
+        _trade_off_spec,
+    ),
+    Problem(
+        "block-spec",
+        "Spec: steady the machine",
+        "isolation_page",
+        f"See {page_link('isolation_page', 'inertia-block', 'An inertia block')}.",
+        _block_spec,
     ),
 )
 
@@ -526,9 +661,9 @@ class IsolationPage(QtWidgets.QWidget):
 
     def apply_trial(self, t: IsolationTrial) -> None:
         for box, value in (
-            (self.mass, 100.0),
+            (self.mass, t.mass),
             (self.rpm, t.rpm),
-            (self.unbalance, 0.01),
+            (self.unbalance, t.unbalance),
             (self.block, t.block),
             (self.mount, MOUNTS.index(t.mount)),
             (self.deflection, t.deflection_mm),
@@ -541,6 +676,24 @@ class IsolationPage(QtWidgets.QWidget):
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self._on_inputs()
+
+    def practice_state(self) -> IsolationTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return IsolationTrial(
+            "",
+            "",
+            deflection_mm=self.deflection.value(),
+            zeta=self.zeta.value(),
+            mount=MOUNTS[self.mount.currentIndex()],
+            stiffness_ratio=self.stiffness_ratio.value(),
+            stage_mass=self.stage_mass.value(),
+            block=self.block.value(),
+            rpm=self.rpm.value(),
+            ramp=self.ramp.value(),
+            tab=self.tabs.currentIndex(),
+            mass=self.mass.value(),
+            unbalance=self.unbalance.value(),
+        )
 
     def _on_inputs(self) -> None:
         mount = MOUNTS[self.mount.currentIndex()]
