@@ -17,6 +17,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.beams_plates import (
     THEORIES,
+    TWO_PI,
     Beam,
     Material,
     Plate,
@@ -32,6 +33,7 @@ from ..core.beams_plates import (
     rect_shape,
     wave_speeds,
 )
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import settle_plots
 from .lesson import (
     Form,
@@ -50,7 +52,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -75,6 +77,9 @@ class BeamPlateTrial:
     mode: int = 1
     mix: int = 0
     tab: int = TAB_TABLE
+    E: float = 210.0  # GPa
+    rho: float = 7850.0
+    nu: float = 0.3
 
 
 TRIALS = (
@@ -144,6 +149,178 @@ TRIALS = (
         mode=1,
         tab=TAB_DENSITY,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed. Steel throughout.
+STEEL = Material()
+
+
+def _rect_plate(rng: np.random.Generator) -> tuple[float, float, float]:
+    return pick(rng, (0.4, 0.5, 0.6, 1)), pick(rng, (0.3, 0.4, 0.5)), pick(rng, (1, 2, 3, 5))
+
+
+def _plate_mode(rng: np.random.Generator) -> Question:
+    a, b, h = _rect_plate(rng)
+    m, n = int(pick(rng, (1, 2, 3))), int(pick(rng, (1, 2)))
+    plate = Plate(a, b, h / 1000, STEEL)
+    f = math.pi**2 * (m * m / a**2 + n * n / b**2) * plate.scale / TWO_PI
+    return Question(
+        f"A steel plate (E = 210 GPa, ν = 0.3, ρ = 7850 kg/m³) {a:g} × {b:g} m, {h:g} mm thick, simply supported. At "
+        f"what frequency is its mode ({m}, {n}), {m} half waves along a and {n} along b?",
+        f,
+        f"D = Eh³/12(1 − ν²) = {number(plate.rigidity)} N·m and ρh = {number(plate.surface_mass)} kg/m², so "
+        f"√(D/ρh) = {number(plate.scale)} m²/s; ω = π²({m}²/{a:g}² + {n}²/{b:g}²) √(D/ρh) = {number(TWO_PI * f)} "
+        f"rad/s, f = {number(f)} Hz.",
+        unit="Hz",
+        setup=dict(structure=RECT, length=a, side=b, thickness=float(h)),
+    )
+
+
+def _modal_density(rng: np.random.Generator) -> Question:
+    a, b, h = _rect_plate(rng)
+    plate = Plate(a, b, h / 1000, STEEL)
+    density = a * b / 2 / plate.scale
+    return Question(
+        f"A steel plate {a:g} × {b:g} m, {h:g} mm thick. How many modes does it have per hertz, high up?",
+        density,
+        f"N ≈ (S/4π) ω √(ρh/D), so dN/df = (S/2) √(ρh/D) = ({number(a * b)}/2)/{number(plate.scale)} = "
+        f"{number(density)} per Hz, whatever the frequency and the shape.",
+        unit="per Hz",
+        setup=dict(structure=RECT, length=a, side=b, thickness=float(h), tab=TAB_DENSITY),
+    )
+
+
+def _euler_beam(rng: np.random.Generator) -> Question:
+    length = pick(rng, (1, 2, 3, 5))
+    depth = pick(rng, (0.02, 0.05, 0.1))
+    n = int(pick(rng, (1, 2, 3)))
+    beam = Beam(length, depth, 0.05, STEEL)
+    f = float(beam_frequencies(beam, n, Theory.EULER)[-1])
+    return Question(
+        f"A steel beam {length:g} m long and {1000 * depth:g} mm deep, simply supported. By Euler–Bernoulli, where is "
+        f"its mode {n}?",
+        f,
+        f"ω = (nπ/L)² √(EI/ρA), and I/A = h²/12 for a rectangle: √(EI/ρA) = h √(E/12ρ) = {number(math.sqrt(beam.material.E * beam.inertia / (beam.material.rho * beam.area)))} m²/s, "
+        f"so f = ({n}π/{length:g})² × that /2π = {number(f)} Hz.",
+        unit="Hz",
+        setup=dict(structure=BEAM, length=length, depth=depth, mode=n),
+    )
+
+
+def _timoshenko_drop(rng: np.random.Generator) -> Question:
+    slender = pick(rng, (5, 10, 20))
+    n = int(pick(rng, (1, 3, 5)))
+    beam = Beam(1.0, 1.0 / slender, 0.05, STEEL)
+    euler = float(beam_frequencies(beam, n, Theory.EULER)[-1])
+    tim = float(beam_frequencies(beam, n, Theory.TIMOSHENKO)[-1])
+    drop = 100 * (1 - tim / euler)
+    return Question(
+        f"A steel beam with L/h = {slender:g}, simply supported. By how many percent does Timoshenko's theory put mode "
+        f"{n} below Euler–Bernoulli's?",
+        drop,
+        f"The wavelength 2L/{n} against the depth sets it: rotary inertia and, more, shear deflection both lower the "
+        f"frequency. Timoshenko's 2 × 2 determinant's lower root gives {number(tim)} Hz against Euler's "
+        f"{number(euler)} Hz: {number(drop)} % lower.",
+        unit="%",
+        tolerance=0.03,
+        setup=dict(structure=BEAM, length=1.0, depth=rounded(1.0 / slender), mode=n),
+    )
+
+
+def _nodal_lines(rng: np.random.Generator) -> Question:
+    m, n = int(pick(rng, (1, 2, 3, 4))), int(pick(rng, (2, 3)))
+    return Question(
+        f"A simply supported rectangular plate vibrates in its mode ({m}, {n}). How many nodal lines cross it?",
+        (m - 1) + (n - 1),
+        f"sin(mπx/a) sin(nπy/b) is zero on m − 1 lines across a and n − 1 across b, the edges aside: {m - 1} + "
+        f"{n - 1} = {(m - 1) + (n - 1)}.",
+        tolerance=0.01,
+    )
+
+
+def _thicker_plate(rng: np.random.Generator) -> Question:
+    return Question(
+        "A plate is made twice as thick, the same material and size. What happens to its natural frequencies?",
+        0,
+        "They double: D ∝ h³ while ρh ∝ h, so √(D/ρh) ∝ h. (Its modal density halves.)",
+        choices=("They double", "They grow √8 times", "They grow 8 times", "They stay the same"),
+        setup=dict(structure=RECT, thickness=6.0),
+        predict=True,
+    )
+
+
+def _euler_side(rng: np.random.Generator) -> Question:
+    return Question(
+        "For a deep beam, which theory gives the higher bending frequencies, Euler–Bernoulli or Timoshenko?",
+        0,
+        "Euler–Bernoulli's, always: it leaves out rotary inertia (more mass) and shear deflection (more flexibility), "
+        "and both lower a frequency.",
+        choices=("Euler–Bernoulli", "Timoshenko", "Either, depending on the mode"),
+        setup=dict(structure=BEAM, depth=0.2, mode=5),
+        predict=True,
+    )
+
+
+def _density_trend(rng: np.random.Generator) -> Question:
+    return Question(
+        "Counting a plate's modes in each 100 Hz band, high and higher up. How does the count per band change?",
+        0,
+        "It stays about the same: a plate's modal density, (S/2)√(ρh/D), doesn't depend on frequency. (A beam's falls "
+        "as 1/√f; a room's grows as f².)",
+        choices=("It stays about the same", "It grows", "It falls"),
+        setup=dict(structure=RECT, tab=TAB_DENSITY),
+        predict=True,
+    )
+
+
+def _plate_spec(rng: np.random.Generator) -> Question:
+    a, b = pick(rng, (0.5, 0.6, 1)), pick(rng, (0.4, 0.5))
+    h = pick(rng, (2, 3, 4, 5))  # mm, the design
+    plate = Plate(a, b, h / 1000, STEEL)
+    f11 = rect_modes(plate, 1)[0].freq_hz
+    lowest = rounded(f11 / 1.2, 2)
+    heaviest = rounded(1.2 * plate.surface_mass * a * b, 2)
+
+    def goal(t: BeamPlateTrial):
+        p = Plate(t.length, t.side, t.thickness / 1000, Material(t.E * 1e9, t.nu, t.rho))
+        f = rect_modes(p, 1)[0].freq_hz
+        steel = abs(t.E - 210) <= 1 and abs(t.rho - 7850) <= 10 and abs(t.nu - 0.3) <= 0.005
+        return (
+            Requirement("A rectangular plate, simply supported", STRUCTURES[t.structure], t.structure == RECT),
+            kept("Side a", t.length, a, "m"),
+            kept("Side b", t.side, b, "m"),
+            Requirement("Steel", f"{number(t.E)} GPa, {number(t.rho, 4)} kg/m³", steel),
+            at_least("Its first mode", f, lowest, "Hz"),
+            at_most("Its mass", p.surface_mass * a * b, heaviest, "kg"),
+        )
+
+    return Question(
+        f"A steel panel {a:g} × {b:g} m, simply supported, must have its first mode at {number(lowest, 2)} Hz or above "
+        f"and weigh no more than {number(heaviest, 2)} kg. Choose its thickness.",
+        0,
+        f"f<sub>11</sub> = π²(1/a² + 1/b²)√(D/ρh) grows in proportion to h (D ∝ h³, ρh ∝ h), and so does the mass: "
+        f"a window. {h:g} mm gives {number(f11)} Hz and {number(plate.surface_mass * a * b)} kg; anything from about "
+        f"{number(h / 1.2)} to {number(1.2 * h)} mm does.",
+        setup=dict(structure=RECT, length=a, side=b, thickness=1.0),
+        goal=goal,
+        design=dict(structure=RECT, length=a, side=b, thickness=float(h)),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "beams_page", f"See {page_link('beams_page', anchor, section)}{more}.", make)
+    for key, title, anchor, section, more, make in (
+        ("plate-mode", "A plate's mode", "plates", "Plates", "", _plate_mode),
+        ("modal-density", "A plate's modal density", "modal-density", "Modal density", "", _modal_density),
+        ("euler-beam", "A beam's mode", "thick-beams", "When a beam is thick", "", _euler_beam),
+        ("timoshenko-drop", "Timoshenko's correction", "thick-beams", "When a beam is thick", "", _timoshenko_drop),
+        ("nodal-lines", "Nodal lines", "plates", "Plates", "", _nodal_lines),
+        ("thicker-plate", "Predict: a thicker plate", "plates", "Plates", "", _thicker_plate),
+        ("euler-side", "Predict: which theory is higher", "thick-beams", "When a beam is thick", "", _euler_side),
+        ("density-trend", "Predict: modes per band", "modal-density", "Modal density", "", _density_trend),
+        ("plate-spec", "Spec: a panel's thickness", "plates", "Plates", "", _plate_spec),
+    )
 )
 
 TIPS = {
@@ -354,16 +531,40 @@ class BeamsPlatesPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(BeamPlateTrial("", "", **setup))
+
+    def practice_state(self) -> BeamPlateTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return BeamPlateTrial(
+            "",
+            "",
+            structure=self.structure.currentIndex(),
+            length=self.length.value(),
+            depth=self.depth.value(),
+            side=self.side.value(),
+            thickness=self.thickness.value(),
+            mode=int(self.mode.value()),
+            mix=self.mix.currentIndex(),
+            tab=self.tabs.currentIndex(),
+            E=self.E.value(),
+            rho=self.rho.value(),
+            nu=self.nu.value(),
+        )
+
+    def apply_trial(self, t: BeamPlateTrial) -> None:
         for box, value in (
             (self.structure, t.structure),
             (self.length, t.length),
             (self.depth, t.depth),
             (self.side, t.side),
             (self.thickness, t.thickness),
-            (self.E, 210.0),
-            (self.rho, 7850.0),
-            (self.nu, 0.3),
+            (self.E, t.E),
+            (self.rho, t.rho),
+            (self.nu, t.nu),
             (self.mode, t.mode),
             (self.mix, t.mix),
         ):
