@@ -12,6 +12,7 @@ Follows the chain from the Simulation page (friction left out: all of this is li
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
@@ -19,6 +20,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.modal import ModalResult, modal_analysis
 from ..core.model import ChainSystem
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick
 from ..core.random_vibration import (
     BLOCKS,
     LEVELS,
@@ -45,13 +47,14 @@ from ..core.random_vibration import (
 )
 from .axes import log_axes
 from .layouts import ColumnScroll, group, plot_height
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .panels import spin
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
 RECOMPUTE_MS = 150  # the parameters settle this long before the record is made again
 SHOWN_PERIODS = 30  # of mode 1, on the record's plot
+TWO_PI = 2.0 * math.pi
 PSD_UNITS = {Input.BASE: "g²/Hz", Input.FORCE_ONE: "N²/Hz", Input.FORCE_ALL: "N²/Hz"}
 
 TIPS = {
@@ -140,6 +143,272 @@ TRIALS = (
         "Only ±10 % round mode 2: one peak, its skirts cut off. Miles' equation, which counts the whole of a "
         "mode's peak, now overestimates.",
     ),
+)
+
+
+@dataclass(frozen=True)
+class RandomSetup:
+    """A practice problem's setup: a chain (none: the one there is) and the page's settings. `mass` and `index`
+    count from the end when negative, as the trials' do."""
+
+    masses: tuple[float, ...] = ()
+    springs: tuple[float, ...] = ()
+    dampers: tuple[float, ...] = ()
+    kind: Input = Input.BASE
+    level: float = 0.01
+    f_lo: float = 0.0
+    f_hi: float = 10.0
+    mass: int = -1
+    quantity: Quantity = Quantity.ACCELERATION
+    index: int = -1
+    duration: float = 600.0
+    block: int = 4096
+    tab: int = 0
+
+    def system(self) -> ChainSystem | None:
+        if not self.masses:
+            return None
+        return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
+
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+TAB_MILES, TAB_RECORD, TAB_STATISTICS = range(3)
+
+
+def _one_mass(fn: float, zeta: float, m: float = 1.0) -> dict:
+    """A single mass with natural frequency fn and damping ratio ζ, as a setup's chain."""
+    k = m * (TWO_PI * fn) ** 2
+    return dict(masses=(m,), springs=(k,), dampers=(2 * zeta * math.sqrt(k * m),))
+
+
+def _grms(rng: np.random.Generator) -> Question:
+    level = pick(rng, (0.001, 0.004, 0.01, 0.04, 0.1))
+    lo, hi = pick(rng, (10, 20, 50)), pick(rng, (500, 1000, 2000))
+    g = math.sqrt(level * (hi - lo))
+    return Question(
+        f"A random shaker test is flat at {level:g} g²/Hz from {lo:g} to {hi:g} Hz. What is its RMS acceleration?",
+        g,
+        f"The mean square is the area under the PSD: {level:g} × ({hi:g} − {lo:g}) = {number(g * g)} g², so the RMS is "
+        f"√{number(g * g)} = {number(g)} g (Grms).",
+        unit="g",
+        setup=dict(level=level, f_lo=float(lo), f_hi=float(hi)),
+    )
+
+
+def _miles_base(rng: np.random.Generator) -> Question:
+    fn, Q, level = pick(rng, (5, 10, 20, 50)), pick(rng, (5, 10, 20, 25)), pick(rng, (0.001, 0.01, 0.04))
+    a = math.sqrt(0.5 * math.pi * fn * Q * level)
+    return Question(
+        f"A single mass on a spring, its natural frequency {fn:g} Hz and Q = {Q:g}, sits on a base shaken flat at "
+        f"{level:g} g²/Hz across its resonance. What RMS acceleration does Miles' equation give it?",
+        a,
+        f"a<sub>RMS</sub> = √((π/2) f<sub>n</sub> Q G) = √(1.571 × {fn:g} × {Q:g} × {level:g}) = {number(a)} g.",
+        unit="g",
+        setup=dict(**_one_mass(fn, 0.5 / Q), level=level, f_hi=float(_nice(3 * fn)), tab=TAB_MILES),
+    )
+
+
+def _miles_force(rng: np.random.Generator) -> Question:
+    m, k = pick(rng, (1, 2, 5)), pick(rng, (1000, 4000, 10000))
+    zeta, level = pick(rng, (0.01, 0.02, 0.05)), pick(rng, (0.1, 1, 10))
+    fn = math.sqrt(k / m) / TWO_PI
+    x = math.sqrt(math.pi * fn * level / (4 * zeta)) / k
+    c = 2 * zeta * math.sqrt(k * m)
+    return Question(
+        f"A {m:g} kg mass on a {k:g} N/m spring, ζ = {zeta:g}, takes a random force flat at {level:g} N²/Hz across its "
+        "resonance. What is the RMS of its displacement, by Miles' equation?",
+        1000 * x,
+        f"f<sub>n</sub> = √(k/m)/2π = {number(fn)} Hz. The resonant part of the force's mean square is "
+        f"(π/2) f<sub>n</sub> Q G = (π/4ζ) f<sub>n</sub> G = {number(math.pi * fn * level / (4 * zeta))} N², and the "
+        f"spring turns its RMS into displacement: x<sub>RMS</sub> = √({number(math.pi * fn * level / (4 * zeta))})/k "
+        f"= {number(1000 * x)} mm.",
+        unit="mm",
+        setup=dict(
+            masses=(m,),
+            springs=(k,),
+            dampers=(c,),
+            kind=Input.FORCE_ONE,
+            level=level,
+            f_hi=float(_nice(3 * fn)),
+            quantity=Quantity.DISPLACEMENT,
+            tab=TAB_MILES,
+        ),
+    )
+
+
+def _crossings(rng: np.random.Generator) -> Question:
+    nu0, k = pick(rng, (5, 10, 20, 50)), pick(rng, (2, 3, 4))
+    rate = 60 * nu0 * math.exp(-0.5 * k * k)
+    return Question(
+        f"A Gaussian response crosses zero upwards {nu0:g} times a second. How many times a minute, on average, does it "
+        f"cross {k:g}σ upwards?",
+        rate,
+        f"Rice: ν<sub>a</sub> = ν₀ e<sup>−a²/2σ²</sup> = {nu0:g} × e<sup>−{k * k / 2:g}</sup> = "
+        f"{number(rate / 60)} a second, {number(rate)} a minute.",
+        unit="per minute",
+        tolerance=0.02,
+    )
+
+
+def _davenport(rng: np.random.Generator) -> Question:
+    fn, minutes = pick(rng, (10, 20, 50, 100)), pick(rng, (1, 10, 60))
+    cycles = fn * 60 * minutes
+    r = math.sqrt(2 * math.log(cycles))
+    factor = r + 0.5772 / r
+    return Question(
+        f"A narrow-band response at {fn:g} Hz runs for {minutes:g} min. By Davenport, what is its expected largest "
+        "peak, in multiples of σ?",
+        factor,
+        f"ν₀T = {fn:g} × {60 * minutes:g} s = {number(cycles)} cycles; √(2 ln ν₀T) = {number(r)}, and the expected "
+        f"largest peak is that + 0.577/{number(r)} = {number(factor)}σ: well past 3σ.",
+        unit="σ",
+        tolerance=0.01,
+    )
+
+
+def _lines(rng: np.random.Generator) -> Question:
+    fn, zeta = pick(rng, (2, 5, 10, 20)), pick(rng, (0.005, 0.01, 0.02, 0.05))
+    fs, block = pick(rng, (100, 200, 500, 1000)), int(pick(rng, (1024, 2048, 4096, 8192)))
+    width = 2 * zeta * fn
+    lines = width * block / fs
+    return Question(
+        f"A mode at {fn:g} Hz with ζ = {zeta:g}, estimated by Welch's method from a record sampled at {fs:g} Hz in "
+        f"blocks of {block}. How many lines fall across its half-power width?",
+        lines,
+        f"The lines are f<sub>s</sub>/block = {number(fs / block)} Hz apart; the half-power width is 2ζf<sub>n</sub> "
+        f"= {number(width)} Hz: {number(lines)} lines. Four or more resolve the peak.",
+        unit="lines",
+        tolerance=0.02,
+    )
+
+
+def _double_damping(rng: np.random.Generator) -> Question:
+    return Question(
+        "A lightly damped mass on a shaken base: its damping is doubled. What happens to its RMS acceleration?",
+        0,
+        "It falls by √2, to 71 %: Miles' a<sub>RMS</sub> = √((π/2) f<sub>n</sub> Q G) goes as √Q. The peak halves, "
+        "but it's twice as wide.",
+        choices=("It falls to about 71 %", "It halves", "It falls to a quarter", "It stays the same"),
+        setup=dict(**_one_mass(10.0, 0.04), f_hi=50.0, tab=TAB_MILES),
+        predict=True,
+    )
+
+
+def _longer_record(rng: np.random.Generator) -> Question:
+    return Question(
+        "A random response is recorded ten times as long. What happens to the largest peak you expect in it?",
+        0,
+        "It grows a little: the largest peak goes as about √(2 ln ν₀T), so ten times the time adds only 10–20 % (3.2σ "
+        "over a hundred cycles, 3.9σ over a thousand).",
+        choices=("It grows a little", "It stays the same", "It grows about √10 times", "It grows ten times"),
+        setup=dict(tab=TAB_STATISTICS),
+        predict=True,
+    )
+
+
+def _coarse_lines(rng: np.random.Generator) -> Question:
+    return Question(
+        "Welch's block is cut to a sixteenth, so the lines are coarser than a mode's peak. What happens to the "
+        "estimated peak and the RMS?",
+        0,
+        "The peak comes out low and wide, smeared by the window over the coarse lines; the RMS, the area, is still "
+        "right.",
+        choices=(
+            "The peak comes out low; the RMS is still right",
+            "Both come out low",
+            "The peak comes out high; the RMS low",
+            "Neither changes",
+        ),
+        setup=dict(**_one_mass(5.0, 0.01), f_hi=20.0, duration=2000.0, block=256),
+        predict=True,
+    )
+
+
+def _mass_line(rng: np.random.Generator) -> Question:
+    return Question(
+        "A random force on a single mass, ζ = 0.1, its acceleration: the force's band is widened from 2 to 20 times "
+        "the natural frequency, the level kept. What happens to the RMS acceleration?",
+        0,
+        "It nearly doubles, 0.66 g to 1.19 g: far above resonance the mass's acceleration is the force over the mass "
+        "(the mass line), flat, so every hertz of the band adds to it. Miles' equation, which only sees the peak, "
+        "stays at 0.64 g.",
+        choices=("It grows a lot", "It hardly changes: the resonance dominates", "It falls"),
+        setup=dict(
+            **_one_mass(5.0, 0.1), kind=Input.FORCE_ONE, level=1.0, f_hi=100.0, duration=60.0, block=256, tab=TAB_MILES
+        ),
+        predict=True,
+    )
+
+
+def _averages(samples: int, block: int) -> int:
+    """Welch's half-overlapping blocks in `samples`."""
+    step = block - block // 2
+    return (samples - block) // step + 1 if samples >= block else 0
+
+
+def _welch_spec(rng: np.random.Generator) -> Question:
+    fn, zeta = pick(rng, (2, 5, 10)), pick(rng, (0.01, 0.02, 0.05))
+    n = int(pick(rng, (15, 31, 63)))
+    chain = _one_mass(fn, zeta)
+    hi = 5 * fn
+    fs = sample_rate(RandomInput(f_hi=hi))
+    block = min(b for b in BLOCKS if b >= 4 * fs / (2 * zeta * fn))
+    need = math.ceil(((n + 1) * (block // 2)) / fs)
+    longest = 10 * math.ceil(1.3 * need / 10)
+
+    def goal(t: RandomSetup):
+        rate = sample_rate(RandomInput(f_hi=t.f_hi))
+        system = t.system()
+        modes = modal_analysis(system).modes if system is not None else []
+        width = 2 * modes[0].zeta_modal * modes[0].fn_hz if modes else math.nan
+        return (
+            Requirement("One mass", f"{len(t.masses)}", len(t.masses) == 1),
+            *(
+                kept(what, now[0] if now else math.nan, given[0], unit)
+                for what, now, given, unit in (
+                    ("Its mass", t.masses, chain["masses"], "kg"),
+                    ("Its spring", t.springs, chain["springs"], "N/m"),
+                    ("Its damper", t.dampers, chain["dampers"], "N·s/m"),
+                )
+            ),
+            kept("The band's top", t.f_hi, hi, "Hz"),
+            at_least("Lines across the half-power width", width * t.block / rate, 4),
+            at_least("Welch's averages", _averages(round(t.duration * rate), t.block), n),
+            at_most("The record's length", t.duration, longest, "s"),
+        )
+
+    return Question(
+        f"A single mass, f<sub>n</sub> = {fn:g} Hz and ζ = {zeta:g}, on a base shaken flat to {hi:g} Hz (the record "
+        f"sampled at {number(fs)} Hz). Choose Welch's block and the record's length so that four or more lines fall "
+        f"across the mode's half-power width and the estimate averages at least {n} blocks, in no more than "
+        f"{longest:g} s.",
+        0,
+        f"The half-power width is 2ζf<sub>n</sub> = {number(2 * zeta * fn)} Hz, so the lines must be "
+        f"{number(zeta * fn / 2)} Hz apart or closer: a block of {number(4 * fs / (2 * zeta * fn))} samples or more, "
+        f"{block} the shortest on offer. Half overlapping, {n} blocks need ({n} + 1) × {block // 2} samples, "
+        f"{need} s. A longer block would need twice as long a record.",
+        setup=dict(**chain, f_hi=float(hi), duration=float(longest), block=BLOCKS[0]),
+        goal=goal,
+        design=dict(**chain, f_hi=float(hi), duration=float(need), block=block),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "random_page", f"See {page_link('random_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("grms", "A test's Grms", "psd", "Random vibration", _grms),
+        ("miles-base", "Miles' equation", "miles", "Miles' equation", _miles_base),
+        ("miles-force", "Miles' equation for a force", "miles", "Miles' equation", _miles_force),
+        ("crossings", "Crossing a level", "statistics", "How often, how high", _crossings),
+        ("davenport", "The largest peak", "statistics", "How often, how high", _davenport),
+        ("lines", "Lines across a peak", "welch", "Estimating it from a record", _lines),
+        ("double-damping", "Predict: twice the damping", "miles", "Miles' equation", _double_damping),
+        ("longer-record", "Predict: a longer record", "statistics", "How often, how high", _longer_record),
+        ("coarse-lines", "Predict: coarse lines", "welch", "Estimating it from a record", _coarse_lines),
+        ("mass-line", "Predict: a wider band", "miles", "Miles' equation", _mass_line),
+        ("welch-spec", "Spec: a record and a block", "welch", "Estimating it from a record", _welch_spec),
+    )
 )
 
 NOTES_HTML = """
@@ -257,6 +526,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
     """Controls on the left, the spectra and the cumulative RMS in the centre, Miles, the record and notes on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
+    system_requested = QtCore.Signal(object)  # a practice problem's chain, for the Simulation page
     edit_parameters = QtCore.Signal()  # the user wants the Simulation page's parameter panel
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
@@ -536,6 +806,54 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self._show_controls()
         self.trial_note.setText(note)
         self._schedule(measure=True)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then
+        the settings."""
+        t = RandomSetup(**setup)
+        system = t.system()
+        if system is not None:
+            self.system_requested.emit(system)
+            if self.system is None or not _same_chain(self.system, system):
+                self.set_system(system)  # nobody passed it back: show it here alone
+        if self.system is None:
+            return
+        n = self.system.n
+        self._loading = True
+        self.kind.setCurrentIndex(self.kind.findData(t.kind))
+        self.mass.setCurrentIndex(t.mass % n)
+        self.level.setValue(t.level)
+        self.f_lo.setValue(t.f_lo)
+        self.f_hi.setValue(t.f_hi)
+        self.duration.setValue(t.duration)
+        self.block.setCurrentIndex(BLOCKS.index(t.block))
+        self.quantity.setCurrentIndex(self.quantity.findData(t.quantity))
+        self._fill_index()
+        self.index.setCurrentIndex(t.index % n)
+        self._loading = False
+        self._show_controls()
+        self.trial_note.setText("")
+        self.tabs.setCurrentIndex(t.tab)
+        self._schedule(measure=True)
+
+    def practice_state(self) -> RandomSetup:
+        """The chain and the page's settings, as a setup: what a practice spec checks."""
+        s = self.system
+        return RandomSetup(
+            tuple(float(v) for v in s.masses) if s is not None else (),
+            tuple(float(v) for v in s.stiffness) if s is not None else (),
+            tuple(float(v) for v in s.damping) if s is not None else (),
+            self.kind.currentData(),
+            self.level.value(),
+            self.f_lo.value(),
+            self.f_hi.value(),
+            self.mass.currentIndex(),
+            self.quantity.currentData(),
+            self.index.currentIndex(),
+            self.duration.value(),
+            self.block.currentData(),
+            self.tabs.currentIndex(),
+        )
 
     def random_input(self) -> RandomInput:
         return RandomInput(
@@ -847,6 +1165,12 @@ def _alpha(color: str, alpha: int):
     c = pg.mkColor(color)
     c.setAlpha(alpha)
     return c
+
+
+def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
+    return a.n == b.n and all(
+        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
+    )
 
 
 def _nice(x: float) -> float:
