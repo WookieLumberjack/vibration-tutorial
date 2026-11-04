@@ -27,6 +27,7 @@ from .style import colors
 from .theming import SETTINGS
 
 PAGES = (
+    "sim_page",
     "sdof_page",
     "transient_page",
     "damping_page",
@@ -39,6 +40,10 @@ TICK = "✓ "
 
 def problems(name: str) -> tuple[Problem, ...]:
     """Page `name`'s practice problems, from its module (without building the page)."""
+    if name == "sim_page":
+        from .sim_trials import PROBLEMS
+
+        return PROBLEMS
     from .main_window import _page_class
 
     return getattr(sys.modules[_page_class(name).__module__], "PROBLEMS", ())
