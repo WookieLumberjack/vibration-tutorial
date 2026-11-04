@@ -37,6 +37,7 @@ from .modes import Method, mode_entries
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
 from .sim_trials import TRIALS as SIM_TRIALS
+from .sim_trials import SimTrial, chain
 from .style import SYSTEM, colors
 from .tab_groups import PageGroups
 
@@ -711,11 +712,32 @@ class MainWindow(QtWidgets.QMainWindow):
     def set_up_page(self, name: str, setup: dict) -> None:
         """Show page `name` set up as a practice problem's `setup` says."""
         self.show_page(name)
-        self._page(name).load_setup(setup)
+        if name == "sim_page":
+            self.apply_sim_trial(SimTrial("", "", **setup))
+        else:
+            self._page(name).load_setup(setup)
+
+    def sim_practice_state(self) -> SimTrial:
+        """The Simulation page's chain and force, as a trial: what a practice spec checks."""
+        system, s = self.sim.system, self.force.settings
+        return SimTrial(
+            "",
+            "",
+            n=system.n,
+            friction=float(system.friction.max()),
+            masses=tuple(float(v) for v in system.masses),
+            springs=tuple(float(v) for v in system.stiffness),
+            dampers=tuple(float(v) for v in system.damping),
+            kind=s.kind,
+            base=(1e3 * s.base_amplitude, s.freq_hz) if s.base else None,
+            target=s.target,
+            freq_hz=s.freq_hz,
+            force=s.amplitude,
+        )
 
     def _practice_state(self, name: str):
         """Page `name`'s settings, which a practice spec checks."""
-        return self._page(name).practice_state()
+        return self.sim_practice_state() if name == "sim_page" else self._page(name).practice_state()
 
     def _read_theory(self, name: str, anchor: str) -> None:
         """A hint's link: the Theory window at page `name`'s `anchor`."""
@@ -847,18 +869,22 @@ class MainWindow(QtWidgets.QMainWindow):
         """Set up one of the Things to try (index 0 is the prompt)."""
         if index <= 0:
             return
-        t = SIM_TRIALS[index - 1]
+        self.apply_sim_trial(SIM_TRIALS[index - 1])
+
+    def apply_sim_trial(self, t: SimTrial) -> None:
+        """Set the Simulation page up as a trial (or a practice problem's setup) says, and run it."""
         self.trial_note.setText(t.note)
         self.force.switch_off()
         if t.preset:
             self.params.load_preset(next(p for p in self.params.presets if p.name.startswith(t.preset)))
         else:
-            system = ChainSystem.uniform(t.n)
-            for i, c in t.damping.items():
-                system.damping[i] = c
-            system.friction[:] = t.friction
+            system = chain(t)
             self.params.set_system(system)
-            settings = ForceSettings(target=t.n - 1)
+            settings = ForceSettings(target=system.n - 1 if t.target is None else t.target)
+            if t.freq_hz is not None:
+                settings = replace(settings, freq_hz=t.freq_hz)
+            if t.force is not None:
+                settings = replace(settings, amplitude=t.force)
             if t.kind is not None:
                 settings = replace(settings, kind=t.kind)
             if t.sweep is not None:

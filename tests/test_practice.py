@@ -4,6 +4,7 @@ import math
 import os
 import re
 import tempfile
+from functools import partial
 
 import pytest
 
@@ -71,7 +72,7 @@ def test_the_pages_with_problems_are_listed():
     from vib_tutorial.gui.main_window import _page_class  # noqa: F401 (the pages' modules)
     from vib_tutorial.gui.practice import problems as found
 
-    course = [name for _, pages in COURSE for name, _, _ in pages if name != "sim_page"]
+    course = [name for _, pages in COURSE for name, _, _ in pages]
     assert sorted(PAGES) == sorted(name for name in course if found(name))
     keys = [(p.page, p.key) for p in ALL]
     assert len(keys) == len(set(keys))
@@ -81,6 +82,11 @@ def test_the_pages_with_problems_are_listed():
 def _trial_class(page: str):
     """The page's trial class, which its setups (and its `practice_state`) are made of."""
     import sys
+
+    if page == "sim_page":
+        from vib_tutorial.gui.sim_trials import SimTrial
+
+        return SimTrial
 
     from vib_tutorial.gui.main_window import _page_class
 
@@ -171,20 +177,25 @@ def test_hints_link_to_sections_that_exist():
 
 # ------------------------------------------------------------------ the window
 def test_every_setup_loads_on_its_page(app):
-    from vib_tutorial.gui.main_window import _page_class
+    from vib_tutorial.gui.main_window import MainWindow, _page_class
 
     for name in PAGES:
-        page = _page_class(name)()
+        if name == "sim_page":  # the main window's own page: set up and read through the window
+            window = MainWindow()
+            load, state = partial(window.set_up_page, "sim_page"), window.sim_practice_state
+        else:
+            window = page = _page_class(name)()
+            load, state = page.load_setup, page.practice_state
         for problem in problems(name):
             for seed in range(10):
                 q = problem.question(seed)
                 if q.setup is not None:
-                    page.load_setup(q.setup)
+                    load(q.setup)
                 if q.is_spec:  # through the page's own boxes: the design still meets it, the start doesn't
-                    assert not check(q, page.practice_state()).right, (problem.key, seed)
-                    page.load_setup(q.design)
-                    assert check(q, page.practice_state()).right, (problem.key, seed)
-        page.close()
+                    assert not check(q, state()).right, (problem.key, seed)
+                    load(q.design)
+                    assert check(q, state()).right, (problem.key, seed)
+        window.close()
 
 
 def test_practice_window(app):
@@ -198,8 +209,8 @@ def test_practice_window(app):
     shortcuts = {s.key().toString(): s for s in w.findChildren(QtGui.QShortcut)}
     shortcuts["Ctrl+F2"].activated.emit()
     p = w.practice_window
-    assert p.isVisible() and p.problem is None  # the Simulation page has no problems yet
-    assert not w._built and not p.check_button.isEnabled()
+    assert p.isVisible() and p.problem.page == "sim_page"  # the page showing's first problem
+    assert not w._built and p.check_button.isEnabled()
 
     # A number: wrong, then right, and the problem is ticked.
     p.show_problem("sdof_page", "natural-frequency", seed=3)
