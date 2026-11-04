@@ -31,6 +31,7 @@ PAGES = (
     "transient_page",
     "damping_page",
     "isolation_page",
+    "signals_page",
 )  # the pages with PROBLEMS, any order (the tree follows the course)
 PROBLEM_ROLE = QtCore.Qt.ItemDataRole.UserRole  # (page, problem key) of a problem's item, (page, "") a page's
 TICK = "✓ "
