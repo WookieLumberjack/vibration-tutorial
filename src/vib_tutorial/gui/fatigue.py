@@ -8,6 +8,7 @@ Rayleigh's and Dirlik's), where the damage comes from, the S–N curve, and the 
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -21,11 +22,13 @@ from ..core.fatigue import (
     dirlik_range_pdf,
     life_text,
     narrow_band_damage,
+    rainflow,
     rates,
     rayleigh_range_pdf,
     record,
     reversals,
 )
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import settle_plots
 from .lesson import (
     Form,
@@ -41,7 +44,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -59,6 +62,8 @@ class FatigueTrial:
     duration: float = 600.0
     seed: int = 1
     tab: int = TAB_RANGES
+    s_ref: float = 80.0
+    n_ref: float = 2e6
 
 
 TRIALS = (
@@ -122,6 +127,203 @@ TRIALS = (
         duration=20.0,
         seed=1,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+DAY = 86400.0
+
+
+def _basquin(rng: np.random.Generator) -> Question:
+    s_ref, b = pick(rng, (50, 80, 100, 125)), pick(rng, (3, 4, 5))
+    S = pick(rng, (0.5, 0.8, 1.5, 2)) * s_ref
+    N = float(Curve(b, s_ref).cycles(S)) / 1e6
+    return Question(
+        f"A detail survives two million cycles of a {s_ref:g} MPa range, on an S–N slope of {b:g}. How many million "
+        f"cycles of a {S:g} MPa range does it survive?",
+        N,
+        f"N = N<sub>ref</sub>(S/S<sub>ref</sub>)<sup>−b</sup> = 2 million × ({S:g}/{s_ref:g})<sup>−{b:g}</sup> = "
+        f"{number(N)} million cycles.",
+        unit="million cycles",
+        setup=dict(b=b, s_ref=s_ref, tab=TAB_SN),
+    )
+
+
+def _miner(rng: np.random.Generator) -> Question:
+    curve = Curve()
+    ranges = (pick(rng, (40, 60)), pick(rng, (80, 100)), pick(rng, (120, 160)))
+    counts = (pick(rng, (1, 2, 5)) * 1e6, pick(rng, (1, 2, 5)) * 1e5, pick(rng, (1, 2, 5)) * 1e4)
+    lives = [float(curve.cycles(S)) for S in ranges]
+    D = sum(n / N for n, N in zip(counts, lives))
+    blocks = ", ".join(f"{n / 1e6:g} million cycles of {S:g} MPa" for S, n in zip(ranges, counts))
+    terms = " + ".join(f"{n / 1e6:g}/{number(N / 1e6)}" for n, N in zip(counts, lives))
+    return Question(
+        f"A welded detail (slope 3, 80 MPa range at two million cycles) takes {blocks}. What is its Miner's sum?",
+        D,
+        f"Each range's life is N = 2 million × (80/S)³; D = Σ n/N, in millions of cycles: {terms} = {number(D)}"
+        + (": past 1, it has failed." if D > 1 else "."),
+    )
+
+
+def _narrow_life(rng: np.random.Generator) -> Question:
+    nu0, sigma = pick(rng, (1, 2, 5, 10)), pick(rng, (10, 15, 20, 30))
+    curve = Curve()
+    rate = nu0 * (2 * math.sqrt(2) * sigma) ** 3 * math.gamma(2.5) / curve.K
+    return Question(
+        f"A narrow-band stress at {nu0:g} Hz, {sigma:g} MPa RMS, on a welded detail (slope 3, 80 MPa range at two "
+        "million cycles). By the narrow-band formula, how many days does it last?",
+        1 / rate / DAY,
+        f"Each up-crossing is a cycle, its amplitude Rayleigh: the damage a second is ν₀(2√2σ)<sup>b</sup>Γ(1 + b/2)/K "
+        f"= {nu0:g} × {number((2 * math.sqrt(2) * sigma) ** 3)} × {number(math.gamma(2.5))}/{number(curve.K)} = "
+        f"{number(rate)}, so the life is {number(1 / rate)} s, {number(1 / rate / DAY)} days.",
+        unit="days",
+        setup=dict(stress=Stress(f1=nu0, sigma1=sigma), tab=TAB_SN),
+    )
+
+
+def _rainflow(rng: np.random.Generator) -> Question:
+    top = pick(rng, (80, 100, 120))
+    low, high = pick(rng, (20, 30, 40)), pick(rng, (60, 70))
+    bottom = pick(rng, (-40, -20, 0))
+    x = np.array([0.0, top, low, high, bottom])
+    fall = f"{bottom:g}".replace("-", "−")
+    ranges, counts = rainflow(x)
+    full = float(ranges[counts == 1.0][0])
+    halves = sorted(float(r) for r in ranges[counts == 0.5])
+    return Question(
+        f"Rainflow-count the stress history 0, {top:g}, {low:g}, {high:g}, {fall} MPa. What range has the one "
+        "full cycle it finds?",
+        full,
+        f"The ripple {low:g} → {high:g} is no larger than the swing before it, and the fall to {fall} goes past "
+        f"it: it closes a full cycle of {number(full)} MPa and is taken out. What's left, 0, {top:g}, {fall}, is "
+        f"two half cycles, {' and '.join(number(h) for h in halves)} MPa: the big swing still counted whole.",
+        unit="MPa",
+    )
+
+
+def _overload(rng: np.random.Generator) -> Question:
+    high, b = pick(rng, (5, 10, 15, 20)), pick(rng, (3, 4, 5))
+    share = 100 / (1 + high / 100) ** b
+    return Question(
+        f"The stress on a part turns out {high:g} % higher than designed for, its S–N slope {b:g}. What percentage "
+        "of the life it was designed for does it have?",
+        share,
+        f"The damage goes as S<sup>b</sup>, so the life as S<sup>−b</sup>: 1/{number(1 + high / 100)}"
+        f"<sup>{b:g}</sup> = {number(share)} %.",
+        unit="%",
+        tolerance=0.01,
+    )
+
+
+def _second_mode(rng: np.random.Generator) -> Question:
+    return Question(
+        "A narrow-band stress gains a second, faster mode with half its RMS. Against the record's rainflow count, "
+        "the narrow-band formula's damage comes out…",
+        0,
+        "…too high (1.6 times here): it counts every up-crossing as a cycle of the whole σ's Rayleigh, but the fast "
+        "mode's crossings are mostly small ripples on the slow swing.",
+        choices=("Too high", "About right", "Too low"),
+        setup=dict(stress=Stress(sigma2=10.0), tab=TAB_DAMAGE),
+        predict=True,
+    )
+
+
+def _steep_slope(rng: np.random.Generator) -> Question:
+    return Question(
+        "On a steep S–N curve (slope 5 or more), which of a random stress's cycles do most of the damage?",
+        0,
+        "The few largest: each cycle's damage goes as S⁵, so a range twice as large does 32 times the damage (the "
+        "Damage by range tab).",
+        choices=(
+            "The few largest",
+            "The many small ones",
+            "The ones near the RMS, evenly",
+        ),
+        setup=dict(stress=Stress(sigma2=10.0), b=5.0, tab=TAB_DAMAGE),
+        predict=True,
+    )
+
+
+def _short_record(rng: np.random.Generator) -> Question:
+    return Question(
+        "Only 20 s of the stress is recorded, on a slope of 5. What does the rainflow damage do as the record's seed "
+        "changes?",
+        0,
+        "It scatters widely (0.67 to 1.53 times the long record's over ten seeds): a few large cycles do most of the "
+        "damage, and a short record may or may not catch them. The spectral methods give one number.",
+        choices=("It scatters widely", "It stays within a few percent", "It's always low", "It's always high"),
+        setup=dict(stress=Stress(sigma2=10.0), b=5.0, duration=20.0, seed=2),
+        predict=True,
+    )
+
+
+def _damping_spec(rng: np.random.Generator) -> Question:
+    base = Stress(sigma2=10.0)  # mode 1 at 20 MPa with ζ = 2 %; mode 2 at 15 Hz, 10 MPa
+    zd = pick(rng, (0.04, 0.05, 0.06, 0.08))
+    curve = Curve()
+
+    def miles(zeta: float) -> float:
+        return base.sigma1 * math.sqrt(base.zeta1 / zeta)
+
+    def life(zeta: float, sigma: float) -> float:
+        return 1 / dirlik_damage(Stress(base.f1, zeta, sigma, base.f2, base.zeta2, base.sigma2), curve) / DAY
+
+    sd = round(miles(zd), 1)
+    target = rounded(life(zd, sd) / 1.1, 2)
+    most = rounded(1.25 * zd, 2)
+    lo, hi = base.zeta1, zd
+    for _ in range(30):
+        mid = 0.5 * (lo + hi)
+        lo, hi = (mid, hi) if life(mid, miles(mid)) < target else (lo, mid)
+
+    def goal(t: FatigueTrial):
+        s = t.stress
+        follows = abs(s.sigma1 / miles(s.zeta1) - 1) <= 0.015
+        return (
+            kept("Mode 1's frequency", s.f1, base.f1, "Hz"),
+            kept("Mode 2's frequency", s.f2, base.f2, "Hz"),
+            kept("Mode 2's ζ", s.zeta2, base.zeta2),
+            kept("Mode 2's RMS", s.sigma2, base.sigma2, "MPa"),
+            kept("The slope", t.b, curve.b),
+            kept("S_ref", t.s_ref, curve.s_ref, "MPa"),
+            kept("N_ref", t.n_ref, curve.n_ref, "cycles"),
+            Requirement(
+                f"Mode 1's RMS follows its damping: 20 √(0.02/ζ₁) = {number(miles(s.zeta1))} MPa",
+                f"{number(s.sigma1)} MPa",
+                follows,
+            ),
+            at_most("Mode 1's ζ", s.zeta1, most),
+            at_least("Dirlik's life", life(s.zeta1, s.sigma1), target, "days"),
+        )
+
+    return Question(
+        f"A welded detail (slope 3, 80 MPa at two million cycles) sees a 2 Hz mode at 20 MPa RMS with ζ = 0.02 and a "
+        f"15 Hz mode at 10 MPa. Damping added to the 2 Hz mode lowers its RMS as 1/√ζ (Miles), its peak's "
+        f"area the same over a wider band. Choose its ζ, no more than {number(most)}, and set its RMS to match, so "
+        f"that Dirlik's life is {number(target, 2)} days or more.",
+        0,
+        f"σ₁ = 20 √(0.02/ζ₁). The damage would fall as ζ<sup>−1.5</sup> for mode 1 alone, but the 15 Hz mode's "
+        f"cycles don't change, so the returns diminish: ζ₁ from about {number(hi)} meets it (ζ₁ = {zd:g} gives "
+        f"σ₁ = {sd:g} MPa and {number(life(zd, sd))} days).",
+        setup=dict(stress=base, tab=TAB_DAMAGE),
+        goal=goal,
+        design=dict(stress=Stress(base.f1, zd, sd, base.f2, base.zeta2, base.sigma2), tab=TAB_DAMAGE),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "fatigue_page", f"See {page_link('fatigue_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("basquin", "Cycles to failure", "sn", "The S–N curve", _basquin),
+        ("miner", "Miner's sum", "miner", "Miner's rule", _miner),
+        ("narrow-life", "A narrow band's life", "spectral", "Damage from the PSD", _narrow_life),
+        ("rainflow", "Rainflow by hand", "rainflow", "Rainflow counting", _rainflow),
+        ("overload", "A higher stress", "sn", "The S–N curve", _overload),
+        ("second-mode", "Predict: a second mode", "spectral", "Damage from the PSD", _second_mode),
+        ("steep-slope", "Predict: a steep curve", "sn", "The S–N curve", _steep_slope),
+        ("short-record", "Predict: a short record", "record", "The record", _short_record),
+        ("damping-spec", "Spec: damping for a life", "spectral", "Damage from the PSD", _damping_spec),
+    )
 )
 
 TIPS = {
@@ -313,7 +515,34 @@ class FatiguePage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(FatigueTrial("", "", **setup))
+
+    def practice_state(self) -> FatigueTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return FatigueTrial(
+            "",
+            "",
+            Stress(
+                self.f1.value(),
+                self.zeta1.value(),
+                self.sigma1.value(),
+                self.f2.value(),
+                self.zeta2.value(),
+                self.sigma2.value(),
+            ),
+            self.b.value(),
+            self.duration.value(),
+            int(self.seed.value()),
+            self.tabs.currentIndex(),
+            self.s_ref.value(),
+            self.n_ref.value(),
+        )
+
+    def apply_trial(self, t: FatigueTrial) -> None:
         s = t.stress
         for box, value in (
             (self.f1, s.f1),
@@ -323,13 +552,14 @@ class FatiguePage(QtWidgets.QWidget):
             (self.zeta2, s.zeta2),
             (self.sigma2, s.sigma2),
             (self.b, t.b),
-            (self.s_ref, 80.0),
-            (self.n_ref, 2e6),
+            (self.s_ref, t.s_ref),
+            (self.n_ref, t.n_ref),
             (self.duration, t.duration),
             (self.seed, t.seed),
         ):
             set_quietly(box, value)
-        self.trials.show_note(t.note)
+        if t.note:
+            self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self._on_stress()
 
