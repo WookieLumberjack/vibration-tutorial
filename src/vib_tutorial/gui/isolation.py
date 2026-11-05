@@ -474,6 +474,9 @@ smaller than at speed, (f<sub>n</sub>/f)² of it, and the faster the run up the 
 (the Single oscillator page's time constant): so lightly damped mounts are usually tolerable, and a slow
 run up or coast down through resonance is the hazard. The <i>Start-up</i> tab steps it exactly, the
 unbalance's force along the mount m<sub>e</sub>e(Ω² cos φ + Ω' sin φ) as the speed climbs.</p>
+<p>The machine here moves one way, up and down. On real mounts it also sways, rocks and twists: six modes, which
+the mounts couple unless they are placed (or tilted) about its centre of mass just so. That comes later, once
+the course has modes: see <a href="page:mounts_page#six-dof">Rigid body on mounts</a>.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the machine, the mounts and the plots (Things to try, top left).</p>

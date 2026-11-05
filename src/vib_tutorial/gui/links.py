@@ -120,6 +120,11 @@ COURSE = (
                 "Quarter-car",
                 "a suspension on an ISO 8608 road: comfort, grip and travel from the road's PSD",
             ),
+            (
+                "mounts_page",
+                "Rigid body on mounts",
+                "a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them",
+            ),
             ("shock_page", "Shock spectrum", "a short pulse on a bank of oscillators, and on the chain"),
             (
                 "seismic_page",
@@ -215,6 +220,7 @@ PAGE_TITLES = {
     "random_page": "Random vibration page",
     "fatigue_page": "Fatigue page",
     "quarter_car_page": "Quarter-car page",
+    "mounts_page": "Rigid body on mounts page",
     "shock_page": "Shock spectrum page",
     "seismic_page": "Seismic response page",
     "coupling_page": "Modal coupling page",

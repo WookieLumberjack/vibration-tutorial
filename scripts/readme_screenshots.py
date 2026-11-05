@@ -1000,6 +1000,20 @@ def quarter_car():
     lesson("quarter_car_page", 0, "quarter_car")  # a car on an average road
 
 
+def rigid_mounts():
+    w = window()
+    page = w.mounts_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(1)  # mounts below the centre of mass: sway and roll couple
+    page._timer.stop()
+    page.running = False
+    page._phase = 0.5 * math.pi
+    page._show_mode()
+    settle()
+    print(page.readout.text())
+    save(w, "rigid_mounts")
+
+
 def seismic_response():
     lesson("seismic_page", 2, "seismic_response")  # close modes need CQC
 
@@ -1133,6 +1147,7 @@ SHOTS = [
     numerical_integration,
     fatigue,
     quarter_car,
+    rigid_mounts,
     seismic_response,
     variability,
     self_excited,
