@@ -25,7 +25,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core.practice import Problem, Question, check
 from . import links
 from .style import colors
-from .theming import SETTINGS
+from .theming import settings
 
 PROBLEM_ROLE = QtCore.Qt.ItemDataRole.UserRole  # (page, problem key) of a problem's item, (page, "") a page's
 TICK = "✓ "
@@ -49,13 +49,13 @@ def pages() -> tuple[str, ...]:
 
 
 def _solved() -> set[str]:
-    stored = QtCore.QSettings(*SETTINGS).value("practice/solved", "")
+    stored = settings().value("practice/solved", "")
     return set(filter(None, str(stored).split(",")))
 
 
 def _mark_solved(problem: Problem) -> None:
     solved = _solved() | {f"{problem.page}/{problem.key}"}
-    QtCore.QSettings(*SETTINGS).setValue("practice/solved", ",".join(sorted(solved)))
+    settings().setValue("practice/solved", ",".join(sorted(solved)))
 
 
 class PracticeWindow(QtWidgets.QWidget):
@@ -182,13 +182,11 @@ class PracticeWindow(QtWidgets.QWidget):
         layout.addLayout(bar)
         layout.addWidget(split)
         self.resize(850, 560)
-        geometry = QtCore.QSettings(*SETTINGS).value("practice_window/geometry")
+        geometry = settings().value("practice_window/geometry")
         if geometry is not None:
             self.restoreGeometry(geometry)
-        self.follow.setChecked(QtCore.QSettings(*SETTINGS).value("practice_window/follow", "false") == "true")
-        self.follow.toggled.connect(
-            lambda on: QtCore.QSettings(*SETTINGS).setValue("practice_window/follow", "true" if on else "false")
-        )
+        self.follow.setChecked(settings().value("practice_window/follow", "false") == "true")
+        self.follow.toggled.connect(lambda on: settings().setValue("practice_window/follow", "true" if on else "false"))
         self._render()
 
     def _button(self, text: str, tip: str, slot: Callable[[], None]) -> QtWidgets.QPushButton:
@@ -354,7 +352,7 @@ class PracticeWindow(QtWidgets.QWidget):
         self._render()  # the verdict's colour
 
     def save_geometry(self) -> None:
-        QtCore.QSettings(*SETTINGS).setValue("practice_window/geometry", self.saveGeometry())
+        settings().setValue("practice_window/geometry", self.saveGeometry())
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.save_geometry()

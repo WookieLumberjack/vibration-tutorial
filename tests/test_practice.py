@@ -3,7 +3,6 @@
 import math
 import os
 import re
-import tempfile
 from functools import partial
 
 import pytest
@@ -11,9 +10,6 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from PySide6 import QtCore  # noqa: E402
-
-# Keep the problems solved here out of the user's own settings.
-QtCore.QSettings.setPath(QtCore.QSettings.Format.NativeFormat, QtCore.QSettings.Scope.UserScope, tempfile.mkdtemp())
 
 from vib_tutorial.core.practice import Question, check, number, parse_number, rounded  # noqa: E402
 from vib_tutorial.gui.links import COURSE  # noqa: E402
