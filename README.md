@@ -62,7 +62,8 @@ or follows them:
    integration** (what the usual time-stepping schemes do to a vibration).
 3. **Responses.** **Random vibration** (a random force or base: the response's spectrum, RMS and peaks),
    **Fatigue** (rainflow, Miner and the spectral estimates), **Quarter-car** (a suspension on a rough
-   road), **Shock spectrum** (a pulse on a bank of single oscillators, and on the chain) and **Seismic
+   road), **Rigid body on mounts** (a machine's six coupled modes on four mounts, and decoupling them),
+   **Shock spectrum** (a pulse on a bank of single oscillators, and on the chain) and **Seismic
    response** (the chain as a building under a design spectrum).
 4. **Building models.** **Modal coupling** (two halves of the chain joined one mode each, to show when
    their modes split) and **Substructuring (CMS)** (the chain reduced by component mode synthesis:
@@ -708,6 +709,17 @@ the body's acceleration (comfort), the tyre's dynamic load (grip) and the suspen
 drive over a synthesized road stepped exactly, as the check.
 
 ![Quarter-car page: a quarter of a family car at 72 km/h on a class C road; body bounce at 1.24 Hz and wheel hop at 11.8 Hz, 1.48 m/s² RMS at the body, 10.7 mm of travel, the tyre's load swinging 24 % of its static 3.33 kN; on the trade-off, comfort is best at 819 N·s/m and grip at 2394](docs/images/quarter_car.png)
+
+### Rigid body on mounts
+
+A machine (a uniform box) on four mounts, each stiff along its axis and softer across it, moving in all
+six ways: K = Σ Tᵀ K<sub>m</sub> T against M, the six modes swinging in 3D, and each one's kinetic energy
+split among x, y, z, roll, pitch and yaw. Mounts below the centre of mass couple sway with roll; an
+off-centre centre of mass couples bounce with pitch. The elastic centre (where a force moves the body
+without turning it), each plane's beside the mounts' lines of action, and focalizing: tilting the mounts
+toward the middle lifts the roll plane's centre to the centre of mass, and sway and roll are pure again.
+
+![Rigid body on mounts page: a 20 kg box on four mounts 80 mm below its centre of mass, swinging in its 6.90 Hz mode, 67 % sway and 33 % roll; the elastic centre has dropped to the mounts' plane, and the sweep shows sway and roll veering apart as the mounts go lower](docs/images/rigid_mounts.png)
 
 ### Complex modes
 
@@ -1635,6 +1647,8 @@ $F_f$ times the distance slid, so the energy balance still closes.
   E1049), Basquin and Miner, and the narrow-band and Dirlik estimates.
 - `core/quarter_car.py`: a quarter-car on an ISO 8608 road: the transfer functions, the outputs' PSDs
   and RMS, the comfort–grip trade-off, and a drive stepped exactly.
+- `core/rigid_mounts.py`: a box on mounts with six degrees of freedom: K = Σ Tᵀ K<sub>m</sub> T, the
+  modes and their kinetic-energy split, the elastic centre (overall and each plane's), and the focal tilt.
 - `core/seismic.py`: a design spectrum, the building's modal masses and peaks, ABS/SRSS/NRL/CQC, and
   synthesized records stepped mode by mode.
 - `core/variability.py`: Monte Carlo on the chain with lognormal scatter and the first-order estimate,

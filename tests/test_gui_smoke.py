@@ -41,6 +41,22 @@ def _close_graphics(app):
             close_graphics(w)
 
 
+@pytest.fixture(scope="module")
+def lesson_window(app):
+    """One window for every lesson page's test, each page built in it once. No window a test builds is ever
+    freed, and one each (with its own Simulation page's histories) took a worker past the 8 GB ulimit. Made
+    before `_close_graphics` looks, so it outlives each test, and torn down once at the end."""
+    from vib_tutorial.gui import close_graphics
+    from vib_tutorial.gui.main_window import MainWindow
+
+    w = MainWindow()
+    w._timer.stop()
+    w.show()
+    yield w
+    w.close()
+    close_graphics(w)
+
+
 def test_window_interactions(app):
     from vib_tutorial.gui.main_window import MainWindow
 
@@ -3896,18 +3912,15 @@ def test_shock_page(app):
         "gyroscope_page",
         "seismic_page",
         "quarter_car_page",
+        "mounts_page",
         "variability_page",
         "diagnostics_page",
         "signals_page",
     ],
 )
-def test_lesson_pages_trials_and_tabs(app, name):
-    """Every one-click trial of the One mass and Signals pages loads, and every tab draws, in either theme."""
-    from vib_tutorial.gui.main_window import MainWindow
-
-    w = MainWindow()
-    w._timer.stop()
-    w.show()
+def test_lesson_pages_trials_and_tabs(app, lesson_window, name):
+    """Every one-click trial of the lesson pages loads, and every tab draws, in either theme."""
+    w = lesson_window
     page = getattr(w, name)
     w.pages.setCurrentWidget(page)
     module = sys.modules[type(page).__module__]
@@ -3921,7 +3934,6 @@ def test_lesson_pages_trials_and_tabs(app, name):
     w.set_theme("Dark")
     app.processEvents()
     w.set_theme("Light")
-    w.close()
 
 
 def test_gyroscope_on_a_table(app):

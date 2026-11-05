@@ -177,6 +177,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .quarter_car import QuarterCarPage
 
         return QuarterCarPage
+    if name == "mounts_page":
+        from .rigid_mounts import MountsPage
+
+        return MountsPage
     if name == "variability_page":
         from .variability import VariabilityPage
 
@@ -644,6 +648,7 @@ class MainWindow(QtWidgets.QMainWindow):
     diagnostics_page = property(lambda self: self._page("diagnostics_page"))
     variability_page = property(lambda self: self._page("variability_page"))
     quarter_car_page = property(lambda self: self._page("quarter_car_page"))
+    mounts_page = property(lambda self: self._page("mounts_page"))
     seismic_page = property(lambda self: self._page("seismic_page"))
     beams_page = property(lambda self: self._page("beams_page"))
     pendulum_page = property(lambda self: self._page("pendulum_page"))
