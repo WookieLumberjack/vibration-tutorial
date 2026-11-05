@@ -168,6 +168,11 @@ COURSE = (
                 "Active control",
                 "velocity feedback, collocation, spillover and actuator lag, against a tuned mass damper",
             ),
+            (
+                "gyroscope_page",
+                "Gyroscope",
+                "a spinning top: Euler's equations, steady precession, nutation and the sleeping top",
+            ),
             ("rotor_page", "Jeffcott rotor", "a spinning shaft: critical speeds, balancing, bearings, stability, rub"),
             (
                 "diagnostics_page",
@@ -223,6 +228,7 @@ PAGE_TITLES = {
     "duffing_page": "Duffing & Mathieu page",
     "self_excited_page": "Self-excited vibration page",
     "active_control_page": "Active control page",
+    "gyroscope_page": "Gyroscope page",
     "rotor_page": "Jeffcott rotor page",
     "diagnostics_page": "Machinery diagnostics page",
 }
