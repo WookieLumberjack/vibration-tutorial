@@ -1033,7 +1033,7 @@ def gyroscope_table():
     w = window()
     page = w.gyroscope_page
     w.pages.setCurrentWidget(page)
-    page.load_trial(13)  # a tippe top turns over
+    page.load_trial(14)  # a tippe top turns over
     page._timer.stop()
     page.running = False
     page.step(4.0)

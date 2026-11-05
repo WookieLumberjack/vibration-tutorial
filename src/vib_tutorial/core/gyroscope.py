@@ -2,7 +2,9 @@
 
 The *Gyroscope* page. The `Top` is a disc of mass m and radius r on a light stem, its centre a height l up the
 axis from the tip, which is held at the origin (it can turn there but not slide). About the tip its moments of
-inertia are I₁ = m(r²/4 + l²) across the axis and I₃ = mr²/2 along it. In Euler angles (precession φ about the
+inertia are I₁ = m(r²/4 + l²) across the axis and I₃ = mr²/2 along it. A square plate of side s
+(`Shape.SQUARE`) is the same kind of top: a quarter turn leaves it as it was, so its moment is the same about
+every line across its axis, ms²/12 (I₃ = ms²/6), and it moves as a disc of radius s/√3 does. In Euler angles (precession φ about the
 vertical, tilt θ from it, spin ψ about the axis) Lagrange's function is
 
     L = ½I₁(θ'² + φ'² sin²θ) + ½I₃(ψ' + φ' cos θ)² − mgl cos θ,
@@ -44,24 +46,44 @@ STEADY = 1e-9  # turning points closer than this (in cos θ) are steady precessi
 _NODES, _WEIGHTS = np.polynomial.legendre.leggauss(64)
 
 
+class Shape(enum.Enum):
+    DISC = "Disc"
+    SQUARE = "Square plate"
+
+
+SHAPES = tuple(Shape)
+
+
 @dataclass(frozen=True)
 class Top:
-    """A disc on a light stem, its tip held at the origin."""
+    """A disc (or a square plate) on a light stem, its tip held at the origin."""
 
     mass: float = 0.5  # kg
-    radius: float = 0.04  # m, the disc's
-    height: float = 0.03  # m, from the tip to the disc's centre (l)
+    radius: float = 0.04  # m, the disc's radius r, or the square's side s
+    height: float = 0.03  # m, from the tip to the plate's centre (l)
     gravity: float = G
+    shape: Shape = Shape.DISC
 
     @property
     def polar(self) -> float:
-        """I₃, about the axis."""
-        return 0.5 * self.mass * self.radius**2
+        """I₃, about the axis: mr²/2, or ms²/6."""
+        return self.mass * self.radius**2 / (2.0 if self.shape is Shape.DISC else 6.0)
+
+    @property
+    def plate(self) -> float:
+        """The plate's moment about a line across the axis through its centre: I₃/2 (perpendicular axes, and
+        the same about every such line, as a quarter turn leaves a square as it was)."""
+        return 0.5 * self.polar
 
     @property
     def transverse(self) -> float:
         """I₁, about a line across the axis through the tip (parallel axes)."""
-        return self.mass * (0.25 * self.radius**2 + self.height**2)
+        return self.plate + self.mass * self.height**2
+
+    @property
+    def corner(self) -> float:
+        """How far the plate reaches from its axis: r, or a square's corner s/√2."""
+        return self.radius if self.shape is Shape.DISC else self.radius / math.sqrt(2.0)
 
     @property
     def weight_moment(self) -> float:
