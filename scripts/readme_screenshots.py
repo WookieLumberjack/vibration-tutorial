@@ -1030,6 +1030,27 @@ def deriving_pendulum():
     save(w, "deriving_pendulum")
 
 
+def frame_builder():
+    from vib_tutorial.gui.frame_builder import TAB_ASSEMBLY, TRIALS
+
+    w = window()
+    page = w.frame_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A portal frame: sway"))
+    page._timer.stop()
+    page.running = False
+    page._phase = 0.5 * math.pi
+    page.tabs.setCurrentIndex(TAB_ASSEMBLY)
+    settle()
+    column = next(k for k, e in enumerate(page.frame.elements) if e.i == 0)  # the left column's foot
+    page.canvas.select(("element", column))
+    page._show_mode()
+    settle()
+    print(page.canvas.selection, page.assembly_note.text())
+    print(page.readout.text())
+    save(w, "frame_builder")
+
+
 def rigid_mounts():
     w = window()
     page = w.mounts_page
@@ -1197,6 +1218,7 @@ SHOTS = [
     quarter_car,
     rigid_mounts,
     rigid_mounts_response,
+    frame_builder,
     seismic_response,
     variability,
     self_excited,

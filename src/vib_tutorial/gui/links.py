@@ -143,6 +143,11 @@ COURSE = (
         (
             ("coupling_page", "Modal coupling", "two parts joined, one mode each: when their modes split"),
             ("cms_page", "Substructuring (CMS)", "a chain reduced to a few modes per part, and back"),
+            (
+                "frame_page",
+                "Frame builder",
+                "build a frame or truss from beams, bars and springs: assembly, supports, modes",
+            ),
         ),
     ),
     (
@@ -231,6 +236,7 @@ PAGE_TITLES = {
     "seismic_page": "Seismic response page",
     "coupling_page": "Modal coupling page",
     "cms_page": "Substructuring page",
+    "frame_page": "Frame builder page",
     "signals_page": "Signals & spectra page",
     "test_page": "Virtual modal test page",
     "oma_page": "Operational modal analysis page",
