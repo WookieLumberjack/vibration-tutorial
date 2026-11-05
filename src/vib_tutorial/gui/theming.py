@@ -7,6 +7,8 @@ and legends, and links in labels.
 
 from __future__ import annotations
 
+import os
+
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -14,6 +16,19 @@ from . import style
 from .style import SYSTEM, THEMES, Theme
 
 SETTINGS = ("vib-tutorial", "vib-tutorial")  # QSettings organization, application
+SETTINGS_DIR = "VIB_SETTINGS"  # if set, a directory: the settings go in an INI file there instead
+
+
+def settings() -> QtCore.QSettings:
+    """The user's settings (theme, playback, windows, solved problems): the platform's own store (the registry on
+    Windows), or vib-tutorial.ini in $VIB_SETTINGS, which the tests set to a directory of their own per process
+    (QSettings.setPath doesn't reach the registry, so parallel test workers shared one on Windows)."""
+    folder = os.environ.get(SETTINGS_DIR)
+    if folder:
+        return QtCore.QSettings(os.path.join(folder, "vib-tutorial.ini"), QtCore.QSettings.Format.IniFormat)
+    return QtCore.QSettings(*SETTINGS)
+
+
 Role = QtGui.QPalette.ColorRole
 Group = QtGui.QPalette.ColorGroup
 
@@ -29,12 +44,12 @@ def current_name() -> str:
 
 
 def saved_name() -> str:
-    value = QtCore.QSettings(*SETTINGS).value("theme", SYSTEM)
+    value = settings().value("theme", SYSTEM)
     return value if value in names() else SYSTEM
 
 
 def save_name(name: str) -> None:
-    QtCore.QSettings(*SETTINGS).setValue("theme", name)
+    settings().setValue("theme", name)
 
 
 def system_theme() -> Theme:

@@ -3,7 +3,6 @@
 import math
 import os
 import sys
-import tempfile
 
 import numpy as np
 import pytest
@@ -11,9 +10,6 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from PySide6 import QtCore  # noqa: E402
-
-# Keep the theme the tests pick out of the user's own settings.
-QtCore.QSettings.setPath(QtCore.QSettings.Format.NativeFormat, QtCore.QSettings.Scope.UserScope, tempfile.mkdtemp())
 
 from vib_tutorial.core import ForceKind  # noqa: E402
 

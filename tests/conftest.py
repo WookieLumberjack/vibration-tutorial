@@ -2,6 +2,7 @@
 
 import os
 import re
+import tempfile
 
 import pytest
 
@@ -15,6 +16,11 @@ for name in ONE_THREAD:
 # Two malloc arenas, not glibc's eight per core: the xdist workers inherit it, and their arenas' reserved address
 # space (not memory used) put the worker running the GUI smoke tests over an 8 GB `ulimit -v`.
 os.environ.setdefault("MALLOC_ARENA_MAX", "2")
+
+# The app's settings (theme, playback speed, solved problems) in a directory of this process's own, not the user's:
+# set in every process that imports this, so each xdist worker has its own (on Windows the app's native store is
+# the registry, which all the workers shared, and QSettings.setPath doesn't reach it).
+os.environ["VIB_SETTINGS"] = tempfile.mkdtemp(prefix="vib-settings-")
 
 WARN_SHARE = 0.8  # warn when a worker's peak address space passes this share of `ulimit -v`
 

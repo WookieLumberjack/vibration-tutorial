@@ -18,7 +18,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import links
 from .rotor_figures import FigureBrowser
-from .theming import SETTINGS
+from .theming import settings
 
 HEADING = re.compile(r"<h3>(.*?)</h3>", re.S)
 ANCHOR = re.compile(r'<a name="([^"]+)"></a>')
@@ -132,13 +132,11 @@ class TheoryWindow(QtWidgets.QWidget):
         layout.addLayout(bar)
         layout.addWidget(split)
         self.resize(950, 800)
-        geometry = QtCore.QSettings(*SETTINGS).value("theory_window/geometry")
+        geometry = settings().value("theory_window/geometry")
         if geometry is not None:
             self.restoreGeometry(geometry)
-        self.follow.setChecked(QtCore.QSettings(*SETTINGS).value("theory_window/follow", "false") == "true")
-        self.follow.toggled.connect(
-            lambda on: QtCore.QSettings(*SETTINGS).setValue("theory_window/follow", "true" if on else "false")
-        )
+        self.follow.setChecked(settings().value("theory_window/follow", "false") == "true")
+        self.follow.toggled.connect(lambda on: settings().setValue("theory_window/follow", "true" if on else "false"))
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Back), self, self.back)
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Forward), self, self.forward)
         self._update_buttons()
@@ -226,7 +224,7 @@ class TheoryWindow(QtWidgets.QWidget):
             self._restore(place)
 
     def save_geometry(self) -> None:
-        QtCore.QSettings(*SETTINGS).setValue("theory_window/geometry", self.saveGeometry())
+        settings().setValue("theory_window/geometry", self.saveGeometry())
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.save_geometry()

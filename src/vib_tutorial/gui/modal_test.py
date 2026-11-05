@@ -60,7 +60,7 @@ from .links import before, page_link, takeaways
 from .modal_extraction import EXTRACTION_THEORY_HTML, ExtractionControls, ResultsView, StabilizationPlot
 from .panels import spin
 from .style import MAX_DOF, colors
-from .theming import SETTINGS, add_legend, mute
+from .theming import add_legend, mute, settings
 
 FRAME_MS = 30
 STEP_BUDGET_MS = 25  # measuring per frame, so the page stays responsive
@@ -398,11 +398,11 @@ PROBLEMS = tuple(
 
 def saved_playback() -> str:
     """The playback speed picked last (its label), kept in the user's settings like the theme."""
-    return str(QtCore.QSettings(*SETTINGS).value("playback", SPEEDS[0][0]))
+    return str(settings().value("playback", SPEEDS[0][0]))
 
 
 def save_playback(label: str) -> None:
-    QtCore.QSettings(*SETTINGS).setValue("playback", label)
+    settings().setValue("playback", label)
 
 
 OVERLAPS = [0.0, 0.5, 0.75]
