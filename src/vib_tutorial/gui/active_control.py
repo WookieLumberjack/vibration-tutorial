@@ -8,6 +8,7 @@ Theory.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -27,6 +28,7 @@ from ..core.active_control import (
     undamped_modes,
 )
 from ..core.model import ChainSystem
+from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
 from . import settle_plots
 from .lesson import (
     Form,
@@ -44,7 +46,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
@@ -64,6 +66,17 @@ class ControlTrial:
     tab: int = TAB_GAIN
     zeta_passive: float = 0.1
     zeta_sky: float = 0.0
+    inp: int = 4  # 1-based, as shown
+    out: int = 4
+    ratio: float = 0.05
+    masses: tuple[float, ...] = ()  # the chain, element by element; none: the uniform four-mass one
+    springs: tuple[float, ...] = ()
+    dampers: tuple[float, ...] = ()
+
+    def system(self) -> ChainSystem:
+        if not self.masses:
+            return ChainSystem.uniform(4)
+        return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
 
 
 TRIALS = (
@@ -127,6 +140,239 @@ TRIALS = (
         zeta_passive=0.1,
         zeta_sky=0.5,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+TWO_PI = 2.0 * math.pi
+UNIFORM = dict(masses=(1.0,) * 4, springs=(400.0,) * 4, dampers=(2.0,) * 4)
+SPEC_GAINS = np.geomspace(0.1, 2000.0, 300)
+
+
+def _least_damped(system: ChainSystem, ctrl: Controller) -> float:
+    """The closed loop's least damped oscillating pole's ζ; −inf if the loop is unstable."""
+    A = closed_loop(system, ctrl)[0]
+    if max_real(A) >= 0:
+        return -math.inf
+    return min((p.zeta for p in oscillating_poles(A)), default=math.inf)
+
+
+def _one_mass(rng: np.random.Generator) -> Question:
+    m, k = pick(rng, (1, 2, 5, 10)), pick(rng, (100, 400, 1000, 4000))
+    g = pick(rng, (2, 5, 10, 20))
+    zeta = g / (2 * math.sqrt(k * m))
+    return Question(
+        f"A {m:g} kg mass on a {k:g} N/m spring, undamped, with a velocity sensor and a force actuator on it: "
+        f"u = −g ẋ with g = {g:g} N·s/m. What damping ratio does the loop give it?",
+        100 * zeta,
+        f"Collocated velocity feedback is a damper of c = g to the ground: ζ = g/2√(km) = {g:g}/(2√({number(k * m)})) "
+        f"= {number(100 * zeta)} %.",
+        unit="%",
+        setup=dict(masses=(m,), springs=(k,), dampers=(0.0,), sensor=1, actuator=1, gain=g, inp=1, out=1, tab=TAB_GAIN),
+    )
+
+
+def _modal_estimate(rng: np.random.Generator) -> Question:
+    a = int(pick(rng, (1, 2, 4)))
+    r = int(pick(rng, (1, 2, 3, 4)))
+    g = pick(rng, (0.5, 1, 2, 5))
+    w, phi = undamped_modes(ChainSystem.uniform(4))
+    f, shape = round(float(w[r - 1]) / TWO_PI, 3), round(abs(float(phi[a - 1, r - 1])), 3)
+    dz = g * shape * shape / (2 * TWO_PI * f)
+    return Question(
+        f"The uniform chain (four 1 kg masses, 400 N/m): mode {r} is at {f:g} Hz, and its mass-normalized shape is "
+        f"{shape:g} at m{a} (in kg<sup>−½</sup>). Collocated velocity feedback at m{a}, g = {g:g} N·s/m: how much "
+        f"damping does mode {r} gain, by the light-gain estimate?",
+        100 * dz,
+        f"Δζ<sub>r</sub> = g φ<sub>r</sub>(a)²/2ω<sub>r</sub> = {g:g} × {shape:g}²/(2 × 2π × {f:g}) = "
+        f"{number(100 * dz)} %: the modes that move m{a} most gain most.",
+        unit="%",
+        setup=dict(**UNIFORM, sensor=a, actuator=a, gain=g, tab=TAB_GAIN),
+    )
+
+
+def _spillover(rng: np.random.Generator) -> Question:
+    sensor = int(pick(rng, (1, 2)))
+    g = pick(rng, (2, 5, 10, 20))
+    w, phi = undamped_modes(ChainSystem.uniform(4))
+    f = round(float(w[1]) / TWO_PI, 3)
+    ps, pa = round(float(phi[sensor - 1, 1]), 3), round(float(phi[3, 1]), 3)
+    loss = -g * ps * pa / (2 * TWO_PI * f)
+    return Question(
+        f"The uniform chain's mode 2 is at {f:g} Hz, its mass-normalized shape {ps:g} at m{sensor} and {pa:g} at m4. "
+        f"Velocity measured at m{sensor} is fed back as a force on m4, g = {g:g} N·s/m. By how much does the light-gain "
+        "estimate lower mode 2's damping ratio?",
+        100 * loss,
+        f"Δζ = g φ(a)φ(s)/2ω = {g:g} × ({pa:g}) × {ps:g}/(2 × 2π × {f:g}) = −{number(100 * loss)} %: in mode 2 the two "
+        "masses move against each other, so the force pushes with m4's motion and feeds the mode energy (spillover).",
+        unit="%",
+        setup=dict(**UNIFORM, sensor=sensor, actuator=4, gain=g, tab=TAB_LOCUS),
+    )
+
+
+def _den_hartog(rng: np.random.Generator) -> Question:
+    mu = pick(rng, (0.01, 0.02, 0.05, 0.1))
+    zeta = math.sqrt(3 * mu / (8 * (1 + mu) ** 3))
+    return Question(
+        f"A tuned mass damper with {mu:g} of its mode's modal mass. What damping ratio does Den Hartog's tuning give "
+        "it?",
+        100 * zeta,
+        f"ζ = √(3μ/8(1 + μ)³) = √(3 × {mu:g}/(8 × {number((1 + mu) ** 3, 4)})) = {number(100 * zeta)} %, with the "
+        f"absorber tuned to f/(1 + μ) = {number(1 / (1 + mu), 4)} f.",
+        unit="%",
+        setup=dict(**UNIFORM, tmd=True, ratio=mu, gain=0.0),
+    )
+
+
+def _skyhook(rng: np.random.Generator) -> Question:
+    zs, r = pick(rng, (0.2, 0.5, 0.7, 1)), pick(rng, (1, 2, 3, 5))
+    t = float(skyhook(np.array([r]), 0.1, zs)[1][0])
+    return Question(
+        f"A machine on a spring mount, with a skyhook damper of ζ<sub>sky</sub> = {zs:g}. Leaving out its passive damper, what "
+        f"is its transmissibility from the floor at {r:g} times its natural frequency?",
+        t,
+        f"|X/Y| = 1/|1 − r² + 2iζr| = 1/√(({number(1 - r * r)})² + ({number(2 * zs * r)})²) = {number(t)}: the "
+        "skyhook damper pushes against the sky, so it never carries the floor's motion through.",
+        setup=dict(zeta_passive=0.1, zeta_sky=zs, tab=TAB_SKYHOOK),
+    )
+
+
+def _lag_phase(rng: np.random.Generator) -> Question:
+    tau, f = pick(rng, (5, 10, 20)), pick(rng, (5, 10, 20, 50))
+    phase = 2 * math.degrees(math.atan(TWO_PI * f * tau / 1000))
+    return Question(
+        f"A loop has two first-order lags, each τ = {tau:g} ms. How far do they turn the feedback's phase at {f:g} Hz?",
+        phase,
+        f"Each lag 1/(1 + iωτ) turns it by arctan(ωτ) = arctan(2π × {f:g} × {tau / 1000:g}) = "
+        f"{number(phase / 2)}°, so the two by {number(phase)}°. Near 180° the force that should oppose the velocity "
+        "helps it.",
+        unit="°",
+        tolerance=0.01,
+        setup=dict(**UNIFORM, lag_ms=tau, gain=100.0, tab=TAB_LOCUS),
+    )
+
+
+def _too_much_gain(rng: np.random.Generator) -> Question:
+    return Question(
+        "Collocated velocity feedback at the uniform chain's tip: the gain is raised from 20 to 2000 N·s/m. What "
+        "happens to the higher modes' damping?",
+        0,
+        "It falls again: the actuator holds m4 nearly still, and the chain vibrates round it as the chain with m4 "
+        "fixed, lightly damped. Each mode's damping has an optimal gain, as a damper's does.",
+        choices=("It falls again", "It keeps growing", "It stays where it was at 20 N·s/m", "The loop goes unstable"),
+        setup=dict(**UNIFORM, gain=2000.0, tab=TAB_GAIN),
+        predict=True,
+    )
+
+
+def _non_collocated(rng: np.random.Generator) -> Question:
+    return Question(
+        "The uniform chain: velocity measured at m1, the force on m4, g = 20 N·s/m. What does the loop do?",
+        0,
+        "It goes unstable (from 6.1 N·s/m): in mode 2 m1 and m4 move against each other, so the force feeds mode 2 "
+        "energy faster than its damping takes it out.",
+        choices=("It goes unstable", "It damps every mode", "It damps mode 1 only, the rest unchanged"),
+        setup=dict(**UNIFORM, sensor=1, actuator=4, gain=20.0, tab=TAB_LOCUS),
+        predict=True,
+    )
+
+
+def _lagged(rng: np.random.Generator) -> Question:
+    return Question(
+        "Collocated velocity feedback at the uniform chain's tip, g = 100 N·s/m, with two 20 ms lags in the loop. "
+        "Stable?",
+        0,
+        "No: above 96 N·s/m the two lags turn the force far enough at a high mode that it feeds the motion. "
+        "Collocation alone doesn't guarantee stability; lag limits the gain.",
+        choices=("No, it's unstable", "Yes: collocated loops are stable at any gain"),
+        setup=dict(**UNIFORM, gain=100.0, lag_ms=20.0, tab=TAB_LOCUS),
+        predict=True,
+    )
+
+
+def _passive_damping(rng: np.random.Generator) -> Question:
+    low, high = skyhook(np.array([5.0]), 0.1, 0.0)[0][0], skyhook(np.array([5.0]), 0.5, 0.0)[0][0]
+    return Question(
+        "A passive isolator's damper (to the floor) goes from ζ = 0.1 to 0.5. What happens to its transmissibility at "
+        "5 times its natural frequency?",
+        0,
+        f"It gets worse, {number(float(low))} to {number(float(high))}: above √2 f<sub>n</sub> the damper carries the "
+        "floor's motion through. A skyhook damper doesn't.",
+        choices=("It gets worse", "It gets better", "It stays the same"),
+        setup=dict(zeta_passive=0.5, zeta_sky=0.0, tab=TAB_SKYHOOK),
+        predict=True,
+    )
+
+
+def _gain_spec(rng: np.random.Generator) -> Question:
+    a = int(pick(rng, (2, 4)))
+    lag = pick(rng, (0, 5, 10))  # ms
+    system = ChainSystem(*(np.array(UNIFORM[key]) for key in ("masses", "springs", "dampers")))
+    z = np.array([_least_damped(system, Controller(a - 1, a - 1, float(g), lag / 1000)) for g in SPEC_GAINS])
+    best = int(np.argmax(z))
+    target = round(0.9 * float(z[best]), 3)
+    design = round(float(SPEC_GAINS[best]), 2)
+    window = SPEC_GAINS[z >= target]
+
+    def goal(t: ControlTrial):
+        system = t.system()
+        n = system.n
+        ctrl = Controller(min(t.sensor, n) - 1, min(t.actuator, n) - 1, t.gain, t.lag_ms / 1000)
+        least = _least_damped(system, ctrl)
+        return (
+            Requirement(
+                "The uniform four-mass chain", f"{n} masses", n == 4 and _same_chain(system, ChainSystem.uniform(4))
+            ),
+            kept("The sensor's mass", t.sensor, a),
+            kept("The actuator's mass", t.actuator, a),
+            kept("The lags", t.lag_ms, lag, "ms")
+            if lag
+            else Requirement("No lag", f"{number(t.lag_ms)} ms", t.lag_ms == 0),
+            Requirement("Stable", "yes" if math.isfinite(least) else "no", math.isfinite(least)),
+            at_least("The least damped mode's ζ", 100 * least, 100 * target, "%"),
+        )
+
+    lagged = f", with two {lag:g} ms lags in the loop" if lag else ""
+    return Question(
+        f"The uniform chain (four 1 kg masses, 400 N/m, 2 N·s/m dampers), collocated velocity feedback at m{a}{lagged}. "
+        f"Choose the gain so that every mode still oscillating has ζ ≥ {number(100 * target)} %.",
+        0,
+        f"Too little gain leaves mode 1 lightly damped; too much pins m{a}, and the chain vibrates round it, lightly "
+        f"damped again. The least damped mode's ζ peaks at {number(100 * float(z[best]))} % near g = {number(design)} "
+        f"N·s/m; anything from about {number(float(window.min()))} to {number(float(window.max()))} N·s/m meets it.",
+        setup=dict(**UNIFORM, sensor=a, actuator=a, gain=0.5, lag_ms=float(lag), tab=TAB_GAIN),
+        goal=goal,
+        design=dict(**UNIFORM, sensor=a, actuator=a, gain=design, lag_ms=float(lag), tab=TAB_GAIN),
+    )
+
+
+def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
+    return a.n == b.n and all(
+        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "active_control_page", f"See {page_link('active_control_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("one-mass", "An active damper", "feedback", "Feedback", _one_mass),
+        ("modal-estimate", "A mode's added damping", "feedback", "Feedback", _modal_estimate),
+        ("spillover", "Spillover", "collocation", "Collocation and spillover", _spillover),
+        ("den-hartog", "A TMD's damping", "tmd", "Active or passive?", _den_hartog),
+        ("skyhook", "Skyhook isolation", "skyhook", "Skyhook", _skyhook),
+        ("lag-phase", "Two lags' phase", "lag", "Lag", _lag_phase),
+        ("too-much-gain", "Predict: too much gain", "feedback", "Feedback", _too_much_gain),
+        (
+            "non-collocated",
+            "Predict: sensor and actuator apart",
+            "collocation",
+            "Collocation and spillover",
+            _non_collocated,
+        ),
+        ("lagged", "Predict: a lagging loop", "lag", "Lag", _lagged),
+        ("passive-damping", "Predict: more passive damping", "skyhook", "Skyhook", _passive_damping),
+        ("gain-spec", "Spec: the gain", "feedback", "Feedback", _gain_spec),
+    )
 )
 
 TIPS = {
@@ -359,33 +605,60 @@ class ActiveControlPage(QtWidgets.QWidget):
             self.redraw()
 
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
-        system = ChainSystem.uniform(4)
-        self.system_requested.emit(system)
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note); drawn when shown."""
+        self.apply_trial(ControlTrial("", "", **setup), draw=self.isVisible())
+
+    def practice_state(self) -> ControlTrial:
+        """The chain and the loop, as a trial: what a practice spec checks."""
         s = self.system
-        if (
-            s.n != 4
-            or not np.allclose(s.masses, 1.0)
-            or not np.allclose(s.stiffness, 400.0)
-            or not np.allclose(s.damping, 2.0)
-        ):
-            self.set_system(system)
+        return ControlTrial(
+            "",
+            "",
+            int(self.sensor.value()),
+            int(self.actuator.value()),
+            self.gain.value(),
+            self.lag.value(),
+            self.tmd.isChecked(),
+            self.tabs.currentIndex(),
+            self.zp.value(),
+            self.zs.value(),
+            int(self.inp.value()),
+            int(self.out.value()),
+            self.ratio.value(),
+            tuple(float(v) for v in s.masses),
+            tuple(float(v) for v in s.stiffness),
+            tuple(float(v) for v in s.damping),
+        )
+
+    def apply_trial(self, t: ControlTrial, draw: bool = True) -> None:
+        system = t.system()
+        self.system_requested.emit(system)
+        if not _same_chain(self.system, system):
+            self.set_system(system)  # nobody passed it back: show it here alone
         for box, value in (
             (self.sensor, t.sensor),
             (self.actuator, t.actuator),
             (self.gain, t.gain),
             (self.lag, t.lag_ms),
-            (self.inp, 4),
-            (self.out, 4),
+            (self.inp, t.inp),
+            (self.out, t.out),
             (self.tmd, t.tmd),
-            (self.ratio, 0.05),
+            (self.ratio, t.ratio),
             (self.zp, t.zeta_passive),
             (self.zs, t.zeta_sky or 0.5),
         ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
+        self.tabs.blockSignals(True)
         self.tabs.setCurrentIndex(t.tab)
-        self.redraw()
+        self.tabs.blockSignals(False)
+        if draw:
+            self.redraw()
+        else:
+            self._dirty = True
 
     def controller(self, gain: float | None = None) -> Controller:
         n = self.system.n
