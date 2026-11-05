@@ -77,7 +77,8 @@ or follows them:
    start-up), **Duffing & Mathieu** (a single mass on a nonlinear spring, driven through its jump or pumped
    into parametric resonance), **Self-excited vibration** (van der Pol, galloping, vortex shedding and
    flutter), **Active control** (feedback on the chain against a tuned mass damper), the **Gyroscope** (a
-   spinning top: precession, nutation and the sleeping top), the **Jeffcott rotor**
+   spinning top: precession, nutation and the sleeping top, then on a table: the rising top and the tippe top), the
+   **Jeffcott rotor**
    (a disc on a flexible shaft in flexible bearings) and **Machinery diagnostics** (orders, sidebands,
    envelopes and the cepstrum).
 
@@ -1261,6 +1262,14 @@ and waves the axis traces. Upright, the top sleeps above I₃ω₃ = 2√(I₁mg
 rigid body (a quaternion and L, split into gravity's moment and the free top, each exact), which doesn't
 mind the Euler angles' lock upright, and checks it against the closed forms. Its last section links the
 top's two precessions to the rotor's forward and backward whirl.
+
+Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant
+J = L·(a e₃ + R ẑ) survives it, so the energy sinks onto the least energy that J allows at each tilt:
+on a slippery table a disc on a round tip rises toward sleeping (until its tip starts to roll, at
+sin θ = μI₃/maR; on a rough one it rolls round a circle instead), and a tippe top turns over onto its
+top if 1 − α < I₁/I₃ < 1 + α, ending with its own spin reversed at the rate J gives.
+
+![Gyroscope page, a tippe top on a table: a 20 g ball weighted 4.5 mm below its centre, spun at 1200 rpm, has turned over in 2 s, its energy sunk onto the least that Jellett's constant allows, which is turned over](docs/images/gyroscope_table.png)
 
 ![Gyroscope page, let go at rest: a 0.5 kg disc 40 mm in radius, 30 mm up its stem, spun at 1500 rpm and let go at 30° nods between 30° and 31.48° 14.73 times a second while precessing at 2.392 rad/s, its axis tracing cusps](docs/images/gyroscope.png)
 

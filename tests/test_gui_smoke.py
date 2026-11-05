@@ -3924,6 +3924,41 @@ def test_lesson_pages_trials_and_tabs(app, name):
     w.close()
 
 
+def test_gyroscope_on_a_table(app):
+    """The table's settings show their own controls and tabs, run and draw, stop where the model can't follow,
+    and going back to the cup brings its own back."""
+    from vib_tutorial.core.sliding_top import Event
+    from vib_tutorial.gui import gyroscope as g
+    from vib_tutorial.gui.main_window import MainWindow
+
+    w = MainWindow()
+    w._timer.stop()
+    w.show()
+    page = w.gyroscope_page
+    w.pages.setCurrentWidget(page)
+    page.load_setup(dict(setting=g.Setting.TIPPE, mass=0.02, radius=0.015, spin_rpm=1200.0, tilt=5.0))
+    assert page.practice_state().round_top.inverts
+    assert not page.tabs.isTabEnabled(g.TAB_PRECESSION) and page.body_form.isRowVisible(page.ratio)
+    assert not page.body_form.isRowVisible(page.height) and not page.release_form.isRowVisible(page.launch)
+    for tab in (g.TAB_POTENTIAL, g.TAB_PATH, g.TAB_CHECK):
+        page.tabs.setCurrentIndex(tab)
+        for _ in range(3):
+            page.step(0.3)
+        app.processEvents()
+    page._draw_ledger()
+    assert "Jellett's J held to" in page.check_note.text() and page.slides.size > 100
+    # a disc too slow to stand: its rim reaches the table, and the run stops there
+    page.load_setup(dict(setting=g.Setting.TABLE, height=0.02, tip_radius=0.01, spin_rpm=100.0, tilt=20.0))
+    for _ in range(20):
+        page.step(0.3)
+    assert page.sim.event is Event.RIM and "Stopped at" in page.readout.text()
+    page.load_trial(0)
+    assert page.tabs.isTabEnabled(g.TAB_PRECESSION) and page.release_form.isRowVisible(page.launch)
+    assert page.body_form.isRowVisible(page.height) and not page.body_form.isRowVisible(page.friction)
+    page.step(0.1)
+    w.close()
+
+
 def test_single_undamped_mass_draws_its_frf(app):
     """One mass and no damper (from a chain of several): the FRF must not be asked for at its natural frequency,
     where it is infinite, nor drawn with the previous chain's modes."""

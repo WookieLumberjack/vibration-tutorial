@@ -1029,6 +1029,19 @@ def gyroscope():
     save(w, "gyroscope")
 
 
+def gyroscope_table():
+    w = window()
+    page = w.gyroscope_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(13)  # a tippe top turns over
+    page._timer.stop()
+    page.running = False
+    page.step(4.0)
+    settle()
+    print(page.readout.text())
+    save(w, "gyroscope_table")
+
+
 def machinery_diagnostics():
     lesson("diagnostics_page", 3, "machinery_diagnostics")  # an outer race defect by its envelope
 
@@ -1106,6 +1119,7 @@ SHOTS = [
     self_excited,
     active_control,
     gyroscope,
+    gyroscope_table,
     machinery_diagnostics,
 ]
 

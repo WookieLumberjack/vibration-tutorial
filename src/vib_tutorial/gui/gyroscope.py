@@ -1,16 +1,19 @@
-"""Gyroscope page: a spinning top with its tip in a cup, from Euler's equations to precession and nutation.
+"""Gyroscope page: a spinning top, from Euler's equations to precession and nutation, and on a table.
 
-Left: the top (a disc on a light stem: its mass, radius and height above the tip, and gravity), how it is let go
-(the spin, the tilt, and the precession: at rest, at either steady rate, or set), and the playback. Centre: the
-top in 3D (drag to turn it), with its axis's path and the vectors ω, L and the moment, then its tilt against
-time beside the turning points worked out in closed form. Right: the effective potential the tilt moves in, the
-steady precession rates against the spin, the axis's path from above, the simulation's check against what is
-conserved, and the Theory. The page has its own model (core/gyroscope.py), stepped on its own frame loop while it
-shows.
+Left: the setting (a disc on a light stem with its tip in a cup, the same disc on a round tip on a table, or a
+tippe top on a table), the top (its mass and size, the round tip and the friction on a table, and gravity), how it
+is let go (the spin, the tilt, and in the cup the precession: at rest, at either steady rate, or set), and the
+playback. Centre: the top in 3D (drag to turn it), with its axis's path and the vectors ω, L and the moment (on a
+table the friction), then its tilt against time, beside the turning points worked out in closed form in the cup.
+Right: the effective potential the tilt moves in (on a table, the least energy Jellett's constant allows), the
+steady precession rates against the spin, the axis's path from above (on a table, the tip's track), the
+simulation's check against what is conserved, and the Theory. The page has its own models (core/gyroscope.py,
+core/sliding_top.py), stepped on its own frame loop while it shows.
 """
 
 from __future__ import annotations
 
+import enum
 import math
 from dataclasses import dataclass
 
@@ -31,6 +34,7 @@ from ..core.gyroscope import (
     tilt_and_azimuth,
 )
 from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
+from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator
 from . import frame_stats, settle_plots
 from .cms_time import SampleBuffer
 from .lesson import (
@@ -46,6 +50,7 @@ from .lesson import (
     note_label,
     plot,
     readout_label,
+    relabel,
     set_quietly,
     stack,
     theory,
@@ -66,6 +71,20 @@ PATH_POINTS = 4000  # at most, on the path from above
 CHECK_POINTS = 2000
 CHECK_FRAMES = 30  # the Check tab's text is worked out over the whole run, every this many frames
 HISTORY = 400_000  # samples kept
+SLIDE_HISTORY = 200_000  # samples kept on a table (RECORD_DT apart)
+SLIDE_TILT_SPAN = 60.0  # s, at most, of the tilt on a table
+TRACK_SPAN = 10.0  # s of the tip's track on the table
+TRACK_POINTS = 3000
+TABLE_TRAIL = 1.0  # s of the axis's trail and the tip's track in the 3D view, on a table
+
+
+class Setting(enum.Enum):
+    CUP = "A disc, its tip in a cup"
+    TABLE = "A disc on a round tip, on a table"
+    TIPPE = "A tippe top, on a table"
+
+
+SETTINGS = tuple(Setting)
 
 
 @dataclass(frozen=True)
@@ -82,10 +101,25 @@ class GyroTrial:
     precession: float = 0.0  # rad/s, with Launch.SET
     playback: int = REAL_TIME  # index into PLAYBACK
     tab: int = TAB_PATH
+    setting: Setting = Setting.CUP
+    tip_radius: float = 0.01  # m, on a table
+    friction: float = 0.3  # μ, on a table
+    low: float = 0.0045  # m, a tippe top's weight below its centre
+    ratio: float = 0.8  # a tippe top's I₁/I₃
 
     @property
     def top(self) -> Top:
+        """The disc on its stem (a tippe top's ball: its mass and radius)."""
         return Top(self.mass, self.radius, self.height, self.gravity)
+
+    @property
+    def round_top(self) -> RoundTop | None:
+        """The top on a table, or None in the cup."""
+        if self.setting is Setting.TABLE:
+            return RoundTop.disc(self.top, self.tip_radius, self.friction)
+        if self.setting is Setting.TIPPE:
+            return RoundTop.tippe(self.mass, self.radius, self.low, self.ratio, self.friction, self.gravity)
+        return None
 
     @property
     def motion(self) -> Motion:
@@ -178,6 +212,71 @@ TRIALS = (
         precession=5.0,
         playback=PLAYBACK.index(0.05),
         tab=TAB_PATH,
+    ),
+    GyroTrial(
+        "On a slippery table: it rises",
+        "Out of the cup: a disc 20 mm up a stem whose tip is rounded to 10 mm, let go at 20° spinning at 1500 rpm "
+        "on a table with μ = 0.01. Its tip slides, and friction raises it: under 10° in 12 s, 5° in 19 s. Jellett's "
+        "J = I₃ω₃(a + R cos θ) stays put as friction takes energy out, and the least energy J allows (the Potential "
+        "tab) is upright. Below 4.6° (sin θ = μI₃/maR) friction can make its tip roll instead, and the rise stalls "
+        "there, spinning at 1457 rpm (upright, J would leave 1455).",
+        setting=Setting.TABLE,
+        height=0.02,
+        friction=0.01,
+        tilt=20.0,
+        playback=PLAYBACK.index(2.0),
+        tab=TAB_POTENTIAL,
+    ),
+    GyroTrial(
+        "On a rough table: it rolls instead",
+        "The same top on wood, μ = 0.3: its tip catches and rolls, so friction takes hardly any energy and it "
+        "doesn't rise. It drops to 16.2° at once, then rolls round a circle about 1.35 m across (the Path tab), "
+        "tilted all the way.",
+        setting=Setting.TABLE,
+        height=0.02,
+        friction=0.3,
+        tilt=20.0,
+        tab=TAB_PATH,
+    ),
+    GyroTrial(
+        "A tippe top turns over",
+        "A 20 g ball 15 mm in radius, weighted 4.5 mm below its centre (α = 0.3), with I₁/I₃ = 0.8, spun at "
+        "1200 rpm on its bottom, 5° off upright. 1 − α &lt; I₁/I₃ &lt; 1 + α and it spins faster than 468 rpm, so "
+        "turned over is the least energy Jellett's J allows: friction turns it over, past 90° in 1.8 s, and it ends "
+        "on its top spinning at J/I₃(R − a) = 643 rpm, the same way seen from above but the other way about its "
+        "own axis. Its centre of mass rises 9 mm, and half its energy goes in the friction.",
+        setting=Setting.TIPPE,
+        mass=0.02,
+        radius=0.015,
+        spin_rpm=1200.0,
+        tilt=5.0,
+        playback=PLAYBACK.index(0.25),
+        tab=TAB_POTENTIAL,
+    ),
+    GyroTrial(
+        "A tippe top spun too slowly",
+        "The same tippe top at 400 rpm, under the 468 rpm at which upright stops being E_J's least: it stays up, "
+        "wobbling a few degrees.",
+        setting=Setting.TIPPE,
+        mass=0.02,
+        radius=0.015,
+        spin_rpm=400.0,
+        tilt=5.0,
+        playback=PLAYBACK.index(0.25),
+        tab=TAB_POTENTIAL,
+    ),
+    GyroTrial(
+        "A tippe top that can't turn over",
+        "With I₁/I₃ = 1.4, over 1 + α = 1.3, turned over is no minimum: E_J is least at 108.6°, and the ball "
+        "rolls over past its side and spins there, near 110°.",
+        setting=Setting.TIPPE,
+        mass=0.02,
+        radius=0.015,
+        ratio=1.4,
+        spin_rpm=1200.0,
+        tilt=5.0,
+        playback=PLAYBACK.index(0.25),
+        tab=TAB_POTENTIAL,
     ),
 )
 
@@ -421,6 +520,101 @@ def _sleep_spec(rng: np.random.Generator) -> Question:
     )
 
 
+JELLETT = "Jellett's constant: the rising top and the tippe top"
+
+
+def _rising_end(rng: np.random.Generator) -> Question:
+    l, R = pick(rng, (0.02, 0.025)), pick(rng, (0.01, 0.012))
+    rpm, tilt = pick(rng, (1000, 1500, 2000)), pick(rng, (25, 30))
+    a = l - R
+    end = rpm * (a + R * math.cos(math.radians(tilt))) / (a + R)
+    return Question(
+        f"A disc spins at {rpm:g} rpm on a stem whose tip is rounded to a radius of {R * 1000:g} mm, the disc's centre "
+        f"{l * 1000:g} mm above the end of the stem. Let go at {tilt:g}° on a slippery table, it rises. If it rose "
+        "all the way upright, how fast would it spin?",
+        end,
+        f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = l − R = {number(a * 1000)} mm the disc's centre "
+        f"above the tip's. Upright cos θ = 1: ω₃ = {rpm:g} × ({number(a * 1000)} + {R * 1000:g} cos {tilt:g}°)/"
+        f"({number(a * 1000)} + {R * 1000:g}) = {number(end)} rpm, a little slower.",
+        unit="rpm",
+        setup=dict(
+            setting=Setting.TABLE,
+            radius=0.03,
+            height=l,
+            tip_radius=R,
+            friction=0.01,
+            spin_rpm=rpm,
+            tilt=tilt,
+            playback=PLAYBACK.index(2.0),
+            tab=TAB_POTENTIAL,
+        ),
+    )
+
+
+def _tippe_end(rng: np.random.Generator) -> Question:
+    R, low = pick(rng, (0.012, 0.015, 0.018)), pick(rng, (0.003, 0.004, 0.005))
+    rpm, tilt = pick(rng, (800, 1000, 1200, 1500)), pick(rng, (5, 10))
+    end = rpm * (R * math.cos(math.radians(tilt)) - low) / (R + low)
+    return Question(
+        f"A tippe top is a ball {R * 1000:g} mm in radius, its centre of mass {low * 1000:g} mm below the ball's "
+        f"centre. Spun at {rpm:g} rpm on its bottom, {tilt:g}° off upright, it turns over. How fast does it spin on "
+        "its top, seen from above?",
+        end,
+        f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = −{low * 1000:g} mm (the weight below the centre). "
+        f"Turned over J = I₃Ω(R − a), so Ω = {rpm:g} × ({R * 1000:g} cos {tilt:g}° − {low * 1000:g})/"
+        f"({R * 1000:g} + {low * 1000:g}) = {number(end)} rpm. About its own axis it now spins the other way.",
+        unit="rpm",
+        setup=dict(
+            setting=Setting.TIPPE,
+            mass=0.02,
+            radius=R,
+            low=low,
+            ratio=0.9,
+            spin_rpm=rpm,
+            tilt=tilt,
+            playback=PLAYBACK.index(0.25),
+            tab=TAB_POTENTIAL,
+        ),
+    )
+
+
+def _tippe_turns(rng: np.random.Generator) -> Question:
+    ratio = pick(rng, (0.6, 0.8, 1.0, 1.4))
+    over, up, side = (
+        "It turns over onto its top",
+        "It stays upright",
+        "It rolls onto its side and spins there",
+    )
+    if ratio < 0.7:
+        choices, why = (up, over, side), "under 1 − α, so upright stays E<sub>J</sub>'s least: it stays up."
+    elif ratio < 1.3:
+        choices, why = (over, up, side), "between them, so turned over is E<sub>J</sub>'s least: it turns over."
+    else:
+        choices, why = (
+            (side, over, up),
+            "over 1 + α, so turned over is no minimum either: E<sub>J</sub> is least past its side, and it ends there.",
+        )
+    return Question(
+        f"A tippe top's weight sits 0.3 of its radius below the ball's centre (α = 0.3), and I₁/I₃ = {ratio:g} about "
+        "its centre of mass. Spun fast (1200 rpm) on its bottom on a table, what does it do?",
+        0,
+        f"1 − α = 0.7 and 1 + α = 1.3; I₁/I₃ = {ratio:g} is {why}",
+        choices=choices,
+        setup=dict(
+            setting=Setting.TIPPE,
+            mass=0.02,
+            radius=0.015,
+            low=0.0045,
+            ratio=ratio,
+            spin_rpm=1200.0,
+            tilt=5.0,
+            playback=PLAYBACK.index(0.25),
+            tab=TAB_POTENTIAL,
+        ),
+        predict=True,
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "gyroscope_page", f"See {page_link('gyroscope_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -436,6 +630,9 @@ PROBLEMS = tuple(
         ("reverse", "Predict: the other way", "precession", "Steady precession", _reverse),
         ("period-spec", "Spec: a steady precession", "precession", "Steady precession", _period_spec),
         ("sleep-spec", "Spec: a top that sleeps", "sleeping", "The sleeping top", _sleep_spec),
+        ("rising-end", "Rising to sleep", "jellett", JELLETT, _rising_end),
+        ("tippe-end", "A tippe top's spin", "jellett", JELLETT, _tippe_end),
+        ("tippe-turns", "Predict: will it turn over?", "jellett", JELLETT, _tippe_turns),
     )
 )
 
@@ -452,6 +649,16 @@ TIPS = {
     "one), or at the rate set below.</p>",
     "precession": "<p>φ', the axis's rate round the vertical when it is let go (with <i>Set φ' below</i>).</p>",
     "playback": "<p>Simulated time per real second. The top spins far too fast to see: slow it down.</p>",
+    "setting": "<p>The disc with its tip held in a cup (it can turn there but not slide), the same disc on a round "
+    "tip that slides and rolls on a table, or a tippe top (a ball weighted low) on a table.</p>",
+    "tip_radius": "<p>The round tip's radius R: its centre is R up the axis from the end of the stem, and the disc's "
+    "centre a = l − R above that.</p>",
+    "friction": "<p>μ, Coulomb's friction between the tip and the table: μN against the slip (smoothed below "
+    "5 mm/s). 0.01 is a polished, oiled surface; 0.3 is wood.</p>",
+    "low": "<p>How far the tippe top's centre of mass sits below the ball's centre, a: α = a/R.</p>",
+    "ratio": "<p>I₁/I₃ about the centre of mass (I₃ = 0.4mR², a ball's). It turns over if 1 − α &lt; I₁/I₃ &lt; "
+    "1 + α.</p>",
+    "ball": "<p>The tippe top's ball's radius R (its stem left out).</p>",
 }
 VIEW_TIP = (
     "<p>The top on its tip, in 3D: drag to turn the view, double-click to reset it. The line through the disc "
@@ -473,6 +680,19 @@ PRECESSION_TIP = (
     "tilt. The dot is this spin's slow rate.</p>"
 )
 PATH_TIP = "<p>The end of the axis, seen from above, the axis's length 1. Dotted: the turning points' circles.</p>"
+ENERGY_TIP = (
+    "<p>E<sub>J</sub>(θ), the least energy the top can have at each tilt with its Jellett's J, which friction can't "
+    "change (solid), and its energy against its tilt as it runs (thin), down to the dot, now. Friction takes energy "
+    "out, so it sinks onto the curve, toward its lowest point.</p>"
+)
+TRACK_TIP = (
+    "<p>The tip's track on the table (solid, mm) and its centre of mass's (dotted), seen from above, the last 10 s.</p>"
+)
+LEDGER_TIP = (
+    "<p>The energy and the work friction has done, together (constant but for the step's error), and Jellett's J "
+    "(constant whatever the contact force), each against what it was let go with.</p>"
+)
+TABLE_TILT_TIP = "<p>The axis's tilt from the vertical as it runs, the last minute.</p>"
 CHECK_TIP = (
     "<p>How far the simulation's energy has strayed (over mgl), and its two momenta's (over I₃ω₃: round-off "
     "only). The text compares what it has run with the closed forms.</p>"
@@ -550,7 +770,41 @@ from the vertical nods unless L is vertical. Nutation is that wobble, which grav
 <p>A top spinning faster stands still upright, <b>asleep</b>; nudged, it nods a little round upright. Slower, U
 has a maximum there, and it falls until it comes back up. Friction at the tip slows a real top, which wakes, then
 wobbles, then falls. (The cup holds this top's tip; on a table, a round tip rolls and slides, which is what makes
-a top rise to sleep, and a tippe top turn over.)</p>
+a top rise to sleep, and a tippe top turn over: see <a href="page:gyroscope_page#on-a-table">On a table</a>.)</p>
+
+<h3><a name="on-a-table"></a>On a table: a round tip</h3>
+<p>Out of its cup the top stands on a table (<i>Setting</i>). Its underside is a sphere of radius R whose centre
+is a below the centre of mass G on the axis: a disc on a round tip has a = l − R, and a <b>tippe top</b>, a ball
+weighted low, a &lt; 0 (α = −a/R). It touches the table at P, R below the sphere's centre, so G stands at
+R + a cos θ, and P slips at v<sub>P</sub> = v<sub>G</sub> + ω × (P − G). The table pushes up with N, whatever
+keeps G at that height, and drags with Coulomb's friction μN against the slip; G moves under the two and gravity,
+and L about G under their moment. Neither of the cup's momenta is kept now (friction's moment is neither
+horizontal nor across the axis), and energy leaks out at F·v<sub>P</sub>.</p>
+<p>Where friction can stop the slip, the tip <b>rolls</b>, and loses nothing. A fast top rolling at tilt θ
+carries G round at ω₃R sin θ while it precesses at about mga/I₃ω₃, which takes a sideways force
+m²gaR sin θ/I₃. Friction gives μmg at most, so it rolls below sin θ = μI₃/maR, whatever the spin, and slides
+above.</p>
+
+<h3><a name="jellett"></a>Jellett's constant: the rising top and the tippe top</h3>
+<p>One thing survives the friction: <b>Jellett's constant</b> J = L·(a e₃ + R ẑ) = −L·(P − G). The contact
+force's moment about G is (P − G) × F, at right angles to P − G, and a e₃ + R ẑ turns only as e₃ does, at
+ω × e₃, with L·(ω × e₃) = 0 for a symmetric top. So friction takes energy at a fixed J, and the least energy the
+top can have at tilt θ with that J (L along I(a e₃ + R ẑ), nothing else moving) is</p>
+<p align="center">E<sub>J</sub>(θ) = J²/2D(θ) + mg(R + a cos θ), &nbsp;
+D = I₁(a² + R² + 2aR cos θ) + (I₃ − I₁)(a + R cos θ)²,</p>
+<p>I₁ now about G. As friction takes energy out, the top sinks onto E<sub>J</sub> and toward its least (the
+<i>Potential</i> tab). Upright E<sub>J</sub>(0) = J²/2I₃(a + R)² + mg(R + a); turned over
+E<sub>J</sub>(π) = J²/2I₃(R − a)² + mg(R − a).</p>
+<ul>
+<li>A disc on a round tip (a &gt; 0) spun fast <b>rises</b> to sleep, at J/I₃(a + R): upright is E<sub>J</sub>'s
+least above Ω² = mga(a + R)²/R(I₃(a + R) − I₁R). It rises only while it slides, so it stalls where its tip starts
+to roll, and on a rough table hardly rises at all. With R = 0 the J² term no longer depends on the tilt: a sharp
+tip can't rise.</li>
+<li>A tippe top (a &lt; 0) turned over has G higher, but its spin J/I₃(R − a) is slower. Spun fast enough,
+turned over is E<sub>J</sub>'s least, and upright isn't, if 1 − α &lt; I₁/I₃ &lt; 1 + α: then it turns over and
+spins on its top (a real one on its stem, which this ball leaves out), the same way seen from above but the other
+way about its own axis. Outside that range it stays up, or ends on its side, wherever E<sub>J</sub> is least.</li>
+</ul>
 
 <h3><a name="simulation"></a>The simulation</h3>
 <p>The simulation steps the whole body: q and L. Each step of h is split: gravity's moment over half a step
@@ -560,6 +814,12 @@ by (1/I₃ − 1/I₁)L₃h), and gravity's other half. This splitting is <b>sym
 page's central difference is: the energy's error stays bounded rather than drifting, and falls as h². Both
 momenta are kept to round-off, since the moment is at right angles to the vertical and to the axis. The step
 resolves the free wobble with 200 steps a turn. The <i>Check</i> tab compares the run with the closed forms.</p>
+<p>On a table nothing can be split off exactly and friction takes energy, so the state (the quaternion, ω and
+v<sub>G</sub> in space, G's place, and friction's work) is stepped by the classic fourth-order Runge–Kutta step
+instead: 64 steps a turn of the spin or of the wobble about G, shorter where friction, smoothed below 5 mm/s,
+would make the step unstable. J and the energy with friction's work hold to about 10⁻⁷ (the <i>Check</i> tab).
+The tip stays on the table: the run stops if the table would have to pull it down (it would hop), or a disc's rim
+touches it.</p>
 
 <h3><a name="to-the-rotor"></a>From the top to the rotor</h3>
 <p>A disc on a spinning shaft is a gyroscope too: as the shaft whirls, the disc's axis tilts, and turning its
@@ -594,6 +854,8 @@ NOTES_HTML = (
             "pushed along waves.",
             "Upright, it sleeps if I₃²ω₃² &gt; 4I₁mgl.",
             "Euler angles lock upright; a quaternion and L, stepped by an exact split, don't.",
+            "On a table friction keeps only Jellett's J, so the energy sinks toward the least J allows: a sliding round "
+            "tip rises to sleep, and a tippe top turns over if 1 − α &lt; I₁/I₃ &lt; 1 + α.",
         ),
     )
 )
@@ -617,18 +879,21 @@ class TopView(pg.PlotWidget):
         self.yaw, self.pitch = self.YAW, self.PITCH
         self._drag: QtCore.QPointF | None = None
         self.top = Top()
+        self.round: RoundTop | None = None  # on a table
+        self.ball = False
         self.reach = 1.0  # the drawn axis's length (m)
-        self.turning: tuple[float, float] = (0.0, 0.0)
+        self.turning: tuple[float, ...] = (0.0, 0.0)
         self.show_vectors = True
-        self._last: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None
-        self._trail = np.zeros((0, 3))
+        self._last: tuple | None = None
 
         plot = self.getPlotItem()
         self.table = QtWidgets.QGraphicsPathItem()
         self.vertical = pg.PlotCurveItem()
         self.circles = pg.PlotCurveItem(connect="finite")  # the turning points' circles
         self.trail = pg.PlotCurveItem()
+        self.track = pg.PlotCurveItem()  # the tip's, on the table
         self.stem = pg.PlotCurveItem()
+        self.tip = pg.PlotCurveItem()  # a round tip's outline
         self.disc = QtWidgets.QGraphicsPathItem()
         self.rim = pg.PlotCurveItem()
         self.spoke = pg.PlotCurveItem()
@@ -641,7 +906,9 @@ class TopView(pg.PlotWidget):
             self.vertical,
             self.circles,
             self.trail,
+            self.track,
             self.stem,
+            self.tip,
             self.disc,
             self.rim,
             self.spoke,
@@ -661,11 +928,14 @@ class TopView(pg.PlotWidget):
         away = x * sy + y * cy
         return across, z * math.cos(self.pitch) + away * math.sin(self.pitch)
 
-    def set_top(self, top: Top, turning: tuple[float, float]) -> None:
-        """A new top or launch: its size sets the view's, and its turning points the circles."""
-        self.top, self.turning = top, turning
-        self.reach = 1.6 * max(top.height, top.radius)
-        self._trail = np.zeros((0, 3))
+    def set_top(self, top: Top, turning: tuple[float, ...], round_top: RoundTop | None = None) -> None:
+        """A new top or launch: its size sets the view's, and its turning points the circles (none on a table,
+        where the view follows the top: its centre of mass stays over the middle)."""
+        self.top, self.turning, self.round = top, turning, round_top
+        self.ball = round_top is not None and round_top.rim == 0
+        self.reach = 2.4 * top.radius if self.ball else 1.6 * max(top.height, top.radius)
+        self.labels[2].setText("F" if round_top is not None else "τ")
+        self._last = None
         self._place_static()
 
     def _place_static(self) -> None:
@@ -692,45 +962,106 @@ class TopView(pg.PlotWidget):
             )
             lines.append(circle)
             lines.append(np.full((1, 3), np.nan))
-        cx, cy = self.project(np.concatenate(lines))
-        self.circles.setData(cx, cy)
+        if lines:
+            self.circles.setData(*self.project(np.concatenate(lines)))
+        else:
+            self.circles.setData([], [])
         span = 1.25 * R
         self.setRange(xRange=(-span, span), yRange=(-0.6 * span, 1.2 * span), padding=0)
         if self._last is not None:
-            self.draw(*self._last, self._trail)
+            self.draw(*self._last)
 
-    def draw(self, axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, trail: np.ndarray) -> None:
-        """The top with its axis along `axis` (a unit vector), the disc's mark toward `mark`, and L; `trail` is
-        where the axis has pointed (n, 3)."""
-        self._last, self._trail = (axis, mark, momentum), trail
-        top, R = self.top, self.reach
-        centre = top.height * axis
-        side = np.cross(axis, mark)
-        ring = np.linspace(0, 2 * math.pi, self.RIM + 1)[:, None]
-        rim = centre + top.radius * (np.cos(ring) * mark + np.sin(ring) * side)
-        rx, ry = self.project(rim)
+    def _anchor(self, axis: np.ndarray, centre: np.ndarray) -> np.ndarray:
+        """Where the drawn axis starts, for axes (..., 3) and centres of mass G: the stem's end (the tip), or a
+        ball's centre."""
+        rt = self.round
+        if rt is None:
+            return np.zeros_like(axis)
+        hub = centre - rt.offset * axis  # the round tip's centre
+        return hub if self.ball else hub - rt.radius * axis
+
+    def _outline(self, item: QtWidgets.QGraphicsPathItem, x: np.ndarray, y: np.ndarray) -> None:
         path = QtGui.QPainterPath()
-        path.moveTo(float(rx[0]), float(ry[0]))
-        for a, b in zip(rx[1:], ry[1:]):
+        path.moveTo(float(x[0]), float(y[0]))
+        for a, b in zip(x[1:], y[1:]):
             path.lineTo(float(a), float(b))
-        self.disc.setPath(path)
+        item.setPath(path)
+
+    def draw(
+        self,
+        axis: np.ndarray,
+        mark: np.ndarray,
+        momentum: np.ndarray,
+        trail: np.ndarray,
+        centre: np.ndarray | None = None,
+        trail_centres: np.ndarray | None = None,
+        track: np.ndarray | None = None,
+        force: np.ndarray | None = None,
+    ) -> None:
+        """The top with its axis along `axis` (a unit vector), the disc's mark toward `mark`, and L; `trail` is
+        where the axis has pointed (n, 3). On a table: G at `centre` (drawn over the middle), G when the axis
+        pointed along `trail` (n, 3; its height), where the tip has touched the table (`track`, (m, 2)) and the
+        friction."""
+        self._last = (axis, mark, momentum, trail, centre, trail_centres, track, force)
+        top, R = self.top, self.reach
+        here = np.zeros(3) if centre is None else np.array([centre[0], centre[1], 0.0])
+        G = top.height * axis if centre is None else centre - here
+        anchor = self._anchor(axis, G)
+        ring = np.linspace(0, 2 * math.pi, self.RIM + 1)[:, None]
+        side = np.cross(axis, mark)
+        if self.ball:
+            rt = self.round
+            assert rt is not None  # a ball is only ever on a table
+            # its outline is a circle on the screen whatever the view; its equator turns with it
+            cx, cy = self.project(anchor)
+            self._outline(self.disc, cx + rt.radius * np.cos(ring[:, 0]), cy + rt.radius * np.sin(ring[:, 0]))
+            rim = anchor + rt.radius * (np.cos(ring) * mark + np.sin(ring) * side)
+            spoke = np.array([anchor, anchor + rt.radius * mark])
+            self.stem.setData([], [])
+            self.tip.setData([], [])
+            start = anchor
+        else:
+            rim = G + top.radius * (np.cos(ring) * mark + np.sin(ring) * side)
+            self._outline(self.disc, *self.project(rim))
+            spoke = np.array([G, G + top.radius * mark])
+            if self.round is None:
+                self.tip.setData([], [])
+            else:
+                hub = anchor + self.round.radius * axis
+                hx, hy = self.project(hub)
+                self.tip.setData(
+                    hx + self.round.radius * np.cos(ring[:, 0]), hy + self.round.radius * np.sin(ring[:, 0])
+                )
+            tx, ty = self.project(np.array([anchor, G]))
+            self.stem.setData(tx, ty)
+            start = G
+        rx, ry = self.project(rim)
         self.rim.setData(rx, ry)
-        sx, sy = self.project(np.array([centre, centre + top.radius * mark]))
+        sx, sy = self.project(spoke)
         self.spoke.setData(sx, sy)
-        tx, ty = self.project(np.array([[0.0, 0.0, 0.0], centre]))
-        self.stem.setData(tx, ty)
-        ax, ay = self.project(np.array([centre, R * axis]))
+        end = anchor + R * axis
+        ax, ay = self.project(np.array([start, end]))
         self.axis_line.setData(ax, ay)
-        ex, ey = self.project(R * axis)
+        ex, ey = self.project(end)
         self.end.setData([ex], [ey])
         if trail.size:
-            px, py = self.project(R * trail)
+            ends = R * trail
+            if trail_centres is not None:  # each over the middle, as the top is drawn: where it pointed, not went
+                ends = ends + self._anchor(trail, trail_centres * [0.0, 0.0, 1.0])
+            px, py = self.project(ends)
             self.trail.setData(px, py)
         else:
             self.trail.setData([], [])
-        self._draw_vectors(axis, momentum)
+        if track is not None and track.size:
+            flat = np.column_stack([track[:, 0] - here[0], track[:, 1] - here[1], np.zeros(len(track))])
+            self.track.setData(*self.project(flat))
+        else:
+            self.track.setData([], [])
+        self._draw_vectors(axis, momentum, np.zeros(3) if centre is None else G, force)
 
-    def _draw_vectors(self, axis: np.ndarray, momentum: np.ndarray) -> None:
+    def _draw_vectors(
+        self, axis: np.ndarray, momentum: np.ndarray, origin: np.ndarray, force: np.ndarray | None
+    ) -> None:
         top, R = self.top, self.reach
         size = float(np.linalg.norm(momentum))
         if not self.show_vectors or size == 0:
@@ -739,20 +1070,25 @@ class TopView(pg.PlotWidget):
                 label.hide()
             return
         along = float(momentum @ axis)
-        omega = momentum / top.transverse + (1 / top.polar - 1 / top.transverse) * along * axis
-        torque = -top.weight_moment * np.cross(axis, [0.0, 0.0, 1.0])
+        rt = self.round
+        i1, i3 = (top.transverse, top.polar) if rt is None else (rt.central, rt.polar)
+        omega = momentum / i1 + (1 / i3 - 1 / i1) * along * axis
+        if rt is None:
+            third = -top.weight_moment * np.cross(axis, [0.0, 0.0, 1.0])
+        else:
+            third = np.zeros(3) if force is None else np.array([force[0], force[1], 0.0])
         for item, label, v, length in zip(
-            self.vectors, self.labels, (momentum, omega, torque), (1.25 * R, 1.05 * R, 0.6 * R)
+            self.vectors, self.labels, (momentum, omega, third), (1.25 * R, 1.05 * R, 0.6 * R)
         ):
             n = float(np.linalg.norm(v))
             if n < 1e-12:
                 item.setData([], [])
                 label.hide()
                 continue
-            tip = length * v / n
-            x, y = self.project(np.array([[0.0, 0.0, 0.0], tip]))
+            tip = origin + length * v / n
+            x, y = self.project(np.array([origin, tip]))
             item.setData(x, y)
-            lx, ly = self.project(1.1 * tip)
+            lx, ly = self.project(origin + 1.1 * (tip - origin))
             label.setPos(float(lx), float(ly))
             label.show()
 
@@ -765,7 +1101,9 @@ class TopView(pg.PlotWidget):
         self.vertical.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DotLine))
         self.circles.setPen(pg.mkPen(c.fit, width=1, style=QtCore.Qt.PenStyle.DotLine))
         self.trail.setPen(pg.mkPen(c.mass[1], width=1.5))
+        self.track.setPen(pg.mkPen(c.mass[2], width=1.5))
         self.stem.setPen(pg.mkPen(c.strong, width=3))
+        self.tip.setPen(pg.mkPen(c.strong, width=2))
         fill = QtGui.QColor(c.mass[0])
         fill.setAlpha(110)
         self.disc.setBrush(QtGui.QBrush(fill))
@@ -811,6 +1149,13 @@ def _thin(n: int, most: int) -> slice:
     return slice(None, None, max(1, -(-n // most)))
 
 
+def _columns(s: SlideSamples) -> np.ndarray:
+    """A table's samples as the history keeps them: `SlideSamples.of`'s columns after t."""
+    return np.column_stack(
+        [s.axis, s.mark, s.centre, s.contact, s.energy, s.work, s.jellett, s.normal, s.friction, s.momentum, s.slip]
+    )
+
+
 class GyroscopePage(QtWidgets.QWidget):
     """Controls on the left, the top and its tilt in the centre, the closed forms and the check on the right."""
 
@@ -819,8 +1164,12 @@ class GyroscopePage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.motion = TRIALS[0].motion
-        self.sim = TopSimulator(self.motion)
+        self.round: RoundTop | None = None  # on a table
+        self.sim: TopSimulator | SlidingSimulator = TopSimulator(self.motion)
         self.history = SampleBuffer(10, HISTORY)  # axis, mark, energy, L
+        self.slides = SampleBuffer(COLUMNS - 1, SLIDE_HISTORY)  # on a table: a sample's columns after t
+        self._track_span: tuple[float, float, float] | None = None  # the Path tab's view on a table: x, y, half
+        self._launch_energy = self._launch_jellett = 0.0  # on a table, let go
         self.running = True
         self._frames = 0
 
@@ -831,14 +1180,22 @@ class GyroscopePage(QtWidgets.QWidget):
         self.trials.picked.connect(self.load_trial)
 
         body = Form("Top")
-        self.mass = body.number("Mass m:", 0.01, 100.0, 0.5, 3, " kg", TIPS["mass"])
+        self.body_form = body.form
+        self.setting = combo([setting.value for setting in SETTINGS], TIPS["setting"])
+        body.add("Setting:", self.setting, TIPS["setting"])
+        self.mass = body.number("Mass m:", 0.001, 100.0, 0.5, 3, " kg", TIPS["mass"])
         self.radius = body.number("Disc radius r:", 1.0, 500.0, 40.0, 1, " mm", TIPS["radius"])
         self.height = body.number("Height l:", 1.0, 500.0, 30.0, 1, " mm", TIPS["height"])
+        self.tip_radius = body.number("Tip radius R:", 0.5, 100.0, 10.0, 1, " mm", TIPS["tip_radius"])
+        self.low = body.number("Weight below centre:", 0.0, 100.0, 4.5, 2, " mm", TIPS["low"])
+        self.ratio = body.number("I₁/I₃:", 0.1, 3.0, 0.8, 2, "", TIPS["ratio"])
+        self.friction = body.number("Friction μ:", 0.0, 2.0, 0.3, 3, "", TIPS["friction"])
         self.gravity = body.number("Gravity g:", 0.0, 100.0, 9.81, 2, " m/s²", TIPS["gravity"])
         self.info = note_label()
         body.row(self.info)
 
         release = Form("Let go")
+        self.release_form = release.form
         self.spin = release.number("Spin ω₃:", -20000.0, 20000.0, 1500.0, 0, " rpm", TIPS["spin"])
         self.tilt = release.number("Tilt θ₀:", 0.1, 179.0, 30.0, 1, "°", TIPS["tilt"])
         self.launch = combo([launch.value for launch in LAUNCHES], TIPS["launch"])
@@ -865,7 +1222,21 @@ class GyroscopePage(QtWidgets.QWidget):
         play.row(self.vectors)
 
         connect_all(
-            (self.mass, self.radius, self.height, self.gravity, self.spin, self.tilt, self.launch, self.rate),
+            (
+                self.setting,
+                self.mass,
+                self.radius,
+                self.height,
+                self.tip_radius,
+                self.low,
+                self.ratio,
+                self.friction,
+                self.gravity,
+                self.spin,
+                self.tilt,
+                self.launch,
+                self.rate,
+            ),
             self._on_inputs,
         )
 
@@ -887,7 +1258,8 @@ class GyroscopePage(QtWidgets.QWidget):
         self.energy_line = pg.InfiniteLine(angle=0)
         self.potential_turns = [pg.InfiniteLine(angle=90), pg.InfiniteLine(angle=90)]
         self.potential_now = Dot(10)
-        for item in (*self.potential_turns, self.energy_line, self.potential_item):
+        self.potential_trace = pg.PlotDataItem()  # on a table: the energy against the tilt as it runs
+        for item in (*self.potential_turns, self.energy_line, self.potential_trace, self.potential_item):
             self.potential_plot.addItem(item)
         self.potential_plot.addItem(self.potential_now, ignoreBounds=True)
         self.potential_plot.setLabel("bottom", "Tilt θ (°)")
@@ -925,6 +1297,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.momentum_item = pg.PlotDataItem(name="momenta, ΔL/I₃ω₃")
         for item in (self.energy_item, self.momentum_item):
             self.check_plot.addItem(item)
+        self.check_legend = self.check_plot.getPlotItem().legend
         self.check_note = note_label()
 
         self.notes = theory(NOTES_HTML)
@@ -969,6 +1342,11 @@ class GyroscopePage(QtWidgets.QWidget):
             radius=self.radius.value() / 1000,
             height=self.height.value() / 1000,
             gravity=self.gravity.value(),
+            setting=SETTINGS[self.setting.currentIndex()],
+            tip_radius=self.tip_radius.value() / 1000,
+            friction=self.friction.value(),
+            low=self.low.value() / 1000,
+            ratio=self.ratio.value(),
             spin_rpm=self.spin.value(),
             tilt=self.tilt.value(),
             launch=LAUNCHES[self.launch.currentIndex()],
@@ -979,6 +1357,11 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def apply_trial(self, t: GyroTrial) -> None:
         for box, value in (
+            (self.setting, SETTINGS.index(t.setting)),
+            (self.tip_radius, t.tip_radius * 1000),
+            (self.friction, t.friction),
+            (self.low, t.low * 1000),
+            (self.ratio, t.ratio),
             (self.mass, t.mass),
             (self.radius, t.radius * 1000),
             (self.height, t.height * 1000),
@@ -997,8 +1380,14 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _on_inputs(self) -> None:
         state = self.practice_state()
+        self._show_rows(state.setting)
         self.rate.setEnabled(state.launch is Launch.SET)
         self.motion = state.motion
+        self.round = state.round_top
+        if self.round is not None:
+            self._on_table(state)
+            self.restart()
+            return
         top = self.motion.top
         self.info.setText(
             f"I₁ = {top.transverse * 1e4:.4g} kg·cm², I₃ = {top.polar * 1e4:.4g} kg·cm², mgl = "
@@ -1022,13 +1411,76 @@ class GyroscopePage(QtWidgets.QWidget):
             )
         self.restart()
 
+    def _show_rows(self, setting: Setting) -> None:
+        """Show the controls this setting uses."""
+        cup, ball = setting is Setting.CUP, setting is Setting.TIPPE
+        for box, shown in (
+            (self.height, not ball),
+            (self.tip_radius, setting is Setting.TABLE),
+            (self.low, ball),
+            (self.ratio, ball),
+            (self.friction, not cup),
+        ):
+            self.body_form.setRowVisible(box, shown)
+        for box in (self.launch, self.rate, self.launch_info):
+            self.release_form.setRowVisible(box, cup)
+        label = self.body_form.labelForField(self.radius)
+        label.setText("Ball radius R:" if ball else "Disc radius r:")
+        self.radius.setToolTip(TIPS["ball"] if ball else TIPS["radius"])
+        label.setToolTip(self.radius.toolTip())
+        self.vectors.setText("Vectors L, ω, τ" if cup else "Vectors L, ω, F")
+        self.tabs.setTabEnabled(TAB_PRECESSION, cup)
+        if not cup and self.tabs.currentIndex() == TAB_PRECESSION:
+            self.tabs.setCurrentIndex(TAB_POTENTIAL)
+        for plot_, cup_tip, table_tip in (
+            (self.potential_plot, POTENTIAL_TIP, ENERGY_TIP),
+            (self.path_plot, PATH_TIP, TRACK_TIP),
+            (self.check_plot, CHECK_TIP, LEDGER_TIP),
+            (self.tilt_plot, TILT_TIP, TABLE_TILT_TIP),
+        ):
+            plot_.setToolTip(cup_tip if cup else table_tip)
+        relabel(self.potential_plot, "left", "U" if cup else "E", "J")
+        self.check_legend.clear()
+        self.check_legend.addItem(self.energy_item, "energy, ΔE/mgl" if cup else "energy + friction's work, ΔE/E₀")
+        self.check_legend.addItem(self.momentum_item, "momenta, ΔL/I₃ω₃" if cup else "Jellett's J, ΔJ/J₀")
+
+    def _on_table(self, state: GyroTrial) -> None:
+        """The info lines for a top on a table."""
+        rt = self.round
+        assert rt is not None  # only called on a table
+        self.info.setText(
+            f"I₁ = {rt.central * 1e4:.4g} kg·cm² (about G), I₃ = {rt.polar * 1e4:.4g} kg·cm²; its centre of mass "
+            + (
+                f"{rt.offset * 1000:.3g} mm above the round tip's centre."
+                if rt.offset >= 0
+                else f"{-rt.offset * 1000:.3g} mm below the ball's centre: α = {rt.alpha:.3g}."
+            )
+        )
+
     def restart(self) -> None:
         """Let the top go again from the launch set."""
+        self._track_span = None
+        if self.round is not None:
+            self.sim = SlidingSimulator(self.round, self.motion.spin, self.motion.tilt)
+            self.slides.clear()
+            first = self.sim.sample()
+            self.slides.extend(first.t, _columns(first))
+            self._launch_energy, self._launch_jellett = float(first.energy[0]), float(first.jellett[0])
+            self.view.set_top(self.motion.top, (), self.round)
+            for line in self.turn_lines:
+                line.hide()
+            self._show_table_forms()
+            self._draw_tab()
+            self._draw_now()
+            self._update_buttons()
+            self._start_timer()
+            return
         self.sim = TopSimulator(self.motion)
         self.history.clear()
         self.view.set_top(self.motion.top, self.motion.turning())
         for line, th in zip(self.turn_lines, self.motion.turning()):
             line.setPos(math.degrees(th))
+            line.show()
         self._show_closed_forms()
         self._draw_tab()
         self._draw_now()
@@ -1074,15 +1526,33 @@ class GyroscopePage(QtWidgets.QWidget):
             self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
 
     def frame_context(self) -> str:
-        return f"{self.spin.value():g} rpm, {self.tilt.value():g}°, {self.launch.currentText()}"
+        launch = self.launch.currentText() if self.round is None else self.setting.currentText()
+        return f"{self.spin.value():g} rpm, {self.tilt.value():g}°, {launch}"
 
     def step(self, duration: float) -> None:
         """Run the top on by `duration` s of simulated time and redraw."""
-        s = self.sim.advance(duration)
-        if s.t.size:
-            self.history.extend(s.t, np.concatenate([s.axis, s.mark, s.energy[:, None], s.momentum], axis=1))
+        if isinstance(self.sim, SlidingSimulator):
+            stopped = self.sim.event is not None
+            slide = self.sim.advance(duration)
+            if slide.t.size:
+                self.slides.extend(slide.t, _columns(slide))
+            if self.sim.event is not None and not stopped:
+                self._show_table_forms()
+        else:
+            s = self.sim.advance(duration)
+            if s.t.size:
+                self.history.extend(s.t, np.concatenate([s.axis, s.mark, s.energy[:, None], s.momentum], axis=1))
         self._draw_now()
         self._draw_live_tab()
+
+    def table_samples(self, seconds: float | None = None) -> SlideSamples:
+        """The samples kept on a table: the last `seconds` of them, or all."""
+        n = self.slides.size
+        if seconds is None:
+            t, y = self.slides.t[:n], self.slides.y[:n]
+        else:
+            t, y = self.slides.window(seconds)
+        return SlideSamples.of(np.column_stack([t, y]))
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
@@ -1092,6 +1562,7 @@ class GyroscopePage(QtWidgets.QWidget):
         for line in (*self.turn_lines, *self.potential_turns):
             line.setPen(pg.mkPen(c.fit, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.potential_item.setPen(pg.mkPen(c.mass[0], width=2))
+        self.potential_trace.setPen(pg.mkPen(c.mass[1], width=1))
         self.energy_line.setPen(pg.mkPen(c.force, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
         self.potential_now.setBrush(pg.mkBrush(c.strong))
         self.potential_now.setPen(pg.mkPen(None))
@@ -1127,7 +1598,74 @@ class GyroscopePage(QtWidgets.QWidget):
             )
         self.readout.setText(nod)
 
+    def _show_table_forms(self) -> None:
+        """The readout on a table: Jellett's constant and where it takes the top; why it stopped, if it did."""
+        rt = self.round
+        assert rt is not None  # only on a table
+        m = self.motion
+        J = rt.jellett(m.spin, m.tilt)
+        least = math.degrees(rt.least_tilt(J))
+        parts = [
+            f"Jellett's J = I₃ω₃(a + R cos θ₀) = {J * 1e4:.3g} kg·cm²/s stays put while friction takes energy out, so "
+            f"it heads for E_J's least, at {least:.3g}°."
+        ]
+        turn = rt.turning_spin()
+        if rt.offset > 0:
+            if math.isfinite(turn):
+                parts.append(
+                    f"Upright is least above {turn / RPM:.4g} rpm, where J would leave it sleeping at "
+                    f"{rt.end_spin(J) / RPM:.4g} rpm."
+                )
+            roll = rt.rolling_tilt()
+            if roll < 0.5 * math.pi:
+                parts.append(
+                    f"But its tip can roll instead of slide below about {math.degrees(roll):.3g}° (sin θ = "
+                    "μI₃/maR), and it stops rising there."
+                )
+            else:
+                parts.append("Its friction can make its tip roll at any tilt: it travels instead of rising.")
+        elif rt.inverts:
+            parts.append(
+                f"With 1 − α = {1 - rt.alpha:.3g} &lt; I₁/I₃ = {rt.ratio:.3g} &lt; 1 + α = {1 + rt.alpha:.3g}, "
+                f"turned over is least above {turn / RPM:.4g} rpm: it would end spinning at "
+                f"{rt.end_spin(J, upright=False) / RPM:.4g} rpm, the other way about its own axis."
+            )
+        elif rt.offset < 0:
+            parts.append(
+                f"I₁/I₃ = {rt.ratio:.3g} lies outside 1 ± α ({1 - rt.alpha:.3g} to {1 + rt.alpha:.3g}): turned over is "
+                "no minimum, so it doesn't turn over."
+            )
+        sim = self.sim
+        if isinstance(sim, SlidingSimulator) and sim.event is not None:
+            parts.append(f"<b>Stopped at {sim.t:.3g} s: {sim.event.value}.</b>")
+        self.readout.setText(" ".join(parts))
+        hi = 180.0 if self.view.ball else min(math.degrees(rt.rim_tilt()) + 2.0, 180.0)
+        self.tilt_plot.setYRange(0.0, hi, padding=0)
+
+    def _draw_table_now(self) -> None:
+        s = self.table_samples(TRACK_SPAN)
+        i0 = int(np.searchsorted(s.t, s.t[-1] - TABLE_TRAIL))
+        trail = slice(i0, None, max(1, -(-(s.t.size - i0) // TRAIL_POINTS)))
+        self.view.draw(
+            s.axis[-1],
+            s.mark[-1],
+            s.momentum[-1],
+            s.axis[trail],
+            s.centre[-1],
+            s.centre[trail],
+            s.contact[trail],
+            s.friction[-1],
+        )
+        t, y = self.slides.window(SLIDE_TILT_SPAN)
+        k = _thin(t.size, 2000)
+        self.tilt_item.setData(t[k], np.degrees(np.arccos(np.clip(y[k, 2], -1, 1))))
+        t1 = max(float(t[-1]), 10.0)
+        self.tilt_plot.setXRange(max(0.0, t1 - SLIDE_TILT_SPAN), t1, padding=0)
+
     def _draw_now(self) -> None:
+        if self.round is not None:
+            self._draw_table_now()
+            return
         n = self.history.size
         if n:
             last = self.history.y[n - 1]
@@ -1160,6 +1698,14 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
+        if self.round is not None:
+            if i == TAB_POTENTIAL:
+                self._draw_energy()
+            elif i == TAB_PATH:
+                self._draw_track()
+            elif i == TAB_CHECK:
+                self._draw_ledger()
+            return
         if i == TAB_POTENTIAL:
             self._draw_potential()
         elif i == TAB_PRECESSION:
@@ -1171,6 +1717,15 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _draw_live_tab(self) -> None:
         i = self.tabs.currentIndex()
+        if self.round is not None:
+            if i == TAB_POTENTIAL:
+                self._energy_dot()
+            elif i == TAB_PATH:
+                self._track_trace()
+            elif i == TAB_CHECK:
+                self._frames += 1
+                self._draw_ledger(text=self._frames % CHECK_FRAMES == 0)
+            return
         if i == TAB_POTENTIAL:
             self._potential_dot()
         elif i == TAB_PATH:
@@ -1179,8 +1734,109 @@ class GyroscopePage(QtWidgets.QWidget):
             self._frames += 1
             self._draw_check(text=self._frames % CHECK_FRAMES == 0)
 
+    # ------------------------------------------------------------- on a table
+    def _draw_energy(self) -> None:
+        rt = self.round
+        assert rt is not None  # only on a table
+        m = self.motion
+        J = rt.jellett(m.spin, m.tilt)
+        hi = rt.rim_tilt()
+        theta = np.linspace(0.0, hi, 500)
+        least = rt.least_energy(J, theta)
+        self.potential_item.setData(np.degrees(theta), least)
+        for line in (*self.potential_turns, self.energy_line):
+            line.hide()
+        start = self._launch_energy
+        top, base = max(start, float(np.max(least))), float(np.min(least))
+        pad = 0.08 * max(top - base, 1e-9 * abs(top))
+        self.potential_plot.setXRange(0.0, math.degrees(hi), padding=0)
+        self.potential_plot.setYRange(base - pad, top + pad, padding=0)
+        where = math.degrees(rt.least_tilt(J))
+        self.potential_note.setText(
+            f"J = {J * 1e4:.3g} kg·cm²/s. E_J is least at {where:.3g}°: upright it is {fmt(float(least[0]), 'J')}"
+            + (f", turned over {fmt(float(least[-1]), 'J')}." if self.view.ball else ".")
+            + f" Let go, it has {fmt(start, 'J')}."
+        )
+        self._energy_dot()
+
+    def _energy_dot(self) -> None:
+        n = self.slides.size
+        y = self.slides.y[:n]
+        k = _thin(n, 2000)
+        theta = np.degrees(np.arccos(np.clip(y[k, 2], -1, 1)))
+        self.potential_trace.setData(theta, y[k, 11])
+        last = y[n - 1]
+        self.potential_now.setData([math.degrees(math.acos(min(1.0, max(-1.0, float(last[2])))))], [float(last[11])])
+
+    def _draw_track(self) -> None:
+        self._track_span = None
+        self.path_circles.setData([], [])
+        self.path_note.setText(
+            f"From above, in mm, the last {TRACK_SPAN:g} s: where the tip has touched the table (solid) and where its "
+            "centre of mass has been (dotted). Sliding, the tip scrawls; rolling, it runs round smooth curves."
+        )
+        self._track_trace()
+
+    def _track_trace(self) -> None:
+        s = self.table_samples(TRACK_SPAN)
+        k = _thin(s.t.size, TRACK_POINTS)
+        tip, centre = 1000 * s.contact[k], 1000 * s.centre[k, :2]
+        self.path_item.setData(tip[:, 0], tip[:, 1])
+        self.path_circles.setData(centre[:, 0], centre[:, 1])
+        self.path_now.setData([tip[-1, 0]], [tip[-1, 1]])
+        both = np.concatenate([tip, centre])
+        lo, hi = both.min(axis=0), both.max(axis=0)
+        span = self._track_span
+        if span is None or np.any(lo < np.array(span[:2]) - span[2]) or np.any(hi > np.array(span[:2]) + span[2]):
+            mid = 0.5 * (lo + hi)
+            half = max(0.65 * float(np.max(hi - lo)), 5.0)
+            self._track_span = (float(mid[0]), float(mid[1]), half)
+            self.path_plot.setRange(
+                xRange=(mid[0] - half, mid[0] + half), yRange=(mid[1] - half, mid[1] + half), padding=0
+            )
+
+    def _draw_ledger(self, text: bool = True) -> None:
+        rt = self.round
+        assert rt is not None  # only on a table
+        s = self.table_samples()
+        start, J0 = self._launch_energy, self._launch_jellett
+        k = _thin(s.t.size, CHECK_POINTS)
+        ledger = (s.energy + s.work - start) / start
+        drift = (s.jellett - J0) / (abs(J0) or 1.0)
+        self.energy_item.setData(s.t[k], ledger[k])
+        self.momentum_item.setData(s.t[k], drift[k])
+        if not text:
+            return
+        sim = self.sim
+        assert isinstance(sim, SlidingSimulator)  # on a table
+        axis, L = s.axis[-1], s.momentum[-1]
+        along = float(L @ axis)
+        spin = along / rt.polar
+        above = L[2] / rt.central + (1 / rt.polar - 1 / rt.central) * along * axis[2]
+        parts = [
+            f"h = {sim.h * 1e3:.3g} ms. Jellett's J held to {np.max(np.abs(drift)):.2g} of itself, and the energy "
+            f"with friction's work to {np.max(np.abs(ledger)):.2g}. Friction has taken {100 * s.work[-1] / start:.3g} % "
+            f"of it. The table pushed up with at least {s.normal.min() / rt.weight:.3g} mg.",
+            f"Now at {math.degrees(math.acos(min(1.0, max(-1.0, float(axis[2]))))):.3g}°, slipping at "
+            f"{1000 * s.slip[-1]:.3g} mm/s, spinning at {spin / RPM:.4g} rpm about its axis ({above / RPM:.4g} rpm "
+            "seen from above).",
+            f"Upright, J would leave it {rt.end_spin(J0) / RPM:.4g} rpm"
+            + (
+                f"; turned over, {rt.end_spin(J0, upright=False) / RPM:.4g} rpm seen from above."
+                if self.view.ball
+                else "."
+            ),
+        ]
+        if sim.event is not None:
+            parts.append(f"Stopped at {sim.t:.3g} s: {sim.event.value}.")
+        self.check_note.setText(" ".join(parts))
+
+    # ------------------------------------------------------------- in the cup
     def _draw_potential(self) -> None:
         m = self.motion
+        for line in (*self.potential_turns, self.energy_line):
+            line.show()
+        self.potential_trace.setData([], [])
         hi, lo = m.turning()
         span = max(lo - hi, math.radians(2.0))
         a, b = max(hi - 1.5 * span, math.radians(0.2)), min(lo + 1.5 * span, math.radians(179.8))
