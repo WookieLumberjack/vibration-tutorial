@@ -37,6 +37,7 @@ from ..core.diagnostics import (
     run_up,
     sidebands,
 )
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick
 from . import settle_plots
 from .lesson import (
     Form,
@@ -55,7 +56,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -84,6 +85,17 @@ class DiagnosticsTrial:
     run_to: float = 4200.0
     run_s: float = 20.0
     tab: int = TAB_SIDEBANDS
+    teeth: int = 27
+    severity: float = 30.0  # %
+    impact: float = 3.0  # m/s²
+    resonance: float = 3000.0  # Hz
+    balls: int = 9
+    ball: float = 7.94  # mm
+    pitch: float = 39.04  # mm
+    contact: float = 0.0  # degrees
+    low: float = 2550.0  # Hz, the envelope's band
+    high: float = 3450.0
+    mode: float = 40.0  # Hz, the run-up's casing mode
 
 
 TRIALS = (
@@ -157,6 +169,259 @@ TRIALS = (
         run_s=4.0,
         tab=TAB_ORDERS,
     ),
+)
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+ENVELOPE_REACH = 0.15  # the band must hold the resonance ± this share (its strikes ring about 3ζ either side)
+CLEAR_HZ = 20.0  # and keep this far from each mesh harmonic
+
+
+def _mesh(rng: np.random.Generator) -> Question:
+    rpm, teeth = pick(rng, (900, 1200, 1500, 1797, 2400, 3000)), int(pick(rng, (17, 23, 27, 31, 41, 53)))
+    f = teeth * rpm / 60
+    return Question(
+        f"A {teeth}-tooth pinion turns at {rpm:g} rpm. What is its mesh frequency?",
+        f,
+        f"The shaft turns at {rpm:g}/60 = {number(rpm / 60, 4)} Hz, and a tooth meets its mate {teeth} times a "
+        f"turn: f<sub>m</sub> = {teeth} × {number(rpm / 60, 4)} = {number(f, 4)} Hz.",
+        unit="Hz",
+        tolerance=0.01,
+        setup=dict(rpm=float(rpm), teeth=teeth),
+    )
+
+
+def _sideband(rng: np.random.Generator) -> Question:
+    rpm, teeth = pick(rng, (900, 1200, 1500, 1797, 2400)), int(pick(rng, (19, 27, 33, 41)))
+    k = int(pick(rng, (1, 2)))
+    shaft = rpm / 60
+    f = teeth * shaft - k * shaft
+    return Question(
+        f"An eccentric {teeth}-tooth pinion at {rpm:g} rpm modulates its mesh once a turn. At what frequency is the "
+        f"{'first' if k == 1 else 'second'} sideband below the mesh?",
+        f,
+        f"The mesh is at {teeth} × {number(shaft, 4)} = {number(teeth * shaft, 4)} Hz, and the sidebands are spaced "
+        f"by the shaft's {number(shaft, 4)} Hz: {number(teeth * shaft, 4)} − {k} × {number(shaft, 4)} = "
+        f"{number(f, 4)} Hz.",
+        unit="Hz",
+        tolerance=0.005,
+        setup=dict(rpm=float(rpm), teeth=teeth, gear=GearFault.ECCENTRIC),
+    )
+
+
+def _bpfo(rng: np.random.Generator) -> Question:
+    n, d, D = int(pick(rng, (8, 9, 10, 12, 16))), pick(rng, (6, 8, 10, 12)), pick(rng, (40, 50, 60, 80))
+    rpm = pick(rng, (900, 1500, 1800, 3000))
+    f = Bearing(n, d / 1e3, D / 1e3).frequencies(rpm / 60)["BPFO"]
+    return Question(
+        f"A ball bearing has {n} balls {d:g} mm across on a {D:g} mm pitch circle, contact angle 0, its inner race "
+        f"on a shaft at {rpm:g} rpm. At what frequency does a ball strike a spall on its outer race (BPFO)?",
+        f,
+        f"BPFO = (n f<sub>r</sub>/2)(1 − d/D) = ({n} × {number(rpm / 60, 4)}/2)(1 − {d:g}/{D:g}) = {number(f, 4)} Hz.",
+        unit="Hz",
+        tolerance=0.01,
+        setup=dict(
+            rpm=float(rpm), balls=n, ball=float(d), pitch=float(D), bearing=BearingFault.OUTER, tab=TAB_ENVELOPE
+        ),
+    )
+
+
+def _bpfi_sideband(rng: np.random.Generator) -> Question:
+    n, d, D = int(pick(rng, (8, 9, 10, 12))), pick(rng, (6, 8, 10)), pick(rng, (40, 50, 60))
+    angle, rpm = pick(rng, (0, 15, 25)), pick(rng, (1200, 1797, 2400))
+    shaft = rpm / 60
+    bpfi = Bearing(n, d / 1e3, D / 1e3, angle).frequencies(shaft)["BPFI"]
+    return Question(
+        f"A spall on the inner race of a bearing with {n} balls {d:g} mm across on a {D:g} mm pitch circle, contact "
+        f"angle {angle:g}°, on a shaft at {rpm:g} rpm. Its envelope spectrum has BPFI with a sideband below it. At "
+        "what frequency is that sideband?",
+        bpfi - shaft,
+        f"BPFI = (n f<sub>r</sub>/2)(1 + (d/D) cos α) = ({n} × {number(shaft, 4)}/2)(1 + {d:g}/{D:g} × "
+        f"{number(math.cos(math.radians(angle)), 4)}) = {number(bpfi, 4)} Hz. The defect turns with the shaft, "
+        f"through the load zone once a turn, so the sidebands are ± 1X: {number(bpfi, 4)} − {number(shaft, 4)} = "
+        f"{number(bpfi - shaft, 4)} Hz.",
+        unit="Hz",
+        tolerance=0.01,
+        setup=dict(
+            rpm=float(rpm),
+            balls=n,
+            ball=float(d),
+            pitch=float(D),
+            contact=float(angle),
+            bearing=BearingFault.INNER,
+            noise=1.0,
+            tab=TAB_ENVELOPE,
+        ),
+    )
+
+
+def _quefrency(rng: np.random.Generator) -> Question:
+    rpm = pick(rng, (600, 900, 1200, 1797, 2400, 3600))
+    q = 60 / rpm * 1000
+    return Question(
+        f"A cracked tooth on a pinion at {rpm:g} rpm gives a long family of sidebands round the mesh. At what "
+        "quefrency is the cepstrum's peak?",
+        q,
+        f"The sidebands are spaced by the shaft's speed, {number(rpm / 60, 4)} Hz, and a family spaced Δf becomes a "
+        f"peak at 1/Δf = {number(q)} ms.",
+        unit="ms",
+        tolerance=0.01,
+        setup=dict(rpm=float(rpm), gear=GearFault.CRACK, tab=TAB_CEPSTRUM),
+    )
+
+
+def _crossing(rng: np.random.Generator) -> Question:
+    mode, order = pick(rng, (25, 30, 40, 50, 60)), int(pick(rng, (1, 2, 3)))
+    rpm = 60 * mode / order
+    return Question(
+        f"A run-up passes a casing mode at {mode:g} Hz. At what shaft speed does the {order}X order cross it?",
+        rpm,
+        f"The {order}X order is at {order} × the shaft's speed, so it meets {mode:g} Hz when the shaft turns at "
+        f"{mode:g}/{order} = {number(mode / order)} Hz, {number(rpm)} rpm.",
+        unit="rpm",
+        tolerance=0.01,
+        setup=dict(mode=float(mode), run_from=60.0, run_to=float(min(9000, 2 * rpm)), tab=TAB_RUNUP),
+    )
+
+
+def _envelope_shows(rng: np.random.Generator) -> Question:
+    return Question(
+        "A spall on a bearing's outer race in a noisy gearbox (1 m/s² RMS). Where does its strike rate, BPFO, stand "
+        "out clearly?",
+        0,
+        "In the envelope spectrum: the band round the 3 kHz resonance has a kurtosis of 5.6 and its envelope reads "
+        "0.45 m/s² at BPFO, ten times its floor. The plain spectrum reads 0.049 m/s² there, on a floor of 0.043: "
+        "lost.",
+        choices=("In the envelope spectrum", "In the plain spectrum", "In both", "In neither"),
+        setup=dict(bearing=BearingFault.OUTER, noise=1.0, tab=TAB_ENVELOPE),
+        predict=True,
+    )
+
+
+def _inner_sidebands(rng: np.random.Generator) -> Question:
+    return Question(
+        "A spall on the inner race, turning with the shaft. What sidebands does BPFI have in the envelope spectrum?",
+        0,
+        "± 1X: the defect passes through the load zone once a turn of the shaft, so its strikes swell and fade at "
+        "the shaft's speed (0.16 and 0.13 m/s² beside 0.31). A ball's defect gives ± FTF, the cage's.",
+        choices=("± 1X, the shaft's speed", "± FTF, the cage's speed", "± BPFO", "None"),
+        setup=dict(bearing=BearingFault.INNER, noise=1.0, tab=TAB_ENVELOPE),
+        predict=True,
+    )
+
+
+def _healthy_kurtosis(rng: np.random.Generator) -> Question:
+    return Question(
+        "A healthy gearbox: its shafts, its mesh and a little noise. What is the record's kurtosis, against a "
+        "Gaussian's 3?",
+        0,
+        "Below 3 (2.4): a sum of steady sines is flatter-topped than noise (a sine alone has 1.5). Impacts raise it.",
+        choices=("Below 3", "About 3", "Well above 3"),
+        setup=dict(),
+        predict=True,
+    )
+
+
+def _fast_run(rng: np.random.Generator) -> Question:
+    return Question(
+        "The run-up through the 40 Hz casing mode is made five times faster (4 s, not 20). What happens to the 1X's "
+        "peak as tracked?",
+        0,
+        "It peaks lower and later: 179 m/s² at 2531 rpm against the steady curve's 211 at 2406. The 1X crosses the "
+        "mode's half-power band in about six of its cycles, too few for the response to build up.",
+        choices=("It peaks lower and later", "It peaks higher and earlier", "It doesn't change"),
+        setup=dict(run_s=4.0, tab=TAB_ORDERS),
+        predict=True,
+    )
+
+
+def _harmonics(rpm: float, teeth: int) -> list[float]:
+    return [h * teeth * rpm / 60 for h in range(1, 4)]
+
+
+def _band_spec(rng: np.random.Generator) -> Question:
+    # A mesh harmonic just outside the band the resonance needs, so the band has a side it can't widen to.
+    for _ in range(100):
+        fr = pick(rng, (2000, 2500, 3500, 4000, 5000, 6000))
+        h, side, gap = int(pick(rng, (1, 2, 3))), pick(rng, (-1, 1)), pick(rng, (0.2, 0.25, 0.3))
+        teeth = int(pick(rng, (17, 21, 27, 33, 41)))
+        rpm = round(60 * fr * (1 + side * gap) / (h * teeth))
+        if not 600 <= rpm <= 6000:
+            continue
+        lo, hi = fr * (1 - ENVELOPE_REACH), fr * (1 + ENVELOPE_REACH)
+        design = (math.floor(lo) - 5.0, math.ceil(hi) + 5.0)
+        mesh = _harmonics(rpm, teeth)
+        if all(m < design[0] - 3 * CLEAR_HZ or m > design[1] + 3 * CLEAR_HZ for m in mesh):
+            break
+    near = min(mesh, key=lambda m: abs(m - fr))
+
+    def goal(t: DiagnosticsTrial):
+        low, high = sorted((t.low, t.high))
+        harmonics = _harmonics(t.rpm, int(t.teeth))
+        inside = [m for m in harmonics if low - CLEAR_HZ < m < high + CLEAR_HZ]
+        return (
+            kept("Shaft speed", t.rpm, float(rpm), "rpm"),
+            kept("Pinion teeth", t.teeth, teeth),
+            kept("Resonance", t.resonance, fr, "Hz"),
+            at_most("The band's bottom", low, lo, "Hz"),
+            at_least("The band's top", high, hi, "Hz"),
+            Requirement(
+                f"No mesh harmonic within {CLEAR_HZ:g} Hz of the band",
+                ", ".join(f"{number(m, 4)} Hz" for m in inside) or "none",
+                not inside,
+            ),
+        )
+
+    return Question(
+        f"A {teeth}-tooth pinion at {rpm:g} rpm; the bearing's strikes ring a casing resonance at {fr:g} Hz. Choose "
+        f"the envelope's band so that it holds the resonance ± {100 * ENVELOPE_REACH:g} % and no mesh harmonic comes "
+        f"within {CLEAR_HZ:g} Hz of it.",
+        0,
+        f"The band needs {number(lo, 4)} to {number(hi, 4)} Hz. The mesh is at {number(mesh[0], 4)} Hz, its "
+        f"harmonics at {number(mesh[1], 4)} and {number(mesh[2], 4)} Hz; the nearest, {number(near, 4)} Hz, sits "
+        f"{'above' if near > fr else 'below'} the resonance, so the band can't stretch that way. "
+        f"{design[0]:g} to {design[1]:g} Hz does.",
+        setup=dict(rpm=float(rpm), teeth=teeth, resonance=float(fr), bearing=BearingFault.OUTER, tab=TAB_ENVELOPE),
+        goal=goal,
+        design=dict(
+            rpm=float(rpm),
+            teeth=teeth,
+            resonance=float(fr),
+            bearing=BearingFault.OUTER,
+            low=design[0],
+            high=design[1],
+            tab=TAB_ENVELOPE,
+        ),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "diagnostics_page", f"See {page_link('diagnostics_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("mesh", "The mesh frequency", "gears", "Gear-mesh sidebands", _mesh),
+        ("sideband", "A sideband", "gears", "Gear-mesh sidebands", _sideband),
+        ("bpfo", "BPFO", "envelope", "Bearings and the envelope", _bpfo),
+        ("bpfi-sideband", "An inner race's sideband", "envelope", "Bearings and the envelope", _bpfi_sideband),
+        ("quefrency", "The cepstrum's peak", "cepstrum", "The cepstrum", _quefrency),
+        ("crossing", "An order meets a mode", "orders", "Run-ups and order tracking", _crossing),
+        ("envelope-shows", "Predict: where BPFO shows", "envelope", "Bearings and the envelope", _envelope_shows),
+        (
+            "inner-sidebands",
+            "Predict: an inner race's sidebands",
+            "envelope",
+            "Bearings and the envelope",
+            _inner_sidebands,
+        ),
+        (
+            "healthy-kurtosis",
+            "Predict: a healthy kurtosis",
+            "machines",
+            "What a machine's vibration says",
+            _healthy_kurtosis,
+        ),
+        ("fast-run", "Predict: a fast run-up", "orders", "Run-ups and order tracking", _fast_run),
+        ("band-spec", "Spec: the envelope's band", "envelope", "Bearings and the envelope", _band_spec),
+    )
 )
 
 TIPS = {
@@ -424,35 +689,80 @@ class DiagnosticsPage(QtWidgets.QWidget):
             self.tabs,
         )
         self._run_key = None
+        self._stale = False  # a setup loaded while hidden: drawn once the page shows
         self.apply_theme()
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
+        self.apply_trial(TRIALS[index])
+        self.redraw()
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note); drawn once it
+        shows."""
+        self.apply_trial(DiagnosticsTrial("", "", **setup))
+        if self.isVisible():
+            self.redraw()
+        else:
+            self._stale = True
+
+    def practice_state(self) -> DiagnosticsTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return DiagnosticsTrial(
+            "",
+            "",
+            rpm=self.rpm.value(),
+            gear=GEAR_FAULTS[self.gear.currentIndex()],
+            bearing=BEARING_FAULTS[self.bearing_fault.currentIndex()],
+            noise=self.noise.value(),
+            run_from=self.run_from.value(),
+            run_to=self.run_to.value(),
+            run_s=self.run_s.value(),
+            tab=self.tabs.currentIndex(),
+            teeth=int(self.teeth.value()),
+            severity=self.severity.value(),
+            impact=self.impact.value(),
+            resonance=self.resonance.value(),
+            balls=int(self.balls.value()),
+            ball=self.ball.value(),
+            pitch=self.pitch.value(),
+            contact=self.contact.value(),
+            low=self.low.value(),
+            high=self.high.value(),
+            mode=self.mode.value(),
+        )
+
+    def apply_trial(self, t: DiagnosticsTrial) -> None:
         for box, value in (
             (self.rpm, t.rpm),
-            (self.teeth, 27),
+            (self.teeth, t.teeth),
             (self.gear, GEAR_FAULTS.index(t.gear)),
-            (self.severity, 30.0),
+            (self.severity, t.severity),
             (self.bearing_fault, BEARING_FAULTS.index(t.bearing)),
-            (self.impact, 3.0),
-            (self.resonance, 3000.0),
+            (self.impact, t.impact),
+            (self.resonance, t.resonance),
             (self.noise, t.noise),
-            (self.balls, 9),
-            (self.ball, 7.94),
-            (self.pitch, 39.04),
-            (self.contact, 0.0),
-            (self.low, 2550.0),
-            (self.high, 3450.0),
+            (self.balls, t.balls),
+            (self.ball, t.ball),
+            (self.pitch, t.pitch),
+            (self.contact, t.contact),
+            (self.low, t.low),
+            (self.high, t.high),
             (self.run_from, t.run_from),
             (self.run_to, t.run_to),
             (self.run_s, t.run_s),
-            (self.mode, 40.0),
+            (self.mode, t.mode),
         ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
+        self.tabs.blockSignals(True)  # the tab's drawing waits for the redraw
         self.tabs.setCurrentIndex(t.tab)
-        self.redraw()
+        self.tabs.blockSignals(False)
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if self._stale:
+            self.redraw()
 
     @property
     def machine(self) -> Machine:
@@ -515,6 +825,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.redraw()
 
     def redraw(self) -> None:
+        self._stale = False
         m = self.machine
         self.rec = rec = record(m)
         f = m.bearing.frequencies(m.speed)
