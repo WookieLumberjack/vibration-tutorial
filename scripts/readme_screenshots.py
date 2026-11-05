@@ -1051,6 +1051,24 @@ def frame_builder():
     save(w, "frame_builder")
 
 
+def frame_response():
+    from vib_tutorial.gui.frame_builder import TAB_RESPONSE, TRIALS
+
+    w = window()
+    page = w.frame_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A tuned mass damper"))
+    page._timer.stop()
+    page.running = False
+    page._phase = 0.5 * math.pi
+    page.tabs.setCurrentIndex(TAB_RESPONSE)
+    settle()
+    page._show_mode()
+    settle()
+    print(page.response_note.text())
+    save(w, "frame_response")
+
+
 def rigid_mounts():
     w = window()
     page = w.mounts_page
@@ -1219,6 +1237,7 @@ SHOTS = [
     rigid_mounts,
     rigid_mounts_response,
     frame_builder,
+    frame_response,
     seismic_response,
     variability,
     self_excited,
