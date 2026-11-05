@@ -3925,6 +3925,7 @@ def test_shock_page(app):
         "seismic_page",
         "quarter_car_page",
         "mounts_page",
+        "frame_page",
         "variability_page",
         "diagnostics_page",
         "signals_page",
@@ -4045,3 +4046,95 @@ def test_grid_is_opaque_and_under_the_data(app):
     w.showGrid(x=False, y=False)
     assert axis.zValue() == plot_patches.AXIS_Z
     w.close()
+
+
+@SHARED
+def test_frame_builder_by_hand(app, shared_window):
+    """Build a frame with the canvas's tools, edit it from the left, undo and redo, and read its matrices."""
+    import numpy as np
+
+    from vib_tutorial.core.frame import Kind, Support
+    from vib_tutorial.gui import frame_builder as fb
+
+    w = shared_window
+    page = w.frame_page
+    w.pages.setCurrentWidget(page)
+    c = page.canvas
+
+    def use(tool):
+        page.tool_buttons.button(fb.TOOLS.index(tool)).click()
+
+    page.tabs.setCurrentIndex(fb.TAB_ASSEMBLY)
+    page.clear_button.click()
+    assert not page.frame.nodes and "Nothing" in page.assembly_view.toPlainText()
+    use(fb.Tool.BEAM)
+    for point in ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0)):  # a beam, then on from its end
+        c.press(np.array(point))
+    c.press(np.array([0.0, 0.0]), right=True)
+    assert len(page.frame.nodes) == 3 and [e.kind for e in page.frame.elements] == [Kind.BEAM] * 2
+    use(fb.Tool.SUPPORT)
+    c.press(np.array([0.0, 0.0]))
+    assert page.frame.nodes[0].support is Support.PINNED
+    page.support_kind.setCurrentIndex(fb.SUPPORTS.index(Support.CLAMPED) - 1)
+    c.press(np.array([0.0, 0.0]))
+    assert page.frame.nodes[0].support is Support.CLAMPED
+    use(fb.Tool.MASS)
+    c.press(np.array([1.0, 1.0]))
+    use(fb.Tool.SPRING)
+    c.press(np.array([1.0, 1.0]))
+    c.press(np.array([2.0, 1.0]))  # to the ground there
+    use(fb.Tool.BAR)
+    c.press(np.array([0.0, 0.0]))
+    c.press(np.array([1.0, 1.0]))
+    kinds = [e.kind for e in page.frame.elements]
+    assert kinds == [Kind.BEAM, Kind.BEAM, Kind.MASS, Kind.SPRING, Kind.BAR]
+    assert page.frame.elements[3].anchor == (2.0, 1.0)
+    assert page.result is not None and page.result.mechanisms == 0 and page.table.rowCount() == 6
+    # the bar's share is tinted on the Assembly tab; its matrices on the Element tab
+    page.tabs.setCurrentIndex(fb.TAB_ASSEMBLY)
+    assert page.picked == 4 and "bar 5" in page.assembly_note.text()
+    page.tabs.setCurrentIndex(fb.TAB_ELEMENT)
+    assert "Bar 5" in page.element_view.toPlainText() and "Tᵀk'T" in page.element_view.toPlainText()
+    # select and edit: the node's mass, then a beam's section
+    use(fb.Tool.SELECT)
+    c.press(np.array([1.0, 1.0]))
+    c.release()
+    assert c.selection == ("node", 2) and page.props.current() is page.props.node
+    page.props.mass.setValue(25.0)
+    page.props.mass.editingFinished.emit()
+    assert next(e for e in page.frame.elements if e.kind is Kind.MASS).value == 25.0
+    c.press(np.array([0.5, 0.0]))
+    assert c.selection == ("element", 0) and page.props.current() is page.props.member
+    before = page.result.hz[0]
+    page.props.depth.setValue(80.0)
+    page.props.depth.editingFinished.emit()
+    assert page.frame.elements[0].section.depth == pytest.approx(0.08) and page.result.hz[0] > before
+    # drag a node; undo puts it back, redo moves it again
+    c.press(np.array([1.0, 0.0]))
+    c.move(np.array([1.5, 0.0]))
+    c.release()
+    assert page.frame.nodes[1].x == 1.5
+    page.undo()
+    assert page.frame.nodes[1].x == 1.0
+    page.redo()
+    assert page.frame.nodes[1].x == 1.5
+    # divide a member, then delete a node and everything on it
+    c.press(np.array([0.75, 0.0]))
+    page.props.parts.setValue(3)
+    page.props.divide.click()
+    assert len(page.frame.nodes) == 5
+    c.press(np.array([1.0, 1.0]))
+    page.props.remove.click()
+    assert len(page.frame.nodes) == 4 and not any(e.kind is Kind.MASS for e in page.frame.elements)
+    # the model's settings, and a frame that can't be solved
+    page.lumped.setCurrentIndex(1)
+    assert page.frame.lumped and page.result is not None and page.result.condensed > 0
+    page.clear_button.click()
+    use(fb.Tool.SPRING)
+    c.press(np.array([0.0, 0.0]))
+    c.press(np.array([1.0, 0.0]))
+    assert page.result is None and "Nothing has mass" in page.readout.text()  # a spring to the ground, no mass
+    page.step(0.1)
+    page.load_trial(0)
+    w.pages.setCurrentWidget(w.sim_page)  # hidden, the page's frame loop stops: no frames for the next test's stats
+    assert not page._timer.isActive()

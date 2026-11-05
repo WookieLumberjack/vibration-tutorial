@@ -67,8 +67,9 @@ or follows them:
    **Shock spectrum** (a pulse on a bank of single oscillators, and on the chain) and **Seismic
    response** (the chain as a building under a design spectrum).
 4. **Building models.** **Modal coupling** (two halves of the chain joined one mode each, to show when
-   their modes split) and **Substructuring (CMS)** (the chain reduced by component mode synthesis:
-   Craig–Bampton, Rubin or MacNeal).
+   their modes split), **Substructuring (CMS)** (the chain reduced by component mode synthesis:
+   Craig–Bampton, Rubin or MacNeal) and **Frame builder** (a plane frame or truss drawn on a grid from
+   beams, bars, springs and masses, its matrices assembled element by element, and its modes).
 5. **Testing.** **Signals & spectra** (sampling, aliasing, leakage, windows,
    averaging, and the transducers that make the signals), **Virtual modal test** (the FRF measured from simulated force and response signals, as in
    a lab), **Operational modal analysis** (the modes from the responses to unmeasured ambient forces
@@ -531,6 +532,21 @@ model's $x_b(t)$, so it keeps every interior mode and its only error is the erro
 ![Back expansion: driven at mode 4 with 2 modes kept per substructure, the coupled recovery of the force in k2 is off by nearly 40%; the enhanced recovery brings it to about 12%](docs/images/substructuring_recovery.png)
 
 ![Compare methods: the same cut reduced three ways; Craig–Bampton and Rubin converge to the exact mode 3, MacNeal does not](docs/images/substructuring_compare.png)
+
+### Frame builder
+
+Build a plane frame or truss on a grid: click to place nodes, click two nodes to join them with a beam (it
+bends and stretches), a bar (it only stretches) or a spring or damper (or anchor one to the ground), add
+point masses and torsion springs, and give nodes supports (pinned, rollers, clamped, guided). Each node has
+u, v and θ. Every change assembles the global M, C and K again: the *Assembly* tab shows the whole matrix,
+with the picked element's share Tᵀk'T tinted and the DOFs a support holds or no element touches (a truss
+node's turn) struck out; the *Element* tab shows its k' or m' in its own axes, its T, and the global DOFs
+it lands on. Massless DOFs (a lumped beam's turns) are condensed out exactly, mechanisms show as modes at
+0 Hz, and each mode swings on the frame with the beams bending along their cubics, its strain energy split
+between stretching, bending and the springs. Consistent or lumped mass, and Euler–Bernoulli or Timoshenko
+beams; the trials compare the mesh with Euler's cantilever and the Beams & plates page's thick beam.
+
+![Frame builder page: a portal frame of 50 × 50 mm steel, clamped at its bases, swaying in its first mode at 14.90 Hz; the Assembly tab shows K with the picked column beam's share tinted and the bases' DOFs struck out](docs/images/frame_builder.png)
 
 ### Signals & spectra
 
@@ -1604,6 +1620,9 @@ $F_f$ times the distance slid, so the energy balance still closes.
 - `core/back_expansion.py`: recovery of the interior DOFs from the coupled solution (by T,
   from the boundary alone, and by re-solving each interior with the boundary motion imposed,
   stepped in the same exact update) and of the spring forces.
+- `core/frame.py`: a plane frame or truss of bars, Euler–Bernoulli or Timoshenko beams, springs,
+  dampers and point masses: each element's local matrices and T, assembly, supports, unused and massless
+  DOFs (condensed), mechanisms, the modes and their strain-energy split, and presets.
 - `core/rotor.py`: the Jeffcott rotor: shaft (beam elements: massless and condensed to the
   stations, or with mass and reduced to the stations and its fixed-interface modes), disc,
   bearings and the gyroscopic matrix; whirl modes, the Campbell diagram and critical speeds, the steady 1X
