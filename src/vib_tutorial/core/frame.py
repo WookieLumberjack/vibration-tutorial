@@ -199,6 +199,7 @@ class Frame:
     elements: tuple[Element, ...] = ()
     lumped: bool = False
     theory: Theory = Theory.EULER
+    zeta: float = 0.0  # Rayleigh damping αM + βK, ζ at the first two modes (`frame_response.rayleigh`)
 
     @property
     def n_dof(self) -> int:

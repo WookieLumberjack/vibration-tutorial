@@ -4138,3 +4138,55 @@ def test_frame_builder_by_hand(app, shared_window):
     page.load_trial(0)
     w.pages.setCurrentWidget(w.sim_page)  # hidden, the page's frame loop stops: no frames for the next test's stats
     assert not page._timer.isActive()
+
+
+@SHARED
+def test_frame_builder_loads_and_formulations(app, shared_window):
+    """A load and a response DOF from the left; the Response and Formulations tabs; the swing in each mode."""
+    import numpy as np
+
+    from vib_tutorial.core.frame_response import LoadKind
+    from vib_tutorial.gui import frame_builder as fb
+
+    w = shared_window
+    page = w.frame_page
+    w.pages.setCurrentWidget(page)
+    page.canvas.release()  # (a press without its release, as the test before may leave, holds the swing still)
+    names = [t.name for t in fb.TRIALS]
+    page.load_trial(names.index("A damper in the first storey"))
+    assert page.tabs.currentIndex() == fb.TAB_FORMULATIONS and page.forms is not None
+    assert page.forms_table.rowCount() > 2 and "Not proportional" in page.forms_note.text()
+    assert "MPC = 0.796" in page.argand_note.text()
+    page.forms_table.selectRow(1)
+    assert page.mode == 1 and "Mode 2" in page.argand_note.text()
+    q0 = page.swing_shape()
+    page.step(0.05)
+    q1 = page.swing_shape()
+    assert q0 is not None and q1 is not None and not np.allclose(q0, q1)
+    # the Response tab: the two models part
+    page.tabs.setCurrentIndex(fb.TAB_RESPONSE)
+    assert page.runs is not None and "They part" in page.response_note.text()
+    assert page.curves["time"][0].getData()[0].size == page.runs.t.size
+    # a harmonic load shows its frequency, and the playhead follows the swung response
+    page.load_kind.setCurrentIndex(fb.LOAD_KINDS.index(LoadKind.HARMONIC))
+    assert page.load.kind is LoadKind.HARMONIC and page.load_form.form.isRowVisible(page.load_hz)
+    page.load_hz.setValue(3.6)
+    assert page.load.hz == 3.6 and page.drive_line.isVisible()
+    page.swing.setCurrentIndex(fb.SWINGS.index(fb.Swing.RESPONSE))
+    page.step(0.5)
+    assert page._played > 0 and page.playhead.isVisible() and page.playhead.value() == page._played
+    # Rayleigh damping alone: the two agree
+    page.load_trial(names.index("Rayleigh damping: one answer"))
+    assert page.zeta.value() == 2.0 and "agree" in page.response_note.text()
+    page.zeta.setValue(5.0)
+    assert page.frame.zeta == 0.05
+    page.undo()
+    assert page.frame.zeta == 0.02
+    # a load on a clamped base does nothing; a node that's gone sends it back to the default
+    page.load_node.setValue(1)
+    assert "held by a support" in page.response_note.text() and page.swing_shape() is None
+    page.clear_button.click()
+    assert page.load.node == 0 and page.frame.zeta == 0.02
+    page.load_trial(0)
+    w.pages.setCurrentWidget(w.sim_page)
+    assert not page._timer.isActive()

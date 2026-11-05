@@ -48,7 +48,17 @@ from ..core.frame import (
     storeys,
     warren,
 )
-from ..core.practice import Problem, Question, Requirement, at_least, number, pick
+from ..core.frame_response import (
+    LOAD_KINDS,
+    Formulations,
+    Load,
+    LoadKind,
+    Responses,
+    formulations,
+    rayleigh,
+    responses,
+)
+from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
 from . import frame_stats, settle_plots
 from .layouts import FlowLayout, group
 from .lesson import (
@@ -58,6 +68,7 @@ from .lesson import (
     combo,
     fmt,
     note_label,
+    plot,
     readout_label,
     set_quietly,
     theory,
@@ -68,7 +79,7 @@ from .links import before, page_link, takeaways
 from .style import colors, rgb
 from .theming import mute
 
-TAB_ASSEMBLY, TAB_ELEMENT, TAB_THEORY = range(3)
+TAB_ASSEMBLY, TAB_ELEMENT, TAB_RESPONSE, TAB_FORMULATIONS, TAB_THEORY = range(5)
 EMPTY = Frame()
 FRAME_MS = 16
 SHOW_HZ = 0.6  # the animation's own pace: every mode swings at it
@@ -77,6 +88,8 @@ MODE_ROWS = 20  # modes listed at most
 NODE_PX, ELEMENT_PX = 10, 7  # how near a click has to be to pick a node or an element
 GRIDS = (0.05, 0.1, 0.125, 0.25, 0.5, 1.0)  # m
 MATRIX_LIMIT = 90  # DOFs: beyond this the Assembly tab lists the free ones only
+PLAY_S = 8.0  # s: a response's record plays over this long on the canvas
+DOF_CHOICES = ("u, along x", "v, along y", "θ, a turn")
 
 
 class Tool(Enum):
@@ -116,6 +129,15 @@ class Matrix(Enum):
 MATRICES = tuple(Matrix)
 
 
+class Swing(Enum):
+    MODE = "Undamped mode"
+    COMPLEX = "Damped mode (complex)"
+    RESPONSE = "Response to the load"
+
+
+SWINGS = tuple(Swing)
+
+
 @dataclass(frozen=True)
 class FrameTrial:
     name: str
@@ -126,6 +148,9 @@ class FrameTrial:
     picked: int | None = None  # the element shown on the Element tab (and tinted on the Assembly tab)
     matrix: Matrix = Matrix.K
     grid: float = 0.25
+    load: Load | None = None  # None: a vertical impulse at the last node free to move so (`default_load`)
+    out: int | None = None  # the DOF the Response tab plots (None: the load's)
+    swing: Swing = Swing.MODE
 
 
 SQUARE = Frame(
@@ -133,6 +158,15 @@ SQUARE = Frame(
     tuple(Element(Kind.BAR, i, j) for i, j in ((0, 1), (1, 2), (2, 3), (3, 0))),
 )
 DEEP = Section(depth=0.2, width=0.05)
+FIRST_FLOOR_DAMPER = Element(Kind.DAMPER, 2, None, value=5000.0, anchor=(-0.5, 1.0))
+# Den Hartog's absorber for 5 % of the four-beam cantilever's first mode (its modal mass at the tip, 4.91 kg)
+TUNED = (
+    dataclasses.replace(cantilever(1.0, 4), zeta=0.01)
+    .with_node(1.0, 0.25, Support.GUIDED_Y)
+    .with_element(Element(Kind.SPRING, 4, 5, value=15.3e3))
+    .with_element(Element(Kind.DAMPER, 4, 5, value=15.6))
+    .with_element(Element(Kind.MASS, 5, value=0.25))
+)
 
 TRIALS = (
     FrameTrial(
@@ -207,6 +241,67 @@ TRIALS = (
         "3.52 and 9.21 Hz. The frame's are a little lower: its floors bend, so the columns' tops turn.",
         frame=storeys(),
         grid=0.25,
+    ),
+    FrameTrial(
+        "Rayleigh damping: one answer",
+        "The two-storey frame with Rayleigh damping, C = αM + βK, set to ζ = 2 % at its two sway modes (3.44 and "
+        "9.14 Hz), and an impulse of 10 N·s across its top floor. The state space (solid) and the conventional "
+        "real modes (dashed) lie on each other, FRF and time response alike: C is proportional, ΦᵀCΦ is diagonal, "
+        "and the conventional model drops nothing. On the Formulations tab every MPC is 1.000. Beyond mode 2, "
+        "Rayleigh's βω takes over: the floors' bending at 92.02 Hz has ζ = 14.7 %.",
+        frame=dataclasses.replace(storeys(), zeta=0.02),
+        tab=TAB_RESPONSE,
+        load=Load(6, 0, LoadKind.IMPULSE, 10.0),
+        swing=Swing.RESPONSE,
+    ),
+    FrameTrial(
+        "A damper in the first storey",
+        "The same frame, undamped, with a 5000 N·s/m damper from its first floor to the ground. The conventional "
+        "model keeps ΦᵀCΦ's diagonal: modes at 3.44 and 9.14 Hz with ζ = 23.9 and 23.2 %. The state space's are "
+        "at 3.64 and 8.65 Hz, with ζ = 24.6 and 23.7 %, and complex: MPC 0.796 and 0.833 (the floors swing out of "
+        "step, and their points spread on the Argand plot). On the Response tab, at the damper's floor, the "
+        "conventional FRF is off by 25.8 % of the exact peak.",
+        frame=storeys().with_element(FIRST_FLOOR_DAMPER),
+        tab=TAB_FORMULATIONS,
+        load=Load(2, 0, LoadKind.IMPULSE, 10.0),
+        swing=Swing.COMPLEX,
+    ),
+    FrameTrial(
+        "A step: twice as far",
+        "The four-beam cantilever, undamped, and a step of 1000 N up at its tip. Held there slowly, the tip would "
+        "rise FL³/3EI = 3.05 mm; put on at once, it overshoots to 6.08 mm, 1.997 times as far, and swings about "
+        "3.05 mm for ever. Give it some damping (Damping ζ, on the left) and it settles there.",
+        frame=cantilever(1.0, 4),
+        tab=TAB_RESPONSE,
+        load=Load(4, 1, LoadKind.STEP, 1000.0),
+        swing=Swing.RESPONSE,
+        grid=0.125,
+    ),
+    FrameTrial(
+        "Resonance from rest",
+        "The cantilever with 1 % Rayleigh damping, driven at its first mode, 41.78 Hz, by 100 N at its tip. From "
+        "rest the swing grows toward 14.8 mm, 48.5 times the static 0.305 mm (1/2ζ = 50 for one mode on its "
+        "own). After the record's 20 cycles (0.48 s) it has reached 10.6 mm: it grows as 1 − e<sup>−ζωt</sup>, "
+        "and 1/ζω is 0.38 s.",
+        frame=dataclasses.replace(cantilever(1.0, 4), zeta=0.01),
+        tab=TAB_RESPONSE,
+        load=Load(4, 1, LoadKind.HARMONIC, 100.0, 41.78),
+        swing=Swing.RESPONSE,
+        grid=0.125,
+    ),
+    FrameTrial(
+        "A tuned mass damper",
+        "A 0.25 kg mass on a guide at the cantilever's tip, held by a 15.3 kN/m spring and a 15.6 N·s/m damper "
+        "(Den Hartog's tuning, for 5 % of the first mode's 4.91 kg modal mass there), with 1 % Rayleigh damping. "
+        "The tip's FRF has two peaks, at 37.2 and 44.0 Hz, 5.33 and 5.84 times the static deflection, where the "
+        "bare beam's is 48.5. The conventional model gives 3.58 and 4.17: the damper couples the two close modes "
+        "strongly (MPC 0.847 and 0.591), the conventional model drops that, and its peaks are a third too low, "
+        "on the unsafe side.",
+        frame=TUNED,
+        tab=TAB_RESPONSE,
+        load=Load(4, 1, LoadKind.HARMONIC, 100.0, 40.0),
+        out=13,
+        grid=0.125,
     ),
 )
 
@@ -370,6 +465,77 @@ def _brace_spec(rng: np.random.Generator) -> Question:
     )
 
 
+def _rayleigh(rng: np.random.Generator) -> Question:
+    f1 = pick(rng, (2.0, 5.0, 10.0, 20.0))
+    f2 = f1 * pick(rng, (2.5, 3.0, 4.0))
+    f3 = f2 * pick(rng, (3.0, 5.0, 10.0))
+    zeta = pick(rng, (0.01, 0.02, 0.05))
+    alpha, beta = rayleigh(zeta, np.array([f1, f2]))
+    w3 = TWO_PI * f3
+    z3 = 0.5 * (alpha / w3 + beta * w3)
+    return Question(
+        f"A frame's Rayleigh damping C = αM + βK is set to ζ = {100 * zeta:g} % at its first two modes, {f1:g} and "
+        f"{f2:g} Hz. What is ζ at a mode at {f3:g} Hz, in %?",
+        100 * z3,
+        f"ζ = (α/ω + βω)/2, and α = 2ζω₁ω₂/(ω₁ + ω₂) = {number(alpha)} 1/s, β = 2ζ/(ω₁ + ω₂) = {number(beta)} s "
+        f"meet it at both. At ω = 2π × {f3:g}: ζ = {number(100 * z3)} %. Above mode 2 the βω term grows "
+        "without end: Rayleigh damping kills high modes.",
+        unit="%",
+    )
+
+
+def _step(rng: np.random.Generator) -> Question:
+    force, length = pick(rng, (200.0, 500.0, 1000.0)), pick(rng, (0.5, 0.8, 1.0))
+    side = pick(rng, (30.0, 40.0, 50.0))
+    I = (side / 1000) ** 4 / 12
+    static = force * length**3 / (3 * 210e9 * I)
+    sec = Section(depth=side / 1000, width=side / 1000)
+    frame = cantilever(length, 4, sec)
+    return Question(
+        f"An undamped steel cantilever (E = 210 GPa), {side:g} × {side:g} mm and {length:g} m long, has a "
+        f"{force:g} N force put on its tip at once, and left there. How far does the tip go at most, in mm?",
+        2000 * static,
+        f"Twice the static deflection FL³/3EI = {number(1000 * static)} mm (I = s⁴/12 = {number(I * 1e12)} mm⁴): "
+        f"{number(2000 * static)} mm. A suddenly applied load does as much work on the way as the spring stores "
+        "when it stops, F x = ½ k x², so x = 2F/k; the frame's other modes change it by a fraction of a percent.",
+        unit="mm",
+        setup=dict(frame=frame, load=Load(4, 1, LoadKind.STEP, force), tab=TAB_RESPONSE, grid=0.125),
+    )
+
+
+def _damper_spec(rng: np.random.Generator) -> Question:
+    target = pick(rng, (8.0, 10.0, 12.0))
+    start = storeys()
+
+    def goal(t: FrameTrial):
+        try:
+            first = formulations(t.frame).modes[0]
+        except FrameError:
+            first = None
+        zeta = 100 * first.zeta_exact if first is not None and first.pole is not None else 0.0
+        mpc = first.measures.mpc if first is not None and first.measures is not None else 0.0
+        same = t.frame.nodes[: len(start.nodes)] == start.nodes
+        return (
+            Requirement("The nodes and their supports kept", "kept" if same else "changed", same),
+            kept("Rayleigh damping ζ", 100 * t.frame.zeta, 0.0, "%"),
+            at_least("Mode 1's ζ (the state space's)", zeta, target, "%"),
+            at_least("Mode 1's MPC", mpc, 0.95),
+        )
+
+    damped = start.with_element(Element(Kind.DAMPER, 6, None, value=1000.0, anchor=(-0.5, 2.0)))
+    return Question(
+        f"Damp this two-storey frame's first mode to ζ ≥ {target:g} % with dampers (Rayleigh damping left at 0), "
+        "without moving its nodes, and keep the mode nearly real: MPC ≥ 0.95.",
+        0,
+        "Put a damper where the mode moves most: the top floor sways furthest in mode 1, so 1000 N·s/m from it "
+        f"to the ground gives ζ = {number(100 * formulations(damped).modes[0].zeta_exact)} % with MPC 0.992. On "
+        "the first floor it takes twice that, and the mode goes more complex (2000 N·s/m: 9.61 %, MPC 0.969).",
+        setup=dict(frame=start, tab=TAB_FORMULATIONS),
+        goal=goal,
+        design=dict(frame=damped, tab=TAB_FORMULATIONS),
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "frame_page", f"See {page_link('frame_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -381,6 +547,9 @@ PROBLEMS = tuple(
         ("pinned-bases", "Predict: pinned bases", "elements", "The elements' matrices", _pinned_bases),
         ("timoshenko", "Predict: Timoshenko beams", "timoshenko", "Timoshenko beams", _timoshenko),
         ("brace-spec", "Spec: brace a portal frame", "mechanisms", "Mechanisms", _brace_spec),
+        ("rayleigh", "Rayleigh damping's ζ", "damping", "Damping", _rayleigh),
+        ("step", "A step on a cantilever", "forced", "Loads and responses", _step),
+        ("damper-spec", "Spec: damp a two-storey frame", "complex", "Complex modes", _damper_spec),
     )
 )
 
@@ -408,8 +577,17 @@ TIPS = {
     "grid": "<p>The spacing new nodes snap to.</p>",
     "matrix": "<p>The matrix the Assembly and Element tabs show.</p>",
     "free_only": "<p>List only the free DOFs: the matrix the eigenproblem solves.</p>",
-    "animate": "<p>Swing the frame in the mode picked in the table (slowed to the same pace whatever its "
-    "frequency, and exaggerated).</p>",
+    "animate": "<p>Swing the frame (slowed to the same pace whatever its frequency, and exaggerated).</p>",
+    "swing": "<p>What the frame swings in: the undamped mode picked in the table; the state space's mode beside "
+    "it, each node with its own phase; or the exact response to the load, slowed so its record lasts "
+    f"{PLAY_S:g} s.</p>",
+    "zeta": "<p>Rayleigh damping C = αM + βK, with this ζ at the first two modes (between them it's less, "
+    "beyond them more). It's proportional: on its own it leaves the modes real. The dampers come on top.</p>",
+    "load_kind": "<p>The load, from rest: a harmonic force F sin Ωt, an impulse (F × 1 s, in N·s), or a step F.</p>",
+    "load_at": "<p>The node and the DOF the load acts on (a moment on a turn). The arrow on the canvas.</p>",
+    "load_size": "<p>The load's size: N, N·m on a turn; an impulse's N·s.</p>",
+    "load_hz": "<p>The harmonic force's frequency.</p>",
+    "out_at": "<p>The node and the DOF whose response the Response tab plots (the ring on the canvas).</p>",
 }
 CANVAS_TIP = (
     "<p>The frame on its grid. Pick a tool above. Dotted: the frame at rest, while it swings in the mode picked. "
@@ -418,6 +596,10 @@ CANVAS_TIP = (
 TABLE_TIP = (
     "<p>The modes: each one's frequency and how its strain energy splits between the members' stretching, their "
     "bending (and shear), and the springs. Click a row to show it.</p>"
+)
+FORMS_TIP = (
+    "<p>Each undamped mode (its f and the conventional ζ = φᵀCφ/2ω) beside the state space's mode that pairs "
+    "with it (|λ|/2π and −Re λ/|λ|), and how complex that is: MPC 1 for a real mode. Click a row to show it.</p>"
 )
 ASSEMBLY_TIP = (
     "<p>The global matrix over every DOF: tinted, the picked element's share Tᵀk'T; greyed and struck out, the "
@@ -499,6 +681,44 @@ folding into a parallelogram. Each is a mode at 0 Hz, the null space of K. For a
 compares the bars b and the support reactions r with the joints' 2j DOFs: b + r &lt; 2j means a mechanism.
 It's necessary but not sufficient: a bar can be redundant in one place while another is missing.</p>
 
+<h3><a name="damping"></a>Damping</h3>
+<p>A frame's own damping (its joints, its material) is rarely known element by element, so it's usually put in
+as <b>Rayleigh damping</b>, C = αM + βK (<i>Damping ζ</i> in the Model box). Each undamped mode then has
+ζ<sub>r</sub> = (α/ω<sub>r</sub> + βω<sub>r</sub>)/2; α and β are chosen to give ζ at the first two modes, so
+it dips a little between them and grows beyond them, without end: the high modes die fast. Rayleigh damping is
+<b>proportional</b>, ΦᵀCΦ diagonal: the modes stay those of the undamped frame, each damped on its own.
+<b>Dampers</b> (between two nodes, to the ground, or on a turn) go into C as their Tᵀc'T, just as springs go
+into K; they are rarely proportional.</p>
+
+<h3><a name="forced"></a>Loads and responses</h3>
+<p>The <i>Load</i> box puts a force (or a moment on a turn) on one DOF: the arrow. The <i>Response</i> tab plots
+the receptance H(ω) from it to another DOF (the square), and the response there from rest: to a harmonic force
+F sin Ωt, an impulse, or a step. Both models are stepped exactly: the load is given states of its own, a
+constant for a step, a sine and a cosine turning at Ω for a harmonic force, stacked under the structure's A, so
+one exponential e<sup>Ah</sup> carries both over each step without approximating either; at resonance too, where
+the closed-form steady state breaks down. (The Simulation page's FOH update is exact for a force that is linear
+between samples.) An impulse J is the state it leaves: the velocities M⁻¹J at t = 0⁺.</p>
+
+<h3><a name="two-ways"></a>Two formulations</h3>
+<p>The <b>conventional</b> model takes the undamped modes, K φ = ω²M φ, and keeps them for the damping too:
+q = Σ φ<sub>r</sub>η<sub>r</sub>, each mode a single oscillator,
+η̈<sub>r</sub> + c<sub>r</sub>η̇<sub>r</sub> + ω<sub>r</sub>²η<sub>r</sub> = φ<sub>r</sub>ᵀf with
+c<sub>r</sub> = φ<sub>r</sub>ᵀCφ<sub>r</sub> = 2ζ<sub>r</sub>ω<sub>r</sub>. It drops ΦᵀCΦ's off-diagonal
+terms. The <b>state space</b> keeps everything: x = (q, q̇), ẋ = A x + B f with
+A = [0 I; −M⁻¹K −M⁻¹C], twice the size, its eigenvalues the damped poles. With proportional damping the two are
+the same model. With a damper they part, by as much as the damper couples the modes, and most when the modes it
+couples are close together: a tuned mass damper is the worst case, since its whole point is two close modes and
+a damper between them.</p>
+
+<h3><a name="complex"></a>Complex modes</h3>
+<p>The state space's eigenvectors ψ are complex: each node has its own phase, so with a damper the nodes no
+longer pass through zero together (<i>Swing: Damped mode</i>), and the shape's points spread off a line in
+the complex plane (the <i>Formulations</i> tab; MPC 1 for a real mode, as the Complex modes page measured it).
+A heavy damper also moves the frequencies, which the conventional model's ζ<sub>r</sub> can't. A DOF with a
+damper on it and no mass (a torsion damper on a lumped beam's node) has a first-order row,
+Cq̇ + Kq = f: it adds a real root, a relaxation e<sup>−t/τ</sup>, not a mode; so does an overdamped mode, two of
+them.</p>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these loads a frame (Things to try, top left). Change it from there: it's yours to edit.</p>
 <!--TRIALS-->
@@ -513,6 +733,8 @@ NOTES_HTML = (
             ("continuum_page", "mass-schemes", "Lumped and consistent mass"),
             ("beams_page", "thick-beams", "Thick beams"),
             ("cms_page", "basis", "Reduced models"),
+            ("complex_page", "state-space", "The state-space form"),
+            ("complex_page", "ignoring-it", "What ignoring complex modes costs"),
         ),
     )
     .replace("<!--TRIALS-->", trials_html(TRIALS))
@@ -526,6 +748,11 @@ NOTES_HTML = (
             "Consistent mass gives upper bounds that fall as the mesh is refined; lumped mass usually comes out low.",
             "Timoshenko's beams shear and have turning inertia: deep beams and high modes come out lower.",
             "A mode at 0 Hz is a mechanism (or a rigid motion): Maxwell's count can miss one.",
+            "Rayleigh damping αM + βK is proportional: the modes stay real, and the conventional model is exact.",
+            "A damper couples the modes through ΦᵀCΦ's off-diagonal terms: the state space keeps them, the "
+            "conventional model drops them, worst for close modes (a tuned mass damper).",
+            "The state space's modes are complex: each node has its own phase (MPC < 1).",
+            "Giving the load states of its own steps a step or a sine exactly, resonance included.",
         ),
     )
 )
@@ -647,6 +874,22 @@ def _spiral(at: np.ndarray, h: float) -> list:
     return [*pts, end + [0.0, -0.4 * h], NAN2] + _ground(end + [0.0, -0.4 * h], np.array([0.0, -1.0]), 0.6 * h)
 
 
+def _arrow(at: np.ndarray, dof: int, sign: float, h: float) -> list:
+    """A load's arrow ending at `at`: along x or y, or round it for a moment (anticlockwise if sign > 0)."""
+    if dof == 2:
+        a = np.linspace(-0.6, 0.9, 16) * math.pi * sign
+        r = 1.2 * h
+        arc = [at + r * np.array([math.cos(t), math.sin(t)]) for t in a]
+        end, tangent = arc[-1], np.array([-math.sin(a[-1]), math.cos(a[-1])]) * sign
+        tip = [end - 0.5 * h * (tangent + 0.6 * np.array([-tangent[1], tangent[0]]) * k) for k in (1, -1)]
+        return [*arc, NAN2, tip[0], end, tip[1], NAN2]
+    d = np.zeros(2)
+    d[dof] = 1.0 if sign >= 0 else -1.0
+    side = np.array([-d[1], d[0]])
+    tail = at - 2.5 * h * d
+    return [tail, at, NAN2, at - 0.6 * h * d + 0.35 * h * side, at, at - 0.6 * h * d - 0.35 * h * side, NAN2]
+
+
 def _segments(points: list) -> tuple[np.ndarray, np.ndarray]:
     if not points:
         return np.array([]), np.array([])
@@ -691,6 +934,8 @@ class FrameCanvas(pg.PlotWidget):
         self.pending: int | None = None  # the first node of a two-click tool
         self.cursor: np.ndarray | None = None
         self.q: np.ndarray | None = None  # the displacement drawn
+        self.load: Load | None = None  # drawn as an arrow
+        self.probe: int | None = None  # the DOF whose response is plotted: a square round its node
         self.unit = 0.1  # m: symbols' size, from the view's
         self._drag: int | None = None
         self._dragged: Frame | None = None
@@ -713,6 +958,8 @@ class FrameCanvas(pg.PlotWidget):
         self.masses = pg.PlotDataItem(pen=None, symbol="s", symbolSize=15)
         self.nodes = pg.PlotDataItem(pen=None, symbol="o", symbolSize=8)
         self.ring = pg.PlotDataItem(pen=None, symbol="o", symbolSize=16)
+        self.arrow = pg.PlotCurveItem(connect="finite")
+        self.probe_mark = pg.PlotDataItem(pen=None, symbol="s", symbolSize=18)
         for item in (
             self.ghost,
             self.supports,
@@ -724,6 +971,8 @@ class FrameCanvas(pg.PlotWidget):
             self.masses,
             self.nodes,
             self.ring,
+            self.arrow,
+            self.probe_mark,
         ):
             plot.addItem(item)
         self.labels: list[pg.TextItem] = []
@@ -989,6 +1238,11 @@ class FrameCanvas(pg.PlotWidget):
                     lit = [at(e.i), b, NAN2]
         self.highlight.setData(*_segments(lit))
         self.ring.setData([at(i)[0] for i in ring], [at(i)[1] for i in ring])
+        load = self.load
+        arrow = _arrow(at(load.node), load.dof, load.size, h) if load is not None and load.node < len(f.nodes) else []
+        self.arrow.setData(*_segments(arrow))
+        probe = self.probe if self.probe is not None and self.probe // 3 < len(f.nodes) else None
+        self.probe_mark.setData(*(([at(probe // 3)[0]], [at(probe // 3)[1]]) if probe is not None else ([], [])))
         if self.pending is not None and self.cursor is not None and self.pending < len(f.nodes):
             hit = self.node_near(self.cursor)
             end = f.point(hit) if hit is not None else self.snap(self.cursor)
@@ -1027,6 +1281,9 @@ class FrameCanvas(pg.PlotWidget):
         self.nodes.setSymbolPen(pg.mkPen(c.structure, width=1.5))
         self.ring.setSymbolBrush(None)
         self.ring.setSymbolPen(pg.mkPen(c.force, width=2.5))
+        self.arrow.setPen(pg.mkPen(c.force, width=2.5))
+        self.probe_mark.setSymbolBrush(None)
+        self.probe_mark.setSymbolPen(pg.mkPen(c.strong, width=1.5))
         for label in self.labels:
             label.setColor(c.muted)
         self.draw()
@@ -1232,6 +1489,26 @@ class Properties(QtWidgets.QGroupBox):
         return next(w for w in (self.empty, self.node, self.member, self.link) if not w.isHidden())
 
 
+def default_load(frame: Frame, assembly: Assembly | None = None) -> Load:
+    """An impulse along y at the last node free to move so (else on the first free DOF)."""
+    free = (assembly if assembly is not None else assemble(frame)).free
+    for i in reversed(range(len(frame.nodes))):
+        if free[3 * i + 1]:
+            return Load(node=i, dof=1)
+    dofs = np.flatnonzero(free)
+    return Load(node=int(dofs[0]) // 3, dof=int(dofs[0]) % 3) if dofs.size else Load()
+
+
+def _percent(zeta: float) -> str:
+    """ζ in %, an axial mode's next to nothing said so rather than in full."""
+    return f"{100 * zeta:.3g} %" if zeta >= 1e-4 else "< 0.01 %"
+
+
+def _reach(q: np.ndarray) -> float:
+    """The largest node translation in q (complex or real; rows of every DOF, or one column)."""
+    return float(np.max(np.hypot(np.abs(q[0::3]), np.abs(q[1::3])), initial=0.0))
+
+
 class FramePage(QtWidgets.QWidget):
     """Controls on the left, the canvas and its modes in the centre, the matrices on the right."""
 
@@ -1245,8 +1522,14 @@ class FramePage(QtWidgets.QWidget):
         self.error = ""
         self.mode = 0
         self.picked: int | None = None  # the element on the Element tab
+        self.load = Load()
+        self.out = self.load.index
+        self.forms: Formulations | None = None  # worked out while the Response or Formulations tab, or a
+        self.runs: Responses | None = None  # damped swing, needs them (None: not yet, since the last change)
+        self.response_error = ""
         self.running = True
         self._phase = 0.0
+        self._played = 0.0  # s into the response's record
         self._history: list[Frame] = []
         self._future: list[Frame] = []
 
@@ -1274,11 +1557,26 @@ class FramePage(QtWidgets.QWidget):
         model.add("Mass:", self.lumped, TIPS["lumped"])
         self.theory = combo([t.value for t in THEORIES], TIPS["theory"])
         model.add("Beams:", self.theory, TIPS["theory"])
+        self.zeta = model.number("Damping ζ:", 0.0, 50.0, 0.0, 2, " %", TIPS["zeta"])
         self.grid = combo([f"{g:g} m" for g in GRIDS], TIPS["grid"])
         model.add("Grid:", self.grid, TIPS["grid"])
         self.lumped.currentIndexChanged.connect(lambda _: self._on_model())
         self.theory.currentIndexChanged.connect(lambda _: self._on_model())
+        self.zeta.valueChanged.connect(lambda _: self._on_model())
         self.grid.currentIndexChanged.connect(self._on_grid)
+
+        loading = Form("Load")
+        self.load_kind = combo([k.value for k in LOAD_KINDS], TIPS["load_kind"])
+        loading.add("Kind:", self.load_kind, TIPS["load_kind"])
+        self.load_node, self.load_dof = self._dof_boxes(loading, "At node:", TIPS["load_at"])
+        self.load_size = loading.number("Size:", -1e7, 1e7, 100.0, 3, " N", TIPS["load_size"])
+        self.load_hz = loading.number("Frequency:", 0.01, 1e5, 10.0, 3, " Hz", TIPS["load_hz"])
+        self.out_node, self.out_dof = self._dof_boxes(loading, "Response at:", TIPS["out_at"])
+        self.load_form = loading
+        for box in (self.load_kind, self.load_dof, self.out_dof):
+            box.currentIndexChanged.connect(lambda _: self._on_load())
+        for box in (self.load_node, self.out_node, self.load_size, self.load_hz):
+            box.valueChanged.connect(lambda _: self._on_load())
 
         show = Form("Show")
         self.matrix = combo([m.value for m in MATRICES], TIPS["matrix"])
@@ -1286,13 +1584,16 @@ class FramePage(QtWidgets.QWidget):
         self.free_only = QtWidgets.QCheckBox("Free DOFs only")
         self.free_only.setToolTip(TIPS["free_only"])
         show.row(self.free_only)
-        self.animate = QtWidgets.QCheckBox("Animate the mode")
+        self.swing = combo([w.value for w in SWINGS], TIPS["swing"])
+        show.add("Swing:", self.swing, TIPS["swing"])
+        self.animate = QtWidgets.QCheckBox("Animate")
         self.animate.setChecked(True)
         self.animate.setToolTip(TIPS["animate"])
         show.row(self.animate)
         self.matrix.currentIndexChanged.connect(lambda _: self._draw_tabs())
         self.free_only.toggled.connect(lambda _: self._draw_tabs())
         self.animate.toggled.connect(self._on_animate)
+        self.swing.currentIndexChanged.connect(lambda _: self._on_swing())
 
         # --- centre: the tools, the canvas, the modes
         self.canvas = FrameCanvas()
@@ -1325,7 +1626,7 @@ class FramePage(QtWidgets.QWidget):
         self.undo_button.clicked.connect(self.undo)
         self.redo_button.clicked.connect(self.redo)
         self.clear_button.clicked.connect(
-            lambda: self._set_frame(Frame(lumped=self.frame.lumped, theory=self.frame.theory))
+            lambda: self._set_frame(Frame(lumped=self.frame.lumped, theory=self.frame.theory, zeta=self.frame.zeta))
         )
         flow.add(group(self.support_kind), self.undo_button, self.redo_button, self.clear_button)
         for keys, slot in (("Ctrl+Z", self.undo), ("Ctrl+Shift+Z", self.redo), ("Ctrl+Y", self.redo)):
@@ -1353,9 +1654,48 @@ class FramePage(QtWidgets.QWidget):
         self.element_view = QtWidgets.QTextBrowser()
         self.element_view.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.NoWrap)
         self.notes = theory(NOTES_HTML)
+
+        self.response_note = note_label()
+        self.frf_mag = plot("|H|", None, "Frequency", "Hz", log_x=True, log_y=True)
+        self.frf_phase = plot("Phase", "°", "Frequency", "Hz", log_x=True)
+        self.time_plot = plot("Displacement", "m", "Time", "s")
+        self.frf_legend = self.frf_mag.addLegend(offset=(-10, 10))
+        self.playhead = pg.InfiniteLine(angle=90)
+        self.time_plot.addItem(self.playhead, ignoreBounds=True)
+        self.drive_line = pg.InfiniteLine(angle=90)
+        self.frf_mag.addItem(self.drive_line, ignoreBounds=True)
+        self.curves = {name: (p.plot(), p.plot()) for name, p in (("mag", self.frf_mag), ("phase", self.frf_phase))}
+        self.curves["time"] = (self.time_plot.plot(), self.time_plot.plot())
+        self.frf_legend.addItem(self.curves["mag"][0], "State space (exact)")
+        self.frf_legend.addItem(self.curves["mag"][1], "Conventional (real modes)")
+
+        self.forms_note = note_label()
+        self.forms_table = QtWidgets.QTableWidget(0, 6)
+        self.forms_table.setToolTip(FORMS_TIP)
+        self.forms_table.setHorizontalHeaderLabels(["Mode", "f (Hz)", "ζ", "f exact", "ζ exact", "MPC"])
+        self.forms_table.verticalHeader().setVisible(False)
+        self.forms_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.forms_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.forms_table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+        self.forms_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        self.forms_table.itemSelectionChanged.connect(self._on_forms_row)
+        self.argand = plot("Im ψ", None, "Re ψ", None, height=200)
+        self.argand.setAspectLocked(True)
+        self.argand_lines = pg.PlotCurveItem(connect="finite")
+        self.argand_dots = pg.PlotDataItem(pen=None, symbol="o", symbolSize=7)
+        self.argand.addItem(self.argand_lines)
+        self.argand.addItem(self.argand_dots)
+        self.argand_note = note_label()
+
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(column(self.assembly_note, self.assembly_view, stretch=False), "Assembly")
         self.tabs.addTab(self.element_view, "Element")
+        self.tabs.addTab(
+            column(self.response_note, self.frf_mag, self.frf_phase, self.time_plot, stretch=False), "Response"
+        )
+        self.tabs.addTab(
+            column(self.forms_note, self.forms_table, self.argand_note, self.argand, stretch=False), "Formulations"
+        )
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tabs())
 
@@ -1367,7 +1707,7 @@ class FramePage(QtWidgets.QWidget):
         v.addWidget(self.canvas, 4)
         v.addWidget(self.table, 0)
         v.addWidget(self.readout, 0)
-        three_panes(self, column(self.trials, self.props, model, show), centre, self.tabs)
+        three_panes(self, column(self.trials, self.props, model, loading, show), centre, self.tabs)
 
         self._clock = QtCore.QElapsedTimer()
         self._last = 0.0
@@ -1397,6 +1737,9 @@ class FramePage(QtWidgets.QWidget):
             picked=self.picked,
             matrix=MATRICES[self.matrix.currentIndex()],
             grid=self.canvas.grid,
+            load=self.load,
+            out=self.out,
+            swing=SWINGS[self.swing.currentIndex()],
         )
 
     def apply_trial(self, t: FrameTrial, keep_history: bool = True) -> None:
@@ -1404,6 +1747,10 @@ class FramePage(QtWidgets.QWidget):
         self.canvas.grid = t.grid
         set_quietly(self.grid, int(np.argmin([abs(g - t.grid) for g in GRIDS])))
         self.mode = t.mode
+        set_quietly(self.swing, SWINGS.index(t.swing))
+        self.load = t.load if t.load is not None else default_load(t.frame)
+        self.out = t.out if t.out is not None else self.load.index
+        self._played = 0.0
         self.trials.show_note(t.note)
         self._set_frame(t.frame, record=keep_history, selection=("element", t.picked) if t.picked is not None else None)
         self.tabs.setCurrentIndex(t.tab)
@@ -1418,7 +1765,11 @@ class FramePage(QtWidgets.QWidget):
         self.frame = frame
         set_quietly(self.lumped, int(frame.lumped))
         set_quietly(self.theory, THEORIES.index(frame.theory))
+        set_quietly(self.zeta, 100 * frame.zeta)
         self.assembly = assemble(frame)
+        self.forms = self.runs = None
+        self.response_error = ""
+        self._fit_load()
         try:
             self.result = modes(frame, self.assembly)
             self.error = ""
@@ -1427,6 +1778,7 @@ class FramePage(QtWidgets.QWidget):
         count = self.result.hz.size if self.result is not None else 0
         self.mode = min(self.mode, max(count - 1, 0))
         self.canvas.selection = selection
+        self.canvas.load, self.canvas.probe = self.load, self.out
         if selection is not None and selection[0] == "element":
             self.picked = selection[1]
         elif self.picked is not None and self.picked >= len(frame.elements):
@@ -1476,9 +1828,89 @@ class FramePage(QtWidgets.QWidget):
 
     def _on_model(self) -> None:
         frame = dataclasses.replace(
-            self.frame, lumped=bool(self.lumped.currentIndex()), theory=THEORIES[self.theory.currentIndex()]
+            self.frame,
+            lumped=bool(self.lumped.currentIndex()),
+            theory=THEORIES[self.theory.currentIndex()],
+            zeta=self.zeta.value() / 100,
         )
         self._set_frame(frame, selection=self.canvas.selection, fit=False)
+
+    # ------------------------------------------------------------- the load
+    def _dof_boxes(self, form: Form, label: str, tip: str) -> tuple[QtWidgets.QSpinBox, QtWidgets.QComboBox]:
+        node = QtWidgets.QSpinBox()
+        node.setRange(1, MAX_NODES)
+        node.setKeyboardTracking(False)
+        dof = combo(DOF_CHOICES, tip)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(node)
+        row.addWidget(dof, 1)
+        holder = QtWidgets.QWidget()
+        holder.setLayout(row)
+        row.setContentsMargins(0, 0, 0, 0)
+        form.add(label, holder, tip)
+        return node, dof
+
+    def _fit_load(self) -> None:
+        """Keep the load and the response on nodes that exist (else back to the default)."""
+        n = len(self.frame.nodes)
+        if self.load.node >= n:
+            self.load = default_load(self.frame, self.assembly)
+        if self.out // 3 >= n:
+            self.out = self.load.index
+        self._fill_load()
+
+    def _fill_load(self) -> None:
+        load = self.load
+        top = max(len(self.frame.nodes), 1)
+        for box, node in ((self.load_node, load.node), (self.out_node, self.out // 3)):
+            box.blockSignals(True)
+            box.setMaximum(top)
+            box.setValue(node + 1)
+            box.blockSignals(False)
+        set_quietly(self.load_kind, LOAD_KINDS.index(load.kind))
+        set_quietly(self.load_dof, load.dof)
+        set_quietly(self.out_dof, self.out % 3)
+        set_quietly(self.load_size, load.size)
+        set_quietly(self.load_hz, load.hz)
+        unit = "N·m" if load.dof == 2 else "N"
+        self.load_size.setSuffix(f" {unit}·s" if load.kind is LoadKind.IMPULSE else f" {unit}")
+        self.load_form.form.setRowVisible(self.load_hz, load.kind is LoadKind.HARMONIC)
+
+    def _on_load(self) -> None:
+        self.load = Load(
+            self.load_node.value() - 1,
+            self.load_dof.currentIndex(),
+            LOAD_KINDS[self.load_kind.currentIndex()],
+            self.load_size.value(),
+            self.load_hz.value(),
+        )
+        self.out = 3 * (self.out_node.value() - 1) + self.out_dof.currentIndex()
+        self.runs = None
+        self._played = 0.0
+        self._fill_load()
+        self.canvas.load, self.canvas.probe = self.load, self.out
+        self._draw_tabs()
+        self._show_mode()
+
+    def _on_swing(self) -> None:
+        self._played = 0.0
+        self._show_mode()
+        self._draw_tabs()
+        self._start_timer()
+
+    def _work(self, runs: bool) -> bool:
+        """Work out the two formulations (and, if `runs`, their responses) if they aren't yet: True if they are."""
+        if self.result is None or self.response_error:
+            return False
+        if self.forms is None:
+            try:
+                self.forms = formulations(self.frame, self.assembly, self.result)
+            except FrameError as error:
+                self.response_error = str(error)
+                return False
+        if runs and self.runs is None:
+            self.runs = responses(self.forms, self.load, self.out)
+        return True
 
     def _selected(self) -> tuple[str, int] | None:
         return self.canvas.selection
@@ -1671,6 +2103,10 @@ class FramePage(QtWidgets.QWidget):
             self._draw_assembly()
         elif i == TAB_ELEMENT:
             self._draw_element()
+        elif i == TAB_RESPONSE:
+            self._draw_response()
+        elif i == TAB_FORMULATIONS:
+            self._draw_formulations()
 
     def _draw_assembly(self) -> None:
         a = self.assembly
@@ -1718,12 +2154,184 @@ class FramePage(QtWidgets.QWidget):
             html = "<p>Pick an element (the Select tool) to see its matrices here.</p>"
         self.element_view.setHtml(html)
 
+    def _draw_response(self) -> None:
+        mag, phase, time = self.curves["mag"], self.curves["phase"], self.curves["time"]
+        load = self.load
+        if not self._work(runs=True) or not self.assembly.free[load.index]:
+            for exact, conventional in (mag, phase, time):
+                exact.setData([], [])
+                conventional.setData([], [])
+            self.drive_line.hide()
+            self.playhead.hide()
+            if self.result is None:
+                self.response_note.setText(self.error or "Nothing to drive yet.")
+            elif self.response_error:
+                self.response_note.setText(self.response_error)
+            else:
+                self.response_note.setText(
+                    f"The load's DOF, {dof_label(load.index)}, is held by a support or unused: the frame doesn't "
+                    "feel it. Move the load (on the left)."
+                )
+            return
+        r = self.runs
+        assert r is not None
+        f = r.freqs
+        for (exact, conventional), (a, b) in (
+            (mag, (np.maximum(np.abs(r.frf_exact), 1e-300), np.maximum(np.abs(r.frf_conventional), 1e-300))),
+            (phase, (np.degrees(np.angle(r.frf_exact)), np.degrees(np.angle(r.frf_conventional)))),
+        ):
+            exact.setData(f, a)
+            conventional.setData(f, b)
+        self.frf_phase.setYRange(-185, 185, padding=0)
+        for p in (self.frf_mag, self.frf_phase):
+            p.setXRange(math.log10(f[0]), math.log10(f[-1]), padding=0)
+        peak = float(np.max(np.abs(r.frf_exact)))
+        if peak > 0:
+            self.frf_mag.setYRange(math.log10(peak) - 5, math.log10(peak) + 0.5, padding=0)
+        turn = self.out % 3 == 2
+        units = ("rad" if turn else "m") + "/" + ("N·m" if load.dof == 2 else "N")
+        self.frf_mag.setLabel("left", f"|{dof_label(self.out)} / F on {dof_label(load.index)}| ({units})")
+        harmonic = load.kind is LoadKind.HARMONIC
+        self.drive_line.setVisible(harmonic)
+        if harmonic:
+            self.drive_line.setPos(math.log10(load.hz))
+        time[0].setData(r.t, r.exact[:, self.out])
+        time[1].setData(r.t, r.conventional[:, self.out])
+        self.time_plot.setLabel("left", dof_label(self.out), units="rad" if turn else "m")
+        self.time_plot.setXRange(0.0, float(r.t[-1]), padding=0)
+        self._place_playhead()
+        top = max(peak, 1e-300)
+        frf_gap = float(np.max(np.abs(r.frf_exact - r.frf_conventional))) / top
+        reach = float(np.max(np.abs(r.exact[:, self.out]), initial=0.0))
+        time_gap = float(np.max(np.abs(r.exact[:, self.out] - r.conventional[:, self.out]))) / reach if reach else 0.0
+        kind = {
+            LoadKind.HARMONIC: f"F sin Ωt at {load.hz:.4g} Hz (the red line)",
+            LoadKind.IMPULSE: "an impulse",
+            LoadKind.STEP: "a step",
+        }[load.kind]
+        gap = (
+            "The two models agree (the damping is proportional)."
+            if frf_gap < 1e-6 and time_gap < 1e-6
+            else f"They part: the conventional FRF is off by up to <b>{100 * frf_gap:.3g} %</b> of the exact peak, "
+            f"its time response by <b>{100 * time_gap:.3g} %</b> of the exact one's largest."
+        )
+        undamped = (
+            " No damping: each peak is infinite (the grid steps round them), and a harmonic load's response "
+            "never settles."
+            if self.frame.zeta == 0 and not self.assembly.C.any()
+            else ""
+        )
+        self.response_note.setText(
+            f"From {dof_label(load.index)} (the arrow) to {dof_label(self.out)} (the square): the receptance, and "
+            f"the response to {kind} from rest. Solid: the state space, exact; dashed: the conventional real modes. "
+            f"{gap}{undamped}"
+        )
+
+    def _place_playhead(self) -> None:
+        on = SWINGS[self.swing.currentIndex()] is Swing.RESPONSE and self.runs is not None
+        self.playhead.setVisible(on)
+        if on:
+            self.playhead.setPos(self._played)
+
+    def _draw_formulations(self) -> None:
+        t = self.forms_table
+        t.blockSignals(True)
+        if not self._work(runs=False):
+            t.setRowCount(0)
+            t.blockSignals(False)
+            self.forms_note.setText(self.response_error or self.error or "Nothing built yet.")
+            self.argand_lines.setData([], [])
+            self.argand_dots.setData([], [])
+            self.argand_note.setText("")
+            return
+        forms = self.forms
+        assert forms is not None
+        rows = forms.modes[:MODE_ROWS]
+        t.setRowCount(len(rows))
+        for i, m in enumerate(rows):
+            if m.hz == 0:
+                texts = [str(i + 1), "0 (mechanism)", "", "", "", ""]
+            elif m.pole is None:
+                texts = [str(i + 1), f"{m.hz:.4g}", _percent(m.zeta_conventional), "overdamped", "", ""]
+            else:
+                assert m.measures is not None
+                texts = [
+                    str(i + 1),
+                    f"{m.hz:.4g}",
+                    _percent(m.zeta_conventional),
+                    f"{m.hz_exact:.4g}",
+                    _percent(m.zeta_exact),
+                    f"{m.measures.mpc:.3f}",
+                ]
+            for col, text in enumerate(texts):
+                item = QtWidgets.QTableWidgetItem(text)
+                item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                t.setItem(i, col, item)
+        if rows:
+            t.selectRow(min(self.mode, len(rows) - 1))
+        t.blockSignals(False)
+        n_conv, n_exact = forms.conventional.size, forms.exact.size
+        first = n_exact - n_conv
+        text = (
+            "Proportional: ΦᵀCΦ is diagonal, so the state space's modes are the undamped ones, real, and its poles "
+            "are the conventional model's."
+            if forms.proportional
+            else "Not proportional: the dampers' ΦᵀCΦ has terms off its diagonal, which the conventional model drops. "
+            "The state space keeps them: its modes are complex, and its f and ζ move."
+        )
+        text += f" The conventional model has {n_conv // 2} oscillators; the state space {n_exact} states"
+        text += f" ({first} first-order: a damper on a massless DOF)." if first else "."
+        if forms.roots.size:
+            tau = -1.0 / forms.roots[0]
+            text += (
+                f" {forms.roots.size} of its roots are real (overdamped modes, or relaxations), the slowest "
+                f"dying away as e<sup>−t/τ</sup>, τ = {fmt(tau, 's')}."
+            )
+        self.forms_note.setText(text)
+        self._draw_argand()
+
+    def _draw_argand(self) -> None:
+        forms = self.forms
+        m = forms.modes[self.mode] if forms is not None and self.mode < len(forms.modes) else None
+        if m is None or m.shape is None or m.measures is None:
+            self.argand_lines.setData([], [])
+            self.argand_dots.setData([], [])
+            self.argand_note.setText(
+                f"Mode {self.mode + 1} has no oscillating counterpart in the state space." if m is not None else ""
+            )
+            return
+        moves = np.concatenate([m.shape[0::3], m.shape[1::3]])
+        moves = moves[np.abs(moves) > 1e-9]
+        lines = [p for z in moves for p in ([0.0, 0.0], [z.real, z.imag], NAN2)]
+        self.argand_lines.setData(*_segments(lines))
+        self.argand_dots.setData(moves.real, moves.imag)
+        self.argand.setXRange(-1.05, 1.05, padding=0)
+        self.argand.setYRange(-1.05, 1.05, padding=0)
+        self.argand_note.setText(
+            f"Mode {self.mode + 1}'s shape ψ in the state space: each node's u and v as a point in the complex "
+            f"plane. A real mode's lie on one line through 0. MPC = {m.measures.mpc:.3f}, MPD = "
+            f"{m.measures.mpd:.3g}°."
+        )
+
+    def _on_forms_row(self) -> None:
+        rows = self.forms_table.selectionModel().selectedRows()
+        if rows:
+            self.mode = rows[0].row()
+            self.table.blockSignals(True)
+            if self.mode < self.table.rowCount():
+                self.table.selectRow(self.mode)
+            self.table.blockSignals(False)
+            self._draw_argand()
+            self._show_mode()
+
     # ------------------------------------------------------------- the modes
     def _on_row(self) -> None:
         rows = self.table.selectionModel().selectedRows()
         if rows:
             self.mode = rows[0].row()
             self._show_mode()
+            if self.tabs.currentIndex() == TAB_FORMULATIONS:
+                self._draw_formulations()
 
     def _on_animate(self, on: bool) -> None:
         self.running = on
@@ -1744,12 +2352,38 @@ class FramePage(QtWidgets.QWidget):
             reach = float(np.abs(phi[2::3]).max()) * size
         return phi * (SWING * size / reach) if reach > 0 else None
 
-    def _show_mode(self) -> None:
+    def _size(self) -> float:
+        x0, x1, y0, y1 = self.frame.extent()
+        return max(x1 - x0, y1 - y0, 1e-3)
+
+    def swing_shape(self) -> np.ndarray | None:
+        """The displacement drawn now (every DOF), as Swing says: the undamped mode at the animation's phase,
+        the state space's (complex) mode at it, or the response at the record's time played; None for none."""
+        swing = SWINGS[self.swing.currentIndex()]
+        phase = self._phase if self.running else 0.5 * math.pi
+        if swing is Swing.RESPONSE:
+            if not self._work(runs=True) or not self.assembly.free[self.load.index]:
+                return None
+            r = self.runs
+            assert r is not None
+            reach = _reach(r.exact.T)
+            if reach <= 0:
+                return None
+            k = min(round(float(self._played / r.t[-1]) * (r.t.size - 1)), r.t.size - 1)
+            return r.exact[k] * (SWING * self._size() / reach)
+        if swing is Swing.COMPLEX and self._work(runs=False):
+            forms = self.forms
+            assert forms is not None
+            m = forms.modes[self.mode] if self.mode < len(forms.modes) else None
+            if m is not None and m.shape is not None:
+                reach = _reach(m.shape)
+                if reach > 0:
+                    return (m.shape * np.exp(1j * phase)).imag * (SWING * self._size() / reach)
         shape = self.mode_shape()
-        if shape is None or not self.animate.isChecked():
-            self.canvas.q = None
-        else:
-            self.canvas.q = shape * math.sin(self._phase) if self.running else shape
+        return shape * math.sin(phase) if shape is not None else None
+
+    def _show_mode(self) -> None:
+        self.canvas.q = self.swing_shape() if self.animate.isChecked() else None
         self.canvas.draw()
 
     def showEvent(self, event) -> None:
@@ -1778,16 +2412,32 @@ class FramePage(QtWidgets.QWidget):
             self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
 
     def frame_context(self) -> str:
-        return f"{len(self.frame.nodes)} nodes, {len(self.frame.elements)} elements, mode {self.mode + 1}"
+        swing = SWINGS[self.swing.currentIndex()].name.lower()
+        return f"{len(self.frame.nodes)} nodes, {len(self.frame.elements)} elements, mode {self.mode + 1}, {swing}"
 
     def step(self, dt: float) -> None:
         """Swing the mode on by dt seconds at the animation's own pace (not while a node is dragged)."""
         if self.canvas._drag is not None:
             return
-        self._phase = (self._phase + TWO_PI * SHOW_HZ * dt) % TWO_PI
+        if SWINGS[self.swing.currentIndex()] is Swing.RESPONSE and self.runs is not None:
+            end = float(self.runs.t[-1])
+            self._played = (self._played + dt * end / PLAY_S) % end
+            if self.tabs.currentIndex() == TAB_RESPONSE:
+                self._place_playhead()
+        else:
+            self._phase = (self._phase + TWO_PI * SHOW_HZ * dt) % TWO_PI
         self._show_mode()
 
     def apply_theme(self) -> None:
         self.canvas.apply_theme()
         mute(self.hint)
+        dash = QtCore.Qt.PenStyle.DashLine
+        for exact, conventional in self.curves.values():
+            exact.setPen(pg.mkPen(colors.strong, width=2))
+            conventional.setPen(pg.mkPen(colors.fit, width=2, style=dash))
+        for line in (self.playhead, self.drive_line):
+            line.setPen(pg.mkPen(colors.force, width=1.5, style=dash))
+        self.argand_lines.setPen(pg.mkPen(colors.mode[0], width=1.5))
+        self.argand_dots.setSymbolBrush(pg.mkBrush(colors.mode[0]))
+        self.argand_dots.setSymbolPen(None)
         self._draw_tabs()
