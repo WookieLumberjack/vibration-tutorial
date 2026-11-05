@@ -3926,6 +3926,7 @@ def test_shock_page(app):
         "quarter_car_page",
         "mounts_page",
         "frame_page",
+        "planning_page",
         "variability_page",
         "diagnostics_page",
         "signals_page",
@@ -4190,3 +4191,45 @@ def test_frame_builder_loads_and_formulations(app, shared_window):
     page.load_trial(0)
     w.pages.setCurrentWidget(w.sim_page)
     assert not page._timer.isActive()
+
+
+@SHARED
+def test_test_planning_controls(app, shared_window):
+    """Sensors placed every way, by hand from the check boxes, the frequency snapped to a mode, and every tab."""
+    from vib_tutorial.gui import test_planning as tp
+
+    w = shared_window
+    page = w.planning_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(0)
+    assert list(page.placement.sensors + 1) == [2, 5, 8] and "10.5 %" in page.shapes_readout.text()
+    page.tabs.setCurrentIndex(tp.TAB_PLACEMENT)
+    assert "drops" in page.steps_view.toPlainText() and "m6" in page.steps_view.toPlainText()
+    # fewer sensors than targets: EfI keeps one a target; by hand, two can't tell three modes apart
+    page.count.setValue(2)
+    assert page.placement.sensors.size == 3 and "needs a sensor per target" in page.shapes_readout.text()
+    page.method.setCurrentIndex(tp.METHODS.index(tp.Method.HAND))
+    assert not page.hand_row.isHidden() and not page.count.isEnabled()
+    for i, box in enumerate(page.hand):
+        box.setChecked(i in (0, 7))
+    assert list(page.placement.sensors) == [0, 7] and "singular" in page.shapes_readout.text()
+    page.hand[3].setChecked(True)
+    assert "Fisher information" in page.shapes_readout.text()
+    page.tabs.setCurrentIndex(tp.TAB_NOISE)
+    assert "Worst auto-MAC" in page.noise_view.toPlainText() and "m1, m4, m8" in page.noise_view.toPlainText()
+    page.tabs.setCurrentIndex(tp.TAB_PLACEMENT)
+    assert "no steps" in page.steps_note.text()
+    # the operating point
+    page.tabs.setCurrentIndex(tp.TAB_ODS)
+    page.at_mode.setCurrentIndex(2)
+    assert page.freq.value() == pytest.approx(round(float(page.hz[1]), 3)) and page.at_mode.currentIndex() == 0
+    assert "MAC 0.999 with mode 2" in page.ods_readout.text() and "mode 2 leads" in page.parts_note.text()
+    page.reference.setValue(1)
+    page.force.setValue(4)
+    assert "The reference, mass 1, moves" in page.ods_readout.text() and "force on mass 4" in page.ods_readout.text()
+    # a smaller chain from the Simulation page
+    w.params.dof.setValue(4)
+    assert page.system.n == 4 and page.hand[5].isHidden() and page.force.maximum() == 4
+    page.load_trial(0)
+    assert page.system.n == 8
+    w.pages.setCurrentWidget(w.sim_page)

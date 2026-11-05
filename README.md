@@ -74,7 +74,8 @@ or follows them:
    averaging, and the transducers that make the signals), **Virtual modal test** (the FRF measured from simulated force and response signals, as in
    a lab), **Operational modal analysis** (the modes from the responses to unmeasured ambient forces
    alone), **Model updating** (a model with errors in it correlated against a modal test of the chain,
-   and updated to find them) and **Variability & localization** (scatter in the chain by Monte Carlo,
+   and updated to find them), **Test planning** (where to put the sensors, by effective independence, and
+   the operational deflection shape at a running frequency) and **Variability & localization** (scatter in the chain by Monte Carlo,
    and a mistuned ring of blades).
 6. **Beyond the chain.** **Torsional vibration** (a drive train of discs, shafts and gear meshes, and its
    start-up), **Duffing & Mathieu** (a single mass on a nonlinear spring, driven through its jump or pumped
@@ -844,6 +845,22 @@ Updated against the hammer test's three frequencies and shapes, the springs find
 error passed into the model. Update the masses as well and the fit gets better while the answer gets worse:
 every factor comes out 2 to 4 % high, because a model that is uniformly stiffer and heavier has exactly the
 same modes.
+
+### Test planning
+
+Before a test: where should the sensors go, and what does the structure do while it runs? For the chain's
+target modes, sensors are placed by **effective independence** (from every mass, drop one at a time the one
+with the smallest share of the Fisher information det(ΦᵀΦ)), by EfI weighted by the driving-point residue,
+evenly, or by hand. The *Placement* tab shows EfI's eliminations step by step; *Noise & aliasing* sets the
+placement beside the methods': the information, each mode's noise against a sensor on every mass, and the
+auto-MAC at the sensors, whose off-diagonal shows spatial aliasing (three sensors bunched at the ground make
+modes 1 and 2 look alike, MAC 0.976, and mode 1's noise 240 times larger). Below, the **operational
+deflection shape** at a running frequency under a force on one mass, beside the mode most like it: the mode
+itself at a lightly damped peak, a mix between peaks, and different when the force moves. The *ODS* tab
+splits it into each mode's share, and the readout warns when the reference sensor sits where the ODS hardly
+moves.
+
+![Test planning page: three sensors on the eight-mass chain placed by effective independence at masses 2, 5 and 8, on the first three modes; the ODS at 1.842 Hz under a force on mass 4, beside mode 1 (MAC 0.650); the ODS tab shows every mass's response and each mode's share of the ODS](docs/images/test_planning.png)
 
 ### Variability & localization
 
@@ -1615,6 +1632,9 @@ $F_f$ times the distance slid, so the energy balance still closes.
   the test (the virtual modal test's or the exact modes with noise) at chosen sensors, the MAC and
   its pairs, frequency errors, the auto-MAC and COMAC; frequency sensitivities in closed form, and
   Gauss–Newton updating of masses, springs and dampers with regularization.
+- `core/test_planning.py`: sensor placement by effective independence (and weighted by the driving-point
+  residue), its Fisher information, noise and auto-MAC; operational deflection shapes and each mode's
+  share of them.
 - `core/shock.py`: shock response spectra: the classical pulses, measured records and syntheses to a
   target (damped sines or wavelets), the oscillators stepped by the exact first-order-hold update
   (primary, residual, positive and negative peaks), and the chain on a shaken base, its peaks from the
