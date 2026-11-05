@@ -14,18 +14,22 @@ from __future__ import annotations
 
 import math
 import time
+from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..core.torsional import (
+    FAN,
     PRESETS,
     Disc,
     DriveTrain,
     Excitation,
     Mesh,
     Shaft,
+    TorsionalPreset,
     criticals,
     forced_response,
     modes,
@@ -34,6 +38,7 @@ from ..core.torsional import (
     response_speeds,
     separation,
     sources,
+    two_inertia_hz,
 )
 from ..core.torsional_startup import (
     FAN_START,
@@ -49,7 +54,7 @@ from ..core.torsional_startup import (
 from . import frame_stats, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, group, plot_height
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
@@ -62,6 +67,254 @@ FRAME_MS = 16
 FRAME_BUDGET = 0.008  # s of computing per frame: past it the start-up plays slower than asked
 PLAYBACK = (0.05, 0.1, 0.25, 0.5, 1.0)  # × real time
 MOTORS = (None, MotorKind.INDUCTION, MotorKind.SYNCHRONOUS)  # the motor combo's items
+TWO_PI = 2.0 * math.pi
+
+
+@dataclass(frozen=True)
+class TorsionalSetup:
+    """A practice problem's setup: a preset to start from, the train instead of its own (None: the preset's), the
+    speeds (None: the preset's) and whether the mode shapes show. The page's state comes back as one too."""
+
+    preset: str = PRESETS[0].name
+    train: DriveTrain | None = None
+    operating_rpm: float | None = None
+    top_rpm: float | None = None
+    shapes: bool = False
+
+    def drive_train(self) -> DriveTrain:
+        return self.train if self.train is not None else _preset(self.preset).train
+
+    def running_rpm(self) -> float:
+        return self.operating_rpm if self.operating_rpm is not None else _preset(self.preset).operating_rpm
+
+
+PRACTICE_SETUP = TorsionalSetup  # what a practice problem's setup and the page's practice_state are
+
+
+def _preset(name: str) -> TorsionalPreset:
+    return next((p for p in PRESETS if p.name == name), PRESETS[0])
+
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+FAN_PRESET, COMPRESSOR_PRESET = PRESETS[0].name, PRESETS[1].name
+
+
+def _fan(j1: float, j2: float, k: float) -> DriveTrain:
+    """The fan preset's train with its inertias and coupling changed."""
+    t = FAN.with_disc(0, Disc("Motor", j1)).with_disc(1, Disc("Fan", j2, FAN.discs[1].damping))
+    return t.with_link(0, Shaft(k, FAN.links[0].damping, "Coupling"))
+
+
+def _two_discs(rng: np.random.Generator) -> Question:
+    j1, j2 = pick(rng, (0.5, 1, 2, 4)), pick(rng, (5, 10, 20, 50))
+    k = pick(rng, (20, 50, 100, 200, 500))  # kN·m/rad
+    f = two_inertia_hz(j1, j2, 1000 * k)
+    return Question(
+        f"A {j1:g} kg·m² motor drives a {j2:g} kg·m² fan through a coupling of {k:g} kN·m/rad. At what frequency "
+        "does the train twist?",
+        f,
+        f"Two discs on one shaft: f = √(k (J₁ + J₂) / J₁J₂) / 2π = √({k:g}×10³ × {j1 + j2:g} / {j1 * j2:g}) / 2π = "
+        f"{number(TWO_PI * f)}/2π = {number(f)} Hz. (The train's other mode is the whole of it turning, at 0 Hz.)",
+        unit="Hz",
+        setup=dict(preset=FAN_PRESET, train=_fan(j1, j2, 1000 * k), shapes=True),
+    )
+
+
+def _shaft_stiffness(rng: np.random.Generator) -> Question:
+    d, length = pick(rng, (30, 50, 80, 100)), pick(rng, (0.5, 1, 2))
+    J = math.pi * (d / 1000) ** 4 / 32
+    k = 80e9 * J / length
+    return Question(
+        f"A solid steel shaft (G = 80 GPa) {d:g} mm across and {length:g} m long. What is its torsional stiffness?",
+        k / 1000,
+        f"J = πd⁴/32 = {number(J * 1e8)}×10⁻⁸ m⁴, so k = GJ/L = 80×10⁹ × {number(J * 1e8)}×10⁻⁸ / {length:g} = "
+        f"{number(k / 1000)} kN·m/rad. It goes as d⁴: twice as thick is 16 times as stiff.",
+        unit="kN·m/rad",
+    )
+
+
+def _referred(rng: np.random.Generator) -> Question:
+    z_in, z_out = int(pick(rng, (60, 90, 120))), int(pick(rng, (20, 30, 40)))
+    j = pick(rng, (0.05, 0.1, 0.3, 0.5))
+    ratio = z_in / z_out
+    referred = j * ratio**2
+    return Question(
+        f"A compressor wheel of {j:g} kg·m² turns on a pinion of {z_out} teeth, driven by a bull gear of {z_in} on "
+        "the motor's shaft. What inertia does it add, referred to the motor's shaft?",
+        referred,
+        f"The pinion turns {z_in}/{z_out} = {number(ratio)} times as fast, so its kinetic energy is that of "
+        f"J n² on the motor's shaft: {j:g} × {number(ratio)}² = {number(referred)} kg·m². A small wheel at high speed "
+        "weighs a lot on the motor.",
+        unit="kg·m²",
+        setup=dict(preset=COMPRESSOR_PRESET, shapes=True),
+    )
+
+
+def _critical(rng: np.random.Generator) -> Question:
+    f, order = pick(rng, (12, 20, 35, 52.3, 97.3)), pick(rng, (1, 2, 3, 6))
+    rpm = 60 * f / order
+    return Question(
+        f"A drive train's mode is at {f:g} Hz. At what speed does a {order:g}× excitation meet it?",
+        rpm,
+        f"The order's frequency is {order:g} × rpm/60; it equals {f:g} Hz at 60 × {f:g}/{order:g} = {number(rpm)} rpm.",
+        unit="rpm",
+    )
+
+
+def _margin(rng: np.random.Generator) -> Question:
+    f, rpm = pick(rng, (45, 50, 52.3, 55, 60)), pick(rng, (1200, 1480, 1500, 1780))
+    order = 2.0
+    critical = 60 * f / order
+    margin = 100 * separation(critical, rpm)
+    return Question(
+        f"A misaligned coupling excites 2× the running speed of {rpm:g} rpm; the train's mode is at {f:g} Hz. How far "
+        "is that critical from the running speed, as a percentage of it?",
+        margin,
+        f"The 2× line meets {f:g} Hz at 60 × {f:g}/2 = {number(critical)} rpm, {number(margin)} % "
+        f"{'above' if critical > rpm else 'below'} {rpm:g} rpm. API 617 asks for 10 %.",
+        unit="%",
+        tolerance=0.02,
+    )
+
+
+def _tooth_pass(rng: np.random.Generator) -> Question:
+    teeth, f = int(pick(rng, (40, 60, 90, 120))), pick(rng, (1500, 2000, 2688, 3000))
+    rpm = 60 * f / teeth
+    return Question(
+        f"A gear of {teeth} teeth turns at the motor's speed, and the mesh's own mode is at {f:g} Hz. At what motor "
+        "speed does the tooth-pass meet it?",
+        rpm,
+        f"The teeth pass at z × rpm/60 = {teeth} × rpm/60 Hz, which is {f:g} Hz at 60 × {f:g}/{teeth} = "
+        f"{number(rpm)} rpm.",
+        unit="rpm",
+        setup=dict(preset=COMPRESSOR_PRESET),
+    )
+
+
+def _node(rng: np.random.Generator) -> Question:
+    j1, j2 = pick(rng, (1, 2, 4)), pick(rng, (5, 10, 20))
+    share = 100 * j2 / (j1 + j2)
+    return Question(
+        f"A {j1:g} kg·m² motor and a {j2:g} kg·m² fan on one shaft twist in their mode. How far along the shaft from "
+        "the motor is the node, the point that doesn't swing, as a percentage of its length?",
+        share,
+        f"The two swing opposite, J₁θ₁ = −J₂θ₂ (no net momentum), so θ₁/θ₂ = −{j2:g}/{j1:g}, and the twist falls "
+        f"linearly along the shaft: the node is J₂/(J₁ + J₂) = {number(share)} % of the way, near the heavier disc.",
+        unit="%",
+        tolerance=0.01,
+        setup=dict(preset=FAN_PRESET, train=_fan(j1, j2, FAN.links[0].stiffness), shapes=True),
+    )
+
+
+def _softer_coupling(rng: np.random.Generator) -> Question:
+    return Question(
+        "The motor and fan's coupling is made four times softer. What happens to the train's frequency?",
+        0,
+        "It halves, 52.3 Hz to 26.2 Hz: f ∝ √k. The 2× critical moves from 1569 to 785 rpm, below the running speed, "
+        "passed on the way up.",
+        choices=("It halves", "It falls to a quarter", "It falls by about a quarter", "It stays the same"),
+        setup=dict(preset=FAN_PRESET, train=_fan(2.0, 10.0, FAN.links[0].stiffness / 4)),
+        predict=True,
+    )
+
+
+def _rigid_gears(rng: np.random.Generator) -> Question:
+    return Question(
+        "The geared compressor's mesh is treated as rigid, the two gears merged into one inertia. What happens to "
+        "its two lower modes, 38.9 and 83.1 Hz?",
+        0,
+        "They barely move (0.05 % and 0.01 %): the mesh is far stiffer than the couplings, so they hardly twist it. "
+        "Only the 2688 Hz mode, the gears bouncing on their teeth, is lost.",
+        choices=("They barely move", "They rise a lot", "They fall a lot", "They disappear"),
+        setup=dict(preset=COMPRESSOR_PRESET, shapes=True),
+        predict=True,
+    )
+
+
+def _faster_running(rng: np.random.Generator) -> Question:
+    return Question(
+        "The motor and fan are run 10 % faster. What happens to the torsional critical speeds?",
+        0,
+        "Nothing: the train's frequencies don't depend on its speed, so the criticals stay where they are. Only the "
+        "band round the running speed moves, here onto the 2× critical at 1569 rpm.",
+        choices=(
+            "They stay where they are",
+            "They rise 10 %",
+            "They fall 10 %",
+            "They rise as the speed squared",
+        ),
+        setup=dict(preset=FAN_PRESET, operating_rpm=1630.0),
+        predict=True,
+    )
+
+
+def _coupling_spec(rng: np.random.Generator) -> Question:
+    j1, j2 = pick(rng, (1, 2, 4)), pick(rng, (5, 10, 20))
+    rpm = pick(rng, (1000, 1480, 1780, 2960))
+    stiff = j1 * j2 / (j1 + j2)  # k = (2πf)² J₁J₂/(J₁ + J₂)
+
+    def k_at(ratio: float) -> float:
+        """The coupling (N·m/rad) whose 2× critical is at `ratio` × the running speed."""
+        return (TWO_PI * 2 * ratio * rpm / 60) ** 2 * stiff
+
+    softest, stiffest = rounded(k_at(0.95) / 1000), rounded(k_at(1.35) / 1000)  # kN·m/rad
+    design = rounded(k_at(1.2) / 1000)
+    start = rounded(k_at(1.0) / 1000)
+
+    def goal(t: TorsionalSetup):
+        train = t.drive_train()
+        running = t.running_rpm()
+        band = [c for c in criticals(train, 1e9) if separation(c.rpm, running) < MARGIN / 100]
+        two = train.n == 2 and isinstance(train.links[0], Shaft)
+        k = train.links[0].stiffness / 1000 if two else math.nan
+        near = min((separation(c.rpm, running) for c in criticals(train, 1e9)), default=math.inf)
+        return (
+            Requirement("Two discs on a coupling", f"{train.n} discs", two),
+            kept("The motor's inertia", train.discs[0].inertia, j1, "kg·m²"),
+            kept("The fan's inertia", train.discs[-1].inertia, j2, "kg·m²"),
+            kept("The running speed", running, rpm, "rpm"),
+            Requirement(
+                f"No critical within {MARGIN:g} % of the running speed",
+                f"the nearest {number(100 * near)} % away",
+                two and not band,
+            ),
+            at_least("The coupling (it must carry the torque)", k, softest, "kN·m/rad"),
+            at_most("The coupling (stiffer ones cost more)", k, stiffest, "kN·m/rad"),
+        )
+
+    return Question(
+        f"A {j1:g} kg·m² motor drives a {j2:g} kg·m² fan at {rpm:g} rpm, and the coupling's misalignment excites 2×. "
+        f"Choose the coupling's stiffness, between {number(softest)} and {number(stiffest)} kN·m/rad, so no torsional "
+        f"critical is within {MARGIN:g} % of the running speed.",
+        0,
+        f"The 2× line meets f = √(k (J₁ + J₂)/J₁J₂)/2π at 30 f rpm, so the critical goes as √k. Within {MARGIN:g} % "
+        f"is from {number(k_at(0.9) / 1000)} to {number(k_at(1.1) / 1000)} kN·m/rad; the softest coupling allowed "
+        f"is above the lower end, so it has to be stiffer: {number(k_at(1.1) / 1000)} kN·m/rad or more ({design:g} "
+        f"puts the critical 20 % above). The 1× critical is twice as fast, far above.",
+        setup=dict(preset=FAN_PRESET, train=_fan(j1, j2, 1000 * start), operating_rpm=rpm, top_rpm=2 * rpm),
+        goal=goal,
+        design=dict(preset=FAN_PRESET, train=_fan(j1, j2, 1000 * design), operating_rpm=rpm, top_rpm=2 * rpm),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "torsional_page", f"See {page_link('torsional_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("two-discs", "Two discs on a shaft", "torsion", "Torsional vibration", _two_discs),
+        ("shaft-stiffness", "A shaft's stiffness", "torsion", "Torsional vibration", _shaft_stiffness),
+        ("referred", "An inertia through a gear", "gears", "Gears", _referred),
+        ("critical", "A critical speed", "interference", "The interference diagram", _critical),
+        ("margin", "The margin to a critical", "interference", "The interference diagram", _margin),
+        ("tooth-pass", "Tooth-pass meets the mesh", "gears", "Gears", _tooth_pass),
+        ("node", "Where the node is", "torsion", "Torsional vibration", _node),
+        ("softer-coupling", "Predict: a softer coupling", "torsion", "Torsional vibration", _softer_coupling),
+        ("rigid-gears", "Predict: rigid gears", "gears", "Gears", _rigid_gears),
+        ("faster-running", "Predict: running faster", "interference", "The interference diagram", _faster_running),
+        ("coupling-spec", "Spec: a coupling's stiffness", "interference", "The interference diagram", _coupling_spec),
+    )
+)
+
 
 TIPS = {
     "inertia": "<p>The disc's polar moment of inertia J about its shaft.</p>",
@@ -124,7 +377,7 @@ RESPONSE_TIP = (
 
 NOTES_HTML = """
 <!--BEFORE-->
-<h3>Torsional vibration</h3>
+<h3><a name="torsion"></a>Torsional vibration</h3>
 <p>A drive train turns as a whole, but its discs also twist back and forth against each other on the shafts
 between them. Each disc i has an angle θ<sub>i</sub> on top of the steady turning, and</p>
 <p align="center">M θ″ + C θ′ + K θ = T(t),</p>
@@ -158,7 +411,7 @@ frequency is a <b>torsional critical speed</b>: the order there drives the mode 
 each shaft's speed. A start-up still passes the criticals below, briefly. Not every crossing matters: an
 order at a disc the mode barely moves (near its node) hardly excites it, and the response tells which do.</p>
 
-<h3>The steady response</h3>
+<h3><a name="response"></a>The steady response</h3>
 <p>At each speed each order is a harmonic torque at ω = order × Ω, and the steady response is one complex
 solve, (K − ω²M + iωC) Θ = T. A shaft's dynamic torque is (k + iωc) times its twist. The transmission error
 enters as an imposed stretch e on the mesh: a force (k<sub>m</sub> + iωc<sub>m</sub>) e on the gears, equal
@@ -167,7 +420,7 @@ the amplitudes is the worst the torque can be.</p>
 <p>The damping ratios come from φᵀCφ / 2ωφᵀMφ, each mode's share of the dampers: exact when the damping is
 light and spread over the train.</p>
 
-<h3>Starting up</h3>
+<h3><a name="startup"></a>Starting up</h3>
 <p>The <i>Start-up</i> tab starts the train from rest with a motor on its first disc and a load on its last that
 rises as its speed squared. The angles are then the whole turn, and the train's free turning (the 0 Hz mode)
 carries it up to speed while the shafts twist on top. The motor's torque depends on the motor's angle and speed
@@ -663,6 +916,34 @@ class TorsionalPage(QtWidgets.QWidget):
         self.startup_link.blockSignals(False)
         self._fill_startup()
         self.set_train(p.train, custom=False)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says: the preset, then its train and speeds if given.
+        The start-up isn't started."""
+        t = TorsionalSetup(**setup)
+        self.load_preset(_preset(t.preset).name)
+        if t.train is not None:
+            self.set_train(t.train)
+        if t.operating_rpm is not None or t.top_rpm is not None:
+            self._loading = True
+            if t.operating_rpm is not None:
+                self.operating.setValue(t.operating_rpm)
+            if t.top_rpm is not None:
+                self.top.setValue(t.top_rpm)
+            self._loading = False
+            self._to_custom()
+            self.redraw()
+        self.tabs.setCurrentIndex(1 if t.shapes else 0)
+
+    def practice_state(self) -> TorsionalSetup:
+        """The train and the speeds, as a setup: what a practice spec checks."""
+        return TorsionalSetup(
+            self.preset.currentText(),
+            self.train,
+            self.operating.value(),
+            self.top.value(),
+            self.tabs.currentIndex() == 1,
+        )
 
     def frame_context(self) -> str:
         """For the frame log (frame_stats): the preset showing."""
