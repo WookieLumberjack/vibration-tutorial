@@ -161,6 +161,7 @@ COURSE = (
             ("test_page", "Virtual modal test", "measuring the FRF from force and response signals, and fitting modes"),
             ("oma_page", "Operational modal analysis", "the modes from the responses alone, the forces unknown"),
             ("updating_page", "Model updating", "comparing a model with a test, and correcting it"),
+            ("planning_page", "Test planning", "where to put the sensors, and what the structure does as it runs"),
             (
                 "variability_page",
                 "Variability && localization",
@@ -225,6 +226,7 @@ PAGE_TITLES = {
     "energy_page": "Energy methods page",
     "frf_page": "FRF matrix page",
     "complex_page": "Complex modes page",
+    "planning_page": "Test planning page",
     "continuum_page": "Continuous systems page",
     "beams_page": "Beams & plates page",
     "integration_page": "Numerical integration page",

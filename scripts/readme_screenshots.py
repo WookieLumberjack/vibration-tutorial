@@ -898,6 +898,20 @@ def model_updating_springs():
     save(w, "model_updating_springs")
 
 
+def test_planning():
+    from vib_tutorial.gui.test_planning import TAB_ODS, TRIALS
+
+    w = window()
+    page = w.planning_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Move the force"))
+    page.tabs.setCurrentIndex(TAB_ODS)
+    settle()
+    print(page.shapes_readout.text())
+    print(page.ods_readout.text())
+    save(w, "test_planning")
+
+
 def shock_spectrum():
     w = window()
     page = w.shock_page
@@ -1194,6 +1208,7 @@ SHOTS = [
     complex_sweep,
     model_updating,
     model_updating_springs,
+    test_planning,
     shock_spectrum,
     shock_chain,
     shock_synthesis,

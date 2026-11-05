@@ -101,6 +101,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .model_updating import ModelUpdatingPage
 
         return ModelUpdatingPage
+    if name == "planning_page":
+        from .test_planning import TestPlanningPage
+
+        return TestPlanningPage
     if name == "complex_page":
         from .complex_modes import ComplexModesPage
 
@@ -652,6 +656,7 @@ class MainWindow(QtWidgets.QMainWindow):
     random_page = property(lambda self: self._page("random_page"))
     complex_page = property(lambda self: self._page("complex_page"))
     updating_page = property(lambda self: self._page("updating_page"))
+    planning_page = property(lambda self: self._page("planning_page"))
     shock_page = property(lambda self: self._page("shock_page"))
     diagnostics_page = property(lambda self: self._page("diagnostics_page"))
     variability_page = property(lambda self: self._page("variability_page"))
