@@ -43,6 +43,24 @@ def plot(
     return p
 
 
+class Dot(QtWidgets.QGraphicsEllipseItem):
+    """A marker `size` px across, moved by setData(x, y) to the last point given (hidden for none), as a
+    one-point ScatterPlotItem would be: that rebuilds its spot table on every setData (~0.2 ms), and the
+    rotor and gyroscope pages move them each frame. Add it to a plot with ignoreBounds=True."""
+
+    def __init__(self, size: float) -> None:
+        super().__init__(-0.5 * size, -0.5 * size, size, size)
+        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
+        self.setZValue(10)  # over the trails
+
+    def setData(self, x, y) -> None:
+        if len(x):
+            self.setPos(float(x[-1]), float(y[-1]))
+            self.show()
+        else:
+            self.hide()
+
+
 def note_label(text: str = "") -> QtWidgets.QLabel:
     """A muted, wrapping rich-text label for a readout or a caption."""
     label = QtWidgets.QLabel(text)

@@ -23,6 +23,7 @@ def notes() -> dict[str, str]:
         energy_methods,
         fatigue,
         frf_matrix,
+        gyroscope,
         integration,
         isolation,
         modal_test,
@@ -75,6 +76,7 @@ def notes() -> dict[str, str]:
         "integration_page": integration.NOTES_HTML,
         "energy_page": energy_methods.NOTES_HTML,
         "periodic_page": periodic.NOTES_HTML,
+        "gyroscope_page": gyroscope.NOTES_HTML,
     }
 
 

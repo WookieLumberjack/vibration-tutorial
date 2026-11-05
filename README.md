@@ -76,7 +76,8 @@ or follows them:
 6. **Beyond the chain.** **Torsional vibration** (a drive train of discs, shafts and gear meshes, and its
    start-up), **Duffing & Mathieu** (a single mass on a nonlinear spring, driven through its jump or pumped
    into parametric resonance), **Self-excited vibration** (van der Pol, galloping, vortex shedding and
-   flutter), **Active control** (feedback on the chain against a tuned mass damper), the **Jeffcott rotor**
+   flutter), **Active control** (feedback on the chain against a tuned mass damper), the **Gyroscope** (a
+   spinning top: precession, nutation and the sleeping top), the **Jeffcott rotor**
    (a disc on a flexible shaft in flexible bearings) and **Machinery diagnostics** (orders, sidebands,
    envelopes and the cepstrum).
 
@@ -1249,6 +1250,19 @@ non-collocated control that spills over into a mode it destabilizes, an actuator
 with a tuned mass damper of the same mass ratio, and skyhook isolation against a passive damper.
 
 ![Active control page, spillover: velocity from m1 fed back to m4 at g = 20 N·s/m damps mode 1 but drives mode 2 unstable (ζ = −0.10); non-collocated, the loop is unstable from g = 6.1 N·s/m](docs/images/active_control.png)
+
+### Gyroscope
+
+A spinning top with its tip held in a cup, from Euler's equations to the closed forms and a simulation.
+Lagrange's top keeps the spin and the angular momentum about the vertical, so the tilt moves on its own
+in an effective potential: steady precession at either root of I₁ cos θ φ'² − I₃ω₃φ' + mgl = 0, nutation
+between the turning points (the roots of a cubic, the period an elliptic integral), and the cusps, loops
+and waves the axis traces. Upright, the top sleeps above I₃ω₃ = 2√(I₁mgl). The 3D view steps the whole
+rigid body (a quaternion and L, split into gravity's moment and the free top, each exact), which doesn't
+mind the Euler angles' lock upright, and checks it against the closed forms. Its last section links the
+top's two precessions to the rotor's forward and backward whirl.
+
+![Gyroscope page, let go at rest: a 0.5 kg disc 40 mm in radius, 30 mm up its stem, spun at 1500 rpm and let go at 30° nods between 30° and 31.48° 14.73 times a second while precessing at 2.392 rad/s, its axis tracing cusps](docs/images/gyroscope.png)
 
 ### Torsional vibration
 

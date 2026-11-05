@@ -3893,6 +3893,7 @@ def test_shock_page(app):
         "beams_page",
         "self_excited_page",
         "active_control_page",
+        "gyroscope_page",
         "seismic_page",
         "quarter_car_page",
         "variability_page",

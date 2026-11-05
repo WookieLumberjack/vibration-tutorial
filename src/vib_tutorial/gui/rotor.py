@@ -58,6 +58,7 @@ from ..core.rotor_waterfall import Waterfall
 from . import frame_stats, rotor_practice, settle_plots
 from .cms_time import SampleBuffer
 from .layouts import ColumnScroll, FlowLayout, group
+from .lesson import Dot
 from .panels import spin
 from .rotor_balance import BalancingPanel
 from .rotor_bearing import BearingPanel
@@ -317,24 +318,6 @@ ORBIT_TIP = (
     "the disc's orbit the red line points at the heavy spot now; the angle from the high spot (where the disc is) to the heavy spot is the phase lag, "
     "0° well below the critical speed, about 90° near it and 180° well above.</p>"
 )
-
-
-class Dot(QtWidgets.QGraphicsEllipseItem):
-    """A marker `size` px across, moved by setData(x, y) to the last point given (hidden for none), as a
-    one-point ScatterPlotItem would be: that rebuilds its spot table on every setData (~0.2 ms), and the
-    rotor page moves a handful each frame. Add it to a plot with ignoreBounds=True."""
-
-    def __init__(self, size: float) -> None:
-        super().__init__(-0.5 * size, -0.5 * size, size, size)
-        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
-        self.setZValue(10)  # over the trails
-
-    def setData(self, x, y) -> None:
-        if len(x):
-            self.setPos(float(x[-1]), float(y[-1]))
-            self.show()
-        else:
-            self.hide()
 
 
 class RotorView(pg.PlotWidget):

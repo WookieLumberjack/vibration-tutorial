@@ -1016,6 +1016,19 @@ def active_control():
     lesson("active_control_page", 2, "active_control")  # non-collocated: spillover
 
 
+def gyroscope():
+    w = window()
+    page = w.gyroscope_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(0)  # let go at rest: cusps
+    page._timer.stop()
+    page.running = False
+    page.step(2.0)
+    settle()
+    print(page.readout.text())
+    save(w, "gyroscope")
+
+
 def machinery_diagnostics():
     lesson("diagnostics_page", 3, "machinery_diagnostics")  # an outer race defect by its envelope
 
@@ -1092,6 +1105,7 @@ SHOTS = [
     variability,
     self_excited,
     active_control,
+    gyroscope,
     machinery_diagnostics,
 ]
 

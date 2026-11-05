@@ -644,6 +644,9 @@ I<sub>p</sub> = 2I<sub>d</sub>, and the forward tilting frequency tends to 2Ω. 
 tilting, so the gyroscopic moment never enters the first mode. Only the disc's own tilting (conical)
 mode, high above, splits. Move the disc off centre, or make the bearings different, and the translation
 and tilt couple. Then the first mode splits too, and its critical speed moves.</p>
+<p>The two whirls are a spinning top's two precessions (see <a href="page:gyroscope_page#to-the-rotor">From the
+top to the rotor</a>, Gyroscope page): the forward one its fast precession, near I<sub>p</sub>Ω/I<sub>d</sub>,
+the backward one its slow precession.</p>
 
 <h3>The Campbell diagram and critical speeds</h3>
 <p>Plotting each damped natural frequency against the spin speed gives the Campbell diagram. The

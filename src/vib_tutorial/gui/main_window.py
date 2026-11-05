@@ -181,6 +181,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .variability import VariabilityPage
 
         return VariabilityPage
+    if name == "gyroscope_page":
+        from .gyroscope import GyroscopePage
+
+        return GyroscopePage
     if name == "diagnostics_page":
         from .diagnostics import DiagnosticsPage
 
@@ -649,6 +653,7 @@ class MainWindow(QtWidgets.QMainWindow):
     integration_page = property(lambda self: self._page("integration_page"))
     energy_page = property(lambda self: self._page("energy_page"))
     periodic_page = property(lambda self: self._page("periodic_page"))
+    gyroscope_page = property(lambda self: self._page("gyroscope_page"))
 
     def _page(self, name: str) -> QtWidgets.QWidget:
         """The page `name` from LAZY_PAGES, built and put in its tab on first use."""
