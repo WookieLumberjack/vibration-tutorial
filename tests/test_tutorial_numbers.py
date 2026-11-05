@@ -1021,3 +1021,47 @@ def test_deriving_trials():
         r = ride(c, hump)
         assert np.degrees(np.abs(r.pitch[r.after()]).max()) == pytest.approx(settled, abs=0.005)
     assert 1 - 1.068 / 1.51 == pytest.approx(0.29, abs=0.005)
+
+
+def test_deriving_pendulum_trials():
+    from vib_tutorial.core.double_pendulum import (
+        Angles,
+        DoublePendulum,
+        divergence,
+        matrices,
+        modes,
+        newton,
+        slipped,
+        swing,
+    )
+    from vib_tutorial.core.pendulum import measured_period
+
+    p = DoublePendulum()
+    slow, fast = modes(p)
+    assert (slow.frequency, fast.frequency) == pytest.approx((0.540, 1.30), abs=0.005)
+    assert (slow.ratio, fast.ratio) == pytest.approx((1.41, -1.41), abs=0.005)
+    assert p.separate_frequencies() == pytest.approx((0.705, 0.705), abs=0.0005)
+    assert matrices(p).M[0, 1] == pytest.approx(0.25) and matrices(p).K[0, 1] == 0
+    # the free-body diagram's rows, and the slip
+    np.testing.assert_allclose(newton(p).M, [[0.5, 0], [0.5, 0.5]])
+    s = slipped(p)
+    wrong = np.sqrt(np.linalg.eigvals(np.linalg.solve(s.M, s.K)).real) / (2 * np.pi)
+    assert wrong == pytest.approx((0.705, 0.705), abs=0.0005)
+    # the elbow's bend
+    bend = matrices(p, Angles.RELATIVE)
+    assert (bend.K[0, 1], bend.M[0, 0]) == pytest.approx((4.91, 1.25), abs=0.005)
+    assert [m.frequency for m in modes(p, Angles.RELATIVE)] == pytest.approx((0.540, 1.30), abs=0.005)
+    assert modes(p, Angles.RELATIVE)[0].shape[1] == pytest.approx(0.41, abs=0.005)
+    # released in the slower mode, at 10° and at 40°
+    for start, whole, apart in (((10, 14.1), 1.858, 1.8), ((40, 56.6), 1.924, 77)):
+        r = swing(p, tuple(np.radians(start)), 20.0)
+        assert measured_period(r.t, r.whole[:, 0]) == pytest.approx(whole, abs=0.0005)
+        assert measured_period(r.t, r.linear[:, 0]) == pytest.approx(1.853, abs=0.0005)
+        assert np.degrees(np.abs(r.whole[:, 0] - r.linear[:, 0]).max()) == pytest.approx(apart, rel=0.03)
+    assert 1.924 / 1.853 - 1 == pytest.approx(0.038, abs=0.0005)
+    # chaos
+    start = (np.radians(120), np.radians(120))
+    d = divergence(p, start, 15.0)
+    assert d.doubling_time() == pytest.approx(0.49, abs=0.005)
+    assert d.apart[np.searchsorted(d.t, 10.0)] > 1.0
+    assert swing(p, start).drift < 1e-9

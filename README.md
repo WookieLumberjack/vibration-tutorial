@@ -54,8 +54,8 @@ or follows them:
    be), **Periodic forcing** (a repeating force as a Fourier series), **Damping models** (viscous, hysteretic, friction
    and viscoelastic damping matched to one another: their loops, losses and decays) and **Vibration
    isolation** (a machine on mounts: transmissibility, static deflection, damping, two stages, start-up).
-2. **Foundations.** **Deriving the equations** (a car's body in bounce and pitch by free-body diagrams and
-   by Lagrange, in any coordinates), *Simulation & modal analysis* (the chain above), **Energy methods** (Rayleigh,
+2. **Foundations.** **Deriving the equations** (a car's body in bounce and pitch, and a double pendulum,
+   by free-body diagrams and by Lagrange, in any coordinates), *Simulation & modal analysis* (the chain above), **Energy methods** (Rayleigh,
    Dunkerley, Rayleigh–Ritz and Holzer), **FRF matrix** (every term of the receptance matrix and how the
    modes build it up), **Complex modes** (when the damping makes the modes complex, and what the usual
    approximation then misses), **Continuous systems** (the chain refined into a string, a bar or a beam,
@@ -1415,7 +1415,15 @@ M, the free-body diagram's rows not symmetric until mixed), the frequencies don'
 mode about its node, the modes are swept against the rear spring, and it rides a speed hump to show
 Olley's flat ride.
 
+The page's second system is a double pendulum. Its free-body diagram needs rod 2's pull, found and
+eliminated; Lagrange's equations never see it. Its whole equations are nonlinear, and it is linearized only
+after differentiating, in the rods' angles or the elbow's bend. Released, it swings by the whole equations
+(DOP853, the energy held to 10⁻¹⁰) beside the linear model. Released high, a twin a millionth of a radian
+further over drifts away exponentially: chaos.
+
 ![Deriving the equations page, moments about the front axle: in x<sub>P</sub> and θ at P = 1.2 m ahead of G both M and K couple, the free-body diagram's moment balance about P keeps G's inertia force, and leaving it out (J<sub>P</sub>θ̈ = ΣM<sub>P</sub>) would give 0.932 and 1.38 Hz instead of 1.25 and 1.41](docs/images/deriving_equations.png)
+
+![Deriving the equations page, the double pendulum released at 120° and 120°: two releases 10⁻⁶ rad apart drift apart exponentially, the difference doubling every 0.49 s, until by 8 s they are radians apart; the lower bob's trail loops over the top](docs/images/deriving_pendulum.png)
 
 ### Energy methods
 
@@ -1658,6 +1666,9 @@ $F_f$ times the distance slid, so the energy balance still closes.
 - `core/bounce_pitch.py`: a car's body in bounce and pitch: Lagrange's M, C and K in three sets of
   coordinates (T = the transformation to G's), the free-body diagram's rows and the slip about P, the
   modes and their nodes, and a ride over a bump stepped exactly.
+- `core/double_pendulum.py`: a double pendulum: its whole equations (Lagrange's), small-swing M and K in
+  the rods' angles or the elbow's bend, the free-body rows and how to mix them, the modes, a release
+  stepped whole beside the linear model, and two releases drifting apart.
 - `core/energy_methods.py`: Rayleigh's quotient, inverse iteration, Dunkerley's sum, Rayleigh–Ritz and
   Holzer's table on the chain.
 - `core/beams_plates.py`: a simply supported beam by Euler–Bernoulli, Rayleigh, shear and Timoshenko

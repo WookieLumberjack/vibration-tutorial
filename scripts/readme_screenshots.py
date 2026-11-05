@@ -1015,6 +1015,21 @@ def deriving_equations():
     save(w, "deriving_equations")
 
 
+def deriving_pendulum():
+    from vib_tutorial.gui.deriving import TRIALS
+
+    w = window()
+    page = w.deriving_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name.startswith("Chaos")))
+    page._timer.stop()
+    for _ in range(int(7.5 / 0.05)):  # well into the chaos, its trail looping
+        page.step(0.05)
+    settle()
+    print(page.chaos_note.text())
+    save(w, "deriving_pendulum")
+
+
 def rigid_mounts():
     w = window()
     page = w.mounts_page
@@ -1174,6 +1189,7 @@ SHOTS = [
     pendulums,
     periodic_forcing,
     deriving_equations,
+    deriving_pendulum,
     energy_methods,
     beams_plates,
     numerical_integration,

@@ -55,7 +55,9 @@ dev = [
 [tool.pytest.ini_options]
 # Worker processes: the GUI tests' windows can't be freed (PySide's signal connections keep
 # them alive), and one process building all of them grew past 8 GB of address space.
-addopts = "-n auto --maxprocesses 4"
+# Small chunks: xdist's load scheduler hands out runs of consecutive tests, up to half of what's left per
+# worker, so one worker could get every GUI smoke test and keep all their windows (see CLAUDE.md).
+addopts = "-n auto --maxprocesses 4 --maxschedchunk 8"
 
 [tool.ruff]
 line-length = 120
