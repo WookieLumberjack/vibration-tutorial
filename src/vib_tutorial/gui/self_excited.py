@@ -9,13 +9,17 @@ models (core/self_excited.py).
 from __future__ import annotations
 
 import enum
+import math
 from dataclasses import dataclass, field
 
 import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..core.self_excited import (
+    PARKINSON,
+    TWO_PI,
     Flutter,
     Galloping,
     VanDerPol,
@@ -43,7 +47,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
@@ -159,6 +163,268 @@ TRIALS = (
     ),
 )
 
+DEFAULTS = {
+    "vdp_freq": 1.0,
+    "vdp_eps": 0.2,
+    "vdp_ref": 0.01,
+    "vdp_start": 0.0005,
+    "vdp_periods": 60.0,
+    "g_side": 0.1,
+    "g_mass": 5.0,
+    "g_fn": 2.0,
+    "g_zeta": 0.005,
+    "g_speed": 6.0,
+    "g_start": 0.001,
+    "g_periods": 300.0,
+    "v_d": 0.05,
+    "v_mass": 20.0,
+    "v_fn": 1.0,
+    "v_zeta": 0.005,
+    "v_reduced": 5.5,
+    "f_plunge": 3.0,
+    "f_pitch": 6.0,
+    "f_cg": 0.2,
+    "f_e": 0.3,
+    "f_zeta": 0.01,
+    "f_speed": 15.0,
+}  # every control's value when a trial doesn't set it
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+A1 = PARKINSON[0]
+
+
+def _vdp_amplitude(rng: np.random.Generator) -> Question:
+    eps, xr = pick(rng, (0.05, 0.1, 0.2, 0.3, 0.5)), pick(rng, (0.002, 0.005, 0.01, 0.02))
+    a = float(VanDerPol(1.0, eps, xr).theory_amplitude(eps))
+    return Question(
+        f"A van der Pol oscillator, ẍ + ω²x = ω(ε − x²/x<sub>r</sub>²)ẋ, with ε = {eps:g} and x<sub>r</sub> = "
+        f"{1000 * xr:g} mm. How large is its limit cycle's amplitude?",
+        1000 * a,
+        f"Averaging: over a cycle of x = a cos ωt the energy in, ε⟨ẋ²⟩, balances the energy out, ⟨x²ẋ²⟩/x<sub>r</sub>², "
+        f"at a²/4 = εx<sub>r</sub>²: a = 2x<sub>r</sub>√ε = 2 × {1000 * xr:g} × √{eps:g} = {number(1000 * a)} mm.",
+        unit="mm",
+        setup=dict(kind=Kind.VDP, values={"vdp_eps": eps, "vdp_ref": xr, "vdp_periods": 120.0}),
+    )
+
+
+def _vdp_growth(rng: np.random.Generator) -> Question:
+    eps, f = pick(rng, (0.05, 0.1, 0.2)), pick(rng, (0.5, 1, 2, 5))
+    w = TWO_PI * f
+    t = 2 * math.log(10) / (eps * w)
+    return Question(
+        f"A van der Pol oscillator at {f:g} Hz with ε = {eps:g} starts from a tiny displacement. How long does its "
+        "amplitude take to grow ten times, while it's still small?",
+        t,
+        f"Near rest it is ẍ − εωẋ + ω²x = 0: poles σ ± iω<sub>d</sub> with σ = εω/2 = {number(eps * w / 2)} /s. The "
+        f"envelope grows as e<sup>σt</sup>, so ten times takes ln 10/σ = {number(t)} s.",
+        unit="s",
+        setup=dict(kind=Kind.VDP, values={"vdp_freq": f, "vdp_eps": eps, "vdp_start": 1e-4}),
+    )
+
+
+def _galloping(rng: np.random.Generator) -> tuple[float, float, float, float]:
+    return (
+        pick(rng, (0.05, 0.1, 0.2, 0.3)),
+        pick(rng, (2, 5, 10, 20)),
+        pick(rng, (1, 2, 3, 5)),
+        pick(rng, (0.002, 0.005, 0.01)),
+    )
+
+
+def _galloping_onset(rng: np.random.Generator) -> Question:
+    side, mass, fn, zeta = _galloping(rng)
+    m = Galloping(side, mass, fn, zeta)
+    return Question(
+        f"A square section {1000 * side:g} mm across, {mass:g} kg/m, on a spring at {fn:g} Hz with ζ = {zeta:g}, in "
+        f"air (ρ = 1.225 kg/m³). Taking Parkinson's A₁ = {A1:g}, at what wind speed does it start to gallop?",
+        m.onset,
+        f"The wind's damping, −½ρUDA₁, beats the structure's 2mζω where U<sub>g</sub> = 4mζω/(ρDA₁) = 4 × {mass:g} × "
+        f"{zeta:g} × {number(m.omega)}/(1.225 × {side:g} × {A1:g}) = {number(m.onset)} m/s.",
+        unit="m/s",
+        setup=dict(kind=Kind.GALLOP, values={"g_side": side, "g_mass": mass, "g_fn": fn, "g_zeta": zeta}),
+    )
+
+
+def _galloping_damping(rng: np.random.Generator) -> Question:
+    side, mass, fn, _ = _galloping(rng)
+    w = TWO_PI * fn
+    U = pick(rng, (10, 15, 20, 30))
+    zeta = U * 1.225 * side * A1 / (4 * mass * w)
+    return Question(
+        f"A square section {1000 * side:g} mm across, {mass:g} kg/m, on a spring at {fn:g} Hz, must not gallop below "
+        f"{U:g} m/s (ρ = 1.225 kg/m³, A₁ = {A1:g}). What damping ratio does it need at least?",
+        100 * zeta,
+        f"U<sub>g</sub> = 4mζω/(ρDA₁) ≥ {U:g} m/s, so ζ ≥ ρDA₁U/(4mω) = 1.225 × {side:g} × {A1:g} × {U:g}/(4 × "
+        f"{mass:g} × {number(w)}) = {number(100 * zeta)} %.",
+        unit="%",
+        setup=dict(kind=Kind.GALLOP, values={"g_side": side, "g_mass": mass, "g_fn": fn, "g_speed": float(U)}),
+    )
+
+
+def _lock_in(rng: np.random.Generator) -> Question:
+    d, fn = pick(rng, (0.02, 0.05, 0.1, 0.3)), pick(rng, (0.5, 1, 2, 5))
+    m = Viv(d, freq_hz=fn)
+    U = m.lock_in_at * fn * d
+    return Question(
+        f"A cylinder {1000 * d:g} mm in diameter on a spring at {fn:g} Hz (in water) stands in a current. Taking a "
+        "Strouhal number of 0.2, at what current speed does the shedding frequency meet its natural frequency?",
+        U,
+        f"Vortices shed at St U/D; that is f<sub>n</sub> at U = f<sub>n</sub>D/St = {fn:g} × {d:g}/0.2 = {number(U)} "
+        "m/s, a reduced velocity U/f<sub>n</sub>D of 5. Lock-in spreads over a band of speeds round it.",
+        unit="m/s",
+        setup=dict(kind=Kind.VIV, values={"v_d": d, "v_fn": fn, "v_reduced": 5.0}),
+    )
+
+
+def _divergence(rng: np.random.Generator) -> Question:
+    pitch, e = pick(rng, (4, 6, 8, 10)), pick(rng, (0.1, 0.2, 0.3, 0.4))
+    m = Flutter(e=e, pitch_hz=pitch)
+    b = m.semichord
+    inertia = m.mass * (m.radius * b) ** 2
+    kt = inertia * (TWO_PI * pitch) ** 2
+    U = m.divergence_speed()
+    return Question(
+        f"A wing section of semichord b = {b:g} m, {m.mass:g} kg per metre of span, radius of gyration {m.radius:g} b, "
+        f"pitches at {pitch:g} Hz. Its lift, ½ρU² × 2b × 2π per radian (ρ = 1.225), acts {e:g} b ahead of the elastic "
+        "axis. At what speed does it diverge?",
+        U,
+        f"I = m(rb)² = {number(inertia)} kg·m, so k<sub>θ</sub> = I(2πf)² = {number(kt)} N·m/rad. The lift's moment "
+        f"about the axis, ½ρU² × 2b × 2π × {e:g}b per radian, uses it up at U = √(k<sub>θ</sub>/(2πρb × {e:g}b)) = "
+        f"{number(U)} m/s.",
+        unit="m/s",
+        setup=dict(kind=Kind.FLUTTER, values={"f_pitch": pitch, "f_e": e}),
+    )
+
+
+def _double_eps(rng: np.random.Generator) -> Question:
+    return Question(
+        "A van der Pol oscillator at ε = 0.2 settles on a limit cycle. ε is doubled. What happens to the cycle's "
+        "amplitude?",
+        0,
+        "It grows √2 times, 8.9 mm to 12.6 mm: the amplitude is 2x<sub>r</sub>√ε.",
+        choices=("It grows √2 times", "It doubles", "It stays the same", "It grows four times"),
+        setup=dict(kind=Kind.VDP, values={"vdp_eps": 0.4, "vdp_periods": 120.0}),
+        predict=True,
+    )
+
+
+def _heavier(rng: np.random.Generator) -> Question:
+    return Question(
+        "A square section starts to gallop at 3.8 m/s. Its mass per metre is doubled, the frequency and damping kept. "
+        "Where does it start to gallop now?",
+        0,
+        "At twice the speed, 7.6 m/s: U<sub>g</sub> = 4mζω/(ρDA₁) is proportional to the mass–damping (Scruton) "
+        "number mζ.",
+        choices=("At twice the speed", "At √2 times the speed", "At the same speed", "At half the speed"),
+        setup=dict(kind=Kind.GALLOP, values={"g_mass": 10.0, "g_speed": 6.0}),
+        predict=True,
+    )
+
+
+def _past_lock_in(rng: np.random.Generator) -> Question:
+    return Question(
+        "A cylinder in a current swings 0.21 D at a reduced velocity of 5.5, locked in. The current rises to a reduced "
+        "velocity of 9. What does the motion do?",
+        0,
+        "It falls to a small forced motion, 0.019 D: the wake sheds near its own Strouhal frequency, 1.8 f<sub>n</sub>, "
+        "and no longer follows the structure. Vortex-induced vibration lives in a band of speeds.",
+        choices=(
+            "It falls to a small forced motion",
+            "It keeps growing with the current",
+            "It stays about the same",
+        ),
+        setup=dict(kind=Kind.VIV, values={"v_reduced": 9.0}),
+        predict=True,
+    )
+
+
+def _coalescence(rng: np.random.Generator) -> Question:
+    return Question(
+        "A wing section's plunge and pitch modes are at 2.9 and 6.7 Hz in still air. As the airspeed rises towards "
+        "flutter, what do their frequencies do?",
+        0,
+        "They close in, 3.4 and 5.0 Hz at 19 m/s, as the lift couples them; one mode's damping reaches zero there, "
+        "the flutter speed.",
+        choices=("They close in", "They move apart", "They stay where they are", "Both fall to zero"),
+        setup=dict(kind=Kind.FLUTTER, values={"f_speed": 19.0}),
+        predict=True,
+    )
+
+
+def _mass_balance(rng: np.random.Generator) -> Question:
+    return Question(
+        "A wing section flutters at 19 m/s with its centre of mass 0.2 semichords behind the elastic axis. The centre "
+        "of mass is moved to 0.2 semichords ahead of it. What happens?",
+        0,
+        "It no longer flutters: the inertia now couples plunge and pitch the other way, and only divergence is left, "
+        "at 39 m/s, where the pitch spring gives out. That is mass balance.",
+        choices=(
+            "It no longer flutters; it only diverges, at 39 m/s",
+            "It flutters at a lower speed",
+            "Nothing changes",
+        ),
+        setup=dict(kind=Kind.FLUTTER, values={"f_cg": -0.2}),
+        predict=True,
+    )
+
+
+def _scruton_spec(rng: np.random.Generator) -> Question:
+    side, fn = pick(rng, (0.1, 0.2)), pick(rng, (1, 2, 3))
+    times = pick(rng, (3, 4))
+    m0, z0 = DEFAULTS["g_mass"], DEFAULTS["g_zeta"]
+    start = Galloping(side, m0, fn, z0)
+    wind = rounded(times * start.onset, 2)
+    stretch = math.sqrt(1.3 * times)
+    heaviest, most = rounded(m0 * stretch, 2), rounded(z0 * stretch, 2)
+    design = {"g_mass": round(heaviest / 1.05, 2), "g_zeta": round(most / 1.05, 4)}
+
+    def goal(t: SelfTrial):
+        v = {**DEFAULTS, **t.values}
+        g = Galloping(v["g_side"], v["g_mass"], v["g_fn"], v["g_zeta"])
+        return (
+            Requirement("Galloping", t.kind.value, t.kind is Kind.GALLOP),
+            kept("Side D", v["g_side"], side, "m"),
+            kept("f<sub>n</sub>", v["g_fn"], fn, "Hz"),
+            at_most("Mass", v["g_mass"], heaviest, "kg/m"),
+            at_most("ζ", v["g_zeta"], most),
+            at_least("The onset U<sub>g</sub>", g.onset, wind, "m/s"),
+        )
+
+    need = wind * 1.225 * side * A1 / (4 * TWO_PI * fn)
+    return Question(
+        f"A square section {1000 * side:g} mm across on a spring at {fn:g} Hz gallops from {number(start.onset)} m/s at "
+        f"{m0:g} kg/m with ζ = {z0:g}. It must not gallop below {number(wind, 2)} m/s. Choose its mass, no more than "
+        f"{number(heaviest, 2)} kg/m, and its damping, ζ no more than {number(most, 2)}.",
+        0,
+        f"U<sub>g</sub> = 4mζω/(ρDA₁), so it needs mζ ≥ ρDA₁U/(4ω) = {number(need)} kg/m, about {times:g} times "
+        f"what it has: more than either limit allows alone ({number(heaviest * z0)} or {number(m0 * most)}), so "
+        f"both have to rise; {design['g_mass']:g} kg/m with ζ = {design['g_zeta']:g} gives "
+        f"{number(design['g_mass'] * design['g_zeta'])}.",
+        setup=dict(kind=Kind.GALLOP, values={"g_side": side, "g_fn": fn, "g_mass": m0, "g_zeta": z0, "g_speed": wind}),
+        goal=goal,
+        design=dict(kind=Kind.GALLOP, values={"g_side": side, "g_fn": fn, **design, "g_speed": wind}),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "self_excited_page", f"See {page_link('self_excited_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("vdp-amplitude", "A limit cycle's size", "vdp", "Van der Pol", _vdp_amplitude),
+        ("vdp-growth", "Growing from rest", "hopf", "Hopf bifurcation and limit cycles", _vdp_growth),
+        ("galloping-onset", "Galloping's onset", "galloping", "Galloping", _galloping_onset),
+        ("galloping-damping", "Damping against galloping", "galloping", "Galloping", _galloping_damping),
+        ("lock-in", "Where lock-in comes", "viv", "Vortex-induced vibration", _lock_in),
+        ("divergence", "Divergence", "flutter", "Flutter", _divergence),
+        ("double-eps", "Predict: twice ε", "vdp", "Van der Pol", _double_eps),
+        ("heavier", "Predict: a heavier section", "galloping", "Galloping", _heavier),
+        ("past-lock-in", "Predict: past lock-in", "viv", "Vortex-induced vibration", _past_lock_in),
+        ("coalescence", "Predict: towards flutter", "flutter", "Flutter", _coalescence),
+        ("mass-balance", "Predict: mass balance", "flutter", "Flutter", _mass_balance),
+        ("scruton-spec", "Spec: mass and damping", "galloping", "Galloping", _scruton_spec),
+    )
+)
+
 TIPS = {
     "kind": "<p>Which self-excited system.</p>",
     "vdp_freq": "<p>The natural frequency.</p>",
@@ -267,6 +533,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self._viv_cache: tuple | None = None
+        self._stale = False
         self.trials = TrialBox(
             [t.name for t in TRIALS], "<p>Each picks a model and sets it up to show one idea from the Theory tab.</p>"
         )
@@ -371,41 +638,41 @@ class SelfExcitedPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
-        t = TRIALS[index]
-        defaults = {
-            "vdp_freq": 1.0,
-            "vdp_eps": 0.2,
-            "vdp_ref": 0.01,
-            "vdp_start": 0.0005,
-            "vdp_periods": 60.0,
-            "g_side": 0.1,
-            "g_mass": 5.0,
-            "g_fn": 2.0,
-            "g_zeta": 0.005,
-            "g_speed": 6.0,
-            "g_start": 0.001,
-            "g_periods": 300.0,
-            "v_d": 0.05,
-            "v_mass": 20.0,
-            "v_fn": 1.0,
-            "v_zeta": 0.005,
-            "v_reduced": 5.5,
-            "f_plunge": 3.0,
-            "f_pitch": 6.0,
-            "f_cg": 0.2,
-            "f_e": 0.3,
-            "f_zeta": 0.01,
-            "f_speed": 15.0,
-        }
-        defaults.update(t.values)
-        for key, value in defaults.items():
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note); hidden, it draws
+        once shown."""
+        self.apply_trial(SelfTrial("", "", **setup))
+
+    def practice_state(self) -> SelfTrial:
+        """The page's settings, as a trial: what a practice spec checks."""
+        return SelfTrial(
+            "", "", KINDS[self.kind.currentIndex()], {k: self.v(k) for k in self.boxes}, self.tabs.currentIndex()
+        )
+
+    def apply_trial(self, t: SelfTrial) -> None:
+        for key, value in {**DEFAULTS, **t.values}.items():
             set_quietly(self.boxes[key], value)
         set_quietly(self.kind, KINDS.index(t.kind))
         self.trials.show_note(t.note)
+        # a practice setup on a hidden page: the stepping waits until it shows
+        self._stale = not (t.name or self.isVisible())
         self.tabs.setCurrentIndex(t.tab)
-        self._on_inputs()
+        if self._stale:
+            self.current = t.kind
+            self.pages.setCurrentIndex(self.kind.currentIndex())
+        else:
+            self._on_inputs()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if self._stale:
+            self._stale = False
+            self._on_inputs()
 
     def _on_inputs(self) -> None:
+        self._stale = False
         self.current = KINDS[self.kind.currentIndex()]
         self.pages.setCurrentIndex(self.kind.currentIndex())
         self.redraw()
@@ -581,7 +848,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         )
 
     def _draw_sweep(self) -> None:
-        if self.tabs.currentIndex() != TAB_SWEEP or not hasattr(self, "current"):
+        if self.tabs.currentIndex() != TAB_SWEEP or not hasattr(self, "current") or self._stale:
             return
         for item in (
             self.sweep_curve,
