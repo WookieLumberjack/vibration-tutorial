@@ -15,10 +15,30 @@ from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
+import scipy.optimize
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.practice import Problem, Question, Requirement, kept, number, pick
-from ..core.rigid_mounts import DOF, SWEEPS, TWO_PI, Body, Layout, Sweep, elastic_centre, plane_centres, sweep
+from ..core.rigid_mounts import (
+    DOF,
+    EXCITATIONS,
+    SWEEPS,
+    TWO_PI,
+    Body,
+    Drive,
+    Excitation,
+    Layout,
+    Sweep,
+    amplitude,
+    elastic_centre,
+    mount_forces,
+    participation,
+    plane_centres,
+    response,
+    spectrum,
+    sweep,
+    torque_roll_axis,
+)
 from . import frame_stats, settle_plots
 from .lesson import (
     Dot,
@@ -41,7 +61,9 @@ from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
-TAB_SWEEP, TAB_CENTRE = range(2)
+TAB_SWEEP, TAB_CENTRE, TAB_RESPONSE, TAB_DRIVE = range(4)
+FORCED = 6  # the Show combo's item after the six modes: the steady response at the speed
+SPEEDS = np.geomspace(60.0, 12000.0, 500)  # rpm, the Response tab's
 FRAME_MS = 16
 SHOW_HZ = 0.8  # the animation's own pace: every mode swings at it
 SWING = 0.06  # m, how far the farthest point swings in the animation
@@ -75,6 +97,27 @@ class MountTrial:
     mode: int = 0
     sweep: Sweep = Sweep.DROP
     tab: int = TAB_SWEEP
+    excitation: Excitation = Excitation.UNBALANCE
+    rpm: float = 1500.0
+    unbalance: float = 0.002  # kg·m
+    at_x: float = 0.1  # m, where the unbalance turns
+    at_z: float = 0.1
+    torque: float = 10.0  # N·m
+    order: int = 2
+    crank: float = 0.0  # degrees, the crank axis up from x
+    loss: float = 0.1  # η, the mounts' loss factor
+
+    @property
+    def drive(self) -> Drive:
+        return Drive(
+            self.excitation,
+            self.rpm,
+            self.unbalance,
+            (self.at_x, 0.0, self.at_z),
+            self.torque,
+            self.order,
+            math.radians(self.crank),
+        )
 
     @property
     def layout(self) -> Layout:
@@ -142,6 +185,65 @@ TRIALS = (
         drop=0.08,
         shear_ratio=1.0,
         sweep=Sweep.TILT,
+    ),
+    MountTrial(
+        "An unbalance at 3000 rpm: isolated",
+        "The level box with 2 kg·mm of unbalance turning about a crank along x, 100 mm ahead of its centre of mass "
+        "and 100 mm up, at 3000 rpm (50 Hz). It pushes mₑeΩ² = 197 N, turning; 22.4 N reaches the floor, 11.3 %: "
+        "the load turns three times faster than the stiffest mode, and the box's inertia carries it. Above about "
+        "1350 rpm the mounts isolate; the Response tab shows where they don't.",
+        rpm=3000.0,
+        mode=FORCED,
+        tab=TAB_RESPONSE,
+    ),
+    MountTrial(
+        "Running at the bounce: amplified",
+        "The same unbalance at 955 rpm, where it turns at the bounce mode's 15.9 Hz: 20.0 N of unbalance puts "
+        "201 N through the floor, 10.1 times as much (about 1/η), held back only by the rubber's loss factor "
+        "η = 0.1.",
+        rpm=955.0,
+        mode=FORCED,
+        tab=TAB_RESPONSE,
+    ),
+    MountTrial(
+        "Lossier rubber: less at resonance, as much isolation",
+        "η = 0.3: at 955 rpm the floor gets 70.0 N (3.5 times the unbalance's), not 201; at 3000 rpm 23.2 N, "
+        "hardly more than η = 0.1's 22.4. Rubber's hysteretic damping (the Damping models page's) stiffens a mount "
+        "by |1 + iη| at every frequency, not more at high ones as a viscous damper's iωc does, so it costs little "
+        "isolation.",
+        rpm=955.0,
+        loss=0.3,
+        mode=FORCED,
+        tab=TAB_RESPONSE,
+    ),
+    MountTrial(
+        "A firing torque: roll alone",
+        "A torque about the crank axis (x), twice a turn at 1500 rpm (50 Hz), on the level mounts: it drives the "
+        "roll mode and nothing else (the Drive tab), so the box only rolls. That is what decoupling buys.",
+        excitation=Excitation.TORQUE,
+        mode=FORCED,
+        tab=TAB_DRIVE,
+    ),
+    MountTrial(
+        "Mounts below: the torque drives two modes",
+        "The same torque with the mounts 80 mm below the centre of mass: the roll it drives is shared by the two "
+        "sway–roll modes, so it drives both (modal forces 1.00 and 0.70), and the box sways as it rolls.",
+        excitation=Excitation.TORQUE,
+        drop=0.08,
+        mode=FORCED,
+        tab=TAB_DRIVE,
+    ),
+    MountTrial(
+        "A tilted crank: the torque roll axis",
+        "A box 0.8 m long with its crank tilted 20° up from x. A free body under a torque about n turns about "
+        "I⁻¹n, not n: here 14.0° up (tan γ' = (I<sub>xx</sub>/I<sub>zz</sub>) tan γ), the torque roll axis "
+        "(green in the 3D view; dashed, the crank). The torque now drives yaw as well as roll (0.30 of it). Engine "
+        "mounts are aimed at this axis, so that the firing torque drives one mode about it.",
+        excitation=Excitation.TORQUE,
+        length=0.8,
+        crank=20.0,
+        mode=FORCED,
+        tab=TAB_DRIVE,
     ),
 )
 
@@ -265,6 +367,104 @@ def _decouple_spec(rng: np.random.Generator) -> Question:
     )
 
 
+def _transmitted(rng: np.random.Generator) -> Question:
+    fn, f, eta = pick(rng, (8.0, 10.0, 12.0, 15.0)), pick(rng, (25.0, 40.0, 50.0)), pick(rng, (0.05, 0.1, 0.2))
+    r = f / fn
+    t = abs(1 + 1j * eta) / abs(1 - r * r + 1j * eta)
+    return Question(
+        f"A machine bounces on its mounts at {fn:g} Hz, the rubber's loss factor η = {eta:g}. Running at {f:g} Hz, "
+        "what fraction of its vertical out-of-balance force reaches the floor, in %?",
+        100 * t,
+        f"With K(1 + iη), the transmissibility is |1 + iη|/|1 − r² + iη|, r = f/f<sub>n</sub> = {number(r)}: "
+        f"{number(100 * t)} %. (Nearly 1/(r² − 1): well above resonance η hardly matters.)",
+        unit="%",
+    )
+
+
+def _roll_axis(rng: np.random.Generator) -> Question:
+    length, gamma = pick(rng, (0.7, 0.8, 1.0)), pick(rng, (10.0, 15.0, 20.0, 30.0))
+    body = Body(20.0, length, 0.5, 0.6)
+    i_xx, _, i_zz = body.inertia
+    tra = math.degrees(math.atan(i_xx / i_zz * math.tan(math.radians(gamma))))
+    return Question(
+        f"An engine block (a uniform box {length * 1000:g} mm long, 500 mm wide, 600 mm tall) has its crank tilted "
+        f"{gamma:g}° up from its length, in the length–height plane. Its firing torque is about the crank. About "
+        "what axis would it turn, free: how many degrees up from its length?",
+        tra,
+        f"I α = T n, so α ∥ I⁻¹n: with n = (cos γ, 0, sin γ), tan γ' = (I<sub>xx</sub>/I<sub>zz</sub>) tan γ, "
+        f"I<sub>xx</sub> = m(w² + h²)/12 and I<sub>zz</sub> = m(l² + w²)/12: γ' = {number(tra)}°. (The mass "
+        "cancels.)",
+        unit="°",
+        setup=dict(excitation=Excitation.TORQUE, length=length, crank=gamma, mode=FORCED, tab=TAB_DRIVE),
+    )
+
+
+def _torque_modes(rng: np.random.Generator) -> Question:
+    return Question(
+        "An engine's firing torque about its crank (along x, a principal axis) acts on a block whose mounts are "
+        "level with its centre of mass and even about it. Which modes does it drive?",
+        0,
+        "The roll mode alone: the modes are pure, and only the roll mode's shape turns about x, so only its modal "
+        "force φᵀQ is not zero.",
+        choices=("Roll alone", "Roll and sway", "All six", "Bounce and pitch"),
+        setup=dict(excitation=Excitation.TORQUE, mode=FORCED, tab=TAB_DRIVE),
+        predict=True,
+    )
+
+
+def _lossier(rng: np.random.Generator) -> Question:
+    return Question(
+        "A machine runs well above its mounts' modes. Its rubber is swapped for one with three times the loss "
+        "factor. What happens to the force reaching the floor at the running speed?",
+        0,
+        "Almost nothing: hysteretic damping adds iη to the stiffness at every frequency, and well above resonance "
+        "|1 + iη|/(r² − 1) hardly changes. It cuts the resonances (passed on start-up) instead.",
+        choices=("It hardly changes", "It drops to a third", "It triples", "It drops to a ninth"),
+        setup=dict(rpm=3000.0, loss=0.3, mode=FORCED, tab=TAB_RESPONSE),
+        predict=True,
+    )
+
+
+def _isolation_spec(rng: np.random.Generator) -> Question:
+    rpm = pick(rng, (1200.0, 1500.0, 1800.0))
+    start = MountTrial("", "", rpm=rpm)
+
+    def ratio(trial: MountTrial) -> float:
+        layout, drive = trial.layout, trial.drive
+        q = response(layout.body, layout.mounts(), trial.loss, drive.frequency(), drive.load())
+        f = mount_forces(layout.mounts(), trial.loss, q)
+        return float(amplitude(f.sum(axis=0)) / amplitude(drive.load()[:3]))
+
+    # the stiffest mounts that pass a tenth, then 10 % softer (the box's boxes show a tenth of a kN/m)
+    k = scipy.optimize.brentq(
+        lambda log_k: ratio(MountTrial("", "", rpm=rpm, stiffness=math.exp(log_k))) - 0.1, math.log(1e3), math.log(5e4)
+    )
+    best = math.floor(0.9 * math.exp(k) / 100) * 100
+
+    def goal(t: MountTrial):
+        now = ratio(t)
+        return (
+            kept("Speed", t.rpm, rpm, "rpm"),
+            kept("Mass", t.mass, start.mass, "kg"),
+            kept("Unbalance", t.unbalance * 1e3, start.unbalance * 1e3, "kg·mm"),
+            kept("Drop", t.drop * 1000, start.drop * 1000, "mm"),
+            Requirement(
+                "At most 10 % of the unbalance's force reaching the floor", f"{number(100 * now)} %", now <= 0.1
+            ),
+        )
+
+    return Question(
+        f"This machine runs at {rpm:g} rpm, and too much of its unbalance reaches the floor. Choose its mounts' "
+        "stiffness so that at most 10 % does.",
+        0,
+        "Softer mounts lower every mode; the force through them falls as (f<sub>n</sub>/f)² above √2 f<sub>n</sub>. "
+        f"About {number(best / 1000)} kN/m does it (the Response tab shows the floor's force against the speed).",
+        setup=dict(rpm=rpm, mode=FORCED, tab=TAB_RESPONSE),
+        goal=goal,
+        design=dict(rpm=rpm, stiffness=best, mode=FORCED, tab=TAB_RESPONSE),
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "mounts_page", f"See {page_link('mounts_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -274,6 +474,11 @@ PROBLEMS = tuple(
         ("lowered", "Predict: mounts below", "decoupling", "Decoupling", _lowered),
         ("offset", "Predict: an offset centre of mass", "elastic-centre", "The elastic centre", _offset),
         ("decouple-spec", "Spec: decouple sway and roll", "decoupling", "Decoupling", _decouple_spec),
+        ("transmitted", "Through the mounts", "floor", "What reaches the floor", _transmitted),
+        ("roll-axis", "The torque roll axis", "torque-roll-axis", "The torque roll axis", _roll_axis),
+        ("torque-modes", "Predict: a firing torque", "forced", "The forced response", _torque_modes),
+        ("lossier", "Predict: lossier rubber", "floor", "What reaches the floor", _lossier),
+        ("isolation-spec", "Spec: isolate the floor", "floor", "What reaches the floor", _isolation_spec),
     )
 )
 
@@ -294,6 +499,16 @@ TIPS = {
     "mode": "<p>The mode the 3D view swings in, slowed to the same pace whatever its frequency.</p>",
     "animate": "<p>Swing the box in the mode picked.</p>",
     "sweep": "<p>The quantity the Sweep tab changes, the rest as set.</p>",
+    "excitation": "<p>What drives the machine: an unbalance turning with the shaft (a force mₑeΩ² going round "
+    "the crank axis), or a torque about the crank axis at a multiple of the speed (an engine's firing).</p>",
+    "rpm": "<p>The machine's speed Ω.</p>",
+    "unbalance": "<p>mₑe: the unbalanced mass times its distance from the axis.</p>",
+    "at": "<p>Where the unbalance turns, from the centre of mass: off it, its force also turns the body.</p>",
+    "torque": "<p>The torque's amplitude about the crank axis.</p>",
+    "order": "<p>How many times a turn the torque goes round: a four-stroke four-cylinder engine fires twice a "
+    "turn.</p>",
+    "crank": "<p>The crank axis's tilt up from x, in the x–z plane.</p>",
+    "loss": "<p>The mounts' loss factor η: K(1 + iη), rubber's hysteretic damping (about 0.05 to 0.3).</p>",
 }
 VIEW_TIP = (
     "<p>The box on its mounts in 3D, swinging in the mode picked (slowed, and exaggerated): drag to turn the view, "
@@ -308,6 +523,12 @@ SWEEP_TIP = (
     "<p>The six frequencies as one quantity changes, each dot coloured by the coordinate with most of the mode's "
     "energy. Decoupled modes cross freely; coupled ones veer apart. The vertical line is the setting now.</p>"
 )
+RESPONSE_TIP = (
+    "<p>Against the speed: the force each mount puts on the floor, and all four's together (thick); for an "
+    "unbalance, dashed, its own force, which a bolted-down machine would pass straight to the floor. Dotted: where "
+    "the load turns at a mode's frequency. The vertical line is the speed set.</p>"
+)
+DRIVE_TIP = "<p>Each mode's modal force |φ<sub>j</sub>ᵀQ|, over the largest: which modes this load drives.</p>"
 CENTRE_TIP = (
     "<p>The box seen from the front (the roll plane, left) and from the side (the pitch plane, right): the mounts, "
     "their lines of action (dotted), the centre of mass (dot) and each plane's elastic centre (cross).</p>"
@@ -367,6 +588,32 @@ h u² − t(1 − ρ)u + hρ = 0, whose smaller root is the focal tilt. It has o
 as stiff across as along can't be focused at all. Engine mounts are focused on the engine's torque roll axis,
 so that its firing torque rolls it about that axis and nothing else.</p>
 
+<h3><a name="forced"></a>The forced response</h3>
+<p>A running machine drives itself: an unbalance m<sub>e</sub>e turning with its shaft pushes
+m<sub>e</sub>eΩ² round the shaft's axis, and an engine's firing turns its block with a torque at a multiple of
+its speed. Either is a generalized force Q about the centre of mass (a force F and its moment r × F, or a torque
+T n), steady at its frequency ω. Rubber mounts lose the same energy per cycle at every frequency, so they are
+modelled with a loss factor, K(1 + iη) (the Damping models page's hysteretic damping), and</p>
+<p align="center">(K(1 + iη) − ω²M) q = Q.</p>
+<p>How hard the load drives each mode is its modal force φ<sub>j</sub>ᵀQ (the <i>Drive</i> tab): a load that
+only one mode's shape can feel drives only that mode.</p>
+
+<h3><a name="floor"></a>What reaches the floor</h3>
+<p>Each mount pushes the floor with K<sub>m</sub>(1 + iη) T q (the <i>Response</i> tab). Bolted down, the
+machine would pass its whole load straight on. On its mounts, below the modes the floor still takes it all,
+near a mode it takes more (about 1/η times as much), and above √2 times the highest mode it takes less, falling
+as (f<sub>n</sub>/f)²: the Vibration isolation page's transmissibility, once per mode. So mounts are chosen to
+put every mode well below the running speed. A loss factor tames the resonances, and costs almost no isolation
+above them, since |1 + iη| is the same at every frequency (a viscous damper's iωc is not).</p>
+
+<h3><a name="torque-roll-axis"></a>The torque roll axis</h3>
+<p>A free body under a torque T n turns with I α = T n: about I⁻¹n, not n, unless n is a principal axis. That
+line through the centre of mass is the <b>torque roll axis</b>. An engine's crank is seldom a principal axis, so
+its firing torque would rock it about the torque roll axis. Mounts placed (and focused) so that one mode turns
+about that axis, and the others don't, leave the torque only that mode to drive: the engine rolls quietly about
+its torque roll axis and passes little else on. A crank tilted γ up from x in a box's x–z plane has
+tan γ' = (I<sub>xx</sub>/I<sub>zz</sub>) tan γ.</p>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the box and its mounts (Things to try, top left).</p>
 <!--TRIALS-->
@@ -379,6 +626,7 @@ NOTES_HTML = (
             ("isolation_page", "transmissibility", "Transmissibility"),
             ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
             ("quarter_car_page", "quarter-car", "The quarter-car"),
+            ("damping_page", "hysteretic", "Hysteretic damping"),
         ),
     )
     .replace("<!--TRIALS-->", trials_html(TRIALS))
@@ -394,6 +642,9 @@ NOTES_HTML = (
             "with pitch.",
             "Tilting the mounts toward the middle lifts the elastic centre: focused on the centre of mass, sway and "
             "roll decouple again.",
+            "Driven, (K(1 + iη) − ω²M)q = Q: the mounts isolate above √2 times the highest mode, and a loss factor "
+            "tames the resonances at little cost to that.",
+            "A torque turns a free body about I⁻¹n, the torque roll axis; decoupled mounts let it drive one mode.",
         ),
     )
 )
@@ -441,8 +692,20 @@ class MountView(pg.PlotWidget):
         self.springs = pg.PlotCurveItem(connect="finite")
         self.pads = pg.PlotCurveItem(connect="finite")
         self.cross = pg.PlotCurveItem(connect="finite")
+        self.crank = pg.PlotCurveItem()  # the crank axis
+        self.roll_axis = pg.PlotCurveItem()  # the torque roll axis
         self.com = Dot(9)
-        for item in (self.floor, self.rest, self.springs, self.pads, self.edges, self.cross):
+        self.drive: Drive | None = None
+        for item in (
+            self.floor,
+            self.rest,
+            self.springs,
+            self.pads,
+            self.edges,
+            self.cross,
+            self.crank,
+            self.roll_axis,
+        ):
             plot.addItem(item)
         plot.addItem(self.com, ignoreBounds=True)
         self.apply_theme()
@@ -470,9 +733,10 @@ class MountView(pg.PlotWidget):
                     out += [corners[i], corners[j], [np.nan] * 3]
         return np.array(out)
 
-    def set_layout(self, layout: Layout, centre: np.ndarray) -> None:
-        """A new body or mounts: its size sets the view's; `centre` is the elastic centre's point."""
-        self.layout_, self.centre = layout, centre
+    def set_layout(self, layout: Layout, centre: np.ndarray, drive: Drive | None = None) -> None:
+        """A new body or mounts: its size sets the view's; `centre` is the elastic centre's point; with a drive,
+        its crank axis (through the unbalance, or the centre of mass) and, for a torque, the torque roll axis."""
+        self.layout_, self.centre, self.drive = layout, centre, drive
         self._place_static()
 
     def _place_static(self) -> None:
@@ -506,6 +770,19 @@ class MountView(pg.PlotWidget):
         cross = np.array([c - [d, 0, 0], c + [d, 0, 0], [np.nan] * 3, c - [0, d, 0], c + [0, d, 0], [np.nan] * 3])
         cross = np.vstack([cross, [c - [0, 0, d], c + [0, 0, d]]])
         self.cross.setData(*self.project(cross))
+        long = 0.6 * max(b.length, b.height)
+        if self.drive is None:
+            self.crank.setData([], [])
+            self.roll_axis.setData([], [])
+        else:
+            n = self.drive.axis()
+            through = np.array(self.drive.at) if self.drive.kind is Excitation.UNBALANCE else np.zeros(3)
+            self.crank.setData(*self.project(np.array([through - long * n, through + long * n])))
+            if self.drive.kind is Excitation.TORQUE:
+                a = torque_roll_axis(b, n)
+                self.roll_axis.setData(*self.project(np.array([-long * a, long * a])))
+            else:
+                self.roll_axis.setData([], [])
         lowest = min(z0, -0.5 * b.height)
         top = 0.5 * b.height + 0.1
         span = max(reach * 1.2, 0.5 * (top - lowest) + 0.15)
@@ -539,6 +816,8 @@ class MountView(pg.PlotWidget):
         self.springs.setPen(pg.mkPen(c.strong, width=1.5))
         self.pads.setPen(pg.mkPen(c.strong, width=3))
         self.cross.setPen(pg.mkPen(c.force, width=2.5))
+        self.crank.setPen(pg.mkPen(c.grey, width=2, style=QtCore.Qt.PenStyle.DashLine))
+        self.roll_axis.setPen(pg.mkPen(c.mass[2], width=2))
         self.com.setBrush(pg.mkBrush(c.strong))
         self.com.setPen(pg.mkPen(None))
 
@@ -621,8 +900,21 @@ class MountsPage(QtWidgets.QWidget):
         self.focus_info = note_label()
         mounts.row(self.focus_info)
 
+        drive = Form("Drive")
+        self.drive_form = drive.form
+        self.excitation = combo([e.value for e in EXCITATIONS], TIPS["excitation"])
+        drive.add("Load:", self.excitation, TIPS["excitation"])
+        self.rpm = drive.number("Speed:", 10.0, 50000.0, 1500.0, 0, " rpm", TIPS["rpm"])
+        self.unbalance = drive.number("Unbalance mₑe:", 0.0, 1e6, 2.0, 2, " kg·mm", TIPS["unbalance"])
+        self.at_x = drive.number("…at x:", -2000.0, 2000.0, 100.0, 0, " mm", TIPS["at"])
+        self.at_z = drive.number("…at z:", -2000.0, 2000.0, 100.0, 0, " mm", TIPS["at"])
+        self.torque = drive.number("Torque T:", 0.0, 1e6, 10.0, 1, " N·m", TIPS["torque"])
+        self.order = drive.number("Order n:", 1.0, 12.0, 2.0, 0, "", TIPS["order"])
+        self.crank = drive.number("Crank tilt γ:", -80.0, 80.0, 0.0, 1, "°", TIPS["crank"])
+        self.loss = drive.number("Mounts' loss η:", 0.0, 2.0, 0.1, 2, "", TIPS["loss"])
+
         show = Form("Show")
-        self.mode = combo([f"Mode {i + 1}" for i in range(6)], TIPS["mode"])
+        self.mode = combo([f"Mode {i + 1}" for i in range(6)] + ["The response at the speed"], TIPS["mode"])
         show.add("Mode:", self.mode, TIPS["mode"])
         self.animate = QtWidgets.QCheckBox("Animate the mode")
         self.animate.setChecked(True)
@@ -642,6 +934,15 @@ class MountsPage(QtWidgets.QWidget):
             self.tilt,
             self.stiffness,
             self.shear,
+            self.excitation,
+            self.rpm,
+            self.unbalance,
+            self.at_x,
+            self.at_z,
+            self.torque,
+            self.order,
+            self.crank,
+            self.loss,
         )
         connect_all(self.boxes, self._on_inputs)
         self.mode.currentIndexChanged.connect(self._on_mode)
@@ -709,16 +1010,38 @@ class MountsPage(QtWidgets.QWidget):
         for p, _ in self.planes:
             h.addWidget(p)
 
+        self.response_plot = plot("Force", "N", "Speed", "rpm", log_x=True, log_y=True, height=280)
+        self.response_plot.setToolTip(RESPONSE_TIP)
+        add_legend(self.response_plot.getPlotItem(), offset=(10, 10))
+        self.applied_item = pg.PlotDataItem(name="the load (bolted down)")
+        self.total_item = pg.PlotDataItem(name="the floor's, all four")
+        self.mount_items = [pg.PlotDataItem(name=f"mount {i + 1}") for i in range(4)]
+        self.response_modes = pg.PlotDataItem(connect="finite")
+        self.response_now = pg.InfiniteLine(angle=90)
+        for item in (self.response_modes, self.applied_item, *self.mount_items, self.total_item, self.response_now):
+            self.response_plot.addItem(item)
+        self.response_note = note_label()
+
+        self.drive_plot = plot("Modal force", None, "Mode", None, height=200)
+        self.drive_plot.setToolTip(DRIVE_TIP)
+        self.drive_bars = pg.BarGraphItem(x=np.arange(1, 7), height=np.zeros(6), width=0.6)
+        self.drive_plot.addItem(self.drive_bars)
+        self.drive_plot.setXRange(0.4, 6.6, padding=0)
+        self.drive_plot.setYRange(0.0, 1.1, padding=0)
+        self.drive_note = note_label()
+
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(sweep_tab, "Sweep")
         self.tabs.addTab(column(planes, self.centre_note, stretch=False), "Elastic centre")
+        self.tabs.addTab(column(self.response_plot, self.response_note, stretch=False), "Response")
+        self.tabs.addTab(column(self.drive_plot, self.drive_note, stretch=False), "Drive")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tab())
 
         three_panes(
             self,
-            column(self.trials, body, mounts, show),
+            column(self.trials, body, mounts, drive, show),
             stack((self.view, 4), (self.table, 0), (self.readout, 0)),
             self.tabs,
         )
@@ -755,6 +1078,15 @@ class MountsPage(QtWidgets.QWidget):
             tilt=self.tilt.value(),
             stiffness=self.stiffness.value() * 1000,
             shear_ratio=self.shear.value(),
+            excitation=EXCITATIONS[self.excitation.currentIndex()],
+            rpm=self.rpm.value(),
+            unbalance=self.unbalance.value() / 1e3,
+            at_x=self.at_x.value() / 1000,
+            at_z=self.at_z.value() / 1000,
+            torque=self.torque.value(),
+            order=int(self.order.value()),
+            crank=self.crank.value(),
+            loss=self.loss.value(),
             mode=self.mode.currentIndex(),
             sweep=SWEEPS[self.sweep_box.currentIndex()],
             tab=self.tabs.currentIndex(),
@@ -773,6 +1105,15 @@ class MountsPage(QtWidgets.QWidget):
             (self.tilt, t.tilt),
             (self.stiffness, t.stiffness / 1000),
             (self.shear, t.shear_ratio),
+            (self.excitation, EXCITATIONS.index(t.excitation)),
+            (self.rpm, t.rpm),
+            (self.unbalance, t.unbalance * 1e3),
+            (self.at_x, t.at_x * 1000),
+            (self.at_z, t.at_z * 1000),
+            (self.torque, t.torque),
+            (self.order, t.order),
+            (self.crank, t.crank),
+            (self.loss, t.loss),
             (self.mode, t.mode),
             (self.sweep_box, SWEEPS.index(t.sweep)),
         ):
@@ -782,7 +1123,18 @@ class MountsPage(QtWidgets.QWidget):
         self._on_inputs()
 
     def _on_inputs(self) -> None:
-        self.layout_ = self.practice_state().layout
+        state = self.practice_state()
+        self.layout_ = state.layout
+        self.drive, self.loss_factor = state.drive, state.loss
+        unbalance = self.drive.kind is Excitation.UNBALANCE
+        for box, shown in (
+            (self.unbalance, unbalance),
+            (self.at_x, unbalance),
+            (self.at_z, unbalance),
+            (self.torque, not unbalance),
+            (self.order, not unbalance),
+        ):
+            self.drive_form.setRowVisible(box, shown)
         self.modes = self.layout_.modes()
         mounts = self.layout_.mounts()
         point, left = elastic_centre(mounts)
@@ -797,7 +1149,8 @@ class MountsPage(QtWidgets.QWidget):
         )
         for i in range(6):
             self.mode.setItemText(i, f"{i + 1}: {self.modes.frequencies[i]:.3g} Hz, {DOF[self.modes.dominant(i)]}")
-        self.view.set_layout(self.layout_, point)
+        self.view.set_layout(self.layout_, point, self.drive)
+        self.forced = self._forced()
         self._fill_table()
         roll, (px, pz) = plane_centres(mounts)
         where = f"({_mm(point[0])}, {_mm(point[1])}, {_mm(point[2])}) mm"
@@ -807,11 +1160,30 @@ class MountsPage(QtWidgets.QWidget):
                 if left < 1e-6
                 else f"No single elastic centre: the best point, {where}, leaves {100 * left:.2g} % of the coupling"
             )
-            + f". The roll plane's is at z = {_mm(roll)} mm, the pitch plane's at x = {_mm(px)}, z = {_mm(pz)} mm. Showing mode {self.mode.currentIndex() + 1}: {self.modes.name(self.mode.currentIndex())}."
+            + f". The roll plane's is at z = {_mm(roll)} mm, the pitch plane's at x = {_mm(px)}, z = {_mm(pz)} mm. "
+            + self._showing()
         )
         self._draw_tab()
         self._show_mode()
         self._start_timer()
+
+    def _forced(self) -> np.ndarray:
+        """The steady response q (6, complex) to the drive at its speed."""
+        return response(
+            self.layout_.body, self.layout_.mounts(), self.loss_factor, self.drive.frequency(), self.drive.load()
+        )
+
+    def _showing(self) -> str:
+        """What the 3D view swings in."""
+        i = self.mode.currentIndex()
+        if i < FORCED:
+            return f"Showing mode {i + 1}: {self.modes.name(i)}."
+        f = mount_forces(self.layout_.mounts(), self.loss_factor, self.forced)
+        hz = self.drive.frequency() / TWO_PI
+        return (
+            f"Showing the response at {self.drive.rpm:g} rpm ({hz:.3g} Hz): {amplitude(f.sum(axis=0)):.3g} N through "
+            f"the floor, the most through one mount {amplitude(f).max():.3g} N."
+        )
 
     def _fill_table(self) -> None:
         self.table.blockSignals(True)
@@ -828,7 +1200,10 @@ class MountsPage(QtWidgets.QWidget):
                     fill.setAlpha(int(150 * share))
                     item.setBackground(QtGui.QBrush(fill))
                 self.table.setItem(i, col, item)
-        self.table.selectRow(self.mode.currentIndex())
+        if self.mode.currentIndex() < FORCED:
+            self.table.selectRow(self.mode.currentIndex())
+        else:
+            self.table.clearSelection()
         self.table.blockSignals(False)
         rows = sum(self.table.rowHeight(i) for i in range(6))  # all six rows, no scrolling
         self.table.setFixedHeight(self.table.horizontalHeader().height() + rows + 2 * self.table.frameWidth())
@@ -840,7 +1215,10 @@ class MountsPage(QtWidgets.QWidget):
 
     def _on_mode(self) -> None:
         self.table.blockSignals(True)
-        self.table.selectRow(self.mode.currentIndex())
+        if self.mode.currentIndex() < FORCED:
+            self.table.selectRow(self.mode.currentIndex())
+        else:
+            self.table.clearSelection()
         self.table.blockSignals(False)
         self._on_inputs()
 
@@ -884,15 +1262,17 @@ class MountsPage(QtWidgets.QWidget):
         self._show_mode()
 
     def mode_shape(self, mode: int) -> np.ndarray:
-        """The mode's shape, scaled so the farthest corner or mount swings SWING."""
-        phi = self.modes.shapes[:, mode]
+        """The mode's shape (or, past the six, the forced response, complex), scaled so the farthest corner or
+        mount swings SWING."""
+        phi = self.modes.shapes[:, mode] if mode < FORCED else self.forced
         points = np.vstack([self.view._corners(), [m.position for m in self.layout_.mounts()]])
-        reach = np.linalg.norm(phi[:3] + np.cross(phi[3:], points), axis=1).max()
+        reach = amplitude(phi[:3] + np.cross(phi[3:], points)).max()
         return phi * (SWING / reach if reach > 0 else 0.0)
 
     def _show_mode(self) -> None:
         q = self.mode_shape(self.mode.currentIndex())
-        self.view.draw(q * (math.sin(self._phase) if self.running else 1.0))
+        turn = np.exp(1j * (self._phase - 0.5 * math.pi)) if self.running else 1.0  # sin φ for a real shape
+        self.view.draw(np.real(q * turn))
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
@@ -914,6 +1294,13 @@ class MountsPage(QtWidgets.QWidget):
             items["com"].setSymbolPen(None)
             items["centre"].setSymbolBrush(pg.mkBrush(c.force))
             items["centre"].setSymbolPen(None)
+        self.applied_item.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
+        self.total_item.setPen(pg.mkPen(c.strong, width=2.5))
+        for i, item in enumerate(self.mount_items):
+            item.setPen(pg.mkPen(c.mass[i], width=1.2))
+        self.response_modes.setPen(pg.mkPen(c.fit, width=1, style=QtCore.Qt.PenStyle.DotLine))
+        self.response_now.setPen(pg.mkPen(c.strong, width=1.5))
+        self.drive_bars.setOpts(brush=pg.mkBrush(c.mass[0]), pen=pg.mkPen(None))
         self._fill_table()
         self._draw_tab()
         self._show_mode()
@@ -924,6 +1311,64 @@ class MountsPage(QtWidgets.QWidget):
             self._draw_sweep()
         elif i == TAB_CENTRE:
             self._draw_centre()
+        elif i == TAB_RESPONSE:
+            self._draw_response()
+        elif i == TAB_DRIVE:
+            self._draw_drive()
+
+    def _draw_response(self) -> None:
+        drive = self.drive
+        sp = spectrum(self.layout_, self.loss_factor, drive, SPEEDS)
+        unbalance = drive.kind is Excitation.UNBALANCE
+        self.applied_item.setData(SPEEDS if unbalance else [], sp.applied if unbalance else [])
+        self.total_item.setData(SPEEDS, np.maximum(sp.total, 1e-12))
+        for i, item in enumerate(self.mount_items):
+            item.setData(SPEEDS, np.maximum(sp.mounts[:, i], 1e-12))
+        per = 60.0 / (1 if unbalance else drive.order)  # rpm per Hz of the load
+        lo, hi = (
+            float(np.log10(max(sp.mounts.max(), sp.total.max(), sp.applied.max()) * 1e-4)),
+            float(np.log10(max(sp.mounts.max(), sp.total.max(), sp.applied.max()) * 3)),
+        )
+        xs, ys = [], []
+        for f in self.modes.frequencies:
+            xs += [f * per, f * per, np.nan]
+            ys += [10**lo, 10**hi, np.nan]
+        self.response_modes.setData(xs, ys)
+        self.response_now.setPos(math.log10(drive.rpm))
+        self.response_plot.setXRange(math.log10(SPEEDS[0]), math.log10(SPEEDS[-1]), padding=0)
+        self.response_plot.setYRange(lo, hi, padding=0)
+        f = mount_forces(self.layout_.mounts(), self.loss_factor, self.forced)
+        total, most = float(amplitude(f.sum(axis=0))), float(amplitude(f).max())
+        if unbalance:
+            applied = float(amplitude(drive.load()[:3]))
+            ratio = total / applied if applied else math.nan
+            what = f"At {drive.rpm:g} rpm the unbalance pushes {applied:.3g} N; {total:.3g} N reaches the floor, " + (
+                f"{100 * ratio:.3g} % of it: isolated." if ratio < 1 else f"{ratio:.3g} times it: amplified."
+            )
+        else:
+            what = (
+                f"At {drive.rpm:g} rpm the torque turns at {drive.order}× ({drive.frequency() / TWO_PI:.3g} Hz): the "
+                f"mounts push {most:.3g} N at most, the floor {total:.3g} N in all (a torque is a couple: its forces "
+                "nearly cancel, but each mount carries its share)."
+            )
+        self.response_note.setText(
+            what + " Dotted: the six modes, at the speeds where the load turns at their frequencies."
+        )
+
+    def _draw_drive(self) -> None:
+        shares = participation(self.modes, self.drive.load())
+        self.drive_bars.setOpts(height=shares)
+        names = ", ".join(f"{j + 1} ({self.modes.name(j)})" for j in range(6) if shares[j] >= 0.01)
+        text = f"The load drives mode{'s' if (shares >= 0.01).sum() > 1 else ''} {names}."
+        if self.drive.kind is Excitation.TORQUE:
+            n = self.drive.axis()
+            a = torque_roll_axis(self.layout_.body, n)
+            text += (
+                f" The torque is about the crank, {self.crank.value():.3g}° up from x, but a free body turns about "
+                f"I⁻¹n, the torque roll axis, {math.degrees(math.atan2(a[2], a[0])):.3g}° up (the line drawn in "
+                "the 3D view): only mounts whose roll mode turns about that axis leave the torque one mode to drive."
+            )
+        self.drive_note.setText(text)
 
     def _draw_sweep(self) -> None:
         which = SWEEPS[self.sweep_box.currentIndex()]

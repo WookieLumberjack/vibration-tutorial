@@ -1014,6 +1014,22 @@ def rigid_mounts():
     save(w, "rigid_mounts")
 
 
+def rigid_mounts_response():
+    from vib_tutorial.gui.rigid_mounts import TRIALS
+
+    w = window()
+    page = w.mounts_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Running at the bounce: amplified"))
+    page._timer.stop()
+    page.running = False
+    page._phase = 0.5 * math.pi
+    page._show_mode()
+    settle()
+    print(page.response_note.text())
+    save(w, "rigid_mounts_response")
+
+
 def seismic_response():
     lesson("seismic_page", 2, "seismic_response")  # close modes need CQC
 
@@ -1148,6 +1164,7 @@ SHOTS = [
     fatigue,
     quarter_car,
     rigid_mounts,
+    rigid_mounts_response,
     seismic_response,
     variability,
     self_excited,
