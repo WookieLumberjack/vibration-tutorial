@@ -931,7 +931,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
-        if self.prediction is not None:
+        if self.prediction is not None and not self._dirty:  # a new chain while hidden: redrawn when it shows
             self.redraw()
 
     def redraw(self) -> None:

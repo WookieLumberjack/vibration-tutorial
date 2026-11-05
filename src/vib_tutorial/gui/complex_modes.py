@@ -935,7 +935,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
-        if self.rows:
+        if self.rows and not self._dirty:  # a new chain while hidden: its rows are the old chain's until it shows
             self.redraw()
 
     def redraw(self) -> None:

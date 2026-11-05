@@ -17,6 +17,8 @@ QtCore.QSettings.setPath(QtCore.QSettings.Format.NativeFormat, QtCore.QSettings.
 
 from vib_tutorial.core import ForceKind  # noqa: E402
 
+SHARED = pytest.mark.xdist_group("shared_window")  # the tests on conftest's `shared_window`, run on one worker
+
 
 @pytest.fixture(scope="module")
 def app():
@@ -39,22 +41,6 @@ def _close_graphics(app):
     for w in QtWidgets.QApplication.topLevelWidgets():
         if w not in before and isValid(w):
             close_graphics(w)
-
-
-@pytest.fixture(scope="module")
-def lesson_window(app):
-    """One window for every lesson page's test, each page built in it once. No window a test builds is ever
-    freed, and one each (with its own Simulation page's histories) took a worker past the 8 GB ulimit. Made
-    before `_close_graphics` looks, so it outlives each test, and torn down once at the end."""
-    from vib_tutorial.gui import close_graphics
-    from vib_tutorial.gui.main_window import MainWindow
-
-    w = MainWindow()
-    w._timer.stop()
-    w.show()
-    yield w
-    w.close()
-    close_graphics(w)
 
 
 def test_window_interactions(app):
@@ -124,17 +110,46 @@ def test_secondary_pages_build_when_opened(app):
     assert page.system.n == 5
     assert [w.pages.tabText(i) for i in range(w.pages.count())] == titles
 
-    for name, _ in LAZY_PAGES:  # reading one builds it, without switching to it
-        assert w.pages.indexOf(getattr(w, name)) >= 0
     assert w.pages.currentWidget() is page and w.pages.count() == 1 + len(LAZY_PAGES)
     page.edit_parameters.emit()
     assert w.pages.currentWidget() is w.sim_page
+    w.close()
 
-    # The Theory window reads each page's notes from its module: the same as its Theory tab shows.
+
+@SHARED
+def test_hidden_pages_take_a_new_chain_and_a_new_theme(app, shared_window):
+    """A page that follows the chain, given a new one while hidden, puts off working it out until it shows; a theme
+    change meanwhile mustn't redraw it from the old chain's results (it threw on Complex modes, Random vibration,
+    OMA, the Virtual modal test and Model updating)."""
+    w = shared_window
+    for i in range(w.pages.count()):  # build every page
+        w.pages.setCurrentIndex(i)
+        app.processEvents()
+    w.pages.setCurrentWidget(w.sim_page)
+    dof = w.params.dof.value()
+    for n in (dof + 2, max(2, dof - 1)):
+        w.params.dof.setValue(n)
+        app.processEvents()
+        w.set_theme("Dark")
+        w.set_theme("Light")
+    for page in (w.complex_page, w.random_page, w.oma_page, w.test_page, w.updating_page):
+        w.pages.setCurrentWidget(page)  # each catches up when it shows
+        app.processEvents()
+    w.params.dof.setValue(dof)
+
+
+@SHARED
+def test_every_page_builds_in_its_tab_with_its_notes(app, shared_window):
+    """Reading a page's attribute builds it in its own tab; the Theory window shows the same notes as its tab."""
     from PySide6 import QtGui
 
+    from vib_tutorial.gui.main_window import LAZY_PAGES
     from vib_tutorial.gui.theory_window import page_html
 
+    w = shared_window
+    for name, _ in LAZY_PAGES:  # reading one builds it, without switching to it
+        assert w.pages.indexOf(getattr(w, name)) >= 0
+    # The Theory window reads each page's notes from its module: the same as its Theory tab shows.
     for name in ["sim_page", *(name for name, _ in LAZY_PAGES)]:
         page = getattr(w, name)
         shown = w.background if name == "sim_page" else getattr(page, "notes", None) or page.theory
@@ -1714,15 +1729,14 @@ def test_frequency_response_with_friction(app):
     w.close()
 
 
-def test_every_legend_has_the_theme_background(app):
+@SHARED
+def test_every_legend_has_the_theme_background(app, shared_window):
     # restyle() only reaches the legends that exist when the theme is applied; one made later
     # (a page built on first use, a rebuilt plot) must get its background when it's created.
     import pyqtgraph as pg
 
-    from vib_tutorial.gui.main_window import MainWindow
-
-    w = MainWindow()
-    w.show()
+    w = shared_window
+    dof = w.params.dof.value()
     for i in range(w.pages.count()):
         w.pages.setCurrentIndex(i)
         app.processEvents()
@@ -1737,7 +1751,7 @@ def test_every_legend_has_the_theme_background(app):
     assert len(legends) > 10
     bare = [legend for legend in legends if legend.opts["brush"].style() == QtCore.Qt.BrushStyle.NoBrush]
     assert not bare
-    w.close()
+    w.params.dof.setValue(dof)
 
 
 def test_modal_test_draws_the_describing_function_for_a_stepped_sine(app):
@@ -3894,6 +3908,7 @@ def test_shock_page(app):
     w.close()
 
 
+@SHARED
 @pytest.mark.parametrize(
     "name",
     [
@@ -3919,9 +3934,9 @@ def test_shock_page(app):
         "signals_page",
     ],
 )
-def test_lesson_pages_trials_and_tabs(app, lesson_window, name):
+def test_lesson_pages_trials_and_tabs(app, shared_window, name):
     """Every one-click trial of the lesson pages loads, and every tab draws, in either theme."""
-    w = lesson_window
+    w = shared_window
     page = getattr(w, name)
     w.pages.setCurrentWidget(page)
     module = sys.modules[type(page).__module__]

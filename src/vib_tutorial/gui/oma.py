@@ -1070,6 +1070,8 @@ class OmaPage(QtWidgets.QWidget):
     def apply_theme(self) -> None:
         self.results.mac.apply_theme()
         self.stab_plot.apply_theme()
+        if self._dirty:  # a new chain while hidden: the record is the old chain's, made again when it shows
+            return
         if self.record is not None:
             self._draw_records()
         if self.fdd is not None:

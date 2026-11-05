@@ -55,9 +55,10 @@ dev = [
 [tool.pytest.ini_options]
 # Worker processes: the GUI tests' windows can't be freed (PySide's signal connections keep
 # them alive), and one process building all of them grew past 8 GB of address space.
-# Small chunks: xdist's load scheduler hands out runs of consecutive tests, up to half of what's left per
-# worker, so one worker could get every GUI smoke test and keep all their windows (see CLAUDE.md).
-addopts = "-n auto --maxprocesses 4 --maxschedchunk 8"
+# loadgroup: the tests on conftest's `shared_window` (marked `xdist_group("shared_window")`) run on one worker,
+# and every other test goes out one at a time. xdist's default `load` hands out runs of consecutive tests, so
+# one worker could get every GUI smoke test and keep all their windows (see CLAUDE.md).
+addopts = "-n auto --maxprocesses 4 --dist loadgroup"
 
 [tool.ruff]
 line-length = 120
