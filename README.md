@@ -1262,7 +1262,10 @@ and waves the axis traces. Upright, the top sleeps above I₃ω₃ = 2√(I₁mg
 rigid body (a quaternion and L, split into gravity's moment and the free top, each exact), which doesn't
 mind the Euler angles' lock upright, and checks it against the closed forms. A square plate in place of
 the disc moves exactly as a disc of radius s/√3 does: its moment is the same about every line across its
-axis, so it is a symmetric top too. Its last section links the
+axis, so it is a symmetric top too. A rectangle isn't: with I₁ ≠ I₂ the spin isn't kept and every closed
+form goes. Without gravity Euler–Poinsot's solution in Jacobi's elliptic functions remains, and spun about its
+middle axis the plate flips over and back (the tennis-racket effect); with gravity there's none, and the
+*Chaos* tab's Poincaré section and two tops let go 10⁻⁸ rad apart show the motion turn chaotic. Its last section links the
 top's two precessions to the rotor's forward and backward whirl.
 
 Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant
@@ -1270,6 +1273,8 @@ J = L·(a e₃ + R ẑ) survives it, so the energy sinks onto the least energy t
 on a slippery table a disc on a round tip rises toward sleeping (until its tip starts to roll, at
 sin θ = μI₃/maR; on a rough one it rolls round a circle instead), and a tippe top turns over onto its
 top if 1 − α < I₁/I₃ < 1 + α, ending with its own spin reversed at the rate J gives.
+
+![Gyroscope page, a rectangular plate spun about its middle axis with gravity: it tumbles, the Poincaré section's dots scatter, and two tops let go 10⁻⁸ rad apart are a radian apart within 5 s](docs/images/gyroscope_chaos.png)
 
 ![Gyroscope page, a tippe top on a table: a 20 g ball weighted 4.5 mm below its centre, spun at 1200 rpm, has turned over in 2 s, its energy sunk onto the least that Jellett's constant allows, which is turned over](docs/images/gyroscope_table.png)
 

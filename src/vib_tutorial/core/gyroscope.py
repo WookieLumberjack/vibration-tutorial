@@ -49,6 +49,7 @@ _NODES, _WEIGHTS = np.polynomial.legendre.leggauss(64)
 class Shape(enum.Enum):
     DISC = "Disc"
     SQUARE = "Square plate"
+    RECTANGLE = "Rectangular plate"
 
 
 SHAPES = tuple(Shape)
@@ -56,33 +57,60 @@ SHAPES = tuple(Shape)
 
 @dataclass(frozen=True)
 class Top:
-    """A disc (or a square plate) on a light stem, its tip held at the origin."""
+    """A disc (or a square or rectangular plate) on a light stem, its tip held at the origin. A rectangle's side
+    `radius` lies along its mark (the body's x axis) and `breadth` across it (y)."""
 
     mass: float = 0.5  # kg
-    radius: float = 0.04  # m, the disc's radius r, or the square's side s
+    radius: float = 0.04  # m, the disc's radius r, or the square's side s, or the rectangle's a
     height: float = 0.03  # m, from the tip to the plate's centre (l)
     gravity: float = G
     shape: Shape = Shape.DISC
+    breadth: float = 0.02  # m, a rectangle's other side b
+
+    @property
+    def symmetric(self) -> bool:
+        """I₁ = I₂: everything but a rectangle with unequal sides."""
+        return self.shape is not Shape.RECTANGLE or self.breadth == self.radius
 
     @property
     def polar(self) -> float:
-        """I₃, about the axis: mr²/2, or ms²/6."""
+        """I₃, about the axis: mr²/2, ms²/6, or m(a² + b²)/12."""
+        if self.shape is Shape.RECTANGLE:
+            return self.mass * (self.radius**2 + self.breadth**2) / 12.0
         return self.mass * self.radius**2 / (2.0 if self.shape is Shape.DISC else 6.0)
 
     @property
     def plate(self) -> float:
-        """The plate's moment about a line across the axis through its centre: I₃/2 (perpendicular axes, and
-        the same about every such line, as a quarter turn leaves a square as it was)."""
+        """The plate's moment about the body's x axis through its centre: I₃/2 for a disc or a square
+        (perpendicular axes, and the same about every line across the axis, as a quarter turn leaves a square as
+        it was), mb²/12 for a rectangle."""
+        if self.shape is Shape.RECTANGLE:
+            return self.mass * self.breadth**2 / 12.0
         return 0.5 * self.polar
 
     @property
     def transverse(self) -> float:
-        """I₁, about a line across the axis through the tip (parallel axes)."""
+        """I₁, about the body's x axis through the tip (parallel axes): every line across the axis but a
+        rectangle's."""
         return self.plate + self.mass * self.height**2
 
     @property
+    def second(self) -> float:
+        """I₂, about the body's y axis through the tip: I₁ but for a rectangle, m(a²/12 + l²)."""
+        if self.shape is Shape.RECTANGLE:
+            return self.mass * (self.radius**2 / 12.0 + self.height**2)
+        return self.transverse
+
+    @property
+    def moments(self) -> tuple[float, float, float]:
+        """(I₁, I₂, I₃) about the tip, the principal moments."""
+        return self.transverse, self.second, self.polar
+
+    @property
     def corner(self) -> float:
-        """How far the plate reaches from its axis: r, or a square's corner s/√2."""
+        """How far the plate reaches from its axis: r, a square's corner s/√2, or a rectangle's √(a² + b²)/2."""
+        if self.shape is Shape.RECTANGLE:
+            return 0.5 * math.hypot(self.radius, self.breadth)
         return self.radius if self.shape is Shape.DISC else self.radius / math.sqrt(2.0)
 
     @property
@@ -166,24 +194,26 @@ class Motion:
 
     @property
     def vertical_momentum(self) -> float:
-        """p_φ = I₁φ' sin²θ + I₃ω₃ cos θ, the angular momentum about the vertical."""
+        """p_φ = I₁φ' sin²θ + I₃ω₃ cos θ, the angular momentum about the vertical (I₂ for a rectangle: it leans
+        about its x axis, so its precession φ' sin θ is about y)."""
         s, c = math.sin(self.tilt), math.cos(self.tilt)
-        return self.top.transverse * self.precession * s * s + self.spin_momentum * c
+        return self.top.second * self.precession * s * s + self.spin_momentum * c
 
     @property
     def energy(self) -> float:
-        """E' (J): the energy less the spin's ½I₃ω₃² (constant too)."""
+        """E' (J): the energy less the spin's ½I₃ω₃² (constant too, but for a rectangle's)."""
         s = math.sin(self.tilt)
-        return 0.5 * self.top.transverse * (self.precession * s) ** 2 + self.top.weight_moment * math.cos(self.tilt)
+        return 0.5 * self.top.second * (self.precession * s) ** 2 + self.top.weight_moment * math.cos(self.tilt)
 
     @property
     def total_energy(self) -> float:
         return self.energy + 0.5 * self.top.polar * self.spin**2
 
     def angular_momentum(self) -> np.ndarray:
-        """L (space axes, z up) at the start: I₁φ' ẑ + (I₃ω₃ − I₁φ' cos θ) e₃, with the axis e₃ leaning toward −y."""
+        """L (space axes, z up) at the start: I₁φ' ẑ + (I₃ω₃ − I₁φ' cos θ) e₃, with the axis e₃ leaning toward −y
+        (turned about the body's x axis, so a rectangle's I₂ in place of I₁)."""
         s, c = math.sin(self.tilt), math.cos(self.tilt)
-        i1, p = self.top.transverse, self.precession
+        i1, p = self.top.second, self.precession
         along = self.spin_momentum - i1 * p * c
         return np.array([0.0, -along * s, i1 * p + along * c])
 
@@ -301,11 +331,13 @@ class TopSimulator:
         self.motion = motion
         top = motion.top
         self.i1, self.i3, self.w = top.transverse, top.polar, top.weight_moment
+        self.skew = 1.0 / top.second - 1.0 / top.transverse  # a rectangle's: 0 for a symmetric top
         half = 0.5 * motion.tilt  # a turn by θ about x: the axis leans toward −y
         self.q = [math.cos(half), math.sin(half), 0.0, 0.0]
         self.L = [float(v) for v in motion.angular_momentum()]
         self.t = 0.0
-        rate = max(math.sqrt(sum(v * v for v in self.L)) / self.i1, math.sqrt(abs(self.w) / self.i1), 1e-3)
+        least = min(self.i1, top.second)
+        rate = max(math.sqrt(sum(v * v for v in self.L)) / least, math.sqrt(abs(self.w) / least), 1e-3)
         self.h = min(2.0 * math.pi / rate / per_period, MAX_STEP)
 
     def axis(self) -> tuple[float, float, float]:
@@ -315,18 +347,24 @@ class TopSimulator:
     def energy(self) -> float:
         lx, ly, lz = self.L
         ex, ey, ez = self.axis()
+        w, x, y, z = self.q
         along = lx * ex + ly * ey + lz * ez
+        across = lx * 2 * (x * y - w * z) + ly * (1 - 2 * (x * x + z * z)) + lz * 2 * (y * z + w * x)  # L·e₂
         return (
-            0.5 * (lx * lx + ly * ly + lz * lz) / self.i1 + 0.5 * (1 / self.i3 - 1 / self.i1) * along**2 + self.w * ez
+            0.5 * (lx * lx + ly * ly + lz * lz) / self.i1
+            + 0.5 * (1 / self.i3 - 1 / self.i1) * along**2
+            + 0.5 * self.skew * across**2
+            + self.w * ez
         )
 
     def advance(self, duration: float) -> TopSamples:
         """Step on by `duration` (to the nearest whole step, at most MAX_STEPS_PER_ADVANCE)."""
         n = min(round(duration / self.h), MAX_STEPS_PER_ADVANCE)
         out = np.empty((n, 11))
-        h, i1, i3, wgt = self.h, self.i1, self.i3, self.w
+        h, i1, i3, wgt, skew = self.h, self.i1, self.i3, self.w, self.skew
         kick = 0.5 * h * wgt
         spin_gain = (1.0 / i3 - 1.0 / i1) * h
+        skew_gain = 0.5 * skew * h  # half a step of a rectangle's part, about its own y axis
         w, x, y, z = self.q
         lx, ly, lz = self.L
         t = self.t
@@ -335,6 +373,9 @@ class TopSimulator:
             ex, ey = 2 * (x * z + w * y), 2 * (y * z - w * x)
             lx -= kick * ey
             ly += kick * ex
+            if skew:  # a rectangle's (1/I₂ − 1/I₁)L₂²/2, half a step: about its own y axis by (1/I₂ − 1/I₁)L₂h/2
+                w, x, y, z = _about_y(w, x, y, z, lx, ly, lz, skew_gain)
+                ex, ey = 2 * (x * z + w * y), 2 * (y * z - w * x)
             # the free top, a whole step: about its own axis (body z) by (1/I₃ − 1/I₁)L₃h ...
             ez = 1 - 2 * (x * x + y * y)
             along = lx * ex + ly * ey + lz * ez
@@ -351,6 +392,8 @@ class TopSimulator:
                     c * y - ax * z + ay * w + az * x,
                     c * z + ax * y - ay * x + az * w,
                 )
+            if skew:
+                w, x, y, z = _about_y(w, x, y, z, lx, ly, lz, skew_gain)
             # gravity's other half
             ex, ey = 2 * (x * z + w * y), 2 * (y * z - w * x)
             lx -= kick * ey
@@ -358,6 +401,7 @@ class TopSimulator:
             t += h
             ez = 1 - 2 * (x * x + y * y)
             along = lx * ex + ly * ey + lz * ez
+            across = lx * 2 * (x * y - w * z) + ly * (1 - 2 * (x * x + z * z)) + lz * 2 * (y * z + w * x)
             out[k] = (
                 t,
                 ex,
@@ -366,7 +410,10 @@ class TopSimulator:
                 1 - 2 * (y * y + z * z),
                 2 * (x * y + w * z),
                 2 * (x * z - w * y),
-                0.5 * (lx * lx + ly * ly + lz * lz) / i1 + 0.5 * (1 / i3 - 1 / i1) * along**2 + wgt * ez,
+                0.5 * (lx * lx + ly * ly + lz * lz) / i1
+                + 0.5 * (1 / i3 - 1 / i1) * along**2
+                + 0.5 * skew * across**2
+                + wgt * ez,
                 lx,
                 ly,
                 lz,
@@ -376,6 +423,13 @@ class TopSimulator:
         self.L = [lx, ly, lz]
         self.t = t
         return TopSamples(out[:, 0], out[:, 1:4], out[:, 4:7], out[:, 7], out[:, 8:11])
+
+
+def _about_y(w, x, y, z, lx, ly, lz, gain):
+    """q turned about the body's own y axis by gain × L₂ (L₂ = L·e₂, which the turn keeps): q ⊗ (c, 0, s, 0)."""
+    along = lx * 2 * (x * y - w * z) + ly * (1 - 2 * (x * x + z * z)) + lz * 2 * (y * z + w * x)
+    c, s = math.cos(0.5 * gain * along), math.sin(0.5 * gain * along)
+    return w * c - y * s, x * c - z * s, y * c + w * s, z * c + x * s
 
 
 def tilt_and_azimuth(axis: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -401,3 +455,111 @@ def euler_reference(motion: Motion, t: np.ndarray, rtol: float = 1e-10) -> tuple
         rates, (0.0, float(t[-1])), [motion.tilt, 0.0, 0.0], t_eval=t, rtol=rtol, atol=1e-12, method="DOP853"
     )
     return sol.y[0], sol.y[2]
+
+
+def body_reference(motion: Motion, t: np.ndarray, rtol: float = 1e-11) -> tuple[np.ndarray, np.ndarray]:
+    """The axis e₃ in space (len(t), 3) and ω in the body's axes (len(t), 3), by `solve_ivp` on Euler's
+    equations, I ω' = (Iω) × ω + τ, τ = mgl (ẑ_y, −ẑ_x, 0) with ẑ in the body's axes, and q' = ½ q ⊗ (0, ω):
+    nothing assumed of the moments, for the tests."""
+    top = motion.top
+    inertia = np.array(top.moments)
+    w = top.weight_moment
+    half = 0.5 * motion.tilt
+    q0 = np.array([math.cos(half), math.sin(half), 0.0, 0.0])
+    c, s = math.cos(motion.tilt), math.sin(motion.tilt)
+    # L in the body's axes: the launch's turned back by θ about x
+    L = motion.angular_momentum()
+    M0 = np.array([L[0], c * L[1] + s * L[2], -s * L[1] + c * L[2]])
+
+    def rates(_, y):
+        qw, qx, qy, qz = y[3:7]
+        omega = y[:3]
+        up = np.array([2 * (qx * qz - qw * qy), 2 * (qy * qz + qw * qx), 1 - 2 * (qx * qx + qy * qy)])  # ẑ in body
+        torque = w * np.array([up[1], -up[0], 0.0])
+        domega = (np.cross(inertia * omega, omega) + torque) / inertia
+        ox, oy, oz = omega
+        dq = 0.5 * np.array(
+            [
+                -qx * ox - qy * oy - qz * oz,
+                qw * ox + qy * oz - qz * oy,
+                qw * oy - qx * oz + qz * ox,
+                qw * oz + qx * oy - qy * ox,
+            ]
+        )
+        return np.concatenate([domega, dq])
+
+    sol = scipy.integrate.solve_ivp(
+        rates, (0.0, float(t[-1])), np.concatenate([M0 / inertia, q0]), t_eval=t, rtol=rtol, atol=1e-12, method="DOP853"
+    )
+    qw, qx, qy, qz = sol.y[3:7]
+    axis = np.stack([2 * (qx * qz + qw * qy), 2 * (qy * qz - qw * qx), 1 - 2 * (qx * qx + qy * qy)], axis=1)
+    return axis, sol.y[:3].T
+
+
+def body_rates(axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, top: Top) -> np.ndarray:
+    """ω in the body's axes (n, 3) from samples: L's components along the mark e₁, e₂ = e₃ × e₁ and the axis e₃,
+    over the moments."""
+    side = np.cross(axis, mark)
+    M = np.stack([np.sum(momentum * mark, 1), np.sum(momentum * side, 1), np.sum(momentum * axis, 1)], axis=1)
+    return M / np.array(top.moments)
+
+
+@dataclass(frozen=True)
+class FreeSpin:
+    """The free asymmetric top's ω in its own axes, exactly (Euler–Poinsot): with the moments sorted
+    I_a < I_b < I_c, energy E and |L| = M, two of ω's components go as Jacobi's cn and sn and the third as dn (or
+    the other way, as M² is above or below 2E I_b), at the rate λ, with parameter k² (Landau & Lifshitz §37)."""
+
+    order: tuple[int, int, int]  # the body axes, by their moments
+    flip: float  # +1, or −1 where the order turns the axes left-handed (one component's sign flipped)
+    amplitudes: tuple[float, float, float]  # of cn, sn, dn's components (in the sorted order)
+    rate: float  # λ (1/s)
+    k2: float  # Jacobi's parameter m = k²
+    start: float  # λt at t = 0
+    swapped: bool  # M² < 2E I_b: the sorted axes a and c trade roles
+
+    @classmethod
+    def of(cls, top: Top, omega: np.ndarray) -> FreeSpin:
+        """From ω (body axes) at t = 0."""
+        moments = np.array(top.moments)
+        i, j, k = (int(v) for v in np.argsort(moments))
+        order = (i, j, k)
+        flip = 1.0 if order in ((0, 1, 2), (1, 2, 0), (2, 0, 1)) else -1.0
+        I = moments[list(order)]
+        w = omega[list(order)] * np.array([flip, 1.0, 1.0])
+        E2 = float(np.sum(I * w * w))  # 2E
+        M2 = float(np.sum((I * w) ** 2))
+        swapped = M2 < E2 * I[1]
+        if swapped:  # the formulas with a and c traded: the axes reversed, so left-handed again
+            I, w = I[::-1], w[::-1] * np.array([-1.0, 1.0, 1.0])
+        a, b, c = I
+        # with a and c traded each ratio is a negative over a negative
+        A = (
+            math.sqrt(max((E2 * c - M2) / (a * (c - a)), 0.0)),
+            math.sqrt(max((E2 * c - M2) / (b * (c - b)), 0.0)),
+            math.sqrt(max((M2 - E2 * a) / (c * (c - a)), 0.0)),
+        )
+        rate = math.sqrt(abs((c - b) * (M2 - E2 * a) / (a * b * c)))
+        k2 = (b - a) * (E2 * c - M2) / ((c - b) * (M2 - E2 * a))
+        # dn > 0, so the third keeps its sign; Euler's equations tie sn's to it, I_b ω_b' = (I_c − I_a)ω_c ω_a
+        sign = math.copysign(1.0, w[2])
+        middle = sign * math.copysign(1.0, c - a)
+        phase = math.atan2(w[1] / (middle * A[1]) if A[1] else 0.0, w[0] / A[0] if A[0] else 1.0)
+        start = float(scipy.special.ellipkinc(phase, k2))
+        return cls(order, flip, (A[0], middle * A[1], sign * A[2]), rate, k2, start, swapped)
+
+    def omega(self, t: np.ndarray) -> np.ndarray:
+        """ω (body axes) at times t: (len(t), 3)."""
+        sn, cn, dn, _ = scipy.special.ellipj(self.rate * np.asarray(t) + self.start, self.k2)
+        sorted_w = np.stack([self.amplitudes[0] * cn, self.amplitudes[1] * sn, self.amplitudes[2] * dn], axis=1)
+        if self.swapped:
+            sorted_w = (sorted_w * np.array([-1.0, 1.0, 1.0]))[:, ::-1]
+        sorted_w = sorted_w * np.array([self.flip, 1.0, 1.0])
+        out = np.empty_like(sorted_w)
+        out[:, list(self.order)] = sorted_w
+        return out
+
+    @property
+    def period(self) -> float:
+        """The time (s) for ω to come back in the body: 4K(k)/λ (sn and cn's period)."""
+        return 4.0 * float(scipy.special.ellipk(self.k2)) / self.rate

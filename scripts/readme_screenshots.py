@@ -1029,11 +1029,30 @@ def gyroscope():
     save(w, "gyroscope")
 
 
-def gyroscope_table():
+def gyroscope_chaos():
+    from vib_tutorial.gui.gyroscope import TRIALS
+
     w = window()
     page = w.gyroscope_page
     w.pages.setCurrentWidget(page)
-    page.load_trial(14)  # a tippe top turns over
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Gravity and the middle axis: chaos"))
+    page._timer.stop()
+    page.running = False
+    for _ in range(80):
+        page.step(0.25)
+    page._draw_tab()
+    settle()
+    print(page.readout.text())
+    save(w, "gyroscope_chaos")
+
+
+def gyroscope_table():
+    from vib_tutorial.gui.gyroscope import TRIALS
+
+    w = window()
+    page = w.gyroscope_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A tippe top turns over"))
     page._timer.stop()
     page.running = False
     page.step(4.0)
@@ -1119,6 +1138,7 @@ SHOTS = [
     self_excited,
     active_control,
     gyroscope,
+    gyroscope_chaos,
     gyroscope_table,
     machinery_diagnostics,
 ]

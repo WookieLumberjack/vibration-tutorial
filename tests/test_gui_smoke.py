@@ -3926,7 +3926,7 @@ def test_lesson_pages_trials_and_tabs(app, name):
 
 def test_gyroscope_on_a_table(app):
     """The table's settings show their own controls and tabs, run and draw, stop where the model can't follow,
-    and going back to the cup brings its own back."""
+    and going back to the cup brings its own back; then an asymmetric top's."""
     from vib_tutorial.core.sliding_top import Event
     from vib_tutorial.gui import gyroscope as g
     from vib_tutorial.gui.main_window import MainWindow
@@ -3956,6 +3956,25 @@ def test_gyroscope_on_a_table(app):
     assert page.tabs.isTabEnabled(g.TAB_PRECESSION) and page.release_form.isRowVisible(page.launch)
     assert page.body_form.isRowVisible(page.height) and not page.body_form.isRowVisible(page.friction)
     page.step(0.1)
+    # an asymmetric top (the same window: every one a test builds is kept): the closed forms' tabs off, the Chaos
+    # tab and Jacobi's check on; no rectangle on a table
+    names = [t.name for t in g.TRIALS]
+    page.load_trial(names.index("No gravity: the tennis-racket flip"))
+    assert not page.tabs.isTabEnabled(g.TAB_POTENTIAL) and not page.tabs.isTabEnabled(g.TAB_PRECESSION)
+    assert page.body_form.isRowVisible(page.breadth) and not page.turn_lines[0].isVisible()
+    for _ in range(10):
+        page.step(0.1)
+    page._draw_check()
+    assert "Euler–Poinsot" in page.check_note.text() and "Jacobi" in page.readout.text()
+    page.load_trial(names.index("Gravity and the middle axis: chaos"))
+    for _ in range(25):
+        page.step(0.25)
+    page._draw_chaos()
+    assert page.section.size > 20 and page.apart.y[page.apart.size - 1, 0] > 1e-3
+    page.load_setup(dict(setting=g.Setting.TABLE, shape=g.Shape.RECTANGLE))
+    assert page.practice_state().shape is g.Shape.DISC and not page.tabs.isTabEnabled(g.TAB_CHAOS)
+    page.load_trial(0)
+    assert page.tabs.isTabEnabled(g.TAB_POTENTIAL) and not page.body_form.isRowVisible(page.breadth)
     w.close()
 
 
