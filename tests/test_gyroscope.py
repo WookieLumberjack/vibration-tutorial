@@ -7,12 +7,15 @@ import pytest
 
 from vib_tutorial.core.gyroscope import (
     RPM,
+    FreeSpin,
     Launch,
     Motion,
     Path,
     Shape,
     Top,
     TopSimulator,
+    body_rates,
+    body_reference,
     euler_reference,
     least_spin,
     steady_precession,
@@ -202,3 +205,108 @@ def test_trials():
     assert math.degrees(math.acos(L[2] / np.linalg.norm(L))) == pytest.approx(28.5, abs=0.05)
     assert m.nutation_period() == pytest.approx(0.065, abs=5e-5)
     assert math.degrees(m.turning()[0]) == pytest.approx(27.0, abs=0.05)
+
+
+RECTANGLE = Top(0.5, 0.1, 0.06, shape=Shape.RECTANGLE, breadth=0.02)  # spun about its smallest moment: stable
+
+
+@pytest.mark.parametrize("gravity", [0.0, 9.81])
+def test_the_asymmetric_split(gravity):
+    """Against Euler's equations by solve_ivp (nothing assumed of the moments): second order, the energy's error
+    falling as h², L·ẑ kept to round-off."""
+    top = Top(0.5, 0.1, 0.06, gravity, Shape.RECTANGLE, 0.02)
+    m = Motion(top, 600 * RPM, math.radians(30), 3.0)
+    errors, energy = [], []
+    for per in (200, 400):
+        sim = TopSimulator(m, per)
+        s = sim.advance(1.0)
+        axis, omega = body_reference(m, s.t[-1:])
+        errors.append(np.abs(axis[0] - s.axis[-1]).max())
+        energy.append(np.abs(s.energy - m.total_energy).max())
+        assert np.abs(s.momentum[:, 2] - m.vertical_momentum).max() < 1e-12
+        assert body_rates(s.axis[-1:], s.mark[-1:], s.momentum[-1:], top)[0] == pytest.approx(omega[0], abs=1e-3)
+    assert errors[0] / errors[1] == pytest.approx(4.0, rel=0.1)
+    assert energy[0] / energy[1] == pytest.approx(4.0, rel=0.15)
+
+
+@pytest.mark.parametrize("height", [0.005, 0.015, 0.06])
+def test_euler_poinsot(height):
+    """Jacobi's cn, sn, dn against Euler's equations, in each ordering of the moments (z largest, middle,
+    smallest: M² above and below 2EI_b)."""
+    top = Top(0.5, 0.1, height, 0.0, Shape.RECTANGLE, 0.02)
+    m = Motion(top, 600 * RPM, math.radians(30), 3.0)
+    t = np.linspace(0.0, 1.0, 41)
+    _, omega = body_reference(m, t, rtol=1e-12)
+    free = FreeSpin.of(top, np.array([0.0, 3.0 * math.sin(m.tilt), m.spin]))
+    assert free.omega(t) == pytest.approx(omega, abs=1e-6 * m.spin)
+
+
+@pytest.mark.parametrize("height, flips", [(0.005, False), (0.015, True), (0.025, True), (0.035, False)])
+def test_the_middle_axis_flips(height, flips):
+    """The tennis-racket problem's setups: about the middle axis it flips over, about the others it doesn't."""
+    from vib_tutorial.gui.gyroscope import GyroTrial, Launch
+
+    t = GyroTrial(
+        "",
+        "",
+        shape=Shape.RECTANGLE,
+        radius=0.1,
+        breadth=0.02,
+        height=height,
+        gravity=0.0,
+        spin_rpm=600.0,
+        tilt=2.0,
+        launch=Launch.SET,
+        precession=0.5,
+    )
+    s = TopSimulator(t.motion).advance(3.0)
+    assert (np.degrees(np.arccos(s.axis[:, 2].min())) > 170) == flips
+
+
+def test_the_section():
+    """A symmetric top keeps ω₃: its section is one line; an asymmetric one's isn't."""
+    from vib_tutorial.gui.gyroscope import _section
+
+    for top, kept in ((Top(), True), (Top(0.5, 0.1, 0.03, shape=Shape.RECTANGLE, breadth=0.04), False)):
+        s = TopSimulator(Motion(top, 600 * RPM, math.radians(30))).advance(5.0)
+        ez = s.axis[:, 2]
+        j = np.flatnonzero((ez[1:-1] < ez[:-2]) & (ez[1:-1] <= ez[2:])) + 1
+        psi, spin = _section(s.axis[j], s.mark[j], s.momentum[j], top)
+        assert j.size > 20 and np.all((psi >= 0) & (psi < 180))
+        assert (np.ptp(spin) < 1e-6) == kept
+
+
+def test_asymmetric_trials():
+    from vib_tutorial.gui.gyroscope import TRIALS
+
+    by = {t.name: t for t in TRIALS}
+
+    def run(name, duration):
+        m = by[name].motion
+        a = TopSimulator(m)
+        b = TopSimulator(Motion(m.top, m.spin, m.tilt + 1e-8, m.precession))
+        s, other = a.advance(duration), b.advance(duration)
+        return m, s, np.linalg.norm(s.axis - other.axis, axis=1), np.degrees(np.arccos(np.clip(s.axis[:, 2], -1, 1)))
+
+    m, s, apart, theta = run("A rectangle: ω₃ isn't kept", 20.0)
+    assert [round(v * 1e4, 2) for v in m.top.moments] == [5.17, 8.67, 4.83]
+    spin = np.sum(s.momentum * s.axis, axis=1) / m.top.polar / RPM
+    assert (spin.min(), spin.max()) == pytest.approx((596.7, 601.1), abs=0.05)
+    assert (theta.min(), theta.max()) == pytest.approx((28.0, 40.7), abs=0.05)
+    assert apart[-1] == pytest.approx(1e-7, rel=0.3)
+
+    m, s, _, _ = run("No gravity: the tennis-racket flip", 3.0)
+    i1, i2, i3 = (round(v * 1e4, 2) for v in m.top.moments)
+    assert (i1, i3, i2) == (1.29, 4.33, 5.29)
+    free = FreeSpin.of(m.top, np.array([0.0, m.precession * math.sin(m.tilt), m.spin]))
+    assert free.period == pytest.approx(0.910, abs=5e-4) and 1 - free.k2 == pytest.approx(1.2e-7, rel=0.05)
+    crossings = s.t[np.flatnonzero(np.diff(np.sign(s.axis[:, 2])))]
+    assert np.diff(crossings) == pytest.approx(0.5 * free.period, abs=1e-3)
+    assert 0.5 * free.period == pytest.approx(0.455, abs=5e-4)
+
+    m, s, apart, _ = run("Gravity and the middle axis: chaos", 6.0)
+
+    def first(limit):
+        return s.t[np.flatnonzero(apart > limit)[0]]
+
+    assert (first(1e-6), first(1e-2), first(1.0)) == pytest.approx((1.1, 3.0, 5.0), abs=0.05)

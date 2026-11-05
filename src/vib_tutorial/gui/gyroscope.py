@@ -26,11 +26,13 @@ from ..core.gyroscope import (
     LAUNCHES,
     RPM,
     SHAPES,
+    FreeSpin,
     Launch,
     Motion,
     Shape,
     Top,
     TopSimulator,
+    body_rates,
     least_spin,
     steady_precession,
     tilt_and_azimuth,
@@ -63,7 +65,7 @@ from .links import before, page_link, takeaways
 from .style import colors
 from .theming import add_legend
 
-TAB_POTENTIAL, TAB_PRECESSION, TAB_PATH, TAB_CHECK = range(4)
+TAB_POTENTIAL, TAB_PRECESSION, TAB_PATH, TAB_CHECK, TAB_CHAOS = range(5)
 FRAME_MS = 16
 PLAYBACK = (0.02, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0)
 REAL_TIME = PLAYBACK.index(1.0)
@@ -72,7 +74,12 @@ TRAIL_POINTS = 1500  # at most, on the 3D view's trail
 PATH_POINTS = 4000  # at most, on the path from above
 CHECK_POINTS = 2000
 CHECK_FRAMES = 30  # the Check tab's text is worked out over the whole run, every this many frames
+SECTION_FRAMES = 10  # the Chaos tab is redrawn every this many frames
 HISTORY = 400_000  # samples kept
+TWIN = 1e-8  # rad: the Chaos tab's second top is let go this much further over
+SECTION_POINTS = 8000  # the Poincaré section's, at most
+APART_STRIDE = 20  # samples of the two tops' separation, one kept in this many
+SKEW_TRAIL, SKEW_TILT, SKEW_PATH = 3.0, 5.0, 10.0  # s of an asymmetric top's trail, tilt and path
 SLIDE_HISTORY = 200_000  # samples kept on a table (RECORD_DT apart)
 SLIDE_TILT_SPAN = 60.0  # s, at most, of the tilt on a table
 TRACK_SPAN = 10.0  # s of the tip's track on the table
@@ -108,12 +115,13 @@ class GyroTrial:
     friction: float = 0.3  # μ, on a table
     low: float = 0.0045  # m, a tippe top's weight below its centre
     ratio: float = 0.8  # a tippe top's I₁/I₃
-    shape: Shape = Shape.DISC  # radius is a square's side
+    shape: Shape = Shape.DISC  # radius is a square's side, or a rectangle's a
+    breadth: float = 0.04  # m, a rectangle's other side b
 
     @property
     def top(self) -> Top:
         """The disc on its stem (a tippe top's ball: its mass and radius)."""
-        return Top(self.mass, self.radius, self.height, self.gravity, self.shape)
+        return Top(self.mass, self.radius, self.height, self.gravity, self.shape, self.breadth)
 
     @property
     def round_top(self) -> RoundTop | None:
@@ -126,7 +134,10 @@ class GyroTrial:
 
     @property
     def motion(self) -> Motion:
-        return Motion.launched(self.top, self.spin_rpm * RPM, math.radians(self.tilt), self.launch, self.precession)
+        """Let go as set; an asymmetric top has no steady precession to start at, so it starts at rest."""
+        top = self.top
+        launch = self.launch if top.symmetric or self.launch is Launch.SET else Launch.REST
+        return Motion.launched(top, self.spin_rpm * RPM, math.radians(self.tilt), launch, self.precession)
 
 
 TRIALS = (
@@ -224,6 +235,52 @@ TRIALS = (
         "corners make no difference; only its moments do.",
         shape=Shape.SQUARE,
         radius=0.06928,
+    ),
+    GyroTrial(
+        "A rectangle: ω₃ isn't kept",
+        "A 0.5 kg plate 100 × 40 mm, 30 mm up its stem: I₁ = 5.17, I₂ = 8.67 and I₃ = 4.83 kg·cm², so I₁ ≠ I₂. Its "
+        "spin ω₃ now wanders, between 596.7 and 601.1 rpm, so the tilt has no potential of its own: it nods between "
+        "28.0° and 40.7°, which no closed form gives. It spins about its smallest moment and stays regular: the Chaos "
+        "tab's dots lie on closed curves, and a second top let go 10⁻⁸ rad further over is still only 10⁻⁷ rad away "
+        "after 20 s.",
+        shape=Shape.RECTANGLE,
+        radius=0.1,
+        breadth=0.04,
+        spin_rpm=600.0,
+        playback=PLAYBACK.index(0.25),
+        tab=TAB_CHAOS,
+    ),
+    GyroTrial(
+        "No gravity: the tennis-racket flip",
+        "A plate 100 × 20 mm, 15 mm up its stem, with g = 0: I₁ = 1.29 &lt; I₃ = 4.33 &lt; I₂ = 5.29 kg·cm², so it "
+        "spins about its middle axis, with nothing acting on it. It flips upside down and back, crossing the "
+        "horizontal every 0.455 s: half the period 4K(k)/λ = 0.910 s of Euler–Poinsot's solution in Jacobi's "
+        "elliptic functions (k² = 1 − 1.2 × 10⁻⁷: near the separatrix, where the period grows without bound). The "
+        "Check tab compares ω with it. The free asymmetric top still has a closed form, if a much harder one.",
+        shape=Shape.RECTANGLE,
+        radius=0.1,
+        breadth=0.02,
+        height=0.015,
+        gravity=0.0,
+        spin_rpm=600.0,
+        tilt=2.0,
+        launch=Launch.SET,
+        precession=0.5,
+        playback=PLAYBACK.index(0.1),
+        tab=TAB_CHECK,
+    ),
+    GyroTrial(
+        "Gravity and the middle axis: chaos",
+        "The same plate with gravity, let go at 30°: it tumbles, and no closed form exists. Two tops let go "
+        "10⁻⁸ rad apart are 10⁻⁶ rad apart at 1.1 s, 10⁻² at 3.0 s and a whole radian at 5.0 s: the gap multiplies "
+        "over and over, the mark of chaos, and the Chaos tab's dots scatter. Spun faster it is no tamer.",
+        shape=Shape.RECTANGLE,
+        radius=0.1,
+        breadth=0.02,
+        height=0.015,
+        spin_rpm=600.0,
+        playback=PLAYBACK.index(0.25),
+        tab=TAB_CHAOS,
     ),
     GyroTrial(
         "On a slippery table: it rises",
@@ -332,6 +389,56 @@ def _square_swap(rng: np.random.Generator) -> Question:
             "It nods more deeply",
         ),
         setup=dict(shape=Shape.SQUARE, radius=0.06928, tab=TAB_PATH),
+        predict=True,
+    )
+
+
+def _rectangle_moments(rng: np.random.Generator) -> Question:
+    m, l = pick(rng, (0.2, 0.5, 1.0)), pick(rng, (0.01, 0.02, 0.03))
+    a, b = pick(rng, (0.08, 0.1, 0.12)), pick(rng, (0.02, 0.03, 0.04))
+    top = Top(m, a, l, shape=Shape.RECTANGLE, breadth=b)
+    return Question(
+        f"A top is a {m:g} kg rectangular plate {a * 1000:g} × {b * 1000:g} mm on a light stem, its centre "
+        f"{l * 1000:g} mm above the tip. What is its moment of inertia about the line through the tip parallel to "
+        f"its {b * 1000:g} mm sides, in kg·cm²?",
+        top.second * 1e4,
+        f"About a line through its centre parallel to the {b * 1000:g} mm sides the plate has ma²/12, a = "
+        f"{a * 1000:g} mm being how far it reaches across that line; moved l up the axis it gains ml²: I₂ = m(a²/12 + l²) = "
+        f"{number(top.second * 1e4)} kg·cm². (Parallel to the other sides, I₁ = m(b²/12 + l²) = "
+        f"{number(top.transverse * 1e4)} kg·cm²: unequal, an asymmetric top.)",
+        unit="kg·cm²",
+        setup=dict(mass=m, radius=a, breadth=b, height=l, shape=Shape.RECTANGLE),
+    )
+
+
+def _racket(rng: np.random.Generator) -> Question:
+    l = pick(rng, (0.005, 0.015, 0.025, 0.035))
+    top = Top(0.5, 0.1, l, 0.0, Shape.RECTANGLE, 0.02)
+    i1, i2, i3 = top.moments
+    middle = min(i1, i2) < i3 < max(i1, i2)
+    flips, keeps = "It flips over and back, again and again", "It keeps spinning steadily about its axis"
+    return Question(
+        f"A plate 100 × 20 mm on a stem, its centre {l * 1000:g} mm above the tip, is spun about its stem with no "
+        "gravity, a little off the axis. What does it do?",
+        0,
+        f"I₁ = m(b²/12 + l²) = {number(i1 * 1e4)}, I₂ = m(a²/12 + l²) = {number(i2 * 1e4)} and I₃ = m(a² + b²)/12 = "
+        f"{number(i3 * 1e4)} kg·cm²: I₃ is the "
+        + ("middle one, and spin about the middle axis is unstable: the tennis-racket flip." if middle else "")
+        + ("" if middle else f"{'largest' if i3 > max(i1, i2) else 'smallest'}, and spin about it is stable."),
+        choices=(flips, keeps) if middle else (keeps, flips),
+        setup=dict(
+            shape=Shape.RECTANGLE,
+            radius=0.1,
+            breadth=0.02,
+            height=l,
+            gravity=0.0,
+            spin_rpm=600.0,
+            tilt=2.0,
+            launch=Launch.SET,
+            precession=0.5,
+            playback=PLAYBACK.index(0.1),
+            tab=TAB_CHECK,
+        ),
         predict=True,
     )
 
@@ -668,6 +775,8 @@ PROBLEMS = tuple(
         ("moments", "A disc on a stem", "rigid-body", "A rigid body turning", _moments),
         ("square-moments", "A square on a stem", "square", "A rigid body turning", _square_moments),
         ("square-swap", "Predict: a square for the disc", "square", "A rigid body turning", _square_swap),
+        ("rectangle-moments", "A rectangle on a stem", "asymmetric", "The asymmetric top", _rectangle_moments),
+        ("racket", "Predict: the tennis-racket flip", "asymmetric", "The asymmetric top", _racket),
         ("flat-precession", "A wheel on a pivot", "precession", "Steady precession", _flat_precession),
         ("steady-tilted", "Steady precession", "precession", "Steady precession", _steady_tilted),
         ("sleeping", "A sleeping top", "sleeping", "The sleeping top", _sleeping),
@@ -690,7 +799,11 @@ TIPS = {
     "radius": "<p>The disc's radius: I₃ = mr²/2.</p>",
     "side": "<p>The square's side: I₃ = ms²/6, the same as a disc of radius s/√3.</p>",
     "shape": "<p>A disc, or a square plate: a quarter turn leaves the square as it was, so its moment is the same "
-    "about every line across its axis, and it is a symmetric top too.</p>",
+    "about every line across its axis, and it is a symmetric top too. A rectangle isn't (I₁ ≠ I₂): an asymmetric top, "
+    "in the cup only.</p>",
+    "breadth": "<p>The rectangle's other side b, across its mark: I₁ = m(b²/12 + l²), I₂ = m(a²/12 + l²), "
+    "I₃ = m(a² + b²)/12.</p>",
+    "side_a": "<p>The rectangle's side a, along its mark (the thick line on it).</p>",
     "height": "<p>From the tip to the disc's centre, l: gravity's arm, and I₁ = m(r²/4 + l²) about the tip.</p>",
     "gravity": "<p>g: 9.81 m/s² on Earth; 0 for a free top.</p>",
     "spin": "<p>ω₃, the spin about the axis (ψ' + φ' cos θ), which stays constant. Negative spins it the other "
@@ -744,6 +857,13 @@ LEDGER_TIP = (
     "<p>The energy and the work friction has done, together (constant but for the step's error), and Jellett's J "
     "(constant whatever the contact force), each against what it was let go with.</p>"
 )
+SECTION_TIP = (
+    "<p>A Poincaré section: each time the tilt peaks, a dot at the spin angle ψ (from the line of nodes, mod 180°) "
+    "and the spin ω₃. A symmetric top keeps ω₃: a line. Regular motion draws closed curves; chaos, a scatter.</p>"
+)
+APART_TIP = (
+    "<p>How far apart (rad, log scale) the axes of two tops let go 10⁻⁸ rad apart have got. Straight up: chaos.</p>"
+)
 TABLE_TILT_TIP = "<p>The axis's tilt from the vertical as it runs, the last minute.</p>"
 CHECK_TIP = (
     "<p>How far the simulation's energy has strayed (over mgl), and its two momenta's (over I₃ω₃: round-off "
@@ -771,6 +891,30 @@ as that disc does, corners and all; so does any regular polygon. A rectangle doe
 axis differ, I₁ ≠ I₂, and it is an <b>asymmetric top</b>, without ω₃ constant or the closed forms below.</p>
 <p>Without a moment, L stays put and the axis turns round it at |L|/I₁ (in a cone), while the body turns about
 its own axis at (1/I₃ − 1/I₁)L₃ besides: the free top's wobble.</p>
+
+<h3><a name="asymmetric"></a>The asymmetric top</h3>
+<p>A rectangular plate a × b (<i>Shape</i>) has three different moments about the tip: I₁ = m(b²/12 + l²),
+I₂ = m(a²/12 + l²) and I₃ = m(a² + b²)/12. With I₁ ≠ I₂, Euler's third equation keeps a term,
+I₃ω₃' = (I₁ − I₂)ω₁ω₂, so the spin isn't kept, and everything below that rests on it goes: the effective
+potential, the turning points, the nutation period, steady precession. What's left is the energy and L·ẑ. With
+φ left out (L·ẑ), the top has two degrees of freedom and one quantity kept: too few to solve it. Lagrange's top
+(I₁ = I₂) and Kovalevskaya's (I₁ = I₂ = 2I₃, the centre of mass in the plane) are the only heavy tops that can be
+solved in general.</p>
+<p>Without gravity it can still be solved, in Jacobi's elliptic functions (<b>Euler–Poinsot</b>). With the
+moments sorted I<sub>a</sub> &lt; I<sub>b</sub> &lt; I<sub>c</sub>, the energy E and |L| = M, two of ω's
+components go as cn(λt, k) and sn(λt, k) and the third as dn(λt, k), with</p>
+<p align="center">λ² = (I<sub>c</sub> − I<sub>b</sub>)(M² − 2EI<sub>a</sub>)/I<sub>a</sub>I<sub>b</sub>I<sub>c</sub>,
+&nbsp; k² = (I<sub>b</sub> − I<sub>a</sub>)(2EI<sub>c</sub> − M²)/(I<sub>c</sub> − I<sub>b</sub>)(M² − 2EI<sub>a</sub>)</p>
+<p>(a and c traded if M² &lt; 2EI<sub>b</sub>), coming back every 4K(k)/λ. Spun about its largest or smallest
+axis, it wobbles round it. Spun about its <b>middle</b> axis, k² is near 1 and the spin is unstable: the top flips
+over and back, again and again, the <b>tennis-racket effect</b> (or Dzhanibekov's, after the cosmonaut who saw a
+wing nut do it in orbit). The orientation, not only ω, needs one integral more.</p>
+<p>With gravity there is no closed form at all, and the motion can be <b>chaotic</b>: two tops let go a hair
+apart drift apart exponentially, until they have nothing in common. The <i>Chaos</i> tab shows it two ways. A
+<b>Poincaré section</b> marks the spin angle ψ and ω₃ each time the tilt peaks: with L·ẑ and the energy kept,
+that is the whole state there. Regular motion draws closed curves (a symmetric top, which keeps ω₃, one line);
+chaos scatters dots over an area. Below it, a second top let go 10⁻⁸ rad further over: regular motion drifts
+from it in proportion to the time, chaos multiplies the gap over and over.</p>
 
 <h3><a name="euler-angles"></a>Euler angles, and why the simulation doesn't use them</h3>
 <p>Three angles place the axis and the body round it: the <b>precession</b> φ about the vertical, the
@@ -873,6 +1017,11 @@ by (1/I₃ − 1/I₁)L₃h), and gravity's other half. This splitting is <b>sym
 page's central difference is: the energy's error stays bounded rather than drifting, and falls as h². Both
 momenta are kept to round-off, since the moment is at right angles to the vertical and to the axis. The step
 resolves the free wobble with 200 steps a turn. The <i>Check</i> tab compares the run with the closed forms.</p>
+<p>An asymmetric top's free motion splits further: its energy is the symmetric top's with I₁ across both axes,
+plus (1/I₂ − 1/I₁)L₂²/2, whose flow just turns the body about its own y axis by (1/I₂ − 1/I₁)L₂h (L₂ = L·e₂,
+which that turn keeps). So each step is gravity's half, that turn's half, the symmetric top's whole step, that
+turn's other half and gravity's: still exact flows, still symplectic and second order, L·ẑ still kept to
+round-off. Without the extra turn it is the symmetric top's step exactly.</p>
 <p>On a table nothing can be split off exactly and friction takes energy, so the state (the quaternion, ω and
 v<sub>G</sub> in space, G's place, and friction's work) is stepped by the classic fourth-order Runge–Kutta step
 instead: 64 steps a turn of the spin or of the wobble about G, shorter where friction, smoothed below 5 mm/s,
@@ -913,6 +1062,8 @@ NOTES_HTML = (
             "pushed along waves.",
             "Upright, it sleeps if I₃²ω₃² &gt; 4I₁mgl.",
             "Euler angles lock upright; a quaternion and L, stepped by an exact split, don't.",
+            "With I₁ ≠ I₂ the spin isn't kept and the closed forms go: a free asymmetric top still needs Jacobi's "
+            "elliptic functions and flips about its middle axis, and with gravity it can be chaotic.",
             "On a table friction keeps only Jellett's J, so the energy sinks toward the least J allows: a sliding round "
             "tip rises to sleep, and a tippe top turns over if 1 − α &lt; I₁/I₃ &lt; 1 + α.",
         ),
@@ -1080,13 +1231,14 @@ class TopView(pg.PlotWidget):
             self.tip.setData([], [])
             start = anchor
         else:
-            if top.shape is Shape.SQUARE:  # its corners, half a side along the mark and across it
-                k = 0.5 * top.radius * np.array([[1, 1], [-1, 1], [-1, -1], [1, -1], [1, 1]])[:, :, None]
-                rim = G + k[:, 0] * mark + k[:, 1] * side
-            else:
+            if top.shape is Shape.DISC:
                 rim = G + top.radius * (np.cos(ring) * mark + np.sin(ring) * side)
+            else:  # its corners, half a side along the mark and half the other across it
+                across = top.breadth if top.shape is Shape.RECTANGLE else top.radius
+                k = 0.5 * np.array([[1, 1], [-1, 1], [-1, -1], [1, -1], [1, 1]]) * [top.radius, across]
+                rim = G + k[:, :1] * mark + k[:, 1:] * side
             self._outline(self.disc, *self.project(rim))
-            spoke = np.array([G, G + (0.5 if top.shape is Shape.SQUARE else 1.0) * top.radius * mark])
+            spoke = np.array([G, G + (1.0 if top.shape is Shape.DISC else 0.5) * top.radius * mark])
             if self.round is None:
                 self.tip.setData([], [])
             else:
@@ -1120,10 +1272,10 @@ class TopView(pg.PlotWidget):
             self.track.setData(*self.project(flat))
         else:
             self.track.setData([], [])
-        self._draw_vectors(axis, momentum, np.zeros(3) if centre is None else G, force)
+        self._draw_vectors(axis, mark, momentum, np.zeros(3) if centre is None else G, force)
 
     def _draw_vectors(
-        self, axis: np.ndarray, momentum: np.ndarray, origin: np.ndarray, force: np.ndarray | None
+        self, axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, origin: np.ndarray, force: np.ndarray | None
     ) -> None:
         top, R = self.top, self.reach
         size = float(np.linalg.norm(momentum))
@@ -1136,6 +1288,9 @@ class TopView(pg.PlotWidget):
         rt = self.round
         i1, i3 = (top.transverse, top.polar) if rt is None else (rt.central, rt.polar)
         omega = momentum / i1 + (1 / i3 - 1 / i1) * along * axis
+        if rt is None and not top.symmetric:  # a rectangle's own y axis has I₂
+            side = np.cross(axis, mark)
+            omega = omega + (1 / top.second - 1 / i1) * float(momentum @ side) * side
         if rt is None:
             third = -top.weight_moment * np.cross(axis, [0.0, 0.0, 1.0])
         else:
@@ -1212,6 +1367,16 @@ def _thin(n: int, most: int) -> slice:
     return slice(None, None, max(1, -(-n // most)))
 
 
+def _section(axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, top: Top) -> tuple[np.ndarray, np.ndarray]:
+    """The Poincaré section's coordinates where the tilt peaks: the spin angle ψ (°, mod 180, a rectangle's
+    period), the mark's angle from the line of nodes n = ẑ × e₃, and ω₃ (rpm). With L·ẑ and the energy kept and φ
+    left out, that is all the state there is: θ' = 0 there, and θ follows from the energy."""
+    nodes = np.stack([-axis[:, 1], axis[:, 0], np.zeros(len(axis))], axis=1)
+    nodes /= np.maximum(np.linalg.norm(nodes, axis=1), 1e-300)[:, None]
+    psi = np.degrees(np.arctan2(np.sum(mark * np.cross(axis, nodes), 1), np.sum(mark * nodes, 1))) % 180.0
+    return psi, np.sum(momentum * axis, 1) / top.polar / RPM
+
+
 def _columns(s: SlideSamples) -> np.ndarray:
     """A table's samples as the history keeps them: `SlideSamples.of`'s columns after t."""
     return np.column_stack(
@@ -1230,9 +1395,13 @@ class GyroscopePage(QtWidgets.QWidget):
         self.round: RoundTop | None = None  # on a table
         self.sim: TopSimulator | SlidingSimulator = TopSimulator(self.motion)
         self.history = SampleBuffer(10, HISTORY)  # axis, mark, energy, L
-        self.slides = SampleBuffer(COLUMNS - 1, SLIDE_HISTORY)  # on a table: a sample's columns after t
+        self.slides = SampleBuffer(COLUMNS - 1, 1)  # on a table: a sample's columns after t (made full size there)
         self._track_span: tuple[float, float, float] | None = None  # the Path tab's view on a table: x, y, half
         self._launch_energy = self._launch_jellett = 0.0  # on a table, let go
+        self.twin: TopSimulator | None = None  # in the cup: the same top let go TWIN further over
+        self.section = SampleBuffer(2, SECTION_POINTS)  # where the tilt peaks: ψ (°, mod 180) and ω₃ (rpm)
+        self.apart = SampleBuffer(1, HISTORY // APART_STRIDE)  # how far apart the two tops' axes are
+        self._peaks = (math.nan, math.nan)  # the last two samples' e₃·ẑ, to find a peak across two frames
         self.running = True
         self._frames = 0
 
@@ -1250,6 +1419,7 @@ class GyroscopePage(QtWidgets.QWidget):
         body.add("Shape:", self.shape, TIPS["shape"])
         self.mass = body.number("Mass m:", 0.001, 100.0, 0.5, 3, " kg", TIPS["mass"])
         self.radius = body.number("Disc radius r:", 1.0, 500.0, 40.0, 2, " mm", TIPS["radius"])
+        self.breadth = body.number("Breadth b:", 1.0, 500.0, 40.0, 2, " mm", TIPS["breadth"])
         self.height = body.number("Height l:", 1.0, 500.0, 30.0, 1, " mm", TIPS["height"])
         self.tip_radius = body.number("Tip radius R:", 0.5, 100.0, 10.0, 1, " mm", TIPS["tip_radius"])
         self.low = body.number("Weight below centre:", 0.0, 100.0, 4.5, 2, " mm", TIPS["low"])
@@ -1292,6 +1462,7 @@ class GyroscopePage(QtWidgets.QWidget):
                 self.shape,
                 self.mass,
                 self.radius,
+                self.breadth,
                 self.height,
                 self.tip_radius,
                 self.low,
@@ -1366,12 +1537,26 @@ class GyroscopePage(QtWidgets.QWidget):
         self.check_legend = self.check_plot.getPlotItem().legend
         self.check_note = note_label()
 
+        self.section_plot = plot("ω₃", "rpm", "ψ at each peak of the tilt", None, height=220)
+        self.section_plot.setToolTip(SECTION_TIP)
+        self.section_plot.setLabel("bottom", "ψ at each peak of the tilt (°, mod 180)")
+        self.section_plot.getAxis("left").enableAutoSIPrefix(False)
+        self.section_item = marker(3)
+        self.section_plot.addItem(self.section_item)
+        self.section_plot.setXRange(0, 180, padding=0)
+        self.apart_plot = plot("Apart", None, "Time", "s", log_y=True, height=150)
+        self.apart_plot.setToolTip(APART_TIP)
+        self.apart_item = pg.PlotDataItem()
+        self.apart_plot.addItem(self.apart_item)
+        self.chaos_note = note_label()
+
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(column(self.potential_plot, self.potential_note, stretch=False), "Potential")
         self.tabs.addTab(column(self.precession_plot, self.precession_note, stretch=False), "Precession")
         self.tabs.addTab(column(self.path_plot, self.path_note, stretch=False), "Path")
         self.tabs.addTab(column(self.check_plot, self.check_note, stretch=False), "Check")
+        self.tabs.addTab(column(self.section_plot, self.apart_plot, self.chaos_note, stretch=False), "Chaos")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(lambda _: self._draw_tab())
 
@@ -1410,6 +1595,7 @@ class GyroscopePage(QtWidgets.QWidget):
             gravity=self.gravity.value(),
             setting=SETTINGS[self.setting.currentIndex()],
             shape=SHAPES[self.shape.currentIndex()],
+            breadth=self.breadth.value() / 1000,
             tip_radius=self.tip_radius.value() / 1000,
             friction=self.friction.value(),
             low=self.low.value() / 1000,
@@ -1426,6 +1612,7 @@ class GyroscopePage(QtWidgets.QWidget):
         for box, value in (
             (self.setting, SETTINGS.index(t.setting)),
             (self.shape, SHAPES.index(t.shape)),
+            (self.breadth, t.breadth * 1000),
             (self.tip_radius, t.tip_radius * 1000),
             (self.friction, t.friction),
             (self.low, t.low * 1000),
@@ -1448,6 +1635,9 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _on_inputs(self) -> None:
         state = self.practice_state()
+        if state.setting is not Setting.CUP and state.shape is Shape.RECTANGLE:  # a symmetric top only, on a table
+            set_quietly(self.shape, SHAPES.index(Shape.DISC))
+            state = self.practice_state()
         self._show_rows(state.setting, state.shape)
         self.rate.setEnabled(state.launch is Launch.SET)
         self.motion = state.motion
@@ -1457,6 +1647,10 @@ class GyroscopePage(QtWidgets.QWidget):
             self.restart()
             return
         top = self.motion.top
+        if not top.symmetric:
+            self._on_skewed(state)
+            self.restart()
+            return
         self.info.setText(
             (
                 f"I₁ = {top.transverse * 1e4:.4g} kg·cm², I₃ = {top.polar * 1e4:.4g} kg·cm², mgl = "
@@ -1500,15 +1694,28 @@ class GyroscopePage(QtWidgets.QWidget):
             self.body_form.setRowVisible(box, shown)
         for box in (self.launch, self.rate, self.launch_info):
             self.release_form.setRowVisible(box, cup)
+        rectangle = shape is Shape.RECTANGLE and cup
+        self.body_form.setRowVisible(self.breadth, rectangle)
+        self.shape.model().item(SHAPES.index(Shape.RECTANGLE)).setEnabled(cup)
         label = self.body_form.labelForField(self.radius)
         square = shape is Shape.SQUARE and not ball
-        label.setText("Ball radius R:" if ball else "Side s:" if square else "Disc radius r:")
-        self.radius.setToolTip(TIPS["ball"] if ball else TIPS["side"] if square else TIPS["radius"])
+        label.setText(
+            "Ball radius R:" if ball else "Side s:" if square else "Side a:" if rectangle else "Disc radius r:"
+        )
+        self.radius.setToolTip(
+            TIPS["ball"] if ball else TIPS["side"] if square else TIPS["side_a"] if rectangle else TIPS["radius"]
+        )
         label.setToolTip(self.radius.toolTip())
         self.vectors.setText("Vectors L, ω, τ" if cup else "Vectors L, ω, F")
-        self.tabs.setTabEnabled(TAB_PRECESSION, cup)
-        if not cup and self.tabs.currentIndex() == TAB_PRECESSION:
-            self.tabs.setCurrentIndex(TAB_POTENTIAL)
+        skewed = rectangle and self.breadth.value() != self.radius.value()
+        for tab, on in (
+            (TAB_POTENTIAL, not skewed),
+            (TAB_PRECESSION, cup and not skewed),
+            (TAB_CHAOS, cup),
+        ):
+            self.tabs.setTabEnabled(tab, on)
+        if not self.tabs.isTabEnabled(self.tabs.currentIndex()):
+            self.tabs.setCurrentIndex(TAB_PATH)
         for plot_, cup_tip, table_tip in (
             (self.potential_plot, POTENTIAL_TIP, ENERGY_TIP),
             (self.path_plot, PATH_TIP, TRACK_TIP),
@@ -1519,7 +1726,23 @@ class GyroscopePage(QtWidgets.QWidget):
         relabel(self.potential_plot, "left", "U" if cup else "E", "J")
         self.check_legend.clear()
         self.check_legend.addItem(self.energy_item, "energy, ΔE/mgl" if cup else "energy + friction's work, ΔE/E₀")
-        self.check_legend.addItem(self.momentum_item, "momenta, ΔL/I₃ω₃" if cup else "Jellett's J, ΔJ/J₀")
+        self.check_legend.addItem(
+            self.momentum_item,
+            "Jellett's J, ΔJ/J₀" if not cup else "L·ẑ, ΔL/I₃ω₃" if skewed else "momenta, ΔL/I₃ω₃",
+        )
+
+    def _on_skewed(self, state: GyroTrial) -> None:
+        """The info lines for an asymmetric top."""
+        top = self.motion.top
+        i1, i2, i3 = (v * 1e4 for v in top.moments)
+        self.info.setText(
+            f"I₁ = {i1:.4g}, I₂ = {i2:.4g}, I₃ = {i3:.4g} kg·cm²"
+            + (f", mgl = {fmt(top.weight_moment, 'N·m')}." if top.weight_moment > 0 else "; no gravity: a free top.")
+        )
+        self.launch_info.setText(
+            f"φ'₀ = {self.motion.precession:.4g} rad/s. An asymmetric top has no steady precession to start at"
+            + (": let go at rest." if state.launch in (Launch.SLOW, Launch.FAST) else ".")
+        )
 
     def _on_table(self, state: GyroTrial) -> None:
         """The info lines for a top on a table."""
@@ -1539,6 +1762,8 @@ class GyroscopePage(QtWidgets.QWidget):
         self._track_span = None
         if self.round is not None:
             self.sim = SlidingSimulator(self.round, self.motion.spin, self.motion.tilt)
+            if self.slides.t.size < SLIDE_HISTORY:  # first time on a table: its 34 MB only once it's needed
+                self.slides = SampleBuffer(COLUMNS - 1, SLIDE_HISTORY)
             self.slides.clear()
             first = self.sim.sample()
             self.slides.extend(first.t, _columns(first))
@@ -1552,13 +1777,22 @@ class GyroscopePage(QtWidgets.QWidget):
             self._update_buttons()
             self._start_timer()
             return
-        self.sim = TopSimulator(self.motion)
+        m = self.motion
+        self.sim = TopSimulator(m)
+        self.twin = TopSimulator(Motion(m.top, m.spin, m.tilt + TWIN, m.precession))
         self.history.clear()
-        self.view.set_top(self.motion.top, self.motion.turning())
-        for line, th in zip(self.turn_lines, self.motion.turning()):
+        self.section.clear()
+        self.apart.clear()
+        self._peaks = (math.nan, math.nan)
+        skewed = not m.top.symmetric
+        self.view.set_top(m.top, () if skewed else m.turning())
+        for line, th in zip(self.turn_lines, m.turning()):
             line.setPos(math.degrees(th))
-            line.show()
-        self._show_closed_forms()
+            line.setVisible(not skewed)
+        if skewed:
+            self._show_skewed_forms()
+        else:
+            self._show_closed_forms()
         self._draw_tab()
         self._draw_now()
         self._update_buttons()
@@ -1619,8 +1853,25 @@ class GyroscopePage(QtWidgets.QWidget):
             s = self.sim.advance(duration)
             if s.t.size:
                 self.history.extend(s.t, np.concatenate([s.axis, s.mark, s.energy[:, None], s.momentum], axis=1))
+                self._record_chaos(s)
         self._draw_now()
         self._draw_live_tab()
+
+    def _record_chaos(self, s) -> None:
+        """The Chaos tab's records: the twin's separation, and the Poincaré section's points (where e₃·ẑ is least:
+        the tilt peaks, θ' = 0), each kept whether or not the tab shows."""
+        assert self.twin is not None  # set with the cup's simulator
+        other = self.twin.advance(float(s.t[-1]) - self.twin.t)
+        n = min(len(other.t), len(s.t))
+        k = slice(0, n, APART_STRIDE)
+        self.apart.extend(s.t[k], np.linalg.norm(s.axis[k] - other.axis[k], axis=1)[:, None])
+        ez = np.concatenate([self._peaks, s.axis[:, 2]])
+        self._peaks = (float(ez[-2]), float(ez[-1]))
+        j = np.flatnonzero((ez[1:-1] < ez[:-2]) & (ez[1:-1] <= ez[2:])) + 1 - 2  # in this chunk
+        j = j[j >= 0]
+        if j.size:
+            psi, spin = _section(s.axis[j], s.mark[j], s.momentum[j], self.motion.top)
+            self.section.extend(s.t[j], np.column_stack([psi, spin]))
 
     def table_samples(self, seconds: float | None = None) -> SlideSamples:
         """The samples kept on a table: the last `seconds` of them, or all."""
@@ -1655,6 +1906,8 @@ class GyroscopePage(QtWidgets.QWidget):
         self.path_now.setPen(pg.mkPen(None))
         self.energy_item.setPen(pg.mkPen(c.mass[0], width=2))
         self.momentum_item.setPen(pg.mkPen(c.grey, width=1.5))
+        mark(self.section_item, c.mass[0], filled=True)
+        self.apart_item.setPen(pg.mkPen(c.mass[1], width=1.5))
         self._draw_tab()
         self._draw_now()
 
@@ -1674,6 +1927,36 @@ class GyroscopePage(QtWidgets.QWidget):
                 f"Path: {m.path().value}."
             )
         self.readout.setText(nod)
+
+    def _launch_rates(self) -> np.ndarray:
+        """ω in the body's axes when let go: φ'₀ about the vertical, which leans θ₀ from the axis about the body's
+        x axis, and ω₃ about the axis."""
+        m = self.motion
+        return np.array([0.0, m.precession * math.sin(m.tilt), m.spin])
+
+    def _show_skewed_forms(self) -> None:
+        """The readout for an asymmetric top: what's lost, and what's left in closed form."""
+        m = self.motion
+        top = m.top
+        i1, i2, i3 = top.moments
+        middle = min(i1, i2) < i3 < max(i1, i2)
+        parts = [
+            "I₁ ≠ I₂: an asymmetric top. ω₃ isn't kept, so there's no effective potential for the tilt, no turning "
+            "points and no nutation period in closed form: only the energy and L·ẑ are kept."
+        ]
+        if top.weight_moment == 0:
+            free = FreeSpin.of(top, self._launch_rates())
+            parts.append(
+                "Without gravity Euler–Poinsot's solution holds: ω in the body goes as Jacobi's cn, sn and dn "
+                + (f"(k² = {free.k2:.4g})" if free.k2 < 0.999 else f"(1 − k² = {1 - free.k2:.2g})")
+                + f", back every {free.period:.4g} s"
+                + (f"; spun about its middle axis, it flips over every {0.5 * free.period:.4g} s." if middle else ".")
+            )
+        elif middle:
+            parts.append("Spun about its middle axis, with gravity, it tumbles: chaos (the Chaos tab).")
+        else:
+            parts.append("With gravity no closed form is left at all: the Chaos tab shows whether it stays regular.")
+        self.readout.setText(" ".join(parts))
 
     def _show_table_forms(self) -> None:
         """The readout on a table: Jellett's constant and where it takes the top; why it stopped, if it did."""
@@ -1753,12 +2036,16 @@ class GyroscopePage(QtWidgets.QWidget):
             mark_ = np.array([1.0, 0.0, 0.0])
             momentum = self.motion.angular_momentum()
         trail = np.zeros((0, 3))
+        skewed = not self.motion.top.symmetric
         if n:
             mean = abs(self.motion.mean_precession())
             span = min(2 * math.pi / mean, 20.0) if mean > 1e-9 else 3 * self.motion.nutation_period()
-            t, y = self.history.window(span)
+            t, y = self.history.window(SKEW_TRAIL if skewed else span)
             trail = y[_thin(t.size, TRAIL_POINTS), 0:3]
         self.view.draw(axis, mark_, momentum, trail)
+        if skewed:
+            self._skewed_tilt()
+            return
         if n:
             window = min(NODS * self.motion.nutation_period(), 20.0)
             t, y = self.history.window(window)
@@ -1773,8 +2060,26 @@ class GyroscopePage(QtWidgets.QWidget):
         pad = max(0.15 * (lo - hi), 0.05 * max(hi, 1.0), 0.05)
         self.tilt_plot.setYRange(hi - pad, lo + pad, padding=0)
 
+    def _skewed_tilt(self) -> None:
+        """An asymmetric top's tilt, the last few seconds, ranged to what it has done (no turning points)."""
+        t, y = self.history.window(SKEW_TILT)
+        if not t.size:
+            self.tilt_item.setData([], [])
+            return
+        k = _thin(t.size, 2000)
+        theta = np.degrees(np.arccos(np.clip(y[k, 2], -1, 1)))
+        self.tilt_item.setData(t[k], theta)
+        t1 = max(float(t[-1]), SKEW_TILT)
+        self.tilt_plot.setXRange(t1 - SKEW_TILT, t1, padding=0)
+        lo, hi = float(theta.min()), float(theta.max())
+        pad = max(0.1 * (hi - lo), 0.5)
+        self.tilt_plot.setYRange(max(lo - pad, 0.0), min(hi + pad, 180.0), padding=0)
+
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
+        if i == TAB_CHAOS:
+            self._draw_chaos()
+            return
         if self.round is not None:
             if i == TAB_POTENTIAL:
                 self._draw_energy()
@@ -1803,7 +2108,11 @@ class GyroscopePage(QtWidgets.QWidget):
                 self._frames += 1
                 self._draw_ledger(text=self._frames % CHECK_FRAMES == 0)
             return
-        if i == TAB_POTENTIAL:
+        if i == TAB_CHAOS:
+            self._frames += 1
+            if self._frames % SECTION_FRAMES == 0:
+                self._draw_chaos()
+        elif i == TAB_POTENTIAL:
             self._potential_dot()
         elif i == TAB_PATH:
             self._path_trace()
@@ -1994,6 +2303,15 @@ class GyroscopePage(QtWidgets.QWidget):
             )
 
     def _draw_path(self) -> None:
+        if not self.motion.top.symmetric:
+            self.path_circles.setData([], [])
+            self.path_plot.setRange(xRange=(-1.05, 1.05), yRange=(-1.05, 1.05), padding=0)
+            self.path_note.setText(
+                f"From above, the last {SKEW_PATH:g} s. With no turning points to draw it against, the path no longer "
+                "keeps between two circles."
+            )
+            self._path_trace()
+            return
         ring = np.linspace(0, 2 * math.pi, 241)
         xs, ys = [], []
         for th in self.motion.turning():
@@ -2022,10 +2340,56 @@ class GyroscopePage(QtWidgets.QWidget):
             self.path_now.setData([], [])
             return
         mean = abs(self.motion.mean_precession())
-        _, y = self.history.window(min(4 * math.pi / mean, 40.0) if mean > 1e-9 else 6 * self.motion.nutation_period())
+        if not self.motion.top.symmetric:
+            span = SKEW_PATH
+        else:
+            span = min(4 * math.pi / mean, 40.0) if mean > 1e-9 else 6 * self.motion.nutation_period()
+        _, y = self.history.window(span)
         k = _thin(len(y), PATH_POINTS)
         self.path_item.setData(y[k, 0], y[k, 1])
         self.path_now.setData([y[-1, 0]], [y[-1, 1]])
+
+    def _skewed_check(self, t: np.ndarray, y: np.ndarray, scale_e: float, scale_l: float) -> None:
+        """An asymmetric top's check: what's kept, ω₃ not, and without gravity Jacobi's ω."""
+        m = self.motion
+        top = m.top
+        spin = np.sum(y[:, 7:10] * y[:, 0:3], axis=1) / top.polar / RPM
+        parts = [
+            f"h = {self.sim.h * 1e3:.3g} ms. Largest energy error {np.max(np.abs(y[:, 6] - m.total_energy)) / scale_e:.2g}"
+            f"{' mgl' if top.weight_moment > 0 else ' of it'}, L·ẑ's {np.max(np.abs(y[:, 9] - m.vertical_momentum)) / scale_l:.2g} "
+            f"of I₃ω₃. ω₃ isn't kept: it has run between {spin.min():.4g} and {spin.max():.4g} rpm."
+        ]
+        if top.weight_moment == 0:
+            omega = body_rates(y[:, 0:3], y[:, 3:6], y[:, 7:10], top)
+            exact = FreeSpin.of(top, self._launch_rates()).omega(t)
+            error = np.max(np.linalg.norm(omega - exact, axis=1)) / max(abs(m.spin), 1e-12)
+            parts.append(f"ω in the body against Euler–Poinsot's (Jacobi's cn, sn, dn): within {error:.2g} of ω₃.")
+        self.check_note.setText(" ".join(parts))
+
+    def _draw_chaos(self) -> None:
+        """The Poincaré section and the two tops' separation."""
+        n = self.section.size
+        self.section_item.setData(self.section.y[:n, 0], self.section.y[:n, 1])
+        a = self.apart.size
+        t, d = self.apart.t[:a], self.apart.y[:a, 0]
+        keep = d > 0
+        self.apart_item.setData(t[keep], d[keep])
+        if a:
+            self.apart_plot.setXRange(0.0, max(float(t[-1]), 1.0), padding=0)
+        self.apart_plot.setYRange(math.log10(TWIN) - 1, math.log10(2.5), padding=0)
+        now = float(d[-1]) if a else TWIN
+        symmetric = self.motion.top.symmetric
+        self.chaos_note.setText(
+            f"{n} peaks of the tilt so far. "
+            + (
+                "A symmetric top keeps ω₃, so its points lie on one line."
+                if symmetric
+                else "Closed curves: the motion is regular; a scatter that fills an area: chaos."
+            )
+            + f" Below, a second top let go {TWIN:g} rad further over: {now:.2g} rad apart now. Regular motion "
+            "drifts apart slowly, in proportion to the time; chaos doubles the gap over and over, a straight line on "
+            "this log scale, until they're as far apart as two axes can be."
+        )
 
     def _draw_check(self, text: bool = True) -> None:
         n = self.history.size
@@ -2042,9 +2406,14 @@ class GyroscopePage(QtWidgets.QWidget):
         k = _thin(n, CHECK_POINTS)
         self.energy_item.setData(t[k], (y[k, 6] - m.total_energy) / scale_e)
         along = np.sum(y[k, 7:10] * y[k, 0:3], axis=1)
-        drift = np.maximum(np.abs(y[k, 9] - m.vertical_momentum), np.abs(along - m.spin_momentum)) / scale_l
+        drift = np.abs(y[k, 9] - m.vertical_momentum) / scale_l
+        if top.symmetric:
+            drift = np.maximum(drift, np.abs(along - m.spin_momentum) / scale_l)
         self.momentum_item.setData(t[k], drift)
         if not text:
+            return
+        if not top.symmetric:
+            self._skewed_check(t, y, scale_e, scale_l)
             return
         theta, phi = tilt_and_azimuth(y[:, 0:3])
         parts = [
