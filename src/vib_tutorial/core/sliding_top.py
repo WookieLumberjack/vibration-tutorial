@@ -77,9 +77,11 @@ class RoundTop:
 
     @classmethod
     def disc(cls, top: Top, tip_radius: float, friction: float) -> RoundTop:
-        """The cup's disc on a stem, its tip rounded to radius R (its end still l below the disc's centre)."""
-        m, r = top.mass, top.radius
-        return cls(m, 0.5 * m * r * r, 0.25 * m * r * r, top.height - tip_radius, tip_radius, friction, top.gravity, r)
+        """The cup's disc (or square) on a stem, its tip rounded to radius R (its end still l below the plate's
+        centre); a square's rim is its corner, which comes round to the bottom every quarter turn."""
+        return cls(
+            top.mass, top.polar, top.plate, top.height - tip_radius, tip_radius, friction, top.gravity, top.corner
+        )
 
     @classmethod
     def tippe(

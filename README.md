@@ -1260,7 +1260,9 @@ in an effective potential: steady precession at either root of I₁ cos θ φ'²
 between the turning points (the roots of a cubic, the period an elliptic integral), and the cusps, loops
 and waves the axis traces. Upright, the top sleeps above I₃ω₃ = 2√(I₁mgl). The 3D view steps the whole
 rigid body (a quaternion and L, split into gravity's moment and the free top, each exact), which doesn't
-mind the Euler angles' lock upright, and checks it against the closed forms. Its last section links the
+mind the Euler angles' lock upright, and checks it against the closed forms. A square plate in place of
+the disc moves exactly as a disc of radius s/√3 does: its moment is the same about every line across its
+axis, so it is a symmetric top too. Its last section links the
 top's two precessions to the rotor's forward and backward whirl.
 
 Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant

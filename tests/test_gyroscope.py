@@ -10,6 +10,7 @@ from vib_tutorial.core.gyroscope import (
     Launch,
     Motion,
     Path,
+    Shape,
     Top,
     TopSimulator,
     euler_reference,
@@ -38,6 +39,22 @@ def test_moments_of_inertia():
     assert TOP.transverse == pytest.approx(0.5 * (0.04**2 / 4 + 0.03**2))
     assert least_spin(TOP, 0.0) == pytest.approx(TOP.sleeping_spin)
     assert least_spin(TOP, math.radians(90)) == 0.0
+
+
+def test_a_square_is_a_symmetric_top():
+    """Summed over a fine grid, a square plate's moment is ms²/12 about every line across its axis, at any angle,
+    and ms²/6 along it: a disc's of radius s/√3, so it moves exactly as that disc does."""
+    m, s, n = 0.5, 0.06, 400
+    x, y = np.meshgrid((np.arange(n) + 0.5) / n - 0.5, (np.arange(n) + 0.5) / n - 0.5)
+    x, y, dm = s * x.ravel(), s * y.ravel(), m / n**2
+    square = Top(m, s, 0.03, shape=Shape.SQUARE)
+    for beta in np.radians([0.0, 17.0, 45.0, 70.0]):
+        across = -x * math.sin(beta) + y * math.cos(beta)  # the distance from the line at angle β
+        assert np.sum(across**2) * dm == pytest.approx(square.plate, rel=1e-4)
+    assert np.sum(x * x + y * y) * dm == pytest.approx(square.polar, rel=1e-4)
+    disc = Top(m, s / math.sqrt(3), 0.03)
+    assert (square.polar, square.transverse) == pytest.approx((disc.polar, disc.transverse))
+    assert square.corner == pytest.approx(s / math.sqrt(2))
 
 
 @pytest.mark.parametrize("tilt", [10.0, 30.0, 60.0, 90.0, 120.0])
@@ -144,6 +161,12 @@ def test_trials():
     assert math.degrees(m.turning()[1]) == pytest.approx(31.5, abs=0.05)
     assert m.nutation_hz() == pytest.approx(14.7, abs=0.05) and m.mean_precession() == pytest.approx(2.39, abs=0.005)
     assert 2 * math.pi / m.mean_precession() == pytest.approx(2.63, abs=0.005) and m.path() is Path.CUSPS
+    m = by["A square top: just like a disc"].motion
+    assert m.top.polar * 1e4 == pytest.approx(4.0, abs=5e-4) and m.top.radius / math.sqrt(3) == pytest.approx(
+        0.04, abs=5e-6
+    )
+    assert math.degrees(m.turning()[1]) == pytest.approx(31.5, abs=0.05)
+    assert m.nutation_hz() == pytest.approx(14.7, abs=0.05) and m.mean_precession() == pytest.approx(2.39, abs=0.005)
     m = by["Steady precession"].motion
     assert m.precession == pytest.approx(2.39, abs=0.005) and m.steady
     assert TOP.weight_moment / (TOP.polar * 1500 * RPM) == pytest.approx(2.34, abs=0.005)

@@ -25,8 +25,10 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core.gyroscope import (
     LAUNCHES,
     RPM,
+    SHAPES,
     Launch,
     Motion,
+    Shape,
     Top,
     TopSimulator,
     least_spin,
@@ -79,8 +81,8 @@ TABLE_TRAIL = 1.0  # s of the axis's trail and the tip's track in the 3D view, o
 
 
 class Setting(enum.Enum):
-    CUP = "A disc, its tip in a cup"
-    TABLE = "A disc on a round tip, on a table"
+    CUP = "Its tip in a cup"
+    TABLE = "On a round tip, on a table"
     TIPPE = "A tippe top, on a table"
 
 
@@ -106,11 +108,12 @@ class GyroTrial:
     friction: float = 0.3  # μ, on a table
     low: float = 0.0045  # m, a tippe top's weight below its centre
     ratio: float = 0.8  # a tippe top's I₁/I₃
+    shape: Shape = Shape.DISC  # radius is a square's side
 
     @property
     def top(self) -> Top:
         """The disc on its stem (a tippe top's ball: its mass and radius)."""
-        return Top(self.mass, self.radius, self.height, self.gravity)
+        return Top(self.mass, self.radius, self.height, self.gravity, self.shape)
 
     @property
     def round_top(self) -> RoundTop | None:
@@ -214,6 +217,15 @@ TRIALS = (
         tab=TAB_PATH,
     ),
     GyroTrial(
+        "A square top: just like a disc",
+        "A 0.5 kg square plate 69.28 mm on a side in place of the disc: I₃ = ms²/6 = 4 kg·cm², the first trial's "
+        "disc's mr²/2 (r = s/√3 = 40 mm), and about every line across its axis ms²/12, that disc's mr²/4. So it "
+        "does just what the disc did: drops to 31.5°, nods 14.7 times a second and precesses at 2.39 rad/s. Its "
+        "corners make no difference; only its moments do.",
+        shape=Shape.SQUARE,
+        radius=0.06928,
+    ),
+    GyroTrial(
         "On a slippery table: it rises",
         "Out of the cup: a disc 20 mm up a stem whose tip is rounded to 10 mm, let go at 20° spinning at 1500 rpm "
         "on a table with μ = 0.01. Its tip slides, and friction raises it: under 10° in 12 s, 5° in 19 s. Jellett's "
@@ -287,6 +299,41 @@ def _disc(rng: np.random.Generator) -> tuple[float, float, float]:
 
 # ------------------------------------------------------------------ practice problems
 # Each question's numbers are printed round, and its answer is worked from them as printed.
+
+
+def _square_moments(rng: np.random.Generator) -> Question:
+    m, l = pick(rng, (0.2, 0.5, 1.0, 2.0)), pick(rng, (0.02, 0.03, 0.04))
+    side = pick(rng, (0.05, 0.06, 0.08, 0.1))
+    top = Top(m, side, l, shape=Shape.SQUARE)
+    return Question(
+        f"A top is a {m:g} kg square plate {side * 1000:g} mm on a side on a light stem, its centre {l * 1000:g} mm "
+        "above the tip. What is its moment of inertia I₁ about a line across the axis through the tip, in kg·cm²?",
+        top.transverse * 1e4,
+        f"About a line through its centre parallel to a side a square plate has ms²/12, and a quarter turn leaves it "
+        f"as it was, so it has that about every line across its axis; moved l up the axis it gains ml²: "
+        f"I₁ = m(s²/12 + l²) = {m:g} × ({number(side * side / 12)} + {number(l * l)}) m² = "
+        f"{number(top.transverse * 1e4)} kg·cm². (Along the axis, I₃ = ms²/6 = {number(top.polar * 1e4)} kg·cm².)",
+        unit="kg·cm²",
+        setup=dict(mass=m, radius=side, height=l, shape=Shape.SQUARE),
+    )
+
+
+def _square_swap(rng: np.random.Generator) -> Question:
+    return Question(
+        "A spinning top's 40 mm disc is swapped for a square plate of the same mass, 69.3 mm on a side, at the same "
+        "height, spun and let go the same way. How does its motion change?",
+        0,
+        "Not at all: the square's moments are ms²/6 along its axis and ms²/12 across it, about every line across it, "
+        "which for s = √3 × 40 mm are the disc's mr²/2 and mr²/4. The motion depends only on the moments.",
+        choices=(
+            "Not at all",
+            "It wobbles four times a turn, at its corners",
+            "It precesses faster",
+            "It nods more deeply",
+        ),
+        setup=dict(shape=Shape.SQUARE, radius=0.06928, tab=TAB_PATH),
+        predict=True,
+    )
 
 
 def _moments(rng: np.random.Generator) -> Question:
@@ -619,6 +666,8 @@ PROBLEMS = tuple(
     Problem(key, title, "gyroscope_page", f"See {page_link('gyroscope_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
         ("moments", "A disc on a stem", "rigid-body", "A rigid body turning", _moments),
+        ("square-moments", "A square on a stem", "square", "A rigid body turning", _square_moments),
+        ("square-swap", "Predict: a square for the disc", "square", "A rigid body turning", _square_swap),
         ("flat-precession", "A wheel on a pivot", "precession", "Steady precession", _flat_precession),
         ("steady-tilted", "Steady precession", "precession", "Steady precession", _steady_tilted),
         ("sleeping", "A sleeping top", "sleeping", "The sleeping top", _sleeping),
@@ -639,6 +688,9 @@ PROBLEMS = tuple(
 TIPS = {
     "mass": "<p>The disc's mass (the stem's is left out).</p>",
     "radius": "<p>The disc's radius: I₃ = mr²/2.</p>",
+    "side": "<p>The square's side: I₃ = ms²/6, the same as a disc of radius s/√3.</p>",
+    "shape": "<p>A disc, or a square plate: a quarter turn leaves the square as it was, so its moment is the same "
+    "about every line across its axis, and it is a symmetric top too.</p>",
     "height": "<p>From the tip to the disc's centre, l: gravity's arm, and I₁ = m(r²/4 + l²) about the tip.</p>",
     "gravity": "<p>g: 9.81 m/s² on Earth; 0 for a free top.</p>",
     "spin": "<p>ω₃, the spin about the axis (ψ' + φ' cos θ), which stays constant. Negative spins it the other "
@@ -649,8 +701,8 @@ TIPS = {
     "one), or at the rate set below.</p>",
     "precession": "<p>φ', the axis's rate round the vertical when it is let go (with <i>Set φ' below</i>).</p>",
     "playback": "<p>Simulated time per real second. The top spins far too fast to see: slow it down.</p>",
-    "setting": "<p>The disc with its tip held in a cup (it can turn there but not slide), the same disc on a round "
-    "tip that slides and rolls on a table, or a tippe top (a ball weighted low) on a table.</p>",
+    "setting": "<p>The disc (or square) with its tip held in a cup (it can turn there but not slide), the same on a "
+    "round tip that slides and rolls on a table, or a tippe top (a ball weighted low) on a table.</p>",
     "tip_radius": "<p>The round tip's radius R: its centre is R up the axis from the end of the stem, and the disc's "
     "centre a = l − R above that.</p>",
     "friction": "<p>μ, Coulomb's friction between the tip and the table: μN against the slip (smoothed below "
@@ -710,6 +762,13 @@ I₃ω₃' + (I₂ − I₁)ω₁ω₂ = τ₃,</p>
 moment, across the axis, leaves ω₃ (the spin) constant. The top here is a disc of mass m and radius r on a light
 stem, its centre a height l above the tip: I₃ = mr²/2 along the axis, and I₁ = m(r²/4 + l²) across it about the
 tip (parallel axes, as for the Pendulums page's rod).</p>
+<p><a name="square"></a>A disc isn't the only symmetric top. A square plate (<i>Shape</i>) looks the same after a
+quarter turn, so its moments about two lines across its axis a quarter turn apart are equal, and so (I being a
+tensor, its moment about a line at angle β is I<sub>x</sub> cos²β + I<sub>y</sub> sin²β) are its moments about
+every line across its axis: ms²/12 for a side s, and I₃ = ms²/6 along it (perpendicular axes: I₃ is the two
+across it together, for any flat plate). That is a disc's mr²/4 and mr²/2 for r = s/√3, so a square moves exactly
+as that disc does, corners and all; so does any regular polygon. A rectangle doesn't: its two moments across the
+axis differ, I₁ ≠ I₂, and it is an <b>asymmetric top</b>, without ω₃ constant or the closed forms below.</p>
 <p>Without a moment, L stays put and the axis turns round it at |L|/I₁ (in a cone), while the body turns about
 its own axis at (1/I₃ − 1/I₁)L₃ besides: the free top's wobble.</p>
 
@@ -933,7 +992,7 @@ class TopView(pg.PlotWidget):
         where the view follows the top: its centre of mass stays over the middle)."""
         self.top, self.turning, self.round = top, turning, round_top
         self.ball = round_top is not None and round_top.rim == 0
-        self.reach = 2.4 * top.radius if self.ball else 1.6 * max(top.height, top.radius)
+        self.reach = 2.4 * top.radius if self.ball else 1.6 * max(top.height, top.corner)
         self.labels[2].setText("F" if round_top is not None else "τ")
         self._last = None
         self._place_static()
@@ -1021,9 +1080,13 @@ class TopView(pg.PlotWidget):
             self.tip.setData([], [])
             start = anchor
         else:
-            rim = G + top.radius * (np.cos(ring) * mark + np.sin(ring) * side)
+            if top.shape is Shape.SQUARE:  # its corners, half a side along the mark and across it
+                k = 0.5 * top.radius * np.array([[1, 1], [-1, 1], [-1, -1], [1, -1], [1, 1]])[:, :, None]
+                rim = G + k[:, 0] * mark + k[:, 1] * side
+            else:
+                rim = G + top.radius * (np.cos(ring) * mark + np.sin(ring) * side)
             self._outline(self.disc, *self.project(rim))
-            spoke = np.array([G, G + top.radius * mark])
+            spoke = np.array([G, G + (0.5 if top.shape is Shape.SQUARE else 1.0) * top.radius * mark])
             if self.round is None:
                 self.tip.setData([], [])
             else:
@@ -1183,8 +1246,10 @@ class GyroscopePage(QtWidgets.QWidget):
         self.body_form = body.form
         self.setting = combo([setting.value for setting in SETTINGS], TIPS["setting"])
         body.add("Setting:", self.setting, TIPS["setting"])
+        self.shape = combo([shape.value for shape in SHAPES], TIPS["shape"])
+        body.add("Shape:", self.shape, TIPS["shape"])
         self.mass = body.number("Mass m:", 0.001, 100.0, 0.5, 3, " kg", TIPS["mass"])
-        self.radius = body.number("Disc radius r:", 1.0, 500.0, 40.0, 1, " mm", TIPS["radius"])
+        self.radius = body.number("Disc radius r:", 1.0, 500.0, 40.0, 2, " mm", TIPS["radius"])
         self.height = body.number("Height l:", 1.0, 500.0, 30.0, 1, " mm", TIPS["height"])
         self.tip_radius = body.number("Tip radius R:", 0.5, 100.0, 10.0, 1, " mm", TIPS["tip_radius"])
         self.low = body.number("Weight below centre:", 0.0, 100.0, 4.5, 2, " mm", TIPS["low"])
@@ -1224,6 +1289,7 @@ class GyroscopePage(QtWidgets.QWidget):
         connect_all(
             (
                 self.setting,
+                self.shape,
                 self.mass,
                 self.radius,
                 self.height,
@@ -1343,6 +1409,7 @@ class GyroscopePage(QtWidgets.QWidget):
             height=self.height.value() / 1000,
             gravity=self.gravity.value(),
             setting=SETTINGS[self.setting.currentIndex()],
+            shape=SHAPES[self.shape.currentIndex()],
             tip_radius=self.tip_radius.value() / 1000,
             friction=self.friction.value(),
             low=self.low.value() / 1000,
@@ -1358,6 +1425,7 @@ class GyroscopePage(QtWidgets.QWidget):
     def apply_trial(self, t: GyroTrial) -> None:
         for box, value in (
             (self.setting, SETTINGS.index(t.setting)),
+            (self.shape, SHAPES.index(t.shape)),
             (self.tip_radius, t.tip_radius * 1000),
             (self.friction, t.friction),
             (self.low, t.low * 1000),
@@ -1380,7 +1448,7 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _on_inputs(self) -> None:
         state = self.practice_state()
-        self._show_rows(state.setting)
+        self._show_rows(state.setting, state.shape)
         self.rate.setEnabled(state.launch is Launch.SET)
         self.motion = state.motion
         self.round = state.round_top
@@ -1390,10 +1458,17 @@ class GyroscopePage(QtWidgets.QWidget):
             return
         top = self.motion.top
         self.info.setText(
-            f"I₁ = {top.transverse * 1e4:.4g} kg·cm², I₃ = {top.polar * 1e4:.4g} kg·cm², mgl = "
-            f"{fmt(top.weight_moment, 'N·m')}. It sleeps above {top.sleeping_spin / RPM:.4g} rpm."
-            if top.weight_moment > 0
-            else f"I₁ = {top.transverse * 1e4:.4g} kg·cm², I₃ = {top.polar * 1e4:.4g} kg·cm²; no gravity: a free top."
+            (
+                f"I₁ = {top.transverse * 1e4:.4g} kg·cm², I₃ = {top.polar * 1e4:.4g} kg·cm², mgl = "
+                f"{fmt(top.weight_moment, 'N·m')}. It sleeps above {top.sleeping_spin / RPM:.4g} rpm."
+                if top.weight_moment > 0
+                else f"I₁ = {top.transverse * 1e4:.4g} kg·cm², I₃ = {top.polar * 1e4:.4g} kg·cm²; no gravity: a free top."
+            )
+            + (
+                f" A disc of radius s/√3 = {top.radius * 1000 / math.sqrt(3):.4g} mm would move the same."
+                if top.shape is Shape.SQUARE
+                else ""
+            )
         )
         slow, fast = steady_precession(top, self.motion.spin, self.motion.tilt)
         if state.launch in (Launch.SLOW, Launch.FAST) and not math.isfinite(
@@ -1411,11 +1486,12 @@ class GyroscopePage(QtWidgets.QWidget):
             )
         self.restart()
 
-    def _show_rows(self, setting: Setting) -> None:
+    def _show_rows(self, setting: Setting, shape: Shape) -> None:
         """Show the controls this setting uses."""
         cup, ball = setting is Setting.CUP, setting is Setting.TIPPE
         for box, shown in (
             (self.height, not ball),
+            (self.shape, not ball),
             (self.tip_radius, setting is Setting.TABLE),
             (self.low, ball),
             (self.ratio, ball),
@@ -1425,8 +1501,9 @@ class GyroscopePage(QtWidgets.QWidget):
         for box in (self.launch, self.rate, self.launch_info):
             self.release_form.setRowVisible(box, cup)
         label = self.body_form.labelForField(self.radius)
-        label.setText("Ball radius R:" if ball else "Disc radius r:")
-        self.radius.setToolTip(TIPS["ball"] if ball else TIPS["radius"])
+        square = shape is Shape.SQUARE and not ball
+        label.setText("Ball radius R:" if ball else "Side s:" if square else "Disc radius r:")
+        self.radius.setToolTip(TIPS["ball"] if ball else TIPS["side"] if square else TIPS["radius"])
         label.setToolTip(self.radius.toolTip())
         self.vectors.setText("Vectors L, ω, τ" if cup else "Vectors L, ω, F")
         self.tabs.setTabEnabled(TAB_PRECESSION, cup)
