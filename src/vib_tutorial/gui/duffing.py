@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 import time
+from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
@@ -19,6 +20,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.duffing import (
     PRESETS,
+    TWO_PI,
     Cycle,
     Duffing,
     DuffingSimulator,
@@ -33,9 +35,10 @@ from ..core.duffing import (
     response_curve,
     tongue_hz,
 )
+from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
 from . import frame_stats, settle_plots
 from .layouts import ColumnScroll, FlowLayout, plot_height
-from .links import before, takeaways
+from .links import before, page_link, takeaways
 from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
@@ -103,7 +106,7 @@ PHASE_TIP = (
 
 NOTES_HTML = """
 <!--BEFORE-->
-<h3>The Duffing oscillator</h3>
+<h3><a name="duffing"></a>The Duffing oscillator</h3>
 <p>A mass on a spring whose force is not proportional to its stretch:</p>
 <p align="center">m x″ + c x′ + k x + k<sub>3</sub> x³ = F cos φ, &nbsp; φ′ = Ω</p>
 <p>With k<sub>3</sub> &gt; 0 the spring <i>hardens</i>: the further it stretches, the stiffer it gets, so a big
@@ -148,7 +151,7 @@ motion never repeats. The Poincaré section, the state once per drive cycle, sho
 response at the drive's frequency, three for a subharmonic at a third of it, and for chaos a cloud that fills a
 folded, layered shape (a strange attractor) without ever coming back to the same point.</p>
 
-<h3>Parametric excitation: the Mathieu equation</h3>
+<h3><a name="parametric"></a>Parametric excitation: the Mathieu equation</h3>
 <p>Instead of pushing the mass, make its spring pulse: k(1 + μ cos Ωt), with no force at all. A child on a swing
 does this, standing and squatting twice a swing. Rest is still a solution, but near Ω = 2ω<sub>n</sub> it is
 unstable: the smallest disturbance grows into a swing at Ω/2, half the pump's frequency, because each pulse comes
@@ -194,6 +197,273 @@ NOTES_HTML = NOTES_HTML.replace(
         "A spring pumped near twice its natural frequency is unstable at rest; its swing grows at half the pump's"
         " frequency until the nonlinearity detunes it.",
     ),
+)
+
+
+@dataclass(frozen=True)
+class DuffingSetup:
+    """A practice problem's setup: the oscillator, the drive and the sweep, as a preset sets them, and the tab."""
+
+    mass: float = 1.0
+    stiffness: float = 400.0
+    damping: float = 1.0
+    cubic: float = 1e5
+    force: float = 2.0
+    pump: float = 0.0
+    noise: float = 0.0
+    freq_hz: float = 2.0
+    start_hz: float = 2.0
+    end_hz: float = 6.0
+    sweep_time: float = 120.0
+    mode: Sweep = Sweep.UP_DOWN
+    tab: int = 0
+
+    def oscillator(self) -> Duffing:
+        return Duffing(self.mass, self.stiffness, self.damping, self.cubic, self.force, self.pump, self.noise)
+
+
+PRACTICE_SETUP = DuffingSetup  # what a practice problem's setup and the page's practice_state are
+
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
+def _backbone(rng: np.random.Generator) -> Question:
+    m, k = pick(rng, (0.5, 1, 2)), pick(rng, (200, 400, 1000))
+    k3, a = pick(rng, (5e4, 1e5, 2e5)), pick(rng, (10, 20, 30, 40))  # a in mm
+    osc = Duffing(m, k, 1.0, k3)
+    kap = float(osc.kappa(a / 1000))
+    f = float(osc.backbone_hz(a / 1000))
+    return Question(
+        f"A {m:g} kg mass on a hardening spring, k = {k:g} N/m and k₃ = {k3:g} N/m³, swings freely at {a:g} mm. At "
+        "what frequency, by harmonic balance?",
+        f,
+        f"The spring acts on the first harmonic as κ(a) = k + ¾ k₃ a² = {k:g} + 0.75 × {k3:g} × {a / 1000:g}² = "
+        f"{number(kap)} N/m, so f = √(κ/m)/2π = {number(f)} Hz, against {number(osc.natural_hz)} Hz for small "
+        "swings.",
+        unit="Hz",
+        setup=dict(mass=m, stiffness=k, cubic=k3, force=0.5, damping=0.5, start_hz=0.5 * osc.natural_hz, end_hz=2 * f),
+    )
+
+
+def _stiffening(rng: np.random.Generator) -> Question:
+    k, k3, a = pick(rng, (200, 400, 1000)), pick(rng, (5e4, 1e5, 2e5, 5e5)), pick(rng, (10, 20, 30))
+    added = 100 * 0.75 * k3 * (a / 1000) ** 2 / k
+    return Question(
+        f"A spring with k = {k:g} N/m and k₃ = {k3:g} N/m³ swings at {a:g} mm. By how many percent does the cubic "
+        "stiffen it, as harmonic balance sees it?",
+        added,
+        f"κ(a) = k + ¾ k₃ a²: the cubic adds ¾ k₃ a²/k = 0.75 × {k3:g} × {a / 1000:g}²/{k:g} = {number(added)} %.",
+        unit="%",
+    )
+
+
+def _escape(rng: np.random.Generator) -> Question:
+    k, k3 = pick(rng, (100, 400, 1000, 2500)), pick(rng, (-1e4, -2e4, -4e4, -1e5))
+    x = math.sqrt(k / -k3)
+    return Question(
+        f"A softening spring, k = {k:g} N/m and k₃ = {f"{k3:g}".replace("-", "−")} N/m³. Past what amplitude does it push the mass "
+        "outwards (its escape amplitude)?",
+        1000 * x,
+        f"k x + k₃ x³ is back to zero at x = √(k/−k₃) = √({k:g}/{number(-k3)}) = {number(1000 * x)} mm, the "
+        "potential's hilltop. (The force peaks at 1/√3 of that.)",
+        unit="mm",
+        setup=dict(stiffness=k, cubic=k3, force=0.5, damping=0.8, start_hz=0.2, end_hz=2 * math.sqrt(k) / TWO_PI),
+    )
+
+
+def _pump_frequency(rng: np.random.Generator) -> Question:
+    m, k = pick(rng, (0.5, 1, 2, 5)), pick(rng, (100, 400, 1000, 4000))
+    fn = math.sqrt(k / m) / TWO_PI
+    return Question(
+        f"A {m:g} kg mass on a {k:g} N/m spring. At what frequency should its stiffness pulse to swing it hardest "
+        "from rest (the first tongue's centre)?",
+        2 * fn,
+        f"f<sub>n</sub> = √(k/m)/2π = {number(fn)} Hz; the principal parametric resonance pumps at twice it, "
+        f"{number(2 * fn)} Hz, and the mass swings at {number(fn)} Hz, half the pump's frequency.",
+        unit="Hz",
+        setup=dict(
+            mass=m,
+            stiffness=k,
+            cubic=0.0,
+            force=0.0,
+            pump=0.3,
+            noise=1e-3,
+            freq_hz=rounded(2 * fn, 4),
+            mode=Sweep.HOLD,
+            start_hz=1.5 * fn,
+            end_hz=2.5 * fn,
+        ),
+    )
+
+
+def _threshold(rng: np.random.Generator) -> Question:
+    m, k, zeta = pick(rng, (0.5, 1, 2)), pick(rng, (100, 400, 1000)), pick(rng, (0.005, 0.01, 0.02, 0.05))
+    c = 2 * zeta * math.sqrt(k * m)
+    return Question(
+        f"A {m:g} kg mass on a {k:g} N/m spring with damping c = {number(c)} N·s/m. Pumped at exactly twice its "
+        "natural frequency, how deep must the pump μ be to make rest unstable?",
+        4 * zeta,
+        f"At Ω = 2ω<sub>n</sub>, (k − mΩ²/4)² + (cΩ/2)² = (μk/2)² leaves c ω<sub>n</sub> = μk/2, so μ = 2cω<sub>n</sub>/k "
+        f"= 4ζ, with ζ = c/2√(km) = {number(zeta)}: μ = {number(4 * zeta)}.",
+        tolerance=0.02,
+    )
+
+
+def _growth_time(rng: np.random.Generator) -> Question:
+    fn, zeta, mu = pick(rng, (2, 3.18, 5, 10)), pick(rng, (0.005, 0.01, 0.02)), pick(rng, (0.1, 0.2, 0.3))
+    rate = (mu / 4 - zeta) * TWO_PI * fn
+    return Question(
+        f"A spring with f<sub>n</sub> = {fn:g} Hz and ζ = {zeta:g} is pumped at 2f<sub>n</sub> with μ = {mu:g}. How "
+        "long does a small swing take to grow e times?",
+        1 / rate,
+        f"σ ≈ (μ/4 − ζ) ω<sub>n</sub> = ({mu:g}/4 − {zeta:g}) × 2π × {fn:g} = {number(rate)} /s, so 1/σ = "
+        f"{number(1 / rate)} s. (Floquet's exact rate is within 1 % of this here.)",
+        unit="s",
+    )
+
+
+def _settled_swing(rng: np.random.Generator) -> Question:
+    m, k, c = 1.0, 400.0, 1.0
+    k3, mu = pick(rng, (5e4, 1e5, 2e5)), pick(rng, (0.2, 0.3, 0.4))
+    f = pick(rng, (6.4, 6.6, 6.8))
+    osc = Duffing(m, k, c, k3, 0.0, mu)
+    w = TWO_PI * f
+    d = math.sqrt((mu * k / 2) ** 2 - (c * w / 2) ** 2)
+    kap = m * w * w / 4 + d
+    a = math.sqrt((kap - k) / (0.75 * k3))
+    amps, stable = parametric_amplitudes(osc, f)
+    assert abs(amps[stable].max() - a) < 1e-9 * a
+    return Question(
+        f"A 1 kg mass on a hardening spring, k = 400 N/m, k₃ = {k3:g} N/m³, c = 1 N·s/m, its stiffness pumped by "
+        f"μ = {mu:g} at {f:g} Hz. What amplitude does its half-harmonic swing settle at?",
+        1000 * a,
+        f"x = a cos(Ωt/2 − θ): (κ(a) − mΩ²/4)² + (cΩ/2)² = (μk/2)². The stable branch is the one detuned the "
+        f"cubic's way: κ(a) = mΩ²/4 + √((μk/2)² − (cΩ/2)²) = {number(m * w * w / 4)} + {number(d)} = {number(kap)} "
+        f"N/m, so ¾ k₃ a² = {number(kap - k)} N/m and a = {number(1000 * a)} mm.",
+        unit="mm",
+        setup=dict(cubic=k3, force=0.0, pump=mu, noise=1e-3, freq_hz=f, mode=Sweep.HOLD, start_hz=5.0, end_hz=8.0),
+    )
+
+
+def _lean(rng: np.random.Generator) -> Question:
+    return Question(
+        "A hardening spring (k = 400 N/m, so 3.18 Hz for small swings) is swept up in frequency. Where does its "
+        "swing jump down?",
+        0,
+        "Above the linear resonance, at 4.45 Hz: the curve leans right along the backbone, a big swing being a stiff "
+        "one, and the upper branch carries the mass past 3.18 Hz to its fold.",
+        choices=("Above 3.18 Hz", "At 3.18 Hz", "Below 3.18 Hz"),
+        setup=dict(mode=Sweep.UP),
+        predict=True,
+    )
+
+
+def _hysteresis(rng: np.random.Generator) -> Question:
+    return Question(
+        "The same hardening spring is swept up, then back down. Where does it jump up on the way down, against where "
+        "it jumped down on the way up?",
+        0,
+        "Lower: the lower branch's fold is at 3.64 Hz, the upper one's at 4.45 Hz. Between them both branches are "
+        "stable, and which the mass is on depends on where it came from.",
+        choices=("Lower", "At the same frequency", "Higher"),
+        setup=dict(mode=Sweep.UP_DOWN),
+        predict=True,
+    )
+
+
+def _softening(rng: np.random.Generator) -> Question:
+    return Question(
+        "A softening spring (k₃ < 0, 3.18 Hz for small swings) is swept up. Where does its swing jump?",
+        0,
+        "Up, below 3.18 Hz (at 2.97 Hz): a softening spring's curve leans left, so the lower branch reaches its fold "
+        "first and the mass jumps up to the upper one.",
+        choices=("Up, below 3.18 Hz", "Down, above 3.18 Hz", "Nowhere: it softens smoothly"),
+        setup=dict(damping=0.8, cubic=-2e4, force=1.25, start_hz=1.5, end_hz=4.5, freq_hz=1.5, mode=Sweep.UP),
+        predict=True,
+    )
+
+
+def _half_frequency(rng: np.random.Generator) -> Question:
+    return Question(
+        "No force, but the spring's stiffness pulses ±30 % at 6.37 Hz, twice its natural frequency. At what frequency "
+        "does the mass end up swinging?",
+        0,
+        "At half the pump's, 3.18 Hz: each pulse comes when the stretch adds energy, twice a swing. Rest is unstable "
+        "there, and the noise grows into the swing.",
+        choices=("3.18 Hz, half the pump's", "6.37 Hz, the pump's", "12.7 Hz, twice the pump's", "It stays at rest"),
+        setup=dict(
+            cubic=0.0,
+            force=0.0,
+            pump=0.3,
+            noise=1e-3,
+            freq_hz=rounded(20.0 / math.pi, 4),
+            mode=Sweep.HOLD,
+            start_hz=5.0,
+            end_hz=8.0,
+        ),
+        predict=True,
+    )
+
+
+def _has_jump(osc: Duffing) -> bool:
+    return bool(response_curve(osc, 3 * osc.natural_hz).folds)
+
+
+def _jump_spec(rng: np.random.Generator) -> Question:
+    F, k3 = pick(rng, (1.0, 2.0, 3.0)), pick(rng, (5e4, 1e5, 2e5))
+    base = Duffing(force=F, cubic=k3)
+    lo, hi = 0.01, 50.0
+    for _ in range(40):  # the damping at which the folds vanish
+        mid = math.sqrt(lo * hi)
+        lo, hi = (mid, hi) if _has_jump(base.with_(damping=mid)) else (lo, mid)
+    least = hi
+    design = rounded(1.2 * least, 3)
+    lowest = math.floor(10_000 * response_curve(base.with_(damping=1.4 * least), 3 * base.natural_hz).peak) / 10
+
+    def goal(t: DuffingSetup):
+        osc = t.oscillator()
+        peak = response_curve(osc, 3 * osc.natural_hz).peak
+        jumps = _has_jump(osc)
+        return (
+            kept("The mass", t.mass, base.mass, "kg"),
+            kept("k", t.stiffness, base.stiffness, "N/m"),
+            kept("k₃", t.cubic, k3, "N/m³"),
+            kept("The drive F", t.force, F, "N"),
+            Requirement("No pump", f"μ = {number(t.pump)}", t.pump == 0),
+            Requirement("No jump: one steady amplitude at every frequency", "jumps" if jumps else "no jump", not jumps),
+            at_least("The peak swing", 1000 * peak, lowest, "mm"),
+        )
+
+    return Question(
+        f"A 1 kg mass on a hardening spring (k = 400 N/m, k₃ = {k3:g} N/m³) driven by {F:g} N jumps on a sweep. "
+        f"Choose its damping so that it doesn't jump at all, but still swings to {number(lowest)} mm or more at its "
+        "peak.",
+        0,
+        f"More damping lowers the peak, so the curve leans less and stops folding over: the folds meet and vanish at "
+        f"c ≈ {number(least)} N·s/m. Above that the peak keeps falling, to {number(lowest)} mm at about "
+        f"{number(1.4 * least)} N·s/m: c = {number(design)} N·s/m, say.",
+        setup=dict(force=F, cubic=k3, damping=1.0),
+        goal=goal,
+        design=dict(force=F, cubic=k3, damping=design),
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "duffing_page", f"See {page_link('duffing_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("backbone", "The backbone", "harmonic-balance", "Harmonic balance", _backbone),
+        ("stiffening", "The cubic's share", "harmonic-balance", "Harmonic balance", _stiffening),
+        ("escape", "The escape amplitude", "duffing", "The Duffing oscillator", _escape),
+        ("pump-frequency", "Where to pump", "parametric", "Parametric excitation", _pump_frequency),
+        ("threshold", "The pump's threshold", "parametric", "Parametric excitation", _threshold),
+        ("growth-time", "How fast it grows", "parametric", "Parametric excitation", _growth_time),
+        ("settled-swing", "A pumped swing's size", "parametric", "Parametric excitation", _settled_swing),
+        ("lean", "Predict: sweeping up", "jump", "The jump", _lean),
+        ("hysteresis", "Predict: sweeping back", "jump", "The jump", _hysteresis),
+        ("softening", "Predict: a softening spring", "jump", "The jump", _softening),
+        ("half-frequency", "Predict: pumped from rest", "parametric", "Parametric excitation", _half_frequency),
+        ("jump-spec", "Spec: damping out the jump", "jump", "The jump", _jump_spec),
+    )
 )
 
 
@@ -533,30 +803,63 @@ class DuffingPage(QtWidgets.QWidget):
 
     def load_preset(self, name: str) -> None:
         p = next(p for p in PRESETS if p.name == name)
+        o = p.osc
+        setup = DuffingSetup(
+            o.mass, o.stiffness, o.damping, o.cubic, o.force, o.pump, o.noise,
+            p.freq_hz, p.start_hz, p.end_hz, p.sweep_time, p.mode, self.tabs.currentIndex(),
+        )  # fmt: skip
+        self._apply_setup(setup, name, p.note)
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a `DuffingSetup`'s fields), as Custom."""
+        self._apply_setup(DuffingSetup(**setup), CUSTOM, "")
+
+    def practice_state(self) -> DuffingSetup:
+        """The page's oscillator, drive and sweep, as a setup: what a practice spec checks."""
+        return DuffingSetup(
+            self.mass.value(),
+            self.stiffness.value(),
+            self.damping.value(),
+            self.cubic.value(),
+            self.force.value(),
+            self.pump.value(),
+            self.noise.value(),
+            self.freq.value(),
+            self.start_hz.value(),
+            self.end_hz.value(),
+            self.sweep_time.value(),
+            self._mode,
+            self.tabs.currentIndex(),
+        )
+
+    def _apply_setup(self, t: DuffingSetup, name: str, note: str) -> None:
         self._loading = True
         for box, value in (
-            (self.mass, p.osc.mass),
-            (self.stiffness, p.osc.stiffness),
-            (self.damping, p.osc.damping),
-            (self.cubic, p.osc.cubic),
-            (self.force, p.osc.force),
-            (self.pump, p.osc.pump),
-            (self.noise, p.osc.noise),
-            (self.freq, p.freq_hz),
-            (self.start_hz, p.start_hz),
-            (self.end_hz, p.end_hz),
-            (self.sweep_time, p.sweep_time),
+            (self.mass, t.mass),
+            (self.stiffness, t.stiffness),
+            (self.damping, t.damping),
+            (self.cubic, t.cubic),
+            (self.force, t.force),
+            (self.pump, t.pump),
+            (self.noise, t.noise),
+            (self.freq, t.freq_hz),
+            (self.start_hz, t.start_hz),
+            (self.end_hz, t.end_hz),
+            (self.sweep_time, t.sweep_time),
         ):
             box.setValue(value)
         self.preset.blockSignals(True)
         self.preset.setCurrentText(name)
         self.preset.blockSignals(False)
-        self.preset_note.setText(p.note)
+        self.preset_note.setText(note)
         self._loading = False
         d = self.sim.drive
-        d.freq_hz, d.start_hz, d.end_hz, d.sweep_time = p.freq_hz, p.start_hz, p.end_hz, p.sweep_time
+        d.freq_hz, d.start_hz, d.end_hz, d.sweep_time = t.freq_hz, t.start_hz, t.end_hz, t.sweep_time
+        self.tabs.blockSignals(True)  # the chart, if it's the tab, is drawn once by _apply_params
+        self.tabs.setCurrentIndex(t.tab)
+        self.tabs.blockSignals(False)
         self._apply_params()
-        self._mode = p.mode
+        self._mode = t.mode
         self.reset()
 
     def frame_context(self) -> str:
