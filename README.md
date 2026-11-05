@@ -718,6 +718,12 @@ split among x, y, z, roll, pitch and yaw. Mounts below the centre of mass couple
 off-centre centre of mass couples bounce with pitch. The elastic centre (where a force moves the body
 without turning it), each plane's beside the mounts' lines of action, and focalizing: tilting the mounts
 toward the middle lifts the roll plane's centre to the centre of mass, and sway and roll are pure again.
+Driven by a turning unbalance or a firing torque, (K(1 + iη) − ω²M)q = Q with rubber's loss factor: the
+force through each mount and the floor's total against the speed (isolated above √2 times the highest mode,
+amplified about 1/η at each), which modes the load drives, and the torque roll axis I⁻¹n that engine mounts
+are aimed at.
+
+![Rigid body on mounts page, driven: 2 kg·mm of unbalance at 955 rpm, where it turns at the bounce mode's 15.9 Hz, puts 201 N through the floor, ten times its own 20 N; the Response tab shows the floor's force against the speed, falling below the load's own above about 1350 rpm](docs/images/rigid_mounts_response.png)
 
 ![Rigid body on mounts page: a 20 kg box on four mounts 80 mm below its centre of mass, swinging in its 6.90 Hz mode, 67 % sway and 33 % roll; the elastic centre has dropped to the mounts' plane, and the sweep shows sway and roll veering apart as the mounts go lower](docs/images/rigid_mounts.png)
 
@@ -1648,7 +1654,8 @@ $F_f$ times the distance slid, so the energy balance still closes.
 - `core/quarter_car.py`: a quarter-car on an ISO 8608 road: the transfer functions, the outputs' PSDs
   and RMS, the comfort–grip trade-off, and a drive stepped exactly.
 - `core/rigid_mounts.py`: a box on mounts with six degrees of freedom: K = Σ Tᵀ K<sub>m</sub> T, the
-  modes and their kinetic-energy split, the elastic centre (overall and each plane's), and the focal tilt.
+  modes and their kinetic-energy split, the elastic centre (overall and each plane's), the focal tilt, and
+  the forced response to an unbalance or a torque (each mount's force, modal forces, the torque roll axis).
 - `core/seismic.py`: a design spectrum, the building's modal masses and peaks, ABS/SRSS/NRL/CQC, and
   synthesized records stepped mode by mode.
 - `core/variability.py`: Monte Carlo on the chain with lognormal scatter and the first-order estimate,

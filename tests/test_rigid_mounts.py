@@ -8,12 +8,20 @@ import pytest
 from vib_tutorial.core.rigid_mounts import (
     TWO_PI,
     Body,
+    Drive,
+    Excitation,
     Layout,
     Mount,
+    amplitude,
     elastic_centre,
     modes,
+    mount_forces,
+    participation,
     plane_centres,
+    response,
+    spectrum,
     stiffness_matrix,
+    torque_roll_axis,
 )
 
 LEVEL = Layout()
@@ -151,3 +159,100 @@ def test_trials():
     assert offset["y 83 %, yaw 17 %"] == pytest.approx(7.30) and offset["yaw 83 %, y 17 %"] == pytest.approx(10.67)
     stiff = by["Stiff in shear: no focus to be had"].layout
     assert math.isnan(stiff.focus_tilt())
+
+
+# ------------------------------------------------------------------ the forced response
+
+SKEWED = Layout(drop=0.06, offset=0.03, tilt=math.radians(10))
+
+
+@pytest.mark.parametrize("kind", list(Excitation))
+def test_newton_on_the_forced_response(kind):
+    """The mounts' forces on the floor balance the load and the body's inertia: Σf = F + ω²m u, and their
+    moments Σ r × f = M + ω² I θ."""
+    drive = Drive(kind, rpm=1300.0, crank=math.radians(15))
+    w, Q = drive.frequency(), drive.load()
+    q = response(SKEWED.body, SKEWED.mounts(), 0.15, w, Q)
+    f = mount_forces(SKEWED.mounts(), 0.15, q)
+    m = SKEWED.body.mass
+    assert f.sum(axis=0) == pytest.approx(Q[:3] + w * w * m * q[:3])
+    moment = sum(np.cross(mt.position, fm) for mt, fm in zip(SKEWED.mounts(), f))
+    assert moment == pytest.approx(Q[3:] + w * w * np.array(SKEWED.body.inertia) * q[3:])
+
+
+def test_the_response_is_a_sum_of_modes():
+    """K(1 + iη) is proportional to K, so q = Σ φ_j φ_jᵀ Q/(ω_j²(1 + iη) − ω²) exactly."""
+    drive, eta = Drive(rpm=700.0), 0.2
+    w, Q = drive.frequency(), drive.load()
+    m = SKEWED.modes()
+    w2 = (TWO_PI * m.frequencies) ** 2
+    modal = sum(np.outer(m.shapes[:, j], m.shapes[:, j]) @ Q / (w2[j] * (1 + 1j * eta) - w * w) for j in range(6))
+    assert response(SKEWED.body, SKEWED.mounts(), eta, w, Q) == pytest.approx(modal)
+
+
+def test_the_peak_of_a_force():
+    t = np.linspace(0, TWO_PI, 200001)
+    for f in (np.array([1 + 2j, 0.5 - 1j, 0.3j]), np.array([2.0, -1.0, 0.5]) * (1 - 1j), np.array([1, -1j, 0])):
+        brute = np.linalg.norm(np.real(np.outer(np.exp(1j * t), f)), axis=1).max()
+        assert amplitude(f) == pytest.approx(brute, rel=1e-9)
+    drive = Drive(rpm=3000.0)
+    speed = 3000 * TWO_PI / 60
+    assert amplitude(drive.load()[:3]) == pytest.approx(drive.unbalance * speed**2)  # turning at a steady size
+
+
+def test_isolation_and_resonance():
+    """Slow, the floor takes the whole load; near the bounce about 1/η times it; well above, (f_n/f)²-like."""
+    drive = Drive(at=(0.0, 0.0, 0.0), crank=0.0)  # at the centre of mass: it only pushes, sideways and up
+    sp = spectrum(LEVEL, 0.1, drive, np.array([30.0, 954.9, 6000.0, 12000.0]))
+    ratio = sp.total / sp.applied
+    assert ratio[0] == pytest.approx(1.0, rel=0.02)
+    assert ratio[1] == pytest.approx(1 / 0.1, rel=0.01)  # the bounce at 15.915 Hz: |1 + iη|/η
+    assert ratio[2] / ratio[3] == pytest.approx(4.0, rel=0.02)
+
+
+def test_the_torque_roll_axis():
+    body = Body(20.0, 0.8, 0.5, 0.6)
+    i_xx, _, i_zz = body.inertia
+    for gamma in (0.0, 15.0, 30.0):
+        g = math.radians(gamma)
+        a = torque_roll_axis(body, np.array([math.cos(g), 0.0, math.sin(g)]))
+        assert math.atan2(a[2], a[0]) == pytest.approx(math.atan(i_xx / i_zz * math.tan(g)))
+    torque = Drive(Excitation.TORQUE)
+    shares = participation(LEVEL.modes(), torque.load())
+    assert sorted(shares)[-2] < 1e-12 and LEVEL.modes().dominant(int(np.argmax(shares))) == 3
+
+
+def test_drive_trials():
+    from vib_tutorial.gui.rigid_mounts import TRIALS
+
+    by = {t.name: t for t in TRIALS}
+
+    def through(name):
+        t = by[name]
+        q = response(t.layout.body, t.layout.mounts(), t.loss, t.drive.frequency(), t.drive.load())
+        f = mount_forces(t.layout.mounts(), t.loss, q)
+        return float(amplitude(t.drive.load()[:3])), float(amplitude(f.sum(axis=0)))
+
+    applied, floor = through("An unbalance at 3000 rpm: isolated")
+    assert (applied, floor, 100 * floor / applied) == pytest.approx((197, 22.4, 11.3), abs=0.5)
+    sp = spectrum(LEVEL, 0.1, Drive(), np.linspace(1000.0, 3000.0, 2001))
+    assert sp.rpm[np.flatnonzero(sp.total < sp.applied)[0]] == pytest.approx(1350, abs=10)
+    applied, floor = through("Running at the bounce: amplified")
+    assert (applied, floor, floor / applied) == pytest.approx((20.0, 201, 10.1), abs=0.05 * 10)
+    applied, floor = through("Lossier rubber: less at resonance, as much isolation")
+    assert (floor, floor / applied) == pytest.approx((70.0, 3.5), abs=0.05)
+    lossy = by["Lossier rubber: less at resonance, as much isolation"]
+    t = lossy.layout
+    q = response(t.body, t.mounts(), 0.3, Drive(rpm=3000.0).frequency(), Drive(rpm=3000.0).load())
+    assert amplitude(mount_forces(t.mounts(), 0.3, q).sum(axis=0)) == pytest.approx(23.2, abs=0.05)
+    t = by["A firing torque: roll alone"]
+    shares = participation(t.layout.modes(), t.drive.load())
+    assert (shares > 1e-9).sum() == 1
+    t = by["Mounts below: the torque drives two modes"]
+    shares = participation(t.layout.modes(), t.drive.load())
+    assert sorted(shares[shares > 1e-9]) == pytest.approx([0.70, 1.0], abs=0.005)
+    t = by["A tilted crank: the torque roll axis"]
+    a = torque_roll_axis(t.layout.body, t.drive.axis())
+    assert math.degrees(math.atan2(a[2], a[0])) == pytest.approx(14.0, abs=0.05)
+    shares = participation(t.layout.modes(), t.drive.load())
+    assert sorted(shares[shares > 1e-9]) == pytest.approx([0.30, 1.0], abs=0.005)

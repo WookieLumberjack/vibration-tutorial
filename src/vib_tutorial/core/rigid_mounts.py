@@ -243,3 +243,110 @@ def sweep(layout: Layout, which: Sweep, values: np.ndarray) -> tuple[np.ndarray,
         freqs[i] = m.frequencies
         dominant[i] = [m.dominant(j) for j in range(6)]
     return freqs, dominant
+
+
+# ------------------------------------------------------------------ the forced response
+class Excitation(enum.Enum):
+    UNBALANCE = "A rotating unbalance"
+    TORQUE = "A torque about the crank"
+
+
+EXCITATIONS = tuple(Excitation)
+
+
+@dataclass(frozen=True)
+class Drive:
+    """What the machine does to itself at `rpm`: an unbalance m_e e turning about the crank axis through `at`,
+    or a torque T cos(n Ω t) about the crank axis (n the `order`: a four-stroke four-cylinder's firing is the
+    2nd). The crank axis lies in the x–z plane, `crank` (rad) up from x."""
+
+    kind: Excitation = Excitation.UNBALANCE
+    rpm: float = 1500.0
+    unbalance: float = 0.002  # kg·m, m_e e
+    at: tuple[float, float, float] = (0.1, 0.0, 0.1)  # m, where the unbalance turns, from the centre of mass
+    torque: float = 10.0  # N·m
+    order: int = 2
+    crank: float = 0.0  # rad
+
+    def axis(self) -> np.ndarray:
+        """n, the crank axis."""
+        return np.array([math.cos(self.crank), 0.0, math.sin(self.crank)])
+
+    def frequency(self, rpm: float | None = None) -> float:
+        """ω (rad/s) the load turns at: Ω for the unbalance, nΩ for the torque."""
+        speed = (self.rpm if rpm is None else rpm) * TWO_PI / 60.0
+        return speed if self.kind is Excitation.UNBALANCE else self.order * speed
+
+    def load(self, rpm: float | None = None) -> np.ndarray:
+        """The generalized force Q (6, complex; the load is Re(Q e^{iωt})) about the centre of mass: the
+        unbalance's m_e eΩ²(u − i v), u and v across the crank axis, with its moment r × F; or the torque T n."""
+        n = self.axis()
+        if self.kind is Excitation.TORQUE:
+            return np.concatenate([np.zeros(3), self.torque * n]).astype(complex)
+        speed = (self.rpm if rpm is None else rpm) * TWO_PI / 60.0
+        u = np.array([0.0, 1.0, 0.0])
+        v = np.cross(n, u)
+        F = self.unbalance * speed * speed * (u - 1j * v)
+        return np.concatenate([F, np.cross(np.array(self.at), F)])
+
+
+def dynamic_stiffness(body: Body, mounts, loss: float, omega: float) -> np.ndarray:
+    """Z(ω) = K(1 + iη) − ω²M: each mount's rubber with a loss factor η (hysteretic damping, as the Damping
+    models page's: the same loss per cycle at every frequency)."""
+    return stiffness_matrix(mounts) * (1 + 1j * loss) - omega * omega * body.mass_matrix()
+
+
+def response(body: Body, mounts, loss: float, omega: float, load: np.ndarray) -> np.ndarray:
+    """q (6, complex): the steady motion Re(q e^{iωt}) under the load, Z(ω) q = Q."""
+    return np.linalg.solve(dynamic_stiffness(body, mounts, loss, omega), load)
+
+
+def mount_forces(mounts, loss: float, q: np.ndarray) -> np.ndarray:
+    """Each mount's force on the floor (n, 3, complex): K_m(1 + iη) T q."""
+    return np.array([(1 + 1j * loss) * (m.stiffness() @ (m.transform() @ q)) for m in mounts])
+
+
+def amplitude(vectors: np.ndarray) -> np.ndarray:
+    """The largest |Re(f e^{iωt})| over a cycle of complex vectors f = a + ib (..., 3): the larger principal value
+    of [a b], √((|a|² + |b|² + √((|a|² − |b|²)² + 4(a·b)²))/2). |a| for a force along one line (b ∥ a); for one
+    turning round at a steady size (|a| = |b|, a ⟂ b), that size."""
+    a, b = np.real(vectors), np.imag(vectors)
+    aa, bb, ab = np.sum(a * a, axis=-1), np.sum(b * b, axis=-1), np.sum(a * b, axis=-1)
+    return np.sqrt(0.5 * (aa + bb + np.sqrt((aa - bb) ** 2 + 4 * ab * ab)))
+
+
+@dataclass(frozen=True)
+class Spectrum:
+    """The forced response over a range of speeds: each mount's force and the floor's total (N, amplitudes),
+    and the load's own force (the floor's if the machine were bolted down)."""
+
+    rpm: np.ndarray
+    mounts: np.ndarray  # (len(rpm), 4)
+    total: np.ndarray
+    applied: np.ndarray
+
+
+def spectrum(layout: Layout, loss: float, drive: Drive, rpm: np.ndarray) -> Spectrum:
+    mounts = layout.mounts()
+    each, total, applied = [], [], []
+    for r in rpm:
+        Q = drive.load(float(r))
+        q = response(layout.body, mounts, loss, drive.frequency(float(r)), Q)
+        f = mount_forces(mounts, loss, q)
+        each.append(amplitude(f))
+        total.append(float(amplitude(f.sum(axis=0))))
+        applied.append(float(amplitude(Q[:3])))
+    return Spectrum(np.asarray(rpm), np.array(each), np.array(total), np.array(applied))
+
+
+def participation(modes: Modes, load: np.ndarray) -> np.ndarray:
+    """How hard the load drives each mode: |φ_jᵀ Q| over the largest (each mode's modal force)."""
+    drive = np.abs(modes.shapes.T @ load)
+    return drive / drive.max() if drive.max() > 0 else drive
+
+
+def torque_roll_axis(body: Body, axis: np.ndarray) -> np.ndarray:
+    """The torque roll axis: a free body under a torque about n turns about I⁻¹n (unit vector), not n, unless n
+    is a principal axis. Engine mounts are aimed at it."""
+    a = np.asarray(axis) / np.array(body.inertia)
+    return a / np.linalg.norm(a)
