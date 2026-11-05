@@ -76,7 +76,7 @@ COURSE = (
             (
                 "deriving_page",
                 "Deriving the equations",
-                "free-body diagrams against Lagrange's equations, on a car's body in bounce and pitch",
+                "free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum",
             ),
             (
                 "sim_page",
