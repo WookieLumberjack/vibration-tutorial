@@ -55,7 +55,7 @@ from ..core.rotor_sweep import (
     probe,
 )
 from ..core.rotor_waterfall import Waterfall
-from . import frame_stats, settle_plots
+from . import frame_stats, rotor_practice, settle_plots
 from .cms_time import SampleBuffer
 from .layouts import ColumnScroll, FlowLayout, group
 from .panels import spin
@@ -65,6 +65,7 @@ from .rotor_bode import SWEEP_COLORS, BodePlots, PolarPlot, SweepPlots, nice_mar
 from .rotor_figures import FigureBrowser
 from .rotor_magnet import MagnetPanel
 from .rotor_notes import THEORY_HTML, matrices_html, whirl_name
+from .rotor_practice import RotorSetup
 from .rotor_rub import SPIRAL_POINTS, RubPanel
 from .rotor_stability import MEASURES, AsymmetryPlot, FullSpectrum, StabilityMap
 from .rotor_waterfall import AGAINST, SCALES, WaterfallPlot, against_speed, baselines
@@ -77,6 +78,8 @@ SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0)  # simulation speed, × real time
 TOP_RPM = 10_000.0  # the default speed range
 MAX_TOP_RPM = 60_000.0  # the widest it can be set to
 ORDERS = {2.0: "2X", 3.0: "3X", 0.5: "½X"}
+PROBLEMS = rotor_practice.PROBLEMS  # the page's practice problems, kept beside it in rotor_practice
+PRACTICE_SETUP = RotorSetup  # what a practice problem's setup and the page's practice_state are
 CUSTOM = "Custom"  # the preset box's entry for a rotor that is none of the presets  # other orders of the speed the Campbell diagram can draw
 DIRECTION_NAMES = ("x (horizontal probe)", "y (vertical probe)", "Orbit (major axis)")
 # Columns of the history: (x, y) at each station, then the unbalance's angle φ, the speed Ω, and a stator
@@ -1877,6 +1880,20 @@ class RotorPage(QtWidgets.QWidget):
         self.set_system(preset.system)
         self.set_target_rpm(preset.target_rpm)
         self.reset()
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says: a preset with its changes, starting from rest."""
+        t = RotorSetup(**setup)
+        self.set_top_rpm(t.base.top_rpm if t.top_rpm is None else t.top_rpm)
+        self.set_system(t.system())
+        self.set_target_rpm(t.base.target_rpm if t.target_rpm is None else t.target_rpm)
+        self.reset()
+
+    def practice_state(self) -> RotorSetup:
+        """The page's rotor and speeds, as a setup: what a practice spec checks."""
+        return RotorSetup(
+            self.preset.currentText(), target_rpm=self.target_rpm.value(), top_rpm=self.top_rpm, rotor=self.system()
+        )
 
     def frame_context(self) -> str:
         """For the frame log (frame_stats): the preset showing."""

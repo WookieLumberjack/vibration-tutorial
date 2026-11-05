@@ -575,7 +575,7 @@ since x = Re w is the same for w and its mirror image. Two probes at right angle
 by its mass. <i>Orbit</i> beside the probe reads the 1X ellipse's major semi-axis,
 |w<sub>f</sub>| + |w<sub>b</sub>|.</p>
 
-<h3>The classic case: disc at midspan</h3>
+<h3><a name="classic"></a>The classic case: disc at midspan</h3>
 <p>With the disc at midspan on identical bearings, the problem is symmetric about the disc, so the
 disc's translation and its tilt are uncoupled. The translation sees the shaft's midspan stiffness
 k<sub>s</sub> = 48EI/L³ in series with the two supports in parallel, 2k<sub>b</sub>. With light
@@ -586,7 +586,7 @@ k<sub>b</sub> = 50,000 N/m, so ω<sub>c</sub> = 165.5 rad/s, <b>1580 rpm</b>. Th
 0.1 kg journals, puts it at 1584 rpm. Flexible supports lower the critical speed: on rigid bearings it
 would be 1854 rpm.</p>
 
-<h3>Unbalance response: heavy spot and high spot</h3>
+<h3><a name="unbalance"></a>Unbalance response: heavy spot and high spot</h3>
 <p>The disc's centre of mass sits a distance e from the shaft's axis: an unbalance U = me. Spinning at
 Ω, it pulls the shaft round with a force meΩ² that turns with it. So the disc whirls once per revolution
 (synchronous, 1X), forward, and in a circle if the rotor is isotropic.</p>
@@ -617,7 +617,7 @@ critical. The lag is late because the damping is at the supports, in series with
 disc. As the speed rises the dampers stiffen the supports a little, so the rotor is not quite the
 one-mass oscillator above.</p>
 
-<h3>The gyroscopic effect</h3>
+<h3><a name="gyroscopic"></a>The gyroscopic effect</h3>
 <p>A spinning disc has angular momentum I<sub>p</sub>Ω along its axis. Tilted by the slopes, the axis
 points along (θ<sub>x</sub>, θ<sub>y</sub>, 1), so the angular momentum has a sideways part
 I<sub>p</sub>Ω(θ<sub>x</sub>, θ<sub>y</sub>). As the disc whirls and its tilt changes, that part changes
@@ -670,7 +670,7 @@ instability begins near ½X (see <i>Stability</i>).</li>
 <p><b>On the page.</b> <i>Also draw</i> adds these lines to the Campbell diagram, up to the speed set in
 <i>Speeds up to</i>. Set an asymmetry or a crack on a horizontal rotor to see a secondary critical.</p>
 
-<h3>The overhung rotor</h3>
+<h3><a name="overhung"></a>The overhung rotor</h3>
 <p>Fans, pump impellers and many small turbines carry their disc outside the bearings, on an overhang ℓ
 (a/L &gt; 1 past bearing B, or below 0 past A). The shaft is then a span between the bearings and a
 cantilever beyond, and at the disc its stiffness is 3EI/(ℓ²(L + ℓ)). Pushed sideways, the overhung disc
@@ -687,7 +687,7 @@ drives only the forward crossing, so that is the one critical speed it shows. Th
 (53 Hz at rest) has a forward branch rising faster than 1X (I<sub>p</sub> = 2I<sub>d</sub>), so it is
 never critical.</p>
 
-<h3>Anisotropic supports and backward whirl</h3>
+<h3><a name="anisotropic"></a>Anisotropic supports and backward whirl</h3>
 <p>Supports stiffer vertically than horizontally are common: gravity, foundations and oil-film bearings
 all make them so. They split each mode into a horizontal one and a vertical one, with two critical
 speeds, and the orbits become ellipses. Between the two criticals the horizontal response already lags by
@@ -841,7 +841,7 @@ centre and the tilt and the translation couple, so the skew moves the disc too. 
 unbalance (the mass off the axis) can be corrected by one weight in one plane. A <i>couple</i>
 unbalance needs two weights in two planes, equal and opposite.</p>
 
-<h3>Single-plane balancing</h3>
+<h3><a name="single-plane"></a>Single-plane balancing</h3>
 <p>Balancing puts a weight on the rotor to cancel its unbalance. Where the heavy spot is cannot be seen,
 and the phase lag between it and the high spot depends on the speed. So it is found from measurements, by
 <b>influence coefficients</b>:</p>
@@ -1092,7 +1092,7 @@ thick while it is open.</p>
 
 <h2>5. Stability</h2>
 
-<h3>Cross-coupling and internal damping</h3>
+<h3><a name="cross-coupling"></a>Cross-coupling and internal damping</h3>
 <p>Everything so far is forced vibration. The unbalance drives the rotor, and however hard it shakes at a
 critical speed, every free whirl dies away. Two effects can instead make a free whirl grow by itself, and
 both are stiffnesses that are not symmetric.</p>
