@@ -38,9 +38,13 @@ def hessian(f, n: int = 2, h: float = 1e-4) -> np.ndarray:
 def test_the_matrices_are_the_energies_hessians(coords, e):
     m = matrices(CAR, coords, e)
     zero = np.zeros(2)
-    np.testing.assert_allclose(hessian(lambda v: energies(CAR, coords, zero, v, e)[0]), m.M, rtol=1e-6)
-    np.testing.assert_allclose(hessian(lambda q: energies(CAR, coords, q, zero, e)[1]), m.K, rtol=1e-6)
-    np.testing.assert_allclose(hessian(lambda v: energies(CAR, coords, zero, v, e)[2]), m.C, rtol=1e-6)
+    # an absolute tolerance too: a coupling that's exactly 0 comes out as round-off (~1e-12) on some BLAS
+    for found, A in (
+        (hessian(lambda v: energies(CAR, coords, zero, v, e)[0]), m.M),
+        (hessian(lambda q: energies(CAR, coords, q, zero, e)[1]), m.K),
+        (hessian(lambda v: energies(CAR, coords, zero, v, e)[2]), m.C),
+    ):
+        np.testing.assert_allclose(found, A, rtol=1e-6, atol=1e-9 * np.abs(A).max())
     for A in (m.M, m.C, m.K):
         np.testing.assert_allclose(A, A.T)
 

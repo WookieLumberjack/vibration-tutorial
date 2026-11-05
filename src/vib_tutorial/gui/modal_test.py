@@ -1184,7 +1184,7 @@ class ModalTestPage(QtWidgets.QWidget):
         """Redraw the current measurement and its results in the current theme (without measuring again)."""
         for w in (self.signals, self.frf_view, self.stab_plot, self.results.mac):
             w.apply_theme()
-        if self.acq is not None:
+        if self.acq is not None and not self._dirty:  # a new chain while hidden: measured again when it shows
             self.check.setHtml(self._setup_check())
             self.redraw()
 

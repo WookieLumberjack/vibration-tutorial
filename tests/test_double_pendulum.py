@@ -62,8 +62,8 @@ def test_the_matrices_are_the_energies_hessians_at_rest(angles):
     m = matrices(P, angles)
     kinetic = hessian(lambda v: float(P.energies(0.0, 0.0, *(T @ v))[0]))
     potential = hessian(lambda q: float(P.energies(*(T @ q), 0.0, 0.0)[1]))
-    np.testing.assert_allclose(kinetic, m.M, rtol=1e-6)
-    np.testing.assert_allclose(potential, m.K, rtol=1e-5)
+    np.testing.assert_allclose(kinetic, m.M, rtol=1e-6, atol=1e-9 * np.abs(m.M).max())  # an exact 0 can be round-off
+    np.testing.assert_allclose(potential, m.K, rtol=1e-5, atol=1e-9 * np.abs(m.K).max())
 
 
 @pytest.mark.parametrize("angles", list(Angles))

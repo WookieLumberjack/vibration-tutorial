@@ -1056,7 +1056,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
     def apply_theme(self) -> None:
         for p in (self.mac_plot, self.auto_plot):
             p.apply_theme()
-        if self.corr is not None:
+        if self.corr is not None and not self._dirty:  # a new chain while hidden: redrawn when it shows
             self.redraw()
 
     def redraw(self) -> None:
