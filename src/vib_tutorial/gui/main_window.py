@@ -173,6 +173,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .seismic import SeismicPage
 
         return SeismicPage
+    if name == "deriving_page":
+        from .deriving import DerivingPage
+
+        return DerivingPage
     if name == "quarter_car_page":
         from .quarter_car import QuarterCarPage
 
@@ -647,6 +651,7 @@ class MainWindow(QtWidgets.QMainWindow):
     shock_page = property(lambda self: self._page("shock_page"))
     diagnostics_page = property(lambda self: self._page("diagnostics_page"))
     variability_page = property(lambda self: self._page("variability_page"))
+    deriving_page = property(lambda self: self._page("deriving_page"))
     quarter_car_page = property(lambda self: self._page("quarter_car_page"))
     mounts_page = property(lambda self: self._page("mounts_page"))
     seismic_page = property(lambda self: self._page("seismic_page"))

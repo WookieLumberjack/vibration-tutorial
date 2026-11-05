@@ -349,6 +349,7 @@ BACKGROUND_HTML = BACKGROUND_HTML.replace(
     before(
         ("sdof_page", "forced-response", "Forced response"),
         ("damping_page", "viscous", "Viscous damping"),
+        ("deriving_page", "lagrange", "Lagrange's equations"),
     ),
 ).replace("<!--TRIALS-->", "<ul>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in TRIALS) + "</ul>")
 
