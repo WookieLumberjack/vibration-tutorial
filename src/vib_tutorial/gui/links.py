@@ -74,6 +74,11 @@ COURSE = (
         "Foundations",
         (
             (
+                "deriving_page",
+                "Deriving the equations",
+                "free-body diagrams against Lagrange's equations, on a car's body in bounce and pitch",
+            ),
+            (
                 "sim_page",
                 "Simulation && modal analysis",
                 "one mass, then a chain of them: modes, damping, energy, forcing, absorbers, friction",
@@ -210,6 +215,7 @@ PAGE_TITLES = {
     "periodic_page": "Periodic forcing page",
     "damping_page": "Damping models page",
     "isolation_page": "Vibration isolation page",
+    "deriving_page": "Deriving the equations page",
     "sim_page": "Simulation page",
     "energy_page": "Energy methods page",
     "frf_page": "FRF matrix page",

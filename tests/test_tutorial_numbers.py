@@ -5,6 +5,8 @@ default, a preset or a solver cannot silently make the text wrong. If one fails,
 the text (or the change), and quote the new value.
 """
 
+import math
+
 import numpy as np
 import pytest
 from scipy.signal import find_peaks
@@ -971,3 +973,51 @@ def record_of(machine):
     from vib_tutorial.core.diagnostics import record
 
     return record(machine)
+
+
+def test_deriving_trials():
+    from dataclasses import replace
+
+    from vib_tutorial.core.bounce_pitch import Bump, Car, Coordinates, matrices, modes, newton, ride, slipped
+
+    def hz(car, coords=Coordinates.CENTRE, e=0.0):
+        return [m.frequency for m in modes(car, coords, e)]
+
+    car = Car()
+    m1, m2 = modes(car)
+    assert (m1.frequency, m2.frequency) == pytest.approx((1.25, 1.41), abs=0.005)
+    assert (m1.node, m2.node) == pytest.approx((-1.92, 0.88), abs=0.005)
+    assert not m1.inside(car) and m2.inside(car)
+    # no static coupling
+    level = replace(car, k_rear=32e3)
+    assert level.k_front * level.front == pytest.approx(level.k_rear * level.rear) == pytest.approx(48e3)
+    assert hz(level) == pytest.approx((1.23, 1.27), abs=0.005)
+    # the elastic centre
+    assert car.elastic_centre() == pytest.approx(-0.15)
+    at = matrices(car, Coordinates.POINT, -0.15)
+    assert abs(at.K[0, 1]) < 1e-9 and at.M[0, 1] == pytest.approx(180.0)
+    assert hz(car, Coordinates.POINT, -0.15) == pytest.approx((1.25, 1.41), abs=0.005)
+    # moments about the front axle, and the slip
+    s = slipped(car, 1.2)
+    wrong = np.sort(np.sqrt(np.linalg.eigvals(np.linalg.solve(s.M, s.K)).real)) / (2 * np.pi)
+    assert wrong == pytest.approx((0.93, 1.38), abs=0.005)
+    # the ends' coordinates
+    assert matrices(car, Coordinates.ENDS).M[0, 1] == pytest.approx(18.1, abs=0.05)
+    rows = newton(car, Coordinates.ENDS).M
+    np.testing.assert_allclose(rows, [[667, 533], [751, -751]], atol=0.5)
+    # a dynamic index of 1
+    one = replace(car, gyration=1.342)
+    assert one.dynamic_index == pytest.approx(1.0, abs=0.002) and math.sqrt(1.2 * 1.5) == pytest.approx(1.34, abs=0.005)
+    assert one.end_masses == pytest.approx((666.7, 533.3), abs=0.05)
+    assert hz(one) == pytest.approx(one.end_frequencies(), abs=0.002)
+    assert one.end_frequencies() == pytest.approx((1.23, 1.38), abs=0.005)
+    assert [m.node for m in modes(one)] == pytest.approx((-1.5, 1.2), abs=0.005)
+    # over a hump, either way round
+    hump = Bump()
+    assert car.wheelbase / hump.speed == pytest.approx(0.32, abs=0.005)
+    for kf, kr, ends, settled in ((48e3, 30e3, (1.35, 1.19), 1.95), (30e3, 48e3, (1.07, 1.51), 1.52)):
+        c = replace(car, k_front=kf, k_rear=kr)
+        assert c.end_frequencies() == pytest.approx(ends, abs=0.005)
+        r = ride(c, hump)
+        assert np.degrees(np.abs(r.pitch[r.after()]).max()) == pytest.approx(settled, abs=0.005)
+    assert 1 - 1.068 / 1.51 == pytest.approx(0.29, abs=0.005)

@@ -54,7 +54,8 @@ or follows them:
    be), **Periodic forcing** (a repeating force as a Fourier series), **Damping models** (viscous, hysteretic, friction
    and viscoelastic damping matched to one another: their loops, losses and decays) and **Vibration
    isolation** (a machine on mounts: transmissibility, static deflection, damping, two stages, start-up).
-2. **Foundations.** *Simulation & modal analysis* (the chain above), **Energy methods** (Rayleigh,
+2. **Foundations.** **Deriving the equations** (a car's body in bounce and pitch by free-body diagrams and
+   by Lagrange, in any coordinates), *Simulation & modal analysis* (the chain above), **Energy methods** (Rayleigh,
    Dunkerley, Rayleigh–Ritz and Holzer), **FRF matrix** (every term of the receptance matrix and how the
    modes build it up), **Complex modes** (when the damping makes the modes complex, and what the usual
    approximation then misses), **Continuous systems** (the chain refined into a string, a bar or a beam,
@@ -1404,6 +1405,18 @@ speed. A third of the pulse comes back upside down and two thirds go on, squeeze
 On 100 elements the squeezed pulse is only five elements wide, and the mesh carries 0.49 of it where
 the string carries 0.67, shedding ripples behind.
 
+### Deriving the equations
+
+A car's body in bounce and pitch, one rigid body on a front and a rear spring, derived two ways with the
+page's own numbers written in: free-body diagrams (forces, and moments about G or another point) and
+Lagrange's equations (T, V and Rayleigh's D, then their derivatives). The coordinates can be the centre
+of mass, any point P on the body, or the two ends: M, C and K change (static coupling in K, dynamic in
+M, the free-body diagram's rows not symmetric until mixed), the frequencies don't. The car swings in each
+mode about its node, the modes are swept against the rear spring, and it rides a speed hump to show
+Olley's flat ride.
+
+![Deriving the equations page, moments about the front axle: in x<sub>P</sub> and θ at P = 1.2 m ahead of G both M and K couple, the free-body diagram's moment balance about P keeps G's inertia force, and leaving it out (J<sub>P</sub>θ̈ = ΣM<sub>P</sub>) would give 0.932 and 1.38 Hz instead of 1.25 and 1.41](docs/images/deriving_equations.png)
+
 ### Energy methods
 
 Frequencies from the energies, on the Simulation page's chain: Rayleigh's quotient (from the static
@@ -1642,6 +1655,9 @@ $F_f$ times the distance slid, so the energy balance still closes.
   best pivot.
 - `core/periodic.py`: periodic forces as Fourier series in closed form, each harmonic's response, and
   the exact periodic steady state from one FOH-stepped period.
+- `core/bounce_pitch.py`: a car's body in bounce and pitch: Lagrange's M, C and K in three sets of
+  coordinates (T = the transformation to G's), the free-body diagram's rows and the slip about P, the
+  modes and their nodes, and a ride over a bump stepped exactly.
 - `core/energy_methods.py`: Rayleigh's quotient, inverse iteration, Dunkerley's sum, Rayleigh–Ritz and
   Holzer's table on the chain.
 - `core/beams_plates.py`: a simply supported beam by Euler–Bernoulli, Rayleigh, shear and Timoshenko

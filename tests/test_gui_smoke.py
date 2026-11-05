@@ -3902,6 +3902,7 @@ def test_shock_page(app):
         "periodic_page",
         "damping_page",
         "isolation_page",
+        "deriving_page",
         "energy_page",
         "integration_page",
         "fatigue_page",

@@ -1000,6 +1000,21 @@ def quarter_car():
     lesson("quarter_car_page", 0, "quarter_car")  # a car on an average road
 
 
+def deriving_equations():
+    from vib_tutorial.gui.deriving import TAB_FBD
+
+    w = window()
+    page = w.deriving_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(3)  # moments about the front axle
+    page.animate.setChecked(False)  # the mode at its full swing
+    page.tabs.setCurrentIndex(TAB_FBD)
+    page.fbd.verticalScrollBar().setValue(page.fbd.verticalScrollBar().maximum())
+    settle()
+    print(page.readout.text())
+    save(w, "deriving_equations")
+
+
 def rigid_mounts():
     w = window()
     page = w.mounts_page
@@ -1158,6 +1173,7 @@ SHOTS = [
     signals_spectra,
     pendulums,
     periodic_forcing,
+    deriving_equations,
     energy_methods,
     beams_plates,
     numerical_integration,
