@@ -288,13 +288,15 @@ class RotorView(pg.PlotWidget):
                 dots.append(on_disc(phase + cmath.phase(p.weight), 0.92) + unit * (p.z - s.a) / self._metres)
             else:  # on the shaft, just off its centre line
                 angle = phase + cmath.phase(p.weight)
-                centre = s.deflection(q, [p.z])[0] * g
+                centre = s.deflection(q, np.array([p.z]))[0] * g
                 dots.append(
-                    [
-                        centre[0] + SHAFT_DOT * math.cos(angle),
-                        centre[1] + SHAFT_DOT * math.sin(angle),
-                        float(self._z(p.z)),
-                    ]
+                    np.array(
+                        [
+                            centre[0] + SHAFT_DOT * math.cos(angle),
+                            centre[1] + SHAFT_DOT * math.sin(angle),
+                            float(self._z(p.z)),
+                        ]
+                    )
                 )
         if dots:
             self.weight_dots.setData(*self.project(np.array(dots)))
@@ -308,7 +310,7 @@ class RotorView(pg.PlotWidget):
             self.stiff_axis.setData([], [])
         if s.crack is not None and s.crack.depth:
             angle = phase + s.crack.angle
-            centre = s.deflection(q, [s.crack_z])[0] * g
+            centre = s.deflection(q, np.array([s.crack_z]))[0] * g
             reach = CRACK_TICK * (0.4 + 0.6 * s.crack.depth / CRACK_DEPTH_MAX)
             tick = np.array(
                 [[centre[0], centre[1]], [centre[0] + reach * math.cos(angle), centre[1] + reach * math.sin(angle)]]

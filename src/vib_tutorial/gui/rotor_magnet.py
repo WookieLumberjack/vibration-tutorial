@@ -136,7 +136,7 @@ class MagnetPanel(QtWidgets.QWidget):
         self.bands: list[pg.LinearRegionItem] = []  # where c_b < 0, on both plots
         self.zero_lines: list[pg.InfiniteLine] = []
         self.mode_lines: list[list[pg.InfiniteLine]] = [[], []]  # per plot
-        for p, curve, (label, unit) in (
+        for p, curve, (title, unit) in (
             (self.k_plot, self.k_curve, ("Stiffness k<sub>b</sub>", "N/m")),
             (self.c_plot, self.c_curve, ("Damping c<sub>b</sub>", "N·s/m")),
         ):
@@ -146,7 +146,7 @@ class MagnetPanel(QtWidgets.QWidget):
             p.showGrid(x=True, y=True, alpha=0.15)
             p.setLogMode(x=True, y=False)
             p.getAxis("left").setWidth(AXIS_WIDTH)
-            p.setLabel("left", label, units=unit)
+            p.setLabel("left", title, units=unit)
             p.addItem(curve)
             zero = pg.InfiniteLine(pos=0.0, angle=0)
             p.addItem(zero)
@@ -219,7 +219,7 @@ class MagnetPanel(QtWidgets.QWidget):
         """The rotor's speed now: its modes there are marked (call while the tab shows)."""
         self.rpm = rpm
         if self.system is not None and not abs(rpm - self._mode_rpm) < MODE_SPEED:
-            self._draw_modes()
+            self._draw_modes(self.system)
 
     def _on_params(self) -> None:
         self._redraw()
@@ -239,7 +239,7 @@ class MagnetPanel(QtWidgets.QWidget):
         self._shade_bands()
         self._mode_rpm = math.nan
         if self.system is not None:
-            self._draw_modes()
+            self._draw_modes(self.system)
 
     def _span(self, m: MagneticBearing) -> tuple[float, float]:
         """The plots' frequency range (Hz): to a few times the amplifier's bandwidth or the band's top."""
@@ -267,7 +267,7 @@ class MagnetPanel(QtWidgets.QWidget):
         self._draw_bands(m, lo, hi)
         self._mode_rpm = math.nan
         if self.system is not None:
-            self._draw_modes()
+            self._draw_modes(self.system)
         else:
             self._clear_modes()
         self._write_now()
@@ -307,11 +307,11 @@ class MagnetPanel(QtWidgets.QWidget):
                 p.removeItem(line)
             lines.clear()
 
-    def _draw_modes(self) -> None:
+    def _draw_modes(self, system: RotorSystem) -> None:
         """Lines at the rotor's natural frequencies at the speed now, solid forward, dashed backward."""
         self._mode_rpm = self.rpm
         self._clear_modes()
-        modes = whirl_modes(self.system, self.rpm / RPM)
+        modes = whirl_modes(system, self.rpm / RPM)
         lo, hi = self._span(self.bearing())
         for f, whirl in zip(modes.freq_hz, modes.whirl):
             if not lo <= f <= hi:

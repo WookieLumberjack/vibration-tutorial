@@ -223,7 +223,9 @@ def _half_power(rng: np.random.Generator) -> Question:
     k = pick(rng, (400, 1000, 2500, 10000))
     zeta = pick(rng, (0.02, 0.03, 0.05, 0.08, 0.1))
     osc = Oscillator(1.0, k, 2.0 * zeta * math.sqrt(k))
-    lo, hi = (rounded(f, 4) for f in osc.half_power_hz())
+    band = osc.half_power_hz()
+    assert band is not None, "ζ ≤ 0.1 has a peak"
+    lo, hi = (rounded(f, 4) for f in band)
     estimate = (hi - lo) / (hi + lo)
     return Question(
         f"A receptance's peak has its half-power points at {number(lo, 4)} Hz and {number(hi, 4)} Hz. What is "
@@ -510,7 +512,7 @@ class SdofPage(QtWidgets.QWidget):
         self.kind.addItems(["Force F cos Ωt", "Rotating unbalance"])
         drive.add("Input:", self.kind, TIPS["kind"])
         self.amplitude = drive.number("Force F:", 0.0, 1e6, 1.0, 4, " N", TIPS["amplitude"])
-        self.amplitude_label = drive.form.labelForField(self.amplitude)
+        self.amplitude_label = drive.label(self.amplitude)
         self.freq = drive.number("Frequency:", 0.001, 1e4, 3.0, 3, " Hz", TIPS["freq"])
         self.tune = QtWidgets.QPushButton("Tune to fₙ")
         self.tune.setToolTip("<p>Set the drive's frequency to the natural frequency.</p>")

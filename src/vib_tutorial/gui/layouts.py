@@ -78,7 +78,8 @@ class FlowLayout(QtWidgets.QLayout):
         gap = self.spacing()
         if gap >= 0:
             return gap
-        style = self.parentWidget().style() if self.parentWidget() else QtWidgets.QApplication.style()
+        parent = self.parentWidget()
+        style = parent.style() if parent else QtWidgets.QApplication.style()
         metric = (
             QtWidgets.QStyle.PixelMetric.PM_LayoutVerticalSpacing
             if vertical
@@ -153,15 +154,20 @@ class ColumnScroll(QtWidgets.QScrollArea):
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     def minimumSizeHint(self) -> QtCore.QSize:
-        width = (
-            self.widget().minimumSizeHint().width()
-            + self.verticalScrollBar().sizeHint().width()
-            + 2 * self.frameWidth()
-        )
+        widget = self.widget()
+        assert widget is not None, "set in __init__"
+        width = widget.minimumSizeHint().width() + self.verticalScrollBar().sizeHint().width() + 2 * self.frameWidth()
         return QtCore.QSize(width, super().minimumSizeHint().height())
 
 
 def plot_height(plot: QtWidgets.QWidget, height: int) -> None:
     """Let a plot be as short as `height` px, and ask for no more (pyqtgraph's views ask for 480)."""
     plot.setMinimumHeight(height)
-    plot.sizeHint = lambda: QtCore.QSize(height, height)  # read by the layouts through PySide
+    plot.sizeHint = lambda: QtCore.QSize(height, height)  # type: ignore[method-assign]  # read through PySide
+
+
+def header_tip(table: QtWidgets.QTableWidget, column: int, tip: str) -> None:
+    """Give a column's header (set by `setHorizontalHeaderLabels`) a tooltip."""
+    item = table.horizontalHeaderItem(column)
+    assert item is not None, "the headers are set first"
+    item.setToolTip(tip)

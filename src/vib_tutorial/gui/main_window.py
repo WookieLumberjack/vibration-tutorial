@@ -619,8 +619,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chain.mass_dragged.connect(self._on_mass_dragged)
         self.chain.mass_released.connect(self._on_mass_released)
         self.theme_combo.textActivated.connect(self._on_theme_picked)
-        app = QtWidgets.QApplication.instance()
-        app.styleHints().colorSchemeChanged.connect(self._on_desktop_scheme)
+        theming.application().styleHints().colorSchemeChanged.connect(self._on_desktop_scheme)
 
         self._apply_dof(system.n)
         self._refresh_modal()

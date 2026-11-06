@@ -702,7 +702,7 @@ class SeismicPage(QtWidgets.QWidget):
             f"<table cellspacing='6'>{head}{''.join(rows)}</table>"
         )
         off = rho - np.diag(np.diag(rho))
-        i, j = np.unravel_index(int(np.argmax(off)), off.shape)
+        i, j = (int(k) for k in np.unravel_index(int(np.argmax(off)), off.shape))
         f = self.modal.f
         self.rho_note.setText(
             f"The most correlated pair: modes {i + 1} and {j + 1} ({f[i]:.3g} and {f[j]:.3g} Hz, "

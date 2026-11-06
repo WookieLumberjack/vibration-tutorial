@@ -513,6 +513,7 @@ def _free_steps(model: CMSModel) -> list[str]:
             continue
         groups = ["i"] * sub.ni + ["b"] * sub.nb
         labels = _dof_labels(sub.dofs)
+        assert sub.G is not None, "a free-interface reduction keeps G"
         parts.append(
             _side_by_side(
                 matrix_html(sub.G, labels, labels, groups, groups, f"G<sub>d</sub><sup>({sub.name})</sup>"),

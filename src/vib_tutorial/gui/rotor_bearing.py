@@ -378,19 +378,20 @@ class BearingPanel(QtWidgets.QWidget):
         else:
             self.unstable_path.setData([], [])
         # Round speeds along the range, labelled where they are not crowded (near the centre they bunch up).
-        marks, pts = [], []
+        marks: list[float] = []
+        pts: list[np.ndarray] = []
         for rpm in _round_speeds(self.top_rpm):
             pt = np.array(b.state(rpm / RPM).position())
             if not pts or np.hypot(*(pt - pts[-1])) >= LABEL_GAP:
                 marks.append(rpm)
                 pts.append(pt)
-        pts = np.array(pts).reshape(-1, 2)
-        self.marks.setData(pts[:, 0], pts[:, 1])
+        xy = np.array(pts).reshape(-1, 2)
+        self.marks.setData(xy[:, 0], xy[:, 1])
         plot = self.locus.getPlotItem()
         for label in self.mark_labels:
             plot.removeItem(label)
         self.mark_labels = []
-        for rpm, (px, py) in zip(marks, pts):
+        for rpm, (px, py) in zip(marks, xy):
             label = pg.TextItem(f"{rpm:,.0f}", color=colors.foreground, anchor=(0.0, 0.5))
             label.setPos(px + 0.05, py)
             plot.addItem(label)

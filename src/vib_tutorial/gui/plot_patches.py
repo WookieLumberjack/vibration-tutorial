@@ -25,7 +25,7 @@ AXIS_Z = 0.5  # pyqtgraph's own
 TITLE_MIN_WIDTH = 80.0  # px a title asks for at least; narrower than its text, it wraps
 
 
-def _opaque_grid_specs(self, p):
+def _opaque_grid_specs(self, p: QtGui.QPainter):
     specs = _generate_draw_specs(self, p)
     if specs is None or self.grid is False:
         return specs

@@ -38,6 +38,8 @@ from dataclasses import dataclass
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from . import theming
+
 ENV = "VIB_FRAME_STATS"
 WINDOW = 120  # frames the overlay summarizes (~2 s at 60 fps)
 GAP = 0.5  # s between frames that starts a new run (a page shown again, a pause)
@@ -291,7 +293,7 @@ class InputLog(QtCore.QObject):
         self._values: dict[int, str] = {}  # what each widget was last logged as, by id
         self._last: tuple[int, str, float] = (0, "", 0.0)  # the last row's widget, value and time
         self._press: QtCore.QPointF | None = None
-        QtWidgets.QApplication.instance().installEventFilter(self)
+        theming.application().installEventFilter(self)
 
     def eventFilter(self, obj: QtCore.QObject, event: QtCore.QEvent) -> bool:
         if STATS is not self.stats:  # turned off (uninstall)

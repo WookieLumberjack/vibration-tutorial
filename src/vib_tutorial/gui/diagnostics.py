@@ -606,7 +606,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.band_plot, self.env_plot, self.env_note, stretch=False), "Envelope")
         self.tabs.addTab(column(self.cep_plot, self.cep_note, stretch=False), "Cepstrum")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: (self._draw_tab(), settle_plots(self)))
+        self.tabs.currentChanged.connect(lambda _: self._show_tab())
 
         three_panes(
             self,
@@ -777,6 +777,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
             f"<b>{kurtosis(band_pass(rec.x, rec.fs, (low, high))):.2f}</b> (3 for Gaussian noise). RMS "
             f"{float(np.std(rec.x)):.3g} m/s²."
         )
+        self._show_tab()
+
+    def _show_tab(self) -> None:
         self._draw_tab()
         settle_plots(self)
 

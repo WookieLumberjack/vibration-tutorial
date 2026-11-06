@@ -160,11 +160,13 @@ class TheoryWindow(QtWidgets.QWidget):
 
     def back(self) -> None:
         if self._back:
+            assert self.page is not None, "a page showed before the one gone back from"
             self._forward.append((self.page, self._scroll()))
             self._step_to(*self._back.pop())
 
     def forward(self) -> None:
         if self._forward:
+            assert self.page is not None, "pages were gone back from"
             self._back.append((self.page, self._scroll()))
             self._step_to(*self._forward.pop())
 

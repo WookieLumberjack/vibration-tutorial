@@ -435,7 +435,7 @@ class TransientPage(QtWidgets.QWidget):
         super().__init__(parent)
         self.osc = Oscillator()
         self.pulse = Pulse()
-        self._spectrum_key = None  # (zeta) the pulse spectrum was drawn for
+        self._spectrum_key: float | None = None  # (zeta) the pulse spectrum was drawn for
         self._span = 1.0
 
         self.trials = TrialBox(
@@ -457,9 +457,9 @@ class TransientPage(QtWidgets.QWidget):
         self.kind.addItems([k.value for k in KINDS])
         inp.add("Force:", self.kind, TIPS["kind"])
         self.amplitude = inp.number("Amplitude F:", 0.0, 1e6, 1.0, 4, " N", TIPS["amplitude"])
-        self.amplitude_label = inp.form.labelForField(self.amplitude)
+        self.amplitude_label = inp.label(self.amplitude)
         self.duration = inp.number("Length T:", 1e-4, 100.0, 0.1, 4, " s", TIPS["duration"])
-        self.duration_label = inp.form.labelForField(self.duration)
+        self.duration_label = inp.label(self.duration)
         self.ratio_note = note_label()
         inp.row(self.ratio_note)
         inp.changed.connect(self._on_inputs)

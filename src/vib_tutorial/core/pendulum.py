@@ -125,7 +125,7 @@ class Pendulum:
         """The restoring moment k_t θ ± m g d sin θ."""
         return self.torsion * theta + self.weight_moment * np.sin(theta)
 
-    def potential(self, theta: np.ndarray) -> np.ndarray:
+    def potential(self, theta: float | np.ndarray) -> np.ndarray:
         """V(θ) = k_t θ²/2 ± m g d (1 − cos θ)."""
         theta = np.asarray(theta, dtype=float)
         return 0.5 * self.torsion * theta**2 + self.weight_moment * (1 - np.cos(theta))
@@ -243,7 +243,7 @@ def orbit(p: Pendulum, energy: float, theta: np.ndarray) -> tuple[np.ndarray, np
     return np.concatenate(xs), np.concatenate(ys)
 
 
-def rod_period(length: float, pivot: np.ndarray, gravity: float = G) -> np.ndarray:
+def rod_period(length: float, pivot: float | np.ndarray, gravity: float = G) -> np.ndarray:
     """A uniform rod's linear period against the pivot's distance d from its centre: 2π √((L²/12 + d²)/(g d))."""
     d = np.asarray(pivot, dtype=float)
     with np.errstate(divide="ignore"):

@@ -112,16 +112,17 @@ def record_startup(window, path: str, launched_at: float | None = None) -> None:
     """
     import json
 
-    from PySide6 import QtCore, QtWidgets
+    from PySide6 import QtCore
 
     from .. import STARTED
+    from . import theming
 
     built = time.perf_counter() - STARTED
 
     class FirstPaint(QtCore.QObject):
         def eventFilter(self, obj, event):
             if event.type() == QtCore.QEvent.Type.Paint and obj.isWidgetType() and obj.window() is window:
-                QtWidgets.QApplication.instance().removeEventFilter(self)
+                theming.application().removeEventFilter(self)
                 timings = {"window": round(built, 3), "python": round(time.perf_counter() - STARTED, 3)}
                 if launched_at is not None:
                     timings["launch"] = round(time.time() - launched_at, 3)
@@ -130,7 +131,7 @@ def record_startup(window, path: str, launched_at: float | None = None) -> None:
             return False
 
     window._first_paint = FirstPaint(window)
-    QtWidgets.QApplication.instance().installEventFilter(window._first_paint)
+    theming.application().installEventFilter(window._first_paint)
 
 
 def run() -> int:

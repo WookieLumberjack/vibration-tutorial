@@ -263,8 +263,8 @@ class FigureBrowser(QtWidgets.QTextBrowser):
     The document caches each image until its HTML is set again, so set it again after a theme change.
     """
 
-    def loadResource(self, kind: int, name: QtCore.QUrl):
-        build = FIGURES.get(name.toString())
+    def loadResource(self, kind: int, name: QtCore.QUrl | str):
+        build = FIGURES.get(name.toString() if isinstance(name, QtCore.QUrl) else name)
         if build is not None and kind == QtGui.QTextDocument.ResourceType.ImageResource:
             return render(build())
         return super().loadResource(kind, name)

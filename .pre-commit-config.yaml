@@ -1,0 +1,28 @@
+# The Lint workflow's Python checks before each commit, with the locked ruff and mypy (through uv, not
+# pre-commit's own environments, so the versions can't drift from the CI's). Install once with
+# `uvx pre-commit install`; `uvx pre-commit run --all-files` runs them on everything.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --only-group dev ruff check --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --only-group dev ruff format --check --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      # The whole of [tool.mypy]'s files (one module's types reach the others'), when any Python changes.
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false
+        require_serial: true

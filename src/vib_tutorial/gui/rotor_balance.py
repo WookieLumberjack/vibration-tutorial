@@ -12,6 +12,7 @@ be changed afterwards and the arithmetic redone.
 from __future__ import annotations
 
 import math
+from typing import TypeGuard
 
 import numpy as np
 import pyqtgraph as pg
@@ -367,8 +368,9 @@ class BalancingPanel(QtWidgets.QWidget):
     def influence(self) -> np.ndarray | None:
         """α (probes x planes) from the trial runs, or None until they are all in."""
         keys = TRIALS if self.two_planes else TRIALS[:1]
-        v0, runs = self.readings("found"), [self.readings(k) for k in keys]
-        if v0 is None or any(r is None for r in runs) or self.trial is None:
+        v0 = self.readings("found")
+        runs = [r for r in (self.readings(k) for k in keys) if r is not None]
+        if v0 is None or len(runs) < len(keys) or self.trial is None:
             return None
         if any(np.array_equal(r, v0) for r in runs):
             return None
@@ -376,11 +378,11 @@ class BalancingPanel(QtWidgets.QWidget):
 
     def correction_weights(self) -> np.ndarray | None:
         """W_c = -α⁻¹ (V₀ - V_s), one weight (kg·m) per plane, or None until the trial runs are in."""
-        alpha = self.influence()
-        if alpha is None:
+        alpha, v0 = self.influence(), self.readings("found")
+        if alpha is None or v0 is None:  # v0 is in once α is
             return None
         try:
-            return corrections(self.readings("found"), alpha, self._runout())
+            return corrections(v0, alpha, self._runout())
         except ValueError:
             return None
 
@@ -557,6 +559,7 @@ class BalancingPanel(QtWidgets.QWidget):
         alpha = self.influence()
         r = self.trial_radius.value() / 1e3
         if alpha is not None:
+            assert self.trial is not None, "α comes from the trial runs"
             mass, angle = weight_parts(self.trial, r)
             if two:
                 out += self._matrix_html(alpha, mass, angle)
@@ -577,9 +580,8 @@ class BalancingPanel(QtWidgets.QWidget):
                 )
             else:
                 out += f"<b>Correction</b> W<sub>c</sub> = −{less}/α: <b>{_weight(complex(w[0]), r)}</b> from the mark (trial off)"
-        v2 = values["verify"]
-        if v2 is not None and v0_ok(values["found"], runout):
-            v0 = values["found"]
+        v2, v0 = values["verify"], values["found"]
+        if v2 is not None and v0_ok(v0, runout):
             share = [100 * abs(a - b) / abs(c - b) for a, b, c in zip(v2, np.broadcast_to(runout, v2.shape), v0)]
             kind = "compensated " if subtract else ""
             if two:
@@ -610,18 +612,18 @@ class BalancingPanel(QtWidgets.QWidget):
         rpm = np.linspace(top / CURVE_POINTS, top, CURVE_POINTS)
         probes = self.probes()
 
-        def amplitude(system) -> np.ndarray:
+        def amplitude(system) -> list[np.ndarray]:
             v = steady_vectors(system, rpm / RPM)
             return [np.abs(probe(v[:, station], direction)) for station, direction in probes]
 
         now = amplitude(self.page.sim.system)
-        found = amplitude(self.found_system) if self.found_system is not None else []
+        found: list[np.ndarray] = amplitude(self.found_system) if self.found_system is not None else []
         for k in range(2):
             self.curve_now[k].setData(rpm, now[k]) if k < len(now) else self.curve_now[k].setData([], [])
             self.curve_found[k].setData(rpm, found[k]) if k < len(found) else self.curve_found[k].setData([], [])
 
 
-def v0_ok(v0: np.ndarray | None, runout) -> bool:
+def v0_ok(v0: np.ndarray | None, runout) -> TypeGuard[np.ndarray]:
     """True if there is an as-found reading, compensated, to compare the check with."""
     return v0 is not None and bool(np.all(np.abs(v0 - runout) > 0))
 
