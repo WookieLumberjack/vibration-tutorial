@@ -65,17 +65,19 @@
   diagonal) and the state space (a damper on a massless DOF kept as a first-order state): Rayleigh damping,
   the complex modes paired with the undamped ones, FRFs, and the exact response to a harmonic force, an
   impulse or a step from rest.
-- `core/rotor.py`: the Jeffcott rotor: shaft (beam elements: massless and condensed to the
+- `core/rotor.py`: the Jeffcott rotor's model: shaft (beam elements: massless and condensed to the
   stations, or with mass and reduced to the stations and its fixed-interface modes), disc,
-  bearings and the gyroscopic matrix; whirl modes, the Campbell diagram and critical speeds, the steady 1X
-  response to the unbalance, the disc's skew and the shaft's bow, and an exact FOH time
-  stepper that follows a speed ramp. An asymmetric shaft's turning stiffness: its Floquet modes
-  (in axes turning with the shaft, or by Hill's method), its steady states by harmonic balance
-  (`harmonic_response`, `gravity_response`), and a split time step with the turning stiffness as
-  a mid-step kick. A cracked shaft (`Crack`): a hinge at the crack, breathing open under the
-  weight, its 1X–3X steady state (`steady_harmonics`). Oil films linearized about each
-  journal's equilibrium, or stepped with their whole force (`nonlinear_films`), and magnetic
-  bearings with their controllers' states in the state vector.
+  bearings and the gyroscopic matrix, the 1X loads (unbalance, the disc's skew, the shaft's bow), an
+  asymmetric shaft's turning stiffness, a cracked shaft (`Crack`: a hinge at the crack, breathing open
+  under the weight), oil films linearized about each journal's equilibrium, and magnetic bearings with
+  their controllers' states in the state vector.
+- `core/rotor_modes.py`: its whirl: the modes at a speed (an asymmetric or cracked shaft's Floquet modes,
+  in axes turning with the shaft or by Hill's method), the Campbell diagram and critical speeds, and the
+  steady states: the 1X response, harmonic balance (`harmonic_response`, `gravity_response`), and every
+  harmonic together (`steady_harmonics`, 1X–3X).
+- `core/rotor_simulator.py`: its time response: an exact FOH stepper that follows a speed ramp, with the
+  turning stiffness as a mid-step kick, the films stepped with their whole force (`nonlinear_films`), the
+  stator ring's rub and the thermal bow.
 - `core/fluid_bearing.py`: the plain journal bearing by short-bearing (Ocvirk) theory: its
   equilibrium, the eight stiffness and damping coefficients in closed form, and the film's whole
   force, in closed form (`force`) and by quadrature (`film_force`) to check it.
@@ -260,7 +262,9 @@ stab = lscf(est.freqs, est.H, band, max_order=30)  # poles at every order
 ident = lsfd(est.freqs, est.H, band, [stab.pole(o, i) for o, i in auto_select(stab)])
 [(r.mode, r.identified and r.identified.fn_hz, r.mac) for r in match_modes(ident.modes, res, 8.0)]
 
-from vib_tutorial.core.rotor import RPM, STEEL, Bearing, RotorSimulator, RotorSystem, campbell, synchronous_response
+from vib_tutorial.core.rotor import STEEL, Bearing, RotorSystem
+from vib_tutorial.core.rotor_modes import campbell, synchronous_response
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 
 rotor = RotorSystem(position=0.3, bearing_a=Bearing(kx=2e4, ky=8e4))  # disc off centre, A anisotropic
 M, C, G, K = rotor.matrices()  # 8x8; M q'' + (C + ΩG) q' + (K + ΩH) q = f
@@ -283,7 +287,7 @@ up, down = RunUpCoastDown(spin, 800 / RPM, 2400 / RPM).run()  # each leg tracked
 w, v, peak = up.trace(1, "x")  # disc, x probe: speed, 1X vector, max |x|
 up.peak(1, "orbit")  # (largest 1X major axis, speed it came at)
 
-from vib_tutorial.core.rotor import gravity_response
+from vib_tutorial.core.rotor_modes import gravity_response
 from vib_tutorial.core.rotor_stability import full_spectrum, stability_onset
 
 unstable = RotorSystem(internal_damping=20.0, bearing_a=Bearing(kxy=5e3))  # H = unstable.circulatory()
@@ -303,7 +307,8 @@ upright = RotorSystem(bearing_a=oil, bearing_b=oil, nonlinear_films=True)  # ste
 JournalBearing().force(5e-6, -8e-6, 0.0, 1e-3, 300.0)  # the whole film's force (N) at any position, velocity
 
 from vib_tutorial.core.magnetic_bearing import MagneticBearing
-from vib_tutorial.core.rotor import Crack, steady_harmonics
+from vib_tutorial.core.rotor import Crack
+from vib_tutorial.core.rotor_modes import steady_harmonics
 
 floating = RotorSystem(bearing_a=Bearing(magnet=MagneticBearing()), bearing_b=Bearing(magnet=MagneticBearing()))
 floating.n_states  # 2 n_dof + the controllers' states

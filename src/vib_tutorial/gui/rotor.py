@@ -25,7 +25,6 @@ from ..core.magnetic_bearing import MagneticBearing
 from ..core.rotor import (
     CRACK_DEPTH_MAX,
     MODE_LIMIT,
-    RPM,
     STEEL,
     XA,
     XB,
@@ -34,17 +33,16 @@ from ..core.rotor import (
     YB,
     YD,
     Bearing,
-    Campbell,
     Crack,
     PlaneWeight,
-    RotorSimulator,
     RotorSystem,
     Stator,
-    whirl_modes,
 )
 from ..core.rotor_analysis import Analysis, AnalysisWorker, analyse
 from ..core.rotor_balance import SteadyMeasurement
+from ..core.rotor_modes import Campbell, whirl_modes
 from ..core.rotor_presets import rotor_presets
+from ..core.rotor_simulator import RPM, RotorSimulator
 from ..core.rotor_stability import AsymmetryChart, Onset, full_spectrum, least_damped
 from ..core.rotor_sweep import (
     DIRECTIONS,

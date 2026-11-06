@@ -7,20 +7,10 @@ import pytest
 
 from vib_tutorial.core import rotor
 from vib_tutorial.core.fluid_bearing import JournalBearing
-from vib_tutorial.core.rotor import (
-    RPM,
-    XA,
-    XB,
-    YA,
-    YB,
-    YD,
-    Bearing,
-    RotorSimulator,
-    RotorSystem,
-    campbell,
-    synchronous_response,
-)
+from vib_tutorial.core.rotor import XA, XB, YA, YB, YD, Bearing, RotorSystem
+from vib_tutorial.core.rotor_modes import campbell, synchronous_response
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 from vib_tutorial.core.rotor_stability import least_damped, stability_onset
 
 FILM = Bearing(film=JournalBearing())

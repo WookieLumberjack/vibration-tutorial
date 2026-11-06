@@ -6,20 +6,10 @@ import numpy as np
 import pytest
 
 import vib_tutorial.core.rotor as rotor
-from vib_tutorial.core.rotor import (
-    MODE_LIMIT,
-    RPM,
-    STEEL,
-    XD,
-    YD,
-    Bearing,
-    RotorSimulator,
-    RotorSystem,
-    campbell,
-    synchronous_response,
-    whirl_modes,
-)
+from vib_tutorial.core.rotor import MODE_LIMIT, STEEL, XD, YD, Bearing, RotorSystem
+from vib_tutorial.core.rotor_modes import campbell, synchronous_response, whirl_modes
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 from vib_tutorial.core.rotor_sweep import vibration
 
 UNDAMPED = Bearing(cx=0.0, cy=0.0)

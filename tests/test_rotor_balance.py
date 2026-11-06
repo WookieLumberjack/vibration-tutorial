@@ -5,17 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from vib_tutorial.core.rotor import (
-    RPM,
-    STEEL,
-    XD,
-    YD,
-    Bearing,
-    PlaneWeight,
-    RotorSimulator,
-    RotorSystem,
-    synchronous_response,
-)
+from vib_tutorial.core.rotor import STEEL, XD, YD, Bearing, PlaneWeight, RotorSystem
 from vib_tutorial.core.rotor_balance import (
     SteadyMeasurement,
     correction,
@@ -25,7 +15,9 @@ from vib_tutorial.core.rotor_balance import (
     weight,
     weight_parts,
 )
+from vib_tutorial.core.rotor_modes import synchronous_response
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 from vib_tutorial.core.rotor_sweep import probe, steady_vectors
 
 BEARING_A, DISC, BEARING_B = 0, 1, 3

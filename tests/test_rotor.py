@@ -5,21 +5,9 @@ import math
 import numpy as np
 import pytest
 
-from vib_tutorial.core.rotor import (
-    RPM,
-    TX,
-    TY,
-    XA,
-    XB,
-    XD,
-    YD,
-    Bearing,
-    RotorSimulator,
-    RotorSystem,
-    campbell,
-    synchronous_response,
-    whirl_modes,
-)
+from vib_tutorial.core.rotor import TX, TY, XA, XB, XD, YD, Bearing, RotorSystem
+from vib_tutorial.core.rotor_modes import campbell, synchronous_response, whirl_modes
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 
 RIGID = Bearing(kx=1e12, ky=1e12, cx=0.0, cy=0.0, mass=1e-3)
 UNDAMPED = Bearing(cx=0.0, cy=0.0)

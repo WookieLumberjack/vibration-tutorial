@@ -28,7 +28,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .rotor import RotorSystem, WhirlModes, campbell, rotating_state_matrix, whirl_modes
+from .rotor import RotorSystem
+from .rotor_modes import WhirlModes, campbell, rotating_state_matrix, whirl_modes
 
 UNSTABLE = -1e-9  # a damping ratio below this is growing, not round-off
 

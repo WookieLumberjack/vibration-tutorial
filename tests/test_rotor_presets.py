@@ -4,8 +4,10 @@ import math
 
 import pytest
 
-from vib_tutorial.core.rotor import RPM, XA, XB, YA, YB, campbell, whirl_modes
+from vib_tutorial.core.rotor import XA, XB, YA, YB
+from vib_tutorial.core.rotor_modes import campbell, whirl_modes
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM
 from vib_tutorial.core.rotor_stability import least_damped, stability_onset
 
 PRESETS = {p.name: p for p in rotor_presets()}

@@ -20,7 +20,8 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from ..core.rotor import RPM, Campbell, WhirlModes
+from ..core.rotor_modes import Campbell, WhirlModes
+from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import AsymmetryChart, Onset, log_decrement, whirl_lines
 from .style import colors
 

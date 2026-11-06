@@ -8,7 +8,9 @@ from collections.abc import Collection
 
 import numpy as np
 
-from ..core.rotor import DOF_NAMES, MODE_LIMIT, RPM, XD, YA, YB, YD, RotorSystem, periodic_steady, whirl_modes
+from ..core.rotor import DOF_NAMES, MODE_LIMIT, XD, YA, YB, YD, RotorSystem
+from ..core.rotor_modes import periodic_steady, whirl_modes
+from ..core.rotor_simulator import RPM
 from .cms_notes import fmt
 from .links import load_notes
 from .style import colors

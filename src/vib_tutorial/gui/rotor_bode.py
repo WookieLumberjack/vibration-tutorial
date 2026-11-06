@@ -20,7 +20,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.rotor import RPM
+from ..core.rotor_simulator import RPM
 from ..core.rotor_sweep import TrackedSweep, lag_degrees
 from .style import colors
 from .theming import add_legend

@@ -17,8 +17,9 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.rotor import RPM, PlaneWeight
+from ..core.rotor import PlaneWeight
 from ..core.rotor_balance import PROBES, corrections, influence_matrix, weight, weight_parts
+from ..core.rotor_simulator import RPM
 from ..core.rotor_sweep import STATIONS, lag_degrees, probe, steady_vectors
 from .layouts import FlowLayout, form_layout, group, plot_height
 from .panels import spin

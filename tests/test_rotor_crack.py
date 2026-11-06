@@ -5,25 +5,11 @@ import math
 import numpy as np
 import pytest
 
-import vib_tutorial.core.rotor as rotor
-from vib_tutorial.core.rotor import (
-    RPM,
-    STEEL,
-    XD,
-    YD,
-    Bearing,
-    Crack,
-    RotorSamples,
-    RotorSimulator,
-    RotorSystem,
-    beam_stiffness,
-    campbell,
-    crack_compliance,
-    steady_harmonics,
-    synchronous_response,
-    whirl_modes,
-)
+import vib_tutorial.core.rotor_modes as rotor_modes
+from vib_tutorial.core.rotor import STEEL, XD, YD, Bearing, Crack, RotorSystem, beam_stiffness, crack_compliance
+from vib_tutorial.core.rotor_modes import campbell, steady_harmonics, synchronous_response, whirl_modes
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSamples, RotorSimulator
 from vib_tutorial.core.rotor_stability import growth_rate, stability_onset
 from vib_tutorial.core.rotor_sweep import (
     RevolutionTracker,
@@ -151,16 +137,16 @@ def test_a_vanishing_crack_is_the_round_shaft():
 def test_hill_is_converged_and_matches_the_rotating_frame(monkeypatch):
     s = CRACKED.with_(crack=Crack(position=0.4, depth=0.5, angle=0.3), bearing_a=ANISO, bearing_b=ANISO)
     for w in (500.0 / RPM, 1560.0 / RPM, 3000.0 / RPM):
-        lam3, _, _ = rotor._hill_modes(s, w)
-        monkeypatch.setattr(rotor, "HILL_ORDER", 6)
-        lam6, _, _ = rotor._hill_modes(s, w)
-        monkeypatch.setattr(rotor, "HILL_ORDER", 3)
+        lam3, _, _ = rotor_modes._hill_modes(s, w)
+        monkeypatch.setattr(rotor_modes, "HILL_ORDER", 6)
+        lam6, _, _ = rotor_modes._hill_modes(s, w)
+        monkeypatch.setattr(rotor_modes, "HILL_ORDER", 3)
         np.testing.assert_allclose(np.sort_complex(lam3)[:4], np.sort_complex(lam6)[:4], atol=1e-3)
     # An open crack turns with the shaft: on isotropic supports its modes are exact in the rotating frame.
     o = RotorSystem(crack=Crack(position=0.4, depth=0.5, angle=0.3, breathing=False))
     for w in (800.0 / RPM, 1550.0 / RPM):
-        exact, _ = rotor._rotating_modes(o, w)
-        hill, _, _ = rotor._hill_modes(o, w)
+        exact, _ = rotor_modes._rotating_modes(o, w)
+        hill, _, _ = rotor_modes._hill_modes(o, w)
         np.testing.assert_allclose(np.sort_complex(exact)[:4], np.sort_complex(hill)[:4], atol=1e-6)
 
 

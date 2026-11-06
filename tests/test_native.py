@@ -12,8 +12,9 @@ import scipy.linalg
 from vib_tutorial.core import fluid_bearing, native
 from vib_tutorial.core.forcing import ForceKind
 from vib_tutorial.core.model import ChainSystem
-from vib_tutorial.core.rotor import RPM, RotorSimulator, RotorSystem
+from vib_tutorial.core.rotor import RotorSystem
 from vib_tutorial.core.rotor_presets import JOURNAL_BEARING, rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 from vib_tutorial.core.simulator import Simulator, foh_discretize
 
 needs_native = pytest.mark.skipif(native.module is None, reason="Rust kernels not loaded")

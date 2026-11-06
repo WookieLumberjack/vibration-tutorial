@@ -18,7 +18,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.fluid_bearing import GRAVITY, JournalBearing, attitude, rigid_threshold
-from ..core.rotor import RPM
+from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
 from .layouts import plot_height
 from .panels import spin

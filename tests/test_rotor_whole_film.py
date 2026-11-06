@@ -3,23 +3,12 @@
 import numpy as np
 import pytest
 
-from vib_tutorial.core import rotor
+from vib_tutorial.core import rotor_simulator
 from vib_tutorial.core.fluid_bearing import JournalBearing
-from vib_tutorial.core.rotor import (
-    RPM,
-    XA,
-    XB,
-    XD,
-    YA,
-    YB,
-    YD,
-    Bearing,
-    Crack,
-    RotorSimulator,
-    RotorSystem,
-    synchronous_response,
-)
+from vib_tutorial.core.rotor import XA, XB, XD, YA, YB, YD, Bearing, Crack, RotorSystem
+from vib_tutorial.core.rotor_modes import synchronous_response
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 
 FILM = Bearing(film=JournalBearing())
 WHOLE = RotorSystem(bearing_a=FILM, bearing_b=FILM, gravity=9.81, nonlinear_films=True)
@@ -94,8 +83,8 @@ def test_whole_film_step_converges(monkeypatch):
     # Halving the step changes the whirl's growth toward the wall by under 1% of the clearance.
     s = WHOLE.with_(gravity=0.0)
     t1, q1 = run(s, 3500.0, 1.0, kick=0.002)
-    monkeypatch.setattr(rotor, "STEPS_PER_PERIOD", 2 * rotor.STEPS_PER_PERIOD)
-    monkeypatch.setattr(rotor, "FILM_MODE_STEPS", 2 * rotor.FILM_MODE_STEPS)
+    monkeypatch.setattr(rotor_simulator, "STEPS_PER_PERIOD", 2 * rotor_simulator.STEPS_PER_PERIOD)
+    monkeypatch.setattr(rotor_simulator, "FILM_MODE_STEPS", 2 * rotor_simulator.FILM_MODE_STEPS)
     t2, q2 = run(s, 3500.0, 1.0, kick=0.002)
     assert t2[1] - t2[0] == pytest.approx(0.5 * (t1[1] - t1[0]))
     np.testing.assert_allclose(q2[1::2, [XA, YA, XB, YB]], q1[:, [XA, YA, XB, YB]], atol=1e-2 * CLEARANCE)
