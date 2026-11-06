@@ -95,10 +95,6 @@ ignore_missing_imports = true
 module = [
     "vib_tutorial.gui.deriving",
     "vib_tutorial.gui.modal_test",
-    "vib_tutorial.gui.model_updating",
     "vib_tutorial.gui.oma",
-    "vib_tutorial.gui.random_vibration",
-    "vib_tutorial.gui.rotor",
-    "vib_tutorial.gui.shock",
 ]
 ignore_errors = true

@@ -2688,7 +2688,7 @@ def test_rotor_rub(app):
     p._catch_up_tab()
     while p.sim.t < 6.0:
         p.step(0.25)
-    t, hist = p.history.window(p.window.value())
+    t, hist = p.history.window(p.time_window.value())
     assert hist[:, PUSH].max() > 0.0
     assert panel.curve.xData is not None and panel.curve.xData.size == t.size
     assert "In contact" in panel.contact.text()

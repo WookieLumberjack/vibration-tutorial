@@ -15,6 +15,7 @@ from __future__ import annotations
 import functools
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
@@ -118,7 +119,7 @@ SHAPES_TIP = (
 )
 
 # Things to try: (name, what it sets, note). The duration is set from the chain (`duration_for`).
-TRIALS = (
+TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
         "Half-sine",
         {},
@@ -752,8 +753,8 @@ class ShockPage(QtWidgets.QWidget):
         # --- wiring
         self.shape.currentIndexChanged.connect(self._on_pulse)
         self.mass.currentIndexChanged.connect(self._on_pulse)
-        for b in (self.peak, self.duration, self.knee, self.noise, self.offset):
-            b.valueChanged.connect(self._on_pulse)
+        for field in (self.peak, self.duration, self.knee, self.noise, self.offset):
+            field.valueChanged.connect(self._on_pulse)
         self.q.valueChanged.connect(self._on_spectrum)
         for c in (self.split_time, self.split_sign):
             c.toggled.connect(lambda _: self._draw_srs())
@@ -789,7 +790,7 @@ class ShockPage(QtWidgets.QWidget):
     def apply_trial(self) -> None:
         """Set the pulse the chosen trial asks for, its duration from the chain as it is; the seed goes back to 1
         so the notes' numbers hold."""
-        if self.result is None:
+        if self.result is None or self.system is None:
             return
         _, changes, note = TRIALS[self.trial.currentIndex()]
         self._loading = True
@@ -874,6 +875,7 @@ class ShockPage(QtWidgets.QWidget):
 
     def _show_controls(self) -> None:
         shape = self.shape.currentData()
+        w: QtWidgets.QWidget
         for w in (self.mass, self.mass_label):
             w.setVisible(shape is Shape.AT_A_MASS)
         for w in (self.noise, self.noise_label, self.offset, self.offset_label):
@@ -956,7 +958,7 @@ class ShockPage(QtWidgets.QWidget):
         """Record the pulse again if asked for (or stale), then its spectrum, and draw."""
         self._recompute.stop()
         self._dirty = False
-        if self.system is None:
+        if self.system is None or self.result is None:  # set together
             return
         pulse = self.pulse()
         self.freqs = bank(pulse, self.result)
@@ -996,6 +998,7 @@ class ShockPage(QtWidgets.QWidget):
         self.lazy.stale()
 
     def _draw_pulse(self) -> None:
+        assert self.record is not None and self.system is not None, "drawn after recompute"
         rec = self.record
         t = rec.t
         p = self.pulse_plot
@@ -1031,6 +1034,7 @@ class ShockPage(QtWidgets.QWidget):
         )
 
     def _draw_srs(self) -> None:
+        assert self.result is not None and self.spectrum is not None, "drawn after recompute"
         sp, rec = self.spectrum, self.record
         if sp is None or rec is None:
             return
@@ -1117,6 +1121,7 @@ class ShockPage(QtWidgets.QWidget):
 
     def _scaled(self, f: float, digits: int = 3) -> str:
         """The frequency on the pulse's own scale: f T, or a synthesis's f / knee."""
+        assert self.record is not None, "drawn after recompute"
         pulse = self.record.pulse
         if pulse.shape.synthesized:
             return f"f / knee = {f / pulse.knee:.{digits}g}"
@@ -1170,6 +1175,7 @@ class ShockPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- the chain, the tripartite plot, the pulses
     def _draw_chain(self) -> None:
+        assert self.system is not None and self.result is not None, "drawn after recompute"
         if self.record is None or self.spectrum is None:
             return
         if self.chain is None:
@@ -1268,6 +1274,7 @@ class ShockPage(QtWidgets.QWidget):
         )
 
     def _draw_tripartite(self) -> None:
+        assert self.record is not None, "drawn after recompute"
         if self.spectrum is None:
             return
         sp, rec = self.spectrum, self.record

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
@@ -100,7 +101,7 @@ AMPLITUDE_BINS = 60
 PEAK_BINS = 40
 
 # Things to try: (name, what it sets, note)
-TRIALS = (
+TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
         "Base shake",
         {},
@@ -677,6 +678,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.apply_trial()
 
     def _fill_index(self) -> None:
+        assert self.system is not None, "filled once there is a chain"
         n = self.system.n
         current = self.index.currentIndex()
         spring = self.quantity.currentData() is Quantity.SPRING
@@ -688,7 +690,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
     def apply_trial(self) -> None:
         """Set the settings the chosen trial asks for, from the chain as it is."""
-        if self.result is None:
+        if self.result is None or self.system is None:
             return
         _, changes, note = TRIALS[self.trial.currentIndex()]
         n = self.system.n
@@ -848,6 +850,9 @@ class RandomVibrationPage(QtWidgets.QWidget):
             self.redraw()
 
     def redraw(self) -> None:
+        assert self.record is not None and self.prediction is not None and self.result is not None, (
+            "drawn after recompute"
+        )
         rec, pred, out = self.record, self.prediction, self.output()
         inp = rec.input
         unit = out.unit()
@@ -1059,6 +1064,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         )
 
     def _draw_record(self, y: np.ndarray, fs: float, sigma: float, unit: str) -> None:
+        assert self.result is not None, "drawn after recompute"
         p = self.record_plot
         p.clear()
         p.setLabel("left", f"Response ({unit})")
