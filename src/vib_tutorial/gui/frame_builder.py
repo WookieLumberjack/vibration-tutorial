@@ -78,7 +78,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .style import colors, rgb
-from .theming import mute
+from .theming import add_legend, mute
 
 TAB_ASSEMBLY, TAB_ELEMENT, TAB_RESPONSE, TAB_FORMULATIONS, TAB_THEORY = range(5)
 EMPTY = Frame()
@@ -1527,7 +1527,7 @@ class FramePage(QtWidgets.QWidget):
         self.frf_mag = plot("|H|", None, "Frequency", "Hz", log_x=True, log_y=True)
         self.frf_phase = plot("Phase", "°", "Frequency", "Hz", log_x=True)
         self.time_plot = plot("Displacement", "m", "Time", "s")
-        self.frf_legend = self.frf_mag.addLegend(offset=(-10, 10))
+        self.frf_legend = add_legend(self.frf_mag, offset=(-10, 10))
         self.playhead = pg.InfiniteLine(angle=90)
         self.time_plot.addItem(self.playhead, ignoreBounds=True)
         self.drive_line = pg.InfiniteLine(angle=90)

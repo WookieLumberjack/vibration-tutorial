@@ -27,7 +27,7 @@ from .layouts import FlowLayout, form_layout, group, plot_height
 from .panels import spin
 from .style import colors
 from .tab_groups import Deferred
-from .theming import mute
+from .theming import add_legend, mute
 
 DASH = QtCore.Qt.PenStyle.DashLine
 CURVE_POINTS = 600
@@ -227,7 +227,7 @@ class BalancingPanel(QtWidgets.QWidget):
         cp.setLabel("bottom", "Speed (rpm)")
         cp.getAxis("bottom").enableAutoSIPrefix(False)
         cp.showGrid(x=True, y=True, alpha=0.15)
-        cp.addLegend(offset=(-5, 5))
+        add_legend(cp, offset=(-5, 5))
         self.curve_found = [cp.plot(name="As found"), cp.plot()]
         self.curve_now = [cp.plot(name="Now"), cp.plot()]
         self.speed_lines = [pg.InfiniteLine(angle=90) for _ in range(2)]

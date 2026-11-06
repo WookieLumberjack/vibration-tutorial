@@ -13,8 +13,6 @@ from PySide6 import QtCore  # noqa: E402
 
 from vib_tutorial.core import ForceKind  # noqa: E402
 
-SHARED = pytest.mark.xdist_group("shared_window")  # the tests on conftest's `shared_window`, run on one worker
-
 
 @pytest.fixture(scope="module")
 def app():
@@ -99,12 +97,11 @@ def test_secondary_pages_build_when_opened(app):
     w.close()
 
 
-@SHARED
-def test_hidden_pages_take_a_new_chain_and_a_new_theme(app, shared_window):
+def test_hidden_pages_take_a_new_chain_and_a_new_theme(app, main_window):
     """A page that follows the chain, given a new one while hidden, puts off working it out until it shows; a theme
     change meanwhile mustn't redraw it from the old chain's results (it threw on Complex modes, Random vibration,
     OMA, the Virtual modal test and Model updating)."""
-    w = shared_window
+    w = main_window
     for i in range(w.pages.count()):  # build every page
         w.pages.setCurrentIndex(i)
         app.processEvents()
@@ -121,15 +118,14 @@ def test_hidden_pages_take_a_new_chain_and_a_new_theme(app, shared_window):
     w.params.dof.setValue(dof)
 
 
-@SHARED
-def test_every_page_builds_in_its_tab_with_its_notes(app, shared_window):
+def test_every_page_builds_in_its_tab_with_its_notes(app, main_window):
     """Reading a page's attribute builds it in its own tab; the Theory window shows the same notes as its tab."""
     from PySide6 import QtGui
 
     from vib_tutorial.gui.main_window import LAZY_PAGES
     from vib_tutorial.gui.theory_window import page_html
 
-    w = shared_window
+    w = main_window
     for name, _ in LAZY_PAGES:  # reading one builds it, without switching to it
         assert w.pages.indexOf(getattr(w, name)) >= 0
     # The Theory window reads each page's notes from its module: the same as its Theory tab shows.
@@ -1712,13 +1708,12 @@ def test_frequency_response_with_friction(app):
     w.close()
 
 
-@SHARED
-def test_every_legend_has_the_theme_background(app, shared_window):
+def test_every_legend_has_the_theme_background(app, main_window):
     # restyle() only reaches the legends that exist when the theme is applied; one made later
     # (a page built on first use, a rebuilt plot) must get its background when it's created.
     import pyqtgraph as pg
 
-    w = shared_window
+    w = main_window
     dof = w.params.dof.value()
     for i in range(w.pages.count()):
         w.pages.setCurrentIndex(i)
@@ -3903,7 +3898,6 @@ def test_shock_page(app):
     w.close()
 
 
-@SHARED
 @pytest.mark.parametrize(
     "name",
     [
@@ -3932,9 +3926,9 @@ def test_shock_page(app):
         "signals_page",
     ],
 )
-def test_lesson_pages_trials_and_tabs(app, shared_window, name):
+def test_lesson_pages_trials_and_tabs(app, main_window, name):
     """Every one-click trial of the lesson pages loads, and every tab draws, in either theme."""
-    w = shared_window
+    w = main_window
     page = getattr(w, name)
     w.pages.setCurrentWidget(page)
     module = sys.modules[type(page).__module__]
@@ -4049,15 +4043,14 @@ def test_grid_is_opaque_and_under_the_data(app):
     w.close()
 
 
-@SHARED
-def test_frame_builder_by_hand(app, shared_window):
+def test_frame_builder_by_hand(app, main_window):
     """Build a frame with the canvas's tools, edit it from the left, undo and redo, and read its matrices."""
     import numpy as np
 
     from vib_tutorial.core.frame import Kind, Support
     from vib_tutorial.gui import frame_builder as fb
 
-    w = shared_window
+    w = main_window
     page = w.frame_page
     w.pages.setCurrentWidget(page)
     c = page.canvas
@@ -4141,15 +4134,14 @@ def test_frame_builder_by_hand(app, shared_window):
     assert not page._timer.isActive()
 
 
-@SHARED
-def test_frame_builder_loads_and_formulations(app, shared_window):
+def test_frame_builder_loads_and_formulations(app, main_window):
     """A load and a response DOF from the left; the Response and Formulations tabs; the swing in each mode."""
     import numpy as np
 
     from vib_tutorial.core.frame_response import LoadKind
     from vib_tutorial.gui import frame_builder as fb
 
-    w = shared_window
+    w = main_window
     page = w.frame_page
     w.pages.setCurrentWidget(page)
     page.canvas.release()  # (a press without its release, as the test before may leave, holds the swing still)
@@ -4193,12 +4185,11 @@ def test_frame_builder_loads_and_formulations(app, shared_window):
     assert not page._timer.isActive()
 
 
-@SHARED
-def test_test_planning_controls(app, shared_window):
+def test_test_planning_controls(app, main_window):
     """Sensors placed every way, by hand from the check boxes, the frequency snapped to a mode, and every tab."""
     from vib_tutorial.gui import test_planning as tp
 
-    w = shared_window
+    w = main_window
     page = w.planning_page
     w.pages.setCurrentWidget(page)
     page.load_trial(0)
@@ -4235,14 +4226,13 @@ def test_test_planning_controls(app, shared_window):
     w.pages.setCurrentWidget(w.sim_page)
 
 
-@SHARED
-def test_nonlinear_forces_controls(app, shared_window):
+def test_nonlinear_forces_controls(app, main_window):
     """The nonlinear element's rows, the sweeps' readout, the Distortion tab, and the identification's methods."""
     from vib_tutorial.core import force_id as fid
     from vib_tutorial.core import nonlinear_test as nl
     from vib_tutorial.gui import nonlinear_forces as nf
 
-    w = shared_window
+    w = main_window
     page = w.nonlinear_page
     w.pages.setCurrentWidget(page)
     names = [t.name for t in nf.TRIALS]
@@ -4280,12 +4270,11 @@ def test_nonlinear_forces_controls(app, shared_window):
     w.pages.setCurrentWidget(w.sim_page)
 
 
-@SHARED
-def test_every_form_lets_its_fields_grow(app, shared_window):
+def test_every_form_lets_its_fields_grow(app, main_window):
     # macOS keeps a form's fields at their size hint, and a combo that elides its items hints at a letter or two.
     from PySide6 import QtWidgets
 
-    w = shared_window
+    w = main_window
     for i in range(w.pages.count()):
         w.pages.setCurrentIndex(i)
         app.processEvents()
