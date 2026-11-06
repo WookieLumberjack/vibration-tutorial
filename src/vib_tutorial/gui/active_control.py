@@ -307,7 +307,7 @@ def _passive_damping(rng: np.random.Generator) -> Question:
 def _gain_spec(rng: np.random.Generator) -> Question:
     a = int(pick(rng, (2, 4)))
     lag = pick(rng, (0, 5, 10))  # ms
-    system = ChainSystem(*(np.array(UNIFORM[key]) for key in ("masses", "springs", "dampers")))
+    system = ChainSystem(np.array(UNIFORM["masses"]), np.array(UNIFORM["springs"]), np.array(UNIFORM["dampers"]))
     z = np.array([_least_damped(system, Controller(a - 1, a - 1, float(g), lag / 1000)) for g in SPEC_GAINS])
     best = int(np.argmax(z))
     target = round(0.9 * float(z[best]), 3)
@@ -691,11 +691,11 @@ class ActiveControlPage(QtWidgets.QWidget):
         s = self.system
         ctrl = self.controller()
         if i == TAB_LOCUS:
-            pts = []
+            roots = []
             for g in GAINS:
                 lam = np.linalg.eigvals(closed_loop(s, self.controller(float(g)))[0])
-                pts.extend(lam[lam.imag >= 0])
-            pts = np.array(pts)
+                roots.append(lam[lam.imag >= 0])
+            pts = np.concatenate(roots)
             self.locus_items.setData(pts.real, pts.imag / (2 * np.pi))
             lam0 = np.linalg.eigvals(closed_loop(s, None)[0])
             lam0 = lam0[lam0.imag >= 0]

@@ -25,6 +25,7 @@ outside the deferred part; a test that reads their drawing shows the tab first.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from typing import TypeGuard
 
 from PySide6 import QtCore, QtWidgets
 
@@ -51,22 +52,28 @@ class TabGroups(QtWidgets.QTabWidget):
     def show_page(self, page: QtWidgets.QWidget) -> None:
         """Bring `page` to the front, in its group."""
         while page is not self:
-            tabs = page.parentWidget().parentWidget()  # a tab's page sits in its tab widget's stack
+            stack = page.parentWidget()  # a tab's page sits in its tab widget's stack
+            assert stack is not None, "the page is in these tabs"
+            tabs = stack.parentWidget()
             if isinstance(tabs, QtWidgets.QTabWidget) and tabs.indexOf(page) >= 0:
                 tabs.setCurrentWidget(page)
-            page = page.parentWidget()
+            page = stack
 
     def current_page(self) -> QtWidgets.QWidget:
-        page = self.currentWidget()
+        page: QtWidgets.QWidget | None = self.currentWidget()
         if self._is_group(page):
             page = page.currentWidget()
-        return page.widget() if isinstance(page, QtWidgets.QScrollArea) else page
+        if isinstance(page, QtWidgets.QScrollArea):
+            page = page.widget()
+        assert page is not None, "every group has pages"
+        return page
 
-    def _is_group(self, widget: QtWidgets.QWidget) -> bool:
-        return isinstance(widget, QtWidgets.QTabWidget) and widget.parentWidget().parentWidget() is self
+    def _is_group(self, widget: QtWidgets.QWidget | None) -> TypeGuard[QtWidgets.QTabWidget]:
+        stack = widget.parentWidget() if isinstance(widget, QtWidgets.QTabWidget) else None
+        return stack is not None and stack.parentWidget() is self
 
 
-def tucked_away(widget: QtWidgets.QWidget) -> bool:
+def tucked_away(widget: QtWidgets.QWidget | None) -> bool:
     """True if `widget` is hidden, or a tab (at any level) hides it, whether or not its window is shown yet."""
     while widget is not None:
         if widget.isHidden():
@@ -202,7 +209,7 @@ class PageGroups(QtWidgets.QWidget):
 
     def currentWidget(self) -> QtWidgets.QWidget | None:
         row = self.groups.currentWidget()
-        return row.currentWidget() if row is not None else None
+        return row.currentWidget() if isinstance(row, QtWidgets.QTabWidget) else None
 
     def setCurrentIndex(self, index: int) -> None:
         row, i = self._locate(index)

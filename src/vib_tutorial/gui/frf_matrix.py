@@ -121,7 +121,8 @@ def set_phase_ticks(axis: pg.AxisItem, phase: bool) -> None:
 
 def log_ticks(lo: float, hi: float, mantissas: tuple[int, ...]) -> list[list[tuple[float, str]]]:
     """Labelled ticks at mantissa x 10^e and unlabelled minor ticks, in log10 view units."""
-    major, minor = [], []
+    major: list[tuple[float, str]] = []
+    minor: list[tuple[float, str]] = []
     for e in range(math.floor(math.log10(lo)), math.ceil(math.log10(hi)) + 1):
         for m in range(1, 10):
             v = m * 10.0**e
@@ -175,7 +176,10 @@ class FrfGrid(pg.GraphicsLayoutWidget):
         thin = pg.mkPen(colors.cell_border, width=1)
         for j in range(n):
             self.addItem(pg.LabelItem(f"<b>x{j + 1}</b>", size="9pt", color=colors.mass[j]), row=j + 1, col=0)
-            cells, full, total, terms = [], [], [], []
+            cells: list[pg.PlotItem] = []
+            full: list[pg.PlotDataItem] = []
+            total: list[pg.PlotDataItem] = []
+            terms: list[list[pg.PlotDataItem]] = []
             for k in range(n):
                 p = pg.PlotItem()
                 p.hideAxis("left")
@@ -248,6 +252,7 @@ class FrfGrid(pg.GraphicsLayoutWidget):
         lo, hi = y_range(q, [full, total])
         self.cells[0][0].setXRange(math.log10(f[0]), math.log10(f[-1]), padding=0)
         self.cells[0][0].setYRange(lo, hi, padding=0)
+        assert self.corner is not None, "laid out by build"
         self.corner.setText(f"<i>{q.axis_label}</i>", size="8pt")
 
     def set_selection(self, output: int, inputs: set[int]) -> None:
@@ -692,7 +697,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self.H = np.zeros((0, 0, 0), dtype=complex)  # (F, n, n) full solution
         self.terms: list[ModalTerm] = []
         self.term_H = np.zeros((0, 0, 0, 0), dtype=complex)  # (R, F, n, n)
-        self.static = None  # K^-1, the static compliance; None if the chain can move as a rigid body
+        self.static: np.ndarray | None = None  # K^-1, the static compliance; None if the chain can move as a rigid body
         self.term_static = np.zeros((0, 0, 0))  # (R, n, n) each term at w = 0
         self.term_colors: list[str] = []
         self.expansion_note = ""
@@ -873,6 +878,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
 
     def practice_state(self) -> FrfTrial:
         """The page's cell, quantity, expansion and the modes left out, as a trial: what a practice spec checks."""
+        assert self.system is not None, "the chain comes before any practice"
         return FrfTrial(
             "",
             "",
@@ -1105,6 +1111,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
                 f"Σ over the ticked modes r of mode r's ({j + 1},{k + 1}) entry only; the other cells "
                 "are responses to other forces."
             )
+            assert self.system is not None, "drawn only once there is a chain"
             zeros = (j if j <= k else k) + (self.system.n - 1 - max(j, k))
             parts += (
                 " Undamped, it has no antiresonances (see Theory)."

@@ -368,7 +368,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         self.structure = combo(STRUCTURES, TIPS["structure"])
         shape.add("Structure:", self.structure, TIPS["structure"])
         self.length = shape.number("Length / side a:", 0.01, 100.0, 1.0, 3, " m", TIPS["length"])
-        self.depth = shape.number("Beam depth h:", 0.001, 10.0, 0.1, 3, " m", TIPS["depth"])
+        self.beam_depth = shape.number("Beam depth h:", 0.001, 10.0, 0.1, 3, " m", TIPS["depth"])
         self.side = shape.number("Plate side b:", 0.01, 100.0, 0.4, 3, " m", TIPS["side"])
         self.thickness = shape.number("Plate thickness:", 0.1, 1000.0, 3.0, 2, " mm", TIPS["thickness"])
         self.info = note_label()
@@ -388,7 +388,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             (
                 self.structure,
                 self.length,
-                self.depth,
+                self.beam_depth,
                 self.side,
                 self.thickness,
                 self.E,
@@ -418,7 +418,9 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         for item in (*self.speed_lines, *self.speed_items.values(), self.speed_now):
             self.speed_plot.addItem(item)
         beam_view = column(self.ratio_plot, self.speed_plot, stretch=False)
-        beam_view.layout().setContentsMargins(0, 0, 0, 0)
+        beam_layout = beam_view.layout()
+        assert beam_layout is not None, "column lays its widgets out"
+        beam_layout.setContentsMargins(0, 0, 0, 0)
 
         # --- centre: a plate
         self.shape_plot = plot("y", "m", "x", "m", height=250)
@@ -479,7 +481,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             "",
             structure=self.structure.currentIndex(),
             length=self.length.value(),
-            depth=self.depth.value(),
+            depth=self.beam_depth.value(),
             side=self.side.value(),
             thickness=self.thickness.value(),
             mode=int(self.mode.value()),
@@ -494,7 +496,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         for box, value in (
             (self.structure, t.structure),
             (self.length, t.length),
-            (self.depth, t.depth),
+            (self.beam_depth, t.depth),
             (self.side, t.side),
             (self.thickness, t.thickness),
             (self.E, t.E),
@@ -514,10 +516,10 @@ class BeamsPlatesPage(QtWidgets.QWidget):
 
     def _on_inputs(self) -> None:
         s = self.structure.currentIndex()
-        self.depth.setEnabled(s == BEAM)
+        self.beam_depth.setEnabled(s == BEAM)
         self.side.setEnabled(s == RECT)
         self.thickness.setEnabled(s != BEAM)
-        self.beam = Beam(self.length.value(), self.depth.value(), 0.05, self.material)
+        self.beam = Beam(self.length.value(), self.beam_depth.value(), 0.05, self.material)
         self.plate = Plate(
             self.length.value(),
             self.side.value() if s == RECT else self.length.value(),

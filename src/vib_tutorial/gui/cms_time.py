@@ -76,8 +76,8 @@ class CMSRunView(QtWidgets.QWidget):
             self.speed.addItem(f"{s:g}× real time", s)
         self.speed.setCurrentIndex(SPEEDS.index(1.0))
         self.speed.setToolTip("Simulation speed (× real time)")
-        self.window = spin(0.1, 60.0, 5.0, 1, " s")
-        self.window.setToolTip("Plot window")
+        self.time_window = spin(0.1, 60.0, 5.0, 1, " s")
+        self.time_window.setToolTip("Plot window")
         self.freq_label, self.duration_label = QtWidgets.QLabel("at"), QtWidgets.QLabel("for")
         self.controls = FlowLayout()
         self.controls.add(
@@ -85,7 +85,7 @@ class CMSRunView(QtWidgets.QWidget):
             group(self.freq_label, self.freq, self.tune),
             group(self.duration_label, self.duration),
             group(self.button, self.reset_button),
-            group("Speed:", self.speed, "Window:", self.window),
+            group("Speed:", self.speed, "Window:", self.time_window),
         )
 
         self.kind.currentIndexChanged.connect(self._apply)
@@ -353,6 +353,7 @@ class CMSTimeView(CMSRunView):
         self.history.clear()
 
     def _advance(self, duration: float) -> None:
+        assert self.sim is not None, "step advances only a running model"
         ts, xf, xr, _ = self.sim.advance(duration)
         cols = self._dofs
         self.history.extend(ts, np.hstack([xf[:, cols], xr[:, cols]]))
@@ -364,7 +365,7 @@ class CMSTimeView(CMSRunView):
                 c.setData([], [])
             self.error_note.setText("")
             return
-        t, y = self.history.window(self.window.value())
+        t, y = self.history.window(self.time_window.value())
         k = len(self._dofs)
         xf, xr = y[:, :k], y[:, k:]
         x_now, r_now = sim.x_full, sim.x_reduced
@@ -385,7 +386,7 @@ class CMSTimeView(CMSRunView):
         for i, curve in enumerate(self.e_curves):
             curve.setData(t, err[:, i])
         if t.size:
-            w = self.window.value()
+            w = self.time_window.value()
             x0 = max(t[-1] - w, 0.0) if t[-1] > w else 0.0
             self.x_plot.setXRange(x0, x0 + w, padding=0)
             span = max(float(np.abs(np.concatenate([xf.ravel(), xr.ravel()])).max()), MIN_SPAN)
