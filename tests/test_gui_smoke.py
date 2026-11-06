@@ -1039,16 +1039,16 @@ def test_modal_test_page(app):
     while not p.acq.done:
         p._measure_some()
     assert p.progress.text().startswith("10 / 10")
-    assert p.window.currentData() is Window.FORCE_EXPONENTIAL  # picked for the impact test
+    assert p.taper.currentData() is Window.FORCE_EXPONENTIAL  # picked for the impact test
     first = p.acq
 
     # Noise and processing reuse the same measurement.
     p.force_noise.setValue(5.0)
-    p.window.setCurrentIndex(list(Window).index(Window.RECTANGULAR))
+    p.taper.setCurrentIndex(list(Window).index(Window.RECTANGULAR))
     assert p.acq is first
     # Test settings measure again; the excitation picks its usual window.
     p.excitation.setCurrentIndex(list(Excitation).index(Excitation.RANDOM))
-    assert p.acq is not first and p.window.currentData() is Window.HANN
+    assert p.acq is not first and p.taper.currentData() is Window.HANN
     assert p.overlap.isVisibleTo(p) and not p.tip.isVisibleTo(p)
 
     # Fewer averages are processed at once, from the data already measured.
@@ -1061,7 +1061,7 @@ def test_modal_test_page(app):
     p.points.setValue(12)
     while not p.acq.done:
         p._measure_some()
-    assert p.progress.text().startswith("12 / 12") and not p.window.isEnabled()
+    assert p.progress.text().startswith("12 / 12") and not p.taper.isEnabled()
     assert "Points\nin it" in p.check.toPlainText()  # the header, over two lines
     # Samples as dots, the fitted sine drawn smoothly through them.
     sig = p.signals
@@ -1227,7 +1227,7 @@ def test_modal_extraction_on_the_test_page(app):
     p.exp_end.setValue(5.0)
     while not p.acq.done:
         p._measure_some()
-    assert p.window.currentData() is Window.FORCE_EXPONENTIAL and p.extract.correct.isVisibleTo(p)
+    assert p.taper.currentData() is Window.FORCE_EXPONENTIAL and p.extract.correct.isVisibleTo(p)
     assert "moved" in p.results.notes.text()
 
     # Accelerometers: a new measurement of the accelerance, fitted as receptance after dividing by -w^2.

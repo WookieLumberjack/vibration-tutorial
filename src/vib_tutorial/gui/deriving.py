@@ -24,6 +24,7 @@ from ..core.bounce_pitch import (
     Bump,
     Car,
     Coordinates,
+    Ride,
     matrices,
     modes,
     newton,
@@ -31,7 +32,7 @@ from ..core.bounce_pitch import (
     slipped,
     sweep,
 )
-from ..core.double_pendulum import Angles, DoublePendulum, divergence, swing
+from ..core.double_pendulum import Angles, Divergence, DoublePendulum, Swing, divergence, swing
 from ..core.double_pendulum import matrices as pendulum_matrices
 from ..core.double_pendulum import modes as pendulum_modes
 from ..core.double_pendulum import sweep as pendulum_sweep
@@ -833,11 +834,12 @@ class CarView(pg.PlotWidget):
         self.wheels.setData(w[:, 0], w[:, 1])
         g = place(np.array([[0.0, G_HEIGHT]]))[0]
         self.centre.setData([g[0]], [g[1]])
-        for dot, x in zip(self.points, points + [None] * 2):
-            if x is None:
+        shown: list[float | None] = [*points, None, None]
+        for dot, at in zip(self.points, shown):
+            if at is None:
                 dot.setData([], [])
             else:
-                p = place(np.array([[x, G_HEIGHT]]))[0]
+                p = place(np.array([[at, G_HEIGHT]]))[0]
                 dot.setData([p[0]], [p[1]])
         if node is not None and abs(node) < VIEW_X:
             self.node.setPos(node)
@@ -887,14 +889,14 @@ class DerivingPage(QtWidgets.QWidget):
 
         bump = Form("Bump")
         self.speed = bump.number("Speed:", 5.0, 150.0, 30.0, 0, " km/h", TIPS["speed"])
-        self.height = bump.number("Height:", 5.0, 200.0, 75.0, 0, " mm", TIPS["height"])
+        self.bump_height = bump.number("Height:", 5.0, 200.0, 75.0, 0, " mm", TIPS["height"])
         self.length = bump.number("Length:", 0.1, 10.0, 3.7, 2, " m", TIPS["length"])
         self.car_forms = (body, suspension, coordinates, bump)
 
         # --- the pendulum's controls
         bobs = Form("Bobs and rods")
         self.upper = bobs.number("Upper bob m₁:", 0.01, 100.0, 1.0, 3, " kg", TIPS["upper"])
-        self.lower = bobs.number("Lower bob m₂:", 0.01, 100.0, 1.0, 3, " kg", TIPS["lower"])
+        self.lower_mass = bobs.number("Lower bob m₂:", 0.01, 100.0, 1.0, 3, " kg", TIPS["lower"])
         self.upper_length = bobs.number("Upper rod L₁:", 0.05, 5.0, 0.5, 2, " m", TIPS["upper_length"])
         self.lower_length = bobs.number("Lower rod L₂:", 0.05, 5.0, 0.5, 2, " m", TIPS["lower_length"])
         angles = Form("Coordinates")
@@ -930,10 +932,10 @@ class DerivingPage(QtWidgets.QWidget):
                 self.coords,
                 self.offset,
                 self.speed,
-                self.height,
+                self.bump_height,
                 self.length,
                 self.upper,
-                self.lower,
+                self.lower_mass,
                 self.upper_length,
                 self.lower_length,
                 self.angles,
@@ -1068,9 +1070,9 @@ class DerivingPage(QtWidgets.QWidget):
         self._timer = QtCore.QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._frame)
-        self.ride = None
-        self.swing = None
-        self.twins = None
+        self.ride: Ride | None = None
+        self.swing: Swing | None = None
+        self.twins: Divergence | None = None
         self._apply_system()
         self.apply_theme()
 
@@ -1099,10 +1101,10 @@ class DerivingPage(QtWidgets.QWidget):
             coords=COORDS[self.coords.currentIndex()],
             offset=self.offset.value(),
             speed_kmh=self.speed.value(),
-            height=self.height.value(),
+            height=self.bump_height.value(),
             length=self.length.value(),
             upper=self.upper.value(),
-            lower=self.lower.value(),
+            lower=self.lower_mass.value(),
             upper_length=self.upper_length.value(),
             lower_length=self.lower_length.value(),
             angles=ANGLES[self.angles.currentIndex()],
@@ -1126,10 +1128,10 @@ class DerivingPage(QtWidgets.QWidget):
             (self.coords, COORDS.index(t.coords)),
             (self.offset, t.offset),
             (self.speed, t.speed_kmh),
-            (self.height, t.height),
+            (self.bump_height, t.height),
             (self.length, t.length),
             (self.upper, t.upper),
-            (self.lower, t.lower),
+            (self.lower_mass, t.lower),
             (self.upper_length, t.upper_length),
             (self.lower_length, t.lower_length),
             (self.angles, ANGLES.index(t.angles)),
@@ -1342,14 +1344,15 @@ class DerivingPage(QtWidgets.QWidget):
             "axles. With a dynamic index of 1 the modes are the ends' own, and their nodes sit on the axles."
         )
 
-    def _ensure_ride(self) -> None:
+    def _ride(self) -> Ride:
+        """The car's ride over the bump, worked out the first time it's asked for after a change."""
         if self.ride is None:
             t = self.practice_state()
             self.ride = ride(t.car, t.bump)
+        return self.ride
 
     def _draw_bump(self) -> None:
-        self._ensure_ride()
-        r = self.ride
+        r = self._ride()
         self.road_curve.setData(r.t, r.road[:, 0])
         for item, values in zip(self.end_curves, r.ends.T):
             item.setData(r.t, values)
@@ -1390,14 +1393,15 @@ class DerivingPage(QtWidgets.QWidget):
             "fast, and the slower mode a single pendulum of length L₁ + L₂ (θ₂ → θ₁)."
         )
 
-    def _ensure_swing(self) -> None:
+    def _swing(self) -> Swing:
+        """The pendulum's swing from its release, worked out the first time it's asked for after a change."""
         if self.swing is None:
             t = self.practice_state()
             self.swing = swing(t.pendulum, t.release, SWING_S)
+        return self.swing
 
     def _draw_swing(self) -> None:
-        self._ensure_swing()
-        s = self.swing
+        s = self._swing()
         for i in range(2):
             self.whole_items[i].setData(s.t, np.degrees(s.whole[:, i]))
             self.linear_items[i].setData(s.t, np.degrees(s.linear[:, i]))
@@ -1512,8 +1516,7 @@ class DerivingPage(QtWidgets.QWidget):
         car, points = self.car, self._coordinate_points()
         show = self.show_box.currentIndex()
         if show == SHOW_MOTION:
-            self._ensure_ride()
-            r = self.ride
+            r = self._ride()
             k = min(int(np.searchsorted(r.t, self._time % r.t[-1])), r.t.size - 1)
             xs = np.linspace(-VIEW_X, VIEW_X, 241)
             bump = self.practice_state().bump
@@ -1537,8 +1540,7 @@ class DerivingPage(QtWidgets.QWidget):
         p = self.pendulum
         show = self.show_box.currentIndex()
         if show == SHOW_MOTION:
-            self._ensure_swing()
-            s = self.swing
+            s = self._swing()
             k = min(int(np.searchsorted(s.t, self._time % s.t[-1])), s.t.size - 1)
             th1, th2 = s.whole[k, 0], s.whole[k, 1]
             back = max(0, k - int(TRAIL_S / (s.t[1] - s.t[0])))
