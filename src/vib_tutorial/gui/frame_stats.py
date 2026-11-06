@@ -34,6 +34,7 @@ from collections import deque
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -124,6 +125,8 @@ class FrameStats:
     def summary(self, page: str | None = None) -> dict[str, float] | None:
         """fps, interval/work/paint medians and 95th percentiles (ms), late share, sim speed."""
         page = page or self.page
+        if page is None:
+            return None
         frames = list(self.frames.get(page, ()))[:-1]  # the last frame's paint is still to come
         if len(frames) < 2:
             return None
@@ -172,6 +175,7 @@ class Overlay(QtWidgets.QLabel):
 
     def __init__(self, window: QtWidgets.QWidget, stats: FrameStats) -> None:
         super().__init__(window)
+        self._main = window  # its parent, whose corner it sits in
         self.stats = stats
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setAutoFillBackground(True)  # the theme's window colour, so the text stays legible
@@ -194,7 +198,7 @@ class Overlay(QtWidgets.QLabel):
 
     def _place(self) -> None:
         self.adjustSize()
-        parent = self.parentWidget()
+        parent = self._main
         self.move(parent.width() - self.width() - 12, parent.height() - self.height() - 30)
         self.raise_()
 
@@ -221,7 +225,7 @@ class Overlay(QtWidgets.QLabel):
 
     def check_view(self) -> None:
         """Log a ``view`` row if what shows changed since the last check."""
-        window = self.parentWidget()
+        window = self._main
         screen = window.screen()
         view = (
             f"{describe_view(window)} | {window.width()}x{window.height()} @{window.devicePixelRatioF():g}x"
@@ -240,7 +244,7 @@ def _plain(text: str) -> str:
 
 def _page_title(window: QtWidgets.QWidget) -> str:
     tabs = getattr(window, "pages", None)  # a QTabWidget, or the window's PageGroups (the same methods)
-    return _plain(tabs.tabText(tabs.currentIndex())) if hasattr(tabs, "tabText") else ""
+    return _plain(tabs.tabText(tabs.currentIndex())) if tabs is not None and hasattr(tabs, "tabText") else ""
 
 
 def describe_view(window: QtWidgets.QWidget) -> str:
@@ -299,7 +303,11 @@ class InputLog(QtCore.QObject):
         if STATS is not self.stats:  # turned off (uninstall)
             return False
         t = event.type()
-        if t == QtCore.QEvent.Type.MouseButtonPress and isinstance(obj, QtWidgets.QWidget):
+        if (
+            isinstance(event, QtGui.QMouseEvent)
+            and t == QtCore.QEvent.Type.MouseButtonPress
+            and isinstance(obj, QtWidgets.QWidget)
+        ):
             self._press = event.globalPosition()
         elif t in (QtCore.QEvent.Type.MouseButtonRelease, QtCore.QEvent.Type.KeyRelease, QtCore.QEvent.Type.Wheel):
             widget = self._control(obj)
@@ -312,6 +320,7 @@ class InputLog(QtCore.QObject):
                     else (
                         "drag"
                         if self._press is not None
+                        and isinstance(event, QtGui.QMouseEvent)
                         and (event.globalPosition() - self._press).manhattanLength() > DRAG_PX
                         else "click"
                     )
@@ -395,16 +404,17 @@ def _label(widget: QtWidgets.QWidget) -> str:
         if isinstance(layout, QtWidgets.QFormLayout) and (label := _form_label(layout, w)):
             return label
         if isinstance(found, QtWidgets.QGridLayout):
-            row, col, _, _ = found.getItemPosition(found.indexOf(w))
+            # PySide's stub says object: it is (row, column, row span, column span).
+            row, col, _, _ = cast(tuple[int, int, int, int], found.getItemPosition(found.indexOf(w)))
             heading = _text_at(found, 0, col) if row > 0 else ""
             side = next((t for c in range(col - 1, -1, -1) if (t := _text_at(found, row, c))), "")
             if heading or side:
                 return " ".join(t for t in (side, heading) if t)
         if isinstance(found, QtWidgets.QBoxLayout):
-            before = [found.itemAt(i).widget() for i in range(found.indexOf(w))]
-            label = next((x for x in reversed(before) if isinstance(x, QtWidgets.QLabel) and x.text()), None)
-            if label is not None:
-                return _plain(label.text()).rstrip(":")
+            before = [item.widget() for i in range(found.indexOf(w)) if (item := found.itemAt(i)) is not None]
+            prior = next((x for x in reversed(before) if isinstance(x, QtWidgets.QLabel) and x.text()), None)
+            if prior is not None:
+                return _plain(prior.text()).rstrip(":")
         w = parent
     tip = _plain(widget.toolTip())
     return re.split(r"(?<=[a-z])[.:;(]", tip, maxsplit=1)[0][:40] if tip else widget.objectName()
@@ -415,7 +425,8 @@ def _holding(layout: QtWidgets.QLayout, widget: QtWidgets.QWidget) -> QtWidgets.
     if layout.indexOf(widget) >= 0:
         return layout
     for i in range(layout.count()):
-        inner = layout.itemAt(i).layout()
+        item = layout.itemAt(i)
+        inner = item.layout() if item is not None else None
         if inner is not None and (found := _holding(inner, widget)) is not None:
             return found
     return None
@@ -432,24 +443,24 @@ def _form_label(form: QtWidgets.QFormLayout, widget: QtWidgets.QWidget) -> str:
     for row in range(form.rowCount()):
         field = form.itemAt(row, QtWidgets.QFormLayout.ItemRole.FieldRole)
         label = form.itemAt(row, QtWidgets.QFormLayout.ItemRole.LabelRole)
-        if field is None or label is None or not isinstance(label.widget(), QtWidgets.QLabel):
+        text = label.widget() if label is not None else None
+        if field is None or not isinstance(text, QtWidgets.QLabel):
             continue
-        held = field.widget()
-        if (held is not None and (held is widget or held.isAncestorOf(widget))) or (
-            field.layout() is not None and _in_layout(field.layout(), widget)
-        ):
-            return _plain(label.widget().text()).rstrip(":")
+        if _holds(field, widget):
+            return _plain(text.text()).rstrip(":")
     return ""
 
 
+def _holds(item: QtWidgets.QLayoutItem, widget: QtWidgets.QWidget) -> bool:
+    """Whether a layout item is `widget`, holds it, or is a layout one of whose items does."""
+    held, inner = item.widget(), item.layout()
+    if held is not None and (held is widget or held.isAncestorOf(widget)):
+        return True
+    return inner is not None and _in_layout(inner, widget)
+
+
 def _in_layout(layout: QtWidgets.QLayout, widget: QtWidgets.QWidget) -> bool:
-    for i in range(layout.count()):
-        item = layout.itemAt(i)
-        if item.widget() is not None and (item.widget() is widget or item.widget().isAncestorOf(widget)):
-            return True
-        if item.layout() is not None and _in_layout(item.layout(), widget):
-            return True
-    return False
+    return any((item := layout.itemAt(i)) is not None and _holds(item, widget) for i in range(layout.count()))
 
 
 def _plot_name(view: QtWidgets.QGraphicsView) -> str:
@@ -458,7 +469,7 @@ def _plot_name(view: QtWidgets.QGraphicsView) -> str:
     names = []
     for item in scene.items() if scene is not None else ():
         title = getattr(item, "titleLabel", None)
-        if title is not None and getattr(title, "text", ""):
+        if title is not None and getattr(title, "text", None):
             names.append(_plain(title.text))
     if names:
         return "plot " + " / ".join(sorted(set(names)))[:60]

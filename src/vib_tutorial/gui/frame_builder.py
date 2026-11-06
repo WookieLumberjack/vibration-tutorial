@@ -612,7 +612,7 @@ NOTES_HTML = load_notes("frame_builder", trials=trials_html(TRIALS))
 
 
 # ------------------------------------------------------------------ drawing helpers
-NAN2 = [np.nan, np.nan]
+NAN2 = np.full(2, np.nan)
 
 
 def _zigzag(a: np.ndarray, b: np.ndarray, width: float, turns: int = 5) -> list:
@@ -1036,7 +1036,11 @@ class FrameCanvas(pg.PlotWidget):
             p = f.point(i)
             return p + q[3 * i : 3 * i + 2] if q is not None else p
 
-        bars, beams, links, ghost, supports = [], [], [], [], []
+        bars: list[np.ndarray] = []
+        beams: list[np.ndarray] = []
+        links: list[np.ndarray] = []
+        ghost: list[np.ndarray] = []
+        supports: list[np.ndarray] = []
         for k, e in enumerate(f.elements):
             if e.kind.member and e.j is not None:
                 if q is not None:
@@ -1083,7 +1087,7 @@ class FrameCanvas(pg.PlotWidget):
                     x, y = (
                         member_curve(f, index, q)
                         if q is not None
-                        else ([at(e.i)[0], at(e.j)[0]], [at(e.i)[1], at(e.j)[1]])
+                        else (np.array([at(e.i)[0], at(e.j)[0]]), np.array([at(e.i)[1], at(e.j)[1]]))
                     )
                     lit = [*np.column_stack([x, y]), NAN2]
                 elif e.kind.link:
@@ -1286,8 +1290,8 @@ class Properties(QtWidgets.QGroupBox):
         self.node = Form("")
         self.node.setFlat(True)
         n = self.node
-        self.x = n.number("x:", -100.0, 100.0, 0.0, 3, " m", TIPS["x"])
-        self.y = n.number("y:", -100.0, 100.0, 0.0, 3, " m", TIPS["y"])
+        self.node_x = n.number("x:", -100.0, 100.0, 0.0, 3, " m", TIPS["x"])
+        self.node_y = n.number("y:", -100.0, 100.0, 0.0, 3, " m", TIPS["y"])
         self.support = combo([s.value for s in SUPPORTS], TIPS["support"])
         n.add("Support:", self.support, TIPS["support"])
         self.mass = n.number("Point mass m:", 0.0, 1e6, 0.0, 3, " kg", TIPS["point_mass"])
@@ -1305,8 +1309,8 @@ class Properties(QtWidgets.QGroupBox):
         m.add("Material:", self.material, TIPS["material"])
         self.shape = combo([s.value for s in SHAPES], TIPS["shape"])
         m.add("Section:", self.shape, TIPS["shape"])
-        self.depth = m.number("Depth (in plane):", 0.1, 5000.0, 50.0, 1, " mm", TIPS["depth"])
-        self.width = m.number("Width:", 0.1, 5000.0, 50.0, 1, " mm", TIPS["width"])
+        self.section_depth = m.number("Depth (in plane):", 0.1, 5000.0, 50.0, 1, " mm", TIPS["depth"])
+        self.section_width = m.number("Width:", 0.1, 5000.0, 50.0, 1, " mm", TIPS["width"])
         self.wall = m.number("Wall:", 0.1, 2500.0, 25.0, 1, " mm", TIPS["wall"])
         self.member_info = note_label()
         m.row(self.member_info)
@@ -1394,13 +1398,13 @@ class FramePage(QtWidgets.QWidget):
 
         self.props = Properties()
         p = self.props
-        for box in (p.x, p.y, p.mass, p.inertia, p.torsion, p.torsion_c):
+        for box in (p.node_x, p.node_y, p.mass, p.inertia, p.torsion, p.torsion_c):
             box.editingFinished.connect(self._on_node_box)
         p.support.currentIndexChanged.connect(lambda _: self._on_node_box())
-        for box in (p.depth, p.width, p.wall):
+        for box in (p.section_depth, p.section_width, p.wall):
             box.editingFinished.connect(self._on_member_box)
-        for box in (p.kind, p.material, p.shape):
-            box.currentIndexChanged.connect(lambda _: self._on_member_box())
+        for choice in (p.kind, p.material, p.shape):
+            choice.currentIndexChanged.connect(lambda _: self._on_member_box())
         p.value.editingFinished.connect(self._on_link_box)
         p.divide.clicked.connect(self._on_divide)
         p.remove.clicked.connect(lambda: self.canvas.delete_selected())
@@ -1426,10 +1430,10 @@ class FramePage(QtWidgets.QWidget):
         self.load_hz = loading.number("Frequency:", 0.01, 1e5, 10.0, 3, " Hz", TIPS["load_hz"])
         self.out_node, self.out_dof = self._dof_boxes(loading, "Response at:", TIPS["out_at"])
         self.load_form = loading
-        for box in (self.load_kind, self.load_dof, self.out_dof):
-            box.currentIndexChanged.connect(lambda _: self._on_load())
-        for box in (self.load_node, self.out_node, self.load_size, self.load_hz):
-            box.valueChanged.connect(lambda _: self._on_load())
+        for choice in (self.load_kind, self.load_dof, self.out_dof):
+            choice.currentIndexChanged.connect(lambda _: self._on_load())
+        for field in (self.load_node, self.out_node, self.load_size, self.load_hz):
+            field.valueChanged.connect(lambda _: self._on_load())
 
         show = Form("Show")
         self.matrix = combo([m.value for m in MATRICES], TIPS["matrix"])
@@ -1455,7 +1459,7 @@ class FramePage(QtWidgets.QWidget):
         self.swing.currentIndexChanged.connect(lambda _: self._on_swing())
 
         # --- centre: the tools, the canvas, the modes
-        self.canvas = FrameCanvas()
+        self.canvas: FrameCanvas = FrameCanvas()
         self.canvas.edited.connect(self._on_edit)
         self.canvas.selected.connect(self._on_selected)
         tools = QtWidgets.QWidget()
@@ -1803,7 +1807,7 @@ class FramePage(QtWidgets.QWidget):
         i = sel[1]
         p = self.props
         f = self.frame
-        node = Node(p.x.value(), p.y.value(), SUPPORTS[p.support.currentIndex()])
+        node = Node(p.node_x.value(), p.node_y.value(), SUPPORTS[p.support.currentIndex()])
         other = f.node_at(node.x, node.y)
         if other is not None and other != i:  # two nodes can't share a point
             node = dataclasses.replace(node, x=f.nodes[i].x, y=f.nodes[i].y)
@@ -1838,8 +1842,8 @@ class FramePage(QtWidgets.QWidget):
         p = self.props
         e = self.frame.elements[sel[1]]
         shape = SHAPES[p.shape.currentIndex()]
-        depth = p.depth.value() / 1000
-        section = Section(shape, depth, p.width.value() / 1000, min(p.wall.value() / 1000, depth / 2))
+        depth = p.section_depth.value() / 1000
+        section = Section(shape, depth, p.section_width.value() / 1000, min(p.wall.value() / 1000, depth / 2))
         kind = Kind.BEAM if p.kind.currentIndex() == 0 else Kind.BAR
         new = dataclasses.replace(e, kind=kind, material=MATERIALS[p.material.currentIndex()], section=section)
         self.canvas.template[kind] = new
@@ -1879,12 +1883,13 @@ class FramePage(QtWidgets.QWidget):
         if what == "node":
             node = self.frame.nodes[index]
             extras = self._node_extras(index)
-            mass = self.frame.elements[extras[Kind.MASS]] if extras[Kind.MASS] is not None else None
+            mass_at = extras[Kind.MASS]
+            mass = self.frame.elements[mass_at] if mass_at is not None else None
             spring = extras[Kind.TORSION_SPRING]
             damper = extras[Kind.TORSION_DAMPER]
             for box, value in (
-                (p.x, node.x),
-                (p.y, node.y),
+                (p.node_x, node.x),
+                (p.node_y, node.y),
                 (p.support, SUPPORTS.index(node.support)),
                 (p.mass, mass.value if mass else 0.0),
                 (p.inertia, mass.inertia if mass else 0.0),
@@ -1897,18 +1902,19 @@ class FramePage(QtWidgets.QWidget):
             return
         e = self.frame.elements[index]
         if e.kind.member:
+            assert e.j is not None, "a member joins two nodes"
             sec = e.section
             for box, value in (
                 (p.kind, 0 if e.kind is Kind.BEAM else 1),
                 (p.material, [m.name for m in MATERIALS].index(e.material.name)),
                 (p.shape, SHAPES.index(sec.shape)),
-                (p.depth, sec.depth * 1000),
-                (p.width, sec.width * 1000),
+                (p.section_depth, sec.depth * 1000),
+                (p.section_width, sec.width * 1000),
                 (p.wall, sec.wall * 1000),
             ):
                 set_quietly(box, value)
             tube = sec.shape is Shape.TUBE
-            p.member.form.setRowVisible(p.width, not tube)
+            p.member.form.setRowVisible(p.section_width, not tube)
             p.member.form.setRowVisible(p.wall, tube)
             length = self.frame.length(e)
             r = math.sqrt(sec.inertia / sec.area)
@@ -2000,7 +2006,7 @@ class FramePage(QtWidgets.QWidget):
         keep = np.arange(n)
         if self.free_only.isChecked() or n > MATRIX_LIMIT:
             keep = a.free_dofs
-        labels = [dof_label(d) for d in keep]
+        labels = [dof_label(int(d)) for d in keep]
         idx = np.ix_(keep, keep)
         self.assembly_view.setHtml(
             matrix_html(A[idx], labels, labels, tint[idx], struck[keep], struck[keep], title=matrix.name)

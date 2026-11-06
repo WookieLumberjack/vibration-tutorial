@@ -436,11 +436,11 @@ class ContinuumPage(QtWidgets.QWidget):
         form.setContentsMargins(0, 0, 0, 0)
         self.modulus = spin(0.001, 1000.0, 210.0, 3, " GPa")
         self.density = spin(1.0, 30000.0, 7850.0, 0, " kg/m³")
-        self.width = spin(0.01, 1000.0, 20.0, 2, " mm")
-        self.depth = spin(0.01, 1000.0, 10.0, 2, " mm")
+        self.section_width = spin(0.01, 1000.0, 20.0, 2, " mm")
+        self.section_depth = spin(0.01, 1000.0, 10.0, 2, " mm")
         _form_row(form, "Modulus E:", self.modulus, TIPS["modulus"])
         _form_row(form, "Density ρ:", self.density, TIPS["density"])
-        _form_row(form, "Section:", group(self.width, "×", self.depth), TIPS["section"])
+        _form_row(form, "Section:", group(self.section_width, "×", self.section_depth), TIPS["section"])
         self.material.addWidget(solid_page)
         mf.addRow(self.material)
         self.left_end = QtWidgets.QComboBox()
@@ -460,11 +460,11 @@ class ContinuumPage(QtWidgets.QWidget):
         self.shown: dict[Scheme, QtWidgets.QCheckBox] = {}
         row = FlowLayout()
         for scheme in SCHEMES:
-            box = QtWidgets.QCheckBox(scheme.value)
-            box.setChecked(True)
-            box.setToolTip(TIPS["schemes"])
-            self.shown[scheme] = box
-            row.add(box)
+            check = QtWidgets.QCheckBox(scheme.value)
+            check.setChecked(True)
+            check.setToolTip(TIPS["schemes"])
+            self.shown[scheme] = check
+            row.add(check)
         label = QtWidgets.QLabel("Mass:")
         label.setToolTip(TIPS["schemes"])
         sf.addRow(label, _holder(row))
@@ -648,18 +648,26 @@ class ContinuumPage(QtWidgets.QWidget):
         # --- wiring
         self.preset.currentIndexChanged.connect(self._on_preset)
         self.kind.currentIndexChanged.connect(self._on_kind)
-        for box in (self.length, self.tension, self.line_density, self.modulus, self.density, self.width, self.depth):
+        for box in (
+            self.length,
+            self.tension,
+            self.line_density,
+            self.modulus,
+            self.density,
+            self.section_width,
+            self.section_depth,
+        ):
             box.valueChanged.connect(self._on_edit)
         self.left_end.currentIndexChanged.connect(self._on_edit)
         self.right_end.currentIndexChanged.connect(self._on_edit)
         self.elements.valueChanged.connect(self._on_edit)
-        for box in self.shown.values():
-            box.toggled.connect(lambda _: self.redraw())
+        for check in self.shown.values():
+            check.toggled.connect(lambda _: self.redraw())
         self.mode.valueChanged.connect(self._on_mode)
         for box in (self.pulse_width, self.pulse_at, self.dashpot, self.step_at, self.step_ratio):
             box.valueChanged.connect(self._on_waves)
-        for box in (self.moving, self.dashpot_on, self.step_on):
-            box.toggled.connect(self._on_waves)
+        for check in (self.moving, self.dashpot_on, self.step_on):
+            check.toggled.connect(self._on_waves)
         self.wave_scheme.currentIndexChanged.connect(self._on_waves)
         self.play_button.toggled.connect(self._on_play)
         self.restart_button.clicked.connect(self.reset)
@@ -705,8 +713,8 @@ class ContinuumPage(QtWidgets.QWidget):
         self.line_density.setValue(c.line_density * 1e3)
         self.modulus.setValue(c.modulus / 1e9)
         self.density.setValue(c.density)
-        self.width.setValue(c.width * 1e3)
-        self.depth.setValue(c.depth * 1e3)
+        self.section_width.setValue(c.width * 1e3)
+        self.section_depth.setValue(c.depth * 1e3)
         self.left_end.setCurrentText(c.left.value)
         self.right_end.setCurrentText(c.right.value)
         self.elements.setValue(elements)
@@ -737,6 +745,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.material.setCurrentIndex(0 if kind is Kind.STRING else 1)
         for i in range(self.material.count()):  # only the page showing sets the height
             page = self.material.widget(i)
+            assert page is not None, "i < count"
             policy = (
                 QtWidgets.QSizePolicy.Policy.Preferred
                 if i == self.material.currentIndex()
@@ -764,8 +773,8 @@ class ContinuumPage(QtWidgets.QWidget):
             line_density=self.line_density.value() / 1e3,
             modulus=self.modulus.value() * 1e9,
             density=self.density.value(),
-            width=self.width.value() / 1e3,
-            depth=self.depth.value() / 1e3,
+            width=self.section_width.value() / 1e3,
+            depth=self.section_depth.value() / 1e3,
         )
 
     def _on_edit(self, *_args) -> None:
@@ -1028,11 +1037,13 @@ class ContinuumPage(QtWidgets.QWidget):
         """Run the pulse on by `frames` frames and redraw."""
         if self.run is None:
             self.restart()
+        assert self.run is not None, "restart made it"
         self.run.advance(frames)
         self._draw_waves()
 
     def _draw_waves(self) -> None:
         run = self.run
+        assert run is not None, "drawn once restart has made the run"
         x, u = run.exact()
         self.exact_curve.setData(x, u)
         dense = np.linspace(0.0, self.continuum.length, SHAPE_POINTS)

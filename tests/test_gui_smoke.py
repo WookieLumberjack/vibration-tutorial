@@ -4120,8 +4120,8 @@ def test_frame_builder_by_hand(app, shared_window):
     c.press(np.array([0.5, 0.0]))
     assert c.selection == ("element", 0) and page.props.current() is page.props.member
     before = page.result.hz[0]
-    page.props.depth.setValue(80.0)
-    page.props.depth.editingFinished.emit()
+    page.props.section_depth.setValue(80.0)
+    page.props.section_depth.editingFinished.emit()
     assert page.frame.elements[0].section.depth == pytest.approx(0.08) and page.result.hz[0] > before
     # drag a node; undo puts it back, redo moves it again
     c.press(np.array([1.0, 0.0]))
