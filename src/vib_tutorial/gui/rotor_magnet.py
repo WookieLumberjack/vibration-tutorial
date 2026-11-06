@@ -24,7 +24,7 @@ from .layouts import plot_height
 from .panels import spin
 from .rotor_bearing import _si
 from .style import colors
-from .tab_groups import tucked_away
+from .tab_groups import Deferred
 from .theming import mute
 
 DASH = QtCore.Qt.PenStyle.DashLine
@@ -78,7 +78,8 @@ class MagnetPanel(QtWidgets.QWidget):
         self.onset: Onset | None = None  # where the rotor running on it goes unstable
         self.rpm = 0.0  # the rotor's speed now
         self._mode_rpm = math.nan  # the speed the mode lines were drawn for
-        self._stale = False  # changed while hidden: drawn when the tab shows
+        self.drawing = Deferred(self, self._draw)  # the curves and the readout, drawn while the tab shows
+        self.writing = Deferred(self, self._write_now)  # the readout alone
         m = MagneticBearing()
         self.gap = spin(0.05, 10.0, m.gap * 1e3, 3, " mm")
         self.bias = spin(0.01, 100.0, m.bias, 2, " A")
@@ -223,14 +224,10 @@ class MagnetPanel(QtWidgets.QWidget):
         self.changed.emit()
 
     # ------------------------------------------------------------- drawing
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self.catch_up()
-
     def catch_up(self) -> None:
-        """Draw what changed while the tab was hidden (its drawing waits till it shows)."""
-        if self._stale:
-            self._redraw()
+        """Draw what changed while the tab was hidden (a window never shown gets no Show events)."""
+        self.drawing.catch_up()
+        self.writing.catch_up()
 
     def apply_theme(self) -> None:
         self.k_curve.setPen(pg.mkPen(colors.mode[0], width=2))
@@ -249,9 +246,9 @@ class MagnetPanel(QtWidgets.QWidget):
         return LOWEST, 10.0 ** math.ceil(math.log10(top))
 
     def _redraw(self) -> None:
-        self._stale = tucked_away(self)  # a tab not showing: draw when it does
-        if self._stale:
-            return
+        self.drawing.request()
+
+    def _draw(self) -> None:
         m = self.bearing()
         lo, hi = self._span(m)
         f = np.geomspace(lo, hi, POINTS)
@@ -271,7 +268,7 @@ class MagnetPanel(QtWidgets.QWidget):
             self._draw_modes()
         else:
             self._clear_modes()
-        self._write()
+        self._write_now()
 
     def _draw_bands(self, m: MagneticBearing, lo: float, hi: float) -> None:
         f_lo, f_hi = m.damped_band()
@@ -324,9 +321,9 @@ class MagnetPanel(QtWidgets.QWidget):
                 lines.append(line)
 
     def _write(self) -> None:
-        if tucked_away(self):
-            self._stale = True
-            return
+        self.writing.request()
+
+    def _write_now(self) -> None:
         m = self.bearing()
         ks, ki = m.negative_stiffness, m.current_gain
         net = ki * m.kp - ks

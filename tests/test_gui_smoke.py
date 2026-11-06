@@ -2353,12 +2353,14 @@ def test_rotor_hidden_tabs_draw_when_shown(app, monkeypatch):
     p.load_preset("Journal bearings (oil whip)")
     p._refresh_analysis()
     s = p.sim.system
-    assert not drawn and p.bearing_panel._stale and p.balancing._stale
+    assert not drawn and p.bearing_panel.drawing.stale and p.balancing.drawing.stale
     assert p.bearing_panel.load.value() == pytest.approx(abs(s.bearing_loads[0]), abs=0.01)
     p.tabs.show_page(p.bearing_panel)
-    assert drawn == ["_draw_locus"] and not p.bearing_panel._stale and "At rest" in p.bearing_panel.readout.text()
+    assert (
+        drawn == ["_draw_locus"] and not p.bearing_panel.drawing.stale and "At rest" in p.bearing_panel.readout.text()
+    )
     p.tabs.show_page(p.balancing)
-    assert drawn == ["_draw_locus", "_draw_curves"] and not p.balancing._stale
+    assert drawn == ["_draw_locus", "_draw_curves"] and not p.balancing.drawing.stale
     p.tabs.show_page(p.bearing_panel)  # nothing changed meanwhile
     assert drawn == ["_draw_locus", "_draw_curves"] and p.tabs.current_page() is p.bearing_panel
     # Another group in front: the bearing tab is still its own group's current one, so not isHidden().
@@ -2366,9 +2368,9 @@ def test_rotor_hidden_tabs_draw_when_shown(app, monkeypatch):
     assert not p.bearing_panel.isHidden() and p.tabs.current_page() is not p.bearing_panel
     p.load_preset("Classic Jeffcott rotor")
     p._refresh_analysis()
-    assert drawn == ["_draw_locus", "_draw_curves"] and p.bearing_panel._stale
+    assert drawn == ["_draw_locus", "_draw_curves"] and p.bearing_panel.drawing.stale
     p.tabs.show_page(p.bearing_panel)
-    assert drawn[-1] == "_draw_locus" and not p.bearing_panel._stale
+    assert drawn[-1] == "_draw_locus" and not p.bearing_panel.drawing.stale
     w.close()
 
 
@@ -3867,7 +3869,7 @@ def test_shock_page(app):
     p.trial.pick("Half-sine")
     p.tabs.setCurrentWidget(p.osc_tab)
     p.recompute()
-    assert p.chain is None and p.chain_tab in p._stale
+    assert p.chain is None and p.lazy.is_stale(p.chain_tab)
     p.tabs.setCurrentWidget(p.chain_tab)
     cp = p.chain
     assert cp is not None and p.chain_table.rowCount() == 4 and p.output.currentText() == "m4"

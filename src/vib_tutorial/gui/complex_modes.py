@@ -42,6 +42,7 @@ from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .panels import spin
 from .style import MAX_DOF, colors
+from .tab_groups import LazyTabs
 from .theming import add_legend, mute
 
 SNAPSHOTS = 8  # over half a cycle, on the snapshots plot
@@ -603,7 +604,6 @@ class ComplexModesPage(QtWidgets.QWidget):
         iv.addWidget(self.ident_note)
         self.sweep_result: Sweep | None = None
         self.ident_result: IdentificationResult | None = None
-        self._stale: set[QtWidgets.QWidget] = set()
 
         self.notes = QtWidgets.QTextBrowser()
         self.notes.setHtml(NOTES_HTML)
@@ -616,6 +616,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.tabs.addTab(sweep_scroll, "Sweep")
         self.tabs.addTab(ident_tab, "Identification")
         self.tabs.addTab(self.notes, "Theory")
+        self.lazy = LazyTabs(self.tabs, {self.sweep_tab: self._work_sweep, self.ident_tab: self._work_identification})
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter.addWidget(left_scroll)
@@ -634,11 +635,10 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.frf_in.currentIndexChanged.connect(lambda _: self._draw_frf())
         self.frf_out.currentIndexChanged.connect(lambda _: self._draw_frf())
         self.sweep_parameter.currentIndexChanged.connect(self._on_sweep_parameter)
-        self.sweep_element.currentIndexChanged.connect(lambda _: self._refresh(self.sweep_tab))
-        self.ident_in.currentIndexChanged.connect(lambda _: self._refresh(self.ident_tab))
-        self.ident_noise.valueChanged.connect(lambda _: self._refresh(self.ident_tab))
+        self.sweep_element.currentIndexChanged.connect(lambda _: self.lazy.stale(self.sweep_tab))
+        self.ident_in.currentIndexChanged.connect(lambda _: self.lazy.stale(self.ident_tab))
+        self.ident_noise.valueChanged.connect(lambda _: self.lazy.stale(self.ident_tab))
         self.ident_out.currentIndexChanged.connect(lambda _: self._draw_identification())
-        self.tabs.currentChanged.connect(lambda _: self._catch_up())
 
     # ------------------------------------------------------------- inputs
     def set_system(self, system: ChainSystem, result: ModalResult | None = None) -> None:
@@ -740,24 +740,18 @@ class ComplexModesPage(QtWidgets.QWidget):
 
     def _on_sweep_parameter(self, _index: int) -> None:
         self._fill_elements()
-        self._refresh(self.sweep_tab)
+        self.lazy.stale(self.sweep_tab)
 
-    def _refresh(self, tab: QtWidgets.QWidget) -> None:
-        """Work out the sweep or the identification again, now if its tab shows, else when it does."""
-        self._stale.add(tab)
-        self._catch_up()
-
-    def _catch_up(self) -> None:
-        tab = self.tabs.currentWidget()
-        if tab not in self._stale or self.system is None:
-            return
-        self._stale.discard(tab)
-        if tab is self.sweep_tab:
+    def _work_sweep(self) -> None:
+        """The Sweep tab, worked out only while it shows (`lazy`)."""
+        if self.system is not None:
             self.sweep_result = sweep(
                 self.system, self.sweep_parameter.currentData(), max(self.sweep_element.currentIndex(), 0)
             )
             self._draw_sweep()
-        elif tab is self.ident_tab:
+
+    def _work_identification(self) -> None:
+        if self.system is not None:
             self.ident_result = identify(
                 self.system, self.result, max(self.ident_in.currentIndex(), 0), self.ident_noise.value() / 100.0
             )
@@ -774,8 +768,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         if self.system is None:
             return
         self.rows = compare(self.system, self.result)
-        self._stale |= {self.sweep_tab, self.ident_tab}
         self.redraw()
+        self.lazy.stale()
 
     def selected(self) -> int:
         return min(max(self.mode.currentIndex(), 0), len(self.rows) - 1)
@@ -807,7 +801,6 @@ class ComplexModesPage(QtWidgets.QWidget):
             self._draw_sweep()
         if self.ident_result is not None:
             self._draw_identification()
-        self._catch_up()
         worst = max((c for c in self.rows if c.measures is not None), key=lambda c: c.measures.mpd, default=None)
         over = [c.index for c in self.rows if c.exact is None and c.fn_hz > 0]
         text = ""

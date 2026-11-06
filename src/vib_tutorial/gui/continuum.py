@@ -55,6 +55,7 @@ from .lesson import RunButton
 from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
+from .tab_groups import LazyTabs
 from .theming import add_legend, mute
 
 CUSTOM = "Custom"
@@ -402,7 +403,6 @@ class ContinuumPage(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self._errors_stale = False  # the Errors tab wants drawing when it next shows
         self.continuum: Continuum = PRESETS[0].continuum
         self.models: dict[Scheme, FEModel] = {}
         self._loading = False
@@ -596,6 +596,9 @@ class ContinuumPage(QtWidgets.QWidget):
         wv.addWidget(self.wave_status)
         self.waves_tab = waves_tab
         self.views.addTab(waves_tab, "Waves")
+        # The Errors tab is drawn only while it shows: the convergence study is ~2 s of eigensolves for a new kind
+        # or set of ends (cached after), which made the page's first opening hang.
+        self.lazy = LazyTabs(self.views, {self.errors_tab: self._draw_errors})
         self.run: WaveRun | None = None  # built when the Waves tab first shows after a change
         self.running = False  # the pulse waits for Start
         self._reach = 1.0  # the plot's half height: the largest displacement seen yet
@@ -980,8 +983,6 @@ class ContinuumPage(QtWidgets.QWidget):
             self.run.set_playback(float(self.playback.currentData()))
 
     def _on_view(self, _index: int) -> None:
-        if self.views.currentWidget() is self.errors_tab and self._errors_stale:
-            self._draw_errors()
         if self.views.currentWidget() is self.waves_tab:
             if self.run is None:
                 self.restart()
@@ -1076,7 +1077,7 @@ class ContinuumPage(QtWidgets.QWidget):
 
     def redraw(self) -> None:
         self._draw_dispersion()
-        self._draw_errors()
+        self.lazy.stale(self.errors_tab)
         self._draw_mode()
 
     def _draw_dispersion(self) -> None:
@@ -1152,11 +1153,6 @@ class ContinuumPage(QtWidgets.QWidget):
         )
 
     def _draw_errors(self) -> None:
-        # Drawn only while its tab shows: the convergence study is ~2 s of eigensolves for a new
-        # kind or set of ends (cached after), which made the page's first opening hang.
-        self._errors_stale = self.views.currentWidget() is not self.errors_tab
-        if self._errors_stale:
-            return
         p = self.errors
         p.clear()
         self.errors_legend.clear()
