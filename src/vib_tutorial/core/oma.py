@@ -10,8 +10,8 @@ Ambient record
 Independent Gaussian forces drive every mass (or one), white at the analog rate fs_sim =
 R fs, optionally coloured by a second-order low-pass. The chain's response comes from the
 same exact first-order-hold update as everywhere in the app, diagonalized into one
-first-order recursive filter per eigenvalue (as in measurement.ChainResponse, here with an
-input at every mass), run for the slowest transient's settling time before the record
+first-order recursive filter per eigenvalue (`foh.FohSteps`, here with an input at every
+mass), run for the slowest transient's settling time before the record
 starts so the record is stationary. Then the anti-alias filter, sampling every R-th sample,
 and sensor noise sized to each channel's RMS, as in the virtual modal test.
 
@@ -61,7 +61,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .frf_matrix import MAX_EIGVEC_CONDITION
+from .foh import FohSteps
 from .identification import (
     MAX_ZETA,
     IdentifiedMode,
@@ -92,7 +92,6 @@ from .measurement import (
 )
 from .modal import TWO_PI, ModalResult, modal_analysis
 from .model import ChainSystem, state_space
-from .simulator import foh_discretize
 
 CHUNK = 1 << 15  # analog samples run at a time
 PEAK_PROMINENCE = 0.3  # decades s₁ must rise above its surroundings to be a peak
@@ -166,20 +165,11 @@ def ambient_record(system: ChainSystem, settings: AmbientSettings, result: Modal
     fs_sim = s.fs * R
     h = 1.0 / fs_sim
     A, B = state_space(linear)
-    Phi, G0, G1 = foh_discretize(A, B, h)
     inputs = list(range(n)) if s.input_dof is None else [s.input_dof]  # the random forces'
     harmonic = s.harmonic_hz > 0 and s.harmonic_force > 0
     cols = inputs + ([0] if harmonic and 0 not in inputs else [])  # and the machine's, on m1
-    G0, G1 = G0[:, cols], G1[:, cols]
+    steps = FohSteps(A, B[:, cols], h)
     rng = np.random.default_rng(s.seed)
-    mu, V = np.linalg.eig(Phi)
-    modal = np.linalg.cond(V) < MAX_EIGVEC_CONDITION
-    if modal:
-        Vinv = np.linalg.inv(V)
-        b0, b1 = Vinv @ G0, Vinv @ G1
-        eta = np.zeros(2 * n, dtype=complex)
-    z = np.zeros(2 * n)
-    f_prev = np.zeros(len(cols))
     colour = None
     if s.colour is Colour.LOW_PASS:
         colour = scipy.signal.butter(2, min(s.corner_hz, 0.45 * fs_sim), fs=fs_sim, output="sos")
@@ -200,21 +190,7 @@ def ambient_record(system: ChainSystem, settings: AmbientSettings, result: Modal
         if harmonic:
             t = (start + 1 + np.arange(m)) * h
             f[:, cols.index(0)] += s.harmonic_force * np.sin(TWO_PI * s.harmonic_hz * t)
-        if modal:
-            u = np.vstack([f_prev[None, :], f[:-1]]) @ b0.T + f @ b1.T  # (m, 2n)
-            states = np.empty((m, 2 * n), dtype=complex)
-            for r in range(2 * n):
-                states[:, r], _zf = scipy.signal.lfilter([1.0], [1.0, -mu[r]], u[:, r], zi=[mu[r] * eta[r]])
-                eta[r] = states[-1, r]
-            zs = (states @ V.T).real
-        else:
-            zs = np.empty((m, 2 * n))
-            f0 = f_prev
-            for k in range(m):
-                z = Phi @ z + G0 @ f0 + G1 @ f[k]
-                zs[k] = z
-                f0 = f[k]
-        f_prev = f[-1].copy()
+        zs = steps.run(f)
         y = zs[:, :n] if s.response is Response.DISPLACEMENT else zs @ out_a.T + f @ out_b.T
         y, aa_zi = scipy.signal.sosfilt(aa, y, axis=0, zi=aa_zi)
         first = max(0, skip - start)  # the analog samples of this chunk that belong to the record
