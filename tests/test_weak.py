@@ -86,7 +86,7 @@ def _uses_self(node: ast.AST) -> bool:
 def _held(path: pathlib.Path) -> list[str]:
     """Slots in `path` that hold `self` strongly: a lambda, `partial` or local function over it, handed to
     a signal or a shortcut (a single shot with a context object is let go when that goes)."""
-    source = path.read_text()
+    source = path.read_text(encoding="utf-8")
     tree = ast.parse(source)
     local = {}
     for fn in ast.walk(tree):
@@ -129,6 +129,7 @@ def test_the_check_finds_them(tmp_path):
         "        self.b.clicked.connect(follow)\n"
         "        self.b.clicked.connect(weak.slot(self, lambda self: self.go()))\n"  # fine
         "        QTimer.singleShot(0, self.b, lambda: self.go())\n"  # fine: let go with self.b
-        "        self.b.clicked.connect(lambda on: settings().setValue('k', on))\n"  # fine: no self
+        "        self.b.clicked.connect(lambda on: settings().setValue('k', on))\n",  # fine: no self
+        encoding="utf-8",
     )
     assert [line.split(":")[1] for line in _held(bad)] == ["3", "4", "5", "6", "9"]
