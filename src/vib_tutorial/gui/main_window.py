@@ -105,6 +105,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .test_planning import TestPlanningPage
 
         return TestPlanningPage
+    if name == "nonlinear_page":
+        from .nonlinear_forces import NonlinearForcesPage
+
+        return NonlinearForcesPage
     if name == "complex_page":
         from .complex_modes import ComplexModesPage
 
@@ -657,6 +661,7 @@ class MainWindow(QtWidgets.QMainWindow):
     complex_page = property(lambda self: self._page("complex_page"))
     updating_page = property(lambda self: self._page("updating_page"))
     planning_page = property(lambda self: self._page("planning_page"))
+    nonlinear_page = property(lambda self: self._page("nonlinear_page"))
     shock_page = property(lambda self: self._page("shock_page"))
     diagnostics_page = property(lambda self: self._page("diagnostics_page"))
     variability_page = property(lambda self: self._page("variability_page"))
