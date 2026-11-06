@@ -5,7 +5,8 @@ import math
 import numpy as np
 import pytest
 
-from vib_tutorial.core.rotor import RPM, Bearing, RotorSimulator, RotorSystem
+from vib_tutorial.core.rotor import Bearing, RotorSystem
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 from vib_tutorial.core.rotor_sweep import (
     DIRECTIONS,
     RevolutionTracker,

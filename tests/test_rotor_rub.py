@@ -9,18 +9,10 @@ import pytest
 import scipy.optimize
 
 from vib_tutorial.core.fluid_bearing import JournalBearing
-from vib_tutorial.core.rotor import (
-    RPM,
-    XD,
-    YD,
-    Bearing,
-    RotorSimulator,
-    RotorSystem,
-    Stator,
-    _rotating_force,
-    stator_force,
-)
+from vib_tutorial.core.rotor import XD, YD, Bearing, RotorSystem, Stator, stator_force
+from vib_tutorial.core.rotor_modes import _rotating_force
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 
 PRESETS = {p.name: p for p in rotor_presets()}
 

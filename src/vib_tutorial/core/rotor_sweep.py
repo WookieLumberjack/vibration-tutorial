@@ -32,14 +32,9 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .rotor import (
-    RPM,
-    RotorSamples,
-    RotorSimulator,
-    RotorSystem,
-    steady_harmonics,
-    whirl_modes,
-)
+from .rotor import RotorSystem
+from .rotor_modes import steady_harmonics, whirl_modes
+from .rotor_simulator import RPM, RotorSamples, RotorSimulator
 
 STATIONS = ("Bearing A", "Disc", "Midspan", "Bearing B")
 DIRECTIONS = ("x", "y", "orbit")  # probe directions; "orbit" is the major axis

@@ -6,22 +6,9 @@ import numpy as np
 import pytest
 
 from vib_tutorial.core.magnetic_bearing import MagneticBearing
-from vib_tutorial.core.rotor import (
-    RPM,
-    XA,
-    XB,
-    XD,
-    YA,
-    YB,
-    YD,
-    Bearing,
-    RotorSimulator,
-    RotorSystem,
-    _rotating_force,
-    gravity_response,
-    synchronous_response,
-    whirl_modes,
-)
+from vib_tutorial.core.rotor import XA, XB, XD, YA, YB, YD, Bearing, RotorSystem
+from vib_tutorial.core.rotor_modes import _rotating_force, gravity_response, synchronous_response, whirl_modes
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 from vib_tutorial.core.rotor_stability import least_damped, stability_onset
 
 MAGNET = MagneticBearing()

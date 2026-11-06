@@ -5,8 +5,9 @@ import math
 import numpy as np
 import pytest
 
-from vib_tutorial.core.rotor import RPM, XB, XD, YA, YB, YD, Bearing, RotorSimulator, RotorSystem
+from vib_tutorial.core.rotor import XB, XD, YA, YB, YD, Bearing, RotorSystem
 from vib_tutorial.core.rotor_balance import SteadyMeasurement
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 from vib_tutorial.core.rotor_sweep import RunUpCoastDown, vibration
 
 G = 9.81

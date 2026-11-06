@@ -5,21 +5,11 @@ import math
 import numpy as np
 import pytest
 
-import vib_tutorial.core.rotor as rotor
-from vib_tutorial.core.rotor import (
-    RPM,
-    XD,
-    YD,
-    Bearing,
-    RotorSamples,
-    RotorSimulator,
-    RotorSystem,
-    campbell,
-    gravity_response,
-    synchronous_response,
-    whirl_modes,
-)
+import vib_tutorial.core.rotor_modes as rotor_modes
+from vib_tutorial.core.rotor import XD, YD, Bearing, RotorSystem
+from vib_tutorial.core.rotor_modes import campbell, gravity_response, synchronous_response, whirl_modes
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSamples, RotorSimulator
 from vib_tutorial.core.rotor_stability import AsymmetryChart, growth_rate, least_damped, stability_onset
 from vib_tutorial.core.rotor_sweep import (
     RevolutionTracker,
@@ -102,8 +92,8 @@ def test_a_vanishing_asymmetry_is_the_round_shaft():
 def test_rotating_frame_and_hill_agree_on_isotropic_supports():
     s = RotorSystem(asymmetry=0.2, asymmetry_angle=0.3, position=0.4)
     for w in (30.0, 150.0, 170.0, 300.0):
-        exact, _ = rotor._rotating_modes(s, w)
-        hill, _, _ = rotor._hill_modes(s, w)
+        exact, _ = rotor_modes._rotating_modes(s, w)
+        hill, _, _ = rotor_modes._hill_modes(s, w)
         # Hill's copies of a mode locked to 1X are evenly split; it may keep one fewer of those.
         for lam in hill:
             assert np.abs(exact - lam).min() < 1e-6 * abs(lam)
@@ -113,10 +103,10 @@ def test_rotating_frame_and_hill_agree_on_isotropic_supports():
 def test_hill_is_converged_on_anisotropic_supports(monkeypatch):
     s = RotorSystem(asymmetry=0.2, bearing_a=ANISO, bearing_b=ANISO)
     for w in (80.0, 160.0, 170.0):
-        lam3, _, _ = rotor._hill_modes(s, w)
-        monkeypatch.setattr(rotor, "HILL_ORDER", 6)
-        lam6, _, _ = rotor._hill_modes(s, w)
-        monkeypatch.setattr(rotor, "HILL_ORDER", 3)
+        lam3, _, _ = rotor_modes._hill_modes(s, w)
+        monkeypatch.setattr(rotor_modes, "HILL_ORDER", 6)
+        lam6, _, _ = rotor_modes._hill_modes(s, w)
+        monkeypatch.setattr(rotor_modes, "HILL_ORDER", 3)
         assert lam3.size == lam6.size
         np.testing.assert_allclose(np.sort(lam3.imag), np.sort(lam6.imag), rtol=1e-6)
         assert lam3.real.max() == pytest.approx(lam6.real.max(), abs=1e-6)

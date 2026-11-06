@@ -18,7 +18,9 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.magnetic_bearing import MagneticBearing
-from ..core.rotor import RPM, RotorSystem, whirl_modes
+from ..core.rotor import RotorSystem
+from ..core.rotor_modes import whirl_modes
+from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
 from .layouts import plot_height
 from .panels import spin

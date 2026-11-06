@@ -1783,7 +1783,8 @@ def test_modal_test_draws_the_describing_function_for_a_stepped_sine(app):
 
 
 def test_rotor_page(app):
-    from vib_tutorial.core.rotor import RPM, Bearing, RotorSystem
+    from vib_tutorial.core.rotor import Bearing, RotorSystem
+    from vib_tutorial.core.rotor_simulator import RPM
     from vib_tutorial.gui.main_window import MainWindow
     from vib_tutorial.gui.style import colors
 
@@ -2028,7 +2029,8 @@ def test_rotor_page(app):
 
 
 def test_rotor_presets_speed_range_and_overhung_disc(app):
-    from vib_tutorial.core.rotor import RPM, RotorSystem
+    from vib_tutorial.core.rotor import RotorSystem
+    from vib_tutorial.core.rotor_simulator import RPM
     from vib_tutorial.gui.main_window import MainWindow
     from vib_tutorial.gui.rotor import CUSTOM
 
@@ -2095,7 +2097,7 @@ def test_rotor_presets_speed_range_and_overhung_disc(app):
 
 
 def test_rotor_waterfall(app):
-    from vib_tutorial.core.rotor import RPM
+    from vib_tutorial.core.rotor_simulator import RPM
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
@@ -2509,7 +2511,7 @@ def test_rotor_fluid_film_bearing(app):
 
 def test_rotor_on_oil_film_bearings(app):
     from vib_tutorial.core.fluid_bearing import JournalBearing
-    from vib_tutorial.core.rotor import RPM
+    from vib_tutorial.core.rotor_simulator import RPM
     from vib_tutorial.gui.main_window import MainWindow
     from vib_tutorial.gui.rotor import CUSTOM, FILMS, SPRINGS
 
@@ -2578,7 +2580,8 @@ def test_rotor_on_magnetic_bearings(app):
     from dataclasses import replace
 
     from vib_tutorial.core.magnetic_bearing import MagneticBearing
-    from vib_tutorial.core.rotor import RPM, XA, XB, YA, YB
+    from vib_tutorial.core.rotor import XA, XB, YA, YB
+    from vib_tutorial.core.rotor_simulator import RPM
     from vib_tutorial.gui.main_window import MainWindow
     from vib_tutorial.gui.rotor import CUSTOM, MAGNETS, SPRINGS
     from vib_tutorial.gui.rotor_notes import matrices_html
@@ -2853,7 +2856,7 @@ def test_rotor_plots_paint_once_per_frame(app):
 
     import pyqtgraph as pg
 
-    from vib_tutorial.core.rotor import RPM
+    from vib_tutorial.core.rotor_simulator import RPM
     from vib_tutorial.gui.main_window import MainWindow
 
     class Paints(QtCore.QObject):

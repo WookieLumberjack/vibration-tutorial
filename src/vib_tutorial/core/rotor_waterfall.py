@@ -21,7 +21,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .rotor import RotorSystem, whirl_modes
+from .rotor import RotorSystem
+from .rotor_modes import whirl_modes
 from .rotor_stability import whirl_lines, whirl_spectrum
 
 RATE = 4000.0  # Hz, the default resampling rate: at least the input's, so nothing aliases

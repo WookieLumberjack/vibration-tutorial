@@ -15,8 +15,10 @@ from dataclasses import dataclass, replace
 import numpy as np
 
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
-from ..core.rotor import RPM, Bearing, RotorSystem, whirl_modes
+from ..core.rotor import Bearing, RotorSystem
+from ..core.rotor_modes import whirl_modes
 from ..core.rotor_presets import RotorPreset, rotor_presets
+from ..core.rotor_simulator import RPM
 from .links import page_link
 
 CLASSIC = "Classic Jeffcott rotor"

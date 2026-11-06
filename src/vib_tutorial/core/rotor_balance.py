@@ -41,7 +41,7 @@ import math
 
 import numpy as np
 
-from .rotor import RotorSimulator
+from .rotor_simulator import RotorSimulator
 from .rotor_sweep import RevolutionTracker, StagedRun, TrackedSweep, settle_time
 
 MEASURE_REVS = 10  # revolutions averaged per measurement

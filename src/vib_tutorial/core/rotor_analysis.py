@@ -21,7 +21,9 @@ from multiprocessing.connection import Connection
 import numpy as np
 
 from .. import ONE_THREAD
-from .rotor import RPM, Campbell, RotorSystem, campbell, steady_harmonics
+from .rotor import RotorSystem
+from .rotor_modes import Campbell, campbell, steady_harmonics
+from .rotor_simulator import RPM
 from .rotor_stability import Onset, stability_onset
 from .rotor_sweep import station_motion
 

@@ -5,8 +5,9 @@ import math
 import numpy as np
 import pytest
 
-from vib_tutorial.core.rotor import RPM, RotorSimulator, whirl_modes
+from vib_tutorial.core.rotor_modes import whirl_modes
 from vib_tutorial.core.rotor_presets import rotor_presets
+from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 from vib_tutorial.core.rotor_stability import whirl_lines
 from vib_tutorial.core.rotor_sweep import station_motion
 from vib_tutorial.core.rotor_waterfall import DAMPED, Waterfall
