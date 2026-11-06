@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ForceController, ForceKind, ForceSettings
 from ..core.model import DEFAULT_DAMPING, DEFAULT_MASS, DEFAULT_STIFFNESS
@@ -77,6 +77,13 @@ STATIC_TIP = (
     "like a squeaking door or a bowed violin string. Static friction holds; it does no work, so "
     "the energy balance is unchanged.</p>"
 )
+
+
+def space_bar(button: QtWidgets.QAbstractButton) -> None:
+    """Space clicks `button` while its page shows. Not `setShortcut`: `setText` resets that to the text's
+    mnemonic, so a button that relabels itself loses it."""
+    space = QtGui.QShortcut(QtGui.QKeySequence("Space"), button)
+    space.activated.connect(lambda: button.click() if button.isEnabled() else None)
 
 
 class ParameterPanel(QtWidgets.QGroupBox):
@@ -350,7 +357,7 @@ class ForcePanel(QtWidgets.QGroupBox):
 
         self.button = QtWidgets.QPushButton()
         self.button.setMinimumHeight(40)
-        self.button.setShortcut("Space")
+        space_bar(self.button)
         self.button.clicked.connect(self._on_button)
         form.addRow(self.button)
 

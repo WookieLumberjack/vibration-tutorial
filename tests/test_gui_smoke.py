@@ -2011,7 +2011,7 @@ def test_rotor_page(app):
         p.step(0.05)
         if p.rubbed:
             break
-    assert p.rubbed and not p.running and p.run_button.text() == "Run" and "Paused" in p.readout.text()
+    assert p.rubbed and not p.running and p.run_button.text() == "Resume" and "Paused" in p.readout.text()
     assert "unstable" in p.readout.text() and "heavy spot leads" not in p.readout.text()
     freqs, amps = p.spectrum.curve.getData()
     assert freqs.size and 20 < freqs[np.argmax(amps)] < 35  # forward, at the natural frequency
@@ -2878,6 +2878,7 @@ def test_rotor_plots_paint_once_per_frame(app):
     page._refresh_analysis()
     page.tabs.show_page(page.bode.parentWidget())
     page.sim.omega = page.sim.target = page.target_rpm.value() / RPM  # at speed: the marker stands still
+    page.run_button.click()  # it waits at rest for Start
     run(1.0)
     # Building the page also handed the analysis to the worker, which can take seconds to spawn (Windows):
     # let its result arrive (and redraw the Bode plot) before counting.
@@ -2924,8 +2925,11 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
         app.processEvents()
         if p is w.torsional_page:
             p.start()  # it plays only once started
-        if p is w.continuum_page:
-            p.views.setCurrentWidget(p.waves_tab)  # it plays only on its Waves tab
+        elif p is w.continuum_page:
+            p.views.setCurrentWidget(p.waves_tab)  # it plays only on its Waves tab, once started
+            p.play_button.click()
+        elif p is not w.cms_page.time:
+            p.run_button.click()  # it waits at rest for Start
         monkeypatch.setattr(p, "step", lambda *_, **__: time.sleep(0.008))
         p._frame()
         assert p._timer.isActive()
@@ -3105,7 +3109,9 @@ def test_duffing_page(app):
     p = w.duffing_page
     w.pages.setCurrentWidget(p)
     app.processEvents()
-    assert p.running and p._timer.isActive() and p.sim.drive.mode is Sweep.UP_DOWN
+    assert not p.running and not p._timer.isActive() and p.run_button.text() == "Start"  # at rest until started
+    p.run_button.click()
+    assert p.running and p._timer.isActive() and p.sim.drive.mode is Sweep.UP_DOWN and p.run_button.text() == "Pause"
     p._timer.stop()
     assert p.preset.currentText() == "Hardening spring: the jump" and p.frame_context() == p.preset.currentText()
     assert "3.64 and 4.45 Hz" in p.readout.text()
@@ -3135,9 +3141,9 @@ def test_duffing_page(app):
     p.preset.setCurrentText("Escape from the well")
     while p.running:
         p.step(5.0)
-    assert p.sim.escaped and "ran away" in p.readout.text() and p.run_button.text() == "Run"
+    assert p.sim.escaped and "ran away" in p.readout.text() and p.run_button.text() == "Resume"
     p.reset()
-    assert p.running and not p.sim.escaped and p.sim.t == 0 and not p.cycles
+    assert not p.running and not p.sim.escaped and p.sim.t == 0 and not p.cycles and p.run_button.text() == "Start"
 
     p.stiffness.setValue(500.0)  # an edit: Custom, the points cleared, the curve redrawn
     assert p.preset.currentText() == "Custom" and p.sim.osc.stiffness == 500.0
@@ -3299,14 +3305,15 @@ def test_torsional_start_up(app):
     app.processEvents()
     assert p.sim is not None and not p.running and p.views.currentWidget() is p.criticals_tab
     assert "At rest" in p.startup_status.text() and "mode 1 (52.3 Hz) is 5 % from it" in p.startup_info.text()
-    p.start_button.click()
+    assert p.pause_button.text() == "Start"
+    p.pause_button.click()
     assert p.running and p.views.currentWidget() is p.startup_tab and p.pause_button.text() == "Pause"
     p.step(0.5)
     assert p.sim.t == pytest.approx(0.5) and p._k == round(0.5 / p.sim.h)
     p.pause_button.click()
-    assert not p.running and p.pause_button.text() == "Run"
+    assert not p.running and p.pause_button.text() == "Resume"
     p.step(10.0)  # a test steps it whether it plays or not: to the end, and no further
-    assert p.sim.done and not p.pause_button.isEnabled()
+    assert p.sim.done and p.pause_button.text() == "Start"  # from rest again
     assert "Done." in p.startup_status.text()
     assert "<b>Coupling: 6 kN·m at 0.068 s (38 rpm), 10.3× its running 580 N·m</b>" in p.startup_note.text()
     assert p.link_curve.xData.size == p._k  # (getData is what shows, decimated)
@@ -3332,11 +3339,11 @@ def test_torsional_start_up(app):
     assert p.startup.motor.breakdown == 7000.0 and p.sim.t == 0.0
 
     p.preset.setCurrentText("Diesel generator set")
-    assert p.sim is None and not p.start_button.isEnabled() and "engine drives this train" in p.startup_info.text()
+    assert p.sim is None and not p.pause_button.isEnabled() and "engine drives this train" in p.startup_info.text()
     p.start()
     assert not p.running
     p.motor_kind.setCurrentIndex(1)  # the last motor's numbers, made an induction motor
-    assert p.startup.motor.kind is MotorKind.INDUCTION and p.sim is not None and p.start_button.isEnabled()
+    assert p.startup.motor.kind is MotorKind.INDUCTION and p.sim is not None and p.pause_button.isEnabled()
     assert p.preset.currentText() == "Custom"
     p.start()
     p.step(0.1)
@@ -3518,9 +3525,9 @@ def test_continuum_waves_tab(app):
     assert "t = 1.00 crossings (10 ms" in p.wave_status.text() and "keeps <b>100 %</b>" in p.wave_status.text()
     assert p.mesh_nodes.getData()[0].size == 41
     p.play_button.click()
-    assert not p.running and not p._timer.isActive() and p.play_button.text() == "Run"
+    assert not p.running and not p._timer.isActive() and p.play_button.text() == "Resume"
     p.restart_button.click()
-    assert p.run.t == 0.0 and not p._timer.isActive()
+    assert p.run.t == 0.0 and not p._timer.isActive() and p.play_button.text() == "Start"
 
     p.preset.setCurrentText("Waves: a matched end")
     assert p.run.waves.dashpot == 1.0 and p.end_line.isVisible() and "reflects +0 of a wave" in p.wave_info.text()
@@ -4313,3 +4320,102 @@ def test_trial_combo_keeps_its_pick_and_picks_it_again(app):
     combo.setCurrentIndex(1)  # the reader picks another: a change, then its `activated`, in one call
     combo.activated.emit(1)
     assert picked == [1, 1, 0]
+
+
+def test_run_button_reads_start_pause_resume(app):
+    from PySide6 import QtGui
+
+    from vib_tutorial.gui.lesson import RunButton
+
+    b = RunButton()
+    seen = []
+    b.toggled.connect(seen.append)
+    assert b.text() == "Start" and not b.running and not b.started
+    b.click()
+    assert b.text() == "Pause" and b.running and seen == [True]
+    b.click()
+    assert b.text() == "Resume" and not b.running and b.started and seen == [True, False]
+    b.set_running(True)  # from code: no signal
+    assert b.text() == "Pause" and seen == [True, False]
+    b.rest()
+    assert b.text() == "Start" and not b.started and seen == [True, False]
+    assert [q.key().toString() for q in b.findChildren(QtGui.QShortcut)] == ["Space"]
+
+
+def test_responses_wait_for_start_and_trials_start_them(app):
+    """A page that simulates a response opens at rest, waiting for Start; a mode shape moves on its own; a trial
+    starts the motion."""
+    from vib_tutorial.gui import deriving, frame_builder, rigid_mounts
+    from vib_tutorial.gui.main_window import MainWindow
+
+    w = MainWindow()
+    w.show()
+    for page, button in (
+        (w.duffing_page, "run_button"),
+        (w.rotor_page, "run_button"),
+        (w.gyroscope_page, "pause_button"),
+        (w.torsional_page, "pause_button"),
+    ):
+        w.pages.setCurrentWidget(page)
+        app.processEvents()
+        assert not page.running and not page._timer.isActive(), page
+        assert getattr(page, button).text() == "Start", page
+    p = w.continuum_page
+    w.pages.setCurrentWidget(p)
+    p.views.setCurrentWidget(p.waves_tab)
+    app.processEvents()
+    assert p.run is not None and not p.running and p.play_button.text() == "Start"
+
+    p = w.gyroscope_page
+    w.pages.setCurrentWidget(p)
+    p.load_trial(0)
+    assert p.running and p._timer.isActive() and p.pause_button.text() == "Pause"
+    p.reset()
+    assert not p.running and p.sim.t == 0.0 and p.pause_button.text() == "Start"
+
+    p = w.deriving_page
+    w.pages.setCurrentWidget(p)
+    app.processEvents()
+    assert p.show_box.currentIndex() != deriving.SHOW_MOTION and p.running  # a mode swings on its own
+    p.show_box.setCurrentIndex(deriving.SHOW_MOTION)
+    assert not p.running and p.run_button.text() == "Start" and p._time == 0.0
+    p.load_trial(next(i for i, t in enumerate(deriving.TRIALS) if t.show == deriving.SHOW_MOTION))
+    assert p.running and p._timer.isActive()
+
+    p = w.mounts_page
+    w.pages.setCurrentWidget(p)
+    app.processEvents()
+    assert p.running and p.run_button.text() == "Pause"
+    p.mode.setCurrentIndex(rigid_mounts.FORCED)
+    assert not p.running and p.run_button.text() == "Start"
+    assert np.allclose(p.view.motion, 0.0)  # at rest until started
+    p.load_trial(next(i for i, t in enumerate(rigid_mounts.TRIALS) if t.mode == rigid_mounts.FORCED))
+    assert p.running and p._timer.isActive()
+
+    p = w.frame_page
+    w.pages.setCurrentWidget(p)
+    app.processEvents()
+    assert p.running
+    p.swing.setCurrentIndex(frame_builder.SWINGS.index(frame_builder.Swing.RESPONSE))
+    assert not p.running and p.run_button.text() == "Start" and p._played == 0.0
+    p.load_trial(next(i for i, t in enumerate(frame_builder.TRIALS) if t.swing is frame_builder.Swing.RESPONSE))
+    assert p.running and p._timer.isActive()
+    w.close()
+
+
+def test_space_switches_the_force_on(app):
+    # The force button relabels itself, and setText resets a button's own shortcut: Space did nothing.
+    from PySide6 import QtCore
+    from PySide6.QtTest import QTest
+
+    from vib_tutorial.gui.main_window import MainWindow
+
+    w = MainWindow()
+    w.show()
+    QTest.qWaitForWindowExposed(w)
+    w.activateWindow()
+    app.processEvents()
+    assert not w.force_panel.force.on
+    QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
+    assert w.force_panel.force.on
+    w.close()

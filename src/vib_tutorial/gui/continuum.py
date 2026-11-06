@@ -51,6 +51,7 @@ from ..core.practice import Problem, Question, Requirement, at_most, number, pic
 from . import frame_stats, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
+from .lesson import RunButton
 from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
@@ -575,10 +576,9 @@ class ContinuumPage(QtWidgets.QWidget):
         self.waves_legend.addItem(self.exact_curve, "Continuum")
         self.waves_legend.addItem(self.mesh_curve, "Mesh")
         self._style_waves()
-        self.play_button = QtWidgets.QPushButton("Pause")
-        self.play_button.setToolTip("<p>Pause or run the pulse.</p>")
-        self.restart_button = QtWidgets.QPushButton("Restart")
-        self.restart_button.setToolTip("<p>Start the pulse again from where it began.</p>")
+        self.play_button = RunButton()
+        self.restart_button = QtWidgets.QPushButton("Reset")
+        self.restart_button.setToolTip("<p>The pulse back where it began, waiting for Start.</p>")
         self.playback = QtWidgets.QComboBox()
         for x in PLAYBACK:
             self.playback.addItem(f"{x:g}×", x)
@@ -597,7 +597,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.waves_tab = waves_tab
         self.views.addTab(waves_tab, "Waves")
         self.run: WaveRun | None = None  # built when the Waves tab first shows after a change
-        self.running = True
+        self.running = False  # the pulse waits for Start
         self._reach = 1.0  # the plot's half height: the largest displacement seen yet
 
         # --- right: the mode's shape, the table, the notes
@@ -658,8 +658,8 @@ class ContinuumPage(QtWidgets.QWidget):
         for box in (self.moving, self.dashpot_on, self.step_on):
             box.toggled.connect(self._on_waves)
         self.wave_scheme.currentIndexChanged.connect(self._on_waves)
-        self.play_button.clicked.connect(self._on_play)
-        self.restart_button.clicked.connect(self.restart)
+        self.play_button.toggled.connect(self._on_play)
+        self.restart_button.clicked.connect(self.reset)
         self.playback.currentIndexChanged.connect(self._on_playback)
         self.views.currentChanged.connect(self._on_view)
 
@@ -672,11 +672,12 @@ class ContinuumPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- inputs
     def load_preset(self, name: str) -> None:
-        """A preset's medium and mesh; a wave preset's pulse too, on the Waves tab, running."""
+        """A preset's medium and mesh; a wave preset's pulse too, on the Waves tab, started (as a trial is)."""
         p = next(p for p in ALL_PRESETS if p.name == name)
         self._load(p.continuum, p.elements, name, p.note, p.waves if isinstance(p, WavePreset) else Waves())
         if isinstance(p, WavePreset):
             self.running = True
+            self.play_button.set_running(True)
             self.views.setCurrentWidget(self.waves_tab)
 
     def load_setup(self, setup: dict) -> None:
@@ -958,16 +959,21 @@ class ContinuumPage(QtWidgets.QWidget):
                 )
         self.wave_info.setText(" ".join(parts))
 
-    def _on_play(self) -> None:
-        self.running = not self.running
-        self._update_play()
+    def reset(self) -> None:
+        """The pulse back where it began, waiting for Start."""
+        self.running = False
+        self.play_button.rest()
+        self.restart()
+
+    def _on_play(self, on: bool) -> None:
+        self.running = on
         if self.running:
             self._start_timer()
         else:
             self._timer.stop()
 
     def _update_play(self) -> None:
-        self.play_button.setText("Pause" if self.running else "Run")
+        self.play_button.set_running(self.running)
 
     def _on_playback(self, _index: int) -> None:
         if self.run is not None:
@@ -1004,6 +1010,8 @@ class ContinuumPage(QtWidgets.QWidget):
             self._timer.start(FRAME_MS)
 
     def _frame(self) -> None:
+        if not self.running:  # paused or reset since this frame was queued
+            return
         began = self._clock.elapsed()
         with frame_stats.frame("Continuous systems", self._sim_t, FRAME_MS):
             self.step()
