@@ -13,7 +13,7 @@ Signal chain
    samples per acquired sample), and the chain's response is found with the
    same exact first-order-hold discretization as the simulator. The discrete
    system is diagonalized, so each mode is a first-order recursive filter and
-   long records are fast. With friction on any mass the chain is nonlinear and
+   long records are fast (`foh.FohSteps`). With friction on any mass the chain is nonlinear and
    is stepped by the simulator instead (stick-slip included), which is slower.
 2. Anti-alias filter (optional): an elliptic low-pass with its passband edge
    at AA_CUTOFF x fs/2, on every channel. The same filter on force and
@@ -54,11 +54,11 @@ from typing import Any
 
 import numpy as np
 
+from .foh import FohSteps
 from .forcing import ForceController, ForceSettings
-from .frf_matrix import MAX_EIGVEC_CONDITION
 from .modal import TWO_PI, ModalResult, modal_analysis
 from .model import ChainSystem, state_space
-from .simulator import Simulator, foh_discretize
+from .simulator import Simulator
 
 # At force level 1:
 FORCE_RMS = 10.0  # N, random and chirp excitation
@@ -282,36 +282,26 @@ class ChainResponse:
     The response is the displacements, or the accelerations
     a = M^-1 (f - C v - K x), which the state and the force give exactly.
 
-    Diagonalizing Phi = V diag(mu) V^-1 turns the update into one first-order
-    filter per eigenvalue, eta_r[k] = mu_r eta_r[k-1] + b0_r f[k-1] + b1_r f[k],
-    which scipy runs in C. A defective eigenvalue (a free chain's rigid-body
-    lambda = 0) has no diagonal form, so that case steps the state directly.
-    With friction the simulator steps it (Simulator.drive), stick-slip and all.
+    The update runs as one first-order filter per eigenvalue (`foh.FohSteps`),
+    or steps the state where the eigenvectors are singular. With friction the
+    simulator steps it (Simulator.drive), stick-slip and all.
     """
 
     def __init__(
         self, system: ChainSystem, h: float, input_dof: int, response: Response = Response.DISPLACEMENT
     ) -> None:
         A, B = state_space(system)
-        Phi, G0, G1 = foh_discretize(A, B, h)
         self.n = n = system.n
         if response is Response.DISPLACEMENT:  # y = C_out z + d f
             self._C, self._d = np.eye(2 * n)[:n], np.zeros(n)
         else:
             self._C, self._d = A[n:].copy(), B[n:, input_dof].copy()
-        self.state = np.zeros(2 * system.n)
-        self.f_prev = 0.0
-        self._Phi, self._g0, self._g1 = Phi, G0[:, input_dof].copy(), G1[:, input_dof].copy()
         self.h = h
         self.displacement = response is Response.DISPLACEMENT
         self._sim = None
         if np.any(system.friction > 0):
             self._sim = Simulator(system, ForceController(ForceSettings(target=input_dof)))
-        mu, V = np.linalg.eig(Phi)
-        self._modal = None
-        if self._sim is None and np.linalg.cond(V) < MAX_EIGVEC_CONDITION:
-            Vinv = np.linalg.inv(V)
-            self._modal = (mu, V, Vinv, Vinv @ self._g0, Vinv @ self._g1)
+        self._steps = FohSteps(A, B[:, [input_dof]], h)
 
     def run(self, f: np.ndarray) -> np.ndarray:
         """Responses (len(f), n) at the instants of the force samples f.
@@ -327,29 +317,10 @@ class ChainResponse:
         return out
 
     def _run(self, f: np.ndarray) -> np.ndarray:
-        import scipy.signal
-
         if self._sim is not None:
             z, a = self._sim.drive(f, self.h)
-            self.state, self.f_prev = z[-1].copy(), float(f[-1])
             return z[:, : self.n] if self.displacement else a
-        if self._modal is not None:
-            mu, V, Vinv, b0, b1 = self._modal
-            eta0 = Vinv @ self.state
-            eta = np.empty((f.size, mu.size), dtype=complex)
-            for r in range(mu.size):
-                zi = [b0[r] * self.f_prev + mu[r] * eta0[r]]
-                eta[:, r], _ = scipy.signal.lfilter([b1[r], b0[r]], [1.0, -mu[r]], f, zi=zi)
-            z = (eta @ V.T).real
-        else:
-            z = np.empty((f.size, 2 * self.n))
-            zk, f0 = self.state, self.f_prev
-            for k, f1 in enumerate(f):
-                zk = self._Phi @ zk + self._g0 * f0 + self._g1 * f1
-                z[k] = zk
-                f0 = f1
-        self.state = z[-1].copy()
-        self.f_prev = float(f[-1])
+        z = self._steps.run(f)
         return z @ self._C.T + f[:, None] * self._d[None, :]
 
 

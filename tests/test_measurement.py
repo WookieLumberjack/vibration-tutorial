@@ -58,8 +58,8 @@ def test_fast_response_matches_stepping_the_foh_update():
 
 @pytest.mark.parametrize("h", [1 / 100, 1 / 2000])
 def test_fast_response_of_a_free_chain(h):
-    # The rigid-body lambda = 0 is double and defective. At h = 1/100 the eigenvectors of Phi are
-    # still independent enough to diagonalize; at h = 1/2000 they are not, and it steps directly.
+    # The rigid-body lambda = 0 is double and defective, so the eigenvectors of Phi are near parallel
+    # (cond 2.7e6 at h = 1/100, 1.8e12 at 1/2000) and it steps directly at both.
     free = ChainSystem([1.0] * 3, [0.0, 400.0, 400.0], [0.0, 2.0, 2.0])
     f = np.random.default_rng(0).standard_normal(5000)
     x = ChainResponse(free, h, 2).run(f)

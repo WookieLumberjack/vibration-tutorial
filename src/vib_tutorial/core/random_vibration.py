@@ -67,7 +67,7 @@ on every FFT line, `synthesize`) at an analog rate ten times the band's top, div
 sinc⁴(f h): the exact first-order-hold update takes the input as linear between the samples
 h apart, which filters it by sinc⁴. It then has the PSD asked for, and the chain's response
 comes from the same exact FOH update as everywhere in the app, diagonalized into a
-first-order filter per eigenvalue (as in core.oma), run for its settling time before the
+first-order filter per eigenvalue (`foh.FohSteps`), run for its settling time before the
 record starts. A linear system responds only where it is driven, so the response has nothing
 above the band either, and every fourth sample is kept: 2.5 samples per period of the band's
 top, clear of aliasing. Friction is left out: all of this needs the chain linear. Welch's
@@ -88,11 +88,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .frf_matrix import MAX_EIGVEC_CONDITION
+from .foh import FohSteps
 from .measurement import settle_time
 from .modal import TWO_PI, ModalResult, modal_analysis
 from .model import ChainSystem, state_space
-from .simulator import foh_discretize
 
 G = 9.80665  # m/s² per g
 GRID_POINTS = 4000  # uniform lines across the band
@@ -334,7 +333,6 @@ def simulate(
     system: ChainSystem, inp: RandomInput, duration: float, seed: int | None = None, result: ModalResult | None = None
 ) -> RandomRecord:
     """Run the chain under the random input for `duration` s after it has settled (see the module's notes)."""
-    import scipy.signal  # deferred: scipy.signal adds ~0.9 s to startup
 
     lin = linear(system)
     result = result or modal_analysis(lin)
@@ -353,34 +351,12 @@ def simulate(
     b = inp.patterns(lin)
     u = synthesize(rng, total, fs_a, inp.psd, b.shape[1])
     A, B = state_space(lin)
-    Phi, G0, G1 = foh_discretize(A, B, h)
-    mu, V = np.linalg.eig(Phi)
-    modal = np.linalg.cond(V) < MAX_EIGVEC_CONDITION
-    if modal:
-        Vinv = np.linalg.inv(V)
-        b0, b1 = Vinv @ G0, Vinv @ G1
-        eta = np.zeros(2 * n, dtype=complex)
-    z = np.zeros(2 * n)
-    f_prev = np.zeros(n)
+    steps = FohSteps(A, B, h)
     xs, accs = [], []
     for start in range(0, total, CHUNK):
         m = min(CHUNK, total - start)
         fk = u[start : start + m] @ b.T  # the forces on the masses (−m a_g for the base)
-        if modal:
-            drive = np.vstack([f_prev[None, :], fk[:-1]]) @ b0.T + fk @ b1.T
-            states = np.empty((m, 2 * n), dtype=complex)
-            for r in range(2 * n):
-                states[:, r], _ = scipy.signal.lfilter([1.0], [1.0, -mu[r]], drive[:, r], zi=[mu[r] * eta[r]])
-                eta[r] = states[-1, r]
-            zs = (states @ V.T).real
-        else:
-            zs = np.empty((m, 2 * n))
-            f0 = f_prev
-            for k in range(m):
-                z = Phi @ z + G0 @ f0 + G1 @ fk[k]
-                zs[k] = z
-                f0 = fk[k]
-        f_prev = fk[-1].copy()
+        zs = steps.run(fk)
         acc = zs @ A[n:].T + fk @ B[n:].T
         if inp.kind is Input.BASE:
             acc = acc + u[start : start + m, :1]  # absolute: the base's own on top

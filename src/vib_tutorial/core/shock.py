@@ -91,11 +91,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .frf_matrix import MAX_EIGVEC_CONDITION
+from .foh import FohSteps
 from .modal import TWO_PI, ModalResult, modal_analysis
 from .model import ChainSystem, state_space
 from .random_vibration import G, linear
-from .simulator import foh_discretize
 
 SAMPLES_PER_PULSE = 400  # samples across a classical pulse at least
 PER_PERIOD = 20  # samples per period of the bank's fastest oscillator at least
@@ -463,30 +462,13 @@ class ChainResponse:
 
 def chain_response(system: ChainSystem, a: np.ndarray, fs: float, result: ModalResult | None = None) -> ChainResponse:
     """The chain from rest, its base accelerated by a (m/s², linear between samples 1/fs apart): in coordinates
-    relative to the base each mass is pushed by −m a, by the exact FOH update, diagonalized (as core.oma's)."""
-    import scipy.signal
+    relative to the base each mass is pushed by −m a, by the exact FOH update (`foh.FohSteps`)."""
 
     lin = linear(system)
     n = lin.n
     A, B = state_space(lin)
     b = B @ -lin.masses
-    Phi, G0, G1 = foh_discretize(A, b[:, None], 1.0 / fs)
-    mu, V = np.linalg.eig(Phi)
-    if np.linalg.cond(V) < MAX_EIGVEC_CONDITION:
-        Vinv = np.linalg.inv(V)
-        g0, g1 = (Vinv @ G0)[:, 0], (Vinv @ G1)[:, 0]
-        eta = np.empty((a.size, 2 * n), dtype=complex)
-        for r in range(2 * n):
-            eta[:, r] = scipy.signal.lfilter([g1[r], g0[r]], [1.0, -mu[r]], a)
-        z = (eta @ V.T).real
-    else:
-        z = np.empty((a.size, 2 * n))
-        state = np.zeros(2 * n)
-        prev = 0.0
-        for k, ak in enumerate(a):
-            state = Phi @ state + G0[:, 0] * prev + G1[:, 0] * ak
-            z[k] = state
-            prev = ak
+    z = FohSteps(A, b[:, None], 1.0 / fs).run(a)
     acc = z @ A[n:].T + np.outer(a, b[n:]) + a[:, None]
     return ChainResponse(z[:, :n], acc)
 
