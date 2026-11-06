@@ -42,7 +42,8 @@ from .axes import log_axes
 from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
 from .cms_recovery import BackExpansionView
 from .cms_time import CMSTimeView
-from .layouts import ColumnScroll
+from .layouts import ColumnScroll, form_layout
+from .lesson import TrialCombo
 from .links import page_link
 from .style import MAX_DOF, colors, current, text_on
 from .theming import add_legend, mute, restyle_plot_item
@@ -1038,15 +1039,12 @@ class SubstructuringPage(QtWidgets.QWidget):
         # --- controls
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItem("Pick one…")
-        self.trial.addItems([t.name for t in TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip(
+        self.trial = TrialCombo(
+            [t.name for t in TRIALS],
             "<p>Each loads the 8-mass chain into the Simulation page and sets the cut, the "
-            "modes kept and the method to show one idea from the Theory tab.</p>"
+            "modes kept and the method to show one idea from the Theory tab.</p>",
         )
-        self.trial.currentIndexChanged.connect(self._on_trial)
+        self.trial.picked.connect(self.load_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -1055,7 +1053,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         tv.addWidget(self.trial_note)
 
         box = QtWidgets.QGroupBox("Component mode synthesis")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
@@ -1091,7 +1089,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         form.addRow(cuts_label, cuts)
         # One "Modes kept in X" row per substructure, rebuilt when their number changes.
         kept_box = QtWidgets.QWidget()
-        self.kept_form = QtWidgets.QFormLayout(kept_box)
+        self.kept_form = form_layout(kept_box)
         self.kept_form.setContentsMargins(0, 0, 0, 0)
         form.addRow(kept_box)
         self.kept: list[QtWidgets.QSpinBox] = []
@@ -1377,14 +1375,6 @@ class SubstructuringPage(QtWidgets.QWidget):
             n=n,
             changed=changed,
         )
-
-    def _on_trial(self, index: int) -> None:
-        if index <= 0:
-            return
-        self.trial.blockSignals(True)
-        self.trial.setCurrentIndex(0)
-        self.trial.blockSignals(False)
-        self.load_trial(index - 1)
 
     def _on_cut(self, i: int, on: bool) -> None:
         self._style_cut_buttons()

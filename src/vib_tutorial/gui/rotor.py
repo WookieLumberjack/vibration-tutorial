@@ -57,7 +57,7 @@ from ..core.rotor_sweep import (
 from ..core.rotor_waterfall import Waterfall
 from . import frame_stats, rotor_practice, settle_plots
 from .cms_time import SampleBuffer
-from .layouts import ColumnScroll, FlowLayout, group
+from .layouts import ColumnScroll, FlowLayout, form_layout, group
 from .lesson import Dot
 from .panels import spin
 from .rotor_balance import BalancingPanel
@@ -1355,7 +1355,7 @@ class RotorPage(QtWidgets.QWidget):
 
     def _speed_box(self) -> QtWidgets.QGroupBox:
         box = QtWidgets.QGroupBox("Speed")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.speed_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self.speed_slider.setRange(0, int(TOP_RPM))
         self.speed_slider.setSingleStep(10)
@@ -1406,7 +1406,7 @@ class RotorPage(QtWidgets.QWidget):
 
     def _sweep_box(self) -> QtWidgets.QGroupBox:
         box = QtWidgets.QGroupBox("Run-up and coast-down")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.sweep_from = spin(60.0, TOP_RPM, 800.0, 0, " rpm")
         self.sweep_to = spin(60.0, TOP_RPM, 2400.0, 0, " rpm")
         for w in (self.sweep_from, self.sweep_to):
@@ -1475,7 +1475,7 @@ class RotorPage(QtWidgets.QWidget):
     def _rotor_box(self) -> QtWidgets.QGroupBox:
         s = RotorSystem()
         box = QtWidgets.QGroupBox("Shaft and disc")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.length = spin(0.05, 5.0, s.length, 3, " m")
         self.length.setToolTip("Bearing span L")
         self.diameter = spin(1.0, 500.0, s.diameter * 1e3, 1, " mm")

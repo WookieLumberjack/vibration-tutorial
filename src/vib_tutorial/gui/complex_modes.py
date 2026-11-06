@@ -37,7 +37,8 @@ from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_least, number, pick, rounded
 from ..core.presets import tuned_mass_damper
 from .axes import log_axes
-from .layouts import ColumnScroll, FlowLayout, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
+from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -345,7 +346,7 @@ PROBLEMS = tuple(
 
 
 NOTES_HTML = load_notes(
-    "complex_modes", trials="<ul>" + "".join(f"<li><b>{name}.</b> {note}</li>" for name, _, note in TRIALS) + "</ul>"
+    "complex_modes", trials="<ol>" + "".join(f"<li><b>{name}.</b> {note}</li>" for name, _, note in TRIALS) + "</ol>"
 )
 
 
@@ -389,7 +390,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
         # --- left: the chain's damping, chains to try, the mode
         box = QtWidgets.QGroupBox("Damping")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
@@ -410,12 +411,10 @@ class ComplexModesPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItem("Load a chain…")
-        self.trial.addItems([name for name, _, _ in TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip(
-            "<p>Chains that show something about complex modes. Loading one replaces the Simulation page's chain.</p>"
+        self.trial = TrialCombo(
+            [name for name, _, _ in TRIALS],
+            "<p>Chains that show something about complex modes. Loading one replaces the Simulation page's chain.</p>",
+            prompt="Load a chain…",
         )
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
@@ -426,7 +425,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         tv.addWidget(self.trial_note)
 
         mode_box = QtWidgets.QGroupBox("Mode")
-        form = QtWidgets.QFormLayout(mode_box)
+        form = form_layout(mode_box)
         self.mode = QtWidgets.QComboBox()
         self.mode.setToolTip(TIPS["mode"])
         label = QtWidgets.QLabel("Show:")
@@ -496,7 +495,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.frf_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         frf_tab = QtWidgets.QWidget()
         fv = QtWidgets.QVBoxLayout(frf_tab)
-        row = QtWidgets.QFormLayout()
+        row = form_layout()
         row.addRow("Force on:", group(self.frf_in, "response of", self.frf_out))
         fv.addLayout(row)
         fv.addWidget(self.frf_mag, 3)
@@ -629,7 +628,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
         # --- wiring
         self.make_proportional.clicked.connect(self._on_make_proportional)
-        self.trial.currentIndexChanged.connect(self._on_trial)
+        self.trial.picked.connect(self.load_trial)
         self.mode.currentIndexChanged.connect(self._on_mode)
         self.table.itemSelectionChanged.connect(self._on_table_selection)
         self.frf_in.currentIndexChanged.connect(lambda _: self._draw_frf())
@@ -709,14 +708,6 @@ class ComplexModesPage(QtWidgets.QWidget):
             tuple(float(k) for k in system.stiffness),
             self.tabs.currentIndex(),
         )
-
-    def _on_trial(self, index: int) -> None:
-        if index <= 0:
-            return
-        self.trial.blockSignals(True)
-        self.trial.setCurrentIndex(0)
-        self.trial.blockSignals(False)
-        self.load_trial(index - 1)
 
     def _on_make_proportional(self) -> None:
         if self.system is not None:

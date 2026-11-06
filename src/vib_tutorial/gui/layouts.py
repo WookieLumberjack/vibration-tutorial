@@ -120,6 +120,14 @@ class FlowLayout(QtWidgets.QLayout):
         return y - line_gap - area.y() + m.top() + m.bottom() if self._shown() else 0
 
 
+def form_layout(parent: QtWidgets.QWidget | None = None) -> QtWidgets.QFormLayout:
+    """A QFormLayout whose fields fill their column on every platform. macOS's default keeps each field at
+    its size hint, and a combo box that elides its items hints at a few letters ("A" for a whole name)."""
+    form = QtWidgets.QFormLayout(parent)
+    form.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+    return form
+
+
 def group(*items: QtWidgets.QWidget | str) -> QtWidgets.QWidget:
     """Widgets (or label texts) kept together on one line of a FlowLayout."""
     row = QtWidgets.QHBoxLayout()

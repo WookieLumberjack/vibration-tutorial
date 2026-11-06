@@ -45,7 +45,8 @@ from ..core.shock import (
     target_band,
 )
 from .axes import log_axes
-from .layouts import ColumnScroll, FlowLayout, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
+from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -539,7 +540,7 @@ class ShockPage(QtWidgets.QWidget):
 
         # --- left: the pulse, the spectrum, things to try
         box = QtWidgets.QGroupBox("Pulse")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
@@ -576,7 +577,7 @@ class ShockPage(QtWidgets.QWidget):
         form.addRow(link)
 
         spec_box = QtWidgets.QGroupBox("Spectrum")
-        form = QtWidgets.QFormLayout(spec_box)
+        form = form_layout(spec_box)
         self.q = spin(1.0, 500.0, DEFAULT_Q, 1, "")
         _form_row(form, "Q:", self.q, TIPS["q"])
         self.split_time = QtWidgets.QCheckBox("Primary and residual")
@@ -590,9 +591,7 @@ class ShockPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItems([name for name, _, _ in TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.trial = TrialCombo([name for name, _, _ in TRIALS], prompt=None)
         self.trial.setToolTip(
             "<p>Pulses that show something about shock spectra, the duration set from the chain as it is now.</p>"
         )
@@ -755,7 +754,7 @@ class ShockPage(QtWidgets.QWidget):
         for c in (self.split_time, self.split_sign):
             c.toggled.connect(lambda _: self._draw_srs())
         self.again.clicked.connect(self._on_again)
-        self.trial.currentIndexChanged.connect(lambda _: self.apply_trial())
+        self.trial.picked.connect(lambda _: self.apply_trial())
         self.pick_line.sigPositionChanged.connect(self._on_line)
         self.f_pick.valueChanged.connect(self._on_pick)
         self.srs_plot.scene().sigMouseClicked.connect(self._on_click)

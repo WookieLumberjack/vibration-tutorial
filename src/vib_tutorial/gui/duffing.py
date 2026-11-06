@@ -37,7 +37,7 @@ from ..core.duffing import (
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
 from . import frame_stats, settle_plots
-from .layouts import ColumnScroll, FlowLayout, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, plot_height
 from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
@@ -457,7 +457,7 @@ class DuffingPage(QtWidgets.QWidget):
         mute(self.preset_note)
 
         osc = QtWidgets.QGroupBox("Oscillator")
-        form = QtWidgets.QFormLayout(osc)
+        form = form_layout(osc)
         self.mass = spin(0.01, 1000.0, 1.0, 3, " kg")
         self.stiffness = spin(0.0, 1e7, 400.0, 1, " N/m")
         self.damping = spin(0.0, 1e4, 1.0, 3, " N·s/m")
@@ -486,7 +486,7 @@ class DuffingPage(QtWidgets.QWidget):
         form.addRow(self.osc_info)
 
         drive = QtWidgets.QGroupBox("Drive")
-        dv = QtWidgets.QFormLayout(drive)
+        dv = form_layout(drive)
         self.freq = spin(0.0, 1000.0, 3.0, 3, " Hz")
         self.start_hz = spin(0.0, 1000.0, 2.0, 3, " Hz")
         self.end_hz = spin(0.0, 1000.0, 6.0, 3, " Hz")

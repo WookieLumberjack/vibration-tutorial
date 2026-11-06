@@ -1020,6 +1020,10 @@ class DerivingPage(QtWidgets.QWidget):
         ):
             for item in (linear, whole, line):
                 p.addItem(item)
+            for item in (linear, whole):
+                # Drawn once, then the moving line only uncovers them: restroking 2,000 antialiased points
+                # under it every frame was ~40 ms (20 fps).
+                item.curve.setCacheMode(QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache)
         self.swing_note = note_label()
 
         self.chaos_plot = plot("Twins apart, |Δθ₁| + |Δθ₂|", "rad", "Time", "s", log_y=True, height=200)
