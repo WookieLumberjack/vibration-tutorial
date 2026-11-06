@@ -342,45 +342,34 @@ def _rotation(c: float, s: float) -> np.ndarray:
     return scipy.linalg.block_diag(r, r)
 
 
-def beam_matrices(
-    E: float, G: float, rho: float, A: float, I: float, kappa: float, L: float, theory: Theory, lumped: bool
+def bending_matrices(
+    E: float, G: float, rho: float, A: float, I: float, kappa: float, L: float, shear: bool, rotary: bool
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
-    """A plane beam's (k', m', k_axial, φ) in its own axes (u1, v1, θ1, u2, v2, θ2)."""
-    phi = 12 * E * I / (kappa * G * A * L * L) if theory is Theory.TIMOSHENKO else 0.0
-    axial = np.zeros((6, 6))
-    ea = E * A / L
-    axial[np.ix_([0, 3], [0, 3])] = ea * np.array([[1.0, -1.0], [-1.0, 1.0]])
-    b = E * I / ((1 + phi) * L**3)
-    bend = b * np.array(
+    """One plane's bending on [w1, θ1, w2, θ2] (θ = dw/dx): (stiffness, translational mass, rotary inertia, φ).
+
+    With `shear`, Timoshenko's (Friedman–Kosmatka, φ = 12EI/κGAL²); without, Euler–Bernoulli's (φ = 0). The
+    rotary inertia (ρI's, the same interpolation) is zero unless `rotary`: a Rayleigh beam is Euler–Bernoulli's
+    with it. Both masses are consistent.
+    """
+    p = 12 * E * I / (kappa * G * A * L * L) if shear else 0.0
+    b = E * I / ((1 + p) * L**3)
+    k = b * np.array(
         [
             [12, 6 * L, -12, 6 * L],
-            [6 * L, (4 + phi) * L * L, -6 * L, (2 - phi) * L * L],
+            [6 * L, (4 + p) * L * L, -6 * L, (2 - p) * L * L],
             [-12, -6 * L, 12, -6 * L],
-            [6 * L, (2 - phi) * L * L, -6 * L, (4 + phi) * L * L],
+            [6 * L, (2 - p) * L * L, -6 * L, (4 + p) * L * L],
         ]
     )
-    k = axial.copy()
-    vt = [1, 2, 4, 5]
-    k[np.ix_(vt, vt)] += bend
-    m = np.zeros((6, 6))
-    total = rho * A * L
-    if lumped:
-        for n in (0, 1, 3, 4):
-            m[n, n] = total / 2
-        if theory is Theory.TIMOSHENKO:
-            m[2, 2] = m[5, 5] = rho * I * L / 2
-        return k, m, axial, phi
-    m[np.ix_([0, 3], [0, 3])] = total / 6 * np.array([[2.0, 1.0], [1.0, 2.0]])
-    p = phi
     a = 13 / 35 + 7 * p / 10 + p * p / 3
     bb = (11 / 210 + 11 * p / 120 + p * p / 24) * L
     c = 9 / 70 + 3 * p / 10 + p * p / 6
     d = (13 / 420 + 3 * p / 40 + p * p / 24) * L
     e = (1 / 105 + p / 60 + p * p / 120) * L * L
     f = (1 / 140 + p / 60 + p * p / 120) * L * L
-    trans = total / (1 + p) ** 2 * np.array([[a, bb, c, -d], [bb, e, d, -f], [c, d, a, -bb], [-d, -f, -bb, e]])
-    m[np.ix_(vt, vt)] += trans
-    if theory is Theory.TIMOSHENKO:
+    trans = rho * A * L / (1 + p) ** 2 * np.array([[a, bb, c, -d], [bb, e, d, -f], [c, d, a, -bb], [-d, -f, -bb, e]])
+    rot = np.zeros((4, 4))
+    if rotary:
         g = (1 / 10 - p / 2) * L
         h = (2 / 15 + p / 6 + p * p / 3) * L * L
         j = (1 / 30 + p / 6 - p * p / 6) * L * L
@@ -390,7 +379,31 @@ def beam_matrices(
             / ((1 + p) ** 2 * L)
             * np.array([[6 / 5, g, -6 / 5, g], [g, h, -g, -j], [-6 / 5, -g, 6 / 5, -g], [g, -j, -g, h]])
         )
-        m[np.ix_(vt, vt)] += rot
+    return k, trans, rot, p
+
+
+def beam_matrices(
+    E: float, G: float, rho: float, A: float, I: float, kappa: float, L: float, theory: Theory, lumped: bool
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+    """A plane beam's (k', m', k_axial, φ) in its own axes (u1, v1, θ1, u2, v2, θ2)."""
+    timoshenko = theory is Theory.TIMOSHENKO
+    bend, trans, rot, phi = bending_matrices(E, G, rho, A, I, kappa, L, timoshenko, timoshenko)
+    axial = np.zeros((6, 6))
+    ea = E * A / L
+    axial[np.ix_([0, 3], [0, 3])] = ea * np.array([[1.0, -1.0], [-1.0, 1.0]])
+    k = axial.copy()
+    vt = [1, 2, 4, 5]
+    k[np.ix_(vt, vt)] += bend
+    m = np.zeros((6, 6))
+    total = rho * A * L
+    if lumped:
+        for n in (0, 1, 3, 4):
+            m[n, n] = total / 2
+        if timoshenko:
+            m[2, 2] = m[5, 5] = rho * I * L / 2
+        return k, m, axial, phi
+    m[np.ix_([0, 3], [0, 3])] = total / 6 * np.array([[2.0, 1.0], [1.0, 2.0]])
+    m[np.ix_(vt, vt)] += trans + rot
     return k, m, axial, phi
 
 

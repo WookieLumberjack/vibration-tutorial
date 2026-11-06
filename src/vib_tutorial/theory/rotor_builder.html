@@ -1,0 +1,114 @@
+<before>
+<a href="page:frame_page#elements">The elements' matrices</a>
+<a href="page:frame_page#timoshenko">Timoshenko beams</a>
+<a href="page:gyroscope_page#to-the-rotor">From the top to the rotor</a>
+<a href="page:rotor_page#gyroscopic">The gyroscopic effect</a>
+<a href="page:rotor_page#cross-coupling">Cross-coupling and internal damping</a>
+</before>
+<h3><a name="building"></a>Building a rotor</h3>
+<p>The Jeffcott rotor page has one disc on one shaft between two bearings, worked out by hand. A real machine has
+a shaft stepped to carry its parts, several discs (impellers, a flywheel, a coupling), bearings of different
+kinds and seals between them. This page builds one the way the Frame builder built a frame: from parts, each
+knowing its own matrices, added up into the rotor's M, C, G and K. Then it solves for the whirl modes at a
+speed.</p>
+<p>The shaft runs along z. Every node has four DOFs: x (sideways), its slope θx = dx/dz, y (up) and its slope
+θy = dy/dz (x<sub>i</sub>, θx<sub>i</sub>, y<sub>i</sub>, θy<sub>i</sub> in the tables). A node sits at every
+section's ends and at every part, and each section is cut into its elements between them.</p>
+
+<h3><a name="elements"></a>The shaft's elements</h3>
+<p>A section is a round tube, outside diameter D and bore d (0: solid), so A = π(D² − d²)/4 and its diametral
+second moment I = π(D⁴ − d⁴)/64; the polar one, about the spin axis, is twice that. In each plane an element is
+the Frame builder's beam on (w<sub>1</sub>, θ<sub>1</sub>, w<sub>2</sub>, θ<sub>2</sub>): with slopes as the
+turning DOFs in both planes, the x plane's matrices and the y plane's are the same. By default it is
+Timoshenko's, which shears (φ = 12EI/κGAL², κ Cowper's coefficient for a tube) and whose sections' turning has
+inertia; or Euler–Bernoulli's with that inertia kept (a Rayleigh beam). A rotor's shaft is often short and
+thick between its bearings, and shear matters more than on most frames.</p>
+<p>A hollow shaft is stiffer for its mass: I/A = (D² + d²)/16, so boring it out takes mass faster than stiffness,
+and the frequencies, which go as √(EI/ρA), rise.</p>
+
+<h3><a name="discs"></a>Discs</h3>
+<p>A disc is rigid, at one node: its mass m on x and y, its diametral moment of inertia I<sub>d</sub> on θx and
+θy. From the library it is cut from a material: an annulus of radii R and r and thickness t has m = ρπ(R² −
+r²)t, I<sub>p</sub> = m(R² + r²)/2 and I<sub>d</sub> = m(3(R² + r²) + t²)/12. A thin disc has I<sub>p</sub> ≈
+2I<sub>d</sub>, a long one (a coupling hub) I<sub>p</sub> &lt; I<sub>d</sub>.</p>
+
+<h3><a name="bearings"></a>Bearings</h3>
+<p>A bearing pushes the shaft back from the ground at its node: f = −K<sub>b</sub>[x, y] − C<sub>b</sub>[x', y'],
+2 × 2 matrices on the node's x and y. With <b>springs and dampers</b> they are what you give: k<sub>xx</sub> and
+k<sub>yy</sub> may differ (a pedestal stiffer sideways than up), and cross terms k<sub>xy</sub> and
+k<sub>yx</sub> may couple them.</p>
+<p><a name="films"></a>An <b>oil film</b> (a plain journal bearing, as on the Jeffcott rotor page's
+Fluid-film bearing tab) has no stiffness of its own: the journal floats where the film's pressure holds up its
+load W. So each bearing's load comes first, its share of the rotor's weight with every bearing held (on a
+vertical rotor there is none, and the film runs centred). From W, the oil's viscosity, the bearing's size and
+the speed, the short-bearing theory gives where the journal sits (its eccentricity ε) and the film's eight
+coefficients, a full K<sub>f</sub>(Ω) and C<sub>f</sub>(Ω), both changing with the speed. K<sub>f</sub> is not
+symmetric: the oil, dragged round at about half the shaft's speed, pushes a displaced journal on round, and
+past about twice a mode's frequency that feeds its forward whirl (oil whip).</p>
+<p><a name="magnets"></a>A <b>magnetic bearing</b> (the Magnetic bearing tab's) pulls the journal toward each
+magnet harder the nearer it comes: a negative stiffness −k<sub>m</sub> on its x and y. A PID controller behind an
+amplifier sets the current that holds it, so the bearing has states of its own (the integral, the filtered
+derivative, the amplifier's current, each axis), which follow q and q' in the state: the rotor's state matrix is
+A = [[0, I, 0], [−M⁻¹K, −M⁻¹(C + ΩG), M⁻¹F<sub>c</sub>], [B<sub>c</sub>, 0, A<sub>c</sub>]].</p>
+
+<h3><a name="seals"></a>Seals</h3>
+<p>An annular seal (between an impeller's stages, or at a shaft's end) is a thin film of the fluid the machine
+handles: a direct stiffness k and damping c on x and y, an added mass, and, because the fluid swirls round at a
+fraction λ of the shaft's speed Ω, a cross-coupled stiffness k<sub>xy</sub> = λΩc, k<sub>yx</sub> =
+−k<sub>xy</sub>. That is a skew stiffness growing with the speed, Ω H in K(Ω): it pushes a forward whirl along
+its path, taking damping from it (and giving it to the backward whirl). At the speed where it takes it all, the
+forward whirl grows by itself.</p>
+
+<h3><a name="gyroscopics"></a>Gyroscopic moments</h3>
+<p>A spinning disc that tilts has to turn its angular momentum I<sub>p</sub>Ω, and that takes a moment: in the
+slopes' equations, I<sub>d</sub>θx'' + ΩI<sub>p</sub>θy' = M<sub>x</sub> and I<sub>d</sub>θy'' −
+ΩI<sub>p</sub>θx' = M<sub>y</sub>. So the disc puts +I<sub>p</sub> and −I<sub>p</sub> between its two slopes in
+a matrix G, which enters with the velocities, as Ω G. G is skew (Gᵀ = −G), so q'ᵀGq' = 0: it does no work and
+dissipates nothing. The shaft's sections spin too, each with a polar inertia twice its diametral one, so each
+element's share of G is twice its rotary inertia matrix, between the x plane's slopes and the y plane's.</p>
+<p>A whirling, tilting disc meets the gyroscopic moment as a stiffness: positive for a forward whirl (its
+frequency rises with the speed), negative for a backward one (it falls). A free body, held by nothing, shows it
+on its own: its tilt becomes a slow forward whirl, the nutation, at I<sub>p</sub>Ω/I<sub>d</sub> (the
+Gyroscope page's top).</p>
+
+<h3><a name="assembly"></a>Assembly</h3>
+<p>Each part adds its matrices at its nodes' DOFs, as the Frame builder's elements did, but no transformation is
+needed: every element lies along z, so its own axes are the rotor's. The equations are</p>
+<p align="center">M q'' + (C(Ω) + Ω G) q' + K(Ω) q = f,</p>
+<p>K(Ω) = K + ΩH + K<sub>f</sub>(Ω) and C(Ω) = C + C<sub>f</sub>(Ω), the speed's terms the seals' and the films'.
+Nothing is struck out: a bearing is a spring, not a support, so every DOF is free, and a rotor without bearings
+has modes at 0 Hz. The <i>Assembly</i> tab shows a matrix at the speed with the picked part's share tinted,
+and the <i>Element</i> tab the part's own.</p>
+
+<h3><a name="modes"></a>Modes at a speed</h3>
+<p>G, the films' and the seals' terms make the damping non-proportional and K unsymmetric, so the modes come from
+the state space (the Complex modes page's): z = [q, q'] (and the controllers' states), z' = A(Ω)z, and the
+eigenvalues λ = −ζω ± iω<sub>d</sub> of A at that speed. The table lists each one's damped frequency, its
+damping ratio and its logarithmic decrement δ = 2πζ/√(1 − ζ²), the measure the API's stability rules use. A
+negative ζ (and δ) grows: at that speed the rotor is unstable. Change the speed and the modes move: that is the
+Campbell diagram, point by point.</p>
+
+<h3><a name="whirl"></a>Forward and backward whirl</h3>
+<p>Each mode's shape is complex: at each node x = Re(X e<sup>iωt</sup>), y = Re(Y e<sup>iωt</sup>), an ellipse.
+The whirl ratio weighs the ellipses by kinetic energy: +1 when every node goes round circularly with the spin
+(forward, x toward y), −1 against it (backward), 0 for a straight line. A round rotor not spinning has each
+frequency twice, and any mix of the pair is a mode: the page picks the circular forward and backward ones. On
+anisotropic bearings the pair splits into two straight lines, the soft way and the stiff way, and the spin
+couples them into ellipses, one forward and one backward. The <i>Whirl</i> tab draws the mode in 3D, the
+<i>side view</i> the up-and-down part of it.</p>
+
+<h3><a name="trials"></a>Things to try</h3>
+<!--TRIALS-->
+
+<takeaways>
+<li>A rotor is assembled like any structure, part by part: beams for the shaft, rigid discs, bearings as springs
+and dampers (or as films and magnets, with terms that change with the speed), seals as cross-coupled springs.</li>
+<li>Each node has x, y and their two slopes; with slopes in both planes the two planes share their beam
+matrices, and only G (and any cross-coupling) joins them.</li>
+<li>The spin adds Ω G, skew: it does no work, but it splits each pair into a forward whirl that stiffens and a
+backward one that softens, most where the discs tilt.</li>
+<li>Oil films and seals add a skew stiffness growing with the speed; it feeds forward whirl, and past some speed
+a mode's ζ goes negative: the rotor is unstable.</li>
+<li>Shear matters on a stubby shaft: Timoshenko's beams are softer than Euler–Bernoulli's, the higher modes
+most.</li>
+</takeaways>

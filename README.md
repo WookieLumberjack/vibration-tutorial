@@ -92,6 +92,7 @@ The course runs through six groups of pages, in the order the app's tabs take th
 - [Active control](docs/beyond-the-chain.md#active-control): velocity feedback, collocation, spillover and actuator lag, against a tuned mass damper
 - [Gyroscope](docs/beyond-the-chain.md#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
 - [Jeffcott rotor](docs/beyond-the-chain.md#jeffcott-rotor): a spinning shaft: critical speeds, balancing, bearings, stability, rub
+- [Rotor builder](docs/beyond-the-chain.md#rotor-builder): build a rotor from shaft sections, discs, bearings and seals: its matrices, and its whirl modes
 - [Machinery diagnostics](docs/beyond-the-chain.md#machinery-diagnostics): order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum
 
 **Reference**

@@ -455,6 +455,26 @@ third of it, which the asymmetric shaft has none of. The *Cracked shaft* preset'
 37.6 µm at 2X at 783 rpm and 18.6 µm at 3X at 522 rpm, and its 1X at the critical is 164 µm
 against 54 µm uncracked. Held open, the crack is an asymmetric shaft: no 3X, and twice the 2X.
 
+## Rotor builder
+
+Build a rotor the way the Frame builder builds a frame, from parts: a shaft of sections (each a solid or
+hollow tube of steel, aluminium or titanium, cut into beam elements), discs from a library (by material and
+size) or by their mass and inertias, bearings (springs and dampers, cross-coupled or not and stiffer one way
+than the other; a plain journal bearing's oil film; or an active magnetic bearing under PID control) and
+seals (a direct stiffness and damping, and the cross-coupling λΩc of their swirling fluid). Click the side
+view to cut a section or put a part on the shaft, drag a part along it, and edit the picked one on the
+left. Every node has x, y and their slopes; each shaft element is a rotating Timoshenko beam (or
+Euler–Bernoulli's, with the sections' rotary inertia), and every change assembles M, C(Ω), G and K(Ω) again:
+the *Assembly* tab shows them at the speed with the picked part's share tinted, the *Element* tab its own
+(an oil film's eight coefficients under its share of the rotor's weight, a magnet's negative stiffness). The
+modes at the speed come from the state space, the magnets' controllers included: each one's frequency,
+damping ratio and log decrement, and whether it whirls forward or backward, drawn in 3D on the *Whirl* tab
+with every node's orbit. The trials compare it with Euler's pinned and free beams and with the Jeffcott
+rotor page's model, split a disc's modes by its spin, part them on anisotropic bearings, and find the speeds
+where an oil film (5466 rpm) and a seal (6845 rpm) make the forward whirl grow.
+
+![Rotor builder page: a stepped compressor rotor, its middle section bored out, with two aluminium impellers between the bearings and a coupling hub overhung, at 6000 rpm; its second pair splits to 199.3 Hz backward and 207.4 Hz forward, and the Whirl tab draws the forward one in 3D with every node's orbit](images/rotor_builder.png)
+
 ## Machinery diagnostics
 
 A gearbox's casing acceleration, synthesized: the shaft's 1X and 2X, the pinion's mesh, a gear fault

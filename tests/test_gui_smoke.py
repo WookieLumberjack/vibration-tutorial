@@ -3919,6 +3919,7 @@ def test_shock_page(app):
         "quarter_car_page",
         "mounts_page",
         "frame_page",
+        "rotor_builder_page",
         "planning_page",
         "nonlinear_page",
         "variability_page",
@@ -4131,6 +4132,106 @@ def test_frame_builder_by_hand(app, main_window):
     page.step(0.1)
     page.load_trial(0)
     w.pages.setCurrentWidget(w.sim_page)  # hidden, the page's frame loop stops: no frames for the next test's stats
+    assert not page._timer.isActive()
+
+
+def test_rotor_builder_by_hand(app, main_window):
+    """Build a rotor with the side view's tools, edit it from the left, drag, undo and redo, and read its
+    matrices."""
+    import numpy as np
+
+    from vib_tutorial.core.rotor_builder import DISC_LIBRARY, BearingKind, Theory
+    from vib_tutorial.gui import rotor_builder as rb
+
+    w = main_window
+    page = w.rotor_builder_page
+    w.pages.setCurrentWidget(page)
+    c = page.canvas
+
+    def use(tool):
+        page.tool_buttons.button(rb.TOOLS.index(tool)).click()
+
+    def at(z, y=0.0):
+        return np.array([z, y])
+
+    page.tabs.setCurrentIndex(rb.TAB_ASSEMBLY)
+    page.clear_button.click()
+    assert len(page.rotor.sections) == 1 and page.result is not None and page.result.rigid == 8
+    use(rb.Tool.SELECT)
+    c.press(at(0.25))
+    c.release()
+    assert c.selection == ("section", 0) and page.props.current() is page.props.section
+    page.props.add_section.click()
+    assert page.rotor.length == pytest.approx(1.0)
+    use(rb.Tool.BEARING)
+    c.press(at(0.0, -0.01))
+    c.press(at(1.0, -0.01))
+    use(rb.Tool.DISC)
+    c.press(at(0.5))
+    use(rb.Tool.SEAL)
+    c.press(at(0.75))
+    use(rb.Tool.SPLIT)
+    c.press(at(0.25))
+    r = page.rotor
+    assert (len(r.sections), len(r.bearings), len(r.discs), len(r.seals)) == (3, 2, 1, 1)
+    assert [b.z for b in r.bearings] == [0.0, 1.0] and r.discs[0].name == DISC_LIBRARY[0].name
+    assert page.result is not None and page.result.rigid == 0 and page.table.rowCount() > 0
+    assert "section 2's share" in page.assembly_note.text()  # the split's new half
+    # a disc from the library, then dragged; undo puts it back
+    use(rb.Tool.SELECT)
+    c.press(at(0.5, 0.05))
+    c.release()
+    assert c.selection == ("disc", 0) and page.props.current() is page.props.disc
+    page.props.library.setCurrentIndex(2)
+    assert page.rotor.discs[0].name == DISC_LIBRARY[1].name
+    c.press(at(0.5, 0.05))
+    c.move(at(0.7, 0.05))
+    c.release()
+    assert page.rotor.discs[0].z == pytest.approx(0.7)
+    page.undo()
+    assert page.rotor.discs[0].z == pytest.approx(0.5)
+    page.redo()
+    assert page.rotor.discs[0].z == pytest.approx(0.7)
+    # a bearing turned into an oil film: its matrices on the Element tab
+    c.press(at(0.0, -0.05))
+    c.release()
+    assert c.selection == ("bearing", 0) and page.props.current() is page.props.bearing
+    page.props.bearing_kind.setCurrentIndex(rb.BEARING_KINDS.index(BearingKind.FILM))
+    b = page.rotor.bearings[0]
+    assert b.kind is BearingKind.FILM and b.film.diameter == pytest.approx(0.05)
+    page.rpm.setValue(3000.0)
+    assert page.result is not None and page.result.omega == pytest.approx(3000 * rb.RPM)
+    page.tabs.setCurrentIndex(rb.TAB_ELEMENT)
+    assert "Bearing 1" in page.element_view.toPlainText() and "ε" in page.element_view.toPlainText()
+    page.matrix.setCurrentIndex(rb.MATRICES.index(rb.Matrix.G))
+    page.tabs.setCurrentIndex(rb.TAB_ASSEMBLY)
+    assert "Gyroscopic" in page.assembly_note.text()
+    # a section's diameter, then the beams' theory
+    c.press(at(0.4))
+    c.release()
+    assert c.selection == ("section", 1)
+    before = page.result.hz[0]
+    page.props.outer.setValue(80.0)
+    page.props.outer.editingFinished.emit()
+    assert page.rotor.sections[1].outer == pytest.approx(0.08) and page.result.hz[0] != before
+    page.theory.setCurrentIndex(rb.THEORIES.index(Theory.RAYLEIGH))
+    assert page.rotor.theory is Theory.RAYLEIGH
+    # delete the seal; a rotor with an oil film and one bearing can't be worked out
+    c.press(at(0.75, 0.03))
+    c.release()
+    assert c.selection == ("seal", 0)
+    page.props.remove.click()
+    assert not page.rotor.seals
+    c.press(at(1.0, -0.05))
+    c.release()
+    page.props.remove.click()
+    assert page.result is None and "two bearings" in page.readout.text()
+    page.tabs.setCurrentIndex(rb.TAB_WHIRL)
+    w.set_theme("Dark")
+    page.step(0.1)
+    page.load_trial(0)
+    page.step(0.1)
+    w.pages.setCurrentWidget(w.sim_page)  # hidden, the page's frame loop stops
     assert not page._timer.isActive()
 
 
