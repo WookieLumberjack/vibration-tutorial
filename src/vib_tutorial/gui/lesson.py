@@ -222,6 +222,12 @@ class Form(QtWidgets.QGroupBox):
             widget.setToolTip(tip)
         self.form.addRow(text, widget)
 
+    def label(self, widget: QtWidgets.QWidget) -> QtWidgets.QLabel:
+        """The label `add` gave `widget`."""
+        text = self.form.labelForField(widget)
+        assert isinstance(text, QtWidgets.QLabel), "added with a label"
+        return text
+
     def row(self, widget: QtWidgets.QWidget | QtWidgets.QLayout) -> None:
         if isinstance(widget, QtWidgets.QLayout):
             self.form.addRow(widget)
@@ -230,13 +236,13 @@ class Form(QtWidgets.QGroupBox):
 
 
 def set_quietly(box: QtWidgets.QWidget, value) -> None:
-    """Set a spin box's value, a check box's state or a combo's index without its signals."""
+    """Set a spin box's or slider's value, a check box's state or a combo's index without its signals."""
     box.blockSignals(True)
     if isinstance(box, QtWidgets.QAbstractButton):
         box.setChecked(bool(value))
     elif isinstance(box, QtWidgets.QComboBox):
         box.setCurrentIndex(int(value))
-    else:
+    elif isinstance(box, (QtWidgets.QSpinBox, QtWidgets.QDoubleSpinBox, QtWidgets.QAbstractSlider)):
         box.setValue(value)
     box.blockSignals(False)
 
@@ -259,7 +265,7 @@ def db(ratio: float) -> float:
 def connect_all(boxes: Sequence[QtWidgets.QWidget], slot: Callable[[], None]) -> None:
     """Call `slot` when any of the spin boxes, check boxes or combos changes."""
     for box in boxes:
-        if isinstance(box, QtWidgets.QAbstractSpinBox):
+        if isinstance(box, (QtWidgets.QSpinBox, QtWidgets.QDoubleSpinBox)):
             box.valueChanged.connect(lambda *_: slot())
         elif isinstance(box, QtWidgets.QAbstractButton):
             box.toggled.connect(lambda *_: slot())

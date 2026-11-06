@@ -270,6 +270,7 @@ class ChainView(pg.PlotWidget):
 
     def _drag_to(self, pos: QtCore.QPointF) -> None:
         i = self.held
+        assert i is not None, "dragging only once a mass is held"
         offset = float(np.clip(pos.x() - (i + 1) * SPACING, -MAX_DRAG, MAX_DRAG))
         self.mass_dragged.emit(i, offset / self.gain)
 

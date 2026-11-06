@@ -1921,7 +1921,7 @@ class FramePage(QtWidgets.QWidget):
             return
         if e.kind.link:
             spring = e.kind is Kind.SPRING
-            label = p.link.form.labelForField(p.value)
+            label = p.link.label(p.value)
             label.setText("Stiffness k:" if spring else "Damping c:")
             p.value.setSuffix(" kN/m" if spring else " N·s/m")
             set_quietly(p.value, e.value / 1e3 if spring else e.value)

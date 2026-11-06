@@ -15,7 +15,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.identification import Method, ModeMatch, Stability, Stabilization
-from .layouts import form_layout
+from .layouts import form_layout, header_tip
 from .links import load_notes
 from .panels import spin
 from .style import colors, text_on
@@ -322,7 +322,7 @@ class ResultsView(QtWidgets.QWidget):
             "Modal assurance criterion between the identified and exact complex shapes: 1 = same shape",
         ]
         for c, tip in enumerate(tips):
-            self.table.horizontalHeaderItem(c).setToolTip(tip)
+            header_tip(self.table, c, tip)
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
@@ -342,6 +342,8 @@ class ResultsView(QtWidgets.QWidget):
             cells: list[tuple[str, str | None]] = []
             color = colors.mode[(m.mode - 1) % len(colors.mode)] if m.mode else colors.muted
             cells.append((str(m.mode) if m.mode else "extra", color))
+            fe: float | None
+            ze: float | None
             if m.exact is not None:
                 fe, ze = abs(m.exact) / (2 * math.pi), -m.exact.real / abs(m.exact)
                 cells.append((f"{fe:.4g}", None))

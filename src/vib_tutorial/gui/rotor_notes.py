@@ -336,7 +336,7 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
     fb = ks @ s.bow_shape() * s.bow
     bow_journals = f"{fmt(-fb[0], 1.0)} N at A and {fmt(-fb[3], 1.0)} N at B"
     if s.gravity and s.periodic:
-        qs, qk = (x[0] for x in periodic_steady(s, [omega], gravity=True, rotating=False, top=3))
+        qs, qk = (x[0] for x in periodic_steady(s, np.array([omega]), gravity=True, rotating=False, top=3))
         breathing = s.spacing == 1
         gravity = (
             f"<h4>Gravity</h4><p>On a horizontal rotor f also holds the weights, constant: "
@@ -542,6 +542,7 @@ THEORY_HTML = load_notes("rotor_notes")
 def _crack_note(s: RotorSystem) -> str:
     """The live notes' section on the crack: its compliance, its loss of stiffness and how it breathes."""
     crack = s.crack
+    assert crack is not None, "only written for a cracked shaft"
     c_open, c_across = s.crack_compliances
     if not s.crack_opening:
         state = (

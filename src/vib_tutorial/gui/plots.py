@@ -19,6 +19,7 @@ from ..core import (
     transmissibility,
 )
 from .axes import log_axes
+from .layouts import header_tip
 from .modes import Method, ModeEntry, time_constant_text
 from .style import colors
 from .theming import add_legend
@@ -274,7 +275,7 @@ class ModalTable(QtWidgets.QTableWidget):
             self.setColumnCount(len(headers))
             self.setHorizontalHeaderLabels(headers)
             for col, tip in enumerate(tips):
-                self.horizontalHeaderItem(col).setToolTip(tip)
+                header_tip(self, col, tip)
         if method is Method.CLASSICAL:
             rows = self._classical_rows(result, friction_zeta)
             self.setColumnHidden(self.FRICTION_COLUMN, friction_zeta is None)
@@ -319,7 +320,7 @@ class ModalTable(QtWidgets.QTableWidget):
         for m in result.complex_modes:
             lam = m.eigenvalue
             if m.is_oscillatory:
-                conj = m.conjugate < m.index
+                conj = m.conjugate is not None and m.conjugate < m.index
                 rows.append(
                     [
                         f"{m.index} = λ{m.conjugate}*" if conj else str(m.index),
@@ -501,9 +502,11 @@ class PhasorPanel(QtWidgets.QWidget):
         self.plot = PhasorPlot()
         self.table = QtWidgets.QTableWidget(0, 3)
         self.table.setHorizontalHeaderLabels(["Mass", "|ψ|", "Phase"])
-        self.table.horizontalHeaderItem(2).setToolTip(
+        header_tip(
+            self.table,
+            2,
             "Phase of each mass relative to the largest one. 0° / 180° everywhere means a real "
-            "mode; anything else means the masses peak at different times."
+            "mode; anything else means the masses peak at different times.",
         )
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)

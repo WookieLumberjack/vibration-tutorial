@@ -11,6 +11,7 @@ import cmath
 import functools
 import math
 from dataclasses import dataclass, replace
+from typing import Any
 
 import numpy as np
 
@@ -87,7 +88,7 @@ def _critical(rng: np.random.Generator) -> Question:
     ks = 48 * ei / length**3
     keq = 1 / (1 / ks + 1 / (2 * kb))
     rpm = math.sqrt(keq / m) * RPM
-    setup = dict(length=length, diameter=d / 1000, disc_mass=m, kx=kb)
+    setup: dict[str, Any] = dict(length=length, diameter=d / 1000, disc_mass=m, kx=kb)
     model = critical_rpm(RotorSetup(**setup).system())
     return Question(
         f"A {m:g} kg disc at the middle of a {length:g} m steel shaft (E = 200 GPa) {d:g} mm across, its bearings on "

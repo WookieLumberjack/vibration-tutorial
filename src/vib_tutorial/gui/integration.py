@@ -552,6 +552,7 @@ class IntegrationPage(QtWidgets.QWidget):
         )
 
     def apply_trial(self, t: IntegrationTrial, note: bool = True) -> None:
+        box: QtWidgets.QWidget
         for box, value in (
             (self.mass, t.mass),
             (self.stiffness, t.stiffness),

@@ -371,13 +371,13 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
         self.uncrit.setData(others, [c / 60.0 for c in others])
         self.crit_labels = []
         groups = _grouped(critical_speeds(result, isotropic))
-        for i, (rpm, names) in enumerate(groups):
+        for i, (crit_rpm, names) in enumerate(groups):
             # Right of the circle and above it, unless the next one is close: then below it.
-            crowded = i + 1 < len(groups) and groups[i + 1][0] - rpm < 0.3 * max_rpm
+            crowded = i + 1 < len(groups) and groups[i + 1][0] - crit_rpm < 0.3 * max_rpm
             label = pg.TextItem(
-                f"{rpm:,.0f} rpm ({' + '.join(names)})", anchor=(-0.05, -0.1) if crowded else (-0.05, 1.1)
+                f"{crit_rpm:,.0f} rpm ({' + '.join(names)})", anchor=(-0.05, -0.1) if crowded else (-0.05, 1.1)
             )
-            label.setPos(rpm, rpm / 60.0)
+            label.setPos(crit_rpm, crit_rpm / 60.0)
             p.addItem(label)
             self.crit_labels.append(label)
         top = np.nanmax(f[ok & (f < 2.5 * max_rpm / 60.0)]) if np.any(ok & (f < 2.5 * max_rpm / 60.0)) else 1.0
@@ -404,6 +404,7 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
             self.reference.append(line)
         for i, line in enumerate(self.reference):
             if i < len(branches):
+                assert result is not None, "branches are only found in a result"
                 j = branches[i]
                 f = np.where(result.zeta[:, j] <= DAMPED, result.freq_hz[:, j], np.nan)
                 line.setData(result.omega * RPM, f, connect="finite")

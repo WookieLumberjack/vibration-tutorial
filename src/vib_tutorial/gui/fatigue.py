@@ -17,6 +17,7 @@ from PySide6 import QtWidgets
 
 from ..core.fatigue import (
     Curve,
+    Record,
     Stress,
     dirlik_damage,
     dirlik_range_pdf,
@@ -358,7 +359,7 @@ class FatiguePage(QtWidgets.QWidget):
         super().__init__(parent)
         self.stress = Stress()
         self.curve = Curve()
-        self.rec = None
+        self.rec: Record | None = None
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],

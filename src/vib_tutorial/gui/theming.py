@@ -52,9 +52,16 @@ def save_name(name: str) -> None:
     settings().setValue("theme", name)
 
 
+def application() -> QtWidgets.QApplication:
+    """The running QApplication (`gui.make_app`'s)."""
+    app = QtWidgets.QApplication.instance()
+    assert isinstance(app, QtWidgets.QApplication), "make_app runs first"
+    return app
+
+
 def system_theme() -> Theme:
     """Dark if the desktop asks for a dark colour scheme, else Light."""
-    scheme = QtWidgets.QApplication.instance().styleHints().colorScheme()
+    scheme = application().styleHints().colorScheme()
     return style.DARK if scheme is QtCore.Qt.ColorScheme.Dark else style.LIGHT
 
 
@@ -62,7 +69,7 @@ def apply(name: str) -> Theme:
     """Make `name` (a THEMES key or SYSTEM) the current theme for new and restyled widgets."""
     global _name
     _name = name
-    app = QtWidgets.QApplication.instance()
+    app = application()
     hints = app.styleHints()
     if name == SYSTEM:
         hints.unsetColorScheme()  # report (and follow) the desktop's scheme again

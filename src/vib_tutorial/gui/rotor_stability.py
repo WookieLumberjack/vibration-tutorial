@@ -231,10 +231,10 @@ class FullSpectrum(pg.PlotWidget):
         p.setXRange(-reach, reach, padding=0)
         if freqs.size:
             inside = np.abs(freqs) <= reach
-            top = float(amps[inside].max()) if inside.any() else 0.0
-            floor = max(top * FLOOR, 1e-12)
+            peak = float(amps[inside].max()) if inside.any() else 0.0
+            floor = max(peak * FLOOR, 1e-12)
             self.curve.setData(freqs[inside], np.maximum(amps[inside], floor))
-            p.setYRange(math.log10(floor), math.log10(max(top, floor) * 2.0), padding=0)
+            p.setYRange(math.log10(floor), math.log10(max(peak, floor) * 2.0), padding=0)
         else:
             self.curve.setData([], [])
         self.apply_theme()
@@ -304,7 +304,8 @@ class AsymmetryPlot(pg.PlotWidget):
             g = np.log10(np.where(unstable, growth, 1.0))
             top = float(g[unstable].max())
             rgba[..., 3] = np.where(unstable, 70 + 170 * np.clip((g - top + 1.5) / 1.5, 0.0, 1.0), 0)
-        rgba[np.isnan(growth)] = (*[int(v) for v in QtGui.QColor(colors.faint).getRgb()[:3]], 40)
+        faint = QtGui.QColor(colors.faint)
+        rgba[np.isnan(growth)] = (faint.red(), faint.green(), faint.blue(), 40)
         rpm, deltas = chart.omegas * RPM, chart.asymmetries
         dw, dd = rpm[1] - rpm[0], deltas[1] - deltas[0]
         self.image.setImage(rgba, autoLevels=False)

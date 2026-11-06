@@ -459,8 +459,8 @@ class TestPlanningPage(QtWidgets.QWidget):
             box.blockSignals(True)
             box.setMaximum(system.n)
             box.blockSignals(False)
-        for i, box in enumerate(self.hand):
-            box.setVisible(i < system.n)
+        for i, check in enumerate(self.hand):
+            check.setVisible(i < system.n)
         self._dirty = True
         if self.isVisible():
             self.redraw()
@@ -516,8 +516,8 @@ class TestPlanningPage(QtWidgets.QWidget):
             (self.reference, t.reference + 1),
         ):
             set_quietly(box, value)
-        for i, box in enumerate(self.hand):
-            set_quietly(box, i in t.hand)
+        for i, check in enumerate(self.hand):
+            set_quietly(check, i in t.hand)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self.redraw()

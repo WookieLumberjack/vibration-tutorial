@@ -487,7 +487,7 @@ class VariabilityPage(QtWidgets.QWidget):
         for p in (self.sweep_plot, self.amp_plot):
             p.setToolTip(FORCED_TIP)
         self.forced_note = note_label()
-        self._curve_key = None
+        self._curve_key: tuple[int, float, int] | None = None
 
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()

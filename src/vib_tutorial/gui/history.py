@@ -21,7 +21,7 @@ class History:
     def reset(self, n: int) -> None:
         self.offset += self.size
         self.n = n
-        self.t = np.empty(self.capacity)
+        self.t: np.ndarray = np.empty(self.capacity)
         self.x = np.empty((self.capacity, n))
         self.v = np.empty((self.capacity, n))
         self.f = np.empty(self.capacity)
@@ -40,7 +40,7 @@ class History:
         ss: np.ndarray,
         gs: np.ndarray | None = None,
     ) -> None:
-        new = (ts, xs, vs, fs, es, ss, np.zeros((ts.size, 2)) if gs is None else gs)
+        new: tuple[np.ndarray, ...] = (ts, xs, vs, fs, es, ss, np.zeros((ts.size, 2)) if gs is None else gs)
         k = ts.size
         if k == 0:
             return
@@ -48,7 +48,7 @@ class History:
             new = tuple(a[-self.capacity :] for a in new)
             self.offset += k - self.capacity  # samples never stored still count
             k = self.capacity
-        arrays = (self.t, self.x, self.v, self.f, self.e, self.s, self.g)
+        arrays: tuple[np.ndarray, ...] = (self.t, self.x, self.v, self.f, self.e, self.s, self.g)
         if self.size + k > self.capacity:
             # Drop the oldest half (or more) to make room; amortized O(1).
             keep = min(self.size, self.capacity // 2, self.capacity - k)

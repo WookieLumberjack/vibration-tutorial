@@ -104,7 +104,7 @@ class Curve:
         """N S^b."""
         return self.n_ref * self.s_ref**self.b
 
-    def cycles(self, S: np.ndarray) -> np.ndarray:
+    def cycles(self, S: float | np.ndarray) -> np.ndarray:
         with np.errstate(divide="ignore"):
             return self.K / np.asarray(S, dtype=float) ** self.b
 
