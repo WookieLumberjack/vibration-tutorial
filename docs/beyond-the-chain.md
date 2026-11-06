@@ -470,10 +470,21 @@ the *Assembly* tab shows them at the speed with the picked part's share tinted, 
 modes at the speed come from the state space, the magnets' controllers included: each one's frequency,
 damping ratio and log decrement, and whether it whirls forward or backward, drawn in 3D on the *Whirl* tab
 with every node's orbit. The trials compare it with Euler's pinned and free beams and with the Jeffcott
-rotor page's model, split a disc's modes by its spin, part them on anisotropic bearings, and find the speeds
-where an oil film (5466 rpm) and a seal (6845 rpm) make the forward whirl grow.
+rotor page's model, split a disc's modes by its spin, and part them on anisotropic bearings.
 
 ![Rotor builder page: a stepped compressor rotor, its middle section bored out, with two aluminium impellers between the bearings and a coupling hub overhung, at 6000 rpm; its second pair splits to 199.3 Hz backward and 207.4 Hz forward, and the Whirl tab draws the forward one in 3D with every node's orbit](images/rotor_builder.png)
+
+Then sweep the speed. The *Campbell* tab plots every branch against it, forward and backward, and marks the
+critical speeds where one meets 1X, each with its amplification factor 1/2ζ (those under 2.5 hollow:
+critically damped) and the running speed's separation margin. Give the discs an unbalance (a library disc
+has 10 µm of its mass) and the *Unbalance* tab plots any node's steady orbit and its lag behind the heavy spot
+through the criticals, exactly in the full model: the overhung fan's peaks at 1003 µm at its forward critical
+and barely shows its backward ones. The rotor can whirl in that response instead of a mode. The *Stability*
+tab plots each branch's log decrement against API 684's 0.1, and finds where the rotor first grows by itself:
+an oil film's whip at 5466 rpm, a seal's swirl at 6845, the shaft's internal damping at 1.44 ×
+its critical. The sweeps work in a Ritz basis of the rotor's lowest modes, a millisecond a speed.
+
+![Rotor builder page: the overhung titanium fan's Campbell diagram to 12,000 rpm, its branches fanning out forward and backward with the speed; the 1X line meets them at 4091 rpm (backward), 5480 rpm (forward, amplification factor 116) and 9507 rpm (backward), and the fan runs at 3000 rpm, 36.4 % below the nearest](images/rotor_builder_campbell.png)
 
 ## Machinery diagnostics
 

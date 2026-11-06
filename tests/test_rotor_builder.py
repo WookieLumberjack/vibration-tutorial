@@ -32,7 +32,8 @@ from vib_tutorial.core.rotor_builder import (
     solid_disc,
     uniform,
 )
-from vib_tutorial.core.rotor_modes import whirl_modes
+from vib_tutorial.core.rotor_builder_sweep import lag, orbit, sweep, unbalance_response
+from vib_tutorial.core.rotor_modes import synchronous_response, whirl_modes
 from vib_tutorial.core.rotor_presets import JOURNAL_BEARING, MAGNETIC_BEARING
 
 
@@ -163,6 +164,65 @@ def test_a_seals_swirl_feeds_the_forward_whirl():
     assert forward[1] < forward[0] and backward[1] > backward[0]
 
 
+# ------------------------------------------------------------------ the sweeps
+def test_the_reduced_model_matches_the_full_one():
+    from vib_tutorial.gui.rotor_builder import TRIALS
+
+    for t in TRIALS:
+        a = assemble(t.rotor)
+        for rpm in (0.0, 3000.0, 9000.0):
+            w = rpm * RPM
+            full, reduced = modes(a, w), modes(a, w, a.basis(w))
+            f, r = full.zeta < 0.5, reduced.zeta < 0.5  # the modes that swing: near-overdamped ones may differ
+            k = min(8, int(f.sum()))
+            assert reduced.hz[r][:k] == pytest.approx(full.hz[f][:k], rel=2e-3), t.name
+            assert reduced.zeta[r][:k] == pytest.approx(full.zeta[f][:k], abs=2e-3), t.name
+            assert reduced.whirl[r][:k] == pytest.approx(full.whirl[f][:k], abs=0.02), t.name
+
+
+def test_a_critical_is_where_a_branch_meets_1x():
+    from vib_tutorial.gui.rotor_builder import OVERHUNG
+
+    a = assemble(OVERHUNG)
+    s = sweep(a, 12000.0)
+    assert [c.forward for c in s.criticals] == [False, True, False]
+    for c in s.criticals:
+        f = modes(a, c.rpm * RPM).hz
+        assert np.min(np.abs(f - c.hz)) < 1e-4 * c.hz
+        assert c.amplification == pytest.approx(1 / (2 * c.zeta))
+    assert s.hz.shape == (121, 8) and s.onset is None and np.all(s.least >= 0)
+
+
+@pytest.mark.parametrize("name", ["Oil-film bearings", "A seal's swirl", "Internal damping"])
+def test_the_onset_is_the_full_models(name):
+    from vib_tutorial.gui.rotor_builder import TRIALS
+
+    rotor = next(t.rotor for t in TRIALS if t.name == name)
+    a = assemble(rotor)
+    onset = sweep(a, 10000.0).onset
+    assert onset is not None
+    below, above = (modes(a, r * RPM).zeta[:8].min() for r in (onset - 2.0, onset + 2.0))
+    assert below > 0 > above
+
+
+def test_the_unbalance_response_matches_the_jeffcott_rotor_page():
+    brg = jeffcott.Bearing()
+    system = jeffcott.RotorSystem(density=jeffcott.STEEL, elements=8, position=0.3)
+    rotor = _jeffcott(system, Bearing(0.0, kxx=brg.kx, kyy=brg.ky, cxx=brg.cx, cyy=brg.cy))
+    disc = dataclasses.replace(rotor.discs[0], unbalance=system.unbalance)
+    rotor = dataclasses.replace(rotor, discs=(disc, *rotor.discs[1:]))
+    rpm = np.array([500.0, 1500.0, 1600.0, 3000.0])
+    ours = unbalance_response(assemble(rotor), rpm)
+    theirs = synchronous_response(system, rpm * RPM)
+    j = 4 * rotor.node_at(disc.z)
+    assert ours[:, j] == pytest.approx(theirs[:, jeffcott.XD], rel=2e-3)
+    assert ours[:, j + 2] == pytest.approx(theirs[:, jeffcott.YD], rel=2e-3)
+    node = rotor.node_at(disc.z)
+    assert lag(ours[:1], node, rotor)[0] < 10 and lag(ours[-1:], node, rotor)[0] > 170
+    assert orbit(ours, node) == pytest.approx(np.abs(ours[:, j]), rel=1e-6)  # a circle on round bearings
+    assert not unbalance_response(assemble(rotor), np.array([0.0])).any()
+
+
 # ------------------------------------------------------------------ editing
 def test_the_mesh_puts_a_node_at_every_part():
     rotor = Rotor(uniform(1.0, 0.05, 2, 2), discs=(Disc(0.3),), bearings=(Bearing(0.05), Bearing(0.95)))
@@ -280,6 +340,11 @@ def test_trials():
 
     name = "Magnetic bearings"
     a, m = at(name)
+    assert m.zeta.min() > 0 and by[name].rotor.internal == 1e-6
+    bare = modes(assemble(dataclasses.replace(by[name].rotor, internal=0.0)), 0.0)
+    i = int(np.argmin(bare.zeta))
+    assert bare.hz[i] == pytest.approx(2.4e3, rel=0.05) and 100 * bare.zeta[i] == pytest.approx(-0.61, abs=0.005)
+    assert by[name].rotor.bearings[0].magnet.damped_band()[1] == pytest.approx(1.2e3, rel=0.05)
     magnet = by[name].rotor.bearings[0].magnet
     assert magnet.negative_stiffness / 1e6 == pytest.approx(0.543, abs=0.0005)
     assert magnet.current_gain * magnet.kp / 1e6 == pytest.approx(2.71, abs=0.005)
@@ -299,3 +364,58 @@ def test_trials():
     assert (100 * forward, 100 * backward) == pytest.approx((0.516, 7.74), abs=0.005)
     onset = scipy.optimize.brentq(lambda rpm: modes(a, rpm * RPM).zeta[:2].min(), 6000.0, 9000.0)
     assert onset == pytest.approx(6845, abs=1)
+
+
+def test_the_sweeps_trials():
+    from vib_tutorial.gui.rotor_builder import TRIALS
+
+    by = {t.name: t for t in TRIALS}
+
+    def run(name: str):
+        t = by[name]
+        a = assemble(t.rotor)
+        return t, a, sweep(a, t.top_rpm)
+
+    t, a, s = run("Campbell diagram: the overhung fan")
+    assert [round(c.rpm) for c in s.criticals] == [4091, 5480, 9507]
+    assert s.criticals[1].amplification == pytest.approx(116, abs=0.5)
+    assert 100 * (s.criticals[0].rpm - t.rpm) / t.rpm == pytest.approx(36.4, abs=0.05)
+
+    t, a, s = run("Unbalance: only the forward critical")
+    disc = t.rotor.discs[0]
+    assert disc.unbalance * 1e6 == pytest.approx(174, abs=0.5) and disc.mass == pytest.approx(17.4, abs=0.05)
+    node = t.rotor.node_at(disc.z)
+    Q = unbalance_response(a, np.array([c.rpm for c in s.criticals]))
+    assert orbit(Q, node) * 1e6 == pytest.approx([12.5, 1003, 13.7], abs=0.5)
+    assert lag(Q[1:2], node, t.rotor)[0] == pytest.approx(90, abs=0.5)
+    assert lag(Q[2:], node, t.rotor)[0] == pytest.approx(180, abs=1)
+
+    t, a, s = run("The compressor's criticals")
+    assert [round(c.rpm) for c in s.criticals] == [9985, 10308, 11758, 12748]
+    assert [c.forward for c in s.criticals] == [False, True, False, True]
+    assert [c.amplification for c in s.criticals] == pytest.approx([10.3, 10.1, 9.2, 10.0], abs=0.05)
+    assert 100 * (s.criticals[0].rpm - t.rpm) / t.rpm == pytest.approx(66.4, abs=0.05)
+    assert [d.unbalance * 1e6 for d in t.rotor.discs] == pytest.approx([156, 156, 71], abs=0.5)
+    node = t.rotor.node_at(t.rotor.discs[0].z)
+    Q = unbalance_response(a, np.array([6000.0, 10308.0]))
+    assert orbit(Q, node) * 1e6 == pytest.approx([2.15, 35.4], abs=0.05)
+
+    t, a, s = run("Stability map: oil whip")
+    assert s.onset == pytest.approx(5466, abs=1)
+    assert sum(c.damped for c in s.criticals) == 2 and all(c.zeta > 0.8 for c in s.criticals if c.damped)
+    m = modes(a, 3000 * RPM)
+    assert m.log_dec[2:4] == pytest.approx([0.193, 0.0632], abs=0.0005)
+    m = modes(a, t.rpm * RPM)
+    assert m.log_dec.min() == pytest.approx(-0.190, abs=0.0005)
+
+    t, a, s = run("Internal damping")
+    assert t.rotor.internal == 1e-4 and t.rotor.bearings[0].cxx == 1e4
+    assert s.onset == pytest.approx(4245, abs=1)
+    forward = next(c for c in s.criticals if c.forward)
+    assert forward.rpm == pytest.approx(2947, abs=1) and 100 * forward.zeta == pytest.approx(0.62, abs=0.005)
+    assert s.onset / forward.rpm == pytest.approx(1.44, abs=0.005)
+    assert 100 * modes(a, 0.0).zeta[0] == pytest.approx(2.04, abs=0.005)
+    bare = dataclasses.replace(t.rotor, internal=0.0)
+    assert 100 * modes(assemble(bare), 0.0).zeta[0] == pytest.approx(0.62, abs=0.005)
+    double = dataclasses.replace(t.rotor, internal=2e-4)
+    assert sweep(assemble(double), t.top_rpm).onset == pytest.approx(3596, abs=1)

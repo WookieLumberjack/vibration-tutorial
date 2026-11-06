@@ -27,7 +27,10 @@ I_d to θx and θy, and I_p to G. So (`Assembly`)
 
     M q'' + (C(Ω) + Ω G) q' + K(Ω) q = f,
 
-G skew (it does no work), K(Ω) = K + Ω H + K_f(Ω) and C(Ω) = C + C_f(Ω): H the seals' skew λc, K_f and C_f the
+G skew (it does no work), K(Ω) = K + Ω H + K_f(Ω) and C(Ω) = C + C_f(Ω): H the seals' skew λc (and the shaft's
+internal damping's: β K_shaft acts on the bending rate seen in the turning shaft, q' - ΩJq, so it is ordinary
+damping βK_shaft in C and a skew βK_shaft between the planes in H, which feeds a forward whirl slower than the
+shaft), K_f and C_f the
 oil films' (each a full 2 × 2 with cross terms, linearized where its journal settles under its load). A film's
 load is its bearing's share of the rotor's weight, with every bearing held (`Assembly.loads`): on a vertical
 rotor (no gravity) it carries none and runs centred. A magnetic bearing puts -k_m in K and its controllers'
@@ -42,8 +45,10 @@ Working on it
 model, not the chain or `core/rotor.py`'s): a frozen `Rotor` of `Section`s and parts (`Disc`, `Bearing`, `Seal`)
 at absolute z; editing returns a new rotor (`split`, `resized`, `without_section` move the parts past the change
 with it), so the page's undo is a list of rotors. `assemble` gives the speed-free matrices and each element's
-share (`Part`, tinted on the Assembly tab); `Assembly.stiffness(Ω)` and `damping(Ω)` add the seals' and the
-films' terms, so use them, not `K` and `C`, wherever the speed is known. The beam matrices are the Frame
+share (`Part`, tinted on the Assembly tab); `Assembly.stiffness(Ω)` and `damping(Ω)` add the seals', the
+films' and the internal damping's terms, so use them, not `K` and `C`, wherever the speed is known. The modes
+table works in the full model; the sweeps (core/rotor_builder_sweep.py) in `Assembly.basis`'s Ritz basis, which
+`modes` and `state_matrix` take too (a test checks the two agree on every trial). The beam matrices are the Frame
 builder's (`frame.bending_matrices`): its tests check Timoshenko's against Euler–Bernoulli's at φ = 0, and
 `tests/test_rotor_builder.py` checks this model against the closed forms (a pinned shaft, a free one, a disc's
 gyroscopic split) and against `core/rotor.py` for a Jeffcott rotor with a massive shaft, and the trials' notes.
@@ -78,6 +83,8 @@ OVERDAMPED = 0.05  # a root with |Im λ| below this times |Re λ| is taken as no
 REPEATED = 1e-7  # eigenvalues this close (relative) are a pair to make circular
 NEUTRAL = 1e-9  # a damping ratio smaller than this is round-off: an undamped rotor's is 0, not growing
 GAP = 1e-9  # m: two positions this close are the same node
+ECCENTRICITY = 10e-6  # m: a library disc's centre of mass off the shaft's (its unbalance m e; ISO G2.5 at ~2400 rpm)
+REDUCED = 32  # DOFs: a sweep over the speed works on the lowest this many undamped modes (see `Basis`)
 
 
 class RotorError(ValueError):
@@ -145,6 +152,8 @@ class Disc:
     diameter: float = 0.2  # m
     thickness: float = 0.04  # m
     name: str = "Custom"  # the library's entry it came from
+    unbalance: float = 0.0  # kg·m, m e: its centre of mass off the shaft's by e
+    unbalance_angle: float = 0.0  # rad, the heavy spot's angle from the shaft's keyphasor mark
 
 
 def solid_disc(
@@ -156,7 +165,8 @@ def solid_disc(
     """
     R, r = diameter / 2, bore / 2
     m = material.rho * math.pi * (R * R - r * r) * thickness
-    return Disc(z, m, m * (R * R + r * r) / 2, m * (3 * (R * R + r * r) + thickness**2) / 12, diameter, thickness, name)
+    ip, id_ = m * (R * R + r * r) / 2, m * (3 * (R * R + r * r) + thickness**2) / 12
+    return Disc(z, m, ip, id_, diameter, thickness, name, m * ECCENTRICITY)
 
 
 @dataclass(frozen=True)
@@ -228,6 +238,7 @@ class Rotor:
     seals: tuple[Seal, ...] = ()
     theory: Theory = Theory.TIMOSHENKO
     gravity: float = GRAVITY  # m/s², pulling in -y; 0 for a vertical rotor
+    internal: float = 0.0  # s, β: the shaft's internal damping, β K_shaft on its bending rate in the shaft
 
     # --------------------------------------------------------- geometry
     @property
@@ -485,22 +496,55 @@ class Assembly:
     def mass_inverse(self) -> np.ndarray:
         return np.linalg.inv(self.M)
 
-    def state_matrix(self, omega: float) -> np.ndarray:
-        """A(Ω) for z = [q, q', x_c]."""
-        n, Minv = self.n, self.mass_inverse
-        A = np.zeros((self.n_states, self.n_states))
+    def state_matrix(self, omega: float, basis: Basis | None = None) -> np.ndarray:
+        """A(Ω) for z = [q, q', x_c], or with a basis T for z = [p, p', x_c], q = T p."""
+        T = basis.T if basis is not None else None
+        M, K, C = self.M, self.stiffness(omega), self.damping(omega) + omega * self.G
+        if T is not None:
+            M, K, C = T.T @ M @ T, T.T @ K @ T, T.T @ C @ T
+        Minv = self.mass_inverse if T is None else np.linalg.inv(M)
+        n = M.shape[0]
+        A = np.zeros((2 * n + self.n_control, 2 * n + self.n_control))
         A[:n, n : 2 * n] = np.eye(n)
-        A[n : 2 * n, :n] = -Minv @ self.stiffness(omega)
-        A[n : 2 * n, n : 2 * n] = -Minv @ (self.damping(omega) + omega * self.G)
+        A[n : 2 * n, :n] = -Minv @ K
+        A[n : 2 * n, n : 2 * n] = -Minv @ C
         k = 2 * n
         for d, m in self.axes:
             a, b, c = m.state_space()
             sl = slice(k, k + b.size)
+            row = T[d] if T is not None else np.eye(n)[d]  # the journal's displacement in the coordinates
             A[sl, sl] = a
-            A[sl, d] = b
-            A[n : 2 * n, sl] += np.outer(Minv[:, d], -m.current_gain * c)
+            A[sl, :n] = np.outer(b, row)
+            A[n : 2 * n, sl] += np.outer(Minv @ row, -m.current_gain * c)
             k += b.size
         return A
+
+    def basis(self, omega: float = 0.0, size: int = REDUCED) -> Basis | None:
+        """The lowest `size` undamped modes of a symmetric stand-in, as a Ritz basis (None: too few DOFs to need
+        one).
+
+        The stand-in is K's symmetric part with the films' direct stiffness at speed Ω and each magnet's
+        controller as its proportional spring k_i k_p: near enough the rotor's for its lowest modes to span the
+        lowest whirl modes at any speed nearby, with G, C, the films' cross terms and the controllers all kept in
+        the projection. Rayleigh–Ritz: the reduced model's frequencies are close to the full one's low ones.
+        """
+        if self.n <= size:
+            return None
+        K = 0.5 * (self.K + self.K.T)
+        for d, film, load in self.films:
+            k = film_state(film, load, omega).k
+            K[np.ix_([d, d + 2], [d, d + 2])] += 0.5 * (k + k.T)
+        for d, m in self.axes:
+            K[d, d] += m.current_gain * m.kp
+        _, T = scipy.linalg.eigh(K, self.M, subset_by_index=(0, size - 1))
+        return Basis(T)
+
+
+@dataclass(frozen=True, eq=False)
+class Basis:
+    """A Ritz basis for the displacements, q = T p (n_dof × size): see `Assembly.basis`."""
+
+    T: np.ndarray
 
 
 def _place(A: np.ndarray, dofs: list[int], block: np.ndarray) -> None:
@@ -530,7 +574,11 @@ def assemble(rotor: Rotor) -> Assembly:
             local["M"][np.ix_(own, own)] += mt + mr
         local["G"][np.ix_(lx, ly)] += 2 * mr  # the sections' polar inertia is twice their diametral
         local["G"][np.ix_(ly, lx)] -= 2 * mr
-        zero = np.zeros((8, 8))
+        # Internal damping turns with the shaft: -β K (q' - Ω J q), J turning x toward y. Its -Ω J part is a skew
+        # stiffness Ω H, H = β [0 K; -K 0] between the planes.
+        damp, skew = rotor.internal * local["K"], np.zeros((8, 8))
+        skew[np.ix_(lx, ly)] += rotor.internal * kb
+        skew[np.ix_(ly, lx)] -= rotor.internal * kb
         parts.append(
             Part(
                 ("section", int(k)),
@@ -538,9 +586,9 @@ def assemble(rotor: Rotor) -> Assembly:
                 tuple(dofs),
                 local["M"],
                 local["K"],
-                zero,
+                damp,
                 local["G"],
-                zero,
+                skew,
                 phi=phi,
                 length=L,
             )
@@ -655,7 +703,8 @@ def whirl_ratio(assembly: Assembly, Q: np.ndarray) -> np.ndarray:
 
 
 def _circularize(assembly: Assembly, lam: np.ndarray, vec: np.ndarray) -> None:
-    """Within each group of repeated eigenvalues, the purely forward and backward combinations."""
+    """Within each group of repeated eigenvalues, the purely forward and backward combinations (vec: the
+    displacements, n_dof × modes)."""
     n = assembly.n
     ix, iy = plane_dofs(n // 4)
     mp = assembly.M[np.ix_(ix, ix)].astype(complex)
@@ -668,23 +717,24 @@ def _circularize(assembly: Assembly, lam: np.ndarray, vec: np.ndarray) -> None:
         while j < lam.size and abs(lam[j] - lam[i]) <= REPEATED * abs(lam[i]):
             j += 1
         if j - i > 1:
-            V = vec[:n, i:j]
+            V = vec[:, i:j]
             _, c = scipy.linalg.eigh(V.conj().T @ Hf @ V, V.conj().T @ Df @ V)
-            vec[:, i:j] = vec[:, i:j] @ c
+            vec[:, i:j] = V @ c
         i = j
 
 
-def modes(assembly: Assembly, omega: float) -> WhirlModes:
-    """The whirl modes at speed Ω (rad/s)."""
+def modes(assembly: Assembly, omega: float, basis: Basis | None = None) -> WhirlModes:
+    """The whirl modes at speed Ω (rad/s): exactly, or in a Ritz basis (`Assembly.basis`), much faster."""
     n = assembly.n
-    lam, vec = scipy.linalg.eig(assembly.state_matrix(omega))
+    lam, vec = scipy.linalg.eig(assembly.state_matrix(omega, basis))
     still = np.abs(lam) < STILL
     real = ~still & (np.abs(lam.imag) < OVERDAMPED * np.abs(lam.real))
     up = ~still & ~real & (lam.imag > 0)
     order = np.argsort(lam[up].imag)
-    lam_up, vec_up = lam[up][order], vec[:, up][:, order]
-    _circularize(assembly, lam_up, vec_up)
-    Q = vec_up[:n]
+    lam_up = lam[up][order]
+    Q = vec[:, up][:, order]
+    Q = Q[:n] if basis is None else basis.T @ Q[: basis.T.shape[1]]
+    _circularize(assembly, lam_up, Q)
     if Q.size:
         trans = np.abs(Q[np.r_[0:n:4, 2:n:4]]).max(axis=0)
         top = np.argmax(np.abs(Q), axis=0)

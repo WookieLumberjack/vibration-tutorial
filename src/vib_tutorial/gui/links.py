@@ -225,7 +225,7 @@ COURSE = (
             (
                 "rotor_builder_page",
                 "Rotor builder",
-                "build a rotor from shaft sections, discs, bearings and seals: its matrices, and its whirl modes",
+                "build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability",
             ),
             (
                 "diagnostics_page",
