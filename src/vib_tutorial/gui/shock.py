@@ -45,6 +45,7 @@ from ..core.shock import (
     target,
     target_band,
 )
+from . import weak
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
@@ -574,7 +575,7 @@ class ShockPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
         spec_box = QtWidgets.QGroupBox("Spectrum")
@@ -757,15 +758,15 @@ class ShockPage(QtWidgets.QWidget):
             field.valueChanged.connect(self._on_pulse)
         self.q.valueChanged.connect(self._on_spectrum)
         for c in (self.split_time, self.split_sign):
-            c.toggled.connect(lambda _: self._draw_srs())
+            c.toggled.connect(self._draw_srs)
         self.again.clicked.connect(self._on_again)
-        self.trial.picked.connect(lambda _: self.apply_trial())
+        self.trial.picked.connect(self.apply_trial)
         self.pick_line.sigPositionChanged.connect(self._on_line)
         self.f_pick.valueChanged.connect(self._on_pick)
         self.srs_plot.scene().sigMouseClicked.connect(self._on_click)
         self.response.currentIndexChanged.connect(self._on_response)
-        self.output.currentIndexChanged.connect(lambda _: self.lazy.stale(self.chain_tab))
-        self.same_dv.toggled.connect(lambda _: self.lazy.stale(self.shapes_tab))
+        self.output.currentIndexChanged.connect(weak.slot(self, lambda self, _: self.lazy.stale(self.chain_tab)))
+        self.same_dv.toggled.connect(weak.slot(self, lambda self, _: self.lazy.stale(self.shapes_tab)))
 
     # ------------------------------------------------------------- inputs
     def set_system(self, system: ChainSystem, result: ModalResult | None = None) -> None:

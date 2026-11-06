@@ -38,6 +38,7 @@ from ..core.model_updating import (
     update,
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
+from . import weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
@@ -552,7 +553,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("The structure is the chain on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
         model_box = QtWidgets.QGroupBox("The model's errors")
@@ -748,17 +749,17 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         # --- wiring
-        self.source.currentIndexChanged.connect(lambda _: self._schedule(measure=True))
+        self.source.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._schedule(measure=True)))
         self.again.clicked.connect(self._on_again)
         self.clear_errors.clicked.connect(self._on_clear)
-        self.trial.picked.connect(lambda _: self.apply_trial())
+        self.trial.picked.connect(self.apply_trial)
         self.table.itemSelectionChanged.connect(self._draw_shapes)
         for w in (*self.update_kind.values(), self.fit_shapes, self.fit_damping):
-            w.toggled.connect(lambda _: self._on_update_settings())
+            w.toggled.connect(self._on_update_settings)
         for w in (self.shape_weight, self.regularization):
-            w.valueChanged.connect(lambda _: self._on_update_settings())
+            w.valueChanged.connect(self._on_update_settings)
         self.apply_update.clicked.connect(self._on_apply_update)
-        self.tabs.currentChanged.connect(lambda _: self._draw_update())
+        self.tabs.currentChanged.connect(self._draw_update)
         self._set_update_settings(DEFAULT_UPDATE)
 
     # ------------------------------------------------------------- inputs
@@ -793,7 +794,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             box = QtWidgets.QCheckBox(f"m{i + 1}")
             box.setChecked(kept[i] if i < len(kept) else True)
             box.setToolTip(TIPS["sensors"])
-            box.toggled.connect(lambda _: self._schedule(measure=False))
+            box.toggled.connect(weak.slot(self, lambda self, _: self._schedule(measure=False)))
             self.sensor_layout.addWidget(box)
             self.sensors.append(box)
         values = [[s.value() for s in row[1:]] for row in self.error_rows]

@@ -37,6 +37,7 @@ from ..core.modal_coupling import (
     sweep,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from . import weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
@@ -907,7 +908,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
             combo.setToolTip(
                 "The mode of this subsystem that becomes its oscillator. Or click its row in the table below."
             )
-            combo.activated.connect(lambda i, s=s: self._on_mode(s, i))
+            combo.activated.connect(weak.slot(self, lambda self, i, s=s: self._on_mode(s, i)))
         self.mode_labels = [QtWidgets.QLabel(), QtWidgets.QLabel()]
         form.addRow(self.mode_labels[0], self.mode_a)
         form.addRow(self.mode_labels[1], self.mode_b)
@@ -926,7 +927,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         form.addRow(self.residual)
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
         self.schematic = CouplingSchematic()

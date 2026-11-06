@@ -23,7 +23,7 @@ from ..core import force_id as fid
 from ..core import nonlinear_test as nl
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
-from . import settle_plots
+from . import settle_plots, weak
 from .layouts import FlowLayout
 from .lesson import (
     Form,
@@ -364,7 +364,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses, springs and friction are edited on the <a href='#sim'>Simulation page</a>.")
         link.setWordWrap(True)
         mute(link)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         ch.row(link)
         self.chain_info = note_label()
         ch.row(self.chain_info)
@@ -419,9 +419,11 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         buttons.addWidget(self.discrepancy_button)
         ident.row(buttons)
         self.ident_form = ident
-        self.corner_button.clicked.connect(lambda: self._set_lambda(self.curve.corner if self.curve else None))
+        self.corner_button.clicked.connect(
+            weak.slot(self, lambda self: self._set_lambda(self.curve.corner if self.curve else None))
+        )
         self.discrepancy_button.clicked.connect(
-            lambda: self._set_lambda(fid.discrepancy(self.problem) if self.problem else None)
+            weak.slot(self, lambda self: self._set_lambda(fid.discrepancy(self.problem) if self.problem else None))
         )
 
         connect_all(
@@ -507,7 +509,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.l_plot, self.l_note, stretch=False), "L-curve")
         self.tabs.addTab(column(self.picard_plot, self.picard_note, stretch=False), "Singular values")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,

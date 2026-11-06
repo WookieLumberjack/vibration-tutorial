@@ -1363,7 +1363,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.check_plot, self.check_note, stretch=False), "Check")
         self.tabs.addTab(column(self.section_plot, self.apart_plot, self.chaos_note, stretch=False), "Chaos")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,

@@ -504,7 +504,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.tabs.addTab(frf, "Frequency response")
         self.tabs.addTab(decay, "Free decay")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter.addWidget(ColumnScroll(left))

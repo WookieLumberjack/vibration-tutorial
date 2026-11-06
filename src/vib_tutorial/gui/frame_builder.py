@@ -59,7 +59,7 @@ from ..core.frame_response import (
     responses,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
-from . import frame_stats, settle_plots
+from . import frame_stats, settle_plots, weak
 from .layouts import FlowLayout, group
 from .lesson import (
     Form,
@@ -1400,14 +1400,14 @@ class FramePage(QtWidgets.QWidget):
         p = self.props
         for box in (p.node_x, p.node_y, p.mass, p.inertia, p.torsion, p.torsion_c):
             box.editingFinished.connect(self._on_node_box)
-        p.support.currentIndexChanged.connect(lambda _: self._on_node_box())
+        p.support.currentIndexChanged.connect(self._on_node_box)
         for box in (p.section_depth, p.section_width, p.wall):
             box.editingFinished.connect(self._on_member_box)
         for choice in (p.kind, p.material, p.shape):
-            choice.currentIndexChanged.connect(lambda _: self._on_member_box())
+            choice.currentIndexChanged.connect(self._on_member_box)
         p.value.editingFinished.connect(self._on_link_box)
         p.divide.clicked.connect(self._on_divide)
-        p.remove.clicked.connect(lambda: self.canvas.delete_selected())
+        p.remove.clicked.connect(weak.slot(self, lambda self: self.canvas.delete_selected()))
 
         model = Form("Model")
         self.lumped = combo(["Consistent", "Lumped"], TIPS["lumped"])
@@ -1417,9 +1417,9 @@ class FramePage(QtWidgets.QWidget):
         self.zeta = model.number("Damping ζ:", 0.0, 50.0, 0.0, 2, " %", TIPS["zeta"])
         self.grid = combo([f"{g:g} m" for g in GRIDS], TIPS["grid"])
         model.add("Grid:", self.grid, TIPS["grid"])
-        self.lumped.currentIndexChanged.connect(lambda _: self._on_model())
-        self.theory.currentIndexChanged.connect(lambda _: self._on_model())
-        self.zeta.valueChanged.connect(lambda _: self._on_model())
+        self.lumped.currentIndexChanged.connect(self._on_model)
+        self.theory.currentIndexChanged.connect(self._on_model)
+        self.zeta.valueChanged.connect(self._on_model)
         self.grid.currentIndexChanged.connect(self._on_grid)
 
         loading = Form("Load")
@@ -1431,9 +1431,9 @@ class FramePage(QtWidgets.QWidget):
         self.out_node, self.out_dof = self._dof_boxes(loading, "Response at:", TIPS["out_at"])
         self.load_form = loading
         for choice in (self.load_kind, self.load_dof, self.out_dof):
-            choice.currentIndexChanged.connect(lambda _: self._on_load())
+            choice.currentIndexChanged.connect(self._on_load)
         for field in (self.load_node, self.out_node, self.load_size, self.load_hz):
-            field.valueChanged.connect(lambda _: self._on_load())
+            field.valueChanged.connect(self._on_load)
 
         show = Form("Show")
         self.matrix = combo([m.value for m in MATRICES], TIPS["matrix"])
@@ -1452,11 +1452,11 @@ class FramePage(QtWidgets.QWidget):
         buttons.addWidget(self.run_button)
         buttons.addWidget(self.reset_button)
         show.row(buttons)
-        self.matrix.currentIndexChanged.connect(lambda _: self._draw_tabs())
-        self.free_only.toggled.connect(lambda _: self._draw_tabs())
+        self.matrix.currentIndexChanged.connect(self._draw_tabs)
+        self.free_only.toggled.connect(self._draw_tabs)
         self.run_button.toggled.connect(self._on_animate)
         self.reset_button.clicked.connect(self.reset)
-        self.swing.currentIndexChanged.connect(lambda _: self._on_swing())
+        self.swing.currentIndexChanged.connect(self._on_swing)
 
         # --- centre: the tools, the canvas, the modes
         self.canvas: FrameCanvas = FrameCanvas()
@@ -1489,7 +1489,12 @@ class FramePage(QtWidgets.QWidget):
         self.undo_button.clicked.connect(self.undo)
         self.redo_button.clicked.connect(self.redo)
         self.clear_button.clicked.connect(
-            lambda: self._set_frame(Frame(lumped=self.frame.lumped, theory=self.frame.theory, zeta=self.frame.zeta))
+            weak.slot(
+                self,
+                lambda self: self._set_frame(
+                    Frame(lumped=self.frame.lumped, theory=self.frame.theory, zeta=self.frame.zeta)
+                ),
+            )
         )
         flow.add(group(self.support_kind), self.undo_button, self.redo_button, self.clear_button)
         for keys, slot in (("Ctrl+Z", self.undo), ("Ctrl+Shift+Z", self.redo), ("Ctrl+Y", self.redo)):
@@ -1560,7 +1565,7 @@ class FramePage(QtWidgets.QWidget):
             column(self.forms_note, self.forms_table, self.argand_note, self.argand, stretch=False), "Formulations"
         )
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tabs())
+        self.tabs.currentChanged.connect(self._draw_tabs)
 
         centre = QtWidgets.QWidget()
         v = QtWidgets.QVBoxLayout(centre)

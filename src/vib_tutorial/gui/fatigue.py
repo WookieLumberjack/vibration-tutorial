@@ -437,7 +437,7 @@ class FatiguePage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.dmg_plot, stretch=False), "Damage by range")
         self.tabs.addTab(column(self.sn_plot, stretch=False), "S–N curve")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
         right = QtWidgets.QWidget()
         rv = QtWidgets.QVBoxLayout(right)
         rv.setContentsMargins(0, 0, 0, 0)

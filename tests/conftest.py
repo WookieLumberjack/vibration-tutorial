@@ -1,8 +1,12 @@
 """Test-wide setup, run before any test module imports NumPy."""
 
+import gc
 import os
 import re
+import sys
 import tempfile
+import traceback
+import weakref
 
 import pytest
 
@@ -28,8 +32,8 @@ WARN_SHARE = 0.8  # warn when a worker's peak address space passes this share of
 @pytest.fixture(scope="session")
 def shared_window():
     """One main window, its frame timer stopped, for the tests that only build, read or set up pages; each page is
-    built as a test asks for it. No window a GUI test builds is ever freed (PySide's signal connections hold them),
-    and each test that built every page in a window of its own kept another 300–600 MB. The tests that use it are
+    built as a test asks for it. From before windows were freed (`free_windows`), when each test that built every
+    page in a window of its own kept another 300–600 MB. The tests that use it are
     marked `xdist_group("shared_window")`, so `--dist loadgroup` (pyproject.toml) runs them on one worker and only
     that worker builds it."""
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -45,6 +49,69 @@ def shared_window():
     yield w
     w.close()
     close_graphics(w)
+
+
+@pytest.fixture
+def free_windows(request):
+    """Tear down the windows a test built and check they're freed: the GUI modules' autouse fixtures use it.
+
+    `close_graphics` clears their plots and blocks their signals, and once the test has dropped them `gc` frees
+    them (their pages' own cycles need it). One still alive after that is held by something that lives on: a
+    lambda or closure over `self` connected to a signal of the window's own (`gui/weak.py`). Not checked after
+    a failed test, whose traceback still holds its window.
+
+    It fails a test in which a slot raised, too: Qt only prints the exception, and `sys.last_exc` keeps it,
+    with the frames that hold the window."""
+    from PySide6 import QtCore, QtWidgets
+
+    _forget_exception()
+    before = set(QtWidgets.QApplication.topLevelWidgets())
+    yield
+    raised = _forget_exception()  # as text: the exception itself holds the frames, and so the window
+    refs = _close_new(before)
+    del before
+    gc.collect()
+    QtCore.QCoreApplication.sendPostedEvents(None, QtCore.QEvent.Type.DeferredDelete)
+    gc.collect()
+    report = getattr(request.node, "rep_call", None)
+    if report is not None and report.passed:
+        assert raised is None, f"a slot raised during the test:\n{raised}"
+        alive = [name for name, ref in refs if ref() is not None]
+        assert not alive, f"windows still alive after the test: {alive} (see gui/weak.py)"
+
+
+def _forget_exception() -> str | None:
+    """Clear the exception a slot last raised (Qt prints it, and Python keeps it); its traceback, if one did."""
+    exc = getattr(sys, "last_exc", None)
+    text = "".join(traceback.format_exception(exc)) if exc is not None else None
+    for name in ("last_exc", "last_type", "last_value", "last_traceback"):
+        if hasattr(sys, name):
+            delattr(sys, name)
+    return text
+
+
+def _close_new(before) -> list[tuple[str, weakref.ref]]:
+    """`close_graphics` on each top-level widget not in `before`; weak references to the app's own (not
+    pyqtgraph's menus, or a test's plain widgets). A function of its own, so no local holds one on."""
+    from PySide6 import QtWidgets
+    from shiboken6 import isValid
+
+    from vib_tutorial.gui import close_graphics
+
+    refs = []
+    for w in QtWidgets.QApplication.topLevelWidgets():
+        if w not in before and isValid(w):
+            close_graphics(w)
+            if type(w).__module__.startswith("vib_tutorial."):
+                refs.append((type(w).__name__, weakref.ref(w)))
+    return refs
+
+
+@pytest.hookimpl(wrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item, call):
+    report = yield
+    setattr(item, f"rep_{report.when}", report)  # for free_windows: was the test itself passed?
+    return report
 
 
 # ------------------------------------------------------------------ the margin

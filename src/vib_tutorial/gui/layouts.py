@@ -14,6 +14,7 @@ to ask for (`plot_height`), or it scrolls even where the plots could have shrunk
 from __future__ import annotations
 
 from PySide6 import QtCore, QtWidgets
+from shiboken6 import isValid
 
 
 class FlowLayout(QtWidgets.QLayout):
@@ -33,13 +34,24 @@ class FlowLayout(QtWidgets.QLayout):
             self.addWidget(item if isinstance(item, QtWidgets.QWidget) else _holder(item))
 
     def count(self) -> int:
-        return len(self._items)
+        return len(self._live())
 
     def itemAt(self, index: int) -> QtWidgets.QLayoutItem | None:
-        return self._items[index] if 0 <= index < len(self._items) else None
+        items = self._live()
+        return items[index] if 0 <= index < len(items) else None
 
     def takeAt(self, index: int) -> QtWidgets.QLayoutItem | None:
-        return self._items.pop(index) if 0 <= index < len(self._items) else None
+        items = self._live()
+        return items.pop(index) if 0 <= index < len(items) else None
+
+    def _live(self) -> list[QtWidgets.QLayoutItem]:
+        """The items, less any Qt has deleted: tearing a window down deletes them while the layout still asks
+        its size, and after the layout's Python side has gone too."""
+        if "_items" not in vars(self):
+            return []
+        if not all(isValid(i) for i in self._items):
+            self._items = [i for i in self._items if isValid(i)]
+        return self._items
 
     def expandingDirections(self) -> QtCore.Qt.Orientation:
         return QtCore.Qt.Orientation(0)
@@ -72,7 +84,7 @@ class FlowLayout(QtWidgets.QLayout):
 
     def _shown(self) -> list[QtWidgets.QLayoutItem]:
         # A hidden widget's item is empty; a group whose widgets are all hidden has no size.
-        return [i for i in self._items if not i.isEmpty() and i.sizeHint().width() > 0]
+        return [i for i in self._live() if not i.isEmpty() and i.sizeHint().width() > 0]
 
     def _gap(self, vertical: bool = False) -> int:
         gap = self.spacing()

@@ -53,7 +53,7 @@ from ..core.rotor_sweep import (
     probe,
 )
 from ..core.rotor_waterfall import Waterfall
-from . import frame_stats, rotor_practice, settle_plots
+from . import frame_stats, rotor_practice, settle_plots, weak
 from .cms_time import SampleBuffer
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
 from .lesson import RunButton
@@ -209,7 +209,7 @@ class RotorPage(QtWidgets.QWidget):
         self.show_sag.setChecked(True)
         self.show_sag.setEnabled(False)
         self.show_sag.setToolTip(SAG_TIP)
-        self.show_sag.toggled.connect(lambda _: self._draw())
+        self.show_sag.toggled.connect(self._draw)
         row = FlowLayout()
         row.add(
             QtWidgets.QLabel("Orbits, seen from the B end:"),
@@ -324,13 +324,13 @@ class RotorPage(QtWidgets.QWidget):
         self.wf_block = spin(0.1, 2.0, 0.5, 2, " s")
         self.wf_block.setSingleStep(0.1)
         self.wf_block.setToolTip(BLOCK_TIP)
-        self.wf_block.valueChanged.connect(lambda _: self._new_waterfall())
+        self.wf_block.valueChanged.connect(self._new_waterfall)
         self.wf_marks = QtWidgets.QCheckBox("1X and free whirl")
         self.wf_marks.setChecked(True)
         self.wf_marks.setToolTip("Mark 1X and the free whirl frequencies (from the Campbell diagram) under the lines")
         for c in (self.wf_station, self.wf_against, self.wf_scale):
-            c.currentIndexChanged.connect(lambda _: self._draw_waterfall())
-        self.wf_marks.toggled.connect(lambda _: self._draw_waterfall())
+            c.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._draw_waterfall()))
+        self.wf_marks.toggled.connect(weak.slot(self, lambda self, _: self._draw_waterfall()))
         self.wf_clear = QtWidgets.QPushButton("Clear")
         self.wf_clear.setToolTip("Drop every spectrum taken so far")
         self.wf_clear.clicked.connect(self._new_waterfall)
@@ -354,10 +354,10 @@ class RotorPage(QtWidgets.QWidget):
         self.balancing = BalancingPanel(self)
         self.bearing_panel = BearingPanel()
         self.bearing_panel.set_top_rpm(self.top_rpm)
-        self.bearing_panel.changed.connect(lambda: self._on_bearing_tab(FILMS))
+        self.bearing_panel.changed.connect(weak.slot(self, lambda self: self._on_bearing_tab(FILMS)))
         self.magnet_panel = MagnetPanel()
         self.magnet_panel.set_top_rpm(self.top_rpm)
-        self.magnet_panel.changed.connect(lambda: self._on_bearing_tab(MAGNETS))
+        self.magnet_panel.changed.connect(weak.slot(self, lambda self: self._on_bearing_tab(MAGNETS)))
         self.rub_panel = RubPanel()
         self.rub_panel.changed.connect(self._on_params)
         self.matrices = QtWidgets.QTextBrowser()
@@ -379,7 +379,7 @@ class RotorPage(QtWidgets.QWidget):
         self.tabs.add_group("Theory", (self.theory, "Theory"), (self.matrices, "Equations && matrices"))
         self.tabs.changed.connect(self._catch_up_tab)
         self.tabs.changed.connect(self._refresh_matrices)
-        self.tabs.changed.connect(lambda: self._draw_waterfall(only_new=True))
+        self.tabs.changed.connect(weak.slot(self, lambda self: self._draw_waterfall(only_new=True)))
         self.tabs.changed.connect(self._show_bearing_speed)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
@@ -447,7 +447,7 @@ class RotorPage(QtWidgets.QWidget):
         self.target_rpm = spin(0.0, TOP_RPM, 1000.0, 0, " rpm")
         self.target_rpm.setToolTip(SPEED_TIP)
         self.speed_slider.setValue(1000)
-        self.speed_slider.valueChanged.connect(lambda v: self.target_rpm.setValue(float(v)))
+        self.speed_slider.valueChanged.connect(weak.slot(self, lambda self, v: self.target_rpm.setValue(float(v))))
         self.target_rpm.valueChanged.connect(self._on_target)
         form.addRow("Target speed:", self.target_rpm)
         form.addRow(self.speed_slider)
@@ -765,7 +765,7 @@ class RotorPage(QtWidgets.QWidget):
         )
         self.supports.setItemData(FILMS, FILM_TIP, QtCore.Qt.ItemDataRole.ToolTipRole)
         self.supports.setItemData(MAGNETS, MAGNET_TIP, QtCore.Qt.ItemDataRole.ToolTipRole)
-        self.supports.currentIndexChanged.connect(lambda _: self._on_params())
+        self.supports.currentIndexChanged.connect(self._on_params)
         self.nonlinear_film = QtWidgets.QCheckBox("Nonlinear film")
         self.nonlinear_film.setChecked(True)
         self.nonlinear_film.setToolTip(NONLINEAR_FILM_TIP)

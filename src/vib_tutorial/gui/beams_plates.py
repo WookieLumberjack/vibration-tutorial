@@ -460,7 +460,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         self.tabs.addTab(self.table, "Frequencies")
         self.tabs.addTab(column(self.density_plot, self.density_note, stretch=False), "Modal density")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(self, column(self.trials, shape, material, pick), centre, self.tabs)
         self._on_inputs()

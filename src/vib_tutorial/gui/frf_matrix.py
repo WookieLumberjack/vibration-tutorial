@@ -20,6 +20,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
+from . import weak
 from .layouts import ColumnScroll, form_layout
 from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
@@ -757,7 +758,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
         self.mode_box = QtWidgets.QGroupBox("Modes included in the sum")
@@ -767,8 +768,8 @@ class FrfMatrixPage(QtWidgets.QWidget):
         buttons = QtWidgets.QHBoxLayout()
         self.all_button = QtWidgets.QPushButton("All")
         self.none_button = QtWidgets.QPushButton("None")
-        self.all_button.clicked.connect(lambda: self._check_all(True))
-        self.none_button.clicked.connect(lambda: self._check_all(False))
+        self.all_button.clicked.connect(weak.slot(self, lambda self: self._check_all(True)))
+        self.none_button.clicked.connect(weak.slot(self, lambda self: self._check_all(False)))
         buttons.addWidget(self.all_button)
         buttons.addWidget(self.none_button)
         mv.addLayout(buttons)

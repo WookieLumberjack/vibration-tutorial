@@ -22,6 +22,7 @@ from ..core.rotor import PlaneWeight
 from ..core.rotor_balance import PROBES, corrections, influence_matrix, weight, weight_parts
 from ..core.rotor_simulator import RPM
 from ..core.rotor_sweep import STATIONS, lag_degrees, probe, steady_vectors
+from . import weak
 from .layouts import FlowLayout, form_layout, group, plot_height
 from .panels import spin
 from .style import colors
@@ -167,8 +168,8 @@ class BalancingPanel(QtWidgets.QWidget):
         actions = {
             "slow": self.measure_slow,
             "found": self.measure_found,
-            "trial": lambda: self.measure_trial(0),
-            "trial2": lambda: self.measure_trial(1),
+            "trial": weak.slot(self, lambda self: self.measure_trial(0)),
+            "trial2": weak.slot(self, lambda self: self.measure_trial(1)),
             "verify": self.measure_verify,
         }
         for key, b in self._buttons.items():

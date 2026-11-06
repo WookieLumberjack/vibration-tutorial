@@ -105,7 +105,7 @@ class BearingPanel(QtWidgets.QWidget):
         self.which = QtWidgets.QComboBox()
         self.which.addItems(["Bearing A", "Bearing B"])
         self.which.setToolTip("<p>The rotor's bearing to show: each carries its own share of the weight.</p>")
-        self.which.currentIndexChanged.connect(lambda _: self._redraw())
+        self.which.currentIndexChanged.connect(self._redraw)
         self.rotor_note = QtWidgets.QLabel()
         mute(self.rotor_note)
         self.against = QtWidgets.QComboBox()
@@ -134,7 +134,7 @@ class BearingPanel(QtWidgets.QWidget):
         form.addWidget(self.which, 3, 1)
         form.addWidget(self.rotor_note, 3, 2, 1, 2)
         self.which.setVisible(False)
-        self.against.currentIndexChanged.connect(lambda _: self._draw_coefficients())
+        self.against.currentIndexChanged.connect(self._draw_coefficients)
         form.setColumnStretch(1, 1)
         form.setColumnStretch(3, 1)
 

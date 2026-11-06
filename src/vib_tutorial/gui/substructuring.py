@@ -37,6 +37,7 @@ from ..core import (
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from ..core.substructure import METHOD_SHORT, SUBSTRUCTURE_NAMES
+from . import weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
@@ -1103,15 +1104,15 @@ class SubstructuringPage(QtWidgets.QWidget):
         self._build_kept_rows(2)
         presets = QtWidgets.QHBoxLayout()
         self.guyan_button = guyan = QtWidgets.QPushButton()
-        guyan.clicked.connect(lambda: self._set_all_kept(0))
+        guyan.clicked.connect(weak.slot(self, lambda self: self._set_all_kept(0)))
         self.exact_button = exact = QtWidgets.QPushButton()
-        exact.clicked.connect(lambda: self._set_all_kept(MAX_DOF))
+        exact.clicked.connect(weak.slot(self, lambda self: self._set_all_kept(MAX_DOF)))
         presets.addWidget(guyan)
         presets.addWidget(exact)
         form.addRow(presets)
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
         self.schematic = SubstructureSchematic()
@@ -1243,7 +1244,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         for s in range(count):
             row = QtWidgets.QHBoxLayout()
             spin = QtWidgets.QSpinBox()
-            spin.valueChanged.connect(lambda v, s=s: self._on_kept(s, v))
+            spin.valueChanged.connect(weak.slot(self, lambda self, v, s=s: self._on_kept(s, v)))
             info = QtWidgets.QLabel()
             mute(info)
             row.addWidget(spin)
@@ -1267,7 +1268,7 @@ class SubstructuringPage(QtWidgets.QWidget):
             b.setCheckable(True)
             b.setMinimumWidth(10)
             b.setToolTip(INTERFACE_TIP)
-            b.toggled.connect(lambda on, i=i: self._on_cut(i, on))
+            b.toggled.connect(weak.slot(self, lambda self, on, i=i: self._on_cut(i, on)))
             self.cut_row.addWidget(b, 1)
             self.cut_buttons.append(b)
         self._style_cut_buttons()

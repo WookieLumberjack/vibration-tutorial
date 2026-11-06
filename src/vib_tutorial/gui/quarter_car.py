@@ -439,7 +439,7 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.damper_plot, self.damper_note, stretch=False), "Damper")
         self.tabs.addTab(column(self.road_plot, self.acc_plot, self.drive_note, stretch=False), "Drive")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,

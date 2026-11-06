@@ -326,7 +326,7 @@ class InputLog(QtCore.QObject):
                     )
                 )
                 # After the widget has handled it: its value is the new one then.
-                QtCore.QTimer.singleShot(0, lambda w=widget, h=how: self._log(w, h))
+                QtCore.QTimer.singleShot(0, widget, lambda w=widget, h=how: self._log(w, h))
         return False
 
     def _control(self, obj: QtCore.QObject) -> QtWidgets.QWidget | None:

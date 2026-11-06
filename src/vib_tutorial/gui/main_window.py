@@ -28,7 +28,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import frame_stats, links, settle_plots, theming
+from . import frame_stats, links, settle_plots, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
@@ -423,7 +423,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "<p>Sets up the chain and the controls to show one idea, and says what to look "
             "for. The Theory tab (F1) lists them all.</p>",
         )
-        self.trial.picked.connect(lambda i: self.apply_sim_trial(SIM_TRIALS[i]))
+        self.trial.picked.connect(weak.slot(self, lambda self, i: self.apply_sim_trial(SIM_TRIALS[i])))
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel(
             "New here? Press <b>Space</b> to switch the force on, or pick one of these. Then read the "
@@ -505,7 +505,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.modal_note = QtWidgets.QLabel()
         self.modal_note.setWordWrap(True)
         self.modal_note.setToolTip(COUPLING_TIP)
-        self.modal_note.linkActivated.connect(lambda _: self.tabs.setCurrentWidget(self.background))
+        self.modal_note.linkActivated.connect(
+            weak.slot(self, lambda self, _: self.tabs.setCurrentWidget(self.background))
+        )
         self.animate_modes = QtWidgets.QCheckBox("Animate mode shapes")
         self.release_amp = spin(0.001, 1000.0, 20.0, 3, " mm")
         amp_tip = (
@@ -631,7 +633,11 @@ class MainWindow(QtWidgets.QMainWindow):
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F1"), self, self.open_theory_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         for i in range(len(PAGE_GROUPS)):  # Ctrl+1 … Ctrl+6: a group, at the page it last showed
-            QtGui.QShortcut(QtGui.QKeySequence(f"Ctrl+{i + 1}"), self, lambda i=i: self.pages.groups.setCurrentIndex(i))
+            QtGui.QShortcut(
+                QtGui.QKeySequence(f"Ctrl+{i + 1}"),
+                self,
+                weak.slot(self, lambda self, i=i: self.pages.groups.setCurrentIndex(i)),
+            )
 
         # --- wiring
         self.params.changed.connect(self._on_system_changed)
@@ -735,7 +741,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not _follows_chain(page):
             return
         page.dof_requested.connect(self.params.dof.setValue)
-        page.edit_parameters.connect(lambda: self.pages.setCurrentWidget(self.sim_page))
+        page.edit_parameters.connect(weak.slot(self, lambda self: self.pages.setCurrentWidget(self.sim_page)))
         if hasattr(page, "system_requested"):
             page.system_requested.connect(self.params.set_system)
         page.set_system(self.sim.system, self.modal)
@@ -832,7 +838,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show_page(name)
         browser = self.show_theory()
         if browser is not None and anchor:
-            QtCore.QTimer.singleShot(0, lambda: browser.scrollToAnchor(anchor))  # once it's laid out
+            QtCore.QTimer.singleShot(0, browser, lambda: browser.scrollToAnchor(anchor))  # once it's laid out
 
     def _wire_links(self, page: QtWidgets.QWidget) -> None:
         for browser in page.findChildren(QtWidgets.QTextBrowser):

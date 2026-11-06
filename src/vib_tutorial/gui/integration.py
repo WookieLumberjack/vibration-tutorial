@@ -508,7 +508,7 @@ class IntegrationPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.period_plot, stretch=False), "Period error")
         self.tabs.addTab(column(self.damp_plot, stretch=False), "Numerical damping")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_curves())
+        self.tabs.currentChanged.connect(self._draw_curves)
         right = QtWidgets.QWidget()
         rv = QtWidgets.QVBoxLayout(right)
         rv.setContentsMargins(0, 0, 0, 0)

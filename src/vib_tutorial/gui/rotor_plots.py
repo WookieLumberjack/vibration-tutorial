@@ -14,6 +14,7 @@ from ..core.rotor_stability import Onset
 from ..core.rotor_sweep import (
     STATIONS,
 )
+from . import weak
 from .lesson import Dot
 from .rotor_notes import whirl_name
 from .style import colors
@@ -293,7 +294,9 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
         p.addItem(self.onset_label)
         self.speed_line = pg.InfiniteLine(angle=90, movable=True)
         self.speed_line.setToolTip("The speed now. Drag it to set the target speed.")
-        self.speed_line.sigPositionChangeFinished.connect(lambda line: self.speed_dragged.emit(max(0.0, line.value())))
+        self.speed_line.sigPositionChangeFinished.connect(
+            weak.slot(self, lambda self, line: self.speed_dragged.emit(max(0.0, line.value())))
+        )
         p.addItem(self.speed_line)
         for item in (*self.points.values(), self.damped, self.sync, self.crit, self.uncrit, self.unstable):
             self.legend.addItem(item, item.name())

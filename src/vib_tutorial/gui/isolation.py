@@ -553,7 +553,7 @@ class IsolationPage(QtWidgets.QWidget):
         self.tabs.addTab(start, "Start-up")
         self.tabs.addTab(chart, "Design chart")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter.addWidget(ColumnScroll(left))

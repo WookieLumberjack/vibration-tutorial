@@ -465,7 +465,7 @@ class PendulumPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.phase_plot, self.phase_note, stretch=False), "Phase plane")
         self.tabs.addTab(column(self.pivot_plot, self.pivot_note, stretch=False), "Pivot")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,
