@@ -89,12 +89,3 @@ warn_redundant_casts = true
 [[tool.mypy.overrides]]
 module = ["vib_tutorial._native", "scipy.*", "pyqtgraph.*"]
 ignore_missing_imports = true
-
-# gui/ modules not clean yet: checked, but their errors not reported. Take a module off once it is.
-[[tool.mypy.overrides]]
-module = [
-    "vib_tutorial.gui.deriving",
-    "vib_tutorial.gui.modal_test",
-    "vib_tutorial.gui.oma",
-]
-ignore_errors = true

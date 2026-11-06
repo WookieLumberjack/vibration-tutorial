@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
@@ -105,7 +106,7 @@ SV_TIP = (
 )
 
 # Things to try: (name, what it sets, note)
-TRIALS = (
+TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
         "Long record, every mass",
         {},
@@ -682,10 +683,10 @@ class OmaPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         # --- wiring
-        for box in (self.input, self.colour, self.response):
-            box.currentIndexChanged.connect(self._on_measure)
-        for box in (self.corner, self.fs, self.duration, self.machine_hz, self.machine_force):
-            box.valueChanged.connect(self._on_measure)
+        for choice in (self.input, self.colour, self.response):
+            choice.currentIndexChanged.connect(self._on_measure)
+        for field in (self.corner, self.fs, self.duration, self.machine_hz, self.machine_force):
+            field.valueChanged.connect(self._on_measure)
         self.noise.valueChanged.connect(self._on_process)
         self.block.currentIndexChanged.connect(self._on_process)
         self.mac_min.valueChanged.connect(self._on_process)
@@ -722,6 +723,7 @@ class OmaPage(QtWidgets.QWidget):
     def _suggested(self) -> tuple[float, float, int]:
         """(fs, record length, block) for the chain's modes: fs clear of the top mode, a thousand periods
         of the slowest, and lines fine enough to put several across its half-power width."""
+        assert self.result is not None, "worked out for the chain first"
         modes = [m for m in self.result.modes if m.damped is not None and m.fn_hz > 0]
         fs = suggested_fs(self.result)
         if not modes:
@@ -736,7 +738,7 @@ class OmaPage(QtWidgets.QWidget):
 
     def apply_trial(self) -> None:
         """Set the settings the chosen trial asks for, from the chain as it is."""
-        if self.result is None:
+        if self.result is None or self.system is None:
             return
         _name, changes, note = TRIALS[self.trial.currentIndex()]
         fs, duration, block = self._suggested()
@@ -937,7 +939,7 @@ class OmaPage(QtWidgets.QWidget):
         self._process()
 
     def _process(self) -> None:
-        if self.record is None:
+        if self.record is None or self.system is None:
             return
         y = self.record.measured(self.noise.value() / 100.0)
         spectra = cross_spectra(y, self.record.settings.fs, self.block.currentData())
@@ -963,6 +965,7 @@ class OmaPage(QtWidgets.QWidget):
         self._draw_methods()
 
     def _band(self) -> tuple[float, float]:
+        assert self.record is not None, "worked out for the chain first"
         return 0.0, AA_CUTOFF * self.record.settings.fs / 2.0
 
     def _on_sv_click(self, event) -> None:
@@ -1007,6 +1010,7 @@ class OmaPage(QtWidgets.QWidget):
             self._draw_methods()
 
     def _show_daq_info(self, spectra) -> None:
+        assert self.record is not None and self.result is not None, "worked out for the chain first"
         s = self.record.settings
         slow = min((m.fn_hz for m in self.result.modes if m.fn_hz > 0), default=math.nan)
         self.daq_info.setText(
@@ -1024,6 +1028,7 @@ class OmaPage(QtWidgets.QWidget):
         self._loading = False
 
     def _draw_records(self) -> None:
+        assert self.record is not None, "worked out for the chain first"
         p = self.records
         p.clear()
         rec = self.record
@@ -1036,6 +1041,7 @@ class OmaPage(QtWidgets.QWidget):
         p.setXRange(0.0, t[-1] if t.size else 1.0, padding=0)
 
     def _draw_sv(self) -> None:
+        assert self.fdd is not None and self.result is not None, "worked out for the chain first"
         p = self.sv
         p.clear()
         self.sv_legend.clear()
@@ -1111,6 +1117,7 @@ class OmaPage(QtWidgets.QWidget):
         return kept, found
 
     def _show_results(self) -> None:
+        assert self.result is not None, "worked out for the chain first"
         f_top = self._band()[1]
         method = self.method.currentText()
         modes, harmonics = self._found(method)
@@ -1162,12 +1169,15 @@ class OmaPage(QtWidgets.QWidget):
         return text
 
     def _draw_stabilization(self) -> None:
-        if self.stab is None:
+        if self.stab is None or self.fdd is None or self.result is None:
             return
         exact = [m.damped.fn_hz for m in self.result.modes if m.damped is not None]
         self.stab_plot.set_data(self.stab, self.ssi_poles, self.fdd.freqs, self.fdd.s[:, 0], exact)
 
     def _hammer_modes(self) -> list:
+        assert self.system is not None and self.record is not None and self.result is not None, (
+            "worked out for the chain first"
+        )
         s = self.system
         key = (tuple(s.masses), tuple(s.stiffness), tuple(s.damping), self.record.settings.fs)
         if self._hammer is None or self._hammer[0] != key:
@@ -1177,18 +1187,18 @@ class OmaPage(QtWidgets.QWidget):
 
     def _draw_methods(self) -> None:
         """The Methods tab, when it shows (the hammer test is measured then, once per chain)."""
-        if self.tabs.currentWidget() is not self.methods_tab or self.fdd is None:
+        if self.tabs.currentWidget() is not self.methods_tab or self.fdd is None or self.result is None:
             return
         f_top = self._band()[1]
-        exact = [m for m in self.result.modes if m.damped is not None and m.damped.fn_hz <= f_top]
+        exact = [(m, m.damped) for m in self.result.modes if m.damped is not None and m.damped.fn_hz <= f_top]
         columns = [self._found(FDD)[0], self._found(SSI)[0], self._hammer_modes()]
         matches = [
             {r.mode: r for r in match_modes(modes, self.result, f_top) if r.mode is not None} for modes in columns
         ]
         t = self.methods
         t.setRowCount(len(exact))
-        for row, m in enumerate(exact):
-            fe, ze = m.damped.fn_hz, m.damped.zeta
+        for row, (m, damped) in enumerate(exact):
+            fe, ze = damped.fn_hz, damped.zeta
             cells = [(str(m.index), colors.mode[(m.index - 1) % len(colors.mode)], ""), (_cell(fe, ze), None, "")]
             for found in matches:
                 r = found.get(m.index)
@@ -1228,6 +1238,7 @@ class OmaPage(QtWidgets.QWidget):
         m = self.modes[self.selected]
         color = colors.mode[self.selected % len(colors.mode)]
         d = self.fdd
+        assert d is not None, "modes are found in the FDD"
         span = np.flatnonzero(m.bell)
         lo, hi = max(1, span[0] - span.size), min(d.freqs.size - 1, span[-1] + span.size)
         floor = max(d.s[lo : hi + 1, 0].max() * 1e-6, 1e-300)

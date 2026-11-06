@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
@@ -334,7 +335,7 @@ def _modes_of(t: TestTrial) -> tuple[float, float, float]:
 
 def _acquisition_spec(rng: np.random.Generator) -> Question:
     c = pick(rng, (1.0, 2.0, 4.0))
-    chain = dict(masses=(1.0,) * 4, springs=(400.0,) * 4, dampers=(c,) * 4)
+    chain: dict[str, Any] = dict(masses=(1.0,) * 4, springs=(400.0,) * 4, dampers=(c,) * 4)
     given = TestTrial("", "", **chain).system()
     width, top, fs = _modes_of(TestTrial("", "", **chain))
     block = min(b for b in BLOCK_SIZES if b >= 4 * fs / width)
@@ -570,6 +571,7 @@ class SignalView(pg.GraphicsLayoutWidget):
                 fit.setData([], [])
             else:
                 curve.setData(est.t[:n], y[:n], pen=None, symbol="o", symbolSize=4, symbolPen=None, symbolBrush=color)
+                assert est.fit is not None, "a fitted curve comes from the fit"
                 m = est.fit[0].size if shown is None else int(np.searchsorted(est.fit[0], shown, side="right"))
                 fit.setData(est.fit[0][:m], y_fit[:m])
             # Time spans the record. (Auto-ranging it padded by the widget's size when the range was
@@ -720,7 +722,7 @@ class FrfView(pg.GraphicsLayoutWidget):
         legend = self.mag.legend
         if legend.getLabel(mag_curve) is not None:
             legend.removeItem(mag_curve)
-        if h is None:
+        if h is None or freqs is None:
             mag_curve.setData([], [])
             phase_curve.setData([], [])
             return
@@ -1044,15 +1046,15 @@ class ModalTestPage(QtWidgets.QWidget):
         # --- processing
         proc = QtWidgets.QGroupBox("Processing")
         form = form_layout(proc)
-        self.window = QtWidgets.QComboBox()
-        for i, w in enumerate(Window):
-            self.window.addItem(w.value, w)
-            self.window.setItemData(i, WINDOW_TIPS[w], QtCore.Qt.ItemDataRole.ToolTipRole)
-        self.window.setToolTip(
+        self.taper = QtWidgets.QComboBox()
+        for i, kind in enumerate(Window):
+            self.taper.addItem(kind.value, kind)
+            self.taper.setItemData(i, WINDOW_TIPS[kind], QtCore.Qt.ItemDataRole.ToolTipRole)
+        self.taper.setToolTip(
             "Multiplies each block before the FFT. Choosing an excitation picks its "
             "usual window; change it to see what the others do to the same data."
         )
-        form.addRow("Window:", self.window)
+        form.addRow("Window:", self.taper)
         self.exp_end = spin(0.1, 100.0, 100.0, 1, " %")
         self.exp_end.setToolTip(
             "<p>The exponential window's value at the end of the block; 100% = no exponential "
@@ -1063,8 +1065,8 @@ class ModalTestPage(QtWidgets.QWidget):
         self.exp_label = QtWidgets.QLabel("Exponential at block end:")
         form.addRow(self.exp_label, self.exp_end)
         self.estimator_combo = QtWidgets.QComboBox()
-        for e in Estimator:
-            self.estimator_combo.addItem(e.value, e)
+        for estimator in Estimator:
+            self.estimator_combo.addItem(estimator.value, estimator)
         self.estimator_combo.setToolTip(
             "<p><b>H1</b> = G<sub>xf</sub>/G<sub>ff</sub>: noise on the response averages out; "
             "noise on the force inflates G<sub>ff</sub> and biases H1 low.</p>"
@@ -1157,19 +1159,19 @@ class ModalTestPage(QtWidgets.QWidget):
 
         # --- wiring: test settings measure again; processing and noise reuse the data.
         self.excitation.currentIndexChanged.connect(self._on_excitation)
-        for w in (self.input, self.response, self.block, self.overlap):
-            w.currentIndexChanged.connect(self.restart)
-        for w in (self.tip, self.burst, self.fs, self.force_level):
-            w.valueChanged.connect(self.restart)
+        for choice in (self.input, self.response, self.block, self.overlap):
+            choice.currentIndexChanged.connect(self.restart)
+        for field in (self.tip, self.burst, self.fs, self.force_level):
+            field.valueChanged.connect(self.restart)
         self.points.valueChanged.connect(self.restart)
         self.anti_alias.toggled.connect(self.restart)
         self.fs_auto.toggled.connect(self._on_fs_auto)
         self.averages.valueChanged.connect(self._on_averages)
         self.speed.currentIndexChanged.connect(self._on_speed)
-        for w in (self.window, self.estimator_combo):
-            w.currentIndexChanged.connect(self._reprocess)
-        for w in (self.exp_end, self.force_noise, self.response_noise):
-            w.valueChanged.connect(self._reprocess)
+        for choice in (self.taper, self.estimator_combo):
+            choice.currentIndexChanged.connect(self._reprocess)
+        for field in (self.exp_end, self.force_noise, self.response_noise):
+            field.valueChanged.connect(self._reprocess)
         self.extract.changed.connect(self._on_extraction_changed)
         self.extract.auto_requested.connect(self._on_auto_poles)
         self.extract.clear_requested.connect(self._on_clear_poles)
@@ -1244,7 +1246,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
     def processing(self) -> Processing:
         return Processing(
-            window=self.window.currentData(),
+            window=self.taper.currentData(),
             exp_end=self.exp_end.value() / 100.0,
             estimator=self.estimator_combo.currentData(),
             force_noise=self.force_noise.value() / 100.0,
@@ -1253,17 +1255,22 @@ class ModalTestPage(QtWidgets.QWidget):
 
     def _on_hold(self, on: bool) -> None:
         """Hold the finished FRF now shown (or let go of it)."""
-        if on and (self.estimate is None or self.acq is None or not self.acq.done):
+        if not on:
+            self.held = None
+        elif self.estimate is None or self.acq is None or not self.acq.done:
             self.hold.setChecked(False)  # nothing complete to hold yet
             return
-        self.held = (self.estimate.freqs, self.estimate.H, self.acq.settings) if on else None
+        else:
+            self.held = (self.estimate.freqs, self.estimate.H, self.acq.settings)
         self.redraw()
 
     def _held_label(self) -> str:
+        assert self.held is not None, "asked for only while one is held"
         s = self.held[2]
         return f"Held: {s.excitation.value.lower()}, force level {100 * s.force_level:.0f}%"
 
     def _show_held(self, j: int) -> None:
+        assert self.acq is not None, "a test is set up"
         s = self.acq.settings
         if self.held is None or (self.held[2].input_dof, self.held[2].response) != (s.input_dof, s.response):
             self.frf_view.set_held(None, None)
@@ -1284,9 +1291,9 @@ class ModalTestPage(QtWidgets.QWidget):
         self.restart()
 
     def _select_window(self, excitation: Excitation) -> None:
-        self.window.blockSignals(True)
-        self.window.setCurrentIndex(list(Window).index(RECOMMENDED_WINDOW[excitation]))
-        self.window.blockSignals(False)
+        self.taper.blockSignals(True)
+        self.taper.setCurrentIndex(list(Window).index(RECOMMENDED_WINDOW[excitation]))
+        self.taper.blockSignals(False)
 
     def _show_rows(self) -> None:
         e = self.excitation.currentData()
@@ -1297,12 +1304,12 @@ class ModalTestPage(QtWidgets.QWidget):
             (self.points_label, self.points): e is Excitation.STEPPED_SINE,
             (self.averages_label, self.averages): e is not Excitation.STEPPED_SINE,
             (self.block_label, self.block): e is not Excitation.STEPPED_SINE,
-            (self.exp_label, self.exp_end): self.window.currentData() is Window.FORCE_EXPONENTIAL,
+            (self.exp_label, self.exp_end): self.taper.currentData() is Window.FORCE_EXPONENTIAL,
         }
         for widgets, on in rows.items():
             for w in widgets:
                 w.setVisible(on)
-        self.window.setEnabled(e is not Excitation.STEPPED_SINE)
+        self.taper.setEnabled(e is not Excitation.STEPPED_SINE)
 
     def load_trial(self, index: int) -> None:
         """Set up TRIALS[index]: its chain (through the Simulation page) and every control, then measure."""
@@ -1322,7 +1329,7 @@ class ModalTestPage(QtWidgets.QWidget):
             input=self.input.currentIndex(),
             excitation=self.excitation.currentData(),
             response=self.response.currentData(),
-            window=self.window.currentData(),
+            window=self.taper.currentData(),
             block=self.block.currentData(),
             fs=None if self.fs_auto.isChecked() else self.fs.value(),
             anti_alias=self.anti_alias.isChecked(),
@@ -1353,7 +1360,7 @@ class ModalTestPage(QtWidgets.QWidget):
         )
         widgets = [w for w, _ in values] + [
             self.input,
-            self.window,
+            self.taper,
             self.fs,
             self.fs_auto,
             self.anti_alias,
@@ -1372,7 +1379,7 @@ class ModalTestPage(QtWidgets.QWidget):
             self.input.setCurrentIndex(trial.input)
         self._select_window(trial.excitation)
         if trial.window is not None:
-            self.window.setCurrentIndex(self.window.findData(trial.window))
+            self.taper.setCurrentIndex(self.taper.findData(trial.window))
         self.fs_auto.setChecked(trial.fs is None)
         if trial.fs is not None:
             self.fs.setValue(trial.fs)
@@ -1500,6 +1507,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
     def _play(self, speed: float) -> None:
         """Paced playback: measure one record, then draw it over its duration / speed."""
+        assert self.acq is not None and self.estimator is not None, "a test is set up"
         if self._shown is None:
             if self.acq.done:
                 self._timer.stop()
@@ -1518,6 +1526,7 @@ class ModalTestPage(QtWidgets.QWidget):
         else:
             self._shown += self._frame.restart() * 1e-3 * speed
         est = self._live
+        assert est is not None, "the record drawn was estimated first"
         if self._shown >= est.t[-1]:
             self._shown = None
             self.redraw()
@@ -1530,6 +1539,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
     @property
     def _noun(self) -> str:
+        assert self.acq is not None, "a test is set up"
         return "frequencies" if self.acq.stepped else "averages"
 
     def redraw(self) -> None:
@@ -1645,7 +1655,7 @@ class ModalTestPage(QtWidgets.QWidget):
         elif exp_window:
             notes.append("<b>Not corrected</b> for the exponential window: every ζ includes its extra damping.")
 
-        exact = [m for m in acq.result.modes if m.damped is not None]
+        exact = [m.damped for m in acq.result.modes if m.damped is not None]
         modes = sorted(reported.modes, key=lambda m: m.fn_hz)
         rows = match_modes(modes, acq.result, band[1])
         found = sum(1 for r in rows if r.mode and r.identified)
@@ -1667,11 +1677,12 @@ class ModalTestPage(QtWidgets.QWidget):
             self.frf_view.set_fit(None, None)
         mask = band_mask(est.freqs, band)
         self.stab_plot.set_data(
-            self.stab, self.poles, est.freqs[mask], mode_indicator(H[mask]), [m.damped.fn_hz for m in exact]
+            self.stab, self.poles, est.freqs[mask], mode_indicator(H[mask]), [d.fn_hz for d in exact]
         )
 
     # -------------------------------------------------------------- text
     def _update_info(self) -> None:
+        assert self.acq is not None, "a test is set up"
         s, a = self.acq.settings, self.acq
         if a.stepped:
             text = f"{s.sine_points} frequencies, {s.band / s.sine_points:.4g} Hz apart<br>"
@@ -1686,6 +1697,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
     def _setup_check(self) -> str:
         """The settings against the chain's modes: what each mode will suffer from."""
+        assert self.acq is not None, "a test is set up"
         s, a = self.acq.settings, self.acq
         T, nyq = s.duration, s.fs / 2
         df = s.band / s.sine_points if a.stepped else s.resolution
@@ -1748,7 +1760,7 @@ class ModalTestPage(QtWidgets.QWidget):
             + "</tr>"
         )
         e = s.excitation
-        w = self.window.currentData()
+        w = self.taper.currentData()
         if e is Excitation.IMPACT and not s.anti_alias and s.tip_width < 2.0 / s.fs:
             warnings.append(
                 "The hit lasts less than 2 samples. Without the anti-alias filter to spread it "
