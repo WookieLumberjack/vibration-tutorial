@@ -912,6 +912,22 @@ def test_planning():
     save(w, "test_planning")
 
 
+def nonlinear_forces():
+    from vib_tutorial.gui.nonlinear_forces import TAB_LCURVE, TRIALS
+
+    w = window()
+    page = w.nonlinear_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A hardening spring"))
+    page.method.setCurrentIndex(2)  # Tikhonov, at the corner
+    page.corner_button.click()
+    page.tabs.setCurrentIndex(TAB_LCURVE)
+    settle()
+    print(page.frf_readout.text())
+    print(page.force_readout.text())
+    save(w, "nonlinear_forces")
+
+
 def shock_spectrum():
     w = window()
     page = w.shock_page
@@ -1209,6 +1225,7 @@ SHOTS = [
     model_updating,
     model_updating_springs,
     test_planning,
+    nonlinear_forces,
     shock_spectrum,
     shock_chain,
     shock_synthesis,

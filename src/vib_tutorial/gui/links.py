@@ -163,6 +163,11 @@ COURSE = (
             ("updating_page", "Model updating", "comparing a model with a test, and correcting it"),
             ("planning_page", "Test planning", "where to put the sensors, and what the structure does as it runs"),
             (
+                "nonlinear_page",
+                "Nonlinearity && forces",
+                "is the structure linear (levels, sweeps, harmonics), and which force made a response",
+            ),
+            (
                 "variability_page",
                 "Variability && localization",
                 "scatter in the chain's properties by Monte Carlo, and modes localized in a mistuned ring of blades",
@@ -227,6 +232,7 @@ PAGE_TITLES = {
     "frf_page": "FRF matrix page",
     "complex_page": "Complex modes page",
     "planning_page": "Test planning page",
+    "nonlinear_page": "Nonlinearity & forces page",
     "continuum_page": "Continuous systems page",
     "beams_page": "Beams & plates page",
     "integration_page": "Numerical integration page",

@@ -75,7 +75,9 @@ or follows them:
    a lab), **Operational modal analysis** (the modes from the responses to unmeasured ambient forces
    alone), **Model updating** (a model with errors in it correlated against a modal test of the chain,
    and updated to find them), **Test planning** (where to put the sensors, by effective independence, and
-   the operational deflection shape at a running frequency) and **Variability & localization** (scatter in the chain by Monte Carlo,
+   the operational deflection shape at a running frequency), **Nonlinearity & forces** (is the chain linear:
+   levels, sweeps up and down, harmonics; and which force made a measured response) and **Variability &
+   localization** (scatter in the chain by Monte Carlo,
    and a mistuned ring of blades).
 6. **Beyond the chain.** **Torsional vibration** (a drive train of discs, shafts and gear meshes, and its
    start-up), **Duffing & Mathieu** (a single mass on a nonlinear spring, driven through its jump or pumped
@@ -862,6 +864,22 @@ moves.
 
 ![Test planning page: three sensors on the eight-mass chain placed by effective independence at masses 2, 5 and 8, on the first three modes; the ODS at 1.842 Hz under a force on mass 4, beside mode 1 (MAC 0.650); the ODS tab shows every mass's response and each mode's share of the ODS](docs/images/test_planning.png)
 
+### Nonlinearity & forces
+
+Two checks a test needs. **Is it linear?** The chain, with its own friction and a cubic spring or a gap the
+page adds alongside one spring, is driven by a stepped sine at three levels, swept up and then down (harmonic
+balance at each step, from the last step's state, with each element's describing function): a linear chain's
+six FRFs lie on one curve; a hardening spring's peak leans and jumps at different frequencies each way, a gap
+does nothing until it closes, and friction's FRF rises with the level. The *Distortion* tab steps the chain in
+time at one point (the exact FOH update, the nonlinear forces found by Newton) and shows the odd harmonics a
+symmetric nonlinearity makes. **Which force made this response?** An impact, two, or a random burst on one
+mass is measured with noise at chosen sensors (displacement or acceleration); y = Gf, G from the FOH
+update's Markov parameters, and f is found plainly (useless: G's singular values span 20 decades), by
+truncated SVD, or by Tikhonov with λ from the L-curve's corner or the noise. The *Singular values* tab is the
+Picard plot. An accelerometer on the force's own mass brings G down to 3 decades and the error to 6 %.
+
+![Nonlinearity & forces page: a hardening spring on the chain swept up and down at 0.05, 0.5 and 1 N, the 1 N peak leaning to 2.43 Hz and jumping at 2.45 Hz up and 2.42 Hz down; below, an impact identified from a displacement at mass 1 by Tikhonov at the L-curve's corner, within 15 %; the L-curve on the right](docs/images/nonlinear_forces.png)
+
 ### Variability & localization
 
 Scatter in what is built. The chain with every mass, spring and damper scattered (lognormal) by Monte
@@ -1632,6 +1650,12 @@ $F_f$ times the distance slid, so the energy balance still closes.
   the test (the virtual modal test's or the exact modes with noise) at chosen sensors, the MAC and
   its pairs, frequency errors, the auto-MAC and COMAC; frequency sensitivities in closed form, and
   Gauss–Newton updating of masses, springs and dampers with regularization.
+- `core/nonlinear_test.py`: stepped sine up and down by one-harmonic harmonic balance (describing functions
+  of a cubic spring, a gap and Coulomb friction; jumps where a branch ends), homogeneity, and the steady
+  response in time (the exact FOH update with the nonlinear forces by Newton) and its harmonics.
+- `core/force_id.py`: force identification: G from the FOH update's Markov parameters (displacement or
+  acceleration sensors), its SVD, the plain inverse, truncated SVD and Tikhonov, the L-curve's corner and the
+  discrepancy principle.
 - `core/test_planning.py`: sensor placement by effective independence (and weighted by the driving-point
   residue), its Fisher information, noise and auto-MAC; operational deflection shapes and each mode's
   share of them.

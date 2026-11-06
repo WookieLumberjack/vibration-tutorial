@@ -3927,6 +3927,7 @@ def test_shock_page(app):
         "mounts_page",
         "frame_page",
         "planning_page",
+        "nonlinear_page",
         "variability_page",
         "diagnostics_page",
         "signals_page",
@@ -4232,4 +4233,49 @@ def test_test_planning_controls(app, shared_window):
     assert page.system.n == 4 and page.hand[5].isHidden() and page.force.maximum() == 4
     page.load_trial(0)
     assert page.system.n == 8
+    w.pages.setCurrentWidget(w.sim_page)
+
+
+@SHARED
+def test_nonlinear_forces_controls(app, shared_window):
+    """The nonlinear element's rows, the sweeps' readout, the Distortion tab, and the identification's methods."""
+    from vib_tutorial.core import force_id as fid
+    from vib_tutorial.core import nonlinear_test as nl
+    from vib_tutorial.gui import nonlinear_forces as nf
+
+    w = shared_window
+    page = w.nonlinear_page
+    w.pages.setCurrentWidget(page)
+    names = [t.name for t in nf.TRIALS]
+    page.load_trial(names.index("A hardening spring"))
+    form = page.element_form.form
+    assert form.isRowVisible(page.k3) and not form.isRowVisible(page.gap)
+    assert "Jumps: 1 N: up at 2.45 Hz, down at 2.422 Hz" in page.frf_readout.text()
+    page.kind.setCurrentIndex(nl.KINDS.index(nl.Kind.GAP))
+    assert form.isRowVisible(page.gap) and form.isRowVisible(page.k_gap) and not form.isRowVisible(page.k3)
+    page.kind.setCurrentIndex(nl.KINDS.index(nl.Kind.NONE))
+    assert not form.isRowVisible(page.spring) and "<b>0 %</b>" in page.frf_readout.text()
+    # the Distortion tab steps the chain in time only when it shows, and again when its point moves
+    page.load_trial(names.index("Distortion: odd harmonics"))
+    assert page.tabs.currentIndex() == nf.TAB_DISTORTION and page.waveform is not None
+    assert "3X is 1.91 %" in page.dist_note.text()
+    page.dist_hz.setValue(2.2)
+    assert page.waveform is not None and "2.2 Hz" in page.dist_note.text()
+    # identification: the methods, λ from the L-curve and the noise, and no sensors
+    page.load_trial(names.index("Force identification: the plain inverse"))
+    assert "plain inverse" in page.force_readout.text() and "clipped" in page.force_readout.text()
+    page.corner_button.click()
+    assert fid.METHODS[page.method.currentIndex()] is fid.Method.TIKHONOV
+    assert page.log_lam.value() == pytest.approx(round(math.log10(page.curve.corner), 2))
+    page.tabs.setCurrentIndex(nf.TAB_LCURVE)
+    assert "corner" in page.l_note.text() and page.l_now.getData()[0] is not None
+    page.discrepancy_button.click()
+    assert page.log_lam.value() == pytest.approx(round(math.log10(fid.discrepancy(page.problem)), 2))
+    page.method.setCurrentIndex(fid.METHODS.index(fid.Method.TSVD))
+    page.tabs.setCurrentIndex(nf.TAB_PICARD)
+    assert page.ident_form.form.isRowVisible(page.k) and "truncated SVD" in page.picard_note.text()
+    for box in page.sensor_boxes:
+        box.setChecked(False)
+    assert page.problem is None and "No sensors" in page.force_readout.text()
+    page.load_trial(0)
     w.pages.setCurrentWidget(w.sim_page)
