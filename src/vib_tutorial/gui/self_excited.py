@@ -47,7 +47,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
@@ -445,84 +445,7 @@ TIPS = {
 }
 SWEEP_TIP = "<p>The settled motion against the parameter that drives it; the dotted line is the value set.</p>"
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="self"></a>Motion that feeds itself</h3>
-<p>Forced vibration needs a force at the frequency of the motion; free vibration dies away. A <b>self-excited</b>
-vibration has neither: a steady source (a power supply, the wind, a current, a rotating shaft) feeds it at its own
-frequency, because the force depends on the motion itself. Near rest the effect is a damping term, and when the
-source's share makes the net damping negative, the rest state is unstable: the smallest disturbance grows.</p>
-
-<h3><a name="hopf"></a>Hopf bifurcation and limit cycles</h3>
-<p>As the parameter (ε, the wind speed) rises past its critical value, a pair of complex poles crosses into the
-right half plane: a <b>Hopf bifurcation</b>. Linear theory says the motion then grows without end; in practice a
-nonlinearity, damping that rises with amplitude, stops it on a <b>limit cycle</b>, a closed orbit that motions on
-both sides approach. Averaging (the energy each cycle puts in against what it takes out) gives its size. If it
-grows from zero at the onset the bifurcation is supercritical; if the curve folds back (as galloping's does) the
-system has <b>hysteresis</b>: two stable motions at one speed, and jumps between them, as with the Duffing
-oscillator's jump.</p>
-
-<h3><a name="vdp"></a>Van der Pol</h3>
-<p>ẍ + ω²x = ω(ε − x²/x<sub>r</sub>²)ẋ: negative damping ε at small amplitude, positive past x<sub>r</sub>√ε. For small
-ε the motion is nearly a sine of amplitude 2x<sub>r</sub>√ε at ω; for large ε it becomes a relaxation oscillation,
-slow creeps and fast snaps, its period growing like ε/ω. Van der Pol wrote it for a valve oscillator; it describes
-any system whose energy source pushes harder at small motion than large.</p>
-
-<h3><a name="galloping"></a>Galloping</h3>
-<p>A bluff section moving across a wind U at ẏ sees the wind at an angle α = ẏ/U. If the force that angle makes
-points the way it is moving, the wind does work on it every cycle. The quasi-steady force coefficient's slope at
-α = 0 decides: <b>Den Hartog's criterion</b>, unstable when dC<sub>L</sub>/dα + C<sub>D</sub> &lt; 0. For a
-square, Parkinson and Smith's fit is C<sub>Fy</sub> = A₁α − A₃α³ + A₅α⁵ − A₇α⁷ with A₁ = 2.69, so the wind adds damping
-−½ρUDA₁ and galloping starts at</p>
-<p align="center">U<sub>g</sub> = 4mζω / (ρDA₁),</p>
-<p>proportional to the mass–damping (Scruton) number. Above it the amplitude grows roughly in proportion to U, with
-no upper limit; the square's higher terms give two stable branches over a range of speeds. Iced power lines, tall
-square towers and bridge decks gallop.</p>
-
-<h3><a name="viv"></a>Vortex-induced vibration</h3>
-<p>A cylinder in a flow sheds vortices alternately from each side at f<sub>s</sub> = St U/D (St ≈ 0.2), with a
-fluctuating lift at that frequency. When f<sub>s</sub> nears f<sub>n</sub> (reduced velocity U/f<sub>n</sub>D ≈ 1/St
-= 5) the structure's motion takes control of the shedding: over a band of speeds the vortices shed at
-f<sub>n</sub> instead (<b>lock-in</b>). The page couples the structure to a van der Pol <b>wake oscillator</b>
-(Facchinetti, de Langre and Biolley) driven by the structure's acceleration. The amplitude is self-limiting, about
-a diameter at most, and the lock-in band widens as the mass ratio falls. Risers, chimneys and cables are protected
-by helical strakes that break up the shedding.</p>
-
-<h3><a name="flutter"></a>Flutter</h3>
-<p>A wing section in plunge h and pitch θ: the lift, proportional to θ and to the dynamic pressure, couples the two
-modes. As the speed rises their frequencies approach, and at the <b>flutter speed</b> the two modes merge into one
-whose damping crosses zero: the wind feeds a combined bending–torsion motion with the right phase between them.
-Moving the centre of mass forward onto the elastic axis (<b>mass balance</b>) removes the inertial coupling and
-raises the flutter speed. Separately, the pitch spring alone is overcome at the <b>divergence</b> speed, a static
-instability. The page uses quasi-steady lift (the lift follows the angle at once); real flutter analysis uses
-unsteady aerodynamics (Theodorsen), which changes the numbers but not the coalescence.</p>
-
-<h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these picks a model and sets it up (Things to try, top left).</p>
-<!--TRIALS-->
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = (
-    NOTES_HTML.replace(
-        "<!--BEFORE-->",
-        before(
-            ("sdof_page", "poles", "Poles"),
-            ("duffing_page", "jump", "The jump"),
-        ),
-    )
-    .replace("<!--TRIALS-->", trials_html(TRIALS))
-    .replace(
-        "<!--TAKEAWAYS-->",
-        takeaways(
-            "Self-excitation is negative damping drawn from a steady source; the rest state loses stability at a Hopf "
-            "bifurcation.",
-            "A nonlinearity sets the size of the limit cycle that follows; averaging the energy per cycle finds it.",
-            "Galloping starts at U<sub>g</sub> ∝ mζ (Den Hartog: dC<sub>L</sub>/dα + C<sub>D</sub> &lt; 0) and grows with the "
-            "wind; vortex-induced vibration locks in over a band of speeds and limits itself.",
-            "Flutter is two modes coupled by the flow until one's damping crosses zero; mass balance raises its speed.",
-        ),
-    )
-)
+NOTES_HTML = load_notes("self_excited", trials=trials_html(TRIALS))
 
 
 class SelfExcitedPage(QtWidgets.QWidget):

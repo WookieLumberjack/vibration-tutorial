@@ -1,0 +1,53 @@
+
+<before>
+<a href="page:continuum_page#continuum-waves">The continuum's waves</a>
+<a href="page:energy_page#rayleigh">Rayleigh's quotient</a>
+</before>
+<h3><a name="thick-beams"></a>When a beam is thick</h3>
+<p>Euler–Bernoulli's beam assumes plane sections stay plane <i>and normal to the axis</i>, and that only the
+axis's sideways motion has inertia. Both fail once a wavelength is no longer long against the depth:</p>
+<ul>
+<li><b>Rotary inertia</b> (Rayleigh): each section also turns, with inertia ρI per length. It adds to the mass,
+so it lowers the frequencies: ω² = EIk⁴ / (ρA + ρIk²).</li>
+<li><b>Shear deflection</b>: the sections also slide on each other, an extra flexibility κGA (κ = 5/6 for a
+rectangle: shear isn't uniform over the section). It lowers the frequencies more, since E/κG ≈ 3.</li>
+</ul>
+<p><b>Timoshenko's beam</b> keeps both, with the section's rotation ψ a second unknown beside the deflection w:</p>
+<p align="center">ρA w<sub>tt</sub> = κGA (w<sub>x</sub> − ψ)<sub>x</sub>,&nbsp;&nbsp;
+ρI ψ<sub>tt</sub> = EI ψ<sub>xx</sub> + κGA (w<sub>x</sub> − ψ).</p>
+<p>On a simply supported beam the modes are still sin(nπx/L), and each gives a 2 × 2 determinant, a quadratic in
+ω²: its lower root is the bending mode, its upper one a <b>thickness-shear</b> mode at very high frequency. The
+correction depends on the wavelength over the depth: under 2 % for the first mode of a beam with L/h = 10, a
+quarter by the fifth.</p>
+
+<h3><a name="dispersion-limit"></a>Waves that can't outrun sound</h3>
+<p>Euler–Bernoulli's bending wave has ω = √(EI/ρA) k², so its speed ω/k grows without limit as k does. A real
+beam can't carry a disturbance faster than its material's waves, and Timoshenko's doesn't: its bending branch
+levels off near the shear wave's speed √(κG/ρ). Wherever a beam is driven with wavelengths near its depth (impact,
+high-frequency machinery, ultrasonics), Timoshenko is the model to use.</p>
+
+<h3><a name="plates"></a>Plates</h3>
+<p>A plate bends in two directions. With D = Eh³/12(1 − ν²) its bending stiffness and ρh its mass per area,</p>
+<p align="center">D ∇⁴w + ρh w<sub>tt</sub> = 0.</p>
+<p>A simply supported rectangle a × b has the modes sin(mπx/a) sin(nπy/b), at
+ω<sub>mn</sub> = π²(m²/a² + n²/b²)√(D/ρh); mode (m, n) has m − 1 nodal lines across a and n − 1 across b. A
+clamped circle of radius a has J<sub>n</sub>(λr/a) − (J<sub>n</sub>(λ)/I<sub>n</sub>(λ)) I<sub>n</sub>(λr/a)
+times cos nθ, at ω = λ²√(D/ρh)/a², with n nodal diameters and a nodal circle for each root past the first.
+When two modes share a frequency (a square plate's (m, n) and (n, m), a circle's cos nθ and sin nθ), every mix
+of them is a mode too: Chladni's sand figures are such mixes on free plates.</p>
+
+<h3><a name="modal-density"></a>Modal density</h3>
+<p>Count the modes below f. A plate's count grows as N ≈ (S/4π) ω √(ρh/D), in proportion to f, so it has a
+constant modal density, S/2 √(ρh/D) modes per hertz, whatever its shape. A beam's grows as √f (its modes spread
+apart), a room's or a solid's as f² or f³ (they crowd together). At high frequencies, with many modes in every
+band, mode-by-mode analysis gives way to energy and statistics (statistical energy analysis).</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the structure and the plots (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>Shear deflection and rotary inertia lower a beam's frequencies once a wavelength nears the depth; Timoshenko's beam keeps both.</li>
+<li>Euler–Bernoulli's bending waves speed up without limit; Timoshenko's level off below the shear wave's speed.</li>
+<li>A plate's modes have nodal lines in two directions; modes sharing a frequency mix into Chladni's figures.</li>
+<li>A plate has a constant modal density, S/2 √(ρh/D) per hertz; a beam's thins out as 1/√f.</li>
+</takeaways>

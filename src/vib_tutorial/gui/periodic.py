@@ -46,7 +46,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
@@ -376,73 +376,7 @@ CONVERGENCE_TIP = (
     "swing, against the number of harmonics kept. Dotted: 1/N and 1/N².</p>"
 )
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="fourier-series"></a>A periodic force is a sum of harmonics</h3>
-<p>A force that repeats every T = 1/f₀, however it is shaped, is a <b>Fourier series</b>:</p>
-<p align="center">f(t) = a₀ + Σ<sub>k≥1</sub> (a<sub>k</sub> cos kω₀t + b<sub>k</sub> sin kω₀t), &nbsp; ω₀ = 2πf₀,</p>
-<p>a₀ its mean, a<sub>k</sub> = (2/T)∫f cos kω₀t dt and b<sub>k</sub> = (2/T)∫f sin kω₀t dt. Only multiples of
-f₀ appear: a periodic force has a <b>line spectrum</b>. Written with complex amplitudes,
-f = Re Σ C<sub>k</sub> e<sup>ikω₀t</sup>, C<sub>k</sub> = a<sub>k</sub> − i b<sub>k</sub>.</p>
-
-<h3><a name="superposition"></a>Each harmonic through H</h3>
-<p>The oscillator is linear, so each harmonic is a harmonic force on its own (the Single oscillator page's
-forced response), and the steady response is the sum of their responses:</p>
-<p align="center">x(t) = Re Σ H(kω₀) C<sub>k</sub> e<sup>ikω₀t</sup>, &nbsp; H(ω) = 1/(k − ω²m + iωc).</p>
-<p>The mean only sags the spring (H(0) = 1/k). A harmonic that lands near f<sub>n</sub> is amplified by Q; the
-rest are not. So a force at f₀ can resonate the oscillator at <i>any</i> multiple k f₀ = f<sub>n</sub> it
-contains: a machine running at a third of a mode's frequency can still drive it, through its third harmonic.</p>
-
-<h3><a name="shapes"></a>Shapes and their harmonics</h3>
-<ul>
-<li><b>Square wave</b> (±F): (4F/π) Σ sin kω₀t / k over odd k. A wave with the half-wave symmetry
-f(t + T/2) = −f(t) has odd harmonics only.</li>
-<li><b>Sawtooth</b>: (2F/π) Σ (−1)<sup>k+1</sup> sin kω₀t / k, every harmonic.</li>
-<li><b>Triangle</b>: (8F/π²) Σ ± sin kω₀t / k², odd only.</li>
-<li><b>Rectified sine</b> F|sin πt/T|: 2F/π − (4F/π) Σ cos kω₀t / (4k² − 1).</li>
-<li><b>Rectangular pulses</b> (F for a fraction d of each period): mean Fd; |C<sub>k</sub>| = (2F/πk)|sin πkd|,
-zero at every multiple of 1/d.</li>
-<li><b>Impulse train</b> (a blow I every T): I/T + (2I/T) Σ cos kω₀t: every harmonic the same height.</li>
-</ul>
-<p>How fast the harmonics fall depends on how smooth the wave is: as 1/k with a jump, 1/k² with a kink (a jump
-in slope), and not at all for an impulse. A jump also brings the <b>Gibbs phenomenon</b>: the series overshoots
-it by 9 % of the jump however many terms it keeps, the overshoot only getting narrower.</p>
-
-<h3><a name="exact"></a>The steady state without the series</h3>
-<p>The page also works the steady state out directly. One period from rest gives z<sub>T</sub> = Φ<sub>T</sub>z₀ +
-z<sub>p</sub> (Φ<sub>T</sub> = e<sup>AT</sup>, the force stepped exactly by the first-order hold); a periodic state
-has z<sub>T</sub> = z₀, so z₀ = (I − Φ<sub>T</sub>)<sup>−1</sup>z<sub>p</sub>. That is exact, and it is what the series
-converges to. Without damping, a harmonic exactly on f<sub>n</sub> leaves I − Φ<sub>T</sub> singular: no steady
-state, the swing grows forever.</p>
-
-<h3><a name="from-rest"></a>Starting from rest</h3>
-<p>Switched on from rest, the response is the steady state plus a free vibration that makes up the start, as for a
-single sine; it dies away in a few time constants 1/ζω<sub>n</sub>. The <i>From rest</i> tab steps it.</p>
-
-<h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the oscillator, the force and the plots (Things to try, top left).</p>
-<!--TRIALS-->
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = (
-    NOTES_HTML.replace(
-        "<!--BEFORE-->",
-        before(
-            ("sdof_page", "forced-response", "Forced response"),
-            ("transient_page", "fourier-pair", "The impulse response and the FRF"),
-        ),
-    )
-    .replace("<!--TRIALS-->", trials_html(TRIALS))
-    .replace(
-        "<!--TAKEAWAYS-->",
-        takeaways(
-            "A periodic force is a line spectrum: its mean and harmonics at whole multiples of f₀.",
-            "Each harmonic goes through H(kω₀) on its own; a mode at any k f₀ resonates.",
-            "The harmonics fall as 1/k after a jump, 1/k² after a kink; a jump's series overshoots it by 9 % (Gibbs).",
-            "The steady state can be found exactly from one period: z₀ = (I − Φ<sub>T</sub>)<sup>−1</sup>z<sub>p</sub>.",
-        ),
-    )
-)
+NOTES_HTML = load_notes("periodic", trials=trials_html(TRIALS))
 
 
 def stems(x: np.ndarray, y: np.ndarray, floor: float) -> tuple[np.ndarray, np.ndarray]:

@@ -1,0 +1,47 @@
+
+<before>
+<a href="page:updating_page#sensitivities">Updating by sensitivities</a>
+<a href="page:test_page#measured">A measured FRF</a>
+</before>
+<h3><a name="scatter"></a>No two structures are alike</h3>
+<p>Real masses, stiffnesses and joints scatter: from part to part, assembly to assembly, day to day. A model
+with nominal values predicts the average structure at best. <b>Monte Carlo</b> treats the properties as random:
+draw many structures, analyse each, and look at the spread of what matters. The page scatters every mass, spring
+and damper independently (lognormal, so they stay positive) and draws each copy's receptance and frequencies.</p>
+<p>For small scatter the spread follows from the sensitivities (the Model updating page's): with φ
+mass-normalized, a spring's change moves λ = ω² by its strain energy share, (φ<sub>i</sub> − φ<sub>i−1</sub>)² δk,
+and a mass's by −λφ<sub>i</sub>² δm, so to first order</p>
+<p align="center">σ<sub>λ</sub>² = Σ ((φ<sub>i</sub> − φ<sub>i−1</sub>)² k<sub>i</sub> c<sub>k</sub>)² +
+Σ (λ φ<sub>i</sub>² m<sub>i</sub> c<sub>m</sub>)², &nbsp; σ<sub>f</sub>/f = σ<sub>λ</sub>/2λ.</p>
+<p>Frequencies scatter by less than the properties (each mode averages over many of them); peaks scatter
+sideways, so near a resonance the response's spread is huge. Damping's scatter moves only the peaks' heights.
+Design to the band, not the nominal curve.</p>
+
+<h3><a name="localization"></a>Mode localization</h3>
+<p>A structure made of identical, weakly coupled parts (a bladed disc, a truss of identical bays, a row of
+identical rooms) has modes that are waves through all the parts, in a narrow band of frequencies. Make the parts
+slightly different (<b>mistuning</b>) and, when the differences are comparable to the coupling, the waves can no
+longer pass: each mode collapses onto one or a few parts (Anderson localization, first met in disordered
+crystals). The measure is the mistuning over the coupling, so a structure that is <i>more</i> precisely made but
+more weakly coupled can be worse.</p>
+<p>The <b>participation number</b> (Σφ²)²/Σφ⁴ counts the parts a mode moves: two-thirds of N for a standing wave,
+N for the uniform one, 1 for a mode on one part.</p>
+
+<h3><a name="mistuning"></a>Forced response of a mistuned disc</h3>
+<p>A turbine's blades are driven by the flow past the vanes ahead of them: the same force on every blade, its
+phase stepping 2πE/N from blade to blade (engine order E). A tuned disc answers with one travelling wave, every
+blade alike. Mistuned, the response spreads over several modes and concentrates on some blades: the worst blade's
+peak rises above the tuned one, which matters because fatigue is set by the worst blade. The amplification peaks
+when the mistuning is comparable to the coupling, and Whitehead's bound (1 + √N)/2 caps it for light damping.
+Intentional mistuning (alternating blades) is one of the cures.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the scatter or the ring (Things to try, top left); the first three load the uniform
+chain into the Simulation page.</p>
+<!--TRIALS-->
+<takeaways>
+<li>Scattered properties scatter the frequencies by less, and the response near a peak by much more.</li>
+<li>First-order sensitivities predict the frequencies' spread from the strain and kinetic energy shares.</li>
+<li>Weakly coupled, nearly identical parts localize their modes when the mistuning matches the coupling.</li>
+<li>A mistuned disc's worst blade can answer up to (1 + √N)/2 times the tuned one.</li>
+</takeaways>

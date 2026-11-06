@@ -47,7 +47,7 @@ from ..core.random_vibration import (
 )
 from .axes import log_axes
 from .layouts import ColumnScroll, group, plot_height
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .panels import spin
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -413,93 +413,7 @@ PROBLEMS = tuple(
     )
 )
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="psd"></a>Random vibration</h3>
-<p>Wind, a road, a rocket's engines: many inputs are random, never the same twice, but their statistics are
-steady. A stationary random signal is described by its <b>power spectral density</b> (PSD) G(f), its mean square
-per hertz: the RMS² is the area under it. A flat PSD across a band is band-limited white noise. A random
-shaker test is usually specified as such a band, giving the base's acceleration PSD in g²/Hz. For example,
-0.01 g²/Hz from 20 to 2000 Hz has an area of 0.01 × 1980 = 19.8 g², so its RMS is √19.8 = 4.4 g (written
-4.4 Grms).</p>
-
-<h3>The response</h3>
-<p>A linear system turns a random input into a random output, Gaussian if the input is, with PSD</p>
-<p align="center">G<sub>y</sub>(f) = H(f) G<sub>u</sub>(f) H(f)<sup>H</sup>,</p>
-<p>H the frequency response from the input to the output: here (K − ω²M + iωC)<sup>−1</sup> applied to the
-input's forces, read off as a displacement, an acceleration (−ω² × displacement) or a spring's force. Inputs
-that are independent add their PSDs. The response's RMS is √∫G<sub>y</sub> df, and its running value, the
-<b>cumulative RMS</b>, climbs a step at each mode: how high each step is says how much that mode contributes.
-On a shaken base the chain moves relative to the base: in those coordinates the base's acceleration
-a<sub>g</sub> pushes each mass with −m a<sub>g</sub>, and the absolute acceleration is the relative one plus
-a<sub>g</sub>.</p>
-
-<h3><a name="miles"></a>Miles' equation</h3>
-<p>A lightly damped mode amplifies its input by Q = 1/2ζ over a band about 2ζ f<sub>n</sub> wide. If the input
-is flat across that band, the area under the peak is (π/2) f<sub>n</sub> Q times the input there, and a single
-mass on a shaken base has an absolute acceleration of</p>
-<p align="center">a<sub>RMS</sub> = √((π/2) f<sub>n</sub> Q G<sub>a</sub>(f<sub>n</sub>)),</p>
-<p><b>Miles' equation</b>, the most used formula in random vibration. On the chain each mode is such a
-system in its modal coordinate, driven by the modal force φ<sup>T</sup>f: its RMS follows, each response
-takes the mode shape's share of it, and the modes combine by the square root of the sum of their squares.
-The <i>Miles</i> tab lists them. It is good where the response is resonant and the modes are well apart. It
-misses what isn't resonant: a forced mass's acceleration far above the modes is the force over the mass (the
-<b>mass line</b>), modes outside the band, and a band edge that cuts across a peak.</p>
-
-<h3><a name="statistics"></a>How often, how high</h3>
-<p>A linear system's response to a Gaussian input is Gaussian: 68.3 % of the time within ±1σ, 95.4 % within
-±2σ, 99.73 % within ±3σ, its skewness 0 and kurtosis 3. How often it does things comes from the PSD's
-<b>spectral moments</b> m<sub>k</sub> = ∫ f<sup>k</sup> G df. <b>Rice</b>: it crosses zero upwards
-ν₀ = √(m₂/m₀) times a second, a level a ν₀ e<sup>−a²/2σ²</sup> times, and has ν<sub>p</sub> = √(m₄/m₂) peaks a
-second. Their ratio, the <b>irregularity factor</b> α = ν₀/ν<sub>p</sub>, says how narrow its band is: at 1, one
-peak per cycle, their heights Rayleigh distributed; towards 0, many small peaks riding on the big swings, some
-below zero, their heights nearly Gaussian.</p>
-<p>The <b>largest peak</b> in a time T grows only slowly with T. Counting each upward crossing as independent,
-<b>Davenport</b> finds its expected value σ(√(2 ln ν₀T) + 0.577/√(2 ln ν₀T)): about 3.2σ over a hundred cycles,
-4.1σ over three thousand, 5.1σ over 270,000. "3σ" is not a maximum: a long life sees more. A narrow-band response's
-crossings come in clumps, on the swells of its slowly varying envelope, so there are fewer independent chances
-than ν₀T, and Davenport overestimates the largest peak, most over short times. <b>Vanmarcke</b> counts the clumps,
-through the band's width δ = √(1 − m₁²/m₀m₂). The <i>Statistics</i> tab compares both with the record's own
-largest values, stretch by stretch.</p>
-
-<h3><a name="welch"></a>Estimating it from a record</h3>
-<p><b>Welch's method</b> cuts the record into blocks, windows each (Hann), Fourier transforms them and averages
-|Y|². Two errors trade against each other:</p>
-<ul>
-<li><b>Bias</b>: the lines are f<sub>s</sub>/block apart, and the window smears each over a few. A peak
-narrower than that comes out low and wide. Put four or more lines across the half-power width
-2ζf<sub>n</sub>.</li>
-<li><b>Random error</b>: one block's estimate scatters by 100 %; averaging n blocks cuts it to 1/√n.</li>
-</ul>
-<p>Fine lines need long blocks and many averages need many blocks: a lightly damped mode needs a long record.
-The RMS itself is less fussy, a whole area: its scatter is about 1/(2√(B T)) for a record T long, B the
-response's bandwidth.</p>
-
-<h3><a name="computing"></a>How this page computes it</h3>
-<p>The simulated record comes from the exact update, its input synthesized to have the PSD asked for, so the
-differences between the record's estimates and the exact PSD are the estimates', not the simulation's. The
-record holds 2.5 samples per period of the band's top: enough to describe it, since it has nothing above the
-band, but not to see its peaks. It is interpolated eightfold before they are counted.</p>
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = NOTES_HTML.replace(
-    "<!--BEFORE-->",
-    before(
-        ("sim_page", "sweeps-and-ground-motion", "Sweeps and ground motion"),
-        ("frf_page", "sum-of-modes", "Every term is a sum of modes"),
-    ),
-).replace(
-    "<!--TAKEAWAYS-->",
-    takeaways(
-        "A random input is described by its PSD; a linear system's response PSD is H G Hᴴ, and its RMS is the "
-        "root of the area under it.",
-        "The cumulative RMS steps up at each mode: the steps say which modes matter.",
-        "Miles' equation, √((π/2) f<sub>n</sub> Q G), gives a lightly damped mode's RMS from the input at its own"
-        " frequency.",
-        "The response is Gaussian, but the largest peak in a record grows with its length: 3σ is not a maximum.",
-        "A PSD estimate trades resolution (long blocks) against scatter (many averages).",
-    ),
-)
+NOTES_HTML = load_notes("random_vibration")
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = True) -> pg.PlotWidget:

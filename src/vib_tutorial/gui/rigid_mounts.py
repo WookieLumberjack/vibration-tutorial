@@ -57,7 +57,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
@@ -534,120 +534,7 @@ CENTRE_TIP = (
     "their lines of action (dotted), the centre of mass (dot) and each plane's elastic centre (cross).</p>"
 )
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="six-dof"></a>Six degrees of freedom</h3>
-<p>The Vibration isolation page put a machine on mounts that let it move one way, up and down. A real machine
-on four mounts is a rigid body: it moves three ways (x fore and aft, y sideways, z up) and turns three ways
-(roll about x, pitch about y, yaw about z), q = (u, θ). Its mass matrix about its centre of mass is
-M = diag(m, m, m, I<sub>xx</sub>, I<sub>yy</sub>, I<sub>zz</sub>), here a uniform box's: I<sub>xx</sub> =
-m(w² + h²)/12 and so on, in its principal axes.</p>
-
-<h3><a name="stiffness"></a>The stiffness matrix</h3>
-<p>A mount at r from the centre of mass is a spring, stiff k<sub>a</sub> along its axis a and k<sub>s</sub>
-across it: K<sub>m</sub> = k<sub>s</sub>I + (k<sub>a</sub> − k<sub>s</sub>) a aᵀ. Its end moves with the body,
-u + θ × r = T q, T = [I, −[r]×], so it adds Tᵀ K<sub>m</sub> T to the body's stiffness:</p>
-<p align="center">K = Σ Tᵀ K<sub>m</sub> T, &nbsp; K φ = ω² M φ,</p>
-<p>six modes, as the chain's (the Simulation page's <i>Undamped normal modes</i>), but of one body. Four upright
-mounts level with the centre of mass, t either side of it: bounce has 4k<sub>a</sub> against m, sway and
-fore-and-aft 4k<sub>s</sub>, roll 4k<sub>a</sub>t² against I<sub>xx</sub>.</p>
-
-<h3><a name="modes"></a>Six modes, and how pure they are</h3>
-<p>K's off-diagonal block, K<sub>tr</sub> = −Σ K<sub>m</sub>[r]×, couples translation to rotation: a mount
-below the centre of mass, pushed sideways by its shear, also rolls the body. Then the modes mix the coordinates.
-How much each mode has of each is measured by its kinetic energy, M<sub>ii</sub>φ<sub>i</sub>² over the whole
-(the table under the 3D view): 100 % in one coordinate is a pure, <b>decoupled</b> mode, the figure mount
-makers quote. A coupled pair rocks about a point: the lower-frequency one below the centre of mass, the other
-above it.</p>
-<p>Why care? A machine's forces are mostly along one coordinate: an engine's firing torque about its crankshaft,
-a fan's unbalance sideways. A pure mode is driven only by its own coordinate's force, and each can be placed
-(by its mounts) away from what drives it. Coupled modes spread every force over several resonances, and a
-vertical force can rock the machine.</p>
-
-<h3><a name="elastic-centre"></a>The elastic centre</h3>
-<p>Taken about another point c, the mounts sit at r − c, and K<sub>tr</sub> changes, linearly in c. The point
-where it vanishes, so that a force through it moves the body without turning it, is the <b>elastic centre</b>.
-If it is the centre of mass (and the mounts' principal axes the body's), M and K are both block-diagonal, and
-every mode is a pure translation or a pure rotation. Mounts all upright and alike have it in their own plane,
-over their middle; below the centre of mass it is below it, and with the centre of mass off the middle, it is
-off too, under the mounts' middle. In general no single point clears all of K<sub>tr</sub>, but each plane can
-have its own (the <i>Elastic centre</i> tab).</p>
-
-<h3><a name="decoupling"></a>Decoupling</h3>
-<p>Two ways to bring the elastic centre to the centre of mass:</p>
-<ul>
-<li><b>Move the mounts</b>: level with the centre of mass, evenly about it (or with stiffnesses in inverse
-proportion to their distances). Often impossible: the mounts go where the floor is.</li>
-<li><b>Tilt them</b> toward the middle (a <b>focalized</b> system): a pair t either side, each leaning β, has its
-lines of action meet above them, and the roll plane's elastic centre at</li>
-</ul>
-<p align="center">z<sub>e</sub> = t(k<sub>a</sub> − k<sub>s</sub>) sin β cos β / (k<sub>a</sub> sin²β +
-k<sub>s</sub> cos²β)</p>
-<p>above the mounts. Setting z<sub>e</sub> = h, with u = tan β and ρ = k<sub>s</sub>/k<sub>a</sub>:
-h u² − t(1 − ρ)u + hρ = 0, whose smaller root is the focal tilt. It has one only while h ≤ t(1 − ρ)/2√ρ: a mount
-as stiff across as along can't be focused at all. Engine mounts are focused on the engine's torque roll axis,
-so that its firing torque rolls it about that axis and nothing else.</p>
-
-<h3><a name="forced"></a>The forced response</h3>
-<p>A running machine drives itself: an unbalance m<sub>e</sub>e turning with its shaft pushes
-m<sub>e</sub>eΩ² round the shaft's axis, and an engine's firing turns its block with a torque at a multiple of
-its speed. Either is a generalized force Q about the centre of mass (a force F and its moment r × F, or a torque
-T n), steady at its frequency ω. Rubber mounts lose the same energy per cycle at every frequency, so they are
-modelled with a loss factor, K(1 + iη) (the Damping models page's hysteretic damping), and</p>
-<p align="center">(K(1 + iη) − ω²M) q = Q.</p>
-<p>How hard the load drives each mode is its modal force φ<sub>j</sub>ᵀQ (the <i>Drive</i> tab): a load that
-only one mode's shape can feel drives only that mode.</p>
-
-<h3><a name="floor"></a>What reaches the floor</h3>
-<p>Each mount pushes the floor with K<sub>m</sub>(1 + iη) T q (the <i>Response</i> tab). Bolted down, the
-machine would pass its whole load straight on. On its mounts, below the modes the floor still takes it all,
-near a mode it takes more (about 1/η times as much), and above √2 times the highest mode it takes less, falling
-as (f<sub>n</sub>/f)²: the Vibration isolation page's transmissibility, once per mode. So mounts are chosen to
-put every mode well below the running speed. A loss factor tames the resonances, and costs almost no isolation
-above them, since |1 + iη| is the same at every frequency (a viscous damper's iωc is not).</p>
-
-<h3><a name="torque-roll-axis"></a>The torque roll axis</h3>
-<p>A free body under a torque T n turns with I α = T n: about I⁻¹n, not n, unless n is a principal axis. That
-line through the centre of mass is the <b>torque roll axis</b>. An engine's crank is seldom a principal axis, so
-its firing torque would rock it about the torque roll axis. Mounts placed (and focused) so that one mode turns
-about that axis, and the others don't, leave the torque only that mode to drive: the engine rolls quietly about
-its torque roll axis and passes little else on. A crank tilted γ up from x in a box's x–z plane has
-tan γ' = (I<sub>xx</sub>/I<sub>zz</sub>) tan γ.</p>
-
-<h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the box and its mounts (Things to try, top left).</p>
-<!--TRIALS-->
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = (
-    NOTES_HTML.replace(
-        "<!--BEFORE-->",
-        before(
-            ("isolation_page", "transmissibility", "Transmissibility"),
-            ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
-            ("quarter_car_page", "quarter-car", "The quarter-car"),
-            ("damping_page", "hysteretic", "Hysteretic damping"),
-        ),
-    )
-    .replace("<!--TRIALS-->", trials_html(TRIALS))
-    .replace(
-        "<!--TAKEAWAYS-->",
-        takeaways(
-            "A body on mounts has six modes; K = Σ Tᵀ K<sub>m</sub> T couples them wherever the mounts act off the "
-            "centre of mass.",
-            "Each mode's kinetic energy split among the six coordinates says how pure it is.",
-            "The elastic centre is where a force moves the body without turning it; at the centre of mass, every "
-            "mode is pure.",
-            "Mounts below the centre of mass couple sway with roll; an off-centre centre of mass couples bounce "
-            "with pitch.",
-            "Tilting the mounts toward the middle lifts the elastic centre: focused on the centre of mass, sway and "
-            "roll decouple again.",
-            "Driven, (K(1 + iη) − ω²M)q = Q: the mounts isolate above √2 times the highest mode, and a loss factor "
-            "tames the resonances at little cost to that.",
-            "A torque turns a free body about I⁻¹n, the torque roll axis; decoupled mounts let it drive one mode.",
-        ),
-    )
-)
+NOTES_HTML = load_notes("rigid_mounts", trials=trials_html(TRIALS))
 
 
 def _mm(value: float) -> str:

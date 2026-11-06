@@ -40,7 +40,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
@@ -423,109 +423,7 @@ CONV_TIP = (
     "F and h are scaled to the plot.</p>"
 )
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="impulse-response"></a>An impulse and the impulse response</h3>
-<p>A hammer blow lasts far less than a period. All that it leaves behind is its <b>impulse</b>
-I = ∫F dt: it changes the mass's momentum by I before the spring has time to stretch, so the mass starts
-from where it was with velocity I/m and then vibrates freely. For a unit impulse (1 N·s) on a mass at rest
-this free vibration is the <b>impulse response</b></p>
-<p align="center">h(t) = e<sup>−ζω<sub>n</sub>t</sup> sin(ω<sub>d</sub>t) / mω<sub>d</sub> &nbsp; (t ≥ 0),</p>
-<p>and 0 before the blow: nothing moves until it is struck (causality).</p>
-
-<h3><a name="convolution"></a>Convolution: Duhamel's integral</h3>
-<p>Any force is a string of small impulses: in the moment dτ at τ it gives the impulse F(τ)dτ. Each rings
-as its own impulse response, which at the later time t has been ringing for t − τ. The system is linear,
-so the responses add:</p>
-<p align="center"><b>x(t) = ∫₀ᵗ F(τ) h(t − τ) dτ.</b></p>
-<p>This is <b>Duhamel's integral</b>, the convolution of the force with h. The bottom plot draws it at one
-instant: h is flipped (time runs backwards from t) and slid along, multiplied by the force, and the shaded
-area is x(t). Recent force counts most; force from long ago has rung down. Drag the slider and the area
-traces out the response.</p>
-<p>So h says everything about the system: knowing it, every response follows. (This page steps the
-response exactly instead, and sets the integral, worked out numerically, beside it: they agree to the
-integral's accuracy.)</p>
-
-<h3><a name="fourier-pair"></a>h and H: one function, two views</h3>
-<p>Convolution in time is multiplication in frequency. Transform Duhamel's integral and it becomes
-X(ω) = H(ω)F(ω): the <b>frequency response is the Fourier transform of the impulse response</b>,
-H(ω) = ∫h(t)e<sup>−iωt</sup>dt. A long, lightly damped ring in time is a tall, narrow peak in frequency; a
-quick decay is a broad, low one. The h and H tab transforms h by the FFT and lays it on the receptance from the
-Single oscillator page. This is why a hammer test works: one blow excites every frequency at once, and the
-ring that follows holds the whole H.</p>
-
-<h3><a name="step-response"></a>The step response</h3>
-<p>A force F switched on and left on is the integral of h:</p>
-<p align="center">x(t) = (F/k)[1 − e<sup>−ζω<sub>n</sub>t</sup>(cos ω<sub>d</sub>t + (ζω<sub>n</sub>/ω<sub>d</sub>)
-sin ω<sub>d</sub>t)].</p>
-<p>It rises towards the static F/k but overshoots it, by the fraction</p>
-<p align="center">M<sub>p</sub> = e<sup>−ζπ/√(1 − ζ²)</sup>,</p>
-<p>at the <b>peak time</b> π/ω<sub>d</sub>, and then rings down about it. Undamped it swings to <b>twice</b> the
-static deflection: suddenly applied, a load does double the damage it does when placed gently. It
-<b>settles</b> within 2 % after about 4/ζω<sub>n</sub> (four time constants). Critically damped, it rises
-without overshoot; overdamped, slowly.</p>
-
-<h3><a name="laplace"></a>The Laplace transform and the transfer function</h3>
-<p>The Laplace transform turns the equation of motion into algebra. With x(0) = x<sub>0</sub> and
-ẋ(0) = v<sub>0</sub>,</p>
-<p align="center">(ms² + cs + k)X(s) = F(s) + m(sx<sub>0</sub> + v<sub>0</sub>) + cx<sub>0</sub>,</p>
-<p>so X(s) = H(s)F(s) plus a term from the start, with the <b>transfer function</b>
-H(s) = 1/(ms² + cs + k). Its poles are the roots of ms² + cs + k, the s-plane points on the
-<a href="page:sdof_page#poles">Single oscillator page</a>: they set the free response's decay and frequency.
-On the imaginary axis, s = iω, H(s) is the frequency response; its inverse transform is h(t). A step is
-F/s, so its response is F/s(ms² + cs + k), which partial fractions turn back into the formula above.</p>
-
-<h3><a name="pulses"></a>Pulses: impulse, step, or in between</h3>
-<p>What a pulse of length T does depends on T against the natural period T<sub>n</sub>:</p>
-<ul>
-<li><b>T ≪ T<sub>n</sub>:</b> it is an impulse. Only its area counts, and the peak grows with it: a rectangle
-reaches 2 sin(πT/T<sub>n</sub>) times static, about 2πT/T<sub>n</sub>.</li>
-<li><b>T ≫ T<sub>n</sub>:</b> the mass follows it statically: a ramp's peak tends to 1 (its overshoot is
-|sin πr|/πr, r = T/T<sub>n</sub>, and none at all for a whole number of periods); a rectangle, which is
-switched on and off suddenly, still throws it to 2.</li>
-<li><b>In between:</b> the worst case. A half-sine is worst at T ≈ 0.8T<sub>n</sub>, 1.77 times static
-undamped.</li>
-</ul>
-<p>The <i>Pulse spectrum</i> tab plots this peak ratio against T/T<sub>n</sub>: it is a shock response
-spectrum. The <a href="page:shock_page#srs">Shock spectrum page</a> turns it round: one pulse, a bank of
-oscillators of every frequency.</p>
-
-<h3><a name="computing"></a>How this page computes it</h3>
-<p>An impulse's response is the free vibration from v = I/m, a step's and a rectangle's are sums of step
-responses, all in closed form. The ramp and the half-sine are stepped by the exact update the chain's
-simulator uses, which is exact for a force linear between steps (the ramp) and accurate to a few millionths
-for the half-sine on 200 steps a period. The convolution integral is worked out separately by the trapezium
-rule, to show that it gives the same.</p>
-
-<h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the oscillator, the input and the plots (Things to try, top left).</p>
-<!--TRIALS-->
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = (
-    NOTES_HTML.replace(
-        "<!--BEFORE-->",
-        before(
-            ("sdof_page", "free-vibration", "Free vibration"),
-            ("sdof_page", "poles", "The poles"),
-            ("sdof_page", "forced-response", "Forced response"),
-        ),
-    )
-    .replace("<!--TRIALS-->", trials_html(TRIALS))
-    .replace(
-        "<!--TAKEAWAYS-->",
-        takeaways(
-            "An impulse I starts the mass at I/m; the response to a unit impulse, h(t), is a free vibration.",
-            "Any response is the convolution of the force with h (Duhamel's integral): every slice of force rings "
-            "as h from its own moment on.",
-            "h(t) and H(ω) are a Fourier pair; with the Laplace transform, H(s) = 1/(ms² + cs + k) and its poles.",
-            "A step overshoots its static value by e<sup>−ζπ/√(1 − ζ²)</sup> (twice the static deflection, "
-            "undamped) and settles in about 4/ζω<sub>n</sub>.",
-            "A pulse much shorter than the period acts by its area, one much longer statically; the worst lengths "
-            "lie near half a period to a period.",
-        ),
-    )
-)
+NOTES_HTML = load_notes("transient", trials=trials_html(TRIALS))
 
 
 class TransientPage(QtWidgets.QWidget):

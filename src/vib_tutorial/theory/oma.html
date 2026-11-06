@@ -1,0 +1,65 @@
+
+<before>
+<a href="page:test_page#estimators">Averaging and estimators</a>
+<a href="page:test_page#extraction">Modal parameter extraction</a>
+<a href="page:random_page#miles">Miles' equation</a>
+</before>
+<h3><a name="oma"></a>Operational modal analysis</h3>
+<p>A modal test measures the force and the response, and their ratio, the FRF, is the structure's own. A bridge
+or a running machine can't be hammered: it is shaken by traffic, wind or its own working, forces nobody
+measures. <b>Operational modal analysis</b> (OMA, output-only) identifies the modes from the responses alone,
+assuming those forces are random and broadband (white), so the responses' spectra take their shape from the
+structure.</p>
+<p>With white forces of spectral density matrix S<sub>ff</sub>, the responses' cross-spectral matrix is</p>
+<p align="center">G<sub>yy</sub>(ω) = H(ω) S<sub>ff</sub> H(ω)<sup>H</sup>,</p>
+<p>and near a lightly damped mode r its term dominates: G<sub>yy</sub> ≈ d<sub>r</sub> φ<sub>r</sub>φ<sub>r</sub><sup>H</sup>,
+a matrix of rank one whose column space is the mode shape.</p>
+
+<h3><a name="fdd"></a>Frequency domain decomposition</h3>
+<p>FDD estimates G<sub>yy</sub> at each line by Welch's method (the responses cut into blocks, windowed,
+Fourier transformed, Y Y<sup>H</sup> averaged) and takes its singular value decomposition,
+G<sub>yy</sub> = U S U<sup>H</sup>. The first singular value s₁ peaks at every mode, and the first singular vector
+there is the mode's shape. Picking the peaks gives the frequencies, to the line. Two close modes show as
+s₁ and s₂ both peaking.</p>
+<p><b>Enhanced FDD</b> (EFDD) adds the damping. The lines round a peak whose first singular vector still has a
+high MAC with the peak's are that mode's single-degree-of-freedom spectrum, its <i>bell</i>. Transformed back
+to the time domain it is the mode's autocorrelation function, a decaying cosine: its zero crossings give the
+damped frequency, and the logarithmic decay of its extremes the damping, as from a free decay.</p>
+
+<h3><a name="ssi"></a>Stochastic subspace identification</h3>
+<p>SSI-cov works in the time domain. The responses' correlations R<sub>i</sub> = E[y<sub>k+i</sub> y<sub>k</sub><sup>T</sup>],
+under white input, are the free decay of the sampled system, R<sub>i</sub> = C A<sup>i−1</sup> G: an impulse
+response in disguise. Stacked in a block Toeplitz matrix, they factor into the observability matrix (C, CA,
+CA², …) times another, so the matrix has rank 2N. Its SVD's first p singular vectors give the observability
+matrix at model order p; its first block row is C, and A follows from its shift structure. A's eigenvalues are
+the poles (λ = f<sub>s</sub> ln μ), and C's view of its eigenvectors the shapes. As with LSCF on the virtual
+modal test, the order isn't known: the poles at every order go in a <b>stabilization diagram</b>, and the
+stable columns are the modes. It fits every mode at once, so close and heavily damped modes don't spoil each
+other as EFDD's bells do.</p>
+
+<h3><a name="harmonics"></a>Harmonics</h3>
+<p>A machine running on the structure adds a sine: a sharp peak, a pole with almost no damping, just what a very
+lightly damped mode looks like. Filtered round its frequency, a mode's random response is Gaussian, with a
+kurtosis E[x⁴]/E[x²]² of 3; a sine's is 1.5. The page projects the responses on each peak's shape, band-pass
+filters them round it, and crosses out the peaks whose kurtosis is below 2 and whose damping is below 1 %. A
+mode with a sine in its band reads low too, but keeps its damping. A sine right on a mode hides it from FDD,
+whose peak there is the sine's. (A harmonic's peak is also one line wide
+whatever the block length: a longer block makes it taller, a mode's not.)</p>
+
+<h3><a name="limits"></a>What OMA can't do</h3>
+<ul>
+<li>The force is unknown, so the shapes can't be <b>scaled</b>: no modal masses, no FRF. (A known mass added
+and the shift in frequency, or a measured force at one point, can scale them.)</li>
+<li>It assumes the forces are <b>white</b> over the band. A coloured input shapes the spectra, and a
+<b>harmonic</b> one (a machine running) makes a sharp peak that looks like a lightly damped mode.</li>
+<li>It needs <b>long records</b>: the input is random, and only many averages make the spectra smooth. The
+rule of thumb is a thousand to two thousand periods of the slowest mode.</li>
+<li>Damping is the hardest: the Hann window's leakage widens the peaks of a short block (too much damping),
+and a bell cut short by the MAC threshold rings on (too little).</li>
+</ul>
+<takeaways>
+<li>With broadband random forces, the responses' spectra take their shape from the structure, so the modes can be found from the responses alone.</li>
+<li>FDD: the cross-spectral matrix's first singular value peaks at each mode, and its singular vector is the shape; EFDD adds the damping from the bell's decay.</li>
+<li>SSI-cov fits a state-space model to the responses' correlations, with a stabilization diagram as LSCF has.</li>
+<li>Output-only shapes can't be scaled, a machine's sine looks like a mode, and the records must be long.</li>
+</takeaways>

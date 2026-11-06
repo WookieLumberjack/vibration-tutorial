@@ -1,0 +1,52 @@
+
+<before>
+<a href="page:shock_page#srs">The shock response spectrum</a>
+<a href="page:shock_page#chain">The chain's modes on a pulse</a>
+</before>
+<h3><a name="design-spectrum"></a>A design spectrum</h3>
+<p>The Shock spectrum page's idea, used for earthquakes: a single oscillator's peak response to the ground's
+motion, plotted against its period. An earthquake's spectrum is jagged and no two are alike, so a design code
+smooths and envelopes many into a <b>design spectrum</b>: a rise from the ground's own acceleration
+a<sub>g</sub>S at T = 0, a plateau of 2.5 η a<sub>g</sub>S from T<sub>B</sub> to T<sub>C</sub>, then falls as
+1/T (constant velocity) and 1/T² (constant displacement). The page uses the shape of the European code's elastic
+spectrum. The ground type sets S and the corners: soft soil amplifies and widens the plateau. Damping scales it
+by η = √(10/(5 + ζ%)).</p>
+
+<h3><a name="participation"></a>Participation and effective mass</h3>
+<p>A building on moving ground is pushed by −M1 a<sub>g</sub> (each floor's inertia, in coordinates relative to
+the ground), so each mode r is a single oscillator driven by Γ<sub>r</sub> a<sub>g</sub>, with the
+<b>participation factor</b></p>
+<p align="center">Γ<sub>r</sub> = φ<sub>r</sub>ᵀM1 / φ<sub>r</sub>ᵀMφ<sub>r</sub>.</p>
+<p>Its peak modal coordinate is Γ<sub>r</sub>S<sub>a</sub>(T<sub>r</sub>)/ω<sub>r</sub>², its floor displacements
+φ<sub>r</sub> times that, and its base shear M<sub>eff,r</sub> S<sub>a</sub>(T<sub>r</sub>) with the <b>effective
+modal mass</b> M<sub>eff,r</sub> = (φ<sub>r</sub>ᵀM1)²/φ<sub>r</sub>ᵀMφ<sub>r</sub>. The effective masses add up
+to the building's mass, so their running sum says how many modes are enough: codes ask for 90 %.</p>
+
+<h3><a name="combination"></a>Combining the modes</h3>
+<p>The spectrum gives each mode's peak, not when it happens. Adding them (<b>ABS</b>) assumes they all peak
+together: safe, usually far too safe. <b>SRSS</b>, √Σ R<sub>r</sub>², assumes they are independent, which holds when
+their frequencies are well apart. <b>NRL</b> (the largest plus the SRSS of the rest) sits between. When two modes
+are close they move together much of the time, and SRSS underestimates; the <b>complete quadratic
+combination</b></p>
+<p align="center">R = √(Σ<sub>i</sub>Σ<sub>j</sub> R<sub>i</sub> ρ<sub>ij</sub> R<sub>j</sub>)</p>
+<p>keeps the cross terms, with Der Kiureghian's correlation ρ<sub>ij</sub> (1 on the diagonal, falling off as
+the frequencies part, faster the less the damping): ρ = 8ζ²(1 + r)r<sup>3/2</sup> / ((1 − r²)² +
+4ζ²r(1 + r)²) for equal damping and r = ω<sub>j</sub>/ω<sub>i</sub>. CQC is SRSS when the modes are far apart, so
+codes now use it throughout.</p>
+
+<h3><a name="records"></a>Checking against records</h3>
+<p>The page synthesizes seven ground motions whose spectra match the design spectrum (sines at random phases
+under a rise, strong-shaking and decay envelope, each scaled until its spectrum meets the target), steps the
+building on each mode by mode, exactly, and takes the mean of their peaks, as a code does with a set of
+records. The rules are estimates of that mean; each record scatters about it by some 10 %.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these loads a building into the Simulation page and sets up the spectrum (Things to try, top
+left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>A design spectrum smooths many earthquakes' spectra into a plateau and 1/T, 1/T² falls; soil and damping scale it.</li>
+<li>Each mode is an oscillator driven by Γ a<sub>g</sub>; its effective mass is its share of the base shear, and the shares add up to the whole mass.</li>
+<li>ABS adds the modes' peaks and overestimates; SRSS is right for well-separated modes.</li>
+<li>Close modes are correlated: CQC keeps the cross terms and SRSS underestimates.</li>
+</takeaways>

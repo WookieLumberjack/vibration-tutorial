@@ -1,0 +1,65 @@
+
+<before>
+<a href="page:frf_page#sum-of-modes">Every term is a sum of modes</a>
+<a href="page:updating_page#mac">The modal assurance criterion</a>
+<a href="page:updating_page#sensors">Sensors</a>
+<a href="page:oma_page#oma">Operational modal analysis</a>
+</before>
+<h3><a name="planning"></a>Planning a test</h3>
+<p>A modal test measures the response at a few points and fits the modes to them. Before the first sensor is
+glued on, two questions: where should the sensors go so the modes wanted (the <b>targets</b>) can be told apart
+and fitted well; and what will the structure actually do while it runs, at the frequencies it runs at. The
+first is <b>sensor placement</b>; the second is its <b>operational deflection shape</b>.</p>
+
+<h3><a name="fisher"></a>What a placement is worth</h3>
+<p>At the sensors the response is y = Φ<sub>s</sub>q + noise: Φ<sub>s</sub> the target modes' rows at the
+sensors, q their modal coordinates. Least squares gives q̂ = (Φ<sub>s</sub>ᵀΦ<sub>s</sub>)⁻¹Φ<sub>s</sub>ᵀy,
+with covariance σ²(Φ<sub>s</sub>ᵀΦ<sub>s</sub>)⁻¹: Φ<sub>s</sub>ᵀΦ<sub>s</sub> is the <b>Fisher information</b>.
+The larger its determinant, the smaller the noise's ellipsoid; if it is singular, the modes can't be separated
+at all. The page scores a placement by its determinant as a share of all the candidates' (every mass with a
+sensor), and each mode's noise as a multiple of all the candidates'.</p>
+
+<h3><a name="efi"></a>Effective independence</h3>
+<p>Kammer's <b>effective independence</b> (EfI) starts with every candidate and drops one at a time. Each
+candidate's share of the information is</p>
+<p align="center">E<sub>i</sub> = [Φ(ΦᵀΦ)⁻¹Φᵀ]<sub>ii</sub>,</p>
+<p>the diagonal of the projector onto the targets' columns: between 0 and 1, adding up to the number of
+targets. Dropping candidate i multiplies det(ΦᵀΦ) by (1 − E<sub>i</sub>), so EfI drops the smallest, then
+works the shares out again for the ones left, until as many are left as there are sensors. With one target,
+E<sub>i</sub> = φ<sub>i</sub>²/Σφ<sub>j</sub>²: the sensors go where the mode moves most. It is greedy, not
+optimal (the best set of k isn't always the best k + 1 less one), but it's fast and usually close.</p>
+<p>EfI looks only at shapes, so it may keep a sensor where the response is small and the noise floor matters.
+Weighting E<sub>i</sub> by the <b>driving-point residue</b>, DPR<sub>i</sub> = Σφ<sub>ir</sub>²/ω<sub>r</sub>
+(<b>EfI-DPR</b>), leans toward where the response is large, at some cost in information.</p>
+
+<h3><a name="aliasing"></a>Noise and spatial aliasing</h3>
+<p>The <i>Noise &amp; aliasing</i> tab sets the placement beside EfI's, EfI-DPR's and evenly spaced sensors:
+the information, each mode's noise, and the <b>auto-MAC</b> of the targets at the sensors. Two modes whose MAC
+is near 1 there look alike to the test: <b>spatial aliasing</b>, as a signal sampled too slowly in time looks
+like a slower one. Too few sensors, or sensors bunched where every mode moves the same way, do it.</p>
+
+<h3><a name="ods"></a>Operational deflection shapes</h3>
+<p>An <b>ODS</b> is how the structure deflects at one frequency under the forces it runs with,
+X(ω) = H(ω)F: complex, each point with its own phase. It is not a mode shape. Each mode contributes
+φ<sub>r</sub>η<sub>r</sub>, η = (Ω² − ω² + iωΦᵀCΦ)⁻¹ΦᵀF in the undamped modes (solved together, so they add up
+to X exactly, whatever the damping): near a lightly damped mode its 1/(2ζ) dominates and the ODS looks like the
+mode; between modes it's a mix; and it changes when the force moves, which a mode doesn't. That's what an ODS is
+for: to see how the machine moves where it runs, and so where to stiffen or damp it.</p>
+
+<h3><a name="reference"></a>Measuring an ODS</h3>
+<p>The forces in a running machine usually aren't measured, so an ODS is measured relative to a
+<b>reference</b> sensor that stays put while the others rove: T<sub>i</sub> = X<sub>i</sub>/X<sub>ref</sub>,
+its phase from the cross-spectrum G<sub>ref,i</sub>. The shape comes out right whatever the force's size, but
+if the reference sits near a node of the ODS every ratio is huge, and its noise with it: put the reference
+where the ODS moves most. (Operational modal analysis goes further, from responses alone to the modes.)</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these loads a chain into the Simulation page and sets the sensors or the operating point.</p>
+<!--TRIALS-->
+<takeaways>
+<li>Φ<sub>s</sub>ᵀΦ<sub>s</sub> at the sensors is the Fisher information: its determinant sets how much the noise spoils the fitted modes.</li>
+<li>Effective independence drops, one at a time, the sensor with the smallest share of it.</li>
+<li>Too few sensors, or bunched ones, make modes look alike (spatial aliasing: a large auto-MAC off-diagonal).</li>
+<li>An ODS is what the structure does at one frequency under its forces: like a mode at a lightly damped peak, a mix between them, and it changes when the force moves.</li>
+<li>Measure an ODS against a reference where it moves most.</li>
+</takeaways>

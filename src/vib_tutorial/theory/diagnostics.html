@@ -1,0 +1,63 @@
+
+<before>
+<a href="page:signals_page#spectrogram">Time and frequency</a>
+<a href="page:torsional_page#gears">Gears and the tooth-pass frequency</a>
+<a href="page:rotor_page#waterfall">Waterfall and cascade plots</a>
+</before>
+<h3><a name="machines"></a>What a machine's vibration says</h3>
+<p>Every part of a running machine leaves its own frequencies in the casing's vibration: the shafts their
+speeds and harmonics (unbalance at 1X, misalignment at 2X), the gears their tooth-mesh frequency (teeth × the
+shaft's speed), the rolling bearings their defect frequencies. Condition monitoring reads the spectrum against
+that list. A fault changes a line, adds new ones, or adds a pattern: sidebands, impacts, families of
+harmonics. This page synthesizes a gearbox's casing acceleration and looks at it four ways.</p>
+
+<h3><a name="orders"></a>Run-ups and order tracking</h3>
+<p>While the speed changes, a frequency analysis smears: a fixed-length block sees the 1X sweep across several
+lines. Each force, though, stays at a fixed <b>order</b> (a multiple of the speed), so <b>order tracking</b>
+analyses in angle instead of time: the record is resampled at equal steps of the shaft's angle (from a
+tachometer's pulses) and each block of whole revolutions is transformed. An order is then one line, whatever the
+speed did. Against frequency, the orders are rays from the origin and a structural mode a horizontal band they
+light up as they cross; against order the orders stand still and the mode's band slants. Each order's amplitude
+along the run-up is its <b>order track</b>, the Bode plot of the Jeffcott rotor page measured.</p>
+<p>A run-up that is too fast misreads a resonance: the response needs about Q cycles to build up, so a sweep that
+crosses the half-power band in fewer peaks lower and later, and rings after.</p>
+
+<h3><a name="gears"></a>Gear-mesh sidebands</h3>
+<p>The mesh's force repeats at every tooth, at f<sub>m</sub> = z f<sub>shaft</sub>, with harmonics. A fault on
+one gear modulates it once a turn of that gear, which puts <b>sidebands</b> at f<sub>m</sub> ± k f<sub>shaft</sub>.
+How many tells what kind of fault: a smooth modulation (an eccentric or bent gear) gives one or two pairs; a
+short event once a turn (a cracked or broken tooth) gives a long, flat family, since a narrow pulse's spectrum is
+broad. Amplitude and phase modulation together make the pairs unequal. The spacing says which shaft the faulty
+gear is on.</p>
+
+<h3><a name="envelope"></a>Bearings and the envelope</h3>
+<p>A rolling bearing with a spall gives a strike each time a ball meets it. Where depends on the geometry
+(n balls of diameter d on a pitch circle D, contact angle α, the inner race turning at f<sub>r</sub>):</p>
+<p align="center">FTF = f<sub>r</sub>/2 (1 − d/D cos α), &nbsp; BPFO = n FTF, &nbsp;
+BPFI = n f<sub>r</sub>/2 (1 + d/D cos α), &nbsp; BSF = D f<sub>r</sub>/2d (1 − (d/D cos α)²).</p>
+<p>Each strike is a short impulse that rings the structure's resonances, in the kilohertz. The strikes' rate
+carries little energy at its own frequency, so the plain spectrum barely shows it under the shafts and the mesh.
+<b>Envelope analysis</b> band-passes the record round a resonance the strikes ring (clear of the gears), takes the
+envelope (the magnitude of the analytic signal, by the Hilbert transform), and transforms that: the strikes'
+rate, and its harmonics, stand out. The kurtosis of the band (3 for Gaussian noise) climbs with impacts and helps
+pick the band. Inner-race and ball defects pass through the load zone, so their strikes swell and fade: sidebands
+at ± 1X (inner race) or ± FTF (ball). The balls slip a little, so the strikes' spacing scatters by a percent or
+two: the envelope's lines stay sharp at low harmonics, while the raw spectrum's high ones smear.</p>
+
+<h3><a name="cepstrum"></a>The cepstrum</h3>
+<p>A family of lines spaced Δf is a periodic ripple in the log spectrum. The <b>cepstrum</b>, the inverse Fourier
+transform of the log power spectrum, turns that ripple into one peak at the <b>quefrency</b> 1/Δf (and its
+<i>rahmonics</i>). A gear's sidebands, however many and however unequal, become one peak at 1/f<sub>shaft</sub>;
+the mesh's own harmonics another at 1/f<sub>m</sub>. The log also separates a source from the path it passes
+through, which multiply in the spectrum and add in the cepstrum.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the machine (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>Each part of a machine has its own frequencies; a diagnosis reads the spectrum against them.</li>
+<li>Under a changing speed, track orders: resample at equal angles, and each order stays on one line.</li>
+<li>Sidebands at the mesh ± the shaft's speed point to a gear; a long flat family to a local fault.</li>
+<li>Bearing strikes hide in the plain spectrum; band-pass round a resonance and look at the envelope's.</li>
+<li>The cepstrum turns a family of equally spaced lines into one peak at 1/spacing.</li>
+</takeaways>

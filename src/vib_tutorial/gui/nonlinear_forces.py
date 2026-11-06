@@ -42,7 +42,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
@@ -324,93 +324,7 @@ FRF_TIP = (
 )
 FORCE_TIP = "<p>The true force (solid) and the one identified from the noisy measurement (dashed).</p>"
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="homogeneity"></a>Is it linear? Homogeneity</h3>
-<p>Everything a modal test fits assumes the structure is linear: double the force and every response doubles,
-so the FRF X/F is the same at any level. That's <b>homogeneity</b>, and the first check is to measure the FRF
-at two or three levels and lay them over each other. A linear structure's coincide; a nonlinear one's move
-with the level. Joints, contacts, friction and large deflections all do it, and only at the levels where they
-act: a gap that never closes is invisible. Test at the levels the structure works at.</p>
-
-<h3><a name="stepped-sine"></a>Stepped sine, up and down</h3>
-<p>A <b>stepped sine</b> holds each frequency until the response is steady, reads its amplitude and phase, and
-steps on. Swept up and then down, a linear structure gives the same curve both ways. A hardening spring's
-peak leans to higher frequencies as the level rises, so the response has two steady states over a band: swept
-up it rides the upper branch until that ends and drops off; swept down it climbs onto it late. The two sweeps
-disagree between the <b>jumps</b>, which no linear structure can do. (The Duffing & Mathieu page, later, follows
-one nonlinear oscillator through its jump, chaos and all.)</p>
-
-<h3><a name="describing"></a>Harmonic balance</h3>
-<p>The page finds each step's steady state by <b>harmonic balance</b> with one harmonic, x = Re(X e<sup>iωt</sup>),
-each nonlinear force replaced by its first harmonic, its <b>describing function</b>:
-(K − ω²M + iωC)X + N(X) = F. A cubic spring on a stretch of amplitude A adds a stiffness ¾k₃A²; a gap of
-clearance g, k<sub>g</sub>[1 − (2/π)(asin r + r√(1 − r²))] with r = g/A (nothing while A ≤ g); Coulomb friction
-F<sub>c</sub> acts as a damper 4F<sub>c</sub>/(πωA), weaker as the motion grows. Each step starts Newton from
-the last step's X, as the structure starts from where it is; where that branch ends, the stable solution
-nearest it is where it jumps to (the real Jacobian's determinant changes sign at each fold, so the unstable
-middle branch has it negative).</p>
-
-<h3><a name="distortion"></a>Distortion</h3>
-<p>One harmonic leaves out the rest: a nonlinear element turns a sine into a distorted wave. The
-<i>Distortion</i> tab steps the chain in time at one level and frequency (the exact FOH update, the nonlinear
-forces an input linear over each step, found by Newton) until a cycle repeats itself, and splits the steady
-response into harmonics. A symmetric nonlinearity (a cubic spring, a gap, friction) makes odd harmonics, 3X and
-5X; an asymmetric one (a contact on one side) makes even ones too. Harmonics where the input was a pure sine
-are a second test of linearity.</p>
-
-<h3><a name="forces"></a>Which force made this response?</h3>
-<p>Sometimes the force is what's wanted, and it can't be measured: a wheel on a rail, a gust, an impact inside
-a machine. The response can. With the force on one mass, sampled every h and linear between samples, the
-exact FOH update makes every sensor's sample a sum over the force's samples so far: <b>y = G f</b>, G lower
-triangular, its columns the impulse response shifted (the Markov parameters). Identifying the force is
-solving for f.</p>
-
-<h3><a name="ill-posed"></a>Why the plain inverse fails</h3>
-<p>G's singular values s<sub>i</sub> fall over many decades: the chain filters out whatever is faster than its
-modes, and a displacement far from the force hardly sees its last samples. Written in G's singular
-directions, f = Σ(u<sub>i</sub>ᵀy/s<sub>i</sub>)v<sub>i</sub>: the noise's share of each direction is divided
-by s<sub>i</sub>, so the smallest turn noise into a force thousands of times too large. The <b>Picard plot</b>
-(the <i>Singular values</i> tab) shows it: |u<sub>i</sub>ᵀy| falls with s<sub>i</sub> while the signal lasts,
-then levels off at the noise, and beyond that point dividing by s<sub>i</sub> only amplifies noise.</p>
-
-<h3><a name="regularization"></a>Regularization</h3>
-<p><b>Truncated SVD</b> keeps the first k directions and drops the rest. <b>Tikhonov</b> minimizes
-‖Gf − y‖² + λ²‖f‖², which weights each direction by s²/(s² + λ²): kept where s ≫ λ, dropped where s ≪ λ.
-The <b>L-curve</b> plots the residual ‖Gf − y‖ against the force's size ‖f‖ as λ varies, on log axes: too
-small a λ and ‖f‖ explodes with the noise, too large and the residual grows as the force is smoothed away. Its
-corner balances them. With the noise's size known, the <b>discrepancy principle</b> picks the λ whose residual
-is that size. No λ brings back what G filtered out, though: a sensor that feels the force directly (an
-accelerometer on the force's own mass) helps far more than any choice of λ.</p>
-
-<h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these loads a chain into the Simulation page and sets up the test.</p>
-<!--TRIALS-->
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = (
-    NOTES_HTML.replace(
-        "<!--BEFORE-->",
-        before(
-            ("frf_page", "receptance-matrix", "The FRF (receptance) matrix"),
-            ("test_page", "friction", "Nonlinearity: friction"),
-            ("updating_page", "sensitivities", "Updating by sensitivities"),
-        ),
-    )
-    .replace("<!--TRIALS-->", trials_html(TRIALS))
-    .replace(
-        "<!--TAKEAWAYS-->",
-        takeaways(
-            "A linear structure's FRF is the same at every level: measure at two or three and compare.",
-            "Swept up and down, a leaning peak jumps at different frequencies each way.",
-            "Hardening springs and gaps lean the peak up as the level rises; friction damps less.",
-            "Symmetric nonlinearities make odd harmonics from a pure sine.",
-            "y = Gf: G's tiny singular values turn noise into force, so the plain inverse is useless.",
-            "Tikhonov or truncated SVD keeps the directions the data can carry; the L-curve's corner picks λ.",
-            "A sensor that feels the force directly beats any regularization.",
-        ),
-    )
-)
+NOTES_HTML = load_notes("nonlinear_forces", trials=trials_html(TRIALS))
 
 
 class NonlinearForcesPage(QtWidgets.QWidget):
