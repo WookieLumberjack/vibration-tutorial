@@ -1,0 +1,133 @@
+
+<h3><a name="course-map"></a>The pages, in order</h3>
+<p>This is the first page. The pages are meant to be read in order, left to right, group by group: each one
+uses only ideas from the pages before it, and its Theory tab (F1) starts by saying which. The <i>One mass</i>
+pages come first, then the Simulation page builds a chain of these oscillators. The Theory window (its
+button, or Ctrl+F1) lists them too, and keeps its place as you move between pages.</p>
+<!--COURSE-->
+<h3><a name="equation"></a>One mass on a spring</h3>
+<p>Every vibration on these pages is built from one oscillator: a mass m on a spring k and a damper c,</p>
+<p align="center"><b>m ẍ + c ẋ + k x = f(t).</b></p>
+<p>The spring pulls back in proportion to the stretch, the damper in proportion to the velocity, and
+whatever is left over accelerates the mass. Three numbers describe it, whatever m, k and c are:</p>
+<ul>
+<li>the <b>natural frequency</b> ω<sub>n</sub> = √(k/m), f<sub>n</sub> = ω<sub>n</sub>/2π: how fast it swings
+when nothing damps it. A stiffer spring is faster, a heavier mass slower;</li>
+<li>the <b>damping ratio</b> ζ = c/c<sub>c</sub>, the damper against the <b>critical damping</b>
+c<sub>c</sub> = 2√(km) = 2mω<sub>n</sub>;</li>
+<li>the <b>static compliance</b> 1/k, how far a steady force pushes it.</li>
+</ul>
+<p>Dividing by m gives the form every later page uses: ẍ + 2ζω<sub>n</sub>ẋ + ω<sub>n</sub>²x = f/m.</p>
+
+<h3><a name="free-vibration"></a>Free vibration</h3>
+<p>Pull the mass to x<sub>0</sub> and let go. Below critical damping (ζ &lt; 1) it swings at the <b>damped
+natural frequency</b> ω<sub>d</sub> = ω<sub>n</sub>√(1 − ζ²), inside an envelope that shrinks
+exponentially:</p>
+<p align="center">x(t) = e<sup>−ζω<sub>n</sub>t</sup> (x<sub>0</sub> cos ω<sub>d</sub>t + (v<sub>0</sub> +
+ζω<sub>n</sub>x<sub>0</sub>)/ω<sub>d</sub> sin ω<sub>d</sub>t).</p>
+<p>The envelope falls by e in the <b>time constant</b> τ = 1/ζω<sub>n</sub>. For the 0.5 % to 5 % damping of
+most structures ω<sub>d</sub> is within 0.1 % of ω<sub>n</sub>: damping shortens the ringing, hardly changes
+its pitch.</p>
+
+<h3><a name="damping-regimes"></a>Under, critical and over</h3>
+<p>Tick <i>Compare ζ = 0.1, 1 and 2</i> to see the three cases together:</p>
+<ul>
+<li><b>Underdamped</b> (ζ &lt; 1): it overshoots and rings down.</li>
+<li><b>Critically damped</b> (ζ = 1): x = (x<sub>0</sub> + (v<sub>0</sub> + ω<sub>n</sub>x<sub>0</sub>)t)
+e<sup>−ω<sub>n</sub>t</sup>. Released from rest it returns without crossing zero, and faster than any
+heavier damping does. Door closers and instrument needles are made near it.</li>
+<li><b>Overdamped</b> (ζ &gt; 1): two plain decays, e<sup>s<sub>1</sub>t</sup> and e<sup>s<sub>2</sub>t</sup>.
+The slow one, s<sub>1</sub> = −ω<sub>n</sub>(ζ − √(ζ² − 1)), gets <i>slower</i> as the damping grows: a
+mass in treacle creeps back.</li>
+</ul>
+
+<h3><a name="log-decrement"></a>Measuring damping from a decay</h3>
+<p>Successive peaks of a free decay, one damped period apart, keep the same ratio. Its logarithm is the
+<b>logarithmic decrement</b></p>
+<p align="center">δ = ln(x<sub>k</sub>/x<sub>k+1</sub>) = 2πζ/√(1 − ζ²) ≈ 2πζ.</p>
+<p>So ζ ≈ δ/2π. Over n cycles, δ = (1/n) ln(x<sub>0</sub>/x<sub>n</sub>), which averages out the noise of a
+real record. The readout under the decay does exactly this on the curve's peaks. The phase plane shows it
+too: each turn of the spiral is e<sup>δ</sup> times smaller than the last.</p>
+
+<h3><a name="poles"></a>The poles</h3>
+<p>Try x = e<sup>st</sup> in the free equation: m s² + c s + k = 0, so</p>
+<p align="center">s = −ζω<sub>n</sub> ± iω<sub>d</sub> (ζ &lt; 1), &nbsp; s = −ω<sub>n</sub>(ζ ∓ √(ζ² − 1)) (ζ &gt; 1).</p>
+<p>These two <b>poles</b> say everything about the free motion: the real part is the decay rate, the
+imaginary part the frequency. Below critical they sit on a circle of radius ω<sub>n</sub> at an angle
+sin⁻¹ζ from the imaginary axis; at ζ = 1 they meet on the real axis and then split along it. Every mode of
+every later page is such a pair (the state-space method's eigenvalues λ are these s).</p>
+
+<h3><a name="forced-response"></a>Forced response</h3>
+<p>Under f = F cos Ωt, once the start has died away, the mass swings at the drive's frequency with
+x = Re(X e<sup>iΩt</sup>), and X = H(Ω)F with the <b>receptance</b></p>
+<p align="center">H(Ω) = 1/(k − Ω²m + iΩc) = (1/k) / (1 − r² + 2iζr), &nbsp; r = Ω/ω<sub>n</sub>.</p>
+<ul>
+<li>Well below resonance the spring carries the force: X ≈ F/k, in phase.</li>
+<li>Well above it the mass does: X ≈ −F/mΩ², 180° behind, smaller the faster.</li>
+<li>At resonance (r = 1) the spring's force and the mass's cancel and only the damper resists: |X| =
+(F/k)/2ζ, lagging by exactly 90°.</li>
+</ul>
+<p>The ratio |X|k/F is the <b>dynamic amplification</b>; at resonance it is the <b>quality factor</b>
+Q = 1/2ζ. The displacement's own peak is a little lower, at r = √(1 − 2ζ²), and there is none at all for
+ζ ≥ 1/√2.</p>
+
+<h3><a name="half-power"></a>The half-power bandwidth</h3>
+<p>The power a damper takes is proportional to |X|², so the points where |X| falls to 1/√2 of its peak are
+the <b>half-power points</b>. They lie at r² = 1 − 2ζ² ± 2ζ√(1 − ζ²), about 2ζf<sub>n</sub> apart, so</p>
+<p align="center">ζ ≈ (f<sub>2</sub> − f<sub>1</sub>)/2f<sub>n</sub> = 1/2Q.</p>
+<p>A lightly damped peak is tall and narrow. This is how damping is read off a measured frequency response,
+and why a test needs fine frequency lines to see it.</p>
+
+<h3><a name="beats"></a>Switching on: transients and beats</h3>
+<p>From rest, the steady response alone would start with the wrong position and velocity, so a free
+vibration at ω<sub>d</sub> is added to make up the difference. It dies away in a few time constants and
+leaves the steady state. Undamped, it never dies: driven near resonance the two swings drift in and out of
+step, and the motion <b>beats</b> at the difference frequency |f − f<sub>n</sub>|. Exactly at resonance
+there is no steady state: x = (F/2mω<sub>n</sub>) t sin ω<sub>n</sub>t grows without bound, and only damping
+(or the spring breaking) stops it.</p>
+
+<h3><a name="unbalance"></a>A rotating unbalance</h3>
+<p>A machine of mass m whose rotor has an unbalance m<sub>e</sub> at radius e feels the force
+m<sub>e</sub>eΩ² cos Ωt. So</p>
+<p align="center">m|X|/m<sub>e</sub>e = r²/√((1 − r²)² + (2ζr)²).</p>
+<p>It is 0 at rest, (1/2ζ) at resonance, and tends to 1 far above: the machine swings by m<sub>e</sub>e/m,
+in anti-phase with the unbalance, so that the two turn round their shared centre of mass. Fans, pumps and
+washing machines start up through this peak (the <a href="page:isolation_page#start-up">Vibration isolation
+page</a> runs one).</p>
+
+<h3><a name="nyquist"></a>The Nyquist plot</h3>
+<p>Drawing H as a point in the complex plane at each frequency (Im H against Re H) turns the resonance into
+nearly a circle of diameter 1/cω<sub>n</sub>, which crosses the imaginary axis at f<sub>n</sub>, where the
+points race round fastest. (The mobility, iΩH, makes an exact circle.) Modal testing fits circles like this
+to find each mode's frequency and damping.</p>
+
+<h3><a name="phase-plane"></a>The phase plane</h3>
+<p>The state of the oscillator is two numbers, position and velocity. Plotting ẋ/ω<sub>n</sub> against x
+turns undamped motion into a circle (its energy, ½kx² + ½mẋ², is constant) and damped motion into a
+spiral, losing a fixed fraction of its radius each turn. Overdamped, the path runs straight into the
+origin along the slow root's direction.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the oscillator and the plots (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>One mass on a spring and a damper is set by f<sub>n</sub> = √(k/m)/2π, ζ = c/2√(km) and 1/k.</li>
+<li>Underdamped, it rings at ω<sub>d</sub> ≈ ω<sub>n</sub> inside an envelope e<sup>−ζω<sub>n</sub>t</sup>; critically damped it returns fastest without overshoot; overdamped it creeps.</li>
+<li>The log decrement δ ≈ 2πζ and the half-power width Δf ≈ 2ζf<sub>n</sub> both measure damping.</li>
+<li>Driven, it follows the force below resonance, opposes it above, and lags by 90° at resonance, where only damping limits it to Q = 1/2ζ times the static response.</li>
+<li>A switched-on force adds a free vibration that dies away; undamped, it beats instead.</li>
+</takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<table border="1" cellspacing="0" cellpadding="3">
+<tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr>
+<tr><td>m, k, c</td><td>mass, stiffness, damping coefficient</td><td>kg, N/m, N·s/m</td></tr>
+<tr><td>ω<sub>n</sub>, f<sub>n</sub></td><td>natural frequency √(k/m), and over 2π</td><td>rad/s, Hz</td></tr>
+<tr><td>ω<sub>d</sub></td><td>damped natural frequency ω<sub>n</sub>√(1 − ζ²)</td><td>rad/s</td></tr>
+<tr><td>ζ</td><td>damping ratio c/2√(km)</td><td>–</td></tr>
+<tr><td>τ</td><td>time constant 1/ζω<sub>n</sub></td><td>s</td></tr>
+<tr><td>δ</td><td>logarithmic decrement</td><td>–</td></tr>
+<tr><td>Ω, r</td><td>drive frequency, and over ω<sub>n</sub></td><td>rad/s, –</td></tr>
+<tr><td>H</td><td>receptance X/F</td><td>m/N</td></tr>
+<tr><td>Q</td><td>quality factor 1/2ζ</td><td>–</td></tr>
+<tr><td>s</td><td>pole, root of m s² + c s + k</td><td>1/s</td></tr>
+</table>

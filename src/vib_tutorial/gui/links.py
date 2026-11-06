@@ -4,11 +4,16 @@ A note links to another page's Theory with `page:<attribute>#<anchor>`, the attr
 `main_window.PAGE_GROUPS` (`page:frf_page#three-forms`); `#anchor` alone stays on its own page,
 and http(s) links open in the browser. `before(...)` writes a page's "Before this page" line.
 The main window calls `wire` on every Theory browser and handles the `page:` links.
+
+A page's notes live in `theory/<name>.html` (`load_notes`), Qt's rich text but for two tags the
+loader writes out: `<before>`, the page: links to read first, and `<takeaways>`, one `<li>` each.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
+from importlib import resources
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -29,6 +34,27 @@ def takeaways(*points: str) -> str:
     return (
         "<h3><a name=\"takeaways\"></a>What to take away</h3><ul>" + "".join(f"<li>{p}</li>" for p in points) + "</ul>"
     )
+
+
+THEORY = resources.files("vib_tutorial") / "theory"
+BEFORE = re.compile(r"<before>(.*?)</before>", re.S)
+TAKEAWAYS = re.compile(r"<takeaways>(.*?)</takeaways>", re.S)
+LINK = re.compile(r'<a href="page:([a-z_]+)#([^"]+)">(.*?)</a>', re.S)
+ITEM = re.compile(r"<li>(.*?)</li>", re.S)
+PART = re.compile(r"<!--([A-Z_]+)-->")
+
+
+def load_notes(name: str, **parts: str) -> str:
+    """The notes in `theory/<name>.html`, its `<before>` and `<takeaways>` written out and each
+    `<!--PART-->` filled by the keyword `part` (what the code works out: the trials, the course map)."""
+    html = (THEORY / f"{name}.html").read_text(encoding="utf-8")
+    html = BEFORE.sub(lambda m: before(*LINK.findall(m.group(1))), html)
+    html = TAKEAWAYS.sub(lambda m: takeaways(*ITEM.findall(m.group(1))), html)
+    wanted = set(PART.findall(html))
+    given = {key.upper() for key in parts}
+    if wanted != given:
+        raise ValueError(f"{name}.html wants {sorted(wanted)}, given {sorted(given)}")
+    return PART.sub(lambda m: parts[m.group(1).lower()], html)
 
 
 # The pages in the order they're meant to be read, in groups: (group, ((attribute, tab title, what it's

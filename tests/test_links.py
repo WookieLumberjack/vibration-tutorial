@@ -121,3 +121,36 @@ def test_before_this_page_points_back(page):
 @pytest.mark.parametrize("page", ORDER)
 def test_every_page_ends_with_its_takeaways(page):
     assert '<a name="takeaways"></a>What to take away' in notes()[page]
+
+
+def test_notes_files_write_out_their_tags(tmp_path, monkeypatch):
+    from vib_tutorial.gui import links
+
+    (tmp_path / "page.html").write_text(
+        '<before>\n<a href="page:sdof_page#equation">The equation</a>\n</before>\n<h3>Text</h3>\n<!--TRIALS-->\n'
+        "<takeaways>\n<li>One.</li>\n<li>Two,\nover two lines.</li>\n</takeaways>\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(links, "THEORY", tmp_path)
+    html = links.load_notes("page", trials="<ul><li>A trial.</li></ul>")
+    assert html == (
+        links.before(("sdof_page", "equation", "The equation"))
+        + "\n<h3>Text</h3>\n<ul><li>A trial.</li></ul>\n"
+        + links.takeaways("One.", "Two,\nover two lines.")
+        + "\n"
+    )
+    with pytest.raises(ValueError, match="TRIALS"):
+        links.load_notes("page")
+    with pytest.raises(ValueError, match="COURSE"):
+        links.load_notes("page", trials="", course="")
+
+
+def test_every_notes_file_is_loaded():
+    from pathlib import Path
+
+    from vib_tutorial.gui import links
+
+    gui = Path(links.__file__).parent
+    loaded = set(re.findall(r'load_notes\(\s*"([a-z_]+)"', "".join(p.read_text() for p in gui.glob("*.py"))))
+    files = {p.stem for p in Path(str(links.THEORY)).glob("*.html")}
+    assert files == loaded

@@ -3,6 +3,8 @@
 # because a one-file build unpacks Qt and SciPy to a temp directory on every launch.
 import sys
 
+from PyInstaller.utils.hooks import collect_data_files
+
 # Qt modules the app never imports. PySide6 ships them all, and they would add ~100 MB+.
 EXCLUDES = [
     "PySide6.Qt3DAnimation", "PySide6.Qt3DCore", "PySide6.Qt3DExtras", "PySide6.Qt3DInput",
@@ -24,6 +26,7 @@ EXCLUDES = [
 a = Analysis(
     ["launcher.py"],
     excludes=EXCLUDES,
+    datas=collect_data_files("vib_tutorial", includes=["theory/*.html"]),  # the pages' notes
 )
 
 # Qt plugins drag in libraries the app doesn't use: the virtual keyboard pulls in QML and
