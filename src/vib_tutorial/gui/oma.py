@@ -47,7 +47,8 @@ from ..core.oma import (
     ssi_modes,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
-from .layouts import ColumnScroll, FlowLayout, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
+from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
@@ -493,7 +494,7 @@ class OmaPage(QtWidgets.QWidget):
 
         # --- left: the test, the acquisition, the processing
         test = QtWidgets.QGroupBox("Test")
-        form = QtWidgets.QFormLayout(test)
+        form = form_layout(test)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
@@ -520,7 +521,7 @@ class OmaPage(QtWidgets.QWidget):
         form.addRow(link)
 
         daq = QtWidgets.QGroupBox("Acquisition")
-        form = QtWidgets.QFormLayout(daq)
+        form = form_layout(daq)
         self.fs = spin(0.5, 10000.0, 20.0, 2, " Hz")
         self.duration = spin(1.0, 1e6, 900.0, 0, " s")
         self.noise = spin(0.0, 500.0, 2.0, 1, " %")
@@ -536,7 +537,7 @@ class OmaPage(QtWidgets.QWidget):
         form.addRow(self.daq_info)
 
         proc = QtWidgets.QGroupBox("Processing")
-        form = self.proc_form = QtWidgets.QFormLayout(proc)
+        form = self.proc_form = form_layout(proc)
         self.method = QtWidgets.QComboBox()
         self.method.addItems([FDD, SSI])
         _form_row(form, "Method:", self.method, TIPS["method"])
@@ -565,9 +566,7 @@ class OmaPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItems([name for name, _, _ in TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.trial = TrialCombo([name for name, _, _ in TRIALS], prompt=None)
         self.trial.setToolTip(
             "<p>Settings that show one of OMA's strengths or pitfalls, set from the chain as it is now.</p>"
         )
@@ -698,7 +697,7 @@ class OmaPage(QtWidgets.QWidget):
         self._on_method(redraw=False)
         self.new_record.clicked.connect(self._on_new_record)
         self.auto_peaks.clicked.connect(self._on_auto_peaks)
-        self.trial.currentIndexChanged.connect(lambda _: self.apply_trial())
+        self.trial.picked.connect(lambda _: self.apply_trial())
         self.mode_pick.currentIndexChanged.connect(self._on_mode_pick)
 
     # ------------------------------------------------------------- inputs

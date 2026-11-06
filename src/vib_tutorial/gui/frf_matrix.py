@@ -20,8 +20,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
-from .layouts import ColumnScroll
-from .lesson import trials_html
+from .layouts import ColumnScroll, form_layout
+from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
 from .plots import frequency_grid
 from .style import MAX_DOF, colors
@@ -705,14 +705,12 @@ class FrfMatrixPage(QtWidgets.QWidget):
         # --- controls
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItem("Pick one…")
-        self.trial.addItems([t.name for t in TRIALS])
-        self.trial.setToolTip(
+        self.trial = TrialCombo(
+            [t.name for t in TRIALS],
             "<p>Each sets up the chain and the plots to show one idea from the Theory tab. "
-            "Loading one replaces the Simulation page's chain.</p>"
+            "Loading one replaces the Simulation page's chain.</p>",
         )
-        self.trial.currentIndexChanged.connect(self._on_trial)
+        self.trial.picked.connect(self.load_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -721,7 +719,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         tv.addWidget(self.trial_note)
 
         box = QtWidgets.QGroupBox("FRF matrix H(ω) = (K − ω²M + iωC)⁻¹")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
@@ -907,14 +905,6 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self._sync_io()
         self.redraw()
         self.tabs.setCurrentWidget(self.detail)
-
-    def _on_trial(self, index: int) -> None:
-        if index <= 0:
-            return
-        self.trial.blockSignals(True)
-        self.trial.setCurrentIndex(0)
-        self.trial.blockSignals(False)
-        self.load_trial(index - 1)
 
     def _on_cell(self, j: int, k: int, add: bool) -> None:
         if add and j == self.output:

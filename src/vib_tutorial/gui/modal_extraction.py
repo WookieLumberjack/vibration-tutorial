@@ -15,6 +15,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.identification import Method, ModeMatch, Stability, Stabilization
+from .layouts import form_layout
 from .links import load_notes
 from .panels import spin
 from .style import colors, text_on
@@ -58,7 +59,7 @@ class ExtractionControls(QtWidgets.QGroupBox):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__("Modal parameters", parent)
-        form = QtWidgets.QFormLayout(self)
+        form = form_layout(self)
         self.method = QtWidgets.QComboBox()
         for i, m in enumerate(Method):
             self.method.addItem(m.value, m)

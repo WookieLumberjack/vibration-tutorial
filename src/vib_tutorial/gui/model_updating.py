@@ -37,7 +37,8 @@ from ..core.model_updating import (
     update,
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
-from .layouts import ColumnScroll, FlowLayout, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
+from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .panels import spin
@@ -518,7 +519,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
 
         # --- left: the structure, the test, the model's errors, errors to try
         box = QtWidgets.QGroupBox("Test")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip(
@@ -571,9 +572,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItems([name for name, _, _ in TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.trial = TrialCombo([name for name, _, _ in TRIALS], prompt=None)
         self.trial.setToolTip(
             "<p>Model errors (and tests) that show something about correlation, set on the chain as it is now.</p>"
         )
@@ -751,7 +750,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.source.currentIndexChanged.connect(lambda _: self._schedule(measure=True))
         self.again.clicked.connect(self._on_again)
         self.clear_errors.clicked.connect(self._on_clear)
-        self.trial.currentIndexChanged.connect(lambda _: self.apply_trial())
+        self.trial.picked.connect(lambda _: self.apply_trial())
         self.table.itemSelectionChanged.connect(self._draw_shapes)
         for w in (*self.update_kind.values(), self.fit_shapes, self.fit_damping):
             w.toggled.connect(lambda _: self._on_update_settings())

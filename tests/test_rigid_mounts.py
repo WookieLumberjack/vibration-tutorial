@@ -256,3 +256,16 @@ def test_drive_trials():
     assert math.degrees(math.atan2(a[2], a[0])) == pytest.approx(14.0, abs=0.05)
     shares = participation(t.layout.modes(), t.drive.load())
     assert sorted(shares[shares > 1e-9]) == pytest.approx([0.30, 1.0], abs=0.005)
+
+
+def test_a_leaning_spring_keeps_its_zigzag_on_one_side():
+    # Mode 1 leans the springs along x; past ~26° the side used to flip, for a frame or two at each extreme.
+    from vib_tutorial.gui.rigid_mounts import _coil
+
+    rest = np.array([0.0, 0.0, 1.0])
+    bottom = np.zeros(3)
+    sides = []
+    for lean in np.radians(np.linspace(-45.0, 45.0, 91)):
+        coil = _coil(bottom, np.array([math.sin(lean), 0.0, math.cos(lean)]), rest)
+        sides.append(coil[2] - (coil[2] @ coil[-1]) * coil[-1])  # the first zig, off the axis
+    assert all(s[1] > 0 for s in sides) or all(s[1] < 0 for s in sides)

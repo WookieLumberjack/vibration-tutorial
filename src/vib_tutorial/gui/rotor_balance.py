@@ -20,7 +20,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.rotor import RPM, PlaneWeight
 from ..core.rotor_balance import PROBES, corrections, influence_matrix, weight, weight_parts
 from ..core.rotor_sweep import STATIONS, lag_degrees, probe, steady_vectors
-from .layouts import FlowLayout, group, plot_height
+from .layouts import FlowLayout, form_layout, group, plot_height
 from .panels import spin
 from .style import colors
 from .tab_groups import tucked_away
@@ -97,7 +97,7 @@ class BalancingPanel(QtWidgets.QWidget):
         self._rng = np.random.default_rng()
         self._stale = False  # changed while hidden: drawn when the tab shows
 
-        form = QtWidgets.QFormLayout()
+        form = form_layout()
         self.mode = QtWidgets.QComboBox()
         self.mode.addItems(MODES)
         self.mode.setToolTip(MODE_TIP)

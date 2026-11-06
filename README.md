@@ -874,7 +874,7 @@ does nothing until it closes, and friction's FRF rises with the level. The *Dist
 time at one point (the exact FOH update, the nonlinear forces found by Newton) and shows the odd harmonics a
 symmetric nonlinearity makes. **Which force made this response?** An impact, two, or a random burst on one
 mass is measured with noise at chosen sensors (displacement or acceleration); y = Gf, G from the FOH
-update's Markov parameters, and f is found plainly (useless: G's singular values span 20 decades), by
+update's Markov parameters, and f is found plainly (useless: G's singular values span nearly 8 decades, beyond two that are zero to round-off), by
 truncated SVD, or by Tikhonov with λ from the L-curve's corner or the noise. The *Singular values* tab is the
 Picard plot. An accelerometer on the force's own mass brings G down to 3 decades and the error to 6 %.
 

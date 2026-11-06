@@ -149,7 +149,8 @@ TRIALS = (
         "Force identification: the plain inverse",
         "Now the other way: a 0.1 s impact on mass 3, measured as mass 1's displacement with 2 % noise. G, "
         "the matrix from the force's samples to the measurement's, is lower triangular with singular values "
-        "spanning 20 decades (the chain filters out what's fast), and G⁻¹y divides the noise by the smallest: "
+        "spanning nearly 8 decades (the chain filters out what's fast; the last two are zero to round-off, and "
+        "the inverse leaves them out), and G⁻¹y divides the noise by the smallest it keeps: "
         "the force comes out 73,000 times too large, all noise.",
         method=fid.Method.INVERSE,
         tab=TAB_PICARD,

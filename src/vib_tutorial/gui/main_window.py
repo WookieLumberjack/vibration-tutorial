@@ -33,6 +33,7 @@ from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
 from .history import History
 from .layouts import ColumnScroll, FlowLayout, group
+from .lesson import TrialCombo
 from .modes import Method, mode_entries
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
@@ -387,15 +388,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.controls = SimControls()
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItem("Pick one…")
-        self.trial.addItems([t.name for t in SIM_TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip(
+        self.trial = TrialCombo(
+            [t.name for t in SIM_TRIALS],
             "<p>Sets up the chain and the controls to show one idea, and says what to look "
-            "for. The Theory tab (F1) lists them all.</p>"
+            "for. The Theory tab (F1) lists them all.</p>",
         )
-        self.trial.activated.connect(self._on_trial)
+        self.trial.picked.connect(lambda i: self.apply_sim_trial(SIM_TRIALS[i]))
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel(
             "New here? Press <b>Space</b> to switch the force on, or pick one of these. Then read the "
@@ -894,12 +892,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.frf_compare.setChecked(preset.absorber)
         if preset.absorber:
             self.tabs.setCurrentWidget(self.frf_tab)
-
-    def _on_trial(self, index: int) -> None:
-        """Set up one of the Things to try (index 0 is the prompt)."""
-        if index <= 0:
-            return
-        self.apply_sim_trial(SIM_TRIALS[index - 1])
 
     def apply_sim_trial(self, t: SimTrial) -> None:
         """Set the Simulation page up as a trial (or a practice problem's setup) says, and run it."""
