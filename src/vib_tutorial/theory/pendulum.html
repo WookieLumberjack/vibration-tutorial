@@ -1,0 +1,55 @@
+
+<before>
+<a href="page:sdof_page#equation">The single oscillator</a>
+<a href="page:sdof_page#phase-plane">The phase plane</a>
+</before>
+<h3><a name="rotation"></a>Turning instead of sliding</h3>
+<p>A body turning about a fixed axis is the single oscillator with every quantity rotated:</p>
+<table cellspacing="6">
+<tr><th>sliding</th><th>turning</th></tr>
+<tr><td>x (m)</td><td>θ (rad)</td></tr>
+<tr><td>m (kg)</td><td>J (kg·m²), the moment of inertia about the axis</td></tr>
+<tr><td>k (N/m)</td><td>k<sub>θ</sub> (N·m/rad)</td></tr>
+<tr><td>c (N·s/m)</td><td>c<sub>θ</sub> (N·m·s/rad)</td></tr>
+<tr><td>F (N)</td><td>M (N·m)</td></tr>
+</table>
+<p>so J θ'' + c<sub>θ</sub> θ' + k<sub>θ</sub> θ = M, ω<sub>n</sub> = √(k<sub>θ</sub>/J),
+ζ = c<sub>θ</sub>/2√(k<sub>θ</sub>J), and every formula of the Single oscillator page holds with these in place
+of m, k and c. The moment of inertia about a pivot a distance d from the centre of mass is
+J = J<sub>G</sub> + m d² (parallel axes).</p>
+
+<h3><a name="gravity-stiffness"></a>Gravity as a spring</h3>
+<p>A pendulum has no spring: its weight, acting a distance d from the pivot, gives a restoring moment
+m g d sin θ. For small swings sin θ ≈ θ, so k<sub>θ</sub> = m g d and</p>
+<p align="center">ω<sub>n</sub> = √(m g d / J); &nbsp; a simple pendulum (J = mL², d = L): ω<sub>n</sub> = √(g/L).</p>
+<p>The mass cancels for a simple pendulum, so its period depends only on L and g. A body of any shape swings as a
+simple pendulum of length L<sub>eq</sub> = J / m d. For a uniform rod J = m(L²/12 + d²), so the period is least
+when d equals the radius of gyration L/√12, and each longer period is reached at two pivots, d and
+k<sub>G</sub>²/d (Kater's reversible pendulum: the distance between those two pivots is L<sub>eq</sub>).</p>
+<p>Turned upside down, the weight pushes the body over: the stiffness is k<sub>θ</sub> − m g d, and if the spring
+is weaker than m g d it is negative, upright is unstable, and the body falls to a leaning balance, as a column
+buckles. Gravity (and any steady load) changes stiffness: this is the <b>geometric stiffness</b> a tension or
+compression adds to a string, a cable or a column.</p>
+
+<h3><a name="large-swings"></a>Large swings</h3>
+<p>sin θ grows more slowly than θ, so a hanging pendulum's spring softens as its swing grows, and its period
+lengthens. Energy gives it exactly: the swing to ±A takes</p>
+<p align="center">T = 4 ∫<sub>0</sub><sup>A</sup> dθ / √(2(V(A) − V(θ))/J),</p>
+<p>for the simple pendulum T = T₀ (2/π) K(sin²(A/2)), with K the complete elliptic integral: 1.8 % longer at
+30°, 18 % at 90°, without bound as A → 180°. Keeping one more term, sin θ ≈ θ − θ³/6, makes it a Duffing
+oscillator with γ = −mgd/6, and its first harmonic balance gives ω² ≈ ω₀²(1 + 3γA²/4k), T ≈ T₀(1 + A²/16): good
+for moderate swings. The inverted pendulum's cubic has the other sign, so it hardens. A torsion wire is linear,
+so a disc on one keeps its period at any twist.</p>
+<p>In the phase plane (θ, θ') the undamped motion follows the curves of constant energy. Small orbits are
+ellipses; larger ones flatten at the ends; the <b>separatrix</b> through the upside-down balance divides swinging
+from going round and round, and an orbit near it lingers at the top.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the pendulum and the plots (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>Turning is sliding with J for m, k<sub>θ</sub> for k and moments for forces.</li>
+<li>A weight a distance d below the pivot is a spring k<sub>θ</sub> = m g d; above it, a negative one.</li>
+<li>A simple pendulum's period, 2π√(L/g), doesn't depend on its mass; a rod's is least pivoted at its radius of gyration.</li>
+<li>Large swings soften a hanging pendulum (a Duffing oscillator with a negative cubic) and harden an inverted one.</li>
+</takeaways>

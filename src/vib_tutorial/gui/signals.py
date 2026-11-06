@@ -50,7 +50,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
@@ -471,100 +471,6 @@ SENSOR_TIP = (
 )
 
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="sampling"></a>Sampling</h3>
-<p>A transducer's signal is continuous; the analyzer keeps its value f<sub>s</sub> times a second. A sine of
-frequency f is pinned down by its samples only if there are more than two per cycle: up to the <b>Nyquist
-frequency</b> f<sub>s</sub>/2.</p>
-
-<h3><a name="aliasing"></a>Aliasing</h3>
-<p>Above Nyquist the samples can't tell a sine at f from one at |f − kf<sub>s</sub>|: they lie on both. So a
-tone at f shows at its <b>alias</b>, folded back into 0 … f<sub>s</sub>/2, with its whole amplitude: 900 Hz
-sampled at 1024 Hz shows at 124 Hz. Nothing after the sampler can undo this; the data are simply wrong.</p>
-
-<h3><a name="anti-alias"></a>The anti-alias filter</h3>
-<p>So an analog low-pass filter runs <i>before</i> the sampler. A real filter can't cut off at Nyquist like a
-wall: it rolls off over a band. Analyzers set it to keep f<sub>s</sub>/2.56 and below (here an 8-pole
-Butterworth, 3 dB down there and 48 dB per octave beyond), so a tone that could fold back into the kept lines (above
-f<sub>s</sub> − f<sub>s</sub>/2.56) is cut by 31 dB or more; real analyzers use steeper (elliptic) filters, 80 dB
-or more. The lines above f<sub>s</sub>/2.56 are thrown away: 1024 samples give 400 good
-lines, not 512.</p>
-
-<h3><a name="dft-lines"></a>Blocks and lines</h3>
-<p>The DFT of a block of N samples, T = N/f<sub>s</sub> long, gives lines</p>
-<p align="center">Δf = 1/T = f<sub>s</sub>/N</p>
-<p>apart, from 0 to f<sub>s</sub>/2. The resolution is set by the block's length in time, nothing else: a finer
-Δf needs a longer block. More samples in the same time (a higher f<sub>s</sub>) only add lines at the top.</p>
-
-<h3><a name="leakage"></a>Leakage</h3>
-<p>The DFT treats the block as one period of a signal that repeats forever. A tone with a whole number of cycles
-in the block lands on a line and reads exactly. Any other tone, joined end to end, has a jump at each join, and
-its energy spreads over every line: <b>leakage</b>. It reads low (by up to 3.9 dB half-way between lines, the
-<b>scalloping loss</b>), and its skirts, falling only as 1/f, can bury a small tone tens of lines away. A peak
-in an FRF comes out too low and too wide, which reads as too much damping.</p>
-
-<h3><a name="windows"></a>Windows</h3>
-<p>Multiplying the block by a taper that goes smoothly to zero at both ends removes the jump. Each window is a
-trade, between how wide its main lobe is (how close two tones can be told apart), how low its sidelobes are
-(how far a big tone leaks), and its scalloping loss (how wrong an amplitude can read):</p>
-<!--WINDOW_TABLE-->
-<p><b>Hann</b> is the usual choice for random and continuous signals; <b>flat top</b> for reading amplitudes
-(calibration); <b>none</b> (rectangular) for signals that are periodic in the block, or that die away inside it
-(a hammer hit, a burst), where a window would cut away the signal itself. The <i>Windows</i> tab draws them.</p>
-
-<h3><a name="scaling"></a>Amplitude or density</h3>
-<p>A window changes how much a tone and how much noise come through, differently. Scaled by its coherent gain
-(the mean of w), the spectrum reads a tone's amplitude: a <b>peak amplitude</b> (or RMS) spectrum, for tones.
-Scaled by its noise power (Σw²) and f<sub>s</sub>, it reads noise's density: the <b>PSD</b>, in units²/Hz, the
-same whatever the block and the window, and its area is the mean square (Parseval). Noise in an amplitude
-spectrum depends on Δf: each line holds the noise in a band Δf × ENBW wide, so a longer block lowers it, as
-1/√N, while a tone stays put. That is how a tone is dug out of noise. A tone in a PSD grows with N instead:
-read tones as amplitudes and noise as a density.</p>
-
-<h3><a name="averaging"></a>Averaging</h3>
-<p>One block's spectrum of noise is itself random: each line's power scatters by 100 %. Averaging n blocks (as
-power) cuts the scatter to 1/√n, without lowering the level. Blocks may <b>overlap</b> (50 % with Hann): the
-window throws away the ends of each block, and the overlap uses them in the next, so a record gives nearly
-twice the averages. Averaging only makes sense for a steady signal; a transient wants one block that holds
-all of it.</p>
-
-<h3><a name="spectrogram"></a>Time and frequency</h3>
-<p>An averaged spectrum says what frequencies there are, not when. A <b>spectrogram</b> (short-time Fourier
-transform) takes one spectrum per block as the record goes by: a run-up's orders, a chirp's sweep. A block T
-long resolves 1/T in frequency and T in time; their product can't go below about 1. The rotor page's waterfall
-is one.</p>
-
-<h3><a name="transducers"></a>Transducers</h3>
-<p>Most vibration sensors are themselves a single oscillator: a seismic mass m on a spring k and a damper c in a
-case fixed to the structure, read by the mass's motion z relative to the case. The case moving as y e<sup>iωt</sup>,</p>
-<p align="center">z/y = r² / (1 − r² + 2iζr), &nbsp; r = f/f<sub>n</sub>,</p>
-<p>the Single oscillator page's equation with the case's acceleration as the force. Two regimes:</p>
-<ul>
-<li><b>Accelerometer</b> (r ≪ 1, a stiff spring): z ≈ −ÿ/ω<sub>n</sub>², the mass follows the case and the
-spring's stretch is proportional to the acceleration. A piezoelectric crystal is the spring, f<sub>n</sub> tens of
-kHz, almost undamped: it reads within 5 % up to 0.22 f<sub>n</sub>. With ζ ≈ 0.7 the flat band would reach
-0.6 f<sub>n</sub>, with the phase nearly proportional to frequency (a pure delay), but piezo crystals can't be
-damped that much.</li>
-<li><b>Seismometer</b> (r ≫ 1, a soft spring): the mass stays still in space, so z ≈ −y, the displacement. A
-geophone (f<sub>n</sub> ≈ 4.5 Hz, ζ ≈ 0.7) reads ground displacement from about 1.7 f<sub>n</sub> up.</li>
-</ul>
-<p>Between them, near r = 1, the sensor resonates: a sensor is only good away from its own f<sub>n</sub>.</p>
-
-<h3><a name="mass-loading"></a>Mass loading</h3>
-<p>A sensor's mass m<sub>s</sub> joins the structure where it is fixed. A mode whose modal mass there (scaled to
-a unit motion at that point) is m drops to f √(m/(m + m<sub>s</sub>)): a 30 g accelerometer on a panel mode of
-0.5 kg modal mass lowers it by 2.9 %. The same sensor roved from point to point loads each mode differently,
-and the modes seem to shift between measurements. Light sensors, a fixed reference, or a test that adds a
-dummy mass and sees how much the frequency moves, keep it in check.</p>
-
-<h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the signal, the acquisition and the plots (Things to try, top left).</p>
-<!--TRIALS-->
-<!--TAKEAWAYS-->
-"""
-
-
 def window_table() -> str:
     rows = "".join(
         f"<tr><td>{w.value}</td><td align='right'>{p.main_lobe:.0f}</td><td align='right'>{p.sidelobe_db:.0f}</td>"
@@ -579,32 +485,7 @@ def window_table() -> str:
     )
 
 
-NOTES_HTML = (
-    NOTES_HTML.replace(
-        "<!--BEFORE-->",
-        before(
-            ("transient_page", "fourier-pair", "The impulse response and the FRF"),
-            ("sdof_page", "half-power", "Half-power bandwidth"),
-            ("random_page", "psd", "The power spectral density"),
-            ("random_page", "welch", "Estimating it from a record"),
-        ),
-    )
-    .replace("<!--WINDOW_TABLE-->", window_table())
-    .replace("<!--TRIALS-->", trials_html(TRIALS))
-    .replace(
-        "<!--TAKEAWAYS-->",
-        takeaways(
-            "Sample faster than twice the highest frequency present, and filter before sampling: an alias can't be "
-            "removed afterwards.",
-            "The lines are 1/T apart: resolution comes from the block's length in time.",
-            "A tone that isn't periodic in the block leaks; a window trades a wider peak for lower leakage (Hann), or "
-            "for a true amplitude (flat top).",
-            "Read tones as amplitudes and noise as a PSD; averaging steadies a spectrum but doesn't lower its noise.",
-            "A seismic sensor reads acceleration below its own f<sub>n</sub> and displacement above it, and its mass "
-            "lowers the modes it measures.",
-        ),
-    )
-)
+NOTES_HTML = load_notes("signals", window_table=window_table(), trials=trials_html(TRIALS))
 
 
 class SignalsPage(QtWidgets.QWidget):
