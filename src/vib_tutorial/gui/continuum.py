@@ -50,7 +50,7 @@ from ..core.continuum_waves import (
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from . import frame_stats, settle_plots
 from .axes import log_axes
-from .layouts import ColumnScroll, FlowLayout, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
@@ -415,7 +415,7 @@ class ContinuumPage(QtWidgets.QWidget):
         mute(self.preset_note)
 
         medium = QtWidgets.QGroupBox("Medium")
-        mf = QtWidgets.QFormLayout(medium)
+        mf = form_layout(medium)
         self.kind = QtWidgets.QComboBox()
         self.kind.addItems([k.value for k in Kind])
         self.length = spin(0.01, 100.0, 1.0, 3, " m")
@@ -423,7 +423,7 @@ class ContinuumPage(QtWidgets.QWidget):
         _form_row(mf, "Length:", self.length, TIPS["length"])
         self.material = QtWidgets.QStackedWidget()
         string_page = QtWidgets.QWidget()
-        form = QtWidgets.QFormLayout(string_page)
+        form = form_layout(string_page)
         form.setContentsMargins(0, 0, 0, 0)
         self.tension = spin(0.01, 1e6, 100.0, 2, " N")
         self.line_density = spin(0.001, 1e5, 10.0, 3, " g/m")
@@ -431,7 +431,7 @@ class ContinuumPage(QtWidgets.QWidget):
         _form_row(form, "Mass per length μ:", self.line_density, TIPS["line_density"])
         self.material.addWidget(string_page)
         solid_page = QtWidgets.QWidget()
-        form = QtWidgets.QFormLayout(solid_page)
+        form = form_layout(solid_page)
         form.setContentsMargins(0, 0, 0, 0)
         self.modulus = spin(0.001, 1000.0, 210.0, 3, " GPa")
         self.density = spin(1.0, 30000.0, 7850.0, 0, " kg/m³")
@@ -451,7 +451,7 @@ class ContinuumPage(QtWidgets.QWidget):
         mf.addRow(self.medium_info)
 
         mesh = QtWidgets.QGroupBox("Mesh")
-        sf = QtWidgets.QFormLayout(mesh)
+        sf = form_layout(mesh)
         self.elements = QtWidgets.QSpinBox()
         self.elements.setRange(1, MAX_ELEMENTS)
         self.elements.setKeyboardTracking(False)
@@ -477,7 +477,7 @@ class ContinuumPage(QtWidgets.QWidget):
         sf.addRow(self.mesh_info)
 
         waves = QtWidgets.QGroupBox("Waves")
-        wf = QtWidgets.QFormLayout(waves)
+        wf = form_layout(waves)
         self.pulse_width = spin(1.0, 100.0, 12.5, 1, " %")
         self.pulse_at = spin(0.0, 100.0, 25.0, 1, " %")
         _form_row(wf, "Pulse:", group(self.pulse_width, "wide at", self.pulse_at), TIPS["pulse"])

@@ -40,6 +40,7 @@ from ..core.rigid_mounts import (
     torque_roll_axis,
 )
 from . import frame_stats, settle_plots
+from .layouts import form_layout
 from .lesson import (
     Dot,
     Form,
@@ -687,7 +688,7 @@ class MountView(pg.PlotWidget):
         for m in self.layout_.mounts():
             top = _rotate(np.array([m.position]), theta)[0] + u
             bottom = np.array(m.position) - SPRING * np.array(m.axis)
-            springs += list(_coil(bottom, top)) + [[np.nan] * 3]
+            springs += list(_coil(bottom, top, np.array(m.axis))) + [[np.nan] * 3]
         self.springs.setData(*self.project(np.array(springs)))
         cx, cy = self.project(u)
         self.com.setData([cx], [cy])
@@ -736,14 +737,17 @@ class MountView(pg.PlotWidget):
         event.accept()
 
 
-def _coil(bottom: np.ndarray, top: np.ndarray) -> np.ndarray:
-    """A zigzag spring from `bottom` to `top`: straight ends, COILS turns between."""
+def _coil(bottom: np.ndarray, top: np.ndarray, rest: np.ndarray) -> np.ndarray:
+    """A zigzag spring from `bottom` to `top`: straight ends, COILS turns between. It zigzags across `rest`
+    (the mount's axis at rest), squared to the spring as it leans: picking the side from the leaning axis
+    flipped it mid-swing, where the axis crossed the choice's threshold."""
     axis = top - bottom
     length = float(np.linalg.norm(axis))
     if length == 0:
         return np.array([bottom, top])
     a = axis / length
-    side = np.cross(a, [0.0, 0.0, 1.0] if abs(a[2]) < 0.9 else [1.0, 0.0, 0.0])
+    side = np.cross(rest, [0.0, 0.0, 1.0] if abs(rest[2]) < 0.9 else [1.0, 0.0, 0.0])
+    side -= (side @ a) * a
     side /= np.linalg.norm(side)
     n = 2 * COILS
     s = np.linspace(0.15, 0.85, n + 1)
@@ -864,7 +868,7 @@ class MountsPage(QtWidgets.QWidget):
         for item in (self.sweep_now, self.sweep_focus):
             self.sweep_plot.addItem(item)
         self.sweep_note = note_label()
-        sweep_row = QtWidgets.QFormLayout()
+        sweep_row = form_layout()
         sweep_row.addRow("Sweep:", self.sweep_box)
         sweep_tab = QtWidgets.QWidget()
         v = QtWidgets.QVBoxLayout(sweep_tab)

@@ -39,7 +39,8 @@ from ..core.practice import Problem, Question, Requirement, at_least, at_most, k
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
-from .layouts import ColumnScroll
+from .layouts import ColumnScroll, form_layout
+from .lesson import TrialCombo
 from .links import page_link
 from .style import MAX_DOF, colors, text_on
 from .substructuring import error_color, zeta_text
@@ -866,15 +867,12 @@ class ModalCouplingPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItem("Pick one…")
-        self.trial.addItems([t.name for t in TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip(
+        self.trial = TrialCombo(
+            [t.name for t in TRIALS],
             "<p>Each loads a chain into the Simulation page and splits and couples it to "
-            "show one idea from the Theory tab.</p>"
+            "show one idea from the Theory tab.</p>",
         )
-        self.trial.currentIndexChanged.connect(self._on_trial)
+        self.trial.picked.connect(self.load_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -883,7 +881,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         tv.addWidget(self.trial_note)
 
         box = QtWidgets.QGroupBox("Modal coupling")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
@@ -1112,14 +1110,6 @@ class ModalCouplingPage(QtWidgets.QWidget):
             residual=self.residual.isChecked(),
             tab=self.tabs.currentIndex(),
         )
-
-    def _on_trial(self, index: int) -> None:
-        if index <= 0:
-            return
-        self.trial.blockSignals(True)
-        self.trial.setCurrentIndex(0)
-        self.trial.blockSignals(False)
-        self.load_trial(index - 1)
 
     def _on_split(self, i: int) -> None:
         self._split_wanted = i + 1

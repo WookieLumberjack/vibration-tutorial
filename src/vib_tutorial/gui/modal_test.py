@@ -55,8 +55,8 @@ from ..core.measurement import AA_CUTOFF, FORCE_RMS, IMPACT_PEAK, SINE_AMPLITUDE
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick
 from . import frame_stats, settle_plots
 from .axes import log_axes
-from .layouts import ColumnScroll
-from .lesson import trials_html
+from .layouts import ColumnScroll, form_layout
+from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import EXTRACTION_THEORY_HTML, ExtractionControls, ResultsView, StabilizationPlot
 from .panels import spin
@@ -893,15 +893,12 @@ class ModalTestPage(QtWidgets.QWidget):
         # --- things to try
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItem("Pick one…")
-        self.trial.addItems([t.name for t in TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.trial.setToolTip(
+        self.trial = TrialCombo(
+            [t.name for t in TRIALS],
             "<p>Each sets up a test of the uniform 4-mass chain that shows one thing that can "
-            "go wrong (or right). Loading one replaces the Simulation page's chain.</p>"
+            "go wrong (or right). Loading one replaces the Simulation page's chain.</p>",
         )
-        self.trial.currentIndexChanged.connect(self._on_trial)
+        self.trial.picked.connect(self.load_trial)
         tv.addWidget(self.trial)
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
@@ -911,7 +908,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
         # --- test setup
         setup = QtWidgets.QGroupBox("Test")
-        form = QtWidgets.QFormLayout(setup)
+        form = form_layout(setup)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
@@ -982,7 +979,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
         # --- acquisition
         daq = QtWidgets.QGroupBox("Acquisition")
-        form = QtWidgets.QFormLayout(daq)
+        form = form_layout(daq)
         fs_row = QtWidgets.QHBoxLayout()
         self.fs = spin(0.5, 10000.0, 20.0, 2, " Hz")
         self.fs.setToolTip(
@@ -1031,7 +1028,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
         # --- noise
         noise = QtWidgets.QGroupBox("Measurement noise")
-        form = QtWidgets.QFormLayout(noise)
+        form = form_layout(noise)
         noise_tip = (
             "Random noise added to the channel, as a percentage of the channel's peak in "
             "each block (the range an analyzer would set). Changing it reuses the same "
@@ -1046,7 +1043,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
         # --- processing
         proc = QtWidgets.QGroupBox("Processing")
-        form = QtWidgets.QFormLayout(proc)
+        form = form_layout(proc)
         self.window = QtWidgets.QComboBox()
         for i, w in enumerate(Window):
             self.window.addItem(w.value, w)
@@ -1408,14 +1405,6 @@ class ModalTestPage(QtWidgets.QWidget):
             else:
                 self._dirty = True
         self.tabs.setCurrentIndex(trial.tab)
-
-    def _on_trial(self, index: int) -> None:
-        if index <= 0:
-            return
-        self.trial.blockSignals(True)
-        self.trial.setCurrentIndex(0)
-        self.trial.blockSignals(False)
-        self.load_trial(index - 1)
 
     def _on_fs_auto(self, on: bool) -> None:
         self.fs.setEnabled(not on)

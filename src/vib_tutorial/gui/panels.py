@@ -7,7 +7,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core import ChainSystem, ForceController, ForceKind, ForceSettings
 from ..core.model import DEFAULT_DAMPING, DEFAULT_MASS, DEFAULT_STIFFNESS
 from ..core.presets import Preset, presets
-from .layouts import FlowLayout, group
+from .layouts import FlowLayout, form_layout, group
 from .modes import ModeEntry
 from .style import MAX_DOF, colors, text_on
 from .theming import mute
@@ -276,7 +276,7 @@ class ForcePanel(QtWidgets.QGroupBox):
         super().__init__("Excitation", parent)
         self.force = force
         s = force.settings
-        form = QtWidgets.QFormLayout(self)
+        form = form_layout(self)
 
         self.input = QtWidgets.QComboBox()
         self.input.addItem("Force on a mass", False)
@@ -484,7 +484,7 @@ class SimControls(QtWidgets.QGroupBox):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__("Simulation", parent)
-        form = QtWidgets.QFormLayout(self)
+        form = form_layout(self)
 
         buttons = QtWidgets.QHBoxLayout()
         self.run = QtWidgets.QPushButton("Pause")

@@ -53,7 +53,7 @@ from ..core.torsional_startup import (
 )
 from . import frame_stats, settle_plots
 from .axes import log_axes
-from .layouts import ColumnScroll, FlowLayout, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
@@ -435,7 +435,7 @@ class TorsionalPage(QtWidgets.QWidget):
         tv.addWidget(self.editor)
 
         disc_page = QtWidgets.QWidget()
-        form = QtWidgets.QFormLayout(disc_page)
+        form = form_layout(disc_page)
         form.setContentsMargins(0, 0, 0, 0)
         self.disc_name = QtWidgets.QLineEdit()
         self.inertia = spin(1e-5, 1e5, 1.0, 4, " kg·m²")
@@ -446,7 +446,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self.editor.addWidget(disc_page)
 
         shaft_page = QtWidgets.QWidget()
-        form = QtWidgets.QFormLayout(shaft_page)
+        form = form_layout(shaft_page)
         form.setContentsMargins(0, 0, 0, 0)
         self.shaft_name = QtWidgets.QLineEdit()
         self.shaft_stiffness = spin(1e-3, 1e7, 100.0, 3, " kN·m/rad")
@@ -460,7 +460,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self.editor.addWidget(shaft_page)
 
         mesh_page = QtWidgets.QWidget()
-        form = QtWidgets.QFormLayout(mesh_page)
+        form = form_layout(mesh_page)
         form.setContentsMargins(0, 0, 0, 0)
         self.mesh_name = QtWidgets.QLineEdit()
         self.teeth_in = QtWidgets.QSpinBox()
@@ -502,7 +502,7 @@ class TorsionalPage(QtWidgets.QWidget):
 
         excite = QtWidgets.QGroupBox("Excitation")
         excite.setToolTip(TIPS["excite"])
-        ef = QtWidgets.QFormLayout(excite)
+        ef = form_layout(excite)
         self.excite_disc = QtWidgets.QComboBox()
         self.excite_disc.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.excite_name = QtWidgets.QLineEdit()
@@ -519,7 +519,7 @@ class TorsionalPage(QtWidgets.QWidget):
             )
 
         speeds = QtWidgets.QGroupBox("Speeds")
-        sf = QtWidgets.QFormLayout(speeds)
+        sf = form_layout(speeds)
         self.operating = spin(1.0, 1e5, 1480.0, 0, " rpm")
         self.top = spin(10.0, 1e5, 3600.0, 0, " rpm")
         _form_row(sf, "Running speed:", self.operating, TIPS["operating"])
@@ -533,7 +533,7 @@ class TorsionalPage(QtWidgets.QWidget):
         sf.addRow(self.log_scales)
 
         start_box = QtWidgets.QGroupBox("Start-up")
-        stf = QtWidgets.QFormLayout(start_box)
+        stf = form_layout(start_box)
         self.motor_kind = QtWidgets.QComboBox()
         self.motor_kind.addItems(["None"] + [k.value for k in MOTORS[1:]])
         self.line_hz = spin(1.0, 400.0, 50.0, 1, " Hz")
@@ -547,14 +547,14 @@ class TorsionalPage(QtWidgets.QWidget):
         _form_row(stf, "Breakdown:", group(self.breakdown, "at slip", self.breakdown_slip), TIPS["breakdown"])
         self.motor_stack = QtWidgets.QStackedWidget()
         induction_page = QtWidgets.QWidget()
-        form = QtWidgets.QFormLayout(induction_page)
+        form = form_layout(induction_page)
         form.setContentsMargins(0, 0, 0, 0)
         self.transient = spin(0.0, 1e7, 0.0, 0, " N·m")
         self.time_constant = spin(1.0, 5000.0, 50.0, 0, " ms")
         _form_row(form, "Switch-on torque:", group(self.transient, "decay", self.time_constant), TIPS["transient"])
         self.motor_stack.addWidget(induction_page)
         synchronous_page = QtWidgets.QWidget()
-        form = QtWidgets.QFormLayout(synchronous_page)
+        form = form_layout(synchronous_page)
         form.setContentsMargins(0, 0, 0, 0)
         self.pulsating = spin(0.0, 1e7, 0.0, 0, " N·m")
         self.field = spin(0.0, 1e7, 0.0, 0, " N·m")

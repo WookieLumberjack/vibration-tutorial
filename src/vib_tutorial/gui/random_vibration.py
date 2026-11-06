@@ -46,7 +46,8 @@ from ..core.random_vibration import (
     welch,
 )
 from .axes import log_axes
-from .layouts import ColumnScroll, group, plot_height
+from .layouts import ColumnScroll, form_layout, group, plot_height
+from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -462,7 +463,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
         # --- left: the input, the response, the record, things to try
         box = QtWidgets.QGroupBox("Input")
-        form = QtWidgets.QFormLayout(box)
+        form = form_layout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
@@ -491,7 +492,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         form.addRow(link)
 
         out_box = QtWidgets.QGroupBox("Response")
-        form = QtWidgets.QFormLayout(out_box)
+        form = form_layout(out_box)
         self.quantity = QtWidgets.QComboBox()
         for q in Quantity:
             self.quantity.addItem(q.value, q)
@@ -499,7 +500,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         _form_row(form, "Look at:", group(self.quantity, "of", self.index), TIPS["output"])
 
         rec_box = QtWidgets.QGroupBox("Record")
-        form = QtWidgets.QFormLayout(rec_box)
+        form = form_layout(rec_box)
         self.duration = spin(1.0, 1e6, 600.0, 0, " s")
         _form_row(form, "Length:", self.duration, TIPS["duration"])
         self.block = QtWidgets.QComboBox()
@@ -516,9 +517,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = QtWidgets.QComboBox()
-        self.trial.addItems([name for name, _, _ in TRIALS])
-        self.trial.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.trial = TrialCombo([name for name, _, _ in TRIALS], prompt=None)
         self.trial.setToolTip(
             "<p>Settings that show something about random vibration, set from the chain as it is now.</p>"
         )
@@ -618,7 +617,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         sv.addWidget(self.amplitude_plot, 1)
         sv.addWidget(self.peaks_plot, 1)
         sv.addWidget(self.stats_table)
-        row = QtWidgets.QFormLayout()
+        row = form_layout()
         label = QtWidgets.QLabel("Largest peak over:")
         label.setToolTip(LARGEST_TIP)
         row.addRow(label, self.largest_over)
@@ -656,7 +655,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.block.currentIndexChanged.connect(lambda _: self._on_output())
         self.largest_over.valueChanged.connect(lambda _: self._show_largest())
         self.new_record.clicked.connect(self._on_new_record)
-        self.trial.currentIndexChanged.connect(lambda _: self.apply_trial())
+        self.trial.picked.connect(lambda _: self.apply_trial())
 
     # ------------------------------------------------------------- inputs
     def set_system(self, system: ChainSystem, result: ModalResult | None = None) -> None:

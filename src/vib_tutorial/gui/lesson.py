@@ -13,7 +13,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from .axes import log_axes
-from .layouts import plot_height
+from .layouts import form_layout, plot_height
 from .panels import spin
 from .theming import mute
 
@@ -78,24 +78,72 @@ def readout_label() -> QtWidgets.QLabel:
     return label
 
 
-class TrialBox(QtWidgets.QGroupBox):
-    """Things to try: a combo of trials ("Pick one…" first) and the picked one's note below it.
+class TrialCombo(QtWidgets.QComboBox):
+    """The Things to try, numbered in the order the notes take them, after a prompt ("Pick one…"; none on a
+    page that always shows one).
 
-    `picked(i)` fires with the trial's index; the combo goes back to the prompt, so the same trial can be
-    picked again.
+    `picked(i)` fires with the trial's index, and the combo keeps showing it. Picking the shown one again sets
+    it up again: Qt only says so through `activated`, which also follows a change, so a change marks the
+    `activated` that comes with it (in the same call) as handled. Setting the index from code picks too.
     """
+
+    picked = QtCore.Signal(int)
+
+    def __init__(
+        self,
+        names: Sequence[str],
+        tip: str = "",
+        prompt: str | None = "Pick one…",
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.names = list(names)
+        self.first = 0 if prompt is None else 1  # the first trial's row: a page that always shows one has no prompt
+        if prompt is not None:
+            self.addItem(prompt)
+        self.addItems([f"{i}. {name}" for i, name in enumerate(self.names, 1)])
+        if tip:
+            self.setToolTip(tip)
+        self.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self._changed = False
+        self.currentIndexChanged.connect(self._on_change)
+        self.activated.connect(self._on_activated)
+
+    def pick(self, name: str) -> None:
+        """Pick the trial called `name`, as the reader would (again, if it's the one shown)."""
+        index = self.names.index(name) + self.first
+        if index == self.currentIndex():
+            self.picked.emit(index - self.first)
+        else:
+            self.setCurrentIndex(index)
+
+    def _on_change(self, index: int) -> None:
+        if index < self.first:
+            return
+        self._changed = True
+        QtCore.QTimer.singleShot(0, self._settle)  # a change from code has no `activated` to follow it
+        self.picked.emit(index - self.first)
+
+    def _settle(self) -> None:
+        self._changed = False
+
+    def _on_activated(self, index: int) -> None:
+        if self._changed:
+            self._changed = False
+        elif index >= self.first:
+            self.picked.emit(index - self.first)
+
+
+class TrialBox(QtWidgets.QGroupBox):
+    """Things to try: a `TrialCombo` and the picked one's note below it; `picked(i)` with the trial's index."""
 
     picked = QtCore.Signal(int)
 
     def __init__(self, names: Sequence[str], tip: str, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__("Things to try", parent)
         layout = QtWidgets.QVBoxLayout(self)
-        self.combo = QtWidgets.QComboBox()
-        self.combo.addItem("Pick one…")
-        self.combo.addItems(list(names))
-        self.combo.setToolTip(tip)
-        self.combo.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.combo.currentIndexChanged.connect(self._on_index)
+        self.combo = TrialCombo(names, tip)
+        self.combo.picked.connect(self.picked)
         layout.addWidget(self.combo)
         self.note = note_label()
         self.note.setVisible(False)
@@ -105,18 +153,10 @@ class TrialBox(QtWidgets.QGroupBox):
         self.note.setText(text)
         self.note.setVisible(bool(text))
 
-    def _on_index(self, index: int) -> None:
-        if index <= 0:
-            return
-        self.combo.blockSignals(True)
-        self.combo.setCurrentIndex(0)
-        self.combo.blockSignals(False)
-        self.picked.emit(index - 1)
-
 
 def trials_html(trials) -> str:
     """The trials as the Theory tab lists them."""
-    return "<ul>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in trials) + "</ul>"
+    return "<ol>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in trials) + "</ol>"
 
 
 class Form(QtWidgets.QGroupBox):
@@ -126,7 +166,7 @@ class Form(QtWidgets.QGroupBox):
 
     def __init__(self, title: str, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(title, parent)
-        self.form = QtWidgets.QFormLayout(self)
+        self.form = form_layout(self)
 
     def number(
         self, label: str, lo: float, hi: float, value: float, decimals: int, suffix: str = "", tip: str = ""
