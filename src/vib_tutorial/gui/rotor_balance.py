@@ -23,7 +23,7 @@ from ..core.rotor_sweep import STATIONS, lag_degrees, probe, steady_vectors
 from .layouts import FlowLayout, form_layout, group, plot_height
 from .panels import spin
 from .style import colors
-from .tab_groups import tucked_away
+from .tab_groups import Deferred
 from .theming import mute
 
 DASH = QtCore.Qt.PenStyle.DashLine
@@ -95,7 +95,7 @@ class BalancingPanel(QtWidgets.QWidget):
         self.planes_used: tuple[PlaneWeight, ...] = ()  # the planes the trials went in (two planes)
         self.correction: np.ndarray | None = None  # the correction weights put on (kg·m), one per plane
         self._rng = np.random.default_rng()
-        self._stale = False  # changed while hidden: drawn when the tab shows
+        self.drawing = Deferred(self, self._draw)  # drawn while the tab shows
 
         form = form_layout()
         self.mode = QtWidgets.QComboBox()
@@ -468,14 +468,9 @@ class BalancingPanel(QtWidgets.QWidget):
             self.status.setText(text)
 
     # ------------------------------------------------------------- drawing
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self.catch_up()
-
     def catch_up(self) -> None:
-        """Draw what changed while the tab was hidden (its drawing waits till it shows)."""
-        if self._stale:
-            self.refresh()
+        """Draw what changed while the tab was hidden (a window never shown gets no Show events)."""
+        self.drawing.catch_up()
 
     def _place_speed_lines(self) -> None:
         self.speed_lines[0].setValue(self.speed.value())
@@ -486,9 +481,9 @@ class BalancingPanel(QtWidgets.QWidget):
         """Redraw the vectors, the results and the curves from the readings kept."""
         if self.page.measurement is None:
             self._enable(True)
-        self._stale = tucked_away(self)  # a tab not showing: draw when it does
-        if self._stale:
-            return
+        self.drawing.request()
+
+    def _draw(self) -> None:
         values = {key: self.readings(key) for key, _, _ in READINGS}
         shown = {key for key, _, _ in READINGS if key != "trial2" or self.two_planes}
         n = len(self.probes())

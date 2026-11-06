@@ -4,9 +4,13 @@ One row of ten tabs needs ~970 px, far more than a side pane has, so the rotor p
 groups its views. Reach a page through `show_page` and `current_page`, which work
 whichever group it's in, and see through a scroll area put round a page; `changed`
 fires whenever the page showing changes.
+
+Drawing that waits while a tab hides it: `Deferred` (a panel, or one tab), `LazyTabs` (a tab widget's tabs).
 """
 
 from __future__ import annotations
+
+from collections.abc import Callable, Mapping
 
 from PySide6 import QtCore, QtWidgets
 
@@ -57,6 +61,53 @@ def tucked_away(widget: QtWidgets.QWidget) -> bool:
         if widget is not None and widget.isWindow():
             return False  # a window never shown is hidden, but its tabs say what would show
     return False
+
+
+class Deferred(QtCore.QObject):
+    """Drawing (or working out) that waits while a tab hides `widget`. `request()` draws now if it shows, else
+    marks it stale; a stale one is drawn when the widget next shows (its Show event), or on `catch_up()` (a window
+    never shown gets no Show events, so a tab switch there calls it)."""
+
+    def __init__(self, widget: QtWidgets.QWidget, draw: Callable[[], object]) -> None:
+        super().__init__(widget)
+        self.widget, self.draw = widget, draw
+        self.stale = False
+        widget.installEventFilter(self)
+
+    def request(self) -> None:
+        self.stale = True
+        self.catch_up()
+
+    def catch_up(self) -> None:
+        if self.stale and not tucked_away(self.widget):
+            self.stale = False
+            self.draw()
+
+    def eventFilter(self, watched: QtCore.QObject, event: QtCore.QEvent) -> bool:
+        if event.type() == QtCore.QEvent.Type.Show:
+            self.catch_up()
+        return False
+
+
+class LazyTabs:
+    """A tab widget's tabs, each drawn by its function only while it shows, and once until marked stale again
+    (`stale`). Tabs without a function draw themselves."""
+
+    def __init__(self, tabs: QtWidgets.QTabWidget, draws: Mapping[QtWidgets.QWidget, Callable[[], object]]) -> None:
+        self.tabs = {tab: Deferred(tab, draw) for tab, draw in draws.items()}
+        tabs.currentChanged.connect(lambda _: self.catch_up())
+
+    def stale(self, *tabs: QtWidgets.QWidget) -> None:
+        """`tabs` (every one, if none given) out of date: the one showing is drawn now, the rest when they show."""
+        for tab in tabs or self.tabs:
+            self.tabs[tab].request()
+
+    def catch_up(self) -> None:
+        for deferred in self.tabs.values():
+            deferred.catch_up()
+
+    def is_stale(self, tab: QtWidgets.QWidget) -> bool:
+        return self.tabs[tab].stale
 
 
 class PageGroups(QtWidgets.QWidget):

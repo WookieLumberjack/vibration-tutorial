@@ -50,6 +50,7 @@ from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .panels import spin
 from .style import MAX_DOF, colors
+from .tab_groups import LazyTabs
 from .theming import add_legend, mute
 
 RECOMPUTE_MS = 150  # the parameters settle this long before the spectrum is worked out again
@@ -528,7 +529,6 @@ class ShockPage(QtWidgets.QWidget):
         self.record: Record | None = None
         self.spectrum: Spectrum | None = None
         self.chain: ChainPeaks | str | None = None  # the chain's peaks, or why they couldn't be worked out
-        self._stale: set[QtWidgets.QWidget] = set()  # tabs drawn only while they show
         self.seed = 1
         self._loading = False
         self._dirty = False
@@ -735,6 +735,10 @@ class ShockPage(QtWidgets.QWidget):
         self.tabs.addTab(self.tri_tab, "Tripartite")
         self.tabs.addTab(self.shapes_tab, "Pulse shapes")
         self.tabs.addTab(self.notes, "Theory")
+        self.lazy = LazyTabs(  # tabs drawn only while they show
+            self.tabs,
+            {self.chain_tab: self._draw_chain, self.tri_tab: self._draw_tripartite, self.shapes_tab: self._draw_shapes},
+        )
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter.addWidget(left_scroll)
@@ -759,9 +763,8 @@ class ShockPage(QtWidgets.QWidget):
         self.f_pick.valueChanged.connect(self._on_pick)
         self.srs_plot.scene().sigMouseClicked.connect(self._on_click)
         self.response.currentIndexChanged.connect(self._on_response)
-        self.output.currentIndexChanged.connect(lambda _: self._draw_chain())
-        self.same_dv.toggled.connect(lambda _: self._draw_shapes())
-        self.tabs.currentChanged.connect(lambda _: self._catch_up())
+        self.output.currentIndexChanged.connect(lambda _: self.lazy.stale(self.chain_tab))
+        self.same_dv.toggled.connect(lambda _: self.lazy.stale(self.shapes_tab))
 
     # ------------------------------------------------------------- inputs
     def set_system(self, system: ChainSystem, result: ModalResult | None = None) -> None:
@@ -927,7 +930,7 @@ class ShockPage(QtWidgets.QWidget):
 
     def _on_response(self) -> None:
         self._fill_outputs(self.output.currentIndex())
-        self._draw_chain()
+        self.lazy.stale(self.chain_tab)
 
     # the picked oscillator: the line, the spin box and a click on the spectrum
     def _on_line(self) -> None:
@@ -989,22 +992,8 @@ class ShockPage(QtWidgets.QWidget):
         self._draw_pulse()
         self._draw_srs()
         self._draw_oscillator()
-        self._stale = {self.chain_tab, self.tri_tab, self.shapes_tab}
         self._shapes_key = None
-        self._catch_up()
-
-    def _catch_up(self) -> None:
-        """Draw the tab showing if it's out of date."""
-        tab = self.tabs.currentWidget()
-        if tab not in self._stale or self.spectrum is None:
-            return
-        self._stale.discard(tab)
-        if tab is self.chain_tab:
-            self._draw_chain()
-        elif tab is self.tri_tab:
-            self._draw_tripartite()
-        elif tab is self.shapes_tab:
-            self._draw_shapes()
+        self.lazy.stale()
 
     def _draw_pulse(self) -> None:
         rec = self.record
@@ -1181,8 +1170,7 @@ class ShockPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- the chain, the tripartite plot, the pulses
     def _draw_chain(self) -> None:
-        if self.record is None or self.tabs.currentWidget() is not self.chain_tab:
-            self._stale.add(self.chain_tab)
+        if self.record is None or self.spectrum is None:
             return
         if self.chain is None:
             try:
@@ -1280,6 +1268,8 @@ class ShockPage(QtWidgets.QWidget):
         )
 
     def _draw_tripartite(self) -> None:
+        if self.spectrum is None:
+            return
         sp, rec = self.spectrum, self.record
         p = self.tri_plot
         p.clear()
@@ -1358,9 +1348,6 @@ class ShockPage(QtWidgets.QWidget):
 
     def _draw_shapes(self) -> None:
         if self.spectrum is None:
-            return
-        if self.tabs.currentWidget() is not self.shapes_tab:
-            self._stale.add(self.shapes_tab)
             return
         q, same = self.q.value(), self.same_dv.isChecked()
         if self._shapes_key == (q, same, colors.strong):
