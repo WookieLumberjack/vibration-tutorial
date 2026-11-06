@@ -19,6 +19,22 @@ of the global matrices is Tᵀk'T, added at its DOFs (`assemble`). A node's supp
 (`Support`); a DOF no element touches (a truss node's turn) is *unused*. Both are struck out, leaving the free DOFs.
 A free DOF with no mass (a lumped Euler–Bernoulli beam's turns, or a node with only springs) is condensed out
 exactly, statically, before the eigenproblem K φ = ω² M φ (`modes`). A mechanism shows as modes at 0 Hz.
+
+Working on it
+-------------
+`core/frame.py` (the *Frame builder* page, `gui/frame_builder.py`, last in Building models; its own model, not
+the chain): a plane `Frame` of `Node`s (u, v, θ each, DOF 3i + d; a `Support` fixes some) and `Element`s (bar,
+Euler–Bernoulli or Timoshenko beam, spring/damper between nodes or to an `anchor`, torsion spring/damper,
+point mass), all frozen: editing returns a new frame (`with_node`, `divide`, `without_node` renumbers), so the
+page's undo is a list of frames. `local(frame, k)` gives each element's own matrices, T and DOFs; `assemble`
+adds Tᵀk'T over every DOF and marks `fixed` and `unused` (no element touches it: a truss node's θ). `modes`
+condenses free DOFs without mass exactly (Guyan), and counts mechanisms from K's null space scaled to a unit
+diagonal (`mechanisms`), not from ω² against the largest: a fine mesh's bending is ~10⁹ below its stretch.
+Timoshenko's matrices are Friedman–Kosmatka's (φ = 12EI/κGAL²; at φ = 0, Euler–Bernoulli's: a test checks, and
+the static tip deflection). `member_curve` draws a beam by its Hermite cubics. The canvas (`FrameCanvas`)
+takes its clicks through `press`/`move`/`release` in view coordinates, so tests build frames without mouse
+events. The Assembly and Element tabs are rich-text tables (`matrix_html`), drawn only while they show.
+`tests/test_frame.py` checks the model and the trials' notes.
 """
 
 from __future__ import annotations

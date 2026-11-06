@@ -6,6 +6,10 @@ rates of zero crossings and peaks and the irregularity factor α₂ = m₂/√(m
 rate under a Basquin curve N = N_ref (S/S_ref)^(−b) (S the stress range) is worked out three ways: the narrow-band
 (Rayleigh) formula, Dirlik's empirical range distribution, and Miner's sum over a synthesized record's rainflow
 cycles (`rainflow`, the ASTM E1049 three-point algorithm).
+
+Working on it
+-------------
+Rainflow counting is ASTM E1049's; the spectral estimate is Dirlik's.
 """
 
 from __future__ import annotations

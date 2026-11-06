@@ -13,6 +13,12 @@ gain, noise bandwidth, scalloping loss and highest sidelobe, worked out from the
 motion relative to the case. Well below its f_n that is proportional to the case's acceleration (an
 accelerometer); well above, to its displacement (a seismometer). `mass_loaded` is what a sensor's own mass
 does to the mode it measures.
+
+Working on it
+-------------
+A `Source` is analog (exact at any instant), so aliasing is real; the anti-alias filter is an 8-pole
+Butterworth at f<sub>s</sub>/2.56 applied to each tone by its gain; `spectrum` scales a peak amplitude by Σw
+and a PSD by f<sub>s</sub>Σw² (`tests/test_signals.py` checks it against `scipy.signal.welch`).
 """
 
 from __future__ import annotations

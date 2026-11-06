@@ -63,6 +63,17 @@ is symmetric and positive wherever the journal is, and Ψ is convex. Its damping
 is never more than the whole (uncavitated) film's at that position
 (`full_film_damping`): that integrates the same positive terms round the whole
 bearing, not half of it. The rotor's nonlinear time step leans on both.
+
+Working on it
+-------------
+`core/fluid_bearing.py` (the rotor page's *Fluid-film bearing* tab) is a plain journal bearing by
+short-bearing (Ocvirk) theory: equilibrium and the eight coefficients in closed form, in the rotor's axes (x
+horizontal, y up, load down, spin x → y), with `film_force` by quadrature to check them (tests compare the
+two). On the rotor (`Bearing.film`, both bearings, the tab's geometry) each film carries
+`RotorSystem.bearing_loads` (its share of the weight, from statics on the model's own stiffness; the film's
+own `load` is ignored), is held at ε = 0.9 below `slowest()`, and is linearized about its journal's
+equilibrium: `_film_terms` gives K_f, C_f and the constant load p = W + K_f q_J, which `gravity_load(Ω)` adds
+so the journals rest on the locus. The simulator holds p at each chunk's speed, as A(Ω).
 """
 
 from __future__ import annotations

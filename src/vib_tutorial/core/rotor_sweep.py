@@ -23,6 +23,17 @@ crack's drives 2X and 3X, most at a half and a third of one.
 
 RunUpCoastDown drives a RotorSimulator from one speed to another and back at
 its ramp rate, recording each leg as its own TrackedSweep.
+
+Working on it
+-------------
+`core/rotor_sweep.py` (rotor page's Bode and polar plots) tracks the 1X vector once per revolution, keyed to
+the unbalance angle φ, from every simulator step (not the page's decimated history). `RunUpCoastDown.advance`
+stops each simulator advance at the next stage change, so the legs start and end at the set speeds. The page
+clears held sweeps when the rotor's parameters change, since the steady-state curve under them changes too.
+
+Anything that drives the rotor simulator over several frames (run-up, balancing measurement) is a `StagedRun`
+(`core/rotor_sweep.py`): resumable `advance(duration)`, each simulator advance stopped at the next stage
+change. The page runs at most one at a time; taking over the speed or changing a parameter cancels it.
 """
 
 from __future__ import annotations

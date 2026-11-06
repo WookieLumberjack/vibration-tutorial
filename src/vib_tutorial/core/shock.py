@@ -81,6 +81,29 @@ displacement. The SRS gives each term's peak but not when it comes, so the peaks
 modes' peaks are independent, as in a long random record; a shock's come together, early); NRL
 (the Naval Research Laboratory's), the largest plus the root of the others' squares. The exact
 response comes from `chain_response`.
+
+Working on it
+-------------
+`core/shock.py` (the *Shock spectrum* page, `gui/shock.py`, which follows the chain): a base `Pulse`
+(classical shapes, or a measured record: `AT_A_MASS`, the chain's absolute acceleration at a mass under a base
+half-sine through `chain_response`, the exact FOH update by `FohSteps`; or `TRANSIENT`, damped sines in
+velocity so it ends at rest; noise and offset seeded) sampled by `record` (fs raised so the pulse is a whole
+number of samples; the input is linear between samples, zero before, a jump at the start a one-step ramp).
+`srs` steps each oscillator as one complex pole by the same FOH update in closed form (`_foh`; absolute
+acceleration 2 Re(λ²η)), peaks refined by a parabola, the residual the free decay from the last state over one
+damped period (its largest value lies there), in `CHUNK`s of oscillators. `bank` spans `LOW`/T to the pulse's
+`high`/T, widened round the chain's modes; `sample_rate` keeps `PER_PERIOD` samples to its fastest. The
+pulse's duration comes from the chain (`duration_for`); trials reset the seed to 1. A synthesized pulse
+(`SINES`, `WAVELETS`; `synthesize`) meets `target` (a plateau above `knee`, ∝ f below, at `SYNTH_Q` whatever
+the page's Q) by scaling each component by the target over the SRS at its frequency, keeping the best round;
+its record's length comes from the band (`Pulse.length`, `Pulse.band`), not `duration`. The SRS strays between
+the components (about 3 dB over the bank, at `SYNTH_PER_OCTAVE` 4 and `WAVELET_MOST` 15; fewer or longer leave
+deeper dips). `chain_peaks` (the *Chain* tab) puts `base_record` (AT_A_MASS's base half-sine) under the chain,
+padded RING periods of mode 1: each mode's term φΓ times the SRS at the mode's own f and ζ, combined by
+ABS/SRSS/NRL, against `chain_response`; with proportional damping the modes' histories add up to it exactly (a
+test checks). The Chain, Tripartite and Pulse shapes tabs draw only while they show (`LazyTabs`), the chain
+worked out once per record. `tests/test_shock.py` checks the oscillators against closed forms,
+`chain_response` against `solve_ivp`, the synthesis, the modal sums, and the trials' notes.
 """
 
 from __future__ import annotations

@@ -29,6 +29,19 @@ inertia force, −m e ẍ_G, is kept (`slipped` drops it, as a hurried derivatio
 wheelbase for a mostly bouncing mode, inside it for a mostly pitching one. `ride` drives the car over a bump
 (a 1 − cos bump of `length` and `height` at speed v, the rear wheel L/v after the front) by the exact FOH
 update, the road linear between samples.
+
+Working on it
+-------------
+`core/bounce_pitch.py` (the *Deriving the equations* page, `gui/deriving.py`, first in Foundations; its own
+model, not the chain): a car's body in bounce and pitch (m, J = m r², springs and dampers a ahead of G and b
+behind), in three sets of `Coordinates` (G, a point P e ahead of it, the two ends), each (x_G, θ) = T q.
+`matrices` is Lagrange's (TᵀMT, SᵀKS with δ = S q): tests check them against the Hessians of `energies`' T, V
+and D. `newton` is the free-body diagram's force and moment-about-G rows (Tᵀ times them is Lagrange's: a test
+checks), `slipped` the moment about P without G's inertia force. The page writes both derivations out with its
+numbers (`fbd_html`, `lagrange_html`, worked from the core's matrices, so they can't drift). `modes` gives
+each mode's node; `ride` steps a bump by the exact FOH update with the dampers' ẏ folded into the state (w =
+q̇ − M⁻¹Eᵀ diag(c) y), so the road's height is the only input, linear over a step (a test checks it against
+`solve_ivp`).
 """
 
 from __future__ import annotations

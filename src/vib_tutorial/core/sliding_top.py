@@ -33,6 +33,19 @@ renormalized after each. Unlike the cup's, nothing here can be split off exactly
 and the step must resolve the spin, the free wobble about G and friction's own time μN/(ε × the contact's
 mass) where it is smoothed; `RECORD_DT` thins what it keeps. `reference` is the same equations by `solve_ivp`,
 for the tests.
+
+Working on it
+-------------
+Its *Setting* also puts a top on a table (`core/sliding_top.py`, `RoundTop`: the disc on a round tip, or a
+tippe top, a ball weighted low): the tip slides with smoothed Coulomb friction, N in closed form from G's
+height, and only Jellett's J = L·(a e₃ + R ẑ) is kept, so the energy sinks onto `least_energy` (E_J), whose
+least (`least_tilt`) is where the top goes, unless the tip starts to roll (`rolling_tilt`). Nothing splits off
+exactly, so `SlidingSimulator` is RK4 in plain floats (~6 µs a step), its step from the spin, the wobble about
+G and the smoothed friction's rate, keeping a sample every `RECORD_DT`; it stops at an `Event` (the table
+would have to pull: a hop; a disc's rim touches) rather than model it. On a table the page's Potential tab
+draws E_J, Path the tip's track, Check J and the energy with friction's work; Precession is disabled.
+`tests/test_sliding_top.py` checks J, the energy ledger, RK4's order against `reference` (`solve_ivp`), E_J,
+and the table trials' numbers.
 """
 
 from __future__ import annotations

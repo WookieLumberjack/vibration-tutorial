@@ -37,6 +37,18 @@ modes of a string or bar with either end fixed or free are such waves, κ_n from
 so the mesh's frequencies are exactly the dispersion curve's at κ_n; likewise a pinned–pinned
 beam's. Low modes span many elements and come out nearly right; the high ones crowd towards
 the cut-off and are wrong by tens of per cent.
+
+Working on it
+-------------
+`core/continuum.py` (the *Continuous systems* page, `gui/continuum.py`, its own model, not the chain): a
+string, a bar or an Euler–Bernoulli beam, cut into N equal elements (linear, or Hermite for the beam) with
+lumped, consistent or mixed mass. A lumped beam's slopes have no mass and are condensed out exactly
+(`_condense`). The exact modes are in closed form (the beam's from a scaled 4 × 4 determinant, `_beam_roots`).
+Each mesh's dispersion comes from one node's Bloch wave (`dispersion`, in closed form for the string and bar,
+`string_dispersion`). A string's or bar's modes, and a pinned beam's, lie exactly on it (tests check). The
+beam's second branch is drawn in the next zone (2π/h − κ), where the extra modes land. `convergence` only
+depends on the kind, the ends and the scheme, so it is worked out on a unit length and cached, and it stops at
+the eigensolver's round-off (`NOISE`). `tests/test_continuum.py` checks the presets' numbers.
 """
 
 from __future__ import annotations

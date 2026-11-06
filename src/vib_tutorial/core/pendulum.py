@@ -10,6 +10,10 @@ pendulum's restoring moment grows more slowly than θ, so it softens (its period
 Duffing oscillator's with a negative cubic, γ = ∓ m g d / 6), and the inverted one's hardens. `period` is the exact
 undamped period by quadrature of the energy, `duffing_period` the cubic's harmonic balance, and `swing` the free
 motion from rest at θ₀, the whole equation stepped by `solve_ivp` beside the linear one.
+
+Working on it
+-------------
+The exact period is by quadrature with the drop factored out, the turning points found exactly.
 """
 
 from __future__ import annotations

@@ -1,6 +1,41 @@
 """The rotor's time response: the exact FOH update of `RotorSystem.state_space`, held over chunks at a speed,
 with the films' nonlinear remainder (`_Films`), the stator ring's rub and the thermal bow solved over each
 step. The model is core.rotor's.
+
+Working on it
+-------------
+With `nonlinear_films` the simulator steps the films' whole force instead (`whole_films`: on a round shaft; a
+turning shaft keeps them linear). `pi_film` gives it in closed form with its stiffness, damping and
+dissipation Ψ (tests check it against `film_force` and finite differences). `RotorSimulator._film_steps`
+(`core/rotor_simulator.py`, beside the model in `core/rotor.py` and the whirl, Campbell and steady states in
+`core/rotor_modes.py`) keeps the exact FOH update, with each film's K_f and p but its damping replaced by the
+bound C_b (`full_film_damping`, the uncavitated film's, taken afresh as the journal moves), and adds the
+remainder as a load on the journals, found each step by Newton (`_Films.solve`, cut back on the convex Q).
+Don't put C_f back in the update: near the wall the remainder would be stiffer than the update, the step
+rings, and the journal is thrown through the wall. The Rust kernel (`native.FilmSteps`, one per held speed and
+step from `_Films.stepper`) runs `_film_steps_reference`'s loop and takes the bound itself as the journals
+drift, with its own FOH exponential (`linalg.rs`'s `expm_foh`: Al-Mohy–Higham on the augmented matrix's
+blocks, balanced first, since A h runs from h to K/M h; more accurate than SciPy's here). ~1.6 µs a step, ~6
+µs on Oil whirl, where the journals circle near the wall and the bound is retaken every ~15 steps (the Python:
+45–120 µs). Keep the Rust in step with `_film_steps_reference` and `_Films`; `tests/test_native.py` compares
+them while ramping and through retakes, and the FOH with `foh_discretize`. The step only resolves the spin and
+the modes coarsely (`FILM_MODE_STEPS`), and the page caps each frame's computing (`step(…, budget)`).
+Everything else (Campbell, stability, steady states) stays linearized.
+
+A stator ring round the disc (`RotorSystem.stator`, a `Stator`; the *Rub* tab, `gui/rotor_rub.py`) is in the
+time response only: `stator_force` gives the ring's push and smoothed-Coulomb drag with its derivatives, and
+`RotorSimulator._rub_steps` adds it to the exact FOH update as a load on the disc, linear over the step,
+solved by Newton (`_rub_solve`), as the films' remainder is. The Rust kernel (`native.RubSteps`, built per
+call from the chunk's Φ, Γ0, Γ1) runs `_rub_steps_reference`'s loop, `stator_force` and the heat included:
+~0.6 µs a step against 10–60 in the Python; keep them in step (`tests/test_native.py` compares them).
+`step_size` resolves the disc on the ring's mount. Only on a round shaft with the films linearized
+(`__post_init__` raises; the page drops the ring and disables its checkbox). Campbell, stability and the
+steady states leave it out. Each advance's `RotorSamples.rub` holds the push; the page's history keeps the
+largest since the last sample kept (`PUSH`). A forward full rub's steady state is a linear one with the ring
+as a cross-coupled spring at the disc; a test checks it. With `thermal_gain` the rub's heat (column 3 of
+`rub`) bows the shaft (Newkirk): `RotorSimulator.thermal_bow`, complex from the mark, held over chunks of at
+most τ/`THERMAL_STEPS` and moved on by `_warm` (exact first-order lag), loads the shaft as the residual bow
+does (`bow_load`, in `force`). The page records the spiral (`_record_spiral`) at a steady speed only.
 """
 
 from __future__ import annotations

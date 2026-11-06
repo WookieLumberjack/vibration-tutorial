@@ -34,6 +34,12 @@ Two other recoveries use less, or more, than the coupled solve provides:
 
 Recovered loads are the spring forces k_e (x_e - x_{e-1}), from each recovered
 displacement (a displacement-based loads transformation matrix).
+
+Working on it
+-------------
+`core/back_expansion.py` recovers the interior DOFs from the coupled CMS solution; its enhanced recovery adds
+the interior states to the reduced model's state vector (`RecoveryResponse`), so it shares the same exact FOH
+step.
 """
 
 from __future__ import annotations

@@ -8,6 +8,10 @@ loop closed (the two lags' states appended when τ > 0), so its poles give each 
 positive for every mode only when the sensor and actuator are collocated. `with_tmd` adds a tuned mass damper
 (Den Hartog's tuning on mode 1's modal mass at its mass) for comparison, and `skyhook` is the single-mass isolator
 with a damper to the sky against one to the base.
+
+Working on it
+-------------
+`tracked_damping` pairs poles by `linear_sum_assignment`, real poles included, NaN once overdamped.
 """
 
 from __future__ import annotations

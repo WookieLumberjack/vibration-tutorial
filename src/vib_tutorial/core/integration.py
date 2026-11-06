@@ -7,6 +7,10 @@ Euler, and the exact first-order-hold update the rest of the app uses. `exact` i
 vibration plus the harmonic force's steady state). For one undamped or damped oscillator, `amplification` is
 each scheme's one-step map of the free motion, and `spectral` reads from it the spectral radius (stable when
 ≤ 1), the period's error and the damping the scheme adds, against Ω = ωΔt.
+
+Working on it
+-------------
+Each scheme is its one-step amplification matrix.
 """
 
 from __future__ import annotations

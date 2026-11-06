@@ -6,6 +6,11 @@ the series can be cut at any number of harmonics. The oscillator's steady respon
 each term multiplied by H(kω₀). `periodic_steady` gives the steady state exactly, without the series: one
 period stepped by the first-order-hold update from the state that repeats (z₀ = (I − Φ_T)⁻¹ z_T), so the
 series' convergence can be measured against it.
+
+Working on it
+-------------
+The Fourier series is in closed form, against `periodic_steady`: one FOH-stepped period from the state that
+repeats.
 """
 
 from __future__ import annotations

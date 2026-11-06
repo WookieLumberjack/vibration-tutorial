@@ -5,6 +5,12 @@ receptance and its half-power points, the impulse and step responses, and the ex
 hold) response to any sampled force, which is what convolution with the impulse response gives
 when the force is linear between samples. `isolation`, `damping_models` and `transient` build on
 these.
+
+Working on it
+-------------
+`sdof.receptance` is infinite at an undamped f<sub>n</sub>, so `frequency_grid` steps round it.
+`tests/test_one_mass.py` checks this module and the other One mass pages' (`transient`, `damping_models`,
+`isolation`), `tests/test_tutorial_numbers.py` their trials' notes.
 """
 
 from __future__ import annotations

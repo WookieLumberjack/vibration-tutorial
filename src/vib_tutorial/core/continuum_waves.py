@@ -26,6 +26,16 @@ stepped exactly, z ← e^{AΔ} z, a frame's Δ at a time, from the pulse sampled
 faster (consistent), and none shorter than two elements travels at all, so the pulse
 trails (or leads) ripples the continuum doesn't have, and a matched dashpot, matched to
 the continuum's long waves, reflects the mesh's short ones.
+
+Working on it
+-------------
+The *Waves* tab (`core/continuum_waves.py`, `WaveRun`) runs a pulse on the continuum and the mesh. A string's
+or bar's continuum is a digital waveguide: d'Alembert's two waves, moved a cell of travel each step τ, which
+is exact. Its ends, a dashpot and a section step scatter them in closed form. A beam's continuum is its exact
+modes, summed (no dashpot or step on a beam). The mesh is stepped by expm(AΔ), a frame's Δ at a time. Δ is a
+whole number of waveguide steps at every `PLAYBACK`, so a speed change keeps both states. The page builds the
+run only while the Waves tab shows, and plays it on its own frame loop there. `tests/test_continuum_waves.py`
+checks the wave presets' numbers.
 """
 
 from __future__ import annotations

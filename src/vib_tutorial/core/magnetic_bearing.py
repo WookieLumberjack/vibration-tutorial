@@ -42,6 +42,20 @@ Per axis the controller has three states, xc = [s, d, i]: the integral of x,
 the filter's lagged x (k_d s/(1 + s/ω_d) x = k_d ω_d (x - d)), and the
 amplifier's current, i' = ω_a (u - i) with u = k_p x + k_I s + k_d ω_d (x - d).
 The integral's state is left out when k_I = 0, and the filter's when k_d = 0.
+
+Working on it
+-------------
+`core/magnetic_bearing.py` (the rotor page's *Magnetic bearing* tab) is an active magnetic bearing: a magnet
+pair per axis (negative stiffness k_m, current gain k_i, from the gap, bias, pole area and turns) under a PID
+with a filtered derivative behind a first-order amplifier, `gain(s)` in closed form and `state_space()` per
+axis (tests check they agree). On the rotor (`Bearing.magnet`) its -k_m is in K and the controllers' states
+follow q and q' in the state: size states from `system.n_states` (2 n_dof + `n_control`), take velocities as
+`state[n:2n]`, not `state[n:]`. The steady states add the magnets' k_i G(ikΩ) at each harmonic
+(`support_stiffness`, `dynamic_solve`); with integral action the 0X row pins the journals at the centre, and
+the rest state comes from `static_state` (A z + B f = 0). Their slow integrator roots are near-repeated and
+split by a hair, so `whirl_modes` counts a root with |Im λ| < `OVERDAMPED` |Re λ| as not oscillating, and
+reports the fastest such growth as `drift` (a magnet too weak for k_m diverges without oscillating);
+`least_damped` and `growth_rate` use it.
 """
 
 from __future__ import annotations

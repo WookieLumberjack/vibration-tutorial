@@ -25,6 +25,18 @@ fixed elbow drops its m₂L₁θ̈₁ (`slipped`).
 energy holds to ~1e-9 of the swing's), beside the linear ones stepped by expm(AΔ), exactly. `divergence` runs
 a twin released `TWIN` rad further over and reports how far apart they drift: slowly for small swings,
 exponentially once the motion is chaotic.
+
+Working on it
+-------------
+Its second system (*System*, `deriving_text.CAR`/`PENDULUM`: the page's tabs, systems and Show items live
+there, shared with `gui/deriving_pendulum.py`, which holds the pendulum's derivations, drawing and problems)
+is `core/double_pendulum.py`: the whole equations (`accelerations`; a test checks them against L by finite
+differences), small-swing M and K in the rods' angles or the elbow's bend, `newton`'s free-body rows (`mix`
+makes them Lagrange's), `swing` by `solve_ivp` (DOP853, tight: the energy holds to ~1e-10) beside the linear
+model by expm, and `divergence`'s twins (each angle's difference wrapped to ±π). One trial dataclass
+(`DerivingTrial`) holds both systems' fields; each system shows its own tabs (`SYSTEM_TABS`, `setTabVisible`).
+The page animates on its own frame loop while it shows. `tests/test_tutorial_numbers.py` checks the trials'
+notes.
 """
 
 from __future__ import annotations

@@ -157,6 +157,63 @@ An asymmetric or cracked shaft's turning stiffness is split off each step as a
 kick to the velocities at mid-step, between two exact half steps of the rest.
 The oil films' whole force and a stator ring's are loads found by Newton each
 step beside the exact update.
+
+Working on it
+-------------
+The rotor's stiffness depends on speed: K + ΩH, with H from the shaft's internal damping and the bearings'
+fluid swirl (`Bearing.swirl`, k_xy growing as λcΩ) (`RotorSystem.circulatory()`, `speed_dependent`), plus an
+oil film's K_f(Ω); its damping too, C + C_f(Ω). K itself is not symmetric once a bearing has cross-coupling
+(`kxy`, `kyx`). Use `system.stiffness(omega)` and `system.damping(omega)` wherever the speed is known, not
+`matrices()` alone (it leaves the films out). `core/rotor_stability.py` finds the onset speed by sweeping and
+bisecting the least damped mode's ζ.
+
+The disc may sit between the bearings or overhang one (`position` > 1 or < 0, never on a bearing). The shaft's
+nodes come from `RotorSystem._mesh` in axial order, and the 3D view spans `system.extent`, so don't assume the
+disc is between 0 and L. Presets live in `core/rotor_presets.py`, and `tests/test_rotor_presets.py` checks the
+numbers in their notes.
+
+The shaft may have mass (`density` > 0): it is then a beam FE model (`elements`, consistent or `lumped` mass),
+reduced Craig–Bampton style to the stations plus the shaft's fixed-interface modes up to `MODE_LIMIT`
+(`RotorSystem._reduced`). So q is `[the 8 station DOFs, ξ_x, ξ_y]`: `XA`…`YB` keep their indices, but q has
+`system.n_dof` entries. Size arrays from `n_dof` (not 8 or `N_DOF`), split or build the planes with
+`plane_dofs`/`merge`/`plane_load`, and get the shaft's shape anywhere from `deflection`. M is then full
+(`mass_inverse`). With density 0 the model is exactly the massless Jeffcott one whatever `elements` is (a test
+checks); keep it so. Raising `MODE_LIMIT` costs time: the time step resolves the fastest mode kept.
+
+Everything that turns with the rotor (unbalance, balance weights, disc skew, shaft bow) goes through
+`RotorSystem.rotating_load(Ω, Ω')`, as f_x + i f_y = P e^{iφ} on [A, D, θ, B]; both the simulator's `force`
+and `synchronous_response` use it, so the steady state and the time response can't drift apart. A new 1X
+source belongs there. Two-plane balancing's `plane_weights` (`PlaneWeight`) go there too: on the disc they add
+to `mass_unbalance` and `couple_unbalance` (a weight at axial offset h adds w·h to the couple); on the shaft
+each is a point force S(z)ᵀw. The Balancing tab keeps its readings at all four stations, and forgets its trial
+runs when the planes change, since the influence matrix belongs to them. φ is the keyphasor mark's angle, not
+the heavy spot's: every rotor angle (unbalance, weights, bow, skew) is measured from the mark, and the heavy
+spot drawn is `mass_unbalance`'s.
+
+An asymmetric shaft (`asymmetry` Δ, EI(1 ± Δ), stiff axis at `asymmetry_angle` from the mark) has a stiffness
+that turns with it: `stiffness(Ω)` is its mean, `stiffness_at(Ω, φ)` the whole thing at an instant. Its modes
+are Floquet modes (`_rotating_modes`, exact in axes turning with the shaft, on isotropic supports;
+`_hill_modes` otherwise), its steady states come by harmonic balance (`harmonic_response`:
+`synchronous_response`'s 1X, `gravity_response`'s mean sag and 2X), and the simulator splits each step around
+a mid-step kick from the turning part (exact FOH with K held when it stands still). Its criticals are its two
+axis rotors' (`axis_system`), and `Onset.end` is where its unstable band ends. A round shaft takes none of
+these paths; tests check that Δ → 0 matches it.
+
+A cracked shaft (`crack`, a `Crack`) is a hinge at the crack (compliance from `crack_compliance`, by depth),
+condensed exactly onto the stations (`_hinge_loss`). Breathing, the weight opens it (`crack_sign`,
+`crack_open(φ)`), so its stiffness has 1X, 2X and 3X; held open it turns with the shaft like the asymmetric
+one. Both are one Fourier series, `_periodic_terms` (the crack's mean goes in K, the harmonics E_k turn): test
+`system.periodic`, not `asymmetry`, for anything that turns; `spacing` is 1 for a breathing crack (harmonic
+balance then couples every harmonic, Hill's method steps by Ω) and `rotating_frame` says when the
+rotating-frame modes are exact. `steady_harmonics` gives the whole steady state (gravity and 1X loads
+together, 1X–3X), which the Bode plot and the tracker (`vectors3`) compare. A massless shaft's crack does not
+depend on `elements` (a test checks).
+
+Gravity (`RotorSystem.gravity`) only moves the rotor's equilibrium to `static_deflection(Ω)`. Anything that
+measures vibration (the 1X tracker, peaks, the spectrum, the phase readout) works on `vibration(system, q, Ω)`
+(`core/rotor_sweep.py`), the motion about it; only the drawing can show the sag (the page's *Static sag* box).
+On an asymmetric shaft gravity also drives 2X: the sag is then the mean of a periodic motion, and the 2X stays
+in the vibration.
 """
 
 from __future__ import annotations

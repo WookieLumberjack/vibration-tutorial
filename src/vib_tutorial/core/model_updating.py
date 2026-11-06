@@ -26,6 +26,26 @@ Correlation
 * COMAC, per sensor: (Σ_r |ψ_ir φ_ir|)² / (Σ_r |ψ_ir|² Σ_r φ_ir²) over the pairs, each test shape
   first scaled to its model shape (the modal scale factor). Where it drops, the shapes disagree,
   which points near the error.
+
+Working on it
+-------------
+`core/model_updating.py` (the *Model updating* page, `gui/model_updating.py`, which follows the chain): the
+Simulation page's chain is the structure tested; the page's model is the structure with `Errors` (factors on
+each mass, spring and damper), so it follows the structure's changes. `measure` takes the structure's modes
+from `oma.hammer_modes` (the virtual modal test's chain, at the test page's sample rate) or the exact modes
+with noise, full shapes kept; `Test.with_sensors` picks the sensors without measuring again. `correlate`: the
+MAC of test shapes (complex) with the model's undamped φ at the sensors, `pair` (best MAC first, `MIN_MAC`),
+frequency errors against the model's |λ|/2π, the auto-MAC and COMAC. The page measures again only when the
+structure, the source or the seed changes; the errors and sensors only re-correlate. Updating (`update`):
+Gauss–Newton on θ = ln p for the chosen `Parameter`s (`updated_errors` multiplies the model's errors by e^θ),
+the residual (`residual`: relative frequency, then shapes at the sensors realized onto the model's and
+weighted, then relative ζ) over the correlation's pairs at the start, kept fixed, J by finite differences,
+Tikhonov λ²‖θ‖², steps clamped (`STEP_LIMIT`), and lstsq with `RCOND` so a direction the data can't see (all
+masses and springs scaled together) isn't chased. `frequency_sensitivity` is the closed form (strain and
+kinetic energy shares); a test checks it against finite differences. The *Updating* and *Sensitivity* tabs
+work out only while they show. Trials reset the seed to 1 so the notes' numbers hold.
+`tests/test_model_updating.py` checks the trials' notes (the frequency shifts are the exact model's against
+the structure's; the test's noise is seeded).
 """
 
 from __future__ import annotations

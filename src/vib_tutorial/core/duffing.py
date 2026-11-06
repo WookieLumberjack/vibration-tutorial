@@ -47,6 +47,22 @@ simulator does) and treats the cubic's and the pump's forces as an input, linear
 over the step, whose end value depends on where the step ends: one scalar Newton
 solve per step. The step resolves the drive and the spring's stiffness at the
 largest amplitude in reach.
+
+Working on it
+-------------
+`core/duffing.py` (the *Duffing & Mathieu* page, `gui/duffing.py`, its own single-DOF model, not the chain):
+harmonic balance traced by amplitude (`response_curve`: the two roots in Ω² at each a, joined at the tip, so
+the unstable branch is one curve with the rest), stability by the sign of dG/ds, folds refined by `brentq`.
+`DuffingSimulator` keeps the exact FOH update for the linear part and puts the cubic's force in as the input,
+linear over the step, its end value by scalar Newton; second order (a test checks the error quarters with the
+step), so the step resolves the stiffness at `REACH` times the largest amplitude in sight. Each drive cycle's
+first and half harmonics (`Cycle`, both over the cycle and the one before, so a ½X swing doesn't leak into the
+1X) are what the page plots against harmonic balance; Poincaré dots only while the frequency is held. The pump
+μ (k(1 + μ cos φ), sharing the drive's phase) goes into the same Newton remainder;
+`parametric_amplitudes`/`parametric_curve` are its first tongue's harmonic balance in closed form,
+`floquet_growth` the Ince–Strutt chart (RK4 of every cell at once, the multipliers from the monodromy matrix:
+it depends on ζ alone). A pumped state needs `noise` (a seeded random force) to leave rest; a linear spring
+inside a tongue grows to `RUNAWAY` and the page pauses. `tests/test_duffing.py` checks the presets' numbers.
 """
 
 from __future__ import annotations

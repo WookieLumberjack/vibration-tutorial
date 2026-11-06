@@ -10,6 +10,10 @@ total mass) and its peak floor displacements, storey drifts and shears from the 
 modes' peaks by ABS, SRSS, NRL or CQC (Der Kiureghian's correlation, which matters when modes are close).
 `accelerogram` synthesizes a ground motion whose 5 % spectrum matches the design one, and `time_history` steps the
 building on it, mode by mode, exactly, as the check.
+
+Working on it
+-------------
+The chain is a shear building; its records are synthesized to the design spectrum, and cached.
 """
 
 from __future__ import annotations

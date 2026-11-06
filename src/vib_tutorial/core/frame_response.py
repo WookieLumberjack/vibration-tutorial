@@ -27,6 +27,20 @@ cosine turning at Ω for a harmonic force), stacked under A, so one matrix expon
 structure and its load over each step without approximating either; an impulse is the state it leaves,
 x(0⁺) = B J. With proportional damping the two models agree to round-off (a test checks); with a damper they part
 by as much as the dropped coupling matters.
+
+Working on it
+-------------
+Its forced response is `core/frame_response.py`: a `Load` on one DOF (harmonic, impulse, step), Rayleigh
+damping from `Frame.zeta` (ζ at the first two modes), and two models as `StateModel`s: `conventional_model`
+(one oscillator per undamped mode, c_r = φᵀCφ + α + βω², the off-diagonal dropped) and `exact_model` (the
+state space; massless DOFs without a damper condensed statically, Rayleigh added after, so a proportional
+frame's two models are the same; a massless DOF with a damper keeps a first-order state, C_dd q̇_d = f_d −
+C_dm v − K_d q). `formulations` pairs the state space's poles with the undamped modes (MAC plus the
+frequency's log ratio, `linear_sum_assignment`). `response` steps exactly by stacking the load's own states
+under A (a constant, or a sine and cosine at Ω), so resonance needs no special case; an impulse is x(0⁺) = BJ.
+The page works them out only while the Response or Formulations tab, or a damped swing, needs them (`_work`).
+`tests/test_frame_response.py` checks the FRF against a direct solve, the steps against `solve_ivp`, and the
+new trials' notes.
 """
 
 from __future__ import annotations
