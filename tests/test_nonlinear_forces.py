@@ -235,7 +235,9 @@ def test_trials():
         return p, truth, _solve(p, t.method, 10**t.log_lam, t.k)
 
     p, truth, est = identified(by["Force identification: the plain inverse"])
-    assert math.log10(p.s[0] / p.s[-1]) == pytest.approx(20, abs=0.5)
+    kept = p.s[p.s > p.s[0] * 1e-15]  # as `inverse` keeps them: the last two are zero to round-off (sized by LAPACK)
+    assert kept.size == p.s.size - 2 and p.s[-2] < 1e-5 * kept[-1]
+    assert math.log10(p.s[0] / kept[-1]) == pytest.approx(7.7, abs=0.1)
     assert np.abs(est).max() / np.abs(truth).max() == pytest.approx(73000, rel=0.01)
 
     t = by["Tikhonov at the L-curve's corner"]

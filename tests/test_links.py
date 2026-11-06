@@ -151,6 +151,8 @@ def test_every_notes_file_is_loaded():
     from vib_tutorial.gui import links
 
     gui = Path(links.__file__).parent
-    loaded = set(re.findall(r'load_notes\(\s*"([a-z_]+)"', "".join(p.read_text() for p in gui.glob("*.py"))))
+    loaded = set(
+        re.findall(r'load_notes\(\s*"([a-z_]+)"', "".join(p.read_text(encoding="utf-8") for p in gui.glob("*.py")))
+    )
     files = {p.stem for p in Path(str(links.THEORY)).glob("*.html")}
     assert files == loaded
