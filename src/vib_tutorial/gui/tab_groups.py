@@ -6,6 +6,20 @@ whichever group it's in, and see through a scroll area put round a page; `change
 fires whenever the page showing changes.
 
 Drawing that waits while a tab hides it: `Deferred` (a panel, or one tab), `LazyTabs` (a tab widget's tabs).
+
+Working on it
+-------------
+The rotor page's right pane is `TabGroups` (`gui/tab_groups.py`): five group tabs, each with its own row of
+tabs (ten in one row didn't fit). Reach a view with `tabs.show_page(widget)` and `tabs.current_page()`, not
+`setCurrentWidget`/`currentWidget`: they work across the groups and see through the `ColumnScroll` round the
+Balancing and bearing panels. Those panels draw only while their tab shows, through a `Deferred`
+(`tab_groups.py`): `request()` draws now or marks it stale (`tucked_away`, which checks the tabs above them
+too: a panel that's its group's current tab isn't `isHidden()` while another group shows), and it draws on the
+panel's Show event or `catch_up()` (the page calls it on a tab switch, since a window never shown gets no show
+events). A tab widget's tabs drawn only while they show are a `LazyTabs` (a `Deferred` per tab; `stale(*tabs)`
+after a change): use it, not a hand-kept stale set. They're still built with the page, so the right pane keeps
+their minimum widths. What they keep as state (the bearing panel's load box, the balancing buttons) stays
+outside the deferred part; a test that reads their drawing shows the tab first.
 """
 
 from __future__ import annotations

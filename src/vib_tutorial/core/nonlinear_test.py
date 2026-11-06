@@ -25,6 +25,25 @@ One harmonic leaves out the others a nonlinear element makes: a symmetric one (c
 harmonics, 3X, 5X. `steady_response` steps the chain in time with the exact FOH update, the nonlinear forces
 as an input linear over the step whose end value is found by Newton (friction smoothed as F_c tanh(v/v_s)), from
 harmonic balance's state until a cycle repeats itself, and gives the response's harmonics.
+
+Working on it
+-------------
+`core/nonlinear_test.py` and `core/force_id.py` (the *Nonlinearity & forces* page, `gui/nonlinear_forces.py`,
+`nonlinear_page`, after Test planning; follows the chain, its friction included). The page adds one `Element`
+(a cubic spring or a gap alongside a spring). `stepped_sine` is one-harmonic harmonic balance (`describing`:
+¾k₃|D|²D, the gap's `gap_stiffness`, friction (4F/π)V/|V| smoothed below `STUCK`), Newton on Re/Im with a
+central-difference Jacobian and a line search (friction's near-step makes full steps oscillate; the whole step
+is taken when no halving helps, or Newton sits in the dip a vanished fold leaves), each step from the last;
+where it fails or the Jacobian's determinant is negative (the middle branch), the stable solution nearest the
+last from other starts (`SEEDS`, `RESCUE` iterations) is the jump. `steady_response` is the exact FOH update
+with the nonlinear forces as an input linear over the step, end value by Newton on the whole state, from
+harmonic balance's state until a cycle repeats. Force identification: `markov` builds y = Gf from the FOH
+update (a displacement, or an acceleration with its direct term), `set_up` adds seeded noise and takes G's SVD
+once; `tikhonov`, `tsvd`, `inverse`, `l_curve` (its corner searched only where the curve moves: below the
+singular values that matter it stands still and round-off makes false corners), `discrepancy`. The trials set
+the controls before sending their chain, so the page works out once. `tests/test_nonlinear_forces.py` checks
+the describing functions by quadrature, every sweep step's residual, the time stepper against `solve_ivp`, G
+against the FOH simulation, Tikhonov against the normal equations, and the trials' notes.
 """
 
 from __future__ import annotations

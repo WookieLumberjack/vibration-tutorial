@@ -78,6 +78,22 @@ A lightly damped mode's peak is narrow, 2ζf_n between its half-power points: We
 must be finer than that or the peak comes out low (the window smears it), and each line's
 estimate scatters by 1/√(averages). Both ask for a long record: `suggested_duration` puts
 four lines across the narrowest peak and sixteen blocks in the record.
+
+Working on it
+-------------
+`core/random_vibration.py` (the *Random vibration* page, `gui/random_vibration.py`, which follows the chain
+without its friction): a flat band-limited PSD (a force on one mass or every mass, or the base's acceleration
+in g², the chain then in coordinates relative to the base, −m a_g on each mass), the exact response PSD H G Hᴴ
+on a grid packed round the modes, its cumulative RMS, and Miles' equation per mode (SRSS). The record's input
+is synthesized from the PSD (FFT lines, ÷ sinc⁴ for the FOH's linear interpolation) at `OVERSAMPLE` × the
+band's top, stepped by the FOH update by `FohSteps`. Every `KEEP`-th sample is kept: the response has nothing
+above the band, so this doesn't alias. Records are sized from the narrowest half-power width
+(`suggested_duration`, `suggested_block`). An output change only redraws; an input change records again. Its
+*Statistics* tab (`record_statistics`, `rice`) counts the record's exceedances, crossings and peaks after
+`upsampled` (a polyphase ×8: 2.5 samples a period can describe the band-limited record but not show its
+peaks). These sit against Rice's rates from the spectral moments and his peak distribution. The largest peak
+over a stretch comes from Davenport (independent crossings) and Vanmarcke (clumped, through δ): a test checks
+Vanmarcke against the record's segment maxima.
 """
 
 from __future__ import annotations

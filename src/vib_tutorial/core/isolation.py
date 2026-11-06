@@ -13,6 +13,11 @@ The transmissibility (the force on the floor over the force the machine makes, w
 reaches the machine over the floor's) is worked out exactly from each kind's dynamic stiffness. `start_up`
 runs the machine up to speed through the mount's resonance by the exact first-order-hold update, the
 unbalance's force including its tangential part as the speed changes.
+
+Working on it
+-------------
+Isolation sizes the mounts by their sag (k = Mg/δ), and `start_up`'s steady state is the transmissibility (a
+test checks).
 """
 
 from __future__ import annotations

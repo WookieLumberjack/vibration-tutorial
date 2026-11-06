@@ -46,6 +46,25 @@ k1 x_g + c1 x_g', so the step also depends on the input's slope du:
 piecewise linear in time and simulated exactly. x stays the absolute
 displacement; spring 1 stretches by x1 - x_g, and "work" is the work the
 moving ground does on the chain, -integral of (tension in element 1) x_g' dt.
+
+Working on it
+-------------
+Friction's steps (`Simulator.start`, `drive`) run in Rust (`native.FrictionSteps`, one per input kind from
+`_friction_kernel`, cached in `_friction_cache`), mirroring `_advance_friction_reference`/`_drive_reference`
+and `_friction_step` event for event, each sub-step's map from `expm_balanced`. Its energy ledger differs in
+method only: the input's work from an integrator state q = ∫x_k, and the dampers' loss from the energy balance
+(exactly 0 without dampers), instead of Van Loan's integrals, so an event costs one exponential, not three.
+The force is open-loop, so `start` works out every step's force first (`_forces`). Keep the two in step;
+`tests/test_native.py` compares them.
+
+The Rust kernels release the GIL while they step. `Simulator.advance` is `start` then `collect`: with friction
+(`steps_aside`), `start` moves the force and the clock, hands the Rust steps to a worker thread and returns;
+`collect` waits for them and finishes the ledger. Anything that touches `state` (`set_state`, `set_system`, …)
+waits for them first, and `reset` drops them. The Simulation page starts them as a frame ends, so they run
+while it paints, and records them at the next frame (`_collect`; it doesn't wait if they aren't done); a
+system change records them first, under the system they ran with. Without friction the steps hold the GIL, so
+the page steps them inline and draws them in the same frame. The rotor page steps inline too: its film kernel
+is ~1 ms of an ~8 ms frame at 1× (drawing is most of it), not worth the threading yet.
 """
 
 from __future__ import annotations

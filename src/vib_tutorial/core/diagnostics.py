@@ -17,6 +17,13 @@ The *Machinery diagnostics* page. Its own model: an accelerometer on a gearbox's
 - `envelope_spectrum`: band-pass round the resonance, the Hilbert envelope, its spectrum: the impacts' rate shows
   up there though it is buried in the plain spectrum. `cepstrum`: the inverse transform of the log power
   spectrum, where a family of lines spaced Δf becomes one peak at quefrency 1/Δf.
+
+Working on it
+-------------
+A synthesized gearbox: a sample-aligned impulse through `ring_filter` is the resonance's exact response; a
+run-up's casing mode is the FOH update as a transfer function through `lfilter`; `order_map` resamples by a
+cubic spline at equal angles, its blocks equal in angle, so the page shows the block nearest each of equally
+spaced speeds.
 """
 
 from __future__ import annotations

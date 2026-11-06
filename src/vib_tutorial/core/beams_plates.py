@@ -6,6 +6,10 @@ Rayleigh (with the sections' rotary inertia), shear only (with the shear deflect
 2 × 2 determinant has a second root, the thickness-shear branch). A simply supported rectangular plate's modes are
 sin(mπx/a) sin(nπy/b), a clamped circular plate's Bessel functions J_n and I_n with cos nθ. `counting` gives the
 number of modes below f, against the asymptotes: ∝ √f for a beam, ∝ f for a plate.
+
+Working on it
+-------------
+Timoshenko's frequencies come from his determinant; the plates are in closed form.
 """
 
 from __future__ import annotations

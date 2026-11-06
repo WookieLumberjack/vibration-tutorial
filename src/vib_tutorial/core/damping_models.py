@@ -6,6 +6,12 @@ viscoelastic (Zener, standard linear solid) element the same stiffness at f_n to
 nearly the same frequency. Then: the force over a harmonic cycle (the hysteresis loop) and the energy it
 encloses, the dynamic stiffness K*(ω) = K' + iK'' and loss factor η = K''/K' against frequency, the
 steady response to a harmonic force (friction by its describing function), and the free decay.
+
+Working on it
+-------------
+The damping models are matched at f<sub>n</sub> (`Matched`: the same energy per cycle as ζ, friction's at the
+amplitude X, the Zener element's storage stiffness k there too); hysteretic damping has no causal time model,
+so its decay is the viscous one.
 """
 
 from __future__ import annotations

@@ -27,6 +27,17 @@ frequencies are flat lines, and a speed-proportional excitation (an engine's fir
 orders, a reciprocating compressor's, a mesh's tooth-pass) a line through the origin: a
 torsional critical speed is where they cross (`criticals`). The steady response to each
 order at each speed is one complex solve, (K − ω²M + iωC) Θ = T (`forced_response`).
+
+Working on it
+-------------
+`core/torsional.py` (the *Torsional vibration* page, `gui/torsional.py`, its own model, not the chain): a
+`DriveTrain` of `Disc`s joined by `Shaft`s or `Mesh`es, each angle in its own shaft's direction, so a mesh is
+a spring on r_in θ_in − r_out θ_out − e (both gears keep their inertias; e the transmission error at
+tooth-pass). `referred()` (× s², a mesh k_m (r s)²) has the same frequencies exactly and `rigid_gears()`
+merges each pair (the n² reflection); tests check both. Nothing depends on speed, so the interference
+diagram's modes are flat and its orders are of the motor's speed (`sources`, `order_lines`); the steady
+response is one complex solve per order and speed (`forced_response`), at `response_speeds` packed round each
+critical. `tests/test_torsional.py` checks the presets' numbers.
 """
 
 from __future__ import annotations

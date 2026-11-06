@@ -12,6 +12,14 @@ taps all through a run-up is a measured Campbell diagram.
 The block length sets the trade-off every analyser has: the frequency
 resolution is 1/T, but over a ramp the speed changes by αT while a block is
 taken, smearing the 1X line.
+
+Working on it
+-------------
+The rotor page's *Waterfall* tab (`core/rotor_waterfall.py`) is fed the page's stored history samples (every
+stride-th step, as the vibration about the sag) at all four stations, so changing the station needs no new
+data. Each block records the free whirl frequencies of the rotor it was measured on, so a new rotor, speed
+range or block length starts it afresh (`_new_waterfall`). Every line is filled (hidden lines), so it's
+redrawn at most every `WATERFALL_FRAMES` frames.
 """
 
 from __future__ import annotations

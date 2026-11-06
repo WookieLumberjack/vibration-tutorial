@@ -25,6 +25,33 @@ on the orientation alone), the free top's motion over a whole step (exact: a sym
 |L|/I₁ and about its own axis at (1/I₃ − 1/I₁)L₃), and gravity's half step again. This is symplectic and second
 order; L·ẑ and L·e₃ are conserved to round-off (the moment is across both), and the energy stays within an error
 that falls as h². `euler_reference` is the Euler-angle equations by `solve_ivp`, for the tests.
+
+Working on it
+-------------
+`core/gyroscope.py` (the *Gyroscope* page, `gui/gyroscope.py`, its own model, not the chain): a symmetric top
+(a disc on a light stem, or a square plate, `Shape.SQUARE`: its moment is the same about every line across its
+axis, so it is a disc of radius s/√3; `Top.radius` holds its side, `Top.corner` its reach) with its tip held
+at the origin. The closed forms are Lagrange's: the spin and the vertical momentum conserved, the tilt in an
+effective potential, its turning points the roots of a cubic in cos θ (`Motion.roots`: cos θ₀ is one, divided
+out, the quadratic left solved exactly), the nutation period an elliptic integral, the mean precession by
+Gauss–Legendre, the path (waves, cusps, loops) from φ' at the turning points, and the two steady precession
+rates. `TopSimulator` steps the whole body, not the Euler angles (singular upright): a unit quaternion and L
+in space, Strang-split into gravity's moment over half steps (exact: it depends on the orientation alone) and
+the free symmetric top over a whole step (exact: about L at |L|/I₁ and about its axis), so it is symplectic
+and second order, both momenta are kept to round-off, and the step only has to resolve the free wobble
+(`PER_PERIOD` a turn), not the spin; ~1.5 µs a step in plain Python floats. `euler_reference` (the Euler-angle
+equations by `solve_ivp`) is for the tests. A rectangular plate (`Shape.RECTANGLE`, sides `radius` along the
+mark and `breadth`) is an asymmetric top, I₁ ≠ I₂ (`Top.moments`; `Top.symmetric`): its free energy is the
+symmetric one with I₁ plus (1/I₂ − 1/I₁)L₂²/2, whose exact flow turns the body about its own y axis
+(`_about_y`), split round the symmetric step (skipped when I₁ = I₂, so symmetric tops step exactly as before).
+None of `Motion`'s closed forms hold for it (the page disables Potential and Precession, starts it at rest for
+a steady launch, and keeps it in the cup); without gravity `FreeSpin` is Euler–Poinsot's exact ω in Jacobi's
+cn, sn, dn (axes sorted; a and c traded below 2EI_b), and `body_reference` (Euler's equations and q by
+`solve_ivp`, any moments) checks both. The page's *Chaos* tab (every top in the cup) keeps a Poincaré section
+(ψ mod 180° and ω₃ where the tilt peaks, `_section`) and a twin let go `TWIN` further over, whose separation
+it plots. The page plays on its own frame loop while it shows, once started, and every control lets the top go
+again (still waiting if it was). `tests/test_gyroscope.py` checks the simulation against the closed forms and
+the trials' numbers.
 """
 
 from __future__ import annotations

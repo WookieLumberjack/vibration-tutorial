@@ -7,6 +7,10 @@ G_d(f/v)/v and its vertical velocity is white. Each output's PSD is |H(f)|² G_z
 square root of the area, worked out on a grid packed round the two modes (body bounce and wheel hop). `tradeoff`
 sweeps the damper (and the spring) for the classic conflict between comfort and grip. `drive` synthesizes a road
 with that PSD and steps the car over it by the exact FOH update, as a check.
+
+Working on it
+-------------
+The road is ISO 8608's, the transfer in closed form, `drive` by the FOH update.
 """
 
 from __future__ import annotations

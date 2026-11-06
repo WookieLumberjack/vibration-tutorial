@@ -51,6 +51,22 @@ response projected on a peak's shape and filtered round it tells them apart (`ku
 mode with a sine in its band reads low too, but keeps its damping (`harmonics`).
 
 Nothing here scales the shapes: without the force, the modal masses are unknown.
+
+Working on it
+-------------
+`core/oma.py` (the *Operational modal analysis* page, `gui/oma.py`, which follows the chain): the ambient
+record drives every mass (or one) with white or low-passed random forces through the exact FOH update, by
+`FohSteps` with an input per mass (friction left out: OMA needs it linear), run past `settle_time` first so
+the record is stationary; then FDD (the cross-spectral matrix's SVD per line) and EFDD (the bell's
+autocorrelation: crossings and log decay), and SSI-cov (`ssi_cov`, the correlations' block Toeplitz SVD at
+every even order, LSCF's `Stabilization` with shapes, `auto_select` for the poles). An optional sine on m1
+(`harmonic_hz`) is a machine running; `harmonics` crosses out a peak whose filtered, shape-projected kurtosis
+is near a sine's 1.5 and whose damping is nil (a mode with the sine in its band reads low too, but keeps its
+damping). The *Methods* tab adds `hammer_modes`, the virtual modal test's chain (impact, H1, LSCF + LSFD),
+measured once per chain when the tab shows. Results go through `identification.match_modes` and the virtual
+modal test's `ResultsView`. A test checks the record's spectra against H S Hᴴ (S = 2h sinc⁴(fh) for forces
+linear between samples h apart). The page records again on a test change and only reprocesses on a processing
+one.
 """
 
 from __future__ import annotations

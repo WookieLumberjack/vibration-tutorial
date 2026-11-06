@@ -27,6 +27,25 @@ centre (offset ≠ 0), bounce couples to pitch. Tilting the mounts raises the ro
 
 above them (t the track, β the tilt; `roll_centre`), so at the tilt `focus_tilt` it reaches the centre of mass
 and lateral and roll decouple again: with u = tan β, h u² − t(1 − ρ)u + hρ = 0 (ρ = k_s/k_a, h the drop).
+
+Working on it
+-------------
+`core/rigid_mounts.py` (the *Rigid body on mounts* page, `gui/rigid_mounts.py`, in Responses after
+Quarter-car; its own model, not the chain): a uniform box (`Body`, principal axes along x, y, z) on `Mount`s,
+each K_m = k_s I + (k_a − k_s) a aᵀ at r from the centre of mass, its end moving T q = u + θ × r: K = Σ Tᵀ K_m
+T, M = diag(m, m, m, I), `modes` by `eigh`, each mode's kinetic energy split among the six coordinates
+(`Modes.energy`, the decoupling figure). K's coupling block is linear in the reference point, so
+`elastic_centre` is a least-squares solve (with what coupling is left) and `plane_centres` each plane's;
+`Layout` is the page's four mounts (span, track, drop, offset, a tilt toward the middle in y–z), with the roll
+plane's centre and the focal tilt in closed form (`roll_centre`, `focus_tilt`; tests check both against K).
+Driven (`Drive`: an unbalance turning round the crank axis, or a torque about it at an order of the speed; the
+crank in the x–z plane), the mounts are hysteretic, K(1 + iη) (`dynamic_stiffness`, `response`), each mount's
+force on the floor K_m(1 + iη) T q (`mount_forces`), and a force's size is its peak over a cycle (`amplitude`:
+the larger principal value of [Re f, Im f], so a turning force reads its steady size, not √2 times it).
+`spectrum` sweeps the speed, `participation` gives the modal forces, `torque_roll_axis` I⁻¹n. The page
+animates the mode picked, or the forced response (the Show combo's last item, `FORCED`), at its own pace
+(`SHOW_HZ`) on its own frame loop. `tests/test_rigid_mounts.py` checks K, the closed forms, Newton's balance
+on the mounts' forces, the modal sum, and the trials' numbers.
 """
 
 from __future__ import annotations

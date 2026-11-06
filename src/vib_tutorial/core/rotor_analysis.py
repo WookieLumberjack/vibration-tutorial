@@ -5,6 +5,17 @@ modes come from Hill's method, an eigenproblem per speed). The page runs it in
 `AnalysisWorker`, a process of its own: on a thread it would share the GIL with
 the page's frames, which hold it for most of each frame, and take several times
 as long.
+
+Working on it
+-------------
+The rotor page's analysis (Campbell, stability onset, steady states: `core/rotor_analysis.py`'s `analyse`,
+0.2–6 s) runs in `AnalysisWorker`, a spawned process shared by the pages (`gui/rotor.py`'s `WORKER`), 150 ms
+after the parameters settle; `_poll_analysis` shows it, and a change while a job has run over `RESTART_S`
+restarts the worker rather than wait. Not a thread: the frames hold the GIL and would starve it. What it sends
+and returns must pickle, and `analyse` must not touch Qt. Tests and scripts can still call
+`_refresh_analysis()`, which works it out at once. The worker hides the parent's `__main__` while it spawns
+(so unguarded scripts aren't rerun); `vib_tutorial.main` calls `freeze_support()` for the packaged app, and
+`--smoke-test` checks the worker answers.
 """
 
 from __future__ import annotations

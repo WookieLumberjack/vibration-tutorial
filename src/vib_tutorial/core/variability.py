@@ -12,6 +12,11 @@ The *Variability & localization* page. Two models:
   in a narrow band; mistuned (each blade's k scattered by a CoV), a weak coupling lets them localize on a few blades
   (`participation`), and an engine-order force (the same on every blade, its phase stepping 2πE/N) can drive one
   blade far harder than the tuned ring would (`amplification`; Whitehead's bound (1 + √N)/2).
+
+Working on it
+-------------
+The scatter is lognormal; the ring's mistuning pattern is seeded, its mean removed; the amplification curve is
+cached per ring.
 """
 
 from __future__ import annotations

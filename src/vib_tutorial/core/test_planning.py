@@ -28,6 +28,18 @@ X = Σ φ_r η_r, η = (Ω² − ω² + iω ΦᵀCΦ)⁻¹ Φᵀ F (`ods_parts`:
 non-proportional damping is kept). In a test the forces are unknown, so the ODS is measured against a reference
 sensor: T_i = X_i / X_ref, its phase from the cross-spectrum. A reference near a node of the ODS makes every
 ratio large and noisy.
+
+Working on it
+-------------
+`core/test_planning.py` (the *Test planning* page, `gui/test_planning.py`, `planning_page`, after Model
+updating; follows the chain): sensor placement for the lowest `targets` undamped modes (`undamped_modes`,
+mass-normalized): `effective_independence` (Kammer: drop the least E_i = [Φ(ΦᵀΦ)⁻¹Φᵀ]_ii, worked out again
+after each drop; × DPR_i for EfI-DPR; every step kept for the Placement tab), `evenly_spaced`, or by hand
+(`place`), scored by `quality` (det(Φ_sᵀΦ_s) against every mass's, each mode's noise against every mass's, the
+auto-MAC). The ODS is X = H(ω)F for a unit force on one mass (`ods`); `ods_parts` splits it into φ_r η_r with
+the undamped modes' coordinates solved together (ΦᵀCΦ whole), so they add up exactly with any damping.
+`tests/test_test_planning.py` checks EfI against the determinant it stands for, the parts' sum, and the
+trials' notes.
 """
 
 from __future__ import annotations

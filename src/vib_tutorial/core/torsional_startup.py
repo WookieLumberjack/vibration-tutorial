@@ -31,6 +31,16 @@ A link's torque is k (w · θ) + c (w · θ′) (a mesh's: the force times the n
 radius, as in the steady response), every step; each link's peak is the largest over the
 run. `running_torques` gives what each link carries once the train runs steadily, the
 yardstick the peaks are measured against.
+
+Working on it
+-------------
+Its start-up (`core/torsional_startup.py`, the page's *Start-up* tab) steps the whole turn, not just the
+twist, from rest: the exact FOH update of the train with the motor's torque (first disc; induction by Kloss
+plus the switch-on transient, or synchronous with its 2× slip pulsation and latched field) and the load's
+(last disc, ∝ speed²) as the input, their end values found by Newton on the two torques, as `DuffingSimulator`
+does; second order, checked against `solve_ivp`. The step resolves 2× the line frequency and the modes below
+`MODE_CAP`. `STARTUPS` pairs a train preset (by name) with its start-up; the page plays it on its own frame
+loop only once started.
 """
 
 from __future__ import annotations

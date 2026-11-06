@@ -48,6 +48,24 @@ ways, by LSFD: with complex residues, which can take any complex shape, and with
 (each mode A_r/(ω_r² − ω² + 2iζ_rω_rω), A_r real: the residues purely imaginary), the normal
 mode model a proportionally damped structure has. With non-proportional damping the real-mode
 fit has to force real shapes on complex modes: its shapes and its FRF miss.
+
+Working on it
+-------------
+`core/complex_modes.py` (the *Complex modes* page, `gui/complex_modes.py`, which follows the chain): each
+mode's exact (state-space) shape against the undamped one, `complexity` (MPC, MPD, each entry's angle from the
+best-fit line) and `compare` (the exact pole beside the proportional approximation's, ζ = φᵀCφ/2ω). The
+approximation is the chain with C_p = MΦ diag(ΦᵀCΦ) ΦᵀM (`proportional_damping`), so its FRF is the receptance
+with C_p (`frf_pair`; `frf_grid` keeps off the natural frequencies, where an undamped mode's is infinite).
+`free_decay` releases the chain in an undamped mode's shape, stepped by expm(AΔ), and reports the modal
+coordinates. The page's *Chains to try* and *Make it proportional* (c_i = βk_i) load a chain into the
+Simulation page through `system_requested` (the main window connects it to `params.set_system`). Its *Sweep*
+tab (`sweep`) follows each mode's exact pole as one damper or spring changes: paired with the undamped modes
+(MAC) at the first value only, then by continuity (`linear_sum_assignment` on the distance to each track's
+last pole), since MAC pairing swaps modes once heavy damping has reshaped them; a track is NaN while its mode
+is overdamped. Its *Identification* tab (`identify`) fits the receptance column on the exact poles with
+`identification.lsfd` (complex residues) and `real_mode_lsfd` (residues purely imaginary: A/(λ − λ*), A real),
+errors against the noise-free FRF. Both tabs work out only while they show (`LazyTabs`).
+`tests/test_complex_modes.py` checks the trials' notes.
 """
 
 from __future__ import annotations

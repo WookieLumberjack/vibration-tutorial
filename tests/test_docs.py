@@ -61,3 +61,12 @@ def test_the_readme_lists_every_page():
     for group, pages in COURSE:
         for _, tab, _ in pages:
             assert f"[{tab.replace('&&', '&')}](docs/{group_file(group).name}#" in text, tab
+
+
+def test_claude_md_indexes_every_page():
+    text = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+    for _, pages in COURSE:
+        for attr, _, _ in pages:
+            line = re.search(rf"^  - .*\(`{attr}`\): `gui/(\w+)\.py`", text, re.M)
+            assert line, attr
+            assert (ROOT / "src/vib_tutorial/gui" / f"{line.group(1)}.py").exists(), attr

@@ -33,6 +33,13 @@ k = m omega^2 and c = m phi^T C phi (= 2 zeta omega m). With the tip modal mass
 and the residual mass, the 2-DOF model is a Rayleigh-Ritz model of the chain
 (A's mode shape, carried rigidly into B, and B's mode shape on a fixed base), so
 its natural frequencies are upper bounds of the chain's.
+
+Working on it
+-------------
+`core/modal_coupling.py` (Modal coupling page) reduces each side of a split to one oscillator per chosen mode.
+With A's tip modal mass and B's residual mass (the defaults) the 2-DOF model is exactly the Rayleigh–Ritz
+projection of the chain, and a test checks this. Keep it so, because the page's upper-bound notes depend on
+it.
 """
 
 from __future__ import annotations

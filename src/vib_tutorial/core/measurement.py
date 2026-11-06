@@ -41,6 +41,15 @@ Force level
 The force is scaled by ``force_level``. A linear chain's FRF does not depend on
 it (the noise is sized to each channel, so it scales too). With friction it
 does, which is how a lab checks linearity: measure at two levels and overlay.
+
+Working on it
+-------------
+`core/measurement.py` (virtual modal test) uses the same FOH update, diagonalized into one `lfilter` per
+eigenvalue so long records are fast (`core/foh.py`'s `FohSteps`, which OMA, random vibration and shock use
+too: resumable, any number of inputs, stepping z itself where Φ's eigenvectors are near parallel, as a free
+chain's always are). With friction it steps through `Simulator.drive` instead (~1–7 µs a step in Rust, 20–90
+in the Python), so `Acquisition.work(budget)` measures in slices and the page calls it each frame; keep new
+acquisition code resumable (`yield from` the analog runs).
 """
 
 from __future__ import annotations
