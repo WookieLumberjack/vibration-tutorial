@@ -93,24 +93,16 @@ ignore_missing_imports = true
 # gui/ modules not clean yet: checked, but their errors not reported. Take a module off once it is.
 [[tool.mypy.overrides]]
 module = [
-    "vib_tutorial.gui.cms_recovery",
     "vib_tutorial.gui.complex_modes",
     "vib_tutorial.gui.continuum",
     "vib_tutorial.gui.deriving",
     "vib_tutorial.gui.frame_builder",
     "vib_tutorial.gui.frame_stats",
-    "vib_tutorial.gui.main_window",
-    "vib_tutorial.gui.modal_coupling",
     "vib_tutorial.gui.modal_test",
     "vib_tutorial.gui.model_updating",
     "vib_tutorial.gui.oma",
-    "vib_tutorial.gui.panels",
     "vib_tutorial.gui.random_vibration",
     "vib_tutorial.gui.rotor",
-    "vib_tutorial.gui.self_excited",
     "vib_tutorial.gui.shock",
-    "vib_tutorial.gui.signals",
-    "vib_tutorial.gui.substructuring",
-    "vib_tutorial.gui.torsional",
 ]
 ignore_errors = true

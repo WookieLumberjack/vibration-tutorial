@@ -149,7 +149,7 @@ def pluck():
 
     w = window()
     energy_view(w, True)
-    w.controls.window.setValue(4.0)
+    w.controls.time_window.setValue(4.0)
     view = w.chain
 
     def pixel(x):
@@ -174,7 +174,7 @@ def chirp():
     p.sweep_start.setValue(2.0)
     p.sweep_end.setValue(7.0)
     p.sweep_time.setValue(40.0)
-    w.controls.window.setValue(40.0)
+    w.controls.time_window.setValue(40.0)
     coords(w, "Modal")
     w.tabs.setCurrentWidget(w.frf_tab)
     p.button.click()
@@ -188,7 +188,7 @@ def base_excitation():
     p.input.setCurrentIndex(1)
     p.base_amplitude.setValue(5.0)
     p.freq.setValue(1.6)
-    w.controls.window.setValue(4.0)
+    w.controls.time_window.setValue(4.0)
     w.tabs.setCurrentWidget(w.frf_tab)
     p.button.click()
     run(w, 30.3)
@@ -207,7 +207,7 @@ def tuned_mass_damper():
 def classical_release_nonproportional():
     w = window()
     set_c1(w, 15.0)
-    w.controls.window.setValue(2.05)
+    w.controls.time_window.setValue(2.05)
     release(w, 2)
     run(w, 1.96)
     save(w, "classical_release_nonproportional")
@@ -217,7 +217,7 @@ def state_space_release():
     w = window()
     set_c1(w, 15.0)
     method(w, True)
-    w.controls.window.setValue(2.12)
+    w.controls.time_window.setValue(2.12)
     release(w, 4)
     run(w, 1.97)
     save(w, "state_space_release")
@@ -227,7 +227,7 @@ def modal_coordinates():
     w = window()
     set_c1(w, 15.0)
     coords(w, "Modal")
-    w.controls.window.setValue(2.05)
+    w.controls.time_window.setValue(2.05)
     release(w, 2)
     run(w, 2.07)
     save(w, "modal_coordinates")
@@ -238,7 +238,7 @@ def energy_by_mode():
     set_c1(w, 15.0)
     coords(w, "Modal")
     energy_view(w, True)
-    w.controls.window.setValue(2.05)
+    w.controls.time_window.setValue(2.05)
     release(w, 2)
     run(w, 0.8)
     save(w, "energy_by_mode")

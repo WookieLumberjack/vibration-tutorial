@@ -15,7 +15,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core import CMSModel
-from ..core.back_expansion import RECOVERIES, RECOVERY_NAMES, RecoveryResponse
+from ..core.back_expansion import RECOVERIES, RECOVERY_NAMES, Recovery, RecoveryResponse
 from .animation import ChainView
 from .cms_time import MIN_SPAN, CMSRunView, SampleBuffer, _fmt
 from .layouts import FlowLayout, group
@@ -46,10 +46,18 @@ TIP = (
 )
 
 
+def _owner(rec: Recovery, dof: int) -> int:
+    """The substructure an interior DOF (the masses offered) is inside."""
+    s = rec.owner(dof)
+    assert s is not None, "an interior DOF"
+    return s
+
+
 class BackExpansionView(CMSRunView):
     """Controls, the true and the back-expanded chain, and one interior mass and spring in time."""
 
     tip = TIP
+    sim: RecoveryResponse | None  # CMSRunView's, with the recoveries
 
     def _build(self) -> None:
         self.history = SampleBuffer(1, CAPACITY)
@@ -169,7 +177,7 @@ class BackExpansionView(CMSRunView):
             ("f_", self.f_plot, self.f_curves),
         ):
             for key, curve in curves.items():
-                color, style = styles.get(prefix + key, styles.get(key))
+                color, style = styles[prefix + key] if prefix + key in styles else styles[key]
                 curve.setPen(pg.mkPen(color, width=1, style=style))
                 plot.legend.getLabel(curve).setText(names[prefix + key], color=colors.foreground)
         self.x_plot.setTitle(f"Interior mass m{d + 1}" if d is not None else None, size="10pt")
@@ -179,6 +187,7 @@ class BackExpansionView(CMSRunView):
         return RecoveryResponse(model, self.force)
 
     def _on_model(self, model: CMSModel) -> None:
+        assert self.sim is not None, "made for the model"
         n = model.system.n
         rec = self.sim.recovery
         self._n, self._nr, self._interior = n, model.n_red, rec.interior
@@ -193,8 +202,8 @@ class BackExpansionView(CMSRunView):
         self.mass_box.blockSignals(True)
         self.mass_box.clear()
         for i in rec.interior:
-            self.mass_box.addItem(f"m{i + 1} (in {model.substructures[rec.owner(i)].name})", int(i))
-        if previous in rec.interior:
+            self.mass_box.addItem(f"m{i + 1} (in {model.substructures[_owner(rec, i)].name})", int(i))
+        if previous is not None and previous in rec.interior:
             self.mass_box.setCurrentIndex(int(np.searchsorted(rec.interior, previous)))
         self.mass_box.blockSignals(False)
         self._fill_springs(keep=True)
@@ -226,8 +235,8 @@ class BackExpansionView(CMSRunView):
         self.spring_box.blockSignals(True)
         previous = self.spring
         self.spring_box.clear()
-        if d is not None and self.model is not None:
-            sub = self.model.substructures[self.sim.recovery.owner(d)]
+        if d is not None and self.model is not None and self.sim is not None:
+            sub = self.model.substructures[_owner(self.sim.recovery, d)]
             for e in sub.elements:
                 left = "ground" if e == 0 else f"m{e}"
                 self.spring_box.addItem(f"Spring k{e + 1} ({left}–m{e + 1})", int(e))
@@ -273,11 +282,13 @@ class BackExpansionView(CMSRunView):
         self.history.clear()
 
     def _advance(self, duration: float) -> None:
+        assert self.sim is not None, "step advances only a running model"
         s = self.sim.record(duration)
         self.history.extend(s.t, np.hstack([s.x_full, s.r, s.x_enhanced[:, self._interior]]))
 
     def _recovered(self, r: np.ndarray, x_enh_interior: np.ndarray) -> dict[str, np.ndarray | None]:
         """Each recovery's displacements (k, n) from the reduced coordinates."""
+        assert self.sim is not None, "recovered only while a model runs"
         rec = self.sim.recovery
         coupled = rec.coupled(r)
         enhanced = coupled.copy()
@@ -298,7 +309,8 @@ class BackExpansionView(CMSRunView):
         r_now = sim.r[None, :]
         now = self._recovered(r_now, sim.x_enhanced[None, self._interior])
         key = self.chain_box.currentData()
-        x_rec = now[key][0] if now[key] is not None else sim.x_reduced
+        shape = now[key]
+        x_rec = shape[0] if shape is not None else sim.x_reduced
         x_true = sim.x_full
         t, y = self.history.window(self.time_window.value())
         peak = max(
@@ -313,13 +325,16 @@ class BackExpansionView(CMSRunView):
                 c.setData([], [])
             self.error_note.setText("" if d is not None else "No interior masses to recover.")
             return
+        assert e is not None, "an interior mass has its springs"
 
         xf, r, xe = y[:, :n], y[:, n : n + nr], y[:, n + nr :]
         recs = self._recovered(r, xe)
+        coupled = recs["coupled"]
+        assert coupled is not None, "the coupled solve always recovers"
         true_x = xf[:, d]
         shown = {
             "true": true_x,
-            "coupled": recs["coupled"][:, d],
+            "coupled": coupled[:, d],
             "from_boundary": rec.from_boundary(r)[:, d],
             "from_modes": rec.from_modes(r)[:, d],
         }
@@ -362,7 +377,7 @@ class BackExpansionView(CMSRunView):
             if k in errs
         ]
         b = rec.boundary
-        xb_err = recs["coupled"][:, b] - xf[:, b]
+        xb_err = coupled[:, b] - xf[:, b]
         xb_rel = float(np.sqrt(np.mean(xb_err**2))) / max(float(np.sqrt(np.mean(xf[:, b] ** 2))), 1e-300)
         missing = "" if "boundary" in errs else " (no boundary-only recovery: K<sub>ii</sub> is singular)"
         self.error_note.setText(

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
@@ -39,7 +40,7 @@ from ..core.practice import Problem, Question, Requirement, at_least, at_most, k
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
-from .layouts import ColumnScroll, form_layout
+from .layouts import ColumnScroll, form_layout, header_tip
 from .lesson import TrialCombo
 from .links import page_link
 from .style import MAX_DOF, colors, text_on
@@ -131,7 +132,7 @@ def _chain(system: ChainSystem) -> dict:
 def _tip_mass(rng: np.random.Generator) -> Question:
     m1, m2 = pick(rng, (1, 2, 5)), pick(rng, (0.5, 1, 2))
     k1, k2 = pick(rng, (400, 1000)), pick(rng, (200, 400, 1000))
-    chain = dict(masses=(m1, m2, 0.1, 0.1), springs=(k1, k2, 40.0, 40.0), dampers=(0.0,) * 4)
+    chain: dict[str, Any] = dict(masses=(m1, m2, 0.1, 0.1), springs=(k1, k2, 40.0, 40.0), dampers=(0.0,) * 4)
     A, _ = subsystems(CouplingSetup(**chain).system(), 2)
     psi = rounded(A.Phi[0, 0] / A.Phi[1, 0], 3)
     m_tip = m1 * psi * psi + m2
@@ -150,7 +151,7 @@ def _tip_mass(rng: np.random.Generator) -> Question:
 def _effective_mass(rng: np.random.Generator) -> Question:
     m3, m4 = pick(rng, (0.1, 0.2, 0.5)), pick(rng, (0.1, 0.2, 0.5))
     k3, k4 = pick(rng, (40, 100)), pick(rng, (20, 40, 100))
-    chain = dict(masses=(1.0, 1.0, m3, m4), springs=(400.0, 400.0, k3, k4), dampers=(0.0,) * 4)
+    chain: dict[str, Any] = dict(masses=(1.0, 1.0, m3, m4), springs=(400.0, 400.0, k3, k4), dampers=(0.0,) * 4)
     _, B = subsystems(CouplingSetup(**chain).system(), 2)
     phi = B.Phi[:, 0]
     psi = rounded(phi[0] / phi[1], 3)
@@ -388,7 +389,7 @@ def _table(headers: list[str], tips: list[str], selectable: bool = False) -> QtW
     table = QtWidgets.QTableWidget(0, len(headers))
     table.setHorizontalHeaderLabels(headers)
     for col, tip in enumerate(tips):
-        table.horizontalHeaderItem(col).setToolTip(tip)
+        header_tip(table, col, tip)
     table.verticalHeader().setVisible(False)
     table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
     if selectable:
@@ -533,7 +534,7 @@ class SubsystemTable(QtWidgets.QTableWidget):
         super().__init__(0, len(self.HEADERS), parent)
         self.setHorizontalHeaderLabels(self.HEADERS)
         for col, tip in enumerate(self.TIPS):
-            self.horizontalHeaderItem(col).setToolTip(tip)
+            header_tip(self, col, tip)
         self.verticalHeader().setVisible(False)
         self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
@@ -562,9 +563,11 @@ class SubsystemTable(QtWidgets.QTableWidget):
             _set_row(self, row, cells)
             if used:
                 for col in (0, used_col):
-                    font = self.item(row, col).font()
+                    item = self.item(row, col)
+                    assert item is not None, "_set_row filled the row"
+                    font = item.font()
                     font.setBold(True)
-                    self.item(row, col).setFont(font)
+                    item.setFont(font)
         _fit_table(self)
 
 
@@ -814,11 +817,10 @@ class DrivePointFrf(QtWidgets.QWidget):
         p = self.plot
         p.clear()
         self.legend.clear()
-        model = self._args[0] if self._args is not None else None
-        if model is None:
+        model, system, full = self._args if self._args is not None else (None, None, None)
+        if model is None or system is None or full is None:
             p.setTitle("")
             return
-        _, system, full = self._args
         point = self.point.currentData()
         dof = chain_dof(model, point)
         fn = np.array([m.fn_hz for m in full.modes if m.fn_hz > 0])
@@ -1243,6 +1245,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
                 combo.clear()
         self.veering.clear(reason)
         self.matrices.setHtml(f"<p>{reason}</p>")
+        assert self.system is not None and self.full is not None, "cleared while showing a chain"
         self.shapes.set_model(None, self.full, [])
         self.frf.set_model(None, self.system, self.full)
 

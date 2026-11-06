@@ -665,7 +665,9 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self._draw_sweep()
         settle_plots(self)
 
-    def _time_and_phase(self, t: np.ndarray, x: np.ndarray, v: np.ndarray, scale: float, unit: str, name: str) -> None:
+    def _time_and_phase(
+        self, t: np.ndarray, x: np.ndarray, v: np.ndarray, scale: float, unit: str | None, name: str
+    ) -> None:
         relabel(self.top_plot, "left", name, unit)
         relabel(self.top_plot, "bottom", "Time", "s")
         relabel(self.bottom_plot, "left", "Velocity", "m/s")
@@ -800,35 +802,38 @@ class SelfExcitedPage(QtWidgets.QWidget):
             self.sweep_line.setValue(m.eps)
             self.sweep_note.setText("Zero below ε = 0 (the Hopf point), then growing as √ε: supercritical.")
         elif self.current is Kind.GALLOP:
-            m = self.galloping()
-            U = np.linspace(0.0, max(15.0, 1.3 * m.speed), 241)
-            stable_x, stable_y, unstable_x, unstable_y = [], [], [], []
-            for b in galloping_branches(m, U):
+            gallop = self.galloping()
+            U = np.linspace(0.0, max(15.0, 1.3 * gallop.speed), 241)
+            stable_x: list[float] = []
+            stable_y: list[float] = []
+            unstable_x: list[float] = []
+            unstable_y: list[float] = []
+            for b in galloping_branches(gallop, U):
                 ok = np.isfinite(b.amplitude)
                 (stable_x if b.stable else unstable_x).extend(b.speed[ok])
-                (stable_y if b.stable else unstable_y).extend(b.amplitude[ok] / m.side)
+                (stable_y if b.stable else unstable_y).extend(b.amplitude[ok] / gallop.side)
             self.sweep_stable.setData(stable_x, stable_y)
             self.sweep_unstable.setData(unstable_x, unstable_y)
             legend.addItem(self.sweep_stable, "stable")
             legend.addItem(self.sweep_unstable, "unstable")
             relabel(self.sweep_plot, "left", "Amplitude / D")
             relabel(self.sweep_plot, "bottom", "Wind speed U (m/s)")
-            self.sweep_line.setValue(m.speed)
+            self.sweep_line.setValue(gallop.speed)
             self.sweep_note.setText(
                 f"Averaging (Parkinson's polynomial). Rest is stable below U<sub>g</sub> = "
-                f"{m.onset:.3g} m/s; above it the amplitude grows with U, on two stable branches "
+                f"{gallop.onset:.3g} m/s; above it the amplitude grows with U, on two stable branches "
                 "where they overlap."
             )
         elif self.current is Kind.VIV:
-            m = self.viv()
-            key = (m.diameter, m.mass, m.freq_hz, m.zeta)
+            viv = self.viv()
+            key = (viv.diameter, viv.mass, viv.freq_hz, viv.zeta)
             if self._viv_cache is None or self._viv_cache[0] != key:
-                self._viv_cache = (key, *m.sweep(VIV_SWEEP))
+                self._viv_cache = (key, *viv.sweep(VIV_SWEEP))
             _, amp, freq = self._viv_cache
             self.sweep_curve.setData(VIV_SWEEP, amp, symbol="o", symbolSize=5)
             legend.addItem(self.sweep_curve, "settled amplitude")
             self.sweep2_curve.setData(VIV_SWEEP, freq, symbol="o", symbolSize=5)
-            self.sweep2_ref.setData(VIV_SWEEP, m.strouhal * VIV_SWEEP)
+            self.sweep2_ref.setData(VIV_SWEEP, viv.strouhal * VIV_SWEEP)
             l2 = self.sweep2_plot.getPlotItem().legend
             l2.addItem(self.sweep2_curve, "response")
             l2.addItem(self.sweep2_ref, "shedding alone, St U/D")
@@ -837,18 +842,18 @@ class SelfExcitedPage(QtWidgets.QWidget):
             relabel(self.sweep2_plot, "left", "Frequency / f<sub>n</sub>")
             relabel(self.sweep2_plot, "bottom", "Reduced velocity U/f<sub>n</sub>D")
             self.sweep2_plot.setYRange(0.0, 3.0, padding=0)
-            self.sweep_line.setValue(m.reduced)
-            self.sweep2_line.setValue(m.reduced)
+            self.sweep_line.setValue(viv.reduced)
+            self.sweep2_line.setValue(viv.reduced)
             self.sweep_note.setText(
                 "Lock-in: where the response frequency stays near f<sub>n</sub> instead of "
                 "following the Strouhal line, the amplitude is large."
             )
         else:
-            m = self.flutter()
-            Uf = m.flutter_speed()
+            flutter = self.flutter()
+            Uf = flutter.flutter_speed()
             top = 1.3 * (Uf if np.isfinite(Uf) else 100.0)
             U = np.linspace(0.0, top, 160)
-            poles = np.array([m.poles(float(u)) for u in U])
+            poles = np.array([flutter.poles(float(u)) for u in U])
             up = np.where(poles.imag > 0, poles, np.nan)
             self.sweep_stable.setData(up.real.ravel(), (up.imag / (2 * np.pi)).ravel())
             legend.addItem(self.sweep_stable, "poles, 0 to 1.3 × the flutter speed")

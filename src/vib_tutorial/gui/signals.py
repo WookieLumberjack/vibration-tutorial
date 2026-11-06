@@ -497,7 +497,7 @@ class SignalsPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.source = Source()
-        self.x = np.zeros(0)
+        self.samples = np.zeros(0)
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -528,11 +528,11 @@ class SignalsPage(QtWidgets.QWidget):
         self.block.addItems([str(b) for b in BLOCKS])
         self.block.setCurrentIndex(BLOCKS.index(1024))
         acq.add("Block N:", self.block, TIPS["block"])
-        self.window = QtWidgets.QComboBox()
-        self.window.addItems([w.value for w in WINDOWS])
-        self.window.setCurrentIndex(WINDOWS.index(Window.HANN))
-        self.window.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        acq.add("Window:", self.window, TIPS["window"])
+        self.taper = QtWidgets.QComboBox()
+        self.taper.addItems([w.value for w in WINDOWS])
+        self.taper.setCurrentIndex(WINDOWS.index(Window.HANN))
+        self.taper.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        acq.add("Window:", self.taper, TIPS["window"])
         self.averages = acq.number("Averages:", 1, 1000, 1, 0, "", TIPS["averages"])
         self.overlap = acq.number("Overlap:", 0.0, 90.0, 50.0, 0, " %", TIPS["overlap"])
         self.acq_info = note_label()
@@ -551,7 +551,7 @@ class SignalsPage(QtWidgets.QWidget):
                 self.fs,
                 self.filtered,
                 self.block,
-                self.window,
+                self.taper,
                 self.averages,
                 self.overlap,
             ),
@@ -591,7 +591,7 @@ class SignalsPage(QtWidgets.QWidget):
         self.noise_line.setZValue(5)
         self.tone_items = pg.PlotDataItem(pen=None, symbol="o", symbolSize=11)
         self.tone_items.setZValue(6)
-        self.legend_shown = ()
+        self.legend_shown: tuple[bool, ...] = ()
         for item in (self.band, self.spec_item, self.noise_line, self.tone_items):
             self.spec_plot.addItem(item)
         self.spec_note = readout_label()
@@ -756,7 +756,7 @@ class SignalsPage(QtWidgets.QWidget):
             (self.sweep, t.sweep),
             (self.fs, t.fs),
             (self.block, BLOCKS.index(t.block)),
-            (self.window, WINDOWS.index(t.window)),
+            (self.taper, WINDOWS.index(t.window)),
             (self.averages, t.averages),
             (self.overlap, t.overlap),
             (self.filtered, t.filtered),
@@ -776,7 +776,7 @@ class SignalsPage(QtWidgets.QWidget):
 
     @property
     def window_kind(self) -> Window:
-        return WINDOWS[self.window.currentIndex()]
+        return WINDOWS[self.taper.currentIndex()]
 
     def _on_inputs(self) -> None:
         kind = KINDS[self.kind.currentIndex()]
@@ -796,8 +796,8 @@ class SignalsPage(QtWidgets.QWidget):
         self.a2.setEnabled(kind is Kind.TONES)
         fs, n = self.fs.value(), self.n_block
         self.n_record = blocks_needed(n, int(self.averages.value()), self.overlap.value() / 100.0)
-        _, self.x = sample(self.source, fs, self.n_record, self.filtered.isChecked())
-        self.spec = spectrum(self.x, fs, n, self.window_kind, self.overlap.value() / 100.0)
+        _, self.samples = sample(self.source, fs, self.n_record, self.filtered.isChecked())
+        self.spec = spectrum(self.samples, fs, n, self.window_kind, self.overlap.value() / 100.0)
         self.acq_info.setText(
             f"Block T = {fmt(n / fs, 's')}, lines Δf = {fmt(fs / n, 'Hz')} apart up to Nyquist, "
             f"{fmt(fs / 2, 'Hz')}"
@@ -848,7 +848,7 @@ class SignalsPage(QtWidgets.QWidget):
     def _draw_time(self) -> None:
         fs, n = self.fs.value(), self.n_block
         t = np.arange(n) / fs
-        x = self.x[:n]
+        x = self.samples[:n]
         fine = np.linspace(0.0, t[-1], min(ANALOG_POINTS, 20 * n))
         self.analog_item.setData(fine, self.source.analog(fine, fs, self.filtered.isChecked()))
         self.samples_item.setData(t, x)
@@ -900,7 +900,7 @@ class SignalsPage(QtWidgets.QWidget):
                 )
         self.tone_items.setData([p[0] for p in lines], [p[1] for p in lines])
         self._legend(noise > 0, bool(lines))
-        mean_square = float(np.mean(self.x**2)) if self.x.size else 0.0
+        mean_square = float(np.mean(self.samples**2)) if self.samples.size else 0.0
         area = float(np.sum(spec.psd) * spec.df)
         texts.append(f"the record's mean square {mean_square:.4g}, the PSD's area {area:.4g}")
         text = "; ".join(texts)
@@ -955,17 +955,17 @@ class SignalsPage(QtWidgets.QWidget):
 
     def _draw_spectrogram(self) -> None:
         fs, n = self.fs.value(), self.n_block
-        if self.x.size < 2 * n:
+        if self.samples.size < 2 * n:
             self.sgram_image.clear()
             self.sgram_note.setText("The record holds one block: raise the averages to see it change in time.")
             return
-        t, f, level = spectrogram(self.x, fs, n, self.window_kind)
+        t, f, level = spectrogram(self.samples, fs, n, self.window_kind)
         top = float(np.max(level))
         image = np.clip((level.T - (top - 60.0)) / 60.0, 0.0, 1.0)
         self.sgram_image.setImage(image, autoLevels=False, levels=(0.0, 1.0))
         dt = t[1] - t[0] if t.size > 1 else n / fs
         self.sgram_image.setRect(QtCore.QRectF(t[0] - dt / 2, 0.0, dt * t.size, f[-1] + fs / n))
-        self.sgram_plot.setXRange(0.0, self.x.size / fs, padding=0)
+        self.sgram_plot.setXRange(0.0, self.samples.size / fs, padding=0)
         self.sgram_plot.setYRange(0.0, fs / 2, padding=0)
         self.sgram_note.setText(
             f"{t.size} blocks of {fmt(n / fs, 's')}, {fmt(dt, 's')} apart (75 % overlap), lines {fmt(fs / n, 'Hz')} "

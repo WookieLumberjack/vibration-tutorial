@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ForceController, ForceKind, ForceSettings
@@ -86,6 +87,16 @@ def space_bar(button: QtWidgets.QAbstractButton) -> None:
     space.activated.connect(lambda: button.click() if button.isEnabled() else None)
 
 
+# A row of the parameter grid: (label, m, k, c, friction).
+MassRow = tuple[
+    QtWidgets.QLabel,
+    QtWidgets.QDoubleSpinBox,
+    QtWidgets.QDoubleSpinBox,
+    QtWidgets.QDoubleSpinBox,
+    QtWidgets.QDoubleSpinBox,
+]
+
+
 class ParameterPanel(QtWidgets.QGroupBox):
     """Mass, spring and damper values for each element of the chain."""
 
@@ -154,7 +165,7 @@ class ParameterPanel(QtWidgets.QGroupBox):
         ratio_row.addStretch(1)
         layout.addLayout(ratio_row)
 
-        self.rows: list[tuple[QtWidgets.QWidget, ...]] = []  # (label, m, k, c, friction)
+        self.rows: list[MassRow] = []
         self._build_rows(system)
 
     def _build_rows(self, system: ChainSystem) -> None:
@@ -170,8 +181,8 @@ class ParameterPanel(QtWidgets.QGroupBox):
             c = spin(0.0, 1e5, system.damping[i], 3)
             f = spin(0.0, 1e5, system.friction[i], 3)
             f.setToolTip(FRICTION_TIP)
-            for col, w in enumerate((label, m, k, c, f)):
-                self.grid.addWidget(w, i + 1, col)
+            for col, cell in enumerate((label, m, k, c, f)):
+                self.grid.addWidget(cell, i + 1, col)
             for box in (m, k, c, f):
                 # Their size hint fits the largest value allowed; let the four columns
                 # share the panel's width instead, which fits the usual values.
@@ -187,10 +198,10 @@ class ParameterPanel(QtWidgets.QGroupBox):
 
     def system(self) -> ChainSystem:
         return ChainSystem(
-            [r[1].value() for r in self.rows],
-            [r[2].value() for r in self.rows],
-            [r[3].value() for r in self.rows],
-            [r[4].value() for r in self.rows],
+            np.array([r[1].value() for r in self.rows]),
+            np.array([r[2].value() for r in self.rows]),
+            np.array([r[3].value() for r in self.rows]),
+            np.array([r[4].value() for r in self.rows]),
             self.static_ratio.value(),
         )
 
@@ -405,9 +416,9 @@ class ForcePanel(QtWidgets.QGroupBox):
         for w, v in values:
             w.blockSignals(True)
             if isinstance(w, QtWidgets.QComboBox):
-                w.setCurrentIndex(min(v, w.count() - 1))
+                w.setCurrentIndex(min(int(v), w.count() - 1))
             elif isinstance(w, QtWidgets.QCheckBox):
-                w.setChecked(v)
+                w.setChecked(bool(v))
             else:
                 w.setValue(v)
             w.blockSignals(False)
@@ -461,8 +472,8 @@ class ForcePanel(QtWidgets.QGroupBox):
             w.setVisible(harmonic)
         self.duration_label.setVisible(pulse)
         self.duration.setVisible(pulse)
-        for w in self._sweep_widgets:
-            w.setVisible(chirp)
+        for sweep in self._sweep_widgets:
+            sweep.setVisible(chirp)
         self.target_label.setVisible(not s.base)
         self.target.setVisible(not s.base)
         self.amplitude.setVisible(not s.base)
@@ -511,8 +522,8 @@ class SimControls(QtWidgets.QGroupBox):
         self.speed.setCurrentIndex(self.SPEEDS.index(1.0))
         form.addRow("Speed:", self.speed)
 
-        self.window = spin(0.05, 120.0, 10.0, 2, " s")
-        form.addRow("Plot window:", self.window)
+        self.time_window = spin(0.05, 120.0, 10.0, 2, " s")
+        form.addRow("Plot window:", self.time_window)
 
         fit_row = QtWidgets.QHBoxLayout()
         self.cycles = QtWidgets.QSpinBox()
@@ -568,7 +579,7 @@ class SimControls(QtWidgets.QGroupBox):
         # Look the frequency up each time so it reflects the current parameters.
         f = self._mode_freqs.get(self._fit_mode) if self._fit_mode else None
         if f:
-            self.window.setValue(self.cycles.value() / f)
+            self.time_window.setValue(self.cycles.value() / f)
 
     def _on_run(self, running: bool) -> None:
         self.run.setText("Pause" if running else "Run")
