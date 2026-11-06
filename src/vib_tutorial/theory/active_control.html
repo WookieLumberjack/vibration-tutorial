@@ -1,0 +1,53 @@
+
+<before>
+<a href="page:sim_page#vibration-absorbers-and-tuned-mass-dampers">Absorbers and tuned mass dampers</a>
+<a href="page:isolation_page#damping-trade-off">Isolation's damping trade-off</a>
+<a href="page:complex_page#state-space">The state-space form</a>
+</before>
+<h3><a name="feedback"></a>Feedback</h3>
+<p>Active control measures the motion and pushes back through an actuator. The simplest law is <b>direct velocity
+feedback</b>: a force u = −g ẋ<sub>s</sub> at mass a from the velocity at mass s. With s = a (<b>collocated</b>)
+it is an ideal damper from that mass to the ground: it can only take energy out, so it is stable at any gain, and
+for light gain each mode gains</p>
+<p align="center">Δζ<sub>r</sub> = g φ<sub>r</sub>(a) φ<sub>r</sub>(s) / 2ω<sub>r</sub></p>
+<p>(φ mass-normalized), the same formula as a damper's modal damping. Too much gain holds the mass still and the
+rest of the structure vibrates around it, so there is an optimal gain, as there is for any one damper.</p>
+
+<h3><a name="collocation"></a>Collocation and spillover</h3>
+<p>When the sensor and actuator are at different places, φ<sub>r</sub>(a)φ<sub>r</sub>(s) can be negative for
+some modes: the feedback then <b>adds energy</b> to them. A controller designed to damp one mode (with the
+others ignored) <b>spills over</b> into the modes it wasn't designed for, and the unmodelled ones can go unstable.
+Collocated, dual sensor–actuator pairs avoid this: their transfer functions have alternating poles and zeros, and
+the phase stays between 0 and −180°.</p>
+
+<h3><a name="lag"></a>Lag</h3>
+<p>Real actuators, amplifiers, filters and digital controllers lag. A lag turns the feedback's phase, so at high
+enough frequency the force that should oppose the velocity helps it. Two first-order lags of τ (as the page has)
+reach 180° far above 1/τ, and a high-gain loop goes unstable there; a time delay does it sooner. This is why
+practical active damping uses modest gains, roll-off filters, and collocated pairs.</p>
+
+<h3><a name="tmd"></a>Active or passive?</h3>
+<p>A tuned mass damper (the Simulation page's absorber) needs no power and cannot go unstable, but it damps one
+mode, near one frequency, and needs mass (Den Hartog's optimum: tune to f<sub>1</sub>/(1 + μ) with
+ζ = √(3μ/8(1 + μ)³)). Active control damps many modes at once with a small actuator, at the cost of power,
+sensors and stability margins. Hybrid and semi-active devices (variable dampers, magnetorheological fluid) sit in
+between.</p>
+
+<h3><a name="skyhook"></a>Skyhook</h3>
+<p>A passive isolator's damper connects the machine to the floor, so above √2 f<sub>n</sub> it passes the floor's
+motion through: more damping, less resonance, worse isolation. A <b>skyhook</b> damper acts between the machine
+and a fixed point in space: impossible passively, but an actuator fed the machine's absolute velocity does it.
+Its transmissibility 1/(1 − r² + 2iζr) has a bounded peak and the full −40 dB/decade roll-off. Semi-active car
+suspensions approximate it.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these loads the uniform chain into the Simulation page and sets up the loop (Things to try, top
+left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>Collocated velocity feedback is an active damper: stable at any gain (ideally), with an optimal gain.</li>
+<li>Each mode gains Δζ = gφ<sub>r</sub>(a)φ<sub>r</sub>(s)/2ω<sub>r</sub>; non-collocated, it can be negative: spillover.</li>
+<li>Lag in the loop limits the gain even when collocated.</li>
+<li>A TMD damps one mode without power; active control damps many, with power and stability to look after.</li>
+<li>Skyhook damping caps the resonance without giving up high-frequency isolation.</li>
+</takeaways>

@@ -1,0 +1,90 @@
+
+<before>
+<a href="page:sdof_page#free-vibration">Free vibration</a>
+<a href="page:sdof_page#log-decrement">Measuring damping from a decay</a>
+<a href="page:sdof_page#forced-response">Forced response</a>
+</before>
+<h3><a name="why"></a>Where the energy goes</h3>
+<p>The viscous damper, a force proportional to velocity, is a model chosen because it makes the equations
+linear and easy. Real structures lose energy in other ways: internal friction in the material, rubbing in
+joints and bolted connections, the shearing of rubber and polymers, the air around them. Each has its own
+force law, and they differ in how the loss depends on the <b>amplitude</b> and on the <b>frequency</b>. This
+page puts four of them on the same mass and spring, matched so that at f<sub>n</sub> they all take the same
+energy per cycle as a viscous damper of ratio ζ.</p>
+
+<h3><a name="hysteresis-loop"></a>The hysteresis loop</h3>
+<p>Cycle the oscillator's spring and damper through x = X sin Ωt and plot the force they carry against x.
+A spring alone traces the line kx out and back. Anything that loses energy traces a <b>loop</b>, because the
+force is larger going one way than coming back, and the area inside it is the energy lost per cycle:</p>
+<p align="center">W<sub>d</sub> = ∮ F dx.</p>
+<p>A material test machine draws exactly this: the loop's tilt is the stiffness, its width the damping.</p>
+
+<h3><a name="viscous"></a>Viscous damping</h3>
+<p>F = cẋ. Over a harmonic cycle the damping force is cΩX cos Ωt, a quarter cycle ahead of x, so the loop is
+an ellipse and</p>
+<p align="center">W<sub>d</sub> = πcΩX².</p>
+<p>The loss grows in proportion to the frequency. Written as a <b>complex stiffness</b>, F = K*X with
+K* = k + iΩc: the real part is the <b>storage stiffness</b> K', the imaginary part the <b>loss
+stiffness</b> K''.</p>
+
+<h3><a name="hysteretic"></a>Hysteretic (structural) damping</h3>
+<p>Tests on most metals, and on built-up structures, find a loss per cycle that hardly depends on frequency.
+The model for it is a complex stiffness that doesn't depend on frequency either:</p>
+<p align="center">K* = k(1 + iη), &nbsp; W<sub>d</sub> = πηkX².</p>
+<p>η is the <b>loss factor</b>. At resonance it gives the same peak as a viscous damper with η = 2ζ, so the two
+are often used interchangeably (as the matching here does), but away from resonance they differ: the
+hysteretic loss is the same at every frequency. It works for steady harmonic motion (and in frequency-domain
+analysis, where it is standard), but it has no honest time-domain form: a constant K'' at every frequency,
+negative ones included, would make the mass respond before it is struck. The free decay draws its viscous
+equivalent instead.</p>
+
+<h3><a name="coulomb"></a>Coulomb friction</h3>
+<p>A dry contact pushes back with a force of fixed size against the sliding, F<sub>f</sub> sign(ẋ). The loop
+is a rectangle (with the spring, a parallelogram) and</p>
+<p align="center">W<sub>d</sub> = 4F<sub>f</sub>X,</p>
+<p>proportional to X, not X². Matching it to a viscous damper gives the <b>equivalent viscous damping</b>
+c<sub>eq</sub> = 4F<sub>f</sub>/πΩX: friction is heavy damping for small motions and light for large ones.
+So it decays in a straight line, losing 4F<sub>f</sub>/k of amplitude a cycle, and stops dead within
+F<sub>f</sub>/k of the centre (the <a href="page:sim_page#friction">Simulation page's friction</a> steps it
+exactly). Under a harmonic force F it can't limit a resonance at all once F &gt; 4F<sub>f</sub>/π: the force
+then puts in πFX per cycle at resonance, more than the 4F<sub>f</sub>X friction takes out, at every
+amplitude.</p>
+
+<h3><a name="viscoelastic"></a>Viscoelastic materials: the Zener element</h3>
+<p>Rubber, polymers and damping layers store and lose energy in a way that depends strongly on frequency.
+The simplest model that captures it is the <b>standard linear solid</b> (Zener): a spring k<sub>0</sub> in
+parallel with a spring k<sub>1</sub> and a dashpot c<sub>1</sub> in series (a Maxwell arm). With the
+relaxation time τ = c<sub>1</sub>/k<sub>1</sub>,</p>
+<p align="center">K*(Ω) = k<sub>0</sub> + k<sub>1</sub> iΩτ/(1 + iΩτ).</p>
+<ul>
+<li>Slowly (Ωτ ≪ 1) the dashpot gives way and only k<sub>0</sub> carries load: the <b>relaxed</b> stiffness.</li>
+<li>Fast (Ωτ ≫ 1) the dashpot locks: k<sub>0</sub> + k<sub>1</sub>, the <b>unrelaxed</b> stiffness.</li>
+<li>In between the stiffness climbs and the loss factor peaks, at Ωτ = 1/√(1 + k<sub>1</sub>/k<sub>0</sub>).</li>
+</ul>
+<p>Far below its peak the Zener element acts like a viscous damper (η ∝ Ω), far above it like a stiffer
+spring with little loss. Real materials have many such arms with a spread of τ, and temperature shifts them
+all; designers put a damping material's loss peak where the structure's modes are.</p>
+
+<h3><a name="loss-factor"></a>The loss factor, compared</h3>
+<p>For any of them the <b>loss factor</b> η = K''/K' = W<sub>d</sub>/(2πU), U = ½K'X² the peak stored energy,
+measures damping without saying where it comes from; at resonance η = 2ζ = 1/Q. Viscous: η = cΩ/k, rising
+with frequency. Hysteretic: constant. Friction: 4F<sub>f</sub>/πkX, constant in frequency but falling with
+amplitude. Zener: a peak.</p>
+
+<h3><a name="computing"></a>How this page computes it</h3>
+<p>The loops, the energies and the loss factors come from each model's complex stiffness (friction's true
+force for its loop, its describing function elsewhere). The frequency response is 1/(K*(Ω) − Ω²m), and
+friction's √(F² − (4F<sub>f</sub>/π)²)/|k − Ω²m|. The free decays are exact: the viscous one in closed form,
+friction's half cycle by half cycle, the Zener element's (three states: the position, the velocity and the
+dashpot's end) by the matrix exponential.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the oscillator, the matching and the plots (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>The area of the force–displacement loop is the energy lost per cycle; the loss factor η = K''/K' measures it, and at resonance η = 2ζ.</li>
+<li>Viscous damping loses energy in proportion to frequency, hysteretic damping not at all; they agree at resonance, which is why η = 2ζ swaps between them.</li>
+<li>Hysteretic damping is a frequency-domain model: it has no causal free decay.</li>
+<li>Friction loses 4F<sub>f</sub>X per cycle: it decays in a straight line, stops off centre, and can't bound a resonance driven harder than 4F<sub>f</sub>/π.</li>
+<li>A viscoelastic material stiffens across its relaxation frequency, where its loss peaks: viscous below, elastic above.</li>
+</takeaways>

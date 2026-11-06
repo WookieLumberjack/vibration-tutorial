@@ -54,7 +54,7 @@ from ..core.torsional_startup import (
 from . import frame_stats, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, group, plot_height
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
@@ -375,91 +375,7 @@ RESPONSE_TIP = (
     "speed. Each peaks where its order meets a mode the link twists in.</p>"
 )
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="torsion"></a>Torsional vibration</h3>
-<p>A drive train turns as a whole, but its discs also twist back and forth against each other on the shafts
-between them. Each disc i has an angle θ<sub>i</sub> on top of the steady turning, and</p>
-<p align="center">M θ″ + C θ′ + K θ = T(t),</p>
-<p>with M the discs' inertias J on the diagonal, K each shaft's stiffness k across the pair it joins, and T
-the pulsating torques. It is the chain of masses and springs again, turned on its side: the train is free at
-both ends, so its first mode is the whole train turning (0 Hz), and the rest twist it. Each mode's
-<b>twist</b> says which links carry its strain energy: those are the shafts that see its torque.</p>
-<p>Two discs on one shaft have one mode, f = √(k (J₁ + J₂) / J₁J₂) / 2π, with a node (a point that doesn't
-swing) nearer the heavier disc.</p>
-
-<h3><a name="gears"></a>Gears</h3>
-<p>A gear pair turns the far shaft at z<sub>in</sub>/z<sub>out</sub> times the near one's speed. Each gear keeps
-its own inertia, and the teeth are a spring k<sub>m</sub> along the line of action: its stretch is
-r<sub>in</sub>θ<sub>in</sub> − r<sub>out</sub>θ<sub>out</sub>, with r the base radii. Referred to the motor's
-shaft, θ<sub>i</sub> = s<sub>i</sub>ψ<sub>i</sub> with s<sub>i</sub> the speed ratio, every inertia and
-stiffness is multiplied by s², and the mesh becomes a shaft of k<sub>m</sub>(r s)²: the geared train is a
-plain chain, with the same frequencies. That is the textbook <b>n² reflection</b>.</p>
-<p>The mesh is far stiffer than the couplings, so its own mode, the two gears bouncing on their teeth, is
-usually kilohertz. Treat the mesh as rigid and the two gears merge into one inertia: the lower modes barely
-move, but that mode is gone (the <i>Mode shapes</i> tab compares). It matters because the teeth excite it:
-no gear is perfect, and the <b>transmission error</b>, the far gear's lag behind where perfect teeth would put
-it, repeats at every tooth, at z × the shaft's speed (the tooth-pass frequency).</p>
-
-<h3><a name="interference"></a>The interference diagram</h3>
-<p>Nothing in the train depends on its speed, so its natural frequencies are flat lines. What changes with
-speed is the excitation: an engine fires at fixed orders of its speed (a four-stroke engine's at half-orders,
-a six-cylinder's majors at 3× and 6×), a reciprocating compressor at 1× and 2× its own, a misaligned coupling
-at 2×, the teeth at the tooth-pass order. Each is a line f = order × speed. Where it crosses a natural
-frequency is a <b>torsional critical speed</b>: the order there drives the mode at its resonance.</p>
-<p>A design keeps every critical out of a band round the running speed: API 617 asks for 10 % from 1× and 2× of
-each shaft's speed. A start-up still passes the criticals below, briefly. Not every crossing matters: an
-order at a disc the mode barely moves (near its node) hardly excites it, and the response tells which do.</p>
-
-<h3><a name="response"></a>The steady response</h3>
-<p>At each speed each order is a harmonic torque at ω = order × Ω, and the steady response is one complex
-solve, (K − ω²M + iωC) Θ = T. A shaft's dynamic torque is (k + iωc) times its twist. The transmission error
-enters as an imposed stretch e on the mesh: a force (k<sub>m</sub> + iωc<sub>m</sub>) e on the gears, equal
-and opposite. The orders are at different frequencies, so their peaks line up only now and then: the sum of
-the amplitudes is the worst the torque can be.</p>
-<p>The damping ratios come from φᵀCφ / 2ωφᵀMφ, each mode's share of the dampers: exact when the damping is
-light and spread over the train.</p>
-
-<h3><a name="startup"></a>Starting up</h3>
-<p>The <i>Start-up</i> tab starts the train from rest with a motor on its first disc and a load on its last that
-rises as its speed squared. The angles are then the whole turn, and the train's free turning (the 0 Hz mode)
-carries it up to speed while the shafts twist on top. The motor's torque depends on the motor's angle and speed
-and the load's on its speed, so each step solves for them at its end by Newton, on the exact FOH update of the
-linear train.</p>
-<p>An <b>induction motor</b> follows its speed–torque curve, here Kloss's, T = 2T<sub>b</sub> s s<sub>b</sub> /
-(s² + s<sub>b</sub>²), from the slip s = 1 − Ω/Ω<sub>s</sub>. Direct on line, it also gives a torque at the line
-frequency for the first few cycles (the stator's flux starts with a DC part the rotor's currents pull against):
-a mode near the line frequency is struck by it at once, while the train has barely moved, and the shafts can
-see many times their running torque.</p>
-<p>A <b>synchronous motor</b> starts as an induction motor on its damper cage, and its salient poles add a
-torque at twice the slip frequency, 2 s f. That is twice the line frequency at rest and nothing at synchronism,
-so it sweeps down through every mode below 2f on the way up: each is a resonance passed at the speed where
-2 s f = f<sub>n</sub>. Near synchronism the field is switched on and pulls the rotor into step. A fast start
-passes the resonances before they build up; a slow one, against a heavy load, lets them grow: that is why such
-drives get a torsional analysis of the start, and couplings sized for its peaks.</p>
-<p>The tab compares each link's peak torque with the torque it carries in steady running: the power drawn by
-the load and the dampers beyond it, divided by the link's speed.</p>
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = NOTES_HTML.replace(
-    "<!--BEFORE-->",
-    before(
-        ("sim_page", "equations-of-motion", "Equations of motion"),
-        ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
-        ("frf_page", "receptance-matrix", "The FRF (receptance) matrix"),
-    ),
-).replace(
-    "<!--TAKEAWAYS-->",
-    takeaways(
-        "A drive train in torsion is the chain again, with inertias and shaft stiffnesses, free at both ends so "
-        "its first mode is rigid turning.",
-        "Gears refer to one shaft by the square of the speed ratio; a stiff mesh has its own mode, excited at "
-        "tooth-pass.",
-        "Criticals are where an excitation order's line crosses a natural frequency; keep them out of a band "
-        "round the running speed.",
-        "A start-up sweeps the excitations through the modes below running speed: a slow start lets them build up.",
-    ),
-)
+NOTES_HTML = load_notes("torsional")
 
 
 def fmt_torque(t: float) -> str:

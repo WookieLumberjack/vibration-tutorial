@@ -1,0 +1,45 @@
+
+<before>
+<a href="page:random_page#psd">The PSD and H G Hᴴ</a>
+<a href="page:isolation_page#damping-trade-off">Isolation's damping trade-off</a>
+</before>
+<h3><a name="road"></a>A road as a random input</h3>
+<p>A road's roughness is a random process in space: its height's PSD G<sub>d</sub>(n), with n in cycles per
+metre. ISO 8608 fits measured roads to G<sub>d</sub>(n) = G<sub>d</sub>(n₀)(n/n₀)<sup>−2</sup> with n₀ = 0.1
+cycles/m, and grades them by G<sub>d</sub>(n₀): class A (a new motorway) 16 × 10<sup>−6</sup> m³, then four times
+more per class, to H. Driven at speed v, a wavelength 1/n passes at f = vn, so the height's PSD in time is
+G<sub>z</sub>(f) = G<sub>d</sub>(f/v)/v ∝ v/f²: the road's vertical velocity is white noise, of intensity ∝ v.</p>
+
+<h3><a name="quarter-car"></a>The quarter-car</h3>
+<p>One corner of a car: the body m<sub>s</sub> on the suspension (k<sub>s</sub>, c<sub>s</sub>), on the wheel
+m<sub>u</sub>, on the tyre k<sub>t</sub>, on the road. It has two modes: <b>body bounce</b>, near
+√(k<sub>s</sub>k<sub>t</sub>/(k<sub>s</sub> + k<sub>t</sub>)/m<sub>s</sub>)/2π (1 to 1.5 Hz in a car), and
+<b>wheel hop</b>, near √((k<sub>s</sub> + k<sub>t</sub>)/m<sub>u</sub>)/2π (10 to 15 Hz). Each output's PSD is
+|H(f)|² G<sub>z</sub>(f), its mean square the area under it: the Random vibration page's H G Hᴴ with one input.
+Three outputs matter:</p>
+<ul>
+<li><b>Body acceleration</b>: ride comfort (ISO 2631 weights it to how people feel it; the page leaves it
+unweighted).</li>
+<li><b>Dynamic tyre load</b> over the static load: road holding. A tyre can only push, so it leaves the road when
+the load swings below −1 × static; for a Gaussian load that happens a fraction Φ(−W/σ) of the time.</li>
+<li><b>Suspension travel</b>: the room the suspension needs (three times the RMS to stay off the bump
+stops).</li>
+</ul>
+
+<h3><a name="conflict"></a>The conflict</h3>
+<p>A soft damper isolates the body above its bounce but lets the wheel hop; a firm one controls the wheel but
+passes the road to the body. So the best damper for comfort (ζ ≈ 0.2 on the body) is lighter than the best for
+grip (ζ ≈ 0.5), and no passive setting is best for both. A softer spring helps comfort at every damper but needs
+more travel; a heavier wheel costs grip. Plotting comfort against grip for every setting draws the
+<b>conflict diagram</b>: passive suspensions live on its curves, and active and semi-active ones (the Active
+control page's skyhook) are how to get below them.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the road and the car (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>A road is a PSD in space; at speed v its vertical velocity is white, of intensity ∝ v.</li>
+<li>A quarter-car has body bounce (about 1 Hz) and wheel hop (about 10 Hz); each output's PSD is |H|² G<sub>z</sub>.</li>
+<li>The best damper for comfort is lighter than the best for grip: passive suspensions trade one for the other.</li>
+<li>Soft springs buy comfort with travel; unsprung mass costs grip.</li>
+</takeaways>

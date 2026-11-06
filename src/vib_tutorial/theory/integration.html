@@ -1,0 +1,65 @@
+
+<before>
+<a href="page:sdof_page#equation">The equation of motion</a>
+<a href="page:sim_page#undamped-normal-modes-real">Undamped normal modes</a>
+<a href="page:continuum_page#dispersion">A mesh's modes against the continuum's</a>
+</before>
+<h3><a name="stepping"></a>Stepping an equation of motion</h3>
+<p>Most structures are solved in time by stepping Mẍ + Cẋ + Kx = f(t) with a fixed Δt. A scheme replaces the
+derivatives with differences, and each choice gets the motion wrong in its own way. For a linear system the error
+is easy to see: let the scheme step a free, undamped oscillator. Its exact motion is a circle in (x, ẋ/ω); one step
+of any scheme is a fixed 2 × 2 (or 3 × 3) matrix, the <b>amplification matrix</b>, and its eigenvalues
+λ = ρe<sup>±iθ</sup> say everything:</p>
+<ul>
+<li><b>ρ &gt; 1</b>: the motion grows every step, the scheme is <b>unstable</b> at this Δt.</li>
+<li><b>ρ &lt; 1</b>: it shrinks: <b>numerical damping</b>, ζ̄ = −ln ρ / |ln λ|.</li>
+<li><b>θ ≠ ωΔt</b>: the period is wrong, <b>period elongation</b> (T̄ − T)/T = ωΔt/θ − 1.</li>
+</ul>
+<p>All of these depend only on Ω = ωΔt = 2πΔt/T, so each scheme's behaviour is a set of curves against Δt/T
+(the tabs on the right).</p>
+
+<h3><a name="central"></a>Central difference</h3>
+<p>ẍ<sub>n</sub> ≈ (x<sub>n+1</sub> − 2x<sub>n</sub> + x<sub>n−1</sub>)/Δt²: explicit (no equations to solve when
+M is diagonal), second order, no numerical damping, and the period comes out short. It is stable only for
+<b>ωΔt ≤ 2</b>, for the <i>highest</i> ω in the model: Δt ≤ T<sub>min</sub>/π. That is the Courant condition of
+explicit crash and blast codes: a fine mesh has a very fast highest mode, so the step has to be tiny however slow
+the motion of interest.</p>
+
+<h3><a name="newmark"></a>Newmark and HHT-α</h3>
+<p>Newmark assumes how the acceleration varies over a step: x<sub>n+1</sub> = x<sub>n</sub> + Δt ẋ<sub>n</sub> +
+Δt²[(½ − β)ẍ<sub>n</sub> + βẍ<sub>n+1</sub>], ẋ<sub>n+1</sub> = ẋ<sub>n</sub> + Δt[(1 − γ)ẍ<sub>n</sub> +
+γẍ<sub>n+1</sub>], and the equation of motion at n + 1 closes it (an implicit scheme: a linear solve per step).</p>
+<ul>
+<li><b>Average acceleration</b> (γ = ½, β = ¼, the trapezoidal rule): <b>unconditionally stable</b>, no numerical
+damping, second order; the period comes out long, by about (ωΔt)²/12.</li>
+<li><b>Linear acceleration</b> (γ = ½, β = ⅙): more accurate, but stable only for ωΔt ≤ 2√3.</li>
+<li>γ &gt; ½ damps, but drops to first order. <b>HHT-α</b> (Hilber, Hughes and Taylor) instead evaluates the
+stiffness and damping forces at t<sub>n+1+α</sub>, with γ = ½ − α, β = (1 − α)²/4, α ∈ [−⅓, 0]: still second order and
+unconditionally stable, with damping that grows with Ω. It removes the unresolved high modes' noise and barely
+touches the low ones: the default in many finite-element codes.</li>
+</ul>
+
+<h3><a name="rk4"></a>Runge–Kutta</h3>
+<p>Classical RK4 on the first-order form ż = Az + Bf is fourth order: very accurate in period at small steps. It is
+explicit, so conditionally stable (ωΔt ≤ 2√2 for an undamped oscillator), and it damps: ρ &lt; 1 at any step.
+<b>Explicit Euler</b>, z<sub>n+1</sub> = z<sub>n</sub> + Δt ż<sub>n</sub>, is the cautionary tale: for an undamped
+oscillator ρ = √(1 + Ω²) &gt; 1 at every Δt, and the energy grows every step.</p>
+
+<h3><a name="exact"></a>The exact update</h3>
+<p>For a linear model there is a better way. Over a step the free motion is exactly z<sub>n+1</sub> =
+e<sup>AΔt</sup>z<sub>n</sub>; if the force is taken as linear between samples (a first-order hold), its part is
+exact too. This <b>FOH update</b> is what the Simulation page and the One mass pages use: stable and exact in
+period and amplitude at any Δt, for any stiffness (ρ = e<sup>−ζωΔt</sup>, the oscillator's own). Its only error
+is in the force between samples, which is second order in Δt. It needs the matrix exponential, which is cheap for
+small models and why big nonlinear codes still use Newmark or central difference.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the oscillator, the step and the schemes (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>One step of a scheme on a free oscillator is a matrix: its eigenvalues give stability (ρ ≤ 1), period error and numerical damping, all functions of ωΔt.</li>
+<li>Explicit schemes are conditionally stable, and the limit is set by the fastest mode in the model: ωΔt ≤ 2 for central difference.</li>
+<li>Newmark's average acceleration is stable at any step but lengthens the period; HHT-α adds damping that grows with frequency, removing unresolved modes.</li>
+<li>Stable is not accurate: resolve the modes you care about with ten or more steps a period.</li>
+<li>For a linear model the FOH update is exact at any step, apart from the force between samples.</li>
+</takeaways>

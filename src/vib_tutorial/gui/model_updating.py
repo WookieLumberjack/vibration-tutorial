@@ -38,7 +38,7 @@ from ..core.model_updating import (
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from .layouts import ColumnScroll, FlowLayout, group, plot_height
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -469,92 +469,7 @@ PROBLEMS = tuple(
     )
 )
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3>Correlation</h3>
-<p>A model of a structure (finite elements, or here a chain of masses and springs) is never quite right: a
-joint stiffer than drawn, a mass left out. A modal test measures the real thing, and <b>correlation</b>
-compares the two mode by mode. Here the Simulation page's chain is the structure, and the model is a copy
-of it with errors set on the left: since both are known, what the correlation says can be checked against
-what is wrong.</p>
-
-<h3><a name="mac"></a>The modal assurance criterion</h3>
-<p>The MAC compares two shapes, whatever their scale:</p>
-<p align="center">MAC(ψ, φ) = |ψ<sup>H</sup>φ|² / (ψ<sup>H</sup>ψ φ<sup>T</sup>φ),</p>
-<p>1 when they are the same shape, 0 when they are orthogonal. It is worked out at the sensors only: the test
-knows nothing else. Every test mode is <b>paired</b> with the model mode it matches best, best pair first,
-and only above a MAC of 0.5. Pairing by frequency alone goes wrong once the model's errors move modes past
-each other; the shapes don't. A good correlation has MACs above about 0.9 on the diagonal, small ones off
-it, and frequency errors of a few per cent.</p>
-
-<h3><a name="shapes-blind"></a>What the shapes don't see</h3>
-<p>A model uniformly too stiff, or too heavy, has exactly the right shapes and wrong frequencies. A single
-spring 30 % too stiff barely changes the shapes either: on a chain the MAC stays near 0.99. Frequency errors
-are the sharper evidence, and the pattern of them over the modes says where the error is: a spring
-changes a mode's frequency in proportion to how much it stretches in it, a mass in proportion to how much it
-moves. That is what sensitivity-based updating uses.</p>
-
-<h3><a name="sensors"></a>Sensors</h3>
-<p>With too few sensors, or badly placed ones, different modes look alike: their shapes, seen at those points
-only, are nearly parallel. The test's <b>auto-MAC</b> (its shapes against each other) shows it: its
-off-diagonal terms rise. Sensors are placed to keep them small. A sensor at a node of a mode sees nothing of
-it.</p>
-
-<h3>COMAC</h3>
-<p>The coordinate MAC turns the comparison round: per sensor, over all the pairs, how well the test's and the
-model's shapes agree there. Where it drops the shapes disagree, which can point to a region of the model to
-look at. It is a weak locator: a stiffness error changes the shapes everywhere a little, and the test's own
-noise is spread over every sensor.</p>
-
-<h3>The test's own errors</h3>
-<p>The test is not exact either: its noise and its curve fit give each mode an error of its own, and weakly
-excited modes may be missed. The correlation can't be finer than that: with no error at all in the model, the
-MACs and frequency errors left are the test's.</p>
-
-<h3><a name="sensitivities"></a>Updating by sensitivities</h3>
-<p>Updating changes the model's parameters p (here its masses, springs or dampers) until it matches the test.
-The residual r is test minus model: each pair's frequency, relatively, and if asked its shape at the sensors
-and its damping ratio. How the model's frequencies move with each parameter is its <b>sensitivity</b>; with
-mass-normalized φ,</p>
-<p align="center">∂ω<sub>r</sub>²/∂p = φ<sub>r</sub><sup>T</sup>(∂K/∂p − ω<sub>r</sub>² ∂M/∂p)φ<sub>r</sub>,</p>
-<p>so a spring changes ln f<sub>r</sub> by half its share of the mode's strain energy, and a mass by minus half
-its share of the kinetic energy (the <i>Sensitivity</i> tab). A spring that hardly stretches in a mode can't be
-seen in that mode's frequency. Each <b>Gauss–Newton</b> step solves the linearized problem, the slopes J of the
-residual against ln p, by least squares,</p>
-<p align="center">min ‖r + JΔ‖² + λ²‖θ + Δ‖²,</p>
-<p>θ the change in ln p so far, and repeats until nothing moves. The <i>Updating</i> tab follows each parameter,
-as a fraction of the structure's true value, step by step.</p>
-
-<h3>What the data can't settle</h3>
-<p>With fewer independent residuals than parameters some combinations of them change nothing measured: J's
-singular values show them, near 0. Masses and springs together are the classic case: scaling every one by the
-same factor leaves every frequency and shape as it was, so a test of modes alone can't fix the model's
-overall mass. The least-squares step then takes the smallest change it can, and the answer fits the test but
-needn't be the structure. <b>Regularization</b> (λ) adds a penalty on the change: it settles those directions
-by keeping the model near where it started, at the price of the fit. Too much, and the model keeps its
-errors. A measured mass, or fewer parameters chosen with engineering judgment (the joints, not every
-element), are better than a large λ. And the test's own errors go into the model: the updated parameters are
-only as good as the modes they were fitted to.</p>
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = NOTES_HTML.replace(
-    "<!--BEFORE-->",
-    before(
-        ("test_page", "extraction", "Modal parameter extraction"),
-        ("frf_page", "sum-of-modes", "Every term is a sum of modes"),
-    ),
-).replace(
-    "<!--TAKEAWAYS-->",
-    takeaways(
-        "Correlation pairs test and model modes by shape (MAC), then compares their frequencies.",
-        "Shapes barely see a single stiffness or mass error; the pattern of frequency errors over the modes says "
-        "where it is.",
-        "A mode's frequency is sensitive to a spring by its share of the strain energy, to a mass by its share of"
-        " the kinetic energy.",
-        "Updating fits the parameters to the test by Gauss–Newton; directions the data can't see (all masses and "
-        "springs together) need regularization or engineering judgment.",
-    ),
-)
+NOTES_HTML = load_notes("model_updating")
 
 
 def _plot(left: str, bottom: str) -> pg.PlotWidget:

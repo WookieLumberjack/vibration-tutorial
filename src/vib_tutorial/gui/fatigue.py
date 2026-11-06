@@ -44,7 +44,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
@@ -346,68 +346,7 @@ RANGES_TIP = (
 DAMAGE_TIP = "<p>Where the damage comes from: each distribution times S<sup>b</sup>, normalized, against the range.</p>"
 SN_TIP = "<p>The S–N curve (log–log) and the record's largest rainflow ranges against the cycles they took.</p>"
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="sn"></a>The S–N curve</h3>
-<p>A part loaded with constant-amplitude cycles of stress range S fails after N(S) cycles, and over the range that
-matters a straight line in log–log does: <b>Basquin's law</b>, N S<sup>b</sup> = K. Welded steel details have
-b ≈ 3 (a detail category is the range they survive for two million cycles); smooth machined parts 5 to 10. A steep
-curve means the largest cycles do almost all the damage.</p>
-
-<h3><a name="miner"></a>Miner's rule</h3>
-<p>Under cycles of many ranges, each cycle at S uses up 1/N(S) of the life, and failure is predicted when
-<b>D = Σ n<sub>i</sub>/N<sub>i</sub></b> reaches 1. It ignores the order of the cycles and is only good to a factor
-of two or so in practice, but it is what every code uses.</p>
-
-<h3><a name="rainflow"></a>Rainflow counting</h3>
-<p>A random stress isn't made of cycles, so they have to be found. <b>Rainflow counting</b> (Matsuishi and Endo)
-pairs each reversal with the one that closes a hysteresis loop with it: the small ripples riding on a large swing
-become small cycles, and the large swing is still counted at its full range. The three-point form (ASTM E1049):
-keep a stack of reversals; when the latest range X is at least the one before, Y, then Y is a cycle (half a cycle
-if it holds the start) and its two points go. What is left at the end counts as half cycles.</p>
-
-<h3><a name="spectral"></a>Damage from the PSD</h3>
-<p>Without a record, everything has to come from the stress PSD G(f) through its moments
-m<sub>n</sub> = ∫ fⁿG df: the RMS σ = √m₀, the up-crossings ν₀ = √(m₂/m₀) and the peaks ν<sub>p</sub> = √(m₄/m₂)
-per second (Rice, as on the Random vibration page), and the <b>irregularity factor</b> α₂ = ν₀/ν<sub>p</sub>: 1 when
-every peak is followed by a zero crossing (a narrow band), smaller when ripples ride on the swings.</p>
-<ul>
-<li><b>Narrow band</b> (Bendat): each up-crossing is one cycle whose amplitude is Rayleigh in σ, so the range
-S = 2a and D/T = ν₀ (2√2 σ)<sup>b</sup> Γ(1 + b/2) / K. Exact for a narrow band; for a broad one it counts every
-ripple as a full swing and is <b>conservative</b>.</li>
-<li><b>Dirlik</b>'s range distribution is an empirical fit to rainflow counts of many simulated processes: an
-exponential and two Rayleigh terms whose weights come from m₀, m₁, m₂ and m₄. D/T = ν<sub>p</sub> E[S<sup>b</sup>]/K.
-It is usually within 10 % of rainflow on the record, and the method most codes now recommend.</li>
-</ul>
-
-<h3><a name="record"></a>The record</h3>
-<p>The page synthesizes a Gaussian record with the PSD (each line with a random phase) and counts it. A long record
-is what the spectral methods stand for; a short one scatters from seed to seed, because a few large cycles carry
-most of the damage.</p>
-
-<h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the stress, the curve and the record (Things to try, top left).</p>
-<!--TRIALS-->
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = (
-    NOTES_HTML.replace(
-        "<!--BEFORE-->",
-        before(
-            ("random_page", "statistics", "Crossings and peaks"),
-        ),
-    )
-    .replace("<!--TRIALS-->", trials_html(TRIALS))
-    .replace(
-        "<!--TAKEAWAYS-->",
-        takeaways(
-            "Basquin's S–N curve, N S<sup>b</sup> = K, makes damage go as the stress to the power b: the RMS must be right.",
-            "Miner's rule adds n/N over the cycles; rainflow counting finds the cycles in a random record.",
-            "The narrow-band formula is exact for one narrow mode and conservative for broad or multi-modal stress.",
-            "The irregularity factor α₂ = ν₀/ν<sub>p</sub> says how narrow the band is; Dirlik's formula handles any α₂.",
-        ),
-    )
-)
+NOTES_HTML = load_notes("fatigue", trials=trials_html(TRIALS))
 
 
 class FatiguePage(QtWidgets.QWidget):

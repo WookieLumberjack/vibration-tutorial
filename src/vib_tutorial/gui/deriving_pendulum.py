@@ -22,7 +22,7 @@ from .deriving_text import (
     matrices_html,
 )
 from .lesson import Dot
-from .links import page_link
+from .links import load_notes, page_link
 from .style import colors
 
 TWO_PI = 2.0 * math.pi
@@ -162,23 +162,7 @@ def fbd_html(p: DoublePendulum, angles: Angles) -> str:
     return "".join(html)
 
 
-NOTES = """
-<h3><a name="double-pendulum"></a>A double pendulum</h3>
-<p>Two bobs on light rods, the second hung from the first. Its free-body diagram needs the rods' pulls: bob 2
-across its rod gives one equation, but bob 1's needs rod 2's pull, found from bob 2 along its rod, and both
-bobs' accelerations have centripetal parts. Lagrange's equations need none of that. In the rods' angles</p>
-<p align="center">T = ½(m<sub>1</sub> + m<sub>2</sub>)L<sub>1</sub>²θ̇<sub>1</sub>² + m<sub>2</sub>L<sub>1</sub>L<sub>2</sub>
-cos(θ<sub>1</sub> − θ<sub>2</sub>) θ̇<sub>1</sub>θ̇<sub>2</sub> + ½m<sub>2</sub>L<sub>2</sub>²θ̇<sub>2</sub>², &nbsp;
-V = −(m<sub>1</sub> + m<sub>2</sub>)gL<sub>1</sub> cos θ<sub>1</sub> − m<sub>2</sub>gL<sub>2</sub> cos θ<sub>2</sub>,</p>
-<p>and two differentiations give the whole nonlinear equations; the rods' pulls never appear, because the
-coordinates keep the rods' lengths and those forces do no work. For small swings M and K are T's and V's
-Hessians at rest. With equal bobs and rods, ω² = (2 ∓ √2)g/L: the rods swing together (θ<sub>2</sub> =
-√2 θ<sub>1</sub>) or against each other (−√2 θ<sub>1</sub>).</p>
-<p>Large swings are another matter. Released in a mode's shape at 40°, its period is 4 % longer and the shape
-doesn't hold. Released high, the motion is <b>chaotic</b>: two releases a millionth of a radian apart drift
-apart exponentially, doubling their difference about every half second, until nothing about one predicts the
-other. The Swing tab sets the whole equations against the linear ones, and the Chaos tab follows the twins.</p>
-"""
+NOTES = load_notes("deriving_pendulum")
 
 
 # ------------------------------------------------------------------ the drawing

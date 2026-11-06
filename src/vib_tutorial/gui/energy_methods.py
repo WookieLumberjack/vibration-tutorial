@@ -56,7 +56,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import before, page_link, takeaways
+from .links import load_notes, page_link
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
@@ -373,86 +373,7 @@ HOLZER_TIP = (
     "it grows as ω<sup>2N</sup>.</p>"
 )
 
-NOTES_HTML = """
-<!--BEFORE-->
-<h3><a name="lagrange"></a>The equations from the energies</h3>
-<p>The chain's kinetic and potential energies are</p>
-<p align="center">T = ½ Σ m<sub>i</sub>ẋ<sub>i</sub>² = ½ ẋᵀMẋ, &nbsp;
-V = ½ Σ k<sub>i</sub>(x<sub>i</sub> − x<sub>i−1</sub>)² = ½ xᵀKx &nbsp; (x₀ = 0, the ground).</p>
-<p><b>Lagrange's equations</b>, d/dt(∂T/∂ẋ<sub>i</sub>) − ∂T/∂x<sub>i</sub> + ∂V/∂x<sub>i</sub> = Q<sub>i</sub>,
-turn these into Mẍ + Kx = f with no free-body diagrams: M and K are just the energies' second derivatives
-(the <i>Lagrange</i> tab works them out for the chain you have). The same recipe works for any coordinates:
-angles, a beam's modal amplitudes, the generalized coordinates of the pages that follow.</p>
-
-<h3><a name="rayleigh"></a>Rayleigh's quotient: an upper bound</h3>
-<p>In a mode x = X sin ωt, the largest kinetic energy ½ω²XᵀMX equals the largest potential energy ½XᵀKX, so</p>
-<p align="center">ω² = XᵀKX / XᵀMX.</p>
-<p>Put in any shape X and this <b>Rayleigh quotient</b> R(X) is an estimate of ω₁². Written in the modes,
-X = φ₁ + Σ ε<sub>r</sub>φ<sub>r</sub> (mass-normalized),</p>
-<p align="center">R(X) = (ω₁² + Σ ε<sub>r</sub>²ω<sub>r</sub>²) / (1 + Σ ε<sub>r</sub>²)
-= ω₁² + Σ ε<sub>r</sub>²(ω<sub>r</sub>² − ω₁²) / (1 + Σ ε<sub>r</sub>²).</p>
-<p>So R is never below ω₁² (every added term is positive), and its error is <b>second order</b> in the shape's:
-a shape 10 % wrong gives a frequency about 1 % wrong, times (ω<sub>r</sub>/ω₁)² − 1. A good shape to try is the
-static deflection under the masses' weights: the inertia forces of mode 1 are distributed much like the
-weights.</p>
-
-<h3><a name="iteration"></a>Improving the shape</h3>
-<p>The static deflection under the inertia forces of a guessed motion, X' = K⁻¹MX, is a better guess: each
-mode's share is divided by its ω<sub>r</sub>², so mode r's share against mode 1's falls by ω₁²/ω<sub>r</sub>² per
-pass (<b>inverse iteration</b>, or Stodola's method). The static-deflection shape is one pass from a rigid
-guess.</p>
-
-<h3><a name="dunkerley"></a>Dunkerley: a lower bound</h3>
-<p>With the flexibility matrix F = K⁻¹, the trace of FM is Σ 1/ω<sub>r</sub>², so</p>
-<p align="center">1/ω₁² &lt; Σ<sub>r</sub> 1/ω<sub>r</sub>² = Σ<sub>i</sub> m<sub>i</sub>f<sub>ii</sub>.</p>
-<p>Each term m<sub>i</sub>f<sub>ii</sub> is 1/ω² of mass i alone on the massless chain, so Dunkerley's estimate
-"adds up the masses one at a time". It is below ω₁ by how much the higher modes contribute to the trace: it does
-best when one mass dominates. With Rayleigh's it brackets the exact value.</p>
-
-<h3><a name="ritz"></a>Rayleigh–Ritz</h3>
-<p>Restrict the motion to a combination of r shapes, x = Qa, and make Rayleigh's quotient stationary in a: that is
-the small eigenproblem</p>
-<p align="center">(QᵀKQ) a = ω² (QᵀMQ) a.</p>
-<p>It gives r frequencies at once, and each is above its mode's exact value (the interlacing theorem), falling as
-shapes are added; with all N shapes it is exact. The quality depends on the shapes: shapes the structure makes
-itself (static deflections, and K⁻¹M applied to them again: <b>Krylov</b> or load-dependent Ritz vectors) do far
-better than generic polynomials that ignore where the structure is stiff. Every reduced model on the later pages
-(substructuring, modal coupling, finite elements) is a Rayleigh–Ritz model.</p>
-
-<h3><a name="holzer"></a>Holzer's table</h3>
-<p>For a chain, guess ω, set x₁ = 1 and walk along it: the ground spring pulls k₁x₁; mass i keeps
-m<sub>i</sub>ω²x<sub>i</sub> of the force reaching it and passes the rest, F<sub>i+1</sub>, to the next spring,
-which stretches by F<sub>i+1</sub>/k<sub>i+1</sub>. At the free end nothing should be left. The force that is left,
-R(ω), is a polynomial in ω² whose roots are the natural frequencies; it changes sign at each one, so they can be
-found by bisection, mode by mode, with a pencil. Holzer's method was the standard for torsional drive trains
-(see the Torsional vibration page) before computers.</p>
-
-<h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these loads a chain into the Simulation page and sets up the estimates (Things to try, top left).</p>
-<!--TRIALS-->
-<!--TAKEAWAYS-->
-"""
-NOTES_HTML = (
-    NOTES_HTML.replace(
-        "<!--BEFORE-->",
-        before(
-            ("sim_page", "undamped-normal-modes-real", "Undamped normal modes"),
-            ("sim_page", "rayleigh-quotient", "Rayleigh's quotient"),
-            ("sim_page", "energy", "Energy"),
-        ),
-    )
-    .replace("<!--TRIALS-->", trials_html(TRIALS))
-    .replace(
-        "<!--TAKEAWAYS-->",
-        takeaways(
-            "M and K are the second derivatives of the kinetic and potential energies (Lagrange).",
-            "Rayleigh's quotient is never below ω₁², and its error is second order in the shape's.",
-            "Dunkerley's sum Σ m<sub>i</sub>f<sub>ii</sub> bounds ω₁ from below; with Rayleigh's it brackets it.",
-            "Rayleigh–Ritz gives r frequencies, each from above; good shapes come from the structure itself.",
-            "Holzer's residual changes sign at each natural frequency of a chain.",
-        ),
-    )
-)
+NOTES_HTML = load_notes("energy_methods", trials=trials_html(TRIALS))
 
 
 def matrix_html(A: np.ndarray, digits: int = 4) -> str:
