@@ -44,6 +44,7 @@ from .cms_time import SampleBuffer
 from .lesson import (
     Dot,
     Form,
+    RunButton,
     TrialBox,
     column,
     combo,
@@ -1204,7 +1205,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.section = SampleBuffer(2, SECTION_POINTS)  # where the tilt peaks: ψ (°, mod 180) and ω₃ (rpm)
         self.apart = SampleBuffer(1, HISTORY // APART_STRIDE)  # how far apart the two tops' axes are
         self._peaks = (math.nan, math.nan)  # the last two samples' e₃·ẑ, to find a peak across two frames
-        self.running = True
+        self.running = False  # held at the launch until started
         self._frames = 0
 
         self.trials = TrialBox(
@@ -1245,10 +1246,11 @@ class GyroscopePage(QtWidgets.QWidget):
         self.playback = combo([f"{p:g}×" for p in PLAYBACK], TIPS["playback"])
         self.playback.setCurrentIndex(REAL_TIME)
         play.add("Playback:", self.playback, TIPS["playback"])
-        self.pause_button = QtWidgets.QPushButton("Pause")
-        self.pause_button.clicked.connect(self._on_pause)
-        self.restart_button = QtWidgets.QPushButton("Let go again")
-        self.restart_button.clicked.connect(self.restart)
+        self.pause_button = RunButton()
+        self.pause_button.toggled.connect(self._on_pause)
+        self.restart_button = QtWidgets.QPushButton("Reset")
+        self.restart_button.setToolTip("<p>Back to the launch, held until started.</p>")
+        self.restart_button.clicked.connect(self.reset)
         buttons = QtWidgets.QHBoxLayout()
         buttons.addWidget(self.pause_button)
         buttons.addWidget(self.restart_button)
@@ -1432,7 +1434,8 @@ class GyroscopePage(QtWidgets.QWidget):
             set_quietly(box, value)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
-        self.running = True
+        self.running = True  # a trial lets the top go
+        self.pause_button.set_running(True)
         self._on_inputs()
 
     def _on_inputs(self) -> None:
@@ -1560,7 +1563,7 @@ class GyroscopePage(QtWidgets.QWidget):
         )
 
     def restart(self) -> None:
-        """Let the top go again from the launch set."""
+        """Let the top go again from the launch set (if it is running; held there if not)."""
         self._track_span = None
         if self.round is not None:
             self.sim = SlidingSimulator(self.round, self.motion.spin, self.motion.tilt)
@@ -1604,13 +1607,18 @@ class GyroscopePage(QtWidgets.QWidget):
         self.view.show_vectors = on
         self._draw_now()
 
-    def _on_pause(self) -> None:
-        self.running = not self.running
-        self._update_buttons()
+    def _on_pause(self, on: bool) -> None:
+        self.running = on
         self._start_timer()
 
     def _update_buttons(self) -> None:
-        self.pause_button.setText("Pause" if self.running else "Run")
+        self.pause_button.set_running(self.running)
+
+    def reset(self) -> None:
+        """Back to the launch, held there until started."""
+        self.running = False
+        self.pause_button.rest()
+        self.restart()
 
     # ------------------------------------------------------------- the loop
     def showEvent(self, event) -> None:
@@ -1628,6 +1636,8 @@ class GyroscopePage(QtWidgets.QWidget):
             self._timer.start(FRAME_MS)
 
     def _frame(self) -> None:
+        if not self.running:  # paused or reset since this frame was queued
+            return
         began = self._clock.elapsed()
         now = began / 1000.0
         dt = min(now - self._last, 0.1)

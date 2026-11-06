@@ -54,6 +54,7 @@ from ..core.torsional_startup import (
 from . import frame_stats, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
+from .lesson import RunButton
 from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
@@ -568,9 +569,9 @@ class TorsionalPage(QtWidgets.QWidget):
         _form_row(stf, "Load at full speed:", self.load_torque, TIPS["load"])
         _form_row(stf, "Run for:", self.duration, TIPS["duration"])
         row = FlowLayout()
-        self.start_button = QtWidgets.QPushButton("Start")
-        self.start_button.setToolTip("<p>Start the train from rest (again).</p>")
-        self.pause_button = QtWidgets.QPushButton("Pause")
+        self.pause_button = RunButton()
+        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button.setToolTip("<p>The train back at rest, waiting for Start.</p>")
         self.playback = QtWidgets.QComboBox()
         for x in PLAYBACK:
             self.playback.addItem(f"{x:g}× real time", x)
@@ -579,7 +580,7 @@ class TorsionalPage(QtWidgets.QWidget):
             "<p>How fast the start-up plays: its first tenth of a second is what an "
             "induction motor's switch-on rings in.</p>"
         )
-        row.add(self.start_button, self.pause_button, self.playback)
+        row.add(self.pause_button, self.reset_button, self.playback)
         stf.addRow(row)
         self.startup_info = QtWidgets.QLabel()
         self.startup_info.setWordWrap(True)
@@ -784,8 +785,8 @@ class TorsionalPage(QtWidgets.QWidget):
             self.duration,
         ):
             box.valueChanged.connect(self._on_startup)
-        self.start_button.clicked.connect(self.start)
-        self.pause_button.clicked.connect(self._on_pause)
+        self.reset_button.clicked.connect(self.reset)
+        self.pause_button.toggled.connect(self._on_pause)
         self.startup_link.currentIndexChanged.connect(lambda _: self._draw_startup(full=True))
 
         # --- the start-up's loop
@@ -1173,18 +1174,28 @@ class TorsionalPage(QtWidgets.QWidget):
         self.views.setCurrentWidget(self.startup_tab)
         self._new_run()
 
-    def _on_pause(self) -> None:
-        if self.sim is None or self.sim.done:
-            return
-        self.running = not self.running
-        self._update_buttons()
-        self._start_timer()
+    def reset(self) -> None:
+        """The train back at rest, waiting for Start."""
+        self.running = False
+        self._new_run()
+
+    def _on_pause(self, on: bool) -> None:
+        if self.sim is None:
+            self._update_buttons()
+        elif on and (self.sim.done or self._k == 0):  # from rest (again, if it ran to the end), shown
+            self.start()
+        else:
+            self.running = on
+            self._update_buttons()
+            self._start_timer()
 
     def _update_buttons(self) -> None:
-        live = self.sim is not None and not self.sim.done
-        self.start_button.setEnabled(self.motor_on)
-        self.pause_button.setEnabled(live and (self.running or self._k > 0))
-        self.pause_button.setText("Pause" if self.running else "Run")
+        self.reset_button.setEnabled(self.motor_on)
+        self.pause_button.setEnabled(self.motor_on)
+        if self.sim is None or self.sim.done or (self._k == 0 and not self.running):
+            self.pause_button.rest()
+        else:
+            self.pause_button.set_running(self.running)
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -1201,6 +1212,8 @@ class TorsionalPage(QtWidgets.QWidget):
             self._timer.start(FRAME_MS)
 
     def _frame(self) -> None:
+        if not self.running:  # paused or reset since this frame was queued
+            return
         began = self._clock.elapsed()
         now = began / 1000.0
         dt = min(now - self._last, 0.1)

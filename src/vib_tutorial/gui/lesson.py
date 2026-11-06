@@ -14,7 +14,7 @@ from PySide6 import QtCore, QtWidgets
 
 from .axes import log_axes
 from .layouts import form_layout, plot_height
-from .panels import spin
+from .panels import space_bar, spin
 from .theming import mute
 
 
@@ -132,6 +132,45 @@ class TrialCombo(QtWidgets.QComboBox):
             self._changed = False
         elif index >= self.first:
             self.picked.emit(index - self.first)
+
+
+class RunButton(QtWidgets.QPushButton):
+    """Every page's one control for its motion: Start at rest, then Pause / Resume, and Space while its page
+    shows. A page that simulates a response opens at rest and waits for it (a mode shape moves on its own);
+    a trial starts it, a control doesn't. `toggled(on)` when the reader presses it; `set_running` and `rest`
+    (back to Start, with the page's Reset) from code, without the signal."""
+
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__("Start", parent)
+        self.setCheckable(True)
+        space_bar(self)
+        self.setToolTip("<p>Start, pause or resume the motion (Space).</p>")
+        self._started = False
+        self.toggled.connect(self._label)
+
+    @property
+    def running(self) -> bool:
+        return self.isChecked()
+
+    @property
+    def started(self) -> bool:
+        """Started since it was last at rest (Pause and Resume keep it)."""
+        return self._started
+
+    def set_running(self, on: bool) -> None:
+        self.blockSignals(True)
+        self.setChecked(on)
+        self.blockSignals(False)
+        self._label(on)
+
+    def rest(self) -> None:
+        """Back to Start: the page is at rest at t = 0."""
+        self._started = False
+        self.set_running(False)
+
+    def _label(self, on: bool) -> None:
+        self._started |= on
+        self.setText("Pause" if on else "Resume" if self._started else "Start")
 
 
 class TrialBox(QtWidgets.QGroupBox):

@@ -58,7 +58,7 @@ from ..core.rotor_waterfall import Waterfall
 from . import frame_stats, rotor_practice, settle_plots
 from .cms_time import SampleBuffer
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
-from .lesson import Dot
+from .lesson import Dot, RunButton
 from .panels import spin
 from .rotor_balance import BalancingPanel
 from .rotor_bearing import BearingPanel
@@ -1064,7 +1064,7 @@ class RotorPage(QtWidgets.QWidget):
         self.history = SampleBuffer(11)
         self.campbell: Campbell | None = None
         self.top_rpm = TOP_RPM  # the speed range: Campbell diagram, stability map, Bode plot, speed controls
-        self.running = True
+        self.running = False  # at rest, not spinning, until started
         self._stride = 1
         self._carry = 0  # steps since the last stored sample
         self._matrices_speed = -math.inf  # rpm the matrices were drawn at
@@ -1379,14 +1379,15 @@ class RotorPage(QtWidgets.QWidget):
         self.sim_speed.setToolTip("Slow motion, so the whirl stays visible at speed")
         form.addRow("Simulation:", self.sim_speed)
         buttons = QtWidgets.QHBoxLayout()
-        self.run_button = QtWidgets.QPushButton("Pause")
-        self.run_button.clicked.connect(self._on_run)
+        self.run_button = RunButton()
+        self.run_button.setToolTip("<p>Start, pause or resume (Space): from rest it ramps up to the target speed.</p>")
+        self.run_button.toggled.connect(self._on_run)
         self.reset_button = QtWidgets.QPushButton("Reset")
-        self.reset_button.setToolTip("Back to rest, not spinning; it then ramps up to the target speed")
+        self.reset_button.setToolTip("Back to rest, not spinning, waiting for Start")
         self.reset_button.clicked.connect(self.reset)
         self.tap_button = QtWidgets.QPushButton("Tap disc")
         self.tap_button.setToolTip(TAP_TIP)
-        self.tap_button.clicked.connect(self.tap)
+        self.tap_button.clicked.connect(self._on_tap)
         for b in (self.run_button, self.reset_button, self.tap_button):
             buttons.addWidget(b)
         form.addRow(buttons)
@@ -1871,6 +1872,7 @@ class RotorPage(QtWidgets.QWidget):
         self.set_system(t.system())
         self.set_target_rpm(t.base.target_rpm if t.target_rpm is None else t.target_rpm)
         self.reset()
+        self._run(True)
 
     def practice_state(self) -> RotorSetup:
         """The page's rotor and speeds, as a setup: what a practice spec checks."""
@@ -1885,6 +1887,7 @@ class RotorPage(QtWidgets.QWidget):
     def _on_preset(self, index: int) -> None:
         if index < len(self.presets):
             self.load_preset(self.presets[index].name)
+            self._run(True)  # the reader picked it, as a trial
         else:
             self._show_preset(self.sim.system)  # Custom is not a rotor: show what is loaded
 
@@ -2337,13 +2340,15 @@ class RotorPage(QtWidgets.QWidget):
     def _on_ramp(self, rate: float) -> None:
         self.sim.accel = rate / RPM
 
-    def _on_run(self) -> None:
-        self.running = not self.running
+    def _on_run(self, on: bool) -> None:
+        self.running = on
         if self.running:
             self.rubbed = False
-        self.run_button.setText("Pause" if self.running else "Run")
-        if self.running:
             self._start_timer()
+
+    def _run(self, on: bool) -> None:
+        self.run_button.set_running(on)
+        self._on_run(on)
 
     def _on_same_scale(self, on: bool) -> None:
         self.orbits.same_scale = on
@@ -2360,10 +2365,18 @@ class RotorPage(QtWidgets.QWidget):
         self._target_t = 0.0
         self._carry = 0
         self._next_tap = 0.0
+        self.running = False
+        self.run_button.rest()
         self._draw()
 
     def tap(self) -> None:
         self.sim.tap(0.0, -TAP_IMPULSE)
+
+    def _on_tap(self) -> None:
+        """The Tap button: a tap, and the rotor started if it waits."""
+        self.tap()
+        if not self.running:
+            self._run(True)
 
     def _on_repeat_taps(self, on: bool) -> None:
         if on:
@@ -2375,7 +2388,7 @@ class RotorPage(QtWidgets.QWidget):
         self.stop_sweep(hold_speed=False)
         self.cancel_measurement()
         if not self.running:
-            self._on_run()
+            self._run(True)
         self.measurement = SteadyMeasurement(self.sim, omega)
         self._measured = measured
         self._sync_target()
@@ -2431,6 +2444,8 @@ class RotorPage(QtWidgets.QWidget):
         self._sweep_pairs += 1
         self.sweep_button.setText("Stop sweep")
         self.ramp.setEnabled(False)  # each sweep is labelled with its rate
+        if not self.running:
+            self._run(True)
         if self.tabs.current_page() is not self.polar.parentWidget():
             self.tabs.show_page(self.bode.parentWidget())
         self._fit_tracking_range()
@@ -2635,6 +2650,8 @@ class RotorPage(QtWidgets.QWidget):
             self._timer.start(FRAME_MS)
 
     def _frame(self) -> None:
+        if not self.running:  # paused or reset since this frame was queued
+            return
         began = self._clock.elapsed()
         now = began / 1000.0
         dt = min(now - self._last, 0.1)
@@ -2697,7 +2714,7 @@ class RotorPage(QtWidgets.QWidget):
         ):
             self.stop_sweep()
             self.cancel_measurement()
-            self._on_run()  # pause
+            self._run(False)  # pause
             self.rubbed = True
             self.touched = touched
         self._draw()

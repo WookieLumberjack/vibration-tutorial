@@ -63,6 +63,7 @@ from . import frame_stats, settle_plots
 from .layouts import FlowLayout, group
 from .lesson import (
     Form,
+    RunButton,
     TrialBox,
     column,
     combo,
@@ -577,7 +578,8 @@ TIPS = {
     "grid": "<p>The spacing new nodes snap to.</p>",
     "matrix": "<p>The matrix the Assembly and Element tabs show.</p>",
     "free_only": "<p>List only the free DOFs: the matrix the eigenproblem solves.</p>",
-    "animate": "<p>Swing the frame (slowed to the same pace whatever its frequency, and exaggerated).</p>",
+    "animate": "<p>Swing the frame (slowed to the same pace whatever its frequency, and exaggerated): a mode "
+    "on its own, the response to the load from Start. Space.</p>",
     "swing": "<p>What the frame swings in: the undamped mode picked in the table; the state space's mode beside "
     "it, each node with its own phase; or the exact response to the load, slowed so its record lasts "
     f"{PLAY_S:g} s.</p>",
@@ -1378,8 +1380,8 @@ class FramePage(QtWidgets.QWidget):
         self.forms: Formulations | None = None  # worked out while the Response or Formulations tab, or a
         self.runs: Responses | None = None  # damped swing, needs them (None: not yet, since the last change)
         self.response_error = ""
-        self.running = True
-        self._phase = 0.0
+        self.running = True  # a mode swings on its own; the response waits for Start (_on_swing)
+        self._phase = math.pi / 2  # a mode starts at its full swing
         self._played = 0.0  # s into the response's record
         self._history: list[Frame] = []
         self._future: list[Frame] = []
@@ -1437,13 +1439,19 @@ class FramePage(QtWidgets.QWidget):
         show.row(self.free_only)
         self.swing = combo([w.value for w in SWINGS], TIPS["swing"])
         show.add("Swing:", self.swing, TIPS["swing"])
-        self.animate = QtWidgets.QCheckBox("Animate")
-        self.animate.setChecked(True)
-        self.animate.setToolTip(TIPS["animate"])
-        show.row(self.animate)
+        self.run_button = RunButton()
+        self.run_button.set_running(True)
+        self.run_button.setToolTip(TIPS["animate"])
+        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button.setToolTip("<p>Back to the start of the swing; the response waits for Start.</p>")
+        buttons = QtWidgets.QHBoxLayout()
+        buttons.addWidget(self.run_button)
+        buttons.addWidget(self.reset_button)
+        show.row(buttons)
         self.matrix.currentIndexChanged.connect(lambda _: self._draw_tabs())
         self.free_only.toggled.connect(lambda _: self._draw_tabs())
-        self.animate.toggled.connect(self._on_animate)
+        self.run_button.toggled.connect(self._on_animate)
+        self.reset_button.clicked.connect(self.reset)
         self.swing.currentIndexChanged.connect(lambda _: self._on_swing())
 
         # --- centre: the tools, the canvas, the modes
@@ -1605,6 +1613,11 @@ class FramePage(QtWidgets.QWidget):
         self.trials.show_note(t.note)
         self._set_frame(t.frame, record=keep_history, selection=("element", t.picked) if t.picked is not None else None)
         self.tabs.setCurrentIndex(t.tab)
+        self._phase = math.pi / 2
+        self.running = True  # a trial starts it
+        self.run_button.set_running(True)
+        self._show_mode()
+        self._start_timer()
 
     # ------------------------------------------------------------- editing
     def _set_frame(
@@ -1744,9 +1757,18 @@ class FramePage(QtWidgets.QWidget):
         self._show_mode()
 
     def _on_swing(self) -> None:
-        self._played = 0.0
-        self._show_mode()
+        self.reset()
         self._draw_tabs()
+
+    def reset(self) -> None:
+        """A mode back at its full swing, still swinging; the response back at t = 0, waiting for Start."""
+        self._played, self._phase = 0.0, math.pi / 2
+        self.running = SWINGS[self.swing.currentIndex()] is not Swing.RESPONSE
+        if self.running:
+            self.run_button.set_running(True)
+        else:
+            self.run_button.rest()
+        self._show_mode()
         self._start_timer()
 
     def _work(self, runs: bool) -> bool:
@@ -2211,7 +2233,7 @@ class FramePage(QtWidgets.QWidget):
         """The displacement drawn now (every DOF), as Swing says: the undamped mode at the animation's phase,
         the state space's (complex) mode at it, or the response at the record's time played; None for none."""
         swing = SWINGS[self.swing.currentIndex()]
-        phase = self._phase if self.running else 0.5 * math.pi
+        phase = self._phase
         if swing is Swing.RESPONSE:
             if not self._work(runs=True) or not self.assembly.free[self.load.index]:
                 return None
@@ -2234,7 +2256,7 @@ class FramePage(QtWidgets.QWidget):
         return shape * math.sin(phase) if shape is not None else None
 
     def _show_mode(self) -> None:
-        self.canvas.q = self.swing_shape() if self.animate.isChecked() else None
+        self.canvas.q = self.swing_shape()
         self.canvas.draw()
 
     def showEvent(self, event) -> None:
@@ -2252,6 +2274,8 @@ class FramePage(QtWidgets.QWidget):
             self._timer.start(FRAME_MS)
 
     def _frame(self) -> None:
+        if not self.running:  # paused or reset since this frame was queued
+            return
         began = self._clock.elapsed()
         now = began / 1000.0
         dt = min(now - self._last, 0.1)

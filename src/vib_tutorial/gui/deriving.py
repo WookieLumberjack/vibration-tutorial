@@ -61,6 +61,7 @@ from .deriving_text import (
 from .lesson import (
     Dot,
     Form,
+    RunButton,
     TrialBox,
     column,
     combo,
@@ -907,9 +908,14 @@ class DerivingPage(QtWidgets.QWidget):
         show = Form("Show")
         self.show_box = combo(("Mode 1", "Mode 2", MOTIONS[CAR]), TIPS["show"])
         show.add("Show:", self.show_box, TIPS["show"])
-        self.animate = QtWidgets.QCheckBox("Animate")
-        self.animate.setChecked(True)
-        show.row(self.animate)
+        self.run_button = RunButton()
+        self.run_button.set_running(True)  # a mode swings on its own; the motion waits for Start (_on_show)
+        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button.setToolTip("<p>The motion back to t = 0, waiting for Start.</p>")
+        buttons = QtWidgets.QHBoxLayout()
+        buttons.addWidget(self.run_button)
+        buttons.addWidget(self.reset_button)
+        show.row(buttons)
 
         connect_all(
             (
@@ -938,7 +944,8 @@ class DerivingPage(QtWidgets.QWidget):
         )
         self.system.currentIndexChanged.connect(lambda _: self._on_system())
         self.show_box.currentIndexChanged.connect(lambda _: self._on_show())
-        self.animate.toggled.connect(lambda _: self._on_show())
+        self.run_button.toggled.connect(lambda _: self._start_timer())
+        self.reset_button.clicked.connect(self.reset)
 
         # --- centre
         self.view = CarView()
@@ -1054,7 +1061,7 @@ class DerivingPage(QtWidgets.QWidget):
             self.tabs,
         )
 
-        self._phase = 0.0
+        self._phase = math.pi / 2  # a mode starts at its full swing
         self._time = 0.0
         self._clock = QtCore.QElapsedTimer()
         self._last = 0.0
@@ -1137,6 +1144,7 @@ class DerivingPage(QtWidgets.QWidget):
         self._apply_system()
         self.tabs.setCurrentIndex(t.tab)
         self.tabs.blockSignals(False)
+        self.run_button.set_running(True)  # a trial starts it
         self.redraw()
 
     def _on_system(self) -> None:
@@ -1220,7 +1228,7 @@ class DerivingPage(QtWidgets.QWidget):
         else:
             self._readout_pendulum()
         self._draw_tab()
-        self._on_show()
+        self._restart()
 
     def _readout_car(self) -> None:
         car, coords, e = self.car, self.coordinates, self.offset.value()
@@ -1430,7 +1438,19 @@ class DerivingPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- the animation
     def _on_show(self) -> None:
-        self._time = 0.0
+        """A mode swings on its own; the motion waits at t = 0 for Start."""
+        self.reset()
+
+    def reset(self) -> None:
+        if self.show_box.currentIndex() == SHOW_MOTION:
+            self.run_button.rest()
+        else:
+            self.run_button.set_running(True)
+        self._restart()
+
+    def _restart(self) -> None:
+        """From t = 0 (a mode at its full swing), running or not as it was: a control neither starts nor stops it."""
+        self._time, self._phase = 0.0, math.pi / 2
         self._draw_system()
         self._start_timer()
 
@@ -1444,7 +1464,7 @@ class DerivingPage(QtWidgets.QWidget):
 
     @property
     def running(self) -> bool:
-        return self.animate.isChecked()
+        return self.run_button.running
 
     def _start_timer(self) -> None:
         if self.isVisible() and self.running and not self._timer.isActive():
@@ -1453,6 +1473,8 @@ class DerivingPage(QtWidgets.QWidget):
             self._timer.start(FRAME_MS)
 
     def _frame(self) -> None:
+        if not self.running:  # paused or reset since this frame was queued
+            return
         began = self._clock.elapsed()
         now = began / 1000.0
         dt = min(now - self._last, 0.1)
@@ -1492,7 +1514,7 @@ class DerivingPage(QtWidgets.QWidget):
         if show == SHOW_MOTION:
             self._ensure_ride()
             r = self.ride
-            k = min(int(np.searchsorted(r.t, self._time % r.t[-1])) if self.running else 0, r.t.size - 1)
+            k = min(int(np.searchsorted(r.t, self._time % r.t[-1])), r.t.size - 1)
             xs = np.linspace(-VIEW_X, VIEW_X, 241)
             bump = self.practice_state().bump
             road = RIDE_SCALE * bump.profile(bump.speed * (r.t[k] - r.lead) - (car.front - xs))
@@ -1506,7 +1528,7 @@ class DerivingPage(QtWidgets.QWidget):
             return
         mode = self.modes[show]
         xg, th = mode.centre * SWING
-        swing_now = math.sin(self._phase) if self.running else 1.0
+        swing_now = math.sin(self._phase)
         node = mode.node if math.isfinite(mode.node) else None
         self.view.draw(car, swing_now * xg, swing_now * th, None, (0.0, 0.0), points, node)
         self.view.caption.setText(f"Mode {show + 1}, {mode.frequency:.3g} Hz (swung slowly)")
@@ -1517,7 +1539,7 @@ class DerivingPage(QtWidgets.QWidget):
         if show == SHOW_MOTION:
             self._ensure_swing()
             s = self.swing
-            k = min(int(np.searchsorted(s.t, self._time % s.t[-1])) if self.running else 0, s.t.size - 1)
+            k = min(int(np.searchsorted(s.t, self._time % s.t[-1])), s.t.size - 1)
             th1, th2 = s.whole[k, 0], s.whole[k, 1]
             back = max(0, k - int(TRAIL_S / (s.t[1] - s.t[0])))
             _, _, x2, y2 = p.positions(s.whole[back : k + 1, 0], s.whole[back : k + 1, 1])
@@ -1528,6 +1550,6 @@ class DerivingPage(QtWidgets.QWidget):
             return
         mode = self.pmodes[show]
         scale = math.radians(dp.SHOWN) / max(1.0, abs(mode.ratio))
-        swing_now = math.sin(self._phase) if self.running else 1.0
+        swing_now = math.sin(self._phase)
         self.pview.draw(p, scale * swing_now, scale * mode.ratio * swing_now, None)
         self.pview.caption.setText(f"Mode {show + 1}, {mode.frequency:.3g} Hz (swung slowly)")

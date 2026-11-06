@@ -38,6 +38,7 @@ from ..core.duffing import (
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
 from . import frame_stats, settle_plots
 from .layouts import ColumnScroll, FlowLayout, form_layout, plot_height
+from .lesson import RunButton
 from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
@@ -441,7 +442,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.sim = DuffingSimulator()
         self.curve: ResponseCurve | None = None  # the drive's, by harmonic balance
         self.p_curve: ResponseCurve | None = None  # the pump's
-        self.running = True
+        self.running = False  # at rest until started
         self.cycles: list[Cycle] = []  # measured since the last sweep started (or the parameters changed)
         self.section: list[tuple[float, float]] = []
         self.trace = _Trace()
@@ -545,8 +546,8 @@ class DuffingPage(QtWidgets.QWidget):
             self.sim_speed.addItem(f"{s:g}× real time", s)
         self.sim_speed.setCurrentIndex(SPEEDS.index(5.0))
         self.sim_speed.setToolTip("<p>Simulated seconds per second. A sweep of 120 s a leg takes 48 s at 5×.</p>")
-        self.run_button = QtWidgets.QPushButton("Pause")
-        self.run_button.clicked.connect(self._on_run)
+        self.run_button = RunButton()
+        self.run_button.toggled.connect(self._on_run)
         self.reset_button = QtWidgets.QPushButton("Reset")
         self.reset_button.setToolTip(
             "<p>Back to rest at t = 0, the measured points cleared; a sweep starts again from its start.</p>"
@@ -717,9 +718,15 @@ class DuffingPage(QtWidgets.QWidget):
         )  # fmt: skip
         self._apply_setup(setup, name, p.note)
 
+    def _pick_preset(self, name: str) -> None:
+        """A preset the reader picked: set up and started, as a trial is."""
+        self.load_preset(name)
+        self._run(True)
+
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says (a `DuffingSetup`'s fields), as Custom."""
         self._apply_setup(DuffingSetup(**setup), CUSTOM, "")
+        self._run(True)
 
     def practice_state(self) -> DuffingSetup:
         """The page's oscillator, drive and sweep, as a setup: what a practice spec checks."""
@@ -775,7 +782,7 @@ class DuffingPage(QtWidgets.QWidget):
 
     def _on_preset(self, index: int) -> None:
         if index < len(PRESETS):
-            self.load_preset(PRESETS[index].name)
+            self._pick_preset(PRESETS[index].name)
 
     def _on_params(self) -> None:
         if self._loading:
@@ -837,7 +844,7 @@ class DuffingPage(QtWidgets.QWidget):
         self._update_branch_buttons()
         self._show_drive_state()
         if not self.running and not self.sim.escaped:
-            self._on_run()
+            self._run(True)
 
     @property
     def pumped_only(self) -> bool:
@@ -882,13 +889,16 @@ class DuffingPage(QtWidgets.QWidget):
             self.branch_note.setText(f"At {f:.3g} Hz there is no steady response below the escape amplitude.")
 
     # ------------------------------------------------------------- run
-    def _on_run(self) -> None:
-        self.running = not self.running
-        self.run_button.setText("Pause" if self.running else "Run")
+    def _on_run(self, on: bool) -> None:
+        self.running = on
         self._start_timer()
 
+    def _run(self, on: bool) -> None:
+        self.run_button.set_running(on)
+        self._on_run(on)
+
     def reset(self) -> None:
-        """Back to rest at t = 0; a sweep starts again from its start."""
+        """Back to rest at t = 0, waiting for Start; a sweep starts again from its start."""
         self.sim.reset()
         self.sim.drive.start(self._mode)
         if self._mode is Sweep.HOLD:
@@ -896,8 +906,8 @@ class DuffingPage(QtWidgets.QWidget):
         self._target_t = 0.0
         self.trace.clear()
         self.clear_points()
-        if not self.running:
-            self._on_run()
+        self.running = False
+        self.run_button.rest()
         self._sync_freq()
         self._update_branch_buttons()
         self._show_drive_state()
@@ -925,6 +935,8 @@ class DuffingPage(QtWidgets.QWidget):
             self._timer.start(FRAME_MS)
 
     def _frame(self) -> None:
+        if not self.running:  # paused or reset since this frame was queued
+            return
         began = self._clock.elapsed()
         now = began / 1000.0
         dt = min(now - self._last, 0.1)
@@ -960,8 +972,7 @@ class DuffingPage(QtWidgets.QWidget):
                 self._update_branch_buttons()
         if self.sim.escaped:
             self._target_t = self.sim.t
-            if self.running:
-                self._on_run()
+            self._run(False)
             self._show_readout()
         self._sync_freq()
         self._show_drive_state()

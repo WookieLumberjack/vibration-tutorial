@@ -44,6 +44,7 @@ from .layouts import form_layout
 from .lesson import (
     Dot,
     Form,
+    RunButton,
     TrialBox,
     column,
     combo,
@@ -498,7 +499,8 @@ TIPS = {
     "shear": "<p>Its stiffness across its axis over along it, ρ = k<sub>s</sub>/k<sub>a</sub> (rubber mounts: about "
     "0.2–0.5).</p>",
     "mode": "<p>The mode the 3D view swings in, slowed to the same pace whatever its frequency.</p>",
-    "animate": "<p>Swing the box in the mode picked.</p>",
+    "animate": "<p>Swing the box in the mode picked (on its own), or in the response at the speed (from Start). "
+    "Space.</p>",
     "sweep": "<p>The quantity the Sweep tab changes, the rest as set.</p>",
     "excitation": "<p>What drives the machine: an unbalance turning with the shaft (a force mₑeΩ² going round "
     "the crank axis), or a torque about the crank axis at a multiple of the speed (an engine's firing).</p>",
@@ -765,8 +767,8 @@ class MountsPage(QtWidgets.QWidget):
         super().__init__(parent)
         self.layout_ = TRIALS[0].layout
         self.modes = self.layout_.modes()
-        self.running = True
-        self._phase = 0.0
+        self.running = True  # a mode swings on its own; the response waits for Start (_on_mode)
+        self._phase = math.pi / 2  # a mode starts at its full swing
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -807,11 +809,17 @@ class MountsPage(QtWidgets.QWidget):
         show = Form("Show")
         self.mode = combo([f"Mode {i + 1}" for i in range(6)] + ["The response at the speed"], TIPS["mode"])
         show.add("Mode:", self.mode, TIPS["mode"])
-        self.animate = QtWidgets.QCheckBox("Animate the mode")
-        self.animate.setChecked(True)
-        self.animate.setToolTip(TIPS["animate"])
-        self.animate.toggled.connect(self._on_animate)
-        show.row(self.animate)
+        self.run_button = RunButton()
+        self.run_button.set_running(True)
+        self.run_button.setToolTip(TIPS["animate"])
+        self.run_button.toggled.connect(self._on_animate)
+        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button.setToolTip("<p>Back to rest; the response waits for Start.</p>")
+        self.reset_button.clicked.connect(self.reset)
+        buttons = QtWidgets.QHBoxLayout()
+        buttons.addWidget(self.run_button)
+        buttons.addWidget(self.reset_button)
+        show.row(buttons)
 
         self.boxes = (
             self.mass,
@@ -1012,6 +1020,10 @@ class MountsPage(QtWidgets.QWidget):
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self._on_inputs()
+        self._phase = 0.0 if self.mode.currentIndex() == FORCED else math.pi / 2
+        self.running = True  # a trial starts it
+        self.run_button.set_running(True)
+        self._start_timer()
 
     def _on_inputs(self) -> None:
         state = self.practice_state()
@@ -1105,6 +1117,7 @@ class MountsPage(QtWidgets.QWidget):
             self.mode.setCurrentIndex(rows[0].row())
 
     def _on_mode(self) -> None:
+        self.reset()
         self.table.blockSignals(True)
         if self.mode.currentIndex() < FORCED:
             self.table.selectRow(self.mode.currentIndex())
@@ -1115,6 +1128,18 @@ class MountsPage(QtWidgets.QWidget):
 
     def _on_animate(self, on: bool) -> None:
         self.running = on
+        self._show_mode()
+        self._start_timer()
+
+    def reset(self) -> None:
+        """A mode back at its full swing, still swinging; the response at rest, waiting for Start."""
+        forced = self.mode.currentIndex() == FORCED
+        self._phase = 0.0 if forced else math.pi / 2
+        self.running = not forced
+        if forced:
+            self.run_button.rest()
+        else:
+            self.run_button.set_running(True)
         self._show_mode()
         self._start_timer()
 
@@ -1134,6 +1159,8 @@ class MountsPage(QtWidgets.QWidget):
             self._timer.start(FRAME_MS)
 
     def _frame(self) -> None:
+        if not self.running:  # paused or reset since this frame was queued
+            return
         began = self._clock.elapsed()
         now = began / 1000.0
         dt = min(now - self._last, 0.1)
@@ -1161,9 +1188,12 @@ class MountsPage(QtWidgets.QWidget):
         return phi * (SWING / reach if reach > 0 else 0.0)
 
     def _show_mode(self) -> None:
-        q = self.mode_shape(self.mode.currentIndex())
-        turn = np.exp(1j * (self._phase - 0.5 * math.pi)) if self.running else 1.0  # sin φ for a real shape
-        self.view.draw(np.real(q * turn))
+        i = self.mode.currentIndex()
+        if i == FORCED and not self.run_button.started:  # at rest until the drive is started
+            self.view.draw(np.zeros(6))
+            return
+        turn = np.exp(1j * (self._phase - 0.5 * math.pi))  # sin φ for a real shape
+        self.view.draw(np.real(self.mode_shape(i) * turn))
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
