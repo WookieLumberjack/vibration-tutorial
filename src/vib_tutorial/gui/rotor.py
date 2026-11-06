@@ -14,6 +14,7 @@ from __future__ import annotations
 import cmath
 import math
 import time
+from collections.abc import Callable
 from dataclasses import fields
 
 import numpy as np
@@ -165,7 +166,7 @@ class RotorPage(QtWidgets.QWidget):
         self._plane_weights: tuple[PlaneWeight, ...] = ()  # weights in balancing planes
         self._hidden: dict[str, float] | None = None  # RotorSystem fields kept out of the panels (SI)
         self.measurement: SteadyMeasurement | None = None  # a balancing measurement running, if any
-        self._measured = None  # its callback, given the mean 1X vectors (4, 2)
+        self._measured: Callable[[np.ndarray], None] | None = None  # its callback, given the mean 1X vectors (4, 2)
         self._frames = 0
         self._next_tap = 0.0  # simulated time of the next repeated tap
         self.waterfall: Waterfall | None = None  # spectra block by block, made by _new_waterfall
@@ -199,8 +200,8 @@ class RotorPage(QtWidgets.QWidget):
         self.station = QtWidgets.QComboBox()
         self.station.addItems(STATIONS)
         self.station.setCurrentIndex(1)
-        self.window = spin(0.2, 20.0, 3.0, 1, " s")
-        self.window.setToolTip("Strip chart window")
+        self.time_window = spin(0.2, 20.0, 3.0, 1, " s")
+        self.time_window.setToolTip("Strip chart window")
         self.same_scale = QtWidgets.QCheckBox("Same scale")
         self.same_scale.setToolTip("Draw the orbits at one scale, to compare their sizes")
         self.same_scale.toggled.connect(self._on_same_scale)
@@ -214,7 +215,7 @@ class RotorPage(QtWidgets.QWidget):
             QtWidgets.QLabel("Orbits, seen from the B end:"),
             self.same_scale,
             self.show_sag,
-            group("Strip chart:", self.station, "Window:", self.window),
+            group("Strip chart:", self.station, "Window:", self.time_window),
         )
         center = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(center)
@@ -648,16 +649,17 @@ class RotorPage(QtWidgets.QWidget):
             row.addWidget(size, 3)
             row.addWidget(QtWidgets.QLabel("at"))
             row.addWidget(angle, 2)
-            for w in (size, angle) if tip else ():
-                w.setToolTip(tip)
+            if tip:
+                size.setToolTip(tip)
+                angle.setToolTip(tip)
             form.addRow(label, row)
         self.crack_position = spin(-1.0, 2.0, crack.position, 3, "")
         self.crack_position.setSingleStep(0.05)
         self.crack_breathing = QtWidgets.QCheckBox("Breathing")
         self.crack_breathing.setChecked(crack.breathing)
         self.crack_breathing.toggled.connect(self._on_params)
-        for w in (self.crack_position, self.crack_breathing):
-            w.setToolTip(CRACK_TIP)
+        self.crack_position.setToolTip(CRACK_TIP)
+        self.crack_breathing.setToolTip(CRACK_TIP)
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.crack_position, 3)
         row.addWidget(self.crack_breathing, 2)
@@ -767,8 +769,8 @@ class RotorPage(QtWidgets.QWidget):
         self.nonlinear_film = QtWidgets.QCheckBox("Nonlinear film")
         self.nonlinear_film.setChecked(True)
         self.nonlinear_film.setToolTip(NONLINEAR_FILM_TIP)
-        for c in (self.isotropic, self.same_bearings, self.nonlinear_film):
-            c.toggled.connect(self._on_params)
+        for check in (self.isotropic, self.same_bearings, self.nonlinear_film):
+            check.toggled.connect(self._on_params)
         grid.addWidget(self.isotropic, 3, 0, 1, 8)
         grid.addWidget(self.same_bearings, 4, 0, 1, 8)
         grid.addWidget(self.supports, 5, 0, 1, 5)
@@ -793,8 +795,9 @@ class RotorPage(QtWidgets.QWidget):
                     w.blockSignals(False)
                 # A film or a magnet holds the journal in place of the springs: only its mass is left to set.
                 w.setEnabled(not (same and r == 1) and not (iso and c in (1, 3)) and not (film and c != 4))
-        for w in (self.isotropic, self.same_bearings):
-            w.setEnabled(not film)
+        widget: QtWidgets.QWidget
+        for widget in (self.isotropic, self.same_bearings):
+            widget.setEnabled(not film)
         # A turning shaft's split time step keeps the films linearized, and has no stator ring.
         round_shaft = not self.asymmetry.value() and not self.crack_depth.value()
         self.nonlinear_film.setEnabled(kind == FILMS and round_shaft)
@@ -802,12 +805,12 @@ class RotorPage(QtWidgets.QWidget):
         self.nonlinear_film.setVisible(kind == FILMS)
         oil = self.bearing_panel.bearing(rotor=False) if kind == FILMS else None
         magnet = self.magnet_panel.bearing() if kind == MAGNETS else None
-        bearings = [Bearing(*(w.value() for w in row), film=oil, magnet=magnet) for row in self.bearing_rows]
-        for w in (self.density, self.elements, self.mass_matrix):
-            w.setEnabled(self.shaft_mass.isChecked())
+        bearings = [_bearing(row, oil, magnet) for row in self.bearing_rows]
+        for widget in (self.density, self.elements, self.mass_matrix):
+            widget.setEnabled(self.shaft_mass.isChecked())
         cracked = self.crack_depth.value() > 0.0
-        for w in (self.crack_angle, self.crack_position, self.crack_breathing):
-            w.setEnabled(cracked)
+        for widget in (self.crack_angle, self.crack_position, self.crack_breathing):
+            widget.setEnabled(cracked)
         return RotorSystem(
             length=self.length.value(),
             diameter=self.diameter.value() / 1e3,
@@ -1278,7 +1281,7 @@ class RotorPage(QtWidgets.QWidget):
             coupled.append(f"internal damping c<sub>i</sub> = {s.internal_damping:g} N·s/m")
         if s.asymmetry:
             coupled.append(f"the shaft's asymmetry Δ = {s.asymmetry:.3g}")
-        if s.crack_opening:
+        if s.crack_opening and s.crack is not None:
             coupled.append(f"a {'breathing' if s.crack.breathing else 'open'} crack {s.crack.depth:.0%} deep")
         cause = (
             "With " + " and ".join(coupled) + ": "
@@ -1465,7 +1468,7 @@ class RotorPage(QtWidgets.QWidget):
             self._next_tap = self.sim.t  # the first one now
 
     # ------------------------------------------------------------- balancing measurements
-    def start_measurement(self, omega: float, measured) -> None:
+    def start_measurement(self, omega: float, measured: Callable[[np.ndarray], None]) -> None:
         """Run at `omega` rad/s, settle and average the 1X vectors; then call measured(vectors (4, 2))."""
         self.stop_sweep(hold_speed=False)
         self.cancel_measurement()
@@ -1484,11 +1487,13 @@ class RotorPage(QtWidgets.QWidget):
 
     def _advance_measurement(self, duration: float):
         m = self.measurement
+        assert m is not None, "advanced only while measuring"
         r = m.advance(duration)
         if m.sim.target * RPM != self.target_rpm.value():
             self._sync_target()
         if m.done:
             measured, self.measurement, self._measured = self._measured, None, None
+            assert measured is not None and m.result is not None, "set with the measurement, and when done"
             measured(m.result)
             self.balancing.measurement_ended()
         return r
@@ -1567,6 +1572,7 @@ class RotorPage(QtWidgets.QWidget):
 
     def _advance_sweep(self, duration: float):
         run_up = self.run_up
+        assert run_up is not None, "advanced only while sweeping"
         before = len(run_up.sweeps)
         r = run_up.advance(duration)
         for sweep in run_up.sweeps[before:]:
@@ -1788,7 +1794,9 @@ class RotorPage(QtWidgets.QWidget):
                         self._clear_spiral()
                     elif self.sim.t >= self._spiral_next and self.sim.omega > 0.0:
                         self._record_spiral()
-                if self.waterfall.feed(r.t[pick], vib[:, 0::2] + 1j * vib[:, 1::2], cols[:, OMEGA]):
+                if self.waterfall is not None and self.waterfall.feed(
+                    r.t[pick], vib[:, 0::2] + 1j * vib[:, 1::2], cols[:, OMEGA]
+                ):
                     self._waterfall_drawn = False
         touched = self._journal_touched()
         if self.running and (
@@ -1816,7 +1824,7 @@ class RotorPage(QtWidgets.QWidget):
 
     def _columns(self, q: np.ndarray, phase: np.ndarray, omega: np.ndarray) -> np.ndarray:
         s = self.sim.system
-        mid = s.deflection(q, [0.5 * s.length])[:, 0, :]
+        mid = s.deflection(q, np.array([0.5 * s.length]))[:, 0, :]
         return np.column_stack([q[:, XA], q[:, YA], q[:, XD], q[:, YD], mid, q[:, XB], q[:, YB], phase, omega])
 
     def _draw(self) -> None:
@@ -1848,9 +1856,11 @@ class RotorPage(QtWidgets.QWidget):
             centre = (float(sag[2]), float(sag[3]))
         self.orbits.update_orbits(trails, keys, heavy if w > 0 else None, centre, ring)
 
-        t, hist = self.history.window(self.window.value())
+        t, hist = self.history.window(self.time_window.value())
         st = self.station.currentIndex()
-        self.time.update_curves(t, self._shown(hist)[:, 2 * st : 2 * st + 2], hist[:, OMEGA] * RPM, self.window.value())
+        self.time.update_curves(
+            t, self._shown(hist)[:, 2 * st : 2 * st + 2], hist[:, OMEGA] * RPM, self.time_window.value()
+        )
         if self.tabs.current_page() is self.rub_panel:
             self._draw_push(t, hist)
         self.campbell_plot.set_speed(sim.omega * RPM)
@@ -1954,9 +1964,9 @@ class RotorPage(QtWidgets.QWidget):
     def _draw_push(self, t: np.ndarray | None = None, hist: np.ndarray | None = None) -> None:
         """The Rub tab's plot of the ring's push, over the strip chart's window (`t`, `hist` from the history),
         and its Newkirk spiral."""
-        if t is None:
-            t, hist = self.history.window(self.window.value())
-        self.rub_panel.update_contact(t, hist[:, PUSH], self.window.value())
+        if t is None or hist is None:
+            t, hist = self.history.window(self.time_window.value())
+        self.rub_panel.update_contact(t, hist[:, PUSH], self.time_window.value())
         if self.sim.thermal:
             vectors, bows = self._spiral
             self.rub_panel.update_spiral(np.array(vectors, dtype=complex), np.array(bows, dtype=complex), self._heat)
@@ -2019,6 +2029,7 @@ class RotorPage(QtWidgets.QWidget):
 
     def _sag_at(self, omega: np.ndarray) -> np.ndarray:
         """The static sag (len(omega), 8) in the history's station columns."""
+        assert self._sag is not None, "set with the rotor (_set_sag)"
         speeds, cols = self._sag
         if speeds.size == 1:
             return np.broadcast_to(cols[0], (np.size(omega), 8))
@@ -2043,7 +2054,7 @@ class RotorPage(QtWidgets.QWidget):
 
     def _draw_spectrum(self) -> None:
         """The full spectrum at the strip chart's station over the strip chart's window."""
-        t, hist = self.history.window(self.window.value())
+        t, hist = self.history.window(self.time_window.value())
         st = self.station.currentIndex()
         freqs, amps = full_spectrum(t, self._vibration(hist)[:, 2 * st : 2 * st + 2])
         omega = self.sim.omega
@@ -2056,7 +2067,7 @@ class RotorPage(QtWidgets.QWidget):
             top=(3 if self.sim.system.spacing == 1 else 2) if self.sim.system.periodic else 1,
         )
         self.spectrum_note.setText(
-            f"Full spectrum of the {STATIONS[st].lower()} orbit over the last {self.window.value():g} s "
+            f"Full spectrum of the {STATIONS[st].lower()} orbit over the last {self.time_window.value():g} s "
             "(the strip chart's station and window): forward whirl on the right, backward on the left."
         )
 
@@ -2074,8 +2085,10 @@ class RotorPage(QtWidgets.QWidget):
             return
         if only_new and self._waterfall_drawn:
             return
-        self._waterfall_drawn = True
         wf = self.waterfall
+        if wf is None:
+            return
+        self._waterfall_drawn = True
         mode = self.wf_against.currentIndex()
         blocks = wf.latest_ramp(up=mode == 0) if against_speed(mode) else wf.blocks
         ys, label = baselines(blocks, mode)
@@ -2108,6 +2121,14 @@ class RotorPage(QtWidgets.QWidget):
                 else " Tap the disc, or tick <i>Tap the disc every</i>, to ring the free whirl."
             )
         )
+
+
+def _bearing(
+    row: list[QtWidgets.QDoubleSpinBox], film: JournalBearing | None, magnet: MagneticBearing | None
+) -> Bearing:
+    """A bearing from its row of boxes (kx, ky, cx, cy, mass, kxy, swirl), on a film or a magnet if given."""
+    kx, ky, cx, cy, mass, kxy, swirl = (w.value() for w in row)
+    return Bearing(kx, ky, cx, cy, mass, kxy, swirl, film=film, magnet=magnet)
 
 
 def _isotropic(system: RotorSystem) -> bool:

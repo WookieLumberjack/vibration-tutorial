@@ -12,6 +12,7 @@ from __future__ import annotations
 import itertools
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
@@ -102,7 +103,7 @@ DEFAULT_UPDATE = {"kinds": (Kind.SPRING,), "shapes": True, "damping": False, "we
 
 # Errors to try: (name, {"k": {element: factor}, "m": ..., "c": ..., "all_k": factor, "sensors": [...],
 # "source": Source}, note). Elements count from 0; -1 is the last.
-TRIALS = (
+TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
         "One spring 30 % too stiff",
         {"k": {2: 1.3}},
@@ -802,15 +803,13 @@ class ModelUpdatingPage(QtWidgets.QWidget):
                 w.deleteLater()
         for i in range(n):
             label = QtWidgets.QLabel(f"{i + 1}")
-            row = [label]
-            for col in range(3):
-                box = spin(0.05, 20.0, values[i][col] if i < len(values) else 1.0, 3)
-                box.setToolTip(TIPS["errors"])
-                box.valueChanged.connect(self._on_errors)
-                row.append(box)
-            for col, w in enumerate(row):
-                self.error_grid.addWidget(w, i + 1, col)
-            self.error_rows.append(tuple(row))
+            m, k, c = (spin(0.05, 20.0, values[i][col] if i < len(values) else 1.0, 3) for col in range(3))
+            for factor in (m, k, c):
+                factor.setToolTip(TIPS["errors"])
+                factor.valueChanged.connect(self._on_errors)
+            for col, cell in enumerate((label, m, k, c)):
+                self.error_grid.addWidget(cell, i + 1, col)
+            self.error_rows.append((label, m, k, c))
         self.errors = self._read_errors() if self.errors is not None else None
 
     def _read_errors(self) -> Errors:
@@ -974,6 +973,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             self.redraw()
 
     def redraw(self) -> None:
+        assert self.corr is not None, "drawn after recompute"
         c = self.corr
         test = c.test
         n_model = len(c.result.modes)
@@ -1018,6 +1018,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             self.readout.setText("No pairs: no test shape matches a model shape with a MAC of 0.5 or more.")
 
     def _fill_table(self) -> None:
+        assert self.corr is not None, "drawn after recompute"
         c = self.corr
         t = self.table
         current = t.currentRow()
@@ -1052,6 +1053,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         t.blockSignals(False)
 
     def _draw_frequencies(self) -> None:
+        assert self.corr is not None, "drawn after recompute"
         c = self.corr
         p, q = self.freq_plot, self.error_plot
         p.clear()
@@ -1074,6 +1076,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         q.getAxis("bottom").setTicks([[(i + 1, f"T{i + 1}") for i in range(len(c.test.modes))]])
 
     def _draw_shapes(self) -> None:
+        assert self.system is not None, "drawn after recompute"
         c = self.corr
         if c is None:
             return
@@ -1116,6 +1119,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         )
 
     def _draw_auto(self) -> None:
+        assert self.corr is not None, "drawn after recompute"
         c = self.corr
         k = len(c.test.modes)
         names = [f"T{i + 1}" for i in range(k)]
@@ -1134,6 +1138,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.auto_note.setText(text)
 
     def _draw_comac(self) -> None:
+        assert self.corr is not None and self.system is not None, "drawn after recompute"
         c = self.corr
         p = self.comac_plot
         p.clear()
@@ -1157,6 +1162,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
 
     def _draw_update(self) -> None:
         """The Updating and Sensitivity tabs, when they show (updated once per correlation and setting)."""
+        assert self.system is not None and self.errors is not None, "drawn after recompute"
         c = self.corr
         tab = self.tabs.currentWidget()
         if c is None or tab not in (self.update_tab, self.sens_tab):
