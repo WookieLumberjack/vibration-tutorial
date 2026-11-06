@@ -300,7 +300,7 @@ class BackExpansionView(CMSRunView):
         key = self.chain_box.currentData()
         x_rec = now[key][0] if now[key] is not None else sim.x_reduced
         x_true = sim.x_full
-        t, y = self.history.window(self.window.value())
+        t, y = self.history.window(self.time_window.value())
         peak = max(
             float(np.abs(x_true).max()), float(np.abs(x_rec).max()), float(np.abs(y[:, :n]).max()) if y.size else 0.0
         )
@@ -340,7 +340,7 @@ class BackExpansionView(CMSRunView):
             self.e_curves[k].setData(t, errs[k])
             self.f_curves[k].setData(t, force)
 
-        w = self.window.value()
+        w = self.time_window.value()
         x0 = max(t[-1] - w, 0.0) if t[-1] > w else 0.0
         self.x_plot.setXRange(x0, x0 + w, padding=0)
         span = max(MIN_SPAN, *(float(np.abs(v).max()) for v in shown.values()))

@@ -391,7 +391,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         self.shape = combo([s.value for s in fid.SHAPES], TIPS["shape"])
         ident.add("Force:", self.shape, TIPS["shape"])
         self.hit = ident.number("On mass:", 1, MAX_DOF, 3, 0, "", TIPS["hit"])
-        self.width = ident.number("Lasting:", 1.0, 2000.0, 100.0, 0, " ms", TIPS["width"])
+        self.pulse_width = ident.number("Lasting:", 1.0, 2000.0, 100.0, 0, " ms", TIPS["width"])
         self.output = combo([o.value for o in fid.OUTPUTS], TIPS["output"])
         ident.add("Measured:", self.output, TIPS["output"])
         holder = QtWidgets.QWidget()
@@ -428,7 +428,9 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             (self.kind, self.spring, self.k3, self.gap, self.k_gap, self.force, self.out, *self.levels, self.mode),
             self._on_sine,
         )
-        connect_all((self.shape, self.hit, self.width, self.output, *self.sensor_boxes, self.noise), self._on_measure)
+        connect_all(
+            (self.shape, self.hit, self.pulse_width, self.output, *self.sensor_boxes, self.noise), self._on_measure
+        )
         connect_all((self.method, self.log_lam, self.k), self._on_solve)
 
         # --- centre
@@ -525,8 +527,8 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             box.blockSignals(True)
             box.setMaximum(system.n)
             box.blockSignals(False)
-        for i, box in enumerate(self.sensor_boxes):
-            box.setVisible(i < system.n)
+        for i, check in enumerate(self.sensor_boxes):
+            check.setVisible(i < system.n)
         self._dirty = True
         if self.isVisible():
             self.redraw()
@@ -562,7 +564,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             hz=self.dist_hz.value(),
             shape=fid.SHAPES[self.shape.currentIndex()],
             hit=int(self.hit.value()) - 1,
-            width=self.width.value() / 1000,
+            width=self.pulse_width.value() / 1000,
             output=fid.OUTPUTS[self.output.currentIndex()],
             sensors=self._sensors(),
             noise=self.noise.value(),
@@ -583,7 +585,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             box.blockSignals(True)
             box.setMaximum(system.n)
             box.blockSignals(False)
-        for box, value in (
+        for control, value in (
             (self.kind, nl.KINDS.index(t.kind)),
             (self.spring, t.spring + 1),
             (self.k3, t.k3),
@@ -599,16 +601,16 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             (self.dist_hz, t.hz),
             (self.shape, fid.SHAPES.index(t.shape)),
             (self.hit, t.hit + 1),
-            (self.width, 1000 * t.width),
+            (self.pulse_width, 1000 * t.width),
             (self.output, fid.OUTPUTS.index(t.output)),
             (self.noise, t.noise),
             (self.method, fid.METHODS.index(t.method)),
             (self.log_lam, t.log_lam),
             (self.k, t.k),
         ):
-            set_quietly(box, value)
-        for i, box in enumerate(self.sensor_boxes):
-            set_quietly(box, i in t.sensors)
+            set_quietly(control, value)
+        for i, check in enumerate(self.sensor_boxes):
+            set_quietly(check, i in t.sensors)
         self.trials.show_note(t.note)
         self.tabs.blockSignals(True)
         self.tabs.setCurrentIndex(t.tab)
@@ -719,7 +721,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         s = self.system
         self.h = fid.step_for(s)
         self.truth = fid.force_history(
-            fid.SHAPES[self.shape.currentIndex()], fid.SAMPLES, self.h, self.width.value() / 1000
+            fid.SHAPES[self.shape.currentIndex()], fid.SAMPLES, self.h, self.pulse_width.value() / 1000
         )
         sensors = self._sensors()
         if not sensors:
@@ -793,8 +795,8 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         self.frf_legend.clear()
         self.frf_legend.addItem(self.linear_item, "linear")
         jumps = []
-        for k, ((up, down), F) in enumerate(zip(self.sweeps, self.levels, strict=True)):
-            F = F.value()
+        for k, ((up, down), level) in enumerate(zip(self.sweeps, self.levels, strict=True)):
+            F = level.value()
             self.up_items[k].setData(up.hz, np.abs(up.X[:, out]) / F)
             self.down_items[k].setData(down.hz, np.abs(down.X[:, out]) / F)
             points = [(up.hz[j], abs(up.X[j, out]) / F) for j in up.jumps] + [

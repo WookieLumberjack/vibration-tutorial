@@ -74,7 +74,7 @@ class Beam:
         return self.length / self.gyration
 
 
-def beam_omega(beam: Beam, k: np.ndarray, theory: Theory = Theory.TIMOSHENKO, branch: int = 0) -> np.ndarray:
+def beam_omega(beam: Beam, k: float | np.ndarray, theory: Theory = Theory.TIMOSHENKO, branch: int = 0) -> np.ndarray:
     """ω for the wave sin(kx) (k = nπ/L on the simply supported beam): the lower root (bending), or with
     `branch` 1 Timoshenko's upper one (thickness shear).
 

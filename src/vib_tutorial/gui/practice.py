@@ -252,11 +252,11 @@ class PracticeWindow(QtWidgets.QWidget):
 
     # --------------------------------------------------------------- answering
     def check(self) -> None:
-        q = self.question
-        if q is None:
+        p, q = self.problem, self.question  # set together
+        if p is None or q is None:
             return
         if q.is_spec:
-            verdict = check(q, self._state(self.problem.page))
+            verdict = check(q, self._state(p.page))
         elif q.is_choice:
             picked = self._choice_group.checkedId()
             if picked < 0:
@@ -270,13 +270,13 @@ class PracticeWindow(QtWidgets.QWidget):
         self._verdict = f'<p><b class="{colour}">{verdict.message}</b></p>'
         self._details = verdict.details
         if verdict.right and not self._solution:
-            _mark_solved(self.problem)
+            _mark_solved(p)
             self._show_ticks()
         if q.is_choice:  # a choice, right or wrong, is answered: the working and the run follow
             self._answered = True
             self._solution = q.solution
             if q.predict and q.setup is not None:
-                self._set_up(self.problem.page, q.setup)
+                self._set_up(p.page, q.setup)
         self._render()
 
     def show_hint(self) -> None:
@@ -292,27 +292,27 @@ class PracticeWindow(QtWidgets.QWidget):
 
     def show_on_page(self) -> None:
         """The question's setup, or a spec's design once its solution shows."""
-        q = self.question
-        if q is None:
+        p, q = self.problem, self.question
+        if p is None or q is None:
             return
         setup = q.design if self._shows_design() else q.setup
         if setup is not None:
-            self._set_up(self.problem.page, setup)
+            self._set_up(p.page, setup)
 
     def _shows_design(self) -> bool:
         return self.question is not None and self.question.design is not None and bool(self._solution)
 
     # --------------------------------------------------------------- drawing
     def _render(self) -> None:
-        q = self.question
-        if q is None:
+        p, q = self.problem, self.question
+        if p is None or q is None:
             self.title.setText("Practice")
             self.text.setHtml(
                 "<p>Pick a problem on the left. Each asks with new numbers every time; "
                 "<i>New numbers</i> asks again.</p>"
             )
         else:
-            self.title.setText(self.problem.title)
+            self.title.setText(p.title)
             parts = [f"<p>{q.prompt}</p>"]
             if q.predict:
                 parts.append("<p><i>Predict it first: once you've answered, the page shows it.</i></p>")
@@ -332,9 +332,9 @@ class PracticeWindow(QtWidgets.QWidget):
         asked = q is not None
         for b in (self.check_button, self.hint_button, self.solution_button, self.new_button):
             b.setEnabled(asked)
-        self.page_button.setEnabled(asked and q.setup is not None and (not q.predict or self._answered))
+        self.page_button.setEnabled(q is not None and q.setup is not None and (not q.predict or self._answered))
         self.page_button.setText("Show a design on the page" if self._shows_design() else "Show on the page")
-        self.answer_area.setVisible(asked and not q.is_spec)
+        self.answer_area.setVisible(q is not None and not q.is_spec)
 
     def _show_ticks(self) -> None:
         solved = _solved()

@@ -547,7 +547,7 @@ def test_substructuring_time_response(app):
     for _ in range(5):
         tv.step(0.2)
     assert tv.sim.t >= 0.99  # (the tab's own timer may add a frame or two)
-    t, y = tv.history.window(tv.window.value())
+    t, y = tv.history.window(tv.time_window.value())
     assert t.size and np.abs(y[:, 0]).max() > 0.01  # the tip moves (m)
     assert 0 < np.abs(y[:, 2] - y[:, 0]).max() < 0.2 * np.abs(y[:, 0]).max()
     assert "tip error" in tv.error_note.text()
@@ -3978,7 +3978,7 @@ def test_gyroscope_on_a_table(app):
     page.load_setup(dict(setting=g.Setting.TIPPE, mass=0.02, radius=0.015, spin_rpm=1200.0, tilt=5.0))
     assert page.practice_state().round_top.inverts
     assert not page.tabs.isTabEnabled(g.TAB_PRECESSION) and page.body_form.isRowVisible(page.ratio)
-    assert not page.body_form.isRowVisible(page.height) and not page.release_form.isRowVisible(page.launch)
+    assert not page.body_form.isRowVisible(page.top_height) and not page.release_form.isRowVisible(page.launch)
     for tab in (g.TAB_POTENTIAL, g.TAB_PATH, g.TAB_CHECK):
         page.tabs.setCurrentIndex(tab)
         for _ in range(3):
@@ -3993,7 +3993,7 @@ def test_gyroscope_on_a_table(app):
     assert page.sim.event is Event.RIM and "Stopped at" in page.readout.text()
     page.load_trial(0)
     assert page.tabs.isTabEnabled(g.TAB_PRECESSION) and page.release_form.isRowVisible(page.launch)
-    assert page.body_form.isRowVisible(page.height) and not page.body_form.isRowVisible(page.friction)
+    assert page.body_form.isRowVisible(page.top_height) and not page.body_form.isRowVisible(page.friction)
     page.step(0.1)
     # an asymmetric top (the same window: every one a test builds is kept): the closed forms' tabs off, the Chaos
     # tab and Jacobi's check on; no rectangle on a table

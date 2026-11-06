@@ -779,8 +779,8 @@ class MountsPage(QtWidgets.QWidget):
         body = Form("Body")
         self.mass = body.number("Mass m:", 0.1, 10000.0, 20.0, 1, " kg", TIPS["mass"])
         self.length = body.number("Length l:", 10.0, 5000.0, 600.0, 0, " mm", TIPS["length"])
-        self.width = body.number("Width w:", 10.0, 5000.0, 500.0, 0, " mm", TIPS["width"])
-        self.height = body.number("Height:", 10.0, 5000.0, 600.0, 0, " mm", TIPS["height"])
+        self.body_width = body.number("Width w:", 10.0, 5000.0, 500.0, 0, " mm", TIPS["width"])
+        self.body_height = body.number("Height:", 10.0, 5000.0, 600.0, 0, " mm", TIPS["height"])
 
         mounts = Form("Mounts")
         self.span = mounts.number("Span (half):", 1.0, 5000.0, 250.0, 0, " mm", TIPS["span"])
@@ -824,8 +824,8 @@ class MountsPage(QtWidgets.QWidget):
         self.boxes = (
             self.mass,
             self.length,
-            self.width,
-            self.height,
+            self.body_width,
+            self.body_height,
             self.span,
             self.track,
             self.drop,
@@ -968,8 +968,8 @@ class MountsPage(QtWidgets.QWidget):
             "",
             mass=self.mass.value(),
             length=self.length.value() / 1000,
-            width=self.width.value() / 1000,
-            height=self.height.value() / 1000,
+            width=self.body_width.value() / 1000,
+            height=self.body_height.value() / 1000,
             span=self.span.value() / 1000,
             track=self.track.value() / 1000,
             drop=self.drop.value() / 1000,
@@ -995,8 +995,8 @@ class MountsPage(QtWidgets.QWidget):
         for box, value in (
             (self.mass, t.mass),
             (self.length, t.length * 1000),
-            (self.width, t.width * 1000),
-            (self.height, t.height * 1000),
+            (self.body_width, t.width * 1000),
+            (self.body_height, t.height * 1000),
             (self.span, t.span * 1000),
             (self.track, t.track * 1000),
             (self.drop, t.drop * 1000),

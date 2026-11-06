@@ -567,8 +567,8 @@ class DuffingPage(QtWidgets.QWidget):
         preset_layout.addWidget(self.preset)
         preset_layout.addWidget(self.preset_note)
         lv.addWidget(presets)
-        for box in (osc, drive, branch, play):
-            lv.addWidget(box)
+        for pane in (osc, drive, branch, play):
+            lv.addWidget(pane)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
@@ -1039,11 +1039,13 @@ class DuffingPage(QtWidgets.QWidget):
     def _draw_curve(self) -> None:
         osc = self.sim.osc
         lo, hi = self._x_range()
-        self.curve = response_curve(osc, hi)
-        self.p_curve = parametric_curve(osc, hi)
+        self.curve = drive_curve = response_curve(osc, hi)
+        self.p_curve = pump_curve = parametric_curve(osc, hi)
         top = 0.0
-        pieces = {key: [] for key in ("stable", "unstable", "p_stable", "p_unstable")}
-        for prefix, curve in (("", self.curve), ("p_", self.p_curve)):
+        pieces: dict[str, list[tuple[np.ndarray, np.ndarray]]] = {
+            key: [] for key in ("stable", "unstable", "p_stable", "p_unstable")
+        }
+        for prefix, curve in (("", drive_curve), ("p_", pump_curve)):
             for f, a, ok in curve.pieces:
                 pieces[prefix + ("stable" if ok else "unstable")].append((f, a))
                 inside = (f >= lo) & (f <= hi) & np.isfinite(a)
@@ -1200,7 +1202,7 @@ class DuffingPage(QtWidgets.QWidget):
             return
         r = self.sim.drive.freq_hz / osc.natural_hz
         self.chart_now.setData(pos=np.array([[r, osc.pump]]))
-        rate = float(floquet_growth(osc.zeta, [r], [osc.pump], CHART_STEPS)[0, 0])
+        rate = float(floquet_growth(osc.zeta, np.array([r]), np.array([osc.pump]), CHART_STEPS)[0, 0])
         verdict = (
             f"rest is unstable: a swing grows as e<sup>{rate:.3g} ω<sub>n</sub> t</sup>"
             if rate > 0
@@ -1230,7 +1232,7 @@ class DuffingPage(QtWidgets.QWidget):
             parts.append("No linear spring: the frequency depends on the swing alone.")
         if osc.cubic < 0:
             parts.append(f"Escape amplitude {fmt_length(osc.escape)}.")
-        elif osc.cubic > 0 and osc.stiffness > 0 and 0 < self.curve.tip < math.inf:
+        elif osc.cubic > 0 and osc.stiffness > 0 and self.curve is not None and 0 < self.curve.tip < math.inf:
             ratio = 0.75 * osc.cubic * self.curve.tip**2 / osc.stiffness
             parts.append(
                 f"At the peak ({fmt_length(self.curve.tip)}) the cubic adds {100 * ratio:.3g} % "
@@ -1245,6 +1247,7 @@ class DuffingPage(QtWidgets.QWidget):
 
     def _measured(self, half: bool) -> str | None:
         """'Measured: the jump at ...' for the sweep's legs so far, if any jumped."""
+        assert self.p_curve is not None, "drawn before any sweep"
         floor = JUMP_FLOOR * self.p_curve.tip if half else 0.0
         measured = []
         for leg, word in (("up", "going up"), ("down", "going down")):
@@ -1254,7 +1257,7 @@ class DuffingPage(QtWidgets.QWidget):
         return "Measured: the jump at " + " and ".join(measured) + "." if measured else None
 
     def _show_readout(self) -> None:
-        if self.curve is None:
+        if self.curve is None or self.p_curve is None:  # drawn together
             return
         osc = self.sim.osc
         lines = []

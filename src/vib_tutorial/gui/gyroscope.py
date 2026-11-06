@@ -1222,8 +1222,9 @@ class GyroscopePage(QtWidgets.QWidget):
         body.add("Shape:", self.shape, TIPS["shape"])
         self.mass = body.number("Mass m:", 0.001, 100.0, 0.5, 3, " kg", TIPS["mass"])
         self.radius = body.number("Disc radius r:", 1.0, 500.0, 40.0, 2, " mm", TIPS["radius"])
+        self.radius_label = body.label(self.radius)
         self.breadth = body.number("Breadth b:", 1.0, 500.0, 40.0, 2, " mm", TIPS["breadth"])
-        self.height = body.number("Height l:", 1.0, 500.0, 30.0, 1, " mm", TIPS["height"])
+        self.top_height = body.number("Height l:", 1.0, 500.0, 30.0, 1, " mm", TIPS["height"])
         self.tip_radius = body.number("Tip radius R:", 0.5, 100.0, 10.0, 1, " mm", TIPS["tip_radius"])
         self.low = body.number("Weight below centre:", 0.0, 100.0, 4.5, 2, " mm", TIPS["low"])
         self.ratio = body.number("I₁/I₃:", 0.1, 3.0, 0.8, 2, "", TIPS["ratio"])
@@ -1267,7 +1268,7 @@ class GyroscopePage(QtWidgets.QWidget):
                 self.mass,
                 self.radius,
                 self.breadth,
-                self.height,
+                self.top_height,
                 self.tip_radius,
                 self.low,
                 self.ratio,
@@ -1395,7 +1396,7 @@ class GyroscopePage(QtWidgets.QWidget):
             "",
             mass=self.mass.value(),
             radius=self.radius.value() / 1000,
-            height=self.height.value() / 1000,
+            height=self.top_height.value() / 1000,
             gravity=self.gravity.value(),
             setting=SETTINGS[self.setting.currentIndex()],
             shape=SHAPES[self.shape.currentIndex()],
@@ -1423,7 +1424,7 @@ class GyroscopePage(QtWidgets.QWidget):
             (self.ratio, t.ratio),
             (self.mass, t.mass),
             (self.radius, t.radius * 1000),
-            (self.height, t.height * 1000),
+            (self.top_height, t.height * 1000),
             (self.gravity, t.gravity),
             (self.spin, t.spin_rpm),
             (self.tilt, t.tilt),
@@ -1488,8 +1489,9 @@ class GyroscopePage(QtWidgets.QWidget):
     def _show_rows(self, setting: Setting, shape: Shape) -> None:
         """Show the controls this setting uses."""
         cup, ball = setting is Setting.CUP, setting is Setting.TIPPE
+        box: QtWidgets.QWidget
         for box, shown in (
-            (self.height, not ball),
+            (self.top_height, not ball),
             (self.shape, not ball),
             (self.tip_radius, setting is Setting.TABLE),
             (self.low, ball),
@@ -1501,8 +1503,10 @@ class GyroscopePage(QtWidgets.QWidget):
             self.release_form.setRowVisible(box, cup)
         rectangle = shape is Shape.RECTANGLE and cup
         self.body_form.setRowVisible(self.breadth, rectangle)
-        self.shape.model().item(SHAPES.index(Shape.RECTANGLE)).setEnabled(cup)
-        label = self.body_form.labelForField(self.radius)
+        shapes = self.shape.model()
+        assert isinstance(shapes, QtGui.QStandardItemModel), "a combo box's own model"
+        shapes.item(SHAPES.index(Shape.RECTANGLE)).setEnabled(cup)
+        label = self.radius_label
         square = shape is Shape.SQUARE and not ball
         label.setText(
             "Ball radius R:" if ball else "Side s:" if square else "Side a:" if rectangle else "Disc radius r:"
