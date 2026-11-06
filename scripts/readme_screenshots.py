@@ -1101,6 +1101,23 @@ def rotor_builder():
     save(w, "rotor_builder")
 
 
+def rotor_builder_campbell():
+    from vib_tutorial.gui.rotor_builder import TRIALS
+
+    w = window()
+    page = w.rotor_builder_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Campbell diagram: the overhung fan"))
+    page._timer.stop()
+    page.running = False
+    page._phase = 0.3 * math.pi
+    settle()
+    page._show_mode()
+    settle()
+    print(page.campbell_note.text())
+    save(w, "rotor_builder_campbell")
+
+
 def frame_response():
     from vib_tutorial.gui.frame_builder import TAB_RESPONSE, TRIALS
 
@@ -1298,6 +1315,7 @@ SHOTS = [
     gyroscope_chaos,
     gyroscope_table,
     rotor_builder,
+    rotor_builder_campbell,
     machinery_diagnostics,
 ]
 

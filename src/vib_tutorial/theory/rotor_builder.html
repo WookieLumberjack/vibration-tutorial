@@ -86,7 +86,7 @@ the state space (the Complex modes page's): z = [q, q'] (and the controllers' st
 eigenvalues λ = −ζω ± iω<sub>d</sub> of A at that speed. The table lists each one's damped frequency, its
 damping ratio and its logarithmic decrement δ = 2πζ/√(1 − ζ²), the measure the API's stability rules use. A
 negative ζ (and δ) grows: at that speed the rotor is unstable. Change the speed and the modes move: that is the
-Campbell diagram, point by point.</p>
+<a href="#campbell">Campbell diagram</a>, point by point.</p>
 
 <h3><a name="whirl"></a>Forward and backward whirl</h3>
 <p>Each mode's shape is complex: at each node x = Re(X e<sup>iωt</sup>), y = Re(Y e<sup>iωt</sup>), an ellipse.
@@ -96,6 +96,57 @@ frequency twice, and any mix of the pair is a mode: the page picks the circular 
 anisotropic bearings the pair splits into two straight lines, the soft way and the stiff way, and the spin
 couples them into ellipses, one forward and one backward. The <i>Whirl</i> tab draws the mode in 3D, the
 <i>side view</i> the up-and-down part of it.</p>
+
+<h3><a name="campbell"></a>The Campbell diagram</h3>
+<p>Work the modes out at every speed from rest to the top one and plot their frequencies against the speed:
+the <b>Campbell diagram</b> (the <i>Campbell</i> tab). Each pair fans out, its forward branch rising and its
+backward one falling, most where the discs tilt. The straight line f = N/60 is <b>1X</b>, the shaft's own
+speed: anything that turns with the shaft, an unbalance above all, pushes once a revolution. Where a branch
+meets it the push is at that mode's own frequency: a <b>critical speed</b>. Each is worked out by bisection
+between the sweep's speeds.</p>
+<p>How hard a critical bites is its <b>amplification factor</b>, AF = 1/2ζ, the peak's height over the
+response well away from it. API 684 doesn't count a critical with AF under 2.5 (ζ over 20 %; hollow circles):
+a rotor on oil films passes its bounce on them without noticing. The <b>separation margin</b> is how far the
+running speed is from the nearest critical, as a fraction of the running speed; machines are run well clear
+of their criticals, or through them quickly.</p>
+<p>The sweep works in a Ritz basis: the lowest 32 undamped modes of a symmetric stand-in for the rotor (its
+films' direct stiffness, each magnet's proportional spring k<sub>i</sub>k<sub>p</sub>), into which M, C, G and K
+are projected, G and the cross terms included. The low whirl modes come out as the full model's to a few
+parts in a million (with oil films, whose stiffness changes, the basis is made again at each speed), at a
+millisecond a speed however fine the mesh.</p>
+
+<h3><a name="unbalance"></a>The unbalance response</h3>
+<p>A disc whose centre of mass sits a distance e off the shaft's has an unbalance U = me. Keeping it on its
+circle takes a force UΩ², turning with the shaft: f<sub>x</sub> + if<sub>y</sub> = Ue<sup>iψ</sup>Ω²e<sup>iΩt</sup>,
+ψ the heavy spot's angle from the keyphasor mark. So F<sub>x</sub> = Ue<sup>iψ</sup>Ω² and F<sub>y</sub> =
+−iF<sub>x</sub> at its node, and the steady response, exactly, is</p>
+<p align="center">(K(Ω) − Ω²M + iΩ(C(Ω) + ΩG) + D(iΩ)) Q = F,</p>
+<p>D the magnets' controllers at that frequency. The <i>Unbalance</i> tab plots one node's orbit, its major
+semi-axis |X + iY|/2 + |X − iY|/2 (its forward circle's radius plus its backward one's), and how far its x lags
+the heavy spot. Through a forward critical the orbit peaks and the lag swings from 0 to 180°, 90° at the peak;
+above it the disc turns about its centre of mass, the heavy spot inside the orbit. A backward critical hardly
+shows: the unbalance pushes forward, and on round bearings it does no work on a backward whirl. On
+anisotropic ones the modes are part forward, part backward, and it does.</p>
+
+<h3><a name="stability"></a>Stability</h3>
+<p>The same sweep gives each branch's damping: the <i>Stability</i> tab plots its <b>logarithmic decrement</b>
+δ = 2πζ/√(1 − ζ²), the log of one free swing's peak over the next, against the speed. API 684 asks for δ ≥ 0.1
+at the running speed (dashed). Where the least damped mode's δ crosses 0 the rotor goes <b>unstable</b>: that
+mode grows by itself, from nothing, with no force driving it, until something nonlinear stops it (or the
+machine). The red line marks the onset, found by bisection. Its sources here are all skew stiffnesses, Ω H and
+the films' cross terms, which push a forward whirl along its path: an oil film past about twice a mode's
+frequency (oil whip), a seal's swirl, and the shaft's internal damping.</p>
+
+<h3><a name="internal"></a>Internal damping</h3>
+<p>A shaft's material damping (or a shrink fit slipping on it) resists its bending as the shaft feels it,
+turning with it: the bending rate in the shaft is q' − ΩJq, J turning x toward y. So it is −βK<sub>shaft</sub>(q' −
+ΩJq): ordinary damping βK<sub>shaft</sub> in C, and a skew βK<sub>shaft</sub> between the planes in Ω H. Below a
+critical speed the whirl outruns the shaft and it damps; at a forward critical the whirl is synchronous, the
+turning shaft doesn't flex at all, and it does nothing; above, the shaft outruns its whirl and the damping drags
+the whirl on round, feeding it. With some damping in the bearings the onset comes above the first critical, at
+roughly Ω<sub>c</sub>(1 + c<sub>bearings</sub>/c<sub>internal</sub>): more internal damping brings it down,
+more external damping pushes it up. That is why built-up rotors with shrink fits whirled themselves apart in
+the 1920s, and why the cure is damping in the bearings.</p>
 
 <h3><a name="trials"></a>Things to try</h3>
 <!--TRIALS-->
@@ -109,6 +160,10 @@ matrices, and only G (and any cross-coupling) joins them.</li>
 backward one that softens, most where the discs tilt.</li>
 <li>Oil films and seals add a skew stiffness growing with the speed; it feeds forward whirl, and past some speed
 a mode's ζ goes negative: the rotor is unstable.</li>
+<li>The Campbell diagram's crossings with 1X are the critical speeds; an unbalance drives the forward ones,
+and their amplification factor 1/2ζ says how hard.</li>
+<li>Internal damping damps at rest but drives the forward whirl above a critical speed; damping in the bearings
+holds it off.</li>
 <li>Shear matters on a stubby shaft: Timoshenko's beams are softer than Euler–Bernoulli's, the higher modes
 most.</li>
 </takeaways>

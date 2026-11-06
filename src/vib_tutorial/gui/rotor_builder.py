@@ -3,10 +3,12 @@
 Left: Things to try, the selected part's properties (a section's length, diameters, material and elements; a
 disc from the library or by its mass and inertias; a bearing's springs and dampers, oil film or magnet; a seal's
 stiffness, damping and swirl), the model's settings (beam theory, horizontal or vertical, the speed) and what to
-show. Centre: the tools, the side view (click the shaft to split it or to put a part there, drag a part along
-it), bending in the mode picked, and the modes at the speed with their damping and whirl. Right: the mode
-whirling in 3D, the global matrices with the picked part's share tinted, the part's own matrices, and the
-Theory. The page has its own model (core/rotor_builder.py) and swings the mode on its own frame loop while it
+show (the mode or the unbalance response, and the node the Unbalance tab plots). Centre: the tools, the side view
+(click the shaft to split it or to put a part there, drag a part along it), bending in the mode picked, and the
+modes at the speed with their damping and whirl. Right: the mode whirling in 3D; the sweeps to the top speed
+(core/rotor_builder_sweep.py), worked out when their tab first shows after a change: the Campbell diagram with
+its critical speeds, the unbalance response's Bode plot, and the stability map; the global matrices with the
+picked part's share tinted, the part's own matrices, and the Theory. The page has its own model (core/rotor_builder.py) and swings the mode on its own frame loop while it
 shows.
 """
 
@@ -54,6 +56,7 @@ from ..core.rotor_builder import (
     solid_disc,
     uniform,
 )
+from ..core.rotor_builder_sweep import N_BRANCHES, Sweep, lag, orbit, sweep, unbalance_response
 from . import frame_stats, settle_plots, weak
 from .frame_builder import matrix_html
 from .layouts import FlowLayout, group
@@ -65,6 +68,7 @@ from .lesson import (
     combo,
     fmt,
     note_label,
+    plot,
     readout_label,
     set_quietly,
     theory,
@@ -73,9 +77,12 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .style import colors
-from .theming import mute
+from .theming import add_legend, mute
 
-TAB_WHIRL, TAB_ASSEMBLY, TAB_ELEMENT, TAB_THEORY = range(4)
+TAB_WHIRL, TAB_CAMPBELL, TAB_UNBALANCE, TAB_STABILITY, TAB_ASSEMBLY, TAB_ELEMENT, TAB_THEORY = range(7)
+SWEEP_TABS = (TAB_CAMPBELL, TAB_UNBALANCE, TAB_STABILITY)
+RESPONSE_SPEEDS = 241  # the unbalance response's speeds, 0 to the top one
+API_LOG_DEC = 0.1  # API 684's least log decrement at the running speed
 FRAME_MS = 16
 SHOW_HZ = 0.6  # the animation's own pace: every mode whirls at it
 SWING = 0.15  # the largest lateral motion drawn, as a fraction of the side view's height
@@ -115,6 +122,14 @@ class Matrix(Enum):
 
 
 MATRICES = tuple(Matrix)
+
+
+class Swing(Enum):
+    MODE = "The mode picked"
+    UNBALANCE = "The unbalance response"
+
+
+SWINGS = tuple(Swing)
 EMPTY = Rotor()
 
 
@@ -129,6 +144,9 @@ class RotorTrial:
     picked: Selection | None = None  # the part on the Element tab (and tinted on the Assembly tab)
     matrix: Matrix = Matrix.K
     grid: float = 0.05
+    top_rpm: float = 12000.0  # the sweeps' (Campbell, unbalance, stability) top speed
+    probe: int | None = None  # the node the Unbalance tab plots (None: the first disc's)
+    swing: Swing = Swing.MODE
 
 
 # ------------------------------------------------------------------ the trials' rotors
@@ -173,12 +191,20 @@ MAGNETS = Rotor(
     uniform(1.0, 0.05, 4, 3),
     discs=(DISC_LIBRARY[1].at(0.5),),
     bearings=(Bearing(0.0, BearingKind.MAGNET, magnet=MAGNET), Bearing(1.0, BearingKind.MAGNET, magnet=MAGNET)),
+    internal=1e-6,
 )
 SEALED = dataclasses.replace(
     ANISOTROPIC,
     discs=(DISC_LIBRARY[1].at(0.5),),
     bearings=(SPRINGS, dataclasses.replace(SPRINGS, z=1.0)),
     seals=(Seal(0.25, 2e6, 2e3, 0.5),),
+)
+DAMPED = dataclasses.replace(SPRINGS, cxx=1e4, cyy=1e4)
+INTERNAL = dataclasses.replace(
+    UNIFORM,
+    discs=(DISC_LIBRARY[1].at(0.5),),
+    bearings=(DAMPED, dataclasses.replace(DAMPED, z=1.0)),
+    internal=1e-4,
 )
 
 TRIALS = (
@@ -271,7 +297,9 @@ TRIALS = (
         "= 0.543 MN/m on K's diagonal, which the PID beats (k<sub>i</sub>k<sub>p</sub> = 2.71 MN/m). The first pair "
         "is at 37.85 Hz with ζ = 4.57 %, the second at 143.0 with 38.4 %: the derivative damps. The controllers' "
         "12 states join q and q' in the state; four of their roots are real, at −12.7 /s, the integral action "
-        "pulling each journal back to the centre.",
+        "pulling each journal back to the centre. Above about 1.2 kHz the controller's lag turns its damping "
+        "negative: the shaft's own internal damping (β = 1 µs) keeps its 2.4 kHz bending modes from growing. "
+        "Set β to 0 and they do (ζ = −0.61 %).",
         MAGNETS,
         picked=("bearing", 0),
         tab=TAB_ELEMENT,
@@ -286,6 +314,68 @@ TRIALS = (
         rpm=6000.0,
         picked=("seal", 0),
         tab=TAB_ELEMENT,
+    ),
+    RotorTrial(
+        "Campbell diagram: the overhung fan",
+        "The fan's branches against the speed: each pair fans out, backward falling and forward rising. Where one "
+        "meets 1X (the red line) is a critical speed: 4091 rpm (the first pair's backward branch), 5480 rpm (its "
+        "forward one) and 9507 rpm (the second pair's backward). Its amplification factor 1/2ζ says how sharply "
+        "an unbalance response could peak there: 116 at 5480 rpm, the bearings' 500 N·s/m barely damping it. "
+        "Running at 3000 rpm the fan is 36.4 % below the nearest: its separation margin.",
+        OVERHUNG,
+        rpm=3000.0,
+        tab=TAB_CAMPBELL,
+        picked=("disc", 0),
+    ),
+    RotorTrial(
+        "Unbalance: only the forward critical",
+        "The fan's unbalance, 174 g·mm (10 µm of its 17.4 kg). Its orbit peaks at the forward critical, 1003 µm "
+        "at 5480 rpm, lagging the heavy spot by 90°; at the backward criticals (4091 and 9507 rpm, grey) it is "
+        "12.5 and 13.7 µm, nothing to see. An unbalance turns forward with the shaft, and on round bearings it "
+        "can't drive a backward whirl. Past the critical the lag goes to 180°: the disc turns about its centre "
+        "of mass, its heavy spot inside the orbit.",
+        OVERHUNG,
+        rpm=5480.0,
+        tab=TAB_UNBALANCE,
+        picked=("disc", 0),
+        swing=Swing.UNBALANCE,
+    ),
+    RotorTrial(
+        "The compressor's criticals",
+        "The stepped compressor rotor, its bearings damped 5 kN·s/m. Its criticals are 9985 rpm (backward), 10308 "
+        "(forward), 11758 (backward) and 12748 (forward), with amplification factors from 9.2 to 10.3. At its "
+        "6000 rpm it is 66.4 % below the first, and the unbalance (on the Unbalance tab: 156 g·mm on each "
+        "impeller, 71 on the hub) whirls the first impeller 2.15 µm; at 10308 rpm, 35.4 µm.",
+        COMPRESSOR,
+        rpm=6000.0,
+        tab=TAB_CAMPBELL,
+        grid=0.025,
+        top_rpm=15000.0,
+    ),
+    RotorTrial(
+        "Stability map: oil whip",
+        "The rotor on oil films, swept to 9000 rpm. The bounce on the films is overdamped (its δ far above 1, its "
+        "1X crossings hollow on the Campbell diagram: critically damped). The bending pair's δ are 0.193 "
+        "(forward) and 0.0632 (backward) at 3000 rpm; the forward one's crosses 0 at 5466 rpm (the red line) "
+        "and at 6000 rpm (shown) it is −0.190: it grows, oil whip. It misses API 684's δ ≥ 0.1 (dashed) well "
+        "before.",
+        FILMS,
+        rpm=6000.0,
+        tab=TAB_STABILITY,
+        top_rpm=9000.0,
+    ),
+    RotorTrial(
+        "Internal damping",
+        "The 300 mm disc at midspan on bearings of 20 MN/m and 10 kN·s/m, and the shaft's internal damping β = "
+        "100 µs. At rest it damps the first pair to 2.04 % (0.62 % without it). But it turns with the shaft, "
+        "resisting the bending rate the shaft feels: at the forward critical, 2947 rpm, a synchronous whirl "
+        "doesn't flex the turning shaft at all, and ζ is back to 0.62 %. Above it the shaft turns faster than it "
+        "whirls, and its internal damping drags the whirl on round: unstable from 4245 rpm, 1.44 × the critical. "
+        "Double β and that falls to 3596 rpm; more damping in the bearings raises it.",
+        INTERNAL,
+        rpm=3000.0,
+        tab=TAB_STABILITY,
+        top_rpm=8000.0,
     ),
 )
 
@@ -431,6 +521,113 @@ def _spec_stiffen(rng: np.random.Generator) -> Question:
     )
 
 
+def _log_dec(rng: np.random.Generator) -> Question:
+    zeta = pick(rng, (0.5, 1.0, 2.0, 5.0, 10.0, 20.0))
+    z = zeta / 100
+    delta = TWO_PI * z / math.sqrt(1 - z * z)
+    return Question(
+        f"A rotor's least damped mode has ζ = {zeta:g} %. What is its logarithmic decrement δ, the ln of the ratio "
+        "of one swing's peak to the next, which API 684 asks to be 0.1 or more?",
+        delta,
+        f"δ = 2πζ/√(1 − ζ²) = {number(delta, 4)}, about 2πζ while ζ is small. δ = 0.1 is ζ = 1.6 %.",
+        setup=dict(rotor=SEALED, rpm=6000.0, tab=TAB_STABILITY),
+    )
+
+
+def _critical_speed(rng: np.random.Generator) -> Question:
+    diameter = pick(rng, (40.0, 50.0, 60.0))
+    kind = int(pick(rng, (0, 1, 2)))
+    rotor = pinned_ends(Rotor(uniform(1.0, diameter / 1000, 4, 3), discs=(DISC_LIBRARY[kind].at(0.5),)))
+    a = assemble(rotor)
+    f0 = float(modes(a, 0.0).hz[0])
+    top = 1.5 * 60 * f0
+    first = next(c for c in sweep(a, top, n_speeds=25).criticals if c.forward)
+    return Question(
+        f"A {diameter:g} mm steel shaft 1 m long, pinned at its ends, carries a "
+        f"{DISC_LIBRARY[kind].name.lower()} at midspan. At rest its first pair of modes is at {number(f0, 4)} Hz. "
+        "At what speed is its first forward critical speed, where unbalance drives it?",
+        first.rpm,
+        f"At a critical the whirl's frequency is the shaft's, f = N/60. A disc at midspan doesn't tilt in the "
+        f"first mode, so its gyroscopic moment hardly moves it: N ≈ 60 × {number(f0, 4)} = {number(60 * f0, 4)} rpm "
+        f"(the Campbell diagram's crossing: {number(first.rpm, 4)} rpm, the shaft's own sections tilting a "
+        "little).",
+        unit="rpm",
+        setup=dict(rotor=rotor, rpm=first.rpm, tab=TAB_CAMPBELL, top_rpm=round(top, -2)),
+    )
+
+
+def _backward(rng: np.random.Generator) -> Question:
+    return Question(
+        "The overhung fan on round bearings has criticals at 4091 rpm (backward), 5480 rpm (forward) and 9507 "
+        "rpm (backward). Running up through them with its unbalance, how big is its orbit at the backward ones?",
+        1,
+        "The unbalance turns with the shaft, forward, so on round bearings it does no work on a backward whirl: "
+        "1003 µm at 5480 rpm, but 12.5 and 13.7 µm at 4091 and 9507 rpm, only the forward branch's tail. On "
+        "anisotropic bearings the modes are ellipses, part forward and part backward, and a backward critical "
+        "does respond.",
+        choices=(
+            "As big as at the forward one",
+            "Tiny: the unbalance can't drive a backward whirl",
+            "Infinite: the backward branch has no damping",
+            "Zero exactly, at any bearings",
+        ),
+        setup=dict(rotor=OVERHUNG, rpm=4091.0, tab=TAB_UNBALANCE, picked=("disc", 0), swing=Swing.UNBALANCE),
+        predict=True,
+    )
+
+
+def _internal(rng: np.random.Generator) -> Question:
+    return Question(
+        "A shaft's internal damping (its material's, or a shrink fit's slip) damps every mode of the rotor at "
+        "rest. What does it do to the forward whirl above the first critical speed?",
+        2,
+        "It turns with the shaft and resists the bending rate the shaft feels, the whirl's less the spin's. "
+        "Below the critical the whirl outruns the shaft and it damps; at the critical the whirl is synchronous "
+        "and it does nothing; above, the shaft outruns the whirl and it drags it on round, feeding it. With "
+        "damping in the bearings the onset comes a little above the critical (here 4245 rpm, 1.44 × 2947).",
+        choices=(
+            "Damps it more, the faster it spins",
+            "Nothing: damping can't drive",
+            "Drives it: past some speed above the critical the whirl grows",
+            "Stiffens it, like the gyroscopic moment",
+        ),
+        setup=dict(rotor=INTERNAL, rpm=3000.0, tab=TAB_STABILITY, top_rpm=8000.0),
+        predict=True,
+    )
+
+
+def _swirl_brake_spec(rng: np.random.Generator) -> Question:
+    target = pick(rng, (8000.0, 9000.0, 10000.0))
+    start = SEALED
+    seal = start.seals[0]
+
+    def goal(t: RotorTrial) -> tuple[Requirement, ...]:
+        s = t.rotor.seals[0] if t.rotor.seals else Seal(0.0, 0.0, 0.0, 0.0)
+        try:
+            onset = sweep(assemble(t.rotor), target, n_speeds=41).onset
+        except RotorError:
+            onset = 0.0
+        return (
+            at_least("the speed it stays stable to", target if onset is None else onset, target, "rpm"),
+            kept("the seal's stiffness", s.k / 1e6, seal.k / 1e6, "MN/m"),
+            kept("the seal's damping", s.c / 1e3, seal.c / 1e3, "kN·s/m"),
+        )
+
+    design = dataclasses.replace(start, seals=(dataclasses.replace(seal, swirl=0.1),))
+    return Question(
+        f"The rotor with a seal (Things to try: <i>A seal's swirl</i>) grows unstable at 6845 rpm, its fluid "
+        f"swirling at half the shaft's speed. Keep it stable to {target:g} rpm without changing the seal's "
+        "stiffness or damping (select the seal; the Stability tab shows the onset).",
+        0,
+        "The seal drives the forward whirl through k<sub>xy</sub> = λΩc: cut the swirl and the drive goes with it. "
+        "A <b>swirl brake</b> (vanes at the seal's inlet) does that: at λ = 0.1 it is stable throughout. More "
+        "damping in the bearings works too.",
+        setup=dict(rotor=start, rpm=6000.0, tab=TAB_STABILITY, picked=("seal", 0), top_rpm=target),
+        goal=goal,
+        design=dict(rotor=design, rpm=6000.0, tab=TAB_STABILITY, picked=("seal", 0), top_rpm=target),
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "rotor_builder_page", f"See {page_link('rotor_builder_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -440,6 +637,11 @@ PROBLEMS = tuple(
         ("hollow", "A hollow shaft", "elements", "The shaft's elements", _hollow),
         ("nutation", "A free shaft's nutation", "gyroscopics", "Gyroscopic moments", _nutation),
         ("stiffen-spec", "Spec: raise the first mode", "modes", "Modes at a speed", _spec_stiffen),
+        ("log-dec", "The log decrement", "stability", "Stability", _log_dec),
+        ("critical", "A critical speed", "campbell", "The Campbell diagram", _critical_speed),
+        ("backward", "Predict: a backward critical", "unbalance", "The unbalance response", _backward),
+        ("internal", "Predict: internal damping", "internal", "Internal damping", _internal),
+        ("swirl-brake", "Spec: a swirl brake", "stability", "Stability", _swirl_brake_spec),
     )
 )
 
@@ -489,6 +691,17 @@ TIPS = {
     "rpm": "<p>The speed the modes are worked out at: the gyroscopic matrix, an oil film's coefficients and a "
     "seal's cross-coupling all change with it.</p>",
     "grid": "<p>The spacing parts and cuts snap to.</p>",
+    "unbalance": "<p>The disc's unbalance m e: its mass times how far its centre of mass is off the shaft's "
+    "(1 g·mm = 10⁻⁶ kg·m). A library disc's is 10 µm of its mass.</p>",
+    "heavy": "<p>Where the heavy spot is, as an angle from the shaft's keyphasor mark in the direction of spin.</p>",
+    "internal": "<p>The shaft's internal damping β (its material's, or a shrink fit's slip): β K<sub>shaft</sub> on the "
+    "bending rate in the turning shaft. It damps at rest, but above a critical speed it drives the forward "
+    "whirl.</p>",
+    "top_rpm": "<p>The top of the speed range the Campbell diagram, the unbalance response and the stability map "
+    "sweep.</p>",
+    "swing": "<p>What the side view and the Whirl tab show: the mode picked in the table, or the steady response "
+    "to the discs' unbalance at the speed.</p>",
+    "probe": "<p>The node whose orbit the Unbalance tab plots against the speed.</p>",
     "matrix": "<p>The matrix the Assembly and Element tabs show, at the speed.</p>",
     "animate": "<p>Whirl the rotor in the mode picked (slowed to the same pace whatever its frequency, and "
     "exaggerated). Space.</p>",
@@ -1113,6 +1326,8 @@ class Properties(QtWidgets.QGroupBox):
         self.id = d.number("Diametral Id:", 0.0, 1e5, 0.025, 5, " kg·m²", TIPS["id"])
         self.diameter = d.number("Diameter:", 1.0, 5000.0, 200.0, 1, " mm", TIPS["diameter"])
         self.thickness = d.number("Thickness:", 1.0, 2000.0, 30.0, 1, " mm", TIPS["thickness"])
+        self.unbalance = d.number("Unbalance:", 0.0, 1e6, 0.0, 1, " g·mm", TIPS["unbalance"])
+        self.heavy = d.number("Heavy spot at:", -360.0, 360.0, 0.0, 0, "°", TIPS["heavy"])
         v.addWidget(self.disc)
 
         self.bearing = Form("")
@@ -1205,6 +1420,8 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.error = ""
         self.mode = 0
         self.picked: Selection | None = None  # the part on the Element tab
+        self._probe: int | None = None  # the node the Unbalance tab plots
+        self._steady: tuple[float, np.ndarray] | None = None  # (Ω, the unbalance response there)
         self.running = True  # a mode whirls on its own
         self._phase = 0.0
         self._history: list[Rotor] = []
@@ -1222,7 +1439,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
             box.editingFinished.connect(self._on_section_box)
         p.material.currentIndexChanged.connect(self._on_section_box)
         p.add_section.clicked.connect(self._on_add_section)
-        for box in (p.disc_z, p.disc_mass, p.ip, p.id, p.diameter, p.thickness):
+        for box in (p.disc_z, p.disc_mass, p.ip, p.id, p.diameter, p.thickness, p.unbalance, p.heavy):
             box.editingFinished.connect(self._on_disc_box)
         p.library.currentIndexChanged.connect(self._on_library)
         for box in (p.bearing_z, *p.spring_rows, *p.film_rows, *p.magnet_rows):
@@ -1237,17 +1454,29 @@ class RotorBuilderPage(QtWidgets.QWidget):
         model.add("Beams:", self.theory, TIPS["theory"])
         self.gravity = combo(["Horizontal", "Vertical"], TIPS["gravity"])
         model.add("Rotor:", self.gravity, TIPS["gravity"])
+        self.internal = model.number("Internal damping β:", 0.0, 1e4, 0.0, 2, " µs", TIPS["internal"])
         self.rpm = model.number("Speed:", 0.0, 100000.0, 0.0, 0, " rpm", TIPS["rpm"])
+        self.top_rpm = model.number("Sweep to:", 100.0, 100000.0, 12000.0, 0, " rpm", TIPS["top_rpm"])
         self.grid = combo([f"{1000 * g:g} mm" for g in GRIDS], TIPS["grid"])
         model.add("Grid:", self.grid, TIPS["grid"])
         self.theory.currentIndexChanged.connect(self._on_model)
         self.gravity.currentIndexChanged.connect(self._on_model)
+        self.internal.editingFinished.connect(self._on_model)
+        self.top_rpm.valueChanged.connect(self._on_top)
         self.rpm.valueChanged.connect(self._on_speed)
         self.grid.currentIndexChanged.connect(self._on_grid)
 
         show = Form("Show")
         self.matrix = combo([m.value for m in MATRICES], TIPS["matrix"])
         show.add("Matrix:", self.matrix, TIPS["matrix"])
+        self.swing = combo([s.value for s in SWINGS], TIPS["swing"])
+        show.add("Whirl in:", self.swing, TIPS["swing"])
+        self.probe = QtWidgets.QSpinBox()
+        self.probe.setRange(1, 1)
+        self.probe.setKeyboardTracking(False)
+        show.add("Response at node:", self.probe, TIPS["probe"])
+        self.swing.currentIndexChanged.connect(self._on_swing)
+        self.probe.valueChanged.connect(self._on_probe)
         self.run_button = RunButton()
         self.run_button.set_running(True)
         self.run_button.setToolTip(TIPS["animate"])
@@ -1327,12 +1556,58 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.element_view = QtWidgets.QTextBrowser()
         self.notes = theory(NOTES_HTML)
 
+        self.campbell_note = note_label()
+        self.campbell = plot("Frequency", "Hz", "Speed (rpm)", None, height=260)
+        self.stability_note = note_label()
+        self.stability = plot("Log decrement δ", None, "Speed (rpm)", None, height=260)
+        self.unbalance_note = note_label()
+        self.bode = plot("Orbit", "µm", "Speed (rpm)", None, log_y=True)
+        self.phase = plot("Lag", "°", "Speed (rpm)", None)
+        legend = add_legend(self.campbell, offset=(10, 10))
+        self.curves: dict[str, pg.PlotCurveItem] = {}
+        for name, p in (
+            ("forward", self.campbell),
+            ("backward", self.campbell),
+            ("one_x", self.campbell),
+            ("d_forward", self.stability),
+            ("d_backward", self.stability),
+            ("orbit", self.bode),
+            ("lag", self.phase),
+        ):
+            # a PlotDataItem on the log axis: a bare PlotCurveItem ignores the log mode
+            self.curves[name] = pg.PlotDataItem() if name == "orbit" else pg.PlotCurveItem(connect="finite")
+            p.addItem(self.curves[name])
+        legend.addItem(self.curves["forward"], "Forward whirl")
+        legend.addItem(self.curves["backward"], "Backward whirl")
+        legend.addItem(self.curves["one_x"], "1X: the shaft's speed")
+        self.criticals = pg.PlotDataItem(pen=None, symbol="o", symbolSize=10)
+        self.damped_criticals = pg.PlotDataItem(pen=None, symbol="o", symbolSize=10)
+        self.campbell.addItem(self.criticals)
+        self.campbell.addItem(self.damped_criticals)
+        self.speed_lines = [pg.InfiniteLine(angle=90) for _ in range(4)]
+        for line, p in zip(self.speed_lines, (self.campbell, self.stability, self.bode, self.phase)):
+            p.addItem(line, ignoreBounds=True)
+        self.zero_line = pg.InfiniteLine(angle=0, pos=0.0)
+        self.api_line = pg.InfiniteLine(angle=0, pos=API_LOG_DEC)
+        self.onset_line = pg.InfiniteLine(angle=90)
+        for line in (self.zero_line, self.api_line, self.onset_line):
+            self.stability.addItem(line, ignoreBounds=True)
+        self.critical_lines = [pg.InfiniteLine(angle=90) for _ in range(6)]
+        for line in self.critical_lines:
+            self.bode.addItem(line, ignoreBounds=True)
+        self.sweep_result: Sweep | None = None  # worked out when a sweep's tab shows (None: not since a change)
+        self.response: np.ndarray | None = None  # the unbalance response at RESPONSE_SPEEDS speeds
+        self.response_rpm = np.zeros(0)
+
         self.tabs = QtWidgets.QTabWidget()
         whirl_tab = QtWidgets.QWidget()
         wl = QtWidgets.QVBoxLayout(whirl_tab)
         wl.addWidget(self.whirl_note)
         wl.addWidget(self.whirl, 1)
         self.tabs.addTab(whirl_tab, "Whirl")
+        self.tabs.addTab(column(self.campbell_note, self.campbell, stretch=False), "Campbell")
+        self.tabs.addTab(column(self.unbalance_note, self.bode, self.phase, stretch=False), "Unbalance")
+        self.tabs.addTab(column(self.stability_note, self.stability, stretch=False), "Stability")
         self.tabs.addTab(column(self.assembly_note, self.assembly_view, stretch=False), "Assembly")
         self.tabs.addTab(self.element_view, "Element")
         self.tabs.addTab(self.notes, "Theory")
@@ -1378,11 +1653,17 @@ class RotorBuilderPage(QtWidgets.QWidget):
             picked=self.picked,
             matrix=MATRICES[self.matrix.currentIndex()],
             grid=self.canvas.grid,
+            top_rpm=self.top_rpm.value(),
+            probe=self.probe.value() - 1,
+            swing=SWINGS[self.swing.currentIndex()],
         )
 
     def apply_trial(self, t: RotorTrial, keep_history: bool = True) -> None:
         set_quietly(self.matrix, MATRICES.index(t.matrix))
         set_quietly(self.rpm, t.rpm)
+        set_quietly(self.top_rpm, t.top_rpm)
+        set_quietly(self.swing, SWINGS.index(t.swing))
+        self._probe = t.probe
         self.canvas.grid = t.grid
         set_quietly(self.grid, int(np.argmin([abs(g - t.grid) for g in GRIDS])))
         self.mode = t.mode
@@ -1410,6 +1691,9 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.rotor = rotor
         set_quietly(self.theory, THEORIES.index(rotor.theory))
         set_quietly(self.gravity, 0 if rotor.gravity else 1)
+        set_quietly(self.internal, rotor.internal * 1e6)
+        self.sweep_result, self.response, self._steady = None, None, None
+        self._fit_probe()
         try:
             self.assembly = assemble(rotor)
             self.error = ""
@@ -1491,11 +1775,41 @@ class RotorBuilderPage(QtWidgets.QWidget):
             self.rotor,
             theory=THEORIES[self.theory.currentIndex()],
             gravity=GRAVITY if self.gravity.currentIndex() == 0 else 0.0,
+            internal=self.internal.value() * 1e-6,
         )
+        if rotor == self.rotor:
+            return
         self._set_rotor(rotor, selection=self.canvas.selection, fit=False)
 
     def _on_speed(self) -> None:
         self._work()
+
+    def _on_top(self) -> None:
+        self.sweep_result, self.response = None, None
+        self._draw_tabs()
+
+    def _fit_probe(self) -> None:
+        """The probe's box sized to the nodes, on the node asked for (`_probe`), else the first disc's."""
+        r = self.rotor
+        nodes = max(r.nodes.size, 1)
+        node = self._probe
+        if node is None or node >= nodes:
+            node = r.node_at(r.discs[0].z) if r.discs else nodes // 2
+        self._probe = node
+        self.probe.blockSignals(True)
+        self.probe.setMaximum(nodes)
+        self.probe.setValue(node + 1)
+        self.probe.blockSignals(False)
+
+    def _on_probe(self) -> None:
+        self._probe = self.probe.value() - 1
+        if self.tabs.currentIndex() == TAB_UNBALANCE:
+            self._draw_unbalance()
+
+    def _on_swing(self) -> None:
+        self._show_mode()
+        if self.tabs.currentIndex() == TAB_WHIRL:
+            self._draw_whirl()
 
     def _selected(self, kind: str) -> int | None:
         sel = self.canvas.selection
@@ -1536,6 +1850,8 @@ class RotorBuilderPage(QtWidgets.QWidget):
             p.id.value(),
             p.diameter.value() / 1000,
             p.thickness.value() / 1000,
+            unbalance=p.unbalance.value() * 1e-6,
+            unbalance_angle=math.radians(p.heavy.value()),
         )
         old = self.rotor.discs[i]
         if (d.mass, d.ip, d.id, d.diameter, d.thickness) == (old.mass, old.ip, old.id, old.diameter, old.thickness):
@@ -1658,6 +1974,8 @@ class RotorBuilderPage(QtWidgets.QWidget):
                 (p.id, d.id),
                 (p.diameter, d.diameter * 1000),
                 (p.thickness, d.thickness * 1000),
+                (p.unbalance, d.unbalance * 1e6),
+                (p.heavy, math.degrees(d.unbalance_angle)),
             ):
                 set_quietly(box, value)
             p.disc.setTitle(f"Disc {i + 1}")
@@ -1769,12 +2087,21 @@ class RotorBuilderPage(QtWidgets.QWidget):
         i = self.tabs.currentIndex()
         if i == TAB_WHIRL:
             self._draw_whirl()
+        elif i == TAB_CAMPBELL:
+            self._draw_campbell()
+        elif i == TAB_UNBALANCE:
+            self._draw_unbalance()
+        elif i == TAB_STABILITY:
+            self._draw_stability()
         elif i == TAB_ASSEMBLY:
             self._draw_assembly()
         elif i == TAB_ELEMENT:
             self._draw_element()
 
     def _draw_whirl(self) -> None:
+        if SWINGS[self.swing.currentIndex()] is Swing.UNBALANCE:
+            self._draw_steady()
+            return
         m = self.result
         if m is None or self.mode >= m.hz.size:
             self.whirl.set_mode(self.rotor, None)
@@ -1788,6 +2115,204 @@ class RotorBuilderPage(QtWidgets.QWidget):
             f"Mode {self.mode + 1} at {self.rpm.value():.5g} rpm: {m.hz[self.mode]:.4g} Hz, ζ = "
             f"{_percent(m.zeta[self.mode])} (it {stable}), whirling {_whirl_word(w)} (whirl ratio {w:+.2f}: +1 "
             "a circle with the spin, −1 against it, 0 a straight line)."
+        )
+
+    def _draw_steady(self) -> None:
+        Q = self.steady()
+        if Q is None or not np.abs(Q).any():
+            self.whirl.set_mode(self.rotor, None)
+            self.whirl_note.setText(
+                self.error
+                or (
+                    "Nothing turns at 0 rpm: set a speed."
+                    if self.omega == 0
+                    else "No disc has an unbalance: select one and give it some (Unbalance, on the left)."
+                )
+            )
+            return
+        size = orbit(Q, np.arange(self.rotor.nodes.size))
+        k = int(np.argmax(size))
+        self.whirl.set_mode(self.rotor, Q / size[k])
+        self.whirl.show_phase(self._phase)
+        self.whirl_note.setText(
+            f"The steady response to the discs' unbalance at {self.rpm.value():.5g} rpm (once a revolution, so at "
+            f"{self.rpm.value() / 60:.4g} Hz): the largest orbit is {fmt(size[k], 'm')} across its major semi-axis, "
+            f"at node {k + 1} (z = {self.rotor.nodes[k]:.3g} m)."
+        )
+
+    # ------------------------------------------------------------- the sweeps
+    def _sweep(self) -> Sweep | None:
+        """The Campbell diagram and the stability map, worked out if they aren't since the last change."""
+        if self.sweep_result is None and self.assembly is not None:
+            try:
+                self.sweep_result = sweep(self.assembly, self.top_rpm.value())
+            except np.linalg.LinAlgError as error:
+                self.error = str(error)
+        return self.sweep_result
+
+    def _responses(self) -> np.ndarray | None:
+        """The unbalance response from 0 to the top speed, worked out if it isn't since the last change."""
+        if self.response is None and self.assembly is not None:
+            self.response_rpm = np.linspace(0.0, self.top_rpm.value(), RESPONSE_SPEEDS)
+            try:
+                self.response = unbalance_response(self.assembly, self.response_rpm)
+            except np.linalg.LinAlgError as error:
+                self.error = str(error)
+        return self.response
+
+    def steady(self) -> np.ndarray | None:
+        """The unbalance response at the speed (complex, n_dof), kept until the rotor or the speed changes."""
+        if self.assembly is None:
+            return None
+        if self._steady is None or self._steady[0] != self.omega:
+            try:
+                Q = unbalance_response(self.assembly, np.array([self.rpm.value()]))[0]
+            except np.linalg.LinAlgError:
+                return None
+            self._steady = (self.omega, Q)
+        return self._steady[1]
+
+    def _place_speed(self) -> None:
+        for line in self.speed_lines:
+            line.setPos(self.rpm.value())
+
+    def _branches(self, s: Sweep, values: np.ndarray, forward: bool) -> tuple[np.ndarray, np.ndarray]:
+        """Every branch's line, NaN where it whirls the other way and between branches."""
+        keep = np.where((s.whirl > 0) == forward, values, np.nan)
+        gap = np.full((1, keep.shape[1]), np.nan)
+        y = np.vstack([keep, gap]).T.ravel()
+        x = np.tile(np.r_[s.rpm, np.nan], keep.shape[1])
+        return x, y
+
+    def _clear(self, *names: str) -> None:
+        for name in names:
+            self.curves[name].setData([], [])
+
+    def _draw_campbell(self) -> None:
+        self._place_speed()
+        s = self._sweep()
+        if s is None:
+            self._clear("forward", "backward", "one_x")
+            for item in (self.criticals, self.damped_criticals):
+                item.setData([], [])
+            self.campbell_note.setText(self.error)
+            return
+        top = float(s.rpm[-1])
+        self.curves["forward"].setData(*self._branches(s, s.hz, True))
+        self.curves["backward"].setData(*self._branches(s, s.hz, False))
+        self.curves["one_x"].setData([0.0, top], [0.0, top / 60.0])
+        sharp = [c for c in s.criticals if not c.damped]
+        soft = [c for c in s.criticals if c.damped]
+        self.criticals.setData([c.rpm for c in sharp], [c.hz for c in sharp])
+        self.damped_criticals.setData([c.rpm for c in soft], [c.hz for c in soft])
+        low = np.nan_to_num(s.hz[:, :4], nan=0.0).max(initial=0.0)
+        self.campbell.setXRange(0.0, top, padding=0)
+        self.campbell.setYRange(0.0, 1.05 * max(1.4 * top / 60.0, low), padding=0)
+        if sharp:
+            listed = ", ".join(
+                f"{c.rpm:.0f} rpm {'forward' if c.forward else 'backward'} (AF {c.amplification:.3g})" for c in sharp
+            )
+            text = f"Critical speeds, where a branch meets 1X (circles): {listed}."
+        else:
+            text = f"No branch meets 1X below {top:.0f} rpm: no critical speed in the range."
+        if soft:
+            text += (
+                f" Hollow: {len(soft)} crossings critically damped (ζ ≥ 20 %: an amplification factor 1/2ζ under "
+                "2.5, which API 684 doesn't count)."
+            )
+        rpm = self.rpm.value()
+        if sharp and rpm > 0:
+            near = min(sharp, key=lambda c: abs(c.rpm - rpm))
+            text += (
+                f" The speed, {rpm:.0f} rpm, is {100 * abs(near.rpm - rpm) / rpm:.3g} % from the nearest, "
+                f"{near.rpm:.0f} rpm (its separation margin)."
+            )
+        self.campbell_note.setText(text)
+
+    def _draw_stability(self) -> None:
+        self._place_speed()
+        s = self._sweep()
+        if s is None:
+            self._clear("d_forward", "d_backward")
+            self.onset_line.hide()
+            self.stability_note.setText(self.error)
+            return
+        delta = s.log_dec
+        self.curves["d_forward"].setData(*self._branches(s, delta, True))
+        self.curves["d_backward"].setData(*self._branches(s, delta, False))
+        top = float(s.rpm[-1])
+        self.stability.setXRange(0.0, top, padding=0)
+        finite = delta[np.isfinite(delta)]
+        lo = float(min(finite.min(initial=0.0), -0.1))
+        self.stability.setYRange(max(lo, -1.0) * 1.1, min(max(float(finite.max(initial=0.5)), 0.5), 2.0), padding=0)
+        self.onset_line.setVisible(s.onset is not None)
+        if s.onset is not None:
+            self.onset_line.setPos(s.onset)
+            text = (
+                f"Unstable from <b>{s.onset:.0f} rpm</b> (the red line): there the least damped mode's δ crosses 0 "
+                "and it grows by itself."
+            )
+        else:
+            text = f"Stable to {top:.0f} rpm: every mode's δ stays above 0."
+        m = self.result
+        if m is not None and m.zeta.size:
+            i = int(np.argmin(m.zeta[:N_BRANCHES]))  # of the low modes the map shows, not the mesh's highest
+            ok = "meets" if m.log_dec[i] >= API_LOG_DEC else "<b>misses</b>"
+            text += (
+                f" At {self.rpm.value():.0f} rpm the least damped mode, {m.hz[i]:.4g} Hz {_whirl_word(m.whirl[i])}, "
+                f"has δ = {m.log_dec[i]:.3g}: it {ok} API 684's δ ≥ {API_LOG_DEC:g} (dashed)."
+            )
+        self.stability_note.setText(text)
+
+    def _draw_unbalance(self) -> None:
+        self._place_speed()
+        Q = self._responses()
+        s = self._sweep()
+        for line in self.critical_lines:
+            line.hide()
+        if Q is None:
+            self._clear("orbit", "lag")
+            self.unbalance_note.setText(self.error)
+            return
+        rotor = self.rotor
+        node = min(self._probe or 0, rotor.nodes.size - 1)
+        rpm = self.response_rpm[1:]
+        size = orbit(Q[1:], node)
+        if not size.any():
+            self._clear("orbit", "lag")
+            self.unbalance_note.setText("No disc has an unbalance: select one and give it some (on the left).")
+            return
+        self.curves["orbit"].setData(rpm, np.maximum(size * 1e6, 1e-6))
+        self.curves["lag"].setData(rpm, lag(Q[1:], node, rotor))
+        self.bode.setLabel("left", "Orbit", units="µm")
+        self.bode.getAxis("left").enableAutoSIPrefix(False)
+        for p in (self.bode, self.phase):
+            p.setXRange(0.0, float(self.response_rpm[-1]), padding=0)
+        self.phase.setYRange(0.0, 360.0, padding=0)
+        peak = float(size.max()) * 1e6
+        self.bode.setYRange(math.log10(peak) - 3, math.log10(peak) + 0.3, padding=0)
+        if s is not None:
+            sharp = [c for c in s.criticals if not c.damped]
+            for line, c in zip(self.critical_lines, sharp):
+                line.setPos(c.rpm)
+                line.setPen(
+                    pg.mkPen(colors.force if c.forward else colors.grey, width=1, style=QtCore.Qt.PenStyle.DotLine)
+                )
+                line.show()
+        k = int(np.argmax(size))
+        steady = self.steady()
+        here = float(orbit(steady, node)) if steady is not None and self.omega > 0 else 0.0
+        unbalanced = [d for d in rotor.discs if d.unbalance]
+        listed = ", ".join(
+            f"disc {rotor.discs.index(d) + 1} {d.unbalance * 1e6:.4g} g·mm at {math.degrees(d.unbalance_angle):.0f}°"
+            for d in unbalanced
+        )
+        self.unbalance_note.setText(
+            f"The steady orbit at node {node + 1} (z = {rotor.nodes[node]:.3g} m; its major semi-axis) against the "
+            f"speed, from the discs' unbalance ({listed}), and how far its x lags behind the heavy spot. It peaks at "
+            f"<b>{size[k] * 1e6:.4g} µm at {rpm[k]:.0f} rpm</b>; at {self.rpm.value():.0f} rpm, {here * 1e6:.3g} µm. "
+            "The dotted lines are the critical speeds, red forward and grey backward: an unbalance turns forward, "
+            "and through a forward critical the lag swings by about 180°."
         )
 
     def _draw_assembly(self) -> None:
@@ -1862,7 +2387,14 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self._start_timer()
 
     def mode_shape(self) -> np.ndarray | None:
-        """The mode picked (complex, n_dof), scaled so its largest translation is SWING of the side view."""
+        """The mode picked, or the unbalance response at the speed (complex, n_dof), scaled so its largest
+        translation is SWING of the side view."""
+        if SWINGS[self.swing.currentIndex()] is Swing.UNBALANCE:
+            Q = self.steady()
+            if Q is None:
+                return None
+            size = float(orbit(Q, np.arange(self.rotor.nodes.size)).max())
+            return Q * (SWING * self.canvas.height_m / size) if size > 0 else None
         m = self.result
         if m is None or self.mode >= m.hz.size:
             return None
@@ -1920,5 +2452,24 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.canvas.apply_theme()
         self.whirl.apply_theme()
         mute(self.hint)
+        dash, dot = QtCore.Qt.PenStyle.DashLine, QtCore.Qt.PenStyle.DotLine
+        for name, color in (("forward", colors.mode[0]), ("d_forward", colors.mode[0])):
+            self.curves[name].setPen(pg.mkPen(color, width=2))
+        for name in ("backward", "d_backward"):
+            self.curves[name].setPen(pg.mkPen(colors.mode[1], width=2, style=dash))
+        self.curves["one_x"].setPen(pg.mkPen(colors.force, width=1.5))
+        self.curves["orbit"].setPen(pg.mkPen(colors.strong, width=2))
+        self.curves["lag"].setPen(pg.mkPen(colors.strong, width=2))
+        self.criticals.setSymbolBrush(pg.mkBrush(colors.force))
+        self.criticals.setSymbolPen(None)
+        self.damped_criticals.setSymbolBrush(None)
+        self.damped_criticals.setSymbolPen(pg.mkPen(colors.force, width=1.5))
+        for line in self.speed_lines:
+            line.setPen(pg.mkPen(colors.grey, width=1.5, style=dash))
+        for line in self.critical_lines:
+            line.setPen(pg.mkPen(colors.force, width=1, style=dot))
+        self.zero_line.setPen(pg.mkPen(colors.muted, width=1))
+        self.api_line.setPen(pg.mkPen(colors.muted, width=1, style=dash))
+        self.onset_line.setPen(pg.mkPen(colors.force, width=1.5))
         self._fill_table()
         self._draw_tabs()
