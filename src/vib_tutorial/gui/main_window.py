@@ -224,6 +224,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .frame_builder import FramePage
 
         return FramePage
+    if name == "rotor_builder_page":
+        from .rotor_builder import RotorBuilderPage
+
+        return RotorBuilderPage
     if name == "mounts_page":
         from .rigid_mounts import MountsPage
 
@@ -703,6 +707,7 @@ class MainWindow(QtWidgets.QMainWindow):
     quarter_car_page = property(lambda self: self._page("quarter_car_page"))
     mounts_page = property(lambda self: self._page("mounts_page"))
     frame_page = property(lambda self: self._page("frame_page"))
+    rotor_builder_page = property(lambda self: self._page("rotor_builder_page"))
     seismic_page = property(lambda self: self._page("seismic_page"))
     beams_page = property(lambda self: self._page("beams_page"))
     pendulum_page = property(lambda self: self._page("pendulum_page"))

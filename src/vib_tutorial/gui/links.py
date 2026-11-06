@@ -223,6 +223,11 @@ COURSE = (
             ),
             ("rotor_page", "Jeffcott rotor", "a spinning shaft: critical speeds, balancing, bearings, stability, rub"),
             (
+                "rotor_builder_page",
+                "Rotor builder",
+                "build a rotor from shaft sections, discs, bearings and seals: its matrices, and its whirl modes",
+            ),
+            (
                 "diagnostics_page",
                 "Machinery diagnostics",
                 "order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum",
@@ -283,6 +288,7 @@ PAGE_TITLES = {
     "active_control_page": "Active control page",
     "gyroscope_page": "Gyroscope page",
     "rotor_page": "Jeffcott rotor page",
+    "rotor_builder_page": "Rotor builder page",
     "diagnostics_page": "Machinery diagnostics page",
 }
 

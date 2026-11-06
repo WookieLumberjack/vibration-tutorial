@@ -1081,6 +1081,26 @@ def frame_builder():
     save(w, "frame_builder")
 
 
+def rotor_builder():
+    from vib_tutorial.gui.rotor_builder import TAB_WHIRL, TRIALS
+
+    w = window()
+    page = w.rotor_builder_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A stepped compressor rotor"))
+    page._timer.stop()
+    page.running = False
+    page.tabs.setCurrentIndex(TAB_WHIRL)
+    page.table.selectRow(3)
+    page._phase = 0.3 * math.pi
+    settle()
+    page._show_mode()
+    settle()
+    print(page.whirl_note.text())
+    print(page.readout.text())
+    save(w, "rotor_builder")
+
+
 def frame_response():
     from vib_tutorial.gui.frame_builder import TAB_RESPONSE, TRIALS
 
@@ -1277,6 +1297,7 @@ SHOTS = [
     gyroscope,
     gyroscope_chaos,
     gyroscope_table,
+    rotor_builder,
     machinery_diagnostics,
 ]
 
