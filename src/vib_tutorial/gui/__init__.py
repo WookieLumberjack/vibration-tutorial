@@ -41,6 +41,10 @@ def close_graphics(widget) -> None:
     freed address. A QWidgetAction later allocated there (pyqtgraph builds some for every
     plot's menu) resolves to that wrapper in QMenu.addAction and segfaults. Taking the item
     out with takeAt() first hands it to Python, which deletes it and unregisters it.
+
+    Blocks every signal in `widget` last, so the window can be freed: `gc` clears its Python
+    objects' attributes in no set order, and the children Qt deletes after (a tab widget losing
+    its tabs, a table its selection) would signal into a page that's half gone, which segfaulted.
     """
     import pyqtgraph as pg
     from PySide6 import QtCore, QtWidgets
@@ -58,6 +62,8 @@ def close_graphics(widget) -> None:
                     layout.takeAt(index)  # the returned item is Python's and freed right away
                     break
         view.close()
+    for obj in (widget, *widget.findChildren(QtCore.QObject)):
+        obj.blockSignals(True)
 
 
 def settle_plots(widget) -> None:
@@ -111,6 +117,7 @@ def record_startup(window, path: str, launched_at: float | None = None) -> None:
     counts the frozen app's bootloader. `window` is the time MainWindow() took to build.
     """
     import json
+    import weakref
 
     from PySide6 import QtCore
 
@@ -118,10 +125,11 @@ def record_startup(window, path: str, launched_at: float | None = None) -> None:
     from . import theming
 
     built = time.perf_counter() - STARTED
+    shown = weakref.ref(window)  # the filter is the window's: holding it strongly would keep the window
 
     class FirstPaint(QtCore.QObject):
         def eventFilter(self, obj, event):
-            if event.type() == QtCore.QEvent.Type.Paint and obj.isWidgetType() and obj.window() is window:
+            if event.type() == QtCore.QEvent.Type.Paint and obj.isWidgetType() and obj.window() is shown():
                 theming.application().removeEventFilter(self)
                 timings = {"window": round(built, 3), "python": round(time.perf_counter() - STARTED, 3)}
                 if launched_at is not None:

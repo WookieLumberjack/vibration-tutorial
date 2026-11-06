@@ -46,6 +46,7 @@ from ..core.random_vibration import (
     suggested_duration,
     welch,
 )
+from . import weak
 from .axes import log_axes
 from .layouts import ColumnScroll, form_layout, group, plot_height
 from .lesson import TrialCombo
@@ -489,7 +490,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
         out_box = QtWidgets.QGroupBox("Response")
@@ -653,10 +654,10 @@ class RandomVibrationPage(QtWidgets.QWidget):
             b.valueChanged.connect(self._on_input)
         self.quantity.currentIndexChanged.connect(self._on_output)
         self.index.currentIndexChanged.connect(self._on_output)
-        self.block.currentIndexChanged.connect(lambda _: self._on_output())
-        self.largest_over.valueChanged.connect(lambda _: self._show_largest())
+        self.block.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._on_output()))
+        self.largest_over.valueChanged.connect(self._show_largest)
         self.new_record.clicked.connect(self._on_new_record)
-        self.trial.picked.connect(lambda _: self.apply_trial())
+        self.trial.picked.connect(self.apply_trial)
 
     # ------------------------------------------------------------- inputs
     def set_system(self, system: ChainSystem, result: ModalResult | None = None) -> None:

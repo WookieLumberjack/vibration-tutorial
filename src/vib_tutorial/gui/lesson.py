@@ -12,6 +12,7 @@ from collections.abc import Callable, Sequence
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from . import weak
 from .axes import log_axes
 from .layouts import form_layout, plot_height
 from .panels import space_bar, spin
@@ -121,7 +122,7 @@ class TrialCombo(QtWidgets.QComboBox):
         if index < self.first:
             return
         self._changed = True
-        QtCore.QTimer.singleShot(0, self._settle)  # a change from code has no `activated` to follow it
+        QtCore.QTimer.singleShot(0, self, weak.call(self._settle))  # a change from code has no `activated` to follow it
         self.picked.emit(index - self.first)
 
     def _settle(self) -> None:
@@ -264,13 +265,14 @@ def db(ratio: float) -> float:
 
 def connect_all(boxes: Sequence[QtWidgets.QWidget], slot: Callable[[], None]) -> None:
     """Call `slot` when any of the spin boxes, check boxes or combos changes."""
+    call = weak.call(slot)
     for box in boxes:
         if isinstance(box, (QtWidgets.QSpinBox, QtWidgets.QDoubleSpinBox)):
-            box.valueChanged.connect(lambda *_: slot())
+            box.valueChanged.connect(call)
         elif isinstance(box, QtWidgets.QAbstractButton):
-            box.toggled.connect(lambda *_: slot())
+            box.toggled.connect(call)
         elif isinstance(box, QtWidgets.QComboBox):
-            box.currentIndexChanged.connect(lambda *_: slot())
+            box.currentIndexChanged.connect(call)
 
 
 def marker(size: int = 11, symbol: str = "o", name: str | None = None) -> pg.PlotDataItem:

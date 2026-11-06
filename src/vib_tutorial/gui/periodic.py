@@ -504,7 +504,7 @@ class PeriodicPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.rest_plot, self.rest_note, stretch=False), "From rest")
         self.tabs.addTab(column(self.conv_plot, self.conv_note, stretch=False), "Convergence")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,

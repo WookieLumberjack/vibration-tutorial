@@ -36,7 +36,7 @@ from ..core.duffing import (
     tongue_hz,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
-from . import frame_stats, settle_plots
+from . import frame_stats, settle_plots, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, plot_height
 from .lesson import RunButton
 from .links import load_notes, page_link
@@ -515,7 +515,7 @@ class DuffingPage(QtWidgets.QWidget):
             (Sweep.HOLD, "Hold"),
         ):
             b = self.sweep_buttons[mode] = QtWidgets.QPushButton(text)
-            b.clicked.connect(lambda _=False, m=mode: self.start_sweep(m))
+            b.clicked.connect(weak.slot(self, lambda self, _=False, m=mode: self.start_sweep(m)))
             row.add(b)
         dv.addRow(row)
         self.drive_state = QtWidgets.QLabel()
@@ -530,7 +530,7 @@ class DuffingPage(QtWidgets.QWidget):
         for i, text in enumerate(("Lower", "Middle", "Upper")):
             b = QtWidgets.QPushButton(text)
             b.setToolTip(TIPS["branch"])
-            b.clicked.connect(lambda _=False, k=i: self.start_on_branch(k))
+            b.clicked.connect(weak.slot(self, lambda self, _=False, k=i: self.start_on_branch(k)))
             self.branch_buttons.append(b)
             row.add(b)
         bv.addLayout(row)
@@ -672,7 +672,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.chart_tab = chart_tab
         self.tabs.addTab(chart_tab, "Ince–Strutt chart")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_chart())
+        self.tabs.currentChanged.connect(self._draw_chart)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter.addWidget(left_scroll)

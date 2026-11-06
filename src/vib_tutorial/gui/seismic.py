@@ -427,7 +427,7 @@ class SeismicPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses and storey stiffnesses are edited on the <a href='#sim'>Simulation page</a>.")
         link.setWordWrap(True)
         mute(link)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         ch.row(link)
 
         spec = Form("Design spectrum")
@@ -500,7 +500,7 @@ class SeismicPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.rho_label, self.rho_note), "Correlation")
         self.tabs.addTab(column(self.record_plot, self.match_plot, self.ground_note, stretch=False), "Records")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(self, column(self.trials, ch, spec), stack((self.spectrum_plot, 1), (self.table, 0)), self.tabs)
         self.apply_theme()

@@ -356,7 +356,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses and springs are edited on the <a href='#sim'>Simulation page</a>.")
         link.setWordWrap(True)
         mute(link)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         ch.row(link)
 
         sensors = Form("Sensors")
@@ -434,7 +434,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.noise_note, self.noise_view, stretch=False), "Noise && aliasing")
         self.tabs.addTab(column(self.spectrum_plot, self.parts_plot, self.parts_note, stretch=False), "ODS")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,
@@ -693,6 +693,8 @@ class TestPlanningPage(QtWidgets.QWidget):
         self.ods_readout.setText(text)
 
     def _draw_tab(self) -> None:
+        if self._dirty:  # the modes aren't worked out for this chain yet (a trial turning to a tab): redraw will
+            return
         i = self.tabs.currentIndex()
         if i == TAB_PLACEMENT:
             self._draw_steps()

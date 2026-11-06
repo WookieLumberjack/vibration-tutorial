@@ -430,7 +430,7 @@ class ActiveControlPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         link.setWordWrap(True)
         mute(link)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         ch.row(link)
 
         loop = Form("Feedback loop")
@@ -509,7 +509,7 @@ class ActiveControlPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.gain_plot, stretch=False), "Damping vs gain")
         self.tabs.addTab(sky, "Skyhook")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
         right = QtWidgets.QWidget()
         rv = QtWidgets.QVBoxLayout(right)
         rv.setContentsMargins(0, 0, 0, 0)

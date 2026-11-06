@@ -550,6 +550,9 @@ class PhasorPanel(QtWidgets.QWidget):
                 self.table.setItem(i, c, item)
 
 
+UNDAMPED = 1e-9  # a mode's ζ at most this is undamped: its fₙ is left off the FRF grid
+
+
 def frequency_grid(result: ModalResult, points: int) -> np.ndarray:
     """Log-spaced FRF frequencies [Hz] spanning the modes, plus every peak."""
     freqs_n = np.array([m.fn_hz for m in result.modes])
@@ -560,13 +563,18 @@ def frequency_grid(result: ModalResult, points: int) -> np.ndarray:
     f = np.geomspace(lo, hi, points)
     # Include the damped peaks so lightly damped resonances are not clipped. An undamped mode's peak is
     # infinite and H singular on it, so it gets two points either side instead (a single undamped mass's
-    # k − ω²m is exactly 0 there).
+    # k − ω²m is exactly 0 there). Undamped up to rounding too: a damper at a mode's node leaves it a ζ of 1e-32.
     peaks = [
-        m.damped.fd_hz for m in result.modes if m.damped is not None and m.damped.zeta > 0 and lo < m.damped.fd_hz < hi
+        m.damped.fd_hz
+        for m in result.modes
+        if m.damped is not None and m.damped.zeta > UNDAMPED and lo < m.damped.fd_hz < hi
     ]
-    on = [m.fn_hz for m in result.modes if m.fn_hz in freqs_n and m.zeta_modal > 0]
+    on = [m.fn_hz for m in result.modes if m.fn_hz in freqs_n and m.zeta_modal > UNDAMPED]
     near = [
-        m.fn_hz * (1 + s) for m in result.modes if m.fn_hz in freqs_n and not m.zeta_modal > 0 for s in (-1e-6, 1e-6)
+        m.fn_hz * (1 + s)
+        for m in result.modes
+        if m.fn_hz in freqs_n and not m.zeta_modal > UNDAMPED
+        for s in (-1e-6, 1e-6)
     ]
     return np.unique(np.concatenate([f, peaks, on, near]))
 

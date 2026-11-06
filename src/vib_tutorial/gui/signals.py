@@ -577,7 +577,7 @@ class SignalsPage(QtWidgets.QWidget):
         self.scale = QtWidgets.QComboBox()
         self.scale.addItems(SCALES)
         self.scale.setToolTip(TIPS["scale"])
-        self.scale.currentIndexChanged.connect(lambda _: self._draw_spectrum())
+        self.scale.currentIndexChanged.connect(self._draw_spectrum)
         self.spec_plot = plot("Amplitude", "m/s²", "Frequency", "Hz", log_y=True, height=200)
         self.spec_plot.setToolTip(SPECTRUM_TIP)
         self.spec_plot.setMouseEnabled(x=True, y=False)
@@ -605,7 +605,7 @@ class SignalsPage(QtWidgets.QWidget):
             "<p>Show the block's first samples close up, to see what the sampler sees, rather "
             "than the whole block and its window.</p>"
         )
-        self.zoom.toggled.connect(lambda _: self._zoom_time())
+        self.zoom.toggled.connect(self._zoom_time)
         scale_row = QtWidgets.QHBoxLayout()
         scale_row.addWidget(self.zoom)
         scale_row.addStretch(1)
@@ -696,7 +696,7 @@ class SignalsPage(QtWidgets.QWidget):
         self.tabs.addTab(sgram, "Spectrogram")
         self.tabs.addTab(ColumnScroll(sensors), "Transducers")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter.addWidget(ColumnScroll(left))

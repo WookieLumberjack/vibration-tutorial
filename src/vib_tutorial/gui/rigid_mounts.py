@@ -861,7 +861,7 @@ class MountsPage(QtWidgets.QWidget):
 
         # --- right
         self.sweep_box = combo([s.value for s in SWEEPS], TIPS["sweep"])
-        self.sweep_box.currentIndexChanged.connect(lambda _: self._draw_tab())
+        self.sweep_box.currentIndexChanged.connect(self._draw_tab)
         self.sweep_plot = plot("Frequency", "Hz", "", None, height=260)
         self.sweep_plot.setToolTip(SWEEP_TIP)
         self.sweep_plot.getAxis("left").enableAutoSIPrefix(False)
@@ -936,7 +936,7 @@ class MountsPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.response_plot, self.response_note, stretch=False), "Response")
         self.tabs.addTab(column(self.drive_plot, self.drive_note, stretch=False), "Drive")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,

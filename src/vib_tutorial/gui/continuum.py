@@ -662,7 +662,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.right_end.currentIndexChanged.connect(self._on_edit)
         self.elements.valueChanged.connect(self._on_edit)
         for check in self.shown.values():
-            check.toggled.connect(lambda _: self.redraw())
+            check.toggled.connect(self.redraw)
         self.mode.valueChanged.connect(self._on_mode)
         for box in (self.pulse_width, self.pulse_at, self.dashpot, self.step_at, self.step_ratio):
             box.valueChanged.connect(self._on_waves)

@@ -606,7 +606,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.band_plot, self.env_plot, self.env_note, stretch=False), "Envelope")
         self.tabs.addTab(column(self.cep_plot, self.cep_note, stretch=False), "Cepstrum")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._show_tab())
+        self.tabs.currentChanged.connect(self._show_tab)
 
         three_panes(
             self,

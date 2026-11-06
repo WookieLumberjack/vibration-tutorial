@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core import ChainSystem, ForceController, ForceKind, ForceSettings
 from ..core.model import DEFAULT_DAMPING, DEFAULT_MASS, DEFAULT_STIFFNESS
 from ..core.presets import Preset, presets
+from . import weak
 from .layouts import FlowLayout, form_layout, group
 from .modes import ModeEntry
 from .style import MAX_DOF, colors, text_on
@@ -84,7 +85,7 @@ def space_bar(button: QtWidgets.QAbstractButton) -> None:
     """Space clicks `button` while its page shows. Not `setShortcut`: `setText` resets that to the text's
     mnemonic, so a button that relabels itself loses it."""
     space = QtGui.QShortcut(QtGui.QKeySequence("Space"), button)
-    space.activated.connect(lambda: button.click() if button.isEnabled() else None)
+    space.activated.connect(weak.slot(button, lambda button: button.click() if button.isEnabled() else None))
 
 
 # A row of the parameter grid: (label, m, k, c, friction).

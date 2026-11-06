@@ -540,7 +540,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(column(self.sweep_plot, self.sweep2_plot, self.sweep_note, stretch=False), "Sweep")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_sweep())
+        self.tabs.currentChanged.connect(self._draw_sweep)
 
         three_panes(
             self,

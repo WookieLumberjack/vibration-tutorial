@@ -35,7 +35,7 @@ class TabGroups(QtWidgets.QTabWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.currentChanged.connect(lambda _: self.changed.emit())
+        self.currentChanged.connect(self.changed)
 
     def add_group(self, title: str, *pages: tuple[QtWidgets.QWidget, str]) -> None:
         """A group tab: one page goes in as it is, several get their own row of tabs."""
@@ -46,7 +46,7 @@ class TabGroups(QtWidgets.QTabWidget):
         inner.setDocumentMode(True)  # no second frame inside the first
         for page, name in pages:
             inner.addTab(page, name)
-        inner.currentChanged.connect(lambda _: self.changed.emit())
+        inner.currentChanged.connect(self.changed)
         self.addTab(inner, title)
 
     def show_page(self, page: QtWidgets.QWidget) -> None:
@@ -116,7 +116,7 @@ class LazyTabs:
 
     def __init__(self, tabs: QtWidgets.QTabWidget, draws: Mapping[QtWidgets.QWidget, Callable[[], object]]) -> None:
         self.tabs = {tab: Deferred(tab, draw) for tab, draw in draws.items()}
-        tabs.currentChanged.connect(lambda _: self.catch_up())
+        tabs.currentChanged.connect(self.catch_up)
 
     def stale(self, *tabs: QtWidgets.QWidget) -> None:
         """`tabs` (every one, if none given) out of date: the one showing is drawn now, the rest when they show."""

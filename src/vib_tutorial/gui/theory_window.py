@@ -16,7 +16,7 @@ from collections.abc import Callable
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from . import links
+from . import links, weak
 from .rotor_figures import FigureBrowser
 from .theming import settings
 
@@ -89,7 +89,7 @@ class TheoryWindow(QtWidgets.QWidget):
         self.open_button = QtWidgets.QToolButton()
         self.open_button.setText("Open this page")
         self.open_button.setToolTip("Show the page these notes belong to in the main window.")
-        self.open_button.clicked.connect(lambda: self.page and self._open_page(self.page))
+        self.open_button.clicked.connect(weak.slot(self, lambda self: self.page and self._open_page(self.page)))
         bar = QtWidgets.QHBoxLayout()
         for w in (self.back_button, self.forward_button, self.follow):
             bar.addWidget(w)
@@ -150,7 +150,9 @@ class TheoryWindow(QtWidgets.QWidget):
                 self._forward.clear()
             self._load(name)
         if anchor:
-            QtCore.QTimer.singleShot(0, lambda: self.browser.scrollToAnchor(anchor))  # once it's laid out
+            QtCore.QTimer.singleShot(
+                0, self.browser, weak.slot(self, lambda self: self.browser.scrollToAnchor(anchor))
+            )  # once it's laid out
         self._update_buttons()
 
     def follow_page(self, name: str) -> None:
@@ -192,7 +194,7 @@ class TheoryWindow(QtWidgets.QWidget):
     def _restore(self, place: int) -> None:
         bar = self.browser.verticalScrollBar()
         bar.setValue(place)
-        QtCore.QTimer.singleShot(0, lambda: bar.setValue(place))  # again once it's laid out
+        QtCore.QTimer.singleShot(0, bar, lambda: bar.setValue(place))  # again once it's laid out
 
     def _scroll(self) -> int:
         return self.browser.verticalScrollBar().value()

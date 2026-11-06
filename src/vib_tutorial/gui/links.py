@@ -12,6 +12,7 @@ loader writes out: `<before>`, the page: links to read first, and `<takeaways>`,
 from __future__ import annotations
 
 import re
+import weakref
 from collections.abc import Callable
 from importlib import resources
 
@@ -292,13 +293,17 @@ def wire(browser: QtWidgets.QTextBrowser, go: Callable[[str, str], None]) -> Non
         return
     browser.setProperty("links_wired", True)
     browser.setOpenLinks(False)
+    # Neither held strongly: the slot lives as long as the browser, and `go` is often its window's method.
+    held = weakref.WeakMethod(go) if hasattr(go, "__self__") else (lambda: go)
+    ref = weakref.ref(browser)
 
     def follow(url: QtCore.QUrl) -> None:
         if url.scheme() == "page":
-            go(url.path(), url.fragment())
+            if (to := held()) is not None:
+                to(url.path(), url.fragment())
         elif url.scheme() in ("http", "https"):
             QtGui.QDesktopServices.openUrl(url)
-        elif url.fragment():
-            browser.scrollToAnchor(url.fragment())
+        elif url.fragment() and (shown := ref()) is not None:
+            shown.scrollToAnchor(url.fragment())
 
     browser.anchorClicked.connect(follow)

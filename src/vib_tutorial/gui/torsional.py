@@ -52,7 +52,7 @@ from ..core.torsional_startup import (
     running_torques,
     steady_speed,
 )
-from . import frame_stats, settle_plots
+from . import frame_stats, settle_plots, weak
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import RunButton, connect_all, set_quietly
@@ -780,8 +780,8 @@ class TorsionalPage(QtWidgets.QWidget):
         connect_all((*self.orders, *self.amplitudes), self._on_excitation)
         self.operating.valueChanged.connect(self._on_speeds)
         self.top.valueChanged.connect(self._on_speeds)
-        self.log_scales.toggled.connect(lambda _: self._draw_interference())
-        self.response_link.currentIndexChanged.connect(lambda _: self._draw_response())
+        self.log_scales.toggled.connect(self._draw_interference)
+        self.response_link.currentIndexChanged.connect(self._draw_response)
         self.motor_kind.currentIndexChanged.connect(self._on_startup)
         connect_all(
             (
@@ -801,7 +801,7 @@ class TorsionalPage(QtWidgets.QWidget):
         )
         self.reset_button.clicked.connect(self.reset)
         self.pause_button.toggled.connect(self._on_pause)
-        self.startup_link.currentIndexChanged.connect(lambda _: self._draw_startup(full=True))
+        self.startup_link.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._draw_startup(full=True)))
 
         # --- the start-up's loop
         self._clock = QtCore.QElapsedTimer()

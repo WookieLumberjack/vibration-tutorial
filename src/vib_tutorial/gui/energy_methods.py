@@ -411,7 +411,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses and springs are edited on the <a href='#sim'>Simulation page</a>.")
         link.setWordWrap(True)
         mute(link)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         ch.row(link)
         self.chain_info = note_label()
         ch.row(self.chain_info)
@@ -479,14 +479,14 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.holzer_curve = pg.PlotDataItem()
         self.holzer_zero = pg.InfiniteLine(angle=0, pos=0)
         self.holzer_trial = pg.InfiniteLine(angle=90, movable=True)
-        self.holzer_trial.sigPositionChanged.connect(lambda *_: self._on_holzer_line())
+        self.holzer_trial.sigPositionChanged.connect(self._on_holzer_line)
         self.holzer_roots: list[pg.InfiniteLine] = []
         for item in (self.holzer_zero, self.holzer_curve, self.holzer_trial):
             self.holzer_plot.addItem(item)
         hz_row = Form("")
         hz_row.setFlat(True)
         self.holzer_hz = hz_row.number("Trial frequency:", 0.01, 1e4, 1.0, 3, " Hz", TIPS["holzer"])
-        self.holzer_hz.valueChanged.connect(lambda *_: self._draw_holzer())
+        self.holzer_hz.valueChanged.connect(self._draw_holzer)
         self.holzer_table = readout_label()
         self.holzer_table.setTextFormat(QtCore.Qt.TextFormat.RichText)
 
@@ -499,7 +499,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.holzer_plot, hz_row, self.holzer_table, stretch=False), "Holzer")
         self.tabs.addTab(self.lagrange, "Lagrange")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,

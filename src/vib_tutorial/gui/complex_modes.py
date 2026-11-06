@@ -36,6 +36,7 @@ from ..core.modal import TWO_PI, ModalResult, modal_analysis
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_least, number, pick, rounded
 from ..core.presets import tuned_mass_damper
+from . import weak
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
@@ -407,7 +408,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
         trials = QtWidgets.QGroupBox("Things to try")
@@ -632,13 +633,13 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.trial.picked.connect(self.load_trial)
         self.mode.currentIndexChanged.connect(self._on_mode)
         self.table.itemSelectionChanged.connect(self._on_table_selection)
-        self.frf_in.currentIndexChanged.connect(lambda _: self._draw_frf())
-        self.frf_out.currentIndexChanged.connect(lambda _: self._draw_frf())
+        self.frf_in.currentIndexChanged.connect(self._draw_frf)
+        self.frf_out.currentIndexChanged.connect(self._draw_frf)
         self.sweep_parameter.currentIndexChanged.connect(self._on_sweep_parameter)
-        self.sweep_element.currentIndexChanged.connect(lambda _: self.lazy.stale(self.sweep_tab))
-        self.ident_in.currentIndexChanged.connect(lambda _: self.lazy.stale(self.ident_tab))
-        self.ident_noise.valueChanged.connect(lambda _: self.lazy.stale(self.ident_tab))
-        self.ident_out.currentIndexChanged.connect(lambda _: self._draw_identification())
+        self.sweep_element.currentIndexChanged.connect(weak.slot(self, lambda self, _: self.lazy.stale(self.sweep_tab)))
+        self.ident_in.currentIndexChanged.connect(weak.slot(self, lambda self, _: self.lazy.stale(self.ident_tab)))
+        self.ident_noise.valueChanged.connect(weak.slot(self, lambda self, _: self.lazy.stale(self.ident_tab)))
+        self.ident_out.currentIndexChanged.connect(self._draw_identification)
 
     # ------------------------------------------------------------- inputs
     def set_system(self, system: ChainSystem, result: ModalResult | None = None) -> None:

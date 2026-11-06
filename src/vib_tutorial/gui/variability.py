@@ -416,7 +416,7 @@ class VariabilityPage(QtWidgets.QWidget):
         )
         link.setWordWrap(True)
         mute(link)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         ch.row(link)
 
         sc = Form("Scatter (CoV)")

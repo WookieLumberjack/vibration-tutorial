@@ -944,9 +944,9 @@ class DerivingPage(QtWidgets.QWidget):
             ),
             self.redraw,
         )
-        self.system.currentIndexChanged.connect(lambda _: self._on_system())
-        self.show_box.currentIndexChanged.connect(lambda _: self._on_show())
-        self.run_button.toggled.connect(lambda _: self._start_timer())
+        self.system.currentIndexChanged.connect(self._on_system)
+        self.show_box.currentIndexChanged.connect(self._on_show)
+        self.run_button.toggled.connect(self._start_timer)
         self.reset_button.clicked.connect(self.reset)
 
         # --- centre
@@ -1054,7 +1054,7 @@ class DerivingPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.chaos_plot, self.chaos_note, stretch=False), "Chaos")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.setCurrentIndex(TAB_LAGRANGE)
-        self.tabs.currentChanged.connect(lambda _: self._draw_tab())
+        self.tabs.currentChanged.connect(self._draw_tab)
 
         three_panes(
             self,

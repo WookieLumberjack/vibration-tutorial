@@ -518,7 +518,7 @@ class OmaPage(QtWidgets.QWidget):
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
-        link.linkActivated.connect(lambda _: self.edit_parameters.emit())
+        link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
         daq = QtWidgets.QGroupBox("Acquisition")
@@ -694,11 +694,11 @@ class OmaPage(QtWidgets.QWidget):
         self.max_order.valueChanged.connect(self._on_process)
         self.method.currentIndexChanged.connect(self._on_method)
         self.stab_plot.pole_clicked.connect(self._on_pole_clicked)
-        self.tabs.currentChanged.connect(lambda _: self._draw_methods())
+        self.tabs.currentChanged.connect(self._draw_methods)
         self._on_method(redraw=False)
         self.new_record.clicked.connect(self._on_new_record)
         self.auto_peaks.clicked.connect(self._on_auto_peaks)
-        self.trial.picked.connect(lambda _: self.apply_trial())
+        self.trial.picked.connect(self.apply_trial)
         self.mode_pick.currentIndexChanged.connect(self._on_mode_pick)
 
     # ------------------------------------------------------------- inputs
@@ -860,7 +860,8 @@ class OmaPage(QtWidgets.QWidget):
         self.proc_form.setRowVisible(self.mac_min, not ssi)  # the whole row, so it leaves no gap
         for w in (self.rows, self.max_order):
             self.proc_form.setRowVisible(w, ssi)
-        if redraw and self.fdd is not None:
+        # Not while a trial loads: it records again, and the results so far may be of another chain.
+        if redraw and self.fdd is not None and not self._loading:
             self._show_results()
 
     def _on_process(self) -> None:
