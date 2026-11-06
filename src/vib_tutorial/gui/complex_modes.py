@@ -439,8 +439,8 @@ class ComplexModesPage(QtWidgets.QWidget):
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for b in (box, mode_box, trials):
-            lv.addWidget(b)
+        for pane in (box, mode_box, trials):
+            lv.addWidget(pane)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
@@ -496,9 +496,9 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.frf_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         frf_tab = QtWidgets.QWidget()
         fv = QtWidgets.QVBoxLayout(frf_tab)
-        row = form_layout()
-        row.addRow("Force on:", group(self.frf_in, "response of", self.frf_out))
-        fv.addLayout(row)
+        frf_form = form_layout()
+        frf_form.addRow("Force on:", group(self.frf_in, "response of", self.frf_out))
+        fv.addLayout(frf_form)
         fv.addWidget(self.frf_mag, 3)
         fv.addWidget(self.frf_phase, 2)
         fv.addWidget(self.frf_note)
@@ -573,8 +573,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.ident_in = QtWidgets.QComboBox()
         self.ident_out = QtWidgets.QComboBox()
         self.ident_noise = spin(0.0, 20.0, 1.0, 1, " %")
-        for b in (self.ident_in, self.ident_out, self.ident_noise):
-            b.setToolTip(IDENT_TIP)
+        for w in (self.ident_in, self.ident_out, self.ident_noise):
+            w.setToolTip(IDENT_TIP)
         self.ident_noise.setToolTip("<p>Noise on each response, its RMS this share of the response's peak.</p>")
         self.ident_plot = _plot("|x/F| (m/N)", None, "Frequency", "Hz", log=True)
         self.ident_plot.setLogMode(x=False, y=True)
@@ -701,7 +701,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
     def practice_state(self) -> ComplexSetup:
         """The chain the page follows and its tab: what a practice spec checks."""
-        system = self.system
+        system, _ = self._chain()
         return ComplexSetup(
             tuple(float(c) for c in system.damping),
             tuple(float(m) for m in system.masses),
@@ -728,8 +728,13 @@ class ComplexModesPage(QtWidgets.QWidget):
         if rows and rows[0].row() != self.mode.currentIndex():
             self.mode.setCurrentIndex(rows[0].row())
 
+    def _chain(self) -> tuple[ChainSystem, ModalResult]:
+        """The chain and its modes, which set_system sets together (all drawn after it)."""
+        assert self.system is not None and self.result is not None, "there is a chain"
+        return self.system, self.result
+
     def _fill_elements(self) -> None:
-        n = self.system.n
+        n = self._chain()[0].n
         letter = "c" if self.sweep_parameter.currentData() is Parameter.DAMPER else "k"
         current = self.sweep_element.currentIndex()
         self.sweep_element.blockSignals(True)
@@ -752,8 +757,9 @@ class ComplexModesPage(QtWidgets.QWidget):
 
     def _work_identification(self) -> None:
         if self.system is not None:
+            system, result = self._chain()
             self.ident_result = identify(
-                self.system, self.result, max(self.ident_in.currentIndex(), 0), self.ident_noise.value() / 100.0
+                system, result, max(self.ident_in.currentIndex(), 0), self.ident_noise.value() / 100.0
             )
             self._draw_identification()
 
@@ -767,7 +773,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self._dirty = False
         if self.system is None:
             return
-        self.rows = compare(self.system, self.result)
+        self.rows = compare(*self._chain())
         self.redraw()
         self.lazy.stale()
 
@@ -780,7 +786,7 @@ class ComplexModesPage(QtWidgets.QWidget):
             self.redraw()
 
     def redraw(self) -> None:
-        r = self.result
+        _, r = self._chain()
         if r.is_proportional:
             self.coupling.setText(
                 "Coupling index <b>0</b>: the damping is <b>proportional</b>, and every mode real. "
@@ -801,11 +807,13 @@ class ComplexModesPage(QtWidgets.QWidget):
             self._draw_sweep()
         if self.ident_result is not None:
             self._draw_identification()
-        worst = max((c for c in self.rows if c.measures is not None), key=lambda c: c.measures.mpd, default=None)
+        measured = [(c.index, c.measures) for c in self.rows if c.measures is not None]
+        worst = max(measured, key=lambda pair: pair[1].mpd, default=None)
         over = [c.index for c in self.rows if c.exact is None and c.fn_hz > 0]
         text = ""
-        if worst is not None and worst.measures.mpd > 0.05:
-            text = f"The most complex: mode {worst.index}, MPC {worst.measures.mpc:.2f}, MPD {worst.measures.mpd:.3g}°."
+        if worst is not None and worst[1].mpd > 0.05:
+            index, m = worst
+            text = f"The most complex: mode {index}, MPC {m.mpc:.2f}, MPD {m.mpd:.3g}°."
         elif worst is not None:
             text = "Every mode is real: the approximation is exact."
         if over:
@@ -830,6 +838,7 @@ class ComplexModesPage(QtWidgets.QWidget):
                 cells += ["overdamped", f"{c.fn_hz:.4g}", "–", f"{c.zeta_approx:.3g}", "–", "–", "–", "–"]
             else:
                 m = c.measures
+                assert m is not None, "an oscillating mode has its measures"
                 cells += [
                     f"{c.fn_exact:.4g}",
                     f"{c.fn_hz:.4g}",
@@ -853,7 +862,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         if not self.rows:
             return
         c = self.rows[self.selected()]
-        n = self.system.n
+        n = self._chain()[0].n
         a, s = self.argand, self.strobe
         a.clear()
         s.clear()
@@ -862,7 +871,8 @@ class ComplexModesPage(QtWidgets.QWidget):
                 f"Mode {c.index} has no oscillating pole: the damping has made it a pair of real roots."
             )
             return
-        psi, m = c.shape, c.measures
+        psi, m, lam = c.shape, c.measures, c.exact
+        assert m is not None and lam is not None, "an oscillating mode has its measures and pole"
         circle = np.exp(1j * np.linspace(0, 2 * np.pi, 97))
         a.plot(circle.real, circle.imag, pen=pg.mkPen(colors.faint, width=1, style=QtCore.Qt.PenStyle.DotLine))
         a.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
@@ -897,7 +907,6 @@ class ComplexModesPage(QtWidgets.QWidget):
         s.setYRange(-1.1, 1.1, padding=0)
         s.getAxis("bottom").setTicks([[(0, "ground")] + [(i + 1, f"m{i + 1}") for i in range(n)]])
         s.setTitle("Half a cycle, 8 snapshots", size="9pt")
-        lam = c.exact
         self.mode_info.setText(
             f"Exact: {c.fn_exact:.4g} Hz, ζ = {c.zeta_exact:.3g} (λ = {lam.real:.3g} ± {lam.imag:.4g}i). "
             f"Approximation: {c.fn_hz:.4g} Hz, ζ = {c.zeta_approx:.3g}."
@@ -907,8 +916,9 @@ class ComplexModesPage(QtWidgets.QWidget):
         if not self.rows:
             return
         inp, out = max(self.frf_in.currentIndex(), 0), max(self.frf_out.currentIndex(), 0)
-        f = frf_grid(self.result)
-        exact, approx = frf_pair(self.system, self.result, f, inp, out)
+        system, result = self._chain()
+        f = frf_grid(result)
+        exact, approx = frf_pair(system, result, f, inp, out)
         p, q = self.frf_mag, self.frf_phase
         p.clear()
         q.clear()
@@ -943,7 +953,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.decay_legend.clear()
         self.leak_legend.clear()
         try:
-            run = free_decay(self.system, self.result, k)
+            run = free_decay(*self._chain(), k)
         except ValueError as e:
             self.decay_note.setText(f"Mode {k + 1}: {e}.")
             return
@@ -955,7 +965,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         p.setYRange(-1.05, 1.05, padding=0)
         p.setXRange(0, run.t[-1], padding=0)
         top = max(float(run.leak.max()), 1e-3)
-        for s in range(self.system.n):
+        for s in range(self._chain()[0].n):
             if s != k:
                 curve = q.plot(run.t, run.q[:, s], pen=pg.mkPen(colors.mode[s % len(colors.mode)], width=1.5))
                 self.leak_legend.addItem(curve, f"q{s + 1}")
@@ -970,7 +980,7 @@ class ComplexModesPage(QtWidgets.QWidget):
     def _draw_scatter(self) -> None:
         p = self.scatter_plot
         p.clear()
-        n = self.system.n
+        n = self._chain()[0].n
         for c in self.rows:
             if c.measures is None:
                 continue
@@ -1000,7 +1010,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         if sw is None:
             return
         n = sw.fn.shape[1]
-        own = (self.system.damping if sw.parameter is Parameter.DAMPER else self.system.stiffness)[sw.element]
+        system, _ = self._chain()
+        own = (system.damping if sw.parameter is Parameter.DAMPER else system.stiffness)[sw.element]
         at = int(np.argmin(np.abs(sw.values - own)))
         unit = "N·s/m" if sw.parameter is Parameter.DAMPER else "N/m"
         name = f"{'c' if sw.parameter is Parameter.DAMPER else 'k'}{sw.element + 1}"
@@ -1107,7 +1118,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         t.setHorizontalHeaderLabels(heads)
         t.setRowCount(len(res.modes))
         for i, k in enumerate(res.modes):
-            exact_mpc = self.rows[k].measures.mpc if self.rows[k].measures is not None else float("nan")
+            measures = self.rows[k].measures
+            exact_mpc = measures.mpc if measures is not None else float("nan")
             cells = [
                 f"{k + 1}",
                 f"{res.complex_fit.mac[i]:.3f}",
