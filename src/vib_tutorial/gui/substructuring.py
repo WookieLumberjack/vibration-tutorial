@@ -42,7 +42,7 @@ from .axes import log_axes
 from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
 from .cms_recovery import BackExpansionView
 from .cms_time import CMSTimeView
-from .layouts import ColumnScroll, form_layout
+from .layouts import ColumnScroll, form_layout, header_tip
 from .lesson import TrialCombo
 from .links import page_link
 from .style import MAX_DOF, colors, current, text_on
@@ -196,7 +196,7 @@ class ComparisonTable(QtWidgets.QTableWidget):
         fill = {"m": METHOD_SHORT[method], "name": METHOD_NAMES[method], "bound": self.BOUNDS[method]}
         self.setHorizontalHeaderLabels([h.format(**fill) for h in self.HEADERS])
         for col, tip in enumerate(self.TIPS):
-            self.horizontalHeaderItem(col).setToolTip(tip.format(**fill))
+            header_tip(self, col, tip.format(**fill))
 
     def set_rows(self, comparisons) -> None:
         selected = self.currentRow() if self.selectedItems() else 0
@@ -292,7 +292,7 @@ class ComponentTable(QtWidgets.QTableWidget):
 
     def set_free(self, free: bool) -> None:
         for col, tip in enumerate(self.TIPS[free]):
-            self.horizontalHeaderItem(col).setToolTip(tip)
+            header_tip(self, col, tip)
 
     def set_rows(self, modes: list[ComponentMode]) -> None:
         self.clearSelection()
@@ -358,7 +358,7 @@ class ComparisonPlots(pg.GraphicsLayoutWidget):
         self.ci.layout.setRowStretchFactor(1, 3)
         self._shape_items: list = []
         self._frf_items: list = []
-        self.comparisons = []
+        self.comparisons: list[ModeComparison] = []
         self.short = "CB"
         self.free = False
         self.apply_theme()
@@ -462,7 +462,7 @@ class ComparisonPlots(pg.GraphicsLayoutWidget):
             name = "tip" if d == tip else "interface"
             pen = pg.mkPen(colors.mass[d], width=2)
             self._frf_items.append(self.frf.plot(f, np.abs(H[:, d]), pen=pen, name=f"x{d + 1} ({name}) true"))
-            if Hr is not None:
+            if model is not None and Hr is not None:
                 pen = pg.mkPen(colors.strong if d == tip else colors.mass[d], width=2, style=CB_PEN_STYLE)
                 self._frf_items.append(self.frf.plot(f, np.abs(Hr[:, d]), pen=pen, name=f"x{d + 1} {model.short_name}"))
         if model is not None:
@@ -632,9 +632,11 @@ class MethodComparison(QtWidgets.QWidget):
         self.table = QtWidgets.QTableWidget(0, len(self.HEADERS))
         self.table.setHorizontalHeaderLabels(self.HEADERS)
         for col, m in enumerate(METHODS, start=2):
-            self.table.horizontalHeaderItem(col).setToolTip(
+            header_tip(
+                self.table,
+                col,
                 f"(f − f_true) / f_true for the {METHOD_NAMES[m]} model with the same interfaces and "
-                "the same number of modes kept in each substructure as on the left"
+                "the same number of modes kept in each substructure as on the left",
             )
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -701,9 +703,11 @@ class MethodComparison(QtWidgets.QWidget):
 
     def _errors(self, model: CMSModel) -> np.ndarray:
         """Relative frequency error of each true mode; NaN where the model has no such mode."""
+        assert self.full is not None, "models are only compared once there is a chain"
         return np.array([np.nan if c.error is None else c.error for c in compare_modes(model, self.full)])
 
     def _fill_table(self) -> None:
+        assert self.full is not None, "filled once there is a chain"
         modes = self.full.modes
         self.table.setRowCount(len(modes))
         for r, mode in enumerate(modes):
@@ -966,7 +970,8 @@ def _fewest_spec(rng: np.random.Generator) -> Question:
         wanted = [int(np.clip(k, lo, hi)) for k, (lo, hi) in zip(_kept_list(t, len(ranges)), ranges)]
         model = component_mode_synthesis(system, list(t.interfaces), wanted, t.method)
         errors = [c.error for c in compare_modes(model, modal_analysis(system))[:modes]]
-        error = math.inf if any(e is None for e in errors) else 100 * max(errors)
+        known = [e for e in errors if e is not None]
+        error = math.inf if len(known) < len(errors) else 100 * max(known)
         return (
             Requirement(
                 "The 8-mass chain, as the Simulation page's trials set it",
@@ -1446,7 +1451,8 @@ class SubstructuringPage(QtWidgets.QWidget):
         full = self.full if self.full is not None else modal_analysis(system)
         self.full = full
 
-        model, error = None, None
+        model: CMSModel | None = None
+        error = ""  # why there is no model
         cuts = self.interfaces
         kept = [s.value() for s in self.kept]
         try:
@@ -1496,6 +1502,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         """Fit the interface choices and kept-mode ranges to the current N."""
         if len(self.cut_buttons) != n - 1:  # N changed: start again from one substructure
             self._build_cut_buttons(n)
+        assert self.system is not None, "the controls follow a chain"
         ranges = kept_ranges(self.system, self.interfaces, self.method_key)
         self._build_kept_rows(len(ranges))
         for spin, (lo, hi), wanted in zip(self.kept, ranges, self._kept_wanted):

@@ -56,10 +56,10 @@ def test_window_interactions(app):
 
     # Fit the plot window to N cycles of mode 2; changing N re-fits.
     w.controls.fit_window.activated.emit(2)
-    assert w.controls.window.value() == pytest.approx(10 / w.modal.modes[1].fn_hz, abs=0.005)
+    assert w.controls.time_window.value() == pytest.approx(10 / w.modal.modes[1].fn_hz, abs=0.005)
     assert w.controls.fit_window.currentIndex() == 0
     w.controls.cycles.setValue(4)
-    assert w.controls.window.value() == pytest.approx(4 / w.modal.modes[1].fn_hz, abs=0.005)
+    assert w.controls.time_window.value() == pytest.approx(4 / w.modal.modes[1].fn_hz, abs=0.005)
 
     # Non-proportional damping: note explains coupling; its link opens the Background tab.
     w.params.rows[0][3].setValue(15.0)
@@ -80,12 +80,12 @@ def test_window_interactions(app):
     w._release_mode()
     assert abs(w.sim.displacement).max() == pytest.approx(0.02)
     # Releasing a mode fits the plot window to it (auto-scale on by default)...
-    assert w.controls.window.value() == pytest.approx(4 / w.modal.modes[2].fn_hz, abs=0.005)
+    assert w.controls.time_window.value() == pytest.approx(4 / w.modal.modes[2].fn_hz, abs=0.005)
     # ...but not when auto-scale is off.
     w.controls.auto_scale.setChecked(False)
     w.table.selectRow(5)
     w._release_mode()
-    assert w.controls.window.value() == pytest.approx(4 / w.modal.modes[2].fn_hz, abs=0.005)
+    assert w.controls.time_window.value() == pytest.approx(4 / w.modal.modes[2].fn_hz, abs=0.005)
     w.close()
 
 
@@ -324,7 +324,7 @@ def test_state_space_method(app):
     m = w.modal.complex_modes[2]
     amp = w.release_amp.value() * 1e-3
     np.testing.assert_allclose(w.sim.state, amp * m.state_vector.real)
-    assert w.controls.window.value() == pytest.approx(10 / m.fd_hz, abs=0.005)
+    assert w.controls.time_window.value() == pytest.approx(10 / m.fd_hz, abs=0.005)
     state = w.sim.state.copy()
     w.table.selectRow(3)
     w._release_mode()
@@ -840,7 +840,7 @@ def _energy_rows(w):
     """The energy curves' whole rows (not the decimated points each curve shows), checked against the curves."""
     import numpy as np
 
-    t, *rows = w.history.window(w.controls.window.value())
+    t, *rows = w.history.window(w.controls.time_window.value())
     y = w._plot_values(*rows)(slice(None))
     for i, c in enumerate(w.time_plot.x_curves):
         tc, yc = c.getData()

@@ -29,6 +29,7 @@ from ..core.torsional import (
     Excitation,
     Mesh,
     Shaft,
+    TorsionalMode,
     TorsionalPreset,
     criticals,
     forced_response,
@@ -54,7 +55,7 @@ from ..core.torsional_startup import (
 from . import frame_stats, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import RunButton
+from .lesson import RunButton, connect_all, set_quietly
 from .links import load_notes, page_link
 from .panels import spin
 from .style import colors
@@ -400,6 +401,16 @@ def _form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, ti
     form.addRow(label, box)
 
 
+def _show_in_stack(stack: QtWidgets.QStackedWidget, page: int) -> None:
+    """Show a stack's page `page`, the stack as tall as it rather than its tallest."""
+    for k in range(stack.count()):
+        widget = stack.widget(k)
+        assert widget is not None, "k < count"
+        policy = QtWidgets.QSizePolicy.Policy.Preferred if k == page else QtWidgets.QSizePolicy.Policy.Ignored
+        widget.setSizePolicy(policy, policy)
+    stack.setCurrentIndex(page)
+
+
 class TorsionalPage(QtWidgets.QWidget):
     """Controls on the left, the interference diagram and the response in the centre, drawing and shapes on the right."""
 
@@ -410,7 +421,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self.train: DriveTrain = PRESETS[0].train
         self.selected = 0  # into elements: 2i a disc, 2i + 1 the link after it
         self._loading = False
-        self._modes = []
+        self._modes: list[TorsionalMode] = []
         self._unreached = 0  # modes above every order in the speed range, left off the interference diagram
         self.startup: StartUp = FAN_START
         self.motor_on = True
@@ -594,8 +605,8 @@ class TorsionalPage(QtWidgets.QWidget):
         preset_layout.addWidget(self.preset)
         preset_layout.addWidget(self.preset_note)
         lv.addWidget(presets)
-        for box in (train_box, excite, speeds, start_box):
-            lv.addWidget(box)
+        for pane in (train_box, excite, speeds, start_box):
+            lv.addWidget(pane)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
@@ -743,19 +754,21 @@ class TorsionalPage(QtWidgets.QWidget):
         # --- wiring
         self.preset.currentIndexChanged.connect(self._on_preset)
         self.element.currentIndexChanged.connect(self._on_element)
-        for box in (
-            self.inertia,
-            self.disc_damping,
-            self.shaft_stiffness,
-            self.shaft_damping,
-            self.base_radius,
-            self.mesh_stiffness,
-            self.mesh_damping,
-            self.error,
-            self.teeth_in,
-            self.teeth_out,
-        ):
-            box.valueChanged.connect(self._on_edit)
+        connect_all(
+            (
+                self.inertia,
+                self.disc_damping,
+                self.shaft_stiffness,
+                self.shaft_damping,
+                self.base_radius,
+                self.mesh_stiffness,
+                self.mesh_damping,
+                self.error,
+                self.teeth_in,
+                self.teeth_out,
+            ),
+            self._on_edit,
+        )
         for line in (self.disc_name, self.shaft_name, self.mesh_name):
             line.editingFinished.connect(self._on_edit)
         self.to_mesh.clicked.connect(self._make_mesh)
@@ -764,27 +777,28 @@ class TorsionalPage(QtWidgets.QWidget):
         self.remove_button.clicked.connect(self._remove_disc)
         self.excite_disc.currentIndexChanged.connect(self._on_excitation)
         self.excite_name.editingFinished.connect(self._on_excitation)
-        for box in (*self.orders, *self.amplitudes):
-            box.valueChanged.connect(self._on_excitation)
+        connect_all((*self.orders, *self.amplitudes), self._on_excitation)
         self.operating.valueChanged.connect(self._on_speeds)
         self.top.valueChanged.connect(self._on_speeds)
         self.log_scales.toggled.connect(lambda _: self._draw_interference())
         self.response_link.currentIndexChanged.connect(lambda _: self._draw_response())
         self.motor_kind.currentIndexChanged.connect(self._on_startup)
-        for box in (
-            self.line_hz,
-            self.pole_pairs,
-            self.breakdown,
-            self.breakdown_slip,
-            self.transient,
-            self.time_constant,
-            self.pulsating,
-            self.field,
-            self.field_slip,
-            self.load_torque,
-            self.duration,
-        ):
-            box.valueChanged.connect(self._on_startup)
+        connect_all(
+            (
+                self.line_hz,
+                self.pole_pairs,
+                self.breakdown,
+                self.breakdown_slip,
+                self.transient,
+                self.time_constant,
+                self.pulsating,
+                self.field,
+                self.field_slip,
+                self.load_torque,
+                self.duration,
+            ),
+            self._on_startup,
+        )
         self.reset_button.clicked.connect(self.reset)
         self.pause_button.toggled.connect(self._on_pause)
         self.startup_link.currentIndexChanged.connect(lambda _: self._draw_startup(full=True))
@@ -912,13 +926,13 @@ class TorsionalPage(QtWidgets.QWidget):
                 kind = f"mesh {link.teeth_in}:{link.teeth_out}" if isinstance(link, Mesh) else "shaft"
                 self.element.addItem(f"    {link.name} ({kind})")
         self.element.setCurrentIndex(self.selected)
-        link = self.response_link.currentIndex()
+        shown = self.response_link.currentIndex()
         self.response_link.clear()
         self.response_link.addItems([link.name for link in t.links])
-        if not 0 <= link < len(t.links):
+        if not 0 <= shown < len(t.links):
             # the link the slowest mode twists most, by default
-            link = self._modes[0].link if self._modes else 0
-        self.response_link.setCurrentIndex(link)
+            shown = self._modes[0].link if self._modes else 0
+        self.response_link.setCurrentIndex(shown)
         self.excite_disc.clear()
         self.excite_disc.addItem("None")
         self.excite_disc.addItems([d.name for d in t.discs])
@@ -941,10 +955,7 @@ class TorsionalPage(QtWidgets.QWidget):
         t = self.train
         i, is_link = divmod(self.selected, 2)
         page = 0 if not is_link else 1 if isinstance(t.links[i], Shaft) else 2
-        for k in range(self.editor.count()):  # the stack as tall as the page showing, not the tallest
-            policy = QtWidgets.QSizePolicy.Policy.Preferred if k == page else QtWidgets.QSizePolicy.Policy.Ignored
-            self.editor.widget(k).setSizePolicy(policy, policy)
-        self.editor.setCurrentIndex(page)
+        _show_in_stack(self.editor, page)  # the stack as tall as the page showing, not the tallest
         if not is_link:
             d = t.discs[i]
             self.disc_name.setText(d.name)
@@ -957,6 +968,7 @@ class TorsionalPage(QtWidgets.QWidget):
             self.shaft_damping.setValue(s.damping)
         else:
             m = t.links[i]
+            assert isinstance(m, Mesh), "a link is a shaft or a mesh"
             self.mesh_name.setText(m.name)
             self.teeth_in.setValue(m.teeth_in)
             self.teeth_out.setValue(m.teeth_out)
@@ -1019,6 +1031,7 @@ class TorsionalPage(QtWidgets.QWidget):
     def _make_shaft(self) -> None:
         i = self.selected // 2
         mesh = self.train.links[i]
+        assert isinstance(mesh, Mesh), "offered for a mesh"
         r = mesh.base_radius
         self._try(lambda: self.train.with_link(i, Shaft(mesh.stiffness * r * r, mesh.damping * r * r, "Shaft")))
 
@@ -1069,12 +1082,9 @@ class TorsionalPage(QtWidgets.QWidget):
             (self.load_torque, self.startup.load),
             (self.duration, self.startup.duration),
         ):
-            box.setValue(value)
+            set_quietly(box, value)
         page = 0 if m.kind is MotorKind.INDUCTION else 1
-        for k in range(self.motor_stack.count()):  # as tall as the page showing
-            policy = QtWidgets.QSizePolicy.Policy.Preferred if k == page else QtWidgets.QSizePolicy.Policy.Ignored
-            self.motor_stack.widget(k).setSizePolicy(policy, policy)
-        self.motor_stack.setCurrentIndex(page)
+        _show_in_stack(self.motor_stack, page)
         for w in (
             self.line_hz,
             self.pole_pairs,
@@ -1589,7 +1599,7 @@ class TorsionalPage(QtWidgets.QWidget):
         width = 0.5
         jmax = max(d.inertia for d in t.discs)
         h = [0.25 + 0.75 * (d.inertia / jmax) ** 0.25 for d in t.discs]
-        out = []
+        out: list[tuple[float, float, float]] = []
         x, y = 0.0, 0.0
         for i, _d in enumerate(t.discs):
             if i:
@@ -1681,7 +1691,7 @@ class TorsionalPage(QtWidgets.QWidget):
                 d = math.hypot(pos.x() - 0.5 * (x0 + x1), pos.y() - 0.5 * (y0 + y1))
                 if d < dist:
                     best, dist = 2 * i + 1, d
-            if dist > 1.0:
+            if best is None or dist > 1.0:
                 return
         self.select(best)
 

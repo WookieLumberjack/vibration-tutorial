@@ -6,7 +6,7 @@ import math
 import time
 from collections.abc import Callable
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol, TypeGuard, runtime_checkable
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -16,6 +16,7 @@ from ..core import (
     ForceController,
     ForceKind,
     ForceSettings,
+    ModalResult,
     Simulator,
     drag_shape,
     element_forces,
@@ -62,7 +63,36 @@ PAGE_GROUPS = tuple((group, tuple((name, title) for name, title, _ in pages)) fo
 LAZY_PAGES = tuple(page for _, pages in PAGE_GROUPS for page in pages if page[0] != "sim_page")
 
 
-def _follows_chain(page: QtWidgets.QWidget) -> bool:
+# What the window asks of the pages it builds, besides being QWidgets.
+@runtime_checkable
+class Themed(Protocol):
+    def apply_theme(self) -> None: ...
+
+
+class ChainPage(Protocol):
+    """A page that follows the chain (`_follows_chain`): it asks for the Simulation page's and is given it."""
+
+    dof_requested: QtCore.SignalInstance
+    edit_parameters: QtCore.SignalInstance
+
+    def set_system(self, system: ChainSystem, result: ModalResult | None = None) -> None: ...
+
+
+@runtime_checkable
+class PracticePage(Protocol):
+    """A page with practice problems: `load_setup` sets one up."""
+
+    def load_setup(self, setup: dict) -> None: ...
+
+
+@runtime_checkable
+class SpecPage(Protocol):
+    """A page with practice specs: `practice_state` reads its settings back, for the spec to check."""
+
+    def practice_state(self) -> Any: ...
+
+
+def _follows_chain(page: QtWidgets.QWidget) -> TypeGuard[ChainPage]:
     """Whether a page shows the chain (and is given it); the rotor, Duffing & Mathieu, torsional and continuous
     systems pages have models of their own."""
     return getattr(page, "follows_chain", True)
@@ -526,8 +556,9 @@ class MainWindow(QtWidgets.QMainWindow):
         theming.mute(self.frf_friction_note)
         fv.addWidget(self.frf_friction_note)
         fv.addWidget(self.frf_plot, 1)
-        self.background = make_background_view()
-        tabs = self.tabs = QtWidgets.QTabWidget()
+        self.background: QtWidgets.QTextBrowser = make_background_view()
+        self.tabs: QtWidgets.QTabWidget = QtWidgets.QTabWidget()
+        tabs = self.tabs
         tabs.addTab(modal_tab, "Modal analysis")
         self.frf_tab = frf_tab
         tabs.addTab(frf_tab, "Frequency response")
@@ -546,7 +577,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._built: dict[str, QtWidgets.QWidget] = {}
         self._placeholders: dict[str, QtWidgets.QWidget] = {}
         for group_title, pages in PAGE_GROUPS:
-            tabs_in_group = []
+            tabs_in_group: list[tuple[QtWidgets.QWidget, str]] = []
             for name, title in pages:
                 if name == "sim_page":
                     tabs_in_group.append((self.sim_page, title))
@@ -610,7 +641,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.controls.run_toggled.connect(self._on_run_toggled)
         self.controls.reset_clicked.connect(self._reset)
         self.controls.auto_scale.toggled.connect(self._on_auto_scale)
-        self.animate_modes.toggled.connect(lambda on: on or self._animate_modes(0.0))
+        self.animate_modes.toggled.connect(self._on_animate_toggled)
         self.table.itemSelectionChanged.connect(self._on_mode_selected)
         self.method_combo.currentIndexChanged.connect(self._on_method_changed)
         self.coords_combo.currentIndexChanged.connect(self._set_plot_curves)
@@ -683,12 +714,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if page is not None:
             return page
         page = self._built[name] = _page_class(name)()
-        if _follows_chain(page):
-            page.dof_requested.connect(self.params.dof.setValue)
-            page.edit_parameters.connect(lambda: self.pages.setCurrentWidget(self.sim_page))
-            if hasattr(page, "system_requested"):
-                page.system_requested.connect(self.params.set_system)
-            page.set_system(self.sim.system, self.modal)
+        self._give_chain(page)
         # Put the page in its placeholder's tab (showing, if that was): only the real page is ever shown.
         holder = self._placeholders.pop(name)
         self.pages.replace(holder, page)
@@ -704,7 +730,17 @@ class MainWindow(QtWidgets.QMainWindow):
         """Show the course's first page, where the app opens."""
         self.show_page(PAGE_GROUPS[0][1][0][0])
 
-    def page_name(self, page: QtWidgets.QWidget) -> str | None:
+    def _give_chain(self, page: QtWidgets.QWidget) -> None:
+        """Wire a new page that follows the chain to the Simulation page's, and give it the chain."""
+        if not _follows_chain(page):
+            return
+        page.dof_requested.connect(self.params.dof.setValue)
+        page.edit_parameters.connect(lambda: self.pages.setCurrentWidget(self.sim_page))
+        if hasattr(page, "system_requested"):
+            page.system_requested.connect(self.params.set_system)
+        page.set_system(self.sim.system, self.modal)
+
+    def page_name(self, page: QtWidgets.QWidget | None) -> str | None:
         """The attribute in PAGE_GROUPS of a page built (or the Simulation page)."""
         if page is self.sim_page:
             return "sim_page"
@@ -742,7 +778,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if name == "sim_page":
             self.apply_sim_trial(SimTrial("", "", **setup))
         else:
-            self._page(name).load_setup(setup)
+            page = self._page(name)
+            assert isinstance(page, PracticePage), "only pages with problems are set up"
+            page.load_setup(setup)
 
     def sim_practice_state(self) -> SimTrial:
         """The Simulation page's chain and force, as a trial: what a practice spec checks."""
@@ -764,7 +802,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _practice_state(self, name: str):
         """Page `name`'s settings, which a practice spec checks."""
-        return self.sim_practice_state() if name == "sim_page" else self._page(name).practice_state()
+        if name == "sim_page":
+            return self.sim_practice_state()
+        page = self._page(name)
+        assert isinstance(page, SpecPage), "only pages with specs are checked"
+        return page.practice_state()
 
     def _read_theory(self, name: str, anchor: str) -> None:
         """A hint's link: the Theory window at page `name`'s `anchor`."""
@@ -773,13 +815,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_theory(self) -> QtWidgets.QTextBrowser | None:
         """Bring the page showing's Theory tab to the front (and any group of tabs it sits in); its browser."""
         page = self.pages.currentWidget()
+        assert page is not None, "a page always shows"
         browser = None
         for tabs in page.findChildren(QtWidgets.QTabWidget):
             for i in range(tabs.count()):
                 if tabs.tabText(i) == "Theory":
                     tabs.setCurrentIndex(i)
                     found = tabs.widget(i)
-                    if not isinstance(found, QtWidgets.QTextBrowser):
+                    if not isinstance(found, QtWidgets.QTextBrowser) and found is not None:
                         found = found.findChild(QtWidgets.QTextBrowser)
                     browser = found or browser
         return browser
@@ -824,11 +867,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
                 QtCore.QTimer.singleShot(0, QtWidgets.QApplication.restoreOverrideCursor)
                 self._page(name)
-        name = self.page_name(self.pages.currentWidget())
-        if name is not None:
+        showing = self.page_name(self.pages.currentWidget())
+        if showing is not None:
             for window in (self.theory_window, self.practice_window):
                 if window is not None and window.isVisible():
-                    window.follow_page(name)
+                    window.follow_page(showing)
 
     # --------------------------------------------------------------- theme
     def set_theme(self, name: str) -> None:
@@ -860,9 +903,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.frf_plot,
             self.params,
             self.energy,
-            *self._built.values(),
         ):
             w.apply_theme()
+        for page in self._built.values():
+            assert isinstance(page, Themed), "every page follows the theme"
+            page.apply_theme()
         for window in (self.theory_window, self.practice_window):
             if window is not None:
                 window.apply_theme()
@@ -914,14 +959,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 settings = replace(settings, base=True, base_amplitude=t.base[0] * 1e-3, freq_hz=t.base[1])
             self.force_panel.load(settings)
             self.frf_compare.setChecked(False)
-            self.tabs.setCurrentWidget(self.frf_tab if t.frf_tab else self.tabs.widget(0))
+            self.tabs.setCurrentIndex(self.tabs.indexOf(self.frf_tab) if t.frf_tab else 0)
         if t.tune:
             self.force_panel.tune.activated.emit(t.tune)
         self.method_combo.setCurrentIndex(1 if t.state_space else 0)
         self.coords_combo.setCurrentIndex(self.coords_combo.findText(t.coords, QtCore.Qt.MatchFlag.MatchStartsWith))
         self.energy.view.setCurrentIndex(1 if t.by_mode else 0)
         self.controls.speed.setCurrentIndex(self.controls.SPEEDS.index(t.speed))
-        self.controls.window.setValue(t.window)
+        self.controls.time_window.setValue(t.window)
         self.animate_modes.setChecked(t.animate)
         self.release_amp.setValue(t.amplitude)
         self._reset()
@@ -1017,6 +1062,10 @@ class MainWindow(QtWidgets.QMainWindow):
         r = self.table.currentRow() if self.table.selectedItems() else None
         self.mode_plot.set_highlight(r)
         self.phasor_plot.set_highlight(r)
+
+    def _on_animate_toggled(self, on: bool) -> None:
+        if not on:
+            self._animate_modes(0.0)  # the shapes back at rest
 
     def _animate_modes(self, theta: float) -> None:
         self.mode_plot.animate(theta)
@@ -1226,7 +1275,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._force_active = self.force.active
             self.force_panel.refresh()
 
-        window = self.controls.window.value()
+        window = self.controls.time_window.value()
         t, x, v, f, e, s_el, g = self.history.window(window)
         peak = float(np.abs(x[-min(len(x), 20_000) :]).max()) if x.size else 0.0
         if held is None:
