@@ -17,10 +17,6 @@ from vib_tutorial import ONE_THREAD
 for name in ONE_THREAD:
     os.environ.setdefault(name, "1")
 
-# Two malloc arenas, not glibc's eight per core: the xdist workers inherit it, and their arenas' reserved address
-# space (not memory used) put the worker running the GUI smoke tests over an 8 GB `ulimit -v`.
-os.environ.setdefault("MALLOC_ARENA_MAX", "2")
-
 # The app's settings (theme, playback speed, solved problems) in a directory of this process's own, not the user's:
 # set in every process that imports this, so each xdist worker has its own (on Windows the app's native store is
 # the registry, which all the workers shared, and QSettings.setPath doesn't reach it).
@@ -29,18 +25,14 @@ os.environ["VIB_SETTINGS"] = tempfile.mkdtemp(prefix="vib-settings-")
 WARN_SHARE = 0.8  # warn when a worker's peak address space passes this share of `ulimit -v`
 
 
-@pytest.fixture(scope="session")
-def shared_window():
-    """One main window, its frame timer stopped, for the tests that only build, read or set up pages; each page is
-    built as a test asks for it. From before windows were freed (`free_windows`), when each test that built every
-    page in a window of its own kept another 300–600 MB. The tests that use it are
-    marked `xdist_group("shared_window")`, so `--dist loadgroup` (pyproject.toml) runs them on one worker and only
-    that worker builds it."""
+@pytest.fixture
+def main_window(request):
+    """A main window, shown, its frame timer stopped, for the tests that only build, read or set up pages: each
+    page is built as the test asks for it. Freed after the test, as every GUI test's windows are (`free_windows`)."""
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     from PySide6 import QtWidgets
 
     QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-    from vib_tutorial.gui import close_graphics
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
@@ -48,7 +40,8 @@ def shared_window():
     w.show()
     yield w
     w.close()
-    close_graphics(w)
+    del w
+    request.node.funcargs.pop("main_window", None)  # pytest keeps it there until after `free_windows` checks
 
 
 @pytest.fixture
@@ -115,8 +108,8 @@ def pytest_runtest_makereport(item, call):
 
 
 # ------------------------------------------------------------------ the margin
-# Each worker's peak address space, in the run's summary: the GUI tests' windows add up, and a worker that
-# reaches `ulimit -v` fails with a MemoryError or a segfault rather than a message.
+# Each worker's peak address space, in the run's summary: a worker that reaches `ulimit -v` fails with a
+# MemoryError or a segfault rather than a message, and windows that stop being freed would add up.
 
 
 def _peak_mb() -> float | None:
@@ -171,8 +164,8 @@ def pytest_terminal_summary(terminalreporter, config):
         for name, mb in sorted(peaks.items()):
             if mb > WARN_SHARE * limit:
                 terminalreporter.write_line(
-                    f"WARNING: {name} reached {100 * mb / limit:.0f} % of ulimit -v: the GUI tests' windows are "
-                    "close to running it out (see CLAUDE.md).",
+                    f"WARNING: {name} reached {100 * mb / limit:.0f} % of ulimit -v: are the GUI tests' windows "
+                    "still freed? (see CLAUDE.md)",
                     yellow=True,
                     bold=True,
                 )
