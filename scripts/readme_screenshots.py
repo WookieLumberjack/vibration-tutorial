@@ -1,9 +1,9 @@
-"""Regenerate the README screenshots in docs/images, each at 1700x900 in the Light theme.
+"""Regenerate the README's and docs/' screenshots in docs/images, each at 1700x900 in the Light theme.
 
     uv run python scripts/readme_screenshots.py              # all of them
     uv run python scripts/readme_screenshots.py chirp pluck  # just these (the function names below)
 
-Each shot builds a fresh MainWindow, sets up the state its README caption
+Each shot builds a fresh MainWindow, sets up the state its caption (in docs/)
 describes and saves window.grab(). The window's frame timer is stopped and the
 script advances simulated time itself, so every image is taken at a fixed
 moment and reruns give the same pictures. Run it after a UI change, then check
