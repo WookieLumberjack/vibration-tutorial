@@ -6,13 +6,19 @@ another page's notes stay in the window; *Open this page* shows the page in the 
 place it was read to, so going back to one carries on where it left off.
 
 The notes are the pages' own module-level HTML, so a page needn't be built to read its notes.
+
+The search box finds a word or a symbol in every page's notes and the glossary (`search`: their plain text,
+section by section, indexed the first time); a hit opens its section with the match selected. The *Glossary
+of symbols* (`theory/glossary.html`) heads the contents.
 """
 
 from __future__ import annotations
 
+import html as html_lib
 import re
 import sys
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -23,10 +29,23 @@ from .theming import settings
 HEADING = re.compile(r"<h3>(.*?)</h3>", re.S)
 ANCHOR = re.compile(r'<a name="([^"]+)"></a>')
 PAGE_ROLE = QtCore.Qt.ItemDataRole.UserRole  # (page attribute, anchor) of a tree item
+GLOSSARY = "glossary"  # the glossary's name where a page's would be
+GLOSSARY_TITLE = "Glossary of symbols"
+INLINE = re.compile(r"</?(?:sub|sup|b|i|a|span|font)\b[^>]*>", re.I)  # tags inside a word or a formula
+TAG = re.compile(r"<[^>]+>")
+SNIPPET = 50  # characters either side of a hit
+MAX_HITS = 200
+
+
+def title(name: str) -> str:
+    """Page `name`'s title, or the glossary's."""
+    return GLOSSARY_TITLE if name == GLOSSARY else links.PAGE_TITLES[name].removesuffix(" page")
 
 
 def page_html(name: str) -> str:
-    """Page `name`'s Theory notes (an attribute from links.COURSE), as its Theory tab shows them."""
+    """Page `name`'s Theory notes (an attribute from links.COURSE), as its Theory tab shows them; or the glossary."""
+    if name == GLOSSARY:
+        return anchored(links.load_notes("glossary"))
     if name == "sim_page":
         from .background import BACKGROUND_HTML
 
@@ -63,6 +82,59 @@ def sections(html: str) -> list[tuple[str, str]]:
     return found
 
 
+def plain(html: str) -> str:
+    """The text of some notes' HTML, as read: a formula's sub- and superscripts kept in their word."""
+    text = TAG.sub(" ", INLINE.sub("", html))
+    return re.sub(r"\s+", " ", html_lib.unescape(text)).strip()
+
+
+@dataclass(frozen=True)
+class Hit:
+    page: str
+    anchor: str  # the section the match is in ("" before the first)
+    section: str
+    snippet: str  # the match with some text either side
+
+
+_INDEX: list[tuple[str, str, str, str]] | None = None  # (page, anchor, section title, its text)
+
+
+def index() -> list[tuple[str, str, str, str]]:
+    """Every page's notes and the glossary, cut at their anchored headings, in the course's order."""
+    global _INDEX
+    if _INDEX is None:
+        out = []
+        for name in [GLOSSARY, *(n for _, pages in links.COURSE for n, _, _ in pages)]:
+            html = page_html(name)
+            cuts = [(m.start(), m.group(1)) for m in ANCHOR.finditer(html)]
+            titles = dict(sections(html))
+            starts = [(0, "")] + cuts
+            for (start, anchor), end in zip(starts, [c for c, _ in cuts] + [len(html)]):
+                text = plain(html[start:end])
+                if text:
+                    out.append((name, anchor, plain(titles.get(anchor, "")), text))
+        _INDEX = out
+    return _INDEX
+
+
+def search(query: str, limit: int = MAX_HITS) -> list[Hit]:
+    """The sections whose text has `query` (any case), each with its first match, in the course's order."""
+    q = query.strip().lower()
+    if not q:
+        return []
+    hits = []
+    for name, anchor, section, text in index():
+        at = text.lower().find(q)
+        if at < 0:
+            continue
+        a, b = max(0, at - SNIPPET), min(len(text), at + len(q) + SNIPPET)
+        snippet = ("…" if a else "") + text[a:b] + ("…" if b < len(text) else "")
+        hits.append(Hit(name, anchor, section, snippet))
+        if len(hits) >= limit:
+            break
+    return hits
+
+
 class TheoryWindow(QtWidgets.QWidget):
     """The notes of any page, in their own window. `open_page(name)` shows a page in the main window."""
 
@@ -90,10 +162,15 @@ class TheoryWindow(QtWidgets.QWidget):
         self.open_button.setText("Open this page")
         self.open_button.setToolTip("Show the page these notes belong to in the main window.")
         self.open_button.clicked.connect(weak.slot(self, lambda self: self.page and self._open_page(self.page)))
+        self.search_box = QtWidgets.QLineEdit()
+        self.search_box.setPlaceholderText("Search the notes (Ctrl+F)")
+        self.search_box.setClearButtonEnabled(True)
+        self.search_box.setToolTip("<p>Find a word or a symbol in every page's notes and the glossary.</p>")
+        self.search_box.textChanged.connect(self._search)
         bar = QtWidgets.QHBoxLayout()
         for w in (self.back_button, self.forward_button, self.follow):
             bar.addWidget(w)
-        bar.addStretch(1)
+        bar.addWidget(self.search_box, 1)
         bar.addWidget(self.open_button)
 
         self.tree = QtWidgets.QTreeWidget()
@@ -102,6 +179,12 @@ class TheoryWindow(QtWidgets.QWidget):
         self.tree.itemActivated.connect(self._on_item)
         self.tree.itemExpanded.connect(self._fill)
         self._items: dict[str, QtWidgets.QTreeWidgetItem] = {}
+        glossary = QtWidgets.QTreeWidgetItem([GLOSSARY_TITLE])
+        glossary.setData(0, PAGE_ROLE, (GLOSSARY, ""))
+        glossary.setToolTip(0, "The symbols the notes use, their meanings and units, and where each comes in")
+        glossary.setChildIndicatorPolicy(QtWidgets.QTreeWidgetItem.ChildIndicatorPolicy.ShowIndicator)
+        self.tree.addTopLevelItem(glossary)
+        self._items[GLOSSARY] = glossary
         number = 1
         for group, pages in links.COURSE:
             top = QtWidgets.QTreeWidgetItem([group])
@@ -123,8 +206,15 @@ class TheoryWindow(QtWidgets.QWidget):
         self.browser = FigureBrowser()
         links.wire(self.browser, self.show_page)  # another page's notes stay in this window
 
+        self.hits = QtWidgets.QListWidget()  # the search's hits, in the tree's place while there's a search
+        self.hits.setWordWrap(True)
+        self.hits.itemClicked.connect(self._on_hit)
+        self.hits.itemActivated.connect(self._on_hit)
+        self.left = QtWidgets.QStackedWidget()
+        self.left.addWidget(self.tree)
+        self.left.addWidget(self.hits)
         split = QtWidgets.QSplitter()
-        split.addWidget(self.tree)
+        split.addWidget(self.left)
         split.addWidget(self.browser)
         split.setStretchFactor(1, 1)
         split.setSizes([260, 640])
@@ -138,6 +228,7 @@ class TheoryWindow(QtWidgets.QWidget):
         self.follow.setChecked(settings().value("theory_window/follow", "false") == "true")
         self.follow.toggled.connect(lambda on: settings().setValue("theory_window/follow", "true" if on else "false"))
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Back), self, self.back)
+        QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Find), self, self.search_box.setFocus)
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Forward), self, self.forward)
         self._update_buttons()
 
@@ -189,7 +280,7 @@ class TheoryWindow(QtWidgets.QWidget):
         item.setExpanded(True)  # its sections
         self.tree.setCurrentItem(item)
         self.tree.scrollToItem(item)
-        self.setWindowTitle(f"Theory: {links.PAGE_TITLES[name].removesuffix(' page')}")
+        self.setWindowTitle(f"Theory: {title(name)}")
 
     def _restore(self, place: int) -> None:
         bar = self.browser.verticalScrollBar()
@@ -214,10 +305,52 @@ class TheoryWindow(QtWidgets.QWidget):
         if target:
             self.show_page(*target)
 
+    # --------------------------------------------------------------- search
+    def _search(self, text: str) -> None:
+        """List the sections with `text`, in the tree's place; back to the tree when it's cleared."""
+        self.hits.clear()
+        if len(text.strip()) < 2:
+            self.left.setCurrentWidget(self.tree)
+            return
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)  # the first search reads them all
+        try:
+            found = search(text)
+        finally:
+            QtWidgets.QApplication.restoreOverrideCursor()
+        for hit in found:
+            where = title(hit.page) + (f" › {hit.section}" if hit.section else "")
+            item = QtWidgets.QListWidgetItem(f"{where}\n{hit.snippet}")
+            item.setData(PAGE_ROLE, (hit.page, hit.anchor))
+            self.hits.addItem(item)
+        if not found:
+            self.hits.addItem(QtWidgets.QListWidgetItem("Nothing in the notes has that."))
+        self.left.setCurrentWidget(self.hits)
+
+    def _on_hit(self, item: QtWidgets.QListWidgetItem) -> None:
+        target = item.data(PAGE_ROLE)
+        if not target:
+            return
+        self.show_page(*target)
+        query = self.search_box.text().strip()
+        QtCore.QTimer.singleShot(0, self.browser, weak.slot(self, lambda self: self._select(query)))  # after the scroll
+
+    def _select(self, query: str) -> None:
+        """Select the first match of `query` from where the notes are scrolled to (the hit's section)."""
+        doc = self.browser.document()
+        cursor = QtGui.QTextCursor(doc)
+        while True:
+            cursor = doc.find(query, cursor)
+            if cursor.isNull():
+                return
+            if self.browser.cursorRect(cursor).top() >= -2:
+                break
+        self.browser.setTextCursor(cursor)
+        self.browser.ensureCursorVisible()
+
     def _update_buttons(self) -> None:
         self.back_button.setEnabled(bool(self._back))
         self.forward_button.setEnabled(bool(self._forward))
-        self.open_button.setEnabled(self.page is not None)
+        self.open_button.setEnabled(self.page is not None and self.page != GLOSSARY)
 
     # --------------------------------------------------------------- window
     def apply_theme(self) -> None:

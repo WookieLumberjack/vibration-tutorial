@@ -12,7 +12,8 @@
 The pages are grouped in the order they are meant to be read, each using only ideas from the pages
 before it (Ctrl+1 to Ctrl+6 jump to a group; the window opens on the first, *Single oscillator*, whose
 Theory starts with the map of the course). The *Theory window* (Ctrl+F1) shows any page's Theory in a
-window of its own, with the pages and their sections listed: it keeps its place as you move between pages,
+window of its own, with the pages and their sections listed, a *Glossary of symbols* at the top, and a search
+box (Ctrl+F) that finds a word or a symbol in every page's notes: it keeps its place as you move between pages,
 or follows them:
 
 1. **One mass.** **Single oscillator** (free decay, damping, resonance, half-power bandwidth, beats and

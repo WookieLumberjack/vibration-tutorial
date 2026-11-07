@@ -1,0 +1,68 @@
+<h3><a name="glossary"></a>Glossary of symbols</h3>
+<p>The symbols the notes use most, what they stand for, their units (SI throughout; frequencies in Hz where
+the controls show them, in rad/s where named ω), and the page that brings each one in. A few letters do
+more than one job; the notes say which where it matters. To find a word or a symbol in every page's notes,
+use the search box above.</p>
+
+<h3><a name="one-mass"></a>One mass</h3>
+<table cellspacing="0" cellpadding="3">
+<tr><th align="left">Symbol</th><th align="left">Meaning</th><th align="left">Units</th><th align="left">Brought in on</th></tr>
+<tr><td>m, k, c</td><td>mass, spring stiffness, viscous damping</td><td>kg, N/m, N·s/m</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>x, ẋ, ẍ</td><td>displacement, velocity, acceleration</td><td>m, m/s, m/s²</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>f(t), F</td><td>applied force; its amplitude</td><td>N</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>ω<sub>n</sub>, f<sub>n</sub></td><td>undamped natural frequency, √(k/m); f<sub>n</sub> = ω<sub>n</sub>/2π</td><td>rad/s, Hz</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>ζ</td><td>damping ratio, c/c<sub>c</sub></td><td>–</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>c<sub>c</sub></td><td>critical damping, 2√(km) = 2mω<sub>n</sub></td><td>N·s/m</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>ω<sub>d</sub>, f<sub>d</sub></td><td>damped natural frequency, ω<sub>n</sub>√(1 − ζ²)</td><td>rad/s, Hz</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>τ</td><td>time constant of the decay, 1/ζω<sub>n</sub></td><td>s</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>δ</td><td>logarithmic decrement, ln(x<sub>i</sub>/x<sub>i+1</sub>) ≈ 2πζ</td><td>–</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>Q</td><td>quality factor, 1/2ζ: the peak over the static response</td><td>–</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>ω, f</td><td>forcing (drive) frequency</td><td>rad/s, Hz</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>r</td><td>frequency ratio, ω/ω<sub>n</sub></td><td>–</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>H(ω)</td><td>frequency response function: response per unit force (the receptance, for displacement)</td><td>m/N</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>φ</td><td>phase of the response behind the force (also a mode shape, below)</td><td>rad, °</td><td><a href="page:sdof_page">Single oscillator</a></td></tr>
+<tr><td>g, L</td><td>gravity; a pendulum's length</td><td>m/s², m</td><td><a href="page:pendulum_page">Pendulums</a></td></tr>
+<tr><td>η</td><td>loss factor of structural (hysteretic) damping; ≈ 2ζ at resonance</td><td>–</td><td><a href="page:damping_page">Damping models</a></td></tr>
+<tr><td>T</td><td>transmissibility: the force (or motion) passed through, over that applied (T is also kinetic energy, below)</td><td>–</td><td><a href="page:isolation_page">Vibration isolation</a></td></tr>
+</table>
+
+<h3><a name="chains"></a>Chains, modes and matrices</h3>
+<table cellspacing="0" cellpadding="3">
+<tr><th align="left">Symbol</th><th align="left">Meaning</th><th align="left">Units</th><th align="left">Brought in on</th></tr>
+<tr><td>M, C, K</td><td>mass, damping and stiffness matrices: M ẍ + C ẋ + K x = f</td><td>kg, N·s/m, N/m</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
+<tr><td>q</td><td>generalized (or modal) coordinates</td><td>varies</td><td><a href="page:deriving_page">Deriving the equations</a></td></tr>
+<tr><td>T, V, ℒ</td><td>kinetic and potential energy; the Lagrangian T − V</td><td>J</td><td><a href="page:deriving_page">Deriving the equations</a></td></tr>
+<tr><td>φ<sub>i</sub>, Φ</td><td>mode shape i; the matrix of mode shapes (one per column)</td><td>–</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
+<tr><td>ω<sub>i</sub></td><td>natural frequency of mode i: K φ = ω² M φ</td><td>rad/s</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
+<tr><td>z, A, B</td><td>state z = [x, ẋ]; the state-space form ż = A z + B u</td><td>–</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
+<tr><td>λ</td><td>eigenvalue of A, σ ± iω<sub>d</sub>: decay rate and damped frequency</td><td>1/s</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
+<tr><td>Φ, Γ<sub>0</sub>, Γ<sub>1</sub>, h</td><td>the exact first-order-hold step z<sub>k+1</sub> = Φ z<sub>k</sub> + Γ<sub>0</sub> u<sub>k</sub> + Γ<sub>1</sub> u<sub>k+1</sub>; the step h</td><td>–, s</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
+<tr><td>R</td><td>Rayleigh's quotient, an estimate of ω² from an assumed shape</td><td>(rad/s)²</td><td><a href="page:energy_page">Energy methods</a></td></tr>
+<tr><td>H<sub>jk</sub>, α<sub>jk</sub></td><td>FRF (receptance) matrix entry: response at j to a force at k</td><td>m/N</td><td><a href="page:frf_page">FRF matrix</a></td></tr>
+<tr><td>E, I, A, ρ</td><td>Young's modulus, second moment of area, cross-section area, density</td><td>Pa, m⁴, m², kg/m³</td><td><a href="page:continuum_page">Continuous systems</a></td></tr>
+<tr><td>κ, c</td><td>wavenumber; wave speed (c also damping above)</td><td>rad/m, m/s</td><td><a href="page:continuum_page">Continuous systems</a></td></tr>
+<tr><td>MAC</td><td>modal assurance criterion: how alike two mode shapes are, 0 to 1</td><td>–</td><td><a href="page:test_page">Virtual modal test</a></td></tr>
+</table>
+
+<h3><a name="responses"></a>Signals and random responses</h3>
+<table cellspacing="0" cellpadding="3">
+<tr><th align="left">Symbol</th><th align="left">Meaning</th><th align="left">Units</th><th align="left">Brought in on</th></tr>
+<tr><td>G, S</td><td>power spectral density (one-sided G)</td><td>unit²/Hz</td><td><a href="page:random_page">Random vibration</a></td></tr>
+<tr><td>σ</td><td>RMS (standard deviation) of a random response</td><td>as the response</td><td><a href="page:random_page">Random vibration</a></td></tr>
+<tr><td>Δf, f<sub>s</sub>, N</td><td>frequency resolution, sampling rate, record length in samples</td><td>Hz, Hz, –</td><td><a href="page:signals_page">Signals &amp; spectra</a></td></tr>
+<tr><td>SRS</td><td>shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub></td><td>as the response</td><td><a href="page:shock_page">Shock spectrum</a></td></tr>
+</table>
+
+<h3><a name="rotors"></a>Rotors and nonlinear systems</h3>
+<table cellspacing="0" cellpadding="3">
+<tr><th align="left">Symbol</th><th align="left">Meaning</th><th align="left">Units</th><th align="left">Brought in on</th></tr>
+<tr><td>Ω</td><td>spin speed (or the drive's frequency, on the Duffing page)</td><td>rad/s, rpm</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
+<tr><td>I<sub>p</sub>, I<sub>d</sub></td><td>polar and diametral moments of inertia of a disc</td><td>kg·m²</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
+<tr><td>G(Ω)</td><td>gyroscopic matrix: its Ω G q̇ term splits forward and backward whirl</td><td>kg·m²</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
+<tr><td>e, ε</td><td>unbalance eccentricity; a journal's eccentricity ratio in its bearing</td><td>m, –</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
+<tr><td>1X, 2X</td><td>once and twice per revolution</td><td>–</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
+<tr><td>k<sub>3</sub></td><td>cubic spring stiffness of the Duffing oscillator</td><td>N/m³</td><td><a href="page:duffing_page">Duffing &amp; Mathieu</a></td></tr>
+<tr><td>μ</td><td>a mass ratio (a tuned absorber), a friction coefficient, or the Mathieu pump's depth, as the page says</td><td>–</td><td><a href="page:duffing_page">Duffing &amp; Mathieu</a></td></tr>
+<tr><td>J</td><td>polar inertia of a disc in a drive train</td><td>kg·m²</td><td><a href="page:torsional_page">Torsional vibration</a></td></tr>
+<tr><td>s</td><td>an induction motor's slip, 1 − Ω/Ω<sub>s</sub></td><td>–</td><td><a href="page:torsional_page">Torsional vibration</a></td></tr>
+</table>
