@@ -16,3 +16,5 @@ wheels/
 native/target/
 src/vib_tutorial/_native*.so
 src/vib_tutorial/_native*.pyd
+# scripts/mac_timings.py writes here
+/timings/
