@@ -165,6 +165,7 @@ class RotorPage(QtWidgets.QWidget):
         self.rubbed = False  # the whirl grew past RUB of the span and the simulation paused
         self.touched: tuple[str, float] | None = None  # or a journal reached its film's clearance: which, how far
         self._sag: tuple[np.ndarray, np.ndarray] | None = None  # see _set_sag
+        self._sag_q: tuple[np.ndarray, np.ndarray] | None = None  # and the whole q_s on the same speeds
         self._weights: tuple[complex, ...] = ()  # balance weights on the disc (kg·m)
         self._plane_weights: tuple[PlaneWeight, ...] = ()  # weights in balancing planes
         self._hidden: dict[str, float] | None = None  # RotorSystem fields kept out of the panels (SI)
@@ -1842,7 +1843,7 @@ class RotorPage(QtWidgets.QWidget):
             turns = np.floor(y[:, PHASE] / (2 * math.pi))
             idx = np.flatnonzero(np.diff(turns) != 0) + 1
             keys = [t[idx] for t in trails]
-        q_vib = sim.q - sim.system.static_deflection(sim.omega) if sim.system.gravity else sim.q
+        q_vib = sim.q - self._static_sag(sim.omega) if sim.system.gravity else sim.q
         q_shown = sim.q if self.show_sag.isChecked() else q_vib
         here = self._columns(q_shown[None, :], np.array([sim.phase]), np.array([sim.omega]))[0]
         peak = max([float(np.abs(t).max()) for t in trails if t.size] + [float(np.abs(here[:8]).max())])
@@ -2003,7 +2004,7 @@ class RotorPage(QtWidgets.QWidget):
             return None
         cx, cy = stator.centre
         if not self.show_sag.isChecked() and self.sim.system.gravity:  # drawn about the sag: move the ring too
-            sag = self.sim.system.static_deflection(self.sim.omega)
+            sag = self._static_sag(self.sim.omega)
             cx, cy = cx - sag[XD], cy - sag[YD]
         dx, dy = q[XD] - cx, q[YD] - cy
         rho = math.hypot(dx, dy)
@@ -2024,11 +2025,32 @@ class RotorPage(QtWidgets.QWidget):
         """The static sag at the history's columns, at a grid of speeds (one row if it does not vary)."""
         self.show_sag.setEnabled(system.gravity > 0.0)
         if not system.gravity:
-            self._sag = None
+            self._sag = self._sag_q = None
             return
         speeds = np.linspace(0.0, self.top_rpm / RPM, SAG_SPEEDS if system.sag_varies else 1)
         qs = system.static_deflection(speeds)
         self._sag = (speeds, self._columns(qs, speeds, speeds)[:, :8])
+        self._sag_q = (speeds, qs)
+
+    def _static_sag(self, omega: float) -> np.ndarray:
+        """The static sag q_s (n_dof,) at the speed omega, which each frame draws about.
+
+        An asymmetric or cracked shaft's (its periodic response's mean, a harmonic balance) took ~40 ms to
+        work out afresh, a frame's worth, every frame the speed changed: it comes from _set_sag's grid instead,
+        as the history's columns do (within 0.05 µm on the cracked preset). Any other rotor's is cached and
+        cheap, and exact; so is one past the grid's top speed, or before the grid is set.
+        """
+        if self._sag_q is None or not self.sim.system.periodic:  # cheap (cached) elsewhere: exact
+            return self.sim.system.static_deflection(omega)
+        speeds, qs = self._sag_q
+        w = abs(omega)
+        if speeds.size == 1:
+            return qs[0]
+        if w > speeds[-1]:
+            return self.sim.system.static_deflection(omega)
+        i = min(int(np.searchsorted(speeds, w, side="right")) - 1, speeds.size - 2)
+        f = (w - speeds[i]) / (speeds[i + 1] - speeds[i])
+        return (1.0 - f) * qs[i] + f * qs[i + 1]
 
     def _sag_at(self, omega: np.ndarray) -> np.ndarray:
         """The static sag (len(omega), 8) in the history's station columns."""

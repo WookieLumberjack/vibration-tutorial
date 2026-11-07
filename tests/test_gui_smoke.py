@@ -2946,6 +2946,30 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
     w.close()
 
 
+def test_rotor_draws_a_turning_shafts_sag_from_its_grid(app, monkeypatch):
+    """A cracked shaft's static sag is a harmonic balance (~40 ms): a frame at a new speed takes it from the
+    grid _set_sag worked out with the rotor, close to the exact one, instead of working it out again."""
+    from vib_tutorial.core.rotor import RotorSystem
+    from vib_tutorial.core.rotor_simulator import RPM
+    from vib_tutorial.gui import rotor as rotor_page
+
+    p = rotor_page.RotorPage()
+    p.load_preset("Cracked shaft (breathing crack)")
+    system = p.sim.system
+    assert system.periodic and system.sag_varies
+    for rpm in (437.0, 1523.0, 2988.0):
+        exact = system.static_deflection(rpm / RPM)
+        assert np.abs(p._static_sag(rpm / RPM) - exact).max() < 1e-3 * np.abs(exact).max()
+    solves = []
+    real = RotorSystem.static_deflection
+    monkeypatch.setattr(RotorSystem, "static_deflection", lambda s, w=0.0: solves.append(w) or real(s, w))
+    p.show_sag.setChecked(False)  # drawn about the sag: the orbits and the ring both need it
+    for rpm in (437.0, 1523.0, 2988.0):
+        p.sim.omega = rpm / RPM
+        p._draw()
+    assert solves == []
+
+
 def test_rotor_analysis_runs_in_the_worker(app, monkeypatch):
     """The page opens with its analysis on its way from the worker process, and a parameter change hands
     it another; the page shows each when it's done, and a change while one runs supersedes it."""
