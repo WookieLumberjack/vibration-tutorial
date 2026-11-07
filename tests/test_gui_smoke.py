@@ -2997,6 +2997,35 @@ def test_rotor_checks_growth_only_against_its_own_onset(app, monkeypatch):
     assert p.onset is None  # the cracked shaft has none up to its top speed
 
 
+def test_rotor_view_turns_the_rotor_with_the_ground_when_paused(app):
+    """Dragging the rotor's 3D view turns everything in it: the shaft, the disc and the stations as well as the
+    supports and the axes, also while the rotor is paused or at rest and the page draws no frames."""
+    from PySide6 import QtCore, QtGui
+
+    from vib_tutorial.gui import rotor as rotor_page
+
+    p = rotor_page.RotorPage()
+    p.load_preset("Classic Jeffcott rotor")
+    assert not p.running
+    for _ in range(60):  # let the view's gain settle, as frames would
+        p._draw()
+    view = p.view
+    before = [np.array(c.getData()) for c in (view.shaft, view.stations)]
+
+    def mouse(kind, x):
+        pos = QtCore.QPointF(x, 100.0)
+        left = QtCore.Qt.MouseButton.LeftButton
+        return QtGui.QMouseEvent(kind, pos, pos, left, left, QtCore.Qt.KeyboardModifier.NoModifier)
+
+    view.mousePressEvent(mouse(QtCore.QEvent.Type.MouseButtonPress, 100.0))
+    view.mouseMoveEvent(mouse(QtCore.QEvent.Type.MouseMove, 160.0))  # 0.6 rad of yaw
+    turned = [np.array(c.getData()) for c in (view.shaft, view.stations)]
+    assert all(t.shape == b.shape and np.abs(t - b).max() > 1e-3 for t, b in zip(turned, before))
+    p._draw()  # what a frame would draw from the new angle: the same
+    for t, c in zip(turned, (view.shaft, view.stations)):
+        np.testing.assert_allclose(np.array(c.getData()), t, atol=1e-3 * np.abs(t).max())
+
+
 def test_rotor_analysis_runs_in_the_worker(app, monkeypatch):
     """The page opens with its analysis on its way from the worker process, and a parameter change hands
     it another; the page shows each when it's done, and a change while one runs supersedes it."""
