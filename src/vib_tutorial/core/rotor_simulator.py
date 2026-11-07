@@ -110,7 +110,9 @@ class _Films:
         self.scale = 1.0 + max(abs(w) for w in system.bearing_loads)
         self.held = math.nan
         self.key: tuple | None = None
-        self.kernel = None  # the Rust film steps at the held speed (`stepper`), and their (h, Ω)
+        self.kernel: native.FilmSteps | None = (
+            None  # the Rust film steps at the held speed (`stepper`), and their (h, Ω)
+        )
         self.kernel_key: tuple | None = None
 
     def __getstate__(self) -> dict:
@@ -154,12 +156,12 @@ class _Films:
         self.key = (h, omega)
 
     def stepper(self, h: float):
-        """The Rust kernel's steps over h at the held speed (`native.module.FilmSteps`): it takes the
+        """The Rust kernel's steps over h at the held speed (`native.FilmSteps`): it takes the
         bound itself, as `take` does, where it first steps and as the journals drift."""
         if self.kernel_key != (h, self.held):
             assert native.module is not None  # the caller checked
             d = self.dofs
-            self.kernel = native.module.FilmSteps(
+            self.kernel = native.FilmSteps(
                 self.A,
                 self.system.input_matrix(),
                 self.system.mass_inverse[:, d],
@@ -532,13 +534,13 @@ class RotorSimulator:
         out: np.ndarray,
         rubs: np.ndarray,
     ) -> np.ndarray:
-        """`_rub_steps_reference`'s steps, by the Rust kernel (`native.module.RubSteps`) where it's built."""
+        """`_rub_steps_reference`'s steps, by the Rust kernel (`native.RubSteps`) where it's built."""
         if native.module is None:
             return self._rub_steps_reference(Phi, G0, G1, drive, w1, out, rubs)
         system = self.system
         stator = system.stator
         assert stator is not None  # only called with a ring
-        kernel = native.module.RubSteps(
+        kernel = native.RubSteps(
             Phi,
             G0,
             G1,

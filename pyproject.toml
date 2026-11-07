@@ -85,5 +85,5 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 
 [[tool.mypy.overrides]]
-module = ["vib_tutorial._native", "scipy.*", "pyqtgraph.*"]
+module = ["scipy.*", "pyqtgraph.*"]
 ignore_missing_imports = true

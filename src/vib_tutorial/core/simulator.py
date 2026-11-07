@@ -512,12 +512,12 @@ class Simulator:
         return totals
 
     def _friction_kernel(self):
-        """The Rust friction steps for the current input (`native.module.FrictionSteps`), kept while the system is."""
+        """The Rust friction steps for the current input (`native.FrictionSteps`), kept while the system is."""
         key, b, b_du = inp = self._input()
         ck = ("kernel", key)
         if ck not in self._friction_cache:
             s = self.system
-            self._friction_cache[ck] = native.module.FrictionSteps(
+            self._friction_cache[ck] = native.FrictionSteps(
                 input_system(self._A, b, b_du),
                 self._pull_rows(*inp),
                 s.masses,
@@ -722,7 +722,7 @@ class Simulator:
         key = (h, self._input()[0])
         if key not in self._linear_cache:
             assert native.module is not None, "called only where the kernels are built"
-            self._linear_cache[key] = native.module.LinearSteps(*self._discrete(h))
+            self._linear_cache[key] = native.LinearSteps(*self._discrete(h))
         return self._linear_cache[key]
 
     def _advance_linear_reference(self, h: float, z: np.ndarray, f0: float, fs: np.ndarray, zs: np.ndarray) -> None:
