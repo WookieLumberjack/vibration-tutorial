@@ -240,9 +240,11 @@ COURSE = (
 def course_map() -> str:
     """The pages in order, as linked lists by group."""
     html, start = [], 1
+    first = COURSE[0][1][0][0]  # the page the map is on: its link goes past the map, to its first section
     for group, pages in COURSE:
         items = "".join(
-            f'<li><a href="page:{name}">{title.replace("&&", "&amp;")}</a>: {about}</li>'
+            f'<li><a href="page:{name}{"#equation" if name == first else ""}">{title.replace("&&", "&amp;")}</a>: '
+            f"{about}</li>"
             for name, title, about in pages
         )
         html.append(f'<p><b>{group}</b></p><ol start="{start}">{items}</ol>')

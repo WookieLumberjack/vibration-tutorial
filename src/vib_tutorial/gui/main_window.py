@@ -740,6 +740,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def open_first_page(self) -> None:
         """Show the course's first page, where the app opens."""
         self.show_page(PAGE_GROUPS[0][1][0][0])
+        # The window was built showing the Simulation page: Foundations would open on it, not its first page.
+        self.pages.rewind()
 
     def _give_chain(self, page: QtWidgets.QWidget) -> None:
         """Wire a new page that follows the chain to the Simulation page's, and give it the chain."""

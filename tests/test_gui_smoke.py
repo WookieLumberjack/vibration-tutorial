@@ -169,6 +169,12 @@ def test_app_opens_on_the_course_s_first_page(app):
     browser = w.show_theory()
     assert "The pages, in order" in browser.toPlainText()  # the course map heads the first page's notes
     assert 'href="page:sdof_page#course-map"' in w.background.toHtml()  # the Simulation page links to it
+    # The map's own page links past the map, to its first section (a link to itself went nowhere).
+    assert 'href="page:sdof_page#equation"' in links.course_map()
+    # Each group opens on its first page, Foundations too (the window was built showing the Simulation page).
+    for g, (_, pages) in enumerate(links.COURSE):
+        w.pages.groups.setCurrentIndex(g)
+        assert w.page_name(w.pages.currentWidget()) == pages[0][0]
 
 
 def test_theory_window_searches_the_notes_and_has_a_glossary(app):
