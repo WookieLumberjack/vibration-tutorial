@@ -1039,10 +1039,11 @@ def deriving_equations():
     page = w.deriving_page
     w.pages.setCurrentWidget(page)
     page.load_trial(3)  # moments about the front axle
-    page.animate.setChecked(False)  # the mode at its full swing
     page.tabs.setCurrentIndex(TAB_FBD)
     page.fbd.verticalScrollBar().setValue(page.fbd.verticalScrollBar().maximum())
     settle()
+    page._restart()  # the mode at its full swing (t = 0), held there
+    page._timer.stop()
     print(page.readout.text())
     save(w, "deriving_equations")
 
