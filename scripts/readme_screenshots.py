@@ -417,6 +417,7 @@ def jeffcott_rotor():
     w.pages.setCurrentWidget(page)
     settle()
     page._timer.stop()
+    page._refresh_analysis()  # at once: it opens with it on its way from the worker
     page.running = False  # the script drives time, as on the Simulation page
     page.ramp.setValue(5000.0)
     page.set_target_rpm(1400.0)
@@ -431,6 +432,7 @@ def jeffcott_run_up():
     w.pages.setCurrentWidget(page)
     settle()
     page._timer.stop()
+    page._refresh_analysis()  # at once: it opens with it on its way from the worker
     page.running = False
     page.sweep_from.setValue(800.0)
     page.sweep_to.setValue(2400.0)

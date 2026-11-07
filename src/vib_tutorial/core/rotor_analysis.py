@@ -10,8 +10,10 @@ Working on it
 -------------
 The rotor page's analysis (Campbell, stability onset, steady states: `core/rotor_analysis.py`'s `analyse`,
 0.2–6 s) runs in `AnalysisWorker`, a spawned process shared by the pages (`gui/rotor.py`'s `WORKER`), 150 ms
-after the parameters settle; `_poll_analysis` shows it, and a change while a job has run over `RESTART_S`
-restarts the worker rather than wait. Not a thread: the frames hold the GIL and would starve it. What it sends
+after the parameters settle. The page's first goes there too: the constructor starts the worker before building
+anything, so it imports NumPy and SciPy while the page builds, and submits as it ends, so the page opens without
+waiting (~140 ms) and the analysis follows ~0.1 s later. `_poll_analysis` shows it, and a change while a job has
+run over `RESTART_S` restarts the worker rather than wait. Not a thread: the frames hold the GIL and would starve it. What it sends
 and returns must pickle, and `analyse` must not touch Qt. Tests and scripts can still call
 `_refresh_analysis()`, which works it out at once. The worker hides the parent's `__main__` while it spawns
 (so unguarded scripts aren't rerun); `vib_tutorial.main` calls `freeze_support()` for the packaged app, and
