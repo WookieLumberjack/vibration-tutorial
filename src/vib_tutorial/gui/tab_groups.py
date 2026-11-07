@@ -221,6 +221,12 @@ class PageGroups(QtWidgets.QWidget):
         if index >= 0:
             self.setCurrentIndex(index)
 
+    def rewind(self) -> None:
+        """Every group but the one showing back to its first page, as a group opens before it's been read."""
+        for row in self._rows:
+            if row is not self.groups.currentWidget():
+                row.setCurrentIndex(0)
+
     def replace(self, old: QtWidgets.QWidget, new: QtWidgets.QWidget) -> None:
         """Put `new` in `old`'s tab, with its title, showing if `old` was; `old` is taken out (not deleted)."""
         row, i = self._locate(self.indexOf(old))
