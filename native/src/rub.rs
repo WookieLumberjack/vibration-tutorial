@@ -165,14 +165,18 @@ impl RubSteps {
     fn steps(
         &self,
         py: Python<'_>,
-        z: Vec<f64>,
+        z: PyReadonlyArray1<f64>,
         drive: PyReadonlyArray2<f64>,
         w1: PyReadonlyArray1<f64>,
         omega0: f64,
         mut out: PyReadwriteArray2<f64>,
         mut rubs: PyReadwriteArray2<f64>,
     ) -> PyResult<Vec<f64>> {
-        let (drive, w1) = (drive.as_array().to_owned(), w1.as_array().to_vec());
+        let (z, drive, w1) = (
+            z.as_array().to_vec(),
+            drive.as_array().to_owned(),
+            w1.as_array().to_vec(),
+        );
         let mut out = out.as_array_mut();
         let mut rubs = rubs.as_array_mut();
         let ns = self.phi.rows;

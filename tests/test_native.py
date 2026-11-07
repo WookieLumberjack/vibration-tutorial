@@ -33,6 +33,34 @@ def test_kernels_are_built():
 
 
 @needs_native
+def test_stub_names_what_the_module_has():
+    # vib_tutorial/_native.pyi types the calls into the kernels for mypy: every name and method in it is in
+    # the built module, and every one the module has is in it.
+    import ast
+    from pathlib import Path
+
+    import vib_tutorial
+
+    def public(names):
+        return {n for n in names if not n.startswith("_")}
+
+    stub = ast.parse((Path(vib_tutorial.__file__).parent / "_native.pyi").read_text(encoding="utf-8"))
+    declared: dict[str, set[str] | None] = {}
+    for node in stub.body:
+        if isinstance(node, ast.ClassDef):
+            declared[node.name] = public(n.name for n in node.body if isinstance(n, ast.FunctionDef))
+        elif isinstance(node, ast.FunctionDef):
+            declared[node.name] = None
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            declared[node.target.id] = None
+    module = native.module
+    assert set(declared) == public(dir(module))
+    for name, methods in declared.items():
+        if methods is not None:
+            assert methods == public(vars(getattr(module, name))), name
+
+
+@needs_native
 def test_constants_agree():
     assert native.module.ECCENTRICITY_MAX == fluid_bearing.ECCENTRICITY_MAX
 

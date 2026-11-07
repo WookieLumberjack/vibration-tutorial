@@ -412,14 +412,19 @@ impl FilmSteps {
     fn steps(
         &mut self,
         py: Python<'_>,
-        z: Vec<f64>,
+        z: PyReadonlyArray1<f64>,
         u0: PyReadonlyArray1<f64>,
         u: PyReadonlyArray2<f64>,
         w1: PyReadonlyArray1<f64>,
         omega0: f64,
         mut out: PyReadwriteArray2<f64>,
     ) -> PyResult<Vec<f64>> {
-        let (u0, u, w1) = (u0.as_array().to_vec(), u.as_array().to_owned(), w1.as_array().to_vec());
+        let (z, u0, u, w1) = (
+            z.as_array().to_vec(),
+            u0.as_array().to_vec(),
+            u.as_array().to_owned(),
+            w1.as_array().to_vec(),
+        );
         let mut out = out.as_array_mut();
         let ns = self.a.rows;
         let (n, nu) = u.dim();
