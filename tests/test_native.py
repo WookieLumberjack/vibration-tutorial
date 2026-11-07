@@ -218,6 +218,39 @@ def _forced(system, freq, amplitude, base=False):
     return sim
 
 
+LINEAR_CASES = {
+    "harmonic": (ChainSystem([1.0] * 3, [400.0] * 3, [1.0] * 3), ForceKind.HARMONIC, False),
+    "stiff, eight masses": (ChainSystem([1.0] * 8, [1e8] * 8, [0.5] * 8), ForceKind.HARMONIC, False),
+    "ground motion": (ChainSystem([1.0] * 3, [400.0] * 3, [1.0] * 3), ForceKind.HARMONIC, True),
+    "chirp": (ChainSystem([0.5] * 4, [2000.0] * 4, [0.2] * 4), ForceKind.CHIRP, False),
+    "pulse": (ChainSystem([0.5] * 4, [2000.0] * 4, [0.2] * 4), ForceKind.PULSE, False),
+}
+
+
+@needs_native
+@pytest.mark.parametrize("case", LINEAR_CASES)
+def test_linear_steps_match_the_reference(case, monkeypatch):
+    system, kind, base = LINEAR_CASES[case]
+    sims = [_forced(system, 3.0, 0.01 if base else 5.0, base) for _ in range(2)]
+    for sim in sims:
+        s = sim.force.settings
+        s.kind, s.sweep_start_hz, s.sweep_end_hz, s.sweep_time, s.pulse_duration = kind, 1.0, 20.0, 0.3, 0.02
+        sim.force.switch_on()
+        sim.set_displacement(np.linspace(0.001, 0.002, system.n))
+    sim, ref = sims
+    for _ in range(6):
+        got = sim.advance(0.1)
+        with monkeypatch.context() as m:
+            m.setattr(native, "module", None)
+            want = ref.advance(0.1)
+        assert want[0].size
+        for g, w in zip(got, want):
+            np.testing.assert_allclose(g, w, rtol=0, atol=1e-11 * max(np.abs(w).max(), 1e-300))
+        np.testing.assert_allclose(sim.ledger, ref.ledger, rtol=0, atol=1e-11 * np.abs(ref.ledger).max())
+    assert sim.work != 0.0  # the force did work, as the ledger says
+    assert sim.t == ref.t
+
+
 FRICTION_CASES = {
     "stick-slip": (ChainSystem([1.0] * 3, [400.0] * 3, [1.0] * 3, [0.3, 0.2, 0.5]), 2.0, 2.0, False),
     "eight masses": (ChainSystem([0.5] * 8, [2000.0] * 8, [0.5] * 8, [1.0] * 8), 5.0, 20.0, False),

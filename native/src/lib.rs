@@ -6,6 +6,7 @@
 mod film;
 mod friction;
 mod linalg;
+mod linear;
 mod rub;
 
 use pyo3::prelude::*;
@@ -18,6 +19,7 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<film::FilmSteps>()?;
     m.add_class::<friction::FrictionSteps>()?;
     m.add_class::<rub::RubSteps>()?;
+    m.add_class::<linear::LinearSteps>()?;
     m.add_function(wrap_pyfunction!(linalg::expm_py, m)?)?;
     m.add_function(wrap_pyfunction!(linalg::foh_discretize_py, m)?)?;
     Ok(())
