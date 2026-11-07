@@ -70,6 +70,9 @@ class RotorView(pg.PlotWidget):
         self.hideButtons()
         self.yaw, self.pitch = self.YAW, self.PITCH
         self._drag: QtCore.QPointF | None = None
+        # The last update_state's arguments: a turn of the view draws the rotor again where it was, paused or not
+        # (the page draws it only on its frames).
+        self._state: tuple[np.ndarray, float, list[np.ndarray], float] | None = None
         self.system = RotorSystem()
         self.gain = 1.0  # display units per metre of lateral motion
         self.disc_radius = 0.4  # display units
@@ -142,6 +145,7 @@ class RotorView(pg.PlotWidget):
 
     def set_system(self, system: RotorSystem) -> None:
         self.system = system
+        self._state = None  # the last rotor's: its q may not fit this one
         r = math.sqrt(2.0 * system.ip / system.disc_mass) if system.ip > 0 else 0.05
         self.disc_radius = float(np.clip(r / self._metres, 0.2, 0.9))
         self._place_static()
@@ -190,6 +194,8 @@ class RotorView(pg.PlotWidget):
         self.setRange(xRange=(px.min(), px.max()), yRange=(py.min(), py.max()), padding=0.02)
         vr = self.getViewBox().viewRange()
         self.scale_label.setPos(vr[0][1], vr[1][1])
+        if self._state is not None:  # the rotor from the new angle too, as the gyroscope's and the mounts' views do
+            self.update_state(*self._state)
 
     def apply_theme(self) -> None:
         self.frame.setPen(pg.mkPen(colors.faint, width=1))
@@ -221,6 +227,7 @@ class RotorView(pg.PlotWidget):
     # ------------------------------------------------------------- drawing
     def update_state(self, q: np.ndarray, phase: float, trails: list[np.ndarray], peak: float) -> None:
         """Draw displacements q (n_dof,) with the keyphasor mark at angle `phase`, and each station's recent (x, y)."""
+        self._state = (q, phase, trails, peak)
         s = self.system
         # The disc's own axis: the shaft's slope there plus the skew. Its rim's wobble counts as motion.
         axis = np.array([q[2], q[6]]) + s.skew * np.array(
