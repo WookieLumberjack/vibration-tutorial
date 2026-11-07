@@ -171,6 +171,36 @@ def test_app_opens_on_the_course_s_first_page(app):
     assert 'href="page:sdof_page#course-map"' in w.background.toHtml()  # the Simulation page links to it
 
 
+def test_theory_window_searches_the_notes_and_has_a_glossary(app):
+    """The Theory window's search lists the sections that have a word or a symbol, across every page and the
+    glossary; a hit opens its section with the match selected. The glossary heads the contents."""
+    from vib_tutorial.gui import theory_window as tw
+    from vib_tutorial.gui.theory_window import TheoryWindow
+
+    t = TheoryWindow(lambda name: None)
+    t.show()
+    assert t.tree.topLevelItem(0).text(0) == tw.GLOSSARY_TITLE
+    t._on_item(t.tree.topLevelItem(0))
+    assert t.page == tw.GLOSSARY and "Damping ratio" not in t.windowTitle()
+    assert "damping ratio" in t.browser.toPlainText() and not t.open_button.isEnabled()
+
+    t.search_box.setText("Rayleigh's quotient")
+    assert t.left.currentWidget() is t.hits and t.hits.count() >= 3
+    pages = [t.hits.item(i).data(tw.PAGE_ROLE)[0] for i in range(t.hits.count())]
+    assert "energy_page" in pages and tw.GLOSSARY in pages
+    hit = next(t.hits.item(i) for i in range(t.hits.count()) if t.hits.item(i).data(tw.PAGE_ROLE)[0] == "energy_page")
+    t._on_hit(hit)
+    app.processEvents()
+    assert t.page == hit.data(tw.PAGE_ROLE)[0] and t.open_button.isEnabled()
+    assert t.browser.textCursor().selectedText().lower() == "rayleigh's quotient"
+    assert [h.page for h in tw.search("ωn")][:2] == [tw.GLOSSARY, "sdof_page"]  # ω<sub>n</sub> is one word
+    t.search_box.setText("zzqqx")
+    assert t.hits.count() == 1 and not t.hits.item(0).data(tw.PAGE_ROLE)
+    t.search_box.clear()
+    assert t.left.currentWidget() is t.tree
+    t.close()
+
+
 def test_theory_window(app):
     from PySide6 import QtGui
     from PySide6.QtTest import QTest
@@ -194,7 +224,8 @@ def test_theory_window(app):
         name for _, group in links.COURSE for name, _, _ in group
     ]
     assert [t.tree.topLevelItem(g).text(0) for g in range(t.tree.topLevelItemCount())] == [
-        group for group, _ in links.COURSE
+        "Glossary of symbols",
+        *(group for group, _ in links.COURSE),
     ]
 
     # A page's sections, from its headings (anchored if they weren't: the Substructuring notes).

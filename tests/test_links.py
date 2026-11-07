@@ -158,3 +158,15 @@ def test_every_notes_file_is_loaded():
     )
     files = {p.stem for p in Path(str(links.THEORY)).glob("*.html")}
     assert files == loaded
+
+
+def test_the_glossarys_links_land():
+    from vib_tutorial.gui.theory_window import page_html
+
+    html = notes()
+    anchors = {p: set(re.findall(r'<a name=["\']([^"\']+)["\']', h)) for p, h in html.items()}
+    links_ = re.findall(r'href="page:([a-z_]+)(?:#([^"]+))?"', page_html("glossary"))
+    assert len(links_) > 30
+    for target, anchor in links_:
+        assert target in html, target
+        assert not anchor or anchor in anchors[target], f"glossary links to {target}#{anchor}"
