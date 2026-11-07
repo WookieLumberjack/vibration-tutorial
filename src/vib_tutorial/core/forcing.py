@@ -12,6 +12,8 @@ import math
 from dataclasses import dataclass
 from enum import Enum
 
+import numpy as np
+
 
 class ForceKind(Enum):
     STEP = "Step (constant)"
@@ -115,6 +117,51 @@ class ForceController:
         if s.kind in (ForceKind.HARMONIC, ForceKind.CHIRP):
             return self.amplitude * math.sin(self.phase)
         return 0.0
+
+    def samples(self, dt: float, steps: int) -> np.ndarray:
+        """The input `value` gives after each of the next `steps` advances by dt, moving on as they do.
+
+        The same as calling `advance(dt)` then `value()` steps times, at once: the phase is the running sum of
+        the same increments (to rounding), a chirp switches off at the step its sweep ends, a pulse ends where
+        its remainder does.
+        """
+        s = self.settings
+        out = np.zeros(steps)
+        if steps <= 0:
+            return out
+        on = steps if self.on else 0  # steps the waveform is on for (a chirp's last is the one it ends at)
+        if self.on and s.kind is ForceKind.CHIRP:
+            # np.cumsum adds in order, as the steps' `sweep_elapsed += dt` does.
+            elapsed = np.cumsum(np.concatenate([[self.sweep_elapsed], np.full(steps, dt)]))
+            ended = np.flatnonzero(elapsed[1:] >= s.sweep_time - 1e-12)
+            on = int(ended[0]) if ended.size else steps
+            moved = min(on + 1, steps)  # steps the phase moves on: the last one too
+            frac = np.minimum((elapsed[:moved] + 0.5 * dt) / s.sweep_time, 1.0)
+            f0, f1 = s.sweep_start_hz, s.sweep_end_hz
+            freq = f0 * (f1 / f0) ** frac if s.sweep_log else f0 + (f1 - f0) * frac
+            phase = self.phase + np.cumsum(2.0 * math.pi * dt * freq)
+            self.sweep_elapsed = float(elapsed[moved])
+        elif self.on and s.kind is ForceKind.HARMONIC:
+            phase = self.phase + np.cumsum(np.full(steps, 2.0 * math.pi * s.freq_hz * dt))
+        else:
+            phase = None
+        if phase is not None:
+            phase %= 2.0 * math.pi
+            out[:on] = self.amplitude * np.sin(phase[:on])
+            self.phase = float(phase[-1])
+        elif s.kind is ForceKind.STEP:
+            out[:on] = self.amplitude
+        if self.pulse_remaining > 0.0:
+            left = np.cumsum(np.concatenate([[self.pulse_remaining], np.full(steps, -dt)]))[1:]
+            over = np.flatnonzero(left < 1e-12)
+            lasts = int(over[0]) if over.size else steps
+            if self.on and on < steps:  # a chirp that ends cuts a pulse short as it switches off
+                lasts = min(lasts, on)
+            out[:lasts] = self.amplitude
+            self.pulse_remaining = 0.0 if lasts < steps else float(left[-1])
+        if self.on and on < steps:
+            self.switch_off()
+        return out
 
     def advance(self, dt: float) -> None:
         kind = self.settings.kind

@@ -379,15 +379,17 @@ impl FrictionSteps {
     fn new(
         aw: PyReadonlyArray2<f64>,
         p: PyReadonlyArray2<f64>,
-        masses: Vec<f64>,
-        stiffness: Vec<f64>,
-        damping: Vec<f64>,
-        friction: Vec<f64>,
-        static_friction: Vec<f64>,
+        masses: PyReadonlyArray1<f64>,
+        stiffness: PyReadonlyArray1<f64>,
+        damping: PyReadonlyArray1<f64>,
+        friction: PyReadonlyArray1<f64>,
+        static_friction: PyReadonlyArray1<f64>,
         base: bool,
         k: usize,
         events_per_mass: usize,
     ) -> PyResult<Self> {
+        let [masses, stiffness, damping, friction, static_friction] =
+            [masses, stiffness, damping, friction, static_friction].map(|a| a.as_array().to_vec());
         let n = masses.len();
         let input = Mat::from_numpy(&aw);
         let p = Mat::from_numpy(&p);
@@ -439,7 +441,7 @@ impl FrictionSteps {
     fn advance(
         &mut self,
         py: Python<'_>,
-        z: Vec<f64>,
+        z: PyReadonlyArray1<f64>,
         u0: f64,
         u: PyReadonlyArray1<f64>,
         h: f64,
@@ -447,6 +449,7 @@ impl FrictionSteps {
         mut losses: PyReadwriteArray2<f64>,
     ) -> PyResult<()> {
         let n = self.n;
+        let z = z.as_array().to_vec();
         let u = u.as_array().to_vec();
         let (mut out, mut losses) = (out.as_array_mut(), losses.as_array_mut());
         if z.len() != 2 * n || out.dim() != (u.len(), 2 * n) || losses.dim() != (u.len(), 3) {
@@ -485,13 +488,14 @@ impl FrictionSteps {
     fn drive(
         &mut self,
         py: Python<'_>,
-        z: Vec<f64>,
+        z: PyReadonlyArray1<f64>,
         u0: f64,
         u: PyReadonlyArray1<f64>,
         h: f64,
         mut out: PyReadwriteArray2<f64>,
     ) -> PyResult<()> {
         let n = self.n;
+        let z = z.as_array().to_vec();
         let u = u.as_array().to_vec();
         let mut out = out.as_array_mut();
         if z.len() != 2 * n || out.dim() != (u.len(), 2 * n) {

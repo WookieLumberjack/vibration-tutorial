@@ -727,6 +727,38 @@ def test_chirp_sweeps_its_frequency_and_stops():
         assert not force.active and force.value() == 0.0
 
 
+@pytest.mark.parametrize(
+    "kind, setup",
+    [
+        (ForceKind.STEP, {}),
+        (ForceKind.HARMONIC, {"freq_hz": 7.3}),
+        (ForceKind.CHIRP, {"sweep_start_hz": 1.0, "sweep_end_hz": 9.0, "sweep_time": 0.37}),
+        (ForceKind.CHIRP, {"sweep_start_hz": 20.0, "sweep_end_hz": 2.0, "sweep_time": 0.37, "sweep_log": True}),
+        (ForceKind.PULSE, {"pulse_duration": 0.0123}),
+    ],
+)
+def test_force_samples_match_stepping_the_controller(kind, setup):
+    # `samples` is `advance` then `value`, step by step, at once: across advances of different lengths, a
+    # chirp's end and a pulse's (which fall inside one), with the controller switched off and on again.
+    a, b = (ForceController(ForceSettings(kind=kind, amplitude=3.0, **setup)) for _ in range(2))
+    for c in (a, b):
+        c.switch_on()
+    for steps, h in ((1, 1e-3), (137, 1e-3), (0, 1e-3), (500, 2.0**-11), (64, 2.0**-9)):
+        got = a.samples(h, steps)
+        want = np.empty(steps)
+        for k in range(steps):
+            b.advance(h)
+            want[k] = b.value()
+        np.testing.assert_allclose(got, want, rtol=0, atol=1e-12)
+        assert (a.on, a.active) == (b.on, b.active)
+        assert a.phase == pytest.approx(b.phase, abs=1e-12)
+        assert a.sweep_elapsed == pytest.approx(b.sweep_elapsed, abs=1e-15)
+        assert a.pulse_remaining == pytest.approx(b.pulse_remaining, abs=1e-15)
+        if not a.active:
+            for c in (a, b):
+                c.switch_on()
+
+
 def test_chirp_steps_resolve_the_highest_frequency():
     force = ForceController(ForceSettings(kind=ForceKind.CHIRP, sweep_start_hz=40.0, sweep_end_hz=2.0))
     sim = Simulator(ChainSystem.uniform(2), force)

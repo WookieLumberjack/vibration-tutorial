@@ -49,21 +49,26 @@ moving ground does on the chain, -integral of (tension in element 1) x_g' dt.
 
 Working on it
 -------------
+The input doesn't depend on the motion, so an advance works out every step's input first (`_forces`, from
+`ForceController.samples`, which `tests/test_core.py` checks against stepping `advance` and `value`). The
+linear steps (no friction) then run in Rust (`native.LinearSteps`, one per step size and input, cached in
+`_linear_cache`), mirroring `_advance_linear_reference`: Φ, g₀ and g₁ still come from `_discrete`, and the
+energy ledger from `_energy_forms` in `_finish_advance`, as matrix products over all the steps at once.
+
 Friction's steps (`Simulator.start`, `drive`) run in Rust (`native.FrictionSteps`, one per input kind from
 `_friction_kernel`, cached in `_friction_cache`), mirroring `_advance_friction_reference`/`_drive_reference`
 and `_friction_step` event for event, each sub-step's map from `expm_balanced`. Its energy ledger differs in
 method only: the input's work from an integrator state q = ∫x_k, and the dampers' loss from the energy balance
 (exactly 0 without dampers), instead of Van Loan's integrals, so an event costs one exponential, not three.
-The force is open-loop, so `start` works out every step's force first (`_forces`). Keep the two in step;
-`tests/test_native.py` compares them.
+Keep each kernel and its reference in step; `tests/test_native.py` compares them.
 
 The Rust kernels release the GIL while they step. `Simulator.advance` is `start` then `collect`: with friction
 (`steps_aside`), `start` moves the force and the clock, hands the Rust steps to a worker thread and returns;
 `collect` waits for them and finishes the ledger. Anything that touches `state` (`set_state`, `set_system`, …)
 waits for them first, and `reset` drops them. The Simulation page starts them as a frame ends, so they run
 while it paints, and records them at the next frame (`_collect`; it doesn't wait if they aren't done); a
-system change records them first, under the system they ran with. Without friction the steps hold the GIL, so
-the page steps them inline and draws them in the same frame. The rotor page steps inline too: its film kernel
+system change records them first, under the system they ran with. Without friction the steps are quick (~0.1 µs each
+for eight masses), so the page steps them inline and draws them in the same frame. The rotor page steps inline too: its film kernel
 is ~1 ms of an ~8 ms frame at 1× (drawing is most of it), not worth the threading yet.
 """
 
@@ -188,6 +193,7 @@ class Simulator:
         self._fmax_natural = self._highest_natural_freq()
         self._cache: dict[tuple, tuple[np.ndarray, np.ndarray, np.ndarray]] = {}
         self._energy_cache: dict[tuple, tuple[np.ndarray, np.ndarray]] = {}
+        self._linear_cache: dict[tuple, Any] = {}  # the Rust linear steps, by step size and input
         # Friction's systems (Aw), sub-step updates (Φ, Γ) and Rust steppers, by kind and key.
         self._friction_cache: dict[tuple, Any] = {}
         # The input where the last step ended, and whether it was a ground motion.
@@ -245,6 +251,7 @@ class Simulator:
         self._fmax_natural = self._highest_natural_freq()
         self._cache.clear()
         self._energy_cache.clear()
+        self._linear_cache.clear()
         self._friction_cache.clear()
         self.energy_added += self.stored_energy - before
 
@@ -513,11 +520,11 @@ class Simulator:
             self._friction_cache[ck] = native.module.FrictionSteps(
                 input_system(self._A, b, b_du),
                 self._pull_rows(*inp),
-                s.masses.tolist(),
-                s.stiffness.tolist(),
-                s.damping.tolist(),
-                s.friction.tolist(),
-                s.static_friction.tolist(),
+                s.masses,
+                s.stiffness,
+                s.damping,
+                s.friction,
+                s.static_friction,
                 key[0] == "base",
                 key[1] if key[0] == "force" else 0,
                 EVENTS_PER_MASS,
@@ -532,22 +539,16 @@ class Simulator:
         n = self.system.n
         inp = self._input()
         P = self._pull_rows(*inp)
-        ts = np.empty(steps)
+        ts, fs = self._forces(h, steps)
         zs = np.empty((steps, 2 * n))
-        fs = np.empty(steps)
         losses = np.empty((steps, 3))
         w = np.zeros(3 * n + 2)
         w[: 2 * n] = self.state
         f0 = self._u
-        for k in range(steps):
-            self.force.advance(h)
-            f1 = self.force.value()
+        for k, f1 in enumerate(fs):
             w[2 * n], w[2 * n + 1] = f0, (f1 - f0) / h
             losses[k] = self._friction_step(w, h, inp, P)
-            self.t += h
-            ts[k] = self.t
             zs[k] = w[: 2 * n]
-            fs[k] = f1
             f0 = f1
         return ts, zs, fs, losses
 
@@ -567,7 +568,7 @@ class Simulator:
         zs = np.empty((f.size, 2 * n))
         F, Fs = self.system.friction, self.system.static_friction
         if native.module is not None:
-            self._friction_kernel().drive(self.state.tolist(), self._u, f, h, zs)
+            self._friction_kernel().drive(self.state, self._u, f, h, zs)
         else:
             self._drive_reference(f, h, inp, P, zs)
         if f.size:
@@ -651,7 +652,7 @@ class Simulator:
         if self.steps_aside:
             ts, fs = self._forces(h, steps)
             zs, losses = np.empty((steps, 2 * n)), np.empty((steps, 3))
-            kernel, z0 = self._friction_kernel(), z_start.tolist()
+            kernel, z0 = self._friction_kernel(), z_start
 
             def steps_():
                 began = time.perf_counter()
@@ -699,28 +700,38 @@ class Simulator:
 
     def _forces(self, h: float, steps: int) -> tuple[np.ndarray, np.ndarray]:
         """The clock and the force (input) at the end of each of the next `steps` steps, moving them on."""
-        ts, fs = np.empty(steps), np.empty(steps)
-        for k in range(steps):  # the force doesn't depend on the motion: all of it first
-            self.force.advance(h)
-            fs[k] = self.force.value()
-            self.t += h
-            ts[k] = self.t
+        # The force doesn't depend on the motion: all of it first. np.cumsum adds h in order, as `t += h` would.
+        fs = self.force.samples(h, steps)
+        ts = np.cumsum(np.concatenate([[self.t], np.full(steps, h)]))[1:]
+        if steps:
+            self.t = float(ts[-1])
         return ts, fs
 
     def _advance_linear(self, h: float, steps: int, z: np.ndarray, f0: float) -> tuple[np.ndarray, ...]:
-        """(t, z, input) for `steps` steps without friction."""
-        Phi, g0, g1 = self._discrete(h)
-        ts, zs, fs = np.empty(steps), np.empty((steps, 2 * self.system.n)), np.empty(steps)
-        for k in range(steps):
-            self.force.advance(h)
-            f1 = self.force.value()
-            z = Phi @ z + g0 * f0 + g1 * f1
-            self.t += h
-            ts[k] = self.t
-            zs[k] = z
-            fs[k] = f1
-            f0 = f1
+        """(t, z, input) for `steps` steps without friction: in Rust (`native.LinearSteps`) where it's built."""
+        ts, fs = self._forces(h, steps)
+        zs = np.empty((steps, 2 * self.system.n))
+        if native.module is not None:
+            self._linear_kernel(h).advance(z, f0, fs, zs)
+        else:
+            self._advance_linear_reference(h, z, f0, fs, zs)
         return ts, zs, fs
+
+    def _linear_kernel(self, h: float):
+        """The Rust steps of `_discrete(h)` for the current input, kept while the system is."""
+        key = (h, self._input()[0])
+        if key not in self._linear_cache:
+            assert native.module is not None, "called only where the kernels are built"
+            self._linear_cache[key] = native.module.LinearSteps(*self._discrete(h))
+        return self._linear_cache[key]
+
+    def _advance_linear_reference(self, h: float, z: np.ndarray, f0: float, fs: np.ndarray, zs: np.ndarray) -> None:
+        """The steps from z (input f0) through the inputs fs, into zs: the Python `LinearSteps.advance` mirrors."""
+        Phi, g0, g1 = self._discrete(h)
+        for k, f1 in enumerate(fs):
+            z = Phi @ z + g0 * f0 + g1 * f1
+            zs[k] = z
+            f0 = f1
 
     def _finish_advance(
         self, h, ts, zs, fs, losses, z_start, f_start, base
@@ -735,9 +746,8 @@ class Simulator:
         w = np.column_stack([z0s, f0s, (fs - f0s) / h])
         if losses is None:
             Wd, Ww = self._energy_forms(h)
-            losses = np.column_stack(
-                [np.einsum("ki,ij,kj->k", w, Wd, w), np.einsum("ki,ij,kj->k", w, Ww, w), np.zeros(steps)]
-            )
+            # w_k^T W w_k for every step: a matrix product (einsum's loop was most of a big chain's advance).
+            losses = np.column_stack([((w @ Wd) * w).sum(axis=1), ((w @ Ww) * w).sum(axis=1), np.zeros(steps)])
         dissipated = self.dissipated + np.cumsum(losses[:, 0])
         work = self.work + np.cumsum(losses[:, 1])
         friction = self.friction_loss + np.cumsum(losses[:, 2])
