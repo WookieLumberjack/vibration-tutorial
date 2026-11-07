@@ -117,7 +117,11 @@ class TimeHistoryPlot(pg.GraphicsLayoutWidget):
         width = int(self.x_plot.vb.width())
         self.decimator.max_points = 2 * width if width > 100 else MAX_POINTS
         picks = self.decimator.index(start, t.size, values, len(self.x_curves) + 1)
-        idx = np.unique(np.concatenate(picks)) if len(picks) > 1 else picks[0]
+        # The rows any curve keeps, each once and in order: a mask, quicker than np.unique's hash and sort.
+        seen = np.zeros(t.size, dtype=bool)
+        for p in picks:
+            seen[p] = True
+        idx = np.flatnonzero(seen)
         yd = values(idx)
         td = t[idx]
         for i, (c, p) in enumerate(zip([*self.x_curves, self.f_curve], picks, strict=True)):
@@ -207,10 +211,21 @@ class Decimator:
 
     @staticmethod
     def _columns(parts: list[np.ndarray], columns: int, k: int) -> list[np.ndarray]:
-        """Each column's sorted picks from (rows, 2 * columns) parts, with the window's ends."""
+        """Each column's sorted picks from (rows, 2 * columns) parts, with the window's ends.
+
+        The rows cover disjoint stretches of the window in order (the head, the buckets, the tail), so
+        each row's two picks, smaller first, are already sorted: only a repeat (a bucket whose min and max
+        are one sample, or an end) has to go, which a sort would have cost ~10x as much to find.
+        """
         both = np.vstack([p for p in parts if p.size])
-        ends = np.array([0, k - 1])
-        return [np.unique(np.concatenate([both[:, c], both[:, columns + c], ends])) for c in range(columns)]
+        lo, hi = both[:, :columns], both[:, columns:]
+        seq = np.empty((2 * len(both) + 2, columns), dtype=np.intp)
+        seq[0], seq[-1] = 0, k - 1
+        np.minimum(lo, hi, out=seq[1:-1:2])
+        np.maximum(lo, hi, out=seq[2:-1:2])
+        keep = np.ones(seq.shape, dtype=bool)
+        keep[1:] = seq[1:] != seq[:-1]
+        return [seq[keep[:, c], c] for c in range(columns)]
 
     @staticmethod
     def _edge(i: int, j: int, values: Callable[[slice | np.ndarray], np.ndarray]) -> np.ndarray:

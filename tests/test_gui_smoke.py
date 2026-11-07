@@ -404,6 +404,25 @@ def test_decimator_cache_matches_a_fresh_pass():
             assert w[idx, c].max() == w[:, c].max() and w[idx, c].min() == w[:, c].min()
 
 
+def test_decimator_picks_are_sorted_and_unique():
+    """Each curve's picks come out in order, each once, also where a bucket's min and max are one sample
+    (a flat curve, a step), as `update_data`'s row lookup needs."""
+    import numpy as np
+
+    from vib_tutorial.gui.plots import Decimator
+
+    rng = np.random.default_rng(3)
+    n = 120_000
+    y = np.column_stack([np.zeros(n), np.repeat(rng.standard_normal(n // 4000), 4000), rng.standard_normal(n).cumsum()])
+    d = Decimator(2000)
+    for start, k in ((0, 50_000), (1234, 70_000), (5000, 100_000), (4999, 115_000)):
+        w = y[start : start + k]
+        for c, idx in enumerate(d.index(start, k, w.__getitem__, 3)):
+            np.testing.assert_array_equal(idx, np.unique(idx))
+            assert idx[0] == 0 and idx[-1] == k - 1
+            assert w[idx, c].max() == w[:, c].max() and w[idx, c].min() == w[:, c].min()
+
+
 def test_history_offset_numbers_samples():
     import numpy as np
 
