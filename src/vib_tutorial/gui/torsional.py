@@ -8,6 +8,12 @@ with the steady dynamic torque in a link against the motor's speed; and the star
 shafts' torque and the motor's speed against time as it runs. Right: the train drawn, its
 mode shapes, and the notes. The page has its own model (core/torsional.py and
 core/torsional_startup.py), not the chain.
+
+Working on it
+-------------
+The start-up's curves keep each one's min and max per pixel column of the run's whole span (`plots.Decimator`,
+reset with the run or the link shown), and the ringing link's pen is 1 px: every step drawn, or a wider pen's
+joins on its zigzag, made it 20 fps at 2× on a Mac. `test_torsional_start_up` checks the points and extremes.
 """
 
 from __future__ import annotations
@@ -58,6 +64,7 @@ from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import RunButton, connect_all, set_quietly
 from .links import load_notes, page_link
 from .panels import spin
+from .plots import Decimator
 from .style import colors
 from .theming import add_legend, mute
 
@@ -1134,6 +1141,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self._rpm = np.empty(cap)
         self._motor = np.empty(cap)
         self._links = np.empty((t.n - 1, cap))
+        self._decimator = Decimator()  # the curves' min and max per pixel column, kept as the run grows
         self._running = running_torques(t, su) if self.motor_on else np.full(t.n - 1, math.nan)
         self._crossings = crossings(t, su.motor) if self.motor_on else []
         self._passed: set[int] = set()
@@ -1282,9 +1290,24 @@ class TorsionalPage(QtWidgets.QWidget):
             if math.isfinite(run):
                 self.running_line.setPos(run)
         t = self._t[:k]
-        self.link_curve.setData(t, self._links[j, :k] if 0 <= j < self._links.shape[0] else t * 0.0)
-        self.motor_curve.setData(t, self._motor[:k])
-        self.speed_curve.setData(t, self._rpm[:k])
+        link = self._links[j] if 0 <= j < self._links.shape[0] else np.zeros_like(self._t)
+        # Every step is ~12,000 points a curve by the end, ringing fast: painting them all took 41 ms a frame
+        # at 2× on a Mac (20 fps). Keep each curve's min and max per pixel column of the run's whole span.
+        width = max(100, int(self.startup_torque.getPlotItem().vb.width()))
+        total = max(k, self._t.size)
+        if full:
+            self._decimator.reset()
+        if k > 2 * width:
+            self._decimator.max_points = max(2, int(2 * width * k / total))
+            picks = self._decimator.index(
+                0, k, lambda i: np.column_stack([link[:k][i], self._motor[:k][i], self._rpm[:k][i]]), 3
+            )
+        else:
+            picks = [np.arange(k)] * 3
+        for curve, y, rows in zip(
+            (self.link_curve, self.motor_curve, self.speed_curve), (link, self._motor, self._rpm), picks
+        ):
+            curve.setData(t[rows], y[:k][rows])
         for i, c in enumerate(self._crossings):
             if i not in self._passed and k and self._rpm[k - 1] >= c.rpm:
                 self._passed.add(i)
@@ -1374,7 +1397,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self._style_startup()
 
     def _style_startup(self) -> None:
-        self.link_curve.setPen(pg.mkPen(colors.strong, width=1.5))
+        self.link_curve.setPen(pg.mkPen(colors.strong, width=1))
         self.motor_curve.setPen(pg.mkPen(colors.force, width=1))
         self.speed_curve.setPen(pg.mkPen(colors.mass[0], width=2))
         self.running_line.setPen(pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine))

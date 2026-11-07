@@ -3385,7 +3385,13 @@ def test_torsional_start_up(app):
     assert p.sim.done and p.pause_button.text() == "Start"  # from rest again
     assert "Done." in p.startup_status.text()
     assert "<b>Coupling: 6 kN·m at 0.068 s (38 rpm), 10.3× its running 580 N·m</b>" in p.startup_note.text()
-    assert p.link_curve.xData.size == p._k  # (getData is what shows, decimated)
+    # Two points a pixel column at most (each curve's min and max), keeping every extreme: every step of a ringing
+    # curve took 41 ms a frame to paint at 2× on a Mac.
+    width = int(p.startup_torque.getPlotItem().vb.width())
+    j = p.startup_link.currentIndex()
+    for curve, y in ((p.link_curve, p._links[j]), (p.motor_curve, p._motor), (p.speed_curve, p._rpm)):
+        assert curve.xData.size <= 2 * width + 6 < p._k
+        assert (curve.yData.max(), curve.yData.min()) == (y[: p._k].max(), y[: p._k].min())
 
     p.preset.setCurrentText("Geared compressor")
     assert p.motor_kind.currentText() == "Synchronous" and p._k == 0 and not p.running
