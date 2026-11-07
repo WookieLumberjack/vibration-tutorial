@@ -2970,6 +2970,33 @@ def test_rotor_draws_a_turning_shafts_sag_from_its_grid(app, monkeypatch):
     assert solves == []
 
 
+def test_rotor_checks_growth_only_against_its_own_onset(app, monkeypatch):
+    """Until a new rotor's analysis arrives the last one's onset is still on the page: the readout's check of
+    whether the whirl grows (a turning shaft's Hill modes, ~12 ms a frame for the cracked one) waits for it."""
+    from vib_tutorial.core.rotor_simulator import RPM
+    from vib_tutorial.gui import rotor as rotor_page
+
+    p = rotor_page.RotorPage()
+    p.load_preset("Two-pole rotor (asymmetric shaft)")
+    p._refresh_analysis()
+    assert p.onset is not None  # unstable between its two criticals
+    calls = []
+    real = rotor_page.least_damped
+    monkeypatch.setattr(rotor_page, "least_damped", lambda s, w: calls.append(w) or real(s, w))
+    p.sim.omega = (p.onset.omega + 1.0 / RPM) if math.isfinite(p.onset.end) else p.onset.omega
+    p._draw()
+    assert calls  # its own onset: checked
+
+    p.load_preset("Cracked shaft (breathing crack)")  # its analysis is on its way: the two-pole's onset stays
+    assert p.onset is not None and p._job is not None
+    calls.clear()
+    p.sim.omega = 3000.0 / RPM
+    p._draw()
+    assert calls == []
+    p._refresh_analysis()
+    assert p.onset is None  # the cracked shaft has none up to its top speed
+
+
 def test_rotor_analysis_runs_in_the_worker(app, monkeypatch):
     """The page opens with its analysis on its way from the worker process, and a parameter change hands
     it another; the page shows each when it's done, and a change while one runs supersedes it."""

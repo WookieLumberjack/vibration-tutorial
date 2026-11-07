@@ -162,6 +162,7 @@ class RotorPage(QtWidgets.QWidget):
         self._steady_orders = [self._steady_vectors] * len(ORDER_NAMES)  # and the 1X, 2X and 3X vectors
         self.asym_chart: AsymmetryChart | None = None  # the stability tab's asymmetry chart, as far as it got
         self.onset: Onset | None = None  # where the rotor goes unstable, if it does up to top_rpm
+        self._analysed: RotorSystem | None = None  # the rotor campbell and onset are of (until a new one's arrive)
         self.rubbed = False  # the whirl grew past RUB of the span and the simulation paused
         self.touched: tuple[str, float] | None = None  # or a journal reached its film's clearance: which, how far
         self._sag: tuple[np.ndarray, np.ndarray] | None = None  # see _set_sag
@@ -1185,6 +1186,7 @@ class RotorPage(QtWidgets.QWidget):
         self._show_analysis(system, top_rpm, analysis)
 
     def _show_analysis(self, system: RotorSystem, top: float, analysis: Analysis) -> None:
+        self._analysed = system
         self.campbell = analysis.campbell
         massless = analysis.massless
         self.onset = analysis.onset
@@ -1903,7 +1905,14 @@ class RotorPage(QtWidgets.QWidget):
         rubbing = sim.system.stator is not None and y.shape[0] and y[:, PUSH].max() > 0.0
         if rubbing:
             parts.append(f"<span style='color:{colors.force}'>rubbing the stator ring</span>")
-        growing = self.onset is not None and sim.omega >= self.onset.omega and least_damped(sim.system, w)[0] < 0
+        # Only with this rotor's own onset: until its analysis arrives the last rotor's is still here, and above
+        # it this would work out a turning shaft's Hill modes every frame (12 ms for the cracked one).
+        growing = (
+            self.onset is not None
+            and self._analysed is sim.system
+            and sim.omega >= self.onset.omega
+            and least_damped(sim.system, w)[0] < 0
+        )
         # (Not where a turning shaft's weight drives 2X: the disc's position then says little of the 1X.)
         if (
             heavy is not None
