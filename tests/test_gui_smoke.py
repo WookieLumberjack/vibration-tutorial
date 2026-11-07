@@ -1793,6 +1793,9 @@ def test_rotor_page(app):
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
     p._timer.stop()
+    # The page opens with its analysis on its way from the worker; work it out here instead.
+    assert p.campbell is None and "working them out" in p.crit_label.text()
+    p._refresh_analysis()
     w.params.dof.setValue(3)  # the chain's edits leave the rotor alone
     assert p.sim.system == RotorSystem()
 
@@ -2944,8 +2947,8 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
 
 
 def test_rotor_analysis_runs_in_the_worker(app, monkeypatch):
-    """A parameter change hands the analysis to the worker process, and the page shows it when it's done;
-    a change while one runs supersedes it."""
+    """The page opens with its analysis on its way from the worker process, and a parameter change hands
+    it another; the page shows each when it's done, and a change while one runs supersedes it."""
     import time
 
     from vib_tutorial.core.rotor_analysis import analyse
@@ -2953,14 +2956,23 @@ def test_rotor_analysis_runs_in_the_worker(app, monkeypatch):
 
     p = rotor_page.RotorPage()
 
-    def settle():
-        p._analysis_timer.stop()
-        p._start_analysis()
+    def wait():
         end = time.perf_counter() + 60.0
         while p._job is not None and time.perf_counter() < end:
             app.processEvents()
             time.sleep(0.01)
         assert p._job is None
+
+    def settle():
+        p._analysis_timer.stop()
+        p._start_analysis()
+        wait()
+
+    assert p._job is not None and p.campbell is None
+    wait()
+    assert p.campbell is not None
+    assert p.campbell.criticals == analyse(p.sim.system, p.top_rpm).campbell.criticals
+    assert "1,584 rpm" in p.crit_label.text()
 
     p.gravity.setChecked(not p.gravity.isChecked())
     shown = p.campbell

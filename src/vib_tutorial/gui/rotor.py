@@ -142,6 +142,9 @@ class RotorPage(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+        # First: the analysis process imports NumPy and SciPy (~0.3 s) while the page builds, and the
+        # page's first analysis goes to it at the end, rather than hold up the page's opening.
+        WORKER.start()
         self.sim = RotorSimulator()
         self.sim.target = 1000.0 / RPM
         self.history = SampleBuffer(11)
@@ -408,13 +411,13 @@ class RotorPage(QtWidgets.QWidget):
         self._analysis_timer.timeout.connect(self._start_analysis)
         self._job: tuple[RotorSystem, float, int, float] | None = None  # (system, top rpm, ticket, started)
         self._busy_noted = False
-        WORKER.start()
         self._job_timer = QtCore.QTimer(self)
         self._job_timer.setInterval(JOB_POLL_MS)
         self._job_timer.timeout.connect(self._poll_analysis)
 
         self._on_params()
-        self._refresh_analysis()
+        self.crit_label.setText("<b>Critical speeds</b>: working them out…")
+        self._start_analysis()  # `_poll_analysis` shows it (tests that need it at once call `_refresh_analysis`)
         self._draw()
 
     # ------------------------------------------------------------- panels
