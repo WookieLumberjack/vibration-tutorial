@@ -12,6 +12,7 @@ loader writes out: `<before>`, the page: links to read first, and `<takeaways>`,
 from __future__ import annotations
 
 import re
+import sys
 import weakref
 from collections.abc import Callable
 from importlib import resources
@@ -43,6 +44,32 @@ TAKEAWAYS = re.compile(r"<takeaways>(.*?)</takeaways>", re.S)
 LINK = re.compile(r'<a href="page:([a-z_]+)#([^"]+)">(.*?)</a>', re.S)
 ITEM = re.compile(r"<li>(.*?)</li>", re.S)
 PART = re.compile(r"<!--([A-Z_]+)-->")
+
+# The keys, as the first page's notes and the About box list them (macOS shows ⌘ for Ctrl: `keys_html`).
+KEYS = (
+    ("Space", "start, pause or resume the page's motion (on the Simulation page, its force)"),
+    ("F1", "the page's Theory tab"),
+    ("Ctrl+F1", "the Theory window: any page's notes beside the page, the search and the glossary"),
+    ("Ctrl+F2", "the Practice window: problems with new numbers each time"),
+    ("Ctrl+1 … Ctrl+6", "a group of pages, at the page it last showed"),
+    ("Ctrl+F", "search the notes, in the Theory window"),
+    ("Alt+← / Alt+→", "back and forward in the Theory window"),
+    ("Ctrl+Z / Ctrl+Shift+Z", "undo and redo, in the Frame and Rotor builders"),
+)
+MAC_KEYS = (("Ctrl+", "⌘"), ("Alt+← / Alt+→", "⌘[ / ⌘]"))
+
+
+def keys_html(mac: bool | None = None) -> str:
+    """`KEYS` as a table; with ⌘ for Ctrl on macOS (`mac` None: on this platform)."""
+    if mac is None:
+        mac = sys.platform == "darwin"
+    rows = []
+    for keys, what in KEYS:
+        if mac:
+            for pc, apple in reversed(MAC_KEYS):  # the whole Alt pair first: its ⌘ is no Ctrl+
+                keys = keys.replace(pc, apple)
+        rows.append(f"<tr><td><b>{keys}</b></td><td>{what}</td></tr>")
+    return '<table cellspacing="0" cellpadding="3">' + "".join(rows) + "</table>"
 
 
 def load_notes(name: str, **parts: str) -> str:

@@ -207,6 +207,36 @@ def test_theory_window_searches_the_notes_and_has_a_glossary(app):
     t.close()
 
 
+def test_first_run_opens_on_how_a_page_works(app):
+    """The first run shows the first page's Theory tab (the course map, how a page works, the keys); later runs
+    the plots. The notes and the About box list the keys, every main-window shortcut among them, ⌘ on macOS."""
+    from PySide6 import QtGui
+
+    from vib_tutorial.gui import links, theming
+    from vib_tutorial.gui.main_window import ABOUT_HTML, GUIDED, MainWindow
+
+    theming.settings().remove(GUIDED)
+    w = MainWindow()
+    w.open_first_page()
+    w.show()
+    w.guide_first_run()
+    theory = next(
+        t for t in w.pages.currentWidget().findChildren(QtWidgets.QTabWidget) if t.tabText(t.count() - 1) == "Theory"
+    )
+    assert theory.tabText(theory.currentIndex()) == "Theory"
+    text = w.show_theory().toPlainText()
+    assert "How a page works" in text and "Ctrl+F2" in text
+    theory.setCurrentIndex(0)
+    w.guide_first_run()  # not again
+    assert theory.currentIndex() == 0
+    assert "Ctrl+F2" in ABOUT_HTML.format(version="", keys=links.keys_html())
+    listed = " ".join(keys for keys, _ in links.KEYS)
+    shortcuts = {s.key().toString() for s in w.findChildren(QtGui.QShortcut) if s.parent() is w}
+    assert shortcuts and all(key in listed for key in shortcuts - {f"Ctrl+{i}" for i in range(2, 6)}), shortcuts
+    mac = links.keys_html(mac=True)
+    assert "⌘F2" in mac and "⌘[ / ⌘]" in mac and "Ctrl" not in mac and "Alt" not in mac
+
+
 def test_theory_window(app):
     from PySide6 import QtGui
     from PySide6.QtTest import QTest
