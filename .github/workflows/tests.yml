@@ -24,8 +24,7 @@ jobs:
       matrix:
         part: [core, gui]
     name: ${{ matrix.part }}
-    # Not ubuntu-latest: its 26.04 image's apt mirrors failed to resolve security.ubuntu.com (2026-11-11).
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
