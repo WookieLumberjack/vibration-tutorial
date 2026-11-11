@@ -73,6 +73,7 @@ def test_two_pole_rotor():
     assert least_damped(p.system, p.target_rpm / RPM)[0] > 0  # it runs stable at the gravity critical
 
 
+@pytest.mark.slow  # ~17 s
 def test_cracked_shaft():
     import numpy as np
 

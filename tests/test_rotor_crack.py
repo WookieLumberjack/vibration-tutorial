@@ -198,6 +198,7 @@ def test_tracking_takes_the_3x_vector():
     assert np.abs(v3) == pytest.approx(18.6e-6, rel=0.01)
 
 
+@pytest.mark.slow  # ~40 s: the run-up through 2X and 1X
 def test_cracked_preset_numbers():
     s = CRACKED
     assert [round(w * RPM) for w, r, z in campbell(s, 3000.0 / RPM).criticals if r > 0.1] == [1562, 1574]
