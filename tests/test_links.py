@@ -218,3 +218,36 @@ def test_notes_files_parse_strictly():
                 if not m.group(0).endswith(";") or m.group(1) not in ENTITIES:
                     bad.append(f"{path.name}:{number}: {line[m.start() : m.start() + 20]!r}")
     assert not bad, "write < as &lt; and & as &amp;:\n" + "\n".join(bad)
+
+
+AHEAD = re.compile(r"\blater\b|\bahead\b|\bnext\b", re.I)
+
+
+def forward_links() -> list[str]:
+    """The links in each page's notes (not its "Before this page") to a page later in the course whose sentence
+    doesn't say it's later ("later", "ahead", "next")."""
+    from vib_tutorial.gui.links import course_map
+    from vib_tutorial.gui.theory_window import page_html
+
+    order = [name for _, pages in COURSE for name, *_ in pages]
+    found = []
+    for i, name in enumerate(order):
+        html = page_html(name).replace(course_map(), "")
+        text = re.sub(r'<a href="page:(\w+)[^"]*">', "\x00\\1\x00", html)  # each link a marker, then no tags
+        text = re.sub(r"<[^>]+>", " ", text).replace("&amp;", "&")
+        for m in re.finditer("\x00(\\w+)\x00", text):
+            if m.group(1) not in order or order.index(m.group(1)) <= i:
+                continue
+            start = max(text.rfind(c, 0, m.start()) for c in ".!?(") + 1
+            ends = [e for e in (text.find(c, m.end()) for c in ".!?)") if e >= 0]
+            sentence = re.sub("\x00\\w+\x00", "", text[start : min(ends, default=len(text))])
+            if not AHEAD.search(sentence):
+                found.append(f"{PAGE_TITLES[name]} → {PAGE_TITLES[m.group(1)]}: {' '.join(sentence.split())}")
+    return found
+
+
+def test_prose_says_when_a_link_goes_ahead():
+    """Each page uses only ideas from the pages before it: a link to a later page is a pointer, and says so
+    ("later", "ahead", "next"), so that the reader knows the page doesn't lean on it."""
+    found = forward_links()
+    assert not found, "\n".join(found)

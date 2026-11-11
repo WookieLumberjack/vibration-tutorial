@@ -55,7 +55,7 @@ instant, like a standing wave.</p>
 so that φ<sub>r</sub><sup>T</sup>Mφ<sub>r</sub> = 1 (its entries are then in 1/√kg). The
 modes are also <b>orthogonal</b> through M and K: φ<sub>r</sub><sup>T</sup>Mφ<sub>s</sub> = 0
 and φ<sub>r</sub><sup>T</sup>Kφ<sub>s</sub> = 0 for r ≠ s, which follows from Kφ = ω²Mφ and
-the symmetry of M and K. (The <a href="page:coupling_page#a-modal-mass">Modal coupling</a> page explains why one entry
+the symmetry of M and K. (The <a href="page:coupling_page#a-modal-mass">Modal coupling</a> page, later, explains why one entry
 of a mass-normalized mode, squared, is a mass.)</p>
 <p>Collecting the mass-normalized shapes into Φ and writing x = Φq turns the
 equations into <i>modal coordinates</i> q:</p>
@@ -75,7 +75,7 @@ static shape of the ground moving), gives 1.162 Hz against the true 1.105 Hz, 5%
 (V<sup>T</sup>KV) c = ω² (V<sup>T</sup>MV) c. Its frequencies are upper bounds too, mode by mode (its first
 is above the chain's first, its second above the chain's second, …), and they fall towards the true ones as
 shapes are added. The <a href="page:coupling_page">Modal coupling</a> and
-<a href="page:cms_page#basis">Substructuring</a> pages build their reduced models this way.</p>
+<a href="page:cms_page#basis">Substructuring</a> pages, later, build their reduced models this way.</p>
 
 <h3><a name="proportional-damping"></a>Proportional damping</h3>
 <p>If C<sub>m</sub> <i>is</i> diagonal, every mode obeys its own independent single-DOF
@@ -107,8 +107,8 @@ of the motion. With proportional damping each q<sub>r</sub> is its own damped os
 With non-proportional damping the off-diagonal terms of C<sub>m</sub> make each
 q<sub>r</sub> push on the others, and you see motion move from one curve to another.</li>
 <li><b>State-space:</b> the complex modes' coordinates, which stay independent for
-<i>any</i> damping (see <a href="page:complex_page#state-space-coordinates">Complex
-modes</a>).</li>
+<i>any</i> damping (the <a href="page:complex_page#state-space-coordinates">Complex
+modes</a> page, later).</li>
 </ul>
 <p>This is also how any free vibration is worked out by hand: project the starting state
 onto the modes, q<sub>r</sub>(0) = φ<sub>r</sub><sup>T</sup>Mx(0) and
@@ -179,7 +179,7 @@ ground's acceleration pushes every mass in proportion to its own mass. Mode r is
 shakes. The effective masses of all the modes add up to the total mass. In the default chain mode 1 carries
 3.57 of the 4 kg (89%), mode 2 0.33 kg, mode 3 0.08 kg and mode 4 0.01 kg, which is why a shaken base
 mostly excites mode 1. The <a href="page:random_page">Random vibration</a> and
-<a href="page:shock_page#chain">Shock spectrum</a> pages use Γ the same way, and the
+<a href="page:shock_page#chain">Shock spectrum</a> pages, later, use Γ the same way, and the
 <a href="page:coupling_page#effective-mass">Modal coupling</a> page explains where it comes from.</p>
 
 <h3><a name="vibration-absorbers-and-tuned-mass-dampers"></a>Vibration absorbers and tuned mass dampers</h3>
@@ -242,7 +242,7 @@ would start from.</li>
 mass moves as a sine, keep only the part of the friction force at the drive's frequency (a square wave's
 fundamental, 4F<sub>f</sub>/π), and solve the linear chain that results, again and again until the
 amplitudes agree. This is <i>harmonic balance</i> (the <a href="page:duffing_page#harmonic-balance">Duffing
-&amp; Mathieu</a> page uses it on a nonlinear spring). The <i>Frequency response</i> tab draws it dash-dot at
+&amp; Mathieu</a> page, much later, uses it on a nonlinear spring). The <i>Frequency response</i> tab draws it dash-dot at
 the <i>Excitation</i> panel's amplitude; where friction holds a mass still, the curve has a gap.</li>
 </ul>
 <p>The simulation itself includes friction exactly, stepping the chain between the moments a mass sticks or
@@ -280,7 +280,7 @@ in first-order (state-space) form with z = [x, ẋ]:</p>
 shapes φ. Otherwise they are complex: each mass gets an amplitude <i>and a phase</i>, peaks at its own time,
 and the nodes drift, so the motion looks partly like a wave travelling along the chain. This is physics, not
 an artifact of the solver. <i>Method → State-space</i> on the <i>Modal analysis</i> tab shows these modes;
-the <a href="page:complex_page">Complex modes</a> page explains them (why there are 2N eigenvalues, what a
+the <a href="page:complex_page">Complex modes</a> page, later, explains them (why there are 2N eigenvalues, what a
 real or overdamped root is, how to release one) and what the classical approximation misses.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
