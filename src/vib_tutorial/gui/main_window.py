@@ -208,6 +208,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .beams_plates import BeamsPlatesPage
 
         return BeamsPlatesPage
+    if name == "acoustics_page":
+        from .vibroacoustics import VibroAcousticsPage
+
+        return VibroAcousticsPage
     if name == "seismic_page":
         from .seismic import SeismicPage
 
@@ -709,6 +713,7 @@ class MainWindow(QtWidgets.QMainWindow):
     frame_page = property(lambda self: self._page("frame_page"))
     rotor_builder_page = property(lambda self: self._page("rotor_builder_page"))
     seismic_page = property(lambda self: self._page("seismic_page"))
+    acoustics_page = property(lambda self: self._page("acoustics_page"))
     beams_page = property(lambda self: self._page("beams_page"))
     pendulum_page = property(lambda self: self._page("pendulum_page"))
     active_control_page = property(lambda self: self._page("active_control_page"))

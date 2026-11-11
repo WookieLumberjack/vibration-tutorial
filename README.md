@@ -67,6 +67,7 @@ The course runs through six groups of pages, in the order the app's tabs take th
 - [Rigid body on mounts](docs/responses.md#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them
 - [Shock spectrum](docs/responses.md#shock-spectrum): a short pulse on a bank of oscillators, and on the chain
 - [Seismic response](docs/responses.md#seismic-response): the chain as a building: a design spectrum, effective modal mass, and ABS, SRSS and CQC against records
+- [Vibro-acoustics & SEA](docs/responses.md#vibro-acoustics--sea): a panel's sound: radiation efficiency, coincidence, the mass law, and energy flow between parts
 
 **[Building models](docs/building-models.md)**
 

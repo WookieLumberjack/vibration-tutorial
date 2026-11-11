@@ -48,6 +48,7 @@ def notes() -> dict[str, str]:
         torsional,
         transient,
         variability,
+        vibroacoustics,
     )
 
     return {
@@ -80,6 +81,7 @@ def notes() -> dict[str, str]:
         "quarter_car_page": quarter_car.NOTES_HTML,
         "mounts_page": rigid_mounts.NOTES_HTML,
         "seismic_page": seismic.NOTES_HTML,
+        "acoustics_page": vibroacoustics.NOTES_HTML,
         "beams_page": beams_plates.NOTES_HTML,
         "pendulum_page": pendulum.NOTES_HTML,
         "active_control_page": active_control.NOTES_HTML,
