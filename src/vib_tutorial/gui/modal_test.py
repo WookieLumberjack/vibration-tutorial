@@ -79,7 +79,7 @@ BLOCK_SIZES = [256, 512, 1024, 2048, 4096, 8192]
 
 
 @dataclass(frozen=True)
-class TestTrial:
+class ModalTestTrial:
     """A test of the uniform 4-mass chain (with friction if given), or of the chain `masses`, `springs` and
     `dampers` give: what each control is set to."""
 
@@ -114,27 +114,27 @@ class TestTrial:
 
 
 TRIALS = (
-    TestTrial(
+    ModalTestTrial(
         "A force at a node",
         "The hammer hits m3, which doesn't move in mode 2 of the uniform chain. Mode 2 isn't excited, drops "
         "out of every FRF, and no method can find it: the Modes tab lists three. Move the "
         "force to m4 and it's back.",
         input=2,
     ),
-    TestTrial(
+    ModalTestTrial(
         "Force noise: H1 against H2",
         "5% noise on the force channel. H1 reads low at the resonances, where the structure barely resists the "
         "force and the force signal is smallest, and the coherence dips there. Switch the estimator to H2: "
         "the peaks come back.",
         force_noise=5.0,
     ),
-    TestTrial(
+    ModalTestTrial(
         "Response noise: the antiresonances",
         "5% noise on the response channels. H1 stays unbiased; switch to H2 and it reads high, most at the "
         "antiresonances, where the response is small. Look at m1's FRF (Show response of).",
         response_noise=5.0,
     ),
-    TestTrial(
+    ModalTestTrial(
         "A short block: leakage",
         "Nb = 256 with no window: the hit is still ringing when the block ends, so the peaks leak, low and "
         "wide, and the damping comes out too high. Pick the Force + exponential window: the leakage goes, but "
@@ -143,14 +143,14 @@ TRIALS = (
         block=256,
         window=Window.RECTANGULAR,
     ),
-    TestTrial(
+    ModalTestTrial(
         "Peak picking on coarse lines",
         "Peak picking with Nb = 256: each frequency snaps to a spectral line and ζ, from the half-power "
         "points, comes out too high. Lengthen the block, or switch to the circle fit or LSCF.",
         block=256,
         method=Method.PEAK,
     ),
-    TestTrial(
+    ModalTestTrial(
         "Acceleration evens out the modes",
         "Periodic random with 2% response noise, measuring displacement: the top modes sink into the noise "
         "and LSCF can miss one. Switch the response sensor to Acceleration: every mode comes through, but "
@@ -159,7 +159,7 @@ TRIALS = (
         response_noise=2.0,
         tab=2,
     ),
-    TestTrial(
+    ModalTestTrial(
         "Friction: the linearity check",
         "0.5 N of friction on every mass, hammer at 100%. Press <i>Hold for comparison</i>, then set the force "
         "level to 1000%: the peaks grow taller and sharper, towards the exact (frictionless) FRF, and the "
@@ -326,7 +326,7 @@ def _one_average(rng: np.random.Generator) -> Question:
     )
 
 
-def _modes_of(t: TestTrial) -> tuple[float, float, float]:
+def _modes_of(t: ModalTestTrial) -> tuple[float, float, float]:
     """The chain's narrowest half-power width and highest damped frequency (Hz), and Auto's sample rate."""
     result = modal_analysis(t.system())
     modes = [m.damped for m in result.modes if m.damped is not None]
@@ -336,12 +336,12 @@ def _modes_of(t: TestTrial) -> tuple[float, float, float]:
 def _acquisition_spec(rng: np.random.Generator) -> Question:
     c = pick(rng, (1.0, 2.0, 4.0))
     chain: dict[str, Any] = dict(masses=(1.0,) * 4, springs=(400.0,) * 4, dampers=(c,) * 4)
-    given = TestTrial("", "", **chain).system()
-    width, top, fs = _modes_of(TestTrial("", "", **chain))
+    given = ModalTestTrial("", "", **chain).system()
+    width, top, fs = _modes_of(ModalTestTrial("", "", **chain))
     block = min(b for b in BLOCK_SIZES if b >= 4 * fs / width)
     longest = math.ceil(1.2 * 10 * block / fs / 60)  # minutes: a fifth over 10 averages of the design's blocks
 
-    def goal(t: TestTrial):
+    def goal(t: ModalTestTrial):
         w, f_top, auto = _modes_of(t)
         rate = t.fs if t.fs is not None else auto
         band = AA_CUTOFF * rate / 2
@@ -1318,12 +1318,12 @@ class ModalTestPage(QtWidgets.QWidget):
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says (a trial's fields, with no note). It measures
         when shown, not here."""
-        self.apply_trial(TestTrial("", "", **setup), measure_hidden=False)
+        self.apply_trial(ModalTestTrial("", "", **setup), measure_hidden=False)
 
-    def practice_state(self) -> TestTrial:
+    def practice_state(self) -> ModalTestTrial:
         """The chain and every control, as a trial: what a practice spec checks (from the settings alone)."""
         s = self.system
-        return TestTrial(
+        return ModalTestTrial(
             "",
             "",
             input=self.input.currentIndex(),
@@ -1346,7 +1346,7 @@ class ModalTestPage(QtWidgets.QWidget):
             exp_end=self.exp_end.value(),
         )
 
-    def apply_trial(self, trial: TestTrial, measure_hidden: bool = True) -> None:
+    def apply_trial(self, trial: ModalTestTrial, measure_hidden: bool = True) -> None:
         """Set every control as `trial` says and its chain (through the Simulation page), then measure: now, or,
         if hidden and not `measure_hidden`, once shown."""
         self.trial_note.setText(trial.note)

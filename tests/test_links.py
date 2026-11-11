@@ -174,3 +174,47 @@ def test_the_glossarys_links_land():
     for target, anchor in links_:
         assert target in html, target
         assert not anchor or anchor in anchors[target], f"glossary links to {target}#{anchor}"
+
+
+# What the notes' markup may hold: Qt's rich-text tags the notes use, and the loader's own.
+NOTES_TAGS = {
+    "a",
+    "b",
+    "br",
+    "h2",
+    "h3",
+    "h4",
+    "i",
+    "img",
+    "li",
+    "ol",
+    "p",
+    "sub",
+    "sup",
+    "table",
+    "td",
+    "th",
+    "tr",
+    "ul",
+}
+NOTES_TAGS |= {"before", "takeaways"}
+ENTITIES = {"amp", "lt", "gt", "nbsp"}
+
+
+def test_notes_files_parse_strictly():
+    """Every `<` in a notes file opens a known tag or a comment, and every `&` an entity: Qt reads "k < k<sub>x"
+    as the start of a tag and drops the text up to the next `>`, on the page and in the search index alike."""
+    from vib_tutorial.gui.links import THEORY
+
+    bad = []
+    for path in sorted(THEORY.iterdir()):
+        if not path.name.endswith(".html"):
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for m in re.finditer(r"<(?!!--)(/?)([A-Za-z][A-Za-z0-9]*)?", line):
+                if m.group(2) is None or m.group(2).lower() not in NOTES_TAGS:
+                    bad.append(f"{path.name}:{number}: {line[m.start() : m.start() + 20]!r}")
+            for m in re.finditer(r"&(#?\w*);?", line):
+                if not m.group(0).endswith(";") or m.group(1) not in ENTITIES:
+                    bad.append(f"{path.name}:{number}: {line[m.start() : m.start() + 20]!r}")
+    assert not bad, "write < as &lt; and & as &amp;:\n" + "\n".join(bad)
