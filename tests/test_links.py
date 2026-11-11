@@ -226,13 +226,13 @@ AHEAD = re.compile(r"\blater\b|\bahead\b|\bnext\b", re.I)
 def forward_links() -> list[str]:
     """The links in each page's notes (not its "Before this page") to a page later in the course whose sentence
     doesn't say it's later ("later", "ahead", "next")."""
-    from vib_tutorial.gui.links import course_map
+    from vib_tutorial.gui.links import course_map, paths_html
     from vib_tutorial.gui.theory_window import page_html
 
     order = [name for _, pages in COURSE for name, *_ in pages]
     found = []
     for i, name in enumerate(order):
-        html = page_html(name).replace(course_map(), "")
+        html = page_html(name).replace(course_map(), "").replace(paths_html(), "")  # lists of pages
         text = re.sub(r'<a href="page:(\w+)[^"]*">', "\x00\\1\x00", html)  # each link a marker, then no tags
         text = re.sub(r"<[^>]+>", " ", text).replace("&amp;", "&")
         for m in re.finditer("\x00(\\w+)\x00", text):
@@ -251,3 +251,21 @@ def test_prose_says_when_a_link_goes_ahead():
     ("later", "ahead", "next"), so that the reader knows the page doesn't lean on it."""
     found = forward_links()
     assert not found, "\n".join(found)
+
+
+def test_paths_hold_every_page_they_build_on():
+    """Each path has, for each of its pages, every page that one's "Before this page" names (and theirs), once
+    each and in the course's order, so it reads front to back like the course."""
+    from vib_tutorial.gui.links import PATHS
+    from vib_tutorial.gui.theory_window import page_html
+
+    order = [name for _, pages in COURSE for name, *_ in pages]
+    needs = {}
+    for name in order:
+        line = re.search(r"Before this page:(.*?)</p>", page_html(name), re.S)
+        needs[name] = set(re.findall(r"page:(\w+)", line.group(1))) - {name} if line else set()
+    for title, _, pages in PATHS:
+        assert list(pages) == sorted(set(pages), key=order.index), f"{title}: out of order or repeated"
+        for page in pages:
+            missing = needs[page] - set(pages)
+            assert not missing, f"{title}: {page} builds on {sorted(missing)}"
