@@ -214,7 +214,8 @@ COURSE = (
             (
                 "fluid_page",
                 "Fluid–structure",
-                "a body in water: added mass of spheres, cylinders, tubes in pipes and plates, wet against dry",
+                "a body in water: added mass of spheres, cylinders, tubes in pipes and plates; sloshing in a tank "
+                "and a tuned liquid damper",
             ),
             (
                 "self_excited_page",

@@ -993,6 +993,64 @@ def test_fluid_structure_trials():
     assert 1 / math.sqrt(1 + bt) == pytest.approx(0.53, abs=0.005)
 
 
+def test_sloshing_trials():
+    from vib_tutorial.core.sloshing import (
+        Damper,
+        G,
+        Structure,
+        Tank,
+        damper_response,
+        frozen_response,
+        mass_ratio,
+        peak,
+        response_band,
+        rigid_mass,
+        slosh_frequency,
+        slosh_mass,
+    )
+
+    tank = Tank(1.0, 0.5)
+    assert slosh_frequency(tank, 1) == pytest.approx(0.846, abs=5e-4)
+    assert (float(slosh_mass(tank, 1)), rigid_mass(tank)) == pytest.approx((237, 250), abs=0.5)
+    assert tank.liquid_mass == 500
+    shallow = Tank(1.0, 0.05)
+    assert (slosh_frequency(shallow, 1), math.sqrt(G * 0.05) / 2) == pytest.approx((0.349, 0.350), abs=5e-4)
+    assert float(slosh_mass(shallow, 1)) == pytest.approx(40.2, abs=0.05)
+    assert rigid_mass(shallow) == pytest.approx(2.71, abs=0.005)
+    deep = Tank(1.0, 2.0)
+    assert slosh_frequency(deep, 1) == pytest.approx(0.884, abs=5e-4)
+    assert math.sqrt(G * math.pi) / (2 * math.pi) == pytest.approx(0.884, abs=5e-4)
+    assert 1 / math.pi == pytest.approx(0.32, abs=0.005)
+    assert float(slosh_mass(deep, 1)) == pytest.approx(258, abs=0.5)
+    assert float(slosh_mass(deep, 1)) / deep.liquid_mass == pytest.approx(0.13, abs=0.005)
+    assert rigid_mass(deep) == pytest.approx(1729, abs=0.5)
+    assert slosh_frequency(tank, 3) == pytest.approx(1.53, abs=0.005)
+    assert float(slosh_mass(tank, 3)) == pytest.approx(9.55, abs=0.005)
+    assert float(slosh_mass(tank, 3)) / 500 == pytest.approx(0.02, abs=0.001)
+    assert slosh_frequency(tank, 2) == pytest.approx(1.25, abs=0.005)
+    assert float(slosh_mass(tank, 2)) == 0
+
+    structure = Structure(20000, 0.5, 0.01)
+    damper = Damper(Tank(2.0, 0.4, 2.0), 1, 0.13)
+    assert slosh_frequency(damper.tank, 1) == pytest.approx(0.466, abs=5e-4)
+    assert (damper.liquid, float(damper.masses[0])) == pytest.approx((1600, 1149), abs=0.5)
+    assert mass_ratio(structure, damper) == pytest.approx(0.0562, abs=5e-5)
+    f = response_band(structure)
+    assert float(np.abs(frozen_response(structure, damper, f)).max()) == pytest.approx(52.0, abs=0.05)
+    assert peak(structure, damper) == pytest.approx(5.58, abs=0.005)
+    bare = Damper(Tank(2.0, 0.4, 2.0), 1, 0.005)
+    r = np.abs(damper_response(structure, bare, f))
+    tops, _ = find_peaks(r)
+    assert f[tops] == pytest.approx([0.426, 0.540], abs=5e-4)
+    assert r[tops] == pytest.approx([34.5, 32.8], abs=0.05)
+    mistuned = Damper(Tank(2.0, 0.25, 2.0), 1, 0.13)
+    assert slosh_frequency(mistuned.tank, 1) == pytest.approx(0.382, abs=5e-4)
+    assert peak(structure, mistuned) == pytest.approx(18.2, abs=0.05)
+    four = Damper(Tank(2.0, 0.3, 2.0), 4, 0.13)
+    assert four.liquid == pytest.approx(4800)
+    assert (mass_ratio(structure, four), peak(structure, four)) == pytest.approx((0.171, 4.41), abs=5e-3)
+
+
 def test_quarter_car_trials():
     from dataclasses import replace
 

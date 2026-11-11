@@ -3,6 +3,7 @@
 <a href="page:energy_page">Energy methods</a>
 <a href="page:beams_page#plates">A plate's modes</a>
 <a href="page:acoustics_page#driven">A point-driven panel</a>
+<a href="page:sim_page#vibration-absorbers-and-tuned-mass-dampers">Tuned mass dampers</a>
 </before>
 <h3><a name="added-mass"></a>Added mass</h3>
 <p>A body that accelerates in a fluid has to accelerate some of the fluid too: the fluid in front must get out
@@ -63,8 +64,54 @@ result for a clamped circular plate of radius a, β = 0.669 (ρ<sub>f</sub>/ρ<s
 case.) Fluid on both sides doubles β. The fluid also couples modes of the same symmetry, which this page leaves
 out: the wet modes are then mixtures of the dry ones, and that shifts their frequencies a little more.</p>
 
+<h3><a name="sloshing"></a>Sloshing</h3>
+<p>A liquid with a free surface has modes of its own, set by gravity: the surface tilts one way and the other,
+and the liquid flows from the high side to the low. In a rectangular tank of length L (along the motion), filled
+to depth h, the linear potential flow φ = cosh(k(z + h)) cos kx meets the walls (∂φ/∂x = 0 at x = 0 and L) for
+k<sub>n</sub> = nπ/L, the bottom by its cosh, and the free surface's condition (the pressure there is
+atmospheric, so ∂φ/∂z = ω²φ/g) for</p>
+<p align="center">ω<sub>n</sub>² = g k<sub>n</sub> tanh(k<sub>n</sub>h).</p>
+<ul>
+<li><b>Shallow</b> (h ≪ L): tanh kh ≈ kh, and ω = k√(gh): a long wave running at √(gh) from wall to wall and
+back, f<sub>1</sub> = √(gh)/2L. Its flow is nearly the same at every depth.</li>
+<li><b>Deep</b> (h ≳ L/2): tanh kh ≈ 1, and ω = √(gk), whatever the depth. The flow dies away as e<sup>kz</sup>
+below the surface, within about L/nπ; below that the liquid stays still.</li>
+</ul>
+<p>A sloshing tank's frequencies are low (a tank a metre long sloshes below 1 Hz, a ship's tank or a
+building's water tower at a fraction of a hertz) and its damping is slight, about 0.5 % for water in a bare
+tank. Fuel in a rocket's or an aircraft's tanks, liquid cargo in a ship or a road tanker, and a tank on a
+building in an earthquake are designed with it.</p>
+
+<h3><a name="analogue"></a>The spring–mass analogue</h3>
+<p>Shake the tank sideways, x(t), and only the odd modes are excited: they tilt the surface, while the even ones
+raise it at both walls together and a sideways push does no work on them. The force on the walls is exactly that
+of a <b>spring–mass analogue</b>: a mass m<sub>0</sub> fixed to the tank, and for each odd mode a mass
+m<sub>n</sub> on a spring k<sub>n</sub> = m<sub>n</sub>ω<sub>n</sub>², with</p>
+<p align="center">m<sub>n</sub> = m<sub>L</sub> 8 tanh(k<sub>n</sub>h) / (n³π³ h/L),&nbsp;&nbsp;&nbsp;
+m<sub>0</sub> = m<sub>L</sub> − Σ m<sub>n</sub>,</p>
+<p>m<sub>L</sub> = ρLBh the liquid's mass (B the tank's breadth). The masses fall as 1/n³, so the first mode, or
+the first two, is all a model needs. In shallow liquid almost all of it sloshes (Σ 8/n²π² = 1); in deep liquid
+only the top, about m<sub>L</sub>·8L/π³h, sloshes and the rest is m<sub>0</sub>. The tank's force over its
+acceleration is m<sub>L</sub> far below the first mode (it all moves together), resonant at each odd mode, and
+m<sub>0</sub> far above them all (the surface can't follow, and the liquid is then a body's added mass with its
+free surface held flat). Analogues for upright cylinders and other shapes are tabulated the same way, with the
+masses' heights to give the moments too.</p>
+
+<h3><a name="damper"></a>A tuned liquid damper</h3>
+<p>Put such a tank on a structure whose mode, mass M at frequency f, sways too much, and its first sloshing mode
+is a <a href="page:sim_page#vibration-absorbers-and-tuned-mass-dampers">tuned mass damper</a> of mass
+m<sub>1</sub>: tall buildings and towers, footbridges and ships' anti-roll tanks use them. The depth tunes it
+(f<sub>1</sub> rises with h until the liquid is deep), and screens or baffles across the tank damp it. Den Hartog's
+tuning for a mass ratio μ = m<sub>1</sub>/(M + m<sub>L</sub> − m<sub>1</sub>) is</p>
+<p align="center">f<sub>d</sub> = f′/(1 + μ),&nbsp;&nbsp;&nbsp;ζ<sub>d</sub> = √(3μ / 8(1 + μ)³),&nbsp;&nbsp;&nbsp;peak
+|X|k/F = √(1 + 2/μ),</p>
+<p>f′ the structure's frequency carrying the rest of the liquid. The water's own damping is far too little: the
+structure's peak splits in two and each is nearly as high. Real dampers are nonlinear when the waves grow large
+(they break, and the frequency shifts), which this linear model leaves out; they're tuned and tested on shaking
+tables.</p>
+
 <h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the body or the plate (Things to try, top left).</p>
+<p>Each of these sets up the body, the plate, the tank or the damper (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
 <li>A body accelerating in a fluid moves fluid with it: its kinetic energy ½m<sub>a</sub>U² makes the body behave as if its mass were m + m<sub>a</sub>.</li>
@@ -72,4 +119,7 @@ out: the wet modes are then mixtures of the dry ones, and that shifts their freq
 <li>The fluid adds mass but no stiffness: f<sub>wet</sub> = f<sub>dry</sub>/√(1 + C<sub>a</sub>ρ<sub>f</sub>/ρ<sub>s</sub>), set by the densities' ratio.</li>
 <li>A wall close to the body forces the fluid through the gap, and the added mass grows without bound as the gap closes.</li>
 <li>A plate's mode carries fluid out to about a cell's size, so its AVMI factor β falls with the mode's order, and grows with ρ<sub>f</sub>a/ρ<sub>p</sub>h.</li>
+<li>A liquid's free surface sloshes at ω² = gk tanh(kh): √(gh)k when shallow, √(gk) when deep, whatever the depth.</li>
+<li>A tank's force under a sideways motion is a rigid mass m<sub>0</sub> plus a mass on a spring for each odd mode, the first by far the largest.</li>
+<li>A tuned liquid damper is the first sloshing mode used as a tuned mass damper: its depth tunes it, and it needs screens to damp it.</li>
 </takeaways>

@@ -110,6 +110,9 @@
 - `core/added_mass.py`: added mass: a sphere's and a cylinder's in open fluid and inside a
   concentric wall, their potential flow, and a baffled plate's modal added mass (its AVMI factor)
   from the wavenumber integral of its mode shape.
+- `core/sloshing.py`: sloshing in a rectangular tank: its modes' frequencies and flow, the
+  spring–mass analogue's rigid and sloshing masses, and a tuned liquid damper on a structure (its
+  response with the sloshing masses eliminated, Den Hartog's tuning, the peak against depth).
 - `core/torsional.py`: torsional drive trains: discs, shafts and gear meshes (with transmission
   error), the modes and their twist, the train referred to one shaft and with rigid gears, the
   orders and torsional critical speeds, the steady forced response, and the page's presets.

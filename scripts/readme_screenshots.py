@@ -748,6 +748,10 @@ def fluid_structure():
     lesson("fluid_page", 1, "fluid_structure")  # a cylinder's dipole flow
 
 
+def liquid_damper():
+    lesson("fluid_page", 14, "liquid_damper")  # a tuned liquid damper on a 20 t structure
+
+
 def mathieu_sweep():
     from vib_tutorial.core.duffing import Sweep
 
@@ -1297,6 +1301,7 @@ SHOTS = [
     duffing_jump,
     mathieu_sweep,
     fluid_structure,
+    liquid_damper,
     torsional_compressor,
     torsional_startup,
     continuum_string,
