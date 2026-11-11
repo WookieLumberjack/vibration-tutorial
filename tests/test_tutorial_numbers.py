@@ -722,6 +722,54 @@ def test_pendulum_trials():
     assert Pendulum(gravity=1.62).period0 == pytest.approx(4.94, abs=0.005)
 
 
+def test_pendulum_worked_example_and_inertia():
+    """The figures Pendulums' worked example and its measured moment of inertia quote, on the page's defaults,
+    and from the rounded figures they show."""
+    import math
+
+    from vib_tutorial.core.pendulum import Kind, Pendulum, duffing_period, period, swing
+
+    p = Pendulum()
+    assert (p.kind, p.mass, p.length, p.gravity, p.zeta) == (Kind.SIMPLE, 1.0, 1.0, 9.81, 0.0)
+    assert (p.inertia, p.stiffness) == pytest.approx((1.0, 9.81))
+    assert p.omega0 == pytest.approx(3.132, abs=5e-4) and p.natural_hz == pytest.approx(0.4985, abs=5e-5)
+    assert p.period0 == pytest.approx(2.006, abs=5e-4)
+    assert 3.132 / (2 * math.pi) == pytest.approx(0.4985, abs=5e-5)  # from the rounded ω_n
+    assert 2 * math.pi / 3.132 == pytest.approx(2.006, abs=5e-4)
+    a = math.radians(10)
+    assert a == pytest.approx(0.1745, abs=5e-5)
+    assert float(p.moment(a)) == pytest.approx(1.703, abs=5e-4) and p.stiffness * a == pytest.approx(1.712, abs=5e-4)
+    assert 9.81 * 0.1745 == pytest.approx(1.712, abs=5e-4)
+    assert 1 - 1.703 / 1.712 == pytest.approx(0.005, abs=5e-4)  # 0.5 % less
+    assert a * a / 16 == pytest.approx(0.0019, abs=5e-5) and 0.1745**2 / 16 == pytest.approx(0.0019, abs=5e-5)
+    exact = period(p, a)
+    assert exact == pytest.approx(2.010, abs=5e-4) and 2.006 * 1.0019 == pytest.approx(2.010, abs=5e-4)
+    assert 100 * (exact / p.period0 - 1) == pytest.approx(0.191, abs=0.0005)  # the readout's +0.191 %
+    assert 100 * (duffing_period(p, a) / p.period0 - 1) == pytest.approx(0.191, abs=0.0005)
+    assert 8 * (exact - p.period0) == pytest.approx(0.03, abs=0.005)  # behind after the eight swings drawn
+    _, whole, linear = swing(p, a, 8 * p.period0, 4000)
+    assert np.max(np.abs(whole - linear)) < 0.1 * a  # too little to see
+    # The series for large swings
+    for deg in (30, 60, 90):
+        A = math.radians(deg)
+        series = 1 + A**2 / 16 + 11 * A**4 / 3072
+        assert series == pytest.approx(period(p, A) / p.period0, rel=0.012)
+    # Measuring J: the 1 m rod hung from its end
+    rod = Pendulum(Kind.ROD)
+    assert rod.period0 == pytest.approx(1.638, abs=5e-4)
+    J = rod.mass * rod.gravity * 0.5 * rod.period0**2 / (4 * math.pi**2)
+    assert J == pytest.approx(1 / 3) and J - 0.25 == pytest.approx(1 / 12)
+    J_rounded = 1 * 9.81 * 0.5 * 1.638**2 / (4 * math.pi**2)
+    assert J_rounded == pytest.approx(0.3334, abs=5e-5) and 0.3334 - 0.25 == pytest.approx(0.0834, abs=5e-5)
+    assert J_rounded - 0.25 == pytest.approx(0.0834, abs=5e-5) and 1 / 12 == pytest.approx(0.0833, abs=5e-5)
+    assert J / (J - 0.25) == pytest.approx(4.0)
+    slow = 1 * 9.81 * 0.5 * (1.001 * rod.period0) ** 2 / (4 * math.pi**2)
+    assert slow / J - 1 == pytest.approx(0.002, abs=5e-5)
+    assert (slow - 0.25) / (1 / 12) - 1 == pytest.approx(0.008, abs=5e-4)
+    # Kater: the two pivots are L_eq apart
+    assert 0.4 + (1 / 12) / 0.4 == pytest.approx(Pendulum(Kind.ROD, pivot=0.4).equivalent_length)
+
+
 def test_beams_plates_trials():
     import math
 

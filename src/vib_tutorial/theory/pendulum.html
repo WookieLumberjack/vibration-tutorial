@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:sdof_page#equation">The single oscillator</a>
 <a href="page:sdof_page#phase-plane">The phase plane</a>
@@ -7,49 +6,123 @@
 <p>A body turning about a fixed axis is the single oscillator with every quantity rotated:</p>
 <table cellspacing="6">
 <tr><th>sliding</th><th>turning</th></tr>
-<tr><td>x (m)</td><td>θ (rad)</td></tr>
-<tr><td>m (kg)</td><td>J (kg·m²), the moment of inertia about the axis</td></tr>
-<tr><td>k (N/m)</td><td>k<sub>θ</sub> (N·m/rad)</td></tr>
-<tr><td>c (N·s/m)</td><td>c<sub>θ</sub> (N·m·s/rad)</td></tr>
-<tr><td>F (N)</td><td>M (N·m)</td></tr>
+<tr><td><m>x</m> (m)</td><td><m>θ</m> (rad)</td></tr>
+<tr><td><m>m</m> (kg)</td><td><m>J</m> (kg·m²), the moment of inertia about the axis</td></tr>
+<tr><td><m>k</m> (N/m)</td><td><m>k<sub>θ</sub></m> (N·m/rad)</td></tr>
+<tr><td><m>c</m> (N·s/m)</td><td><m>c<sub>θ</sub></m> (N·m·s/rad)</td></tr>
+<tr><td><m>F</m> (N)</td><td><m>M</m> (N·m), a moment</td></tr>
 </table>
-<p>so J θ'' + c<sub>θ</sub> θ' + k<sub>θ</sub> θ = M, ω<sub>n</sub> = √(k<sub>θ</sub>/J),
-ζ = c<sub>θ</sub>/2√(k<sub>θ</sub>J), and every formula of the Single oscillator page holds with these in place
-of m, k and c. The moment of inertia about a pivot a distance d from the centre of mass is
-J = J<sub>G</sub> + m d² (parallel axes).</p>
+<p>so</p>
+<eq>J\ddot{\theta} + c_\theta\dot{\theta} + k_\theta\theta = M</eq>
+<eq>\omega_n = \sqrt{\frac{k_\theta}{J}}, \qquad \zeta = \frac{c_\theta}{2\sqrt{k_\theta J}}</eq>
+<p>and every formula of the Single oscillator page holds with these in place of <m>m</m>, <m>k</m> and
+<m>c</m>. A moment of inertia is the mass weighted by the square of its distance from the axis: <m>mL²</m>
+for a bob on a string <m>L</m> long, <m>mr²/2</m> for a disc of radius <m>r</m> about its own axis,
+<m>mL²/12</m> for a uniform rod <m>L</m> long about its middle. About a pivot a distance <m>d</m> from the
+centre of mass <m>G</m> it is (parallel axes)</p>
+<eq>J = J_G + md^2 = m\left(k_G^2 + d^2\right)</eq>
+<p>where <m>k<sub>G</sub> = √(J<sub>G</sub>/m)</m> is the <b>radius of gyration</b>: the distance from
+<m>G</m> at which the whole mass would have the same <m>J<sub>G</sub></m> (<m>L/√12</m> for the rod).</p>
 
 <h3><a name="gravity-stiffness"></a>Gravity as a spring</h3>
-<p>A pendulum has no spring: its weight, acting a distance d from the pivot, gives a restoring moment
-m g d sin θ. For small swings sin θ ≈ θ, so k<sub>θ</sub> = m g d and</p>
-<p align="center">ω<sub>n</sub> = √(m g d / J); &nbsp; a simple pendulum (J = mL², d = L): ω<sub>n</sub> = √(g/L).</p>
-<p>The mass cancels for a simple pendulum, so its period depends only on L and g. A body of any shape swings as a
-simple pendulum of length L<sub>eq</sub> = J / m d. For a uniform rod J = m(L²/12 + d²), so the period is least
-when d equals the radius of gyration L/√12, and each longer period is reached at two pivots, d and
-k<sub>G</sub>²/d (Kater's reversible pendulum: the distance between those two pivots is L<sub>eq</sub>).</p>
-<p>Turned upside down, the weight pushes the body over: the stiffness is k<sub>θ</sub> − m g d, and if the spring
-is weaker than m g d it is negative, upright is unstable, and the body falls to a leaning balance, as a column
-buckles. Gravity (and any steady load) changes stiffness: this is the <b>geometric stiffness</b> a tension or
-compression adds to a string, a cable or a column.</p>
+<p>A pendulum has no spring: its weight does the job. Turned by <m>θ</m>, the weight <m>mg</m> acts at
+<m>G</m>, a horizontal distance <m>d sin θ</m> from the pivot <m>O</m>:</p>
+<table width="100%"><tr><td align="center"><img src="fig:pendulum" width="360" height="223"></td></tr></table>
+<p>Taking moments about <m>O</m>, the pin's force passes through it and drops out, so</p>
+<eq>J\ddot{\theta} = -mgd\sin\theta</eq>
+<p>with <m>J</m> about <m>O</m>. That holds because <m>O</m> doesn't move: about a point that moves, the
+moment of the inertia force has to be added too, as <a href="page:deriving_page#free-body">Deriving the
+equations</a>, later, shows. Energy gives the same equation without the pin's force: the swing keeps
+<m>½Jθ̇² + mgd(1 − cos θ)</m> constant, and differentiating that by time gives it back.</p>
+<p>For small swings <m>sin θ ≈ θ</m>, so the weight is a spring <m>k<sub>θ</sub> = mgd</m>, and</p>
+<eq>\omega_n = \sqrt{\frac{mgd}{J}}</eq>
+<p>and for a simple pendulum, a bob on a string (<m>J = mL²</m>, <m>d = L</m>),</p>
+<eq>\omega_n = \sqrt{\frac{g}{L}}, \qquad T_0 = 2\pi\sqrt{\frac{L}{g}}</eq>
+<p>The mass cancels for a simple pendulum, so its period depends only on <m>L</m> and <m>g</m>. A body of any
+shape swings as a simple pendulum of the <b>equivalent length</b></p>
+<eq>L_\mathrm{eq} = \frac{J}{md} = d + \frac{k_G^2}{d}</eq>
+<p>For a uniform rod, <m>J = m(L²/12 + d²)</m>, so the period is least when <m>d</m> equals the radius of
+gyration <m>L/√12</m>, and each longer period is reached at two distances from <m>G</m>, <m>d</m> and
+<m>k<sub>G</sub>²/d</m>. Pivot it on the other side of <m>G</m> at the second, and the two pivots are
+<m>L<sub>eq</sub></m> apart:</p>
+<table width="100%"><tr><td align="center"><img src="fig:kater" width="360" height="194"></td></tr></table>
+<p>That is <b>Kater's reversible pendulum</b> <cite>kater</cite>: a bar with two knife edges, adjusted until
+it swings with the same period on either one. Then <m>L<sub>eq</sub></m> is the distance between the edges,
+which can be measured far more precisely than the centre of mass can be found, and
+<m>g = 4π²L<sub>eq</sub>/T²</m>. It measured gravity for a century. The second pivot is also the
+<b>centre of percussion</b> of the first: a blow there, square to the line from the pivot, leaves no jolt
+at the pivot (a bat's sweet spot).</p>
+<p>The page's other two kinds turn on a torsion spring <m>k<sub>t</sub></m>: a disc of radius <m>r</m> on a
+wire, and a mass on an upright arm with the spring at its foot:</p>
+<table width="100%"><tr><td align="center"><img src="fig:pendulum-kinds" width="360" height="199"></td></tr></table>
+<p>Upside down, the weight pushes the body over, so it takes away from the spring:</p>
+<eq>k_\theta = k_t - mgd</eq>
+<p>If the spring is weaker than <m>mgd</m> it is negative: upright is unstable, and the body falls to a
+leaning balance, where <m>k<sub>t</sub>θ = mgd sin θ</m>, as a column buckles. Gravity (and any steady load)
+changes stiffness: this is the <b>geometric stiffness</b> a tension or compression adds to a string, a cable
+or a column. A disc on a wire has no gravity in its stiffness at all: <m>k<sub>θ</sub> = k<sub>t</sub></m>,
+the wire's twist.</p>
+
+<h3><a name="measuring-inertia"></a>Measuring a moment of inertia</h3>
+<p>The period turns the formula round: swing a part on a pivot and time it, and its moment of inertia
+follows. From <m>T<sub>0</sub> = 2π√(J/mgd)</m>, with the mass and <m>d</m> measured,</p>
+<eq>J_G = J - md^2 = md\left(\frac{gT_0^2}{4\pi^2} - d\right)</eq>
+<p>A 1 kg rod 1 m long, hung from its end (<m>d</m> = 0.5 m), swings in 1.638 s:
+<m>J = 1 × 9.81 × 0.5 × 1.638²/4π²</m> = 0.3334 kg·m², and <m>J<sub>G</sub> = 0.3334 − 0.25</m> =
+0.0834 kg·m², the formula's <m>mL²/12</m> = 0.0833 kg·m² to the rounding of <m>T<sub>0</sub></m>. It is a
+difference, so errors grow: here <m>J</m> is four times <m>J<sub>G</sub></m>, and 0.1 % in
+<m>T<sub>0</sub></m> (0.2 % in <m>J</m>) is 0.8 % in <m>J<sub>G</sub></m>. A part with no handy pivot
+hangs on a wire instead, a <b>torsion pendulum</b>: timed with it and then with a disc of known
+<m>J</m> on the same wire, <m>J = J<sub>disc</sub>(T/T<sub>disc</sub>)²</m>, since
+<m>k<sub>t</sub></m> is the same. Large parts (an engine, a car body) hang on three wires, the trifilar
+pendulum, whose twist the weight resists as gravity resists a swing.</p>
 
 <h3><a name="large-swings"></a>Large swings</h3>
-<p>sin θ grows more slowly than θ, so a hanging pendulum's spring softens as its swing grows, and its period
-lengthens. Energy gives it exactly: the swing to ±A takes</p>
-<p align="center">T = 4 ∫<sub>0</sub><sup>A</sup> dθ / √(2(V(A) − V(θ))/J),</p>
-<p>for the simple pendulum T = T₀ (2/π) K(sin²(A/2)), with K the complete elliptic integral: 1.7 % longer at
-30°, 18 % at 90°, without bound as A → 180°. Keeping one more term, sin θ ≈ θ − θ³/6, makes it a Duffing
-oscillator with γ = −mgd/6, and its first harmonic balance gives ω² ≈ ω₀²(1 + 3γA²/4k), T ≈ T₀(1 + A²/16): good
-for moderate swings. The inverted pendulum's cubic has the other sign, so it hardens. A torsion wire is linear,
-so a disc on one keeps its period at any twist.</p>
-<p>In the phase plane (θ, θ') the undamped motion follows the curves of constant energy. Small orbits are
-ellipses; larger ones flatten at the ends; the <b>separatrix</b> through the upside-down balance divides swinging
-from going round and round, and an orbit near it lingers at the top.</p>
+<p><m>sin θ</m> grows more slowly than <m>θ</m>, so a hanging pendulum's spring softens as its swing grows,
+and its period lengthens. Energy gives it exactly. With <m>V(θ)</m> the potential energy, the swing between
+<m>±A</m> takes</p>
+<eq>T = 4\int_0^A \frac{\mathrm{d}\theta}{\sqrt{2\left(V(A) - V(\theta)\right)/J}}</eq>
+<p>For the simple pendulum, with <m>K</m> the complete elliptic integral of the first kind,</p>
+<eq>T = T_0\,\frac{2}{\pi}\,K\!\left(\sin^2\frac{A}{2}\right)</eq>
+<eq>T \approx T_0\left(1 + \frac{A^2}{16} + \frac{11A^4}{3072}\right)</eq>
+<p>1.7 % longer than <m>T<sub>0</sub></m> at 30°, 18 % at 90°, and without bound as <m>A</m> → 180°.
+Keeping one more term of the sine, <m>sin θ ≈ θ − θ³/6</m>, makes it a <b>Duffing oscillator</b>
+<cite>duffing</cite>, a spring with a cubic term <m>k<sub>θ</sub>θ + k<sub>3</sub>θ³</m>, here with
+<m>k<sub>3</sub> = −mgd/6</m>. Its first harmonic balance (assume <m>θ = A cos ωt</m> and keep the
+<m>cos ωt</m> terms, since <m>cos³ = ¾cos + ¼cos 3</m>) gives</p>
+<eq>\omega^2 \approx \omega_n^2\left(1 + \frac{3k_3A^2}{4k_\theta}\right), \qquad T \approx T_0\left(1 + \frac{A^2}{16}\right)</eq>
+<p>good to 1 % in the period up to about 75°. The inverted pendulum's cubic has the other sign, so it
+hardens. A torsion wire is linear, so a disc on one keeps its period at any twist.</p>
+<p>In the phase plane (<m>θ</m>, <m>θ̇</m>) the undamped motion follows the curves of constant energy. Small
+orbits are ellipses; larger ones flatten at the ends; the <b>separatrix</b> through the upside-down balance
+divides swinging from going round and round, and an orbit near it lingers at the top.</p>
+
+<h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
+<p>The page opens on a simple pendulum: a 1 kg bob on a 1 m string, <m>g</m> = 9.81 m/s², no damping, let
+go from 10°. Each step below can be checked against the readouts.</p>
+<ol>
+<li><b>Inertia and stiffness.</b> <m>J = mL²</m> = 1 kg·m², and gravity's spring is
+<m>k<sub>θ</sub> = mgL</m> = 9.81 N·m/rad (the line under the controls).</li>
+<li><b>Natural frequency.</b> <m>ω<sub>n</sub> = √(9.81/1)</m> = 3.132 rad/s, so
+<m>f<sub>n</sub> = 3.132/2π</m> = 0.4985 Hz and <m>T<sub>0</sub> = 2π/3.132</m> = 2.006 s.</li>
+<li><b>How far from linear.</b> 10° is <m>A</m> = 0.1745 rad. The weight's moment there is
+<m>9.81 sin 10°</m> = 1.703 N·m, against the linear spring's <m>9.81 × 0.1745</m> = 1.712 N·m: 0.5 %
+less, so on the moment plot the curve still lies on its dashed tangent.</li>
+<li><b>The period.</b> <m>A²/16</m> = 0.0019, so the swing is 0.19 % slower:
+<m>T ≈ 2.006 × 1.0019</m> = 2.010 s. The readout under the plots gives the exact period, 2.01 s,
++0.191 %, and Duffing's estimate, the same to three figures. Over the eight swings drawn
+the whole swing falls 0.03 s behind the linearized one, too little to see.</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the pendulum and the plots (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>Turning is sliding with J for m, k<sub>θ</sub> for k and moments for forces.</li>
-<li>A weight a distance d below the pivot is a spring k<sub>θ</sub> = m g d; above it, a negative one.</li>
-<li>A simple pendulum's period, 2π√(L/g), doesn't depend on its mass; a rod's is least pivoted at its radius of gyration.</li>
+<li>Turning is sliding with <m>J</m> for <m>m</m>, <m>k<sub>θ</sub></m> for <m>k</m> and moments for forces; about a pivot, <m>J = J<sub>G</sub> + md²</m>.</li>
+<li>A weight a distance <m>d</m> below the pivot is a spring <m>k<sub>θ</sub> = mgd</m>; above it, a negative one.</li>
+<li>A simple pendulum's period, <m>2π√(L/g)</m>, doesn't depend on its mass; a rod's is least pivoted at its radius of gyration, and timing a swing measures <m>J</m>.</li>
 <li>Large swings soften a hanging pendulum (a Duffing oscillator with a negative cubic) and harden an inverted one.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>theta J J_G k_theta M_moment m x f omega_n zeta g d_arm L_eq k_t r_disc T_period A_swing V_theta K_ell k_3</notation>
+<reading>thomson rao inman baker-blackburn</reading>
