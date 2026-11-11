@@ -150,7 +150,7 @@ def run() -> int:
 
     app = make_app()
     window = MainWindow()
-    window.open_first_page()
+    window.open_start_page()
     if path := os.environ.get("VIB_TUTORIAL_STARTUP_FILE"):  # set by the release builds' smoke test
         launched = os.environ.get("VIB_TUTORIAL_LAUNCHED_AT")
         record_startup(window, path, float(launched) if launched else None)

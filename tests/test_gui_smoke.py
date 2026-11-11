@@ -177,6 +177,32 @@ def test_app_opens_on_the_course_s_first_page(app):
         assert w.page_name(w.pages.currentWidget()) == pages[0][0]
 
 
+def test_app_reopens_on_the_page_last_shown(app):
+    """The page showing is kept in the settings, and a new window opens on it; on none (the first run) or on a
+    page since renamed, on the course's first page."""
+    from vib_tutorial.gui import theming
+    from vib_tutorial.gui.main_window import LAST_PAGE, MainWindow
+
+    w = MainWindow()
+    w.show_page("fatigue_page")
+    assert theming.settings().value(LAST_PAGE) == "fatigue_page"
+    again = MainWindow()
+    again.open_start_page()
+    assert again.page_name(again.pages.currentWidget()) == "fatigue_page"
+    # The other groups still open on their first page.
+    again.pages.groups.setCurrentIndex(1)
+    assert again.page_name(again.pages.currentWidget()) == "deriving_page"
+    fresh = []  # freed after the test, with the others (free_windows)
+    for stored in (None, "no_such_page"):
+        if stored is None:
+            theming.settings().remove(LAST_PAGE)
+        else:
+            theming.settings().setValue(LAST_PAGE, stored)
+        fresh.append(MainWindow())
+        fresh[-1].open_start_page()
+        assert fresh[-1].page_name(fresh[-1].pages.currentWidget()) == "sdof_page"
+
+
 def test_theory_window_searches_the_notes_and_has_a_glossary(app):
     """The Theory window's search lists the sections that have a word or a symbol, across every page and the
     glossary; a hit opens its section with the match selected. The glossary heads the contents."""
