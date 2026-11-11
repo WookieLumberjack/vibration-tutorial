@@ -39,7 +39,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import course_map, load_notes, page_link
+from .links import course_map, keys_html, load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
@@ -471,7 +471,7 @@ POLES_TIP = (
     "kept, k and c follow).</p>"
 )
 
-NOTES_HTML = load_notes("sdof", course=course_map(), trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("sdof", course=course_map(), keys=keys_html(), trials=trials_html(TRIALS))
 
 
 class SdofPage(QtWidgets.QWidget):

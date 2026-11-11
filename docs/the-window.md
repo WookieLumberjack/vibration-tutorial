@@ -10,8 +10,9 @@
 | **Top** | The pages, in six groups, and the *Theory*, *Theory window*, *About* and *Theme* controls |
 
 The pages are grouped in the order they are meant to be read, each using only ideas from the pages
-before it (Ctrl+1 to Ctrl+6 jump to a group; the window opens on the first, *Single oscillator*, whose
-Theory starts with the map of the course). The *Theory window* (Ctrl+F1) shows any page's Theory in a
+before it (Ctrl+1 to Ctrl+6 jump to a group). The first run opens on the first, *Single oscillator*, at
+its Theory: the map of the course, then *How a page works* and the keys (the *About* box lists the keys
+too). The *Theory window* (Ctrl+F1) shows any page's Theory in a
 window of its own, with the pages and their sections listed, a *Glossary of symbols* at the top, and a search
 box (Ctrl+F) that finds a word or a symbol in every page's notes: it keeps its place as you move between pages,
 or follows them:

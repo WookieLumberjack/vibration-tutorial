@@ -371,7 +371,10 @@ PRACTICE_TIP = (
 ABOUT_HTML = """<h3>Vibration Tutorial {version}</h3>
 <p>An interactive teaching tool for mechanical vibration: a chain of masses, springs and dampers, and the
 systems built from it. Start with the first page, <i>One mass → Single oscillator</i>, and read each page's
-<i>Theory</i> tab (F1); the pages are in the order they are meant to be read.</p>
+<i>Theory</i> tab (F1); the pages are in the order they are meant to be read. That page's notes say how a
+page works.</p>
+<p>The keys:</p>
+{keys}
 <p><b>For educational use only.</b> This program was written with an AI coding assistant (Claude Code).
 Although it has an automated test suite, its results are <b>not guaranteed to be technically correct</b>:
 the simulations, analyses and theory notes may contain errors. Check any calculation independently before
@@ -380,6 +383,7 @@ decisions.</p>
 <p>Provided "as is", without warranty of any kind. Released under the MIT License.
 <a href="https://github.com/WookieLumberjack/vibration-tutorial">github.com/WookieLumberjack/vibration-tutorial</a></p>
 """
+GUIDED = "window/guided"  # the first run's Theory tab has been shown (guide_first_run)
 COMPARE_TIP = (
     "<p>Also draws, thin and dashed, the frequency response of the chain with its last mass "
     "removed. When the last mass is a vibration absorber or tuned mass damper (see "
@@ -881,9 +885,18 @@ class MainWindow(QtWidgets.QMainWindow):
         box = QtWidgets.QMessageBox(self)
         box.setWindowTitle("About Vibration Tutorial")
         box.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        box.setText(ABOUT_HTML.format(version=v))
+        box.setText(ABOUT_HTML.format(version=v, keys=links.keys_html()))
         box.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
         box.exec()
+
+    def guide_first_run(self) -> None:
+        """On the app's first run, show the page's Theory tab: on the first page, the course map and how a page
+        works. Later runs open on the plots."""
+        store = theming.settings()
+        if store.value(GUIDED, "false") == "true":
+            return
+        self.show_theory()
+        store.setValue(GUIDED, "true")
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         for window in (self.theory_window, self.practice_window):

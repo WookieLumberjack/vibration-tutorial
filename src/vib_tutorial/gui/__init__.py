@@ -155,6 +155,7 @@ def run() -> int:
         launched = os.environ.get("VIB_TUTORIAL_LAUNCHED_AT")
         record_startup(window, path, float(launched) if launched else None)
     window.show()
+    window.guide_first_run()
     preload = threading.Thread(target=_preload_scipy, name="preload-scipy", daemon=True)
     QtCore.QTimer.singleShot(0, preload.start)  # after the first paint
     if "--smoke-test" in sys.argv:  # release builds check the packaged app starts, then quit
