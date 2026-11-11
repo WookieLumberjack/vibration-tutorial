@@ -175,7 +175,7 @@ SYMBOLS = (
         "large-swings",
     ),
     Symbol("A_swing", "A", "a swing's amplitude: it turns between ±A", "rad, °", "pendulum_page", "large-swings"),
-    Symbol("V_theta", "V(θ)", "potential energy, as a function of the angle", "J", "pendulum_page", "large-swings"),
+    Symbol("V_theta", "V", "potential energy (V(θ): as a function of the angle)", "J", "pendulum_page", "large-swings"),
     Symbol("K_ell", "K", "the complete elliptic integral of the first kind", "–", "pendulum_page", "large-swings"),
     Symbol(
         "k_3",
@@ -197,7 +197,7 @@ SYMBOLS = (
         "matrices", "M, C, K", "mass, damping and stiffness matrices: M ẍ + C ẋ + K x = f", "kg, N·s/m, N/m", "sim_page"
     ),
     Symbol("q", "q", "generalized (or modal) coordinates", "varies", "deriving_page"),
-    Symbol("energies", "T, V, ℒ", "kinetic and potential energy; the Lagrangian T − V", "J", "deriving_page"),
+    Symbol("energies", "T, ℒ", "kinetic energy; the Lagrangian T − V", "J", "deriving_page"),
     Symbol("phi_i", "φ<sub>i</sub>, Φ", "mode shape i; the matrix of mode shapes (one per column)", "–", "sim_page"),
     Symbol("omega_i", "ω<sub>i</sub>", "natural frequency of mode i: K φ = ω² M φ", "rad/s", "sim_page"),
     Symbol("state", "z, A, B", "state z = [x, ẋ]; the state-space form ż = A z + B u", "–", "sim_page"),
