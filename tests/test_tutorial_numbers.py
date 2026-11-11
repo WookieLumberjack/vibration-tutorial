@@ -669,6 +669,7 @@ def test_pendulum_trials():
     assert (p.natural_hz, p.period0) == pytest.approx((0.498, 2.006), abs=5e-4)
     assert Pendulum(mass=7.0).period0 == pytest.approx(p.period0)
     assert period(p, math.radians(90)) == pytest.approx(2.368, abs=5e-4)
+    assert period(p, math.radians(30)) / p.period0 - 1 == pytest.approx(0.017, abs=0.0005)
     assert period(p, math.radians(90)) / p.period0 - 1 == pytest.approx(0.18, abs=0.005)
     # Duffing's estimate (either form) within 1 % up to about 75°
     for a, inside in ((70, True), (80, False)):
