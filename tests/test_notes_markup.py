@@ -183,7 +183,8 @@ def test_figures_follow_the_theme(app):
             style.set_theme(theme)
             for name, build in figures.all_figures().items():
                 svg = build()
-                assert theme.background in svg and theme.foreground in svg and theme.mass[0] in svg
+                assert theme.background in svg and theme.foreground in svg
+                assert theme.mass[0] in svg or theme.force in svg, f"{name} draws its subject in the plots' colour"
                 image = browser.loadResource(QtGui.QTextDocument.ResourceType.ImageResource, QtCore.QUrl(name))
                 assert isinstance(image, QtGui.QImage) and not image.isNull()
                 assert 300 < image.deviceIndependentSize().width() <= 560

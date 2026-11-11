@@ -337,6 +337,68 @@ def test_transient_trials():
     assert peak_ratio(0.05, PulseKind.RAMP, np.array([r]))[0] - 1 == pytest.approx(0.06, abs=0.005)
 
 
+def test_transient_worked_example_and_pulses():
+    """The figures Transient response's worked example quotes, on the page's defaults (a 1 N step), from the
+    rounded numbers it shows too; and its pulses' closed forms."""
+    from vib_tutorial.core.sdof import Oscillator, impulse_response, step_response
+    from vib_tutorial.core.transient import Pulse, PulseKind, convolution, peak_ratio, pulse_response, step_metrics
+
+    osc, pulse = Oscillator(), Pulse()
+    assert (osc.mass, osc.stiffness, osc.damping) == (1.0, 400.0, 2.0)
+    assert (pulse.kind, pulse.amplitude) == (PulseKind.STEP, 1.0)
+    zw, wd = osc.zeta * osc.omega_n, osc.omega_d
+    assert osc.natural_hz == pytest.approx(3.18, abs=0.005) and osc.period == pytest.approx(0.314, abs=0.0005)
+    assert osc.zeta == pytest.approx(0.05) and zw == pytest.approx(1.0) and wd == pytest.approx(19.97, abs=0.005)
+    assert zw / wd == pytest.approx(0.0501, abs=0.00005)
+    # the partial fractions: (1/400)(1/s − (s + 2)/((s + 1)² + ω_d²)) is 1/(s(s² + 2s + 400))
+    for s in (0.3 + 2j, 5.0, -1 + 7j):
+        assert (1 / s - (s + 2) / ((s + 1) ** 2 + wd**2)) / 400 == pytest.approx(1 / (s * (s * s + 2 * s + 400)))
+    t = np.linspace(0, 3, 301)
+    closed = 2.5e-3 * (1 - np.exp(-t) * (np.cos(wd * t) + zw / wd * np.sin(wd * t)))
+    np.testing.assert_allclose(step_response(osc, t), closed, atol=1e-12)
+    # the overshoot
+    m = step_metrics(osc)
+    assert 0.05 * math.pi / math.sqrt(1 - 0.05**2) == pytest.approx(0.1573, abs=0.00005)
+    assert math.exp(-0.1573) == pytest.approx(0.854, abs=0.0005) and m.overshoot == pytest.approx(0.854, abs=0.0005)
+    assert 2.5 * 1.854 == pytest.approx(4.64, abs=0.005) and 2.5 * (1 + m.overshoot) == pytest.approx(4.64, abs=0.005)
+    assert math.pi / 19.97 == pytest.approx(0.157, abs=0.0005) and m.peak_time == pytest.approx(0.157, abs=0.0005)
+    assert m.settling_estimate == pytest.approx(4.0) and m.settling == pytest.approx(3.8, abs=0.05)
+    assert math.log(50) == pytest.approx(3.9, abs=0.05)  # the 2 % rule: ln 50, rounded to 4
+    # at 0.3 s, where the convolution is drawn
+    assert wd * 0.3 == pytest.approx(5.9925, abs=0.00005)
+    assert math.cos(5.9925) == pytest.approx(0.95805, abs=0.000005)
+    assert math.sin(5.9925) == pytest.approx(-0.28661, abs=0.000005)
+    assert math.exp(-0.3) == pytest.approx(0.74082, abs=0.000005)
+    bracket = 1 - 0.74082 * (0.95805 - 0.0501 * 0.28661)
+    assert bracket == pytest.approx(0.3009, abs=0.00005) and 2.5 * bracket == pytest.approx(0.752, abs=0.0005)
+    x = float(pulse_response(osc, pulse, np.array([0.0, 0.3]))[-1])
+    assert x * 1e3 == pytest.approx(0.752, abs=0.0005)
+    assert convolution(osc, pulse, 0.3)[3] * 1e3 == pytest.approx(0.752, abs=0.0005)
+    # h and H
+    assert osc.time_constant == pytest.approx(1.0)
+    assert 2 * osc.zeta * osc.natural_hz == pytest.approx(0.318, abs=0.0005)
+    assert 1 / (osc.damping * osc.omega_n) == pytest.approx(0.025)
+    # the impulse trial's first swing, 4.6 mm, a little under I/mω_n = 5 mm
+    t = np.linspace(0, 0.1, 2001)
+    assert 0.1 * impulse_response(osc, t).max() * 1e3 == pytest.approx(4.6, abs=0.05)
+    assert 0.1 / osc.omega_n == pytest.approx(0.005)
+    # the residual swing of an undamped pulse is |F(ω_n)|/mω_n: a rectangle's (F/k) 2|sin πr|
+    undamped = Oscillator(1, 400, 0)
+    for r in (0.3, 0.7, 1.0, 1.4):
+        T = r * undamped.period
+        tau = np.linspace(0, T, 20001)
+        y = np.exp(-1j * undamped.omega_n * tau)
+        spectrum = abs(np.sum(0.5 * (y[1:] + y[:-1]) * np.diff(tau)))  # F = 1 N
+        after = undamped.period * np.linspace(r + 0.01, r + 1.01, 2001)
+        swing = np.abs(pulse_response(undamped, Pulse(PulseKind.RECTANGLE, 1.0, T), np.concatenate([[0], after])))
+        assert swing[1:].max() == pytest.approx(spectrum / undamped.omega_n, rel=1e-3, abs=1e-7)
+        assert spectrum / undamped.omega_n == pytest.approx(2 * abs(math.sin(math.pi * r)) / 400, abs=1e-7)
+    # the half-sine's worst: 1.77 times static near T = 0.8 T_n
+    ratios = np.linspace(0.7, 0.9, 201)
+    peaks = peak_ratio(0.0, PulseKind.HALF_SINE, ratios)
+    assert peaks.max() == pytest.approx(1.77, abs=0.005) and ratios[peaks.argmax()] == pytest.approx(0.8, abs=0.03)
+
+
 def test_damping_models_trials():
     from vib_tutorial.core.damping_models import Matched, Model, coulomb_stop
 
@@ -779,6 +841,54 @@ def test_pendulum_trials():
     _, th, _ = swing(lean, math.radians(1.0), 70.0)
     assert math.degrees(th[-1]) == pytest.approx(40.8, abs=0.1)
     assert Pendulum(gravity=1.62).period0 == pytest.approx(4.94, abs=0.005)
+
+
+def test_pendulum_worked_example_and_inertia():
+    """The figures Pendulums' worked example and its measured moment of inertia quote, on the page's defaults,
+    and from the rounded figures they show."""
+    import math
+
+    from vib_tutorial.core.pendulum import Kind, Pendulum, duffing_period, period, swing
+
+    p = Pendulum()
+    assert (p.kind, p.mass, p.length, p.gravity, p.zeta) == (Kind.SIMPLE, 1.0, 1.0, 9.81, 0.0)
+    assert (p.inertia, p.stiffness) == pytest.approx((1.0, 9.81))
+    assert p.omega0 == pytest.approx(3.132, abs=5e-4) and p.natural_hz == pytest.approx(0.4985, abs=5e-5)
+    assert p.period0 == pytest.approx(2.006, abs=5e-4)
+    assert 3.132 / (2 * math.pi) == pytest.approx(0.4985, abs=5e-5)  # from the rounded ω_n
+    assert 2 * math.pi / 3.132 == pytest.approx(2.006, abs=5e-4)
+    a = math.radians(10)
+    assert a == pytest.approx(0.1745, abs=5e-5)
+    assert float(p.moment(a)) == pytest.approx(1.703, abs=5e-4) and p.stiffness * a == pytest.approx(1.712, abs=5e-4)
+    assert 9.81 * 0.1745 == pytest.approx(1.712, abs=5e-4)
+    assert 1 - 1.703 / 1.712 == pytest.approx(0.005, abs=5e-4)  # 0.5 % less
+    assert a * a / 16 == pytest.approx(0.0019, abs=5e-5) and 0.1745**2 / 16 == pytest.approx(0.0019, abs=5e-5)
+    exact = period(p, a)
+    assert exact == pytest.approx(2.010, abs=5e-4) and 2.006 * 1.0019 == pytest.approx(2.010, abs=5e-4)
+    assert 100 * (exact / p.period0 - 1) == pytest.approx(0.191, abs=0.0005)  # the readout's +0.191 %
+    assert 100 * (duffing_period(p, a) / p.period0 - 1) == pytest.approx(0.191, abs=0.0005)
+    assert 8 * (exact - p.period0) == pytest.approx(0.03, abs=0.005)  # behind after the eight swings drawn
+    _, whole, linear = swing(p, a, 8 * p.period0, 4000)
+    assert np.max(np.abs(whole - linear)) < 0.1 * a  # too little to see
+    # The series for large swings
+    for deg in (30, 60, 90):
+        A = math.radians(deg)
+        series = 1 + A**2 / 16 + 11 * A**4 / 3072
+        assert series == pytest.approx(period(p, A) / p.period0, rel=0.012)
+    # Measuring J: the 1 m rod hung from its end
+    rod = Pendulum(Kind.ROD)
+    assert rod.period0 == pytest.approx(1.638, abs=5e-4)
+    J = rod.mass * rod.gravity * 0.5 * rod.period0**2 / (4 * math.pi**2)
+    assert J == pytest.approx(1 / 3) and J - 0.25 == pytest.approx(1 / 12)
+    J_rounded = 1 * 9.81 * 0.5 * 1.638**2 / (4 * math.pi**2)
+    assert J_rounded == pytest.approx(0.3334, abs=5e-5) and 0.3334 - 0.25 == pytest.approx(0.0834, abs=5e-5)
+    assert J_rounded - 0.25 == pytest.approx(0.0834, abs=5e-5) and 1 / 12 == pytest.approx(0.0833, abs=5e-5)
+    assert J / (J - 0.25) == pytest.approx(4.0)
+    slow = 1 * 9.81 * 0.5 * (1.001 * rod.period0) ** 2 / (4 * math.pi**2)
+    assert slow / J - 1 == pytest.approx(0.002, abs=5e-5)
+    assert (slow - 0.25) / (1 / 12) - 1 == pytest.approx(0.008, abs=5e-4)
+    # Kater: the two pivots are L_eq apart
+    assert 0.4 + (1 / 12) / 0.4 == pytest.approx(Pendulum(Kind.ROD, pivot=0.4).equivalent_length)
 
 
 def test_beams_plates_trials():

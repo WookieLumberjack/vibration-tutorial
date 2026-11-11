@@ -1,88 +1,206 @@
-
 <before>
 <a href="page:sdof_page#free-vibration">Free vibration</a>
 <a href="page:sdof_page#poles">The poles</a>
 <a href="page:sdof_page#forced-response">Forced response</a>
 </before>
+<p>The Single oscillator page drove the mass with a force that went on for ever. Real forces start and stop: a
+hammer blow, a load put down, a door slammed. This page takes the same oscillator through five such inputs,
+from rest:</p>
+<table width="100%"><tr><td align="center"><img src="fig:pulses" width="380" height="215"></td></tr></table>
+
 <h3><a name="impulse-response"></a>An impulse and the impulse response</h3>
 <p>A hammer blow lasts far less than a period. All that it leaves behind is its <b>impulse</b>
-I = ∫F dt: it changes the mass's momentum by I before the spring has time to stretch, so the mass starts
-from where it was with velocity I/m and then vibrates freely. For a unit impulse (1 N·s) on a mass at rest
-this free vibration is the <b>impulse response</b></p>
-<p align="center">h(t) = e<sup>−ζω<sub>n</sub>t</sup> sin(ω<sub>d</sub>t) / mω<sub>d</sub> &nbsp; (t ≥ 0),</p>
-<p>and 0 before the blow: nothing moves until it is struck (causality).</p>
+<m>I = ∫f dt</m>: it changes the mass's momentum by <m>I</m> before the spring has time to stretch, so the mass
+starts from where it was with velocity <m>I/m</m> and then vibrates freely. Put <m>x<sub>0</sub> = 0</m> and
+<m>v<sub>0</sub> = I/m</m> into the <a href="page:sdof_page#free-vibration">free vibration</a>: for a unit
+impulse (1 N·s) on a mass at rest it is the <b>impulse response</b></p>
+<eq>h(t) = \frac{\mathrm{e}^{-\zeta\omega_n t}\sin\omega_d t}{m\omega_d} \qquad (t \ge 0)</eq>
+<p>and 0 before the blow: nothing moves until it is struck (causality). A blow <m>I</m> gives
+<m>x = I h(t)</m>, whose first swing is a little under <m>I/mω<sub>n</sub></m>.</p>
 
 <h3><a name="convolution"></a>Convolution: Duhamel's integral</h3>
-<p>Any force is a string of small impulses: in the moment dτ at τ it gives the impulse F(τ)dτ. Each rings
-as its own impulse response, which at the later time t has been ringing for t − τ. The system is linear,
-so the responses add:</p>
-<p align="center"><b>x(t) = ∫₀ᵗ F(τ) h(t − τ) dτ.</b></p>
-<p>This is <b>Duhamel's integral</b>, the convolution of the force with h. The bottom plot draws it at one
-instant: h is flipped (time runs backwards from t) and slid along, multiplied by the force, and the shaded
-area is x(t). Recent force counts most; force from long ago has rung down. Drag the slider and the area
-traces out the response.</p>
-<p>So h says everything about the system: knowing it, every response follows. (This page steps the
+<p>Any force is a string of small impulses: in the moment <m>dτ</m> at the time <m>τ</m> it gives the impulse
+<m>f(τ) dτ</m>. Each rings as its own impulse response, which at the later time <m>t</m> has been ringing for
+<m>t − τ</m>. The system is linear, so the responses add:</p>
+<eq>x(t) = \int_0^t f(\tau)\,h(t - \tau)\,\mathrm{d}\tau</eq>
+<p>This is <b>Duhamel's integral</b> (<cite>duhamel</cite>), the <b>convolution</b> of the force with <m>h</m>. The
+bottom plot draws it at one instant: <m>h</m> is flipped (time runs backwards from <m>t</m>) and slid along,
+multiplied by the force, and the shaded area is <m>x(t)</m>. Recent force counts most; force from long ago has
+rung down. Drag the slider and the area traces out the response.</p>
+<p>So <m>h</m> says everything about the system: knowing it, every response follows. The integral starts from
+rest; from <m>x<sub>0</sub></m> and <m>v<sub>0</sub></m>, add the free vibration from there. (This page steps the
 response exactly instead, and sets the integral, worked out numerically, beside it: they agree to the
 integral's accuracy.)</p>
 
 <h3><a name="fourier-pair"></a>h and H: one function, two views</h3>
 <p>Convolution in time is multiplication in frequency. Transform Duhamel's integral and it becomes
-X(ω) = H(ω)F(ω): the <b>frequency response is the Fourier transform of the impulse response</b>,
-H(ω) = ∫h(t)e<sup>−iωt</sup>dt. A long, lightly damped ring in time is a tall, narrow peak in frequency; a
-quick decay is a broad, low one. The h and H tab transforms h by the FFT and lays it on the receptance from the
-Single oscillator page. This is why a hammer test works: one blow excites every frequency at once, and the
-ring that follows holds the whole H.</p>
+<m>X(Ω) = H(Ω)F(Ω)</m>, with <m>X(Ω)</m> and <m>F(Ω)</m> the Fourier transforms of the response and the force:
+the <b>frequency response is the Fourier transform of the impulse response</b>,</p>
+<eq>H(\Omega) = \int_0^\infty h(t)\,\mathrm{e}^{-i\Omega t}\,\mathrm{d}t</eq>
+<p>A long, lightly damped ring in time is a tall, narrow peak in frequency; a quick decay is a broad, low one.
+The <i>h and H</i> tab transforms <m>h</m> by the FFT and lays it on the receptance from the Single oscillator
+page. This is why a hammer test works: one blow excites every frequency at once, and the ring that follows
+holds the whole <m>H</m>.</p>
 
 <h3><a name="step-response"></a>The step response</h3>
-<p>A force F switched on and left on is the integral of h:</p>
-<p align="center">x(t) = (F/k)[1 − e<sup>−ζω<sub>n</sub>t</sup>(cos ω<sub>d</sub>t + (ζω<sub>n</sub>/ω<sub>d</sub>)
-sin ω<sub>d</sub>t)].</p>
-<p>It rises towards the static F/k but overshoots it, by the fraction</p>
-<p align="center">M<sub>p</sub> = e<sup>−ζπ/√(1 − ζ²)</sup>,</p>
-<p>at the <b>peak time</b> π/ω<sub>d</sub>, and then rings down about it. Undamped it swings to <b>twice</b> the
-static deflection: suddenly applied, a load does double the damage it does when placed gently. It
-<b>settles</b> within 2 % after about 4/ζω<sub>n</sub> (four time constants). Critically damped, it rises
-without overshoot; overdamped, slowly.</p>
+<p>A force <m>F</m> switched on and left on is a string of impulses <m>F dτ</m> without end, so its response is
+<m>F</m> times the integral of <m>h</m>:</p>
+<eq>x(t) = \frac{F}{k}\left[1 - \mathrm{e}^{-\zeta\omega_n t}\left(\cos\omega_d t + \frac{\zeta\omega_n}{\omega_d}\sin\omega_d t\right)\right]</eq>
+<p>(and the other way round, <m>h</m> is the slope of the unit step's response). It rises towards the static
+<m>F/k</m> but overshoots it, by the fraction <m>M<sub>p</sub></m> of it, at the <b>peak time</b>
+<m>t<sub>p</sub></m>, half a damped period:</p>
+<eq>M_p = \mathrm{e}^{-\zeta\pi/\sqrt{1 - \zeta^2}}, \qquad t_p = \frac{\pi}{\omega_d}</eq>
+<p>and then rings down about it. Undamped it swings to <b>twice</b> the static deflection: suddenly applied, a
+load does double the damage it does when placed gently. It <b>settles</b> within 2 % once its envelope
+<m>e<sup>−ζω<sub>n</sub>t</sup></m> has fallen to 0.02, after <m>t<sub>s</sub> ≈ ln 50/ζω<sub>n</sub></m>, which is
+rounded to <m>4/ζω<sub>n</sub></m>, four time constants (<cite>ogata</cite>). Critically damped, it rises without
+overshoot; overdamped, slowly.</p>
 
-<h3><a name="laplace"></a>The Laplace transform and the transfer function</h3>
-<p>The Laplace transform turns the equation of motion into algebra. With x(0) = x<sub>0</sub> and
-ẋ(0) = v<sub>0</sub>,</p>
-<p align="center">(ms² + cs + k)X(s) = F(s) + m(sx<sub>0</sub> + v<sub>0</sub>) + cx<sub>0</sub>,</p>
-<p>so X(s) = H(s)F(s) plus a term from the start, with the <b>transfer function</b>
-H(s) = 1/(ms² + cs + k). Its poles are the roots of ms² + cs + k, the s-plane points on the
-<a href="page:sdof_page#poles">Single oscillator page</a>: they set the free response's decay and frequency.
-On the imaginary axis, s = iω, H(s) is the frequency response; its inverse transform is h(t). A step is
-F/s, so its response is F/s(ms² + cs + k), which partial fractions turn back into the formula above.</p>
+<h3><a name="laplace"></a>The Laplace transform</h3>
+<p>Duhamel's integral starts from rest, and working it out for a given force means integrating. The
+<b>Laplace transform</b> takes the start in too, and turns the equation of motion into algebra: each
+derivative becomes a multiplication by <m>s</m>, and the response becomes a fraction to be read back from a
+table. It is the standard tool for transients, and the language of control (the
+<a href="page:active_control_page">Active control page</a>, later, uses its transfer functions). It turns a
+function of time <m>x(t)</m>, from <m>t = 0</m> on, into a function <m>X(s)</m> of a complex frequency
+<m>s</m>:</p>
+<eq>X(s) = \int_0^\infty x(t)\,\mathrm{e}^{-st}\,\mathrm{d}t</eq>
+<p>Think of <m>s</m> as the exponent of a motion <m>e<sup>st</sup></m>, as with the poles: on the imaginary
+axis, <m>s = iΩ</m>, it is a steady oscillation at <m>Ω</m>; with a negative real part, one that dies away. The
+transform weighs <m>x(t)</m> against <m>e<sup>−st</sup></m> for every such <m>s</m>. With a large enough real part
+<m>e<sup>−st</sup></m> dies away faster than any response on these pages grows, so the integral is finite.</p>
+<p>The transforms needed here all follow from that one integral. A step, 1 from <m>t = 0</m> on, gives
+<m>∫e<sup>−st</sup> dt = 1/s</m>. An exponential <m>e<sup>s<sub>1</sub>t</sup></m> gives
+<m>∫e<sup>(s<sub>1</sub> − s)t</sup> dt = 1/(s − s<sub>1</sub>)</m>, and with
+<m>s<sub>1</sub> = −ζω<sub>n</sub> ± iω<sub>d</sub></m> (and <m>e<sup>iω<sub>d</sub>t</sup> = cos ω<sub>d</sub>t + i sin ω<sub>d</sub>t</m>) the two
+together give the decaying cosine and sine. A unit impulse, all of it at <m>t = 0</m> where
+<m>e<sup>−st</sup> = 1</m>, gives 1:</p>
+<table cellspacing="0" cellpadding="3" align="center">
+<tr><th align="left"><m>x(t)</m>, from <m>t = 0</m></th><th align="left"><m>X(s)</m></th></tr>
+<tr><td>a unit impulse at <m>t = 0</m></td><td><m>1</m></td></tr>
+<tr><td>a unit step</td><td><m>1/s</m></td></tr>
+<tr><td><m>e<sup>s<sub>1</sub>t</sup></m></td><td><m>1/(s − s<sub>1</sub>)</m></td></tr>
+<tr><td><m>e<sup>−ζω<sub>n</sub>t</sup> cos ω<sub>d</sub>t</m></td><td><m>(s + ζω<sub>n</sub>)/((s + ζω<sub>n</sub>)² + ω<sub>d</sub>²)</m></td></tr>
+<tr><td><m>e<sup>−ζω<sub>n</sub>t</sup> sin ω<sub>d</sub>t</m></td><td><m>ω<sub>d</sub>/((s + ζω<sub>n</sub>)² + ω<sub>d</sub>²)</m></td></tr>
+</table>
+<p>Four rules do the rest:</p>
+<ul>
+<li><b>It is linear:</b> the transform of a sum is the sum of the transforms, and a constant factor stays a
+factor.</li>
+<li><b>A derivative is a multiplication by <m>s</m></b>, less the start. Integrating
+<m>ẋ e<sup>−st</sup></m> by parts gives <m>s X(s) − x<sub>0</sub></m>, and doing it again
+<m>s² X(s) − s x<sub>0</sub> − v<sub>0</sub></m> for <m>ẍ</m>.</li>
+<li><b>A delay is a factor:</b> <m>x(t − T)</m>, started at <m>T</m> instead of 0, has the transform
+<m>e<sup>−sT</sup>X(s)</m>.</li>
+<li><b>A convolution is a product:</b> Duhamel's integral has the transform <m>H(s)F(s)</m>, as in time and
+frequency above.</li>
+</ul>
+
+<h3><a name="transfer-function"></a>The equation transformed: the transfer function</h3>
+<p>Transform each term of <m>m ẍ + c ẋ + k x = f(t)</m> with the derivative rule, starting from
+<m>x(0) = x<sub>0</sub></m> and <m>ẋ(0) = v<sub>0</sub></m>, and collect the terms in <m>X(s)</m>:</p>
+<eq>(m s^2 + c s + k)\,X(s) = F(s) + m(s x_0 + v_0) + c x_0</eq>
+<p>The differential equation has become an algebraic one, solved by dividing:</p>
+<eq>X(s) = \underbrace{H(s)\,F(s)}_{\text{forced}} + \underbrace{\frac{m(s x_0 + v_0) + c x_0}{m s^2 + c s + k}}_{\text{free}}</eq>
+<p>with the <b>transfer function</b> <m>H(s) = 1/(m s² + c s + k)</m>. The first part is Duhamel's integral, the
+second the free vibration from the start, both at once. A unit impulse from rest (<m>F(s) = 1</m>) leaves
+<m>X = H(s)</m>, so <m>H(s)</m> is the transform of <m>h(t)</m>; to check, <m>m s² + c s + k</m> is
+<m>m((s + ζω<sub>n</sub>)² + ω<sub>d</sub>²)</m>, and the table's last row turns <m>H(s)</m> back into the
+<m>h(t)</m> above.</p>
+<p>The transfer function says everything about the oscillator in two ways:</p>
+<ul>
+<li><b>Its poles</b>, the roots of <m>m s² + c s + k</m>, are where it is infinite: the s-plane points of the
+<a href="page:sdof_page#poles">Single oscillator page</a>. Each pole <m>s<sub>1</sub></m> puts an
+<m>e<sup>s<sub>1</sub>t</sup></m> in the response, so the poles set the free response's decay and
+frequency.</li>
+<li><b>On the imaginary axis</b>, <m>s = iΩ</m>, it is the frequency response <m>H(Ω)</m>: the Laplace
+transform there is the Fourier transform, for anything that has died away.</li>
+</ul>
+
+<h3><a name="partial-fractions"></a>Back to time: partial fractions</h3>
+<p>Under a step <m>F</m> from rest, <m>F(s) = F/s</m>, so</p>
+<eq>X(s) = \frac{F}{s\,(m s^2 + c s + k)}</eq>
+<p>which is in no table. Split it into fractions that are, the <b>partial fractions</b>:</p>
+<eq>X(s) = \frac{F}{k}\left(\frac{1}{s} - \frac{s + 2\zeta\omega_n}{(s + \zeta\omega_n)^2 + \omega_d^2}\right)</eq>
+<p>(put the two over the common denominator to check: the top becomes <m>ω<sub>n</sub>² = k/m</m>). Write
+<m>s + 2ζω<sub>n</sub></m> as <m>(s + ζω<sub>n</sub>) + (ζω<sub>n</sub>/ω<sub>d</sub>)ω<sub>d</sub></m> and read
+each piece off the table: <m>1/s</m> is the static step, the rest the decaying cosine and
+<m>ζω<sub>n</sub>/ω<sub>d</sub></m> times the decaying sine. That is the step response above. Its final value
+needs no inverting at all: a response that settles ends at <m>lim<sub>s→0</sub> s X(s)</m>, here
+<m>F/k</m>.</p>
+<p>The delay rule builds the pulses from steps. A rectangle of length <m>T</m> is a step <m>F</m> at 0 less a
+step <m>F</m> at <m>T</m>:</p>
+<table width="100%"><tr><td align="center"><img src="fig:steps" width="380" height="100"></td></tr></table>
+<p>so <m>F(s) = F(1 − e<sup>−sT</sup>)/s</m>, and its response is the step response less the same step
+response started <m>T</m> later. This page works it out that way.</p>
 
 <h3><a name="pulses"></a>Pulses: impulse, step, or in between</h3>
-<p>What a pulse of length T does depends on T against the natural period T<sub>n</sub>:</p>
+<p>What a pulse of length <m>T</m> does depends on <m>T</m> against the natural period
+<m>T<sub>n</sub> = 2π/ω<sub>n</sub></m>, through <m>r = T/T<sub>n</sub></m>:</p>
 <ul>
-<li><b>T ≪ T<sub>n</sub>:</b> it is an impulse. Only its area counts, and the peak grows with it: a rectangle
-reaches 2 sin(πT/T<sub>n</sub>) times static, about 2πT/T<sub>n</sub>.</li>
-<li><b>T ≫ T<sub>n</sub>:</b> the mass follows it statically: a ramp's peak tends to 1 (its overshoot is
-|sin πr|/πr, r = T/T<sub>n</sub>, and none at all for a whole number of periods); a rectangle, which is
-switched on and off suddenly, still throws it to 2.</li>
-<li><b>In between:</b> the worst case. A half-sine is worst at T ≈ 0.8T<sub>n</sub>, 1.77 times static
+<li><b><m>T ≪ T<sub>n</sub></m>:</b> it is an impulse. Only its area counts, and the peak grows with it: a
+rectangle reaches <m>2 sin πr</m> times static, about <m>2πr</m>.</li>
+<li><b><m>T ≫ T<sub>n</sub></m>:</b> the mass follows it statically: a ramp's peak tends to 1 (its overshoot is
+<m>|sin πr|/πr</m>, and none at all for a whole number of periods); a rectangle, which is switched on and off
+suddenly, still throws it to 2.</li>
+<li><b>In between:</b> the worst case. A half-sine is worst at <m>T ≈ 0.8T<sub>n</sub></m>, 1.77 times static
 undamped.</li>
 </ul>
-<p>The <i>Pulse spectrum</i> tab plots this peak ratio against T/T<sub>n</sub>: it is a shock response
+<p>The peak can come while the pulse lasts (the <b>primary</b> response) or in the free vibration it leaves (the
+<b>residual</b> response). Undamped, the residual swing has a simple meaning. Once the pulse is over,
+Duhamel's integral runs over the whole pulse, and with <m>h = sin ω<sub>n</sub>t/mω<sub>n</sub></m> it is a
+free vibration of amplitude</p>
+<eq>\frac{1}{m\omega_n}\left|\int_0^T f(\tau)\,\mathrm{e}^{-i\omega_n\tau}\,\mathrm{d}\tau\right| = \frac{|F(\omega_n)|}{m\omega_n}</eq>
+<p>the force's Fourier transform at the natural frequency. A short pulse's transform is flat at its area
+<m>I</m> there, so it swings by <m>I/mω<sub>n</sub></m>, as a blow does. A rectangle's is
+<m>2F|sin(ΩT/2)|/Ω</m>, which at <m>ω<sub>n</sub></m> is <m>(F/k) 2|sin πr|</m>: zero for a rectangle of
+a whole number of periods, which leaves the mass at rest. A ramp's overshoot is the residual of its slope,
+a rectangle <m>F/T</m> high, and so <m>(F/k)|sin πr|/πr</m>.</p>
+<p>The <i>Pulse spectrum</i> tab plots the peak ratio against <m>T/T<sub>n</sub></m>: it is a shock response
 spectrum. The <a href="page:shock_page#srs">Shock spectrum page</a>, later, turns it round: one pulse, a bank of
 oscillators of every frequency.</p>
 
 <h3><a name="computing"></a>How this page computes it</h3>
-<p>An impulse's response is the free vibration from v = I/m, a step's and a rectangle's are sums of step
+<p>An impulse's response is the free vibration from <m>v = I/m</m>, a step's and a rectangle's are sums of step
 responses, all in closed form. The ramp and the half-sine are stepped by the exact update the chain's
 simulator uses, which is exact for a force linear between steps (the ramp) and accurate to a few millionths
 for the half-sine on 200 steps a period. The convolution integral is worked out separately by the trapezium
 rule, to show that it gives the same.</p>
 
+<h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
+<p>The page opens on the Single oscillator's defaults, <m>m</m> = 1 kg, <m>k</m> = 400 N/m and
+<m>c</m> = 2 N·s/m, with a step of 1 N switched on at <m>t = 0</m> and the convolution drawn at 0.3 s.</p>
+<ol>
+<li><b>The oscillator.</b> <m>ω<sub>n</sub> = √400</m> = 20 rad/s, so <m>f<sub>n</sub></m> = 3.18 Hz and
+<m>T<sub>n</sub> = 2π/20</m> = 0.314 s; <m>ζ = 2/(2√400) = 0.05</m>, <m>ζω<sub>n</sub></m> = 1 s<sup>−1</sup> and
+<m>ω<sub>d</sub></m> = 19.97 rad/s. The readout under the oscillator's boxes says the same.</li>
+<li><b>The transform.</b> <m>F(s) = 1/s</m>, so <m>X(s) = 1/(s(s² + 2s + 400))</m>, which splits into
+<m>(1/400)(1/s − (s + 2)/((s + 1)² + 19.97²))</m>. From the table,
+<m>x(t)</m> is 2.5 mm times <m>1 − e<sup>−t</sup>(cos 19.97t + 0.0501 sin 19.97t)</m>, with <m>t</m> in seconds.</li>
+<li><b>The overshoot.</b> <m>ζπ/√(1 − ζ²)</m> = 0.1573, so <m>M<sub>p</sub> = e<sup>−0.1573</sup></m> = 0.854:
+85.4 %, up to 2.5 × 1.854 = 4.64 mm, at <m>t<sub>p</sub> = π/19.97</m> = 0.157 s.</li>
+<li><b>Settling.</b> The rule gives <m>4/ζω<sub>n</sub></m> = 4 s; the response itself last leaves the 2 % band
+at 3.8 s. The <i>Step response</i> tab marks both.</li>
+<li><b>At 0.3 s</b>, where the convolution is drawn: <m>ω<sub>d</sub>t</m> = 5.9925 rad, whose cosine is 0.95805
+and sine −0.28661, and <m>e<sup>−0.3</sup></m> = 0.74082. So
+<m>x</m> is 2.5 mm times <m>1 − 0.74082 × (0.95805 − 0.0501 × 0.28661) = 0.3009</m>, 0.752 mm: the 752 µm
+under the convolution plot, from its shaded area and exactly.</li>
+<li><b>h and H.</b> The ring's time constant <m>1/ζω<sub>n</sub></m> = 1 s makes a peak
+<m>2ζf<sub>n</sub></m> = 0.318 Hz wide and <m>1/cω<sub>n</sub> = 1/(2 × 20)</m> = 25 mm/N high, as the
+<i>h and H</i> tab says.</li>
+</ol>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the oscillator, the input and the plots (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>An impulse I starts the mass at I/m; the response to a unit impulse, h(t), is a free vibration.</li>
-<li>Any response is the convolution of the force with h (Duhamel's integral): every slice of force rings as h from its own moment on.</li>
-<li>h(t) and H(ω) are a Fourier pair; with the Laplace transform, H(s) = 1/(ms² + cs + k) and its poles.</li>
-<li>A step overshoots its static value by e<sup>−ζπ/√(1 − ζ²)</sup> (twice the static deflection, undamped) and settles in about 4/ζω<sub>n</sub>.</li>
-<li>A pulse much shorter than the period acts by its area, one much longer statically; the worst lengths lie near half a period to a period.</li>
+<li>An impulse <m>I</m> starts the mass at <m>I/m</m>; the response to a unit impulse, <m>h(t)</m>, is a free vibration.</li>
+<li>Any response is the convolution of the force with <m>h</m> (Duhamel's integral): every slice of force rings as <m>h</m> from its own moment on.</li>
+<li><m>h(t)</m> and <m>H(Ω)</m> are a Fourier pair; the Laplace transform of <m>h</m> is the transfer function <m>H(s) = 1/(m s² + c s + k)</m>, infinite at the poles.</li>
+<li>The Laplace transform turns the equation into algebra, the start included; partial fractions and a table bring the answer back to time.</li>
+<li>A step overshoots its static value by <m>e<sup>−ζπ/√(1 − ζ²)</sup></m> (twice the static deflection, undamped) and settles in about <m>4/ζω<sub>n</sub></m>.</li>
+<li>A pulse much shorter than the period acts by its area, one much longer statically; the worst lengths lie near half a period to a period. Undamped, the swing it leaves is its spectrum at <m>ω<sub>n</sub></m>.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x x0 f omega_n zeta omega_d impulse h_t tau_conv Omega H laplace s H_s step_metrics T_pulse r_pulse</notation>
+<reading>inman rao thomson ogata harris</reading>

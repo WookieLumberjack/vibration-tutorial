@@ -49,6 +49,48 @@ REFERENCES = (
         "the classic: physical explanations, absorbers, rotors",
     ),
     Reference(
+        "baker-blackburn",
+        "Baker and Blackburn 2005",
+        "G. L. Baker and J. A. Blackburn, <i>The Pendulum: A Case Study in Physics</i>, Oxford University Press, 2005",
+        "the pendulum in full: large swings, the physical and torsion pendulums, Kater's, chaos",
+    ),
+    Reference(
+        "duffing",
+        "Duffing 1918",
+        "G. Duffing, <i>Erzwungene Schwingungen bei veränderlicher Eigenfrequenz und ihre technische "
+        "Bedeutung</i>, Sammlung Vieweg, Heft 41/42, Vieweg, Braunschweig, 1918",
+        "the oscillator with a cubic spring",
+    ),
+    Reference(
+        "kater",
+        "Kater 1818",
+        "H. Kater, An account of experiments for determining the length of the pendulum vibrating seconds in "
+        "the latitude of London, <i>Philosophical Transactions of the Royal Society of London</i> 108, 33–102, "
+        "1818",
+        "the reversible pendulum",
+    ),
+    Reference(
+        "duhamel",
+        "Duhamel 1833",
+        "J.-M. C. Duhamel, Sur la méthode générale relative au mouvement de la chaleur dans les corps solides "
+        "plongés dans des milieux dont la température varie avec le temps, <i>Journal de l'École polytechnique</i> "
+        "14 (22e cahier), 20–77, 1833",
+        "the superposition of responses to a changing input, first for heat",
+    ),
+    Reference(
+        "harris",
+        "Piersol and Paez 2010",
+        "A. G. Piersol and T. L. Paez (eds), <i>Harris' Shock and Vibration Handbook</i>, 6th edition, "
+        "McGraw-Hill, 2010",
+        "pulses, shock spectra and their tables, for reference",
+    ),
+    Reference(
+        "ogata",
+        "Ogata 2010",
+        "K. Ogata, <i>Modern Control Engineering</i>, 5th edition, Prentice Hall, 2010",
+        "the Laplace transform and transfer functions, step responses' overshoot and settling",
+    ),
+    Reference(
         "fourier",
         "Fourier 1822",
         "J. Fourier, <i>Théorie analytique de la chaleur</i>, Firmin Didot, Paris, 1822",

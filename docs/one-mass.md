@@ -44,9 +44,10 @@ convolution of the force with the impulse response h(t), and the page draws the 
 instant (the force, h flipped and slid, and their product, whose area is the response there). Its tabs
 set h(t) beside its Fourier transform, the receptance; measure a step's overshoot and settling time; and
 plot each pulse's peak response against its length over the natural period, the shock spectrum's
-single-oscillator form.
+single-oscillator form. The Theory brings in the Laplace transform: the transfer function, its poles, and
+partial fractions back to time.
 
-![Transient response page, a 0.2 s rectangular pulse of 1 N: at t = 0.3 s the area under F(τ) h(t − τ) is −2.58 mm, the exact response there; the peak, 4.64 mm, is 1.85 times static at T/T<sub>n</sub> = 0.637, on the pulse spectrum's rectangle curve](images/transient_response.png)
+![Transient response page, a 0.2 s rectangular pulse of 1 N: at t = 0.3 s the area under f(τ) h(t − τ) is −2.58 mm, the exact response there; the peak, 4.64 mm, is 1.85 times static at T/T<sub>n</sub> = 0.637, on the pulse spectrum's rectangle curve](images/transient_response.png)
 
 ## Periodic forcing
 
