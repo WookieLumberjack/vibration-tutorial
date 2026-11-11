@@ -178,7 +178,9 @@ SYMBOLS = (
     Symbol("energies", "T, V, ℒ", "kinetic and potential energy; the Lagrangian T − V", "J", "deriving_page"),
     Symbol("phi_i", "φ<sub>i</sub>, Φ", "mode shape i; the matrix of mode shapes (one per column)", "–", "sim_page"),
     Symbol("omega_i", "ω<sub>i</sub>", "natural frequency of mode i: K φ = ω² M φ", "rad/s", "sim_page"),
-    Symbol("state", "z, A, B", "state z = [x, ẋ]; the state-space form ż = A z + B u", "–", "sim_page"),
+    Symbol(
+        "state", "A, B", "the state-space form ż = A z + B u, for the state z = [x, ẋ] of every mass", "–", "sim_page"
+    ),
     Symbol("lambda", "λ", "eigenvalue of A, σ ± iω<sub>d</sub>: decay rate and damped frequency", "1/s", "sim_page"),
     Symbol(
         "foh",

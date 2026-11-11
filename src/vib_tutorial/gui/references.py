@@ -78,7 +78,7 @@ REFERENCES = (
         "Parseval 1806",
         "M.-A. Parseval des Chênes, Mémoire sur les séries et sur l'intégration complète d'une équation aux "
         "différences partielles linéaires du second ordre, à coefficients constants, <i>Mémoires présentés à "
-        "l'Institut des Sciences, Lettres et Arts, par divers savans</i> 1, 638–648, 1806 (read 1799)",
+        "l'Institut des Sciences, Lettres et Arts, par divers savans</i> 1, 1806 (read 5 April 1799)",
         "",
     ),
     Reference(
