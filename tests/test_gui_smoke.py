@@ -12,6 +12,7 @@ QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from PySide6 import QtCore  # noqa: E402
 
 from vib_tutorial.core import ForceKind  # noqa: E402
+from vib_tutorial.gui import maths  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -4120,7 +4121,7 @@ def test_lesson_pages_trials_and_tabs(app, main_window, name):
     for i in range(len(module.TRIALS)):
         page.load_trial(i)
         app.processEvents()
-        assert page.trials.note.text() == module.TRIALS[i].note
+        assert page.trials.note.text() == maths.markup(module.TRIALS[i].note)
     for i in range(page.tabs.count()):
         page.tabs.setCurrentIndex(i)
         app.processEvents()

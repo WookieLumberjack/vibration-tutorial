@@ -15,6 +15,7 @@ from PySide6 import QtCore, QtWidgets
 from . import weak
 from .axes import log_axes
 from .layouts import form_layout, plot_height
+from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import space_bar, spin
 from .theming import mute
@@ -191,13 +192,13 @@ class TrialBox(QtWidgets.QGroupBox):
         layout.addWidget(self.note)
 
     def show_note(self, text: str) -> None:
-        self.note.setText(text)
+        self.note.setText(markup(text))
         self.note.setVisible(bool(text))
 
 
 def trials_html(trials) -> str:
     """The trials as the Theory tab lists them."""
-    return "<ol>" + "".join(f"<li><b>{t.name}.</b> {t.note}</li>" for t in trials) + "</ol>"
+    return "<ol>" + "".join(f"<li><b>{t.name}.</b> {markup(t.note)}</li>" for t in trials) + "</ol>"
 
 
 class Form(QtWidgets.QGroupBox):
