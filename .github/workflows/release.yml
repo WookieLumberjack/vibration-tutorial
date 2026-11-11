@@ -68,8 +68,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --group build
 
+      # -v names each test as it finishes, so a hang shows which never did; faulthandler dumps every
+      # thread's stack if one test runs past 10 minutes; the step's limit ends a hang well before
+      # the job's 6 hours (the macOS runs stalled near the end of the suite from Nov 7).
       - name: Run tests
-        run: uv run pytest --durations=15
+        timeout-minutes: 30
+        run: uv run pytest --durations=15 -v -o faulthandler_timeout=600
 
       - name: Build
         run: uv run pyinstaller packaging/vib-tutorial.spec --noconfirm

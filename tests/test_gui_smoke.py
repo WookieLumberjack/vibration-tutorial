@@ -250,12 +250,13 @@ def test_first_run_opens_on_how_a_page_works(app):
         t for t in w.pages.currentWidget().findChildren(QtWidgets.QTabWidget) if t.tabText(t.count() - 1) == "Theory"
     )
     assert theory.tabText(theory.currentIndex()) == "Theory"
+    practice = "⌘F2" if sys.platform == "darwin" else "Ctrl+F2"  # the keys as this platform writes them
     text = w.show_theory().toPlainText()
-    assert "How a page works" in text and "Ctrl+F2" in text
+    assert "How a page works" in text and practice in text
     theory.setCurrentIndex(0)
     w.guide_first_run()  # not again
     assert theory.currentIndex() == 0
-    assert "Ctrl+F2" in ABOUT_HTML.format(version="", keys=links.keys_html())
+    assert practice in ABOUT_HTML.format(version="", keys=links.keys_html())
     listed = " ".join(keys for keys, _ in links.KEYS)
     shortcuts = {s.key().toString() for s in w.findChildren(QtGui.QShortcut) if s.parent() is w}
     assert shortcuts and all(key in listed for key in shortcuts - {f"Ctrl+{i}" for i in range(2, 6)}), shortcuts

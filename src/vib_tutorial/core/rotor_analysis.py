@@ -17,14 +17,18 @@ run over `RESTART_S` restarts the worker rather than wait. Not a thread: the fra
 and returns must pickle, and `analyse` must not touch Qt. Tests and scripts can still call
 `_refresh_analysis()`, which works it out at once. The worker hides the parent's `__main__` while it spawns
 (so unguarded scripts aren't rerun); `vib_tutorial.main` calls `freeze_support()` for the packaged app, and
-`--smoke-test` checks the worker answers.
+`--smoke-test` checks the worker answers. The worker reads its jobs on a thread of its own, so a page never
+waits to submit while a result it hasn't read fills the pipe (`_serve`; macOS's small socket buffers hung the
+release builds' tests on this).
 """
 
 from __future__ import annotations
 
 import multiprocessing
 import os
+import queue
 import sys
+import threading
 import traceback
 import types
 from collections import OrderedDict
@@ -78,12 +82,25 @@ def analyse(system: RotorSystem, top_rpm: float) -> Analysis:
 
 
 def _serve(conn) -> None:
-    """The worker process: analyse each (ticket, system, top_rpm) received, in turn, and send back the result."""
-    while True:
-        try:
-            ticket, system, top_rpm = conn.recv()
-        except EOFError:  # the app is gone
-            return
+    """The worker process: analyse each (ticket, system, top_rpm) received, in turn, and send back the result.
+
+    A thread takes the jobs in as they come, so the worker reads while it sends: a result (~1.6 MB) can wait
+    in a full pipe until the page reads it, and a page that submits meanwhile mustn't then wait on the worker
+    in turn (macOS's socket buffers are small enough for both to block; the release builds' tests hung so).
+    """
+    jobs: queue.SimpleQueue = queue.SimpleQueue()
+
+    def receive() -> None:
+        while True:
+            try:
+                jobs.put(conn.recv())
+            except (EOFError, OSError):  # the app is gone
+                jobs.put(None)
+                return
+
+    threading.Thread(target=receive, name="rotor-analysis-jobs", daemon=True).start()
+    while (job := jobs.get()) is not None:
+        ticket, system, top_rpm = job
         reply: tuple[int, Analysis | None, str | None]
         try:
             reply = (ticket, analyse(system, top_rpm), None)
