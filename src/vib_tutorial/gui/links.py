@@ -5,8 +5,11 @@ A note links to another page's Theory with `page:<attribute>#<anchor>`, the attr
 and http(s) links open in the browser. `before(...)` writes a page's "Before this page" line.
 The main window calls `wire` on every Theory browser and handles the `page:` links.
 
-A page's notes live in `theory/<name>.html` (`load_notes`), Qt's rich text but for two tags the
-loader writes out: `<before>`, the page: links to read first, and `<takeaways>`, one `<li>` each.
+A page's notes live in `theory/<name>.html` (`load_notes`), Qt's rich text but for the tags the
+loader writes out: `<before>`, the page: links to read first; `<takeaways>`, one `<li>` each; `<eq>` (a
+display equation in LaTeX) and `<m>` (inline maths), see `maths`; `<notation>`, the page's table of
+symbols, see `notation`; `<cite>` and `<reading>`, its Further reading, see `references`. Figures are
+`<img src="fig:…">`, see `figures`. Show the notes in a `notes_view.NotesBrowser`, which draws them.
 """
 
 from __future__ import annotations
@@ -44,6 +47,8 @@ TAKEAWAYS = re.compile(r"<takeaways>(.*?)</takeaways>", re.S)
 LINK = re.compile(r'<a href="page:([a-z_]+)#([^"]+)">(.*?)</a>', re.S)
 ITEM = re.compile(r"<li>(.*?)</li>", re.S)
 PART = re.compile(r"<!--([A-Z_]+)-->")
+EQ = re.compile(r"<eq>(.*?)</eq>", re.S)  # a display equation, in LaTeX (`maths`)
+MATH = re.compile(r"<m>(.*?)</m>", re.S)  # inline maths (`maths.inline`)
 
 # The keys, as the first page's notes and the About box list them (macOS shows ⌘ for Ctrl: `keys_html`).
 KEYS = (
@@ -73,11 +78,22 @@ def keys_html(mac: bool | None = None) -> str:
 
 
 def load_notes(name: str, **parts: str) -> str:
-    """The notes in `theory/<name>.html`, its `<before>` and `<takeaways>` written out and each
+    """The notes in `theory/<name>.html`, its tags written out (see the module's docstring) and each
     `<!--PART-->` filled by the keyword `part` (what the code works out: the trials, the course map)."""
+    from . import maths, notation, references
+
     html = (THEORY / f"{name}.html").read_text(encoding="utf-8")
+    html = EQ.sub(lambda m: maths.display(m.group(1)), html)  # first: its LaTeX is raw, & and < as they are
     html = BEFORE.sub(lambda m: before(*LINK.findall(m.group(1))), html)
     html = TAKEAWAYS.sub(lambda m: takeaways(*ITEM.findall(m.group(1))), html)
+    html = notation.NOTATION.sub(lambda m: notation.notation_html(m.group(1).split()), html)
+    reading = list(dict.fromkeys(references.CITE.findall(html)))
+    for found in references.READING.findall(html):
+        reading += [key for key in found.split() if key not in reading]
+    html = references.CITE.sub(lambda m: references.cite(m.group(1)), references.READING.sub("", html))
+    if reading:
+        html = html.rstrip() + "\n" + references.reading_html(reading) + "\n"
+    html = MATH.sub(lambda m: maths.inline(m.group(1)), html)
     wanted = set(PART.findall(html))
     given = {key.upper() for key in parts}
     if wanted != given:

@@ -197,7 +197,7 @@ NOTES_TAGS = {
     "tr",
     "ul",
 }
-NOTES_TAGS |= {"before", "takeaways"}
+NOTES_TAGS |= {"before", "takeaways", "eq", "m", "rm", "notation", "cite", "reading"}
 ENTITIES = {"amp", "lt", "gt", "nbsp"}
 
 
@@ -210,7 +210,9 @@ def test_notes_files_parse_strictly():
     for path in sorted(THEORY.iterdir()):
         if not path.name.endswith(".html"):
             continue
-        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        text = path.read_text(encoding="utf-8")
+        text = re.sub(r"<eq>.*?</eq>", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text, flags=re.S)  # raw LaTeX
+        for number, line in enumerate(text.splitlines(), 1):
             for m in re.finditer(r"<(?!!--)(/?)([A-Za-z][A-Za-z0-9]*)?", line):
                 if m.group(2) is None or m.group(2).lower() not in NOTES_TAGS:
                     bad.append(f"{path.name}:{number}: {line[m.start() : m.start() + 20]!r}")

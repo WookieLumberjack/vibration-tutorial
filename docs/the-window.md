@@ -59,7 +59,8 @@ or follows them:
    envelopes and the cepstrum).
 
 Every page has a *Theory* tab (the *Theory* button or F1 opens it) that starts with what to read first,
-links to the sections it builds on, and ends with *Things to try* and *What to take away*. Most pages'
+links to the sections it builds on, and ends with *Things to try*, *What to take away*, a table of the
+page's symbols and books to read further (the pages are being brought to this form one by one). Most pages'
 *Things to try* are one click: pick one from the box at the top left and the page sets itself up. All of
 them are described below.
 

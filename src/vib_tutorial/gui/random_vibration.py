@@ -51,6 +51,7 @@ from .axes import log_axes
 from .layouts import ColumnScroll, form_layout, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .panels import spin
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -627,7 +628,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         sv.addWidget(self.largest_note)
         stats_scroll = ColumnScroll(stats_tab)
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.miles_tab = miles_tab

@@ -40,6 +40,7 @@ from . import frame_stats, settle_plots, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, plot_height
 from .lesson import RunButton
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
@@ -665,7 +666,7 @@ class DuffingPage(QtWidgets.QWidget):
         chv.addWidget(self.chart, 1)
         chv.addWidget(self.chart_note)
         self._chart_zeta: float | None = None  # the damping ratio the chart shows
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(phase_tab, "Phase plane")

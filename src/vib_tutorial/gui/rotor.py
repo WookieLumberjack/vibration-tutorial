@@ -57,11 +57,11 @@ from . import frame_stats, rotor_practice, settle_plots, weak
 from .cms_time import SampleBuffer
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
 from .lesson import RunButton
+from .notes_view import NotesBrowser
 from .panels import spin
 from .rotor_balance import BalancingPanel
 from .rotor_bearing import BearingPanel
 from .rotor_bode import SWEEP_COLORS, BodePlots, PolarPlot, SweepPlots, nice_marks
-from .rotor_figures import FigureBrowser
 from .rotor_magnet import MagnetPanel
 from .rotor_notes import THEORY_HTML, matrices_html, whirl_name
 from .rotor_plots import DAMPED, MIN_PEAK, ORDERS, CampbellPlot, OrbitPlots, TimePlots, critical_speeds
@@ -366,7 +366,7 @@ class RotorPage(QtWidgets.QWidget):
         self.rub_panel = RubPanel()
         self.rub_panel.changed.connect(self._on_params)
         self.matrices = QtWidgets.QTextBrowser()
-        self.theory = FigureBrowser()
+        self.theory = NotesBrowser()
         self.theory.setHtml(THEORY_HTML)
         self.tabs = TabGroups()
         self.tabs.add_group("Modes", (campbell_tab, "Campbell diagram"), (stability_tab, "Stability"))
@@ -1390,9 +1390,6 @@ class RotorPage(QtWidgets.QWidget):
         self.magnet_panel.apply_theme()
         self.rub_panel.apply_theme()
         self._draw_tracking(full=True)
-        scroll = self.theory.verticalScrollBar().value()
-        self.theory.setHtml(THEORY_HTML)
-        self.theory.verticalScrollBar().setValue(scroll)
         self._matrices_speed = -math.inf
         self._refresh_matrices()
         self._draw()

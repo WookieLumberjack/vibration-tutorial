@@ -6,6 +6,7 @@ from PySide6 import QtWidgets
 
 from .lesson import trials_html
 from .links import load_notes
+from .notes_view import NotesBrowser
 from .sim_trials import TRIALS
 
 COUPLING_TIP = (
@@ -23,7 +24,7 @@ BACKGROUND_HTML = load_notes("background", trials=trials_html(TRIALS))
 
 
 def make_background_view() -> QtWidgets.QTextBrowser:
-    view = QtWidgets.QTextBrowser()
+    view = NotesBrowser()
     view.setHtml(BACKGROUND_HTML)
     view.setOpenExternalLinks(False)
     return view

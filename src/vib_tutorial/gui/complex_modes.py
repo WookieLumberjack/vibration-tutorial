@@ -41,6 +41,7 @@ from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .panels import spin
 from .style import MAX_DOF, colors
 from .tab_groups import LazyTabs
@@ -606,7 +607,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.sweep_result: Sweep | None = None
         self.ident_result: IdentificationResult | None = None
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.frf_tab, self.decay_tab, self.scatter_tab = frf_tab, decay_tab, scatter_tab

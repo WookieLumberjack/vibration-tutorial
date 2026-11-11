@@ -33,6 +33,7 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .style import colors
 from .theming import add_legend
 
@@ -547,7 +548,7 @@ class IsolationPage(QtWidgets.QWidget):
         self.chart_note = note_label()
         chv.addWidget(self.chart_note)
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(start, "Start-up")

@@ -40,6 +40,7 @@ from .lesson import (
     trials_html,
 )
 from .links import course_map, keys_html, load_notes, page_link, paths_html
+from .notes_view import NotesBrowser
 from .style import colors
 from .theming import add_legend
 
@@ -646,7 +647,7 @@ class SdofPage(QtWidgets.QWidget):
         self.pole_note = note_label()
         sv.addWidget(self.pole_note)
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self._notes_html = NOTES_HTML  # redrawn with the course map's progress as the notes show (_refresh_map)
         self.tabs = QtWidgets.QTabWidget()

@@ -53,6 +53,7 @@ from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
+from .notes_view import NotesBrowser
 from .panels import spin
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -662,7 +663,7 @@ class OmaPage(QtWidgets.QWidget):
         mv = QtWidgets.QVBoxLayout(methods_tab)
         mv.addWidget(self.methods, 1)
         mv.addWidget(self.methods_note)
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.efdd_tab = efdd_tab

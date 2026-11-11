@@ -41,6 +41,7 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .style import colors
 from .theming import add_legend
 
@@ -569,7 +570,7 @@ class TransientPage(QtWidgets.QWidget):
         self.step_note = note_label()
         stv.addWidget(self.step_note)
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(spec, "Pulse spectrum")

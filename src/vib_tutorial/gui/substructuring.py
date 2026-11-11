@@ -46,6 +46,7 @@ from .cms_time import CMSTimeView
 from .layouts import ColumnScroll, form_layout, header_tip
 from .lesson import TrialCombo
 from .links import page_link
+from .notes_view import NotesBrowser
 from .style import MAX_DOF, colors, current, text_on
 from .theming import add_legend, mute, restyle_plot_item
 
@@ -1144,7 +1145,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         # --- right: plots, matrices, theory
         self.plots = ComparisonPlots()
         self.matrices = QtWidgets.QTextBrowser()
-        self.theory = QtWidgets.QTextBrowser()
+        self.theory = NotesBrowser()
         self.theory.setHtml(THEORY_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.basis = BasisPlots()

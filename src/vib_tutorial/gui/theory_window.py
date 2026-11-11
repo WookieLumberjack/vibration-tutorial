@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import links, weak
-from .rotor_figures import FigureBrowser
+from .notes_view import NotesBrowser
 from .theming import settings
 
 HEADING = re.compile(r"<h3>(.*?)</h3>", re.S)
@@ -33,6 +33,7 @@ GLOSSARY = "glossary"  # the glossary's name where a page's would be
 GLOSSARY_TITLE = "Glossary of symbols"
 INLINE = re.compile(r"</?(?:sub|sup|b|i|a|span|font)\b[^>]*>", re.I)  # tags inside a word or a formula
 TAG = re.compile(r"<[^>]+>")
+ALT = re.compile(r'<img [^>]*alt="([^"]*)"[^>]*>')
 SNIPPET = 50  # characters either side of a hit
 MAX_HITS = 200
 
@@ -45,7 +46,9 @@ def title(name: str) -> str:
 def page_html(name: str) -> str:
     """Page `name`'s Theory notes (an attribute from links.COURSE), as its Theory tab shows them; or the glossary."""
     if name == GLOSSARY:
-        return anchored(links.load_notes("glossary"))
+        from .notation import glossary_html
+
+        return anchored(links.load_notes("glossary", glossary=glossary_html()))
     if name == "sim_page":
         from .background import BACKGROUND_HTML
 
@@ -87,9 +90,10 @@ def sections(html: str) -> list[tuple[str, str]]:
 
 
 def plain(html: str) -> str:
-    """The text of some notes' HTML, as read: a formula's sub- and superscripts kept in their word."""
-    text = TAG.sub(" ", INLINE.sub("", html))
-    return re.sub(r"\s+", " ", html_lib.unescape(text)).strip()
+    """The text of some notes' HTML, as read: a formula's sub- and superscripts kept in their word, an
+    equation's image as its alt text."""
+    text = TAG.sub(" ", INLINE.sub("", ALT.sub(lambda m: " " + m.group(1) + " ", html)))
+    return re.sub(r"\s+", " ", html_lib.unescape(text).replace("\u2060", "")).strip()  # maths' word joiners
 
 
 @dataclass(frozen=True)
@@ -207,7 +211,7 @@ class TheoryWindow(QtWidgets.QWidget):
                 number += 1
             top.setExpanded(True)
 
-        self.browser = FigureBrowser()
+        self.browser = NotesBrowser()
         links.wire(self.browser, self.show_page)  # another page's notes stay in this window
 
         self.hits = QtWidgets.QListWidget()  # the search's hits, in the tree's place while there's a search

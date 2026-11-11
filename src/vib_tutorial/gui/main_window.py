@@ -36,6 +36,7 @@ from .history import History
 from .layouts import ColumnScroll, FlowLayout, group
 from .lesson import TrialCombo
 from .modes import Method, mode_entries
+from .notes_view import NotesBrowser
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
 from .sim_trials import TRIALS as SIM_TRIALS
@@ -958,6 +959,8 @@ class MainWindow(QtWidgets.QMainWindow):
         for window in (self.theory_window, self.practice_window):
             if window is not None:
                 window.apply_theme()
+        for browser in self.findChildren(NotesBrowser):
+            browser.refresh()  # their equations and figures, in the new colours
         self.force_panel.refresh()
         self._refresh_modal_views()  # mode colours: table, shapes, time and FRF curves
 

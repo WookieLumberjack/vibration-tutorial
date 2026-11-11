@@ -26,7 +26,11 @@ EXCLUDES = [
 a = Analysis(
     ["launcher.py"],
     excludes=EXCLUDES,
-    datas=collect_data_files("vib_tutorial", includes=["theory/*.html"]),  # the pages' notes
+    # The pages' notes and their maths font; ziamath's maths font and latex2mathml's symbol table.
+    datas=collect_data_files("vib_tutorial", includes=["theory/*.html", "fonts/*"])
+    + collect_data_files("ziamath")
+    + collect_data_files("ziafont")
+    + collect_data_files("latex2mathml"),
 )
 
 # Qt plugins drag in libraries the app doesn't use: the virtual keyboard pulls in QML and

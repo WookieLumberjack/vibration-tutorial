@@ -15,6 +15,7 @@ from PySide6 import QtCore, QtWidgets
 from . import weak
 from .axes import log_axes
 from .layouts import form_layout, plot_height
+from .notes_view import NotesBrowser
 from .panels import space_bar, spin
 from .theming import mute
 
@@ -338,10 +339,9 @@ def three_panes(
     return splitter
 
 
-def theory(html: str) -> QtWidgets.QTextBrowser:
-    browser = QtWidgets.QTextBrowser()
-    browser.setHtml(html)
-    return browser
+def theory(html: str) -> NotesBrowser:
+    """A Theory tab showing the notes `html` (their equations and figures drawn)."""
+    return NotesBrowser(html)
 
 
 def relabel(p: pg.PlotWidget, side: str, text: str, units: str | None = None) -> None:

@@ -53,6 +53,7 @@ from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import RunButton
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .panels import spin
 from .style import colors
 from .tab_groups import LazyTabs
@@ -628,7 +629,7 @@ class ContinuumPage(QtWidgets.QWidget):
         )
         self.table.itemSelectionChanged.connect(self._on_table_selection)
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.shape_tab = shape_tab

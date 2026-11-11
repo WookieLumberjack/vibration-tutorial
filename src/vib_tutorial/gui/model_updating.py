@@ -43,6 +43,7 @@ from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
+from .notes_view import NotesBrowser
 from .panels import spin
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -726,7 +727,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         nv.addWidget(self.sens_note)
         self.update_result: Update | None = None
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.freq_tab, self.shape_tab, self.auto_tab, self.comac_tab = freq_tab, shape_tab, auto_tab, comac_tab
