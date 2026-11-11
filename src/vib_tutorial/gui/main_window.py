@@ -28,7 +28,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import frame_stats, links, settle_plots, theming, weak
+from . import frame_stats, links, maths, settle_plots, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
@@ -989,7 +989,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def apply_sim_trial(self, t: SimTrial) -> None:
         """Set the Simulation page up as a trial (or a practice problem's setup) says, and run it."""
-        self.trial_note.setText(t.note)
+        self.trial_note.setText(maths.markup(t.note))
         self.force.switch_off()
         if t.preset:
             self.params.load_preset(next(p for p in self.params.presets if p.name.startswith(t.preset)))

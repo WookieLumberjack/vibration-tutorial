@@ -48,7 +48,6 @@ LINK = re.compile(r'<a href="page:([a-z_]+)#([^"]+)">(.*?)</a>', re.S)
 ITEM = re.compile(r"<li>(.*?)</li>", re.S)
 PART = re.compile(r"<!--([A-Z_]+)-->")
 EQ = re.compile(r"<eq>(.*?)</eq>", re.S)  # a display equation, in LaTeX (`maths`)
-MATH = re.compile(r"<m>(.*?)</m>", re.S)  # inline maths (`maths.inline`)
 
 # The keys, as the first page's notes and the About box list them (macOS shows ⌘ for Ctrl: `keys_html`).
 KEYS = (
@@ -93,7 +92,7 @@ def load_notes(name: str, **parts: str) -> str:
     html = references.CITE.sub(lambda m: references.cite(m.group(1)), references.READING.sub("", html))
     if reading:
         html = html.rstrip() + "\n" + references.reading_html(reading) + "\n"
-    html = MATH.sub(lambda m: maths.inline(m.group(1)), html)
+    html = maths.markup(html)
     wanted = set(PART.findall(html))
     given = {key.upper() for key in parts}
     if wanted != given:

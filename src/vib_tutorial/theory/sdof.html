@@ -94,8 +94,8 @@ mounts, and 20–40 % for a car's suspension, which is there to stop the body bo
 <p>Pull the mass to <m>x<sub>0</sub></m> and let go. Below critical damping (<m>ζ &lt; 1</m>) it swings at
 the <b>damped natural frequency</b> <m>ω<sub>d</sub> = ω<sub>n</sub>√(1 − ζ²)</m>, inside an envelope that
 shrinks exponentially:</p>
-<eq>x(t) = e^{-\zeta\omega_n t}\left(x_0\cos\omega_d t + \frac{v_0 + \zeta\omega_n x_0}{\omega_d}\sin\omega_d t\right)</eq>
-<p>The envelope falls by e in the <b>time constant</b> <m>τ = 1/ζω<sub>n</sub></m>. For the 0.5 % to 5 %
+<eq>x(t) = \mathrm{e}^{-\zeta\omega_n t}\left(x_0\cos\omega_d t + \frac{v_0 + \zeta\omega_n x_0}{\omega_d}\sin\omega_d t\right)</eq>
+<p>The envelope falls by a factor of e in the <b>time constant</b> <m>τ = 1/ζω<sub>n</sub></m>. For the 0.5 % to 5 %
 damping of most structures <m>ω<sub>d</sub></m> is within 0.1 % of <m>ω<sub>n</sub></m>: damping shortens
 the ringing, hardly changes its pitch.</p>
 
@@ -104,7 +104,7 @@ the ringing, hardly changes its pitch.</p>
 <ul>
 <li><b>Underdamped</b> (<m>ζ &lt; 1</m>): it overshoots and rings down.</li>
 <li><b>Critically damped</b> (<m>ζ = 1</m>): it returns as
-<eq>x(t) = \bigl(x_0 + (v_0 + \omega_n x_0)\,t\bigr)\,e^{-\omega_n t}</eq>
+<eq>x(t) = \bigl(x_0 + (v_0 + \omega_n x_0)\,t\bigr)\,\mathrm{e}^{-\omega_n t}</eq>
 Released from rest it returns without crossing zero, and faster than any heavier damping does. Door closers
 and instrument needles are made near it.</li>
 <li><b>Overdamped</b> (<m>ζ &gt; 1</m>): two plain decays, <m>e<sup>s<sub>1</sub>t</sup></m> and
@@ -166,7 +166,9 @@ resonance there is no steady state:</p>
 
 <h3><a name="unbalance"></a>A rotating unbalance</h3>
 <p>A machine of mass <m>m</m> whose rotor has an unbalance <m>m<sub>e</sub></m> at radius <m>e</m> feels the
-force <m>m<sub>e</sub>eΩ² cos Ωt</m>. So</p>
+force <m>m<sub>e</sub>eΩ² cos Ωt</m>, up and down on its mount (and as much sideways, which the mount holds):</p>
+<table width="100%"><tr><td align="center"><img src="fig:unbalance" width="380" height="195"></td></tr></table>
+<p>That is the forced response with <m>F = m<sub>e</sub>eΩ²</m>, a force that grows with speed, so</p>
 <eq>\frac{m|X|}{m_e e} = \frac{r^2}{\sqrt{(1 - r^2)^2 + (2\zeta r)^2}}</eq>
 <p>It is 0 at rest, <m>1/2ζ</m> at resonance, and tends to 1 far above: the machine swings by
 <m>m<sub>e</sub>e/m</m>, in anti-phase with the unbalance, so that the two turn round their shared centre of
@@ -217,5 +219,5 @@ the static), lagging by 90°, with the half-power points 2<m>ζf<sub>n</sub></m>
 <li>A switched-on force adds a free vibration that dies away; undamped, it beats instead.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
-<notation>m x f omega_n zeta c_c omega_d tau delta Omega r H phi Q s g section</notation>
+<notation>m x x0 f omega_n zeta c_c omega_d tau delta n_count Omega r H X phi Q half_power s unbalance g section b_h</notation>
 <reading>inman rao thomson den-hartog</reading>

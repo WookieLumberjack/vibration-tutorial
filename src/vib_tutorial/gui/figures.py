@@ -8,7 +8,7 @@ as the plots do), named in that module's ``FIGURES`` dict, which `all_figures` g
 The house style, so the figures read as one set:
 
 - Draw with the primitives here (`line`, `arrow`, `circle`, `arc`, `text`, `spring`, `damper`, `ground`,
-  `svg` for the frame), in `colors.foreground` for what the figure is about, `colors.muted` for axes and
+  `floor`, `upright` to stand a spring or damper up, `svg` for the frame), in `colors.foreground` for what the figure is about, `colors.muted` for axes and
   guides, `colors.faint` for construction lines, and a `colors.mass[i]` or `colors.force` where the plots use
   that colour for the same thing (the mass, the force).
 - Label symbols with `text(..., italic=True)`: set in the notes' maths font (`maths.FONT`), as ``<m>`` is.
@@ -176,3 +176,19 @@ def ground(x: float, y1: float, y2: float, color: str, side: int = -1) -> str:
 def math_label(x: float, y: float, s: str, color: str, anchor: str = "middle", size: int = FONT + 2) -> str:
     """A symbol, in the maths font's italic, a little larger than the words (its x-height is smaller)."""
     return text(x, y, s, color, anchor, italic=True, size=size)
+
+
+def floor(x1: float, x2: float, y: float, color: str) -> str:
+    """A fixed floor at y from x1 to x2, hatched below."""
+    parts = [line(x1, y, x2, y, color, 2.0)]
+    x = x1 + 4
+    while x < x2:
+        parts.append(line(x, y, x - 8, y + 8, color, 1.0))
+        x += 9.0
+    return "".join(parts)
+
+
+def upright(x: float, y_top: float, y_bottom: float, draw: Callable[[float, float, float], str]) -> str:
+    """A horizontal element (`spring`, `damper`: drawn by `draw(x1, x2, y)`) stood upright at x, from y_top
+    down to y_bottom."""
+    return f"<g transform='translate({x:.1f} {y_top:.1f}) rotate(90)'>{draw(0.0, y_bottom - y_top, 0.0)}</g>"

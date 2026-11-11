@@ -11,7 +11,9 @@ inline maths as ``<m>…</m>`` (the notes' usual Unicode and HTML: ``ω<sub>n</s
 - Inline maths stays text, kept on one line, set in STIX Two Text (`FONT`, bundled in ``vib_tutorial/fonts`` with its
   licence, registered by `register_fonts` from `make_app`): letters italic as variables, upper-case Greek,
   digits, the functions and units in `UPRIGHT` and a word of two or more letters in a sub- or superscript
-  (a label, ``F<sub>floor</sub>``) upright. ``<rm>…</rm>`` keeps a stretch upright.
+  (a label, ``F<sub>floor</sub>``) upright, and so is an ``e`` raised to a power: Euler's number, as ISO 80000-2
+  writes it, apart from a variable e (an eccentricity). In ``<eq>`` write it ``\\mathrm{e}``. ``<rm>…</rm>``
+  keeps a stretch upright.
 
 Working on it: `tests/test_maths.py` renders every equation in the notes, checks no LaTeX command is left
 unknown or in the alt text, and checks the inline rules.
@@ -42,9 +44,12 @@ UPRIGHT = frozenset(
     "sgn arg rms erf tr diag Hz kHz dB rpm rad mm cm km kg kN MPa GPa kPa Pa ms µs dof DOF FRF MAC RMS PSD SRS "
     "cpm".split()
 )
-LETTER = r"[^\W\d_\u0391-\u03a9]"  # a letter, but not upper-case Greek
+LETTER = (
+    r"[^\W\d_\u0391-\u03a9\u00b2\u00b3\u00b9\u2070-\u209f\u00bc-\u00be]"  # a letter: not upper-case Greek, ² ⁿ ₁ or ½
+)
 WORD = re.compile(rf"&#?\w+;|[\u0391-\u03a9]+|{LETTER}(?:{LETTER}|[\u0300-\u036f])*")
 TAG = re.compile(r"(<[^>]+>)")
+MATH = re.compile(r"<m>(.*?)</m>", re.S)  # inline maths in the notes, and in the trials' notes
 # Qt breaks a line after | and / even in a nowrap span: a word joiner after each keeps the maths in one piece.
 JOINER = "\u2060"
 JOIN = str.maketrans({"|": "|" + JOINER, "/": "/" + JOINER})
@@ -68,12 +73,19 @@ def register_fonts() -> None:
 
 
 # ------------------------------------------------------------------ inline maths
+def markup(text: str) -> str:
+    """`text` with each `<m>…</m>` set as inline maths: the notes do it as they load, and the trials' notes
+    (Python strings, shown both in the Theory and under a page's Things to try) as they're shown."""
+    return MATH.sub(lambda m: inline(m.group(1)), text)
+
+
 def inline(fragment: str) -> str:
     """`<m>` maths as HTML: its variables in italic, the whole set in the maths text font."""
     out = []
     script = 0  # depth inside <sub>/<sup>
     upright = 0  # depth inside <rm> or an author's own <i>/<b>
-    for part in TAG.split(fragment):
+    parts = TAG.split(fragment)
+    for at, part in enumerate(parts):
         if part.startswith("<"):
             name = part.strip("</>").split()[0].lower()
             closing = part.startswith("</")
@@ -87,7 +99,10 @@ def inline(fragment: str) -> str:
         elif upright:
             out.append(part)
         else:
-            out.append(WORD.sub(functools.partial(_word, in_script=script > 0), part.translate(JOIN)))
+            text = WORD.sub(functools.partial(_word, in_script=script > 0), part.translate(JOIN))
+            if text.endswith("<i>e</i>") and parts[at + 1 : at + 2] == ["<sup>"]:
+                text = text.removesuffix("<i>e</i>") + "e"  # e to a power: Euler's number, upright
+            out.append(text)
     return f'<span class="m" style="font-family:\'{FONT}\'; white-space:nowrap">{"".join(out)}</span>'
 
 

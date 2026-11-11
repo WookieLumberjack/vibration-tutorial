@@ -70,49 +70,56 @@ class SdofTrial:
 TRIALS = (
     SdofTrial(
         "Ringing down: the log decrement",
-        "m = 1 kg, k = 400 N/m, c = 2 N·s/m: f<sub>n</sub> = 3.18 Hz and ζ = 0.05. Released from 10 mm, each "
-        "peak is 1.37 times the next: the log decrement δ = ln 1.37 = 0.315, and ζ = δ/2π = 0.050. The readout "
+        "<m>m</m> = 1 kg, <m>k</m> = 400 N/m, <m>c</m> = 2 N·s/m: <m>f<sub>n</sub></m> = 3.18 Hz and <m>ζ = 0.05</m>. "
+        "Released from 10 mm, each "
+        "peak is 1.37 times the next: the log decrement <m>δ = ln 1.37 = 0.315</m>, and <m>ζ = δ/2π = 0.050</m>. "
+        "The readout "
         "under the decay measures it from the curve's peaks. The dashed envelope falls by e in the time "
-        "constant 1/ζω<sub>n</sub> = 1 s.",
+        "constant <m>1/ζω<sub>n</sub></m> = 1 s.",
         tab=TAB_PHASE,
     ),
     SdofTrial(
         "Critical damping: the quickest return",
-        "c = 40 N·s/m, the critical damping 2√(km), with ζ = 0.1, 1 and 2 drawn beside it. ζ = 0.1 overshoots "
-        "and rings; ζ = 1 comes back without crossing zero, the fastest that does; ζ = 2 creeps back, held up "
-        "by its slow root at −0.27ω<sub>n</sub> (a time constant of 0.19 s against critical's 0.05 s).",
+        "<m>c</m> = 40 N·s/m, the critical damping <m>2√(km)</m>, with <m>ζ</m> = 0.1, 1 and 2 drawn beside it. "
+        "<m>ζ = 0.1</m> overshoots "
+        "and rings; <m>ζ = 1</m> comes back without crossing zero, the fastest that does; <m>ζ = 2</m> creeps back, "
+        "held up "
+        "by its slow root at <m>−0.27ω<sub>n</sub></m> (a time constant of 0.19 s against critical's 0.05 s).",
         damping=40.0,
         compare=True,
         tab=TAB_POLES,
     ),
     SdofTrial(
         "Overdamped: two real poles",
-        "c = 80 N·s/m, ζ = 2. The poles have left the imaginary axis for two points on the real one, at "
+        "<m>c</m> = 80 N·s/m, <m>ζ = 2</m>. The poles have left the imaginary axis for two points on the real one, at "
         "−5.4 and −74.6 s<sup>−1</sup>: two decays and no oscillation. Click in the Poles plot to put them "
-        "anywhere; the page works out the k and c that put them there.",
+        "anywhere; the page works out the <m>k</m> and <m>c</m> that put them there.",
         damping=80.0,
         tab=TAB_POLES,
     ),
     SdofTrial(
         "Resonance: a 90° lag",
-        "A 1 N force at f<sub>n</sub> = 3.18 Hz. From rest the swing grows over a few time constants (1 s) to "
-        "(F/k)/2ζ = 25 mm, ten times the static 2.5 mm: the quality factor Q = 1/2ζ = 10. The response lags "
+        "A 1 N force at <m>f<sub>n</sub></m> = 3.18 Hz. From rest the swing grows over a few time constants (1 s) to "
+        "<m>(F/k)/2ζ</m> = 25 mm, ten times the static 2.5 mm: the quality factor <m>Q = 1/2ζ = 10</m>. "
+        "The response lags "
         "the force by 90°, where the phase plot crosses −90°.",
         tune=True,
         tab=TAB_FRF,
     ),
     SdofTrial(
         "Half-power bandwidth",
-        "The default oscillator's peak, with its half-power points marked: |H| falls to 1/√2 of the peak at "
-        "3.01 and 3.33 Hz, 0.32 Hz apart, so ζ ≈ Δf/2f<sub>n</sub> = 0.050. Raise c and the band widens in "
+        "The default oscillator's peak, with its half-power points marked: <m>|H|</m> falls to <m>1/√2</m> of the "
+        "peak at "
+        "3.01 and 3.33 Hz, 0.32 Hz apart, so <m>ζ ≈ Δf/2f<sub>n</sub> = 0.050</m>. Raise <m>c</m> and the band "
+        "widens in "
         "proportion.",
         freq_hz=3.0,
         tab=TAB_FRF,
     ),
     SdofTrial(
         "Beats: undamped, just off resonance",
-        "c = 0, a 1 N force at 3.0 Hz, 0.18 Hz below f<sub>n</sub>. The free vibration the start sets off never "
-        "dies, and it drifts in and out of step with the forced one: the swing beats at |f − f<sub>n</sub>| = "
+        "<m>c = 0</m>, a 1 N force at 3.0 Hz, 0.18 Hz below <m>f<sub>n</sub></m>. The free vibration the start sets off never "
+        "dies, and it drifts in and out of step with the forced one: the swing beats at <m>|f − f<sub>n</sub>|</m> = "
         "0.18 Hz, every 5.5 s, between zero and twice the steady 22 mm.",
         damping=0.0,
         freq_hz=3.0,
@@ -120,17 +127,18 @@ TRIALS = (
     ),
     SdofTrial(
         "Exactly at resonance, undamped",
-        "c = 0 and the force at f<sub>n</sub>. There is no steady state: the swing grows in a straight line, "
-        "F/2mω<sub>n</sub> = 25 mm a second, for ever. Any damping at all bounds it.",
+        "<m>c = 0</m> and the force at <m>f<sub>n</sub></m>. There is no steady state: the swing grows in a straight line, "
+        "<m>F/2mω<sub>n</sub></m> = 25 mm a second, for ever. Any damping at all bounds it.",
         damping=0.0,
         tune=True,
         tab=TAB_FRF,
     ),
     SdofTrial(
         "A rotating unbalance",
-        "An unbalance m<sub>e</sub>e = 1×10<sup>−4</sup> kg·m (10 g at 10 mm) on a 1 kg machine. Its force "
-        "grows as Ω², so the response starts at zero, peaks at resonance at (m<sub>e</sub>e/m)/2ζ = 1 mm, and "
-        "levels off far above it at m<sub>e</sub>e/m = 0.1 mm, 180° out of phase: the machine turns round "
+        "An unbalance <m>m<sub>e</sub>e</m> = 1×10<sup>−4</sup> kg·m (10 g at 10 mm) on a 1 kg machine. Its force "
+        "grows as <m>Ω²</m>, so the response starts at zero, peaks at resonance at <m>(m<sub>e</sub>e/m)/2ζ</m> = 1 mm, "
+        "and "
+        "levels off far above it at <m>m<sub>e</sub>e/m</m> = 0.1 mm, 180° out of phase: the machine turns round "
         "the shared centre of mass.",
         kind=UNBALANCE,
         amplitude=1e-4,
@@ -139,9 +147,9 @@ TRIALS = (
     ),
     SdofTrial(
         "The Nyquist circle",
-        "The receptance drawn as Im H against Re H. Near resonance it traces nearly a circle of diameter "
-        "1/cω<sub>n</sub> = 25 mm/N, crossing the imaginary axis at f<sub>n</sub>; the points (1 per "
-        "0.02 Hz) are furthest apart there, which is how modal tests find f<sub>n</sub>.",
+        "The receptance drawn as <m>Im H</m> against <m>Re H</m>. Near resonance it traces nearly a circle of diameter "
+        "<m>1/cω<sub>n</sub></m> = 25 mm/N, crossing the imaginary axis at <m>f<sub>n</sub></m>; the points (1 per "
+        "0.02 Hz) are furthest apart there, which is how modal tests find <m>f<sub>n</sub></m>.",
         freq_hz=3.0,
         tab=TAB_NYQUIST,
     ),

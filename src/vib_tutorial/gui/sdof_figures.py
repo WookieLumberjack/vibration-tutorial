@@ -62,4 +62,47 @@ def springs_svg() -> str:
     return fig.svg(380, 160, "".join(parts))
 
 
-FIGURES = {"fig:oscillator": oscillator_svg, "fig:springs": springs_svg}
+def unbalance_svg() -> str:
+    """A machine on its mount with a rotor turning inside: a small mass m_e at radius e, flung out by m_e eΩ²."""
+    import math
+
+    fg, muted, faint = colors.foreground, colors.muted, colors.faint
+    mass, force = colors.mass[0], colors.force
+    left, right, top, bottom, ground = 70.0, 250.0, 42.0, 128.0, 180.0
+    cx, cy, radius, angle = 165.0, 85.0, 28.0, 35.0
+    spot_x, spot_y = fig.point(cx, cy, radius, angle)
+    out_x, out_y = fig.point(cx, cy, radius + 34, angle)
+    parts = [
+        fig.floor(40, 300, ground, muted),
+        fig.upright(110, bottom, ground, lambda a, b, y: fig.spring(a, b, y, fg, coils=4)),
+        fig.math_label(90, 158, "k", fg),
+        fig.upright(215, bottom, ground, lambda a, b, y: fig.damper(a, b, y, fg)),
+        fig.math_label(238, 158, "c", fg),
+        fig.rect(left, top, right - left, bottom - top, mass, mass, 2.0, opacity=0.2),
+        fig.math_label(left + 16, bottom - 12, "m", fg),
+        fig.circle(cx, cy, radius, faint, dash="4 3"),
+        fig.circle(cx, cy, 2.5, fill=fg),
+        fig.line(cx, cy, spot_x, spot_y, fg),
+        fig.math_label(cx + 4, cy + 16, "e", fg, "start"),
+        fig.circle(spot_x, spot_y, 6, fill=force),
+        fig.math_label(spot_x - 14, spot_y - 6, "m<tspan baseline-shift='sub' font-size='10'>e</tspan>", fg, "end"),
+        fig.arrow(
+            spot_x + 8 * math.cos(math.radians(angle)),
+            spot_y - 8 * math.sin(math.radians(angle)),
+            out_x,
+            out_y,
+            force,
+            2.0,
+        ),
+        fig.math_label(out_x + 4, out_y + 2, "m<tspan baseline-shift='sub' font-size='10'>e</tspan>eΩ²", fg, "start"),
+        fig.arc(cx, cy, radius + 10, 130, 210, fg, 1.5, arrow=True),
+        fig.math_label(*fig.point(cx, cy, radius + 24, 170), "Ω", fg),
+        # x: the machine's motion, up and down on its mount
+        fig.arrow(right + 40, 105, right + 40, 55, fg, 1.5),
+        fig.math_label(right + 50, 70, "x", fg, "start"),
+        fig.line(right + 4, 105, right + 46, 105, faint, 1.0, "4 3"),
+    ]
+    return fig.svg(380, 195, "".join(parts))
+
+
+FIGURES = {"fig:oscillator": oscillator_svg, "fig:springs": springs_svg, "fig:unbalance": unbalance_svg}
