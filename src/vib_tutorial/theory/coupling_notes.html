@@ -150,8 +150,9 @@ rigidly along;</li>
 u<sub>a</sub>).</li>
 </ul>
 <p>Writing the kinetic and strain energies in u<sub>a</sub> and u<sub>b</sub> gives the
-2-DOF masses and springs above. For B this is <b>Craig–Bampton</b> with one fixed-interface
-mode kept (see the <a href="page:cms_page#craig-bampton">Substructuring page</a>): its reduced mass matrix [[1, Γ], [Γ, m<sub>B</sub>]]
+2-DOF masses and springs above. For B this is what the <a href="page:cms_page#craig-bampton">Substructuring page</a>, next,
+calls <b>Craig–Bampton</b>: the interface's own motion carrying the part rigidly, plus the part's modes with its
+interface held fixed (here one). Its reduced mass matrix [[1, Γ], [Γ, m<sub>B</sub>]]
 is the effective mass plus the residual mass in other coordinates. For A it is one
 free-interface mode with no residual flexibility.</p>
 <p>Being Rayleigh–Ritz, the 2-DOF frequencies are <b>upper bounds</b>: its mode 1 is never
@@ -200,7 +201,7 @@ well matched if the other modes are far off in frequency. A MAC well below 1 mea
 take part too. Couple A's mode 2 with B's mode 1, say, to follow a different pair.</li>
 <li><b>A's residual flexibility.</b> A's other modes add static flexibility at its tip,
 which the 2-DOF model leaves out (MacNeal's and Rubin's methods, on the <a href="page:cms_page#basis">Substructuring
-page</a>, put it back). That is why the model is too stiff.</li>
+page</a> next, put it back). That is why the model is too stiff.</li>
 <li><b>Non-proportional damping</b>: the modal damping ratios are the diagonal of
 Φ<sup>T</sup>CΦ, as in the Simulation page's <a href="page:sim_page#proportional-damping">classical
 method</a>.</li>

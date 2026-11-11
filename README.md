@@ -15,6 +15,16 @@ ground ──[k1,c1]── m1 ──[k2,c2]── m2 ──[k3,c3]── m3 ─�
 
 ![Main window: a harmonic force tuned to mode 2 drives the chain; the modal table and mode shapes are on the right](docs/images/main_window.png)
 
+## Who it's for
+
+Engineering students from about the third year of a degree, and engineers who want a refresher
+or a place to try things out. The course assumes calculus and linear differential equations,
+complex numbers (e<sup>iωt</sup>, a response's size and phase as one complex number), and
+matrices with their eigenvalues and eigenvectors. The Laplace and Fourier transforms, Lagrange's
+equations and the statistics of random signals are introduced on the pages that first use them.
+Criteria quoted from standards (API, ISO, ASTM, the Eurocodes) come with their edition and are
+for teaching, not design.
+
 ## Quick start
 
 Standalone builds for Windows, macOS (Apple Silicon) and Linux, which need no Python

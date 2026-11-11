@@ -5,6 +5,18 @@ uses only ideas from the pages before it, and its Theory tab (F1) starts by sayi
 pages come first, then the Simulation page builds a chain of these oscillators. The Theory window (its
 button, or Ctrl+F1) lists them too, and keeps its place as you move between pages.</p>
 <!--COURSE-->
+<h3><a name="audience"></a>Who it's for, and what it assumes</h3>
+<p>The course is written for engineering students from about the third year of a degree, and for engineers who
+want a refresher or a place to try things out. It assumes calculus and linear differential equations, complex
+numbers (e<sup>iωt</sup>, and a response's size and phase as one complex number), and matrices with their
+eigenvalues and eigenvectors. The rest comes later, on the page that first needs it: the Laplace transform on
+<a href="page:transient_page#laplace">Transient response</a>, Fourier series on
+<a href="page:periodic_page">Periodic forcing</a>, Lagrange's equations on
+<a href="page:deriving_page">Deriving the equations</a>, the statistics of random signals on
+<a href="page:random_page">Random vibration</a>; having met them before helps.</p>
+<p>Some pages quote design criteria from standards (API, ISO, ASTM, the Eurocodes), with the edition they come
+from. They are there to show how such a criterion works, not to design to: the figures are for teaching, and a
+design should go to the current standard itself.</p>
 <h3><a name="equation"></a>One mass on a spring</h3>
 <p>Every vibration on these pages is built from one oscillator: a mass m on a spring k and a damper c,</p>
 <p align="center"><b>m ẍ + c ẋ + k x = f(t).</b></p>
@@ -93,7 +105,7 @@ m<sub>e</sub>eΩ² cos Ωt. So</p>
 <p>It is 0 at rest, (1/2ζ) at resonance, and tends to 1 far above: the machine swings by m<sub>e</sub>e/m,
 in anti-phase with the unbalance, so that the two turn round their shared centre of mass. Fans, pumps and
 washing machines start up through this peak (the <a href="page:isolation_page#start-up">Vibration isolation
-page</a> runs one).</p>
+page</a>, later in this group, runs one).</p>
 
 <h3><a name="nyquist"></a>The Nyquist plot</h3>
 <p>Drawing H as a point in the complex plane at each frequency (Im H against Re H) turns the resonance into
