@@ -744,6 +744,10 @@ def duffing_jump():
     save(w, "duffing_jump")
 
 
+def fluid_structure():
+    lesson("fluid_page", 1, "fluid_structure")  # a cylinder's dipole flow
+
+
 def mathieu_sweep():
     from vib_tutorial.core.duffing import Sweep
 
@@ -1292,6 +1296,7 @@ SHOTS = [
     jeffcott_cracked,
     duffing_jump,
     mathieu_sweep,
+    fluid_structure,
     torsional_compressor,
     torsional_startup,
     continuum_string,

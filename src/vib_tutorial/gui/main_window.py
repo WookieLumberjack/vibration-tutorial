@@ -156,6 +156,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .duffing import DuffingPage
 
         return DuffingPage
+    if name == "fluid_page":
+        from .fluid_structure import FluidStructurePage
+
+        return FluidStructurePage
     if name == "torsional_page":
         from .torsional import TorsionalPage
 
@@ -697,6 +701,7 @@ class MainWindow(QtWidgets.QMainWindow):
     oma_page = property(lambda self: self._page("oma_page"))
     rotor_page = property(lambda self: self._page("rotor_page"))
     duffing_page = property(lambda self: self._page("duffing_page"))
+    fluid_page = property(lambda self: self._page("fluid_page"))
     torsional_page = property(lambda self: self._page("torsional_page"))
     continuum_page = property(lambda self: self._page("continuum_page"))
     random_page = property(lambda self: self._page("random_page"))

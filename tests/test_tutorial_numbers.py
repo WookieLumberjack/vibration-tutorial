@@ -940,6 +940,59 @@ def test_sea_trials():
     assert critical_frequency(wall) == pytest.approx(1200, abs=5)
 
 
+def test_fluid_structure_trials():
+    from vib_tutorial.core.added_mass import (
+        AIR,
+        Body,
+        Shape,
+        avmi,
+        plate_added_mass,
+        plate_dry_frequency,
+        plate_modal_mass,
+        wet_frequency,
+    )
+    from vib_tutorial.core.beams_plates import Plate
+
+    def wet(b):
+        return wet_frequency(20.0, b.mass, b.added_mass)
+
+    sphere = Body(Shape.SPHERE, 0.1)
+    assert (sphere.added_mass, sphere.mass, wet(sphere)) == pytest.approx((2.09, 32.9, 19.4), rel=0.0025)
+    rod = Body(Shape.CYLINDER, 0.025)
+    assert (rod.added_mass, wet(rod)) == pytest.approx((1.96, 18.8), rel=0.0025)
+    light = Body(Shape.CYLINDER, 0.025, 500.0)
+    assert light.added_mass / light.mass == pytest.approx(2.0)
+    assert wet(light) / 20 == pytest.approx(0.577, abs=0.0005)
+    assert wet(light) == pytest.approx(11.5, abs=0.05)
+    air = Body(Shape.CYLINDER, 0.025, fluid=AIR)
+    assert air.added_mass == pytest.approx(0.00238, abs=5e-6)
+    assert air.mass / air.added_mass == pytest.approx(6500, rel=0.01)
+    assert 1 - wet(air) / 20 < 1e-4
+    pipe = Body(Shape.CYLINDER, 0.025, outer=0.03)
+    assert (pipe.coefficient, pipe.added_mass, wet(pipe)) == pytest.approx((5.55, 10.9, 15.3), rel=0.0025)
+    tight = Body(Shape.CYLINDER, 0.025, outer=0.025 * 1.05)
+    assert (tight.coefficient, tight.added_mass / tight.mass, wet(tight)) == pytest.approx((20.5, 2.6, 10.5), abs=0.05)
+    r = 1.05  # the speed beside the rod: |A + B/R²| = C_a
+    assert (r**2 + 1) / (r**2 - 1) == pytest.approx(20.5, abs=0.05)
+
+    plate = Plate()
+    assert plate_added_mass(plate, 1, 1) == pytest.approx(11.9, abs=0.05)
+    assert plate_modal_mass(plate) == pytest.approx(1.41, abs=0.005)
+    beta = avmi(plate, 1, 1)
+    f11 = plate_dry_frequency(plate, 1, 1)
+    assert (beta, f11, f11 / math.sqrt(1 + beta)) == pytest.approx((8.43, 66.6, 21.7), rel=0.0025)
+    beta32 = avmi(plate, 3, 2)
+    f32 = plate_dry_frequency(plate, 3, 2)
+    assert (beta32, f32, f32 / math.sqrt(1 + beta32)) == pytest.approx((2.18, 369, 207), abs=0.5)
+    assert beta32 == pytest.approx(2.18, abs=0.005)
+    thick = Plate(thickness=0.010)
+    assert plate_modal_mass(thick) / plate_modal_mass(plate) == pytest.approx(3.33, abs=0.005)
+    bt, ft = avmi(thick, 1, 1), plate_dry_frequency(thick, 1, 1)
+    assert (bt, ft, ft / math.sqrt(1 + bt)) == pytest.approx((2.53, 222, 118), abs=0.5)
+    assert bt == pytest.approx(2.53, abs=0.005)
+    assert 1 / math.sqrt(1 + bt) == pytest.approx(0.53, abs=0.005)
+
+
 def test_quarter_car_trials():
     from dataclasses import replace
 

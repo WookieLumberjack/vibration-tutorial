@@ -212,6 +212,11 @@ COURSE = (
             ("torsional_page", "Torsional vibration", "a drive train of discs, shafts and gears, and its start-up"),
             ("duffing_page", "Duffing && Mathieu", "a nonlinear spring: jumps, chaos, and parametric resonance"),
             (
+                "fluid_page",
+                "Fluid–structure",
+                "a body in water: added mass of spheres, cylinders, tubes in pipes and plates, wet against dry",
+            ),
+            (
                 "self_excited_page",
                 "Self-excited vibration",
                 "negative damping and limit cycles: van der Pol, galloping, vortex-induced vibration and flutter",
@@ -292,6 +297,7 @@ PAGE_TITLES = {
     "variability_page": "Variability & localization page",
     "torsional_page": "Torsional vibration page",
     "duffing_page": "Duffing & Mathieu page",
+    "fluid_page": "Fluid–structure page",
     "self_excited_page": "Self-excited vibration page",
     "active_control_page": "Active control page",
     "gyroscope_page": "Gyroscope page",

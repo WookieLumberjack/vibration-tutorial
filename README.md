@@ -89,6 +89,7 @@ The course runs through six groups of pages, in the order the app's tabs take th
 
 - [Torsional vibration](docs/beyond-the-chain.md#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
 - [Duffing & Mathieu](docs/beyond-the-chain.md#duffing--mathieu): a nonlinear spring: jumps, chaos, and parametric resonance
+- [Fluid–structure](docs/beyond-the-chain.md#fluidstructure): a body in water: added mass of spheres, cylinders, tubes in pipes and plates, wet against dry
 - [Self-excited vibration](docs/beyond-the-chain.md#self-excited-vibration): negative damping and limit cycles: van der Pol, galloping, vortex-induced vibration and flutter
 - [Active control](docs/beyond-the-chain.md#active-control): velocity feedback, collocation, spillover and actuator lag, against a tuned mass damper
 - [Gyroscope](docs/beyond-the-chain.md#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top

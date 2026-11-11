@@ -6,6 +6,7 @@ The pages in the order the app's tabs take them.
 
 - [Torsional vibration](#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
 - [Duffing & Mathieu](#duffing--mathieu): a nonlinear spring: jumps, chaos, and parametric resonance
+- [Fluid–structure](#fluidstructure): a body in water: added mass of spheres, cylinders, tubes in pipes and plates, wet against dry
 - [Self-excited vibration](#self-excited-vibration): negative damping and limit cycles: van der Pol, galloping, vortex-induced vibration and flutter
 - [Active control](#active-control): velocity feedback, collocation, spillover and actuator lag, against a tuned mass damper
 - [Gyroscope](#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
@@ -112,6 +113,23 @@ start it. A hardening spring's swing detunes itself out of the tongue and settle
 jump of its own: sweeping down from rest, nothing happens until rest turns unstable at the
 tongue's upper edge, and then the swing leaps up to a branch that the sweep back up rides far past
 the tongue.
+
+## Fluid–structure
+
+What water does to a vibrating body. A body accelerating in a fluid has to push some of the fluid about,
+and that flow's kinetic energy makes it behave as if it were heavier: its **added mass**. In open fluid a
+sphere carries half the fluid it displaces and a cylinder all of it; the centre shows the potential flow
+round the body, and how fast it falls off with distance. Inside a pipe, the fluid has to squeeze through
+the gap, and the added mass grows without bound as the gap closes. The fluid adds no stiffness, so on its
+springs the body's frequency falls by √(m/(m + m<sub>a</sub>)), set by the body's density against the
+fluid's.
+
+The *Plate in water* tab gives each mode of a baffled plate its own added mass, from the fluid's
+pressure for each wavenumber in the mode's shape, and its AVMI factor β: a 3 mm steel panel in water
+carries eight times its modal mass in its fundamental, and falls to a third of its frequency in air.
+Higher modes carry less, as the fluid sloshes between their cells.
+
+![Fluid–structure page: a 25 mm steel rod moving across its axis in water; centre, the potential flow round it (speed in colour, streamlines) and the fluid's speed ahead of it falling as R²/r²; right, the added-mass coefficient against a pipe's radius (1 in open water, growing as the gap closes) and the frequency's fall against the densities' ratio, 20 Hz to 18.8 Hz](images/fluid_structure.png)
 
 ## Self-excited vibration
 

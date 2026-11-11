@@ -4071,6 +4071,7 @@ def test_shock_page(app):
         "gyroscope_page",
         "seismic_page",
         "acoustics_page",
+        "fluid_page",
         "quarter_car_page",
         "mounts_page",
         "frame_page",

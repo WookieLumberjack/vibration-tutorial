@@ -107,6 +107,9 @@
   half-harmonic response and first tongue, the Floquet growth rate over the Ince–Strutt chart, the
   swept drive, an exact FOH stepper with the cubic's and the pump's forces found by Newton each
   step, each drive cycle's first and half harmonics, and the page's presets.
+- `core/added_mass.py`: added mass: a sphere's and a cylinder's in open fluid and inside a
+  concentric wall, their potential flow, and a baffled plate's modal added mass (its AVMI factor)
+  from the wavenumber integral of its mode shape.
 - `core/torsional.py`: torsional drive trains: discs, shafts and gear meshes (with transmission
   error), the modes and their twist, the train referred to one shaft and with rigid gears, the
   orders and torsional critical speeds, the steady forced response, and the page's presets.
