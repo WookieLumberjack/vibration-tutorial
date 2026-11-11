@@ -1,55 +1,160 @@
-
 <before>
 <a href="page:sdof_page#forced-response">Forced response</a>
+<a href="page:transient_page#impulse-response">An impulse and the impulse response</a>
 <a href="page:transient_page#fourier-pair">The impulse response and the FRF</a>
 </before>
 <h3><a name="fourier-series"></a>A periodic force is a sum of harmonics</h3>
-<p>A force that repeats every T = 1/f₀, however it is shaped, is a <b>Fourier series</b>:</p>
-<p align="center">f(t) = a₀ + Σ<sub>k≥1</sub> (a<sub>k</sub> cos kω₀t + b<sub>k</sub> sin kω₀t), &nbsp; ω₀ = 2πf₀,</p>
-<p>a₀ its mean, a<sub>k</sub> = (2/T)∫f cos kω₀t dt and b<sub>k</sub> = (2/T)∫f sin kω₀t dt. Only multiples of
-f₀ appear: a periodic force has a <b>line spectrum</b>. Written with complex amplitudes,
-f = Re Σ C<sub>k</sub> e<sup>ikω₀t</sup>, C<sub>k</sub> = a<sub>k</sub> − i b<sub>k</sub>.</p>
+<p>Many forces repeat: an engine's firing, a pump's pulses, a press's strokes, footsteps on a floor. A force
+that repeats every <b>period</b> <m>T</m>, however it is shaped, can be built from sines and cosines: one at
+the <b>fundamental frequency</b> <m>f<sub>0</sub> = 1/T</m>, the rest at whole multiples of it, the
+<b>harmonics</b>. With <m>ω<sub>0</sub> = 2πf<sub>0</sub></m> and harmonic number <m>j</m>, this is its
+<b>Fourier series</b> (<cite>fourier</cite>):</p>
+<eq>f(t) = a_0 + \sum_{j=1}^{\infty}\bigl(a_j\cos j\omega_0 t + b_j\sin j\omega_0 t\bigr)</eq>
+<p>Only multiples of <m>f<sub>0</sub></m> can appear, because only they repeat every <m>T</m> too. So a
+periodic force has a <b>line spectrum</b>: its mean <m>a<sub>0</sub></m>, and a line at each harmonic. The
+picture below builds a ±<m>F</m> square wave from its first three harmonics. Each one alone is a smooth sine;
+added, the 3rd and 5th flatten the 1st's top and steepen its sides, and the sum is already close to square.
+More harmonics square it further.</p>
+<table width="100%"><tr><td align="center"><img src="fig:harmonics" width="380" height="232"></td></tr></table>
+
+<h3><a name="coefficients"></a>Finding the coefficients</h3>
+<p>Each coefficient is found by an average, because the harmonics are <b>orthogonal</b>: over a period, the
+product of two different harmonics (a sine and a cosine, or two at different <m>j</m>) averages to zero, and a
+harmonic times itself (<m>sin² jω<sub>0</sub>t</m>, say) averages to ½. Multiply the series by
+<m>sin jω<sub>0</sub>t</m> and average it over a period: every term drops out except <m>b<sub>j</sub></m>'s,
+which leaves <m>b<sub>j</sub>/2</m>. So</p>
+<eq>a_0 = \frac{1}{T}\int_0^T f\,\mathrm{d}t, \qquad a_j = \frac{2}{T}\int_0^T f\cos j\omega_0 t\,\mathrm{d}t</eq>
+<eq>b_j = \frac{2}{T}\int_0^T f\sin j\omega_0 t\,\mathrm{d}t</eq>
+<p>In words: <m>a<sub>0</sub></m> is the mean, and <m>b<sub>j</sub></m> is twice the mean of the force times
+the harmonic's sine. The figure does it for the square wave. Times <m>sin ω<sub>0</sub>t</m>, the product is
+never negative: the two agree in sign everywhere, the mean is <m>2F/π</m>, and <m>b<sub>1</sub> = 4F/π</m>.
+Times <m>sin 2ω<sub>0</sub>t</m>, each half period holds as much below the axis as above, and
+<m>b<sub>2</sub> = 0</m>.</p>
+<table width="100%"><tr><td align="center"><img src="fig:coefficient" width="380" height="175"></td></tr></table>
+<p>Worked out for every <m>j</m>, with <m>f = F</m> over the first half period and <m>−F</m> over the second
+(and <m>ω<sub>0</sub>T = 2π</m>),</p>
+<eq>b_j = \frac{2F}{T}\left(\int_0^{T/2}\!\sin j\omega_0 t\,\mathrm{d}t - \int_{T/2}^{T}\!\sin j\omega_0 t\,\mathrm{d}t\right)</eq>
+<eq>b_j = \frac{2F}{\pi j}\,(1 - \cos j\pi) = \begin{cases} 4F/\pi j & j\ \text{odd} \\ 0 & j\ \text{even}\end{cases}</eq>
+<p>and every <m>a<sub>j</sub></m> is zero: the series below. Tables of such series are in any engineering
+mathematics text (<cite>kreyszig</cite>).</p>
+<p><b>Symmetry saves work.</b> A force that is <b>odd</b> about <m>t = 0</m> (<m>f(−t) = −f(t)</m>, as this
+square wave is) has only sines; an <b>even</b> one (<m>f(−t) = f(t)</m>) only cosines and the mean. A force
+with <b>half-wave symmetry</b>, <m>f(t + T/2) = −f(t)</m> (each half period the last one upside down), has odd
+harmonics only. Moving the force along in time changes how each harmonic is split between its cosine and its
+sine, but not its height.</p>
+
+<h3><a name="complex-form"></a>Height and phase: the complex amplitudes</h3>
+<p>Each harmonic's cosine and sine together are one sinusoid, with a height and a phase. As on the Single
+oscillator page, a complex number holds both: with <m>C<sub>j</sub> = a<sub>j</sub> − i b<sub>j</sub></m>
+(and <m>C<sub>0</sub> = a<sub>0</sub></m>),</p>
+<eq>f(t) = \mathrm{Re}\sum_{j\ge 0} C_j\,\mathrm{e}^{ij\omega_0 t}, \qquad C_j = \frac{2}{T}\int_0^T f\,\mathrm{e}^{-ij\omega_0 t}\,\mathrm{d}t</eq>
+<p>(the integral for <m>j ≥ 1</m>). <m>|C<sub>j</sub>| = √(a<sub>j</sub>² + b<sub>j</sub>²)</m> is the
+harmonic's height, which the <i>Line spectra</i> tab plots, and its angle the harmonic's phase. (The
+<a href="page:signals_page">Signals &amp; spectra page</a>, later, finds these lines in a sampled record with
+the FFT, which splits each into two half-height lines at <m>±jf<sub>0</sub></m>.)</p>
+<p>The heights also share out the force's power. The mean of <m>f²</m> over a period is</p>
+<eq>\frac{1}{T}\int_0^T f^2\,\mathrm{d}t = a_0^2 + \frac{1}{2}\sum_{j\ge1}|C_j|^2</eq>
+<p>(<b>Parseval's theorem</b>, <cite>parseval</cite>): the cross terms average to zero, and each sinusoid's mean
+square is half its height squared. A ±<m>F</m> square wave's mean square is <m>F²</m>; its fundamental,
+<m>4F/π</m> high, carries <m>8/π²</m> = 81.1 % of it, and the first three harmonics 93.3 %.</p>
 
 <h3><a name="superposition"></a>Each harmonic through H</h3>
-<p>The oscillator is linear, so each harmonic is a harmonic force on its own (the Single oscillator page's
-forced response), and the steady response is the sum of their responses:</p>
-<p align="center">x(t) = Re Σ H(kω₀) C<sub>k</sub> e<sup>ikω₀t</sup>, &nbsp; H(ω) = 1/(k − ω²m + iωc).</p>
-<p>The mean only sags the spring (H(0) = 1/k). A harmonic that lands near f<sub>n</sub> is amplified by Q; the
-rest are not. So a force at f₀ can resonate the oscillator at <i>any</i> multiple k f₀ = f<sub>n</sub> it
-contains: a machine running at a third of a mode's frequency can still drive it, through its third harmonic.</p>
+<p>The oscillator is linear, so each harmonic drives it as a harmonic force on its own (the Single oscillator
+page's forced response, at <m>Ω = jω<sub>0</sub></m>), and the steady response is the sum of their responses:</p>
+<eq>x(t) = \mathrm{Re}\sum_{j\ge 0} X_j\,\mathrm{e}^{ij\omega_0 t}, \qquad X_j = H(j\omega_0)\,C_j</eq>
+<eq>H(\Omega) = \frac{1}{k - \Omega^2 m + i\Omega c}</eq>
+<p>Each harmonic is multiplied by its own <m>|H|</m> and lags by its own <m>φ</m>, with <m>r = jω<sub>0</sub>/ω<sub>n</sub></m>:</p>
+<eq>|X_j| = \frac{|C_j|/k}{\sqrt{(1 - r^2)^2 + (2\zeta r)^2}}, \qquad r = \frac{j\omega_0}{\omega_n}</eq>
+<ul>
+<li>The mean only sags the spring: <m>H(0) = 1/k</m>.</li>
+<li>A harmonic that lands near <m>f<sub>n</sub></m> is amplified by about <m>Q</m>; the rest are not. So a
+force at <m>f<sub>0</sub></m> can resonate the oscillator at <i>any</i> multiple <m>jf<sub>0</sub> =
+f<sub>n</sub></m> it contains: a machine running at a third of a mode's frequency can still drive it, through
+its third harmonic.</li>
+<li>The harmonics well above <m>f<sub>n</sub></m> are cut by <m>|H| ≈ 1/mΩ²</m>, so by <m>1/j²</m> more than
+the force's: the response is smoother than the force.</li>
+<li>Each harmonic is shifted by a different lag, so the response's shape is not the force's, and its peak is
+not the sum of the harmonics' heights: they don't peak at the same time.</li>
+</ul>
+<p>On a machine, the harmonics of the running speed are called <b>orders</b> (once per revolution, twice, …);
+the <a href="page:diagnostics_page#orders">Machinery diagnostics page</a>, later, tracks them through a run-up.</p>
 
 <h3><a name="shapes"></a>Shapes and their harmonics</h3>
+<p>The page's waves, each as its series (the formulas for the <m>|C<sub>j</sub>|</m> the <i>Line spectra</i>
+tab plots):</p>
 <ul>
-<li><b>Square wave</b> (±F): (4F/π) Σ sin kω₀t / k over odd k. A wave with the half-wave symmetry
-f(t + T/2) = −f(t) has odd harmonics only.</li>
-<li><b>Sawtooth</b>: (2F/π) Σ (−1)<sup>k+1</sup> sin kω₀t / k, every harmonic.</li>
-<li><b>Triangle</b>: (8F/π²) Σ ± sin kω₀t / k², odd only.</li>
-<li><b>Rectified sine</b> F|sin πt/T|: 2F/π − (4F/π) Σ cos kω₀t / (4k² − 1).</li>
-<li><b>Rectangular pulses</b> (F for a fraction d of each period): mean Fd; |C<sub>k</sub>| = (2F/πk)|sin πkd|,
-zero at every multiple of 1/d.</li>
-<li><b>Impulse train</b> (a blow I every T): I/T + (2I/T) Σ cos kω₀t: every harmonic the same height.</li>
+<li><b>Square wave</b> (±<m>F</m>): <m>(4F/π) Σ sin jω<sub>0</sub>t / j</m> over odd <m>j</m>. It has
+half-wave symmetry, so odd harmonics only.</li>
+<li><b>Sawtooth</b>: <m>(2F/π) Σ (−1)<sup>j+1</sup> sin jω<sub>0</sub>t / j</m>, every harmonic.</li>
+<li><b>Triangle</b>: <m>(8F/π²) Σ ± sin jω<sub>0</sub>t / j²</m>, odd only, the signs alternating.</li>
+<li><b>Rectified sine</b> <m>F|sin πt/T|</m>: <m>2F/π − (4F/π) Σ cos jω<sub>0</sub>t / (4j² − 1)</m>.</li>
+<li><b>Rectangular pulses</b> (<m>F</m> for a fraction <m>d</m> of each period): mean <m>Fd</m>, and
+<m>|C<sub>j</sub>| = (2F/πj)|sin πjd|</m>, zero at every multiple of <m>1/d</m>.</li>
+<li><b>Impulse train</b> (a blow of impulse <m>I</m> every <m>T</m>): <m>I/T + (2I/T) Σ cos jω<sub>0</sub>t</m>:
+every harmonic the same height.</li>
 </ul>
-<p>How fast the harmonics fall depends on how smooth the wave is: as 1/k with a jump, 1/k² with a kink (a jump
-in slope), and not at all for an impulse. A jump also brings the <b>Gibbs phenomenon</b>: the series overshoots
-it by 9 % of the jump however many terms it keeps, the overshoot only getting narrower.</p>
+<p>How fast the harmonics fall depends on how smooth the wave is: as <m>1/j</m> with a jump, <m>1/j²</m> with a
+kink (a jump in slope), and not at all for an impulse. The smoother the force, the fewer harmonics it takes.</p>
+
+<h3><a name="gibbs"></a>Cutting the series short: Gibbs</h3>
+<p>The page keeps the first <m>N</m> harmonics. Where the force is smooth, the series closes in on it as
+<m>N</m> grows. At a jump it goes through the midpoint (0 for the square wave), and on either side it
+overshoots: by 8.95 % of the jump, however many terms it keeps, the overshoot only getting narrower. This is
+the <b>Gibbs phenomenon</b>, described by Wilbraham (<cite>wilbraham</cite>) and again by Gibbs
+(<cite>gibbs</cite>). For the ±<m>F</m> square wave the jump is <m>2F</m>, so the overshoot settles at
+<m>0.18F</m>. The response doesn't jump (a mass can't), so its own series has no Gibbs overshoot and converges
+much faster: the <i>Convergence</i> tab measures it.</p>
 
 <h3><a name="exact"></a>The steady state without the series</h3>
-<p>The page also works the steady state out directly. One period from rest gives z<sub>T</sub> = Φ<sub>T</sub>z₀ +
-z<sub>p</sub> (Φ<sub>T</sub> = e<sup>AT</sup>, the force stepped exactly by the first-order hold); a periodic state
-has z<sub>T</sub> = z₀, so z₀ = (I − Φ<sub>T</sub>)<sup>−1</sup>z<sub>p</sub>. That is exact, and it is what the series
-converges to. Without damping, a harmonic exactly on f<sub>n</sub> leaves I − Φ<sub>T</sub> singular: no steady
-state, the swing grows forever.</p>
+<p>The page also works the steady state out directly. Write the oscillator's state, its position and
+velocity, as <m>z = [x, ẋ]</m>. Starting a period from <m>z<sub>0</sub></m>, the free motion carries it to
+<m>Φ<sub>T</sub>z<sub>0</sub></m>, and the force adds <m>z<sub>p</sub></m>, where one period of the force would
+leave it from rest (both stepped exactly, the force by a straight line between closely spaced samples). In the
+steady state each period ends where it started:</p>
+<eq>z_0 = \Phi_T z_0 + z_p</eq>
+<p>two linear equations for the two numbers in <m>z<sub>0</sub></m>. That is exact, and it is what the series
+converges to. Without damping, a harmonic exactly on <m>f<sub>n</sub></m> leaves the equations with no solution:
+no steady state, the swing grows for ever.</p>
 
 <h3><a name="from-rest"></a>Starting from rest</h3>
 <p>Switched on from rest, the response is the steady state plus a free vibration that makes up the start, as for a
-single sine; it dies away in a few time constants 1/ζω<sub>n</sub>. The <i>From rest</i> tab steps it.</p>
+single sine; it dies away in a few time constants <m>τ = 1/ζω<sub>n</sub></m>. The <i>From rest</i> tab steps it.</p>
+
+<h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
+<p>The page opens on the Single oscillator's defaults, <m>m</m> = 1 kg, <m>k</m> = 400 N/m and <m>c</m> =
+2 N·s/m, driven by a ±1 N square wave at <m>f<sub>0</sub></m> = 1 Hz with 5 harmonics kept.</p>
+<ol>
+<li><b>The oscillator.</b> <m>f<sub>n</sub></m> = 3.18 Hz and <m>ζ</m> = 0.05, so
+<m>f<sub>n</sub>/f<sub>0</sub></m> = 3.18: the 3rd harmonic, at 3 Hz, sits just below resonance.</li>
+<li><b>The force's harmonics.</b> Odd only: <m>|C<sub>1</sub>| = 4/π</m> = 1.273 N,
+<m>|C<sub>3</sub>| = 4/3π</m> = 0.4244 N, <m>|C<sub>5</sub>| = 4/5π</m> = 0.255 N.</li>
+<li><b>Each through H.</b> <m>r = 2πj/20</m> = 0.314, 0.942 and 1.571. At 1 Hz, <m>1 − r²</m> = 0.9013 and
+<m>2ζr</m> = 0.0314, so <m>|H|</m> = 2.5 mm/N / 0.902 = 2.77 mm/N; at 3 Hz it is the Single oscillator
+example's 17.10 mm/N; at 5 Hz, above resonance, <m>1 − r²</m> = −1.4674 and <m>2ζr</m> = 0.1571, so
+<m>|H|</m> = 2.5 mm/N / 1.476 = 1.69 mm/N. Then</li>
+</ol>
+<eq>|X_1| = 1.273 \times 2.77 = 3.53\ \mathrm{mm}</eq>
+<eq>|X_3| = 0.4244 \times 17.10 = 7.26\ \mathrm{mm}</eq>
+<eq>|X_5| = 0.255 \times 1.69 = 0.431\ \mathrm{mm}</eq>
+<p>lagging their harmonics of the force by 2.0°, 40.1° and 173.9°. The force's fundamental is three times its
+3rd harmonic, but the response's 3rd harmonic is about twice its fundamental: it carries 80.6 % of the swing's power
+(<m>7.26²</m> over <m>3.53² + 7.26² + 0.431²</m>), the 1st 19.1 % and the 5th 0.3 %, as the note under the
+<i>Line spectra</i> tab lists them. The response rings at three times the drive. By Parseval its RMS is</p>
+<eq>\sqrt{\tfrac{1}{2}\left(3.53^2 + 7.26^2 + 0.431^2\right)}\ \mathrm{mm} = 5.72\ \mathrm{mm}</eq>
+<p>the exact steady state's RMS too. Its peak is not the heights' sum, 11.2 mm: with their different lags the
+harmonics never peak together, and the steady state swings between −10 mm and 10 mm, as the readout under the
+response says. The series with 5 harmonics is within 2.02 % of that swing.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the oscillator, the force and the plots (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>A periodic force is a line spectrum: its mean and harmonics at whole multiples of f₀.</li>
-<li>Each harmonic goes through H(kω₀) on its own; a mode at any k f₀ resonates.</li>
-<li>The harmonics fall as 1/k after a jump, 1/k² after a kink; a jump's series overshoots it by 9 % (Gibbs).</li>
-<li>The steady state can be found exactly from one period: z₀ = (I − Φ<sub>T</sub>)<sup>−1</sup>z<sub>p</sub>.</li>
+<li>A periodic force is a line spectrum: its mean and harmonics at whole multiples of <m>f<sub>0</sub></m>, each coefficient twice the mean of the force times that harmonic.</li>
+<li>Odd symmetry gives sines only, even cosines only, half-wave symmetry odd harmonics only.</li>
+<li>Each harmonic goes through <m>H(jω<sub>0</sub>)</m> on its own; a mode at any <m>jf<sub>0</sub></m> resonates.</li>
+<li>The harmonics fall as <m>1/j</m> after a jump, <m>1/j²</m> after a kink; a jump's series overshoots it by 9 % (Gibbs).</li>
+<li>The steady state can be found exactly from one period: the state that repeats, <m>z<sub>0</sub> = Φ<sub>T</sub>z<sub>0</sub> + z<sub>p</sub></m>.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x f omega_n zeta Q tau Omega r H phi period j_harm fourier C_j duty impulse N_kept state_period</notation>
+<reading>rao inman thomson kreyszig hewitt</reading>

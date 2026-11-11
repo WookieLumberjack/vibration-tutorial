@@ -90,6 +90,46 @@ REFERENCES = (
         "K. Ogata, <i>Modern Control Engineering</i>, 5th edition, Prentice Hall, 2010",
         "the Laplace transform and transfer functions, step responses' overshoot and settling",
     ),
+    Reference(
+        "fourier",
+        "Fourier 1822",
+        "J. Fourier, <i>Théorie analytique de la chaleur</i>, Firmin Didot, Paris, 1822",
+        "where the series were first put to work, on heat flow",
+    ),
+    Reference(
+        "gibbs",
+        "Gibbs 1899",
+        "J. W. Gibbs, Fourier's series, <i>Nature</i> 59, 200 (1898) and 59, 606 (1899)",
+        "two letters; the second describes the overshoot",
+    ),
+    Reference(
+        "hewitt",
+        "Hewitt and Hewitt 1979",
+        "E. Hewitt and R. E. Hewitt, The Gibbs–Wilbraham phenomenon: an episode in Fourier analysis, "
+        "<i>Archive for History of Exact Sciences</i> 21, 129–160, 1979",
+        "the overshoot's history, from Wilbraham to Gibbs and after",
+    ),
+    Reference(
+        "kreyszig",
+        "Kreyszig 2011",
+        "E. Kreyszig, <i>Advanced Engineering Mathematics</i>, 10th edition, Wiley, 2011",
+        "Fourier series from the start, with their tables and symmetries",
+    ),
+    Reference(
+        "parseval",
+        "Parseval 1806",
+        "M.-A. Parseval des Chênes, Mémoire sur les séries et sur l'intégration complète d'une équation aux "
+        "différences partielles linéaires du second ordre, à coefficients constants, <i>Mémoires présentés à "
+        "l'Institut des Sciences, Lettres et Arts, par divers savans</i> 1, 1806 (read 5 April 1799)",
+        "",
+    ),
+    Reference(
+        "wilbraham",
+        "Wilbraham 1848",
+        "H. Wilbraham, On a certain periodic function, <i>Cambridge and Dublin Mathematical Journal</i> 3, "
+        "198–201, 1848",
+        "the overshoot, fifty years before Gibbs",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
