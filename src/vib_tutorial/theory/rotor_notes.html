@@ -799,8 +799,8 @@ against frequency, shades where c<sub>b</sub> &lt; 0, and draws the rotor's mode
 <h3>Rotor–stator rub</h3>
 <p>Seals and casings sit close round a rotor. A ring round the disc, a radial clearance δ<sub>c</sub> larger
 than it, does nothing until the disc's centre moves δ<sub>c</sub> off the ring's centre. Past that, by δ,
-the ring pushes the disc back toward its centre with N = k<sub>s</sub>δ + c<sub>s</sub>δ', never
-pulling (k<sub>s</sub> and c<sub>s</sub> are the ring's mount; the rim and the ring are rigid), and its
+the ring pushes the disc back toward its centre with N = k<sub>ring</sub>δ + c<sub>ring</sub>δ', never
+pulling (k<sub>ring</sub> and c<sub>ring</sub> are the ring's mount; the rim and the ring are rigid), and its
 friction drags the rim against its slip over the ring with μN. The slip is the rim's speed RΩ, R the
 disc's radius, plus the disc's centre moving along the ring, v<sub>t</sub>:</p>
 <p align='center'>f = −N n − μN sat(RΩ + v<sub>t</sub>) t, &nbsp; sat(s) = s/√(s² + s<sub>0</sub>²)</p>
@@ -817,11 +817,11 @@ sub-harmonics. On the <i>Partial rub</i> preset (horizontal, a 385 µm seal roun
 the disc brushes the ring's bottom once a turn above the critical and every other turn past about 4000
 rpm: at 4400 rpm the full spectrum's tallest line is ½X, 36.7 Hz.</p>
 <p><b>Full rub and backward whirl.</b> Held against the ring all round, the disc whirls forward with the
-unbalance, and the ring is a spring κ = k<sub>s</sub>(1 − δ<sub>c</sub>/ρ) at the disc on an orbit of
+unbalance, and the ring is a spring κ = k<sub>ring</sub>(1 − δ<sub>c</sub>/ρ) at the disc on an orbit of
 radius ρ. Its friction acts along t: −μκ, a cross-coupled stiffness, and since the rim slips forward over
 the ring (RΩ is far faster than the whirl) it pushes the disc backward round the ring. Enough of it flips
 the whirl backward. The disc then whirls at its frequency on the ring,
-√((k + k<sub>s</sub>)/m), k the rotor's own stiffness at the disc, far above the speed, and the friction
+√((k + k<sub>ring</sub>)/m), k the rotor's own stiffness at the disc, far above the speed, and the friction
 keeps feeding it until the rim rolls round the ring without slipping: |ω|ρ = RΩ. So the orbit's radius is
 RΩ/|ω|, set by the speed and not by the clearance: <b>dry whirl</b>, the most violent rub there is. On the
 <i>Full rub</i> preset (a 30 µm ring, μ = 0.3) the whirl flips at 1545 rpm, to 227 Hz backward, and at
@@ -892,7 +892,7 @@ Z<sub>k+1</sub> = ΦZ<sub>k</sub> + Γ<sub>0</sub>(u<sub>k</sub> + r<sub>k</sub>
 + r<sub>k+1</sub>), with r<sub>k+1</sub> found by Newton's method, since it depends on Z<sub>k+1</sub>.
 That is the trapezoidal rule on the ring's force: a rim rolling on the ring is held there by a drag of
 μN/s<sub>0</sub>, hundreds of kN·s/m in dry whirl, which would ring an explicit step. The step also resolves the disc
-bouncing on the ring, √(k<sub>s</sub>/m), as well as the rotor's own modes. Checked against the full rub's
+bouncing on the ring, √((k + k<sub>ring</sub>)/m), as well as the rotor's own modes. Checked against the full rub's
 steady state above (a frictionless one and one with μ = 0.1, to a part in 10<sup>6</sup>) and against
 a step four times finer. The steps run in Rust, at well under a microsecond each, so even a full rub
 runs in real time.</p>
@@ -1119,10 +1119,10 @@ settling at 5.9 µm with the bow at 2.4 µm. Set β to 0 and nothing grows below
 <tr><td>m<sub>b</sub>, ω<sub>w</sub>, K<sub>eq</sub></td><td>Lund's rigid rotor: its mass per bearing; its whirl frequency at the threshold; the film's equivalent stiffness</td><td>kg, rad/s, N/m</td></tr>
 <tr><td colspan="3"><b>Rub</b></td></tr>
 <tr><td>δ<sub>c</sub>, δ, ρ</td><td>the stator ring's radial clearance; how far the disc presses past it; the disc's distance from the ring's centre</td><td>m</td></tr>
-<tr><td>k<sub>s</sub>, c<sub>s</sub>, N</td><td>the ring's mount stiffness and damping; its push on the disc, k<sub>s</sub>δ + c<sub>s</sub>δ'</td><td>N/m, N·s/m, N</td></tr>
+<tr><td>k<sub>ring</sub>, c<sub>ring</sub>, N</td><td>the ring's mount stiffness and damping; its push on the disc, k<sub>ring</sub>δ + c<sub>ring</sub>δ'</td><td>N/m, N·s/m, N</td></tr>
 <tr><td>μ, R, v<sub>t</sub>, s<sub>0</sub></td><td>friction coefficient of the rim on the ring; the disc's radius (√(2I<sub>p</sub>/m)); the disc's velocity along the ring; the slip over which the friction is smoothed</td><td>—, m, m/s, m/s</td></tr>
 <tr><td>H, b, β, τ</td><td>the rub's heat (the drag's work on the slip); the thermal bow at the disc; the bow per watt, settled; its time constant</td><td>W, m, m/W, s</td></tr>
-<tr><td>n, t, κ</td><td>unit vectors out from the ring's centre and along it (with the spin); the ring as a spring at the disc in a full rub, k<sub>s</sub>(1 − δ<sub>c</sub>/ρ)</td><td>—, —, N/m</td></tr>
+<tr><td>n, t, κ</td><td>unit vectors out from the ring's centre and along it (with the spin); the ring as a spring at the disc in a full rub, k<sub>ring</sub>(1 − δ<sub>c</sub>/ρ)</td><td>—, —, N/m</td></tr>
 <tr><td colspan="3"><b>The magnetic bearing</b></td></tr>
 <tr><td>s<sub>0</sub>, i<sub>0</sub>, i, A, N</td><td>a magnet's air gap with the journal centred; the bias current; the control current; a pole face's area; the coil's turns</td><td>m, A, A, m², —</td></tr>
 <tr><td>k<sub>m</sub>, k<sub>i</sub></td><td>a magnet pair's negative stiffness 4ki<sub>0</sub>²/s<sub>0</sub>³ and current gain 4ki<sub>0</sub>/s<sub>0</sub>², k = μ<sub>0</sub>N²A/4</td><td>N/m, N/A</td></tr>

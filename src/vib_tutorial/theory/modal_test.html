@@ -50,8 +50,9 @@ mass.</li>
 f<sub>s</sub>/2 can be represented; anything above <b>aliases</b>, appearing at
 |f − k f<sub>s</sub>| as if it were real response. So an <b>anti-alias filter</b> removes it
 before sampling. The filter rolls off below Nyquist, so only the lower part of the band
-(here 80%) is usable. Analyzers usually express the same margin as f<sub>s</sub> ≈ 2.56
-f<sub>max</sub>. The same filter on the force and every response cancels in their ratio.</p>
+(here 80 %, so f<sub>s</sub> = 2.5 f<sub>max</sub>) is usable. Analyzers usually keep a little less,
+f<sub>s</sub> = 2.56 f<sub>max</sub> (78 %, the <a href="page:signals_page">Signals &amp; spectra</a> page's
+choice), so that a power-of-two block gives a round number of lines. The same filter on the force and every response cancels in their ratio.</p>
 
 <h3><a name="leakage"></a>Blocks, the DFT and leakage</h3>
 <p>The analyzer takes blocks of N<sub>b</sub> samples, lasting T = N<sub>b</sub>/f<sub>s</sub>,
