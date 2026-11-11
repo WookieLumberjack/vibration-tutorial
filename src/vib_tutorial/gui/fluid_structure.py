@@ -1,17 +1,23 @@
-"""Fluid–structure page: the fluid a body carries with it (added mass), and what it does to its frequencies.
+"""Fluid–structure page: the fluid a body carries with it (added mass), what it does to its frequencies, and a
+liquid's sloshing in a tank.
 
 Left: the fluid's density, and the body: a sphere or a cylinder, its radius and density, its natural frequency
 on its springs in vacuum, and a concentric wall round it (a tube in a pipe). Centre: the potential flow about the
 body as it moves to the right (speed in colour, streamlines), and the fluid's speed ahead of it against distance.
 Right: the added-mass coefficient against the wall's distance, the frequency's fall against the body's density;
-a plate in water (its own controls: each mode's AVMI factor and its wet frequency); and the Theory. The page has
-its own model (core/added_mass.py) and no frame loop: a control change redraws at once.
+a plate in water (its own controls: each mode's AVMI factor and its wet frequency); sloshing in a rectangular tank
+(its own controls: the frequencies and the spring–mass analogue's masses against depth); a tuned liquid damper on
+a structure (its own controls; the tank is the sloshing tab's: its response, and its peak against depth); and the
+Theory. While the sloshing or the damper tab shows, the centre shows the tank instead of the body: the mode's
+surface at its extremes and its flow as it passes level. The page has its own models (core/added_mass.py,
+core/sloshing.py) and no frame loop: a control change redraws at once.
 
 Working on it
 -------------
 Each tab is worked out only while it shows (`LazyTabs`); the plate's modal added masses are the slow part
-(~0.5 s for 24 modes the first time; `added_mass._plate_integral` caches them by the plate's size). Trials'
-numbers are in `tests/test_tutorial_numbers.py`, the core's in `tests/test_added_mass.py`.
+(~0.5 s for 24 modes the first time; `added_mass._plate_integral` caches them by the plate's size). The damper's
+peak against depth sweeps DEPTHS tanks (~20 ms). Trials' numbers are in `tests/test_tutorial_numbers.py`, the
+core's in `tests/test_added_mass.py` and `tests/test_sloshing.py`.
 """
 
 from __future__ import annotations
@@ -39,7 +45,25 @@ from ..core.added_mass import (
     wet_frequency,
 )
 from ..core.beams_plates import Material, Plate
-from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
+from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..core.sloshing import (
+    Damper,
+    G,
+    Structure,
+    Tank,
+    damper_response,
+    den_hartog,
+    frozen_response,
+    loaded_frequency,
+    mass_ratio,
+    peak,
+    peak_against_depth,
+    response_band,
+    rigid_mass,
+    slosh_frequency,
+    slosh_mass,
+    tank_flow,
+)
 from . import settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
@@ -65,12 +89,16 @@ from .style import colors
 from .tab_groups import LazyTabs
 from .theming import add_legend
 
-TAB_BODY, TAB_PLATE = range(2)
+TAB_BODY, TAB_PLATE, TAB_SLOSH, TAB_DAMPER = range(4)
 GRID = 161  # points across the flow picture
 STREAMLINES = 14
 PLATE_MODES = 24
 RATIOS = np.geomspace(1.02, 20.0, 200)  # R_o/R for the coefficient's curves
 DENSITIES = np.geomspace(0.05, 50.0, 200)  # ρ_s/ρ_f
+TANK_GRID = 141  # points along the tank's longer side
+TANK_STREAMLINES = 10
+DEPTH_RATIOS = np.geomspace(0.01, 2.0, 200)  # h/L for the frequencies' and masses' curves
+DEPTHS = 120  # depths in the damper's tuning curve
 
 
 @dataclass(frozen=True)
@@ -93,6 +121,17 @@ class FluidTrial:
     sides: int = 1
     m: int = 1
     n: int = 1
+    # the tank
+    length: float = 1.0  # m, along the motion
+    depth: float = 0.5
+    breadth: float = 1.0
+    slosh: int = 1  # the sloshing mode drawn
+    # the damper
+    structure_mass: float = 20.0  # t
+    structure_f: float = 0.5  # Hz
+    structure_zeta: float = 1.0  # %
+    tanks: int = 1
+    damper_zeta: float = 13.0  # %, the sloshing's
     tab: int = TAB_BODY
 
 
@@ -146,7 +185,7 @@ TRIALS = (
     ),
     FluidTrial(
         "A plate in water",
-        "The Vibro-acoustics panel, 600 × 400 × 3 mm steel, baffled with water on one side (Plate in water tab). "
+        "The Vibro-acoustics panel, 600 × 400 × 3 mm steel, baffled with water on one side (Plate tab). "
         "Mode (1, 1)'s water weighs 11.9 kg against the plate's modal 1.41 kg: β = 8.43, and 66.6 Hz falls to "
         "21.7 Hz, a third. A thin plate in water is mostly water.",
         tab=TAB_PLATE,
@@ -167,6 +206,88 @@ TRIALS = (
         "falls to 118 Hz, 0.53 of it.",
         thickness=10.0,
         tab=TAB_PLATE,
+    ),
+    FluidTrial(
+        "Sloshing in a tank",
+        "A tank 1 m long, filled to 0.5 m (Sloshing tab). Its first mode tilts the surface one way and the "
+        "other, at ω² = gk tanh(kh) with k = π/L: 0.846 Hz. Of the 500 kg of water, the spring–mass analogue's "
+        "first sloshing mass is 237 kg; 250 kg moves with the tank as if it were solid.",
+        tab=TAB_SLOSH,
+    ),
+    FluidTrial(
+        "Shallow water",
+        "The same tank filled to 5 cm: a long wave, running at √(gh) from wall to wall and back, 0.349 Hz against "
+        "√(gh)/2L = 0.350 Hz. 40.2 kg of the 50 kg sloshes in the first mode, and only 2.71 kg moves with the "
+        "tank: in shallow water nearly everything sloshes.",
+        depth=0.05,
+        tab=TAB_SLOSH,
+    ),
+    FluidTrial(
+        "Deep water",
+        "Filled to 2 m. The first mode's flow dies away as e<sup>kz</sup>, within about L/π = 0.32 m of the "
+        "surface (the tank's lower part is still), so the frequency stops depending on depth: 0.884 Hz, √(gπ/L)/2π. Four times "
+        "the water, but the sloshing mass is only 258 kg, 13 %: the rest, 1729 kg, rides along with the tank.",
+        depth=2.0,
+        tab=TAB_SLOSH,
+    ),
+    FluidTrial(
+        "A higher mode",
+        "Mode 3 of the 0.5 m fill, 1.53 Hz: three half waves, and the flow reaches only a third as deep. Its "
+        "analogue mass is 9.55 kg, 2 % of the water (they go as 1/n³): a few modes are all a tank's analogue "
+        "needs.",
+        slosh=3,
+        tab=TAB_SLOSH,
+    ),
+    FluidTrial(
+        "An even mode",
+        "Mode 2, 1.25 Hz: the surface rises at both walls and falls in the middle. It's symmetric, so shaking the "
+        "tank sideways doesn't excite it, and it has no mass in the analogue (a shake along the tank's length "
+        "pushes the walls the same way, not towards each other).",
+        slosh=2,
+        tab=TAB_SLOSH,
+    ),
+    FluidTrial(
+        "A tuned liquid damper",
+        "A 20 t structure at 0.5 Hz with 1 % damping (Damper tab), carrying a tank 2 m long and 2 m wide, "
+        "filled to 0.4 m: its first mode is at 0.466 Hz, and screens in it damp the sloshing at 13 %. Frozen, the "
+        "1600 kg of water would just add mass, and the structure's peak would be 52.0 times its static "
+        "deflection; sloshing, the 1149 kg in the first mode is a tuned mass damper (μ = 0.0562), and the peak is "
+        "5.58.",
+        length=2.0,
+        depth=0.4,
+        breadth=2.0,
+        tab=TAB_DAMPER,
+    ),
+    FluidTrial(
+        "A bare tank",
+        "The same tank with no screens: the water's own damping, ζ<sub>d</sub> = 0.5 %. The structure's peak "
+        "splits in two, at 0.426 and 0.540 Hz, each still 34.5 and 32.8 times the static deflection: a damper "
+        "needs damping, the more the heavier it is.",
+        length=2.0,
+        depth=0.4,
+        breadth=2.0,
+        damper_zeta=0.5,
+        tab=TAB_DAMPER,
+    ),
+    FluidTrial(
+        "Mistuned",
+        "The tank filled to 0.25 m only: its first mode falls to 0.382 Hz, too far below the structure's, and the "
+        "peak rises to 18.2. A liquid damper is tuned by its depth (right, bottom: the peak against it).",
+        length=2.0,
+        depth=0.25,
+        breadth=2.0,
+        tab=TAB_DAMPER,
+    ),
+    FluidTrial(
+        "Four tanks",
+        "Four of the tanks, filled to 0.3 m: 4.8 t of water, μ = 0.171, and the peak falls to 4.41. More water in "
+        "the dampers needs a lower tuning (Den Hartog's f/(1 + μ)), so the four are filled less deep than the "
+        "one.",
+        length=2.0,
+        depth=0.3,
+        breadth=2.0,
+        tanks=4,
+        tab=TAB_DAMPER,
     ),
 )
 
@@ -292,6 +413,121 @@ def _pipe_spec(rng: np.random.Generator) -> Question:
     )
 
 
+def _slosh(rng: np.random.Generator) -> Question:
+    L = pick(rng, (0.5, 1.0, 2.0, 4.0))
+    h = pick(rng, (0.1, 0.2, 0.5, 1.0))
+    tank = Tank(L, h)
+    k = math.pi / L
+    f = slosh_frequency(tank, 1)
+    return Question(
+        f"A rectangular tank {L:g} m long is filled with water to {h:g} m. What is the frequency of its first "
+        "sloshing mode, along its length?",
+        f,
+        f"k = π/L = {number(k)} /m, ω² = gk tanh(kh) = 9.81 × {number(k)} × tanh({number(k * h)}), so f = "
+        f"{number(f)} Hz.",
+        unit="Hz",
+        setup=dict(length=L, depth=h, tab=TAB_SLOSH),
+    )
+
+
+def _slosh_mass(rng: np.random.Generator) -> Question:
+    L = pick(rng, (1.0, 2.0, 3.0))
+    h = pick(rng, (0.2, 0.5, 1.0))
+    B = pick(rng, (0.5, 1.0, 2.0))
+    tank = Tank(L, h, B)
+    m1 = float(slosh_mass(tank, 1))
+    return Question(
+        f"A tank {L:g} m long and {B:g} m wide is filled with water to {h:g} m. In the spring–mass analogue for "
+        "a sideways motion along its length, what is the first sloshing mass?",
+        m1,
+        f"m<sub>L</sub> = ρLBh = {number(tank.liquid_mass)} kg, and m<sub>1</sub> = m<sub>L</sub> 8 tanh(πh/L)"
+        f"/(π³h/L) = {number(tank.liquid_mass)} × 8 tanh({number(math.pi * h / L)})/(π³ × {number(h / L)}) = "
+        f"{number(m1)} kg.",
+        unit="kg",
+        setup=dict(length=L, depth=h, breadth=B, tab=TAB_SLOSH),
+    )
+
+
+def _tuning(rng: np.random.Generator) -> Question:
+    f = pick(rng, (0.2, 0.5, 1.0, 2.0))
+    mu = pick(rng, (0.01, 0.02, 0.05, 0.1))
+    fd = f / (1 + mu)
+    return Question(
+        f"A structure's mode at {f:g} Hz gets a tuned liquid damper whose sloshing mass is μ = {mu:g} of the "
+        "structure's. By Den Hartog's rule, what should the damper's sloshing frequency be?",
+        fd,
+        f"f<sub>d</sub> = f/(1 + μ) = {f:g}/{1 + mu:g} = {number(fd)} Hz, a little below the structure's.",
+        unit="Hz",
+        setup=dict(length=2.0, depth=0.4, breadth=2.0, tab=TAB_DAMPER),
+    )
+
+
+def _deeper(rng: np.random.Generator) -> Question:
+    return Question(
+        "A tank 1 m long is filled with water to 2 m. More water is added, to 3 m. What happens to its first "
+        "sloshing frequency?",
+        2,
+        "It stays the same: the mode's flow dies away as e<sup>kz</sup> below the surface, within about L/π, and "
+        "tanh(kh) is already 1. Only the rigid mass grows.",
+        choices=("It rises", "It falls", "It stays the same", "It falls by √(2/3)"),
+        setup=dict(depth=3.0, tab=TAB_SLOSH),
+        predict=True,
+    )
+
+
+def _even(rng: np.random.Generator) -> Question:
+    return Question(
+        "A tank is shaken sideways, along its length, at the frequency of its second sloshing mode. How much does "
+        "the water slosh?",
+        0,
+        "Hardly at all: the second mode is symmetric (the surface rises at both walls together), and a sideways "
+        "shake pushes the walls the same way, so it does no work on that mode. Its analogue mass is 0.",
+        choices=("Hardly at all", "A lot: it's at resonance", "As much as at the first mode", "Twice as much"),
+        setup=dict(slosh=2, tab=TAB_SLOSH),
+        predict=True,
+    )
+
+
+def _damper_of(t: FluidTrial) -> tuple[Structure, Damper]:
+    return (
+        Structure(t.structure_mass * 1000, t.structure_f, t.structure_zeta / 100),
+        Damper(Tank(t.length, t.depth, t.breadth, t.fluid), t.tanks, t.damper_zeta / 100),
+    )
+
+
+def _damper_spec(rng: np.random.Generator) -> Question:
+    zeta = pick(rng, (5.0, 8.0, 10.0))  # the design, %
+    design = FluidTrial("", "", length=2.0, depth=0.4, breadth=2.0, damper_zeta=zeta)
+    need = rounded(peak(*_damper_of(design)) * 1.01, 3)
+
+    def goal(t: FluidTrial):
+        structure, damper = _damper_of(t)
+        return (
+            kept("Structure's mass", t.structure_mass, 20.0, "t"),
+            kept("Structure's frequency", t.structure_f, 0.5, "Hz"),
+            kept("Structure's damping", t.structure_zeta, 1.0, "%"),
+            kept("Fluid", t.fluid, WATER, "kg/m³"),
+            kept("Tank length", t.length, 2.0, "m"),
+            kept("Tank breadth", t.breadth, 2.0, "m"),
+            kept("Depth", t.depth, 0.4, "m"),
+            kept("Tanks", t.tanks, 1),
+            at_most("Peak |X|k/F", peak(structure, damper), need),
+        )
+
+    return Question(
+        "A 20 t structure at 0.5 Hz (1 % damping) carries a tank of water 2 m by 2 m, filled to 0.4 m to tune its "
+        f"sloshing. Bare, the water damps itself at 0.5 %. Screens in the tank add damping: how much is needed to "
+        f"keep the structure's peak response at or below {number(need, 3)} times its static deflection? Set "
+        "ζ<sub>d</sub>.",
+        0,
+        f"The peak falls as ζ<sub>d</sub> rises towards Den Hartog's optimum, about 13 % here. ζ<sub>d</sub> = "
+        f"{zeta:g} % gives {number(peak(*_damper_of(design)))}.",
+        setup=dict(length=2.0, depth=0.4, breadth=2.0, damper_zeta=0.5, tab=TAB_DAMPER),
+        goal=goal,
+        design=dict(length=2.0, depth=0.4, breadth=2.0, damper_zeta=zeta, tab=TAB_DAMPER),
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "fluid_page", f"See {page_link('fluid_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -302,6 +538,12 @@ PROBLEMS = tuple(
         ("gap", "Predict: a narrower pipe", "confined", "Confined fluid", _gap),
         ("thicker", "Predict: a thicker plate", "plates", "A plate in water", _thicker),
         ("pipe-spec", "Spec: a rod in a pipe", "confined", "Confined fluid", _pipe_spec),
+        ("slosh", "A tank's sloshing frequency", "sloshing", "Sloshing", _slosh),
+        ("slosh-mass", "A sloshing mass", "analogue", "The spring–mass analogue", _slosh_mass),
+        ("tuning", "Tuning a liquid damper", "damper", "A tuned liquid damper", _tuning),
+        ("deeper", "Predict: a deeper tank", "sloshing", "Sloshing", _deeper),
+        ("even", "Predict: the second mode", "analogue", "The spring–mass analogue", _even),
+        ("damper-spec", "Spec: a liquid damper's screens", "damper", "A tuned liquid damper", _damper_spec),
     )
 )
 
@@ -321,6 +563,17 @@ TIPS = {
     "sides": "<p>Fluid on one side of the plate (a tank's wall, a hull), or both (a plate under water).</p>",
     "m": "<p>The mode's half waves along a.</p>",
     "n": "<p>The mode's half waves along b.</p>",
+    "length": "<p>The tank's length L, along the direction it moves in.</p>",
+    "depth": "<p>The liquid's depth h.</p>",
+    "breadth": "<p>The tank's breadth B, across the motion (it scales the masses, not the frequencies).</p>",
+    "slosh": "<p>The sloshing mode drawn: n half waves along the tank's length.</p>",
+    "structure_mass": "<p>The structure's mass in the mode the damper is for (its modal mass).</p>",
+    "structure_f": "<p>The structure's natural frequency without the damper.</p>",
+    "structure_zeta": "<p>The structure's own damping ratio.</p>",
+    "tanks": "<p>How many identical tanks the structure carries.</p>",
+    "damper_zeta": (
+        "<p>The sloshing's damping ratio: about 0.5 % for a bare tank, more with screens or baffles in it.</p>"
+    ),
 }
 FLOW_TIP = (
     "<p>The fluid's motion as the body moves to the right at speed U: its speed over U in colour, and its "
@@ -346,6 +599,38 @@ WETDRY_TIP = (
     "<p>The first modes' frequencies in the fluid against in air: f<sub>dry</sub>/√(1 + β). The dashed line is "
     "f<sub>wet</sub> = f<sub>dry</sub>.</p>"
 )
+
+TANK_TIP = (
+    "<p>The tank's section in the mode picked: the surface at its two extremes (solid and dashed), and the flow as "
+    "it passes level, its speed in colour and its streamlines.</p>"
+)
+SLOSH_F_TIP = (
+    "<p>The first three sloshing modes' frequencies against the liquid's depth, for this tank's length: "
+    "√(gh)nπ/L/2π in shallow liquid (dashed), √(gnπ/L)/2π in deep (dotted). Ring: the mode picked.</p>"
+)
+SLOSH_M_TIP = (
+    "<p>The spring–mass analogue's masses over the liquid's, against its depth over the tank's length: the rigid "
+    "mass m<sub>0</sub> and the first two sloshing masses (the even modes have none).</p>"
+)
+RESPONSE_TIP = (
+    "<p>The structure's response to a force, over its static deflection, with the liquid sloshing and as if it "
+    "were frozen (the same mass, rigid).</p>"
+)
+TUNE_TIP = (
+    "<p>The structure's peak response against the liquid's depth in the tanks (the tanks as set): the depth tunes "
+    "the damper. Dotted: Den Hartog's peak √(1 + 2/μ) for this depth's μ.</p>"
+)
+
+
+def _kg(m: float) -> str:
+    if m >= 1e4:
+        return f"{m / 1000:.3g} t"
+    return f"{m:.0f} kg" if m >= 100 else f"{m:.3g} kg"
+
+
+def _hz(f: float) -> str:
+    return f"{f:.3g} Hz"
+
 
 NOTES_HTML = load_notes("fluid_structure", trials=trials_html(TRIALS))
 
@@ -406,7 +691,7 @@ class FluidStructurePage(QtWidgets.QWidget):
         for item in (*self.axis_refs, self.axis_item):
             self.axis_plot.addItem(item)
         self.readout = readout_label()
-        centre = stack((self.flow_plot, 3), (self.axis_plot, 2), (self.readout, 0))
+        body_view = stack((self.flow_plot, 3), (self.axis_plot, 2))
 
         # --- right: added mass
         self.coeff_plot = plot("C<sub>a</sub>", None, "Wall R<sub>o</sub>/R", None, log_x=True, log_y=True, height=170)
@@ -458,13 +743,97 @@ class FluidStructurePage(QtWidgets.QWidget):
         self.plate_tab = column(plate, self.beta_plot, self.wetdry_plot, self.plate_note, stretch=False)
         self.modes: PlateModes | None = None
 
+        # --- right: sloshing
+        tank = Form("Tank (rectangular)")
+        self.length = tank.number("Length L:", 0.05, 100.0, 1.0, 3, " m", TIPS["length"])
+        self.fill_depth = tank.number("Depth h:", 0.005, 100.0, 0.5, 3, " m", TIPS["depth"])
+        self.breadth = tank.number("Breadth B:", 0.01, 100.0, 1.0, 3, " m", TIPS["breadth"])
+        self.slosh = tank.number("Mode n:", 1, 9, 1, 0, "", TIPS["slosh"])
+        connect_all((self.length, self.fill_depth, self.breadth), self._on_tank)
+        self.slosh.valueChanged.connect(self._on_slosh)
+        self.tank_plot = plot("z", "m", "x", "m", height=200)
+        self.tank_plot.setToolTip(TANK_TIP)
+        self.tank_plot.setAspectLocked(True)
+        self.tank_plot.setMouseEnabled(x=False, y=False)
+        self.tank_image = pg.ImageItem(axisOrder="row-major")
+        self.tank_plot.addItem(self.tank_image)
+        self.tank_lines = [pg.IsocurveItem(axisOrder="row-major") for _ in range(TANK_STREAMLINES)]
+        for item in self.tank_lines:
+            item.setParentItem(self.tank_image)
+        self.surface = pg.PlotDataItem()
+        self.surface_back = pg.PlotDataItem()
+        self.tank_outline = pg.PlotDataItem()
+        for item in (self.surface_back, self.surface, self.tank_outline):
+            self.tank_plot.addItem(item)
+        self.centre = QtWidgets.QStackedWidget()  # the body's flow, or the tank's
+        self.centre.addWidget(body_view)
+        self.centre.addWidget(self.tank_plot)
+        centre = stack((self.centre, 1), (self.readout, 0))
+        self.slosh_f_plot = plot("Frequency", "Hz", "Depth h", "m", log_x=True, height=160)
+        self.slosh_f_plot.setToolTip(SLOSH_F_TIP)
+        add_legend(self.slosh_f_plot.getPlotItem(), offset=(10, 5), colCount=3)
+        self.slosh_f_items = [pg.PlotDataItem(name=f"n = {n}") for n in (1, 2, 3)]
+        self.slosh_f_refs = [pg.PlotDataItem(), pg.PlotDataItem()]  # shallow, deep
+        self.slosh_f_dot = marker(14)
+        for item in (*self.slosh_f_refs, *self.slosh_f_items, self.slosh_f_dot):
+            self.slosh_f_plot.addItem(item)
+        self.slosh_m_plot = plot("Mass / m<sub>L</sub>", None, "Depth h/L", None, log_x=True, height=160)
+        self.slosh_m_plot.setToolTip(SLOSH_M_TIP)
+        add_legend(self.slosh_m_plot.getPlotItem(), offset=(10, 5), colCount=3)
+        self.slosh_m_items = [pg.PlotDataItem(name=name) for name in ("rigid m₀", "m₁", "m₃")]
+        self.slosh_m_line = pg.InfiniteLine(angle=90)
+        for item in (*self.slosh_m_items, self.slosh_m_line):
+            self.slosh_m_plot.addItem(item)
+        self.slosh_tab = column(tank, self.slosh_f_plot, self.slosh_m_plot, stretch=False)
+
+        # --- right: a tuned liquid damper
+        damper = Form("Structure and damper")
+        self.structure_mass = damper.number("Structure's mass M:", 0.01, 1e6, 20.0, 2, " t", TIPS["structure_mass"])
+        self.structure_f = damper.number("Its frequency f:", 0.01, 100.0, 0.5, 3, " Hz", TIPS["structure_f"])
+        self.structure_zeta = damper.number("Its damping ζ:", 0.0, 50.0, 1.0, 2, " %", TIPS["structure_zeta"])
+        self.tanks = damper.number("Tanks:", 1, 100, 1, 0, "", TIPS["tanks"])
+        self.damper_zeta = damper.number(
+            "Sloshing damping ζ<sub>d</sub>:", 0.01, 50.0, 13.0, 2, " %", TIPS["damper_zeta"]
+        )
+        damper.row(note_label("The tank is the Sloshing tab's."))
+        connect_all(
+            (self.structure_mass, self.structure_f, self.structure_zeta, self.tanks, self.damper_zeta),
+            self._on_damper,
+        )
+        self.response_plot = plot("|X| k/F", None, "Frequency", "Hz", log_y=True, height=170)
+        self.response_plot.setToolTip(RESPONSE_TIP)
+        add_legend(self.response_plot.getPlotItem(), offset=(-10, 10))
+        self.response_items = [pg.PlotDataItem(name=name) for name in ("liquid frozen", "sloshing")]
+        for item in self.response_items:
+            self.response_plot.addItem(item)
+        self.tune_plot = plot("Peak |X| k/F", None, "Depth h", "m", log_y=True, height=170)
+        self.tune_plot.setToolTip(TUNE_TIP)
+        self.tune_item = pg.PlotDataItem()
+        self.tune_ref = pg.InfiniteLine(angle=0)
+        self.tune_dot = marker(14)
+        for item in (self.tune_ref, self.tune_item, self.tune_dot):
+            self.tune_plot.addItem(item)
+        self.damper_note = note_label()
+        self.damper_tab = column(damper, self.response_plot, self.tune_plot, self.damper_note, stretch=False)
+
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(self.body_tab, "Added mass")
-        self.tabs.addTab(ColumnScroll(self.plate_tab), "Plate in water")
+        self.tabs.addTab(ColumnScroll(self.plate_tab), "Plate")
+        self.tabs.addTab(ColumnScroll(self.slosh_tab), "Sloshing")
+        self.tabs.addTab(ColumnScroll(self.damper_tab), "Damper")
         self.tabs.addTab(self.notes, "Theory")
-        self.lazy = LazyTabs(self.tabs, {self.body_tab: self._draw_body, self.plate_tab: self._draw_plate})
+        self.lazy = LazyTabs(
+            self.tabs,
+            {
+                self.body_tab: self._draw_body,
+                self.plate_tab: self._draw_plate,
+                self.slosh_tab: self._draw_slosh,
+                self.damper_tab: self._draw_damper,
+            },
+        )
 
+        self.tabs.currentChanged.connect(self._on_tab)
         three_panes(self, column(self.trials, fluid, body), centre, self.tabs)
         self.apply_theme()
 
@@ -496,6 +865,15 @@ class FluidStructurePage(QtWidgets.QWidget):
             sides=int(self.sides.value()),
             m=int(self.mode_m.value()),
             n=int(self.mode_n.value()),
+            length=self.length.value(),
+            depth=self.fill_depth.value(),
+            breadth=self.breadth.value(),
+            slosh=int(self.slosh.value()),
+            structure_mass=self.structure_mass.value(),
+            structure_f=self.structure_f.value(),
+            structure_zeta=self.structure_zeta.value(),
+            tanks=int(self.tanks.value()),
+            damper_zeta=self.damper_zeta.value(),
             tab=self.tabs.currentIndex(),
         )
 
@@ -516,6 +894,15 @@ class FluidStructurePage(QtWidgets.QWidget):
             (self.sides, t.sides),
             (self.mode_m, t.m),
             (self.mode_n, t.n),
+            (self.length, t.length),
+            (self.fill_depth, t.depth),
+            (self.breadth, t.breadth),
+            (self.slosh, t.slosh),
+            (self.structure_mass, t.structure_mass),
+            (self.structure_f, t.structure_f),
+            (self.structure_zeta, t.structure_zeta),
+            (self.tanks, t.tanks),
+            (self.damper_zeta, t.damper_zeta),
         ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
@@ -537,6 +924,44 @@ class FluidStructurePage(QtWidgets.QWidget):
             self.thickness.value() / 1000,
             Material(self.E.value() * 1e9, 0.3, self.plate_rho.value()),
         )
+
+    @property
+    def tank(self) -> Tank:
+        return Tank(self.length.value(), self.fill_depth.value(), self.breadth.value(), self.fluid.value())
+
+    @property
+    def structure(self) -> Structure:
+        return Structure(
+            self.structure_mass.value() * 1000, self.structure_f.value(), self.structure_zeta.value() / 100
+        )
+
+    @property
+    def damper(self) -> Damper:
+        return Damper(self.tank, int(self.tanks.value()), self.damper_zeta.value() / 100)
+
+    @property
+    def showing_tank(self) -> bool:
+        return self.tabs.currentIndex() in (TAB_SLOSH, TAB_DAMPER)
+
+    def _on_tab(self) -> None:
+        tank = self.showing_tank
+        if tank != (self.centre.currentIndex() == 1):
+            self.centre.setCurrentIndex(1 if tank else 0)
+            self._draw_centre()
+
+    def _on_tank(self) -> None:
+        self.lazy.stale(self.slosh_tab)
+        self.lazy.stale(self.damper_tab)
+        if self.showing_tank:
+            self._draw_tank()
+
+    def _on_slosh(self) -> None:
+        self.lazy.stale(self.slosh_tab)
+        if self.showing_tank:
+            self._draw_tank()
+
+    def _on_damper(self) -> None:
+        self.lazy.stale(self.damper_tab)
 
     def _on_body(self) -> None:
         self.ratio.setEnabled(self.walled.isChecked())
@@ -586,10 +1011,37 @@ class FluidStructurePage(QtWidgets.QWidget):
         self.wetdry_line.setPen(pg.mkPen(c.grey, width=1, style=dashed))
         mark(self.wetdry_items, c.mass[0], filled=True)
         mark(self.wetdry_dot, c.force, width=3)
+        self.tank_image.setLookupTable(
+            pg.ColorMap([0.0, 1.0], [clear, pg.mkColor(c.mass[0])]).getLookupTable(nPts=256, alpha=True)
+        )
+        for item in self.tank_lines:
+            item.setPen(pg.mkPen(c.strong, width=1))
+        self.surface.setPen(pg.mkPen(c.mass[0], width=3))
+        self.surface_back.setPen(pg.mkPen(c.mass[0], width=2, style=dashed))
+        self.tank_outline.setPen(pg.mkPen(c.structure, width=4))
+        for item, color in zip(self.slosh_f_items, (c.mass[0], c.mass[1], c.mass[3])):
+            item.setPen(pg.mkPen(color, width=2))
+        self.slosh_f_refs[0].setPen(pg.mkPen(c.grey, width=1, style=dashed))
+        self.slosh_f_refs[1].setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DotLine))
+        mark(self.slosh_f_dot, c.force, width=3)
+        for item, color in zip(self.slosh_m_items, (c.strong, c.mass[0], c.mass[1])):
+            item.setPen(pg.mkPen(color, width=2))
+        self.slosh_m_line.setPen(pg.mkPen(c.force, width=2))
+        self.response_items[0].setPen(pg.mkPen(c.grey, width=2, style=dashed))
+        self.response_items[1].setPen(pg.mkPen(c.mass[0], width=3))
+        self.tune_item.setPen(pg.mkPen(c.mass[0], width=2))
+        self.tune_ref.setPen(pg.mkPen(c.muted, width=1, style=QtCore.Qt.PenStyle.DotLine))
+        mark(self.tune_dot, c.force, width=3)
         self._draw_centre()
         self.lazy.stale()
 
     def _draw_centre(self) -> None:
+        if self.showing_tank:
+            self._draw_tank()
+        else:
+            self._draw_flow()
+
+    def _draw_flow(self) -> None:
         body = self.body
         R = body.radius
         half = 1.12 * body.outer if math.isfinite(body.outer) else 4.0 * R
@@ -699,5 +1151,104 @@ class FluidStructurePage(QtWidgets.QWidget):
             f"β = {beta:.3g}, and it falls to {fmt(wet, 'Hz')} ({wet / dry:.3g} of it). Dots: the first "
             f"{PLATE_MODES} modes, by the parity of m and n (odd–odd, mixed, even–even). The fluid's coupling "
             "between modes is left out."
+        )
+        settle_plots(self)
+
+    # ------------------------------------------------------------- sloshing
+    def _draw_tank(self) -> None:
+        tank = self.tank
+        n = int(self.slosh.value())
+        L, h = tank.length, tank.depth
+        cells = TANK_GRID / max(L, h)
+        x = np.linspace(0.0, L, max(int(cells * L), 24))
+        z = np.linspace(-h, 0.0, max(int(cells * h), 12))
+        f = tank_flow(tank, n, x, z)
+        self.tank_image.setImage(f.speed, levels=(0.0, 1.0), autoLevels=False)
+        self.tank_image.setRect(QtCore.QRectF(0.0, -h, L, h))
+        levels = np.linspace(-1.0, 1.0, TANK_STREAMLINES + 2)[1:-1]
+        for item, level in zip(self.tank_lines, levels):
+            item.setData(f.stream)
+            item.setLevel(float(level))
+        amp = 0.15 * min(h, L / n)  # the surface's swing, drawn
+        self.surface.setData(x, amp * f.surface)
+        self.surface_back.setData(x, -amp * f.surface)
+        top = 1.8 * amp
+        self.tank_outline.setData([0.0, 0.0, L, L], [top, -h, -h, top])
+        # both at once: with the aspect locked, the second of two calls would crop the first
+        self.tank_plot.getViewBox().setRange(xRange=(0.0, L), yRange=(-h, top), padding=0.04)
+        fn = slosh_frequency(tank, n)
+        mL, m0, mn = tank.liquid_mass, rigid_mass(tank), float(slosh_mass(tank, n))
+        excited = (
+            f"its analogue mass is {_kg(mn)}, {mn / mL:.3g} of the liquid's"
+            if n % 2
+            else "it's symmetric, so a sideways motion doesn't excite it (no analogue mass)"
+        )
+        self.readout.setText(
+            f"Mode {n} sloshes at {_hz(fn)} (k = nπ/L, ω² = gk tanh(kh)); {excited}. Of the {_kg(mL)} of liquid, "
+            f"m<sub>0</sub> = {_kg(m0)} moves with the tank, and the first mode's m<sub>1</sub> = "
+            f"{_kg(float(slosh_mass(tank, 1)))} sloshes at {_hz(slosh_frequency(tank, 1))}."
+        )
+        settle_plots(self)
+
+    def _draw_slosh(self) -> None:
+        tank = self.tank
+        n = int(self.slosh.value())
+        L, h = tank.length, tank.depth
+        hs = DEPTH_RATIOS * L
+        for item, mode in zip(self.slosh_f_items, (1, 2, 3)):
+            item.setData(hs, [slosh_frequency(Tank(L, d), mode) for d in hs])
+        self.slosh_f_refs[0].setData(hs, np.sqrt(G * hs) / (2 * L))
+        deep = math.sqrt(G * math.pi / L) / (2 * math.pi)
+        self.slosh_f_refs[1].setData(hs, np.full_like(hs, deep))
+        self.slosh_f_plot.setYRange(0.0, 1.35 * float(slosh_frequency(Tank(L, 10 * L), 3)), padding=0)
+        fn = slosh_frequency(tank, n)
+        self.slosh_f_dot.setData([h], [fn])
+        lo, hi = min(float(hs[0]), h), max(float(hs[-1]), h)
+        self.slosh_f_plot.setXRange(math.log10(lo), math.log10(hi), padding=0.02)
+
+        masses = [
+            [rigid_mass(Tank(1.0, r)) / Tank(1.0, r).liquid_mass for r in DEPTH_RATIOS],
+            [float(slosh_mass(Tank(1.0, r), 1)) / Tank(1.0, r).liquid_mass for r in DEPTH_RATIOS],
+            [float(slosh_mass(Tank(1.0, r), 3)) / Tank(1.0, r).liquid_mass for r in DEPTH_RATIOS],
+        ]
+        for item, values in zip(self.slosh_m_items, masses):
+            item.setData(DEPTH_RATIOS, values)
+        self.slosh_m_line.setPos(math.log10(h / L))
+        ratio_lo, ratio_hi = min(float(DEPTH_RATIOS[0]), h / L), max(float(DEPTH_RATIOS[-1]), h / L)
+        self.slosh_m_plot.setXRange(math.log10(ratio_lo), math.log10(ratio_hi), padding=0.02)
+        self.slosh_m_plot.setYRange(0.0, 1.25, padding=0)
+
+        settle_plots(self)
+
+    def _draw_damper(self) -> None:
+        structure, damper = self.structure, self.damper
+        loaded = loaded_frequency(structure, damper)
+        f = np.linspace(0.6 * loaded, 1.5 * loaded, 1500)
+        sloshing = np.abs(damper_response(structure, damper, f))
+        frozen = np.abs(frozen_response(structure, damper, f))
+        self.response_items[0].setData(f, frozen)
+        self.response_items[1].setData(f, sloshing)
+        self.response_plot.setXRange(float(f[0]), float(f[-1]), padding=0)
+
+        tank = damper.tank
+        top = max(1.2 * tank.length, 1.1 * tank.depth)
+        depths = np.linspace(0.02 * tank.length, top, DEPTHS)
+        peaks = peak_against_depth(structure, damper, depths)
+        here = peak(structure, damper)
+        self.tune_item.setData(depths, peaks)
+        self.tune_dot.setData([tank.depth], [here])
+        mu = mass_ratio(structure, damper)
+        tuning, zeta_opt, dh_peak = den_hartog(mu)
+        self.tune_ref.setPos(math.log10(dh_peak))
+        self.tune_plot.setXRange(0.0, top, padding=0.02)
+
+        frozen_peak = float(np.abs(frozen_response(structure, damper, response_band(structure))).max())
+        m1 = float(damper.masses[0])
+        self.damper_note.setText(
+            f"Of the {_kg(damper.liquid)} of liquid, the first sloshing mode's {_kg(m1)}, at "
+            f"{_hz(slosh_frequency(tank, 1))}, is a tuned mass damper with μ = {mu:.3g}; the rest moves with the "
+            f"structure and lowers it to {_hz(loaded)}. Peak: {here:.3g} times the static deflection (frozen, "
+            f"{frozen_peak:.3g}). Den Hartog's tuning for this μ: f<sub>d</sub> = {_hz(tuning * loaded)}, "
+            f"ζ<sub>d</sub> = {100 * zeta_opt:.3g} %, a peak of {dh_peak:.3g} (with no damping in the structure)."
         )
         settle_plots(self)

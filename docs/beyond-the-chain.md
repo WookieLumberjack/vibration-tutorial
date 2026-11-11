@@ -124,12 +124,22 @@ the gap, and the added mass grows without bound as the gap closes. The fluid add
 springs the body's frequency falls by √(m/(m + m<sub>a</sub>)), set by the body's density against the
 fluid's.
 
-The *Plate in water* tab gives each mode of a baffled plate its own added mass, from the fluid's
+The *Plate* tab gives each mode of a baffled plate its own added mass, from the fluid's
 pressure for each wavenumber in the mode's shape, and its AVMI factor β: a 3 mm steel panel in water
 carries eight times its modal mass in its fundamental, and falls to a third of its frequency in air.
 Higher modes carry less, as the fluid sloshes between their cells.
 
 ![Fluid–structure page: a 25 mm steel rod moving across its axis in water; centre, the potential flow round it (speed in colour, streamlines) and the fluid's speed ahead of it falling as R²/r²; right, the added-mass coefficient against a pipe's radius (1 in open water, growing as the gap closes) and the frequency's fall against the densities' ratio, 20 Hz to 18.8 Hz](images/fluid_structure.png)
+
+A liquid with a free surface has modes of its own. The *Sloshing* tab puts it in a rectangular tank
+(the centre then shows the tank: the surface at its extremes and the flow as it passes level). The
+modes' frequencies follow ω² = gk tanh(kh), so a shallow tank's first mode runs at √(gh)/2L and a deep
+one's stops depending on depth. Under a sideways motion the tank behaves as a **spring–mass analogue**:
+a rigid mass and a mass on a spring for each odd mode, the first by far the largest. The *Damper* tab
+uses that first mode as a **tuned liquid damper** on a structure. The water's depth tunes it, screens
+damp it, and the peak against depth shows where Den Hartog's tuning lies.
+
+![Fluid–structure page, a tuned liquid damper: a tank 2 m by 2 m filled to 0.4 m on a 20 t structure at 0.5 Hz; centre, the tank's first sloshing mode (0.466 Hz); right, the structure's response with the water sloshing (peak 5.58) and frozen (52.0), and the peak against the water's depth, lowest near 0.4 m](images/liquid_damper.png)
 
 ## Self-excited vibration
 
