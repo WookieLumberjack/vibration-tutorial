@@ -49,6 +49,27 @@ REFERENCES = (
         "the classic: physical explanations, absorbers, rotors",
     ),
     Reference(
+        "baker-blackburn",
+        "Baker and Blackburn 2005",
+        "G. L. Baker and J. A. Blackburn, <i>The Pendulum: A Case Study in Physics</i>, Oxford University Press, 2005",
+        "the pendulum in full: large swings, the physical and torsion pendulums, Kater's, chaos",
+    ),
+    Reference(
+        "duffing",
+        "Duffing 1918",
+        "G. Duffing, <i>Erzwungene Schwingungen bei veränderlicher Eigenfrequenz und ihre technische "
+        "Bedeutung</i>, Sammlung Vieweg, Heft 41/42, Vieweg, Braunschweig, 1918",
+        "the oscillator with a cubic spring",
+    ),
+    Reference(
+        "kater",
+        "Kater 1818",
+        "H. Kater, An account of experiments for determining the length of the pendulum vibrating seconds in "
+        "the latitude of London, <i>Philosophical Transactions of the Royal Society of London</i> 108, 33–102, "
+        "1818",
+        "the reversible pendulum",
+    ),
+    Reference(
         "duhamel",
         "Duhamel 1833",
         "J.-M. C. Duhamel, Sur la méthode générale relative au mouvement de la chaleur dans les corps solides "

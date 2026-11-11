@@ -31,7 +31,7 @@ from ..core.pendulum import (
     swing,
 )
 from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
-from . import settle_plots
+from . import pendulum_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -76,17 +76,17 @@ class PendulumTrial:
 TRIALS = (
     PendulumTrial(
         "Gravity is the spring",
-        "A 1 kg bob on a 1 m string, let go from 10°. Its restoring moment is mgL sin θ ≈ mgL θ, and its moment of "
-        "inertia mL², so ω<sub>n</sub> = √(g/L): 0.498 Hz, a period of 2.006 s, whatever the mass (change it). "
-        "At 10° the whole and the linearized swings can't be told apart.",
+        "A 1 kg bob on a 1 m string, let go from 10°. Its restoring moment is <m>mgL sin θ ≈ mgLθ</m>, and its "
+        "moment of inertia <m>mL²</m>, so <m>ω<sub>n</sub> = √(g/L)</m>: 0.498 Hz, a period of 2.006 s, whatever "
+        "the mass (change it). At 10° the whole and the linearized swings can't be told apart.",
         angle=10.0,
     ),
     PendulumTrial(
         "Large swings are slower",
-        "The same pendulum from 90°. sin θ falls below θ, so the spring softens as the swing grows: the period is "
-        "2.368 s, 18 % longer than the small swing's, and the linearized swing drifts ahead (Centre). The Period "
-        "tab gives the exact period (an elliptic integral), and Duffing's first approximation, "
-        "T ≈ T₀(1 + A²/16), which holds to 1 % up to about 75°.",
+        "The same pendulum from 90°. <m>sin θ</m> falls below <m>θ</m>, so the spring softens as the swing grows: "
+        "the period is 2.368 s, 18 % longer than the small swing's, and the linearized swing drifts ahead "
+        "(Centre). The Period tab gives the exact period (an elliptic integral), and Duffing's first "
+        "approximation, <m>T ≈ T<sub>0</sub>(1 + A²/16)</m>, which holds to 1 % up to about 75°.",
         angle=90.0,
     ),
     PendulumTrial(
@@ -100,19 +100,21 @@ TRIALS = (
     ),
     PendulumTrial(
         "A rod: where to pivot it",
-        "A 1 m uniform rod pivoted 0.5 m from its centre (at its end): J = mL²/3, the weight's arm 0.5 m, so it "
-        "swings as a simple pendulum 0.667 m long (1.638 s). Pivoted 0.289 m from the centre (L/√12, the radius "
-        "of gyration) it swings fastest, 1.524 s; pivoted 0.167 m from the centre it swings at 1.638 s again: "
-        "Kater's reversible pendulum, which measured g.",
+        "A 1 m uniform rod pivoted 0.5 m from its centre (at its end): <m>J = mL²/3</m>, the weight's arm "
+        "<m>d</m> = 0.5 m, so it swings as a simple pendulum <m>L<sub>eq</sub></m> = 0.667 m long (1.638 s). "
+        "Pivoted 0.289 m from the centre (<m>L/√12</m>, the radius of gyration) it swings fastest, 1.524 s; "
+        "pivoted 0.167 m from the centre (<m>k<sub>G</sub>²/d</m>) it swings at 1.638 s again: Kater's "
+        "reversible pendulum, which measured <m>g</m>.",
         kind=Kind.ROD,
         angle=10.0,
         tab=TAB_PIVOT,
     ),
     PendulumTrial(
         "A disc on a wire: no softening",
-        "A 1 kg disc of radius 0.1 m on a wire of torsional stiffness 0.5 N·m/rad: J = mr²/2, f = √(k<sub>t</sub>/J)/2π "
-        "= 1.59 Hz. The wire's twist is linear, so the period is the same at 10° as at 170°: the softening above "
-        "came from gravity's sin θ, not from turning.",
+        "A 1 kg disc of radius 0.1 m on a wire of torsional stiffness <m>k<sub>t</sub></m> = 0.5 N·m/rad: "
+        "<m>J = mr²/2</m>, <m>f<sub>n</sub> = √(k<sub>t</sub>/J)/2π</m> = 1.59 Hz. The wire's twist is linear, "
+        "so the period is the same at 10° as at 170°: the softening above came from gravity's <m>sin θ</m>, not "
+        "from turning.",
         kind=Kind.TORSION,
         length=0.1,
         spring=0.5,
@@ -121,17 +123,18 @@ TRIALS = (
     PendulumTrial(
         "Inverted: gravity as a negative spring",
         "A 1 kg mass on a 1 m arm balanced upright on a 15 N·m/rad spring. Gravity now pushes it over: the "
-        "stiffness is k<sub>t</sub> − mgL = 5.19 N·m/rad, f = 0.363 Hz. And it hardens: from 60° the period is "
-        "10 % shorter than the small swing's.",
+        "stiffness is <m>k<sub>θ</sub> = k<sub>t</sub> − mgL</m> = 5.19 N·m/rad, <m>f<sub>n</sub></m> = 0.363 Hz. "
+        "And it hardens: from 60° the period is 10 % shorter than the small swing's.",
         kind=Kind.INVERTED,
         spring=15.0,
         angle=60.0,
     ),
     PendulumTrial(
         "Inverted: buckling",
-        "The spring at 9 N·m/rad, under mgL = 9.81: the stiffness is negative and upright is unstable. Let go "
-        "from 1° with a little damping, it falls over and settles leaning at 40.8°, where the spring's 9θ "
-        "balances the weight's 9.81 sin θ. A column under a load past its buckling load does the same.",
+        "The spring at 9 N·m/rad, under <m>mgL</m> = 9.81 N·m/rad: the stiffness is negative and upright is "
+        "unstable. Let go from 1° with a little damping, it falls over and settles leaning at 40.8°, where the "
+        "spring's <m>9θ</m> balances the weight's <m>9.81 sin θ</m>. A column under a load past its buckling "
+        "load does the same.",
         kind=Kind.INVERTED,
         spring=9.0,
         angle=1.0,
@@ -139,8 +142,8 @@ TRIALS = (
     ),
     PendulumTrial(
         "On the Moon",
-        "The 1 m pendulum where g = 1.62 m/s²: √(9.81/1.62) = 2.46 times slower, a period of 4.94 s. A pendulum "
-        "clock is a gravimeter.",
+        "The 1 m pendulum where <m>g</m> = 1.62 m/s²: <m>√(9.81/1.62)</m> = 2.46 times slower, a period of "
+        "4.94 s. A pendulum clock is a gravimeter.",
         gravity=1.62,
         angle=10.0,
     ),
@@ -204,8 +207,8 @@ def _inverted_spring(rng: np.random.Generator) -> Question:
         f"A {m:g} kg mass on a light arm {length:g} m long stands upright on a pivot, held up by a torsion spring. "
         "How stiff must the spring be for upright to be stable?",
         least,
-        f"Leaning by θ, the weight pushes it over with mgL sin θ ≈ mgLθ, so the stiffness is k<sub>θ</sub> − mgL: "
-        f"stable only if k<sub>θ</sub> &gt; mgL = {m:g} × 9.81 × {length:g} = {number(least)} N·m/rad. A weaker "
+        f"Leaning by θ, the weight pushes it over with mgL sin θ ≈ mgLθ, so the stiffness is k<sub>t</sub> − mgL: "
+        f"stable only if k<sub>t</sub> &gt; mgL = {m:g} × 9.81 × {length:g} = {number(least)} N·m/rad. A weaker "
         "spring lets it fall to a leaning balance, as a column buckles.",
         unit="N·m/rad",
         setup=dict(kind=Kind.INVERTED, mass=m, length=length, spring=rounded(1.2 * least)),
@@ -221,7 +224,7 @@ def _disc_on_wire(rng: np.random.Generator) -> Question:
         f"A {m:g} kg disc of radius {r:g} m hangs on a wire of torsional stiffness {k:g} N·m/rad. At what frequency "
         "does it twist back and forth?",
         p.natural_hz,
-        f"J = mr²/2 = {number(p.inertia)} kg·m², so ω<sub>n</sub> = √(k<sub>θ</sub>/J) = {number(p.omega0)} rad/s "
+        f"J = mr²/2 = {number(p.inertia)} kg·m², so ω<sub>n</sub> = √(k<sub>t</sub>/J) = {number(p.omega0)} rad/s "
         f"and f<sub>n</sub> = {number(p.natural_hz)} Hz: the single oscillator, turned.",
         unit="Hz",
         setup=dict(kind=Kind.TORSION, mass=m, length=r, spring=k),
@@ -272,7 +275,7 @@ def _wire_large_twist(rng: np.random.Generator) -> Question:
     return Question(
         "A disc on a torsion wire is twisted to 90° and let go, instead of 10°. What happens to its period?",
         0,
-        "Nothing: a wire's moment is k<sub>θ</sub>θ at any twist, so it is linear and its period doesn't depend "
+        "Nothing: a wire's moment is k<sub>t</sub>θ at any twist, so it is linear and its period doesn't depend "
         "on the swing. Only gravity's sin θ makes a pendulum's lengthen.",
         choices=("It stays the same", "It lengthens, as a pendulum's does", "It shortens"),
         setup=dict(kind=Kind.TORSION, angle=90.0, tab=TAB_PERIOD),
@@ -363,7 +366,7 @@ PERIOD_TIP = (
     "Duffing's first harmonic balance, and linear (1).</p>"
 )
 PHASE_TIP = (
-    "<p>The undamped orbits (energy curves) in the (θ, θ') plane, the separatrix bold where there is one, "
+    "<p>The undamped orbits (energy curves) in the (θ, θ̇) plane, the separatrix bold where there is one, "
     "and the swing from the release (colour).</p>"
 )
 PIVOT_TIP = (
@@ -371,7 +374,7 @@ PIVOT_TIP = (
     "fastest is at the radius of gyration; every other period is reached at two distances.</p>"
 )
 
-NOTES_HTML = load_notes("pendulum", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("pendulum", figures=pendulum_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class PendulumPage(QtWidgets.QWidget):
@@ -438,7 +441,7 @@ class PendulumPage(QtWidgets.QWidget):
             self.period_plot.addItem(item)
         self.period_note = note_label()
 
-        self.phase_plot = plot("θ'", None, "θ", None, height=200)
+        self.phase_plot = plot("θ̇", None, "θ", None, height=200)
         self.phase_plot.setToolTip(PHASE_TIP)
         self.orbit_items: list[pg.PlotDataItem] = []
         self.separatrix = pg.PlotDataItem()
@@ -715,7 +718,7 @@ class PendulumPage(QtWidgets.QWidget):
         self.start_dot.setData([math.degrees(a)], [0.0])
         self.phase_plot.setXRange(-math.degrees(reach), math.degrees(reach), padding=0.02)
         self.phase_plot.setLabel("bottom", "θ (°)")
-        self.phase_plot.setLabel("left", "θ' (°/s)")
+        self.phase_plot.setLabel("left", "θ̇ (°/s)")
         if p.weight_moment > 0 and p.torsion == 0:
             self.phase_note.setText(
                 "Grey: undamped orbits of constant energy; bold: the separatrix through the "
