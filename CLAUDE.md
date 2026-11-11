@@ -72,6 +72,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
 - Beyond the chain:
   - Torsional vibration (`torsional_page`): `gui/torsional.py`; core `torsional`, `torsional_startup`
   - Duffing & Mathieu (`duffing_page`): `gui/duffing.py`; core `duffing`
+  - Fluid–structure (`fluid_page`): `gui/fluid_structure.py`; core `added_mass`, `beams_plates`
   - Self-excited vibration (`self_excited_page`): `gui/self_excited.py`; core `self_excited`
   - Active control (`active_control_page`): `gui/active_control.py`; core `active_control`
   - Gyroscope (`gyroscope_page`): `gui/gyroscope.py`; core `gyroscope`, `sliding_top`

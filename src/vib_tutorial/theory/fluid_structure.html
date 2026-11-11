@@ -1,0 +1,75 @@
+<before>
+<a href="page:sdof_page#free-vibration">Free vibration</a>
+<a href="page:energy_page">Energy methods</a>
+<a href="page:beams_page#plates">A plate's modes</a>
+<a href="page:acoustics_page#driven">A point-driven panel</a>
+</before>
+<h3><a name="added-mass"></a>Added mass</h3>
+<p>A body that accelerates in a fluid has to accelerate some of the fluid too: the fluid in front must get out
+of the way, the fluid behind must fill in, and it flows round the sides to do so. Treat the fluid as ideal
+(no viscosity) and incompressible, and the body's velocity U sets up a <b>potential flow</b>, u = ∇φ with
+∇²φ = 0, whose speed everywhere is proportional to U. Its kinetic energy is then proportional to U² too, and
+written</p>
+<p align="center">T<sub>fluid</sub> = ½ m<sub>a</sub> U²,</p>
+<p>with m<sub>a</sub> the <b>added mass</b>. The force needed to accelerate the body is (m + m<sub>a</sub>)
+dU/dt: the fluid's pressure on the body, ρ ∂φ/∂t, pushes back in phase with its acceleration, exactly as more
+mass would. (In a steady flow an ideal fluid exerts no drag at all, d'Alembert's paradox; only acceleration
+costs force.) It is usually written as a coefficient on the fluid the body displaces, m<sub>a</sub> =
+C<sub>a</sub>ρ<sub>f</sub>V:</p>
+<ul>
+<li>a <b>sphere</b>, φ = −UR³cos θ/2r²: C<sub>a</sub> = ½, half the fluid it displaces;</li>
+<li>a <b>circular cylinder</b> moving across its axis (per length), φ = −UR²cos θ/r: C<sub>a</sub> = 1, all of
+it.</li>
+</ul>
+<p>The cylinder's flow falls off as R²/r², the sphere's as R³/r³: a two-dimensional body stirs the fluid
+further out. Other shapes have their own coefficients (a flat plate moving broadside, a strip of width 2a, has
+ρπa² per length though it displaces nothing), and a body's added mass is different in each direction and for
+turning.</p>
+
+<h3><a name="wet"></a>Wet and dry</h3>
+<p>The fluid adds mass but no stiffness, so a body on springs k vibrates in the fluid at</p>
+<p align="center">f<sub>wet</sub> = f<sub>dry</sub> √(m/(m + m<sub>a</sub>)) = f<sub>dry</sub> / √(1 +
+C<sub>a</sub>ρ<sub>f</sub>/ρ<sub>s</sub>),</p>
+<p>which depends only on the body's density against the fluid's. A steel body in water loses a few per cent; a
+light one (a float, a thin-walled tube, a composite panel) loses much more; anything in air loses next to
+nothing, unless it is very light for its size (a balloon, a membrane, a loudspeaker's cone). Added mass is
+also why a modal test in air doesn't give a ship's, or an offshore structure's, frequencies in water.</p>
+
+<h3><a name="confined"></a>Confined fluid</h3>
+<p>Put a still wall round the body, a concentric pipe at R<sub>o</sub>, and the fluid the body pushes has to
+squeeze through the gap to get round it. The flow is again in closed form, φ = cos θ (Ar + B/r) with
+∂φ/∂r = U cos θ on the body and 0 at the wall, and its energy gives (Fritz, 1972)</p>
+<p align="center">C<sub>a</sub> = (R<sub>o</sub>² + R²) / (R<sub>o</sub>² − R²),</p>
+<p>1.67 with the pipe at twice the radius, 5.55 at 1.2 times, and without bound as the gap g closes, about
+R/g: the fluid in the gap moves about R/g times as fast as the body (all it pushes aside has to get through), and
+its energy goes as the square of that speed. A sphere in a spherical shell has (2/3)πρR³ (R<sub>o</sub>³ + 2R³)/(R<sub>o</sub>³ − R³). Tubes in a heat
+exchanger's baffles, fuel rods in their channels and pumps' wear rings are designed with it; close to a wall, the
+added mass can outweigh the structure.</p>
+
+<h3><a name="plates"></a>A plate in water</h3>
+<p>A plate vibrating in a mode pushes fluid only where it moves, and a mode with several cells pushes and pulls
+side by side, so the fluid mostly sloshes from one cell to the next. For a baffled plate with fluid on one side,
+an incompressible fluid's pressure for a surface acceleration of wavenumber k is ρ a(k)/|k|, and each mode's
+added mass is</p>
+<p align="center">m<sub>a</sub> = (ρ<sub>f</sub>/4π²) ∫∫ |Φ̂(k)|² / |k| d²k,</p>
+<p>Φ̂ the mode shape's Fourier transform (the same transform as Wallace's integral for <a
+href="page:acoustics_page#modes">radiation</a>, taken at no frequency at all: incompressible fluid is sound with
+c → ∞). The fluid it carries reaches about a cell's size from the plate, so higher modes carry less. Over the
+mode's own modal mass ρ<sub>p</sub>hab/4 it is the <b>AVMI factor</b> (added virtual mass incremental factor)
+β, and</p>
+<p align="center">f<sub>wet</sub> = f<sub>dry</sub> / √(1 + β), β ∝ (ρ<sub>f</sub>/ρ<sub>p</sub>)(a/h),</p>
+<p>large for a thin plate: a 3 mm steel panel in water carries eight times its own modal mass. (Lamb's 1920
+result for a clamped circular plate of radius a, β = 0.669 (ρ<sub>f</sub>/ρ<sub>p</sub>)(a/h), is the classic
+case.) Fluid on both sides doubles β. The fluid also couples modes of the same symmetry, which this page leaves
+out: the wet modes are then mixtures of the dry ones, and that shifts their frequencies a little more.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the body or the plate (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>A body accelerating in a fluid moves fluid with it: its kinetic energy ½m<sub>a</sub>U² makes the body behave as if its mass were m + m<sub>a</sub>.</li>
+<li>In open fluid a sphere carries half the fluid it displaces, a cylinder all of it.</li>
+<li>The fluid adds mass but no stiffness: f<sub>wet</sub> = f<sub>dry</sub>/√(1 + C<sub>a</sub>ρ<sub>f</sub>/ρ<sub>s</sub>), set by the densities' ratio.</li>
+<li>A wall close to the body forces the fluid through the gap, and the added mass grows without bound as the gap closes.</li>
+<li>A plate's mode carries fluid out to about a cell's size, so its AVMI factor β falls with the mode's order, and grows with ρ<sub>f</sub>a/ρ<sub>p</sub>h.</li>
+</takeaways>
