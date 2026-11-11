@@ -428,7 +428,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         self.shape_plot.setAspectLocked(True)
         self.shape_plot.setMouseEnabled(x=False, y=False)
         self.shape_image = pg.ImageItem(axisOrder="row-major")
-        self.nodal = pg.IsocurveItem(level=0.0)
+        self.nodal = pg.IsocurveItem(level=0.0, axisOrder="row-major")  # as the image
         self.nodal.setParentItem(self.shape_image)
         self.outline = pg.PlotDataItem()
         for item in (self.shape_image, self.outline):

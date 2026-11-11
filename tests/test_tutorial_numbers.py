@@ -787,6 +787,90 @@ def test_seismic_trials():
     assert Design(zeta=0.10).eta == pytest.approx(0.82, abs=0.005)
 
 
+def test_vibroacoustics_trials():
+    import math
+
+    import numpy as np
+
+    from vib_tutorial.core.beams_plates import Material, Plate, rect_modes
+    from vib_tutorial.core.radiation import (
+        AIR,
+        band_edges,
+        coincidence_dip,
+        critical_frequency,
+        maidanik,
+        mass_law,
+        modal_efficiency,
+        point_drive,
+        radiation_loss_factor,
+        transmission_loss,
+    )
+
+    def sigma(m, n, f):
+        return float(modal_efficiency(p, np.array([m]), np.array([n]), f)[0, 0])
+
+    p = Plate()
+    fc = critical_frequency(p)
+    assert fc == pytest.approx(3990, abs=5) and AIR.c == 343
+    # a corner mode
+    f11 = rect_modes(p, 1)[0].freq_hz
+    assert (f11, AIR.c / f11) == pytest.approx((66.6, 5.2), abs=0.05)
+    assert sigma(1, 1, f11) == pytest.approx(0.037, abs=5e-4)
+    f = np.geomspace(100, 5000, 400)
+    s11 = np.array([sigma(1, 1, x) for x in f])
+    assert f[np.argmax(s11 > 1)] == pytest.approx(450, rel=0.02) and AIR.c / 450 == pytest.approx(0.76, abs=0.005)
+    assert (s11.max(), f[s11.argmax()]) == pytest.approx((1.28, 720), rel=0.02)
+    # even modes, an edge mode
+    modes = rect_modes(p, 10)
+    assert (modes[4].m, modes[4].n, modes[4].freq_hz) == pytest.approx((2, 2, 266), abs=0.5)
+    assert (sigma(2, 2, 100.0), sigma(1, 1, 100.0)) == pytest.approx((1.4e-5, 0.082), rel=0.03)
+    f13 = modes[7].freq_hz
+    assert (modes[7].m, modes[7].n, f13) == pytest.approx((1, 3, 435), abs=0.5)
+    assert (3 * math.pi / p.b, math.pi / p.a, 2 * math.pi * f13 / AIR.c) == pytest.approx((23.6, 5.2, 7.98), abs=0.05)
+    first = [sigma(md.m, md.n, md.freq_hz) for md in modes]
+    assert first[7] == pytest.approx(0.059, abs=5e-4) and max(first) == first[7]
+    # a point-driven panel
+    freq = np.geomspace(20, 2.5 * fc, 700)
+    d = point_drive(p, 0.01, (0.21, 0.13), freq)
+    assert d.infinite_input == pytest.approx(565e-6, rel=0.002)
+
+    def gap(centre):
+        lo, hi = band_edges(np.array([centre]))
+        sel = (freq >= lo[0]) & (freq < hi[0])
+        return 10 * math.log10(d.input_power[sel].mean() / d.radiated_power[sel].mean())
+
+    assert (gap(1000.0), gap(1000 * 10**0.8)) == pytest.approx((18, 11), abs=0.5)
+    eta_rad = radiation_loss_factor(p, 1000.0)
+    assert (float(maidanik(p, 1000.0)), eta_rad, 0.01 / eta_rad) == pytest.approx((0.054, 1.5e-4, 66), rel=0.02)
+    assert float(maidanik(p, 6300.0)) == pytest.approx(1.7, abs=0.05)
+    # the mass law
+    assert (p.surface_mass, float(mass_law(p, 500.0))) == pytest.approx((23.6, 39.0), abs=0.051)
+    assert transmission_loss(p, 0.01, 500.0)[0] == pytest.approx(33.8, abs=0.05)
+    # glass
+    glass = Material(70e9, 0.22, 2500.0)
+    window = Plate(1.2, 1.0, 0.010, glass)
+    assert critical_frequency(window) == pytest.approx(1200, abs=5)
+    f_dip, tl_dip = coincidence_dip(window, 0.01)
+    assert (f_dip, tl_dip) == pytest.approx((1280, 19.2), rel=0.004)
+    assert float(mass_law(window, 500.0)) == pytest.approx(39.5, abs=0.05)
+    assert critical_frequency(Plate(1.2, 1.0, 0.004, glass)) == pytest.approx(2990, abs=5)
+    assert coincidence_dip(Plate(1.2, 1.0, 0.004, glass), 0.01)[1] == pytest.approx(19.2, abs=0.05)
+    # damping at coincidence
+    assert (coincidence_dip(p, 0.01)[1], coincidence_dip(p, 0.1)[1]) == pytest.approx((26.1, 37.5), abs=0.05)
+    assert (transmission_loss(p, 0.1, 2 * fc)[0], transmission_loss(p, 0.01, 2 * fc)[0]) == pytest.approx(
+        (51.0, 41.3), abs=0.05
+    )
+    at = np.array([f11])  # ⟨v²⟩ at a resonance ∝ 1/η²; over a band ∝ 1/η
+    light, damped = (point_drive(p, eta, (0.21, 0.13), at).mean_square_velocity[0] for eta in (0.01, 0.1))
+    assert 10 * math.log10(light / damped) == pytest.approx(20, abs=0.2)
+    heavy = point_drive(p, 0.1, (0.21, 0.13), freq)
+    lo, hi = band_edges(np.array([2000.0]))
+    sel = (freq >= lo[0]) & (freq < hi[0])
+    ratio = d.mean_square_velocity[sel].mean() / heavy.mean_square_velocity[sel].mean()
+    assert 10 * math.log10(ratio) == pytest.approx(10, abs=1)
+    assert heavy.input_power[sel].mean() / d.input_power[sel].mean() == pytest.approx(1, abs=0.15)
+
+
 def test_quarter_car_trials():
     from dataclasses import replace
 

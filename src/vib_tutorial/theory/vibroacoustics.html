@@ -1,0 +1,111 @@
+<before>
+<a href="page:beams_page#plates">A plate's modes</a>
+<a href="page:beams_page#modal-density">Modal density</a>
+<a href="page:random_page#psd">Random vibration</a>
+</before>
+<h3><a name="efficiency"></a>Radiation efficiency</h3>
+<p>A vibrating surface pushes the air next to it, and some of that push leaves as sound. How much depends on
+the motion's pattern as well as its size, so the radiated sound power is written</p>
+<p align="center">W = ρc S σ ⟨v²⟩,</p>
+<p>with ρc the air's characteristic impedance (415 rayl), S the area, ⟨v²⟩ the mean-square velocity averaged
+over the surface and over time, and σ the <b>radiation efficiency</b>: 1 for a large piston, which pushes a plane
+wave off at ρc per unit velocity, and far less for a panel whose neighbouring patches move opposite ways, as
+most of the air they push just sloshes from one to the next. σ is often quoted in decibels, 10 log σ (the
+radiation index).</p>
+
+<h3><a name="coincidence"></a>Coincidence</h3>
+<p>A free bending wave on a plate has the wavenumber k<sub>b</sub> = √ω (ρh/D)<sup>¼</sup>: it is
+<i>dispersive</i>, its speed ω/k<sub>b</sub> growing as √f, while sound's k = ω/c grows in proportion to f. The two
+meet at the <b>critical frequency</b></p>
+<p align="center">f<sub>c</sub> = (c²/2π) √(ρh/D),</p>
+<p>which for a plate of thickness h is about 12/h kHz·mm in steel, aluminium or glass (D ∝ h³, so f<sub>c</sub>
+∝ 1/h). Above it, the bending wave is <i>supersonic</i>: it drives a plane sound wave at the angle θ where its
+trace matches, sin θ = k/k<sub>b</sub>, and an infinite plate's σ is 1/√(1 − f<sub>c</sub>/f), large just above
+f<sub>c</sub> (the wave leaves near grazing) and 1 above that. Below f<sub>c</sub> the wave is
+<i>subsonic</i>: the air above each crest cancels the air above the trough beside it, and an infinite plate
+radiates nothing at all. A finite one still radiates from where the cancellation is incomplete: its edges and its
+corners.</p>
+
+<h3><a name="modes"></a>A mode's radiation</h3>
+<p>A simply supported panel's mode (m, n) is sin(mπx/a) sin(nπy/b), the sum of four plane bending waves with
+k<sub>x</sub> = mπ/a, k<sub>y</sub> = nπ/b. Set in a rigid baffle (so that the air behind can't reach round the
+edge) its radiated power is the far field's integral over a hemisphere, which Wallace (1972) reduced to</p>
+<p align="center">σ<sub>mn</sub> = (64k²ab/π⁶m²n²) ∫∫ [A<sub>m</sub>(α) B<sub>n</sub>(β)]² sin θ dθ dφ,</p>
+<p>over θ and φ from 0 to π/2, with α = ka sin θ cos φ, β = kb sin θ sin φ, and A<sub>m</sub> = cos(α/2) (m odd)
+or sin(α/2) (m even) over (α/mπ)² − 1, B<sub>n</sub> likewise. The page works it out numerically. Comparing
+k with the mode's own wavenumbers sorts the modes:</p>
+<ul>
+<li><b>Corner modes</b> (k < k<sub>x</sub> and k < k<sub>y</sub>): every half wave cancels its neighbour but for
+the quarter cells at the corners. Far below a mode's own resonance, σ<sub>mn</sub> ≈ 32k²ab/π⁵m²n² for odd m and
+n, a monopole's k²: the panel pumps like a small piston. An even index cancels that too, leaving a dipole's two more
+powers of k, and two even indices a quadrupole's four.</li>
+<li><b>Edge modes</b> (k between k<sub>x</sub> and k<sub>y</sub>): along the longer half waves nothing cancels, so
+the two edges across the shorter ones radiate like strips.</li>
+<li><b>Surface modes</b> (√(k<sub>x</sub>² + k<sub>y</sub>²) < k): the mode is above its own coincidence, and the
+whole surface radiates, σ<sub>mn</sub> ≈ 1.</li>
+</ul>
+<p>At its own resonance a mode is on the bending wave's curve, k<sub>mn</sub> = k<sub>b</sub>, so below
+f<sub>c</sub> the resonant modes are all corner or edge modes, and above it all surface modes.</p>
+
+<h3><a name="averages"></a>Averaged over a band</h3>
+<p>From a few hundred hertz up a panel has many modes in each third-octave band (Beams &amp; plates' constant
+S/2 √(ρh/D) per hertz), and what matters is their average. Maidanik's formula (1962, corrected by Crocker and
+Price) gives the mean σ of the resonant modes of a baffled, simply supported panel of perimeter P from the
+wavelength at coincidence λ<sub>c</sub> = c/f<sub>c</sub>:</p>
+<ul>
+<li>below f<sub>c</sub>, σ = (λ<sub>c</sub>P/S) g<sub>2</sub>(α) + 2(λ<sub>c</sub>²/S) g<sub>1</sub>(α), with
+α = √(f/f<sub>c</sub>): the edge modes (g<sub>2</sub>, growing with the perimeter) and below f<sub>c</sub>/2 the
+corner modes (g<sub>1</sub>);</li>
+<li>near f<sub>c</sub>, a peak of about √(a/λ<sub>c</sub>) + √(b/λ<sub>c</sub>);</li>
+<li>above, the infinite plate's 1/√(1 − f<sub>c</sub>/f).</li>
+</ul>
+<p>The page sets it beside the mean of Wallace's σ<sub>mn</sub> over the modes resonant in each band, which it
+follows to within a dB or two wherever a band holds a few modes. Below f<sub>c</sub> a panel radiates more the
+longer its edges for its area: stiffening ribs, which add edges, make a panel louder.</p>
+
+<h3><a name="driven"></a>A point-driven panel</h3>
+<p>Drive the panel with a force F at one point. Each mode is a single oscillator of mass M/4 (the mean of its
+shape squared), driven by F φ<sub>mn</sub>(x<sub>0</sub>, y<sub>0</sub>), with the loss factor η in its stiffness.
+The power going in, ½ F Re v(x<sub>0</sub>, y<sub>0</sub>), peaks at each resonance, but averaged over a band
+it settles, from where several modes share each band, to an <b>infinite plate's</b>:</p>
+<p align="center">P<sub>in</sub> = ½ F² Re Y<sub>∞</sub>, Y<sub>∞</sub> = 1/8√(Dρh),</p>
+<p>a pure resistance: a wave carried off and never returned. In the band, that power is lost in the panel as
+fast as it comes in, ωηE = P<sub>in</sub>, so the panel's energy E = M⟨v²⟩ is P<sub>in</sub>/ωη: the response
+of a panel with many modes in a band depends on its mass, its stiffness and its damping, not on its shape or
+where it's driven. This is the starting point of statistical energy analysis. The radiated power is each mode's
+ρcS σ<sub>mn</sub>⟨v<sub>mn</sub>²⟩ (the page leaves out the modes' mutual radiation, which is small once a band
+holds several). Written as a loss, ρcSσ⟨v²⟩ = ωη<sub>rad</sub>E with the <b>radiation loss factor</b></p>
+<p align="center">η<sub>rad</sub> = ρcσ / ωm″,</p>
+<p>so the panel's energy leaves by two routes, its damping and its sound, and the sound takes
+η<sub>rad</sub>/(η + η<sub>rad</sub>) of it. In air η<sub>rad</sub> is small, 10<sup>−4</sup> or so below
+f<sub>c</sub> for a steel sheet, so sound is a small leak from a panel's energy, a larger one above
+f<sub>c</sub> where σ ≈ 1. A heavy fluid (water) changes that, and loads the panel as an added mass too.</p>
+
+<h3><a name="transmission"></a>Between two rooms</h3>
+<p>A panel between two rooms is pushed by the sound on one side and radiates on the other. As an infinite plate
+of mass m″ per area, a plane wave arriving at θ sees the wall impedance
+Z = iωm″[1 − (f/f<sub>c</sub>)² sin⁴θ (1 + iη)], and gets through with the transmission coefficient
+τ(θ) = 1/|1 + Z cos θ / 2ρc|². The <b>transmission loss</b> is TL = 10 log 1/τ̄.</p>
+<ul>
+<li><b>The mass law.</b> Well below f<sub>c</sub>, only the mass holds the sound back: at normal incidence
+TL = 10 log[1 + (ωm″/2ρc)²] ≈ 20 log(f m″) − 42 dB, 6 dB more for each doubling of the frequency or the mass.
+Averaged over the angles a room's sound arrives from (<b>field incidence</b>, up to 78°) it is about 5 dB less.</li>
+<li><b>Coincidence.</b> Above f<sub>c</sub>, at the angle where sin²θ = f<sub>c</sub>/f, the sound's trace
+matches the bending wave: the panel's stiffness cancels its mass, only damping is left, and the sound walks
+through. The diffuse field's TL dips at f<sub>c</sub>, and above it rises with the damping, about
+10 log(2ηf/πf<sub>c</sub>) on the mass law.</li>
+</ul>
+<p>Since f<sub>c</sub> ∝ 1/h while m″ ∝ h, f<sub>c</sub>m″ depends only on the material: a heavier panel of the
+same stuff gains on the mass law but brings its dip lower, into the band it was meant to stop. Double walls, and
+laminated glass's damping layer, are the ways round it.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up the panel and the plots (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>Radiated power is ρcSσ⟨v²⟩: the radiation efficiency σ says how much of a surface's motion becomes sound.</li>
+<li>Bending waves catch up with sound at the critical frequency f<sub>c</sub> = (c²/2π)√(ρh/D), ∝ 1/h; above it a plate radiates fully, below it only its edges and corners do.</li>
+<li>A mode's radiation falls with each sign change across it: odd–odd modes radiate like pistons, even ones like dipoles and quadrupoles.</li>
+<li>Over a band, a point-driven panel takes in the infinite plate's F²/16√(Dρh) and holds the energy P/ωη, whatever its shape.</li>
+<li>A panel's transmission loss follows the mass law, 6 dB per doubling of mass or frequency, until the coincidence dip at f<sub>c</sub>, where damping takes over.</li>
+</takeaways>

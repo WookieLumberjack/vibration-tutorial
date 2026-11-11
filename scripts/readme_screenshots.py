@@ -1173,6 +1173,10 @@ def seismic_response():
     lesson("seismic_page", 2, "seismic_response")  # close modes need CQC
 
 
+def vibroacoustics():
+    lesson("acoustics_page", 3, "vibroacoustics")  # an edge mode, and every mode's σ against Maidanik
+
+
 def variability():
     lesson("variability_page", 6, "variability")  # a mistuned disc's forced response
 
@@ -1311,6 +1315,7 @@ SHOTS = [
     frame_builder,
     frame_response,
     seismic_response,
+    vibroacoustics,
     variability,
     self_excited,
     active_control,

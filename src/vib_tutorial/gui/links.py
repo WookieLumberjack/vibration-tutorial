@@ -163,6 +163,11 @@ COURSE = (
                 "Seismic response",
                 "the chain as a building: a design spectrum, effective modal mass, and ABS, SRSS and CQC against records",
             ),
+            (
+                "acoustics_page",
+                "Vibro-acoustics && SEA",
+                "a panel's sound: radiation efficiency, coincidence, the mass law, and energy flow between parts",
+            ),
         ),
     ),
     (
@@ -276,6 +281,7 @@ PAGE_TITLES = {
     "mounts_page": "Rigid body on mounts page",
     "shock_page": "Shock spectrum page",
     "seismic_page": "Seismic response page",
+    "acoustics_page": "Vibro-acoustics & SEA page",
     "coupling_page": "Modal coupling page",
     "cms_page": "Substructuring page",
     "frame_page": "Frame builder page",

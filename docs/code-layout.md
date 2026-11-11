@@ -148,6 +148,9 @@
   the forced response to an unbalance or a torque (each mount's force, modal forces, the torque roll axis).
 - `core/seismic.py`: a design spectrum, the building's modal masses and peaks, ABS/SRSS/NRL/CQC, and
   synthesized records stepped mode by mode.
+- `core/radiation.py`: a baffled panel's sound: the critical frequency, each mode's radiation efficiency
+  (Wallace's integral), their band average against Maidanik's, the point-driven panel's input and radiated
+  power, and the infinite plate's transmission loss (mass law, coincidence dip).
 - `core/variability.py`: Monte Carlo on the chain with lognormal scatter and the first-order estimate,
   and a mistuned bladed ring's modes, localization and forced response.
 - `core/self_excited.py`: van der Pol, galloping, a wake oscillator and two-mode flutter: their

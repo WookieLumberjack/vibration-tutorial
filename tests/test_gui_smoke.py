@@ -4070,6 +4070,7 @@ def test_shock_page(app):
         "active_control_page",
         "gyroscope_page",
         "seismic_page",
+        "acoustics_page",
         "quarter_car_page",
         "mounts_page",
         "frame_page",

@@ -56,6 +56,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Rigid body on mounts (`mounts_page`): `gui/rigid_mounts.py`; core `rigid_mounts`
   - Shock spectrum (`shock_page`): `gui/shock.py`; core `random_vibration`, `shock`
   - Seismic response (`seismic_page`): `gui/seismic.py`; core `random_vibration`, `seismic`
+  - Vibro-acoustics & SEA (`acoustics_page`): `gui/vibroacoustics.py`; core `beams_plates`, `radiation`
 - Building models:
   - Modal coupling (`coupling_page`): `gui/modal_coupling.py`; core `modal_coupling`
   - Substructuring (CMS) (`cms_page`): `gui/substructuring.py`; core `substructure`, `back_expansion`

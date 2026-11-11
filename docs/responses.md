@@ -10,6 +10,7 @@ The pages in the order the app's tabs take them.
 - [Rigid body on mounts](#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them
 - [Shock spectrum](#shock-spectrum): a short pulse on a bank of oscillators, and on the chain
 - [Seismic response](#seismic-response): the chain as a building: a design spectrum, effective modal mass, and ABS, SRSS and CQC against records
+- [Vibro-acoustics & SEA](#vibro-acoustics--sea): a panel's sound: radiation efficiency, coincidence, the mass law, and energy flow between parts
 
 ## Random vibration
 
@@ -153,6 +154,23 @@ spectrum, combined by ABS, SRSS, NRL or CQC, against seven records synthesized t
 stepped exactly. A roof tank tuned to mode 1 shows why close modes need CQC.
 
 ![Seismic response page: a roof tank tuned to mode 1 of the five-storey building splits it into modes at 0.96 and 1.06 Hz; SRSS gives a base shear of 165 kN, 21 % below the mean of seven matched records (209 kN), and the tank's swing 54 % high](images/seismic_response.png)
+
+## Vibro-acoustics & SEA
+
+How a vibrating panel makes sound. The panel is Beams & plates' simply supported rectangle, set in a
+baffle with air on one side. Its bending waves are slower than sound at low frequency and faster at high:
+they meet at the **critical frequency** f<sub>c</sub> = (c²/2π)√(ρh/D), 3.99 kHz for 3 mm of steel. Below
+it, neighbouring half waves cancel each other's sound, and only a mode's corners or edges radiate. The
+*Radiation* tab gives each mode's **radiation efficiency** σ<sub>mn</sub> from Wallace's integral, and every
+mode's at its own resonance against their third-octave average and Maidanik's formula for it.
+
+The *Driven panel* tab drives the panel with a point force, mode by mode. Its band-averaged input power
+settles to an infinite plate's F²/16√(Dρh), and the sound it radiates is set by the radiation loss factor
+ρcσ/ωm″ against its own damping. *Transmission loss* puts the panel between two rooms: the mass law, 6 dB
+per doubling of mass or frequency, until the coincidence dip at f<sub>c</sub>, where only damping holds the
+sound back.
+
+![Vibro-acoustics & SEA page: a 3 mm steel panel's mode (1, 3), an edge mode at 435 Hz with σ = 0.059; centre, the bending wavenumber crosses sound's at the critical frequency, 3.99 kHz; right, every mode's radiation efficiency at its own resonance, in three bands by the parity of m and n, with their third-octave average following Maidanik's formula up to the coincidence peak](images/vibroacoustics.png)
 
 ---
 
