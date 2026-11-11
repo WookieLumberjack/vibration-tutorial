@@ -76,10 +76,15 @@ def keys_html(mac: bool | None = None) -> str:
     return '<table cellspacing="0" cellpadding="3">' + "".join(rows) + "</table>"
 
 
-def load_notes(name: str, **parts: str) -> str:
+def load_notes(name: str, figures: dict[str, Callable[[], str]] | None = None, **parts: str) -> str:
     """The notes in `theory/<name>.html`, its tags written out (see the module's docstring) and each
-    `<!--PART-->` filled by the keyword `part` (what the code works out: the trials, the course map)."""
+    `<!--PART-->` filled by the keyword `part` (what the code works out: the trials, the course map). `figures`
+    is the figure module's FIGURES the notes show (`figures.register`)."""
+    from . import figures as figure_registry
     from . import maths, notation, references
+
+    if figures:
+        figure_registry.register(figures)  # the figures these notes show
 
     html = (THEORY / f"{name}.html").read_text(encoding="utf-8")
     html = EQ.sub(lambda m: maths.display(m.group(1)), html)  # first: its LaTeX is raw, & and < as they are

@@ -1,9 +1,11 @@
 """The notes' figures: SVG drawn from the theme's colours when the notes are laid out.
 
-A notes file shows a figure with ``<img src="fig:<name>" width=… height=…>`` in a centred table cell (the
-rotor's), and a figure module builds it: a function returning SVG text from `colors` (so it follows the theme,
-as the plots do), named in that module's ``FIGURES`` dict, which `all_figures` gathers;
-`notes_view.NotesBrowser` finds a name in them (`build`) and draws it with `render`.
+A notes file shows a figure with ``<img src="fig:<name>" width=… height=…>`` in a centred table cell, and a
+figure module builds it (``gui/<page>_figures.py``): a function returning SVG text from `colors` (so it follows
+the theme, as the plots do), named in that module's ``FIGURES`` dict. The page module passes that dict to the
+notes that show it, ``load_notes(<file>, figures=<page>_figures.FIGURES, …)``, which `register`s it, so a
+new figure module touches no shared list. `notes_view.NotesBrowser` finds a name (`build`) and draws it
+with `render`.
 
 The house style, so the figures read as one set:
 
@@ -34,17 +36,32 @@ FONT = 13  # px, the labels' size
 SCALE = 2  # rendered at twice the size, for high-density screens
 
 
-def all_figures() -> dict[str, Callable[[], str]]:
-    """Every figure, by name: each figure module's FIGURES (imported here, not by name, so the release
-    builds find them)."""
-    from . import rotor_figures, sdof_figures
+# Every figure loaded, by name: `links.load_notes(name, figures=…)` adds the figures of the notes it loads.
+FIGURES: dict[str, Callable[[], str]] = {}
 
-    return {**rotor_figures.FIGURES, **sdof_figures.FIGURES}
+
+def register(found: dict[str, Callable[[], str]]) -> None:
+    """Add a figure module's FIGURES (``fig:`` name → the function that draws it)."""
+    for name, draw in found.items():
+        if FIGURES.get(name, draw) is not draw:
+            raise ValueError(f"two figures are named {name}")
+        FIGURES[name] = draw
+
+
+def all_figures() -> dict[str, Callable[[], str]]:
+    """Every figure in the notes: loads every page's notes (which registers their figures) first."""
+    from . import links
+    from .theory_window import page_html
+
+    for _, pages in links.COURSE:
+        for page, _, _ in pages:
+            page_html(page)
+    return dict(FIGURES)
 
 
 def build(name: str) -> Callable[[], str] | None:
-    """The function that draws figure `name` (``fig:…``), or None."""
-    return all_figures().get(name)
+    """The function that draws figure `name` (``fig:…``), or None. The notes that show it registered it."""
+    return FIGURES.get(name)
 
 
 def render(svg_text: str) -> QtGui.QImage:

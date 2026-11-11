@@ -27,7 +27,7 @@ from ..core.sdof import (
     receptance,
     settling_time,
 )
-from . import settle_plots
+from . import sdof_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -480,7 +480,14 @@ POLES_TIP = (
     "kept, k and c follow).</p>"
 )
 
-NOTES_HTML = load_notes("sdof", course=course_map(), paths=paths_html(), keys=keys_html(), trials=trials_html(TRIALS))
+NOTES_HTML = load_notes(
+    "sdof",
+    figures=sdof_figures.FIGURES,
+    course=course_map(),
+    paths=paths_html(),
+    keys=keys_html(),
+    trials=trials_html(TRIALS),
+)
 
 
 def notes_html() -> str:
