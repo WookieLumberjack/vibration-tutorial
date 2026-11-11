@@ -63,6 +63,7 @@ from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import RunButton, connect_all, set_quietly
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .panels import spin
 from .plots import Decimator
 from .style import colors
@@ -740,7 +741,7 @@ class TorsionalPage(QtWidgets.QWidget):
         sv.addWidget(self.mode_list)
         sv.addWidget(self.check)
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.drawing_tab = drawing_tab

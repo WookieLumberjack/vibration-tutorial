@@ -22,6 +22,9 @@ def make_app(theme: str | None = None):
     pg.setConfigOptions(antialias=True)
     plot_patches.install()
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+    from .maths import register_fonts
+
+    register_fonts()
     app.setApplicationName("Vibration Tutorial")
     theming.apply(theme or theming.saved_name())
     return app
@@ -159,9 +162,11 @@ def run() -> int:
     preload = threading.Thread(target=_preload_scipy, name="preload-scipy", daemon=True)
     QtCore.QTimer.singleShot(0, preload.start)  # after the first paint
     if "--smoke-test" in sys.argv:  # release builds check the packaged app starts, then quit
-        from .rotor_figures import FIGURES, render  # the rotor page is built lazily: check QtSvg is packaged
+        from . import figures, maths  # the pages are built lazily: check QtSvg and ziamath's font are packaged
 
-        if any(render(build()).isNull() for build in FIGURES.values()):
+        if any(figures.render(build()).isNull() for build in figures.all_figures().values()):
+            return 1
+        if maths.render(r"\omega_n = \sqrt{k/m}", 13.0, "#000000").isNull():
             return 1
         if not _analysis_worker_runs():
             return 1

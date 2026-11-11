@@ -44,6 +44,7 @@ from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
 from .layouts import ColumnScroll, form_layout, header_tip
 from .lesson import TrialCombo
 from .links import page_link
+from .notes_view import NotesBrowser
 from .style import MAX_DOF, colors, text_on
 from .substructuring import error_color, zeta_text
 from .theming import add_legend, mute
@@ -994,7 +995,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.shapes = ShapePlots()
         self.frf = DrivePointFrf()
         self.matrices = QtWidgets.QTextBrowser()
-        self.theory = QtWidgets.QTextBrowser()
+        self.theory = NotesBrowser()
         self.theory.setHtml(THEORY_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(self.veering, "Veering && splitting")

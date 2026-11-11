@@ -50,6 +50,7 @@ from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .panels import spin
 from .style import MAX_DOF, colors
 from .tab_groups import LazyTabs
@@ -729,7 +730,7 @@ class ShockPage(QtWidgets.QWidget):
         sv.addWidget(self.shapes_note)
         self._shapes_key: tuple | None = None
 
-        self.notes = QtWidgets.QTextBrowser()
+        self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(osc_tab, "Oscillator")

@@ -173,6 +173,12 @@
   widget reads its colours from the current one (`colors.mass[i]`, `colors.force`) and
   redraws in a new one through its `apply_theme()`. Log axes use `gui/axes.py`, which labels
   only as many ticks as fit.
+- The Theory notes are HTML files in `theory/`, read by `gui/links.py`'s `load_notes`. Their display
+  equations are written in LaTeX and typeset by [ziamath](https://github.com/cdelker/ziamath)
+  (`gui/maths.py`); inline maths is set in the bundled STIX Two Text font (`fonts/`, under the SIL Open
+  Font Licence). Each page's table of symbols and the glossary come from one list, `gui/notation.py`, and
+  its *Further reading* from `gui/references.py`. The figures are SVG drawn in the theme's colours
+  (`gui/figures.py`), and `gui/notes_view.py`'s browser draws the equations and figures.
 
 To measure the frame rate on your own display, start the app with `VIB_FRAME_STATS=1`
 (e.g. `VIB_FRAME_STATS=1 uv run vib-tutorial`): an overlay in the corner shows the running

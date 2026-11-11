@@ -24,6 +24,7 @@ from . import weak
 from .layouts import ColumnScroll, form_layout
 from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
+from .notes_view import NotesBrowser
 from .plots import frequency_grid
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -830,7 +831,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
 
         # --- right: the selected term, and theory
         self.detail = FrfDetail()
-        self.theory = QtWidgets.QTextBrowser()
+        self.theory = NotesBrowser()
         self.theory.setHtml(THEORY_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(self.detail, "Selected")

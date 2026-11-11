@@ -60,6 +60,7 @@ from .layouts import ColumnScroll, form_layout
 from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import EXTRACTION_THEORY_HTML, ExtractionControls, ResultsView, StabilizationPlot
+from .notes_view import NotesBrowser
 from .panels import spin
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute, settings
@@ -1138,7 +1139,7 @@ class ModalTestPage(QtWidgets.QWidget):
 
         # --- right
         self.check = QtWidgets.QTextBrowser()
-        self.theory = QtWidgets.QTextBrowser()
+        self.theory = NotesBrowser()
         self.theory.setHtml(THEORY_HTML)
         self.results = ResultsView()
         self.stab_plot = StabilizationPlot()
