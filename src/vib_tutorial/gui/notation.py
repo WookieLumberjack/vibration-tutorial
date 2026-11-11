@@ -124,7 +124,7 @@ SYMBOLS = (
         "sdof_page",
         "where-from",
     ),
-    Symbol("impulse", "I", "impulse, ∫f dt: the momentum a blow gives", "N·s", "transient_page", "impulse-response"),
+    Symbol("impulse", "I", "an impulse, ∫F dt: a hammer blow's", "N·s", "transient_page", "impulse-response"),
     Symbol(
         "h_t",
         "h(t)",
