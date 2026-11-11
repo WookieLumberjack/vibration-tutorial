@@ -69,6 +69,27 @@ REFERENCES = (
         "1818",
         "the reversible pendulum",
     ),
+    Reference(
+        "duhamel",
+        "Duhamel 1833",
+        "J.-M. C. Duhamel, Sur la méthode générale relative au mouvement de la chaleur dans les corps solides "
+        "plongés dans des milieux dont la température varie avec le temps, <i>Journal de l'École polytechnique</i> "
+        "14 (22e cahier), 20–77, 1833",
+        "the superposition of responses to a changing input, first for heat",
+    ),
+    Reference(
+        "harris",
+        "Piersol and Paez 2010",
+        "A. G. Piersol and T. L. Paez (eds), <i>Harris' Shock and Vibration Handbook</i>, 6th edition, "
+        "McGraw-Hill, 2010",
+        "pulses, shock spectra and their tables, for reference",
+    ),
+    Reference(
+        "ogata",
+        "Ogata 2010",
+        "K. Ogata, <i>Modern Control Engineering</i>, 5th edition, Prentice Hall, 2010",
+        "the Laplace transform and transfer functions, step responses' overshoot and settling",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
