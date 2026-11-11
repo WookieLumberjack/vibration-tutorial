@@ -53,6 +53,9 @@ def test_restart_drops_the_jobs_underway(worker):
     assert _wait(worker, second).steady_rpm.size
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="its pipes are named pipes, not sockets, whose buffers this shrinks"
+)
 def test_jobs_go_through_while_results_wait_to_be_read(worker):
     """The page may submit while the worker is still sending a result no one has read: neither may wait on the
     other. macOS's socket buffers are small enough for one result to fill them (the release builds' tests hung
