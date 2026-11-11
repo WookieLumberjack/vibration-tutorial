@@ -21,7 +21,7 @@ X = φ₁ + Σ ε<sub>r</sub>φ<sub>r</sub> (mass-normalized),</p>
 <p align="center">R(X) = (ω₁² + Σ ε<sub>r</sub>²ω<sub>r</sub>²) / (1 + Σ ε<sub>r</sub>²)
 = ω₁² + Σ ε<sub>r</sub>²(ω<sub>r</sub>² − ω₁²) / (1 + Σ ε<sub>r</sub>²).</p>
 <p>So R is never below ω₁² (every added term is positive), and its error is <b>second order</b> in the shape's:
-a shape 10 % wrong gives a frequency about 1 % wrong, times (ω<sub>r</sub>/ω₁)² − 1. A good shape to try is the
+a shape 10 % wrong (ε = 0.1) gives ω² about 1 % wrong, so the frequency about 0.5 %, times (ω<sub>r</sub>/ω₁)² − 1. A good shape to try is the
 static deflection under the masses' weights: the inertia forces of mode 1 are distributed much like the
 weights.</p>
 
@@ -42,8 +42,8 @@ best when one mass dominates. With Rayleigh's it brackets the exact value.</p>
 <p>Restrict the motion to a combination of r shapes, x = Qa, and make Rayleigh's quotient stationary in a: that is
 the small eigenproblem</p>
 <p align="center">(QᵀKQ) a = ω² (QᵀMQ) a.</p>
-<p>It gives r frequencies at once, and each is above its mode's exact value (the interlacing theorem), falling as
-shapes are added; with all N shapes it is exact. The quality depends on the shapes: shapes the structure makes
+<p>It gives r frequencies at once, and each is above its mode's exact value (the Poincaré separation, or min–max,
+theorem), falling as shapes are added (with one more shape, the old estimates and the new interlace); with all N shapes it is exact. The quality depends on the shapes: shapes the structure makes
 itself (static deflections, and K⁻¹M applied to them again: <b>Krylov</b> or load-dependent Ritz vectors) do far
 better than generic polynomials that ignore where the structure is stiff. Every reduced model on the later pages
 (substructuring, modal coupling, finite elements) is a Rayleigh–Ritz model.</p>

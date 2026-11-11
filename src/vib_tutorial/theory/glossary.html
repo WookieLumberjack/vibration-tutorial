@@ -37,11 +37,12 @@ use the search box above.</p>
 <tr><td>z, A, B</td><td>state z = [x, ẋ]; the state-space form ż = A z + B u</td><td>–</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
 <tr><td>λ</td><td>eigenvalue of A, σ ± iω<sub>d</sub>: decay rate and damped frequency</td><td>1/s</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
 <tr><td>Φ, Γ<sub>0</sub>, Γ<sub>1</sub>, h</td><td>the exact first-order-hold step z<sub>k+1</sub> = Φ z<sub>k</sub> + Γ<sub>0</sub> u<sub>k</sub> + Γ<sub>1</sub> u<sub>k+1</sub>; the step h</td><td>–, s</td><td><a href="page:sim_page">Simulation &amp; modal analysis</a></td></tr>
+<tr><td>Γ<sub>r</sub>, Γ<sub>r</sub>²</td><td>mode r's participation factor φ<sub>r</sub><sup>T</sup>M1: how strongly a base motion drives it; its effective mass (all the modes' add up to the total)</td><td>√kg, kg</td><td><a href="page:sim_page#sweeps-and-ground-motion">Simulation &amp; modal analysis</a></td></tr>
 <tr><td>R</td><td>Rayleigh's quotient, an estimate of ω² from an assumed shape</td><td>(rad/s)²</td><td><a href="page:energy_page">Energy methods</a></td></tr>
 <tr><td>H<sub>jk</sub>, α<sub>jk</sub></td><td>FRF (receptance) matrix entry: response at j to a force at k</td><td>m/N</td><td><a href="page:frf_page">FRF matrix</a></td></tr>
 <tr><td>E, I, A, ρ</td><td>Young's modulus, second moment of area, cross-section area, density</td><td>Pa, m⁴, m², kg/m³</td><td><a href="page:continuum_page">Continuous systems</a></td></tr>
 <tr><td>κ, c</td><td>wavenumber; wave speed (c also damping above)</td><td>rad/m, m/s</td><td><a href="page:continuum_page">Continuous systems</a></td></tr>
-<tr><td>MAC</td><td>modal assurance criterion: how alike two mode shapes are, 0 to 1</td><td>–</td><td><a href="page:test_page">Virtual modal test</a></td></tr>
+<tr><td>MAC</td><td>modal assurance criterion: how alike two mode shapes are, 0 to 1</td><td>–</td><td><a href="page:complex_page#how-complex">Complex modes</a></td></tr>
 </table>
 
 <h3><a name="responses"></a>Signals and random responses</h3>
@@ -50,6 +51,8 @@ use the search box above.</p>
 <tr><td>G, S</td><td>power spectral density (one-sided G)</td><td>unit²/Hz</td><td><a href="page:random_page">Random vibration</a></td></tr>
 <tr><td>σ</td><td>RMS (standard deviation) of a random response</td><td>as the response</td><td><a href="page:random_page">Random vibration</a></td></tr>
 <tr><td>Δf, f<sub>s</sub>, N</td><td>frequency resolution, sampling rate, record length in samples</td><td>Hz, Hz, –</td><td><a href="page:signals_page">Signals &amp; spectra</a></td></tr>
+<tr><td>H1, H2</td><td>FRF estimators from averaged spectra: G<sub>xf</sub>/G<sub>ff</sub> (unbiased by response noise) and G<sub>xx</sub>/G<sub>fx</sub> (by force noise)</td><td>m/N</td><td><a href="page:test_page#estimators">Virtual modal test</a></td></tr>
+<tr><td>γ²</td><td>coherence, |G<sub>xf</sub>|²/(G<sub>ff</sub>G<sub>xx</sub>) = H1/H2: the share of the response the force explains, 0 to 1</td><td>–</td><td><a href="page:test_page#estimators">Virtual modal test</a></td></tr>
 <tr><td>SRS</td><td>shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub></td><td>as the response</td><td><a href="page:shock_page">Shock spectrum</a></td></tr>
 <tr><td>f<sub>c</sub></td><td>critical (coincidence) frequency: a plate's bending wave travels at the speed of sound</td><td>Hz</td><td><a href="page:acoustics_page#coincidence">Vibro-acoustics &amp; SEA</a></td></tr>
 <tr><td>ρc, k</td><td>the air's characteristic impedance (415 rayl), sound's wavenumber ω/c</td><td>Pa·s/m, rad/m</td><td><a href="page:acoustics_page#efficiency">Vibro-acoustics &amp; SEA</a></td></tr>
@@ -68,6 +71,7 @@ use the search box above.</p>
 <tr><td>Ω</td><td>spin speed (or the drive's frequency, on the Duffing page)</td><td>rad/s, rpm</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
 <tr><td>I<sub>p</sub>, I<sub>d</sub></td><td>polar and diametral moments of inertia of a disc</td><td>kg·m²</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
 <tr><td>G(Ω)</td><td>gyroscopic matrix: its Ω G q̇ term splits forward and backward whirl</td><td>kg·m²</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
+<tr><td>S</td><td>Sommerfeld number of a fluid-film bearing, (μNL<sub>b</sub>D<sub>b</sub>/W)(R<sub>b</sub>/c<sub>r</sub>)²: the larger, the nearer the journal to the centre</td><td>–</td><td><a href="page:rotor_page#cross-coupling">Jeffcott rotor</a></td></tr>
 <tr><td>e, ε</td><td>unbalance eccentricity; a journal's eccentricity ratio in its bearing</td><td>m, –</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
 <tr><td>1X, 2X</td><td>once and twice per revolution</td><td>–</td><td><a href="page:rotor_page">Jeffcott rotor</a></td></tr>
 <tr><td>k<sub>3</sub></td><td>cubic spring stiffness of the Duffing oscillator</td><td>N/m³</td><td><a href="page:duffing_page">Duffing &amp; Mathieu</a></td></tr>
@@ -78,6 +82,9 @@ use the search box above.</p>
 <tr><td>β</td><td>a plate mode's AVMI factor: its added mass over its modal mass (also SEA's coupling coefficient)</td><td>–</td><td><a href="page:fluid_page#plates">Fluid–structure</a></td></tr>
 <tr><td>m<sub>L</sub>, m<sub>0</sub>, m<sub>n</sub></td><td>a tank's liquid, and the spring–mass analogue's rigid mass and mode n's sloshing mass</td><td>kg</td><td><a href="page:fluid_page#analogue">Fluid–structure</a></td></tr>
 <tr><td>ζ<sub>d</sub></td><td>a tuned liquid damper's sloshing damping ratio</td><td>–</td><td><a href="page:fluid_page#damper">Fluid–structure</a></td></tr>
+<tr><td>St</td><td>Strouhal number: vortices shed from a cylinder at f<sub>s</sub> = St U/D, St ≈ 0.2</td><td>–</td><td><a href="page:self_excited_page#viv">Self-excited vibration</a></td></tr>
+<tr><td>I₁, I₂, I₃</td><td>a body's principal moments of inertia (a symmetric top's I₁ = I₂ across its axis, I₃ along it)</td><td>kg·m²</td><td><a href="page:gyroscope_page">Gyroscope</a></td></tr>
+<tr><td>J (top)</td><td>Jellett's constant L·(a e₃ + R ẑ): what survives a sliding top's friction</td><td>kg·m³/s</td><td><a href="page:gyroscope_page#jellett">Gyroscope</a></td></tr>
 <tr><td>J</td><td>polar inertia of a disc in a drive train</td><td>kg·m²</td><td><a href="page:torsional_page">Torsional vibration</a></td></tr>
 <tr><td>s</td><td>an induction motor's slip, 1 − Ω/Ω<sub>s</sub></td><td>–</td><td><a href="page:torsional_page">Torsional vibration</a></td></tr>
 </table>
