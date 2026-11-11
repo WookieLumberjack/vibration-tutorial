@@ -1,5 +1,6 @@
 """The rotor page's analysis, worked out in a process of its own."""
 
+import os
 import subprocess
 import sys
 import textwrap
@@ -50,6 +51,31 @@ def test_restart_drops_the_jobs_underway(worker):
     second = worker.submit(RotorSystem(unbalance=2e-4), 6000.0)
     assert not worker.lost(second)
     assert _wait(worker, second).steady_rpm.size
+
+
+def test_jobs_go_through_while_results_wait_to_be_read(worker):
+    """The page may submit while the worker is still sending a result no one has read: neither may wait on the
+    other. macOS's socket buffers are small enough for one result to fill them (the release builds' tests hung
+    here); shrink this one's to match, so the test sees it on every platform."""
+    import socket
+    import threading
+
+    ticket = worker.submit(RotorSystem(), 6000.0)
+    assert worker._conn is not None
+    with socket.socket(fileno=os.dup(worker._conn.fileno())) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
+    time.sleep(3.0)  # the first job done: its result fills the buffer, unread
+
+    def submit_more():  # each job is ~1 kB: forty fill the buffer the worker doesn't read
+        for i in range(40):
+            worker.submit(RotorSystem(unbalance=1e-4 * (i + 1)), 6000.0)
+
+    sender = threading.Thread(target=submit_more, daemon=True)
+    sender.start()
+    sender.join(timeout=20.0)
+    assert not sender.is_alive(), "submit hung: the worker isn't reading while it sends"
+    assert _wait(worker, ticket).steady_rpm.size, "and the results still come through"
 
 
 def test_a_script_without_a_main_guard_runs_once(tmp_path):
