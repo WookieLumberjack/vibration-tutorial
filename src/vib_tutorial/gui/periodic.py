@@ -27,7 +27,7 @@ from ..core.periodic import (
 )
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import Oscillator, frequency_grid, receptance
-from . import settle_plots
+from . import periodic_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -75,60 +75,63 @@ class PeriodicTrial:
 TRIALS = (
     PeriodicTrial(
         "A square wave, harmonic by harmonic",
-        "A ±1 N square wave at 1 Hz is (4/π)(sin ω₀t + sin 3ω₀t/3 + sin 5ω₀t/5 + …): odd harmonics only, falling as "
-        "1/k. With 5 kept, the series already looks square, but it overshoots each jump by 19 % of F. Keeping more terms "
-        "only narrows the overshoot; its height settles at 18 % of F, 9 % of the jump (Gibbs). The response is "
-        "smoother: the oscillator divides the k-th harmonic by about k² above f<sub>n</sub>.",
+        "A ±1 N square wave at 1 Hz is "
+        "<m>(4/π)(sin ω<sub>0</sub>t + sin 3ω<sub>0</sub>t/3 + sin 5ω<sub>0</sub>t/5 + …)</m>: "
+        "odd harmonics only, falling as <m>1/j</m>. With 5 kept, the series already looks square, but it overshoots "
+        "each jump by 19 % of <m>F</m>. Keeping more terms only narrows the overshoot; its height settles at 18 % of "
+        "<m>F</m>, 9 % of the jump (Gibbs). The response is smoother: above <m>f<sub>n</sub></m> the oscillator "
+        "divides harmonic <m>j</m> by about <m>j²</m> more than the force's.",
         harmonics=5,
     ),
     PeriodicTrial(
         "Resonance through the third harmonic",
-        "The square wave at f<sub>n</sub>/3 = 1.06 Hz. Its fundamental is far below resonance, but its third "
-        "harmonic, 4/3π = 0.42 N, sits on f<sub>n</sub>, where |H| = 1/cω<sub>n</sub> = 25 mm/N: it alone swings "
-        "the mass 10.6 mm, three times the fundamental's 3.6 mm. The response rings at three times the drive: "
-        "slow machines excite fast modes this way.",
+        "The square wave at <m>f<sub>n</sub>/3</m> = 1.06 Hz. Its fundamental is far below resonance, but its third "
+        "harmonic, <m>4/3π</m> = 0.42 N, sits on <m>f<sub>n</sub></m>, where <m>|H| = 1/cω<sub>n</sub></m> = "
+        "25 mm/N: it alone swings the mass 10.6 mm, three times the fundamental's 3.6 mm. The response rings at "
+        "three times the drive: slow machines excite fast modes this way.",
         tune=3,
         harmonics=7,
     ),
     PeriodicTrial(
         "No even harmonics, no resonance",
-        "The same square wave at f<sub>n</sub>/2. A square wave has no second harmonic, so nothing reaches "
-        "f<sub>n</sub>: the response is 5.0 mm, a third of the 13.9 mm at f<sub>n</sub>/3, though the drive is "
-        "closer to resonance.",
+        "The same square wave at <m>f<sub>n</sub>/2</m>. A square wave has no second harmonic, so nothing reaches "
+        "<m>f<sub>n</sub></m>: the response is 5.0 mm, a third of the 13.9 mm at <m>f<sub>n</sub>/3</m>, though the "
+        "drive is closer to resonance.",
         tune=2,
         harmonics=7,
     ),
     PeriodicTrial(
         "Hammer blows",
-        "A 0.1 N·s blow every second. An impulse train has every harmonic at the same height, 2I/T = 0.2 N, so "
-        "the line spectra show H itself, sampled at 1 Hz steps. In time, each blow sets the mass ringing and "
-        "the next arrives before it has died away (τ = 1 s): the steady state swings from −4.5 to 5.2 mm about the "
-        "mean I/kT = 0.25 mm.",
+        "A 0.1 N·s blow every second. An impulse train has every harmonic at the same height, <m>2I/T</m> = 0.2 N, "
+        "so the line spectra show <m>H</m> itself, sampled at 1 Hz steps. In time, each blow sets the mass ringing "
+        "and the next arrives before it has died away (<m>τ</m> = 1 s): the steady state swings from −4.5 to 5.2 mm "
+        "about the mean <m>I/kT</m> = 0.25 mm.",
         wave=Wave.IMPULSES,
         amplitude=0.1,
         harmonics=20,
     ),
     PeriodicTrial(
         "A rectified sine",
-        "F|sin πt/T| with F = 1 N: a mean of 2F/π = 0.64 N, which only sags the spring, 1.59 mm, and harmonics "
-        "−4F/π(4k² − 1) that fall as 1/k². What a full-wave rectifier, or a cam, puts on its mounts.",
+        "<m>F|sin πt/T|</m> with <m>F</m> = 1 N: a mean of <m>2F/π</m> = 0.64 N, which only sags the spring, "
+        "1.59 mm, and harmonics <m>−4F/π(4j² − 1)</m> that fall as <m>1/j²</m>. What a full-wave rectifier, or a "
+        "cam, puts on its mounts.",
         wave=Wave.RECTIFIED,
         harmonics=5,
     ),
     PeriodicTrial(
         "Smooth waves converge faster",
-        "A triangle's harmonics fall as 1/k², a square's as 1/k: with 3 harmonics the triangle's response series "
-        "is within 1.9 % of the exact steady state, the square's 5.7 %; with 9, 0.10 % against 0.65 %. A jump in "
-        "the force costs 1/k, a kink 1/k². The Convergence tab draws it.",
+        "A triangle's harmonics fall as <m>1/j²</m>, a square's as <m>1/j</m>: with 3 harmonics the triangle's "
+        "response series is within 1.9 % of the exact steady state, the square's 5.7 %; with 9, 0.10 % against "
+        "0.65 %. A jump in the force costs <m>1/j</m>, a kink <m>1/j²</m>. The Convergence tab draws it.",
         wave=Wave.TRIANGLE,
         harmonics=3,
         tab=TAB_CONVERGENCE,
     ),
     PeriodicTrial(
         "Starting from rest",
-        "The square wave at f<sub>n</sub>/3, switched on from rest. The resonant third harmonic builds up over a "
-        "few time constants (1 s), as a sine at f<sub>n</sub> would: the steady state only arrives once the start "
-        "has died away.",
+        "The square wave at <m>f<sub>n</sub>/3</m>, switched on from rest. The resonant third harmonic builds up "
+        "over a few time constants (1 s), as a sine at <m>f<sub>n</sub></m> would: the steady state only arrives "
+        "once the start has died away.",
         tune=3,
         harmonics=7,
         tab=TAB_REST,
@@ -154,7 +157,7 @@ def _square_harmonic(rng: np.random.Generator) -> Question:
     return Question(
         f"A ±{F:g} N square wave repeats at {f0:g} Hz. How large is its harmonic at {number(k * f0)} Hz?",
         a,
-        f"That is the {k}{'st' if k == 1 else 'th'} harmonic. A square wave is (4F/π) Σ sin kω₀t / k over odd k: "
+        f"That is the {k}{'st' if k == 1 else 'th'} harmonic. A square wave is (4F/π) Σ sin jω₀t / j over odd j: "
         f"4 × {F:g}/({k}π) = {number(a)} N.",
         unit="N",
         setup=dict(wave=Wave.SQUARE, amplitude=float(F), freq_hz=f0, harmonics=max(k, 5)),
@@ -170,7 +173,7 @@ def _pulse_harmonic(rng: np.random.Generator) -> Question:
         f"A train of rectangular pulses of {F:g} N, each on for {100 * d:g} % of the period. How large is "
         f"its harmonic number {k}?",
         a,
-        f"|C<sub>k</sub>| = (2F/πk)|sin πkd| = (2 × {F:g}/{k}π) |sin({k}π × {d:g})| = {number(a)} N. (It is zero at "
+        f"|C<sub>j</sub>| = (2F/πj)|sin πjd| = (2 × {F:g}/{k}π) |sin({k}π × {d:g})| = {number(a)} N. (It is zero at "
         "every multiple of 1/d.)",
         unit="N",
         setup=dict(wave=Wave.PULSES, amplitude=float(F), duty=d, harmonics=8),
@@ -221,7 +224,7 @@ def _impulse_lines(rng: np.random.Generator) -> Question:
     return Question(
         f"A hammer strikes a blow of {blow:g} N·s {f0:g} times a second. How large is each of its harmonics?",
         a,
-        f"An impulse train is I/T + (2I/T) Σ cos kω₀t: every harmonic the same, 2I/T = 2 × {blow:g} × {f0:g} = "
+        f"An impulse train is I/T + (2I/T) Σ cos jω₀t: every harmonic the same, 2I/T = 2 × {blow:g} × {f0:g} = "
         f"{number(a)} N (the mean is half that).",
         unit="N",
         setup=dict(wave=Wave.IMPULSES, amplitude=blow, freq_hz=float(f0), harmonics=8),
@@ -296,7 +299,7 @@ def _speed_spec(rng: np.random.Generator) -> Question:
         f"a 1 kg mass on 400 N/m with c = {number(c)} N·s/m (f<sub>n</sub> = {number(fn)} Hz). Pick a speed where "
         f"the mass's steady swing stays within ±{number(most, 2)} mm.",
         0,
-        f"Each odd harmonic kf₀ must keep off f<sub>n</sub>. f₀ = f<sub>n</sub>/3 = {number(fn / 3)} Hz puts the 3rd "
+        f"Each odd harmonic jf₀ must keep off f<sub>n</sub>. f₀ = f<sub>n</sub>/3 = {number(fn / 3)} Hz puts the 3rd "
         "on it. Below that the jumps come slowly and each one rings the mass (the 5th, 7th, … harmonics crowd "
         "round f<sub>n</sub>); above it the 3rd is past f<sub>n</sub>, and only the 1st matters, still below "
         f"resonance. So anywhere from about 0.4f<sub>n</sub> up to {number(hi)} Hz does: f<sub>n</sub>/2 = "
@@ -355,16 +358,16 @@ TIPS = {
     "stiffness": "<p>The spring k.</p>",
     "damping": "<p>The damper c.</p>",
     "wave": "<p>The waveform repeated every period: each has its Fourier series in closed form.</p>",
-    "amplitude": "<p>The waveform's height F (for the impulse train, each blow's impulse, N·s).</p>",
+    "amplitude": "<p>The waveform's height F (for the impulse train, each blow's impulse I, N·s).</p>",
     "freq": "<p>How often it repeats, f₀ = 1/T.</p>",
-    "duty": "<p>The fraction of each period the rectangular pulses are on.</p>",
-    "harmonics": "<p>How many harmonics the series keeps.</p>",
+    "duty": "<p>The fraction d of each period the rectangular pulses are on.</p>",
+    "harmonics": "<p>How many harmonics N the series keeps.</p>",
     "tune": "<p>Set f₀ to f<sub>n</sub> divided by this, so that harmonic sits on resonance.</p>",
 }
 TIME_TIP = "<p>Two periods. Grey: the true waveform; colour: its Fourier series with the harmonics kept.</p>"
 RESPONSE_TIP = (
     "<p>The steady response over two periods: solid, exact (one period stepped from the state that "
-    "repeats); dashed, the series Σ H(kω₀) C<sub>k</sub> e<sup>ikω₀t</sup>.</p>"
+    "repeats); dashed, the series Σ H(jω₀) C<sub>j</sub> e<sup>ijω₀t</sup>.</p>"
 )
 LINES_TIP = (
     "<p>Each harmonic's amplitude at its frequency: the force's (top) and the response's (bottom), with "
@@ -376,7 +379,7 @@ CONVERGENCE_TIP = (
     "swing, against the number of harmonics kept. Dotted: 1/N and 1/N².</p>"
 )
 
-NOTES_HTML = load_notes("periodic", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("periodic", figures=periodic_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 def stems(x: np.ndarray, y: np.ndarray, floor: float) -> tuple[np.ndarray, np.ndarray]:
@@ -456,8 +459,8 @@ class PeriodicPage(QtWidgets.QWidget):
         # --- right
         lines = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(lines)
-        self.fline_plot = plot("Force harmonic |C<sub>k</sub>|", "N", "Frequency", "Hz", log_y=True, height=130)
-        self.xline_plot = plot("Response harmonic |X<sub>k</sub>|", "m", "Frequency", "Hz", log_y=True, height=130)
+        self.fline_plot = plot("Force harmonic |C<sub>j</sub>|", "N", "Frequency", "Hz", log_y=True, height=130)
+        self.xline_plot = plot("Response harmonic |X<sub>j</sub>|", "m", "Frequency", "Hz", log_y=True, height=130)
         self.xline_plot.setXLink(self.fline_plot)
         self.fstems = pg.PlotDataItem(connect="pairs")
         self.fdots = marker(6)
@@ -677,7 +680,7 @@ class PeriodicPage(QtWidgets.QWidget):
         ks = np.arange(n + 1)[keep][finite]
         total = float(np.sum(Xa[finite][ks > 0] ** 2)) or 1.0
         parts = [
-            f"k = {ks[i]} ({fmt(f[keep][finite][i], 'Hz')}): {fmt(float(Xa[finite][i]), 'm')}"
+            f"j = {ks[i]} ({fmt(f[keep][finite][i], 'Hz')}): {fmt(float(Xa[finite][i]), 'm')}"
             + (f", {100 * Xa[finite][i] ** 2 / total:.3g} % of the swing's power" if ks[i] > 0 else " (mean)")
             for i in order
         ]

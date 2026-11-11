@@ -10,7 +10,8 @@ with `render`.
 The house style, so the figures read as one set:
 
 - Draw with the primitives here (`line`, `arrow`, `circle`, `arc`, `text`, `spring`, `damper`, `ground`,
-  `floor`, `upright` to stand a spring or damper up, `svg` for the frame), in `colors.foreground` for what the figure is about, `colors.muted` for axes and
+  `floor`, `upright` to stand a spring or damper up, `curve` and `area` for a plotted line and the area under it,
+  `svg` for the frame), in `colors.foreground` for what the figure is about, `colors.muted` for axes and
   guides, `colors.faint` for construction lines, and a `colors.mass[i]` or `colors.force` where the plots use
   that colour for the same thing (the mass, the force).
 - Label symbols with `text(..., italic=True)`: set in the notes' maths font (`maths.FONT`), as ``<m>`` is.
@@ -209,3 +210,16 @@ def upright(x: float, y_top: float, y_bottom: float, draw: Callable[[float, floa
     """A horizontal element (`spring`, `damper`: drawn by `draw(x1, x2, y)`) stood upright at x, from y_top
     down to y_bottom."""
     return f"<g transform='translate({x:.1f} {y_top:.1f}) rotate(90)'>{draw(0.0, y_bottom - y_top, 0.0)}</g>"
+
+
+def curve(points: list[tuple[float, float]], color: str, width: float = 1.5, dash: str = "") -> str:
+    """A line through `points` (a plotted curve)."""
+    d = f" stroke-dasharray='{dash}'" if dash else ""
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+    return f"<polyline points='{pts}' fill='none' stroke='{color}' stroke-width='{width}' stroke-linejoin='round'{d}/>"
+
+
+def area(points: list[tuple[float, float]], fill: str, opacity: float = 0.25) -> str:
+    """A filled region bounded by `points` (closed back to the first), unstroked: the area under a curve."""
+    pts = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+    return f"<polygon points='{pts}' fill='{fill}' fill-opacity='{opacity}' stroke='none'/>"

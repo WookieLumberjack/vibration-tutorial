@@ -466,6 +466,65 @@ def test_periodic_trials():
     assert series_error(osc, sq1, 9) == pytest.approx(0.0065, abs=0.00005)
 
 
+def test_periodic_worked_example_and_series():
+    """The figures Periodic forcing's worked example and its notes on the series quote, on the page's defaults."""
+    import math
+
+    from scipy.special import sici
+
+    from vib_tutorial.core.periodic import Forcing, Wave, periodic_steady, response_coefficients, series
+    from vib_tutorial.core.sdof import Oscillator, receptance
+
+    # The notes: the square wave's fundamental carries 8/π² of its power, the first three harmonics 93.3 %;
+    # the series overshoots a jump by 8.95 % of it.
+    sq = Forcing(Wave.SQUARE)
+    C = np.abs(sq.coefficients(20000))
+    assert C[1] ** 2 / 2 == pytest.approx(8 / math.pi**2) and 8 / math.pi**2 == pytest.approx(0.811, abs=0.0005)
+    assert np.sum(C[1:] ** 2) / 2 == pytest.approx(1.0, abs=1e-4)  # Parseval: the mean square F²
+    assert np.sum(C[1:6] ** 2) / 2 == pytest.approx(0.933, abs=0.0005)
+    assert sici(math.pi)[0] / math.pi - 0.5 == pytest.approx(0.0895, abs=0.00005)
+    t = np.linspace(0.0, 1.0, 40001)
+    assert np.mean(sq.force(t[:-1]) * np.sin(2 * math.pi * t[:-1])) == pytest.approx(2 / math.pi, abs=1e-4)
+    assert np.mean(sq.force(t[:-1]) * np.sin(4 * math.pi * t[:-1])) == pytest.approx(0.0, abs=1e-4)
+
+    # The worked example.
+    osc, fo = Oscillator(), Forcing()
+    assert (osc.mass, osc.stiffness, osc.damping) == (1.0, 400.0, 2.0)
+    assert (fo.wave, fo.amplitude, fo.freq_hz) == (Wave.SQUARE, 1.0, 1.0)
+    assert osc.natural_hz == pytest.approx(3.18, abs=0.005) and osc.zeta == pytest.approx(0.05)
+    C = fo.coefficients(5)
+    assert np.all(np.abs(np.abs(C[[1, 3, 5]]) - [1.273, 0.4244, 0.255]) <= [5e-4, 5e-5, 5e-4])
+    assert np.all(C[[0, 2, 4]] == 0)
+    r = 2 * math.pi * np.array([1, 3, 5]) / osc.omega_n
+    assert r == pytest.approx([0.314, 0.942, 1.571], abs=5e-4)
+    assert 1 - r[0] ** 2 == pytest.approx(0.9013, abs=5e-5) and 2 * osc.zeta * r[0] == pytest.approx(0.0314, abs=5e-5)
+    assert 1 - r[2] ** 2 == pytest.approx(-1.4674, abs=5e-5) and 2 * osc.zeta * r[2] == pytest.approx(0.1571, abs=5e-5)
+    assert math.hypot(0.9013, 0.0314) == pytest.approx(0.902, abs=5e-4)
+    assert math.hypot(1.4674, 0.1571) == pytest.approx(1.476, abs=5e-4)
+    H = np.abs(receptance(osc, np.array([1.0, 3.0, 5.0]))) * 1e3  # mm/N
+    assert H == pytest.approx([2.77, 17.10, 1.69], abs=0.005)
+    assert (2.5 / 0.902, 2.5 / 1.476) == pytest.approx((2.77, 1.69), abs=0.005)  # from the rounded figures
+    X = response_coefficients(osc, fo, 5)
+    amps = np.abs(X[[1, 3, 5]]) * 1e3
+    assert np.all(np.abs(amps - [3.53, 7.26, 0.431]) <= [0.005, 0.005, 0.0005])
+    rounded = (1.273 * 2.77, 0.4244 * 17.10, 0.255 * 1.69)
+    assert np.all(np.abs(np.array(rounded) - [3.53, 7.26, 0.431]) <= [0.005, 0.005, 0.0005])
+    lags = -np.degrees(np.angle(X[[1, 3, 5]] / C[[1, 3, 5]]))
+    assert lags == pytest.approx([2.0, 40.1, 173.9], abs=0.05)
+    assert amps[1] / amps[0] == pytest.approx(2, abs=0.1)  # "about twice its fundamental"
+    for parts in (amps, np.array([3.53, 7.26, 0.431])):
+        shares = 100 * parts**2 / np.sum(parts**2)
+        assert shares == pytest.approx([19.1, 80.6, 0.3], abs=0.05)
+        assert math.sqrt(np.sum(parts**2) / 2) == pytest.approx(5.72, abs=0.005)
+        assert np.sum(parts) == pytest.approx(11.2, abs=0.05)
+    t = np.linspace(0.0, 1.0, 4000, endpoint=False)
+    exact = periodic_steady(osc, fo, t)
+    assert np.sqrt(np.mean(exact**2)) * 1e3 == pytest.approx(5.72, abs=0.005)
+    assert (exact.min() * 1e3, exact.max() * 1e3) == pytest.approx((-10.0, 10.0), abs=0.05)
+    err = np.max(np.abs(series(X, 1.0, t) - exact)) / np.max(np.abs(exact))
+    assert 100 * err == pytest.approx(2.02, abs=0.005)
+
+
 def test_energy_methods_trials():
     from vib_tutorial.core.energy_methods import (
         Basis,

@@ -123,6 +123,46 @@ SYMBOLS = (
         "sdof_page",
         "where-from",
     ),
+    Symbol("impulse", "I", "an impulse, ∫F dt: a hammer blow's", "N·s", "transient_page", "impulse-response"),
+    Symbol(
+        "period",
+        "T, f<sub>0</sub>, ω<sub>0</sub>",
+        "a periodic force's period; its fundamental frequency, 1/T and 2π/T",
+        "s, Hz, rad/s",
+        "periodic_page",
+        "fourier-series",
+    ),
+    Symbol(
+        "j_harm", "j", "a harmonic's number: harmonic j is at jf<sub>0</sub>", "–", "periodic_page", "fourier-series"
+    ),
+    Symbol(
+        "fourier",
+        "a<sub>0</sub>, a<sub>j</sub>, b<sub>j</sub>",
+        "a Fourier series' mean, and its cosine and sine coefficients",
+        "as f",
+        "periodic_page",
+        "coefficients",
+    ),
+    Symbol(
+        "C_j",
+        "C<sub>j</sub>, X<sub>j</sub>",
+        "harmonic j's complex amplitude: the force's, a<sub>j</sub> − ib<sub>j</sub>, and the response's, "
+        "H(jω<sub>0</sub>)C<sub>j</sub>",
+        "N, m",
+        "periodic_page",
+        "complex-form",
+    ),
+    Symbol("N_kept", "N", "the number of harmonics a series keeps", "–", "periodic_page", "gibbs"),
+    Symbol("duty", "d", "the fraction of each period a rectangular pulse is on", "–", "periodic_page", "shapes"),
+    Symbol(
+        "state_period",
+        "z, z<sub>0</sub>, z<sub>p</sub>, Φ<sub>T</sub>",
+        "the state [x, ẋ]; where a steady period starts; where one period of the force leaves it from rest; "
+        "what one period of free motion does to a state",
+        "m and m/s, –",
+        "periodic_page",
+        "exact",
+    ),
     Symbol("eta", "η", "loss factor of structural (hysteretic) damping; ≈ 2ζ at resonance", "–", "damping_page"),
     Symbol(
         "T_trans",
