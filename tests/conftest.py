@@ -101,8 +101,8 @@ def _close_new(before) -> list[tuple[str, weakref.ref]]:
 
 
 # ------------------------------------------------------------------ core and GUI tests
-# A test that builds a QApplication is marked `gui`, by the fixtures that make one or by hand: the CI runs
-# `-m "not gui"` and `-m gui` as two jobs (`.github/workflows/tests.yml`).
+# A test that builds a QApplication is marked `gui`, by the fixtures that make one or by hand, so that
+# `-m "not gui"` is a quick loop (the maths, the notes, the trials' numbers) and `-m gui` the rest.
 GUI_FIXTURES = {"app", "main_window", "free_windows"}
 _RAN_GUI = False  # once a GUI test has run in this process, its QApplication stays
 
@@ -119,7 +119,7 @@ def pytest_runtest_setup(item):
 
 
 def pytest_runtest_teardown(item):
-    """Fail a test not marked `gui` that built a QApplication: it would fail in the CI's core job."""
+    """Fail a test not marked `gui` that built a QApplication: `-m "not gui"` would run it."""
     if _RAN_GUI or "PySide6.QtCore" not in sys.modules:
         return
     from PySide6 import QtCore
