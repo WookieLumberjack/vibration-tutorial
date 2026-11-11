@@ -100,6 +100,34 @@ def _close_new(before) -> list[tuple[str, weakref.ref]]:
     return refs
 
 
+# ------------------------------------------------------------------ core and GUI tests
+# A test that builds a QApplication is marked `gui`, by the fixtures that make one or by hand, so that
+# `-m "not gui"` is a quick loop (the maths, the notes, the trials' numbers) and `-m gui` the rest.
+GUI_FIXTURES = {"app", "main_window", "free_windows"}
+_RAN_GUI = False  # once a GUI test has run in this process, its QApplication stays
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if GUI_FIXTURES & set(getattr(item, "fixturenames", ())):
+            item.add_marker(pytest.mark.gui)
+
+
+def pytest_runtest_setup(item):
+    global _RAN_GUI
+    _RAN_GUI = _RAN_GUI or item.get_closest_marker("gui") is not None
+
+
+def pytest_runtest_teardown(item):
+    """Fail a test not marked `gui` that built a QApplication: `-m "not gui"` would run it."""
+    if _RAN_GUI or "PySide6.QtCore" not in sys.modules:
+        return
+    from PySide6 import QtCore
+
+    if QtCore.QCoreApplication.instance() is not None:
+        pytest.fail(f"{item.nodeid} built a QApplication: mark it `gui` or use a GUI fixture", pytrace=False)
+
+
 @pytest.hookimpl(wrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     report = yield

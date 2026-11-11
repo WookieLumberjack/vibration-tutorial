@@ -57,6 +57,8 @@ dev = [
 # process can run them all (`-n0`, ~2 GB of address space). worksteal: the default `load` hands out runs of
 # consecutive tests, and one worker got the slow GUI ones (270 s a run against 150).
 addopts = "-n auto --maxprocesses 4 --dist worksteal"
+testpaths = ["tests"]  # not src/: pytest takes gui/modal_test.py and gui/test_planning.py for test modules
+markers = ['gui: builds a QApplication (marked by conftest from the GUI fixtures); -m "not gui" skips them']
 
 [tool.ruff]
 line-length = 120
