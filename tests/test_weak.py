@@ -54,6 +54,7 @@ def test_call_drops_the_signal_s_arguments():
     assert ref() is None
 
 
+@pytest.mark.gui
 def test_a_page_s_window_is_freed_once_dropped():
     from vib_tutorial.gui import close_graphics
     from vib_tutorial.gui.fatigue import FatiguePage
