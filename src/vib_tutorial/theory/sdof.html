@@ -60,6 +60,36 @@ fast it swings when nothing damps it. A stiffer spring is faster, a heavier mass
 <p>Dividing by <m>m</m> gives the form every later page uses:</p>
 <eq>\ddot{x} + 2\zeta\omega_n\dot{x} + \omega_n^2 x = \frac{f}{m}</eq>
 
+<h3><a name="where-from"></a>Where m, k and c come from</h3>
+<p>The model is three numbers, so the first job with a real part is to find them. The <b>mass</b> is
+whatever moves with the point that swings: weighed, or worked out from the drawing. The <b>stiffness</b> is
+the force per unit deflection at that point, and for simple parts it has a formula:</p>
+<ul>
+<li>a bar stretched along its length: <m>k = EA/L</m>;</li>
+<li>a cantilever pushed at its tip: <m>k = 3EI/L³</m>;</li>
+<li>a beam on two simple supports, pushed at mid-span: <m>k = 48EI/L³</m>,</li>
+</ul>
+<p>with <m>E</m> the material's Young's modulus (about 200 GPa for steel, 70 GPa for aluminium), <m>A</m> the
+cross-section's area, <m>I</m> its second moment of area (<m>bh³/12</m> for a rectangle <m>b</m> wide and
+<m>h</m> deep in the direction it bends) and <m>L</m> the length. Parts joined together add up in one of two
+ways:</p>
+<table width="100%"><tr><td align="center"><img src="fig:springs" width="380" height="160"></td></tr></table>
+<eq>k_\mathrm{parallel} = k_1 + k_2, \qquad \frac{1}{k_\mathrm{series}} = \frac{1}{k_1} + \frac{1}{k_2}</eq>
+<p>Side by side, both springs deflect as much as the mass moves and their forces add, so the pair is stiffer
+than either. End to end, one force goes through both and their stretches add, so the pair is softer than the
+softer one: a stiff shaft on soft bearings is only as stiff as the bearings let it be. Two of the page's
+400 N/m springs give 800 N/m side by side and <m>f<sub>n</sub></m> = 4.50 Hz, or 200 N/m end to end and
+2.25 Hz: a factor of √2 either way from 3.18 Hz.</p>
+<p><b>Gravity drops out.</b> Hung on its spring, the mass sags by <m>mg/k</m>, to where the spring holds its
+weight. Measured from there, the spring's extra pull is <m>kx</m> and the weight is balanced, so the equation
+is the same as without gravity. Only the sag is left, and
+<a href="page:isolation_page#static-deflection">Vibration isolation</a>, later in this group, turns it into a
+way to find <m>f<sub>n</sub></m>.</p>
+<p>The <b>damping</b> rarely has a formula. It comes from the joints, the material and the air, so it is
+measured rather than worked out: the decay and the half-power width, below, are the two usual ways. As a guide,
+<m>ζ</m> is about 0.5–1 % for a welded steel structure, 2–5 % for a bolted one or a building, 5–10 % for rubber
+mounts, and 20–40 % for a car's suspension, which is there to stop the body bouncing.</p>
+
 <h3><a name="free-vibration"></a>Free vibration</h3>
 <p>Pull the mass to <m>x<sub>0</sub></m> and let go. Below critical damping (<m>ζ &lt; 1</m>) it swings at
 the <b>damped natural frequency</b> <m>ω<sub>d</sub> = ω<sub>n</sub>√(1 − ζ²)</m>, inside an envelope that
@@ -105,6 +135,8 @@ Every mode of every later page is such a pair (the state-space method's eigenval
 <p>Under <m>f = F cos Ωt</m>, once the start has died away, the mass swings at the drive's frequency with
 <m>x = Re(X e<sup>iΩt</sup>)</m>, and <m>X = H(Ω)F</m> with the <b>receptance</b></p>
 <eq>H(\Omega) = \frac{1}{k - \Omega^2 m + i\Omega c} = \frac{1/k}{1 - r^2 + 2i\zeta r}, \qquad r = \frac{\Omega}{\omega_n}</eq>
+<p>Its size is the amplitude per newton, and its angle the lag <m>φ</m> of the motion behind the force:</p>
+<eq>|X| = \frac{F/k}{\sqrt{(1 - r^2)^2 + (2\zeta r)^2}}, \qquad \tan\varphi = \frac{2\zeta r}{1 - r^2}</eq>
 <ul>
 <li>Well below resonance the spring carries the force: <m>X ≈ F/k</m>, in phase.</li>
 <li>Well above it the mass does: <m>X ≈ −F/mΩ²</m>, 180° behind, smaller the faster.</li>
@@ -153,6 +185,27 @@ against <m>x</m> turns undamped motion into a circle (its energy, <m>½kx² + ½
 motion into a spiral, losing a fixed fraction of its radius each turn. Overdamped, the path runs straight
 into the origin along the slow root's direction.</p>
 
+<h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
+<p>The page opens on <m>m</m> = 1 kg, <m>k</m> = 400 N/m and <m>c</m> = 2 N·s/m, released from 10 mm, and
+driven by 1 N at 3 Hz. Each step below can be checked on its plots.</p>
+<ol>
+<li><b>Natural frequency.</b> <m>ω<sub>n</sub> = √(400/1)</m> = 20 rad/s, so
+<m>f<sub>n</sub> = 20/2π</m> = 3.18 Hz.</li>
+<li><b>Damping ratio.</b> <m>c<sub>c</sub> = 2√(400 × 1)</m> = 40 N·s/m, so <m>ζ = 2/40 = 0.05</m>: 5 %.</li>
+<li><b>The free decay.</b> <m>ω<sub>d</sub> = 20√(1 − 0.05²)</m> = 19.97 rad/s, only 0.13 % below
+<m>ω<sub>n</sub></m>. The envelope's time constant is <m>τ = 1/(0.05 × 20)</m> = 1 s, and
+<m>δ = 2π × 0.05/√(1 − 0.05²) = 0.315</m>, so each peak is <m>e<sup>0.315</sup> = 1.37</m> times the next.
+The readout under the free decay measures the same from the curve's peaks.</li>
+<li><b>Driven at 3 Hz.</b> <m>Ω = 2π × 3</m> = 18.85 rad/s and <m>r = 18.85/20 = 0.942</m>. Then
+<m>1 − r² = 0.1117</m> and <m>2ζr = 0.0942</m>, so</li>
+</ol>
+<eq>|X| = \frac{1/400}{\sqrt{0.1117^2 + 0.0942^2}} = \frac{2.5\ \mathrm{mm}}{0.1462} = 17.1\ \mathrm{mm}</eq>
+<eq>\varphi = \tan^{-1}\frac{0.0942}{0.1117} = 40.1^\circ</eq>
+<p>That is 6.84 times the static 2.5 mm, lagging the force by 40.1°, as the readout over the forced response
+says. At resonance, driven at 3.18 Hz, it would be <m>(F/k)/2ζ</m> = 2.5 mm/0.1 = 25 mm (<m>Q</m> = 10 times
+the static), lagging by 90°, with the half-power points 2<m>ζf<sub>n</sub></m> = 0.32 Hz apart, at 3.01 and
+3.33 Hz.</p>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the oscillator and the plots (Things to try, top left).</p>
 <!--TRIALS-->
@@ -164,5 +217,5 @@ into the origin along the slow root's direction.</p>
 <li>A switched-on force adds a free vibration that dies away; undamped, it beats instead.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
-<notation>m x f omega_n zeta c_c omega_d tau delta Omega r H Q s</notation>
+<notation>m x f omega_n zeta c_c omega_d tau delta Omega r H phi Q s g section</notation>
 <reading>inman rao thomson den-hartog</reading>

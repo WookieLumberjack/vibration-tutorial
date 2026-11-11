@@ -32,4 +32,34 @@ def oscillator_svg() -> str:
     return fig.svg(380, 175, "".join(parts))
 
 
-FIGURES = {"fig:oscillator": oscillator_svg}
+def springs_svg() -> str:
+    """Two springs side by side (in parallel) and end to end (in series), each holding a mass."""
+    fg, muted, mass = colors.foreground, colors.muted, colors.mass[0]
+    parts = []
+    # side by side: both from the wall to the mass, each deflecting as much as the mass moves
+    wall, block = 20.0, 130.0
+    parts += [
+        fig.ground(wall, 22, 118, muted),
+        fig.spring(wall, block, 45, fg),
+        fig.math_label((wall + block) / 2, 31, "k<tspan baseline-shift='sub' font-size='10'>1</tspan>", fg),
+        fig.spring(wall, block, 95, fg),
+        fig.math_label((wall + block) / 2, 81, "k<tspan baseline-shift='sub' font-size='10'>2</tspan>", fg),
+        fig.rect(block, 30, 40, 80, mass, mass, 2.0, opacity=0.2),
+        fig.text(95, 145, "in parallel: forces add", muted),
+    ]
+    # end to end: one force through both, their stretches adding
+    wall, joint, block = 205.0, 262.0, 320.0
+    parts += [
+        fig.ground(wall, 22, 118, muted),
+        fig.spring(wall, joint, 70, fg, coils=4),
+        fig.math_label((wall + joint) / 2, 56, "k<tspan baseline-shift='sub' font-size='10'>1</tspan>", fg),
+        fig.circle(joint, 70, 2.5, fill=fg),
+        fig.spring(joint, block, 70, fg, coils=4),
+        fig.math_label((joint + block) / 2, 56, "k<tspan baseline-shift='sub' font-size='10'>2</tspan>", fg),
+        fig.rect(block, 30, 40, 80, mass, mass, 2.0, opacity=0.2),
+        fig.text(285, 145, "in series: stretches add", muted),
+    ]
+    return fig.svg(380, 160, "".join(parts))
+
+
+FIGURES = {"fig:oscillator": oscillator_svg, "fig:springs": springs_svg}

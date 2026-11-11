@@ -291,6 +291,33 @@ def test_single_oscillator_trials():
     assert 1 / (2 * osc.omega_n) == pytest.approx(0.025)  # the Nyquist circle's diameter 1/cω_n, m/N
 
 
+def test_single_oscillator_worked_example_and_springs():
+    """The figures Single oscillator's worked example and its springs quote, on the page's defaults."""
+    from vib_tutorial.core.sdof import Oscillator, receptance
+
+    osc = Oscillator()
+    assert (osc.mass, osc.stiffness, osc.damping) == (1.0, 400.0, 2.0)
+    assert osc.omega_n == pytest.approx(20.0) and osc.critical == pytest.approx(40.0)
+    assert osc.omega_d == pytest.approx(19.97, abs=0.005)
+    assert 1 - osc.omega_d / osc.omega_n == pytest.approx(0.0013, abs=0.00005)
+    assert osc.log_decrement == pytest.approx(0.315, abs=0.0005)
+    omega = 2 * math.pi * 3.0
+    r = omega / osc.omega_n
+    assert omega == pytest.approx(18.85, abs=0.005) and r == pytest.approx(0.942, abs=0.0005)
+    assert 1 - r**2 == pytest.approx(0.1117, abs=0.00005) and 2 * osc.zeta * r == pytest.approx(0.0942, abs=0.00005)
+    assert math.hypot(1 - r**2, 2 * osc.zeta * r) == pytest.approx(0.1462, abs=0.00005)
+    assert 2.5 / 0.1462 == pytest.approx(17.1, abs=0.05)  # mm, from the rounded numbers
+    h = receptance(osc, np.array([3.0]))[0]
+    assert abs(h) * 1e3 == pytest.approx(17.1, abs=0.05)  # mm, for 1 N
+    assert abs(h) * osc.stiffness == pytest.approx(6.84, abs=0.005)
+    assert -math.degrees(math.atan2(h.imag, h.real)) == pytest.approx(40.1, abs=0.05)
+    assert math.degrees(math.atan2(0.0942, 0.1117)) == pytest.approx(40.1, abs=0.05)  # from the rounded numbers too
+    assert 2 * osc.zeta * osc.natural_hz == pytest.approx(0.32, abs=0.005)
+    # Two of its springs side by side, and end to end.
+    assert Oscillator(1, 800, 0).natural_hz == pytest.approx(4.50, abs=0.005)
+    assert Oscillator(1, 200, 0).natural_hz == pytest.approx(2.25, abs=0.005)
+
+
 def test_transient_trials():
     from vib_tutorial.core.sdof import Oscillator
     from vib_tutorial.core.transient import PulseKind, peak_ratio, step_metrics
