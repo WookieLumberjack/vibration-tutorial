@@ -99,6 +99,72 @@ through. The diffuse field's TL dips at f<sub>c</sub>, and above it rises with t
 same stuff gains on the mass law but brings its dip lower, into the band it was meant to stop. Double walls, and
 laminated glass's damping layer, are the ways round it.</p>
 
+<h3><a name="oscillators"></a>Two oscillators</h3>
+<p>A panel with hundreds of modes in a band, joined to another and to a room, is too much to follow mode by
+mode, and its details (exactly where each resonance falls) are not known well enough to be worth following.
+<b>Statistical energy analysis</b> (SEA) follows energy instead, and rests on one exact result. Take two
+oscillators, m₁ and m₂ with <i>blocked</i> natural frequencies ω₁ and ω₂ (each with the other held still) and
+damping rates Δ = c/m = 2ζω, joined by a spring k<sub>c</sub>, and drive each with its own white noise,
+independent of the other's. The power through the spring, averaged over time, is</p>
+<p align="center">P₁₂ = β (E₁ − E₂),</p>
+<p>E = m⟨v²⟩ each oscillator's energy (twice its kinetic energy, which is its total on average), with</p>
+<p align="center">β = (k<sub>c</sub>²/m₁m₂)(Δ₁ + Δ₂) / [(ω₁² − ω₂²)² + (Δ₁ + Δ₂)(Δ₁ω₂² + Δ₂ω₁²)],</p>
+<p>whatever the forces' strengths: power flows from the oscillator with more energy to the one with less, in
+proportion to the difference, as heat flows between two bodies at different temperatures (Lyon and Maidanik,
+1962). It holds for any strength of coupling. The page works the response out exactly (the covariance of
+the oscillators' motion, from a Lyapunov equation) and sets β beside it. β is largest when the oscillators are
+tuned, over a band as wide as their damping rates: energy crosses between pairs of modes whose resonances
+overlap.</p>
+
+<h3><a name="sea"></a>Statistical energy analysis</h3>
+<p>Sum the two-oscillator result over every pair of modes of two subsystems with resonances in a band, each mode
+of subsystem i holding the same energy E<sub>i</sub>/N<sub>i</sub> (N<sub>i</sub> = n<sub>i</sub>Δf its modes
+in the band, n<sub>i</sub> its modal density). The flow between the subsystems becomes</p>
+<p align="center">P<sub>ij</sub> = ω(η<sub>ij</sub>E<sub>i</sub> − η<sub>ji</sub>E<sub>j</sub>),</p>
+<p>with the <b>coupling loss factors</b> η<sub>ij</sub> (the share of subsystem i's energy that leaves for j in a
+cycle, over 2π, as its own loss factor η<sub>i</sub> is the share it dissipates) obeying
+<b>reciprocity</b>,</p>
+<p align="center">n<sub>i</sub>η<sub>ij</sub> = n<sub>j</sub>η<sub>ji</sub>,</p>
+<p>so P<sub>ij</sub> = ωη<sub>ij</sub>n<sub>i</sub>(E<sub>i</sub>/n<sub>i</sub> − E<sub>j</sub>/n<sub>j</sub>):
+energy flows down the difference in <i>modal energy</i>, energy per mode, which plays temperature's part. In
+each band every subsystem balances the power it is given with what it dissipates and what it sends on,</p>
+<p align="center">P<sub>i</sub> = ωη<sub>i</sub>E<sub>i</sub> + Σ<sub>j</sub> ω(η<sub>ij</sub>E<sub>i</sub> −
+η<sub>ji</sub>E<sub>j</sub>),</p>
+<p>a small linear system for the energies. The assumptions are the two-oscillator result's, made
+statistical: several modes in each band, so that their averages mean something; the input spread evenly over
+the band; and coupling weak enough that each subsystem's modes are its own. The answers are band averages:
+what a set of nominally identical structures would give on average, not what one of them does at one
+frequency.</p>
+
+<h3><a name="junction"></a>Plates at a corner</h3>
+<p>Where two plates meet at a right angle, each plate's in-plane stiffness stops the other's bending at the
+corner: the line doesn't move, but it turns, both plates turning with it, and their bending moments balance.
+A bending wave arriving on plate 1 at θ from the normal shares its trace along the corner,
+k<sub>y</sub> = k<sub>1</sub> sin θ, with every wave it makes: a reflected wave and a transmitted one, and a
+near field on each side that decays from the corner. The four conditions give their four amplitudes, and the
+transmitted wave carries τ(θ) of the energy, the reflected one the rest (τ + |r|² = 1). Identical plates
+pass half at normal incidence; a plate much thicker or thinner reflects most. Averaged over a diffuse field's
+directions (its intensity at the corner goes as cos θ),</p>
+<p align="center">τ̄<sub>12</sub> = ∫ τ(θ) cos θ dθ, over 0 to π/2,</p>
+<p>(a third for identical plates), and the energy crossing a corner of length L each second, out of the
+energy E₁ spread over S₁, gives the coupling loss factor</p>
+<p align="center">η<sub>12</sub> = c<sub>g1</sub> L τ̄<sub>12</sub> / πωS₁,</p>
+<p>c<sub>g</sub> = 2√(ω√(D/ρh)) being the bending wave's group speed, twice its phase speed. Reciprocity holds
+because k₁τ̄<sub>12</sub> = k₂τ̄<sub>21</sub>. A plate's modal density, S/2 √(ρh/D) modes per hertz, is
+<a href="page:beams_page#modal-density">Beams &amp; plates'</a>. A plate couples to a room by its radiation, with η<sub>rad</sub> = ρcσ/ωm″ from
+<a href="page:acoustics_page#driven">the driven panel</a>; a room has 4πf²V/c³ modes per hertz, many more than a panel from a few
+hundred hertz up, so by reciprocity it gives back far less, and its own loss factor is set by its reverberation
+time, 2.2/fT<sub>60</sub>. Its energy E = ⟨p²⟩V/ρc² gives the sound pressure level.</p>
+
+<h3><a name="equipartition"></a>Equipartition</h3>
+<p>For two subsystems with only 1 driven, subsystem 2's balance gives</p>
+<p align="center">E₂/E₁ = η<sub>12</sub> / (η₂ + η<sub>21</sub>).</p>
+<p>If subsystem 2's damping is small next to η<sub>21</sub>, it can only lose energy by giving it back, and
+E₂/n₂ → E₁/n₁: the modal energies even out, <b>equipartition</b>, as two bodies in contact come to one
+temperature. If it is large, subsystem 2 drains what it is sent. Damping the receiving structure helps only
+while its damping is comparable with the coupling; damping the source, or cutting the coupling (a resilient
+joint, a mismatch in thickness), works whatever the receiver.</p>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the panel and the plots (Things to try, top left).</p>
 <!--TRIALS-->
@@ -108,4 +174,8 @@ laminated glass's damping layer, are the ways round it.</p>
 <li>A mode's radiation falls with each sign change across it: odd–odd modes radiate like pistons, even ones like dipoles and quadrupoles.</li>
 <li>Over a band, a point-driven panel takes in the infinite plate's F²/16√(Dρh) and holds the energy P/ωη, whatever its shape.</li>
 <li>A panel's transmission loss follows the mass law, 6 dB per doubling of mass or frequency, until the coincidence dip at f<sub>c</sub>, where damping takes over.</li>
+<li>Two coupled oscillators driven by independent noise exchange power β(E₁ − E₂), exactly: from the one with more energy to the one with less.</li>
+<li>SEA balances each subsystem's power in a band: ω(η<sub>ij</sub>E<sub>i</sub> − η<sub>ji</sub>E<sub>j</sub>) flows from i to j, with n<sub>i</sub>η<sub>ij</sub> = n<sub>j</sub>η<sub>ji</sub>.</li>
+<li>A corner's coupling loss factor is c<sub>g</sub>Lτ̄/πωS, τ̄ from the bending waves it reflects and transmits; a plate couples to a room by its radiation loss factor.</li>
+<li>When coupling beats a receiver's damping, the energy per mode evens out (equipartition); damping the receiver helps only while it doesn't.</li>
 </takeaways>

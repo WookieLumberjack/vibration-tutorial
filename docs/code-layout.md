@@ -151,6 +151,9 @@
 - `core/radiation.py`: a baffled panel's sound: the critical frequency, each mode's radiation efficiency
   (Wallace's integral), their band average against Maidanik's, the point-driven panel's input and radiated
   power, and the infinite plate's transmission loss (mass law, coincidence dip).
+- `core/sea.py`: statistical energy analysis: two coupled oscillators' exact power flow against Lyon's β, a
+  right-angle corner's bending-wave transmission and coupling loss factor, and two plates and a room solved band
+  by band.
 - `core/variability.py`: Monte Carlo on the chain with lognormal scatter and the first-order estimate,
   and a mistuned bladed ring's modes, localization and forced response.
 - `core/self_excited.py`: van der Pol, galloping, a wake oscillator and two-mode flutter: their
