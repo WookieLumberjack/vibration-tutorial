@@ -58,6 +58,7 @@ STORE_PER_PERIOD = 16
 
 # The pages in reading order, in groups: (group title, ((attribute, tab title), ...)), from links.COURSE.
 # All but the Simulation page are imported and built the first time they're opened (MainWindow._page).
+LAST_PAGE = "window/page"  # the page showing, kept in the settings: the app reopens on it
 PAGE_GROUPS = tuple((group, tuple((name, title) for name, title, _ in pages)) for group, pages in links.COURSE)
 # The pages built on first use, in reading order: (attribute, tab title).
 LAZY_PAGES = tuple(page for _, pages in PAGE_GROUPS for page in pages if page[0] != "sim_page")
@@ -748,10 +749,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pages.setCurrentWidget(self.sim_page if name == "sim_page" else self._page(name))
 
     def open_first_page(self) -> None:
-        """Show the course's first page, where the app opens."""
+        """Show the course's first page, where the app first opens."""
         self.show_page(PAGE_GROUPS[0][1][0][0])
         # The window was built showing the Simulation page: Foundations would open on it, not its first page.
         self.pages.rewind()
+
+    def open_start_page(self) -> None:
+        """Show the page the reader last had open (kept in the settings), or the course's first page."""
+        name = theming.settings().value(LAST_PAGE)
+        if name not in {page for _, pages in PAGE_GROUPS for page, _ in pages}:  # none yet, or since renamed
+            self.open_first_page()
+            return
+        self.show_page(str(name))
+        self.pages.rewind()  # the other groups open on their first page, as they do on the first run
 
     def _give_chain(self, page: QtWidgets.QWidget) -> None:
         """Wire a new page that follows the chain to the Simulation page's, and give it the chain."""
@@ -892,6 +902,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._page(name)
         showing = self.page_name(self.pages.currentWidget())
         if showing is not None:
+            theming.settings().setValue(LAST_PAGE, showing)
             for window in (self.theory_window, self.practice_window):
                 if window is not None and window.isVisible():
                     window.follow_page(showing)
