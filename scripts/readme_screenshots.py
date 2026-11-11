@@ -1175,6 +1175,7 @@ def seismic_response():
 
 def vibroacoustics():
     lesson("acoustics_page", 3, "vibroacoustics")  # an edge mode, and every mode's σ against Maidanik
+    lesson("acoustics_page", 11, "vibroacoustics_sea")  # two plates at a corner and a room
 
 
 def variability():

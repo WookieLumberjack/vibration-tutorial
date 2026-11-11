@@ -170,7 +170,16 @@ settles to an infinite plate's F²/16√(Dρh), and the sound it radiates is set
 per doubling of mass or frequency, until the coincidence dip at f<sub>c</sub>, where only damping holds the
 sound back.
 
+*Two oscillators* is statistical energy analysis's basis: two oscillators joined by a spring, each driven by
+its own noise, exchange power in exact proportion to the difference of their energies, P₁₂ = β(E₁ − E₂),
+from the one with more to the one with less. *SEA* sums that over the modes of two plates meeting at a corner
+and a room they both radiate into: the corner's coupling loss factor from the bending waves it transmits,
+the plates' from their radiation, reciprocity n<sub>i</sub>η<sub>ij</sub> = n<sub>j</sub>η<sub>ji</sub>, and
+each band's energies from the power balance.
+
 ![Vibro-acoustics & SEA page: a 3 mm steel panel's mode (1, 3), an edge mode at 435 Hz with σ = 0.059; centre, the bending wavenumber crosses sound's at the critical frequency, 3.99 kHz; right, every mode's radiation efficiency at its own resonance, in three bands by the parity of m and n, with their third-octave average following Maidanik's formula up to the coincidence peak](images/vibroacoustics.png)
+
+![Vibro-acoustics & SEA page, SEA tab: the 3 mm panel meets a 2 mm plate at a corner, both radiating into a 50 m³ room; the coupling loss factors in each third octave, the two plates' mean-square velocities against the panel's alone, and the room's sound pressure level with each plate's share](images/vibroacoustics_sea.png)
 
 ---
 

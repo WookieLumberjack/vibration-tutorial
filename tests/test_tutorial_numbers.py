@@ -871,6 +871,75 @@ def test_vibroacoustics_trials():
     assert heavy.input_power[sel].mean() / d.input_power[sel].mean() == pytest.approx(1, abs=0.15)
 
 
+def test_sea_trials():
+    from vib_tutorial.core.beams_plates import Plate
+    from vib_tutorial.core.radiation import critical_frequency
+    from vib_tutorial.core.sea import (
+        Network,
+        Oscillators,
+        coupling_beta,
+        junction_transmission,
+        network,
+        oscillator_pair,
+    )
+
+    # two oscillators share power
+    osc = Oscillators()
+    r = oscillator_pair(osc, 1.0, 0.5)
+    assert (r.E1, r.E2, r.flow) == pytest.approx((0.0396, 0.0366, 0.00593), abs=6e-5)
+    assert coupling_beta(osc) == pytest.approx(2.01, abs=0.005)
+    # tuned
+    tuned = coupling_beta(Oscillators(f2=100.0))
+    assert tuned == pytest.approx(26.2, abs=0.05)
+    assert tuned / coupling_beta(osc) == pytest.approx(13, abs=0.1)
+    assert coupling_beta(Oscillators(f2=150.0)) == pytest.approx(0.070, abs=0.0005)
+    assert Oscillators(f2=100.0).deltas == pytest.approx((25.1, 12.6), abs=0.05)
+    # strong coupling
+    strong = Oscillators(f2=100.0, zeta1=0.002, zeta2=0.002)
+    assert coupling_beta(strong) == pytest.approx(196, abs=0.5)
+    assert strong.deltas[0] == pytest.approx(2.51, abs=0.005)
+    one = oscillator_pair(strong, 1.0, 0.0)
+    assert one.E2 / one.E1 == pytest.approx(0.987, abs=0.0005)
+    assert one.flow == pytest.approx(0.497, abs=0.0005)
+
+    p1, p2 = Plate(), Plate(0.5, 0.4, 0.002)
+    at = np.array([1000.0])
+
+    def band(plate2, loss2=0.01):
+        res = network(Network(p1, plate2, 0.01, loss2, 0.4), at)
+        e, n = res.energy[0], res.density[0]
+        return dict(
+            share=(e[1] / n[1]) / (e[0] / n[0]),
+            v2=10 * math.log10(res.velocity[0, 1] / res.velocity[0, 0]),
+            spl=10 * math.log10(res.pressure[0] / 4e-10),
+            by2=res.flow[0, 1, 2] / (res.flow[0, 0, 2] + res.flow[0, 1, 2]),
+            eta=res.eta[0],
+        )
+
+    # plates at a corner
+    assert junction_transmission(p1, p2, 1000.0) == pytest.approx(0.279, abs=0.0005)
+    b = band(p2)
+    assert (b["eta"][0, 1], b["eta"][1, 0]) == pytest.approx((0.00809, 0.00647), abs=6e-6)
+    assert b["v2"] == pytest.approx(-0.57, abs=0.005)
+    assert b["share"] == pytest.approx(0.39, abs=0.005)
+    assert b["spl"] == pytest.approx(63.1, abs=0.05)
+    assert b["by2"] == pytest.approx(0.281, abs=0.0005)
+    # equipartition
+    e = band(p2, 1e-4)
+    assert e["share"] == pytest.approx(0.967, abs=0.0005)
+    assert e["v2"] == pytest.approx(3.4, abs=0.05)
+    assert e["spl"] == pytest.approx(66.2, abs=0.05)
+    assert band(p2, 0.1)["share"] == pytest.approx(0.061, abs=0.0005)
+    # a heavy wall
+    wall = Plate(0.5, 0.4, 0.010)
+    assert junction_transmission(p1, wall, 1000.0) == pytest.approx(0.037, abs=0.0005)
+    h = band(wall)
+    assert h["v2"] == pytest.approx(-16.2, abs=0.05)
+    assert h["by2"] == pytest.approx(0.458, abs=0.0005)
+    assert h["spl"] == pytest.approx(65.7, abs=0.05)
+    assert critical_frequency(wall) == pytest.approx(1200, abs=5)
+
+
 def test_quarter_car_trials():
     from dataclasses import replace
 
