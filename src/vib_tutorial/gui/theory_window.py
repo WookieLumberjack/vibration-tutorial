@@ -50,6 +50,10 @@ def page_html(name: str) -> str:
         from .background import BACKGROUND_HTML
 
         html = BACKGROUND_HTML
+    elif name == "sdof_page":
+        from .sdof import notes_html
+
+        html = notes_html()  # its course map with the problems solved
     else:
         from .main_window import _page_class
 

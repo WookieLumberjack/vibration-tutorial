@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import (
@@ -39,7 +39,7 @@ from .lesson import (
     set_quietly,
     trials_html,
 )
-from .links import course_map, keys_html, load_notes, page_link
+from .links import course_map, keys_html, load_notes, page_link, paths_html
 from .style import colors
 from .theming import add_legend
 
@@ -471,7 +471,17 @@ POLES_TIP = (
     "kept, k and c follow).</p>"
 )
 
-NOTES_HTML = load_notes("sdof", course=course_map(), keys=keys_html(), trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("sdof", course=course_map(), paths=paths_html(), keys=keys_html(), trials=trials_html(TRIALS))
+
+
+def notes_html() -> str:
+    """The notes with the course map's progress as it stands (the reader's problems solved)."""
+    from .practice import progress
+
+    solved = progress()
+    if not solved:  # nothing solved yet: the notes as built
+        return NOTES_HTML
+    return NOTES_HTML.replace(course_map(), course_map(solved))
 
 
 class SdofPage(QtWidgets.QWidget):
@@ -638,12 +648,14 @@ class SdofPage(QtWidgets.QWidget):
 
         self.notes = QtWidgets.QTextBrowser()
         self.notes.setHtml(NOTES_HTML)
+        self._notes_html = NOTES_HTML  # redrawn with the course map's progress as the notes show (_refresh_map)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(frf, "Frequency response")
         self.tabs.addTab(nyq, "Nyquist")
         self.tabs.addTab(phase, "Phase plane")
         self.tabs.addTab(poles, "Poles")
         self.tabs.addTab(self.notes, "Theory")
+        self.tabs.currentChanged.connect(self._refresh_map)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter.addWidget(ColumnScroll(left))
@@ -655,6 +667,22 @@ class SdofPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         self.apply_theme()
+
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
+        super().showEvent(event)
+        self._refresh_map()
+
+    def _refresh_map(self, *_: object) -> None:
+        """The notes again if the course map's progress has changed, at the same place."""
+        if self.tabs.currentWidget() is not self.notes:
+            return
+        html = notes_html()
+        if html != self._notes_html:
+            bar = self.notes.verticalScrollBar()
+            at = bar.value()
+            self.notes.setHtml(html)
+            bar.setValue(at)
+            self._notes_html = html
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:

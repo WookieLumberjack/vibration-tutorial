@@ -53,6 +53,27 @@ def _solved() -> set[str]:
     return set(filter(None, str(stored).split(",")))
 
 
+def progress() -> dict[str, tuple[int, int]]:
+    """(solved, problems) of each page with a problem solved, for the course map: only those pages' modules are
+    imported (all forty take over half a second)."""
+    keys: dict[str, set[str]] = {}
+    for item in _solved():
+        page, _, key = item.partition("/")
+        keys.setdefault(page, set()).add(key)
+    known = {name for _, group in links.COURSE for name, _, _ in group}
+    out = {}
+    for page in keys.keys() & known:  # a page since renamed is left out
+        found = problems(page)
+        if found:
+            out[page] = (sum(p.key in keys[page] for p in found), len(found))
+    return out
+
+
+def reset_progress() -> None:
+    """Forget every problem solved."""
+    settings().remove("practice/solved")
+
+
 def _mark_solved(problem: Problem) -> None:
     solved = _solved() | {f"{problem.page}/{problem.key}"}
     settings().setValue("practice/solved", ",".join(sorted(solved)))
@@ -84,9 +105,15 @@ class PracticeWindow(QtWidgets.QWidget):
 
         self.follow = QtWidgets.QCheckBox("Follow the page")
         self.follow.setToolTip("<p>Turn to the problems of each page the main window turns to.</p>")
+        reset = self._button(
+            "Reset progress…",
+            "Forget which problems are solved: their ticks, here and on the course map.",
+            self._ask_reset,
+        )
         bar = QtWidgets.QHBoxLayout()
         bar.addWidget(self.follow)
         bar.addStretch(1)
+        bar.addWidget(reset)
 
         self.tree = QtWidgets.QTreeWidget()
         self.tree.setHeaderHidden(True)
@@ -335,6 +362,18 @@ class PracticeWindow(QtWidgets.QWidget):
         self.page_button.setEnabled(q is not None and q.setup is not None and (not q.predict or self._answered))
         self.page_button.setText("Show a design on the page" if self._shows_design() else "Show on the page")
         self.answer_area.setVisible(q is not None and not q.is_spec)
+
+    def _ask_reset(self) -> None:
+        answer = QtWidgets.QMessageBox.question(
+            self, "Reset progress", "Forget every problem solved? Their ticks go, here and on the course map."
+        )
+        if answer == QtWidgets.QMessageBox.StandardButton.Yes:
+            self.reset()
+
+    def reset(self) -> None:
+        """Forget every problem solved, and untick them."""
+        reset_progress()
+        self._show_ticks()
 
     def _show_ticks(self) -> None:
         solved = _solved()

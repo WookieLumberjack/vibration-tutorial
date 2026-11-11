@@ -269,3 +269,32 @@ def test_practice_window(app):
     w.set_theme("Light")
     w.close()
     assert not p.isVisible()
+
+
+def test_course_map_counts_the_problems_solved(app, main_window):
+    """The first page's course map counts each page's problems solved (none: the notes as built), in its Theory
+    tab and the Theory window; Reset progress forgets them."""
+    from vib_tutorial.gui import practice, sdof
+    from vib_tutorial.gui.theory_window import page_html
+
+    practice.reset_progress()
+    assert sdof.notes_html() is sdof.NOTES_HTML
+    first, second = practice.problems("transient_page")[:2]
+    total = len(practice.problems("transient_page"))
+    practice._mark_solved(first)
+    assert practice.progress() == {"transient_page": (1, total)}
+    assert f"(1 of {total} solved)" in page_html("sdof_page")
+    main_window.show_page("sdof_page")
+    page = main_window.pages.currentWidget()
+    main_window.show_theory()
+    assert f"(1 of {total} solved)" in page.notes.toPlainText()
+    for p in practice.problems("transient_page"):
+        practice._mark_solved(p)
+    page.tabs.setCurrentIndex(0)
+    main_window.show_theory()  # the map is redrawn as the notes show
+    assert f"all {total} problems solved" in page.notes.toPlainText()
+    window = main_window.open_practice_window()
+    assert f"({total}/{total})" in window._page_items["transient_page"].text(0)
+    window.reset()
+    assert practice.progress() == {} and "(0/" in window._page_items["transient_page"].text(0)
+    assert second.key  # two problems at least, so "1 of" was a part

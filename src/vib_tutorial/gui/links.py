@@ -275,18 +275,128 @@ COURSE = (
 )
 
 
-def course_map() -> str:
-    """The pages in order, as linked lists by group."""
+def course_map(progress: dict[str, tuple[int, int]] | None = None) -> str:
+    """The pages in order, as linked lists by group; with `progress` (practice.progress(): solved, of how many,
+    for each page with one solved), how far each page's problems are done."""
     html, start = [], 1
     first = COURSE[0][1][0][0]  # the page the map is on: its link goes past the map, to its first section
+    progress = progress or {}
+
+    def done(name: str) -> str:
+        if name not in progress:
+            return ""
+        solved, total = progress[name]
+        return (
+            f" <i>(✓ all {total} problems solved)</i>" if solved == total else f" <i>({solved} of {total} solved)</i>"
+        )
+
     for group, pages in COURSE:
         items = "".join(
             f'<li><a href="page:{name}{"#equation" if name == first else ""}">{title.replace("&&", "&amp;")}</a>: '
-            f"{about}</li>"
+            f"{about}{done(name)}</li>"
             for name, title, about in pages
         )
         html.append(f'<p><b>{group}</b></p><ol start="{start}">{items}</ol>')
         start += len(pages)
+    return "".join(html)
+
+
+# Shorter ways through the course: (name, who it's for, its pages). Each page in a path has every page it builds
+# on (its "Before this page", and theirs) in the path too, so a path reads front to back like the course
+# (tests/test_links.py checks it).
+PATHS = (
+    (
+        "Essentials",
+        "one mass, isolation, a chain's modes and frequency responses, random vibration, and measuring an FRF",
+        (
+            "sdof_page",
+            "pendulum_page",
+            "transient_page",
+            "periodic_page",
+            "damping_page",
+            "isolation_page",
+            "deriving_page",
+            "sim_page",
+            "frf_page",
+            "random_page",
+            "signals_page",
+            "test_page",
+        ),
+    ),
+    (
+        "Testing",
+        "measuring a structure's modes, with and without the force, and correcting a model with them",
+        (
+            "sdof_page",
+            "pendulum_page",
+            "transient_page",
+            "damping_page",
+            "deriving_page",
+            "sim_page",
+            "frf_page",
+            "random_page",
+            "signals_page",
+            "test_page",
+            "oma_page",
+            "updating_page",
+            "planning_page",
+            "nonlinear_page",
+            "variability_page",
+        ),
+    ),
+    (
+        "Rotating machinery",
+        "drive trains, nonlinear springs, rotors on their bearings, and diagnosing a running machine",
+        (
+            "sdof_page",
+            "pendulum_page",
+            "transient_page",
+            "damping_page",
+            "deriving_page",
+            "sim_page",
+            "frf_page",
+            "complex_page",
+            "random_page",
+            "signals_page",
+            "torsional_page",
+            "duffing_page",
+            "rotor_page",
+            "diagnostics_page",
+        ),
+    ),
+    (
+        "Vibration environments",
+        "random vibration, fatigue, shock and earthquakes, a car on a road and a machine on its mounts",
+        (
+            "sdof_page",
+            "pendulum_page",
+            "damping_page",
+            "isolation_page",
+            "deriving_page",
+            "sim_page",
+            "frf_page",
+            "random_page",
+            "fatigue_page",
+            "quarter_car_page",
+            "mounts_page",
+            "shock_page",
+            "seismic_page",
+        ),
+    ),
+)
+
+
+def paths_html() -> str:
+    """The paths, each with its pages linked and numbered by their place in the whole course."""
+    number = {name: i for i, name in enumerate((n for _, pages in COURSE for n, _, _ in pages), 1)}
+    title = {name: t.replace("&&", "&amp;") for _, pages in COURSE for name, t, _ in pages}
+    first = COURSE[0][1][0][0]
+    html = []
+    for name, about, pages in PATHS:
+        items = " · ".join(
+            f'{number[p]}&nbsp;<a href="page:{p}{"#equation" if p == first else ""}">{title[p]}</a>' for p in pages
+        )
+        html.append(f"<p><b>{name}</b> ({len(pages)} pages): {about}.<br>{items}</p>")
     return "".join(html)
 
 
