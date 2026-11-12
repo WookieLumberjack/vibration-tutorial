@@ -640,6 +640,41 @@ REFERENCES = (
         "Wiley-ISTE, 2014",
         "the shock response spectrum, its properties, and how shock tests are specified and run on machines and shakers",
     ),
+    Reference(
+        "en1998-1",
+        "EN 1998-1",
+        "EN 1998-1, <i>Eurocode 8: Design of structures for earthquake resistance, Part 1: General rules, seismic "
+        "actions and rules for buildings</i>, CEN, 2004",
+        "",
+    ),
+    Reference(
+        "der-kiureghian",
+        "Der Kiureghian 1981",
+        "A. Der Kiureghian, A response spectrum method for random vibration analysis of MDF systems, "
+        "<i>Earthquake Engineering and Structural Dynamics</i> 9, 419–435, 1981",
+        "",
+    ),
+    Reference(
+        "veletsos-newmark",
+        "Veletsos and Newmark 1960",
+        "A. S. Veletsos and N. M. Newmark, Effect of inelastic behavior on the response of simple systems to "
+        "earthquake motions, <i>Proceedings of the 2nd World Conference on Earthquake Engineering</i>, Tokyo, vol. 2, "
+        "1960",
+        "",
+    ),
+    Reference(
+        "naeim-kelly",
+        "Naeim and Kelly 1999",
+        "F. Naeim and J. M. Kelly, <i>Design of Seismic Isolated Structures: From Theory to Practice</i>, Wiley, 1999",
+        "isolators, their models, and the codes' procedures for isolated buildings",
+    ),
+    Reference(
+        "chopra",
+        "Chopra 2017",
+        "A. K. Chopra, <i>Dynamics of Structures: Theory and Applications to Earthquake Engineering</i>, 5th "
+        "edition, Pearson, 2017",
+        "response spectra, modal combination and inelastic spectra, with the US codes and Eurocode 8",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

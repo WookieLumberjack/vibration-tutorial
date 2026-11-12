@@ -1,38 +1,61 @@
-
 <before>
 <a href="page:shock_page#srs">The shock response spectrum</a>
 <a href="page:shock_page#chain">The chain's modes on a pulse</a>
 </before>
 <h3><a name="design-spectrum"></a>A design spectrum</h3>
-<p>The Shock spectrum page's idea, used for earthquakes: a single oscillator's peak response to the ground's
-motion, plotted against its period. An earthquake's spectrum is jagged and no two are alike, so a design code
-smooths and envelopes many into a <b>design spectrum</b>: a rise from the ground's own acceleration
-a<sub>g</sub>S at T = 0, a plateau of 2.5 η a<sub>g</sub>S from T<sub>B</sub> to T<sub>C</sub>, then falls as
-1/T (constant velocity) and 1/T² (constant displacement). The page uses the shape of the European code's elastic
-spectrum (Eurocode 8, EN 1998-1:2004, its type 1). The ground type sets S and the corners: soft soil amplifies and widens the plateau. Damping scales it
-by η = √(10/(5 + ζ%)).</p>
+<p>The Shock spectrum page's idea, used for earthquakes, where it began <cite>biot</cite>: a single oscillator's
+peak response to the ground's motion, plotted against its period <m>T</m>. Earthquake codes plot the
+pseudo-acceleration <m>S<sub>a</sub> = ω<sup>2</sup>|z|<sub>max</sub></m>, which times a mass is the oscillator's
+peak spring force. An earthquake's spectrum is jagged and no two are alike, so a code smooths and envelopes many
+into a <b>design spectrum</b>. The page uses the shape of the European code's elastic spectrum (Eurocode 8, its
+type 1 <cite>en1998-1</cite>), for a peak ground acceleration <m>a<sub>g</sub></m> on rock:</p>
+<eq>S_a = a_g S \left[1 + \frac{T}{T_B}(2.5\eta - 1)\right] \quad (T < T_B)</eq>
+<eq>S_a = 2.5\,\eta\,a_g S \quad (T_B \le T \le T_C)</eq>
+<eq>S_a = 2.5\,\eta\,a_g S\,\frac{T_C}{T} \quad (T_C \le T \le T_D)</eq>
+<eq>S_a = 2.5\,\eta\,a_g S\,\frac{T_C T_D}{T^2} \quad (T > T_D)</eq>
+<p>A rise from the ground's own acceleration at <m>T</m> = 0 (a rigid building moves with the ground), a plateau,
+then falls at constant pseudo-velocity and at constant displacement. The ground type sets the soil factor
+<m>S</m> and the corners <m>T<sub>B</sub>, T<sub>C</sub>, T<sub>D</sub></m>: soft soil amplifies and widens the
+plateau. Damping scales it by</p>
+<eq>\eta = \sqrt{\frac{10}{5 + \zeta\%}} \ \ge 0.55</eq>
+<p>1 at the 5 % the spectrum is drawn for.</p>
+
+<h3><a name="building"></a>The chain as a building</h3>
+<p>The page reads the Simulation page's chain as a <b>shear building</b>: each mass a floor <m>m</m>, each spring a
+storey's sideways stiffness <m>k</m> (its columns bending with the floors kept level), the first on the
+ground.</p>
+<table width="100%"><tr><td align="center"><img src="fig:building" width="310" height="186"></td></tr></table>
+<p>Measured from the moving ground, the floors' displacements <m>u</m> obey</p>
+<eq>M\ddot{u} + C\dot{u} + Ku = -M\mathbf{1}\,a_g(t)</eq>
+<p>each floor pushed by its own inertia. Two things a designer reads off them: a storey's <b>drift</b>
+<m>Δ<sub>j</sub> = u<sub>j</sub> − u<sub>j−1</sub></m>, how far its top moves against its bottom, which bends its
+columns and cracks its walls; and its <b>storey shear</b> <m>V<sub>j</sub> = kΔ<sub>j</sub></m>, the sideways
+force it carries for every floor above it, the largest at the bottom, the <b>base shear</b>
+<m>V<sub>b</sub></m>.</p>
 
 <h3><a name="participation"></a>Participation and effective mass</h3>
-<p>A building on moving ground is pushed by −M1 a<sub>g</sub> (each floor's inertia, in coordinates relative to
-the ground), so each mode r is a single oscillator driven by Γ<sub>r</sub> a<sub>g</sub>, with the
+<p>In the modes each is a single oscillator driven by <m>Γ<sub>r</sub>a<sub>g</sub></m>, with the
 <b>participation factor</b></p>
-<p align="center">Γ<sub>r</sub> = φ<sub>r</sub>ᵀM1 / φ<sub>r</sub>ᵀMφ<sub>r</sub>.</p>
-<p>Its peak modal coordinate is Γ<sub>r</sub>S<sub>a</sub>(T<sub>r</sub>)/ω<sub>r</sub>², its floor displacements
-φ<sub>r</sub> times that, and its base shear M<sub>eff,r</sub> S<sub>a</sub>(T<sub>r</sub>) with the <b>effective
-modal mass</b> M<sub>eff,r</sub> = (φ<sub>r</sub>ᵀM1)²/φ<sub>r</sub>ᵀMφ<sub>r</sub>. The effective masses add up
-to the building's mass, so their running sum says how many modes are enough: codes ask for 90 %.</p>
+<eq>\Gamma_r = \frac{\varphi_r^{\mathsf{T}} M \mathbf{1}}{\varphi_r^{\mathsf{T}} M \varphi_r}</eq>
+<p>Its peak modal coordinate is <m>Γ<sub>r</sub>S<sub>a</sub>(T<sub>r</sub>)/ω<sub>r</sub><sup>2</sup></m>, its
+floors' displacements <m>φ<sub>r</sub></m> times that, and its base shear
+<m>M<sub>eff,r</sub>S<sub>a</sub>(T<sub>r</sub>)</m>, with</p>
+<eq>M_{\text{eff},r} = \frac{(\varphi_r^{\mathsf{T}} M \mathbf{1})^2}{\varphi_r^{\mathsf{T}} M \varphi_r}</eq>
+<p>the <b>effective modal mass</b>. The effective masses add up to the building's
+mass, so their running sum says how many modes are enough: codes ask for 90 %.</p>
 
 <h3><a name="combination"></a>Combining the modes</h3>
-<p>The spectrum gives each mode's peak, not when it happens. Adding them (<b>ABS</b>) assumes they all peak
-together: safe, usually far too safe. <b>SRSS</b>, √Σ R<sub>r</sub>², assumes they are independent, which holds when
-their frequencies are well apart. <b>NRL</b> (the largest plus the SRSS of the rest) sits between. When two modes
-are close they move together much of the time, and SRSS underestimates; the <b>complete quadratic
-combination</b></p>
-<p align="center">R = √(Σ<sub>i</sub>Σ<sub>j</sub> R<sub>i</sub> ρ<sub>ij</sub> R<sub>j</sub>)</p>
-<p>keeps the cross terms, with Der Kiureghian's correlation ρ<sub>ij</sub> (1 on the diagonal, falling off as
-the frequencies part, faster the less the damping): ρ = 8ζ²(1 + r)r<sup>3/2</sup> / ((1 − r²)² +
-4ζ²r(1 + r)²) for equal damping and r = ω<sub>j</sub>/ω<sub>i</sub>. CQC is SRSS when the modes are far apart, so
-codes now use it throughout.</p>
+<p>The spectrum gives each mode's peak <m>R<sub>r</sub></m>, not when it happens. Adding them (<b>ABS</b>) assumes
+they all peak together: safe, usually far too safe. <b>SRSS</b>, <m>√(ΣR<sub>r</sub><sup>2</sup>)</m>, assumes
+they are independent, which holds when their frequencies are well apart. <b>NRL</b> (the largest plus the SRSS of
+the rest <cite>ohara-belsheim</cite>) sits between. When two modes are close they move together much of the time,
+and SRSS underestimates; the <b>complete quadratic combination</b> (CQC)</p>
+<eq>R = \sqrt{\sum_i \sum_j R_i\,\rho_{ij}\,R_j}</eq>
+<p>keeps the cross terms, with Der Kiureghian's correlation <cite>der-kiureghian</cite> for equal damping and
+<m>β = ω<sub>j</sub>/ω<sub>i</sub></m>:</p>
+<eq>\rho_{ij} = \frac{8\zeta^2(1 + \beta)\beta^{3/2}}{(1 - \beta^2)^2 + 4\zeta^2\beta(1 + \beta)^2}</eq>
+<p>1 on the diagonal, falling off as the frequencies part, faster the less the damping. CQC is SRSS when the modes
+are far apart, so codes now use it throughout.</p>
 
 <h3><a name="records"></a>Checking against records</h3>
 <p>The page synthesizes seven ground motions whose spectra match the design spectrum (sines at random phases
@@ -40,13 +63,81 @@ under a rise, strong-shaking and decay envelope, each scaled until its spectrum 
 building on each mode by mode, exactly, and takes the mean of their peaks, as a code does with a set of
 records. The rules are estimates of that mean; each record scatters about it by some 10 %.</p>
 
+<h3><a name="drift"></a>Storey drift</h3>
+<p>The base shear sizes the structure; the drift decides the damage. Partitions, glazing and cladding fixed to
+the frame are racked by each storey's drift, so a code limits it as a fraction of the storey's height
+<m>h</m>, under a smaller and more frequent earthquake than the one the structure is designed to survive.
+Eurocode 8 takes that as the design one scaled by <m>ν</m> (0.5 for ordinary buildings) and asks for
+<m>νΔ</m> ≤ 0.005<m>h</m> with brittle partitions fixed to the frame, 0.0075<m>h</m> with ductile ones and
+0.010<m>h</m> where they are fixed so they don't feel it. A soft storey, much less stiff than those above it
+(the open ground floor of a car park or shop), takes most of the drift (Things to try, 7).</p>
+
+<h3><a name="ductility"></a>Ductility and the behaviour factor</h3>
+<p>The elastic spectrum's forces are large: this page's five storeys would need a base shear of nearly half their
+weight. Buildings are not designed to stay elastic in the design earthquake but to yield in a controlled way, in
+chosen places (the beams' ends, braces), and keep their strength while they do. An elastic–plastic oscillator of
+yield force <m>F<sub>y</sub></m> and yield displacement <m>u<sub>y</sub></m> that reaches <m>u<sub>max</sub></m>
+has a <b>ductility</b></p>
+<eq>\mu = \frac{u_{\max}}{u_y}</eq>
+<table width="100%"><tr><td align="center"><img src="fig:ductility" width="310" height="178"></td></tr></table>
+<p>How much weaker can it be than the elastic one, <m>q = F<sub>el</sub>/F<sub>y</sub></m>, for a given
+<m>μ</m>? Veletsos and Newmark's study of oscillators on records <cite>veletsos-newmark</cite> found that a flexible
+oscillator, of
+period past the plateau, reaches about the same peak displacement either way (the <b>equal-displacement
+rule</b>), so <m>q ≈ μ</m>; a stiffer one, on the plateau, takes about the same energy, the areas under the two
+curves equal, which gives</p>
+<eq>q \approx \sqrt{2\mu - 1}</eq>
+<p>and a rigid one, at <m>T</m> = 0, moves with the ground whatever its strength: <m>q</m> = 1. Plotting the
+strength an oscillator needs for a given <m>μ</m> against its period draws an <b>inelastic spectrum</b>: the
+elastic one divided by <m>q(μ, T)</m>. A code does it the other way round: it gives each kind of structure a
+<b>behaviour factor</b> <m>q</m> for the ductility its detailing can be relied on for (about 1.5 for a frame that
+isn't detailed for it, up to 4 to 6 for a well-detailed steel or concrete frame), divides the elastic spectrum by
+it (with a floor of 0.2<m>a<sub>g</sub></m>) to get the forces to design for, and multiplies the displacements
+those forces give by <m>q</m> again to get the real ones: by the equal-displacement rule, the elastic
+displacements.</p>
+
+<h3><a name="isolation"></a>Base isolation</h3>
+<p>The spectrum also says how to need less strength: move the building's period off the plateau. Base isolation
+puts it on a layer of soft bearings (laminated rubber, often with a lead core to damp it, or sliding
+pendulums), an isolator stiffness <m>k<sub>b</sub></m> so much softer than the storeys that the first mode, of
+period <m>T<sub>b</sub></m> ≈ <m>2π√(Σm/k<sub>b</sub>)</m> for the whole mass <m>Σm</m> above, is the
+building moving rigidly on the bearings <cite>naeim-kelly</cite>. At 2 to 3 s it sits on the spectrum's falls,
+where <m>S<sub>a</sub></m> is a fraction of the plateau, and it carries almost all the mass, so the higher modes,
+which would bend the building, are barely driven. The price is the bearings' displacement, a few hundred
+millimetres, which the services and the gap round the building must allow, and which the bearings' damping (10
+to 30 %) is there to keep down. It works on firm ground; on soft soil, whose spectrum stays high to long periods,
+it gains less.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on five 10 t floors on 5 MN/m storeys, under <m>a<sub>g</sub></m> = 0.3 g on ground type C
+(<m>S</m> = 1.15, <m>T<sub>B</sub></m> = 0.2 s, <m>T<sub>C</sub></m> = 0.6 s, <m>T<sub>D</sub></m> = 2 s) at 5 %
+(<m>η</m> = 1): a plateau of 2.5 × 0.3 × 1.15 = 0.8625 g (the readout's 0.863 g). A uniform shear building's first mode is</p>
+<eq>\omega_1 = 2\sqrt{k/m}\,\sin\frac{\pi}{2(2N + 1)} = 2\sqrt{500} \times \sin\frac{\pi}{22} = 6.36\ \text{rad/s}</eq>
+<p>so <m>T<sub>1</sub></m> = 0.987 s, past <m>T<sub>C</sub></m>: <m>S<sub>a</sub></m> = 0.8625 × 0.6/0.987 =
+0.524 g. Mode 1's effective mass is 88.0 % of the 50 t, so its base shear is 44.0 t × 0.524 g = 226 kN. Mode 2
+(<m>T<sub>2</sub></m> = 0.338 s, on the plateau, 8.7 % of the mass) gives 37 kN of its own, and the five by CQC give 230 kN,
+against 235 kN averaged over the seven records; ABS gives 277 kN. The roof moves 159 mm (mode 1's
+<m>S<sub>a</sub>/ω<sub>1</sub><sup>2</sup></m> = 127 mm times <m>Γ<sub>1</sub>φ</m> = 1.25 at the roof), and the
+first storey drifts 46 mm.</p>
+<p>On 3 m storeys (the model has no heights) that drift is 1.5 % of the storey; halved by <m>ν</m>, 0.77 %:
+within the limit for partitions fixed so they don't feel it, not for brittle ones. Designed as a frame with
+<m>q</m> = 3, the building needs a base shear of 230/3 = 77 kN, and since <m>T<sub>1</sub></m> is past
+<m>T<sub>C</sub></m> its floors still move about as far: its storeys yield, to a ductility of about 3.</p>
+<p>Isolated (Things to try, 8) on a 10 t slab on bearings of 300 kN/m at 15 %: <m>T<sub>b</sub></m> = 2.94 s and
+<m>η</m> = 0.71, so the shear in the first storey above the bearings falls from 230 to 42 kN and its drift from 46
+to 8 mm, while the bearings move 166 mm.</p>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these loads a building into the Simulation page and sets up the spectrum (Things to try, top
 left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>A design spectrum smooths many earthquakes' spectra into a plateau and 1/T, 1/T² falls; soil and damping scale it.</li>
-<li>Each mode is an oscillator driven by Γ a<sub>g</sub>; its effective mass is its share of the base shear, and the shares add up to the whole mass.</li>
+<li>A design spectrum smooths many earthquakes' spectra into a plateau and 1/<m>T</m>, 1/<m>T</m><sup>2</sup> falls; soil and damping scale it.</li>
+<li>Each mode is an oscillator driven by <m>Γa<sub>g</sub></m>; its effective mass is its share of the base shear, and the shares add up to the whole mass.</li>
 <li>ABS adds the modes' peaks and overestimates; SRSS is right for well-separated modes.</li>
 <li>Close modes are correlated: CQC keeps the cross terms and SRSS underestimates.</li>
+<li>Drift decides the damage; ductility lets a building be designed for the elastic forces over <m>q</m>, and isolation moves it off the plateau.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>srs_osc z_rel sa_T ec8_ag ec8_corners g m matrices ones x_g N_dof zeta omega_i phi_i Gamma_r m_eff storey combine_r ductility isolator</notation>
+<reading>chopra en1998-1 naeim-kelly</reading>

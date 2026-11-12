@@ -1659,7 +1659,7 @@ def test_seismic_trials():
     assert (m.mass_share[0], m.mass_share[:2].sum()) == pytest.approx((0.88, 0.97), abs=0.005)
     assert m.sa[0] / 9.81 == pytest.approx(0.52, abs=0.005)
     shear = {r: float(combine(m.shear, r, rho)[0]) for r in Rule}
-    assert (shear[Rule.CQC], shear[Rule.SRSS], shear[Rule.ABS]) == pytest.approx((229e3, 229e3, 277e3), abs=1e3)
+    assert (shear[Rule.CQC], shear[Rule.SRSS], shear[Rule.ABS]) == pytest.approx((230e3, 229e3, 277e3), abs=500)
     records = suite(five, d).base_shear
     assert records == pytest.approx(235e3, abs=1e3)
     assert shear[Rule.ABS] / records - 1 == pytest.approx(0.18, abs=0.005)
@@ -1686,6 +1686,58 @@ def test_seismic_trials():
     alone = abs(eight.shear[:, 0]) / total
     assert (alone[0], alone[-1]) == pytest.approx((0.96, 0.74), abs=0.005)
     assert Design(zeta=0.10).eta == pytest.approx(0.82, abs=0.005)
+
+
+def test_seismic_worked_example():
+    import math
+
+    import numpy as np
+
+    from vib_tutorial.core.model import ChainSystem
+    from vib_tutorial.core.seismic import Design, Rule, building, combine, correlation, modal, suite
+
+    d = Design()
+    S, TB, TC, TD = d.corners
+    assert (S, TB, TC, TD, d.eta) == (1.15, 0.2, 0.6, 2.0, 1.0)
+    assert 2.5 * 0.3 * S == pytest.approx(0.8625, abs=1e-12)
+    m = modal(building(5), d)
+    w1 = 2 * math.sqrt(500) * math.sin(math.pi / 22)
+    assert w1 == pytest.approx(6.36, abs=0.005) and 2 * math.pi / w1 == pytest.approx(m.T[0], rel=1e-9)
+    assert m.T[0] == pytest.approx(0.987, abs=5e-4)
+    assert 0.8625 * 0.6 / 0.987 == pytest.approx(0.524, abs=5e-4) and m.sa[0] / 9.81 == pytest.approx(0.524, abs=5e-4)
+    assert m.mass_share[0] == pytest.approx(0.880, abs=5e-4) and 44.0e3 * 0.524 * 9.81 == pytest.approx(226e3, abs=500)
+    assert abs(m.base_shear[0]) == pytest.approx(226e3, abs=500)
+    assert (m.T[1], m.mass_share[1], abs(m.base_shear[1])) == pytest.approx((0.338, 0.087, 37e3), rel=0.01)
+    rho = correlation(m.f, d.zeta)
+    assert float(combine(m.shear, Rule.CQC, rho)[0]) == pytest.approx(230e3, abs=500)
+    assert float(combine(m.shear, Rule.ABS, rho)[0]) == pytest.approx(277e3, abs=500)
+    assert suite(building(5), d).base_shear == pytest.approx(235e3, abs=500)
+    sd = m.sa[0] / (2 * math.pi * m.f[0]) ** 2
+    assert (sd, m.gamma[0] * m.phi[-1, 0]) == pytest.approx((0.127, 1.25), abs=5e-3)
+    drift = combine(m.drift, Rule.CQC, rho)
+    assert float(combine(m.displacement, Rule.CQC, rho)[-1]) == pytest.approx(0.159, abs=5e-4)
+    assert drift[0] == pytest.approx(0.046, abs=5e-4)
+    assert drift[0] / 3 == pytest.approx(0.015, abs=5e-4) and 0.5 * drift[0] / 3 == pytest.approx(0.0077, abs=5e-5)
+    assert 230 / 3 == pytest.approx(77, abs=0.5)
+    # a soft storey
+    soft = ChainSystem(np.full(5, 1e4), np.array([1e6] + [5e6] * 4), np.zeros(5))
+    ms = modal(soft, d)
+    rs = correlation(ms.f, d.zeta)
+    ds = combine(ms.drift, Rule.CQC, rs)
+    top = float(combine(ms.displacement, Rule.CQC, rs)[-1])
+    assert (ms.T[0], float(combine(ms.shear, Rule.CQC, rs)[0])) == pytest.approx((1.58, 159e3), rel=3e-3)
+    assert (ds[0], top, ds[0] / top) == pytest.approx((0.159, 0.227, 0.70), abs=5e-3)
+    # base isolation
+    iso = ChainSystem(np.full(6, 1e4), np.array([3e5] + [5e6] * 5), np.zeros(6))
+    di = Design(zeta=0.15)
+    mi = modal(iso, di)
+    ri = correlation(mi.f, di.zeta)
+    assert (mi.T[0], di.eta, mi.mass_share[0]) == pytest.approx((2.94, 0.71, 0.998), abs=5e-3)
+    assert mi.T[0] > TD
+    shear = combine(mi.shear, Rule.CQC, ri)
+    drift_i = combine(mi.drift, Rule.CQC, ri)
+    assert shear[1] == pytest.approx(42e3, abs=500) and max(drift_i[1:]) == pytest.approx(0.008, abs=5e-4)
+    assert float(combine(mi.displacement, Rule.CQC, ri)[0]) == pytest.approx(0.166, abs=5e-4)
 
 
 def test_vibroacoustics_trials():
