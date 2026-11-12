@@ -347,7 +347,7 @@ WAVE_PRESETS = (
         _STRING,
         40,
         Waves(width=0.1, at=0.25),
-        "A pulse four beads wide runs along a string at c = 100 m/s. On the string it comes back from "
+        "A pulse four beads wide runs along a string at <m>c</m> = 100 m/s. On the string it comes back from "
         "the fixed end upside down and whole; on the beads, after one crossing, it is down to 66 % of "
         "its height and 5 cm behind, the ripples it sheds trailing it: the short waves it is made of go "
         "slower on the beads. Consistent masses make them faster (53 %, ahead), mixed keep 81 %.",
@@ -357,7 +357,7 @@ WAVE_PRESETS = (
         Continuum(Kind.BAR, 1.0, End.FIXED, End.FIXED, modulus=210e9, density=7850.0, width=0.02, depth=0.02),
         20,
         Waves(width=0.15, at=0.3, dashpot=1.0),
-        "A dashpot c = ρcA on the bar's far end is its impedance: the continuum's pulse runs into it and "
+        "A dashpot <m>c<sub>d</sub> = ρcA</m> on the bar's far end is its impedance: the continuum's pulse runs into it and "
         "is gone, as if the bar went on for ever. Matched to the long waves, it isn't to the 20 "
         "elements' short ones, which slow down: 17 % of the mesh's energy comes back (5 % consistent).",
     ),
@@ -367,8 +367,8 @@ WAVE_PRESETS = (
         100,
         Waves(width=0.1, at=0.2, step_at=0.5, step_ratio=2.0),
         "Halfway along, the string is four times heavier: twice the impedance, half the speed. The pulse "
-        "splits: a third of it comes back upside down (R = −1/3, 1/9 of the energy) and two thirds "
-        "go on (T = 2/3), at half the speed and so half as long. There it spans five elements, and the "
+        "splits: a third of it comes back upside down (<m>R</m> = −1/3, 1/9 of the energy) and two thirds "
+        "go on (<m>τ</m> = 2/3), at half the speed and so half as long. There it spans five elements, and the "
         "mesh carries 0.49 of it, not 0.67.",
     ),
     WavePreset(
@@ -376,7 +376,7 @@ WAVE_PRESETS = (
         Continuum(Kind.BEAM, 1.0, End.PINNED, End.PINNED, modulus=210e9, density=7850.0, width=0.05, depth=0.01),
         20,
         Waves(width=0.1, at=0.5, moving=False),
-        "A bump released on a beam splits and spreads: bending waves are dispersive (ω = aκ²), the "
+        "A bump released on a beam splits and spreads: bending waves are dispersive (<m>ω = aκ<sup>2</sup></m>), the "
         "short ones twice as fast as waves twice as long, so ripples run ahead, on the beam itself. "
         "Half a crossing later the beam's peak is 0.22; 20 lumped elements, slowing the short waves, "
         "still hold 0.26 there (consistent 0.23).",

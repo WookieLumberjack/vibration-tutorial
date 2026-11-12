@@ -295,6 +295,47 @@ def test_complex_modes_worked_example():
     assert [m.fn_hz for m in held.modes] == pytest.approx([1.42, 3.97, 5.74], abs=0.005)
 
 
+def test_continuum_worked_example():
+    """The Theory's worked example: the guitar string (the page's default) on 12 elements, its speed and
+    fundamental, modes 1 and 6 on each mesh, the 11 lumped modes under the cut-off, and its impedance."""
+    from vib_tutorial.core.continuum import PRESETS, FEModel, Scheme, errors, flexible_hz
+
+    p = PRESETS[0]
+    c = p.continuum
+    assert p.elements == 12 and (c.length, c.tension, c.line_density) == (0.648, 73.0, 6.40e-3)
+    assert math.sqrt(73 / 0.0064) == pytest.approx(106.8, abs=0.05) and c.speed == pytest.approx(106.8, abs=0.05)
+    assert c.exact_hz(1)[0] == pytest.approx(82.41, abs=0.005)
+    assert 106.8 / (2 * 0.648) == pytest.approx(82.41, abs=0.005)
+    h = c.length / 12
+    assert h == pytest.approx(0.054) and math.pi / 12 == pytest.approx(0.262, abs=0.0005)
+    assert (math.pi / 12) ** 2 / 24 == pytest.approx(0.0029, abs=0.00005)
+    f = {s: flexible_hz(FEModel(c, 12, s)) for s in Scheme}
+    err = {s: errors(FEModel(c, 12, s))[1] for s in Scheme}
+    assert f[Scheme.LUMPED][0] == pytest.approx(82.17, abs=0.005)
+    assert f[Scheme.CONSISTENT][0] == pytest.approx(82.64, abs=0.005)
+    assert f[Scheme.MIXED][0] == pytest.approx(82.41, abs=0.005) and abs(err[Scheme.MIXED][0]) < 0.000015
+    assert 100 * err[Scheme.LUMPED][0] == pytest.approx(-0.29, abs=0.005)
+    assert 100 * err[Scheme.CONSISTENT][0] == pytest.approx(0.29, abs=0.005)
+    assert 6 * 82.407 == pytest.approx(494.4, abs=0.05)
+    assert math.sin(math.pi / 4) / (math.pi / 4) == pytest.approx(0.900, abs=0.0005)
+    assert 494.4 * 0.900 == pytest.approx(445, abs=0.5) and f[Scheme.LUMPED][5] == pytest.approx(445, abs=0.5)
+    assert 100 * err[Scheme.LUMPED][5] == pytest.approx(-10.0, abs=0.05)
+    assert 100 * err[Scheme.CONSISTENT][5] == pytest.approx(10.3, abs=0.05)
+    assert 100 * err[Scheme.MIXED][5] == pytest.approx(-1.4, abs=0.05)
+    assert f[Scheme.LUMPED].size == 11
+    assert c.speed / (math.pi * h) == pytest.approx(629.5, abs=0.05)
+    assert f[Scheme.LUMPED][10] == pytest.approx(624.2, abs=0.05) and c.exact_hz(11)[10] == pytest.approx(
+        906.5, abs=0.05
+    )
+    assert 100 * err[Scheme.LUMPED][10] == pytest.approx(-31, abs=0.5)
+    assert math.sqrt(c.tension * c.line_density) == pytest.approx(0.684, abs=0.0005)
+    # the notes' general claims: the cut-off error and a cantilever's ratios
+    assert 2 / math.pi - 1 == pytest.approx(-0.36, abs=0.005)
+    assert [(b / 1.87510) ** 2 for b in (4.69409, 7.85476)] == pytest.approx(
+        [6.27, 17.5], abs=0.05
+    )  # roots to 5 figures; 17.55 to 3
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)

@@ -352,7 +352,7 @@ PROBLEMS = tuple(
 NOTES_HTML = load_notes(
     "complex_modes",
     figures=complex_figures.FIGURES,
-    trials="<ol>" + "".join(f"<li><b>{name}.</b> {note}</li>" for name, _, note in TRIALS) + "</ol>",
+    trials="<ol>" + "".join(f"<li><b>{name}.</b> {maths.markup(note)}</li>" for name, _, note in TRIALS) + "</ol>",
 )
 
 

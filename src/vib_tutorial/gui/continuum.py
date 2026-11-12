@@ -48,10 +48,10 @@ from ..core.continuum_waves import (
     step_coefficients,
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
-from . import frame_stats, settle_plots
+from . import continuum_figures, frame_stats, maths, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import RunButton
+from .lesson import RunButton, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -369,7 +369,7 @@ PROBLEMS = tuple(
 )
 
 
-NOTES_HTML = load_notes("continuum")
+NOTES_HTML = load_notes("continuum", figures=continuum_figures.FIGURES, trials=trials_html(ALL_PRESETS))
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = False) -> pg.PlotWidget:
@@ -414,6 +414,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.preset.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.preset_note = QtWidgets.QLabel()
         self.preset_note.setWordWrap(True)
+        self.preset_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         mute(self.preset_note)
 
         medium = QtWidgets.QGroupBox("Medium")
@@ -706,7 +707,7 @@ class ContinuumPage(QtWidgets.QWidget):
     def _load(self, c: Continuum, elements: int, name: str, note: str, waves: Waves) -> None:
         self._loading = True
         self.preset.setCurrentText(name)
-        self.preset_note.setText(note)
+        self.preset_note.setText(maths.markup(note))
         self.kind.setCurrentText(c.kind.value)
         self._fill_ends(c.kind)
         self.length.setValue(c.length)
