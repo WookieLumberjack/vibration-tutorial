@@ -38,8 +38,8 @@ from ..core.double_pendulum import modes as pendulum_modes
 from ..core.double_pendulum import sweep as pendulum_sweep
 from ..core.pendulum import measured_period
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
+from . import deriving_figures, frame_stats, settle_plots
 from . import deriving_pendulum as dp
-from . import frame_stats, settle_plots
 from .deriving_text import (
     CAR,
     PENDULUM,
@@ -163,33 +163,34 @@ class DerivingTrial:
 TRIALS = (
     DerivingTrial(
         "A car in bounce and pitch",
-        "A 1200 kg body (r = 1.3 m) on 40 kN/m at each axle, 1.2 m ahead of G and 1.5 m behind it. Its slower "
-        "mode (1.25 Hz) turns about a node 1.92 m behind G, outside the wheelbase: mostly bounce. The faster "
-        "(1.41 Hz) turns about a node 0.88 m ahead of G, between the axles: mostly pitch. Neither is pure, "
-        "because k<sub>f</sub>a ≠ k<sub>r</sub>b: the springs couple the two (static coupling).",
+        "A 1200 kg body (<m>k<sub>G</sub></m> = 1.3 m) on 40 kN/m at each axle, 1.2 m ahead of G and 1.5 m behind it. Its slower "
+        "mode (1.25 Hz) turns about a node 1.92 m behind <m>G</m>, outside the wheelbase: mostly bounce. The faster "
+        "(1.41 Hz) turns about a node 0.88 m ahead of <m>G</m>, between the axles: mostly pitch. Neither is pure, "
+        "because <m>k<sub>f</sub>a ≠ k<sub>r</sub>b</m>: the springs couple the two (static coupling).",
     ),
     DerivingTrial(
         "No static coupling",
-        "The rear spring at 32 kN/m, so k<sub>f</sub>a = k<sub>r</sub>b = 48 kN: K is diagonal in (x<sub>G</sub>, "
-        "θ), and the modes are pure bounce (1.23 Hz, no node) and pure pitch (1.27 Hz, about G). The Modes "
+        "The rear spring at 32 kN/m, so <m>k<sub>f</sub>a = k<sub>r</sub>b</m> = 48 kN: <m>K</m> is diagonal in "
+        "<m>(x<sub>G</sub>, θ)</m>, and the modes are pure bounce (1.23 Hz, no node) and pure pitch (1.27 Hz, about G). The Modes "
         "tab's nodes run off to infinity there.",
         k_rear=32.0,
         tab=TAB_MODES,
     ),
     DerivingTrial(
         "Coordinates at the elastic centre",
-        "x<sub>P</sub> and θ at the elastic centre, e* = (k<sub>f</sub>a − k<sub>r</sub>b)/(k<sub>f</sub> + "
-        "k<sub>r</sub>) = −0.15 m (behind G): a force there pushes the body straight, so K is diagonal. The "
-        "coupling has moved into M (−m e = 180 kg·m): dynamic coupling. The frequencies are the same 1.25 and "
+        "<m>x<sub>P</sub></m> and <m>θ</m> at the elastic centre, <m>e* = (k<sub>f</sub>a − k<sub>r</sub>b)/(k<sub>f</sub> + "
+        "k<sub>r</sub>)</m> = −0.15 m (behind <m>G</m>): a force there pushes the body straight, so <m>K</m> is diagonal. "
+        "The coupling has moved into <m>M</m> (<m>−me</m> = 180 kg·m): dynamic coupling. The frequencies are the same 1.25 and "
         "1.41 Hz: coupling belongs to the coordinates, not the car.",
         coords=Coordinates.POINT,
         offset=-0.15,
     ),
     DerivingTrial(
         "Moments about the front axle",
-        "x<sub>P</sub> and θ with P above the front axle (e = 1.2 m), by the free-body diagram. Taking moments "
-        "about P keeps the moment of G's inertia force, −m e ẍ<sub>G</sub>: the moment balance is (J + m e²)θ̈ "
-        "− m e ẍ<sub>P</sub> = ΣM<sub>P</sub>. Leave that term out, as J<sub>P</sub>θ̈ = ΣM<sub>P</sub>, and "
+        "<m>x<sub>P</sub></m> and <m>θ</m> with <m>P</m> above the front axle (<m>e</m> = 1.2 m), by the free-body "
+        "diagram. Taking moments about <m>P</m> keeps the moment of <m>G</m>'s inertia force, <m>−meẍ<sub>G</sub></m>: "
+        "the moment balance is <m>(J + me²)θ̈ − meẍ<sub>P</sub> = ΣM<sub>P</sub></m>. Leave that term out, as "
+        "<m>J<sub>P</sub>θ̈ = ΣM<sub>P</sub></m>, and "
         "the frequencies come out 0.93 and 1.38 Hz instead of 1.25 and 1.41.",
         coords=Coordinates.POINT,
         offset=1.2,
@@ -197,19 +198,19 @@ TRIALS = (
     ),
     DerivingTrial(
         "The two ends as coordinates",
-        "x<sub>f</sub> and x<sub>r</sub>, the body above each axle. Each spring now sees one coordinate, so K "
-        "is diagonal, and M couples by (m a b − J)/L² = 18.1 kg. The free-body diagram's force balance gives "
-        "M the row (667, 533) kg and its moment balance (751, −751) kg·m: right, but not symmetric. Moments "
+        "<m>x<sub>f</sub></m> and <m>x<sub>r</sub></m>, the body above each axle. Each spring now sees one coordinate, "
+        "so <m>K</m> is diagonal, and <m>M</m> couples by <m>(mab − J)/L²</m> = 18.1 kg. The free-body diagram's force "
+        "balance gives <m>M</m> the row (667, 533) kg and its moment balance (751, −751) kg·m: right, but not symmetric. Moments "
         "about each axle, which are Lagrange's rows, make them so.",
         coords=Coordinates.ENDS,
         tab=TAB_FBD,
     ),
     DerivingTrial(
         "Dynamic index 1: the ends uncouple",
-        "The radius of gyration at √(ab) = 1.34 m, so J = m a b and the dynamic index r²/(ab) is 1. In the "
-        "ends' coordinates M is diagonal too, and each end bounces on its own spring: 1.23 Hz at the front "
+        "The radius of gyration at <m>√(ab)</m> = 1.34 m, so <m>J = mab</m> and the dynamic index <m>k<sub>G</sub>²/(ab)</m> "
+        "is 1. In the ends' coordinates <m>M</m> is diagonal too, and each end bounces on its own spring: 1.23 Hz at the front "
         "(667 kg on 40 kN/m), 1.38 Hz at the rear (533 kg), the nodes on the axles. A bump at the front then "
-        "barely moves the rear: most cars are near 1.",
+        "barely moves the rear: many cars are near 1.",
         gyration=1.342,
         coords=Coordinates.ENDS,
         tab=TAB_MODES,
@@ -227,8 +228,8 @@ TRIALS = (
     DerivingTrial(
         "Olley's flat ride",
         "The springs swapped: 30 kN/m at the front (1.07 Hz) and 48 at the rear (1.51 Hz). Now the rear, hit "
-        "later, catches the front up, and once past the hump the body pitches only 1.52°. Olley's rule: the "
-        "front's ride frequency below the rear's (here by 29 %).",
+        "later, catches the front up, and once past the hump the body pitches only 1.52°. Olley's rule puts the "
+        "front's ride frequency below the rear's; here it is 29 % lower, more than the 12 % his rule gives.",
         k_front=30.0,
         k_rear=48.0,
         show=SHOW_MOTION,
@@ -236,27 +237,27 @@ TRIALS = (
     ),
     DerivingTrial(
         "A double pendulum, small swings",
-        "Two 1 kg bobs on 0.5 m rods. Lagrange's T has a cross term m<sub>2</sub>L<sub>1</sub>L<sub>2</sub> "
-        "cos(θ<sub>1</sub> − θ<sub>2</sub>)θ̇<sub>1</sub>θ̇<sub>2</sub>, so for small swings M couples the angles "
-        "(0.25 kg·m²) and K doesn't. The slower mode (0.540 Hz) swings the rods together, θ<sub>2</sub> = 1.41 "
-        "θ<sub>1</sub>; the faster (1.30 Hz) against each other, −1.41 θ<sub>1</sub>. Each rod alone would swing "
+        "Two 1 kg bobs on 0.5 m rods. Lagrange's <m>T</m> has a cross term <m>m<sub>2</sub>L<sub>1</sub>L<sub>2</sub> "
+        "cos(θ<sub>1</sub> − θ<sub>2</sub>)θ̇<sub>1</sub>θ̇<sub>2</sub></m>, so for small swings <m>M</m> couples the "
+        "angles (0.25 kg·m²) and <m>K</m> doesn't. The slower mode (0.540 Hz) swings the rods together, "
+        "<m>θ<sub>2</sub></m> = 1.41 <m>θ<sub>1</sub></m>; the faster (1.30 Hz) against each other, −1.41 <m>θ<sub>1</sub></m>. Each rod alone would swing "
         "at 0.705 Hz.",
         system=PENDULUM,
     ),
     DerivingTrial(
         "The double pendulum's free-body diagram",
         "Each bob across its rod: bob 2 needs no rod's pull there, but bob 1 needs rod 2's, found from bob 2 along "
-        "its rod. In M the rows come out (0.5, 0) and (0.5, 0.5) kg·m: right, but not symmetric; L<sub>1</sub> × "
-        "their sum and L<sub>2</sub> × the second are Lagrange's. Hanging bob 2 from a fixed elbow (the elbow's "
+        "its rod. In <m>M</m> the rows come out (0.5, 0) and (0.5, 0.5) kg·m: right, but not symmetric; "
+        "<m>L<sub>1</sub></m> × their sum and <m>L<sub>2</sub></m> × the second are Lagrange's. Hanging bob 2 from a fixed elbow (the elbow's "
         "acceleration left out) would make both modes 0.705 Hz, a simple pendulum's each.",
         system=PENDULUM,
         tab=TAB_FBD,
     ),
     DerivingTrial(
         "The elbow's bend as a coordinate",
-        "θ<sub>1</sub> and φ = θ<sub>2</sub> − θ<sub>1</sub>: now K couples too (4.91 N·m), and M is fuller "
-        "(M₁₁ = 1.25 kg·m²). The frequencies are the same 0.540 and 1.30 Hz; the slower mode bends the elbow by "
-        "0.41 θ<sub>1</sub>.",
+        "<m>θ<sub>1</sub></m> and <m>φ = θ<sub>2</sub> − θ<sub>1</sub></m>: now <m>K</m> couples too (4.91 N·m), and "
+        "<m>M</m> is fuller (<m>M<sub>11</sub></m> = 1.25 kg·m²). The frequencies are the same 0.540 and 1.30 Hz; the "
+        "slower mode bends the elbow by 0.41 <m>θ<sub>1</sub></m>.",
         system=PENDULUM,
         angles=Angles.RELATIVE,
     ),
@@ -411,7 +412,7 @@ def fbd_html(car: Car, coords: Coordinates, e: float) -> str:
             "<p>Right, but not symmetric: the rows are a force and a moment, each mixing both coordinates. Mix "
             "them again: b/L × the force balance + 1/L × the moment balance is the moment balance about the "
             "rear axle, over L; a/L × the force balance − 1/L × the moment balance is the one about the front. "
-            "That is Tᵀ times the rows, T the matrix taking q to (x<sub>G</sub>, θ), and it gives Lagrange's "
+            "That is Sᵀ times the rows, S the matrix taking q to (x<sub>G</sub>, θ), and it gives Lagrange's "
             "symmetric matrices:</p>" + matrices_html(lagrange)
         )
     html.append(frequencies_html(lagrange))
@@ -526,7 +527,7 @@ def _end_frequency(rng: np.random.Generator) -> Question:
         "own spring?",
         f,
         f"The front axle carries m b/L = {m:g} × {b:g}/{number(a + b)} = {number(mf)} kg, so f = √({number(1e3 * kf)}/"
-        f"{number(mf)})/2π = {number(f)} Hz. It's exactly a mode's frequency when the dynamic index r²/(ab) is 1.",
+        f"{number(mf)})/2π = {number(f)} Hz. It's exactly a mode's frequency when the dynamic index k<sub>G</sub>²/(ab) is 1.",
         unit="Hz",
         setup=dict(mass=m, front=a, rear=b, k_front=kf, coords=Coordinates.ENDS, tab=TAB_MODES),
     )
@@ -539,8 +540,8 @@ def _index_one(rng: np.random.Generator) -> Question:
         f"A car's axles are {a:g} m ahead of and {b:g} m behind its centre of mass. What radius of gyration in "
         "pitch makes its ends bounce independently?",
         r,
-        f"In the ends' coordinates M couples by (m a b − J)/L², nil when J = m r² = m a b: r = √(ab) = √({number(a * b)}) "
-        f"= {number(r)} m, a dynamic index r²/(ab) of 1.",
+        f"In the ends' coordinates M couples by (m a b − J)/L², nil when J = m k<sub>G</sub>² = m a b: k<sub>G</sub> = √(ab) = √({number(a * b)}) "
+        f"= {number(r)} m, a dynamic index k<sub>G</sub>²/(ab) of 1.",
         unit="m",
         tolerance=0.01,
         setup=dict(front=a, rear=b, gyration=round(r, 3), coords=Coordinates.ENDS, tab=TAB_MODES),
@@ -673,7 +674,7 @@ PROBLEMS = (
 
 TIPS = {
     "mass": "<p>The body's mass (the wheels left out: the Quarter-car page has them).</p>",
-    "gyration": "<p>The body's radius of gyration in pitch about G: J = m r².</p>",
+    "gyration": "<p>The body's radius of gyration in pitch about G: J = m k<sub>G</sub>².</p>",
     "front": "<p>a: from G forward to the front axle.</p>",
     "rear": "<p>b: from G back to the rear axle.</p>",
     "k_front": "<p>The front suspension's stiffness, both wheels together, at the axle.</p>",
@@ -715,7 +716,7 @@ CHAOS_TIP = (
     "straight rise is exponential growth: chaos.</p>"
 )
 
-NOTES_HTML = load_notes("deriving", pendulum=dp.NOTES, trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("deriving", figures=deriving_figures.FIGURES, pendulum=dp.NOTES, trials=trials_html(TRIALS))
 
 
 # ------------------------------------------------------------------ the car, drawn
@@ -869,7 +870,7 @@ class DerivingPage(QtWidgets.QWidget):
         # --- the car's controls
         body = Form("Body")
         self.mass = body.number("Mass m:", 100.0, 5000.0, 1200.0, 0, " kg", TIPS["mass"])
-        self.gyration = body.number("Radius of gyration r:", 0.3, 3.0, 1.3, 3, " m", TIPS["gyration"])
+        self.gyration = body.number("Radius of gyration k<sub>G</sub>:", 0.3, 3.0, 1.3, 3, " m", TIPS["gyration"])
         self.front = body.number("G to front axle a:", 0.3, 3.0, 1.2, 2, " m", TIPS["front"])
         self.rear = body.number("G to rear axle b:", 0.3, 3.0, 1.5, 2, " m", TIPS["rear"])
         self.body_info = note_label()
@@ -1237,7 +1238,7 @@ class DerivingPage(QtWidgets.QWidget):
         self.coords_form.form.setRowVisible(self.offset, coords is Coordinates.POINT)
         self.modes = modes(car, coords, e)
         self.body_info.setText(
-            f"J = {car.inertia:.4g} kg·m², L = {car.wheelbase:.3g} m, dynamic index r²/(ab) = {car.dynamic_index:.3g}."
+            f"J = {car.inertia:.4g} kg·m², L = {car.wheelbase:.3g} m, dynamic index k<sub>G</sub>²/(ab) = {car.dynamic_index:.3g}."
         )
         q1, q2 = q_names(coords)
         self.matrix_label.setText(

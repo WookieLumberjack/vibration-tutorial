@@ -11,6 +11,7 @@ import scipy.optimize
 
 from ..core.double_pendulum import Angles, DoublePendulum, matrices, mix, modes, newton, slipped
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
+from . import deriving_figures
 from .deriving_text import (
     PENDULUM,
     SHOW_MOTION,
@@ -96,7 +97,7 @@ def lagrange_html(p: DoublePendulum, angles: Angles) -> str:
     ]
     if angles is Angles.RELATIVE:
         html.append(
-            f"<p>In {TH1} and φ the same steps (or these equations with {TH2} = {TH1} + φ, mixed by Tᵀ) give the "
+            f"<p>In {TH1} and φ the same steps (or these equations with {TH2} = {TH1} + φ, mixed by Sᵀ) give the "
             "whole equations in the bend.</p>"
         )
     html += [
@@ -146,7 +147,7 @@ def fbd_html(p: DoublePendulum, angles: Angles) -> str:
         "<h3>5. Check</h3>",
         f"<p>Right, but not symmetric. {L1} × (the sum of the rows) is both bobs' moments about the pivot, and "
         f"{L2} × the second is bob 2's about the elbow: those"
-        + (", mixed again by Tᵀ for the bend," if angles is Angles.RELATIVE else "")
+        + (", mixed again by Sᵀ for the bend," if angles is Angles.RELATIVE else "")
         + " are Lagrange's rows:</p>",
         matrices_html(type(rows)(*(mix(p, angles) @ A for A in (rows.M, rows.K)))),
     ]
@@ -162,7 +163,7 @@ def fbd_html(p: DoublePendulum, angles: Angles) -> str:
     return "".join(html)
 
 
-NOTES = load_notes("deriving_pendulum")
+NOTES = load_notes("deriving_pendulum", figures=deriving_figures.FIGURES)
 
 
 # ------------------------------------------------------------------ the drawing

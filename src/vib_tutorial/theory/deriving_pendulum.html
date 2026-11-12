@@ -1,16 +1,27 @@
-
 <h3><a name="double-pendulum"></a>A double pendulum</h3>
-<p>Two bobs on light rods, the second hung from the first. Its free-body diagram needs the rods' pulls: bob 2
-across its rod gives one equation, but bob 1's needs rod 2's pull, found from bob 2 along its rod, and both
+<p>Two bobs <m>m<sub>1</sub></m> and <m>m<sub>2</sub></m> on light rods <m>L<sub>1</sub></m> and
+<m>L<sub>2</sub></m>, the second hung from the first, each rod at its angle <m>θ<sub>1</sub></m>,
+<m>θ<sub>2</sub></m> from the vertical.</p>
+<table width="100%"><tr><td align="center"><img src="fig:double-pendulum" width="360" height="205"></td></tr></table>
+<p>Its free-body diagram needs the rods' pulls. Bob 2 across its rod gives one equation, since rod 2's pull has
+no part there (the figure's right). But bob 1's needs rod 2's pull, found from bob 2 along its rod, and both
 bobs' accelerations have centripetal parts. Lagrange's equations need none of that. In the rods' angles</p>
-<p align="center">T = ½(m<sub>1</sub> + m<sub>2</sub>)L<sub>1</sub>²θ̇<sub>1</sub>² + m<sub>2</sub>L<sub>1</sub>L<sub>2</sub>
-cos(θ<sub>1</sub> − θ<sub>2</sub>) θ̇<sub>1</sub>θ̇<sub>2</sub> + ½m<sub>2</sub>L<sub>2</sub>²θ̇<sub>2</sub>², &nbsp;
-V = −(m<sub>1</sub> + m<sub>2</sub>)gL<sub>1</sub> cos θ<sub>1</sub> − m<sub>2</sub>gL<sub>2</sub> cos θ<sub>2</sub>,</p>
+<eq>T = \tfrac12 (m_1 + m_2) L_1^2 \dot\theta_1^2 + \tfrac12 m_2 L_2^2 \dot\theta_2^2 + m_2 L_1 L_2 \cos(\theta_1 - \theta_2)\,\dot\theta_1 \dot\theta_2</eq>
+<eq>V = -(m_1 + m_2) g L_1 \cos\theta_1 - m_2 g L_2 \cos\theta_2</eq>
 <p>and two differentiations give the whole nonlinear equations; the rods' pulls never appear, because the
-coordinates keep the rods' lengths and those forces do no work. For small swings M and K are T's and V's
-Hessians at rest. With equal bobs and rods, ω² = (2 ∓ √2)g/L: the rods swing together (θ<sub>2</sub> =
-√2 θ<sub>1</sub>) or against each other (−√2 θ<sub>1</sub>).</p>
-<p>Large swings are another matter. Released in a mode's shape at 40°, its period is 4 % longer and the shape
-doesn't hold. Released high, the motion is <b>chaotic</b>: two releases a millionth of a radian apart drift
-apart exponentially, doubling their difference about every half second, until nothing about one predicts the
-other. The Swing tab sets the whole equations against the linear ones, and the Chaos tab follows the twins.</p>
+coordinates keep the rods' lengths and those forces do no work. For small swings <m>M</m> and <m>K</m> are
+<m>T</m>'s and <m>V</m>'s Hessians at rest (<m>cos</m> → 1 in <m>T</m>, <m>V</m> to second order in the
+angles):</p>
+<eq>M = \begin{bmatrix} (m_1 + m_2) L_1^2 & m_2 L_1 L_2 \\ m_2 L_1 L_2 & m_2 L_2^2 \end{bmatrix}</eq>
+<eq>K = \begin{bmatrix} (m_1 + m_2) g L_1 & 0 \\ 0 & m_2 g L_2 \end{bmatrix}</eq>
+<p>Here <m>M</m> couples the angles and <m>K</m> doesn't. With equal bobs and rods,
+<m>det(K − ω²M) = 0</m> is <m>(ω²L/g)² − 4(ω²L/g) + 2 = 0</m>, so</p>
+<eq>\omega^2 = (2 \mp \sqrt{2})\,\frac{g}{L}</eq>
+<p>and the rods swing together (<m>θ<sub>2</sub> = √2 θ<sub>1</sub></m>) or against each other
+(<m>θ<sub>2</sub> = −√2 θ<sub>1</sub></m>). Taking the elbow's bend <m>φ = θ<sub>2</sub> − θ<sub>1</sub></m> as
+the second coordinate makes <m>K</m> couple too; the frequencies don't change.</p>
+<p>Large swings are another matter. Released in a mode's shape at 40°, its period is about 4 % longer and the
+shape doesn't hold. Released high, the motion is <b>chaotic</b> <cite>shinbrot</cite>: two releases a millionth
+of a radian apart drift apart exponentially, doubling their difference about every half second, until nothing
+about one predicts the other. The Swing tab sets the whole equations against the linear ones, and the Chaos tab
+follows the twins.</p>
