@@ -558,6 +558,52 @@ def test_fatigue_worked_example():
     assert 10 ** (2 / 8) == pytest.approx(1.78, abs=0.005) and 10 * math.log10(10 ** (2 / 8)) == pytest.approx(2.5)
 
 
+def test_quarter_car_worked_example():
+    """The Theory's worked example: the default car on a class C road at 72 km/h, the road's white velocity,
+    the two modes' estimates, the body's damping, the travel's short answer against the full model, the
+    readout's RMS values, and a 2.7 m wheelbase's nulls."""
+    from vib_tutorial.core.quarter_car import CLASSES, Car, Output, Road, response
+    from vib_tutorial.gui.quarter_car import CarTrial
+
+    t = CarTrial("", "")
+    assert (t.grade, t.speed_kmh, t.sprung, t.unsprung, t.spring, t.damper, t.tyre) == ("C", 72, 300, 40, 20, 1500, 200)
+    car, road = Car(), Road("C", 20.0)
+    assert CLASSES["C"] == pytest.approx(256e-6)
+    gv = 4 * math.pi**2 * 256e-6 * 0.1**2 * 20
+    assert gv == pytest.approx(2.02e-3, abs=0.005e-3)
+    f = np.array([0.5, 3.0, 20.0])
+    assert (2 * math.pi * f) ** 2 * road.psd(f) == pytest.approx(np.full(3, gv))  # white velocity
+    ks = 20e3 * 200e3 / 220e3
+    assert ks == pytest.approx(18.2e3, abs=50)
+    bounce, hop = car.modes()
+    assert math.sqrt(18_200 / 300) / (2 * math.pi) == pytest.approx(1.24, abs=0.005) and bounce == pytest.approx(
+        1.24, abs=0.01
+    )
+    assert math.sqrt(220_000 / 40) / (2 * math.pi) == pytest.approx(11.8, abs=0.05) and hop == pytest.approx(
+        11.8, abs=0.1
+    )
+    assert car.body_zeta() == pytest.approx(0.31, abs=0.005)
+    assert math.sqrt(2.02e-3 * 300 / 6000) == pytest.approx(10.1e-3, abs=0.06e-3)
+    assert math.sqrt(gv * 300 / 6000) == pytest.approx(10.1e-3, abs=0.05e-3)
+    r = response(car, road)
+    assert r.rms[Output.BODY] == pytest.approx(1.48, abs=0.005)
+    assert r.rms[Output.TRAVEL] == pytest.approx(10.7e-3, abs=0.05e-3)
+    assert 100 * r.load_ratio == pytest.approx(24, abs=0.5) and r.weight == pytest.approx(3334, abs=0.5)
+    # the travel's short answer: exact for a rigid wheel, whatever the spring
+    rigid = Car(unsprung=40.0, tyre=1e12)
+    for spring in (10e3, 20e3, 40e3):
+        stiff = Car(spring=spring, tyre=1e12)
+        assert response(stiff, road).rms[Output.TRAVEL] == pytest.approx(math.sqrt(gv * 300 / 6000), rel=0.01)
+    assert response(rigid, road).rms[Output.TRAVEL] < r.rms[Output.TRAVEL]
+    # wheelbase filtering
+    tau = 2.7 / 20
+    assert (
+        tau == pytest.approx(0.135)
+        and 1 / (2 * tau) == pytest.approx(3.7, abs=0.05)
+        and 1 / tau == pytest.approx(7.4, abs=0.05)
+    )
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)

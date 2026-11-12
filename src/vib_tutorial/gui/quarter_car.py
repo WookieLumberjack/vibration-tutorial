@@ -27,7 +27,7 @@ from ..core.quarter_car import (
     response,
     tradeoff,
 )
-from . import settle_plots
+from . import quarter_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -82,14 +82,14 @@ TRIALS = (
     CarTrial(
         "Rougher and faster",
         "Each ISO class is four times the last's PSD, so twice its RMS, and the road's velocity is white with a "
-        "PSD ∝ v, so the RMS grows as √v. Class D at 108 km/h: 3.63 m/s², and the tyre's load swings by 59 % of "
+        "PSD in proportion to <m>v</m>, so the RMS grows as <m>√v</m>. Class D at 108 km/h: 3.63 m/s², and the tyre's load swings by 59 % of "
         "its static load RMS: it leaves the road 4.4 % of the time.",
         grade="D",
         speed_kmh=108.0,
     ),
     CarTrial(
         "Soft damper: comfort",
-        "The damper at 830 N·s/m, the best for comfort on this spring (ζ = 0.17 on the body): 1.36 m/s², 8 % "
+        "The damper at 830 N·s/m, the best for comfort on this spring (<m>ζ</m> = 0.17 on the body): 1.36 m/s², 8 % "
         "better. But the wheel hop is now lightly damped: the tyre's load swings by 29 %, and the suspension "
         "travels 14.4 mm.",
         damper=830.0,
@@ -97,7 +97,7 @@ TRIALS = (
     ),
     CarTrial(
         "Firm damper: grip",
-        "The damper at 2.3 kN·s/m, the best for the tyre's grip (ζ = 0.48): its load swings by 23 %, while the "
+        "The damper at 2.3 kN·s/m, the best for the tyre's grip (<m>ζ</m> = 0.48): its load swings by 23 %, while the "
         "body's acceleration rises to 1.72 m/s². No damper is best for both: the classic conflict.",
         damper=2340.0,
         tab=TAB_DAMPER,
@@ -350,7 +350,7 @@ TRADE_TIP = (
 DAMPER_TIP = "<p>Each output's RMS against the damper, over its value at the car's damper.</p>"
 DRIVE_TIP = "<p>The road's height (top) and the body's acceleration (bottom) on the synthesized road.</p>"
 
-NOTES_HTML = load_notes("quarter_car", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("quarter_car", figures=quarter_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class QuarterCarPage(QtWidgets.QWidget):
