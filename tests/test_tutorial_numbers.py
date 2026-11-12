@@ -820,6 +820,59 @@ def test_energy_methods_trials():
     assert holzer_roots(s, 7.0) == pytest.approx(f, abs=0.0005)
 
 
+def test_energy_methods_worked_example():
+    """The Theory's worked example on the page's opening chain: Rayleigh from the sag, Dunkerley, two Krylov
+    shapes and a line of Holzer's table, each number from the solver and from the figures it quotes."""
+    from vib_tutorial.core.energy_methods import (
+        Basis,
+        dunkerley,
+        dunkerley_terms,
+        exact,
+        holzer,
+        rayleigh,
+        ritz_table,
+        static_deflection,
+    )
+    from vib_tutorial.gui.energy_methods import chain
+
+    s = chain()
+    M, _, K = s.matrices()
+    w, _ = exact(s)
+    assert w[0] ** 2 == pytest.approx(48.246, abs=0.0005)
+    v = static_deflection(s, s.masses)
+    assert 400 * v == pytest.approx([4, 7, 9, 10])
+    assert np.diag(np.linalg.inv(K)) * 400 == pytest.approx([1, 2, 3, 4])
+    assert 12000 / 246 == pytest.approx(48.78, abs=0.005) == rayleigh(s, v)
+    assert math.sqrt(48.78) == pytest.approx(6.984, abs=0.0005)
+    assert math.sqrt(rayleigh(s, v)) / (2 * math.pi) == pytest.approx(1.112, abs=0.0005)
+    assert math.sqrt(rayleigh(s, v)) / w[0] - 1 == pytest.approx(0.0055, abs=0.00005)
+    assert np.sqrt(dunkerley_terms(s)) == pytest.approx([20, 14.14, 11.55, 10], abs=0.005)
+    assert dunkerley(s) == pytest.approx(40) and math.sqrt(40) == pytest.approx(6.325, abs=0.0005)
+    assert math.sqrt(40) / (2 * math.pi) == pytest.approx(1.007, abs=0.0005)
+    assert np.sum(1 / w**2) == pytest.approx(0.025) and 1 / w[0] ** 2 == pytest.approx(0.0207, abs=0.00005)
+    # two Krylov shapes, as the notes scale them
+    w1 = np.array([4.0, 7, 9, 10])
+    w2 = 400 * np.linalg.solve(K, M @ w1)
+    assert w2 == pytest.approx([30, 56, 75, 85])
+    W = np.column_stack([w1, w2])
+    assert W.T @ M @ W == pytest.approx(np.array([[246, 2037], [2037, 16886]]))
+    assert W.T @ K @ W == pytest.approx(400 * np.array([[30, 246], [246, 2037]]))
+    a, b, c = 246 * 16886 - 2037**2, 400 * (30 * 16886 + 2037 * 246 - 2 * 246 * 2037), 400**2 * (30 * 2037 - 246**2)
+    assert (a, b / 1e6, c / 1e7) == pytest.approx((4587, 2.1912, 9.504), abs=0.00005)
+    roots = np.sort(np.roots([a, -b, c]))
+    assert roots == pytest.approx([48.246, 429.45], abs=0.005)
+    ritz = ritz_table(s, Basis.KRYLOV)[1, :2]
+    assert ritz**2 * (2 * math.pi) ** 2 == pytest.approx(roots, rel=1e-9)
+    assert ritz == pytest.approx([1.105, 3.298], abs=0.0005) and ritz[0] / w[0] * 2 * math.pi - 1 < 1e-5
+    assert ritz[1] / (w[1] / (2 * math.pi)) - 1 == pytest.approx(0.036, abs=0.0005)
+    # Holzer at 1 Hz
+    assert (2 * math.pi) ** 2 == pytest.approx(39.48, abs=0.005)
+    rows = holzer(s, 2 * math.pi)
+    assert [r.inertia for r in rows] == pytest.approx([39.5, 75.1, 103.2, 121.2], abs=0.05)
+    assert [r.spring for r in rows] == pytest.approx([360.5, 285.5, 182.2, 61.0], abs=0.05)
+    assert [r.x for r in rows][1:] == pytest.approx([1.901, 2.615, 3.071], abs=0.0005)
+
+
 def test_integration_trials():
     import math
 

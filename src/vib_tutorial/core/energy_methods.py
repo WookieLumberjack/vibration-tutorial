@@ -176,7 +176,7 @@ def holzer(system: ChainSystem, omega: float) -> list[HolzerRow]:
 def holzer_residual(system: ChainSystem, omega: np.ndarray) -> np.ndarray:
     """The force left at the free end (N, for x₁ = 1) at each ω: zero only at a natural frequency.
 
-    It is −det(K − ω²M) / (k₂ k₃ … k_N), so its sign changes at each mode (a test checks).
+    It is det(K − ω²M) / (k₂ k₃ … k_N) (k₁ at ω = 0), so its sign changes at each mode (a test checks).
     """
     m, k = system.masses, system.stiffness
     w2 = np.asarray(omega, dtype=float) ** 2

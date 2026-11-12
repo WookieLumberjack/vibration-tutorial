@@ -38,7 +38,7 @@ from ..core.energy_methods import (
 )
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick, rounded
-from . import settle_plots
+from . import energy_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -91,24 +91,24 @@ TRIALS = (
     EnergyTrial(
         "Rayleigh from the static deflection",
         "The uniform chain (four 1 kg masses, 400 N/m springs) sagging under its own weight, as a guess at mode "
-        "1's shape. Its Rayleigh quotient xᵀKx / xᵀMx gives f₁ = 1.112 Hz against the exact 1.105 Hz: 0.55 % "
+        "1's shape. Its Rayleigh quotient <m>vᵀKv / vᵀMv</m> gives <m>f<sub>1</sub></m> = 1.112 Hz against the exact 1.105 Hz: 0.55 % "
         "high. The shapes are hard to tell apart; the error in frequency is smaller still, because it is "
         "second order in the shape's.",
     ),
     EnergyTrial(
         "A straight line, then one pass of iteration",
-        "A straight line, x<sub>i</sub> ∝ i, is a worse guess: 5.1 % high. One pass of inverse iteration "
-        "(x ← K⁻¹Mx: the static deflection under the inertia forces of the guessed motion) brings it to 0.063 % "
+        "A straight line, <m>v<sub>i</sub> ∝ i</m>, is a worse guess: 5.1 % high. One pass of inverse iteration "
+        "(<m>v ← K<sup>−1</sup>Mv</m>: the static deflection under the inertia forces of the guessed motion) brings it to 0.063 % "
         "high.",
         shape=Shape.LINEAR,
         iterations=1,
     ),
     EnergyTrial(
         "The error is second order",
-        "On a uniform chain the quarter sine is mode 1 exactly. With 10 % of mode 2 mixed in (ε = 0.1) the "
+        "On a uniform chain the quarter sine is mode 1 exactly. With 10 % of mode 2 mixed in (<m>ε = 0.1</m>) the "
         "estimate is 4.6 % high; with 20 %, 16.6 %, nearly four times as much. The Shape error tab draws the "
-        "parabola: it is flat at ε = 0, which is why a rough shape still gives a good frequency, and it never "
-        "dips below the exact f₁.",
+        "parabola: it is flat at <m>ε = 0</m>, which is why a rough shape still gives a good frequency, and it never "
+        "dips below the exact <m>f<sub>1</sub></m>.",
         shape=Shape.SINE,
         eps=0.1,
         tab=TAB_ERROR,
@@ -116,16 +116,16 @@ TRIALS = (
     EnergyTrial(
         "Inverse iteration from a poor guess",
         "Only the last mass moving: 3.18 Hz, 188 % high (it is the last mass on its own spring). One pass of "
-        "inverse iteration: 5.1 % high; two: 0.063 %. Each pass shrinks mode r's share by ω₁²/ω<sub>r</sub>², "
+        "inverse iteration: 5.1 % high; two: 0.063 %. Each pass shrinks mode <m>r</m>'s share by <m>ω<sub>1</sub>²/ω<sub>r</sub>²</m>, "
         "0.12 for mode 2 here, and the frequency's error by its square.",
         shape=Shape.TIP,
         iterations=1,
     ),
     EnergyTrial(
         "Dunkerley from below",
-        "Dunkerley adds up each mass alone on the massless chain: 1/ω₁² ≈ Σ m<sub>i</sub>f<sub>ii</sub>, with "
-        "f = K⁻¹. On the uniform chain the four alone are at 3.18, 2.25, 1.84 and 1.59 Hz and the sum gives "
-        "1.007 Hz, 8.9 % low. With Rayleigh's static estimate the exact f₁ is bracketed: 1.007 ≤ 1.105 ≤ 1.112 "
+        "Dunkerley adds up each mass alone on the massless chain: <m>1/ω<sub>1</sub>² ≈ Σ m<sub>i</sub>(K<sup>−1</sup>)<sub>ii</sub></m>, "
+        "from the flexibility matrix <m>K<sup>−1</sup></m>. On the uniform chain the four alone are at 3.18, 2.25, 1.84 and 1.59 Hz and the sum gives "
+        "1.007 Hz, 8.9 % low. With Rayleigh's static estimate the exact <m>f<sub>1</sub></m> is bracketed: 1.007 ≤ 1.105 ≤ 1.112 "
         "Hz.",
     ),
     EnergyTrial(
@@ -137,18 +137,18 @@ TRIALS = (
     ),
     EnergyTrial(
         "Rayleigh–Ritz from above",
-        "Two Ritz shapes (the static deflection and one more pass of K⁻¹M) on the uniform chain: f₁ is exact to "
-        "four figures, and f₂ is 3.30 Hz against 3.18, 3.6 % high. With three, f₂ is 3.184 and f₃ 5.02 Hz "
-        "against 4.88. Every estimate sits above its mode and comes down as shapes are added; with all N it is "
+        "Two Ritz shapes (the static deflection and one more pass of <m>K<sup>−1</sup>M</m>) on the uniform chain: <m>f<sub>1</sub></m> is exact to "
+        "four figures, and <m>f<sub>2</sub></m> is 3.30 Hz against 3.18, 3.6 % high. With three, <m>f<sub>2</sub></m> is 3.184 and <m>f<sub>3</sub></m> 5.02 Hz "
+        "against 4.88. Every estimate sits above its mode and comes down as shapes are added; with all <m>N</m> it is "
         "exact.",
         tab=TAB_RITZ,
         shapes=2,
     ),
     EnergyTrial(
         "A poor basis: a stiff first spring",
-        "k₁ = 4000 N/m, ten times the others, holds m1 nearly still. Powers of i start with a straight line, "
-        "which moves m1 a quarter as far as m4, far more than the stiff spring lets it: with two of them f₁ is 1.63 Hz "
-        "against 1.38, 18 % high, and f₂ 6.04 against 3.89. The Krylov shapes come from the chain itself, and "
+        "<m>k<sub>1</sub></m> = 4000 N/m, ten times the others, holds <m>m<sub>1</sub></m> nearly still. Powers of i start with a straight line, "
+        "which moves <m>m<sub>1</sub></m> a quarter as far as <m>m<sub>4</sub></m>, far more than the stiff spring lets it: with two of them <m>f<sub>1</sub></m> is 1.63 Hz "
+        "against 1.38, 18 % high, and <m>f<sub>2</sub></m> 6.04 against 3.89. The Krylov shapes come from the chain itself, and "
         "one of them is already within 0.8 %.",
         basis=Basis.POWERS,
         shapes=2,
@@ -157,8 +157,9 @@ TRIALS = (
     ),
     EnergyTrial(
         "Holzer's table",
-        "Holzer guesses ω, sets x₁ = 1 and walks along the chain: each mass takes its inertia force m ω² x out "
-        "of the spring force reaching it and passes the rest on. At 1.00 Hz, 61 N are left at the free end; the "
+        "Holzer guesses <m>ω</m>, sets <m>x<sub>1</sub> = 1</m> and walks along the chain: each mass takes its inertia force "
+        "<m>m<sub>i</sub>ω²x<sub>i</sub></m> out of the spring force reaching it and passes the rest on. At 1.00 Hz, "
+        "<m>N<sub>5</sub></m> = 61 N are left at the free end; the "
         "residual changes sign at 1.105 Hz, then at 3.183, 4.877 and 5.982 Hz: the four natural frequencies, "
         "found without an eigenvalue solver.",
         tab=TAB_HOLZER,
@@ -201,8 +202,9 @@ def _dunkerley(rng: np.random.Generator) -> Question:
         f"kg on k<sub>2</sub> = {k2:g} N/m to m<sub>1</sub>. What lower bound on f<sub>1</sub> does Dunkerley's "
         "sum give?",
         float(1 / np.sqrt(s) / TWO_PI),
-        f"The flexibilities at each mass: f<sub>11</sub> = 1/k<sub>1</sub>, f<sub>22</sub> = 1/k<sub>1</sub> + "
-        f"1/k<sub>2</sub>. 1/ω² ≈ m<sub>1</sub>f<sub>11</sub> + m<sub>2</sub>f<sub>22</sub> = {number(s)} s², so "
+        f"The flexibilities at each mass: (K<sup>−1</sup>)<sub>11</sub> = 1/k<sub>1</sub>, (K<sup>−1</sup>)<sub>22</sub> = "
+        f"1/k<sub>1</sub> + 1/k<sub>2</sub>. 1/ω² ≈ m<sub>1</sub>(K<sup>−1</sup>)<sub>11</sub> + "
+        f"m<sub>2</sub>(K<sup>−1</sup>)<sub>22</sub> = {number(s)} s², so "
         f"ω = {number(1 / np.sqrt(s))} rad/s, f = {number(1 / np.sqrt(s) / TWO_PI)} Hz, below the exact "
         f"{number(exact(chain((m1, m2), (k1, k2)))[0][0] / TWO_PI)} Hz.",
         unit="Hz",
@@ -264,7 +266,8 @@ def _dunkerley_side(rng: np.random.Generator) -> Question:
     return Question(
         "Dunkerley's sum adds up each mass alone on the massless chain. Where does its estimate of f<sub>1</sub> lie?",
         0,
-        "Below it: Σm<sub>i</sub>f<sub>ii</sub> is the trace of FM, Σ 1/ω<sub>r</sub>², more than 1/ω₁² by the higher "
+        "Below it: Σm<sub>i</sub>(K<sup>−1</sup>)<sub>ii</sub> is the trace of K<sup>−1</sup>M, Σ 1/ω<sub>r</sub>², more "
+        "than 1/ω₁² by the higher "
         "modes' terms. With Rayleigh's above, the two bracket it.",
         choices=("Below the exact value", "Above the exact value", "Either side"),
         setup=dict(tab=TAB_ERROR),
@@ -345,7 +348,7 @@ TIPS = {
     "shape": "<p>The shape Rayleigh's quotient is worked out for.</p>",
     "eps": "<p>How much of mode 2's shape (its largest entry 1) is added to the trial shape: a known error in the "
     "shape, to see what it costs in frequency.</p>",
-    "iterations": "<p>Passes of inverse iteration, x ← K⁻¹Mx: each is the static deflection under the inertia "
+    "iterations": "<p>Passes of inverse iteration, v ← K⁻¹Mv: each is the static deflection under the inertia "
     "forces of the shape before.</p>",
     "basis": "<p>The shapes Rayleigh–Ritz restricts the chain to.</p>",
     "shapes": "<p>How many of them it keeps (r ≤ N).</p>",
@@ -369,11 +372,11 @@ RITZ_TIP = (
 )
 HOLZER_TIP = (
     "<p>The force left at the free end of Holzer's table (for x₁ = 1), against the trial frequency; "
-    "it changes sign at each natural frequency (dotted). Drawn as sign · log₁₀(1 + |R|/k₁), since "
+    "it changes sign at each natural frequency (dotted). Drawn as sign · log₁₀(1 + |N<sub>N+1</sub>|/k₁), since "
     "it grows as ω<sup>2N</sup>.</p>"
 )
 
-NOTES_HTML = load_notes("energy_methods", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("energy_methods", figures=energy_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 def matrix_html(A: np.ndarray, digits: int = 4) -> str:

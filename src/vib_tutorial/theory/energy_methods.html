@@ -1,68 +1,140 @@
-
 <before>
+<a href="page:deriving_page#lagrange">Lagrange's equations</a>
 <a href="page:sim_page#undamped-normal-modes-real">Undamped normal modes</a>
 <a href="page:sim_page#rayleigh-quotient">Rayleigh's quotient</a>
 <a href="page:sim_page#energy">Energy</a>
 </before>
+<p>Every method on this page works from the chain's two energies, without solving its eigenproblem. Before
+computers that was the point: a pencil, the energies, and a bound on the answer. Now the same ideas are how big
+models are cut down to size (Rayleigh–Ritz) and checked (a quick Rayleigh estimate against a solver's
+<m>f<sub>1</sub></m>).</p>
+
 <h3><a name="lagrange"></a>The equations from the energies</h3>
-<p>The chain's kinetic and potential energies are</p>
-<p align="center">T = ½ Σ m<sub>i</sub>ẋ<sub>i</sub>² = ½ ẋᵀMẋ, &nbsp;
-V = ½ Σ k<sub>i</sub>(x<sub>i</sub> − x<sub>i−1</sub>)² = ½ xᵀKx &nbsp; (x₀ = 0, the ground).</p>
-<p><b>Lagrange's equations</b>, d/dt(∂T/∂ẋ<sub>i</sub>) − ∂T/∂x<sub>i</sub> + ∂V/∂x<sub>i</sub> = Q<sub>i</sub>,
-turn these into Mẍ + Kx = f with no free-body diagrams: M and K are just the energies' second derivatives
-(the <i>Lagrange</i> tab works them out for the chain you have). The same recipe works for any coordinates:
-angles, a beam's modal amplitudes, the generalized coordinates of the pages that follow.</p>
+<p>The chain's kinetic and potential energies are (with <m>x<sub>0</sub> = 0</m>, the ground)</p>
+<eq>T = \tfrac12 \sum_i m_i \dot x_i^2 = \tfrac12\,\dot x^{\mathsf T} M \dot x</eq>
+<eq>V = \tfrac12 \sum_i k_i (x_i - x_{i-1})^2 = \tfrac12\,x^{\mathsf T} K x</eq>
+<p>and <a href="page:deriving_page#lagrange">Lagrange's equations</a> <cite>lagrange</cite>, in any coordinates
+<m>q<sub>i</sub></m>,</p>
+<eq>\frac{\mathrm{d}}{\mathrm{d}t}\frac{\partial T}{\partial \dot q_i} - \frac{\partial T}{\partial q_i} + \frac{\partial V}{\partial q_i} = Q_i</eq>
+<p>turn them into <m>Mẍ + Kx = f</m> with no free-body diagrams: <m>M</m> and <m>K</m> are the energies'
+second derivatives,</p>
+<eq>M_{ij} = \frac{\partial^2 T}{\partial \dot x_i\,\partial \dot x_j}, \qquad K_{ij} = \frac{\partial^2 V}{\partial x_i\,\partial x_j}</eq>
+<p>Spring <m>i</m> stretches by <m>x<sub>i</sub> − x<sub>i−1</sub></m>, so it adds <m>k<sub>i</sub></m> to the
+two diagonal entries of the masses it joins and <m>−k<sub>i</sub></m> to the two between them: the assembly
+the Simulation page uses (the <i>Lagrange</i> tab works them out for the chain you have). The same recipe works
+in any coordinates: angles, a beam's modal amplitudes, the generalized coordinates of the pages that follow.</p>
 
 <h3><a name="rayleigh"></a>Rayleigh's quotient: an upper bound</h3>
-<p>In a mode x = X sin ωt, the largest kinetic energy ½ω²XᵀMX equals the largest potential energy ½XᵀKX, so</p>
-<p align="center">ω² = XᵀKX / XᵀMX.</p>
-<p>Put in any shape X and this <b>Rayleigh quotient</b> R(X) is an estimate of ω₁². Written in the modes,
-X = φ₁ + Σ ε<sub>r</sub>φ<sub>r</sub> (mass-normalized),</p>
-<p align="center">R(X) = (ω₁² + Σ ε<sub>r</sub>²ω<sub>r</sub>²) / (1 + Σ ε<sub>r</sub>²)
-= ω₁² + Σ ε<sub>r</sub>²(ω<sub>r</sub>² − ω₁²) / (1 + Σ ε<sub>r</sub>²).</p>
-<p>So R is never below ω₁² (every added term is positive), and its error is <b>second order</b> in the shape's:
-a shape 10 % wrong (ε = 0.1) gives ω² about 1 % wrong, so the frequency about 0.5 %, times (ω<sub>r</sub>/ω₁)² − 1. A good shape to try is the
-static deflection under the masses' weights: the inertia forces of mode 1 are distributed much like the
-weights.</p>
+<p>In a mode, <m>x = v sin ωt</m>, the largest kinetic energy <m>½ω²vᵀMv</m> equals the largest potential
+energy <m>½vᵀKv</m>, so</p>
+<eq>\omega^2 = R(v) = \frac{v^{\mathsf T} K v}{v^{\mathsf T} M v}</eq>
+<p>Put in any shape <m>v</m> and this <b>Rayleigh quotient</b> <cite>rayleigh-sound</cite> is an estimate of
+<m>ω<sub>1</sub>²</m>. To see how good, write the shape in the mass-normalized modes, mode 1 and some of each
+other mode, <m>v = φ<sub>1</sub> + Σ ε<sub>r</sub>φ<sub>r</sub></m>. The modes are orthogonal
+(<m>φ<sub>r</sub>ᵀMφ<sub>s</sub> = 0</m> and <m>φ<sub>r</sub>ᵀKφ<sub>s</sub> = 0</m> for <m>r ≠ s</m>), so the
+cross terms drop out and</p>
+<eq>R(v) = \frac{\omega_1^2 + \sum_r \varepsilon_r^2 \omega_r^2}{1 + \sum_r \varepsilon_r^2}</eq>
+<eq>= \omega_1^2 + \frac{\sum_r \varepsilon_r^2 (\omega_r^2 - \omega_1^2)}{1 + \sum_r \varepsilon_r^2}</eq>
+<p>So <m>R</m> is never below <m>ω<sub>1</sub>²</m> (every added term is positive), and its error is
+<b>second order</b> in the shape's: a shape 10 % wrong (<m>ε = 0.1</m>) puts <m>ω²</m> about 1 % times
+<m>(ω<sub>r</sub>/ω<sub>1</sub>)² − 1</m> high, and the frequency half that.</p>
+<p>A good shape to try is the <b>static deflection</b> under the masses' own weights: mode 1's inertia forces,
+<m>m<sub>i</sub>ω²x<sub>i</sub></m>, are spread much like the weights. Then <m>Kv</m> is the weights,
+<m>vᵀKv = g Σ m<sub>i</sub>v<sub>i</sub></m>, and the quotient needs only the sag:</p>
+<eq>\omega_1^2 \approx g\,\frac{\sum_i m_i v_i}{\sum_i m_i v_i^2}</eq>
 
 <h3><a name="iteration"></a>Improving the shape</h3>
-<p>The static deflection under the inertia forces of a guessed motion, X' = K⁻¹MX, is a better guess: each
-mode's share is divided by its ω<sub>r</sub>², so mode r's share against mode 1's falls by ω₁²/ω<sub>r</sub>² per
-pass (<b>inverse iteration</b>, or Stodola's method). The static-deflection shape is one pass from a rigid
-guess.</p>
+<p>The static deflection under the inertia forces of a guessed motion is a better guess:</p>
+<eq>v' = K^{-1} M v</eq>
+<p>Since <m>K<sup>−1</sup>Mφ<sub>r</sub> = φ<sub>r</sub>/ω<sub>r</sub>²</m>, each mode's share is divided by its
+<m>ω<sub>r</sub>²</m>: against mode 1's, mode <m>r</m>'s falls by <m>ω<sub>1</sub>²/ω<sub>r</sub>²</m> per pass,
+<m>ε<sub>r</sub>′ = ε<sub>r</sub>ω<sub>1</sub>²/ω<sub>r</sub>²</m>, and the quotient's error by the square of
+that. This is <b>inverse iteration</b>. The static-deflection shape is one pass from every mass moving
+together (<m>v = 1</m>, whose inertia forces are the weights' shape).</p>
 
 <h3><a name="dunkerley"></a>Dunkerley: a lower bound</h3>
-<p>With the flexibility matrix F = K⁻¹, the trace of FM is Σ 1/ω<sub>r</sub>², so</p>
-<p align="center">1/ω₁² &lt; Σ<sub>r</sub> 1/ω<sub>r</sub>² = Σ<sub>i</sub> m<sub>i</sub>f<sub>ii</sub>.</p>
-<p>Each term m<sub>i</sub>f<sub>ii</sub> is 1/ω² of mass i alone on the massless chain, so Dunkerley's estimate
-"adds up the masses one at a time". It is below ω₁ by how much the higher modes contribute to the trace: it does
-best when one mass dominates. With Rayleigh's it brackets the exact value.</p>
+<p>The <b>flexibility matrix</b> <m>K<sup>−1</sup></m> turns forces into deflections: its column <m>i</m> is
+the chain's sag under 1 N on mass <m>i</m>, and <m>(K<sup>−1</sup>)<sub>ii</sub></m> is how far mass <m>i</m>
+itself moves. On the chain the force is carried by the springs between mass <m>i</m> and the ground, and the
+rest ride along:</p>
+<table width="100%"><tr><td align="center"><img src="fig:flexibility" width="360" height="125"></td></tr></table>
+<eq>(K^{-1})_{ii} = \frac{1}{k_1} + \frac{1}{k_2} + \dots + \frac{1}{k_i}</eq>
+<p>The eigenvalues of <m>K<sup>−1</sup>M</m> are the <m>1/ω<sub>r</sub>²</m> (from
+<m>Kφ = ω²Mφ</m>), and a matrix's trace is the sum of its eigenvalues. With <m>M</m> diagonal the trace is
+<m>Σ m<sub>i</sub>(K<sup>−1</sup>)<sub>ii</sub></m>, so</p>
+<eq>\frac{1}{\omega_1^2} < \sum_r \frac{1}{\omega_r^2} = \sum_i m_i (K^{-1})_{ii} = \sum_i \frac{1}{\omega_{ii}^2}</eq>
+<p>Each <m>ω<sub>ii</sub></m> is mass <m>i</m> alone on the massless chain, so Dunkerley's estimate
+<cite>dunkerley</cite> "adds up the masses one at a time". It is below <m>ω<sub>1</sub></m> by what the higher
+modes add to the sum, so it does best when one mass dominates. With Rayleigh's it brackets the exact value.</p>
 
 <h3><a name="ritz"></a>Rayleigh–Ritz</h3>
-<p>Restrict the motion to a combination of r shapes, x = Qa, and make Rayleigh's quotient stationary in a: that is
-the small eigenproblem</p>
-<p align="center">(QᵀKQ) a = ω² (QᵀMQ) a.</p>
-<p>It gives r frequencies at once, and each is above its mode's exact value (the Poincaré separation, or min–max,
-theorem), falling as shapes are added (with one more shape, the old estimates and the new interlace); with all N shapes it is exact. The quality depends on the shapes: shapes the structure makes
-itself (static deflections, and K⁻¹M applied to them again: <b>Krylov</b> or load-dependent Ritz vectors) do far
-better than generic polynomials that ignore where the structure is stiff. Every reduced model on the later pages
+<p>Restrict the motion to a mix of a few shapes, the columns of <m>W</m>, with weights <m>a</m>:
+<m>x = Wa</m>. Making Rayleigh's quotient stationary in <m>a</m> <cite>ritz</cite> gives a small
+eigenproblem, one row per shape:</p>
+<eq>(W^{\mathsf T} K W)\,a = \omega^2\,(W^{\mathsf T} M W)\,a</eq>
+<p>It gives as many frequencies as there are shapes, and each is above its mode's exact value (the separation,
+or min–max, theorem <cite>poincare</cite>). Adding a shape brings every estimate down, the new ones interlacing
+the old; with all <m>N</m> shapes it is exact.</p>
+<p>The answer is only as good as the shapes. Shapes the structure makes itself do far better than generic
+polynomials that ignore where it is stiff: the static deflection, then <m>K<sup>−1</sup>M</m> applied to it
+again and again (<b>Krylov</b>, or load-dependent Ritz, vectors <cite>wilson-ritz</cite>). Each such shape adds
+the next pass of inverse iteration, so the first mode converges fastest. Every reduced model on the later pages
 (substructuring, modal coupling, finite elements) is a Rayleigh–Ritz model.</p>
 
 <h3><a name="holzer"></a>Holzer's table</h3>
-<p>For a chain, guess ω, set x₁ = 1 and walk along it: the ground spring pulls k₁x₁; mass i keeps
-m<sub>i</sub>ω²x<sub>i</sub> of the force reaching it and passes the rest, F<sub>i+1</sub>, to the next spring,
-which stretches by F<sub>i+1</sub>/k<sub>i+1</sub>. At the free end nothing should be left. The force that is left,
-R(ω), is a polynomial in ω² whose roots are the natural frequencies; it changes sign at each one, so they can be
+<p>For a chain there is a way with no matrices at all <cite>holzer</cite>. Guess <m>ω</m>, set
+<m>x<sub>1</sub> = 1</m> and walk along the chain. Spring 1 pulls mass 1 back with <m>N<sub>1</sub> =
+k<sub>1</sub>x<sub>1</sub></m>. Moving as <m>x<sub>i</sub> sin ωt</m>, mass <m>i</m> needs a net
+<m>m<sub>i</sub>ω²x<sub>i</sub></m> towards the ground, so the next spring is left to carry the rest:</p>
+<table width="100%"><tr><td align="center"><img src="fig:holzer" width="360" height="125"></td></tr></table>
+<eq>N_{i+1} = N_i - m_i \omega^2 x_i, \qquad x_{i+1} = x_i + \frac{N_{i+1}}{k_{i+1}}</eq>
+<p>Past the last mass there is no spring, so at a natural frequency <m>N<sub>N+1</sub></m> is zero. At any other
+<m>ω</m> it is the residual, a polynomial in <m>ω²</m> (it is <m>det(K − ω²M)</m> over
+<m>k<sub>2</sub>k<sub>3</sub>…k<sub>N</sub></m>) that changes sign at each natural frequency, so they can be
 found by bisection, mode by mode, with a pencil. Holzer's method was the standard for torsional drive trains
-(see the Torsional vibration page) before computers.</p>
+(see the Torsional vibration page, later in the course) before computers.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the uniform chain: four 1 kg masses on four 400 N/m springs, whose exact frequencies
+(from <a href="page:sim_page#uniform-chain">the closed form</a>) are 1.105, 3.183, 4.877 and 5.982 Hz,
+<m>ω<sub>1</sub>² = 48.246</m> (rad/s)².</p>
+<p><b>The static deflection.</b> Under 1 N on each mass, spring 1 carries all four newtons, spring 2 three, spring 3 two and
+spring 4 one, so they stretch 4, 3, 2 and 1 (in 1/400 m) and the masses sag
+<m>v = (4, 7, 9, 10)/400</m> m. With <m>Kv</m> the 1 N loads,</p>
+<eq>R = \frac{\sum v_i}{\sum v_i^2} = \frac{30 \times 400}{16 + 49 + 81 + 100} = \frac{12000}{246} = 48.78</eq>
+<p>so <m>ω = 6.984</m> rad/s and <m>f<sub>1</sub> ≈ 1.112</m> Hz, 0.55 % high: the readout's Rayleigh line.</p>
+<p><b>Dunkerley.</b> From the figure, <m>(K<sup>−1</sup>)<sub>ii</sub> = i/400</m> m/N, so mass <m>i</m> alone is
+at <m>ω<sub>ii</sub>² = 400/i</m>: 20, 14.14, 11.55 and 10 rad/s, or 3.18, 2.25, 1.84 and 1.59 Hz. The sum
+<m>Σ m<sub>i</sub>(K<sup>−1</sup>)<sub>ii</sub> = 10/400 = 0.025</m> s² gives <m>ω = √40 = 6.325</m> rad/s,
+<m>f<sub>1</sub> ≥ 1.007</m> Hz, 8.9 % low. (The sum is also <m>Σ 1/ω<sub>r</sub>²</m> exactly: mode 1
+alone is 0.0207 of the 0.025.) So <m>1.007 ≤ f<sub>1</sub> ≤ 1.112</m> Hz, with no eigenvalue solved.</p>
+<p><b>Rayleigh–Ritz with two Krylov shapes</b> (the page's default). The second shape is the sag under the first's
+inertia forces: loads (4, 7, 9, 10) give spring forces 30, 26, 19 and 10, so
+<m>w<sub>2</sub> = (30, 56, 75, 85)</m> (scaled; a shape's scale doesn't matter). Since
+<m>Kw<sub>1</sub></m> and <m>Kw<sub>2</sub></m> are 400 times the loads (1, 1, 1, 1) and
+<m>w<sub>1</sub></m>, the reduced matrices are sums of products:</p>
+<eq>W^{\mathsf T} M W = \begin{bmatrix} 246 & 2037 \\ 2037 & 16886 \end{bmatrix}</eq>
+<eq>W^{\mathsf T} K W = 400 \begin{bmatrix} 30 & 246 \\ 246 & 2037 \end{bmatrix}</eq>
+<p>Their determinant equation is <m>4587 ω⁴ − 2.1912×10⁶ ω² + 9.504×10⁷ = 0</m>, so <m>ω²</m> = 48.246 and
+429.45: <m>f<sub>1</sub></m> = 1.105 Hz, exact to five figures, and <m>f<sub>2</sub></m> = 3.298 Hz against
+3.183, 3.6 % high. Both above, as the theorem says.</p>
+<p><b>Holzer at 1.00 Hz</b> (<m>ω² = 39.48</m>, the Holzer tab's start). Spring 1 pulls 400 N; mass 1 keeps
+39.5 N and passes 360.5 N, so <m>x<sub>2</sub> = 1 + 360.5/400 = 1.901</m>; mass 2 keeps 75.1 N and passes
+285.5 N, <m>x<sub>3</sub> = 2.615</m>; mass 3 keeps 103.2 N and passes 182.2 N,
+<m>x<sub>4</sub> = 3.071</m>; mass 4 keeps 121.2 N and leaves <m>N<sub>5</sub> = 61.0</m> N. Positive, so
+1 Hz is below <m>f<sub>1</sub></m>; the sign changes at 1.105 Hz.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these loads a chain into the Simulation page and sets up the estimates (Things to try, top left).</p>
 <!--TRIALS-->
+<h3><a name="notation"></a>Notation</h3>
+<notation>chain_i N_dof x f energies V_theta matrices q Q_gen g omega_i phi_i R eps_r flex omega_ii ritz holzer</notation>
+<reading>rao thomson den-hartog</reading>
 <takeaways>
-<li>M and K are the second derivatives of the kinetic and potential energies (Lagrange).</li>
-<li>Rayleigh's quotient is never below ω₁², and its error is second order in the shape's.</li>
-<li>Dunkerley's sum Σ m<sub>i</sub>f<sub>ii</sub> bounds ω₁ from below; with Rayleigh's it brackets it.</li>
-<li>Rayleigh–Ritz gives r frequencies, each from above; good shapes come from the structure itself.</li>
+<li><m>M</m> and <m>K</m> are the second derivatives of the kinetic and potential energies (Lagrange).</li>
+<li>Rayleigh's quotient is never below <m>ω<sub>1</sub>²</m>, and its error is second order in the shape's.</li>
+<li>Dunkerley's sum <m>Σ m<sub>i</sub>(K<sup>−1</sup>)<sub>ii</sub></m> bounds <m>ω<sub>1</sub></m> from below;
+with Rayleigh's it brackets it.</li>
+<li>Rayleigh–Ritz gives a frequency per shape, each from above; good shapes come from the structure itself.</li>
 <li>Holzer's residual changes sign at each natural frequency of a chain.</li>
 </takeaways>

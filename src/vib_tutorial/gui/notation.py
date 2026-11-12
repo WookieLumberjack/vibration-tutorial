@@ -575,7 +575,7 @@ SYMBOLS = (
     ),
     Symbol(
         "R",
-        "R",
+        "R, v",
         "Rayleigh's quotient vᵀKv/vᵀMv of a guessed shape v: an estimate of ω², never below ω<sub>1</sub>²",
         "(rad/s)²",
         "sim_page",
@@ -608,6 +608,40 @@ SYMBOLS = (
         "√kg, kg",
         "sim_page",
         "sweeps-and-ground-motion",
+    ),
+    Symbol(
+        "eps_r",
+        "ε<sub>r</sub>",
+        "how much of mode r a guessed shape holds, against mode 1's: v = φ<sub>1</sub> + Σ ε<sub>r</sub>φ<sub>r</sub>",
+        "–",
+        "energy_page",
+        "rayleigh",
+    ),
+    Symbol(
+        "flex",
+        "K<sup>−1</sup>, (K<sup>−1</sup>)<sub>ii</sub>",
+        "flexibility matrix: column i is the deflection under 1 N on mass i; its diagonal entry is how far "
+        "mass i itself moves",
+        "m/N",
+        "energy_page",
+        "dunkerley",
+    ),
+    Symbol(
+        "omega_ii",
+        "ω<sub>ii</sub>",
+        "mass i alone on the massless chain: its natural frequency, 1/√(m<sub>i</sub>(K<sup>−1</sup>)<sub>ii</sub>)",
+        "rad/s",
+        "energy_page",
+        "dunkerley",
+    ),
+    Symbol(
+        "holzer",
+        "N<sub>i</sub>",
+        "Holzer's table: the tension in spring i at a trial ω (x<sub>1</sub> = 1); N<sub>N+1</sub>, past the last "
+        "mass, is the residual, zero at a natural frequency",
+        "N",
+        "energy_page",
+        "holzer",
     ),
     Symbol(
         "H_jk",
