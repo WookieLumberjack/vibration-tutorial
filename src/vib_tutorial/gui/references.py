@@ -618,6 +618,28 @@ REFERENCES = (
         "Sound and Vibration</i> 234, 85–114, 2000",
         "",
     ),
+    Reference(
+        "biot",
+        "Biot 1932",
+        "M. A. Biot, <i>Vibration of Buildings during Earthquakes</i>, PhD thesis, California Institute of "
+        "Technology, 1932; and A mechanical analyzer for the prediction of earthquake stresses, <i>Bulletin of the "
+        "Seismological Society of America</i> 31, 151–171, 1941",
+        "",
+    ),
+    Reference(
+        "ohara-belsheim",
+        "O'Hara and Belsheim 1963",
+        "G. J. O'Hara and R. O. Belsheim, <i>Interim Design Values for Shock Design of Shipboard Equipment</i>, NRL "
+        "Memorandum Report 1396, Naval Research Laboratory, 1963",
+        "",
+    ),
+    Reference(
+        "lalanne-2",
+        "Lalanne 2014",
+        "C. Lalanne, <i>Mechanical Vibration and Shock Analysis, Volume 2: Mechanical Shock</i>, 3rd edition, "
+        "Wiley-ISTE, 2014",
+        "the shock response spectrum, its properties, and how shock tests are specified and run on machines and shakers",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
