@@ -45,7 +45,7 @@ from ..core.shock import (
     target,
     target_band,
 )
-from . import weak
+from . import maths, shock_figures, weak
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
@@ -125,33 +125,33 @@ TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
         "Half-sine",
         {},
-        "A 10 g half-sine. At Q = 10 the spectrum peaks at 1.65 × the pulse's peak, at f T = 0.83: an oscillator "
+        "A 10 g half-sine. At <m>Q</m> = 10 the spectrum peaks at 1.65 × the pulse's peak, at <m>fT</m> = 0.83: an oscillator "
         "whose period is a little longer than the pulse. Stiff oscillators follow the pulse (1 ×); soft ones take it as "
-        "an impulse and ring with ω Δv, the dashed line at the left.",
+        "an impulse and ring with <m>ωΔv</m>, the dashed line at the left.",
     ),
     (
         "Square",
         {"shape": Shape.SQUARE},
-        "A square pulse: a step up and one down. Every stiff oscillator overshoots the step, to 1.85 × at Q = 10 "
-        "(2 × undamped), so the spectrum stays high across the top. Its Δv is the largest of the pulses (the area "
-        "A T), so it is highest at the left too.",
+        "A square pulse: a step up and one down. Every stiff oscillator overshoots the step, to 1.85 × at <m>Q</m> = 10 "
+        "(2 × undamped), so the spectrum stays high across the top. Its <m>Δv</m> is the largest of the pulses (the area "
+        "<m>AT</m>), so it is highest at the left too.",
     ),
     (
         "Terminal-peak sawtooth",
         {"shape": Shape.TERMINAL_PEAK},
-        "Rising slowly, dropping at once: the drop makes stiff oscillators ring the other way, so above f T ≈ 2 "
+        "Rising slowly, dropping at once: the drop makes stiff oscillators ring the other way, so above <m>fT</m> ≈ 2 "
         "the negative spectrum is 0.85–0.86 × the positive one. Tests like it for that: a part is loaded both ways.",
     ),
     (
         "Haversine",
         {"shape": Shape.HAVERSINE},
         "A smooth pulse: no corner, so stiff oscillators don't ring and the negative spectrum at the top is "
-        "nearly nothing. Its peak, 1.60 × at f T = 1.0, is close to the half-sine's.",
+        "nearly nothing. Its peak, 1.60 × at <m>fT</m> = 1.0, is close to the half-sine's.",
     ),
     (
         "Light damping, Q = 50",
         {"q": 50.0},
-        "The half-sine at Q = 50: the spectrum hardly changes (1.74 × at the peak against 1.65 ×). A shock is over "
+        "The half-sine at <m>Q</m> = 50: the spectrum hardly changes (1.74 × at the peak against 1.65 ×). A shock is over "
         "before damping has time to act on the primary peak, unlike a steady sine, whose response grows with Q.",
     ),
     (
@@ -165,20 +165,20 @@ TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
         "Pyrotechnic transient",
         {"shape": Shape.TRANSIENT, "noise": 0.02},
         "A burst of damped sines with a little noise: the spectrum peaks among its frequencies, at 4.5 × the "
-        "record's peak (f T ≈ 38). It ends at rest, with no net Δv, so the soft oscillators at the left feel only "
-        "their dampers' push: at f T = 0.02 the spectrum is 10⁻⁴ of the peak.",
+        "record's peak (<m>fT</m> ≈ 38). It ends at rest, with no net <m>Δv</m>, so the soft oscillators at the left feel only "
+        "their dampers' push: at <m>fT</m> = 0.02 the spectrum is 10⁻⁴ of the peak.",
     ),
     (
         "Zero shift",
         {"shape": Shape.TRANSIENT, "noise": 0.02, "offset": 0.01},
         "The same record with a 1 % offset, an accelerometer's zero shift: integrated over the record it is a "
-        "velocity change the shock didn't have, and the spectrum's low end climbs to the 2π f Δv line, ten times "
-        "what it was at f T = 0.02. A measured spectrum whose low end follows that line is suspect.",
+        "velocity change the shock didn't have, and the spectrum's low end climbs to the <m>2πfΔv</m> line, ten times "
+        "what it was at <m>fT</m> = 0.02. A measured spectrum whose low end follows that line is suspect.",
     ),
     (
         "Modes combined",
         {"tab": "chain_tab"},
-        "The half-sine on the chain. Each mode is an oscillator at its own f and ζ, driven by Γ times the base, so "
+        "The half-sine on the chain. Each mode is an oscillator at its own <m>f</m> and <m>ζ</m>, driven by <m>Γ</m> times the base, so "
         "the SRS gives each mode's peak but not when it comes. On m4, exactly 9.14 g; ABS (their sum) 11 g, +20 %; "
         "SRSS 6.62 g, −28 %; NRL 9.27 g, +1 %. The SRSS assumes the modes peak at unrelated times, but a shock sets "
         "them all off at once: each one's part peaks within the first 0.3 s, a third of mode 1's period.",
@@ -187,7 +187,7 @@ TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
         "Four-way paper",
         {"tab": "tri_tab"},
         "The half-sine's spectrum as a pseudo-velocity, read against diagonals of constant displacement and "
-        "acceleration. At the left it tends to the base's Δv = 2AT/π, 6.24 m/s; at the right it falls along the "
+        "acceleration. At the left it tends to the base's <m>Δv = 2AT/π</m>, 6.24 m/s; at the right it falls along the "
         "10 g line. Between, it says how far each oscillator's spring stretches: 4.6 m at the softest, the rattle "
         "space a soft mount would need.",
     ),
@@ -195,7 +195,7 @@ TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
         "Pulse shapes compared",
         {"tab": "shapes_tab"},
         "The six pulses at the same peak and duration. The square has the most area, so it is highest at the left "
-        "(0.12 × at f T = 0.02) and, overshooting, near the top (1.86 ×). The terminal-peak sawtooth rises gently "
+        "(0.12 × at <m>fT</m> = 0.02) and, overshooting, near the top (1.86 ×). The terminal-peak sawtooth rises gently "
         "and peaks at only 1.19 ×. Tick Same velocity change: the low ends meet, and the narrower pulses, now "
         "taller, take the top: the initial-peak sawtooth reaches 2.33 ×, the square only 1.18 ×.",
     ),
@@ -210,13 +210,17 @@ TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
         "Wavelets to a spectrum",
         {"shape": Shape.WAVELETS},
-        "The same target met by 28 wavelets, each sin(ωt/N) sin ωt over N half-cycles, N odd: each starts and ends at "
+        "The same target met by 28 wavelets, each <m>sin(ωt/N<sub>w</sub>) sin ωt</m> over <m>N<sub>w</sub></m> half-cycles, <m>N<sub>w</sub></m> odd: each starts and ends at "
         "rest, so the record does too, within a micrometre, and a shaker can play it: the table moves at most "
         "0.54 m and comes back.",
     ),
 )
 
-NOTES_HTML = load_notes("shock")
+NOTES_HTML = load_notes(
+    "shock",
+    figures=shock_figures.FIGURES,
+    trials="<ol>" + "".join(f"<li><b>{name}.</b> {maths.markup(note)}</li>" for name, _, note in TRIALS) + "</ol>",
+)
 
 
 TAB_OSCILLATOR, TAB_CHAIN, TAB_TRIPARTITE, TAB_SHAPES = range(4)
@@ -808,7 +812,7 @@ class ShockPage(QtWidgets.QWidget):
         self._loading = False
         self._pick_peak = True
         self._show_controls()
-        self.trial_note.setText(note)
+        self.trial_note.setText(maths.markup(note))
         if "tab" in changes:
             self.tabs.setCurrentWidget(getattr(self, changes["tab"]))
         self._schedule(rerecord=True)

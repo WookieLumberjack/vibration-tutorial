@@ -668,6 +668,27 @@ def test_rigid_mounts_worked_example():
     assert math.atan(s) == pytest.approx(lay.focus_tilt(), rel=1e-6)
 
 
+def test_shock_worked_example():
+    """The Theory's worked example: the default 10 g, 100 ms half-sine at Q = 10, its velocity change, the
+    spectrum's impulse end, its peak and its stiff end, and the softest oscillator's stretch."""
+    from vib_tutorial.core.shock import G, Pulse, Shape
+    from vib_tutorial.gui.shock import ShockSetup, _peak_srs
+
+    t = ShockSetup()
+    assert (t.shape, t.peak, t.duration, t.q) == (Shape.HALF_SINE, 10.0, 100.0, 10.0)
+    A, T = 10 * G, 0.1
+    assert A == pytest.approx(98.1, abs=0.05)
+    dv = 2 * A * T / math.pi
+    assert dv == pytest.approx(6.24, abs=0.005)
+    p = Pulse()
+    srs = _peak_srs(p, np.array([0.2, 8.25, 500.0]))
+    assert 2 * math.pi * 0.2 * 6.24 == pytest.approx(7.84, abs=0.005) and 7.84 / G == pytest.approx(0.80, abs=0.005)
+    assert srs[0] == pytest.approx(0.74, abs=0.005)
+    assert srs[1] == pytest.approx(16.5, abs=0.05) and srs[1] / 10 == pytest.approx(1.65, abs=0.005)
+    assert srs[2] == pytest.approx(10.0, abs=0.05)
+    assert 6.24 / (2 * math.pi * 0.2) == pytest.approx(4.97, abs=0.005)
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)

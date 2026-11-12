@@ -4017,6 +4017,7 @@ def test_shock_page(app):
     """The shock spectrum page follows the chain, sets its pulse from it, records again only when the pulse changes,
     picks an oscillator from the spectrum, runs each trial, and follows the chain's size."""
     from vib_tutorial.core.shock import Response, Shape
+    from vib_tutorial.gui import maths
     from vib_tutorial.gui.main_window import MainWindow
     from vib_tutorial.gui.shock import TRIALS
 
@@ -4051,7 +4052,7 @@ def test_shock_page(app):
     for i, (_, _, note) in enumerate(TRIALS):
         p.trial.setCurrentIndex(i)
         p.recompute()
-        assert p.trial_note.text() == note and p.spectrum is not None and "Maximax" in p.readout.text()
+        assert p.trial_note.text() == maths.markup(note) and p.spectrum is not None and "Maximax" in p.readout.text()
     p.trial.pick("A component on the last mass")
     p.recompute()
     assert p.mass.isVisibleTo(p) and p.mass.currentText() == "m4" and "3.32 ×" in p.readout.text()

@@ -4,27 +4,32 @@
 <a href="page:random_page#miles">Miles' equation</a>
 </before>
 <h3><a name="srs"></a>The shock response spectrum</h3>
-<p>A shock is a short, strong acceleration of a structure's base: a drop, a collision, a stage separation.
-Its time history alone says little about what it does. What matters is what it does to the things mounted on
-the structure, and they are, to a first approximation, single-degree-of-freedom oscillators: a mass on a
-spring and damper, natural frequency f, damping ζ. The <b>shock response spectrum</b> (SRS) is the largest
-absolute acceleration of such an oscillator on that base, against f, all at one Q = 1/2ζ (10 by custom).
-A component whose natural frequency is f sees that peak; its spring carries that peak times its mass.</p>
-<p>In the coordinate z relative to the base, z'' + 2ζω z' + ω² z = −a(t), and the oscillator's absolute
-acceleration is −2ζω z' − ω² z.</p>
+<p>A shock is a short, strong acceleration <m>a(t)</m> of a structure's base: a drop, a collision, a stage
+separation. Its time history alone says little about what it does. What matters is what it does to the things
+mounted on the structure, and they are, to a first approximation, single-degree-of-freedom oscillators: a mass on
+a spring and damper, natural frequency <m>f</m> (<m>ω = 2πf</m>), damping <m>ζ</m>. The <b>shock response
+spectrum</b> (SRS) is the largest absolute acceleration of such an oscillator on that base, against <m>f</m>, all
+at one <m>Q = 1/2ζ</m> (10 by custom). Biot <cite>biot</cite> drew the first such spectra, for earthquakes. A
+component whose natural frequency is <m>f</m> sees that peak; its spring carries that peak times its mass.</p>
+<p>In the coordinate <m>z</m> relative to the base,</p>
+<eq>\ddot z + 2\zeta\omega\,\dot z + \omega^2 z = -a(t)</eq>
+<p>and the oscillator's absolute acceleration is <m>ẍ = −2ζωż − ω<sup>2</sup>z</m>.</p>
 
 <h3><a name="regions"></a>Three regions</h3>
 <ul>
-<li><b>Stiff oscillators</b> (f T ≫ 1) follow the pulse: the spectrum tends to the pulse's peak. A pulse that
-jumps (a square, an initial-peak sawtooth) makes them overshoot, to nearly twice it.</li>
-<li><b>Near f T ≈ 1</b> the oscillator amplifies: 1.65 × at Q = 10 for a half-sine.</li>
-<li><b>Soft oscillators</b> (f T ≪ 1) barely move while the pulse lasts. They take it as an impulse, a
-change of velocity Δv, and ring with amplitude ω Δv: the spectrum rises as 2π f Δv. Only the pulse's area
-matters there, not its shape. A transient with no net Δv is far lower there: only the damper's push, 2ζω
-times the base's velocity, reaches a soft oscillator.</li>
+<li><b>Stiff oscillators</b> (<m>fT ≫ 1</m>, <m>T</m> the pulse's length) follow the pulse: the spectrum tends to
+the pulse's peak <m>A</m>. A pulse that jumps (a square, an initial-peak sawtooth) makes them overshoot, to nearly
+twice it.</li>
+<li><b>Near <m>fT ≈ 1</m></b> the oscillator amplifies: 1.65 × at <m>Q</m> = 10 for a half-sine.</li>
+<li><b>Soft oscillators</b> (<m>fT ≪ 1</m>) barely move while the pulse lasts. They take it as an impulse, a
+change of velocity <m>Δv = ∫a dt</m>: afterwards the mass is still where it was and the base moves away at
+<m>Δv</m>, so <m>z</m> starts at 0 with <m>ż = −Δv</m> and rings with amplitude <m>Δv/ω</m>, an acceleration of
+<m>ω<sup>2</sup> × Δv/ω = ωΔv</m>. The spectrum rises as <m>2πfΔv</m>. Only the pulse's area matters there, not its
+shape. A transient with no net <m>Δv</m> is far lower there: only the damper's push, <m>2ζω</m> times the base's
+velocity, reaches a soft oscillator.</li>
 </ul>
 
-<h3>Primary, residual, positive, negative</h3>
+<h3><a name="primary-residual"></a>Primary, residual, positive, negative</h3>
 <p>The <b>primary</b> spectrum is the largest response while the pulse lasts, the <b>residual</b> one the
 free decay after it (soft oscillators peak there); each has a <b>positive</b> and a <b>negative</b> peak. The
 <b>maximax</b> is the largest of the four. Pulses with the same maximax can load a part very differently one
@@ -32,36 +37,38 @@ way and the other: a terminal-peak sawtooth's drop rings stiff oscillators backw
 is nearly its positive one, which is why tests use it.</p>
 
 <h3><a name="damping"></a>Damping</h3>
-<p>The primary peak barely depends on Q: the shock is over before the damping has acted. That is unlike a
+<p>The primary peak barely depends on <m>Q</m>: the shock is over before the damping has acted. That is unlike a
 steady sine, whose resonant response is Q times larger. The residual decays with ζ, but its first peak, which
 the spectrum counts, hardly does.</p>
 
 <h3><a name="chain"></a>The chain's peak from the spectrum</h3>
 <p>The SRS was meant for more than single oscillators. On the shaken base each of the chain's modes is an
-oscillator at its own frequency and damping, driven by Γ<sub>r</sub> = φ<sub>r</sub>ᵀM1 times the base's
-acceleration, so the chain's absolute acceleration at mass j is Σ φ<sub>jr</sub>Γ<sub>r</sub> times each
-oscillator's, and its peak term is φ<sub>jr</sub>Γ<sub>r</sub> times the SRS at that mode. The spectrum loses
+oscillator at its own frequency and damping, driven by <m>Γ<sub>r</sub> = φ<sub>r</sub><sup>T</sup>M1</m> times
+the base's acceleration, so the chain's absolute acceleration at mass <m>j</m> is
+<m>Σ φ<sub>jr</sub>Γ<sub>r</sub></m> times each oscillator's, and its peak term is <m>φ<sub>jr</sub>Γ<sub>r</sub></m>
+times the SRS at that mode. The spectrum loses
 when each peak comes, so the terms are combined by a rule. <b>ABS</b>, their sum, never falls short; <b>SRSS</b>,
 the root of the sum of squares, assumes the peaks come at unrelated times, as in a long random record, and a
 shock's don't: it sets every mode off at once, and they peak early, nearly together, so the SRSS falls short.
-<b>NRL</b> (the Naval Research Laboratory's rule, used for shipboard shock) adds the largest term in full to the
+<b>NRL</b> (the Naval Research Laboratory's rule <cite>ohara-belsheim</cite>, used for shipboard shock) adds the largest term in full to the
 SRSS of the rest. The <i>Chain</i> tab sets them against the exact response, mass by mass and spring by spring.
-Γ<sub>r</sub>² is the mode's effective mass (the modes' add up to the total mass): the modes that carry most of
+<m>Γ<sub>r</sub><sup>2</sup></m> is the mode's effective mass (the modes' add up to the total mass): the modes that carry most of
 it carry the shock.</p>
 
 <h3><a name="tripartite"></a>Four-way paper</h3>
-<p>The relative displacement's peak |z|, times ω, is the <b>pseudo-velocity</b>, and times ω² the
-<b>pseudo-acceleration</b>, close to the SRS when damping is light. Plotted log–log against f, lines of constant
-|z| rise at 45° and lines of constant pseudo-acceleration fall at 45°, so one curve reads all three. A shock's
-pseudo-velocity is flat at Δv at the left (a soft oscillator stays put while the base moves away, then rings
+<p>The relative displacement's peak <m>|z|<sub>max</sub></m>, times <m>ω</m>, is the <b>pseudo-velocity</b>
+<m>PV</m>, and times <m>ω<sup>2</sup></m> the <b>pseudo-acceleration</b> <m>PA</m>, close to the SRS when damping is
+light. Plotted log–log against <m>f</m>, <m>PV = 2πf|z|<sub>max</sub> = PA/2πf</m>: lines of constant
+<m>|z|<sub>max</sub></m> rise at 45° and lines of constant <m>PA</m> fall at 45°, so one curve reads all three. A
+shock's pseudo-velocity is flat at <m>Δv</m> at the left (a soft oscillator stays put while the base moves away, then rings
 at that speed) and falls along the peak acceleration's line at the right.</p>
 
-<h3>Synthesis</h3>
-<p>Tests are specified by an SRS (with a tolerance, ±3 dB here), not a time history, and a shaker or shock
+<h3><a name="synthesis"></a>Synthesis</h3>
+<p>Tests are often specified by an SRS (with a tolerance, ±3 dB here), not a time history, and a shaker or shock
 machine needs one that meets it. It is built from short components at frequencies across the band, their
 amplitudes scaled round by round by the target over the SRS achieved. <b>Damped sines</b> are simple but each
-leaves a net velocity, so the record ends moving and the table would drift away. <b>Wavelets</b>
-(Smallwood's), sin(ωt/N) sin ωt over N odd half-cycles, start and end at rest in velocity and displacement, so
+leaves a net velocity, so the record ends moving and the table would drift away. <b>Wavelets</b>,
+<m>sin(ωt/N<sub>w</sub>) sin ωt</m> over <m>N<sub>w</sub></m> half-cycles, <m>N<sub>w</sub></m> odd, start and end at rest in velocity and displacement, so
 a shaker can play them. The SRS is matched only at the components' frequencies; between them it strays a
 little, and the same record at another Q no longer matches.</p>
 
@@ -70,16 +77,58 @@ little, and the same record at another Q no longer matches.</p>
 chain, ringing at the chain's modes. Its spectrum, an in-structure shock spectrum, peaks at those modes. A
 pyrotechnic shock is a burst of high-frequency ringing with almost no net velocity change, and its spectrum
 falls steeply below its frequencies. An accelerometer's <b>zero shift</b>, a small offset after the shock,
-integrates into a large false Δv and lifts the low end: a measured spectrum is checked for it by its slope
+integrates into a large false <m>Δv</m> and lifts the low end: a measured spectrum is checked for it by its slope
 there.</p>
 
 <h3><a name="computing"></a>How this page computes it</h3>
 <p>Each oscillator is stepped by the same exact update as the chain (the input linear between samples), and
 its peaks are refined between samples. The residual's largest value lies within one damped period of the
 pulse's end, so that is all the free decay that is followed.</p>
+<h3><a name="test-specs"></a>Test specifications</h3>
+<p>A shock test is specified one of two ways <cite>lalanne-2</cite>:</p>
+<ul>
+<li><b>A classical pulse</b>: its shape (half-sine, terminal-peak sawtooth, trapezoid), peak and length, with a
+tolerance band round the time history, given by a drop table's programmer or a shaker. On a shaker the pulse
+needs <b>compensation</b>: a half-sine leaves the table moving at <m>Δv</m>, so small pre- and post-pulses of the
+opposite sign are added to bring its velocity and displacement back to zero. They take away the pulse's area, so
+the spectrum's low end, where only <m>Δv</m> counts, falls well below the uncompensated pulse's.</li>
+</ul>
+<table width="100%"><tr><td align="center"><img src="fig:compensated" width="310" height="170"></td></tr></table>
+<ul>
+<li><b>An SRS</b>: measured in-structure spectra (several shots, several places) are enveloped by straight lines on
+log–log axes, usually a ramp in dB per octave up to a knee and flat above it, at <m>Q</m> = 10, with a margin
+added for qualification. The test passes if the achieved SRS lies within a tolerance band round the
+specification (a few dB either way) over the band, positive and negative both. Any record that meets it will
+do: damped sines or wavelets on a shaker, or a resonant fixture struck by a projectile for a pyroshock.</li>
+</ul>
+<p>The SRS rates a shock by its peaks only. Two records with the same SRS can differ in their velocity, their
+length, how many cycles they put through a part, and so in the fatigue damage they do; and the SRS at
+<m>Q</m> = 10 says nothing exact about a part whose own damping is far from it. A specification therefore also
+bounds the record's length, and is applied along each axis, both ways.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on a 10 g half-sine, 100 ms long (<m>A</m> = 98.1 m/s², <m>T</m> = 0.1 s), at <m>Q</m> = 10. Its
+area, the base's velocity change, is</p>
+<eq>\Delta v = \int_0^T A\sin\frac{\pi t}{T}\,\mathrm{d}t = \frac{2AT}{\pi} = 6.24\ \text{m/s}</eq>
+<ul>
+<li>At the left, <m>f</m> = 0.2 Hz (<m>fT</m> = 0.02): the impulse estimate is
+<m>2π × 0.2 × 6.24</m> = 7.84 m/s² = 0.80 g, and the spectrum is 0.74 g, already a little under it.</li>
+<li>Its peak, 16.5 g, is 1.65 × the pulse's, at <m>fT</m> = 0.825, <m>f</m> = 8.25 Hz: a period a little longer
+than the pulse.</li>
+<li>At the right, <m>f</m> = 500 Hz (<m>fT</m> = 50): 10.0 g, the pulse's own peak.</li>
+</ul>
+<p>The oscillator at 0.2 Hz would stretch <m>Δv/ω</m> = 6.24/(2π × 0.2) = 4.97 m undamped; its damping holds it to the
+four-way paper's 4.6 m. A soft mount needs room as well as softness.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Pick a pulse or a view under <i>Things to try</i> on the left:</p>
+<!--TRIALS-->
 <takeaways>
 <li>The SRS is the peak response of a bank of single oscillators on the shaken base, at one Q: it rates a shock by what it does, not by its time history.</li>
-<li>Stiff oscillators follow the pulse, soft ones feel only its velocity change, and those near f T ≈ 1 amplify it, barely more with less damping.</li>
-<li>On a chain each mode is one of the bank's oscillators, scaled by φΓ; the modes' peaks come nearly together, so ABS or NRL, not SRSS, bound the response.</li>
-<li>Tests specify an SRS; a time history that meets it is synthesized from damped sines or wavelets.</li>
+<li>Stiff oscillators follow the pulse, soft ones feel only its velocity change, and those near <m>fT ≈ 1</m> amplify it, barely more with less damping.</li>
+<li>On a chain each mode is one of the bank's oscillators, scaled by <m>φΓ</m>; the modes' peaks come nearly together, so ABS or NRL, not SRSS, bound the response.</li>
+<li>Tests specify a classical pulse (compensated, on a shaker) or an SRS within a tolerance; a time history that meets an SRS is synthesized from damped sines or wavelets.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>shock_pulse srs_osc zeta Q z_rel SRS pseudo matrices phi_i modal_const Gamma_r ones N_w</notation>
+<reading>harris lalanne-2</reading>

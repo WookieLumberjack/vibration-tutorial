@@ -218,7 +218,7 @@ def test_the_trials_notes():
 
     rec, sp, top = run("Half-sine")
     assert peak(sp, top) == pytest.approx((1.65, 0.83), abs=0.005)
-    assert "1.65 ×" in note["Half-sine"] and "f T = 0.83" in note["Half-sine"]
+    assert "1.65 ×" in note["Half-sine"] and "<m>fT</m> = 0.83" in note["Half-sine"]
     _, sq, top = run("Square")
     assert sq.maximax[-1] / top == pytest.approx(1.85, abs=0.01)
     assert rec.velocity_change < record(Pulse(Shape.SQUARE, 10.0, T), rec.fs).velocity_change
