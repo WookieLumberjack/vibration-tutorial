@@ -118,7 +118,8 @@ def timoshenko_determinant(beam: Beam, k: float, omega: float) -> float:
 
 
 def wave_speeds(beam: Beam) -> tuple[float, float]:
-    """(√(E/ρ), √(κG/ρ)): the speeds Timoshenko's bending wave and its shear branch tend to at short wavelength."""
+    """(√(E/ρ), √(κG/ρ)): the bar's and the shear wave's speeds. At short wavelength Timoshenko's thickness-shear
+    branch tends to the first and its bending wave to the second, the lower."""
     m = beam.material
     return math.sqrt(m.E / m.rho), math.sqrt(beam.kappa * m.G / m.rho)
 

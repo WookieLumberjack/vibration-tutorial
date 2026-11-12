@@ -34,7 +34,7 @@ from ..core.beams_plates import (
     wave_speeds,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
-from . import settle_plots
+from . import beams_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -85,7 +85,7 @@ class BeamPlateTrial:
 TRIALS = (
     BeamPlateTrial(
         "A stocky beam",
-        "A steel beam 1 m long and 100 mm deep (L/h = 10), simply supported. Euler–Bernoulli's first mode, 235 Hz, "
+        "A steel beam 1 m long and 100 mm deep (<m>L/h</m> = 10), simply supported. Euler–Bernoulli's first mode, 235 Hz, "
         "is 1.7 % too high; by the fifth mode, where a half wave is only twice the depth, it is 33 % too high "
         "(Timoshenko: 0.75 of it). Shear deflection costs more than the sections' rotary inertia (0.78 against "
         "0.91 at mode 5), and the two together cost most.",
@@ -93,7 +93,7 @@ TRIALS = (
     ),
     BeamPlateTrial(
         "A slender beam",
-        "The same beam 20 mm deep (L/h = 50): Timoshenko's first mode is 0.07 % below Euler–Bernoulli's, its "
+        "The same beam 20 mm deep (<m>L/h</m> = 50): Timoshenko's first mode is 0.07 % below Euler–Bernoulli's, its "
         "tenth 6.0 %. A beam is 'thin' only for wavelengths long against its depth: every beam gets thick at "
         "high enough modes.",
         depth=0.02,
@@ -101,16 +101,16 @@ TRIALS = (
     ),
     BeamPlateTrial(
         "Short waves stop speeding up",
-        "Euler–Bernoulli's bending wave travels at c = √ω (EI/ρA)<sup>¼</sup>, faster without limit as the "
+        "Euler–Bernoulli's bending wave travels at <m>c = √ω (EI/ρA)<sup>1/4</sup></m>, faster without limit as the "
         "wavelength shortens: impossible. With shear and rotary inertia (Timoshenko) the speed levels off below "
-        "the shear wave's √(κG/ρ) = 2.9 km/s (centre, bottom). Timoshenko's second branch, thickness shear, "
-        "starts near 16 kHz on this beam (√(κGA/ρI)/2π: a cut-off, below which it doesn't propagate).",
+        "the shear wave's <m>c<sub>s</sub> = √(κ<sub>s</sub>G/ρ)</m> = 2.9 km/s (centre, bottom). Timoshenko's second branch, thickness shear, "
+        "starts near 16 kHz on this beam (<m>√(κ<sub>s</sub>GA/ρI)/2π</m>: a cut-off, below which it doesn't propagate).",
         mode=20,
     ),
     BeamPlateTrial(
         "A plate's modes",
-        "A steel plate 600 × 400 mm, 3 mm thick, simply supported. Its modes are sin(mπx/a) sin(nπy/b), at "
-        "ω = π²(m²/a² + n²/b²)√(D/ρh): 66.6 Hz for (1, 1), then 128 Hz (2, 1), 205 Hz (1, 2) and 230 Hz (3, 1). Mode "
+        "A steel plate 600 × 400 mm, 3 mm thick, simply supported. Its modes are <m>sin(mπx/a) sin(nπy/b)</m>, at "
+        "<m>ω<sub>mn</sub> = π<sup>2</sup>(m<sup>2</sup>/a<sup>2</sup> + n<sup>2</sup>/b<sup>2</sup>)√(D/ρh)</m>: 66.6 Hz for (1, 1), then 128 Hz (2, 1), 205 Hz (1, 2) and 230 Hz (3, 1). Mode "
         "(3, 2), the sixth, has 2 nodal lines across and 1 along.",
         structure=RECT,
         length=0.6,
@@ -130,18 +130,18 @@ TRIALS = (
     ),
     BeamPlateTrial(
         "A drum-like plate",
-        "A clamped circular plate, radius 200 mm, 3 mm thick: λ² = 10.22 for the fundamental (191 Hz), then 21.26 "
+        "A clamped circular plate, radius 200 mm, 3 mm thick: <m>λ<sup>2</sup></m> = 10.22 for the fundamental (191 Hz), then 21.26 "
         "with one nodal diameter (397 Hz), 34.88 with two (652 Hz) and 39.77 with one nodal circle (743 Hz). A "
-        "mode with nodal diameters is a pair (cos nθ and sin nθ) at one frequency.",
+        "mode with nodal diameters is a pair (<m>cos nθ</m> and <m>sin nθ</m>) at one frequency.",
         structure=CIRCLE,
         length=0.2,
         mode=4,
     ),
     BeamPlateTrial(
         "How many modes per hertz",
-        "Count the modes below f (Modal density tab). A plate's count grows in proportion to f, so it has as many "
-        "modes in every band of a given width: S/2 √(ρh/D) = 0.026 per Hz on the 600 × 400 mm plate, a mode "
-        "every 39 Hz. A beam's count grows only as √f, so its modes spread apart. This is why plates and "
+        "Count the modes below <m>f</m> (Modal density tab). A plate's count grows in proportion to <m>f</m>, so it has as many "
+        "modes in every band of a given width: <m>(S/2)√(ρh/D)</m> = 0.026 per Hz on the 600 × 400 mm plate, a mode "
+        "every 39 Hz. A beam's count grows only as <m>√f</m>, so its modes spread apart. This is why plates and "
         "panels are treated statistically at high frequency.",
         structure=RECT,
         length=0.6,
@@ -343,12 +343,12 @@ RATIO_TIP = (
 )
 SPEED_TIP = (
     "<p>The bending wave's phase speed against its wavelength over the depth: Euler–Bernoulli's grows "
-    "without bound as the wave shortens; Timoshenko's levels off. Dotted: √(E/ρ) and √(κG/ρ).</p>"
+    "without bound as the wave shortens; Timoshenko's levels off. Dotted: c<sub>b</sub> = √(E/ρ) and c<sub>s</sub> = √(κ<sub>s</sub>G/ρ).</p>"
 )
 SHAPE_TIP = "<p>The mode's shape (colour: up and down) and its nodal lines, where it doesn't move.</p>"
 DENSITY_TIP = "<p>The number of modes at or below f (steps) against its asymptote (dashed).</p>"
 
-NOTES_HTML = load_notes("beams_plates", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("beams_plates", figures=beams_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class BeamsPlatesPage(QtWidgets.QWidget):

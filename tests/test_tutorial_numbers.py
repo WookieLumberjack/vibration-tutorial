@@ -336,6 +336,64 @@ def test_continuum_worked_example():
     )  # roots to 5 figures; 17.55 to 3
 
 
+def test_beams_plates_worked_example():
+    """The Theory's worked example: the page's default beam on mode 1, each theory's frequency, the first-order
+    Timoshenko formula, the thickness-shear root and the wave speeds; then the trials' plate, from the figures
+    it quotes too."""
+    from vib_tutorial.core.beams_plates import (
+        TWO_PI,
+        Beam,
+        Plate,
+        Theory,
+        beam_frequencies,
+        beam_omega,
+        rect_modes,
+        wave_speeds,
+    )
+    from vib_tutorial.gui.beams_plates import STEEL, BeamPlateTrial
+
+    t = BeamPlateTrial("", "")
+    assert (t.length, t.depth, t.mode, t.E, t.rho, t.nu) == (1.0, 0.1, 1, 210.0, 7850.0, 0.3)
+    b = Beam(1.0, 0.1, 0.05, STEEL)
+    assert b.area == pytest.approx(0.005) and b.inertia == pytest.approx(4.167e-6, abs=5e-10)
+    scale = math.sqrt(210e9 * b.inertia / (7850 * b.area))
+    assert scale == pytest.approx(149.3, abs=0.05)
+    assert math.pi**2 * 149.3 == pytest.approx(1474, abs=0.5)
+    f = {th: float(beam_frequencies(b, 1, th)[0]) for th in Theory}
+    assert f[Theory.EULER] == pytest.approx(234.5, abs=0.05) and 1474 / TWO_PI == pytest.approx(234.5, abs=0.1)
+    assert (math.pi * 0.1) ** 2 / 12 == pytest.approx(0.00822, abs=0.000005)
+    assert f[Theory.RAYLEIGH] == pytest.approx(233.6, abs=0.05)
+    G = STEEL.G
+    assert G == pytest.approx(80.8e9, rel=0.001) and 5 / 6 * G == pytest.approx(67.3e9, rel=0.001)
+    assert 210 / 67.3 == pytest.approx(3.12, abs=0.005)
+    assert f[Theory.SHEAR] == pytest.approx(231.6, abs=0.05)
+    assert (math.pi * 0.1) ** 2 / 24 == pytest.approx(0.00411, abs=0.000005)
+    first = 1 - 0.00411 * 4.12
+    assert first == pytest.approx(0.9831, abs=0.00005) and first * 234.5 == pytest.approx(230.5, abs=0.05)
+    assert 1 - (math.pi * 0.1) ** 2 / 24 * (1 + 210e9 / (5 / 6 * G)) == pytest.approx(
+        f[Theory.TIMOSHENKO] / f[Theory.EULER], abs=1e-3
+    )
+    assert f[Theory.TIMOSHENKO] == pytest.approx(230.7, abs=0.05)
+    assert 100 * (f[Theory.TIMOSHENKO] / f[Theory.EULER] - 1) == pytest.approx(-1.64, abs=0.005)
+    assert float(beam_omega(b, math.pi, branch=1)) / TWO_PI == pytest.approx(16.4e3, abs=50)
+    assert math.sqrt(5 / 6 * G * b.area / (7850 * b.inertia)) / TWO_PI == pytest.approx(16.1e3, abs=50)
+    assert wave_speeds(b) == pytest.approx((5172, 2928), abs=0.5)
+    # the bending wave's speed levels off at c_s, the thickness-shear branch's at c_b
+    k = 1e4
+    assert float(beam_omega(b, k)) / k == pytest.approx(2928, rel=1e-3)
+    assert float(beam_omega(b, k, branch=1)) / k == pytest.approx(5172, rel=1e-3)
+
+    p = Plate(0.6, 0.4, 0.003, STEEL)
+    assert p.rigidity == pytest.approx(519, abs=0.5) and p.surface_mass == pytest.approx(23.55, abs=0.005)
+    assert p.scale == pytest.approx(4.696, abs=0.0005)
+    assert math.pi**2 * (1 / 0.36 + 1 / 0.16) * 4.696 == pytest.approx(418.4, abs=0.05)
+    assert rect_modes(p, 1)[0].freq_hz == pytest.approx(66.6, abs=0.05)
+    assert 0.24 / 2 / 4.696 == pytest.approx(0.026, abs=0.0005) and 0.24 / 2 / p.scale == pytest.approx(
+        0.026, abs=0.0005
+    )
+    assert 1 / (0.24 / 2 / p.scale) == pytest.approx(39, abs=0.5)
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)
