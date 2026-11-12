@@ -303,6 +303,33 @@ REFERENCES = (
         "2000",
         "FRFs, their modal forms and residuals, and how they are measured: the standard text on modal testing",
     ),
+    Reference(
+        "foss",
+        "Foss 1958",
+        "K. A. Foss, Co-ordinates which uncouple the equations of motion of damped linear dynamic systems, "
+        "<i>Journal of Applied Mechanics</i> 25, 361–364, 1958",
+        "",
+    ),
+    Reference(
+        "pappa",
+        "Pappa, Elliott and Schenk 1993",
+        "R. S. Pappa, K. B. Elliott and A. Schenk, Consistent-mode indicator for the eigensystem realization "
+        "algorithm, <i>Journal of Guidance, Control, and Dynamics</i> 16, 852–858, 1993",
+        "",
+    ),
+    Reference(
+        "allemang-brown",
+        "Allemang and Brown 1982",
+        "R. J. Allemang and D. L. Brown, A correlation coefficient for modal vector analysis, <i>Proceedings of the "
+        "1st International Modal Analysis Conference</i>, Orlando, 110–116, 1982",
+        "",
+    ),
+    Reference(
+        "adhikari",
+        "Adhikari 2013",
+        "S. Adhikari, <i>Structural Dynamic Analysis with Generalized Damping Models: Analysis</i>, Wiley-ISTE, 2013",
+        "non-proportional damping and complex modes in depth: their perturbation forms, state space and beyond",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

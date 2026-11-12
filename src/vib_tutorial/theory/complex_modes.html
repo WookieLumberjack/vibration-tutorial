@@ -1,131 +1,195 @@
-
 <before>
 <a href="page:sim_page#proportional-damping">Proportional damping</a>
 <a href="page:sim_page#non-proportional-damping-and-coupling">Non-proportional damping</a>
 <a href="page:sim_page#exact-damped-modes-are-complex">Exact damped modes are complex</a>
+<a href="page:frf_page#antiresonances">Where the dips are</a>
 </before>
-<h3>Proportional damping, again</h3>
-<p>The undamped modes φ<sub>r</sub> diagonalize the mass and stiffness matrices: in modal coordinates the
-chain is N separate oscillators. Damping keeps them separate only if Φ<sup>T</sup>CΦ is diagonal too:
-<b>proportional</b> (or classical) damping, such as C = βK, a damper per spring in proportion to it. Then each
-mode keeps its real shape, its damping ratio is ζ<sub>r</sub> = φ<sub>r</sub><sup>T</sup>Cφ<sub>r</sub>/2ω<sub>r</sub>
-(φ mass-normalized), and its pole is −ζ<sub>r</sub>ω<sub>r</sub> ± iω<sub>r</sub>√(1 − ζ<sub>r</sub>²).</p>
+<h3><a name="proportional"></a>Proportional damping, again</h3>
+<p>The undamped modes <m>φ<sub>r</sub></m> (mass-normalized) diagonalize the mass and stiffness matrices, so in
+modal coordinates <m>x = Φq</m> the chain is <m>N</m> separate oscillators. Damping keeps them separate only if
+the modal damping matrix <m>C<sub>m</sub> = ΦᵀCΦ</m> is diagonal too. This is <b>proportional</b> (or
+classical) damping, and the condition for it is <m>CM<sup>−1</sup>K = KM<sup>−1</sup>C</m>
+<cite>caughey</cite>. A damper beside every spring, each the same multiple of it (<m>c<sub>i</sub> =
+βk<sub>i</sub></m>, so <m>C = βK</m>), meets it. Each mode then keeps its real shape, and</p>
+<eq>\zeta_r = \frac{C_{m,rr}}{2\omega_r}, \qquad \lambda_r = -\zeta_r\omega_r \pm \mathrm{i}\,\omega_r\sqrt{1 - \zeta_r^2}</eq>
+<table width="100%"><tr><td align="center"><img src="fig:dampers" width="360" height="150"></td></tr></table>
+<p>A damper on its own (a shock absorber, a joint, a tuned mass damper) does not meet it. A single damper
+<m>c<sub>1</sub></m> at the base gives <m>C<sub>m,rs</sub> = c<sub>1</sub>φ<sub>1r</sub>φ<sub>1s</sub></m>:
+every off-diagonal term is as large as it can be beside the diagonal, a <a
+href="page:sim_page#non-proportional-damping-and-coupling">coupling index</a> of exactly 1.</p>
 
 <h3><a name="complex-shapes"></a>Complex modes</h3>
-<p>A damper on its own (a shock absorber, a joint, a tuned mass damper) is not proportional: Φ<sup>T</sup>CΦ
-has off-diagonal terms c<sub>rs</sub> that couple the modes. The exact modes are then the eigenvectors of the
-2N × 2N state matrix, and their shapes ψ are complex: each mass has its own phase and peaks at its own
-time, the nodes move, and the motion is partly a wave travelling along the chain. To first order in the
-damping,</p>
-<p align="center">ψ<sub>r</sub> ≈ φ<sub>r</sub> + Σ<sub>s≠r</sub> iω<sub>r</sub>c<sub>sr</sub>
-/ (ω<sub>r</sub>² − ω<sub>s</sub>²) φ<sub>s</sub>:</p>
-<p>the imaginary part grows with the coupling and as the other modes come close. Close modes, as a tuned mass
-damper makes, go complex first; a mode far from the others stays nearly real even under a heavy coupling.</p>
+<p>With off-diagonal terms in <m>C<sub>m</sub></m>, a mode's damping force pushes on the other modes. The exact
+modes are then the eigenvectors of the <m>2N × 2N</m> state matrix, and their shapes <m>ψ<sub>r</sub></m> are
+complex: each mass has its own phase and peaks at its own time, the nodes move, and the motion is partly a wave
+travelling along the chain. How complex they get follows from the modal equations,</p>
+<eq>\ddot q_s + \omega_s^2 q_s + \sum_k C_{m,sk}\,\dot q_k = 0</eq>
+<p>Look for mode <m>r</m>, <m>q<sub>s</sub> = a<sub>sr</sub> e<sup>λt</sup></m> with <m>a<sub>rr</sub> = 1</m>.
+When the damping is light, <m>λ ≈ iω<sub>r</sub></m> and the other <m>a<sub>sr</sub></m> are small, so in row
+<m>s ≠ r</m> only the terms in <m>a<sub>sr</sub></m> and <m>a<sub>rr</sub></m> count:</p>
+<eq>(\omega_s^2 - \omega_r^2)\,a_{sr} + \mathrm{i}\,\omega_r C_{m,sr} \approx 0</eq>
+<eq>\psi_r \approx \varphi_r + \sum_{s \ne r} \frac{\mathrm{i}\,\omega_r C_{m,sr}}{\omega_r^2 - \omega_s^2}\,\varphi_s</eq>
+<p>The imaginary part grows with the coupling and as the other modes come close. Close modes, such as the pair
+a tuned mass damper makes, go complex first. A mode far from the others stays nearly real even under a heavy
+coupling.</p>
+<p><a name="second-order"></a>Row <m>r</m> gives the pole. To first order it is
+<m>λ<sup>2</sup> + C<sub>m,rr</sub>λ + ω<sub>r</sub><sup>2</sup> = 0</m>, the approximation's pole. Putting the
+<m>a<sub>sr</sub></m> back in adds a second-order term, which moves the frequency but, to this order, not the
+decay rate <m>C<sub>m,rr</sub>/2</m>:</p>
+<eq>\omega_r^2 \to \omega_r^2\Bigl(1 + \sum_{s \ne r} \frac{C_{m,rs}^2}{\omega_s^2 - \omega_r^2}\Bigr)</eq>
+<p>The modes above pull a mode's frequency up and the modes below push it down. For the lowest mode every term
+is positive: a damper stiffens the chain a little, as it starts to hold its ends together.</p>
 
 <h3><a name="state-space"></a>The state-space form: 2N eigenvalues</h3>
-<p>The exact modes come from the equations written in first order, z = [x, ẋ]: ż = Az with
-A = [ 0 &nbsp;I ; −M<sup>−1</sup>K &nbsp;−M<sup>−1</sup>C ]. That doubles the size of the eigenproblem, so
-there are <b>2N eigenvalues</b> and 2N eigenvectors. <i>Method → State-space</i> on the
-<a href="page:sim_page#exact-damped-modes-are-complex">Simulation page</a>'s Modal analysis tab lists them.</p>
+<p>The exact modes come from the equations in first order, with the state <m>z = [x, ẋ]</m>:</p>
+<eq>\dot z = A z, \qquad A = \begin{bmatrix} 0 & I \\ -M^{-1}K & -M^{-1}C \end{bmatrix}</eq>
+<p>That doubles the size of the eigenproblem, so there are <b><m>2N</m> eigenvalues</b> and <m>2N</m>
+eigenvectors. <i>Method → State-space</i> on the <a href="page:sim_page#exact-damped-modes-are-complex">Simulation
+page</a>'s Modal analysis tab lists them.</p>
 <ul>
-<li><b>Conjugate pairs.</b> A is real, so complex eigenvalues come in pairs
-λ = σ + iω<sub>d</sub> and λ* = σ − iω<sub>d</sub>, with conjugate shapes ψ and ψ*.
-Neither one alone is a real motion; together they are:
-x(t) = ψe<sup>λt</sup> + ψ*e<sup>λ*t</sup> = 2 Re(ψ e<sup>λt</sup>). In the Simulation page's
-complex-plane plot the arrows of λ turn anticlockwise and those of λ* clockwise; their
-real parts, the displacements, are identical. Each oscillatory mode of the classical
-table corresponds to one pair.</li>
-<li><b>Real eigenvalues.</b> A heavily damped (overdamped) mode gives two real
-eigenvalues instead of a pair: pure exponential decays with time constant
-τ = −1/λ and no oscillation. A chain with no spring to the ground (k<sub>1</sub> = 0)
-has λ = 0: rigid-body motion, a position it keeps. With the damper c<sub>1</sub> still
-there, a second real root goes with it, close to −c<sub>1</sub>/(m<sub>1</sub> + … + m<sub>N</sub>)
-(−0.50 s<sup>−1</sup> for the default chain): a push slides the whole chain to a new position
-as its velocity dies away through c<sub>1</sub>. With
-c<sub>1</sub> = 0 too, λ = 0 is a repeated root with only one eigenvector (defective): the
-chain can drift at constant velocity, which no pair of exponentials describes.</li>
-<li><b>The eigenvector includes velocities.</b> The state eigenvector is
-[ψ ; λψ]. To start the chain in exactly one mode you must set the displacements
-<i>and</i> the velocities: x(0) = Re(ψ), ẋ(0) = Re(λψ). That is what <i>Release
-selected mode</i> does in this method. It is why a complex mode can be released cleanly
-with non-proportional damping, while the classical release (real shape, at rest) excites
-other modes too.</li>
-<li><b>Orthogonality.</b> A is not symmetric, so the ψ are not orthogonal in the
-usual sense. Decoupling the equations needs the <i>left</i> eigenvectors of A as well
-(or the symmetric "Duncan" form of the state equations). This is why the classical
-method, with its simple Φ<sup>T</sup>MΦ = I, is preferred whenever damping is light
-or nearly proportional.</li>
+<li><b>Conjugate pairs.</b> <m>A</m> is real, so complex eigenvalues come in pairs <m>λ</m> and <m>λ*</m>, with
+conjugate shapes <m>ψ</m> and <m>ψ*</m>. Neither alone is a real motion; together they are,
+<m>x(t) = ψe<sup>λt</sup> + ψ*e<sup>λ*t</sup> = 2 Re(ψe<sup>λt</sup>)</m>. In the Simulation page's complex-plane plot the arrows of <m>λ</m> turn anticlockwise and those of <m>λ*</m>
+clockwise, and their real parts, the displacements, are the same. Each oscillatory mode of the classical table
+is one pair, with <m>λ = −ζω<sub>n</sub> ± iω<sub>d</sub></m>: the exact <m>ζ</m> is <m>−Re λ/|λ|</m>.</li>
+<li><b>Real eigenvalues.</b> A mode damped past critical gives two real eigenvalues instead of a pair: pure
+decays with time constants <m>τ = −1/λ</m> and no oscillation. A chain with no spring to the ground
+(<m>k<sub>1</sub> = 0</m>) has <m>λ = 0</m>: rigid-body motion, a position it keeps. With the damper
+<m>c<sub>1</sub></m> still there, a second real root goes with it, close to
+<m>−c<sub>1</sub>/(m<sub>1</sub> + … + m<sub>N</sub>)</m> (−0.50 s<sup>−1</sup> for the default chain): a push
+slides the whole chain to a new position as its velocity dies away through <m>c<sub>1</sub></m>. With
+<m>c<sub>1</sub> = 0</m> too, <m>λ = 0</m> is a repeated root with only one eigenvector (defective): the chain
+can drift at constant velocity, which no pair of exponentials describes.</li>
+<li><b>The eigenvector holds velocities.</b> The state eigenvector is <m>[ψ; λψ]</m>. To start the chain in
+exactly one mode, set the displacements <i>and</i> the velocities: <m>x(0) = Re ψ</m>, <m>ẋ(0) = Re(λψ)</m>.
+That is what <i>Release selected mode</i> does in this method. It is why a complex mode can be released cleanly
+with non-proportional damping, while the classical release (the real shape, at rest) sets off other modes
+too.</li>
 </ul>
+<p><a name="orthogonality"></a><b>Orthogonality.</b> <m>A</m> is not symmetric, so its eigenvectors are not
+orthogonal in the usual sense. Writing the equations of motion with the identity <m>Mẋ − Mẋ = 0</m> as a
+second row makes them symmetric <cite>foss</cite>:</p>
+<eq>\begin{bmatrix} C & M \\ M & 0 \end{bmatrix} \dot z + \begin{bmatrix} K & 0 \\ 0 & -M \end{bmatrix} z = 0</eq>
+<p>Both matrices are symmetric, so two eigenvectors <m>y<sub>r</sub> = [ψ<sub>r</sub>; λ<sub>r</sub>ψ<sub>r</sub>]</m>
+and <m>y<sub>s</sub></m> with <m>λ<sub>r</sub> ≠ λ<sub>s</sub></m> are orthogonal through each, as
+<m>φ<sub>r</sub></m> and <m>φ<sub>s</sub></m> are through <m>M</m> and <m>K</m>. Through the first, that is</p>
+<eq>\psi_r^{\mathsf T}\bigl((\lambda_r + \lambda_s)M + C\bigr)\psi_s = 0</eq>
+<p>The shapes alone are not orthogonal through <m>M</m>: the damping and the eigenvalues come into it. This is
+why the classical method, with its plain <m>ΦᵀMΦ = I</m>, is preferred whenever the damping is light or nearly
+proportional.</p>
 <p><b>Is this an artifact of the solver?</b> No, it is physics. Both calculations are exact for the problem
-they solve: the undamped modes from the symmetric eigenproblem Kφ = ω²Mφ (real by construction), the damped
-ones from the general eigenproblem of A (complex when the damping is non-proportional). When the damping is
-proportional the two agree to machine precision. The only approximation is the classical ζ, which describes
-the damped chain with the <i>undamped</i> shapes; the time simulation always uses the full M, C and K.</p>
+they solve: the undamped modes from the symmetric eigenproblem <m>Kφ = ω<sup>2</sup>Mφ</m> (real by
+construction), the damped ones from the general eigenproblem of <m>A</m> (complex when the damping is
+non-proportional). When the damping is proportional the two agree to machine precision. The only approximation
+is the classical <m>ζ</m>, which describes the damped chain with the <i>undamped</i> shapes; the time simulation
+always uses the full <m>M</m>, <m>C</m> and <m>K</m>.</p>
 <p><a name="state-space-coordinates"></a><b>Modal coordinates in state space.</b> With the eigenvectors
-[ψ; λψ] as the columns of Y, the state's modal coordinates are η = Y<sup>−1</sup>z. They need velocities as
-well as displacements. The coordinates of λ and λ* are conjugates, so each pair is one curve, 2 Re(η), in the
-Simulation page's modal plot. They are independent for <i>any</i> damping: each is a pure decaying
-oscillation (or decay) unless a force drives it. (The energy panel still splits the energy with the
-classical modes: the complex ones are not orthogonal through M and K, so their energies have cross
-terms.)</p>
+<m>[ψ; λψ]</m> as the columns of <m>Y</m>, the state's modal coordinates are <m>η = Y<sup>−1</sup>z</m>. They
+need the velocities as well as the displacements. The coordinates of <m>λ</m> and <m>λ*</m> are conjugates, so
+each pair is one curve, <m>2 Re η</m>, in the Simulation page's modal plot. They are independent for <i>any</i>
+damping: each is a pure decaying oscillation (or decay) unless a force drives it. (The energy panel still
+splits the energy with the classical modes: the complex ones are not orthogonal through <m>M</m> and <m>K</m>,
+so their energies have cross terms.)</p>
 
 <h3><a name="how-complex"></a>How complex</h3>
-<ul>
-<li><b>MPC</b>, the modal phase collinearity:</li>
-</ul>
-<p align="center">MPC = [(s<sub>xx</sub> − s<sub>yy</sub>)² + 4s<sub>xy</sub>²] / (s<sub>xx</sub> + s<sub>yy</sub>)²,</p>
-<p>where s<sub>xx</sub> = Σ(Re ψ<sub>j</sub>)², s<sub>yy</sub> = Σ(Im ψ<sub>j</sub>)² and
-s<sub>xy</sub> = Σ Re ψ<sub>j</sub> Im ψ<sub>j</sub>. It is 1 when the entries lie on a line through the
-origin, 0 when they spread evenly round it.</p>
-<ul>
-<li><b>MPD</b>, the mean phase deviation: the entries' angles from their best-fit line, weighted by their size.
-0° for a real mode.</li>
-<li><b>MAC</b>(φ, ψ) = |φ<sup>T</sup>ψ|² / (φ<sup>T</sup>φ ψ<sup>H</sup>ψ): how much of the exact shape the
-undamped one explains, 1 for the same shape.</li>
-</ul>
-<p>Measured modes are always a little complex (noise, a slightly non-linear structure, a sensor out of
-phase), so a small MPD says little; a large one in an analysis says the damping couples the modes.</p>
+<p>Plot a shape's entries <m>ψ<sub>j</sub></m> in the complex plane (the page's left-hand plot). A real mode,
+turned by any phase, puts them on one line through the origin. Three numbers say how far a shape is from
+that.</p>
+<p><b>MPC</b>, the modal phase collinearity <cite>pappa</cite>, comes from the scatter's sums
+<m>s<sub>xx</sub> = Σ(Re ψ<sub>j</sub>)<sup>2</sup></m>, <m>s<sub>yy</sub> = Σ(Im ψ<sub>j</sub>)<sup>2</sup></m>
+and <m>s<sub>xy</sub> = Σ Re ψ<sub>j</sub> Im ψ<sub>j</sub></m>:</p>
+<eq>\mathrm{MPC} = \frac{(s_{xx} - s_{yy})^2 + 4 s_{xy}^2}{(s_{xx} + s_{yy})^2}</eq>
+<p>The two eigenvalues of <m>[s<sub>xx</sub>, s<sub>xy</sub>; s<sub>xy</sub>, s<sub>yy</sub>]</m> are the
+scatter's spread along its long and short axes, and MPC is the square of their difference over their sum: 1
+when the entries lie on a line, 0 when they spread evenly round the origin.</p>
+<p><b>MPD</b>, the mean phase deviation, measures the angle <m>θ<sub>j</sub></m> of each entry from the
+scatter's long axis (the best-fit line, at <m>½ atan2(2s<sub>xy</sub>, s<sub>xx</sub> − s<sub>yy</sub>)</m>,
+the dashed line on the plot), and averages them weighted by size:</p>
+<eq>\mathrm{MPD} = \frac{\sum_j |\psi_j|\,|\theta_j|}{\sum_j |\psi_j|}</eq>
+<p>It is 0° for a real mode. An entry pointing back along the line is on it too, so <m>θ<sub>j</sub></m> runs
+from −90° to 90°.</p>
+<p><b>MAC</b> <cite>allemang-brown</cite> sets the exact shape against the undamped one: how much of
+<m>ψ</m> the shape <m>φ</m> explains, 1 for the same shape at any phase.</p>
+<eq>\mathrm{MAC}(\varphi, \psi) = \frac{|\varphi^{\mathsf T}\psi|^2}{(\varphi^{\mathsf T}\varphi)(\psi^{\mathsf H}\psi)}</eq>
+<p>Measured modes are always a little complex (noise, a slightly non-linear structure, a sensor out of phase),
+so a small MPD says little; a large one in an analysis says the damping couples the modes.</p>
 
 <h3><a name="ignoring-it"></a>What ignoring it costs</h3>
-<p>The usual approximation keeps Φ<sup>T</sup>CΦ's diagonal and drops the rest. It is exact for proportional
-damping and good when the damping is light and the modes are well apart. It fails where a damper is
-strong enough to change the shapes: a damper that hardly moves in the exact mode (its two ends move
-together) is counted as if it did, and the approximation's ζ can be ten times too high. It cannot see a mode
-go overdamped, or a damper lock a joint. The <i>FRF</i> tab compares the receptances; the <i>Free decay</i> tab
-releases the chain in an undamped mode's shape: exactly that mode, if the damping is proportional; otherwise
-the damping hands some of the motion to the other modes, close ones most.</p>
+<p>The usual approximation keeps <m>C<sub>m</sub></m>'s diagonal and drops the rest. In effect it puts in the
+proportional damping</p>
+<eq>C_p = M\Phi\,\mathrm{diag}(C_{m,11}, \ldots, C_{m,NN})\,\Phi^{\mathsf T} M</eq>
+<p>whose modal matrix is that diagonal. It is exact for proportional damping, and good to first order when the
+damping is light and the modes are well apart (the pole's error is the second-order term above). It fails where
+a damper is strong enough to change the shapes. A damper that hardly moves in the exact mode (its two ends
+move together) is counted as if it stretched as in the undamped one, and the approximation's <m>ζ</m> can be
+ten times too high. It cannot see a mode go overdamped, or a damper lock a joint. The <i>FRF</i> tab compares
+the receptances, exact <m>(K − Ω<sup>2</sup>M + iΩC)<sup>−1</sup></m> and with <m>C<sub>p</sub></m>. The
+<i>Free decay</i> tab releases the chain in an undamped mode's shape: it stays in exactly that mode if the
+damping is proportional; otherwise the damping hands some of the motion to the other modes, close ones
+most.</p>
 
 <h3><a name="sweep"></a>Sweeping a damper</h3>
-<p>The <i>Sweep</i> tab follows each mode's exact pole as one damper goes from almost nothing to very stiff,
-the rest of the chain as it is: the <b>root locus</b>. With a light damper every mode's damping grows in
-proportion to it, as the approximation says. But a damper only works while its ends move apart: as it
-stiffens it holds them together, and the chain's modes turn into those of the chain with that joint rigid,
-whose frequencies are different and whose damping falls back towards zero. So each mode's damping rises
-to a peak and falls again, and on the way one pair (the motion across the damper) leaves as two real,
-overdamped roots. There is a best damper for each mode, and it is not the stiffest. A damper at the base of
-the default chain, its other dampers taken out, gives mode 1 at most ζ = 0.147, at about 60 N·s/m; the approximation's ζ keeps growing for
-ever. The modes are most complex near those peaks, where the damper both works hard and changes the shapes.
-Sweeping a spring instead moves the modes, and how complex they get depends on how close they come.</p>
+<p>The <i>Sweep</i> tab follows each mode's exact pole as one damper goes from almost nothing to very stiff, the
+rest of the chain as it is: the <b>root locus</b>. With a light damper every mode's damping grows in proportion
+to it, as the approximation says. But a damper only works while its ends move apart. As it stiffens it holds
+them together, and the chain's modes turn into those of the chain with that joint rigid, whose frequencies are
+different and whose damping falls back towards zero. A damper at the base, locked, holds <m>m<sub>1</sub></m>
+still: the modes go to those of the 3-mass chain above it, at 1.42, 3.97 and 5.74 Hz, the same frequencies as
+<m>H<sub>11</sub></m>'s <a href="page:frf_page#antiresonances">dips</a>. So each mode's damping rises to a peak
+and falls again, and on the way one pair (the motion across the damper) leaves as two real, overdamped roots.
+There is a best damper for each mode, and it is not the stiffest. A damper at the base of the default chain, its
+other dampers taken out, gives mode 1 at most <m>ζ</m> = 0.147, at about 60 N·s/m; the approximation's <m>ζ</m>
+keeps growing for ever. The modes are most complex near those peaks, where the damper both works hard and
+changes the shapes. Sweeping a spring instead moves the modes, and how complex they get depends on how close
+they come.</p>
 
 <h3><a name="identification"></a>Identification</h3>
-<p>This tab looks ahead to the <a href="page:test_page#extraction">Virtual modal test</a> page, which
-explains how modes are fitted to a measurement; come back to it after that page. A modal test fits a model
-to measured FRFs. The <i>Identification</i> tab fits one column (a force on one
-mass, every response, with a little noise) on the exact poles two ways, by least squares (LSFD): with
-<b>complex modes</b>, residues of any phase, which fit any viscous damping; and with <b>real modes</b>,
-A<sub>r</sub>/(ω<sub>r</sub>² − ω² + 2iζ<sub>r</sub>ω<sub>r</sub>ω) with A<sub>r</sub> real, the model of a
-proportionally damped structure. With proportional damping the two agree. Otherwise the real-mode fit can't
-take the modes' phases: it fits the FRF worse and gets the shapes wrong, and its shapes are not the undamped
-ones either. Noise makes even real modes come out a little complex from the complex-mode fit, which is why
-a small MPD in a measurement says little.</p>
+<p>This tab looks ahead to the <a href="page:test_page#extraction">Virtual modal test</a> page, later, which
+explains how modes are fitted to a measurement; come back to it after that page. A modal test fits a model to
+measured FRFs. The <i>Identification</i> tab fits one column (a force on mass <m>k</m>, every response, with a
+little noise) on the exact poles two ways, by least squares (LSFD). With <b>complex modes</b> the residues may
+have any phase, which fits any viscous damping. With <b>real modes</b> each entry is</p>
+<eq>H_{jk} = \sum_r \frac{\varphi_{jr}\varphi_{kr}}{\omega_r^2 - \Omega^2 + 2\mathrm{i}\,\zeta_r\omega_r\Omega}</eq>
+<p>with real modal constants <m>φ<sub>jr</sub>φ<sub>kr</sub></m>, the model of a proportionally damped
+structure. With proportional damping the two agree. Otherwise the real-mode fit can't take the modes' phases: it
+fits the FRF worse and gets the shapes wrong, and its shapes are not the undamped ones either. Noise makes even
+real modes come out a little complex from the complex-mode fit, which is why a small MPD in a measurement says
+little.</p>
 
-<h3>Things to try</h3>
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the default chain, four 1 kg masses on 400 N/m springs with a 2 N·s/m damper beside each:
+<m>C = K/200</m>, coupling index 0, every mode real (MPC 1, MPD 0°) and the approximation exact. The <a
+href="page:sim_page#worked-example">Simulation page's example</a> works out its poles. Load <i>One damper, at the
+base</i> to see what a single damper does: <m>c<sub>1</sub></m> = 20 N·s/m and no others. The undamped modes
+are the same as before, from the <a href="page:frf_page#worked-example">FRF matrix example</a>:</p>
+<eq>\omega_r = 6.946,\ 20.00,\ 30.64,\ 37.59\ \text{rad/s}</eq>
+<eq>\varphi_{1r}^2 = 0.0520,\ 0.3333,\ 0.4310,\ 0.1836</eq>
+<p>The damper stretches by <m>φ<sub>1r</sub></m> in mode <m>r</m>, so <m>C<sub>m,rr</sub> =
+20φ<sub>1r</sub><sup>2</sup></m> and the approximation gives</p>
+<eq>\zeta_r = \frac{10\,\varphi_{1r}^2}{\omega_r} = 0.0748,\ 0.167,\ 0.141,\ 0.0489</eq>
+<p>The table's exact values are 0.0726, 0.178, 0.168 and 0.0225: close for mode 1, more than twice too high for
+mode 4. The exact frequencies are 1.124, 3.434, 4.569 and 5.823 Hz against the undamped 1.105, 3.183, 4.877
+and 5.982 Hz.</p>
+<p>Mode 1 is far below the others and lightly damped, so the first-order shape works for it. Its coefficients
+<m>a<sub>s1</sub> = iω<sub>1</sub>C<sub>m,s1</sub>/(ω<sub>1</sub><sup>2</sup> − ω<sub>s</sub><sup>2</sup>)</m>
+are −0.052i, −0.023i and 0.010i for modes 2, 3 and 4, small and imaginary. They give MPD 2.97°, against the
+exact 2.98°. The second-order frequency is</p>
+<eq>\omega_1^2 \bigl(1 + 0.0197 + 0.0101 + 0.0028\bigr) = (7.058\ \text{rad/s})^2</eq>
+<p>against the exact <m>|λ<sub>1</sub>|</m> = 7.061 rad/s (1.124 Hz), up from 6.946. For modes 2 to 4 the
+coefficients are not small (mode 2's from mode 3 is 0.28), and the first-order shapes miss: the exact mode 3 is
+the most complex, MPC 0.20 and MPD 28.9°, as the readout says. Released in mode 2's undamped shape, the chain
+hands 45 % of it to mode 1.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
 <p>Pick a chain under <i>Things to try</i> on the left (it loads into the Simulation page too):</p>
 <!--TRIALS-->
 <takeaways>
-<li>Proportional damping keeps the undamped modes: real shapes, nodes that stand still, and ζ = φ<sup>T</sup>Cφ/2ω exactly.</li>
-<li>A damper that isn't proportional couples the modes; the exact modes, from the 2N × 2N state matrix, are then complex, most of all where modes are close.</li>
-<li>The usual approximation keeps only the diagonal of Φ<sup>T</sup>CΦ: good for light damping and separated modes, wrong (even ten times) where a damper changes the shapes.</li>
+<li>Proportional damping keeps the undamped modes: real shapes, nodes that stand still, and <m>ζ<sub>r</sub> = C<sub>m,rr</sub>/2ω<sub>r</sub></m> exactly.</li>
+<li>A damper that isn't proportional couples the modes; the exact modes, from the <m>2N × 2N</m> state matrix, are then complex, most of all where modes are close.</li>
+<li>The usual approximation keeps only the diagonal of <m>C<sub>m</sub></m>: right to first order for light damping and separated modes, wrong (even ten times) where a damper changes the shapes.</li>
 <li>A damper has a best size for each mode: past it, it locks its joint and damps less.</li>
 <li>MPC and MPD measure how complex a shape is; a measured mode is always a little complex, so only a large value means much.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x N_dof matrices identity q phi_i omega_i gamma_step C_m alpha_beta zeta a_sr psi state lambda omega_d tau eta_state mpc MAC C_p Omega H_jk modal_const</notation>
+<reading>ewins inman adhikari</reading>
