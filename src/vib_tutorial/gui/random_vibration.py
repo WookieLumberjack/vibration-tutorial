@@ -46,7 +46,7 @@ from ..core.random_vibration import (
     suggested_duration,
     welch,
 )
-from . import weak
+from . import maths, random_figures, weak
 from .axes import log_axes
 from .layouts import ColumnScroll, form_layout, group, plot_height
 from .lesson import TrialCombo
@@ -417,7 +417,11 @@ PROBLEMS = tuple(
     )
 )
 
-NOTES_HTML = load_notes("random_vibration")
+NOTES_HTML = load_notes(
+    "random_vibration",
+    figures=random_figures.FIGURES,
+    trials="<ol>" + "".join(f"<li><b>{name}.</b> {maths.markup(note)}</li>" for name, _, note in TRIALS) + "</ol>",
+)
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = True) -> pg.PlotWidget:
@@ -723,7 +727,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.index.setCurrentIndex(changes.get("index", n - 1))
         self._loading = False
         self._show_controls()
-        self.trial_note.setText(note)
+        self.trial_note.setText(maths.markup(note))
         self._schedule(measure=True)
 
     def load_setup(self, setup: dict) -> None:

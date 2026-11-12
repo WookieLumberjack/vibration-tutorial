@@ -445,6 +445,62 @@ REFERENCES = (
         "3rd edition, Wiley, 2015",
         "structural dynamics with the numerical side: time integration and its accuracy, among much else",
     ),
+    Reference(
+        "miles",
+        "Miles 1954",
+        "J. W. Miles, On structural fatigue under random loading, <i>Journal of the Aeronautical Sciences</i> 21, "
+        "753–762, 1954",
+        "",
+    ),
+    Reference(
+        "rice",
+        "Rice 1944–45",
+        "S. O. Rice, Mathematical analysis of random noise, <i>Bell System Technical Journal</i> 23, 282–332, 1944, "
+        "and 24, 46–156, 1945",
+        "",
+    ),
+    Reference(
+        "davenport",
+        "Davenport 1964",
+        "A. G. Davenport, Note on the distribution of the largest value of a random function with application to gust "
+        "loading, <i>Proceedings of the Institution of Civil Engineers</i> 28, 187–196, 1964",
+        "",
+    ),
+    Reference(
+        "vanmarcke",
+        "Vanmarcke 1975",
+        "E. H. Vanmarcke, On the distribution of the first-passage time for normal stationary random processes, "
+        "<i>Journal of Applied Mechanics</i> 42, 215–220, 1975",
+        "",
+    ),
+    Reference(
+        "welch",
+        "Welch 1967",
+        "P. D. Welch, The use of fast Fourier transform for the estimation of power spectra: a method based on time "
+        "averaging over short, modified periodograms, <i>IEEE Transactions on Audio and Electroacoustics</i> 15, "
+        "70–73, 1967",
+        "",
+    ),
+    Reference(
+        "scharton",
+        "Scharton 1997",
+        "T. D. Scharton, <i>Force Limited Vibration Testing Monograph</i>, NASA RP-1403, 1997",
+        "",
+    ),
+    Reference(
+        "bendat-piersol",
+        "Bendat and Piersol 2010",
+        "J. S. Bendat and A. G. Piersol, <i>Random Data: Analysis and Measurement Procedures</i>, 4th edition, Wiley, "
+        "2010",
+        "spectra, their estimates and their errors: the bias and random error of Welch's method in full",
+    ),
+    Reference(
+        "newland",
+        "Newland 1993",
+        "D. E. Newland, <i>An Introduction to Random Vibrations, Spectral and Wavelet Analysis</i>, 3rd edition, "
+        "Longman, 1993 (Dover reprint, 2005)",
+        "random vibration from the ground up: spectra, the response of linear systems, crossings and peaks",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

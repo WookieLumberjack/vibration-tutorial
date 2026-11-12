@@ -1,77 +1,149 @@
-
 <before>
 <a href="page:sim_page#sweeps-and-ground-motion">Sweeps and ground motion</a>
 <a href="page:frf_page#sum-of-modes">Every term is a sum of modes</a>
 </before>
 <h3><a name="psd"></a>Random vibration</h3>
 <p>Wind, a road, a rocket's engines: many inputs are random, never the same twice, but their statistics are
-steady. A stationary random signal is described by its <b>power spectral density</b> (PSD) G(f), its mean square
-per hertz: the RMS² is the area under it. A flat PSD across a band is band-limited white noise. A random
-shaker test is usually specified as such a band, giving the base's acceleration PSD in g²/Hz. For example,
-0.01 g²/Hz from 20 to 2000 Hz has an area of 0.01 × 1980 = 19.8 g², so its RMS is √19.8 = 4.4 g (written
-4.4 Grms).</p>
+steady. A stationary random signal is described by its <b>power spectral density</b> (PSD) <m>G(f)</m>, its
+mean square per hertz at the frequency <m>f</m>: the RMS <m>σ</m> is the root of the area under it,</p>
+<eq>\sigma^2 = \int_0^\infty G(f)\,\mathrm{d}f</eq>
+<p>A flat PSD across a band is band-limited white noise. A random shaker test is usually specified as such a
+band, giving the base's acceleration PSD in g²/Hz. For example, 0.01 g²/Hz from 20 to 2000 Hz has an area of
+0.01 × 1980 = 19.8 g², so its RMS is √19.8 = 4.4 g (written 4.4 Grms).</p>
 
-<h3>The response</h3>
-<p>A linear system turns a random input into a random output, Gaussian if the input is, with PSD</p>
-<p align="center">G<sub>y</sub>(f) = H(f) G<sub>u</sub>(f) H(f)<sup>H</sup>,</p>
-<p>H the frequency response from the input to the output: here (K − ω²M + iωC)<sup>−1</sup> applied to the
-input's forces, read off as a displacement, an acceleration (−ω² × displacement) or a spring's force. Inputs
-that are independent add their PSDs. The response's RMS is √∫G<sub>y</sub> df, and its running value, the
-<b>cumulative RMS</b>, climbs a step at each mode: how high each step is says how much that mode contributes.
-On a shaken base the chain moves relative to the base: in those coordinates the base's acceleration
-a<sub>g</sub> pushes each mass with −m a<sub>g</sub>, and the absolute acceleration is the relative one plus
-a<sub>g</sub>.</p>
+<h3><a name="response"></a>The response</h3>
+<p>A linear system turns a random input into a random output, Gaussian if the input is. Each frequency's share
+of the input passes through the frequency response <m>H</m>, the output's amplitude per unit input, so the
+mean squares multiply by <m>|H|<sup>2</sup></m>. With several inputs, a matrix of them:</p>
+<eq>G_y(f) = H(f)\,G_u(f)\,H(f)^{\mathsf H}</eq>
+<p>Here <m>H</m> is <m>(K − Ω<sup>2</sup>M + iΩC)<sup>−1</sup></m> applied to the inputs' forces, at
+<m>Ω = 2πf</m>, read off as a displacement, an acceleration (<m>−Ω<sup>2</sup></m> times the displacement) or a
+spring's force. Inputs that are independent add their PSDs. The response's RMS is the root of the area under
+<m>G<sub>y</sub></m>, and its running value, the <b>cumulative RMS</b>, climbs a step at each mode: how high
+each step is says how much that mode contributes. On a shaken base the chain moves relative to the base: in
+those coordinates the base's acceleration <m>a<sub>g</sub></m> pushes each mass with
+<m>−m<sub>i</sub>a<sub>g</sub></m>, and the absolute acceleration is the relative one plus
+<m>a<sub>g</sub></m>.</p>
 
 <h3><a name="miles"></a>Miles' equation</h3>
-<p>A lightly damped mode amplifies its input by Q = 1/2ζ over a band about 2ζ f<sub>n</sub> wide. If the input
-is flat across that band, the area under the peak is (π/2) f<sub>n</sub> Q times the input there, and a single
-mass on a shaken base has an absolute acceleration of</p>
-<p align="center">a<sub>RMS</sub> = √((π/2) f<sub>n</sub> Q G<sub>a</sub>(f<sub>n</sub>)),</p>
-<p><b>Miles' equation</b>, the most used formula in random vibration. On the chain each mode is such a
-system in its modal coordinate, driven by the modal force φ<sup>T</sup>f: its RMS follows, each response
-takes the mode shape's share of it, and the modes combine by the square root of the sum of their squares.
-The <i>Miles</i> tab lists them. It is good where the response is resonant and the modes are well apart. It
-misses what isn't resonant: a forced mass's acceleration far above the modes is the force over the mass (the
-<b>mass line</b>), modes outside the band, and a band edge that cuts across a peak.</p>
+<p>A lightly damped mode amplifies its input by <m>Q = 1/2ζ</m> over a band about <m>2ζf<sub>n</sub></m> wide.
+If the input is flat across that band, the area under the peak of <m>|H|<sup>2</sup></m> works out to
+<m>(π/2)f<sub>n</sub>Q</m> times the input there (exactly, for the motion relative to the base; the absolute
+acceleration's is <m>1 + 4ζ<sup>2</sup></m> times that). So a single mass on a shaken base has an acceleration of
+<cite>miles</cite></p>
+<eq>a_{\mathrm{RMS}} = \sqrt{\frac{\pi}{2}\,f_n\,Q\,G_a(f_n)}</eq>
+<p>the most used formula in random vibration. On the chain each mode is such a system in its modal coordinate,
+driven by the modal force <m>φ<sub>r</sub><sup>T</sup>f</m>: on a shaken base that is
+<m>−Γ<sub>r</sub>a<sub>g</sub></m>, its participation factor times the base's acceleration. Its RMS follows,
+each response takes the mode shape's share of it, and the modes combine by the square root of the sum of their
+squares (SRSS). The <i>Miles</i> tab lists them. It is good where the response is resonant and the modes are
+well apart. It misses what isn't resonant: a forced mass's acceleration far above the modes is the force over
+the mass (the <b>mass line</b>), modes outside the band, and a band edge that cuts across a peak.</p>
 
 <h3><a name="statistics"></a>How often, how high</h3>
-<p>A linear system's response to a Gaussian input is Gaussian: 68.3 % of the time within ±1σ, 95.4 % within
-±2σ, 99.73 % within ±3σ, its skewness 0 and kurtosis 3. How often it does things comes from the PSD's
-<b>spectral moments</b> m<sub>k</sub> = ∫ f<sup>k</sup> G df. <b>Rice</b>: it crosses zero upwards
-ν₀ = √(m₂/m₀) times a second, a level a ν₀ e<sup>−a²/2σ²</sup> times, and has ν<sub>p</sub> = √(m₄/m₂) peaks a
-second. Their ratio, the <b>irregularity factor</b> α = ν₀/ν<sub>p</sub>, says how narrow its band is: at 1, one
-peak per cycle, their heights Rayleigh distributed; towards 0, many small peaks riding on the big swings, some
-below zero, their heights nearly Gaussian.</p>
-<p>The <b>largest peak</b> in a time T grows only slowly with T. Counting each upward crossing as independent,
-<b>Davenport</b> finds its expected value σ(√(2 ln ν₀T) + 0.577/√(2 ln ν₀T)): about 3.2σ over a hundred cycles,
-4.1σ over three thousand, 5.1σ over 270,000. "3σ" is not a maximum: a long life sees more. A narrow-band response's
-crossings come in clumps, on the swells of its slowly varying envelope, so there are fewer independent chances
-than ν₀T, and Davenport overestimates the largest peak, most over short times. <b>Vanmarcke</b> counts the clumps,
-through the band's width δ = √(1 − m₁²/m₀m₂). The <i>Statistics</i> tab compares both with the record's own
-largest values, stretch by stretch.</p>
+<p>A linear system's response to a Gaussian input is Gaussian: 68.3 % of the time within <m>±σ</m>, 95.4 %
+within <m>±2σ</m>, 99.73 % within <m>±3σ</m>, its skewness 0 and kurtosis 3. How often it does things comes from
+the PSD's <b>spectral moments</b>,</p>
+<eq>m_k = \int_0^\infty f^k\,G(f)\,\mathrm{d}f</eq>
+<p>Rice <cite>rice</cite> found that it crosses zero upwards <m>ν<sub>0</sub></m> times a second, a level
+<m>b</m> fewer times, and has <m>ν<sub>p</sub></m> peaks a second:</p>
+<eq>\nu_0 = \sqrt{m_2/m_0}, \qquad \nu_p = \sqrt{m_4/m_2}</eq>
+<eq>\nu_b = \nu_0\,\mathrm{e}^{-b^2/2\sigma^2}</eq>
+<p>Their ratio, the <b>irregularity factor</b> <m>α<sub>i</sub> = ν<sub>0</sub>/ν<sub>p</sub></m>, says how narrow
+its band is. At 1 there is one peak per cycle, their heights Rayleigh distributed. Towards 0 there are many
+small peaks riding on the big swings, some below zero, their heights nearly Gaussian.</p>
+<p>The <b>largest peak</b> in a time <m>T</m> grows only slowly with <m>T</m>. Counting each upward crossing as
+independent, Davenport <cite>davenport</cite> finds its expected value</p>
+<eq>\sigma\Bigl(\sqrt{2\ln\nu_0 T} + \frac{0.577}{\sqrt{2\ln\nu_0 T}}\Bigr)</eq>
+<p>about <m>3.2σ</m> over a hundred cycles, <m>4.1σ</m> over three thousand, <m>5.1σ</m> over 270,000. "<m>3σ</m>"
+is not a maximum: a long life sees more. A narrow-band response's crossings come in clumps, on the swells of
+its slowly varying envelope, so there are fewer independent chances than <m>ν<sub>0</sub>T</m>, and Davenport
+overestimates the largest peak, most over short times. Vanmarcke <cite>vanmarcke</cite> counts the clumps,
+through the band's width <m>δ<sub>b</sub> = √(1 − m<sub>1</sub><sup>2</sup>/m<sub>0</sub>m<sub>2</sub>)</m>. The
+<i>Statistics</i> tab compares both with the record's own largest values, stretch by stretch.</p>
 
 <h3><a name="welch"></a>Estimating it from a record</h3>
-<p><b>Welch's method</b> cuts the record into blocks, windows each (Hann), Fourier transforms them and averages
-|Y|². Two errors trade against each other:</p>
+<p><b>Welch's method</b> <cite>welch</cite> cuts the record into blocks, windows each (Hann), Fourier transforms
+them and averages <m>|Y|<sup>2</sup></m>. Two errors trade against each other:</p>
 <ul>
-<li><b>Bias</b>: the lines are f<sub>s</sub>/block apart, and the window smears each over a few. A peak
-narrower than that comes out low and wide. Put four or more lines across the half-power width
-2ζf<sub>n</sub>.</li>
-<li><b>Random error</b>: one block's estimate scatters by 100 %; averaging n blocks cuts it to 1/√n.</li>
+<li><b>Bias</b>: the lines are <m>Δf = f<sub>s</sub></m>/block apart, and the window smears each over a few. A
+peak narrower than that comes out low and wide. Put four or more lines across the half-power width
+<m>2ζf<sub>n</sub></m>.</li>
+<li><b>Random error</b>: one block's estimate scatters by 100 %; averaging <m>n<sub>d</sub></m> blocks cuts it to
+<m>1/√n<sub>d</sub></m>.</li>
 </ul>
 <p>Fine lines need long blocks and many averages need many blocks: a lightly damped mode needs a long record.
-The RMS itself is less fussy, a whole area: its scatter is about 1/(2√(B T)) for a record T long, B the
-response's bandwidth.</p>
+The RMS itself is less fussy, a whole area: its scatter is about <m>1/(2√(BT))</m> for a record <m>T</m> long,
+<m>B</m> the response's bandwidth.</p>
+
+<h3><a name="test-specs"></a>Test specifications</h3>
+<p>A random vibration test drives a shaker so that the acceleration at the item's mounting follows a
+<b>profile</b>: a PSD given by breakpoints joined by straight lines on log–log axes, each sloping some
+<m>s</m> dB per octave. On such a line <m>G = G<sub>1</sub>(f/f<sub>1</sub>)<sup>p</sup></m> with the exponent
+<m>p = s/(10 log<sub>10</sub>2) = s/3.01</m>, and its area is</p>
+<eq>\int_{f_1}^{f_2} G\,\mathrm{d}f = \frac{G_1 f_1}{p + 1}\Bigl[\Bigl(\frac{f_2}{f_1}\Bigr)^{p+1} - 1\Bigr]</eq>
+<p>(or <m>G<sub>1</sub>f<sub>1</sub> ln(f<sub>2</sub>/f<sub>1</sub>)</m> at <m>s</m> = −3.01 dB/oct). Its Grms is the
+root of the segments' areas added up.</p>
+<table width="100%"><tr><td align="center"><img src="fig:profile" width="310" height="170"></td></tr></table>
+<ul>
+<li><b>Where a profile comes from: enveloping.</b> Measured PSDs from the service environment (many flights,
+many roads) are covered by a few straight lines that lie on or above all of them, and a margin is added for a
+qualification test. The envelope is conservative by construction: it puts the worst of each band together.</li>
+<li><b>Tolerance bands.</b> The shaker's controller measures the control PSD, by Welch's method as above, and
+must keep it within a band round the profile (a few dB either side), with the overall Grms close to the
+profile's. Wider alarm and abort limits stop the test before it can damage the item. The estimate's own scatter
+(<m>1/√n<sub>d</sub></m>) is why the band can't be tight at fine resolution.</li>
+<li><b>Notching.</b> A shaker table is far stiffer than the structure the item is mounted on in service. In
+service, the item's own resonance pulls its mounting point's motion down (an <a
+href="page:frf_page#antiresonances">antiresonance</a> of the mounting, as the item holds it), but the table holds
+the profile regardless, and over-tests the item at its resonances. Notching lowers the input in narrow bands
+round them, by limiting a response, or the force between table and item <cite>scharton</cite>, to what service
+would give.</li>
+<li><b>Sine-on-random.</b> Rotating machinery (propellers, rotors, engines) adds tones to a broadband background.
+The test adds sines, fixed or swept, to the random profile. A sine of amplitude <m>A</m> has a mean square of
+<m>A<sup>2</sup>/2</m>, and independent parts add their mean squares: <m>σ<sup>2</sup> =
+σ<sub>random</sub><sup>2</sup> + ΣA<sup>2</sup>/2</m>.</li>
+</ul>
+<p>How long to run, and how to shorten a long life into a short test at a higher level, is a question of
+fatigue damage: the <a href="page:fatigue_page">Fatigue</a> page, next.</p>
 
 <h3><a name="computing"></a>How this page computes it</h3>
 <p>The simulated record comes from the exact update, its input synthesized to have the PSD asked for, so the
 differences between the record's estimates and the exact PSD are the estimates', not the simulation's. The
 record holds 2.5 samples per period of the band's top: enough to describe it, since it has nothing above the
 band, but not to see its peaks. It is interpolated eightfold before they are counted.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the default chain (four 1 kg masses, 400 N/m springs and 2 N·s/m dampers) on a base shaken
+at 0.01 g²/Hz from 0 to 10 Hz, an input of <m>√(0.01 × 10)</m> = 0.316 Grms, looking at the last mass's
+acceleration. Every mode's damping is <m>ζ<sub>r</sub> = ω<sub>r</sub>/400</m>, so <m>f<sub>r</sub>Q<sub>r</sub>
+= f<sub>r</sub>/2ζ<sub>r</sub> = 200/2π</m> = 31.83 Hz for every mode, and every mode's Miles factor is the
+same:</p>
+<eq>\sqrt{\frac{\pi}{2} \times 31.83 \times 0.01} = 0.707\ \text{g}</eq>
+<p>Mode <m>r</m> responds at the last mass with that times <m>|Γ<sub>r</sub>φ<sub>4r</sub>|</m>, its share of
+the base's push and of the last mass's motion: 1.241, 0.333, 0.120 and 0.028, so 0.878, 0.236, 0.085 and
+0.020 g. Their SRSS is <m>√(0.878<sup>2</sup> + 0.236<sup>2</sup> + 0.085<sup>2</sup> + 0.020<sup>2</sup>)</m> =
+0.913 g, against the exact 0.911 g from <m>H G Hᴴ</m>: Miles is 0.2 % high. Mode 1 is almost all of it.</p>
+<p>The response's moments give <m>ν<sub>0</sub></m> = 1.40 crossings a second and <m>ν<sub>p</sub></m> = 2.47
+peaks a second, <m>α<sub>i</sub></m> = 0.565: mode 1's swings with mode 2's wiggles on them. Over the
+Statistics tab's 60 s stretches, <m>ν<sub>0</sub>T</m> = 83.8, and Davenport expects the largest peak at
+<m>3.17σ</m> = 2.89 g; Vanmarcke, counting the clumps (<m>δ<sub>b</sub></m> = 0.43), at <m>3.05σ</m>.</p>
+<p>A test profile, by way of the formula above: 0.01 g²/Hz at 20 Hz rising at +3 dB/oct (<m>p</m> = 1, near enough) to
+0.04 g²/Hz at 80 Hz, flat to 500 Hz, then falling at −6 dB/oct (<m>p</m> = −2) to 2000 Hz. The three areas are
+<m>(0.01 × 20/2)(4<sup>2</sup> − 1)</m> = 1.5, 0.04 × 420 = 16.8 and <m>(0.04 × 500/(−1))(4<sup>−1</sup> − 1)</m> =
+15 g², 33.3 g² in all: 5.77 Grms.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets the input and the response (Things to try, top left):</p>
+<!--TRIALS-->
 <takeaways>
-<li>A random input is described by its PSD; a linear system's response PSD is H G Hᴴ, and its RMS is the root of the area under it.</li>
+<li>A random input is described by its PSD; a linear system's response PSD is <m>HGHᴴ</m>, and its RMS is the root of the area under it.</li>
 <li>The cumulative RMS steps up at each mode: the steps say which modes matter.</li>
-<li>Miles' equation, √((π/2) f<sub>n</sub> Q G), gives a lightly damped mode's RMS from the input at its own frequency.</li>
-<li>The response is Gaussian, but the largest peak in a record grows with its length: 3σ is not a maximum.</li>
+<li>Miles' equation, <m>√((π/2)f<sub>n</sub>QG)</m>, gives a lightly damped mode's RMS from the input at its own frequency.</li>
+<li>The response is Gaussian, but the largest peak in a record grows with its length: <m>3σ</m> is not a maximum.</li>
 <li>A PSD estimate trades resolution (long blocks) against scatter (many averages).</li>
+<li>A test profile's Grms is the root of its segments' areas; notching keeps a stiff shaker from over-testing an item's resonances.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>psd psd_io sigma Omega H matrices m chain_i omega_n zeta Q phi_i Gamma_r a_base moments rice_rates irregularity delta_b T_rec n_avg s_slope</notation>
+<reading>bendat-piersol newland</reading>
