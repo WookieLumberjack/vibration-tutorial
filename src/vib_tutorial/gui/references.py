@@ -128,7 +128,7 @@ REFERENCES = (
         "Piersol and Paez 2010",
         "A. G. Piersol and T. L. Paez (eds), <i>Harris' Shock and Vibration Handbook</i>, 6th edition, "
         "McGraw-Hill, 2010",
-        "pulses, shock spectra and their tables, for reference",
+        "the engineer's reference: shock pulses and spectra, isolators and six-degree-of-freedom mountings",
     ),
     Reference(
         "ogata",
@@ -610,6 +610,13 @@ REFERENCES = (
         "Wong 2022",
         "J. Y. Wong, <i>Theory of Ground Vehicles</i>, 5th edition, Wiley, 2022",
         "ride and handling from the tyre up: road spectra, quarter- and half-car models, suspension design",
+    ),
+    Reference(
+        "jeong-singh",
+        "Jeong and Singh 2000",
+        "T. Jeong and R. Singh, Analytical methods of decoupling the automotive engine torque roll axis, <i>Journal of "
+        "Sound and Vibration</i> 234, 85–114, 2000",
+        "",
     ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}

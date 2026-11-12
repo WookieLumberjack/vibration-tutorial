@@ -39,7 +39,7 @@ from ..core.rigid_mounts import (
     sweep,
     torque_roll_axis,
 )
-from . import frame_stats, settle_plots
+from . import frame_stats, mounts_figures, settle_plots
 from .layouts import form_layout
 from .lesson import (
     Dot,
@@ -142,8 +142,8 @@ TRIALS = (
     MountTrial(
         "Level with the centre of mass: six pure modes",
         "A 20 kg box 0.6 × 0.5 × 0.6 m on four mounts of 50 kN/m (12.5 across) level with its centre of mass. "
-        "Every mode is pure, all its kinetic energy in one coordinate: x and y at 7.96 Hz (√(4k<sub>s</sub>/m)/2π), "
-        "roll 8.47, yaw 9.79, bounce 15.9 (√(4k<sub>a</sub>/m)/2π) and pitch 16.2 Hz. The elastic centre is the "
+        "Every mode is pure, all its kinetic energy in one coordinate: <m>x</m> and <m>y</m> at 7.96 Hz (<m>√(4k<sub>s</sub>/m)/2π</m>), "
+        "roll 8.47, yaw 9.79, bounce 15.9 (<m>√(4k<sub>a</sub>/m)/2π</m>) and pitch 16.2 Hz. The elastic centre is the "
         "centre of mass.",
         mode=4,
     ),
@@ -159,8 +159,8 @@ TRIALS = (
     MountTrial(
         "Tilted to the focus: decoupled again",
         f"Each mount leaning {FOCUS:g}° toward the middle, the pair's lines of action meet above them, and the roll "
-        "plane's elastic centre, t(k<sub>a</sub> − k<sub>s</sub>) sin β cos β/(k<sub>a</sub> sin²β + k<sub>s</sub> "
-        "cos²β) above the mounts, rises the 80 mm to the centre of mass: sway and roll are pure again (roll 7.56 Hz, "
+        "plane's elastic centre, <m>t(k<sub>a</sub> − k<sub>s</sub>) sin β cos β/(k<sub>a</sub> sin<sup>2</sup>β + k<sub>s</sub> "
+        "cos<sup>2</sup>β)</m> above the mounts, rises the 80 mm to the centre of mass: sway and roll are pure again (roll 7.56 Hz, "
         "y 8.91 Hz). That's a focalized mount system. The tilt is in the roll plane only, so the pitch plane's "
         "centre stays at the mounts: no single elastic centre now.",
         drop=0.08,
@@ -180,10 +180,10 @@ TRIALS = (
     ),
     MountTrial(
         "Stiff in shear: no focus to be had",
-        "Mounts as stiff across as along (k<sub>s</sub> = k<sub>a</sub>) 80 mm below: tilting one changes nothing, "
+        "Mounts as stiff across as along (<m>k<sub>s</sub> = k<sub>a</sub></m>) 80 mm below: tilting one changes nothing, "
         "since it is equally stiff every way, and the roll plane's elastic centre stays at the mounts whatever the "
-        "tilt. Focalizing needs k<sub>s</sub> &lt; k<sub>a</sub>, and the softer in shear the higher it can lift "
-        "the centre: h ≤ t(1 − ρ)/2√ρ.",
+        "tilt. Focalizing needs <m>k<sub>s</sub></m> &lt; <m>k<sub>a</sub></m>, and the softer in shear the higher it can lift "
+        "the centre: <m>d ≤ t(1 − ρ<sub>s</sub>)/2√ρ<sub>s</sub></m>.",
         drop=0.08,
         shear_ratio=1.0,
         sweep=Sweep.TILT,
@@ -191,7 +191,7 @@ TRIALS = (
     MountTrial(
         "An unbalance at 3000 rpm: isolated",
         "The level box with 2 kg·mm of unbalance turning about a crank along x, 100 mm ahead of its centre of mass "
-        "and 100 mm up, at 3000 rpm (50 Hz). It pushes mₑeΩ² = 197 N, turning; 22.4 N reaches the floor, 11.3 %: "
+        "and 100 mm up, at 3000 rpm (50 Hz). It pushes <m>m<sub>e</sub>eΩ<sup>2</sup></m> = 197 N, turning; 22.4 N reaches the floor, 11.3 %: "
         "the load turns three times faster than the stiffest mode, and the box's inertia carries it. Above about "
         "1350 rpm the mounts isolate; the Response tab shows where they don't.",
         rpm=3000.0,
@@ -202,16 +202,16 @@ TRIALS = (
         "Running at the bounce: amplified",
         "The same unbalance at 955 rpm, where it turns at the bounce mode's 15.9 Hz: 20.0 N of unbalance puts "
         "201 N through the floor, 10.1 times as much (about 1/η), held back only by the rubber's loss factor "
-        "η = 0.1.",
+        "<m>η</m> = 0.1.",
         rpm=955.0,
         mode=FORCED,
         tab=TAB_RESPONSE,
     ),
     MountTrial(
         "Lossier rubber: less at resonance, as much isolation",
-        "η = 0.3: at 955 rpm the floor gets 70.0 N (3.5 times the unbalance's), not 201; at 3000 rpm 23.2 N, "
-        "hardly more than η = 0.1's 22.4. Rubber's hysteretic damping (the Damping models page's) stiffens a mount "
-        "by |1 + iη| at every frequency, not more at high ones as a viscous damper's iωc does, so it costs little "
+        "<m>η</m> = 0.3: at 955 rpm the floor gets 70.0 N (3.5 times the unbalance's), not 201; at 3000 rpm 23.2 N, "
+        "hardly more than <m>η</m> = 0.1's 22.4. Rubber's hysteretic damping (the Damping models page's) stiffens a mount "
+        "by <m>|1 + iη|</m> at every frequency, not more at high ones as a viscous damper's <m>iωc</m> does, so it costs little "
         "isolation.",
         rpm=955.0,
         loss=0.3,
@@ -220,7 +220,7 @@ TRIALS = (
     ),
     MountTrial(
         "A firing torque: roll alone",
-        "A torque about the crank axis (x), twice a turn at 1500 rpm (50 Hz), on the level mounts: it drives the "
+        "A torque about the crank axis (<m>x</m>), twice a turn at 1500 rpm (50 Hz), on the level mounts: it drives the "
         "roll mode and nothing else (the Drive tab), so the box only rolls. That is what decoupling buys.",
         excitation=Excitation.TORQUE,
         mode=FORCED,
@@ -237,8 +237,8 @@ TRIALS = (
     ),
     MountTrial(
         "A tilted crank: the torque roll axis",
-        "A box 0.8 m long with its crank tilted 20° up from x. A free body under a torque about n turns about "
-        "I⁻¹n, not n: here 14.0° up (tan γ' = (I<sub>xx</sub>/I<sub>zz</sub>) tan γ), the torque roll axis "
+        "A box 0.8 m long with its crank tilted 20° up from <m>x</m>. A free body under a torque about <m>n</m> turns about "
+        "<m>I<sup>−1</sup>n</m>, not <m>n</m>: here 14.0° up (<m>tan γ' = (I<sub>xx</sub>/I<sub>zz</sub>) tan γ</m>), the torque roll axis "
         "(green in the 3D view; dashed, the crank). The torque now drives yaw as well as roll (0.30 of it). Engine "
         "mounts are aimed at this axis, so that the firing torque drives one mode about it.",
         excitation=Excitation.TORQUE,
@@ -537,7 +537,7 @@ CENTRE_TIP = (
     "their lines of action (dotted), the centre of mass (dot) and each plane's elastic centre (cross).</p>"
 )
 
-NOTES_HTML = load_notes("rigid_mounts", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("rigid_mounts", figures=mounts_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 def _mm(value: float) -> str:
