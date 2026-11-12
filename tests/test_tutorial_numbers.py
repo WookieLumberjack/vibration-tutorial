@@ -454,6 +454,71 @@ def test_integration_worked_example():
     assert f"{largest[Scheme.LINEAR]:.3g}" == "91.9" and f"{largest[Scheme.RK4]:.3g}" == "7.58"
 
 
+def test_random_vibration_worked_example():
+    """The Theory's worked example: the default base shake on the default chain, Miles mode by mode from one
+    common factor, the exact RMS, Rice's rates and the largest peak over the Statistics tab's stretch; then the
+    test profile's Grms from its segments, each from the figures it quotes too."""
+    from vib_tutorial.core.modal import modal_analysis
+    from vib_tutorial.core.model import ChainSystem
+    from vib_tutorial.core.random_vibration import Input, Output, Quantity, RandomInput, predict, rice
+    from vib_tutorial.gui import random_figures
+    from vib_tutorial.gui.random_vibration import RandomSetup
+
+    t = RandomSetup()
+    assert (t.kind, t.level, t.f_lo, t.f_hi, t.quantity, t.mass) == (
+        Input.BASE,
+        0.01,
+        0.0,
+        10.0,
+        Quantity.ACCELERATION,
+        -1,
+    )
+    s = ChainSystem.uniform(4)
+    inp = RandomInput()
+    assert inp.rms == pytest.approx(0.316, abs=0.0005)
+    r = modal_analysis(s)
+    for m in r.modes:
+        assert m.zeta_modal == pytest.approx(m.omega_n / 400)
+        assert m.fn_hz / (2 * m.zeta_modal) == pytest.approx(200 / (2 * math.pi))
+    assert 200 / (2 * math.pi) == pytest.approx(31.83, abs=0.005)
+    factor = math.sqrt(math.pi / 2 * 31.83 * 0.01)
+    assert factor == pytest.approx(0.707, abs=0.0005)
+    shares = [abs(m.shape_mass_normalized.sum() * m.shape_mass_normalized[3]) for m in r.modes]
+    assert shares == pytest.approx([1.241, 0.333, 0.120, 0.028], abs=0.0005)
+    p = predict(s, inp, Output(Quantity.ACCELERATION, 3), r)
+    miles = [row[3] for row in p.miles]
+    assert miles == pytest.approx([0.878, 0.236, 0.085, 0.020], abs=0.0005)
+    assert [0.707 * x for x in (1.241, 0.333, 0.120, 0.028)] == pytest.approx([0.878, 0.236, 0.085, 0.020], abs=0.001)
+    assert math.sqrt(0.878**2 + 0.236**2 + 0.085**2 + 0.020**2) == pytest.approx(0.913, abs=0.0005)
+    assert p.miles_rms == pytest.approx(0.913, abs=0.0005) and p.rms == pytest.approx(0.911, abs=0.0005)
+    assert 100 * (p.miles_rms / p.rms - 1) == pytest.approx(0.2, abs=0.05)
+    R = rice(p)
+    assert (R.nu0, R.nu_peak, R.alpha, R.delta) == pytest.approx((1.40, 2.47, 0.565, 0.43), abs=0.005)
+    assert R.nu0 * 60 == pytest.approx(83.8, abs=0.05)
+    assert R.peak_factor(60) == pytest.approx(3.17, abs=0.005) and R.clumped_peak_factor(60) == pytest.approx(
+        3.05, abs=0.005
+    )
+    assert R.peak_factor(60) * R.sigma == pytest.approx(2.89, abs=0.005)
+    # Davenport's general figures
+    from vib_tutorial.core.random_vibration import davenport
+
+    assert [davenport(c) for c in (100, 3000, 270_000)] == pytest.approx([3.2, 4.1, 5.1], abs=0.05)
+
+    # the test profile: segment areas G1 f1/(p + 1) [(f2/f1)^(p+1) − 1]
+    def area(f1, g1, f2, g2):
+        p = math.log(g2 / g1) / math.log(f2 / f1)
+        return g1 * f1 / (p + 1) * ((f2 / f1) ** (p + 1) - 1)
+
+    prof = random_figures.PROFILE
+    areas = [area(*prof[i], *prof[i + 1]) for i in range(3)]
+    assert areas == pytest.approx([1.5, 16.8, 15.0])
+    assert sum(areas) == pytest.approx(33.3) and math.sqrt(33.3) == pytest.approx(5.77, abs=0.005)
+    assert 10 * math.log10(2) == pytest.approx(3.01, abs=0.005)
+    f = np.geomspace(20, 2000, 200001)
+    g = np.interp(np.log(f), np.log([q[0] for q in prof]), np.log([q[1] for q in prof]))
+    assert np.trapezoid(np.exp(g), f) == pytest.approx(33.3, rel=1e-4)
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)
