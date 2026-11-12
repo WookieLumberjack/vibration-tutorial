@@ -20,7 +20,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
-from . import weak
+from . import frf_figures, maths, weak
 from .layouts import ColumnScroll, form_layout
 from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
@@ -390,25 +390,25 @@ class FrfTrial:
 TRIALS = (
     FrfTrial(
         "Antiresonances at a driving point (H22)",
-        "Force and response both at m2. Peaks and dips alternate, and the phase falls 180° at each peak and "
-        "climbs back at each dip. Undamped, the dips would be at 1.97 Hz and 5.15 Hz (m3 and m4 vibrating on "
-        "their own with m2 held) and 4.50 Hz (m1 between the ground and m2). With the dampers the one at "
+        "Force and response both at <m>m<sub>2</sub></m>. Peaks and dips alternate, and the phase falls 180° at each peak and "
+        "climbs back at each dip. Undamped, the dips would be at 1.97 Hz and 5.15 Hz (<m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> vibrating on "
+        "their own with <m>m<sub>2</sub></m> held) and 4.50 Hz (<m>m<sub>1</sub></m> between the ground and <m>m<sub>2</sub></m>). With the dampers the one at "
         "5.15 Hz, squeezed between the peaks at 4.88 and 5.98 Hz, is washed out to a shoulder.",
         output=1,
         inputs=(1,),
     ),
     FrfTrial(
         "A force at a node (m3 in mode 2)",
-        "Mode 2 has a node at m3 (its shape is 0.58, 0.58, 0, −0.58). Pushing there can't excite it, and "
-        "measuring there can't see it, so H33, and the whole of row 3 and column 3, have no peak at 3.18 Hz. "
+        "Mode 2 has a node at <m>m<sub>3</sub></m> (its shape is 0.58, 0.58, 0, −0.58). Pushing there can't excite it, and "
+        "measuring there can't see it, so <m>H<sub>33</sub></m>, and the whole of row 3 and column 3, have no peak at 3.18 Hz. "
         "Click another cell in row 3: still no mode 2.",
         output=2,
         inputs=(2,),
     ),
     FrfTrial(
         "End to end (H14): no antiresonances",
-        "Force at m4, response at m1. Between m1 and m4 there is no chain left outside, so there are no "
-        "dips, and the phase keeps falling by 180° at every peak, 720° in all. Compare H22's phase, which "
+        "Force at <m>m<sub>4</sub></m>, response at <m>m<sub>1</sub></m>. Between <m>m<sub>1</sub></m> and <m>m<sub>4</sub></m> there is no chain left outside, so there are no "
+        "dips, and the phase keeps falling by 180° at every peak, 720° in all. Compare <m>H<sub>22</sub></m>'s phase, which "
         "swings back up at each dip.",
         output=0,
         inputs=(3,),
@@ -417,7 +417,7 @@ TRIALS = (
     FrfTrial(
         "Truncate the high modes (H11)",
         "Modes 3 and 4 unticked, the real part shown. Near modes 1 and 2 the sum is close, but below them it "
-        "sits low: modes 3 and 4 hold 24% of m1's static compliance (their residual flexibility), and the "
+        "sits low: modes 3 and 4 hold 24% of <m>m<sub>1</sub></m>'s static compliance (their residual flexibility), and the "
         "header lists each mode's share. Tick mode 3 back and the offset mostly closes.",
         output=0,
         inputs=(0,),
@@ -426,8 +426,8 @@ TRIALS = (
     ),
     FrfTrial(
         "Leave out mode 1 (H44)",
-        "Only mode 1 unticked. Above 1.1 Hz the missing term is mass-like, −φφᵀ/ω², so the sum is off by "
-        "an amount that grows towards low frequency as 1/ω²: the residual mass. At ω = 0 the error is mode "
+        "Only mode 1 unticked. Above 1.1 Hz the missing term is mass-like, <m>−φφᵀ/Ω²</m>, so the sum is off by "
+        "an amount that grows towards low frequency as <m>1/Ω²</m>: the residual mass. At <m>Ω = 0</m> the error is mode "
         "1's 89% share of the static compliance.",
         output=3,
         inputs=(3,),
@@ -435,8 +435,8 @@ TRIALS = (
     ),
     FrfTrial(
         "Two forces at once (m3 and m4)",
-        "Unit forces at m3 and m4, in phase, the response at m4: the sum of H43 and H44. At mode 1 (1.11 Hz) "
-        "m3 and m4 move together in the mode, the forces help each other and m4 moves almost twice as far. "
+        "Unit forces at <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m>, in phase, the response at <m>m<sub>4</sub></m>: the sum of <m>H<sub>43</sub></m> and <m>H<sub>44</sub></m>. At mode 1 (1.11 Hz) "
+        "<m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> move together in the mode, the forces help each other and <m>m<sub>4</sub></m> moves almost twice as far. "
         "At mode 3 (4.88 Hz) they move in opposite directions, the forces fight, and the sum is smaller than "
         "either term alone.",
         output=3,
@@ -444,9 +444,9 @@ TRIALS = (
     ),
     FrfTrial(
         "Non-proportional damping: the classical sum misses",
-        "c1 = 15 N·s/m, the other dampers at 2, with Modal terms → Classical. Even with every mode ticked the "
+        "<m>c<sub>1</sub></m> = 15 N·s/m, the other dampers at 2, with Modal terms → Classical. Even with every mode ticked the "
         "sum misses the full solution, most where two modes' peaks overlap, because the classical terms "
-        "drop ΦᵀCΦ's coupling. Switch to Exact (complex modes): the sum lies on the full solution again.",
+        "drop <m>ΦᵀCΦ</m>'s coupling. Switch to Exact (complex modes): the sum lies on the full solution again.",
         output=0,
         inputs=(0,),
         damping=(15.0, 2.0, 2.0, 2.0),
@@ -508,7 +508,7 @@ def _accelerance_limit(rng: np.random.Generator) -> Question:
         f"A force pushes a {m:g} kg mass in a chain of springs and masses. What does its driving-point accelerance "
         "level off at, far above every mode?",
         1.0 / m,
-        f"Far above the modes the springs can't keep up and the mass is pushed alone: ẍ = F/m, so −ω²H<sub>jj</sub> "
+        f"Far above the modes the springs can't keep up and the mass is pushed alone: ẍ = F/m, so −Ω²H<sub>jj</sub> "
         f"→ 1/m = {number(1 / m)} 1/kg.",
         unit="1/kg",
     )
@@ -555,7 +555,7 @@ def _mobility(rng: np.random.Generator) -> Question:
     return Question(
         f"A receptance measures {h:g} mm/N at {f:g} Hz. What is the mobility there?",
         v,
-        f"For harmonic motion velocity is iω times displacement: |iωH| = 2π × {f:g} × {number(1e-3 * h)} = "
+        f"For harmonic motion velocity is iΩ times displacement: |iΩH| = 2π × {f:g} × {number(1e-3 * h)} = "
         f"{number(v)} m/(N·s).",
         unit="m/(N·s)",
     )
@@ -725,7 +725,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self.trial_note.setVisible(False)
         tv.addWidget(self.trial_note)
 
-        box = QtWidgets.QGroupBox("FRF matrix H(ω) = (K − ω²M + iωC)⁻¹")
+        box = QtWidgets.QGroupBox("FRF matrix H(Ω) = (K − Ω²M + iΩC)⁻¹")
         form = form_layout(box)
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
@@ -748,10 +748,10 @@ class FrfMatrixPage(QtWidgets.QWidget):
             self.expansion.addItem(e.value, e)
         self.expansion.setToolTip(
             "<p><b>Exact:</b> each eigenvalue pair of the state-space model contributes "
-            "R/(iω − λ) + R*/(iω − λ*). The sum of all of them is the full solution for any "
+            "R/(iΩ − λ) + R*/(iΩ − λ*). The sum of all of them is the full solution for any "
             "damping.</p>"
-            "<p><b>Classical:</b> each undamped mode contributes φφᵀ/(ω<sub>r</sub>² − ω² + "
-            "2iζ<sub>r</sub>ω<sub>r</sub>ω). With non-proportional damping even the sum of all modes "
+            "<p><b>Classical:</b> each undamped mode contributes φφᵀ/(ω<sub>r</sub>² − Ω² + "
+            "2iζ<sub>r</sub>ω<sub>r</sub>Ω). With non-proportional damping even the sum of all modes "
             "misses the full solution, because the coupling terms of ΦᵀCΦ are dropped.</p>"
         )
         self.expansion.currentIndexChanged.connect(self._recompute_terms)
@@ -893,7 +893,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         )
 
     def apply_trial(self, trial: FrfTrial) -> None:
-        self.trial_note.setText(trial.note)
+        self.trial_note.setText(maths.markup(trial.note))
         self.trial_note.setVisible(True)
         self._unchecked = set()
         system = trial.system()
@@ -1152,7 +1152,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         """Static compliance (w = 0): the ticked modes' sum vs K^-1, and each mode's share."""
         if self.static is None:
             return (
-                "<b>Static compliance</b> (ω = 0): none. K is singular, so the chain can move "
+                "<b>Static compliance</b> (Ω = 0): none. K is singular, so the chain can move "
                 "as a rigid body and a steady force has no static deflection."
             )
         full = float(self.static[j, inputs].sum())
@@ -1173,10 +1173,10 @@ class FrfMatrixPage(QtWidgets.QWidget):
             style = "" if on else f" style='color:{colors.grey}'"
             shares.append(f"<span style='color:{c}'>■</span><span{style}>{t.label} {share}</span>")
         return (
-            f"<b>Static compliance</b> (ω = 0): K<sup>−1</sup> gives {full:.4g} m/N; the ticked "
+            f"<b>Static compliance</b> (Ω = 0): K<sup>−1</sup> gives {full:.4g} m/N; the ticked "
             f"modes give {partial:.4g} m/N, error <b style='color:{color}'>{amount}</b>. "
             f"<span style='color:{colors.muted}'>Each mode's share (grey: not ticked):</span> {', '.join(shares)}."
         )
 
 
-THEORY_HTML = load_notes("frf_matrix", trials=trials_html(TRIALS))
+THEORY_HTML = load_notes("frf_matrix", figures=frf_figures.FIGURES, trials=trials_html(TRIALS))

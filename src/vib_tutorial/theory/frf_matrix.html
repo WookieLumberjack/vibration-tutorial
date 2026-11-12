@@ -1,122 +1,170 @@
-
 <before>
 <a href="page:sim_page#start-with-one-mass">Start with one mass</a>
 <a href="page:sim_page#undamped-normal-modes-real">Undamped normal modes</a>
 <a href="page:sim_page#proportional-damping">Proportional damping</a>
 </before>
 <h3><a name="receptance-matrix"></a>The FRF (receptance) matrix</h3>
-<p>For a harmonic force f(t) = F e<sup>iωt</sup> the steady response is x(t) = X e<sup>iωt</sup> with
-<b>(K − ω²M + iωC) X = F</b>, so</p>
-<p>&nbsp;&nbsp;<b>X = H(ω) F</b>, &nbsp;&nbsp; H(ω) = (K − ω²M + iωC)<sup>−1</sup></p>
-<p>H is an N × N matrix at every frequency. Its term H<sub>jk</sub> is the displacement of mass j
-per unit force at mass k. Column k is the response of every mass to a force at m<sub>k</sub> (the
-Frequency response tab on the Simulation page shows one column). Row j is how every force moves
-mass j.</p>
+<p>For a harmonic force <m>f(t) = F e<sup>iΩt</sup></m> the steady response is <m>x(t) = X e<sup>iΩt</sup></m>
+with <m>(K − Ω²M + iΩC)X = F</m>, so</p>
+<eq>X = H(\Omega)\,F, \qquad H(\Omega) = (K - \Omega^2 M + \mathrm{i}\Omega C)^{-1}</eq>
+<p><m>H</m> is an <m>N × N</m> matrix at every frequency. Its entry <m>H<sub>jk</sub></m> is the displacement of
+mass <m>j</m> per unit force at mass <m>k</m>. Column <m>k</m> is the response of every mass to a force at
+<m>m<sub>k</sub></m> (the Frequency response tab on the Simulation page shows one column). Row <m>j</m> is how
+every force moves mass <m>j</m>.</p>
 <ul>
-<li><b>Driving point</b> (diagonal, j = k): response where the force acts.</li>
-<li><b>Transfer</b> (off-diagonal, j ≠ k): response somewhere else.</li>
-<li><b>Reciprocity:</b> M, C and K are symmetric, so H is too: H<sub>jk</sub> = H<sub>kj</sub>.
-Pushing at m<sub>k</sub> and measuring at m<sub>j</sub> gives exactly the same FRF as the
-other way round (Maxwell–Betti).</li>
+<li><b>Driving point</b> (diagonal, <m>j = k</m>): the response where the force acts.</li>
+<li><b>Transfer</b> (off-diagonal, <m>j ≠ k</m>): the response somewhere else.</li>
+<li><b>Reciprocity:</b> <m>M</m>, <m>C</m> and <m>K</m> are symmetric, so <m>H</m> is too:
+<m>H<sub>jk</sub> = H<sub>kj</sub></m>. Pushing at <m>m<sub>k</sub></m> and measuring at <m>m<sub>j</sub></m>
+gives exactly the same FRF as the other way round. For static loads this is Maxwell's reciprocal theorem
+<cite>maxwell-1864</cite>, generalized by Betti <cite>betti</cite>; Rayleigh carried it over to vibration
+<cite>rayleigh-sound</cite>.</li>
 </ul>
+<p>At <m>Ω = 0</m>, <m>H</m> is the flexibility matrix <m>K<sup>−1</sup></m>, whose column <m>k</m> is the static sag under 1 N on <m>m<sub>k</sub></m>: the
+<b>static compliance</b>.</p>
 
 <h3><a name="three-forms"></a>Three forms of the same FRF</h3>
-<p>H here is the <b>receptance</b> (or compliance, dynamic flexibility): displacement per unit
-force, in m/N. The same information is often given per unit force as velocity or acceleration,
-which for harmonic motion only multiplies H by iω or −ω²:</p>
+<p><m>H</m> here is the <b>receptance</b> (or compliance, dynamic flexibility): displacement per unit force, in
+m/N. The same information is often given as velocity or acceleration per unit force, which for harmonic motion
+only multiplies <m>H</m> by <m>iΩ</m> or <m>−Ω²</m>:</p>
 <table border="1" cellspacing="0" cellpadding="3">
-<tr><th>Form</th><th>Response</th><th>In terms of H</th><th>Units</th><th>Below / above the modes (driving point)</th></tr>
-<tr><td>Receptance</td><td>displacement</td><td>H</td><td>m/N</td><td>flat (static compliance) / falls as 1/ω²</td></tr>
-<tr><td>Mobility</td><td>velocity</td><td>iωH</td><td>m/(N·s)</td><td>rises as ω / falls as 1/ω</td></tr>
-<tr><td>Accelerance (inertance)</td><td>acceleration</td><td>−ω²H</td><td>1/kg</td><td>rises as ω² / flat at 1/m</td></tr>
+<tr><th>Form</th><th>Response</th><th>FRF</th><th>Units</th><th>Driving point, below / above the modes</th></tr>
+<tr><td>Receptance</td><td>displacement</td><td><m>H</m></td><td>m/N</td><td>flat at <m>(K<sup>−1</sup>)<sub>jj</sub></m> / falls as <m>1/Ω²</m></td></tr>
+<tr><td>Mobility</td><td>velocity</td><td><m>iΩH</m></td><td>m/(N·s)</td><td>rises as <m>Ω</m> / falls as <m>1/Ω</m></td></tr>
+<tr><td>Accelerance</td><td>acceleration</td><td><m>−Ω²H</m></td><td>1/kg</td><td>rises as <m>Ω²</m> / flat at <m>1/m<sub>j</sub></m></td></tr>
 </table>
-<p>The poles, mode shapes and damping are the same in all three; only the weighting of low and
-high frequencies changes. Tests usually measure acceleration, so a measured FRF is most often an
-accelerance (see the Virtual modal test page). Plotting Im H against Re H (a <i>Nyquist</i> plot)
-turns each lightly damped resonance into a near-circle; for mobility and viscous damping it is
-exactly a circle, which the circle fit uses. Transfer FRFs (j ≠ k) fall faster above the modes.</p>
+<p>The poles, mode shapes and damping are the same in all three; only the weighting of low and high frequencies
+changes. Tests usually measure acceleration, so a measured FRF is most often an accelerance (or
+<i>inertance</i>; see the Virtual modal test page, later). Plotting <m>Im H</m> against <m>Re H</m> (a
+<i>Nyquist</i> plot) turns each lightly damped resonance into a near-circle. For one mode with viscous damping the
+mobility's is exactly a circle, which the circle fit of Kennedy and Pancu <cite>kennedy-pancu</cite> uses. Transfer
+FRFs (<m>j ≠ k</m>) fall faster above the modes.</p>
 
 <h3><a name="several-forces"></a>Several forces at once</h3>
-<p>Because the system is linear, the response to several forces is the sum of the responses to
-each: x<sub>j</sub> = Σ<sub>k</sub> H<sub>jk</sub> F<sub>k</sub>, a sum along row j. Tick
-several forces (or Ctrl+click plots in one row) to see the terms and their sum. The terms are
-complex, so where they are out of phase they cancel, and the sum can be <i>smaller</i> than
-either term alone.</p>
+<p>Because the system is linear, the response to several forces is the sum of the responses to each, a sum along
+row <m>j</m>:</p>
+<eq>X_j = \sum_k H_{jk} F_k</eq>
+<p>Tick several forces (or Ctrl+click plots in one row) to see the terms and their sum. The terms are complex,
+so where they are out of phase they cancel, and the sum can be <i>smaller</i> than either term alone.</p>
 
-<h3><a name="sum-of-modes"></a>Every term is a sum of modes</h3>
-<p>With mass-normalized undamped mode shapes φ<sub>r</sub> and proportional damping,</p>
-<p>&nbsp;&nbsp;<b>H<sub>jk</sub>(ω) = Σ<sub>r</sub> φ<sub>jr</sub> φ<sub>kr</sub> /
-(ω<sub>r</sub>² − ω² + 2iζ<sub>r</sub>ω<sub>r</sub>ω)</b></p>
+<h3><a name="sum-of-modes"></a>Every entry is a sum of modes</h3>
+<p>With mass-normalized undamped mode shapes <m>φ<sub>r</sub></m> and proportional damping, the modal coordinates
+uncouple (<m>ΦᵀMΦ = I</m>, <m>ΦᵀKΦ</m> and <m>ΦᵀCΦ</m> diagonal), so</p>
+<eq>H(\Omega) = \Phi\,\mathrm{diag}\!\left(\frac{1}{\omega_r^2 - \Omega^2 + 2\mathrm{i}\zeta_r\omega_r\Omega}\right)\Phi^{\mathsf T}</eq>
+<eq>H_{jk}(\Omega) = \sum_r \frac{\varphi_{jr}\,\varphi_{kr}}{\omega_r^2 - \Omega^2 + 2\mathrm{i}\zeta_r\omega_r\Omega}</eq>
 <p>Each mode is a single-DOF resonance, scaled by the <b>modal constant</b>
-φ<sub>jr</sub>φ<sub>kr</sub>: how much mode r is excited at k times how much it shows at j.
-In matrix form H = Φ diag(1/(ω<sub>r</sub>² − ω² + 2iζ<sub>r</sub>ω<sub>r</sub>ω)) Φ<sup>T</sup>:
-every term of the matrix is built from the same N resonances, only weighted differently.</p>
+<m>φ<sub>jr</sub>φ<sub>kr</sub></m> (<m>φ<sub>jr</sub></m> is mode <m>r</m>'s entry at mass <m>j</m>): how much mode
+<m>r</m> is excited at <m>k</m> times how much it shows at <m>j</m>. Every entry of the matrix is built from the
+same <m>N</m> resonances, only weighted differently.</p>
 <ul>
-<li>Near ω<sub>r</sub>, mode r's term dominates, so every H<sub>jk</sub> peaks there, unless
-m<sub>j</sub> or m<sub>k</sub> sits at a node of that mode (φ = 0).</li>
-<li>Below its resonance a mode's term acts like a spring (in phase with the force, or exactly
-opposite if its modal constant is negative), above it like a mass (180° further behind). Between two resonances the lower mode is already mass-like and the
-upper still spring-like.</li>
-<li>If both modal constants have the <b>same sign</b>, the two terms are in anti-phase there and
-cancel at some frequency: an <b>antiresonance</b> (a sharp dip). With <b>opposite signs</b> they
-add, and the curve just passes through a minimum. (This looks at the two neighbouring modes
-only; the others shift the dip, and a large contribution from them can remove it.)</li>
-<li>At a driving point every modal constant φ<sub>jr</sub>² is positive, so there is an
-antiresonance between every pair of resonances: peaks and dips alternate, and (lightly damped)
-the phase swings down by 180° at each resonance and back up at each antiresonance.</li>
-<li>For this chain, the undamped H<sub>jk</sub> (j ≤ k) has (j − 1) + (N − k)
-antiresonances, one for each mass outside the stretch of chain from m<sub>j</sub> to m<sub>k</sub>
-(two can fall at the same frequency, e.g. in a uniform chain). They are exactly the natural
-frequencies of the two pieces of chain outside that stretch, with m<sub>j</sub> and
-m<sub>k</sub> held still: at those frequencies the outer pieces can vibrate on their own and
-absorb the force, as a vibration absorber does. In the undamped uniform 4-mass chain,
-H<sub>22</sub>'s dips are at 1.97 and 5.15 Hz (m3 and m4 with m2 held) and 4.50 Hz (m1
-between the ground and m2). The end-to-end term
-H<sub>1N</sub> has none, so its phase keeps falling by 180° at every resonance.</li>
+<li>Near <m>ω<sub>r</sub></m>, mode <m>r</m>'s term dominates, so every <m>H<sub>jk</sub></m> peaks there, unless
+<m>m<sub>j</sub></m> or <m>m<sub>k</sub></m> sits at a node of that mode (<m>φ = 0</m>).</li>
+<li>Below its resonance a mode's term acts like a spring (in phase with the force, or exactly opposite if its
+modal constant is negative), above it like a mass (180° further behind). Between two resonances the lower mode
+is already mass-like and the upper still spring-like.</li>
+<li>If both modal constants have the <b>same sign</b>, the two terms are in anti-phase there and cancel at some
+frequency: an <b>antiresonance</b> (a sharp dip). With <b>opposite signs</b> they add, and the curve just passes
+through a minimum. (This looks at the two neighbouring modes only; the others shift the dip, and a large
+contribution from them can remove it.)</li>
+<li>At a driving point every modal constant <m>φ<sub>jr</sub>²</m> is positive, so there is an antiresonance
+between every pair of resonances: peaks and dips alternate, and (lightly damped) the phase swings down by 180°
+at each resonance and back up at each antiresonance.</li>
 </ul>
 
+<h3><a name="antiresonances"></a>Where the dips are</h3>
+<p>For this chain the undamped <m>H<sub>jk</sub></m> (<m>j ≤ k</m>) has <m>(j − 1) + (N − k)</m>
+antiresonances, one for each mass outside the stretch of chain from <m>m<sub>j</sub></m> to
+<m>m<sub>k</sub></m> (two can fall at the same frequency). They are exactly the natural frequencies of the
+pieces of chain outside that stretch, with <m>m<sub>j</sub></m> and <m>m<sub>k</sub></m> held still: at those
+frequencies the outer pieces vibrate on their own and absorb the force, as a vibration absorber does.</p>
+<table width="100%"><tr><td align="center"><img src="fig:held" width="360" height="170"></td></tr></table>
+<p>Why: <m>H</m> is the inverse of <m>K − Ω²M + iΩC</m>, so <m>H<sub>jk</sub></m> is a cofactor over the
+determinant. The chain's matrix is tridiagonal, and the cofactor is the springs between <m>m<sub>j</sub></m>
+and <m>m<sub>k</sub></m> multiplied together, times the determinants of the two blocks outside them: masses 1 to
+<m>j − 1</m> with <m>m<sub>j</sub></m> held, and masses <m>k + 1</m> to <m>N</m> with <m>m<sub>k</sub></m> held.
+Undamped, those vanish at the outer pieces' natural frequencies. In the undamped uniform 4-mass chain,
+<m>H<sub>22</sub></m>'s dips are at 1.97 and 5.15 Hz (<m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> with
+<m>m<sub>2</sub></m> held) and 4.50 Hz (<m>m<sub>1</sub></m> between the ground and <m>m<sub>2</sub></m>).
+The end-to-end entry <m>H<sub>1N</sub></m> has none, so its phase keeps falling by 180° at every resonance.</p>
+
 <h3><a name="truncation"></a>Truncation</h3>
-<p>Untick modes to see a <b>truncated modal model</b>, which is what you get from a finite-element
-model with only its lowest modes kept, or from a test that measured only some modes. Near the kept
-modes' peaks the sum is close. Elsewhere, especially at antiresonances and at low frequency, it
-misses. The missing high modes act almost like springs there (their <i>residual flexibility</i>
-Σ φ<sub>jr</sub>φ<sub>kr</sub>/ω<sub>r</sub>²), and leaving them out shifts the antiresonances.
-Compare the <b>real part</b>: the terms add directly, so you can see the offset left by a
-missing mode.</p>
-<p>Leaving out a <i>low</i> mode does the opposite. Well above its frequency a mode's term
-is −φ<sub>jr</sub>φ<sub>kr</sub>/ω², mass-like, so the missing low modes leave a
-<b>residual mass</b> (residual inertia) term that grows towards low frequency as 1/ω². Untick
-mode 1 and the sum is wrong by about that amount above it. A model or test band that starts
-above the lowest modes needs both corrections, H ≈ Σ<sub>kept</sub> + U − L/ω² (the
-<i>residuals</i> fitted on the Virtual modal test page): U for the modes above, L for those
-below.</p>
-<p>At ω = 0 the sum of every mode is the <b>static compliance</b> K<sup>−1</sup> =
-Σ<sub>r</sub> φ<sub>r</sub>φ<sub>r</sub><sup>T</sup>/ω<sub>r</sub>² (damping plays no part
-there, so even the classical sum is exact). Each mode's share of it is
-φ<sub>jr</sub>φ<sub>kr</sub>/ω<sub>r</sub>² divided by the total, which is why the high modes
-matter so little statically: their share falls as 1/ω<sub>r</sub>². The header of the large plot
-lists every mode's share and the error of the ticked ones. That error is the residual
-flexibility that a truncated model leaves out.</p>
+<p>Untick modes to see a <b>truncated modal model</b>, which is what you get from a finite-element model with
+only its lowest modes kept, or from a test that measured only some modes. Near the kept modes' peaks the sum is
+close. Elsewhere, especially at antiresonances and at low frequency, it misses. Well below their resonances the
+missing high modes act almost like springs, their <b>residual flexibility</b></p>
+<eq>U_{jk} = \sum_{r\ \text{above}} \frac{\varphi_{jr}\varphi_{kr}}{\omega_r^2}</eq>
+<p>and leaving them out shifts the antiresonances. Compare the <b>real part</b>: the terms add directly, so you
+can see the offset left by a missing mode.</p>
+<p>Leaving out a <i>low</i> mode does the opposite. Well above its frequency a mode's term is
+<m>−φ<sub>jr</sub>φ<sub>kr</sub>/Ω²</m>, mass-like, so the missing low modes leave a <b>residual mass</b> (or
+residual inertia) term that grows towards low frequency as <m>1/Ω²</m>. Untick mode 1 and the sum is wrong by about
+that amount above it. A model or test band that starts above the lowest modes needs both corrections
+<cite>ewins</cite>:</p>
+<eq>H_{jk} \approx \sum_{r\ \text{kept}} \frac{\varphi_{jr}\varphi_{kr}}{\omega_r^2 - \Omega^2 + 2\mathrm{i}\zeta_r\omega_r\Omega} + U_{jk} - \frac{L_{jk}}{\Omega^2}</eq>
+<p>with <m>U</m> for the modes above and <m>L = Σ<sub>below</sub> φ<sub>jr</sub>φ<sub>kr</sub></m> for those
+below (the <i>residuals</i> fitted on the Virtual modal test page).</p>
+<p>At <m>Ω = 0</m> the sum of every mode is the static compliance (damping plays no part there, so even the
+classical sum is exact):</p>
+<eq>K^{-1} = \sum_r \frac{\varphi_r \varphi_r^{\mathsf T}}{\omega_r^2}</eq>
+<p>Each mode's share of it is <m>φ<sub>jr</sub>φ<sub>kr</sub>/ω<sub>r</sub>²</m> over the total, which is why
+the high modes matter so little statically: their share falls as <m>1/ω<sub>r</sub>²</m>. The header of the
+large plot lists every mode's share and the error of the ticked ones. That error is the residual flexibility
+that a truncated model leaves out. Far above every mode the opposite sum takes over:
+<m>−Ω²H → ΦΦᵀ = M<sup>−1</sup></m>, so every mode counts by its <m>φ<sub>jr</sub>φ<sub>kr</sub></m>, and the
+driving-point accelerance levels off at <m>1/m<sub>j</sub></m>.</p>
 
 <h3><a name="non-proportional-damping"></a>Non-proportional damping</h3>
-<p>The formula above keeps only the diagonal of Φ<sup>T</sup>CΦ. With non-proportional damping
-(say, raise only c<sub>1</sub>), the <b>Classical</b> sum misses the full solution even with
-every mode ticked. The <b>Exact</b> expansion uses the complex modes of the state-space form
-instead: each eigenvalue pair contributes</p>
-<p>&nbsp;&nbsp;R<sub>r</sub>/(iω − λ<sub>r</sub>) + R<sub>r</sub>*/(iω − λ<sub>r</sub>*)</p>
-<p>with complex residue matrices R<sub>r</sub> (from the right and left eigenvectors), and their
-sum is exactly H for any damping. A heavily damped mode can split into two real
-(non-oscillatory) roots; each then contributes its own term. Where those complex modes come from,
-and how far they are from the real ones, is the next page's subject (Complex modes).</p>
+<p>The formula above keeps only the diagonal of <m>ΦᵀCΦ</m>. With non-proportional damping (say, raise only
+<m>c<sub>1</sub></m>), the <b>Classical</b> sum misses the full solution even with every mode ticked. The
+<b>Exact</b> expansion uses the complex modes of the state-space form instead (the Simulation page's
+<m>ż = Az + Bu</m>): each eigenvalue pair <m>λ<sub>r</sub>, λ<sub>r</sub>*</m> contributes</p>
+<eq>\frac{R_r}{\mathrm{i}\Omega - \lambda_r} + \frac{R_r^{*}}{\mathrm{i}\Omega - \lambda_r^{*}}</eq>
+<p>with complex <b>residue</b> matrices <m>R<sub>r</sub></m> (from the right and left eigenvectors), and their sum is
+exactly <m>H</m> for any damping. A heavily damped mode can split into two real (non-oscillatory) roots; each
+then contributes its own term. Where those complex modes come from, and how far they are from the real ones, is
+the next page's subject (Complex modes).</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on <m>H<sub>11</sub></m> of the uniform chain: four 1 kg masses, 400 N/m springs and 2 N·s/m
+dampers. Its modes come from <a href="page:sim_page#uniform-chain">the closed form</a>: with
+<m>N = 4</m>, <m>φ<sub>1r</sub> = (2/3) sin γ<sub>r</sub></m> for <m>γ<sub>r</sub></m> = 20°, 60°, 100° and
+140°, so</p>
+<eq>\varphi_{1r} = 0.2280,\ 0.5774,\ 0.6565,\ 0.4285</eq>
+<eq>\varphi_{1r}^2 = 0.0520,\ 0.3333,\ 0.4310,\ 0.1836</eq>
+<p>(the solver's signs may differ; a driving point squares them). They add up to 1, which is
+<m>1/m<sub>1</sub></m>: far above the modes the accelerance levels off at 1 /kg.</p>
+<p><b>Static.</b> <m>H<sub>11</sub>(0) = 1/k<sub>1</sub> = 0.0025</m> m/N: a force on <m>m<sub>1</sub></m>
+stretches only spring 1. With <m>ω<sub>r</sub>²</m> = 48.25, 400, 938.9 and 1412.8 (rad/s)², the modes' shares
+<m>φ<sub>1r</sub>²/ω<sub>r</sub>²</m> are 1.078, 0.833, 0.459 and 0.130 (×10⁻³ m/N), or 43.1, 33.3, 18.4 and
+5.2 % of it: the header's list. Modes 3 and 4 hold 23.6 %, the residual flexibility the <i>Truncate the high
+modes</i> trial leaves out.</p>
+<p><b>The first peak.</b> The dampers are proportional (<m>C = K/200</m>), so
+<m>ζ<sub>r</sub> = 0.0025 ω<sub>r</sub></m>: 0.0174 for mode 1. At <m>ω<sub>1</sub></m> mode 1's term is
+<m>φ<sub>11</sub>²/(2iζ<sub>1</sub>ω<sub>1</sub>²)</m>, of size <m>0.0520/(2 × 0.0174 × 48.25)</m> = 0.0310 m/N, 12.4 times the
+static compliance. The whole sum gives 0.0311 m/N: the other modes add little there.</p>
+<p><b>The dips.</b> <m>j = k = 1</m>, so there are <m>0 + (4 − 1) = 3</m> antiresonances: the natural frequencies of
+<m>m<sub>2</sub></m>, <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> with <m>m<sub>1</sub></m> held. That is a
+uniform 3-mass chain on its own, whose closed form gives
+<m>ω = 40 sin((2r − 1)π/14)</m> = 8.90, 24.94 and 36.04 rad/s: 1.417, 3.969 and 5.736 Hz. They interlace the
+peaks at 1.105, 3.183, 4.877 and 5.982 Hz. With the dampers the first two show as sharp dips (near 1.42 and
+3.99 Hz on the magnitude plot); the third, between the peaks at 4.88 and 5.98 Hz where <m>ζ</m> is 0.08 to 0.09,
+is washed out, and so is the fourth peak.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the chain and the plots (Things to try, top left). Loading one replaces the
 Simulation page's chain.</p>
 <!--TRIALS-->
+<h3><a name="notation"></a>Notation</h3>
+<notation>chain_i N_dof x f matrices Omega H H_jk flex phi_i omega_i zeta gamma_step modal_const residuals identity state lambda residue</notation>
+<reading>ewins inman</reading>
 <takeaways>
-<li>H(ω) = (K − ω²M + iωC)<sup>−1</sup>: term H<sub>jk</sub> is the response at m<sub>j</sub> to a unit force at m<sub>k</sub>, and H<sub>jk</sub> = H<sub>kj</sub>.</li>
-<li>Every term is a sum of the same N resonances, weighted by the modal constants φ<sub>jr</sub>φ<sub>kr</sub>; a node (φ = 0) hides a mode from a whole row and column.</li>
-<li>A driving point's peaks and dips alternate; the dips are the frequencies of the chain outside, held at the force and the response.</li>
-<li>A truncated sum misses the high modes as a residual flexibility and the low ones as a residual mass, most at the dips and away from the peaks.</li>
+<li><m>H(Ω) = (K − Ω²M + iΩC)<sup>−1</sup></m>: entry <m>H<sub>jk</sub></m> is the response at
+<m>m<sub>j</sub></m> to a unit force at <m>m<sub>k</sub></m>, and <m>H<sub>jk</sub> = H<sub>kj</sub></m>.</li>
+<li>Every entry is a sum of the same <m>N</m> resonances, weighted by the modal constants
+<m>φ<sub>jr</sub>φ<sub>kr</sub></m>; a node (<m>φ = 0</m>) hides a mode from a whole row and column.</li>
+<li>A driving point's peaks and dips alternate; the dips are the frequencies of the chain outside, held at the
+force and the response.</li>
+<li>A truncated sum misses the high modes as a residual flexibility and the low ones as a residual mass, most at
+the dips and away from the peaks.</li>
 <li>With non-proportional damping only the complex-mode (exact) sum is exact.</li>
 </takeaways>
