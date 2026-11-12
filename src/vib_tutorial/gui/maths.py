@@ -41,7 +41,7 @@ EQUATIONS: dict[str, str] = {}
 
 UPRIGHT = frozenset(
     "sin cos tan cot sec csc sinh cosh tanh arcsin arccos arctan exp ln log lg Re Im det max min sup inf lim "
-    "sgn arg rms erf tr diag Hz kHz dB rpm rad mm cm km kg kN MPa GPa kPa Pa ms µs dof DOF FRF MAC RMS PSD SRS "
+    "sgn arg rms erf tr diag Hz kHz dB rpm rad mm cm kg kN MPa GPa kPa Pa ms µs dof DOF FRF MAC RMS PSD SRS "
     "cpm".split()
 )
 LETTER = (

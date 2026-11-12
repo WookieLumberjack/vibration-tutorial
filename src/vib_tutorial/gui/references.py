@@ -49,6 +49,46 @@ REFERENCES = (
         "the classic: physical explanations, absorbers, rotors",
     ),
     Reference(
+        "den-hartog-1931",
+        "Den Hartog 1931",
+        "J. P. Den Hartog, Forced vibrations with combined Coulomb and viscous friction, <i>Transactions of the "
+        "ASME</i> 53 (APM-53-9), 107–115, 1931",
+        "the exact sliding motion, and when friction bounds a resonance",
+    ),
+    Reference(
+        "coulomb",
+        "Coulomb 1785",
+        "C.-A. Coulomb, Théorie des machines simples, en ayant égard au frottement de leurs parties et à la roideur "
+        "des cordages, <i>Mémoires de mathématique et de physique présentés à l'Académie royale des sciences</i> "
+        "10, 1785 (the Academy's prize of 1781)",
+        "dry friction's laws, from experiment",
+    ),
+    Reference(
+        "crandall",
+        "Crandall 1970",
+        "S. H. Crandall, The role of damping in vibration theory, <i>Journal of Sound and Vibration</i> 11, 3–18, 1970",
+        "what each damping model can and can't do, hysteretic damping's lack of a causal form among them",
+    ),
+    Reference(
+        "maxwell",
+        "Maxwell 1867",
+        "J. C. Maxwell, On the dynamical theory of gases, <i>Philosophical Transactions of the Royal Society of "
+        "London</i> 157, 49–88, 1867",
+        "the model of a stress that relaxes, a spring and a viscosity in series",
+    ),
+    Reference(
+        "nashif",
+        "Nashif, Jones and Henderson 1985",
+        "A. D. Nashif, D. I. G. Jones and J. P. Henderson, <i>Vibration Damping</i>, Wiley, 1985",
+        "damping materials, their measurement and their use in structures",
+    ),
+    Reference(
+        "zener",
+        "Zener 1948",
+        "C. Zener, <i>Elasticity and Anelasticity of Metals</i>, University of Chicago Press, 1948",
+        "the standard linear solid and its relaxation peak",
+    ),
+    Reference(
         "baker-blackburn",
         "Baker and Blackburn 2005",
         "G. L. Baker and J. A. Blackburn, <i>The Pendulum: A Case Study in Physics</i>, Oxford University Press, 2005",
