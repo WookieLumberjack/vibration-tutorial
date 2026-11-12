@@ -36,7 +36,7 @@ from ..core.modal import TWO_PI, ModalResult, modal_analysis
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_least, number, pick, rounded
 from ..core.presets import tuned_mass_damper
-from . import weak
+from . import complex_figures, maths, weak
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
@@ -69,11 +69,11 @@ STROBE_TIP = (
 )
 TABLE_TIP = (
     "<p>Each mode: the exact pole's frequency |λ|/2π and damping ratio, against the proportional approximation's "
-    "(ζ = φ<sup>T</sup>Cφ/2ω, the undamped frequency); the exact shape's MAC with the undamped one, its MPC "
+    "(ζ = φ<sup>T</sup>Cφ/2ω<sub>r</sub>, at the undamped frequency); the exact shape's MAC with the undamped one, its MPC "
     "(1 real, 0 spread evenly) and its mean phase deviation from the best-fit line.</p>"
 )
 FRF_TIP = (
-    "<p>The receptance, exact (K − ω²M + iωC)<sup>−1</sup>, and with the proportional approximation's damping "
+    "<p>The receptance, exact (K − Ω²M + iΩC)<sup>−1</sup>, and with the proportional approximation's damping "
     "C<sub>p</sub> = MΦ diag(Φ<sup>T</sup>CΦ) Φ<sup>T</sup>M: the off-diagonal terms dropped.</p>"
 )
 DECAY_TIP = (
@@ -92,8 +92,8 @@ LOCUS_TIP = (
 )
 IDENT_TIP = (
     "<p>The FRF column for a force on one mass, with a little noise, fitted by LSFD on the exact poles two ways: "
-    "with complex modes (any complex residues) and with real modes (A<sub>r</sub>/(ω<sub>r</sub>² − ω² + "
-    "2iζ<sub>r</sub>ω<sub>r</sub>ω), A<sub>r</sub> real), the model of a proportionally damped structure.</p>"
+    "with complex modes (any complex residues) and with real modes (φ<sub>jr</sub>φ<sub>kr</sub>/(ω<sub>r</sub>² − Ω² + "
+    "2iζ<sub>r</sub>ω<sub>r</sub>Ω), the modal constant φ<sub>jr</sub>φ<sub>kr</sub> real), the model of a proportionally damped structure.</p>"
 )
 SCATTER_TIP = (
     "<p>Each mode's entries' angles from its best-fit line (one dot per mass, mass colours), and their mean, "
@@ -110,36 +110,37 @@ TRIALS = (
     (
         "A damper per spring, in proportion",
         ChainSystem.uniform(4),
-        "Four equal masses, springs and dampers: c<sub>i</sub> = k<sub>i</sub>/200, so C = K/200 and the damping is "
-        "proportional. Every mode is real (MPC 1, MPD 0°), the approximation is exact, and a mode released "
-        "stays alone.",
+        "Four equal masses, springs and dampers: <m>c<sub>i</sub> = k<sub>i</sub>/200</m>, so <m>C = K/200</m> and "
+        "the damping is proportional. Every mode is real (MPC 1, MPD 0°), the approximation is exact, and a mode "
+        "released stays alone.",
     ),
     (
         "One damper, at the base",
         _chain([20.0, 0, 0, 0]),
         "The same chain with a single 20 N·s/m damper, on spring 1. Mode 3 is the most complex (MPC 0.20, "
-        "MPD 29°), and the approximation puts mode 4's ζ at 0.049, twice the exact 0.023. Released in mode 2's "
+        "MPD 29°), and the approximation puts mode 4's <m>ζ</m> at 0.049, twice the exact 0.023. Released in mode 2's "
         "shape, the chain passes 45 % of it to mode 1.",
     ),
     (
         "One damper, at the top",
         _chain([0, 0, 0, 20.0]),
-        "The damper between m3 and m4: mode 4's ζ is 0.017, not the approximation's 0.17, ten times less. "
-        "The approximation counts the damper's stretch in the undamped mode 4, but the exact mode 4 shakes m1 "
-        "and m2 and leaves m3 and m4 moving nearly together (under a third of the stretch), so the damper barely "
+        "The damper between <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m>: mode 4's <m>ζ</m> is 0.017, not the approximation's 0.17, ten times less. "
+        "The approximation counts the damper's stretch in the undamped mode 4, but the exact mode 4 shakes "
+        "<m>m<sub>1</sub></m> and <m>m<sub>2</sub></m> and leaves <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> moving nearly together (under a third of the stretch), so the damper barely "
         "works.",
     ),
     (
         "A strong damper locks a joint",
         _chain([0, 200.0, 0, 0]),
-        "200 N·s/m between m1 and m2: so stiff a damper that the two move together, and it hardly works. Mode 1's "
-        "ζ is 0.050, not the approximation's 0.58; mode 3's 0.0018, not 2.6; mode 4 has become a pair of real "
-        "roots. Mode 2, where m1 and m2 already move together, is untouched.",
+        "200 N·s/m between <m>m<sub>1</sub></m> and <m>m<sub>2</sub></m>: so stiff a damper that the two move "
+        "together, and it hardly works. Mode 1's <m>ζ</m> is 0.050, not the approximation's 0.58; mode 3's 0.0018, "
+        "not 2.6; mode 4 has become a pair of real roots. Mode 2, where <m>m<sub>1</sub></m> and "
+        "<m>m<sub>2</sub></m> already move together, is untouched.",
     ),
     (
         "Tuned mass damper",
         tuned_mass_damper(ChainSystem.uniform(4), 0.05),
-        "The default chain with a Den Hartog damper on m4 (m5). Modes 1 and 2 are the structure's mode 1 split in "
+        "The default chain with a Den Hartog damper on <m>m<sub>4</sub></m> (<m>m<sub>5</sub></m>). Modes 1 and 2 are the structure's mode 1 split in "
         "two, close together, and the damper couples them: the most complex (MPD 10° and 17°), while the "
         "modes above, far from them, stay nearly real.",
     ),
@@ -349,7 +350,9 @@ PROBLEMS = tuple(
 
 
 NOTES_HTML = load_notes(
-    "complex_modes", trials="<ol>" + "".join(f"<li><b>{name}.</b> {note}</li>" for name, _, note in TRIALS) + "</ol>"
+    "complex_modes",
+    figures=complex_figures.FIGURES,
+    trials="<ol>" + "".join(f"<li><b>{name}.</b> {note}</li>" for name, _, note in TRIALS) + "</ol>",
 )
 
 
@@ -686,7 +689,7 @@ class ComplexModesPage(QtWidgets.QWidget):
     def load_trial(self, index: int) -> None:
         """Ask for chain `index` of TRIALS, and show its note."""
         _, system, note = TRIALS[index]
-        self.trial_note.setText(note)
+        self.trial_note.setText(maths.markup(note))
         self.trial_note.setVisible(True)
         self.system_requested.emit(system.copy())
 

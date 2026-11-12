@@ -245,6 +245,56 @@ def test_frf_matrix_worked_example():
     assert abs(-((2 * np.pi * 50) ** 2) * frf(s, np.array([50.0]), 0)[0, 0]) == pytest.approx(1, abs=0.01)
 
 
+def test_complex_modes_worked_example():
+    """The Theory's worked example: one 20 N·s/m damper at the base of the default chain. The approximation's ζ
+    from φ₁ᵣ², the exact poles and shapes, the first-order shape and second-order frequency of mode 1, and the
+    locked damper's limit, each from the figures it quotes too."""
+    from vib_tutorial.core.complex_modes import compare, complexity, free_decay
+    from vib_tutorial.core.modal import modal_analysis
+    from vib_tutorial.core.model import ChainSystem
+
+    base = ChainSystem(np.ones(4), np.full(4, 400.0), np.array([20.0, 0, 0, 0]))
+    r = modal_analysis(base)
+    assert modal_analysis(ChainSystem.uniform(4)).is_proportional
+    assert r.coupling == pytest.approx(1.0)  # a rank-one C_m
+    phi = np.column_stack([m.shape_mass_normalized for m in r.modes])
+    w = np.array([m.omega_n for m in r.modes])
+    assert w == pytest.approx([6.946, 20.00, 30.64, 37.59], abs=0.005)
+    assert w == pytest.approx(40 * np.sin(np.radians([10, 30, 50, 70])))
+    phi2 = np.array([0.0520, 0.3333, 0.4310, 0.1836])
+    assert phi[0] ** 2 == pytest.approx(phi2, abs=5e-5)
+    cm = phi.T @ base.matrices()[1] @ phi
+    assert cm == pytest.approx(20 * np.outer(phi[0], phi[0]))
+    rows = compare(base, r)
+    approx = [0.0748, 0.167, 0.141, 0.0489]
+    assert [c.zeta_approx for c in rows] == pytest.approx(approx, rel=0.004)
+    assert 10 * phi2 / np.array([6.946, 20.00, 30.64, 37.59]) == pytest.approx(approx, rel=0.004)
+    assert [c.zeta_exact for c in rows] == pytest.approx([0.0726, 0.178, 0.168, 0.0225], rel=0.004)
+    assert [c.fn_exact for c in rows] == pytest.approx([1.124, 3.434, 4.569, 5.823], abs=0.0005)
+    assert [c.fn_hz for c in rows] == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=0.0005)
+    # mode 1, first order: a_s1 = iω₁C_s1/(ω₁² − ω_s²)
+    a = np.array([1j * w[0] * cm[s, 0] / (w[0] ** 2 - w[s] ** 2) for s in range(1, 4)])
+    assert a == pytest.approx([-0.052j, -0.023j, 0.010j], abs=0.0005)
+    guess = phi[:, 0] + phi[:, 1:] @ a
+    assert complexity(guess).mpd == pytest.approx(2.97, abs=0.005)
+    assert rows[0].measures.mpd == pytest.approx(2.98, abs=0.005)
+    terms = [cm[0, s] ** 2 / (w[s] ** 2 - w[0] ** 2) for s in range(1, 4)]
+    assert terms == pytest.approx([0.0197, 0.0101, 0.0028], abs=0.00005)
+    assert w[0] * math.sqrt(1 + sum(terms)) == pytest.approx(7.058, abs=0.0005)
+    assert math.sqrt(6.946**2 * (1 + 0.0197 + 0.0101 + 0.0028)) == pytest.approx(7.058, abs=0.0005)
+    assert abs(rows[0].exact) == pytest.approx(7.061, abs=0.0005)
+    assert rows[0].exact.real == pytest.approx(-cm[0, 0] / 2, rel=0.02)  # the decay rate kept to this order
+    # modes 2 to 4: not small; mode 3 the most complex
+    assert abs(1j * w[1] * cm[2, 1] / (w[1] ** 2 - w[2] ** 2)) == pytest.approx(0.28, abs=0.005)
+    assert rows[2].measures.mpc == pytest.approx(0.20, abs=0.005)
+    assert rows[2].measures.mpd == pytest.approx(28.9, abs=0.05)
+    assert min(rows, key=lambda c: c.measures.mpc).index == 3
+    assert free_decay(base, r, 1).leak[0] == pytest.approx(0.45, abs=0.005)
+    # locked at the base: the 3-mass chain above m1, H11's dips
+    held = modal_analysis(ChainSystem(np.ones(3), np.full(3, 400.0), np.zeros(3)))
+    assert [m.fn_hz for m in held.modes] == pytest.approx([1.42, 3.97, 5.74], abs=0.005)
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)

@@ -675,6 +675,48 @@ SYMBOLS = (
         "non-proportional-damping",
     ),
     Symbol(
+        "a_sr",
+        "a<sub>sr</sub>",
+        "how much of undamped mode s a complex mode r holds, to first order in the damping",
+        "–",
+        "complex_page",
+        "complex-shapes",
+    ),
+    Symbol(
+        "psi",
+        "ψ<sub>r</sub>",
+        "complex mode r's exact shape: the displacements of the state matrix's eigenvector [ψ; λψ]",
+        "–",
+        "complex_page",
+        "complex-shapes",
+    ),
+    Symbol(
+        "eta_state",
+        "η, Y, y<sub>r</sub>",
+        "the state's modal coordinates, Y<sup>−1</sup>z; Y the eigenvectors y<sub>r</sub> = [ψ<sub>r</sub>; "
+        "λ<sub>r</sub>ψ<sub>r</sub>] as columns (η is also a loss factor)",
+        "–",
+        "complex_page",
+        "state-space-coordinates",
+    ),
+    Symbol(
+        "mpc",
+        "MPC, MPD, s<sub>xx</sub>, θ<sub>j</sub>",
+        "modal phase collinearity (1 real, 0 spread evenly) from the sums s<sub>xx</sub>, s<sub>yy</sub>, "
+        "s<sub>xy</sub>; mean phase deviation, the entries' angles θ<sub>j</sub> from the best-fit line",
+        "–, °",
+        "complex_page",
+        "how-complex",
+    ),
+    Symbol(
+        "C_p",
+        "C<sub>p</sub>",
+        "the proportional approximation's damping matrix, MΦ diag(C<sub>m</sub>) ΦᵀM",
+        "N·s/m",
+        "complex_page",
+        "ignoring-it",
+    ),
+    Symbol(
         "rho",
         "ρ",
         "density",
