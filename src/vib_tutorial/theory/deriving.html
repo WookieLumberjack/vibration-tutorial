@@ -1,81 +1,156 @@
-
 <before>
 <a href="page:sdof_page#equation">The equation of motion</a>
 <a href="page:pendulum_page#rotation">The rotational form</a>
 </before>
 <h3><a name="two-ways"></a>Two ways to the equations</h3>
-<p>Every page from here on starts from <b>M q̈ + C q̇ + K q = f</b>. For one mass on a spring the equation can
-be written down by eye; for anything bigger it has to be derived, and there are two ways.</p>
+<p>Every page from here on starts from</p>
+<eq>M\ddot q + C\dot q + K q = Q</eq>
+<p>for some coordinates <m>q</m>: the mass, damping and stiffness matrices <m>M</m>, <m>C</m> and <m>K</m>,
+and the forces <m>Q</m> on each coordinate. For one mass on a spring the equation can be written down by eye;
+for anything bigger it has to be derived, and there are two ways.</p>
 <ul>
-<li><b>Free-body diagrams</b> (Newton and Euler): cut each body free, draw every force on it, and write
-m a<sub>G</sub> = ΣF and, about G, J θ̈ = ΣM<sub>G</sub>. Direct, but it takes vectors, forces of constraint and
-care over which point the moments are taken about.</li>
-<li><b>Lagrange's equations</b>: write the kinetic energy T, the potential energy V and the dissipation D in any
-coordinates q that describe the motion, and differentiate. Scalars only, no forces of constraint, and the
-matrices come out symmetric whatever the coordinates.</li>
+<li><b>Free-body diagrams</b> (Newton and Euler): cut each body free, draw every force on it, and balance the
+forces against its mass times the acceleration of its centre of mass <m>G</m>, and the moments about
+<m>G</m> against its inertia times its angular acceleration. Direct, but it takes vectors, the forces that
+hold the bodies together, and care over which point the moments are taken about.</li>
+<li><b>Lagrange's equations</b>: write the kinetic energy <m>T</m>, the potential energy <m>V</m> and the
+dissipation <m>D</m> in any coordinates <m>q</m> that describe the motion, and differentiate. Scalars only, no
+forces of constraint, and the matrices come out symmetric whatever the coordinates.</li>
 </ul>
 <p>Both give the same motion. The page derives two systems both ways, step by step, with their own numbers (the
-Free body and Lagrange tabs follow the controls): a car's body in bounce and pitch, linear from the
-start, and a double pendulum, whose whole equations are nonlinear and whose free-body diagram needs the rods'
-pulls (pick one under <i>System</i>).</p>
+Free body and Lagrange tabs follow the controls): a car's body in bounce and pitch, linear from the start,
+and a double pendulum, whose whole equations are nonlinear and whose free-body diagram needs the rods' pulls
+(pick one under <i>System</i>).</p>
 
 <h3><a name="free-body"></a>Free-body diagrams</h3>
-<p>For a rigid body in a plane: <b>m ẍ<sub>G</sub> = ΣF</b> and <b>J<sub>G</sub> θ̈ = ΣM<sub>G</sub></b>, the
-moments about the centre of mass G. Moments may be taken about another point P instead, often to drop a force
-that passes through it, but then the inertia force m a<sub>G</sub>, acting at G, has a moment about P too:
-ΣM<sub>P</sub> = J<sub>G</sub> θ̈ + (r<sub>G</sub> − r<sub>P</sub>) × m a<sub>G</sub>. Writing ΣM<sub>P</sub> =
-J<sub>P</sub> θ̈ alone (true only when P is fixed, or is G) is the classic slip, and it gives wrong frequencies
-(the trial <i>Moments about the front axle</i>). The rows that come out are a force and a moment, so in other
-coordinates M, C and K need not be symmetric, though they're right.</p>
+<p>For a rigid body moving in a plane, rising <m>x<sub>G</sub></m> at its centre of mass and turning
+<m>θ</m>:</p>
+<eq>m\ddot x_G = \sum F, \qquad J_G\ddot\theta = \sum M_G</eq>
+<p>with the moments taken about <m>G</m>. They may be taken about another point <m>P</m> instead, often to
+drop a force that passes through it, but then the inertia force <m>mẍ<sub>G</sub></m>, which acts at
+<m>G</m>, has a moment about <m>P</m> too. With <m>P</m> a distance <m>e</m> ahead of <m>G</m> (the figure
+below), and small turns,</p>
+<eq>\sum M_P = J_G\ddot\theta - m e\,\ddot x_G</eq>
+<p>Writing <m>ΣM<sub>P</sub> = J<sub>P</sub>θ̈</m> alone, with <m>J<sub>P</sub> = J<sub>G</sub> + me²</m>
+(true only when <m>P</m> is fixed, or is <m>G</m>), is the classic slip, and it gives wrong frequencies (the
+trial <i>Moments about the front axle</i>). The rows that come out are a force and a moment, so in other
+coordinates <m>M</m>, <m>C</m> and <m>K</m> need not be symmetric, though they're right.</p>
 
 <h3><a name="lagrange"></a>Lagrange's equations</h3>
-<p>With T(q, q̇), V(q) and Rayleigh's dissipation function D(q̇) = ½ Σ c<sub>i</sub>(stretch rate)², each
-coordinate q<sub>i</sub> has</p>
-<p align="center"><b>d/dt(∂T/∂q̇<sub>i</sub>) − ∂T/∂q<sub>i</sub> + ∂D/∂q̇<sub>i</sub> + ∂V/∂q<sub>i</sub> =
-Q<sub>i</sub></b>,</p>
-<p>where Q<sub>i</sub> is the generalized force: the work the applied forces do in a small δq<sub>i</sub>, over
-δq<sub>i</sub>. For small motion about equilibrium T = ½ q̇ᵀMq̇, V = ½ qᵀKq and D = ½ q̇ᵀCq̇, and the equations
-are M q̈ + C q̇ + K q = Q: <b>M, K and C are the Hessians of T, V and D</b>, so they're symmetric. Changing to new
-coordinates q = T q′ makes them TᵀMT, TᵀCT and TᵀKT. The free-body diagram's rows, mixed by Tᵀ, are the same
-equations. Measuring each spring from where it sits at rest drops gravity: its work cancels the springs'
-preload. (The Pendulums page's gravity stiffness is where it doesn't: there the weight's own potential
-curves.)</p>
+<p>Write the kinetic energy <m>T(q, q̇)</m>, the potential energy <m>V(q)</m> and Rayleigh's dissipation
+function <m>D(q̇)</m>, half the sum of each damper's <m>c</m> times its stretch rate squared
+<cite>rayleigh</cite>. Then each coordinate <m>q<sub>i</sub></m> has <cite>lagrange</cite></p>
+<eq>\frac{\mathrm{d}}{\mathrm{d}t}\frac{\partial T}{\partial \dot q_i} - \frac{\partial T}{\partial q_i} + \frac{\partial D}{\partial \dot q_i} + \frac{\partial V}{\partial q_i} = Q_i</eq>
+<p>The first two terms are the inertia, written from the energy rather than from accelerations; with the
+Lagrangian <m>ℒ = T − V</m> the conservative part is <m>d/dt(∂ℒ/∂q̇<sub>i</sub>) − ∂ℒ/∂q<sub>i</sub></m>.
+<m>Q<sub>i</sub></m> is the <b>generalized force</b>: the work the applied forces do in a small change
+<m>δq<sub>i</sub></m>, the other coordinates held, over <m>δq<sub>i</sub></m>. A force <m>F</m> pushing up on
+a body at a distance <m>a</m> ahead of <m>G</m> (the car's front axle, below), where it rises
+<m>δx<sub>G</sub> + aδθ</m>, does work <m>F(δx<sub>G</sub> + aδθ)</m>, so in <m>(x<sub>G</sub>, θ)</m> it is
+<m>Q = (F, aF)</m>: a force on the rise and a moment on the turn. The forces that hold the bodies together do no work in any motion the
+coordinates allow, so they never appear.</p>
+<p>For small motion about equilibrium the energies are quadratic,</p>
+<eq>T = \tfrac12\dot q^{\mathsf T} M \dot q, \qquad V = \tfrac12 q^{\mathsf T} K q, \qquad D = \tfrac12\dot q^{\mathsf T} C \dot q</eq>
+<p>and Lagrange's equations are <m>Mq̈ + Cq̇ + Kq = Q</m>: <b><m>M</m>, <m>K</m> and <m>C</m> are the
+Hessians of <m>T</m>, <m>V</m> and <m>D</m></b>, <m>M<sub>ij</sub> = ∂²T/∂q̇<sub>i</sub>∂q̇<sub>j</sub></m>, so
+they're symmetric. New coordinates <m>q′</m>, with <m>q = Sq′</m>, make them</p>
+<eq>M' = S^{\mathsf T} M S, \qquad C' = S^{\mathsf T} C S, \qquad K' = S^{\mathsf T} K S</eq>
+<p>and the free-body diagram's rows, mixed by <m>Sᵀ</m>, are the same equations. Measuring each spring from where
+it sits at rest drops gravity: its work cancels the springs' preload. (The Pendulums page's gravity stiffness
+is where it doesn't: there the weight's own potential curves.)</p>
 
 <h3><a name="bounce-pitch"></a>A car in bounce and pitch</h3>
-<p>A car's body on its springs, the wheels and tyres left out: a rigid body of mass m and pitch inertia J =
-m r² about G, on k<sub>f</sub> and c<sub>f</sub> at a ahead of G and k<sub>r</sub> and c<sub>r</sub> at b behind
-(L = a + b). Two coordinates describe its motion, x<sub>G</sub> and θ for instance, and</p>
-<p align="center">T = ½ m ẋ<sub>G</sub>² + ½ J θ̇², &nbsp; V = ½ k<sub>f</sub>(x<sub>G</sub> + aθ)² + ½
-k<sub>r</sub>(x<sub>G</sub> − bθ)²,</p>
-<p>so M = diag(m, J) and K = [[k<sub>f</sub> + k<sub>r</sub>, k<sub>f</sub>a − k<sub>r</sub>b], [k<sub>f</sub>a −
-k<sub>r</sub>b, k<sub>f</sub>a² + k<sub>r</sub>b²]]. Pure bounce would be at √((k<sub>f</sub> + k<sub>r</sub>)/m)
-and pure pitch at √((k<sub>f</sub>a² + k<sub>r</sub>b²)/J), but unless k<sub>f</sub>a = k<sub>r</sub>b the two
-couple and each mode is a turn about a <b>node</b>: outside the wheelbase for the mostly bouncing one, inside it
-for the mostly pitching one.</p>
+<p>A car's body on its springs, the wheels and tyres left out: a rigid body of mass <m>m</m> and pitch
+inertia <m>J = mk<sub>G</sub>²</m> about <m>G</m>, on <m>k<sub>f</sub></m> and <m>c<sub>f</sub></m> a distance
+<m>a</m> ahead of <m>G</m> and <m>k<sub>r</sub></m> and <m>c<sub>r</sub></m> a distance <m>b</m> behind, the
+wheelbase <m>L = a + b</m>.</p>
+<table width="100%"><tr><td align="center"><img src="fig:car" width="360" height="205"></td></tr></table>
+<p>Two coordinates describe its motion, <m>x<sub>G</sub></m> and <m>θ</m> (nose up) for instance. The body
+above the front axle rises <m>x<sub>G</sub> + aθ</m> and above the rear <m>x<sub>G</sub> − bθ</m>, so</p>
+<eq>T = \tfrac12 m\dot x_G^2 + \tfrac12 J\dot\theta^2</eq>
+<eq>V = \tfrac12 k_f(x_G + a\theta)^2 + \tfrac12 k_r(x_G - b\theta)^2</eq>
+<p>and their Hessians are <m>M</m> = diag(<m>m</m>, <m>J</m>) and</p>
+<eq>K = \begin{bmatrix} k_f + k_r & k_f a - k_r b \\ k_f a - k_r b & k_f a^2 + k_r b^2 \end{bmatrix}</eq>
+<p>(<m>C</m> the same, with <m>c<sub>f</sub></m> and <m>c<sub>r</sub></m>). Pure bounce would be at <m>√((k<sub>f</sub> + k<sub>r</sub>)/m)</m>
+and pure pitch at <m>√((k<sub>f</sub>a² + k<sub>r</sub>b²)/J)</m>, but unless <m>k<sub>f</sub>a =
+k<sub>r</sub>b</m> the two couple. The natural frequencies <m>ω<sub>i</sub></m> are the roots of
+<m>det(K − ω²M) = 0</m>, a quadratic in <m>ω²</m>, and each mode is a turn about a <b>node</b>, the point that
+stays still: <m>x<sub>G</sub> + ℓθ = 0</m>, a distance <m>ℓ = −x<sub>G</sub>/θ</m> ahead of <m>G</m> in the
+mode's shape. It lies outside the wheelbase for the mostly bouncing mode, inside it for the mostly pitching
+one.</p>
+
+<h3><a name="road"></a>Driven by the road</h3>
+<p>Over a bump the road lifts the front wheel <m>y<sub>f</sub>(t)</m> and the rear <m>y<sub>r</sub>(t) =
+y<sub>f</sub>(t − L/v)</m> at speed <m>v</m>. The front spring then stretches <m>x<sub>G</sub> + aθ −
+y<sub>f</sub></m>, and differentiating the new <m>V</m> and <m>D</m> leaves the same <m>M</m>, <m>C</m> and
+<m>K</m>, with the road on the right:</p>
+<eq>Q = \begin{bmatrix} 1 \\ a \end{bmatrix} (k_f y_f + c_f\dot y_f) + \begin{bmatrix} 1 \\ -b \end{bmatrix} (k_r y_r + c_r\dot y_r)</eq>
+<p>each wheel's spring and damper pushing at its axle, as the base motion did under the
+<a href="page:isolation_page#transmissibility">isolator's mount</a>. The Bump tab rides a speed hump this way,
+by the same exact step as the chain.</p>
 
 <h3><a name="coupling"></a>Coordinates and coupling</h3>
-<p>Coupling belongs to the coordinates, not to the car. In (x<sub>G</sub>, θ) only K couples (<b>static
-coupling</b>). At the <b>elastic centre</b> e* = (k<sub>f</sub>a − k<sub>r</sub>b)/(k<sub>f</sub> +
-k<sub>r</sub>), where a force pushes the body straight, K is diagonal, and M couples through −m e (<b>dynamic
-coupling</b>). In the ends' coordinates (x<sub>f</sub>, x<sub>r</sub>), each spring sees one coordinate and K is
-diagonal again, while M couples by (m a b − J)/L². When J = m a b, a <b>dynamic index</b> r²/(ab) of 1, that
-vanishes too, and each end bounces on its own spring at √(k/m<sub>end</sub>), m<sub>f</sub> = m b/L and
-m<sub>r</sub> = m a/L: a bump under the front wheel leaves the rear alone. Most cars sit near 1. In every set of
-coordinates the frequencies are the same.</p>
+<p>Coupling belongs to the coordinates, not to the car. In <m>(x<sub>G</sub>, θ)</m> only <m>K</m> couples
+(<b>static coupling</b>). Take instead <m>x<sub>P</sub></m> at a point <m>P</m> a distance <m>e</m> ahead of
+<m>G</m>, so <m>x<sub>G</sub> = x<sub>P</sub> − eθ</m>. At the <b>elastic centre</b></p>
+<eq>e^* = \frac{k_f a - k_r b}{k_f + k_r}</eq>
+<p>where a force pushes the body straight up, <m>K</m> is diagonal, and <m>M</m> couples through <m>−me</m>
+(<b>dynamic coupling</b>). In the ends' coordinates <m>(x<sub>f</sub>, x<sub>r</sub>)</m>, each spring sees one
+coordinate and <m>K</m> is diagonal again, while <m>M</m> couples by <m>(mab − J)/L²</m>. When <m>J = mab</m>,
+a <b>dynamic index</b> <m>k<sub>G</sub>²/(ab)</m> of 1, that vanishes too, and each end bounces on its own
+spring at <m>√(k<sub>f</sub>/m<sub>f</sub>)</m> and <m>√(k<sub>r</sub>/m<sub>r</sub>)</m>, with
+<m>m<sub>f</sub> = mb/L</m> and <m>m<sub>r</sub> = ma/L</m>: a bump under the front wheel leaves the rear alone.
+Cars are often laid out near 1, and Olley built his ride rig to vary it <cite>milliken</cite>. In every set
+of coordinates the frequencies are the same.</p>
 
 <h3><a name="olley"></a>Flat ride</h3>
-<p>Over a bump the rear wheel arrives L/v after the front. Maurice Olley's rule from the 1930s: make the front's
-ride frequency lower than the rear's (about 20 % lower), so that the rear, hit later but quicker, catches the
-front up and the body bounces rather than pitches. The Bump tab rides a speed hump either way round.</p>
+<p>Over a bump the rear wheel arrives <m>L/v</m> after the front. Maurice Olley's rule, from his ride tests at
+Cadillac in the early 1930s: the front springs' static deflection some 30 % greater than the rear's
+<cite>milliken</cite>. Since <m>f<sub>n</sub> = √(g/δ)/2π</m>
+(<a href="page:isolation_page#static-deflection">static deflection</a>), the front's ride frequency is then
+about 12 % lower than the rear's (<m>1/√1.3</m> = 0.88), so the rear, hit later but quicker, catches the front
+up and the body bounces rather than pitches. The Bump tab rides a speed hump either way round.</p>
 
 <!--PENDULUM-->
+<h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
+<p>The page opens on the car in <m>(x<sub>G</sub>, θ)</m>: a 1200 kg body with <m>k<sub>G</sub></m> = 1.3 m,
+its axles <m>a</m> = 1.2 m ahead of <m>G</m> and <m>b</m> = 1.5 m behind, 40 kN/m and 2500 N·s/m at each.</p>
+<ol>
+<li><b>The energies' Hessians.</b> <m>J = mk<sub>G</sub>²</m> = 1200 × 1.3² = 2028 kg·m², so <m>M</m> =
+diag(1200, 2028). <m>K<sub>11</sub> = k<sub>f</sub> + k<sub>r</sub></m> = 80,000 N/m, <m>K<sub>12</sub> =
+k<sub>f</sub>a − k<sub>r</sub>b</m> = 48,000 − 60,000 = −12,000 N, and <m>K<sub>22</sub> = k<sub>f</sub>a² +
+k<sub>r</sub>b²</m> = 57,600 + 90,000 = 147,600 N·m. <m>C</m> in the same way: 5000, −750 and 9225.</li>
+<li><b>Uncoupled.</b> Pure bounce would be <m>√(80,000/1200)</m> = 8.165 rad/s, 1.30 Hz, and pure pitch
+<m>√(147,600/2028)</m> = 8.531 rad/s, 1.36 Hz.</li>
+<li><b>The frequencies.</b> <m>det(K − ω²M) = 0</m> is</li>
+</ol>
+<eq>2.434\times10^{6}\,\omega^4 - 3.394\times10^{8}\,\omega^2 + 1.166\times10^{10} = 0</eq>
+<p>(<m>mJ</m>, <m>mK<sub>22</sub> + JK<sub>11</sub></m> and <m>K<sub>11</sub>K<sub>22</sub> −
+K<sub>12</sub>²</m>), so <m>ω²</m> = 61.45 and 78.00 (rad/s)²: <b>1.25 Hz and 1.41 Hz</b>, one below both
+uncoupled frequencies and one above: with <m>M</m> diagonal, static coupling always pushes them apart.</p>
+<ol start="4">
+<li><b>The nodes.</b> In a mode, the first row of <m>(K − ω²M)q = 0</m> gives <m>x<sub>G</sub>/θ = −K<sub>12</sub>/(K<sub>11</sub>
+− ω²m)</m>. At 61.45, 12,000/(80,000 − 73,740) = 1.92 m, so the node is 1.92 m behind <m>G</m>, outside the
+wheelbase: mostly bounce. At 78.00, 12,000/(80,000 − 93,600) = −0.88 m: a node 0.88 m ahead of <m>G</m>,
+between the axles, mostly pitch.</li>
+<li><b>The other coordinates.</b> The elastic centre is <m>e*</m> = −12,000/80,000 = −0.15 m, 0.15 m behind
+<m>G</m>, and the dynamic index 1.69/(1.2 × 1.5) = 0.939; the ends alone, <m>m<sub>f</sub></m> = 1200 × 1.5/2.7
+= 667 kg and <m>m<sub>r</sub></m> = 533 kg on 40 kN/m, would bounce at 1.23 and 1.38 Hz.</li>
+</ol>
+<p>These are the readouts under the matrices, and the Lagrange tab's last lines. Picking the double pendulum,
+two 1 kg bobs on 0.5 m rods, <m>ω²</m> = (2 ∓ √2) × 9.807/0.5 = 11.49 and 66.97 (rad/s)²: 0.540 and 1.30 Hz,
+against 0.705 Hz for either rod alone.</p>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the car or the pendulum (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>Free-body diagrams: m a<sub>G</sub> = ΣF and J θ̈ = ΣM<sub>G</sub>; moments about another point need G's inertia force too.</li>
-<li>Lagrange: write T, V and D in any coordinates; M, K and C are their Hessians, so always symmetric.</li>
-<li>Coupling depends on the coordinates (static in K, dynamic in M); the frequencies don't.</li>
-<li>A car's bounce and pitch couple unless k<sub>f</sub>a = k<sub>r</sub>b; at a dynamic index of 1 its ends bounce apart.</li>
-<li>Lagrange needs no forces of constraint (a double pendulum's rod pulls); linearize after differentiating, and large swings, which the linear model can't follow, can be chaotic.</li>
+<li>Free-body diagrams: <m>mẍ<sub>G</sub> = ΣF</m> and <m>J<sub>G</sub>θ̈ = ΣM<sub>G</sub></m>; moments about another point need <m>G</m>'s inertia force too.</li>
+<li>Lagrange: write <m>T</m>, <m>V</m> and <m>D</m> in any coordinates; <m>M</m>, <m>K</m> and <m>C</m> are their Hessians, so always symmetric, and the forces come in as the work they do, <m>Q<sub>i</sub></m>.</li>
+<li>Coupling depends on the coordinates (static in <m>K</m>, dynamic in <m>M</m>); the frequencies don't.</li>
+<li>A car's bounce and pitch couple unless <m>k<sub>f</sub>a = k<sub>r</sub>b</m>; at a dynamic index of 1 its ends bounce apart.</li>
+<li>Lagrange needs no forces of constraint (a double pendulum's rod pulls); take the whole <m>T</m> and <m>V</m>, or their quadratic parts at rest, never a cruder linearization, and large swings, which the linear model can't follow, can be chaotic.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>q matrices Q_gen m x_G_P G_P theta J J_G F_sum M_sum energies V_theta D_diss S_coords car_axles k_fr omega_i ell_node road e_offset m_ends g pendulum2 phi_bend</notation>
+<reading>rao gillespie milliken</reading>

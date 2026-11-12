@@ -1649,3 +1649,62 @@ def test_deriving_pendulum_trials():
     assert d.doubling_time() == pytest.approx(0.49, abs=0.005)
     assert d.apart[np.searchsorted(d.t, 10.0)] > 1.0
     assert swing(p, start).drift < 1e-9
+
+
+def test_deriving_worked_example():
+    """The notes' worked example: the car as the page opens, in (x_G, θ), and the equal double pendulum."""
+    from vib_tutorial.core.bounce_pitch import Car, Coordinates, matrices, modes
+    from vib_tutorial.core.double_pendulum import DoublePendulum
+    from vib_tutorial.core.double_pendulum import modes as pendulum_modes
+    from vib_tutorial.gui.deriving import DerivingTrial
+
+    car = DerivingTrial("", "").car
+    assert car == Car()
+    m, J, a, b, k = 1200.0, 1200 * 1.3**2, 1.2, 1.5, 40e3
+    assert J == pytest.approx(2028) and car.inertia == pytest.approx(J)
+    K = [[2 * k, k * a - k * b], [k * a - k * b, k * a**2 + k * b**2]]
+    assert K == [[80_000, -12_000], [-12_000, 147_600]] and k * a == 48_000 and k * b == 60_000
+    mats = matrices(car, Coordinates.CENTRE)
+    np.testing.assert_allclose(mats.M, [[m, 0], [0, J]])
+    np.testing.assert_allclose(mats.K, K)
+    np.testing.assert_allclose(mats.C, [[5000, -750], [-750, 9225]])
+    # uncoupled
+    assert math.sqrt(80_000 / 1200) == pytest.approx(8.165, abs=5e-4)
+    assert math.sqrt(147_600 / 2028) == pytest.approx(8.531, abs=5e-4)
+    assert car.uncoupled_frequencies() == pytest.approx((1.30, 1.36), abs=0.005)
+    assert (8.165 / (2 * math.pi), 8.531 / (2 * math.pi)) == pytest.approx((1.30, 1.36), abs=0.005)
+    # the quadratic, its coefficients as quoted, and its roots from them
+    A, B, C = m * J, m * 147_600 + J * 80_000, 80_000 * 147_600 - 12_000**2
+    assert (A, B, C) == pytest.approx((2.434e6, 3.394e8, 1.166e10), rel=5e-4)
+    roots = np.sort(np.roots([A, -B, C]))
+    assert roots == pytest.approx((61.45, 78.00), abs=0.005)
+    rounded = np.sort(np.roots([2.434e6, -3.394e8, 1.166e10]))
+    assert rounded == pytest.approx((61.45, 78.00), rel=0.01)
+    assert np.sqrt([61.45, 78.00]) / (2 * math.pi) == pytest.approx((1.25, 1.41), abs=0.005)
+    assert [md.frequency for md in modes(car)] == pytest.approx((1.25, 1.41), abs=0.005)
+    assert 1.25 < 1.30 and 1.41 > 1.36  # one below both uncoupled, one above
+    # the nodes, from the first row
+    assert 61.45 * 1200 == pytest.approx(73_740) and 78.00 * 1200 == pytest.approx(93_600)
+    assert 12_000 / (80_000 - 73_740) == pytest.approx(1.92, abs=0.005)
+    assert 12_000 / (80_000 - 93_600) == pytest.approx(-0.88, abs=0.005)
+    assert [md.node for md in modes(car)] == pytest.approx((-1.92, 0.88), abs=0.005)
+    # the other coordinates
+    assert -12_000 / 80_000 == car.elastic_centre() == -0.15
+    assert 1.69 / (1.2 * 1.5) == pytest.approx(0.939, abs=5e-4) and car.dynamic_index == pytest.approx(0.939, abs=5e-4)
+    assert 1200 * 1.5 / 2.7 == pytest.approx(667, abs=0.5) and car.end_masses == pytest.approx((666.7, 533.3), abs=0.05)
+    assert car.end_frequencies() == pytest.approx((1.23, 1.38), abs=0.005)
+    assert (math.sqrt(40e3 / 667) / (2 * math.pi), math.sqrt(40e3 / 533) / (2 * math.pi)) == pytest.approx(
+        (1.23, 1.38), abs=0.005
+    )
+    # Olley: 30 % more static deflection at the front is a ride frequency 12 % lower
+    assert 1 / math.sqrt(1.3) == pytest.approx(0.88, abs=0.005) and 1 - 1 / math.sqrt(1.3) == pytest.approx(
+        0.12, abs=0.005
+    )
+    # the equal double pendulum: (ω²L/g)² − 4(ω²L/g) + 2 = 0
+    assert np.sort(np.roots([1, -4, 2])) == pytest.approx((2 - math.sqrt(2), 2 + math.sqrt(2)))
+    w2 = (2 - math.sqrt(2)) * 9.807 / 0.5, (2 + math.sqrt(2)) * 9.807 / 0.5
+    assert w2 == pytest.approx((11.49, 66.97), abs=0.005)
+    p = DoublePendulum()
+    assert [md.frequency for md in pendulum_modes(p)] == pytest.approx((0.540, 1.30), abs=0.005)
+    assert np.sqrt([11.49, 66.97]) / (2 * math.pi) == pytest.approx((0.540, 1.30), abs=0.005)
+    assert p.separate_frequencies() == pytest.approx((0.705, 0.705), abs=0.0005)

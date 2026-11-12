@@ -176,6 +176,39 @@ REFERENCES = (
         "198–201, 1848",
         "the overshoot, fifty years before Gibbs",
     ),
+    Reference(
+        "lagrange",
+        "Lagrange 1788",
+        "J.-L. Lagrange, <i>Méchanique analitique</i>, Veuve Desaint, Paris, 1788",
+        "mechanics from the energies, without a figure in it",
+    ),
+    Reference(
+        "rayleigh",
+        "Rayleigh 1873",
+        "J. W. Strutt (Lord Rayleigh), Some general theorems relating to vibrations, <i>Proceedings of the London "
+        "Mathematical Society</i> s1-4, 357–368, 1873",
+        "where the dissipation function comes in",
+    ),
+    Reference(
+        "milliken",
+        "Milliken and Milliken 2002",
+        "W. F. Milliken and D. L. Milliken, <i>Chassis Design: Principles and Analysis</i> (from Maurice Olley's "
+        "notes), SAE International, 2002",
+        "Olley's own ride work, flat ride among it",
+    ),
+    Reference(
+        "gillespie",
+        "Gillespie 2021",
+        "T. D. Gillespie, <i>Fundamentals of Vehicle Dynamics</i>, revised edition, SAE International, 2021",
+        "a car's ride, bounce and pitch",
+    ),
+    Reference(
+        "shinbrot",
+        "Shinbrot et al. 1992",
+        "T. Shinbrot, C. Grebogi, J. Wisdom and J. A. Yorke, Chaos in a double pendulum, <i>American Journal of "
+        "Physics</i> 60, 491–499, 1992",
+        "",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
