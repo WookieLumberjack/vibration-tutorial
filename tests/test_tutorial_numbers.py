@@ -206,6 +206,45 @@ def test_frf_matrix_antiresonances_of_h22():
     assert dips == pytest.approx([1.97, 4.50, 5.15], abs=0.01)
 
 
+def test_frf_matrix_worked_example():
+    """The Theory's worked example: H11 of the default chain from the closed-form modes, its static shares, the
+    first peak, and the dips as the held 3-mass chain's frequencies, each from the figures it quotes too."""
+    import scipy.linalg
+
+    s = ChainSystem.uniform(4)
+    M, C, K = s.matrices()
+    w2, phi = scipy.linalg.eigh(K, M)
+    gamma = np.radians([20, 60, 100, 140])
+    p1 = 2 / 3 * np.sin(gamma)
+    assert np.abs(phi[0]) == pytest.approx(np.abs(p1))
+    assert p1 == pytest.approx([0.2280, 0.5774, 0.6565, 0.4285], abs=0.00005)
+    assert p1**2 == pytest.approx([0.0520, 0.3333, 0.4310, 0.1836], abs=0.00005) and np.sum(p1**2) == pytest.approx(1)
+    assert w2 == pytest.approx([48.25, 400, 938.9, 1412.8], abs=0.05)
+    share = p1**2 / w2
+    assert np.sum(share) == pytest.approx(1 / 400) == np.linalg.inv(K)[0, 0]
+    assert share * 1e3 == pytest.approx([1.078, 0.833, 0.459, 0.130], abs=0.0005)
+    assert 100 * share * 400 == pytest.approx([43.1, 33.3, 18.4, 5.2], abs=0.05)
+    assert 100 * share[2:].sum() * 400 == pytest.approx(23.6, abs=0.05)
+    assert np.allclose(C, K / 200)
+    zeta = np.diag(phi.T @ C @ phi) / (2 * np.sqrt(w2))
+    assert zeta == pytest.approx(0.0025 * np.sqrt(w2)) and zeta[0] == pytest.approx(0.0174, abs=0.00005)
+    assert zeta[2:] == pytest.approx([0.08, 0.09], abs=0.005)
+    peak = 0.0520 / (2 * 0.0174 * 48.25)
+    assert peak == pytest.approx(0.0310, abs=0.00005) and peak / 0.0025 == pytest.approx(12.4, abs=0.05)
+    h11 = abs(np.linalg.inv(K - w2[0] * M + 1j * np.sqrt(w2[0]) * C)[0, 0])
+    assert h11 == pytest.approx(0.0311, abs=0.00005)
+    held = 40 * np.sin(np.array([1, 3, 5]) * np.pi / 14)
+    assert held == pytest.approx([8.90, 24.94, 36.04], abs=0.005)
+    assert held / (2 * np.pi) == pytest.approx([1.417, 3.969, 5.736], abs=0.0005)
+    assert held**2 == pytest.approx(scipy.linalg.eigvalsh(K[1:, 1:], M[1:, 1:]))
+    f = np.linspace(0.5, 7.0, 130001)
+    h = np.abs(frf(s, f, 0)[:, 0])
+    dips = [float(f[i]) for i in find_peaks(-np.log(h))[0]]
+    assert dips == pytest.approx([1.42, 3.99], abs=0.005)  # the third is washed out
+    assert len(find_peaks(np.log(h))[0]) == 3  # and so is the fourth peak
+    assert abs(-((2 * np.pi * 50) ** 2) * frf(s, np.array([50.0]), 0)[0, 0]) == pytest.approx(1, abs=0.01)
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)

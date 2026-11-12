@@ -276,6 +276,33 @@ REFERENCES = (
         "<i>Earthquake Engineering and Structural Dynamics</i> 10, 813–821, 1982",
         "",
     ),
+    Reference(
+        "maxwell-1864",
+        "Maxwell 1864",
+        "J. C. Maxwell, On the calculation of the equilibrium and stiffness of frames, <i>Philosophical Magazine</i> "
+        "27, 294–299, 1864",
+        "",
+    ),
+    Reference(
+        "betti",
+        "Betti 1872",
+        "E. Betti, Teoria della elasticità, <i>Il Nuovo Cimento</i>, series 2, 7–8, 1872",
+        "",
+    ),
+    Reference(
+        "kennedy-pancu",
+        "Kennedy and Pancu 1947",
+        "C. C. Kennedy and C. D. P. Pancu, Use of vectors in vibration measurement and analysis, <i>Journal of the "
+        "Aeronautical Sciences</i> 14, 603–625, 1947",
+        "",
+    ),
+    Reference(
+        "ewins",
+        "Ewins 2000",
+        "D. J. Ewins, <i>Modal Testing: Theory, Practice and Application</i>, 2nd edition, Research Studies Press, "
+        "2000",
+        "FRFs, their modal forms and residuals, and how they are measured: the standard text on modal testing",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
