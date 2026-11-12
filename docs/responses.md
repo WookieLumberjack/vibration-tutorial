@@ -151,7 +151,8 @@ short at m4, while NRL lands within 1 %.
 The chain as a shear building on the ground: a design spectrum in the European code's shape, each
 mode's participation and effective mass, peak floor displacements, drifts and storey shears from the
 spectrum, combined by ABS, SRSS, NRL or CQC, against seven records synthesized to match the spectrum and
-stepped exactly. A roof tank tuned to mode 1 shows why close modes need CQC.
+stepped exactly. A roof tank tuned to mode 1 shows why close modes need CQC; a soft storey and base
+isolation are trials too, and the notes cover drift limits, ductility and the behaviour factor.
 
 ![Seismic response page: a roof tank tuned to mode 1 of the five-storey building splits it into modes at 0.96 and 1.06 Hz; SRSS gives a base shear of 165 kN, 21 % below the mean of seven matched records (209 kN), and the tank's swing 54 % high](images/seismic_response.png)
 

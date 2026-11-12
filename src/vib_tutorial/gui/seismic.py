@@ -34,7 +34,7 @@ from ..core.seismic import (
     suite,
     with_tank,
 )
-from . import settle_plots
+from . import seismic_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -91,23 +91,23 @@ class SeismicTrial:
 TRIALS = (
     SeismicTrial(
         "A five-storey building",
-        "Five 10 t floors on 5 MN/m storeys: T₁ = 0.99 s. Mode 1 carries 88 % of the mass and modes 1 and 2 "
-        "together 97 % (codes want 90 %), so a few modes are enough. The spectrum gives mode 1 S<sub>a</sub> = "
-        "0.52 g, and the modes together a base shear of 229 kN (CQC or SRSS); stepped on seven records that match "
-        "the spectrum, the building's base shear averages 235 kN.",
+        "Five 10 t floors on 5 MN/m storeys: <m>T<sub>1</sub></m> = 0.99 s. Mode 1 carries 88 % of the mass and "
+        "modes 1 and 2 together 97 % (codes want 90 %), so a few modes are enough. The spectrum gives mode 1 "
+        "<m>S<sub>a</sub></m> = 0.52 g, and the modes together a base shear of 230 kN by CQC (229 by SRSS); stepped on "
+        "seven records that match the spectrum, the building's base shear averages 235 kN.",
         rule=Rule.CQC,
     ),
     SeismicTrial(
         "ABS is too safe",
         "The same building by ABS: every mode's peak added as if they all arrived together, 277 kN, 18 % over "
-        "the records' mean. Modes this far apart (ρ₁₂ = 0.007) peak at different moments, and SRSS (229 kN) is "
-        "right.",
+        "the records' mean. Modes this far apart (<m>ρ<sub>12</sub></m> = 0.007) peak at different moments, and "
+        "SRSS (229 kN) is right.",
         rule=Rule.ABS,
     ),
     SeismicTrial(
         "Close modes need CQC",
         "A tank on the roof, 1 % of mode 1's modal mass there, tuned to mode 1, splits it into two modes "
-        "0.96 and 1.06 Hz apart, with ρ = 0.50: they move together much of the time. SRSS treats them as "
+        "0.96 and 1.06 Hz apart, with <m>ρ</m> = 0.50: they move together much of the time. SRSS treats them as "
         "independent: 21 % low on the base shear, and 54 % high on the tank's own swing, where the two modes "
         "nearly cancel. CQC keeps the cross term, with its sign, and is within 11 % of the records' mean on both.",
         tank=0.01,
@@ -115,23 +115,42 @@ TRIALS = (
     ),
     SeismicTrial(
         "Soft soil",
-        "Ground type D: S = 1.35 and the plateau runs to T<sub>C</sub> = 0.8 s, so mode 1 (0.99 s) sits near it. "
-        "Its S<sub>a</sub> rises from 0.52 g to 0.82 g, and the base shear from 229 to 357 kN: a site's soil "
-        "matters as much as its seismicity.",
+        "Ground type D: <m>S</m> = 1.35 and the plateau runs to <m>T<sub>C</sub></m> = 0.8 s, so mode 1 (0.99 s) "
+        "sits near it. Its <m>S<sub>a</sub></m> rises from 0.52 g to 0.82 g, and the base shear from 230 to "
+        "357 kN: a site's soil matters as much as its seismicity.",
         ground=3,
     ),
     SeismicTrial(
         "A taller building",
-        "Eight storeys: T₁ = 1.52 s, and mode 1 carries 86 % of the mass, under the 90 % codes want, so mode 2 "
-        "is needed too. Mode 1 now sits on the falling branch (0.34 g) and modes 2 to 4 on the plateau (0.86 g): "
-        "mode 1 alone gives 96 % of the base shear but only 74 % of the top storey's.",
+        "Eight storeys: <m>T<sub>1</sub></m> = 1.52 s, and mode 1 carries 86 % of the mass, under the 90 % codes "
+        "want, so mode 2 is needed too. Mode 1 now sits on the falling branch (0.34 g) and modes 2 to 4 on the "
+        "plateau (0.86 g): mode 1 alone gives 96 % of the base shear but only 74 % of the top storey's.",
         storeys=8,
     ),
     SeismicTrial(
         "More damping",
-        "ζ = 10 % in every mode (dampers added): η = √(10/(5 + 10)) = 0.82 lowers the whole spectrum by 18 %, and "
-        "every peak with it.",
+        "<m>ζ</m> = 10 % in every mode (dampers added): <m>η</m> = √(10/(5 + 10)) = 0.82 lowers the whole "
+        "spectrum by 18 %, and every peak with it.",
         zeta=10.0,
+    ),
+    SeismicTrial(
+        "A soft storey",
+        "The first storey a fifth as stiff, 1 MN/m (an open ground floor): <m>T<sub>1</sub></m> = 1.58 s, further "
+        "down the spectrum, so the base shear falls to 159 kN. But the first storey drifts 159 mm, against 46 mm, "
+        "70 % of the roof's 227 mm: the whole building's sway in one storey, which is where it yields and fails.",
+        masses=(1e4,) * 5,
+        springs=(1e6,) + (5e6,) * 4,
+    ),
+    SeismicTrial(
+        "Base isolation",
+        "The five storeys on a 10 t slab on bearings of 300 kN/m, at 15 % damping: <m>T<sub>b</sub></m> = 2.94 s, "
+        "past <m>T<sub>D</sub></m>, with 99.8 % of the mass in that mode. The first storey above the bearings "
+        "carries 42 kN, against 230 kN fixed to the ground, and drifts 8 mm, against 46 mm; the bearings move "
+        "166 mm. (The page gives every mode the bearings' damping; with 99.8 % of the mass in the first, that "
+        "changes little.)",
+        zeta=15.0,
+        masses=(1e4,) * 6,
+        springs=(3e5,) + (5e6,) * 5,
     ),
 )
 
@@ -387,7 +406,7 @@ FLOOR_TIP = (
 GROUND_TIP = "<p>One of the records (top), and every record's spectrum against the design spectrum (bottom).</p>"
 
 
-NOTES_HTML = load_notes("seismic", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("seismic", figures=seismic_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 def _same(a: ChainSystem, b: ChainSystem) -> bool:
