@@ -396,6 +396,55 @@ REFERENCES = (
         "America, 1993)",
         "the plates' frequencies tabulated, for every shape and edge: where the clamped circle's roots come from",
     ),
+    Reference(
+        "cfl",
+        "Courant, Friedrichs and Lewy 1928",
+        "R. Courant, K. Friedrichs and H. Lewy, Über die partiellen Differenzengleichungen der mathematischen Physik, "
+        "<i>Mathematische Annalen</i> 100, 32–74, 1928",
+        "",
+    ),
+    Reference(
+        "newmark",
+        "Newmark 1959",
+        "N. M. Newmark, A method of computation for structural dynamics, <i>Journal of the Engineering Mechanics "
+        "Division (ASCE)</i> 85, 67–94, 1959",
+        "",
+    ),
+    Reference(
+        "hht",
+        "Hilber, Hughes and Taylor 1977",
+        "H. M. Hilber, T. J. R. Hughes and R. L. Taylor, Improved numerical dissipation for time integration "
+        "algorithms in structural dynamics, <i>Earthquake Engineering and Structural Dynamics</i> 5, 283–292, 1977",
+        "",
+    ),
+    Reference(
+        "runge",
+        "Runge 1895",
+        "C. Runge, Über die numerische Auflösung von Differentialgleichungen, <i>Mathematische Annalen</i> 46, "
+        "167–178, 1895",
+        "",
+    ),
+    Reference(
+        "kutta",
+        "Kutta 1901",
+        "W. Kutta, Beitrag zur näherungsweisen Integration totaler Differentialgleichungen, <i>Zeitschrift für "
+        "Mathematik und Physik</i> 46, 435–453, 1901",
+        "",
+    ),
+    Reference(
+        "hughes",
+        "Hughes 2000",
+        "T. J. R. Hughes, <i>The Finite Element Method: Linear Static and Dynamic Finite Element Analysis</i>, Dover, "
+        "2000 (first published 1987)",
+        "its chapters on time stepping: the amplification matrix, Newmark's family and HHT-α worked in full",
+    ),
+    Reference(
+        "geradin-rixen",
+        "Géradin and Rixen 2015",
+        "M. Géradin and D. J. Rixen, <i>Mechanical Vibrations: Theory and Application to Structural Dynamics</i>, "
+        "3rd edition, Wiley, 2015",
+        "structural dynamics with the numerical side: time integration and its accuracy, among much else",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

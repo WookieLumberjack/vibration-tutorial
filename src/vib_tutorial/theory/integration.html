@@ -1,65 +1,119 @@
-
 <before>
 <a href="page:sdof_page#equation">The equation of motion</a>
 <a href="page:sim_page#undamped-normal-modes-real">Undamped normal modes</a>
+<a href="page:sim_page#exact-damped-modes-are-complex">The state-space form</a>
 <a href="page:continuum_page#dispersion">A mesh's modes against the continuum's</a>
 </before>
 <h3><a name="stepping"></a>Stepping an equation of motion</h3>
-<p>Most structures are solved in time by stepping Mẍ + Cẋ + Kx = f(t) with a fixed Δt. A scheme replaces the
-derivatives with differences, and each choice gets the motion wrong in its own way. For a linear system the error
-is easy to see: let the scheme step a free, undamped oscillator. Its exact motion is a circle in (x, ẋ/ω); one step
-of any scheme is a fixed 2 × 2 (or 3 × 3) matrix, the <b>amplification matrix</b>, and its eigenvalues
-λ = ρe<sup>±iθ</sup> say everything:</p>
-<ul>
-<li><b>ρ &gt; 1</b>: the motion grows every step, the scheme is <b>unstable</b> at this Δt.</li>
-<li><b>ρ &lt; 1</b>: it shrinks: <b>numerical damping</b>, ζ̄ = −ln ρ / |ln λ|.</li>
-<li><b>θ ≠ ωΔt</b>: the period is wrong, <b>period elongation</b> (T̄ − T)/T = ωΔt/θ − 1.</li>
-</ul>
-<p>All of these depend only on Ω = ωΔt = 2πΔt/T, so each scheme's behaviour is a set of curves against Δt/T
-(the tabs on the right).</p>
+<p>Most structures are solved in time by stepping <m>Mẍ + Cẋ + Kx = f(t)</m> with a fixed time step
+<m>Δt</m>, from <m>x<sub>n</sub></m> at <m>t<sub>n</sub> = nΔt</m> to <m>x<sub>n+1</sub></m>. A scheme replaces
+the derivatives with differences, and each choice gets the motion wrong in its own way. For a linear system the
+error is easy to see: let the scheme step a free, undamped oscillator of natural frequency <m>ω</m> and period
+<m>T = 2π/ω</m>. Its exact motion goes round a circle in the plane of <m>(x, ẋ/ω)</m>, turning <m>ωΔt</m> a
+step. One step of any scheme is a fixed 2 × 2 (or 3 × 3) matrix, the <b>amplification matrix</b>, and its
+eigenvalues</p>
+<eq>\lambda = \rho\,\mathrm{e}^{\pm\mathrm{i}\theta}</eq>
+<p>say everything. The exact step has <m>ρ = 1</m> and <m>θ = ωΔt</m>; a scheme's differ.</p>
+<p><b><m>ρ</m> &gt; 1</b> (<m>ρ</m> is the <b>spectral radius</b>): the motion grows every step, and the scheme is
+<b>unstable</b> at this <m>Δt</m>.</p>
+<p><b><m>ρ</m> &lt; 1</b>: it shrinks, <b>numerical damping</b>. Per step the motion is multiplied by
+<m>e<sup>ln λ</sup></m>, as a damped oscillator's by <m>e<sup>(−ζ ± i√(1−ζ²))ωΔt</sup></m>, so</p>
+<eq>\bar\zeta = \frac{-\ln\rho}{|\ln\lambda|} = \frac{-\ln\rho}{\sqrt{(\ln\rho)^2 + \theta^2}}</eq>
+<p><b><m>θ ≠ ωΔt</m></b>: the computed period <m>T̄ = 2πΔt/θ</m> is wrong, a <b>period elongation</b>:</p>
+<eq>\frac{\bar T - T}{T} = \frac{\omega\Delta t}{\theta} - 1</eq>
+<p>All of these depend only on <m>ωΔt = 2πΔt/T</m>, so each scheme's behaviour is a set of curves against
+<m>Δt/T</m> (the tabs on the right).</p>
+<table width="100%"><tr><td align="center"><img src="fig:phase" width="340" height="170"></td></tr></table>
 
 <h3><a name="central"></a>Central difference</h3>
-<p>ẍ<sub>n</sub> ≈ (x<sub>n+1</sub> − 2x<sub>n</sub> + x<sub>n−1</sub>)/Δt²: explicit (no equations to solve when
-M is diagonal), second order, no numerical damping, and the period comes out short. It is stable only for
-<b>ωΔt ≤ 2</b>, for the <i>highest</i> ω in the model: Δt ≤ T<sub>min</sub>/π. That is the Courant condition of
-explicit crash and blast codes: a fine mesh has a very fast highest mode, so the step has to be tiny however slow
-the motion of interest.</p>
+<p>Central difference takes the acceleration from three positions:</p>
+<eq>\ddot x_n \approx \frac{x_{n+1} - 2x_n + x_{n-1}}{\Delta t^2}</eq>
+<p>It is explicit (no equations to solve when <m>M</m> is diagonal) and second order. On the undamped
+oscillator it gives <m>x<sub>n+1</sub> = (2 − ω²Δt²)x<sub>n</sub> − x<sub>n−1</sub></m>, so its eigenvalues
+solve <m>λ<sup>2</sup> − (2 − ω<sup>2</sup>Δt<sup>2</sup>)λ + 1 = 0</m>. Their product is 1: while they are
+complex, both have <m>ρ = 1</m> (no numerical damping) and</p>
+<eq>\theta = 2\arcsin\frac{\omega\Delta t}{2}</eq>
+<p>which is more than <m>ωΔt</m>, so the period comes out short. Once <m>ωΔt</m> &gt; 2 there is no such
+angle: the roots are real, one outside the unit circle. So it is stable only for <b><m>ωΔt ≤ 2</m></b>, for the
+<i>highest</i> <m>ω</m> in the model: <m>Δt ≤ T<sub>min</sub>/π</m>. On a mesh this is the Courant condition
+<cite>cfl</cite> of explicit crash and blast codes: a fine mesh has a very fast highest mode, so the step has
+to be tiny however slow the motion of interest.</p>
 
 <h3><a name="newmark"></a>Newmark and HHT-α</h3>
-<p>Newmark assumes how the acceleration varies over a step: x<sub>n+1</sub> = x<sub>n</sub> + Δt ẋ<sub>n</sub> +
-Δt²[(½ − β)ẍ<sub>n</sub> + βẍ<sub>n+1</sub>], ẋ<sub>n+1</sub> = ẋ<sub>n</sub> + Δt[(1 − γ)ẍ<sub>n</sub> +
-γẍ<sub>n+1</sub>], and the equation of motion at n + 1 closes it (an implicit scheme: a linear solve per step).</p>
+<p>Newmark's scheme <cite>newmark</cite> assumes how the acceleration varies over a step, with two parameters
+<m>β</m> and <m>γ</m>:</p>
+<eq>x_{n+1} = x_n + \Delta t\,\dot x_n + \Delta t^2\bigl[(\tfrac12 - \beta)\ddot x_n + \beta\,\ddot x_{n+1}\bigr]</eq>
+<eq>\dot x_{n+1} = \dot x_n + \Delta t\bigl[(1 - \gamma)\ddot x_n + \gamma\,\ddot x_{n+1}\bigr]</eq>
+<p>The equation of motion at <m>n + 1</m> closes it: an implicit scheme, with a linear solve each step.</p>
+<p><b>Average acceleration</b> (<m>γ = ½, β = ¼</m>, the trapezoidal rule): the acceleration is the mean of its
+two ends. On the undamped oscillator</p>
+<eq>\lambda = \frac{1 - \omega^2\Delta t^2/4 \pm \mathrm{i}\,\omega\Delta t}{1 + \omega^2\Delta t^2/4}, \qquad \theta = 2\arctan\frac{\omega\Delta t}{2}</eq>
+<p>so <m>ρ = 1</m> at every step: <b>unconditionally stable</b>, with no numerical damping, and second order.
+<m>θ</m> &lt; <m>ωΔt</m>, so the period comes out long, by about <m>(ωΔt)<sup>2</sup>/12</m>.</p>
 <ul>
-<li><b>Average acceleration</b> (γ = ½, β = ¼, the trapezoidal rule): <b>unconditionally stable</b>, no numerical
-damping, second order; the period comes out long, by about (ωΔt)²/12.</li>
-<li><b>Linear acceleration</b> (γ = ½, β = ⅙): more accurate, but stable only for ωΔt ≤ 2√3.</li>
-<li>γ &gt; ½ damps, but drops to first order. <b>HHT-α</b> (Hilber, Hughes and Taylor) instead evaluates the
-stiffness and damping forces at t<sub>n+1+α</sub>, with γ = ½ − α, β = (1 − α)²/4, α ∈ [−⅓, 0]: still second order and
-unconditionally stable, with damping that grows with Ω. It removes the unresolved high modes' noise and barely
-touches the low ones: the default in many finite-element codes.</li>
+<li><b>Linear acceleration</b> (<m>γ = ½, β = 1/6</m>): more accurate, but stable only for
+<m>ωΔt ≤ 2√3</m>.</li>
+<li><m>γ</m> &gt; ½ damps, but drops to first order. <b>HHT-α</b> <cite>hht</cite> instead evaluates the
+stiffness and damping forces at <m>t<sub>n+1+α</sub></m>, with <m>γ = ½ − α</m>, <m>β = (1 − α)<sup>2</sup>/4</m>
+and <m>α</m> from −1/3 to 0. It is still second order and unconditionally stable, with damping that grows with
+<m>ωΔt</m>. It removes the unresolved high modes' noise and barely touches the low ones: the default in many
+finite-element codes.</li>
 </ul>
 
 <h3><a name="rk4"></a>Runge–Kutta</h3>
-<p>Classical RK4 on the first-order form ż = Az + Bf is fourth order: very accurate in period at small steps. It is
-explicit, so conditionally stable (ωΔt ≤ 2√2 for an undamped oscillator), and it damps: ρ &lt; 1 at any step.
-<b>Explicit Euler</b>, z<sub>n+1</sub> = z<sub>n</sub> + Δt ż<sub>n</sub>, is the cautionary tale: for an undamped
-oscillator ρ = √(1 + Ω²) &gt; 1 at every Δt, and the energy grows every step.</p>
+<p>Classical RK4 (<cite>runge</cite>, <cite>kutta</cite>) on the first-order form <m>ż = Az + Bf</m> is fourth order.
+On a linear system its four stages add up to the Taylor series of the exact step <m>e<sup>AΔt</sup></m>, cut
+after the fourth power:</p>
+<eq>z_{n+1} = \Bigl(I + A\Delta t + \frac{(A\Delta t)^2}{2} + \frac{(A\Delta t)^3}{6} + \frac{(A\Delta t)^4}{24}\Bigr) z_n</eq>
+<p>On the undamped oscillator <m>AΔt</m> has the eigenvalues <m>±iωΔt</m>, and the missing terms make</p>
+<eq>\rho^2 = 1 - \frac{(\omega\Delta t)^6}{72} + \frac{(\omega\Delta t)^8}{576}</eq>
+<p>It is very accurate in period at small steps, and it damps: <m>ρ</m> &lt; 1 up to its limit,
+<m>ωΔt ≤ 2√2</m>, where the last two terms cancel. It is explicit, so conditionally stable. <b>Explicit
+Euler</b>, <m>z<sub>n+1</sub> = z<sub>n</sub> + Δt ż<sub>n</sub></m>, keeps only the first two terms: for an
+undamped oscillator <m>λ = 1 ± iωΔt</m> and <m>ρ = √(1 + ω<sup>2</sup>Δt<sup>2</sup>)</m> &gt; 1 at every
+<m>Δt</m>. It steps along the tangent, which always points out of the circle, and the energy grows every
+step.</p>
 
 <h3><a name="exact"></a>The exact update</h3>
-<p>For a linear model there is a better way. Over a step the free motion is exactly z<sub>n+1</sub> =
-e<sup>AΔt</sup>z<sub>n</sub>; if the force is taken as linear between samples (a first-order hold), its part is
-exact too. This <b>FOH update</b> is what the Simulation page and the One mass pages use: stable and exact in
-period and amplitude at any Δt, for any stiffness (ρ = e<sup>−ζωΔt</sup>, the oscillator's own). Its only error
-is in the force between samples, which is second order in Δt. It needs the matrix exponential, which is cheap for
-small models and why big nonlinear codes still use Newmark or central difference.</p>
+<p>For a linear model there is a better way. Over a step the free motion is exactly
+<m>z<sub>n+1</sub> = e<sup>AΔt</sup>z<sub>n</sub></m>. If the force is taken as straight between samples (a
+first-order hold), its part is exact too, two fixed matrices <m>Γ<sub>0</sub></m> and <m>Γ<sub>1</sub></m> worked
+out once:</p>
+<eq>z_{n+1} = \mathrm{e}^{A\Delta t} z_n + \Gamma_0 f_n + \Gamma_1 f_{n+1}</eq>
+<p>This <b>FOH update</b> is what the Simulation page and the One mass pages use. It is stable and exact in
+period and amplitude at any <m>Δt</m>, for any stiffness (<m>ρ = e<sup>−ζωΔt</sup></m>, the oscillator's own).
+Its only error is in the force between samples, which is second order in <m>Δt</m>. It needs the matrix
+exponential, which is cheap for small models: big nonlinear codes, whose matrices change every step, still use
+Newmark or central difference.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on 1 kg on 400 N/m, undamped, let go from 10 mm: <m>ω</m> = 20 rad/s (3.18 Hz),
+<m>T</m> = 0.314 s, and ten steps a period, <m>Δt</m> = 0.0314 s and <m>ωΔt</m> = 0.628. Each scheme's step:</p>
+<ul>
+<li><b>Central difference</b>: <m>θ = 2 arcsin 0.314</m> = 0.639, so the period is <m>0.628/0.639</m> = 0.983 of
+the true one, 1.7 % short.</li>
+<li><b>Average acceleration</b>: <m>θ = 2 arctan 0.314</m> = 0.609, the period 3.2 % long
+(<m>(ωΔt)<sup>2</sup>/12</m> = 3.3 % estimates it).</li>
+<li><b>Linear acceleration</b>: 1.6 % long.</li>
+<li><b>RK4</b>: <m>ρ</m> = 0.99959 and 0.11 % long, with numerical damping <m>ζ̄</m> = 0.065 %.</li>
+</ul>
+<p>Over the ten periods, 100 steps, the errors pile up as phase. Average acceleration has turned
+<m>100 × 0.609</m> = 60.9 rad where the oscillator turned 62.8, 1.95 rad (0.31 of a cycle) behind, so it ends at
+<m>10 cos 1.95</m> = −3.7 mm where the mass is back at 10 mm. Central difference, 1.08 rad ahead, ends at
+4.7 mm. RK4 is only 0.07 rad behind, but <m>ρ<sup>100</sup></m> = 0.960, so it ends at 9.6 mm. Against the 10 mm
+swing, the readout's largest errors are 98 % (central difference), 165 % (average acceleration), 91.9 % (linear
+acceleration) and 7.58 % (RK4): ten steps a period is enough for stability, not for ten periods of phase.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the oscillator, the step and the schemes (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>One step of a scheme on a free oscillator is a matrix: its eigenvalues give stability (ρ ≤ 1), period error and numerical damping, all functions of ωΔt.</li>
-<li>Explicit schemes are conditionally stable, and the limit is set by the fastest mode in the model: ωΔt ≤ 2 for central difference.</li>
+<li>One step of a scheme on a free oscillator is a matrix: its eigenvalues give stability (<m>ρ ≤ 1</m>), period error and numerical damping, all functions of <m>ωΔt</m>.</li>
+<li>Explicit schemes are conditionally stable, and the limit is set by the fastest mode in the model: <m>ωΔt ≤ 2</m> for central difference.</li>
 <li>Newmark's average acceleration is stable at any step but lengthens the period; HHT-α adds damping that grows with frequency, removing unresolved modes.</li>
-<li>Stable is not accurate: resolve the modes you care about with ten or more steps a period.</li>
+<li>Stable is not accurate: resolve the modes you care about with ten or more steps a period, and more for long runs.</li>
 <li>For a linear model the FOH update is exact at any step, apart from the force between samples.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x f matrices identity state omega_T dt_n amp_eig num_err newmark foh_gamma zeta</notation>
+<reading>hughes geradin-rixen</reading>
