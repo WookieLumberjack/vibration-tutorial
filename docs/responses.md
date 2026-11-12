@@ -169,7 +169,8 @@ The *Driven panel* tab drives the panel with a point force, mode by mode. Its ba
 settles to an infinite plate's F²/16√(Dρh), and the sound it radiates is set by the radiation loss factor
 ρcσ/ωm″ against its own damping. *Transmission loss* puts the panel between two rooms: the mass law, 6 dB
 per doubling of mass or frequency, until the coincidence dip at f<sub>c</sub>, where only damping holds the
-sound back.
+sound back. The notes also cover decibels and third-octave bands, double walls and a room's reverberation
+time.
 
 *Two oscillators* is statistical energy analysis's basis: two oscillators joined by a spring, each driven by
 its own noise, exchange power in exact proportion to the difference of their energies, P₁₂ = β(E₁ − E₂),

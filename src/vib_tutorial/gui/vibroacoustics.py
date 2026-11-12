@@ -61,7 +61,7 @@ from ..core.sea import (
     network,
     oscillator_pair,
 )
-from . import settle_plots
+from . import acoustics_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -134,22 +134,22 @@ GLASS: dict[str, float] = dict(E=70.0, rho=2500.0, nu=0.22)  # a practice setup'
 TRIALS = (
     AcousticsTrial(
         "Coincidence",
-        "A steel panel 600 × 400 mm, 3 mm thick. Its bending waves travel at √ω (D/ρh)<sup>¼</sup>, slower at low "
+        "A steel panel 600 × 400 mm, 3 mm thick. Its bending waves travel at <m>√ω (D/ρh)<sup>1/4</sup></m>, slower at low "
         "frequency than sound's 343 m/s and faster at high: the two meet at the critical frequency "
-        "f<sub>c</sub> = (c²/2π)√(ρh/D) = 3.99 kHz (centre, bottom: k<sub>b</sub> crosses k). Above it, a bending "
-        "wave sends sound off at the angle where its trace matches, sin θ = k/k<sub>b</sub>; below it, its sound "
+        "<m>f<sub>c</sub> = (c<sup>2</sup>/2π)√(ρh/D)</m> = 3.99 kHz (centre, bottom: <m>k<sub>b</sub></m> crosses <m>k</m>). Above it, a bending "
+        "wave sends sound off at the angle where its trace matches, <m>sin θ = k/k<sub>b</sub></m>; below it, its sound "
         "cancels, all but at the edges and corners.",
     ),
     AcousticsTrial(
         "A corner mode",
         "Mode (1, 1) at 66.6 Hz. Sound's wavelength there, 5.2 m, dwarfs the panel: the whole panel pumps in "
-        "phase, like a small piston, and σ<sub>11</sub> = 0.037. Far below its resonance it follows "
-        "32k²ab/π⁵ (dashed), so 20 dB less for each tenfold drop in frequency. Above, it passes 1 at 450 Hz, where sound's "
+        "phase, like a small piston, and <m>σ<sub>11</sub></m> = 0.037. Far below its resonance it follows "
+        "<m>32k<sup>2</sup>ab/π<sup>5</sup></m> (dashed), so 20 dB less for each tenfold drop in frequency. Above, it passes 1 at 450 Hz, where sound's "
         "wavelength (0.76 m) is about the panel's diagonal, peaks at 1.28 near 720 Hz and settles to 1.",
     ),
     AcousticsTrial(
         "Even modes cancel",
-        "Mode (2, 2), 266 Hz: four cells, each pushing the air its neighbours pull. At 100 Hz σ<sub>22</sub> is "
+        "Mode (2, 2), 266 Hz: four cells, each pushing the air its neighbours pull. At 100 Hz <m>σ<sub>22</sub></m> is "
         "1.4 × 10<sup>−5</sup>, against (1, 1)'s 0.082 at the same frequency: an even index cancels to two more "
         "powers of k, and here both are even. The modes' dots (right, bottom) fall in three bands: odd–odd "
         "highest, even–even lowest.",
@@ -158,38 +158,38 @@ TRIALS = (
     ),
     AcousticsTrial(
         "An edge mode",
-        "Mode (1, 3), 435 Hz: its half waves across b (k<sub>y</sub> = 3π/b = 23.6 rad/m) are shorter than "
-        "sound's (k = 7.98 rad/m), its one across a (k<sub>x</sub> = 5.2) longer. Along a nothing cancels, so the "
-        "two edges along a radiate: σ<sub>13</sub> = 0.059, the most of the first ten modes. The averages "
-        "(right, bottom) are mostly edge modes from a few hundred hertz to f<sub>c</sub>, which is why "
+        "Mode (1, 3), 435 Hz: its half waves across b (<m>k<sub>y</sub> = 3π/b</m> = 23.6 rad/m) are shorter than "
+        "sound's (<m>k</m> = 7.98 rad/m), its one across <m>a</m> (<m>k<sub>x</sub></m> = 5.2) longer. Along <m>a</m> nothing cancels, so the "
+        "two edges along <m>a</m> radiate: <m>σ<sub>13</sub></m> = 0.059, the most of the first ten modes. The averages "
+        "(right, bottom) are mostly edge modes from a few hundred hertz to <m>f<sub>c</sub></m>, which is why "
         "Maidanik's formula grows with the perimeter.",
         m=1,
         n=3,
     ),
     AcousticsTrial(
         "A point-driven panel",
-        "A 1 N force at (0.21 m, 0.13 m), η = 0.01 (Driven panel tab). At each resonance the input power peaks; "
-        "averaged over a band it settles to the infinite plate's F²/16√(Dρh), here 565 µW, from a few hundred "
-        "hertz up, and ⟨v²⟩ to the energy that input sustains, P/ωηM. The radiated power stays far below: 18 dB "
-        "in the 1 kHz band, where σ ≈ 0.054 makes the radiation's own loss factor ρcσ/ωm″ = 1.5 × 10<sup>−4</sup>, "
-        "a 66th of η; 11 dB at 6.3 kHz, above f<sub>c</sub>, where σ ≈ 1.7. Sound is a small leak from a panel's "
+        "A 1 N force at (0.21 m, 0.13 m), <m>η</m> = 0.01 (Driven panel tab). At each resonance the input power peaks; "
+        "averaged over a band it settles to the infinite plate's <m>F<sup>2</sup>/16√(Dρh)</m>, here 565 µW, from a few hundred "
+        "hertz up, and <m>⟨v<sup>2</sup>⟩</m> to the energy that input sustains, <m>P/ωηM</m>. The radiated power stays far below: 18 dB "
+        "in the 1 kHz band, where <m>σ</m> ≈ 0.054 makes the radiation's own loss factor <m>ρcσ/ωm″</m> = 1.5 × 10<sup>−4</sup>, "
+        "a 66th of <m>η</m>; 11 dB at 6.3 kHz, above <m>f<sub>c</sub></m>, where <m>σ</m> ≈ 1.7. Sound is a small leak from a panel's "
         "energy.",
         tab=TAB_DRIVEN,
     ),
     AcousticsTrial(
         "The mass law",
         "Between two rooms (Transmission loss tab), the panel's mass holds the sound back: at normal incidence "
-        "TL = 10 log[1 + (ωm″/2ρc)²], 39.0 dB at 500 Hz for 23.6 kg/m². Sound from every direction (field "
+        "TL = 10 log[1 + <m>(ωm″/2ρc)<sup>2</sup></m>], 39.0 dB at 500 Hz for 23.6 kg/m². Sound from every direction (field "
         "incidence, to 78°) gets through more easily: 33.8 dB. Double the mass or the frequency and the TL rises "
-        "6 dB, until the coincidence dip at f<sub>c</sub>.",
+        "6 dB, until the coincidence dip at <m>f<sub>c</sub></m>.",
         tab=TAB_TRANSMISSION,
     ),
     AcousticsTrial(
         "Thicker glass, a dip in the speech band",
-        "A window of 10 mm glass, 1.2 × 1 m: f<sub>c</sub> = 1.20 kHz, in the middle of speech, and its TL "
+        "A window of 10 mm glass, 1.2 × 1 m: <m>f<sub>c</sub></m> = 1.20 kHz, in the middle of speech, and its TL "
         "dips to 19.2 dB at 1.28 kHz, against 39.5 dB on the mass law at 500 Hz. Thinner glass puts the dip "
-        "higher (4 mm: f<sub>c</sub> = 2.99 kHz) but has less mass. f<sub>c</sub>m″ is the material's own "
-        "constant, so the dip is 19.2 dB deep at any thickness of glass with η = 0.01: laminated glass, with a "
+        "higher (4 mm: <m>f<sub>c</sub></m> = 2.99 kHz) but has less mass. <m>f<sub>c</sub>m″</m> is the material's own "
+        "constant, so the dip is 19.2 dB deep at any thickness of glass with <m>η</m> = 0.01: laminated glass, with a "
         "damping layer, fills it in.",
         a=1.2,
         b=1.0,
@@ -201,34 +201,34 @@ TRIALS = (
     ),
     AcousticsTrial(
         "Damping at coincidence",
-        "The steel panel with η = 0.1 instead of 0.01. Below f<sub>c</sub> the TL hardly changes (mass-controlled); "
+        "The steel panel with <m>η</m> = 0.1 instead of 0.01. Below <m>f<sub>c</sub></m> the TL hardly changes (mass-controlled); "
         "at and above it, only damping holds the sound back: the dip's bottom rises from 26.1 to 37.5 dB, and at "
-        "2f<sub>c</sub> the TL is 51.0 dB against 41.3 dB, 10 log 10 = 10 dB more. On the Driven panel tab, "
-        "damping lowers ⟨v²⟩'s resonant peaks by 20 dB but its band average only by 10 dB, and leaves the band's "
+        "<m>2f<sub>c</sub></m> the TL is 51.0 dB against 41.3 dB, 10 log 10 = 10 dB more. On the Driven panel tab, "
+        "damping lowers <m>⟨v<sup>2</sup>⟩</m>'s resonant peaks by 20 dB but its band average only by 10 dB, and leaves the band's "
         "input power as it was.",
         loss=0.1,
         tab=TAB_TRANSMISSION,
     ),
     AcousticsTrial(
         "Two oscillators share power",
-        "Oscillator 1 at 100 Hz, oscillator 2 at 110 Hz, coupled by a spring 5 % of k₁, each driven by its own "
-        "white noise, P₂ = ½P₁ (Two oscillators tab). Their energies m⟨v²⟩ are 39.6 and 36.6 mJ, and 5.93 mW "
-        "flows from 1 to 2. Drive them in any ratio (dots: P₂/P₁ from 0 to 4) and the flow lies on one line through "
-        "the origin, P₁₂ = β(E₁ − E₂), β = 2.01/s, exactly: power flows from the oscillator with more energy to the "
+        "Oscillator 1 at 100 Hz, oscillator 2 at 110 Hz, coupled by a spring 5 % of <m>k<sub>1</sub></m>, each driven by its own "
+        "white noise, <m>P<sub>2</sub> = ½P<sub>1</sub></m> (Two oscillators tab). Their energies <m>m⟨v<sup>2</sup>⟩</m> are 39.6 and 36.6 mJ, and 5.93 mW "
+        "flows from 1 to 2. Drive them in any ratio (dots: <m>P<sub>2</sub>/P<sub>1</sub></m> from 0 to 4) and the flow lies on one line through "
+        "the origin, <m>P<sub>12</sub> = β(E<sub>1</sub> − E<sub>2</sub>)</m>, <m>β</m> = 2.01/s, exactly: power flows from the oscillator with more energy to the "
         "one with less, as heat flows from hot to cold. This is what statistical energy analysis is built on.",
         tab=TAB_OSCILLATORS,
     ),
     AcousticsTrial(
         "Tuned oscillators couple best",
-        "Tune oscillator 2 to 100 Hz: β = 26.2/s, 13 times what it was at 110 Hz, and at 150 Hz it is only "
-        "0.070/s. The peak is as wide as the damping rates Δ = 2ζω (25.1/s and 12.6/s): two subsystems exchange "
+        "Tune oscillator 2 to 100 Hz: <m>β</m> = 26.2/s, 13 times what it was at 110 Hz, and at 150 Hz it is only "
+        "0.070/s. The peak is as wide as the damping rates <m>Δ = 2ζω</m> (25.1/s and 12.6/s): two subsystems exchange "
         "energy through the pairs of modes whose resonances overlap, which is why SEA counts the modes in a band.",
         f_ratio=1.0,
         tab=TAB_OSCILLATORS,
     ),
     AcousticsTrial(
         "Strong coupling, equal energies",
-        "Only oscillator 1 driven, both tuned to 100 Hz with ζ = 0.002. Now β = 196/s, far above the damping "
+        "Only oscillator 1 driven, both tuned to 100 Hz with <m>ζ</m> = 0.002. Now <m>β</m> = 196/s, far above the damping "
         "rates (2.51/s): oscillator 2 holds 0.987 of oscillator 1's energy, and half the 1 W put in crosses to it "
         "(497 mW). When coupling beats damping the energies even out, whoever is driven: equipartition.",
         f_ratio=1.0,
@@ -240,8 +240,9 @@ TRIALS = (
     AcousticsTrial(
         "Plates at a corner",
         "The panel meets a 2 mm steel plate at a right angle along its 0.4 m side, and both radiate into a 50 m³ "
-        "room (SEA tab). A diffuse bending field gets across the corner with τ̄₁₂ = 0.279, so η₁₂ = 0.00809 at "
-        "1 kHz, and back with η₂₁ = 0.00647: n₁η₁₂ = n₂η₂₁. Plate 2 isn't driven, yet its ⟨v²⟩ is only 0.57 dB "
+        "room (SEA tab). A diffuse bending field gets across the corner with <m>τ̄<sub>12</sub></m> = 0.279, so "
+        "<m>η<sub>12</sub></m> = 0.00809 at 1 kHz, and back with <m>η<sub>21</sub></m> = 0.00647: "
+        "<m>n<sub>1</sub>η<sub>12</sub> = n<sub>2</sub>η<sub>21</sub></m>. Plate 2 isn't driven, yet its <m>⟨v<sup>2</sup>⟩</m> is only 0.57 dB "
         "below plate 1's (its energy per mode 0.39 of plate 1's); the room hears 63.1 dB, 28.1 % of it from "
         "plate 2.",
         tab=TAB_SEA,
@@ -249,15 +250,15 @@ TRIALS = (
     AcousticsTrial(
         "Equipartition",
         "Plate 2's own loss factor down to 0.0001, far below what it hands back across the corner "
-        "(η₂₁ = 0.00647): it can only lose its energy by returning it, and its energy per mode comes to 0.967 of "
-        "plate 1's. Its ⟨v²⟩ is now 3.4 dB above the driven plate's (it is lighter), and the room 66.2 dB. With "
-        "η₂ = 0.1 instead the share falls to 0.061: a damped receiver drains the energy it is sent.",
+        "(<m>η<sub>21</sub></m> = 0.00647): it can only lose its energy by returning it, and its energy per mode comes to 0.967 of "
+        "plate 1's. Its <m>⟨v<sup>2</sup>⟩</m> is now 3.4 dB above the driven plate's (it is lighter), and the room 66.2 dB. With "
+        "<m>η<sub>2</sub></m> = 0.1 instead the share falls to 0.061: a damped receiver drains the energy it is sent.",
         loss2=0.0001,
         tab=TAB_SEA,
     ),
     AcousticsTrial(
         "A heavy wall",
-        "Plate 2 10 mm thick. The corner's mismatch reflects most of the bending waves (τ̄₁₂ = 0.037) and plate 2 "
+        "Plate 2 10 mm thick. The corner's mismatch reflects most of the bending waves (<m>τ̄<sub>12</sub></m> = 0.037) and plate 2 "
         "moves 16.2 dB less than plate 1 at 1 kHz, yet it puts 45.8 % of the room's sound in, and the room is "
         "louder (65.7 dB): its critical frequency is 1.20 kHz, so at 1 kHz it radiates far better than the 3 mm "
         "panel. A quiet structure isn't the same thing as a quiet surface.",
@@ -592,7 +593,7 @@ ROOM_TIP = (
     "plate radiating.</p>"
 )
 
-NOTES_HTML = load_notes("vibroacoustics", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("vibroacoustics", figures=acoustics_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class VibroAcousticsPage(QtWidgets.QWidget):

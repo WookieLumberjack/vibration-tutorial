@@ -6,176 +6,248 @@
 <h3><a name="efficiency"></a>Radiation efficiency</h3>
 <p>A vibrating surface pushes the air next to it, and some of that push leaves as sound. How much depends on
 the motion's pattern as well as its size, so the radiated sound power is written</p>
-<p align="center">W = ρc S σ ⟨v²⟩,</p>
-<p>with ρc the air's characteristic impedance (415 rayl), S the area, ⟨v²⟩ the mean-square velocity averaged
-over the surface and over time, and σ the <b>radiation efficiency</b>: 1 for a large piston, which pushes a plane
-wave off at ρc per unit velocity, and far less for a panel whose neighbouring patches move opposite ways, as
-most of the air they push just sloshes from one to the next. σ is often quoted in decibels, 10 log σ (the
-radiation index).</p>
+<eq>W = \rho c\, S\, \sigma \langle v^2 \rangle</eq>
+<p>with <m>ρc</m> the air's characteristic impedance (415 rayl), <m>S</m> the area, <m>⟨v<sup>2</sup>⟩</m> the
+mean-square velocity averaged over the surface and over time, and <m>σ</m> the <b>radiation efficiency</b>: 1 for a large piston, which pushes a plane
+wave off at <m>ρc</m> per unit velocity, and far less for a panel whose neighbouring patches move opposite ways,
+as most of the air they push just sloshes from one to the next. <m>σ</m> is often quoted in decibels, 10 log
+<m>σ</m> (the radiation index).</p>
+
+<h3><a name="levels"></a>Levels and bands</h3>
+<p>Sound spans too many powers of ten to plot on a linear scale, so it is given as a <b>level</b> in decibels,
+ten times the logarithm of a power ratio: the sound power level and the sound pressure level</p>
+<eq>L_W = 10 \log_{10} \frac{W}{10^{-12}\ \text{W}}, \qquad L_p = 10 \log_{10} \frac{\langle p^2 \rangle}{(2\times 10^{-5}\ \text{Pa})^2}</eq>
+<p>the references being about the quietest sound a person hears at 1 kHz. A pressure, being an amplitude, gains 20
+dB per factor of ten; a power 10. Doubling a power adds 3 dB, and two equal, unrelated sources together are 3 dB
+louder than one. Spectra are given in <b>bands</b> of constant relative width, as an ear hears: an octave doubles
+the frequency, a <b>third-octave</b> is a third of one (a width of 23 % of its centre, the centres 1000, 1250,
+1600, 2000 Hz …), and a band's level is the power in it, the PSD's area over the band (the <a
+href="page:random_page#psd">Random vibration</a> page's). This page's averages are over third-octaves.</p>
 
 <h3><a name="coincidence"></a>Coincidence</h3>
-<p>A free bending wave on a plate has the wavenumber k<sub>b</sub> = √ω (ρh/D)<sup>¼</sup>: it is
-<i>dispersive</i>, its speed ω/k<sub>b</sub> growing as √f, while sound's k = ω/c grows in proportion to f. The two
-meet at the <b>critical frequency</b></p>
-<p align="center">f<sub>c</sub> = (c²/2π) √(ρh/D),</p>
-<p>which for a plate of thickness h is about 12/h kHz·mm in steel, aluminium or glass (D ∝ h³, so f<sub>c</sub>
-∝ 1/h). Above it, the bending wave is <i>supersonic</i>: it drives a plane sound wave at the angle θ where its
-trace matches, sin θ = k/k<sub>b</sub>, and an infinite plate's σ is 1/√(1 − f<sub>c</sub>/f), large just above
-f<sub>c</sub> (the wave leaves near grazing) and 1 above that. Below f<sub>c</sub> the wave is
-<i>subsonic</i>: the air above each crest cancels the air above the trough beside it, and an infinite plate
+<p>A free bending wave on a plate has the wavenumber <m>k<sub>b</sub> = √ω (ρh/D)<sup>1/4</sup></m>: it is
+<i>dispersive</i>, its speed <m>ω/k<sub>b</sub></m> growing as <m>√f</m>, while sound's <m>k = ω/c</m> grows in
+proportion to <m>f</m>. The two meet at the <b>critical frequency</b></p>
+<eq>f_c = \frac{c^2}{2\pi} \sqrt{\frac{\rho h}{D}}</eq>
+<p>which for a plate of thickness <m>h</m> is about 12/<m>h</m> kHz·mm in steel, aluminium or glass
+(<m>D ∝ h<sup>3</sup></m>, so <m>f<sub>c</sub> ∝ 1/h</m>). Above it, the bending wave is <i>supersonic</i>: it
+drives a plane sound wave at the angle <m>θ</m> where its trace matches,</p>
+<table width="100%"><tr><td align="center"><img src="fig:coincidence" width="310" height="190"></td></tr></table>
+<eq>\sin\theta = \frac{k}{k_b} = \frac{\lambda}{\lambda_b}, \qquad \sigma = \frac{1}{\sqrt{1 - f_c/f}}</eq>
+<p>the second an infinite plate's efficiency: large just above <m>f<sub>c</sub></m> (the wave leaves near grazing)
+and 1 above that. Below <m>f<sub>c</sub></m> the wave is <i>subsonic</i>: the air above each crest cancels the air above the trough beside it, and an infinite plate
 radiates nothing at all. A finite one still radiates from where the cancellation is incomplete: its edges and its
 corners.</p>
 
 <h3><a name="modes"></a>A mode's radiation</h3>
-<p>A simply supported panel's mode (m, n) is sin(mπx/a) sin(nπy/b), the sum of four plane bending waves with
-k<sub>x</sub> = mπ/a, k<sub>y</sub> = nπ/b. Set in a rigid baffle (so that the air behind can't reach round the
-edge) its radiated power is the far field's integral over a hemisphere, which Wallace (1972) reduced to</p>
-<p align="center">σ<sub>mn</sub> = (64k²ab/π⁶m²n²) ∫∫ [A<sub>m</sub>(α) B<sub>n</sub>(β)]² sin θ dθ dφ,</p>
-<p>over θ and φ from 0 to π/2, with α = ka sin θ cos φ, β = kb sin θ sin φ, and A<sub>m</sub> = cos(α/2) (m odd)
-or sin(α/2) (m even) over (α/mπ)² − 1, B<sub>n</sub> likewise. The page works it out numerically. Comparing
-k with the mode's own wavenumbers sorts the modes:</p>
+<p>A simply supported panel's mode (<m>m, n</m>) is <m>sin(mπx/a) sin(nπy/b)</m>, the sum of four plane bending
+waves with <m>k<sub>x</sub> = mπ/a</m>, <m>k<sub>y</sub> = nπ/b</m>. Set in a rigid baffle (so that the air behind
+can't reach round the edge) its radiated power is the far field's integral over a hemisphere, which reduces to
+<cite>wallace</cite></p>
+<eq>\sigma_{mn} = \frac{64 k^2 ab}{\pi^6 m^2 n^2} \int_0^{\pi/2}\!\!\int_0^{\pi/2} \bigl[A_m(\alpha)\,B_n(\gamma)\bigr]^2 \sin\theta\,d\theta\,d\varphi</eq>
+<p>with <m>α = ka sin θ cos φ</m>, <m>γ = kb sin θ sin φ</m>, and <m>A<sub>m</sub></m> = cos(<m>α</m>/2) (<m>m</m>
+odd) or sin(<m>α</m>/2) (<m>m</m> even) over <m>(α/mπ)<sup>2</sup> − 1</m>, <m>B<sub>n</sub></m> likewise. The page
+works it out numerically. Comparing <m>k</m> with the mode's own wavenumbers sorts the modes:</p>
 <ul>
-<li><b>Corner modes</b> (k &lt; k<sub>x</sub> and k &lt; k<sub>y</sub>): every half wave cancels its neighbour but for
-the quarter cells at the corners. Far below a mode's own resonance, σ<sub>mn</sub> ≈ 32k²ab/π⁵m²n² for odd m and
-n, a monopole's k²: the panel pumps like a small piston. An even index cancels that too, leaving a dipole's two more
-powers of k, and two even indices a quadrupole's four.</li>
-<li><b>Edge modes</b> (k between k<sub>x</sub> and k<sub>y</sub>): along the longer half waves nothing cancels, so
+<li><b>Corner modes</b> (<m>k</m> &lt; <m>k<sub>x</sub></m> and <m>k</m> &lt; <m>k<sub>y</sub></m>): every half wave
+cancels its neighbour but for the quarter cells at the corners. Far below a mode's own resonance,
+<m>σ<sub>mn</sub> ≈ 32k<sup>2</sup>ab/π<sup>5</sup>m<sup>2</sup>n<sup>2</sup></m> for odd <m>m</m> and <m>n</m>, a
+monopole's <m>k<sup>2</sup></m>: the panel pumps like a small piston. An even index cancels that too, leaving a dipole's two more
+powers of <m>k</m>, and two even indices a quadrupole's four.</li>
+<li><b>Edge modes</b> (<m>k</m> between <m>k<sub>x</sub></m> and <m>k<sub>y</sub></m>): along the longer half waves nothing cancels, so
 the two edges across the shorter ones radiate like strips.</li>
-<li><b>Surface modes</b> (√(k<sub>x</sub>² + k<sub>y</sub>²) &lt; k): the mode is above its own coincidence, and the
-whole surface radiates, σ<sub>mn</sub> ≈ 1.</li>
+<li><b>Surface modes</b> (<m>√(k<sub>x</sub><sup>2</sup> + k<sub>y</sub><sup>2</sup>)</m> &lt; <m>k</m>): the
+mode is above its own coincidence, and the whole surface radiates, <m>σ<sub>mn</sub></m> ≈ 1.</li>
 </ul>
-<p>At its own resonance a mode is on the bending wave's curve, k<sub>mn</sub> = k<sub>b</sub>, so below
-f<sub>c</sub> the resonant modes are all corner or edge modes, and above it all surface modes.</p>
+<p>At its own resonance a mode is on the bending wave's curve, <m>k<sub>mn</sub> = k<sub>b</sub></m>, so below
+<m>f<sub>c</sub></m> the resonant modes are all corner or edge modes, and above it all surface modes.</p>
 
 <h3><a name="averages"></a>Averaged over a band</h3>
 <p>From a few hundred hertz up a panel has many modes in each third-octave band (Beams &amp; plates' constant
-S/2 √(ρh/D) per hertz), and what matters is their average. Maidanik's formula (1962, corrected by Crocker and
-Price) gives the mean σ of the resonant modes of a baffled, simply supported panel of perimeter P from the
-wavelength at coincidence λ<sub>c</sub> = c/f<sub>c</sub>:</p>
+<m>(S/2)√(ρh/D)</m> per hertz), and what matters is their average. Maidanik's formula <cite>maidanik</cite>, as
+Crocker and Price corrected it <cite>crocker-price</cite>, gives the mean <m>σ</m> of the resonant modes of a
+baffled, simply supported panel of perimeter <m>P</m> from the wavelength at coincidence <m>λ<sub>c</sub> =
+c/f<sub>c</sub></m>:</p>
 <ul>
-<li>below f<sub>c</sub>, σ = (λ<sub>c</sub>P/S) g<sub>2</sub>(α) + 2(λ<sub>c</sub>²/S) g<sub>1</sub>(α), with
-α = √(f/f<sub>c</sub>): the edge modes (g<sub>2</sub>, growing with the perimeter) and below f<sub>c</sub>/2 the
-corner modes (g<sub>1</sub>);</li>
-<li>near f<sub>c</sub>, a peak of about √(a/λ<sub>c</sub>) + √(b/λ<sub>c</sub>);</li>
-<li>above, the infinite plate's 1/√(1 − f<sub>c</sub>/f).</li>
+<li>below <m>f<sub>c</sub></m>, the edge modes (<m>g<sub>2</sub></m>, growing with the perimeter) and below
+<m>f<sub>c</sub></m>/2 the corner modes (<m>g<sub>1</sub></m>), with <m>ε = √(f/f<sub>c</sub>)</m>:</li>
 </ul>
-<p>The page sets it beside the mean of Wallace's σ<sub>mn</sub> over the modes resonant in each band, which it
+<eq>\sigma = \frac{\lambda_c P}{S}\,g_2(\varepsilon) + \frac{2\lambda_c^2}{S}\,g_1(\varepsilon)</eq>
+<ul>
+<li>near <m>f<sub>c</sub></m>, a peak of about <m>√(a/λ<sub>c</sub>) + √(b/λ<sub>c</sub>)</m>;</li>
+<li>above, the infinite plate's <m>1/√(1 − f<sub>c</sub>/f)</m>.</li>
+</ul>
+<p>The page sets it beside the mean of Wallace's <m>σ<sub>mn</sub></m> over the modes resonant in each band, which it
 follows to within a dB or two wherever a band holds a few modes. Below f<sub>c</sub> a panel radiates more the
 longer its edges for its area: stiffening ribs, which add edges, make a panel louder.</p>
 
 <h3><a name="driven"></a>A point-driven panel</h3>
-<p>Drive the panel with a force F at one point. Each mode is a single oscillator of mass M/4 (the mean of its
-shape squared), driven by F φ<sub>mn</sub>(x<sub>0</sub>, y<sub>0</sub>), with the loss factor η in its stiffness.
-The power going in, ½ F Re v(x<sub>0</sub>, y<sub>0</sub>), peaks at each resonance, but averaged over a band
-it settles, from where several modes share each band, to an <b>infinite plate's</b>:</p>
-<p align="center">P<sub>in</sub> = ½ F² Re Y<sub>∞</sub>, Y<sub>∞</sub> = 1/8√(Dρh),</p>
+<p>Drive the panel with a force <m>F</m> at one point. Each mode is a single oscillator of mass <m>M</m>/4 (the
+mean of its shape squared), driven by <m>Fφ<sub>mn</sub>(x<sub>0</sub>, y<sub>0</sub>)</m>, with the loss factor
+<m>η</m> in its stiffness. The power going in, <m>½F Re v(x<sub>0</sub>, y<sub>0</sub>)</m>, peaks at each
+resonance, but averaged over a band it settles, from where several modes share each band, to an <b>infinite
+plate's</b>:</p>
+<eq>P_{\text{in}} = \tfrac12 F^2\, \mathrm{Re}\, Y_\infty, \qquad Y_\infty = \frac{1}{8\sqrt{D\rho h}}</eq>
 <p>a pure resistance: a wave carried off and never returned. In the band, that power is lost in the panel as
-fast as it comes in, ωηE = P<sub>in</sub>, so the panel's energy E = M⟨v²⟩ is P<sub>in</sub>/ωη: the response
+fast as it comes in, <m>ωηE = P<sub>in</sub></m>, so the panel's energy <m>E = M⟨v<sup>2</sup>⟩</m> is
+<m>P<sub>in</sub>/ωη</m>: the response
 of a panel with many modes in a band depends on its mass, its stiffness and its damping, not on its shape or
 where it's driven. This is the starting point of statistical energy analysis. The radiated power is each mode's
-ρcS σ<sub>mn</sub>⟨v<sub>mn</sub>²⟩ (the page leaves out the modes' mutual radiation, which is small once a band
-holds several). Written as a loss, ρcSσ⟨v²⟩ = ωη<sub>rad</sub>E with the <b>radiation loss factor</b></p>
-<p align="center">η<sub>rad</sub> = ρcσ / ωm″,</p>
+<m>ρcSσ<sub>mn</sub>⟨v<sub>mn</sub><sup>2</sup>⟩</m> (the page leaves out the modes' mutual radiation, which is
+small once a band holds several). Written as a loss, <m>ρcSσ⟨v<sup>2</sup>⟩ = ωη<sub>rad</sub>E</m> with the
+<b>radiation loss factor</b></p>
+<eq>\eta_{\text{rad}} = \frac{\rho c\,\sigma}{\omega m''}</eq>
 <p>so the panel's energy leaves by two routes, its damping and its sound, and the sound takes
-η<sub>rad</sub>/(η + η<sub>rad</sub>) of it. In air η<sub>rad</sub> is small, 10<sup>−4</sup> or so below
-f<sub>c</sub> for a steel sheet, so sound is a small leak from a panel's energy, a larger one above
-f<sub>c</sub> where σ ≈ 1. A heavy fluid (water) changes that, and loads the panel as an added mass too.</p>
+<m>η<sub>rad</sub>/(η + η<sub>rad</sub>)</m> of it. In air <m>η<sub>rad</sub></m> is small, 10<sup>−4</sup> or so
+below <m>f<sub>c</sub></m> for a steel sheet, so sound is a small leak from a panel's energy, a larger one above
+<m>f<sub>c</sub></m> where <m>σ</m> ≈ 1. A heavy fluid (water) changes that, and loads the panel as an added mass too.</p>
 
 <h3><a name="transmission"></a>Between two rooms</h3>
 <p>A panel between two rooms is pushed by the sound on one side and radiates on the other. As an infinite plate
-of mass m″ per area, a plane wave arriving at θ sees the wall impedance
-Z = iωm″[1 − (f/f<sub>c</sub>)² sin⁴θ (1 + iη)], and gets through with the transmission coefficient
-τ(θ) = 1/|1 + Z cos θ / 2ρc|². The <b>transmission loss</b> is TL = 10 log 1/τ̄.</p>
+of mass <m>m″</m> per area, a plane wave arriving at <m>θ</m> sees the wall impedance <m>Z</m> and gets through
+with the transmission coefficient <m>τ(θ)</m>:</p>
+<eq>Z = \mathrm{i}\omega m''\Bigl[1 - \Bigl(\frac{f}{f_c}\Bigr)^2 \sin^4\theta\,(1 + \mathrm{i}\eta)\Bigr]</eq>
+<eq>\tau(\theta) = \frac{1}{|1 + Z\cos\theta/2\rho c|^2}, \qquad \text{TL} = 10\log_{10}\frac{1}{\bar\tau}</eq>
+<p>the <b>transmission loss</b>, with <m>τ̄</m> averaged over the angles the sound arrives from.</p>
 <ul>
-<li><b>The mass law.</b> Well below f<sub>c</sub>, only the mass holds the sound back: at normal incidence
-TL = 10 log[1 + (ωm″/2ρc)²] ≈ 20 log(f m″) − 42 dB, 6 dB more for each doubling of the frequency or the mass.
+<li><b>The mass law.</b> Well below <m>f<sub>c</sub></m>, only the mass holds the sound back: at normal
+incidence TL = 10 log[1 + <m>(ωm″/2ρc)<sup>2</sup></m>] ≈ 20 log(<m>fm″</m>) − 42 dB, 6 dB more for each
+doubling of the frequency or the mass.
 Averaged over the angles a room's sound arrives from (<b>field incidence</b>, up to 78°) it is about 5 dB less.</li>
-<li><b>Coincidence.</b> Above f<sub>c</sub>, at the angle where sin²θ = f<sub>c</sub>/f, the sound's trace
-matches the bending wave: the panel's stiffness cancels its mass, only damping is left, and the sound walks
-through. The diffuse field's TL dips at f<sub>c</sub>, and above it rises with the damping, about
-10 log(2ηf/πf<sub>c</sub>) on the mass law.</li>
+<li><b>Coincidence.</b> Above <m>f<sub>c</sub></m>, at the angle where <m>sin<sup>2</sup>θ =
+f<sub>c</sub>/f</m>, the sound's trace matches the bending wave: the panel's stiffness cancels its mass, only
+damping is left, and the sound walks through. The diffuse field's TL dips at <m>f<sub>c</sub></m>, and above it
+rises with the damping, about 10 log(<m>2ηf/πf<sub>c</sub></m>) on the mass law <cite>cremer-heckl</cite>.</li>
 </ul>
-<p>Since f<sub>c</sub> ∝ 1/h while m″ ∝ h, f<sub>c</sub>m″ depends only on the material: a heavier panel of the
-same stuff gains on the mass law but brings its dip lower, into the band it was meant to stop. Double walls, and
-laminated glass's damping layer, are the ways round it.</p>
+<p>Since <m>f<sub>c</sub> ∝ 1/h</m> while <m>m″ ∝ h</m>, <m>f<sub>c</sub>m″</m> depends only on the material: a
+heavier panel of the same stuff gains on the mass law but brings its dip lower, into the band it was meant to
+stop. Laminated glass's damping layer fills the dip in; a <b>double wall</b> beats the mass law outright. Its two
+leaves, <m>m″<sub>1</sub></m> and <m>m″<sub>2</sub></m> a gap <m>d</m> apart, bounce on the air between them
+as on a spring of stiffness <m>ρc<sup>2</sup>/d</m> per area, at the mass–air–mass resonance</p>
+<eq>f_0 = \frac{1}{2\pi}\sqrt{\frac{\rho c^2}{d}\Bigl(\frac{1}{m''_1} + \frac{1}{m''_2}\Bigr)}</eq>
+<p>where the wall lets more through than one leaf would. Above it each leaf isolates the other, as a mount isolates
+a machine above its natural frequency, and the TL climbs 18 dB an octave instead of 6, until the gap's own
+standing waves (and the studs that bridge it) cap it: two 10 kg/m² plasterboards 100 mm apart resonate at 85 Hz,
+below speech. Absorbent in the gap damps the cavity; it is a structure–cavity coupling, the subject of the SEA
+below.</p>
 
 <h3><a name="oscillators"></a>Two oscillators</h3>
 <p>A panel with hundreds of modes in a band, joined to another and to a room, is too much to follow mode by
 mode, and its details (exactly where each resonance falls) are not known well enough to be worth following.
 <b>Statistical energy analysis</b> (SEA) follows energy instead, and rests on one exact result. Take two
-oscillators, m₁ and m₂ with <i>blocked</i> natural frequencies ω₁ and ω₂ (each with the other held still) and
-damping rates Δ = c/m = 2ζω, joined by a spring k<sub>c</sub>, and drive each with its own white noise,
-independent of the other's. The power through the spring, averaged over time, is</p>
-<p align="center">P₁₂ = β (E₁ − E₂),</p>
-<p>E = m⟨v²⟩ each oscillator's energy (twice its kinetic energy, which is its total on average), with</p>
-<p align="center">β = (k<sub>c</sub>²/m₁m₂)(Δ₁ + Δ₂) / [(ω₁² − ω₂²)² + (Δ₁ + Δ₂)(Δ₁ω₂² + Δ₂ω₁²)],</p>
+oscillators, <m>m<sub>1</sub></m> and <m>m<sub>2</sub></m> with <i>blocked</i> natural frequencies
+<m>ω<sub>1</sub></m> and <m>ω<sub>2</sub></m> (each with the other held still) and damping rates <m>Δ = c/m =
+2ζω</m>, joined by a spring <m>k<sub>c</sub></m>, and drive each with its own white noise, independent of the
+other's.</p>
+<table width="100%"><tr><td align="center"><img src="fig:oscillators" width="310" height="156"></td></tr></table>
+<p>The power through the spring, averaged over time, is</p>
+<eq>P_{12} = \beta\,(E_1 - E_2)</eq>
+<p><m>E = m⟨v<sup>2</sup>⟩</m> each oscillator's energy (twice its kinetic energy, which is its total on average),
+with</p>
+<eq>\beta = \frac{(k_c^2/m_1 m_2)(\Delta_1 + \Delta_2)}{(\omega_1^2 - \omega_2^2)^2 + (\Delta_1 + \Delta_2)(\Delta_1\omega_2^2 + \Delta_2\omega_1^2)}</eq>
 <p>whatever the forces' strengths: power flows from the oscillator with more energy to the one with less, in
-proportion to the difference, as heat flows between two bodies at different temperatures (Lyon and Maidanik,
-1962). It holds for any strength of coupling. The page works the response out exactly (the covariance of
+proportion to the difference, as heat flows between two bodies at different temperatures. This is Lyon and
+Maidanik's result <cite>lyon-maidanik</cite>, and it holds for any strength of coupling. The page works the response out exactly (the covariance of
 the oscillators' motion, from a Lyapunov equation) and sets β beside it. β is largest when the oscillators are
 tuned, over a band as wide as their damping rates: energy crosses between pairs of modes whose resonances
 overlap.</p>
 
 <h3><a name="sea"></a>Statistical energy analysis</h3>
 <p>Sum the two-oscillator result over every pair of modes of two subsystems with resonances in a band, each mode
-of subsystem i holding the same energy E<sub>i</sub>/N<sub>i</sub> (N<sub>i</sub> = n<sub>i</sub>Δf its modes
-in the band, n<sub>i</sub> its modal density). The flow between the subsystems becomes</p>
-<p align="center">P<sub>ij</sub> = ω(η<sub>ij</sub>E<sub>i</sub> − η<sub>ji</sub>E<sub>j</sub>),</p>
-<p>with the <b>coupling loss factors</b> η<sub>ij</sub> (the share of subsystem i's energy that leaves for j in a
-cycle, over 2π, as its own loss factor η<sub>i</sub> is the share it dissipates) obeying
-<b>reciprocity</b>,</p>
-<p align="center">n<sub>i</sub>η<sub>ij</sub> = n<sub>j</sub>η<sub>ji</sub>,</p>
-<p>so P<sub>ij</sub> = ωη<sub>ij</sub>n<sub>i</sub>(E<sub>i</sub>/n<sub>i</sub> − E<sub>j</sub>/n<sub>j</sub>):
-energy flows down the difference in <i>modal energy</i>, energy per mode, which plays temperature's part. In
-each band every subsystem balances the power it is given with what it dissipates and what it sends on,</p>
-<p align="center">P<sub>i</sub> = ωη<sub>i</sub>E<sub>i</sub> + Σ<sub>j</sub> ω(η<sub>ij</sub>E<sub>i</sub> −
-η<sub>ji</sub>E<sub>j</sub>),</p>
+of subsystem <m>i</m> holding the same energy <m>E<sub>i</sub>/N<sub>i</sub></m> (<m>N<sub>i</sub> =
+n<sub>i</sub>Δf</m> its modes in the band of width <m>Δf</m>, <m>n<sub>i</sub></m> its modal density). The flow
+between the subsystems becomes</p>
+<eq>P_{ij} = \omega\,(\eta_{ij} E_i - \eta_{ji} E_j)</eq>
+<p>with the <b>coupling loss factors</b> <m>η<sub>ij</sub></m> (the share of subsystem <m>i</m>'s energy that
+leaves for <m>j</m> in a cycle, over 2π, as its own loss factor <m>η<sub>i</sub></m> is the share it dissipates)
+obeying <b>reciprocity</b>,</p>
+<eq>n_i\,\eta_{ij} = n_j\,\eta_{ji}</eq>
+<p>so <m>P<sub>ij</sub> = ωη<sub>ij</sub>n<sub>i</sub>(E<sub>i</sub>/n<sub>i</sub> −
+E<sub>j</sub>/n<sub>j</sub>)</m>: energy flows down the difference in <i>modal energy</i>, energy per mode, which
+plays temperature's part. In each band every subsystem balances the power <m>P<sub>i</sub></m> it is given with
+what it dissipates and what it sends on,</p>
+<eq>P_i = \omega\eta_i E_i + \sum_j \omega\,(\eta_{ij} E_i - \eta_{ji} E_j)</eq>
 <p>a small linear system for the energies. The assumptions are the two-oscillator result's, made
 statistical: several modes in each band, so that their averages mean something; the input spread evenly over
 the band; and coupling weak enough that each subsystem's modes are its own. The answers are band averages:
 what a set of nominally identical structures would give on average, not what one of them does at one
-frequency.</p>
+frequency <cite>lyon-dejong</cite>.</p>
 
 <h3><a name="junction"></a>Plates at a corner</h3>
 <p>Where two plates meet at a right angle, each plate's in-plane stiffness stops the other's bending at the
 corner: the line doesn't move, but it turns, both plates turning with it, and their bending moments balance.
-A bending wave arriving on plate 1 at θ from the normal shares its trace along the corner,
-k<sub>y</sub> = k<sub>1</sub> sin θ, with every wave it makes: a reflected wave and a transmitted one, and a
-near field on each side that decays from the corner. The four conditions give their four amplitudes, and the
-transmitted wave carries τ(θ) of the energy, the reflected one the rest (τ + |r|² = 1). Identical plates
+A bending wave arriving on plate 1 at <m>θ</m> from the normal shares its trace along the corner, <m>k<sub>y</sub>
+= k<sub>1</sub> sin θ</m>, with every wave it makes: a reflected wave and a transmitted one, and a near field on
+each side that decays from the corner.</p>
+<table width="100%"><tr><td align="center"><img src="fig:junction" width="310" height="180"></td></tr></table>
+<p>The four conditions give their four amplitudes, and the transmitted wave carries <m>τ(θ)</m> of the energy,
+the reflected one the rest (<m>τ + |r|<sup>2</sup></m> = 1). Identical plates
 pass half at normal incidence; a plate much thicker or thinner reflects most. Averaged over a diffuse field's
-directions (its intensity at the corner goes as cos θ),</p>
-<p align="center">τ̄<sub>12</sub> = ∫ τ(θ) cos θ dθ, over 0 to π/2,</p>
-<p>(a third for identical plates), and the energy crossing a corner of length L each second, out of the
-energy E₁ spread over S₁, gives the coupling loss factor</p>
-<p align="center">η<sub>12</sub> = c<sub>g1</sub> L τ̄<sub>12</sub> / πωS₁,</p>
-<p>c<sub>g</sub> = 2√(ω√(D/ρh)) being the bending wave's group speed, twice its phase speed. Reciprocity holds
-because k₁τ̄<sub>12</sub> = k₂τ̄<sub>21</sub>. A plate's modal density, S/2 √(ρh/D) modes per hertz, is
-<a href="page:beams_page#modal-density">Beams &amp; plates'</a>. A plate couples to a room by its radiation, with η<sub>rad</sub> = ρcσ/ωm″ from
-<a href="page:acoustics_page#driven">the driven panel</a>; a room has 4πf²V/c³ modes per hertz, many more than a panel from a few
-hundred hertz up, so by reciprocity it gives back far less, and its own loss factor is set by its reverberation
-time, 2.2/fT<sub>60</sub>. Its energy E = ⟨p²⟩V/ρc² gives the sound pressure level.</p>
+directions (its intensity at the corner goes as <m>cos θ</m>),</p>
+<eq>\bar\tau_{12} = \int_0^{\pi/2} \tau(\theta)\cos\theta\,d\theta</eq>
+<p>(a third for identical plates), and the energy crossing a corner of length <m>L</m> each second, out of the
+energy <m>E<sub>1</sub></m> spread over <m>S<sub>1</sub></m>, gives the coupling loss factor</p>
+<eq>\eta_{12} = \frac{c_{g1} L\,\bar\tau_{12}}{\pi\omega S_1}</eq>
+<p><m>c<sub>g</sub> = 2√(ω√(D/ρh))</m> being the bending wave's group speed, twice its phase speed
+<cite>cremer-heckl</cite>. Reciprocity holds because <m>k<sub>1</sub>τ̄<sub>12</sub> = k<sub>2</sub>τ̄<sub>21</sub></m>.
+A plate's modal density, <m>(S/2)√(ρh/D)</m> modes per hertz, is
+<a href="page:beams_page#modal-density">Beams &amp; plates'</a>. A plate couples to a room by its radiation, with
+<m>η<sub>rad</sub> = ρcσ/ωm″</m> from <a href="page:acoustics_page#driven">the driven panel</a>.</p>
+
+<h3><a name="room"></a>A room</h3>
+<p>A room of volume <m>V</m> has <m>4πf<sup>2</sup>V/c<sup>3</sup></m> modes per hertz, many more than a panel
+from a few hundred hertz up, so by reciprocity it gives back far less than it takes. Its sound decays at a rate
+set by what its surfaces absorb, measured as the <b>reverberation time</b> <m>T<sub>60</sub></m>, the time it
+takes to fall 60 dB once the source stops. Sabine's rule <cite>sabine</cite> relates it to the absorption
+<m>A</m> (in m², each surface's area times the share of the sound it absorbs), and it sets the room's loss
+factor:</p>
+<eq>T_{60} = \frac{0.161\,V}{A}, \qquad \eta_{\text{room}} = \frac{2.2}{f\,T_{60}}</eq>
+<p>The room's energy <m>E = ⟨p<sup>2</sup>⟩V/ρc<sup>2</sup></m> gives the sound pressure level; for a source of
+power <m>W</m> in it, the balance <m>W = ωη<sub>room</sub>E</m> gives <m>⟨p<sup>2</sup>⟩ = 4ρcW/A</m>, so
+<m>L<sub>p</sub> = L<sub>W</sub></m> + 10 log(4/<m>A</m>): a room twice as absorbent is 3 dB quieter.</p>
 
 <h3><a name="equipartition"></a>Equipartition</h3>
 <p>For two subsystems with only 1 driven, subsystem 2's balance gives</p>
-<p align="center">E₂/E₁ = η<sub>12</sub> / (η₂ + η<sub>21</sub>).</p>
-<p>If subsystem 2's damping is small next to η<sub>21</sub>, it can only lose energy by giving it back, and
-E₂/n₂ → E₁/n₁: the modal energies even out, <b>equipartition</b>, as two bodies in contact come to one
+<eq>\frac{E_2}{E_1} = \frac{\eta_{12}}{\eta_2 + \eta_{21}}</eq>
+<p>If subsystem 2's damping is small next to <m>η<sub>21</sub></m>, it can only lose energy by giving it back,
+and <m>E<sub>2</sub>/n<sub>2</sub> → E<sub>1</sub>/n<sub>1</sub></m>: the modal energies even out, <b>equipartition</b>, as two bodies in contact come to one
 temperature. If it is large, subsystem 2 drains what it is sent. Damping the receiving structure helps only
 while its damping is comparable with the coupling; damping the source, or cutting the coupling (a resilient
 joint, a mismatch in thickness), works whatever the receiver.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on a steel panel 600 × 400 mm, 3 mm thick, <m>η</m> = 0.01. Its bending stiffness is
+<m>D</m> = 210 × 10⁹ × 0.003³/12(1 − 0.3²) = 519 N·m and <m>m″ = ρh</m> = 23.6 kg/m², so</p>
+<eq>f_c = \frac{343^2}{2\pi}\sqrt{\frac{23.55}{519}} = 3.99\ \text{kHz}</eq>
+<p>(12/3 = 4 kHz by the rule of thumb), and <m>λ<sub>c</sub></m> = 86 mm. Its first mode, (1, 1), is at 66.6 Hz,
+where sound's wavelength is 5.2 m. It has <m>(S/2)√(ρh/D)</m> = 0.0256 modes per hertz, so the 1 kHz
+third-octave (891 to 1122 Hz) should hold 5.9 of them (it holds 5).</p>
+<p>Driven by 1 N, it takes in the infinite plate's <m>F<sup>2</sup>/16√(Dρh)</m> = 565 µW over a band (a sound
+power level of 87.5 dB, were it all radiated). At 1 kHz that sustains an energy <m>P/ωη</m> = 565 × 10⁻⁶/(2π ×
+1000 × 0.01) = 9.0 µJ in the panel's 5.65 kg: <m>⟨v<sup>2</sup>⟩</m> = 1.59 × 10⁻⁶ (m/s)², an RMS velocity of
+1.26 mm/s. Maidanik's <m>σ</m> there is 0.054, so it radiates 415 × 0.24 × 0.054 × 1.59 × 10⁻⁶ = 8.6 µW, a sound
+power level of 69.3 dB, 18 dB below what goes in: <m>η<sub>rad</sub></m> = 415 × 0.054/(2π × 1000 × 23.55) = 1.5
+× 10⁻⁴, a 66th of <m>η</m>.</p>
+<p>Between two rooms, the mass law at 500 Hz is 10 log[1 + (2π × 500 × 23.55/830)²] = 39.0 dB at normal
+incidence (39.4 dB by 20 log(<m>fm″</m>) − 42), 33.8 dB over a diffuse field. In a room of 50 m³ with a
+reverberation time of 0.5 s, <m>A</m> = 0.161 × 50/0.5 = 16.1 m², <m>η<sub>room</sub></m> = 0.0044 at 1 kHz, and
+the room has 15.6 modes per hertz there, 600 times the panel's.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the panel and the plots (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>Radiated power is ρcSσ⟨v²⟩: the radiation efficiency σ says how much of a surface's motion becomes sound.</li>
-<li>Bending waves catch up with sound at the critical frequency f<sub>c</sub> = (c²/2π)√(ρh/D), ∝ 1/h; above it a plate radiates fully, below it only its edges and corners do.</li>
+<li>Radiated power is <m>ρcSσ⟨v<sup>2</sup>⟩</m>: the radiation efficiency <m>σ</m> says how much of a surface's motion becomes sound.</li>
+<li>Sound is given in levels, 10 log of a power ratio (20 of a pressure ratio), and in octave or third-octave bands.</li>
+<li>Bending waves catch up with sound at the critical frequency <m>f<sub>c</sub> = (c<sup>2</sup>/2π)√(ρh/D)</m>, <m>∝ 1/h</m>; above it a plate radiates fully, below it only its edges and corners do.</li>
 <li>A mode's radiation falls with each sign change across it: odd–odd modes radiate like pistons, even ones like dipoles and quadrupoles.</li>
-<li>Over a band, a point-driven panel takes in the infinite plate's F²/16√(Dρh) and holds the energy P/ωη, whatever its shape.</li>
-<li>A panel's transmission loss follows the mass law, 6 dB per doubling of mass or frequency, until the coincidence dip at f<sub>c</sub>, where damping takes over.</li>
-<li>Two coupled oscillators driven by independent noise exchange power β(E₁ − E₂), exactly: from the one with more energy to the one with less.</li>
-<li>SEA balances each subsystem's power in a band: ω(η<sub>ij</sub>E<sub>i</sub> − η<sub>ji</sub>E<sub>j</sub>) flows from i to j, with n<sub>i</sub>η<sub>ij</sub> = n<sub>j</sub>η<sub>ji</sub>.</li>
-<li>A corner's coupling loss factor is c<sub>g</sub>Lτ̄/πωS, τ̄ from the bending waves it reflects and transmits; a plate couples to a room by its radiation loss factor.</li>
+<li>Over a band, a point-driven panel takes in the infinite plate's <m>F<sup>2</sup>/16√(Dρh)</m> and holds the energy <m>P/ωη</m>, whatever its shape.</li>
+<li>A panel's transmission loss follows the mass law, 6 dB per doubling of mass or frequency, until the coincidence dip at <m>f<sub>c</sub></m>, where damping takes over; a double wall gains 18 dB an octave above its mass–air–mass resonance.</li>
+<li>Two coupled oscillators driven by independent noise exchange power <m>β(E<sub>1</sub> − E<sub>2</sub>)</m>, exactly: from the one with more energy to the one with less.</li>
+<li>SEA balances each subsystem's power in a band: <m>ω(η<sub>ij</sub>E<sub>i</sub> − η<sub>ji</sub>E<sub>j</sub>)</m> flows from <m>i</m> to <m>j</m>, with <m>n<sub>i</sub>η<sub>ij</sub> = n<sub>j</sub>η<sub>ji</sub></m>.</li>
+<li>A corner's coupling loss factor is <m>c<sub>g</sub>Lτ̄/πωS</m>, <m>τ̄</m> from the bending waves it reflects and transmits; a plate couples to a room by its radiation loss factor, and a room's own is set by its reverberation time.</li>
 <li>When coupling beats a receiver's damping, the energy per mode evens out (equipartition); damping the receiver helps only while it doesn't.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>sound_power rho_c levels N_count plate_ab h_thick rho G_nu D_plate mn_modes f_c k_bend sigma_mn maidanik_terms eta point_input m_area eta_rad wall_z TL double_wall osc_pair beta_sea sea_terms eta_ij tau_bar room</notation>
+<reading>fahy-gardonio cremer-heckl lyon-dejong</reading>
