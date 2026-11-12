@@ -369,6 +369,33 @@ REFERENCES = (
         "S. S. Rao, <i>Vibration of Continuous Systems</i>, 2nd edition, Wiley, 2019",
         "the modes of strings, bars, beams and plates, with their end conditions, and their finite elements",
     ),
+    Reference(
+        "timoshenko",
+        "Timoshenko 1921",
+        "S. P. Timoshenko, On the correction for shear of the differential equation for transverse vibrations of "
+        "prismatic bars, <i>Philosophical Magazine</i> (6) 41, 744–746, 1921",
+        "",
+    ),
+    Reference(
+        "kirchhoff",
+        "Kirchhoff 1850",
+        "G. Kirchhoff, Über das Gleichgewicht und die Bewegung einer elastischen Scheibe, <i>Journal für die reine "
+        "und angewandte Mathematik</i> 40, 51–88, 1850",
+        "",
+    ),
+    Reference(
+        "chladni",
+        "Chladni 1787",
+        "E. F. F. Chladni, <i>Entdeckungen über die Theorie des Klanges</i>, Weidmanns Erben und Reich, Leipzig, 1787",
+        "",
+    ),
+    Reference(
+        "leissa",
+        "Leissa 1969",
+        "A. W. Leissa, <i>Vibration of Plates</i>, NASA SP-160, 1969 (reprinted by the Acoustical Society of "
+        "America, 1993)",
+        "the plates' frequencies tabulated, for every shape and edge: where the clamped circle's roots come from",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
