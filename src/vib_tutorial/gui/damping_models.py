@@ -18,7 +18,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.damping_models import MODELS, Matched, Model, coulomb_stop
 from ..core.practice import Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
-from . import settle_plots
+from . import damping_figures, settle_plots
 from .layouts import ColumnScroll, FlowLayout
 from .lesson import (
     Form,
@@ -63,16 +63,17 @@ def matched(t: DampingTrial) -> Matched:
 TRIALS = (
     DampingTrial(
         "Four loops, one energy",
-        "m = 1 kg, k = 400 N/m (f<sub>n</sub> = 3.18 Hz), each model matched to ζ = 0.05 there. Cycled at "
-        "f<sub>n</sub> through ±10 mm, every loop of damping force encloses the same πcω<sub>n</sub>X² = 12.6 mJ: "
-        "that is what matched means. Viscous, hysteretic and Zener damping make ellipses, their force a quarter "
-        "cycle ahead of the motion; friction makes a rectangle, ±F<sub>f</sub> = ±0.31 N, flipping at each end "
-        "of the stroke, which doesn't shrink as the motion does.",
+        "<m>m</m> = 1 kg, <m>k</m> = 400 N/m (<m>f<sub>n</sub></m> = 3.18 Hz), each model matched to "
+        "<m>ζ</m> = 0.05 there. Cycled at <m>f<sub>n</sub></m> through ±10 mm, every loop of damping force "
+        "encloses the same <m>πcω<sub>n</sub>X²</m> = 12.6 mJ: that is what matched means. Viscous, hysteretic "
+        "and Zener damping make ellipses, their force a quarter cycle ahead of the motion; friction makes a "
+        "rectangle, <m>±F<sub>f</sub></m> = ±0.31 N, flipping at each end of the stroke, which doesn't shrink as "
+        "the motion does.",
         tab=TAB_LOSS,
     ),
     DampingTrial(
         "Twice the frequency",
-        "The same cycle at 2f<sub>n</sub>. The viscous loop is twice as fat (25.1 mJ: its force grows with "
+        "The same cycle at <m>2f<sub>n</sub></m>. The viscous loop is twice as fat (25.1 mJ: its force grows with "
         "the velocity), the hysteretic and friction loops are unchanged (12.6 mJ), and the Zener element's, "
         "past its loss peak, is thinner (10.7 mJ).",
         ratio=2.0,
@@ -80,38 +81,38 @@ TRIALS = (
     DampingTrial(
         "With the spring: what a test machine draws",
         "The whole force, spring and damping together, as a test machine measures it on a sample: each loop is "
-        "the spring's line kx (dashed) opened out by the damping. The tilt is the stiffness (4 N at 10 mm), "
+        "the spring's line <m>kx</m> (dashed) opened out by the damping. The tilt is the stiffness (4 N at 10 mm), "
         "the width the loss (0.4 N): a lightly damped part draws a thin loop.",
         damping_only=False,
     ),
     DampingTrial(
         "Friction can't stop a resonance",
-        "1 N at every frequency. The viscous, hysteretic and Zener peaks stop at 25 mm, (F/k)/2ζ. Friction, "
-        "matched to them at 10 mm, takes at most 4F<sub>f</sub>X a cycle, which grows only as X while the force "
-        "puts in πFX: since F = 1 N &gt; 4F<sub>f</sub>/π = 0.4 N, the resonance runs away. Set the drive below "
+        "1 N at every frequency. The viscous, hysteretic and Zener peaks stop at 25 mm, <m>(F/k)/2ζ</m>. Friction, "
+        "matched to them at 10 mm, takes at most <m>4F<sub>f</sub>X</m> a cycle, which grows only as <m>X</m> while the force "
+        "puts in <m>πFX</m>: since <m>F</m> = 1 N &gt; <m>4F<sub>f</sub>/π</m> = 0.4 N, the resonance runs away. Set the drive below "
         "0.4 N and friction holds the mass still (to this approximation).",
         tab=TAB_FRF,
     ),
     DampingTrial(
         "A straight-line decay",
-        "Released from 10 mm. The viscous swing falls by the same fraction each cycle, e<sup>−δ</sup> = 0.73, "
-        "for ever. Friction's falls by the same amount, 4F<sub>f</sub>/k = 3.1 mm, and stops dead after three "
+        "Released from 10 mm. The viscous swing falls by the same fraction each cycle, <m>e<sup>−δ</sup></m> = 0.73, "
+        "for ever. Friction's falls by the same amount, <m>4F<sub>f</sub>/k</m> = 3.1 mm, and stops dead after three "
         "cycles, 0.58 mm off centre, where the spring can no longer beat the friction.",
         tab=TAB_DECAY,
     ),
     DampingTrial(
         "A viscoelastic loss peak",
-        "The Zener element: a spring k<sub>0</sub> beside a spring k<sub>1</sub> and a dashpot in series. Slowly "
-        "the dashpot gives and only k<sub>0</sub> = 364 N/m holds; fast it locks and k<sub>0</sub> + "
-        "k<sub>1</sub> = 444 N/m does. In between, at its relaxation frequency (here f<sub>n</sub>), the loss "
+        "The Zener element: a spring <m>k<sub>0</sub></m> beside a spring <m>k<sub>1</sub></m> and a dashpot in series. Slowly "
+        "the dashpot gives and only <m>k<sub>0</sub></m> = 364 N/m holds; fast it locks and "
+        "<m>k<sub>0</sub> + k<sub>1</sub></m> = 444 N/m does. In between, at its relaxation frequency (here <m>f<sub>n</sub></m>), the loss "
         "factor peaks at 0.1. Rubber mounts and polymers behave like this.",
         tab=TAB_LOSS,
     ),
     DampingTrial(
         "Relaxing well above resonance",
-        "The Zener element's peak moved to 10 f<sub>n</sub>. Below it, its loss grows in proportion to "
+        "The Zener element's peak moved to <m>10f<sub>n</sub></m>. Below it, its loss grows in proportion to "
         "frequency, as a viscous damper's does: through the oscillator's band it is a viscous damper. It "
-        "needs a stiffer arm for the same damping at f<sub>n</sub>.",
+        "needs a stiffer arm for the same damping at <m>f<sub>n</sub></m>.",
         relax=10.0,
         tab=TAB_LOSS,
     ),
@@ -364,7 +365,7 @@ DECAY_TIP = (
     "f<sub>n</sub>.</p>"
 )
 
-NOTES_HTML = load_notes("damping_models", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("damping_models", figures=damping_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class DampingModelsPage(QtWidgets.QWidget):

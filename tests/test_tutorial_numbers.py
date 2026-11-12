@@ -416,6 +416,71 @@ def test_damping_models_trials():
     assert (k0, k0 + k1) == pytest.approx((364, 444), abs=0.5)
 
 
+def test_damping_models_worked_example():
+    """The figures Damping models' worked example quotes, on the page's defaults, from the rounded numbers it
+    shows too; and its equivalent viscous damping and loss factor formulas."""
+    from vib_tutorial.core.damping_models import Matched, Model, coulomb_decay, coulomb_stop
+    from vib_tutorial.core.sdof import Oscillator
+
+    m = Matched()
+    assert (m.mass, m.stiffness, m.zeta, m.amplitude, m.relax) == (1.0, 400.0, 0.05, 0.01, 1.0)
+    wn = m.omega_n
+    assert wn == pytest.approx(20.0) and m.natural_hz == pytest.approx(3.18, abs=0.005) and m.c == pytest.approx(2.0)
+    U = 0.5 * m.stiffness * m.amplitude**2
+    assert U == pytest.approx(0.020) and m.eta == pytest.approx(0.1)
+    w = np.array([wn])
+    for model in Model:
+        assert m.energy_per_cycle(model, w)[0] * 1e3 == pytest.approx(12.57, abs=0.005)
+        K = m.dynamic_stiffness(model, w)[0]
+        assert m.energy_per_cycle(model, w)[0] / (2 * math.pi * 0.5 * K.real * m.amplitude**2) == pytest.approx(
+            K.imag / K.real
+        )  # η = W_d/2πU = K''/K'
+    assert 2 * math.pi * 0.1 * 20 == pytest.approx(12.57, abs=0.005)  # mJ, from the rounded numbers
+    assert math.pi * 2 * 20 * 0.01**2 * 1e3 == pytest.approx(12.57, abs=0.005)
+    # friction
+    assert m.friction == pytest.approx(0.314, abs=0.0005) and 12.57 / 40 == pytest.approx(0.314, abs=0.0005)
+    assert m.friction == pytest.approx(0.3142, abs=0.00005) and m.zener()[2] == pytest.approx(0.04525, abs=5e-6)
+    assert abs(coulomb_stop(m.stiffness, m.friction, m.amplitude)[1]) * 1e6 == pytest.approx(575, abs=0.5)
+    assert 4 * m.friction / m.stiffness * 1e3 == pytest.approx(3.14, abs=0.005)
+    assert m.friction / m.stiffness * 1e3 == pytest.approx(0.785, abs=0.0005)
+    turns = [10 - 1.57 * n for n in range(1, 7)]  # from the rounded 1.57 mm a half cycle
+    assert turns == pytest.approx([8.43, 6.86, 5.29, 3.72, 2.15, 0.58], abs=0.005)
+    halves, stop = coulomb_stop(m.stiffness, m.friction, m.amplitude)
+    assert halves == 6 and abs(stop) * 1e3 == pytest.approx(0.58, abs=0.005)
+    t = np.linspace(0, 2.5 * 2 * math.pi / wn, 50001)  # its turns, every half period: 8.43, 6.86, … mm
+    x = coulomb_decay(m.mass, m.stiffness, m.friction, m.amplitude, t)
+    half = np.searchsorted(t, [n * math.pi / wn for n in range(1, 5)])
+    assert np.abs(x[half]) * 1e3 == pytest.approx([8.43, 6.86, 5.29, 3.72], abs=0.005)
+    delta = Oscillator(1, 400, 2).log_decrement
+    assert delta == pytest.approx(0.315, abs=0.0005) and math.exp(-delta) == pytest.approx(0.730, abs=0.0005)
+    assert math.exp(-0.315) == pytest.approx(0.730, abs=0.0005)
+    # driven by 1 N
+    assert abs(m.receptance(Model.HYSTERETIC, np.array([m.natural_hz]), 1.0)[0]) * 1e3 == pytest.approx(25.0)
+    f = np.linspace(3.0, 3.3, 300001)
+    assert np.abs(m.receptance(Model.VISCOUS, f, 1.0)).max() * 1e3 == pytest.approx(25.03, abs=0.005)
+    assert 2.5 / (0.1 * math.sqrt(1 - 0.05**2)) == pytest.approx(25.03, abs=0.005)
+    assert np.abs(m.receptance(Model.HYSTERETIC, f, 1.0)).max() == pytest.approx(0.025, rel=1e-6)
+    assert 4 * m.friction / math.pi == pytest.approx(0.4)
+    # the Zener element
+    k0, k1, tau = m.zener()
+    a = k1 / k0
+    assert a == pytest.approx(0.221, abs=0.0005) and a / (2 * math.sqrt(1 + a)) == pytest.approx(0.1)
+    assert 0.221 / (2 * math.sqrt(1.221)) == pytest.approx(0.1, abs=0.0005)  # η_max = k1/2√(k0(k0 + k1))
+    assert k1 / (2 * math.sqrt(k0 * (k0 + k1))) == pytest.approx(0.1)
+    assert k0 == pytest.approx(363.8, abs=0.05) and k1 == pytest.approx(80.4, abs=0.05)
+    assert 400 / (1 + 0.221 / 2.221) == pytest.approx(363.8, abs=0.05)
+    assert tau * 1e3 == pytest.approx(45.2, abs=0.05) and 1e3 / (20 * math.sqrt(1.221)) == pytest.approx(45.2, abs=0.05)
+    assert m.loss_factor(Model.ZENER, w)[0] == pytest.approx(0.1)
+    assert m.loss_factor(Model.ZENER, np.geomspace(0.1, 10, 2001) * wn).max() == pytest.approx(0.1, rel=1e-5)
+    # equivalent viscous damping: velocity-squared drag a ẋ|ẋ| takes (8/3) a Ω² X³ a cycle
+    drag, omega, X = 0.7, 13.0, 0.02
+    th = np.linspace(0, 2 * math.pi, 400001)
+    v = X * omega * np.cos(th)
+    loss = np.trapezoid(drag * v * np.abs(v) * v, th / omega)  # ∮F dx = ∫F ẋ dt
+    assert loss == pytest.approx(8 / 3 * drag * omega**2 * X**3, rel=1e-6)
+    assert loss / (math.pi * omega * X**2) == pytest.approx(8 * drag * omega * X / (3 * math.pi), rel=1e-6)
+
+
 def test_isolation_trials():
     from vib_tutorial.core.isolation import Isolator, Mount, deflection_for
 
