@@ -248,6 +248,34 @@ REFERENCES = (
         "J. E. Brock, A note on the damped vibration absorber, <i>Journal of Applied Mechanics</i> 13, A-284, 1946",
         "",
     ),
+    Reference(
+        "dunkerley",
+        "Dunkerley 1894",
+        "S. Dunkerley, On the whirling and vibration of shafts, <i>Philosophical Transactions of the Royal Society "
+        "A</i> 185, 279–360, 1894",
+        "",
+    ),
+    Reference(
+        "holzer",
+        "Holzer 1921",
+        "H. Holzer, <i>Die Berechnung der Drehschwingungen und ihre Anwendung im Maschinenbau</i>, Springer, Berlin, "
+        "1921",
+        "",
+    ),
+    Reference(
+        "poincare",
+        "Poincaré 1890",
+        "H. Poincaré, Sur les équations aux dérivées partielles de la physique mathématique, <i>American Journal "
+        "of Mathematics</i> 12, 211–294, 1890",
+        "",
+    ),
+    Reference(
+        "wilson-ritz",
+        "Wilson, Yuan and Dickens 1982",
+        "E. L. Wilson, M.-W. Yuan and J. M. Dickens, Dynamic analysis by direct superposition of Ritz vectors, "
+        "<i>Earthquake Engineering and Structural Dynamics</i> 10, 813–821, 1982",
+        "",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

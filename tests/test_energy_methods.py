@@ -56,7 +56,7 @@ def test_holzer_finds_the_natural_frequencies(system):
     f = w / (2 * np.pi)
     assert holzer_roots(system, 1.1 * f[-1], 20000) == pytest.approx(f, rel=1e-7)
     M, _, K = system.matrices()
-    for omega in (0.3 * w[0], 0.5 * (w[0] + w[-1]), 1.2 * w[-1]):  # −det(K − ω²M) / (k₂ … k_N)
+    for omega in (0.3 * w[0], 0.5 * (w[0] + w[-1]), 1.2 * w[-1]):  # det(K − ω²M) / (k₂ … k_N)
         det = np.linalg.det(K - omega**2 * M)
         assert holzer_residual(system, np.array([omega]))[0] == pytest.approx(
             det / np.prod(system.stiffness[1:]), rel=1e-8
