@@ -586,6 +586,31 @@ REFERENCES = (
         "J. Schijve, <i>Fatigue of Structures and Materials</i>, 2nd edition, Springer, 2009",
         "the materials side: crack initiation and growth, notches, mean stress and what the rules leave out",
     ),
+    Reference(
+        "iso8608",
+        "ISO 8608:2016",
+        "ISO 8608:2016, <i>Mechanical vibration: Road surface profiles: Reporting of measured data</i>, ISO, 2016",
+        "",
+    ),
+    Reference(
+        "iso2631",
+        "ISO 2631-1:1997",
+        "ISO 2631-1:1997, <i>Mechanical vibration and shock: Evaluation of human exposure to whole-body vibration, "
+        "Part 1: General requirements</i>, ISO, 1997",
+        "",
+    ),
+    Reference(
+        "griffin",
+        "Griffin 1990",
+        "M. J. Griffin, <i>Handbook of Human Vibration</i>, Academic Press, 1990",
+        "",
+    ),
+    Reference(
+        "wong-vehicles",
+        "Wong 2022",
+        "J. Y. Wong, <i>Theory of Ground Vehicles</i>, 5th edition, Wiley, 2022",
+        "ride and handling from the tyre up: road spectra, quarter- and half-car models, suspension design",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
