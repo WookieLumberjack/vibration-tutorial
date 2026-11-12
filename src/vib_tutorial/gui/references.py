@@ -330,6 +330,45 @@ REFERENCES = (
         "S. Adhikari, <i>Structural Dynamic Analysis with Generalized Damping Models: Analysis</i>, Wiley-ISTE, 2013",
         "non-proportional damping and complex modes in depth: their perturbation forms, state space and beyond",
     ),
+    Reference(
+        "dalembert",
+        "d'Alembert 1747",
+        "J. le R. d'Alembert, Recherches sur la courbe que forme une corde tenduë mise en vibration, <i>Histoire de "
+        "l'Académie royale des sciences et belles lettres de Berlin</i> 3, 214–219, 1747 (published 1749)",
+        "",
+    ),
+    Reference(
+        "euler-1744",
+        "Euler 1744",
+        "L. Euler, De curvis elasticis, Additamentum I to <i>Methodus inveniendi lineas curvas maximi minimive "
+        "proprietate gaudentes</i>, Lausanne and Geneva, 1744",
+        "",
+    ),
+    Reference(
+        "brillouin",
+        "Brillouin 1946",
+        "L. Brillouin, <i>Wave Propagation in Periodic Structures</i>, McGraw-Hill, 1946 (2nd edition, Dover, 1953)",
+        "",
+    ),
+    Reference(
+        "archer",
+        "Archer 1963",
+        "J. S. Archer, Consistent mass matrix for distributed mass systems, <i>Journal of the Structural Division "
+        "(ASCE)</i> 89, 161–178, 1963",
+        "",
+    ),
+    Reference(
+        "graff",
+        "Graff 1975",
+        "K. F. Graff, <i>Wave Motion in Elastic Solids</i>, 1975 (Dover reprint, 1991)",
+        "waves in strings, bars, beams and plates: reflection, impedance and dispersion, worked in full",
+    ),
+    Reference(
+        "rao-continuous",
+        "Rao 2019",
+        "S. S. Rao, <i>Vibration of Continuous Systems</i>, 2nd edition, Wiley, 2019",
+        "the modes of strings, bars, beams and plates, with their end conditions, and their finite elements",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

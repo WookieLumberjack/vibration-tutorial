@@ -480,7 +480,7 @@ PRESETS = (
         "Steel bar, fixed–free",
         Continuum(Kind.BAR, 1.0, End.FIXED, End.FREE, modulus=210e9, density=7850.0, width=0.02, depth=0.02),
         10,
-        "A 1 m steel bar held at one end, rung lengthwise: c = 5172 m/s, so a quarter wavelength fits at "
+        "A 1 m steel bar held at one end, rung lengthwise: <m>c</m> = 5172 m/s, so a quarter wavelength fits at "
         "1293 Hz and the modes go 1 : 3 : 5. Ten elements: lumped is low and consistent high by the same, "
         "and their average (mixed) far closer than either.",
     ),
@@ -489,8 +489,8 @@ PRESETS = (
         Continuum(Kind.BEAM, 0.3, End.CLAMPED, End.FREE, modulus=210e9, density=7850.0, width=0.025, depth=0.001),
         8,
         "300 mm of a 1 mm steel ruler held over a desk's edge: 9.28 Hz, then 58.2 and 163 Hz, not "
-        "whole multiples (a beam's waves are dispersive, ω ∝ κ²). Consistent Hermite beams converge as "
-        "N⁻⁴, lumped masses only as N⁻².",
+        "whole multiples (a beam's waves are dispersive, <m>ω ∝ κ<sup>2</sup></m>). Consistent Hermite beams "
+        "converge as <m>N<sup>−4</sup></m>, lumped masses only as <m>N<sup>−2</sup></m>.",
     ),
     Preset(
         "Vibraphone bar, free–free",

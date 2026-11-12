@@ -3646,6 +3646,7 @@ def test_continuum_page(app):
     from PySide6.QtCore import QPointF
 
     from vib_tutorial.core.continuum import PRESETS, End, Kind, Scheme
+    from vib_tutorial.gui import maths
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
@@ -3682,7 +3683,7 @@ def test_continuum_page(app):
     for preset in (*PRESETS[1:], PRESETS[0]):
         p.preset.setCurrentText(preset.name)
         assert p.continuum == preset.continuum and p.elements.value() == preset.elements
-        assert p.preset_note.text() == preset.note and p.mode.value() == 1
+        assert p.preset_note.text() == maths.markup(preset.note) and p.mode.value() == 1
 
     p.kind.setCurrentText("Bar")
     assert p.preset.currentText() == "Custom" and p.continuum.kind is Kind.BAR

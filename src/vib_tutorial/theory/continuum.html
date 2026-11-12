@@ -1,76 +1,140 @@
-
 <before>
 <a href="page:sim_page#undamped-normal-modes-real">Undamped normal modes</a>
+<a href="page:sim_page#uniform-chain">A uniform chain's modes</a>
 <a href="page:sim_page#rayleigh-quotient">Estimating a frequency from a guessed shape</a>
 </before>
-<h3>From a chain to a continuum</h3>
-<p>Cut a string, a bar or a beam into N equal elements of length h and it becomes a chain of masses and
-springs, with N or so modes where the continuum has infinitely many. How good are they? A string becomes a
-string of beads and a bar becomes the first page's chain (k = EA/h, m = ρAh), and the clearest way to compare
-them with the continuum is through the waves each can carry.</p>
+<h3><a name="from-a-chain"></a>From a chain to a continuum</h3>
+<p>Cut a string, a bar or a beam of length <m>L</m> into <m>N</m> equal elements of length <m>h = L/N</m> and it
+becomes a chain of masses and springs, with about <m>N</m> modes where the continuum has infinitely many. A
+string under tension <m>T</m>, with mass <m>μ</m> per length, becomes a string of beads: masses
+<m>μh</m> on massless pieces of string, each pulling sideways like a spring of <m>T/h</m>. A bar (Young's modulus
+<m>E</m>, section <m>A</m>, density <m>ρ</m>) becomes the first page's chain, <m>k = EA/h</m> and
+<m>m = ρAh</m>. How good are their modes? The clearest way to compare them with the continuum is through the
+waves each can carry.</p>
+<table width="100%"><tr><td align="center"><img src="fig:beads" width="340" height="150"></td></tr></table>
 
 <h3><a name="continuum-waves"></a>The continuum's waves</h3>
-<p>A string under tension T (mass μ per length) and a bar (EA, ρA) obey one equation, the wave equation:</p>
-<p align="center">μ w<sub>tt</sub> = T w<sub>xx</sub>,&nbsp;&nbsp; ρA u<sub>tt</sub> = EA u<sub>xx</sub>.</p>
-<p>A wave e<sup>i(κx − ωt)</sup> solves it when ω = cκ, with c = √(T/μ) or √(E/ρ): every wavelength travels at
-the same speed (the medium is <b>non-dispersive</b>), so a pulse keeps its shape. A beam's bending,
-ρA w<sub>tt</sub> = −EI w<sub>xxxx</sub>, gives ω = aκ² with a = √(EI/ρA): short waves outrun long ones
-(<b>dispersive</b>), and a pulse spreads into ripples.</p>
+<p>A short piece <m>dx</m> of string, deflected <m>w(x, t)</m>, is pulled by the tension at each end along the
+string's slope. The sideways force is <m>T</m> times the slope at one end minus at the other,
+<m>T w<sub>xx</sub> dx</m> (the subscripts are derivatives), and it accelerates the piece's mass
+<m>μ dx</m>. A bar's piece, moving <m>u(x, t)</m> along its length, is pushed by the stress <m>Eu<sub>x</sub></m>
+on its ends the same way. Both give the <b>wave equation</b> <cite>dalembert</cite>:</p>
+<eq>\mu\,w_{tt} = T\,w_{xx}, \qquad \rho A\,u_{tt} = EA\,u_{xx}</eq>
+<p>A wave <m>e<sup>i(κx − ωt)</sup></m> of wavenumber <m>κ = 2π/λ</m> solves it when <m>ω = cκ</m>, with</p>
+<eq>c = \sqrt{T/\mu} \quad\text{or}\quad c = \sqrt{E/\rho}</eq>
+<p>Every wavelength travels at the same speed: the medium is <b>non-dispersive</b>, so a pulse keeps its shape.
+D'Alembert's solution says so directly: any <m>w = r(x − ct) + l(x + ct)</m> solves it, a shape running right
+and another running left, unchanged.</p>
+<p>A beam's bending <cite>euler-1744</cite> is resisted by its stiffness <m>EI</m> (<m>I</m> the section's second
+moment of area), through the fourth derivative:</p>
+<eq>\rho A\,w_{tt} = -EI\,w_{xxxx}, \qquad \omega = a\kappa^2, \quad a = \sqrt{EI/\rho A}</eq>
+<p>Short waves outrun long ones (the beam is <b>dispersive</b>), and a pulse spreads into ripples.</p>
 <p>A mode is a standing wave that fits the ends. Fixed at both ends, a whole number of half wavelengths fits:
-κ<sub>n</sub> = nπ/L and f<sub>n</sub> = n c / 2L, every overtone a whole multiple (a guitar string). Fixed at
-one end and free at the other, an odd number of quarters: 1 : 3 : 5. A beam's ends give a transcendental
-equation, cos βL cosh βL = −1 for a cantilever, so its overtones are no multiples at all (1 : 6.27 : 17.5).</p>
+<m>κ<sub>n</sub> = nπ/L</m> and <m>f<sub>n</sub> = nc/2L</m>, every overtone a whole multiple (a guitar
+string). Fixed at one end and free at the other, an odd number of quarters: <m>f<sub>n</sub> = (2n −
+1)c/4L</m>, 1 : 3 : 5. A beam's ends give a transcendental equation for <m>β = κ</m>, for a cantilever</p>
+<eq>\cos\beta L\,\cosh\beta L = -1</eq>
+<p>whose roots are <m>β<sub>n</sub>L</m> = 1.875, 4.694, 7.855, …, and mode <m>n</m> is at <m>aβ<sub>n</sub><sup>2</sup></m> rad/s, so its overtones are no multiples at all: 1 : 6.27 :
+17.5.</p>
 
 <h3><a name="dispersion"></a>The chain's waves</h3>
-<p>On an endless chain of masses m = μh joined by springs k = T/h, try the same wave sampled at the nodes,
-x<sub>j</sub> = e<sup>i(κjh − ωt)</sup>. One mass's equation gives</p>
-<p align="center">ω = (2c/h) sin(κh/2).</p>
-<p>For long waves (κh ≪ 1) the sine is its argument and ω = cκ: the chain is the continuum. Shorter waves go
-slower, and at κh = π, two elements a wavelength, the curve tops out at 2c/h: the chain's <b>cut-off</b>.
-Nothing faster can travel on it, and its group velocity dω/dκ = c cos(κh/2), the speed a pulse's energy
-travels at, falls to zero there. A wave beyond κ = π/h looks, at the nodes, exactly like a longer one
+<p>On an endless chain of masses <m>m = μh</m> joined by springs <m>k = T/h</m>, mass <m>j</m> obeys</p>
+<eq>m\,\ddot x_j = k\,(x_{j+1} - 2x_j + x_{j-1})</eq>
+<p>Try the continuum's wave sampled at the masses, <m>x<sub>j</sub> = e<sup>i(κjh − ωt)</sup></m>. The
+neighbours are the same wave a step <m>h</m> along, so the bracket is <m>(2 cos κh − 2)x<sub>j</sub> =
+−4 sin<sup>2</sup>(κh/2) x<sub>j</sub></m>, and with <m>k/m = c<sup>2</sup>/h<sup>2</sup></m>
+<cite>brillouin</cite>,</p>
+<eq>\omega = \frac{2c}{h}\,\sin\frac{\kappa h}{2}</eq>
+<p>For long waves (<m>κh ≪ 1</m>) the sine is its argument and <m>ω = cκ</m>: the chain is the continuum.
+Shorter waves go slower, and at <m>κh = π</m>, two elements a wavelength, the curve tops out at <m>2c/h</m>: the
+chain's <b>cut-off</b>. Nothing faster can travel on it, and its <b>group velocity</b>, the speed a pulse's
+energy travels at,</p>
+<eq>c_g = \frac{\mathrm{d}\omega}{\mathrm{d}\kappa} = c\,\cos\frac{\kappa h}{2}</eq>
+<p>falls to zero there. A wave beyond <m>κ = π/h</m> looks, at the masses, exactly like a longer one
 (aliasing): the chain can't tell them apart.</p>
 <p>A chain with ends has the same modes as the continuum in shape: the sampled standing waves, at the same
-κ<sub>n</sub>. Its frequencies are the dispersion curve's at those κ<sub>n</sub>, so the low modes come out
-nearly right, and the high ones, crowding towards κ = π/h, far too low: the lumped string's error is
-−(κh)²/24 to begin with, and −36 % at the cut-off.</p>
+<m>κ<sub>n</sub></m>. Its frequencies are the dispersion curve's at those <m>κ<sub>n</sub></m>, so the low modes
+come out nearly right, and the high ones, crowding towards <m>κ = π/h</m>, far too low. Expanding the sine,
+the lumped string's error is</p>
+<eq>\frac{\sin(\kappa h/2)}{\kappa h/2} - 1 \approx -\frac{(\kappa h)^2}{24}</eq>
+<p>to begin with, and −36 % at the cut-off (<m>2/π − 1</m>).</p>
 
 <h3><a name="mass-schemes"></a>Lumped and consistent masses</h3>
 <p>Lumping is one way to share an element's mass out: half to each end. The finite element method's
-<b>consistent</b> mass takes it from the same straight-line shape functions as the stiffness, ρAh/6 [2 1; 1 2]:
-the mesh is then a Rayleigh–Ritz approximation, and every frequency is an upper bound. Its dispersion is</p>
-<p align="center">ω² = (c/h)² · 2(1 − cos κh) / (1 − (1 − cos κh)/3),</p>
-<p>which is high by (κh)²/24 for long waves: the same as lumping's error, the other way. Their average, the
-<b>mixed</b> mass, cancels it, and its error goes as (κh)⁴. Halve the elements' length and the lumped or
-consistent error falls 4 times (N<sup>−2</sup>), the mixed 16 times (N<sup>−4</sup>): the <i>Errors</i>
-tab's convergence plot shows the slopes.</p>
-<p>A beam's elements are cubics in its deflection, with a deflection and a slope at each node. Its consistent
-mass is far better than its lumped one (N<sup>−4</sup> against N<sup>−2</sup>), and here averaging only
-halves the lumped error. With two unknowns a node the endless mesh has two waves for each κ: the bending wave,
-and a second branch far above it in which the slopes swing against the deflections, which the continuum
-doesn't have. Lumped, the slopes carry no mass, and are condensed out exactly.</p>
+<b>consistent</b> mass <cite>archer</cite> takes it from the same straight-line shape functions as the stiffness,
+<m>ψ<sub>1</sub> = 1 − ξ</m> and <m>ψ<sub>2</sub> = ξ</m>, <m>ξ</m> the fraction of the way along it: each
+entry is <m>ρAh</m> times the integral over <m>ξ</m> of two of them multiplied (<m>∫ψ<sub>1</sub><sup>2</sup>dξ</m> =
+1/3, <m>∫ψ<sub>1</sub>ψ<sub>2</sub>dξ</m> = 1/6):</p>
+<eq>M_e = \frac{\rho A h}{6}\begin{bmatrix} 2 & 1 \\ 1 & 2 \end{bmatrix}, \qquad K_e = \frac{EA}{h}\begin{bmatrix} 1 & -1 \\ -1 & 1 \end{bmatrix}</eq>
+<p>The mesh is then a Rayleigh–Ritz approximation <cite>ritz</cite> (its shapes the straight-line pieces), and every
+frequency is an upper bound. Each mass now feels its neighbours' accelerations too, and the same sampled wave
+gives</p>
+<eq>\omega^2 = \frac{c^2}{h^2}\,\frac{2(1 - \cos\kappa h)}{1 - (1 - \cos\kappa h)/3}</eq>
+<p>which is high by <m>(κh)<sup>2</sup>/24</m> for long waves: the same as lumping's error, the other way. Their
+average, the <b>mixed</b> mass, cancels it, and its error goes as <m>(κh)<sup>4</sup></m>. A mode's
+<m>κh = nπ/N</m>, so halving the elements' length cuts the lumped or consistent error 4 times
+(<m>N<sup>−2</sup></m>) and the mixed 16 times (<m>N<sup>−4</sup></m>): the <i>Errors</i> tab's convergence plot
+shows the slopes, <m>p</m> = 2 or 4.</p>
+<p>A beam's elements are cubics in its deflection (Hermite's), with a deflection and a slope at each node. Its
+consistent mass is far better than its lumped one (<m>N<sup>−4</sup></m> against <m>N<sup>−2</sup></m>), and here
+averaging only halves the lumped error. With two unknowns a node, the endless mesh has two waves for each
+<m>κ</m>: the bending wave, and a second branch far above it in which the slopes swing against the deflections,
+which the continuum doesn't have. Lumped, the slopes carry no mass, and are condensed out exactly.</p>
 
 <h3><a name="reflections"></a>Waves and reflections</h3>
 <p>The <i>Waves</i> tab runs a pulse along the medium and the mesh side by side. On a string or bar the
-continuum's pulse keeps its shape, u = r(x − ct) + l(x + ct), and comes back from a fixed end upside down
-(the end must stay still, so the reflection cancels it there) and from a free end upright (doubling there).
-On the mesh the pulse is made of waves the mesh carries at their own speeds: lumped, its short waves go
-slow, and the pulse leaves ripples behind it; consistent, they go fast and the ripples lead. Nothing
-shorter than two elements travels at all. Few elements across the pulse and it falls apart.</p>
-<p>What a wave meets reflects some of it, by the impedance Z = √(Tμ) (string) or ρcA (bar), the force a
-wave needs per unit of velocity. A <b>dashpot</b> of c<sub>d</sub> at an end returns (Z − c<sub>d</sub>)/(Z +
-c<sub>d</sub>) of the wave: c<sub>d</sub> = Z is a <b>matched</b>, non-reflecting end, which absorbs the wave as
-an endless medium would carry it off. A <b>step</b> from Z₁ to Z₂ returns (Z₁ − Z₂)/(Z₁ + Z₂), upside down
-into something heavier, and passes 2Z₁/(Z₁ + Z₂). The energy is shared R² : T²Z₂/Z₁.</p>
-<p>The mesh's impedance is the continuum's only for long waves: a dashpot matched to the continuum
-reflects the mesh's short ones. That is why an absorbing boundary on a model is never quite silent, and
-why the mesh's high modes, the short waves, are the ones not to trust.</p>
-<p>A beam's bending waves are dispersive on the continuum too, ω = aκ²: a bump released on it spreads
-into ripples, the short ones running ahead at twice the speed of waves twice as long.</p>
+continuum's pulse keeps its shape, and comes back from a fixed end upside down (the end must stay still, so
+the reflection cancels it there) and from a free end upright (doubling there). On the mesh the pulse is made
+of waves the mesh carries at their own speeds: lumped, its short waves go slow, and the pulse leaves ripples
+behind it; consistent, they go fast and the ripples lead. Nothing shorter than two elements travels at all.
+With few elements across the pulse, it falls apart.</p>
+<p>What a wave meets reflects some of it, set by the <b>impedance</b> <m>Z</m>, the force a wave needs per unit
+of velocity. For a wave <m>r(x − ct)</m> on a string the sideways force is <m>−Tw<sub>x</sub> = −Tr′</m> and
+the velocity <m>−cr′</m>, so</p>
+<eq>Z = T/c = \sqrt{T\mu} \quad\text{(string)}, \qquad Z = \rho c A \quad\text{(bar)}</eq>
+<p>A <b>dashpot</b> <m>c<sub>d</sub></m> on the end at <m>x = L</m> must take the string's force,
+<m>−Tw<sub>x</sub> = c<sub>d</sub>w<sub>t</sub></m>. With an incoming <m>r</m> and an outgoing <m>l = Rr</m> there,
+the incoming wave pushes with <m>Z</m> times its velocity and the outgoing with <m>−Z</m> times its own, so
+<m>Z(1 − R) = c<sub>d</sub>(1 + R)</m>:</p>
+<eq>R = \frac{Z - c_d}{Z + c_d}</eq>
+<p><m>c<sub>d</sub> = Z</m> is a <b>matched</b>, non-reflecting end, which absorbs the wave as an endless medium
+would carry it off; <m>c<sub>d</sub> → ∞</m> is a fixed end (<m>R = −1</m>), <m>c<sub>d</sub> = 0</m> a free
+one (<m>R = 1</m>). A <b>step</b> from <m>Z<sub>1</sub></m> to <m>Z<sub>2</sub></m> is the same, with the second
+medium as the dashpot. Its deflection and force must match across the joint, and that gives</p>
+<eq>R = \frac{Z_1 - Z_2}{Z_1 + Z_2}, \qquad \tau = \frac{2Z_1}{Z_1 + Z_2}</eq>
+<p>upside down into something heavier. The energy is shared <m>R<sup>2</sup> : τ<sup>2</sup>Z<sub>2</sub>/Z<sub>1</sub></m>,
+which add to 1.</p>
+<table width="100%"><tr><td align="center"><img src="fig:step" width="340" height="150"></td></tr></table>
+<p>The mesh's impedance is the continuum's only for long waves: a dashpot matched to the continuum reflects the
+mesh's short ones. That is why an absorbing boundary on a model is never quite silent, and why the mesh's high
+modes, the short waves, are the ones not to trust.</p>
+<p>A beam's bending waves are dispersive on the continuum too, <m>ω = aκ<sup>2</sup></m>: a bump released on it
+spreads into ripples. Their group velocity <m>2aκ</m> is twice their phase speed <m>aκ</m>, so the short ones run
+ahead at twice the speed of waves twice as long.</p>
 
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the guitar's low E string: <m>L</m> = 0.648 m at <m>T</m> = 73 N, with <m>μ</m> = 6.40 g/m,
+cut into 12 lumped, consistent and mixed elements. Its wave speed and fundamental are</p>
+<eq>c = \sqrt{73/0.0064} = 106.8\ \text{m/s}, \qquad f_1 = \frac{c}{2L} = 82.41\ \text{Hz}</eq>
+<p>The elements are <m>h</m> = 0.054 m long, and mode <m>n</m> has <m>κ<sub>n</sub>h = nπ/12</m>. Mode 1,
+24 elements a wavelength, has <m>κh</m> = 0.262, so the lumped mesh is <m>(κh)<sup>2</sup>/24</m> = 0.29 % low:
+82.17 Hz, and the consistent 0.29 % high, 82.64 Hz. The mixed mesh's 82.41 Hz is out by 0.001 %. At mode 6,
+<m>κh = π/2</m> and four elements a wavelength, the lumped mode is</p>
+<eq>f_6 = 6f_1\,\frac{\sin(\pi/4)}{\pi/4} = 494.4 \times 0.900 = 445\ \text{Hz}</eq>
+<p>10.0 % low; the consistent is 10.3 % high and the mixed 1.4 % low. The 12 elements, held at both ends, have
+11 free nodes and so 11 modes. The lumped cut-off is <m>c/πh</m> = 629.5 Hz, and its mode 11 sits just below it at
+624.2 Hz, 31 % under the string's 906.5 Hz. The impedance is <m>√(Tμ)</m> = 0.684 N·s/m: the dashpot that would
+end this string without an echo.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Pick a preset at the top of the left column:</p>
+<!--TRIALS-->
 <takeaways>
 <li>A mesh is a low-pass filter on the continuum: it carries the long waves correctly, its short ones too slowly (lumped) or too fast (consistent), and nothing shorter than two elements.</li>
-<li>Its low modes are good and its top modes are artefacts of the mesh: ten elements a wavelength (κh ≈ 0.63) keeps a string's lumped error under 2 %, and the rule of thumb is 6 to 10.</li>
+<li>Its low modes are good and its top modes are artefacts of the mesh: ten elements a wavelength (<m>κh</m> ≈ 0.63) keeps a string's lumped error under 2 %, and the rule of thumb is 6 to 10.</li>
 <li>A consistent mass makes the mesh Rayleigh–Ritz (upper bounds); mixing lumped and consistent cancels the leading error.</li>
 <li>Waves reflect at every change of impedance; a matched dashpot absorbs them.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>mk_mesh g h_el section rho mu_line w_u x wavenumber lambda_wave dispersion_w beam_wave n_mode shape_fn p_order dalembert Z_imp refl_coef</notation>
+<reading>graff rao-continuous inman</reading>
