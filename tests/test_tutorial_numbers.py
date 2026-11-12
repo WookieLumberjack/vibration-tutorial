@@ -604,6 +604,70 @@ def test_quarter_car_worked_example():
     )
 
 
+def test_rigid_mounts_worked_example():
+    """The Theory's worked example: the default box on level mounts, its inertias and six pure modes from the
+    stiffnesses it quotes, and the unbalance at 1500 rpm reaching the floor through bounce alone; the focal tilt
+    from its quadratic."""
+    from vib_tutorial.core.rigid_mounts import Layout, modes, spectrum
+    from vib_tutorial.gui.rigid_mounts import MountTrial
+
+    t = MountTrial("", "")
+    assert (t.mass, t.length, t.width, t.height, t.span, t.track, t.drop, t.offset, t.tilt) == (
+        20,
+        0.6,
+        0.5,
+        0.6,
+        0.25,
+        0.12,
+        0,
+        0,
+        0,
+    )
+    assert (t.stiffness, t.shear_ratio, t.rpm, t.unbalance, t.at_x, t.at_z, t.loss) == (
+        50e3,
+        0.25,
+        1500,
+        0.002,
+        0.1,
+        0.1,
+        0.1,
+    )
+    L = t.layout
+    assert L.body.inertia == pytest.approx((1.0167, 1.2, 1.0167), abs=0.0001)
+    assert 20 * (0.25 + 0.36) / 12 == pytest.approx(1.017, abs=0.0005)
+    m = modes(L.body, L.mounts())
+    assert m.frequencies == pytest.approx([7.96, 7.96, 8.47, 9.79, 15.9, 16.2], abs=0.05)
+    assert np.allclose(np.sort(m.energy.max(axis=1)), 1.0)  # every mode pure
+    tp = 2 * math.pi
+    assert math.sqrt(4 * 12_500 / 20) / tp == pytest.approx(7.96, abs=0.005)
+    assert 4 * 50_000 * 0.12**2 == pytest.approx(2880) and math.sqrt(2880 / 1.017) / tp == pytest.approx(
+        8.47, abs=0.005
+    )
+    assert 4 * 12_500 * (0.25**2 + 0.12**2) == pytest.approx(3845) and math.sqrt(3845 / 1.017) / tp == pytest.approx(
+        9.79, abs=0.005
+    )
+    assert math.sqrt(4 * 50_000 / 20) / tp == pytest.approx(15.9, abs=0.05)
+    assert 4 * 50_000 * 0.25**2 == pytest.approx(12_500) and math.sqrt(12_500 / 1.2) / tp == pytest.approx(
+        16.2, abs=0.05
+    )
+    assert 0.002 * (tp * 25) ** 2 == pytest.approx(49.3, abs=0.05)
+    r = 25 / 15.9155
+    assert r == pytest.approx(1.571, abs=0.0005) and r * r == pytest.approx(2.467, abs=0.0005)
+    assert abs(1 + 0.1j) == pytest.approx(1.005, abs=0.0005)
+    tr = abs(1 + 0.1j) / abs(1 - r * r + 0.1j)
+    assert tr == pytest.approx(0.683, abs=0.0005) and 1.005 / abs(1 - 2.467 + 0.1j) == pytest.approx(0.683, abs=0.001)
+    assert abs(1 + 0.1j) / abs(1 - (25 / 7.9577) ** 2 + 0.1j) == pytest.approx(0.113, abs=0.0005)
+    assert 25 / 7.96 == pytest.approx(3.14, abs=0.005)
+    sp = spectrum(L, 0.1, t.drive, np.array([1500.0]))
+    assert sp.applied[0] == pytest.approx(49.3, abs=0.05) and sp.total[0] == pytest.approx(33.7, abs=0.05)
+    assert 0.683 * 49.3 == pytest.approx(33.7, abs=0.05)
+    # the focal tilt is the smaller root of d s² − t(1 − ρ)s + dρ = 0
+    lay = Layout(drop=0.08)
+    d, tt, rho = 0.08, lay.track, lay.shear_ratio
+    s = (tt * (1 - rho) - math.sqrt((tt * (1 - rho)) ** 2 - 4 * d * d * rho)) / (2 * d)
+    assert math.atan(s) == pytest.approx(lay.focus_tilt(), rel=1e-6)
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)
