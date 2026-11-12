@@ -14,10 +14,11 @@ The house style, so the figures read as one set:
   `svg` for the frame), in `colors.foreground` for what the figure is about, `colors.muted` for axes and
   guides, `colors.faint` for construction lines, and a `colors.mass[i]` or `colors.force` where the plots use
   that colour for the same thing (the mass, the force).
-- Label symbols with `text(..., italic=True)`: set in the notes' maths font (`maths.FONT`), as ``<m>`` is.
-  Words stay in the UI's sans-serif.
-- 13 px labels (`FONT`), lines 1.5 px (1 px for guides), no wider than 380 px: the Theory tab is ~407 px
-  with the window at 1280 px, less its table cell's padding (the rotor's older figures are wider, and scroll there).
+- Label symbols with `math_label` (`text(..., italic=True)`): set in the notes' maths font (`maths.FONT`), as
+  ``<m>`` is; ``k<sub>1</sub>``, ``Ω<sup>2</sup>`` and `UPRIGHT` work in it (drawn as separate texts, since Qt's SVG
+  ignores a tspan's shift: never ``baseline-shift`` or ``dy``). Words stay in the UI's sans-serif.
+- 13 px labels (`FONT`), lines 1.5 px (1 px for guides), about 360 px wide: the narrowest Theory tab is ~400 px
+  with the window at 1280 px, less its table cell's padding (`test_every_theory_tab_fits_a_1280_px_window`) (the rotor's older figures are wider, and scroll there).
 
 Working on it: `tests/test_figures.py` checks every ``fig:`` name in the notes has a figure, and draws each in
 every theme.
@@ -26,6 +27,7 @@ every theme.
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Callable
 
 from PySide6 import QtCore, QtGui, QtSvg
@@ -80,9 +82,50 @@ def render(svg_text: str) -> QtGui.QImage:
 
 
 # ------------------------------------------------------------------ primitives
+SCRIPT = re.compile(r"<(sub|sup)>(.*?)</\1>")
+SCRIPT_SIZE = 0.72  # a sub- or superscript's size over its text's
+SCRIPT_SHIFT = {"sub": 0.3, "sup": -0.42}  # and how far it drops (rises), over the text's size
+UPRIGHT = "<tspan font-style='normal'>{}</tspan>"  # a stretch upright inside a math_label (a digit, a unit)
+
+
 def text(x: float, y: float, s: str, color: str, anchor: str = "middle", italic: bool = False, size: int = FONT) -> str:
+    """Text at (x, y). `s` may hold ``<sub>…</sub>`` and ``<sup>…</sup>``: Qt's SVG renderer ignores a tspan's
+    shift (``baseline-shift``, ``dy``), so each piece is a text of its own, placed by the font's widths."""
+    if SCRIPT.search(s):
+        return _scripted(x, y, s, color, anchor, italic, size)
+    return _text(x, y, s, color, anchor, italic, size)
+
+
+def _text(x: float, y: float, s: str, color: str, anchor: str, italic: bool, size: float) -> str:
     style = f" font-style='italic' font-family='{MATH_FONT}'" if italic else ""
-    return f"<text x='{x:.1f}' y='{y:.1f}' fill='{color}' font-size='{size}' text-anchor='{anchor}'{style}>{s}</text>"
+    return f"<text x='{x:.1f}' y='{y:.1f}' fill='{color}' font-size='{size:g}' text-anchor='{anchor}'{style}>{s}</text>"
+
+
+def _width(s: str, italic: bool, size: float) -> float:
+    """How wide `s` sets (its markup dropped), in px."""
+    font = QtGui.QFont(MATH_FONT) if italic else QtGui.QFont()
+    font.setItalic(italic)
+    font.setPixelSize(max(1, round(size)))
+    return QtGui.QFontMetricsF(font).horizontalAdvance(re.sub(r"<[^>]+>", "", s))
+
+
+def _scripted(x: float, y: float, s: str, color: str, anchor: str, italic: bool, size: float) -> str:
+    pieces: list[tuple[str, float, float]] = []  # (text, size, baseline shift)
+    at = 0
+    for m in SCRIPT.finditer(s):
+        if m.start() > at:
+            pieces.append((s[at : m.start()], size, 0.0))
+        pieces.append((m.group(2), size * SCRIPT_SIZE, size * SCRIPT_SHIFT[m.group(1)]))
+        at = m.end()
+    if at < len(s):
+        pieces.append((s[at:], size, 0.0))
+    widths = [_width(t, italic, z) for t, z, _ in pieces]
+    start = x - {"start": 0.0, "middle": sum(widths) / 2, "end": sum(widths)}[anchor]
+    out = []
+    for (t, z, shift), w in zip(pieces, widths, strict=True):
+        out.append(_text(start, y + shift, t, color, "start", italic, z))
+        start += w
+    return "".join(out)
 
 
 def line(x1: float, y1: float, x2: float, y2: float, color: str, width: float = 1.5, dash: str = "") -> str:

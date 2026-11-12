@@ -10,8 +10,6 @@ import numpy as np
 from . import figures as fig
 from .style import colors
 
-SUB = "<tspan baseline-shift='sub' font-size='10'>{}</tspan>"
-
 
 def _axes(x0: float, x1: float, y0: float, color: str) -> str:
     """A time axis from x0 to x1 at height y0, with an arrowhead and t."""
@@ -86,8 +84,8 @@ def coefficient_svg() -> str:
     parts = [
         _projection(22.0, 1, "f × sin ω₀t"),
         _projection(212.0, 2, "f × sin 2ω₀t"),
-        fig.text(97.0, 160, "mean 2F/π: b" + SUB.format("1") + " = 4F/π", muted),
-        fig.text(287.0, 160, "mean 0: b" + SUB.format("2") + " = 0", muted),
+        fig.text(97.0, 160, "mean 2F/π: b<sub>1</sub> = 4F/π", muted),
+        fig.text(287.0, 160, "mean 0: b<sub>2</sub> = 0", muted),
     ]
     return fig.svg(380, 175, "".join(parts))
 
