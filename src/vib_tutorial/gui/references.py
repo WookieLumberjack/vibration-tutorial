@@ -83,6 +83,12 @@ REFERENCES = (
         "damping materials, their measurement and their use in structures",
     ),
     Reference(
+        "rivin",
+        "Rivin 2003",
+        "E. I. Rivin, <i>Passive Vibration Isolation</i>, ASME Press, 2003",
+        "isolation in practice: six degrees of freedom, two stages, nonlinear mounts, waves in isolators",
+    ),
+    Reference(
         "zener",
         "Zener 1948",
         "C. Zener, <i>Elasticity and Anelasticity of Metals</i>, University of Chicago Press, 1948",

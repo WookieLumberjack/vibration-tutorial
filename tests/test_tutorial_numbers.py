@@ -509,6 +509,64 @@ def test_isolation_trials():
     assert Isolator(block=300).at_speed()[0] == pytest.approx(27e-6, abs=0.5e-6)
 
 
+def test_isolation_worked_example():
+    """The figures Vibration isolation's worked example quotes, on the page's defaults, from the rounded
+    numbers it shows too; and the base-motion and hysteretic transmissibilities its notes give."""
+    from vib_tutorial.core.isolation import G, Isolator, start_up
+
+    iso = Isolator()
+    assert (iso.mass, iso.rpm, iso.unbalance, iso.deflection, iso.zeta) == (100.0, 1500.0, 0.01, 0.005, 0.05)
+    assert iso.stiffness == pytest.approx(196_100, abs=50) and 100 * 9.807 / 0.005 == pytest.approx(196_100, abs=50)
+    assert iso.natural_hz == pytest.approx(7.048, abs=0.0005) and 15.76 / math.sqrt(5) == pytest.approx(
+        7.048, abs=0.0005
+    )
+    assert 60 * iso.natural_hz == pytest.approx(423, abs=0.5) and iso.damping == pytest.approx(442.9, abs=0.05)
+    assert math.sqrt(G / 0.001) / (2 * math.pi) == pytest.approx(15.76, abs=0.005)
+    assert 2 * math.pi * 25 == pytest.approx(157.08, abs=0.005)
+    F = float(iso.force_at(25.0))
+    assert F == pytest.approx(246.7, abs=0.05) and 0.01 * 157.08**2 == pytest.approx(246.7, abs=0.05)
+    r = 25 / iso.natural_hz
+    assert r == pytest.approx(3.547, abs=0.0005) and 25 / 7.048 == pytest.approx(3.547, abs=0.0005)
+    assert 3.547**2 == pytest.approx(12.58, abs=0.005) and 0.1 * 3.547 == pytest.approx(0.3547)
+    assert math.sqrt(1 + 0.3547**2) == pytest.approx(1.0610, abs=0.00005)
+    assert math.hypot(11.58, 0.3547) == pytest.approx(11.585, abs=0.0005)
+    assert 1.0610 / 11.585 == pytest.approx(0.0916, abs=0.00005)
+    X, floor, T = iso.at_speed()
+    assert T == pytest.approx(0.0916, abs=0.00005) and floor == pytest.approx(22.6, abs=0.05)
+    assert 246.7 * 0.0916 == pytest.approx(22.6, abs=0.05)
+    assert 100 * (1 - T) == pytest.approx(90.8, abs=0.05) and 20 * math.log10(0.0916) == pytest.approx(-20.8, abs=0.05)
+    assert X * 1e6 == pytest.approx(109, abs=0.5) and 100 * 12.58 / 11.585 == pytest.approx(109, abs=0.5)
+    assert (iso.natural_hz / 25) ** 2 == pytest.approx(0.0795, abs=0.00005)
+    assert (7.048 / 25) ** 2 * 246.7 == pytest.approx(19.6, abs=0.05) and 19.6 / 0.1 == pytest.approx(196)
+    s = start_up(iso, 2.0, 1.0)
+    assert np.abs(s.floor[s.t <= 2.0]).max() == pytest.approx(111, abs=0.5)
+    # the static-deflection examples and 90 % isolation
+    for mm, hz in ((1, 15.8), (5, 7.0), (25, 3.2)):
+        assert Isolator(deflection=mm * 1e-3).natural_hz == pytest.approx(hz, abs=0.05)
+    assert 25 / math.sqrt(11) == pytest.approx(7.5, abs=0.05) and (15.76 / 7.54) ** 2 == pytest.approx(4.4, abs=0.05)
+    # base motion: M x'' + c x' + k x = k y + c y' passes |X|/|Y| = T
+    k, c, M = iso.stiffness, iso.damping, iso.mass
+    for f in (2.0, 7.0, 25.0, 80.0):
+        w = 2 * math.pi * f
+        assert abs((k + 1j * w * c) / (k - w * w * M + 1j * w * c)) == pytest.approx(
+            float(iso.transmissibility(np.array([f]))[0])
+        )
+    # far above resonance: √(1 + (2ζr)²)/r², 2ζ/r once 2ζr ≫ 1; a hysteretic mount keeps falling as 1/r²
+    for r in (30.0, 300.0):
+        f = r * iso.natural_hz
+        assert float(iso.transmissibility(np.array([f]))[0]) == pytest.approx(
+            math.sqrt(1 + (0.1 * r) ** 2) / r**2, rel=2e-3
+        )
+    assert math.sqrt(1 + 30.0**2) / 300**2 == pytest.approx(0.1 / 300, rel=1e-3)
+    eta, r = 0.1, 30.0
+    hyst = abs((1 + 1j * eta) / (1 - r * r + 1j * eta))
+    assert hyst == pytest.approx(math.sqrt(1 + eta**2) / math.hypot(1 - r * r, eta)) and hyst * r * r == pytest.approx(
+        1, abs=0.01
+    )
+    # the machine's motion tends to m_e e/M
+    assert Isolator(rpm=60 * 50 * iso.natural_hz).at_speed()[0] == pytest.approx(0.01 / 100, rel=1e-3)
+
+
 def test_signals_trials():
     from vib_tutorial.core.signals import (
         Kind,

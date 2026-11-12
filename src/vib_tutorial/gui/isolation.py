@@ -19,7 +19,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.isolation import G, Isolator, Mount, deflection_for, start_up
 from ..core.practice import Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
-from . import settle_plots
+from . import isolation_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -80,27 +80,27 @@ def isolator(t: IsolationTrial) -> Isolator:
 TRIALS = (
     IsolationTrial(
         "Soft mounts: isolation",
-        "A 100 kg machine with a 0.01 kg·m unbalance at 1500 rpm (25 Hz) on mounts that sag 5 mm: f<sub>n</sub> "
-        "= 15.76/√5 = 7.05 Hz, so the speed is 3.5 f<sub>n</sub>. The unbalance pulls with 247 N; only 23 N, 9 %, "
+        "A 100 kg machine with a 0.01 kg·m unbalance at 1500 rpm (25 Hz) on mounts that sag 5 mm: <m>f<sub>n</sub></m> "
+        "= <m>15.76/√5</m> = 7.05 Hz, so the speed is <m>3.5f<sub>n</sub></m>. The unbalance pulls with 247 N; only 23 N, 9 %, "
         "reaches the floor (−21 dB): 91 % isolation.",
     ),
     IsolationTrial(
         "Stiff mounts: amplification",
-        "The same machine on mounts that sag only 0.3 mm: f<sub>n</sub> = 28.8 Hz, just above the running "
-        "speed. The mounts now amplify: 3.9 times the unbalance's force reaches the floor. Below √2 f<sub>n</sub> "
+        "The same machine on mounts that sag only 0.3 mm: <m>f<sub>n</sub></m> = 28.8 Hz, just above the running "
+        "speed. The mounts now amplify: 3.9 times the unbalance's force reaches the floor. Below <m>√2 f<sub>n</sub></m> "
         "a mount can only make things worse.",
         deflection_mm=0.3,
     ),
     IsolationTrial(
         "Damping costs isolation",
-        "Back on the soft mounts, with ζ = 0.3 instead of 0.05. Above √2 f<sub>n</sub> the damper passes force "
+        "Back on the soft mounts, with <m>ζ</m> = 0.3 instead of 0.05. Above <m>√2 f<sub>n</sub></m> the damper passes force "
         "to the floor in proportion to the speed: 20 % now reaches it instead of 9 %. Damping only helps at "
         "resonance, which the machine passes through at start-up.",
         zeta=0.3,
     ),
     IsolationTrial(
         "Running up through resonance",
-        "A 2 s run up to 1500 rpm on the soft, lightly damped mounts. As the speed passes f<sub>n</sub> = 7 Hz "
+        "A 2 s run up to 1500 rpm on the soft, lightly damped mounts. As the speed passes <m>f<sub>n</sub></m> = 7 Hz "
         "(420 rpm) the machine and the floor force swell, then settle to the isolated running state. The "
         "unbalance's force grows as the speed squared, so the resonance is passed at a twelfth of the running "
         "force, which is what keeps it tolerable.",
@@ -109,9 +109,9 @@ TRIALS = (
     IsolationTrial(
         "An elastically supported damper",
         "A relaxation mount at 3000 rpm: the damper sits on a spring 3 times as stiff as the mount's, with "
-        "ζ = 0.3. At resonance it passes a little more than the plain mount of the same ζ (2.1 times against "
+        "<m>ζ</m> = 0.3. At resonance it passes a little more than the plain mount of the same <m>ζ</m> (2.1 times against "
         "2.0), but high above it the spring in series lets the damper float, and the transmissibility falls as "
-        "1/r² again, not 1/r: 7.0 % reaches the floor against the plain mount's 8.8 % (at 6000 rpm, 1.9 % "
+        "<m>1/r²</m> again, not <m>1/r</m>: 7.0 % reaches the floor against the plain mount's 8.8 % (at 6000 rpm, 1.9 % "
         "against 4.3 %).",
         zeta=0.3,
         mount=Mount.RELAXATION,
@@ -120,14 +120,14 @@ TRIALS = (
     IsolationTrial(
         "Two stages",
         "The machine on mounts on a 50 kg intermediate mass, itself on mounts sagging 5 mm under both. Two resonances, but "
-        "above them the transmissibility falls as 1/r⁴ (80 dB a decade) instead of 1/r²: 3.8 % reaches the "
+        "above them the transmissibility falls as <m>1/r⁴</m> (80 dB a decade) instead of <m>1/r²</m>: 3.8 % reaches the "
         "floor here (one stage: 9 %), and at 3000 rpm the two stages pass 0.2 % against one stage's 2.5 %.",
         mount=Mount.TWO_STAGE,
     ),
     IsolationTrial(
         "An inertia block",
         "The machine bolted to a 300 kg block, the mounts stiffened to sag the same 5 mm. The transmissibility "
-        "doesn't change (f<sub>n</sub> depends only on δ), nor does the force on the floor, but the machine "
+        "doesn't change (<m>f<sub>n</sub></m> depends only on <m>δ</m>), nor does the force on the floor, but the machine "
         "moves a quarter as much (±27 µm instead of ±109 µm): a block steadies the machine, it doesn't "
         "isolate better.",
         block=300.0,
@@ -418,7 +418,7 @@ CHART_TIP = (
     "this machine.</p>"
 )
 
-NOTES_HTML = load_notes("isolation", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("isolation", figures=isolation_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class IsolationPage(QtWidgets.QWidget):
