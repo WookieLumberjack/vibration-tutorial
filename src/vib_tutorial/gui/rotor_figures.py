@@ -111,11 +111,7 @@ def attitude_svg() -> str:
     ]
     for y, color, label, kind in legend:
         parts.append(fig.line(lx, y - 4, lx + 22, y - 4, color, 2.0, "4 3" if kind == "dash" else ""))
-        parts.append(
-            fig.text(
-                lx + 30, y, label.replace("radius c", "radius c<tspan font-size='10' dy='3'>r</tspan>"), fg, "start"
-            )
-        )
+        parts.append(fig.text(lx + 30, y, label.replace("radius c", "radius c<sub>r</sub>"), fg, "start"))
     parts += [
         fig.text(lx, oy + 18, f"here ε = {eps} and", muted, "start"),
         fig.text(lx, oy + 36, f"χ = {chi:.0f}° from the load line", muted, "start"),
@@ -159,7 +155,7 @@ def campbell_svg() -> str:
         curve(branch(-1.0), backward),
         fig.text(*at(2.55, branch(-1.0)(2.55) - 0.16), "backward", fg, "end"),
         fig.circle(*at(0, 1), 3, fill=muted),
-        fig.text(x0 - 8, at(0, 1)[1] + 4, "ω<tspan font-size='10' dy='3'>n</tspan>", fg, "end", italic=True),
+        fig.text(x0 - 8, at(0, 1)[1] + 4, "ω<sub>n</sub>", fg, "end", italic=True),
     ]
     s_f, s_b = 1.0 / math.sqrt(1.0 - p), 1.0 / math.sqrt(1.0 + p)
     fx, fy = at(s_f, s_f)
@@ -170,7 +166,7 @@ def campbell_svg() -> str:
         fig.text(fx + 12, fy + 24, "critical speed", fg, "start"),
         fig.circle(bx, by, 6, hot, colors.background, 2.0),
         fig.text(bx + 12, by + 30, "backward crossing", fg, "start"),
-        fig.text(fx, y0 + 18, "ω<tspan font-size='10' dy='3'>c</tspan>", fg, italic=True),
+        fig.text(fx, y0 + 18, "ω<sub>c</sub>", fg, italic=True),
     ]
     return fig.svg(540, 330, "".join(parts))
 

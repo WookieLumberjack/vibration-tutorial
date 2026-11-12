@@ -2499,6 +2499,35 @@ def test_window_fits_a_1280_px_screen(app, request):
     w.close()
 
 
+def test_every_theory_tab_fits_a_1280_px_window(app):
+    """Every page's notes, shown in its Theory tab with the window 1280×800, need no sideways scroll: their
+    figures and equations fit the narrowest tab (it differs by page, ~400 px)."""
+    from vib_tutorial.gui.main_window import MainWindow
+
+    w = MainWindow()
+    w._timer.stop()
+    w.resize(1280, 800)
+    w.show()
+    wide = []
+    for i in range(w.pages.count()):
+        w.pages.setCurrentIndex(i)  # builds each page
+        browser = w.show_theory()
+        assert browser is not None, w.pages.tabText(i)
+        for _ in range(3):
+            app.processEvents()
+        bar = browser.horizontalScrollBar()
+        if bar.maximum() > 0:
+            wide.append(f"{w.pages.tabText(i)}: {bar.maximum()} px too wide for its {browser.viewport().width()} px")
+    w.close()
+    still = [line for line in wide if line.split(":")[0] in TOO_WIDE_FOR_NOW]
+    assert len(still) == len(TOO_WIDE_FOR_NOW), f"{TOO_WIDE_FOR_NOW} fit now: take them off TOO_WIDE_FOR_NOW"
+    assert len(wide) == len(still), "\n".join(line for line in wide if line not in still)
+
+
+# The rotor's three older figures are 540–560 px: they're redrawn narrower in its page pass (#218).
+TOO_WIDE_FOR_NOW = {"Jeffcott rotor"}
+
+
 def _windows_font(app) -> None:
     """Measure in Segoe UI 9 pt, as on a Windows desktop, where the offscreen platform has no fonts.
 

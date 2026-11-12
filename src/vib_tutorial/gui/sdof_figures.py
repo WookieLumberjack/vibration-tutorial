@@ -41,9 +41,9 @@ def springs_svg() -> str:
     parts += [
         fig.ground(wall, 22, 118, muted),
         fig.spring(wall, block, 45, fg),
-        fig.math_label((wall + block) / 2, 31, "k<tspan baseline-shift='sub' font-size='10'>1</tspan>", fg),
+        fig.math_label((wall + block) / 2, 31, "k<sub>1</sub>", fg),
         fig.spring(wall, block, 95, fg),
-        fig.math_label((wall + block) / 2, 81, "k<tspan baseline-shift='sub' font-size='10'>2</tspan>", fg),
+        fig.math_label((wall + block) / 2, 81, "k<sub>2</sub>", fg),
         fig.rect(block, 30, 40, 80, mass, mass, 2.0, opacity=0.2),
         fig.text(95, 145, "in parallel: forces add", muted),
     ]
@@ -52,10 +52,10 @@ def springs_svg() -> str:
     parts += [
         fig.ground(wall, 22, 118, muted),
         fig.spring(wall, joint, 70, fg, coils=4),
-        fig.math_label((wall + joint) / 2, 56, "k<tspan baseline-shift='sub' font-size='10'>1</tspan>", fg),
+        fig.math_label((wall + joint) / 2, 56, "k<sub>1</sub>", fg),
         fig.circle(joint, 70, 2.5, fill=fg),
         fig.spring(joint, block, 70, fg, coils=4),
-        fig.math_label((joint + block) / 2, 56, "k<tspan baseline-shift='sub' font-size='10'>2</tspan>", fg),
+        fig.math_label((joint + block) / 2, 56, "k<sub>2</sub>", fg),
         fig.rect(block, 30, 40, 80, mass, mass, 2.0, opacity=0.2),
         fig.text(285, 145, "in series: stretches add", muted),
     ]
@@ -85,7 +85,7 @@ def unbalance_svg() -> str:
         fig.line(cx, cy, spot_x, spot_y, fg),
         fig.math_label(cx + 4, cy + 16, "e", fg, "start"),
         fig.circle(spot_x, spot_y, 6, fill=force),
-        fig.math_label(spot_x - 14, spot_y - 6, "m<tspan baseline-shift='sub' font-size='10'>e</tspan>", fg, "end"),
+        fig.math_label(spot_x - 14, spot_y - 6, "m<sub>e</sub>", fg, "end"),
         fig.arrow(
             spot_x + 8 * math.cos(math.radians(angle)),
             spot_y - 8 * math.sin(math.radians(angle)),
@@ -94,7 +94,7 @@ def unbalance_svg() -> str:
             force,
             2.0,
         ),
-        fig.math_label(out_x + 4, out_y + 2, "m<tspan baseline-shift='sub' font-size='10'>e</tspan>eΩ²", fg, "start"),
+        fig.math_label(out_x + 4, out_y + 2, "m<sub>e</sub>eΩ²", fg, "start"),
         fig.arc(cx, cy, radius + 10, 130, 210, fg, 1.5, arrow=True),
         fig.math_label(*fig.point(cx, cy, radius + 24, 170), "Ω", fg),
         # x: the machine's motion, up and down on its mount

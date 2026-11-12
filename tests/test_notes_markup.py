@@ -183,6 +183,7 @@ def test_figures_follow_the_theme(app):
             style.set_theme(theme)
             for name, build in figures.all_figures().items():
                 svg = build()
+                assert "baseline-shift" not in svg and " dy=" not in svg, f"{name}: Qt ignores a tspan's shift"
                 assert theme.background in svg and theme.foreground in svg
                 assert theme.mass[0] in svg or theme.force in svg, f"{name} draws its subject in the plots' colour"
                 image = browser.loadResource(QtGui.QTextDocument.ResourceType.ImageResource, QtCore.QUrl(name))

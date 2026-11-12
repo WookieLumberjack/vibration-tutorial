@@ -7,22 +7,7 @@ import math
 from . import figures as fig
 from .style import colors
 
-UPRIGHT = "<tspan font-style='normal'>{}</tspan>"
-
-
-def sub_label(x: float, y: float, base: str, sub: str, color: str, anchor: str = "middle", after: str = "") -> str:
-    """A symbol with a subscript (k_t, L_eq) and what follows it: Qt's SVG ignores a tspan's shift, so the
-    subscript is its own text, placed by the glyphs' estimated widths."""
-    size, small = fig.FONT + 2, fig.FONT - 2
-    widths = (0.55 * size * len(base), 0.5 * small * len(sub), 0.5 * size * len(after))
-    start = x - {"start": 0.0, "middle": sum(widths) / 2, "end": sum(widths)}[anchor]
-    parts = [
-        fig.math_label(start, y, base, color, "start"),
-        fig.math_label(start + widths[0], y + 4, sub, color, "start", small),
-    ]
-    if after:
-        parts.append(fig.math_label(start + widths[0] + widths[1], y, after, color, "start"))
-    return "".join(parts)
+EQ_LABEL = "L<sub>" + fig.UPRIGHT.format("eq") + "</sub>"  # the equivalent length: "eq" is a label, upright
 
 
 def ceiling(x1: float, x2: float, y: float, color: str) -> str:
@@ -102,7 +87,7 @@ def pendulum_svg() -> str:
         fig.circle(gx, gy, 3.5, fill=fg),
         fig.math_label(gx + 10, gy + 2, "G", fg, "start"),
         fig.line(ox, gy, gx, gy, muted, 1.0, "3 2"),
-        fig.math_label(ox - 6, gy + 4, "d " + UPRIGHT.format("sin") + " θ", fg, "end"),
+        fig.math_label(ox - 6, gy + 4, "d " + fig.UPRIGHT.format("sin") + " θ", fg, "end"),
         fig.arrow(gx, gy + 6, gx, gy + 50, force, 2.0),
         fig.math_label(gx - 8, gy + 44, "mg", fg, "end"),
         fig.text(285, 222, "a body on a pivot", muted),
@@ -121,7 +106,7 @@ def kinds_svg() -> str:
     parts += [
         ceiling(60, 140, top, muted),
         fig.line(cx, top, cx, cy, fg, 2.0),
-        sub_label(cx + 8, 70, "k", "t", fg, "start"),
+        fig.math_label(cx + 8, 70, "k<sub>t</sub>", fg, "start"),
         f"<ellipse cx='{cx:.1f}' cy='{cy:.1f}' rx='58' ry='14' stroke='{mass}' stroke-width='2' fill='{mass}' "
         "fill-opacity='0.2'/>",
         fig.line(cx, cy, cx + 58, cy, fg, 1.0, "4 3"),
@@ -144,7 +129,7 @@ def kinds_svg() -> str:
         fig.arc(px, py, 10, 100, 400, fg, 1.0),
         fig.arc(px, py, 16, 120, 380, fg, 1.0),
         pivot(px, py),
-        sub_label(px - 26, py - 14, "k", "t", fg, "end"),
+        fig.math_label(px - 26, py - 14, "k<sub>t</sub>", fg, "end"),
         fig.arc(px, py, 50, 90 - theta, 90, fg, 1.0),
         fig.math_label(*fig.point(px, py, 62, 90 - theta / 2), "θ", fg),
         fig.math_label((px + mx) / 2 + 10, (py + my) / 2 + 14, "L", fg, "start"),
@@ -179,11 +164,11 @@ def kater_svg() -> str:
         span(x - 34, p1, g, muted),
         fig.math_label(x - 42, (p1 + g) / 2 + 5, "d", fg, "end"),
         span(x - 34, g, p2, muted),
-        sub_label(x - 42, (g + p2) / 2 + 5, "k", "G", fg, "end", "²/d"),
+        fig.math_label(x - 42, (g + p2) / 2 + 5, "k<sub>G</sub>²/d", fg, "end"),
         fig.line(x + 12, p1, x + 52, p1, faint, 1.0),
         fig.line(x + 12, p2, x + 52, p2, faint, 1.0),
         span(x + 46, p1, p2, muted),
-        sub_label(x + 54, (p1 + p2) / 2 + 22, "L", "eq", fg, "start"),
+        fig.math_label(x + 54, (p1 + p2) / 2 + 22, EQ_LABEL, fg, "start"),
         fig.text(x, 192, "two pivots, one period", muted),
     ]
     # the simple pendulum with the same period
@@ -194,7 +179,7 @@ def kater_svg() -> str:
         pivot(sx, p1),
         fig.circle(sx, p2, 9, mass, mass),
         span(sx + 30, p1, p2, muted),
-        sub_label(sx + 38, (p1 + p2) / 2 + 5, "L", "eq", fg, "start"),
+        fig.math_label(sx + 38, (p1 + p2) / 2 + 5, EQ_LABEL, fg, "start"),
         fig.text(sx, 192, "the simple pendulum", muted),
     ]
     return fig.svg(380, 205, "".join(parts))
