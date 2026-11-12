@@ -344,6 +344,38 @@ SYMBOLS = (
         "isolation_page",
     ),
     Symbol(
+        "M_machine",
+        "M, m<sub>2</sub>",
+        "the mass on the mounts (a machine, with any block bolted to it); an intermediate mass between two stages",
+        "kg",
+        "isolation_page",
+    ),
+    Symbol(
+        "delta_sag",
+        "δ",
+        "a mount's static deflection under its load (δ is also the log decrement, above)",
+        "m",
+        "isolation_page",
+        "static-deflection",
+    ),
+    Symbol("y_floor", "y, Y", "the floor's (base's) motion; its amplitude", "m", "isolation_page", "transmissibility"),
+    Symbol(
+        "N_relax",
+        "N",
+        "a relaxation mount's series spring over its main spring, Nk (N is also a number of harmonics, above)",
+        "–",
+        "isolation_page",
+        "relaxation",
+    ),
+    Symbol(
+        "phi_turn",
+        "φ, Ω̇",
+        "the angle an unbalance has turned, ∫Ω dt; the rate its speed climbs (φ is also a phase, above)",
+        "rad, rad/s²",
+        "isolation_page",
+        "start-up",
+    ),
+    Symbol(
         "matrices", "M, C, K", "mass, damping and stiffness matrices: M ẍ + C ẋ + K x = f", "kg, N·s/m, N/m", "sim_page"
     ),
     Symbol("q", "q", "generalized (or modal) coordinates", "varies", "deriving_page"),

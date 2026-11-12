@@ -1,74 +1,135 @@
-
 <before>
 <a href="page:sdof_page#forced-response">Forced response</a>
 <a href="page:sdof_page#unbalance">A rotating unbalance</a>
 <a href="page:damping_page#viscoelastic">The Zener element</a>
 </before>
 <h3><a name="problem"></a>The problem</h3>
-<p>A machine that runs with a little unbalance shakes with the force m<sub>e</sub>eΩ². Bolted straight to the
-floor, all of it goes into the building; set on mounts, some of it is taken up by the machine's own motion. The
-same question arises the other way round: an instrument on a floor that shakes. Both are answered by one
-number, the <b>transmissibility</b>.</p>
+<p>A machine that runs with a little unbalance shakes with the force <m>m<sub>e</sub>eΩ²</m>. Bolted straight
+to the floor, all of it goes into the building; set on mounts, some of it is taken up by the machine's own
+motion. The same question arises the other way round: an instrument on a floor that shakes. Both are answered
+by one number, the <b>transmissibility</b>.</p>
 
 <h3><a name="transmissibility"></a>Transmissibility</h3>
-<p>The mount (k and c) pushes on the floor with kx + cẋ. For a machine of mass M on it, under F cos Ωt,</p>
-<p align="center">T = |F<sub>floor</sub>|/|F| = |k + iΩc| / |k − Ω²M + iΩc| = √(1 + (2ζr)²) / √((1 − r²)² + (2ζr)²),</p>
-<p>with r = Ω/ω<sub>n</sub>. It is exactly the same as the motion that reaches a mass on a moving floor, X/X<sub>g</sub>
-(the Simulation page's ground motion), so one curve serves for both. It is 1 at low speed (the mount passes the
-force on), peaks at resonance, and crosses 1 again at</p>
-<p align="center"><b>r = √2,</b> &nbsp; whatever the damping.</p>
-<p>Above √2 f<sub>n</sub> the mount isolates: the machine's inertia takes most of the force. Far above, T ≈ 1/r²
-(40 dB a decade). Below √2 f<sub>n</sub> it amplifies. So isolation needs a mount whose f<sub>n</sub> is well
-<i>below</i> the running speed: a soft one. The <b>isolation</b> is 1 − T, often quoted in dB, 20 log T.</p>
+<p>A machine of mass <m>M</m> sits on a mount of stiffness <m>k</m> and damping <m>c</m>. Under a force
+<m>F cos Ωt</m> it moves <m>X = F/(k − Ω²M + iΩc)</m>, and the mount pushes on the floor with
+<m>kx + cẋ</m>, <m>(k + iΩc)X</m>. Their ratio is</p>
+<eq>T = \frac{|F_{\mathrm{floor}}|}{|F|} = \frac{|k + i\Omega c|}{|k - \Omega^2 M + i\Omega c|}</eq>
+<eq>T = \frac{\sqrt{1 + (2\zeta r)^2}}{\sqrt{(1 - r^2)^2 + (2\zeta r)^2}}</eq>
+<p>with <m>r = Ω/ω<sub>n</sub></m> and <m>ω<sub>n</sub> = √(k/M)</m>. Now turn it round: the floor moves,
+<m>y = Y cos Ωt</m>, and the mount pushes the machine with <m>k(y − x) + c(ẏ − ẋ)</m>. Then
+<m>Mẍ + cẋ + kx = ky + cẏ</m>, and the motion that reaches the machine, <m>|X|/|Y|</m>, is the same
+<m>T</m> (the <a href="page:sim_page#sweeps-and-ground-motion">Simulation page</a>, later, drives its chain this way). So one curve serves for both, as the
+figure sets them side by side.</p>
+<table width="100%"><tr><td align="center"><img src="fig:two-ways" width="360" height="190"></td></tr></table>
+<p><m>T</m> is 1 at low speed (the mount passes the force on), peaks at resonance, and crosses 1 again where
+<m>(1 − r²)² = 1</m>:</p>
+<eq>r = \sqrt{2}, \quad\text{whatever the damping}</eq>
+<p>Above <m>√2 f<sub>n</sub></m> the mount isolates: the machine's inertia takes most of the force. Far above,
+<m>T ≈ 1/r²</m> (40 dB a decade). Below <m>√2 f<sub>n</sub></m> it amplifies. So isolation needs a mount
+whose <m>f<sub>n</sub></m> is well <i>below</i> the running speed: a soft one. The <b>isolation</b> is
+<m>1 − T</m>, often quoted in dB as <m>20 log T</m>.</p>
 
 <h3><a name="static-deflection"></a>Static deflection</h3>
-<p>A mount's stiffness under a machine of weight Mg is set by how far it sags, δ = Mg/k, and so</p>
-<p align="center">f<sub>n</sub> = (1/2π)√(g/δ) = 15.76/√δ<sub>mm</sub> Hz.</p>
+<p>A mount's stiffness under a machine of weight <m>Mg</m> is set by how far it sags,
+<m>δ = Mg/k</m>, and so</p>
+<eq>f_n = \frac{1}{2\pi}\sqrt{\frac{g}{\delta}} = \frac{15.76}{\sqrt{\delta_{\mathrm{mm}}}}\ \mathrm{Hz}</eq>
 <p>The mass has gone: isolation is a matter of sag. 1 mm gives 15.8 Hz, 5 mm 7 Hz, 25 mm 3.2 Hz. For 90 %
-isolation (T = 0.1) undamped mounts need r² = 1 + 1/T = 11, f<sub>n</sub> = f/3.3; at 1500 rpm that is 7.5 Hz,
-4.4 mm. The <i>Design chart</i> tab draws this for every speed. A very slow machine needs a very soft mount,
-which is why isolating low frequencies is hard.</p>
+isolation (<m>T</m> = 0.1) undamped mounts need <m>r² = 1 + 1/T</m> = 11, <m>f<sub>n</sub> = f/3.3</m>; at
+1500 rpm that is 7.5 Hz, 4.4 mm. The <i>Design chart</i> tab draws this for every speed. A very slow machine
+needs a very soft mount, which is why isolating low frequencies is hard.</p>
 
 <h3><a name="damping-trade-off"></a>The damping trade-off</h3>
-<p>Damping lowers the resonant peak, T ≈ 1/2ζ there, which matters while the machine runs up and down
-through it. But above √2 f<sub>n</sub> the damper passes force in proportion to speed, cΩX, and isolation gets
-<i>worse</i>: at high r, T ≈ 2ζ/r instead of 1/r². Mounts are a compromise: light damping, or damping that
-only works at resonance.</p>
+<p>Damping lowers the resonant peak, <m>T ≈ 1/2ζ</m> there, which matters while the machine runs up and down
+through it. But above <m>√2 f<sub>n</sub></m> the damper passes force in proportion to speed,
+<m>cΩX</m>, and isolation gets <i>worse</i>. Far above resonance</p>
+<eq>T \approx \frac{\sqrt{1 + (2\zeta r)^2}}{r^2}</eq>
+<p>which is still <m>1/r²</m> while <m>2ζr ≪ 1</m>, but turns to <m>2ζ/r</m>, 20 dB a decade, once
+<m>r ≫ 1/2ζ</m>: at <m>ζ</m> = 0.05 from about 10 <m>f<sub>n</sub></m> up, at <m>ζ</m> = 0.3 from
+2 <m>f<sub>n</sub></m>. Mounts are a compromise: light damping, or damping that only works at resonance.</p>
+<p>A rubber mount's loss is closer to the Damping models page's
+<a href="page:damping_page#hysteretic">hysteretic damping</a>, <m>k(1 + iη)</m>. Then
+<m>T = √(1 + η²)/√((1 − r²)² + η²)</m>: the same peak as <m>ζ = η/2</m>, but it keeps falling as
+<m>1/r²</m>, since <m>|1 + iη|</m> doesn't grow with frequency as <m>|k + iΩc|</m> does.</p>
 
 <h3><a name="relaxation"></a>The relaxation isolator</h3>
-<p>Put the damper in series with a spring N k (an <b>elastically supported damper</b>). Near resonance the
-spring is stiff compared with the damper and the damper works; at high frequency the damper hardly moves, so
-the mount is just k and Nk side by side and T falls as 1/r² again, not 2ζ/r. Near resonance it passes a little
-more than a plain mount of the same ζ; it pays off well above it. Its dynamic
-stiffness is that of the Damping models page's Zener element.</p>
+<p>Put the damper in series with a spring <m>Nk</m> (an <b>elastically supported damper</b>,
+<cite>harris</cite>), as the middle of the figure below. Near resonance the spring is stiff compared with
+the damper and the damper works; at high frequency the damper hardly moves, so the mount is just <m>k</m> and
+<m>Nk</m> side by side and <m>T</m> falls as <m>1/r²</m> again, not <m>2ζ/r</m>. Near resonance it passes a
+little more than a plain mount of the same <m>ζ</m>; it pays off well above it. Its dynamic stiffness is that
+of the Damping models page's Zener element, with <m>k<sub>0</sub> = k</m>, <m>k<sub>1</sub> = Nk</m> and
+<m>c<sub>1</sub> = c</m>.</p>
+<table width="100%"><tr><td align="center"><img src="fig:mounts" width="360" height="200"></td></tr></table>
 
 <h3><a name="two-stage"></a>Two stages</h3>
-<p>Mount the machine on an intermediate mass (a concrete block, a sub-frame), and mount that. There are two
-resonances, but above both each stage isolates on its own, and the transmissibility falls as 1/r⁴, 80 dB a
-decade. Ships' engines and sensitive instruments are mounted this way.</p>
+<p>Mount the machine on an intermediate mass <m>m<sub>2</sub></m> (a concrete block, a sub-frame), and mount
+that, as on the right of the figure. There are two resonances, but above both each stage isolates on its own,
+and the transmissibility falls as <m>1/r⁴</m>, 80 dB a decade. Ships' engines and sensitive instruments are
+mounted this way.</p>
 
 <h3><a name="inertia-block"></a>An inertia block</h3>
-<p>Bolting the machine to a heavy block and stiffening the mounts to keep the same sag leaves f<sub>n</sub>,
-and so T, unchanged. What it changes is the machine's own motion, m<sub>e</sub>e/M well above resonance: a
-heavier M moves less. A block steadies the machine and lowers its centre of gravity; it doesn't isolate
-better.</p>
+<p>Bolting the machine to a heavy block and stiffening the mounts to keep the same sag leaves
+<m>f<sub>n</sub></m>, and so <m>T</m>, unchanged. What it changes is the machine's own motion. Its amplitude
+is</p>
+<eq>|X| = \frac{m_e e}{M}\,\frac{r^2}{\sqrt{(1 - r^2)^2 + (2\zeta r)^2}}</eq>
+<p>which tends to <m>m<sub>e</sub>e/M</m> well above resonance: the machine and its unbalance turn about their
+common centre of mass, and a heavier <m>M</m> moves less. A block steadies the machine and lowers its centre
+of gravity; it doesn't isolate better.</p>
+
+<h3><a name="real-mounts"></a>Real mounts</h3>
+<p>The single mass on a massless spring is the place to start, and real installations depart from it in a few
+known ways (<cite>rivin</cite>):</p>
+<ul>
+<li><b>Rubber is stiffer moving than standing.</b> A rubber mount's dynamic stiffness is above the stiffness
+its sag gives, so its <m>f<sub>n</sub></m> is higher than <m>15.76/√δ<sub>mm</sub></m> says; designers use
+the maker's dynamic figures.</li>
+<li><b>The mount has mass too.</b> High enough, waves stand in the mount itself (a coil spring's surge, a
+rubber block's thickness modes), and <m>T</m> rises in peaks above the <m>1/r²</m> line.</li>
+<li><b>The floor isn't rigid.</b> A light or flexible floor has its own resonances; a mount isolates only if it
+is soft compared with the floor where it stands too.</li>
+<li><b>The machine rocks.</b> It sways, rocks and twists as well as bouncing: six modes, which the mounts
+couple unless they are placed (or tilted) about its centre of mass just so. That comes later, once the course
+has modes: see <a href="page:mounts_page#six-dof">Rigid body on mounts</a>.</li>
+</ul>
 
 <h3><a name="start-up"></a>Starting up</h3>
 <p>Running up to speed, the machine passes through the mounts' resonance. The unbalance's force there is
-smaller than at speed, (f<sub>n</sub>/f)² of it, and the faster the run up the less time the resonance has to build
-(the Single oscillator page's time constant): so lightly damped mounts are usually tolerable, and a slow
-run up or coast down through resonance is the hazard. The <i>Start-up</i> tab steps it exactly, the
-unbalance's force along the mount m<sub>e</sub>e(Ω² cos φ + Ω' sin φ) as the speed climbs.</p>
-<p>The machine here moves one way, up and down. On real mounts it also sways, rocks and twists: six modes, which
-the mounts couple unless they are placed (or tilted) about its centre of mass just so. That comes later, once
-the course has modes: see <a href="page:mounts_page#six-dof">Rigid body on mounts</a>.</p>
+smaller than at speed, <m>(f<sub>n</sub>/f)²</m> of it, and the faster the run up the less time the resonance
+has to build (the Single oscillator page's time constant): so lightly damped mounts are usually tolerable, and
+a slow run up or coast down through resonance is the hazard. The <i>Start-up</i> tab steps it exactly. The
+unbalance has turned through <m>φ = ∫Ω dt</m>, and its force along the mount is</p>
+<eq>f(t) = m_e e\,\bigl(\Omega^2\cos\varphi + \dot\Omega\sin\varphi\bigr)</eq>
+<p>as the speed climbs: the second part is the push that speeds the unbalance up.</p>
+
+<h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
+<p>The page opens on a 100 kg machine with an unbalance <m>m<sub>e</sub>e</m> = 0.01 kg·m, running at
+1500 rpm on mounts that sag <m>δ</m> = 5 mm, with <m>ζ</m> = 0.05.</p>
+<ol>
+<li><b>The mounts.</b> <m>k = Mg/δ</m> = 100 × 9.807/0.005 = 196,100 N/m, and
+<m>f<sub>n</sub> = 15.76/√5</m> = 7.048 Hz (423 rpm). <m>c = 2ζ√(kM)</m> = 442.9 N·s/m.</li>
+<li><b>The force.</b> 1500 rpm is 25 Hz, <m>Ω</m> = 157.08 rad/s, so the unbalance pulls with
+<m>m<sub>e</sub>eΩ²</m> = 0.01 × 157.08² = 246.7 N.</li>
+<li><b>The transmissibility.</b> <m>r</m> = 25/7.048 = 3.547, so <m>r²</m> = 12.58,
+<m>1 − r²</m> = −11.58 and <m>2ζr</m> = 0.3547. Then</li>
+</ol>
+<eq>T = \frac{\sqrt{1 + 0.3547^2}}{\sqrt{11.58^2 + 0.3547^2}} = \frac{1.0610}{11.585} = 0.0916</eq>
+<p>and the floor gets 246.7 × 0.0916 = 22.6 N: isolation 90.8 %, <m>20 log 0.0916</m> = −20.8 dB. The machine
+moves <m>(m<sub>e</sub>e/M) r²/11.585</m> = 100 µm × 12.58/11.585 = 109 µm. Running up in 2 s, it passes
+<m>f<sub>n</sub></m> where the unbalance makes only <m>(7.048/25)²</m> = 0.0795 of its running force,
+19.6 N; held there, <m>T ≈ 1/2ζ</m> = 10 would pass 196 N, but the run up is through before that can build,
+and the floor's force peaks at 111 N. These are the readouts under the mounts' controls, the transmissibility
+and the start-up.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the machine, the mounts and the plots (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>Transmissibility is the same for force into the floor and motion from it; it falls below 1 only above √2 f<sub>n</sub>, whatever the damping.</li>
-<li>A mount's f<sub>n</sub> is set by its static deflection alone: 15.76/√δ<sub>mm</sub> Hz. Isolation needs a soft mount.</li>
-<li>Damping lowers the resonant peak but worsens isolation above √2 f<sub>n</sub>; a relaxation mount gets the first without most of the second.</li>
-<li>Two stages fall as 1/r⁴; an inertia block steadies the machine but doesn't change the transmissibility.</li>
+<li>Transmissibility is the same for force into the floor and motion from it; it falls below 1 only above <m>√2 f<sub>n</sub></m>, whatever the damping.</li>
+<li>A mount's <m>f<sub>n</sub></m> is set by its static deflection alone: <m>15.76/√δ<sub>mm</sub></m> Hz. Isolation needs a soft mount.</li>
+<li>Viscous damping lowers the resonant peak but worsens isolation far above it; a relaxation mount, or a rubber's hysteretic loss, gets the first without most of the second.</li>
+<li>Two stages fall as <m>1/r⁴</m>; an inertia block steadies the machine but doesn't change the transmissibility.</li>
+<li>Real mounts are stiffer than their sag says, resonate themselves high up, and isolate only from a floor stiffer than they are.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m M_machine x f omega_n zeta Omega r X unbalance g delta_sag T_trans y_floor eta N_relax zener phi_turn</notation>
+<reading>rao inman harris rivin</reading>
