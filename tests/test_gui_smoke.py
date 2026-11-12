@@ -329,7 +329,7 @@ def test_theory_window(app):
 def test_one_click_trials_set_up_their_pages(app):
     from PySide6.QtTest import QTest
 
-    from vib_tutorial.gui import coupling_notes, frf_matrix
+    from vib_tutorial.gui import coupling_notes, frf_matrix, maths
     from vib_tutorial.gui.cms_notes import TRIALS as CMS_TRIALS
     from vib_tutorial.gui.main_window import MainWindow
     from vib_tutorial.gui.sim_trials import TRIALS as SIM_TRIALS
@@ -338,7 +338,7 @@ def test_one_click_trials_set_up_their_pages(app):
     w.show()
     for i, trial in enumerate(SIM_TRIALS):
         w.trial.setCurrentIndex(i + 1)
-        assert w.trial_note.text() == trial.note
+        assert w.trial_note.text() == maths.markup(trial.note)
         if not trial.preset:
             assert w.params.system().n == trial.n
 

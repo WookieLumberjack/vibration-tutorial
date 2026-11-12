@@ -209,6 +209,45 @@ REFERENCES = (
         "Physics</i> 60, 491–499, 1992",
         "",
     ),
+    Reference(
+        "rayleigh-sound",
+        "Rayleigh 1877",
+        "J. W. Strutt (Lord Rayleigh), <i>The Theory of Sound</i>, vol. 1, Macmillan, 1877 (2nd edition 1894)",
+        "the quotient and proportional damping, among much else",
+    ),
+    Reference(
+        "ritz",
+        "Ritz 1909",
+        "W. Ritz, Über eine neue Methode zur Lösung gewisser Variationsprobleme der mathematischen Physik, "
+        "<i>Journal für die reine und angewandte Mathematik</i> 135, 1–61, 1909",
+        "",
+    ),
+    Reference(
+        "caughey",
+        "Caughey and O'Kelly 1965",
+        "T. K. Caughey and M. E. J. O'Kelly, Classical normal modes in damped linear dynamic systems, <i>Journal "
+        "of Applied Mechanics</i> 32, 583–588, 1965",
+        "",
+    ),
+    Reference(
+        "frahm",
+        "Frahm 1911",
+        "H. Frahm, Device for damping vibrations of bodies, US patent 989,958, 1911",
+        "",
+    ),
+    Reference(
+        "ormondroyd",
+        "Ormondroyd and Den Hartog 1928",
+        "J. Ormondroyd and J. P. Den Hartog, The theory of the dynamic vibration absorber, <i>Transactions of the "
+        "ASME</i> 50, 9–22, 1928",
+        "",
+    ),
+    Reference(
+        "brock",
+        "Brock 1946",
+        "J. E. Brock, A note on the damped vibration absorber, <i>Journal of Applied Mechanics</i> 13, A-284, 1946",
+        "",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

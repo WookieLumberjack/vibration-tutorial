@@ -239,6 +239,51 @@ def test_background_rayleigh_quotient_and_effective_masses():
     np.testing.assert_allclose(gamma2, [3.57, 0.33, 0.08, 0.01], atol=0.006)
 
 
+def test_background_worked_example():
+    """The Simulation notes' worked example: the default chain's modes in closed form, from the rounded figures."""
+    s = ChainSystem.uniform(4)
+    M, C, K = s.matrices()
+    np.testing.assert_allclose(M, np.eye(4))
+    np.testing.assert_allclose(np.diag(K), [800, 800, 800, 400])
+    np.testing.assert_allclose(np.diag(K, 1), [-400, -400, -400])
+    np.testing.assert_allclose(C, K / 200)
+    r = modal_analysis(s)
+    # the closed form: γ_r = (2r − 1)π/(2N + 1), ω_r = 2√(k/m) sin(γ_r/2), φ_r,i = 2 sin(iγ_r)/√((2N + 1)m)
+    gammas = [(2 * k - 1) * math.pi / 9 for k in range(1, 5)]
+    assert np.degrees(gammas) == pytest.approx([20, 60, 100, 140])
+    w = [40 * math.sin(g / 2) for g in gammas]
+    assert w == pytest.approx([6.946, 20.00, 30.64, 37.59], abs=0.005)
+    assert [m.omega_n for m in r.modes] == pytest.approx(w)
+    assert np.array([6.946, 20.00, 30.64, 37.59]) / (2 * math.pi) == pytest.approx(
+        [1.105, 3.183, 4.877, 5.982], abs=0.001
+    )
+    assert [m.fn_hz for m in r.modes] == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=0.0005)
+    for k, (g, m) in enumerate(zip(gammas, r.modes)):
+        shape = 2 * np.sin(np.arange(1, 5) * g) / 3
+        assert np.abs(m.shape_mass_normalized) == pytest.approx(np.abs(shape)), k
+    assert 2 / 3 * np.sin(np.radians(20 * np.arange(1, 5))) == pytest.approx([0.228, 0.429, 0.577, 0.657], abs=5e-4)
+    # damping: ζ_r = βω_r/2, exact; the damped frequencies
+    zetas = 0.0025 * np.array([6.946, 20.00, 30.64, 37.59])
+    assert zetas == pytest.approx([0.0174, 0.0500, 0.0766, 0.0940], abs=5e-5)
+    assert [m.zeta_modal for m in r.modes] == pytest.approx([m.damped.zeta for m in r.modes])
+    assert [m.zeta_modal for m in r.modes] == pytest.approx([0.0174, 0.0500, 0.0766, 0.0940], abs=5e-5)
+    fd = np.array([1.105, 3.183, 4.877, 5.982]) * np.sqrt(1 - np.array([0.0174, 0.0500, 0.0766, 0.0940]) ** 2)
+    assert fd == pytest.approx([1.105, 3.179, 4.862, 5.956], abs=0.001)
+    assert [m.damped.fd_hz for m in r.modes] == pytest.approx([1.105, 3.179, 4.862, 5.956], abs=0.0005)
+    # the straight-line guess
+    v = np.arange(1.0, 5.0)
+    assert v @ K @ v == 1600 and v @ M @ v == 30
+    assert math.sqrt(1600 / 30) == pytest.approx(7.303, abs=5e-4)
+    assert 7.303 / (2 * math.pi) == pytest.approx(1.162, abs=5e-4)
+    assert 1.162 / 1.105 - 1 == pytest.approx(0.05, abs=0.005)
+    assert 6.946**2 == pytest.approx(48.25, abs=0.005) and 53.33 / 48.25 - 1 == pytest.approx(0.105, abs=0.0005)
+    # the ground: mode 1's participation and effective mass
+    assert 0.228 + 0.429 + 0.577 + 0.657 == pytest.approx(1.890, abs=0.0015)
+    assert 1.890**2 == pytest.approx(3.57, abs=0.005) and 3.57 / 4 == pytest.approx(0.89, abs=0.005)
+    # the tuned mass damper at μ = 5 %
+    assert math.sqrt(1 + 2 / 0.05) == pytest.approx(math.sqrt(41)) and math.sqrt(41) == pytest.approx(6.4, abs=0.05)
+
+
 def test_frf_and_coupling_trials():
     from vib_tutorial.core.modal_coupling import coupled_model as model
     from vib_tutorial.gui.coupling_notes import TRIALS as COUPLING
