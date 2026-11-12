@@ -1824,6 +1824,64 @@ def test_vibroacoustics_trials():
     assert heavy.input_power[sel].mean() / d.input_power[sel].mean() == pytest.approx(1, abs=0.15)
 
 
+def test_vibroacoustics_worked_example():
+    import math
+
+    import numpy as np
+
+    from vib_tutorial.core.beams_plates import Plate, rect_modes
+    from vib_tutorial.core.radiation import (
+        AIR,
+        band_edges,
+        critical_frequency,
+        maidanik,
+        mass_law,
+        radiation_loss_factor,
+        transmission_loss,
+    )
+    from vib_tutorial.core.sea import plate_modal_density, room_modal_density
+
+    p = Plate()
+    assert (p.rigidity, p.surface_mass) == pytest.approx((519, 23.55), abs=0.5)
+    assert 210e9 * 0.003**3 / (12 * (1 - 0.3**2)) == pytest.approx(519, abs=0.5)
+    fc = critical_frequency(p)
+    assert 343**2 / (2 * math.pi) * math.sqrt(23.55 / 519) == pytest.approx(3990, abs=5)
+    assert fc == pytest.approx(3990, abs=5) and 343 / fc == pytest.approx(0.086, abs=5e-4)
+    assert rect_modes(p, 1)[0].freq_hz == pytest.approx(66.6, abs=0.05)
+    n = plate_modal_density(p)
+    lo, hi = band_edges(np.array([1000.0]))
+    assert (lo[0], hi[0]) == pytest.approx((891, 1122), abs=0.5)
+    assert n == pytest.approx(0.0256, abs=5e-5) and n * (hi[0] - lo[0]) == pytest.approx(5.9, abs=0.05)
+    assert sum(1 for m in rect_modes(p, 100) if lo[0] <= m.freq_hz < hi[0]) == 5
+    p_in = 1 / (16 * math.sqrt(p.rigidity * p.surface_mass))
+    assert p_in == pytest.approx(565e-6, abs=0.5e-6) and 10 * math.log10(p_in / 1e-12) == pytest.approx(87.5, abs=0.05)
+    mass = p.surface_mass * p.a * p.b
+    energy = 565e-6 / (2 * math.pi * 1000 * 0.01)
+    v2 = energy / mass
+    assert (energy, mass, v2, math.sqrt(v2)) == pytest.approx((9.0e-6, 5.65, 1.59e-6, 1.26e-3), rel=4e-3)
+    sigma = float(maidanik(p, 1000.0))
+    assert sigma == pytest.approx(0.054, abs=5e-4) and AIR.impedance == pytest.approx(415, abs=0.5)
+    w = 415 * 0.24 * 0.054 * 1.59e-6
+    assert w == pytest.approx(8.6e-6, abs=0.05e-6) and 10 * math.log10(w / 1e-12) == pytest.approx(69.3, abs=0.05)
+    assert 10 * math.log10(565e-6 / w) == pytest.approx(18, abs=0.5)
+    eta_rad = radiation_loss_factor(p, 1000.0)
+    assert (415 * 0.054 / (2 * math.pi * 1000 * 23.55), eta_rad) == pytest.approx((1.5e-4, 1.5e-4), abs=0.05e-4)
+    assert 0.01 / eta_rad == pytest.approx(66, abs=0.5)
+    x = 2 * math.pi * 500 * 23.55 / 830
+    assert 10 * math.log10(1 + x * x) == pytest.approx(39.0, abs=0.05) and float(mass_law(p, 500.0)) == pytest.approx(
+        39.0, abs=0.05
+    )
+    assert 20 * math.log10(500 * p.surface_mass) - 42 == pytest.approx(39.4, abs=0.05)
+    assert transmission_loss(p, 0.01, 500.0)[0] == pytest.approx(33.8, abs=0.05)
+    # the room
+    assert (0.161 * 50 / 0.5, 2.2 / (1000 * 0.5)) == pytest.approx((16.1, 0.0044), abs=1e-9)
+    rooms = float(room_modal_density(50.0, 1000.0))
+    assert rooms == pytest.approx(15.6, abs=0.05) and rooms / n == pytest.approx(600, rel=0.02)
+    # a double wall: two 10 kg/m² leaves 100 mm apart
+    f0 = math.sqrt(AIR.rho * AIR.c**2 / 0.1 * (1 / 10 + 1 / 10)) / (2 * math.pi)
+    assert f0 == pytest.approx(85, abs=0.5)
+
+
 def test_sea_trials():
     from vib_tutorial.core.beams_plates import Plate
     from vib_tutorial.core.radiation import critical_frequency

@@ -675,6 +675,54 @@ REFERENCES = (
         "edition, Pearson, 2017",
         "response spectra, modal combination and inelastic spectra, with the US codes and Eurocode 8",
     ),
+    Reference(
+        "wallace",
+        "Wallace 1972",
+        "C. E. Wallace, Radiation resistance of a rectangular panel, <i>Journal of the Acoustical Society of America</i> 51, 946–952, 1972",
+        "",
+    ),
+    Reference(
+        "maidanik",
+        "Maidanik 1962",
+        "G. Maidanik, Response of ribbed panels to reverberant acoustic fields, <i>Journal of the Acoustical Society of America</i> 34, 809–826, 1962",
+        "",
+    ),
+    Reference(
+        "crocker-price",
+        "Crocker and Price 1969",
+        "M. J. Crocker and A. J. Price, Sound transmission using statistical energy analysis, <i>Journal of Sound and Vibration</i> 9, 469–486, 1969",
+        "",
+    ),
+    Reference(
+        "lyon-maidanik",
+        "Lyon and Maidanik 1962",
+        "R. H. Lyon and G. Maidanik, Power flow between linearly coupled oscillators, <i>Journal of the Acoustical Society of America</i> 34, 623–639, 1962",
+        "",
+    ),
+    Reference(
+        "sabine",
+        "Sabine 1922",
+        "W. C. Sabine, <i>Collected Papers on Acoustics</i>, Harvard University Press, 1922 (Dover, 1964)",
+        "his reverberation papers from 1900 on",
+    ),
+    Reference(
+        "cremer-heckl",
+        "Cremer, Heckl and Petersson 2005",
+        "L. Cremer, M. Heckl and B. A. T. Petersson, <i>Structure-Borne Sound</i>, 3rd edition, Springer, 2005",
+        "waves in structures, junctions, impedances and radiation: the reference for the theory",
+    ),
+    Reference(
+        "lyon-dejong",
+        "Lyon and DeJong 1995",
+        "R. H. Lyon and R. G. DeJong, <i>Theory and Application of Statistical Energy Analysis</i>, 2nd edition, Butterworth-Heinemann, 1995",
+        "SEA from the two oscillators up, with its coupling loss factors",
+    ),
+    Reference(
+        "fahy-gardonio",
+        "Fahy and Gardonio 2007",
+        "F. Fahy and P. Gardonio, <i>Sound and Structural Vibration: Radiation, Transmission and Response</i>, 2nd edition, Academic Press, 2007",
+        "radiation efficiency, transmission loss and fluid loading, the subject of this page",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
