@@ -30,7 +30,7 @@ from ..core.fatigue import (
     reversals,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
-from . import settle_plots
+from . import fatigue_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -70,14 +70,14 @@ class FatigueTrial:
 TRIALS = (
     FatigueTrial(
         "One mode: a narrow band",
-        "A 2 Hz mode with ζ = 2 %, 20 MPa RMS, on a welded detail (S–N slope 3, 80 MPa range at two million "
-        "cycles). The band is narrow (α₂ = 0.95): nearly every up-crossing is one cycle, with Rayleigh-distributed "
+        "A 2 Hz mode with <m>ζ</m> = 2 %, 20 MPa RMS, on a welded detail (S–N slope 3, 80 MPa range at two million "
+        "cycles). The band is narrow (<m>α<sub>i</sub></m> = 0.95): nearly every up-crossing is one cycle, with Rayleigh-distributed "
         "amplitudes. The narrow-band formula, Dirlik's and Miner's sum over the record's rainflow cycles agree "
         "within 1.5 %: a life of 25 days.",
     ),
     FatigueTrial(
         "Two modes: the narrow-band formula is pessimistic",
-        "Add a 15 Hz mode with 10 MPa RMS. The record now has small fast cycles riding on the slow ones, α₂ = "
+        "Add a 15 Hz mode with 10 MPa RMS. The record now has small fast cycles riding on the slow ones, <m>α<sub>i</sub></m> = "
         "0.46. The narrow-band formula counts every up-crossing (6.9 a second) as a cycle of the whole σ's "
         "Rayleigh, and overestimates the damage 1.6 times; Dirlik, fitted to rainflow counts, is 8 % under the "
         "record's.",
@@ -95,7 +95,7 @@ TRIALS = (
     ),
     FatigueTrial(
         "A steeper S–N curve",
-        "The two modes, on an S–N slope of 5 (closer to a machined part). Damage goes as S⁵, so the few largest "
+        "The two modes, on an S–N slope of 5 (closer to a machined part). Damage goes as <m>S<sup>5</sup></m>, so the few largest "
         "ranges do nearly all of it (the Damage tab), and the estimates part further: the narrow-band formula is "
         "1.6 times the record's, Dirlik 18 % under (15 % under the average of twenty such records).",
         stress=Stress(sigma2=10.0),
@@ -104,15 +104,15 @@ TRIALS = (
     ),
     FatigueTrial(
         "Double the stress, eight times the damage",
-        "One mode at 40 MPa RMS instead of 20. With slope 3 the damage rate goes up 2³ = 8 times: the life "
-        "falls from 25 days to 3.1. A load that is 10 % high costs a third of the life (1.1³ = 1.33); the RMS "
+        "One mode at 40 MPa RMS instead of 20. With slope 3 the damage rate goes up <m>2<sup>3</sup></m> = 8 times: the life "
+        "falls from 25 days to 3.1. A load that is 10 % high costs a third of the life (<m>1.1<sup>3</sup></m> = 1.33); the RMS "
         "has to be right before anything else is.",
         stress=Stress(sigma1=40.0),
         tab=TAB_SN,
     ),
     FatigueTrial(
         "A broad peak",
-        "One mode but heavily damped, ζ = 30 %: a broad band, α₂ = 0.64. The record's cycles are irregular, "
+        "One mode but heavily damped, <m>ζ</m> = 30 %: a broad band, <m>α<sub>i</sub></m> = 0.64. The record's cycles are irregular, "
         "with peaks below zero and troughs above it, and the narrow-band formula is 15 % high, Dirlik within "
         "2 %.",
         stress=Stress(zeta1=0.3),
@@ -347,7 +347,7 @@ RANGES_TIP = (
 DAMAGE_TIP = "<p>Where the damage comes from: each distribution times S<sup>b</sup>, normalized, against the range.</p>"
 SN_TIP = "<p>The S–N curve (log–log) and the record's largest rainflow ranges against the cycles they took.</p>"
 
-NOTES_HTML = load_notes("fatigue", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("fatigue", figures=fatigue_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class FatiguePage(QtWidgets.QWidget):
@@ -563,7 +563,7 @@ class FatiguePage(QtWidgets.QWidget):
         self.psd_item.setData(f[keep], G[keep])
         r = rates(s)
         self.stress_info.setText(
-            f"σ = {r.sigma:.3g} MPa; {r.nu0:.3g} up-crossings and {r.nup:.3g} peaks a second; α₂ = {r.alpha2:.2f}."
+            f"σ = {r.sigma:.3g} MPa; {r.nu0:.3g} up-crossings and {r.nup:.3g} peaks a second; α<sub>i</sub> = {r.alpha2:.2f}."
         )
         span = min(SHOWN / min(p[0] for p in s.peaks()), rec.duration)
         n = int(np.searchsorted(rec.t, span))

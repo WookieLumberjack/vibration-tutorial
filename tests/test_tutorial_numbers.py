@@ -519,6 +519,45 @@ def test_random_vibration_worked_example():
     assert np.trapezoid(np.exp(g), f) == pytest.approx(33.3, rel=1e-4)
 
 
+def test_fatigue_worked_example():
+    """The Theory's worked example: the default stress on the default welded detail, the narrow-band damage
+    rate from its rounded figures, Dirlik's and the record's lives; a notch and a mean stress; the Eurocode
+    knee and cut-off; the FDS's time compression."""
+    from vib_tutorial.core.fatigue import Curve, Stress, dirlik_damage, narrow_band_damage, rates, record
+    from vib_tutorial.gui import fatigue_figures
+    from vib_tutorial.gui.fatigue import FatigueTrial
+
+    t = FatigueTrial("", "")
+    assert (t.stress, t.b, t.s_ref, t.n_ref, t.duration, t.seed) == (Stress(), 3.0, 80.0, 2e6, 600.0, 1)
+    s, c = Stress(), Curve()
+    assert (s.f1, s.zeta1, s.sigma1, s.sigma2) == (2.0, 0.02, 20.0, 0.0)
+    assert c.K == pytest.approx(1.024e12)
+    r = rates(s)
+    assert (r.nu0, r.nup, r.alpha2) == pytest.approx((1.99, 2.09, 0.95), abs=0.005)
+    assert (2 * math.sqrt(2) * 20) ** 3 == pytest.approx(181_000, rel=0.001)
+    assert math.gamma(2.5) == pytest.approx(1.329, abs=0.0005)
+    nb = narrow_band_damage(s, c)
+    assert nb == pytest.approx(4.68e-7, abs=0.005e-7)
+    assert 1.99 * 181_000 * 1.329 / 1.024e12 == pytest.approx(4.68e-7, abs=0.01e-7)
+    assert 1 / nb == pytest.approx(2.13e6, abs=0.005e6) and 2.13e6 / 86400 == pytest.approx(24.7, abs=0.05)
+    assert 1 / nb / 86400 == pytest.approx(24.7, abs=0.05)
+    assert 1 / dirlik_damage(s, c) / 86400 == pytest.approx(25.1, abs=0.05)
+    rf = record(s, 600.0, 1).damage_rate(c)
+    assert 1 / rf / 86400 == pytest.approx(25.1, abs=0.05) and 100 * (nb / rf - 1) == pytest.approx(1.4, abs=0.05)
+    # a notch, and a mean stress
+    kf = 1 + 0.8 * (2.5 - 1)
+    assert kf == pytest.approx(2.2) and kf**3 == pytest.approx(10.6, abs=0.05)
+    assert 1 / nb / 86400 / kf**3 == pytest.approx(2.3, abs=0.05)
+    assert 100 / (1 - 200 / 600) == pytest.approx(150) and 100 / (1 - (200 / 600) ** 2) == pytest.approx(112.5)
+    assert (fatigue_figures.S_AR, fatigue_figures.S_U, fatigue_figures.EXAMPLE) == (150.0, 600.0, (200.0, 100.0))
+    # the Eurocode's knee and cut-off from its slopes
+    assert (2 / 5) ** (1 / 3) == pytest.approx(0.737, abs=0.0005) and (5 / 100) ** (1 / 5) == pytest.approx(
+        0.549, abs=0.0005
+    )
+    # time compression with b = 8
+    assert 10 ** (2 / 8) == pytest.approx(1.78, abs=0.005) and 10 * math.log10(10 ** (2 / 8)) == pytest.approx(2.5)
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)

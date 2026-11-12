@@ -501,6 +501,91 @@ REFERENCES = (
         "Longman, 1993 (Dover reprint, 2005)",
         "random vibration from the ground up: spectra, the response of linear systems, crossings and peaks",
     ),
+    Reference(
+        "basquin",
+        "Basquin 1910",
+        "O. H. Basquin, The exponential law of endurance tests, <i>Proceedings of the American Society for Testing "
+        "Materials</i> 10, 625–630, 1910",
+        "",
+    ),
+    Reference(
+        "palmgren",
+        "Palmgren 1924",
+        "A. Palmgren, Die Lebensdauer von Kugellagern, <i>Zeitschrift des Vereins Deutscher Ingenieure</i> 68, "
+        "339–341, 1924",
+        "",
+    ),
+    Reference(
+        "miner",
+        "Miner 1945",
+        "M. A. Miner, Cumulative damage in fatigue, <i>Journal of Applied Mechanics</i> 12, A159–A164, 1945",
+        "",
+    ),
+    Reference(
+        "goodman",
+        "Goodman 1899",
+        "J. Goodman, <i>Mechanics Applied to Engineering</i>, Longmans, Green, London, 1899",
+        "",
+    ),
+    Reference(
+        "gerber",
+        "Gerber 1874",
+        "W. Gerber, Bestimmung der zulässigen Spannungen in Eisenconstructionen, <i>Zeitschrift des Bayerischen "
+        "Architekten- und Ingenieur-Vereins</i> 6, 101–110, 1874",
+        "",
+    ),
+    Reference(
+        "en1993-1-9",
+        "EN 1993-1-9",
+        "EN 1993-1-9, <i>Eurocode 3: Design of steel structures, Part 1-9: Fatigue</i>, CEN, 2005",
+        "",
+    ),
+    Reference(
+        "peterson",
+        "Pilkey and Pilkey 2008",
+        "W. D. Pilkey and D. F. Pilkey, <i>Peterson's Stress Concentration Factors</i>, 3rd edition, Wiley, 2008",
+        "",
+    ),
+    Reference(
+        "matsuishi-endo",
+        "Matsuishi and Endo 1968",
+        "M. Matsuishi and T. Endo, Fatigue of metals subjected to varying stress, Japan Society of Mechanical "
+        "Engineers, 1968",
+        "",
+    ),
+    Reference(
+        "astm-e1049",
+        "ASTM E1049",
+        "ASTM E1049-85, <i>Standard Practices for Cycle Counting in Fatigue Analysis</i>, ASTM International, 1985 "
+        "(reapproved since)",
+        "",
+    ),
+    Reference(
+        "bendat-1964",
+        "Bendat 1964",
+        "J. S. Bendat, <i>Probability Functions for Random Responses: Prediction of Peaks, Fatigue Damage, and "
+        "Catastrophic Failures</i>, NASA CR-33, 1964",
+        "",
+    ),
+    Reference(
+        "dirlik",
+        "Dirlik 1985",
+        "T. Dirlik, <i>Application of Computers in Fatigue Analysis</i>, PhD thesis, University of Warwick, 1985",
+        "",
+    ),
+    Reference(
+        "lalanne-4",
+        "Lalanne 2014",
+        "C. Lalanne, <i>Mechanical Vibration and Shock Analysis, Volume 4: Fatigue Damage</i>, 3rd edition, "
+        "Wiley-ISTE, 2014",
+        "fatigue under vibration from the S–N curve to the fatigue damage spectrum, with every spectral method",
+    ),
+    Reference(
+        "schijve",
+        "Schijve 2009",
+        "J. Schijve, <i>Fatigue of Structures and Materials</i>, 2nd edition, Springer, 2009",
+        "the materials side: crack initiation and growth, notches, mean stress and what the rules leave out",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

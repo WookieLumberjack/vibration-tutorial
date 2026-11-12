@@ -1,37 +1,90 @@
-
 <before>
 <a href="page:random_page#statistics">Crossings and peaks</a>
+<a href="page:random_page#miles">Miles' equation</a>
 </before>
 <h3><a name="sn"></a>The S–N curve</h3>
-<p>A part loaded with constant-amplitude cycles of stress range S fails after N(S) cycles, and over the range that
-matters a straight line in log–log does: <b>Basquin's law</b>, N S<sup>b</sup> = K. Welded steel details have
-b ≈ 3 (a detail category is the range they survive for two million cycles); smooth machined parts 5 to 10. A steep
-curve means the largest cycles do almost all the damage.</p>
+<p>A part loaded with constant-amplitude cycles of stress range <m>S</m> fails after <m>N(S)</m> cycles, and over
+the range that matters a straight line in log–log does, <b>Basquin's law</b> <cite>basquin</cite>:</p>
+<eq>N S^b = K</eq>
+<p>Welded steel details have <m>b</m> ≈ 3 (a detail category is the range they survive for two million cycles);
+smooth machined parts 5 to 10. A steep curve means the largest cycles do almost all the damage: a range 10 %
+higher does <m>1.1<sup>b</sup></m> times the damage.</p>
+<p><a name="two-slope"></a>Many steels also have an <b>endurance limit</b>: below some range a smooth specimen
+lasts for ever under constant amplitude. A random load blurs it, because the large cycles start a crack that
+the small ones then grow, so design codes bend the curve instead of ending it. Eurocode 3's curves
+<cite>en1993-1-9</cite> run at <m>b</m> = 3 from the detail category <m>S<sub>C</sub></m> at 2 × 10⁶ cycles to the
+constant-amplitude limit at 5 × 10⁶, then at <m>b</m> = 5 to a cut-off at 10⁸, below which a range does no
+damage. The knee and the cut-off follow from the slopes:</p>
+<eq>S_D = (2/5)^{1/3} S_C = 0.737\,S_C</eq>
+<eq>S_L = (5/100)^{1/5} S_D = 0.549\,S_D</eq>
 
 <h3><a name="miner"></a>Miner's rule</h3>
-<p>Under cycles of many ranges, each cycle at S uses up 1/N(S) of the life, and failure is predicted when
-<b>D = Σ n<sub>i</sub>/N<sub>i</sub></b> reaches 1. It ignores the order of the cycles and is only good to a factor
-of two or so in practice, but it is what every code uses.</p>
+<p>Under cycles of many ranges, each cycle at <m>S</m> uses up <m>1/N(S)</m> of the life, and failure is predicted
+when the damage</p>
+<eq>D = \sum_i \frac{n_i}{N_i}</eq>
+<p>reaches 1 (Palmgren's rule <cite>palmgren</cite>, made known by Miner <cite>miner</cite>). It ignores the order
+of the cycles and is only good to a factor of two or so in practice, but it is what every code uses.</p>
+
+<h3><a name="mean-stress"></a>Mean stress</h3>
+<p>A cycle that swings about a tensile mean <m>S<sub>m</sub></m> does more damage than one of the same amplitude
+<m>S<sub>a</sub></m> about zero: tension opens the crack. S–N curves are measured fully reversed, so a cycle
+with a mean is converted to the fully reversed amplitude <m>S<sub>ar</sub></m> that does the same damage. On a
+plot of amplitude against mean (Haigh's diagram), the cycles of equal life lie on a line from
+<m>S<sub>ar</sub></m> at zero mean to the ultimate strength <m>S<sub>u</sub></m> at zero amplitude: straight in
+Goodman's form <cite>goodman</cite>, a parabola in Gerber's <cite>gerber</cite>.</p>
+<eq>\text{Goodman: } S_{ar} = \frac{S_a}{1 - S_m/S_u}</eq>
+<eq>\text{Gerber: } S_{ar} = \frac{S_a}{1 - (S_m/S_u)^2}</eq>
+<table width="100%"><tr><td align="center"><img src="fig:haigh" width="310" height="170"></td></tr></table>
+<p>Goodman is the safer of the two for steels, Gerber nearer to tests on ductile metals. A compressive mean
+helps, but the corrections are usually not given credit for it. Welded joints are the exception that sets
+the codes: the weld's residual stress is near yield, so the real mean is high whatever the load's, and their
+S–N curves are on the range alone.</p>
+
+<h3><a name="notches"></a>Notches</h3>
+<p>A hole, a fillet or a thread concentrates the nominal stress by its <b>elastic stress concentration factor</b>
+<m>K<sub>t</sub></m>, from tables or a finite-element model <cite>peterson</cite>. Fatigue feels a little less: a
+sharp notch's peak is over so small a volume that its gradient helps, so the <b>fatigue notch factor</b> is</p>
+<eq>K_f = 1 + q\,(K_t - 1)</eq>
+<p>with the notch sensitivity <m>q</m> between 0 (none) and 1 (all of it), larger for strong steels and blunt
+notches. The local stress range is <m>K<sub>f</sub></m> times the nominal one, so the damage goes up
+<m>K<sub>f</sub><sup>b</sup></m> times. A welded detail's category already holds its notch.</p>
 
 <h3><a name="rainflow"></a>Rainflow counting</h3>
-<p>A random stress isn't made of cycles, so they have to be found. <b>Rainflow counting</b> (Matsuishi and Endo)
-pairs each reversal with the one that closes a hysteresis loop with it: the small ripples riding on a large swing
-become small cycles, and the large swing is still counted at its full range. The three-point form (ASTM E1049-85):
-keep a stack of reversals; when the latest range X is at least the one before, Y, then Y is a cycle (half a cycle
-if it holds the start) and its two points go. What is left at the end counts as half cycles.</p>
+<p>A random stress isn't made of cycles, so they have to be found. <b>Rainflow counting</b> (Matsuishi and Endo
+<cite>matsuishi-endo</cite>) pairs each reversal with the one that closes a hysteresis loop with it: the small
+ripples riding on a large swing become small cycles, and the large swing is still counted at its full range.
+The three-point form <cite>astm-e1049</cite>: keep a stack of reversals; when the latest range <m>X</m> is at least
+the one before, <m>Y</m>, then <m>Y</m> is a cycle (half a cycle if it holds the start) and its two points go.
+What is left at the end counts as half cycles.</p>
 
 <h3><a name="spectral"></a>Damage from the PSD</h3>
-<p>Without a record, everything has to come from the stress PSD G(f) through its moments
-m<sub>n</sub> = ∫ fⁿG df: the RMS σ = √m₀, the up-crossings ν₀ = √(m₂/m₀) and the peaks ν<sub>p</sub> = √(m₄/m₂)
-per second (Rice, as on the Random vibration page), and the <b>irregularity factor</b> α₂ = ν₀/ν<sub>p</sub>: 1 when
-every peak is followed by a zero crossing (a narrow band), smaller when ripples ride on the swings.</p>
+<p>Without a record, everything has to come from the stress PSD <m>G(f)</m> through its moments
+<m>m<sub>k</sub></m>, as on the <a href="page:random_page#statistics">Random vibration</a> page: the RMS
+<m>σ = √m<sub>0</sub></m>, the up-crossings <m>ν<sub>0</sub> = √(m<sub>2</sub>/m<sub>0</sub>)</m> and the peaks
+<m>ν<sub>p</sub> = √(m<sub>4</sub>/m<sub>2</sub>)</m> a second, and the irregularity factor <m>α<sub>i</sub> =
+ν<sub>0</sub>/ν<sub>p</sub></m> (often written <m>α<sub>2</sub></m>): 1 when every peak is followed by a zero
+crossing (a narrow band), smaller when ripples ride on the swings. Over a time <m>T</m> the damage is the
+number of cycles times the mean damage of one, <m>E[S<sup>b</sup>]/K</m>.</p>
+<p><b>Narrow band</b> <cite>bendat-1964</cite>: each up-crossing is one cycle whose amplitude
+<m>S<sub>a</sub></m> is Rayleigh in <m>σ</m>, so the range <m>S = 2S<sub>a</sub></m> and
+<m>E[S<sub>a</sub><sup>b</sup>] = (√2σ)<sup>b</sup>Γ(1 + b/2)</m>, with <m>Γ</m> the gamma function:</p>
+<eq>\frac{D}{T} = \frac{\nu_0\,(2\sqrt2\,\sigma)^b\,\Gamma(1 + b/2)}{K}</eq>
+<p>It is exact for a narrow band; for a broad one it counts every ripple as a full swing and is
+<b>conservative</b>.</p>
+<p><b>Dirlik</b>'s range distribution <cite>dirlik</cite> is an empirical fit to rainflow counts of many simulated
+processes: in <m>Z = S/2σ</m>, an exponential and two Rayleigh terms whose weights <m>D<sub>1</sub></m>,
+<m>D<sub>2</sub></m>, <m>D<sub>3</sub></m> and scales <m>Q</m>, <m>R</m> come from <m>m<sub>0</sub></m>,
+<m>m<sub>1</sub></m>, <m>m<sub>2</sub></m> and <m>m<sub>4</sub></m>. Then <m>D/T = ν<sub>p</sub>E[S<sup>b</sup>]/K</m>
+over it. It is usually within 10 % of rainflow on the record, and the method most codes now recommend.</p>
+<eq>\frac{D}{T} = \frac{\nu_0\,(2\sqrt2\,\sigma)^b\,\Gamma(1 + b/2)}{K}</eq>
 <ul>
-<li><b>Narrow band</b> (Bendat): each up-crossing is one cycle whose amplitude is Rayleigh in σ, so the range
-S = 2a and D/T = ν₀ (2√2 σ)<sup>b</sup> Γ(1 + b/2) / K. Exact for a narrow band; for a broad one it counts every
-ripple as a full swing and is <b>conservative</b>.</li>
-<li><b>Dirlik</b>'s range distribution is an empirical fit to rainflow counts of many simulated processes: an
-exponential and two Rayleigh terms whose weights come from m₀, m₁, m₂ and m₄. D/T = ν<sub>p</sub> E[S<sup>b</sup>]/K.
-It is usually within 10 % of rainflow on the record, and the method most codes now recommend.</li>
+<li style="list-style:none">Exact for a narrow band; for a broad one it counts every ripple as a full swing and is
+<b>conservative</b>.</li>
+<li><b>Dirlik</b>'s range distribution <cite>dirlik</cite> is an empirical fit to rainflow counts of many simulated
+processes: in <m>Z = S/2σ</m>, an exponential and two Rayleigh terms whose weights <m>D<sub>1</sub></m>,
+<m>D<sub>2</sub></m>, <m>D<sub>3</sub></m> and scales <m>Q</m>, <m>R</m> come from <m>m<sub>0</sub></m>,
+<m>m<sub>1</sub></m>, <m>m<sub>2</sub></m> and <m>m<sub>4</sub></m>. Then <m>D/T = ν<sub>p</sub>E[S<sup>b</sup>]/K</m>
+over it. It is usually within 10 % of rainflow on the record, and the method most codes now recommend.</li>
 </ul>
 
 <h3><a name="record"></a>The record</h3>
@@ -39,12 +92,45 @@ It is usually within 10 % of rainflow on the record, and the method most codes n
 is what the spectral methods stand for; a short one scatters from seed to seed, because a few large cycles carry
 most of the damage.</p>
 
+<h3><a name="fds"></a>The fatigue damage spectrum</h3>
+<p>To compare two vibration environments (a road and a test, a flight and a shaker), feed each to a row of
+single oscillators, one at each natural frequency <m>f<sub>n</sub></m> with the same damping <m>ζ</m>, and work
+out the fatigue damage each would take. That curve against <m>f<sub>n</sub></m> is the <b>fatigue damage
+spectrum</b> (FDS) <cite>lalanne-4</cite>, as the shock response spectrum is for peaks. With Miles' RMS and the
+narrow-band damage, an oscillator under a base PSD <m>G<sub>a</sub></m> accumulates</p>
+<eq>D(f_n) \propto f_n\,T\,\Bigl(\frac{G_a(f_n)}{\zeta f_n^3}\Bigr)^{b/2}</eq>
+<p>(its stress taken in proportion to its relative displacement). A test is fair if its FDS covers the
+service one's at every <m>f<sub>n</sub></m>. Because the damage goes as <m>T G<sup>b/2</sup></m>, a test can be
+shortened by raising its level: equal damage needs</p>
+<eq>\frac{T_t}{T_s} = \Bigl(\frac{G_s}{G_t}\Bigr)^{b/2}</eq>
+<p>so with <m>b</m> = 8, a test a tenth as long as service needs the PSD <m>10<sup>2/8</sup></m> = 1.78 times as high,
+2.5 dB. The steeper the S–N curve, the less level buys time: it is only fair while the higher level doesn't
+cause failures that service never would.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on one 2 Hz mode with <m>ζ</m> = 2 %, 20 MPa RMS, on a welded detail: <m>b</m> = 3 and an 80 MPa
+range at two million cycles, so <m>K</m> = 2 × 10⁶ × 80³ = 1.024 × 10¹² MPa³. The moments give
+<m>ν<sub>0</sub></m> = 1.99 and <m>ν<sub>p</sub></m> = 2.09 a second, <m>α<sub>i</sub></m> = 0.95: a narrow band.
+The narrow-band damage rate is</p>
+<eq>\frac{D}{T} = \frac{1.99 \times (2\sqrt2 \times 20)^3 \times \Gamma(2.5)}{1.024\times 10^{12}} = \frac{1.99 \times 181\,000 \times 1.329}{1.024\times 10^{12}}</eq>
+<p>4.68 × 10⁻⁷ a second, a life of <m>1/(4.68 × 10⁻⁷)</m> = 2.13 × 10⁶ s, 24.7 days. Dirlik's gives 25.1 days, and
+the 600 s record's rainflow count 25.1 days too: the narrow-band formula is 1.4 % pessimistic, as it should be
+on a nearly narrow band.</p>
+<p>If the detail had a hole in it with <m>K<sub>t</sub></m> = 2.5 and <m>q</m> = 0.8, <m>K<sub>f</sub></m> = 2.2 and
+the life would fall <m>2.2<sup>3</sup></m> = 10.6 times, to 2.3 days. A smooth part with a mean of 200 MPa, an
+amplitude of 100 MPa and <m>S<sub>u</sub></m> = 600 MPa needs an S–N curve's fully reversed 150 MPa by Goodman,
+112.5 by Gerber.</p>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the stress, the curve and the record (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>Basquin's S–N curve, N S<sup>b</sup> = K, makes damage go as the stress to the power b: the RMS must be right.</li>
-<li>Miner's rule adds n/N over the cycles; rainflow counting finds the cycles in a random record.</li>
-<li>The narrow-band formula is exact for one narrow mode and conservative for broad or multi-modal stress.</li>
-<li>The irregularity factor α₂ = ν₀/ν<sub>p</sub> says how narrow the band is; Dirlik's formula handles any α₂.</li>
+<li>Basquin's S–N curve, <m>NS<sup>b</sup> = K</m>, makes damage go as the stress to the power <m>b</m>: the RMS must be right.</li>
+<li>Miner's rule adds <m>n/N</m> over the cycles; rainflow counting finds the cycles in a random record.</li>
+<li>A tensile mean, a notch and the knee of a two-slope curve all change the damage before any counting does.</li>
+<li>The narrow-band formula is exact for one narrow mode and conservative for broad or multi-modal stress; Dirlik's formula handles any band.</li>
+<li>The fatigue damage spectrum compares environments by the damage they do; equal damage trades time for level as <m>TG<sup>b/2</sup></m>.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>S_range basquin miner_d mean_stress notch sigma G_stress psd_io moments nu_fat irregularity gamma_fn dirlik omega_n zeta T_rec fds_t</notation>
+<reading>lalanne-4 schijve</reading>
