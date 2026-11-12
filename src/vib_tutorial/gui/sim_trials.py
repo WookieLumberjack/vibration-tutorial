@@ -66,8 +66,8 @@ def chain(t: SimTrial) -> ChainSystem:
 TRIALS = (
     SimTrial(
         "Resonance building up",
-        "A harmonic force on m4, tuned to mode 1 (1.11 Hz). The swing grows over a few of the mode's time "
-        "constants, 1/ζω = 8.3 s, to a steady amplitude where the dampers take out what the force puts in. "
+        "A harmonic force on <m>m<sub>4</sub></m>, tuned to mode 1 (1.11 Hz). The swing grows over a few of the "
+        "mode's time constants, <m>1/ζω</m> = 8.3 s, to a steady amplitude where the dampers take out what the force puts in. "
         "The Frequency response tab marks the drive (dashed) on the peak.",
         tune=1,
         apply=True,
@@ -75,7 +75,7 @@ TRIALS = (
     ),
     SimTrial(
         "Proportional damping: one mode stays one mode",
-        "Every damper is 0.005 times its spring (C = βK), the default chain. Mode 3 is released at 0.25× "
+        "Every damper is 0.005 times its spring (<m>C = βK</m>), the default chain. Mode 3 is released at 0.25× "
         "speed: it decays in one clean shape, only its curve moves in modal coordinates, and it keeps 100% "
         "of the energy (Energy: by mode) while the total decays.",
         coords="Modal",
@@ -86,8 +86,8 @@ TRIALS = (
     ),
     SimTrial(
         "Non-proportional damping: modes trade energy",
-        "c1 = 15 N·s/m, the other dampers at 2. The note under the modal table says non-proportional, and ζ "
-        "modal and ζ exact separate. Mode 3's real shape is no longer an exact mode of the damped chain: "
+        "<m>c<sub>1</sub></m> = 15 N·s/m, the other dampers at 2. The note under the modal table says "
+        "non-proportional, and <m>ζ</m> modal and <m>ζ</m> exact separate. Mode 3's real shape is no longer an exact mode of the damped chain: "
         "released, it feeds modes 1 and 2, and within a second most of the energy left is in mode 1, which "
         "keeps ringing after mode 3 has died away.",
         damping={0: 15.0},
@@ -99,10 +99,10 @@ TRIALS = (
     ),
     SimTrial(
         "A complex mode, released",
-        "c1 = 15 again, with Method → State-space: the table lists 2N eigenvalues in conjugate pairs. Mode 3's "
-        "λ is released with its velocities as well as its displacements, so it stays in one shape as it "
+        "<m>c<sub>1</sub></m> = 15 again, with Method → State-space: the table lists <m>2N</m> eigenvalues in "
+        "conjugate pairs. Mode 3's <m>λ</m> is released with its velocities as well as its displacements, so it stays in one shape as it "
         "decays. The arrows in the complex plane fan out (phases other than 0° and 180°), and the shape never "
-        "passes through zero everywhere at once. Release λ* instead: the motion is the same.",
+        "passes through zero everywhere at once. Release <m>λ*</m> instead: the motion is the same.",
         damping={0: 15.0},
         state_space=True,
         speed=0.25,
@@ -113,7 +113,7 @@ TRIALS = (
     SimTrial(
         "An overdamped pair (c1 = 200)",
         "A damper so strong that one pair of eigenvalues turns into two real ones, one slow and one very "
-        "fast, listed with their time constants instead of a frequency. There are still 2N in all.",
+        "fast, listed with their time constants instead of a frequency. There are still <m>2N</m> in all.",
         damping={0: 200.0},
         state_space=True,
     ),
@@ -121,7 +121,7 @@ TRIALS = (
         "Friction: a straight-line decay",
         "One mass with 0.5 N of friction and a damper too weak to matter (0.01 N·s/m), released from 20 mm. "
         "Each cycle it loses the same "
-        "4F<sub>f</sub>/k = 5 mm, not the same fraction: after four cycles (1.3 s) it sticks, at rest. The "
+        "<m>4F<sub>f</sub>/k</m> = 5 mm, not the same fraction: after four cycles (1.3 s) it sticks, at rest. The "
         "modal table's ζ friction column is the equivalent viscous damping at the release amplitude.",
         n=1,
         damping={0: 0.01},
@@ -131,7 +131,7 @@ TRIALS = (
     ),
     SimTrial(
         "A chirp through the modes",
-        "A sweep from 2 to 7 Hz over 40 s at m4, in modal coordinates: mode 1 rings from the switch-on and "
+        "A sweep from 2 to 7 Hz over 40 s at <m>m<sub>4</sub></m>, in modal coordinates: mode 1 rings from the switch-on and "
         "decays, then modes 2, 3 and 4 swell in turn as the sweep passes them. Sweep faster (Sweep time) and "
         "the peaks come later and lower.",
         coords="Modal",
@@ -143,9 +143,9 @@ TRIALS = (
     ),
     SimTrial(
         "Ground motion: isolation",
-        "The ground moves 5 mm at 1.6 Hz instead of a force pushing m4. The Frequency response tab shows the "
-        "transmissibility: 1 at low frequency, peaks at the modes, and below 1 well above them. At 1.6 Hz m3 "
-        "already moves less than the ground.",
+        "The ground moves 5 mm at 1.6 Hz instead of a force pushing <m>m<sub>4</sub></m>. The Frequency response tab shows the "
+        "transmissibility: 1 at low frequency, peaks at the modes, and below 1 well above them. At 1.6 Hz "
+        "<m>m<sub>3</sub></m> already moves less than the ground.",
         base=(5.0, 1.6),
         apply=True,
         window=4.0,
@@ -153,9 +153,9 @@ TRIALS = (
     ),
     SimTrial(
         "Vibration absorber (undamped)",
-        "A small mass tuned to the machine's frequency, driven there. After the start-up transient m1 stands "
+        "A small mass tuned to the machine's frequency, driven there. After the start-up transient <m>m<sub>1</sub></m> stands "
         "still and only the absorber moves: in Element forces its spring carries the applied force. Change "
-        "the drive frequency a little and m1 starts moving again.",
+        "the drive frequency a little and <m>m<sub>1</sub></m> starts moving again.",
         preset="Vibration absorber",
         coords="Element forces",
         apply=True,
@@ -163,8 +163,8 @@ TRIALS = (
     SimTrial(
         "Tuned mass damper (Den Hartog)",
         "The Frequency response tab: the dashed primary alone peaks at 40 times its static deflection, the "
-        "damped system at under 6. Set c2 to 0: two sharp peaks. Set it to 5: the damper locks the absorber "
-        "to m1 and one tall peak comes back. Every curve passes close to the same two fixed points.",
+        "damped system at under 6. Set <m>c<sub>2</sub></m> to 0: two sharp peaks. Set it to 5: the damper locks the "
+        "absorber to <m>m<sub>1</sub></m> and one tall peak comes back. Every curve passes close to the same two fixed points.",
         preset="Tuned mass damper",
         frf_tab=True,
         apply=True,

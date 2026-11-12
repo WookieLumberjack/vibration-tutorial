@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from PySide6 import QtWidgets
 
+from . import background_figures
 from .lesson import trials_html
 from .links import load_notes
 from .notes_view import NotesBrowser
@@ -20,7 +21,7 @@ COUPLING_TIP = (
     "close the modes' frequencies are. See the Theory tab.</p>"
 )
 
-BACKGROUND_HTML = load_notes("background", trials=trials_html(TRIALS))
+BACKGROUND_HTML = load_notes("background", figures=background_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 def make_background_view() -> QtWidgets.QTextBrowser:
