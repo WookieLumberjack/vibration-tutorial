@@ -394,6 +394,66 @@ def test_beams_plates_worked_example():
     assert 1 / (0.24 / 2 / p.scale) == pytest.approx(39, abs=0.5)
 
 
+def test_integration_worked_example():
+    """The Theory's worked example: the page's default (1 kg on 400 N/m from 10 mm, ten steps a period), each
+    scheme's step from its closed form, the phase after ten periods, and the readout's largest errors."""
+    from vib_tutorial.core.integration import Load, Model, Scheme, exact, simulate, spectral
+    from vib_tutorial.gui.integration import IntegrationTrial
+
+    t = IntegrationTrial("", "")
+    assert (t.mass, t.stiffness, t.damping, t.x0, t.per_period, t.periods, t.force) == (1, 400, 0, 0.01, 10, 10, 0)
+    model, load = Model(), Load()
+    w = math.sqrt(400)
+    assert w == 20 and w / (2 * math.pi) == pytest.approx(3.18, abs=0.005)
+    T = 2 * math.pi / w
+    h = T / 10
+    assert T == pytest.approx(0.314, abs=0.0005) and h == pytest.approx(0.0314, abs=0.00005)
+    O = w * h
+    assert O == pytest.approx(0.628, abs=0.0005) and O / 2 == pytest.approx(0.314, abs=0.0005)
+    cd, aa = 2 * math.asin(O / 2), 2 * math.atan(O / 2)
+    assert cd == pytest.approx(0.639, abs=0.0005) and 0.628 / 0.639 == pytest.approx(0.983, abs=0.0005)
+    assert aa == pytest.approx(0.609, abs=0.0005)
+    sp = {s: spectral(s, O) for s in (Scheme.CENTRAL, Scheme.AVERAGE, Scheme.LINEAR, Scheme.RK4)}
+    assert O / cd - 1 == pytest.approx(sp[Scheme.CENTRAL].period_error) and 100 * sp[
+        Scheme.CENTRAL
+    ].period_error == pytest.approx(-1.7, abs=0.05)
+    assert O / aa - 1 == pytest.approx(sp[Scheme.AVERAGE].period_error) and 100 * sp[
+        Scheme.AVERAGE
+    ].period_error == pytest.approx(3.2, abs=0.05)
+    assert 100 * O**2 / 12 == pytest.approx(3.3, abs=0.05)
+    assert 100 * sp[Scheme.LINEAR].period_error == pytest.approx(1.6, abs=0.05)
+    assert sp[Scheme.RK4].radius == pytest.approx(0.99959, abs=0.000005)
+    assert 100 * sp[Scheme.RK4].period_error == pytest.approx(0.11, abs=0.005)
+    assert 100 * sp[Scheme.RK4].damping == pytest.approx(0.065, abs=0.0005)
+    rk = sum((1j * O) ** k / math.factorial(k) for k in range(5))
+    assert abs(rk) ** 2 == pytest.approx(1 - O**6 / 72 + O**8 / 576)
+    assert 1 - 8**3 / 72 + 8**4 / 576 == pytest.approx(1.0)  # ρ = 1 at ωΔt = 2√2
+    # ten periods: 100 steps of phase
+    assert 100 * aa == pytest.approx(60.9, abs=0.05) and 20 * math.pi == pytest.approx(62.8, abs=0.05)
+    assert 20 * math.pi - 100 * aa == pytest.approx(1.95, abs=0.005) and 1.95 / (2 * math.pi) == pytest.approx(
+        0.31, abs=0.005
+    )
+    assert 10 * math.cos(1.95) == pytest.approx(-3.7, abs=0.05)
+    assert 100 * cd - 20 * math.pi == pytest.approx(1.08, abs=0.005) and 10 * math.cos(1.08) == pytest.approx(
+        4.7, abs=0.05
+    )
+    assert 20 * math.pi - 100 * float(np.angle(rk)) == pytest.approx(0.07, abs=0.005)
+    assert abs(rk) ** 100 == pytest.approx(0.960, abs=0.0005)
+    steps = 100
+    times = np.arange(steps + 1) * h
+    reference = exact(model, load, times)
+    largest = {}
+    for s in sp:
+        x = simulate(s, model, load, h, steps, t.alpha)
+        largest[s] = 100 * float(np.max(np.abs(x - reference))) / float(np.max(np.abs(reference)))
+        assert 1000 * x[-1] == pytest.approx(
+            {Scheme.CENTRAL: 4.7, Scheme.AVERAGE: -3.7, Scheme.LINEAR: 5.5, Scheme.RK4: 9.6}[s], abs=0.05
+        )
+    assert [round(largest[s], 1) for s in sp] == pytest.approx([98.0, 164.5, 91.9, 7.6], abs=0.06)
+    assert f"{largest[Scheme.AVERAGE]:.3g}" == "165" and f"{largest[Scheme.CENTRAL]:.3g}" == "98"
+    assert f"{largest[Scheme.LINEAR]:.3g}" == "91.9" and f"{largest[Scheme.RK4]:.3g}" == "7.58"
+
+
 def test_modal_coupling_absorber_damping_is_shared():
     r = modal_analysis(preset("absorber").system)
     assert [m.zeta_modal for m in r.modes] == pytest.approx([0.012, 0.012], abs=0.0015)

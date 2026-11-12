@@ -28,7 +28,7 @@ from ..core.integration import (
     spectral_curves,
 )
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
-from . import settle_plots
+from . import integration_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -83,8 +83,8 @@ TRIALS = (
     ),
     IntegrationTrial(
         "Central difference's limit: Δt < T/π",
-        "Central difference is explicit, and stable only for ωΔt ≤ 2, Δt ≤ T/π. At 3.0 steps a period "
-        "(ωΔt = 2.09) its error doubles every few steps and the run stops; at 3.2 (ωΔt = 1.96) it is stable "
+        "Central difference is explicit, and stable only for <m>ωΔt ≤ 2</m>, <m>Δt ≤ T/π</m>. At 3.0 steps a period "
+        "(<m>ωΔt</m> = 2.09) its error doubles every few steps and the run stops; at 3.2 (<m>ωΔt</m> = 1.96) it is stable "
         "but its period is 29 % short. Newmark's average acceleration runs at any step, its period 30 % long.",
         per_period=3.0,
         schemes=(Scheme.CENTRAL, Scheme.AVERAGE),
@@ -92,9 +92,9 @@ TRIALS = (
     ),
     IntegrationTrial(
         "One step a period",
-        "Δt = T. Average acceleration is unconditionally stable: the amplitude holds at 10 mm, but the motion it "
+        "<m>Δt = T</m>. Average acceleration is unconditionally stable: the amplitude holds at 10 mm, but the motion it "
         "computes has a period 2.5 times too long, nothing like the oscillator's. Linear acceleration needs "
-        "ωΔt ≤ 2√3 (Δt ≤ 0.55 T) and blows up. Stable is not the same as accurate.",
+        "<m>ωΔt ≤ 2√3</m> (<m>Δt ≤ 0.55T</m>) and blows up. Stable is not the same as accurate.",
         per_period=1.0,
         periods=10.0,
         schemes=(Scheme.AVERAGE, Scheme.LINEAR),
@@ -103,7 +103,7 @@ TRIALS = (
     IntegrationTrial(
         "RK4's numerical damping",
         "Five steps a period. RK4 is the most accurate here in period (1.1 % long), but it shrinks the "
-        "amplitude by 2.2 % a step: numerical damping of ζ = 1.8 %, so after ten periods only 33 % is left. "
+        "amplitude by 2.2 % a step: numerical damping of <m>ζ̄</m> = 1.8 %, so after ten periods only 33 % is left. "
         "Average acceleration keeps the amplitude exactly, its period 12 % long.",
         per_period=5.0,
         schemes=(Scheme.AVERAGE, Scheme.RK4),
@@ -114,7 +114,7 @@ TRIALS = (
         "Fifty steps a period, which would be plenty for any other scheme. Explicit Euler steps along the "
         "tangent, which always points outwards from the circle the motion should go round: the amplitude grows "
         "by 0.8 % a step, 48 % a period, 50 times over ten periods. Its spectral radius is above 1 at every "
-        "Δt for an undamped oscillator.",
+        "<m>Δt</m> for an undamped oscillator.",
         per_period=50.0,
         schemes=(Scheme.EULER, Scheme.CENTRAL),
         tab=TAB_RADIUS,
@@ -122,7 +122,7 @@ TRIALS = (
     IntegrationTrial(
         "A stiff mode breaks the explicit schemes",
         "A 0.1 kg mass on a stiff spring hangs from the first: a 1049 Hz mode beside the 3.03 Hz one, as a fine "
-        "mesh has. The run takes 50 steps per period of the slow mode, which gives the stiff one ωΔt = 43, a "
+        "mesh has. The run takes 50 steps per period of the slow mode, which gives the stiff one <m>ωΔt</m> = 43, a "
         "seventh of a step per period. Central difference and RK4 blow up within 20 ms, although nothing that "
         "matters happens up there. Average acceleration doesn't: what limits an explicit step is the fastest mode "
         "in the model, not the one you want.",
@@ -134,10 +134,10 @@ TRIALS = (
     ),
     IntegrationTrial(
         "HHT-α damps what it can't resolve",
-        "The same stiff mode. It is in the closed form too (let go from rest, m1 sets it ringing), but no step "
-        "this long can follow it, so average acceleration turns it into jagged noise that never dies (ρ = 1 at "
-        "any step). HHT-α with α = −0.3 has ρ = 0.57 a step at ωΔt = 43: the noise is gone within a few steps, "
-        "and the 3.03 Hz mode loses only ζ = 0.004 %. That is what finite-element codes use it for.",
+        "The same stiff mode. It is in the closed form too (let go from rest, <m>m<sub>1</sub></m> sets it ringing), but no step "
+        "this long can follow it, so average acceleration turns it into jagged noise that never dies (<m>ρ</m> = 1 at "
+        "any step). HHT-α with <m>α</m> = −0.3 has <m>ρ</m> = 0.57 a step at <m>ωΔt</m> = 43: the noise is gone within a few steps, "
+        "and the 3.03 Hz mode loses only <m>ζ̄</m> = 0.004 %. That is what finite-element codes use it for.",
         per_period=50.0,
         periods=5.0,
         stiff_hz=1000.0,
@@ -150,7 +150,7 @@ TRIALS = (
         "A 1 N sine at 2 Hz from rest, ten steps a period. The first-order-hold update every other page uses is "
         "exact for the oscillator at any Δt; its only error comes from treating the force as straight between "
         "samples: 1.3 % of the swing here. RK4's error is 3 %; central difference's and average "
-        "acceleration's, 41 and 61 %: the start sets the undamped mass ringing at f<sub>n</sub> as well, and their "
+        "acceleration's, 41 and 61 %: the start sets the undamped mass ringing at its natural frequency as well, and their "
         "period errors put that ringing out of phase.",
         x0=0.0,
         force=1.0,
@@ -401,7 +401,7 @@ DAMPING_TIP = (
     "damping), against Δt/T. Negative: it grows.</p>"
 )
 
-NOTES_HTML = load_notes("integration", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("integration", figures=integration_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class IntegrationPage(QtWidgets.QWidget):
