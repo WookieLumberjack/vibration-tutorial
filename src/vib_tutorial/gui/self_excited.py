@@ -2,8 +2,8 @@
 
 Left: the model and its parameters. Centre: its motion from a small start (time history and phase plane), or for
 flutter the two modes' frequencies and damping against the speed. Right: the sweep (the steady amplitude against
-the parameter that drives it, which shows the Hopf point and any hysteresis), and the Theory. The page has its own
-models (core/self_excited.py).
+the parameter that drives it, which shows the Hopf point and any hysteresis), and the Theory (its figures:
+gui/self_excited_figures.py). The page has its own models (core/self_excited.py).
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from ..core.self_excited import (
     galloping_branches,
     settled_amplitude,
 )
-from . import settle_plots
+from . import self_excited_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -76,40 +76,40 @@ class SelfTrial:
 TRIALS = (
     SelfTrial(
         "Negative damping grows to a limit cycle",
-        "ẍ + ω²x = ω(ε − x²/x<sub>r</sub>²)ẋ with ε = 0.2: at small amplitude the damping is negative (ζ = −0.1), "
+        "<m>ẍ + ω<sub>n</sub>²x = ω<sub>n</sub>(ε − x²/x<sub>r</sub>²)ẋ</m> with <m>ε</m> = 0.2: at small amplitude the damping is negative (<m>ζ</m> = −0.1), "
         "so a 0.5 mm start grows; at large amplitude it is positive. It settles where the cycle's energy in and out "
-        "balance: 8.9 mm, 2x<sub>r</sub>√ε. Start it anywhere and it ends on the same closed curve in the phase "
+        "balance: 8.9 mm, 2<m>x<sub>r</sub></m>√<m>ε</m>. Start it anywhere and it ends on the same closed curve in the phase "
         "plane: a limit cycle.",
         Kind.VDP,
         {"vdp_eps": 0.2},
     ),
     SelfTrial(
         "The Hopf point",
-        "ε = −0.1: positive damping everywhere near rest, and the start dies away. The Sweep tab shows the settled "
-        "amplitude against ε: zero below ε = 0, then 2x<sub>r</sub>√ε, rising steeply from nothing. At ε = 0 the "
+        "<m>ε</m> = −0.1: positive damping everywhere near rest, and the start dies away. The Sweep tab shows the settled "
+        "amplitude against <m>ε</m>: zero below <m>ε</m> = 0, then 2<m>x<sub>r</sub></m>√<m>ε</m>, rising steeply from nothing. At <m>ε</m> = 0 the "
         "pair of poles crosses the imaginary axis: a (supercritical) Hopf bifurcation.",
         Kind.VDP,
         {"vdp_eps": -0.1},
     ),
     SelfTrial(
         "Relaxation oscillations",
-        "ε = 5: the nonlinearity dominates. The motion creeps, then snaps: a period of 1.84 s against 1 s for small "
+        "<m>ε</m> = 5: the nonlinearity dominates. The motion creeps, then snaps: a period of 1.84 s against 1 s for small "
         "ε, and a squared-off wave. A dripping tap, a squealing brake and a heartbeat oscillate this way.",
         Kind.VDP,
         {"vdp_eps": 5.0, "vdp_periods": 20.0},
     ),
     SelfTrial(
         "Galloping: Den Hartog's criterion",
-        "A 100 mm square section (5 kg/m, 2 Hz, ζ = 0.5 %) across a 4.5 m/s wind. Moving up, it sees the wind "
-        "come from above; for a square, the force that angle makes pushes it further up (Den Hartog: dC<sub>L</sub>/dα "
-        "+ C<sub>D</sub> &lt; 0). The wind's negative damping ½ρUDA₁ beats the structure's 2mζω above "
-        "U<sub>g</sub> = 3.81 m/s, so the motion grows, slowly this close to the onset.",
+        "A 100 mm square section (5 kg/m, 2 Hz, <m>ζ</m> = 0.5 %) across a 4.5 m/s wind. Moving up, it sees the wind "
+        "come from above; for a square, the force that angle makes pushes it further up (Den Hartog: d<m>C<sub>L</sub></m>/d<m>α</m> "
+        "+ <m>C<sub>D</sub></m> &lt; 0). The wind's negative damping ½<m>ρUDA<sub>1</sub></m> beats the structure's 2<m>mζω<sub>n</sub></m> above "
+        "<m>U<sub>g</sub></m> = 3.81 m/s, so the motion grows, slowly this close to the onset.",
         Kind.GALLOP,
         {"g_speed": 4.5, "g_start": 0.001, "g_periods": 300.0},
     ),
     SelfTrial(
         "Galloping's hysteresis",
-        "Between 4.7 and 7.0 m/s a square section has two stable motions, at 6 m/s 0.51 D and 1.28 D, with an "
+        "Between 4.7 and 7.0 m/s a square section has two stable motions, at 6 m/s 0.51 <m>D</m> and 1.28 <m>D</m>, with an "
         "unstable one between (Sweep tab: filled and open dots). From a small start it settles on the lower; set "
         "the start to 0.12 m and it settles on the upper. Raise the wind past 7.0 m/s and the lower one is gone: "
         "the motion jumps to the upper, and stays there until the wind drops below 4.7 m/s.",
@@ -118,26 +118,26 @@ TRIALS = (
     ),
     SelfTrial(
         "Galloping grows with the wind",
-        "At 12 m/s, three times the onset speed, the section swings 2.7 D from side to side. Unlike flutter or "
+        "At 12 m/s, three times the onset speed, the section swings 2.7 <m>D</m> from side to side. Unlike flutter or "
         "resonance there is no upper limit: the amplitude keeps growing with the wind. Damping only moves the "
-        "onset (U<sub>g</sub> ∝ mζ, the Scruton number).",
+        "onset (<m>U<sub>g</sub></m> ∝ <m>mζ</m>, the Scruton number).",
         Kind.GALLOP,
         {"g_speed": 12.0, "g_start": 0.001, "g_periods": 200.0},
     ),
     SelfTrial(
         "Lock-in",
         "A 50 mm cylinder (20 kg/m, mass ratio 10) on a 1 Hz spring in a current at reduced velocity "
-        "U/f<sub>n</sub>D = 5.5. Vortices would shed at St U/D = 1.1 f<sub>n</sub>, but the structure's motion "
-        "pulls the wake to its own frequency: it swings 0.21 D at f<sub>n</sub>. The Sweep tab shows lock-in, the "
-        "response within 4 % of f<sub>n</sub>, from U<sub>r</sub> = 4.5 to 6.25: a band of speeds, not a single "
+        "<m>U</m>/<m>f<sub>n</sub>D</m> = 5.5. Vortices would shed at St <m>U</m>/<m>D</m> = 1.1 <m>f<sub>n</sub></m>, but the structure's motion "
+        "pulls the wake to its own frequency: it swings 0.21 <m>D</m> at <m>f<sub>n</sub></m>. The Sweep tab shows lock-in, the "
+        "response within 4 % of <m>f<sub>n</sub></m>, from <m>U<sub>r</sub></m> = 4.5 to 6.25: a band of speeds, not a single "
         "resonance.",
         Kind.VIV,
         {"v_reduced": 5.5},
     ),
     SelfTrial(
         "Out of lock-in",
-        "U<sub>r</sub> = 9: the wake sheds near its own Strouhal frequency, 1.8 f<sub>n</sub>, far above the "
-        "structure's (the response is at 1.7 f<sub>n</sub>), and it is a forced one: 0.019 D. Vortex-induced vibration is self-limited "
+        "<m>U<sub>r</sub></m> = 9: the wake sheds near its own Strouhal frequency, 1.8 <m>f<sub>n</sub></m>, far above the "
+        "structure's (the response is at 1.7 <m>f<sub>n</sub></m>), and it is a forced one: 0.019 <m>D</m>. Vortex-induced vibration is self-limited "
         "(about one diameter at most, in practice), unlike galloping.",
         Kind.VIV,
         {"v_reduced": 9.0},
@@ -153,11 +153,11 @@ TRIALS = (
     ),
     SelfTrial(
         "Mass balance",
-        "Move the centre of mass ahead of the elastic axis, to x<sub>cg</sub> = −0.2 semichords: the inertia now "
+        "Move the centre of mass ahead of the elastic axis, to <m>x<sub>cg</sub></m> = −0.2 semichords: the inertia now "
         "couples plunge and pitch the other way, and the section no longer flutters at all; it only diverges, at "
         "39 m/s, where the pitch spring gives out. Mass-balancing control surfaces (lead in the leading edge) "
         "does this. The trend isn't monotonic in this quasi-steady model: with the centre of mass on the axis "
-        "(x<sub>cg</sub> = 0) flutter comes earlier, at 17.7 m/s.",
+        "(<m>x<sub>cg</sub></m> = 0) flutter comes earlier, at 17.7 m/s.",
         Kind.FLUTTER,
         {"f_cg": -0.2, "f_speed": 15.0},
     ),
@@ -198,7 +198,7 @@ def _vdp_amplitude(rng: np.random.Generator) -> Question:
     eps, xr = pick(rng, (0.05, 0.1, 0.2, 0.3, 0.5)), pick(rng, (0.002, 0.005, 0.01, 0.02))
     a = float(VanDerPol(1.0, eps, xr).theory_amplitude(eps))
     return Question(
-        f"A van der Pol oscillator, ẍ + ω²x = ω(ε − x²/x<sub>r</sub>²)ẋ, with ε = {eps:g} and x<sub>r</sub> = "
+        f"A van der Pol oscillator, ẍ + ω<sub>n</sub>²x = ω<sub>n</sub>(ε − x²/x<sub>r</sub>²)ẋ, with ε = {eps:g} and x<sub>r</sub> = "
         f"{1000 * xr:g} mm. How large is its limit cycle's amplitude?",
         1000 * a,
         f"Averaging: over a cycle of x = a cos ωt the energy in, ε⟨ẋ²⟩, balances the energy out, ⟨x²ẋ²⟩/x<sub>r</sub>², "
@@ -216,7 +216,7 @@ def _vdp_growth(rng: np.random.Generator) -> Question:
         f"A van der Pol oscillator at {f:g} Hz with ε = {eps:g} starts from a tiny displacement. How long does its "
         "amplitude take to grow ten times, while it's still small?",
         t,
-        f"Near rest it is ẍ − εωẋ + ω²x = 0: poles σ ± iω<sub>d</sub> with σ = εω/2 = {number(eps * w / 2)} /s. The "
+        f"Near rest it is ẍ − εω<sub>n</sub>ẋ + ω<sub>n</sub>²x = 0: poles σ ± iω<sub>d</sub> with σ = εω<sub>n</sub>/2 = {number(eps * w / 2)} /s. The "
         f"envelope grows as e<sup>σt</sup>, so ten times takes ln 10/σ = {number(t)} s.",
         unit="s",
         setup=dict(kind=Kind.VDP, values={"vdp_freq": f, "vdp_eps": eps, "vdp_start": 1e-4}),
@@ -237,9 +237,9 @@ def _galloping_onset(rng: np.random.Generator) -> Question:
     m = Galloping(side, mass, fn, zeta)
     return Question(
         f"A square section {1000 * side:g} mm across, {mass:g} kg/m, on a spring at {fn:g} Hz with ζ = {zeta:g}, in "
-        f"air (ρ = 1.225 kg/m³). Taking Parkinson's A₁ = {A1:g}, at what wind speed does it start to gallop?",
+        f"air (ρ = 1.225 kg/m³). Taking Parkinson's A<sub>1</sub> = {A1:g}, at what wind speed does it start to gallop?",
         m.onset,
-        f"The wind's damping, −½ρUDA₁, beats the structure's 2mζω where U<sub>g</sub> = 4mζω/(ρDA₁) = 4 × {mass:g} × "
+        f"The wind's damping, −½ρUDA<sub>1</sub>, beats the structure's 2mζω<sub>n</sub> where U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) = 4 × {mass:g} × "
         f"{zeta:g} × {number(m.omega)}/(1.225 × {side:g} × {A1:g}) = {number(m.onset)} m/s.",
         unit="m/s",
         setup=dict(kind=Kind.GALLOP, values={"g_side": side, "g_mass": mass, "g_fn": fn, "g_zeta": zeta}),
@@ -253,9 +253,9 @@ def _galloping_damping(rng: np.random.Generator) -> Question:
     zeta = U * 1.225 * side * A1 / (4 * mass * w)
     return Question(
         f"A square section {1000 * side:g} mm across, {mass:g} kg/m, on a spring at {fn:g} Hz, must not gallop below "
-        f"{U:g} m/s (ρ = 1.225 kg/m³, A₁ = {A1:g}). What damping ratio does it need at least?",
+        f"{U:g} m/s (ρ = 1.225 kg/m³, A<sub>1</sub> = {A1:g}). What damping ratio does it need at least?",
         100 * zeta,
-        f"U<sub>g</sub> = 4mζω/(ρDA₁) ≥ {U:g} m/s, so ζ ≥ ρDA₁U/(4mω) = 1.225 × {side:g} × {A1:g} × {U:g}/(4 × "
+        f"U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) ≥ {U:g} m/s, so ζ ≥ ρDA<sub>1</sub>U/(4mω<sub>n</sub>) = 1.225 × {side:g} × {A1:g} × {U:g}/(4 × "
         f"{mass:g} × {number(w)}) = {number(100 * zeta)} %.",
         unit="%",
         setup=dict(kind=Kind.GALLOP, values={"g_side": side, "g_mass": mass, "g_fn": fn, "g_speed": float(U)}),
@@ -314,7 +314,7 @@ def _heavier(rng: np.random.Generator) -> Question:
         "A square section starts to gallop at 3.8 m/s. Its mass per metre is doubled, the frequency and damping kept. "
         "Where does it start to gallop now?",
         0,
-        "At twice the speed, 7.6 m/s: U<sub>g</sub> = 4mζω/(ρDA₁) is proportional to the mass–damping (Scruton) "
+        "At twice the speed, 7.6 m/s: U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) is proportional to the mass–damping (Scruton) "
         "number mζ.",
         choices=("At twice the speed", "At √2 times the speed", "At the same speed", "At half the speed"),
         setup=dict(kind=Kind.GALLOP, values={"g_mass": 10.0, "g_speed": 6.0}),
@@ -397,7 +397,7 @@ def _scruton_spec(rng: np.random.Generator) -> Question:
         f"{m0:g} kg/m with ζ = {z0:g}. It must not gallop below {number(wind, 2)} m/s. Choose its mass, no more than "
         f"{number(heaviest, 2)} kg/m, and its damping, ζ no more than {number(most, 2)}.",
         0,
-        f"U<sub>g</sub> = 4mζω/(ρDA₁), so it needs mζ ≥ ρDA₁U/(4ω) = {number(need)} kg/m, about {times:g} times "
+        f"U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>), so it needs mζ ≥ ρDA<sub>1</sub>U/(4ω<sub>n</sub>) = {number(need)} kg/m, about {times:g} times "
         f"what it has: more than either limit allows alone ({number(heaviest * z0)} or {number(m0 * most)}), so "
         f"both have to rise; {design['g_mass']:g} kg/m with ζ = {design['g_zeta']:g} gives "
         f"{number(design['g_mass'] * design['g_zeta'])}.",
@@ -445,7 +445,7 @@ TIPS = {
 }
 SWEEP_TIP = "<p>The settled motion against the parameter that drives it; the dotted line is the value set.</p>"
 
-NOTES_HTML = load_notes("self_excited", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("self_excited", figures=self_excited_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class SelfExcitedPage(QtWidgets.QWidget):
@@ -708,7 +708,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self._time_and_phase(t, y, v, m.side, None, "y / D")
         amp = float(settled_amplitude(y))
         self.info.setText(
-            f"Onset U<sub>g</sub> = 4mζω/(ρDA₁) = {m.onset:.3g} m/s; U/U<sub>g</sub> = {m.speed / m.onset:.3g}."
+            f"Onset U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) = {m.onset:.3g} m/s; U/U<sub>g</sub> = {m.speed / m.onset:.3g}."
         )
         self.readout.setText(
             f"At {m.speed:.3g} m/s from {m.start * 1e3:.3g} mm: the last quarter swings "

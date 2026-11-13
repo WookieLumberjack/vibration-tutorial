@@ -2561,6 +2561,61 @@ def test_fluid_structure_worked_example():
     assert sl.peak(structure, tuned) == pytest.approx(5.58, abs=0.005)
 
 
+def test_self_excited_worked_example():
+    """The Self-excited vibration page's worked example: each model on the page's defaults."""
+    from vib_tutorial.core import self_excited as se
+    from vib_tutorial.gui.self_excited import DEFAULTS
+
+    d = DEFAULTS
+    # van der Pol: ζ −0.1 at rest, 2 × 10 × √0.2 = 8.94 mm
+    assert (d["vdp_freq"], d["vdp_eps"], d["vdp_ref"]) == (1.0, 0.2, 0.01)
+    vdp = se.VanDerPol(1.0, 0.2, 0.01)
+    assert -vdp.eps / 2 == pytest.approx(-0.1)
+    assert float(vdp.theory_amplitude(0.2)) == pytest.approx(0.00894, abs=0.000005)
+    # galloping: 0.628 against the wind's 0.989 at 6 m/s; U_g 3.81 m/s; 0.51 D, 0.91 D (unstable), 1.28 D
+    assert (d["g_side"], d["g_mass"], d["g_fn"], d["g_zeta"], d["g_speed"]) == (0.1, 5.0, 2.0, 0.005, 6.0)
+    g = se.Galloping(0.1, 5.0, 2.0, 0.005, 6.0)
+    assert 2 * math.pi * 2 == pytest.approx(12.57, abs=0.005)
+    assert 2 * 5 * 0.005 * 4 * math.pi == pytest.approx(0.628, abs=0.0005)
+    assert 4 * 5 * 0.005 * 12.57 / (1.225 * 0.1 * 2.69) == pytest.approx(3.81, abs=0.005)
+    assert g.onset == pytest.approx(3.81, abs=0.005)
+    assert 0.5 * 1.225 * 6 * 0.1 * 2.69 == pytest.approx(0.989, abs=0.0005)
+    branches = se.galloping_branches(g, np.array([6.0]))
+    found = sorted((float(b.amplitude[0]) / g.side, b.stable) for b in branches)
+    assert [a for a, _ in found] == pytest.approx([0.51, 0.91, 1.28], abs=0.005)
+    assert [s for _, s in found] == [True, False, True]
+    # vortex shedding: m* 10.2, m_a 1.96 kg/m, 0.275 m/s, 1.1 f_n, lock-in near 5
+    assert (d["v_d"], d["v_mass"], d["v_fn"], d["v_reduced"]) == (0.05, 20.0, 1.0, 5.5)
+    v = se.Viv(0.05, 20.0, 1.0)
+    assert v.mass_ratio == pytest.approx(10.2, abs=0.05)
+    assert v.added_mass == pytest.approx(1.96, abs=0.005)
+    assert 5.5 * 1 * 0.05 == pytest.approx(0.275)
+    assert v.strouhal * 5.5 == pytest.approx(1.1)
+    assert v.lock_in_at == pytest.approx(5.0)
+    # flutter at rest: S 0.3, I 0.05625, k_h 3553, k_θ 79.94; 0.4725ω⁴ − 999.3ω² + 284 000 = 0 → 2.93, 6.71 Hz
+    assert (d["f_plunge"], d["f_pitch"], d["f_cg"], d["f_e"]) == (3.0, 6.0, 0.2, 0.3)
+    f = se.Flutter()
+    assert (f.semichord, f.mass, f.radius) == (0.15, 10.0, 0.5)
+    M, _, K = f.matrices(0.0)
+    assert M[0, 1] == pytest.approx(0.3)
+    assert M[1, 1] == pytest.approx(0.05625)
+    assert K[0, 0] == pytest.approx(3553, abs=0.5)
+    assert K[1, 1] == pytest.approx(79.94, abs=0.005)
+    assert 10 * 0.05625 - 0.3**2 == pytest.approx(0.4725)
+    assert 3553 * 0.05625 + 79.94 * 10 == pytest.approx(999.3, abs=0.05)
+    assert 3553 * 79.94 == pytest.approx(284_000, abs=500)
+    roots = np.sort(np.roots([0.4725, -999.3, 284_000.0]))
+    assert np.sqrt(roots) / (2 * math.pi) == pytest.approx([2.93, 6.71], abs=0.005)
+    fr, _ = f.modes(np.array([0.0]))
+    assert fr[0] == pytest.approx([2.93, 6.71], abs=0.005)
+    # divergence 39.2 m/s; flutter 19.1 m/s (17.7 with the cg on the axis, none 0.2 ahead)
+    assert math.sqrt(79.94 / (2 * math.pi * 1.225 * 0.15**2 * 0.3)) == pytest.approx(39.2, abs=0.05)
+    assert f.divergence_speed() == pytest.approx(39.2, abs=0.05)
+    assert f.flutter_speed() == pytest.approx(19.1, abs=0.05)
+    assert f.at(x_cg=0.0).flutter_speed() == pytest.approx(17.7, abs=0.05)
+    assert f.at(x_cg=-0.2).flutter_speed() == pytest.approx(f.divergence_speed(), rel=1e-3)
+
+
 def test_diagnostics_trials():
     from dataclasses import replace
 

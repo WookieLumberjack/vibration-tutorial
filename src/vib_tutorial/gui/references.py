@@ -1201,6 +1201,45 @@ REFERENCES = (
         "R. A. Ibrahim, <i>Liquid Sloshing Dynamics: Theory and Applications</i>, Cambridge University Press, 2005",
         "sloshing in depth: linear and nonlinear theory, analogues, liquid dampers",
     ),
+    Reference(
+        "van-der-pol-1926",
+        "van der Pol 1926",
+        "B. van der Pol, On “relaxation-oscillations”, <i>Philosophical Magazine</i> (7) 2(11), 978–992, 1926",
+        "",
+    ),
+    Reference(
+        "parkinson-smith",
+        "Parkinson and Smith 1964",
+        "G. V. Parkinson and J. D. Smith, The square prism as an aeroelastic non-linear oscillator, <i>Quarterly "
+        "Journal of Mechanics and Applied Mathematics</i> 17(2), 225–239, 1964",
+        "",
+    ),
+    Reference(
+        "facchinetti",
+        "Facchinetti, de Langre and Biolley 2004",
+        "M. L. Facchinetti, E. de Langre and F. Biolley, Coupling of structure and wake oscillators in "
+        "vortex-induced vibrations, <i>Journal of Fluids and Structures</i> 19(2), 123–140, 2004",
+        "",
+    ),
+    Reference(
+        "theodorsen",
+        "Theodorsen 1935",
+        "T. Theodorsen, General theory of aerodynamic instability and the mechanism of flutter, NACA Report 496, 1935",
+        "",
+    ),
+    Reference(
+        "blevins-fiv",
+        "Blevins 1990",
+        "R. D. Blevins, <i>Flow-Induced Vibration</i>, 2nd edition, Van Nostrand Reinhold, 1990 (Krieger reprint, "
+        "corrected)",
+        "galloping, vortex shedding, flutter and more, with the data to design against them",
+    ),
+    Reference(
+        "dowell",
+        "Dowell 2022",
+        "E. H. Dowell (ed.), <i>A Modern Course in Aeroelasticity</i>, 6th edition, Springer, 2022",
+        "flutter and divergence from the typical section to unsteady aerodynamics",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
