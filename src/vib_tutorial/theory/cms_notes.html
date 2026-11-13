@@ -145,7 +145,10 @@ the two shapes share no kinetic energy.</li>
 </ul>
 So <m>V<sup>T</sup>KV</m> = [400 400; 400 2000]. The matrices look nothing like <m>K</m> and <m>M</m>,
 and the off-diagonal 400 says the two shapes are coupled, yet solving gives exactly 1.967 and 5.150 Hz. A
-<b>square</b> (complete) basis only rewrites the problem; it cannot change the answer.</li>
+<b>square</b> (complete) basis only rewrites the problem; it cannot change the answer. Any shapes would
+do, provided none is a combination of the others (else <m>V</m> can't be inverted and some motion is
+missing). The frequencies come out the same in every such basis; the mode shapes come out as
+coordinates <m>η</m> in it, and <m>x = Vη</m> turns them back into displacements.</li>
 <li><b>Truncate it.</b> Keep only <m>v<sub>1</sub></m>: one equation, <m>ω<sup>2</sup></m> =
 400/2, <m>f</m> = 2.25 Hz, 14% high. The masses are now forced to move together, which is a
 constraint, so the structure is stiffer and the frequency can only go up (the Rayleigh quotient,
@@ -182,6 +185,16 @@ answer is exact); in general it enlarges the set, so the frequencies can only fa
 ones from above <cite>ritz</cite>. The <a href="#worked-example">worked example</a> shows it on the
 four-mass chain: 1.162, 1.108, 1.1057 Hz with 0, 1, 2 modes kept, and the exact 1.1055 Hz with all
 3.</p>
+<p><b>In short.</b></p>
+<ul>
+<li>Any independent set of shapes is a valid basis, and premultiplying by <m>V<sup>T</sup></m> makes the
+reduced model's energies equal the full model's for every motion it can make.</li>
+<li>A <b>square</b> basis rewrites the problem: same frequencies, same modes, in other coordinates.</li>
+<li>A <b>tall</b> basis changes the answer. The reduced model is the full one held to the chosen
+shapes, so it <i>approximates</i> the dynamics, never too soft, and only as well as those shapes allow.
+Reduction is therefore all about choosing the shapes, which is what the rest of this page is
+about.</li>
+</ul>
 
 <h3><a name="craig-bampton"></a>The Craig–Bampton basis, built up</h3>
 <p>Craig–Bampton is one particular way of choosing <m>V</m> for a component, and the method has its own
@@ -243,13 +256,23 @@ the coordinates they join: <m>M̂<sub>qq</sub></m> modes with modes, <m>M̂<sub>
 the boundary, <m>M̂<sub>bb</sub></m> the boundary with itself.</p>
 
 <h4>5. Why this choice: what the basis buys</h4>
+<p>Ordering the DOFs [interior | boundary] is only bookkeeping, so that the blocks are easy to name;
+it changes nothing. What matters is the choice of shapes, which does two jobs: accuracy with few
+shapes, and components that can be reduced apart and joined.</p>
 <ul>
+<li><b>Accurate with few shapes.</b> The constraint modes are exact static solutions, so slow,
+low-frequency motion is captured exactly, whatever is left out; the few lowest fixed-interface modes add
+the interior's own vibration on top. The low modes of the assembled structure then lie almost inside
+what the basis can make: the small angle of the rails picture, and so a small error.</li>
 <li><b>The boundary coordinates stay physical.</b> Every fixed-interface mode is zero on the
 boundary, and each constraint mode is 1 on its own boundary DOF and 0 on the others. So the
 coordinate multiplying constraint mode <m>j</m> <i>is</i> the displacement <m>x<sub>b,j</sub></m>.
 This is what makes assembly trivial: two components are joined simply by giving their interface the
-same <m>x<sub>b</sub></m>. Modal coordinates of two separate components cannot be joined like
-that.</li>
+same <m>x<sub>b</sub></m>. Modal coordinates of two separate components cannot be joined like that.
+And it is why substructuring needs this basis at all: the assembled structure's own lowest modes
+would reduce it just as well, but finding them means solving the whole model first, which is what
+substructuring sets out to avoid. Each component's Craig–Bampton basis needs only that
+component.</li>
 <li><b><m>K̂</m> is block diagonal</b> (the 0s above). The constraint modes are static, so they do no
 elastic work against the fixed-interface modes: <m>φ<sup>T</sup>(K<sub>ii</sub>Ψ + K<sub>ib</sub>)</m>
 = 0. The two families are stiffness-orthogonal.</li>
