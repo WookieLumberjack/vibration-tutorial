@@ -12,6 +12,7 @@ from __future__ import annotations
 import itertools
 import math
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -38,9 +39,9 @@ from ..core.model_updating import (
     update,
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
-from . import weak
+from . import updating_figures, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TrialCombo
+from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .notes_view import NotesBrowser
@@ -473,7 +474,11 @@ PROBLEMS = tuple(
     )
 )
 
-NOTES_HTML = load_notes("model_updating")
+NOTES_HTML = load_notes(
+    "model_updating",
+    figures=updating_figures.FIGURES,
+    trials=trials_html(SimpleNamespace(name=name, note=note) for name, _, note in TRIALS),
+)
 
 
 def _plot(left: str, bottom: str) -> pg.PlotWidget:

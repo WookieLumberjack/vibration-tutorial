@@ -1845,6 +1845,24 @@ SYMBOLS = (
         "scaling",
     ),
     Symbol(
+        "comac",
+        "COMAC",
+        "coordinate modal assurance criterion: per sensor, how well the test's and the model's shapes agree "
+        "there, over all the pairs, 0 to 1",
+        "–",
+        "updating_page",
+        "comac",
+    ),
+    Symbol(
+        "updating",
+        "p, θ, ε, J, Δ, λ, S<sub>r</sub>",
+        "updating: the model's parameters; the change in ln p so far; the residual, test minus model; its slopes "
+        "against θ; a Gauss–Newton step; the regularization's weight; a frequency's sensitivity, ∂ln f/∂ln p",
+        "–",
+        "updating_page",
+        "sensitivities",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

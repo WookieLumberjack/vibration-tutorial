@@ -2661,3 +2661,52 @@ def test_oma_worked_example():
     assert shape4[3] == pytest.approx(0.347, abs=5e-4)
     assert 100 * (1 - k4 / h4) == pytest.approx(0.23, abs=5e-3)
     assert 100 * (1 - a4 * float(np.sum(shape4**2))) == pytest.approx(13, abs=0.5)
+
+
+def test_model_updating_worked_example():
+    from vib_tutorial.core import ChainSystem, modal_analysis
+    from vib_tutorial.core.model_updating import Kind, Parameter, frequency_sensitivity
+
+    chain = ChainSystem.uniform(4)
+    exact = modal_analysis(chain)
+    stiff = chain.stiffness.copy()
+    stiff[2] *= 1.3
+    model = modal_analysis(ChainSystem(chain.masses, stiff, chain.damping))
+    f0 = np.array([m.fn_hz for m in exact.modes])
+    f1 = np.array([m.fn_hz for m in model.modes])
+    assert f1 == pytest.approx([1.129, 3.312, 4.906, 6.379], abs=5e-4)
+    assert 100 * (f1 / f0 - 1) == pytest.approx([2.2, 4.1, 0.6, 6.6], abs=0.05)
+    macs = [
+        float((a.shape @ b.shape) ** 2 / ((a.shape @ a.shape) * (b.shape @ b.shape)))
+        for a, b in zip(exact.modes, model.modes)
+    ]
+    assert macs == pytest.approx([0.999, 0.993, 0.992, 0.988], abs=5e-4)
+    springs = frequency_sensitivity(chain, exact, [Parameter(Kind.SPRING, j) for j in range(4)])
+    masses = frequency_sensitivity(chain, exact, [Parameter(Kind.MASS, j) for j in range(4)])
+    phi = exact.modes[0].shape_mass_normalized
+    assert (exact.modes[0].omega_n, *phi) == pytest.approx((6.946, 0.2280, 0.4285, 0.5774, 0.6565), abs=1e-4)
+    assert 0.5774 - 0.4285 == pytest.approx(0.149, abs=5e-4)
+    assert 400 * 0.149**2 / (2 * 6.946**2) == pytest.approx(0.092, abs=5e-4)
+    assert springs == pytest.approx(
+        np.array(
+            [
+                [0.216, 0.167, 0.092, 0.026],
+                [0.167, 0, 0.167, 0.167],
+                [0.092, 0.167, 0.026, 0.216],
+                [0.026, 0.167, 0.216, 0.092],
+            ]
+        ).T.T,
+        abs=5e-4,
+    )
+    assert np.sum(springs, axis=1) == pytest.approx(0.5) and np.sum(masses, axis=1) == pytest.approx(-0.5)
+    share = 2 * springs[:, 2]
+    assert 100 * share == pytest.approx([18, 33, 5, 43], abs=0.5)
+    linear = 100 * (1.3 ** springs[:, 2] - 1)
+    assert linear == pytest.approx([2.4, 4.5, 0.7, 5.8], abs=0.05)
+    y = np.log(f1 / f0)
+    s = springs[:, 2]
+    assert (float(s @ y), float(s @ s)) == pytest.approx((0.0226, 0.0833), abs=5e-5)
+    theta = float(s @ y) / float(s @ s)
+    assert (theta, math.exp(theta), 0.0226 / 0.0833) == pytest.approx((0.271, 1.31, 0.271), abs=5e-3)
+    scaled = modal_analysis(ChainSystem(1.1 * chain.masses, 1.1 * chain.stiffness, chain.damping))
+    assert [m.fn_hz for m in scaled.modes] == pytest.approx(list(f0))
