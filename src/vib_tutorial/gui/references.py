@@ -747,6 +747,42 @@ REFERENCES = (
         "D. de Klerk, D. J. Rixen and S. N. Voormeeren, General framework for dynamic substructuring: history, review and classification of techniques, <i>AIAA Journal</i> 46, 1169–1181, 2008",
         "the methods, modal and frequency-based, in one framework",
     ),
+    Reference(
+        "hurty",
+        "Hurty 1965",
+        "W. C. Hurty, Dynamic analysis of structural systems using component modes, <i>AIAA Journal</i> 3, 678–685, 1965",
+        "",
+    ),
+    Reference(
+        "guyan",
+        "Guyan 1965",
+        "R. J. Guyan, Reduction of stiffness and mass matrices, <i>AIAA Journal</i> 3, 380, 1965",
+        "",
+    ),
+    Reference(
+        "hou",
+        "Hou 1969",
+        "S.-N. Hou, Review of modal synthesis techniques and a new approach, <i>Shock and Vibration Bulletin</i> 40(4), 25–31, 1969",
+        "",
+    ),
+    Reference(
+        "goldman",
+        "Goldman 1969",
+        "R. L. Goldman, Vibration analysis by dynamic partitioning, <i>AIAA Journal</i> 7, 1152–1154, 1969",
+        "",
+    ),
+    Reference(
+        "craig-chang",
+        "Craig and Chang 1977",
+        "R. R. Craig and C.-J. Chang, <i>Substructure Coupling for Dynamic Analysis and Testing</i>, NASA CR-2781, 1977",
+        "",
+    ),
+    Reference(
+        "craig-kurdila",
+        "Craig and Kurdila 2006",
+        "R. R. Craig and A. J. Kurdila, <i>Fundamentals of Structural Dynamics</i>, 2nd edition, Wiley, 2006",
+        "component mode synthesis, fixed and free interface, from the authors of the first",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

@@ -16,6 +16,7 @@ from ..core import (
     substructure_damping,
 )
 from ..core.modal import TWO_PI
+from . import cms_figures
 from .lesson import trials_html
 from .links import load_notes
 from .style import colors
@@ -49,7 +50,7 @@ STEP, HARMONIC = ForceKind.STEP, ForceKind.HARMONIC
 TRIALS = (
     CmsTrial(
         "One substructure: Guyan",
-        "No cut and no modes kept: only x<sub>8</sub> is left, one DOF and one frequency, 0.630 Hz against "
+        "No cut and no modes kept: only <m>x<sub>8</sub></m> is left, one DOF and one frequency, 0.630 Hz against "
         "the true 0.587 Hz (+7.3%). The Basis tab shows why: the one constraint mode is a straight line "
         "from the ground to the tip, so this is Rayleigh's quotient with a linear shape.",
         kept=(0,),
@@ -81,7 +82,7 @@ TRIALS = (
     ),
     CmsTrial(
         "Cut at m4, one mode each",
-        "4 DOFs (q<sub>A1</sub>, q<sub>B1</sub>, x<sub>4</sub>, x<sub>8</sub>) instead of 8. Mode 1 is "
+        "4 DOFs (<m>q<sub>A1</sub>, q<sub>B1</sub>, x<sub>4</sub>, x<sub>8</sub></m>) instead of 8. Mode 1 is "
         "within 0.03%, mode 4 is 7% high with MAC 0.84, and modes 5 to 8 aren't in the model at all. "
         "Under <i>Substructures on their own</i>, A and B are identical three-mass pieces with a clamped "
         "mode at 2.44 Hz each; coupled, they split into modes 3 (2.84 Hz) and 4 (3.84 Hz), each carrying "
@@ -161,7 +162,7 @@ TRIALS = (
     ),
     CmsTrial(
         "Parts that float",
-        "k<sub>1</sub> = k<sub>2</sub> = 0, so m1 and m2 aren't held by anything but the interface. "
+        "<m>k<sub>1</sub> = k<sub>2</sub></m> = 0, so m1 and m2 aren't held by anything but the interface. "
         "Craig–Bampton fails (m1 and m2 float when the boundary is held: switch to it and see), but the "
         "free-interface methods simply find more rigid-body modes in A.",
         interfaces=(3,),
@@ -181,7 +182,7 @@ TRIALS = (
     ),
     CmsTrial(
         "Recovering a force",
-        "2 modes each, driven at mode 4. x<sub>b</sub> is within about 9%, the coupled recovery of x2 within "
+        "2 modes each, driven at mode 4. <m>x<sub>b</sub></m> is within about 9%, the coupled recovery of x2 within "
         "15%, but its force in k2 is off by nearly 40%: a force is a difference of displacements, which "
         "brings out the truncated higher modes. The enhanced recovery puts them back (about 12%). Keep 3 "
         "(all) modes and every recovery but the boundary-only one is exact.",
@@ -208,7 +209,7 @@ def legend_html() -> str:
     )
 
 
-THEORY_HTML = load_notes("cms_notes", trials=trials_html(TRIALS))
+THEORY_HTML = load_notes("cms_notes", figures=cms_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 def fmt(v: float, scale: float) -> str:
