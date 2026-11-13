@@ -836,7 +836,7 @@ PRESETS = (
         120.0,
         Sweep.UP_DOWN,
         2.0,
-        "k3 = 0: one amplitude at each frequency, so the two sweeps agree, apart from the ringing a sweep "
+        "<m>k<sub>3</sub></m> = 0: one amplitude at each frequency, so the two sweeps agree, apart from the ringing a sweep "
         "leaves behind just past the resonance.",
     ),
     DuffingPreset(
@@ -871,7 +871,7 @@ PRESETS = (
         2.0 / TWO_PI * 20.0,
         "No force: the stiffness pulses ±30 % at twice the natural frequency (6.37 Hz), like a swing pumped "
         "twice a swing. Rest is unstable there, and the noise grows into a swing at half the pump's "
-        "frequency, by e^(0.05 ω_n t), with nothing on a linear spring to stop it.",
+        "frequency, by <m>e<sup>0.05ω<sub>n</sub>t</sup></m>, with nothing on a linear spring to stop it.",
     ),
     DuffingPreset(
         "Parametric resonance, hardening",
@@ -905,7 +905,7 @@ PRESETS = (
         120.0,
         Sweep.HOLD,
         1.0 / TWO_PI,
-        "x'' + 0.05 x' + x^3 = 7.5 cos t: no linear spring, light damping, a big drive. The response never "
+        "<m>ẍ + 0.05ẋ + x³ = 7.5 cos t</m>: no linear spring, light damping, a big drive. The response never "
         "repeats: once per drive cycle the Poincaré section's dot lands somewhere new on a strange attractor.",
     ),
 )

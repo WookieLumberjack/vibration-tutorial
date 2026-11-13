@@ -1955,6 +1955,26 @@ SYMBOLS = (
         "startup",
     ),
     Symbol(
+        "duffing",
+        "φ, a, θ, κ(a), x<sub>e</sub>",
+        "the Duffing oscillator: the drive's phase, φ̇ = Ω; a steady swing's amplitude and lag, x = a cos(φ − θ); "
+        "the spring's stiffness to the first harmonic, k + ¾k<sub>3</sub>a²; a softening spring's escape "
+        "amplitude, √(k/−k<sub>3</sub>), its potential's hilltop",
+        "rad, m, rad, N/m, m",
+        "duffing_page",
+        "harmonic-balance",
+    ),
+    Symbol(
+        "floquet",
+        "λ, σ, n",
+        "a pumped spring's Floquet multiplier, the monodromy matrix's largest eigenvalue over one pump period; "
+        "its swing's growth rate, (Ω/2π) ln|λ|; a tongue's number, the n-th reaching down toward Ω/2π = "
+        "2f<sub>n</sub>/n",
+        "–, 1/s, –",
+        "duffing_page",
+        "parametric",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",
