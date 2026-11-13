@@ -122,20 +122,37 @@ basis the shapes don't exchange energy, so each can be solved on its own. Keep o
 modes and it is a reduction like any other (modal truncation), with <m>Φ</m> a tall matrix.</p>
 
 <h4>A small example (2 masses, 1 kg and 400 N/m each)</h4>
-<p><m>K</m> = [800 −400; −400 400], <m>M = I</m>. True frequencies: 1.967 and 5.150 Hz.</p>
+<p>The chain is ground – spring – <m>m<sub>1</sub></m> – spring – <m>m<sub>2</sub></m>, so
+<m>K</m> = [800 −400; −400 400] and <m>M = I</m>. True frequencies: 1.967 and 5.150 Hz, with mode
+shapes [0.618, 1] and [1, −0.618].</p>
+<p>A basis is always a set of <i>displacement</i> shapes, chosen freely: a column [1, 1] means "mass 1
+moves 1 m and mass 2 moves 1 m", and its coordinate says how far. The energy argument above only says
+how to weigh each shape once it is chosen, and each entry of <m>V<sup>T</sup>KV</m> can be read off the
+springs as the strain energy of those displacements.</p>
 <ol>
-<li><b>A full, different basis.</b> Take <m>v<sub>1</sub></m> = [1, 1] ("move together") and
-<m>v<sub>2</sub></m> = [1, −1] ("move apart"). Then <m>V<sup>T</sup>KV</m> = [400 400; 400 2000]
-and <m>V<sup>T</sup>MV</m> = [2 0; 0 2]. The matrices look nothing like <m>K</m> and <m>M</m>, and
-the off-diagonal 400 says the two shapes are coupled, yet solving gives exactly 1.967 and 5.150 Hz.
-A <b>square</b> (complete) basis only rewrites the problem; it cannot change the answer.</li>
+<li><b>A full, different basis.</b> Take <m>v<sub>1</sub></m> = [1, 1] (both masses move the same way,
+together) and <m>v<sub>2</sub></m> = [1, −1] (they move opposite ways). These are easy to picture, not
+the chain's modes. Then
+<ul>
+<li><m>v<sub>1</sub><sup>T</sup>Kv<sub>1</sub></m> = 400: moving both by 1 stretches only the first
+spring, by 1;</li>
+<li><m>v<sub>2</sub><sup>T</sup>Kv<sub>2</sub></m> = 2000: the first spring stretches by 1 and the second
+by 2, 400 × 1<sup>2</sup> + 400 × 2<sup>2</sup>;</li>
+<li><m>v<sub>1</sub><sup>T</sup>Kv<sub>2</sub></m> = 400: the strain energy the two shapes share when both
+are present, which is what couples them;</li>
+<li><m>V<sup>T</sup>MV</m> = [2 0; 0 2]: in either shape both 1 kg masses move at the shape's speed, and
+the two shapes share no kinetic energy.</li>
+</ul>
+So <m>V<sup>T</sup>KV</m> = [400 400; 400 2000]. The matrices look nothing like <m>K</m> and <m>M</m>,
+and the off-diagonal 400 says the two shapes are coupled, yet solving gives exactly 1.967 and 5.150 Hz. A
+<b>square</b> (complete) basis only rewrites the problem; it cannot change the answer.</li>
 <li><b>Truncate it.</b> Keep only <m>v<sub>1</sub></m>: one equation, <m>ω<sup>2</sup></m> =
 400/2, <m>f</m> = 2.25 Hz, 14% high. The masses are now forced to move together, which is a
 constraint, so the structure is stiffer and the frequency can only go up (the Rayleigh quotient,
 <m>ω<sup>2</sup> = v<sup>T</sup>Kv/v<sup>T</sup>Mv</m>).</li>
 <li><b>Choose a better shape.</b> Use the static deflection under a tip load instead,
 <m>v</m> = [0.5, 1]: <m>ω<sup>2</sup></m> = 200/1.25, <m>f</m> = 2.01 Hz, only 2.3% high with a
-single coordinate. (The true mode is [0.618, 1].) A static shape captures most of the
+single coordinate. (The true mode 1 is [0.618, 1].) A static shape captures most of the
 low-frequency motion. That is exactly why Craig–Bampton uses static constraint modes.</li>
 </ol>
 

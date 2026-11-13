@@ -154,6 +154,25 @@ def cms(interfaces, kept, method="craig-bampton"):
     ]
 
 
+def test_substructuring_small_example():
+    K, M = np.array([[800.0, -400], [-400, 400]]), np.eye(2)
+    w2, shapes = np.linalg.eigh(K)
+    assert np.sqrt(w2) / (2 * np.pi) == pytest.approx([1.967, 5.150], abs=5e-4)
+    assert shapes[:, 0] / shapes[1, 0] == pytest.approx([0.618, 1], abs=5e-4)
+    assert shapes[:, 1] / shapes[0, 1] == pytest.approx([1, -0.618], abs=5e-4)
+    V = np.array([[1.0, 1], [1, -1]])
+    assert V.T @ K @ V == pytest.approx(np.array([[400, 400], [400, 2000]]))
+    assert V.T @ M @ V == pytest.approx(2 * np.eye(2))
+    assert 400 * 1**2 + 400 * 2**2 == 2000
+    f = np.sqrt(np.linalg.eigvals(np.linalg.solve(V.T @ M @ V, V.T @ K @ V)).real) / (2 * np.pi)
+    assert sorted(f) == pytest.approx([1.967, 5.150], abs=5e-4)
+    v = np.array([1.0, 1])
+    assert np.sqrt(v @ K @ v / (v @ v)) / (2 * np.pi) == pytest.approx(2.25, abs=0.005)
+    v = np.array([0.5, 1])
+    assert (v @ K @ v, v @ v) == pytest.approx((200, 1.25))
+    assert np.sqrt(200 / 1.25) / (2 * np.pi) == pytest.approx(2.01, abs=0.005)
+
+
 def test_substructuring_worked_example():
     import math
 
