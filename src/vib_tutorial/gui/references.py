@@ -1079,6 +1079,26 @@ REFERENCES = (
         "emerging directions”, <i>Journal of Propulsion and Power</i> 22(2), 384–396, 2006",
         "mistuned bladed discs: localization, the amplification's statistics, reduced models and intentional mistuning",
     ),
+    Reference(
+        "api-617",
+        "API 617",
+        "American Petroleum Institute, <i>API Standard 617: Axial and Centrifugal Compressors and "
+        "Expander-compressors</i>, 9th edition, 2022",
+        "",
+    ),
+    Reference(
+        "walker",
+        "Walker 2004",
+        "D. N. Walker, <i>Torsional Vibration of Turbomachinery</i>, McGraw-Hill, 2004",
+        "torsional analysis of turbomachinery trains: modelling, excitation, motor start-ups, testing and standards",
+    ),
+    Reference(
+        "nestorides",
+        "Nestorides 1958",
+        "E. J. Nestorides (compiler), <i>A Handbook on Torsional Vibration</i>, Cambridge University Press, 1958",
+        "the classic handbook on engine and machinery trains: inertias, stiffnesses, natural frequencies, "
+        "stresses and dampers",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

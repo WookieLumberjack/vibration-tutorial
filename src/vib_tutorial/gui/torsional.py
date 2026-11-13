@@ -58,11 +58,12 @@ from ..core.torsional_startup import (
     running_torques,
     steady_speed,
 )
-from . import frame_stats, settle_plots, weak
+from . import frame_stats, settle_plots, torsional_figures, weak
 from .axes import log_axes
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import RunButton, connect_all, set_quietly
 from .links import load_notes, page_link
+from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import spin
 from .plots import Decimator
@@ -385,7 +386,18 @@ RESPONSE_TIP = (
     "speed. Each peaks where its order meets a mode the link twists in.</p>"
 )
 
-NOTES_HTML = load_notes("torsional")
+
+def presets_html() -> str:
+    """The presets as the Theory tab lists them, each with its start-up's note where it has one."""
+    items = []
+    for p in PRESETS:
+        start = STARTUPS.get(p.name)
+        more = f" <i>Start-up:</i> {markup(start.note)}" if start is not None else ""
+        items.append(f"<li><b>{p.name}.</b> {markup(p.note)}{more}</li>")
+    return "<ol>" + "".join(items) + "</ol>"
+
+
+NOTES_HTML = load_notes("torsional", figures=torsional_figures.FIGURES, presets=presets_html())
 
 
 def fmt_torque(t: float) -> str:
@@ -830,7 +842,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self.preset.blockSignals(True)
         self.preset.setCurrentText(name)
         self.preset.blockSignals(False)
-        self.preset_note.setText(p.note)
+        self.preset_note.setText(markup(p.note))
         self._loading = False
         self.selected = 0
         self.response_link.blockSignals(True)

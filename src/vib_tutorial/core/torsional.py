@@ -460,7 +460,7 @@ PRESETS = (
         1480.0,
         3600.0,
         "One mode, the motor and the fan twisting the coupling against each other at "
-        "√(k (J₁ + J₂) / J₁J₂) / 2π = 52.3 Hz. A misaligned coupling's 2× torque meets it at 1569 rpm, "
+        "<m>√(k(J<sub>1</sub> + J<sub>2</sub>)/J<sub>1</sub>J<sub>2</sub>)</m>/2π = 52.3 Hz. A misaligned coupling's 2× torque meets it at 1569 rpm, "
         "6 % above the running speed: inside a 10 % margin. A softer coupling moves it below.",
     ),
     TorsionalPreset(

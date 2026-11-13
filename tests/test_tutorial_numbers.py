@@ -2352,6 +2352,74 @@ def test_variability_worked_example():
     assert 2.23 * 0.0159 == pytest.approx(0.0355, abs=5e-5)
 
 
+def test_torsional_worked_example():
+    """The Torsional vibration page's worked example: the motor and fan's mode, node and Holzer check, its damping,
+    the 2× critical and the torque there and at the running speed, a softer coupling, the motor's start and
+    running point; and the geared compressor's mesh mode."""
+    import math
+
+    from vib_tutorial.core.torsional import (
+        COMPRESSOR,
+        FAN,
+        criticals,
+        forced_response,
+        modes,
+        natural_hz,
+        response_speeds,
+        separation,
+    )
+    from vib_tutorial.core.torsional_startup import FAN_START, running_torques, steady_speed
+    from vib_tutorial.gui.torsional_figures import node_fraction
+
+    w2 = 180_000 * 12 / 20
+    assert w2 == pytest.approx(108_000)
+    assert math.sqrt(w2) == pytest.approx(328.6, abs=0.05)
+    mode = modes(FAN)[0]
+    assert mode.freq_hz == pytest.approx(52.3, abs=0.05)
+    assert mode.shape == pytest.approx([1.0, -0.2])
+    assert node_fraction() == pytest.approx(10 / 12) and 100 * 10 / 12 == pytest.approx(83, abs=0.5)
+    assert 2 * w2 == pytest.approx(216_000) and 216_000 / 180_000 == pytest.approx(1.2)
+    assert 2 * w2 + 10 * w2 * (1 - 1.2) == pytest.approx(0.0, abs=1e-9)
+
+    assert mode.zeta == pytest.approx(0.0183, abs=5e-5)
+    assert 1 / (2 * mode.zeta) == pytest.approx(27.3, abs=0.05)
+    crit = criticals(FAN, 3600)[0]
+    assert (crit.order, crit.rpm) == pytest.approx((2.0, 1569), abs=0.5)
+    assert 60 * 52.3 / 2 == pytest.approx(1569, abs=0.5)
+    assert 100 * separation(crit.rpm, 1480) == pytest.approx(6.0, abs=0.05)
+
+    assert 50 * 2 / 12 == pytest.approx(8.33, abs=5e-3)
+    rpm = response_speeds(FAN, 3600)
+    peak = forced_response(FAN, rpm).total()[0].max()
+    assert peak == pytest.approx(228, abs=0.5)
+    assert 8.33 * 27.3 == pytest.approx(227, abs=0.5)
+    r = 2 * 1480 / 60 / mode.freq_hz
+    assert 2 * 1480 / 60 == pytest.approx(49.3, abs=0.05)
+    assert r == pytest.approx(0.943, abs=5e-4)
+    assert 8.33 / math.sqrt((1 - 0.943**2) ** 2 + (2 * 0.0183 * 0.943) ** 2) == pytest.approx(71.8, abs=0.05)
+    assert forced_response(FAN, np.array([1480.0])).total()[0, 0] == pytest.approx(72.1, abs=0.05)
+    assert 0.9 * 49.3 == pytest.approx(44.4, abs=0.05)
+    assert (2 * math.pi * 44.4) ** 2 * 20 / 12 / 1000 == pytest.approx(130, abs=0.5)
+
+    motor = FAN_START.motor
+    assert motor.sync_rpm == pytest.approx(1500)
+    assert motor.cage(1.0)[0] == pytest.approx(615, abs=0.5)
+    assert 2 * 1600 * 0.2 / 1.04 == pytest.approx(615, abs=0.5)
+    w = steady_speed(FAN, FAN_START)
+    assert 60 * w / (2 * math.pi) == pytest.approx(1444, abs=0.5)
+    assert 100 * (1 - w / motor.sync_speed) == pytest.approx(3.75, abs=5e-3)
+    assert running_torques(FAN, FAN_START)[0] == pytest.approx(580, abs=0.5)
+
+    assert 3 / 4**2 == pytest.approx(0.1875)
+    assert 2e9 * 0.075**2 == pytest.approx(1.125e7)
+    w2_mesh = 1.125e7 * 0.2375 / (0.05 * 0.1875)
+    assert w2_mesh == pytest.approx(2.85e8, rel=5e-3)
+    assert math.sqrt(w2_mesh) / (2 * math.pi) == pytest.approx(2687, abs=0.5)
+    assert natural_hz(COMPRESSOR)[2] == pytest.approx(2688, abs=0.5)
+    tooth = next(c for c in criticals(COMPRESSOR, 1800) if c.mode == 2)
+    assert (tooth.order, tooth.rpm) == pytest.approx((120, 1344), abs=0.5)
+
+
 def test_diagnostics_trials():
     from dataclasses import replace
 
