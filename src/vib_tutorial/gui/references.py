@@ -970,6 +970,32 @@ REFERENCES = (
         "R. Brincker and C. E. Ventura, <i>Introduction to Operational Modal Analysis</i>, Wiley, 2015",
         "OMA from random vibration up: FDD, SSI, record lengths, close modes and scaling",
     ),
+    Reference(
+        "fox-kapoor",
+        "Fox and Kapoor 1968",
+        "R. L. Fox and M. P. Kapoor, Rates of change of eigenvalues and eigenvectors, <i>AIAA Journal</i> 6(12), "
+        "2426–2429, 1968",
+        "",
+    ),
+    Reference(
+        "nocedal-wright",
+        "Nocedal and Wright 2006",
+        "J. Nocedal and S. J. Wright, <i>Numerical Optimization</i>, 2nd edition, Springer, 2006",
+        "",
+    ),
+    Reference(
+        "tikhonov-arsenin",
+        "Tikhonov and Arsenin 1977",
+        "A. N. Tikhonov and V. Y. Arsenin, <i>Solutions of Ill-Posed Problems</i>, Winston, 1977",
+        "",
+    ),
+    Reference(
+        "friswell-mottershead",
+        "Friswell and Mottershead 1995",
+        "M. I. Friswell and J. E. Mottershead, <i>Finite Element Model Updating in Structural Dynamics</i>, Kluwer, "
+        "1995",
+        "correlation, sensitivities, regularization and the methods built on them",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
