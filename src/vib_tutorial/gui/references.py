@@ -1288,6 +1288,66 @@ REFERENCES = (
         "A. Preumont, <i>Vibration Control of Active Structures: An Introduction</i>, 4th edition, Springer, 2018",
         "the field from collocation and spillover to state feedback, piezoelectric transducers and semi-active control",
     ),
+    Reference(
+        "euler-1765",
+        "Euler 1765",
+        "L. Euler, <i>Theoria motus corporum solidorum seu rigidorum</i>, Rostock and Greifswald, 1765 (E289)",
+        "",
+    ),
+    Reference(
+        "kovalevskaya",
+        "Kovalevskaya 1889",
+        "S. Kowalevski, Sur le problème de la rotation d'un corps solide autour d'un point fixe, <i>Acta "
+        "Mathematica</i> 12, 177–232, 1889",
+        "",
+    ),
+    Reference(
+        "poinsot",
+        "Poinsot 1834",
+        "L. Poinsot, <i>Théorie nouvelle de la rotation des corps</i>, Paris, 1834; in full in <i>Journal de "
+        "Mathématiques Pures et Appliquées</i> 16, 9–129 and 289–336, 1851",
+        "",
+    ),
+    Reference(
+        "jacobi-1850",
+        "Jacobi 1850",
+        "C. G. J. Jacobi, Sur la rotation d'un corps, <i>Journal für die reine und angewandte Mathematik</i> 39, "
+        "293–350, 1850",
+        "",
+    ),
+    Reference(
+        "ashbaugh",
+        "Ashbaugh, Chicone and Cushman 1991",
+        "M. S. Ashbaugh, C. C. Chicone and R. H. Cushman, The twisting tennis racket, <i>Journal of Dynamics and "
+        "Differential Equations</i> 3(1), 67–85, 1991",
+        "",
+    ),
+    Reference(
+        "hamilton",
+        "Hamilton 1844",
+        "W. R. Hamilton, On quaternions; or on a new system of imaginaries in algebra, <i>Philosophical Magazine</i> "
+        "(3) 25, 10–13, 1844 (continued to 1850)",
+        "",
+    ),
+    Reference(
+        "jellett",
+        "Jellett 1872",
+        "J. H. Jellett, <i>A Treatise on the Theory of Friction</i>, Hodges, Foster and Co., Dublin, and Macmillan, "
+        "London, 1872",
+        "",
+    ),
+    Reference(
+        "hugenholtz",
+        "Hugenholtz 1952",
+        "N. M. Hugenholtz, On tops rising by friction, <i>Physica</i> 18, 515, 1952",
+        "",
+    ),
+    Reference(
+        "goldstein",
+        "Goldstein, Poole and Safko 2002",
+        "H. Goldstein, C. Poole and J. Safko, <i>Classical Mechanics</i>, 3rd edition, Addison-Wesley, 2002",
+        "the rigid body, Euler's angles and equations, and the heavy symmetric top (its section 5.7)",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

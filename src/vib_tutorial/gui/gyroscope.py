@@ -7,8 +7,8 @@ playback. Centre: the top in 3D (drag to turn it), with its axis's path and the 
 table the friction), then its tilt against time, beside the turning points worked out in closed form in the cup.
 Right: the effective potential the tilt moves in (on a table, the least energy Jellett's constant allows), the
 steady precession rates against the spin, the axis's path from above (on a table, the tip's track), the
-simulation's check against what is conserved, and the Theory. The page has its own models (core/gyroscope.py,
-core/sliding_top.py), stepped on its own frame loop while it shows.
+simulation's check against what is conserved, and the Theory (its figures: gui/gyroscope_figures.py). The page
+has its own models (core/gyroscope.py, core/sliding_top.py), stepped on its own frame loop while it shows.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ from ..core.gyroscope import (
 )
 from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
 from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator
-from . import frame_stats, settle_plots
+from . import frame_stats, gyroscope_figures, settle_plots
 from .cms_time import SampleBuffer
 from .lesson import (
     Dot,
@@ -116,7 +116,7 @@ class GyroTrial:
     friction: float = 0.3  # μ, on a table
     low: float = 0.0045  # m, a tippe top's weight below its centre
     ratio: float = 0.8  # a tippe top's I₁/I₃
-    shape: Shape = Shape.DISC  # radius is a square's side, or a rectangle's a
+    shape: Shape = Shape.DISC  # radius is a square's side, or a rectangle's w
     breadth: float = 0.04  # m, a rectangle's other side b
 
     @property
@@ -152,13 +152,13 @@ TRIALS = (
     GyroTrial(
         "Steady precession",
         "The same top let go already precessing at the slow steady rate, 2.39 rad/s: the root of "
-        "I₁ cos θ φ'² − I₃ω₃ φ' + mgl = 0. It doesn't nod at all, and its axis traces a circle. "
-        "mgl/I₃ω₃ = 2.34 rad/s is the fast top's estimate of it.",
+        "<m>I₁</m> cos <m>θ φ̇</m>² − <m>I₃ω₃φ̇</m> + <m>mgl</m> = 0. It doesn't nod at all, and its axis traces a circle. "
+        "<m>mgl</m>/<m>I₃ω₃</m> = 2.34 rad/s is the fast top's estimate of it.",
         launch=Launch.SLOW,
     ),
     GyroTrial(
         "Fast precession",
-        "The quadratic's other root, 109 rad/s (17 turns a second): steady too, near I₃ω₃/I₁ cos θ = 112 rad/s, "
+        "The quadratic's other root, 109 rad/s (17 turns a second): steady too, near <m>I₃ω₃</m>/<m>I₁</m> cos <m>θ</m> = 112 rad/s, "
         "the free top's own wobble. Watch it at 0.05× speed.",
         launch=Launch.FAST,
         playback=PLAYBACK.index(0.05),
@@ -181,15 +181,15 @@ TRIALS = (
     GyroTrial(
         "Spun slowly: deep nods",
         "At 600 rpm the nods are deep, from 30° to 43.9°, and slow, 4.53 a second; the precession is 6.70 rad/s "
-        "on average. The fast top's estimates (nods 2I₁mgl sin θ/(I₃ω₃)² = 8.7° deep, at I₃ω₃/2πI₁ = 6.2 Hz) no "
+        "on average. The fast top's estimates (nods 2<m>I₁mgl</m> sin <m>θ</m>/(<m>I₃ω₃</m>)² = 8.7° deep, at <m>I₃ω₃</m>/2π<m>I₁</m> = 6.2 Hz) no "
         "longer hold.",
         spin_rpm=600.0,
         playback=PLAYBACK.index(0.25),
     ),
     GyroTrial(
         "A sleeping top",
-        "Nearly upright (2°) at 1000 rpm, over the 467 rpm that I₃ω₃ > 2√(I₁mgl) asks: it stays up, nodding "
-        "between 2° and 2.26°. Upright, the Euler angles φ and ψ turn about the same axis, so their equations "
+        "Nearly upright (2°) at 1000 rpm, over the 467 rpm that <m>I₃ω₃</m> &gt; 2√(<m>I₁mgl</m>) asks: it stays up, nodding "
+        "between 2° and 2.26°. Upright, the Euler angles <m>φ</m> and <m>ψ</m> turn about the same axis, so their equations "
         "are singular there; the simulation steps the orientation as a quaternion and doesn't notice.",
         spin_rpm=1000.0,
         tilt=2.0,
@@ -206,7 +206,7 @@ TRIALS = (
     GyroTrial(
         "Lying flat",
         "At 90°, as a bicycle wheel held by one end of its axle, steady precession has the one root, "
-        "mgl/I₃ω₃ = 2.34 rad/s exactly: a turn in 2.68 s. Gravity's moment mgl turns the angular momentum I₃ω₃ "
+        "<m>mgl</m>/<m>I₃ω₃</m> = 2.34 rad/s exactly: a turn in 2.68 s. Gravity's moment mgl turns the angular momentum I₃ω₃ "
         "round without changing its size.",
         tilt=90.0,
         launch=Launch.SLOW,
@@ -219,8 +219,8 @@ TRIALS = (
     ),
     GyroTrial(
         "No gravity: nutation is the free wobble",
-        "With g = 0 and let go precessing at 5 rad/s, nothing acts on it, so L stays put, 28.5° from the "
-        "vertical, and the axis turns round L once every 2πI₁/|L| = 65.0 ms. Seen from the vertical, its tilt "
+        "With g = 0 and let go precessing at 5 rad/s, nothing acts on it, so <b>L</b> stays put, 28.5° from the "
+        "vertical, and the axis turns round L once every 2π<m>I₁</m>/|<b>L</b>| = 65.0 ms. Seen from the vertical, its tilt "
         "nods between 27.0° and 30°: nutation is this free wobble, which gravity's precession carries round.",
         gravity=0.0,
         launch=Launch.SET,
@@ -230,8 +230,8 @@ TRIALS = (
     ),
     GyroTrial(
         "A square top: just like a disc",
-        "A 0.5 kg square plate 69.28 mm on a side in place of the disc: I₃ = ms²/6 = 4 kg·cm², the first trial's "
-        "disc's mr²/2 (r = s/√3 = 40 mm), and about every line across its axis ms²/12, that disc's mr²/4. So it "
+        "A 0.5 kg square plate 69.28 mm on a side in place of the disc: <m>I₃</m> = <m>ms</m>²/6 = 4 kg·cm², the first trial's "
+        "disc's <m>mr</m>²/2 (<m>r</m> = <m>s</m>/√3 = 40 mm), and about every line across its axis <m>ms</m>²/12, that disc's <m>mr</m>²/4. So it "
         "does just what the disc did: drops to 31.5°, nods 14.7 times a second and precesses at 2.39 rad/s. Its "
         "corners make no difference; only its moments do.",
         shape=Shape.SQUARE,
@@ -239,8 +239,8 @@ TRIALS = (
     ),
     GyroTrial(
         "A rectangle: ω₃ isn't kept",
-        "A 0.5 kg plate 100 × 40 mm, 30 mm up its stem: I₁ = 5.17, I₂ = 8.67 and I₃ = 4.83 kg·cm², so I₁ ≠ I₂. Its "
-        "spin ω₃ now wanders, between 596.7 and 601.1 rpm, so the tilt has no potential of its own: it nods between "
+        "A 0.5 kg plate 100 × 40 mm, 30 mm up its stem: <m>I₁</m> = 5.17, <m>I₂</m> = 8.67 and <m>I₃</m> = 4.83 kg·cm², so <m>I₁</m> ≠ <m>I₂</m>. Its "
+        "spin <m>ω₃</m> now wanders, between 596.7 and 601.1 rpm, so the tilt has no potential of its own: it nods between "
         "28.0° and 40.7°, which no closed form gives. It spins about its smallest moment and stays regular: the Chaos "
         "tab's dots lie on closed curves, and a second top let go 10⁻⁸ rad further over is still only 10⁻⁷ rad away "
         "after 20 s.",
@@ -253,11 +253,11 @@ TRIALS = (
     ),
     GyroTrial(
         "No gravity: the tennis-racket flip",
-        "A plate 100 × 20 mm, 15 mm up its stem, with g = 0: I₁ = 1.29 &lt; I₃ = 4.33 &lt; I₂ = 5.29 kg·cm², so it "
+        "A plate 100 × 20 mm, 15 mm up its stem, with g = 0: <m>I₁</m> = 1.29 &lt; <m>I₃</m> = 4.33 &lt; <m>I₂</m> = 5.29 kg·cm², so it "
         "spins about its middle axis, with nothing acting on it. It flips upside down and back, crossing the "
-        "horizontal every 0.455 s: half the period 4K(k)/λ = 0.910 s of Euler–Poinsot's solution in Jacobi's "
-        "elliptic functions (k² = 1 − 1.2 × 10⁻⁷: near the separatrix, where the period grows without bound). The "
-        "Check tab compares ω with it. The free asymmetric top still has a closed form, if a much harder one.",
+        "horizontal every 0.455 s: half the period 4<m>K</m>(<m>k</m>)/<m>λ</m> = 0.910 s of Euler–Poinsot's solution in Jacobi's "
+        "elliptic functions (<m>k</m>² = 1 − 1.2 × 10⁻⁷: near the separatrix, where the period grows without bound). The "
+        "Check tab compares <m>ω</m> with it. The free asymmetric top still has a closed form, if a much harder one.",
         shape=Shape.RECTANGLE,
         radius=0.1,
         breadth=0.02,
@@ -286,9 +286,9 @@ TRIALS = (
     GyroTrial(
         "On a slippery table: it rises",
         "Out of the cup: a disc 20 mm up a stem whose tip is rounded to 10 mm, let go at 20° spinning at 1500 rpm "
-        "on a table with μ = 0.01. Its tip slides, and friction raises it: under 10° in 12 s, 5° in 19 s. Jellett's "
-        "J = I₃ω₃(a + R cos θ) stays put as friction takes energy out, and the least energy J allows (the Potential "
-        "tab) is upright. Below 4.6° (sin θ = μI₃/maR) friction can make its tip roll instead, and the rise stalls "
+        "on a table with <m>μ</m> = 0.01. Its tip slides, and friction raises it: under 10° in 12 s, 5° in 19 s. Jellett's "
+        "<m>J</m> = <m>I₃ω₃</m>(<m>a</m> + <m>R</m> cos <m>θ</m>) stays put as friction takes energy out, and the least energy J allows (the Potential "
+        "tab) is upright. Below 4.6° (sin <m>θ</m> = <m>μI₃</m>/<m>maR</m>) friction can make its tip roll instead, and the rise stalls "
         "there, spinning at 1457 rpm (upright, J would leave 1455).",
         setting=Setting.TABLE,
         height=0.02,
@@ -299,7 +299,7 @@ TRIALS = (
     ),
     GyroTrial(
         "On a rough table: it rolls instead",
-        "The same top on wood, μ = 0.3: its tip catches and rolls, so friction takes hardly any energy and it "
+        "The same top on wood, <m>μ</m> = 0.3: its tip catches and rolls, so friction takes hardly any energy and it "
         "doesn't rise. It drops to 16.2° at once, then rolls round a circle about 1.35 m across (the Path tab), "
         "tilted all the way.",
         setting=Setting.TABLE,
@@ -310,10 +310,10 @@ TRIALS = (
     ),
     GyroTrial(
         "A tippe top turns over",
-        "A 20 g ball 15 mm in radius, weighted 4.5 mm below its centre (α = 0.3), with I₁/I₃ = 0.8, spun at "
-        "1200 rpm on its bottom, 5° off upright. 1 − α &lt; I₁/I₃ &lt; 1 + α and it spins faster than 468 rpm, so "
-        "turned over is the least energy Jellett's J allows: friction turns it over, past 90° in 1.8 s, and it ends "
-        "on its top spinning at J/I₃(R − a) = 643 rpm, the same way seen from above but the other way about its "
+        "A 20 g ball 15 mm in radius, weighted 4.5 mm below its centre (<m>α</m> = 0.3), with <m>I₁</m>/<m>I₃</m> = 0.8, spun at "
+        "1200 rpm on its bottom, 5° off upright. 1 − <m>α</m> &lt; <m>I₁</m>/<m>I₃</m> &lt; 1 + <m>α</m> and it spins faster than 468 rpm, so "
+        "turned over is the least energy Jellett's <m>J</m> allows: friction turns it over, past 90° in 1.8 s, and it ends "
+        "on its top spinning at <m>J</m>/<m>I₃</m>(<m>R</m> − <m>a</m>) = 643 rpm, the same way seen from above but the other way about its "
         "own axis. Its centre of mass rises 9 mm, and half its energy goes in the friction.",
         setting=Setting.TIPPE,
         mass=0.02,
@@ -325,7 +325,7 @@ TRIALS = (
     ),
     GyroTrial(
         "A tippe top spun too slowly",
-        "The same tippe top at 400 rpm, under the 468 rpm at which upright stops being E_J's least: it stays up, "
+        "The same tippe top at 400 rpm, under the 468 rpm at which upright stops being <m>E<sub>J</sub></m>'s least: it stays up, "
         "wobbling a few degrees.",
         setting=Setting.TIPPE,
         mass=0.02,
@@ -337,7 +337,7 @@ TRIALS = (
     ),
     GyroTrial(
         "A tippe top that can't turn over",
-        "With I₁/I₃ = 1.4, over 1 + α = 1.3, turned over is no minimum: E_J is least at 108.6°, and the ball "
+        "With <m>I₁</m>/<m>I₃</m> = 1.4, over 1 + <m>α</m> = 1.3, turned over is no minimum: <m>E<sub>J</sub></m> is least at 108.6°, and the ball "
         "rolls over past its side and spins there, near 110°.",
         setting=Setting.TIPPE,
         mass=0.02,
@@ -403,8 +403,8 @@ def _rectangle_moments(rng: np.random.Generator) -> Question:
         f"{l * 1000:g} mm above the tip. What is its moment of inertia about the line through the tip parallel to "
         f"its {b * 1000:g} mm sides, in kg·cm²?",
         top.second * 1e4,
-        f"About a line through its centre parallel to the {b * 1000:g} mm sides the plate has ma²/12, a = "
-        f"{a * 1000:g} mm being how far it reaches across that line; moved l up the axis it gains ml²: I₂ = m(a²/12 + l²) = "
+        f"About a line through its centre parallel to the {b * 1000:g} mm sides the plate has mw²/12, w = "
+        f"{a * 1000:g} mm being how far it reaches across that line; moved l up the axis it gains ml²: I₂ = m(w²/12 + l²) = "
         f"{number(top.second * 1e4)} kg·cm². (Parallel to the other sides, I₁ = m(b²/12 + l²) = "
         f"{number(top.transverse * 1e4)} kg·cm²: unequal, an asymmetric top.)",
         unit="kg·cm²",
@@ -422,7 +422,7 @@ def _racket(rng: np.random.Generator) -> Question:
         f"A plate 100 × 20 mm on a stem, its centre {l * 1000:g} mm above the tip, is spun about its stem with no "
         "gravity, a little off the axis. What does it do?",
         0,
-        f"I₁ = m(b²/12 + l²) = {number(i1 * 1e4)}, I₂ = m(a²/12 + l²) = {number(i2 * 1e4)} and I₃ = m(a² + b²)/12 = "
+        f"I₁ = m(b²/12 + l²) = {number(i1 * 1e4)}, I₂ = m(w²/12 + l²) = {number(i2 * 1e4)} and I₃ = m(w² + b²)/12 = "
         f"{number(i3 * 1e4)} kg·cm²: I₃ is the "
         + ("middle one, and spin about the middle axis is unstable: the tennis-racket flip." if middle else "")
         + ("" if middle else f"{'largest' if i3 > max(i1, i2) else 'smallest'}, and spin about it is stable."),
@@ -489,7 +489,7 @@ def _steady_tilted(rng: np.random.Generator) -> Question:
         f"{number(top.weight_moment)} N·m. Spinning at {rpm:g} rpm, at what rate can it precess slowly and steadily "
         f"at {tilt:g}° from the vertical?",
         slow,
-        f"Held at θ, the tilt's equation leaves I₁ cos θ φ'² − I₃ω₃ φ' + mgl = 0, with I₃ω₃ = "
+        f"Held at θ, the tilt's equation leaves I₁ cos θ φ̇² − I₃ω₃ φ̇ + mgl = 0, with I₃ω₃ = "
         f"{number(top.polar * rpm * RPM)} N·m·s and I₁ cos θ = {number(top.transverse * math.cos(math.radians(tilt)))}. "
         f"Its smaller root is {number(slow)} rad/s (the larger, {number(fast)} rad/s, is the fast precession); the "
         f"fast top's estimate mgl/I₃ω₃ = {number(top.weight_moment / (top.polar * rpm * RPM))} rad/s.",
@@ -549,7 +549,7 @@ def _at_rest_path(rng: np.random.Generator) -> Question:
     return Question(
         "A fast top is let go tilted, without being pushed round. What does the tip of its axis trace?",
         0,
-        "Cusps: it starts at rest, so at the top of every nod it stops (φ' = 0) before it falls and is turned "
+        "Cusps: it starts at rest, so at the top of every nod it stops (φ̇ = 0) before it falls and is turned "
         "round again.",
         choices=("Cusps", "Loops", "Smooth waves", "A circle"),
         setup=dict(tilt=30.0, launch=Launch.REST, tab=TAB_PATH),
@@ -562,7 +562,7 @@ def _pushed_back(rng: np.random.Generator) -> Question:
         "A spinning top is let go tilted with a push the opposite way to its precession. What does the tip of its "
         "axis trace?",
         0,
-        "Loops: the precession rate φ' = (b − a cos θ)/sin²θ changes sign between the turning points, so it runs "
+        "Loops: the precession rate φ̇ = (a<sub>φ</sub> − a<sub>ψ</sub> cos θ)/sin²θ changes sign between the turning points, so it runs "
         "backward at one of them.",
         choices=("Loops", "Cusps", "Smooth waves", "A circle"),
         setup=dict(tilt=30.0, launch=Launch.SET, precession=-2.0, tab=TAB_PATH),
@@ -629,8 +629,8 @@ def _period_spec(rng: np.random.Generator) -> Question:
         f"Spin this {m:g} kg top (radius {r * 1000:g} mm, {l * 1000:g} mm up the stem) and let it go at {tilt:g}° "
         f"so that it precesses steadily, once round in {number(target)} s, without nodding.",
         0,
-        f"Steady at θ: I₁ cos θ φ'² − I₃ω₃ φ' + mgl = 0 with φ' = 2π/{number(target)} s = "
-        f"{number(2 * math.pi / target)} rad/s, so ω₃ = (I₁ cos θ φ'² + mgl)/I₃φ': about {number(rpm)} rpm. Let "
+        f"Steady at θ: I₁ cos θ φ̇² − I₃ω₃ φ̇ + mgl = 0 with φ̇ = 2π/{number(target)} s = "
+        f"{number(2 * math.pi / target)} rad/s, so ω₃ = (I₁ cos θ φ̇² + mgl)/I₃φ̇: about {number(rpm)} rpm. Let "
         "it go at the slow steady rate, or it nods.",
         setup=dict(mass=m, radius=r, height=l, tilt=float(tilt), spin_rpm=rounded(rpm * 0.6), launch=Launch.REST),
         goal=goal,
@@ -802,18 +802,17 @@ TIPS = {
     "shape": "<p>A disc, or a square plate: a quarter turn leaves the square as it was, so its moment is the same "
     "about every line across its axis, and it is a symmetric top too. A rectangle isn't (I₁ ≠ I₂): an asymmetric top, "
     "in the cup only.</p>",
-    "breadth": "<p>The rectangle's other side b, across its mark: I₁ = m(b²/12 + l²), I₂ = m(a²/12 + l²), "
-    "I₃ = m(a² + b²)/12.</p>",
-    "side_a": "<p>The rectangle's side a, along its mark (the thick line on it).</p>",
+    "breadth": "<p>The rectangle's other side b, across its mark: I₁ = m(b²/12 + l²), I₂ = m(w²/12 + l²), "
+    "I₃ = m(w² + b²)/12.</p>",
+    "side_a": "<p>The rectangle's side w, along its mark (the thick line on it).</p>",
     "height": "<p>From the tip to the disc's centre, l: gravity's arm, and I₁ = m(r²/4 + l²) about the tip.</p>",
     "gravity": "<p>g: 9.81 m/s² on Earth; 0 for a free top.</p>",
-    "spin": "<p>ω₃, the spin about the axis (ψ' + φ' cos θ), which stays constant. Negative spins it the other "
-    "way.</p>",
+    "spin": "<p>ω₃, the spin about the axis (ψ̇ + φ̇ cos θ), which stays constant. Negative spins it the other way.</p>",
     "tilt": "<p>The axis's angle from the vertical when it is let go, its tilt not changing then (a turning "
     "point).</p>",
-    "launch": "<p>How it is let go: not precessing (φ' = 0), at the slow or fast steady rate (where there is "
+    "launch": "<p>How it is let go: not precessing (φ̇ = 0), at the slow or fast steady rate (where there is "
     "one), or at the rate set below.</p>",
-    "precession": "<p>φ', the axis's rate round the vertical when it is let go (with <i>Set φ' below</i>).</p>",
+    "precession": "<p>φ̇, the axis's rate round the vertical when it is let go (with <i>Set φ̇ below</i>).</p>",
     "playback": "<p>Simulated time per real second. The top spins far too fast to see: slow it down.</p>",
     "setting": "<p>The disc (or square) with its tip held in a cup (it can turn there but not slide), the same on a "
     "round tip that slides and rolls on a table, or a tippe top (a ball weighted low) on a table.</p>",
@@ -821,7 +820,7 @@ TIPS = {
     "centre a = l − R above that.</p>",
     "friction": "<p>μ, Coulomb's friction between the tip and the table: μN against the slip (smoothed below "
     "5 mm/s). 0.01 is a polished, oiled surface; 0.3 is wood.</p>",
-    "low": "<p>How far the tippe top's centre of mass sits below the ball's centre, a: α = a/R.</p>",
+    "low": "<p>How far the tippe top's centre of mass sits below the ball's centre, −a (a &lt; 0): α = −a/R.</p>",
     "ratio": "<p>I₁/I₃ about the centre of mass (I₃ = 0.4mR², a ball's). It turns over if 1 − α &lt; I₁/I₃ &lt; "
     "1 + α.</p>",
     "ball": "<p>The tippe top's ball's radius R (its stem left out).</p>",
@@ -871,7 +870,7 @@ CHECK_TIP = (
     "only). The text compares what it has run with the closed forms.</p>"
 )
 
-NOTES_HTML = load_notes("gyroscope", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("gyroscope", figures=gyroscope_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class TopView(pg.PlotWidget):
@@ -1173,7 +1172,7 @@ def _thin(n: int, most: int) -> slice:
 def _section(axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, top: Top) -> tuple[np.ndarray, np.ndarray]:
     """The Poincaré section's coordinates where the tilt peaks: the spin angle ψ (°, mod 180, a rectangle's
     period), the mark's angle from the line of nodes n = ẑ × e₃, and ω₃ (rpm). With L·ẑ and the energy kept and φ
-    left out, that is all the state there is: θ' = 0 there, and θ follows from the energy."""
+    left out, that is all the state there is: θ̇ = 0 there, and θ follows from the energy."""
     nodes = np.stack([-axis[:, 1], axis[:, 0], np.zeros(len(axis))], axis=1)
     nodes /= np.maximum(np.linalg.norm(nodes, axis=1), 1e-300)[:, None]
     psi = np.degrees(np.arctan2(np.sum(mark * np.cross(axis, nodes), 1), np.sum(mark * nodes, 1))) % 180.0
@@ -1239,7 +1238,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.tilt = release.number("Tilt θ₀:", 0.1, 179.0, 30.0, 1, "°", TIPS["tilt"])
         self.launch = combo([launch.value for launch in LAUNCHES], TIPS["launch"])
         release.add("Precession:", self.launch, TIPS["launch"])
-        self.rate = release.number("φ'₀:", -500.0, 500.0, 0.0, 2, " rad/s", TIPS["precession"])
+        self.rate = release.number("φ̇₀:", -500.0, 500.0, 0.0, 2, " rad/s", TIPS["precession"])
         self.launch_info = note_label()
         release.row(self.launch_info)
 
@@ -1481,7 +1480,7 @@ class GyroscopePage(QtWidgets.QWidget):
         else:
             rates = ", ".join(f"{r:.4g}" for r in (slow, fast) if math.isfinite(r))
             self.launch_info.setText(
-                f"φ'₀ = {self.motion.precession:.4g} rad/s. Steady rates at this tilt: "
+                f"φ̇₀ = {self.motion.precession:.4g} rad/s. Steady rates at this tilt: "
                 + (f"{rates} rad/s." if rates else "none.")
             )
         self.restart()
@@ -1509,7 +1508,7 @@ class GyroscopePage(QtWidgets.QWidget):
         label = self.radius_label
         square = shape is Shape.SQUARE and not ball
         label.setText(
-            "Ball radius R:" if ball else "Side s:" if square else "Side a:" if rectangle else "Disc radius r:"
+            "Ball radius R:" if ball else "Side s:" if square else "Side w:" if rectangle else "Disc radius r:"
         )
         self.radius.setToolTip(
             TIPS["ball"] if ball else TIPS["side"] if square else TIPS["side_a"] if rectangle else TIPS["radius"]
@@ -1549,7 +1548,7 @@ class GyroscopePage(QtWidgets.QWidget):
             + (f", mgl = {fmt(top.weight_moment, 'N·m')}." if top.weight_moment > 0 else "; no gravity: a free top.")
         )
         self.launch_info.setText(
-            f"φ'₀ = {self.motion.precession:.4g} rad/s. An asymmetric top has no steady precession to start at"
+            f"φ̇₀ = {self.motion.precession:.4g} rad/s. An asymmetric top has no steady precession to start at"
             + (": let go at rest." if state.launch in (Launch.SLOW, Launch.FAST) else ".")
         )
 
@@ -1675,7 +1674,7 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _record_chaos(self, s) -> None:
         """The Chaos tab's records: the twin's separation, and the Poincaré section's points (where e₃·ẑ is least:
-        the tilt peaks, θ' = 0), each kept whether or not the tab shows."""
+        the tilt peaks, θ̇ = 0), each kept whether or not the tab shows."""
         assert self.twin is not None  # set with the cup's simulator
         other = self.twin.advance(float(s.t[-1]) - self.twin.t)
         n = min(len(other.t), len(s.t))
@@ -1745,7 +1744,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.readout.setText(nod)
 
     def _launch_rates(self) -> np.ndarray:
-        """ω in the body's axes when let go: φ'₀ about the vertical, which leans θ₀ from the axis about the body's
+        """ω in the body's axes when let go: φ̇₀ about the vertical, which leans θ₀ from the axis about the body's
         x axis, and ω₃ about the axis."""
         m = self.motion
         return np.array([0.0, m.precession * math.sin(m.tilt), m.spin])
