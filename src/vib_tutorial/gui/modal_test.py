@@ -54,12 +54,12 @@ from ..core.identification import (
 )
 from ..core.measurement import AA_CUTOFF, FORCE_RMS, IMPACT_PEAK, SINE_AMPLITUDE
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick
-from . import frame_stats, settle_plots
+from . import frame_stats, modal_test_figures, settle_plots
 from .axes import log_axes
 from .layouts import ColumnScroll, form_layout
 from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
-from .modal_extraction import EXTRACTION_THEORY_HTML, ExtractionControls, ResultsView, StabilizationPlot
+from .modal_extraction import ExtractionControls, ResultsView, StabilizationPlot
 from .notes_view import NotesBrowser
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -124,36 +124,36 @@ TRIALS = (
     ),
     ModalTestTrial(
         "Force noise: H1 against H2",
-        "5% noise on the force channel. H1 reads low at the resonances, where the structure barely resists the "
+        "5 % noise on the force channel. H1 reads low at the resonances, where the structure barely resists the "
         "force and the force signal is smallest, and the coherence dips there. Switch the estimator to H2: "
         "the peaks come back.",
         force_noise=5.0,
     ),
     ModalTestTrial(
         "Response noise: the antiresonances",
-        "5% noise on the response channels. H1 stays unbiased; switch to H2 and it reads high, most at the "
+        "5 % noise on the response channels. H1 stays unbiased; switch to H2 and it reads high, most at the "
         "antiresonances, where the response is small. Look at m1's FRF (Show response of).",
         response_noise=5.0,
     ),
     ModalTestTrial(
         "A short block: leakage",
-        "Nb = 256 with no window: the hit is still ringing when the block ends, so the peaks leak, low and "
+        "<m>N<sub>b</sub></m> = 256 with no window: the hit is still ringing when the block ends, so the peaks leak, low and "
         "wide, and the damping comes out too high. Pick the Force + exponential window: the leakage goes, but "
-        "every mode gains Δζ = 1/(τ<sub>w</sub>ω) (the dashed grey curve), which the extraction takes off "
+        "every mode gains <m>Δζ = 1/τ<sub>w</sub>ω<sub>n</sub></m> (the dashed grey curve), which the extraction takes off "
         "again unless you untick <i>Remove the exponential window's damping</i>.",
         block=256,
         window=Window.RECTANGULAR,
     ),
     ModalTestTrial(
         "Peak picking on coarse lines",
-        "Peak picking with Nb = 256: each frequency snaps to a spectral line and ζ, from the half-power "
+        "Peak picking with <m>N<sub>b</sub></m> = 256: each frequency snaps to a spectral line and <m>ζ</m>, from the half-power "
         "points, comes out too high. Lengthen the block, or switch to the circle fit or LSCF.",
         block=256,
         method=Method.PEAK,
     ),
     ModalTestTrial(
         "Acceleration evens out the modes",
-        "Periodic random with 2% response noise, measuring displacement: the top modes sink into the noise "
+        "Periodic random with 2 % response noise, measuring displacement: the top modes sink into the noise "
         "and LSCF can miss one. Switch the response sensor to Acceleration: every mode comes through, but "
         "the FRF below the first mode turns to noise.",
         excitation=Excitation.PERIODIC_RANDOM,
@@ -1798,4 +1798,4 @@ class ModalTestPage(QtWidgets.QWidget):
         )
 
 
-THEORY_HTML = load_notes("modal_test", extraction=EXTRACTION_THEORY_HTML, trials=trials_html(TRIALS))
+THEORY_HTML = load_notes("modal_test", figures=modal_test_figures.FIGURES, trials=trials_html(TRIALS))

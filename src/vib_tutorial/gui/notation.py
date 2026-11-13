@@ -1758,6 +1758,57 @@ SYMBOLS = (
         "estimators",
     ),
     Symbol(
+        "accelerance",
+        "A",
+        "accelerance, −Ω²H: acceleration per unit force (A<sub>kk</sub> at the drive point)",
+        "1/kg",
+        "test_page",
+        "measured",
+    ),
+    Symbol(
+        "test_block",
+        "N<sub>b</sub>, T, Δf, f<sub>s</sub>, f<sub>max</sub>",
+        "an analyzer's block: its samples; its length N<sub>b</sub>/f<sub>s</sub>; its lines' spacing 1/T; the sample "
+        "rate; the top of the usable band",
+        "–, s, Hz, Hz, Hz",
+        "test_page",
+        "leakage",
+    ),
+    Symbol(
+        "block_spectra",
+        "F, X",
+        "a block's Fourier transforms: of the force (a vector, with several forces) and of a response",
+        "N·s, m·s",
+        "test_page",
+        "estimators",
+    ),
+    Symbol(
+        "spectra_G",
+        "G<sub>ff</sub>, G<sub>xx</sub>, G<sub>xf</sub>, G<sub>fx</sub>",
+        "auto-spectra of the force and the response, and their cross-spectra, averaged over blocks (matrices, "
+        "with several forces)",
+        "N², m², m·N",
+        "test_page",
+        "estimators",
+    ),
+    Symbol(
+        "hammer",
+        "τ<sub>p</sub>, τ<sub>w</sub>, Δζ",
+        "the hammer's pulse length; the exponential window's time constant; the damping that window adds to a mode",
+        "s, s, –",
+        "test_page",
+        "excitation",
+    ),
+    Symbol(
+        "shaker",
+        "F<sub>0</sub>, m<sub>sh</sub>, Z<sub>sh</sub>",
+        "a shaker: its coil's force; its armature's mass; its impedance, the force it spends per unit velocity "
+        "of the drive point",
+        "N, kg, N·s/m",
+        "test_page",
+        "shaker",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

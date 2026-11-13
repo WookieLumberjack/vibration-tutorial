@@ -2570,3 +2570,48 @@ def test_signals_worked_example():
     # the notes' other numbers: a drift, octave and third ratios
     assert (0.01 * 10, 0.5 * 0.01 * 10**2) == pytest.approx((0.1, 0.5))
     assert (10**0.3, 10**0.1, 20 * math.log10(2)) == pytest.approx((2.0, 1.26, 6.02), abs=0.005)
+
+
+def test_modal_test_worked_example():
+    from vib_tutorial.core import ChainSystem, frf, impact_spectrum, modal_analysis
+    from vib_tutorial.gui.modal_test import suggested_fs
+
+    chain = ChainSystem.uniform(4)  # 1 kg, 400 N/m, 2 N·s/m
+    modes = [m.damped for m in modal_analysis(chain).modes]
+    w = np.array([40 * math.sin(math.radians(a)) for a in (10, 30, 50, 70)])
+    assert w == pytest.approx([6.95, 20.0, 30.6, 37.6], abs=0.05)
+    fn = np.array([d.fn_hz for d in modes])
+    assert fn == pytest.approx(w / (2 * math.pi))
+    assert fn == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=5e-4)
+    zeta = np.array([d.zeta for d in modes])
+    assert zeta == pytest.approx(w / 400)
+    assert zeta == pytest.approx([0.0174, 0.0500, 0.0766, 0.0940], abs=5e-5)
+    assert [d.fd_hz for d in modes] == pytest.approx([1.105, 3.179, 4.862, 5.956], abs=5e-4)
+    fs = suggested_fs(modal_analysis(chain))
+    assert (1.25 * 5.956 * 2 / 0.8, fs, fs / 2, 0.8 * fs / 2) == pytest.approx((18.6, 19.0, 9.5, 7.6), abs=0.05)
+    T = 1024 / fs
+    assert (T, 1 / T, 10 * T / 60) == pytest.approx((53.9, 0.0186, 9.0), abs=0.05)
+    widths = [2 * d.zeta * d.fn_hz for d in modes]
+    assert widths == pytest.approx([0.0384, 0.318, 0.747, 1.12], rel=4e-3)
+    assert [b * T for b in widths] == pytest.approx([2.07, 17.2, 40.3, 60.6], rel=3e-3)
+    assert widths[0] * 2048 / fs == pytest.approx(4.1, abs=0.05)
+    decay = modes[0].zeta * w[0]
+    assert (decay, decay * T, math.exp(-decay * T) * 100) == pytest.approx((0.121, 6.50, 0.15), abs=5e-3)
+    tau_w = T / math.log(20)
+    assert (tau_w, 1 / (tau_w * w[0])) == pytest.approx((18.0, 0.0080), abs=0.05)
+    assert 1 / (tau_w * w[0]) == pytest.approx(0.0080, abs=5e-5)
+    levels = 20 * np.log10(impact_spectrum(0.05, np.array([d.fd_hz for d in modes])))
+    assert levels[3] == pytest.approx(-0.73, abs=0.005)
+    assert [round(v) + 0 for v in levels] == [0, 0, 0, -1]
+    assert impact_spectrum(0.05, np.array([30.0]))[0] == pytest.approx(0.0, abs=1e-12)
+    result = modal_analysis(chain)
+    assert np.abs(result.modes[1].shape) == pytest.approx([1, 1, 0, 1], abs=1e-9)
+    assert min(abs(m.shape[3]) for m in result.modes) > 0.3  # every mode moves at m4
+    shape = np.array([0.347, 0.653, 0.879, 1.0])
+    assert np.abs(result.modes[0].shape) == pytest.approx(shape, abs=5e-4)
+    phi2 = 1 / float(np.sum(shape**2))
+    assert (phi2, phi2 / (2 * 0.0174)) == pytest.approx((0.431, 12.4), abs=0.05)
+    assert 0.431 / 0.0347 == pytest.approx(12.4, abs=0.05)
+    accel = abs(-((2 * math.pi * modes[0].fn_hz) ** 2) * frf(chain, np.array([modes[0].fn_hz]), 3)[0, 3])
+    assert accel == pytest.approx(12.4, abs=0.05)
+    assert (abs(1 / (1 + 1.24j)), abs(1 / (1 + 0.1 * accel * 1j))) == pytest.approx((0.63, 0.63), abs=5e-3)
