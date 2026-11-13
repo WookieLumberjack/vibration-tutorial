@@ -1445,7 +1445,7 @@ SYMBOLS = (
         "mass j; spring and damper j (joining mass j − 1, or the ground, to mass j); a spring e whose force is recovered",
         "kg, N/m, N·s/m, N/m",
         "cms_page",
-        "boundary",
+        "why",
     ),
     Symbol(
         "cms_sub",
@@ -1453,7 +1453,7 @@ SYMBOLS = (
         "the substructures from the ground; a superscript (s) marks substructure s's own matrices, K<sup>(s)</sup>; the Boolean matrix picking its DOFs out of x",
         "–",
         "cms_page",
-        "boundary",
+        "why",
     ),
     Symbol(
         "cms_parts",
