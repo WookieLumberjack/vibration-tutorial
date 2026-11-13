@@ -36,7 +36,7 @@ from ..core.signals import (
     window,
     window_props,
 )
-from . import settle_plots
+from . import settle_plots, signals_figures
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -93,7 +93,7 @@ class SignalsTrial:
 TRIALS = (
     SignalsTrial(
         "A tone on a line",
-        "1024 samples at 1024 Hz: a 1 s block, lines Δf = 1 Hz apart, the highest at the Nyquist frequency, "
+        "1024 samples at 1024 Hz: a 1 s block, lines <m>Δf</m> = 1 Hz apart, the highest at the Nyquist frequency, "
         "512 Hz. A 50 Hz tone fits 50 whole cycles in the block, so it lands on a line and, without a window, "
         "reads its amplitude exactly, 1.000, with nothing on the other lines: no leakage.",
         f2=120.0,
@@ -142,9 +142,9 @@ TRIALS = (
     ),
     SignalsTrial(
         "The anti-alias filter",
-        "The same 900 Hz tone with the filter on: an 8-pole low-pass at f<sub>s</sub>/2.56 = 400 Hz cuts it to "
+        "The same 900 Hz tone with the filter on: an 8-pole low-pass at <m>f<sub>s</sub>/2.56</m> = 400 Hz cuts it to "
         "0.0015 (−56 dB) before it is sampled. The filter also takes 3 dB off a tone at 400 Hz, which is why only "
-        "the lines up to f<sub>s</sub>/2.56 are kept (the shaded band is not to be trusted).",
+        "the lines up to <m>f<sub>s</sub>/2.56</m> are kept (the shaded band is not to be trusted).",
         f1=900.0,
         a1=1.0,
         a2=0.0,
@@ -154,9 +154,9 @@ TRIALS = (
     SignalsTrial(
         "A tone in noise",
         "A 0.05 tone at 100 Hz in noise of RMS 0.5 (ten times its amplitude). As a PSD the noise reads its "
-        "density, 0.5²/512 = 4.9 × 10⁻⁴ per Hz, whatever the block. As an amplitude, each line holds the noise "
-        "in a band about Δf wide: in blocks of 4096 the noise sits at 0.019 and the tone stands 2.6 times above it. "
-        "It falls as 1/√N: in blocks of 256 it is at 0.077 and the tone drowns.",
+        "density, 0.5²/512 = 4.9 × 10⁻⁴ (m/s²)² per Hz, whatever the block. As an amplitude, each line holds the noise "
+        "in a band about <m>Δf</m> wide: in blocks of 4096 the noise sits at 0.019 and the tone stands 2.6 times above it. "
+        "It falls as <m>1/√N</m>: in blocks of 256 it is at 0.077 and the tone drowns.",
         f1=100.0,
         a1=0.05,
         a2=0.0,
@@ -168,7 +168,7 @@ TRIALS = (
     SignalsTrial(
         "Averaging smooths",
         "Noise alone, of RMS 0.5, as a PSD from one block of 256: each line scatters by 100 %. Raise the averages "
-        "to 64 and the scatter falls to an eighth (1/√n), but the level stays at 4.9 × 10⁻⁴: averaging doesn't "
+        "to 64 and the scatter falls to an eighth (<m>1/√n<sub>d</sub></m>), but the level stays at 4.9 × 10⁻⁴: averaging doesn't "
         "lower the noise, it makes its level certain. The PSD's area, 0.25, is the RMS².",
         a1=0.0,
         a2=0.0,
@@ -181,7 +181,7 @@ TRIALS = (
         "A chirp's spectrogram",
         "A sine swept from 10 to 400 Hz in 4 s, in blocks of 256 (0.25 s). The averaged spectrum is a flat "
         "smear: it can't say when each frequency was there. The spectrogram, one spectrum per block, shows the "
-        "sweep as a line. A shorter block places it better in time and worse in frequency: Δf Δt ≥ 1.",
+        "sweep as a line. A shorter block places it better in time and worse in frequency: <m>Δf Δt</m> ≈ 1.",
         kind=Kind.CHIRP,
         f1=10.0,
         a1=1.0,
@@ -193,8 +193,8 @@ TRIALS = (
     ),
     SignalsTrial(
         "A ringing mode",
-        "A mode at 50 Hz with ζ = 0.01 struck once: its half-power width is 2ζf<sub>n</sub> = 1 Hz. In a 4 s "
-        "block (Δf = 0.25 Hz) it has four lines across it and its peak shows, without a window since it dies "
+        "A mode at 50 Hz with <m>ζ</m> = 0.01 struck once: its half-power width is <m>2ζf<sub>n</sub></m> = 1 Hz. In a 4 s "
+        "block (<m>Δf</m> = 0.25 Hz) it has four lines across it and its peak shows, without a window since it dies "
         "away inside the block. A Hann window here would throw away its start, where most of it is.",
         kind=Kind.RINGING,
         f1=50.0,
@@ -205,10 +205,10 @@ TRIALS = (
     ),
     SignalsTrial(
         "An accelerometer",
-        "A piezoelectric accelerometer is a seismic mass on a stiff crystal: f<sub>n</sub> = 30 kHz, ζ ≈ 0.01. "
-        "Below its resonance its output follows the acceleration, within 5 % up to 0.22 f<sub>n</sub>, 6.5 kHz. "
-        "A geophone is the other way round: soft, f<sub>n</sub> = 4.5 Hz, and with ζ = 0.7 it follows the "
-        "displacement within 5 % from 1.7 f<sub>n</sub>, 7.6 Hz, up.",
+        "A piezoelectric accelerometer is a seismic mass on a stiff crystal: <m>f<sub>n</sub></m> = 30 kHz, <m>ζ</m> ≈ 0.01. "
+        "Below its resonance its output follows the acceleration, within 5 % up to 0.22 <m>f<sub>n</sub></m>, 6.5 kHz. "
+        "A geophone is the other way round: soft, <m>f<sub>n</sub></m> = 4.5 Hz, and with <m>ζ</m> = 0.7 it follows the "
+        "displacement within 5 % from 1.7 <m>f<sub>n</sub></m>, 7.6 Hz, up.",
         tab=TAB_SENSORS,
     ),
 )
@@ -486,7 +486,9 @@ def window_table() -> str:
     )
 
 
-NOTES_HTML = load_notes("signals", window_table=window_table(), trials=trials_html(TRIALS))
+NOTES_HTML = load_notes(
+    "signals", figures=signals_figures.FIGURES, window_table=window_table(), trials=trials_html(TRIALS)
+)
 
 
 class SignalsPage(QtWidgets.QWidget):
