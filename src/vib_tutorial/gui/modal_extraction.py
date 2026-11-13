@@ -16,7 +16,6 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.identification import Method, ModeMatch, Stability, Stabilization
 from .layouts import form_layout, header_tip
-from .links import load_notes
 from .panels import spin
 from .style import colors, text_on
 from .theming import add_legend
@@ -375,6 +374,3 @@ class ResultsView(QtWidgets.QWidget):
                     item.setForeground(pg.mkColor(col))
                 self.table.setItem(r, c, item)
         self.notes.setText(notes)
-
-
-EXTRACTION_THEORY_HTML = load_notes("modal_extraction")

@@ -886,6 +886,40 @@ REFERENCES = (
         "A. Brandt, <i>Noise and Vibration Analysis: Signal Analysis and Experimental Procedures</i>, Wiley, 2011",
         "the measurement side in full: sampling, windows, spectra and their errors, filters, transducers",
     ),
+    Reference(
+        "trethewey-cafeo",
+        "Trethewey and Cafeo 1992",
+        "M. W. Trethewey and J. A. Cafeo, Tutorial: signal processing aspects of structural impact testing, "
+        "<i>International Journal of Analytical and Experimental Modal Analysis</i> 7(2), 129–149, 1992",
+        "",
+    ),
+    Reference(
+        "mcconnell-varoto",
+        "McConnell and Varoto 2008",
+        "K. G. McConnell and P. S. Varoto, <i>Vibration Testing: Theory and Practice</i>, 2nd edition, Wiley, 2008",
+        "transducers, analyzers and exciters, and how the shaker and the structure interact",
+    ),
+    Reference(
+        "vold-polyref",
+        "Vold, Kundrat, Rocklin and Russell 1982",
+        "H. Vold, J. Kundrat, G. T. Rocklin and R. Russell, A multi-input modal estimation algorithm for "
+        "mini-computers, SAE Technical Paper 820194, 1982",
+        "",
+    ),
+    Reference(
+        "guillaume-lscf",
+        "Guillaume et al. 2003",
+        "P. Guillaume, P. Verboven, S. Vanlanduit, H. Van der Auweraer and B. Peeters, A poly-reference "
+        "implementation of the least-squares complex frequency-domain estimator, <i>Proceedings of IMAC XXI</i>, 2003",
+        "",
+    ),
+    Reference(
+        "peeters-polymax",
+        "Peeters et al. 2004",
+        "B. Peeters, H. Van der Auweraer, P. Guillaume and J. Leuridan, The PolyMAX frequency-domain method: a new "
+        "standard for modal parameter estimation?, <i>Shock and Vibration</i> 11, 395–409, 2004",
+        "",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

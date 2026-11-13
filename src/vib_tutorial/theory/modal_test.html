@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:sim_page#start-with-one-mass">Start with one mass</a>
 <a href="page:frf_page#three-forms">Three forms of the same FRF</a>
@@ -11,34 +10,40 @@
 excites the structure, sensors record the force and the responses, and the FRF is estimated
 from those signals. This page does the same with the simulated chain, so each step of the
 measurement, and each error it can bring in, can be compared with the exact answer.</p>
+<p><img src="fig:setup"></p>
+<p>The page's test is the one drawn: the force at one mass (a hammer, or a shaker through a thin rod, the
+<b>stinger</b>, and a <b>force gauge</b>), and a sensor on every mass. The steps below follow the signals
+from the sensors to the modes: what is measured, how it is sampled and cut into blocks, how the blocks become
+an FRF, how the structure is excited, and how the modes are fitted to the result.</p>
 
 <h3><a name="measured"></a>What is measured, and where</h3>
 <ul>
 <li><b>Displacement or acceleration.</b> The <i>Response sensor</i> setting picks what is
-recorded at each mass. <b>Displacement</b> gives the receptance H = X/F directly, as on the
-other pages. A lab usually measures with accelerometers and a force transducer, so its FRF is
-the <b>accelerance</b> A = −ω²H (see <a href="page:frf_page#three-forms">Three forms of the same FRF</a> on the FRF matrix
+recorded at each mass. <b>Displacement</b> gives the receptance <m>H = X/F</m> directly, as on the
+other pages. A lab usually measures with accelerometers and a force gauge, so its FRF is
+the <b>accelerance</b> <m>A = −Ω²H</m> (see <a href="page:frf_page#three-forms">Three forms of the same FRF</a> on the FRF matrix
 page); pick <b>Acceleration</b> to measure that way. The acceleration is that of the simulated
-chain, a = M<sup>−1</sup>(f − Cv − Kx), not a converted displacement, so it passes through
+chain, from its equation of motion, not a converted displacement, so it passes through
 the same filter, sampling and noise as a real accelerometer signal. The plots then show
-accelerances: towards 0 Hz they fall as ω² (or, for a free chain, level off at 1/total
-mass), and above the modes the driving point levels off at 1/m.</li>
+accelerances: towards 0 Hz they fall as <m>Ω²</m> (or, for a free chain, level off at 1/total
+mass), and above the modes the driving point levels off at <m>1/m<sub>j</sub></m>.</li>
 <li><b>What the choice changes.</b> The poles, shapes and damping are the same in either
 form; only the weighting of low and high frequencies changes. Displacement is dominated by
 the lowest mode, so noise sized to the channel's peak swamps the high modes. Acceleration
-weights each mode by ω², which evens the modes out, but makes a mode above Nyquist alias
+weights each mode by <m>Ω²</m>, which evens the modes out, but makes a mode above Nyquist alias
 more strongly when the anti-alias filter is off. The extraction methods here fit receptance,
-so a measured accelerance is divided by −ω² first: the poles do not move, but the noise below
+so a measured accelerance is divided by <m>−Ω²</m> first: the poles do not move, but the noise below
 the first mode, where the acceleration is tiny, is amplified enormously. An analyzer that fits accelerance directly
 swaps the residuals' roles: the modes below the band give a constant and the modes above a
-term growing as ω².</li>
+term growing as <m>Ω²</m>.</li>
 <li><b>One column, or one row.</b> Here one force acts and every mass is measured: one
-<b>column</b> of H, as with a shaker and an accelerometer moved from point to point. An impact
-test usually does the opposite: one accelerometer stays put and the <b>hammer roves</b>,
-measuring one <b>row</b> of H. By reciprocity, H<sub>jk</sub> = H<sub>kj</sub> (FRF matrix
-page), a row holds the same mode shapes as a column, so either gives every mode, as long as
-the fixed point is not at a node of one of them.</li>
-<li><b>The sensor is part of the structure.</b> A real accelerometer adds its mass at the
+<b>column</b> of H, <m>H<sub>jk</sub></m> for every <m>j</m>, as with a shaker and an accelerometer moved
+from point to point. An impact test usually does the opposite: one accelerometer stays put and the
+<b>hammer roves</b>, measuring one <b>row</b> of H. By reciprocity, <m>H<sub>jk</sub> = H<sub>kj</sub></m>
+(FRF matrix page), a row holds the same mode shapes as a column, so either gives every mode, as long as
+the fixed point is not at a node of one of them. The fixed point (the force's, or the sensor's) is the
+test's <b>reference</b>.</li>
+<li><b>The sensor is part of the structure.</b> A real accelerometer adds its mass <m>m<sub>s</sub></m> at the
 point it measures, lowering the frequencies of a light structure (<a href="page:signals_page#mass-loading">Mass
 loading</a>). Here the sensors weigh
 nothing, so this error is absent; in practice it is checked by moving or doubling the sensor
@@ -46,59 +51,76 @@ mass.</li>
 </ul>
 
 <h3><a name="sampling"></a>Sampling</h3>
-<p>Each channel is sampled at f<sub>s</sub>. Only frequencies up to the <b>Nyquist frequency</b>
-f<sub>s</sub>/2 can be represented; anything above <b>aliases</b>, appearing at
-|f − k f<sub>s</sub>| as if it were real response. So an <b>anti-alias filter</b> removes it
-before sampling. The filter rolls off below Nyquist, so only the lower part of the band
-(here 80 %, so f<sub>s</sub> = 2.5 f<sub>max</sub>) is usable. Analyzers usually keep a little less,
-f<sub>s</sub> = 2.56 f<sub>max</sub> (78 %, the <a href="page:signals_page">Signals &amp; spectra</a> page's
-choice), so that a power-of-two block gives a round number of lines. The same filter on the force and every response cancels in their ratio.</p>
+<p>Each channel is sampled at <m>f<sub>s</sub></m>. Only frequencies up to the <b>Nyquist frequency</b>
+<m>f<sub>s</sub>/2</m> can be represented; anything above <b>aliases</b>, appearing at</p>
+<eq>f_{\text{shown}} = \bigl|\,f - \mathrm{round}(f/f_s)\,f_s\bigr|</eq>
+<p>as if it were real response (<a href="page:signals_page#aliasing">Aliasing</a>). So an
+<b>anti-alias filter</b> removes it before sampling. The filter rolls off below Nyquist, so only the lower
+part of the band (here 80 %, so <m>f<sub>s</sub> = 2.5 f<sub>max</sub></m>) is usable. Analyzers usually keep a
+little less, <m>f<sub>s</sub> = 2.56 f<sub>max</sub></m> (78 %, the <a href="page:signals_page">Signals &amp;
+spectra</a> page's choice), so that a power-of-two block gives a round number of lines. The same filter on
+the force and every response cancels in their ratio. <i>Auto</i> picks the sample rate that puts the highest
+mode a quarter inside the usable band, <m>f<sub>max</sub></m> = 1.25 <m>f<sub>d</sub></m> of the top mode,
+rounded up.</p>
 
 <h3><a name="leakage"></a>Blocks, the DFT and leakage</h3>
-<p>The analyzer takes blocks of N<sub>b</sub> samples, lasting T = N<sub>b</sub>/f<sub>s</sub>,
-and takes their discrete Fourier transform (FFT). That gives spectral lines Δf = 1/T apart.
+<p>The analyzer takes blocks of <m>N<sub>b</sub></m> samples, lasting</p>
+<eq>T = \frac{N_b}{f_s}, \qquad \Delta f = \frac{1}{T}</eq>
+<p>and takes their discrete Fourier transform (FFT), whose spectral lines are <m>Δf</m> apart.
 The DFT treats the block as one period of a signal that repeats forever.
 If the signal is not periodic in the block, the repeat has a jump at the join, and energy at
 one frequency spreads into its neighbours. That is <b>leakage</b>: resonance peaks come out too
 low and too wide, which looks like too much damping.</p>
 <ul>
 <li><b>Periodic in the block</b> (periodic random, chirp, a hit or burst that dies away inside
-the block): no leakage, no window needed.</li>
-<li><b>Not periodic</b> (continuous random): taper each block with a <b>window</b> (Hann), which
+the block): no leakage, no window needed. A free decay has <m>e<sup>−ζω<sub>n</sub>T</sup></m> of itself
+left at the block's end (the <i>Left at T</i> column of the Setup tab); under about 1 % it has died
+away.</li>
+<li><b>Not periodic</b> (continuous random): taper each block with a <b>window</b> <m>w</m> (Hann), which
 trades leakage for a slightly wider peak. The wider peak still biases the identified damping
 upward, as leakage does, though much less.</li>
-<li><b>Resolution:</b> a peak's half-power bandwidth is 2ζf<sub>n</sub>. A lightly damped mode
-needs a long block to get lines across it.</li>
 </ul>
+<p><b>Resolution.</b> A peak's half-power bandwidth is <m>2ζf<sub>n</sub></m>, and the lines across it are</p>
+<eq>\frac{2\zeta f_n}{\Delta f} = 2\zeta f_n T</eq>
+<p>should be at least about 2, or the peak falls between lines and reads too low. A lightly damped mode
+needs a long block.</p>
 
 <h3><a name="estimators"></a>Averaging and estimators</h3>
-<p>With F and X the spectra of a block (X of the response, displacement or acceleration;
-the estimators are the same for either), averaging over blocks gives the auto-spectra
-G<sub>ff</sub> = ⟨|F|²⟩, G<sub>xx</sub> = ⟨|X|²⟩ and the cross-spectrum
-G<sub>xf</sub> = ⟨X F*⟩. Then</p>
-<p>&nbsp;&nbsp;<b>H1 = G<sub>xf</sub>/G<sub>ff</sub></b>, &nbsp;&nbsp;
-<b>H2 = G<sub>xx</sub>/G<sub>fx</sub></b></p>
-<p>Noise uncorrelated with the force averages out of G<sub>xf</sub> but adds to the
+<p>With <m>F</m> and <m>X</m> the spectra of a block (<m>X</m> of the response, displacement or
+acceleration; the estimators are the same for either), averaging over blocks gives the auto-spectra
+and the cross-spectrum</p>
+<eq>G_{ff} = \langle |F|^2 \rangle, \quad G_{xx} = \langle |X|^2 \rangle, \quad G_{xf} = \langle X F^* \rangle</eq>
+<p>(<m>G<sub>fx</sub></m> is <m>G<sub>xf</sub></m>'s conjugate). Then</p>
+<eq>H_1 = \frac{G_{xf}}{G_{ff}}, \qquad H_2 = \frac{G_{xx}}{G_{fx}}</eq>
+<p>Noise uncorrelated with the force averages out of <m>G<sub>xf</sub></m> but adds to the
 auto-spectrum of its own channel. So noise on the response leaves H1 unbiased and pushes H2
-up, and noise on the force pushes H1 down and leaves H2 unbiased. In practice the response is
-noisiest near antiresonances, where it is small, so H1 is used there; the force is noisiest at
-resonances, where the structure barely resists it, so H2 is used there.</p>
-<p>The <b>coherence</b> γ² = |G<sub>xf</sub>|²/(G<sub>ff</sub>G<sub>xx</sub>) = H1/H2 is between
-0 and 1. It is 1 when the response is entirely explained by the measured force, linearly.
+up, and noise on the force pushes H1 down and leaves H2 unbiased <cite>bendat-piersol</cite>. In practice
+the response is noisiest near antiresonances, where it is small, so H1 is used there; the force is noisiest
+at resonances, where the structure barely resists it (<a href="#shaker">Shaker and structure</a>), so H2 is
+used there.</p>
+<p>The <b>coherence</b></p>
+<eq>\gamma^2 = \frac{|G_{xf}|^2}{G_{ff}\,G_{xx}} = \frac{H_1}{H_2}</eq>
+<p>is between 0 and 1. It is 1 when the response is entirely explained by the measured force, linearly.
 Noise, leakage and aliasing all lower it. With one average it is always 1, which is why at
 least a few averages are needed. In practice a coherence above about 0.9 near the resonances
 is taken as a good measurement.</p>
 
 <h3><a name="excitation"></a>Excitation</h3>
+<p><b>Impact hammer:</b> quick and portable. The tip sets the pulse length <m>τ<sub>p</sub></m>, and
+the force spectrum is flat only up to about <m>1/τ<sub>p</sub></m> (a half-sine pulse's first zero is at
+<m>1.5/τ<sub>p</sub></m>). Each hit is checked before it is averaged: a <b>double hit</b> (the hammer
+bouncing back onto the structure) puts notches in the force spectrum, and an <b>overload</b> clips the force
+or the response; both are rejected. A <b>force window</b> keeps the hit and zeroes the noise
+after it. An <b>exponential window</b></p>
+<eq>w(t) = \mathrm{e}^{-t/\tau_w}</eq>
+<p>forces a slowly decaying response to die away inside the block. It multiplies every mode of the impulse
+response, <m>e<sup>−ζω<sub>n</sub>t</sup></m>, so it moves every pole left by <m>1/τ<sub>w</sub></m>, and every
+mode looks more damped, by</p>
+<eq>\Delta\zeta = \frac{1}{\tau_w\,\omega_n}</eq>
+<p>which has to be subtracted when damping is identified <cite>trethewey-cafeo</cite>. A window that falls to
+5 % at the block's end has <m>τ<sub>w</sub></m> = <m>T</m>/ln 20.</p>
+<p>A shaker can drive other signals:</p>
 <ul>
-<li><b>Impact hammer:</b> quick and portable. The tip sets the pulse length τ<sub>p</sub>, and
-the force spectrum is flat only up to about 1/τ<sub>p</sub>. Each hit is checked before it is
-averaged: a <b>double hit</b> (the hammer bouncing back onto the structure) puts notches in the
-force spectrum, and an <b>overload</b> clips the force or the response; both are rejected. A <b>force window</b> keeps the hit and zeroes the noise
-after it. An <b>exponential window</b> forces a slowly decaying response to die away inside
-the block. It multiplies the impulse response by e<sup>−t/τ<sub>w</sub></sup>, which moves every
-pole left by 1/τ<sub>w</sub>. So every mode looks more damped, by Δζ = 1/(τ<sub>w</sub>ω), which
-has to be subtracted when damping is identified.</li>
 <li><b>Random</b> (shaker): excites the whole band at once, and averaging removes noise, but it
 leaks unless windowed.</li>
 <li><b>Burst random:</b> random, then silence. If the response dies away inside the block,
@@ -112,16 +134,98 @@ frequencies. Near the band edge there are only 2.5 samples per cycle, which is e
 fit at a known frequency.</li>
 </ul>
 
-<!--EXTRACTION-->
+<h3><a name="shaker"></a>Shaker and structure</h3>
+<p>A shaker is not a pure force. Its coil pushes on its <b>armature</b>, a mass <m>m<sub>sh</sub></m> on a
+soft suspension, and the armature pushes the structure through the stinger:</p>
+<p><img src="fig:shaker"></p>
+<p>The coil's force <m>F<sub>0</sub></m> both accelerates the armature, which moves with the drive point, and
+pushes the structure with <m>F</m>. With the drive point's accelerance <m>A<sub>kk</sub></m>, its acceleration
+is <m>A<sub>kk</sub>F</m>, so <m>F<sub>0</sub> = F + m<sub>sh</sub>A<sub>kk</sub>F</m> and</p>
+<eq>\frac{F}{F_0} = \frac{1}{1 + m_{sh}A_{kk}}</eq>
+<p>At a resonance the structure moves freely and <m>|A<sub>kk</sub>|</m> peaks, so most of the coil's force
+goes into shaking the armature: the force that reaches the structure <b>drops off</b>, in a dip at every
+resonance. The suspension, and the coil's back-EMF when the amplifier holds the voltage (it acts as a damper),
+act in the same way: in general the shaker's impedance <m>Z<sub>sh</sub></m>, the force it spends per unit
+velocity of the drive point, times that point's mobility <m>iΩH<sub>kk</sub></m>, takes the place of
+<m>m<sub>sh</sub>A<sub>kk</sub></m> <cite>mcconnell-varoto</cite>.</p>
+<ul>
+<li><b>The FRF is still right.</b> The gauge measures <m>F</m> itself, where it enters the structure, so
+<m>X/F</m> is the structure's own FRF whatever the shaker does. That is why the gauge goes at the structure
+end of the stinger, not on the shaker.</li>
+<li><b>But the force is smallest where it matters.</b> At the resonances the force channel's signal dips,
+its noise doesn't, and H1 reads low there: the reason to use H2 at resonances (above). A lighter armature,
+or a current-driven amplifier (no back-EMF damping), makes the dip shallower.</li>
+<li><b>The stinger</b> is stiff along its axis and flexible across it, so the shaker pushes along one line
+and adds no moment or side force, which the single gauge couldn't measure.</li>
+<li><b>Mass above the gauge.</b> The part of the gauge between its sensing element and the structure moves
+with the structure, and its inertia is measured as if it were the structure's; for a light structure it is
+subtracted (<i>mass cancellation</i>).</li>
+</ul>
+<p>The page's shaker is ideal: the force it asks for is the force applied. The worked example below sizes the
+dip a real one would have.</p>
+
+<h3><a name="references"></a>More than one reference</h3>
+<p>This page measures one column of H: one reference. Real tests often use several, two or more shakers (or
+fixed accelerometers, with the hammer roving), because one reference has blind spots:</p>
+<ul>
+<li><b>Nodes.</b> A mode with a node at the reference is missing from every FRF (the first trial). A second
+reference elsewhere catches it.</li>
+<li><b>Close and repeated modes.</b> Each mode's term in a column is its shape times its value at the
+reference, <m>φ<sub>jr</sub>φ<sub>kr</sub></m>. Two modes at (nearly) the same frequency, as a symmetric
+structure has, add into one peak, and one column can't say how much of it belongs to each: it holds only one
+combination of their shapes. With two references, the two columns hold two different combinations, and both
+shapes can be separated.</li>
+<li><b>Consistency.</b> A mode's frequency and damping are the structure's, the same in every column; a
+fit across all the references at once gives one value for each instead of one per column.</li>
+</ul>
+<p>With several shakers driven at once (MIMO, multiple input, multiple output), the forces must be
+<i>uncorrelated</i> (independent random signals), and the estimators become matrix ones: the forces' spectra
+make a vector <m>F</m>, the auto-spectra a matrix <m>G<sub>ff</sub></m>, the cross-spectra another, and</p>
+<eq>G_{xf} = H\,G_{ff} \;\Rightarrow\; H_1 = G_{xf}\,G_{ff}^{-1}</eq>
+<p>which needs <m>G<sub>ff</sub></m> invertible: correlated forces can't be told apart. The <i>multiple
+coherence</i> plays the part of <m>γ²</m>, for each response against all the forces together
+<cite>bendat-piersol</cite>. Polyreference fitting methods fit every column at once:
+the polyreference complex exponential method in the time domain <cite>vold-polyref</cite>, and the
+poly-reference LSCF (PolyMAX) in the frequency domain <cite>guillaume-lscf</cite> <cite>peeters-polymax</cite>.</p>
+
+<h3><a name="extraction"></a>Modal parameter extraction</h3>
+<p>The measured FRF column is only data. <b>Modal parameter extraction</b> (curve fitting) finds
+the modal model behind it: for each mode a pole <m>λ<sub>r</sub></m> (natural frequency and damping)
+and residues <m>R<sub>jr</sub></m> (the mode shape), with</p>
+<eq>H_{jk}(\Omega) \approx \sum_r \left[ \frac{R_{jr}}{i\Omega - \lambda_r} + \frac{R_{jr}^*}{i\Omega - \lambda_r^*} \right] + U_j - \frac{L_j}{\Omega^2}</eq>
+<p>For a force at mass <m>k</m>, <m>R<sub>jr</sub></m> ∝ <m>ψ<sub>jr</sub>ψ<sub>kr</sub></m>: one column of H gives
+every mode's shape, as long as <m>ψ<sub>kr</sub></m> ≠ 0 (the force is not at a node of that mode).
+<m>U</m> and <m>L</m>, the <b>residuals</b>, stand in for the modes above and below the fitted band.</p>
+<p><b>Peak picking</b> treats each peak as a single-DOF resonance: <m>f<sub>n</sub></m> at the peak,
+the shape from the FRF at the peak, and the damping from the half-power points <m>f<sub>1</sub></m> and
+<m>f<sub>2</sub></m>, where the peak is down to 1/√2,</p>
+<eq>\zeta \approx \frac{f_2 - f_1}{2 f_n}</eq>
+<p>It needs well-separated, lightly damped modes and a fine line spacing. The other methods here:</p>
+<ul>
+<li><b>Circle fit</b> <cite>kennedy-pancu</cite>: for a single mode the mobility <m>iΩH</m> (velocity per unit
+force) is exactly a circle in the complex plane. How fast the points move round it peaks at resonance, and the
+angles give <m>ω<sub>n</sub></m> and <m>ζ</m> even when <m>ω<sub>n</sub></m> falls between two frequency lines.
+Still one mode at a time.</li>
+<li><b>LSCF + LSFD</b> fit every mode and every response at once <cite>guillaume-lscf</cite>. The model order
+(number of poles) is not known in advance, so the fit is repeated at every order and the poles are
+plotted in a <b>stabilization diagram</b>. Physical modes form vertical columns of stable poles;
+noise and leakage poles scatter. The residues of the chosen poles then follow from a linear
+least-squares fit (LSFD).</li>
+</ul>
+<p>The <b>Modes</b> tab compares the result with the exact modes: frequency and
+damping errors, and the <b>MAC</b> (modal assurance criterion) <cite>allemang-brown</cite> between shapes</p>
+<eq>\mathrm{MAC}(\psi_a, \psi_b) = \frac{|\psi_a^{H}\psi_b|^2}{(\psi_a^{H}\psi_a)(\psi_b^{H}\psi_b)}</eq>
+<p>which is 1 for the same shape and 0 for orthogonal ones.</p>
+
 <h3><a name="friction"></a>Nonlinearity: friction</h3>
 <p>Everything above assumes the structure is <b>linear</b>: double the force and every response
 doubles, so the FRF is a property of the structure alone. Real joints rub, and friction breaks
-this. Give the masses Coulomb friction (F<sub>f</sub> under <i>System parameters</i> on the
+this. Give the masses Coulomb friction (<m>F<sub>f</sub></m> under <i>System parameters</i> on the
 Simulation page) and the test simulates the stick-slip motion step by step. The FRF it
 estimates is then the best <i>linear</i> fit to a nonlinear chain, and it depends on how hard
 and how the chain is driven:</p>
 <ul>
-<li><b>Force level.</b> Friction takes out F<sub>f</sub> times the distance slid, which grows
+<li><b>Force level.</b> Friction takes out <m>F<sub>f</sub></m> times the distance slid, which grows
 only with the amplitude, while the energy a mode stores grows with its square. So friction
 damps small motions heavily and large ones lightly: as the force level rises, the peaks grow
 taller and sharper towards the exact (frictionless) FRF. At a low level the masses spend much
@@ -141,17 +245,59 @@ and the estimate there is meaningless.</li>
 <p>The modal extraction still fits a linear model, so with friction the identified damping
 ratios and frequencies are those of the linear fit at this level, not properties of the chain.</p>
 
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the uniform 4-mass chain (<m>m</m> = 1 kg, <m>k</m> = 400 N/m, <m>c</m> = 2 N·s/m
+between neighbours), hit by the hammer at <m>m<sub>4</sub></m> with a 50 ms pulse, displacement measured,
+<m>N<sub>b</sub></m> = 1024, 10 averages, the sample rate on <i>Auto</i>. Its Setup tab's table:</p>
+<ol>
+<li><b>The modes.</b> A uniform chain fixed at one end has <m>ω<sub>n</sub></m> = <m>2√(k/m) sin((2r − 1)π/18)</m>,
+40 sin 10°, 40 sin 30°, 40 sin 50° and 40 sin 70°: 6.95, 20.0, 30.6 and 37.6 rad/s, or <m>f<sub>n</sub></m> = 1.105,
+3.183, 4.877 and 5.982 Hz. The dampers sit beside the springs, so <m>C = (c/k)K</m> and
+<m>ζ = cω<sub>n</sub>/2k = ω<sub>n</sub>/400</m>: 0.0174, 0.0500, 0.0766 and 0.0940. The damped
+frequencies the table lists, <m>f<sub>d</sub> = f<sub>n</sub>√(1 − ζ²)</m>, are 1.105, 3.179, 4.862 and
+5.956 Hz.</li>
+<li><b>The sample rate.</b> <i>Auto</i> wants the top mode at 80 % of the usable band:
+<m>f<sub>s</sub></m> ≥ 1.25 × 5.956 × 2/0.8 = 18.6 Hz, rounded up to 19 Hz. Nyquist is 9.5 Hz and the
+usable band 7.6 Hz.</li>
+<li><b>The block.</b> <m>T</m> = 1024/19 = 53.9 s and <m>Δf</m> = 0.0186 Hz; ten averages take 9 minutes of
+hits.</li>
+<li><b>Lines across each peak.</b> <m>2ζf<sub>n</sub></m> = 0.0384, 0.318, 0.747 and 1.12 Hz, so
+2.07, 17.2, 40.3 and 60.6 lines. Mode 1 just clears 2: <m>N<sub>b</sub></m> = 2048 would give it 4.1.</li>
+<li><b>Left at T.</b> Mode 1 decays at <m>ζω<sub>n</sub></m> = 0.0174 × 6.95 = 0.121 s<sup>−1</sup>, so
+<m>e<sup>−0.121 × 53.9</sup></m> = <m>e<sup>−6.50</sup></m> = 0.15 % is left at the block's end: under 1 %, no
+leakage, and the faster modes have long gone. With the exponential window at 5 %,
+<m>τ<sub>w</sub></m> = 53.9/ln 20 = 18.0 s would add <m>Δζ</m> = 1/(18.0 × 6.95) = 0.0080 to mode 1, nearly
+half its own 0.0174.</li>
+<li><b>The hammer.</b> A 50 ms pulse is flat to about 1/0.05 = 20 Hz, its first zero at 30 Hz. At the top
+mode, 5.956 Hz, its spectrum is down 0.73 dB: the table rounds every mode's level to 0 dB but that one's to
+−1 dB.</li>
+<li><b>The reference.</b> Mode 2's shape is (1, 1, 0, −1) (largest entry 1): <m>m<sub>3</sub></m> is a node.
+At <m>m<sub>4</sub></m> every mode moves, so the column finds all four; the first trial moves the hammer to
+<m>m<sub>3</sub></m>, and mode 2 is gone.</li>
+<li><b>A real shaker's dip.</b> Mass-normalized, mode 1's entry at <m>m<sub>4</sub></m> is
+<m>φ<sub>41</sub></m>² = 1/(0.347² + 0.653² + 0.879² + 1²) = 0.431, so at its resonance
+<m>|A<sub>44</sub>|</m> ≈ <m>φ<sub>41</sub></m>²/2ζ = 0.431/0.0347 = 12.4 /kg. A shaker there with a
+0.1 kg armature would deliver <m>|F/F<sub>0</sub>|</m> = 1/|1 + 1.24i| = 0.63 of its coil's force: a 37 % dip
+at 1.105 Hz.</li>
+</ol>
+
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up a test of the uniform 4-mass chain (Things to try, top left).</p>
 <!--TRIALS-->
 <p>And one by hand: turn the anti-alias filter off and raise the stiffness on the Simulation page until
-the top mode is above Nyquist (untick fs Auto first). It appears at |f − f<sub>s</sub>|, at the wrong
-frequency.</p>
+the top mode is above Nyquist (untick <m>f<sub>s</sub></m> Auto first). It appears at
+<m>|f − f<sub>s</sub>|</m>, at the wrong frequency.</p>
 <takeaways>
 <li>A measured FRF is an estimate: sampling, blocks, windows, noise and averaging each leave their mark, and the coherence says how much to trust each line.</li>
+<li>Resolution comes from the block's length: aim for two or more lines across each half-power width, <m>2ζf<sub>n</sub>T</m> ≥ 2.</li>
 <li>H1 for noise on the response (antiresonances), H2 for noise on the force (resonances).</li>
-<li>Leakage and windows both widen peaks, so both read as extra damping; an exponential window's share can be taken off exactly.</li>
+<li>Leakage and windows both widen peaks, so both read as extra damping; an exponential window's share, <m>1/τ<sub>w</sub>ω<sub>n</sub></m>, can be taken off exactly.</li>
 <li>Filter before sampling, or a mode above Nyquist shows up as a false one below it.</li>
+<li>A shaker's force drops at every resonance; the gauge at the structure keeps the FRF right, but the force channel is weakest there.</li>
+<li>One reference misses the modes with a node there and can't split close modes; several references, and a fit across them all, can.</li>
 <li>Curve fitting turns the FRFs into poles and shapes; the stabilization diagram separates the physical poles from the fit's.</li>
 <li>If the FRF changes with the force level, the structure is nonlinear and its modal parameters belong to that level.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m chain_i matrices x Omega H accelerance H_jk test_block block_spectra spectra_G H1 gamma2 w_window hammer omega_n omega_d zeta half_power lambda residue residuals psi modal_const MAC m_sensor shaker friction</notation>
+<reading>ewins mcconnell-varoto brandt</reading>
