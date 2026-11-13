@@ -52,11 +52,49 @@ of each point.</p>
 <p>Substitute <m>x = Vc</m> into <m>Mẍ + Cẋ + Kx = f</m> and premultiply by
 <m>V<sup>T</sup></m>:</p>
 <eq>(V^{\mathsf{T}} M V)\,\ddot c + (V^{\mathsf{T}} C V)\,\dot c + (V^{\mathsf{T}} K V)\,c = V^{\mathsf{T}} f</eq>
-<p>Why <m>V<sup>T</sup></m>? Energy. The kinetic energy is <m>½ẋ<sup>T</sup>Mẋ =
-½ċ<sup>T</sup>(V<sup>T</sup>MV)ċ</m> and the strain energy is
-<m>½c<sup>T</sup>(V<sup>T</sup>KV)c</m>, so the new matrices describe the <i>same</i> energies in
-the new coordinates. <m>V<sup>T</sup>f</m> is the work the force does through each shape (a
-generalized force). This is also the principle of virtual work, or a Galerkin projection.</p>
+<h4><a name="why-vt"></a>Why premultiply by <m>V<sup>T</sup></m>?</h4>
+<p>After substituting, there are still <m>N</m> equations, one per mass, but only as many unknowns
+as there are shapes. With fewer shapes than masses (a reduction) they can't all hold: the true
+motion isn't one the shapes can make, so some force is left over,</p>
+<eq>r = f - (M V \ddot c + C V \dot c + K V c)</eq>
+<p>the force that would be needed to hold the chain to those shapes. Some <m>m</m> combinations of
+the <m>N</m> equations have to be chosen to keep, and premultiplying by a matrix <m>W<sup>T</sup></m>
+is that choice. So a reduction makes two choices, and they are different in kind:</p>
+<ul>
+<li><b>The shapes</b>, <m>V</m>: which motions the model can make. This one is free, and it decides
+how good the model is (the small example below, and the rest of this page, are about choosing
+it well).</li>
+<li><b>The equations kept</b>, <m>W</m>: once <m>V</m> is chosen, this one is not free. Mechanics
+says <m>W = V</m>, for the reasons below. (Methods with <m>W ≠ V</m> exist, Petrov–Galerkin in
+numerical analysis, and give up what follows.)</li>
+</ul>
+<p><m>W = V</m> keeps <m>v<sub>j</sub><sup>T</sup>r</m> = 0 for every shape: the leftover force
+does <b>no work on any motion the model allows</b>. That is how a frictionless guide behaves: it
+pushes the body across the path, never along it, so it doesn't change the energy.</p>
+<p>The smallest case shows it. Join two masses by a rigid link, the one shape <m>v</m> = [1, 1]. The
+link pulls on them with some force <m>R</m> you don't know, <m>+R</m> on one and <m>−R</m> on the
+other:</p>
+<eq>m_1\ddot x_1 + \dots = f_1 + R, \qquad m_2\ddot x_2 + \dots = f_2 - R</eq>
+<p>Premultiplying by <m>v<sup>T</sup></m> adds the two, the unknown <m>R</m> cancels, and what is left
+is the equation for the pair as one body: what a free-body diagram drawn round both masses gives.
+With any other shape the guide's forces aren't equal and opposite, but they still do no work along
+<m>v</m>, and <m>v<sup>T</sup></m> still removes them. This is the principle of virtual work (in
+numerical methods, a <b>Galerkin</b> projection).</p>
+<p>Energy gives the same answer. In the new coordinates the kinetic energy (a mass times its speed
+squared, halved, summed over the masses) and the strain energy are</p>
+<eq>\tfrac12 \dot x^{\mathsf{T}} M \dot x = \tfrac12 \dot c^{\mathsf{T}} (V^{\mathsf{T}} M V)\,\dot c</eq>
+<eq>\tfrac12 x^{\mathsf{T}} K x = \tfrac12 c^{\mathsf{T}} (V^{\mathsf{T}} K V)\,c</eq>
+<p>so <m>V<sup>T</sup>MV</m> is the mass the kinetic energy sees in the new coordinates, and
+<m>V<sup>T</sup>KV</m> the stiffness the strain energy sees. The force's power is <m>f<sup>T</sup>ẋ =
+(V<sup>T</sup>f)<sup>T</sup>ċ</m>, so <m>V<sup>T</sup>f</m> is the generalized force on each shape.
+<a href="page:deriving_page#lagrange">Lagrange's equations</a>, applied to those energies in the
+coordinates <m>c</m>, give exactly the premultiplied equation: <m>V<sup>T</sup></m> isn't a separate
+choice, it is what writing the energies in <m>c</m> gives.</p>
+<p>Any other choice of combinations (keeping just some of the rows, say) still makes <m>m</m>
+equations, but loses three things <m>V<sup>T</sup></m> keeps: the reduced <m>M</m> and <m>K</m> stay
+symmetric; the model can't create or destroy energy; and, because the model is the true one held to
+a smaller set of motions, its frequencies are upper bounds (Rayleigh–Ritz). The <a
+href="#craig-bampton">Craig–Bampton</a> bounds below rest on that.</p>
 <p>That gives a practical way to <b>read</b> any transformed matrix:</p>
 <ul>
 <li>Diagonal entry <m>(V<sup>T</sup>KV)<sub>jj</sub> = v<sub>j</sub><sup>T</sup>Kv<sub>j</sub></m>:
@@ -68,63 +106,179 @@ and <m>C</m>.</li>
 </ul>
 
 <h4>Modal analysis is already a change of basis</h4>
-<p>Choosing <m>V = Φ</m>, the system's own mass-normalized mode shapes, is the best-known
-example. Those shapes happen to be orthogonal through both <m>M</m> and <m>K</m>, so
-<m>V<sup>T</sup>MV = I</m> and <m>V<sup>T</sup>KV</m> = diag(<m>ω<sup>2</sup></m>): every
-off-diagonal term vanishes and the equations uncouple. That is <i>why</i> modal coordinates are so
-useful, not a coincidence of the solver.</p>
+<p>The same substitution, with the system's own mass-normalized mode shapes as the basis:
+<m>V = Φ</m>, whose columns are the modes <m>φ<sub>r</sub></m>. The coordinates <m>c</m> are then the
+<b>modal coordinates</b>, usually written <m>q</m>: <m>x = Φq</m>, each <m>q<sub>r</sub></m> how much of
+mode <m>r</m> the motion holds. Premultiplying by <m>Φ<sup>T</sup></m> as above gives</p>
+<eq>(\Phi^{\mathsf{T}} M \Phi)\,\ddot q + (\Phi^{\mathsf{T}} C \Phi)\,\dot q + (\Phi^{\mathsf{T}} K \Phi)\,q = \Phi^{\mathsf{T}} f</eq>
+<p>The modes are orthogonal through both <m>M</m> and <m>K</m>, so <m>Φ<sup>T</sup>MΦ = I</m> and
+<m>Φ<sup>T</sup>KΦ</m> = diag(<m>ω<sub>r</sub><sup>2</sup></m>): every off-diagonal term vanishes. With
+damping that is diagonal in the modes too (proportional damping, <m>Φ<sup>T</sup>CΦ</m> =
+diag(<m>2ζ<sub>r</sub>ω<sub>r</sub></m>)), the <m>N</m> coupled equations come apart into <m>N</m>
+separate single oscillators, one per mode:</p>
+<eq>\ddot q_r + 2\zeta_r \omega_r \dot q_r + \omega_r^2 q_r = \varphi_r^{\mathsf{T}} f</eq>
+<p>That is <i>why</i> modal coordinates are so useful, not a coincidence of the solver: in this one
+basis the shapes don't exchange energy, so each can be solved on its own. Keep only the lowest few
+modes and it is a reduction like any other (modal truncation), with <m>Φ</m> a tall matrix.</p>
 
 <h4>A small example (2 masses, 1 kg and 400 N/m each)</h4>
-<p><m>K</m> = [800 −400; −400 400], <m>M = I</m>. True frequencies: 1.967 and 5.150 Hz.</p>
+<p>The chain is ground – spring – <m>m<sub>1</sub></m> – spring – <m>m<sub>2</sub></m>, so
+<m>K</m> = [800 −400; −400 400] and <m>M = I</m>. True frequencies: 1.967 and 5.150 Hz, with mode
+shapes [0.618, 1] and [1, −0.618].</p>
+<p>A basis is always a set of <i>displacement</i> shapes, chosen freely: a column [1, 1] means "mass 1
+moves 1 m and mass 2 moves 1 m", and its coordinate says how far. The energy argument above only says
+how to weigh each shape once it is chosen, and each entry of <m>V<sup>T</sup>KV</m> can be read off the
+springs as the strain energy of those displacements.</p>
 <ol>
-<li><b>A full, different basis.</b> Take <m>v<sub>1</sub></m> = [1, 1] ("move together") and
-<m>v<sub>2</sub></m> = [1, −1] ("move apart"). Then <m>V<sup>T</sup>KV</m> = [400 400; 400 2000]
-and <m>V<sup>T</sup>MV</m> = [2 0; 0 2]. The matrices look nothing like <m>K</m> and <m>M</m>, and
-the off-diagonal 400 says the two shapes are coupled, yet solving gives exactly 1.967 and 5.150 Hz.
-A <b>square</b> (complete) basis only rewrites the problem; it cannot change the answer.</li>
+<li><b>A full, different basis.</b> Take <m>v<sub>1</sub></m> = [1, 1] (both masses move the same way,
+together) and <m>v<sub>2</sub></m> = [1, −1] (they move opposite ways). These are easy to picture, not
+the chain's modes. Then
+<ul>
+<li><m>v<sub>1</sub><sup>T</sup>Kv<sub>1</sub></m> = 400: moving both by 1 stretches only the first
+spring, by 1;</li>
+<li><m>v<sub>2</sub><sup>T</sup>Kv<sub>2</sub></m> = 2000: the first spring stretches by 1 and the second
+by 2, 400 × 1<sup>2</sup> + 400 × 2<sup>2</sup>;</li>
+<li><m>v<sub>1</sub><sup>T</sup>Kv<sub>2</sub></m> = 400: the strain energy the two shapes share when both
+are present, which is what couples them;</li>
+<li><m>V<sup>T</sup>MV</m> = [2 0; 0 2]: in either shape both 1 kg masses move at the shape's speed, and
+the two shapes share no kinetic energy.</li>
+</ul>
+So <m>V<sup>T</sup>KV</m> = [400 400; 400 2000]. The matrices look nothing like <m>K</m> and <m>M</m>,
+and the off-diagonal 400 says the two shapes are coupled, yet solving gives exactly 1.967 and 5.150 Hz. A
+<b>square</b> (complete) basis only rewrites the problem; it cannot change the answer. Any shapes would
+do, provided none is a combination of the others (else <m>V</m> can't be inverted and some motion is
+missing). The frequencies come out the same in every such basis; the mode shapes come out as
+coordinates <m>η</m> in it, and <m>x = Vη</m> turns them back into displacements.</li>
 <li><b>Truncate it.</b> Keep only <m>v<sub>1</sub></m>: one equation, <m>ω<sup>2</sup></m> =
 400/2, <m>f</m> = 2.25 Hz, 14% high. The masses are now forced to move together, which is a
 constraint, so the structure is stiffer and the frequency can only go up (the Rayleigh quotient,
 <m>ω<sup>2</sup> = v<sup>T</sup>Kv/v<sup>T</sup>Mv</m>).</li>
 <li><b>Choose a better shape.</b> Use the static deflection under a tip load instead,
 <m>v</m> = [0.5, 1]: <m>ω<sup>2</sup></m> = 200/1.25, <m>f</m> = 2.01 Hz, only 2.3% high with a
-single coordinate. (The true mode is [0.618, 1].) A static shape captures most of the
+single coordinate. (The true mode 1 is [0.618, 1].) A static shape captures most of the
 low-frequency motion. That is exactly why Craig–Bampton uses static constraint modes.</li>
 </ol>
 
-<h4>Reduction = a tall basis</h4>
+<h4><a name="reduction"></a>Reduction = a tall basis</h4>
 <p>When <m>V</m> has fewer columns than rows (<m>N × m</m>, <m>m</m> &lt; <m>N</m>),
 <m>x = Vc</m> <i>restricts</i> the motion to combinations of <m>m</m> shapes: the model can only
 move along those "rails". Everything then depends on whether the true motion lies (nearly) inside
-that set of shapes. The MAC in the comparison table measures exactly that for each mode. Adding
-shapes can only enlarge the set, which is why the frequencies converge from above
-<cite>ritz</cite>.</p>
-
-<h4><a name="craig-bampton"></a>The Craig–Bampton basis, and why it is chosen this way</h4>
-<p>Inside a component, any motion can be split into two parts:</p>
+that set of shapes.</p>
+<p>The two-mass chain above shows it literally. Its displacements are points (<m>x<sub>1</sub>,
+x<sub>2</sub></m>) in a plane, and its first mode is a direction in that plane, [0.618, 1] (solid).
+A basis of one shape is a line through the origin: the only motions the one-coordinate model can
+make. Its frequency is Rayleigh's quotient along that line, and the further the line from the mode,
+the higher it is:</p>
+<table width="100%"><tr><td align="center"><img src="fig:rails" width="310" height="186"></td></tr></table>
+<table border="1" cellspacing="0" cellpadding="4" align="center">
+<tr><th>shape (rail)</th><th>angle to mode 1</th><th>MAC</th><th>frequency</th><th>error</th></tr>
+<tr><td>[0.5, 1], the static deflection under a tip load</td><td align="right">5.2°</td><td align="right">0.992</td><td align="right">2.01 Hz</td><td align="right">+2.3 %</td></tr>
+<tr><td>[1, 1], both together</td><td align="right">13°</td><td align="right">0.947</td><td align="right">2.25 Hz</td><td align="right">+14 %</td></tr>
+<tr><td>[0, 1], mass 2 alone</td><td align="right">32°</td><td align="right">0.724</td><td align="right">3.18 Hz</td><td align="right">+62 %</td></tr>
+<tr><td>both [1, 1] and [1, −1]: the whole plane</td><td align="right">0°</td><td align="right">1</td><td align="right">1.967 Hz</td><td align="right">exact</td></tr>
+</table>
+<p>No rail does better than the mode itself, so every error is positive: the model is the chain held
+to the rail, and holding it can only stiffen it. The MAC is the cosine of the angle, squared: the
+MAC column of the page's comparison table measures exactly this, how close the true mode lies to what
+the reduced model can make. Adding a shape turns the line into a plane (here the whole plane, and the
+answer is exact); in general it enlarges the set, so the frequencies can only fall, towards the true
+ones from above <cite>ritz</cite>. The <a href="#worked-example">worked example</a> shows it on the
+four-mass chain: 1.162, 1.108, 1.1057 Hz with 0, 1, 2 modes kept, and the exact 1.1055 Hz with all
+3.</p>
+<p><b>In short.</b></p>
 <ul>
-<li><b>Motion forced by the boundary.</b> If the boundary moves slowly, the interior simply
-follows statically. The constraint modes <m>Ψ</m> describe this exactly: column <m>j</m> is the
-static shape when boundary DOF <m>j</m> moves by 1 and the others are held.</li>
-<li><b>The component's own vibration relative to that.</b> With the boundary held, what is left
-is a free vibration of the clamped component, so it is described by its fixed-interface modes
-<m>Φ</m>, lowest first, since low-frequency loading excites them most.</li>
+<li>Any independent set of shapes is a valid basis, and premultiplying by <m>V<sup>T</sup></m> makes the
+reduced model's energies equal the full model's for every motion it can make.</li>
+<li>A <b>square</b> basis rewrites the problem: same frequencies, same modes, in other coordinates.</li>
+<li>A <b>tall</b> basis changes the answer. The reduced model is the full one held to the chosen
+shapes, so it <i>approximates</i> the dynamics, never too soft, and only as well as those shapes allow.
+Reduction is therefore all about choosing the shapes, which is what the rest of this page is
+about.</li>
 </ul>
-<p>Together they are complete: keep every fixed-interface mode and <m>T</m> is square and
-invertible, so nothing is lost. The design has three further consequences:</p>
+
+<h3><a name="craig-bampton"></a>The Craig–Bampton basis, built up</h3>
+<p>Craig–Bampton is one particular way of choosing <m>V</m> for a component, and the method has its own
+names for the pieces. They come in one at a time below, each with the page's default to look at: the
+four-mass chain, uncut, loaded at its tip.</p>
+
+<h4><a name="boundary"></a>1. Boundary and interior DOFs</h4>
 <ul>
+<li><b>Boundary DOFs</b>, <m>x<sub>b</sub></m> (also called masters), are kept as physical
+displacements. They are the interface masses, each shared by the substructures either side of it,
+and the last mass of the chain, where the force is applied. In the default, only the tip:
+<m>x<sub>b</sub> = x<sub>4</sub></m>.</li>
+<li><b>Interior DOFs</b>, <m>x<sub>i</sub></m>, are every other mass. Each belongs to exactly one
+substructure and will be described by a few shapes instead. In the default, <m>x<sub>1</sub></m> to
+<m>x<sub>3</sub></m>.</li>
+</ul>
+<p>The subscripts <m>i</m> and <m>b</m> also split the matrices into blocks: <m>K<sub>ii</sub></m>
+couples interior DOFs to each other, <m>K<sub>ib</sub></m> interior to boundary, and so on.</p>
+
+<h4>2. Two families of shapes</h4>
+<ul>
+<li><b>Constraint modes</b>, <m>Ψ</m>: move one boundary DOF by 1 m, hold any others, and let the
+interior settle where the springs put it, statically. One shape per boundary DOF. In the default it is
+a straight line from the ground to the tip, <m>Ψ</m> = [0.25, 0.5, 0.75] over <m>m<sub>1</sub></m> to
+<m>m<sub>3</sub></m>. It describes the motion the boundary <i>forces</i> on the interior: if the
+boundary moves slowly, the interior follows exactly this.</li>
+<li><b>Fixed-interface modes</b>, <m>Φ</m>: hold every boundary DOF still and find the interior's own
+mode shapes, as on the Simulation page. In the default that is a three-mass chain fixed at both
+ends; its first mode, at 2.44 Hz, is <m>φ</m> = [0.5, 0.707, 0.5]. They describe the interior's own
+vibration on top of what the boundary forces. Only the lowest <m>k</m> are kept, since low-frequency
+loading excites them most: <m>Φ<sub>k</sub></m>, with coordinates <m>q</m> (how much of each, the
+modal coordinates of the section above).</li>
+</ul>
+
+<h4>3. The basis, <m>T</m></h4>
+<p>Put both families side by side as columns, and that is the Craig–Bampton basis: the <m>V</m> of the
+sections above. Texts on the method call it <m>T</m> (for <i>transformation</i>), and its coordinates,
+the <m>c</m> above, are the kept modes' <m>q</m> together with the boundary displacements:</p>
+<eq>\begin{bmatrix} x_i \\ x_b \end{bmatrix} = T \begin{bmatrix} q \\ x_b \end{bmatrix}, \qquad T = \begin{bmatrix} \Phi_k & \Psi \\ 0 & I \end{bmatrix}</eq>
+<p>Read it by rows. The interior moves as <m>x<sub>i</sub> = Φ<sub>k</sub>q + Ψx<sub>b</sub></m>: its own
+vibration plus what the boundary forces on it. The boundary's row, [0 <m>I</m>], says
+<m>x<sub>b</sub> = x<sub>b</sub></m>: the boundary coordinates are the boundary's displacements
+themselves. In the default with one mode kept, <m>T</m> has two columns, [0.5, 0.707, 0.5, 0] and
+[0.25, 0.5, 0.75, 1], so the four masses are described by two coordinates.</p>
+<p><m>T</m> has a column for each kept mode and each boundary DOF. Keep every fixed-interface mode and
+it has as many columns as rows: <b>square</b>, and invertible (no column is a combination of the
+others), so it only rewrites the problem and nothing is lost. Keep fewer and it is <b>tall</b>: a
+reduction, with the rails above.</p>
+
+<h4>4. The reduced matrices: what the hats mean</h4>
+<p>Substitute and premultiply exactly as before. The results are the matrices of the
+<b>reduced model</b>, and a hat marks them:</p>
+<eq>\hat M = T^{\mathsf{T}} M T, \quad \hat C = T^{\mathsf{T}} C T, \quad \hat K = T^{\mathsf{T}} K T, \quad \hat f = T^{\mathsf{T}} f</eq>
+<p>These are <m>V<sup>T</sup>MV</m> and its kin from above, renamed: the hat says "the same quantity,
+in the reduced coordinates", one row and column per column of <m>T</m>. In the default,</p>
+<eq>\hat M = \begin{bmatrix} 1 & 0.854 \\ 0.854 & 1.875 \end{bmatrix}, \qquad \hat K = \begin{bmatrix} 234 & 0 \\ 0 & 100 \end{bmatrix}</eq>
+<p>(the <a href="#worked-example">worked example</a> works each entry out). Their blocks are named by
+the coordinates they join: <m>M̂<sub>qq</sub></m> modes with modes, <m>M̂<sub>qb</sub></m> modes with
+the boundary, <m>M̂<sub>bb</sub></m> the boundary with itself.</p>
+
+<h4>5. Why this choice: what the basis buys</h4>
+<p>Ordering the DOFs [interior | boundary] is only bookkeeping, so that the blocks are easy to name;
+it changes nothing. What matters is the choice of shapes, which does two jobs: accuracy with few
+shapes, and components that can be reduced apart and joined.</p>
+<ul>
+<li><b>Accurate with few shapes.</b> The constraint modes are exact static solutions, so slow,
+low-frequency motion is captured exactly, whatever is left out; the few lowest fixed-interface modes add
+the interior's own vibration on top. The low modes of the assembled structure then lie almost inside
+what the basis can make: the small angle of the rails picture, and so a small error.</li>
 <li><b>The boundary coordinates stay physical.</b> Every fixed-interface mode is zero on the
-boundary, and each constraint mode is 1 on one boundary DOF and 0 on the others. So the
-coordinate multiplying constraint mode <m>j</m> <i>is</i> the displacement
-<m>x<sub>b,j</sub></m>. This is what makes assembly trivial: two components are joined simply by
-giving their interface the same <m>x<sub>b</sub></m>. Modal coordinates of two separate
-components cannot be joined like that.</li>
-<li><b><m>K̂</m> is block diagonal.</b> The constraint modes are static, so they do no elastic
-work against the fixed-interface modes: <m>φ<sup>T</sup>(K<sub>ii</sub>Ψ + K<sub>ib</sub>)</m> =
-0. The two families are stiffness-orthogonal.</li>
-<li><b><m>M̂</m> is not.</b> They are not mass-orthogonal: when the boundary accelerates, the
-inertia of the interior drives the component's modes. <m>M̂<sub>qb</sub></m> is that inertial
-coupling, and it is how the components talk to each other dynamically. (For <m>C</m>, see
+boundary, and each constraint mode is 1 on its own boundary DOF and 0 on the others. So the
+coordinate multiplying constraint mode <m>j</m> <i>is</i> the displacement <m>x<sub>b,j</sub></m>.
+This is what makes assembly trivial: two components are joined simply by giving their interface the
+same <m>x<sub>b</sub></m>. Modal coordinates of two separate components cannot be joined like that.
+And it is why substructuring needs this basis at all: the assembled structure's own lowest modes
+would reduce it just as well, but finding them means solving the whole model first, which is what
+substructuring sets out to avoid. Each component's Craig–Bampton basis needs only that
+component.</li>
+<li><b><m>K̂</m> is block diagonal</b> (the 0s above). The constraint modes are static, so they do no
+elastic work against the fixed-interface modes: <m>φ<sup>T</sup>(K<sub>ii</sub>Ψ + K<sub>ib</sub>)</m>
+= 0. The two families are stiffness-orthogonal.</li>
+<li><b><m>M̂</m> is not</b> (the 0.854). The two families are not mass-orthogonal: when the boundary
+accelerates, the inertia of the interior drives the component's modes. <m>M̂<sub>qb</sub></m> is that
+inertial coupling, and it is how the components talk to each other dynamically. (For <m>C</m>, see
 <i>Damping</i> under <i>Properties worth knowing</i>.)</li>
 </ul>
 <p>The <i>Basis</i> tab plots every column of the current <m>T</m> as a shape along the chain. For
@@ -135,20 +289,13 @@ both components when the interface moves) and a ramp for <m>x<sub>8</sub></m> (z
 rising to the tip). Every motion the reduced model can make is a combination of those four
 shapes.</p>
 
-<h3><a name="boundary"></a>Boundary (master) and interior DOFs</h3>
-<ul>
-<li><b>Boundary DOFs <m>x<sub>b</sub></m></b> are kept as physical displacements. Here they are
-the interface masses, each shared by the substructures either side of it, and the last mass of
-the chain, where the force is applied.</li>
-<li><b>Interior DOFs <m>x<sub>i</sub></m></b> are every other mass. Each belongs to exactly one
-substructure and is replaced by a few modal coordinates <m>q</m>.</li>
-</ul>
-<p><b>Why is the force limited to the last mass?</b> A force on a boundary DOF enters the
-reduced model unchanged (<m>f̂ = T<sup>T</sup>f</m> = [0; <m>f<sub>b</sub></m>]) and the response
-there is read directly, so any difference from the full model is caused by the reduction and not
-by how the load was projected. A force on an interior DOF is allowed in Craig–Bampton, but it only
-reaches the model through the kept modes and the constraint modes. In practice, the DOFs that are
-loaded, measured or connected to other components are made masters.</p>
+<h3><a name="loads"></a>Why the force is on a boundary DOF</h3>
+<p>A force on a boundary DOF enters the reduced model unchanged (<m>f̂ = T<sup>T</sup>f</m> = [0;
+<m>f<sub>b</sub></m>]) and the response there is read directly, so any difference from the full
+model is caused by the reduction and not by how the load was projected. A force on an interior DOF
+is allowed in Craig–Bampton, but it only reaches the model through the kept modes and the
+constraint modes. In practice, the DOFs that are loaded, measured or connected to other components
+are made masters.</p>
 
 <h3><a name="formulation"></a>Original vs substructured formulation</h3>
 <table border="1" cellspacing="0" cellpadding="4">

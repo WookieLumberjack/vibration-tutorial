@@ -3,6 +3,8 @@ and boundary DOFs."""
 
 from __future__ import annotations
 
+import math
+
 from . import figures as fig
 from .style import colors
 
@@ -42,4 +44,35 @@ def cut_svg() -> str:
     return fig.svg(310, 120, "".join(parts))
 
 
-FIGURES = {"fig:cut": cut_svg}
+def rails_svg() -> str:
+    """The two-mass chain's displacements as points (x₁, x₂) in a plane. Its first mode is a direction in it,
+    [0.618, 1]; a one-shape basis is a line through the origin, a rail the model can only move along. The closer
+    the rail to the mode, the closer the frequency (each rail's error, as the notes' table)."""
+    fg, muted = colors.foreground, colors.muted
+    ox, oy, r = 46.0, 168.0, 150.0
+    parts = [
+        fig.arrow(ox - 8, oy, ox + r + 14, oy, muted, 1.0),
+        fig.arrow(ox, oy + 8, ox, oy - r - 10, muted, 1.0),
+        fig.math_label(ox + r + 18, oy + 5, "x<sub>1</sub>", fg, "start"),
+        fig.math_label(ox - 6, oy - r - 4, "x<sub>2</sub>", fg, "end"),
+    ]
+
+    def ray(dx: float, dy: float, length: float) -> tuple[float, float]:
+        n = math.hypot(dx, dy)
+        return ox + length * dx / n, oy - length * dy / n
+
+    mode = ray(0.618, 1.0, r)
+    parts += [fig.line(ox, oy, *mode, colors.mass[0], 3.0), fig.text(mode[0] + 4, mode[1] - 2, "mode 1", fg, "start")]
+    for (dx, dy), label in (
+        ((1.0, 1.0), "+14 %"),
+        ((0.5, 1.0), "+2.3 %"),
+    ):
+        end = ray(dx, dy, r - 10)
+        parts.append(fig.line(ox, oy, *end, fg, 1.2, dash="5,4"))
+        anchor = "start" if dx > 0.7 else "end"
+        tx = end[0] + (6 if anchor == "start" else -6)
+        parts.append(fig.text(tx, end[1] + (14 if dx > 0.7 else 4), label, fg, anchor))
+    return fig.svg(310, 186, "".join(parts))
+
+
+FIGURES = {"fig:cut": cut_svg, "fig:rails": rails_svg}
