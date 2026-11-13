@@ -9,6 +9,7 @@ import numpy as np
 from ..core import ChainSystem, ModalResult
 from ..core.modal_coupling import CoupledModel
 from ..core.presets import presets
+from . import coupling_figures, links, notation
 from .cms_notes import _side_by_side, fmt, matrix_html
 from .lesson import trials_html
 from .links import load_notes
@@ -45,22 +46,22 @@ TRIALS = (
     CouplingTrial(
         "An absorber is already a 2-DOF model",
         "The Vibration absorber chain, split after m1: A is the machine, B the absorber, tuned to it with "
-        "μ = 0.1. The 2-DOF model is the chain itself, so the errors are 0. The two modes sit "
-        "√0.1 ≈ 32% of f<sub>A</sub> apart, one either side.",
+        "<m>μ</m> = 0.1. The 2-DOF model is the chain itself, so the errors are 0. The two modes sit "
+        "<m>√0.1</m> ≈ 32% of <m>f<sub>A</sub></m> apart, one either side.",
         "absorber",
         split=1,
     ),
     CouplingTrial(
         "Two equal halves: pushed far apart",
-        "The uniform chain split after m2. Both halves have the same mode 1, so f<sub>B</sub> = "
-        "f<sub>A</sub>, but μ = 1.37 is large: the modes are pushed far apart. The upper one is 4.9% too "
+        "The uniform chain split after m2. Both halves have the same mode 1, so <m>f<sub>B</sub> = "
+        "f<sub>A</sub></m>, but <m>μ</m> = 1.27 is large: the modes are pushed far apart. The upper one is 4.9% too "
         "high, with a MAC of 0.96, because the halves' second modes aren't far off and are left out.",
         "uniform",
         split=2,
     ),
     CouplingTrial(
         "A light half, tuned: splitting",
-        "m3 and m4 at 0.1 kg on 40 N/m springs: B is tuned to A with μ = 0.14, and the 2-DOF model is "
+        "m3 and m4 at 0.1 kg on 40 N/m springs: B is tuned to A with <m>μ</m> = 0.14, and the 2-DOF model is "
         "within 0.2% and 0.3%, both above the chain (the Rayleigh–Ritz bound). The Veering tab sweeps B's "
         "frequency: the two curves veer apart instead of crossing. Switch it to the mass ratio to see the "
         "splitting shrink as B gets lighter.",
@@ -88,9 +89,12 @@ TRIALS = (
     ),
 )
 
-NOTATION_HTML = load_notes("coupling_notation")
-
-THEORY_HTML = load_notes("coupling_notes", notation=NOTATION_HTML, trials=trials_html(TRIALS))
+THEORY_HTML = load_notes("coupling_notes", figures=coupling_figures.FIGURES, trials=trials_html(TRIALS))
+# The Matrices tab ends with the notes' own notation table.
+_NOTES = (links.THEORY / "coupling_notes.html").read_text(encoding="utf-8")
+_FOUND = notation.NOTATION.search(_NOTES)
+assert _FOUND is not None, "the notes list their symbols"
+NOTATION_HTML = notation.notation_html(_FOUND.group(1).split())
 
 
 # ------------------------------------------------------------------ step by step (live numbers)

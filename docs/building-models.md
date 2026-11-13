@@ -48,6 +48,9 @@ and plots the chain's and the 2-DOF model's frequencies. Near f<sub>B</sub> = f<
 modes veer apart instead of crossing; two oscillators tuned exactly end up √μ·f<sub>a</sub> apart,
 whatever μ.
 
+The notes work the default split through by hand (the masses, the tuned-oscillator split, the
+model's errors) and close with frequency-based substructuring: joining two parts by their FRFs.
+
 ![Modal coupling: m3–m4 made light (0.1 kg) and tuned to m1–m2; the 2-DOF model (dashed) follows the chain's two lowest modes through the veering, within 0.33%](images/modal_coupling.png)
 
 ## Substructuring (component mode synthesis)
