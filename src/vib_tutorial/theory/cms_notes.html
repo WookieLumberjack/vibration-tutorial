@@ -106,11 +106,20 @@ and <m>C</m>.</li>
 </ul>
 
 <h4>Modal analysis is already a change of basis</h4>
-<p>Choosing <m>V = Φ</m>, the system's own mass-normalized mode shapes, is the best-known
-example. Those shapes happen to be orthogonal through both <m>M</m> and <m>K</m>, so
-<m>V<sup>T</sup>MV = I</m> and <m>V<sup>T</sup>KV</m> = diag(<m>ω<sup>2</sup></m>): every
-off-diagonal term vanishes and the equations uncouple. That is <i>why</i> modal coordinates are so
-useful, not a coincidence of the solver.</p>
+<p>The same substitution, with the system's own mass-normalized mode shapes as the basis:
+<m>V = Φ</m>, whose columns are the modes <m>φ<sub>r</sub></m>. The coordinates <m>c</m> are then the
+<b>modal coordinates</b>, usually written <m>q</m>: <m>x = Φq</m>, each <m>q<sub>r</sub></m> how much of
+mode <m>r</m> the motion holds. Premultiplying by <m>Φ<sup>T</sup></m> as above gives</p>
+<eq>(\Phi^{\mathsf{T}} M \Phi)\,\ddot q + (\Phi^{\mathsf{T}} C \Phi)\,\dot q + (\Phi^{\mathsf{T}} K \Phi)\,q = \Phi^{\mathsf{T}} f</eq>
+<p>The modes are orthogonal through both <m>M</m> and <m>K</m>, so <m>Φ<sup>T</sup>MΦ = I</m> and
+<m>Φ<sup>T</sup>KΦ</m> = diag(<m>ω<sub>r</sub><sup>2</sup></m>): every off-diagonal term vanishes. With
+damping that is diagonal in the modes too (proportional damping, <m>Φ<sup>T</sup>CΦ</m> =
+diag(<m>2ζ<sub>r</sub>ω<sub>r</sub></m>)), the <m>N</m> coupled equations come apart into <m>N</m>
+separate single oscillators, one per mode:</p>
+<eq>\ddot q_r + 2\zeta_r \omega_r \dot q_r + \omega_r^2 q_r = \varphi_r^{\mathsf{T}} f</eq>
+<p>That is <i>why</i> modal coordinates are so useful, not a coincidence of the solver: in this one
+basis the shapes don't exchange energy, so each can be solved on its own. Keep only the lowest few
+modes and it is a reduction like any other (modal truncation), with <m>Φ</m> a tall matrix.</p>
 
 <h4>A small example (2 masses, 1 kg and 400 N/m each)</h4>
 <p><m>K</m> = [800 −400; −400 400], <m>M = I</m>. True frequencies: 1.967 and 5.150 Hz.</p>
