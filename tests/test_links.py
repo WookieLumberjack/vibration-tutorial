@@ -271,3 +271,14 @@ def test_paths_hold_every_page_they_build_on():
         for page in pages:
             missing = needs[page] - set(pages)
             assert not missing, f"{title}: {page} builds on {sorted(missing)}"
+
+
+def test_headings_without_an_anchor_get_one_for_the_contents():
+    from vib_tutorial.gui.theory_window import anchored
+
+    html = anchored('<h3>One</h3><p>text</p><h3><a name="two"></a>Two</h3><h3>Three</h3>')
+    assert html == (
+        '<h3><a name="section-1"></a>One</h3><p>text</p><h3><a name="two"></a>Two</h3>'
+        '<h3><a name="section-3"></a>Three</h3>'
+    )
+    assert anchored(html) == html  # anchoring twice changes nothing

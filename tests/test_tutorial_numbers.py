@@ -154,6 +154,43 @@ def cms(interfaces, kept, method="craig-bampton"):
     ]
 
 
+def test_substructuring_worked_example():
+    import math
+
+    chain = ChainSystem.uniform(4)
+    w1 = 2 * math.sqrt(400) * math.sin(math.pi / 8)
+    assert (math.sin(math.pi / 8), w1, w1 / (2 * math.pi)) == pytest.approx((0.383, 15.3, 2.44), rel=4e-3)
+    K = np.array([[800.0, -400, 0], [-400, 800, -400], [0, -400, 800]])
+    w2, phi = np.linalg.eigh(K)
+    assert math.sqrt(w2[0]) == pytest.approx(w1) and abs(phi[:, 0]) == pytest.approx([0.5, 0.707, 0.5], abs=5e-4)
+    psi = -np.linalg.solve(K, np.array([0.0, 0, -400]))
+    assert psi == pytest.approx([0.25, 0.5, 0.75])
+    assert 1 + psi @ psi == pytest.approx(1.875)
+    guyan = math.sqrt(100 / 1.875) / (2 * math.pi)
+    true = modal_analysis(chain).modes
+    assert (guyan, true[0].fn_hz, guyan / true[0].fn_hz - 1) == pytest.approx((1.162, 1.105, 0.051), abs=5e-4)
+    coupling = 0.5 * 0.25 + 0.707 * 0.5 + 0.5 * 0.75
+    assert w1**2 == pytest.approx(234, abs=0.5) and (coupling, abs(phi[:, 0]) @ psi) == pytest.approx(
+        (0.854, 0.854), abs=6e-4
+    )
+    # the 2 x 2 model, by hand and as the page builds it
+    Kh, Mh = np.diag([234.0, 100.0]), np.array([[1.0, 0.854], [0.854, 1.875]])
+    f_hand = np.sqrt(np.linalg.eigvals(np.linalg.solve(Mh, Kh)).real) / (2 * math.pi)
+    assert sorted(f_hand) == pytest.approx([1.108, 3.27], abs=0.005)
+    m = component_mode_synthesis(chain, [], [1])
+    c = compare_modes(m, modal_analysis(chain))
+    assert (c[0].error, c[1].error) == pytest.approx((0.0019, 0.027), abs=5e-4) and c[1].mac == pytest.approx(
+        0.96, abs=0.005
+    )
+    assert true[1].fn_hz == pytest.approx(3.18, abs=0.005)
+    two = compare_modes(component_mode_synthesis(chain, [], [2]), modal_analysis(chain))
+    assert (two[0].error, two[1].error) == pytest.approx((0.00017, 0.0015), abs=5e-5)
+    assert component_mode_synthesis(chain, [], [0]).fn_hz[0] == pytest.approx(1.162, abs=5e-4)
+    assert all(
+        abs(x.error) < 1e-9 for x in compare_modes(component_mode_synthesis(chain, [], [3]), modal_analysis(chain))
+    )
+
+
 @pytest.mark.parametrize(
     ("interfaces", "kept", "method", "mode", "error", "tol"),
     [

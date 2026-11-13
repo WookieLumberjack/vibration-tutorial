@@ -120,6 +120,9 @@ With more cuts each substructure is smaller and has fewer modes to keep, but eve
 stays in the model as a physical DOF. For 8 masses and a 6-DOF model, one cut with 2 modes
 each gets modes 1 to 4 within 0.7%; two cuts with 1 mode each only within 2.3%:
 
+The notes work the default (the 4-mass chain, uncut, one mode kept) through by hand: the clamped
+mode, the constraint mode, Guyan's 1.162 Hz and the 2 × 2 model's 1.108 Hz against the true 1.105 Hz.
+
 ![Three substructures: cuts at m3 and m6 with one clamped mode each; the six columns of T are three clamped modes and three constraint-mode "tents"](images/substructuring_three.png)
 
 For each substructure, partitioned into interior $i$ and boundary $b$ DOFs,

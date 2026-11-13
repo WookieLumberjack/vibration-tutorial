@@ -292,10 +292,11 @@ def test_theory_window(app):
         *(group for group, _ in links.COURSE),
     ]
 
-    # A page's sections, from its headings (anchored if they weren't: the Substructuring notes).
+    # A page's sections, from its headings (`anchored` gives any without an anchor one: test_links checks it).
     cms = next(p for p in pages if p.data(0, QtCore.Qt.ItemDataRole.UserRole)[0] == "cms_page")
     cms.setExpanded(True)
-    assert cms.childCount() > 5 and cms.child(0).data(0, QtCore.Qt.ItemDataRole.UserRole)[1].startswith("section-")
+    assert cms.childCount() > 5
+    assert all(cms.child(i).data(0, QtCore.Qt.ItemDataRole.UserRole)[1] for i in range(cms.childCount()))
     t.tree.itemClicked.emit(cms.child(2), 0)
     assert t.page == "cms_page" and w.pages.currentWidget() is w.sim_page and not w._built
 
