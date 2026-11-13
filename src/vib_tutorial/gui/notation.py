@@ -1882,6 +1882,25 @@ SYMBOLS = (
         "ods",
     ),
     Symbol(
+        "nl_element",
+        "N(X), A, g, k<sub>g</sub>, k<sub>eq</sub>",
+        "the nonlinear elements' first harmonics (their describing functions); the amplitude of the motion an "
+        "element sees; a gap's clearance; the spring past it; the stiffness a gap adds to the first harmonic",
+        "N, m, m, N/m, N/m",
+        "nonlinear_page",
+        "describing",
+    ),
+    Symbol(
+        "force_id",
+        "y, G, z<sub>k</sub>, c, d, s<sub>i</sub>, u<sub>i</sub>, v<sub>i</sub>, λ, k",
+        "force identification: the measured samples; the matrix from the force's samples to them (y = Gf); the "
+        "chain's state at sample k; the sensor's read-out of it and of the force; G's singular values and "
+        "directions; Tikhonov's weight; how many directions truncated SVD keeps",
+        "m or m/s², m/N, –, –, –, m/N, –, –, m/N, –",
+        "nonlinear_page",
+        "forces",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

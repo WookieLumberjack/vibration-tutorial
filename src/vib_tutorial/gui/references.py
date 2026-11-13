@@ -1017,6 +1017,40 @@ REFERENCES = (
         "March 1997 (30th anniversary issue)",
         "",
     ),
+    Reference(
+        "gelb-vandervelde",
+        "Gelb and Vander Velde 1968",
+        "A. Gelb and W. E. Vander Velde, <i>Multiple-Input Describing Functions and Nonlinear System Design</i>, "
+        "McGraw-Hill, 1968",
+        "",
+    ),
+    Reference(
+        "juang",
+        "Juang 1994",
+        "J.-N. Juang, <i>Applied System Identification</i>, Prentice Hall, 1994",
+        "Markov parameters",
+    ),
+    Reference(
+        "hansen-picard",
+        "Hansen 1990",
+        "P. C. Hansen, “The discrete Picard condition for discrete ill-posed problems”, <i>BIT</i> 30(4), "
+        "658–672, 1990",
+        "",
+    ),
+    Reference(
+        "hansen-lcurve",
+        "Hansen 1992",
+        "P. C. Hansen, “Analysis of discrete ill-posed problems by means of the L-curve”, <i>SIAM Review</i> "
+        "34(4), 561–580, 1992",
+        "",
+    ),
+    Reference(
+        "worden-tomlinson",
+        "Worden and Tomlinson 2001",
+        "K. Worden and G. R. Tomlinson, <i>Nonlinearity in Structural Dynamics: Detection, Identification and "
+        "Modelling</i>, Institute of Physics Publishing, 2001",
+        "detecting nonlinearity in tests, and describing functions",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
