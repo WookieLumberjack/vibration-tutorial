@@ -23,7 +23,7 @@ from ..core import force_id as fid
 from ..core import nonlinear_test as nl
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
-from . import settle_plots, weak
+from . import nonlinear_figures, settle_plots, weak
 from .layouts import FlowLayout
 from .lesson import (
     Form,
@@ -106,13 +106,13 @@ TRIALS = (
     NonlinearTrial(
         "Linear: every level agrees",
         "Three 1 kg masses on 1000 N/m springs with 4 N·s/m dampers, driven on mass 3 by 0.05, 0.2 and 0.5 N, "
-        "stepped up and down through mode 1 (2.240 Hz). The six FRFs |X₃/F| lie on one curve, and on the "
+        "stepped up and down through mode 1 (2.240 Hz). The six FRFs <m>|X<sub>3</sub>/F|</m> lie on one curve, and on the "
         "linear FRF: double the force and the response doubles. That's homogeneity, and the first check of "
         "any test.",
     ),
     NonlinearTrial(
         "A hardening spring",
-        "A cubic spring, 2 × 10⁶ N/m³, alongside the first spring. At 0.05 N it hardly shows; at 0.5 N mode 1's "
+        "A cubic spring, <m>k<sub>3</sub></m> = 2 × 10⁶ N/m³, alongside the first spring. At 0.05 N it hardly shows; at 0.5 N mode 1's "
         "peak has leaned up to 2.319 Hz; at 1 N, swept up, the response rides the leaning branch to its peak at "
         "2.431 Hz and drops off it at 2.450 Hz, while swept down it only jumps up onto it at 2.422 Hz: between "
         "the two the response depends on the way it came. The levels' FRFs differ by 67 % of the peak.",
@@ -150,15 +150,15 @@ TRIALS = (
         "Now the other way: a 0.1 s impact on mass 3, measured as mass 1's displacement with 2 % noise. G, "
         "the matrix from the force's samples to the measurement's, is lower triangular with singular values "
         "spanning nearly 8 decades (the chain filters out what's fast; the last two are zero to round-off, and "
-        "the inverse leaves them out), and G⁻¹y divides the noise by the smallest it keeps: "
+        "the inverse leaves them out), and <m>G<sup>−1</sup>y</m> divides the noise by the smallest it keeps: "
         "the force comes out 73,000 times too large, all noise.",
         method=fid.Method.INVERSE,
         tab=TAB_PICARD,
     ),
     NonlinearTrial(
         "Tikhonov at the L-curve's corner",
-        "The same measurement, solved with Tikhonov's λ = 5.4 × 10⁻⁵ from the L-curve's corner: each "
-        "direction weighted by s²/(s² + λ²), so those far below λ drop out. The impact comes back within 15 % "
+        "The same measurement, solved with Tikhonov's <m>λ</m> = 5.4 × 10⁻⁵ from the L-curve's corner: each "
+        "direction weighted by <m>s<sub>i</sub>²/(s<sub>i</sub>² + λ²)</m>, so those far below <m>λ</m> drop out. The impact comes back within 15 % "
         "(the error's norm against the force's), its peak a little low and spread: the sharpest part of it is "
         "what the chain filtered out.",
         log_lam=math.log10(5.44e-5),
@@ -166,8 +166,8 @@ TRIALS = (
     ),
     NonlinearTrial(
         "Measure the acceleration where the force is",
-        "An accelerometer on mass 3, where the impact is: it feels the force at once (a = F/m, before any "
-        "spring moves), so G's singular values span only 3 decades, not 20. Tikhonov with λ = 0.024 recovers "
+        "An accelerometer on mass 3, where the impact is: it feels the force at once (<m>a = F/m</m>, before any "
+        "spring moves), so G's singular values span only 3 decades, not nearly 8. Tikhonov with <m>λ</m> = 0.024 recovers "
         "the impact within 6 %. Where the sensor is, and what it measures, matters more than the method.",
         output=fid.Output.ACCELERATION,
         sensors=(2,),
@@ -215,7 +215,7 @@ def _friction_level(rng: np.random.Generator) -> Question:
         "A chain with Coulomb friction is tested at a low and then a high force. How does its peak FRF |X/F| change?",
         0,
         "It rises: friction is a fixed force, so at a higher level it's a smaller share of the motion's forces "
-        "and damps less (its describing function is an equivalent damping 4F<sub>c</sub>/(πωX), falling as X "
+        "and damps less (its describing function is an equivalent damper <m>c<sub>eq</sub> = 4F<sub>f</sub>/πΩX</m>, falling as <m>X</m> "
         "grows).",
         choices=("It rises", "It falls", "It doesn't change", "It leans to a higher frequency"),
         setup=dict(levels=(0.2, 0.5, 2.0), friction=(0.0, 0.0, 0.1)),
@@ -325,7 +325,7 @@ FRF_TIP = (
 )
 FORCE_TIP = "<p>The true force (solid) and the one identified from the noisy measurement (dashed).</p>"
 
-NOTES_HTML = load_notes("nonlinear_forces", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("nonlinear_forces", figures=nonlinear_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class NonlinearForcesPage(QtWidgets.QWidget):

@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:frf_page#receptance-matrix">The FRF (receptance) matrix</a>
 <a href="page:test_page#friction">Nonlinearity: friction</a>
@@ -6,70 +5,145 @@
 </before>
 <h3><a name="homogeneity"></a>Is it linear? Homogeneity</h3>
 <p>Everything a modal test fits assumes the structure is linear: double the force and every response doubles,
-so the FRF X/F is the same at any level. That's <b>homogeneity</b>, and the first check is to measure the FRF
-at two or three levels and lay them over each other. A linear structure's coincide; a nonlinear one's move
+so the FRF <m>X/F</m> is the same at any level. That's <b>homogeneity</b>, and the first check is to measure the
+FRF at two or three levels and lay them over each other. A linear structure's coincide; a nonlinear one's move
 with the level. Joints, contacts, friction and large deflections all do it, and only at the levels where they
 act: a gap that never closes is invisible. Test at the levels the structure works at.</p>
+<p>Two more checks come almost free. <b>Reciprocity</b> <cite>maxwell-1864</cite>: a linear structure's
+<m>H<sub>jk</sub></m> = <m>H<sub>kj</sub></m>, so driving at <m>k</m> and measuring at <m>j</m> must give what
+driving at <m>j</m> and measuring at <m>k</m> does; a nonlinear one's needn't. And the excitation: a random
+force spreads its energy over every frequency and every level, so the FFT's averaging hands back a "best
+linear" FRF, smeared, and the nonlinearity shows only as a <b>coherence</b> <m>γ²</m> below 1 at the peaks. A
+sine at one level and frequency at a time hides nothing, which is why the checks below use one.</p>
 
 <h3><a name="stepped-sine"></a>Stepped sine, up and down</h3>
 <p>A <b>stepped sine</b> holds each frequency until the response is steady, reads its amplitude and phase, and
 steps on. Swept up and then down, a linear structure gives the same curve both ways. A hardening spring's
 peak leans to higher frequencies as the level rises, so the response has two steady states over a band: swept
 up it rides the upper branch until that ends and drops off; swept down it climbs onto it late. The two sweeps
-disagree between the <b>jumps</b>, which no linear structure can do. (The Duffing &amp; Mathieu page, later, follows
-one nonlinear oscillator through its jump, chaos and all.)</p>
+disagree between the <b>jumps</b>, which no linear structure can do. (The Duffing &amp; Mathieu page, later,
+follows one nonlinear oscillator <cite>duffing</cite> through its jump, chaos and all.)</p>
 
 <h3><a name="describing"></a>Harmonic balance</h3>
-<p>The page finds each step's steady state by <b>harmonic balance</b> with one harmonic, x = Re(X e<sup>iωt</sup>),
-each nonlinear force replaced by its first harmonic, its <b>describing function</b>:
-(K − ω²M + iωC)X + N(X) = F. A cubic spring on a stretch of amplitude A adds a stiffness ¾k₃A²; a gap of
-clearance g, k<sub>g</sub>[1 − (2/π)(asin r + r√(1 − r²))] with r = g/A (nothing while A ≤ g); Coulomb friction
-F<sub>c</sub> acts as a damper 4F<sub>c</sub>/(πωA), weaker as the motion grows. Each step starts Newton from
-the last step's X, as the structure starts from where it is; where that branch ends, the stable solution
-nearest it is where it jumps to (the real Jacobian's determinant changes sign at each fold, so the unstable
-middle branch has it negative).</p>
+<p>The page adds one element to the chain, alongside one of its springs: a cubic spring, or a gap. With the
+chain's own friction, these are the force laws it can have:</p>
+<p><img src="fig:laws"></p>
+<p>It finds each step's steady state by <b>harmonic balance</b> with one harmonic,
+<m>x</m> = <m>Re(X e<sup>iΩt</sup>)</m>: each nonlinear force is replaced by its first harmonic, its
+<b>describing function</b> <cite>gelb-vandervelde</cite>, and the chain's equations become</p>
+<eq>(K - \Omega^2 M + i\,\Omega\,C)\,X + N(X) = F</eq>
+<p>with <m>N(X)</m> the elements' first harmonics. Each is worked out on the amplitude <m>A</m> of the motion it
+sees (a spring's stretch, the travel of friction's mass):</p>
+<ul>
+<li><b>A cubic spring.</b> Since <m>cos³θ</m> = <m>¾cos θ + ¼cos 3θ</m>, the first harmonic of
+<m>k<sub>3</sub>(A cos θ)³</m> is <m>¾k<sub>3</sub>A³cos θ</m>: an added stiffness <m>¾k<sub>3</sub>A²</m>, growing
+with the amplitude. (The <m>¼cos 3θ</m> left over is the 3X of <a href="#distortion">Distortion</a>.)</li>
+<li><b>A gap</b> of clearance <m>g</m> and spring <m>k<sub>g</sub></m> adds nothing while <m>A ≤ g</m>, and then
+a stiffness that rises toward <m>k<sub>g</sub></m> as the gap becomes a small share of the swing (below).</li>
+<li><b>Coulomb friction</b> <cite>coulomb</cite> <m>F<sub>f</sub></m> takes <m>4F<sub>f</sub>A</m> a cycle (four
+strokes of <m>A</m> against it). A damper takes <m>πc<sub>eq</sub>ΩA²</m>; setting the two equal gives the
+equivalent damper below, weaker as the motion grows.</li>
+</ul>
+<eq>k_{eq} = k_g\Bigl[1 - \frac{2}{\pi}\Bigl(\arcsin\frac{g}{A} + \frac{g}{A}\sqrt{1 - \frac{g^2}{A^2}}\Bigr)\Bigr]</eq>
+<eq>c_{eq} = \frac{4F_f}{\pi\,\Omega A}</eq>
+<p>Why the peak leans: the added stiffness moves each mode's frequency as an updated spring would
+(<a href="page:updating_page#sensitivities">Updating by sensitivities</a>): a spring at the wall stretches
+<m>φ<sub>1r</sub></m> in mode <m>r</m>, so</p>
+<eq>\omega^2 \approx \omega_r^2 + \tfrac34 k_3 A^2\,\phi_{1r}^2</eq>
+<p>and as <m>A</m> grows with the level so does the frequency the peak sits at: the <b>backbone</b> the peaks
+lie on. Each step starts Newton from the last step's <m>X</m>, as the structure starts from where it is; where
+that branch ends, the stable solution nearest it is where it jumps to (the real Jacobian's determinant changes
+sign at each fold, so the unstable middle branch has it negative).</p>
 
 <h3><a name="distortion"></a>Distortion</h3>
 <p>One harmonic leaves out the rest: a nonlinear element turns a sine into a distorted wave. The
 <i>Distortion</i> tab steps the chain in time at one level and frequency (the exact FOH update, the nonlinear
 forces an input linear over each step, found by Newton) until a cycle repeats itself, and splits the steady
-response into harmonics. A symmetric nonlinearity (a cubic spring, a gap, friction) makes odd harmonics, 3X and
-5X; an asymmetric one (a contact on one side) makes even ones too. Harmonics where the input was a pure sine
-are a second test of linearity.</p>
+response into harmonics. A symmetric nonlinearity (a cubic spring, a gap, friction: the same force reversed
+when the motion is) makes odd harmonics, 3X and 5X; an asymmetric one (a contact on one side) makes even ones
+too. Harmonics where the input was a pure sine are a second test of linearity.</p>
 
 <h3><a name="forces"></a>Which force made this response?</h3>
 <p>Sometimes the force is what's wanted, and it can't be measured: a wheel on a rail, a gust, an impact inside
-a machine. The response can. With the force on one mass, sampled every h and linear between samples, the
-exact FOH update makes every sensor's sample a sum over the force's samples so far: <b>y = G f</b>, G lower
-triangular, its columns the impulse response shifted (the Markov parameters). Identifying the force is
-solving for f.</p>
+a machine. The response can. With the force on one mass, sampled every <m>h</m> and linear between samples,
+the exact FOH update, <m>z<sub>k</sub></m> = <m>Φz<sub>k−1</sub> + Γ<sub>0</sub>f<sub>k−1</sub> +
+Γ<sub>1</sub>f<sub>k</sub></m>, read by a sensor as <m>y<sub>k</sub></m> = <m>c z<sub>k</sub> +
+d f<sub>k</sub></m>, makes every sample a sum over the force's samples so far: <b><m>y = G f</m></b>, with</p>
+<eq>G_{kk} = c\,\Gamma_1 + d, \qquad G_{kj} = c\,\Phi^{\,k-j-1}(\Phi\Gamma_1 + \Gamma_0) \quad (j < k)</eq>
+<p>and zero above the diagonal (a response can't come before its force). The entries are the <b>Markov
+parameters</b> <cite>juang</cite>, the sampled impulse response: each column is it, shifted down to start at
+its own sample.</p>
+<p><img src="fig:markov"></p>
+<p>Identifying the force is solving for <m>f</m>. (<m>d</m> is 0 for a displacement; an acceleration feels the
+force on its own mass at once, <m>d</m> = <m>1/m</m> there.)</p>
 
 <h3><a name="ill-posed"></a>Why the plain inverse fails</h3>
-<p>G's singular values s<sub>i</sub> fall over many decades: the chain filters out whatever is faster than its
-modes, and a displacement far from the force hardly sees its last samples. Written in G's singular
-directions, f = Σ(u<sub>i</sub>ᵀy/s<sub>i</sub>)v<sub>i</sub>: the noise's share of each direction is divided
-by s<sub>i</sub>, so the smallest turn noise into a force thousands of times too large. The <b>Picard plot</b>
-(the <i>Singular values</i> tab) shows it: |u<sub>i</sub>ᵀy| falls with s<sub>i</sub> while the signal lasts,
-then levels off at the noise, and beyond that point dividing by s<sub>i</sub> only amplifies noise.</p>
+<p>Written in <m>G</m>'s singular directions (<m>G</m> = <m>Σs<sub>i</sub>u<sub>i</sub>v<sub>i</sub>ᵀ</m>),</p>
+<eq>f = G^{-1}y = \sum_i \frac{u_i^{T} y}{s_i}\,v_i</eq>
+<p>and <m>G</m>'s singular values <m>s<sub>i</sub></m> fall over many decades: the chain filters out whatever is
+faster than its modes, and a displacement far from the force hardly sees its last samples. The noise's share
+of each direction is divided by <m>s<sub>i</sub></m>, so the smallest turn noise into a force thousands of times
+too large. The <b>Picard plot</b> <cite>hansen-picard</cite> (the <i>Singular values</i> tab) shows it:
+<m>|u<sub>i</sub>ᵀy|</m> falls with <m>s<sub>i</sub></m> while the signal lasts, then levels off at the noise,
+and beyond that point dividing by <m>s<sub>i</sub></m> only amplifies noise.</p>
 
 <h3><a name="regularization"></a>Regularization</h3>
-<p><b>Truncated SVD</b> keeps the first k directions and drops the rest. <b>Tikhonov</b> minimizes
-‖Gf − y‖² + λ²‖f‖², which weights each direction by s²/(s² + λ²): kept where s ≫ λ, dropped where s ≪ λ.
-The <b>L-curve</b> plots the residual ‖Gf − y‖ against the force's size ‖f‖ as λ varies, on log axes: too
-small a λ and ‖f‖ explodes with the noise, too large and the residual grows as the force is smoothed away. Its
-corner balances them. With the noise's size known, the <b>discrepancy principle</b> picks the λ whose residual
-is that size. No λ brings back what G filtered out, though: a sensor that feels the force directly (an
-accelerometer on the force's own mass) helps far more than any choice of λ.</p>
+<p><b>Truncated SVD</b> keeps the first <m>k</m> directions and drops the rest. <b>Tikhonov</b>
+<cite>tikhonov-arsenin</cite> minimizes <m>‖Gf − y‖² + λ²‖f‖²</m>, whose solution is</p>
+<eq>f_\lambda = \sum_i \frac{s_i^2}{s_i^2 + \lambda^2}\,\frac{u_i^{T} y}{s_i}\,v_i</eq>
+<p>each direction weighted by <m>s<sub>i</sub>²/(s<sub>i</sub>² + λ²)</m>: kept where <m>s<sub>i</sub> ≫ λ</m>,
+dropped where <m>s<sub>i</sub> ≪ λ</m>, half at <m>s<sub>i</sub> = λ</m>. The <b>L-curve</b>
+<cite>hansen-lcurve</cite> plots the residual <m>‖Gf − y‖</m> against the force's size <m>‖f‖</m> as
+<m>λ</m> varies, on log axes: too small a <m>λ</m> and <m>‖f‖</m> explodes with the noise, too large and the
+residual grows as the force is smoothed away. Its corner balances them. With the noise's size known, the
+<b>discrepancy principle</b> picks the <m>λ</m> whose residual is that size: fitting the data closer than its
+noise only fits the noise. No <m>λ</m> brings back what <m>G</m> filtered out, though: a sensor that feels the
+force directly (an accelerometer on the force's own mass) helps far more than any choice of <m>λ</m>.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The trials' chain: three 1 kg masses on 1000 N/m springs with 4 N·s/m dampers, the force on mass 3. Mode 1
+is at 2.240 Hz (<m>ω<sub>1</sub></m> = 14.07 rad/s, <m>ω<sub>1</sub>²</m> = 198.1), its mass-normalized shape
+0.3280, 0.5910 and 0.7370, and since the dampers are 0.004 × the springs its damping ratio is
+<m>ζ</m> = 0.004 × 14.07/2 = 0.02814.</p>
+<ol>
+<li><b>Linear.</b> Near its peak mode 1 alone gives <m>|X<sub>3</sub>/F|</m> = 0.7370²/(2 × 0.02814 × 198.1) =
+0.0487 m/N, the first trial's curve at every level.</li>
+<li><b>The cubic spring's lean.</b> With <m>k<sub>3</sub></m> = 2 × 10⁶ N/m³ beside spring 1, at 0.5 N the swept
+peak is at 2.319 Hz, where mass 1 (spring 1's stretch, from the wall) swings 9.82 mm. The added stiffness is
+¾ × 2 × 10⁶ × 0.00982² = 144.6 N/m, and with <m>φ<sub>11</sub>²</m> = 0.1076 the backbone puts the peak at
+√(198.1 + 144.6 × 0.1076) = √213.7 = 14.62 rad/s = 2.326 Hz: one sweep step (0.0094 Hz) from where it is. The
+peak's height stays 0.0483 m/N: a spring moves the peak, it doesn't damp it.</li>
+<li><b>Friction's fade.</b> With 0.1 N of friction on mass 3 and 0.2 N of force, the peak's <m>X<sub>3</sub></m>
+is 3.55 mm at 2.234 Hz (<m>Ω</m> = 14.04 rad/s), so <m>c<sub>eq</sub></m> = 4 × 0.1/(π × 14.04 × 0.00355) =
+2.55 N·s/m. On mass 3 it adds 2.55 × 0.7370² = 1.39 to the mode's own 0.004 × 198.1 = 0.79, and the peak is
+0.5432/(14.07 × 2.18) = 0.0177 m/N, as swept. At 2 N, <m>X<sub>3</sub></m> = 91.2 mm, <m>c<sub>eq</sub></m> =
+0.099 N·s/m adds only 0.054, and the peak is 0.0456 m/N, near the linear 0.0487.</li>
+<li><b>The force's samples.</b> 300 samples over four of mode 1's periods (1.79 s), <m>h</m> = 5.95 ms. Measured
+as mass 1's displacement, <m>G</m>'s singular values run from 7.7 × 10⁻³ down to 1.4 × 10⁻¹⁰, 7.7 decades,
+with two more at round-off. The 2 % noise is 1.70 × 10⁻⁴ m in all.</li>
+<li><b>The L-curve's corner</b> is at <m>λ</m> = 5.44 × 10⁻⁵: 37 of the 300 singular values are above it. Its
+residual, 1.63 × 10⁻⁴ m, is just under the noise's size, and the impact comes back within 15 %, its peak
+0.95 N against 0.997 N.</li>
+<li><b>The discrepancy principle</b> asks the residual to be the noise's 1.70 × 10⁻⁴ m exactly: <m>λ</m> =
+1.27 × 10⁻⁴, 34 directions above it, 18 % off. Here the corner does slightly better; both are far from the plain
+inverse.</li>
+<li><b>An accelerometer on mass 3</b> instead: <m>G</m>'s first entry is 0.98, nearly <m>1/m</m> = 1, its singular
+values span 3.0 decades, and <m>λ</m> = 0.024 recovers the impact within 6 %.</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these loads a chain into the Simulation page and sets up the test.</p>
 <!--TRIALS-->
 <takeaways>
-<li>A linear structure's FRF is the same at every level: measure at two or three and compare.</li>
+<li>A linear structure's FRF is the same at every level: measure at two or three and compare. Reciprocity and coherence are further checks.</li>
 <li>Swept up and down, a leaning peak jumps at different frequencies each way.</li>
+<li>A describing function is an element's first harmonic: a cubic spring adds <m>¾k<sub>3</sub>A²</m>, friction a damper <m>4F<sub>f</sub>/πΩA</m>.</li>
 <li>Hardening springs and gaps lean the peak up as the level rises; friction damps less.</li>
 <li>Symmetric nonlinearities make odd harmonics from a pure sine.</li>
-<li>y = Gf: G's tiny singular values turn noise into force, so the plain inverse is useless.</li>
-<li>Tikhonov or truncated SVD keeps the directions the data can carry; the L-curve's corner picks λ.</li>
+<li><m>y = Gf</m>: <m>G</m>'s tiny singular values turn noise into force, so the plain inverse is useless.</li>
+<li>Tikhonov or truncated SVD keeps the directions the data can carry; the L-curve's corner picks <m>λ</m>.</li>
 <li>A sensor that feels the force directly beats any regularization.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>matrices X f Omega_load H_jk gamma2 omega_i modal_const zeta k_3 friction nl_element foh force_id</notation>
+<reading>worden-tomlinson ewins</reading>

@@ -2774,3 +2774,83 @@ def test_test_planning_worked_example():
     assert mac(x, phi[:, 0]) == pytest.approx(0.999, abs=5e-4)
     assert np.abs(x) / np.abs(x).max() == pytest.approx([0.326, 0.619, 0.852, 1], abs=5e-4)
     assert int(np.argmax(np.abs(x))) == 3
+
+
+def test_nonlinear_forces_worked_example():
+    from vib_tutorial.core import force_id as fid
+    from vib_tutorial.core import nonlinear_test as nl
+    from vib_tutorial.core.test_planning import undamped_modes
+    from vib_tutorial.gui.nonlinear_forces import BAND, STEPS, TRIALS, chain
+
+    s = chain()
+    assert (s.masses[0], s.stiffness[0], s.damping[0]) == (1.0, 1000.0, 4.0)
+    hz, phi = undamped_modes(s)
+    w1 = 2 * np.pi * hz[0]
+    assert (hz[0], w1) == pytest.approx((2.240, 14.07), abs=5e-3) and w1**2 == pytest.approx(198.1, abs=0.05)
+    assert phi[:, 0] == pytest.approx([0.3280, 0.5910, 0.7370], abs=5e-5)
+    assert 0.004 * 14.07 / 2 == pytest.approx(0.02814, abs=5e-6)
+    assert 0.7370**2 / (2 * 0.02814 * 198.1) == pytest.approx(0.0487, abs=5e-5)
+    freqs = np.linspace(BAND[0] * hz[0], BAND[1] * hz[0], STEPS)
+    assert freqs[1] - freqs[0] == pytest.approx(0.0094, abs=5e-5)
+    linear = nl.stepped_sine(s, nl.Element(), 2, 1.0, freqs)
+    assert np.abs(linear.X[:, 2]).max() == pytest.approx(0.0487, abs=5e-5)
+    # the cubic spring's lean at 0.5 N
+    cubic = TRIALS[1].element
+    assert cubic.k3 == 2e6 and cubic.spring == 0
+    sweep = nl.stepped_sine(s, cubic, 2, 0.5, freqs)
+    i = int(np.argmax(np.abs(sweep.X[:, 2])))
+    assert sweep.hz[i] == pytest.approx(2.319, abs=5e-4)
+    assert 1000 * abs(sweep.X[i, 0]) == pytest.approx(9.82, abs=5e-3)
+    assert abs(sweep.X[i, 2]) / 0.5 == pytest.approx(0.0483, abs=5e-5)
+    assert 0.75 * 2e6 * 0.00982**2 == pytest.approx(144.6, abs=0.05) and phi[0, 0] ** 2 == pytest.approx(
+        0.1076, abs=5e-5
+    )
+    assert 198.1 + 144.6 * 0.1076 == pytest.approx(213.7, abs=0.05)
+    assert (np.sqrt(213.7), np.sqrt(213.7) / (2 * np.pi)) == pytest.approx((14.62, 2.326), abs=5e-3)
+    # friction's fade
+    t = TRIALS[3]
+    assert t.friction[2] == 0.1 and t.levels[0] == 0.2 and t.levels[2] == 2.0
+    for F, X3, ceq, tol, added, peak in (
+        (0.2, 3.55, 2.55, 5e-3, 1.39, 0.0177),
+        (2.0, 91.2, 0.099, 5e-4, 0.054, 0.0456),
+    ):
+        sw = nl.stepped_sine(t.system(), t.element, 2, F, freqs)
+        i = int(np.argmax(np.abs(sw.X[:, 2])))
+        assert sw.hz[i] == pytest.approx(2.234, abs=5e-4) and 2 * np.pi * sw.hz[i] == pytest.approx(14.04, abs=5e-3)
+        assert 1000 * abs(sw.X[i, 2]) == pytest.approx(X3, abs=0.05)
+        assert 4 * 0.1 / (np.pi * 14.04 * X3 / 1000) == pytest.approx(ceq, abs=tol)
+        assert ceq * 0.7370**2 == pytest.approx(added, abs=tol)
+        total = 0.004 * 198.1 + ceq * 0.7370**2
+        assert 0.7370**2 / (14.07 * total) == pytest.approx(peak, abs=5e-5)
+        assert abs(sw.X[i, 2]) / F == pytest.approx(peak, abs=5e-5)
+    assert (0.004 * 198.1, 0.7370**2, 0.79 + 1.39) == pytest.approx((0.79, 0.5432, 2.18), abs=5e-3)
+    # force identification
+    t = TRIALS[6]
+    h = fid.step_for(s)
+    assert (fid.SAMPLES, h * 1000, h * fid.SAMPLES, 4 / hz[0]) == pytest.approx((300, 5.95, 1.79, 1.79), abs=5e-3)
+    truth = fid.force_history(t.shape, fid.SAMPLES, h, t.width)
+    G = fid.markov(s, t.hit, t.sensors, t.output, h, fid.SAMPLES)
+    assert t.sensors == (0,) and t.output is fid.Output.DISPLACEMENT and t.noise == 2.0
+    p = fid.set_up(G, truth, t.noise / 100)
+    assert (p.s[0], p.s[-3]) == pytest.approx((7.7e-3, 1.4e-10), rel=0.02) and p.s[-2] < 1e-17
+    assert np.log10(p.s[0] / p.s[-3]) == pytest.approx(7.7, abs=0.05)
+    assert p.noise == pytest.approx(1.70e-4, abs=5e-7)
+    lam = fid.l_curve(p).corner
+    assert lam == pytest.approx(5.44e-5, abs=5e-8) and 10**t.log_lam == pytest.approx(lam, abs=5e-8)
+    assert int((p.s > lam).sum()) == 37
+    f = fid.tikhonov(p, lam)
+    assert np.linalg.norm(G @ f - p.y) == pytest.approx(1.63e-4, abs=5e-7)
+    assert 100 * fid.error(f, truth) == pytest.approx(15, abs=0.5)
+    assert (f.max(), truth.max()) == pytest.approx((0.95, 0.997), abs=5e-3)
+    ld = fid.discrepancy(p)
+    fd = fid.tikhonov(p, ld)
+    assert ld == pytest.approx(1.27e-4, abs=5e-7) and int((p.s > ld).sum()) == 34
+    assert np.linalg.norm(G @ fd - p.y) == pytest.approx(p.noise, rel=1e-3) and 100 * fid.error(
+        fd, truth
+    ) == pytest.approx(18, abs=0.5)
+    t = TRIALS[7]
+    G = fid.markov(s, t.hit, t.sensors, t.output, h, fid.SAMPLES)
+    p = fid.set_up(G, truth, t.noise / 100)
+    assert G[0, 0] == pytest.approx(0.98, abs=5e-3) and np.log10(p.s[0] / p.s[-1]) == pytest.approx(3.0, abs=0.05)
+    assert 10**t.log_lam == pytest.approx(0.024, abs=5e-4)
+    assert 100 * fid.error(fid.tikhonov(p, 10**t.log_lam), truth) < 6
