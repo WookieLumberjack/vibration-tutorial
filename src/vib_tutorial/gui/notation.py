@@ -2019,6 +2019,47 @@ SYMBOLS = (
         "damper",
     ),
     Symbol(
+        "vdp",
+        "ε, x<sub>r</sub>, a",
+        "van der Pol's oscillator: its negative damping at rest (ζ = −ε/2); the amplitude past which its damping "
+        "turns positive, over √ε; a limit cycle's amplitude",
+        "–, m, m",
+        "self_excited_page",
+        "vdp",
+    ),
+    Symbol(
+        "galloping",
+        "U, D, y, α, C<sub>L</sub>, C<sub>D</sub>, C<sub>Fy</sub>, A<sub>1</sub>, A<sub>3</sub>, A<sub>5</sub>, "
+        "A<sub>7</sub>, U<sub>g</sub>, F<sub>y</sub>",
+        "a section in a flow: the flow's speed; the section's size; its motion across the flow; the angle the flow "
+        "meets it at; its lift and drag coefficients and the force coefficient across the flow; Parkinson and "
+        "Smith's fit to a square's; galloping's onset speed; the force across the flow",
+        "m/s, m, m, rad, –, –, –, –, –, –, –, m/s, N/m",
+        "self_excited_page",
+        "galloping",
+    ),
+    Symbol(
+        "viv",
+        "f<sub>s</sub>, U<sub>r</sub>, m*, q, Ω<sub>f</sub>, ε<sub>w</sub>, A<sub>w</sub>, γ, C<sub>L0</sub>",
+        "vortex shedding: its frequency; the reduced velocity U/f<sub>n</sub>D; the mass ratio, m/(ρπD²/4); the "
+        "wake oscillator's variable, its frequency 2π St U/D, its nonlinearity, its coupling to the structure; the "
+        "wake's damping on the structure; the shedding's lift coefficient",
+        "Hz, –, –, –, rad/s, –, –, –, –",
+        "self_excited_page",
+        "viv",
+    ),
+    Symbol(
+        "flutter",
+        "h, θ, b, e, x<sub>cg</sub>, r, S, I, k<sub>h</sub>, k<sub>θ</sub>, L, U<sub>F</sub>, U<sub>D</sub>",
+        "a wing's typical section: plunge (down) and pitch (nose up); its semichord; the quarter chord's lead on "
+        "the elastic axis and the centre of mass's lag behind it, and the radius of gyration, all in semichords; "
+        "the static unbalance mx<sub>cg</sub>b and the inertia mr²b² about the axis; the plunge and pitch "
+        "springs; the lift; the flutter and divergence speeds",
+        "m, rad, m, –, –, –, kg·m/m, kg·m²/m, N/m², N·m/m, N/m, m/s, m/s",
+        "self_excited_page",
+        "flutter",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:sdof_page#poles">Poles</a>
 <a href="page:duffing_page#jump">The jump</a>
@@ -10,48 +9,110 @@ frequency, because the force depends on the motion itself. Near rest the effect 
 source's share makes the net damping negative, the rest state is unstable: the smallest disturbance grows.</p>
 
 <h3><a name="hopf"></a>Hopf bifurcation and limit cycles</h3>
-<p>As the parameter (ε, the wind speed) rises past its critical value, a pair of complex poles crosses into the
-right half plane: a <b>Hopf bifurcation</b>. Linear theory says the motion then grows without end; in practice a
-nonlinearity, damping that rises with amplitude, stops it on a <b>limit cycle</b>, a closed orbit that motions on
-both sides approach. Averaging (the energy each cycle puts in against what it takes out) gives its size. If it
-grows from zero at the onset the bifurcation is supercritical; if the curve folds back (as galloping's does) the
-system has <b>hysteresis</b>: two stable motions at one speed, and jumps between them, as with the Duffing
-oscillator's jump.</p>
+<p>As the parameter (<m>ε</m> below, or the wind speed) rises past its critical value, a pair of complex poles
+crosses into the right half plane: a <b>Hopf bifurcation</b>. Linear theory says the motion then grows without
+end; in practice a nonlinearity, damping that rises with amplitude, stops it on a <b>limit cycle</b>, a closed
+orbit that motions on both sides approach. <b>Averaging</b> gives its size: guess a sine of amplitude <m>a</m>,
+and find where the energy the source puts in over a cycle equals what the damping takes out. If it grows from zero
+at the onset the bifurcation is supercritical; if the curve folds back (as galloping's does) the system has
+<b>hysteresis</b>: two stable motions at one speed, and jumps between them, as with the Duffing oscillator's
+jump.</p>
 
 <h3><a name="vdp"></a>Van der Pol</h3>
-<p>ẍ + ω²x = ω(ε − x²/x<sub>r</sub>²)ẋ: negative damping ε at small amplitude, positive past x<sub>r</sub>√ε. For small
-ε the motion is nearly a sine of amplitude 2x<sub>r</sub>√ε at ω; for large ε it becomes a relaxation oscillation,
-slow creeps and fast snaps, its period growing like ε/ω. Van der Pol wrote it for a valve oscillator; it describes
-any system whose energy source pushes harder at small motion than large.</p>
+<p>Van der Pol's oscillator <cite>van-der-pol-1926</cite> is the simplest:</p>
+<eq>\ddot{x} + \omega_n^2 x = \omega_n\Bigl(\varepsilon - \frac{x^2}{x_r^2}\Bigr)\dot{x}.</eq>
+<p>At small amplitude the right-hand side is negative damping, <m>ζ</m> = −<m>ε</m>/2; past
+<m>x<sub>r</sub></m>√<m>ε</m> it turns positive. Averaging over <m>x</m> = <m>a</m> cos <m>ω<sub>n</sub>t</m>, the
+energy in goes as <m>ε</m>⟨<m>ẋ</m>²⟩ = <m>εa</m>²<m>ω<sub>n</sub></m>²/2 and the energy out as
+⟨<m>x</m>²<m>ẋ</m>²⟩/<m>x<sub>r</sub></m>² = <m>a</m>⁴<m>ω<sub>n</sub></m>²/8<m>x<sub>r</sub></m>², and they
+balance at</p>
+<eq>a = 2x_r\sqrt{\varepsilon}.</eq>
+<p>For small <m>ε</m> the motion is nearly that sine, at <m>ω<sub>n</sub></m>; for large <m>ε</m> it becomes a
+relaxation oscillation, slow creeps and fast snaps, its period growing like <m>ε</m>/<m>ω<sub>n</sub></m>. Van der
+Pol wrote it for a valve oscillator; it describes any system whose energy source pushes harder at small motion than
+large.</p>
 
 <h3><a name="galloping"></a>Galloping</h3>
-<p>A bluff section moving across a wind U at ẏ sees the wind at an angle α = ẏ/U. If the force that angle makes
-points the way it is moving, the wind does work on it every cycle. The quasi-steady force coefficient's slope at
-α = 0 decides: <b>Den Hartog's criterion</b>, unstable when dC<sub>L</sub>/dα + C<sub>D</sub> &lt; 0. For a
-square, Parkinson and Smith's fit is C<sub>Fy</sub> = A₁α − A₃α³ + A₅α⁵ − A₇α⁷ with A₁ = 2.69, so the wind adds damping
-−½ρUDA₁ and galloping starts at</p>
-<p align="center">U<sub>g</sub> = 4mζω / (ρDA₁),</p>
-<p>proportional to the mass–damping (Scruton) number. Above it the amplitude grows roughly in proportion to U, with
-no upper limit; the square's higher terms give two stable branches over a range of speeds. Iced power lines, tall
-square towers and bridge decks gallop.</p>
+<p>A bluff section of size <m>D</m> moving across a wind <m>U</m> at <m>ẏ</m> sees the wind come at it at an
+angle <m>α</m> = <m>ẏ</m>/<m>U</m>. If the force across the wind that angle makes points the way it is moving, the
+wind does work on it every cycle.</p>
+<p><img src="fig:gallop"></p>
+<p>The lift <m>C<sub>L</sub></m> acts across the wind it sees and the drag <m>C<sub>D</sub></m> along it; resolved
+onto the direction of motion, to first order in <m>α</m>, they give a force coefficient
+−(d<m>C<sub>L</sub></m>/d<m>α</m> + <m>C<sub>D</sub></m>)<m>α</m>. That is <b>Den Hartog's criterion</b>
+<cite>den-hartog</cite>: the section gallops if</p>
+<eq>\frac{\mathrm{d}C_L}{\mathrm{d}\alpha} + C_D < 0.</eq>
+<p>A circle can't (its lift has no slope); a square, an iced cable or a D-section can. For a square, Parkinson and
+Smith <cite>parkinson-smith</cite> fitted the measured force to</p>
+<eq>C_{Fy} = A_1\alpha - A_3\alpha^3 + A_5\alpha^5 - A_7\alpha^7,</eq>
+<p>with <m>A<sub>1</sub></m> = 2.69. Near rest the force is ½<m>ρU</m>²<m>DA<sub>1</sub>ẏ</m>/<m>U</m>: a negative
+damping ½<m>ρUDA<sub>1</sub></m> that grows with the wind, against the structure's 2<m>mζω<sub>n</sub></m>
+(per length). They balance at the onset</p>
+<eq>U_g = \frac{4m\zeta\omega_n}{\rho D A_1},</eq>
+<p>proportional to the mass–damping (Scruton) number. Above it the amplitude grows roughly in proportion to
+<m>U</m>, with no upper limit; averaging the square's higher terms gives two stable branches over a range of speeds.
+Iced power lines, tall square towers and bridge decks gallop.</p>
 
 <h3><a name="viv"></a>Vortex-induced vibration</h3>
-<p>A cylinder in a flow sheds vortices alternately from each side at f<sub>s</sub> = St U/D (St ≈ 0.2), with a
-fluctuating lift at that frequency. When f<sub>s</sub> nears f<sub>n</sub> (reduced velocity U/f<sub>n</sub>D ≈ 1/St
-= 5) the structure's motion takes control of the shedding: over a band of speeds the vortices shed at
-f<sub>n</sub> instead (<b>lock-in</b>). The page couples the structure to a van der Pol <b>wake oscillator</b>
-(Facchinetti, de Langre and Biolley) driven by the structure's acceleration. The amplitude is self-limiting, about
-a diameter at most, and the lock-in band widens as the mass ratio falls. Risers, chimneys and cables are protected
-by helical strakes that break up the shedding.</p>
+<p>A cylinder in a flow sheds vortices alternately from each side at <m>f<sub>s</sub></m> = St <m>U</m>/<m>D</m>
+(St ≈ 0.2), with a fluctuating lift at that frequency. When <m>f<sub>s</sub></m> nears <m>f<sub>n</sub></m>
+(reduced velocity <m>U<sub>r</sub></m> = <m>U</m>/<m>f<sub>n</sub>D</m> ≈ 1/St = 5) the structure's motion takes
+control of the shedding: over a band of speeds the vortices shed at <m>f<sub>n</sub></m> instead
+(<b>lock-in</b>). The page couples the structure to a <b>wake oscillator</b> <cite>facchinetti</cite>, a van der Pol
+oscillator <m>q</m> for the wake's lift, driven by the structure's acceleration:</p>
+<eq>\ddot{q} + \varepsilon_w\Omega_f(q^2 - 1)\dot{q} + \Omega_f^2 q = \frac{A_w}{D}\,\ddot{y},</eq>
+<eq>(m + m_a)\ddot{y} + (c + \gamma\Omega_f\rho D^2)\dot{y} + ky = \tfrac{1}{4}\rho U^2 D\,C_{L0}\,q,</eq>
+<p><m>Ω<sub>f</sub></m> = 2π St <m>U</m>/<m>D</m> the shedding's own frequency, <m>m<sub>a</sub></m> the
+<a href="page:fluid_page#added-mass">added mass</a>, and <m>ε<sub>w</sub></m> = 0.3, <m>A<sub>w</sub></m> = 12,
+<m>γ</m> = 0.8, <m>C<sub>L0</sub></m> = 0.3 fitted to experiments. Left alone the wake swings at
+<m>Ω<sub>f</sub></m> with <m>q</m> ≈ 2; near <m>f<sub>n</sub></m> the structure's acceleration pulls it into step.
+The amplitude is self-limiting, about a diameter at most, and the lock-in band widens as the mass ratio
+<m>m</m>* = <m>m</m>/(<m>ρ</m>π<m>D</m>²/4) falls. Risers, chimneys and cables are protected by helical strakes that
+break up the shedding.</p>
 
 <h3><a name="flutter"></a>Flutter</h3>
-<p>A wing section in plunge h and pitch θ: the lift, proportional to θ and to the dynamic pressure, couples the two
-modes. As the speed rises their frequencies approach, and at the <b>flutter speed</b> the two modes merge into one
-whose damping crosses zero: the wind feeds a combined bending–torsion motion with the right phase between them.
-Moving the centre of mass forward onto the elastic axis (<b>mass balance</b>) removes the inertial coupling and
-raises the flutter speed. Separately, the pitch spring alone is overcome at the <b>divergence</b> speed, a static
-instability. The page uses quasi-steady lift (the lift follows the angle at once); real flutter analysis uses
-unsteady aerodynamics (Theodorsen), which changes the numbers but not the coalescence.</p>
+<p>A wing section of semichord <m>b</m>, in plunge <m>h</m> (down) and pitch <m>θ</m> (nose up) on springs
+<m>k<sub>h</sub></m> and <m>k<sub>θ</sub></m> at its elastic axis. The lift acts at the quarter chord,
+<m>eb</m> ahead of the axis, and the centre of mass sits <m>x<sub>cg</sub>b</m> behind it.</p>
+<p><img src="fig:section"></p>
+<p>With <m>S</m> = <m>mx<sub>cg</sub>b</m> the static unbalance and <m>I</m> = <m>mr</m>²<m>b</m>² the inertia about
+the axis (<m>r</m> the radius of gyration in semichords),</p>
+<eq>m\ddot{h} + S\ddot{\theta} + k_h h = -L, \qquad S\ddot{h} + I\ddot{\theta} + k_\theta\theta = eb\,L,</eq>
+<eq>L = \tfrac{1}{2}\rho U^2\,(2b)\,2\pi\,(\theta + \dot{h}/U):</eq>
+<p>the lift of a thin wing at the angle it sees, the pitch plus the plunge's own <m>ḣ</m>/<m>U</m>, following it at
+once (quasi-steady). The lift, proportional to <m>θ</m> and to the dynamic pressure, couples the two modes. As the
+speed rises their frequencies approach, and at the <b>flutter speed</b> <m>U<sub>F</sub></m> the two modes merge
+into one whose damping crosses zero: the wind feeds a combined bending–torsion motion with the right phase between
+them. Moving the centre of mass forward onto the elastic axis (<b>mass balance</b>) removes the inertial coupling
+<m>S</m> and raises the flutter speed. Separately, the lift's moment <m>eb</m>·d<m>L</m>/d<m>θ</m> uses up the pitch
+spring at the <b>divergence</b> speed, a static instability:</p>
+<eq>U_D = \sqrt{\frac{k_\theta}{2\pi\rho b^2 e}}.</eq>
+<p>Real flutter analysis uses unsteady aerodynamics (Theodorsen <cite>theodorsen</cite>), in which the lift lags
+the motion; that changes the numbers but not the coalescence.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>Each model on the page's defaults.</p>
+<ol>
+<li><b>Van der Pol</b> (1 Hz, <m>ε</m> = 0.2, <m>x<sub>r</sub></m> = 10 mm). At rest <m>ζ</m> = −0.1, so a start
+grows; it settles at 2 × 10 × √0.2 = 8.94 mm.</li>
+<li><b>Galloping</b> (a 100 mm square, 5 kg/m, 2 Hz, <m>ζ</m> = 0.5 %, air at 1.225 kg/m³). The structure's
+damping is 2 × 5 × 0.005 × 4π = 0.628 N·s/m per metre, so <m>U<sub>g</sub></m> = 4 × 5 × 0.005 × 12.57/(1.225
+× 0.1 × 2.69) = 3.81 m/s. At the default 6 m/s the wind's ½ × 1.225 × 6 × 0.1 × 2.69 = 0.989 beats it, and
+averaging finds three amplitudes: 0.51 <m>D</m> and 1.28 <m>D</m>, stable, with 0.91 <m>D</m> unstable
+between.</li>
+<li><b>Vortex shedding</b> (a 50 mm cylinder, 20 kg/m, 1 Hz, in water). <m>m</m>* = 20/(1000 × π × 0.05²/4) =
+10.2, and <m>m<sub>a</sub></m> = 1.96 kg/m. At <m>U<sub>r</sub></m> = 5.5 the current is 5.5 × 1 × 0.05 =
+0.275 m/s, and the shedding alone would be at 0.2 × 5.5 = 1.1 <m>f<sub>n</sub></m>: inside lock-in, which starts
+near 1/St = 5.</li>
+<li><b>Flutter, at rest</b> (<m>b</m> = 0.15 m, 10 kg/m, <m>x<sub>cg</sub></m> = 0.2, <m>r</m> = 0.5,
+<m>e</m> = 0.3, plunge 3 Hz, pitch 6 Hz). <m>S</m> = 10 × 0.2 × 0.15 = 0.3 kg·m/m and <m>I</m> = 10 × (0.5 ×
+0.15)² = 0.05625 kg·m²/m, so <m>k<sub>h</sub></m> = 10 × (6π)² = 3553 N/m² and <m>k<sub>θ</sub></m> = 0.05625 ×
+(12π)² = 79.94 N·m/m. The inertia couples them even still: det(<b>K</b> − <m>ω<sub>r</sub></m>²<b>M</b>) = 0 gives
+0.4725<m>ω<sub>r</sub></m>⁴ − 999.3<m>ω<sub>r</sub></m>² + 284 000 = 0, so 2.93 and 6.71 Hz.</li>
+<li><b>Flutter and divergence.</b> <m>U<sub>D</sub></m> = √(79.94/(2π × 1.225 × 0.15² × 0.3)) = 39.2 m/s; the
+page finds flutter far sooner, at 19.1 m/s (17.7 m/s with the centre of mass on the axis, and none with it
+0.2 semichords ahead).</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these picks a model and sets it up (Things to try, top left).</p>
@@ -62,3 +123,6 @@ unsteady aerodynamics (Theodorsen), which changes the numbers but not the coales
 <li>Galloping starts at U<sub>g</sub> ∝ mζ (Den Hartog: dC<sub>L</sub>/dα + C<sub>D</sub> &lt; 0) and grows with the wind; vortex-induced vibration locks in over a band of speeds and limits itself.</li>
 <li>Flutter is two modes coupled by the flow until one's damping crosses zero; mass balance raises its speed.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x zeta omega_n omega_i matrices rho m_a vdp galloping St viv flutter</notation>
+<reading>blevins-fiv dowell</reading>
