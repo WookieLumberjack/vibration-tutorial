@@ -2508,3 +2508,35 @@ def test_deriving_worked_example():
     assert [md.frequency for md in pendulum_modes(p)] == pytest.approx((0.540, 1.30), abs=0.005)
     assert np.sqrt([11.49, 66.97]) / (2 * math.pi) == pytest.approx((0.540, 1.30), abs=0.005)
     assert p.separate_frequencies() == pytest.approx((0.705, 0.705), abs=0.0005)
+
+
+def test_frame_builder_worked_example():
+    from vib_tutorial.core.frame import STEEL, assemble, cantilever, modes
+
+    frame = cantilever(1.0, 4)
+    sec = frame.elements[0].section
+    E, rho, A, I, L = STEEL.E, STEEL.rho, sec.area, sec.inertia, 0.25
+    assert (A * 1e6, I * 1e12 / 1e5, E * A / 1e6, E * I / 1e3, rho * A) == pytest.approx(
+        (2500, 5.208, 525, 109.4, 19.63), abs=0.05
+    )
+    assert (E * A / L / 1e9, 12 * E * I / L**3 / 1e6, 6 * E * I / L**2 / 1e6) == pytest.approx((2.10, 84.0, 10.5))
+    assert (4 * E * I / L / 1e6, 2 * E * I / L / 1e6) == pytest.approx((1.75, 0.875))
+    a = assemble(frame)
+    assert (a.K[3, 3] / 1e9, a.K[4, 4] / 1e6, a.K[5, 5] / 1e6, a.K[4, 5]) == pytest.approx((4.20, 168, 3.50, 0))
+    assert (156 / 420, rho * A * L, a.M[4, 4]) == pytest.approx((0.3714, 4.906, 3.645), abs=5e-4)
+    assert int(a.free.sum()) == 12
+    _, _, K = a.reduced()
+    q = np.linalg.solve(K, 1000.0 * np.eye(12)[:, 10])  # 1000 N up at the tip, v5
+    assert (1000 * q[10], 1000 * q[11]) == pytest.approx((3.048, 4.571), abs=5e-4)
+    assert (1000 * 1000 / (3 * E * I), 1000 * 1000 / (2 * E * I)) == pytest.approx((3.048, 4.571), abs=5e-4)
+    c = math.sqrt(E * I / (rho * A))
+    euler = np.array([b * b * c / (2 * math.pi) for b in (1.875104, 4.694091, 7.854757)])
+    assert c == pytest.approx(74.65, abs=0.005) and euler == pytest.approx([41.78, 261.8, 733.1], abs=0.05)
+    hz = modes(frame).hz
+    assert hz[:4] == pytest.approx([41.78, 262.1, 738.7, 1301], abs=0.5)
+    assert 100 * (hz[:3] / euler - 1) == pytest.approx([0.003, 0.12, 0.77], abs=0.005)
+    bar = math.sqrt(E / rho) / 4
+    assert (math.sqrt(E / rho), bar, 100 * (hz[3] / bar - 1)) == pytest.approx((5172, 1293, 0.6), abs=0.5)
+    table = {1: (41.97, 413.6, 1426), 2: (41.80, 264.0, 893.0), 4: (41.78, 262.1, 738.7), 8: (41.78, 261.8, 733.5)}
+    for parts, row in table.items():
+        assert modes(cantilever(1.0, parts)).hz[:3] == pytest.approx(row, rel=6e-4)

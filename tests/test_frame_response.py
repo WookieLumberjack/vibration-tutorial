@@ -241,21 +241,23 @@ def test_trials():
     bare = formulations(cantilever(1.0, 4))
     tip = bare.result.shapes[13, 0]
     assert 1 / tip**2 == pytest.approx(4.91, abs=0.005)
-    mu, f1 = 0.05, bare.result.hz[0]
-    m = mu / tip**2
+    m, f1 = 0.25, bare.result.hz[0]
+    mu = m * tip**2
+    assert 100 * mu == pytest.approx(5.1, abs=0.05)
     tuned = f1 / (1 + mu)
     zeta = np.sqrt(3 * mu / (8 * (1 + mu) ** 3))
+    assert (tuned, 100 * zeta) == pytest.approx((39.75, 12.8), abs=0.05)
     assert (m, m * (TWO_PI * tuned) ** 2 / 1e3, 2 * zeta * m * TWO_PI * tuned) == pytest.approx(
-        (0.25, 15.3, 15.6), abs=0.05
+        (0.25, 15.6, 16.0), abs=0.05
     )
     forms = formulations(t.frame)
     r = responses(forms, t.load, 13)
     f, a = peaks(r.freqs, r.frf_exact)
-    assert f[:2] == pytest.approx([37.2, 44.0], abs=0.05)
-    assert a[:2] / still * t.load.size == pytest.approx([5.33, 5.84], abs=0.005)
+    assert f[:2] == pytest.approx([37.4, 44.0], abs=0.05)
+    assert a[:2] / still * t.load.size == pytest.approx([5.61, 5.53], abs=0.005)
     _, b = peaks(r.freqs, r.frf_conventional)
-    assert b[:2] / still * t.load.size == pytest.approx([3.58, 4.17], abs=0.005)
+    assert b[:2] / still * t.load.size == pytest.approx([3.74, 3.86], abs=0.005)
     plain = formulations(dataclasses.replace(cantilever(1.0, 4), zeta=0.01))
     alone = abs(frf(plain.exact, plain.result.hz[:1], 13, 13)[0]) / still * t.load.size
     assert alone == pytest.approx(48.5, abs=0.05)
-    assert [mode.measures.mpc for mode in forms.modes[:2]] == pytest.approx([0.847, 0.591], abs=5e-4)
+    assert [mode.measures.mpc for mode in forms.modes[:2]] == pytest.approx([0.833, 0.596], abs=5e-4)

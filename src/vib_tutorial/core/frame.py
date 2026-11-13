@@ -451,12 +451,12 @@ def local(frame: Frame, k: int) -> Local:
             mb = total / 2 * np.eye(4)
         else:  # ρAL/6 [[2, 1], [1, 2]] along and across
             mb = total / 6 * np.kron(np.array([[2.0, 1.0], [1.0, 2.0]]), np.eye(2))
-        return Local(dofs, ("a1", "t1", "a2", "t2"), T, kb, mb, np.zeros((4, 4)), L, angle, k_axial=kb)
+        return Local(dofs, ("u′1", "v′1", "u′2", "v′2"), T, kb, mb, np.zeros((4, 4)), L, angle, k_axial=kb)
     dofs = tuple(range(3 * e.i, 3 * e.i + 3)) + tuple(range(3 * e.j, 3 * e.j + 3))
     kl, ml, axial, phi = beam_matrices(mat.E, mat.G, mat.rho, A, I, sec.kappa(mat.nu), L, frame.theory, frame.lumped)
     return Local(
         dofs,
-        ("a1", "t1", "θ1", "a2", "t2", "θ2"),
+        ("u′1", "v′1", "θ1", "u′2", "v′2", "θ2"),
         _rotation(c, s),
         kl,
         ml,
