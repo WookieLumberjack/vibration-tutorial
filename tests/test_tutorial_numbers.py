@@ -171,6 +171,20 @@ def test_substructuring_small_example():
     v = np.array([0.5, 1])
     assert (v @ K @ v, v @ v) == pytest.approx((200, 1.25))
     assert np.sqrt(200 / 1.25) / (2 * np.pi) == pytest.approx(2.01, abs=0.005)
+    # the rails: each one-shape model against mode 1, [0.618, 1]
+    mode = shapes[:, 0] / shapes[1, 0]
+    for rail, angle, mac, f1 in (
+        ([0.5, 1], 5.2, 0.992, 2.01),
+        ([1, 1], 13, 0.947, 2.25),
+        ([0, 1], 32, 0.724, 3.18),
+    ):
+        v = np.array(rail, dtype=float)
+        cos2 = (v @ mode) ** 2 / ((v @ v) * (mode @ mode))
+        assert cos2 == pytest.approx(mac, abs=5e-4)
+        assert np.degrees(np.arccos(np.sqrt(cos2))) == pytest.approx(angle, abs=0.5 if angle > 10 else 0.05)
+        f = np.sqrt(v @ K @ v / (v @ v)) / (2 * np.pi)
+        assert f == pytest.approx(f1, abs=0.005) and f > 1.967
+    assert (2.01 / 1.967 - 1, 2.25 / 1.967 - 1, 3.18 / 1.967 - 1) == pytest.approx((0.023, 0.14, 0.62), abs=0.005)
 
 
 def test_substructuring_worked_example():
@@ -205,6 +219,9 @@ def test_substructuring_worked_example():
     two = compare_modes(component_mode_synthesis(chain, [], [2]), modal_analysis(chain))
     assert (two[0].error, two[1].error) == pytest.approx((0.00017, 0.0015), abs=5e-5)
     assert component_mode_synthesis(chain, [], [0]).fn_hz[0] == pytest.approx(1.162, abs=5e-4)
+    assert [component_mode_synthesis(chain, [], [k]).fn_hz[0] for k in (1, 2, 3)] == pytest.approx(
+        [1.1076, 1.1057, 1.1055], abs=5e-5
+    )
     assert all(
         abs(x.error) < 1e-9 for x in compare_modes(component_mode_synthesis(chain, [], [3]), modal_analysis(chain))
     )

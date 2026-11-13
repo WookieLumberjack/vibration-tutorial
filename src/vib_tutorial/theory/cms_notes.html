@@ -156,13 +156,32 @@ single coordinate. (The true mode 1 is [0.618, 1].) A static shape captures most
 low-frequency motion. That is exactly why Craig–Bampton uses static constraint modes.</li>
 </ol>
 
-<h4>Reduction = a tall basis</h4>
+<h4><a name="reduction"></a>Reduction = a tall basis</h4>
 <p>When <m>V</m> has fewer columns than rows (<m>N × m</m>, <m>m</m> &lt; <m>N</m>),
 <m>x = Vc</m> <i>restricts</i> the motion to combinations of <m>m</m> shapes: the model can only
 move along those "rails". Everything then depends on whether the true motion lies (nearly) inside
-that set of shapes. The MAC in the comparison table measures exactly that for each mode. Adding
-shapes can only enlarge the set, which is why the frequencies converge from above
-<cite>ritz</cite>.</p>
+that set of shapes.</p>
+<p>The two-mass chain above shows it literally. Its displacements are points (<m>x<sub>1</sub>,
+x<sub>2</sub></m>) in a plane, and its first mode is a direction in that plane, [0.618, 1] (solid).
+A basis of one shape is a line through the origin: the only motions the one-coordinate model can
+make. Its frequency is Rayleigh's quotient along that line, and the further the line from the mode,
+the higher it is:</p>
+<table width="100%"><tr><td align="center"><img src="fig:rails" width="310" height="186"></td></tr></table>
+<table border="1" cellspacing="0" cellpadding="4" align="center">
+<tr><th>shape (rail)</th><th>angle to mode 1</th><th>MAC</th><th>frequency</th><th>error</th></tr>
+<tr><td>[0.5, 1], the static deflection under a tip load</td><td align="right">5.2°</td><td align="right">0.992</td><td align="right">2.01 Hz</td><td align="right">+2.3 %</td></tr>
+<tr><td>[1, 1], both together</td><td align="right">13°</td><td align="right">0.947</td><td align="right">2.25 Hz</td><td align="right">+14 %</td></tr>
+<tr><td>[0, 1], mass 2 alone</td><td align="right">32°</td><td align="right">0.724</td><td align="right">3.18 Hz</td><td align="right">+62 %</td></tr>
+<tr><td>both [1, 1] and [1, −1]: the whole plane</td><td align="right">0°</td><td align="right">1</td><td align="right">1.967 Hz</td><td align="right">exact</td></tr>
+</table>
+<p>No rail does better than the mode itself, so every error is positive: the model is the chain held
+to the rail, and holding it can only stiffen it. The MAC is the cosine of the angle, squared: the
+MAC column of the page's comparison table measures exactly this, how close the true mode lies to what
+the reduced model can make. Adding a shape turns the line into a plane (here the whole plane, and the
+answer is exact); in general it enlarges the set, so the frequencies can only fall, towards the true
+ones from above <cite>ritz</cite>. The <a href="#worked-example">worked example</a> shows it on the
+four-mass chain: 1.162, 1.108, 1.1057 Hz with 0, 1, 2 modes kept, and the exact 1.1055 Hz with all
+3.</p>
 
 <h4><a name="craig-bampton"></a>The Craig–Bampton basis, and why it is chosen this way</h4>
 <p>Inside a component, any motion can be split into two parts:</p>
