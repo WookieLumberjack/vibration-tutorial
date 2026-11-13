@@ -783,6 +783,48 @@ REFERENCES = (
         "R. R. Craig and A. J. Kurdila, <i>Fundamentals of Structural Dynamics</i>, 2nd edition, Wiley, 2006",
         "component mode synthesis, fixed and free interface, from the authors of the first",
     ),
+    Reference(
+        "turner",
+        "Turner et al. 1956",
+        "M. J. Turner, R. W. Clough, H. C. Martin and L. J. Topp, Stiffness and deflection analysis of complex "
+        "structures, <i>Journal of the Aeronautical Sciences</i> 23, 805–823, 1956",
+        "the direct stiffness method, and the finite element, for aircraft structures",
+    ),
+    Reference(
+        "maxwell-frames",
+        "Maxwell 1864",
+        "J. C. Maxwell, On the calculation of the equilibrium and stiffness of frames, <i>Philosophical "
+        "Magazine</i> 27, 294–299, 1864",
+        "the count of bars a frame needs to be stiff",
+    ),
+    Reference(
+        "calladine",
+        "Calladine 1978",
+        "C. R. Calladine, Buckminster Fuller's “tensegrity” structures and Clerk Maxwell's rules for the "
+        "construction of stiff frames, <i>International Journal of Solids and Structures</i> 14, 161–172, 1978",
+        "Maxwell's count made exact, with mechanisms and states of self-stress",
+    ),
+    Reference(
+        "friedman-kosmatka",
+        "Friedman and Kosmatka 1993",
+        "Z. Friedman and J. B. Kosmatka, An improved two-node Timoshenko beam finite element, <i>Computers &amp; "
+        "Structures</i> 47, 473–481, 1993",
+        "",
+    ),
+    Reference(
+        "cowper",
+        "Cowper 1966",
+        "G. R. Cowper, The shear coefficient in Timoshenko's beam theory, <i>Journal of Applied Mechanics</i> 33, "
+        "335–340, 1966",
+        "",
+    ),
+    Reference(
+        "petyt",
+        "Petyt 2010",
+        "M. Petyt, <i>Introduction to Finite Element Vibration Analysis</i>, 2nd edition, Cambridge University "
+        "Press, 2010",
+        "element matrices for bars, beams and frames worked in full, consistent and lumped mass",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

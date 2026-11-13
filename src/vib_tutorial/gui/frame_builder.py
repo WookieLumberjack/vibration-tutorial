@@ -59,7 +59,7 @@ from ..core.frame_response import (
     responses,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
-from . import frame_stats, settle_plots, weak
+from . import frame_figures, frame_stats, settle_plots, weak
 from .layouts import FlowLayout, group
 from .lesson import (
     Form,
@@ -160,12 +160,12 @@ SQUARE = Frame(
 )
 DEEP = Section(depth=0.2, width=0.05)
 FIRST_FLOOR_DAMPER = Element(Kind.DAMPER, 2, None, value=5000.0, anchor=(-0.5, 1.0))
-# Den Hartog's absorber for 5 % of the four-beam cantilever's first mode (its modal mass at the tip, 4.91 kg)
+# Den Hartog's absorber, 0.25 kg: μ = 0.25/4.91 = 5.1 % of the four-beam cantilever's first mode's modal mass at the tip
 TUNED = (
     dataclasses.replace(cantilever(1.0, 4), zeta=0.01)
     .with_node(1.0, 0.25, Support.GUIDED_Y)
-    .with_element(Element(Kind.SPRING, 4, 5, value=15.3e3))
-    .with_element(Element(Kind.DAMPER, 4, 5, value=15.6))
+    .with_element(Element(Kind.SPRING, 4, 5, value=15.6e3))
+    .with_element(Element(Kind.DAMPER, 4, 5, value=16.0))
     .with_element(Element(Kind.MASS, 5, value=0.25))
 )
 
@@ -201,7 +201,7 @@ TRIALS = (
     ),
     FrameTrial(
         "A deep beam: Timoshenko",
-        "A steel beam 1 m long and 200 mm deep (L/h = 5), pinned and on a roller, in eight Timoshenko beams: "
+        "A steel beam 1 m long and 200 mm deep (<m>ℓ/h</m> = 5), pinned and on a roller, in eight Timoshenko beams: "
         "441.0, 1539 and 2992 Hz in bending (1295 Hz stretches it); Euler–Bernoulli (Beams, on the left) gives "
         "469.1, 1877 and 4227. Shear and the sections' turning inertia soften it, the higher modes more: −6 %, "
         "−18 %, −29 %. The Beams & plates page's closed forms are 440.8, 1529 and 2921 Hz.",
@@ -229,27 +229,27 @@ TRIALS = (
     FrameTrial(
         "A square of bars: a mechanism",
         "Four bars, the bottom two corners pinned: four free DOFs, but mode 1 is at 0 Hz, a parallelogram folding "
-        "with no bar stretching. Maxwell's count, 2j = b + r (2 × 4 = 4 + 4), says it might be rigid, but the "
-        "bottom bar joins two pins and holds nothing: the count is needed, not enough. Add a diagonal (the Bar "
+        "with no bar stretching. Maxwell's count, <m>2j = b + r</m> (2 × 4 = 4 + 4), says it might be rigid, but the "
+        "bottom bar joins two pins and holds nothing (a state of self-stress): the count is needed, not enough. Add a diagonal (the Bar "
         "tool, node 1 to node 3) and the first mode is at 276.9 Hz.",
         frame=SQUARE,
     ),
     FrameTrial(
         "Two storeys: the chain again",
         "Columns 50 × 20 mm, 1 m high, clamped; floors 1.5 m long, 100 × 20 mm, with 100 kg on each. The two sway "
-        "modes are at 3.44 and 9.14 Hz. As a chain (the Simulation page's) each storey is k = 2 × 12EI/h³ = 168 "
-        "kN/m, and each floor 131.4 kg (its 100 kg, the 23.6 kg floor beam, and half the columns, 7.9 kg): "
+        "modes are at 3.44 and 9.14 Hz. As a chain (the Simulation page's) each storey is <m>k = 2 × 12EI/ℓ<sup>3</sup></m> = 168 "
+        "kN/m (<m>ℓ</m> = 1 m, a column's height), and each floor 131.4 kg (its 100 kg, the 23.6 kg floor beam, and half the columns, 7.9 kg): "
         "3.52 and 9.21 Hz. The frame's are a little lower: its floors bend, so the columns' tops turn.",
         frame=storeys(),
         grid=0.25,
     ),
     FrameTrial(
         "Rayleigh damping: one answer",
-        "The two-storey frame with Rayleigh damping, C = αM + βK, set to ζ = 2 % at its two sway modes (3.44 and "
+        "The two-storey frame with Rayleigh damping, <m>C = αM + βK</m>, set to <m>ζ</m> = 2 % at its two sway modes (3.44 and "
         "9.14 Hz), and an impulse of 10 N·s across its top floor. The state space (solid) and the conventional "
-        "real modes (dashed) lie on each other, FRF and time response alike: C is proportional, ΦᵀCΦ is diagonal, "
+        "real modes (dashed) lie on each other, FRF and time response alike: <m>C</m> is proportional, <m>Φ<sup>T</sup>CΦ</m> is diagonal, "
         "and the conventional model drops nothing. On the Formulations tab every MPC is 1.000. Beyond mode 2, "
-        "Rayleigh's βω takes over: the floors' bending at 92.02 Hz has ζ = 14.7 %.",
+        "Rayleigh's <m>βω</m> takes over: the floors' bending at 92.02 Hz has <m>ζ</m> = 14.7 %.",
         frame=dataclasses.replace(storeys(), zeta=0.02),
         tab=TAB_RESPONSE,
         load=Load(6, 0, LoadKind.IMPULSE, 10.0),
@@ -258,8 +258,8 @@ TRIALS = (
     FrameTrial(
         "A damper in the first storey",
         "The same frame, undamped, with a 5000 N·s/m damper from its first floor to the ground. The conventional "
-        "model keeps ΦᵀCΦ's diagonal: modes at 3.44 and 9.14 Hz with ζ = 23.9 and 23.2 %. The state space's are "
-        "at 3.64 and 8.65 Hz, with ζ = 24.6 and 23.7 %, and complex: MPC 0.796 and 0.833 (the floors swing out of "
+        "model keeps <m>Φ<sup>T</sup>CΦ</m>'s diagonal: modes at 3.44 and 9.14 Hz with <m>ζ</m> = 23.9 and 23.2 %. The state space's are "
+        "at 3.64 and 8.65 Hz, with <m>ζ</m> = 24.6 and 23.7 %, and complex: MPC 0.796 and 0.833 (the floors swing out of "
         "step, and their points spread on the Argand plot). On the Response tab, at the damper's floor, the "
         "conventional FRF is off by 25.8 % of the exact peak.",
         frame=storeys().with_element(FIRST_FLOOR_DAMPER),
@@ -270,7 +270,7 @@ TRIALS = (
     FrameTrial(
         "A step: twice as far",
         "The four-beam cantilever, undamped, and a step of 1000 N up at its tip. Held there slowly, the tip would "
-        "rise FL³/3EI = 3.05 mm; put on at once, it overshoots to 6.08 mm, 1.997 times as far, and swings about "
+        "rise <m>Fℓ<sup>3</sup>/3EI</m> = 3.05 mm; put on at once, it overshoots to 6.08 mm, 1.997 times as far, and swings about "
         "3.05 mm for ever. Give it some damping (Damping ζ, on the left) and it settles there.",
         frame=cantilever(1.0, 4),
         tab=TAB_RESPONSE,
@@ -281,9 +281,9 @@ TRIALS = (
     FrameTrial(
         "Resonance from rest",
         "The cantilever with 1 % Rayleigh damping, driven at its first mode, 41.78 Hz, by 100 N at its tip. From "
-        "rest the swing grows toward 14.8 mm, 48.5 times the static 0.305 mm (1/2ζ = 50 for one mode on its "
-        "own). After the record's 20 cycles (0.48 s) it has reached 10.6 mm: it grows as 1 − e<sup>−ζωt</sup>, "
-        "and 1/ζω is 0.38 s.",
+        "rest the swing grows toward 14.8 mm, 48.5 times the static 0.305 mm (<m>1/2ζ</m> = 50 for one mode on its "
+        "own). After the record's 20 cycles (0.48 s) it has reached 10.6 mm: it grows as <m>1 − e<sup>−ζω<sub>1</sub>t</sup></m>, "
+        "and <m>1/ζω<sub>1</sub></m> is 0.38 s.",
         frame=dataclasses.replace(cantilever(1.0, 4), zeta=0.01),
         tab=TAB_RESPONSE,
         load=Load(4, 1, LoadKind.HARMONIC, 100.0, 41.78),
@@ -292,11 +292,12 @@ TRIALS = (
     ),
     FrameTrial(
         "A tuned mass damper",
-        "A 0.25 kg mass on a guide at the cantilever's tip, held by a 15.3 kN/m spring and a 15.6 N·s/m damper "
-        "(Den Hartog's tuning, for 5 % of the first mode's 4.91 kg modal mass there), with 1 % Rayleigh damping. "
-        "The tip's FRF has two peaks, at 37.2 and 44.0 Hz, 5.33 and 5.84 times the static deflection, where the "
-        "bare beam's is 48.5. The conventional model gives 3.58 and 4.17: the damper couples the two close modes "
-        "strongly (MPC 0.847 and 0.591), the conventional model drops that, and its peaks are a third too low, "
+        "A 0.25 kg mass on a guide at the cantilever's tip, held by a 15.6 kN/m spring and a 16.0 N·s/m damper, "
+        "with 1 % Rayleigh damping: Den Hartog's tuning for <m>μ</m> = 0.25/4.91 = 5.1 % of the first mode's modal "
+        "mass at the tip, tuned to <m>f<sub>1</sub>/(1 + μ)</m> = 39.75 Hz with <m>ζ</m> = 12.8 %. The tip's FRF "
+        "has two nearly equal peaks, at 37.4 and 44.0 Hz, 5.61 and 5.53 times the static deflection, where the "
+        "bare beam's is 48.5. The conventional model gives 3.74 and 3.86: the damper couples the two close modes "
+        "strongly (MPC 0.833 and 0.596), the conventional model drops that, and its peaks are a third too low, "
         "on the unsafe side.",
         frame=TUNED,
         tab=TAB_RESPONSE,
@@ -325,7 +326,7 @@ def _bar_entry(rng: np.random.Generator) -> Question:
         f"{angle:g}° to x. What does it add to K at row and column u<sub>2</sub>, in MN/m?",
         k,
         f"Its own k' is (EA/L)[[1, −1], [−1, 1]] on the stretch, EA/L = {number(210e9 * area * 1e-6 / length / 1e6)} "
-        f"MN/m, and T takes u<sub>2</sub> into it as cos α. So Tᵀk'T has (EA/L) cos²α there: "
+        f"MN/m, and T takes u<sub>2</sub> into it as cos γ. So Tᵀk′T has (EA/L) cos²γ there: "
         f"{number(k)} MN/m.",
         unit="MN/m",
         setup=dict(frame=frame, picked=0, tab=TAB_ELEMENT),
@@ -608,7 +609,7 @@ ASSEMBLY_TIP = (
     "DOFs a support holds or no element touches. A dot is an exact zero.</p>"
 )
 
-NOTES_HTML = load_notes("frame_builder", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("frame_builder", figures=frame_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 # ------------------------------------------------------------------ drawing helpers
@@ -1220,7 +1221,7 @@ def element_html(frame: Frame, assembly: Assembly, k: int, matrix: Matrix) -> st
     if e.kind.member or e.kind.link:
         c, s = math.cos(part.angle), math.sin(part.angle)
         lines.append(
-            f" L = {fmt(part.length, 'm')}, α = {math.degrees(part.angle):.4g}° (cos α = {c:.3f}, sin α = {s:.3f})."
+            f" L = {fmt(part.length, 'm')}, γ = {math.degrees(part.angle):.4g}° (cos γ = {c:.3f}, sin γ = {s:.3f})."
         )
     if e.kind.member:
         sec, mat = e.section, e.material
@@ -1231,7 +1232,7 @@ def element_html(frame: Frame, assembly: Assembly, k: int, matrix: Matrix) -> st
         if e.kind is Kind.BEAM:
             lines.append(f", EI/L³ = {fmt(mat.E * sec.inertia / part.length**3, 'N/m')}")
             if frame.theory is Theory.TIMOSHENKO:
-                lines.append(f", φ = 12EI/κGAL² = {part.phi:.3g}")
+                lines.append(f", φ<sub>s</sub> = 12EI/κ<sub>s</sub>GAL² = {part.phi:.3g}")
         lines.append(".")
     elif e.kind is Kind.MASS:
         lines.append(f" m = {fmt(e.value, 'kg')}, J = {e.inertia:.4g} kg·m².")
