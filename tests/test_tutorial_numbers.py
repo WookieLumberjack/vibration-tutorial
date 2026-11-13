@@ -2710,3 +2710,67 @@ def test_model_updating_worked_example():
     assert (theta, math.exp(theta), 0.0226 / 0.0833) == pytest.approx((0.271, 1.31, 0.271), abs=5e-3)
     scaled = modal_analysis(ChainSystem(1.1 * chain.masses, 1.1 * chain.stiffness, chain.damping))
     assert [m.fn_hz for m in scaled.modes] == pytest.approx(list(f0))
+
+
+def test_test_planning_worked_example():
+    from vib_tutorial.core.test_planning import (
+        Method,
+        driving_point_residue,
+        mac,
+        ods,
+        ods_parts,
+        place,
+        quality,
+        shares,
+        undamped_modes,
+    )
+    from vib_tutorial.gui.planning_figures import ellipse_axes
+
+    chain = ChainSystem.uniform(4)
+    assert (chain.masses[0], chain.stiffness[0], chain.damping[0]) == (1.0, 400.0, 2.0)
+    hz, phi = undamped_modes(chain)
+    assert hz == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=5e-4)
+    T = phi[:, :3]
+    four = phi[:, 3] * np.sign(phi[1, 3])
+    assert four == pytest.approx([-0.4285, 0.6565, -0.5774, 0.2280], abs=5e-5)
+    E = shares(T)
+    assert E == pytest.approx(1 - four**2) and E.sum() == pytest.approx(3)
+    assert E == pytest.approx([0.816, 0.569, 0.667, 0.948], abs=5e-4)
+    for method in (Method.EFI, Method.EFI_DPR, Method.EVEN):
+        p = place(T, hz[:3], method, 3)
+        assert list(p.sensors + 1) == [1, 3, 4]
+    assert [s.dropped for s in place(T, hz[:3], Method.EFI, 3).steps] == [1]
+    assert driving_point_residue(T, hz[:3]).shape == (4,)
+    q = quality(T, np.array([0, 2, 3]))
+    assert q.information == pytest.approx(1 - E[1]) and 100 * q.information == pytest.approx(43.1, abs=0.05)
+    a = T[1] * np.sign(T[1, 0])
+    assert a == pytest.approx([0.4285, 0.5774, -0.2280], abs=5e-5)
+    assert 1 + a**2 / 0.431 == pytest.approx([1.43, 1.77, 1.12], abs=0.005)
+    assert q.noise == pytest.approx([1.19, 1.33, 1.06], abs=0.005)
+    assert int(np.argmax(q.noise)) == 1 and int(np.argmax(a**2)) == 1
+    assert (0.2280 * 0.5774 - 0.6565 * 0.5774, 0.2280**2 + 0.5774**2 + 0.6565**2) == pytest.approx(
+        (0.1316 - 0.3790, 0.8164), abs=2e-4
+    )
+    assert (0.1316 - 0.3790) ** 2 / (0.8164 * 0.6667) == pytest.approx(0.112, abs=5e-4)
+    assert q.auto_mac[0, 1] == pytest.approx(0.112, abs=5e-4) and q.worst == q.auto_mac[0, 1]
+    assert quality(T, np.array([0, 1, 2])).information == pytest.approx(0.052, abs=5e-4)
+    # the figure's ellipses: a circle, a little larger, long and thin
+    sizes = [np.sqrt(np.linalg.eigvalsh(c)) for c in ellipse_axes()]
+    assert sizes[0] == pytest.approx([1, 1]) and 1 < sizes[1].max() < 2 < 3 < sizes[2].max()
+    # where to excite: mass 3 is mode 2's node, mass 4 has every target
+    assert abs(T[2, 1]) < 1e-12 and np.abs(T[3]) == pytest.approx([0.6565, 0.5774, 0.4285], abs=5e-5)
+    # the ODS at 1 Hz, force and reference on mass 4
+    w1, w = 2 * np.pi * hz[0], 2 * np.pi
+    assert (w1, w, w1**2, w**2) == pytest.approx((6.946, 6.283, 48.25, 39.48), abs=5e-3)
+    assert chain.damping[0] / chain.stiffness[0] == 0.005
+    assert w * 0.005 * w1**2 == pytest.approx(1.52, abs=5e-3) and 0.6565**2 == pytest.approx(0.4310, abs=5e-5)
+    x = ods(chain, 3, 1.0)
+    one = 0.4310 / (48.25 - 39.48 + 1j * 1.52)
+    assert abs(one) == pytest.approx(0.0484, abs=5e-5) and abs(x[3]) == pytest.approx(0.0496, abs=5e-5)
+    parts = ods_parts(chain, 3, 1.0)
+    assert abs(parts[3, 0]) == pytest.approx(0.0484, abs=5e-5)
+    share = np.max(np.abs(parts), axis=0) / np.max(np.abs(x))
+    assert share[0] == pytest.approx(0.977, abs=5e-4)
+    assert mac(x, phi[:, 0]) == pytest.approx(0.999, abs=5e-4)
+    assert np.abs(x) / np.abs(x).max() == pytest.approx([0.326, 0.619, 0.852, 1], abs=5e-4)
+    assert int(np.argmax(np.abs(x))) == 3

@@ -996,6 +996,27 @@ REFERENCES = (
         "1995",
         "correlation, sensitivities, regularization and the methods built on them",
     ),
+    Reference(
+        "fisher",
+        "Fisher 1925",
+        "R. A. Fisher, “Theory of statistical estimation”, <i>Proceedings of the Cambridge Philosophical Society</i> "
+        "22(5), 700–725, 1925",
+        "",
+    ),
+    Reference(
+        "kammer",
+        "Kammer 1991",
+        "D. C. Kammer, “Sensor placement for on-orbit modal identification and correlation of large space "
+        "structures”, <i>Journal of Guidance, Control, and Dynamics</i> 14(2), 251–259, 1991",
+        "effective independence",
+    ),
+    Reference(
+        "richardson-ods",
+        "Richardson 1997",
+        "M. H. Richardson, “Is it a mode shape, or an operating deflection shape?”, <i>Sound and Vibration</i>, "
+        "March 1997 (30th anniversary issue)",
+        "",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

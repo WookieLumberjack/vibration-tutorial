@@ -35,7 +35,7 @@ from ..core.test_planning import (
     spectrum_grid,
     undamped_modes,
 )
-from . import settle_plots
+from . import planning_figures, settle_plots
 from .layouts import FlowLayout
 from .lesson import (
     Form,
@@ -93,7 +93,7 @@ TRIALS = (
         "Three sensors by effective independence",
         "Eight 1 kg masses on 1000 N/m springs, its first three modes (0.929, 2.755 and 4.487 Hz) the targets, "
         "and three sensors. EfI starts from all eight and drops, in turn, masses 1, 6, 4, 7 and 3, each the one "
-        "that adds least to det(ΦᵀΦ), leaving masses 2, 5 and 8: 10.5 % of all eight's Fisher information. "
+        "that adds least to <m>det(ΦᵀΦ)</m>, leaving masses 2, 5 and 8: 10.5 % of all eight's Fisher information. "
         "The modes' noise is 1.61, 1.55 and 1.29 times what eight sensors would give, and no two of them look "
         "alike at the sensors (the auto-MAC's largest off-diagonal is 0.041).",
         hz=0.929,
@@ -154,7 +154,7 @@ TRIALS = (
     PlanningTrial(
         "A reference that hardly moves",
         "The same ODS measured against a reference sensor on mass 1, which moves only 3.2 % as much as mass 8. "
-        "Every ratio X<sub>i</sub>/X<sub>ref</sub> is then up to 32 times larger, and in a real test the "
+        "Every ratio <m>X<sub>j</sub>/X<sub>ref</sub></m> is then up to 32 times larger, and in a real test the "
         "reference's noise is magnified by as much. Put the reference where the ODS moves most (mass 8 here).",
         force=3,
         hz=1.842,
@@ -173,7 +173,7 @@ def _one_mode_share(rng: np.random.Generator) -> Question:
         f"A test targets one mode, whose shape at three candidate sensors is ({shape[0]:g}, {shape[1]:g}, "
         f"{shape[2]:g}). What is sensor {i + 1}'s effective independence E<sub>{i + 1}</sub>?",
         e,
-        f"With one target, E<sub>i</sub> = φ<sub>i</sub>² / Σ φ<sub>j</sub>²: {shape[i]:g}² / "
+        f"With one target, E<sub>j</sub> = φ<sub>j</sub>² / Σ φ<sub>k</sub>²: {shape[i]:g}² / "
         f"{number(sum(x * x for x in shape))} = {number(e)}. The shares add up to 1, the number of targets.",
     )
 
@@ -285,7 +285,7 @@ TIPS = {
     "force": "<p>The mass the operating force acts on (the machine's unbalance, say).</p>",
     "hz": "<p>The operating frequency: the ODS is the chain's deflection there.</p>",
     "at_mode": "<p>Set the frequency to a natural frequency.</p>",
-    "reference": "<p>The reference sensor an ODS is measured against: each ratio X<sub>i</sub>/X<sub>ref</sub>.</p>",
+    "reference": "<p>The reference sensor an ODS is measured against: each ratio X<sub>j</sub>/X<sub>ref</sub>.</p>",
 }
 SHAPES_TIP = (
     "<p>The target modes (each scaled to largest 1) along the chain, and the sensors on them (the circles, and "
@@ -297,7 +297,7 @@ ODS_TIP = (
     "mode most like it. The square is the reference sensor, the triangle the force.</p>"
 )
 
-NOTES_HTML = load_notes("test_planning", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("test_planning", figures=planning_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 def _table(head: list[str], rows: list[list[str]]) -> str:
@@ -685,7 +685,7 @@ class TestPlanningPage(QtWidgets.QWidget):
             + f". The reference, mass {ref + 1}, moves {100 * ratio:.3g} % as much as the most"
         )
         text += (
-            f": every ratio X<sub>i</sub>/X<sub>ref</sub> is up to {1 / ratio:.3g} times its sensor's motion, its "
+            f": every ratio X<sub>j</sub>/X<sub>ref</sub> is up to {1 / ratio:.3g} times its sensor's motion, its "
             "noise with it."
             if ratio < 0.2
             else "."
@@ -730,7 +730,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         rows.append(["kept", *kept, ""])
         self.steps_view.setHtml(_table(head, rows))
         self.steps_note.setText(
-            f"Each row: every candidate's E<sub>i</sub>{' × DPR<sub>i</sub>' if weighted else ''} (its share of "
+            f"Each row: every candidate's E<sub>j</sub>{' × DPR<sub>j</sub>' if weighted else ''} (its share of "
             "the Fisher information), and the one dropped, in red. The shares are worked out again after each drop: "
             "losing one candidate raises the others'."
             + (" (The DPR weights are in s/kg: compare along a row.)" if weighted else "")

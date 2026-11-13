@@ -1863,6 +1863,25 @@ SYMBOLS = (
         "sensitivities",
     ),
     Symbol(
+        "placement",
+        "Φ<sub>s</sub>, y, η̂, σ, E<sub>j</sub>, DPR<sub>j</sub>, a",
+        "sensor placement: the target modes' rows at the sensors; the sensors' readings; the fitted modal "
+        "coordinates; each sensor's noise (its standard deviation); candidate j's share of the information; its "
+        "driving-point residue; a candidate's row of Φ",
+        "1/√kg, m, m·√kg, m, –, s/kg, 1/√kg",
+        "planning_page",
+        "fisher",
+    ),
+    Symbol(
+        "ods",
+        "ODS, X<sub>j</sub>, T<sub>j</sub>, G<sub>ref,j</sub>, θ",
+        "operational deflection shape; its complex amplitude at mass j; that over the reference's; their "
+        "cross-spectrum; the phase the shape is drawn at",
+        "–, m, –, m², rad",
+        "planning_page",
+        "ods",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

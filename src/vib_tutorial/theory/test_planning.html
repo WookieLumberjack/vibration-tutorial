@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:frf_page#sum-of-modes">Every term is a sum of modes</a>
 <a href="page:updating_page#mac">The modal assurance criterion</a>
@@ -9,28 +8,48 @@
 <p>A modal test measures the response at a few points and fits the modes to them. Before the first sensor is
 glued on, two questions: where should the sensors go so the modes wanted (the <b>targets</b>) can be told apart
 and fitted well; and what will the structure actually do while it runs, at the frequencies it runs at. The
-first is <b>sensor placement</b>; the second is its <b>operational deflection shape</b>.</p>
+first is <b>sensor placement</b>; the second is its <b>operational deflection shape</b> (ODS).</p>
+<p>Both start from a model of the structure, even a rough one: it gives the target modes' shapes at every
+place a sensor could go (here, every mass: the <b>candidates</b>), and that is all placement needs.</p>
 
 <h3><a name="fisher"></a>What a placement is worth</h3>
-<p>At the sensors the response is y = Φ<sub>s</sub>q + noise: Φ<sub>s</sub> the target modes' rows at the
-sensors, q their modal coordinates. Least squares gives q̂ = (Φ<sub>s</sub>ᵀΦ<sub>s</sub>)⁻¹Φ<sub>s</sub>ᵀy,
-with covariance σ²(Φ<sub>s</sub>ᵀΦ<sub>s</sub>)⁻¹: Φ<sub>s</sub>ᵀΦ<sub>s</sub> is the <b>Fisher information</b>.
-The larger its determinant, the smaller the noise's ellipsoid; if it is singular, the modes can't be separated
-at all. The page scores a placement by its determinant as a share of all the candidates' (every mass with a
-sensor), and each mode's noise as a multiple of all the candidates'.</p>
+<p>At the sensors the response is the target modes' shapes there, <m>Φ<sub>s</sub></m> (a row per sensor, a
+column per target), times the modal coordinates <m>η</m>, plus each sensor's noise, of standard deviation
+<m>σ</m>:</p>
+<eq>y = \Phi_s\,\eta + \text{noise}, \qquad \hat\eta = (\Phi_s^{T}\Phi_s)^{-1}\,\Phi_s^{T}\,y</eq>
+<p>The least-squares fit <m>η̂</m> has covariance <m>σ²(Φ<sub>s</sub>ᵀΦ<sub>s</sub>)⁻¹</m>:
+<m>Φ<sub>s</sub>ᵀΦ<sub>s</sub></m> is the <b>Fisher information</b> <cite>fisher</cite> about <m>η</m>. Its
+inverse sets the noise on each fitted coordinate, and its determinant the volume of the noise's ellipsoid,
+inversely: the larger the determinant, the tighter the fit. If it is singular (fewer sensors than targets, or
+sensors that see two modes alike) the modes can't be separated at all.</p>
+<p><img src="fig:noise"></p>
+<p>The figure is the default chain's (worked below): modes 1 and 2's noise with a sensor on every mass (a
+circle), on the three masses effective independence keeps (a little larger), and on the three nearest the
+ground (long and thin: along that diagonal the two modes can't be told apart). The page scores a placement by
+its determinant as a share of all the candidates', and each mode's noise as a multiple of all the
+candidates'.</p>
 
 <h3><a name="efi"></a>Effective independence</h3>
-<p>Kammer's <b>effective independence</b> (EfI) starts with every candidate and drops one at a time. Each
-candidate's share of the information is</p>
-<p align="center">E<sub>i</sub> = [Φ(ΦᵀΦ)⁻¹Φᵀ]<sub>ii</sub>,</p>
+<p>Trying every set of sensors is out of reach (choose 10 of 100 points: 10<sup>13</sup> sets). Kammer's
+<b>effective independence</b> (EfI) <cite>kammer</cite> starts with every candidate and drops one at a time.
+Each candidate <m>j</m>'s share of the information is</p>
+<eq>E_j = \bigl[\Phi\,(\Phi^{T}\Phi)^{-1}\,\Phi^{T}\bigr]_{jj}</eq>
 <p>the diagonal of the projector onto the targets' columns: between 0 and 1, adding up to the number of
-targets. Dropping candidate i multiplies det(ΦᵀΦ) by (1 − E<sub>i</sub>), so EfI drops the smallest, then
-works the shares out again for the ones left, until as many are left as there are sensors. With one target,
-E<sub>i</sub> = φ<sub>i</sub>²/Σφ<sub>j</sub>²: the sensors go where the mode moves most. It is greedy, not
-optimal (the best set of k isn't always the best k + 1 less one), but it's fast and usually close.</p>
+targets. It is what dropping that candidate costs: its row of <m>Φ</m>, <m>a</m>, adds <m>aa<sup>T</sup></m>
+to the information <m>Φ<sup>T</sup>Φ</m>, and taking it away scales the determinant by
+<m>1 − a<sup>T</sup>(Φ<sup>T</sup>Φ)<sup>−1</sup>a</m>, which is <m>E<sub>j</sub></m>'s complement:</p>
+<eq>\det(\Phi^{T}\Phi - a a^{T}) = \det(\Phi^{T}\Phi)\,(1 - E_j)</eq>
+<p>So EfI drops the candidate with the smallest <m>E<sub>j</sub></m>, the one the determinant misses least,
+then works the shares out again for the ones left (losing one raises the others'), until as many are left as
+there are sensors. With one target, <m>E<sub>j</sub></m> = <m>φ<sub>j</sub>²/‖φ‖²</m>: the sensors go where
+the mode moves most. It is greedy, not optimal (the best ten sensors aren't always the best eleven less one),
+but it's fast and usually close.</p>
 <p>EfI looks only at shapes, so it may keep a sensor where the response is small and the noise floor matters.
-Weighting E<sub>i</sub> by the <b>driving-point residue</b>, DPR<sub>i</sub> = Σφ<sub>ir</sub>²/ω<sub>r</sub>
-(<b>EfI-DPR</b>), leans toward where the response is large, at some cost in information.</p>
+Weighting <m>E<sub>j</sub></m> by the <b>driving-point residue</b>,</p>
+<eq>\mathrm{DPR}_j = \sum_r \frac{\phi_{jr}^2}{\omega_r}</eq>
+<p>(<b>EfI-DPR</b>), leans toward where the response is large, at some cost in information.
+(<m>φ<sub>jr</sub>²/ω<sub>r</sub></m> is, but for a constant, mode <m>r</m>'s residue in the driving-point FRF at
+<m>j</m>: the lower modes count most.)</p>
 
 <h3><a name="aliasing"></a>Noise and spatial aliasing</h3>
 <p>The <i>Noise &amp; aliasing</i> tab sets the placement beside EfI's, EfI-DPR's and evenly spaced sensors:
@@ -38,28 +57,81 @@ the information, each mode's noise, and the <b>auto-MAC</b> of the targets at th
 is near 1 there look alike to the test: <b>spatial aliasing</b>, as a signal sampled too slowly in time looks
 like a slower one. Too few sensors, or sensors bunched where every mode moves the same way, do it.</p>
 
+<h3><a name="exciting"></a>Where to excite</h3>
+<p>The force has a placement too. A shaker or hammer at mass <m>k</m> drives mode <m>r</m> in proportion to
+<m>φ<sub>kr</sub></m>: at a node of a mode it misses that mode entirely, and no number of sensors brings it
+back. Pick a point where every target moves well (the smallest <m>|φ<sub>kr</sub>|</m> over the targets as
+large as can be), which the driving-point residue also favours. A second reference covers a mode the first
+misses (<a href="page:test_page#references">More than one reference</a>).</p>
+
 <h3><a name="ods"></a>Operational deflection shapes</h3>
-<p>An <b>ODS</b> is how the structure deflects at one frequency under the forces it runs with,
-X(ω) = H(ω)F: complex, each point with its own phase. It is not a mode shape. Each mode contributes
-φ<sub>r</sub>η<sub>r</sub>, η = (Ω² − ω² + iωΦᵀCΦ)⁻¹ΦᵀF in the undamped modes (solved together, so they add up
-to X exactly, whatever the damping): near a lightly damped mode its 1/(2ζ) dominates and the ODS looks like the
-mode; between modes it's a mix; and it changes when the force moves, which a mode doesn't. That's what an ODS is
-for: to see how the machine moves where it runs, and so where to stiffen or damp it.</p>
+<p>An <b>ODS</b> <cite>richardson-ods</cite> is how the structure deflects at one frequency <m>Ω</m> under the
+forces it runs with:</p>
+<eq>X(\Omega) = H(\Omega)\,F = \sum_r \phi_r\,\eta_r</eq>
+<p>complex, each mass with its own phase. It is not a mode shape. Its modal coordinates come from the
+undamped modes, solved together (so they add up to <m>X</m> exactly, whatever the damping):</p>
+<eq>\eta = \bigl(\mathrm{diag}(\omega_r^2) - \Omega^2 I + i\,\Omega\,\Phi^{T} C\,\Phi\bigr)^{-1}\,\Phi^{T} F</eq>
+<p>Near a lightly damped mode its term grows as <m>1/2ζ</m> and the ODS looks like the mode; between modes
+it's a mix; and it changes when the force moves, which a mode doesn't. That's what an ODS is for: to see how
+the machine moves where it runs, and so where to stiffen or damp it.</p>
+<p>A complex shape has no single picture: mass <m>j</m> moves as <m>Re(X<sub>j</sub>e<sup>iΩt</sup>)</m>. The
+page draws it at the instant it is largest, <m>Re(X e<sup>−iθ</sup>)</m>, with</p>
+<eq>\theta = \tfrac12\,\mathrm{arg} \sum_j X_j^2</eq>
+<p>since <m>‖Re(X e<sup>−iθ</sup>)‖²</m> = <m>½‖X‖²</m> + <m>½Re(e<sup>−2iθ</sup>ΣX<sub>j</sub>²)</m>, largest
+when the second term's phase is 0. A quarter cycle later it is the imaginary part, dotted: zero for a shape
+whose masses all move in or out of phase, as an undamped mode's do.</p>
 
 <h3><a name="reference"></a>Measuring an ODS</h3>
 <p>The forces in a running machine usually aren't measured, so an ODS is measured relative to a
-<b>reference</b> sensor that stays put while the others rove: T<sub>i</sub> = X<sub>i</sub>/X<sub>ref</sub>,
-its phase from the cross-spectrum G<sub>ref,i</sub>. The shape comes out right whatever the force's size, but
-if the reference sits near a node of the ODS every ratio is huge, and its noise with it: put the reference
-where the ODS moves most. (Operational modal analysis goes further, from responses alone to the modes.)</p>
+<b>reference</b> sensor that stays put while the others rove:</p>
+<p><img src="fig:roving"></p>
+<eq>T_j = \frac{X_j}{X_\mathrm{ref}}</eq>
+<p>in a test the cross-spectrum <m>G<sub>ref,j</sub></m> over the reference's auto-spectrum, which keeps
+each ratio's phase. The shape comes out right whatever the force's size, but if the reference sits near a node
+of the ODS every ratio is huge, and its noise with it: put the reference where the ODS moves most.
+(Operational modal analysis goes further, from responses alone to the modes.)</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the Simulation page's chain: four 1 kg masses on 400 N/m springs with 2 N·s/m dampers,
+modes at 1.105, 3.183, 4.877 and 5.982 Hz. Three targets, three sensors, by effective independence.</p>
+<ol>
+<li><b>The shares.</b> With equal masses the four mass-normalized modes make an orthogonal matrix, so the
+projector onto the first three is <m>I − φ<sub>4</sub>φ<sub>4</sub>ᵀ</m> and <m>E<sub>j</sub></m> = 1 −
+<m>φ<sub>j4</sub>²</m>: mode 4's shape is −0.4285, 0.6565, −0.5774 and 0.2280, so the shares are 0.816,
+0.569, 0.667 and 0.948, adding up to 3. A candidate is worth least where the mode left out moves most.</li>
+<li><b>One drop.</b> Mass 2's 0.569 is the smallest: EfI keeps masses 1, 3 and 4, and the Fisher information is
+1 − 0.569 = 0.431 of all four's (43.1 %). Evenly spaced sensors, and EfI-DPR, land on the same three here.</li>
+<li><b>The noise.</b> All four sensors give <m>Φ<sup>T</sup>Φ</m> = <m>I</m>; dropping mass 2's row
+<m>a</m> = (0.4285, 0.5774, −0.2280) leaves <m>I − aa<sup>T</sup></m>, whose inverse is
+<m>I + aa<sup>T</sup>/(1 − 0.569)</m> (multiply them to check). Its diagonal is 1 + 0.4285²/0.431 = 1.43,
+1.77 and 1.12, so each mode's noise is √ of that: 1.19, 1.33 and 1.06 times four sensors'. Mode 2 loses
+most: of the three, it has the largest entry in mass 2's row.</li>
+<li><b>The auto-MAC.</b> At masses 1, 3 and 4 modes 1 and 2 are (0.2280, 0.5774, 0.6565) and (0.5774, 0,
+−0.5774): their MAC is (0.1316 − 0.3790)²/(0.8164 × 0.6667) = 0.112, the largest off-diagonal. Bunched on
+masses 1 to 3 instead, the information is 1 − 0.948 = 0.052: the figure's long ellipse.</li>
+<li><b>Where to excite.</b> At mass 3 mode 2's shape is 0: a hammer there would miss it. At mass 4 the
+targets' shapes are 0.6565, −0.5774 and 0.4285, none small: the page's force is there.</li>
+<li><b>The ODS.</b> The operating point is 1 Hz on mass 4, just below mode 1 (<m>ω<sub>1</sub></m> =
+6.946 rad/s, <m>Ω</m> = 6.283 rad/s). The dampers are 0.005 × the springs, so <m>Φ<sup>T</sup>CΦ</m> =
+0.005 <m>diag(ω<sub>r</sub>²)</m> and mode 1 alone gives, at mass 4,
+0.6565²/(48.25 − 39.48 + i × 6.283 × 0.005 × 48.25) = 0.4310/(8.77 + 1.52i), of size 0.0484 m/N against the
+whole response's 0.0496: mode 1's share is 0.977, and the ODS's MAC with mode 1 is 0.999. Its shape is 0.326,
+0.619, 0.852 and 1, close to mode 1's.</li>
+<li><b>The reference.</b> On mass 4, where the ODS is largest, every ratio <m>T<sub>j</sub></m> is at most
+1: 0.326, 0.619 and 0.852.</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these loads a chain into the Simulation page and sets the sensors or the operating point.</p>
 <!--TRIALS-->
 <takeaways>
-<li>Φ<sub>s</sub>ᵀΦ<sub>s</sub> at the sensors is the Fisher information: its determinant sets how much the noise spoils the fitted modes.</li>
-<li>Effective independence drops, one at a time, the sensor with the smallest share of it.</li>
+<li><m>Φ<sub>s</sub>ᵀΦ<sub>s</sub></m> at the sensors is the Fisher information: its determinant sets how much the noise spoils the fitted modes.</li>
+<li>Effective independence drops, one at a time, the sensor with the smallest share of it: the determinant falls by 1 − <m>E<sub>j</sub></m>.</li>
 <li>Too few sensors, or bunched ones, make modes look alike (spatial aliasing: a large auto-MAC off-diagonal).</li>
+<li>Excite where every target moves well, not at a node.</li>
 <li>An ODS is what the structure does at one frequency under its forces: like a mode at a lightly damped peak, a mix between them, and it changes when the force moves.</li>
 <li>Measure an ODS against a reference where it moves most.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>matrices identity phi_i omega_i modal_const eta_r Omega H f X zeta MAC placement ods</notation>
+<reading>ewins friswell-mottershead</reading>
