@@ -109,6 +109,42 @@ def test_modal_coupling_try_it():
     assert errs[0][0] == pytest.approx(-0.14, abs=0.005)  # "14% too low"
 
 
+def test_modal_coupling_worked_example():
+    import math
+
+    from vib_tutorial.core.modal_coupling import subsystems
+
+    chain = ChainSystem.uniform(4)
+    A, B = subsystems(chain, 2)
+    assert A.fn_hz[0] == pytest.approx(1.967, abs=5e-4) and B.fn_hz[0] == pytest.approx(1.967, abs=5e-4)
+    assert abs(A.Phi[:, 0]) == pytest.approx([0.526, 0.851], abs=5e-4)
+    w2 = (2 * math.pi * 1.967) ** 2
+    assert (1 / 0.851**2, 1.38 * w2, 0.526 + 0.851, 1.89 * w2) == pytest.approx((1.38, 211, 1.376, 289), rel=3e-3)
+    m = coupled_model(chain, 2)
+    assert (m.osc_a.m, m.osc_b.m, m.m_a) == pytest.approx((1.382, 1.894, 1.488), abs=5e-4)
+    assert (m.osc_a.k, m.osc_b.k) == pytest.approx((211, 289), abs=0.5)
+    assert 2 - m.osc_b.m == pytest.approx(0.106, abs=5e-4)
+    mu = 1.894 / 1.382
+    assert mu == pytest.approx(1.37, abs=0.005)
+    roots = (1 + mu / 2 - math.sqrt(mu + mu * mu / 4), 1 + mu / 2 + math.sqrt(mu + mu * mu / 4))
+    assert (1 + mu / 2, math.sqrt(mu + mu * mu / 4)) == pytest.approx((1.685, 1.356), abs=5e-4)
+    assert roots == pytest.approx((0.329, 3.04), abs=0.005)
+    f = (1.967 * math.sqrt(0.329), 1.967 * math.sqrt(3.04))
+    assert f == pytest.approx((1.13, 3.43), abs=0.005) and f[1] - f[0] == pytest.approx(2.30, abs=0.005)
+    assert math.sqrt(mu) * 1.967 == pytest.approx(2.30, abs=0.005)
+    bare = coupled_model(chain, 2, residual=False)
+    assert bare.fn_hz == pytest.approx((1.13, 3.43), abs=0.005)
+    assert m.mass_ratio == pytest.approx(1.27, abs=0.005) and m.fn_hz == pytest.approx((1.117, 3.339), abs=5e-4)
+    errs = compare_coupled(m, modal_analysis(chain))
+    assert [c.fn_full for c in errs] == pytest.approx([1.105, 3.183], abs=5e-4)
+    assert [c.error for c in errs] == pytest.approx([0.011, 0.049], abs=5e-4)
+    assert [c.mac for c in errs] == pytest.approx([0.999, 0.958], abs=5e-4)
+    assert [c.error for c in compare_coupled(bare, modal_analysis(chain))] == pytest.approx([0.020, 0.078], abs=5e-4)
+    assert B.fn_hz[1] == pytest.approx(5.15, abs=0.005) and A.fn_hz[1] == pytest.approx(5.15, abs=0.005)
+    # the "Two equal halves" trial: μ = 1.27, the upper mode 4.9% high, a MAC of 0.96
+    assert errs[1].mac == pytest.approx(0.96, abs=0.005)
+
+
 def cms(interfaces, kept, method="craig-bampton"):
     s = ChainSystem.uniform(8)
     return [

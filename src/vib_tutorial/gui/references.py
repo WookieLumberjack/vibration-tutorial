@@ -723,6 +723,30 @@ REFERENCES = (
         "F. Fahy and P. Gardonio, <i>Sound and Structural Vibration: Radiation, Transmission and Response</i>, 2nd edition, Academic Press, 2007",
         "radiation efficiency, transmission loss and fluid loading, the subject of this page",
     ),
+    Reference(
+        "craig-bampton",
+        "Craig and Bampton 1968",
+        "R. R. Craig and M. C. C. Bampton, Coupling of substructures for dynamic analyses, <i>AIAA Journal</i> 6, 1313–1319, 1968",
+        "",
+    ),
+    Reference(
+        "macneal",
+        "MacNeal 1971",
+        "R. H. MacNeal, A hybrid method of component mode synthesis, <i>Computers and Structures</i> 1, 581–601, 1971",
+        "",
+    ),
+    Reference(
+        "rubin",
+        "Rubin 1975",
+        "S. Rubin, Improved component-mode representation for structural dynamic analysis, <i>AIAA Journal</i> 13, 995–1006, 1975",
+        "",
+    ),
+    Reference(
+        "de-klerk",
+        "de Klerk, Rixen and Voormeeren 2008",
+        "D. de Klerk, D. J. Rixen and S. N. Voormeeren, General framework for dynamic substructuring: history, review and classification of techniques, <i>AIAA Journal</i> 46, 1169–1181, 2008",
+        "the methods, modal and frequency-based, in one framework",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
