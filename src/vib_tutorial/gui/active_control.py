@@ -3,7 +3,7 @@
 Left: the sensor and actuator masses, the gain and the actuator's lag, the disturbance and response masses, and a
 tuned mass damper to compare. Centre: the receptance without control, with it, and with the TMD, and each mode's
 damping. Right: the root locus as the gain rises, each mode's damping against the gain, skyhook isolation, and the
-Theory.
+Theory (its figures: gui/active_control_figures.py).
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from ..core.active_control import (
 )
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
-from . import settle_plots
+from . import active_control_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -83,9 +83,9 @@ TRIALS = (
     ControlTrial(
         "Velocity feedback at the tip",
         "The uniform chain (four 1 kg masses, 400 N/m), a velocity sensor and a force actuator both on m4, "
-        "u = −g ẋ₄ with g = 20 N·s/m: an active damper to the ground. Every mode gains damping, mode 1 most "
-        "(ζ from 1.7 % to 72 %), and the tip's resonance peak all but disappears. For light gain each mode gains "
-        "Δζ = gφ<sub>r</sub>(4)²/2ω<sub>r</sub>, so the modes that move the tip most are damped most.",
+        "<m>u</m> = −<m>gẋ<sub>4</sub></m> with <m>g</m> = 20 N·s/m: an active damper to the ground. Every mode gains damping, mode 1 most "
+        "(<m>ζ</m> from 1.7 % to 72 %), and the tip's resonance peak all but disappears. For light gain each mode gains "
+        "Δ<m>ζ</m> = <m>gφ<sub>r</sub></m>(4)²/2<m>ω<sub>r</sub></m>, so the modes that move the tip most are damped most.",
         tab=TAB_GAIN,
     ),
     ControlTrial(
@@ -100,9 +100,9 @@ TRIALS = (
     ),
     ControlTrial(
         "Non-collocated: spillover",
-        "Sensor on m1, actuator on m4, g = 20 N·s/m. In mode 1 the two move together, so mode 1 is damped; in "
+        "Sensor on <m>m<sub>1</sub></m>, actuator on <m>m<sub>4</sub></m>, <m>g</m> = 20 N·s/m. In mode 1 the two move together, so mode 1 is damped; in "
         "mode 2 they move against each other, so the feedback pushes with the motion: the estimate takes 0.17 "
-        "off mode 2's ζ of 0.05, and exactly its ζ is −0.10. The chain is unstable from g = 6.1 N·s/m. Control "
+        "off mode 2's <m>ζ</m> of 0.05, and exactly its <m>ζ</m> is −0.10. The chain is unstable from g = 6.1 N·s/m. Control "
         "designed for one mode spills over into the others.",
         sensor=1,
         actuator=4,
@@ -111,7 +111,7 @@ TRIALS = (
     ),
     ControlTrial(
         "Actuator lag",
-        "Back to collocated, but the sensor filter and the actuator each lag by τ = 20 ms. At high frequency the "
+        "Back to collocated, but the sensor filter and the actuator each lag by <m>τ</m> = 20 ms. At high frequency the "
         "two lags turn the force by 180°, and the feedback that damped now feeds the motion: the loop is unstable "
         "above 96 N·s/m (with 10 ms, 200). Every real loop has lag, so collocation alone doesn't guarantee "
         "stability.",
@@ -131,11 +131,11 @@ TRIALS = (
     ),
     ControlTrial(
         "Skyhook isolation",
-        "A machine on a mount over a vibrating floor (Skyhook tab). A passive damper (ζ = 0.1) trades the "
-        "resonance peak (5.1) against isolation above √2 f<sub>n</sub> (at 5 f<sub>n</sub>: 0.059). A "
+        "A machine on a mount over a vibrating floor (Skyhook tab). A passive damper (<m>ζ</m> = 0.1) trades the "
+        "resonance peak (5.1) against isolation above √2 <m>f<sub>n</sub></m> (at 5 <m>f<sub>n</sub></m>: 0.059). A "
         "skyhook damper, pushing against an inertial frame through an actuator that feeds back the mass's "
-        "absolute velocity, has neither problem: ζ<sub>sky</sub> = 0.5 caps the peak at 1.15 and keeps the "
-        "−40 dB/decade roll-off (0.041 at 5 f<sub>n</sub>).",
+        "absolute velocity, has neither problem: <m>ζ<sub>sky</sub></m> = 0.5 caps the peak at 1.15 and keeps the "
+        "−40 dB/decade roll-off (0.041 at 5 <m>f<sub>n</sub></m>).",
         tab=TAB_SKYHOOK,
         zeta_passive=0.1,
         zeta_sky=0.5,
@@ -400,7 +400,7 @@ GAIN_TIP = (
 )
 SKY_TIP = "<p>Transmissibility from floor to machine: passive damper, skyhook, and both.</p>"
 
-NOTES_HTML = load_notes("active_control", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("active_control", figures=active_control_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class ActiveControlPage(QtWidgets.QWidget):

@@ -2060,6 +2060,51 @@ SYMBOLS = (
         "flutter",
     ),
     Symbol(
+        "dvf",
+        "u, g, s, a, q<sub>r</sub>, Δζ<sub>r</sub>, τ",
+        "velocity feedback: the actuator's force; the gain; the masses sensed and pushed; mode r's coordinate, "
+        "x = Σφ<sub>r</sub>q<sub>r</sub>; the damping the loop adds to it; each of the loop's two lags",
+        "N, N·s/m, –, –, √kg·m, –, s",
+        "active_control_page",
+        "feedback",
+    ),
+    Symbol(
+        "state_fb",
+        "K<sub>c</sub>, k<sub>p</sub>, k<sub>v</sub>, ω<sub>c</sub>, ζ<sub>c</sub>, ẑ, y<sub>m</sub>, C<sub>o</sub>, "
+        "L<sub>o</sub>, l<sub>1</sub>, l<sub>2</sub>",
+        "state feedback: its gains, u = −K<sub>c</sub>z (on one mass, the position and velocity gains); the closed "
+        "loop's frequency and damping; an observer's estimate of the state; the measurement and the matrix that "
+        "makes it from the state; the observer's gain and, on one mass, its two entries",
+        "–, N/m, N·s/m, rad/s, –, –, as measured, –, –, 1/s, 1/s²",
+        "active_control_page",
+        "state-feedback",
+    ),
+    Symbol(
+        "ppf",
+        "η, γ, ω<sub>f</sub>, ζ<sub>f</sub>",
+        "positive position feedback: the filter's output; the loop's gain; the filter's frequency and damping",
+        "m, –, rad/s, –",
+        "active_control_page",
+        "ppf",
+    ),
+    Symbol(
+        "shunt",
+        "L, R, C<sub>pz</sub>, ω<sub>e</sub>",
+        "a piezoelectric shunt: its inductor and resistor; the patch's capacitance; the circuit's resonance, "
+        "1/√(LC<sub>pz</sub>)",
+        "H, Ω, F, rad/s",
+        "active_control_page",
+        "shunt",
+    ),
+    Symbol(
+        "skyhook_z",
+        "ζ<sub>sky</sub>",
+        "a skyhook damper's damping ratio: a damper from the mass to a fixed point in space",
+        "–",
+        "active_control_page",
+        "skyhook",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

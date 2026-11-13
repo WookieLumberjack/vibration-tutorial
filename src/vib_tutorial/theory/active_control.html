@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:sim_page#vibration-absorbers-and-tuned-mass-dampers">Absorbers and tuned mass dampers</a>
 <a href="page:isolation_page#damping-trade-off">Isolation's damping trade-off</a>
@@ -6,39 +5,133 @@
 </before>
 <h3><a name="feedback"></a>Feedback</h3>
 <p>Active control measures the motion and pushes back through an actuator. The simplest law is <b>direct velocity
-feedback</b>: a force u = −g ẋ<sub>s</sub> at mass a from the velocity at mass s. With s = a (<b>collocated</b>)
-it is an ideal damper from that mass to the ground: it can only take energy out, so it is stable at any gain, and
-for light gain each mode gains</p>
-<p align="center">Δζ<sub>r</sub> = g φ<sub>r</sub>(a) φ<sub>r</sub>(s) / 2ω<sub>r</sub></p>
-<p>(φ mass-normalized), the same formula as a damper's modal damping. Too much gain holds the mass still and the
-rest of the structure vibrates around it, so there is an optimal gain, as there is for any one damper.</p>
+feedback</b>: a force on mass <m>a</m> from the velocity of mass <m>s</m>,</p>
+<eq>u = -g\,\dot{x}_s.</eq>
+<p>With <m>s</m> = <m>a</m> (<b>collocated</b>) it is an ideal damper of <m>g</m> from that mass to the ground: it
+can only take energy out, so it is stable at any gain. How much each mode gains follows from the modal
+equations. Write the motion as <m>x</m> = Σ<m>φ<sub>r</sub>q<sub>r</sub></m> (mass-normalized shapes); the force
+<m>u</m> on mass <m>a</m> drives mode <m>r</m> by <m>φ<sub>r</sub></m>(<m>a</m>)<m>u</m>, and if the gain is light
+enough that the modes stay apart, <m>ẋ<sub>s</sub></m> ≈ <m>φ<sub>r</sub></m>(<m>s</m>)<m>q̇<sub>r</sub></m> near
+mode <m>r</m>'s frequency. So</p>
+<eq>\ddot{q}_r + \bigl(2\zeta_r\omega_r + g\,\varphi_r(a)\,\varphi_r(s)\bigr)\dot{q}_r + \omega_r^2 q_r = 0,</eq>
+<p>and the mode gains</p>
+<eq>\Delta\zeta_r = \frac{g\,\varphi_r(a)\,\varphi_r(s)}{2\omega_r},</eq>
+<p>the same formula as a damper's modal damping. The modes that move the mass most gain most. Too much gain holds
+the mass still and the rest of the structure vibrates around it, so there is an optimal gain, as there is for any
+one damper.</p>
 
 <h3><a name="collocation"></a>Collocation and spillover</h3>
-<p>When the sensor and actuator are at different places, φ<sub>r</sub>(a)φ<sub>r</sub>(s) can be negative for
-some modes: the feedback then <b>adds energy</b> to them. A controller designed to damp one mode (with the
-others ignored) <b>spills over</b> into the modes it wasn't designed for, and the unmodelled ones can go unstable.
-Collocated, dual sensor–actuator pairs avoid this: their transfer functions have alternating poles and zeros, and
-the phase stays between 0 and −180°.</p>
+<p>When the sensor and actuator are at different places, <m>φ<sub>r</sub></m>(<m>a</m>)<m>φ<sub>r</sub></m>(<m>s</m>)
+can be negative for some modes: the feedback then <b>adds energy</b> to them.</p>
+<p><img src="fig:spill"></p>
+<p>On the uniform chain with the sensor on <m>m<sub>1</sub></m> and the actuator on <m>m<sub>4</sub></m>, the two
+move together in mode 1, so it is damped, and against each other in mode 2, which the loop drives. A controller
+designed to damp one mode (with the others ignored) <b>spills over</b> into the modes it wasn't designed for, and
+the unmodelled ones can go unstable <cite>balas</cite>. Collocated, dual sensor–actuator pairs (a velocity sensor
+with a force actuator at the same point, along the same line) avoid this: their transfer functions have
+alternating poles and zeros, and the phase stays between 0 and −180°.</p>
 
 <h3><a name="lag"></a>Lag</h3>
-<p>Real actuators, amplifiers, filters and digital controllers lag. A lag turns the feedback's phase, so at high
-enough frequency the force that should oppose the velocity helps it. Two first-order lags of τ (as the page has)
-reach 180° far above 1/τ, and a high-gain loop goes unstable there; a time delay does it sooner. This is why
-practical active damping uses modest gains, roll-off filters, and collocated pairs.</p>
+<p>Real actuators, amplifiers, filters and digital controllers lag. The page puts two first-order lags of
+<m>τ</m> in the loop (a sensor filter and the actuator), so the force is <m>u</m> = −<m>g</m>
+<m>ẋ<sub>s</sub></m>/(1 + i<m>Ωτ</m>)² for a motion at <m>Ω</m>. The power it takes out of a collocated mass goes as
+<m>g</m> times the real part of 1/(1 + i<m>Ωτ</m>)², which is (1 − <m>Ω</m>²<m>τ</m>²)/(1 +
+<m>Ω</m>²<m>τ</m>²)²: positive damping below <m>Ω</m> = 1/<m>τ</m>, and above it the force, lagging the
+velocity by more than 90°, feeds the motion. One lag alone never lags more than 90°, so it only adds stiffness;
+two can, and with enough gain a mode of the loop pushed up there goes unstable. A time delay does it sooner. This
+is why practical active damping uses modest gains, roll-off filters, and collocated pairs.</p>
+
+<h3><a name="state-feedback"></a>State feedback and observers</h3>
+<p>Velocity feedback uses one measurement. With the whole state <m>z</m> (every mass's displacement and velocity,
+as in the <a href="page:complex_page#state-space">state-space form</a>) the force can be any combination of it,
+<m>u</m> = −<b>K</b><sub>c</sub><m>z</m>, and the closed loop is <m>ż</m> = (<b>A</b> −
+<b>BK</b><sub>c</sub>)<m>z</m>. If the actuators can reach every mode (the system is controllable), the gains can put
+the closed loop's poles anywhere (<b>pole placement</b>). On one mass <m>m</m>, with <m>u</m> = −<m>k<sub>p</sub>x</m>
+− <m>k<sub>v</sub>ẋ</m>, the loop's stiffness is <m>k</m> + <m>k<sub>p</sub></m> and its damping <m>c</m> +
+<m>k<sub>v</sub></m>; to put it at <m>ω<sub>c</sub></m> with damping <m>ζ<sub>c</sub></m>,</p>
+<eq>k_p = m\omega_c^2 - k, \qquad k_v = 2m\zeta_c\omega_c - c.</eq>
+<p>Moving a pole far takes force, so the <b>linear-quadratic regulator</b> chooses <b>K</b><sub>c</sub> to minimize
+a weighted sum of the response and the control effort over time, rather than placing the poles by hand.</p>
+<p>The state is rarely all measured. An <b>observer</b> <cite>luenberger</cite> runs a model of the structure
+alongside it, driven by the same force, and corrects the model by how far its predicted measurement
+<m>C<sub>o</sub>ẑ</m> strays from the real one <m>y<sub>m</sub></m>:</p>
+<eq>\dot{\hat{z}} = \mathbf{A}\hat{z} + \mathbf{B}u + L_o\,(y_m - C_o\hat{z}).</eq>
+<p>The error <m>z</m> − <m>ẑ</m> then obeys <b>A</b> − <m>L<sub>o</sub>C<sub>o</sub></m>, whose poles the gain
+<m>L<sub>o</sub></m> places as <b>K</b><sub>c</sub> placed the loop's: usually a few times faster, so the estimate
+settles before the control needs it. The two designs don't disturb each other (the separation principle), and
+fed <m>ẑ</m> instead of <m>z</m>, the controller's poles are the two sets together. With noisy measurements the best
+gain is the Kalman filter's <cite>kalman</cite>. The catch for structures is the model: an observer of the first
+few modes still sees the others in its measurement (observation spillover), and they can go unstable as above.</p>
+
+<h3><a name="ppf"></a>Positive position feedback</h3>
+<p><b>Positive position feedback</b> <cite>fanson-caughey</cite> feeds a mode's displacement through a lightly damped
+filter <m>η</m> tuned near it, and back with a positive sign:</p>
+<eq>\ddot{q}_r + 2\zeta_r\omega_r\dot{q}_r + \omega_r^2 q_r = \gamma\,\omega_r^2\eta,</eq>
+<eq>\ddot{\eta} + 2\zeta_f\omega_f\dot{\eta} + \omega_f^2\eta = \omega_f^2 q_r.</eq>
+<p>Near the mode the filter lags the displacement by about 90°, so its output acts as a damper; far above it the
+filter rolls off as the square of frequency, so the loop leaves the higher modes, and the lag that troubles velocity feedback,
+alone. It is stable whenever the static stiffness stays positive: the pair's stiffness matrix has determinant
+<m>ω<sub>r</sub></m>²<m>ω<sub>f</sub></m>²(1 − <m>γ</m>), so the condition is <m>γ</m> &lt; 1, whatever the structure's damping
+and the filter's tuning.</p>
+
+<h3><a name="shunt"></a>Piezoelectric shunts</h3>
+<p>A piezoelectric patch bonded to a structure turns its strain into charge. Wired to a resistor <m>R</m>, the
+current through it dissipates energy, and the patch acts as a viscoelastic layer. Wired to an inductor <m>L</m> and a
+resistor in series, it makes an electrical resonance with the patch's own capacitance
+<m>C<sub>pz</sub></m> at</p>
+<eq>\omega_e = 1/\sqrt{L\,C_{pz}},</eq>
+<p>and tuned to a mode it behaves as a <a href="page:sim_page#vibration-absorbers-and-tuned-mass-dampers">tuned mass
+damper</a> made of electricity <cite>hagood-von-flotow</cite>: the electromechanical coupling plays the mass ratio's
+part, and <m>R</m> the absorber's damper. It needs no power and cannot go unstable. The inductances are large for
+the patches' small capacitances, so they are usually synthesized from op-amps.</p>
 
 <h3><a name="tmd"></a>Active or passive?</h3>
 <p>A tuned mass damper (the Simulation page's absorber) needs no power and cannot go unstable, but it damps one
-mode, near one frequency, and needs mass (Den Hartog's optimum: tune to f<sub>1</sub>/(1 + μ) with
-ζ = √(3μ/8(1 + μ)³)). Active control damps many modes at once with a small actuator, at the cost of power,
-sensors and stability margins. Hybrid and semi-active devices (variable dampers, magnetorheological fluid) sit in
-between.</p>
+mode, near one frequency, and needs mass. Den Hartog's optimum <cite>den-hartog</cite> for a mass ratio <m>μ</m> of
+the mode's modal mass is to tune it to <m>f<sub>1</sub></m>/(1 + <m>μ</m>) with damping
+<m>ζ</m> = √(3<m>μ</m>/8(1 + <m>μ</m>)³). Active control damps many modes at once with a small actuator, at the
+cost of power, sensors and stability margins. Hybrid and semi-active devices (variable dampers,
+magnetorheological fluid) sit in between.</p>
 
 <h3><a name="skyhook"></a>Skyhook</h3>
-<p>A passive isolator's damper connects the machine to the floor, so above √2 f<sub>n</sub> it passes the floor's
-motion through: more damping, less resonance, worse isolation. A <b>skyhook</b> damper acts between the machine
-and a fixed point in space: impossible passively, but an actuator fed the machine's absolute velocity does it.
-Its transmissibility 1/(1 − r² + 2iζr) has a bounded peak and the full −40 dB/decade roll-off. Semi-active car
-suspensions approximate it.</p>
+<p>A passive isolator's damper connects the machine to the floor, so above √2 <m>f<sub>n</sub></m> it passes the
+floor's motion through: more damping, less resonance, worse isolation. A <b>skyhook</b> damper <cite>karnopp</cite>
+acts between the machine and a fixed point in space: impossible passively, but an actuator fed the machine's
+absolute velocity does it.</p>
+<p><img src="fig:skyhook"></p>
+<p>The floor's motion <m>y</m> then reaches the machine through the spring alone, and the damper only resists the
+machine's own motion, so at the frequency ratio <m>r</m></p>
+<eq>T = \frac{1}{\lvert 1 - r^2 + 2\mathrm{i}\,\zeta_{sky}\,r\rvert}:</eq>
+<p>a bounded peak, 1/(2<m>ζ<sub>sky</sub></m>√(1 − <m>ζ<sub>sky</sub></m>²)), and the full −40 dB/decade
+roll-off. Semi-active car suspensions approximate it with a damper whose setting follows the sign of the
+velocities.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page's chain is the uniform one: four 1 kg masses on 400 N/m springs with 2 N·s/m dampers.</p>
+<ol>
+<li><b>Its modes.</b> 1.105, 3.183, 4.877 and 5.982 Hz, damped 1.74, 5.00, 7.66 and 9.40 %; at <m>m<sub>4</sub></m>
+the mass-normalized shapes are 0.657, −0.577, −0.429 and 0.228.</li>
+<li><b>Velocity feedback at the tip</b> (<m>g</m> = 20 N·s/m on <m>m<sub>4</sub></m>). Mode 2 (at 20 rad/s, where 0.577² = ⅓):
+20 × ⅓/(2 × 20) = 0.167, so 0.217 in all, against the page's 0.214. Mode 1: 20 × 0.657²/(2 × 2π × 1.105) =
+0.622, so 0.639, against the page's 0.719: at this gain mode 1 is no longer light, and the estimate falls short.
+Mode 1's damping peaks at 0.98 near <m>g</m> = 25 N·s/m.</li>
+<li><b>Spillover</b> (sensor on <m>m<sub>1</sub></m>). In mode 2 <m>m<sub>1</sub></m> swings +0.577, so
+Δ<m>ζ<sub>2</sub></m> = 20 × (−⅓)/40 = −0.167: from 0.05 to −0.117 by the estimate, −0.10
+exactly.</li>
+<li><b>Lag.</b> With <m>τ</m> = 20 ms the loop feeds any motion above 1/<m>τ</m> = 50 rad/s, 7.96 Hz.</li>
+<li><b>A tuned mass damper</b> at <m>m<sub>4</sub></m>, <m>μ</m> = 5 %: mode 1's modal mass there is 1/0.657² =
+2.32 kg, so 0.116 kg, tuned to 1.1055/1.05 = 1.053 Hz with <m>ζ</m> = √(0.15/(8 × 1.05³)) = 0.127.</li>
+<li><b>Skyhook</b> (<m>ζ<sub>sky</sub></m> = 0.5): the peak is 1/(2 × 0.5 × √0.75) = 1.155, and at 5
+<m>f<sub>n</sub></m> 1/|1 − 25 + 5i| = 0.0408, against a passive <m>ζ</m> = 0.1's 0.0589.</li>
+<li><b>State feedback</b> on one of the chain's elements (1 kg, 400 N/m, 2 N·s/m): to put it at 30 rad/s with
+<m>ζ<sub>c</sub></m> = 0.7, <m>k<sub>p</sub></m> = 900 − 400 = 500 N/m and <m>k<sub>v</sub></m> = 2 × 0.7 × 30 −
+2 = 40 N·s/m.</li>
+<li><b>Its observer</b>, measuring <m>x</m>, at 100 rad/s and 0.7: the error's characteristic polynomial is
+<m>λ</m>² + (<m>l<sub>1</sub></m> + <m>c</m>/<m>m</m>)<m>λ</m> + (<m>k</m>/<m>m</m> + <m>l<sub>2</sub></m> +
+<m>l<sub>1</sub>c</m>/<m>m</m>) for <m>L<sub>o</sub></m> = [<m>l<sub>1</sub></m>, <m>l<sub>2</sub></m>], so
+<m>l<sub>1</sub></m> = 140 − 2 = 138 /s and <m>l<sub>2</sub></m> = 10 000 − 400 − 276 = 9324 /s².</li>
+<li><b>A shunt</b>: a patch of 100 nF tuned to a 50 Hz mode needs <m>L</m> = 1/((2π × 50)² × 10⁻⁷) = 101 H.</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these loads the uniform chain into the Simulation page and sets up the loop (Things to try, top
@@ -47,7 +140,11 @@ left).</p>
 <takeaways>
 <li>Collocated velocity feedback is an active damper: stable at any gain (ideally), with an optimal gain.</li>
 <li>Each mode gains Δζ = gφ<sub>r</sub>(a)φ<sub>r</sub>(s)/2ω<sub>r</sub>; non-collocated, it can be negative: spillover.</li>
-<li>Lag in the loop limits the gain even when collocated.</li>
+<li>Lag in the loop limits the gain even when collocated: past 1/τ two lags turn the damper into a source.</li>
+<li>State feedback can place every pole, an observer estimates the state it needs, and positive position feedback and piezo shunts damp chosen modes robustly.</li>
 <li>A TMD damps one mode without power; active control damps many, with power and stability to look after.</li>
 <li>Skyhook damping caps the resonance without giving up high-frequency isolation.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x matrices state lambda omega_i phi_i zeta omega_n Omega mu r y_floor T_trans dvf state_fb ppf shunt skyhook_z</notation>
+<reading>preumont</reading>
