@@ -825,6 +825,67 @@ REFERENCES = (
         "Press, 2010",
         "element matrices for bars, beams and frames worked in full, consistent and lumped mass",
     ),
+    Reference(
+        "nyquist",
+        "Nyquist 1928",
+        "H. Nyquist, Certain topics in telegraph transmission theory, <i>Transactions of the AIEE</i> 47, 617–644, "
+        "1928",
+        "",
+    ),
+    Reference(
+        "shannon",
+        "Shannon 1949",
+        "C. E. Shannon, Communication in the presence of noise, <i>Proceedings of the IRE</i> 37, 10–21, 1949",
+        "",
+    ),
+    Reference(
+        "butterworth",
+        "Butterworth 1930",
+        "S. Butterworth, On the theory of filter amplifiers, <i>Experimental Wireless and the Wireless "
+        "Engineer</i> 7, 536–541, 1930",
+        "",
+    ),
+    Reference(
+        "cooley-tukey",
+        "Cooley and Tukey 1965",
+        "J. W. Cooley and J. W. Tukey, An algorithm for the machine calculation of complex Fourier series, "
+        "<i>Mathematics of Computation</i> 19, 297–301, 1965",
+        "",
+    ),
+    Reference(
+        "harris-windows",
+        "Harris 1978",
+        "F. J. Harris, On the use of windows for harmonic analysis with the discrete Fourier transform, "
+        "<i>Proceedings of the IEEE</i> 66, 51–83, 1978",
+        "",
+    ),
+    Reference(
+        "grossmann-morlet",
+        "Grossmann and Morlet 1984",
+        "A. Grossmann and J. Morlet, Decomposition of Hardy functions into square integrable wavelets of constant "
+        "shape, <i>SIAM Journal on Mathematical Analysis</i> 15, 723–736, 1984",
+        "",
+    ),
+    Reference(
+        "iso-1683",
+        "ISO 1683:2015",
+        "ISO 1683:2015, <i>Acoustics: Preferred reference values for acoustical and vibratory levels</i>, "
+        "International Organization for Standardization, 2015",
+        "",
+    ),
+    Reference(
+        "iec-61260",
+        "IEC 61260-1:2014",
+        "IEC 61260-1:2014, <i>Electroacoustics: Octave-band and fractional-octave-band filters, Part 1: "
+        "Specifications</i>, International Electrotechnical Commission, 2014",
+        "",
+    ),
+    Reference(
+        "brandt",
+        "Brandt 2011",
+        "A. Brandt, <i>Noise and Vibration Analysis: Signal Analysis and Experimental Procedures</i>, Wiley, 2011",
+        "the measurement side in full: sampling, windows, spectra and their errors, filters, transducers",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

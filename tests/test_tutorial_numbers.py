@@ -2540,3 +2540,33 @@ def test_frame_builder_worked_example():
     table = {1: (41.97, 413.6, 1426), 2: (41.80, 264.0, 893.0), 4: (41.78, 262.1, 738.7), 8: (41.78, 261.8, 733.5)}
     for parts, row in table.items():
         assert modes(cantilever(1.0, parts)).hz[:3] == pytest.approx(row, rel=6e-4)
+
+
+def test_signals_worked_example():
+    from vib_tutorial.core.signals import Source, Window, sample, spectrum, window_props
+
+    fs, n = 1024.0, 1024
+    source = Source()  # the page's opening tones: 1 at 50 Hz, 0.1 at 120 Hz
+    assert (n / fs, fs / n, fs / 2, fs / 2.56) == (1.0, 1.0, 512.0, 400.0)
+    assert 0.3**16 == pytest.approx(4.3e-9, rel=0.01)
+    gains = source.gain(np.array([120.0, 400.0, 624.0]), fs, True)
+    assert gains[0] == pytest.approx(1.0, abs=1e-8) and gains[1] == pytest.approx(1 / math.sqrt(2))
+    assert (1.56**16, gains[2], 20 * math.log10(gains[2])) == pytest.approx((1230, 0.0285, -30.9), rel=2e-3)
+    _, x = sample(source, fs, n, True)
+    spec = spectrum(x, fs, n, Window.HANN)
+    props = window_props(Window.HANN)
+    assert (props.coherent_gain, props.enbw) == (0.5, 1.5)
+    assert spec.amplitude[[49, 50, 51, 119, 120, 121]] == pytest.approx([0.5, 1.0, 0.5, 0.05, 0.1, 0.05], abs=5e-4)
+    assert float(np.mean(x**2)) == pytest.approx(0.505) and float(np.sum(spec.psd) * spec.df) == pytest.approx(0.505)
+    assert spec.psd[50] == pytest.approx(0.5 / 1.5) == pytest.approx(0.333, abs=5e-4)
+    level = 20 * math.log10(1 / math.sqrt(2) / 1e-6)
+    assert (level, level - 20) == pytest.approx((117.0, 97.0), abs=0.05)
+    third = 1000 * 10 ** np.array([-1.3, -0.9])
+    edges = np.array([third * 10**-0.05, third * 10**0.05])
+    assert edges.T.ravel() == pytest.approx([44.7, 56.2, 112.2, 141.3], abs=0.05)
+    w50, w120 = 2 * math.pi * 50, 2 * math.pi * 120
+    assert (1000 / w50, 1e6 / w50**2, 100 / w120, 1e5 / w120**2) == pytest.approx((3.18, 10.1, 0.133, 0.176), rel=4e-3)
+    assert ((1 / w50**2) / (0.1 / w120**2), (120 / 50) ** 2) == pytest.approx((57.6, 5.76), rel=1e-3)
+    # the notes' other numbers: a drift, octave and third ratios
+    assert (0.01 * 10, 0.5 * 0.01 * 10**2) == pytest.approx((0.1, 0.5))
+    assert (10**0.3, 10**0.1, 20 * math.log10(2)) == pytest.approx((2.0, 1.26, 6.02), abs=0.005)
