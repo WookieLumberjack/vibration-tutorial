@@ -2483,6 +2483,84 @@ def test_duffing_worked_example():
     assert swing == pytest.approx(0.0275, abs=0.00005)
 
 
+def test_fluid_structure_worked_example():
+    """The Fluid–structure page's worked example: its defaults (rod, plate, tank, structure) and the damper trial."""
+    from vib_tutorial.core import added_mass as am
+    from vib_tutorial.core import sloshing as sl
+    from vib_tutorial.core.beams_plates import Material, Plate
+    from vib_tutorial.gui.fluid_structure import TRIALS, FluidTrial
+
+    t = FluidTrial("", "")
+    assert (t.radius, t.density, t.f_dry, t.fluid, t.ratio) == (25.0, 7850.0, 20.0, 1000.0, 1.5)
+    # the rod: 15.41 kg and 1.963 kg a metre, 18.84 Hz
+    rod = am.Body(am.Shape.CYLINDER, 0.025, 7850.0)
+    assert rod.mass == pytest.approx(15.41, abs=0.005)
+    assert rod.added_mass == pytest.approx(1.963, abs=0.0005)
+    assert am.wet_frequency(20.0, rod.mass, rod.added_mass) == pytest.approx(18.84, abs=0.005)
+    assert 20 / math.sqrt(1 + 1000 / 7850) == pytest.approx(18.84, abs=0.005)
+    # in a pipe at 1.5R: C_a 2.6, 5.11 kg, 17.33 Hz
+    piped = am.Body(am.Shape.CYLINDER, 0.025, 7850.0, outer=0.0375)
+    assert piped.coefficient == pytest.approx(2.6)
+    assert piped.added_mass == pytest.approx(5.11, abs=0.005)
+    assert 20 / math.sqrt(1 + 2.6 * 0.1274) == pytest.approx(17.33, abs=0.005)
+    assert am.wet_frequency(20.0, piped.mass, piped.added_mass) == pytest.approx(17.33, abs=0.005)
+    # the plate: D 519.2, ρh 23.55, (1, 1) at 66.6 Hz; modal 1.413 kg, 11.9 kg of water, β 8.43, 21.7 Hz
+    assert (t.a, t.b, t.thickness, t.plate_rho, t.E, t.sides) == (0.6, 0.4, 3.0, 7850.0, 210.0, 1)
+    plate = Plate(0.6, 0.4, 0.003, Material(210e9, 0.3, 7850.0))
+    assert plate.rigidity == pytest.approx(519.2, abs=0.05)
+    assert plate.surface_mass == pytest.approx(23.55)
+    assert am.plate_dry_frequency(plate, 1, 1) == pytest.approx(66.6, abs=0.05)
+    assert math.pi / 2 * (1 / 0.6**2 + 1 / 0.4**2) * math.sqrt(519.2 / 23.55) == pytest.approx(66.6, abs=0.05)
+    assert am.plate_modal_mass(plate) == pytest.approx(1.413, abs=0.0005)
+    assert am.plate_added_mass(plate, 1, 1) == pytest.approx(11.9, abs=0.05)
+    assert am.avmi(plate, 1, 1) == pytest.approx(8.43, abs=0.005)
+    assert 66.6 / math.sqrt(9.43) == pytest.approx(21.7, abs=0.05)
+    assert am.avmi(plate, 1, 1, sides=2) == pytest.approx(16.86, abs=0.005)
+    assert 66.6 / math.sqrt(17.86) == pytest.approx(15.8, abs=0.05)
+    # the tank: tanh(π/2) 0.91715, ω² 28.27, 0.846 Hz; m_L 500, m₁ 236.6, m₃ 9.55, m₀ 250
+    assert (t.length, t.depth, t.breadth) == (1.0, 0.5, 1.0)
+    tank = sl.Tank(1.0, 0.5, 1.0)
+    assert math.tanh(math.pi * 0.5) == pytest.approx(0.91715, abs=0.000005)
+    assert 9.81 * math.pi * 0.91715 == pytest.approx(28.27, abs=0.005)
+    assert math.sqrt(28.27) / (2 * math.pi) == pytest.approx(0.846, abs=0.0005)
+    assert sl.slosh_frequency(tank, 1) == pytest.approx(0.846, abs=0.0005)
+    assert tank.liquid_mass == pytest.approx(500.0)
+    assert 500 * 8 * 0.91715 / (math.pi**3 * 0.5) == pytest.approx(236.6, abs=0.05)
+    assert float(sl.slosh_mass(tank, 1)) == pytest.approx(236.6, abs=0.05)
+    assert float(sl.slosh_mass(tank, 3)) == pytest.approx(9.55, abs=0.005)
+    assert sl.rigid_mass(tank) == pytest.approx(250.0, abs=0.5)
+    # as a damper on the default structure: μ 0.0117, f′ 0.497, Den Hartog 0.491 Hz; peak 50.0 → 47.7
+    assert (t.structure_mass, t.structure_f, t.structure_zeta, t.damper_zeta) == (20.0, 0.5, 1.0, 13.0)
+    structure = sl.Structure(20000.0, 0.5, 0.01)
+    damper = sl.Damper(tank, 1, 0.13)
+    assert sl.mass_ratio(structure, damper) == pytest.approx(0.0117, abs=0.00005)
+    assert 236.6 / (20000 + 500 - 236.6) == pytest.approx(0.0117, abs=0.00005)
+    assert 0.5 * math.sqrt(20000 / 20263) == pytest.approx(0.497, abs=0.0005)
+    assert sl.loaded_frequency(structure, damper) == pytest.approx(0.497, abs=0.0005)
+    assert 0.497 / 1.0117 == pytest.approx(0.491, abs=0.0005)
+    assert sl.peak(structure, None) == pytest.approx(50.0, abs=0.05)
+    assert sl.peak(structure, damper) == pytest.approx(47.7, abs=0.05)
+    # tuned: the trial's 2 × 2 m tank at 0.4 m
+    trial = next(tr for tr in TRIALS if tr.name == "A tuned liquid damper")
+    assert (trial.length, trial.depth, trial.breadth) == (2.0, 0.4, 2.0)
+    big = sl.Tank(2.0, 0.4, 2.0)
+    assert big.liquid_mass == pytest.approx(1600.0)
+    assert math.tanh(0.2 * math.pi) == pytest.approx(0.5569, abs=0.00005)
+    assert math.sqrt(9.81 * math.pi / 2 * 0.5569) / (2 * math.pi) == pytest.approx(0.466, abs=0.0005)
+    assert 1600 * 8 * 0.5569 / (math.pi**3 * 0.2) == pytest.approx(1149, abs=0.5)
+    assert float(sl.slosh_mass(big, 1)) == pytest.approx(1149, abs=0.5)
+    tuned = sl.Damper(big, 1, 0.13)
+    assert 1149 / 20451 == pytest.approx(0.0562, abs=0.00005)
+    assert sl.mass_ratio(structure, tuned) == pytest.approx(0.0562, abs=0.00005)
+    assert 0.5 * math.sqrt(20000 / 20451) == pytest.approx(0.4945, abs=0.00005)
+    assert 0.4945 / 1.0562 == pytest.approx(0.468, abs=0.0005)
+    ratio, zd, top = sl.den_hartog(0.0562)
+    assert ratio == pytest.approx(1 / 1.0562)
+    assert zd == pytest.approx(0.134, abs=0.0005)
+    assert top == pytest.approx(6.05, abs=0.005)
+    assert sl.peak(structure, tuned) == pytest.approx(5.58, abs=0.005)
+
+
 def test_diagnostics_trials():
     from dataclasses import replace
 

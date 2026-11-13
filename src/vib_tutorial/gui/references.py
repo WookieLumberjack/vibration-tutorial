@@ -1154,6 +1154,53 @@ REFERENCES = (
         "Behaviour</i>, Wiley, 2011",
         "a whole book on this page's oscillator: its history, jumps, super- and subharmonics, chaos",
     ),
+    Reference(
+        "dalembert-1752",
+        "d'Alembert 1752",
+        "J. le R. d'Alembert, <i>Essai d'une nouvelle théorie de la résistance des fluides</i>, David l'aîné, "
+        "Paris, 1752",
+        "",
+    ),
+    Reference(
+        "fritz",
+        "Fritz 1972",
+        "R. J. Fritz, The effect of liquids on the dynamic motions of immersed solids, <i>Journal of Engineering "
+        "for Industry</i> (ASME) 94, 167–173, 1972",
+        "",
+    ),
+    Reference(
+        "lamb-1920",
+        "Lamb 1920",
+        "H. Lamb, On the vibrations of an elastic plate in contact with water, <i>Proceedings of the Royal Society "
+        "of London A</i> 98, 205–216, 1920",
+        "",
+    ),
+    Reference(
+        "kwak",
+        "Kwak 1991",
+        "M. K. Kwak, Vibration of circular plates in contact with water, <i>Journal of Applied Mechanics</i> 58(2), "
+        "480–483, 1991",
+        "",
+    ),
+    Reference(
+        "graham-rodriquez",
+        "Graham and Rodriquez 1952",
+        "E. W. Graham and A. M. Rodriquez, The characteristics of fuel motion which affect airplane dynamics, "
+        "<i>Journal of Applied Mechanics</i> 19(3), 381–388, 1952",
+        "",
+    ),
+    Reference(
+        "abramson",
+        "Abramson 1966",
+        "H. N. Abramson (ed.), <i>The Dynamic Behavior of Liquids in Moving Containers</i>, NASA SP-106, 1966",
+        "the classic survey of sloshing: tanks of every shape, their analogues and damping",
+    ),
+    Reference(
+        "ibrahim",
+        "Ibrahim 2005",
+        "R. A. Ibrahim, <i>Liquid Sloshing Dynamics: Theory and Applications</i>, Cambridge University Press, 2005",
+        "sloshing in depth: linear and nonlinear theory, analogues, liquid dampers",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

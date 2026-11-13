@@ -1975,6 +1975,50 @@ SYMBOLS = (
         "parametric",
     ),
     Symbol(
+        "potential_flow",
+        "U, u, φ, T<sub>fluid</sub>, V, R, r, θ, δ",
+        "a body in an ideal fluid: its velocity; the fluid's velocity, ∇φ; the velocity potential; the fluid's "
+        "kinetic energy; the body's volume (per length for a cylinder) and radius; distance and angle from its "
+        "centre and line of motion; the gap to a concentric wall, R<sub>o</sub> − R",
+        "m/s, m/s, m²/s, J, m³, m, m, rad, m",
+        "fluid_page",
+        "added-mass",
+    ),
+    Symbol(
+        "wet_body",
+        "m<sub>s</sub>, f<sub>dry</sub>, f<sub>wet</sub>",
+        "a body in a fluid: its own mass; its natural frequency on its springs in vacuum, and in the fluid",
+        "kg, Hz, Hz",
+        "fluid_page",
+        "wet",
+    ),
+    Symbol(
+        "plate_fluid",
+        "ρ<sub>p</sub>, κ, Φ̂",
+        "a plate in a fluid: its density; a pattern's wavenumber across it; the mode shape's Fourier transform",
+        "kg/m³, rad/m, m²",
+        "fluid_page",
+        "plates",
+    ),
+    Symbol(
+        "slosh",
+        "d, B, x, z, η, κ<sub>n</sub>, k<sub>n</sub>",
+        "a sloshing tank: the liquid's depth; the tank's breadth; along it and up from the still surface; the "
+        "surface's height; mode n's wavenumber, nπ/L; the analogue's spring for it, m<sub>n</sub> times the mode's frequency squared",
+        "m, m, m, m, m, rad/m, N/m",
+        "fluid_page",
+        "sloshing",
+    ),
+    Symbol(
+        "tld",
+        "M, k, f<sub>s</sub>, f<sub>s</sub>′, f<sub>d</sub>, F, X",
+        "a structure under a tuned liquid damper: its mode's mass and stiffness, its frequency, its frequency "
+        "carrying the liquid that doesn't slosh, the damper's tuned frequency; the force on it and its sway",
+        "kg, N/m, Hz, Hz, Hz, N, m",
+        "fluid_page",
+        "damper",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",
