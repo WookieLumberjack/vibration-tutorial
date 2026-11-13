@@ -1240,6 +1240,54 @@ REFERENCES = (
         "E. H. Dowell (ed.), <i>A Modern Course in Aeroelasticity</i>, 6th edition, Springer, 2022",
         "flutter and divergence from the typical section to unsteady aerodynamics",
     ),
+    Reference(
+        "balas",
+        "Balas 1978",
+        "M. J. Balas, Active control of flexible systems, <i>Journal of Optimization Theory and Applications</i> 25, "
+        "415–436, 1978",
+        "",
+    ),
+    Reference(
+        "luenberger",
+        "Luenberger 1964",
+        "D. G. Luenberger, Observing the state of a linear system, <i>IEEE Transactions on Military Electronics</i> "
+        "8(2), 74–80, 1964",
+        "",
+    ),
+    Reference(
+        "kalman",
+        "Kalman 1960",
+        "R. E. Kalman, A new approach to linear filtering and prediction problems, <i>Journal of Basic "
+        "Engineering</i> 82(1), 35–45, 1960",
+        "",
+    ),
+    Reference(
+        "fanson-caughey",
+        "Fanson and Caughey 1990",
+        "J. L. Fanson and T. K. Caughey, Positive position feedback control for large space structures, <i>AIAA "
+        "Journal</i> 28(4), 717–724, 1990",
+        "",
+    ),
+    Reference(
+        "hagood-von-flotow",
+        "Hagood and von Flotow 1991",
+        "N. W. Hagood and A. von Flotow, Damping of structural vibrations with piezoelectric materials and passive "
+        "electrical networks, <i>Journal of Sound and Vibration</i> 146(2), 243–268, 1991",
+        "",
+    ),
+    Reference(
+        "karnopp",
+        "Karnopp, Crosby and Harwood 1974",
+        "D. Karnopp, M. J. Crosby and R. A. Harwood, Vibration control using semi-active force generators, "
+        "<i>Journal of Engineering for Industry</i> (ASME) 96(2), 619–626, 1974",
+        "",
+    ),
+    Reference(
+        "preumont",
+        "Preumont 2018",
+        "A. Preumont, <i>Vibration Control of Active Structures: An Introduction</i>, 4th edition, Springer, 2018",
+        "the field from collocation and spillover to state feedback, piezoelectric transducers and semi-active control",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

@@ -2616,6 +2616,95 @@ def test_self_excited_worked_example():
     assert f.at(x_cg=-0.2).flutter_speed() == pytest.approx(f.divergence_speed(), rel=1e-3)
 
 
+def test_active_control_worked_example():
+    """The Active control page's worked example: the uniform chain under velocity feedback, spillover, lag, a TMD,
+    skyhook, and the state feedback, observer, positive position feedback and shunt examples."""
+    from vib_tutorial.core import active_control as ac
+    from vib_tutorial.core.model import ChainSystem
+    from vib_tutorial.gui.active_control import TRIALS
+
+    chain = ChainSystem.uniform(4)
+    for got, want in zip(TRIALS[0].system().matrices(), chain.matrices(), strict=True):
+        assert np.allclose(got, want)
+    assert np.allclose(chain.damping, 2.0)
+    # the modes: 1.105 … 5.982 Hz, 1.74 … 9.40 %; shapes at m4 0.657, −0.577, −0.429, 0.228
+    w, phi = ac.undamped_modes(chain)
+    assert w / (2 * math.pi) == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=0.0005)
+    open_loop = ac.oscillating_poles(ac.closed_loop(chain, None)[0])
+    assert [p.zeta for p in open_loop] == pytest.approx([0.0174, 0.0500, 0.0766, 0.0940], abs=0.00005)
+    sign = np.sign(phi[3, 0])
+    assert sign * phi[3] == pytest.approx([0.657, -0.577, -0.429, 0.228], abs=0.0005)
+    assert w[1] == pytest.approx(20.0)
+    assert phi[3, 1] ** 2 == pytest.approx(1 / 3)
+    # velocity feedback at the tip, g = 20: mode 2 0.167 → 0.217 (page 0.214); mode 1 0.622 → 0.639 (page 0.719)
+    tip = ac.Controller(3, 3, 20.0)
+    est = ac.modal_damping_estimate(chain, tip)
+    assert 20 * (1 / 3) / (2 * 20) == pytest.approx(0.167, abs=0.0005)
+    assert est[1] == pytest.approx(0.167, abs=0.0005)
+    assert 20 * 0.657**2 / (2 * 2 * math.pi * 1.105) == pytest.approx(0.622, abs=0.0005)
+    assert 0.0174 + 0.622 == pytest.approx(0.639, abs=0.0005)
+    closed = ac.oscillating_poles(ac.closed_loop(chain, tip)[0])
+    assert closed[0].zeta == pytest.approx(0.719, abs=0.0005)
+    assert closed[1].zeta == pytest.approx(0.214, abs=0.0005)
+    g, z = ac.best_gain(chain, tip)
+    assert (g, z) == pytest.approx((25, 0.98), abs=0.5)
+    assert z == pytest.approx(0.98, abs=0.005)
+    # spillover: −0.167 → −0.117 by the estimate, −0.10 exactly
+    spill = ac.Controller(0, 3, 20.0)
+    assert ac.modal_damping_estimate(chain, spill)[1] == pytest.approx(-0.167, abs=0.0005)
+    assert 0.05 - 0.167 == pytest.approx(-0.117)
+    poles = np.linalg.eigvals(ac.closed_loop(chain, spill)[0])
+    mode2 = poles[np.argmin(np.abs(np.abs(poles) - 20.0) + (poles.imag <= 0) * 1e9)]
+    assert -mode2.real / abs(mode2) == pytest.approx(-0.10, abs=0.005)
+    # lag: 1/τ = 50 rad/s = 7.96 Hz
+    assert 1 / 0.02 / (2 * math.pi) == pytest.approx(7.96, abs=0.005)
+    # the TMD: 2.32 kg modal, 0.116 kg, 1.053 Hz, ζ 0.127
+    assert 1 / 0.657**2 == pytest.approx(2.32, abs=0.005)
+    j, mt, kt, ct = ac.tmd_for(chain, 3, 0.05)
+    assert j == 3
+    assert mt == pytest.approx(0.116, abs=0.0005)
+    assert math.sqrt(kt / mt) / (2 * math.pi) == pytest.approx(1.053, abs=0.0005)
+    assert 1.1055 / 1.05 == pytest.approx(1.053, abs=0.0005)
+    assert ct / (2 * math.sqrt(kt * mt)) == pytest.approx(0.127, abs=0.0005)
+    # skyhook: peak 1.155, 0.0408 against the passive 0.0589 at 5 f_n
+    assert 1 / (2 * 0.5 * math.sqrt(0.75)) == pytest.approx(1.155, abs=0.0005)
+    r = np.linspace(0.01, 3, 30001)
+    assert ac.skyhook(r, 0.1, 0.5)[1].max() == pytest.approx(1.155, abs=0.0005)
+    passive, sky, _ = ac.skyhook(np.array([5.0]), 0.1, 0.5)
+    assert sky[0] == pytest.approx(0.0408, abs=0.00005)
+    assert passive[0] == pytest.approx(0.0589, abs=0.00005)
+    # state feedback on 1 kg, 400 N/m, 2 N·s/m to 30 rad/s, ζ 0.7: k_p 500, k_v 40
+    kp, kv = 1 * 30**2 - 400, 2 * 1 * 0.7 * 30 - 2
+    assert (kp, kv) == pytest.approx((500, 40))
+    lam = np.roots([1.0, 2 + kv, 400 + kp])
+    assert np.abs(lam) == pytest.approx([30, 30])
+    assert -lam[0].real / abs(lam[0]) == pytest.approx(0.7)
+    # its observer at 100 rad/s, 0.7: l1 138, l2 9324
+    l1, l2 = 140 - 2, 10_000 - 400 - 2 * 138
+    assert (l1, l2) == (138, 9324)
+    A = np.array([[0.0, 1.0], [-400.0, -2.0]])
+    err = np.linalg.eigvals(A - np.outer([l1, l2], [1.0, 0.0]))
+    assert np.abs(err) == pytest.approx([100, 100])
+    assert -err[0].real / abs(err[0]) == pytest.approx(0.7)
+
+    # positive position feedback: stable for γ < 1 (here on mode 2, ζ 0.05, the filter at its frequency, ζ_f 0.3)
+    def ppf_max_real(gamma: float) -> float:
+        wr, zr, wf, zf = 20.0, 0.05, 20.0, 0.3
+        M = np.array(
+            [
+                [0, 1, 0, 0],
+                [-(wr**2), -2 * zr * wr, gamma * wr**2, 0],
+                [0, 0, 0, 1],
+                [wf**2, 0, -(wf**2), -2 * zf * wf],
+            ]
+        )
+        return float(np.linalg.eigvals(M).real.max())
+
+    assert ppf_max_real(0.9) < 0 < ppf_max_real(1.1)
+    # a shunt: 100 nF at 50 Hz needs 101 H
+    assert 1 / ((2 * math.pi * 50) ** 2 * 1e-7) == pytest.approx(101, abs=0.5)
+
+
 def test_diagnostics_trials():
     from dataclasses import replace
 
