@@ -7,75 +7,99 @@
 </before>
 <h3><a name="added-mass"></a>Added mass</h3>
 <p>A body that accelerates in a fluid has to accelerate some of the fluid too: the fluid in front must get out
-of the way, the fluid behind must fill in, and it flows round the sides to do so. Treat the fluid as ideal
-(no viscosity) and incompressible, and the body's velocity U sets up a <b>potential flow</b>, u = ∇φ with
-∇²φ = 0, whose speed everywhere is proportional to U. Its kinetic energy is then proportional to U² too, and
-written</p>
-<p align="center">T<sub>fluid</sub> = ½ m<sub>a</sub> U²,</p>
-<p>with m<sub>a</sub> the <b>added mass</b>. The force needed to accelerate the body is (m + m<sub>a</sub>)
-dU/dt: the fluid's pressure on the body, ρ ∂φ/∂t, pushes back in phase with its acceleration, exactly as more
-mass would. (In a steady flow an ideal fluid exerts no drag at all, d'Alembert's paradox; only acceleration
-costs force.) It is usually written as a coefficient on the fluid the body displaces, m<sub>a</sub> =
-C<sub>a</sub>ρ<sub>f</sub>V:</p>
+of the way, the fluid behind must fill in, and it flows round the sides to do so. Treat the fluid as ideal (no
+viscosity) and incompressible, and the body's velocity <m>U</m> sets up a <b>potential flow</b>: the fluid's
+velocity is the gradient of a potential <m>φ</m>, which obeys Laplace's equation,</p>
+<eq>\mathbf{u} = \nabla\varphi, \qquad \nabla^2\varphi = 0,</eq>
+<p>with the fluid's velocity normal to the body equal to the body's. The equation is linear, so the flow's speed
+everywhere is proportional to <m>U</m>, its kinetic energy to <m>U</m>², and it is written</p>
+<eq>T_\mathrm{fluid} = \tfrac{1}{2}\,m_a U^2,</eq>
+<p>with <m>m<sub>a</sub></m> the <b>added mass</b>. Whatever force speeds the fluid up does work on it at the
+rate its energy grows, <m>m<sub>a</sub>U</m> d<m>U</m>/d<m>t</m>, and it does it through the body; so the force
+needed to accelerate the body of mass <m>m<sub>s</sub></m> is (<m>m<sub>s</sub></m> + <m>m<sub>a</sub></m>)
+d<m>U</m>/d<m>t</m>. The fluid's pressure pushes back in phase with the acceleration, exactly as more mass would.
+In a steady flow an ideal fluid exerts no drag at all, d'Alembert's paradox <cite>dalembert-1752</cite>: only
+acceleration costs force. The added mass is usually written as a coefficient on the fluid the body displaces,</p>
+<eq>m_a = C_a\,\rho_f V:</eq>
 <ul>
-<li>a <b>sphere</b>, φ = −UR³cos θ/2r²: C<sub>a</sub> = ½, half the fluid it displaces;</li>
-<li>a <b>circular cylinder</b> moving across its axis (per length), φ = −UR²cos θ/r: C<sub>a</sub> = 1, all of
-it.</li>
+<li>a <b>sphere</b> of radius <m>R</m>, <m>φ</m> = −<m>UR</m>³cos <m>θ</m>/2<m>r</m>² (<m>r</m>, <m>θ</m>
+measured from its centre and its line of motion): <m>C<sub>a</sub></m> = ½, half the fluid it displaces;</li>
+<li>a <b>circular cylinder</b> moving across its axis (per length), <m>φ</m> = −<m>UR</m>²cos <m>θ</m>/<m>r</m>:
+<m>C<sub>a</sub></m> = 1, all of it.</li>
 </ul>
-<p>The cylinder's flow falls off as R²/r², the sphere's as R³/r³: a two-dimensional body stirs the fluid
-further out. Other shapes have their own coefficients (a flat plate moving broadside, a strip of width 2a, has
-ρπa² per length though it displaces nothing), and a body's added mass is different in each direction and for
-turning.</p>
+<p>The cylinder's flow falls off as <m>R</m>²/<m>r</m>², the sphere's as <m>R</m>³/<m>r</m>³: a two-dimensional
+body stirs the fluid further out. Other shapes have their own coefficients (a flat strip of width <m>a</m> moving
+broadside carries <m>ρ<sub>f</sub></m>π<m>a</m>²/4 per length, though it displaces nothing), and a body's added
+mass is different in each direction and for turning.</p>
 
 <h3><a name="wet"></a>Wet and dry</h3>
-<p>The fluid adds mass but no stiffness, so a body on springs k vibrates in the fluid at</p>
-<p align="center">f<sub>wet</sub> = f<sub>dry</sub> √(m/(m + m<sub>a</sub>)) = f<sub>dry</sub> / √(1 +
-C<sub>a</sub>ρ<sub>f</sub>/ρ<sub>s</sub>),</p>
-<p>which depends only on the body's density against the fluid's. A steel body in water loses a few per cent; a
-light one (a float, a thin-walled tube, a composite panel) loses much more; anything in air loses next to
-nothing, unless it is very light for its size (a balloon, a membrane, a loudspeaker's cone). Added mass is
+<p>The fluid adds mass but no stiffness, so a body on springs that vibrates at <m>f<sub>dry</sub></m> in vacuum
+vibrates in the fluid at</p>
+<eq>f_\mathrm{wet} = f_\mathrm{dry}\sqrt{\frac{m_s}{m_s + m_a}} = \frac{f_\mathrm{dry}}{\sqrt{1 + C_a\rho_f/\rho_s}},</eq>
+<p>since <m>m<sub>s</sub></m> = <m>ρ<sub>s</sub>V</m> and <m>m<sub>a</sub></m> = <m>C<sub>a</sub>ρ<sub>f</sub>V</m>
+share the volume: it depends only on the body's density against the fluid's. A steel body in water loses a few
+per cent; a light one (a float, a thin-walled tube, a composite panel) loses much more; anything in air loses
+next to nothing, unless it is very light for its size (a balloon, a membrane, a loudspeaker's cone). Added mass is
 also why a modal test in air doesn't give a ship's, or an offshore structure's, frequencies in water.</p>
 
 <h3><a name="confined"></a>Confined fluid</h3>
-<p>Put a still wall round the body, a concentric pipe at R<sub>o</sub>, and the fluid the body pushes has to
-squeeze through the gap to get round it. The flow is again in closed form, φ = cos θ (Ar + B/r) with
-∂φ/∂r = U cos θ on the body and 0 at the wall, and its energy gives (Fritz, 1972)</p>
-<p align="center">C<sub>a</sub> = (R<sub>o</sub>² + R²) / (R<sub>o</sub>² − R²),</p>
-<p>1.67 with the pipe at twice the radius, 5.55 at 1.2 times, and without bound as the gap g closes, about
-R/g: the fluid in the gap moves about R/g times as fast as the body (all it pushes aside has to get through), and
-its energy goes as the square of that speed. A sphere in a spherical shell has (2/3)πρR³ (R<sub>o</sub>³ + 2R³)/(R<sub>o</sub>³ − R³). Tubes in a heat
-exchanger's baffles, fuel rods in their channels and pumps' wear rings are designed with it; close to a wall, the
-added mass can outweigh the structure.</p>
+<p>Put a still wall round the body, a concentric pipe at <m>R<sub>o</sub></m>, and the fluid the body pushes has
+to squeeze through the gap to get round it. The flow is again in closed form, <m>φ</m> = cos <m>θ</m>
+(<m>Ar</m> + <m>B</m>/<m>r</m>) with ∂<m>φ</m>/∂<m>r</m> = <m>U</m> cos <m>θ</m> on the body and 0 at the wall,
+and its energy gives <cite>fritz</cite></p>
+<eq>C_a = \frac{R_o^2 + R^2}{R_o^2 - R^2}:</eq>
+<p>1.67 with the pipe at twice the radius, 5.55 at 1.2 times, and without bound as the gap closes. With
+<m>R<sub>o</sub></m> = <m>R</m> + <m>δ</m> and <m>δ</m> small it is about <m>R</m>/<m>δ</m>: the fluid in the gap
+moves about <m>R</m>/<m>δ</m> times as fast as the body (all it pushes aside has to get through a slot <m>δ</m>
+wide), and its energy goes as the square of that speed, over a layer only <m>δ</m> thick. A sphere in a spherical
+shell has <m>C<sub>a</sub></m> = ½(<m>R<sub>o</sub></m>³ + 2<m>R</m>³)/(<m>R<sub>o</sub></m>³ − <m>R</m>³). Tubes in
+a heat exchanger's baffles, fuel rods in their channels and pumps' wear rings are designed with it; close to a
+wall, the added mass can outweigh the structure.</p>
 
 <h3><a name="plates"></a>A plate in water</h3>
 <p>A plate vibrating in a mode pushes fluid only where it moves, and a mode with several cells pushes and pulls
-side by side, so the fluid mostly sloshes from one cell to the next. For a baffled plate with fluid on one side,
-an incompressible fluid's pressure for a surface acceleration of wavenumber k is ρ a(k)/|k|, and each mode's
-added mass is</p>
-<p align="center">m<sub>a</sub> = (ρ<sub>f</sub>/4π²) ∫∫ |Φ̂(k)|² / |k| d²k,</p>
-<p>Φ̂ the mode shape's Fourier transform (the same transform as Wallace's integral for <a
-href="page:acoustics_page#modes">radiation</a>, taken at no frequency at all: incompressible fluid is sound with
-c → ∞). The fluid it carries reaches about a cell's size from the plate, so higher modes carry less. Over the
-mode's own modal mass ρ<sub>p</sub>hab/4 it is the <b>AVMI factor</b> (added virtual mass incremental factor)
-β, and</p>
-<p align="center">f<sub>wet</sub> = f<sub>dry</sub> / √(1 + β), β ∝ (ρ<sub>f</sub>/ρ<sub>p</sub>)(a/h),</p>
-<p>large for a thin plate: a 3 mm steel panel in water carries eight times its own modal mass. (Lamb's 1920
-result for a clamped circular plate of radius a, β = 0.669 (ρ<sub>f</sub>/ρ<sub>p</sub>)(a/h), is the classic
-case.) Fluid on both sides doubles β. The fluid also couples modes of the same symmetry, which this page leaves
-out: the wet modes are then mixtures of the dry ones, and that shifts their frequencies a little more.</p>
+side by side, so the fluid mostly sloshes from one cell to the next and goes no further out than about a
+cell.</p>
+<p><img src="fig:cells"></p>
+<p>Put numbers on it for a baffled plate with fluid on one side. A pattern of surface acceleration that varies
+across the plate as <m>e<sup>iκ·x</sup></m> (a wavenumber <m>κ</m>) sets up a flow that dies away as
+<m>e<sup>−|κ|z</sup></m> from the plate, and a pressure <m>ρ<sub>f</sub></m>/|<m>κ</m>| times the
+acceleration on it: the fluid it carries is a layer 1/|<m>κ</m>| thick. Adding up the mode shape's parts, each
+mode's added mass is</p>
+<eq>m_a = \frac{\rho_f}{4\pi^2}\iint\frac{|\hat\Phi(\boldsymbol\kappa)|^2}{|\boldsymbol\kappa|}\,\mathrm{d}^2\kappa,</eq>
+<p><m>Φ̂</m> the mode shape's Fourier transform (the same transform as Wallace's integral <cite>wallace</cite> for <a
+href="page:acoustics_page#modes">radiation</a>, taken at no frequency at all: incompressible fluid is sound that
+travels infinitely fast). Higher modes have smaller cells, so they carry less. Over the mode's own modal mass
+<m>ρ<sub>p</sub>hab</m>/4 it is the <b>AVMI factor</b> (added virtual mass incremental factor <cite>kwak</cite>)
+<m>β</m>, and</p>
+<eq>f_\mathrm{wet} = \frac{f_\mathrm{dry}}{\sqrt{1 + \beta}}, \qquad \beta \propto \frac{\rho_f}{\rho_p}\,\frac{a}{h}:</eq>
+<p>the fluid's layer, a cell's size and so a fraction of <m>a</m> deep, against the plate's thickness <m>h</m>.
+It is large for a thin plate: a 3 mm steel panel in water carries eight times its own modal mass. Lamb's result
+for a clamped circular plate of radius <m>a</m> <cite>lamb-1920</cite>, <m>β</m> = 0.669
+(<m>ρ<sub>f</sub></m>/<m>ρ<sub>p</sub></m>)(<m>a</m>/<m>h</m>), is the classic case. Fluid on both sides doubles
+<m>β</m>. The fluid also couples modes of the same symmetry, which this page leaves out: the wet modes are then
+mixtures of the dry ones, and that shifts their frequencies a little more.</p>
 
 <h3><a name="sloshing"></a>Sloshing</h3>
 <p>A liquid with a free surface has modes of its own, set by gravity: the surface tilts one way and the other,
-and the liquid flows from the high side to the low. In a rectangular tank of length L (along the motion), filled
-to depth h, the linear potential flow φ = cosh(k(z + h)) cos kx meets the walls (∂φ/∂x = 0 at x = 0 and L) for
-k<sub>n</sub> = nπ/L, the bottom by its cosh, and the free surface's condition (the pressure there is
-atmospheric, so ∂φ/∂z = ω²φ/g) for</p>
-<p align="center">ω<sub>n</sub>² = g k<sub>n</sub> tanh(k<sub>n</sub>h).</p>
+and the liquid flows from the high side to the low. Take a rectangular tank of length <m>L</m> (along the
+motion), filled to depth <m>d</m>, with <m>x</m> along it and <m>z</m> up from the still surface. The potential
+<m>φ</m> = cosh(<m>κ</m>(<m>z</m> + <m>d</m>)) cos <m>κx</m> obeys Laplace's equation and lets no liquid through
+the bottom. It lets none through the walls (∂<m>φ</m>/∂<m>x</m> = 0 at <m>x</m> = 0 and <m>L</m>) for</p>
+<eq>\kappa_n = n\pi/L,</eq>
+<p><m>n</m> half waves along the tank. At the surface the pressure is atmospheric: the surface's height
+<m>η</m> rises at the liquid's upward speed, ∂<m>η</m>/∂<m>t</m> = ∂<m>φ</m>/∂<m>z</m>, and gravity pulls
+it back, ∂<m>φ</m>/∂<m>t</m> + <m>gη</m> = 0 (Bernoulli's equation, linearized). Together, at a frequency
+<m>ω<sub>n</sub></m>, they ask <m>ω<sub>n</sub></m>²<m>φ</m> = <m>g</m> ∂<m>φ</m>/∂<m>z</m>, which the cosh
+meets for</p>
+<eq>\omega_n^2 = g\,\kappa_n\tanh(\kappa_n d).</eq>
 <ul>
-<li><b>Shallow</b> (h ≪ L): tanh kh ≈ kh, and ω = k√(gh): a long wave running at √(gh) from wall to wall and
-back, f<sub>1</sub> = √(gh)/2L. Its flow is nearly the same at every depth.</li>
-<li><b>Deep</b> (h ≳ L/2): tanh kh ≈ 1, and ω = √(gk), whatever the depth. The flow dies away as e<sup>kz</sup>
-below the surface, within about L/nπ; below that the liquid stays still.</li>
+<li><b>Shallow</b> (<m>d</m> ≪ <m>L</m>): tanh <m>κ<sub>n</sub>d</m> ≈ <m>κ<sub>n</sub>d</m>, and <m>ω<sub>n</sub></m> = <m>κ<sub>n</sub></m>√(<m>gd</m>): a long
+wave running at √(<m>gd</m>) from wall to wall and back, <m>f<sub>1</sub></m> = √(<m>gd</m>)/2<m>L</m>. Its flow
+is nearly the same at every depth.</li>
+<li><b>Deep</b> (<m>d</m> ≳ <m>L</m>/2): tanh <m>κ<sub>n</sub>d</m> ≈ 1, and <m>ω<sub>n</sub></m> = √(<m>gκ<sub>n</sub></m>), whatever the depth.
+The flow dies away as <m>e<sup>κ<sub>n</sub>z</sup></m> below the surface, within about <m>L</m>/<m>n</m>π; below that the
+liquid stays still.</li>
 </ul>
 <p>A sloshing tank's frequencies are low (a tank a metre long sloshes below 1 Hz, a ship's tank or a
 building's water tower at a fraction of a hertz) and its damping is slight, about 0.5 % for water in a bare
@@ -83,43 +107,81 @@ tank. Fuel in a rocket's or an aircraft's tanks, liquid cargo in a ship or a roa
 building in an earthquake are designed with it.</p>
 
 <h3><a name="analogue"></a>The spring–mass analogue</h3>
-<p>Shake the tank sideways, x(t), and only the odd modes are excited: they tilt the surface, while the even ones
-raise it at both walls together and a sideways push does no work on them. The force on the walls is exactly that
-of a <b>spring–mass analogue</b>: a mass m<sub>0</sub> fixed to the tank, and for each odd mode a mass
-m<sub>n</sub> on a spring k<sub>n</sub> = m<sub>n</sub>ω<sub>n</sub>², with</p>
-<p align="center">m<sub>n</sub> = m<sub>L</sub> 8 tanh(k<sub>n</sub>h) / (n³π³ h/L),&nbsp;&nbsp;&nbsp;
-m<sub>0</sub> = m<sub>L</sub> − Σ m<sub>n</sub>,</p>
-<p>m<sub>L</sub> = ρLBh the liquid's mass (B the tank's breadth). The masses fall as 1/n³, so the first mode, or
-the first two, is all a model needs. In shallow liquid almost all of it sloshes (Σ 8/n²π² = 1); in deep liquid
-only the top, about m<sub>L</sub>·8L/π³h, sloshes and the rest is m<sub>0</sub>. The tank's force over its
-acceleration is m<sub>L</sub> far below the first mode (it all moves together), resonant at each odd mode, and
-m<sub>0</sub> far above them all (the surface can't follow, and the liquid is then a body's added mass with its
-free surface held flat). Analogues for upright cylinders and other shapes are tabulated the same way, with the
-masses' heights to give the moments too.</p>
+<p>Shake the tank sideways and only the odd modes are excited: they tilt the surface, while the even ones raise
+it at both walls together, and a sideways push does no work on them. The force on the walls is exactly that of a
+<b>spring–mass analogue</b> <cite>graham-rodriquez</cite>: a mass <m>m<sub>0</sub></m> fixed to the tank, and for
+each odd mode a mass <m>m<sub>n</sub></m> on a spring <m>k<sub>n</sub></m> = <m>m<sub>n</sub>ω<sub>n</sub></m>².</p>
+<p><img src="fig:analogue"></p>
+<p>With <m>m<sub>L</sub></m> = <m>ρ<sub>f</sub>LBd</m> the liquid's mass (<m>B</m> the tank's breadth),</p>
+<eq>m_n = m_L\,\frac{8\tanh(\kappa_n d)}{n^3\pi^3\,d/L}, \qquad m_0 = m_L - \sum m_n.</eq>
+<p>The masses fall as 1/<m>n</m>³, so the first mode, or the first two, is all a model needs. In shallow liquid
+almost all of it sloshes: tanh <m>κ<sub>n</sub>d</m> ≈ <m>nπd</m>/<m>L</m> makes <m>m<sub>n</sub></m> =
+8<m>m<sub>L</sub></m>/<m>n</m>²π², and those add up to <m>m<sub>L</sub></m> (Σ 1/<m>n</m>² over odd <m>n</m>
+is π²/8). In deep liquid only the top, about 8<m>m<sub>L</sub>L</m>/π³<m>d</m>, sloshes and the rest is
+<m>m<sub>0</sub></m>. The tank's force over its acceleration is <m>m<sub>L</sub></m> far below the first mode
+(it all moves together), resonant at each odd mode, and <m>m<sub>0</sub></m> far above them all (the surface can't
+follow, and the liquid is then a body's added mass with its free surface held flat). Analogues for upright
+cylinders and other shapes are tabulated the same way <cite>abramson</cite>, with the masses' heights to give the
+moments too.</p>
 
 <h3><a name="damper"></a>A tuned liquid damper</h3>
-<p>Put such a tank on a structure whose mode, mass M at frequency f, sways too much, and its first sloshing mode
-is a <a href="page:sim_page#vibration-absorbers-and-tuned-mass-dampers">tuned mass damper</a> of mass
-m<sub>1</sub>: tall buildings and towers, footbridges and ships' anti-roll tanks use them. The depth tunes it
-(f<sub>1</sub> rises with h until the liquid is deep), and screens or baffles across the tank damp it. Den Hartog's
-tuning for a mass ratio μ = m<sub>1</sub>/(M + m<sub>L</sub> − m<sub>1</sub>) is</p>
-<p align="center">f<sub>d</sub> = f′/(1 + μ),&nbsp;&nbsp;&nbsp;ζ<sub>d</sub> = √(3μ / 8(1 + μ)³),&nbsp;&nbsp;&nbsp;peak
-|X|k/F = √(1 + 2/μ),</p>
-<p>f′ the structure's frequency carrying the rest of the liquid. The water's own damping is far too little: the
-structure's peak splits in two and each is nearly as high. Real dampers are nonlinear when the waves grow large
-(they break, and the frequency shifts), which this linear model leaves out; they're tuned and tested on shaking
-tables.</p>
+<p>Put such a tank on a structure whose mode, of mass <m>M</m> and stiffness <m>k</m>, sways too much at
+<m>f<sub>s</sub></m>, and its first sloshing mode is a
+<a href="page:sim_page#vibration-absorbers-and-tuned-mass-dampers">tuned mass damper</a> of mass
+<m>m<sub>1</sub></m>: tall buildings and towers, footbridges and ships' anti-roll tanks use them. The depth tunes
+it (<m>f<sub>1</sub></m> rises with <m>d</m> until the liquid is deep), and screens or baffles across the tank
+damp it. The rest of the liquid rides along as mass, so the structure on its own sways at
+<m>f<sub>s</sub></m>′ = <m>f<sub>s</sub></m>√(<m>M</m>/(<m>M</m> + <m>m<sub>L</sub></m> −
+<m>m<sub>1</sub></m>)), and the mass ratio is <m>μ</m> = <m>m<sub>1</sub></m>/(<m>M</m> + <m>m<sub>L</sub></m> −
+<m>m<sub>1</sub></m>). Den Hartog's tuning <cite>den-hartog</cite> for a force <m>F</m> on it is then</p>
+<eq>f_d = \frac{f_s'}{1 + \mu}, \qquad \zeta_d = \sqrt{\frac{3\mu}{8(1 + \mu)^3}},</eq>
+<p>which holds the peak of its sway <m>X</m> to</p>
+<eq>\frac{|X|k}{F} = \sqrt{1 + 2/\mu}.</eq>
+<p>The water's own damping is far too little: the structure's peak splits in two and each is nearly as high.
+Real dampers are nonlinear when the waves grow large (they break, and the frequency shifts), which this linear
+model leaves out; they're tuned and tested on shaking tables.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on a steel rod (7850 kg/m³) 25 mm in radius, in water, on springs that give it 20 Hz in
+vacuum; a 600 × 400 × 3 mm steel plate; a tank 1 m long and 1 m wide filled to 0.5 m; and a 20 t structure at
+0.5 Hz with 1 % damping.</p>
+<ol>
+<li><b>The rod.</b> Per metre, <m>m<sub>s</sub></m> = 7850 × π × 0.025² = 15.41 kg and <m>m<sub>a</sub></m> =
+1000 × π × 0.025² = 1.963 kg, so <m>f<sub>wet</sub></m> = 20/√(1 + 1000/7850) = 18.84 Hz.</li>
+<li><b>In a pipe.</b> Tick the wall (at 1.5 times the radius): <m>C<sub>a</sub></m> = (2.25 + 1)/(2.25 − 1) =
+2.6, so <m>m<sub>a</sub></m> = 5.11 kg and 20/√(1 + 2.6 × 0.1274) = 17.33 Hz.</li>
+<li><b>The plate, dry.</b> <m>D</m> = 210×10⁹ × 0.003³/(12 × 0.91) = 519.2 N·m and <m>ρ<sub>p</sub>h</m> =
+23.55 kg/m², so mode (1, 1) is at (π/2)(1/0.6² + 1/0.4²)√(519.2/23.55) = 66.6 Hz.</li>
+<li><b>The plate, wet.</b> Its modal mass is 23.55 × 0.6 × 0.4/4 = 1.413 kg; the page's integral gives 11.9 kg
+of water, so <m>β</m> = 8.43 and 66.6/√9.43 = 21.7 Hz. Water on both sides: <m>β</m> = 16.86, and 15.8 Hz.</li>
+<li><b>The tank.</b> <m>κ<sub>1</sub></m> = π/m, tanh(π × 0.5) = 0.91715, so <m>ω<sub>1</sub></m>² = 9.81 × π
+× 0.91715 = 28.27 /s² and <m>f<sub>1</sub></m> = 5.317/2π = 0.846 Hz.</li>
+<li><b>Its analogue.</b> <m>m<sub>L</sub></m> = 500 kg; <m>m<sub>1</sub></m> = 500 × 8 × 0.91715/(π³ × 0.5) =
+236.6 kg, <m>m<sub>3</sub></m> = 9.55 kg, and the page's sum leaves <m>m<sub>0</sub></m> = 250 kg.</li>
+<li><b>As a damper.</b> On the structure, <m>μ</m> = 236.6/(20 000 + 500 − 236.6) = 0.0117 and
+<m>f<sub>s</sub></m>′ = 0.5√(20 000/20 263) = 0.497 Hz, so Den Hartog asks for 0.497/1.0117 = 0.491 Hz: the
+tank's 0.846 Hz is far off, and the peak only falls from 50.0 to the page's 47.7.</li>
+<li><b>Tuned</b> (the trial <i>A tuned liquid damper</i>: 2 × 2 m, filled to 0.4 m). <m>m<sub>L</sub></m> =
+1600 kg, tanh(0.2π) = 0.5569, so <m>f<sub>1</sub></m> = √(9.81 × π/2 × 0.5569)/2π = 0.466 Hz and
+<m>m<sub>1</sub></m> = 1600 × 8 × 0.5569/(π³ × 0.2) = 1149 kg. <m>μ</m> = 1149/20 451 = 0.0562, and
+<m>f<sub>s</sub></m>′ = 0.5√(20 000/20 451) = 0.4945 Hz, so Den Hartog's 0.4945/1.0562 = 0.468 Hz is met, with
+<m>ζ<sub>d</sub></m> = 13.4 % (the trial's 13 %). The peak √(1 + 2/0.0562) = 6.05; the page's 5.58 is lower, as
+the structure's own 1 % helps.</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the body, the plate, the tank or the damper (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>A body accelerating in a fluid moves fluid with it: its kinetic energy ½m<sub>a</sub>U² makes the body behave as if its mass were m + m<sub>a</sub>.</li>
+<li>A body accelerating in a fluid moves fluid with it: its kinetic energy ½m<sub>a</sub>U² makes the body behave as if its mass were m<sub>s</sub> + m<sub>a</sub>.</li>
 <li>In open fluid a sphere carries half the fluid it displaces, a cylinder all of it.</li>
 <li>The fluid adds mass but no stiffness: f<sub>wet</sub> = f<sub>dry</sub>/√(1 + C<sub>a</sub>ρ<sub>f</sub>/ρ<sub>s</sub>), set by the densities' ratio.</li>
 <li>A wall close to the body forces the fluid through the gap, and the added mass grows without bound as the gap closes.</li>
 <li>A plate's mode carries fluid out to about a cell's size, so its AVMI factor β falls with the mode's order, and grows with ρ<sub>f</sub>a/ρ<sub>p</sub>h.</li>
-<li>A liquid's free surface sloshes at ω² = gk tanh(kh): √(gh)k when shallow, √(gk) when deep, whatever the depth.</li>
+<li>A liquid's free surface sloshes at ω<sub>n</sub>² = gκ<sub>n</sub> tanh(κ<sub>n</sub>d): κ<sub>n</sub>√(gd) when shallow, √(gκ<sub>n</sub>) when deep, whatever the depth.</li>
 <li>A tank's force under a sideways motion is a rigid mass m<sub>0</sub> plus a mass on a spring for each odd mode, the first by far the largest.</li>
 <li>A tuned liquid damper is the first sloshing mode used as a tuned mass damper: its depth tunes it, and it needs screens to damp it.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>potential_flow m_a rho_f wet_body R_o plate_ab h_thick D_plate mn_modes plate_fluid beta_avmi g omega_n slosh m_L zeta mu tld zeta_d</notation>
+<reading>ibrahim abramson</reading>
