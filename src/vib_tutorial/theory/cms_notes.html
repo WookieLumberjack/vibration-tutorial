@@ -183,31 +183,79 @@ ones from above <cite>ritz</cite>. The <a href="#worked-example">worked example<
 four-mass chain: 1.162, 1.108, 1.1057 Hz with 0, 1, 2 modes kept, and the exact 1.1055 Hz with all
 3.</p>
 
-<h4><a name="craig-bampton"></a>The Craig–Bampton basis, and why it is chosen this way</h4>
-<p>Inside a component, any motion can be split into two parts:</p>
+<h3><a name="craig-bampton"></a>The Craig–Bampton basis, built up</h3>
+<p>Craig–Bampton is one particular way of choosing <m>V</m> for a component, and the method has its own
+names for the pieces. They come in one at a time below, each with the page's default to look at: the
+four-mass chain, uncut, loaded at its tip.</p>
+
+<h4><a name="boundary"></a>1. Boundary and interior DOFs</h4>
 <ul>
-<li><b>Motion forced by the boundary.</b> If the boundary moves slowly, the interior simply
-follows statically. The constraint modes <m>Ψ</m> describe this exactly: column <m>j</m> is the
-static shape when boundary DOF <m>j</m> moves by 1 and the others are held.</li>
-<li><b>The component's own vibration relative to that.</b> With the boundary held, what is left
-is a free vibration of the clamped component, so it is described by its fixed-interface modes
-<m>Φ</m>, lowest first, since low-frequency loading excites them most.</li>
+<li><b>Boundary DOFs</b>, <m>x<sub>b</sub></m> (also called masters), are kept as physical
+displacements. They are the interface masses, each shared by the substructures either side of it,
+and the last mass of the chain, where the force is applied. In the default, only the tip:
+<m>x<sub>b</sub> = x<sub>4</sub></m>.</li>
+<li><b>Interior DOFs</b>, <m>x<sub>i</sub></m>, are every other mass. Each belongs to exactly one
+substructure and will be described by a few shapes instead. In the default, <m>x<sub>1</sub></m> to
+<m>x<sub>3</sub></m>.</li>
 </ul>
-<p>Together they are complete: keep every fixed-interface mode and <m>T</m> is square and
-invertible, so nothing is lost. The design has three further consequences:</p>
+<p>The subscripts <m>i</m> and <m>b</m> also split the matrices into blocks: <m>K<sub>ii</sub></m>
+couples interior DOFs to each other, <m>K<sub>ib</sub></m> interior to boundary, and so on.</p>
+
+<h4>2. Two families of shapes</h4>
+<ul>
+<li><b>Constraint modes</b>, <m>Ψ</m>: move one boundary DOF by 1 m, hold any others, and let the
+interior settle where the springs put it, statically. One shape per boundary DOF. In the default it is
+a straight line from the ground to the tip, <m>Ψ</m> = [0.25, 0.5, 0.75] over <m>m<sub>1</sub></m> to
+<m>m<sub>3</sub></m>. It describes the motion the boundary <i>forces</i> on the interior: if the
+boundary moves slowly, the interior follows exactly this.</li>
+<li><b>Fixed-interface modes</b>, <m>Φ</m>: hold every boundary DOF still and find the interior's own
+mode shapes, as on the Simulation page. In the default that is a three-mass chain fixed at both
+ends; its first mode, at 2.44 Hz, is <m>φ</m> = [0.5, 0.707, 0.5]. They describe the interior's own
+vibration on top of what the boundary forces. Only the lowest <m>k</m> are kept, since low-frequency
+loading excites them most: <m>Φ<sub>k</sub></m>, with coordinates <m>q</m> (how much of each, the
+modal coordinates of the section above).</li>
+</ul>
+
+<h4>3. The basis, <m>T</m></h4>
+<p>Put both families side by side as columns, and that is the Craig–Bampton basis: the <m>V</m> of the
+sections above. Texts on the method call it <m>T</m> (for <i>transformation</i>), and its coordinates,
+the <m>c</m> above, are the kept modes' <m>q</m> together with the boundary displacements:</p>
+<eq>\begin{bmatrix} x_i \\ x_b \end{bmatrix} = T \begin{bmatrix} q \\ x_b \end{bmatrix}, \qquad T = \begin{bmatrix} \Phi_k & \Psi \\ 0 & I \end{bmatrix}</eq>
+<p>Read it by rows. The interior moves as <m>x<sub>i</sub> = Φ<sub>k</sub>q + Ψx<sub>b</sub></m>: its own
+vibration plus what the boundary forces on it. The boundary's row, [0 <m>I</m>], says
+<m>x<sub>b</sub> = x<sub>b</sub></m>: the boundary coordinates are the boundary's displacements
+themselves. In the default with one mode kept, <m>T</m> has two columns, [0.5, 0.707, 0.5, 0] and
+[0.25, 0.5, 0.75, 1], so the four masses are described by two coordinates.</p>
+<p><m>T</m> has a column for each kept mode and each boundary DOF. Keep every fixed-interface mode and
+it has as many columns as rows: <b>square</b>, and invertible (no column is a combination of the
+others), so it only rewrites the problem and nothing is lost. Keep fewer and it is <b>tall</b>: a
+reduction, with the rails above.</p>
+
+<h4>4. The reduced matrices: what the hats mean</h4>
+<p>Substitute and premultiply exactly as before. The results are the matrices of the
+<b>reduced model</b>, and a hat marks them:</p>
+<eq>\hat M = T^{\mathsf{T}} M T, \quad \hat C = T^{\mathsf{T}} C T, \quad \hat K = T^{\mathsf{T}} K T, \quad \hat f = T^{\mathsf{T}} f</eq>
+<p>These are <m>V<sup>T</sup>MV</m> and its kin from above, renamed: the hat says "the same quantity,
+in the reduced coordinates", one row and column per column of <m>T</m>. In the default,</p>
+<eq>\hat M = \begin{bmatrix} 1 & 0.854 \\ 0.854 & 1.875 \end{bmatrix}, \qquad \hat K = \begin{bmatrix} 234 & 0 \\ 0 & 100 \end{bmatrix}</eq>
+<p>(the <a href="#worked-example">worked example</a> works each entry out). Their blocks are named by
+the coordinates they join: <m>M̂<sub>qq</sub></m> modes with modes, <m>M̂<sub>qb</sub></m> modes with
+the boundary, <m>M̂<sub>bb</sub></m> the boundary with itself.</p>
+
+<h4>5. Why this choice: what the basis buys</h4>
 <ul>
 <li><b>The boundary coordinates stay physical.</b> Every fixed-interface mode is zero on the
-boundary, and each constraint mode is 1 on one boundary DOF and 0 on the others. So the
-coordinate multiplying constraint mode <m>j</m> <i>is</i> the displacement
-<m>x<sub>b,j</sub></m>. This is what makes assembly trivial: two components are joined simply by
-giving their interface the same <m>x<sub>b</sub></m>. Modal coordinates of two separate
-components cannot be joined like that.</li>
-<li><b><m>K̂</m> is block diagonal.</b> The constraint modes are static, so they do no elastic
-work against the fixed-interface modes: <m>φ<sup>T</sup>(K<sub>ii</sub>Ψ + K<sub>ib</sub>)</m> =
-0. The two families are stiffness-orthogonal.</li>
-<li><b><m>M̂</m> is not.</b> They are not mass-orthogonal: when the boundary accelerates, the
-inertia of the interior drives the component's modes. <m>M̂<sub>qb</sub></m> is that inertial
-coupling, and it is how the components talk to each other dynamically. (For <m>C</m>, see
+boundary, and each constraint mode is 1 on its own boundary DOF and 0 on the others. So the
+coordinate multiplying constraint mode <m>j</m> <i>is</i> the displacement <m>x<sub>b,j</sub></m>.
+This is what makes assembly trivial: two components are joined simply by giving their interface the
+same <m>x<sub>b</sub></m>. Modal coordinates of two separate components cannot be joined like
+that.</li>
+<li><b><m>K̂</m> is block diagonal</b> (the 0s above). The constraint modes are static, so they do no
+elastic work against the fixed-interface modes: <m>φ<sup>T</sup>(K<sub>ii</sub>Ψ + K<sub>ib</sub>)</m>
+= 0. The two families are stiffness-orthogonal.</li>
+<li><b><m>M̂</m> is not</b> (the 0.854). The two families are not mass-orthogonal: when the boundary
+accelerates, the inertia of the interior drives the component's modes. <m>M̂<sub>qb</sub></m> is that
+inertial coupling, and it is how the components talk to each other dynamically. (For <m>C</m>, see
 <i>Damping</i> under <i>Properties worth knowing</i>.)</li>
 </ul>
 <p>The <i>Basis</i> tab plots every column of the current <m>T</m> as a shape along the chain. For
@@ -218,20 +266,13 @@ both components when the interface moves) and a ramp for <m>x<sub>8</sub></m> (z
 rising to the tip). Every motion the reduced model can make is a combination of those four
 shapes.</p>
 
-<h3><a name="boundary"></a>Boundary (master) and interior DOFs</h3>
-<ul>
-<li><b>Boundary DOFs <m>x<sub>b</sub></m></b> are kept as physical displacements. Here they are
-the interface masses, each shared by the substructures either side of it, and the last mass of
-the chain, where the force is applied.</li>
-<li><b>Interior DOFs <m>x<sub>i</sub></m></b> are every other mass. Each belongs to exactly one
-substructure and is replaced by a few modal coordinates <m>q</m>.</li>
-</ul>
-<p><b>Why is the force limited to the last mass?</b> A force on a boundary DOF enters the
-reduced model unchanged (<m>f̂ = T<sup>T</sup>f</m> = [0; <m>f<sub>b</sub></m>]) and the response
-there is read directly, so any difference from the full model is caused by the reduction and not
-by how the load was projected. A force on an interior DOF is allowed in Craig–Bampton, but it only
-reaches the model through the kept modes and the constraint modes. In practice, the DOFs that are
-loaded, measured or connected to other components are made masters.</p>
+<h3><a name="loads"></a>Why the force is on a boundary DOF</h3>
+<p>A force on a boundary DOF enters the reduced model unchanged (<m>f̂ = T<sup>T</sup>f</m> = [0;
+<m>f<sub>b</sub></m>]) and the response there is read directly, so any difference from the full
+model is caused by the reduction and not by how the load was projected. A force on an interior DOF
+is allowed in Craig–Bampton, but it only reaches the model through the kept modes and the
+constraint modes. In practice, the DOFs that are loaded, measured or connected to other components
+are made masters.</p>
 
 <h3><a name="formulation"></a>Original vs substructured formulation</h3>
 <table border="1" cellspacing="0" cellpadding="4">
