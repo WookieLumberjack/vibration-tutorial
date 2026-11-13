@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -48,8 +49,9 @@ from ..core.oma import (
     ssi_modes,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from . import oma_figures
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TrialCombo
+from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
@@ -130,7 +132,7 @@ TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
         "Forces at m3 only",
         {"input": 2},
-        "On the default chain m3 sits on a node of mode 2: nothing excites it, so it is missing from s₁.",
+        "On the default chain m3 sits on a node of mode 2: nothing excites it, so it is missing from <m>s<sub>1</sub></m>.",
     ),
     (
         "Coloured forces",
@@ -436,7 +438,11 @@ PROBLEMS = tuple(
     )
 )
 
-NOTES_HTML = load_notes("oma")
+NOTES_HTML = load_notes(
+    "oma",
+    figures=oma_figures.FIGURES,
+    trials=trials_html(SimpleNamespace(name=name, note=note) for name, _, note in TRIALS),
+)
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None) -> pg.PlotWidget:

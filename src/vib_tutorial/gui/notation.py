@@ -1809,6 +1809,42 @@ SYMBOLS = (
         "shaker",
     ),
     Symbol(
+        "oma_spectra",
+        "y, Y, G<sub>yy</sub>, S<sub>ff</sub>, d<sub>r</sub>",
+        "the responses, one per sensor; a block's Fourier transforms of them; their cross-spectral matrix; the "
+        "forces' (white: the same at every frequency); mode r's single-degree-of-freedom spectrum in it",
+        "m/s², m/s, (m/s²)²/Hz, N²/Hz, –",
+        "oma_page",
+        "oma",
+    ),
+    Symbol(
+        "oma_svd",
+        "U, s<sub>1</sub>, s<sub>2</sub>",
+        "FDD: the singular vectors of G<sub>yy</sub> at a line; its largest singular values",
+        "–, (m/s²)²/Hz",
+        "oma_page",
+        "fdd",
+    ),
+    Symbol(
+        "ssi",
+        "x<sub>k</sub>, y<sub>k</sub>, A, C, G, R<sub>i</sub>, τ, O<sub>p</sub>, p, μ",
+        "SSI: the sampled system's state and outputs at sample k; its state and output matrices; the next "
+        "state's covariance with the output; the outputs' correlation at a lag of i samples (τ in time); the "
+        "observability matrix at model order p; A's eigenvalues",
+        "–",
+        "oma_page",
+        "ssi",
+    ),
+    Symbol(
+        "oma_scale",
+        "α, ΔM, f′<sub>n</sub>",
+        "scaling an output-only shape: the factor to mass-normalize it; the mass added; the mode's frequency "
+        "with it on",
+        "–, kg, Hz",
+        "oma_page",
+        "scaling",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:test_page#estimators">Averaging and estimators</a>
 <a href="page:test_page#extraction">Modal parameter extraction</a>
@@ -10,56 +9,137 @@ or a running machine can't be hammered: it is shaken by traffic, wind or its own
 measures. <b>Operational modal analysis</b> (OMA, output-only) identifies the modes from the responses alone,
 assuming those forces are random and broadband (white), so the responses' spectra take their shape from the
 structure.</p>
-<p>With white forces of spectral density matrix S<sub>ff</sub>, the responses' cross-spectral matrix is</p>
-<p align="center">G<sub>yy</sub>(ω) = H(ω) S<sub>ff</sub> H(ω)<sup>H</sup>,</p>
-<p>and near a lightly damped mode r its term dominates: G<sub>yy</sub> ≈ d<sub>r</sub> φ<sub>r</sub>φ<sub>r</sub><sup>H</sup>,
-a matrix of rank one whose column space is the mode shape.</p>
+<p><img src="fig:ambient"></p>
+<p>The page drives the chain with independent random forces on every mass (or on one) and records the
+responses <m>y</m>, one channel a mass, as accelerations by default. With white forces of spectral density
+matrix <m>S<sub>ff</sub></m> (the same at every frequency), the responses' cross-spectral matrix is</p>
+<eq>G_{yy}(\Omega) = H(\Omega)\, S_{ff}\, H(\Omega)^{H}</eq>
+<p>Each column of <m>H</m> is a sum of modes, so near a lightly damped mode <m>r</m> its term dominates every
+entry:</p>
+<eq>G_{yy}(\Omega) \approx d_r(\Omega)\, \phi_r \phi_r^{H}</eq>
+<p>a matrix of rank one whose column space is the mode shape, with <m>d<sub>r</sub></m> a single-degree-of-freedom
+spectrum: how strongly the mode responds at that line. The methods below find the modes from this structure.</p>
 
 <h3><a name="fdd"></a>Frequency domain decomposition</h3>
-<p>FDD estimates G<sub>yy</sub> at each line by Welch's method (the responses cut into blocks, windowed,
-Fourier transformed, Y Y<sup>H</sup> averaged) and takes its singular value decomposition,
-G<sub>yy</sub> = U S U<sup>H</sup>. The first singular value s₁ peaks at every mode, and the first singular vector
-there is the mode's shape. Picking the peaks gives the frequencies, to the line. Two close modes show as
-s₁ and s₂ both peaking.</p>
-<p><b>Enhanced FDD</b> (EFDD) adds the damping. The lines round a peak whose first singular vector still has a
-high MAC with the peak's are that mode's single-degree-of-freedom spectrum, its <i>bell</i>. Transformed back
-to the time domain it is the mode's autocorrelation function, a decaying cosine: its zero crossings give the
-damped frequency, and the logarithmic decay of its extremes the damping, as from a free decay.</p>
+<p>FDD <cite>brincker-fdd</cite> estimates <m>G<sub>yy</sub></m> at each line by Welch's method
+<cite>welch</cite> (the responses cut into half-overlapping blocks of <m>N<sub>b</sub></m> samples, Hann
+windowed, Fourier transformed, <m>Y Y<sup>H</sup></m> averaged) and takes its singular value decomposition</p>
+<eq>G_{yy} = U\,\mathrm{diag}(s_1, s_2, \ldots)\,U^{H}</eq>
+<p>The first singular value <m>s<sub>1</sub></m> peaks at every mode, and the first column of <m>U</m> there is
+the mode's shape: where one mode dominates, the matrix is (nearly) rank one, and its one direction is
+<m>φ<sub>r</sub></m>. Picking the peaks gives the frequencies, to the line. Two close modes show as
+<m>s<sub>1</sub></m> and <m>s<sub>2</sub></m> both peaking: the SVD splits them into two orthogonal
+directions, so close modes are found even where their peaks merge.</p>
+<p><b>Enhanced FDD</b> (EFDD) adds the damping <cite>brincker-efdd</cite>. The lines round a peak whose first
+singular vector still has a high MAC (above 0.8 here) with the peak's are that mode's single-degree-of-freedom
+spectrum, its <i>bell</i>. Transformed back to the time domain it is the mode's autocorrelation function, a
+decaying cosine: its zero crossings give the damped frequency <m>f<sub>d</sub></m>, and the logarithmic
+decrement <m>δ</m> of its extremes the damping, as from a free decay,</p>
+<eq>\zeta = \frac{\delta}{\sqrt{4\pi^2 + \delta^2}}</eq>
+
+<h3><a name="next"></a>Why correlations are free decays</h3>
+<p>Both EFDD's bell and SSI below lean on one fact, the <b>natural excitation technique</b> (NExT)
+<cite>james-next</cite>: under white forces, the correlation of the responses,
+<m>E[y(t + τ) y(t)<sup>T</sup>]</m> as a function of the lag <m>τ</m>, decays exactly as the structure's free
+vibration does. A white force has no memory: what it does after <m>t</m> is uncorrelated with the response at
+<m>t</m>. So, averaged over the forces, the response <m>τ</m> later is just how the motion at <m>t</m> carries
+on by itself, a free decay from that state, and the correlation is a sum of the modes' free decays,
+<m>e<sup>−ζω<sub>n</sub>τ</sup></m> cos(<m>ω<sub>d</sub>τ</m> + …). Every free-decay method, the log decrement
+and curve fits alike, then works on correlations as on an impulse response.</p>
 
 <h3><a name="ssi"></a>Stochastic subspace identification</h3>
-<p>SSI-cov works in the time domain. The responses' correlations R<sub>i</sub> = E[y<sub>k+i</sub> y<sub>k</sub><sup>T</sup>],
-under white input, are the free decay of the sampled system, R<sub>i</sub> = C A<sup>i−1</sup> G: an impulse
-response in disguise. Stacked in a block Toeplitz matrix, they factor into the observability matrix (C, CA,
-CA², …) times another, so the matrix has rank 2N. Its SVD's first p singular vectors give the observability
-matrix at model order p; its first block row is C, and A follows from its shift structure. A's eigenvalues are
-the poles (λ = f<sub>s</sub> ln μ), and C's view of its eigenvectors the shapes. As with LSCF on the virtual
-modal test, the order isn't known: the poles at every order go in a <b>stabilization diagram</b>, and the
-stable columns are the modes. It fits every mode at once, so close and heavily damped modes don't spoil each
-other as EFDD's bells do.</p>
+<p>SSI-cov <cite>peeters-deroeck</cite> works in the time domain, on the sampled system
+<m>x<sub>k+1</sub> = A x<sub>k</sub></m> + noise, <m>y<sub>k</sub> = C x<sub>k</sub></m>: <m>A</m> moves the state
+(every mass's displacement and velocity) one sample on, and <m>C</m> reads the sensors from it. The responses'
+correlations at lag <m>i</m> samples, by NExT a free decay, are</p>
+<eq>R_i = E\bigl[y_{k+i}\,y_k^{T}\bigr] = C\,A^{\,i-1}\,G</eq>
+<p>with <m>G</m> the covariance of the next state with the output. Stacked in a block Toeplitz matrix, each
+block row one lag further on, they factor into the observability matrix (<m>C</m>, <m>CA</m>,
+<m>CA</m><sup>2</sup>, …) times a partner built the same way from <m>G</m>:</p>
+<p><img src="fig:toeplitz"></p>
+<p>The observability matrix has only <m>2N</m> columns (two states per mass), so the Toeplitz matrix has rank
+<m>2N</m> however many lags it holds. Its SVD's first <m>p</m> singular vectors give the observability matrix
+<m>O<sub>p</sub></m> at model order <m>p</m>. Its first block row is <m>C</m>, and <m>A</m> follows from its
+shift structure: <m>O<sub>p</sub></m> without its last block row, times <m>A</m>, is <m>O<sub>p</sub></m>
+without its first. <m>A</m>'s eigenvalues <m>μ</m> give the poles,</p>
+<eq>\lambda = f_s \ln \mu</eq>
+<p>and <m>C</m>'s view of its eigenvectors the shapes. As with LSCF on the virtual modal test, the order isn't
+known: the poles at every order go in a <b>stabilization diagram</b>, and the stable columns are the modes. It
+fits every mode at once, so close and heavily damped modes don't spoil each other as EFDD's bells do.</p>
 
 <h3><a name="harmonics"></a>Harmonics</h3>
 <p>A machine running on the structure adds a sine: a sharp peak, a pole with almost no damping, just what a very
 lightly damped mode looks like. Filtered round its frequency, a mode's random response is Gaussian, with a
-kurtosis E[x⁴]/E[x²]² of 3; a sine's is 1.5. The page projects the responses on each peak's shape, band-pass
-filters them round it, and crosses out the peaks whose kurtosis is below 2 and whose damping is below 1 %. A
-mode with a sine in its band reads low too, but keeps its damping. A sine right on a mode hides it from FDD,
-whose peak there is the sine's. (A harmonic's peak is also one line wide
-whatever the block length: a longer block makes it taller, a mode's not.)</p>
+kurtosis</p>
+<eq>\frac{E[y^4]}{E[y^2]^2} = 3</eq>
+<p>while a sine's is 1.5: the sine spends its time near its peaks, where a Gaussian's values crowd near zero
+with a long tail <cite>jacobsen-harmonics</cite>. The page projects the responses on each peak's shape,
+band-pass filters them round it, and crosses out the peaks whose kurtosis is below 2 and whose damping is below
+1 %. A mode with a sine in its band reads low too, but keeps its damping. A sine right on a mode hides it from
+FDD, whose peak there is the sine's. (A harmonic's peak is also one line wide whatever the block length: a
+longer block makes it taller, a mode's not.)</p>
+
+<h3><a name="scaling"></a>Scaling the shapes</h3>
+<p>Without the force, OMA's shapes <m>ψ</m> have no scale: no modal masses, no FRF. One way to get it is to
+<b>add a known mass</b> <m>ΔM</m> and measure again <cite>parloo-scaling</cite>. If the mass is small enough to
+leave the shape alone, the mass-normalized <m>φ<sub>r</sub> = αψ</m> keeps its modal stiffness, while its
+modal mass goes from 1 to 1 + <m>φ<sub>r</sub><sup>T</sup>ΔMφ<sub>r</sub></m>. The frequency squared is their
+ratio, so <m>f<sub>n</sub></m>² = <m>f′<sub>n</sub></m>²(1 + <m>α</m>²<m>ψ<sup>T</sup>ΔMψ</m>), and</p>
+<eq>\alpha^2 = \frac{f_n^2 - f_n'^2}{f_n'^2\;\psi^{T}\Delta M\,\psi}</eq>
+<p>with <m>f′<sub>n</sub></m> the mode's frequency with the mass on. The mass must go where the mode moves, and
+shift its frequency by more than the identification's scatter: the worked example's mode 4 shows why.</p>
 
 <h3><a name="limits"></a>What OMA can't do</h3>
 <ul>
-<li>The force is unknown, so the shapes can't be <b>scaled</b>: no modal masses, no FRF. (A known mass added
-and the shift in frequency, or a measured force at one point, can scale them.)</li>
+<li>The force is unknown, so the shapes can't be <b>scaled</b> by OMA alone (above, for the ways round it).</li>
 <li>It assumes the forces are <b>white</b> over the band. A coloured input shapes the spectra, and a
 <b>harmonic</b> one (a machine running) makes a sharp peak that looks like a lightly damped mode.</li>
 <li>It needs <b>long records</b>: the input is random, and only many averages make the spectra smooth. The
-rule of thumb is a thousand to two thousand periods of the slowest mode.</li>
+rule of thumb is a thousand to two thousand periods of the slowest mode <cite>brincker-ventura</cite>.</li>
 <li>Damping is the hardest: the Hann window's leakage widens the peaks of a short block (too much damping),
 and a bell cut short by the MAC threshold rings on (too little).</li>
+<li>A mode with a node at every point the forces act isn't excited at all, as one with a node at the force
+isn't in a modal test.</li>
 </ul>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the uniform 4-mass chain (the virtual modal test's: modes at 1.105, 3.183, 4.877 and
+5.982 Hz, <m>ζ</m> = 0.0174, 0.0500, 0.0766 and 0.0940) with random forces on every mass, accelerations measured
+with 2 % noise, and FDD + EFDD. The settings it picks, and what they give:</p>
+<ol>
+<li><b>Sample rate and record.</b> <m>f<sub>s</sub></m> = 19 Hz, as the virtual modal test's <i>Auto</i>. Two
+thousand periods of mode 1 are 2000/1.105 = 1809 s, 1809 × 19 = 34,371 samples a channel.</li>
+<li><b>The block.</b> The page wants lines <m>ζf<sub>n</sub></m>/2 apart for the slowest mode,
+0.0174 × 1.105/2 = 0.0096 Hz, so <m>N<sub>b</sub></m> ≥ 19/0.0096 = 1979: 2048. Then <m>Δf</m> = 19/2048 =
+0.00928 Hz, mode 1's half-power width 2 × 0.0174 × 1.105 = 0.0384 Hz spans 4.1 lines, and half-overlapping
+blocks fit (34,371 − 2048)/1024 + 1 = 32 times.</li>
+<li><b>The scatter.</b> Each line's spectrum is an average of 32 random blocks, so it scatters by about
+1/√32 = 18 % (a little more: overlapping blocks aren't independent). That is why the identified damping moves
+from one <i>New record</i> to the next, and why a hundred periods (<i>Short record</i>), a twentieth of the data, is far rougher.</li>
+<li><b>SSI's size.</b> Block rows over two periods of mode 1, 2 × 19/1.105 = 34.4: 34, so lags 1 to 67,
+67/19 = 3.5 s. The Toeplitz matrix is 4 × 34 = 136 square and has rank <m>2N</m> = 8; orders up to
+15 × 4 = 60 leave room for noise poles.</li>
+<li><b>The machines.</b> <i>A machine running</i> puts the sine halfway between modes 1 and 2,
+(1.105 + 3.183)/2 = 2.144 Hz; <i>near a mode</i> 2 % above mode 2, 3.247 Hz. A sine's kurtosis is
+<m>E</m>[sin⁴]/<m>E</m>[sin²]² = (3/8)/(1/4) = 1.5.</li>
+<li><b>Scaling by a mass.</b> Add 0.1 kg to <m>m<sub>4</sub></m>. Mode 1 falls from 1.1055 to 1.0823 Hz
+(−2.1 %), and its shape scaled to 1 at <m>m<sub>4</sub></m> gives <m>ψ<sup>T</sup>ΔMψ</m> = 0.1, so
+<m>α</m>² = (1.1055² − 1.0823²)/(1.0823² × 0.1) = 0.433, against the exact
+1/(0.347² + 0.653² + 0.879² + 1²) = 0.431: 0.6 % off. Mode 4 moves little at <m>m<sub>4</sub></m> (0.347 of
+its peak): it shifts only 0.23 %, and its <m>α</m>² comes out 13 % off.</li>
+</ol>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets up a test of the chain as it is (Things to try, top left).</p>
+<!--TRIALS-->
 <takeaways>
 <li>With broadband random forces, the responses' spectra take their shape from the structure, so the modes can be found from the responses alone.</li>
 <li>FDD: the cross-spectral matrix's first singular value peaks at each mode, and its singular vector is the shape; EFDD adds the damping from the bell's decay.</li>
+<li>Under white forces the responses' correlations are free decays (NExT), so every free-decay method works on them.</li>
 <li>SSI-cov fits a state-space model to the responses' correlations, with a stabilization diagram as LSCF has.</li>
-<li>Output-only shapes can't be scaled, a machine's sine looks like a mode, and the records must be long.</li>
+<li>A sine's kurtosis is 1.5 and a mode's random response's 3: that tells a machine's harmonic from a mode.</li>
+<li>Output-only shapes can't be scaled without more (a known added mass can do it), and the records must be long: a thousand periods or more.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m chain_i N_dof Omega H oma_spectra test_block oma_svd phi_i psi_scaled MAC zeta omega_n omega_d delta lambda ssi oma_scale</notation>
+<reading>brincker-ventura ewins</reading>
