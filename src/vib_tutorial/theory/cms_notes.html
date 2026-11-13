@@ -52,11 +52,49 @@ of each point.</p>
 <p>Substitute <m>x = Vc</m> into <m>Mẍ + Cẋ + Kx = f</m> and premultiply by
 <m>V<sup>T</sup></m>:</p>
 <eq>(V^{\mathsf{T}} M V)\,\ddot c + (V^{\mathsf{T}} C V)\,\dot c + (V^{\mathsf{T}} K V)\,c = V^{\mathsf{T}} f</eq>
-<p>Why <m>V<sup>T</sup></m>? Energy. The kinetic energy is <m>½ẋ<sup>T</sup>Mẋ =
-½ċ<sup>T</sup>(V<sup>T</sup>MV)ċ</m> and the strain energy is
-<m>½c<sup>T</sup>(V<sup>T</sup>KV)c</m>, so the new matrices describe the <i>same</i> energies in
-the new coordinates. <m>V<sup>T</sup>f</m> is the work the force does through each shape (a
-generalized force). This is also the principle of virtual work, or a Galerkin projection.</p>
+<h4><a name="why-vt"></a>Why premultiply by <m>V<sup>T</sup></m>?</h4>
+<p>After substituting, there are still <m>N</m> equations, one per mass, but only as many unknowns
+as there are shapes. With fewer shapes than masses (a reduction) they can't all hold: the true
+motion isn't one the shapes can make, so some force is left over,</p>
+<eq>r = f - (M V \ddot c + C V \dot c + K V c)</eq>
+<p>the force that would be needed to hold the chain to those shapes. Some <m>m</m> combinations of
+the <m>N</m> equations have to be chosen to keep, and premultiplying by a matrix <m>W<sup>T</sup></m>
+is that choice. So a reduction makes two choices, and they are different in kind:</p>
+<ul>
+<li><b>The shapes</b>, <m>V</m>: which motions the model can make. This one is free, and it decides
+how good the model is (the small example below, and the rest of this page, are about choosing
+it well).</li>
+<li><b>The equations kept</b>, <m>W</m>: once <m>V</m> is chosen, this one is not free. Mechanics
+says <m>W = V</m>, for the reasons below. (Methods with <m>W ≠ V</m> exist, Petrov–Galerkin in
+numerical analysis, and give up what follows.)</li>
+</ul>
+<p><m>W = V</m> keeps <m>v<sub>j</sub><sup>T</sup>r</m> = 0 for every shape: the leftover force
+does <b>no work on any motion the model allows</b>. That is how a frictionless guide behaves: it
+pushes the body across the path, never along it, so it doesn't change the energy.</p>
+<p>The smallest case shows it. Join two masses by a rigid link, the one shape <m>v</m> = [1, 1]. The
+link pulls on them with some force <m>R</m> you don't know, <m>+R</m> on one and <m>−R</m> on the
+other:</p>
+<eq>m_1\ddot x_1 + \dots = f_1 + R, \qquad m_2\ddot x_2 + \dots = f_2 - R</eq>
+<p>Premultiplying by <m>v<sup>T</sup></m> adds the two, the unknown <m>R</m> cancels, and what is left
+is the equation for the pair as one body: what a free-body diagram drawn round both masses gives.
+With any other shape the guide's forces aren't equal and opposite, but they still do no work along
+<m>v</m>, and <m>v<sup>T</sup></m> still removes them. This is the principle of virtual work (in
+numerical methods, a <b>Galerkin</b> projection).</p>
+<p>Energy gives the same answer. In the new coordinates the kinetic energy (a mass times its speed
+squared, halved, summed over the masses) and the strain energy are</p>
+<eq>\tfrac12 \dot x^{\mathsf{T}} M \dot x = \tfrac12 \dot c^{\mathsf{T}} (V^{\mathsf{T}} M V)\,\dot c</eq>
+<eq>\tfrac12 x^{\mathsf{T}} K x = \tfrac12 c^{\mathsf{T}} (V^{\mathsf{T}} K V)\,c</eq>
+<p>so <m>V<sup>T</sup>MV</m> is the mass the kinetic energy sees in the new coordinates, and
+<m>V<sup>T</sup>KV</m> the stiffness the strain energy sees. The force's power is <m>f<sup>T</sup>ẋ =
+(V<sup>T</sup>f)<sup>T</sup>ċ</m>, so <m>V<sup>T</sup>f</m> is the generalized force on each shape.
+<a href="page:deriving_page#lagrange">Lagrange's equations</a>, applied to those energies in the
+coordinates <m>c</m>, give exactly the premultiplied equation: <m>V<sup>T</sup></m> isn't a separate
+choice, it is what writing the energies in <m>c</m> gives.</p>
+<p>Any other choice of combinations (keeping just some of the rows, say) still makes <m>m</m>
+equations, but loses three things <m>V<sup>T</sup></m> keeps: the reduced <m>M</m> and <m>K</m> stay
+symmetric; the model can't create or destroy energy; and, because the model is the true one held to
+a smaller set of motions, its frequencies are upper bounds (Rayleigh–Ritz). The <a
+href="#craig-bampton">Craig–Bampton</a> bounds below rest on that.</p>
 <p>That gives a practical way to <b>read</b> any transformed matrix:</p>
 <ul>
 <li>Diagonal entry <m>(V<sup>T</sup>KV)<sub>jj</sub> = v<sub>j</sub><sup>T</sup>Kv<sub>j</sub></m>:
