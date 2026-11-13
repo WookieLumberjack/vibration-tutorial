@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:sim_page#equations-of-motion">Equations of motion</a>
 <a href="page:sim_page#undamped-normal-modes-real">Undamped normal modes</a>
@@ -6,69 +5,164 @@
 </before>
 <h3><a name="torsion"></a>Torsional vibration</h3>
 <p>A drive train turns as a whole, but its discs also twist back and forth against each other on the shafts
-between them. Each disc i has an angle θ<sub>i</sub> on top of the steady turning, and</p>
-<p align="center">M θ″ + C θ′ + K θ = T(t),</p>
-<p>with M the discs' inertias J on the diagonal, K each shaft's stiffness k across the pair it joins, and T
-the pulsating torques. It is the chain of masses and springs again, turned on its side: the train is free at
-both ends, so its first mode is the whole train turning (0 Hz), and the rest twist it. Each mode's
-<b>twist</b> says which links carry its strain energy: those are the shafts that see its torque.</p>
-<p>Two discs on one shaft have one mode, f = √(k (J₁ + J₂) / J₁J₂) / 2π, with a node (a point that doesn't
-swing) nearer the heavier disc.</p>
+between them. Each disc <m>i</m> has an inertia <m>J<sub>i</sub></m> and an angle <m>θ<sub>i</sub></m> on top of
+the steady turning, each shaft a stiffness <m>k<sub>i</sub></m> and damping <m>c<sub>i</sub></m> across the pair
+it joins, and</p>
+<eq>M\ddot{\theta} + C\dot{\theta} + K\theta = T(t)</eq>
+<p>with <m>M</m> the inertias on the diagonal and <m>T</m> the pulsating torques. It is the chain of masses and
+springs again, turned on its side: a disc for a mass, a shaft for a spring. The train is free at both ends, so its
+first mode is the whole train turning (0 Hz: <m>K</m> has no stiffness against it), and the rest twist it. Each
+mode's <b>twist</b> says which links carry its strain energy: those are the shafts that see its torque.</p>
+<p>A shaft's stiffness comes from its material and shape. A solid round shaft of shear modulus <m>G</m>, diameter
+<m>d</m> and length <m>L</m> has</p>
+<eq>k = \frac{G}{L}\,\frac{\pi d^4}{32}</eq>
+<p>so it goes as <m>d</m>⁴: twice as thick is sixteen times as stiff. A coupling's stiffness is its maker's
+figure.</p>
+
+<h3><a name="two-discs"></a>Two discs on one shaft</h3>
+<p>Two discs on one shaft have one flexible mode. Nothing acts on the pair from outside, so their momenta
+cancel, <m>J<sub>1</sub>θ̇<sub>1</sub></m> = −<m>J<sub>2</sub>θ̇<sub>2</sub></m>: they swing opposite, the lighter
+further. The shaft's twist is <m>θ<sub>1</sub></m> − <m>θ<sub>2</sub></m>, and either disc's equation gives</p>
+<eq>\omega^2 = k\,\frac{J_1 + J_2}{J_1 J_2}, \qquad \frac{\theta_2}{\theta_1} = -\frac{J_1}{J_2}</eq>
+<p>The shaft's own inertia neglected, its angle varies linearly between the discs, so it has a <b>node</b> (a point
+that doesn't swing) a fraction <m>J<sub>2</sub></m>/(<m>J<sub>1</sub></m> + <m>J<sub>2</sub></m>) of the way from
+disc 1: nearer the heavier disc.</p>
+<p><img src="fig:node"></p>
+<p>Longer trains have no such formula. <b>Holzer's method</b> <cite>holzer</cite>, the classic hand calculation,
+guesses <m>ω</m>, swings the first disc by 1, and walks along the train: each disc adds
+<m>J<sub>i</sub>ω²θ<sub>i</sub></m> to the torque the next shaft carries, which twists it by that torque over
+<m>k<sub>i</sub></m>. At a natural frequency the torque left over past the last disc is zero. The page solves the
+eigenproblem <m>Kφ</m> = <m>ω²Mφ</m> instead, which is the same condition all at once.</p>
 
 <h3><a name="gears"></a>Gears</h3>
-<p>A gear pair turns the far shaft at z<sub>in</sub>/z<sub>out</sub> times the near one's speed. Each gear keeps
-its own inertia, and the teeth are a spring k<sub>m</sub> along the line of action: its stretch is
-r<sub>in</sub>θ<sub>in</sub> − r<sub>out</sub>θ<sub>out</sub>, with r the base radii. Referred to the motor's
-shaft, θ<sub>i</sub> = s<sub>i</sub>ψ<sub>i</sub> with s<sub>i</sub> the speed ratio, every inertia and
-stiffness is multiplied by s², and the mesh becomes a shaft of k<sub>m</sub>(r s)²: the geared train is a
-plain chain, with the same frequencies. That is the textbook <b>n² reflection</b>.</p>
+<p>A gear pair with <m>z<sub>in</sub></m> teeth on the motor's side and <m>z<sub>out</sub></m> on the far side turns
+the far shaft at <m>z<sub>in</sub>/z<sub>out</sub></m> times the near one's speed. Each gear keeps its own inertia,
+and the teeth are a spring <m>k<sub>m</sub></m> along the <b>line of action</b>, the common tangent of the two base
+circles (radii <m>r<sub>in</sub></m>, <m>r<sub>out</sub></m>) that the contact moves along:</p>
+<p><img src="fig:mesh"></p>
+<p>With each gear's angle measured in its own direction of turning, the spring's stretch is
+<m>r<sub>in</sub>θ<sub>in</sub></m> − <m>r<sub>out</sub>θ<sub>out</sub></m> − <m>ε</m>, where <m>ε</m> is the
+transmission error below, and the mesh stiffens the pair by</p>
+<eq>k_m \begin{bmatrix} r_{in}^2 & -r_{in} r_{out} \\ -r_{in} r_{out} & r_{out}^2 \end{bmatrix}</eq>
+<p><b>Referred</b> to the motor's shaft. Write each angle as <m>θ<sub>i</sub></m> = <m>n<sub>i</sub>ψ<sub>i</sub></m>,
+with <m>n<sub>i</sub></m> the product of the ratios on the way out to disc <m>i</m>. A disc's kinetic energy
+½<m>J<sub>i</sub>θ̇<sub>i</sub>²</m> is then ½(<m>J<sub>i</sub>n<sub>i</sub>²</m>)<m>ψ̇<sub>i</sub>²</m> and a shaft's
+strain energy goes the same way, so every inertia and stiffness is multiplied by <m>n</m>². The mesh becomes a
+shaft of <m>k<sub>m</sub>(r<sub>in</sub>n<sub>in</sub>)²</m> (since <m>r<sub>out</sub>n<sub>out</sub></m> =
+<m>r<sub>in</sub>n<sub>in</sub></m>). It is only a change of coordinates, so the geared train is a plain chain
+with exactly the same frequencies. That is the textbook <b>n² reflection</b>.</p>
 <p>The mesh is far stiffer than the couplings, so its own mode, the two gears bouncing on their teeth, is
-usually kilohertz. Treat the mesh as rigid and the two gears merge into one inertia: the lower modes barely
-move, but that mode is gone (the <i>Mode shapes</i> tab compares). It matters because the teeth excite it:
-no gear is perfect, and the <b>transmission error</b>, the far gear's lag behind where perfect teeth would put
-it, repeats at every tooth, at z × the shaft's speed (the tooth-pass frequency).</p>
+usually kilohertz. Treat the mesh as rigid and the two gears merge into one inertia,
+<m>J<sub>in</sub>n<sub>in</sub>²</m> + <m>J<sub>out</sub>n<sub>out</sub>²</m>: the lower modes barely move, but that
+mode is gone (the <i>Mode shapes</i> tab compares). It matters because the teeth excite it. No gear is perfect,
+and the <b>transmission error</b> <m>ε</m>, the far gear's lag behind where perfect teeth would put it, repeats at
+every tooth: at <m>z</m> times the shaft's speed (the tooth-pass frequency).</p>
 
 <h3><a name="interference"></a>The interference diagram</h3>
 <p>Nothing in the train depends on its speed, so its natural frequencies are flat lines. What changes with
-speed is the excitation: an engine fires at fixed orders of its speed (a four-stroke engine's at half-orders,
-a six-cylinder's majors at 3× and 6×), a reciprocating compressor at 1× and 2× its own, a misaligned coupling
-at 2×, the teeth at the tooth-pass order. Each is a line f = order × speed. Where it crosses a natural
-frequency is a <b>torsional critical speed</b>: the order there drives the mode at its resonance.</p>
-<p>A design keeps every critical out of a band round the running speed: API 617 (9th edition, 2022) asks for 10 % from 1× and 2× of
-each shaft's speed. A start-up still passes the criticals below, briefly. Not every crossing matters: an
-order at a disc the mode barely moves (near its node) hardly excites it, and the response tells which do.</p>
+speed <m>Ω</m> is the excitation. Each source is a line <m>ω</m> = <m>n<sub>o</sub>Ω</m>, its order
+<m>n<sub>o</sub></m> times the speed:</p>
+<ul>
+<li>A four-stroke engine fires each cylinder once every two turns, so its torque has every half-order. With
+<m>N</m> cylinders firing evenly, the bursts come <m>N</m>/2 times a turn, and the <b>major orders</b>, where all
+the cylinders' torques add, are the multiples of <m>N</m>/2: 3× and 6× for six cylinders.</li>
+<li>A reciprocating compressor gives 1× and 2× its own speed.</li>
+<li>A misaligned coupling gives 2×.</li>
+<li>The teeth give the tooth-pass order.</li>
+</ul>
+<p>Where an order's line crosses a natural frequency <m>f<sub>r</sub></m> is a <b>torsional critical speed</b>,
+<m>Ω</m> = 2π<m>f<sub>r</sub></m>/<m>n<sub>o</sub></m>: the order there drives the mode at its resonance.</p>
+<p>A design keeps every critical out of a band round the running speed. API 617 <cite>api-617</cite> asks for the
+train's torsional natural frequencies to be at least 10 % away from every excitation in the operating speed range.
+A start-up still passes the criticals below, briefly. Not every crossing matters: an order applied at a disc the
+mode barely moves (near its node) hardly excites it, and the response tells which do.</p>
 
 <h3><a name="response"></a>The steady response</h3>
-<p>At each speed each order is a harmonic torque at ω = order × Ω, and the steady response is one complex
-solve, (K − ω²M + iωC) Θ = T. A shaft's dynamic torque is (k + iωc) times its twist. The transmission error
-enters as an imposed stretch e on the mesh: a force (k<sub>m</sub> + iωc<sub>m</sub>) e on the gears, equal
-and opposite. The orders are at different frequencies, so their peaks line up only now and then: the sum of
-the amplitudes is the worst the torque can be.</p>
-<p>The damping ratios come from φᵀCφ / 2ωφᵀMφ, each mode's share of the dampers: exact when the damping is
-light and spread over the train.</p>
+<p>At each speed each order is a harmonic torque at <m>ω</m> = <m>n<sub>o</sub>Ω</m>, and the steady response is
+one complex solve,</p>
+<eq>\left(K - \omega^2 M + \mathrm{i}\,\omega C\right)\Theta = T</eq>
+<p>A shaft's dynamic torque is (<m>k<sub>i</sub></m> + i<m>ωc<sub>i</sub></m>) times its twist. The transmission
+error enters as an imposed stretch on the mesh: a force (<m>k<sub>m</sub></m> + i<m>ωc<sub>m</sub></m>)<m>ε</m>
+on the gears, equal and opposite. The orders are at different frequencies, so their peaks line up only now and
+then: the sum of the amplitudes is the worst the torque can be.</p>
+<p>Each mode's damping ratio is its share of the dampers,</p>
+<eq>\zeta_r = \frac{\phi_r^{T} C\,\phi_r}{2\,\omega_r\,\phi_r^{T} M\,\phi_r}</eq>
+<p>exact when the damping is light and spread over the train. At a critical, a single mode's response is
+1/2<m>ζ<sub>r</sub></m> times what the same torque would do slowly. So the peak torque in a shaft is about
+1/2<m>ζ<sub>r</sub></m> times the share of the excitation that shaft carries quasi-statically.</p>
 
 <h3><a name="startup"></a>Starting up</h3>
 <p>The <i>Start-up</i> tab starts the train from rest with a motor on its first disc and a load on its last that
 rises as its speed squared. The angles are then the whole turn, and the train's free turning (the 0 Hz mode)
-carries it up to speed while the shafts twist on top. The motor's torque depends on the motor's angle and speed
+carries it up to speed while the shafts twist on top. The motor's torque depends on the motor's angle and speed,
 and the load's on its speed, so each step solves for them at its end by Newton, on the exact FOH update of the
 linear train.</p>
-<p>An <b>induction motor</b> follows its speed–torque curve, here Kloss's, T = 2T<sub>b</sub> s s<sub>b</sub> /
-(s² + s<sub>b</sub>²), from the slip s = 1 − Ω/Ω<sub>s</sub>. Direct on line, it also gives a torque at the line
-frequency for the first few cycles (the stator's flux starts with a DC part the rotor's currents pull against):
-a mode near the line frequency is struck by it at once, while the train has barely moved, and the shafts can
-see many times their running torque.</p>
-<p>A <b>synchronous motor</b> starts as an induction motor on its damper cage, and its salient poles add a
-torque at twice the slip frequency, 2 s f. That is twice the line frequency at rest and nothing at synchronism,
-so it sweeps down through every mode below 2f on the way up: each is a resonance passed at the speed where
-2 s f = f<sub>n</sub>. Near synchronism the field is switched on and pulls the rotor into step. A fast start
-passes the resonances before they build up; a slow one, against a heavy load, lets them grow: that is why such
-drives get a torsional analysis of the start, and couplings sized for its peaks.</p>
+<p>An <b>induction motor</b> with <m>p</m> pole pairs on a supply of <m>f<sub>e</sub></m> turns just below its
+synchronous speed <m>Ω<sub>s</sub></m> = 2π<m>f<sub>e</sub></m>/<m>p</m>. Its torque follows a speed–torque curve,
+here Kloss's, in the slip <m>s</m> = 1 − <m>Ω</m>/<m>Ω<sub>s</sub></m>:</p>
+<eq>T = \frac{2\,T_b\,s\,s_b}{s^2 + s_b^2}</eq>
+<p>It peaks at the breakdown torque <m>T<sub>b</sub></m> at the slip <m>s<sub>b</sub></m>, gives
+2<m>T<sub>b</sub>s<sub>b</sub></m>/(1 + <m>s<sub>b</sub></m>²) at rest, and nothing at synchronism. The train runs
+where the curve meets the load, on the steep side below <m>s<sub>b</sub></m>:</p>
+<p><img src="fig:kloss"></p>
+<p>Direct on line, the motor also gives a torque at the line frequency for the first few cycles,
+<m>T<sub>t</sub></m>e<sup>−t/τ</sup> sin 2π<m>f<sub>e</sub></m>t: the stator's flux starts with a DC part the rotor's
+currents pull against. A mode near the line frequency is struck by it at once, while the train has barely
+moved, and the shafts can see many times their running torque.</p>
+<p>A <b>synchronous motor</b> starts as an induction motor on its damper cage. Its salient poles add a torque
+<m>T<sub>p</sub></m> sin 2<m>δ</m>, with <m>δ</m> the rotor's electrical lag behind the stator's field. At a slip
+<m>s</m> that lag grows at 2π<m>sf<sub>e</sub></m>, so the torque pulses at 2<m>sf<sub>e</sub></m>: twice the line
+frequency at rest and nothing at synchronism. It sweeps down through every mode below
+2<m>f<sub>e</sub></m> on the way up, each a resonance passed at the slip where 2<m>sf<sub>e</sub></m> =
+<m>f<sub>r</sub></m>. Near synchronism the field is switched on, adding <m>T<sub>f</sub></m> sin <m>δ</m>, which
+pulls the rotor into step. A fast start passes the resonances before they build up; a slow one, against a heavy
+load, lets them grow. That is why such drives get a torsional analysis of the start, and couplings sized for its
+peaks.</p>
 <p>The tab compares each link's peak torque with the torque it carries in steady running: the power drawn by
 the load and the dampers beyond it, divided by the link's speed.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the motor and fan: a 2 kg·m² motor and a 10 kg·m² fan on a coupling of 180 kN·m/rad
+(damping 20 N·m·s/rad, and 2 N·m·s/rad of the fan's to ground), running at 1480 rpm. A misaligned coupling puts
+50 N·m at 2× on the fan.</p>
+<ol>
+<li><b>The mode.</b> <m>ω</m>² = 180 000 × 12/20 = 108 000, so <m>ω</m> = 328.6 rad/s and
+<m>f</m> = 52.3 Hz. The fan swings −2/10 = −0.2 of the motor's swing, and the node is 10/12 = 83 % of the way
+along the coupling, by the fan.</li>
+<li><b>Holzer's check.</b> At <m>ω</m>² = 108 000, swing the motor by 1: the coupling carries 2 × 108 000 =
+216 000 N·m per radian and twists by 216 000/180 000 = 1.2, leaving the fan at −0.2. The fan adds
+10 × 108 000 × (−0.2) = −216 000: nothing is left over.</li>
+<li><b>The damping.</b> <m>ζ</m> = 0.0183, so 1/2<m>ζ</m> = 27.3.</li>
+<li><b>The critical.</b> The 2× line meets 52.3 Hz at 60 × 52.3/2 = 1569 rpm, 6.0 % above the running speed:
+inside the 10 % band.</li>
+<li><b>The torque there.</b> Slowly, a torque on the fan accelerates both discs, and the coupling carries the
+motor's share, 50 × 2/12 = 8.33 N·m. At the critical that is multiplied by 27.3: 227 N·m, against the response
+tab's peak of 228.</li>
+<li><b>At the running speed.</b> 2 × 1480/60 = 49.3 Hz is a frequency ratio of 0.943. One mode gives
+8.33/√((1 − 0.943²)² + (2 × 0.0183 × 0.943)²) = 71.8 N·m, against the page's 72.1.</li>
+<li><b>A softer coupling.</b> To put the critical 10 % below the running speed, <m>f</m> ≤ 0.9 × 49.3 = 44.4 Hz:
+<m>k</m> ≤ (2π × 44.4)² × 20/12 = 130 kN·m/rad.</li>
+<li><b>The motor.</b> Two pole pairs on 50 Hz: <m>Ω<sub>s</sub></m> is 1500 rpm. With <m>T<sub>b</sub></m> =
+1600 N·m at <m>s<sub>b</sub></m> = 0.2 it starts with 2 × 1600 × 0.2/1.04 = 615 N·m. It runs at 1444 rpm (a 3.75 %
+slip), where the fan and its damper take 580 N·m.</li>
+</ol>
+<p><b>The gears.</b> The geared compressor's bull gear (3 kg·m², 120 teeth, base radius 0.3 m) drives a pinion
+(0.05 kg·m², 30 teeth, 0.075 m) through a 2 GN/m mesh. Referred to the pinion's shaft, the bull gear weighs
+3/4² = 0.1875 kg·m², and the mesh is a shaft of 2×10⁹ × 0.075² = 1.125×10⁷ N·m/rad. Two discs on it:
+<m>ω</m>² = 1.125×10⁷ × 0.2375/(0.05 × 0.1875) = 2.85×10⁸, so <m>f</m> = 2687 Hz, against the page's 2688 Hz
+(the couplings barely hold the gears). The tooth-pass, 120× the motor's speed, meets it at 60 × 2688/120 =
+1344 rpm.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each preset (top left) sets up a train, and its start-up where it has one:</p>
+<!--PRESETS-->
 <takeaways>
 <li>A drive train in torsion is the chain again, with inertias and shaft stiffnesses, free at both ends so its first mode is rigid turning.</li>
 <li>Gears refer to one shaft by the square of the speed ratio; a stiff mesh has its own mode, excited at tooth-pass.</li>
 <li>Criticals are where an excitation order's line crosses a natural frequency; keep them out of a band round the running speed.</li>
+<li>At a critical, a shaft's torque is about 1/2ζ times its quasi-static share of the excitation.</li>
 <li>A start-up sweeps the excitations through the modes below running speed: a slow start lets them build up.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>J theta matrices omega_i phi_i zeta speeds_rot torsion_train gears slip motor</notation>
+<reading>walker nestorides</reading>

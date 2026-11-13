@@ -1922,6 +1922,39 @@ SYMBOLS = (
         "localization",
     ),
     Symbol(
+        "torsion_train",
+        "J<sub>i</sub>, θ<sub>i</sub>, k<sub>i</sub>, c<sub>i</sub>, T, Θ, G, d, L, N",
+        "a drive train: disc i's inertia and angle; the stiffness and damping of the shaft after it; the torques on "
+        "the discs, and their complex amplitudes' angles; a shaft's shear modulus, diameter and length; an engine's "
+        "cylinders",
+        "kg·m², rad, N·m/rad, N·m·s/rad, N·m, rad, Pa, m, m, –",
+        "torsional_page",
+        "torsion",
+    ),
+    Symbol(
+        "gears",
+        "z<sub>in</sub>, z<sub>out</sub>, r<sub>in</sub>, r<sub>out</sub>, θ<sub>in</sub>, θ<sub>out</sub>, "
+        "J<sub>in</sub>, J<sub>out</sub>, k<sub>m</sub>, c<sub>m</sub>, ε, n<sub>i</sub>, ψ<sub>i</sub>, z",
+        "a gear pair: the teeth on the motor's side and the far side; their base radii; their angles, each in its "
+        "own direction of turning; their inertias; the mesh's stiffness and damping along the line of action; the "
+        "transmission error; disc i's speed over the motor's (n<sub>in</sub>, n<sub>out</sub> the gears'); its "
+        "angle referred to the motor's shaft, θ<sub>i</sub>/n<sub>i</sub>; a gear's teeth",
+        "–, –, m, m, rad, rad, kg·m², kg·m², N/m, N·s/m, m, –, rad, –",
+        "torsional_page",
+        "gears",
+    ),
+    Symbol(
+        "motor",
+        "p, f<sub>e</sub>, Ω<sub>s</sub>, T<sub>b</sub>, s<sub>b</sub>, T<sub>t</sub>, τ, T<sub>p</sub>, "
+        "T<sub>f</sub>, δ",
+        "a motor: its pole pairs; the line frequency; its synchronous speed, 2πf<sub>e</sub>/p; the breakdown "
+        "torque and its slip (Kloss); the switch-on torque and its decay time; a synchronous motor's pole torque, "
+        "its field's pull-out torque, and the rotor's electrical lag behind the stator's field",
+        "–, Hz, rad/s, N·m, –, N·m, s, N·m, N·m, rad",
+        "torsional_page",
+        "startup",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",
