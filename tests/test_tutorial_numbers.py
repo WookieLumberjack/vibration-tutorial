@@ -2615,3 +2615,49 @@ def test_modal_test_worked_example():
     accel = abs(-((2 * math.pi * modes[0].fn_hz) ** 2) * frf(chain, np.array([modes[0].fn_hz]), 3)[0, 3])
     assert accel == pytest.approx(12.4, abs=0.05)
     assert (abs(1 / (1 + 1.24j)), abs(1 / (1 + 0.1 * accel * 1j))) == pytest.approx((0.63, 0.63), abs=5e-3)
+
+
+def test_oma_worked_example():
+    from types import SimpleNamespace
+
+    from vib_tutorial.core import ChainSystem, modal_analysis
+    from vib_tutorial.core.oma import cross_spectra
+    from vib_tutorial.gui.oma import CYCLES, OmaPage
+
+    chain = ChainSystem.uniform(4)
+    result = modal_analysis(chain)
+    f1, z1 = result.modes[0].fn_hz, result.modes[0].zeta_modal
+    fs, duration, block = OmaPage._suggested(SimpleNamespace(result=result))  # the page's own choice
+    assert (fs, duration, block) == (19.0, 1809, 2048)
+    assert (CYCLES / f1, duration * fs) == pytest.approx((1809, 34371), abs=0.5)
+    assert z1 * f1 / 2 == pytest.approx(0.0096, abs=5e-5)
+    assert (fs / (0.5 * z1 * f1), 19 / 0.0096) == pytest.approx((1979, 1979), abs=1)
+    assert (2 * z1 * f1, 2 * z1 * f1 * block / fs) == pytest.approx((0.0384, 4.1), abs=0.05)
+    assert 0.0384 / 0.00928 == pytest.approx(4.1, abs=0.05)
+    assert fs / block == pytest.approx(0.00928, abs=5e-6)
+    spectra = cross_spectra(np.zeros((34371, 1)), fs, block)
+    assert spectra.blocks == 32 == (34371 - 2048) // 1024 + 1
+    assert 1 / math.sqrt(32) == pytest.approx(0.18, abs=0.005)
+    rows = round(2 * fs / f1)
+    assert (2 * fs / f1, rows, 2 * rows - 1, (2 * rows - 1) / fs) == pytest.approx((34.4, 34, 67, 3.5), abs=0.05)
+    assert (4 * rows, 2 * 4, min(15 * 4, 120)) == (136, 8, 60)
+    f2 = result.modes[1].fn_hz
+    assert ((f1 + f2) / 2, 1.02 * f2) == pytest.approx((2.144, 3.247), abs=5e-4)
+    assert (3 / 8) / (1 / 4) == 1.5
+    t = np.linspace(0, 2 * math.pi, 100001)
+    assert np.mean(np.sin(t) ** 4) / np.mean(np.sin(t) ** 2) ** 2 == pytest.approx(1.5, abs=1e-3)
+    # Scaling by 0.1 kg on m4
+    heavier = modal_analysis(ChainSystem(np.array([1, 1, 1, 1.1]), chain.stiffness, chain.damping, chain.friction))
+    g0, g1 = f1, heavier.modes[0].fn_hz
+    assert (g0, g1, 100 * (g1 / g0 - 1)) == pytest.approx((1.1055, 1.0823, -2.1), abs=5e-3)
+    assert (1.1055**2 - 1.0823**2) / (1.0823**2 * 0.1) == pytest.approx(0.433, abs=5e-4)
+    psi = np.abs(result.modes[0].shape)
+    assert psi[3] == 1.0 and 1 / float(np.sum(psi**2)) == pytest.approx(0.431, abs=5e-4)
+    alpha2 = (g0**2 - g1**2) / (g1**2 * 0.1)
+    assert 100 * (alpha2 * float(np.sum(psi**2)) - 1) == pytest.approx(0.6, abs=0.05)
+    shape4 = np.abs(result.modes[3].shape)
+    h4, k4 = result.modes[3].fn_hz, heavier.modes[3].fn_hz
+    a4 = (h4**2 - k4**2) / (k4**2 * 0.1 * shape4[3] ** 2)
+    assert shape4[3] == pytest.approx(0.347, abs=5e-4)
+    assert 100 * (1 - k4 / h4) == pytest.approx(0.23, abs=5e-3)
+    assert 100 * (1 - a4 * float(np.sum(shape4**2))) == pytest.approx(13, abs=0.5)

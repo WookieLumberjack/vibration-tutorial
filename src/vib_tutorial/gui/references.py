@@ -920,6 +920,56 @@ REFERENCES = (
         "standard for modal parameter estimation?, <i>Shock and Vibration</i> 11, 395–409, 2004",
         "",
     ),
+    Reference(
+        "brincker-fdd",
+        "Brincker, Zhang and Andersen 2001",
+        "R. Brincker, L. Zhang and P. Andersen, Modal identification of output-only systems using frequency domain "
+        "decomposition, <i>Smart Materials and Structures</i> 10, 441–445, 2001",
+        "",
+    ),
+    Reference(
+        "brincker-efdd",
+        "Brincker, Ventura and Andersen 2001",
+        "R. Brincker, C. E. Ventura and P. Andersen, Damping estimation by frequency domain decomposition, "
+        "<i>Proceedings of IMAC XIX</i>, Kissimmee, 698–703, 2001",
+        "",
+    ),
+    Reference(
+        "james-next",
+        "James, Carne and Lauffer 1995",
+        "G. H. James, T. G. Carne and J. P. Lauffer, The natural excitation technique (NExT) for modal parameter "
+        "extraction from operating structures, <i>Modal Analysis: the International Journal of Analytical and "
+        "Experimental Modal Analysis</i> 10(4), 260–277, 1995",
+        "",
+    ),
+    Reference(
+        "peeters-deroeck",
+        "Peeters and De Roeck 1999",
+        "B. Peeters and G. De Roeck, Reference-based stochastic subspace identification for output-only modal "
+        "analysis, <i>Mechanical Systems and Signal Processing</i> 13, 855–878, 1999",
+        "",
+    ),
+    Reference(
+        "jacobsen-harmonics",
+        "Jacobsen, Andersen and Brincker 2006",
+        "N.-J. Jacobsen, P. Andersen and R. Brincker, Using enhanced frequency domain decomposition as a robust "
+        "technique to harmonic excitation in operational modal analysis, <i>Proceedings of ISMA2006</i>, Leuven, "
+        "2006",
+        "",
+    ),
+    Reference(
+        "parloo-scaling",
+        "Parloo et al. 2002",
+        "E. Parloo, P. Verboven, P. Guillaume and M. Van Overmeire, Sensitivity-based operational mode shape "
+        "normalisation, <i>Mechanical Systems and Signal Processing</i> 16, 757–767, 2002",
+        "",
+    ),
+    Reference(
+        "brincker-ventura",
+        "Brincker and Ventura 2015",
+        "R. Brincker and C. E. Ventura, <i>Introduction to Operational Modal Analysis</i>, Wiley, 2015",
+        "OMA from random vibration up: FDD, SSI, record lengths, close modes and scaling",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
