@@ -2420,6 +2420,69 @@ def test_torsional_worked_example():
     assert (tooth.order, tooth.rpm) == pytest.approx((120, 1344), abs=0.5)
 
 
+def test_duffing_worked_example():
+    """The Duffing & Mathieu page's worked example: the opening hardening spring and the parametric presets."""
+    from vib_tutorial.core import duffing as d
+
+    osc = d.PRESETS[0].osc
+    assert (osc.mass, osc.stiffness, osc.damping, osc.cubic, osc.force) == (1.0, 400.0, 1.0, 1e5, 2.0)
+    # small swings: f_n 3.18 Hz, ζ 0.025, 2m/c = 2 s
+    assert osc.natural_hz == pytest.approx(3.18, abs=0.005)
+    assert osc.zeta == pytest.approx(0.025)
+    assert 2 * osc.mass / osc.damping == 2.0
+    # the backbone at 50 mm: κ 587.5 N/m, 3.86 Hz
+    assert osc.kappa(0.05) == pytest.approx(587.5)
+    assert float(osc.backbone_hz(0.05)) == pytest.approx(3.86, abs=0.005)
+    # the peak: 71.5 mm on the backbone, κ 783.4, Ω 27.99 rad/s (4.45 Hz), F/cΩ = 71.5 mm, the cubic +96 %
+    curve = d.response_curve(osc, 6.0)
+    assert curve.tip == pytest.approx(0.0715, abs=0.00005)
+    assert osc.kappa(0.0715) == pytest.approx(783.4, abs=0.05)
+    assert math.sqrt(783.4) == pytest.approx(27.99, abs=0.005)
+    assert math.sqrt(783.4) / (2 * math.pi) == pytest.approx(4.45, abs=0.005)
+    assert 2 / 27.99 == pytest.approx(0.0715, abs=0.00005)
+    assert 383.4 / 400 == pytest.approx(0.96, abs=0.005)
+    assert 0.75 * osc.cubic * curve.tip**2 / osc.stiffness == pytest.approx(0.958, abs=0.0005)  # the page's readout
+    assert osc.force / (osc.damping * 20.0) == pytest.approx(0.1)
+    # the folds: 4.45 Hz (71.4 mm drops to 5.23 mm) and 3.64 Hz (24.0 mm jumps to 46.2 mm)
+    hi, lo = sorted(curve.folds, key=lambda f: -f.freq_hz)
+    assert (hi.freq_hz, hi.amplitude * 1e3, hi.lands_at * 1e3) == pytest.approx((4.45, 71.4, 5.23), abs=0.005, rel=2e-3)
+    assert hi.down and not lo.down
+    assert lo.freq_hz == pytest.approx(3.64, abs=0.005)
+    assert lo.amplitude == pytest.approx(0.0240, abs=0.00005)
+    assert lo.lands_at == pytest.approx(0.0462, abs=0.00005)
+    # inside the band at 4 Hz: 8.80, 52.0 (unstable), 58.3 mm; the upper checks to 1.99 N
+    a, stable = d.amplitudes(osc, 4.0)
+    assert a * 1e3 == pytest.approx([8.80, 52.0, 58.3], abs=0.05)
+    assert list(stable) == [True, False, True]
+    w = 2 * math.pi * 4.0
+    assert w == pytest.approx(25.13, abs=0.005)
+    assert w * w == pytest.approx(631.7, abs=0.05)
+    assert osc.kappa(0.0583) == pytest.approx(654.9, abs=0.05)
+    assert 654.9 - 631.7 == pytest.approx(23.2)
+    assert 0.0583 * math.hypot(23.2, 25.13) == pytest.approx(1.99, abs=0.005)
+    # the pump: μ 0.3 at 6.37 Hz, threshold 4ζ = 0.1, growth 1.0 /s against Floquet's 0.0498 ω_n = 0.996 /s
+    lin = next(p.osc for p in d.PRESETS if p.name == "Parametric resonance")
+    hard = next(p for p in d.PRESETS if p.name == "Parametric resonance, hardening")
+    assert lin.pump == 0.3 and hard.osc.pump == 0.3
+    assert hard.freq_hz == pytest.approx(6.37, abs=0.005)
+    assert 4 * lin.zeta == pytest.approx(0.1)
+    assert (0.3 / 4 - 0.025) * 20 == pytest.approx(1.0)
+    growth = float(d.floquet_growth(lin.zeta, np.array([2.0]), np.array([0.3]))[0, 0])
+    assert growth == pytest.approx(0.0498, abs=0.00005)
+    assert 0.0498 * 20 == pytest.approx(0.996)
+    # the tongue: undamped 5.87 to 6.83 Hz, the page's 5.89 to 6.80
+    assert 6.37 * math.sqrt(0.85) == pytest.approx(5.87, abs=0.005)
+    assert 6.37 * math.sqrt(1.15) == pytest.approx(6.83, abs=0.005)
+    assert d.tongue_hz(lin) == pytest.approx((5.89, 6.80), abs=0.005)
+    # the hardening spring's settled swing: mΩ²/4 = 400, √(60² − 20²) = 56.6, κ 456.6, a = 27.5 mm
+    w = 2 * math.pi * hard.freq_hz
+    assert w * w / 4 == pytest.approx(400.0)
+    assert math.sqrt(60.0**2 - 20.0**2) == pytest.approx(56.6, abs=0.05)
+    assert math.sqrt(56.6 / 75_000) == pytest.approx(0.0275, abs=0.00005)
+    swing = d.parametric_amplitudes(hard.osc, hard.freq_hz)[0].max()
+    assert swing == pytest.approx(0.0275, abs=0.00005)
+
+
 def test_diagnostics_trials():
     from dataclasses import replace
 

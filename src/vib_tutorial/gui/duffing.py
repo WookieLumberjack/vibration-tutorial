@@ -4,8 +4,8 @@ Left: the oscillator, the drive and the playback. Centre: the amplitude against 
 frequency (harmonic balance's branches, backbone and folds, for the drive's first harmonic
 and the pump's half harmonic, under each drive cycle's measured ones) and the displacement's
 strip chart. Right: the phase plane with its Poincaré section, the Ince–Strutt chart of the
-pumped spring's tongues, and the notes. The page has its own model (core/duffing.py), not
-the chain.
+pumped spring's tongues, and the notes (their figures: gui/duffing_figures.py). The page has its own model
+(core/duffing.py), not the chain.
 """
 
 from __future__ import annotations
@@ -36,10 +36,11 @@ from ..core.duffing import (
     tongue_hz,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
-from . import frame_stats, settle_plots, weak
+from . import duffing_figures, frame_stats, settle_plots, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, plot_height
 from .lesson import RunButton
 from .links import load_notes, page_link
+from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import spin
 from .style import colors
@@ -106,7 +107,13 @@ PHASE_TIP = (
     "frequency is held: a sweep's would be a different section each cycle.</p>"
 )
 
-NOTES_HTML = load_notes("duffing")
+
+def presets_html() -> str:
+    """The presets as the Theory tab lists them."""
+    return "<ol>" + "".join(f"<li><b>{p.name}.</b> {markup(p.note)}</li>" for p in PRESETS) + "</ol>"
+
+
+NOTES_HTML = load_notes("duffing", figures=duffing_figures.FIGURES, presets=presets_html())
 
 
 @dataclass(frozen=True)
@@ -766,7 +773,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.preset.blockSignals(True)
         self.preset.setCurrentText(name)
         self.preset.blockSignals(False)
-        self.preset_note.setText(note)
+        self.preset_note.setText(markup(note))
         self._loading = False
         d = self.sim.drive
         d.freq_hz, d.start_hz, d.end_hz, d.sweep_time = t.freq_hz, t.start_hz, t.end_hz, t.sweep_time

@@ -1099,6 +1099,61 @@ REFERENCES = (
         "the classic handbook on engine and machinery trains: inertias, stiffnesses, natural frequencies, "
         "stresses and dampers",
     ),
+    Reference(
+        "ueda",
+        "Ueda 1979",
+        "Y. Ueda, Randomly transitional phenomena in the system governed by Duffing's equation, <i>Journal of "
+        "Statistical Physics</i> 20, 181–196, 1979",
+        "",
+    ),
+    Reference(
+        "poincare-celeste",
+        "Poincaré 1892–1899",
+        "H. Poincaré, <i>Les méthodes nouvelles de la mécanique céleste</i>, 3 vols., Gauthier-Villars, Paris, "
+        "1892, 1893, 1899",
+        "",
+    ),
+    Reference(
+        "mathieu",
+        "Mathieu 1868",
+        "É. Mathieu, Mémoire sur le mouvement vibratoire d'une membrane de forme elliptique, <i>Journal de "
+        "Mathématiques Pures et Appliquées</i> (2) 13, 137–203, 1868",
+        "",
+    ),
+    Reference(
+        "floquet",
+        "Floquet 1883",
+        "G. Floquet, Sur les équations différentielles linéaires à coefficients périodiques, <i>Annales "
+        "scientifiques de l'École Normale Supérieure</i> (2) 12, 47–88, 1883",
+        "",
+    ),
+    Reference(
+        "ince",
+        "Ince 1925",
+        "E. L. Ince, Researches into the characteristic numbers of the Mathieu equation, <i>Proceedings of the "
+        "Royal Society of Edinburgh</i> 46, 316–322, 1925–26",
+        "",
+    ),
+    Reference(
+        "van-der-pol-strutt",
+        "van der Pol and Strutt 1928",
+        "B. van der Pol and M. J. O. Strutt, On the stability of the solutions of Mathieu's equation, "
+        "<i>Philosophical Magazine</i> (7) 5(27), 18–38, 1928",
+        "",
+    ),
+    Reference(
+        "nayfeh-mook",
+        "Nayfeh and Mook 1979",
+        "A. H. Nayfeh and D. T. Mook, <i>Nonlinear Oscillations</i>, Wiley, 1979 (Wiley Classics Library reprint 1995)",
+        "the standard reference: harmonic balance, multiple scales, the Duffing and Mathieu equations in depth",
+    ),
+    Reference(
+        "kovacic-brennan",
+        "Kovacic and Brennan 2011",
+        "I. Kovacic and M. J. Brennan (eds.), <i>The Duffing Equation: Nonlinear Oscillators and their "
+        "Behaviour</i>, Wiley, 2011",
+        "a whole book on this page's oscillator: its history, jumps, super- and subharmonics, chaos",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

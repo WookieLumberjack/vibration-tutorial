@@ -1,82 +1,154 @@
-
 <before>
 <a href="page:sim_page#start-with-one-mass">Start with one mass</a>
 <a href="page:sim_page#friction">Friction</a>
 </before>
 <h3><a name="duffing"></a>The Duffing oscillator</h3>
-<p>A mass on a spring whose force is not proportional to its stretch:</p>
-<p align="center">m x″ + c x′ + k x + k<sub>3</sub> x³ = F cos φ, &nbsp; φ′ = Ω</p>
-<p>With k<sub>3</sub> &gt; 0 the spring <i>hardens</i>: the further it stretches, the stiffer it gets, so a big
-swing is a fast one. With k<sub>3</sub> &lt; 0 it <i>softens</i>: its force peaks at √(k / −3k<sub>3</sub>) and falls
-back to zero at the escape amplitude √(k / −k<sub>3</sub>), the potential's hilltop. Past that the spring pushes outward, and a mass carried over the potential's hilltop runs
-away.</p>
+<p>A mass on a spring whose force is not proportional to its stretch <cite>duffing</cite>:</p>
+<eq>m\ddot{x} + c\dot{x} + kx + k_3x^3 = F\cos\varphi, \qquad \dot{\varphi} = \Omega</eq>
+<p>The drive's phase <m>φ</m> advances at its frequency <m>Ω</m>: <m>φ</m> = <m>Ωt</m> while the frequency is
+held, and a sweep changes <m>Ω</m> as it goes. The cubic is the first term a symmetric spring adds to a straight
+line: a pendulum's sin <m>θ</m> ≈ <m>θ</m> − <m>θ</m>³/6 has <m>k<sub>3</sub></m> &lt; 0 (the
+<a href="page:pendulum_page#large-swings">Pendulums</a> page), and a string or thin plate that has to stretch as
+it bends has <m>k<sub>3</sub></m> &gt; 0.</p>
+<p><img src="fig:cubic"></p>
+<p>With <m>k<sub>3</sub></m> &gt; 0 the spring <i>hardens</i>: the further it stretches, the stiffer it gets, so a
+big swing is a fast one. With <m>k<sub>3</sub></m> &lt; 0 it <i>softens</i>. Its force stops rising where its
+slope <m>k</m> + 3<m>k<sub>3</sub>x</m>² is nil, at <m>x<sub>e</sub></m>/√3, and falls back to zero at the
+<b>escape amplitude</b></p>
+<eq>x_e = \sqrt{k/(-k_3)},</eq>
+<p>the top of the potential's hill, <m>kx<sub>e</sub></m>²/4 above the bottom (the dot in the figure). Past it the
+spring pushes outward, and a mass carried over the hilltop runs away.</p>
 
 <h3><a name="harmonic-balance"></a>Harmonic balance</h3>
-<p>Guess that the mass moves at the drive's frequency, x = a cos(φ − θ), and keep only the first harmonic of
-each force. Since cos³ = ¾ cos + ¼ cos 3φ, the spring acts on the first harmonic as one of stiffness</p>
-<p align="center">κ(a) = k + ¾ k<sub>3</sub> a²,</p>
-<p>stiffer the bigger the swing. Matching the cosine and sine parts:</p>
-<p align="center">(κ(a) − mΩ²) a = F cos θ, &nbsp; cΩ a = F sin θ,</p>
-<p>and squaring and adding, a²[(κ(a) − mΩ²)² + (cΩ)²] = F². That is a cubic in a², so at one frequency there
-can be one steady amplitude or three. The curve leans along the <b>backbone</b>, mΩ² = κ(a): the frequency at
-which the mass would swing freely at amplitude a. A hardening spring's leans to the right, a softening one's to
-the left.</p>
+<p>Guess that the mass moves at the drive's frequency, <m>x</m> = <m>a</m> cos(<m>φ</m> − <m>θ</m>), with an
+amplitude <m>a</m> and a lag <m>θ</m> to be found, and keep only the first harmonic of each force. Since
+cos³<m>u</m> = ¾ cos <m>u</m> + ¼ cos 3<m>u</m>, the cubic's force <m>k<sub>3</sub>a</m>³cos³(<m>φ</m> −
+<m>θ</m>) has a first harmonic ¾<m>k<sub>3</sub>a</m>³cos(<m>φ</m> − <m>θ</m>): to the first harmonic the spring
+acts as one of stiffness</p>
+<eq>\kappa(a) = k + \tfrac{3}{4}k_3a^2,</eq>
+<p>stiffer the bigger the swing. Put <m>x</m> in the equation and match the parts in cos(<m>φ</m> − <m>θ</m>) and
+in sin(<m>φ</m> − <m>θ</m>) on each side (the force is <m>F</m> cos <m>θ</m> of the one and <m>F</m> sin
+<m>θ</m> of the other):</p>
+<eq>\bigl(\kappa(a) - m\Omega^2\bigr)a = F\cos\theta, \qquad c\Omega a = F\sin\theta.</eq>
+<p>Squaring and adding takes out <m>θ</m>:</p>
+<eq>a^2\Bigl[\bigl(\kappa(a) - m\Omega^2\bigr)^2 + (c\Omega)^2\Bigr] = F^2.</eq>
+<p>That is a cubic in <m>a</m>², so at one frequency there can be one steady amplitude or three. The curve leans
+along the <b>backbone</b>, <m>mΩ</m>² = <m>κ(a)</m>: the frequency at which the mass would swing freely at
+amplitude <m>a</m>,</p>
+<eq>\Omega = \omega_n\sqrt{1 + \tfrac{3}{4}(k_3/k)\,a^2}.</eq>
+<p>A hardening spring's leans to the right, a softening one's to the left. Where the curve crosses the backbone
+the spring and the inertia cancel, <m>θ</m> = 90°, and the damping alone holds the drive: the peak is where the
+backbone meets <m>a</m> = <m>F</m>/<m>cΩ</m>.</p>
 
 <h3><a name="jump"></a>The jump</h3>
 <p>Where there are three amplitudes, the middle one is unstable (a saddle): nudged, the mass leaves it for one of
-the other two, which are both stable. So the response depends on where it came from. Sweeping a hardening spring
-up, the mass rides the upper branch past the linear resonance until the branch ends at a <b>fold</b>, and drops
-to the lower one. Sweeping down, it follows the lower branch to its own fold, at a lower frequency, and jumps up.
-Between the folds the two sweeps disagree: hysteresis. A softening spring does the same, mirrored.</p>
+the other two, which are both stable. (On it the left-hand side above falls as <m>a</m> grows: a bigger swing would need less force
+than the drive gives, so a nudge outward keeps growing, and one inward keeps shrinking.) So the response depends on where it came
+from. Sweeping a hardening spring up, the mass rides the upper branch past the linear resonance until the branch
+ends at a <b>fold</b>, and drops to the lower one. Sweeping down, it follows the lower branch to its own fold, at
+a lower frequency, and jumps up. Between the folds the two sweeps disagree: hysteresis. A softening spring does
+the same, mirrored.</p>
 <p>Near a fold the steady state is barely stable: a disturbance there dies away ever more slowly (critical
 slowing down), so a sweep overruns the fold before the mass leaves. The slower the sweep, the nearer the fold it
-jumps. A jump up takes a few of the damping's time constants, 2m/c, to grow.</p>
+jumps. A jump up takes a few of the damping's time constants, 2<m>m</m>/<m>c</m>, to grow.</p>
 <p>Hold the frequency inside the band and start the mass on each branch (<i>Start on a branch</i>): from the lower
 or upper it stays; from the middle one it falls off to one or the other, depending on the slightest difference.
 From rest it settles on the lower branch.</p>
 
 <h3>How good is one harmonic?</h3>
-<p>The cubic makes 3Ω too, which the balance leaves out. The measured dots are each drive cycle's first harmonic,
-so they compare like with like, and they sit on the curve to within about 1 % even where the cubic doubles the
-spring's stiffness. A strongly driven, lightly damped spring has more: <b>superharmonic</b> resonances, where 3Ω
-(or 2Ω, with a static offset) meets the natural frequency, so near a third of it; <b>subharmonic</b> ones, at
-three times it, where the mass swings at Ω/3; and <b>chaos</b>.</p>
+<p>The cubic makes 3<m>Ω</m> too, which the balance leaves out. The measured dots are each drive cycle's first
+harmonic, so they compare like with like, and they sit on the curve to within about 1 % even where the cubic
+doubles the spring's stiffness. A strongly driven, lightly damped spring has more: <b>superharmonic</b>
+resonances, where 3<m>Ω</m> (or 2<m>Ω</m>, with a static offset) meets the natural frequency, so with <m>Ω</m>
+near a third of it; <b>subharmonic</b> ones, with <m>Ω</m> near three times it, where the mass swings at
+<m>Ω</m>/3; and <b>chaos</b>.</p>
 
 <h3>Chaos</h3>
-<p>Ueda's oscillator, x″ + 0.05 x′ + x³ = 7.5 cos t, has no linear spring, light damping and a big drive. Its
-motion never repeats. The Poincaré section, the state once per drive cycle, shows it: one dot for a steady
-response at the drive's frequency, three for a subharmonic at a third of it, and for chaos a cloud that fills a
-folded, layered shape (a strange attractor) without ever coming back to the same point.</p>
+<p>Ueda's oscillator <cite>ueda</cite>, <m>ẍ</m> + 0.05<m>ẋ</m> + <m>x</m>³ = 7.5 cos <m>t</m>, has no linear
+spring, light damping and a big drive. Its motion never repeats. The <b>Poincaré section</b>
+<cite>poincare-celeste</cite>, the state (<m>x</m>, <m>ẋ</m>) once per drive cycle, shows it: one dot for a
+steady response at the drive's frequency, three for a subharmonic at a third of it, and for chaos a cloud that
+fills a folded, layered shape (a strange attractor) without ever coming back to the same point.</p>
 
 <h3><a name="parametric"></a>Parametric excitation: the Mathieu equation</h3>
-<p>Instead of pushing the mass, make its spring pulse: k(1 + μ cos Ωt), with no force at all. A child on a swing
-does this, standing and squatting twice a swing. Rest is still a solution, but near Ω = 2ω<sub>n</sub> it is
-unstable: the smallest disturbance grows into a swing at Ω/2, half the pump's frequency, because each pulse comes
-when the stretch adds energy. On a linear spring nothing stops it, and the swing grows as e<sup>σt</sup> for
-ever.</p>
-<p>Floquet theory says how fast. Over one pump period the linear equation maps the state by a matrix (the
-monodromy matrix), and its largest eigenvalue λ gives σ = Ω ln|λ| / 2π. The <b>Ince–Strutt chart</b> maps σ over
-the pump's frequency and depth: rest is unstable inside <b>tongues</b> that reach down to Ω = 2ω<sub>n</sub>/n
-(n = 1: the swing at Ω/2; n = 2: at Ω; ...), narrower the higher n. Without damping their tips touch the axis, so
-any pump destabilizes a spring tuned to them; damping lifts them, so the pump must beat it: at Ω = 2ω<sub>n</sub>
-the growth is σ ≈ (μ/4 − ζ)ω<sub>n</sub>.</p>
-<p>Harmonic balance with x = a cos(Ωt/2 − θ) gives the first tongue and, with a cubic spring, its steady swing:</p>
-<p align="center">(κ(a) − mΩ²/4)² + (cΩ/2)² = (μk/2)².</p>
-<p>A hardening spring's swing detunes itself as it grows, out of the tongue, and settles there. Sweep down from
-rest and rest stays stable down to the tongue's upper edge, where it turns unstable and the swing jumps up to the
-branch; sweep up and the swing grows near the lower edge (a little past it: at the edge itself the growth is
-nil) and rides the branch far past the upper edge, where rest is stable too. Hysteresis, as in the forced jump.</p>
+<p>Instead of pushing the mass, make its spring pulse, with no force at all:</p>
+<eq>m\ddot{x} + c\dot{x} + k(1 + \mu\cos\Omega t)\,x = 0.</eq>
+<p>With <m>c</m> = 0 this is Mathieu's equation, which he met in the modes of an elliptical membrane
+<cite>mathieu</cite>. A child on a swing pumps it, standing and squatting twice a swing. Rest is still a
+solution, but near <m>Ω</m> = 2<m>ω<sub>n</sub></m> it is unstable: the smallest disturbance grows into a swing
+at <m>Ω</m>/2, half the pump's frequency. The timing is what does it: the swing that grows is the one on which
+the spring is stiff while the mass swings back toward the middle and soft while it swings out, so it gives back
+more energy than it took.</p>
+<p><img src="fig:pump"></p>
+<p>On a linear spring nothing stops it, and the swing grows as <m>e<sup>σt</sup></m> for ever.</p>
+<p>Floquet theory <cite>floquet</cite> says how fast. Over one pump period, 2π/<m>Ω</m>, the linear equation maps
+the state (<m>x</m>, <m>ẋ</m>) by a matrix (the monodromy matrix). Its largest eigenvalue <m>λ</m>, the Floquet
+multiplier, is what each period multiplies the growing swing by, so</p>
+<eq>\sigma = \frac{\Omega}{2\pi}\ln|\lambda|.</eq>
+<p>The <b>Ince–Strutt chart</b> <cite>ince</cite> <cite>van-der-pol-strutt</cite> maps <m>σ</m> over the pump's
+frequency and depth: rest is unstable inside <b>tongues</b> that reach down to <m>Ω</m> =
+2<m>ω<sub>n</sub></m>/<m>n</m> (<m>n</m> = 1: the swing at <m>Ω</m>/2; <m>n</m> = 2: at <m>Ω</m>; ...), narrower
+the higher <m>n</m>. Without damping their tips touch the axis, so any pump destabilizes a spring tuned to them;
+damping lifts them, so the pump must beat it. For a light pump and light damping, at <m>Ω</m> =
+2<m>ω<sub>n</sub></m> the swing grows at</p>
+<eq>\sigma \approx \bigl(\tfrac{\mu}{4} - \zeta\bigr)\,\omega_n,</eq>
+<p>the pump's gain less the damping's decay, so rest turns unstable once <m>μ</m> &gt; 4<m>ζ</m>.</p>
+<p>Harmonic balance with <m>x</m> = <m>a</m> cos(<m>Ωt</m>/2 − <m>θ</m>) gives the first tongue. The pump's term
+<m>μk</m> cos <m>Ωt</m> · <m>a</m> cos(<m>Ωt</m>/2 − <m>θ</m>) has a part at the swing's own frequency,
+½<m>μka</m> cos(<m>Ωt</m>/2 + <m>θ</m>), and matching it as before, with a cubic spring:</p>
+<eq>\Bigl(\kappa(a) - \frac{m\Omega^2}{4}\Bigr)^2 + \Bigl(\frac{c\Omega}{2}\Bigr)^2 = \Bigl(\frac{\mu k}{2}\Bigr)^2.</eq>
+<p>As <m>a</m> → 0 (<m>κ</m> = <m>k</m>) that is the tongue's edge: without damping, <m>Ω</m> =
+2<m>ω<sub>n</sub></m>√(1 ∓ <m>μ</m>/2), and at the centre the damping's term needs <m>μ</m> = 4<m>ζ</m>, as
+above. A hardening spring's swing detunes itself as it grows, out of the tongue, and settles where <m>κ(a)</m>
+meets the equation's larger root. Sweep down from rest and rest stays stable down to the tongue's upper edge,
+where it turns unstable and the swing jumps up to the branch; sweep up and the swing grows near the lower edge (a
+little past it: at the edge itself the growth is nil) and rides the branch far past the upper edge, where rest is
+stable too. Hysteresis, as in the forced jump.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on the hardening spring: <m>m</m> = 1 kg, <m>k</m> = 400 N/m, <m>c</m> = 1 N·s/m,
+<m>k<sub>3</sub></m> = 10⁵ N/m³, driven by <m>F</m> = 2 N.</p>
+<ol>
+<li><b>Small swings.</b> <m>ω<sub>n</sub></m> = √400 = 20 rad/s, so <m>f<sub>n</sub></m> = 3.18 Hz, and
+<m>ζ</m> = 1/(2 × 20) = 0.025 (the page's 2.5 %). The damping's time constant 2<m>m</m>/<m>c</m> is 2 s.</li>
+<li><b>The backbone.</b> At <m>a</m> = 50 mm, <m>κ</m> = 400 + 0.75 × 10⁵ × 0.05² = 587.5 N/m, so a free swing
+that big runs at √587.5/2π = 3.86 Hz.</li>
+<li><b>The peak.</b> Try <m>a</m> = 71.5 mm: <m>κ</m> = 400 + 75 000 × 0.0715² = 783.4 N/m, so the backbone is at
+<m>Ω</m> = √783.4 = 27.99 rad/s (4.45 Hz), where <m>F</m>/<m>cΩ</m> = 2/27.99 = 71.5 mm: that is the peak. The
+cubic adds 383.4/400 = 96 % to the spring's stiffness there (the page's 95.8 %). Without it the peak would be
+<m>F</m>/<m>cω<sub>n</sub></m> = 100 mm at 3.18 Hz.</li>
+<li><b>The folds.</b> The page finds them at 4.45 Hz, where the upper branch (71.4 mm) ends and drops to 5.23 mm,
+and at 3.64 Hz, where the lower one (24.0 mm) ends and jumps to 46.2 mm. In light damping the upper fold sits
+almost at the peak.</li>
+<li><b>Inside the band.</b> At 4 Hz (<m>Ω</m> = 25.13 rad/s, <m>mΩ</m>² = 631.7 N/m) the cubic has three roots:
+8.80, 52.0 and 58.3 mm, the middle one unstable. Check the upper: <m>κ</m> = 400 + 75 000 × 0.0583² = 654.9 N/m,
+and 0.0583 × √(23.2² + 25.13²) = 1.99 N, the drive's 2 N to the rounding.</li>
+</ol>
+<p><b>The pump.</b> The parametric presets pump the same spring by <m>μ</m> = 0.3 at 2<m>f<sub>n</sub></m> =
+6.37 Hz (<m>Ω</m> = 40 rad/s), with no force. 4<m>ζ</m> = 0.1, so 0.3 is well over the threshold, and the swing
+grows at (0.3/4 − 0.025) × 20 = 1.0 /s; the chart's Floquet multiplier gives 0.0498<m>ω<sub>n</sub></m> =
+0.996 /s. Undamped, the tongue would run from 6.37 × √0.85 = 5.87 to 6.37 × √1.15 = 6.83 Hz; damped,
+the page's 5.89 to 6.80 Hz. On the hardening spring <m>mΩ</m>²/4 = 400 N/m and the larger root is
+√(60² − 20²) = 56.6 N/m above it, so <m>κ</m> = 456.6 N/m and <m>a</m> = √(56.6/75 000) = 27.5 mm, the preset's
+settled swing.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each preset (top left) sets up the spring, the drive and the sweep:</p>
+<!--PRESETS-->
 
 <h3><a name="computing"></a>How this page computes it</h3>
-<p>The linear part, m x″ + c x′ + k x, is stepped exactly, as the chain's simulator steps it (a first-order hold
-on the input). The cubic's and the pump's forces go in as an input that changes linearly over each step, its end
-value found by Newton from where the step ends. The step resolves the drive and the spring's stiffness at the largest
-amplitude in reach. The measured amplitudes are the displacement's first and half harmonics over each drive cycle and the one
-before (over a pair, a swing at Ω/2 doesn't leak into the first harmonic). The chart's multipliers come from a
-Runge–Kutta step of every cell at once.</p>
+<p>The linear part, <m>mẍ</m> + <m>cẋ</m> + <m>kx</m>, is stepped exactly, as the chain's simulator steps it (a
+first-order hold on the input). The cubic's and the pump's forces go in as an input that changes linearly over
+each step, its end value found by Newton from where the step ends. The step resolves the drive and the spring's
+stiffness at the largest amplitude in reach. The measured amplitudes are the displacement's first and half
+harmonics over each drive cycle and the one before (over a pair, a swing at <m>Ω</m>/2 doesn't leak into the
+first harmonic). The chart's multipliers come from a Runge–Kutta step of every cell at once.</p>
 <takeaways>
 <li>A nonlinear spring's resonance leans along its backbone, the frequency of a free swing at each amplitude: right for a hardening spring, left for a softening one.</li>
 <li>Where the curve folds over there are three steady states, the middle one unstable: sweeps jump at the folds, and the two directions disagree.</li>
 <li>Harmonic balance (one harmonic) predicts the curve well, but misses super- and subharmonic resonances and chaos.</li>
-<li>A spring pumped near twice its natural frequency is unstable at rest; its swing grows at half the pump's frequency until the nonlinearity detunes it.</li>
+<li>A spring pumped near twice its natural frequency is unstable at rest once the pump beats the damping (μ &gt; 4ζ); its swing grows at half the pump's frequency until the nonlinearity detunes it.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x f omega_n zeta Omega k_3 duffing mu floquet</notation>
+<reading>kovacic-brennan nayfeh-mook</reading>
