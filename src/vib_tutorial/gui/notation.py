@@ -1901,6 +1901,27 @@ SYMBOLS = (
         "forces",
     ),
     Symbol(
+        "scatter",
+        "V<sub>m</sub>, V<sub>k</sub>, V<sub>c</sub>, σ<sub>L</sub>, μ<sub>L</sub>, s<sub>i</sub>, t<sub>i</sub>, σ<sub>f</sub>, δ, N<sub>s</sub>",
+        "scatter: the coefficients of variation (σ over the mean) of the masses, springs and dampers; a lognormal "
+        "factor's log's standard deviation and mean; spring i's share of a mode's strain energy, mass i's of its "
+        "kinetic energy; a natural frequency's standard deviation; a mode's relative shift; the chains drawn",
+        "–, –, –, –, –, –, –, Hz, –, –",
+        "variability_page",
+        "scatter",
+    ),
+    Symbol(
+        "ring",
+        "N, n, k<sub>c</sub>, ω<sub>b</sub>, x<sub>j</sub>, δ<sub>j</sub>, Δ, θ, P, E, F<sub>j</sub>",
+        "a ring of blades: their number; a wave's nodal diameters; the springs between neighbours; a blade's own "
+        "frequency, √(k/m); blade j's motion and its stiffness's mistuning; two blades' difference; the mixing "
+        "angle of their mode; the participation number, how many blades a mode moves; the engine order; the "
+        "force on blade j",
+        "–, –, N/m, rad/s, m, –, –, rad, –, –, N",
+        "variability_page",
+        "localization",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

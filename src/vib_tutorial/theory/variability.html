@@ -1,4 +1,3 @@
-
 <before>
 <a href="page:updating_page#sensitivities">Updating by sensitivities</a>
 <a href="page:test_page#measured">A measured FRF</a>
@@ -7,41 +6,137 @@
 <p>Real masses, stiffnesses and joints scatter: from part to part, assembly to assembly, day to day. A model
 with nominal values predicts the average structure at best. <b>Monte Carlo</b> treats the properties as random:
 draw many structures, analyse each, and look at the spread of what matters. The page scatters every mass, spring
-and damper independently (lognormal, so they stay positive) and draws each copy's receptance and frequencies.</p>
-<p>For small scatter the spread follows from the sensitivities (the Model updating page's): with φ
-mass-normalized, a spring's change moves λ = ω² by its strain energy share, (φ<sub>i</sub> − φ<sub>i−1</sub>)² δk,
-and a mass's by −λφ<sub>i</sub>² δm, so to first order</p>
-<p align="center">σ<sub>λ</sub>² = Σ ((φ<sub>i</sub> − φ<sub>i−1</sub>)² k<sub>i</sub> c<sub>k</sub>)² +
-Σ (λ φ<sub>i</sub>² m<sub>i</sub> c<sub>m</sub>)², &nbsp; σ<sub>f</sub>/f = σ<sub>λ</sub>/2λ.</p>
-<p>Frequencies scatter by less than the properties (each mode averages over many of them); peaks scatter
-sideways, so near a resonance the response's spread is huge. Damping's scatter moves only the peaks' heights.
-Design to the band, not the nominal curve.</p>
+and damper independently and draws each copy's receptance and frequencies.</p>
+<p>Each property is its nominal value times a <b>lognormal</b> factor, which stays positive however wide the
+scatter. With the coefficient of variation <m>V</m> (the standard deviation over the mean: <m>V<sub>m</sub></m>,
+<m>V<sub>k</sub></m>, <m>V<sub>c</sub></m> for the masses, springs and dampers), the factor's logarithm is normal
+with</p>
+<eq>\sigma_L^2 = \ln\left(1 + V^2\right), \qquad \mu_L = -\tfrac{1}{2}\sigma_L^2</eq>
+<p>the mean <m>μ<sub>L</sub></m> pulled down by half the variance so that the factor's own mean is 1. For a small
+<m>V</m>, <m>σ<sub>L</sub></m> ≈ <m>V</m> and the factor is nearly normal; for a wide one it leans: a few
+parts well above nominal, none below zero.</p>
+
+<h3><a name="first-order"></a>The frequencies' spread to first order</h3>
+<p>For a small scatter the spread follows from the sensitivities (the
+<a href="page:updating_page#sensitivities">Model updating page's</a>). With <m>φ<sub>r</sub></m>
+mass-normalized, a relative change in spring <m>i</m> moves <m>ω<sub>r</sub>²</m> by its share
+<m>s<sub>i</sub></m> of the mode's strain energy, and one in mass <m>i</m> by minus its share
+<m>t<sub>i</sub></m> of the kinetic energy:</p>
+<eq>s_i = \frac{k_i\,(\phi_{ir} - \phi_{i-1,r})^2}{\omega_r^2}, \qquad t_i = m_i\,\phi_{ir}^2</eq>
+<p>each set adding up to 1 over the mode. Independent changes add in quadrature, and <m>f<sub>r</sub></m> moves by half of <m>ω<sub>r</sub>²</m>'s
+relative change, so</p>
+<eq>\frac{\sigma_f}{f_r} = \frac{1}{2}\sqrt{V_k^2 \sum_i s_i^2 + V_m^2 \sum_i t_i^2}</eq>
+<p>This is the dashed curve on the <i>Frequencies</i> tab and the first-order column of the readout. Since the
+shares add to 1, <m>Σs<sub>i</sub>²</m> is at most 1 (one spring carrying the whole mode) and at least one
+over the number of springs (all alike): a mode averages over the parts it moves, so its frequency scatters by less than
+half of theirs. Dampers don't enter at all: the undamped frequencies depend on <m>M</m> and <m>K</m> alone.</p>
+
+<h3><a name="peaks"></a>Why the peaks scatter most</h3>
+<p>The frequencies scatter by a per cent or two; the response near a resonance by far more, because the
+peak moves sideways. Near mode <m>r</m> one term of the receptance dominates. If the scattered mode sits a
+fraction <m>δ</m> above the nominal one, then at the nominal resonance
+<m>ω<sub>r</sub>²(1 + δ)² − ω<sub>r</sub>²</m> ≈ <m>2δω<sub>r</sub>²</m> beside the damping's
+<m>2ζω<sub>r</sub>²</m>, and</p>
+<eq>\frac{|H(\omega_r)|}{|H|_{\text{peak}}} \approx \frac{1}{\sqrt{1 + (\delta/\zeta)^2}}</eq>
+<p>The yardstick is the frequencies' scatter against the damping ratio: once <m>σ<sub>f</sub>/f<sub>r</sub></m>
+is comparable to <m>ζ</m>, the response at the nominal peak can drop to half or less, and between the peaks a
+scattered peak can arrive and raise it. The band on the receptance is therefore narrow between the peaks and
+wide at them. Damping's own scatter changes only the peaks' heights. Design to the band, not the nominal curve.</p>
+
+<h3><a name="how-many"></a>How many draws</h3>
+<p>Monte Carlo's answer is itself random. A standard deviation estimated from <m>N<sub>s</sub></m> normal draws
+scatters by about</p>
+<eq>\frac{\sigma(\hat\sigma)}{\sigma} \approx \frac{1}{\sqrt{2\,(N_s - 1)}}</eq>
+<p>so 200 chains give each <m>σ<sub>f</sub></m> to about 5 %, and halving that takes four times as many. The
+band's edges (the 5th and 95th percentiles) rest on the few chains out in the tails and need more draws than
+the standard deviation does.</p>
 
 <h3><a name="localization"></a>Mode localization</h3>
 <p>A structure made of identical, weakly coupled parts (a bladed disc, a truss of identical bays, a row of
-identical rooms) has modes that are waves through all the parts, in a narrow band of frequencies. Make the parts
-slightly different (<b>mistuning</b>) and, when the differences are comparable to the coupling, the waves can no
-longer pass: each mode collapses onto one or a few parts (Anderson localization, first met in disordered
-crystals). The measure is the mistuning over the coupling, so a structure that is <i>more</i> precisely made but
-more weakly coupled can be worse.</p>
-<p>The <b>participation number</b> (Σφ²)²/Σφ⁴ counts the parts a mode moves: two-thirds of N for a standing wave,
-N for the uniform one, 1 for a mode on one part.</p>
+identical rooms) has modes that are waves through all the parts, in a narrow band of frequencies. The page's
+model is a ring of <m>N</m> blades, each a mass <m>m</m> on a spring <m>k</m> to a disc held still, neighbours
+joined by springs <m>k<sub>c</sub></m>:</p>
+<p><img src="fig:ring"></p>
+<p>Tuned, a wave with <m>n</m> nodal diameters, <m>x<sub>j</sub></m> = <m>X</m>e<sup>i2πnj/N</sup>, stretches
+each coupling spring by <m>X</m>(e<sup>i2πn/N</sup> − 1), and the blade's equation gives</p>
+<eq>\omega^2 = \frac{k}{m}\left(1 + \frac{4k_c}{k}\sin^2\frac{\pi n}{N}\right), \qquad n = 0, 1, \ldots, N/2</eq>
+<p>from the blade's own frequency (<m>n</m> = 0, the coupling springs unstretched) to
+√(1 + 4<m>k<sub>c</sub></m>/<m>k</m>) times it (neighbours in opposition). The waves round the ring one way
+and the other share a frequency, so every mode but the first and (for even <m>N</m>) the last comes in a pair.</p>
+<p>Make the blades slightly different (<b>mistuning</b>: blade <m>j</m>'s stiffness <m>k</m>(1 +
+<m>δ<sub>j</sub></m>)) and, when the differences are comparable to the coupling, the waves can no longer pass:
+each mode collapses onto one or a few blades. This is <b>Anderson localization</b>, first met in disordered
+crystals <cite>anderson</cite> and shown in structures <cite>hodges</cite>. Two blades show why. Their
+stiffness factors differ by <m>Δ</m>; the coupling <m>k<sub>c</sub></m> is the off-diagonal term of their
+stiffness matrix and <m>kΔ</m> the difference on its diagonal, so the lower mode is (cos <m>θ</m>, sin <m>θ</m>)
+with</p>
+<eq>\tan 2\theta = \frac{2k_c}{k\,\Delta}</eq>
+<p>Tuned, <m>θ</m> = 45°: both blades alike. Once <m>kΔ</m> passes <m>k<sub>c</sub></m>, <m>θ</m> falls and the
+mode settles on the softer blade:</p>
+<p><img src="fig:pair"></p>
+<p>The measure is the mistuning over the coupling, not the mistuning alone, so a structure that is <i>more</i>
+precisely made but more weakly coupled can be worse. The <b>participation number</b></p>
+<eq>P = \frac{\left(\sum_j \phi_j^2\right)^2}{\sum_j \phi_j^4}</eq>
+<p>counts the blades a mode moves: <m>N</m> when they all move alike, about two-thirds of <m>N</m> for a
+standing wave (sin² averages ½ and sin⁴ ⅜), 1 for a mode on one blade, and 1/(cos⁴<m>θ</m> + sin⁴<m>θ</m>)
+for the pair.</p>
 
 <h3><a name="mistuning"></a>Forced response of a mistuned disc</h3>
 <p>A turbine's blades are driven by the flow past the vanes ahead of them: the same force on every blade, its
-phase stepping 2πE/N from blade to blade (engine order E). A tuned disc answers with one travelling wave, every
-blade alike. Mistuned, the response spreads over several modes and concentrates on some blades: the worst blade's
-peak rises above the tuned one, which matters because fatigue is set by the worst blade. The amplification peaks
-when the mistuning is comparable to the coupling, and Whitehead's bound (1 + √N)/2 caps it for light damping.
-Intentional mistuning (alternating blades) is one of the cures.</p>
+phase stepping round the disc,</p>
+<eq>F_j = F\,\mathrm{e}^{\,\mathrm{i}\,2\pi E j/N}</eq>
+<p>with <m>E</m> the <b>engine order</b> (the number of disturbances per revolution). A tuned disc answers with
+the matching wave alone, every blade alike: <m>n</m> = <m>E</m>, or <m>N</m> − <m>E</m> (a wave the other way)
+when <m>E</m> passes <m>N</m>/2, as the samples of a sine alias. Its peak, at that wave's frequency, is set by
+the damper alone. Mistuned, the force's wave is no longer a mode: the response spreads over several modes and
+concentrates on some blades, and the worst blade's peak rises above the tuned one. That matters because fatigue
+is set by the worst blade. The amplification peaks when the mistuning is comparable to the coupling, and
+for light damping and one engine order it can't exceed Whitehead's bound <cite>whitehead</cite></p>
+<eq>\frac{|x|_{\max}}{|x|_{\text{tuned}}} \le \frac{1 + \sqrt{N}}{2}</eq>
+<p>With much more mistuning the blades decouple and each answers alone: the amplification falls back.
+<b>Intentional mistuning</b> (alternating two kinds of blade) is one of the cures: a large, known difference
+that keeps the random one small beside it <cite>castanier-pierre</cite>.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page's defaults: the uniform 4-mass chain (1 kg, 400 N/m, 2 N·s/m; modes at 1.105, 3.183, 4.877 and
+5.982 Hz), its springs scattered by <m>V<sub>k</sub></m> = 5 %, 200 chains; and a ring of 12 blades (1 kg,
+10 kN/m, <m>k<sub>c</sub></m> = 5 % of <m>k</m>, <m>ζ</m> = 0.003), tuned.</p>
+<ol>
+<li><b>The factors.</b> <m>σ<sub>L</sub>²</m> = ln(1 + 0.05²) = 0.002497, so <m>σ<sub>L</sub></m> = 0.0500 and
+<m>μ<sub>L</sub></m> = −0.00125: a spring's 95th percentile is e<sup>−0.00125 + 1.645 × 0.05</sup> = 1.084
+times nominal.</li>
+<li><b>Mode 1's shares.</b> Its springs carry 0.431, 0.333, 0.184 and 0.052 of the strain energy (twice the
+Model updating page's sensitivities). <m>Σs<sub>i</sub>²</m> = 0.333 (it is ⅓ for every mode of this chain), so
+<m>σ<sub>f</sub>/f<sub>1</sub></m> = ½ × 5 % × √0.333 = 1.44 %: <m>σ<sub>f</sub></m> = 0.0160 Hz on 1.105 Hz, and
+1.44 % for every mode.</li>
+<li><b>Against Monte Carlo.</b> The 200 chains give 0.0155 Hz for mode 1 (1.40 %) and 1.36 to 1.45 % over the
+modes. With 200 draws the estimate is good to 1/√398 = 5.0 %, ± 0.0008 Hz: the two agree.</li>
+<li><b>At the peak.</b> Mode 1's damping ratio is 0.0174, a little more than the 1.44 % scatter. 95 % of the
+chains have their mode within 1.96 × 1.44 = 2.82 % of nominal, which leaves 1/√(1 + (2.82/1.74)²) = 0.53 of
+the peak; the readout's band at the nominal peak runs from 0.54 to 1.00 times nominal. It can't rise above
+1: there the nominal chain is already at its peak.</li>
+<li><b>The tuned ring.</b> The blade alone: √(10 000/1)/2π = 15.92 Hz. With <m>k<sub>c</sub>/k</m> = 0.05 the
+band runs to 15.92 × √1.2 = 17.43 Hz, through 16.02, 16.31, 16.69, 17.07 and 17.34 Hz for <m>n</m> = 1 to 5:
+the <i>Ring modes</i> tab's frequencies. Engine order 3 drives the <m>n</m> = 3 pair at 16.69 Hz, where
+the damper (2<m>ζmω<sub>b</sub></m> at the blade's <m>ω<sub>b</sub></m>) leaves 1/(2 × 0.003 × 100.0 × 104.9) =
+0.0159 m/N on every blade.</li>
+<li><b>Two blades.</b> Coupled by <m>k<sub>c</sub></m> = 1 % of <m>k</m>, their stiffnesses 1 % apart:
+tan 2<m>θ</m> = 2, <m>θ</m> = 31.7°, amplitudes 0.85 and 0.53, <m>P</m> = 1.67. 5 % apart: <m>θ</m> =
+10.9°, amplitudes 0.98 and 0.19, <m>P</m> = 1.07, a mode of one blade.</li>
+<li><b>The bound.</b> For 12 blades Whitehead's (1 + √12)/2 = 2.23: the worst blade can answer at most 2.23
+times the tuned ring's 0.0159 m/N, 0.0355 m/N, however the blades are mistuned.</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the scatter or the ring (Things to try, top left); the first three load the uniform
 chain into the Simulation page.</p>
 <!--TRIALS-->
 <takeaways>
-<li>Scattered properties scatter the frequencies by less, and the response near a peak by much more.</li>
+<li>Scattered properties scatter the frequencies by less, and the response near a peak by much more: compare σ<sub>f</sub>/f with ζ.</li>
 <li>First-order sensitivities predict the frequencies' spread from the strain and kinetic energy shares.</li>
 <li>Weakly coupled, nearly identical parts localize their modes when the mistuning matches the coupling.</li>
 <li>A mistuned disc's worst blade can answer up to (1 + √N)/2 times the tuned one.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m chain_i matrices omega_i phi_i modal_const zeta scatter ring</notation>
+<reading>castanier-pierre ewins</reading>
