@@ -5,8 +5,8 @@ The *Variability & localization* page. Two models:
 - The Simulation page's chain with every mass, spring and damper scattered (lognormal, so it stays positive, with
   the given coefficient of variation): `monte_carlo` draws `count` chains and gives each one's natural frequencies
   and receptance, for bands on the FRF. `sensitivity_sigma` is the first-order estimate of each frequency's spread:
-  with φ mass-normalized, λ = ω² moves by (φ_i − φ_{i−1})² δk_i and −λ φ_i² δm_i, so
-  σ_λ² = Σ ((φ_i − φ_{i−1})² k_i c_k)² + Σ (λ φ_i² m_i c_m)² and σ_f/f = σ_λ/2λ.
+  with φ mass-normalized, spring i's share of the strain energy s_i = k_i (φ_i − φ_{i−1})²/ω² and mass i's of the
+  kinetic energy t_i = m_i φ_i², so σ_f/f = ½√(V_k² Σs_i² + V_m² Σt_i²), V the coefficients of variation.
 - A `Ring` of identical blades (a bladed disc): each blade a mass on its own spring k to the disc (held still),
   neighbours joined by weak springs k_c round the ring. Tuned, its modes are travelling waves with n nodal diameters
   in a narrow band; mistuned (each blade's k scattered by a CoV), a weak coupling lets them localize on a few blades

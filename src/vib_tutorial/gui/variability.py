@@ -34,7 +34,7 @@ from ..core.variability import (
     tuned_band,
     whitehead,
 )
-from . import settle_plots
+from . import settle_plots, variability_figures
 from .lesson import (
     Form,
     TrialBox,
@@ -89,14 +89,16 @@ TRIALS = (
     VariabilityTrial(
         "5 % scatter in the springs",
         "Two hundred copies of the uniform chain, each spring scattered by 5 % (lognormal). Each frequency "
-        "scatters by about 1.4 % (mode 1: σ = 0.015 Hz on 1.105 Hz), and the first-order estimate from the "
-        "modes' strain energies, σ<sub>f</sub>/f = σ<sub>λ</sub>/2λ, gives 1.44 % for every mode. The receptance's band is narrow "
-        "between the peaks and wide at them: a sharp peak moves sideways, so near it the response can be several "
-        "times the nominal one.",
+        "scatters by about 1.4 % (mode 1: <m>σ<sub>f</sub></m> = 0.015 Hz on 1.105 Hz), and the first-order "
+        "estimate from the modes' strain energies, <m>σ<sub>f</sub>/f</m> = ½<m>V<sub>k</sub></m>√Σ<m>s<sub>i</sub>²</m>, "
+        "gives 1.44 % for every mode. The receptance's band is narrow between the peaks and wide at them: a sharp "
+        "peak moves sideways, so at the nominal peak 5 % of the chains answer below 0.54 of it, and between the "
+        "peaks a scattered one can arrive and raise the response.",
     ),
     VariabilityTrial(
         "Masses scatter too",
-        "5 % on the masses as well as the springs: the frequencies scatter by about 2 % (mode 1: σ = 0.023 Hz). "
+        "5 % on the masses as well as the springs: the frequencies scatter by about 2 % (mode 1: "
+        "<m>σ<sub>f</sub></m> = 0.023 Hz). "
         "Independent sources add in quadrature: √2 times the springs' alone.",
         mass=5.0,
     ),
@@ -117,7 +119,8 @@ TRIALS = (
     VariabilityTrial(
         "Weak coupling: 1 % mistuning localizes",
         "The coupling cut to 0.5 % and each blade's stiffness scattered by 1 %: the scatter is now twice the "
-        "coupling, the waves can't get past the blades that differ, and the lowest mode moves 1.3 blades: "
+        "coupling, the waves can't get past the blades that differ, and the lowest mode moves 1.3 blades "
+        "(<m>P</m> = 1.3): "
         "it is one blade's. A mode localized on a few blades puts all the energy there.",
         coupling=0.5,
         mistuning=1.0,
@@ -136,7 +139,7 @@ TRIALS = (
         "Engine order 3 on the ring with a 2 % coupling (Forced tab). Tuned, every blade answers alike. With "
         "this 1 % pattern the worst blade peaks only 1.06 times the tuned one, but over 12 patterns the worst "
         "reaches 1.34 at 1 % and 1.42 at 2 %, where the mistuning matches the coupling: still below "
-        "Whitehead's bound (1 + √12)/2 = 2.23. More mistuning helps again (1.28 at 10 %): the blades "
+        "Whitehead's bound (1 + √<m>N</m>)/2 = 2.23. More mistuning helps again (1.28 at 10 %): the blades "
         "decouple.",
         coupling=2.0,
         mistuning=1.0,
@@ -184,8 +187,9 @@ def _shares(rng: np.random.Generator) -> Question:
         f"In one mode of a chain, its {n} springs carry these shares of the strain energy: {listed}. Every spring "
         f"scatters by {c:g} %, independently. By how many percent does the mode's frequency scatter, to first order?",
         spread,
-        f"A spring's δk moves λ = ω² by its share s<sub>i</sub> of λ, so σ<sub>λ</sub>/λ = c √Σs<sub>i</sub>² = "
-        f"{c:g} × √{number(sum(v * v for v in shares))} and σ<sub>f</sub>/f = σ<sub>λ</sub>/2λ = {number(spread)} %. "
+        f"A spring's relative change moves ω² by its share s<sub>i</sub> of that change, and f by half of it, so "
+        f"σ<sub>f</sub>/f = ½V<sub>k</sub>√Σs<sub>i</sub>² = ½ × {c:g} × √{number(sum(v * v for v in shares))} = "
+        f"{number(spread)} %. "
         "Less than the springs' own: the mode averages over them.",
         unit="%",
         setup=dict(**_uniform(n), stiffness=c),
@@ -380,7 +384,7 @@ FORCED_TIP = (
     "patterns, and Whitehead's bound.</p>"
 )
 
-NOTES_HTML = load_notes("variability", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("variability", figures=variability_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 def _fields(t: VariabilityTrial) -> dict:

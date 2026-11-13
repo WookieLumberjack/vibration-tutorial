@@ -1051,6 +1051,34 @@ REFERENCES = (
         "Modelling</i>, Institute of Physics Publishing, 2001",
         "detecting nonlinearity in tests, and describing functions",
     ),
+    Reference(
+        "anderson",
+        "Anderson 1958",
+        "P. W. Anderson, “Absence of diffusion in certain random lattices”, <i>Physical Review</i> 109(5), "
+        "1492–1505, 1958",
+        "",
+    ),
+    Reference(
+        "hodges",
+        "Hodges 1982",
+        "C. H. Hodges, “Confinement of vibration by structural irregularity”, <i>Journal of Sound and Vibration</i> "
+        "82(3), 411–424, 1982",
+        "",
+    ),
+    Reference(
+        "whitehead",
+        "Whitehead 1966",
+        "D. S. Whitehead, “Effect of mistuning on the vibration of turbo-machine blades induced by wakes”, "
+        "<i>Journal of Mechanical Engineering Science</i> 8(1), 15–21, 1966",
+        "",
+    ),
+    Reference(
+        "castanier-pierre",
+        "Castanier and Pierre 2006",
+        "M. P. Castanier and C. Pierre, “Modeling and analysis of mistuned bladed disk vibration: status and "
+        "emerging directions”, <i>Journal of Propulsion and Power</i> 22(2), 384–396, 2006",
+        "mistuned bladed discs: localization, the amplification's statistics, reduced models and intentional mistuning",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")

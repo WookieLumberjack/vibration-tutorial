@@ -2265,6 +2265,93 @@ def test_variability_trials():
     assert whitehead(12) == pytest.approx(2.23, abs=0.005)
 
 
+def test_variability_worked_example():
+    """The Variability & localization page's worked example: the lognormal factors, mode 1's strain-energy shares
+    and first-order spread against Monte Carlo, the band at the peak, the tuned ring and its engine-order peak, two
+    blades sharing a mode, and Whitehead's bound."""
+    import math
+
+    from vib_tutorial.core.model import ChainSystem
+    from vib_tutorial.core.variability import (
+        Ring,
+        Scatter,
+        forced,
+        monte_carlo,
+        natural_hz,
+        participation,
+        ring_modes,
+        sensitivity_sigma,
+        sweep_grid,
+        whitehead,
+    )
+    from vib_tutorial.gui.variability_figures import pair_modes
+
+    s2 = math.log(1 + 0.05**2)
+    assert s2 == pytest.approx(0.002497, abs=5e-7)
+    assert math.sqrt(s2) == pytest.approx(0.0500, abs=5e-5)
+    assert -s2 / 2 == pytest.approx(-0.00125, abs=5e-6)
+    assert math.exp(-0.00125 + 1.645 * 0.05) == pytest.approx(1.084, abs=5e-4)
+
+    chain = ChainSystem.uniform(4)
+    f, phi = natural_hz(chain)
+    w2 = (2 * math.pi * f) ** 2
+    shares = np.diff(phi, prepend=0.0, axis=0) ** 2 * chain.stiffness[:, None] / w2
+    assert shares[:, 0] == pytest.approx([0.431, 0.333, 0.184, 0.052], abs=5e-4)
+    assert (shares**2).sum(axis=0) == pytest.approx([1 / 3] * 4, abs=5e-4)
+    assert 0.5 * 5 * math.sqrt(0.333) == pytest.approx(1.44, abs=5e-3)
+    scatter = Scatter(0.0, 0.05, 0.0)
+    sigma = sensitivity_sigma(chain, scatter)
+    assert sigma[0] == pytest.approx(0.0160, abs=5e-5)
+    assert sigma / f == pytest.approx([0.0144] * 4, abs=5e-5)
+
+    grid = np.geomspace(0.3 * f[0], 1.8 * f[-1], 900)  # the page's
+    mc = monte_carlo(chain, scatter, 200, grid, 3, 3)
+    spread = mc.freqs.std(axis=0)
+    assert spread[0] == pytest.approx(0.0155, abs=5e-5)
+    assert 100 * spread[0] / f[0] == pytest.approx(1.40, abs=5e-3)
+    rel = 100 * spread / f
+    assert (rel.min(), rel.max()) == pytest.approx((1.36, 1.45), abs=5e-3)
+    assert 1 / math.sqrt(398) == pytest.approx(0.050, abs=5e-4)
+    assert 0.05 * 0.0160 == pytest.approx(0.0008, abs=5e-5)
+
+    _, C, _ = chain.matrices()
+    zeta = np.diag(phi.T @ C @ phi) / (2 * np.sqrt(w2))
+    assert zeta[0] == pytest.approx(0.0174, abs=5e-5)
+    assert 1.96 * 1.44 == pytest.approx(2.82, abs=5e-3)
+    assert 1 / math.sqrt(1 + (2.82 / 1.74) ** 2) == pytest.approx(0.53, abs=5e-3)
+    low, high = mc.band()
+    peak = int(np.argmax(mc.nominal_frf))
+    assert low[peak] / mc.nominal_frf[peak] == pytest.approx(0.54, abs=5e-3)
+    assert high[peak] / mc.nominal_frf[peak] == pytest.approx(1.00, abs=5e-3)
+
+    ring = Ring()
+    assert ring.blade_hz == pytest.approx(15.92, abs=5e-3)
+    tuned_hz, _ = ring_modes(ring)
+    n = np.arange(7)
+    bands = ring.blade_hz * np.sqrt(1 + 4 * 0.05 * np.sin(np.pi * n / 12) ** 2)
+    assert bands == pytest.approx([15.92, 16.02, 16.31, 16.69, 17.07, 17.34, 17.43], abs=5e-3)
+    assert np.unique(tuned_hz.round(6)) == pytest.approx(bands, abs=1e-6)
+    wb, w3 = 2 * math.pi * ring.blade_hz, 2 * math.pi * bands[3]
+    assert (wb, w3) == pytest.approx((100.0, 104.9), abs=0.05)
+    assert 1 / (2 * 0.003 * 100.0 * 104.9) == pytest.approx(0.0159, abs=5e-5)
+    swept = forced(ring, 3, sweep_grid(ring))
+    assert swept.max() == pytest.approx(0.0159, abs=5e-5)
+    assert np.ptp(swept.max(axis=0)) == pytest.approx(0.0, abs=1e-9)
+
+    (a0, b0, p0), (a1, b1, p1), (a5, b5, p5) = pair_modes()
+    assert (a0, b0, p0) == pytest.approx((0.707, 0.707, 2.00), abs=5e-3)
+    assert math.degrees(0.5 * math.atan(2.0)) == pytest.approx(31.7, abs=0.05)
+    assert (a1, b1, p1) == pytest.approx((0.85, 0.53, 1.67), abs=5e-3)
+    assert math.degrees(0.5 * math.atan(2 / 5)) == pytest.approx(10.9, abs=0.05)
+    assert (a5, b5, p5) == pytest.approx((0.98, 0.19, 1.07), abs=5e-3)
+    assert participation(np.array([[math.cos(0.5 * math.atan(2.0))], [math.sin(0.5 * math.atan(2.0))]]))[0] == (
+        pytest.approx(1.67, abs=5e-3)
+    )
+
+    assert whitehead(12) == pytest.approx(2.23, abs=5e-3)
+    assert 2.23 * 0.0159 == pytest.approx(0.0355, abs=5e-5)
+
+
 def test_diagnostics_trials():
     from dataclasses import replace
 
