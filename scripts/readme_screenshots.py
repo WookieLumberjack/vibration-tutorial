@@ -360,10 +360,10 @@ def test_page(block, force_noise, response_noise, exp_end, tab, poles=None):
     p = w.test_page
     w.pages.setCurrentWidget(p)
     settle()
-    p.block.setCurrentIndex(p.block.findText(str(block)))
-    p.force_noise.setValue(force_noise)
-    p.response_noise.setValue(response_noise)
-    p.exp_end.setValue(exp_end)
+    p.test_setup.block.setCurrentIndex(p.test_setup.block.findText(str(block)))
+    p.test_setup.force_noise.setValue(force_noise)
+    p.test_setup.response_noise.setValue(response_noise)
+    p.test_setup.exp_end.setValue(exp_end)
     # Random noise: take the first seed whose automatic pick finds `poles` modes, as the caption says.
     for seed in range(40):
         p.seed = seed
