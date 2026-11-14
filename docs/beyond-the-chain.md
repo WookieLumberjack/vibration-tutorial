@@ -173,7 +173,9 @@ axis, so it is a symmetric top too. A rectangle isn't: with I₁ ≠ I₂ the sp
 form goes. Without gravity Euler–Poinsot's solution in Jacobi's elliptic functions remains, and spun about its
 middle axis the plate flips over and back (the tennis-racket effect); with gravity there's none, and the
 *Chaos* tab's Poincaré section and two tops let go 10⁻⁸ rad apart show the motion turn chaotic. Its last section links the
-top's two precessions to the rotor's forward and backward whirl.
+top's two precessions to the rotor's forward and backward whirl. The *Components* tab plots ω, L, τ and the inertia
+tensor as the top runs, in fixed axes, the body's or the axis frame (following the axis, not the spin): I is
+constant in the body's axes and turns in space, and L isn't along ω.
 
 Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant
 J = L·(a e₃ + R ẑ) survives it, so the energy sinks onto the least energy that J allows at each tilt:

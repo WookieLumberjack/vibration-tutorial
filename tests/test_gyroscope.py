@@ -322,3 +322,34 @@ def test_a_slow_playback_still_moves_the_top():
     for _ in range(60):
         sim.advance(1 / 60)
     assert sim.t == pytest.approx(600 * frame + 1.0, abs=sim.h), "1×: one simulated second a second, not more"
+
+
+def test_the_components_in_a_frame():
+    """dL/dt = τ in space, I constant in the body's axes and turning in space, ω = I⁻¹L, and a symmetric top's
+    inertia constant in the axis frame too (its spin doesn't move it)."""
+    from vib_tutorial.core.gyroscope import (
+        Frame,
+        angular_velocity,
+        frame_axes,
+        gravity_torque,
+        in_frame,
+        inertia_in,
+    )
+
+    for top in (Top(), RECTANGLE):
+        sim = TopSimulator(Motion(top, 600 * RPM, math.radians(30)))
+        s = sim.advance(2.0)
+        tau = gravity_torque(s.axis, top.weight_moment)
+        rate = np.gradient(s.momentum, s.t, axis=0)
+        assert np.abs(rate - tau)[5:-5].max() < 1e-3 * np.abs(tau).max(), "dL/dt = τ"
+        body = inertia_in(s.axis, s.mark, top.moments, frame_axes(s.axis, s.mark, Frame.BODY))
+        assert np.allclose(body, np.diag(top.moments)), "constant in the body's axes"
+        space = inertia_in(s.axis, s.mark, top.moments, frame_axes(s.axis, s.mark, Frame.SPACE))
+        assert np.ptp(space[:, 0, 0]) > 1e-3 * top.transverse, "it turns in space"
+        assert np.allclose(
+            np.einsum("nij,nj->ni", space, angular_velocity(s.axis, s.mark, s.momentum, top.moments)), s.momentum
+        )
+        held = inertia_in(s.axis, s.mark, top.moments, frame_axes(s.axis, s.mark, Frame.AXIS))
+        assert np.allclose(held, held[0], atol=1e-9 * top.polar) == top.symmetric, "spin moves only an asymmetric top's"
+        axes = frame_axes(s.axis, s.mark, Frame.AXIS)
+        assert np.allclose(in_frame(s.axis, axes), [0.0, 0.0, 1.0]), "the axis is the frame's third"
