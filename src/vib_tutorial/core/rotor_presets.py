@@ -127,7 +127,7 @@ def rotor_presets() -> list[RotorPreset]:
             RotorSystem(bearing_a=Bearing(swirl=0.5), bearing_b=Bearing(swirl=0.5)),
             10_000.0,
             2500.0,
-            "The oil swirls round at half the shaft's speed, so the cross-coupling grows as cΩ/2. Past "
+            "The oil swirls round at half the shaft's speed, so the cross-coupling grows as <m>cΩ</m>/2. Past "
             "twice the first natural frequency, 3136 rpm, the forward whirl grows: oil whip, locked at "
             "26 Hz whatever the speed.",
         ),
@@ -171,7 +171,7 @@ def rotor_presets() -> list[RotorPreset]:
             "A tight ring, 30 µm round the disc, with dry friction μ = 0.3. Through the critical the whirl "
             "reaches the ring, and the friction, dragging the disc's rim backward, flips it at 1545 rpm "
             "into backward whirl at 227 Hz, the disc's frequency on the ring, far above the speed. The "
-            "rim rolls round the ring, so the orbit's radius is R Ω / ω, 7.3 mm at 2000 rpm, pushing the "
+            "rim rolls round the ring, so the orbit's radius is <m>RΩ</m>/<m>ω</m>, 7.3 mm at 2000 rpm, pushing the "
             "ring back far past its clearance: dry whirl, which would wreck a real machine.",
         ),
         RotorPreset(
@@ -196,7 +196,7 @@ def rotor_presets() -> list[RotorPreset]:
             6000.0,
             "The disc overhung past B, horizontal, floating in active magnetic bearings: the integral holds "
             "both journals at the centre, and the shaft alone sags. The forward critical, 1542 rpm, is well "
-            "damped (ζ = 0.054). The disc's forward tilting mode rises with the speed, and at 8894 rpm it "
+            "damped (<m>ζ</m> = 0.054). The disc's forward tilting mode rises with the speed, and at 8894 rpm it "
             "reaches 739 Hz, where the amplifier's lag turns the bearings' damping negative: past it the "
             "whirl grows.",
         ),
