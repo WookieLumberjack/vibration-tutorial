@@ -17,11 +17,14 @@ def make_app(theme: str | None = None):
     import pyqtgraph as pg
     from PySide6 import QtWidgets
 
-    from . import plot_patches, theming
+    from . import display_size, plot_patches, theming
 
     pg.setConfigOptions(antialias=True)
     plot_patches.install()
-    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        display_size.apply_saved()  # Qt reads its scale factor as the app is created
+        app = QtWidgets.QApplication(sys.argv)
     from .maths import register_fonts
 
     register_fonts()
@@ -148,7 +151,7 @@ def record_startup(window, path: str, launched_at: float | None = None) -> None:
 def run() -> int:
     from PySide6 import QtCore
 
-    from . import frame_stats
+    from . import display_size, frame_stats
     from .main_window import MainWindow
 
     app = make_app()
@@ -158,6 +161,8 @@ def run() -> int:
         launched = os.environ.get("VIB_TUTORIAL_LAUNCHED_AT")
         record_startup(window, path, float(launched) if launched else None)
     window.show()
+    if not display_size.check_fits(window):  # the size saved is too large for this screen: restarted at 100 %
+        return 0
     window.guide_first_run()
     preload = threading.Thread(target=_preload_scipy, name="preload-scipy", daemon=True)
     QtCore.QTimer.singleShot(0, preload.start)  # after the first paint

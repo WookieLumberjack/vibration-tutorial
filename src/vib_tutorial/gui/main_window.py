@@ -28,7 +28,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import frame_stats, links, maths, notes_view, theming, weak
+from . import display_size, frame_stats, links, maths, notes_view, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
@@ -356,6 +356,11 @@ THEME_TIP = (
     "<p>Colours of the whole app: plots, animation and controls.</p>"
     "<p><b>System</b> follows the desktop's light or dark setting, and switches with it.</p>"
 )
+SIZE_TIP = (
+    "<p>How large the whole app draws: text, lines, plots and figures alike. For a projector or a TV across "
+    "the room, try 150 %. The app restarts to change it, back on this page.</p>"
+    "<p>The notes' text has a size of its own too (Ctrl+= and Ctrl+-).</p>"
+)
 THEORY_TIP = (
     "<p>Show this page's <i>Theory</i> tab: what the page shows, the ideas behind it, things to try, "
     "and its symbols. (F1)</p>"
@@ -616,6 +621,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.theme_combo.setToolTip(THEME_TIP)
         theme_label = QtWidgets.QLabel("Theme:")
         theme_label.setToolTip(THEME_TIP)
+        self.size_combo = QtWidgets.QComboBox()
+        self.size_combo.addItems([display_size.label(scale) for scale in display_size.SIZES])
+        self.size_combo.setCurrentText(display_size.label(display_size.active()))
+        size_label = QtWidgets.QLabel("Size:")
+        for widget in (self.size_combo, size_label):
+            widget.setToolTip(SIZE_TIP)
+        if display_size.from_environment():  # QT_SCALE_FACTOR, set before launch, decides it
+            self.size_combo.setEnabled(False)
+            self.size_combo.setToolTip(f"Set by {display_size.ENV} in the environment.")
         corner = QtWidgets.QWidget()
         cl = QtWidgets.QHBoxLayout(corner)
         cl.setContentsMargins(6, 2, 6, 2)
@@ -644,6 +658,8 @@ class MainWindow(QtWidgets.QMainWindow):
         cl.addSpacing(8)
         cl.addWidget(theme_label)
         cl.addWidget(self.theme_combo)
+        cl.addWidget(size_label)
+        cl.addWidget(self.size_combo)
         self.pages.setCornerWidget(corner, QtCore.Qt.Corner.TopRightCorner)
         self.setCentralWidget(self.pages)
         self.resize(1700, 900)
@@ -675,6 +691,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chain.mass_dragged.connect(self._on_mass_dragged)
         self.chain.mass_released.connect(self._on_mass_released)
         self.theme_combo.textActivated.connect(self._on_theme_picked)
+        self.size_combo.activated.connect(self._on_size_picked)
         theming.application().styleHints().colorSchemeChanged.connect(self._on_desktop_scheme)
 
         self._apply_dof(system.n)
@@ -929,6 +946,31 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_theme_picked(self, name: str) -> None:
         theming.save_name(name)
         self.set_theme(name)
+
+    def _on_size_picked(self, index: int) -> None:
+        """A new size: saved and, if the reader agrees, shown at once by a restart (see `display_size`)."""
+        scale = display_size.SIZES[index]
+        now = display_size.label(display_size.active())
+        if not display_size.fits(self, scale):
+            QtWidgets.QMessageBox.information(
+                self,
+                "Size",
+                f"At {display_size.label(scale)} the window needs a screen at least "
+                f"{display_size.screen_width_needed(self, scale)} px wide (at 100 %), more than this one has.",
+            )
+            self.size_combo.setCurrentText(now)
+            return
+        display_size.save(scale)
+        if scale == display_size.active():
+            return
+        answer = QtWidgets.QMessageBox.question(
+            self,
+            "Size",
+            f"Restart the app now to show it at {display_size.label(scale)}? (Otherwise it opens at that size "
+            "next time.)",
+        )
+        if answer == QtWidgets.QMessageBox.StandardButton.Yes:
+            display_size.restart()
 
     def _on_desktop_scheme(self) -> None:
         # Checked once the change (which theming.apply also causes) has settled.

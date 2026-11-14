@@ -7,7 +7,7 @@
 | **Left** | System parameters (m, k, c for each element and friction F<sub>f</sub> for each mass, 1 to 8 masses), the excitation (a force on a mass, or motion of the ground), and simulation controls (run/pause, speed, plot window, auto-scale) |
 | **Centre** | Animation of the chain (with a scale bar for the real displacement) and live energy bars, above time histories of the applied force and of the motion (in physical or modal coordinates), of the energy, or of the force in each spring and damper |
 | **Right** | Tabs: *Modal analysis* (table, mode shapes, release), *Frequency response*, and *Theory* (notes written for students) |
-| **Top** | The pages, in six groups, and the *Theory*, *Theory window*, *About* and *Theme* controls |
+| **Top** | The pages, in six groups, and the *Theory*, *Theory window*, *About*, *Theme* and *Size* controls |
 
 The pages are grouped in the order they are meant to be read, each using only ideas from the pages
 before it (Ctrl+1 to Ctrl+6 jump to a group). The first run opens on the first, *Single oscillator*, at
@@ -73,6 +73,16 @@ the masses, modes and substructures, chosen so every curve, label and table entr
 legible on its background. The choice is remembered.
 
 ![Dark theme: a harmonic force tuned to mode 2, plotted in modal coordinates, with non-proportional damping](images/dark_theme.png)
+
+## Size, for presenting
+
+*Size* (top right, beside *Theme*) draws the whole app larger, for a projector or a TV across the room:
+**125 %**, **150 %** or **200 %**. Text, lines, markers, plots and figures all grow together, as on a
+high-resolution screen, so every page looks as it does at 100 %, only larger. The app restarts to change
+it, back on the page it showed; the choice is remembered. At 150 % the window needs a screen about
+1,700 px wide (a 1080p projector or TV), and a size the screen can't hold is refused. If the app opens on
+a smaller screen than the size was picked for, it goes back to 100 %. The notes' text has its own size as
+well (Ctrl+= and Ctrl+-), for reading closely at any size.
 
 ---
 
