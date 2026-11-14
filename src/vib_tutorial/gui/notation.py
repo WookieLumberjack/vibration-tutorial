@@ -2486,6 +2486,14 @@ SYMBOLS = (
         "rotor_page",
     ),
     Symbol(
+        "squeeze_film",
+        "C<sub>sq</sub>",
+        "a squeeze-film damper's damping, on a centred circular orbit",
+        "N·s/m",
+        "rotor_page",
+        "other-bearings",
+    ),
+    Symbol(
         "lund",
         "m<sub>b</sub>, ω<sub>w</sub>, K<sub>eq</sub>",
         "Lund's rigid rotor: its mass per bearing, its whirl frequency at the threshold, the film's equivalent "
