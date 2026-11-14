@@ -2105,6 +2105,71 @@ SYMBOLS = (
         "skyhook",
     ),
     Symbol(
+        "top_body",
+        "m, r, l, s, w, b, g, I<sub>x</sub>, I<sub>y</sub>, β",
+        "a top: its mass; a disc's radius; its centre's height up the stem; a square's side; a rectangle's sides; "
+        "gravity; a plate's moments about two lines across its axis, and the angle of a third between them",
+        "kg, m, m, m, m, m, m/s², kg·m², rad",
+        "gyroscope_page",
+        "rigid-body",
+    ),
+    Symbol(
+        "top_rates",
+        "L, I, ω, ω₁, ω₂, ω₃, L₂, L₃, τ, e₂, e₃, ẑ",
+        "a turning body: its angular momentum and inertia tensor; its angular velocity and that along each principal "
+        "axis (ω₃ the spin); L along e₂ and e₃; gravity's moment; the body's axes as unit vectors; the vertical",
+        "kg·m²/s, kg·m², rad/s, rad/s, rad/s, rad/s, kg·m²/s, kg·m²/s, N·m, –, –, –",
+        "gyroscope_page",
+        "rigid-body",
+    ),
+    Symbol(
+        "euler_angles",
+        "φ, θ, ψ, θ₀, q, χ, n̂, h",
+        "Euler's angles: precession about the vertical, tilt from it, spin about the axis; the tilt let go at; a "
+        "unit quaternion, the angle it turns by and the axis about which; the simulation's step",
+        "rad, rad, rad, rad, –, rad, –, s",
+        "gyroscope_page",
+        "euler-angles",
+    ),
+    Symbol(
+        "lagrange_top",
+        "ℒ, p<sub>ψ</sub>, p<sub>φ</sub>, E, E′, U",
+        "Lagrange's top: its Lagrangian (kinetic less potential energy); the angular momenta about the axis and "
+        "about the vertical, both kept; the energy, and the energy less the spin's; the tilt's effective potential",
+        "J, kg·m²/s, kg·m²/s, J, J, J",
+        "gyroscope_page",
+        "lagrange",
+    ),
+    Symbol(
+        "nutation_u",
+        "u, u₁, u₂, u₃, f(u), a<sub>ψ</sub>, a<sub>φ</sub>, ε, γ, T, k",
+        "nutation: cos θ; the cubic's roots (the turning points, and the third above 1); the cubic, u̇²; "
+        "p<sub>ψ</sub>/I₁, p<sub>φ</sub>/I₁, 2E′/I₁ and 2mgl/I₁; a nod's period; the elliptic modulus",
+        "–, –, –, –, 1/s², 1/s, 1/s, 1/s², 1/s², s, –",
+        "gyroscope_page",
+        "nutation",
+    ),
+    Symbol(
+        "poinsot",
+        "I<sub>a</sub>, I<sub>b</sub>, I<sub>c</sub>, M, λ",
+        "a free asymmetric top (Euler–Poinsot): its moments in order, smallest first; |L|; the rate of its Jacobi "
+        "elliptic functions",
+        "kg·m², kg·m², kg·m², kg·m²/s, 1/s",
+        "gyroscope_page",
+        "asymmetric",
+    ),
+    Symbol(
+        "round_tip",
+        "R, a, α, G, P, N, F, v<sub>P</sub>, v<sub>G</sub>, D, E<sub>J</sub>",
+        "a top on a table: its tip's radius; how far the tip's centre sits below the centre of mass (negative: "
+        "above, a tippe top's), and α = −a/R; the centre of mass; the contact point; the table's push and its "
+        "friction; the contact's slip and the centre of mass's velocity; the inertia J's energy uses; the least "
+        "energy at a given J",
+        "m, m, –, –, –, N, N, m/s, m/s, kg·m², J",
+        "gyroscope_page",
+        "on-a-table",
+    ),
+    Symbol(
         "SRS",
         "SRS",
         "shock response spectrum: each oscillator's peak response to a shock, against its f<sub>n</sub>",

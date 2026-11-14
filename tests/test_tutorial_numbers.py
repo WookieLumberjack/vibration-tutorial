@@ -2705,6 +2705,63 @@ def test_active_control_worked_example():
     assert 1 / ((2 * math.pi * 50) ** 2 * 1e-7) == pytest.approx(101, abs=0.5)
 
 
+def test_gyroscope_worked_example():
+    """The Gyroscope page's worked example: the opening top (0.5 kg disc, r 40 mm, l 30 mm, 1500 rpm, let go at
+    rest at 30°)."""
+    import scipy.special
+
+    from vib_tutorial.core import gyroscope as gy
+    from vib_tutorial.gui.gyroscope import TRIALS
+
+    trial = TRIALS[0]
+    assert (trial.mass, trial.radius, trial.height, trial.spin_rpm, trial.tilt) == (0.5, 0.04, 0.03, 1500.0, 30.0)
+    top, motion = trial.top, trial.motion
+    # the top: I₃ 4.0, I₁ 6.5 kg·cm², mgl 0.14715 N·m, ω₃ 157.1 rad/s
+    i1, _, i3 = top.moments
+    assert (i3 * 1e4, i1 * 1e4) == pytest.approx((4.0, 6.5))
+    assert top.weight_moment == pytest.approx(0.14715)
+    assert 1500 * 2 * math.pi / 60 == pytest.approx(157.08, abs=0.005)
+    # sleeps above 48.9 rad/s, 467 rpm
+    assert 2 * math.sqrt(6.5e-4 * 0.14715) / 4.0e-4 == pytest.approx(48.9, abs=0.05)
+    assert top.sleeping_spin == pytest.approx(48.9, abs=0.05)
+    assert top.sleeping_spin / gy.RPM == pytest.approx(467, abs=0.5)
+    # steady precession: 2.39 and 109 rad/s; estimates 2.34 and 112
+    assert 4.0e-4 * 157.08 == pytest.approx(0.06283, abs=0.000005)
+    assert 6.5e-4 * math.cos(math.radians(30)) == pytest.approx(5.629e-4, abs=5e-8)
+    slow, fast = gy.steady_precession(top, 1500 * gy.RPM, math.radians(30))
+    assert (slow, fast) == pytest.approx((2.39, 109), abs=0.5)
+    assert slow == pytest.approx(2.39, abs=0.005)
+    assert np.sort(np.roots([5.629e-4, -0.06283, 0.14715])) == pytest.approx([2.39, 109], abs=0.5)
+    assert 0.14715 / 0.06283 == pytest.approx(2.34, abs=0.005)
+    assert 0.06283 / 5.629e-4 == pytest.approx(112, abs=0.5)
+    # nutation: a_ψ 96.7, a_φ 83.7, γ 452.8; roots 0.8528, 0.8660, 19.78; 30° to 31.48°; k² 6.98e-4, K 1.5711, 67.9 ms
+    assert 0.06283 / 6.5e-4 == pytest.approx(96.7, abs=0.05)
+    assert 96.66 * math.cos(math.radians(30)) == pytest.approx(83.7, abs=0.05)
+    assert 2 * 0.14715 / 6.5e-4 == pytest.approx(452.8, abs=0.05)
+    u1, u2, u3 = motion.roots()
+    assert (u1, u2, u3) == pytest.approx((0.8528, 0.8660, 19.78), abs=0.005)
+    assert u1 == pytest.approx(0.8528, abs=0.00005)
+    assert u2 == pytest.approx(0.8660, abs=0.00005)
+    lo, hi = (math.degrees(x) for x in motion.turning())
+    assert (lo, hi) == pytest.approx((30.0, 31.48), abs=0.005)
+    assert 19.78 - 0.8528 == pytest.approx(18.93, abs=0.005)
+    assert u2 - u1 == pytest.approx(0.01321, abs=0.000005)
+    assert 0.01321 / 18.93 == pytest.approx(6.98e-4, abs=5e-6)
+    assert scipy.special.ellipk(6.98e-4) == pytest.approx(1.5711, abs=0.00005)
+    assert 4 * 1.5711 / math.sqrt(452.8 * 18.93) == pytest.approx(0.0679, abs=0.00005)
+    assert motion.nutation_period() == pytest.approx(0.0679, abs=0.00005)
+    assert motion.nutation_hz() == pytest.approx(14.7, abs=0.05)
+    # the fast top's estimates: 0.0242 rad = 1.39° deep, 15.4 Hz
+    assert 2 * 6.5e-4 * 0.14715 * 0.5 / 0.06283**2 == pytest.approx(0.0242, abs=0.00005)
+    assert math.degrees(0.0242) == pytest.approx(1.39, abs=0.005)
+    assert hi - lo == pytest.approx(1.48, abs=0.005)
+    assert 0.06283 / (2 * math.pi * 6.5e-4) == pytest.approx(15.4, abs=0.05)
+    # the path: cusps; 2.39 rad/s on average, a turn in 2.63 s
+    assert motion.path() is gy.Path.CUSPS
+    assert motion.mean_precession() == pytest.approx(2.39, abs=0.005)
+    assert 2 * math.pi / 2.39 == pytest.approx(2.63, abs=0.005)
+
+
 def test_diagnostics_trials():
     from dataclasses import replace
 

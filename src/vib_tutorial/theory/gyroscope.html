@@ -1,172 +1,227 @@
-
 <before>
 <a href="page:pendulum_page#rotation">Turning instead of sliding</a>
 <a href="page:pendulum_page#large-swings">Large swings</a>
 <a href="page:integration_page#central">Central difference</a>
 </before>
 <h3><a name="rigid-body"></a>A rigid body turning</h3>
-<p>A body turning about a fixed point has angular momentum L = Iω, with I its inertia tensor about the
-point, and gravity's moment τ about the point changes it: dL/dt = τ (in fixed axes). In the body's
-<b>principal axes</b> I is diagonal, (I₁, I₂, I₃), but those axes turn, so L's rate in them gains ω × L:</p>
-<p align="center">I₁ω₁' + (I₃ − I₂)ω₂ω₃ = τ₁, &nbsp; I₂ω₂' + (I₁ − I₃)ω₃ω₁ = τ₂, &nbsp;
-I₃ω₃' + (I₂ − I₁)ω₁ω₂ = τ₃,</p>
-<p><b>Euler's equations</b>. A <b>symmetric top</b> has I₁ = I₂, so the third reads I₃ω₃' = τ₃, and gravity's
-moment, across the axis, leaves ω₃ (the spin) constant. The top here is a disc of mass m and radius r on a light
-stem, its centre a height l above the tip: I₃ = mr²/2 along the axis, and I₁ = m(r²/4 + l²) across it about the
-tip (parallel axes, as for the Pendulums page's rod).</p>
+<p>A body turning about a fixed point has angular momentum <b>L</b> = <b>I</b><m>ω</m>, with <b>I</b> its inertia
+tensor about the point, and gravity's moment <m>τ</m> about the point changes it: d<b>L</b>/d<m>t</m> = <m>τ</m>
+(in fixed axes). In the body's <b>principal axes</b> <b>I</b> is diagonal, (<m>I₁</m>, <m>I₂</m>, <m>I₃</m>), but
+those axes turn, so <b>L</b>'s rate in them gains <m>ω</m> × <b>L</b>:</p>
+<eq>I_1\dot\omega_1 + (I_3 - I_2)\,\omega_2\omega_3 = \tau_1,</eq>
+<eq>I_2\dot\omega_2 + (I_1 - I_3)\,\omega_3\omega_1 = \tau_2,</eq>
+<eq>I_3\dot\omega_3 + (I_2 - I_1)\,\omega_1\omega_2 = \tau_3,</eq>
+<p><b>Euler's equations</b> <cite>euler-1765</cite>. A <b>symmetric top</b> has <m>I₁</m> = <m>I₂</m>, so the third
+reads <m>I₃ω̇₃</m> = <m>τ₃</m>, and gravity's moment, across the axis, leaves <m>ω₃</m> (the spin) constant.</p>
+<p><img src="fig:top"></p>
+<p>The top here is a disc of mass <m>m</m> and radius <m>r</m> on a light stem, its centre a height <m>l</m> above
+the tip: <m>I₃</m> = <m>mr</m>²/2 along the axis, and <m>I₁</m> = <m>m</m>(<m>r</m>²/4 + <m>l</m>²) across it about
+the tip (parallel axes, as for the Pendulums page's rod).</p>
 <p><a name="square"></a>A disc isn't the only symmetric top. A square plate (<i>Shape</i>) looks the same after a
-quarter turn, so its moments about two lines across its axis a quarter turn apart are equal, and so (I being a
-tensor, its moment about a line at angle β is I<sub>x</sub> cos²β + I<sub>y</sub> sin²β) are its moments about
-every line across its axis: ms²/12 for a side s, and I₃ = ms²/6 along it (perpendicular axes: I₃ is the two
-across it together, for any flat plate). That is a disc's mr²/4 and mr²/2 for r = s/√3, so a square moves exactly
-as that disc does, corners and all; so does any regular polygon. A rectangle doesn't: its two moments across the
-axis differ, I₁ ≠ I₂, and it is an <b>asymmetric top</b>, without ω₃ constant or the closed forms below.</p>
-<p>Without a moment, L stays put and the axis turns round it at |L|/I₁ (in a cone), while the body turns about
-its own axis at (1/I₃ − 1/I₁)L₃ besides: the free top's wobble.</p>
+quarter turn, so its moments about two lines across its axis a quarter turn apart are equal, and so (<b>I</b> being
+a tensor, its moment about a line at angle <m>β</m> is <m>I<sub>x</sub></m> cos²<m>β</m> + <m>I<sub>y</sub></m>
+sin²<m>β</m>) are its moments about every line across its axis: <m>ms</m>²/12 for a side <m>s</m>, and <m>I₃</m> =
+<m>ms</m>²/6 along it (perpendicular axes: <m>I₃</m> is the two across it together, for any flat plate). That is a
+disc's <m>mr</m>²/4 and <m>mr</m>²/2 for <m>r</m> = <m>s</m>/√3, so a square moves exactly as that disc does, corners
+and all; so does any regular polygon. A rectangle doesn't: its two moments across the axis differ,
+<m>I₁</m> ≠ <m>I₂</m>, and it is an <b>asymmetric top</b>, without <m>ω₃</m> constant or the closed forms below.</p>
+<p>Without a moment, <b>L</b> stays put and the axis turns round it at |<b>L</b>|/<m>I₁</m> (in a cone), while the
+body turns about its own axis at (1/<m>I₃</m> − 1/<m>I₁</m>)<m>L₃</m> besides: the free top's wobble.</p>
 
 <h3><a name="asymmetric"></a>The asymmetric top</h3>
-<p>A rectangular plate a × b (<i>Shape</i>) has three different moments about the tip: I₁ = m(b²/12 + l²),
-I₂ = m(a²/12 + l²) and I₃ = m(a² + b²)/12. With I₁ ≠ I₂, Euler's third equation keeps a term,
-I₃ω₃' = (I₁ − I₂)ω₁ω₂, so the spin isn't kept, and everything below that rests on it goes: the effective
-potential, the turning points, the nutation period, steady precession. What's left is the energy and L·ẑ. With
-φ left out (L·ẑ), the top has two degrees of freedom and one quantity kept: too few to solve it. Lagrange's top
-(I₁ = I₂) and Kovalevskaya's (I₁ = I₂ = 2I₃, the centre of mass in the plane) are the only heavy tops that can be
-solved in general.</p>
-<p>Without gravity it can still be solved, in Jacobi's elliptic functions (<b>Euler–Poinsot</b>). With the
-moments sorted I<sub>a</sub> &lt; I<sub>b</sub> &lt; I<sub>c</sub>, the energy E and |L| = M, two of ω's
-components go as cn(λt, k) and sn(λt, k) and the third as dn(λt, k), with</p>
-<p align="center">λ² = (I<sub>c</sub> − I<sub>b</sub>)(M² − 2EI<sub>a</sub>)/I<sub>a</sub>I<sub>b</sub>I<sub>c</sub>,
-&nbsp; k² = (I<sub>b</sub> − I<sub>a</sub>)(2EI<sub>c</sub> − M²)/(I<sub>c</sub> − I<sub>b</sub>)(M² − 2EI<sub>a</sub>)</p>
-<p>(a and c traded if M² &lt; 2EI<sub>b</sub>), coming back every 4K(k)/λ. Spun about its largest or smallest
-axis, it wobbles round it. Spun about its <b>middle</b> axis, k² is near 1 and the spin is unstable: the top flips
-over and back, again and again, the <b>tennis-racket effect</b> (or Dzhanibekov's, after the cosmonaut who saw a
-wing nut do it in orbit). The orientation, not only ω, needs one integral more.</p>
+<p>A rectangular plate <m>w</m> × <m>b</m> (<i>Shape</i>) has three different moments about the tip:
+<m>I₁</m> = <m>m</m>(<m>b</m>²/12 + <m>l</m>²), <m>I₂</m> = <m>m</m>(<m>w</m>²/12 + <m>l</m>²) and <m>I₃</m> =
+<m>m</m>(<m>w</m>² + <m>b</m>²)/12. With <m>I₁</m> ≠ <m>I₂</m>, Euler's third equation keeps a term,
+<m>I₃ω̇₃</m> = (<m>I₁</m> − <m>I₂</m>)<m>ω₁ω₂</m>, so the spin isn't kept, and everything below that rests on it
+goes: the effective potential, the turning points, the nutation period, steady precession. What's left is the
+energy and <b>L</b>·<m>ẑ</m>. With <m>φ</m> left out (<b>L</b>·<m>ẑ</m>), the top has two degrees of freedom and
+one quantity kept: too few to solve it. Lagrange's top (<m>I₁</m> = <m>I₂</m>) and Kovalevskaya's (<m>I₁</m> =
+<m>I₂</m> = 2<m>I₃</m>, the centre of mass in the plane <cite>kovalevskaya</cite>) are the only heavy tops that can
+be solved in general.</p>
+<p>Without gravity it can still be solved, in Jacobi's elliptic functions <cite>jacobi-1850</cite>
+(<b>Euler–Poinsot</b> <cite>poinsot</cite>). With the moments sorted <m>I<sub>a</sub></m> &lt; <m>I<sub>b</sub></m>
+&lt; <m>I<sub>c</sub></m>, the energy <m>E</m> and |<b>L</b>| = <m>M</m>, two of <m>ω</m>'s components go as
+cn(<m>λt</m>, <m>k</m>) and sn(<m>λt</m>, <m>k</m>) and the third as dn(<m>λt</m>, <m>k</m>), with</p>
+<eq>\lambda^2 = \frac{(I_c - I_b)(M^2 - 2EI_a)}{I_aI_bI_c},</eq>
+<eq>k^2 = \frac{(I_b - I_a)(2EI_c - M^2)}{(I_c - I_b)(M^2 - 2EI_a)}</eq>
+<p>(<m>a</m> and <m>c</m> traded if <m>M</m>² &lt; 2<m>EI<sub>b</sub></m>), coming back every 4<m>K</m>(<m>k</m>)/<m>λ</m>.
+Spun about its largest or smallest axis, it wobbles round it. Spun about its <b>middle</b> axis, <m>k</m>² is near
+1 and the spin is unstable: the top flips over and back, again and again, the <b>tennis-racket effect</b>
+<cite>ashbaugh</cite> (or Dzhanibekov's, after the cosmonaut who saw a wing nut do it in orbit). The orientation,
+not only <m>ω</m>, needs one integral more.</p>
 <p>With gravity there is no closed form at all, and the motion can be <b>chaotic</b>: two tops let go a hair
 apart drift apart exponentially, until they have nothing in common. The <i>Chaos</i> tab shows it two ways. A
-<b>Poincaré section</b> marks the spin angle ψ and ω₃ each time the tilt peaks: with L·ẑ and the energy kept,
-that is the whole state there. Regular motion draws closed curves (a symmetric top, which keeps ω₃, one line);
-chaos scatters dots over an area. Below it, a second top let go 10⁻⁸ rad further over: regular motion drifts
-from it in proportion to the time, chaos multiplies the gap over and over.</p>
+<b>Poincaré section</b> <cite>poincare-celeste</cite> marks the spin angle <m>ψ</m> and <m>ω₃</m> each time the tilt
+peaks: with <b>L</b>·<m>ẑ</m> and the energy kept, that is the whole state there. Regular motion draws closed
+curves (a symmetric top, which keeps <m>ω₃</m>, one line); chaos scatters dots over an area. Below it, a second
+top let go 10⁻⁸ rad further over: regular motion drifts from it in proportion to the time, chaos multiplies the
+gap over and over.</p>
 
 <h3><a name="euler-angles"></a>Euler angles, and why the simulation doesn't use them</h3>
-<p>Three angles place the axis and the body round it: the <b>precession</b> φ about the vertical, the
-<b>tilt</b> θ from the vertical, and the <b>spin</b> ψ about the axis. Then
-ω₃ = ψ' + φ' cos θ, and the axis's own rates are θ' and φ' sin θ. Upright (θ = 0), φ and ψ turn about the same
-axis: one of the three angles is lost, the angle rates' equations divide by sin θ, and they blow up (gimbal
-lock). A sleeping top sits right there.</p>
-<p>A <b>unit quaternion</b> q = (cos ½α, n̂ sin ½α), a turn by α about n̂, has no such place: turns compose by
-multiplying quaternions, and nothing divides by zero. The simulation keeps the orientation as one and L in fixed
-axes.</p>
+<p>Three angles place the axis and the body round it: the <b>precession</b> <m>φ</m> about the vertical, the
+<b>tilt</b> <m>θ</m> from the vertical, and the <b>spin</b> <m>ψ</m> about the axis (the figure above). Then</p>
+<eq>\omega_3 = \dot\psi + \dot\varphi\cos\theta,</eq>
+<p>and the axis's own rates are <m>θ̇</m> and <m>φ̇</m> sin <m>θ</m>. Upright (<m>θ</m> = 0), <m>φ</m> and <m>ψ</m>
+turn about the same axis: one of the three angles is lost, the angle rates' equations divide by sin <m>θ</m>, and
+they blow up (gimbal lock). A sleeping top sits right there.</p>
+<p>A <b>unit quaternion</b> <cite>hamilton</cite> <m>q</m> = (cos ½<m>χ</m>, <m>n̂</m> sin ½<m>χ</m>), a turn by
+<m>χ</m> about <m>n̂</m>, has no such place: turns compose by multiplying quaternions, and nothing divides by zero.
+The simulation keeps the orientation as one and <b>L</b> in fixed axes.</p>
 
 <h3><a name="lagrange"></a>Lagrange's top</h3>
-<p>The energy in the angles gives Lagrange's function</p>
-<p align="center">L = ½I₁(θ'² + φ'² sin²θ) + ½I₃(ψ' + φ' cos θ)² − mgl cos θ.</p>
-<p>Neither φ nor ψ appears in it, so their momenta are constant: p<sub>ψ</sub> = I₃ω₃, the angular momentum
-about the axis, and p<sub>φ</sub> = I₁φ' sin²θ + I₃ω₃ cos θ, about the vertical (gravity's moment, horizontal,
-changes neither). So does the energy. Taking φ' from p<sub>φ</sub>, the tilt is left on its own,</p>
-<p align="center">½I₁θ'² + U(θ) = E', &nbsp; U(θ) = (p<sub>φ</sub> − p<sub>ψ</sub> cos θ)²/2I₁ sin²θ + mgl cos θ,</p>
-<p>E' the energy less the spin's ½I₃ω₃². It is a one-mass problem in an <b>effective potential</b>, as the
-Pendulums page's large swing is in its V(θ), and the tilt moves between the two angles where U = E' (the
-<i>Potential</i> tab), the <b>turning points</b>.</p>
+<p>The energy in the angles gives Lagrange's function <cite>lagrange</cite></p>
+<eq>\mathcal{L} = \tfrac{1}{2}I_1(\dot\theta^2 + \dot\varphi^2\sin^2\theta) + \tfrac{1}{2}I_3(\dot\psi + \dot\varphi\cos\theta)^2 - mgl\cos\theta.</eq>
+<p>Neither <m>φ</m> nor <m>ψ</m> appears in it, so their momenta are constant: <m>p<sub>ψ</sub></m> = <m>I₃ω₃</m>, the
+angular momentum about the axis, and <m>p<sub>φ</sub></m> = <m>I₁φ̇</m> sin²<m>θ</m> + <m>I₃ω₃</m> cos <m>θ</m>, about
+the vertical (gravity's moment, horizontal, changes neither). So does the energy. Taking <m>φ̇</m> from
+<m>p<sub>φ</sub></m>, the tilt is left on its own,</p>
+<eq>\tfrac{1}{2}I_1\dot\theta^2 + U(\theta) = E',</eq>
+<eq>U(\theta) = \frac{(p_\varphi - p_\psi\cos\theta)^2}{2I_1\sin^2\theta} + mgl\cos\theta,</eq>
+<p><m>E′</m> the energy less the spin's ½<m>I₃ω₃</m>². It is a one-mass problem in an <b>effective potential</b>, as
+the Pendulums page's large swing is in its <m>V</m>(<m>θ</m>), and the tilt moves between the two angles where
+<m>U</m> = <m>E′</m> (the <i>Potential</i> tab), the <b>turning points</b>.</p>
 
 <h3><a name="precession"></a>Steady precession</h3>
-<p>Held at one tilt (θ'' = 0), the tilt's equation leaves</p>
-<p align="center">I₁ cos θ φ'² − I₃ω₃ φ' + mgl = 0,</p>
+<p>Held at one tilt (<m>θ̈</m> = 0), the tilt's equation leaves</p>
+<eq>I_1\cos\theta\,\dot\varphi^2 - I_3\omega_3\,\dot\varphi + mgl = 0,</eq>
 <p>so a top can precess steadily at either of two rates. For a fast top, the <b>slow</b> one is about
-mgl/I₃ω₃: gravity's moment mgl sin θ turns the angular momentum's horizontal part I₃ω₃ sin θ round, at a rate
-falling as the spin rises. The <b>fast</b> one is about I₃ω₃/I₁ cos θ, the free wobble, gravity hardly in it.
-Lying flat (cos θ = 0) the slow one is exactly mgl/I₃ω₃ and the fast one is gone: the bicycle wheel held by one
-end of its axle. The two meet, and then neither is left, at I₃ω₃ = 2√(I₁ mgl cos θ): a slower top can't precess
-steadily at that tilt (the <i>Precession</i> tab). The precession always turns L toward the moment, so a top spun
-the other way precesses the other way.</p>
+<m>mgl</m>/<m>I₃ω₃</m>: gravity's moment <m>mgl</m> sin <m>θ</m> turns the angular momentum's horizontal part
+<m>I₃ω₃</m> sin <m>θ</m> round, at a rate falling as the spin rises. The <b>fast</b> one is about
+<m>I₃ω₃</m>/<m>I₁</m> cos <m>θ</m>, the free wobble, gravity hardly in it. Lying flat (cos <m>θ</m> = 0) the slow
+one is exactly <m>mgl</m>/<m>I₃ω₃</m> and the fast one is gone: the bicycle wheel held by one end of its axle. The
+two meet, and then neither is left, where the quadratic's discriminant vanishes, at</p>
+<eq>I_3\omega_3 = 2\sqrt{I_1\,mgl\cos\theta}:</eq>
+<p>a slower top can't precess steadily at that tilt (the <i>Precession</i> tab). The precession always turns
+<b>L</b> toward the moment, so a top spun the other way precesses the other way.</p>
 
 <h3><a name="nutation"></a>Nutation</h3>
-<p>Let go at any other rate, the tilt nods between the turning points, <b>nutation</b>. With u = cos θ, the
-energy is</p>
-<p align="center">u'² = f(u) = (α − βu)(1 − u²) − (b − au)²,</p>
-<p>with a = p<sub>ψ</sub>/I₁, b = p<sub>φ</sub>/I₁, α = 2E'/I₁ and β = 2mgl/I₁: a cubic, whose roots
-u₁ &lt; u₂ in [−1, 1] are the turning points and u₃ &gt; 1 the third. A nod and back takes</p>
-<p align="center">T = 4K(m)/√(β(u₃ − u₁)), &nbsp; m = (u₂ − u₁)/(u₃ − u₁),</p>
-<p>K the complete elliptic integral, as in the Pendulums page's large swing. A fast top let go at θ₀ nods about
-2I₁mgl sin θ₀/(I₃ω₃)² deep at about I₃ω₃/I₁: the faster it spins, the shallower and quicker. As it nods it
-precesses at φ' = (b − a cos θ)/sin²θ, so the end of its axis (the <i>Path</i> tab) traces</p>
+<p>Let go at any other rate, the tilt nods between the turning points, <b>nutation</b>. With <m>u</m> = cos
+<m>θ</m>, the energy is</p>
+<eq>\dot u^2 = f(u) = (\varepsilon - \gamma u)(1 - u^2) - (a_\varphi - a_\psi u)^2,</eq>
+<p>with <m>a<sub>ψ</sub></m> = <m>p<sub>ψ</sub></m>/<m>I₁</m>, <m>a<sub>φ</sub></m> = <m>p<sub>φ</sub></m>/<m>I₁</m>,
+<m>ε</m> = 2<m>E′</m>/<m>I₁</m> and <m>γ</m> = 2<m>mgl</m>/<m>I₁</m>: a cubic, whose roots <m>u₁</m> &lt; <m>u₂</m> in
+[−1, 1] are the turning points and <m>u₃</m> &gt; 1 the third. A nod and back takes</p>
+<eq>T = \frac{4K(k)}{\sqrt{\gamma(u_3 - u_1)}}, \qquad k^2 = \frac{u_2 - u_1}{u_3 - u_1},</eq>
+<p><m>K</m> the complete elliptic integral, as in the Pendulums page's large swing. A fast top let go at
+<m>θ₀</m> nods about 2<m>I₁mgl</m> sin <m>θ₀</m>/(<m>I₃ω₃</m>)² deep at about <m>I₃ω₃</m>/<m>I₁</m>: the faster it
+spins, the shallower and quicker. As it nods it precesses at</p>
+<eq>\dot\varphi = \frac{a_\varphi - a_\psi\cos\theta}{\sin^2\theta},</eq>
+<p>so the end of its axis (the <i>Path</i> tab) traces</p>
 <ul>
-<li><b>cusps</b> if φ' = 0 at a turning point: let go without a push, it stops at the top of each nod;</li>
-<li><b>loops</b> if φ' changes sign between them: pushed back, it runs backward at one;</li>
+<li><b>cusps</b> if <m>φ̇</m> = 0 at a turning point: let go without a push, it stops at the top of each nod;</li>
+<li><b>loops</b> if <m>φ̇</m> changes sign between them: pushed back, it runs backward at one;</li>
 <li><b>waves</b> if it doesn't;</li>
 <li>a <b>circle</b> if the two turning points meet: steady precession.</li>
 </ul>
-<p>Without gravity the top is free: L stays put, and the axis turns round it at |L|/I₁ on a cone, so its tilt
-from the vertical nods unless L is vertical. Nutation is that wobble, which gravity's precession carries round.</p>
+<p>Without gravity the top is free: <b>L</b> stays put, and the axis turns round it at |<b>L</b>|/<m>I₁</m> on a
+cone, so its tilt from the vertical nods unless <b>L</b> is vertical. Nutation is that wobble, which gravity's
+precession carries round.</p>
 
 <h3><a name="sleeping"></a>The sleeping top</h3>
-<p>Upright, b = a, and U(θ) ≈ mgl + ½(I₃²ω₃²/4I₁ − mgl)θ² for small θ: a minimum, so upright is stable, if</p>
-<p align="center">I₃²ω₃² &gt; 4I₁mgl, &nbsp; ω₃ &gt; 2√(I₁mgl)/I₃.</p>
-<p>A top spinning faster stands still upright, <b>asleep</b>; nudged, it nods a little round upright. Slower, U
-has a maximum there, and it falls until it comes back up. Friction at the tip slows a real top, which wakes, then
-wobbles, then falls. (The cup holds this top's tip; on a table, a round tip rolls and slides, which is what makes
-a top rise to sleep, and a tippe top turn over: see <a href="page:gyroscope_page#on-a-table">On a table</a>.)</p>
+<p>Upright, <m>a<sub>φ</sub></m> = <m>a<sub>ψ</sub></m>, and for small <m>θ</m></p>
+<eq>U(\theta) \approx mgl + \tfrac{1}{2}\Bigl(\frac{I_3^2\omega_3^2}{4I_1} - mgl\Bigr)\theta^2:</eq>
+<p>a minimum, so upright is stable, if</p>
+<eq>I_3^2\omega_3^2 > 4I_1\,mgl, \qquad \omega_3 > \frac{2\sqrt{I_1\,mgl}}{I_3}.</eq>
+<p>A top spinning faster stands still upright, <b>asleep</b>; nudged, it nods a little round upright. Slower,
+<m>U</m> has a maximum there, and it falls until it comes back up. Friction at the tip slows a real top, which
+wakes, then wobbles, then falls. (The cup holds this top's tip; on a table, a round tip rolls and slides, which is
+what makes a top rise to sleep, and a tippe top turn over: see
+<a href="page:gyroscope_page#on-a-table">On a table</a>.)</p>
 
 <h3><a name="on-a-table"></a>On a table: a round tip</h3>
-<p>Out of its cup the top stands on a table (<i>Setting</i>). Its underside is a sphere of radius R whose centre
-is a below the centre of mass G on the axis: a disc on a round tip has a = l − R, and a <b>tippe top</b>, a ball
-weighted low, a &lt; 0 (α = −a/R). It touches the table at P, R below the sphere's centre, so G stands at
-R + a cos θ, and P slips at v<sub>P</sub> = v<sub>G</sub> + ω × (P − G). The table pushes up with N, whatever
-keeps G at that height, and drags with Coulomb's friction μN against the slip; G moves under the two and gravity,
-and L about G under their moment. Neither of the cup's momenta is kept now (friction's moment is neither
-horizontal nor across the axis), and energy leaks out at F·v<sub>P</sub>.</p>
-<p>Where friction can stop the slip, the tip <b>rolls</b>, and loses nothing. A fast top rolling at tilt θ
-carries G round at ω₃R sin θ while it precesses at about mga/I₃ω₃, which takes a sideways force
-m²gaR sin θ/I₃. Friction gives μmg at most, so it rolls below sin θ = μI₃/maR, whatever the spin, and slides
-above.</p>
+<p>Out of its cup the top stands on a table (<i>Setting</i>). Its underside is a sphere of radius <m>R</m> whose
+centre is <m>a</m> below the centre of mass <m>G</m> on the axis: a disc on a round tip has <m>a</m> = <m>l</m> −
+<m>R</m>, and a <b>tippe top</b>, a ball weighted low, <m>a</m> &lt; 0 (<m>α</m> = −<m>a</m>/<m>R</m>).</p>
+<p><img src="fig:tip"></p>
+<p>It touches the table at <m>P</m>, <m>R</m> below the sphere's centre, so <m>G</m> stands at <m>R</m> +
+<m>a</m> cos <m>θ</m>, and <m>P</m> slips at <b>v</b><sub>P</sub> = <b>v</b><sub>G</sub> + <m>ω</m> × (<m>P</m> −
+<m>G</m>). The table pushes up with <m>N</m>, whatever keeps <m>G</m> at that height, and drags with Coulomb's
+friction <cite>coulomb</cite> <m>μN</m> against the slip; <m>G</m> moves under the two and gravity, and <b>L</b>
+about <m>G</m> under their moment. Neither of the cup's momenta is kept now (friction's moment is neither
+horizontal nor across the axis), and energy leaks out at <b>F</b>·<b>v</b><sub>P</sub>.</p>
+<p>Where friction can stop the slip, the tip <b>rolls</b>, and loses nothing. A fast top rolling at tilt
+<m>θ</m> carries <m>G</m> round at <m>ω₃R</m> sin <m>θ</m> while it precesses at about <m>mga</m>/<m>I₃ω₃</m>,
+which takes a sideways force <m>m</m>²<m>gaR</m> sin <m>θ</m>/<m>I₃</m>. Friction gives <m>μmg</m> at most, so it
+rolls below sin <m>θ</m> = <m>μI₃</m>/<m>maR</m>, whatever the spin, and slides above.</p>
 
 <h3><a name="jellett"></a>Jellett's constant: the rising top and the tippe top</h3>
-<p>One thing survives the friction: <b>Jellett's constant</b> J = L·(a e₃ + R ẑ) = −L·(P − G). The contact
-force's moment about G is (P − G) × F, at right angles to P − G, and a e₃ + R ẑ turns only as e₃ does, at
-ω × e₃, with L·(ω × e₃) = 0 for a symmetric top. So friction takes energy at a fixed J, and the least energy the
-top can have at tilt θ with that J (L along I(a e₃ + R ẑ), nothing else moving) is</p>
-<p align="center">E<sub>J</sub>(θ) = J²/2D(θ) + mg(R + a cos θ), &nbsp;
-D = I₁(a² + R² + 2aR cos θ) + (I₃ − I₁)(a + R cos θ)²,</p>
-<p>I₁ now about G. As friction takes energy out, the top sinks onto E<sub>J</sub> and toward its least (the
-<i>Potential</i> tab). Upright E<sub>J</sub>(0) = J²/2I₃(a + R)² + mg(R + a); turned over
-E<sub>J</sub>(π) = J²/2I₃(R − a)² + mg(R − a).</p>
+<p>One thing survives the friction: <b>Jellett's constant</b> <cite>jellett</cite></p>
+<eq>J = \mathbf{L}\cdot(a\,\mathbf{e}_3 + R\,\hat{z}) = -\mathbf{L}\cdot(P - G).</eq>
+<p>The contact force's moment about <m>G</m> is (<m>P</m> − <m>G</m>) × <b>F</b>, at right angles to <m>P</m> −
+<m>G</m>, and <m>a</m><b>e</b>₃ + <m>R</m><m>ẑ</m> turns only as <b>e</b>₃ does, at <m>ω</m> × <b>e</b>₃, with
+<b>L</b>·(<m>ω</m> × <b>e</b>₃) = 0 for a symmetric top. So friction takes energy at a fixed <m>J</m>, and the
+least energy the top can have at tilt <m>θ</m> with that <m>J</m> (<b>L</b> along <b>I</b>(<m>a</m><b>e</b>₃ +
+<m>R</m><m>ẑ</m>), nothing else moving) is</p>
+<eq>E_J(\theta) = \frac{J^2}{2D(\theta)} + mg(R + a\cos\theta),</eq>
+<eq>D = I_1(a^2 + R^2 + 2aR\cos\theta) + (I_3 - I_1)(a + R\cos\theta)^2,</eq>
+<p><m>I₁</m> now about <m>G</m>. As friction takes energy out, the top sinks onto <m>E<sub>J</sub></m> and toward its
+least (the <i>Potential</i> tab). Upright <m>E<sub>J</sub></m>(0) = <m>J</m>²/2<m>I₃</m>(<m>a</m> + <m>R</m>)² +
+<m>mg</m>(<m>R</m> + <m>a</m>); turned over <m>E<sub>J</sub></m>(π) = <m>J</m>²/2<m>I₃</m>(<m>R</m> − <m>a</m>)² +
+<m>mg</m>(<m>R</m> − <m>a</m>).</p>
 <ul>
-<li>A disc on a round tip (a &gt; 0) spun fast <b>rises</b> to sleep, at J/I₃(a + R): upright is E<sub>J</sub>'s
-least above Ω² = mga(a + R)²/R(I₃(a + R) − I₁R). It rises only while it slides, so it stalls where its tip starts
-to roll, and on a rough table hardly rises at all. With R = 0 the J² term no longer depends on the tilt: a sharp
-tip can't rise.</li>
-<li>A tippe top (a &lt; 0) turned over has G higher, but its spin J/I₃(R − a) is slower. Spun fast enough,
-turned over is E<sub>J</sub>'s least, and upright isn't, if 1 − α &lt; I₁/I₃ &lt; 1 + α: then it turns over and
-spins on its top (a real one on its stem, which this ball leaves out), the same way seen from above but the other
-way about its own axis. Outside that range it stays up, or ends on its side, wherever E<sub>J</sub> is least.</li>
+<li>A disc on a round tip (<m>a</m> &gt; 0) spun fast <b>rises</b> to sleep <cite>hugenholtz</cite>, at
+<m>J</m>/<m>I₃</m>(<m>a</m> + <m>R</m>): upright is <m>E<sub>J</sub></m>'s least above <m>ω₃</m>² =
+<m>mga</m>(<m>a</m> + <m>R</m>)²/<m>R</m>(<m>I₃</m>(<m>a</m> + <m>R</m>) − <m>I₁R</m>). It rises only while it
+slides, so it stalls where its tip starts to roll, and on a rough table hardly rises at all. With <m>R</m> = 0 the
+<m>J</m>² term no longer depends on the tilt: a sharp tip can't rise.</li>
+<li>A tippe top (<m>a</m> &lt; 0) turned over has <m>G</m> higher, but its spin <m>J</m>/<m>I₃</m>(<m>R</m> − <m>a</m>)
+is slower. Spun fast enough, turned over is <m>E<sub>J</sub></m>'s least, and upright isn't, if</li>
 </ul>
+<eq>1 - \alpha < I_1/I_3 < 1 + \alpha:</eq>
+<p>then it turns over and spins on its top (a real one on its stem, which this ball leaves out), the same way seen
+from above but the other way about its own axis. Outside that range it stays up, or ends on its side, wherever
+<m>E<sub>J</sub></m> is least.</p>
 
 <h3><a name="simulation"></a>The simulation</h3>
-<p>The simulation steps the whole body: q and L. Each step of h is split: gravity's moment over half a step
-(L += ½h τ, τ = −mgl e₃ × ẑ: exact, since τ depends only on where the axis points, which doesn't change in it),
-the free top over the whole step (exact: L fixed, the axis turned round it by |L|h/I₁ and the body about its axis
-by (1/I₃ − 1/I₁)L₃h), and gravity's other half. This splitting is <b>symplectic</b>, as the Numerical integration
-page's central difference is: the energy's error stays bounded rather than drifting, and falls as h². Both
-momenta are kept to round-off, since the moment is at right angles to the vertical and to the axis. The step
-resolves the free wobble with 200 steps a turn. The <i>Check</i> tab compares the run with the closed forms.</p>
-<p>An asymmetric top's free motion splits further: its energy is the symmetric top's with I₁ across both axes,
-plus (1/I₂ − 1/I₁)L₂²/2, whose flow just turns the body about its own y axis by (1/I₂ − 1/I₁)L₂h (L₂ = L·e₂,
-which that turn keeps). So each step is gravity's half, that turn's half, the symmetric top's whole step, that
-turn's other half and gravity's: still exact flows, still symplectic and second order, L·ẑ still kept to
-round-off. Without the extra turn it is the symmetric top's step exactly.</p>
-<p>On a table nothing can be split off exactly and friction takes energy, so the state (the quaternion, ω and
-v<sub>G</sub> in space, G's place, and friction's work) is stepped by the classic fourth-order Runge–Kutta step
-instead: 64 steps a turn of the spin or of the wobble about G, shorter where friction, smoothed below 5 mm/s,
-would make the step unstable. J and the energy with friction's work hold to about 10⁻⁷ (the <i>Check</i> tab).
-The tip stays on the table: the run stops if the table would have to pull it down (it would hop), or a disc's rim
-touches it.</p>
+<p>The simulation steps the whole body: <m>q</m> and <b>L</b>. Each step of <m>h</m> is split: gravity's moment over
+half a step (<b>L</b> += ½<m>hτ</m>, <m>τ</m> = −<m>mgl</m> <b>e</b>₃ × <m>ẑ</m>: exact, since <m>τ</m> depends only
+on where the axis points, which doesn't change in it), the free top over the whole step (exact: <b>L</b> fixed, the
+axis turned round it by |<b>L</b>|<m>h</m>/<m>I₁</m> and the body about its axis by (1/<m>I₃</m> −
+1/<m>I₁</m>)<m>L₃h</m>), and gravity's other half. This splitting is <b>symplectic</b>, as the Numerical
+integration page's central difference is: the energy's error stays bounded rather than drifting, and falls as
+<m>h</m>². Both momenta are kept to round-off, since the moment is at right angles to the vertical and to the axis.
+The step resolves the free wobble with 200 steps a turn. The <i>Check</i> tab compares the run with the closed
+forms.</p>
+<p>An asymmetric top's free motion splits further: its energy is the symmetric top's with <m>I₁</m> across both
+axes, plus (1/<m>I₂</m> − 1/<m>I₁</m>)<m>L₂</m>²/2, whose flow just turns the body about its own <m>y</m> axis by
+(1/<m>I₂</m> − 1/<m>I₁</m>)<m>L₂h</m> (<m>L₂</m> = <b>L</b>·<b>e</b>₂, which that turn keeps). So each step is
+gravity's half, that turn's half, the symmetric top's whole step, that turn's other half and gravity's: still exact
+flows, still symplectic and second order, <b>L</b>·<m>ẑ</m> still kept to round-off. Without the extra turn it is
+the symmetric top's step exactly.</p>
+<p>On a table nothing can be split off exactly and friction takes energy, so the state (the quaternion, <m>ω</m> and
+<b>v</b><sub>G</sub> in space, <m>G</m>'s place, and friction's work) is stepped by the classic fourth-order
+Runge–Kutta step instead: 64 steps a turn of the spin or of the wobble about <m>G</m>, shorter where friction,
+smoothed below 5 mm/s, would make the step unstable. <m>J</m> and the energy with friction's work hold to about
+10⁻⁷ (the <i>Check</i> tab). The tip stays on the table: the run stops if the table would have to pull it down (it
+would hop), or a disc's rim touches it.</p>
 
 <h3><a name="to-the-rotor"></a>From the top to the rotor</h3>
 <p>A disc on a spinning shaft is a gyroscope too: as the shaft whirls, the disc's axis tilts, and turning its
-angular momentum I<sub>p</sub>Ω takes a moment. Its two whirl modes are the top's two precessions: a forward
-whirl, stiffened by the spin, its tilting frequency rising toward I<sub>p</sub>Ω/I<sub>d</sub>, the fast
-precession's I₃ω₃/I₁; and a backward one, softened, falling as the slow precession does. The Jeffcott rotor
-page's Campbell diagram plots them against the speed (see its <i>The gyroscopic effect</i>).</p>
+angular momentum (its polar moment of inertia times the shaft's speed) takes a moment. Its two whirl modes are the top's two precessions: a forward
+whirl, stiffened by the spin, its tilting frequency rising toward the speed times its polar moment over its diametral
+one, the fast precession's <m>I₃ω₃</m>/<m>I₁</m>; and a backward one, softened, falling as the slow precession does. The
+Jeffcott rotor page's Campbell diagram plots them against the speed (see its <i>The gyroscopic effect</i>), later in
+the course.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page opens on a 0.5 kg disc 40 mm in radius, 30 mm up its stem, spun at 1500 rpm and let go at 30° without a
+push.</p>
+<ol>
+<li><b>The top.</b> <m>I₃</m> = 0.5 × 0.04²/2 = 4.0 kg·cm², <m>I₁</m> = 0.5 × (0.04²/4 + 0.03²) = 6.5 kg·cm²,
+<m>mgl</m> = 0.5 × 9.81 × 0.03 = 0.14715 N·m, and <m>ω₃</m> = 1500 × 2π/60 = 157.08 rad/s.</li>
+<li><b>It can sleep</b> above 2√(6.5×10⁻⁴ × 0.14715)/4.0×10⁻⁴ = 48.9 rad/s, 467 rpm.</li>
+<li><b>Steady precession.</b> <m>I₃ω₃</m> = 0.06283 N·m·s and <m>I₁</m> cos 30° = 5.629×10⁻⁴, so the quadratic's
+roots are 2.39 and 109 rad/s, against the estimates 0.14715/0.06283 = 2.34 and 0.06283/5.629×10⁻⁴ = 112 rad/s.</li>
+<li><b>Nutation.</b> Let go at rest, <m>a<sub>ψ</sub></m> = 0.06283/6.5×10⁻⁴ = 96.7 /s, <m>a<sub>φ</sub></m> =
+<m>a<sub>ψ</sub></m> cos 30° = 83.7 /s and <m>γ</m> = 2 × 0.14715/6.5×10⁻⁴ = 452.8 /s². The page's cubic has roots
+<m>u₁</m> = 0.8528, <m>u₂</m> = 0.8660 (cos 30°, where it was let go) and <m>u₃</m> = 19.78: it nods between 30° and
+31.48°. <m>k</m>² = 0.01321/18.93 = 6.98×10⁻⁴, so <m>K</m> = 1.5711 and <m>T</m> = 4 × 1.5711/√(452.8 × 18.93) =
+67.9 ms: 14.7 nods a second.</li>
+<li><b>The fast top's estimates.</b> 2 × 6.5×10⁻⁴ × 0.14715 × 0.5/0.06283² = 0.0242 rad, 1.39° deep (the exact
+1.48°), at 0.06283/(2π × 6.5×10⁻⁴) = 15.4 Hz (the exact 14.7).</li>
+<li><b>The path.</b> Let go at rest, <m>φ̇</m> = 0 at the top of each nod: cusps. On average it precesses at
+2.39 rad/s, a turn in 2.63 s.</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the top and lets it go (Things to try, top left).</p>
@@ -180,3 +235,6 @@ page's Campbell diagram plots them against the speed (see its <i>The gyroscopic 
 <li>With I₁ ≠ I₂ the spin isn't kept and the closed forms go: a free asymmetric top still needs Jacobi's elliptic functions and flips about its middle axis, and with gravity it can be chaotic.</li>
 <li>On a table friction keeps only Jellett's J, so the energy sinks toward the least J allows: a sliding round tip rises to sleep, and a tippe top turns over if 1 − α &lt; I₁/I₃ &lt; 1 + α.</li>
 </takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>I_principal top_body top_rates euler_angles lagrange_top V_theta nutation_u K_ell poinsot round_tip J_top mu</notation>
+<reading>goldstein</reading>
