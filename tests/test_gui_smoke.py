@@ -2520,13 +2520,7 @@ def test_every_theory_tab_fits_a_1280_px_window(app):
         if bar.maximum() > 0:
             wide.append(f"{w.pages.tabText(i)}: {bar.maximum()} px too wide for its {browser.viewport().width()} px")
     w.close()
-    still = [line for line in wide if line.split(":")[0] in TOO_WIDE_FOR_NOW]
-    assert len(still) == len(TOO_WIDE_FOR_NOW), f"{TOO_WIDE_FOR_NOW} fit now: take them off TOO_WIDE_FOR_NOW"
-    assert len(wide) == len(still), "\n".join(line for line in wide if line not in still)
-
-
-# The rotor's three older figures are 540–560 px: they're redrawn narrower in its page pass (#218).
-TOO_WIDE_FOR_NOW = {"Jeffcott rotor"}
+    assert not wide, "\n".join(wide)
 
 
 def _windows_font(app) -> None:

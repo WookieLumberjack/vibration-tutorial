@@ -57,6 +57,7 @@ from . import frame_stats, rotor_practice, settle_plots, weak
 from .cms_time import SampleBuffer
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
 from .lesson import RunButton
+from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import spin
 from .rotor_balance import BalancingPanel
@@ -988,7 +989,7 @@ class RotorPage(QtWidgets.QWidget):
         self.preset.setCurrentIndex(index)
         self.preset.blockSignals(False)
         self.preset_note.setText(
-            self.presets[index].note
+            markup(self.presets[index].note)
             if index < len(self.presets)
             else "Your own rotor: pick a preset to start again from one."
         )
