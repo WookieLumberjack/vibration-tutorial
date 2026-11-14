@@ -1,0 +1,115 @@
+<before>
+<a href="page:pendulum_page#rotation">Turning instead of sliding</a>
+<a href="page:deriving_page#two-ways">Two ways to the equations</a>
+</before>
+<h3><a name="why"></a>Why a rigid body in 3D</h3>
+<p>The pendulum and the car's pitch turn about one fixed axis, where the angular momentum is a moment of inertia
+times the rate, one number times another. A body free to turn any way, a box tossed in the air, a satellite, a spinning top, a rotor
+on its bearings, needs more: its angular velocity <m>ω</m> and angular momentum <b>L</b> are vectors, and they
+needn't point the same way. This page builds the equations for that from Newton's, with no gravity and no
+support, so only the turning is left: the body is free in space, turning about its centre of mass <m>G</m>.</p>
+
+<h3><a name="inertia-tensor"></a>The inertia tensor</h3>
+<p><img src="fig:point"></p>
+<p>Cut the body into bits of mass <m>m</m>, each at <m>r</m> from <m>G</m>. Turning at <m>ω</m>, a bit moves at
+<m>ω</m> × <m>r</m>, and its moment of momentum about <m>G</m> is <m>r</m> × <m>m</m>(<m>ω</m> × <m>r</m>). Add
+them up, with <m>a</m> × (<m>b</m> × <m>c</m>) = <m>b</m>(<m>a</m>·<m>c</m>) − <m>c</m>(<m>a</m>·<m>b</m>):</p>
+<eq>\mathbf{L} = \sum m\,\mathbf{r}\times(\boldsymbol{\omega}\times\mathbf{r})</eq>
+<eq>= \sum m\left(|\mathbf{r}|^2\boldsymbol{\omega} - \mathbf{r}\,(\mathbf{r}\cdot\boldsymbol{\omega})\right) = \mathbf{I}\,\boldsymbol{\omega},</eq>
+<p>linear in <m>ω</m>, so a 3 × 3 matrix, the <b>inertia tensor</b> about <m>G</m>:</p>
+<eq>\mathbf{I} = \sum m\left(|\mathbf{r}|^2\,\mathbf{1} - \mathbf{r}\,\mathbf{r}^{\mathsf T}\right),</eq>
+<eq>I_{xx} = \sum m(y^2+z^2),\quad I_{xy} = -\sum m\,xy.</eq>
+<p>On its diagonal are the <b>moments of inertia</b> about each axis (mass times distance squared from it, as the
+pendulum's); off it the <b>products of inertia</b>, which are zero when the mass is spread evenly either
+side of each axis, as in a uniform box about its centre. The kinetic energy is
+<m>E</m> = ½Σ<m>m</m>|<m>ω</m> × <m>r</m>|² = ½<m>ω</m>·<b>I</b><m>ω</m> = ½<m>ω</m>·<b>L</b>.</p>
+<p>For the page's shapes, about their centres: a box of sides <m>a</m>, <m>b</m>, <m>c</m> has
+<m>I<sub>xx</sub></m> = <m>m</m>(<m>b</m>² + <m>c</m>²)/12 and so on round; a cylinder of radius <m>a</m> and
+length <m>c</m>, <m>ma</m>²/2 about its axis and <m>m</m>(3<m>a</m>² + <m>c</m>²)/12 across it; a sphere,
+2<m>ma</m>²/5 about every axis. The page's default box, 1 kg and 30 × 20 × 10 cm, has 4.167, 8.333 and 10.83
+×10⁻³ kg·m².</p>
+<p>A <b>point mass</b> <m>m<sub>p</sub></m> at <m>p</m> from the shape's centre moves <m>G</m> toward it, to
+<m>m<sub>p</sub></m><m>p</m>/(<m>m</m> + <m>m<sub>p</sub></m>), and the tensor about the new <m>G</m> is the
+shape's own moved there by the <b>parallel-axis theorem</b>, <b>I</b> + <m>m</m>(|<m>d</m>|²<b>1</b> −
+<m>d</m><m>d</m>ᵀ) (<m>d</m> from <m>G</m> to the shape's centre), plus the point mass's own
+<m>m<sub>p</sub></m>(|<m>r</m>|²<b>1</b> − <m>r</m><m>r</m>ᵀ). Off the body's axes it brings products of
+inertia: the <i>Inertia</i> tab writes the tensor out.</p>
+
+<h3><a name="principal-axes"></a>Principal axes</h3>
+<p><b>I</b> is symmetric, so it has three real eigenvalues and three perpendicular eigenvectors: the
+<b>principal moments</b> <m>I₁</m> ≤ <m>I₂</m> ≤ <m>I₃</m> and the <b>principal axes</b>. With the eigenvectors as
+the columns of a rotation matrix <m>P</m>,</p>
+<eq>\mathbf{I} = P\,\mathrm{diag}(I_1, I_2, I_3)\,P^{\mathsf T},</eq>
+<p>and in the principal axes the tensor is diagonal: no products of inertia. Spun about a principal axis,
+<b>L</b> = <m>I<sub>k</sub></m><m>ω</m> is along <m>ω</m>; about any other axis it isn't, and the body wobbles. A
+body with a symmetry has its principal axes along it (a box's are its edges' directions); a sphere's moments are
+all equal, so every axis is principal and <b>L</b> is always along <m>ω</m>.</p>
+
+<h3><a name="turning-axes"></a>Derivatives in turning axes</h3>
+<p>Newton's second law for turning, summed over the bits (their internal forces cancel in pairs), is
+d<b>L</b>/d<m>t</m> = <m>τ</m>, the torque about <m>G</m>, in fixed axes. But in fixed axes <b>I</b> changes as the
+body turns. Write <b>L</b> in axes that turn with the body instead: its axes are the columns of a rotation matrix
+<m>B</m>, so <b>L</b> = <m>B</m><b>L</b><sub>b</sub>, and in them <b>I</b><sub>body</sub> is constant, since the
+mass doesn't move in them. A unit vector fixed in the body moves at <m>ω</m> × it, so
+d<m>B</m>/d<m>t</m> applied to any <m>v</m> is <m>ω</m> × <m>Bv</m>, and</p>
+<eq>\frac{d\mathbf{L}}{dt} = B\frac{d\mathbf{L}_b}{dt} + \boldsymbol{\omega}\times\mathbf{L}:</eq>
+<p>a vector's rate in fixed axes is its rate in the turning axes plus <m>ω</m> × it, the change that comes only
+from the axes turning under it. In any frame turning at <m>Ω</m> the same holds with <m>Ω</m> for <m>ω</m>. This is
+the <b>transport theorem</b>, and the <i>Components</i> tab writes it out at any instant with the numbers, in fixed
+axes, the body's own or its principal axes.</p>
+
+<h3><a name="euler-equations"></a>Euler's equations</h3>
+<p>In the body's axes, <b>L</b><sub>b</sub> = <b>I</b><sub>body</sub><m>ω</m> with <b>I</b><sub>body</sub>
+constant, so d<b>L</b>/d<m>t</m> = <m>τ</m> becomes</p>
+<eq>\mathbf{I}\,\dot{\boldsymbol{\omega}} + \boldsymbol{\omega}\times(\mathbf{I}\,\boldsymbol{\omega}) = \boldsymbol{\tau},</eq>
+<p>everything in the body's axes. In its principal axes <b>I</b> is diagonal and the three components are
+<b>Euler's equations</b> <cite>euler-1765</cite>:</p>
+<eq>I_1\dot\omega_1 + (I_3 - I_2)\,\omega_2\omega_3 = \tau_1,</eq>
+<eq>I_2\dot\omega_2 + (I_1 - I_3)\,\omega_3\omega_1 = \tau_2,</eq>
+<eq>I_3\dot\omega_3 + (I_2 - I_1)\,\omega_1\omega_2 = \tau_3.</eq>
+<p>The products of two rates are the gyroscopic terms: even with no torque <m>ω</m> changes, unless it lies along a
+principal axis (two of the three rates zero) or the moments are equal. Torque-free, two things stay fixed: <b>L</b>
+in space (its rate is the torque), so |<b>L</b>|, and the energy <m>E</m> = ½<m>ω</m>·<b>L</b> (its rate is
+<m>τ</m>·<m>ω</m>, the torque's power).</p>
+
+<h3><a name="intermediate-axis"></a>The intermediate axis</h3>
+<p>Spin the body at <m>ω₀</m> about principal axis 1 and nudge it: <m>ω₂</m> and <m>ω₃</m> small. To first order
+<m>ω₁</m> stays <m>ω₀</m> and the second and third equations give</p>
+<eq>\ddot\omega_2 = \frac{(I_3 - I_1)(I_1 - I_2)}{I_2 I_3}\,\omega_0^2\,\omega_2.</eq>
+<p>If <m>I₁</m> is the largest or the smallest moment the two brackets have opposite signs, the factor is
+negative, and the nudge just circles: the body wobbles at <m>ω₀</m>√((<m>I₁</m> − <m>I₂</m>)(<m>I₁</m> −
+<m>I₃</m>)/(<m>I₂</m><m>I₃</m>)). If <m>I₁</m> is the middle one the factor is positive and the nudge grows as
+e<sup><m>λt</m></sup>: the body turns over, and back, again and again. This is the <b>intermediate-axis</b> or
+tennis-racket theorem (and, seen on a wing nut in orbit, the Dzhanibekov effect) <cite>ashbaugh</cite>.</p>
+<p>The page's box, spun at 6 rad/s about its middle axis, has <m>λ</m> = 6√((8.333 − 4.167)(10.83 −
+8.333)/(4.167 × 10.83)) = 2.88 /s; nudged 1° (0.01745 rad) off it, the nudge reaches about a radian in
+ln(57.3)/2.88 = 1.4 s, when it turns over. About its greatest axis it wobbles instead, at 6√((10.83 −
+4.167)(10.83 − 8.333)/(4.167 × 8.333)) = 4.16 rad/s.</p>
+
+<h3><a name="torques"></a>Torques held in the body or in space</h3>
+<p>A torque <m>τ</m> changes <b>L</b> by its impulse, ∫<m>τ</m> d<m>t</m>, and the energy by its work,
+∫<m>τ</m>·<m>ω</m> d<m>t</m>. Held in space (a push that keeps its direction), the impulse just adds up. Held in the
+body (a thruster fixed to it), the torque turns with the body: across a spin it points every way in turn, and
+<b>L</b> only wobbles round, which is why a spinning spacecraft fires its thrusters in pulses timed to the spin.
+The <i>Check</i> tab compares the simulation's energy and <b>L</b> with what the torque put in.</p>
+
+<h3><a name="simulation"></a>The simulation</h3>
+<p>The page keeps the body's orientation as a unit quaternion <m>q</m>, from which <m>B</m> follows, and <b>L</b>
+in space, and steps q̇ = ½<m>q</m> ⊗ (0, <m>ω</m>) and d<b>L</b>/d<m>t</m> = <m>τ</m> by classical Runge–Kutta
+(fourth order), with <m>ω</m> = <b>I</b><sub>body</sub><sup>−1</sup><m>B</m>ᵀ<b>L</b> worked out at every stage
+and <m>q</m> made unit length after each step. The step is 1/400 of a turn at the body's rate (at most 5 ms), and a
+torque's end falls on a step's, so its impulse is exact.</p>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Each of these sets the body up and lets it go (Things to try, top left).</p>
+<!--TRIALS-->
+<takeaways>
+<li>A body's angular momentum about its centre of mass is L = Iω, with I = Σm(|r|²1 − rrᵀ) a 3 × 3 tensor: moments on its diagonal, products of inertia off it.</li>
+<li>Its eigenvectors are the principal axes, in which it is diagonal; spun about one, L is along ω, about any other it isn't.</li>
+<li>A vector's rate in fixed axes is its rate in turning axes plus Ω × it; in the body's axes, where I is constant, dL/dt = τ becomes Euler's equations, Iω̇ + ω × Iω = τ.</li>
+<li>Torque-free, L and the energy are kept; spun about its middle principal axis a body turns over and back, about the least or greatest it only wobbles.</li>
+<li>A torque changes L by its impulse; held in the body across a spin, it turns with it and L only wobbles.</li>
+</takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>rigid_rates rb_tensor I_principal top_frames rb_body rb_flip</notation>
+<reading>goldstein</reading>

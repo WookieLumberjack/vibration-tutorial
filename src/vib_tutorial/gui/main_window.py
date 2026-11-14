@@ -222,6 +222,10 @@ def _page_class(name: str) -> type[QtWidgets.QWidget]:
         from .seismic import SeismicPage
 
         return SeismicPage
+    if name == "rigid_body_page":
+        from .rigid_body import RigidBodyPage
+
+        return RigidBodyPage
     if name == "deriving_page":
         from .deriving import DerivingPage
 
@@ -736,6 +740,7 @@ class MainWindow(QtWidgets.QMainWindow):
     diagnostics_page = property(lambda self: self._page("diagnostics_page"))
     variability_page = property(lambda self: self._page("variability_page"))
     deriving_page = property(lambda self: self._page("deriving_page"))
+    rigid_body_page = property(lambda self: self._page("rigid_body_page"))
     quarter_car_page = property(lambda self: self._page("quarter_car_page"))
     mounts_page = property(lambda self: self._page("mounts_page"))
     frame_page = property(lambda self: self._page("frame_page"))

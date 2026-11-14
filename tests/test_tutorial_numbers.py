@@ -3615,3 +3615,29 @@ def test_diagnostics_worked_example():
         rate = (run.end - run.start) / seconds
         assert (round(2.4 / rate, 2), round(2.4 / rate * run.mode, 1)) == (crossing, cycles)
     assert (dg.PER_REV // 2, dg.REVS) == (16, 8)
+
+
+def test_rigid_body_notes():
+    """The 3D rigid body notes' numbers: the default box's moments, the flip's growth rate and time, and the
+    wobble about the greatest axis; and the trials' (a 0.02 N·m push for 1 s)."""
+    from vib_tutorial.core.rigid_body import Body, Torque, Tumbler
+    from vib_tutorial.gui import rigid_body as page
+
+    box = Body()
+    I1, I2, I3 = box.principal()[0]
+    assert [round(v * 1e3, 3 if v < 0.01 else 2) for v in (I1, I2, I3)] == [4.167, 8.333, 10.83]
+    lam = 6 * math.sqrt((I2 - I1) * (I3 - I2) / (I1 * I3))
+    assert round(lam, 2) == 2.88
+    assert round(math.radians(1.0), 5) == 0.01745 and round(1 / math.radians(1.0), 1) == 57.3
+    assert round(math.log(57.3) / 2.88, 1) == 1.4
+    assert round(6 * math.sqrt((I3 - I1) * (I3 - I2) / (I1 * I2)), 2) == 4.16
+    # The flip takes about that long: the middle axis first points the other way near 1.4 s plus a little.
+    trial = page.TRIALS[0]
+    tm = Tumbler(box, tuple(page.start_rate(box, trial.spin_axis, trial.rate, trial.nudge)))
+    s = tm.advance(3.0)
+    from vib_tutorial.core import rotation
+
+    along = rotation.matrix(s.q)[:, 1, 1]
+    assert 1.4 < s.t[np.argmax(along < 0)] < 2.2
+    push = page.TRIALS[5]
+    assert (push.held, push.torque[2], push.duration) == (Torque.SPACE, 0.02, 1.0)

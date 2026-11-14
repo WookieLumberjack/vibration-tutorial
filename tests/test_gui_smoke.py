@@ -4148,6 +4148,7 @@ def test_shock_page(app):
         "damping_page",
         "isolation_page",
         "deriving_page",
+        "rigid_body_page",
         "energy_page",
         "integration_page",
         "fatigue_page",
@@ -4931,3 +4932,61 @@ def test_notes_text_size_is_one_for_all_and_remembered(app):
         assert notes_view.zoom() == 1.0 and [b.text_px() for b in browsers] == usual
     finally:
         notes_view.set_zoom(1.0)
+
+
+def test_rigid_body_page(main_window, app):
+    """The 3D rigid body page: before a run nothing to plot; run, every quantity in every frame plots, the snapshot
+    holds in each frame; the principal axes' tensor is diagonal; a kick changes L by its impulse; the shapes and
+    the point mass redraw the view and the Inertia tab; the Check tab's errors are small."""
+    import numpy as np
+
+    from vib_tutorial.core.rigid_body import Torque
+    from vib_tutorial.gui import rigid_body as r
+
+    w = main_window
+    page = w.rigid_body_page
+    w.pages.setCurrentWidget(page)
+    page.reset()
+    page.tabs.setCurrentIndex(r.TAB_COMPONENTS)
+    assert "Start it" in page.comp_note.text() and page.snapshot_now() is None
+    page.apply_trial(r.TRIALS[3])  # the off-centre mass: products of inertia
+    page.tabs.setCurrentIndex(r.TAB_COMPONENTS)
+    for _ in range(4):
+        page.step(0.25)
+    page._on_pause(False)
+    for show in range(len(r.SHOWS)):
+        for frame in range(len(r.FRAMES)):
+            page.comp_show.setCurrentIndex(show)
+            page.comp_frame.setCurrentIndex(frame)
+            drawn = [item for item in page.comp_items if item.yData is not None and len(item.yData)]
+            assert len(drawn) == (6 if show == r.SHOW_I else 3)
+            snap = page.snapshot_now()
+            assert snap is not None and snap.mismatch < 1e-3, (show, frame)
+            assert f"At t = {snap.t:.3f} s" in page.comp_snapshot.text()
+    page.comp_show.setCurrentIndex(r.SHOW_I)
+    page.comp_frame.setCurrentIndex(r.FRAMES.index(r.Axes.PRINCIPAL))
+    products = [item for item in page.comp_items[3:]]
+    assert all(np.abs(item.yData).max() < 1e-12 for item in products), "no products of inertia in principal axes"
+    page.comp_frame.setCurrentIndex(r.FRAMES.index(r.Axes.BODY))
+    assert np.abs(page.comp_items[3].yData).max() > 1e-4, "but in the body's own axes"
+    assert "−0.00185" in page.inertia_text.text()
+
+    set_torque = (Torque.SPACE, (0.0, 0.0, 0.05))
+    page.held.setCurrentIndex(r.TORQUES.index(set_torque[0]))
+    for box, v in zip(page.torque, set_torque[1]):
+        box.setValue(v)
+    page.duration.setValue(0.5)
+    before = np.array(page.sim.L)
+    page.kick()
+    page.step(1.0)
+    assert np.allclose(np.array(page.sim.L) - before, [0.0, 0.0, 0.025], atol=1e-12)
+    page.tabs.setCurrentIndex(r.TAB_CHECK)
+    page._draw_check()
+    assert page.energy_item.yData.max() < 1e-3 and page.momentum_item.yData.max() < 1e-9
+    assert "work" in page.check_note.text()
+
+    for shape in range(len(r.SHAPES)):
+        page.shape.setCurrentIndex(shape)
+        page.step(0.1)
+        assert page.view.outline.xData is not None and len(page.view.outline.xData) > 10
+    assert not page.side_b.isVisibleTo(page) and not page.side_c.isVisibleTo(page), "a sphere has a radius only"

@@ -43,6 +43,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Vibration isolation (`isolation_page`): `gui/isolation.py`; core `isolation`, `sdof`
 - Foundations:
   - Deriving the equations (`deriving_page`): `gui/deriving.py`; core `bounce_pitch`, `double_pendulum`, `pendulum`
+  - 3D rigid body (`rigid_body_page`): `gui/rigid_body.py` (with `equations_snapshot.py`); core `rigid_body`, `rotation`
   - Simulation & modal analysis (`sim_page`): `gui/main_window.py`; core `simulator`, `modal`, `model`, `forcing`, `energy`, `presets`
   - Energy methods (`energy_page`): `gui/energy_methods.py`; core `energy_methods`
   - FRF matrix (`frf_page`): `gui/frf_matrix.py`; core `frf_matrix`
@@ -76,7 +77,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Fluid–structure (`fluid_page`): `gui/fluid_structure.py`; core `added_mass`, `beams_plates`, `sloshing`
   - Self-excited vibration (`self_excited_page`): `gui/self_excited.py`; core `self_excited`
   - Active control (`active_control_page`): `gui/active_control.py`; core `active_control`
-  - Gyroscope (`gyroscope_page`): `gui/gyroscope.py` (with `gyroscope_snapshot.py`); core `gyroscope`, `sliding_top`
+  - Gyroscope (`gyroscope_page`): `gui/gyroscope.py` (with `equations_snapshot.py`); core `gyroscope`, `rotation`, `sliding_top`
   - Jeffcott rotor (`rotor_page`): `gui/rotor.py`; core `rotor`, `rotor_modes`, `rotor_simulator`, `rotor_sweep`, `rotor_stability`, `rotor_analysis`, `rotor_balance`, `rotor_waterfall`, `rotor_presets`, `fluid_bearing`, `magnetic_bearing`
   - Rotor builder (`rotor_builder_page`): `gui/rotor_builder.py`; core `rotor_builder`, `rotor_builder_sweep`, `fluid_bearing`, `magnetic_bearing`
   - Machinery diagnostics (`diagnostics_page`): `gui/diagnostics.py`; core `diagnostics`

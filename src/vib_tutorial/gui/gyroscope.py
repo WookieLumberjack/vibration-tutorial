@@ -9,7 +9,7 @@ Right: the effective potential the tilt moves in (on a table, the least energy J
 steady precession rates against the spin, the axis's path from above (on a table, the tip's track), the
 components of ω, L, τ and the inertia tensor in fixed, body or axis-frame axes (core/gyroscope.py's `frame_axes`,
 `inertia_in`), with the equations written out at one instant under the plot (`snapshot`, drawn by
-gui/gyroscope_snapshot.py), the simulation's check against what is conserved, and the Theory (its figures: gui/gyroscope_figures.py). The page
+gui/equations_snapshot.py), the simulation's check against what is conserved, and the Theory (its figures: gui/gyroscope_figures.py). The page
 has its own models (core/gyroscope.py, core/sliding_top.py), stepped on its own frame loop while it shows.
 """
 
@@ -50,8 +50,8 @@ from ..core.practice import Problem, Question, Requirement, kept, number, pick, 
 from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator, contact_torque
 from . import gyroscope_figures
 from .cms_time import SampleBuffer
+from .equations_snapshot import snapshot_html
 from .frame_loop import FrameLoop
-from .gyroscope_snapshot import snapshot_html
 from .layouts import ColumnScroll, form_layout, form_row
 from .lesson import (
     Dot,
@@ -95,6 +95,11 @@ BODY_AXES = 6  # the body's axes' colour, colors.mass[k], apart from the vectors
 # theme; the axis frame's are drawn dashed in the axis's own colour, as they go with it
 AXES_NONE, AXES_BODY, AXES_HELD, AXES_BOTH = range(4)  # the axes the 3D view draws on the top
 AXES_SHOWN = ("None", "Body's (turn with the top)", "Axis frame's (not the spin)", "Both")
+WHERE = {
+    Frame.SPACE: "in fixed axes (x, y, z up)",
+    Frame.BODY: "in the body's axes (e₁ the mark, e₃ the axis)",
+    Frame.AXIS: "in the axis frame (e₃ the axis, e₁′ horizontal across it)",
+}  # the Components tab's snapshot: whose axes
 SNAPSHOT_FRAMES = 10  # while it runs the Components tab's snapshot is rewritten every this many frames
 CHECK_FRAMES = 30  # the Check tab's text is worked out over the whole run, every this many frames
 SECTION_FRAMES = 10  # the Chaos tab is redrawn every this many frames
@@ -2161,7 +2166,14 @@ class GyroscopePage(QtWidgets.QWidget):
             self.comp_snapshot.setText("")
             return
         self.comp_cursor.setValue(s.t)
-        self.comp_snapshot.setText(snapshot_html(s))
+        self.comp_snapshot.setText(
+            snapshot_html(
+                s,
+                WHERE[s.kind],
+                frame_note="AᵀB is a turn by ψ about e₃.",
+                turning_note="precession and nodding, not the spin",
+            )
+        )
 
     def _on_snapshot_dragged(self) -> None:
         self._snap_t = float(self.comp_cursor.value())
