@@ -3484,3 +3484,71 @@ def test_rotor_worked_example():
     assert (round(squeeze(0.0)), round(squeeze(0.5))) == (1571, 2418) and round(squeeze(0.0) / 100) == 16
     # Rolling bearings: stiffness ∝ load^(1/3) for balls, ^0.1 for rollers.
     assert round(100 * (2 ** (1 / 3) - 1)) == 26 and round(100 * (2**0.1 - 1)) == 7
+
+
+def test_rotor_builder_worked_example():
+    """Rotor builder's worked example (the opening shaft) and its mesh convergence."""
+    import dataclasses
+
+    from vib_tutorial.core import rotor_builder as rb
+    from vib_tutorial.gui.rotor_builder import TRIALS
+
+    rotor = TRIALS[0].rotor
+    s = rotor.sections[0]
+    mat = s.material
+    assert (mat.E, mat.nu, mat.rho, s.outer, s.inner, len(rotor.sections), s.elements) == (
+        210e9,
+        0.3,
+        7850.0,
+        0.05,
+        0.0,
+        4,
+        3,
+    )
+    asm = rb.assemble(rotor)
+    assert rotor.nodes.size == 13 and asm.M.shape == (52, 52)
+    assert round(s.area * 1e6, 1) == 1963.5 and f"{s.inertia:.3e}" == "3.068e-07"
+    ei, rho_a, length = mat.E * s.inertia, mat.rho * s.area, 1.0
+    assert round(ei / 1e3, 2) == 64.43 and round(rho_a, 2) == 15.41
+    hz = rb.modes(asm, 0.0).hz
+    assert [round(f, 2) for f in hz[:6]] == [101.25, 101.25, 401.5, 401.5, 891.33, 891.33]
+    eb = rb.modes(rb.assemble(dataclasses.replace(rotor, theory=rb.Theory.RAYLEIGH)), 0.0).hz
+    assert [round(eb[0], 2), round(eb[4], 1)] == [101.48, 908.0]
+    euler = [n * n * math.pi / 2 * math.sqrt(ei / (rho_a * length**4)) for n in (1, 2, 3)]
+    assert [round(euler[0], 2), round(euler[1], 1), round(euler[2], 1)] == [101.56, 406.2, 914.0]
+    rg = s.outer / 4
+    assert rg == pytest.approx(math.sqrt(s.inertia / s.area)) and rg == 0.0125
+    rot = [0.5 * (n * math.pi * rg / length) ** 2 for n in (1, 3)]
+    assert [round(100 * rot[0], 3), round(100 * rot[1], 2)] == [0.077, 0.69]
+    assert [round(euler[0] * (1 - rot[0]), 2), round(euler[2] * (1 - rot[1]), 1)] == [101.48, 907.7]
+    assert round(s.kappa, 3) == 0.886 and round(mat.E / mat.G, 1) == 2.6
+    factor = 1 + mat.E / (s.kappa * mat.G)
+    assert round(factor, 3) == 3.933
+    assert [round(100 * rot[0] * factor, 2), round(100 * rot[1] * factor, 1)] == [0.30, 2.7]
+    assert [round(euler[0] * (1 - rot[0] * factor), 2), round(euler[2] * (1 - rot[1] * factor), 1)] == [101.25, 889.1]
+
+    def phi(span: float) -> float:
+        return 12 * ei / (s.kappa * mat.G * s.area * span**2)
+
+    assert round(length / 12 * 1e3, 1) == 83.3 and round(phi(length / 12), 3) == 0.792
+    assert round(phi(length), 4) == 0.0055 and phi(length / 3) == pytest.approx(9 * phi(length))
+
+    # Timoshenko's exact pinned frequencies (the 2 × 2 determinant), and the mesh converging on them.
+    def exact(n: int) -> float:
+        k, kg = n * math.pi / length, s.kappa * mat.G * s.area
+        a, rho_i = rho_a * mat.rho * s.inertia, mat.rho * s.inertia
+        b = -(rho_a * (ei * k * k + kg) + rho_i * kg * k * k)
+        c = kg * k * k * ei * k * k
+        return math.sqrt((-b - math.sqrt(b * b - 4 * a * c)) / (2 * a)) / (2 * math.pi)
+
+    assert (round(exact(1), 2), round(exact(3), 1)) == (101.25, 890.3)
+    thirds = []
+    for n in (1, 2, 3, 6):
+        mesh = rb.pinned_ends(rb.Rotor(rb.uniform(1.0, 0.05, 4, n)))
+        f = rb.modes(rb.assemble(mesh), 0.0).hz
+        thirds.append(round(f[4], 1))
+        assert f[4] > exact(3) and f[0] > exact(1) - 1e-6
+        if n == 1:
+            assert abs(f[0] - exact(1)) < 0.045
+    assert thirds == [912.7, 893.2, 891.3, 890.5]
+    assert round(100 * (hz[4] / exact(3) - 1), 2) == 0.12
