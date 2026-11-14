@@ -36,7 +36,8 @@ from ..core.duffing import (
     tongue_hz,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
-from . import duffing_figures, frame_stats, settle_plots, weak
+from . import duffing_figures, weak
+from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, plot_height
 from .lesson import RunButton
 from .links import load_notes, page_link
@@ -46,7 +47,6 @@ from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
 
-FRAME_MS = 16
 FRAME_BUDGET = 0.008  # s of computing per frame: past it the page runs slower than asked
 SPEEDS = (0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
 WINDOW = 20.0  # s of simulated time on the strip chart
@@ -692,13 +692,9 @@ class DuffingPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         # --- loop
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
         self._cost = 1e-6  # s of computing per simulated s (see step)
         self._target_t = 0.0
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Duffing & Mathieu", self._tick, self._runs, self._sim_t, self._catch_up)
 
         self.preset.currentIndexChanged.connect(self._on_preset)
         self.apply_theme()
@@ -899,7 +895,7 @@ class DuffingPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- run
     def _on_run(self, on: bool) -> None:
         self.running = on
-        self._start_timer()
+        self.loop.start()
 
     def _run(self, on: bool) -> None:
         self.run_button.set_running(on)
@@ -927,33 +923,20 @@ class DuffingPage(QtWidgets.QWidget):
         self._draw_points()
         self._show_readout()
 
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
+    # ------------------------------------------------------------- the loop
+    def _runs(self) -> bool:
+        return self.running
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
+    def _sim_t(self) -> float:
+        return self.sim.t
 
-    def _start_timer(self) -> None:
-        if self.isVisible() and self.running and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._target_t = self.sim.t
-            self._timer.start(FRAME_MS)
+    def _catch_up(self) -> None:
+        """As the loop starts or resumes: play on from where the simulation is."""
+        self._target_t = self.sim.t
 
-    def _frame(self) -> None:
-        if not self.running:  # paused or reset since this frame was queued
-            return
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
-        with frame_stats.frame("Duffing & Mathieu", lambda: self.sim.t, FRAME_MS):
-            self.step(dt * float(self.sim_speed.currentData()), FRAME_BUDGET)
-            settle_plots(self)
-        if self.isVisible() and self.running:  # the next frame FRAME_MS after this one began, not after it ended
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _tick(self, dt: float) -> None:
+        """A frame: `dt` s of wall-clock time at the playback speed, within the frame's budget."""
+        self.step(dt * float(self.sim_speed.currentData()), FRAME_BUDGET)
 
     def step(self, duration: float, budget: float | None = None) -> None:
         """Advance by `duration` s of simulated time and redraw.

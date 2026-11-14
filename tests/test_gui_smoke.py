@@ -26,6 +26,12 @@ def _free_windows(app, free_windows):
     """Each test's windows torn down and freed after it (conftest's `free_windows`)."""
 
 
+def frame_timer(page):
+    """A page's frame timer: its `FrameLoop`'s (`gui/frame_loop.py`), or its own on a page not moved to one yet."""
+    loop = getattr(page, "loop", None)
+    return loop.timer if loop is not None else page._timer
+
+
 def test_window_interactions(app):
     from vib_tutorial.gui.main_window import MainWindow
 
@@ -3006,7 +3012,7 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
     frame's computing comes out of the wait, not on top of it (16 ms + its work held the rotor at 47 fps)."""
     import time
 
-    from vib_tutorial.gui import cms_time, continuum, duffing, rotor, torsional
+    from vib_tutorial.gui import cms_time, continuum, frame_loop, rotor
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
@@ -3017,8 +3023,8 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
     for p, frame_ms in (
         (w.cms_page.time, cms_time.FRAME_MS),
         (w.rotor_page, rotor.FRAME_MS),
-        (w.duffing_page, duffing.FRAME_MS),
-        (w.torsional_page, torsional.FRAME_MS),
+        (w.duffing_page, frame_loop.FRAME_MS),
+        (w.torsional_page, frame_loop.FRAME_MS),
         (w.continuum_page, continuum.FRAME_MS),
     ):
         w.pages.setCurrentWidget(w.cms_page if p is w.cms_page.time else p)
@@ -3031,9 +3037,11 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
         elif p is not w.cms_page.time:
             p.run_button.click()  # it waits at rest for Start
         monkeypatch.setattr(p, "step", lambda *_, **__: time.sleep(0.008))
-        p._frame()
-        assert p._timer.isActive()
-        assert p._timer.remainingTime() <= frame_ms - 7
+        loop = getattr(p, "loop", None)  # the pages on gui/frame_loop.py's FrameLoop
+        (loop._frame if loop else p._frame)()
+        timer = frame_timer(p)
+        assert timer.isActive()
+        assert timer.remainingTime() <= frame_ms - 7
     w.close()
 
 
@@ -3298,10 +3306,12 @@ def test_duffing_page(app):
     p = w.duffing_page
     w.pages.setCurrentWidget(p)
     app.processEvents()
-    assert not p.running and not p._timer.isActive() and p.run_button.text() == "Start"  # at rest until started
+    assert not p.running and not frame_timer(p).isActive() and p.run_button.text() == "Start"  # at rest until started
     p.run_button.click()
-    assert p.running and p._timer.isActive() and p.sim.drive.mode is Sweep.UP_DOWN and p.run_button.text() == "Pause"
-    p._timer.stop()
+    assert (
+        p.running and frame_timer(p).isActive() and p.sim.drive.mode is Sweep.UP_DOWN and p.run_button.text() == "Pause"
+    )
+    frame_timer(p).stop()
     assert p.preset.currentText() == "Hardening spring: the jump" and p.frame_context() == p.preset.currentText()
     assert "3.64 and 4.45 Hz" in p.readout.text()
     while p.sim.drive.mode is not Sweep.HOLD:
@@ -3355,7 +3365,7 @@ def test_mathieu_on_the_duffing_page(app):
     p = w.duffing_page
     w.pages.setCurrentWidget(p)
     app.processEvents()
-    p._timer.stop()
+    frame_timer(p).stop()
     assert w.pages.tabText(w.pages.currentIndex()) == "Duffing && Mathieu"
 
     p.preset.setCurrentText("Parametric resonance, hardening")
@@ -4679,7 +4689,7 @@ def test_responses_wait_for_start_and_trials_start_them(app):
     ):
         w.pages.setCurrentWidget(page)
         app.processEvents()
-        assert not page.running and not page._timer.isActive(), page
+        assert not page.running and not frame_timer(page).isActive(), page
         assert getattr(page, button).text() == "Start", page
     p = w.continuum_page
     w.pages.setCurrentWidget(p)

@@ -58,8 +58,9 @@ from ..core.torsional_startup import (
     running_torques,
     steady_speed,
 )
-from . import frame_stats, settle_plots, torsional_figures, weak
+from . import torsional_figures, weak
 from .axes import log_axes
+from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import RunButton, connect_all, set_quietly
 from .links import load_notes, page_link
@@ -74,7 +75,6 @@ CUSTOM = "Custom"
 MAX_DISCS = 12
 SHAPES_SHOWN = 6  # modes drawn on the shape plot
 MARGIN = 10.0  # % either side of the running speed a critical should stay out of (API 617's 10 %)
-FRAME_MS = 16
 FRAME_BUDGET = 0.008  # s of computing per frame: past it the start-up plays slower than asked
 PLAYBACK = (0.05, 0.1, 0.25, 0.5, 1.0)  # × real time
 MOTORS = (None, MotorKind.INDUCTION, MotorKind.SYNCHRONOUS)  # the motor combo's items
@@ -824,12 +824,8 @@ class TorsionalPage(QtWidgets.QWidget):
         self.startup_link.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._draw_startup(full=True)))
 
         # --- the start-up's loop
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
         self._cost = 1e-5  # s of computing per simulated s (see step)
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Torsional vibration", self._tick, self._runs, self._sim_t)
 
         self.load_preset(PRESETS[0].name)
 
@@ -1180,7 +1176,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self._show_startup_info()
         self._show_status()
         self._update_buttons()
-        self._start_timer()
+        self.loop.start()
 
     def _add_mark(self, plot: pg.PlotWidget, pos: float, angle: int, label: str) -> None:
         line = pg.InfiniteLine(
@@ -1218,7 +1214,7 @@ class TorsionalPage(QtWidgets.QWidget):
         else:
             self.running = on
             self._update_buttons()
-            self._start_timer()
+            self.loop.start()
 
     def _update_buttons(self) -> None:
         self.reset_button.setEnabled(self.motor_on)
@@ -1228,32 +1224,12 @@ class TorsionalPage(QtWidgets.QWidget):
         else:
             self.pause_button.set_running(self.running)
 
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
+    def _runs(self) -> bool:
+        return self.running
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
-
-    def _start_timer(self) -> None:
-        if self.isVisible() and self.running and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._timer.start(FRAME_MS)
-
-    def _frame(self) -> None:
-        if not self.running:  # paused or reset since this frame was queued
-            return
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
-        with frame_stats.frame("Torsional vibration", self._sim_t, FRAME_MS):
-            self.step(dt * float(self.playback.currentData()), FRAME_BUDGET)
-            settle_plots(self)
-        if self.isVisible() and self.running:  # the next frame FRAME_MS after this one began, not after it ended
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _tick(self, dt: float) -> None:
+        """A frame: `dt` s of wall-clock time at the playback speed, within the frame's budget."""
+        self.step(dt * float(self.playback.currentData()), FRAME_BUDGET)
 
     def _sim_t(self) -> float | None:
         return self.sim.t if self.sim is not None else None
