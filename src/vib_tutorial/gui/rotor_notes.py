@@ -250,16 +250,16 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         Kc, _ = s.deviatoric
         asymmetric = (
             f"<h4>The asymmetric shaft ΔK(φ)</h4><p>The shaft is stiffer bending toward its stiff axis, at "
-            f"φ<sub>s</sub> = φ + β<sub>s</sub> from x (β<sub>s</sub> = {math.degrees(s.asymmetry_angle):.0f}° from the mark), than "
+            f"φ<sub>Δ</sub> = φ + β<sub>s</sub> from x (β<sub>s</sub> = {math.degrees(s.asymmetry_angle):.0f}° from the mark), than "
             f"across it: "
             f"EI(1 ± Δ) with Δ = {s.asymmetry:.3g}. Its stiffness less the mean (K<sub>shaft</sub>, in K) is, "
-            "in each plane pair,</p><p align='center'>ΔK(φ) = Δ [cos 2φ<sub>s</sub> K<sub>shaft</sub> &nbsp; "
-            "sin 2φ<sub>s</sub> K<sub>shaft</sub> ; sin 2φ<sub>s</sub> K<sub>shaft</sub> &nbsp; −cos 2φ<sub>s</sub> "
+            "in each plane pair,</p><p align='center'>ΔK(φ) = Δ [cos 2φ<sub>Δ</sub> K<sub>shaft</sub> &nbsp; "
+            "sin 2φ<sub>Δ</sub> K<sub>shaft</sub> ; sin 2φ<sub>Δ</sub> K<sub>shaft</sub> &nbsp; −cos 2φ<sub>Δ</sub> "
             "K<sub>shaft</sub>]</p><p>or, as f<sub>x</sub> + i f<sub>y</sub>, "
-            "−ΔK<sub>shaft</sub>e<sup>2iφ<sub>s</sub></sup>(x − iy). It turns with the "
+            "−ΔK<sub>shaft</sub>e<sup>2iφ<sub>Δ</sub></sup>(x − iy). It turns with the "
             "shaft, twice per revolution as seen from the bearings, so the equations have a periodic "
-            "stiffness and no fixed modes. Here it is with the stiff axis along x (φ<sub>s</sub> = 0):</p>"
-            + _matrix(Kc, labels, groups, "ΔK(φ<sub>s</sub> = 0)")
+            "stiffness and no fixed modes. Here it is with the stiff axis along x (φ<sub>Δ</sub> = 0):</p>"
+            + _matrix(Kc, labels, groups, "ΔK(φ<sub>Δ</sub> = 0)")
             + "<p>In coordinates turning with the shaft, q = R(φ)q<sub>r</sub>, it is constant, and so is "
             "everything else if the supports are isotropic: M q̈<sub>r</sub> + (C + ΩG + 2ΩMJ) q̇<sub>r</sub> + "
             "(K + ΩH + ΔK(0) − Ω²M + ΩCJ + Ω²GJ) q<sub>r</sub> = R<sup>T</sup>f. The −Ω²M is the centrifugal force: between the two critical speeds it "
