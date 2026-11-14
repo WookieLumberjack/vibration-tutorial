@@ -183,3 +183,21 @@ def header_tip(table: QtWidgets.QTableWidget, column: int, tip: str) -> None:
     item = table.horizontalHeaderItem(column)
     assert item is not None, "the headers are set first"
     item.setToolTip(tip)
+
+
+def form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip: str) -> None:
+    """A form's row: `text`'s label and `box`, both with the tooltip `tip`."""
+    box.setToolTip(tip)
+    label = QtWidgets.QLabel(text)
+    label.setToolTip(tip)
+    form.addRow(label, box)
+
+
+def show_in_stack(stack: QtWidgets.QStackedWidget, page: int) -> None:
+    """Show a stack's page `page`, the stack as tall as it rather than its tallest."""
+    for k in range(stack.count()):
+        widget = stack.widget(k)
+        assert widget is not None, "k < count"
+        policy = QtWidgets.QSizePolicy.Policy.Preferred if k == page else QtWidgets.QSizePolicy.Policy.Ignored
+        widget.setSizePolicy(policy, policy)
+    stack.setCurrentIndex(page)

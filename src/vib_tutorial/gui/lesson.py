@@ -29,9 +29,11 @@ def plot(
     log_x: bool = False,
     log_y: bool = False,
     height: int = 160,
+    log_ready: bool = False,
 ) -> pg.PlotWidget:
-    """A plot with a faint grid, no menu and no auto-range button; log axes if asked."""
-    p = pg.PlotWidget(axisItems=log_axes() if (log_x or log_y) else None)
+    """A plot with a faint grid, no menu and no auto-range button; log axes if asked (`log_ready`: axes that
+    label a log scale well, for a plot switched to one later, and label only as many ticks as fit)."""
+    p = pg.PlotWidget(axisItems=log_axes() if (log_x or log_y or log_ready) else None)
     p.setMenuEnabled(False)
     p.hideButtons()
     p.showGrid(x=True, y=True, alpha=0.15)

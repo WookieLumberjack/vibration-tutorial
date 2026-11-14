@@ -3024,7 +3024,8 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
             p.play_button.click()
         elif p is not w.cms_page.time:
             p.run_button.click()  # it waits at rest for Start
-        monkeypatch.setattr(p, "step", lambda *_, **__: time.sleep(0.008))
+        stepper = getattr(p, "startup_view", p)  # Torsional's start-up steps in its own view
+        monkeypatch.setattr(stepper, "step", lambda *_, **__: time.sleep(0.008))
         p.loop._frame()
         assert p.loop.timer.isActive()
         assert p.loop.timer.remainingTime() <= frame_ms - 7
@@ -3429,28 +3430,28 @@ def test_torsional_page(app):
     # edit the fan's coupling: Custom, and the mode moves as sqrt(k)
     p.preset.setCurrentText("Motor and fan: two inertias")
     p.select(1)
-    assert p.editor.currentIndex() == 1 and p.shaft_stiffness.value() == pytest.approx(180.0)
-    p.shaft_stiffness.setValue(120.0)
+    assert p.train_editor.editor.currentIndex() == 1 and p.train_editor.shaft_stiffness.value() == pytest.approx(180.0)
+    p.train_editor.shaft_stiffness.setValue(120.0)
     assert p.preset.currentText() == "Custom" and p.train.links[0].stiffness == pytest.approx(1.2e5)
     assert "No torsional critical within ±10 %" in p.readout.text()
     f = p._modes[0].freq_hz
-    p.to_mesh.click()  # the same referred stiffness: the same mode
-    assert isinstance(p.train.links[0], Mesh) and p.editor.currentIndex() == 2
+    p.train_editor.to_mesh.click()  # the same referred stiffness: the same mode
+    assert isinstance(p.train.links[0], Mesh) and p.train_editor.editor.currentIndex() == 2
     assert p._modes[0].freq_hz == pytest.approx(f, rel=1e-9)
-    p.teeth_out.setValue(80)  # a 2:1 reduction: the fan's inertia counts a quarter
+    p.train_editor.teeth_out.setValue(80)  # a 2:1 reduction: the fan's inertia counts a quarter
     assert p.train.speeds[1] == pytest.approx(0.5) and len(p._modes) == 1
-    p.to_shaft.click()
+    p.train_editor.to_shaft.click()
     assert isinstance(p.train.links[0], Shaft)
 
     p.select(2)  # the fan
-    p.add_button.click()
-    assert p.train.n == 3 and p.selected == 4 and p.element.count() == 5
-    p.remove_button.click()
-    assert p.train.n == 2 and not p.remove_button.isEnabled()
+    p.train_editor.add_button.click()
+    assert p.train.n == 3 and p.selected == 4 and p.train_editor.element.count() == 5
+    p.train_editor.remove_button.click()
+    assert p.train.n == 2 and not p.train_editor.remove_button.isEnabled()
 
-    p.excite_disc.setCurrentIndex(0)  # None: no sources
+    p.train_editor.excite_disc.setCurrentIndex(0)  # None: no sources
     assert p.train.excitation is None and "No excitation" in p.response_note.text()
-    p.excite_disc.setCurrentIndex(1)  # on the motor, a fresh 1×
+    p.train_editor.excite_disc.setCurrentIndex(1)  # on the motor, a fresh 1×
     assert p.train.excitation.disc == 0 and p.train.excitation.harmonics == ((1.0, 100.0),)
 
     p.tabs.setCurrentWidget(p.drawing_tab)
@@ -3466,7 +3467,7 @@ def test_torsional_page(app):
             return self.at
 
     p._on_drawing_click(Click(*spots[1][:2]))
-    assert p.selected == 2 and p.editor.currentIndex() == 0
+    assert p.selected == 2 and p.train_editor.editor.currentIndex() == 0
     p._on_drawing_click(Click(0.5 * (spots[0][0] + spots[1][0]), spots[0][1]))
     assert p.selected == 1
 
@@ -3488,57 +3489,74 @@ def test_torsional_start_up(app):
     p = w.torsional_page
     w.pages.setCurrentWidget(p)
     app.processEvents()
-    assert p.sim is not None and not p.running and p.views.currentWidget() is p.criticals_tab
-    assert "At rest" in p.startup_status.text() and "mode 1 (52.3 Hz) is 5 % from it" in p.startup_info.text()
+    assert p.startup_view.sim is not None and not p.running and p.views.currentWidget() is p.criticals_tab
+    assert (
+        "At rest" in p.startup_view.startup_status.text()
+        and "mode 1 (52.3 Hz) is 5 % from it" in p.startup_view.startup_info.text()
+    )
     assert p.pause_button.text() == "Start"
     p.pause_button.click()
     assert p.running and p.views.currentWidget() is p.startup_tab and p.pause_button.text() == "Pause"
-    p.step(0.5)
-    assert p.sim.t == pytest.approx(0.5) and p._k == round(0.5 / p.sim.h)
+    p.startup_view.step(0.5)
+    assert p.startup_view.sim.t == pytest.approx(0.5) and p.startup_view._k == round(0.5 / p.startup_view.sim.h)
     p.pause_button.click()
     assert not p.running and p.pause_button.text() == "Resume"
-    p.step(10.0)  # a test steps it whether it plays or not: to the end, and no further
-    assert p.sim.done and p.pause_button.text() == "Start"  # from rest again
-    assert "Done." in p.startup_status.text()
-    assert "<b>Coupling: 6 kN·m at 0.068 s (38 rpm), 10.3× its running 580 N·m</b>" in p.startup_note.text()
+    p.startup_view.step(10.0)  # a test steps it whether it plays or not: to the end, and no further
+    assert p.startup_view.sim.done and p.pause_button.text() == "Start"  # from rest again
+    assert "Done." in p.startup_view.startup_status.text()
+    assert (
+        "<b>Coupling: 6 kN·m at 0.068 s (38 rpm), 10.3× its running 580 N·m</b>" in p.startup_view.startup_note.text()
+    )
     # Two points a pixel column at most (each curve's min and max), keeping every extreme: every step of a ringing
     # curve took 41 ms a frame to paint at 2× on a Mac.
-    width = int(p.startup_torque.getPlotItem().vb.width())
-    j = p.startup_link.currentIndex()
-    for curve, y in ((p.link_curve, p._links[j]), (p.motor_curve, p._motor), (p.speed_curve, p._rpm)):
-        assert curve.xData.size <= 2 * width + 6 < p._k
-        assert (curve.yData.max(), curve.yData.min()) == (y[: p._k].max(), y[: p._k].min())
+    width = int(p.startup_view.startup_torque.getPlotItem().vb.width())
+    j = p.startup_view.startup_link.currentIndex()
+    for curve, y in (
+        (p.startup_view.link_curve, p.startup_view._links[j]),
+        (p.startup_view.motor_curve, p.startup_view._motor),
+        (p.startup_view.speed_curve, p.startup_view._rpm),
+    ):
+        assert curve.xData.size <= 2 * width + 6 < p.startup_view._k
+        assert (curve.yData.max(), curve.yData.min()) == (y[: p.startup_view._k].max(), y[: p.startup_view._k].min())
 
     p.preset.setCurrentText("Geared compressor")
-    assert p.motor_kind.currentText() == "Synchronous" and p._k == 0 and not p.running
-    assert "meets mode 2 (83.1 Hz) at 254 rpm, mode 1 (38.9 Hz) at 916 rpm" in p.startup_info.text()
-    assert len(p._marks) == 2  # the two crossings' speeds
+    assert p.startup_view.motor_kind.currentText() == "Synchronous" and p.startup_view._k == 0 and not p.running
+    assert "meets mode 2 (83.1 Hz) at 254 rpm, mode 1 (38.9 Hz) at 916 rpm" in p.startup_view.startup_info.text()
+    assert len(p.startup_view._marks) == 2  # the two crossings' speeds
     p.start()
-    p.step(3.0)
-    assert len(p._marks) == 4 and p.sim.field_on  # and when the run passed them
-    assert "in step, the field on. Done." in p.startup_status.text()
-    assert "<b>Low-speed coupling: 11.3 kN·m" in p.startup_note.text()
-    p.startup_link.setCurrentText("High-speed coupling")
-    assert np.abs(p.link_curve.yData).max() == pytest.approx(p.sim.peaks[2])
+    p.startup_view.step(3.0)
+    assert len(p.startup_view._marks) == 4 and p.startup_view.sim.field_on  # and when the run passed them
+    assert "in step, the field on. Done." in p.startup_view.startup_status.text()
+    assert "<b>Low-speed coupling: 11.3 kN·m" in p.startup_view.startup_note.text()
+    p.startup_view.startup_link.setCurrentText("High-speed coupling")
+    assert np.abs(p.startup_view.link_curve.yData).max() == pytest.approx(p.startup_view.sim.peaks[2])
 
     p.start()
-    p.step(0.2)
+    p.startup_view.step(0.2)
     p.select(3)  # the mesh: a stiffer one starts the run again from rest, still playing
-    p.mesh_stiffness.setValue(3000.0)
-    assert p.preset.currentText() == "Custom" and p.running and p.sim.t == 0.0 and p._k == 0
-    p.breakdown.setValue(7000.0)
-    assert p.startup.motor.breakdown == 7000.0 and p.sim.t == 0.0
+    p.train_editor.mesh_stiffness.setValue(3000.0)
+    assert p.preset.currentText() == "Custom" and p.running and p.startup_view.sim.t == 0.0 and p.startup_view._k == 0
+    p.startup_view.breakdown.setValue(7000.0)
+    assert p.startup_view.startup.motor.breakdown == 7000.0 and p.startup_view.sim.t == 0.0
 
     p.preset.setCurrentText("Diesel generator set")
-    assert p.sim is None and not p.pause_button.isEnabled() and "engine drives this train" in p.startup_info.text()
+    assert (
+        p.startup_view.sim is None
+        and not p.pause_button.isEnabled()
+        and "engine drives this train" in p.startup_view.startup_info.text()
+    )
     p.start()
     assert not p.running
-    p.motor_kind.setCurrentIndex(1)  # the last motor's numbers, made an induction motor
-    assert p.startup.motor.kind is MotorKind.INDUCTION and p.sim is not None and p.pause_button.isEnabled()
+    p.startup_view.motor_kind.setCurrentIndex(1)  # the last motor's numbers, made an induction motor
+    assert (
+        p.startup_view.startup.motor.kind is MotorKind.INDUCTION
+        and p.startup_view.sim is not None
+        and p.pause_button.isEnabled()
+    )
     assert p.preset.currentText() == "Custom"
     p.start()
-    p.step(0.1)
-    assert p._k > 0
+    p.startup_view.step(0.1)
+    assert p.startup_view._k > 0
     w.set_theme("Dark")
     w.set_theme("Light")
     w.close()
