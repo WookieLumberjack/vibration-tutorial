@@ -8,7 +8,8 @@ table the friction), then its tilt against time, beside the turning points worke
 Right: the effective potential the tilt moves in (on a table, the least energy Jellett's constant allows), the
 steady precession rates against the spin, the axis's path from above (on a table, the tip's track), the
 components of ω, L, τ and the inertia tensor in fixed, body or axis-frame axes (core/gyroscope.py's `frame_axes`,
-`inertia_in`), the simulation's check against what is conserved, and the Theory (its figures: gui/gyroscope_figures.py). The page
+`inertia_in`), with the equations written out at one instant under the plot (`snapshot`, drawn by
+gui/gyroscope_snapshot.py), the simulation's check against what is conserved, and the Theory (its figures: gui/gyroscope_figures.py). The page
 has its own models (core/gyroscope.py, core/sliding_top.py), stepped on its own frame loop while it shows.
 """
 
@@ -41,6 +42,7 @@ from ..core.gyroscope import (
     in_frame,
     inertia_in,
     least_spin,
+    snapshot,
     steady_precession,
     tilt_and_azimuth,
 )
@@ -49,7 +51,8 @@ from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator
 from . import gyroscope_figures
 from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
-from .layouts import form_layout, form_row
+from .gyroscope_snapshot import snapshot_html
+from .layouts import ColumnScroll, form_layout, form_row
 from .lesson import (
     Dot,
     Form,
@@ -88,6 +91,7 @@ FRAMES = tuple(Frame)
 SPANS = (("the last 2 s", 2.0), ("the last 10 s", 10.0), ("the whole run", None))
 AXIS_NAMES = {Frame.SPACE: ("x", "y", "z"), Frame.BODY: ("1", "2", "3"), Frame.AXIS: ("1′", "2′", "3")}
 UNITS = ("rad/s", "N·m·s", "N·m", "kg·m²")
+SNAPSHOT_FRAMES = 10  # while it runs the Components tab's snapshot is rewritten every this many frames
 CHECK_FRAMES = 30  # the Check tab's text is worked out over the whole run, every this many frames
 SECTION_FRAMES = 10  # the Chaos tab is redrawn every this many frames
 HISTORY = 400_000  # samples kept
@@ -885,6 +889,11 @@ APART_TIP = (
     "<p>How far apart (rad, log scale) the axes of two tops let go 10⁻⁸ rad apart have got. Straight up: chaos.</p>"
 )
 TABLE_TILT_TIP = "<p>The axis's tilt from the vertical as it runs, the last minute.</p>"
+SNAPSHOT_TIP = (
+    "<p>The equations of motion at one instant, in the axes picked, with the numbers: the rotation matrices that "
+    "place the body, its inertia tensor in these axes, L = Iω, and dL/dt + Ω × L = τ. While the top runs it is "
+    "the latest instant; pause it and drag the line across the plot to see any other.</p>"
+)
 COMPONENTS_TIP = (
     "<p>The components of ω, L, τ or I in the axes picked, as the top runs; for a vector, its size dashed (the "
     "same in every frame). The text says what to look for.</p>"
@@ -1376,7 +1385,14 @@ class GyroscopePage(QtWidgets.QWidget):
         self.comp_size = pg.PlotDataItem()  # the vector's magnitude
         for item in (*self.comp_items, self.comp_size):
             self.comp_plot.addItem(item)
+        self.comp_cursor = pg.InfiniteLine(angle=90, movable=True)  # the snapshot's instant
+        self.comp_cursor.setToolTip(SNAPSHOT_TIP)
+        self.comp_cursor.sigDragged.connect(self._on_snapshot_dragged)
+        self.comp_plot.addItem(self.comp_cursor, ignoreBounds=True)
         self.comp_note = note_label()
+        self.comp_snapshot = readout_label()
+        self.comp_snapshot.setToolTip(SNAPSHOT_TIP)
+        self._snap_t: float | None = None  # the instant dragged to; None: the latest
         comp_row = QtWidgets.QWidget()
         form = form_layout(comp_row)
         form.setContentsMargins(0, 0, 0, 0)
@@ -1403,7 +1419,9 @@ class GyroscopePage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.potential_plot, self.potential_note, stretch=False), "Potential")
         self.tabs.addTab(column(self.precession_plot, self.precession_note, stretch=False), "Precession")
         self.tabs.addTab(column(self.path_plot, self.path_note, stretch=False), "Path")
-        self.tabs.addTab(column(comp_row, self.comp_plot, self.comp_note, stretch=False), "Components")
+        self.tabs.addTab(
+            ColumnScroll(column(comp_row, self.comp_plot, self.comp_note, self.comp_snapshot)), "Components"
+        )
         self.tabs.addTab(column(self.check_plot, self.check_note, stretch=False), "Check")
         self.tabs.addTab(column(self.section_plot, self.apart_plot, self.chaos_note, stretch=False), "Chaos")
         self.tabs.addTab(self.notes, "Theory")
@@ -1608,6 +1626,7 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def restart(self) -> None:
         """Let the top go again from the launch set (if it is running; held there if not)."""
+        self._snap_t = None
         self._track_span = None
         if self.round is not None:
             self.sim = SlidingSimulator(self.round, self.motion.spin, self.motion.tilt)
@@ -1653,6 +1672,8 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _on_pause(self, on: bool) -> None:
         self.running = on
+        if not on and self.tabs.currentIndex() == TAB_COMPONENTS:
+            self._draw_snapshot()  # the instant it stopped at (while running it is rewritten every few frames)
         self.loop.start()
 
     def _update_buttons(self) -> None:
@@ -1750,6 +1771,8 @@ class GyroscopePage(QtWidgets.QWidget):
         for k, item in enumerate(self.comp_items):  # 1 px, as the Check tab's: the body's components swing at the spin
             item.setPen(pg.mkPen(c.mass[k % len(c.mass)], width=1))
         self.comp_size.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DashLine))
+        self.comp_cursor.setPen(pg.mkPen(c.strong, width=1))
+        self.comp_cursor.setHoverPen(pg.mkPen(c.strong, width=3))
         mark(self.section_item, c.mass[0], filled=True)
         self.apart_item.setPen(pg.mkPen(c.mass[1], width=1.5))
         self._draw_tab()
@@ -1948,6 +1971,7 @@ class GyroscopePage(QtWidgets.QWidget):
     def _draw_live_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_COMPONENTS:
+            self._frames += 1
             self._draw_components()
             return
         if self.round is not None:
@@ -2004,6 +2028,8 @@ class GyroscopePage(QtWidgets.QWidget):
             for item in (*self.comp_items, self.comp_size):
                 item.setData([], [])
             self.comp_note.setText("Start the top to see its components.")
+            self.comp_snapshot.setText("")
+            self.comp_cursor.hide()
             return
         t, axis, mark, momentum, torque, moments = data
         axes = frame_axes(axis, mark, frame)
@@ -2038,6 +2064,46 @@ class GyroscopePage(QtWidgets.QWidget):
             self.comp_size.setData(t, size)
             self.comp_legend.addItem(self.comp_size, f"|{symbol}|")
         self.comp_note.setText(self._components_note(show, frame))
+        self.comp_cursor.show()
+        if not self.running or self._frames % SNAPSHOT_FRAMES == 0:
+            self._draw_snapshot()
+
+    def snapshot_now(self):
+        """The `Snapshot` the tab shows: at the instant dragged to (paused), else the latest with two samples after
+        it; None before a run. Only the five samples around it are read (the torque is worked out per sample)."""
+        buffer = self.history if self.round is None else self.slides
+        n = buffer.size
+        if n < 2:
+            return None
+        t = buffer.t[:n]
+        if self._snap_t is None or self.running:
+            k = max(n - 3, 0)
+        else:
+            k = int(min(np.searchsorted(t, self._snap_t), n - 1))
+        near = slice(max(k - 2, 0), min(k + 3, n))
+        t, y = t[near], buffer.y[near]
+        axis, mark = y[:, 0:3], y[:, 3:6]
+        if self.round is None:
+            top = self.motion.top
+            momentum, torque, moments = y[:, 7:10], gravity_torque(axis, top.weight_moment), top.moments
+        else:
+            rt = self.round
+            momentum, moments = y[:, 17:20], (rt.central, rt.central, rt.polar)
+            torque = contact_torque(y[:, 6:9], y[:, 9:11], y[:, 14], y[:, 15:17])
+        frame = FRAMES[self.comp_frame.currentIndex()]
+        return snapshot(t, axis, mark, momentum, torque, moments, frame, k - near.start)
+
+    def _draw_snapshot(self) -> None:
+        s = self.snapshot_now()
+        if s is None:
+            self.comp_snapshot.setText("")
+            return
+        self.comp_cursor.setValue(s.t)
+        self.comp_snapshot.setText(snapshot_html(s))
+
+    def _on_snapshot_dragged(self) -> None:
+        self._snap_t = float(self.comp_cursor.value())
+        self._draw_snapshot()
 
     def _components_note(self, show: int, frame: Frame) -> str:
         """What to look for in this plot."""

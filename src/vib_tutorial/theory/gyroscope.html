@@ -18,6 +18,15 @@ with the body, its numbers changing and products of inertia appearing, and <b>L<
 <m>ω</m> unless the moments are equal. The <i>Components</i> tab plots <m>ω</m>, <b>L</b>, <m>τ</m> and <b>I</b> as
 the top runs, in fixed axes, in the body's, or in the axis frame, which follows the axis as it precesses and nods but
 not the spin about it.</p>
+<p>Under the plot the tab writes the equations out at one instant, with the numbers. The body's axes
+<b>e</b>₁, <b>e</b>₂, <b>e</b>₃ in space are the columns of a rotation matrix <m>B</m>, so in fixed axes
+<b>I</b> = <m>B</m><b>I</b><sub>body</sub><m>B</m><sup>T</sup>, <b>I</b><sub>body</sub> = diag(<m>I₁</m>, <m>I₂</m>,
+<m>I₃</m>); in a frame whose axes are the columns of <m>A</m>, the same with <m>A</m><sup>T</sup><m>B</m> in place of
+<m>B</m>. In axes that turn at <m>Ω</m> a vector's components change by its own rate less <m>Ω</m> × it:</p>
+<eq>\left.\frac{d\mathbf{L}}{dt}\right|_{\text{axes}} + \boldsymbol{\Omega}\times\mathbf{L} = \boldsymbol{\tau},</eq>
+<p>with <m>Ω</m> = 0 in fixed axes (<b>L</b> changes only by the torque), <m>Ω</m> = <m>ω</m> in the body's (with
+<b>I</b> constant there, Euler's equations above), and in the axis frame <m>ω</m> less the spin about the axis. Pause
+the top and drag the line across the plot to see any instant.</p>
 <p><img src="fig:top"></p>
 <p>The top here is a disc of mass <m>m</m> and radius <m>r</m> on a light stem, its centre a height <m>l</m> above
 the tip: <m>I₃</m> = <m>mr</m>²/2 along the axis, and <m>I₁</m> = <m>m</m>(<m>r</m>²/4 + <m>l</m>²) across it about
@@ -241,5 +250,5 @@ roots are 2.39 and 109 rad/s, against the estimates 0.14715/0.06283 = 2.34 and 0
 <li>On a table friction keeps only Jellett's J, so the energy sinks toward the least J allows: a sliding round tip rises to sleep, and a tippe top turns over if 1 − α &lt; I₁/I₃ &lt; 1 + α.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
-<notation>I_principal top_body top_rates euler_angles lagrange_top V_theta nutation_u K_ell poinsot round_tip J_top mu</notation>
+<notation>I_principal top_body top_rates top_frames euler_angles lagrange_top V_theta nutation_u K_ell poinsot round_tip J_top mu</notation>
 <reading>goldstein</reading>

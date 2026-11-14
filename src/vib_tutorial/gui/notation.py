@@ -2124,6 +2124,15 @@ SYMBOLS = (
         "rigid-body",
     ),
     Symbol(
+        "top_frames",
+        "B, A, Ω",
+        "a turning body's axes in space, as a rotation matrix's columns; another frame's axes, likewise; how fast a "
+        "frame's axes turn",
+        "–, –, rad/s",
+        "gyroscope_page",
+        "rigid-body",
+    ),
+    Symbol(
         "euler_angles",
         "φ, θ, ψ, θ₀, q, χ, n̂, h",
         "Euler's angles: precession about the vertical, tilt from it, spin about the axis; the tilt let go at; a "
