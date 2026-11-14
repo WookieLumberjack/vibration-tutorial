@@ -374,6 +374,7 @@ class ContinuumPage(QtWidgets.QWidget):
 
         # --- left: the preset, the medium, the mesh
         self.preset = QtWidgets.QComboBox()
+        self.preset.setAccessibleName("Preset")
         self.preset.addItems([p.name for p in ALL_PRESETS] + [CUSTOM])
         self.preset.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.preset_note = QtWidgets.QLabel()

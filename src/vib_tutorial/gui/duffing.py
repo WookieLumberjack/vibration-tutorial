@@ -459,6 +459,7 @@ class DuffingPage(QtWidgets.QWidget):
 
         # --- left: the oscillator, the drive, the playback
         self.preset = QtWidgets.QComboBox()
+        self.preset.setAccessibleName("Preset")
         self.preset.addItems([p.name for p in PRESETS] + [CUSTOM])
         self.preset.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.preset_note = QtWidgets.QLabel()
@@ -550,6 +551,7 @@ class DuffingPage(QtWidgets.QWidget):
         play = QtWidgets.QGroupBox("Simulation")
         pv = QtWidgets.QVBoxLayout(play)
         self.sim_speed = QtWidgets.QComboBox()
+        self.sim_speed.setAccessibleName("Playback speed")
         for s in SPEEDS:
             self.sim_speed.addItem(f"{s:g}× real time", s)
         self.sim_speed.setCurrentIndex(SPEEDS.index(5.0))

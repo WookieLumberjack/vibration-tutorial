@@ -364,6 +364,7 @@ class TorsionalPage(QtWidgets.QWidget):
 
         # --- left: the preset, the train, the excitation, the speeds
         self.preset = QtWidgets.QComboBox()
+        self.preset.setAccessibleName("Preset")
         self.preset.addItems([p.name for p in PRESETS] + [CUSTOM])
         self.preset.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.preset_note = QtWidgets.QLabel()

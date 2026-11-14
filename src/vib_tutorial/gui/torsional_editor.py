@@ -58,6 +58,7 @@ class TrainEditor(QtWidgets.QGroupBox):
 
         tv = QtWidgets.QVBoxLayout(self)
         self.element = QtWidgets.QComboBox()
+        self.element.setAccessibleName("Element to edit")
         self.element.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.element.setToolTip("<p>The disc or link to edit: or click it in the <i>Drive train</i> drawing.</p>")
         tv.addWidget(self.element)

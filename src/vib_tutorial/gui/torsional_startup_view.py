@@ -133,6 +133,7 @@ class StartUpView(QtWidgets.QWidget):
         self.reset_button = QtWidgets.QPushButton("Reset")
         self.reset_button.setToolTip("<p>The train back at rest, waiting for Start.</p>")
         self.playback = QtWidgets.QComboBox()
+        self.playback.setAccessibleName("Playback speed")
         for x in PLAYBACK:
             self.playback.addItem(f"{x:g}× real time", x)
         self.playback.setCurrentIndex(PLAYBACK.index(0.25))

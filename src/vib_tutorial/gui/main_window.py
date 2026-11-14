@@ -28,7 +28,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import display_size, frame_stats, links, maths, notes_view, theming, weak
+from . import accessible, display_size, frame_stats, links, maths, notes_view, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
@@ -615,6 +615,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pages.setCurrentWidget(self.sim_page)
         self.pages.currentChanged.connect(self._on_page_changed)
         self._wire_links(self.sim_page)
+        accessible.name_controls(self.sim_page)
         self.theme_combo = QtWidgets.QComboBox()
         self.theme_combo.addItems(theming.names())
         self.theme_combo.setCurrentText(theming.current_name())
@@ -660,6 +661,8 @@ class MainWindow(QtWidgets.QMainWindow):
         cl.addWidget(self.theme_combo)
         cl.addWidget(size_label)
         cl.addWidget(self.size_combo)
+        theme_label.setBuddy(self.theme_combo)  # their names for a screen reader
+        size_label.setBuddy(self.size_combo)
         self.pages.setCornerWidget(corner, QtCore.Qt.Corner.TopRightCorner)
         self.setCentralWidget(self.pages)
         self.resize(1700, 900)
@@ -761,6 +764,7 @@ class MainWindow(QtWidgets.QMainWindow):
         holder = self._placeholders.pop(name)
         self.pages.replace(holder, page)
         self._wire_links(page)
+        accessible.name_controls(page)
         holder.deleteLater()
         return page
 

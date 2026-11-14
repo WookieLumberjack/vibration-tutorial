@@ -110,6 +110,7 @@ class TrialCombo(QtWidgets.QComboBox):
         if tip:
             self.setToolTip(tip)
         self.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.setAccessibleName("Things to try")
         self._changed = False
         self.currentIndexChanged.connect(self._on_change)
         self.activated.connect(self._on_activated)

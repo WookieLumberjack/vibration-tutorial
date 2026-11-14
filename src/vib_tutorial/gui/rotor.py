@@ -424,6 +424,7 @@ class RotorPage(QtWidgets.QWidget):
         v = QtWidgets.QVBoxLayout(box)
         self.presets = rotor_presets()
         self.preset = QtWidgets.QComboBox()
+        self.preset.setAccessibleName("Rotor preset")
         self.preset.addItems([p.name for p in self.presets] + [CUSTOM])
         self.preset.setToolTip(
             "<p>Load a rotor that shows one effect clearly, with a speed range to suit it. It starts from "
@@ -441,6 +442,7 @@ class RotorPage(QtWidgets.QWidget):
         box = QtWidgets.QGroupBox("Speed")
         form = form_layout(box)
         self.speed_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.speed_slider.setAccessibleName("Target speed")
         self.speed_slider.setRange(0, int(TOP_RPM))
         self.speed_slider.setSingleStep(10)
         self.speed_slider.setPageStep(250)
@@ -760,6 +762,7 @@ class RotorPage(QtWidgets.QWidget):
             "supports couple the disc's translation and tilt, so the gyroscopic moment shows.</p>"
         )
         self.supports = QtWidgets.QComboBox()
+        self.supports.setAccessibleName("Supports")
         self.supports.addItems(SUPPORTS)
         self.supports.setToolTip(
             "<p>What holds the journals: the springs and dampers in the table, or these bearings at both ends.</p>"
