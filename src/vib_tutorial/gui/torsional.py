@@ -11,15 +11,17 @@ core/torsional_startup.py), not the chain.
 
 Working on it
 -------------
-The start-up's curves keep each one's min and max per pixel column of the run's whole span (`plots.Decimator`,
-reset with the run or the link shown), and the ringing link's pen is 1 px: every step drawn, or a wider pen's
-joins on its zigzag, made it 20 fps at 2× on a Mac. `test_torsional_start_up` checks the points and extremes.
+The page is three parts: the drive-train editor and the excitation (`torsional_editor.TrainEditor`), which
+hands the page each train it builds (`built`); the start-up, its controls and its tab, on its own frame loop
+(`torsional_startup_view.StartUpView`), which the page gives each new train; and this page, which holds the
+train and its modes and draws the interference diagram, the response, the drawing and the mode shapes. The
+page keeps `start`, `running`, `pause_button` and `loop` for the main window and the tests (its one motion is
+the start-up). `test_torsional_page` and `test_torsional_start_up` in `test_gui_smoke.py` check it.
 """
 
 from __future__ import annotations
 
 import math
-import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -32,7 +34,6 @@ from ..core.torsional import (
     PRESETS,
     Disc,
     DriveTrain,
-    Excitation,
     Mesh,
     Shaft,
     TorsionalMode,
@@ -48,36 +49,26 @@ from ..core.torsional import (
     two_inertia_hz,
 )
 from ..core.torsional_startup import (
-    FAN_START,
     STARTUPS,
-    Motor,
     MotorKind,
-    StartUp,
-    StartUpSimulator,
     crossings,
-    running_torques,
-    steady_speed,
 )
-from . import torsional_figures, weak
-from .axes import log_axes
+from . import torsional_figures
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import RunButton, connect_all, set_quietly
+from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
+from .lesson import RunButton, plot
 from .links import load_notes, page_link
 from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import spin
-from .plots import Decimator
 from .style import colors
 from .theming import add_legend, mute
+from .torsional_editor import TrainEditor
+from .torsional_startup_view import StartUpView, fmt_torque
 
 CUSTOM = "Custom"
-MAX_DISCS = 12
 SHAPES_SHOWN = 6  # modes drawn on the shape plot
 MARGIN = 10.0  # % either side of the running speed a critical should stay out of (API 617's 10 %)
-FRAME_BUDGET = 0.008  # s of computing per frame: past it the start-up plays slower than asked
-PLAYBACK = (0.05, 0.1, 0.25, 0.5, 1.0)  # × real time
-MOTORS = (None, MotorKind.INDUCTION, MotorKind.SYNCHRONOUS)  # the motor combo's items
 TWO_PI = 2.0 * math.pi
 
 
@@ -328,45 +319,9 @@ PROBLEMS = tuple(
 
 
 TIPS = {
-    "inertia": "<p>The disc's polar moment of inertia J about its shaft.</p>",
-    "disc_damping": "<p>A damper from the disc to ground: a fan's or pump's load, which rises with speed "
-    "(its slope dT/dΩ), or windage. It damps every mode the disc swings in.</p>",
-    "stiffness": "<p>The shaft's (or coupling's) torsional stiffness: torque per radian of twist, GJ/L for a "
-    "plain shaft.</p>",
-    "shaft_damping": "<p>The shaft's damping: torque per rad/s of twist rate. A rubber coupling has a lot; "
-    "steel very little.</p>",
-    "teeth": "<p>Teeth on the gear on the motor's side (in) and on the far side (out). The far shaft turns "
-    "at z<sub>in</sub>/z<sub>out</sub> times the near one's speed: more teeth out slows it down.</p>",
-    "base_radius": "<p>The base radius of the gear on the motor's side; the far gear's is r z<sub>out</sub> / "
-    "z<sub>in</sub>.</p>",
-    "mesh_stiffness": "<p>The mesh's stiffness along the line of action: the teeth bending and the contact "
-    "flattening, about 14 N/µm per mm of face width for steel spur gears.</p>",
-    "mesh_damping": "<p>The mesh's damping along the line of action.</p>",
-    "error": "<p>The transmission error: how far the far gear lags or leads where perfect involutes would put "
-    "it, here one harmonic at the tooth-pass frequency (teeth × speed). It drives the mesh as an "
-    "imposed stretch.</p>",
-    "excite": "<p>A pulsating torque on one disc, each harmonic an order of that disc's own speed: an "
-    "engine's firing (a four-stroke six's majors are 3× and 6×), a reciprocating compressor's "
-    "strokes, a misaligned coupling's 2×.</p>",
     "operating": "<p>The motor's running speed: the interference diagram and the response mark a band of "
     "±10 % round it, where no torsional critical should be.</p>",
     "top": "<p>The highest motor speed the diagram and the response show.</p>",
-    "motor": "<p>The motor on the first disc that starts the train from rest: an induction motor direct on "
-    "line, or a synchronous motor started on its damper cage. None: no start-up.</p>",
-    "supply": "<p>The line frequency and the motor's pole pairs: it runs at (or, an induction motor, just "
-    "below) 60 f / p rpm.</p>",
-    "breakdown": "<p>The cage's speed–torque curve (Kloss's): its peak torque, and the slip where it peaks. "
-    "It starts the train, and an induction motor runs on it, where it meets the load.</p>",
-    "transient": "<p>Switching an induction motor on gives a torque at the line frequency on top of its "
-    "curve's, dying away with this time constant: the stator's flux starts with a DC part.</p>",
-    "pulsating": "<p>A salient-pole synchronous motor's torque pulses at twice the slip frequency as it starts "
-    "(T<sub>p</sub> sin 2δ): from twice the line frequency at rest to nothing at synchronism, "
-    "sweeping through the modes below.</p>",
-    "field": "<p>The field's pull-out torque (T<sub>f</sub> sin δ), switched on below the slip given, which "
-    "pulls the rotor into step.</p>",
-    "load": "<p>The load on the last disc, rising as its speed squared (a fan's, a centrifugal "
-    "compressor's) to this, on its own shaft, with the motor at its synchronous speed.</p>",
-    "duration": "<p>How long the start-up runs, in simulated time.</p>",
 }
 INTERFERENCE_TIP = (
     "<p>The interference (Campbell) diagram. The flat lines are the natural frequencies: they don't change "
@@ -374,11 +329,6 @@ INTERFERENCE_TIP = (
     "speed (solid: the train's own excitation and tooth-pass; dashed: 1× and 2× of each shaft's speed, which "
     "a standard asks to check). Where an order crosses a mode is a torsional critical speed; filled red "
     "inside the band round the running speed.</p>"
-)
-STARTUP_TIP = (
-    "<p>The start-up: the chosen link's torque (a mesh: its force times the near gear's base radius) and the "
-    "motor's air-gap torque against time, the dashed line what the link carries running steadily; below, "
-    "the motor's speed, with the speeds where a synchronous motor's 2× slip pulsation meets each mode.</p>"
 )
 RESPONSE_TIP = (
     "<p>The steady dynamic torque in the chosen link (a mesh: its force times the near gear's base radius), "
@@ -400,37 +350,6 @@ def presets_html() -> str:
 NOTES_HTML = load_notes("torsional", figures=torsional_figures.FIGURES, presets=presets_html())
 
 
-def fmt_torque(t: float) -> str:
-    return f"{t / 1e3:.3g} kN·m" if abs(t) >= 1e3 else f"{t:.3g} N·m"
-
-
-def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None) -> pg.PlotWidget:
-    p = pg.PlotWidget(axisItems=log_axes())
-    p.setMenuEnabled(False)
-    p.hideButtons()
-    p.showGrid(x=True, y=True, alpha=0.15)
-    p.setLabel("left", left, units=left_units)
-    p.setLabel("bottom", bottom, units=bottom_units)
-    return p
-
-
-def _form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip: str) -> None:
-    box.setToolTip(tip)
-    label = QtWidgets.QLabel(text)
-    label.setToolTip(tip)
-    form.addRow(label, box)
-
-
-def _show_in_stack(stack: QtWidgets.QStackedWidget, page: int) -> None:
-    """Show a stack's page `page`, the stack as tall as it rather than its tallest."""
-    for k in range(stack.count()):
-        widget = stack.widget(k)
-        assert widget is not None, "k < count"
-        policy = QtWidgets.QSizePolicy.Policy.Preferred if k == page else QtWidgets.QSizePolicy.Policy.Ignored
-        widget.setSizePolicy(policy, policy)
-    stack.setCurrentIndex(page)
-
-
 class TorsionalPage(QtWidgets.QWidget):
     """Controls on the left, the interference diagram and the response in the centre, drawing and shapes on the right."""
 
@@ -439,15 +358,9 @@ class TorsionalPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.train: DriveTrain = PRESETS[0].train
-        self.selected = 0  # into elements: 2i a disc, 2i + 1 the link after it
         self._loading = False
         self._modes: list[TorsionalMode] = []
         self._unreached = 0  # modes above every order in the speed range, left off the interference diagram
-        self.startup: StartUp = FAN_START
-        self.motor_on = True
-        self.sim: StartUpSimulator | None = None
-        self.running = False
-        self._startup_note = ""  # the preset's, until something is edited
 
         # --- left: the preset, the train, the excitation, the speeds
         self.preset = QtWidgets.QComboBox()
@@ -457,105 +370,14 @@ class TorsionalPage(QtWidgets.QWidget):
         self.preset_note.setWordWrap(True)
         mute(self.preset_note)
 
-        train_box = QtWidgets.QGroupBox("Drive train")
-        tv = QtWidgets.QVBoxLayout(train_box)
-        self.element = QtWidgets.QComboBox()
-        self.element.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.element.setToolTip("<p>The disc or link to edit: or click it in the <i>Drive train</i> drawing.</p>")
-        tv.addWidget(self.element)
-        self.editor = QtWidgets.QStackedWidget()
-        tv.addWidget(self.editor)
-
-        disc_page = QtWidgets.QWidget()
-        form = form_layout(disc_page)
-        form.setContentsMargins(0, 0, 0, 0)
-        self.disc_name = QtWidgets.QLineEdit()
-        self.inertia = spin(1e-5, 1e5, 1.0, 4, " kg·m²")
-        self.disc_damping = spin(0.0, 1e6, 0.0, 2, " N·m·s/rad")
-        _form_row(form, "Name:", self.disc_name, "<p>What the disc is called.</p>")
-        _form_row(form, "Inertia J:", self.inertia, TIPS["inertia"])
-        _form_row(form, "Damping to ground:", self.disc_damping, TIPS["disc_damping"])
-        self.editor.addWidget(disc_page)
-
-        shaft_page = QtWidgets.QWidget()
-        form = form_layout(shaft_page)
-        form.setContentsMargins(0, 0, 0, 0)
-        self.shaft_name = QtWidgets.QLineEdit()
-        self.shaft_stiffness = spin(1e-3, 1e7, 100.0, 3, " kN·m/rad")
-        self.shaft_damping = spin(0.0, 1e6, 0.0, 2, " N·m·s/rad")
-        _form_row(form, "Name:", self.shaft_name, "<p>What the shaft or coupling is called.</p>")
-        _form_row(form, "Stiffness k:", self.shaft_stiffness, TIPS["stiffness"])
-        _form_row(form, "Damping c:", self.shaft_damping, TIPS["shaft_damping"])
-        self.to_mesh = QtWidgets.QPushButton("Make it a gear mesh")
-        self.to_mesh.setToolTip("<p>Replace this shaft by a gear pair: the discs either side become the gears.</p>")
-        form.addRow(self.to_mesh)
-        self.editor.addWidget(shaft_page)
-
-        mesh_page = QtWidgets.QWidget()
-        form = form_layout(mesh_page)
-        form.setContentsMargins(0, 0, 0, 0)
-        self.mesh_name = QtWidgets.QLineEdit()
-        self.teeth_in = QtWidgets.QSpinBox()
-        self.teeth_out = QtWidgets.QSpinBox()
-        for box in (self.teeth_in, self.teeth_out):
-            box.setRange(5, 1000)
-            box.setKeyboardTracking(False)
-        self.base_radius = spin(1.0, 5000.0, 100.0, 1, " mm")
-        self.mesh_stiffness = spin(1.0, 1e5, 1000.0, 1, " N/µm")
-        self.mesh_damping = spin(0.0, 1e7, 0.0, 0, " N·s/m")
-        self.error = spin(0.0, 1000.0, 0.0, 2, " µm")
-        _form_row(form, "Name:", self.mesh_name, "<p>What the mesh is called.</p>")
-        _form_row(form, "Teeth:", group(self.teeth_in, "in,", self.teeth_out, "out"), TIPS["teeth"])
-        _form_row(form, "Base radius (in):", self.base_radius, TIPS["base_radius"])
-        _form_row(form, "Mesh stiffness:", self.mesh_stiffness, TIPS["mesh_stiffness"])
-        _form_row(form, "Mesh damping:", self.mesh_damping, TIPS["mesh_damping"])
-        _form_row(form, "Transmission error:", self.error, TIPS["error"])
-        self.to_shaft = QtWidgets.QPushButton("Make it a shaft")
-        self.to_shaft.setToolTip(
-            "<p>Replace the gear pair by a shaft of the mesh's referred stiffness "
-            "(the far side then turns at the near side's speed).</p>"
-        )
-        form.addRow(self.to_shaft)
-        self.editor.addWidget(mesh_page)
-
-        row = FlowLayout()
-        self.add_button = QtWidgets.QPushButton("Add a disc after")
-        self.add_button.setToolTip(
-            "<p>A copy of the chosen disc (or of the disc before the chosen link) after it, on a copy of its shaft.</p>"
-        )
-        self.remove_button = QtWidgets.QPushButton("Remove disc")
-        self.remove_button.setToolTip("<p>Take the chosen disc off the train, with the link after it.</p>")
-        row.add(self.add_button, self.remove_button)
-        tv.addLayout(row)
-        self.train_info = QtWidgets.QLabel()
-        self.train_info.setWordWrap(True)
-        mute(self.train_info)
-        tv.addWidget(self.train_info)
-
-        excite = QtWidgets.QGroupBox("Excitation")
-        excite.setToolTip(TIPS["excite"])
-        ef = form_layout(excite)
-        self.excite_disc = QtWidgets.QComboBox()
-        self.excite_disc.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.excite_name = QtWidgets.QLineEdit()
-        self.orders = [spin(0.0, 500.0, 0.0, 2, "×") for _ in range(2)]
-        self.amplitudes = [spin(0.0, 1e7, 0.0, 1, " N·m") for _ in range(2)]
-        _form_row(ef, "Torque on:", self.excite_disc, TIPS["excite"])
-        _form_row(ef, "Called:", self.excite_name, "<p>What the excitation is (its orders' label).</p>")
-        for k in range(2):
-            _form_row(
-                ef,
-                f"Harmonic {k + 1}:",
-                group(self.orders[k], self.amplitudes[k]),
-                "<p>An order of the disc's own speed and its torque's amplitude (0: off).</p>",
-            )
+        self.train_editor = TrainEditor()  # the Drive train and Excitation panes
 
         speeds = QtWidgets.QGroupBox("Speeds")
         sf = form_layout(speeds)
         self.operating = spin(1.0, 1e5, 1480.0, 0, " rpm")
         self.top = spin(10.0, 1e5, 3600.0, 0, " rpm")
-        _form_row(sf, "Running speed:", self.operating, TIPS["operating"])
-        _form_row(sf, "Show up to:", self.top, TIPS["top"])
+        form_row(sf, "Running speed:", self.operating, TIPS["operating"])
+        form_row(sf, "Show up to:", self.top, TIPS["top"])
         self.log_scales = QtWidgets.QCheckBox("Log scales on the interference diagram")
         self.log_scales.setToolTip(
             "<p>Both axes logarithmic: every order is then a parallel line, and modes "
@@ -564,59 +386,7 @@ class TorsionalPage(QtWidgets.QWidget):
         )
         sf.addRow(self.log_scales)
 
-        start_box = QtWidgets.QGroupBox("Start-up")
-        stf = form_layout(start_box)
-        self.motor_kind = QtWidgets.QComboBox()
-        self.motor_kind.addItems(["None"] + [k.value for k in MOTORS[1:]])
-        self.line_hz = spin(1.0, 400.0, 50.0, 1, " Hz")
-        self.pole_pairs = QtWidgets.QSpinBox()
-        self.pole_pairs.setRange(1, 50)
-        self.pole_pairs.setKeyboardTracking(False)
-        self.breakdown = spin(1.0, 1e7, 1000.0, 0, " N·m")
-        self.breakdown_slip = spin(0.5, 100.0, 20.0, 1, " %")
-        _form_row(stf, "Motor:", self.motor_kind, TIPS["motor"])
-        _form_row(stf, "Supply:", group(self.line_hz, self.pole_pairs, "pole pairs"), TIPS["supply"])
-        _form_row(stf, "Breakdown:", group(self.breakdown, "at slip", self.breakdown_slip), TIPS["breakdown"])
-        self.motor_stack = QtWidgets.QStackedWidget()
-        induction_page = QtWidgets.QWidget()
-        form = form_layout(induction_page)
-        form.setContentsMargins(0, 0, 0, 0)
-        self.transient = spin(0.0, 1e7, 0.0, 0, " N·m")
-        self.time_constant = spin(1.0, 5000.0, 50.0, 0, " ms")
-        _form_row(form, "Switch-on torque:", group(self.transient, "decay", self.time_constant), TIPS["transient"])
-        self.motor_stack.addWidget(induction_page)
-        synchronous_page = QtWidgets.QWidget()
-        form = form_layout(synchronous_page)
-        form.setContentsMargins(0, 0, 0, 0)
-        self.pulsating = spin(0.0, 1e7, 0.0, 0, " N·m")
-        self.field = spin(0.0, 1e7, 0.0, 0, " N·m")
-        self.field_slip = spin(0.1, 100.0, 5.0, 1, " %")
-        _form_row(form, "Pulsating (2× slip):", self.pulsating, TIPS["pulsating"])
-        _form_row(form, "Field:", group(self.field, "below slip", self.field_slip), TIPS["field"])
-        self.motor_stack.addWidget(synchronous_page)
-        stf.addRow(self.motor_stack)
-        self.load_torque = spin(0.0, 1e7, 300.0, 0, " N·m")
-        self.duration = spin(0.1, 60.0, 4.0, 1, " s")
-        _form_row(stf, "Load at full speed:", self.load_torque, TIPS["load"])
-        _form_row(stf, "Run for:", self.duration, TIPS["duration"])
-        row = FlowLayout()
-        self.pause_button = RunButton()
-        self.reset_button = QtWidgets.QPushButton("Reset")
-        self.reset_button.setToolTip("<p>The train back at rest, waiting for Start.</p>")
-        self.playback = QtWidgets.QComboBox()
-        for x in PLAYBACK:
-            self.playback.addItem(f"{x:g}× real time", x)
-        self.playback.setCurrentIndex(PLAYBACK.index(0.25))
-        self.playback.setToolTip(
-            "<p>How fast the start-up plays: its first tenth of a second is what an "
-            "induction motor's switch-on rings in.</p>"
-        )
-        row.add(self.pause_button, self.reset_button, self.playback)
-        stf.addRow(row)
-        self.startup_info = QtWidgets.QLabel()
-        self.startup_info.setWordWrap(True)
-        mute(self.startup_info)
-        stf.addRow(self.startup_info)
+        self.startup_view = StartUpView()  # the Start-up pane (its controls) and tab
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
@@ -625,13 +395,13 @@ class TorsionalPage(QtWidgets.QWidget):
         preset_layout.addWidget(self.preset)
         preset_layout.addWidget(self.preset_note)
         lv.addWidget(presets)
-        for pane in (train_box, excite, speeds, start_box):
+        for pane in (self.train_editor, self.train_editor.excitation_box, speeds, self.startup_view.controls):
             lv.addWidget(pane)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
         # --- centre: the interference diagram, the readout, the response
-        self.interference = _plot("Frequency", "Hz", "Motor speed", "rpm")
+        self.interference = plot("Frequency", "Hz", "Motor speed", "rpm", log_ready=True)
         self.interference.setToolTip(INTERFERENCE_TIP)
         plot_height(self.interference, 220)
         self.readout = QtWidgets.QLabel()
@@ -643,7 +413,7 @@ class TorsionalPage(QtWidgets.QWidget):
         )
         self.response_link.setMinimumContentsLength(18)
         self.response_link.setToolTip(RESPONSE_TIP)
-        self.response = _plot("Dynamic torque", "N·m", "Motor speed", "rpm")
+        self.response = plot("Dynamic torque", "N·m", "Motor speed", "rpm", log_ready=True)
         self.response.setLogMode(x=False, y=True)
         self.response.setToolTip(RESPONSE_TIP)
         plot_height(self.response, 180)
@@ -662,53 +432,11 @@ class TorsionalPage(QtWidgets.QWidget):
         cv.addWidget(self.response, 2)
         cv.addWidget(self.response_note)
 
-        # the start-up: a link's torque and the motor's speed against time
-        self.startup_link = QtWidgets.QComboBox()
-        self.startup_link.setSizeAdjustPolicy(
-            QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
-        )
-        self.startup_link.setMinimumContentsLength(18)
-        self.startup_link.setToolTip(STARTUP_TIP)
-        self.startup_torque = _plot("Torque", "N·m", "Time", "s")
-        self.startup_torque.setToolTip(STARTUP_TIP)
-        plot_height(self.startup_torque, 200)
-        self.startup_legend = add_legend(self.startup_torque.getPlotItem(), offset=(-10, 10))
-        self.startup_speed = _plot("Motor speed", "rpm", "Time", "s")
-        self.startup_speed.setToolTip(STARTUP_TIP)
-        self.startup_speed.setXLink(self.startup_torque)
-        plot_height(self.startup_speed, 130)
-        for p in (self.startup_torque, self.startup_speed):
-            p.setClipToView(True)
-            p.setDownsampling(auto=True, mode="peak")
-        self.motor_curve = self.startup_torque.plot([], [])
-        self.link_curve = self.startup_torque.plot([], [])
-        self.startup_legend.addItem(self.link_curve, "Link")
-        self.startup_legend.addItem(self.motor_curve, "Motor's air-gap torque")
-        self.running_line = pg.InfiniteLine(0.0, angle=0)
-        self.startup_torque.addItem(self.running_line)
-        self.speed_curve = self.startup_speed.plot([], [])
-        self._marks: list[tuple[pg.PlotWidget, pg.InfiniteLine]] = []  # the crossings' speeds, when the run passed them
-        self._style_startup()
-        self.startup_status = QtWidgets.QLabel()
-        self.startup_status.setWordWrap(True)
-        mute(self.startup_status)
-        self.startup_note = QtWidgets.QLabel()
-        self.startup_note.setWordWrap(True)
-        self.startup_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        startup_tab = QtWidgets.QWidget()
-        uv = QtWidgets.QVBoxLayout(startup_tab)
-        row = FlowLayout()
-        row.add(group("Torque in:", self.startup_link))
-        uv.addLayout(row)
-        uv.addWidget(self.startup_torque, 3)
-        uv.addWidget(self.startup_speed, 2)
-        uv.addWidget(self.startup_status)
-        uv.addWidget(self.startup_note)
         self.views = QtWidgets.QTabWidget()
         self.criticals_tab = center
-        self.startup_tab = startup_tab
+        self.startup_tab = self.startup_view
         self.views.addTab(center, "Criticals")
-        self.views.addTab(startup_tab, "Start-up")
+        self.views.addTab(self.startup_view, "Start-up")
 
         # --- right: the train drawn, the mode shapes, the notes
         self.drawing = pg.PlotWidget()
@@ -732,7 +460,7 @@ class TorsionalPage(QtWidgets.QWidget):
         dv.addWidget(self.drawing, 1)
         dv.addWidget(self.drawing_note)
 
-        self.shapes = _plot("Swing (referred to the motor's shaft)", None, "Disc", None)
+        self.shapes = plot("Swing (referred to the motor's shaft)", None, "Disc", None, log_ready=True)
         self.shapes.setMouseEnabled(x=False, y=False)
         self.shapes.setToolTip(
             "<p>Each mode's swing at each disc, referred to the motor's shaft (θ / s, so a "
@@ -773,59 +501,14 @@ class TorsionalPage(QtWidgets.QWidget):
 
         # --- wiring
         self.preset.currentIndexChanged.connect(self._on_preset)
-        self.element.currentIndexChanged.connect(self._on_element)
-        connect_all(
-            (
-                self.inertia,
-                self.disc_damping,
-                self.shaft_stiffness,
-                self.shaft_damping,
-                self.base_radius,
-                self.mesh_stiffness,
-                self.mesh_damping,
-                self.error,
-                self.teeth_in,
-                self.teeth_out,
-            ),
-            self._on_edit,
-        )
-        for line in (self.disc_name, self.shaft_name, self.mesh_name):
-            line.editingFinished.connect(self._on_edit)
-        self.to_mesh.clicked.connect(self._make_mesh)
-        self.to_shaft.clicked.connect(self._make_shaft)
-        self.add_button.clicked.connect(self._add_disc)
-        self.remove_button.clicked.connect(self._remove_disc)
-        self.excite_disc.currentIndexChanged.connect(self._on_excitation)
-        self.excite_name.editingFinished.connect(self._on_excitation)
-        connect_all((*self.orders, *self.amplitudes), self._on_excitation)
+        self.train_editor.built.connect(self.set_train)
+        self.train_editor.picked.connect(self._on_picked)
+        self.startup_view.edited.connect(self._on_startup_edited)
+        self.startup_view.shown_wanted.connect(self._show_startup)
         self.operating.valueChanged.connect(self._on_speeds)
         self.top.valueChanged.connect(self._on_speeds)
         self.log_scales.toggled.connect(self._draw_interference)
         self.response_link.currentIndexChanged.connect(self._draw_response)
-        self.motor_kind.currentIndexChanged.connect(self._on_startup)
-        connect_all(
-            (
-                self.line_hz,
-                self.pole_pairs,
-                self.breakdown,
-                self.breakdown_slip,
-                self.transient,
-                self.time_constant,
-                self.pulsating,
-                self.field,
-                self.field_slip,
-                self.load_torque,
-                self.duration,
-            ),
-            self._on_startup,
-        )
-        self.reset_button.clicked.connect(self.reset)
-        self.pause_button.toggled.connect(self._on_pause)
-        self.startup_link.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._draw_startup(full=True)))
-
-        # --- the start-up's loop
-        self._cost = 1e-5  # s of computing per simulated s (see step)
-        self.loop = FrameLoop(self, "Torsional vibration", self._tick, self._runs, self._sim_t)
 
         self.load_preset(PRESETS[0].name)
 
@@ -840,7 +523,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self.preset.blockSignals(False)
         self.preset_note.setText(markup(p.note))
         self._loading = False
-        self.selected = 0
+        self.train_editor.selected = 0
         self.response_link.blockSignals(True)
         self.response_link.setCurrentIndex(-1)  # set_train picks the slowest mode's link
         self.response_link.blockSignals(False)
@@ -848,20 +531,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self.log_scales.blockSignals(True)
         self.log_scales.setChecked(bool(f.size and f[-1] > 10 * f[0]))
         self.log_scales.blockSignals(False)
-        start = STARTUPS.get(name)
-        self.motor_on = start is not None
-        if start is not None:
-            self.startup = start.startup
-        self._startup_note = (
-            start.note
-            if start is not None
-            else "The engine drives this train: no motor starts it. Pick one to try anyway."
-        )
-        self.running = False
-        self.startup_link.blockSignals(True)
-        self.startup_link.setCurrentIndex(-1)  # _new_run picks the link carrying the most
-        self.startup_link.blockSignals(False)
-        self._fill_startup()
+        self.startup_view.load(STARTUPS.get(name))
         self.set_train(p.train, custom=False)
 
     def load_setup(self, setup: dict) -> None:
@@ -905,174 +575,68 @@ class TorsionalPage(QtWidgets.QWidget):
         self.preset.setCurrentText(CUSTOM)
         self.preset.blockSignals(False)
         self.preset_note.setText("")
-        if self._startup_note:
-            self._startup_note = ""
-            self._show_startup_info()
+        self.startup_view.clear_note()
 
     def set_train(self, train: DriveTrain, custom: bool = True) -> None:
         """Show a new train: every view redrawn, the editors refilled."""
         self.train = train
         self._modes = modes(train)
-        self.selected = min(self.selected, 2 * train.n - 2)
         if custom:
             self._to_custom()
-        self._fill_lists()
-        self._fill_editor()
-        self._show_train_info()
+        self.train_editor.show_train(train)
+        self._fill_response_links()
         self.redraw()
-        self._new_run()
+        self.startup_view.set_train(train, self._modes)
 
-    def _try(self, make) -> None:
-        """Apply the train `make()` builds, or say why it can't be built and keep the last one."""
-        try:
-            train = make()
-        except ValueError as e:
-            self.train_info.setText(f"<b>{e}</b>: the page keeps the last train.")
-            return
-        self.set_train(train)
-
-    def _fill_lists(self) -> None:
-        self._loading = True
+    def _fill_response_links(self) -> None:
         t = self.train
-        self.element.clear()
-        for i, d in enumerate(t.discs):
-            self.element.addItem(f"{i + 1}. {d.name}")
-            if i < len(t.links):
-                link = t.links[i]
-                kind = f"mesh {link.teeth_in}:{link.teeth_out}" if isinstance(link, Mesh) else "shaft"
-                self.element.addItem(f"    {link.name} ({kind})")
-        self.element.setCurrentIndex(self.selected)
         shown = self.response_link.currentIndex()
+        self.response_link.blockSignals(True)
         self.response_link.clear()
         self.response_link.addItems([link.name for link in t.links])
         if not 0 <= shown < len(t.links):
             # the link the slowest mode twists most, by default
             shown = self._modes[0].link if self._modes else 0
         self.response_link.setCurrentIndex(shown)
-        self.excite_disc.clear()
-        self.excite_disc.addItem("None")
-        self.excite_disc.addItems([d.name for d in t.discs])
-        exc = t.excitation
-        self.excite_disc.setCurrentIndex(0 if exc is None else exc.disc + 1)
-        harmonics = list(exc.harmonics) if exc is not None else []
-        harmonics += [(0.0, 0.0)] * (2 - len(harmonics))
-        for k in range(2):
-            self.orders[k].setValue(harmonics[k][0])
-            self.amplitudes[k].setValue(harmonics[k][1])
-        self.excite_name.setText(exc.name if exc is not None else "Torque")
-        for w in (self.excite_name, *self.orders, *self.amplitudes):
-            w.setEnabled(exc is not None)
-        self.add_button.setEnabled(t.n < MAX_DISCS)
-        self.remove_button.setEnabled(t.n > 2)
-        self._loading = False
+        self.response_link.blockSignals(False)
 
-    def _fill_editor(self) -> None:
-        self._loading = True
-        t = self.train
-        i, is_link = divmod(self.selected, 2)
-        page = 0 if not is_link else 1 if isinstance(t.links[i], Shaft) else 2
-        _show_in_stack(self.editor, page)  # the stack as tall as the page showing, not the tallest
-        if not is_link:
-            d = t.discs[i]
-            self.disc_name.setText(d.name)
-            self.inertia.setValue(d.inertia)
-            self.disc_damping.setValue(d.damping)
-        elif isinstance(t.links[i], Shaft):
-            s = t.links[i]
-            self.shaft_name.setText(s.name)
-            self.shaft_stiffness.setValue(s.stiffness / 1e3)
-            self.shaft_damping.setValue(s.damping)
-        else:
-            m = t.links[i]
-            assert isinstance(m, Mesh), "a link is a shaft or a mesh"
-            self.mesh_name.setText(m.name)
-            self.teeth_in.setValue(m.teeth_in)
-            self.teeth_out.setValue(m.teeth_out)
-            self.base_radius.setValue(m.base_radius * 1e3)
-            self.mesh_stiffness.setValue(m.stiffness / 1e6)
-            self.mesh_damping.setValue(m.damping)
-            self.error.setValue(m.error * 1e6)
-        self._loading = False
+    @property
+    def selected(self) -> int:
+        """The element being edited: 2i the i-th disc, 2i + 1 the link after it."""
+        return self.train_editor.selected
 
     def select(self, element: int) -> None:
         """Edit element `element`: 2i the i-th disc, 2i + 1 the link after it."""
-        self.selected = element
-        self.element.blockSignals(True)
-        self.element.setCurrentIndex(element)
-        self.element.blockSignals(False)
-        self._fill_editor()
+        self.train_editor.select(element)
         self._draw_train()
 
-    def _on_element(self, index: int) -> None:
-        if not self._loading and index >= 0:
-            self.select(index)
+    def _on_picked(self, _element: int) -> None:
+        self._draw_train()
 
-    def _on_edit(self) -> None:
-        if self._loading:
-            return
-        t = self.train
-        i, is_link = divmod(self.selected, 2)
-        if not is_link:
-            disc = Disc(
-                self.disc_name.text().strip() or t.discs[i].name, self.inertia.value(), self.disc_damping.value()
-            )
-            self._try(lambda: t.with_disc(i, disc))
-        elif isinstance(t.links[i], Shaft):
-            shaft = Shaft(
-                self.shaft_stiffness.value() * 1e3,
-                self.shaft_damping.value(),
-                self.shaft_name.text().strip() or t.links[i].name,
-            )
-            self._try(lambda: t.with_link(i, shaft))
-        else:
-            mesh = Mesh(
-                self.teeth_in.value(),
-                self.teeth_out.value(),
-                self.base_radius.value() / 1e3,
-                self.mesh_stiffness.value() * 1e6,
-                self.mesh_damping.value(),
-                self.error.value() / 1e6,
-                self.mesh_name.text().strip() or t.links[i].name,
-            )
-            self._try(lambda: t.with_link(i, mesh))
+    # ------------------------------------------------------------- start-up
+    def _on_startup_edited(self) -> None:
+        self._to_custom()
+        self._draw_interference()
 
-    def _make_mesh(self) -> None:
-        i = self.selected // 2
-        shaft = self.train.links[i]
-        # a 1:1 pair of 100 mm base radius whose referred stiffness is the shaft's
-        r = 0.1
-        mesh = Mesh(40, 40, r, shaft.stiffness / (r * r), shaft.damping / (r * r), 0.0, "Gear mesh")
-        self._try(lambda: self.train.with_link(i, mesh))
+    def _show_startup(self) -> None:
+        self.views.setCurrentWidget(self.startup_view)
 
-    def _make_shaft(self) -> None:
-        i = self.selected // 2
-        mesh = self.train.links[i]
-        assert isinstance(mesh, Mesh), "offered for a mesh"
-        r = mesh.base_radius
-        self._try(lambda: self.train.with_link(i, Shaft(mesh.stiffness * r * r, mesh.damping * r * r, "Shaft")))
+    def start(self) -> None:
+        """Start the train from rest, and show it."""
+        self.startup_view.start()
 
-    def _add_disc(self) -> None:
-        i = self.selected // 2
-        self.selected = 2 * (i + 1)
-        self._try(lambda: self.train.inserted(i))
+    @property
+    def running(self) -> bool:
+        """The start-up playing (the page's one motion)."""
+        return self.startup_view.running
 
-    def _remove_disc(self) -> None:
-        i = self.selected // 2
-        self.selected = 2 * max(i - 1, 0)
-        self._try(lambda: self.train.removed(i))
+    @property
+    def pause_button(self) -> RunButton:
+        return self.startup_view.pause_button
 
-    def _on_excitation(self) -> None:
-        if self._loading:
-            return
-        disc = self.excite_disc.currentIndex() - 1
-        if disc < 0:
-            self._try(lambda: self.train.with_(excitation=None))
-            return
-        harmonics = tuple((self.orders[k].value(), self.amplitudes[k].value()) for k in range(2))
-        if self.train.excitation is None and not any(o > 0 and a > 0 for o, a in harmonics):
-            harmonics = ((1.0, 100.0),)  # a fresh excitation: something to see
-        name = self.excite_name.text().strip() or "Torque"
-        self._try(lambda: self.train.with_(excitation=Excitation(disc, harmonics, name)))
+    @property
+    def loop(self) -> FrameLoop:
+        return self.startup_view.loop
 
     def _on_speeds(self) -> None:
         if self._loading:
@@ -1081,317 +645,10 @@ class TorsionalPage(QtWidgets.QWidget):
         self.redraw()
 
     # ------------------------------------------------------------- start-up
-    def _fill_startup(self) -> None:
-        loading, self._loading = self._loading, True
-        m = self.startup.motor
-        self.motor_kind.setCurrentIndex(MOTORS.index(m.kind) if self.motor_on else 0)
-        for box, value in (
-            (self.line_hz, m.line_hz),
-            (self.pole_pairs, m.pole_pairs),
-            (self.breakdown, m.breakdown),
-            (self.breakdown_slip, 100.0 * m.breakdown_slip),
-            (self.transient, m.transient),
-            (self.time_constant, 1e3 * m.time_constant),
-            (self.pulsating, m.pulsating),
-            (self.field, m.field),
-            (self.field_slip, 100.0 * m.field_slip),
-            (self.load_torque, self.startup.load),
-            (self.duration, self.startup.duration),
-        ):
-            set_quietly(box, value)
-        page = 0 if m.kind is MotorKind.INDUCTION else 1
-        _show_in_stack(self.motor_stack, page)
-        for w in (
-            self.line_hz,
-            self.pole_pairs,
-            self.breakdown,
-            self.breakdown_slip,
-            self.motor_stack,
-            self.load_torque,
-            self.duration,
-        ):
-            w.setEnabled(self.motor_on)
-        self._loading = loading
-
-    def _on_startup(self) -> None:
-        if self._loading:
-            return
-        kind = MOTORS[self.motor_kind.currentIndex()]
-        try:
-            motor = Motor(
-                kind or self.startup.motor.kind,
-                self.line_hz.value(),
-                self.pole_pairs.value(),
-                self.breakdown.value(),
-                self.breakdown_slip.value() / 100.0,
-                self.transient.value(),
-                self.time_constant.value() / 1e3,
-                self.pulsating.value(),
-                self.field.value(),
-                self.field_slip.value() / 100.0,
-            )
-            startup = StartUp(motor, self.load_torque.value(), self.duration.value())
-        except ValueError as e:
-            self.startup_info.setText(f"<b>{e}</b>: the start-up keeps the last motor.")
-            return
-        self.startup, self.motor_on = startup, kind is not None
-        self._to_custom()
-        self._fill_startup()
-        self._draw_interference()
-        self._new_run()
-
-    def _new_run(self) -> None:
-        """A fresh start-up of the train as it is now, from rest (still playing if it was)."""
-        t, su = self.train, self.startup
-        self.sim = StartUpSimulator(t, su) if self.motor_on else None
-        cap = round(su.duration / self.sim.h) + 1 if self.sim is not None else 0
-        self._k = 0
-        self._t = np.empty(cap)
-        self._rpm = np.empty(cap)
-        self._motor = np.empty(cap)
-        self._links = np.empty((t.n - 1, cap))
-        self._decimator = Decimator()  # the curves' min and max per pixel column, kept as the run grows
-        self._running = running_torques(t, su) if self.motor_on else np.full(t.n - 1, math.nan)
-        self._crossings = crossings(t, su.motor) if self.motor_on else []
-        self._passed: set[int] = set()
-        chosen = self.startup_link.currentIndex()
-        self.startup_link.blockSignals(True)
-        self.startup_link.clear()
-        self.startup_link.addItems([link.name for link in t.links])
-        if not 0 <= chosen < len(t.links):
-            chosen = int(np.argmax(np.nan_to_num(self._running)))  # the link carrying the most
-        self.startup_link.setCurrentIndex(chosen)
-        self.startup_link.blockSignals(False)
-        for plot, mark in self._marks:
-            plot.removeItem(mark)
-        self._marks = []
-        for c in self._crossings:
-            self._add_mark(self.startup_speed, c.rpm, 0, f"Mode {c.mode + 1}, {c.freq_hz:.3g} Hz")
-        self.startup_torque.setXRange(0.0, su.duration, padding=0)
-        self.startup_torque.enableAutoRange(axis="y")
-        self.startup_speed.setYRange(0.0, 1.1 * su.motor.sync_rpm, padding=0)
-        if self.sim is None:
-            self.running = False
-        self._draw_startup(full=True)
-        self._show_startup_info()
-        self._show_status()
-        self._update_buttons()
-        self.loop.start()
-
-    def _add_mark(self, plot: pg.PlotWidget, pos: float, angle: int, label: str) -> None:
-        line = pg.InfiniteLine(
-            pos,
-            angle=angle,
-            label=label,
-            labelOpts={"position": 0.02 if angle == 0 else 0.95, "anchors": [(0, 1), (0, 1)]},
-        )
-        plot.addItem(line)
-        self._marks.append((plot, line))
-        self._style_mark(line)
-
-    def _style_mark(self, line: pg.InfiniteLine) -> None:
-        line.setPen(pg.mkPen(colors.grey, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        line.label.setColor(colors.muted)
-
-    def start(self) -> None:
-        """Start the train from rest, and show it."""
-        if not self.motor_on:
-            return
-        self.running = True
-        self.views.setCurrentWidget(self.startup_tab)
-        self._new_run()
-
-    def reset(self) -> None:
-        """The train back at rest, waiting for Start."""
-        self.running = False
-        self._new_run()
-
-    def _on_pause(self, on: bool) -> None:
-        if self.sim is None:
-            self._update_buttons()
-        elif on and (self.sim.done or self._k == 0):  # from rest (again, if it ran to the end), shown
-            self.start()
-        else:
-            self.running = on
-            self._update_buttons()
-            self.loop.start()
-
-    def _update_buttons(self) -> None:
-        self.reset_button.setEnabled(self.motor_on)
-        self.pause_button.setEnabled(self.motor_on)
-        if self.sim is None or self.sim.done or (self._k == 0 and not self.running):
-            self.pause_button.rest()
-        else:
-            self.pause_button.set_running(self.running)
-
-    def _runs(self) -> bool:
-        return self.running
-
-    def _tick(self, dt: float) -> None:
-        """A frame: `dt` s of wall-clock time at the playback speed, within the frame's budget."""
-        self.step(dt * float(self.playback.currentData()), FRAME_BUDGET)
-
-    def _sim_t(self) -> float | None:
-        return self.sim.t if self.sim is not None else None
-
-    def step(self, duration: float, budget: float | None = None) -> None:
-        """Run the start-up on by `duration` s of simulated time and redraw.
-
-        With a `budget` (s of computing), no further than it allows at the cost seen so far, so a fast
-        playback falls behind rather than stalling the window.
-        """
-        sim = self.sim
-        if sim is None:
-            return
-        ahead = duration if budget is None else min(duration, budget / self._cost)
-        if ahead >= 0.5 * sim.h and not sim.done:
-            start, began = time.perf_counter(), sim.t
-            while ahead >= 0.5 * sim.h and not sim.done:
-                s = sim.advance(ahead)
-                m = s.t.size
-                if not m:
-                    break
-                k = self._k
-                self._t[k : k + m] = s.t
-                self._rpm[k : k + m] = s.rpm
-                self._motor[k : k + m] = s.motor
-                self._links[:, k : k + m] = s.links
-                self._k += m
-                ahead -= m * sim.h
-            if sim.t > began:
-                self._cost = 0.8 * self._cost + 0.2 * (time.perf_counter() - start) / (sim.t - began)
-            self._draw_startup()
-            self._show_status()
-            if sim.done:
-                self.running = False
-                self._update_buttons()
-
-    def _draw_startup(self, full: bool = False) -> None:
-        k = self._k
-        j = self.startup_link.currentIndex()
-        if full:
-            self.startup_legend.clear()
-            name = self.train.links[j].name if 0 <= j < len(self.train.links) else "Link"
-            self.startup_legend.addItem(self.link_curve, name)
-            self.startup_legend.addItem(self.motor_curve, "Motor's air-gap torque")
-            run = self._running[j] if 0 <= j < self._running.size else math.nan
-            self.running_line.setVisible(bool(math.isfinite(run)))
-            if math.isfinite(run):
-                self.running_line.setPos(run)
-        t = self._t[:k]
-        link = self._links[j] if 0 <= j < self._links.shape[0] else np.zeros_like(self._t)
-        # Every step is ~12,000 points a curve by the end, ringing fast: painting them all took 41 ms a frame
-        # at 2× on a Mac (20 fps). Keep each curve's min and max per pixel column of the run's whole span.
-        width = max(100, int(self.startup_torque.getPlotItem().vb.width()))
-        total = max(k, self._t.size)
-        if full:
-            self._decimator.reset()
-        if k > 2 * width:
-            self._decimator.max_points = max(2, int(2 * width * k / total))
-            picks = self._decimator.index(
-                0, k, lambda i: np.column_stack([link[:k][i], self._motor[:k][i], self._rpm[:k][i]]), 3
-            )
-        else:
-            picks = [np.arange(k)] * 3
-        for curve, y, rows in zip(
-            (self.link_curve, self.motor_curve, self.speed_curve), (link, self._motor, self._rpm), picks
-        ):
-            curve.setData(t[rows], y[:k][rows])
-        for i, c in enumerate(self._crossings):
-            if i not in self._passed and k and self._rpm[k - 1] >= c.rpm:
-                self._passed.add(i)
-                at = self._t[int(np.argmax(self._rpm[:k] >= c.rpm))]
-                self._add_mark(self.startup_torque, at, 90, f"Mode {c.mode + 1}")
-        self._show_peaks()
-
-    def _show_status(self) -> None:
-        sim = self.sim
-        if sim is None:
-            self.startup_status.setText("No motor on the train: pick one under Start-up to run it up.")
-            return
-        if self._k == 0:
-            self.startup_status.setText("At rest: Start runs the train up.")
-            return
-        m = sim.startup.motor
-        rpm = self._rpm[self._k - 1]
-        slip = sim.slip
-        text = f"t = {sim.t:.3f} s: the motor at {rpm:.0f} rpm, slip {100 * slip:.1f} %"
-        if m.kind is MotorKind.SYNCHRONOUS:
-            if sim.field_on and abs(slip) < 1e-3:
-                text += ", in step"
-            else:
-                text += f", its poles pulsing at {m.pulsation_hz(abs(slip)):.3g} Hz"
-            text += ", the field on" if sim.field_on else ""
-        self.startup_status.setText(text + (". Done." if sim.done else "."))
-
-    def _show_peaks(self) -> None:
-        sim = self.sim
-        if sim is None or self._k == 0:
-            self.startup_note.setText("")
-            return
-        rows = []
-        ratios = np.where(self._running > 0, sim.peaks / np.where(self._running > 0, self._running, 1.0), 0.0)
-        worst = int(np.argmax(ratios)) if np.isfinite(ratios).all() else -1
-        for i, link in enumerate(self.train.links):
-            at = int(np.searchsorted(self._t[: self._k], sim.peak_t[i]))
-            rpm = self._rpm[min(at, self._k - 1)]
-            text = f"{link.name}: {fmt_torque(sim.peaks[i])} at {sim.peak_t[i]:.3f} s ({rpm:.0f} rpm)"
-            if math.isfinite(self._running[i]) and self._running[i] > 0:
-                text += f", {ratios[i]:.1f}× its running {fmt_torque(self._running[i])}"
-            rows.append(f"<b>{text}</b>" if i == worst else text)
-        head = "Peak torques" if sim.done else "Peak torques so far"
-        self.startup_note.setText(f"{head}: " + "; ".join(rows) + ".")
-
-    def _show_startup_info(self) -> None:
-        if not self.motor_on:
-            self.startup_info.setText(self._startup_note or "No motor: pick one to start the train from rest.")
-            return
-        t, su = self.train, self.startup
-        m = su.motor
-        w = steady_speed(t, su)
-        parts = [self._startup_note] if self._startup_note else []
-        if math.isnan(w):
-            parts.append(
-                f"Synchronous speed {m.sync_rpm:.0f} rpm: the motor can't carry the load there, and "
-                f"stalls on the way up."
-            )
-        elif m.kind is MotorKind.INDUCTION:
-            parts.append(
-                f"Synchronous speed {m.sync_rpm:.0f} rpm; it runs at {60 * w / (2 * math.pi):.0f} rpm "
-                f"(slip {100 * (1 - w / m.sync_speed):.1f} %)."
-            )
-            near = min(self._modes, key=lambda md: abs(md.freq_hz - m.line_hz), default=None)
-            if near is not None:
-                j = self._modes.index(near)
-                parts.append(
-                    f"The switch-on rings at {m.line_hz:g} Hz; mode {j + 1} ({near.freq_hz:.3g} Hz) is "
-                    f"{100 * abs(near.freq_hz - m.line_hz) / m.line_hz:.0f} % from it."
-                )
-        else:
-            parts.append(f"It runs at {m.sync_rpm:.0f} rpm.")
-            cs = crossings(t, m)
-            if cs:
-                parts.append(
-                    "The poles' 2× slip pulsation meets "
-                    + ", ".join(f"mode {c.mode + 1} ({c.freq_hz:.3g} Hz) at {c.rpm:.0f} rpm" for c in cs)
-                    + "."
-                )
-            else:
-                parts.append(f"No mode below {2 * m.line_hz:g} Hz for the poles' pulsation to meet.")
-        self.startup_info.setText(" ".join(parts))
-
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
         self.redraw()
-        self._style_startup()
-
-    def _style_startup(self) -> None:
-        self.link_curve.setPen(pg.mkPen(colors.strong, width=1))
-        self.motor_curve.setPen(pg.mkPen(colors.force, width=1))
-        self.speed_curve.setPen(pg.mkPen(colors.mass[0], width=2))
-        self.running_line.setPen(pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        for _, mark in self._marks:
-            self._style_mark(mark)
+        self.startup_view.apply_theme()
 
     def redraw(self) -> None:
         self._draw_interference()
@@ -1463,8 +720,8 @@ class TorsionalPage(QtWidgets.QWidget):
             text = pg.TextItem(label, color=color, anchor=(1, 1) if end < top else (1, 0.5))
             text.setPos(*at(end, order * end / 60.0))
             p.addItem(text)
-        motor = self.startup.motor
-        if self.motor_on and motor.kind is MotorKind.SYNCHRONOUS:
+        motor = self.startup_view.startup.motor
+        if self.startup_view.motor_on and motor.kind is MotorKind.SYNCHRONOUS:
             # the poles' 2 s f pulsation, falling from 2f at rest to nothing at synchronism
             xs = np.linspace(max(x_lo, 1e-9), min(top, motor.sync_rpm), 200)
             ys = 2.0 * motor.line_hz * (1.0 - xs / motor.sync_rpm)
@@ -1759,15 +1016,6 @@ class TorsionalPage(QtWidgets.QWidget):
                 + f", {lost} mode{'s' if lost != 1 else ''} lost."
             )
         self.check.setText(text)
-
-    def _show_train_info(self) -> None:
-        t = self.train
-        ref = t.referred()
-        j = sum(d.inertia for d in ref.discs)
-        self.train_info.setText(
-            f"{t.n} discs, {len(t.meshes)} gear mesh{'es' if len(t.meshes) != 1 else ''}; "
-            f"{j:.4g} kg·m² referred to the motor's shaft."
-        )
 
 
 def _small_font() -> QtGui.QFont:

@@ -71,7 +71,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Nonlinearity & forces (`nonlinear_page`): `gui/nonlinear_forces.py`; core `nonlinear_test`, `force_id`
   - Variability & localization (`variability_page`): `gui/variability.py`; core `random_vibration`, `variability`
 - Beyond the chain:
-  - Torsional vibration (`torsional_page`): `gui/torsional.py`; core `torsional`, `torsional_startup`
+  - Torsional vibration (`torsional_page`): `gui/torsional.py` (with `torsional_editor.py`, `torsional_startup_view.py`); core `torsional`, `torsional_startup`
   - Duffing & Mathieu (`duffing_page`): `gui/duffing.py`; core `duffing`
   - Fluid–structure (`fluid_page`): `gui/fluid_structure.py`; core `added_mass`, `beams_plates`, `sloshing`
   - Self-excited vibration (`self_excited_page`): `gui/self_excited.py`; core `self_excited`
