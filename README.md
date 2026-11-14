@@ -29,8 +29,15 @@ for teaching, not design.
 
 Standalone builds for Windows, macOS (Apple Silicon) and Linux, which need no Python
 install, are on the [Releases](https://github.com/WookieLumberjack/vibration-tutorial/releases)
-page. They aren't code-signed; the release notes say how to open them past the system's
-warning.
+page. They aren't code-signed, so the system warns the first time you open one:
+
+- **Windows:** unzip and run `vib-tutorial\vib-tutorial.exe`. If SmartScreen says "Windows
+  protected your PC", click **More info → Run anyway**.
+- **macOS:** unzip to get **Vibration Tutorial.app**. If macOS says the app "is damaged" or
+  "can't be opened", run `xattr -dr com.apple.quarantine "Vibration Tutorial.app"` in
+  Terminal once, then open it.
+- **Linux:** unpack the `.tar.gz` and run `vib-tutorial/vib-tutorial` (needs an X11 or
+  Wayland desktop).
 
 To run from source instead, you need [uv](https://docs.astral.sh/uv/) and a
 [Rust toolchain](https://rustup.rs/) (uv builds the app's Rust kernels, in `native/`, on
@@ -112,6 +119,8 @@ The course runs through six groups of pages, in the order the app's tabs take th
 - [The window](docs/the-window.md): the panes, the tabs, the Theory and Practice windows, and the themes
 - [The math, briefly](docs/the-math.md): the equations behind the Simulation page
 - [Code layout](docs/code-layout.md): the modules, the Rust kernels, and scripting the core
+- [Contributing](CONTRIBUTING.md): setting up, the checks before a pull request, and adding a page
+- [Changelog](CHANGELOG.md): what changed in each release
 
 ## Disclaimer and license
 
