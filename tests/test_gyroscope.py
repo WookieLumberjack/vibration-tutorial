@@ -353,3 +353,36 @@ def test_the_components_in_a_frame():
         assert np.allclose(held, held[0], atol=1e-9 * top.polar) == top.symmetric, "spin moves only an asymmetric top's"
         axes = frame_axes(s.axis, s.mark, Frame.AXIS)
         assert np.allclose(in_frame(s.axis, axes), [0.0, 0.0, 1.0]), "the axis is the frame's third"
+
+
+def test_a_snapshot_of_the_equations():
+    """At any instant, in every frame: R and A are rotations, I = (AᵀR) I_body (AᵀR)ᵀ, L = Iω, the frame turns at
+    Ω (0, ω, or ω less the spin: checked against its axes' own rates), and dL/dt + Ω × L = τ holds to the
+    simulation's step error."""
+    from vib_tutorial.core.gyroscope import Frame, frame_axes, gravity_torque, snapshot
+
+    for top in (Top(), RECTANGLE):
+        sim = TopSimulator(Motion(top, 600 * RPM, math.radians(30)))
+        s = sim.advance(2.0)
+        tau = gravity_torque(s.axis, top.weight_moment)
+        for frame in Frame:
+            for k in range(2, len(s.t) - 2, 151):
+                snap = snapshot(s.t, s.axis, s.mark, s.momentum, tau, top.moments, frame, k)
+                for R in (snap.orientation, snap.frame, snap.turn):
+                    assert np.allclose(R @ R.T, np.eye(3)) and np.isclose(np.linalg.det(R), 1.0)
+                assert np.allclose(snap.turn @ snap.body_inertia @ snap.turn.T, snap.inertia)
+                assert np.allclose(snap.inertia @ snap.omega, snap.momentum)
+                assert snap.mismatch < 1e-3, (top.shape, frame, k, snap.mismatch)
+            # Ω from the frame's axes themselves (ė_j = Ω × e_j: Ω₁ = ė₂·e₃, Ω₂ = ė₃·e₁, Ω₃ = ė₁·e₂), by central
+            # differences: second order at ωh ~ 0.13 rad, so to a percent or so (a wrong Ω misses by far more).
+            k = 777
+            axes = frame_axes(s.axis[k - 1 : k + 2], s.mark[k - 1 : k + 2], frame)
+            turning = (axes[2] - axes[0]) / (s.t[k + 1] - s.t[k - 1])
+            here = axes[1]
+            measured = [turning[1] @ here[2], turning[2] @ here[0], turning[0] @ here[1]]
+            snap = snapshot(s.t, s.axis, s.mark, s.momentum, tau, top.moments, frame, k)
+            assert np.allclose(snap.frame_rate, measured, rtol=2e-2, atol=2e-2 * np.abs(snap.omega).max()), frame
+            if frame is Frame.SPACE:
+                assert np.allclose(snap.carried, 0.0), "fixed axes: dL/dt = τ"
+            if frame is Frame.BODY:
+                assert np.allclose(snap.inertia, np.diag(top.moments)), "Euler's: I constant and diagonal"

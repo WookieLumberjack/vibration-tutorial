@@ -594,6 +594,101 @@ def gravity_torque(axis: np.ndarray, weight_moment: float) -> np.ndarray:
     return weight_moment * np.cross(axis, [0.0, 0.0, -1.0])
 
 
+def frame_rate(axis: np.ndarray, mark: np.ndarray, omega: np.ndarray, frame: Frame) -> np.ndarray:
+    """How fast a frame's axes turn, Ω in space (n, 3). Space: 0. Body: ω. Axis frame: Euler's φ̇ẑ + θ̇n, which
+    is ω less the spin about the axis, ψ̇e₃: across the axis it is ω's part, and along it φ̇ cos θ, with
+    φ̇ = ω·e₂′/sin θ (e₂′ = e₃ × n; taken as 0 upright, where φ is undefined)."""
+    if frame is Frame.SPACE:
+        return np.zeros_like(omega)
+    if frame is Frame.BODY:
+        return omega.copy()
+    axes = frame_axes(axis, mark, Frame.AXIS)
+    parts = in_frame(omega, axes)
+    sin = np.hypot(axis[:, 0], axis[:, 1])
+    upright = sin < 1e-9
+    parts[:, 2] = np.where(upright, 0.0, parts[:, 1] * axis[:, 2] / np.where(upright, 1.0, sin))
+    return np.einsum("nij,ni->nj", axes, parts)
+
+
+@dataclass(frozen=True)
+class Snapshot:
+    """The equations of motion at one instant, in a frame's axes (all its vectors' components in them).
+
+    `orientation` is B, the body's axes in space (its columns e₁, e₂, e₃), and `frame` A, the frame's axes in
+    space; `turn` = AᵀB is the body's axes in the frame's, so I = (AᵀB) I_body (AᵀB)ᵀ. L = Iω, and the rate of
+    L's components in turning axes (`rate`, worked out from the samples either side) plus Ω × L (`carried`: the
+    axes turning under L) is the torque: the transport theorem, which in the body's axes (Ω = ω) is Euler's."""
+
+    t: float
+    kind: Frame
+    orientation: np.ndarray  # B (3, 3)
+    frame: np.ndarray  # A (3, 3)
+    body_inertia: np.ndarray  # diag(I₁, I₂, I₃)
+    inertia: np.ndarray  # I in the frame's axes
+    omega: np.ndarray
+    momentum: np.ndarray
+    rate: np.ndarray  # d/dt of L's components in these axes
+    frame_rate: np.ndarray  # Ω
+    torque: np.ndarray
+
+    @property
+    def turn(self) -> np.ndarray:
+        """AᵀB: the body's axes in the frame's (columns)."""
+        return self.frame.T @ self.orientation
+
+    @property
+    def carried(self) -> np.ndarray:
+        """Ω × L: how much L's components change only because the axes turn under it."""
+        return np.cross(self.frame_rate, self.momentum)
+
+    @property
+    def mismatch(self) -> float:
+        """How far rate + Ω × L is from τ, over the larger of the three (0 is the equation held exactly)."""
+        lhs = self.rate + self.carried
+        scale = max(np.abs(lhs).max(), np.abs(self.torque).max(), np.abs(self.carried).max(), 1e-300)
+        return float(np.abs(lhs - self.torque).max() / scale)
+
+
+def snapshot(
+    t: np.ndarray,
+    axis: np.ndarray,
+    mark: np.ndarray,
+    momentum: np.ndarray,
+    torque: np.ndarray,
+    moments: tuple[float, float, float],
+    frame: Frame,
+    k: int,
+) -> Snapshot:
+    """The equations at sample `k` of a run's samples (consecutive and evenly spaced), in `frame`'s axes. The
+    rate of L's components is the fourth-order central difference over k ± 2 (the body's components swing at
+    the spin, and k ± 1 alone missed by ~1 % on the rectangle), k ± 1 or one-sided nearer the ends."""
+    n = len(t)
+    reach = min(2, k, n - 1 - k)
+    lo, hi = (k - reach, k + reach) if reach else (max(k - 1, 0), min(k + 1, n - 1))
+    near = slice(lo, hi + 1)
+    parts = in_frame(momentum[near], frame_axes(axis[near], mark[near], frame))
+    if reach == 2:
+        rate = (8.0 * (parts[3] - parts[1]) - (parts[4] - parts[0])) / (3.0 * (t[hi] - t[lo]))
+    else:
+        rate = (parts[-1] - parts[0]) / (t[hi] - t[lo]) if hi > lo else np.zeros(3)
+    here = slice(k, k + 1)
+    a = frame_axes(axis[here], mark[here], frame)
+    omega = angular_velocity(axis[here], mark[here], momentum[here], moments)
+    return Snapshot(
+        t=float(t[k]),
+        kind=frame,
+        orientation=frame_axes(axis[here], mark[here], Frame.BODY)[0].T,
+        frame=a[0].T,
+        body_inertia=np.diag(np.asarray(moments, dtype=float)),
+        inertia=inertia_in(axis[here], mark[here], moments, a)[0],
+        omega=in_frame(omega, a)[0],
+        momentum=in_frame(momentum[here], a)[0],
+        rate=rate,
+        frame_rate=in_frame(frame_rate(axis[here], mark[here], omega, frame), a)[0],
+        torque=in_frame(torque[here], a)[0],
+    )
+
+
 @dataclass(frozen=True)
 class FreeSpin:
     """The free asymmetric top's ω in its own axes, exactly (Euler–Poinsot): with the moments sorted

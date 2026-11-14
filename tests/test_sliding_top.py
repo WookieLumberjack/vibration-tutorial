@@ -157,3 +157,12 @@ def test_the_contact_torque_turns_l():
     tau = contact_torque(s.centre, s.contact, s.normal, s.friction)
     rate = np.gradient(s.momentum, s.t, axis=0)
     assert np.abs(rate - tau)[5:-5].max() < 2e-2 * np.abs(tau).max()
+    from vib_tutorial.core.gyroscope import Frame, snapshot
+
+    moments = (DISC.central, DISC.central, DISC.polar)
+    for frame in Frame:
+        worst = max(
+            snapshot(s.t, s.axis, s.mark, s.momentum, tau, moments, frame, k).mismatch
+            for k in range(5, len(s.t) - 5, 7)
+        )
+        assert worst < 2e-2, (frame, worst)

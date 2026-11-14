@@ -4221,6 +4221,38 @@ def test_gyroscope_components(main_window, app):
         assert all(np.ptp(item.yData) < 1e-12 for item in page.comp_items), "constant in the body's axes"
 
 
+def test_gyroscope_snapshot(main_window, app):
+    """The Components tab's snapshot: empty before a run; the latest instant while it runs, in every frame, its
+    line at that time; once paused, the instant the line is dragged to; and on a table too."""
+    from vib_tutorial.gui import gyroscope as g
+
+    w = main_window
+    page = w.gyroscope_page
+    w.pages.setCurrentWidget(page)
+    for setup in (dict(tilt=30.0), dict(setting=g.Setting.TABLE, spin_rpm=1200.0, tilt=10.0)):
+        page.load_setup(setup)
+        page.tabs.setCurrentIndex(g.TAB_COMPONENTS)
+        page.running = False
+        page.restart()
+        assert page.snapshot_now() is None and not page.comp_snapshot.text()
+        page.running = True
+        for _ in range(3):
+            page.step(0.3)
+        page._on_pause(False)
+        for frame in range(len(g.FRAMES)):
+            page.comp_frame.setCurrentIndex(frame)
+            snap = page.snapshot_now()
+            assert snap is not None and snap.kind is g.FRAMES[frame]
+            assert snap.t == pytest.approx(page.sim.t, abs=0.01), "the latest"
+            assert page.comp_cursor.value() == pytest.approx(snap.t)
+            assert f"At t = {snap.t:.3f} s" in page.comp_snapshot.text()
+            assert snap.mismatch < 2e-2, (setup, frame, snap.mismatch)
+        page.comp_cursor.setValue(0.4)
+        page._on_snapshot_dragged()
+        assert page.snapshot_now().t == pytest.approx(0.4, abs=0.01), "dragged to"
+        assert "At t = 0.4" in page.comp_snapshot.text()
+
+
 def test_gyroscope_on_a_table(app):
     """The table's settings show their own controls and tabs, run and draw, stop where the model can't follow,
     and going back to the cup brings its own back; then an asymmetric top's."""

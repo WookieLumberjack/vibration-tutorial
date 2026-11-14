@@ -175,7 +175,9 @@ middle axis the plate flips over and back (the tennis-racket effect); with gravi
 *Chaos* tab's Poincaré section and two tops let go 10⁻⁸ rad apart show the motion turn chaotic. Its last section links the
 top's two precessions to the rotor's forward and backward whirl. The *Components* tab plots ω, L, τ and the inertia
 tensor as the top runs, in fixed axes, the body's or the axis frame (following the axis, not the spin): I is
-constant in the body's axes and turns in space, and L isn't along ω.
+constant in the body's axes and turns in space, and L isn't along ω. Under the plot it writes out, at one
+instant, the rotation matrices that place the body, I in those axes, L = Iω and dL/dt + Ω × L = τ with the numbers;
+pause it and drag the line to pick the instant.
 
 Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant
 J = L·(a e₃ + R ẑ) survives it, so the energy sinks onto the least energy that J allows at each tilt:
