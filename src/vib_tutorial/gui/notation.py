@@ -2245,8 +2245,9 @@ SYMBOLS = (
     ),
     Symbol(
         "rotor_shaft",
-        "d, E, ν, EI",
-        "the shaft's diameter, Young's modulus and Poisson's ratio; its bending stiffness, E πd⁴/64",
+        "d, E, ν, I, EI",
+        "the shaft's diameter, Young's modulus and Poisson's ratio; its section's second moment of area, πd⁴/64, "
+        "and its bending stiffness",
         "m, Pa, –, N·m²",
         "rotor_page",
     ),
@@ -2353,6 +2354,37 @@ SYMBOLS = (
         "–, m, m, rad/s, –",
         "rotor_page",
     ),
+    Symbol(
+        "rotor_derivation",
+        "L<sub>a</sub>, T<sub>k</sub>, V<sub>p</sub>, D<sub>v</sub>, K<sub>sym</sub>, K<sub>skew</sub>",
+        "the disc's angular momentum; the rotor's kinetic and strain energy; a kinetic energy term linear in "
+        "the velocities, q̇<sup>T</sup>D<sub>v</sub>q, which gives ΩG = D<sub>v</sub> − D<sub>v</sub><sup>T</sup>; "
+        "the symmetric and skew parts of K",
+        "kg·m²/s, J, –, N/m",
+        "rotor_page",
+        "gyro-derivation",
+    ),
+    Symbol(
+        "rotor_element",
+        "L<sub>e</sub>, z̄, N<sub>1</sub>, N<sub>2</sub>, N<sub>3</sub>, N<sub>4</sub>, w<sub>1</sub>, "
+        "θ<sub>1</sub>, w<sub>2</sub>, θ<sub>2</sub>, k<sub>e</sub>, m<sub>e</sub>, m<sub>r</sub>, g<sub>e</sub>, "
+        "G<sub>m</sub>, A<sub>s</sub>",
+        "a shaft element's length and the fraction of the way along it; its Hermite cubics; its nodes' "
+        "deflections and slopes in one plane; its stiffness, translational and rotary mass and gyroscopic "
+        "matrices; the shaft's shear modulus and its section's area",
+        "m, –, –, m, rad, N/m, kg, kg, kg, Pa, m²",
+        "rotor_page",
+        "beam-elements",
+    ),
+    Symbol(
+        "rotor_eigen",
+        "ψ<sub>j</sub>, ψ̃<sub>j</sub>, η<sub>j</sub>, s<sub>j</sub>",
+        "mode j's right eigenvector (how it moves) and left eigenvector (how a force excites it), its "
+        "coordinate, ψ̃<sub>j</sub><sup>T</sup>Z/ψ̃<sub>j</sub><sup>T</sup>ψ<sub>j</sub>, and its eigenvalue",
+        "–, –, –, 1/s",
+        "rotor_page",
+        "solving",
+    ),
     # once per revolution
     Symbol(
         "U_unbalance",
@@ -2392,7 +2424,7 @@ SYMBOLS = (
     # stiffness that turns
     Symbol(
         "asymmetric",
-        "x<sub>r</sub>, y<sub>r</sub>, Δ, β<sub>s</sub>, φ<sub>s</sub>, K(φ), ΔK(φ)",
+        "x<sub>r</sub>, y<sub>r</sub>, Δ, β<sub>s</sub>, φ<sub>Δ</sub>, K(φ), ΔK(φ)",
         "the displacement along a shaft's stiff and soft axes, turning with it; its asymmetry, EI(1 ± Δ); the "
         "stiff axis's angle from the mark, and from x (φ + β<sub>s</sub>); the stiffness at the shaft's angle φ, and less its mean",
         "m, –, rad, N/m",

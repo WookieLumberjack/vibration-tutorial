@@ -3351,3 +3351,84 @@ def test_nonlinear_forces_worked_example():
     assert G[0, 0] == pytest.approx(0.98, abs=5e-3) and np.log10(p.s[0] / p.s[-1]) == pytest.approx(3.0, abs=0.05)
     assert 10**t.log_lam == pytest.approx(0.024, abs=5e-4)
     assert 100 * fid.error(fid.tikhonov(p, 10**t.log_lam), truth) < 6
+
+
+def test_rotor_equations_of_motion():
+    """Jeffcott rotor's part 2: the gyroscopic split, K_shaft, the beam elements and the eigenproblem."""
+    from vib_tutorial.core.rotor import POISSON, STEEL, Bearing, RotorSystem, beam_mass, beam_stiffness
+    from vib_tutorial.core.rotor_modes import whirl_modes
+
+    s = RotorSystem()
+    d, L = s.diameter, s.length
+    inertia, area = math.pi * d**4 / 64, math.pi * d**2 / 4
+    ei = s.youngs * inertia
+    assert round(ei, 2) == 98.17
+    assert (s.ip, s.id) == (1.25e-3, 6.25e-4)
+    # The disc's own tilt on rigid bearings: k_θ = 12EI/L, the θx entry of K_shaft.
+    k_theta = 12 * ei / L
+    ks = s.shaft_stiffness()
+    assert round(k_theta) == 2356 and ks[2, 2] == pytest.approx(k_theta)
+    assert round(math.sqrt(k_theta / s.id) / (2 * math.pi), 1) == 309.0
+    rpm = 2 * math.pi / 60
+    w = 6000 * rpm
+    assert round(s.ip * w, 3) == 0.785
+
+    def split(ip: float) -> tuple[float, float]:
+        a = ip * w
+        r = math.sqrt(a * a + 4 * s.id * k_theta)
+        return (a + r) / (2 * s.id) / (2 * math.pi), (r - a) / (2 * s.id) / (2 * math.pi)
+
+    rigid = Bearing(kx=1e10, ky=1e10, cx=100.0, cy=100.0, mass=0.1)
+    for ip, fw, bw in ((s.ip, 424.8, 224.8), (s.id, 363.0, 263.0)):
+        assert [round(f, 1) for f in split(ip)] == [fw, bw]
+        m = whirl_modes(s.with_(bearing_a=rigid, bearing_b=rigid, ip=ip), w)
+        tilt = sorted((round(f, 1), wr > 0) for f, wr in zip(m.freq_hz, m.whirl, strict=True) if 100 < f < 1000)
+        assert tilt == [(bw, False), (fw, True)]
+        assert round(fw - bw) == round(ip / s.id * w / (2 * math.pi))  # 200 Hz, then 100 Hz
+    # K_shaft on the defaults, in kN/m, kN/rad and kN·m/rad; a rigid shift takes no force.
+    assert [round(ks[i, j] / 1e3, 3) for i, j in ((0, 0), (1, 1), (0, 2), (2, 2))] == [18.85, 37.699, 4.712, 2.356]
+    assert round(ks[1, 1]) == round(48 * ei / L**3) == 37699
+    assert np.allclose(ks @ [1, 1, 0, 1], 0.0, atol=1e-9)
+    # The beam elements on the defaults with shaft mass.
+    sm = s.with_(density=STEEL)
+    le = L / sm.elements
+    assert (sm.elements, le) == (8, 0.0625)
+    assert round(12 * ei / le**3 / 1e6, 2) == 4.83
+    rho_a, rho_i = STEEL * area, STEEL * inertia
+    assert round(rho_a, 4) == 0.6165
+    mt, mr = beam_mass(rho_a, rho_i, le)
+    shift = np.array([1.0, 0.0, 1.0, 0.0])
+    assert round(shift @ mt @ shift, 4) == 0.0385 and round(8 * shift @ mt @ shift, 3) == 0.308
+    assert np.allclose(beam_stiffness(ei, le) @ shift, 0.0)
+    assert round(100 * mr[0, 0] / mt[0, 0], 2) == 0.52 and round(100 * mr[1, 1] / mt[1, 1], 1) == 2.2
+    assert f"{2 * rho_i * L:.2e}" == "3.85e-06" and round(100 * 2 * rho_i * L / s.ip, 1) == 0.3
+    kappa = 6 * (1 + POISSON) / (7 + 6 * POISSON)
+    assert round(kappa, 3) == 0.886
+
+    def phi(length: float) -> float:
+        return 1.5 * (1 + POISSON) / kappa * (d / length) ** 2
+
+    shear = s.youngs / (2 * (1 + POISSON))
+    assert phi(le) == pytest.approx(12 * ei / (kappa * shear * area * le**2))
+    assert round(phi(le), 3) == 0.056 and round(phi(L), 5) == 0.00088
+    assert 1 - 1 / math.sqrt(1 + phi(L)) < 0.0005
+    assert (2 * 2 * (sm.elements + 1), sm.n_dof, sm.n_states) == (36, 12, 24)
+    # The eigenproblem at 3000 rpm: the first pair, the conical mode, and the spin reversed.
+    w = 3000 * rpm
+    lam = np.linalg.eigvals(s.state_matrix(w))
+    first = lam[np.argmin(np.abs(lam))]
+    assert (round(first.real, 3), round(abs(first.imag), 1)) == (-7.714, 165.9)
+    assert round(abs(first.imag) / (2 * math.pi), 2) == 26.40 and round(-first.real / abs(first), 4) == 0.0464
+    assert s.n_states == 16
+    for sign, back in ((1, 271.5), (-1, 368.0)):
+        m = whirl_modes(s, sign * w)
+        conical = {round(f, 1): wr > 0 for f, wr in zip(m.freq_hz, m.whirl, strict=True) if f > 200}
+        assert conical == {271.5: sign < 0, 368.0: sign > 0}, back
+    # Left eigenvectors at Ω are the right ones at −Ω (M, C, K symmetric; G, H skew).
+    M, C, G, K = s.matrices()
+    H = s.circulatory()
+    lm, vm = np.linalg.eig(s.state_matrix(-w))
+    for j in range(lm.size):
+        chi = vm[: s.n_dof, j]
+        D = lm[j] ** 2 * M + lm[j] * (C + w * G) + K + w * H
+        assert np.linalg.norm(chi @ D) <= 1e-9 * np.linalg.norm(D) * np.linalg.norm(chi)

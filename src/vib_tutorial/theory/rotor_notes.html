@@ -11,10 +11,10 @@ machine. H. H. Jeffcott's 1919 paper (and A. Föppl's of 1895, hence also the <i
 <i>Föppl–Jeffcott</i> rotor) used it to explain why a turbine can run smoothly above the speed at which
 its shaft whirls most violently. Here the bearings stand on flexible supports, springs and dampers in
 the horizontal (<m>x</m>) and vertical (<m>y</m>) directions, and the disc can tilt as well as move sideways.</p>
-<p>The notes come in seven parts: the fundamentals; how the response is measured; what drives the rotor
-once per revolution, and balancing; gravity, and shafts whose stiffness turns with them; stability; rub;
+<p>The notes come in eight parts: the fundamentals; the equations of motion, where they come from and how
+they are solved; how the response is measured; what drives the rotor once per revolution, and balancing; gravity, and shafts whose stiffness turns with them; stability; rub;
 and the numerics. Each section gives the idea, its equation and where that comes from, then the numbers on
-the defaults, and ends with where to find it on the page. The <i>Things to try</i> follow the first six
+the defaults, and ends with where to find it on the page. The <i>Things to try</i> follow the first seven
 parts, and the notation is listed last.</p>
 
 <h2>1. Fundamentals</h2>
@@ -190,9 +190,235 @@ element's mass at each end, is simpler but has no such bound. Here it gives 8187
 because with few elements much of the mass sits on the bearings, where it hardly moves.</p>
 <p><b>On the page.</b> Tick <i>Shaft mass</i> to give the shaft its mass, and set the number of
 <i>Beam elements</i> and the kind of mass beside it. The Campbell diagram draws the massless model's
-branches dashed beside the real ones. How the model is kept fast is under <i>Numerics</i>.</p>
+branches dashed beside the real ones. How the elements are built is under <i>Beam finite elements</i> in
+part 2, and how the model is kept fast under <i>Numerics</i>.</p>
 
-<h2>2. Measuring the response</h2>
+<h2><a name="equations"></a>2. The equations of motion</h2>
+<p>Part 1 showed what the gyroscopic effect does. This part derives it, twice: from the disc's angular
+momentum, then from its energy by Lagrange's equations, which also show why the gyroscopic matrix is
+skew-symmetric. It then builds the rotor's equations piece by piece, the beam elements that give a shaft
+its own mass, and shows why solving them is harder than for the chains of the earlier pages. Everything
+else on the page rests on these equations. The Rotor builder page, later in the course, builds whole
+machines from the same pieces.</p>
+
+<h3><a name="gyro-derivation"></a>The gyroscopic moment from angular momentum</h3>
+<p>Hold the disc's centre still and let it tilt by the small slopes <m>θ<sub>x</sub></m> and
+<m>θ<sub>y</sub></m>. Its axis then points along (<m>θ<sub>x</sub></m>, <m>θ<sub>y</sub></m>, 1). Its
+angular momentum <m>L<sub>a</sub></m> has two parts. The spin's, <m>I<sub>p</sub>Ω</m> along the axis, is
+by far the larger. The tilting adds a smaller one: the axis turning at (<m>θ̇<sub>x</sub></m>,
+<m>θ̇<sub>y</sub></m>) is a rotation about the y and x axes, (−<m>θ̇<sub>y</sub></m>,
+<m>θ̇<sub>x</sub></m>), resisted by the diametral inertia <m>I<sub>d</sub></m>. To first order in the
+tilt,</p>
+<eq>\mathbf{L}_a \approx I_p\Omega\,(\theta_x,\ \theta_y,\ 1)</eq>
+<eq>+\ I_d\,(-\dot\theta_y,\ \dot\theta_x,\ 0)</eq>
+<p>A moment is what changes an angular momentum, so the moment on the disc is <m>dL<sub>a</sub>/dt</m>. At a
+steady speed that is <m>I<sub>p</sub>Ω</m>(<m>θ̇<sub>x</sub></m>, <m>θ̇<sub>y</sub></m>, 0) +
+<m>I<sub>d</sub></m>(−<m>θ̈<sub>y</sub></m>, <m>θ̈<sub>x</sub></m>, 0). Now name the moments by the
+planes they bend: a moment about +y turns the axis toward +x, so it is the <m>M<sub>x</sub></m> that drives
+<m>θ<sub>x</sub></m>, and one about −x is the <m>M<sub>y</sub></m> that drives <m>θ<sub>y</sub></m>.
+The y component and minus the x component then give part 1's two equations:</p>
+<eq>I_d\ddot\theta_x + \Omega I_p\dot\theta_y = M_x,</eq>
+<eq>I_d\ddot\theta_y - \Omega I_p\dot\theta_x = M_y</eq>
+<table align='center' width='340' cellspacing='0' cellpadding='0'>
+<tr><td align='center'><img src="fig:gyro"></td></tr>
+<tr><td><i>The disc's axis seen end on, as in the heavy-spot figure, its tip whirling forward round the bearings' line. The spin's angular momentum has a sideways part I<sub>p</sub>Ω(θ<sub>x</sub>, θ<sub>y</sub>), pointing where the axis leans. As the tilt whirls, that part turns, at I<sub>p</sub>Ω(θ̇<sub>x</sub>, θ̇<sub>y</sub>): along the circle, at right angles to the lean. Turning it takes a moment about that direction, which bends the shaft in the plane at right angles to the one it leans in.</i></td></tr>
+</table>
+<p>The figure shows what the new term does. For a whirl at <m>ω</m> with the tilt <m>θ</m> on a circle,
+the sideways angular momentum turns at <m>I<sub>p</sub>Ωωθ</m>. That moment is in step with the tilt, as a
+spring's is. On a forward whirl it adds to the shaft's <m>k<sub>θ</sub></m>, as a spring of
+<m>I<sub>p</sub>Ωω</m> would, so the frequency rises. On a backward whirl it takes from it. Written in <m>θ = θ<sub>x</sub> + iθ<sub>y</sub></m>, the two equations become one,
+<m>I<sub>d</sub>θ̈ − iΩI<sub>p</sub>θ̇ = M<sub>x</sub> + iM<sub>y</sub></m>. With
+<m>θ = θ<sub>0</sub>e<sup>±iωt</sup></m> and the shaft's <m>−k<sub>θ</sub>θ</m> on the right, it gives
+part 1's <m>I<sub>d</sub>ω² ∓ I<sub>p</sub>Ωω − k<sub>θ</sub></m> = 0. The two roots are
+<m>ω<sub>f</sub></m> and <m>ω<sub>b</sub></m>, and their difference is exactly
+<m>ω<sub>f</sub> − ω<sub>b</sub> = (I<sub>p</sub>/I<sub>d</sub>)Ω</m>, whatever the stiffness.</p>
+<p><b>On the defaults.</b> The disc at midspan has <m>I<sub>p</sub></m> = 1.25 × 10<sup>−3</sup> kg·m² and
+<m>I<sub>d</sub></m> = 6.25 × 10<sup>−4</sup> kg·m². On rigid bearings its shaft resists its tilt with
+<m>k<sub>θ</sub> = 12EI/L</m> = 2356 N·m/rad, since <m>EI</m> = 98.17 N·m². At rest it tilts at
+√(<m>k<sub>θ</sub>/I<sub>d</sub></m>), 309.0 Hz. At 6000 rpm, <m>I<sub>p</sub>Ω</m> = 0.785 N·m·s and the
+roots are 424.8 Hz forward and 224.8 Hz backward. They are 200 Hz apart, twice the speed's 100 Hz, as
+<m>I<sub>p</sub> = 2I<sub>d</sub></m> says. Make both supports rigid on the page (<m>k<sub>x</sub></m> = 10<sup>10</sup>
+N/m), and its modes table gives the same two.</p>
+
+<h3><a name="lagrange"></a>The same from Lagrange's equations</h3>
+<p>Lagrange's equations <cite>lagrange</cite> (see <a href="page:deriving_page#lagrange">the Deriving the equations page</a>) reach
+the same equations from energies. They also show where the skew symmetry comes from. To second order in
+the tilts, the disc's kinetic energy is</p>
+<eq>T_k = \tfrac12 m(\dot x^2 + \dot y^2) + \tfrac12 I_d(\dot\theta_x^2 + \dot\theta_y^2)</eq>
+<eq>+\ \tfrac12 I_p\Omega^2 + I_p\Omega\,\dot\theta_x\theta_y</eq>
+<p>The last term is the spin's: with the axis tilted, the disc's rate of turning about its own axis picks up
+<m>θ̇<sub>x</sub>θ<sub>y</sub></m>. (Defining the angles another way changes the term only by the time
+derivative of a function of the angles, and such a term drops out of Lagrange's equations.) The term is
+linear in the velocities, and that is what makes it gyroscopic. In the equation for <m>θ<sub>x</sub></m>,
+<m>d/dt(∂T<sub>k</sub>/∂θ̇<sub>x</sub>) − ∂T<sub>k</sub>/∂θ<sub>x</sub></m>, it gives
+<m>d/dt(I<sub>p</sub>Ωθ<sub>y</sub>) = I<sub>p</sub>Ωθ̇<sub>y</sub></m>. In the equation for
+<m>θ<sub>y</sub></m> it gives <m>−∂T<sub>k</sub>/∂θ<sub>y</sub> = −I<sub>p</sub>Ωθ̇<sub>x</sub></m>.
+With the shaft's strain energy <m>V<sub>p</sub></m> on the right, these are the equations above.</p>
+<p>In general a kinetic energy term <m>q̇<sup>T</sup>D<sub>v</sub>q</m>, with <m>D<sub>v</sub></m> a constant
+matrix, gives <m>D<sub>v</sub>q̇</m> from the first part of Lagrange's equation and
+<m>−D<sub>v</sub><sup>T</sup>q̇</m> from the second, so</p>
+<eq>\Omega G = D_v - D_v^{\mathsf T}</eq>
+<p>That is skew-symmetric whatever <m>D<sub>v</sub></m> is. So <m>G</m> is skew because it comes from a term
+linear in the velocities, and since <m>q̇<sup>T</sup>Gq̇</m> = 0 for any skew <m>G</m>, it never does
+work. Here <m>D<sub>v</sub></m> holds <m>I<sub>p</sub>Ω</m> in the <m>θ<sub>x</sub></m> row and the
+<m>θ<sub>y</sub></m> column, and nothing else.</p>
+
+<h3><a name="assembly"></a>Building M, C, G, K and H</h3>
+<p>The rotor's equations are</p>
+<eq>M\ddot q + (C + \Omega G)\dot q + (K + \Omega H)q = f</eq>
+<p>on the eight DOFs <m>q</m> = [<m>x<sub>A</sub></m>, <m>x<sub>D</sub></m>, <m>θ<sub>x</sub></m>,
+<m>x<sub>B</sub></m>, <m>y<sub>A</sub></m>, <m>y<sub>D</sub></m>, <m>θ<sub>y</sub></m>,
+<m>y<sub>B</sub></m>]: the x plane, then the y plane. Each matrix collects what each part of the rotor
+adds to it.</p>
+<ul>
+<li><b><m>M</m></b>: the disc's <m>m</m> on <m>x<sub>D</sub></m> and <m>y<sub>D</sub></m> and its
+<m>I<sub>d</sub></m> on <m>θ<sub>x</sub></m> and <m>θ<sub>y</sub></m>, and each journal's 0.1 kg on its two
+displacements. With a massless shaft that is all, and <m>M</m> is diagonal.</li>
+<li><b><m>K</m></b>: the shaft's stiffness <m>K<sub>shaft</sub></m>, the same 4 × 4 in each plane, plus each
+support's <m>k<sub>x</sub></m> and <m>k<sub>y</sub></m> on its journal, and any cross-coupled
+<m>k<sub>xy</sub></m> between the planes. <m>K<sub>shaft</sub></m> comes from beam elements (below) from
+bearing to disc and disc to bearing. Those also have slopes at the bearings, but no force or inertia acts
+there, so the slopes take whatever shape the stations give them. Condensing them out (the Frame builder's
+<a href="page:frame_page#condensation">static condensation</a>) leaves the stations' stiffness. On the
+defaults it is given below.</li>
+<li><b><m>C</m></b>: the supports' dampers at the journals, and the shaft's internal damping,
+<m>τ<sub>i</sub>K<sub>shaft</sub></m> in each plane.</li>
+<li><b><m>G</m></b>: <m>I<sub>p</sub></m> in the <m>θ<sub>x</sub></m> row and <m>θ<sub>y</sub></m> column,
+<m>−I<sub>p</sub></m> the other way round, as the last section derived. A shaft with mass adds its sections'
+share.</li>
+<li><b><m>H</m></b>: the stiffness that grows with the speed and is skew. The internal damping acts on the
+bending rate seen from the turning shaft, so it puts <m>τ<sub>i</sub>K<sub>shaft</sub></m> between the
+planes (see <i>Cross-coupling and internal damping</i>). A bearing's oil swirl puts <m>λc</m> where
+<m>K</m> has <m>k<sub>xy</sub></m>.</li>
+</ul>
+<p>On the defaults, in kN/m, kN/rad and kN·m/rad,</p>
+<eq>K_{\text{shaft}} = \begin{bmatrix} 18.85 & -18.85 & 4.712 & 0 \\ -18.85 & 37.70 & 0 & -18.85 \\ 4.712 & 0 & 2.356 & -4.712 \\ 0 & -18.85 & -4.712 & 18.85 \end{bmatrix}</eq>
+<p>Its middle entry is part 1's <m>k<sub>s</sub> = 48EI/L³</m>, and its <m>θ<sub>x</sub></m> entry the
+<m>k<sub>θ</sub> = 12EI/L</m> above. It takes no force to move the shaft rigidly: a rigid shift,
+[1, 1, 0, 1], times each row adds up to zero.</p>
+<p><b>What each does to the energy.</b> Split <m>K</m> into its symmetric part <m>K<sub>sym</sub></m> and its
+skew part <m>K<sub>skew</sub></m> (the cross-coupling). Multiply the equations by <m>q̇<sup>T</sup></m>, and
+the terms of each kind collect into</p>
+<eq>\frac{d}{dt}\Bigl(\tfrac12\dot q^{\mathsf T}M\dot q + \tfrac12 q^{\mathsf T}K_{\text{sym}}q\Bigr) = \dot q^{\mathsf T}f</eq>
+<eq>-\ \dot q^{\mathsf T}C\dot q - \dot q^{\mathsf T}(K_{\text{skew}} + \Omega H)\,q</eq>
+<p><m>M</m> and <m>K<sub>sym</sub></m> store energy. <m>C</m> only takes it out, since
+<m>q̇<sup>T</sup>Cq̇</m> ≥ 0. <m>G</m> is not there at all. The skew stiffnesses neither store energy nor
+always take it out: on a forward circle they feed it in, as <i>Stability</i> works out. A rotor goes
+unstable when they feed in more than <m>C</m> takes out.</p>
+
+<h3><a name="beam-elements"></a>Beam finite elements</h3>
+<p>A shaft with mass needs DOFs along it, so it is cut into beam elements. Each is the Frame builder's
+bending element (see <a href="page:frame_page#elements">The elements' matrices</a>), once in each plane, and
+three things are added for a shaft that spins.</p>
+<table align='center' width='340' cellspacing='0' cellpadding='0'>
+<tr><td align='center'><img src="fig:shaft-element"></td></tr>
+<tr><td><i>A shaft element of length L<sub>e</sub> in the x–z plane: each node's deflection w and slope θ = dw/dz. In the y–z plane it is the same with y and θ<sub>y</sub>, so the element has eight DOFs.</i></td></tr>
+</table>
+<p><b>The shape.</b> Between its nodes the element bends as a cubic, set by its four end DOFs. With
+<m>z̄</m> = z/<m>L<sub>e</sub></m> the fraction of the way along,</p>
+<eq>w = N_1 w_1 + N_2\theta_1 + N_3 w_2 + N_4\theta_2</eq>
+<p>with the Hermite cubics <m>N<sub>1</sub></m> = 1 − 3<m>z̄</m>² + 2<m>z̄</m>³ and <m>N<sub>2</sub></m> =
+<m>L<sub>e</sub></m>(<m>z̄</m> − 2<m>z̄</m>² + <m>z̄</m>³) at node 1, and <m>N<sub>3</sub></m> =
+3<m>z̄</m>² − 2<m>z̄</m>³ and <m>N<sub>4</sub></m> = <m>L<sub>e</sub></m>(<m>z̄</m>³ − <m>z̄</m>²) at node 2.
+A beam with no load between its ends bends exactly as a cubic. So a massless shaft is modelled exactly
+by one element per stretch between stations, which is why Jeffcott's model needs only the stations.</p>
+<p><b>Stiffness and mass.</b> The bending energy <m>½∫EI w″² dz</m>, written through the nodes, gives the
+element's stiffness <m>k<sub>e</sub></m>, and the kinetic energy of its slices' sideways motion gives the
+consistent mass <m>m<sub>e</sub></m>, with <m>I</m> = πd⁴/64 the section's second moment of area:</p>
+<eq>k_e = \frac{EI}{L_e^3}\begin{bmatrix} 12 & 6L_e & -12 & 6L_e \\ 6L_e & 4L_e^2 & -6L_e & 2L_e^2 \\ -12 & -6L_e & 12 & -6L_e \\ 6L_e & 2L_e^2 & -6L_e & 4L_e^2 \end{bmatrix}</eq>
+<eq>m_e = \frac{\rho\pi d^2 L_e}{1680}\begin{bmatrix} 156 & 22L_e & 54 & -13L_e \\ 22L_e & 4L_e^2 & 13L_e & -3L_e^2 \\ 54 & 13L_e & 156 & -22L_e \\ -13L_e & -3L_e^2 & -22L_e & 4L_e^2 \end{bmatrix}</eq>
+<p>(ρπ<m>d</m>²/4 is the mass per length, and 1680 = 4 × 420.)</p>
+<p><b>Rotary inertia.</b> Each slice <m>dz</m> also tilts, by <m>w′</m>, and resists that with its own
+diametral inertia, <m>ρI dz</m>. Its kinetic energy <m>½∫ρI w′² dz</m> gives a second mass matrix, the
+rotary inertia:</p>
+<eq>m_r = \frac{\rho I}{30L_e}\begin{bmatrix} 36 & 3L_e & -36 & 3L_e \\ 3L_e & 4L_e^2 & -3L_e & -L_e^2 \\ -36 & -3L_e & 36 & -3L_e \\ 3L_e & -L_e^2 & -3L_e & 4L_e^2 \end{bmatrix}</eq>
+<p>A beam with it is a <i>Rayleigh beam</i>.</p>
+<p><b>The element's gyroscopic matrix.</b> Each slice also spins, and it is a thin disc: a round section's
+polar second moment is twice its diametral one, so its polar inertia is <m>2ρI dz</m>. The disc's argument
+then applies slice by slice, with each slice's slopes <m>θ = w′</m>. It gives a term
+<m>2ρIΩθ̇<sub>x</sub>θ<sub>y</sub></m> per length in the kinetic energy, linear in the velocities. Written
+through the same cubics as the rotary inertia, it gives a gyroscopic matrix twice the rotary inertia's:</p>
+<eq>g_e = 2m_r, \qquad G \mathrel{+}= \begin{bmatrix} 0 & g_e \\ -g_e & 0 \end{bmatrix}</eq>
+<p>on the element's x-plane and y-plane DOFs. Nelson and McVaugh's rotating beam element is this one (1976).
+Nelson later added shear (1980).</p>
+<p><b>Shear.</b> A short, thick element also shears. Timoshenko's element (see
+<a href="page:frame_page#timoshenko">Timoshenko beams</a>) keeps the same DOFs, with the shear parameter
+<m>φ<sub>s</sub></m>. For a round shaft it is</p>
+<eq>\varphi_s = \frac{12EI}{\kappa_s G_m A_s L_e^2} = \frac{3(1 + \nu)}{2\kappa_s}\Bigl(\frac{d}{L_e}\Bigr)^2</eq>
+<p>with <m>G<sub>m</sub></m> = E/2(1 + ν) the shear modulus and <m>A<sub>s</sub></m> the section's area. The
+shear coefficient <m>κ<sub>s</sub></m> is Cowper's <cite>cowper</cite> 6(1 + ν)/(7 + 6ν) for a solid circle, 0.886 for
+steel. This page's elements are Rayleigh beams, without shear. The Rotor builder, later in the course,
+uses Timoshenko's, which matter for short, thick sections like a turbine's.</p>
+<p><b>Assembly.</b> Each element's matrices go in at its two nodes' DOFs, in both planes, adding where
+neighbours share a node, and each <m>g<sub>e</sub></m> goes into the blocks between the planes. The disc
+and the supports add their own terms at their nodes. A shaft with mass is reduced to the stations and its
+own lowest modes before any of this is solved (see <i>Keeping a shaft with mass fast</i>).</p>
+<p><b>On the defaults with <i>Shaft mass</i>.</b> The shaft is cut into 8 elements of
+<m>L<sub>e</sub></m> = 62.5 mm, so <m>12EI/L<sub>e</sub>³</m> = 4.83 MN/m. Its mass per length is
+0.6165 kg/m. For a rigid shift, [1, 0, 1, 0], <m>m<sub>e</sub></m> gives the element's mass, 0.0385 kg,
+and the eight together give the shaft's 0.308 kg. The diagonal of <m>m<sub>r</sub></m> is 0.52% of
+<m>m<sub>e</sub></m>'s on the deflections and 2.2% on the slopes, so rotary inertia barely matters in so slender a shaft. Its polar inertia,
+3.85 × 10<sup>−6</sup> kg·m² in all, is 0.3% of the disc's. Shear matters even less. Over one element,
+<m>φ<sub>s</sub></m> = 0.056. But the shaft bends over its whole span, and over the span
+<m>φ<sub>s</sub></m> is 0.00088. That is how much shear would add to the midspan deflection, and it would
+lower the critical speed by less than 0.05%. The 36 DOFs of the 9 nodes in both planes reduce to the 8
+stations' and two shaft modes per plane, which makes 12 DOFs and 24 states.</p>
+
+<h3><a name="solving"></a>Solving: modes that move with the speed</h3>
+<p>Try <m>q = ψe<sup>st</sup></m>, as for any linear system:</p>
+<eq>\bigl(s^2M + s(C + \Omega G) + K + \Omega H\bigr)\psi = 0</eq>
+<p>This is a <b>quadratic eigenvalue problem</b>, and three things make it harder than the chain's
+<m>(K − ω²M)ψ = 0</m>.</p>
+<ul>
+<li><b>It changes with the speed.</b> <m>Ω</m> sits in the coefficients, so every speed is a new problem, and
+a Campbell diagram is hundreds of them.</li>
+<li><b>It is not symmetric.</b> <m>G</m>, <m>H</m> and any cross-coupling are skew. So there are no real
+modes that <m>M</m> and <m>K</m> both make orthogonal. The modes are complex, and adding them up the way
+the earlier pages did (modal superposition) no longer works.</li>
+<li><b>The damping is not proportional.</b> The dampers are at the supports, not spread like <m>M</m> or
+<m>K</m>, so even at rest the modes are complex (see <a href="page:complex_page#state-space">the
+state-space form</a>, Complex modes page).</li>
+</ul>
+<p><b>State space.</b> With the state <m>Z</m> = [<m>q</m>, <m>q̇</m>] the problem becomes a standard one,
+<m>Ż = A(Ω)Z + Bu</m>, with 0 and 1 the zero and identity blocks:</p>
+<eq>A(\Omega) = \begin{bmatrix} 0 & 1 \\ -M^{-1}(K + \Omega H) & -M^{-1}(C + \Omega G) \end{bmatrix}</eq>
+<p>On the defaults it is 16 × 16, and its 16 eigenvalues come as 8 conjugate pairs, one pair a mode. Each
+<m>s = −ζ|s| ± i|s|√(1 − ζ²)</m> gives the mode's damped frequency and damping ratio, and its eigenvector's
+x and y parts say which way it whirls. At 3000 rpm the first pair is <m>s</m> = −7.714 ± 165.9i 1/s:
+26.40 Hz, <m>ζ</m> = 0.0464. It comes twice, once whirling forward and once backward, since the midspan
+disc does not tilt in this mode.</p>
+<p><b>Left and right eigenvectors.</b> Because <m>A</m> is not symmetric, each mode has two vectors. The
+right eigenvector, <m>Aψ<sub>j</sub> = s<sub>j</sub>ψ<sub>j</sub></m>, is how the mode moves. The left one,
+<m>ψ̃<sub>j</sub><sup>T</sup>A = s<sub>j</sub>ψ̃<sub>j</sub><sup>T</sup></m>, is how much a force at each
+DOF excites it. They are biorthogonal: <m>ψ̃<sub>i</sub><sup>T</sup>ψ<sub>j</sub></m> = 0 unless
+<m>i = j</m>. So a state splits into modes, <m>Z = Σψ<sub>j</sub>η<sub>j</sub></m> with
+<m>η<sub>j</sub> = ψ̃<sub>j</sub><sup>T</sup>Z/ψ̃<sub>j</sub><sup>T</sup>ψ<sub>j</sub></m>, and each mode's
+coordinate obeys <m>η̇<sub>j</sub> = s<sub>j</sub>η<sub>j</sub></m> plus its share of the force. For a
+rotor with symmetric <m>M</m>, <m>C</m> and <m>K</m>, the left vectors have a meaning of their own.
+Transposing the equations flips the sign of <m>G</m> and <m>H</m>, as reversing the spin does. So the
+left eigenvectors at <m>Ω</m> (in the second-order form above) are the right ones at −<m>Ω</m>. Reversing
+the spin swaps forward and backward whirl, so a forward mode is excited through the shape of its mirror
+backward one. At 3000 rpm the defaults' conical mode whirls backward at 271.5 Hz and forward at 368.0 Hz.
+At −3000 rpm the same two frequencies come back, with the directions swapped.</p>
+<p><b>What the page actually solves.</b> It never adds up modes. The steady 1X response solves the
+dynamic stiffness at each speed directly,
+<m>(K + ΩH − Ω²M + iΩ(C + ΩG))Q = F</m>. The time response steps the state exactly. The modes are for the
+Campbell diagram, the stability map and the modes table.</p>
+<p><b>Following a mode through the speeds.</b> At each speed the eigenvalues come out sorted by frequency,
+and nothing says which belongs to which branch at the last speed. Where two branches truly cross (a
+forward and a backward one, which do not interact on an isotropic rotor), sorting by frequency swaps their
+labels there. Where two modes that do interact approach, they <b>veer</b> instead: they come close, trade
+shapes and turn away without crossing. Telling the two apart takes the shapes, by comparing each mode's
+shape with those at the speed before. The page draws each speed's modes as dots, coloured by their whirl
+ratio, so no line has to choose. It finds a critical speed where a frequency-sorted branch meets the 1X
+line, then closes in on it with secant steps on <m>2πf(Ω) − Ω</m>.</p>
+<p><b>Stepping it in time.</b> A rotor's model is stiff: its journals on stiff supports or oil films, and a
+shaft's higher modes, have frequencies far above anything the speed drives. An explicit integrator's step
+has to stay below about 2/<m>ω</m> of the fastest of them, or it blows up. The exact first-order-hold
+update (see <a href="page:integration_page#exact">The exact update</a>, Numerical integration page) is
+stable at any step, so the step only has to resolve what the rotor does (see <i>Numerics</i>).</p>
+
+<h2>3. Measuring the response</h2>
 
 <h3>Run-up and coast-down: Bode and polar plots</h3>
 <p>On a real machine the response is measured as the speed changes. A <b>keyphasor</b>, a once-per-turn
@@ -263,7 +489,7 @@ speed. The Bode plot's once-per-revolution 1X vector is that kind of measurement
 blocks of 0.5 s by default, each starting halfway through the last. <i>Tap the disc every</i> taps it as
 it runs.</p>
 
-<h2>3. Once-per-revolution forces and balancing</h2>
+<h2>4. Once-per-revolution forces and balancing</h2>
 
 <h3>Other 1X sources: a bent shaft and a skewed disc</h3>
 <p>Unbalance is not the only thing that turns with the shaft. Anything fixed to the rotor and off its
@@ -394,7 +620,7 @@ apart about 8 µm. Real balancing machines put the planes as far apart as the ro
 <p><b>On the page.</b> Choose <i>Two planes</i> on the <i>Balancing</i> tab, on the disc's faces or on
 the shaft.</p>
 
-<h2>4. Gravity, and stiffness that turns</h2>
+<h2>5. Gravity, and stiffness that turns</h2>
 
 <h3>Gravity on a horizontal rotor</h3>
 <p>Laid horizontal, the rotor carries its own weight. The disc's mg bends the shaft, and the bearings'
@@ -563,7 +789,7 @@ with its mouth's angle from the keyphasor mark and its place along the shaft. Un
 hold it open, as a sawn notch. The 3D view draws it as a dark tick on the shaft, pointing at its mouth,
 thick while it is open.</p>
 
-<h2>5. Stability</h2>
+<h2>6. Stability</h2>
 
 <h3><a name="cross-coupling"></a>Cross-coupling and internal damping</h3>
 <p>Everything so far is forced vibration. The unbalance drives the rotor, and however hard it shakes at a
@@ -792,7 +1018,7 @@ journals in the <i>Magnetic bearing</i> tab's bearing. The tab plots <m>k<sub>mb
 against frequency, shades where <m>c<sub>mb</sub></m> &lt; 0, and draws the rotor's modes at the speed now
 (dashed backward).</p>
 
-<h2>6. Rub</h2>
+<h2>7. Rub</h2>
 
 <h3>Rotor–stator rub</h3>
 <p>Seals and casings sit close round a rotor. A ring round the disc, a radial clearance <m>δ<sub>c</sub></m> larger
@@ -834,7 +1060,7 @@ rub gets harder, and the vibration grows without limit. Here the heat is the dra
 bow <m>δ<sub>T</sub></m> at the disc follows it with a first-order lag:</p>
 <eq>\tau_T\dot{\delta}_T = a_T P_h - \delta_T</eq>
 <p><m>a<sub>T</sub></m> is the bow per watt once it has settled, <m>τ<sub>T</sub></m> how slowly it does. The bow loads the shaft as a residual
-bow does (section 3), turning with it. Because the rotor's response lags the bow a little, each turn of
+bow does (part 4), turning with it. Because the rotor's response lags the bow a little, each turn of
 the loop moves the high spot a little behind the hot spot: the 1X vector grows and turns <b>against</b>
 the spin, its lag growing, the <b>Newkirk spiral</b>. Above the critical the rotor's response to the bow
 is nearly opposite to it: the bow pulls the high spot away from the hot spot, the rub eases, and it heals
@@ -849,14 +1075,13 @@ spiral: each revolution's 1X vector at the disc (in the probe's direction) and t
 when the speed settled. The ring is drawn round the disc in the 3D
 view and on its orbit. A ring needs a round shaft, with the oil films linearized.</p>
 
-<h2>7. Numerics</h2>
+<h2>8. Numerics</h2>
 
 <h3>Why state space</h3>
-<p>Real modes and modal superposition need symmetric <m>M</m> and <m>K</m>, damping in proportion to them, and modes
-that do not change with the speed. Here <m>ΩG</m> is skew-symmetric and changes with the speed, and the support
-damping is not proportional. So the modes are complex and depend on the speed. The first-order form
-<m>Ż = A(Ω)Z + Bu</m> handles all of it. The eigenvalues of A give each mode's frequency, damping and whirl
-direction, and the time response is stepped exactly.</p>
+<p>Real modes and modal superposition need symmetric matrices, damping in proportion to them, and modes that
+do not change with the speed. The rotor has none of these (see <i>Solving: modes that move with the
+speed</i> in part 2), so it is solved in the first-order form <m>Ż = A(Ω)Z + Bu</m>. The eigenvalues of A
+give each mode's frequency, damping and whirl direction, and the time response is stepped exactly.</p>
 <p>As on the other pages, each step is the exact first-order-hold matrix-exponential update,
 <m>Z<sub>k+1</sub> = ΦZ<sub>k</sub> + Γ<sub>0</sub>u<sub>k</sub> + Γ<sub>1</sub>u<sub>k+1</sub></m>, with
 <m>Φ = e<sup>AΔt</sup></m> for a step <m>Δt</m>. It is stable however stiff the shaft. While the speed ramps, <m>A(Ω)</m> is
@@ -935,7 +1160,18 @@ shaft bends in its second mode, the one the dashed massless model doesn't have. 
 elements</i> to 2 and to 4, consistent and lumped, and watch the second critical move on the Campbell
 diagram.</li>
 </ol>
-<h3>2. Measuring the response</h3>
+<h3>2. The equations of motion</h3>
+<ol>
+<li>Set both supports' <m>k<sub>x</sub></m> to 10<sup>10</sup> N/m (with <i>Isotropic</i> ticked), run at
+6000 rpm and open the <i>Equations &amp; matrices</i> tab. The modes table lists the disc's tilt at 224.8 Hz
+backward and 424.8 Hz forward, 200 Hz apart. Set <m>I<sub>p</sub></m> to 6.25 × 10<sup>−4</sup> kg·m², the
+same as <m>I<sub>d</sub></m>: now they are 263.0 and 363.0 Hz, 100 Hz apart, since the gap is
+<m>(I<sub>p</sub>/I<sub>d</sub>)Ω</m>.</li>
+<li>On the same tab, look at <m>ΩG</m> as the speed rises: only the <m>θ<sub>x</sub></m>–<m>θ<sub>y</sub></m>
+entries are filled, equal and opposite. Tick <i>Shaft mass</i> and the shaft's own share appears beside
+them, on its modes' coordinates too.</li>
+</ol>
+<h3>3. Measuring the response</h3>
 <ol>
 <li>Run up and coast down from 800 to 2400 rpm at 500 rpm/s, then again at 5000 rpm/s with <i>Hold
 earlier sweeps</i> ticked, and compare them with the steady-state curve on the Bode and polar plots. Then
@@ -948,7 +1184,7 @@ follow the dots of the forward and backward branches (backward from 14.5 down to
 grows where it crosses the forward branch. Switch to <i>Time</i> and set a steady speed: the taps' peaks
 then stay at one frequency.</li>
 </ol>
-<h3>3. Once-per-revolution forces and balancing</h3>
+<h3>4. Once-per-revolution forces and balancing</h3>
 <ol>
 <li>Set the unbalance to 0 and the shaft bow to 20 µm. Turning slowly, the disc's orbit is 20 µm round,
 the bow. It peaks at 218 µm at the critical and falls to 8 µm at 3000 rpm (towards zero, not towards <m>e</m>).
@@ -968,7 +1204,7 @@ and press <i>Mystery unbalance</i>: now the disc is skewed too, by a hidden angl
 steps, and the curve <i>Now</i> stays flat at every speed. Then try <i>Two planes on the shaft</i>, near
 the bearings, and see the critical come back.</li>
 </ol>
-<h3>4. Gravity, and stiffness that turns</h3>
+<h3>5. Gravity, and stiffness that turns</h3>
 <ol>
 <li>Tick <i>Gravity</i>: the rotor sags, 378 µm at the disc, and whirls about the sagged position, the
 orbits sitting below the bearings' centre. Untick <i>Static sag</i> to look at the vibration alone: it is
@@ -995,7 +1231,7 @@ resonance three times as fast as the speed. Untick <i>Breathing</i>: the 3X is g
 Tick it again and turn the crack's angle to 180°, opposite the heavy spot: the 1X at the critical speed
 falls from 164 to 52 µm.</li>
 </ol>
-<h3>5. Stability</h3>
+<h3>6. Stability</h3>
 <ol>
 <li>Set the internal damping <m>c<sub>i</sub></m> to 20 N·s/m and look at the <i>Stability</i> tab. The forward
 first mode's damping falls with speed and crosses zero at 3,910 rpm, while the backward mode's rises.
@@ -1031,7 +1267,7 @@ unstable at rest. Ten times the integral gain (350,000) pushes the band's bottom
 first mode at 25 Hz, which then grows.</li>
 </ol>
 
-<h3>6. Rub</h3>
+<h3>7. Rub</h3>
 <ol>
 <li>Load the <i>Partial rub</i> preset and open the <i>Rub</i> tab: the disc has 7 µm to the ring below
 it at rest. Through the critical it hits the ring every turn; at 4400 rpm, every other turn. Watch the
@@ -1055,4 +1291,4 @@ settling at 5.9 µm with the bow at 2.4 µm. Set <m>a<sub>T</sub></m> to 0 and n
 </takeaways>
 
 <h2><a name="notation"></a>Notation</h2>
-<notation>rotor_span g rotor_shaft rho m I_p rotor_supports rotor_k rotor_xy whirl_w Omega_spin one_x phi_turn omega_n r_spin X_rotor zeta delta s_rotor rotor_matrices rotor_q rotor_state dt_n foh_gamma shaft_modes turning_axes unbalance U_unbalance bow skew balancing asymmetric crack crack_stations cross_coupling S_sommerfeld epsilon film_coefficients lund whole_film magnet magnet_control stator_ring rub_friction newkirk</notation>
+<notation>rotor_span g rotor_shaft rho m I_p rotor_supports rotor_k rotor_xy whirl_w Omega_spin one_x phi_turn omega_n r_spin X_rotor zeta delta s_rotor rotor_matrices rotor_q rotor_state dt_n foh_gamma rotor_derivation rotor_element phi_s kappa_s rotor_eigen shaft_modes turning_axes unbalance U_unbalance bow skew balancing asymmetric crack crack_stations cross_coupling S_sommerfeld epsilon film_coefficients lund whole_film magnet magnet_control stator_ring rub_friction newkirk</notation>

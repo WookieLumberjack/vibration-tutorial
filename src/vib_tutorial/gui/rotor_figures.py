@@ -171,4 +171,84 @@ def campbell_svg() -> str:
     return fig.svg(340, 262, "".join(parts))
 
 
-FIGURES = {"fig:spots": spots_svg, "fig:attitude": attitude_svg, "fig:campbell": campbell_svg}
+def gyro_svg() -> str:
+    """The disc's axis seen end on (z toward you): its tip whirling forward round the bearings' line, the
+    sideways part of its angular momentum, I_pΩ times the tilt, and the rate that part turns at."""
+    fg, muted, faint = colors.foreground, colors.muted, colors.faint
+    tilt, rate = colors.mass[0], colors.force
+    ox, oy, r = 140.0, 120.0, 74.0
+    deg = 35.0
+    px, py = fig.point(ox, oy, r, deg)
+    tx, ty = -math.sin(math.radians(deg)), -math.cos(math.radians(deg))  # the tangent, counterclockwise (SVG y down)
+    parts = [
+        fig.arrow(ox - 110, oy, ox + 180, oy, muted, 1.0),
+        fig.text(ox + 180, oy + 18, "x", fg, italic=True),
+        fig.arrow(ox, oy + 96, ox, oy - 110, muted, 1.0),
+        fig.text(ox + 12, oy - 100, "y", fg, italic=True),
+        fig.circle(ox, oy, r, faint, width=1.0, dash="4,3"),
+        fig.arc(ox, oy, r, 200.0, 250.0, muted, 1.2, arrow=True),
+        fig.text(14, oy + 100, "forward whirl", muted, "start"),
+        fig.arc(ox, oy, 16.0, 200.0, 320.0, fg, 1.2, arrow=True),
+        fig.math_label(ox - 24, oy + 30, "Ω", fg, "end"),
+        fig.arrow(ox, oy, px, py, tilt, 2.0),
+        fig.math_label(ox + 34, oy + 26, "I<sub>p</sub>Ω(θ<sub>x</sub>, θ<sub>y</sub>)", tilt, "start"),
+        fig.circle(px, py, 3.5, fg, fg),
+        fig.arrow(px, py, px + 58 * tx, py + 58 * ty, rate, 2.0),
+        fig.math_label(
+            px + 58 * tx + 4, py + 58 * ty - 8, "I<sub>p</sub>Ω(θ̇<sub>x</sub>, θ̇<sub>y</sub>)", rate, "start"
+        ),
+        fig.text(px + 8, py + 16, "the axis", fg, "start"),
+    ]
+    return fig.svg(340, 236, "".join(parts))
+
+
+def element_svg() -> str:
+    """A beam element in the x–z plane: its two nodes, their deflections w and slopes θ, and its length L_e."""
+    fg, muted, shaft, dof = colors.foreground, colors.muted, colors.mass[0], colors.force
+    x1, x2, base = 50.0, 290.0, 150.0
+    le = x2 - x1
+    w1, t1, w2, t2 = 34.0, 0.35, 62.0, -0.15  # px up, and slopes (up per px along)
+
+    def shape(u: float) -> float:
+        n1, n2 = 1 - 3 * u * u + 2 * u**3, le * (u - 2 * u * u + u**3)
+        n3, n4 = 3 * u * u - 2 * u**3, le * (u**3 - u * u)
+        return n1 * w1 + n2 * t1 + n3 * w2 + n4 * t2
+
+    pts = [(x1 + le * u, base - shape(u)) for u in np.linspace(0.0, 1.0, 41)]
+    parts = [
+        fig.arrow(20, base, 326, base, muted, 1.0),
+        fig.text(322, base + 18, "z", fg, italic=True),
+        fig.arrow(20, base + 30, 20, 26, muted, 1.0),
+        fig.text(32, 34, "x", fg, italic=True),
+        fig.curve(pts, shaft, 3.0),
+        fig.circle(x1, base - w1, 4.0, fg, fg),
+        fig.circle(x2, base - w2, 4.0, fg, fg),
+        fig.arrow(x1, base, x1, base - w1 + 5, dof, 1.5),
+        fig.math_label(x1 + 6, base - 8, "w<sub>1</sub>", dof, "start"),
+        fig.arrow(x2, base, x2, base - w2 + 5, dof, 1.5),
+        fig.math_label(x2 - 6, base - 12, "w<sub>2</sub>", dof, "end"),
+    ]
+    for x, w, t, side in ((x1, w1, t1, 1.0), (x2, w2, t2, -1.0)):
+        y = base - w
+        parts.append(fig.line(x - 40, y + 40 * t, x + 40, y - 40 * t, fg, 1.0, "3,3"))
+        parts.append(fig.line(x, y, x + side * 40, y, muted, 1.0))
+    parts += [
+        fig.math_label(x1 + 46, base - w1 - 8, "θ<sub>1</sub>", fg, "start"),
+        fig.math_label(x2 - 46, base - w2 + 18, "θ<sub>2</sub>", fg, "end"),
+        fig.line(x1, base + 22, x2, base + 22, fg, 1.0),
+        fig.line(x1, base + 16, x1, base + 28, fg, 1.0),
+        fig.line(x2, base + 16, x2, base + 28, fg, 1.0),
+        fig.math_label((x1 + x2) / 2, base + 40, "L<sub>e</sub>", fg),
+        fig.text(x1, base - w1 - 36, "node 1", fg),
+        fig.text(x2, base - w2 - 22, "node 2", fg),
+    ]
+    return fig.svg(340, 206, "".join(parts))
+
+
+FIGURES = {
+    "fig:spots": spots_svg,
+    "fig:attitude": attitude_svg,
+    "fig:campbell": campbell_svg,
+    "fig:gyro": gyro_svg,
+    "fig:shaft-element": element_svg,
+}
