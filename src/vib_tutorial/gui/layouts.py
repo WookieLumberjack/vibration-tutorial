@@ -16,6 +16,8 @@ from __future__ import annotations
 from PySide6 import QtCore, QtWidgets
 from shiboken6 import isValid
 
+from . import accessible
+
 
 class FlowLayout(QtWidgets.QLayout):
     """Items left to right, wrapping onto a new line when the next doesn't fit."""
@@ -144,8 +146,10 @@ def form_layout(parent: QtWidgets.QWidget | None = None) -> QtWidgets.QFormLayou
 def group(*items: QtWidgets.QWidget | str) -> QtWidgets.QWidget:
     """Widgets (or label texts) kept together on one line of a FlowLayout."""
     row = QtWidgets.QHBoxLayout()
-    for item in items:
-        row.addWidget(QtWidgets.QLabel(item) if isinstance(item, str) else item)
+    widgets = [QtWidgets.QLabel(item) if isinstance(item, str) else item for item in items]
+    for widget in widgets:
+        row.addWidget(widget)
+    accessible.name_row(widgets)  # each control after its label, for a screen reader
     return _holder(row)
 
 
@@ -191,6 +195,7 @@ def form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip
     label = QtWidgets.QLabel(text)
     label.setToolTip(tip)
     form.addRow(label, box)
+    accessible.name_field(label, box)
 
 
 def show_in_stack(stack: QtWidgets.QStackedWidget, page: int) -> None:
