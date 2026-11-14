@@ -540,6 +540,60 @@ def body_rates(axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, top: To
     return M / np.array(top.moments)
 
 
+# ------------------------------------------------------------------ components, in a frame
+class Frame(enum.Enum):
+    """Axes to see a vector or the inertia in: fixed in space, turning with the body, or following the axis
+    (its precession and nutation, not the spin about it: the frame the top's closed forms are written in)."""
+
+    SPACE = "Space (fixed)"
+    BODY = "Body (turns with the top)"
+    AXIS = "Axis frame (follows the axis, not the spin)"
+
+
+def frame_axes(axis: np.ndarray, mark: np.ndarray, frame: Frame) -> np.ndarray:
+    """The frame's unit vectors in space at each sample, (n, 3, 3): row i is axis i. Body: the mark e₁,
+    e₂ = e₃ × e₁ and the axis e₃. Axis frame: the line of nodes n = ẑ × e₃ (horizontal, across the axis),
+    e₃ × n, and e₃; where the axis is upright n is taken along x."""
+    count = len(axis)
+    if frame is Frame.SPACE:
+        return np.broadcast_to(np.eye(3), (count, 3, 3)).copy()
+    if frame is Frame.BODY:
+        return np.stack([mark, np.cross(axis, mark), axis], axis=1)
+    nodes = np.stack([-axis[:, 1], axis[:, 0], np.zeros(count)], axis=1)
+    size = np.linalg.norm(nodes, axis=1)
+    upright = size < 1e-9
+    nodes[upright] = (1.0, 0.0, 0.0)
+    nodes /= np.where(upright, 1.0, size)[:, None]
+    return np.stack([nodes, np.cross(axis, nodes), axis], axis=1)
+
+
+def in_frame(vectors: np.ndarray, axes: np.ndarray) -> np.ndarray:
+    """Space vectors (n, 3) as their components along a frame's axes (`frame_axes`)."""
+    return np.einsum("nij,nj->ni", axes, vectors)
+
+
+def inertia_in(axis: np.ndarray, mark: np.ndarray, moments: tuple[float, float, float], axes: np.ndarray) -> np.ndarray:
+    """The inertia tensor (n, 3, 3) in a frame's axes: diag(I₁, I₂, I₃) in the body's, I = B diag Bᵀ in space
+    (B's columns the body axes), and F I Fᵀ in a frame F. Constant in the body's axes, as the mass doesn't move
+    in them; in space it turns with the body."""
+    body = frame_axes(axis, mark, Frame.BODY)  # rows: e₁, e₂, e₃ in space
+    turn = np.einsum("nij,nkj->nik", axes, body)  # the body's axes in the frame's: columns
+    return np.einsum("nik,k,njk->nij", turn, np.asarray(moments, dtype=float), turn)
+
+
+def angular_velocity(axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, moments) -> np.ndarray:
+    """ω in space (n, 3): L's components in the body's axes over the moments, turned back to space. Not along L
+    unless the moments are equal."""
+    body = frame_axes(axis, mark, Frame.BODY)
+    rates = in_frame(momentum, body) / np.asarray(moments, dtype=float)
+    return np.einsum("nij,ni->nj", body, rates)
+
+
+def gravity_torque(axis: np.ndarray, weight_moment: float) -> np.ndarray:
+    """Gravity's moment about the tip (n, 3), mgl e₃ × (−ẑ): horizontal, across the axis."""
+    return weight_moment * np.cross(axis, [0.0, 0.0, -1.0])
+
+
 @dataclass(frozen=True)
 class FreeSpin:
     """The free asymmetric top's ω in its own axes, exactly (Euler–Poinsot): with the moments sorted

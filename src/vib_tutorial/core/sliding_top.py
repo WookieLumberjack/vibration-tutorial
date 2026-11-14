@@ -330,6 +330,14 @@ class SlideSamples:
         )
 
 
+def contact_torque(centre: np.ndarray, contact: np.ndarray, normal: np.ndarray, friction: np.ndarray) -> np.ndarray:
+    """The table's moment about G (n, 3): the normal force and friction at the contact P, (P − G) × F. Gravity
+    acts at G and has none."""
+    lever = np.column_stack([contact, np.zeros(len(contact))]) - centre
+    force = np.column_stack([friction, normal])
+    return np.cross(lever, force)
+
+
 class SlidingSimulator:
     """The top on the table, stepped by RK4 from let go at rest (`launch_state`)."""
 

@@ -7,7 +7,8 @@ playback. Centre: the top in 3D (drag to turn it), with its axis's path and the 
 table the friction), then its tilt against time, beside the turning points worked out in closed form in the cup.
 Right: the effective potential the tilt moves in (on a table, the least energy Jellett's constant allows), the
 steady precession rates against the spin, the axis's path from above (on a table, the tip's track), the
-simulation's check against what is conserved, and the Theory (its figures: gui/gyroscope_figures.py). The page
+components of ω, L, τ and the inertia tensor in fixed, body or axis-frame axes (core/gyroscope.py's `frame_axes`,
+`inertia_in`), the simulation's check against what is conserved, and the Theory (its figures: gui/gyroscope_figures.py). The page
 has its own models (core/gyroscope.py, core/sliding_top.py), stepped on its own frame loop while it shows.
 """
 
@@ -26,22 +27,29 @@ from ..core.gyroscope import (
     LAUNCHES,
     RPM,
     SHAPES,
+    Frame,
     FreeSpin,
     Launch,
     Motion,
     Shape,
     Top,
     TopSimulator,
+    angular_velocity,
     body_rates,
+    frame_axes,
+    gravity_torque,
+    in_frame,
+    inertia_in,
     least_spin,
     steady_precession,
     tilt_and_azimuth,
 )
 from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
-from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator
+from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator, contact_torque
 from . import gyroscope_figures
 from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
+from .layouts import form_layout, form_row
 from .lesson import (
     Dot,
     Form,
@@ -67,13 +75,19 @@ from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
-TAB_POTENTIAL, TAB_PRECESSION, TAB_PATH, TAB_CHECK, TAB_CHAOS = range(5)
+TAB_POTENTIAL, TAB_PRECESSION, TAB_PATH, TAB_COMPONENTS, TAB_CHECK, TAB_CHAOS = range(6)
 PLAYBACK = (0.02, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0)
 REAL_TIME = PLAYBACK.index(1.0)
 NODS = 6  # nutation periods the tilt plot spans
 TRAIL_POINTS = 1500  # at most, on the 3D view's trail
 PATH_POINTS = 4000  # at most, on the path from above
 CHECK_POINTS = 2000
+SHOWS = ("ω, angular velocity", "L, angular momentum", "τ, torque", "I, inertia tensor")
+SHOW_W, SHOW_L, SHOW_TAU, SHOW_I = range(4)
+FRAMES = tuple(Frame)
+SPANS = (("the last 2 s", 2.0), ("the last 10 s", 10.0), ("the whole run", None))
+AXIS_NAMES = {Frame.SPACE: ("x", "y", "z"), Frame.BODY: ("1", "2", "3"), Frame.AXIS: ("1′", "2′", "3")}
+UNITS = ("rad/s", "N·m·s", "N·m", "kg·m²")
 CHECK_FRAMES = 30  # the Check tab's text is worked out over the whole run, every this many frames
 SECTION_FRAMES = 10  # the Chaos tab is redrawn every this many frames
 HISTORY = 400_000  # samples kept
@@ -796,6 +810,12 @@ PROBLEMS = tuple(
 )
 
 TIPS = {
+    "comp_show": "<p>What to plot as the top runs: its angular velocity ω, its angular momentum L = Iω (about the "
+    "tip, or about G on a table), the torque τ that turns L, or the six numbers of its inertia tensor I.</p>",
+    "comp_frame": "<p>Whose axes the components are in. <b>Space</b>: fixed, z up. <b>Body</b>: e₁ the mark, e₃ "
+    "the axis, turning with the top, spin and all. <b>Axis frame</b>: e₃ the axis, e₁ horizontal across it; it "
+    "follows the axis as it precesses and nods, but not the spin about it.</p>",
+    "comp_span": "<p>How much of the run to plot.</p>",
     "mass": "<p>The disc's mass (the stem's is left out).</p>",
     "radius": "<p>The disc's radius: I₃ = mr²/2.</p>",
     "side": "<p>The square's side: I₃ = ms²/6, the same as a disc of radius s/√3.</p>",
@@ -865,6 +885,10 @@ APART_TIP = (
     "<p>How far apart (rad, log scale) the axes of two tops let go 10⁻⁸ rad apart have got. Straight up: chaos.</p>"
 )
 TABLE_TILT_TIP = "<p>The axis's tilt from the vertical as it runs, the last minute.</p>"
+COMPONENTS_TIP = (
+    "<p>The components of ω, L, τ or I in the axes picked, as the top runs; for a vector, its size dashed (the "
+    "same in every frame). The text says what to look for.</p>"
+)
 CHECK_TIP = (
     "<p>How far the simulation's energy has strayed (over mgl), and its two momenta's (over I₃ω₃: round-off "
     "only). The text compares what it has run with the closed forms.</p>"
@@ -1341,6 +1365,26 @@ class GyroscopePage(QtWidgets.QWidget):
         self.check_legend = self.check_plot.getPlotItem().legend
         self.check_note = note_label()
 
+        self.comp_show = combo(SHOWS, TIPS["comp_show"])
+        self.comp_frame = combo([f.value for f in FRAMES], TIPS["comp_frame"])
+        self.comp_span = combo([name for name, _ in SPANS], TIPS["comp_span"])
+        self.comp_span.setCurrentIndex(1)
+        self.comp_plot = plot("ω", "rad/s", "Time", "s", height=240)
+        self.comp_plot.setToolTip(COMPONENTS_TIP)
+        self.comp_legend = add_legend(self.comp_plot.getPlotItem(), offset=(10, 10), colCount=4)
+        self.comp_items = [pg.PlotDataItem() for _ in range(6)]
+        self.comp_size = pg.PlotDataItem()  # the vector's magnitude
+        for item in (*self.comp_items, self.comp_size):
+            self.comp_plot.addItem(item)
+        self.comp_note = note_label()
+        comp_row = QtWidgets.QWidget()
+        form = form_layout(comp_row)
+        form.setContentsMargins(0, 0, 0, 0)
+        for text, box in (("Show:", self.comp_show), ("In axes:", self.comp_frame), ("Over:", self.comp_span)):
+            form_row(form, text, box, box.toolTip())
+        for box in (self.comp_show, self.comp_frame, self.comp_span):
+            box.currentIndexChanged.connect(self._draw_components)
+
         self.section_plot = plot("ω₃", "rpm", "ψ at each peak of the tilt", None, height=220)
         self.section_plot.setToolTip(SECTION_TIP)
         self.section_plot.setLabel("bottom", "ψ at each peak of the tilt (°, mod 180)")
@@ -1359,6 +1403,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.potential_plot, self.potential_note, stretch=False), "Potential")
         self.tabs.addTab(column(self.precession_plot, self.precession_note, stretch=False), "Precession")
         self.tabs.addTab(column(self.path_plot, self.path_note, stretch=False), "Path")
+        self.tabs.addTab(column(comp_row, self.comp_plot, self.comp_note, stretch=False), "Components")
         self.tabs.addTab(column(self.check_plot, self.check_note, stretch=False), "Check")
         self.tabs.addTab(column(self.section_plot, self.apart_plot, self.chaos_note, stretch=False), "Chaos")
         self.tabs.addTab(self.notes, "Theory")
@@ -1702,6 +1747,9 @@ class GyroscopePage(QtWidgets.QWidget):
         # tab painted in 140 ms a frame at 2 px and 1.5 px, 1.5 ms at 1 px).
         self.energy_item.setPen(pg.mkPen(c.mass[0], width=1))
         self.momentum_item.setPen(pg.mkPen(c.grey, width=1))
+        for k, item in enumerate(self.comp_items):  # 1 px, as the Check tab's: the body's components swing at the spin
+            item.setPen(pg.mkPen(c.mass[k % len(c.mass)], width=1))
+        self.comp_size.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DashLine))
         mark(self.section_item, c.mass[0], filled=True)
         self.apart_item.setPen(pg.mkPen(c.mass[1], width=1.5))
         self._draw_tab()
@@ -1883,6 +1931,8 @@ class GyroscopePage(QtWidgets.QWidget):
                 self._draw_track()
             elif i == TAB_CHECK:
                 self._draw_ledger()
+            elif i == TAB_COMPONENTS:
+                self._draw_components()
             return
         if i == TAB_POTENTIAL:
             self._draw_potential()
@@ -1892,9 +1942,14 @@ class GyroscopePage(QtWidgets.QWidget):
             self._draw_path()
         elif i == TAB_CHECK:
             self._draw_check()
+        elif i == TAB_COMPONENTS:
+            self._draw_components()
 
     def _draw_live_tab(self) -> None:
         i = self.tabs.currentIndex()
+        if i == TAB_COMPONENTS:
+            self._draw_components()
+            return
         if self.round is not None:
             if i == TAB_POTENTIAL:
                 self._energy_dot()
@@ -1915,6 +1970,126 @@ class GyroscopePage(QtWidgets.QWidget):
         elif i == TAB_CHECK:
             self._frames += 1
             self._draw_check(text=self._frames % CHECK_FRAMES == 0)
+
+    # ------------------------------------------------------------- components
+    def _component_samples(self):
+        """(t, axis, mark, L, τ, moments) over the span picked, thinned to CHECK_POINTS; None before a run."""
+        span = SPANS[self.comp_span.currentIndex()][1]
+        if self.round is None:
+            buffer = self.history
+        else:
+            buffer = self.slides
+        n = buffer.size
+        if n < 2:
+            return None
+        t, y = buffer.t[:n], buffer.y[:n]
+        first = 0 if span is None else int(np.searchsorted(t, t[-1] - span))
+        k = slice(first, n, max(1, -(-(n - first) // CHECK_POINTS)))
+        t, y = t[k], y[k]
+        axis, mark = y[:, 0:3], y[:, 3:6]
+        if self.round is None:
+            top = self.motion.top
+            return t, axis, mark, y[:, 7:10], gravity_torque(axis, top.weight_moment), top.moments
+        rt = self.round
+        torque = contact_torque(y[:, 6:9], y[:, 9:11], y[:, 14], y[:, 15:17])
+        return t, axis, mark, y[:, 17:20], torque, (rt.central, rt.central, rt.polar)
+
+    def _draw_components(self) -> None:
+        show = self.comp_show.currentIndex()
+        frame = FRAMES[self.comp_frame.currentIndex()]
+        relabel(self.comp_plot, "left", SHOWS[show].split(",")[0], UNITS[show])
+        data = self._component_samples()
+        self.comp_legend.clear()
+        if data is None:
+            for item in (*self.comp_items, self.comp_size):
+                item.setData([], [])
+            self.comp_note.setText("Start the top to see its components.")
+            return
+        t, axis, mark, momentum, torque, moments = data
+        axes = frame_axes(axis, mark, frame)
+        names = AXIS_NAMES[frame]
+        symbol = SHOWS[show][0]
+        if show == SHOW_I:
+            tensor = inertia_in(axis, mark, moments, axes)
+            pairs = ((0, 0), (1, 1), (2, 2), (0, 1), (0, 2), (1, 2))
+            series = [(f"I {names[i]}{names[j]}", tensor[:, i, j]) for i, j in pairs]
+            size = None
+        else:
+            vector = (
+                angular_velocity(axis, mark, momentum, moments)
+                if show == SHOW_W
+                else momentum
+                if show == SHOW_L
+                else torque
+            )
+            parts = in_frame(vector, axes)
+            series = [(f"{symbol} {names[i]}", parts[:, i]) for i in range(3)]
+            size = np.linalg.norm(vector, axis=1)
+        for k, item in enumerate(self.comp_items):
+            if k < len(series):
+                label, values = series[k]
+                item.setData(t, values)
+                self.comp_legend.addItem(item, label)
+            else:
+                item.setData([], [])
+        if size is None:
+            self.comp_size.setData([], [])
+        else:
+            self.comp_size.setData(t, size)
+            self.comp_legend.addItem(self.comp_size, f"|{symbol}|")
+        self.comp_note.setText(self._components_note(show, frame))
+
+    def _components_note(self, show: int, frame: Frame) -> str:
+        """What to look for in this plot."""
+        table = self.round is not None
+        symmetric = table or self.motion.top.symmetric
+        free = not table and self.motion.top.weight_moment == 0
+        if show == SHOW_I:
+            return {
+                Frame.BODY: "Constant: the mass doesn't move in the body's own axes, which is why Euler's equations "
+                "are written in them. The products of inertia are zero: these are its principal axes.",
+                Frame.SPACE: "In fixed axes I = R I<sub>body</sub> R<sup>T</sup> changes as the body turns, and "
+                "products of inertia appear. "
+                + (
+                    "Here only the axis's tilt and precession change it: spinning about its own axis maps a "
+                    "symmetric top onto itself."
+                    if symmetric
+                    else "The rectangle's spin changes it too: its two moments across the axis differ."
+                ),
+                Frame.AXIS: "Constant: the axis frame keeps up with the axis, and the spin about it maps a symmetric "
+                "top onto itself."
+                if symmetric
+                else "It swings at twice the spin: the rectangle's two moments across the axis take turns.",
+            }[frame]
+        where = {
+            Frame.SPACE: "In fixed axes, z up.",
+            Frame.BODY: "In the body's axes (e₁ the mark, e₃ the axis), turning with the top, spin and all: the "
+            "components swing at the spin rate.",
+            Frame.AXIS: "In the axis frame (e₃ the axis, e₁ horizontal across it), which follows the axis but not "
+            "the spin.",
+        }[frame]
+        if show == SHOW_W:
+            what = (
+                "ω = I<sup>−1</sup>L isn't along L, as I₃ ≠ I₁: compare L in the same axes. Its part along the "
+                "axis, ω₃, is the spin."
+            )
+        elif show == SHOW_L:
+            what = (
+                "No torque: L stays fixed in space, and only its components in turning axes change."
+                if free
+                else "The table's forces at the contact turn L about G, and friction changes its size."
+                if table
+                else "dL/dt = τ. Gravity's moment is horizontal, so L's vertical part stays put while the rest turns "
+                "with the precession."
+            )
+        else:
+            what = (
+                "The normal force and friction at the contact P, about G: (P − G) × F. Gravity acts at G and has none."
+                if table
+                else "Gravity's moment about the tip, mgl e₃ × (−ẑ): always horizontal and across the axis, so it "
+                "has no part along the axis (ω₃ stays) or up (L<sub>z</sub> stays)."
+            )
+        return f"{what} {where}"
 
     # ------------------------------------------------------------- on a table
     def _draw_energy(self) -> None:

@@ -4188,6 +4188,39 @@ def test_lesson_pages_trials_and_tabs(app, main_window, name):
     w.set_theme("Light")
 
 
+def test_gyroscope_components(main_window, app):
+    """The Components tab plots every quantity in every frame, for a top in its cup and on a table: a vector's
+    three components and its size, the tensor's six numbers; and says what to look for."""
+    import numpy as np
+
+    from vib_tutorial.gui import gyroscope as g
+
+    w = main_window
+    page = w.gyroscope_page
+    w.pages.setCurrentWidget(page)
+    for setup in (dict(tilt=30.0), dict(setting=g.Setting.TABLE, spin_rpm=1200.0, tilt=10.0)):
+        page.load_setup(setup)
+        page.tabs.setCurrentIndex(g.TAB_COMPONENTS)
+        page._draw_components()
+        assert "Start the top" in page.comp_note.text()
+        for _ in range(3):
+            page.step(0.3)
+        for show in range(len(g.SHOWS)):
+            for frame in range(len(g.FRAMES)):
+                page.comp_show.setCurrentIndex(show)
+                page.comp_frame.setCurrentIndex(frame)
+                drawn = [item for item in page.comp_items if item.yData is not None and len(item.yData)]
+                assert len(drawn) == (6 if show == g.SHOW_I else 3), (setup, show, frame)
+                assert all(np.isfinite(item.yData).all() for item in drawn)
+                sized = page.comp_size.yData is not None and len(page.comp_size.yData) > 0
+                assert sized == (show != g.SHOW_I), "a vector's size, dashed"
+                assert len(page.comp_legend.items) == (6 if show == g.SHOW_I else 4)
+                assert page.comp_note.text()
+        page.comp_show.setCurrentIndex(g.SHOW_I)
+        page.comp_frame.setCurrentIndex(g.FRAMES.index(g.Frame.BODY))
+        assert all(np.ptp(item.yData) < 1e-12 for item in page.comp_items), "constant in the body's axes"
+
+
 def test_gyroscope_on_a_table(app):
     """The table's settings show their own controls and tabs, run and draw, stop where the model can't follow,
     and going back to the cup brings its own back; then an asymmetric top's."""

@@ -145,3 +145,15 @@ def test_a_slow_playback_still_moves_the_top():
     for _ in range(100):
         sim.advance(piece)
     assert sim.t == pytest.approx(100 * piece, abs=sim.h)
+
+
+def test_the_contact_torque_turns_l():
+    """dL/dt about G = (P − G) × F from the table's forces."""
+    from vib_tutorial.core.sliding_top import contact_torque
+
+    sim = SlidingSimulator(DISC, 1000 * RPM, math.radians(10))
+    sim.stride = 1
+    s = sim.advance(0.3)
+    tau = contact_torque(s.centre, s.contact, s.normal, s.friction)
+    rate = np.gradient(s.momentum, s.t, axis=0)
+    assert np.abs(rate - tau)[5:-5].max() < 2e-2 * np.abs(tau).max()
