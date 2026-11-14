@@ -376,7 +376,7 @@ def test_one_click_trials_set_up_their_pages(app):
         if not p.running:
             break
         QTest.qWait(25)
-    assert p.input.currentIndex() == 2 and p.ident is not None and len(p.ident.modes) == 3
+    assert p.test_setup.input.currentIndex() == 2 and p.ident is not None and len(p.ident.modes) == 3
     w.close()
 
 
@@ -1134,33 +1134,33 @@ def test_modal_test_page(app):
     assert p.acq is None  # nothing is measured until the page is shown
     w.show()
     w.pages.setCurrentWidget(p)
-    assert p.acq is not None and p.fs_auto.isChecked()
+    assert p.acq is not None and p.test_setup.fs_auto.isChecked()
     while not p.acq.done:
         p._measure_some()
     assert p.progress.text().startswith("10 / 10")
-    assert p.taper.currentData() is Window.FORCE_EXPONENTIAL  # picked for the impact test
+    assert p.test_setup.taper.currentData() is Window.FORCE_EXPONENTIAL  # picked for the impact test
     first = p.acq
 
     # Noise and processing reuse the same measurement.
-    p.force_noise.setValue(5.0)
-    p.taper.setCurrentIndex(list(Window).index(Window.RECTANGULAR))
+    p.test_setup.force_noise.setValue(5.0)
+    p.test_setup.taper.setCurrentIndex(list(Window).index(Window.RECTANGULAR))
     assert p.acq is first
     # Test settings measure again; the excitation picks its usual window.
-    p.excitation.setCurrentIndex(list(Excitation).index(Excitation.RANDOM))
-    assert p.acq is not first and p.taper.currentData() is Window.HANN
-    assert p.overlap.isVisibleTo(p) and not p.tip.isVisibleTo(p)
+    p.test_setup.excitation.setCurrentIndex(list(Excitation).index(Excitation.RANDOM))
+    assert p.acq is not first and p.test_setup.taper.currentData() is Window.HANN
+    assert p.test_setup.overlap.isVisibleTo(p) and not p.test_setup.tip.isVisibleTo(p)
 
     # Fewer averages are processed at once, from the data already measured.
     while not p.acq.done:
         p._measure_some()
-    p.averages.setValue(3)
+    p.test_setup.averages.setValue(3)
     assert p.estimator.estimate().count == 3
 
-    p.excitation.setCurrentIndex(list(Excitation).index(Excitation.STEPPED_SINE))
-    p.points.setValue(12)
+    p.test_setup.excitation.setCurrentIndex(list(Excitation).index(Excitation.STEPPED_SINE))
+    p.test_setup.points.setValue(12)
     while not p.acq.done:
         p._measure_some()
-    assert p.progress.text().startswith("12 / 12") and not p.taper.isEnabled()
+    assert p.progress.text().startswith("12 / 12") and not p.test_setup.taper.isEnabled()
     assert "Points\nin it" in p.check.toPlainText()  # the header, over two lines
     # Samples as dots, the fitted sine drawn smoothly through them.
     sig = p.signals
@@ -1168,11 +1168,11 @@ def test_modal_test_page(app):
     assert sig.f_fit.getData()[0].size > sig.f_curve.getData()[0].size
 
     # The chain changes on the Simulation page: the test follows, with fs re-chosen.
-    fs = p.fs.value()
+    fs = p.test_setup.fs.value()
     w.params.dof.setValue(6)
-    assert p.acq.n == 6 and p.output.count() == 6 and p.fs.value() > fs
+    assert p.acq.n == 6 and p.output.count() == 6 and p.test_setup.fs.value() > fs
     p.output.setCurrentIndex(0)
-    p.anti_alias.setChecked(False)
+    p.test_setup.anti_alias.setChecked(False)
     assert not p.acq.settings.anti_alias
     w.close()
 
@@ -1190,7 +1190,7 @@ def test_modal_test_with_friction_holds_one_level_for_comparison(app):
     assert "Friction on m1, m2, m3, m4" in p.check.toPlainText()
     legend = p.frf_view.mag.legend
     labels = lambda: [label.text for _, label in legend.items]  # noqa: E731
-    assert p.force_level_info.text() == "100 N peak"
+    assert p.test_setup.force_level_info.text() == "100 N peak"
     p.hold.setChecked(True)  # nothing finished yet: nothing to hold
     assert not p.hold.isChecked() and p.held is None
     while not p.acq.done:
@@ -1198,8 +1198,8 @@ def test_modal_test_with_friction_holds_one_level_for_comparison(app):
     assert "Exact, without friction" in labels()
     p.hold.setChecked(True)
     first = p.estimate.H[:, 3].copy()
-    p.force_level.setValue(1000.0)
-    assert p.force_level_info.text() == "1000 N peak" and p.acq.settings.force_level == 10.0
+    p.test_setup.force_level.setValue(1000.0)
+    assert p.test_setup.force_level_info.text() == "1000 N peak" and p.acq.settings.force_level == 10.0
     while not p.acq.done:
         p._measure_some()
     assert "Held: impact hammer, force level 100%" in labels()
@@ -1208,7 +1208,7 @@ def test_modal_test_with_friction_holds_one_level_for_comparison(app):
     # Friction: the stronger hit gives a taller first peak.
     assert np.abs(p.estimate.H[:, 3]).max() > 1.5 * np.abs(first).max()
     # Measuring another quantity hides the held curve; letting go of it clears it.
-    p.response.setCurrentIndex(1)
+    p.test_setup.response.setCurrentIndex(1)
     while not p.acq.done:
         p._measure_some()
     hidden = p.frf_view.held_curves[0].getData()[0]
@@ -1274,7 +1274,7 @@ def test_modal_extraction_on_the_test_page(app):
     p.seed = 0
     w.pages.setCurrentWidget(p)
     assert "complete" in p.results.notes.text()  # nothing extracted while measuring
-    p.excitation.setCurrentIndex(list(Excitation).index(Excitation.PERIODIC_RANDOM))
+    p.test_setup.excitation.setCurrentIndex(list(Excitation).index(Excitation.PERIODIC_RANDOM))
     while not p.acq.done:
         p._measure_some()
     # LSCF by default, poles picked automatically: all four modes.
@@ -1299,7 +1299,7 @@ def test_modal_extraction_on_the_test_page(app):
     click(order, i)
     assert len(p.poles) == 4
     # A new noise level keeps the hand-picked poles (found again by frequency).
-    p.response_noise.setValue(0.5)
+    p.test_setup.response_noise.setValue(0.5)
     assert len(p.poles) == 4 and p.picked is not None
     # Clear, then build the model up one pole at a time.
     p.extract.clear.click()
@@ -1322,18 +1322,18 @@ def test_modal_extraction_on_the_test_page(app):
 
     # The exponential-window correction is offered only with that window.
     assert not p.extract.correct.isVisibleTo(p)
-    p.excitation.setCurrentIndex(list(Excitation).index(Excitation.IMPACT))
-    p.exp_end.setValue(5.0)
+    p.test_setup.excitation.setCurrentIndex(list(Excitation).index(Excitation.IMPACT))
+    p.test_setup.exp_end.setValue(5.0)
     while not p.acq.done:
         p._measure_some()
-    assert p.taper.currentData() is Window.FORCE_EXPONENTIAL and p.extract.correct.isVisibleTo(p)
+    assert p.test_setup.taper.currentData() is Window.FORCE_EXPONENTIAL and p.extract.correct.isVisibleTo(p)
     assert "moved" in p.results.notes.text()
 
     # Accelerometers: a new measurement of the accelerance, fitted as receptance after dividing by -w^2.
     from vib_tutorial.core import Response
 
-    p.excitation.setCurrentIndex(list(Excitation).index(Excitation.PERIODIC_RANDOM))
-    p.response.setCurrentIndex(list(Response).index(Response.ACCELERATION))
+    p.test_setup.excitation.setCurrentIndex(list(Excitation).index(Excitation.PERIODIC_RANDOM))
+    p.test_setup.response.setCurrentIndex(list(Response).index(Response.ACCELERATION))
     while not p.acq.done:
         p._measure_some()
     assert p.acq.settings.response is Response.ACCELERATION and p.estimate.response is Response.ACCELERATION
@@ -1864,17 +1864,17 @@ def test_modal_test_draws_the_describing_function_for_a_stepped_sine(app):
         while p.acq.progress[0] < 1:
             p._measure_some()
 
-    p.excitation.setCurrentIndex(p.excitation.findData(Excitation.STEPPED_SINE))
+    p.test_setup.excitation.setCurrentIndex(p.test_setup.excitation.findData(Excitation.STEPPED_SINE))
     first_frequency()
     assert not any(t.startswith("Describing function") for t in labels())  # no friction
     for row in w.params.rows:
         row[4].setValue(0.5)
     first_frequency()
     assert "Describing function at 10 N" in labels()
-    p.force_level.setValue(30.0)
+    p.test_setup.force_level.setValue(30.0)
     first_frequency()
     assert "Describing function at 3 N" in labels()
-    p.excitation.setCurrentIndex(p.excitation.findData(Excitation.IMPACT))  # no single amplitude
+    p.test_setup.excitation.setCurrentIndex(p.test_setup.excitation.findData(Excitation.IMPACT))  # no single amplitude
     first_frequency()
     assert not any(t.startswith("Describing function") for t in labels())
     w.close()

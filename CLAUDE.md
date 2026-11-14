@@ -64,7 +64,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Frame builder (`frame_page`): `gui/frame_builder.py`; core `frame`, `frame_response`
 - Testing:
   - Signals & spectra (`signals_page`): `gui/signals.py`; core `signals`
-  - Virtual modal test (`test_page`): `gui/modal_test.py`; core `identification`, `measurement`
+  - Virtual modal test (`test_page`): `gui/modal_test.py` (with `modal_test_setup.py`, `modal_test_views.py`); core `identification`, `measurement`
   - Operational modal analysis (`oma_page`): `gui/oma.py`; core `identification`, `measurement`, `oma`
   - Model updating (`updating_page`): `gui/model_updating.py`; core `complex_modes`, `model_updating`
   - Test planning (`planning_page`): `gui/test_planning.py`; core `test_planning`
