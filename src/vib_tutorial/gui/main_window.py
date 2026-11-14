@@ -28,10 +28,11 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import frame_stats, links, maths, notes_view, settle_plots, theming, weak
+from . import frame_stats, links, maths, notes_view, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
+from .frame_loop import FrameLoop
 from .history import History
 from .layouts import ColumnScroll, FlowLayout, group
 from .lesson import TrialCombo
@@ -48,7 +49,6 @@ if TYPE_CHECKING:
     from .practice import PracticeWindow
     from .theory_window import TheoryWindow
 
-FRAME_MS = 16  # ~60 fps
 FRAME_BUDGET = 0.012  # s of computing per frame: past it (friction on a stiff chain) the simulation runs slower
 PROBE_STEPS = 200  # steps in a frame while the cost of a step isn't known yet (a new system)
 # The history keeps samples at least STORE_DT apart, or STORE_PER_PERIOD to the fastest mode's or the
@@ -687,12 +687,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._step_cost = 0.0  # s of computing per simulator step (with the history it feeds); 0 = not known
         self._started: tuple[float, bool] | None = None  # (when, ground motion?) of the advance in flight
         self._carry = 0  # steps since the last sample stored in the history
-        # Single-shot timer re-armed after each frame: if a frame runs long, the
-        # event loop still gets to handle input before the next one starts.
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
-        self._timer.start(FRAME_MS)
+        # Like the Substructuring tabs, the simulation runs only while its page shows: the loop stops on
+        # the other pages. `_tick` keeps its own clock (the mode animation's phase), and tests call it.
+        self.loop = FrameLoop(self.sim_page, "Simulation", self._on_frame, self._runs, self._sim_t)
         self.frame_overlay = frame_stats.install(self)  # only with VIB_FRAME_STATS set
 
     # --------------------------------------------------------------- pages
@@ -1288,18 +1285,14 @@ class MainWindow(QtWidgets.QMainWindow):
         finally:
             frame_stats.STATS.paint(time.perf_counter() - start)
 
-    def _frame(self) -> None:
-        start = self._clock.elapsed()
-        try:
-            if self.pages.currentWidget() is self.sim_page:
-                with frame_stats.frame("Simulation", lambda: self.sim.t, FRAME_MS):
-                    self._tick()
-                    settle_plots(self.sim_page)
-            else:
-                self._tick()
-        finally:
-            spent = self._clock.elapsed() - start
-            self._timer.start(max(1, FRAME_MS - spent))
+    def _runs(self) -> bool:
+        return True  # paused or not, the page moves: the modes swing, a held mass shows its force
+
+    def _sim_t(self) -> float:
+        return self.sim.t
+
+    def _on_frame(self, _dt: float) -> None:
+        self._tick()
 
     def _tick(self) -> None:
         now = self._clock.elapsed() / 1000.0

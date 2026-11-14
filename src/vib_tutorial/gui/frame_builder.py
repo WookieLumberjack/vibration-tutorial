@@ -59,7 +59,8 @@ from ..core.frame_response import (
     responses,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
-from . import frame_figures, frame_stats, settle_plots, weak
+from . import frame_figures, weak
+from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
 from .lesson import (
     Form,
@@ -82,7 +83,6 @@ from .theming import add_legend, mute
 
 TAB_ASSEMBLY, TAB_ELEMENT, TAB_RESPONSE, TAB_FORMULATIONS, TAB_THEORY = range(5)
 EMPTY = Frame()
-FRAME_MS = 16
 SHOW_HZ = 0.6  # the animation's own pace: every mode swings at it
 SWING = 0.08  # the largest displacement drawn, as a fraction of the frame's size
 MODE_ROWS = 20  # modes listed at most
@@ -1578,11 +1578,7 @@ class FramePage(QtWidgets.QWidget):
         v.addWidget(self.readout, 0)
         three_panes(self, column(self.trials, self.props, model, loading, show), centre, self.tabs)
 
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Frame builder", self._tick, self._runs, self._sim_t)
         self._on_tool(0)
         self.apply_trial(TRIALS[0], keep_history=False)
         self.apply_theme()
@@ -1627,7 +1623,7 @@ class FramePage(QtWidgets.QWidget):
         self.running = True  # a trial starts it
         self.run_button.set_running(True)
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     # ------------------------------------------------------------- editing
     def _set_frame(
@@ -1665,7 +1661,7 @@ class FramePage(QtWidgets.QWidget):
         self._show_mode()
         self.undo_button.setEnabled(bool(self._history))
         self.redo_button.setEnabled(bool(self._future))
-        self._start_timer()
+        self.loop.start()
 
     def undo(self) -> None:
         if self._history:
@@ -1779,7 +1775,7 @@ class FramePage(QtWidgets.QWidget):
         else:
             self.run_button.rest()
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     def _work(self, runs: bool) -> bool:
         """Work out the two formulations (and, if `runs`, their responses) if they aren't yet: True if they are."""
@@ -2221,7 +2217,7 @@ class FramePage(QtWidgets.QWidget):
     def _on_animate(self, on: bool) -> None:
         self.running = on
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     def mode_shape(self) -> np.ndarray | None:
         """The mode picked, scaled so its largest displacement is SWING of the frame's size (None if none)."""
@@ -2271,32 +2267,14 @@ class FramePage(QtWidgets.QWidget):
         self.canvas.q = self.swing_shape()
         self.canvas.draw()
 
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
+    def _runs(self) -> bool:
+        return self.running and self.result is not None
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
+    def _sim_t(self) -> float:
+        return self._phase
 
-    def _start_timer(self) -> None:
-        if self.isVisible() and self.running and self.result is not None and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._timer.start(FRAME_MS)
-
-    def _frame(self) -> None:
-        if not self.running:  # paused or reset since this frame was queued
-            return
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
-        with frame_stats.frame("Frame builder", lambda: self._phase, FRAME_MS):
-            self.step(dt)
-            settle_plots(self)
-        if self.isVisible() and self.running and self.result is not None:
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _tick(self, dt: float) -> None:
+        self.step(dt)
 
     def frame_context(self) -> str:
         swing = SWINGS[self.swing.currentIndex()].name.lower()

@@ -57,8 +57,9 @@ from ..core.rotor_builder import (
     uniform,
 )
 from ..core.rotor_builder_sweep import N_BRANCHES, Sweep, lag, orbit, sweep, unbalance_response
-from . import frame_stats, rotor_builder_figures, settle_plots, weak
+from . import rotor_builder_figures, weak
 from .frame_builder import matrix_html
+from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
 from .lesson import (
     Form,
@@ -83,7 +84,6 @@ TAB_WHIRL, TAB_CAMPBELL, TAB_UNBALANCE, TAB_STABILITY, TAB_ASSEMBLY, TAB_ELEMENT
 SWEEP_TABS = (TAB_CAMPBELL, TAB_UNBALANCE, TAB_STABILITY)
 RESPONSE_SPEEDS = 241  # the unbalance response's speeds, 0 to the top one
 API_LOG_DEC = 0.1  # API 684's least log decrement at the running speed
-FRAME_MS = 16
 SHOW_HZ = 0.6  # the animation's own pace: every mode whirls at it
 SWING = 0.15  # the largest lateral motion drawn, as a fraction of the side view's height
 MODE_ROWS = 20  # modes listed at most
@@ -1628,11 +1628,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         v.addWidget(self.readout, 0)
         three_panes(self, column(self.trials, self.props, model, show), centre, self.tabs)
 
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Rotor builder", self._tick, self._runs, self._sim_t)
         self._on_tool(0)
         self._on_disc_kind(self.disc_kind.currentIndex())
         self.apply_trial(TRIALS[0], keep_history=False)
@@ -1680,7 +1676,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.running = True  # a trial starts it
         self.run_button.set_running(True)
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     # ------------------------------------------------------------- editing
     @property
@@ -1734,7 +1730,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self._fill_readout()
         self._draw_tabs()
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     def undo(self) -> None:
         if self._history:
@@ -2381,7 +2377,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
 
     def _on_animate(self, on: bool) -> None:
         self.running = on
-        self._start_timer()
+        self.loop.start()
 
     def reset(self) -> None:
         """The whirl back at its start, still whirling."""
@@ -2389,7 +2385,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.running = True
         self.run_button.set_running(True)
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     def mode_shape(self) -> np.ndarray | None:
         """The mode picked, or the unbalance response at the speed (complex, n_dof), scaled so its largest
@@ -2412,32 +2408,14 @@ class RotorBuilderPage(QtWidgets.QWidget):
         if self.tabs.currentIndex() == TAB_WHIRL:
             self.whirl.show_phase(self._phase)
 
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
+    def _runs(self) -> bool:
+        return self.running and self.result is not None
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
+    def _sim_t(self) -> float:
+        return self._phase
 
-    def _start_timer(self) -> None:
-        if self.isVisible() and self.running and self.result is not None and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._timer.start(FRAME_MS)
-
-    def _frame(self) -> None:
-        if not self.running:  # paused since this frame was queued
-            return
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
-        with frame_stats.frame("Rotor builder", lambda: self._phase, FRAME_MS):
-            self.step(dt)
-            settle_plots(self)
-        if self.isVisible() and self.running and self.result is not None:
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _tick(self, dt: float) -> None:
+        self.step(dt)
 
     def frame_context(self) -> str:
         r = self.rotor

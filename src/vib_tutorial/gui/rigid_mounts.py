@@ -39,7 +39,8 @@ from ..core.rigid_mounts import (
     sweep,
     torque_roll_axis,
 )
-from . import frame_stats, mounts_figures, settle_plots
+from . import mounts_figures
+from .frame_loop import FrameLoop
 from .layouts import form_layout
 from .lesson import (
     Dot,
@@ -66,7 +67,6 @@ from .theming import add_legend
 TAB_SWEEP, TAB_CENTRE, TAB_RESPONSE, TAB_DRIVE = range(4)
 FORCED = 6  # the Show combo's item after the six modes: the steady response at the speed
 SPEEDS = np.geomspace(60.0, 12000.0, 500)  # rpm, the Response tab's
-FRAME_MS = 16
 SHOW_HZ = 0.8  # the animation's own pace: every mode swings at it
 SWING = 0.06  # m, how far the farthest point swings in the animation
 SPRING = 0.12  # m, a mount's drawn length
@@ -945,11 +945,7 @@ class MountsPage(QtWidgets.QWidget):
             self.tabs,
         )
 
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Rigid body on mounts", self._tick, self._runs, self._sim_t)
         self._on_inputs()
         self.apply_theme()
 
@@ -1023,7 +1019,7 @@ class MountsPage(QtWidgets.QWidget):
         self._phase = 0.0 if self.mode.currentIndex() == FORCED else math.pi / 2
         self.running = True  # a trial starts it
         self.run_button.set_running(True)
-        self._start_timer()
+        self.loop.start()
 
     def _on_inputs(self) -> None:
         state = self.practice_state()
@@ -1068,7 +1064,7 @@ class MountsPage(QtWidgets.QWidget):
         )
         self._draw_tab()
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     def _forced(self) -> np.ndarray:
         """The steady response q (6, complex) to the drive at its speed."""
@@ -1129,7 +1125,7 @@ class MountsPage(QtWidgets.QWidget):
     def _on_animate(self, on: bool) -> None:
         self.running = on
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     def reset(self) -> None:
         """A mode back at its full swing, still swinging; the response at rest, waiting for Start."""
@@ -1141,35 +1137,18 @@ class MountsPage(QtWidgets.QWidget):
         else:
             self.run_button.set_running(True)
         self._show_mode()
-        self._start_timer()
+        self.loop.start()
 
     # ------------------------------------------------------------- the loop
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
+    def _runs(self) -> bool:
+        return self.running
 
-    def _start_timer(self) -> None:
-        if self.isVisible() and self.running and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._timer.start(FRAME_MS)
+    def _sim_t(self) -> float:
+        return self._phase
 
-    def _frame(self) -> None:
-        if not self.running:  # paused or reset since this frame was queued
-            return
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
-        with frame_stats.frame("Rigid body on mounts", lambda: self._phase, FRAME_MS):
-            self.step(dt)
-            settle_plots(self)
-        if self.isVisible() and self.running:  # the next frame FRAME_MS after this one began, not after it ended
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _tick(self, dt: float) -> None:
+        self.step(dt)
 
     def frame_context(self) -> str:
         return f"mode {self.mode.currentIndex() + 1}, drop {self.drop.value():g} mm, tilt {self.tilt.value():g}°"

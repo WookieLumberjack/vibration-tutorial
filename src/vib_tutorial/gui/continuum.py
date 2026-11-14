@@ -48,8 +48,9 @@ from ..core.continuum_waves import (
     step_coefficients,
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
-from . import continuum_figures, frame_stats, maths, settle_plots
+from . import continuum_figures, maths
 from .axes import log_axes
+from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import RunButton, trials_html
 from .links import load_notes, page_link
@@ -61,7 +62,6 @@ from .theming import add_legend, mute
 
 CUSTOM = "Custom"
 ALL_PRESETS = (*PRESETS, *WAVE_PRESETS)
-FRAME_MS = 16
 NODES_DRAWN = 80  # the mesh's nodes are dotted up to this many elements
 KAPPA_POINTS = 241  # samples of each mesh's dispersion curve
 SHAPE_POINTS = 801
@@ -676,10 +676,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.playback.currentIndexChanged.connect(self._on_playback)
         self.views.currentChanged.connect(self._on_view)
 
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
-        self._clock = QtCore.QElapsedTimer()
+        self.loop = FrameLoop(self, "Continuous systems", self._tick, self._runs, self._sim_t)
 
         self.load_preset(PRESETS[0].name)
 
@@ -951,7 +948,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.end_line.setPos(c.length)
         self._draw_waves()
         self._update_play()
-        self._start_timer()
+        self.loop.start()
 
     def _show_wave_info(self) -> None:
         c, w = self.continuum, self._waves()
@@ -982,9 +979,9 @@ class ContinuumPage(QtWidgets.QWidget):
     def _on_play(self, on: bool) -> None:
         self.running = on
         if self.running:
-            self._start_timer()
+            self.loop.start()
         else:
-            self._timer.stop()
+            self.loop.stop()
 
     def _update_play(self) -> None:
         self.play_button.set_running(self.running)
@@ -998,39 +995,16 @@ class ContinuumPage(QtWidgets.QWidget):
             if self.run is None:
                 self.restart()
             else:
-                self._start_timer()
+                self.loop.start()
         else:
-            self._timer.stop()
+            self.loop.stop()
 
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
+    def _runs(self) -> bool:
+        """Playing, on the Waves tab: the other tabs don't move."""
+        return self.running and self.run is not None and self.views.currentWidget() is self.waves_tab
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
-
-    def _start_timer(self) -> None:
-        if (
-            self.isVisible()
-            and self.running
-            and self.run is not None
-            and self.views.currentWidget() is self.waves_tab
-            and not self._timer.isActive()
-        ):
-            self._clock.restart()
-            self._timer.start(FRAME_MS)
-
-    def _frame(self) -> None:
-        if not self.running:  # paused or reset since this frame was queued
-            return
-        began = self._clock.elapsed()
-        with frame_stats.frame("Continuous systems", self._sim_t, FRAME_MS):
-            self.step()
-            settle_plots(self)
-        if self.isVisible() and self.running and self.views.currentWidget() is self.waves_tab:
-            # the next frame FRAME_MS after this one began, not after it ended
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _tick(self, _dt: float) -> None:
+        self.step()  # a frame's worth of the pulse, at its own playback rate
 
     def _sim_t(self) -> float | None:
         return self.run.t if self.run is not None else None

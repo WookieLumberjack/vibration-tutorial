@@ -13,14 +13,13 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core import CMSModel, ForceController, ForceKind, ForceSettings, ModalResult
 from ..core.cms_response import CMSResponse
-from . import frame_stats, settle_plots
 from .animation import ChainView
+from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
 from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
 
-FRAME_MS = 16
 KINDS = (ForceKind.STEP, ForceKind.HARMONIC, ForceKind.PULSE)
 SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0)
 MIN_SPAN = 1e-9  # m; smaller motions are float noise
@@ -95,15 +94,8 @@ class CMSRunView(QtWidgets.QWidget):
         self.button.clicked.connect(self._on_button)
         self.reset_button.clicked.connect(self.reset)
 
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
         self._target = 0.0  # simulated time to catch up to
-        # Single-shot timer re-armed after each frame: if a frame runs long, the
-        # event loop still gets to handle input before the next one starts.
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.setInterval(FRAME_MS)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Substructuring time response", self._tick, self._runs, self._sim_t, self._catch_up)
         self._build()
         self._apply()
         self.apply_theme()
@@ -143,7 +135,7 @@ class CMSRunView(QtWidgets.QWidget):
         if model is None:
             self.sim = None
             self.header.setText(f"<b style='color:{colors.poor}'>{reason}</b>")
-            self._timer.stop()
+            self.loop.stop()
             self._clear_history()
             self._draw()
             return
@@ -163,7 +155,7 @@ class CMSRunView(QtWidgets.QWidget):
             if f > 0:
                 self.tune.addItem(f"Mode {r + 1} {model.short_name} ({f:.4g} Hz)", float(f))
         self._draw()
-        self._start_timer()
+        self.loop.start()
 
     def reset(self) -> None:
         if self.sim is not None:
@@ -215,31 +207,19 @@ class CMSRunView(QtWidgets.QWidget):
             self.button.setText("Stop force" if self.force.on else "Apply force")
 
     # ------------------------------------------------------------- loop
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
+    def _runs(self) -> bool:
+        return self.sim is not None
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
+    def _sim_t(self) -> float | None:
+        return self.sim.t if self.sim is not None else None
 
-    def _start_timer(self) -> None:
-        if self.sim is not None and self.isVisible() and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._target = self.sim.t
-            self._timer.start(FRAME_MS)
+    def _catch_up(self) -> None:
+        """As the loop starts or resumes: play on from where the simulation is."""
+        assert self.sim is not None, "the loop runs only with a model"
+        self._target = self.sim.t
 
-    def _frame(self) -> None:
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
-        with frame_stats.frame("Substructuring time response", lambda: self.sim.t if self.sim else None, FRAME_MS):
-            self.step(dt * float(self.speed.currentData()))
-            settle_plots(self)
-        if self.sim is not None and self.isVisible():  # the next frame FRAME_MS after this one began
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _tick(self, dt: float) -> None:
+        self.step(dt * float(self.speed.currentData()))
 
     def step(self, duration: float) -> None:
         """Advance both models by `duration` s of simulated time and redraw."""
