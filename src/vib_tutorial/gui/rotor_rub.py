@@ -43,9 +43,9 @@ INPUT_TIPS = {
     "friction": "<p>The friction coefficient μ between the rim and the ring: the drag is μ times the ring's "
     "push, against the rim's slip over the ring (Coulomb's, smoothed over 1 cm/s).</p>",
     "thermal_gain": "<p>The Newkirk effect: the drag's heat goes into the shaft where it rubs, and a shaft "
-    "hotter on one side bows toward it. β is the bow at the disc per watt of heat, once it has "
+    "hotter on one side bows toward it. a<sub>T</sub> is the bow at the disc per watt of heat, once it has "
     "settled (0: no thermal bow). A real shaft's is set by its size, material and cooling.</p>",
-    "thermal_lag": "<p>How slowly the bow follows the heat: a first-order lag, τ b' = β H − b. Real shafts "
+    "thermal_lag": "<p>How slowly the bow follows the heat: a first-order lag, τ<sub>T</sub>δ̇<sub>T</sub> = a<sub>T</sub>P<sub>h</sub> − δ<sub>T</sub>, with P<sub>h</sub> the rub's heat and δ<sub>T</sub> the bow. Real shafts "
     "take minutes; a few seconds here keeps the spiral watchable.</p>",
 }
 SPIRAL_TIP = (
@@ -86,8 +86,8 @@ class RubPanel(QtWidgets.QWidget):
             ("Mount stiffness:", (self.stiffness,), "stiffness"),
             ("Mount damping:", (self.damping,), "damping"),
             ("Friction μ:", (self.friction,), "friction"),
-            ("Thermal bow β:", (self.thermal_gain,), "thermal_gain"),
-            ("Thermal lag τ:", (self.thermal_lag,), "thermal_lag"),
+            ("Thermal bow a<sub>T</sub>:", (self.thermal_gain,), "thermal_gain"),
+            ("Thermal lag τ<sub>T</sub>:", (self.thermal_lag,), "thermal_lag"),
         )
         for r, (text, boxes, key) in enumerate(rows):
             label = QtWidgets.QLabel(text)

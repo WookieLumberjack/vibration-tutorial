@@ -60,7 +60,7 @@ LOCUS_TIP = (
 )
 COEFF_TIP = (
     "<p>The linearized coefficients for small motions about the journal's equilibrium: the film pushes "
-    "back with f = −K Δq − C Δq′. k<sub>xy</sub> is the force in x from a displacement in y.</p>"
+    "back with f = −K Δq − C Δq̇. k<sub>xy</sub> is the force in x from a displacement in y.</p>"
     "<p>K is not symmetric: k<sub>xy</sub> and k<sub>yx</sub> have opposite signs, and that skew part "
     "pushes a forward whirl along its path, as the rotor's k<sub>xy</sub> does. It grows with the speed "
     "while the direct damping levels off, so past some speed the film feeds a whirl faster than it damps "
@@ -75,7 +75,7 @@ INPUT_TIPS = {
     "bearing and holds for L<sub>b</sub>/D<sub>b</sub> up to about 0.5; longer bearings carry more than it says.</p>",
     "clearance": "<p>Radial clearance c<sub>r</sub>, the gap with the journal centred: typically 1/1000 to 2/1000 of "
     "the radius.</p>",
-    "viscosity": "<p>The oil's dynamic viscosity μ. ISO VG 32 turbine oil is about 30 mPa·s at 40 °C, "
+    "viscosity": "<p>The oil's dynamic viscosity η. ISO VG 32 turbine oil is about 30 mPa·s at 40 °C, "
     "and about 10 mPa·s at 70 °C.</p>",
     "load": "<p>The steady load W on the bearing, straight down: on a horizontal rotor, the weight it carries.</p>",
 }
@@ -119,7 +119,7 @@ class BearingPanel(QtWidgets.QWidget):
             ("Diameter D<sub>b</sub>:", self.diameter, "diameter"),
             ("Length L<sub>b</sub>:", self.length, "length"),
             ("Clearance c<sub>r</sub>:", self.clearance, "clearance"),
-            ("Viscosity μ:", self.viscosity, "viscosity"),
+            ("Viscosity η:", self.viscosity, "viscosity"),
             ("Load W:", self.load, "load"),
         )
         for i, (text, box, key) in enumerate(boxes):

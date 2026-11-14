@@ -2234,23 +2234,293 @@ SYMBOLS = (
         "acoustics_page",
         "junction",
     ),
-    Symbol("Omega_spin", "Ω", "spin speed (a drive's frequency on the other pages)", "rad/s, rpm", "rotor_page"),
+    # The Jeffcott rotor: its model
     Symbol(
-        "I_p", "I<sub>p</sub>, I<sub>d</sub>", "polar and diametral moments of inertia of a disc", "kg·m²", "rotor_page"
+        "rotor_span",
+        "a, b, ℓ, z",
+        "the disc's distance from bearing A and from B (a + b = L, the span); an overhung disc's distance past "
+        "its bearing; the position along the shaft, from A",
+        "m",
+        "rotor_page",
     ),
     Symbol(
-        "G_gyro", "G(Ω)", "gyroscopic matrix: its Ω G q̇ term splits forward and backward whirl", "kg·m²", "rotor_page"
+        "rotor_shaft",
+        "d, E, ν, EI",
+        "the shaft's diameter, Young's modulus and Poisson's ratio; its bending stiffness, E πd⁴/64",
+        "m, Pa, –, N·m²",
+        "rotor_page",
     ),
     Symbol(
-        "S_sommerfeld",
-        "S",
-        "Sommerfeld number of a fluid-film bearing, (μNL<sub>b</sub>D<sub>b</sub>/W)(R<sub>b</sub>/c<sub>r</sub>)²: the larger, the nearer the journal to the centre",
+        "I_p", "I<sub>p</sub>, I<sub>d</sub>", "a disc's polar and diametral moments of inertia", "kg·m²", "rotor_page"
+    ),
+    Symbol(
+        "rotor_supports",
+        "k<sub>x</sub>, k<sub>y</sub>, c<sub>x</sub>, c<sub>y</sub>",
+        "a support's stiffness and damping, horizontal and vertical",
+        "N/m, N·s/m",
+        "rotor_page",
+    ),
+    Symbol(
+        "rotor_k",
+        "k<sub>s</sub>, k<sub>b</sub>, k<sub>eq</sub>, k<sub>θ</sub>, k<sub>disc</sub>",
+        "the shaft's midspan stiffness, 48EI/L³; a support's; the two in series; a disc's tilt stiffness; the "
+        "shaft's stiffness at the disc, its journals held",
+        "N/m, N·m/rad",
+        "rotor_page",
+        "classic",
+    ),
+    Symbol(
+        "rotor_xy",
+        "x, y, θ, θ<sub>x</sub>, θ<sub>y</sub>, M<sub>x</sub>, M<sub>y</sub>",
+        "the shaft centre's horizontal and vertical displacement; the disc's tilt, the shaft's slopes there "
+        "(dx/dz, dy/dz), and the moments on it in each plane",
+        "m, rad, N·m",
+        "rotor_page",
+    ),
+    Symbol(
+        "whirl_w",
+        "w, w<sub>f</sub>, w<sub>b</sub>, r<sub>w</sub>",
+        "the complex displacement x + iy; an orbit's forward and backward circles at one frequency, "
+        "w = w<sub>f</sub>e<sup>iωt</sup> + w<sub>b</sub>e<sup>−iωt</sup>; a circular orbit's radius",
+        "m",
+        "rotor_page",
+    ),
+    Symbol(
+        "Omega_spin",
+        "Ω, ω, ω<sub>c</sub>, Ω<sub>onset</sub>",
+        "the spin speed; a whirl frequency; a critical speed, where a forward whirl's frequency meets the speed; "
+        "the speed past which a whirl grows",
+        "rad/s (rpm, Hz)",
+        "rotor_page",
+    ),
+    Symbol("one_x", "1X, 2X", "once and twice per revolution", "–", "rotor_page"),
+    Symbol("r_spin", "r", "the speed ratio Ω/ω<sub>c</sub>", "–", "rotor_page", "unbalance"),
+    Symbol(
+        "X_rotor",
+        "X, Y",
+        "a one-mass rotor's complex whirl, w = Xe<sup>iΩt</sup>; with a bowed shaft, the whirl less the bow",
+        "m",
+        "rotor_page",
+        "unbalance",
+    ),
+    Symbol(
+        "s_rotor",
+        "s",
+        "a mode's eigenvalue, e<sup>st</sup> (on a shaft whose stiffness turns, a Floquet exponent)",
+        "1/s",
+        "rotor_page",
+    ),
+    # its equations
+    Symbol(
+        "rotor_matrices",
+        "M, C, G, K, H, J",
+        "the mass, damping, gyroscopic, stiffness and circulatory matrices, M q̈ + (C + ΩG)q̇ + (K + ΩH)q = f "
+        "(G and H skew-symmetric); the matrix that turns x toward y in each pair of planes",
         "–",
+        "rotor_page",
+        "gyroscopic",
+    ),
+    Symbol(
+        "rotor_q",
+        "q, f, f<sub>x</sub>, f<sub>y</sub>, f<sub>g</sub>, q<sub>s</sub>",
+        "the DOFs: the stations' displacements and slopes (then ξ); the loads, and a force's two components; "
+        "the weights on the journals and the disc; the sag under them",
+        "m, rad; N",
+        "rotor_page",
+    ),
+    Symbol(
+        "rotor_state",
+        "Z, u, A(Ω), B, Φ",
+        "the state [q, q̇] (and x<sub>c</sub>, with magnetic bearings); the loads; the state and input matrices; "
+        "the exact update's e<sup>AΔt</sup>",
+        "–",
+        "rotor_page",
+    ),
+    Symbol(
+        "shaft_modes",
+        "ξ, τ<sub>i</sub>",
+        "the shaft's modes' amplitudes with the stations held (mass normalized); the internal damping's loss "
+        "time, c<sub>i</sub>/k<sub>disc</sub>",
+        "√kg·m, s",
+        "rotor_page",
+    ),
+    Symbol(
+        "turning_axes",
+        "R(φ), q<sub>r</sub>, Q<sub>0</sub>, Q<sub>n</sub>, Ω<sub>s</sub>, n",
+        "the rotation to axes turning with the shaft, q = R(φ)q<sub>r</sub>; a periodic steady state's mean "
+        "and its nX harmonic; the harmonic spacing of a turning stiffness (2Ω, or Ω for a breathing crack); a "
+        "harmonic's number",
+        "–, m, m, rad/s, –",
+        "rotor_page",
+    ),
+    # once per revolution
+    Symbol(
+        "U_unbalance",
+        "U, Ū, ψ",
+        "an unbalance me as a complex number, at the heavy spot's angle ψ from the keyphasor mark; its conjugate",
+        "kg·m (g·mm), rad",
+        "rotor_page",
+        "unbalance",
+    ),
+    Symbol(
+        "bow",
+        "δ<sub>b</sub>, β<sub>b</sub>, θ<sub>b</sub>, K<sub>shaft</sub>, q<sub>bow</sub>",
+        "a shaft's bow at the disc, its angle from the mark, and the bowed shaft's slope there; the shaft's "
+        "stiffness and its bowed shape, so that its force is K<sub>shaft</sub>(q − q<sub>bow</sub>)",
+        "m (µm), rad, rad",
+        "rotor_page",
+    ),
+    Symbol(
+        "skew",
+        "τ, γ",
+        "a disc's skew, its axis's tilt from the shaft's, and the angle it tilts toward, from the mark",
+        "rad (°)",
+        "rotor_page",
+    ),
+    Symbol(
+        "balancing",
+        "V, V<sub>s</sub>, V<sub>0</sub>, V<sub>j</sub>, ΔV, T, W<sub>c</sub>, U<sub>w</sub>, α, α<sub>+</sub>, "
+        "α<sub>−</sub>, T<sub>b</sub>",
+        "a 1X vector (amplitude |V|, phase lag −arg V); the readings at slow roll, as found and with the trial "
+        "weight in plane j; V<sub>0</sub> − V<sub>s</sub>; the trial and correction weights and any other balance "
+        "weight (mass × radius at an angle); the influence coefficient (V<sub>1</sub> − V<sub>0</sub>)/T, or "
+        "matrix, and on an asymmetric shaft those of U and Ū; a spectrum's block length",
+        "m; kg·m (g·mm); m per kg·m; s",
+        "rotor_page",
+        "single-plane",
+    ),
+    # stiffness that turns
+    Symbol(
+        "asymmetric",
+        "x<sub>r</sub>, y<sub>r</sub>, Δ, β<sub>s</sub>, φ<sub>s</sub>, K(φ), ΔK(φ)",
+        "the displacement along a shaft's stiff and soft axes, turning with it; its asymmetry, EI(1 ± Δ); the "
+        "stiff axis's angle from the mark, and from x (φ + β<sub>s</sub>); the stiffness at the shaft's angle φ, and less its mean",
+        "m, –, rad, N/m",
+        "rotor_page",
+    ),
+    Symbol(
+        "crack",
+        "a<sub>c</sub>, β<sub>c</sub>, M<sub>b</sub>, Δθ, κ, κ<sub>o</sub>, κ<sub>a</sub>, K<sub>I</sub>",
+        "a crack's depth from the surface and its mouth's angle from the mark; the bending moment there and "
+        "the jump in slope it opens, Δθ = κM<sub>b</sub>; the compliance, opening the crack and across it; the "
+        "stress intensity factor at its front",
+        "m, rad, N·m, rad, rad/(N·m), Pa·√m",
+        "rotor_page",
+    ),
+    Symbol(
+        "crack_stations",
+        "b<sub>h</sub>, k<sub>h</sub>, σ(φ), P, D<sub>o</sub>, D<sub>a</sub>, E<sub>n</sub>",
+        "the moment at a crack per unit of each station's displacement; the shaft's stiffness against a jump "
+        "in slope there; how open a breathing crack is, 0 (shut) to 1; its loss of stiffness on the stations: "
+        "the mean, held open along and across the mouth, and its nX harmonic",
+        "N, N·m/rad, –, N/m",
+        "rotor_page",
+    ),
+    # stability and the bearings
+    Symbol(
+        "cross_coupling",
+        "k<sub>xy</sub>, k<sub>yx</sub>, c<sub>xy</sub>, c<sub>yx</sub>, c<sub>i</sub>, c<sub>e</sub>, λ",
+        "a bearing's cross-coupled stiffness and damping, f<sub>x</sub> = −k<sub>xy</sub>y − c<sub>xy</sub>ẏ; the "
+        "shaft's internal damping and the external damping, at the disc; the swirl ratio, the oil's speed "
+        "round the bearing over the shaft's",
+        "N/m, N·s/m, –",
         "rotor_page",
         "cross-coupling",
     ),
-    Symbol("epsilon", "ε", "a journal's eccentricity ratio in its bearing", "–", "rotor_page"),
-    Symbol("one_x", "1X, 2X", "once and twice per revolution", "–", "rotor_page"),
+    Symbol(
+        "S_sommerfeld",
+        "D<sub>b</sub>, R<sub>b</sub>, L<sub>b</sub>, c<sub>r</sub>, η, W, χ, S, N",
+        "a journal bearing's diameter, radius and length, its radial clearance, the oil's viscosity and the load; "
+        "the attitude angle from the load line; the Sommerfeld number (ηNL<sub>b</sub>D<sub>b</sub>/W)"
+        "(R<sub>b</sub>/c<sub>r</sub>)², N the speed in rev/s",
+        "m, Pa·s, N, rad, –, 1/s",
+        "rotor_page",
+    ),
+    Symbol(
+        "epsilon",
+        "ε",
+        "a journal's eccentricity ratio in its bearing, its offset over c<sub>r</sub>",
+        "–",
+        "rotor_page",
+    ),
+    Symbol(
+        "film_coefficients",
+        "k<sub>xx</sub>, k<sub>yy</sub>, c<sub>xx</sub>, c<sub>yy</sub>, K̄, C̄, K<sub>f</sub>, C<sub>f</sub>, "
+        "q<sub>J</sub>, p",
+        "a film's direct stiffness and damping; its coefficients made dimensionless, Kc<sub>r</sub>/W and "
+        "Cc<sub>r</sub>Ω/W; on the rotor, the films' stiffness and damping, the journals' equilibrium and the "
+        "films' constant load W + K<sub>f</sub>q<sub>J</sub>",
+        "N/m, N·s/m, –, m, N",
+        "rotor_page",
+    ),
+    Symbol(
+        "lund",
+        "m<sub>b</sub>, ω<sub>w</sub>, K<sub>eq</sub>",
+        "Lund's rigid rotor: its mass per bearing, its whirl frequency at the threshold, the film's equivalent "
+        "stiffness",
+        "kg, rad/s, N/m",
+        "rotor_page",
+    ),
+    Symbol(
+        "whole_film",
+        "ϑ, ϑ<sub>e</sub>, Ψ, r<sub>f</sub>, C<sub>b</sub>",
+        "the angle round a bearing from the line of centres, and its eccentric anomaly; the film's dissipation; "
+        "stepping the whole film, the rest of its force on the journals, and the whole uncavitated film's "
+        "damping, which bounds the film's",
+        "rad, W, N, N·s/m",
+        "rotor_page",
+    ),
+    Symbol(
+        "magnet",
+        "h<sub>0</sub>, h, i<sub>0</sub>, i<sub>c</sub>, A<sub>p</sub>, N<sub>c</sub>, μ<sub>0</sub>, Λ, "
+        "k<sub>m</sub>, k<sub>i</sub>",
+        "a magnetic bearing's air gap with the journal centred, and the gap; the bias and control currents; a "
+        "pole face's area; the coil's turns; the permeability of free space; μ<sub>0</sub>N<sub>c</sub>²"
+        "A<sub>p</sub>/4; a magnet pair's negative stiffness 4Λi<sub>0</sub>²/h<sub>0</sub>³ and current gain "
+        "4Λi<sub>0</sub>/h<sub>0</sub>²",
+        "m, A, m², –, H/m, N·m²/A², N/m, N/A",
+        "rotor_page",
+    ),
+    Symbol(
+        "magnet_control",
+        "k<sub>p</sub>, k<sub>I</sub>, k<sub>d</sub>, ω<sub>lp</sub>, ω<sub>a</sub>, G<sub>c</sub>(s), "
+        "K<sub>mb</sub>(s), k<sub>mb</sub>, c<sub>mb</sub>, x<sub>c</sub>, A<sub>c</sub>, B<sub>c</sub>, "
+        "F<sub>c</sub>",
+        "a controller's proportional, integral and derivative gains, the derivative's filter and the "
+        "amplifier's bandwidth; the controller, i<sub>c</sub> = −G<sub>c</sub>(s)x; the bearing's push back, "
+        "−K<sub>mb</sub>x, and its spring and damper at ω, K<sub>mb</sub>(iω) = k<sub>mb</sub> + iωc<sub>mb</sub>; "
+        "the controllers' states, ẋ<sub>c</sub> = A<sub>c</sub>x<sub>c</sub> + B<sub>c</sub>q, and their push "
+        "on q, F<sub>c</sub>x<sub>c</sub>",
+        "A/m, A/(m·s), A·s/m, rad/s; A/m, N/m, N·s/m",
+        "rotor_page",
+    ),
+    # rub
+    Symbol(
+        "stator_ring",
+        "δ<sub>c</sub>, δ<sub>p</sub>, r<sub>d</sub>, k<sub>ring</sub>, c<sub>ring</sub>, F<sub>N</sub>, n̂, t̂, "
+        "k<sub>full</sub>",
+        "a stator ring's radial clearance; how far the disc presses past it; the disc's distance from the "
+        "ring's centre; the ring's mount stiffness and damping; its push on the disc; unit vectors out from the "
+        "ring's centre and along it, with the spin; the ring as a spring at the disc in a full rub",
+        "m, N/m, N·s/m, N, –",
+        "rotor_page",
+    ),
+    Symbol(
+        "rub_friction",
+        "μ, R<sub>d</sub>, v<sub>t</sub>, v<sub>0</sub>, r<sub>k</sub>",
+        "the rim's friction coefficient on the ring; the disc's radius, √(2I<sub>p</sub>/m); the disc's velocity "
+        "along the ring; the slip over which the friction is smoothed; the ring's force at step k",
+        "–, m, m/s, m/s, N",
+        "rotor_page",
+    ),
+    Symbol(
+        "newkirk",
+        "P<sub>h</sub>, δ<sub>T</sub>, a<sub>T</sub>, τ<sub>T</sub>",
+        "a rub's heat, the drag's work on the slip; the thermal bow at the disc; the bow per watt, settled; its "
+        "time constant",
+        "W, m, m/W, s",
+        "rotor_page",
+    ),
     Symbol(
         "m_a",
         "m<sub>a</sub>, C<sub>a</sub>",
