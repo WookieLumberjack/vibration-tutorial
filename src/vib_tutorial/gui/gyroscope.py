@@ -91,6 +91,10 @@ FRAMES = tuple(Frame)
 SPANS = (("the last 2 s", 2.0), ("the last 10 s", 10.0), ("the whole run", None))
 AXIS_NAMES = {Frame.SPACE: ("x", "y", "z"), Frame.BODY: ("1", "2", "3"), Frame.AXIS: ("1′", "2′", "3")}
 UNITS = ("rad/s", "N·m·s", "N·m", "kg·m²")
+BODY_AXES = 6  # the body's axes' colour, colors.mass[k], apart from the vectors', the trail's and the disc's in every
+# theme; the axis frame's are drawn dashed in the axis's own colour, as they go with it
+AXES_NONE, AXES_BODY, AXES_HELD, AXES_BOTH = range(4)  # the axes the 3D view draws on the top
+AXES_SHOWN = ("None", "Body's (turn with the top)", "Axis frame's (not the spin)", "Both")
 SNAPSHOT_FRAMES = 10  # while it runs the Components tab's snapshot is rewritten every this many frames
 CHECK_FRAMES = 30  # the Check tab's text is worked out over the whole run, every this many frames
 SECTION_FRAMES = 10  # the Chaos tab is redrawn every this many frames
@@ -838,6 +842,10 @@ TIPS = {
     "one), or at the rate set below.</p>",
     "precession": "<p>φ̇, the axis's rate round the vertical when it is let go (with <i>Set φ̇ below</i>).</p>",
     "playback": "<p>Simulated time per real second. The top spins far too fast to see: slow it down.</p>",
+    "axes": "<p>Draw a frame's axes on the top, at the disc's centre. The <b>body's</b> e₁ (the mark) and e₂ turn "
+    "with the top, spin and all; the <b>axis frame's</b> e₁′ (kept horizontal) and e₂′ follow the axis as it "
+    "precesses and nods, but not the spin. Both share e₃, the axis, and differ by the spin angle ψ about it. Slow "
+    "the playback (0.02×) to see the body's whirl round while the axis frame's only lean and swing.</p>",
     "setting": "<p>The disc (or square) with its tip held in a cup (it can turn there but not slide), the same on a "
     "round tip that slides and rolls on a table, or a tippe top (a ball weighted low) on a table.</p>",
     "tip_radius": "<p>The round tip's radius R: its centre is R up the axis from the end of the stem, and the disc's "
@@ -853,7 +861,9 @@ VIEW_TIP = (
     "<p>The top on its tip, in 3D: drag to turn the view, double-click to reset it. The line through the disc "
     "is its axis and the tick on the disc a mark that turns with it; the thin line is where the end of the "
     "axis has been, between the dotted circles at the turning points. With <i>Vectors</i> ticked: the "
-    "angular momentum L, the angular velocity ω and gravity's moment τ, each scaled to fit.</p>"
+    "angular momentum L, the angular velocity ω and gravity's moment τ, each scaled to fit. <i>Axes</i> draws the "
+    "body's axes e₁, e₂ (solid) and the axis frame's e₁′, e₂′ (dashed) at the disc's centre, about the axis e₃ "
+    "they share.</p>"
 )
 TILT_TIP = (
     "<p>The axis's tilt from the vertical as it runs, the last few nods. Dashed: the turning points the "
@@ -929,6 +939,7 @@ class TopView(pg.PlotWidget):
         self.reach = 1.0  # the drawn axis's length (m)
         self.turning: tuple[float, ...] = (0.0, 0.0)
         self.show_vectors = True
+        self.show_axes = AXES_NONE
         self._last: tuple | None = None
 
         plot = self.getPlotItem()
@@ -946,6 +957,13 @@ class TopView(pg.PlotWidget):
         self.vectors = [pg.PlotCurveItem() for _ in range(3)]  # L, ω, τ
         self.labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in ("L", "ω", "τ")]
         self.end = Dot(7)
+        self.frame_lines = [pg.PlotCurveItem() for _ in range(4)]  # e₁, e₂ (the body's), e₁′, e₂′ (the axis frame's)
+        # an apostrophe for the prime: the view's font has no ′
+        self.frame_labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in ("e₁", "e₂", "e₁'", "e₂'", "e₃")]
+        bigger = QtGui.QFont()
+        bigger.setPointSizeF(bigger.pointSizeF() * 1.25)
+        for label in self.frame_labels:
+            label.setFont(bigger)
         for item in (
             self.table,
             self.vertical,
@@ -958,8 +976,10 @@ class TopView(pg.PlotWidget):
             self.rim,
             self.spoke,
             self.axis_line,
+            *self.frame_lines,
             *self.vectors,
             *self.labels,
+            *self.frame_labels,
         ):
             plot.addItem(item)
         plot.addItem(self.end, ignoreBounds=True)
@@ -1108,6 +1128,35 @@ class TopView(pg.PlotWidget):
         else:
             self.track.setData([], [])
         self._draw_vectors(axis, mark, momentum, np.zeros(3) if centre is None else G, force)
+        self._draw_axes(axis, mark, G, anchor + R * axis)
+
+    def _draw_axes(self, axis: np.ndarray, mark: np.ndarray, G: np.ndarray, end: np.ndarray) -> None:
+        """The body's e₁, e₂ and the axis frame's e₁′, e₂′ from the disc's centre G, as `show_axes` picks, and e₃
+        named at the axis's end."""
+        body = self.show_axes in (AXES_BODY, AXES_BOTH)
+        held = self.show_axes in (AXES_HELD, AXES_BOTH)
+        length = 0.75 * self.reach
+        b = frame_axes(axis[None], mark[None], Frame.BODY)[0]
+        a = frame_axes(axis[None], mark[None], Frame.AXIS)[0]
+        for item, label, v, on in zip(
+            self.frame_lines, self.frame_labels, (b[0], b[1], a[0], a[1]), (body, body, held, held)
+        ):
+            if not on:
+                item.setData([], [])
+                label.hide()
+                continue
+            x, y = self.project(np.array([G, G + length * v]))
+            item.setData(x, y)
+            lx, ly = self.project(G + 1.12 * length * v)
+            label.setPos(float(lx), float(ly))
+            label.show()
+        e3 = self.frame_labels[4]
+        if body or held:
+            ex, ey = self.project(end + 0.1 * self.reach * axis)
+            e3.setPos(float(ex), float(ey))
+            e3.show()
+        else:
+            e3.hide()
 
     def _draw_vectors(
         self, axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, origin: np.ndarray, force: np.ndarray | None
@@ -1169,6 +1218,12 @@ class TopView(pg.PlotWidget):
         for item, label, color in zip(self.vectors, self.labels, (c.force, c.mass[2], c.mass[3])):
             item.setPen(pg.mkPen(color, width=2.5))
             label.setColor(color)
+        dash = QtCore.Qt.PenStyle.DashLine
+        for k, (item, label) in enumerate(zip(self.frame_lines, self.frame_labels)):
+            color = c.mass[BODY_AXES] if k < 2 else c.strong
+            item.setPen(pg.mkPen(color, width=2, style=QtCore.Qt.PenStyle.SolidLine if k < 2 else dash))
+            label.setColor(color)
+        self.frame_labels[4].setColor(c.strong)
 
     def mousePressEvent(self, event) -> None:
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
@@ -1292,6 +1347,9 @@ class GyroscopePage(QtWidgets.QWidget):
         self.vectors.setChecked(True)
         self.vectors.toggled.connect(self._on_vectors)
         play.row(self.vectors)
+        self.axes_shown = combo(AXES_SHOWN, TIPS["axes"])
+        self.axes_shown.currentIndexChanged.connect(self._on_axes_shown)
+        play.add("Axes:", self.axes_shown, TIPS["axes"])
 
         connect_all(
             (
@@ -1668,6 +1726,10 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _on_vectors(self, on: bool) -> None:
         self.view.show_vectors = on
+        self._draw_now()
+
+    def _on_axes_shown(self, index: int) -> None:
+        self.view.show_axes = index
         self._draw_now()
 
     def _on_pause(self, on: bool) -> None:

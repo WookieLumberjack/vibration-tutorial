@@ -89,4 +89,69 @@ def tip_svg() -> str:
     return fig.svg(310, 160, "".join(parts))
 
 
-FIGURES = {"fig:top": top_svg, "fig:tip": tip_svg}
+def frames_svg() -> str:
+    """The two frames on the tilted disc, in 3D: the axis frame's e₁′ (horizontal, the line of nodes) and e₂′ (in
+    the disc, up the slope), and the body's e₁ (the mark) and e₂, turned ψ from them about the shared e₃."""
+    fg, muted, mass = colors.foreground, colors.muted, colors.mass[0]
+    held, turned = colors.strong, colors.mass[6]  # the axis frame's, the body's: as the page's 3D view draws them
+    theta, phi, psi = math.radians(35.0), math.radians(25.0), math.radians(55.0)
+    yaw, pitch = math.radians(20.0), math.radians(15.0)
+    e3 = (math.sin(theta) * math.sin(phi), -math.sin(theta) * math.cos(phi), math.cos(theta))
+    n = (math.cos(phi), math.sin(phi), 0.0)  # ẑ × e₃, made unit: horizontal
+    e2a = (e3[1] * n[2] - e3[2] * n[1], e3[2] * n[0] - e3[0] * n[2], e3[0] * n[1] - e3[1] * n[0])
+    e1 = tuple(math.cos(psi) * a + math.sin(psi) * b for a, b in zip(n, e2a))
+    e2 = tuple(-math.sin(psi) * a + math.cos(psi) * b for a, b in zip(n, e2a))
+    scale, ox, oy = 95.0, 95.0, 188.0  # px per unit; the tip on the page
+
+    def at(p: tuple[float, ...]) -> tuple[float, float]:
+        x, y, z = p
+        across = x * math.cos(yaw) - y * math.sin(yaw)
+        away = x * math.sin(yaw) + y * math.cos(yaw)
+        return ox + scale * across, oy - scale * (z * math.cos(pitch) + away * math.sin(pitch))
+
+    def plus(a: tuple[float, ...], b: tuple[float, ...], k: float) -> tuple[float, ...]:
+        return tuple(u + k * v for u, v in zip(a, b))
+
+    G = plus((0.0, 0.0, 0.0), e3, 1.0)
+    r = 0.62
+    rim = [
+        at(plus(G, tuple(math.cos(a) * u + math.sin(a) * v for u, v in zip(n, e2a)), r))
+        for a in (2 * math.pi * k / 48 for k in range(49))
+    ]
+    tx, ty = at((0.0, 0.0, 0.0))
+    gx, gy = at(G)
+    parts = [
+        fig.line(tx, ty, *at((0.0, 0.0, 1.7)), muted, 1.0, "3,3"),
+        fig.math_label(at((0.0, 0.0, 1.7))[0] - 6, at((0.0, 0.0, 1.7))[1] + 6, "ẑ", muted, "end"),
+        fig.area(rim, mass, 0.25),
+        fig.curve(rim, mass, 1.2),
+        fig.line(tx, ty, gx, gy, held, 2.0),
+        fig.circle(tx, ty, 2.5, fg, fg),
+        fig.arrow(gx, gy, *at(plus(G, e3, 0.75)), held, 1.8),
+        fig.math_label(at(plus(G, e3, 0.8))[0] + 6, at(plus(G, e3, 0.8))[1], "e₃", fg, "start"),
+    ]
+    for vector, name, color, dash in (
+        (n, "e₁′", held, "5,3"),
+        (e2a, "e₂′", held, "5,3"),
+        (e1, "e₁", turned, ""),
+        (e2, "e₂", turned, ""),
+    ):
+        end = at(plus(G, vector, 0.95))
+        parts.append(fig.arrow(gx, gy, *end, color, 1.8, dash))
+        lx, ly = at(plus(G, vector, 1.08))
+        parts.append(fig.math_label(lx, ly + 5, name, color))
+    # ψ: from e₁′ to e₁ in the disc's plane
+    arc = [
+        at(plus(G, tuple(math.cos(a) * u + math.sin(a) * v for u, v in zip(n, e2a)), 0.42))
+        for a in (psi * k / 16 for k in range(17))
+    ]
+    parts.append(fig.curve(arc, fg, 1.2))
+    mx, my = at(plus(G, tuple(math.cos(0.2 * psi) * u + math.sin(0.2 * psi) * v for u, v in zip(n, e2a)), 0.56))
+    parts.append(fig.math_label(mx, my + 5, "ψ", fg))
+    parts.append(fig.text(300, 30, "axis frame: dashed", held, "end"))
+    parts.append(fig.text(300, 48, "body: solid", turned, "end"))
+    parts.append(fig.text(300, 66, "e₁′ horizontal", muted, "end"))
+    return fig.svg(310, 200, "".join(parts))
+
+
+FIGURES = {"fig:top": top_svg, "fig:tip": tip_svg, "fig:frames": frames_svg}

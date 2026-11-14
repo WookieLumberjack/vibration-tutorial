@@ -4253,6 +4253,39 @@ def test_gyroscope_snapshot(main_window, app):
         assert "At t = 0.4" in page.comp_snapshot.text()
 
 
+def test_gyroscope_frame_axes_drawn(main_window, app):
+    """The 3D view's Axes box: none, the body's e₁ e₂, the axis frame's e₁′ e₂′, or both, each from the disc's
+    centre; the body's e₁ along the mark, the axis frame's e₁′ level, and e₃ named only with some drawn."""
+    import numpy as np
+
+    from vib_tutorial.gui import gyroscope as g
+
+    w = main_window
+    page = w.gyroscope_page
+    w.pages.setCurrentWidget(page)
+    page.load_setup(dict(tilt=30.0))
+    page.step(0.3)
+    view = page.view
+    drawn = {}
+    for shown in range(len(g.AXES_SHOWN)):
+        page.axes_shown.setCurrentIndex(shown)
+        drawn[shown] = [item.xData is not None and len(item.xData) == 2 for item in view.frame_lines]
+        assert view.frame_labels[4].isVisible() == (shown != g.AXES_NONE)
+    assert drawn == {
+        g.AXES_NONE: [False] * 4,
+        g.AXES_BODY: [True, True, False, False],
+        g.AXES_HELD: [False, False, True, True],
+        g.AXES_BOTH: [True] * 4,
+    }
+    axis, mark = (np.asarray(v, dtype=float) for v in view._last[:2])
+    G = page.motion.top.height * axis
+    length = 0.75 * view.reach
+    for k, direction in ((0, mark), (2, np.cross([0.0, 0.0, 1.0], axis) / np.linalg.norm(axis[:2]))):
+        x, y = view.project(np.array([G, G + length * direction]))
+        line = view.frame_lines[k]
+        assert np.allclose(line.xData, x) and np.allclose(line.yData, y), k
+
+
 def test_gyroscope_on_a_table(app):
     """The table's settings show their own controls and tabs, run and draw, stop where the model can't follow,
     and going back to the cup brings its own back; then an asymmetric top's."""
