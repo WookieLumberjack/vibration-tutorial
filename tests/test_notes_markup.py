@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import re
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -238,20 +239,22 @@ def test_notes_browser_redraws_its_equations_in_a_new_colour(app):
         assert isinstance(image, QtGui.QImage) and not image.isNull()
         return {image.pixel(x, y) & 0xFFFFFF for x in range(image.width()) for y in range(image.height())}
 
+    from vib_tutorial.gui import style
+
+    before = style.current()
     try:
-        palette = browser.palette()
-        palette.setColor(QtGui.QPalette.ColorRole.Text, QtGui.QColor("#000000"))
-        browser.setPalette(palette)
+        # Ink from the theme, not the palette: Qt sends the browser a new palette after the refresh.
+        style.set_theme(style.LIGHT)
         browser.refresh()
         assert 0xFF0000 not in ink()
-        palette.setColor(QtGui.QPalette.ColorRole.Text, QtGui.QColor("#ff0000"))
-        browser.setPalette(palette)
+        style.set_theme(replace(style.DARK, text="#ff0000"))
         browser.refresh()
         assert 0xFF0000 in ink()
         # Inline maths is a little larger than the text round it.
         sheet = browser.document().defaultStyleSheet()
         assert f"font-size: {round(browser.text_px() * maths.INLINE_SIZE)}px" in sheet
     finally:
+        style.set_theme(before)
         browser.close()
         browser.deleteLater()
 
