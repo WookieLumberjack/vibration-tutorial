@@ -177,7 +177,8 @@ top's two precessions to the rotor's forward and backward whirl. The *Components
 tensor as the top runs, in fixed axes, the body's or the axis frame (following the axis, not the spin): I is
 constant in the body's axes and turns in space, and L isn't along ω. Under the plot it writes out, at one
 instant, the rotation matrices that place the body, I in those axes, L = Iω and dL/dt + Ω × L = τ with the numbers;
-pause it and drag the line to pick the instant.
+pause it and drag the line to pick the instant. The 3D view's *Axes* box draws the body's axes, the
+axis frame's or both on the top, so the two frames' difference, the spin about the axis, can be seen.
 
 Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant
 J = L·(a e₃ + R ẑ) survives it, so the energy sinks onto the least energy that J allows at each tilt:
