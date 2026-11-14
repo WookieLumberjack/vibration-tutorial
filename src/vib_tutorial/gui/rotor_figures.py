@@ -214,7 +214,7 @@ def element_svg() -> str:
         n3, n4 = 3 * u * u - 2 * u**3, le * (u**3 - u * u)
         return n1 * w1 + n2 * t1 + n3 * w2 + n4 * t2
 
-    pts = [(x1 + le * u, base - shape(u)) for u in np.linspace(0.0, 1.0, 41)]
+    pts = [(x1 + le * float(u), base - shape(float(u))) for u in np.linspace(0.0, 1.0, 41)]
     parts = [
         fig.arrow(20, base, 326, base, muted, 1.0),
         fig.text(322, base + 18, "z", fg, italic=True),
