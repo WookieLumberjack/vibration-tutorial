@@ -109,12 +109,12 @@ def _duffing(preset: str, speed: float):
 
 def _startup(preset: str, speed: float = 1.0):
     def setup(w):
-        from vib_tutorial.gui import torsional
+        from vib_tutorial.gui import torsional_startup_view
 
         page = w.torsional_page
         w.pages.setCurrentWidget(page)
         page.load_preset(preset)
-        page.playback.setCurrentIndex(torsional.PLAYBACK.index(speed))
+        page.startup_view.playback.setCurrentIndex(torsional_startup_view.PLAYBACK.index(speed))
         page.start()
         return page, speed
 
