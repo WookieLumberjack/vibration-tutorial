@@ -3024,7 +3024,7 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
             p.play_button.click()
         elif p is not w.cms_page.time:
             p.run_button.click()  # it waits at rest for Start
-        stepper = getattr(p, "startup_view", p)  # Torsional's start-up steps in its own view
+        stepper = getattr(p, "startup_view", None) or getattr(p, "waves_view", p)  # Torsional's, Continuum's views
         monkeypatch.setattr(stepper, "step", lambda *_, **__: time.sleep(0.008))
         p.loop._frame()
         assert p.loop.timer.isActive()
@@ -3726,40 +3726,57 @@ def test_continuum_waves_tab(app):
     p = w.continuum_page
     w.pages.setCurrentWidget(p)
     app.processEvents()
-    assert p.run is None  # not built until the tab shows
+    assert p.waves_view.run is None  # not built until the tab shows
     p.preset.setCurrentText("Waves: a pulse on 40 beads")
-    assert p.views.currentWidget() is p.waves_tab and p.run is not None and p.loop.timer.isActive()
-    assert p.run.elements == 40 and p.run.waves.moving and p.play_button.text() == "Pause"
+    assert p.views.currentWidget() is p.waves_tab and p.waves_view.run is not None and p.loop.timer.isActive()
+    assert p.waves_view.run.elements == 40 and p.waves_view.run.waves.moving and p.play_button.text() == "Pause"
     p.loop.timer.stop()
-    p.step(FRAMES_PER_TRANSIT)
-    assert "t = 1.00 crossings (10 ms" in p.wave_status.text() and "keeps <b>100 %</b>" in p.wave_status.text()
-    assert p.mesh_nodes.getData()[0].size == 41
+    p.waves_view.step(FRAMES_PER_TRANSIT)
+    assert (
+        "t = 1.00 crossings (10 ms" in p.waves_view.wave_status.text()
+        and "keeps <b>100 %</b>" in p.waves_view.wave_status.text()
+    )
+    assert p.waves_view.mesh_nodes.getData()[0].size == 41
     p.play_button.click()
     assert not p.running and not p.loop.timer.isActive() and p.play_button.text() == "Resume"
-    p.restart_button.click()
-    assert p.run.t == 0.0 and not p.loop.timer.isActive() and p.play_button.text() == "Start"
+    p.waves_view.restart_button.click()
+    assert p.waves_view.run.t == 0.0 and not p.loop.timer.isActive() and p.play_button.text() == "Start"
 
     p.preset.setCurrentText("Waves: a matched end")
-    assert p.run.waves.dashpot == 1.0 and p.end_line.isVisible() and "reflects +0 of a wave" in p.wave_info.text()
-    p.loop.timer.stop()
-    p.step(2 * FRAMES_PER_TRANSIT)
-    assert "keeps <b>17.3 %</b>" in p.wave_status.text()
-    p.wave_scheme.setCurrentText("Consistent")
     assert (
-        p.run.waves.scheme is Scheme.CONSISTENT and p.run.t == 0.0 and p.preset.currentText() == "Waves: a matched end"
+        p.waves_view.run.waves.dashpot == 1.0
+        and p.waves_view.end_line.isVisible()
+        and "reflects +0 of a wave" in p.waves_view.wave_info.text()
     )
-    p.playback.setCurrentIndex(0)
-    assert p.run.playback == 0.25
+    p.loop.timer.stop()
+    p.waves_view.step(2 * FRAMES_PER_TRANSIT)
+    assert "keeps <b>17.3 %</b>" in p.waves_view.wave_status.text()
+    p.waves_view.wave_scheme.setCurrentText("Consistent")
+    assert (
+        p.waves_view.run.waves.scheme is Scheme.CONSISTENT
+        and p.waves_view.run.t == 0.0
+        and p.preset.currentText() == "Waves: a matched end"
+    )
+    p.waves_view.playback.setCurrentIndex(0)
+    assert p.waves_view.run.playback == 0.25
 
     p.preset.setCurrentText("Waves: a light string tied to a heavy one")
-    assert p.step_region.isVisible() and p.run.step_x == pytest.approx(0.5)
-    assert "reflects -0.333 and passes 0.667" in p.wave_info.text()
-    p.step_on.setChecked(False)
-    assert p.run.step_x is None and not p.step_region.isVisible() and not p.step_at.isEnabled()
+    assert p.waves_view.step_region.isVisible() and p.waves_view.run.step_x == pytest.approx(0.5)
+    assert "reflects -0.333 and passes 0.667" in p.waves_view.wave_info.text()
+    p.waves_view.step_on.setChecked(False)
+    assert (
+        p.waves_view.run.step_x is None
+        and not p.waves_view.step_region.isVisible()
+        and not p.waves_view.step_at.isEnabled()
+    )
 
     p.kind.setCurrentText("Beam")
-    assert p.continuum.kind is Kind.BEAM and not p.moving.isEnabled() and not p.dashpot_on.isEnabled()
-    assert p.run.waves.dashpot is None and not p.run.moving
+    assert (
+        p.continuum.kind is Kind.BEAM
+        and not p.waves_view.moving.isEnabled()
+        and not p.waves_view.dashpot_on.isEnabled()
+    )
+    assert p.waves_view.run.waves.dashpot is None and not p.waves_view.run.moving
 
     p.views.setCurrentWidget(p.errors_tab)
     assert not p.loop.timer.isActive()
@@ -4699,7 +4716,7 @@ def test_responses_wait_for_start_and_trials_start_them(app):
     w.pages.setCurrentWidget(p)
     p.views.setCurrentWidget(p.waves_tab)
     app.processEvents()
-    assert p.run is not None and not p.running and p.play_button.text() == "Start"
+    assert p.waves_view.run is not None and not p.running and p.play_button.text() == "Start"
 
     p = w.gyroscope_page
     w.pages.setCurrentWidget(p)

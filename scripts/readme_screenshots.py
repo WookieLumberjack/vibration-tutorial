@@ -43,7 +43,7 @@ def window(theme="Light"):
     # The script drives time (run), so every shot is at a known moment. Stop the timer before
     # the window shows: frames run while it settles would advance History.offset by a
     # wall-clock-dependent count, and the strip chart's decimation buckets are aligned to it.
-    w._timer.stop()
+    w.loop.enabled = False
     w.set_theme(theme)
     w.resize(1700, 900)
     w.show()
@@ -85,7 +85,7 @@ def save(w, name):
 
 
 def done(w):
-    w._timer.stop()
+    w.loop.enabled = False
     w.close()
     gui.close_graphics(w)
     w.deleteLater()
@@ -316,14 +316,14 @@ def substructuring_three():
 
 
 def drive_cms(view, w, seconds):
-    view._timer.stop()
+    view.loop.enabled = False
     view.reset()
     view.kind.setCurrentIndex(view.kind.findData(ForceKind.HARMONIC))
     view.freq.setValue(w.modal.modes[3].fn_hz)
     view.button.click()
     for _ in range(round(seconds / 0.05)):
         view.step(0.05)
-    view._timer.stop()
+    view.loop.enabled = False
 
 
 def substructuring_time():
@@ -416,7 +416,7 @@ def jeffcott_rotor():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page._refresh_analysis()  # at once: it opens with it on its way from the worker
     page.running = False  # the script drives time, as on the Simulation page
     page.ramp.setValue(5000.0)
@@ -431,7 +431,7 @@ def jeffcott_run_up():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page._refresh_analysis()  # at once: it opens with it on its way from the worker
     page.running = False
     page.sweep_from.setValue(800.0)
@@ -449,7 +449,7 @@ def jeffcott_bow():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.set_system(RotorSystem(bow=10e-6, bow_angle=math.pi))
     page._refresh_analysis()
@@ -469,7 +469,7 @@ def jeffcott_balancing():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.set_system(RotorSystem(bow=20e-6, bow_angle=math.pi / 2))
     page._refresh_analysis()
@@ -490,7 +490,7 @@ def jeffcott_two_plane():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.set_system(RotorSystem(position=0.3, skew=math.radians(0.5)))
     page._refresh_analysis()
@@ -511,7 +511,7 @@ def jeffcott_stability():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.internal_damping.setValue(20.0)
     page._refresh_analysis()
@@ -532,7 +532,7 @@ def jeffcott_oil_whirl():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Oil whirl (vertical rotor)")
     page._refresh_analysis()
@@ -550,7 +550,7 @@ def jeffcott_magnetic():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Magnetic bearings")
     page._refresh_analysis()
@@ -572,7 +572,7 @@ def jeffcott_rub():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Partial rub (½X)")
     page._refresh_analysis()
@@ -591,7 +591,7 @@ def jeffcott_newkirk():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Newkirk effect (thermal bow)")
     page._refresh_analysis()
@@ -608,7 +608,7 @@ def jeffcott_overhung():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Overhung rotor")
     page._refresh_analysis()
@@ -626,7 +626,7 @@ def jeffcott_waterfall():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Overhung rotor")
     page._refresh_analysis()
@@ -646,7 +646,7 @@ def jeffcott_shaft_mass():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Long shaft, with its mass")
     page._refresh_analysis()
@@ -665,7 +665,7 @@ def jeffcott_asymmetric():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Two-pole rotor (asymmetric shaft)")
     page._refresh_analysis()
@@ -689,7 +689,7 @@ def jeffcott_asymmetry_chart():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Two-pole rotor (asymmetric shaft)")
     page._refresh_analysis()
@@ -710,7 +710,7 @@ def jeffcott_cracked():
     page = w.rotor_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.load_preset("Cracked shaft (breathing crack)")
     page._refresh_analysis()
@@ -736,7 +736,7 @@ def duffing_jump():
     page = w.duffing_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     while page.sim.drive.mode is not Sweep.HOLD:  # the preset's sweep up, then down
         page.step(1.0)
@@ -759,7 +759,7 @@ def mathieu_sweep():
     page = w.duffing_page
     w.pages.setCurrentWidget(page)
     settle()
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.preset.setCurrentText("Parametric sweep: the jump")
     page.tabs.setCurrentWidget(page.chart_tab)
@@ -786,9 +786,9 @@ def torsional_startup():
     w.pages.setCurrentWidget(page)
     page.preset.setCurrentText("Geared compressor")
     page.start()
-    page.step(page.startup.duration)
+    page.startup_view.step(page.startup_view.startup.duration)
     settle()
-    print(page.startup_note.text())
+    print(page.startup_view.startup_note.text())
     save(w, "torsional_startup")
 
 
@@ -822,12 +822,12 @@ def continuum_waves():
     page = w.continuum_page
     w.pages.setCurrentWidget(page)
     page.preset.setCurrentText("Waves: a light string tied to a heavy one")
-    page._timer.stop()
-    page.running = False
-    page.step(120)  # half a crossing: the reflection and the transmitted pulse apart
+    page.loop.enabled = False
+    page.waves_view.running = False
+    page.waves_view.step(120)  # half a crossing: the reflection and the transmitted pulse apart
     settle()
-    print(page.wave_status.text())
-    print(page.wave_info.text())
+    print(page.waves_view.wave_status.text())
+    print(page.waves_view.wave_info.text())
     save(w, "continuum_waves")
 
 
@@ -1051,7 +1051,7 @@ def deriving_equations():
     page.fbd.verticalScrollBar().setValue(page.fbd.verticalScrollBar().maximum())
     settle()
     page._restart()  # the mode at its full swing (t = 0), held there
-    page._timer.stop()
+    page.loop.enabled = False
     print(page.readout.text())
     save(w, "deriving_equations")
 
@@ -1063,7 +1063,7 @@ def deriving_pendulum():
     page = w.deriving_page
     w.pages.setCurrentWidget(page)
     page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name.startswith("Chaos")))
-    page._timer.stop()
+    page.loop.enabled = False
     for _ in range(int(7.5 / 0.05)):  # well into the chaos, its trail looping
         page.step(0.05)
     settle()
@@ -1078,7 +1078,7 @@ def frame_builder():
     page = w.frame_page
     w.pages.setCurrentWidget(page)
     page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A portal frame: sway"))
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page._phase = 0.5 * math.pi
     page.tabs.setCurrentIndex(TAB_ASSEMBLY)
@@ -1099,7 +1099,7 @@ def rotor_builder():
     page = w.rotor_builder_page
     w.pages.setCurrentWidget(page)
     page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A stepped compressor rotor"))
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.tabs.setCurrentIndex(TAB_WHIRL)
     page.table.selectRow(3)
@@ -1119,7 +1119,7 @@ def rotor_builder_campbell():
     page = w.rotor_builder_page
     w.pages.setCurrentWidget(page)
     page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Campbell diagram: the overhung fan"))
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page._phase = 0.3 * math.pi
     settle()
@@ -1136,7 +1136,7 @@ def frame_response():
     page = w.frame_page
     w.pages.setCurrentWidget(page)
     page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A tuned mass damper"))
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page._phase = 0.5 * math.pi
     page.tabs.setCurrentIndex(TAB_RESPONSE)
@@ -1152,7 +1152,7 @@ def rigid_mounts():
     page = w.mounts_page
     w.pages.setCurrentWidget(page)
     page.load_trial(1)  # mounts below the centre of mass: sway and roll couple
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page._phase = 0.5 * math.pi
     page._show_mode()
@@ -1168,7 +1168,7 @@ def rigid_mounts_response():
     page = w.mounts_page
     w.pages.setCurrentWidget(page)
     page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Running at the bounce: amplified"))
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page._phase = 0.5 * math.pi
     page._show_mode()
@@ -1203,7 +1203,7 @@ def gyroscope():
     page = w.gyroscope_page
     w.pages.setCurrentWidget(page)
     page.load_trial(0)  # let go at rest: cusps
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.step(2.0)
     settle()
@@ -1218,7 +1218,7 @@ def gyroscope_chaos():
     page = w.gyroscope_page
     w.pages.setCurrentWidget(page)
     page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Gravity and the middle axis: chaos"))
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     for _ in range(80):
         page.step(0.25)
@@ -1235,7 +1235,7 @@ def gyroscope_table():
     page = w.gyroscope_page
     w.pages.setCurrentWidget(page)
     page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A tippe top turns over"))
-    page._timer.stop()
+    page.loop.enabled = False
     page.running = False
     page.step(4.0)
     settle()

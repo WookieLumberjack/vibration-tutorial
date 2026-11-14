@@ -47,7 +47,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Energy methods (`energy_page`): `gui/energy_methods.py`; core `energy_methods`
   - FRF matrix (`frf_page`): `gui/frf_matrix.py`; core `frf_matrix`
   - Complex modes (`complex_page`): `gui/complex_modes.py`; core `complex_modes`
-  - Continuous systems (`continuum_page`): `gui/continuum.py`; core `continuum`, `continuum_waves`
+  - Continuous systems (`continuum_page`): `gui/continuum.py` (with `continuum_waves_view.py`); core `continuum`, `continuum_waves`
   - Beams & plates (`beams_page`): `gui/beams_plates.py`; core `beams_plates`
   - Numerical integration (`integration_page`): `gui/integration.py`; core `integration`
 - Responses:
