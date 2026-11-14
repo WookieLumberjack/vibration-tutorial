@@ -57,7 +57,7 @@ from ..core.rotor_builder import (
     uniform,
 )
 from ..core.rotor_builder_sweep import N_BRANCHES, Sweep, lag, orbit, sweep, unbalance_response
-from . import frame_stats, settle_plots, weak
+from . import frame_stats, rotor_builder_figures, settle_plots, weak
 from .frame_builder import matrix_html
 from .layouts import FlowLayout, group
 from .lesson import (
@@ -230,7 +230,8 @@ TRIALS = (
         "The pinned shaft with a steel disc 300 × 40 mm (22.2 kg) a quarter along, at 3000 rpm. At rest its pairs "
         "are at 62.28, 265.2 and 501.4 Hz; spinning, each splits, backward below and forward above: 60.83 and "
         "63.70, 261.2 and 268.6, 468.2 and 538.2 Hz. The disc tilts as the shaft bends, most in the third mode, "
-        "which splits most. G (the Assembly tab) is where it comes from: I<sub>p</sub> between the disc's slopes.",
+        "which splits most. <m>G</m> (the Assembly tab) is where it comes from: <m>I<sub>p</sub></m> between the "
+        "disc's slopes.",
         QUARTER_DISC,
         rpm=3000.0,
         picked=("disc", 0),
@@ -240,8 +241,8 @@ TRIALS = (
         "An overhung fan",
         "A titanium fan 500 × 20 mm (17.4 kg) 200 mm past the right-hand bearing of a 60 mm steel shaft. At rest "
         "the first pair is at 79.06 Hz; at 3000 rpm it splits to 71.13 (backward) and 86.24 Hz (forward), at 6000 "
-        "rpm to 63.10 and 92.30. An overhung disc tilts as it whirls, and a thin one (I<sub>p</sub> ≈ "
-        "2I<sub>d</sub>) stiffens its forward whirl strongly.",
+        "rpm to 63.10 and 92.30. An overhung disc tilts as it whirls, and a thin one "
+        "(<m>I<sub>p</sub> ≈ 2I<sub>d</sub></m>) stiffens its forward whirl strongly.",
         OVERHUNG,
         rpm=3000.0,
         picked=("disc", 0),
@@ -251,7 +252,7 @@ TRIALS = (
         "The 50 mm shaft with nothing holding it. At rest there are 8 roots at 0 (its two translations and two "
         "tilts, each twice: a free body has no stiffness), then pairs at 228.7 and 623.3 Hz (Euler's free–free "
         "beam: 230.2 Hz). At 3000 rpm two of the zero roots become a slow forward whirl at 0.19 Hz: the free "
-        "shaft's nutation, I<sub>p</sub>Ω/I<sub>d</sub>, I<sub>p</sub>/I<sub>d</sub> = 1.5D²/L² = 0.00375 of its 50 "
+        "shaft's nutation, <m>I<sub>p</sub>Ω/I<sub>d</sub></m>, <m>I<sub>p</sub>/I<sub>d</sub> = 1.5D²/L²</m> = 0.00375 of its 50 "
         "rev/s.",
         FREE,
         rpm=3000.0,
@@ -271,8 +272,9 @@ TRIALS = (
         "A stepped compressor rotor",
         "Five sections, 60, 80 and 100 mm across, the middle one bored out to 40 mm, with two aluminium impellers "
         "350 × 60 mm (15.6 kg each) between the bearings and a steel coupling hub (7.1 kg) overhung. At 6000 rpm: "
-        "167.8 and 171.0 Hz, 199.3 and 207.4, 422.5 and 442.9. On the Assembly tab, K with the bored section's "
-        "share tinted: each beam's 8 × 8 adds at its two nodes' [x, θx, y, θy], so K is banded.",
+        "167.8 and 171.0 Hz, 199.3 and 207.4, 422.5 and 442.9. On the Assembly tab, <m>K</m> with the bored "
+        "section's share tinted: each beam's 8 × 8 adds at its two nodes' [<m>x</m>, <m>θ<sub>x</sub></m>, <m>y</m>, "
+        "<m>θ<sub>y</sub></m>], so <m>K</m> is banded.",
         COMPRESSOR,
         rpm=6000.0,
         tab=TAB_ASSEMBLY,
@@ -282,9 +284,9 @@ TRIALS = (
     RotorTrial(
         "Oil-film bearings",
         "Plain journal bearings 50 mm across and 30 mm long, 50 µm clearance, 20 mPa·s oil, each carrying 184.5 N "
-        "(half the rotor's 37.6 kg). At 3000 rpm the films' K and C are full, with cross terms (the Element tab): "
+        "(half the rotor's 37.6 kg). At 3000 rpm the films' <m>K</m> and <m>C</m> are full, with cross terms (the Element tab): "
         "the rotor bounces on them at 25.3 and 25.6 Hz, damped 24 %, and bends at 50.9 and 51.1 Hz. The oil "
-        "swirls at about half the speed: past 5466 rpm, where that nears the bending mode, its forward whirl's ζ "
+        "swirls at about half the speed: past 5466 rpm, where that nears the bending mode, its forward whirl's <m>ζ</m> "
         "goes negative and it grows by itself (at 6000 rpm, −3.0 %): oil whip.",
         FILMS,
         rpm=3000.0,
@@ -293,13 +295,13 @@ TRIALS = (
     ),
     RotorTrial(
         "Magnetic bearings",
-        "Active magnetic bearings (0.5 mm gaps, 2 A bias): each magnet's pull is a negative stiffness, k<sub>m</sub> "
-        "= 0.543 MN/m on K's diagonal, which the PID beats (k<sub>i</sub>k<sub>p</sub> = 2.71 MN/m). The first pair "
-        "is at 37.85 Hz with ζ = 4.57 %, the second at 143.0 with 38.4 %: the derivative damps. The controllers' "
-        "12 states join q and q' in the state; four of their roots are real, at −12.7 /s, the integral action "
+        "Active magnetic bearings (0.5 mm gaps, 2 A bias): each magnet's pull is a negative stiffness, "
+        "<m>k<sub>m</sub></m> = 0.543 MN/m on <m>K</m>'s diagonal, which the PID beats (<m>k<sub>i</sub>k<sub>p</sub></m> = 2.71 MN/m). The first pair "
+        "is at 37.85 Hz with <m>ζ</m> = 4.57 %, the second at 143.0 with 38.4 %: the derivative damps. The controllers' "
+        "12 states join <m>q</m> and <m>q̇</m> in the state; four of their roots are real, at −12.7 /s, the integral action "
         "pulling each journal back to the centre. Above about 1.2 kHz the controller's lag turns its damping "
-        "negative: the shaft's own internal damping (β = 1 µs) keeps its 2.4 kHz bending modes from growing. "
-        "Set β to 0 and they do (ζ = −0.61 %).",
+        "negative: the shaft's own internal damping (<m>τ<sub>i</sub></m> = 1 µs) keeps its 2.4 kHz bending modes from "
+        "growing. Set <m>τ<sub>i</sub></m> to 0 and they do (<m>ζ</m> = −0.61 %).",
         MAGNETS,
         picked=("bearing", 0),
         tab=TAB_ELEMENT,
@@ -308,7 +310,7 @@ TRIALS = (
         "A seal's swirl",
         "Stiff bearings and an annular seal a quarter along (2 MN/m, 2 kN·s/m, its fluid swirling at half the "
         "shaft's speed). At rest it damps both whirls of the first pair to 4.17 %. At 6000 rpm its cross-coupling, "
-        "λΩc = 0.63 MN/m, pushes a forward whirl along and holds a backward one back: forward 0.516 %, backward "
+        "<m>λΩc</m> = 0.63 MN/m, pushes a forward whirl along and holds a backward one back: forward 0.516 %, backward "
         "7.74 %. Past 6845 rpm the forward one grows: the seal drives it.",
         SEALED,
         rpm=6000.0,
@@ -319,7 +321,7 @@ TRIALS = (
         "Campbell diagram: the overhung fan",
         "The fan's branches against the speed: each pair fans out, backward falling and forward rising. Where one "
         "meets 1X (the red line) is a critical speed: 4091 rpm (the first pair's backward branch), 5480 rpm (its "
-        "forward one) and 9507 rpm (the second pair's backward). Its amplification factor 1/2ζ says how sharply "
+        "forward one) and 9507 rpm (the second pair's backward). Its amplification factor <m>1/2ζ</m> says how sharply "
         "an unbalance response could peak there: 116 at 5480 rpm, the bearings' 500 N·s/m barely damping it. "
         "Running at 3000 rpm the fan is 36.4 % below the nearest: its separation margin.",
         OVERHUNG,
@@ -354,10 +356,10 @@ TRIALS = (
     ),
     RotorTrial(
         "Stability map: oil whip",
-        "The rotor on oil films, swept to 9000 rpm. The bounce on the films is overdamped (its δ far above 1, its "
-        "1X crossings hollow on the Campbell diagram: critically damped). The bending pair's δ are 0.193 "
+        "The rotor on oil films, swept to 9000 rpm. The bounce on the films is overdamped (its <m>δ</m> far above 1, its "
+        "1X crossings hollow on the Campbell diagram: critically damped). The bending pair's <m>δ</m> are 0.193 "
         "(forward) and 0.0632 (backward) at 3000 rpm; the forward one's crosses 0 at 5466 rpm (the red line) "
-        "and at 6000 rpm (shown) it is −0.190: it grows, oil whip. It misses API 684's δ ≥ 0.1 (dashed) well "
+        "and at 6000 rpm (shown) it is −0.190: it grows, oil whip. It misses API 684's <m>δ</m> ≥ 0.1 (dashed) well "
         "before.",
         FILMS,
         rpm=6000.0,
@@ -366,12 +368,12 @@ TRIALS = (
     ),
     RotorTrial(
         "Internal damping",
-        "The 300 mm disc at midspan on bearings of 20 MN/m and 10 kN·s/m, and the shaft's internal damping β = "
+        "The 300 mm disc at midspan on bearings of 20 MN/m and 10 kN·s/m, and the shaft's internal damping <m>τ<sub>i</sub></m> = "
         "100 µs. At rest it damps the first pair to 2.04 % (0.62 % without it). But it turns with the shaft, "
         "resisting the bending rate the shaft feels: at the forward critical, 2947 rpm, a synchronous whirl "
-        "doesn't flex the turning shaft at all, and ζ is back to 0.62 %. Above it the shaft turns faster than it "
+        "doesn't flex the turning shaft at all, and <m>ζ</m> is back to 0.62 %. Above it the shaft turns faster than it "
         "whirls, and its internal damping drags the whirl on round: unstable from 4245 rpm, 1.44 × the critical. "
-        "Double β and that falls to 3596 rpm; more damping in the bearings raises it.",
+        "Double <m>τ<sub>i</sub></m> and that falls to 3596 rpm; more damping in the bearings raises it.",
         INTERNAL,
         rpm=3000.0,
         tab=TAB_STABILITY,
@@ -547,8 +549,8 @@ def _critical_speed(rng: np.random.Generator) -> Question:
         f"{DISC_LIBRARY[kind].name.lower()} at midspan. At rest its first pair of modes is at {number(f0, 4)} Hz. "
         "At what speed is its first forward critical speed, where unbalance drives it?",
         first.rpm,
-        f"At a critical the whirl's frequency is the shaft's, f = N/60. A disc at midspan doesn't tilt in the "
-        f"first mode, so its gyroscopic moment hardly moves it: N ≈ 60 × {number(f0, 4)} = {number(60 * f0, 4)} rpm "
+        f"At a critical the whirl's frequency is the shaft's, the rpm over 60. A disc at midspan doesn't tilt in the "
+        f"first mode, so its gyroscopic moment hardly moves it: the critical ≈ 60 × {number(f0, 4)} = {number(60 * f0, 4)} rpm "
         f"(the Campbell diagram's crossing: {number(first.rpm, 4)} rpm, the shaft's own sections tilting a "
         "little).",
         unit="rpm",
@@ -669,10 +671,10 @@ TIPS = {
     "kyx": "<p>Cross-coupled stiffness: f<sub>y</sub> = −k<sub>yx</sub> x.</p>",
     "cxx": "<p>The bearing's damping along x.</p>",
     "cyy": "<p>The bearing's damping along y.</p>",
-    "film_length": "<p>The oil film's axial length L.</p>",
-    "film_diameter": "<p>The journal's diameter D (the shaft's, where it sits).</p>",
-    "clearance": "<p>The radial clearance c between the journal and its bearing.</p>",
-    "viscosity": "<p>The oil's viscosity μ.</p>",
+    "film_length": "<p>The oil film's axial length L<sub>b</sub>.</p>",
+    "film_diameter": "<p>The journal's diameter D<sub>b</sub> (the shaft's, where it sits).</p>",
+    "clearance": "<p>The radial clearance c<sub>r</sub> between the journal and its bearing.</p>",
+    "viscosity": "<p>The oil's viscosity η.</p>",
     "gap": "<p>Each magnet's air gap with the journal centred.</p>",
     "bias": "<p>The bias current in every coil.</p>",
     "kp": "<p>The PID's proportional gain: k<sub>i</sub>k<sub>p</sub> has to beat the magnets' k<sub>m</sub>.</p>",
@@ -694,7 +696,8 @@ TIPS = {
     "unbalance": "<p>The disc's unbalance m e: its mass times how far its centre of mass is off the shaft's "
     "(1 g·mm = 10⁻⁶ kg·m). A library disc's is 10 µm of its mass.</p>",
     "heavy": "<p>Where the heavy spot is, as an angle from the shaft's keyphasor mark in the direction of spin.</p>",
-    "internal": "<p>The shaft's internal damping β (its material's, or a shrink fit's slip): β K<sub>shaft</sub> on the "
+    "internal": "<p>The shaft's internal damping, as its loss time τ<sub>i</sub> (its material's, or a shrink fit's "
+    "slip): τ<sub>i</sub>K<sub>shaft</sub> on the "
     "bending rate in the turning shaft. It damps at rest, but above a critical speed it drives the forward "
     "whirl.</p>",
     "top_rpm": "<p>The top of the speed range the Campbell diagram, the unbalance response and the stability map "
@@ -724,7 +727,7 @@ WHIRL_TIP = (
     "whirl goes round the way the shaft spins (x toward y); backward, against it.</p>"
 )
 
-NOTES_HTML = load_notes("rotor_builder", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("rotor_builder", trials=trials_html(TRIALS), figures=rotor_builder_figures.FIGURES)
 
 
 # ------------------------------------------------------------------ drawing helpers
@@ -1228,12 +1231,14 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
             f"<p><b>Section {i + 1}</b>: {fmt(s.length, 'm')} of {s.material.name.lower()}, D = "
             f"{fmt(s.outer, 'm')}"
             + (f", bore d = {fmt(s.inner, 'm')}" if s.inner else ", solid")
-            + f": A = {number(s.area * 1e6, 4)} mm², I = {number(s.inertia * 1e12, 4)} mm⁴, EI = "
+            + f": A<sub>s</sub> = {number(s.area * 1e6, 4)} mm², I = {number(s.inertia * 1e12, 4)} mm⁴, EI = "
             f"{fmt(s.ei, 'N·m²')}, {fmt(s.mass, 'kg')}. In {len(owned)} elements; the first, "
             f"{fmt(part.length, 'm')} long, is shown"
         )
         lines.append(
-            f" (φ = 12EI/κGAL² = {part.phi:.3g}, κ = {s.kappa:.3f})." if rotor.theory is Theory.TIMOSHENKO else "."
+            f" (φ<sub>s</sub> = 12EI/κ<sub>s</sub>G<sub>m</sub>A<sub>s</sub>L<sub>e</sub>² = {part.phi:.3g}, κ<sub>s</sub> = {s.kappa:.3f})."
+            if rotor.theory is Theory.TIMOSHENKO
+            else "."
         )
         lines.append(
             " Its G is twice its rotary inertia, coupling the x plane's slopes to the y plane's.</p>"
@@ -1255,8 +1260,8 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
             w = assembly.loads[i]
             st = film_state(b.film, w, omega)
             lines.append(
-                f", L = {fmt(b.film.length, 'm')}, D = {fmt(b.film.diameter, 'm')}, c = {fmt(b.film.clearance, 'm')}, "
-                f"μ = {fmt(b.film.viscosity, 'Pa·s')}, under {fmt(w, 'N')} of the rotor's weight. At "
+                f", L<sub>b</sub> = {fmt(b.film.length, 'm')}, D<sub>b</sub> = {fmt(b.film.diameter, 'm')}, c<sub>r</sub> = {fmt(b.film.clearance, 'm')}, "
+                f"η = {fmt(b.film.viscosity, 'Pa·s')}, under {fmt(w, 'N')} of the rotor's weight. At "
                 f"{omega / RPM:.4g} rpm its journal sits at ε = {st.eccentricity:.3f}, {math.degrees(st.attitude):.3g}° "
                 "from the load: its K and C are full, and change with the speed.</p>"
             )
@@ -1264,7 +1269,7 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
             m = b.magnet
             lines.append(
                 f": k<sub>m</sub> = {fmt(m.negative_stiffness, 'N/m')} (on K's diagonal, negative), k<sub>i</sub> = "
-                f"{fmt(m.current_gain, 'N/A')}; its PID's {m.n_states} states a side follow q and q' in the state: "
+                f"{fmt(m.current_gain, 'N/A')}; its PID's {m.n_states} states a side follow q and q̇ in the state: "
                 f"k<sub>i</sub>k<sub>p</sub> = {fmt(m.current_gain * m.kp, 'N/m')} holds it.</p>"
             )
         else:
@@ -1345,7 +1350,7 @@ class Properties(QtWidgets.QGroupBox):
         self.film_length = b.number("Film length L:", 1.0, 1000.0, 25.0, 1, " mm", TIPS["film_length"])
         self.film_diameter = b.number("Journal D:", 1.0, 2000.0, 50.0, 1, " mm", TIPS["film_diameter"])
         self.clearance = b.number("Clearance c:", 1.0, 5000.0, 50.0, 1, " µm", TIPS["clearance"])
-        self.viscosity = b.number("Viscosity μ:", 0.1, 10000.0, 30.0, 1, " mPa·s", TIPS["viscosity"])
+        self.viscosity = b.number("Viscosity η:", 0.1, 10000.0, 30.0, 1, " mPa·s", TIPS["viscosity"])
         self.gap = b.number("Air gap:", 0.05, 20.0, 1.0, 2, " mm", TIPS["gap"])
         self.bias = b.number("Bias current:", 0.01, 100.0, 1.0, 2, " A", TIPS["bias"])
         self.kp = b.number("kp:", 0.0, 1e7, 3500.0, 0, " A/m", TIPS["kp"])
@@ -1454,7 +1459,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         model.add("Beams:", self.theory, TIPS["theory"])
         self.gravity = combo(["Horizontal", "Vertical"], TIPS["gravity"])
         model.add("Rotor:", self.gravity, TIPS["gravity"])
-        self.internal = model.number("Internal damping β:", 0.0, 1e4, 0.0, 2, " µs", TIPS["internal"])
+        self.internal = model.number("Internal damping τ<sub>i</sub>:", 0.0, 1e4, 0.0, 2, " µs", TIPS["internal"])
         self.rpm = model.number("Speed:", 0.0, 100000.0, 0.0, 0, " rpm", TIPS["rpm"])
         self.top_rpm = model.number("Sweep to:", 100.0, 100000.0, 12000.0, 0, " rpm", TIPS["top_rpm"])
         self.grid = combo([f"{1000 * g:g} mm" for g in GRIDS], TIPS["grid"])

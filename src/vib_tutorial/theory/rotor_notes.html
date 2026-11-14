@@ -118,7 +118,8 @@ top to the rotor</a>, Gyroscope page): the forward one its fast precession, near
 the backward one its slow precession.</p>
 
 <h3>The Campbell diagram and critical speeds</h3>
-<p>Plotting each damped natural frequency against the spin speed gives the Campbell diagram. The
+<p>Plotting each damped natural frequency against the spin speed gives the Campbell diagram
+<cite>campbell-1924</cite>. The
 unbalance turns once per revolution, so it drives at <m>Ω</m>/2π: the 1X line. Where a whirl frequency
 crosses the 1X line, the unbalance drives that mode at its own natural frequency: a <b>critical
 speed</b>. In an isotropic rotor the unbalance is a purely forward rotating force, so it drives only the
@@ -324,9 +325,9 @@ A beam with no load between its ends bends exactly as a cubic. So a massless sha
 by one element per stretch between stations, which is why Jeffcott's model needs only the stations.</p>
 <p><b>Stiffness and mass.</b> The bending energy <m>½∫EI w″² dz</m>, written through the nodes, gives the
 element's stiffness <m>k<sub>e</sub></m>, and the kinetic energy of its slices' sideways motion gives the
-consistent mass <m>m<sub>e</sub></m>, with <m>I</m> = πd⁴/64 the section's second moment of area:</p>
+consistent mass <m>m<sub>t</sub></m>, with <m>I</m> = πd⁴/64 the section's second moment of area:</p>
 <eq>k_e = \frac{EI}{L_e^3}\begin{bmatrix} 12 & 6L_e & -12 & 6L_e \\ 6L_e & 4L_e^2 & -6L_e & 2L_e^2 \\ -12 & -6L_e & 12 & -6L_e \\ 6L_e & 2L_e^2 & -6L_e & 4L_e^2 \end{bmatrix}</eq>
-<eq>m_e = \frac{\rho\pi d^2 L_e}{1680}\begin{bmatrix} 156 & 22L_e & 54 & -13L_e \\ 22L_e & 4L_e^2 & 13L_e & -3L_e^2 \\ 54 & 13L_e & 156 & -22L_e \\ -13L_e & -3L_e^2 & -22L_e & 4L_e^2 \end{bmatrix}</eq>
+<eq>m_t = \frac{\rho\pi d^2 L_e}{1680}\begin{bmatrix} 156 & 22L_e & 54 & -13L_e \\ 22L_e & 4L_e^2 & 13L_e & -3L_e^2 \\ 54 & 13L_e & 156 & -22L_e \\ -13L_e & -3L_e^2 & -22L_e & 4L_e^2 \end{bmatrix}</eq>
 <p>(ρπ<m>d</m>²/4 is the mass per length, and 1680 = 4 × 420.)</p>
 <p><b>Rotary inertia.</b> Each slice <m>dz</m> also tilts, by <m>w′</m>, and resists that with its own
 diametral inertia, <m>ρI dz</m>. Its kinetic energy <m>½∫ρI w′² dz</m> gives a second mass matrix, the
@@ -355,9 +356,9 @@ and the supports add their own terms at their nodes. A shaft with mass is reduce
 own lowest modes before any of this is solved (see <i>Keeping a shaft with mass fast</i>).</p>
 <p><b>On the defaults with <i>Shaft mass</i>.</b> The shaft is cut into 8 elements of
 <m>L<sub>e</sub></m> = 62.5 mm, so <m>12EI/L<sub>e</sub>³</m> = 4.83 MN/m. Its mass per length is
-0.6165 kg/m. For a rigid shift, [1, 0, 1, 0], <m>m<sub>e</sub></m> gives the element's mass, 0.0385 kg,
+0.6165 kg/m. For a rigid shift, [1, 0, 1, 0], <m>m<sub>t</sub></m> gives the element's mass, 0.0385 kg,
 and the eight together give the shaft's 0.308 kg. The diagonal of <m>m<sub>r</sub></m> is 0.52% of
-<m>m<sub>e</sub></m>'s on the deflections and 2.2% on the slopes, so rotary inertia barely matters in so slender a shaft. Its polar inertia,
+<m>m<sub>t</sub></m>'s on the deflections and 2.2% on the slopes, so rotary inertia barely matters in so slender a shaft. Its polar inertia,
 3.85 × 10<sup>−6</sup> kg·m² in all, is 0.3% of the disc's. Shear matters even less. Over one element,
 <m>φ<sub>s</sub></m> = 0.056. But the shaft bends over its whole span, and over the span
 <m>φ<sub>s</sub></m> is 0.00088. That is how much shear would add to the midspan deflection, and it would

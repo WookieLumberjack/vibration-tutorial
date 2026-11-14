@@ -1449,8 +1449,9 @@ SYMBOLS = (
     ),
     Symbol(
         "cms_sub",
-        "A, B, C, (s), L<sub>s</sub>",
-        "the substructures from the ground; a superscript (s) marks substructure s's own matrices, K<sup>(s)</sup>; the Boolean matrix picking its DOFs out of x",
+        "(s), L<sub>s</sub>",
+        "a superscript (s) marks substructure s's own matrices, K<sup>(s)</sup> (the substructures are named A, B, "
+        "C, … from the ground: names, not symbols); the Boolean matrix picking its DOFs out of x",
         "–",
         "cms_page",
         "why",
@@ -2367,7 +2368,7 @@ SYMBOLS = (
     Symbol(
         "rotor_element",
         "L<sub>e</sub>, z̄, N<sub>1</sub>, N<sub>2</sub>, N<sub>3</sub>, N<sub>4</sub>, w<sub>1</sub>, "
-        "θ<sub>1</sub>, w<sub>2</sub>, θ<sub>2</sub>, k<sub>e</sub>, m<sub>e</sub>, m<sub>r</sub>, g<sub>e</sub>, "
+        "θ<sub>1</sub>, w<sub>2</sub>, θ<sub>2</sub>, k<sub>e</sub>, m<sub>t</sub>, m<sub>r</sub>, g<sub>e</sub>, "
         "G<sub>m</sub>, A<sub>s</sub>",
         "a shaft element's length and the fraction of the way along it; its Hermite cubics; its nodes' "
         "deflections and slopes in one plane; its stiffness, translational and rotary mass and gyroscopic "
@@ -2614,6 +2615,68 @@ SYMBOLS = (
         "jellett",
     ),
     Symbol("slip", "s", "an induction motor's slip, 1 − Ω/Ω<sub>s</sub>", "–", "torsional_page"),
+    # the Rotor builder
+    Symbol(
+        "builder_section",
+        "D, d, E, ν, I, EI",
+        "a shaft section's outside diameter and bore; its material's Young's modulus and Poisson's ratio; its "
+        "diametral second moment of area, π(D⁴ − d⁴)/64, and bending stiffness",
+        "m, Pa, –, m⁴, N·m²",
+        "rotor_builder_page",
+        "elements",
+    ),
+    Symbol(
+        "builder_disc",
+        "R, r, t<sub>d</sub>",
+        "an annular disc's outer and inner radii and its thickness",
+        "m",
+        "rotor_builder_page",
+        "discs",
+    ),
+    Symbol(
+        "builder_bearing",
+        "K<sub>b</sub>, C<sub>b</sub>",
+        "a bearing's 2 × 2 stiffness and damping matrices on its node's x and y",
+        "N/m, N·s/m",
+        "rotor_builder_page",
+        "bearings",
+    ),
+    Symbol(
+        "builder_speed",
+        "K(Ω), C(Ω), K<sub>c</sub>, K<sub>shaft</sub>",
+        "the stiffness and damping at the speed, with the seals' and the films' terms; the magnets' controllers' "
+        "push, k<sub>i</sub>G<sub>c</sub>(iΩ); the shaft's own stiffness",
+        "N/m, N·s/m, N/m, N/m",
+        "rotor_builder_page",
+        "assembly",
+    ),
+    Symbol(
+        "builder_af",
+        "AF, SM",
+        "a critical speed's amplification factor, 1/2ζ; the separation margin, the running speed's distance from "
+        "the nearest critical over the running speed",
+        "–, %",
+        "rotor_builder_page",
+        "campbell",
+    ),
+    Symbol(
+        "whirl_shapes",
+        "X, Y, Q, F, F<sub>x</sub>, F<sub>y</sub>",
+        "a node's complex x and y in a mode, x = Re(Xe<sup>iωt</sup>); the steady response and the force, "
+        "q = Re(Qe<sup>iΩt</sup>); the force's x and y at the disc's node",
+        "m, N",
+        "rotor_builder_page",
+        "whirl",
+    ),
+    Symbol(
+        "builder_mesh",
+        "n, L, r<sub>g</sub>",
+        "a mode's number, its half waves along a uniform shaft; the shaft's length; its section's radius of "
+        "gyration, √(I/A<sub>s</sub>)",
+        "–, m, m",
+        "rotor_builder_page",
+        "worked-example",
+    ),
 )
 BY_KEY = {s.key: s for s in SYMBOLS}
 NOTATION = re.compile(r"<notation>(.*?)</notation>", re.S)

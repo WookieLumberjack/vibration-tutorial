@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 from pathlib import Path
 
 import pytest
@@ -41,8 +40,19 @@ def files_of(page: str) -> list[str]:
         module = "vib_tutorial.gui.background"
     else:
         module = _page_class(page).__module__
-    source = Path(sys.modules[module].__file__ or "").read_text(encoding="utf-8")
-    return re.findall(r'load_notes\(\s*"([a-z_]+)"', source)
+    return _notes_in(module)
+
+
+def _notes_in(module: str) -> list[str]:
+    """The notes files `module` loads, or the module it takes its THEORY_HTML or NOTES_HTML from loads (the rotor
+    page's are in `rotor_notes`)."""
+    import importlib
+
+    source = Path(importlib.import_module(module).__file__ or "").read_text(encoding="utf-8")
+    found = re.findall(r'load_notes\(\s*"([a-z_]+)"', source)
+    for name in re.findall(r"from \.(\w+) import [^\n]*\b(?:THEORY|NOTES|BACKGROUND)_HTML\b", source):
+        found += _notes_in(module.rsplit(".", 1)[0] + "." + name)
+    return found
 
 
 # ------------------------------------------------------------------ inline maths

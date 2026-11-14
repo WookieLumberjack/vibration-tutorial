@@ -1492,6 +1492,13 @@ REFERENCES = (
         "A. Muszynska, <i>Rotordynamics</i>, CRC Press, 2005",
         "fluid-induced instabilities, rub and diagnostics, from measurements",
     ),
+    Reference(
+        "campbell-1924",
+        "Campbell 1924",
+        "W. Campbell, The protection of steam-turbine disk wheels from axial vibration, <i>Transactions of the "
+        "ASME</i> 46, 31–140, 1924",
+        "",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
