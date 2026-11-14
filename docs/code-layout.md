@@ -194,7 +194,10 @@ time for each.
 the state its caption describes): `uv run python scripts/readme_screenshots.py`, or name the
 shots to retake, e.g. `... chirp pluck`.
 
-The `core` package has no Qt dependency, so you can use it from scripts or notebooks:
+The `core` package has no Qt dependency, so you can use it from scripts or notebooks. Two whole
+studies are in [`examples/`](../examples): a tuned mass damper's effect against its mass, and a
+rotor's critical speeds as its bearings stiffen. The tour below, and the examples, run in the tests
+(`tests/test_examples.py`), so they keep up with the code:
 
 ```python
 from vib_tutorial.core import ChainSystem, modal_analysis
