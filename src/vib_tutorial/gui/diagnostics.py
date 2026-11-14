@@ -38,7 +38,7 @@ from ..core.diagnostics import (
     sidebands,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick
-from . import settle_plots
+from . import diagnostics_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -463,7 +463,7 @@ CEPSTRUM_TIP = (
     "its multiples; dashed: 1/the mesh.</p>"
 )
 
-NOTES_HTML = load_notes("diagnostics", trials=trials_html(TRIALS))
+NOTES_HTML = load_notes("diagnostics", trials=trials_html(TRIALS), figures=diagnostics_figures.FIGURES)
 
 
 class DiagnosticsPage(QtWidgets.QWidget):

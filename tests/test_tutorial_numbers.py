@@ -3552,3 +3552,66 @@ def test_rotor_builder_worked_example():
             assert abs(f[0] - exact(1)) < 0.045
     assert thirds == [912.7, 893.2, 891.3, 890.5]
     assert round(100 * (hz[4] / exact(3) - 1), 2) == 0.12
+
+
+def test_diagnostics_worked_example():
+    """Machinery diagnostics: the healthy gearbox, the bearing's frequencies, the sidebands, severity and TSA."""
+    from vib_tutorial.core import diagnostics as dg
+
+    m = dg.Machine()
+    assert (m.speed, m.teeth, round(m.mesh_hz, 2)) == (29.95, 27, 808.65)
+    assert (round(2 * m.mesh_hz, 1), round(3 * m.mesh_hz, 2)) == (1617.3, 2425.95)
+    assert (dg.FS, dg.DURATION, dg.FS / dg.BLOCK) == (20480.0, 4.0, 2.5)
+    rec = dg.record(m)
+    sp = dg.amplitude_spectrum(rec.x, rec.fs)
+    read = [round(dg.line_amplitude(sp.freqs, sp.amplitude, f), 3) for f in (m.speed, 2 * m.speed)]
+    read += [round(dg.line_amplitude(sp.freqs, sp.amplitude, h * m.mesh_hz), 3) for h in (1, 2, 3)]
+    assert read == [0.301, 0.102, 1.001, 0.399, 0.149]
+    assert round(dg.kurtosis(rec.x), 2) == 2.40
+    # The 6205's frequencies, from rolling without slip.
+    b = m.bearing
+    rb = b.ball / b.pitch
+    assert (b.balls, b.ball, b.pitch, b.contact_deg, round(rb, 4)) == (9, 7.94e-3, 39.04e-3, 0.0, 0.2034)
+    f = b.frequencies(m.speed)
+    assert (round(f["FTF"], 2), round(f["BPFO"], 1), round(f["BPFI"], 1), round(2 * f["BSF"], 1)) == (
+        11.93,
+        107.4,
+        162.2,
+        141.2,
+    )
+    assert (round(f["BPFO"] / m.speed, 3), round(f["BPFI"] / m.speed, 3)) == (3.585, 5.415)
+    assert f["BPFO"] + f["BPFI"] == pytest.approx(b.balls * m.speed)
+    # An eccentric pinion: sidebands (s ± β)/2 beside the unit mesh line.
+    s, beta = m.gear_severity, 0.5 * m.gear_severity
+    assert (s, beta) == (0.3, 0.15) and (round((s + beta) / 2, 3), round((s - beta) / 2, 3)) == (0.225, 0.075)
+    e = dg.Machine(gear=dg.GearFault.ECCENTRIC)
+    r2 = dg.record(e)
+    s2 = dg.amplitude_spectrum(r2.x, r2.fs)
+    lines = [round(dg.line_amplitude(s2.freqs, s2.amplitude, e.mesh_hz + k * e.speed), 3) for k in (-1, 0, 1)]
+    assert lines == [0.076, 0.995, 0.226]
+    # The envelope's band: the resonance's half-power band, and about 3ζ either side.
+    assert (round(2 * m.zeta * m.resonance), round(3 * m.zeta * m.resonance)) == (300, 450)
+    # Severity: each line's RMS velocity, the noise's over 10–1000 Hz, and the total.
+    rms = [a / (2 * math.pi * fq) / math.sqrt(2) * 1e3 for a, fq in ((0.3, m.speed), (0.1, 2 * m.speed))]
+    rms += [a / (2 * math.pi * h * m.mesh_hz) / math.sqrt(2) * 1e3 for h, a in zip((1, 2, 3), dg.MESH_HARMONICS)]
+    assert round(0.3 / (2 * math.pi * m.speed) * 1e3, 3) == 1.594
+    assert [round(v, 3) for v in rms] == [1.127, 0.188, 0.139, 0.028, 0.007]
+    noise = math.sqrt(m.noise**2 / (dg.FS / 2) / (4 * math.pi**2) * (1 / 10 - 1 / 1000)) * 1e3
+    assert round(noise, 3) == 0.099
+    assert round(math.sqrt(sum(v * v for v in rms) + noise**2), 2) == 1.16
+    assert 1.16 < 1.4 and round(0.25 * 2.8, 1) == 0.7  # zone A; a significant change
+    # Time-synchronous averaging over the record's whole revolutions.
+    revs = int(dg.DURATION * m.speed)
+    assert (revs, round(math.sqrt(revs), 1), round(m.noise / math.sqrt(revs), 3)) == (119, 10.9, 0.018)
+    # The run-up: Q, the half-power band, and how many of the mode's cycles the 1X spends crossing it.
+    run = dg.RunUp()
+    assert (run.mode, run.zeta, round(1 / (2 * run.zeta), 1), round(2 * run.zeta * run.mode, 1)) == (
+        40.0,
+        0.03,
+        16.7,
+        2.4,
+    )
+    for seconds, crossing, cycles in ((20.0, 0.8, 32.0), (4.0, 0.16, 6.4)):
+        rate = (run.end - run.start) / seconds
+        assert (round(2.4 / rate, 2), round(2.4 / rate * run.mode, 1)) == (crossing, cycles)
+    assert (dg.PER_REV // 2, dg.REVS) == (16, 8)

@@ -1499,6 +1499,54 @@ REFERENCES = (
         "ASME</i> 46, 31–140, 1924",
         "",
     ),
+    Reference(
+        "gabor-1946",
+        "Gabor 1946",
+        "D. Gabor, Theory of communication. Part 1: The analysis of information, <i>Journal of the Institution of Electrical Engineers, Part III</i> 93(26), 429–457, 1946",
+        "",
+    ),
+    Reference(
+        "randall-antoni",
+        "Randall and Antoni 2011",
+        "R. B. Randall and J. Antoni, Rolling element bearing diagnostics: a tutorial, <i>Mechanical Systems and Signal Processing</i> 25(2), 485–520, 2011",
+        "",
+    ),
+    Reference(
+        "dwyer-1983",
+        "Dwyer 1983",
+        "R. F. Dwyer, Detection of non-Gaussian signals by frequency domain kurtosis estimation, <i>Proceedings of ICASSP '83</i>, 607–610, 1983",
+        "",
+    ),
+    Reference(
+        "antoni-2006",
+        "Antoni 2006",
+        "J. Antoni, The spectral kurtosis: a useful tool for characterising non-stationary signals, <i>Mechanical Systems and Signal Processing</i> 20(2), 282–307, 2006",
+        "",
+    ),
+    Reference(
+        "bogert-1963",
+        "Bogert, Healy and Tukey 1963",
+        "B. P. Bogert, M. J. R. Healy and J. W. Tukey, The quefrency alanysis of time series for echoes: cepstrum, pseudo-autocovariance, cross-cepstrum and saphe cracking, in M. Rosenblatt (ed.), <i>Proceedings of the Symposium on Time Series Analysis</i>, Wiley, 209–243, 1963",
+        "",
+    ),
+    Reference(
+        "mcfadden-1987",
+        "McFadden 1987",
+        "P. D. McFadden, A revised model for the extraction of periodic waveforms by time domain averaging, <i>Mechanical Systems and Signal Processing</i> 1(1), 83–95, 1987",
+        "",
+    ),
+    Reference(
+        "randall-2011",
+        "Randall 2011",
+        "R. B. Randall, <i>Vibration-based Condition Monitoring: Industrial, Aerospace and Automotive Applications</i>, Wiley, 2011",
+        "the whole field: gears, bearings, the cepstrum, order tracking and diagnosis",
+    ),
+    Reference(
+        "iso-20816-3",
+        "ISO 20816-3",
+        "ISO 20816-3, <i>Mechanical vibration: Measurement and evaluation of machine vibration. Part 3: Industrial machinery with a power rating above 15 kW and operating speeds between 120 r/min and 30 000 r/min</i>, 2022",
+        "",
+    ),
 )
 BY_KEY = {r.key: r for r in REFERENCES}
 CITE = re.compile(r"<cite>(.*?)</cite>")
