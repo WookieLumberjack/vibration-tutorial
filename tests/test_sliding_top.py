@@ -136,3 +136,12 @@ def test_trials():
     top, J, s, theta = go("A tippe top that can't turn over", 15.0)
     assert math.degrees(top.least_tilt(J)) == pytest.approx(108.6, abs=0.05)
     assert np.mean(theta[s.t > 5]) == pytest.approx(110, abs=3)
+
+
+def test_a_slow_playback_still_moves_the_top():
+    """Fractions of a step add up across calls rather than being rounded away."""
+    sim = SlidingSimulator(DISC, 1000 * RPM, math.radians(10))
+    piece = 0.3 * sim.h
+    for _ in range(100):
+        sim.advance(piece)
+    assert sim.t == pytest.approx(100 * piece, abs=sim.h)
