@@ -2,6 +2,7 @@
 
 import math
 import os
+import re
 import sys
 
 import numpy as np
@@ -4739,3 +4740,65 @@ def test_space_switches_the_force_on(app):
     QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
     assert w.force_panel.force.on
     w.close()
+
+
+def test_notes_text_size_is_one_for_all_and_remembered(app):
+    """Ctrl+= / - / 0 and Ctrl with the wheel size every notes view's text, equations and figures together."""
+    from PySide6 import QtCore, QtGui
+    from PySide6.QtTest import QTest
+
+    from vib_tutorial.gui import notes_view, theming
+    from vib_tutorial.gui.main_window import MainWindow
+    from vib_tutorial.gui.notes_view import NotesBrowser
+
+    w = MainWindow()
+    w.show_page("sdof_page")
+    w.show()
+    tab = w.show_theory()
+    t = w.open_theory_window()
+    assert isinstance(tab, NotesBrowser)
+    browsers = (tab, t.browser)
+    usual = [b.text_px() for b in browsers]
+    eq = next(k for k in re.findall(r'src="(eq:[^"]+)"', tab._html))
+    Image = QtGui.QTextDocument.ResourceType.ImageResource
+
+    def drawn(b: NotesBrowser, key: str) -> float:
+        return b.loadResource(Image, QtCore.QUrl(key)).deviceIndependentSize().width()
+
+    eq_usual, fig_usual = drawn(tab, eq), drawn(tab, "fig:oscillator")
+    shortcuts = {s.key().toString(): s for s in w.findChildren(QtGui.QShortcut) if s.parent() is w}
+    try:
+        shortcuts["Ctrl+="].activated.emit()
+        assert notes_view.zoom() == 1.1 and float(theming.settings().value(notes_view.ZOOM_SETTING)) == 1.1
+        assert all(b.text_px() > px for b, px in zip(browsers, usual, strict=True)), "every view, both windows"
+        assert drawn(tab, eq) > eq_usual and drawn(tab, "fig:oscillator") == pytest.approx(1.1 * fig_usual, rel=0.01)
+        assert 'width="418"' in tab.toHtml(), "the notes' set figure widths too (380 px)"
+        assert NotesBrowser("<p>new</p>").text_px() == tab.text_px(), "a view built later takes the size"
+        QTest.keyClick(tab, QtCore.Qt.Key.Key_Minus, QtCore.Qt.KeyboardModifier.ControlModifier)
+        assert notes_view.zoom() == 1.0 and tab.text_px() == usual[0]
+        QTest.keyClick(
+            tab,
+            QtCore.Qt.Key.Key_Plus,
+            QtCore.Qt.KeyboardModifier.ShiftModifier | QtCore.Qt.KeyboardModifier.ControlModifier,
+        )
+        assert notes_view.zoom() == 1.1, "Ctrl++ as typed, with Shift"
+        notch = QtGui.QWheelEvent(
+            QtCore.QPointF(5, 5),
+            QtCore.QPointF(5, 5),
+            QtCore.QPoint(),
+            QtCore.QPoint(0, 60),
+            QtCore.Qt.MouseButton.NoButton,
+            QtCore.Qt.KeyboardModifier.ControlModifier,
+            QtCore.Qt.ScrollPhase.NoScrollPhase,
+            False,
+        )
+        tab.wheelEvent(notch)
+        assert notes_view.zoom() == 1.1, "half a notch: not yet"
+        tab.wheelEvent(notch)
+        assert notes_view.zoom() == 1.25
+        notes_view.step_zoom(100)
+        assert notes_view.zoom() == notes_view.ZOOMS[-1]
+        shortcuts["Ctrl+0"].activated.emit()
+        assert notes_view.zoom() == 1.0 and [b.text_px() for b in browsers] == usual
+    finally:
+        notes_view.set_zoom(1.0)

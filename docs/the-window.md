@@ -13,7 +13,7 @@ The pages are grouped in the order they are meant to be read, each using only id
 before it (Ctrl+1 to Ctrl+6 jump to a group). The first run opens on the first, *Single oscillator*, at
 its Theory: the map of the course (which counts each page's practice problems solved), four shorter *paths*
 through it (Essentials, Testing, Rotating machinery, Vibration environments: each with every page its pages
-build on), then *How a page works* and the keys (the *About* box lists the keys too). The *Theory window* (Ctrl+F1) shows any page's Theory in a
+build on), then *How a page works* and the keys (the *About* box lists the keys too). Ctrl+= and Ctrl+− (or Ctrl and the mouse wheel) make the notes' text, equations and figures larger or smaller in every Theory tab and the Theory window, and Ctrl+0 puts them back; the size is remembered. The *Theory window* (Ctrl+F1) shows any page's Theory in a
 window of its own, with the pages and their sections listed, a *Glossary of symbols* at the top, and a search
 box (Ctrl+F) that finds a word or a symbol in every page's notes: it keeps its place as you move between pages,
 or follows them:

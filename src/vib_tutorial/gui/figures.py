@@ -67,11 +67,11 @@ def build(name: str) -> Callable[[], str] | None:
     return FIGURES.get(name)
 
 
-def render(svg_text: str) -> QtGui.QImage:
-    """The SVG as an image at SCALE times its size, marked so it shows at its own size."""
+def render(svg_text: str, zoom: float = 1.0) -> QtGui.QImage:
+    """The SVG as an image at SCALE times its size, marked so it shows at its own size (`zoom` times that)."""
     renderer = QtSvg.QSvgRenderer(QtCore.QByteArray(svg_text.encode()))
     size = renderer.defaultSize()
-    image = QtGui.QImage(size * SCALE, QtGui.QImage.Format.Format_ARGB32_Premultiplied)
+    image = QtGui.QImage(size * (SCALE * zoom), QtGui.QImage.Format.Format_ARGB32_Premultiplied)
     image.fill(QtCore.Qt.GlobalColor.transparent)
     painter = QtGui.QPainter(image)
     painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
