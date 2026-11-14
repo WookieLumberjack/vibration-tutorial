@@ -26,12 +26,6 @@ def _free_windows(app, free_windows):
     """Each test's windows torn down and freed after it (conftest's `free_windows`)."""
 
 
-def frame_timer(page):
-    """A page's frame timer: its `FrameLoop`'s (`gui/frame_loop.py`), or its own on a page not moved to one yet."""
-    loop = getattr(page, "loop", None)
-    return loop.timer if loop is not None else page._timer
-
-
 def test_window_interactions(app):
     from vib_tutorial.gui.main_window import MainWindow
 
@@ -644,7 +638,7 @@ def test_substructuring_time_response(app):
     page.tabs.setCurrentWidget(page.time)
     app.processEvents()
     tv = page.time
-    assert tv._timer.isActive()  # runs while the tab shows
+    assert tv.loop.timer.isActive()  # runs while the tab shows
 
     # A step at the tip: both models move, and 1 mode each leaves a reduction error.
     tv.button.click()
@@ -690,7 +684,7 @@ def test_substructuring_time_response(app):
     w.params.rows[1][2].setValue(0.0)
     assert tv.sim is None and "K_ii" in tv.header.text()
     w.pages.setCurrentWidget(w.sim_page)
-    assert not tv._timer.isActive()
+    assert not tv.loop.timer.isActive()
     w.set_theme("Light")
     w.close()
 
@@ -1594,7 +1588,7 @@ def test_substructuring_back_expansion(app):
     page.tabs.setCurrentWidget(page.recovery)
     app.processEvents()
     v = page.recovery
-    assert v._timer.isActive() and not page.time._timer.isActive()  # only the tab on show runs
+    assert v.loop.timer.isActive() and not page.time.loop.timer.isActive()  # only the tab on show runs
     assert [v.mass_box.itemData(i) for i in range(v.mass_box.count())] == [0, 1, 3, 4]
     assert v.rec_view._recovered == {0, 1, 3, 4}
     assert "4 interior masses" in v.header.text()
@@ -1645,7 +1639,7 @@ def test_substructuring_back_expansion(app):
     w.params.rows[1][2].setValue(0.0)
     assert v.sim is None and "K_ii" in v.header.text()
     w.pages.setCurrentWidget(w.sim_page)
-    assert not v._timer.isActive()
+    assert not v.loop.timer.isActive()
     w.set_theme("Light")
     w.close()
 
@@ -1895,7 +1889,7 @@ def test_rotor_page(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     # The page opens with its analysis on its way from the worker; work it out here instead.
     assert p.campbell is None and "working them out" in p.crit_label.text()
     p._refresh_analysis()
@@ -2144,7 +2138,7 @@ def test_rotor_presets_speed_range_and_overhung_disc(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     # The defaults are the classic preset.
     assert p.preset.currentText() == "Classic Jeffcott rotor" and "1584 rpm" in p.preset_note.text()
 
@@ -2210,7 +2204,7 @@ def test_rotor_waterfall(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     p.running = False
     p.load_preset("Overhung rotor")
     p._refresh_analysis()
@@ -2265,7 +2259,7 @@ def test_rotor_shaft_mass(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     p.running = False
     p._refresh_analysis()
     assert not p.elements.isEnabled() and not p.campbell_plot.reference[0:1]
@@ -2313,7 +2307,7 @@ def test_rotor_asymmetric_shaft(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     p.running = False
     p.load_preset("Two-pole rotor (asymmetric shaft)")
     p._refresh_analysis()
@@ -2384,7 +2378,7 @@ def test_rotor_cracked_shaft(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     p.running = False
     p.load_preset("Cracked shaft (breathing crack)")
     p._refresh_analysis()
@@ -2453,7 +2447,7 @@ def test_rotor_hidden_tabs_draw_when_shown(app, monkeypatch):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     p.running = False
     drawn = []
     for cls, name in ((BearingPanel, "_draw_locus"), (BalancingPanel, "_draw_curves")):
@@ -2495,7 +2489,7 @@ def test_window_fits_a_1280_px_screen(app, request):
         w.pages.setCurrentIndex(i)  # builds each page
     w.method_combo.setCurrentIndex(list(Method).index(Method.STATE_SPACE))  # the complex plane beside the shapes
     p = w.rotor_page
-    p._timer.stop()
+    p.loop.timer.stop()
     p.balancing.mode.setCurrentIndex(2)  # two planes on the shaft: two probes, five steps
     p.orbits.set_midspan_shown(True)  # four orbits
     app.processEvents()
@@ -2513,7 +2507,7 @@ def test_every_theory_tab_fits_a_1280_px_window(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w._timer.stop()
+    w.loop.enabled = False
     w.resize(1280, 800)
     w.show()
     wide = []
@@ -2605,7 +2599,7 @@ def test_rotor_fluid_film_bearing(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     p.running = False
     panel = p.bearing_panel
     p.tabs.show_page(panel)
@@ -2650,7 +2644,7 @@ def test_rotor_on_oil_film_bearings(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     p.running = False
     panel = p.bearing_panel
     # The preset runs on the tab's bearing, each journal under its share of the weight.
@@ -2721,7 +2715,7 @@ def test_rotor_on_magnetic_bearings(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     p.running = False
     panel = p.magnet_panel
     assert panel.bearing() == MagneticBearing() and panel.system is None
@@ -2790,7 +2784,7 @@ def test_rotor_rub(app):
     w = MainWindow()
     p = w.rotor_page
     w.pages.setCurrentWidget(p)
-    p._timer.stop()
+    p.loop.timer.stop()
     panel = p.rub_panel
     assert p.sim.system.stator is None and not panel.clearance.isEnabled()
     # Ticking the ring puts it on the rotor (the user's own rotor), drawn round the disc.
@@ -2884,19 +2878,18 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
     monkeypatch.delenv(frame_stats.ENV, raising=False)
     w = MainWindow()
     assert w.frame_overlay is None and frame_stats.STATS is None
-    w._timer.stop()  # or its frames would count with the next window's
+    w.loop.enabled = False  # or its frames would count with the next window's
     w.close()
 
     log = tmp_path / "frames.csv"
     monkeypatch.setenv(frame_stats.ENV, str(log))
     w = MainWindow()
     try:
-        w._timer.stop()
+        w.loop.enabled = False  # the test runs the frames
         w.show()
         for _ in range(6):
             time.sleep(0.02)  # a frame's worth of time, so there's something new to draw
-            w._frame()
-            w._timer.stop()
+            w.loop._frame()
             for _ in range(2):  # the repaint the frame asked for (posted while the first pass runs)
                 app.processEvents()
         w.frame_overlay.refresh()
@@ -2997,9 +2990,9 @@ def test_rotor_plots_paint_once_per_frame(app):
     for name, c in counts.items():
         views[name].viewport().installEventFilter(c)
     frames = Paints()
-    page._timer.timeout.connect(lambda: setattr(frames, "n", frames.n + 1))
+    page.loop.timer.timeout.connect(lambda: setattr(frames, "n", frames.n + 1))
     run(1.5)
-    page._timer.stop()
+    page.loop.timer.stop()
     assert frames.n > 10
     for name in ("OrbitPlots", "TimePlots"):
         assert counts[name].n <= frames.n + 1, name
@@ -3008,11 +3001,11 @@ def test_rotor_plots_paint_once_per_frame(app):
 
 
 def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
-    """The rotor and substructuring pages start their next frame FRAME_MS after the last one began: a
+    """The pages' loops (`FrameLoop`) start their next frame FRAME_MS after the last one began: a
     frame's computing comes out of the wait, not on top of it (16 ms + its work held the rotor at 47 fps)."""
     import time
 
-    from vib_tutorial.gui import cms_time, continuum, frame_loop, rotor
+    from vib_tutorial.gui import frame_loop
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
@@ -3020,13 +3013,8 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
     w.pages.setCurrentWidget(w.cms_page)
     w.cms_page.tabs.setCurrentWidget(w.cms_page.time)
     app.processEvents()
-    for p, frame_ms in (
-        (w.cms_page.time, cms_time.FRAME_MS),
-        (w.rotor_page, rotor.FRAME_MS),
-        (w.duffing_page, frame_loop.FRAME_MS),
-        (w.torsional_page, frame_loop.FRAME_MS),
-        (w.continuum_page, continuum.FRAME_MS),
-    ):
+    frame_ms = frame_loop.FRAME_MS
+    for p in (w.cms_page.time, w.rotor_page, w.duffing_page, w.torsional_page, w.continuum_page):
         w.pages.setCurrentWidget(w.cms_page if p is w.cms_page.time else p)
         app.processEvents()
         if p is w.torsional_page:
@@ -3037,11 +3025,9 @@ def test_frame_timers_keep_the_frame_rate(app, monkeypatch):
         elif p is not w.cms_page.time:
             p.run_button.click()  # it waits at rest for Start
         monkeypatch.setattr(p, "step", lambda *_, **__: time.sleep(0.008))
-        loop = getattr(p, "loop", None)  # the pages on gui/frame_loop.py's FrameLoop
-        (loop._frame if loop else p._frame)()
-        timer = frame_timer(p)
-        assert timer.isActive()
-        assert timer.remainingTime() <= frame_ms - 7
+        p.loop._frame()
+        assert p.loop.timer.isActive()
+        assert p.loop.timer.remainingTime() <= frame_ms - 7
     w.close()
 
 
@@ -3306,12 +3292,12 @@ def test_duffing_page(app):
     p = w.duffing_page
     w.pages.setCurrentWidget(p)
     app.processEvents()
-    assert not p.running and not frame_timer(p).isActive() and p.run_button.text() == "Start"  # at rest until started
+    assert not p.running and not p.loop.timer.isActive() and p.run_button.text() == "Start"  # at rest until started
     p.run_button.click()
     assert (
-        p.running and frame_timer(p).isActive() and p.sim.drive.mode is Sweep.UP_DOWN and p.run_button.text() == "Pause"
+        p.running and p.loop.timer.isActive() and p.sim.drive.mode is Sweep.UP_DOWN and p.run_button.text() == "Pause"
     )
-    frame_timer(p).stop()
+    p.loop.timer.stop()
     assert p.preset.currentText() == "Hardening spring: the jump" and p.frame_context() == p.preset.currentText()
     assert "3.64 and 4.45 Hz" in p.readout.text()
     while p.sim.drive.mode is not Sweep.HOLD:
@@ -3365,7 +3351,7 @@ def test_mathieu_on_the_duffing_page(app):
     p = w.duffing_page
     w.pages.setCurrentWidget(p)
     app.processEvents()
-    frame_timer(p).stop()
+    p.loop.timer.stop()
     assert w.pages.tabText(w.pages.currentIndex()) == "Duffing && Mathieu"
 
     p.preset.setCurrentText("Parametric resonance, hardening")
@@ -3724,20 +3710,20 @@ def test_continuum_waves_tab(app):
     app.processEvents()
     assert p.run is None  # not built until the tab shows
     p.preset.setCurrentText("Waves: a pulse on 40 beads")
-    assert p.views.currentWidget() is p.waves_tab and p.run is not None and p._timer.isActive()
+    assert p.views.currentWidget() is p.waves_tab and p.run is not None and p.loop.timer.isActive()
     assert p.run.elements == 40 and p.run.waves.moving and p.play_button.text() == "Pause"
-    p._timer.stop()
+    p.loop.timer.stop()
     p.step(FRAMES_PER_TRANSIT)
     assert "t = 1.00 crossings (10 ms" in p.wave_status.text() and "keeps <b>100 %</b>" in p.wave_status.text()
     assert p.mesh_nodes.getData()[0].size == 41
     p.play_button.click()
-    assert not p.running and not p._timer.isActive() and p.play_button.text() == "Resume"
+    assert not p.running and not p.loop.timer.isActive() and p.play_button.text() == "Resume"
     p.restart_button.click()
-    assert p.run.t == 0.0 and not p._timer.isActive() and p.play_button.text() == "Start"
+    assert p.run.t == 0.0 and not p.loop.timer.isActive() and p.play_button.text() == "Start"
 
     p.preset.setCurrentText("Waves: a matched end")
     assert p.run.waves.dashpot == 1.0 and p.end_line.isVisible() and "reflects +0 of a wave" in p.wave_info.text()
-    p._timer.stop()
+    p.loop.timer.stop()
     p.step(2 * FRAMES_PER_TRANSIT)
     assert "keeps <b>17.3 %</b>" in p.wave_status.text()
     p.wave_scheme.setCurrentText("Consistent")
@@ -3758,7 +3744,7 @@ def test_continuum_waves_tab(app):
     assert p.run.waves.dashpot is None and not p.run.moving
 
     p.views.setCurrentWidget(p.errors_tab)
-    assert not p._timer.isActive()
+    assert not p.loop.timer.isActive()
     p.views.setCurrentWidget(p.waves_tab)
     w.set_theme("Dark")
     w.set_theme("Light")
@@ -4175,7 +4161,7 @@ def test_gyroscope_on_a_table(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w._timer.stop()
+    w.loop.enabled = False
     w.show()
     page = w.gyroscope_page
     w.pages.setCurrentWidget(page)
@@ -4228,7 +4214,7 @@ def test_single_undamped_mass_draws_its_frf(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w._timer.stop()
+    w.loop.enabled = False
     system = ChainSystem.uniform(1)
     system.damping[0] = 0.0
     w.params.set_system(system)
@@ -4354,7 +4340,7 @@ def test_frame_builder_by_hand(app, main_window):
     page.step(0.1)
     page.load_trial(0)
     w.pages.setCurrentWidget(w.sim_page)  # hidden, the page's frame loop stops: no frames for the next test's stats
-    assert not page._timer.isActive()
+    assert not page.loop.timer.isActive()
 
 
 def test_rotor_builder_by_hand(app, main_window):
@@ -4481,7 +4467,7 @@ def test_rotor_builder_by_hand(app, main_window):
     assert "δ" in page.stability_note.text()
     page.step(0.1)
     w.pages.setCurrentWidget(w.sim_page)  # hidden, the page's frame loop stops
-    assert not page._timer.isActive()
+    assert not page.loop.timer.isActive()
 
 
 def test_frame_builder_loads_and_formulations(app, main_window):
@@ -4532,7 +4518,7 @@ def test_frame_builder_loads_and_formulations(app, main_window):
     assert page.load.node == 0 and page.frame.zeta == 0.02
     page.load_trial(0)
     w.pages.setCurrentWidget(w.sim_page)
-    assert not page._timer.isActive()
+    assert not page.loop.timer.isActive()
 
 
 def test_test_planning_controls(app, main_window):
@@ -4689,7 +4675,7 @@ def test_responses_wait_for_start_and_trials_start_them(app):
     ):
         w.pages.setCurrentWidget(page)
         app.processEvents()
-        assert not page.running and not frame_timer(page).isActive(), page
+        assert not page.running and not page.loop.timer.isActive(), page
         assert getattr(page, button).text() == "Start", page
     p = w.continuum_page
     w.pages.setCurrentWidget(p)
@@ -4700,7 +4686,7 @@ def test_responses_wait_for_start_and_trials_start_them(app):
     p = w.gyroscope_page
     w.pages.setCurrentWidget(p)
     p.load_trial(0)
-    assert p.running and p._timer.isActive() and p.pause_button.text() == "Pause"
+    assert p.running and p.loop.timer.isActive() and p.pause_button.text() == "Pause"
     p.reset()
     assert not p.running and p.sim.t == 0.0 and p.pause_button.text() == "Start"
 
@@ -4711,7 +4697,7 @@ def test_responses_wait_for_start_and_trials_start_them(app):
     p.show_box.setCurrentIndex(deriving.SHOW_MOTION)
     assert not p.running and p.run_button.text() == "Start" and p._time == 0.0
     p.load_trial(next(i for i, t in enumerate(deriving.TRIALS) if t.show == deriving.SHOW_MOTION))
-    assert p.running and p._timer.isActive()
+    assert p.running and p.loop.timer.isActive()
 
     p = w.mounts_page
     w.pages.setCurrentWidget(p)
@@ -4721,7 +4707,7 @@ def test_responses_wait_for_start_and_trials_start_them(app):
     assert not p.running and p.run_button.text() == "Start"
     assert np.allclose(p.view.motion, 0.0)  # at rest until started
     p.load_trial(next(i for i, t in enumerate(rigid_mounts.TRIALS) if t.mode == rigid_mounts.FORCED))
-    assert p.running and p._timer.isActive()
+    assert p.running and p.loop.timer.isActive()
 
     p = w.frame_page
     w.pages.setCurrentWidget(p)
@@ -4730,7 +4716,7 @@ def test_responses_wait_for_start_and_trials_start_them(app):
     p.swing.setCurrentIndex(frame_builder.SWINGS.index(frame_builder.Swing.RESPONSE))
     assert not p.running and p.run_button.text() == "Start" and p._played == 0.0
     p.load_trial(next(i for i, t in enumerate(frame_builder.TRIALS) if t.swing is frame_builder.Swing.RESPONSE))
-    assert p.running and p._timer.isActive()
+    assert p.running and p.loop.timer.isActive()
     w.close()
 
 

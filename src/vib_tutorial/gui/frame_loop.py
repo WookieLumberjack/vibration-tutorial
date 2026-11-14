@@ -67,6 +67,7 @@ class FrameLoop(QtCore.QObject):
         self._restart = _weak(restart)
         self._clock = QtCore.QElapsedTimer()
         self._last = 0.0
+        self.enabled = True  # False keeps it still, shown or not (a test that drives the frames itself)
         self.timer = QtCore.QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self._frame)
@@ -78,7 +79,7 @@ class FrameLoop(QtCore.QObject):
 
     def _should_run(self) -> bool:
         page = self._page()
-        return page is not None and page.isVisible() and bool(self._call(self._runs))
+        return self.enabled and page is not None and page.isVisible() and bool(self._call(self._runs))
 
     def start(self) -> None:
         """Run, if the page shows and wants to (`runs`) and the loop isn't already: the next frame in FRAME_MS."""

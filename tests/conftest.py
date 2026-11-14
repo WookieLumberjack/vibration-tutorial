@@ -27,7 +27,7 @@ WARN_SHARE = 0.8  # warn when a worker's peak address space passes this share of
 
 @pytest.fixture
 def main_window(request):
-    """A main window, shown, its frame timer stopped, for the tests that only build, read or set up pages: each
+    """A main window, shown, its frame loop held still (`loop.enabled`), for the tests that only build, read or set up pages: each
     page is built as the test asks for it. Freed after the test, as every GUI test's windows are (`free_windows`)."""
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     from PySide6 import QtWidgets
@@ -36,7 +36,7 @@ def main_window(request):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w._timer.stop()
+    w.loop.enabled = False
     w.show()
     yield w
     w.close()

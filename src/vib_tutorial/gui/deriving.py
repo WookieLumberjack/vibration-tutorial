@@ -38,7 +38,7 @@ from ..core.double_pendulum import modes as pendulum_modes
 from ..core.double_pendulum import sweep as pendulum_sweep
 from ..core.pendulum import measured_period
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
-from . import deriving_figures, frame_stats, settle_plots
+from . import deriving_figures, settle_plots
 from . import deriving_pendulum as dp
 from .deriving_text import (
     CAR,
@@ -59,6 +59,7 @@ from .deriving_text import (
     matrices_html,
     num,
 )
+from .frame_loop import FrameLoop
 from .lesson import (
     Dot,
     Form,
@@ -93,7 +94,6 @@ SWING_S = 20.0  # s of the pendulum's swing
 CHAOS_S = 15.0  # s the twins are followed
 TRAIL_S = 2.0  # s of the lower bob's trail
 RATIOS = np.geomspace(0.25, 4.0, 161)  # the Modes tab's rear springs, × the front's
-FRAME_MS = 16
 SHOW_HZ = 0.6  # the modes swing at this pace, whatever their frequency
 SWING = 0.25  # m: a mode's larger end swings this far, drawn
 RIDE_SCALE = 3.0  # the ride's road and motion drawn this many times their size
@@ -947,7 +947,7 @@ class DerivingPage(QtWidgets.QWidget):
         )
         self.system.currentIndexChanged.connect(self._on_system)
         self.show_box.currentIndexChanged.connect(self._on_show)
-        self.run_button.toggled.connect(self._start_timer)
+        self.run_button.toggled.connect(self._on_run)
         self.reset_button.clicked.connect(self.reset)
 
         # --- centre
@@ -1066,11 +1066,7 @@ class DerivingPage(QtWidgets.QWidget):
 
         self._phase = math.pi / 2  # a mode starts at its full swing
         self._time = 0.0
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Deriving the equations", self._tick, self._runs, self._sim_t)
         self.ride: Ride | None = None
         self.swing: Swing | None = None
         self.twins: Divergence | None = None
@@ -1457,38 +1453,23 @@ class DerivingPage(QtWidgets.QWidget):
         """From t = 0 (a mode at its full swing), running or not as it was: a control neither starts nor stops it."""
         self._time, self._phase = 0.0, math.pi / 2
         self._draw_system()
-        self._start_timer()
-
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
-
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
+        self.loop.start()
 
     @property
     def running(self) -> bool:
         return self.run_button.running
 
-    def _start_timer(self) -> None:
-        if self.isVisible() and self.running and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._timer.start(FRAME_MS)
+    def _on_run(self, _on: bool) -> None:
+        self.loop.start()
 
-    def _frame(self) -> None:
-        if not self.running:  # paused or reset since this frame was queued
-            return
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
-        with frame_stats.frame("Deriving the equations", lambda: self._time, FRAME_MS):
-            self.step(dt)
-            settle_plots(self)
-        if self.isVisible() and self.running:  # the next frame FRAME_MS after this one began, not after it ended
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _runs(self) -> bool:
+        return self.running
+
+    def _sim_t(self) -> float:
+        return self._time
+
+    def _tick(self, dt: float) -> None:
+        self.step(dt)
 
     def frame_context(self) -> str:
         return f"{SYSTEMS[self.system.currentIndex()]}: {self.show_box.currentText()}"

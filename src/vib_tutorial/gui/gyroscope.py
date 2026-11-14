@@ -39,8 +39,9 @@ from ..core.gyroscope import (
 )
 from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
 from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator
-from . import frame_stats, gyroscope_figures, settle_plots
+from . import gyroscope_figures
 from .cms_time import SampleBuffer
+from .frame_loop import FrameLoop
 from .lesson import (
     Dot,
     Form,
@@ -67,7 +68,6 @@ from .style import colors
 from .theming import add_legend
 
 TAB_POTENTIAL, TAB_PRECESSION, TAB_PATH, TAB_CHECK, TAB_CHAOS = range(5)
-FRAME_MS = 16
 PLAYBACK = (0.02, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0)
 REAL_TIME = PLAYBACK.index(1.0)
 NODS = 6  # nutation periods the tilt plot spans
@@ -1371,11 +1371,7 @@ class GyroscopePage(QtWidgets.QWidget):
             self.tabs,
         )
 
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Gyroscope", self._tick, self._runs, self._sim_t)
         self.tabs.setCurrentIndex(TAB_PATH)
         self._on_inputs()
         self.apply_theme()
@@ -1583,7 +1579,7 @@ class GyroscopePage(QtWidgets.QWidget):
             self._draw_tab()
             self._draw_now()
             self._update_buttons()
-            self._start_timer()
+            self.loop.start()
             return
         m = self.motion
         self.sim = TopSimulator(m)
@@ -1604,7 +1600,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self._draw_tab()
         self._draw_now()
         self._update_buttons()
-        self._start_timer()
+        self.loop.start()
 
     def _on_vectors(self, on: bool) -> None:
         self.view.show_vectors = on
@@ -1612,7 +1608,7 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _on_pause(self, on: bool) -> None:
         self.running = on
-        self._start_timer()
+        self.loop.start()
 
     def _update_buttons(self) -> None:
         self.pause_button.set_running(self.running)
@@ -1624,32 +1620,15 @@ class GyroscopePage(QtWidgets.QWidget):
         self.restart()
 
     # ------------------------------------------------------------- the loop
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
+    def _runs(self) -> bool:
+        return self.running
 
-    def _start_timer(self) -> None:
-        if self.isVisible() and self.running and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._timer.start(FRAME_MS)
+    def _sim_t(self) -> float:
+        return self.sim.t
 
-    def _frame(self) -> None:
-        if not self.running:  # paused or reset since this frame was queued
-            return
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
-        with frame_stats.frame("Gyroscope", lambda: self.sim.t, FRAME_MS):
-            self.step(dt * PLAYBACK[self.playback.currentIndex()])
-            settle_plots(self)
-        if self.isVisible() and self.running:  # the next frame FRAME_MS after this one began, not after it ended
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+    def _tick(self, dt: float) -> None:
+        self.step(dt * PLAYBACK[self.playback.currentIndex()])
 
     def frame_context(self) -> str:
         launch = self.launch.currentText() if self.round is None else self.setting.currentText()

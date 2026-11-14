@@ -53,8 +53,9 @@ from ..core.rotor_sweep import (
     probe,
 )
 from ..core.rotor_waterfall import Waterfall
-from . import frame_stats, rotor_practice, settle_plots, weak
+from . import rotor_practice, weak
 from .cms_time import SampleBuffer
+from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
 from .lesson import RunButton
 from .maths import markup
@@ -98,7 +99,6 @@ from .style import colors
 from .tab_groups import TabGroups
 from .theming import mute
 
-FRAME_MS = 16
 SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0)  # simulation speed, × real time
 TOP_RPM = 10_000.0  # the default speed range
 MAX_TOP_RPM = 60_000.0  # the widest it can be set to
@@ -398,14 +398,9 @@ class RotorPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         # --- loop
-        self._clock = QtCore.QElapsedTimer()
-        self._last = 0.0
         self._cost = 1e-9  # s of computing per simulated s (see step)
         self._target_t = 0.0
-        self._timer = QtCore.QTimer(self)
-        self._timer.setSingleShot(True)
-        self._timer.setInterval(FRAME_MS)
-        self._timer.timeout.connect(self._frame)
+        self.loop = FrameLoop(self, "Jeffcott rotor", self._tick, self._runs, self._sim_t, self._catch_up)
         # Parameter edits are applied at once; the Campbell diagram and the steady states are worked out
         # once they settle, on a worker thread (seconds, for a turning shaft), and shown when they're done.
         self._analysis_timer = QtCore.QTimer(self)
@@ -1433,7 +1428,7 @@ class RotorPage(QtWidgets.QWidget):
         self.running = on
         if self.running:
             self.rubbed = False
-            self._start_timer()
+            self.loop.start()
 
     def _run(self, on: bool) -> None:
         self.run_button.set_running(on)
@@ -1481,7 +1476,7 @@ class RotorPage(QtWidgets.QWidget):
         self.measurement = SteadyMeasurement(self.sim, omega)
         self._measured = measured
         self._sync_target()
-        self._start_timer()
+        self.loop.start()
 
     def cancel_measurement(self) -> None:
         if self.measurement is None:
@@ -1541,7 +1536,7 @@ class RotorPage(QtWidgets.QWidget):
             self.tabs.show_page(self.bode.parentWidget())
         self._fit_tracking_range()
         self._update_sweep_status()
-        self._start_timer()
+        self.loop.start()
 
     def stop_sweep(self, hold_speed: bool = True) -> None:
         """Stop the sweep running (its legs so far stay on the plots), holding the speed it got to."""
@@ -1726,34 +1721,20 @@ class RotorPage(QtWidgets.QWidget):
         )
 
     # ------------------------------------------------------------- loop
-    def showEvent(self, event) -> None:
-        super().showEvent(event)
-        self._start_timer()
 
-    def hideEvent(self, event) -> None:
-        super().hideEvent(event)
-        self._timer.stop()
+    def _runs(self) -> bool:
+        return self.running
 
-    def _start_timer(self) -> None:
-        if self.isVisible() and self.running and not self._timer.isActive():
-            self._clock.restart()
-            self._last = 0.0
-            self._target_t = self.sim.t
-            self._timer.start(FRAME_MS)
+    def _sim_t(self) -> float:
+        return self.sim.t
 
-    def _frame(self) -> None:
-        if not self.running:  # paused or reset since this frame was queued
-            return
-        began = self._clock.elapsed()
-        now = began / 1000.0
-        dt = min(now - self._last, 0.1)
-        self._last = now
+    def _catch_up(self) -> None:
+        """As the loop starts or resumes: play on from where the simulation is."""
+        self._target_t = self.sim.t
+
+    def _tick(self, dt: float) -> None:
         speed = float(self.sim_speed.currentData())
-        with frame_stats.frame("Jeffcott rotor", lambda: self.sim.t, FRAME_MS):
-            self.step(dt * (max(speed, MEASURE_SPEED) if self.measurement is not None else speed), FRAME_BUDGET)
-            settle_plots(self)
-        if self.isVisible() and self.running:  # the next frame FRAME_MS after this one began, not after it ended
-            self._timer.start(max(1, FRAME_MS - (self._clock.elapsed() - began)))
+        self.step(dt * (max(speed, MEASURE_SPEED) if self.measurement is not None else speed), FRAME_BUDGET)
 
     def step(self, duration: float, budget: float | None = None) -> None:
         """Advance by `duration` s of simulated time and redraw.
