@@ -6,7 +6,7 @@ modes (`setup_check`, the page's Setup tab).
 A change that needs new data (the excitation, where the force is, the sensor, the block, the sample rate, the
 force level...) says `remeasure`; one that only processes the same data again (the window, the estimator, the
 noise) says `reprocess`; the number of averages says `averages_changed`, since the record carries on. A
-trial's settings are set by `apply` without any of them.
+trial's settings are set by the page's `apply_trial`, its signals held, without any of them.
 
 Working on it: `test_gui_smoke.py`'s modal test tests set the controls through `page.test_setup`.
 """
