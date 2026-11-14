@@ -121,6 +121,21 @@ def _startup(preset: str, speed: float = 1.0):
     return setup
 
 
+def _gyroscope(tab: str):
+    def setup(w):
+        from vib_tutorial.gui import gyroscope
+
+        page = w.gyroscope_page
+        w.pages.setCurrentWidget(page)
+        page.trials.combo.pick(gyroscope.TRIALS[0].name)  # starts it
+        page.tabs.setCurrentIndex(getattr(gyroscope, tab))  # a TAB_ name
+        if not page.running:
+            page.pause_button.click()
+        return page, gyroscope.PLAYBACK[page.playback.currentIndex()]
+
+    return setup
+
+
 SCENARIOS = (
     Scenario("Simulation: 4 masses, resonance building up", "baseline: the first trial", _sim_trial),
     Scenario("Simulation: 8 masses at 1e8 N/m, 50 Hz", "#202 linear steps in Rust, #203 strip chart", _stiff(0.0)),
@@ -150,6 +165,10 @@ SCENARIOS = (
         "FOH + Newton stepper (#130, low priority)",
         _startup("Geared compressor"),
         seconds=2.5,
+    ),
+    Scenario("Gyroscope: the first trial, Potential tab", "baseline for the Check tab", _gyroscope("TAB_POTENTIAL")),
+    Scenario(
+        "Gyroscope: the first trial, Check tab", "the Check plot, reported slow on the Mac", _gyroscope("TAB_CHECK")
     ),
 )
 

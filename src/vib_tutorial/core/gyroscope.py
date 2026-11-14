@@ -366,6 +366,7 @@ class TopSimulator:
         least = min(self.i1, top.second)
         rate = max(math.sqrt(sum(v * v for v in self.L)) / least, math.sqrt(abs(self.w) / least), 1e-3)
         self.h = min(2.0 * math.pi / rate / per_period, MAX_STEP)
+        self._owed = 0.0  # s asked for but not yet stepped: less than a step, carried to the next advance
 
     def axis(self) -> tuple[float, float, float]:
         w, x, y, z = self.q
@@ -384,9 +385,17 @@ class TopSimulator:
             + self.w * ez
         )
 
+    def _steps(self, duration: float) -> int:
+        """The whole steps `duration` makes with what's owed: a slow playback's frame is often under half a step,
+        which rounding each call on its own lost every time (the top stood still at 0.02×)."""
+        owed = self._owed + duration
+        n = min(int(owed / self.h + 1e-9), MAX_STEPS_PER_ADVANCE)  # a whole number of steps asked for stays whole
+        self._owed = owed - n * self.h if n < MAX_STEPS_PER_ADVANCE else 0.0
+        return n
+
     def advance(self, duration: float) -> TopSamples:
-        """Step on by `duration` (to the nearest whole step, at most MAX_STEPS_PER_ADVANCE)."""
-        n = min(round(duration / self.h), MAX_STEPS_PER_ADVANCE)
+        """Step on by `duration` (whole steps, the part of one left over carried to the next call; at most MAX_STEPS_PER_ADVANCE)."""
+        n = self._steps(duration)
         out = np.empty((n, 11))
         h, i1, i3, wgt, skew = self.h, self.i1, self.i3, self.w, self.skew
         kick = 0.5 * h * wgt

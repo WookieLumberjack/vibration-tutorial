@@ -1698,8 +1698,10 @@ class GyroscopePage(QtWidgets.QWidget):
         self.path_item.setPen(pg.mkPen(c.mass[1], width=1.5))
         self.path_now.setBrush(pg.mkBrush(c.strong))
         self.path_now.setPen(pg.mkPen(None))
-        self.energy_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.momentum_item.setPen(pg.mkPen(c.grey, width=1.5))
+        # 1 px: the errors zigzag at every step, and Qt strokes a wider antialiased zigzag ~100x slower (the Check
+        # tab painted in 140 ms a frame at 2 px and 1.5 px, 1.5 ms at 1 px).
+        self.energy_item.setPen(pg.mkPen(c.mass[0], width=1))
+        self.momentum_item.setPen(pg.mkPen(c.grey, width=1))
         mark(self.section_item, c.mass[0], filled=True)
         self.apart_item.setPen(pg.mkPen(c.mass[1], width=1.5))
         self._draw_tab()

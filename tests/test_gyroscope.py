@@ -310,3 +310,15 @@ def test_asymmetric_trials():
         return s.t[np.flatnonzero(apart > limit)[0]]
 
     assert (first(1e-6), first(1e-2), first(1.0)) == pytest.approx((1.1, 3.0, 5.0), abs=0.05)
+
+
+def test_a_slow_playback_still_moves_the_top():
+    """A frame at 0.02× asks for a fraction of a step: carried over, not rounded away (the top stood still)."""
+    sim = TopSimulator(Motion(Top(0.5, 0.1, 0.03, shape=Shape.SQUARE), 60 * RPM, math.radians(30)))
+    frame = 0.02 / 60
+    assert frame < 0.5 * sim.h, "a frame is under half a step"
+    steps = sum(sim.advance(frame).t.size for _ in range(600))
+    assert steps == int(600 * frame / sim.h + 1e-9) and sim.t == pytest.approx(600 * frame, abs=sim.h)
+    for _ in range(60):
+        sim.advance(1 / 60)
+    assert sim.t == pytest.approx(600 * frame + 1.0, abs=sim.h), "1×: one simulated second a second, not more"

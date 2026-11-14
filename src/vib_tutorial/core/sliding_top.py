@@ -342,6 +342,7 @@ class SlidingSimulator:
         turning = max(abs(spin), abs(spin) * top.polar / top.central, 1.0)
         self.h = min(2 * math.pi / turning / per_period, FRICTION_STEP / max(top.contact_rate(), 1e-9), MAX_STEP)
         self.stride = max(1, round(RECORD_DT / self.h))
+        self._owed = 0.0  # s asked for but not yet stepped: less than a step, carried to the next advance
         self._count = 0
         self._rim = top.rim_tilt()
 
@@ -350,10 +351,18 @@ class SlidingSimulator:
         _, N, Fx, Fy = self._rates(self.state)
         return SlideSamples.of(np.array([_row(self.top, self.t, self.state, N, Fx, Fy)]))
 
+    def _steps(self, duration: float) -> int:
+        """The whole steps `duration` makes with what's owed: a slow playback's frame is often under half a step,
+        which rounding each call on its own lost every time (the top stood still at 0.02×)."""
+        owed = self._owed + duration
+        n = min(int(owed / self.h + 1e-9), MAX_STEPS_PER_ADVANCE)  # a whole number of steps asked for stays whole
+        self._owed = owed - n * self.h if n < MAX_STEPS_PER_ADVANCE else 0.0
+        return n
+
     def advance(self, duration: float) -> SlideSamples:
-        """Step on by `duration` (to the nearest whole step, at most MAX_STEPS_PER_ADVANCE), keeping every
+        """Step on by `duration` (whole steps, the part of one left over carried to the next call; at most MAX_STEPS_PER_ADVANCE), keeping every
         `stride`-th step; stops at an `Event`."""
-        n = min(round(duration / self.h), MAX_STEPS_PER_ADVANCE)
+        n = self._steps(duration)
         rows: list[list[float]] = []
         if self.event is not None:
             return SlideSamples.of(np.zeros((0, COLUMNS)))
