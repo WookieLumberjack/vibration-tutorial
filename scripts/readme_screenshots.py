@@ -12,7 +12,9 @@ that the captions' numbers still match the images.
 It runs offscreen with a temporary settings folder, so it neither opens a
 window nor touches the user's saved theme or playback speed. It drives the
 widgets directly (some private attributes too, such as MainWindow._tick), so a
-UI refactor may need a matching change here.
+UI refactor may need a matching change here: tests/test_scripts.py runs every shot
+(without the waits or the PNGs) to catch it. Pick a trial by name with `trial.pick`:
+the combo's items are numbered, so `setCurrentText` matches none and loads nothing.
 """
 
 import math
@@ -401,7 +403,7 @@ def oma_ssi():
     p = w.oma_page
     w.pages.setCurrentWidget(p)
     settle()
-    p.trial.setCurrentText("A machine near a mode")
+    p.trial.pick("A machine near a mode")
     p.recompute()
     p.method.setCurrentText("SSI-cov")
     p.tabs.setCurrentWidget(p.stab_plot)
@@ -835,7 +837,7 @@ def random_vibration():
     w = window()
     page = w.random_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("Base shake")
+    page.trial.pick("Base shake")
     page.recompute()
     settle()
     print(page.readout.text())
@@ -847,7 +849,7 @@ def random_statistics():
     w = window()
     page = w.random_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("The base spring's force")
+    page.trial.pick("The base spring's force")
     page.tabs.setCurrentWidget(page.stats_tab)
     page.recompute()
     settle()
@@ -859,7 +861,7 @@ def complex_modes():
     w = window()
     page = w.complex_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("One damper, at the base")
+    page.trial.pick("One damper, at the base")
     page.mode.setCurrentIndex(2)
     page.tabs.setCurrentWidget(page.decay_tab)
     settle()
@@ -872,7 +874,7 @@ def complex_sweep():
     w = window()
     page = w.complex_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("One damper, at the base")
+    page.trial.pick("One damper, at the base")
     page.tabs.setCurrentWidget(page.sweep_tab)
     settle()
     print(page.sweep_note.text())
@@ -888,7 +890,7 @@ def model_updating():
     w = window()
     page = w.updating_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("One spring 30 % too stiff")
+    page.trial.pick("One spring 30 % too stiff")
     page.recompute()
     settle()
     print(page.readout.text())
@@ -900,7 +902,7 @@ def model_updating_springs():
     w = window()
     page = w.updating_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("Update: find the stiff spring")
+    page.trial.pick("Update: find the stiff spring")
     page.recompute()
     page.tabs.setCurrentWidget(page.update_tab)
     settle()
@@ -942,7 +944,7 @@ def shock_spectrum():
     w = window()
     page = w.shock_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("Half-sine")
+    page.trial.pick("Half-sine")
     page.split_time.setChecked(True)
     page.recompute()
     settle()
@@ -955,7 +957,7 @@ def shock_chain():
     w = window()
     page = w.shock_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("Modes combined")
+    page.trial.pick("Modes combined")
     page.recompute()
     settle()
     print(page.chain_note.text())
@@ -966,7 +968,7 @@ def shock_synthesis():
     w = window()
     page = w.shock_page
     w.pages.setCurrentWidget(page)
-    page.trial.setCurrentText("Wavelets to a spectrum")
+    page.trial.pick("Wavelets to a spectrum")
     page.recompute()
     page.tabs.setCurrentWidget(page.tri_tab)
     settle()

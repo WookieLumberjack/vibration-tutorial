@@ -437,7 +437,7 @@ The rub's heat bows the shaft toward where it rubs. Below the critical speed tha
 spot further into the rub, and the *Newkirk effect* preset's 1X vector spirals out, turning against
 the spin; above the critical the bow pulls the high spot away, and the same rub heals.
 
-![Bode plot of the disc's 1X response, run up and coasted down between 800 and 2400 rpm at 500 and 5000 rpm/s over the steady-state curve: the steady peak is 217 µm at 1590 rpm; the 500 rpm/s run-up reaches 95% of it at 1672 rpm, the 5000 rpm/s run-up 62% at 1947 rpm, and the coast-downs peak lower and below the critical speed](images/jeffcott_run_up.png)
+![Bode plot of the disc's 1X response, run up and coasted down between 800 and 2400 rpm at 500 and 5000 rpm/s over the steady-state curve: the steady peak is 217 µm at 1590 rpm; the 500 rpm/s run-up reaches 95% of it at 1672 rpm, the 5000 rpm/s run-up 62% at 1957 rpm, and the coast-downs peak lower and below the critical speed](images/jeffcott_run_up.png)
 
 ![Cascade of the overhung rotor's disc orbit, run up from rest to 2500 rpm at 200 rpm/s with the disc tapped every 0.5 s: 49 full spectra on a log scale. The taps' peaks follow the first mode's backward whirl down from −14.5 to −5.7 Hz and its forward whirl up to 25.5 Hz, and the 1X ridge peaks at 209 µm at 1350 rpm, just past the forward critical](images/jeffcott_waterfall.png)
 
@@ -458,7 +458,7 @@ rpm, about what adding 17/35 of its mass to the disc predicts. But a shaft also 
 mass the second critical comes down from above as elements are added (7393, 6591 and 6582 rpm
 with 2, 4 and 8); lumped mass has no such bound (8187, 6733 and 6620).
 
-![Two-pole rotor preset (a horizontal shaft 15% stiffer about one axis and 15% softer across it) run up and coasted down between 500 and 1200 rpm at 200 rpm/s, with the Bode plot tracking the disc orbit's 2X: the steady-state 2X peak is 447 µm at 784 rpm, half the critical speeds of 1491 and 1665 rpm, and the sweeps reach 93% and 94% of it](images/jeffcott_asymmetric.png)
+![Two-pole rotor preset (a horizontal shaft 15% stiffer about one axis and 15% softer across it) run up and coasted down between 500 and 1200 rpm at 200 rpm/s, with the Bode plot tracking the disc orbit's 2X: the steady-state 2X peak is 447 µm at 785 rpm, half the critical speeds of 1491 and 1665 rpm, and the sweeps reach 93% and 94% of it](images/jeffcott_asymmetric.png)
 
 A two-pole generator's rotor is stiffer bending one way than the other, so its stiffness turns
 with it. Laid horizontal, its own weight acts on a stiffness that changes twice per revolution
