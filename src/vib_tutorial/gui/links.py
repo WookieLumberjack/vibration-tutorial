@@ -58,6 +58,10 @@ KEYS = (
     ("Ctrl+1 … Ctrl+6", "a group of pages, at the page it last showed"),
     ("Ctrl+F", "search the notes, in the Theory window"),
     ("Alt+← / Alt+→", "back and forward in the Theory window"),
+    (
+        "Ctrl+= or Ctrl++ / Ctrl+- / Ctrl+0 / Ctrl+wheel",
+        "larger, smaller or the usual text in the notes",
+    ),
     ("Ctrl+Z / Ctrl+Shift+Z", "undo and redo, in the Frame and Rotor builders"),
 )
 MAC_KEYS = (("Ctrl+", "⌘"), ("Alt+← / Alt+→", "⌘[ / ⌘]"))

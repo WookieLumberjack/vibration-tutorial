@@ -22,7 +22,7 @@ from dataclasses import dataclass
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from . import links, weak
+from . import links, notes_view, weak
 from .notes_view import NotesBrowser
 from .theming import settings
 
@@ -238,6 +238,7 @@ class TheoryWindow(QtWidgets.QWidget):
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Back), self, self.back)
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Find), self, self.search_box.setFocus)
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Forward), self, self.forward)
+        notes_view.add_zoom_keys(self)
         self._update_buttons()
 
     # --------------------------------------------------------------- navigation
