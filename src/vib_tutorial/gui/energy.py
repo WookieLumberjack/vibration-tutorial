@@ -220,6 +220,7 @@ class EnergyPanel(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.view = QtWidgets.QComboBox()
+        self.view.setAccessibleName("Energy view")
         self.view.addItem("Energy: stored and balance", False)
         self.view.addItem("Energy: by mode", True)
         self.view.currentIndexChanged.connect(self._on_view)

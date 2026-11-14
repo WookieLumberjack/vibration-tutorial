@@ -422,6 +422,7 @@ class PeriodicPage(QtWidgets.QWidget):
         self.harmonics = force.number("Harmonics kept:", 1, MOST, 5, 0, "", TIPS["harmonics"])
         tune_row = QtWidgets.QHBoxLayout()
         self.tune_k = QtWidgets.QSpinBox()
+        self.tune_k.setAccessibleName("Tune to harmonic")
         self.tune_k.setRange(1, 20)
         self.tune_k.setValue(3)
         self.tune_k.setToolTip(TIPS["tune"])

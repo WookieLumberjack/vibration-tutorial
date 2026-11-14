@@ -472,6 +472,7 @@ class TransientPage(QtWidgets.QWidget):
         conv = Form("Convolution")
         self.at = conv.number("At t =", 0.0, 1e4, 0.3, 4, " s", TIPS["at"])
         self.slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.slider.setAccessibleName("At t")
         self.slider.setRange(0, SLIDER_STEPS)
         self.slider.setToolTip(TIPS["at"])
         conv.row(self.slider)

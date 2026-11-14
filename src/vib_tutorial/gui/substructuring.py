@@ -1251,6 +1251,7 @@ class SubstructuringPage(QtWidgets.QWidget):
             row.addWidget(spin)
             row.addWidget(info, 1)
             label = QtWidgets.QLabel()
+            label.setBuddy(spin)  # its name for a screen reader (the field is the row)
             self.kept_form.addRow(label, row)
             self.kept.append(spin)
             self.kept_info.append(info)

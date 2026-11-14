@@ -12,7 +12,7 @@ from collections.abc import Callable, Sequence
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from . import weak
+from . import accessible, weak
 from .axes import log_axes
 from .layouts import form_layout, plot_height
 from .maths import markup
@@ -110,6 +110,7 @@ class TrialCombo(QtWidgets.QComboBox):
         if tip:
             self.setToolTip(tip)
         self.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.setAccessibleName("Things to try")
         self._changed = False
         self.currentIndexChanged.connect(self._on_change)
         self.activated.connect(self._on_activated)
@@ -226,6 +227,7 @@ class Form(QtWidgets.QGroupBox):
             text.setToolTip(tip)
             widget.setToolTip(tip)
         self.form.addRow(text, widget)
+        accessible.name_field(text, widget)
 
     def label(self, widget: QtWidgets.QWidget) -> QtWidgets.QLabel:
         """The label `add` gave `widget`."""

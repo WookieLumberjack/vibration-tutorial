@@ -660,6 +660,8 @@ class MainWindow(QtWidgets.QMainWindow):
         cl.addWidget(self.theme_combo)
         cl.addWidget(size_label)
         cl.addWidget(self.size_combo)
+        theme_label.setBuddy(self.theme_combo)  # their names for a screen reader
+        size_label.setBuddy(self.size_combo)
         self.pages.setCornerWidget(corner, QtCore.Qt.Corner.TopRightCorner)
         self.setCentralWidget(self.pages)
         self.resize(1700, 900)
