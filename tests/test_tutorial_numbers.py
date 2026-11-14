@@ -3432,3 +3432,55 @@ def test_rotor_equations_of_motion():
         chi = vm[: s.n_dof, j]
         D = lm[j] ** 2 * M + lm[j] * (C + w * G) + K + w * H
         assert np.linalg.norm(chi @ D) <= 1e-9 * np.linalg.norm(D) * np.linalg.norm(chi)
+
+
+def test_rotor_worked_example():
+    """Jeffcott rotor's worked example on the defaults, and the squeeze-film and rolling-bearing figures."""
+    from vib_tutorial.core.rotor import XD, RotorSystem
+    from vib_tutorial.core.rotor_modes import campbell, synchronous_response, whirl_modes
+
+    s = RotorSystem()
+    rpm = 60 / (2 * math.pi)
+    ei = s.youngs * math.pi * s.diameter**4 / 64
+    ks = 48 * ei / s.length**3
+    assert round(ei, 2) == 98.17 and round(ks) == 37699 == round(s.disc_stiffness)
+    kb = s.bearing_a.kx
+    keq = 1 / (1 / ks + 1 / (2 * kb))
+    wc = math.sqrt(keq / s.disc_mass)
+    assert (kb, round(keq), round(wc, 2), round(wc * rpm)) == (50000.0, 27378, 165.46, 1580)
+    crit = campbell(s, 3000 / rpm, n_speeds=121, n_modes=4).criticals
+    assert {round(w * rpm) for w, _, _ in crit} == {1584}
+    m = whirl_modes(s, 0.0)
+    assert [round(f, 2) for f in m.freq_hz[:2]] == [26.40, 26.40] and round(m.zeta[0], 4) == 0.0464
+    zeta = 0.0464
+    assert round(2 * math.pi * zeta / math.sqrt(1 - zeta**2), 3) == 0.292
+    e = 20.0  # µm
+    assert s.unbalance == pytest.approx(e * 1e-6)
+    assert round(s.disc_mass * s.unbalance * (3000 / rpm) ** 2, 2) == 1.97
+    for speed, r, amp, lag, page_amp, page_lag in (
+        (3000, 1.894, 27.7, 176.1, 28.0, 175.9),
+        (500, 0.3157, 2.21, 1.9, 2.22, 1.8),
+    ):
+        assert round(speed / 1584, 4 if r < 1 else 3) == r
+        assert round(e * r * r / math.sqrt((1 - r * r) ** 2 + (2 * zeta * r) ** 2), 2 if amp < 10 else 1) == amp
+        assert round(math.degrees(math.atan2(2 * zeta * r, 1 - r * r)), 1) == lag
+        X = synchronous_response(s, np.array([speed / rpm]))[0, XD]
+        assert (
+            round(abs(X) * 1e6, 2 if page_amp < 10 else 1) == page_amp
+            and round(-math.degrees(np.angle(X)), 1) == page_lag
+        )
+    assert round(e / (2 * zeta)) == 216
+    X = synchronous_response(s, np.array([1584 / rpm]))[0, XD]
+    assert round(abs(X) * 1e6) == 217 and round(-math.degrees(np.angle(X))) == 88
+    first = np.linalg.eigvals(s.state_matrix(3000 / rpm))
+    first = first[np.argmin(np.abs(first))]
+    assert (round(first.real, 3), round(abs(first.imag), 1)) == (-7.714, 165.9)
+    # A squeeze-film damper: πηRL³/(2c³(1 − ε²)^1.5).
+    eta, radius, length, clearance = 0.02, 0.05, 0.02, 0.2e-3
+
+    def squeeze(eps: float) -> float:
+        return math.pi * eta * radius * length**3 / (2 * clearance**3 * (1 - eps**2) ** 1.5)
+
+    assert (round(squeeze(0.0)), round(squeeze(0.5))) == (1571, 2418) and round(squeeze(0.0) / 100) == 16
+    # Rolling bearings: stiffness ∝ load^(1/3) for balls, ^0.1 for rollers.
+    assert round(100 * (2 ** (1 / 3) - 1)) == 26 and round(100 * (2**0.1 - 1)) == 7

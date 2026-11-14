@@ -7,7 +7,7 @@
 </before>
 <h2>The Jeffcott rotor</h2>
 <p>A disc on a flexible, massless shaft between two bearings is the simplest model of a rotating
-machine. H. H. Jeffcott's 1919 paper (and A. Föppl's of 1895, hence also the <i>Laval</i> or
+machine. H. H. Jeffcott's 1919 paper <cite>jeffcott-1919</cite> (and A. Föppl's of 1895 <cite>foppl-1895</cite>, hence also the <i>Laval</i> or
 <i>Föppl–Jeffcott</i> rotor) used it to explain why a turbine can run smoothly above the speed at which
 its shaft whirls most violently. Here the bearings stand on flexible supports, springs and dampers in
 the horizontal (<m>x</m>) and vertical (<m>y</m>) directions, and the disc can tilt as well as move sideways.</p>
@@ -79,7 +79,7 @@ spins about its own centre of mass, and the shaft's centre whirls on a circle of
 <p>With the defaults (<m>e</m> = 20 µm) the disc whirls 2.2 µm at 500 rpm, with 2° of lag. At the 1584 rpm
 critical the lag is 88°, and the peak, 217 µm, comes at 1589 rpm. At 3000 rpm the whirl is 28 µm, with
 176° of lag. At <m>r</m> = 1 the equation gives <m>X = e/(2iζ)</m>: a lag of 90° and a whirl of <m>e/(2ζ)</m>. The first mode's
-<m>ζ</m> is 0.046, so <m>e/(2ζ)</m> = 215 µm, within 1% of the peak.</p>
+<m>ζ</m> is 0.0464, so <m>e/(2ζ)</m> = 216 µm, within 1% of the peak.</p>
 <p>The lag reaches 90° at 1586 rpm, not quite at the critical, and the peak comes later still. The peak
 is late even for one mass on a spring: an unbalance response peaks at <m>r = 1/√(1 − 2ζ²)</m>, just above the
 critical. The lag is late because the damping is at the supports, in series with the shaft, not at the
@@ -175,7 +175,7 @@ is then no longer set by the stations alone, so it is cut into beam <b>finite el
 as a cubic between two nodes, and each node has a displacement and a slope in each plane.</p>
 <p>A light shaft changes little. The defaults' steel shaft weighs 0.31 kg beside the 1 kg disc, and it
 takes the first critical speed from 1584 to 1458 rpm. The old rule adds 17/35 of a simply supported
-shaft's mass to the disc, which gives 1477 rpm. (The rule is Rayleigh's method, taking the shaft's shape
+shaft's mass to the disc, which gives 1477 rpm. (The rule is Rayleigh's method <cite>rayleigh</cite>, taking the shaft's shape
 as its static deflection under a load at the disc.)</p>
 <p>But a shaft has bending modes of its own, and a heavier one brings them down into the speed range.
 In the <i>Long shaft</i> preset (a 2 kg disc on a 1 m, 20 mm shaft of 2.47 kg) the critical speeds are
@@ -339,9 +339,9 @@ then applies slice by slice, with each slice's slopes <m>θ = w′</m>. It gives
 <m>2ρIΩθ̇<sub>x</sub>θ<sub>y</sub></m> per length in the kinetic energy, linear in the velocities. Written
 through the same cubics as the rotary inertia, it gives a gyroscopic matrix twice the rotary inertia's:</p>
 <eq>g_e = 2m_r, \qquad G \mathrel{+}= \begin{bmatrix} 0 & g_e \\ -g_e & 0 \end{bmatrix}</eq>
-<p>on the element's x-plane and y-plane DOFs. Nelson and McVaugh's rotating beam element is this one (1976).
-Nelson later added shear (1980).</p>
-<p><b>Shear.</b> A short, thick element also shears. Timoshenko's element (see
+<p>on the element's x-plane and y-plane DOFs. Nelson and McVaugh's rotating beam element is this one <cite>nelson-mcvaugh</cite>.
+Nelson later added shear <cite>nelson-1980</cite>.</p>
+<p><b>Shear.</b> A short, thick element also shears. Timoshenko's element <cite>timoshenko</cite> (see
 <a href="page:frame_page#timoshenko">Timoshenko beams</a>) keeps the same DOFs, with the shear parameter
 <m>φ<sub>s</sub></m>. For a round shaft it is</p>
 <eq>\varphi_s = \frac{12EI}{\kappa_s G_m A_s L_e^2} = \frac{3(1 + \nu)}{2\kappa_s}\Bigl(\frac{d}{L_e}\Bigr)^2</eq>
@@ -455,8 +455,7 @@ in full. On the polar plot the tracked vector loops around the steady-state circ
 <li><b>The parameter that matters is <m>Ω̇/ω<sub>c</sub>²</m>, against <m>ζ</m>.</b> Measure time in units of
 <m>1/ω<sub>c</sub></m>, and a single mode accelerated through resonance has only two parameters left: <m>ζ</m> and the
 dimensionless acceleration <m>Ω̇/ω<sub>c</sub>²</m>. So the ratio of the transient peak to the steady-state
-one, and how far the peak is shifted, depend on these alone. F. M. Lewis first worked this out (1932,
-<i>Vibration during acceleration through a critical speed</i>), and much later work on passage through
+one, and how far the peak is shifted, depend on these alone. F. M. Lewis first worked this out <cite>lewis-1932</cite>, and much later work on passage through
 resonance builds on it.</li>
 </ul>
 <p><b>On the page.</b> <i>Run up and coast down</i> ramps to the first speed and waits for the
@@ -671,7 +670,7 @@ are negative, and the undamped rotor neither grows nor decays.</p>
 with <m>Δ</m> = 0.15 and undamped supports, 1479 to 1645 rpm. Damping narrows it, and below a threshold
 asymmetry there is none: <m>Δ</m> = 0.123 with the defaults' 100 N·s/m supports, 0.178 with 400 N·s/m. Unlike
 the instabilities of <i>Stability</i>, it ends: past the stiff axis's critical speed the rotor is stable
-again. Mapped against <m>Δ</m> and the speed, it is an Ince–Strutt chart, like a Mathieu equation's. It has one
+again. Mapped against <m>Δ</m> and the speed, it is an Ince–Strutt chart <cite>ince</cite>, like a Mathieu equation's <cite>mathieu</cite>. It has one
 tongue between the two critical speeds, its tip lifted off <m>Δ</m> = 0 by the damping. The <i>Two-pole
 rotor</i> preset (<m>Δ</m> = 0.15) has critical speeds of 1491 and 1665 rpm, and it is unstable from 1527 to
 1631 rpm. Tapped at 1580 rpm, its whirl grows ×e every 0.56 s at 26.3 Hz: the speed, not a natural
@@ -711,7 +710,7 @@ takes one trial per plane, so the two-trial method is for working by hand.</p>
 <p><b>How it is worked out.</b> In axes turning with the shaft, on isotropic supports, the rotor is
 time-invariant, so its modes are exact. Each is seen from the bearings as a forward and a backward
 circle, at s ± <m>iΩ</m>, and is listed at the one with more kinetic energy. On anisotropic supports the modes
-come from Hill's method: the Floquet exponents of the periodic system, from its harmonics up to
+come from Hill's method <cite>hill-1886</cite>: the Floquet exponents <cite>floquet</cite> of the periodic system, from its harmonics up to
 ±3 × <m>2Ω</m>. The steady states (the unbalance's 1X, gravity's mean sag and 2X) come from harmonic balance.
 The turning stiffness ties each harmonic <m>n</m> to <m>n</m> ± 2. That closes at once on isotropic supports (1X stays
 1X, and the sag gives a forward 2X), and is cut at ±6X otherwise. The time stepping splits each step:
@@ -732,7 +731,7 @@ the unstable band.</p>
 a shoulder or a shrink fit. Its depth from the surface is <m>a<sub>c</sub></m>, up to half the shaft's diameter
 <m>d</m>.</p>
 <p><b>A hinge.</b> Where it is open, the crack lets the shaft's slope jump across it: <m>Δθ = κM<sub>b</sub></m> under a
-bending moment <m>M<sub>b</sub></m>. Its compliance <m>κ</m> comes from fracture mechanics (Dimarogonas and Papadopoulos). Cut the
+bending moment <m>M<sub>b</sub></m>. Its compliance <m>κ</m> comes from fracture mechanics (Dimarogonas and Papadopoulos <cite>dimarogonas-papadopoulos</cite>). Cut the
 crack into strips across its front, each an edge crack in a strip as tall as the shaft there, and add up
 the energy each releases as the crack grows, <m>(1 − ν²)K<sub>I</sub>²/E</m>. Bending that pulls the mouth open
 (the moment along the crack's front) loads every strip. Bending across it loads one half in tension and
@@ -754,7 +753,7 @@ by <m>Δθ</m> there, and the shaft, resisting the jump with a stiffness <m>k<su
 shaft, its two axes along and across the mouth, softened.</p>
 <p><b>Breathing.</b> A real crack is shut most of the time, its faces pressed together, unless the
 bending stretches its side of the shaft. On a horizontal rotor the shaft's weight bends it far more than
-its vibration does (<i>weight dominance</i>, as in Mayes and Davies' model), so the weight sets it. It is
+its vibration does (<i>weight dominance</i>, as in Mayes and Davies' model <cite>mayes-davies</cite>), so the weight sets it. It is
 fully open as its mouth turns to the side the sag stretches (the bottom, between the bearings), and shut
 half a turn later. With its mouth at <m>φ + β<sub>c</sub></m> from +x, it is open by</p>
 <eq>\sigma(\varphi) = \tfrac{1}{2}\bigl(1 - \sin(\varphi + \beta_c)\bigr)</eq>
@@ -848,7 +847,7 @@ the classic Jeffcott rotor on rigid bearings, with <m>c<sub>e</sub></m> at the d
 <eq>\Omega_{onset} = \omega_n\Bigl(1 + \frac{c_e}{c_i}\Bigr)</eq>
 <p>It is always above the critical speed, and with no external damping exactly at it. (On flexible
 supports only the shaft's share of the motion is damped internally, so the onset rises further.) This was
-the cause of the supercritical whirl of early built-up rotors, studied by Kimball and Newkirk in the
+the cause of the supercritical whirl of early built-up rotors, studied by Kimball <cite>kimball-1924</cite> and Newkirk <cite>newkirk-1924</cite> in the
 1920s. The model makes the internal damping viscous, a force in proportion to the bending rate. Real
 material damping is closer to hysteretic, a fixed loss per cycle whatever the rate, and the onset speed
 depends on which is assumed.</p>
@@ -857,7 +856,7 @@ the onset up to 6,220 rpm, and 40 N·s/m down to 2,760 rpm. Below the critical, 
 rest the first mode's <m>ζ</m> rises from 0.046 to 0.078 with <m>c<sub>i</sub></m> = 20 N·s/m.</p>
 <p><b>The stability map</b> draws the damping ratio of each mode against speed, or its log decrement
 <m>δ = 2πζ/√(1 − ζ²)</m>. The <b>onset speed</b> is where the first forward mode crosses zero. Industry practice
-(API 684, 2nd edition, 2005) asks for <m>δ</m> ≥ 0.1 at the running speed; the defaults' first mode has <m>δ</m> = 0.29. (The criterion is for the
+(API 684 <cite>api-684</cite>) asks for <m>δ</m> ≥ 0.1 at the running speed; the defaults' first mode has <m>δ</m> = 0.29. (The criterion is for the
 modes in and near the running range: the defaults' lightly damped conical mode, at 315 Hz, is far above it.)</p>
 <p><b>Beyond the onset</b> a tap, or just the unbalance's start-up transient, sets off a whirl that
 grows exponentially at the mode's own natural frequency, not at the speed: a <b>subsynchronous</b> whirl.
@@ -876,15 +875,15 @@ pauses when a growing whirl reaches 2% of the span.</p>
 <p>A plain journal bearing has no balls or rollers. The journal turns in a sleeve a little larger than
 itself, and the gap, the radial clearance <m>c<sub>r</sub></m> (a thousandth or two of the radius), is full of
 oil. Turning, the journal drags the oil round with it into the narrowing side of the gap. The oil,
-squeezed, rises in pressure and holds the journal off the sleeve. Reynolds' equation gives that pressure.
+squeezed, rises in pressure and holds the journal off the sleeve. Reynolds' equation <cite>reynolds-1886</cite> gives that pressure.
 In a bearing short beside its diameter (<m>L<sub>b</sub>/D<sub>b</sub></m> up to about ½) the oil escapes mostly
-out of the ends, and the pressure is a parabola along the bearing: <b>short-bearing</b> (Ocvirk) theory.
+out of the ends, and the pressure is a parabola along the bearing: <b>short-bearing</b> (Ocvirk) theory <cite>ocvirk-1952</cite>.
 Where the pressure would go below zero the oil cavitates instead, so only the half of the film that
 narrows carries load (the <m>π-film</m>).</p>
 <p>At rest the journal lies on the bottom of its clearance. As the speed rises the film lifts it. Since
 the film's pressure peaks ahead of the thinnest point, it also pushes the journal <b>sideways</b>, in the
 direction of spin. The journal settles off the load line by the <b>attitude angle</b> <m>χ</m>, at an
-<b>eccentricity</b> <m>ε</m>, its offset over <m>c<sub>r</sub></m>. The Sommerfeld number
+<b>eccentricity</b> <m>ε</m>, its offset over <m>c<sub>r</sub></m>. The Sommerfeld number <cite>sommerfeld-1904</cite>
 <m>S = (ηNL<sub>b</sub>D<sub>b</sub>/W)(R<sub>b</sub>/c<sub>r</sub>)²</m>, <m>N</m> in rev/s, and the bearing's
 proportions set <m>ε</m>. In short-bearing theory <m>ε</m> depends only on <m>S(L<sub>b</sub>/D<sub>b</sub>)²</m>, the modified
 Sommerfeld number: at <m>S</m> = 1, halving <m>L<sub>b</sub></m> moves <m>ε</m> from 0.32 to 0.60. The more speed and
@@ -904,7 +903,7 @@ dimensionless. The film's sideways push makes <m>K</m> far from symmetric: at 3,
 For the short bearing it is exactly <m>k<sub>xy</sub> − k<sub>yx</sub> = ½Ω(c<sub>xx</sub> + c<sub>yy</sub>)</m>,
 at every load: the oil swirls at half the shaft's speed, the swirl ratio <m>λ</m> = ½. As the speed rises the
 cross-coupling grows with it, while the direct stiffness and damping level off.</p>
-<p>So a rotor on such bearings has a <b>threshold speed</b>. Lund worked it out for a rigid rotor of
+<p>So a rotor on such bearings has a <b>threshold speed</b>. Lund worked it out <cite>lund-1987</cite> for a rigid rotor of
 mass <m>m<sub>b</sub></m> per bearing. At the threshold it whirls at <m>ω<sub>w</sub></m>, neither growing nor
 decaying, so s = <m>iω<sub>w</sub></m> solves its characteristic equation. The real and imaginary parts give</p>
 <eq>m_b\omega_w^2 = K_{eq} = \frac{k_{xx}c_{yy} + k_{yy}c_{xx} - k_{xy}c_{yx} - k_{yx}c_{xy}}{c_{xx} + c_{yy}}</eq>
@@ -1018,6 +1017,42 @@ journals in the <i>Magnetic bearing</i> tab's bearing. The tab plots <m>k<sub>mb
 against frequency, shades where <m>c<sub>mb</sub></m> &lt; 0, and draws the rotor's modes at the speed now
 (dashed backward).</p>
 
+<h3><a name="other-bearings"></a>Other bearings, and gears</h3>
+<p>The page's supports are springs and dampers, plain oil films or magnets. Machines use others too, and
+each puts its own terms into part 2's <m>K</m> and <m>C</m>.</p>
+<p><b>Tilting-pad journal bearings.</b> The sleeve is cut into pads, each free to tilt on a pivot behind
+it. A pad's film force then always passes through its pivot, so the pad cannot push the journal sideways
+the way a plain film's pressure peak does. The cross-coupled stiffness that drives oil whip all but
+vanishes, and the bearing stays stable at speeds where a plain one whips. Lund <cite>lund-1964</cite>
+worked out its coefficients pad by pad and added them up. The price is more parts, and coefficients that
+depend on the whirl frequency, through the pads' own motion.</p>
+<p><b>Squeeze-film dampers.</b> Here the film does not turn. A rolling bearing's outer race sits in an
+oil-filled clearance, held centred by a spring and kept from spinning. The oil is only squeezed, so it
+damps without the swirl's cross-coupling. For a short damper with a π-film, whirling in a centred circle
+of eccentricity <m>ε</m>, the damping is</p>
+<eq>C_{sq} = \frac{\pi\eta R_b L_b^3}{2c_r^3\,(1 - \varepsilon^2)^{3/2}}</eq>
+<p>A damper of radius <m>R<sub>b</sub></m> = 50 mm and length <m>L<sub>b</sub></m> = 20 mm, with
+<m>c<sub>r</sub></m> = 0.2 mm and oil of 20 mPa·s, gives 1571 N·s/m centred and 2418 N·s/m at
+<m>ε</m> = 0.5: some sixteen times the defaults' 100 N·s/m supports. The film stiffens sharply on large
+orbits, and a heavily unbalanced rotor can jump between a small orbit and a large one
+<cite>childs-1993</cite>.</p>
+<p><b>Rolling-element bearings.</b> Balls or rollers between hardened races are far stiffer than the
+page's supports, and they damp little, so a rotor on them takes its damping from elsewhere, often a
+squeeze-film damper in series. Their stiffness grows with the load. A ball touches its race at a point,
+and Hertz's contact theory <cite>hertz-1882</cite> makes the deflection grow as the load to the power 2/3,
+so the stiffness grows as its cube root: doubling the load stiffens it by 26%. A roller's line
+contact is nearly linear, its deflection growing about as the load to the power 0.9, so doubling the load
+stiffens it by only 7% <cite>harris-kotzalas</cite>. And as the balls roll round, the number carrying the
+load changes, so the stiffness varies at the ball-pass frequency: a parametric excitation, like the
+asymmetric shaft's turning stiffness.</p>
+<p><b>Gears: torsion and bending coupled.</b> The Torsional vibration page's gear pair is a spring along
+the line of action (see <a href="page:torsional_page#gears">Gears</a>). That spring's force also acts on
+each gear's shaft, sideways, along the line of action. So a torque is also a lateral force on both
+shafts, and a lateral whirl of either gear changes the mesh's compression, and with it the torque. In a
+geared machine's model the mesh spring joins the torsional DOFs to the lateral ones. The two kinds of
+mode mix, and a torsional resonance can show at the bearings, and a lateral one in the torque. Neither
+this page nor the Torsional page models that coupling.</p>
+
 <h2>7. Rub</h2>
 
 <h3>Rotor–stator rub</h3>
@@ -1030,7 +1065,7 @@ disc's radius, plus the disc's centre moving along the ring, <m>v<sub>t</sub></m
 <eq>f = -F_N\hat{n} - \mu F_N\,\mathrm{sat}(R_d\Omega + v_t)\,\hat{t},</eq>
 <eq>\mathrm{sat}(v) = \frac{v}{\sqrt{v^2 + v_0^2}}</eq>
 <p><m>n̂</m> points out from the ring's centre to the disc's, <m>t̂</m> along the ring in the direction of spin, and
-<m>v<sub>0</sub></m> = 1 cm/s smooths Coulomb's step at zero slip, so that a rim rolling on the ring is held there
+<m>v<sub>0</sub></m> = 1 cm/s smooths Coulomb's <cite>coulomb</cite> step at zero slip, so that a rim rolling on the ring is held there
 by a steep drag rather than a jump. The force is not linear in anything, so the ring is in the time
 response only: the Campbell diagram, the stability map and the steady-state curves are the rotor's
 without it.</p>
@@ -1053,7 +1088,7 @@ keeps feeding it until the rim rolls round the ring without slipping: <m>|ω|r<s
 2000 rpm the orbit is 7.3 mm, the ring pushed back with 15 kN.</p>
 <h3>The Newkirk effect: a rub that bows the shaft</h3>
 <p>The rub's friction heats the shaft where it touches, and a shaft hotter on one side grows longer there
-and bows toward it. Newkirk (1926) saw what follows: below the critical speed the disc's high spot is
+and bows toward it. Newkirk <cite>newkirk-1926</cite> saw what follows: below the critical speed the disc's high spot is
 close to its heavy spot, so the rub heats the high spot, the bow pushes the high spot further out, the
 rub gets harder, and the vibration grows without limit. Here the heat is the drag's work on the slip,
 <m>P<sub>h</sub> = μF<sub>N</sub>(R<sub>d</sub>Ω + v<sub>t</sub>)</m>, taken on the shaft where it touches (from the mark, turning with it), and the
@@ -1124,12 +1159,38 @@ runs in real time.</p>
 <h3>Keeping a shaft with mass fast</h3>
 <p>Every beam element adds modes. The highest are at tens of kHz, far above anything the rotor does at
 these speeds, but the time stepping would still have to resolve them. So the model is reduced the way
-the <i>Substructuring</i> page reduces a substructure (Craig–Bampton). The stations' DOFs are kept as
+the <i>Substructuring</i> page reduces a substructure (Craig–Bampton <cite>craig-bampton</cite>). The stations' DOFs are kept as
 they are. The rest of the shaft moves in the static shape they give it, which is all a massless shaft
 ever does, plus its lowest modes with the stations held, up to 1000 Hz. Those modes' amplitudes <m>ξ</m> join <m>q</m>,
 after the stations. The reduced model's modes are within 0.2% of the full element model's below 500 Hz,
 and within 1% up to 1000 Hz (60,000 rpm, the top of the speed range). With a massless shaft there are no
 such modes, and the reduction is exactly the Jeffcott model.</p>
+
+<h3><a name="worked-example"></a>Worked example: the defaults</h3>
+<p>Every number here can be read off the page as it opens.</p>
+<ol>
+<li><b>The critical speed by hand.</b> The 10 mm steel shaft, 0.5 m between bearings, has
+<m>EI</m> = 98.17 N·m², so <m>k<sub>s</sub> = 48EI/L³</m> = 37,699 N/m at midspan. The two supports
+of <m>k<sub>b</sub></m> = 50,000 N/m side by side give 100,000 N/m in series with it:
+<m>k<sub>eq</sub></m> = 27,378 N/m. With the 1 kg disc, <m>ω<sub>c</sub> = √(k<sub>eq</sub>/m)</m> =
+165.46 rad/s, 1580 rpm. The page's Campbell diagram puts the critical at 1584 rpm: the full model also has the journals' 0.1 kg
+each and the supports' dampers, which the estimate leaves out.</li>
+<li><b>The damping.</b> The modes table gives the first mode at 26.40 Hz with <m>ζ</m> = 0.0464, whirling
+forward and backward at the same frequency (the midspan disc does not tilt). Its log decrement is
+<m>δ = 2πζ/√(1 − ζ²)</m> = 0.292, well above API 684's 0.1.</li>
+<li><b>The unbalance response, one mass.</b> The disc's 20 µm eccentricity at 3000 rpm pulls with
+<m>meΩ²</m> = 1.97 N, turning with the shaft. There <m>r</m> = 3000/1584 = 1.894, and the one-mass formula
+gives <m>|X|</m> = 20 × 1.894²/√((1 − 1.894²)² + (2 × 0.0464 × 1.894)²) = 27.7 µm, lagging by 176.1°. The
+page reads 28.0 µm at 175.9° on the Bode plot. At 500 rpm (<m>r</m> = 0.3157) the formula gives 2.21 µm and
+1.9°, the page 2.22 µm and 1.8°.</li>
+<li><b>At the critical.</b> <m>X = e/(2iζ)</m> gives 20/(2 × 0.0464) = 216 µm, lagging 90°. The page gives
+217 µm at 1584 rpm, lagging 88°. Its damping is at the supports, not at the disc, so the one-mass model is
+close but not exact (see <i>Unbalance response</i>).</li>
+<li><b>The matrices.</b> The <i>Equations &amp; matrices</i> tab shows <m>K<sub>shaft</sub></m> as in part
+2, with 37.70 kN/m on <m>x<sub>D</sub></m>, and <m>G</m> holding only <m>I<sub>p</sub></m> = 1.25 ×
+10<sup>−3</sup> kg·m² between <m>θ<sub>x</sub></m> and <m>θ<sub>y</sub></m>. At 3000 rpm the first pair of
+eigenvalues of the 16 × 16 <m>A(Ω)</m> is −7.714 ± 165.9i 1/s.</li>
+</ol>
 
 <h2>Things to try</h2>
 <h3>1. Fundamentals</h3>
@@ -1290,5 +1351,6 @@ settling at 5.9 µm with the bow at 2.4 µm. Set <m>a<sub>T</sub></m> to 0 and n
 <li>Cross-coupled stiffness (oil films, seals, internal damping) feeds the forward whirl and sets an onset speed above which the rotor is unstable, whatever its balance.</li>
 </takeaways>
 
+<reading>friswell-rotating childs-1993 vance-rotordynamics genta-rotating muszynska-2005</reading>
 <h2><a name="notation"></a>Notation</h2>
-<notation>rotor_span g rotor_shaft rho m I_p rotor_supports rotor_k rotor_xy whirl_w Omega_spin one_x phi_turn omega_n r_spin X_rotor zeta delta s_rotor rotor_matrices rotor_q rotor_state dt_n foh_gamma rotor_derivation rotor_element phi_s kappa_s rotor_eigen shaft_modes turning_axes unbalance U_unbalance bow skew balancing asymmetric crack crack_stations cross_coupling S_sommerfeld epsilon film_coefficients lund whole_film magnet magnet_control stator_ring rub_friction newkirk</notation>
+<notation>rotor_span g rotor_shaft rho m I_p rotor_supports rotor_k rotor_xy whirl_w Omega_spin one_x phi_turn omega_n r_spin X_rotor zeta delta s_rotor rotor_matrices rotor_q rotor_state dt_n foh_gamma rotor_derivation rotor_element phi_s kappa_s rotor_eigen shaft_modes turning_axes unbalance U_unbalance bow skew balancing asymmetric crack crack_stations cross_coupling S_sommerfeld epsilon film_coefficients squeeze_film lund whole_film magnet magnet_control stator_ring rub_friction newkirk</notation>
