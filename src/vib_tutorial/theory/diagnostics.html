@@ -1,55 +1,163 @@
-
 <before>
 <a href="page:signals_page#spectrogram">Time and frequency</a>
 <a href="page:torsional_page#gears">Gears and the tooth-pass frequency</a>
 <a href="page:rotor_page#waterfall">Waterfall and cascade plots</a>
 </before>
 <h3><a name="machines"></a>What a machine's vibration says</h3>
-<p>Every part of a running machine leaves its own frequencies in the casing's vibration: the shafts their
-speeds and harmonics (unbalance at 1X, misalignment at 2X), the gears their tooth-mesh frequency (teeth × the
-shaft's speed), the rolling bearings their defect frequencies. Condition monitoring reads the spectrum against
-that list. A fault changes a line, adds new ones, or adds a pattern: sidebands, impacts, families of
-harmonics. This page synthesizes a gearbox's casing acceleration and looks at it four ways.</p>
+<p>Every part of a running machine leaves its own frequencies in the casing's vibration. The shafts leave
+their speeds and harmonics (unbalance at 1X, misalignment at 2X). The gears leave their tooth-mesh frequency
+(the number of teeth times the shaft's speed), and the rolling bearings their defect frequencies. Condition
+monitoring reads the spectrum against that list. A fault changes a line, adds new ones, or adds a pattern:
+sidebands, impacts, families of harmonics. This page synthesizes a gearbox's casing acceleration
+<m>x(t)</m> and looks at it four ways. The sections after them cover what a monitoring programme does with
+the readings: averaging, the common shaft faults, severity limits and trends.</p>
+<p>The machine: a shaft turning at <m>f<sub>r</sub></m> = 29.95 Hz (1797 rpm), a pinion of <m>z</m> = 27
+teeth, a 6205 ball bearing, and an accelerometer on the casing with a resonance at 3 kHz. The record is 4 s
+long, sampled at 20,480 Hz, and its spectra take blocks of 8192 samples, so their lines are
+<m>Δf</m> = 2.5 Hz apart.</p>
 
 <h3><a name="orders"></a>Run-ups and order tracking</h3>
 <p>While the speed changes, a frequency analysis smears: a fixed-length block sees the 1X sweep across several
-lines. Each force, though, stays at a fixed <b>order</b> (a multiple of the speed), so <b>order tracking</b>
-analyses in angle instead of time: the record is resampled at equal steps of the shaft's angle (from a
-tachometer's pulses) and each block of whole revolutions is transformed. An order is then one line, whatever the
-speed did. Against frequency, the orders are rays from the origin and a structural mode a horizontal band they
-light up as they cross; against order the orders stand still and the mode's band slants. Each order's amplitude
-along the run-up is its <b>order track</b>, the Bode plot of the Jeffcott rotor page measured.</p>
-<p>A run-up that is too fast misreads a resonance: the response needs about Q cycles to build up, so a sweep that
-crosses the half-power band in fewer peaks lower and later, and rings after.</p>
+lines. Each force, though, stays at a fixed <b>order</b>, a multiple of the speed. So <b>order tracking</b>
+analyses in angle instead of time. The record is resampled at equal steps of the shaft's angle (from a
+tachometer's pulses), and each block of whole revolutions is transformed. An order is then one line, whatever
+the speed did. The page resamples at 32 points a revolution, which reaches order 16, and transforms blocks of 8
+revolutions, so its order lines are 1/8 apart.</p>
+<p>Against frequency, the orders are rays from the origin, and a structural mode is a horizontal band that
+they light up as they cross it. Against order, the orders stand still and the mode's band slants. Each order's
+amplitude along the run-up is its <b>order track</b>: the Bode plot of the Jeffcott rotor page, measured.</p>
+<p>A run-up that is too fast misreads a resonance. The response needs about <m>Q</m> = 1/2<m>ζ</m> cycles to
+build up, so a sweep that crosses the half-power band in fewer peaks lower and later, and rings after (see
+<a href="page:rotor_page#run-up">the Jeffcott rotor page's run-up</a>, Lewis's result
+<cite>lewis-1932</cite>). The run-up's casing mode is at 40 Hz with <m>ζ</m> = 0.03: <m>Q</m> = 16.7 and a
+half-power band of <m>2ζf</m> = 2.4 Hz. Running from 10 to 70 Hz in 20 s, the 1X crosses that band in 0.8 s,
+32 of the mode's cycles. In 4 s it crosses in 0.16 s, only 6.4 cycles.</p>
 
 <h3><a name="gears"></a>Gear-mesh sidebands</h3>
-<p>The mesh's force repeats at every tooth, at f<sub>m</sub> = z f<sub>shaft</sub>, with harmonics. A fault on
-one gear modulates it once a turn of that gear, which puts <b>sidebands</b> at f<sub>m</sub> ± k f<sub>shaft</sub>.
-How many tells what kind of fault: a smooth modulation (an eccentric or bent gear) gives one or two pairs; a
-short event once a turn (a cracked or broken tooth) gives a long, flat family, since a narrow pulse's spectrum is
-broad. Amplitude and phase modulation together make the pairs unequal. The spacing says which shaft the faulty
-gear is on.</p>
+<p>The mesh's force repeats at every tooth, at <m>f<sub>m</sub> = zf<sub>r</sub></m>, with harmonics. A fault
+on one gear modulates it once a turn of that gear, which puts <b>sidebands</b> at
+<m>f<sub>m</sub> ± kf<sub>r</sub></m>. Take an eccentric pinion. Once a turn, at the shaft's angle
+<m>θ</m>, its mesh grows and shrinks by a share <m>s</m>, and its phase swings by <m>β</m>:</p>
+<eq>x = (1 + s\cos\theta)\cos(z\theta + \beta\sin\theta)</eq>
+<p>To first order in <m>s</m> and <m>β</m>, the products of cosines split into sums:</p>
+<eq>x \approx \cos z\theta + \tfrac12(s + \beta)\cos(z + 1)\theta</eq>
+<eq>+\ \tfrac12(s - \beta)\cos(z - 1)\theta</eq>
+<p>The amplitude modulation alone gives equal sidebands, <m>s</m>/2 each side. The phase modulation adds
+<m>β</m>/2 to the upper one and takes it from the lower. So the pair is unequal whenever both are present, and
+its two lines measure <m>s</m> and <m>β</m> separately. The page's eccentric pinion has <m>s</m> = 0.3 and
+<m>β</m> = 0.15 rad: sidebands of 0.225 above and 0.075 below the unit mesh line. Its spectrum reads 0.226
+and 0.076 beside 0.995.</p>
+<p>How many pairs tells what kind of fault it is. A smooth modulation (an eccentric or bent gear) gives one or
+two pairs. A short event once a turn (a cracked or broken tooth) gives a long, flat family, since a narrow
+pulse's spectrum is broad. The spacing says which shaft the faulty gear is on.</p>
 
 <h3><a name="envelope"></a>Bearings and the envelope</h3>
-<p>A rolling bearing with a spall gives a strike each time a ball meets it. Where depends on the geometry
-(n balls of diameter d on a pitch circle D, contact angle α, the inner race turning at f<sub>r</sub>):</p>
-<p align="center">FTF = f<sub>r</sub>/2 (1 − d/D cos α), &nbsp; BPFO = n FTF, &nbsp;
-BPFI = n f<sub>r</sub>/2 (1 + d/D cos α), &nbsp; BSF = D f<sub>r</sub>/2d (1 − (d/D cos α)²).</p>
+<p>A rolling bearing with a spall gives a strike each time a ball meets it. The bearing has <m>n</m> balls of
+diameter <m>d</m> on a pitch circle of diameter <m>D</m>, touching the races along a line at the contact angle
+<m>α</m>, with the inner race turning at <m>f<sub>r</sub></m> and the outer one still.</p>
+<table align='center' width='340' cellspacing='0' cellpadding='0'>
+<tr><td align='center'><img src="fig:bearing-geometry"></td></tr>
+<tr><td><i>A ball bearing end on: n balls of diameter d on a pitch circle of diameter D, the inner race turning at f<sub>r</sub> and the outer one still. Right, a ball cut through, touching its races along a line at the contact angle α.</i></td></tr>
+</table>
+<p>Where the strikes come follows from rolling without slip. Write <m>r<sub>b</sub> = (d/D)cos α</m>. Then
+the ball's contact with the inner race is at a radius <m>(D/2)(1 − r<sub>b</sub>)</m>, moving at
+<m>2πf<sub>r</sub></m> times that, and its contact with the still outer race doesn't move. A ball's centre
+moves at the average of its two contact points, so the cage turns at the <b>fundamental train
+frequency</b>:</p>
+<eq>\mathrm{FTF} = \frac{f_r}{2}(1 - r_b)</eq>
+<p>A point on the outer race is passed by all <m>n</m> balls each turn of the cage. A point on the inner race is
+passed at <m>n</m> times the inner race's speed relative to the cage, <m>f<sub>r</sub></m> − FTF. A ball spins,
+relative to the cage, at that relative speed times the inner contact's radius over the ball's:</p>
+<eq>\mathrm{BPFO} = n\,\mathrm{FTF}, \qquad \mathrm{BPFI} = \frac{n f_r}{2}(1 + r_b)</eq>
+<eq>\mathrm{BSF} = \frac{D f_r}{2d}\bigl(1 - r_b^2\bigr)</eq>
+<p>A defect on a ball meets both races each spin, so it strikes at 2 BSF. On the 6205 (<m>n</m> = 9,
+<m>d</m> = 7.94 mm, <m>D</m> = 39.04 mm, <m>α</m> = 0): <m>r<sub>b</sub></m> = 0.2034, FTF = 11.93 Hz,
+BPFO = 107.4 Hz (3.585 × the shaft's speed), BPFI = 162.2 Hz (5.415 ×) and 2 BSF = 141.2 Hz. That the two race
+frequencies add up to <m>n</m> times the shaft's speed is a quick check.</p>
 <p>Each strike is a short impulse that rings the structure's resonances, in the kilohertz. The strikes' rate
-carries little energy at its own frequency, so the plain spectrum barely shows it under the shafts and the mesh.
-<b>Envelope analysis</b> band-passes the record round a resonance the strikes ring (clear of the gears), takes the
-envelope (the magnitude of the analytic signal, by the Hilbert transform), and transforms that: the strikes'
-rate, and its harmonics, stand out. The kurtosis of the band (3 for Gaussian noise) climbs with impacts and helps
-pick the band. Inner-race and ball defects pass through the load zone, so their strikes swell and fade: sidebands
-at ± 1X (inner race) or ± FTF (ball). The balls slip a little, so the strikes' spacing scatters by a percent or
-two: the envelope's lines stay sharp at low harmonics, while the raw spectrum's high ones smear.</p>
+carries little energy at its own frequency, so the plain spectrum barely shows it under the shafts and the
+mesh. <b>Envelope analysis</b> band-passes the record round a resonance the strikes ring, clear of the gears.
+It takes the envelope, the magnitude of the analytic signal <cite>gabor-1946</cite> (by the Hilbert transform),
+and transforms that, and the strikes' rate and its harmonics stand out <cite>randall-antoni</cite>. A
+resonance at <m>f<sub>c</sub></m> = 3000 Hz with <m>ζ</m> = 0.05 rings over its half-power band,
+<m>2ζf<sub>c</sub></m> = 300 Hz wide, and its strikes spread about <m>3ζf<sub>c</sub></m> either side. Hence
+the page's band, 2550 to 3450 Hz.</p>
+<p>The kurtosis of the band climbs with impacts and helps pick the band. It is 3 for Gaussian noise and 1.5
+for a sine. Doing that band by band is the <b>spectral kurtosis</b> <cite>dwyer-1983</cite>
+<cite>antoni-2006</cite>. Inner-race and ball defects pass through the load zone, so their strikes swell and
+fade, which gives sidebands at ± 1X (inner race) or ± FTF (ball). The balls slip a little, so the strikes'
+spacing scatters by a percent or two. The envelope's lines stay sharp at low harmonics, while the raw
+spectrum's high ones smear.</p>
 
 <h3><a name="cepstrum"></a>The cepstrum</h3>
-<p>A family of lines spaced Δf is a periodic ripple in the log spectrum. The <b>cepstrum</b>, the inverse Fourier
-transform of the log power spectrum, turns that ripple into one peak at the <b>quefrency</b> 1/Δf (and its
-<i>rahmonics</i>). A gear's sidebands, however many and however unequal, become one peak at 1/f<sub>shaft</sub>;
-the mesh's own harmonics another at 1/f<sub>m</sub>. The log also separates a source from the path it passes
-through, which multiply in the spectrum and add in the cepstrum.</p>
+<p>A family of lines spaced <m>Δf</m> is a periodic ripple in the log spectrum. The <b>cepstrum</b>
+<cite>bogert-1963</cite>, the inverse Fourier transform of the log of the power spectrum <m>S(f)</m>,</p>
+<eq>c(\tau) = \mathcal{F}^{-1}\bigl[\ln S(f)\bigr]</eq>
+<p>turns that ripple into one peak at the <b>quefrency</b> <m>τ = 1/Δf</m> (and its <i>rahmonics</i>). A gear's
+sidebands, however many and however unequal, become one peak at <m>1/f<sub>r</sub></m>, and the mesh's own
+harmonics another at <m>1/f<sub>m</sub></m>. The log also separates a source from the path it passes through,
+which multiply in the spectrum and add in the cepstrum.</p>
+
+<h3><a name="tsa"></a>Time-synchronous averaging</h3>
+<p>A gearbox has several shafts, each with its own gears, and their lines crowd the spectrum. <b>Time-synchronous
+averaging</b> <cite>mcfadden-1987</cite> picks out one shaft. The record is resampled at equal steps of that
+shaft's angle, as for order tracking, cut into whole revolutions, and the revolutions are averaged. What
+repeats every turn of that shaft (its orders, its gears' mesh and their sidebands) survives. Everything else
+(the other shafts, the bearings, which are not locked to the shaft, and the noise) averages away, its
+amplitude falling as <m>1/√N</m> for <m>N</m> revolutions. The 4 s record holds 119 whole revolutions, which
+would cut the noise by √119 = 10.9. Subtracting the mesh's harmonics from the average then leaves a
+<i>residual</i>, in which a cracked tooth shows as one local event per revolution. This page doesn't average:
+its spectra are of the raw record.</p>
+
+<h3><a name="shaft-faults"></a>Misalignment and looseness</h3>
+<p>Not every fault has a frequency of its own. The shaft's own orders carry the commonest ones, and they are
+told apart by how their orders, directions and phases go together <cite>randall-2011</cite>.</p>
+<ul>
+<li><b>Unbalance</b>: 1X, radial, in about the same amount horizontally and vertically on a round rotor, and
+about 90° apart in phase between the two: the rotor's forward whirl.</li>
+<li><b>Misalignment</b> across a coupling: a large 2X, and often 1X, both radially and axially. The two ends of
+the coupling move about 180° out of phase. Angular misalignment shows most in the axial direction.</li>
+<li><b>Mechanical looseness</b> (a cracked foot, a loose bearing in its housing): many harmonics of 1X, often
+with half-orders (½X, 1½X), because the part rattles, clipping the motion each turn. A clipped waveform's
+spectrum is rich in harmonics, as a cracked tooth's is in sidebands.</li>
+</ul>
+<p>The page's run-up has an unbalance and a misalignment driving one casing mode: the 1X peaks as it crosses
+the mode at 40 Hz (2400 rpm), and the 2X at half that speed.</p>
+
+<h3><a name="severity"></a>Severity and trends</h3>
+<p>How much vibration is too much is set by standards. <b>ISO 20816</b> <cite>iso-20816-3</cite> judges
+machines by the RMS velocity on their bearing housings, over 10 to 1000 Hz. Velocity weights low and high
+frequencies alike in damage, where displacement favours the low and acceleration the high. Readings fall into
+four zones: A for new machines, B acceptable for long running, C for limited running, and D, damaging. The
+zones' boundaries depend on the machine's size and on its support. For a 15 to 300 kW machine on a rigid
+support they are 1.4, 2.8 and 4.5 mm/s.</p>
+<p>The page's healthy gearbox has, in velocity, 1X at 0.3 m/s²/(2π × 29.95 Hz) = 1.594 mm/s peak, 1.127 mm/s
+RMS. Its 2X adds 0.188 mm/s, the three mesh harmonics 0.139, 0.028 and 0.007 mm/s, and the noise
+0.099 mm/s over 10 to 1000 Hz. Together, as the root of the sum of squares: 1.16 mm/s RMS, zone A. The mesh,
+the largest line in acceleration, hardly counts in velocity.</p>
+<p>A monitoring programme <b>trends</b> what it measures: the overall level, and the bands that mean
+something (1X, 2X, the mesh, the envelope at BPFO). A level in zone B is not the whole story: a steady
+machine whose reading jumps has changed. The standard counts a change of a quarter of the B/C boundary as
+significant, up or down, which is 0.7 mm/s for the machine above. Alarms are set from the machine's own
+baseline, and a trip near the top of zone C.</p>
+
+<h3><a name="worked-example"></a>Worked example: the healthy gearbox</h3>
+<p>The page opens on the healthy gearbox. Every number here is read off its tabs or worked from its
+settings.</p>
+<ol>
+<li><b>The lines.</b> The shaft at 29.95 Hz meshes 27 teeth at <m>f<sub>m</sub></m> = 808.65 Hz, with
+harmonics at 1617.3 and 2425.95 Hz. The spectrum reads 0.301 and 0.102 m/s² at 1X and 2X, and 1.001,
+0.399 and 0.149 m/s² at the mesh's three harmonics, against the model's 0.3, 0.1, 1.0, 0.4 and 0.15: the
+flat-top window reads a tone's amplitude wherever it falls between the 2.5 Hz lines.</li>
+<li><b>The bearing.</b> The 6205's defect frequencies, from its geometry: FTF = 11.93, BPFO = 107.4,
+BPFI = 162.2 and 2 BSF = 141.2 Hz. None shows: the bearing is healthy.</li>
+<li><b>The kurtosis.</b> The record's is 2.40, below a Gaussian's 3, since a sum of steady sines is
+flatter-topped than noise. An impacting bearing would raise it (see the outer race defect).</li>
+<li><b>Severity.</b> 1.16 mm/s RMS in velocity over 10 to 1000 Hz, almost all of it the 1X: zone A for a
+medium machine on a rigid support.</li>
+<li><b>Averaging.</b> Time-synchronous averaging over its 119 revolutions would leave the noise's
+0.2 m/s² RMS at 0.018 m/s².</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets up the machine (Things to try, top left).</p>
@@ -57,7 +165,17 @@ through, which multiply in the spectrum and add in the cepstrum.</p>
 <takeaways>
 <li>Each part of a machine has its own frequencies; a diagnosis reads the spectrum against them.</li>
 <li>Under a changing speed, track orders: resample at equal angles, and each order stays on one line.</li>
-<li>Sidebands at the mesh ± the shaft's speed point to a gear; a long flat family to a local fault.</li>
-<li>Bearing strikes hide in the plain spectrum; band-pass round a resonance and look at the envelope's.</li>
+<li>Sidebands at the mesh ± the shaft's speed point to a gear; a long flat family to a local fault. Unequal
+pairs mean amplitude and phase modulation together.</li>
+<li>A bearing's defect frequencies follow from its geometry; its strikes hide in the plain spectrum, so
+band-pass round a resonance and look at the envelope's.</li>
 <li>The cepstrum turns a family of equally spaced lines into one peak at 1/spacing.</li>
+<li>Time-synchronous averaging keeps one shaft's orders and averages the rest away.</li>
+<li>Severity is judged in RMS velocity against zones; a change from a machine's own baseline matters as much as
+the zone.</li>
 </takeaways>
+
+<reading>randall-2011</reading>
+
+<h3><a name="notation"></a>Notation</h3>
+<notation>diag_machine Q zeta modulation bearing_geom bearing_freqs diag_envelope cepstrum_c tsa_n</notation>
