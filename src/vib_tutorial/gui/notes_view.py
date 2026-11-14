@@ -4,9 +4,10 @@
 and colour) and ``fig:`` images (`figures`), and sets inline maths (``<span class="m">``) a little larger
 than the text around it (`maths.INLINE_SIZE`). The document caches the images until its HTML is set again,
 so `refresh` sets it again (keeping the place read) after a theme change: `MainWindow._restyle` calls it on
-every NotesBrowser it holds, the Theory window on its own.
+every NotesBrowser it holds, the Theory window on its own. The equations are inked in the theme's own text
+colour (`ink`), not the palette's: Qt sends the browser its new palette only after the refresh.
 
-Working on it: `tests/test_notes_view.py` checks every page's Theory tab is one, and that it redraws in a
+Working on it: `tests/test_notes_markup.py` checks every page's Theory tab is one, and that it redraws in a
 new theme.
 """
 
@@ -15,6 +16,13 @@ from __future__ import annotations
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import figures, maths
+from .style import colors
+
+
+def ink() -> str:
+    """The equations' colour: the theme's text. Not the browser's palette, which Qt hands it only after
+    `MainWindow._restyle` has redrawn the notes, so it would draw them in the previous theme's ink."""
+    return colors.text or colors.foreground  # Light keeps the platform's palette: its text is black
 
 
 class NotesBrowser(QtWidgets.QTextBrowser):
@@ -47,8 +55,7 @@ class NotesBrowser(QtWidgets.QTextBrowser):
         if kind == QtGui.QTextDocument.ResourceType.ImageResource:
             key = name.toString() if isinstance(name, QtCore.QUrl) else name
             if key.startswith("eq:") and (latex := maths.EQUATIONS.get(key[3:])) is not None:
-                ink = self.palette().color(QtGui.QPalette.ColorRole.Text).name()
-                return maths.render(latex, self.text_px(), ink)
+                return maths.render(latex, self.text_px(), ink())
             if key.startswith("fig:") and (draw := figures.build(key)) is not None:
                 return figures.render(draw())
         return super().loadResource(kind, name)
