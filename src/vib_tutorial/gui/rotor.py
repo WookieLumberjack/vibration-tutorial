@@ -1720,7 +1720,7 @@ class RotorPage(QtWidgets.QWidget):
             )
         return (
             head + "<table cellspacing='0' cellpadding='2'><tr><th align='left'>Sweep</th>"
-            f"<th>Ω'/ω<sub>c</sub>²</th><th>{order}X peak</th><th>of steady</th><th>at rpm</th><th>vs steady</th></tr>"
+            f"<th>Ω̇/ω<sub>c</sub>²</th><th>{order}X peak</th><th>of steady</th><th>at rpm</th><th>vs steady</th></tr>"
             + "".join(rows)
             + "</table>"
         )

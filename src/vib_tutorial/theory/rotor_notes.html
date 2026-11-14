@@ -119,7 +119,7 @@ the backward one its slow precession.</p>
 
 <h3>The Campbell diagram and critical speeds</h3>
 <p>Plotting each damped natural frequency against the spin speed gives the Campbell diagram. The
-unbalance turns once per revolution, so it drives at <m>f = Ω/2π</m>: the 1X line. Where a whirl frequency
+unbalance turns once per revolution, so it drives at <m>Ω</m>/2π: the 1X line. Where a whirl frequency
 crosses the 1X line, the unbalance drives that mode at its own natural frequency: a <b>critical
 speed</b>. In an isotropic rotor the unbalance is a purely forward rotating force, so it drives only the
 forward branches. The backward crossings are critical only for an anisotropic rotor, or for other
@@ -209,11 +209,11 @@ reaches it.</p>
 ways:</p>
 <ul>
 <li><b>The transient peak is lower than the steady-state one, and lower the faster the ramp.</b> The
-whirl builds up with the mode's time constant, <m>1/(ζω<sub>c</sub>)</m>. A ramp at <m>Ω'</m> (rad/s²) crosses the
-half-power band <m>2ζω<sub>c</sub></m> in <m>2ζω<sub>c</sub>/Ω'</m>. So the ramp is slow enough to reach the
-steady-state peak only when <m>Ω'/ω<sub>c</sub>²</m> is well below <m>2ζ²</m>. With the defaults (<m>ζ</m> = 0.046,
+whirl builds up with the mode's time constant, <m>1/(ζω<sub>c</sub>)</m>. A ramp at <m>Ω̇</m> (rad/s²) crosses the
+half-power band <m>2ζω<sub>c</sub></m> in <m>2ζω<sub>c</sub>/Ω̇</m>. So the ramp is slow enough to reach the
+steady-state peak only when <m>Ω̇/ω<sub>c</sub>²</m> is well below <m>2ζ²</m>. With the defaults (<m>ζ</m> = 0.046,
 <m>2ζ²</m> = 0.0043, the peak 217 µm at 1589 rpm), sweeping 800 to 2400 rpm, a run-up at 100 rpm/s
-(<m>Ω'/ω<sub>c</sub>²</m> = 0.0004) peaks at 100% of it. At 500 rpm/s (0.0019) it peaks at 95%, at
+(<m>Ω̇/ω<sub>c</sub>²</m> = 0.0004) peaks at 100% of it. At 500 rpm/s (0.0019) it peaks at 95%, at
 2000 rpm/s at 78%, and at 5000 rpm/s (0.019) at about 60%.</li>
 <li><b>The peak comes after the critical speed on a run-up, and before it on a coast-down.</b> The
 response lags the sweep. At 500 rpm/s the run-up peaks at 1672 rpm (82 rpm late) and the coast-down at
@@ -226,9 +226,9 @@ vibration at the natural frequency <m>ω<sub>c</sub></m>, while the unbalance ke
 at <m>Ω − ω<sub>c</sub></m>, faster as the speed moves on. So the 1X amplitude wobbles after the peak. The
 largest displacement over each revolution (the dots) wobbles more, since it includes the free vibration
 in full. On the polar plot the tracked vector loops around the steady-state circle.</li>
-<li><b>The parameter that matters is <m>Ω'/ω<sub>c</sub>²</m>, against <m>ζ</m>.</b> Measure time in units of
+<li><b>The parameter that matters is <m>Ω̇/ω<sub>c</sub>²</m>, against <m>ζ</m>.</b> Measure time in units of
 <m>1/ω<sub>c</sub></m>, and a single mode accelerated through resonance has only two parameters left: <m>ζ</m> and the
-dimensionless acceleration <m>Ω'/ω<sub>c</sub>²</m>. So the ratio of the transient peak to the steady-state
+dimensionless acceleration <m>Ω̇/ω<sub>c</sub>²</m>. So the ratio of the transient peak to the steady-state
 one, and how far the peak is shifted, depend on these alone. F. M. Lewis first worked this out (1932,
 <i>Vibration during acceleration through a critical speed</i>), and much later work on passage through
 resonance builds on it.</li>
@@ -254,8 +254,8 @@ the forward branch, at the critical speed (1284 rpm), and peaks just after it, a
 full spectrum the backward branch lies on the other side of zero, so the +1X ridge never meets it. The
 backward crossing on the Campbell diagram (664 rpm) is not a critical for an isotropic rotor.</p>
 <p><b>Block length.</b> A block of <m>T<sub>b</sub></m> seconds resolves frequencies <m>1/T<sub>b</sub></m> apart:
-2 Hz for 0.5 s. A longer block resolves more finely, but while the speed ramps at <m>Ω'</m> it changes by
-<m>Ω'T<sub>b</sub></m> over the block, smearing the 1X ridge. That is 100 rpm (1.7 Hz) at 200 rpm/s, but
+2 Hz for 0.5 s. A longer block resolves more finely, but while the speed ramps at <m>Ω̇</m> it changes by
+<m>Ω̇T<sub>b</sub></m> over the block, smearing the 1X ridge. That is 100 rpm (1.7 Hz) at 200 rpm/s, but
 2500 rpm (42 Hz) at 5000 rpm/s, where the ridge is a smear. Analysers get round this by <i>order
 tracking</i>: sampling at fixed shaft angles, from the keyphasor, so that 1X stays in one bin whatever the
 speed. The Bode plot's once-per-revolution 1X vector is that kind of measurement.</p>
@@ -274,8 +274,8 @@ disc would give. Its elastic force is <m>K<sub>shaft</sub>(q − q<sub>bow</sub>
 <m>K<sub>shaft</sub>q<sub>bow</sub></m> turning with the shaft, <m>kδ<sub>b</sub></m> at the disc. Unlike the
 unbalance's <m>meΩ²</m>, it does not grow with speed. For the classic Jeffcott rotor, with the heavy spot at the
 mark,</p>
-<eq>(k - m\Omega^2 + \mathrm{i}c\Omega)\,X = me\Omega^2 + k\delta_b\,\mathrm{e}^{\mathrm{i}\beta}</eq>
-<p>with <m>β</m> the bow's angle from the mark. So:</p>
+<eq>(k - m\Omega^2 + \mathrm{i}c\Omega)\,X = me\Omega^2 + k\delta_b\,\mathrm{e}^{\mathrm{i}\beta_b}</eq>
+<p>with <m>β<sub>b</sub></m> the bow's angle from the mark. So:</p>
 <ul>
 <li><b>At low speed the probes read the bow itself.</b> The shaft just carries its bend round: the
 <i>slow-roll runout</i>. The bow's forces on the disc and the journals balance, so the bearings carry
@@ -284,13 +284,13 @@ the bow vector, not at the origin.</li>
 <li><b>Well above the critical the disc's whirl dies away.</b> The disc stays on the bearings' axis, and
 the shaft bends round it to cancel the bow. The unbalance's response, by contrast, tends to <m>e</m>.</li>
 <li><b>With an unbalance, the angle between them decides.</b> In phase they add: with the defaults and
-<m>δ<sub>b</sub></m> = 20 µm, the peak doubles to 435 µm. Opposite (<m>β</m> = 180°), the bow's response falls with
+<m>δ<sub>b</sub></m> = 20 µm, the peak doubles to 435 µm. Opposite (<m>β<sub>b</sub></m> = 180°), the bow's response falls with
 speed while the unbalance's grows, and they cancel at one speed, where <m>meΩ² = kδ<sub>b</sub></m> in the
 classic case. Choose <m>δ<sub>b</sub> = e</m>, opposite, and the disc's centre of mass sits exactly on the
 bearings' axis. Then nothing whirls at any speed, and the probe reads a steady 20 µm, the bow.</li>
 </ul>
-<p>Measured from its bent shape, the shaft's deflection <m>y = x − δ<sub>b</sub></m> obeys
-<m>(k − mΩ² + icΩ)y = (me + mδ<sub>b</sub>e<sup>iβ</sup>)Ω² − icΩδ<sub>b</sub>e<sup>iβ</sup></m>. Relative to
+<p>Measured from its bent shape, the shaft's deflection <m>Y = X − δ<sub>b</sub>e<sup>iβ<sub>b</sub></sup></m> obeys
+<m>(k − mΩ² + icΩ)Y = (me + mδ<sub>b</sub>e<sup>iβ<sub>b</sub></sup>)Ω² − icΩδ<sub>b</sub>e<sup>iβ<sub>b</sub></sup></m>. Relative to
 its bow, the shaft sees the disc's mass carried round on the bow: an unbalance <m>mδ<sub>b</sub></m>. The last term
 is a damper on the disc itself dragged round the bow; here the damping is at the bearings, which the bow
 doesn't move, so it drops out. The probe adds the bow itself, as runout. With the disc at midspan the bow is
@@ -471,10 +471,10 @@ find two coefficients, so the single influence coefficient of <i>Single-plane ba
 Two trials at right angles, <m>T</m> and iT, reading <m>V<sub>1</sub></m> and <m>V<sub>2</sub></m>, find both:</p>
 <eq>\alpha_+ = \frac{(V_1 - V_0) - \mathrm{i}(V_2 - V_0)}{2T},</eq>
 <eq>\alpha_- = \frac{(V_1 - V_0) + \mathrm{i}(V_2 - V_0)}{2\bar{T}}</eq>
-<p>The correction then solves <m>α<sub>+</sub>W<sub>c</sub> + α<sub>−</sub>W̄<sub>c</sub></m> = −R, with
-<m>R = V<sub>0</sub> − V<sub>s</sub></m>. With its conjugate that is two equations for <m>W<sub>c</sub></m> and
+<p>The correction then solves <m>α<sub>+</sub>W<sub>c</sub> + α<sub>−</sub>W̄<sub>c</sub></m> = −ΔV, with
+<m>ΔV = V<sub>0</sub> − V<sub>s</sub></m>. With its conjugate that is two equations for <m>W<sub>c</sub></m> and
 <m>W̄<sub>c</sub></m>:</p>
-<eq>W_c = \frac{\alpha_-\bar{R} - \bar{\alpha}_+ R}{|\alpha_+|^2 - |\alpha_-|^2}</eq>
+<eq>W_c = \frac{\alpha_-\overline{\Delta V} - \bar{\alpha}_+ \Delta V}{|\alpha_+|^2 - |\alpha_-|^2}</eq>
 <p>Take the rotor above (<m>Δ</m> = 0.10) with the heavy spot at 45°, read at the disc and balanced at
 1200 rpm with a 0.5 g trial at 20 mm. One trial, at 0°, gives 1.18 g at 237°. The check run still reads
 9 µm, and through the critical the orbit peaks at 283 µm, worse than the 201 µm before. Two trials, at 0°
@@ -505,8 +505,8 @@ the unstable band.</p>
 <p>A fatigue crack grows across a shaft from its surface, often where the bending stress is highest, at
 a shoulder or a shrink fit. Its depth from the surface is <m>a<sub>c</sub></m>, up to half the shaft's diameter
 <m>d</m>.</p>
-<p><b>A hinge.</b> Where it is open, the crack lets the shaft's slope jump across it: <m>Δθ = κM</m> under a
-bending moment <m>M</m>. Its compliance <m>κ</m> comes from fracture mechanics (Dimarogonas and Papadopoulos). Cut the
+<p><b>A hinge.</b> Where it is open, the crack lets the shaft's slope jump across it: <m>Δθ = κM<sub>b</sub></m> under a
+bending moment <m>M<sub>b</sub></m>. Its compliance <m>κ</m> comes from fracture mechanics (Dimarogonas and Papadopoulos). Cut the
 crack into strips across its front, each an edge crack in a strip as tall as the shaft there, and add up
 the energy each releases as the crack grows, <m>(1 − ν²)K<sub>I</sub>²/E</m>. Bending that pulls the mouth open
 (the moment along the crack's front) loads every strip. Bending across it loads one half in tension and
@@ -595,7 +595,7 @@ two, which is the same for equal dampers.</p>
 <m>ω</m></b>, the oil's swirl outrunning the whirl, whatever the damping. With <m>λ</m> = ½ the rotor goes unstable at
 <b>twice its first natural frequency</b>. The <i>Oil swirl λ = ½</i> preset's onset is 3136 rpm, twice
 the forward whirl's 26.1 Hz, and just there the whirl is at exactly ½X. Faster, it stays locked at the
-natural frequency (26.3 Hz, 0.32×, at 5000 rpm, growing by <m>e</m> every 0.22 s): <i>oil whip</i>, its ratio
+natural frequency (26.3 Hz, 0.32×, at 5000 rpm, growing ×e every 0.22 s): <i>oil whip</i>, its ratio
 to the speed falling as the speed rises.</p>
 <p>With a constant <m>λ</m> the whirl turns straight into whip at the onset. On real machines <i>oil
 whirl</i> often comes first: a limit cycle near 0.45X that follows the speed up, and locks into whip once
@@ -635,7 +635,7 @@ rest the first mode's <m>ζ</m> rises from 0.046 to 0.078 with <m>c<sub>i</sub><
 modes in and near the running range: the defaults' lightly damped conical mode, at 315 Hz, is far above it.)</p>
 <p><b>Beyond the onset</b> a tap, or just the unbalance's start-up transient, sets off a whirl that
 grows exponentially at the mode's own natural frequency, not at the speed: a <b>subsynchronous</b> whirl.
-With <m>c<sub>i</sub></m> = 20 N·s/m at 5,000 rpm it is at 26.9 Hz (0.32×), growing by <m>e</m> every 0.28 s, while the
+With <m>c<sub>i</sub></m> = 20 N·s/m at 5,000 rpm it is at 26.9 Hz (0.32×), growing ×e every 0.28 s, while the
 unbalance still turns at 83 Hz. No balancing removes it. The <b>full spectrum</b> transforms <m>w = x + iy</m> of
 the orbit, forward whirl at positive frequencies and backward at negative. The unbalance shows at +1X,
 and the instability as a growing line below it on the forward side. The model is linear, so the whirl
@@ -659,7 +659,7 @@ narrows carries load (the <m>π-film</m>).</p>
 the film's pressure peaks ahead of the thinnest point, it also pushes the journal <b>sideways</b>, in the
 direction of spin. The journal settles off the load line by the <b>attitude angle</b> <m>χ</m>, at an
 <b>eccentricity</b> <m>ε</m>, its offset over <m>c<sub>r</sub></m>. The Sommerfeld number
-<m>S = (μNL<sub>b</sub>D<sub>b</sub>/W)(R<sub>b</sub>/c<sub>r</sub>)²</m>, <m>N</m> in rev/s, and the bearing's
+<m>S = (ηNL<sub>b</sub>D<sub>b</sub>/W)(R<sub>b</sub>/c<sub>r</sub>)²</m>, <m>N</m> in rev/s, and the bearing's
 proportions set <m>ε</m>. In short-bearing theory <m>ε</m> depends only on <m>S(L<sub>b</sub>/D<sub>b</sub>)²</m>, the modified
 Sommerfeld number: at <m>S</m> = 1, halving <m>L<sub>b</sub></m> moves <m>ε</m> from 0.32 to 0.60. The more speed and
 viscosity, or the less load, the larger <m>S</m>, and the closer the journal to the centre, at nearly 90° to
@@ -669,7 +669,7 @@ the load. Every short bearing travels the same path, the <b>locus</b>, only at a
 <tr><td><i>A plain journal bearing, its clearance much exaggerated. The load W pushes the journal down and the film pushes it sideways, the way it spins. It settles on the locus at the eccentricity ε, at the attitude angle χ from the load line. The film is thinnest along the line of centres.</i></td></tr>
 </table>
 <p>The default bearing (<m>D<sub>b</sub></m> = 10 mm, <m>L<sub>b</sub></m> = 5 mm, <m>c<sub>r</sub></m> = 15 µm, oil of
-30 mPa·s, 5 N) has <m>ε</m> = 0.80 at 100 rpm, 0.44 at 1,000 rpm and 0.22 at 3,000 rpm, its thinnest film
+<m>η</m> = 30 mPa·s, 5 N) has <m>ε</m> = 0.80 at 100 rpm, 0.44 at 1,000 rpm and 0.22 at 3,000 rpm, its thinnest film
 11.7 µm there.</p>
 <p>For small motions about that point the film acts as springs and dampers, eight coefficients:
 <m>f = −KΔq − CΔq̇</m>, with <m>K = (W/c<sub>r</sub>)K̄(ε)</m> and <m>C = (W/(c<sub>r</sub>Ω))C̄(ε)</m>, <m>K̄</m> and <m>C̄</m>
@@ -712,7 +712,7 @@ ellipse.</p>
 touch the bearing long before that, so read them as the linear model's prediction only.</p>
 <p>A little below twice the critical, at 3576 rpm, the forward whirl grows at 30.5 Hz (0.51×). This is
 oil whip from the bearing itself, not from a chosen <m>λ</m>. It is locked at 30.7 Hz at 5000 rpm (0.37×),
-growing by <m>e</m> every 0.85 s. Long before it reaches the size of the disc's whirl, it fills the 15 µm
+growing ×e every 0.85 s. Long before it reaches the size of the disc's whirl, it fills the 15 µm
 clearance. A vertical rotor's bearings carry no load, and an unloaded plain bearing has no direct
 stiffness, only the swirl's cross-coupling. On them the rotor whirls at any speed, which is why vertical
 machines use tilting-pad or preloaded bearings.</p>
@@ -749,62 +749,62 @@ speed rises.</p>
 
 <h3>Active magnetic bearings</h3>
 <p>An active magnetic bearing holds the journal with no contact at all. On each axis two electromagnets
-face each other across the journal, each an air gap <m>s<sub>0</sub></m> from it. A magnet pulls with
-<m>k i²/s²</m>, <m>k = μ<sub>0</sub>N²A/4</m> for <m>N</m> turns and pole faces of area A, so the nearer the journal, the
-harder it pulls. Both coils carry a bias current <m>i<sub>0</sub></m>, and the control current <m>i</m> is added to one
+face each other across the journal, each an air gap <m>h<sub>0</sub></m> from it. Across a gap <m>h</m>, a magnet carrying a current <m>i</m> pulls with
+<m>Λi²/h²</m>, <m>Λ = μ<sub>0</sub>N<sub>c</sub>²A<sub>p</sub>/4</m> for <m>N<sub>c</sub></m> turns and pole faces of area <m>A<sub>p</sub></m> (<m>μ<sub>0</sub></m> the permeability of free space), so the nearer the journal, the
+harder it pulls. Both coils carry a bias current <m>i<sub>0</sub></m>, and the control current <m>i<sub>c</sub></m> is added to one
 and taken from the other. For small motions the pair's force is</p>
-<eq>f = k_i\,i + k_m x,</eq>
-<eq>k_i = \frac{4k\,i_0}{s_0^2}, \qquad k_m = \frac{4k\,i_0^2}{s_0^3}</eq>
+<eq>f = k_i\,i_c + k_m x,</eq>
+<eq>k_i = \frac{4\Lambda\,i_0}{h_0^2}, \qquad k_m = \frac{4\Lambda\,i_0^2}{h_0^3}</eq>
 <p><m>k<sub>m</sub></m> is a <b>negative stiffness</b>: left alone, the journal falls onto a magnet. The force
-can reach <m>k<sub>i</sub>i<sub>0</sub> = k<sub>m</sub>s<sub>0</sub></m>, where one magnet's current runs out:
-that is the bearing's load capacity. The default bearing (<m>s<sub>0</sub></m> = 1 mm, <m>i<sub>0</sub></m> = 1 A,
-<m>A</m> = 400 mm², <m>N</m> = 200) has <m>k<sub>m</sub></m> = 20.1 kN/m, <m>k<sub>i</sub></m> = 20.1 N/A and a capacity of 20.1 N.</p>
-<p>A sensor reads <m>x</m>, and a controller sets <m>i = −G(s)x</m> through a power amplifier:
-<m>G(s) = (k<sub>p</sub> + k<sub>I</sub>/s + k<sub>d</sub>s/(1 + s/ω<sub>d</sub>))/(1 + s/ω<sub>a</sub>)</m>, a PID
-with its derivative filtered at <m>ω<sub>d</sub></m> and the amplifier's bandwidth <m>ω<sub>a</sub></m>. The bearing then
-pushes back with <m>−K<sub>b</sub>(s)x</m>, <m>K<sub>b</sub> = k<sub>i</sub>G(s) − k<sub>m</sub></m>. The proportional
+can reach <m>k<sub>i</sub>i<sub>0</sub> = k<sub>m</sub>h<sub>0</sub></m>, where one magnet's current runs out:
+that is the bearing's load capacity. The default bearing (<m>h<sub>0</sub></m> = 1 mm, <m>i<sub>0</sub></m> = 1 A,
+<m>A<sub>p</sub></m> = 400 mm², <m>N<sub>c</sub></m> = 200) has <m>k<sub>m</sub></m> = 20.1 kN/m, <m>k<sub>i</sub></m> = 20.1 N/A and a capacity of 20.1 N.</p>
+<p>A sensor reads <m>x</m>, and a controller sets <m>i<sub>c</sub> = −G<sub>c</sub>(s)x</m> through a power amplifier:
+<m>G<sub>c</sub>(s) = (k<sub>p</sub> + k<sub>I</sub>/s + k<sub>d</sub>s/(1 + s/ω<sub>lp</sub>))/(1 + s/ω<sub>a</sub>)</m>, a PID
+with its derivative filtered at <m>ω<sub>lp</sub></m> and the amplifier's bandwidth <m>ω<sub>a</sub></m>. The bearing then
+pushes back with <m>−K<sub>mb</sub>(s)x</m>, <m>K<sub>mb</sub> = k<sub>i</sub>G<sub>c</sub>(s) − k<sub>m</sub></m>. The proportional
 gain has to beat the magnets first: <m>k<sub>i</sub>k<sub>p</sub> − k<sub>m</sub></m> is what is left as
 stiffness, 50.3 kN/m by default, and the derivative gives <m>k<sub>i</sub>k<sub>d</sub></m> = 101 N·s/m of
 damping. The integral makes the stiffness infinite at 0 Hz: under a steady load the current keeps
 growing until the journal is back at the centre. On a horizontal rotor the journals stay centred and the
 shaft alone sags.</p>
 <p>So the bearing's stiffness and damping are not constants but depend on the frequency. At <m>ω</m>,
-<m>K<sub>b</sub>(iω) = k<sub>b</sub> + iωc<sub>b</sub></m>: the spring and damper that would push the same.
-Where the controller leads the motion, <m>c<sub>b</sub></m> &gt; 0. The integral lags it at low frequency, and
-the derivative's filter and the amplifier lag it at high frequency, so <m>c<sub>b</sub></m> is positive only in
+<m>K<sub>mb</sub>(iω) = k<sub>mb</sub> + iωc<sub>mb</sub></m>: the spring and damper that would push the same.
+Where the controller leads the motion, <m>c<sub>mb</sub></m> &gt; 0. The integral lags it at low frequency, and
+the derivative's filter and the amplifier lag it at high frequency, so <m>c<sub>mb</sub></m> is positive only in
 a band: 14.1 to 1297 Hz for the default bearing. Outside it the bearing feeds a mode. A mode that sits
 out there unstable, or moves out there as the speed changes, grows.</p>
 <p>That is how a controller's <b>phase lag</b> destabilizes a rotor. A gyroscopic rotor's forward
 modes rise with the speed. On the <i>Magnetic bearings</i> preset (the disc overhung past B, the
 amplifier slowed to 400 Hz, which brings the band's top down to 739 Hz) the disc's forward tilting mode
 reaches 739 Hz at 8894 rpm, 4.99× the speed, and is unstable past it: at 12,000 rpm it whirls at 778 Hz
-and grows by <m>e</m> every 0.41 s. The onset is exactly where the mode crosses the band's edge. A faster
+and grows ×e every 0.41 s. The onset is exactly where the mode crosses the band's edge. A faster
 amplifier (1000 Hz) keeps the rotor stable to 20,000 rpm; a slower one (300 Hz) leaves the mode outside
 the band even at rest. Backward modes fall with the speed, toward the integral's lag at the bottom.</p>
 <p>The controller has states of its own (the integral, the filter, the current), so the rotor's state
 grows past [<m>q</m>, <m>q̇</m>] by three per axis. The time stepping is still the exact update, with them in A; the
-steady states take <m>K<sub>b</sub></m> at each harmonic. The model is linearized about the centred journal and
+steady states take <m>K<sub>mb</sub></m> at each harmonic. The model is linearized about the centred journal and
 the bias current, with the sensor at the journal. A real bearing also saturates (the current cannot
 pass <m>i<sub>0</sub></m> one way), and its rotor drops onto backup bearings, at half the air gap, when control
 is lost. The page pauses there.</p>
 <p><b>On the page.</b> Choose <i>Magnetic bearings</i> under the bearing supports to float both
-journals in the <i>Magnetic bearing</i> tab's bearing. The tab plots <m>k<sub>b</sub></m> and <m>c<sub>b</sub></m>
-against frequency, shades where <m>c<sub>b</sub></m> &lt; 0, and draws the rotor's modes at the speed now
+journals in the <i>Magnetic bearing</i> tab's bearing. The tab plots <m>k<sub>mb</sub></m> and <m>c<sub>mb</sub></m>
+against frequency, shades where <m>c<sub>mb</sub></m> &lt; 0, and draws the rotor's modes at the speed now
 (dashed backward).</p>
 
 <h2>6. Rub</h2>
 
 <h3>Rotor–stator rub</h3>
 <p>Seals and casings sit close round a rotor. A ring round the disc, a radial clearance <m>δ<sub>c</sub></m> larger
-than it, does nothing until the disc's centre moves <m>δ<sub>c</sub></m> off the ring's centre. Past that, by <m>δ</m>,
-the ring pushes the disc back toward its centre with <m>N = k<sub>ring</sub>δ + c<sub>ring</sub>δ'</m>, never
+than it, does nothing until the disc's centre moves <m>δ<sub>c</sub></m> off the ring's centre. Past that, by <m>δ<sub>p</sub></m>,
+the ring pushes the disc back toward its centre with <m>F<sub>N</sub> = k<sub>ring</sub>δ<sub>p</sub> + c<sub>ring</sub>δ̇<sub>p</sub></m>, never
 pulling (<m>k<sub>ring</sub></m> and <m>c<sub>ring</sub></m> are the ring's mount; the rim and the ring are rigid), and its
-friction drags the rim against its slip over the ring with <m>μN</m>. The slip is the rim's speed <m>RΩ</m>, <m>R</m> the
+friction drags the rim against its slip over the ring with <m>μF<sub>N</sub></m>. The slip is the rim's speed <m>R<sub>d</sub>Ω</m>, <m>R<sub>d</sub></m> the
 disc's radius, plus the disc's centre moving along the ring, <m>v<sub>t</sub></m>:</p>
-<eq>f = -Nn - \mu N\,\mathrm{sat}(R\Omega + v_t)\,t,</eq>
-<eq>\mathrm{sat}(s) = \frac{s}{\sqrt{s^2 + s_0^2}}</eq>
-<p><m>n</m> points out from the ring's centre to the disc's, <m>t</m> along the ring in the direction of spin, and
-<m>s<sub>0</sub></m> = 1 cm/s smooths Coulomb's step at zero slip, so that a rim rolling on the ring is held there
+<eq>f = -F_N\hat{n} - \mu F_N\,\mathrm{sat}(R_d\Omega + v_t)\,\hat{t},</eq>
+<eq>\mathrm{sat}(v) = \frac{v}{\sqrt{v^2 + v_0^2}}</eq>
+<p><m>n̂</m> points out from the ring's centre to the disc's, <m>t̂</m> along the ring in the direction of spin, and
+<m>v<sub>0</sub></m> = 1 cm/s smooths Coulomb's step at zero slip, so that a rim rolling on the ring is held there
 by a steep drag rather than a jump. The force is not linear in anything, so the ring is in the time
 response only: the Campbell diagram, the stability map and the steady-state curves are the rotor's
 without it.</p>
@@ -816,13 +816,13 @@ sub-harmonics. On the <i>Partial rub</i> preset (horizontal, a 385 µm seal roun
 the disc brushes the ring's bottom once a turn above the critical and every other turn past about 4000
 rpm: at 4400 rpm the full spectrum's tallest line is ½X, 36.7 Hz.</p>
 <p><b>Full rub and backward whirl.</b> Held against the ring all round, the disc whirls forward with the
-unbalance, and the ring is a spring <m>κ = k<sub>ring</sub>(1 − δ<sub>c</sub>/ρ)</m> at the disc on an orbit of
-radius <m>ρ</m>. Its friction acts along <m>t</m>: <m>−μκ</m>, a cross-coupled stiffness, and since the rim slips forward over
-the ring (<m>RΩ</m> is far faster than the whirl) it pushes the disc backward round the ring. Enough of it flips
+unbalance, and the ring is a spring <m>k<sub>full</sub> = k<sub>ring</sub>(1 − δ<sub>c</sub>/r<sub>d</sub>)</m> at the disc on an orbit of
+radius <m>r<sub>d</sub></m>. Its friction acts along <m>t̂</m>: <m>−μk<sub>full</sub></m>, a cross-coupled stiffness, and since the rim slips forward over
+the ring (<m>R<sub>d</sub>Ω</m> is far faster than the whirl) it pushes the disc backward round the ring. Enough of it flips
 the whirl backward. The disc then whirls at its frequency on the ring,
 <m>√((k + k<sub>ring</sub>)/m)</m>, <m>k</m> the rotor's own stiffness at the disc, far above the speed, and the friction
-keeps feeding it until the rim rolls round the ring without slipping: <m>|ω|ρ = RΩ</m>. So the orbit's radius is
-<m>RΩ/|ω|</m>, set by the speed and not by the clearance: <b>dry whirl</b>, the most violent rub there is. On the
+keeps feeding it until the rim rolls round the ring without slipping: <m>|ω|r<sub>d</sub> = R<sub>d</sub>Ω</m>. So the orbit's radius is
+<m>R<sub>d</sub>Ω/|ω|</m>, set by the speed and not by the clearance: <b>dry whirl</b>, the most violent rub there is. On the
 <i>Full rub</i> preset (a 30 µm ring, <m>μ</m> = 0.3) the whirl flips at 1545 rpm, to 227 Hz backward, and at
 2000 rpm the orbit is 7.3 mm, the ring pushed back with 15 kN.</p>
 <h3>The Newkirk effect: a rub that bows the shaft</h3>
@@ -830,21 +830,21 @@ keeps feeding it until the rim rolls round the ring without slipping: <m>|ω|ρ 
 and bows toward it. Newkirk (1926) saw what follows: below the critical speed the disc's high spot is
 close to its heavy spot, so the rub heats the high spot, the bow pushes the high spot further out, the
 rub gets harder, and the vibration grows without limit. Here the heat is the drag's work on the slip,
-<m>H = μN·(RΩ + v<sub>t</sub>)</m>, taken on the shaft where it touches (from the mark, turning with it), and the
-bow <m>b</m> at the disc follows it with a first-order lag:</p>
-<eq>\tau\dot{b} = \beta H - b</eq>
-<p><m>β</m> is the bow per watt once it has settled, <m>τ</m> how slowly it does. The bow loads the shaft as a residual
+<m>P<sub>h</sub> = μF<sub>N</sub>(R<sub>d</sub>Ω + v<sub>t</sub>)</m>, taken on the shaft where it touches (from the mark, turning with it), and the
+bow <m>δ<sub>T</sub></m> at the disc follows it with a first-order lag:</p>
+<eq>\tau_T\dot{\delta}_T = a_T P_h - \delta_T</eq>
+<p><m>a<sub>T</sub></m> is the bow per watt once it has settled, <m>τ<sub>T</sub></m> how slowly it does. The bow loads the shaft as a residual
 bow does (section 3), turning with it. Because the rotor's response lags the bow a little, each turn of
 the loop moves the high spot a little behind the hot spot: the 1X vector grows and turns <b>against</b>
 the spin, its lag growing, the <b>Newkirk spiral</b>. Above the critical the rotor's response to the bow
 is nearly opposite to it: the bow pulls the high spot away from the hot spot, the rub eases, and it heals
 itself. So the effect depends on which side of the critical the rotor runs, not on how hard it rubs. On
-the <i>Newkirk effect</i> preset (a seal 15 µm round the disc, set 10 µm low, <m>β</m> = 120 µm/W, <m>τ</m> = 5 s, so
+the <i>Newkirk effect</i> preset (a seal 15 µm round the disc, set 10 µm low, <m>a<sub>T</sub></m> = 120 µm/W, <m>τ<sub>T</sub></m> = 5 s, so
 much faster than a real shaft's minutes) the 1X at 1300 rpm, 0.82 of the critical, grows from 10 µm past
 100 µm in 15 s, its lag from 13° to 40°. Run at 3200 rpm, the bow built going through the critical
 fades to 2.4 µm, and the disc runs at 5.9 µm.</p>
 <p><b>On the page.</b> The <i>Rub</i> tab sets the ring, says how much gap the disc has at rest and its
-frequency on the ring, and plots the ring's push on the disc. With a thermal gain <m>β</m> it also draws the
+frequency on the ring, and plots the ring's push on the disc. With a thermal gain <m>a<sub>T</sub></m> it also draws the
 spiral: each revolution's 1X vector at the disc (in the probe's direction) and the thermal bow, from
 when the speed settled. The ring is drawn round the disc in the 3D
 view and on its orbit. A ring needs a round shaft, with the oil films linearized.</p>
@@ -855,13 +855,13 @@ view and on its orbit. A ring needs a round shaft, with the oil films linearized
 <p>Real modes and modal superposition need symmetric <m>M</m> and <m>K</m>, damping in proportion to them, and modes
 that do not change with the speed. Here <m>ΩG</m> is skew-symmetric and changes with the speed, and the support
 damping is not proportional. So the modes are complex and depend on the speed. The first-order form
-<m>Z' = A(Ω)Z</m> + Bu handles all of it. The eigenvalues of A give each mode's frequency, damping and whirl
+<m>Ż = A(Ω)Z + Bu</m> handles all of it. The eigenvalues of A give each mode's frequency, damping and whirl
 direction, and the time response is stepped exactly.</p>
 <p>As on the other pages, each step is the exact first-order-hold matrix-exponential update,
 <m>Z<sub>k+1</sub> = ΦZ<sub>k</sub> + Γ<sub>0</sub>u<sub>k</sub> + Γ<sub>1</sub>u<sub>k+1</sub></m>, with
-<m>Φ = e<sup>Ah</sup></m> for a step <m>h</m>. It is stable however stiff the shaft. While the speed ramps, <m>A(Ω)</m> is
+<m>Φ = e<sup>AΔt</sup></m> for a step <m>Δt</m>. It is stable however stiff the shaft. While the speed ramps, <m>A(Ω)</m> is
 updated every 2 ms of simulated time, and the unbalance force follows the exact angle <m>φ</m>, including the
-<m>Ω'</m> term. The ramp's gyroscopic term <m>I<sub>p</sub>Ω'θ</m> is left out: at 5000 rpm/s it is about 0.03% of the
+<m>Ω̇</m> term. The ramp's gyroscopic term <m>I<sub>p</sub>Ω̇θ</m> is left out: at 5000 rpm/s it is about 0.03% of the
 disc's tilt stiffness.</p>
 
 <h3>Stepping the whole film</h3>
@@ -877,7 +877,7 @@ make the update ring from step to step and throw the journal through the wall. S
 <m>C<sub>b</sub></m> instead: the damping of the whole film, uncavitated, where the journal is. The film's
 damping is a sum of positive terms over the half carrying pressure, so it is never more than
 <m>C<sub>b</sub></m>, whatever the velocity. The remainder is then never stiffer than the update, and the step
-stays second order in <m>h</m>. As the journal moves round, <m>C<sub>b</sub></m> is taken afresh, and <m>Φ</m> with it.</p>
+stays second order in <m>Δt</m>. As the journal moves round, <m>C<sub>b</sub></m> is taken afresh, and <m>Φ</m> with it.</p>
 <p>The film's force is also minus the gradient, in the journal's velocity, of its dissipation <m>Ψ</m>, which
 is convex. So each step's journal velocities are where a convex function is least, and a Newton step
 that does not lower it is cut back. That keeps Newton right where the film's force bends sharply: at the
@@ -888,9 +888,9 @@ a hundred times more. Past what a frame can compute, the page runs slower than t
 <h3>Stepping the rub</h3>
 <p>The ring's force goes in as the films' remainder does: a load on the disc, linear over the step,
 <m>Z<sub>k+1</sub> = ΦZ<sub>k</sub> + Γ<sub>0</sub>(u<sub>k</sub> + r<sub>k</sub>) + Γ<sub>1</sub>(u<sub>k+1</sub>
-+ r<sub>k+1</sub>)</m>, with <m>r<sub>k+1</sub></m> found by Newton's method, since it depends on <m>Z<sub>k+1</sub></m>.
++ r<sub>k+1</sub>)</m>, with <m>r<sub>k</sub></m> the ring's force at step <m>k</m> and <m>r<sub>k+1</sub></m> found by Newton's method, since it depends on <m>Z<sub>k+1</sub></m>.
 That is the trapezoidal rule on the ring's force: a rim rolling on the ring is held there by a drag of
-<m>μN/s<sub>0</sub></m>, hundreds of kN·s/m in dry whirl, which would ring an explicit step. The step also resolves the disc
+<m>μF<sub>N</sub>/v<sub>0</sub></m>, hundreds of kN·s/m in dry whirl, which would ring an explicit step. The step also resolves the disc
 bouncing on the ring, <m>√((k + k<sub>ring</sub>)/m)</m>, as well as the rotor's own modes. Checked against the full rub's
 steady state above (a frictionless one and one with <m>μ</m> = 0.1, to a part in 10<sup>6</sup>) and against
 a step four times finer. The steps run in Rust, at well under a microsecond each, so even a full rub
@@ -1044,7 +1044,7 @@ Set <m>μ</m> to 0.1 and Reset: the disc still reaches the ring, but whirls forw
 <li>Load the <i>Newkirk effect</i> preset, open the <i>Rub</i> tab and watch the polar plot: the 1X vector
 and the thermal bow spiral out together, turning clockwise (more lag), until the page pauses. Set the
 target to 3200 rpm and Reset: through the critical the bow grows to about 26 µm, and then fades, the disc
-settling at 5.9 µm with the bow at 2.4 µm. Set <m>β</m> to 0 and nothing grows below the critical either.</li>
+settling at 5.9 µm with the bow at 2.4 µm. Set <m>a<sub>T</sub></m> to 0 and nothing grows below the critical either.</li>
 </ol>
 <takeaways>
 <li>A rotor's unbalance response peaks at the critical speeds, and the heavy spot leads the high spot by 90° there and by about 180° well above: run above a critical and the disc centres itself.</li>
@@ -1054,78 +1054,5 @@ settling at 5.9 µm with the bow at 2.4 µm. Set <m>β</m> to 0 and nothing grow
 <li>Cross-coupled stiffness (oil films, seals, internal damping) feeds the forward whirl and sets an onset speed above which the rotor is unstable, whatever its balance.</li>
 </takeaways>
 
-<h2>Notation</h2>
-<table border="1" cellspacing="0" cellpadding="4">
-<tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr>
-<tr><td colspan="3"><b>The rotor</b></td></tr>
-<tr><td>L, a, b, ℓ</td><td>bearing span; the disc's distance from A and from B (a + b = L); an overhung disc's distance past its bearing</td><td>m</td></tr>
-<tr><td>z</td><td>position along the shaft, from bearing A</td><td>m</td></tr>
-<tr><td>d, E, ν, EI</td><td>shaft diameter, Young's modulus, Poisson's ratio, bending stiffness E π d⁴/64</td><td>m, Pa, —, N·m²</td></tr>
-<tr><td>m, I<sub>p</sub>, I<sub>d</sub></td><td>disc mass; its polar and diametral moments of inertia</td><td>kg, kg·m²</td></tr>
-<tr><td>k<sub>x</sub>, k<sub>y</sub>, c<sub>x</sub>, c<sub>y</sub></td><td>a support's stiffness and damping, horizontal and vertical</td><td>N/m, N·s/m</td></tr>
-<tr><td>k, c</td><td>stiffness and damping in a one-mass model</td><td>N/m, N·s/m</td></tr>
-<tr><td>k<sub>s</sub>, k<sub>b</sub>, k<sub>eq</sub>, k<sub>θ</sub></td><td>the shaft's midspan stiffness; a support's; the two in series; a disc's tilt stiffness</td><td>N/m, N·m/rad</td></tr>
-<tr><td>ρ, ξ</td><td>the shaft's density; the amplitudes of its modes with the stations held (mass normalized)</td><td>kg/m³, √kg·m</td></tr>
-<tr><td colspan="3"><b>Motion and speed</b></td></tr>
-<tr><td>x, y</td><td>horizontal and vertical displacement of the shaft's centre</td><td>m</td></tr>
-<tr><td>w, w<sub>f</sub>, w<sub>b</sub></td><td>the complex displacement x + iy; the forward and backward circles of an orbit at one frequency, w = w<sub>f</sub>e<sup>iωt</sup> + w<sub>b</sub>e<sup>−iωt</sup></td><td>m</td></tr>
-<tr><td>θ<sub>x</sub>, θ<sub>y</sub></td><td>shaft's slope at the disc, dx/dz and dy/dz</td><td>rad</td></tr>
-<tr><td>q</td><td>the DOFs: the stations' displacements and slopes (then ξ)</td><td>m, rad</td></tr>
-<tr><td>Ω, Ω', φ</td><td>spin speed; its rate of change on a ramp; angle of the keyphasor mark on the shaft from +x (φ' = Ω)</td><td>rad/s (rpm), rad/s² (rpm/s), rad</td></tr>
-<tr><td>ω, ω<sub>n</sub>, ω<sub>c</sub></td><td>a whirl frequency; a natural frequency; a critical speed</td><td>rad/s (Hz, rpm)</td></tr>
-<tr><td>r</td><td>speed ratio Ω/ω<sub>c</sub></td><td>—</td></tr>
-<tr><td>r<sub>w</sub>, X</td><td>radius of a circular whirl orbit; a one-mass model's complex amplitude, w = Xe<sup>iΩt</sup></td><td>m</td></tr>
-<tr><td>ζ, δ</td><td>damping ratio of a mode, −Re s / |s|; log decrement, 2πζ/√(1 − ζ²)</td><td>—</td></tr>
-<tr><td>s</td><td>eigenvalue of a mode (for a turning stiffness, a Floquet exponent)</td><td>1/s</td></tr>
-<tr><td colspan="3"><b>Equations</b></td></tr>
-<tr><td>M, C, G, K, H</td><td>mass, damping, gyroscopic, stiffness and circulatory matrices (8 × 8 for a massless shaft); H is the skew stiffness per unit speed, from internal damping and fluid swirl</td><td>—</td></tr>
-<tr><td>J</td><td>the matrix that turns x toward y, in each pair of planes</td><td>—</td></tr>
-<tr><td>Z, u, A(Ω), B</td><td>state vector [q, q̇] (and x<sub>c</sub> with magnetic bearings); the loads; the state and input matrices (16 × 16 and 16 × 8 for a massless shaft)</td><td>—</td></tr>
-<tr><td>h, Φ, Γ<sub>0</sub>, Γ<sub>1</sub></td><td>the time step; the exact update's matrices</td><td>s, —</td></tr>
-<tr><td>r<sub>f</sub>, C<sub>b</sub></td><td>stepping the whole film: the remainder of its force on the journals; the whole uncavitated film's damping, which bounds the film's</td><td>N, N·s/m</td></tr>
-<tr><td>R(φ), q<sub>r</sub></td><td>the rotation to axes turning with the shaft; q in those axes, q = R(φ)q<sub>r</sub></td><td>—, m</td></tr>
-<tr><td>Q<sub>0</sub>, Q<sub>n</sub></td><td>a periodic steady state's mean and its nX harmonic</td><td>m</td></tr>
-<tr><td>Ω<sub>s</sub></td><td>the harmonic spacing of a turning stiffness (2Ω, or Ω for a breathing crack)</td><td>rad/s</td></tr>
-<tr><td colspan="3"><b>Once-per-revolution forces and balancing</b></td></tr>
-<tr><td>U = m e, ψ</td><td>unbalance: disc mass times its centre of mass's offset e; the heavy spot's angle from the mark</td><td>kg·m (g·mm), rad</td></tr>
-<tr><td>δ<sub>b</sub>, β, θ<sub>b</sub></td><td>shaft bow at the disc, its angle from the keyphasor mark, and the bowed shaft's slope at the disc</td><td>m (µm), rad, rad</td></tr>
-<tr><td>τ, γ</td><td>disc skew (its axis's tilt from the shaft's), and its angle from the keyphasor mark</td><td>rad (°)</td></tr>
-<tr><td>V</td><td>1X vector: amplitude |V|, phase lag −arg V</td><td>m</td></tr>
-<tr><td>V<sub>s</sub>, V<sub>0</sub>, V<sub>j</sub></td><td>the readings: slow roll, as found, with the trial weight in plane j</td><td>m</td></tr>
-<tr><td>T, W<sub>c</sub>, U<sub>w</sub></td><td>trial and correction weights, and any other balance weight (mass × radius at an angle)</td><td>kg·m (g·mm)</td></tr>
-<tr><td>α; α<sub>+</sub>, α<sub>−</sub></td><td>influence coefficient (V<sub>1</sub> − V<sub>0</sub>)/T, or matrix; on an asymmetric shaft, the coefficients of U and Ū, V = α<sub>+</sub>U + α<sub>−</sub>Ū</td><td>m per kg·m</td></tr>
-<tr><td>T<sub>b</sub></td><td>a spectrum's block length</td><td>s</td></tr>
-<tr><td colspan="3"><b>Gravity, the asymmetric shaft and the crack</b></td></tr>
-<tr><td>g, f<sub>g</sub>, q<sub>s</sub></td><td>gravity; the weights on the journals and the disc; the static deflection under them</td><td>m/s², N, m</td></tr>
-<tr><td>x<sub>r</sub>, y<sub>r</sub></td><td>a Jeffcott rotor's displacement in axes turning with the shaft, along its stiff and soft axes</td><td>m</td></tr>
-<tr><td>Δ, β<sub>s</sub></td><td>shaft asymmetry (EI(1 ± Δ) about its stiff and soft axes), and the stiff axis's angle from the keyphasor mark</td><td>—, rad (°)</td></tr>
-<tr><td>ΔK(φ)</td><td>the asymmetric or cracked shaft's stiffness less its mean, turning with it</td><td>N/m</td></tr>
-<tr><td>a<sub>c</sub>, β<sub>c</sub></td><td>a crack's depth from the shaft's surface (a<sub>c</sub>/d of the diameter); its mouth's angle from the keyphasor mark</td><td>m, rad (°)</td></tr>
-<tr><td>κ, κ<sub>o</sub>, κ<sub>a</sub>, Δθ</td><td>a crack's compliance (the jump in slope across it per unit bending moment), opening it and across; the jump itself</td><td>rad/(N·m), rad</td></tr>
-<tr><td>b<sub>h</sub>, k<sub>h</sub></td><td>the moment at a crack per unit of each station's displacement; the shaft's stiffness against a jump in slope there</td><td>N, N·m/rad</td></tr>
-<tr><td>σ(φ)</td><td>how open a breathing crack is, 0 (shut) to 1</td><td>—</td></tr>
-<tr><td>P, D<sub>o</sub>, D<sub>a</sub>, E<sub>n</sub></td><td>the crack's loss of stiffness on the stations: its mean; held open, along and across the mouth; its nX harmonic</td><td>N/m</td></tr>
-<tr><td colspan="3"><b>Stability and the fluid-film bearing</b></td></tr>
-<tr><td>k<sub>xy</sub>, k<sub>yx</sub>; c<sub>xy</sub>, c<sub>yx</sub></td><td>a bearing's cross-coupled stiffness (k<sub>yx</sub> = −k<sub>xy</sub> unless given) and damping: f<sub>x</sub> = −k<sub>xy</sub>y − c<sub>xy</sub>ẏ</td><td>N/m; N·s/m</td></tr>
-<tr><td>c<sub>i</sub>, c<sub>e</sub>, η</td><td>internal (rotating) damping of the shaft, as a damper at the disc; external damping at the disc; η = c<sub>i</sub>/k<sub>disc</sub></td><td>N·s/m, s</td></tr>
-<tr><td>λ</td><td>a fluid-film bearing's swirl ratio: k<sub>xy</sub> grows by λcΩ, c the mean of c<sub>x</sub> and c<sub>y</sub></td><td>—</td></tr>
-<tr><td>D<sub>b</sub>, R<sub>b</sub>, L<sub>b</sub>, c<sub>r</sub>, μ, W</td><td>on the <i>Fluid-film bearing</i> tab: journal diameter and radius, bearing length, radial clearance, oil viscosity, load</td><td>m, m, m, m (µm), Pa·s, N</td></tr>
-<tr><td>ε, χ</td><td>the journal's eccentricity (its offset over c<sub>r</sub>); its attitude angle from the load line</td><td>—, rad (°)</td></tr>
-<tr><td>S, N</td><td>the Sommerfeld number (μNL<sub>b</sub>D<sub>b</sub>/W)(R<sub>b</sub>/c<sub>r</sub>)²; the speed in rev/s</td><td>—, 1/s</td></tr>
-<tr><td>K̄, C̄</td><td>a bearing's coefficients made dimensionless: K c<sub>r</sub>/W and C c<sub>r</sub>Ω/W</td><td>—</td></tr>
-<tr><td>K<sub>f</sub>, C<sub>f</sub>, q<sub>J</sub>, p</td><td>on the rotor, the films' stiffness and damping; the journals' equilibrium; the films' constant load W + K<sub>f</sub>q<sub>J</sub></td><td>N/m, N·s/m, m, N</td></tr>
-<tr><td>ϑ, ϑ<sub>e</sub>, Ψ</td><td>the whole film: the angle round the bearing from the line of centres, and its eccentric anomaly; the film's dissipation</td><td>rad, rad, W</td></tr>
-<tr><td>m<sub>b</sub>, ω<sub>w</sub>, K<sub>eq</sub></td><td>Lund's rigid rotor: its mass per bearing; its whirl frequency at the threshold; the film's equivalent stiffness</td><td>kg, rad/s, N/m</td></tr>
-<tr><td colspan="3"><b>Rub</b></td></tr>
-<tr><td>δ<sub>c</sub>, δ, ρ</td><td>the stator ring's radial clearance; how far the disc presses past it; the disc's distance from the ring's centre</td><td>m</td></tr>
-<tr><td>k<sub>ring</sub>, c<sub>ring</sub>, N</td><td>the ring's mount stiffness and damping; its push on the disc, k<sub>ring</sub>δ + c<sub>ring</sub>δ'</td><td>N/m, N·s/m, N</td></tr>
-<tr><td>μ, R, v<sub>t</sub>, s<sub>0</sub></td><td>friction coefficient of the rim on the ring; the disc's radius (√(2I<sub>p</sub>/m)); the disc's velocity along the ring; the slip over which the friction is smoothed</td><td>—, m, m/s, m/s</td></tr>
-<tr><td>H, b, β, τ</td><td>the rub's heat (the drag's work on the slip); the thermal bow at the disc; the bow per watt, settled; its time constant</td><td>W, m, m/W, s</td></tr>
-<tr><td>n, t, κ</td><td>unit vectors out from the ring's centre and along it (with the spin); the ring as a spring at the disc in a full rub, k<sub>ring</sub>(1 − δ<sub>c</sub>/ρ)</td><td>—, —, N/m</td></tr>
-<tr><td colspan="3"><b>The magnetic bearing</b></td></tr>
-<tr><td>s<sub>0</sub>, i<sub>0</sub>, i, A, N</td><td>a magnet's air gap with the journal centred; the bias current; the control current; a pole face's area; the coil's turns</td><td>m, A, A, m², —</td></tr>
-<tr><td>k<sub>m</sub>, k<sub>i</sub></td><td>a magnet pair's negative stiffness 4ki<sub>0</sub>²/s<sub>0</sub>³ and current gain 4ki<sub>0</sub>/s<sub>0</sub>², k = μ<sub>0</sub>N²A/4</td><td>N/m, N/A</td></tr>
-<tr><td>k<sub>p</sub>, k<sub>I</sub>, k<sub>d</sub>; ω<sub>d</sub>, ω<sub>a</sub></td><td>the controller's proportional, integral and derivative gains; the derivative's filter and the amplifier's bandwidth</td><td>A/m, A/(m·s), A·s/m; rad/s (Hz)</td></tr>
-<tr><td>G(s), K<sub>b</sub>(s); k<sub>b</sub>(ω), c<sub>b</sub>(ω)</td><td>the controller, i = −G(s)x; the bearing's push back, −K<sub>b</sub>x, K<sub>b</sub> = k<sub>i</sub>G − k<sub>m</sub>; its equivalent spring and damper at ω, K<sub>b</sub>(iω) = k<sub>b</sub> + iωc<sub>b</sub></td><td>A/m, N/m; N/m, N·s/m</td></tr>
-<tr><td>x<sub>c</sub>, A<sub>c</sub>, B<sub>c</sub>, F<sub>c</sub></td><td>the controllers' states; their equations, x<sub>c</sub>' = A<sub>c</sub>x<sub>c</sub> + B<sub>c</sub>q; their push on q, F<sub>c</sub>x<sub>c</sub></td><td>—</td></tr>
-</table>
+<h2><a name="notation"></a>Notation</h2>
+<notation>rotor_span g rotor_shaft rho m I_p rotor_supports rotor_k rotor_xy whirl_w Omega_spin one_x phi_turn omega_n r_spin X_rotor zeta delta s_rotor rotor_matrices rotor_q rotor_state dt_n foh_gamma shaft_modes turning_axes unbalance U_unbalance bow skew balancing asymmetric crack crack_stations cross_coupling S_sommerfeld epsilon film_coefficients lund whole_film magnet magnet_control stator_ring rub_friction newkirk</notation>

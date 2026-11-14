@@ -186,27 +186,29 @@ def _magnets_html(s: RotorSystem) -> str:
     which = "both bearings" if len(magnets) == 2 and magnets[0][1] == magnets[1][1] else f"bearing {magnets[0][0]}"
     lo, hi = m.damped_band()
     band = (
-        f"It damps from {lo:.3g} to {hi:,.4g} Hz; outside that band c<sub>b</sub> &lt; 0 and it feeds a mode."
+        f"It damps from {lo:.3g} to {hi:,.4g} Hz; outside that band c<sub>mb</sub> &lt; 0 and it feeds a mode."
         if math.isfinite(lo)
-        else "It damps nowhere: c<sub>b</sub> &lt; 0 at every frequency."
+        else "It damps nowhere: c<sub>mb</sub> &lt; 0 at every frequency."
     )
-    states = ", ".join((["∫x"] if m.integral else []) + (["x<sub>d</sub>"] if m.kd > 0.0 else []) + ["i"])
+    states = ", ".join((["∫x"] if m.integral else []) + (["x<sub>lp</sub>"] if m.kd > 0.0 else []) + ["i<sub>c</sub>"])
     return (
         "<h4>The magnetic bearings</h4><p>The journals float in active magnetic bearings (the <i>Magnetic "
         "bearing</i> tab) in place of the springs and dampers. On each axis a pair of magnets pulls the journal "
         f"toward the nearer one with k<sub>m</sub>x, here (at {which}) k<sub>m</sub> = {fmt(m.negative_stiffness, 1.0)} "
         "N/m: that is the −k<sub>m</sub> on the journals' diagonal in K below, a negative stiffness. The rest of "
-        f"the push is the control current's, −k<sub>i</sub>i (k<sub>i</sub> = {m.current_gain:.4g} N/A), set by a "
-        f"PID behind the amplifier, i = G(s)x with G(s) = (k<sub>p</sub> + k<sub>I</sub>/s + "
-        f"k<sub>d</sub>s/(1 + s/ω<sub>d</sub>)) / (1 + s/ω<sub>a</sub>): k<sub>p</sub> = {m.kp:,.4g} A/m, "
-        f"k<sub>I</sub> = {m.ki:,.4g} A/(m·s), k<sub>d</sub> = {m.kd:.4g} A·s/m, f<sub>d</sub> = {m.filter_hz:,.4g} Hz, "
+        f"the push is the control current's, −k<sub>i</sub>i<sub>c</sub> (k<sub>i</sub> = {m.current_gain:.4g} N/A), set by a "
+        f"PID behind the amplifier, i<sub>c</sub> = G<sub>c</sub>(s)x with G<sub>c</sub>(s) = (k<sub>p</sub> + k<sub>I</sub>/s + "
+        f"k<sub>d</sub>s/(1 + s/ω<sub>lp</sub>)) / (1 + s/ω<sub>a</sub>): k<sub>p</sub> = {m.kp:,.4g} A/m, "
+        f"k<sub>I</sub> = {m.ki:,.4g} A/(m·s), k<sub>d</sub> = {m.kd:.4g} A·s/m, f<sub>lp</sub> = {m.filter_hz:,.4g} Hz, "
         f"f<sub>a</sub> = {m.amplifier_hz:,.4g} Hz. Each axis's controller has {m.n_states} state"
         f"{'s' if m.n_states > 1 else ''} of its own, x<sub>c</sub> = [{states}]:</p>"
-        "<p align='center'>(∫x)' = x, &nbsp; x<sub>d</sub>' = ω<sub>d</sub>(x − x<sub>d</sub>), &nbsp; i' = "
-        "ω<sub>a</sub>(k<sub>p</sub>x + k<sub>I</sub>∫x + k<sub>d</sub>ω<sub>d</sub>(x − x<sub>d</sub>) − i)</p>"
-        "<p>At a frequency ω the bearing pushes back as a spring and a damper, K<sub>b</sub>(iω) = "
-        "k<sub>i</sub>G(iω) − k<sub>m</sub> = k<sub>b</sub> + iωc<sub>b</sub>. " + band + " The steady states "
-        "(Bode and polar plots, harmonic balance) take K<sub>b</sub> at each harmonic; with the integral it is "
+        "<p align='center'>d(∫x)/dt = x, &nbsp; ẋ<sub>lp</sub> = ω<sub>lp</sub>(x − x<sub>lp</sub>), &nbsp; i̇<sub>c</sub> = "
+        "ω<sub>a</sub>(k<sub>p</sub>x + k<sub>I</sub>∫x + k<sub>d</sub>ω<sub>lp</sub>(x − x<sub>lp</sub>) − i<sub>c</sub>)</p>"
+        "<p>At a frequency ω the bearing pushes back as a spring and a damper, K<sub>mb</sub>(iω) = "
+        "k<sub>i</sub>G<sub>c</sub>(iω) − k<sub>m</sub> = k<sub>mb</sub> + iωc<sub>mb</sub>. "
+        + band
+        + " The steady states "
+        "(Bode and polar plots, harmonic balance) take K<sub>mb</sub> at each harmonic; with the integral it is "
         "infinite at 0 Hz, and a steady load cannot move the journals.</p>"
     )
 
@@ -486,8 +488,8 @@ The supports hold it.</p>
 {shaft}
 
 <h4>Damping C and the gyroscopic matrix Ω G</h4>
-<p>C has the support dampers, and the shaft's internal damping η K<sub>shaft</sub> in each plane
-(η = c<sub>i</sub>/k<sub>disc</sub> = {s.loss_time:.4g} s, so that it is c<sub>i</sub> =
+<p>C has the support dampers, and the shaft's internal damping τ<sub>i</sub>K<sub>shaft</sub> in each plane
+(τ<sub>i</sub> = c<sub>i</sub>/k<sub>disc</sub> = {s.loss_time:.4g} s, so that it is c<sub>i</sub> =
 {s.internal_damping:g} N·s/m on the disc's own stiffness k<sub>disc</sub> = {disc_k}). {gyro_text}
 It is <b>skew-symmetric</b> (G<sup>T</sup> = −G), so
 q̇<sup>T</sup>(ΩG)q̇ = 0: unlike C, it takes no power out. It only turns the motion from one plane into
@@ -497,7 +499,7 @@ the other, and it grows with the speed.</p>
 <h4>The circulatory matrix Ω H</h4>
 <p>The internal damping acts on the bending rate the spinning shaft sees, q̇ − ΩJq in fixed
 coordinates (J turns x toward y). The −ΩJq part becomes a stiffness that grows with the speed,
-ΩH = Ωη[0 K<sub>shaft</sub>; −K<sub>shaft</sub> 0], skew-symmetric like the cross-coupling in K. A
+ΩH = Ωτ<sub>i</sub>[0 K<sub>shaft</sub>; −K<sub>shaft</sub> 0], skew-symmetric like the cross-coupling in K. A
 fluid-film bearing's swirl adds its λc at the journal, where K has k<sub>xy</sub> (here λ =
 {s.bearing_a.swirl:g} at A and {s.bearing_b.swirl:g} at B). A skew stiffness pushes a forward whirl
 along its orbit: per cycle it puts in energy where C takes it out. Damping falls off as the speed rises,
@@ -521,15 +523,15 @@ their masses (and the slopes by I<sub>d</sub>). A negative ζ is a mode that gro
 at this speed.{" For the turning shaft these are Floquet modes, e<sup>st</sup> times a motion periodic in φ: each is listed by its harmonic with the most kinetic energy, and a mode locked to 1X sits at exactly the speed." if s.periodic else ""}</small></p>
 
 <h4>The 1X forces</h4>
-<p>{unbalance} turns with the shaft, the keyphasor mark at angle φ (φ' = Ω). For the heavy spot at the
+<p>{unbalance} turns with the shaft, the keyphasor mark at angle φ (φ̇ = Ω). For the heavy spot at the
 mark, keeping the disc's centre of mass on its path takes</p>
-<p align='center'>f<sub>x</sub> = U(Ω² cos φ + Ω' sin φ), &nbsp; f<sub>y</sub> = U(Ω² sin φ − Ω' cos φ)</p>
+<p align='center'>f<sub>x</sub> = U(Ω² cos φ + Ω̇ sin φ), &nbsp; f<sub>y</sub> = U(Ω² sin φ − Ω̇ cos φ)</p>
 <p>on the disc's x<sub>D</sub> and y<sub>D</sub>, or in general f<sub>x</sub> + i f<sub>y</sub> =
-Ue<sup>iψ</sup>(Ω² − iΩ')e<sup>iφ</sup>, with ψ the heavy spot's angle from the mark. Balance weights add
-to Ue<sup>iψ</sup>. Here the force is {force} N turning once per revolution. Ω' is the ramp's angular
+Ue<sup>iψ</sup>(Ω² − iΩ̇)e<sup>iφ</sup>, with ψ the heavy spot's angle from the mark. Balance weights add
+to Ue<sup>iψ</sup>. Here the force is {force} N turning once per revolution. Ω̇ is the ramp's angular
 acceleration, while the speed changes.{shaft_weights}</p>
 <p>{skew} gives the same form on its slopes, M<sub>x</sub> + i M<sub>y</sub> =
-(I<sub>d</sub> − I<sub>p</sub>)τ(Ω² − iΩ')e<sup>i(φ+γ)</sup>: here {moment}.{faces} The shaft's bow δ<sub>b</sub> =
+(I<sub>d</sub> − I<sub>p</sub>)τ(Ω² − iΩ̇)e<sup>i(φ+γ)</sup>: here {moment}.{faces} The shaft's bow δ<sub>b</sub> =
 {s.bow * 1e6:.4g} µm (toward {math.degrees(s.bow_angle):.0f}°) gives K<sub>shaft</sub>q<sub>bow</sub>
 turning with the shaft whatever the speed: {fmt(s.disc_stiffness * s.bow, 1.0)} N on the disc, and the
 bearings' share of it back on the journals, {bow_journals}.</p>

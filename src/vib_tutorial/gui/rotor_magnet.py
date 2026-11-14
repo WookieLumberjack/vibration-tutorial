@@ -36,24 +36,25 @@ AXIS_WIDTH = 56  # px, the plots' left axes
 MODE_SPEED = 25.0  # rpm: the rotor's modes are worked out afresh once the speed has moved this much
 
 EQUIVALENT_TIP = (
-    "<p>The bearing pushes back on its journal with −K<sub>b</sub>(s) x, K<sub>b</sub>(s) = "
-    "k<sub>i</sub> G(s) − k<sub>m</sub>. Shaken at a frequency f, that push is the same as a spring "
-    "k<sub>b</sub>(f) (its real part) and a damper c<sub>b</sub>(f) (its imaginary part over ω): unlike "
+    "<p>The bearing pushes back on its journal with −K<sub>mb</sub>(s) x, K<sub>mb</sub>(s) = "
+    "k<sub>i</sub> G<sub>c</sub>(s) − k<sub>m</sub>, G<sub>c</sub>(s) the controller. Shaken at a frequency f, that push is the same as a spring "
+    "k<sub>mb</sub>(f) (its real part) and a damper c<sub>mb</sub>(f) (its imaginary part over ω): unlike "
     "a real spring and damper, both change with the frequency.</p>"
     "<p>The derivative gives the damping. Up the frequency the derivative's filter and the amplifier lag "
-    "the current behind the motion, and past some frequency c<sub>b</sub> turns negative (shaded): the "
+    "the current behind the motion, and past some frequency c<sub>mb</sub> turns negative (shaded): the "
     "bearing then feeds a mode there instead of damping it. Down at the bottom the integral's lag does the "
     "same, below the frequency where it fades. The lines are the rotor's modes at the speed now, solid "
     "forward, dashed backward: a lightly damped one in a shaded band goes unstable.</p>"
 )
 INPUT_TIPS = {
-    "gap": "<p>Air gap s<sub>0</sub> between each magnet's poles and the journal, with the journal centred. "
+    "gap": "<p>Air gap h<sub>0</sub> between each magnet's poles and the journal, with the journal centred. "
     "Half of it is the backup (touchdown) bearing's clearance: the journal lands there first.</p>",
     "bias": "<p>Bias current i<sub>0</sub> in every coil. The control current is added to one magnet of a "
     "pair and taken from the other. A larger bias gives more force per ampere (k<sub>i</sub> ∝ i<sub>0</sub>) "
     "and more load capacity, but a stronger negative stiffness (k<sub>m</sub> ∝ i<sub>0</sub>²).</p>",
-    "area": "<p>Area A of each of a magnet's two pole faces.</p>",
-    "turns": "<p>Turns N of each magnet's coil. The magnet pulls with k i²/s², k = μ<sub>0</sub>N²A/4.</p>",
+    "area": "<p>Area A<sub>p</sub> of each of a magnet's two pole faces.</p>",
+    "turns": "<p>Turns N<sub>c</sub> of each magnet's coil. Across a gap h the magnet pulls with Λi²/h², "
+    "Λ = μ<sub>0</sub>N<sub>c</sub>²A<sub>p</sub>/4.</p>",
     "kp": "<p>Proportional gain k<sub>p</sub>: amperes per metre the journal is off centre. "
     "k<sub>i</sub>k<sub>p</sub> has to beat the magnets' pull k<sub>m</sub>, and what is left over is "
     "the bearing's stiffness.</p>",
@@ -61,7 +62,7 @@ INPUT_TIPS = {
     "current keeps growing until it is back. Its lag makes the damping negative at low frequency.</p>",
     "kd": "<p>Derivative gain k<sub>d</sub>: amperes per metre per second. k<sub>i</sub>k<sub>d</sub> is "
     "the damping, below the filter and the amplifier.</p>",
-    "filter": "<p>The derivative's low-pass filter, f<sub>d</sub>: a pure derivative would amplify the "
+    "filter": "<p>The derivative's low-pass filter, f<sub>lp</sub>: a pure derivative would amplify the "
     "sensor's noise without limit. Above it the derivative's phase lead fades.</p>",
     "amplifier": "<p>The power amplifier's bandwidth f<sub>a</sub>: the coils' inductance keeps the current "
     "from following the controller at once. Its lag eats the derivative's lead.</p>",
@@ -94,14 +95,14 @@ class MagnetPanel(QtWidgets.QWidget):
         self.amplifier = spin(1.0, 1e5, m.amplifier_hz, 0, " Hz")
         form = QtWidgets.QGridLayout()
         boxes = (
-            ("Air gap s<sub>0</sub>:", self.gap, "gap"),
+            ("Air gap h<sub>0</sub>:", self.gap, "gap"),
             ("Bias i<sub>0</sub>:", self.bias, "bias"),
-            ("Pole area A:", self.area, "area"),
-            ("Turns N:", self.turns, "turns"),
+            ("Pole area A<sub>p</sub>:", self.area, "area"),
+            ("Turns N<sub>c</sub>:", self.turns, "turns"),
             ("k<sub>p</sub>:", self.kp, "kp"),
             ("k<sub>I</sub>:", self.ki, "ki"),
             ("k<sub>d</sub>:", self.kd, "kd"),
-            ("Filter f<sub>d</sub>:", self.filter, "filter"),
+            ("Filter f<sub>lp</sub>:", self.filter, "filter"),
             ("Amplifier f<sub>a</sub>:", self.amplifier, "amplifier"),
         )
         heads = ("<b>Actuator</b> (a magnet pair on each axis)", "<b>Controller</b> (on each axis)")
@@ -137,8 +138,8 @@ class MagnetPanel(QtWidgets.QWidget):
         self.zero_lines: list[pg.InfiniteLine] = []
         self.mode_lines: list[list[pg.InfiniteLine]] = [[], []]  # per plot
         for p, curve, (title, unit) in (
-            (self.k_plot, self.k_curve, ("Stiffness k<sub>b</sub>", "N/m")),
-            (self.c_plot, self.c_curve, ("Damping c<sub>b</sub>", "N·s/m")),
+            (self.k_plot, self.k_curve, ("Stiffness k<sub>mb</sub>", "N/m")),
+            (self.c_plot, self.c_curve, ("Damping c<sub>mb</sub>", "N·s/m")),
         ):
             p.setMenuEnabled(False)
             p.setMouseEnabled(x=False, y=False)
@@ -332,9 +333,9 @@ class MagnetPanel(QtWidgets.QWidget):
         f_lo, f_hi = m.damped_band()
         parts = [
             (
-                f"<p><b>Actuator</b>: k = μ<sub>0</sub>N²A/4 = {m.force_constant:.3g} N·m²/A²; negative stiffness "
-                f"k<sub>m</sub> = 4ki<sub>0</sub>²/s<sub>0</sub>³ = {_si(ks, 'N/m')}; current gain k<sub>i</sub> = "
-                f"4ki<sub>0</sub>/s<sub>0</sub>² = {ki:.3g} N/A; load capacity k<sub>i</sub>i<sub>0</sub> = "
+                f"<p><b>Actuator</b>: Λ = μ<sub>0</sub>N<sub>c</sub>²A<sub>p</sub>/4 = {m.force_constant:.3g} N·m²/A²; negative stiffness "
+                f"k<sub>m</sub> = 4Λi<sub>0</sub>²/h<sub>0</sub>³ = {_si(ks, 'N/m')}; current gain k<sub>i</sub> = "
+                f"4Λi<sub>0</sub>/h<sub>0</sub>² = {ki:.3g} N/A; load capacity k<sub>i</sub>i<sub>0</sub> = "
                 f"{m.capacity:.3g} N; backup bearing {_si(m.touchdown, 'm')} off centre.</p>"
             )
         ]
