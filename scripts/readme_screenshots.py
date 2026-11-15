@@ -518,7 +518,7 @@ def jeffcott_stability():
     settle()
     page.loop.enabled = False
     page.running = False
-    page.internal_damping.setValue(20.0)
+    page.editor.internal_damping.setValue(20.0)
     page._refresh_analysis()
     page.ramp.setValue(5000.0)
     page.set_target_rpm(5000.0)
