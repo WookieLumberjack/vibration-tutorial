@@ -23,6 +23,9 @@ import sys
 import tempfile
 from pathlib import Path
 
+from vib_tutorial import ONE_THREAD
+
+os.environ.update({name: os.environ.get(name, "1") for name in ONE_THREAD})  # BLAS on one thread, as the app
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ["XDG_CONFIG_HOME"] = tempfile.mkdtemp(prefix="vib-screenshots-")  # before Qt reads settings
 
@@ -1245,6 +1248,21 @@ def gyroscope_table():
     save(w, "gyroscope_table")
 
 
+def rigid_body():
+    """The default box spun 1° off its middle axis, 2.5 s on: turned over, ω's components in its principal axes."""
+    w = window()
+    page = w.rigid_body_page
+    w.pages.setCurrentWidget(page)
+    page.load_trial(0)  # spun about the middle axis, it flips
+    page.loop.enabled = False
+    page.running = False
+    page.step(2.5)
+    page._draw_tab()
+    settle()
+    print(page.readout.text())
+    save(w, "rigid_body")
+
+
 def machinery_diagnostics():
     lesson("diagnostics_page", 3, "machinery_diagnostics")  # an outer race defect by its envelope
 
@@ -1318,6 +1336,7 @@ SHOTS = [
     periodic_forcing,
     deriving_equations,
     deriving_pendulum,
+    rigid_body,
     energy_methods,
     beams_plates,
     numerical_integration,

@@ -30,6 +30,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from vib_tutorial import ONE_THREAD
+
+# BLAS on one thread, as the app runs it (vib_tutorial.main), set before NumPy loads: on OpenBLAS's pool the
+# cracked shaft's waterfall blocks took 1.2 s each, not 15 ms, which the app never sees.
+os.environ.update({name: os.environ.get(name, "1") for name in ONE_THREAD})
+
 import numpy as np
 
 MARK = "mac_timings: "  # the input rows that start and end a scenario in the log

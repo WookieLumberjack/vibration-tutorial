@@ -57,6 +57,8 @@ and from a start near the lock they fail. The view can trace ω's path in space 
 torque-free, it runs round a closed loop (Poinsot's polhode). The body is drawn with shaded faces, lit
 from the upper left, so its turning reads at a glance.
 
+![3D rigid body page, the default 30 × 20 × 10 cm box spun at 6 rad/s 1° off its middle axis: 2.5 s on it has turned over, its middle-axis rate ω<sub>2</sub> gone from +6 to −5.8 rad/s while |L| holds at 0.05001 N·m·s, and the Components tab writes Euler's equations out with that instant's numbers](images/rigid_body.png)
+
 ## Simulation & modal analysis
 
 - **Edit any mass, stiffness, or damping value while the simulation runs.** The state is
