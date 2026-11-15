@@ -6,7 +6,8 @@ start or from a *Kick*), and the playback. Centre: the body in 3D (drag to turn 
 optionally its principal axes, the vectors L, ω and τ and the trail of ω's direction, and a readout below.
 Right: the *Inertia* tab (the tensor about G in the body's axes, its principal moments and axes), *Components*
 (ω, L, τ or I against time in space's, the body's or the principal axes, with the equations at one instant
-written out below: `equations_snapshot`), *Check* (the energy and L against what the torque put in) and the
+written out below: `equations_snapshot`), *Orientation* (the start pose, and the orientation four ways), *Drift*
+(the start stepped torque-free as a matrix, as Euler angles and as a quaternion: `rigid_body.compare`), *Check* (the energy and L against what the torque put in) and the
 Theory. The model is core/rigid_body.py (shared maths in core/rotation.py), stepped on the page's frame loop.
 
 Its `PROBLEMS` (the Practice window) ask for a box's moments, a point mass's shift of G and product of inertia,
@@ -30,7 +31,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import rotation
 from ..core.practice import Problem, Question, number, pick, rounded
-from ..core.rigid_body import SHAPES, TORQUES, Body, Shape, Torque, Tumbler
+from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbler, compare
 from ..core.rotation import Turning
 from . import rigid_body_figures
 from .cms_time import SampleBuffer
@@ -59,7 +60,12 @@ from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
-TAB_INERTIA, TAB_COMPONENTS, TAB_ORIENTATION, TAB_CHECK = range(4)
+TAB_INERTIA, TAB_COMPONENTS, TAB_ORIENTATION, TAB_DRIFT, TAB_CHECK = range(5)
+PATHS = ("In space", "On the body", "Both", "None")  # where the view traces ω's direction
+PATH_SPACE, PATH_BODY, PATH_BOTH, PATH_NONE = range(4)
+POLHODE = 20.0  # s of ω's path on the body drawn
+DRIFT_STEPS = (("1/20 of a turn", 20), ("1/50 of a turn", 50))
+DRIFT_SPANS = (5.0, 10.0, 20.0)  # s
 PLAYBACK = (0.02, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0)
 REAL_TIME = PLAYBACK.index(1.0)
 HISTORY = 200_000  # samples kept
@@ -113,6 +119,7 @@ class RigidTrial:
     frame: Axes = Axes.PRINCIPAL
     principal: bool = False  # draw the principal axes
     pose: tuple[float, float, float] = (0.0, 0.0, 0.0)  # the start's Euler angles φ, θ, ψ, degrees
+    path: int = PATH_SPACE  # where the view traces ω
 
     @property
     def body(self) -> Body:
@@ -235,6 +242,29 @@ TRIALS = (
         playback=PLAYBACK.index(0.1),
         tab=TAB_ORIENTATION,
     ),
+    RigidTrial(
+        "ω's path on the body",
+        "Spun 15° off its greatest axis, the box's <m>ω</m> traces a closed loop round that axis in the body's own "
+        "axes (drawn turning with it: Poinsot's polhode), while in space it wanders round L. Try the middle "
+        "axis: its path runs from one end of the axis to the other.",
+        spin_axis=2,
+        nudge=15.0,
+        path=PATH_BOTH,
+        tab=TAB_COMPONENTS,
+        show=SHOW_W,
+        frame=Axes.PRINCIPAL,
+    ),
+    RigidTrial(
+        "Step it three ways",
+        "The box tipped 50° and spun 20° off its least axis, stepped torque-free at a coarse 1/20 of a turn as a "
+        "rotation matrix, as Euler angles and as a quaternion, for 10 s. The quaternion ends about 0.05° off, the "
+        "matrix about 0.3° and no longer quite a rotation, and the Euler angles about 13°: the nearer they pass to "
+        "the lock, the worse they step. Then try the rates trial's start, which passes it within 1.7°.",
+        spin_axis=0,
+        nudge=20.0,
+        pose=(30.0, 50.0, 20.0),
+        tab=TAB_DRIFT,
+    ),
 )
 
 TIPS = {
@@ -262,6 +292,13 @@ TIPS = {
     "y, z, turning with it. <b>Principal</b>: the body's principal axes, turning with it too, in which I is "
     "diagonal.</p>",
     "comp_span": "<p>How much of the run to plot.</p>",
+    "path": "<p>Where the view traces ω's direction. <b>In space</b>: where it has pointed, the last few seconds. "
+    "<b>On the body</b>: where it has pointed in the body's own axes, drawn turning with it: torque-free, a closed "
+    "loop round the axis it spins about (Poinsot's polhode), or, spun about the middle axis, a path from that "
+    "axis's one end to the other.</p>",
+    "drift_step": "<p>The step the three are stepped with, as a fraction of a turn at the body's starting rate: a "
+    "coarse step, so the drift shows within the run.</p>",
+    "drift_span": "<p>How long to step them for.</p>",
     "pose": "<p>How the body is turned at the start, as Euler's z-x-z angles: φ about Z, then θ about the line of "
     "nodes (where x has got to), then ψ about the body's own z. B = R<sub>z</sub>(φ) R<sub>x</sub>(θ) "
     "R<sub>z</sub>(ψ).</p>",
@@ -434,6 +471,12 @@ VIEW_TIP = (
     "lines are its own axes x, y, z (dashed: its principal axes 1, 2, 3); the dot, the point mass. With "
     "<i>Vectors</i> ticked: L, ω and the torque τ, each scaled to fit, and the thin line where ω has pointed.</p>"
 )
+DRIFT_TIP = (
+    "<p>The body's start (its shape, spin and pose; no torque) stepped by RK4 three ways at one coarse step: its "
+    "rotation matrix, never corrected; its Euler angles; and its quaternion, made unit each step. Top: how far "
+    "each orientation is from the true one (a quaternion stepped 8 times finer), in degrees. Below: how far the "
+    "matrix has strayed from being a rotation, and how far a quaternion's length does if it isn't made unit.</p>"
+)
 SNAPSHOT_TIP = (
     "<p>The equations of motion at one instant, in the axes picked, with the numbers. While it runs it is the "
     "latest instant; pause it and drag the line across the plot to see any other.</p>"
@@ -507,7 +550,9 @@ class BodyView(pg.PlotWidget):
         self.axis_labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in "xyz"]
         self.principal = [pg.PlotCurveItem() for _ in range(3)]
         self.principal_labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in "123"]
-        self.trail = pg.PlotCurveItem()
+        self.trail = pg.PlotCurveItem()  # ω's direction in space (Poinsot's herpolhode's direction)
+        self.polhode = pg.PlotCurveItem()  # ω's direction on the body, turning with it (the polhode's)
+        self.path_mode = PATH_SPACE
         self.vectors = [pg.PlotCurveItem() for _ in range(3)]  # L, ω, τ
         self.labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in ("L", "ω", "τ")]
         self.mass_dot = Dot(10)
@@ -527,6 +572,7 @@ class BodyView(pg.PlotWidget):
             self.far,
             self.outline,
             self.trail,
+            self.polhode,
             *self.axes,
             *self.principal,
             *self.vectors,
@@ -703,9 +749,12 @@ class BodyView(pg.PlotWidget):
             self.ball.hide()
             self.far.setData([], [])
 
-    def draw(self, q: np.ndarray, momentum: np.ndarray, torque: np.ndarray, trail: np.ndarray) -> None:
-        """The body turned by the quaternion q, with L and τ (space), and `trail`: where ω has pointed (n, 3)."""
-        self._last = (q, momentum, torque, trail)
+    def draw(
+        self, q: np.ndarray, momentum: np.ndarray, torque: np.ndarray, trail: np.ndarray, on_body: np.ndarray
+    ) -> None:
+        """The body turned by the quaternion q, with L and τ (space); `trail` where ω has pointed in space (n, 3)
+        and `on_body` where it has pointed in the body's axes (m, 3), drawn turning with it."""
+        self._last = (q, momentum, torque, trail, on_body)
         body, R = self.body, self.reach
         B = rotation.matrix(np.asarray(q)[None])[0]
         self._draw_body(B)
@@ -728,10 +777,14 @@ class BodyView(pg.PlotWidget):
                 label.hide()
                 continue
             self._line(item, label, v / float(np.linalg.norm(v)), length * R, True)
-        if self.show_vectors and trail.size:
+        if self.path_mode in (PATH_SPACE, PATH_BOTH) and trail.size:
             self.trail.setData(*self.project(1.05 * R * trail))
         else:
             self.trail.setData([], [])
+        if self.path_mode in (PATH_BODY, PATH_BOTH) and on_body.size:
+            self.polhode.setData(*self.project(1.05 * R * on_body @ B.T))
+        else:
+            self.polhode.setData([], [])
 
     def _line(self, item: pg.PlotCurveItem, label: pg.TextItem, v: np.ndarray, length: float, on: bool) -> None:
         if not on:
@@ -758,6 +811,7 @@ class BodyView(pg.PlotWidget):
             item.setPen(pg.mkPen(c.strong, width=2, style=QtCore.Qt.PenStyle.DashLine))
             label.setColor(c.strong)
         self.trail.setPen(pg.mkPen(c.mass[2], width=1))
+        self.polhode.setPen(pg.mkPen(c.mass[1], width=1.5))
         for item, label, color in zip(self.vectors, self.labels, (c.force, c.mass[2], c.mass[3])):
             item.setPen(pg.mkPen(color, width=2.5))
             label.setColor(color)
@@ -861,6 +915,9 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.principal_box = QtWidgets.QCheckBox("Principal axes")
         self.principal_box.toggled.connect(self._on_view_options)
         play.row(self.principal_box)
+        self.path_box = combo(PATHS, TIPS["path"])
+        self.path_box.currentIndexChanged.connect(self._on_view_options)
+        play.add("ω's path:", self.path_box, TIPS["path"])
         connect_all(
             (self.shape, self.mass, self.side_a, self.side_b, self.side_c, self.point, *self.offset),
             self._on_inputs,
@@ -917,6 +974,33 @@ class RigidBodyPage(QtWidgets.QWidget):
             turn.setWrapping(True)
         pose.changed.connect(self.restart)
         self.orient_text = readout_label()
+        # Drift tab
+        drift = Form("Step it three ways (torque-free)")
+        self.drift_step = combo([name for name, _ in DRIFT_STEPS], TIPS["drift_step"])
+        drift.add("Step:", self.drift_step, TIPS["drift_step"])
+        self.drift_span = combo([f"{v:g} s" for v in DRIFT_SPANS], TIPS["drift_span"])
+        self.drift_span.setCurrentIndex(1)
+        drift.add("For:", self.drift_span, TIPS["drift_span"])
+        self.drift_button = QtWidgets.QPushButton("Step them")
+        self.drift_button.setToolTip(DRIFT_TIP)
+        self.drift_button.clicked.connect(self.step_three)
+        drift.row(self.drift_button)
+        self.drift_plot = plot("Off by", "°", "Time", "s", log_y=True, height=200)
+        self.drift_plot.setToolTip(DRIFT_TIP)
+        add_legend(self.drift_plot.getPlotItem(), offset=(-10, -10))  # bottom right: the errors grow upward
+        self.drift_items = [pg.PlotDataItem(name=n) for n in ("rotation matrix", "Euler angles", "quaternion")]
+        for item in self.drift_items:
+            self.drift_plot.addItem(item)
+        self.strayed_plot = plot("Not a rotation by", None, "Time", "s", log_y=True, height=160)
+        self.strayed_plot.setToolTip(DRIFT_TIP)
+        add_legend(self.strayed_plot.getPlotItem(), offset=(-10, -10))
+        self.strayed_items = [
+            pg.PlotDataItem(name=n) for n in ("matrix: ‖BᵀB − 1‖", "quaternion left alone: ||q| − 1|")
+        ]
+        for item in self.strayed_items:
+            self.strayed_plot.addItem(item)
+        self.drift_note = note_label("Press <i>Step them</i> to step the body's start three ways.")
+        self.drift: Drift | None = None
 
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
@@ -925,6 +1009,7 @@ class RigidBodyPage(QtWidgets.QWidget):
             ColumnScroll(column(comp_row, self.comp_plot, self.comp_note, self.comp_snapshot)), "Components"
         )
         self.tabs.addTab(ColumnScroll(column(pose, self.orient_text)), "Orientation")
+        self.tabs.addTab(ColumnScroll(column(drift, self.drift_plot, self.strayed_plot, self.drift_note)), "Drift")
         self.tabs.addTab(column(self.check_plot, self.check_note, stretch=False), "Check")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(self._draw_tab)
@@ -968,6 +1053,7 @@ class RigidBodyPage(QtWidgets.QWidget):
             (self.comp_show, t.show),
             (self.comp_frame, FRAMES.index(t.frame)),
             (self.principal_box, t.principal),
+            (self.path_box, t.path),
         ):
             set_quietly(box, value)
         self.trials.show_note(t.note)
@@ -976,6 +1062,8 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.pause_button.set_running(True)
         self._on_view_options()
         self._on_inputs()
+        if t.tab == TAB_DRIFT:
+            self.step_three()
 
     def practice_state(self) -> RigidTrial:
         """The page's settings, as a trial (what a practice problem reads)."""
@@ -1028,6 +1116,7 @@ class RigidBodyPage(QtWidgets.QWidget):
     def _on_view_options(self) -> None:
         self.view.show_vectors = self.vectors.isChecked()
         self.view.show_principal = self.principal_box.isChecked()
+        self.view.path_mode = self.path_box.currentIndex()
         self._draw_now()
 
     def kick(self) -> None:
@@ -1041,6 +1130,7 @@ class RigidBodyPage(QtWidgets.QWidget):
 
     def restart(self) -> None:
         """Let the body go again from the start (if it is running; held there if not)."""
+        self._clear_drift()
         s = self.practice_state()
         self._snap_t = None
         omega = start_rate(self.body, s.spin_axis, s.rate, s.nudge)
@@ -1107,6 +1197,10 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.comp_size.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.comp_cursor.setPen(pg.mkPen(c.strong, width=1))
         self.comp_cursor.setHoverPen(pg.mkPen(c.strong, width=3))
+        for item, color in zip(self.drift_items, (c.mass[0], c.mass[1], c.mass[2])):
+            item.setPen(pg.mkPen(color, width=1.5))
+        for item, color in zip(self.strayed_items, (c.mass[0], c.mass[2])):
+            item.setPen(pg.mkPen(color, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
         self.energy_item.setPen(pg.mkPen(c.mass[0], width=1))
         self.momentum_item.setPen(pg.mkPen(c.mass[1], width=1))
         self._draw_inertia()
@@ -1126,7 +1220,12 @@ class RigidBodyPage(QtWidgets.QWidget):
         omega = np.einsum("nij,nj->ni", B, np.einsum("ij,nj->ni", I_inv, np.einsum("nji,nj->ni", B, ys[k, 4:7])))
         size = np.linalg.norm(omega, axis=1)
         trail = omega[size > 1e-12] / size[size > 1e-12, None]
-        self.view.draw(q, L, tau, trail)
+        _, ys = self.history.window(POLHODE)  # on the body: ω = I⁻¹BᵀL in its own axes
+        k = slice(None, None, max(1, len(ys) // 1200))
+        w_body = np.einsum("ij,nj->ni", I_inv, np.einsum("nji,nj->ni", rotation.matrix(ys[k, 0:4]), ys[k, 4:7]))
+        size = np.linalg.norm(w_body, axis=1)
+        on_body = w_body[size > 1e-12] / size[size > 1e-12, None]
+        self.view.draw(q, L, tau, trail, on_body)
         B0 = rotation.matrix(q[None])[0]
         w = B0 @ (I_inv @ (B0.T @ L))
         energy = 0.5 * float(w @ L)
@@ -1404,6 +1503,50 @@ class RigidBodyPage(QtWidgets.QWidget):
     def _on_snapshot_dragged(self) -> None:
         self._snap_t = float(self.comp_cursor.value())
         self._draw_snapshot()
+
+    def _clear_drift(self) -> None:
+        self.drift = None
+        for item in (*self.drift_items, *self.strayed_items):
+            item.setData([], [])
+        self.drift_note.setText("Press <i>Step them</i> to step the body's start three ways.")
+
+    def step_three(self) -> None:
+        """Step the body's start (no torque) three ways at the step picked, and plot how each drifts."""
+        s = self.practice_state()
+        omega = start_rate(self.body, s.spin_axis, s.rate, s.nudge)
+        rate = float(np.linalg.norm(omega))
+        if rate == 0.0:
+            self._clear_drift()
+            self.drift_note.setText("It isn't turning: give it a rate in <i>Spin</i> to step.")
+            return
+        h = 2.0 * math.pi / rate / DRIFT_STEPS[self.drift_step.currentIndex()][1]
+        q0 = rotation.quaternion(rotation.from_euler(*np.radians(s.pose)))
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
+        try:
+            d = compare(self.body, omega, q0, DRIFT_SPANS[self.drift_span.currentIndex()], h)
+        finally:
+            QtWidgets.QApplication.restoreOverrideCursor()
+        self.drift = d
+        floor = 1e-12
+        for item, values in zip(self.drift_items, (d.matrix, d.euler, d.quaternion)):
+            ok = np.isfinite(values)
+            item.setData(d.t[ok], np.maximum(values[ok], floor))
+        for item, values in zip(self.strayed_items, (d.orthogonality, d.length)):
+            item.setData(d.t, np.maximum(values, floor))
+        failed = np.flatnonzero(~np.isfinite(d.euler))
+        euler = (
+            f"The Euler angles met the lock at t = {d.t[failed[0]]:.2f} s (a rate of 1/sin θ = ∞) and stop there."
+            if failed.size
+            else f"The Euler angles end {d.euler[-1]:.2g}° off; their 1/sin θ reached {np.max(d.lock):.3g}, and the "
+            "nearer the lock, the worse they step."
+        )
+        self.drift_note.setText(
+            f"At a step of {h * 1000:.3g} ms, after {d.t[-1]:.3g} s: the matrix is {d.matrix[-1]:.2g}° off and "
+            f"‖BᵀB − 1‖ = {d.orthogonality[-1]:.2g}, no longer quite a rotation (left alone, it keeps growing); "
+            f"the quaternion is {d.quaternion[-1]:.2g}° off and exactly a rotation (made unit each step; left alone "
+            f"its length would be out by {d.length[-1]:.2g}). {euler} RK4's error falls as the step's fourth power: "
+            "try the finer step."
+        )
 
     def _draw_check(self) -> None:
         n = self.history.size
