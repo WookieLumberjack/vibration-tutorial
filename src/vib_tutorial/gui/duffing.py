@@ -6,13 +6,17 @@ and the pump's half harmonic, under each drive cycle's measured ones) and the di
 strip chart. Right: the phase plane with its Poincaré section, the Ince–Strutt chart of the
 pumped spring's tongues, and the notes (their figures: gui/duffing_figures.py). The page has its own model
 (core/duffing.py), not the chain.
+
+What it draws and prints is worked out in its view model (`view_models/duffing.py`, no Qt), which also keeps the
+run's record (`Record`: the samples, each drive cycle, the Poincaré section) and the page's settings
+(`DuffingSetup`); this module holds the controls, the frame loop and the practice problems, and binds them. Change
+a readout or a curve there, and its tests in `tests/test_view_models.py`.
 """
 
 from __future__ import annotations
 
 import math
 import time
-from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
@@ -21,21 +25,15 @@ from PySide6 import QtCore, QtWidgets
 from ..core.duffing import (
     PRESETS,
     TWO_PI,
-    Cycle,
     Duffing,
     DuffingSimulator,
-    ResponseCurve,
     Sweep,
-    amplitudes,
-    floquet_growth,
-    linear_response,
-    measured_jump,
     parametric_amplitudes,
-    parametric_curve,
     response_curve,
-    tongue_hz,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
+from ..view_models import duffing as view
+from ..view_models.duffing import CHART_DEPTHS, CHART_RATIOS, GROWTH_TOP, LEGEND, LEGS, DuffingSetup
 from . import duffing_figures, weak
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height
@@ -49,16 +47,6 @@ from .theming import add_legend, mute
 
 FRAME_BUDGET = 0.008  # s of computing per frame: past it the page runs slower than asked
 SPEEDS = (0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
-WINDOW = 20.0  # s of simulated time on the strip chart
-PLOT_POINTS = 1200  # the strip chart's buckets (min and max of each)
-CAPACITY = 1 << 18  # samples kept for the strip chart and the phase plane
-PHASE_CYCLES = 3  # drive cycles of trajectory in the phase plane
-SECTION_POINTS = 4000  # Poincaré dots kept
-CHART_RATIOS = np.linspace(0.3, 4.0, 186)  # Omega / omega_n across the Ince–Strutt chart
-CHART_DEPTHS = np.linspace(0.0, 1.0, 61)  # mu up it
-CHART_STEPS = 300  # RK4 steps per pump period for its Floquet multipliers
-GROWTH_TOP = 0.15  # sigma / omega_n where the chart's colour saturates
-JUMP_FLOOR = 0.05  # of the curve's peak: a swing smaller than this is rest, to the jump detector
 CUSTOM = "Custom"
 
 TIPS = {
@@ -114,28 +102,6 @@ def presets_html() -> str:
 
 
 NOTES_HTML = load_notes("duffing", figures=duffing_figures.FIGURES, presets=presets_html())
-
-
-@dataclass(frozen=True)
-class DuffingSetup:
-    """A practice problem's setup: the oscillator, the drive and the sweep, as a preset sets them, and the tab."""
-
-    mass: float = 1.0
-    stiffness: float = 400.0
-    damping: float = 1.0
-    cubic: float = 1e5
-    force: float = 2.0
-    pump: float = 0.0
-    noise: float = 0.0
-    freq_hz: float = 2.0
-    start_hz: float = 2.0
-    end_hz: float = 6.0
-    sweep_time: float = 120.0
-    mode: Sweep = Sweep.UP_DOWN
-    tab: int = 0
-
-    def oscillator(self) -> Duffing:
-        return Duffing(self.mass, self.stiffness, self.damping, self.cubic, self.force, self.pump, self.noise)
 
 
 PRACTICE_SETUP = DuffingSetup  # what a practice problem's setup and the page's practice_state are
@@ -383,53 +349,6 @@ PROBLEMS = tuple(
 )
 
 
-def fmt_length(a: float) -> str:
-    """A length in mm below a metre, in km from one, else in m."""
-    if abs(a) < 1.0:
-        return f"{a * 1e3:.3g} mm"
-    return f"{a:.3g} m" if abs(a) < 1e3 else f"{a / 1e3:.3g} km"
-
-
-class _Trace:
-    """The last CAPACITY samples of t, x, v: a buffer twice as long, slid back when it fills."""
-
-    def __init__(self) -> None:
-        self.data = np.empty((3, 2 * CAPACITY))
-        self.n = 0
-
-    def clear(self) -> None:
-        self.n = 0
-
-    def add(self, t: np.ndarray, x: np.ndarray, v: np.ndarray) -> None:
-        k = t.size
-        if k >= CAPACITY:
-            t, x, v, k = t[-CAPACITY:], x[-CAPACITY:], v[-CAPACITY:], CAPACITY
-        if self.n + k > self.data.shape[1]:
-            keep = CAPACITY - k
-            self.data[:, :keep] = self.data[:, self.n - keep : self.n]
-            self.n = keep
-        self.data[:, self.n : self.n + k] = (t, x, v)
-        self.n += k
-
-    def since(self, t0: float) -> np.ndarray:
-        """(3, n) of the samples from time t0 on."""
-        t = self.data[0, : self.n]
-        return self.data[:, int(np.searchsorted(t, t0)) : self.n]
-
-
-def min_max(t: np.ndarray, y: np.ndarray, buckets: int) -> tuple[np.ndarray, np.ndarray]:
-    """Each bucket's min and max, in order, so the line covers what the whole record would."""
-    if y.size <= 2 * buckets:
-        return t, y
-    size = -(-y.size // buckets)
-    n = y.size // size * size
-    yy = y[:n].reshape(-1, size)
-    tt = t[:n:size]
-    out = np.empty((2, yy.shape[0]))
-    out[0], out[1] = yy.min(axis=1), yy.max(axis=1)
-    return np.repeat(tt, 2), out.T.ravel()
-
-
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None) -> pg.PlotWidget:
     p = pg.PlotWidget()
     p.setMenuEnabled(False)
@@ -448,12 +367,9 @@ class DuffingPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.sim = DuffingSimulator()
-        self.curve: ResponseCurve | None = None  # the drive's, by harmonic balance
-        self.p_curve: ResponseCurve | None = None  # the pump's
+        self.shown: view.Response | None = None  # the response plot's curves, by harmonic balance
         self.running = False  # at rest until started
-        self.cycles: list[Cycle] = []  # measured since the last sweep started (or the parameters changed)
-        self.section: list[tuple[float, float]] = []
-        self.trace = _Trace()
+        self.record = view.Record()  # the run's samples, and its cycles since the last sweep started
         self._y_top = 0.0
         self._loading = False
 
@@ -598,7 +514,8 @@ class DuffingPage(QtWidgets.QWidget):
             for leg, text in (("up", "up"), ("down", "down"), ("hold", "held"))
         }
         self.now_item = pg.ScatterPlotItem(size=11)
-        self.points = (self.up_item, self.down_item, self.hold_item, *self.half_items.values())
+        self.first_items = {"up": self.up_item, "down": self.down_item, "hold": self.hold_item}
+        self.points = (*self.first_items.values(), *self.half_items.values())
         for item in (
             self.linear_item,
             self.backbone_item,
@@ -850,17 +767,11 @@ class DuffingPage(QtWidgets.QWidget):
     @property
     def pumped_only(self) -> bool:
         """Pumped with no drive force: the steady states are the pump's half-harmonic swings."""
-        return self.sim.osc.force == 0 and self.sim.osc.pump > 0
-
-    def steady_states(self) -> tuple[np.ndarray, np.ndarray]:
-        """The steady amplitudes at the held frequency (smallest first) and their stability: the drive's,
-        or with no drive force the pump's (rest first)."""
-        f = self.sim.drive.freq_hz
-        return parametric_amplitudes(self.sim.osc, f) if self.pumped_only else amplitudes(self.sim.osc, f)
+        return view.pumped_only(self.sim.osc)
 
     def start_on_branch(self, k: int) -> None:
         """Put the mass on a steady state at the held frequency: 0 the lower, 1 the middle, 2 the upper."""
-        a, _ = self.steady_states()
+        a, _ = view.steady_states(self.sim.osc, self.sim.drive.freq_hz)
         if not a.size:
             return
         if self.sim.drive.legs:
@@ -871,23 +782,10 @@ class DuffingPage(QtWidgets.QWidget):
         self._show_drive_state()
 
     def _update_branch_buttons(self) -> None:
-        a, stable = self.steady_states()
-        self.branch_buttons[0].setEnabled(a.size > 0)
-        self.branch_buttons[1].setEnabled(a.size >= 3)
-        self.branch_buttons[2].setEnabled(a.size >= 2)
-        f = self.sim.drive.freq_hz
-        listed = ", ".join(
-            f"{fmt_length(x) if x > 0 else 'rest'}{'' if ok else ' (unstable)'}" for x, ok in zip(a, stable)
-        )
-        what = "swings at half the pump's frequency" if self.pumped_only else "steady amplitudes"
-        if a.size >= 2:
-            self.branch_note.setText(f"At {f:.3g} Hz, {what}: {listed}.")
-        elif a.size:
-            self.branch_note.setText(
-                f"At {f:.3g} Hz there is one steady state, {listed}: hold inside the band for more."
-            )
-        else:
-            self.branch_note.setText(f"At {f:.3g} Hz there is no steady response below the escape amplitude.")
+        b = view.branches(self.sim.osc, self.sim.drive.freq_hz)
+        for button, on in zip(self.branch_buttons, b.enabled):
+            button.setEnabled(on)
+        self.branch_note.setText(b.note)
 
     # ------------------------------------------------------------- run
     def _on_run(self, on: bool) -> None:
@@ -905,7 +803,7 @@ class DuffingPage(QtWidgets.QWidget):
         if self._mode is Sweep.HOLD:
             self.sim.drive.freq_hz = self.freq.value()
         self._target_t = 0.0
-        self.trace.clear()
+        self.record.clear()
         self.clear_points()
         self.running = False
         self.run_button.rest()
@@ -915,8 +813,7 @@ class DuffingPage(QtWidgets.QWidget):
         self._draw_live()
 
     def clear_points(self) -> None:
-        self.cycles = []
-        self.section = []
+        self.record.clear_points()
         self._draw_points()
         self._show_readout()
 
@@ -950,11 +847,7 @@ class DuffingPage(QtWidgets.QWidget):
             s = self.sim.advance(ahead)
             if s.t.size:
                 self._cost = 0.8 * self._cost + 0.2 * (time.perf_counter() - start) / (s.t[-1] - s.t[0] + 1e-9)
-                self.trace.add(s.t, s.x, s.v)
-            if s.cycles:
-                self.cycles += s.cycles
-                self.section += [(c.x, c.v) for c in s.cycles if c.leg == "hold"]  # at one frequency only
-                del self.section[:-SECTION_POINTS]
+            if self.record.add(s):
                 self._draw_points()
                 self._show_readout()
                 self._update_branch_buttons()
@@ -1002,7 +895,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.chart_now.setPen(pg.mkPen(c.strong, width=2))
         self.chart_now.setBrush(None)
         self.chart_image.setLookupTable(self._chart_lut())
-        if self.curve is not None:
+        if self.shown is not None:
             self._draw_curve()
             self._draw_points()
             self._show_readout()
@@ -1017,189 +910,81 @@ class DuffingPage(QtWidgets.QWidget):
         w = np.where(w > 0, 0.25 + 0.75 * w, 0.0)  # a step at zero, so the faintest growth shows
         return (back * (1 - w) + hot * w).astype(np.ubyte)
 
-    def _x_range(self) -> tuple[float, float]:
-        d = self.sim.drive
-        lo = min(d.start_hz, d.end_hz, d.freq_hz)
-        hi = max(d.start_hz, d.end_hz, d.freq_hz)
-        pad = 0.1 * (hi - lo) if hi > lo else 0.5 * max(hi, 0.1)
-        return max(lo - pad, 0.0), hi + pad
-
     def _draw_curve(self) -> None:
         osc = self.sim.osc
-        lo, hi = self._x_range()
-        self.curve = drive_curve = response_curve(osc, hi)
-        self.p_curve = pump_curve = parametric_curve(osc, hi)
-        top = 0.0
-        pieces: dict[str, list[tuple[np.ndarray, np.ndarray]]] = {
-            key: [] for key in ("stable", "unstable", "p_stable", "p_unstable")
-        }
-        for prefix, curve in (("", drive_curve), ("p_", pump_curve)):
-            for f, a, ok in curve.pieces:
-                pieces[prefix + ("stable" if ok else "unstable")].append((f, a))
-                inside = (f >= lo) & (f <= hi) & np.isfinite(a)
-                if inside.any():
-                    top = max(top, float(a[inside].max()))
-        top = top or 1e-3
-        self._y_top = 1.15 * top
-
-        def joined(parts):
-            if not parts:
-                return np.empty(0), np.empty(0)
-            f = np.concatenate([np.append(p[0], np.nan) for p in parts])
-            return f, np.concatenate([np.append(p[1], np.nan) for p in parts])
-
-        for key, item in (
-            ("stable", self.stable_item),
-            ("unstable", self.unstable_item),
-            ("p_stable", self.p_stable_item),
-            ("p_unstable", self.p_unstable_item),
+        self.shown = v = view.response(osc, view.x_range(self.sim.drive))
+        self._y_top = v.y_top
+        for item, curve in (
+            (self.stable_item, v.stable),
+            (self.unstable_item, v.unstable),
+            (self.p_stable_item, v.p_stable),
+            (self.p_unstable_item, v.p_unstable),
+            (self.backbone_item, v.backbone),
+            (self.jump_item, v.jumps),
         ):
-            item.setData(*joined(pieces[key]))
-        f = np.linspace(lo, hi, 600)
-        if osc.force > 0:
-            lin = linear_response(osc, f)
-            self.linear_item.setData(f, np.where(lin <= 2 * self._y_top, lin, np.nan), connect="finite")
-        else:
-            self.linear_item.setData([], [])
-        a = np.linspace(0.0, 2 * self._y_top, 300)
-        backbone = osc.backbone_hz(a)
-        self.backbone_item.setData(backbone if osc.force > 0 else 2 * backbone, a, connect="finite")
-        folds = self.curve.folds + self.p_curve.folds
-        self.jump_item.setData(
-            np.ravel([(j.freq_hz, j.freq_hz) for j in folds]), np.ravel([(j.amplitude, j.lands_at) for j in folds])
-        )
-        self.fold_item.setData([j.freq_hz for j in folds], [j.amplitude for j in folds])
-        self.response.setXRange(lo, hi, padding=0)
-        self.response.setYRange(0.0, self._y_top, padding=0)
-        self.response.setLabel(
-            "left", "Amplitude (½X: half harmonic)" if self.pumped_only else "Amplitude (first harmonic)", units="m"
-        )
-        if osc.cubic < 0:  # in the corner the curve leans away from
+            item.setData(*curve)
+        self.linear_item.setData(*v.linear, connect="finite")
+        self.fold_item.setData(*v.folds)
+        self.response.setXRange(*v.x_range, padding=0)
+        self.response.setYRange(0.0, v.y_top, padding=0)
+        self.response.setLabel("left", v.y_label, units="m")
+        if v.legend_right:  # in the corner the curve leans away from
             self.legend.anchor((1, 0), (1, 0), offset=(-10, 10))
         else:
             self.legend.anchor((0, 0), (0, 0), offset=(10, 10))
-        self._fill_legend()
-
-    def _fill_legend(self) -> None:
-        """Only what the plot shows: the drive's curves with a drive force, the pump's with a pump."""
-        osc = self.sim.osc
+        items = {
+            "linear": self.linear_item,
+            "backbone": self.backbone_item,
+            "backbone_2x": self.backbone_item,
+            "stable": self.stable_item,
+            "unstable": self.unstable_item,
+            "p_stable": self.p_stable_item,
+            "p_unstable": self.p_unstable_item,
+            **self.first_items,
+            **{f"half_{leg}": item for leg, item in self.half_items.items()},
+        }
         self.legend.clear()
-        shown = []
-        if osc.force > 0:
-            shown += [
-                (self.linear_item, "Linear spring (k₃ = 0)"),
-                (self.backbone_item, "Backbone"),
-                (self.stable_item, "Harmonic balance"),
-                (self.unstable_item, "… unstable"),
-            ]
-        elif osc.pump > 0 and osc.cubic != 0:
-            shown += [(self.backbone_item, "Backbone, at 2× its frequency")]
-        if osc.pump > 0:
-            shown += [(self.p_stable_item, "Pumped, ½X"), (self.p_unstable_item, "… unstable")]
-        if osc.force > 0:
-            shown += [(self.up_item, "Sweeping up"), (self.down_item, "Sweeping down"), (self.hold_item, "Held")]
-        if osc.pump > 0:
-            shown += [
-                (self.half_items["up"], "½X, up"),
-                (self.half_items["down"], "½X, down"),
-                (self.half_items["hold"], "½X, held"),
-            ]
-        for item, name in shown:
-            self.legend.addItem(item, name)
+        for key in v.legend:
+            self.legend.addItem(items[key], LEGEND[key])
 
     def _draw_points(self) -> None:
-        osc = self.sim.osc
-        cycles = self.cycles
-        top = 0.0
-        for leg, first, half in (
-            ("up", self.up_item, self.half_items["up"]),
-            ("down", self.down_item, self.half_items["down"]),
-            ("hold", self.hold_item, self.half_items["hold"]),
-        ):
-            run = [c for c in cycles if c.leg == leg][-200:] if leg == "hold" else [c for c in cycles if c.leg == leg]
-            pts = (
-                np.array([(c.freq_hz, c.amplitude) for c in run]).reshape(-1, 2) if osc.force > 0 else np.empty((0, 2))
-            )
-            halves = (
-                np.array([(c.freq_hz, c.half) for c in run if math.isfinite(c.half)]).reshape(-1, 2)
-                if osc.pump > 0
-                else np.empty((0, 2))
-            )
-            first.setData(pos=pts)
-            half.setData(pos=halves)
-            for arr in (pts, halves):
-                if arr.size:
-                    top = max(top, float(arr[-400:, 1].max()))
-        last = cycles[-1] if cycles else None
-        now = None
-        if last is not None:
-            amp = last.half if self.pumped_only else last.amplitude
-            now = (last.freq_hz, amp) if math.isfinite(amp) else None
-        self.now_item.setData(pos=np.array([now]) if now else np.empty((0, 2)))
-        if top > self._y_top and math.isfinite(top) and top < self.sim.runaway:
-            self._y_top = 1.15 * top
+        v = view.points(self.sim.osc, self.record, self._y_top, self.sim.runaway)
+        for leg in LEGS:
+            self.first_items[leg].setData(pos=v.first[leg])
+            self.half_items[leg].setData(pos=v.half[leg])
+        self.now_item.setData(pos=v.now)
+        if v.y_top is not None:
+            self._y_top = v.y_top
             self.response.setYRange(0.0, self._y_top, padding=0)
-        self.section_item.setData(pos=np.array(self.section).reshape(-1, 2))
+        self.section_item.setData(pos=v.section)
 
     def _draw_live(self) -> None:
-        t, x, v = self.trace.since(self.sim.t - WINDOW)
-        tt, xx = min_max(t, x, PLOT_POINTS)
-        self.x_item.setData(tt, xx)
-        if t.size:
-            self.strip.setXRange(max(self.sim.t - WINDOW, 0.0), max(self.sim.t, WINDOW), padding=0)
-        f = self.sim.drive.freq_hz
-        span = PHASE_CYCLES / f if f > 0 else 2.0
-        t, x, v = self.trace.since(self.sim.t - span)
-        self.orbit_item.setData(x, v)
+        v = view.live(self.record.trace, self.sim.t, self.sim.drive.freq_hz)
+        self.x_item.setData(*v.strip)
+        if v.strip_range is not None:
+            self.strip.setXRange(*v.strip_range, padding=0)
+        self.orbit_item.setData(*v.orbit)
 
     def _draw_chart(self) -> None:
         """The Ince–Strutt chart at the page's damping, when it shows (it takes ~0.1 s)."""
         osc = self.sim.osc
         if self.tabs.currentWidget() is not self.chart_tab or osc.stiffness <= 0:
             if osc.stiffness <= 0:
-                self.chart_note.setText("No linear spring: no natural frequency to chart the pump against.")
+                self.chart_note.setText(view.NO_SPRING)
             return
         if self._chart_zeta != osc.zeta:
             self._chart_zeta = osc.zeta
-            growth = floquet_growth(osc.zeta, CHART_RATIOS, CHART_DEPTHS, CHART_STEPS)
-            self.chart_image.setImage(growth.T, levels=(-0.05, GROWTH_TOP), autoLevels=False)
-            dr, dm = CHART_RATIOS[1] - CHART_RATIOS[0], CHART_DEPTHS[1] - CHART_DEPTHS[0]
-            self.chart_image.setRect(
-                QtCore.QRectF(
-                    CHART_RATIOS[0] - dr / 2,
-                    CHART_DEPTHS[0] - dm / 2,
-                    CHART_RATIOS[-1] - CHART_RATIOS[0] + dr,
-                    CHART_DEPTHS[-1] - CHART_DEPTHS[0] + dm,
-                )
-            )
-            self.chart_zero.setData(growth.T)
-            # harmonic balance's first tongue: (1 - r^2/4)^2 + (zeta r)^2 = (mu/2)^2, a quadratic in r^2
-            lo, hi = [], []
-            for mu in CHART_DEPTHS:
-                roots = np.roots([1 / 16, osc.zeta**2 - 0.5, 1 - mu * mu / 4])
-                r2 = np.sort(roots[(np.abs(roots.imag) < 1e-12) & (roots.real > 0)].real)
-                lo.append(math.sqrt(r2[0]) if r2.size == 2 else np.nan)
-                hi.append(math.sqrt(r2[1]) if r2.size == 2 else np.nan)
-            self.chart_hb.setData(np.concatenate([lo[::-1], hi]), np.concatenate([CHART_DEPTHS[::-1], CHART_DEPTHS]))
+            c = view.chart(osc.zeta)
+            self.chart_image.setImage(c.growth, levels=(-0.05, GROWTH_TOP), autoLevels=False)
+            self.chart_image.setRect(QtCore.QRectF(*c.rect))
+            self.chart_zero.setData(c.growth)
+            self.chart_hb.setData(*c.tongue)
         self._draw_chart_point()
 
     def _draw_chart_point(self) -> None:
-        osc = self.sim.osc
-        if osc.stiffness <= 0:
-            self.chart_now.setData(pos=np.empty((0, 2)))
-            return
-        r = self.sim.drive.freq_hz / osc.natural_hz
-        self.chart_now.setData(pos=np.array([[r, osc.pump]]))
-        rate = float(floquet_growth(osc.zeta, np.array([r]), np.array([osc.pump]), CHART_STEPS)[0, 0])
-        verdict = (
-            f"rest is unstable: a swing grows as e<sup>{rate:.3g} ω<sub>n</sub> t</sup>"
-            if rate > 0
-            else f"rest is stable: a swing dies away as e<sup>−{-rate:.3g} ω<sub>n</sub> t</sup>"
-        )
-        self.chart_note.setText(
-            f"ζ = {100 * osc.zeta:.2g} %. Pumping at Ω/ω<sub>n</sub> = {r:.3g} with "
-            f"μ = {osc.pump:.3g}, {verdict} (on the linear spring). Click to pump elsewhere."
-        )
+        v = view.chart_point(self.sim.osc, self.sim.drive.freq_hz)
+        self.chart_now.setData(pos=v.now)
+        self.chart_note.setText(v.note)
 
     def _on_chart_click(self, event) -> None:
         vb = self.chart.getPlotItem().getViewBox()
@@ -1212,106 +997,15 @@ class DuffingPage(QtWidgets.QWidget):
         self.freq.setValue(round(r * osc.natural_hz, 3))  # holds there
 
     def _show_osc_info(self) -> None:
-        osc = self.sim.osc
-        parts = []
-        if osc.stiffness > 0:
-            parts.append(f"Small swings: f<sub>n</sub> = {osc.natural_hz:.3g} Hz, ζ = {100 * osc.zeta:.2g} %.")
-        else:
-            parts.append("No linear spring: the frequency depends on the swing alone.")
-        if osc.cubic < 0:
-            parts.append(f"Escape amplitude {fmt_length(osc.escape)}.")
-        elif osc.cubic > 0 and osc.stiffness > 0 and self.curve is not None and 0 < self.curve.tip < math.inf:
-            ratio = 0.75 * osc.cubic * self.curve.tip**2 / osc.stiffness
-            parts.append(
-                f"At the peak ({fmt_length(self.curve.tip)}) the cubic adds {100 * ratio:.3g} % "
-                "to the spring's stiffness."
-            )
-        self.osc_info.setText(" ".join(parts))
+        self.osc_info.setText(view.osc_info(self.sim.osc, self.shown.curve if self.shown else None))
 
     def _show_drive_state(self) -> None:
-        d = self.sim.drive
-        text = {"up": "Sweeping up", "down": "Sweeping down", "hold": "Holding"}[d.leg]
-        self.drive_state.setText(f"{text} at {d.freq_hz:.3f} Hz, t = {self.sim.t:.1f} s")
-
-    def _measured(self, half: bool) -> str | None:
-        """'Measured: the jump at ...' for the sweep's legs so far, if any jumped."""
-        assert self.p_curve is not None, "drawn before any sweep"
-        floor = JUMP_FLOOR * self.p_curve.tip if half else 0.0
-        measured = []
-        for leg, word in (("up", "going up"), ("down", "going down")):
-            f = measured_jump(self.cycles, leg, half=half, floor=floor)
-            if f is not None:
-                measured.append(f"{f:.3g} Hz {word}")
-        return "Measured: the jump at " + " and ".join(measured) + "." if measured else None
+        self.drive_state.setText(view.drive_state(self.sim.drive, self.sim.t))
 
     def _show_readout(self) -> None:
-        if self.curve is None or self.p_curve is None:  # drawn together
+        if self.shown is None:
             return
-        osc = self.sim.osc
-        lines = []
-        if osc.force > 0:
-            folds = sorted(self.curve.folds, key=lambda f: f.freq_hz)
-            if len(folds) >= 2:
-                lo, hi = folds[0], folds[-1]
-                lines.append(
-                    f"Harmonic balance: two stable amplitudes between {lo.freq_hz:.3g} and {hi.freq_hz:.3g} Hz. "
-                    f"Sweeping up, the {'upper' if hi.down else 'lower'} branch ends at {hi.freq_hz:.3g} Hz "
-                    f"({fmt_length(hi.amplitude)}) and {'drops' if hi.down else 'jumps'} to "
-                    f"{fmt_length(hi.lands_at)}; sweeping down, the {'upper' if lo.down else 'lower'} ends at "
-                    f"{lo.freq_hz:.3g} Hz ({fmt_length(lo.amplitude)}) and "
-                    f"{'drops' if lo.down else 'jumps'} to {fmt_length(lo.lands_at)}."
-                )
-                measured = self._measured(half=False)
-                if measured:
-                    lines.append(measured)
-            elif folds:
-                fold = folds[0]
-                lines.append(
-                    f"Harmonic balance: a branch ends at {fold.freq_hz:.3g} Hz ({fmt_length(fold.amplitude)}) and "
-                    f"{'drops' if fold.down else 'jumps'} to {fmt_length(fold.lands_at)}; the other runs into the "
-                    "escape amplitude."
-                    if osc.cubic < 0
-                    else f"Harmonic balance: a branch ends at {fold.freq_hz:.3g} Hz; the other runs off the top "
-                    "(no damping to bound it)."
-                )
-            else:
-                lines.append(
-                    "Harmonic balance: one steady amplitude at each frequency, so no jump: sweeps up and down agree."
-                )
-        if osc.pump > 0:
-            edges = tongue_hz(osc)
-            if edges is None:
-                lines.append("Pumped: the pump is too weak for the damping, so rest is stable at every frequency.")
-            else:
-                text = f"Pumped: rest is unstable between {edges[0]:.3g} and {edges[1]:.3g} Hz (harmonic balance)"
-                if osc.cubic == 0:
-                    text += ", and there a swing at half the pump's frequency grows without bound."
-                else:
-                    jumps = [f for f in self.p_curve.folds if f.lands_at > f.amplitude]
-                    text += ", where the swing at half its frequency settles on the branch" + (
-                        f"; sweeping down, rest turns unstable at {jumps[0].freq_hz:.3g} Hz and the swing "
-                        f"jumps to {fmt_length(jumps[0].lands_at)}."
-                        if jumps
-                        else "."
-                    )
-                lines.append(text)
-                if osc.force == 0 and osc.cubic != 0:
-                    measured = self._measured(half=True)
-                    if measured:
-                        lines.append(measured)
-                if osc.force > 0:
-                    lines.append(
-                        "The two curves leave each other out: harmonic balance of the drive alone, "
-                        "and of the pump alone."
-                    )
-        if not lines:
-            lines.append("No drive and no pump: the mass only rings down.")
-        if self.sim.escaped:
-            lines.append(
-                f"<b>The mass went over the potential's hilltop (±{fmt_length(osc.escape)}) and ran "
-                "away.</b> Reset to start again."
-                if osc.cubic < 0
-                else f"<b>The swing grew past {fmt_length(self.sim.runaway)}, without bound: a linear "
-                "spring has nothing to stop it.</b> Reset to start again."
-            )
-        self.readout.setText("<br>".join(lines))
+        v = self.shown
+        self.readout.setText(
+            view.readout(self.sim.osc, v.curve, v.p_curve, self.record.cycles, self.sim.escaped, self.sim.runaway)
+        )

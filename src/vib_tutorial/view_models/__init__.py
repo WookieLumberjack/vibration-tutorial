@@ -15,5 +15,9 @@ Working on it:
   in a fresh interpreter and checks none of them is loaded).
 - One function per panel or tab, so a page still works out only what shows (the start-up's run, say).
 - A view holds what's drawn, not how: no pens or colours (those are the theme's, at draw time).
-- A page gets one when it's next worked on, not all at once. Isolation is the first (`isolation.py`).
+- A page that runs keeps what the run measured in a plain object here too (`duffing.Record`), which the simulator's
+  stretches go into; the frame loop, its budget and the Start/Pause stay the page's. A function the frame calls
+  (`duffing.live`) takes views of the record and allocates only what it draws.
+- A page gets one when it's next worked on, not all at once: Isolation (`isolation.py`) and Duffing & Mathieu
+  (`duffing.py`) so far. `plot.Curve` is a line's or a marker's points; `text` formats numbers as the pages do.
 """

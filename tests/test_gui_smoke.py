@@ -3303,8 +3303,8 @@ def test_simulation_page_keeps_to_its_compute_budget(app, monkeypatch):
 
 
 def test_duffing_page(app):
-    """The Duffing page sweeps up and down over harmonic balance's curve, measures its jumps, starts the
-    mass on a branch, pauses when a softening spring's mass escapes, and keeps going across a theme switch."""
+    """The Duffing page runs a sweep and draws it, starts the mass on a branch, pauses when a softening spring's mass
+    escapes, and keeps going across a theme switch (what it draws and prints: test_view_models.py)."""
     from vib_tutorial.core.duffing import Sweep
     from vib_tutorial.gui.main_window import MainWindow
 
@@ -3321,13 +3321,11 @@ def test_duffing_page(app):
     p.loop.timer.stop()
     assert p.preset.currentText() == "Hardening spring: the jump" and p.frame_context() == p.preset.currentText()
     assert "3.64 and 4.45 Hz" in p.readout.text()
-    while p.sim.drive.mode is not Sweep.HOLD:
+    for _ in range(12):  # a minute up the sweep (the whole sweep's readings: test_view_models.py)
         p.step(5.0)
-    legs = {c.leg for c in p.cycles}
-    assert {"up", "down"} <= legs and len(p.up_item.data) > 100 and len(p.down_item.data) > 100
-    assert "Measured: the jump at 4." in p.readout.text() and "and 3.5" in p.readout.text()
-    assert p.x_item.getData()[0].size <= 2 * 1200 + 2
-    assert len(p.section) == sum(c.leg == "hold" for c in p.cycles)  # Poincaré dots only once it holds
+    assert len(p.up_item.data) > 20 and not len(p.down_item.data) and len(p.now_item.data) == 1
+    assert p.x_item.getData()[0].size <= 2 * 1200 + 2 and p.orbit_item.getData()[0].size > 0
+    assert "Sweeping up" in p.drive_state.text() and "t = 60" in p.drive_state.text()
 
     w.set_theme("Dark")
     p.step(1.0)
@@ -3339,8 +3337,8 @@ def test_duffing_page(app):
     p.start_on_branch(2)
     for _ in range(20):
         p.step(1.0)
-    assert p.cycles[-1].amplitude == pytest.approx(0.0583, rel=0.02)  # stays on the upper branch
-    assert len(p.section) >= 60 and np.ptp(np.array(p.section[-10:]), axis=0).max() < 1e-3  # one dot
+    assert p.record.cycles[-1].amplitude == pytest.approx(0.0583, rel=0.02)  # stays on the upper branch
+    assert len(p.record.section) >= 60 and np.ptp(np.array(p.record.section[-10:]), axis=0).max() < 1e-3  # one dot
     p.freq.setValue(5.0)  # outside the band: one amplitude
     assert not p.branch_buttons[1].isEnabled() and p.branch_buttons[0].isEnabled()
 
@@ -3349,7 +3347,9 @@ def test_duffing_page(app):
         p.step(5.0)
     assert p.sim.escaped and "ran away" in p.readout.text() and p.run_button.text() == "Resume"
     p.reset()
-    assert not p.running and not p.sim.escaped and p.sim.t == 0 and not p.cycles and p.run_button.text() == "Start"
+    assert (
+        not p.running and not p.sim.escaped and p.sim.t == 0 and not p.record.cycles and p.run_button.text() == "Start"
+    )
 
     p.stiffness.setValue(500.0)  # an edit: Custom, the points cleared, the curve redrawn
     assert p.preset.currentText() == "Custom" and p.sim.osc.stiffness == 500.0
@@ -3380,10 +3380,9 @@ def test_mathieu_on_the_duffing_page(app):
     names = [label.text for _, label in p.legend.items]
     assert "Pumped, ½X" in names and "Sweeping up" not in names
     assert [b.isEnabled() for b in p.branch_buttons] == [True, False, True]  # rest, the swing
-    assert "rest (unstable)" in p.branch_note.text()
     for _ in range(30):
         p.step(2.0)
-    assert p.cycles[-1].half == pytest.approx(0.0275, rel=0.02)
+    assert p.record.cycles[-1].half == pytest.approx(0.0275, rel=0.02)
     assert len(p.half_items["hold"].data) > 50 and not len(p.hold_item.data)
     p.start_on_branch(0)  # back to rest: unstable, so the noise grows again
     assert p.sim.x == 0 and p.sim.v == 0

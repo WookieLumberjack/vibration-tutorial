@@ -23,6 +23,7 @@ import numpy as np
 
 from ..core.isolation import G, Isolator, Mount, deflection_for, start_up
 from ..core.sdof import TWO_PI
+from .plot import Curve
 from .text import db, fmt
 
 MOUNTS = list(Mount)
@@ -122,25 +123,6 @@ TRIALS = (
         block=300.0,
     ),
 )
-
-
-@dataclass(frozen=True)
-class Curve:
-    """A line's or a marker's points; `item.setData(*curve)` draws it (an empty one hides a marker)."""
-
-    x: np.ndarray
-    y: np.ndarray
-
-    def __iter__(self):
-        return iter((self.x, self.y))
-
-    @staticmethod
-    def point(x: float, y: float) -> Curve:
-        return Curve(np.array([x]), np.array([y]))
-
-    @staticmethod
-    def empty() -> Curve:
-        return Curve(np.empty(0), np.empty(0))
 
 
 @dataclass(frozen=True)

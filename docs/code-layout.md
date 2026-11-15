@@ -175,8 +175,9 @@
   only as many ticks as fit.
 - `view_models/`: what a page shows, worked out without Qt (its curves, markers, ranges and readout
   texts, from its settings), so its readouts are tested as printed and its plots could be drawn
-  elsewhere; the page's widget only binds them. Vibration isolation is the first page with one
-  (`view_models/isolation.py`), and `tests/test_view_models.py` checks them.
+  elsewhere; the page's widget only binds them. Vibration isolation and Duffing & Mathieu have one
+  so far (`view_models/isolation.py`, `view_models/duffing.py`: a page that runs keeps its run's
+  record there too), and `tests/test_view_models.py` checks them.
 - The Theory notes are HTML files in `theory/`, read by `gui/links.py`'s `load_notes`. Their display
   equations are written in LaTeX and typeset by [ziamath](https://github.com/cdelker/ziamath)
   (`gui/maths.py`); inline maths is set in the bundled STIX Two Text font (`fonts/`, under the SIL Open
