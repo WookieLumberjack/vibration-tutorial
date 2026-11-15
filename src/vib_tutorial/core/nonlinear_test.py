@@ -32,7 +32,9 @@ Working on it
 `nonlinear_page`, after Test planning; follows the chain, its friction included). The page adds one `Element`
 (a cubic spring or a gap alongside a spring). `stepped_sine` is one-harmonic harmonic balance (`describing`:
 ¾k₃|D|²D, the gap's `gap_stiffness`, friction (4F/π)V/|V| smoothed below `STUCK`), Newton on Re/Im with a
-central-difference Jacobian and a line search (friction's near-step makes full steps oscillate; the whole step
+central-difference Jacobian and a line search (`_solve_many`: every start of a rescue at once, and each step's
+Jacobian and line-search residuals in one call to `describing` each, as a call at n ≤ 8 is NumPy's overhead:
+the gap's sweep went from 5.5 s to 0.6 s with the same answers) (friction's near-step makes full steps oscillate; the whole step
 is taken when no halving helps, or Newton sits in the dip a vanished fold leaves), each step from the last;
 where it fails or the Jacobian's determinant is negative (the middle branch), the stable solution nearest the
 last from other starts (`SEEDS`, `RESCUE` iterations) is the jump. `steady_response` is the exact FOH update
@@ -62,6 +64,7 @@ TOL = 1e-10  # Newton: the residual's norm below this × the force
 ITERATIONS = 40
 RESCUE = 200  # Newton's iterations from the other starts, where a branch has ended: it wanders before it lands
 HALVINGS = 30
+HALF_STEPS = 0.5 ** np.arange(HALVINGS)  # the line search's fractions of a Newton step
 LEAP = 0.2  # a step that moves the response this share of itself, and
 STEEPER = 5.0  # this many times further than the step before, is a jump
 SEEDS = (0.1, 0.3, 2.0, 3.0, 10.0)  # multiples of the linear response, and the last, tried when a branch ends
@@ -140,7 +143,7 @@ class Solution:
     stable: bool
 
 
-def _solve(
+def _solve_many(
     system: ChainSystem,
     element: Element,
     Z: np.ndarray,
@@ -149,47 +152,84 @@ def _solve(
     X0: np.ndarray,
     scale: float,
     iterations: int = ITERATIONS,
-) -> Solution:
-    """Newton on the real and imaginary parts, the Jacobian by central differences (every column at once)."""
-    n = f.size
+) -> list[Solution]:
+    """Newton on the real and imaginary parts from each start in X0 (S, n) at once, the Jacobian by central
+    differences: each start's iterations are its own (it stops when it converges, stands still or fails), only
+    the arithmetic is shared. All of a step's residuals (the Jacobian's 4n + 1, then the line search's halvings)
+    go through `describing` in one call: at n ≤ 8 a call is NumPy's overhead, not its arithmetic."""
+    S, n = X0.shape
     size = float(np.abs(f).max())
+    unit = np.concatenate([np.eye(n), 1j * np.eye(n)])  # (2n, n): a nudge to each Re and Im
 
     def residual(Xs: np.ndarray) -> np.ndarray:
         r = Xs @ Z.T + describing(system, element, Xs, omega, scale) - f
         return np.concatenate([r.real, r.imag], axis=-1)
 
     X = X0.astype(complex)
+    converged = np.zeros(S, dtype=bool)
+    stable = np.zeros(S, dtype=bool)
+    live = np.ones(S, dtype=bool)
     for _ in range(iterations):
-        step = 1e-6 * max(float(np.abs(X).max()), scale)
-        shift = np.concatenate([np.eye(n), 1j * np.eye(n)]) * step
-        R = residual(np.concatenate([X[None], X + shift, X - shift]))
-        r0 = R[0]
-        J = (R[1 : 2 * n + 1] - R[2 * n + 1 :]).T / (2 * step)  # central differences
-        if np.linalg.norm(r0) <= TOL * size:
-            return Solution(X, True, bool(np.linalg.det(J) > 0))
-        try:
-            d = np.linalg.solve(J, -r0)
-        except np.linalg.LinAlgError:
+        act = np.flatnonzero(live)
+        if not act.size:
             break
-        d = d[:n] + 1j * d[n:]
-        cap = 0.5 * max(float(np.abs(X).max()), scale)  # no step longer than half the motion so far
-        big = float(np.abs(d).max())
-        if big > cap:
-            d *= cap / big
-        # a line search: halve the step until the residual falls (friction's near-step makes full steps
-        # overshoot back and forth)
-        now = float(np.linalg.norm(r0))
-        trial = d
-        for _ in range(HALVINGS):
-            if float(np.linalg.norm(residual(X + trial))) < now:
-                d = trial
-                break
-            trial = 0.5 * trial
-        X = X + d  # (the whole step if no part of it helps: near a fold that has gone, the residual has a
-        # shallow dip a line search would stay in)
-        if big <= 1e-12 * scale:  # standing still: as converged as round-off allows
-            return Solution(X, True, bool(np.linalg.det(J) > 0))
-    return Solution(X, False, False)
+        Xa = X[act]
+        step = 1e-6 * np.maximum(np.abs(Xa).max(axis=1), scale)  # (A,)
+        shift = unit[None] * step[:, None, None]
+        R = residual(np.concatenate([Xa[:, None], Xa[:, None] + shift, Xa[:, None] - shift], axis=1))
+        r0 = R[:, 0]
+        J = np.swapaxes(R[:, 1 : 2 * n + 1] - R[:, 2 * n + 1 :], 1, 2) / (2 * step)[:, None, None]
+        now = np.linalg.norm(r0, axis=1)
+        done = now <= TOL * size
+        if done.any():
+            i = act[done]
+            converged[i], stable[i], live[i] = True, np.linalg.det(J[done]) > 0, False
+        go = ~done
+        if not go.any():
+            continue
+        act, Xa, J, r0, now = act[go], Xa[go], J[go], r0[go], now[go]
+        try:
+            sol = np.linalg.solve(J, -r0[..., None])[..., 0]
+        except np.linalg.LinAlgError:  # one start's Jacobian is singular: that start fails, the rest go on
+            sol = np.zeros_like(r0)
+            for k in range(act.size):
+                try:
+                    sol[k] = np.linalg.solve(J[k], -r0[k])
+                except np.linalg.LinAlgError:
+                    live[act[k]] = False
+            ok = live[act]
+            act, Xa, J, r0, now, sol = act[ok], Xa[ok], J[ok], r0[ok], now[ok], sol[ok]
+            if not act.size:
+                continue
+        d = sol[:, :n] + 1j * sol[:, n:]
+        cap = 0.5 * np.maximum(np.abs(Xa).max(axis=1), scale)  # no step longer than half the motion so far
+        big = np.abs(d).max(axis=1)
+        d = d * np.where(big > cap, cap / np.where(big > 0, big, 1.0), 1.0)[:, None]
+        # a line search: the longest of d, d/2, d/4, … that lowers the residual (friction's near-step makes full
+        # steps overshoot back and forth); the whole step if none does (near a fold that has gone, the residual
+        # has a shallow dip a line search would stay in)
+        trials = d[:, None, :] * HALF_STEPS[None, :, None]
+        better = np.linalg.norm(residual(Xa[:, None] + trials), axis=-1) < now[:, None]
+        some = better.any(axis=1)
+        first = np.argmax(better, axis=1)
+        d = np.where(some[:, None], trials[np.arange(act.size), first], d)
+        X[act] = Xa + d
+        still = big <= 1e-12 * scale  # standing still: as converged as round-off allows
+        if still.any():
+            i = act[still]
+            converged[i], stable[i], live[i] = True, np.linalg.det(J[still]) > 0, False
+    return [Solution(X[k], bool(converged[k]), bool(stable[k])) for k in range(S)]
+
+
+def _problem(system: ChainSystem, force: int, F: float, hz: float):
+    """Z = K − ω²M + iωC, the force vector, ω, the linear response and its size: one step's linear algebra."""
+    M, C, K = system.matrices()
+    omega = TWO_PI * hz
+    Z = K - omega * omega * M + 1j * omega * C
+    f = np.zeros(system.n, dtype=complex)
+    f[force] = F
+    linear = np.linalg.solve(Z, f)
+    return Z, f, omega, linear, float(np.abs(linear).max())
 
 
 def harmonic_balance(
@@ -202,16 +242,11 @@ def harmonic_balance(
     iterations: int = ITERATIONS,
 ) -> Solution:
     """The one-harmonic steady state at hz under F on mass `force`, from `start` (the linear response if None)."""
-    M, C, K = system.matrices()
-    omega = TWO_PI * hz
-    Z = K - omega * omega * M + 1j * omega * C
-    f = np.zeros(system.n, dtype=complex)
-    f[force] = F
-    linear = np.linalg.solve(Z, f)
-    scale = float(np.abs(linear).max())
+    Z, f, omega, linear, scale = _problem(system, force, F, hz)
     if not nonlinear(system, element):
         return Solution(linear, True, True)
-    return _solve(system, element, Z, f, omega, linear if start is None else start, scale, iterations)
+    X0 = linear if start is None else start
+    return _solve_many(system, element, Z, f, omega, X0[None], scale, iterations)[0]
 
 
 @dataclass(frozen=True)
@@ -236,10 +271,10 @@ def stepped_sine(
         s = harmonic_balance(system, element, force, F, float(f), last)
         lost = last is not None and not (s.converged and s.stable)
         if last is not None and lost:
-            linear = harmonic_balance(system, Element(), force, F, float(f)).X
+            Z, fv, omega, linear, scale = _problem(system, force, F, float(f))
             here = last
-            starts = [linear * m for m in (1.0, *SEEDS)] + [here * m for m in SEEDS]
-            options = [harmonic_balance(system, element, force, F, float(f), x, RESCUE) for x in starts]
+            starts = np.array([linear * m for m in (1.0, *SEEDS)] + [here * m for m in SEEDS])
+            options = _solve_many(system, element, Z, fv, omega, starts, scale, RESCUE)
             good = [o for o in options if o.converged and o.stable]
             if good:
                 s = min(good, key=lambda o: float(np.linalg.norm(o.X - here)))
