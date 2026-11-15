@@ -5,27 +5,39 @@ and a design target. Centre: the transmissibility against frequency (with a fami
 behind it) and the force on the floor against the speed. Right: a run up to speed through the mounts'
 resonance, the design chart (static deflection against speed for each isolation), and the Theory. The page
 has its own model (core/isolation.py).
+
+What it draws and prints is worked out in its view model (`view_models/isolation.py`, no Qt), which also holds
+its settings (`IsolationTrial`) and `TRIALS`; this module binds the controls to it and keeps the practice
+problems. Change a readout or a curve there, and its tests in `tests/test_view_models.py`.
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, replace
 
 import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.isolation import G, Isolator, Mount, deflection_for, start_up
+from ..core.isolation import G, Isolator, Mount, deflection_for
 from ..core.practice import Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
+from ..view_models import isolation as view
+from ..view_models.isolation import (
+    CHART_LEVELS,
+    FAMILY,
+    MOUNTS,
+    TAB_CHART,
+    TAB_START,
+    TRIALS,
+    IsolationTrial,
+    isolator,
+)
 from . import isolation_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
     TrialBox,
-    db,
-    fmt,
     note_label,
     plot,
     readout_label,
@@ -36,104 +48,6 @@ from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .style import colors
 from .theming import add_legend
-
-MOUNTS = list(Mount)
-FAMILY = (0.0, 0.1, 0.3, 0.7)  # the damping ratios drawn behind the isolator's own curve
-RATIOS = np.geomspace(0.1, 20.0, 1500)
-CHART_SPEEDS = np.geomspace(5.0, 200.0, 200)  # Hz on the design chart
-CHART_LEVELS = (0.5, 0.8, 0.9, 0.95, 0.99)
-TAB_START, TAB_CHART = range(2)
-
-
-@dataclass(frozen=True)
-class IsolationTrial:
-    name: str
-    note: str
-    deflection_mm: float = 5.0
-    zeta: float = 0.05
-    mount: Mount = Mount.VISCOUS
-    stiffness_ratio: float = 3.0
-    stage_mass: float = 0.5
-    block: float = 0.0
-    rpm: float = 1500.0
-    ramp: float = 2.0
-    tab: int = TAB_START
-    mass: float = 100.0
-    unbalance: float = 0.01
-
-
-def isolator(t: IsolationTrial) -> Isolator:
-    """The machine on its mounts as a trial (or the page's `practice_state`) sets them."""
-    return Isolator(
-        t.mass,
-        t.rpm,
-        t.unbalance,
-        1e-3 * t.deflection_mm,
-        t.zeta,
-        t.mount,
-        t.stiffness_ratio,
-        t.stage_mass,
-        t.block,
-    )
-
-
-TRIALS = (
-    IsolationTrial(
-        "Soft mounts: isolation",
-        "A 100 kg machine with a 0.01 kg·m unbalance at 1500 rpm (25 Hz) on mounts that sag 5 mm: <m>f<sub>n</sub></m> "
-        "= <m>15.76/√5</m> = 7.05 Hz, so the speed is <m>3.5f<sub>n</sub></m>. The unbalance pulls with 247 N; only 23 N, 9 %, "
-        "reaches the floor (−21 dB): 91 % isolation.",
-    ),
-    IsolationTrial(
-        "Stiff mounts: amplification",
-        "The same machine on mounts that sag only 0.3 mm: <m>f<sub>n</sub></m> = 28.8 Hz, just above the running "
-        "speed. The mounts now amplify: 3.9 times the unbalance's force reaches the floor. Below <m>√2 f<sub>n</sub></m> "
-        "a mount can only make things worse.",
-        deflection_mm=0.3,
-    ),
-    IsolationTrial(
-        "Damping costs isolation",
-        "Back on the soft mounts, with <m>ζ</m> = 0.3 instead of 0.05. Above <m>√2 f<sub>n</sub></m> the damper passes force "
-        "to the floor in proportion to the speed: 20 % now reaches it instead of 9 %. Damping only helps at "
-        "resonance, which the machine passes through at start-up.",
-        zeta=0.3,
-    ),
-    IsolationTrial(
-        "Running up through resonance",
-        "A 2 s run up to 1500 rpm on the soft, lightly damped mounts. As the speed passes <m>f<sub>n</sub></m> = 7 Hz "
-        "(420 rpm) the machine and the floor force swell, then settle to the isolated running state. The "
-        "unbalance's force grows as the speed squared, so the resonance is passed at a twelfth of the running "
-        "force, which is what keeps it tolerable.",
-        tab=TAB_START,
-    ),
-    IsolationTrial(
-        "An elastically supported damper",
-        "A relaxation mount at 3000 rpm: the damper sits on a spring 3 times as stiff as the mount's, with "
-        "<m>ζ</m> = 0.3. At resonance it passes a little more than the plain mount of the same <m>ζ</m> (2.1 times against "
-        "2.0), but high above it the spring in series lets the damper float, and the transmissibility falls as "
-        "<m>1/r²</m> again, not <m>1/r</m>: 7.0 % reaches the floor against the plain mount's 8.8 % (at 6000 rpm, 1.9 % "
-        "against 4.3 %).",
-        zeta=0.3,
-        mount=Mount.RELAXATION,
-        rpm=3000.0,
-    ),
-    IsolationTrial(
-        "Two stages",
-        "The machine on mounts on a 50 kg intermediate mass, itself on mounts sagging 5 mm under both. Two resonances, but "
-        "above them the transmissibility falls as <m>1/r⁴</m> (80 dB a decade) instead of <m>1/r²</m>: 3.8 % reaches the "
-        "floor here (one stage: 9 %), and at 3000 rpm the two stages pass 0.2 % against one stage's 2.5 %.",
-        mount=Mount.TWO_STAGE,
-    ),
-    IsolationTrial(
-        "An inertia block",
-        "The machine bolted to a 300 kg block, the mounts stiffened to sag the same 5 mm. The transmissibility "
-        "doesn't change (<m>f<sub>n</sub></m> depends only on <m>δ</m>), nor does the force on the floor, but the machine "
-        "moves a quarter as much (±27 µm instead of ±109 µm): a block steadies the machine, it doesn't "
-        "isolate better.",
-        block=300.0,
-    ),
-)
-
 
 # ------------------------------------------------------------------ practice problems
 # The page's machine: 100 kg with a 0.01 kg·m unbalance (the trials and the problems keep it).
@@ -612,20 +526,9 @@ class IsolationPage(QtWidgets.QWidget):
         )
 
     def _on_inputs(self) -> None:
-        mount = MOUNTS[self.mount.currentIndex()]
-        self.iso = Isolator(
-            self.mass.value(),
-            self.rpm.value(),
-            self.unbalance.value(),
-            1e-3 * self.deflection.value(),
-            self.zeta.value(),
-            mount,
-            self.stiffness_ratio.value(),
-            self.stage_mass.value(),
-            self.block.value(),
-        )
-        for box in (self.stiffness_ratio,):
-            box.setEnabled(mount is Mount.RELAXATION)
+        self.iso = isolator(self.practice_state())
+        mount = self.iso.mount
+        self.stiffness_ratio.setEnabled(mount is Mount.RELAXATION)
         self.stage_mass.setEnabled(mount is Mount.TWO_STAGE)
         self.redraw()
 
@@ -656,68 +559,28 @@ class IsolationPage(QtWidgets.QWidget):
         self.redraw()
 
     def redraw(self) -> None:
-        iso = self.iso
-        fn = iso.natural_hz
-        text = (
-            f"k = {iso.stiffness:.4g} N/m, c = {iso.damping:.4g} N·s/m, f<sub>n</sub> = {fn:.4g} Hz "
-            f"({60 * fn:.0f} rpm); running at r = {iso.speed_hz / fn:.3g}."
-        )
-        self.mount_info.setText(text)
+        self.mount_info.setText(view.mount_info(self.iso))
         self._draw_transmissibility()
         self._show_design()
         self._draw_tab()
         settle_plots(self)
 
     def _draw_transmissibility(self) -> None:
-        iso = self.iso
-        fn = iso.natural_hz
-        for item, z in zip(self.family_items, FAMILY):
-            plain = replace(iso, zeta=z, mount=Mount.VISCOUS, block=0.0)
-            T = plain.transmissibility(RATIOS * fn)
-            item.setData(RATIOS, np.where(np.isfinite(T), T, np.nan), connect="finite")
-        f = RATIOS * fn
-        f = f[np.abs(f / fn - 1) > 1e-9] if iso.zeta == 0 else f
-        T = iso.transmissibility(f)
-        self.tr_item.setData(f / fn, T, connect="finite")
-        X, Ff, Tn = iso.at_speed()
-        r = iso.speed_hz / fn
-        self.tr_now.setData([r], [Tn]) if RATIOS[0] <= r <= RATIOS[-1] else self.tr_now.setData([], [])
-        self.tr_plot.setXRange(math.log10(RATIOS[0]), math.log10(RATIOS[-1]), padding=0)
-        self.tr_plot.setYRange(-4, math.log10(30.0), padding=0)
-        F = float(iso.force_at(iso.speed_hz))
-        verdict = (
-            f"isolation {100 * (1 - Tn):.3g} % ({db(Tn):.3g} dB)"
-            if Tn < 1
-            else f"amplified {Tn:.3g} times ({db(Tn):+.3g} dB)"
-        )
-        self.tr_note.setText(
-            f"At {iso.rpm:.0f} rpm the unbalance pulls with {fmt(F, 'N')}; {fmt(Ff, 'N')} reaches the floor: T = "
-            f"{Tn:.3g}, {verdict}. The machine moves ±{fmt(X, 'm')}."
-        )
-        rpm = np.geomspace(max(iso.rpm / 50.0, 1.0), iso.rpm * 3.0, 800)
-        fr = rpm / 60.0
-        if iso.zeta == 0:
-            fr = fr[np.abs(fr / fn - 1) > 1e-6]
-            rpm = fr * 60.0
-        force = iso.force_at(fr)
-        self.rigid_item.setData(rpm, force)
-        self.floor_item.setData(rpm, iso.transmissibility(fr) * force, connect="finite")
-        self.force_now.setData([iso.rpm], [Ff])
-        self.force_plot.setXRange(rpm[0], rpm[-1], padding=0)
+        v = view.transmissibility(self.iso)
+        for item, curve in zip(self.family_items, v.family):
+            item.setData(*curve, connect="finite")
+        self.tr_item.setData(*v.isolator, connect="finite")
+        self.tr_now.setData(*v.now)
+        self.tr_plot.setXRange(math.log10(view.RATIOS[0]), math.log10(view.RATIOS[-1]), padding=0)
+        self.tr_plot.setYRange(*view.T_RANGE, padding=0)
+        self.tr_note.setText(v.note)
+        self.rigid_item.setData(*v.rigid)
+        self.floor_item.setData(*v.floor, connect="finite")
+        self.force_now.setData(*v.force_now)
+        self.force_plot.setXRange(*v.rpm_range, padding=0)
 
     def _show_design(self) -> None:
-        iso = self.iso
-        target = self.target.value() / 100.0
-        try:
-            d = deflection_for(iso.speed_hz, target)
-        except ValueError:
-            self.design_note.setText("")
-            return
-        self.design_note.setText(
-            f"{100 * target:.4g} % at {iso.rpm:.0f} rpm needs f<sub>n</sub> ≤ "
-            f"{math.sqrt(G / d) / TWO_PI:.3g} Hz: a sag of {1e3 * d:.3g} mm or more "
-            "(undamped, one stage)."
-        )
+        self.design_note.setText(view.design_note(self.iso, self.target.value() / 100.0))
         if self.tabs.currentIndex() == TAB_CHART:
             self._draw_chart()
 
@@ -729,38 +592,19 @@ class IsolationPage(QtWidgets.QWidget):
             self._draw_chart()
 
     def _draw_start(self) -> None:
-        iso = self.iso
-        ramp = self.ramp.value()
-        hold = max(0.25 * ramp, 1.0, 6.0 / max(iso.zeta * TWO_PI * iso.natural_hz, 1e-3) / 3)
-        hold = min(hold, 4.0 * ramp + 2.0)
-        s = start_up(iso, ramp, hold)
-        stride = max(1, s.t.size // 6000)
-        self.speed_item.setData(s.t[::stride], 60.0 * s.speed_hz[::stride])
-        self.res_line.setPos(60.0 * iso.natural_hz)
-        self.sx_item.setData(s.t[::stride], s.x[::stride])
-        self.sf_item.setData(s.t[::stride], s.floor[::stride])
-        self.sf_rigid.setData(s.t[::stride], iso.force_at(s.speed_hz[::stride]))
-        self.speed_plot.setXRange(0, s.t[-1], padding=0)
-        during = s.t <= ramp
-        peak_f = float(np.max(np.abs(s.floor[during]))) if during.any() else 0.0
-        peak_x = float(np.max(np.abs(s.x[during]))) if during.any() else 0.0
-        X, Ff, _ = iso.at_speed()
-        self.start_note.setText(
-            f"Through resonance ({60 * iso.natural_hz:.0f} rpm, dotted) the floor force peaks at {fmt(peak_f, 'N')} "
-            f"and the machine at ±{fmt(peak_x, 'm')}; running, {fmt(Ff, 'N')} and ±{fmt(X, 'm')}. Dashed: the "
-            "unbalance's own force."
-        )
+        v = view.start_up_view(self.iso, self.ramp.value())
+        self.speed_item.setData(*v.speed)
+        self.res_line.setPos(v.resonance_rpm)
+        self.sx_item.setData(*v.x)
+        self.sf_item.setData(*v.floor)
+        self.sf_rigid.setData(*v.rigid)
+        self.speed_plot.setXRange(0, v.t_end, padding=0)
+        self.start_note.setText(v.note)
 
     def _draw_chart(self) -> None:
-        iso = self.iso
-        rpm = 60.0 * CHART_SPEEDS
-        for item, level in zip(self.chart_items, CHART_LEVELS):
-            item.setData(rpm, [1e3 * deflection_for(f, level) for f in CHART_SPEEDS])
-        self.chart_now.setData([iso.rpm], [1e3 * iso.deflection])
-        self.chart_plot.setXRange(math.log10(rpm[0]), math.log10(rpm[-1]), padding=0)
-        T = iso.at_speed()[2]
-        self.chart_note.setText(
-            f"This machine: {iso.rpm:.0f} rpm on {1e3 * iso.deflection:.3g} mm mounts "
-            f"({100 * (1 - T):.3g} % with its damping and kind). Above a line, better isolated "
-            "than it."
-        )
+        v = view.chart(self.iso)
+        for item, curve in zip(self.chart_items, v.levels):
+            item.setData(*curve)
+        self.chart_now.setData(*v.now)
+        self.chart_plot.setXRange(*(math.log10(x) for x in v.rpm_range), padding=0)
+        self.chart_note.setText(v.note)
