@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 from vib_tutorial.core.rotor import XD, YD, Bearing, RotorSystem
 from vib_tutorial.core.rotor_modes import campbell, synchronous_response, whirl_modes
@@ -91,9 +92,9 @@ def test_cross_coupling_threshold_is_exactly_c_omega_at_the_onset_whirl():
 
     k = brentq(lambda k: least_damped(cross_coupled(k), 0.0)[0], 1e4, 2e4, xtol=1e-6)
     _, f, _ = least_damped(cross_coupled(k), 0.0)
-    assert round(k) == 16_419 and round(f, 2) == 26.13
+    assert round(k) == 16_419 and round(f, 2) == quoted("rotor_notes", "26.13")
     assert k == pytest.approx(Bearing().cx * 2 * math.pi * f, rel=1e-9)
-    assert whirl_modes(RotorSystem(), 0.0).freq_hz[0] == pytest.approx(26.4, abs=0.005)
+    assert whirl_modes(RotorSystem(), 0.0).freq_hz[0] == pytest.approx(quoted("rotor_notes", "26.4"), abs=0.005)
 
 
 def test_steady_synchronous_response_matches_the_simulation_with_both_terms():

@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 import vib_tutorial.core.rotor_modes as rotor_modes
 from vib_tutorial.core.rotor import XD, YD, Bearing, RotorSystem
@@ -210,8 +211,8 @@ def test_two_pole_preset_numbers():
     assert [round(w * RPM) for w, r, z in campbell(s, 3000.0 / RPM).criticals if r > 0.1] == [1491, 1665]
     band = stability_onset(s, 3000.0 / RPM)
     assert (round(band.omega * RPM), round(band.end * RPM)) == (1527, 1631)
-    assert 1.0 / growth_rate(s, 1580.0 / RPM) == pytest.approx(0.56, abs=0.005)
-    assert least_damped(s, 1580.0 / RPM)[1] == pytest.approx(26.3, abs=0.05)
+    assert 1.0 / growth_rate(s, 1580.0 / RPM) == pytest.approx(quoted("rotor_notes", "0.56"), abs=0.005)
+    assert least_damped(s, 1580.0 / RPM)[1] == pytest.approx(quoted("rotor_notes", "26.3"), abs=0.05)
     w = np.linspace(500.0, 1100.0, 6001) / RPM
     v2 = np.abs(probe(steady_vectors(s, w, order=2)[:, 1], "orbit"))
     i = int(np.argmax(v2))

@@ -8,6 +8,7 @@ import math
 import numpy as np
 import pytest
 import scipy.optimize
+from notes_quoting import quoted
 
 from vib_tutorial.core import rotor as jeffcott
 from vib_tutorial.core.fluid_bearing import JournalBearing
@@ -86,9 +87,9 @@ def test_the_spin_splits_forward_up_and_backward_down():
 
 def test_a_disc_from_the_library():
     d = solid_disc(0.0, STEEL, 0.3, 0.04)
-    assert d.mass == pytest.approx(7850 * math.pi * 0.15**2 * 0.04)
+    assert d.mass == pytest.approx(7850 * math.pi * 0.15**2 * quoted("rotor_builder", "0.04"))
     assert d.ip == pytest.approx(d.mass * 0.15**2 / 2)
-    assert d.id == pytest.approx(d.mass * (3 * 0.15**2 + 0.04**2) / 12)
+    assert d.id == pytest.approx(d.mass * (3 * 0.15**2 + quoted("rotor_builder", "0.04") ** 2) / 12)
     ring = solid_disc(0.0, STEEL, 0.3, 0.04, bore=0.1)
     assert ring.ip == pytest.approx(ring.mass * (0.15**2 + 0.05**2) / 2)
 
@@ -274,10 +275,18 @@ def test_trials():
         return a, modes(a, (by[name].rpm if rpm is None else rpm) * RPM)
 
     _, m = at("A uniform shaft, pinned")
-    assert m.hz[0:6:2] == pytest.approx([101.25, 401.5, 891.3], abs=0.05)
-    assert euler_pinned(1.0, 0.05) == pytest.approx([101.56, 406.2, 914.0], abs=0.05)
+    assert m.hz[0:6:2] == pytest.approx(
+        [quoted("rotor_builder", "101.25"), quoted("rotor_builder", "401.5"), quoted("rotor_builder", "891.3")],
+        abs=0.05,
+    )
+    assert euler_pinned(1.0, 0.05) == pytest.approx(
+        [quoted("rotor_builder", "101.56"), quoted("rotor_builder", "406.2"), quoted("rotor_builder", "914.0")],
+        abs=0.05,
+    )
     _, m = at("A uniform shaft, pinned", theory=Theory.RAYLEIGH)
-    assert m.hz[0:6:2] == pytest.approx([101.48, 405.0, 908.0], abs=0.05)
+    assert m.hz[0:6:2] == pytest.approx(
+        [quoted("rotor_builder", "101.48"), 405.0, quoted("rotor_builder", "908.0")], abs=0.05
+    )
 
     _, m = at("A stubby shaft: Timoshenko")
     assert m.hz[0:6:2] == pytest.approx([776.3, 2784, 5506], abs=0.51)
@@ -386,7 +395,7 @@ def test_the_sweeps_trials():
     assert disc.unbalance * 1e6 == pytest.approx(174, abs=0.5) and disc.mass == pytest.approx(17.4, abs=0.05)
     node = t.rotor.node_at(disc.z)
     Q = unbalance_response(a, np.array([c.rpm for c in s.criticals]))
-    assert orbit(Q, node) * 1e6 == pytest.approx([12.5, 1003, 13.7], abs=0.5)
+    assert orbit(Q, node) * 1e6 == pytest.approx([quoted("rotor_builder", "12.5"), 1003, 13.7], abs=0.5)
     assert lag(Q[1:2], node, t.rotor)[0] == pytest.approx(90, abs=0.5)
     assert lag(Q[2:], node, t.rotor)[0] == pytest.approx(180, abs=1)
 

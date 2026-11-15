@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 from vib_tutorial.core import rotor_simulator
 from vib_tutorial.core.fluid_bearing import JournalBearing
@@ -98,8 +99,8 @@ def test_oil_whirl_settles_to_a_limit_cycle():
     assert s == WHOLE.with_(gravity=0.0) and rpm == 3500.0
     t, q = run(s, rpm, 3.0, kick=0.002)
     late, later = (t > 2.0) & (t < 2.5), t > 2.5
-    assert whirl_freq(t[t > 1.5], q[t > 1.5]) == pytest.approx(29.2, abs=0.05)
-    assert round(0.5 * rpm / 60.0, 1) == 29.2
+    assert whirl_freq(t[t > 1.5], q[t > 1.5]) == pytest.approx(quoted("rotor_notes", "29.2"), abs=0.05)
+    assert round(0.5 * rpm / 60.0, 1) == quoted("rotor_notes", "29.2")
     e1, e2 = eccentricity(q[late]).max(), eccentricity(q[later]).max()
     assert 0.9 < e1 < e2 < 0.97
     disc = [np.hypot(q[m, XD], q[m, YD]).max() for m in (late, later)]
@@ -141,7 +142,7 @@ def test_vertical_rotor_whips_past_twice_its_natural_frequency():
     # The Oil whirl preset's note: at 5000 rpm the whirl is locked at 30.8 Hz, and twice that is 3700 rpm.
     t, q = run(WHIRL.system, 5000.0, 1.5, kick=0.002)
     f = whirl_freq(t[t > 0.5], q[t > 0.5])
-    assert f == pytest.approx(30.8, abs=0.1) and round(2 * f * 60, -2) == 3700
+    assert f == pytest.approx(quoted("rotor_notes", "30.8"), abs=0.1) and round(2 * f * 60, -2) == 3700
 
 
 def test_whole_films_hold_the_journals_through_the_critical():

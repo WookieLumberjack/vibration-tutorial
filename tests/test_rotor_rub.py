@@ -7,6 +7,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 import scipy.optimize
+from notes_quoting import quoted
 
 from vib_tutorial.core.fluid_bearing import JournalBearing
 from vib_tutorial.core.rotor import XD, YD, Bearing, RotorSystem, Stator, stator_force
@@ -173,7 +174,7 @@ def test_full_rub_preset_flips_to_backward_whirl():
     # Rolling: the rim's slip R Ω + ω ρ is nil, so ρ = R Ω / |ω|.
     omega = 2000.0 / RPM
     assert r[-1] == pytest.approx(s.disc_radius * omega / (227 * 2 * math.pi), rel=0.01)
-    assert round(r[-1] * 1e3, 1) == 7.3
+    assert round(r[-1] * 1e3, 1) == quoted("rotor_notes", "7.3")
 
 
 def test_things_to_try():
@@ -248,4 +249,6 @@ def test_newkirk_preset_spirals_out_below_the_critical_and_heals_above():
         r = sim.advance(min(0.25, 30.0 - sim.t))
         peak = max(peak, float(np.abs(r.bow).max()))
     assert round(peak * 1e6) == 26
-    assert round(abs(sim.thermal_bow) * 1e6, 1) == 2.4 and round(abs(one_x(sim, r)) * 1e6, 1) == 5.9
+    assert round(abs(sim.thermal_bow) * 1e6, 1) == quoted("rotor_notes", "2.4") and round(
+        abs(one_x(sim, r)) * 1e6, 1
+    ) == quoted("rotor_notes", "5.9")

@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 import vib_tutorial.core.rotor_modes as rotor_modes
 from vib_tutorial.core.rotor import STEEL, XD, YD, Bearing, Crack, RotorSystem, beam_stiffness, crack_compliance
@@ -209,18 +210,18 @@ def test_cracked_preset_numbers():
     loss = [1.0 - s.axis_system(k).stiffness(0.0)[XD, XD] / r0.stiffness(0.0)[XD, XD] for k in (False, True)]
     assert [round(x * 1000) for x in loss] == [36, 17]
     w = np.linspace(300.0, 2000.0, 17001) / RPM
-    assert orbit_peak(s, 2, w) == (37.6, 783)
-    assert orbit_peak(s, 3, w) == (18.6, 522)
+    assert orbit_peak(s, 2, w) == (quoted("rotor_notes", "37.6"), 783)
+    assert orbit_peak(s, 3, w) == (quoted("rotor_notes", "18.6"), 522)
     assert round(orbit_peak(s, 1, w)[0]) == 164 and round(orbit_peak(r0, 1, w)[0]) == 54
     assert round(orbit_peak(s.with_(unbalance=0.0), 1, w)[0]) == 107
     opposite = s.with_(crack=Crack(position=0.5, depth=0.4, angle=math.pi))
     assert round(orbit_peak(opposite, 1, w)[0]) == 52
     held = s.with_(crack=Crack(position=0.5, depth=0.4, breathing=False))
-    assert orbit_peak(held, 2, w) == (75.3, 775) and orbit_peak(held, 3, w)[0] == 0.0
+    assert orbit_peak(held, 2, w) == (quoted("rotor_notes", "75.3"), 775) and orbit_peak(held, 3, w)[0] == 0.0
     assert [orbit_peak(s.with_(crack=Crack(position=0.5, depth=d)), 2, w)[0] for d in (0.2, 0.3, 0.5)] == [
-        9.5,
-        21.8,
-        51.5,
+        quoted("rotor_notes", "9.5"),
+        quoted("rotor_notes", "21.8"),
+        quoted("rotor_notes", "51.5"),
     ]
     # The asymmetric shaft's stiffness has no 3X in it, so its weight drives none.
     two_pole = next(p for p in rotor_presets() if p.name.startswith("Two-pole")).system
