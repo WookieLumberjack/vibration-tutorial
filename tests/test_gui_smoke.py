@@ -4,6 +4,7 @@ import math
 import os
 import re
 import sys
+import time
 
 import numpy as np
 import pytest
@@ -4774,9 +4775,16 @@ def test_nonlinear_forces_controls(app, main_window):
     form = page.element_form.form
     assert form.isRowVisible(page.k3) and not form.isRowVisible(page.gap)
     assert "Jumps: 1 N: up at 2.45 Hz, down at 2.422 Hz" in page.frf_readout.text()
+    # a control's change steps the sine on the worker (#316 D2): it returns at once, the sweeps come after
+    start = time.perf_counter()
     page.kind.setCurrentIndex(nl.KINDS.index(nl.Kind.GAP))
+    assert time.perf_counter() - start < 0.1 and page.sweeper.busy
     assert form.isRowVisible(page.gap) and form.isRowVisible(page.k_gap) and not form.isRowVisible(page.k3)
+    assert "Stepping" in page.frf_readout.text()
+    page.sweeper.wait()
+    assert "Jumps:" in page.frf_readout.text()
     page.kind.setCurrentIndex(nl.KINDS.index(nl.Kind.NONE))
+    page.sweeper.wait()
     assert not form.isRowVisible(page.spring) and "<b>0 %</b>" in page.frf_readout.text()
     # the Distortion tab steps the chain in time only when it shows, and again when its point moves
     page.load_trial(names.index("Distortion: odd harmonics"))

@@ -13,6 +13,7 @@ chain.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -43,6 +44,7 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
@@ -339,6 +341,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         super().__init__(parent)
         self.system = chain()
         self._dirty = True
+        self.sweeper = Recompute(self._on_sweeps, self)
         self.sweeps: list[tuple[nl.Sweep, nl.Sweep]] = []
         self.freqs = np.zeros(0)
         self.problem: fid.Problem | None = None
@@ -654,8 +657,14 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         self._on_solve()
 
     def _on_sine(self) -> None:
-        self._sweep()
+        """A control of the stepped sine changed: its sweeps (up to a second or two of harmonic balance) are worked
+        out on the worker, the plots keeping the last ones meanwhile (`recompute.Recompute`)."""
         self.waveform = None
+        self.frf_readout.setText("Stepping the sine…")
+        self.sweeper.request(self._sweep_job())
+
+    def _on_sweeps(self, result: tuple[np.ndarray, np.ndarray, list]) -> None:
+        self.mode_hz, self.freqs, self.sweeps = result
         self._draw_frf()
         self._draw_tab()
         settle_plots(self)
@@ -696,6 +705,11 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         settle_plots(self)
 
     def _sweep(self) -> None:
+        """The sweeps now, on the GUI thread (a trial, a new chain)."""
+        self.sweeper.now(self._sweep_job())
+
+    def _sweep_job(self) -> Callable[[], tuple[np.ndarray, np.ndarray, list]]:
+        """The rows the element shows, then the sweeps as a job: plain values in, touching no widget."""
         s = self.system
         n = s.n
         kind = nl.KINDS[self.kind.currentIndex()]
@@ -703,21 +717,23 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         self.element_form.form.setRowVisible(self.gap, kind is nl.Kind.GAP)
         self.element_form.form.setRowVisible(self.k_gap, kind is nl.Kind.GAP)
         self.element_form.form.setRowVisible(self.spring, kind is not nl.Kind.NONE)
-        M, _, K = s.matrices()
-        w = np.sqrt(np.clip(np.sort(np.linalg.eigvals(np.linalg.solve(M, K)).real), 0.0, None))
-        self.mode_hz = w / (2 * math.pi)
         r = min(int(self.mode.value()), n) - 1
-        f0 = max(float(self.mode_hz[r]), 1e-3)
-        self.freqs = np.linspace(BAND[0] * f0, BAND[1] * f0, STEPS)
         force = min(int(self.force.value()), n) - 1
         e = self._element()
-        self.sweeps = [
-            (
-                nl.stepped_sine(s, e, force, F.value(), self.freqs),
-                nl.stepped_sine(s, e, force, F.value(), self.freqs, False),
-            )
-            for F in self.levels
-        ]
+        levels = [F.value() for F in self.levels]
+
+        def job() -> tuple[np.ndarray, np.ndarray, list]:
+            M, _, K = s.matrices()
+            w = np.sqrt(np.clip(np.sort(np.linalg.eigvals(np.linalg.solve(M, K)).real), 0.0, None))
+            mode_hz = w / (2 * math.pi)
+            f0 = max(float(mode_hz[r]), 1e-3)
+            freqs = np.linspace(BAND[0] * f0, BAND[1] * f0, STEPS)
+            sweeps = [
+                (nl.stepped_sine(s, e, force, F, freqs), nl.stepped_sine(s, e, force, F, freqs, False)) for F in levels
+            ]
+            return mode_hz, freqs, sweeps
+
+        return job
 
     def _measure(self) -> None:
         s = self.system
