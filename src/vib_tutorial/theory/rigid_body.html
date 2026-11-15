@@ -112,11 +112,11 @@ is lost: <b>gimbal lock</b>. Near it the angles' rates blow up whatever the body
 <eq>\dot\theta = \omega_1\cos\psi - \omega_2\sin\psi,\quad \dot\psi = \omega_3 - \dot\varphi\cos\theta,</eq>
 <p>(<m>ω</m> in the body's axes) so a simulation that steps the angles fails there. Every set of three angles has
 such a place: aircraft use z-y-x (yaw, pitch, roll), which locks at a pitch of ±90°.</p>
-<p><b>A quaternion.</b> Euler's rotation theorem says every orientation is a single turn <m>χ</m> about a single
-axis <m>n̂</m>. Hamilton's quaternion <cite>hamilton</cite> stores it as four numbers,</p>
+<p><b>A quaternion.</b> Euler's rotation theorem <cite>euler-1776</cite> says every orientation is a single turn
+<m>χ</m> about a single axis <m>n̂</m>. Hamilton's quaternion <cite>hamilton</cite> stores it as four numbers,</p>
 <eq>q = \left(\cos\tfrac{\chi}{2},\ \sin\tfrac{\chi}{2}\,\hat{\mathbf n}\right),\quad |q| = 1,</eq>
 <p>with <m>q</m> and −<m>q</m> the same turn. Turns compose by Hamilton's product, <m>q</m> ⊗ <m>p</m>, and the
-body turning at <m>ω</m> moves <m>q</m> at q̇ = ½<m>q</m> ⊗ (0, <m>ω</m>): smooth everywhere, no locked place, and
+body turning at <m>ω</m> moves <m>q</m> at <m>q̇</m> = ½<m>q</m> ⊗ (0, <m>ω</m>): smooth everywhere, no locked place, and
 only one condition to keep (|<m>q</m>| = 1, by dividing by it). That is why the page steps <m>q</m>, and why
 spacecraft and games do.</p>
 <p><b>A homogeneous transform</b> adds a place to a turn: the 4 × 4 matrix</p>
@@ -129,10 +129,32 @@ car) multiply. The tab carries the point mass through <m>T</m>.</p>
 
 <h3><a name="simulation"></a>The simulation</h3>
 <p>The page keeps the body's orientation as a unit quaternion <m>q</m>, from which <m>B</m> follows, and <b>L</b>
-in space, and steps q̇ = ½<m>q</m> ⊗ (0, <m>ω</m>) and d<b>L</b>/d<m>t</m> = <m>τ</m> by classical Runge–Kutta
+in space, and steps <m>q̇</m> = ½<m>q</m> ⊗ (0, <m>ω</m>) and d<b>L</b>/d<m>t</m> = <m>τ</m> by classical Runge–Kutta
 (fourth order), with <m>ω</m> = <b>I</b><sub>body</sub><sup>−1</sup><m>B</m>ᵀ<b>L</b> worked out at every stage
 and <m>q</m> made unit length after each step. The step is 1/400 of a turn at the body's rate (at most 5 ms), and a
 torque's end falls on a step's, so its impulse is exact.</p>
+
+<h3><a name="worked-example"></a>Worked example</h3>
+<p>The page's defaults: a 1 kg box, 30 × 20 × 10 cm, spun at 6 rad/s about its middle axis and nudged 1° toward
+its greatest.</p>
+<ol>
+<li><b>The moments.</b> About its centre, <m>I<sub>xx</sub></m> = 1 × (0.2² + 0.1²)/12 = 4.167×10⁻³,
+<m>I<sub>yy</sub></m> = 1 × (0.3² + 0.1²)/12 = 8.333×10⁻³ and <m>I<sub>zz</sub></m> = 1 × (0.3² + 0.2²)/12 =
+10.83×10⁻³ kg·m², with no products: x, y, z are its principal axes 1, 2, 3.</li>
+<li><b>ω and L apart.</b> <m>ω</m> = 6(0, cos 1°, sin 1°) = (0, 5.999, 0.1047) rad/s, so
+<b>L</b> = <b>I</b><m>ω</m> = (0, 0.04999, 0.001134) N·m·s, |<b>L</b>| = 0.05001 N·m·s, and the energy
+½<m>ω</m>·<b>L</b> = 0.1500 J: the readout's numbers. <m>ω</m> is 1° from y but <b>L</b> is tan⁻¹(10.83/8.333 ×
+tan 1°) = 1.30°, so they are 0.30° apart, and the readout says so.</li>
+<li><b>The flip.</b> As in <a href="#intermediate-axis">The intermediate axis</a>, <m>λ</m> = 2.88 /s and the 1°
+grows to a radian in about 1.4 s; the <i>Components</i> tab's <m>ω₂</m> drops through zero soon after.</li>
+<li><b>An off-centre mass</b> (the fourth trial): 300 g at <m>p</m> = (100, 80, 0) mm. <m>G</m> moves
+0.3/1.3 of the way, to (23.1, 18.5, 0) mm. By parallel axes <m>I<sub>xx</sub></m> = 4.167×10⁻³ + 1 × 0.01846² +
+0.3 × (0.08 − 0.01846)² = 5.644×10⁻³ kg·m², and the product
+<m>I<sub>xy</sub></m> = −1 × 0.02308 × 0.01846 − 0.3 × (0.1 − 0.02308)(0.08 − 0.01846) = −1.846×10⁻³ kg·m², which is
+−(<m>m</m><m>m<sub>p</sub></m>/(<m>m</m> + <m>m<sub>p</sub></m>))<m>xy</m> = −(0.3/1.3) × 0.1 × 0.08: the
+<i>Inertia</i> tab's bold −0.00185. Its principal moments are 5.036, 11.25 and 14.62 ×10⁻³ kg·m², axis 1 turned
+18.2° from x toward y.</li>
+</ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
 <p>Each of these sets the body up and lets it go (Things to try, top left).</p>
@@ -147,4 +169,4 @@ torque's end falls on a step's, so its impulse is exact.</p>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
 <notation>rigid_rates rb_tensor I_principal top_frames rb_body rb_flip rb_orient rb_transform</notation>
-<reading>goldstein</reading>
+<reading>goldstein kuipers</reading>

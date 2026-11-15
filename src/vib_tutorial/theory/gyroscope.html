@@ -1,38 +1,35 @@
 <before>
+<a href="page:rigid_body_page#euler-equations">Euler's equations</a>
+<a href="page:rigid_body_page#orientation">Writing down how it's turned</a>
 <a href="page:pendulum_page#rotation">Turning instead of sliding</a>
 <a href="page:pendulum_page#large-swings">Large swings</a>
 <a href="page:integration_page#central">Central difference</a>
 </before>
 <h3><a name="rigid-body"></a>A rigid body turning</h3>
-<p>A body turning about a fixed point has angular momentum <b>L</b> = <b>I</b><m>ω</m>, with <b>I</b> its inertia
-tensor about the point, and gravity's moment <m>τ</m> about the point changes it: d<b>L</b>/d<m>t</m> = <m>τ</m>
-(in fixed axes). In the body's <b>principal axes</b> <b>I</b> is diagonal, (<m>I₁</m>, <m>I₂</m>, <m>I₃</m>), but
-those axes turn, so <b>L</b>'s rate in them gains <m>ω</m> × <b>L</b>:</p>
+<p>The <a href="page:rigid_body_page#inertia-tensor">3D rigid body</a> page built the tools; in brief: a body
+turning about a point has <b>L</b> = <b>I</b><m>ω</m>, the inertia tensor <b>I</b> about the point, and the torque
+<m>τ</m> about it changes <b>L</b>, d<b>L</b>/d<m>t</m> = <m>τ</m> in fixed axes. In the body's principal axes,
+where <b>I</b> = diag(<m>I₁</m>, <m>I₂</m>, <m>I₃</m>) is constant, that is Euler's equations
+<cite>euler-1765</cite>:</p>
 <eq>I_1\dot\omega_1 + (I_3 - I_2)\,\omega_2\omega_3 = \tau_1,</eq>
 <eq>I_2\dot\omega_2 + (I_1 - I_3)\,\omega_3\omega_1 = \tau_2,</eq>
-<eq>I_3\dot\omega_3 + (I_2 - I_1)\,\omega_1\omega_2 = \tau_3,</eq>
-<p><b>Euler's equations</b> <cite>euler-1765</cite>. A <b>symmetric top</b> has <m>I₁</m> = <m>I₂</m>, so the third
-reads <m>I₃ω̇₃</m> = <m>τ₃</m>, and gravity's moment, across the axis, leaves <m>ω₃</m> (the spin) constant.</p>
-<p>Why the body's axes: in them <b>I</b> is constant, as the mass doesn't move in them. In fixed axes it turns
-with the body, its numbers changing and products of inertia appearing, and <b>L</b> = <b>I</b><m>ω</m> isn't along
-<m>ω</m> unless the moments are equal. The <i>Components</i> tab plots <m>ω</m>, <b>L</b>, <m>τ</m> and <b>I</b> as
-the top runs, in fixed axes, in the body's, or in the axis frame, which follows the axis as it precesses and nods but
-not the spin about it.</p>
+<eq>I_3\dot\omega_3 + (I_2 - I_1)\,\omega_1\omega_2 = \tau_3.</eq>
+<p>A <b>symmetric top</b> has <m>I₁</m> = <m>I₂</m>, so the third reads <m>I₃ω̇₃</m> = <m>τ₃</m>, and gravity's
+moment, across the axis, leaves <m>ω₃</m> (the spin) constant. Here the point is the tip, held in its cup, not the
+centre of mass. The <i>Components</i> tab plots <m>ω</m>, <b>L</b>, <m>τ</m> and <b>I</b> as the top runs, in
+fixed axes, in the body's, or in the axis frame, which follows the axis as it precesses and nods but not the spin
+about it.</p>
 <p><img src="fig:frames"></p>
 <p>The two turning frames share the axis <b>e</b>₃. The axis frame's <b>e</b>₁′ is kept horizontal (along
 <m>ẑ</m> × <b>e</b>₃, the line of nodes) and <b>e</b>₂′ runs up the disc's slope, so it moves only as the axis
 precesses and nods. The body's <b>e</b>₁ (the mark) and <b>e</b>₂ are those turned by the spin angle <m>ψ</m> about
 <b>e</b>₃, which keeps growing at the spin rate. The <i>Axes</i> box draws either or both on the running top: at
 0.02× playback the body's whirl round the axis while the axis frame's only lean and swing with it.</p>
-<p>Under the plot the tab writes the equations out at one instant, with the numbers. The body's axes
-<b>e</b>₁, <b>e</b>₂, <b>e</b>₃ in space are the columns of a rotation matrix <m>B</m>, so in fixed axes
-<b>I</b> = <m>B</m><b>I</b><sub>body</sub><m>B</m><sup>T</sup>, <b>I</b><sub>body</sub> = diag(<m>I₁</m>, <m>I₂</m>,
-<m>I₃</m>); in a frame whose axes are the columns of <m>A</m>, the same with <m>A</m><sup>T</sup><m>B</m> in place of
-<m>B</m>. In axes that turn at <m>Ω</m> a vector's components change by its own rate less <m>Ω</m> × it:</p>
-<eq>\left.\frac{d\mathbf{L}}{dt}\right|_{\text{axes}} + \boldsymbol{\Omega}\times\mathbf{L} = \boldsymbol{\tau},</eq>
-<p>with <m>Ω</m> = 0 in fixed axes (<b>L</b> changes only by the torque), <m>Ω</m> = <m>ω</m> in the body's (with
-<b>I</b> constant there, Euler's equations above), and in the axis frame <m>ω</m> less the spin about the axis. Pause
-the top and drag the line across the plot to see any instant.</p>
+<p>Under the plot the tab writes the equations out at one instant with the numbers, as the 3D rigid body page's
+does: the body's axes <m>B</m>, the frame's <m>A</m>, <b>I</b> in the frame's axes and the
+<a href="page:rigid_body_page#turning-axes">transport theorem</a>, d<b>L</b>/d<m>t</m>|<sub>axes</sub> +
+<m>Ω</m> × <b>L</b> = <m>τ</m>, with <m>Ω</m> = 0 in fixed axes, <m>ω</m> in the body's, and in the axis frame
+<m>ω</m> less the spin about the axis. Pause the top and drag the line across the plot to see any instant.</p>
 <p><img src="fig:top"></p>
 <p>The top here is a disc of mass <m>m</m> and radius <m>r</m> on a light stem, its centre a height <m>l</m> above
 the tip: <m>I₃</m> = <m>mr</m>²/2 along the axis, and <m>I₁</m> = <m>m</m>(<m>r</m>²/4 + <m>l</m>²) across it about
