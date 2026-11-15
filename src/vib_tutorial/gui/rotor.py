@@ -4,9 +4,9 @@ Left: the speed controls, the run-up and coast-down sweep, and the rotor's
 parameters (`rotor_editor.RotorEditor`: its boxes, and the RotorSystem they describe). Centre: a 3D view of the whirling shaft (projected onto a 2D
 pyqtgraph scene, no OpenGL), the orbits at the bearings, the disc and midspan,
 and a strip chart. Right: the Campbell diagram, the Bode and polar plots of the
-1X response (steady state and tracked sweeps), the stability map and full
-spectrum, the matrices of the equations of motion at the current speed, and the
-theory notes.
+1X response (steady state and tracked sweeps), the waterfall (`rotor_waterfall.WaterfallTab`),
+the stability map and full spectrum, the matrices of the equations of motion at the current speed, and the
+theory notes. The notes under the boxes and on the Stability tab are `rotor_readouts`' texts.
 """
 
 from __future__ import annotations
@@ -23,7 +23,6 @@ from PySide6 import QtCore, QtWidgets
 from ..core.fluid_bearing import JournalBearing
 from ..core.magnetic_bearing import MagneticBearing
 from ..core.rotor import (
-    MODE_LIMIT,
     XA,
     XB,
     XD,
@@ -50,7 +49,6 @@ from ..core.rotor_sweep import (
     lag_degrees,
     probe,
 )
-from ..core.rotor_waterfall import Waterfall
 from . import rotor_practice, weak
 from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
@@ -67,10 +65,10 @@ from .rotor_magnet import MagnetPanel
 from .rotor_notes import THEORY_HTML, matrices_html, whirl_name
 from .rotor_plots import DAMPED, MIN_PEAK, ORDERS, CampbellPlot, OrbitPlots, TimePlots, critical_speeds
 from .rotor_practice import RotorSetup
+from .rotor_readouts import fmt_len, instability_causes, onset_text, shaft_note
 from .rotor_rub import SPIRAL_POINTS, RubPanel
 from .rotor_stability import MEASURES, AsymmetryPlot, FullSpectrum, StabilityMap
 from .rotor_tips import (
-    BLOCK_TIP,
     HOLD_SWEEPS_TIP,
     ORDER_TIPS,
     REPEAT_TAP_TIP,
@@ -80,7 +78,7 @@ from .rotor_tips import (
     TAP_TIP,
 )
 from .rotor_view import RotorView
-from .rotor_waterfall import AGAINST, SCALES, WaterfallPlot, against_speed, baselines
+from .rotor_waterfall import WaterfallTab
 from .style import colors
 from .tab_groups import TabGroups
 from .theming import mute
@@ -111,7 +109,6 @@ SPIRAL_DT = 0.05  # s of simulated time between the Newkirk spiral's points
 MEASURE_SPEED = 2.0  # × real time, at least, while a balancing measurement runs
 FRAME_BUDGET = 0.012  # s of computing per frame: past it (the films' whole force is slow) the page runs slower
 WATERFALL_FRAMES = 15  # new spectra are drawn at most every this many frames (each repaint fills every line)
-WATERFALL_RANGE = 2.0  # the waterfall keeps frequencies up to this many times the top speed
 CHART_BUDGET = 0.012  # s per frame spent filling in the asymmetry chart while it shows
 CHART_DELTA = 0.5  # the asymmetry chart's top Δ (taller only for a rotor past it)
 ORDER_NAMES = ("1X", "2X", "3X")  # what the Bode and polar plots can track
@@ -153,11 +150,9 @@ class RotorPage(QtWidgets.QWidget):
         self._measured: Callable[[np.ndarray], None] | None = None  # its callback, given the mean 1X vectors (4, 2)
         self._frames = 0
         self._next_tap = 0.0  # simulated time of the next repeated tap
-        self.waterfall: Waterfall | None = None  # spectra block by block, made by _new_waterfall
         self._spiral: tuple[list[complex], list[complex]] = ([], [])  # the 1X vectors and thermal bows recorded
         self._spiral_next = 0.0  # simulated time of the spiral's next point
         self._heat = 0.0  # W: the rub's heat over the last advance
-        self._waterfall_drawn = False  # the waterfall tab shows the latest blocks
 
         # The bearing and rub tabs' panels: the editor reads the rotor's films, magnets and stator from them.
         self.bearing_panel = BearingPanel()
@@ -299,54 +294,7 @@ class RotorPage(QtWidgets.QWidget):
         st.addWidget(self.stability_note)
         st.addWidget(self.spectrum, 2)
         st.addWidget(self.spectrum_note)
-        self.waterfall_plot = WaterfallPlot()
-        self.wf_station = QtWidgets.QComboBox()
-        self.wf_station.addItems(STATIONS)
-        self.wf_station.setCurrentIndex(1)
-        self.wf_against = QtWidgets.QComboBox()
-        self.wf_against.addItems(AGAINST)
-        self.wf_against.setToolTip(
-            "<p>Against speed (a <i>cascade</i>): the latest run-up's or coast-down's spectra, each at its "
-            "speed. Against time (a <i>waterfall</i>): every spectrum kept, steady running and taps "
-            "included.</p>"
-        )
-        self.wf_scale = QtWidgets.QComboBox()
-        self.wf_scale.addItems(SCALES)
-        self.wf_scale.setToolTip(
-            "<p>Log: each line's height is its amplitude in decades above a floor 1000 times (60 dB) "
-            "below the tallest peak, so small peaks show beside the 1X one. Linear: heights in proportion "
-            "to the amplitude, as most cascades are drawn.</p>"
-        )
-        self.wf_block = spin(0.1, 2.0, 0.5, 2, " s")
-        self.wf_block.setSingleStep(0.1)
-        self.wf_block.setToolTip(BLOCK_TIP)
-        self.wf_block.valueChanged.connect(self._new_waterfall)
-        self.wf_marks = QtWidgets.QCheckBox("1X and free whirl")
-        self.wf_marks.setChecked(True)
-        self.wf_marks.setToolTip("Mark 1X and the free whirl frequencies (from the Campbell diagram) under the lines")
-        for c in (self.wf_station, self.wf_against, self.wf_scale):
-            c.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._draw_waterfall()))
-        self.wf_marks.toggled.connect(weak.slot(self, lambda self, _: self._draw_waterfall()))
-        self.wf_clear = QtWidgets.QPushButton("Clear")
-        self.wf_clear.setToolTip("Drop every spectrum taken so far")
-        self.wf_clear.clicked.connect(self._new_waterfall)
-        self.waterfall_note = QtWidgets.QLabel()
-        self.waterfall_note.setWordWrap(True)
-        mute(self.waterfall_note)
-        waterfall_tab = QtWidgets.QWidget()
-        wt = QtWidgets.QVBoxLayout(waterfall_tab)
-        row = FlowLayout()
-        row.add(
-            group("Orbit at:", self.wf_station),
-            group("Against:", self.wf_against),
-            group("Amplitude:", self.wf_scale),
-            group("Block:", self.wf_block),
-            self.wf_marks,
-            self.wf_clear,
-        )
-        wt.addLayout(row)
-        wt.addWidget(self.waterfall_plot, 1)
-        wt.addWidget(self.waterfall_note)
+        self.waterfall_tab = WaterfallTab()
         self.balancing = BalancingPanel(self)
         self.matrices = QtWidgets.QTextBrowser()
         self.theory = NotesBrowser()
@@ -354,7 +302,7 @@ class RotorPage(QtWidgets.QWidget):
         self.tabs = TabGroups()
         self.tabs.add_group("Modes", (campbell_tab, "Campbell diagram"), (stability_tab, "Stability"))
         self.tabs.add_group(
-            "Response", (bode_tab, "Bode plot"), (polar_tab, "Polar plot"), (waterfall_tab, "Waterfall")
+            "Response", (bode_tab, "Bode plot"), (polar_tab, "Polar plot"), (self.waterfall_tab, "Waterfall")
         )
         # The panels scroll when the window is short, rather than squeeze their plots or set its height.
         self.tabs.add_group("Balancing", (ColumnScroll(self.balancing), "Balancing"))
@@ -647,70 +595,8 @@ class RotorPage(QtWidgets.QWidget):
         self._stride = max(1, round(STORE_DT / self.sim.step_size()))
         self._set_sag(system)
         self._new_waterfall()  # its spectra and free whirl frequencies were of the old rotor
-        ks = 48.0 * system.ei / system.length**3
-        if system.overhung:
-            formula = f" = 3EI/(c²(L + c)), overhung by c = {system.overhang * 1e3:.4g} mm"
-        elif abs(system.position - 0.5) < 1e-9:
-            formula = " = 48EI/L³"
-        else:
-            formula = f" (48EI/L³ = {ks:,.0f} N/m at midspan)"
-        self.editor.shaft_note.setText(
-            f"EI = {system.ei:.4g} N·m²; shaft stiffness at the disc (bearings rigid) "
-            f"{system.disc_stiffness:,.0f} N/m"
-            + formula
-            + self._asymmetry_text(system)
-            + self._crack_text(system)
-            + self._shaft_mass_text(system)
-            + self._sag_text(system)
-        )
+        self.editor.shaft_note.setText(shaft_note(system))
         self._analysis_timer.start()
-
-    @staticmethod
-    def _asymmetry_text(system: RotorSystem) -> str:
-        if not system.asymmetry:
-            return ""
-        d = system.asymmetry
-        return (
-            f"<br>Asymmetric: EI = {system.ei * (1 + d):.4g} N·m² bending toward the stiff axis "
-            f"({math.degrees(system.asymmetry_angle):.0f}° from the mark), {system.ei * (1 - d):.4g} across it"
-        )
-
-    @staticmethod
-    def _crack_text(system: RotorSystem) -> str:
-        crack = system.crack
-        if crack is None:
-            return ""
-        c_open, c_across = system.crack_compliances
-        soft, stiff = (system.axis_system(k).stiffness(0.0) for k in (False, True))
-        loss = [1.0 - k[XD, XD] / system.with_(crack=None).stiffness(0.0)[XD, XD] for k in (soft, stiff)]
-        state = (
-            "held open"
-            if not crack.breathing
-            else "breathing, opened by the weight"
-            if system.crack_opening
-            else "breathing, but shut: nothing opens it without gravity"
-        )
-        return (
-            f"<br>Crack {crack.depth:.0%} deep at z = {system.crack_z * 1e3:.4g} mm ({state}): compliance "
-            f"{c_open:.3g} rad/(N·m) opening it, {c_across:.3g} across; on average over a turn it takes "
-            f"{loss[0]:.2%} and {loss[1]:.2%} off the disc's stiffness along and across its mouth"
-        )
-
-    @staticmethod
-    def _shaft_mass_text(system: RotorSystem) -> str:
-        if not system.density:
-            return ""
-        f = system.fixed_interface_freqs
-        held = (
-            f"its lowest {f.size} mode{'s' if f.size != 1 else ''} with the stations held "
-            f"({', '.join(f'{x:,.0f}' for x in f)} Hz)"
-            if f.size
-            else f"no modes with the stations held below {MODE_LIMIT:,.0f} Hz"
-        )
-        return (
-            f"<br>Shaft {system.shaft_mass:.3g} kg ({system.shaft_mass / system.disc_mass:.0%} of the disc), "
-            f"{system.nodes.size - 1} elements, reduced to the stations and {held}"
-        )
 
     def _refresh_analysis(self) -> None:
         """The Campbell diagram, critical speeds and steady states for the current parameters, at once."""
@@ -800,7 +686,7 @@ class RotorPage(QtWidgets.QWidget):
                 if massless is not None
                 else ""
             )
-            + f"<br><b>Stability:</b> {self._onset_text()}"
+            + f"<br><b>Stability:</b> {onset_text(self.onset, self.top_rpm)}"
         )
         self.stability_note.setText(self._stability_note())
         self.campbell_note.setText(
@@ -829,44 +715,8 @@ class RotorPage(QtWidgets.QWidget):
         self.balancing.rotor_changed()
         self.balancing.refresh()
 
-    def _onset_text(self) -> str:
-        o = self.onset
-        if o is None:
-            return f"stable up to {self.top_rpm:,.0f} rpm."
-        whirl = whirl_name(o.whirl)
-        if o.omega == 0.0:
-            return f"<b>unstable even at rest</b>: the {whirl} whirl at {o.freq_hz:.3g} Hz grows."
-        if math.isfinite(o.end):
-            return (
-                f"<b>unstable from {o.omega * RPM:,.0f} to {o.end * RPM:,.0f} rpm</b>, where the {whirl} whirl "
-                f"at {o.freq_hz:.3g} Hz ({o.order:.2f}×) grows; stable again above."
-            )
-        return (
-            f"<b>unstable above {o.omega * RPM:,.0f} rpm</b>, where the {whirl} whirl at "
-            f"{o.freq_hz:.3g} Hz ({o.order:.2f}×) starts to grow."
-        )
-
     def _stability_note(self) -> str:
-        s = self.sim.system
-        bearings = (("A", s.bearing_a), ("B", s.bearing_b))
-        coupled = [f"k<sub>xy</sub> = {b.kxy:,.0f} N/m at {n}" for n, b in bearings if b.kxy and b.film is None]
-        coupled += [f"swirl λ = {b.swirl:g} at {n}" for n, b in bearings if b.swirling]
-        if s.films:
-            coupled.append("oil-film bearings (their oil swirling at half the speed)")
-        if s.magnets:
-            coupled.append("magnetic bearings (their controllers' lag)")
-        if s.internal_damping:
-            coupled.append(f"internal damping c<sub>i</sub> = {s.internal_damping:g} N·s/m")
-        if s.asymmetry:
-            coupled.append(f"the shaft's asymmetry Δ = {s.asymmetry:.3g}")
-        if s.crack_opening and s.crack is not None:
-            coupled.append(f"a {'breathing' if s.crack.breathing else 'open'} crack {s.crack.depth:.0%} deep")
-        cause = (
-            "With " + " and ".join(coupled) + ": "
-            if coupled
-            else "No cross-coupling, internal damping, asymmetry or crack: every mode stays damped, however fast it "
-            "spins. Set c<sub>i</sub>, k<sub>xy</sub>, λ or Δ to see one go unstable. "
-        )
+        cause = instability_causes(self.sim.system)
         if self.measure.currentIndex() == 2:
             chart = (
                 " The chart shades where the rotor is unstable against the shaft's asymmetry Δ and the speed "
@@ -876,9 +726,8 @@ class RotorPage(QtWidgets.QWidget):
                 chart += f" Working it out: {self.asym_chart._next / self.asym_chart.growth.size:.0%}."
         else:
             chart = f" Modes damped more than ζ = {DAMPED:g} are left off."
-        return (
-            f"<small>{cause}{self._onset_text()}{chart} Below: the full spectrum of the strip chart's station.</small>"
-        )
+        onset = onset_text(self.onset, self.top_rpm)
+        return f"<small>{cause}{onset}{chart} Below: the full spectrum of the strip chart's station.</small>"
 
     def _on_measure(self, index: int) -> None:
         if index < 2:
@@ -953,7 +802,7 @@ class RotorPage(QtWidgets.QWidget):
         self.campbell_plot.apply_theme()
         self.stability_map.apply_theme()
         self.spectrum.apply_theme()
-        self.waterfall_plot.apply_theme()
+        self.waterfall_tab.plot.apply_theme()
         self.bode.apply_theme()
         self.polar.apply_theme()
         self.sweep_plots.apply_theme()
@@ -1039,6 +888,7 @@ class RotorPage(QtWidgets.QWidget):
             self._run(True)
 
     def _on_repeat_taps(self, on: bool) -> None:
+        self.waterfall_tab.tapping = on  # its note says to tap, or not
         if on:
             self._next_tap = self.sim.t  # the first one now
 
@@ -1259,7 +1109,7 @@ class RotorPage(QtWidgets.QWidget):
                     if order == 3 and system.spacing == 2
                     else " without gravity: tick <i>Horizontal rotor</i>."
                 )
-        head = f"<b>Steady state</b> ({where}): peak {_fmt_len(ss_amp)} at {ss_rpm:,.0f} rpm"
+        head = f"<b>Steady state</b> ({where}): peak {fmt_len(ss_amp)} at {ss_rpm:,.0f} rpm"
         crits = self.campbell.criticals if self.campbell else []
         zetas = [(abs(w - wc), z) for w, _, z in crits]
         near = min(crits, key=lambda c: abs(c[0] - order * wc), default=None)
@@ -1285,7 +1135,7 @@ class RotorPage(QtWidgets.QWidget):
             alpha = sweep.rate / RPM
             rows.append(
                 f"<tr><td><span style='color:{color}'><b>{line}</b></span> {sweep.label}</td>"
-                f"<td align='right'>{alpha / wc**2:.2g}</td><td align='right'>{_fmt_len(amp)}</td>"
+                f"<td align='right'>{alpha / wc**2:.2g}</td><td align='right'>{fmt_len(amp)}</td>"
                 f"<td align='right'>{100 * amp / ss_amp:.0f}%</td><td align='right'>{w * RPM:,.0f}</td>"
                 f"<td align='right'>{(w - wc) * RPM:+,.0f}</td></tr>"
             )
@@ -1355,10 +1205,7 @@ class RotorPage(QtWidgets.QWidget):
                         self._clear_spiral()
                     elif self.sim.t >= self._spiral_next and self.sim.omega > 0.0:
                         self._record_spiral()
-                if self.waterfall is not None and self.waterfall.feed(
-                    r.t[pick], vib[:, 0::2] + 1j * vib[:, 1::2], cols[:, OMEGA]
-                ):
-                    self._waterfall_drawn = False
+                self.waterfall_tab.feed(r.t[pick], vib[:, 0::2] + 1j * vib[:, 1::2], cols[:, OMEGA])
         touched = self._journal_touched()
         if self.running and (
             touched or np.abs(self.sim.q[[XA, XD, XB, YA, YD, YB]]).max() > RUB * self.sim.system.length
@@ -1449,7 +1296,7 @@ class RotorPage(QtWidgets.QWidget):
             parts.append(f"Ω / first critical = {sim.omega / crits[0]:.2f}")
         disc = self._vibration(y)[:, 2:4]
         if disc.size:
-            text = f"disc whirling up to {_fmt_len(float(np.hypot(disc[:, 0], disc[:, 1]).max()))}"
+            text = f"disc whirling up to {fmt_len(float(np.hypot(disc[:, 0], disc[:, 1]).max()))}"
             if sim.system.gravity:
                 text += " about its sag"
             if w > 0 and disc.shape[0] > 2:
@@ -1495,21 +1342,21 @@ class RotorPage(QtWidgets.QWidget):
                 )
         if self.rubbed:
             where = (
-                f"journal {self.touched[0]} landed on its backup bearing, {_fmt_len(self.touched[1])} off "
+                f"journal {self.touched[0]} landed on its backup bearing, {fmt_len(self.touched[1])} off "
                 "centre (half the magnets' air gap). A real machine drops onto these when its magnetic "
                 "bearings lose control; the model here is linear, and has no contact. "
                 if self.touched and sim.system.magnets
                 else f"journal {self.touched[0]} reached the wall of its bearing, a clearance of "
-                f"{_fmt_len(self.touched[1])} off centre. "
+                f"{fmt_len(self.touched[1])} off centre. "
                 "A real oil film stiffens sharply there and keeps the journal off the wall; the film here is "
                 "linearized (about where the journal rests), so it would let it through. Tick <i>Nonlinear "
                 "film</i> to step the film's whole force. "
                 if self.touched
-                else f"the whirl passed {_fmt_len(RUB * sim.system.length)} ({RUB:.0%} of the span), "
-                f"{_fmt_len(RUB * sim.system.length - sim.system.stator.clearance)} past the stator ring's "
+                else f"the whirl passed {fmt_len(RUB * sim.system.length)} ({RUB:.0%} of the span), "
+                f"{fmt_len(RUB * sim.system.length - sim.system.stator.clearance)} past the stator ring's "
                 "clearance: its mount would have given way long before, and the machine been wrecked. "
                 if sim.system.stator is not None
-                else f"the whirl passed {_fmt_len(RUB * sim.system.length)} ({RUB:.0%} of the span), where a real "
+                else f"the whirl passed {fmt_len(RUB * sim.system.length)} ({RUB:.0%} of the span), where a real "
                 "rotor would rub its seals or wreck its bearings. "
                 + (
                     "The oil films hold the journals inside their clearance, but not the shaft's bending, so "
@@ -1632,15 +1479,6 @@ class RotorPage(QtWidgets.QWidget):
         """History rows' station columns as drawn: with the sag or without, as ticked."""
         return y[:, :8] if self.show_sag.isChecked() else self._vibration(y)
 
-    def _sag_text(self, system: RotorSystem) -> str:
-        if not system.gravity:
-            return ""
-        q = system.static_deflection(0.0)
-        return (
-            f"<br>Static sag at rest: disc {_fmt_len(-q[YD])}, journals {_fmt_len(-q[YA])} (A) and "
-            f"{_fmt_len(-q[YB])} (B)"
-        )
-
     def _draw_spectrum(self) -> None:
         """The full spectrum at the strip chart's station over the strip chart's window."""
         t, hist = self.history.window(self.time_window.value())
@@ -1662,54 +1500,14 @@ class RotorPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- waterfall
     def _new_waterfall(self) -> None:
-        """Start the spectra afresh: for a new rotor, speed range or block length, or on Clear."""
-        f_max = max(WATERFALL_RANGE * self.top_rpm / 60.0, 50.0)
-        self.waterfall = Waterfall(self.wf_block.value(), f_max, self.sim.system)
-        self._waterfall_drawn = False
+        """Start the spectra afresh: for a new rotor, speed range or block length."""
+        self.waterfall_tab.restart(self.sim.system, self.top_rpm)
         self._draw_waterfall()
 
     def _draw_waterfall(self, only_new: bool = False) -> None:
         """Draw the waterfall if its tab is showing (with `only_new`, only if blocks came in since)."""
-        if self.tabs.current_page() is not self.waterfall_plot.parentWidget():
-            return
-        if only_new and self._waterfall_drawn:
-            return
-        wf = self.waterfall
-        if wf is None:
-            return
-        self._waterfall_drawn = True
-        mode = self.wf_against.currentIndex()
-        blocks = wf.latest_ramp(up=mode == 0) if against_speed(mode) else wf.blocks
-        ys, label = baselines(blocks, mode)
-        st = self.wf_station.currentIndex()
-        log = self.wf_scale.currentIndex() == 0
-        tallest = self.waterfall_plot.set_blocks(wf.freqs, blocks, ys, st, log, self.wf_marks.isChecked(), label)
-        where = f"the {STATIONS[st].lower()} orbit"
-        if tallest is None:
-            if against_speed(mode):
-                text = (
-                    f"No {'run-up' if mode == 0 else 'coast-down'} since the spectra were cleared: change "
-                    "the target speed, or run up and coast down, and the spectra are drawn at each speed. "
-                    "Spectra taken at a steady speed are shown against time."
-                )
-            else:
-                text = f"The first {wf.block:g} s block is being taken."
-            self.waterfall_note.setText(text)
-            return
-        b = tallest.block
-        at = f"{b.omega * RPM:,.0f} rpm" if against_speed(mode) else f"{b.t:.1f} s ({b.omega * RPM:,.0f} rpm)"
-        order = f" ({tallest.freq / (b.omega / (2 * math.pi)):+.2f}×)" if b.omega > 0 else ""
-        self.waterfall_note.setText(
-            f"{len(blocks)} full spectra of {where}, each of a {wf.block:g} s block ({1 / wf.block:.2g} Hz "
-            f"resolution), overlapping by half. Tallest peak {_fmt_len(tallest.amp)} at "
-            f"{tallest.freq:+.1f} Hz{order}, at {at}"
-            + (": heights are in decades above 1/1000 of it (60 dB)." if log else ".")
-            + (
-                ""
-                if self.repeat_taps.isChecked()
-                else " Tap the disc, or tick <i>Tap the disc every</i>, to ring the free whirl."
-            )
-        )
+        if self.tabs.current_page() is self.waterfall_tab:
+            self.waterfall_tab.draw(only_new)
 
 
 def _isotropic(system: RotorSystem) -> bool:
@@ -1722,14 +1520,6 @@ def _isotropic(system: RotorSystem) -> bool:
         return system.isotropic_supports
     plain = [Bearing(mass=b.mass) if b.magnet is not None else b for b in (system.bearing_a, system.bearing_b)]
     return system.with_(bearing_a=plain[0], bearing_b=plain[1]).isotropic_supports
-
-
-def _fmt_len(meters: float) -> str:
-    if meters >= 1e-3:
-        return f"{meters * 1e3:.3g} mm"
-    if meters >= 1e-6:
-        return f"{meters * 1e6:.3g} µm"
-    return f"{meters * 1e9:.3g} nm"
 
 
 def _same_rotor(a: RotorSystem, b: RotorSystem) -> bool:

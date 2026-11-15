@@ -636,13 +636,13 @@ def jeffcott_waterfall():
     page.load_preset("Overhung rotor")
     page._refresh_analysis()
     page.ramp.setValue(200.0)
-    page.tabs.show_page(page.waterfall_plot.parentWidget())
+    page.tabs.show_page(page.waterfall_tab.plot.parentWidget())
     page.repeat_taps.setChecked(True)
     page.set_target_rpm(2500.0)
     while page.sim.omega < page.sim.target:
         page.step(0.02)
     page._draw()
-    print(page.waterfall_note.text())
+    print(page.waterfall_tab.note.text())
     save(w, "jeffcott_waterfall")
 
 
