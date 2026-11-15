@@ -4,9 +4,10 @@ Each test recomputes what a page tells the student they will see, so a change to
 default, a preset or a solver cannot silently make the text wrong. If one fails, fix
 the text (or the change), and quote the new value.
 
-A test ties a figure to the notes that quote it with `quoted("<notes file>", "1.7 %")`, which fails unless the
-notes (`theory/<notes file>.html`, outside its `<eq>`s) show that number, and gives its value (1.7) to check
-against what the code works out. `test_every_quoted_number_is_checked` reads the `quoted` calls here and fails
+A test ties a figure to the notes that quote it with `quoted("<notes file>", "1.7 %")` (`notes_quoting.py`), which
+fails unless the notes (`theory/<notes file>.html`, outside its `<eq>`s) show that number, and gives its value
+(1.7) to check against what the code works out. Any test module may call it: a page's figures that its own tests
+already work out are tied there. `test_every_quoted_number_is_checked` reads every module's `quoted` calls and fails
 on a decimal or a percentage in the notes that none ties and `notes_unchecked_numbers.txt` doesn't list: the
 numbers written before the guard, to tie as their pages are next touched (delete a line's number when it's
 tied). So an edited figure (Pendulums' 1.8 %, #220) or a new one needs a test. Run this file as a script to
@@ -14,18 +15,15 @@ rewrite the list, only for a number that has nothing to check (a section number,
 """
 
 import ast
-import functools
-import html
 import math
-import re
 import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
+from notes_quoting import THEORY, notes_numbers, quoted
 from scipy.signal import find_peaks
 
-import vib_tutorial
 from vib_tutorial.core import (
     ChainSystem,
     Simulator,
@@ -41,36 +39,19 @@ from vib_tutorial.core import (
 )
 from vib_tutorial.core.presets import presets
 
-THEORY = Path(vib_tutorial.__file__).parent / "theory"
 UNCHECKED = Path(__file__).with_name("notes_unchecked_numbers.txt")
-NUMBER = re.compile(r"(?<![\w.])\d+\.\d+(?:\s*%)?|(?<![\w.])\d+\s*%")
-
-
-@functools.cache
-def notes_numbers(notes: str) -> frozenset[str]:
-    """The decimals and percentages `theory/<notes>.html` shows outside its `<eq>`s ("0.19 %", "2.010")."""
-    text = (THEORY / f"{notes}.html").read_text(encoding="utf-8")
-    text = re.sub(r"<eq>.*?</eq>|<!--.*?-->", " ", text, flags=re.S)
-    # table cells, blocks and exponents stay apart ("0.878<sup>2</sup>" isn't 0.8782)
-    text = re.sub(r"</?(?:td|th|tr|li|p|br|div|table|h\d|sup|sub)\b[^>]*>", " ", text)
-    text = html.unescape(re.sub(r"<[^>]+>", "", text))
-    return frozenset(re.sub(r"\s*%", " %", n) for n in NUMBER.findall(text))
-
-
-def quoted(notes: str, number: str) -> float:
-    """`number`, as `theory/<notes>.html` shows it ("1.7 %" gives 1.7): fails if the notes don't."""
-    assert number in notes_numbers(notes), f"{notes}.html doesn't quote {number}"
-    return float(number.removesuffix(" %"))
 
 
 def tied_numbers() -> dict[str, set[str]]:
-    """The numbers each notes file has tied by a `quoted(...)` call in this file (its literal arguments)."""
+    """The numbers each notes file has tied by a `quoted(...)` call in any test module (its literal arguments)."""
     tied: dict[str, set[str]] = {}
-    for node in ast.walk(ast.parse(Path(__file__).read_text(encoding="utf-8"))):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "quoted":
-            args = [a.value for a in node.args if isinstance(a, ast.Constant) and isinstance(a.value, str)]
-            assert len(args) == 2 == len(node.args), f"line {node.lineno}: quoted takes two string literals"
-            tied.setdefault(args[0], set()).add(args[1])
+    for path in sorted(Path(__file__).parent.glob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "quoted":
+                args = [a.value for a in node.args if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+                where = f"{path.name}, line {node.lineno}"
+                assert len(args) == 2 == len(node.args), f"{where}: quoted takes two string literals"
+                tied.setdefault(args[0], set()).add(args[1])
     return tied
 
 
@@ -1794,16 +1775,14 @@ def test_signals_trials():
     assert 0.05 / 0.019 == pytest.approx(2.6, abs=0.05)
     ringing = Source(Kind.RINGING, f1=50.0, zeta=0.01)
     assert 2 * ringing.zeta * ringing.f1 == pytest.approx(1.0) and 1024 / 4096 == 0.25
-    assert usable_band(0.01) == pytest.approx(quoted("signals", "0.22"), abs=0.005) and 0.218 * 30000 == pytest.approx(
-        6.5e3, abs=60
-    )
+    assert usable_band(0.01) == pytest.approx(quoted("signals", "0.22"), abs=0.005)
+    assert 0.218 * 30000 == pytest.approx(6.5e3, abs=60)
     assert usable_band(0.7, accelerometer=False) == pytest.approx(quoted("signals", "1.7"), abs=0.05)
     assert usable_band(0.7, accelerometer=False) * quoted("signals", "4.5") == pytest.approx(
         7.6, abs=0.05
     )  # a geophone's
-    assert (
-        usable_band(0.7) == pytest.approx(quoted("signals", "0.6"), abs=0.01) and quoted("signals", "0.7") == 0.7
-    )  # ζ ≈ 0.7: the flat band
+    assert usable_band(0.7) == pytest.approx(quoted("signals", "0.6"), abs=0.01)
+    assert quoted("signals", "0.7") == 0.7  # ζ ≈ 0.7: the flat band
     assert usable_band(0.01, quoted("signals", "5 %") / 100) == usable_band(0.01)  # within 5 %
     assert 100 * (1 - mass_loaded(200.0, 0.5, 0.03) / 200) == pytest.approx(quoted("signals", "2.9 %"), abs=0.05)
     assert -window_props(Window.RECTANGULAR).scalloping_db == pytest.approx(quoted("signals", "3.9"), abs=0.05)
@@ -3075,11 +3054,9 @@ def test_variability_worked_example():
     assert ring.blade_hz == pytest.approx(quoted("variability", "15.92"), abs=5e-3)
     tuned_hz, _ = ring_modes(ring)
     n = np.arange(7)
-    assert (
-        100 * ring.coupling == quoted("variability", "5 %")
-        and ring.zeta == quoted("variability", "0.003")
-        and 1 + 4 * ring.coupling == pytest.approx(quoted("variability", "1.2"))
-    )
+    assert 100 * ring.coupling == quoted("variability", "5 %")
+    assert ring.zeta == quoted("variability", "0.003")
+    assert 1 + 4 * ring.coupling == pytest.approx(quoted("variability", "1.2"))
     bands = ring.blade_hz * np.sqrt(1 + 4 * ring.coupling * np.sin(np.pi * n / 12) ** 2)
     assert bands == pytest.approx(
         [
@@ -3618,52 +3595,64 @@ def test_gyroscope_worked_example():
     from vib_tutorial.gui.gyroscope import TRIALS
 
     trial = TRIALS[0]
-    assert (trial.mass, trial.radius, trial.height, trial.spin_rpm, trial.tilt) == (0.5, 0.04, 0.03, 1500.0, 30.0)
+    assert (trial.mass, trial.radius, trial.height) == (
+        quoted("gyroscope", "0.5"),
+        quoted("gyroscope", "0.04"),
+        quoted("gyroscope", "0.03"),
+    )
+    assert (trial.spin_rpm, trial.tilt) == (1500.0, 30.0) and trial.gravity == quoted("gyroscope", "9.81")
+    from vib_tutorial.gui.gyroscope import PLAYBACK
+
+    assert quoted("gyroscope", "0.02") in PLAYBACK  # the slowest playback
     top, motion = trial.top, trial.motion
     # the top: I₃ 4.0, I₁ 6.5 kg·cm², mgl 0.14715 N·m, ω₃ 157.1 rad/s
     i1, _, i3 = top.moments
-    assert (i3 * 1e4, i1 * 1e4) == pytest.approx((4.0, 6.5))
-    assert top.weight_moment == pytest.approx(0.14715)
-    assert 1500 * 2 * math.pi / 60 == pytest.approx(157.08, abs=0.005)
+    assert (i3 * 1e4, i1 * 1e4) == pytest.approx((quoted("gyroscope", "4.0"), quoted("gyroscope", "6.5")))
+    assert top.weight_moment == pytest.approx(quoted("gyroscope", "0.14715"))
+    assert 1500 * 2 * math.pi / 60 == pytest.approx(quoted("gyroscope", "157.08"), abs=0.005)
     # sleeps above 48.9 rad/s, 467 rpm
-    assert 2 * math.sqrt(6.5e-4 * 0.14715) / 4.0e-4 == pytest.approx(48.9, abs=0.05)
-    assert top.sleeping_spin == pytest.approx(48.9, abs=0.05)
+    assert 2 * math.sqrt(6.5e-4 * 0.14715) / 4.0e-4 == pytest.approx(quoted("gyroscope", "48.9"), abs=0.05)
+    assert top.sleeping_spin == pytest.approx(quoted("gyroscope", "48.9"), abs=0.05)
     assert top.sleeping_spin / gy.RPM == pytest.approx(467, abs=0.5)
     # steady precession: 2.39 and 109 rad/s; estimates 2.34 and 112
-    assert 4.0e-4 * 157.08 == pytest.approx(0.06283, abs=0.000005)
-    assert 6.5e-4 * math.cos(math.radians(30)) == pytest.approx(5.629e-4, abs=5e-8)
+    assert 4.0e-4 * 157.08 == pytest.approx(quoted("gyroscope", "0.06283"), abs=0.000005)
+    assert 6.5e-4 * math.cos(math.radians(30)) * 1e4 == pytest.approx(quoted("gyroscope", "5.629"), abs=5e-4)
     slow, fast = gy.steady_precession(top, 1500 * gy.RPM, math.radians(30))
-    assert (slow, fast) == pytest.approx((2.39, 109), abs=0.5)
-    assert slow == pytest.approx(2.39, abs=0.005)
-    assert np.sort(np.roots([5.629e-4, -0.06283, 0.14715])) == pytest.approx([2.39, 109], abs=0.5)
-    assert 0.14715 / 0.06283 == pytest.approx(2.34, abs=0.005)
+    assert (slow, fast) == pytest.approx((quoted("gyroscope", "2.39"), 109), abs=0.5)
+    assert slow == pytest.approx(quoted("gyroscope", "2.39"), abs=0.005)
+    assert np.sort(np.roots([5.629e-4, -0.06283, 0.14715])) == pytest.approx(
+        [quoted("gyroscope", "2.39"), 109], abs=0.5
+    )
+    assert 0.14715 / 0.06283 == pytest.approx(quoted("gyroscope", "2.34"), abs=0.005)
     assert 0.06283 / 5.629e-4 == pytest.approx(112, abs=0.5)
     # nutation: a_ψ 96.7, a_φ 83.7, γ 452.8; roots 0.8528, 0.8660, 19.78; 30° to 31.48°; k² 6.98e-4, K 1.5711, 67.9 ms
-    assert 0.06283 / 6.5e-4 == pytest.approx(96.7, abs=0.05)
-    assert 96.66 * math.cos(math.radians(30)) == pytest.approx(83.7, abs=0.05)
-    assert 2 * 0.14715 / 6.5e-4 == pytest.approx(452.8, abs=0.05)
+    assert 0.06283 / 6.5e-4 == pytest.approx(quoted("gyroscope", "96.7"), abs=0.05)
+    assert 96.66 * math.cos(math.radians(30)) == pytest.approx(quoted("gyroscope", "83.7"), abs=0.05)
+    assert 2 * 0.14715 / 6.5e-4 == pytest.approx(quoted("gyroscope", "452.8"), abs=0.05)
     u1, u2, u3 = motion.roots()
-    assert (u1, u2, u3) == pytest.approx((0.8528, 0.8660, 19.78), abs=0.005)
-    assert u1 == pytest.approx(0.8528, abs=0.00005)
-    assert u2 == pytest.approx(0.8660, abs=0.00005)
+    assert (u1, u2, u3) == pytest.approx(
+        (quoted("gyroscope", "0.8528"), quoted("gyroscope", "0.8660"), quoted("gyroscope", "19.78")), abs=0.005
+    )
+    assert u1 == pytest.approx(quoted("gyroscope", "0.8528"), abs=0.00005)
+    assert u2 == pytest.approx(quoted("gyroscope", "0.8660"), abs=0.00005)
     lo, hi = (math.degrees(x) for x in motion.turning())
-    assert (lo, hi) == pytest.approx((30.0, 31.48), abs=0.005)
-    assert 19.78 - 0.8528 == pytest.approx(18.93, abs=0.005)
-    assert u2 - u1 == pytest.approx(0.01321, abs=0.000005)
-    assert 0.01321 / 18.93 == pytest.approx(6.98e-4, abs=5e-6)
-    assert scipy.special.ellipk(6.98e-4) == pytest.approx(1.5711, abs=0.00005)
-    assert 4 * 1.5711 / math.sqrt(452.8 * 18.93) == pytest.approx(0.0679, abs=0.00005)
+    assert (lo, hi) == pytest.approx((30.0, quoted("gyroscope", "31.48")), abs=0.005)
+    assert 19.78 - 0.8528 == pytest.approx(quoted("gyroscope", "18.93"), abs=0.005)
+    assert u2 - u1 == pytest.approx(quoted("gyroscope", "0.01321"), abs=0.000005)
+    assert 0.01321 / 18.93 * 1e4 == pytest.approx(quoted("gyroscope", "6.98"), abs=0.005)
+    assert scipy.special.ellipk(6.98e-4) == pytest.approx(quoted("gyroscope", "1.5711"), abs=0.00005)
+    assert 4 * 1.5711 / math.sqrt(452.8 * 18.93) * 1e3 == pytest.approx(quoted("gyroscope", "67.9"), abs=0.05)
     assert motion.nutation_period() == pytest.approx(0.0679, abs=0.00005)
-    assert motion.nutation_hz() == pytest.approx(14.7, abs=0.05)
+    assert motion.nutation_hz() == pytest.approx(quoted("gyroscope", "14.7"), abs=0.05)
     # the fast top's estimates: 0.0242 rad = 1.39° deep, 15.4 Hz
-    assert 2 * 6.5e-4 * 0.14715 * 0.5 / 0.06283**2 == pytest.approx(0.0242, abs=0.00005)
-    assert math.degrees(0.0242) == pytest.approx(1.39, abs=0.005)
-    assert hi - lo == pytest.approx(1.48, abs=0.005)
-    assert 0.06283 / (2 * math.pi * 6.5e-4) == pytest.approx(15.4, abs=0.05)
+    assert 2 * 6.5e-4 * 0.14715 * 0.5 / 0.06283**2 == pytest.approx(quoted("gyroscope", "0.0242"), abs=0.00005)
+    assert math.degrees(0.0242) == pytest.approx(quoted("gyroscope", "1.39"), abs=0.005)
+    assert hi - lo == pytest.approx(quoted("gyroscope", "1.48"), abs=0.005)
+    assert 0.06283 / (2 * math.pi * 6.5e-4) == pytest.approx(quoted("gyroscope", "15.4"), abs=0.05)
     # the path: cusps; 2.39 rad/s on average, a turn in 2.63 s
     assert motion.path() is gy.Path.CUSPS
-    assert motion.mean_precession() == pytest.approx(2.39, abs=0.005)
-    assert 2 * math.pi / 2.39 == pytest.approx(2.63, abs=0.005)
+    assert motion.mean_precession() == pytest.approx(quoted("gyroscope", "2.39"), abs=0.005)
+    assert 2 * math.pi / 2.39 == pytest.approx(quoted("gyroscope", "2.63"), abs=0.005)
 
 
 def test_diagnostics_trials():
@@ -3688,9 +3677,9 @@ def test_diagnostics_trials():
 
     band = (2550.0, 3450.0)
     m = Machine(speed=1797 / 60)
-    assert m.mesh_hz == pytest.approx(808.65)
+    assert m.mesh_hz == pytest.approx(quoted("diagnostics", "808.65"))
     healthy = record_of(m)
-    assert kurtosis(healthy.x) == pytest.approx(2.40, abs=0.005)
+    assert kurtosis(healthy.x) == pytest.approx(quoted("diagnostics", "2.40"), abs=0.005)
     _, c = cepstrum(healthy.x, healthy.fs)
     at = round(healthy.fs / m.speed)
     assert c[at - 2 : at + 3].max() == pytest.approx(0.027, abs=5e-4)
@@ -3698,7 +3687,7 @@ def test_diagnostics_trials():
     ecc = replace(m, gear=GearFault.ECCENTRIC)
     s = amplitude_spectrum(record_of(ecc).x, healthy.fs)
     _, a = sidebands(s.freqs, s.amplitude, m.mesh_hz, m.speed, 1)
-    assert (a[2], a[0], a[1]) == pytest.approx((0.23, 0.08, 1.0), abs=0.005)
+    assert (a[2], a[0], a[1]) == pytest.approx((0.23, 0.08, quoted("diagnostics", "1.0")), abs=0.005)
 
     crack = record_of(replace(m, gear=GearFault.CRACK))
     s = amplitude_spectrum(crack.x, crack.fs)
@@ -3711,7 +3700,14 @@ def test_diagnostics_trials():
     noisy = replace(m, noise=1.0)
     f = noisy.bearing.frequencies(m.speed)
     assert (f["BPFO"] / m.speed, f["BPFO"], f["BPFI"], 2 * f["BSF"], f["FTF"]) == pytest.approx(
-        (3.585, 107.4, 162.2, 141.2, 11.9), abs=0.05
+        (
+            quoted("diagnostics", "3.585"),
+            quoted("diagnostics", "107.4"),
+            quoted("diagnostics", "162.2"),
+            quoted("diagnostics", "141.2"),
+            11.9,
+        ),
+        abs=0.05,
     )
     outer = replace(noisy, bearing_fault=BearingFault.OUTER)
     r = record_of(outer)
@@ -3749,9 +3745,11 @@ def test_diagnostics_trials():
     om = order_map(run_up(fast))
     one = order_track(om, 1)
     assert (one.max(), 60 * om.speed[one.argmax()]) == pytest.approx((179, 2531), abs=1)
-    assert 1 - one.max() / steady.max() == pytest.approx(0.15, abs=0.005)
+    assert 1 - one.max() / steady.max() == pytest.approx(quoted("diagnostics", "0.15"), abs=0.005)
     sweep = 2 * slow.zeta * slow.mode / ((fast.end - fast.start) / fast.duration)
-    assert (sweep, sweep * slow.mode) == pytest.approx((0.16, 6.4), abs=0.005)
+    assert (sweep, sweep * slow.mode) == pytest.approx(
+        (quoted("diagnostics", "0.16"), quoted("diagnostics", "6.4")), abs=0.005
+    )
 
 
 def record_of(machine):
@@ -4033,14 +4031,12 @@ def test_signals_worked_example():
     from vib_tutorial.core.signals import FILTER_RATIO
 
     assert FILTER_RATIO == quoted("signals", "2.56")
-    assert 2.56 * 120 / fs == pytest.approx(quoted("signals", "0.3")) and 0.3**16 * 1e9 == pytest.approx(
-        quoted("signals", "4.3"), abs=0.05
-    )
+    assert 2.56 * 120 / fs == pytest.approx(quoted("signals", "0.3"))
+    assert 0.3**16 * 1e9 == pytest.approx(quoted("signals", "4.3"), abs=0.05)
     assert 2.56 * 624 / fs == pytest.approx(quoted("signals", "1.56"))
     gains = source.gain(np.array([120.0, 400.0, 624.0]), fs, True)
-    assert gains[0] == pytest.approx(quoted("signals", "1.000"), abs=1e-8) and gains[1] == pytest.approx(
-        1 / math.sqrt(2)
-    )
+    assert gains[0] == pytest.approx(quoted("signals", "1.000"), abs=1e-8)
+    assert gains[1] == pytest.approx(1 / math.sqrt(2))
     assert (1.56**16, gains[2], 20 * math.log10(gains[2])) == pytest.approx(
         (1230, quoted("signals", "0.0285"), -quoted("signals", "30.9")), rel=2e-3
     )
@@ -4058,15 +4054,12 @@ def test_signals_worked_example():
     ]
     assert spec.amplitude[[49, 50, 51, 119, 120, 121]] == pytest.approx(readings, abs=5e-4)
     assert 20 * math.log10(spec.amplitude[50]) == pytest.approx(quoted("signals", "0.00"), abs=0.005)  # +0.00 dB
-    assert props.coherent_gain == quoted("signals", "0.5") and spec.amplitude[49] == pytest.approx(
-        quoted("signals", "0.5"), abs=5e-4
-    )
-    assert spec.amplitude[119] == pytest.approx(quoted("signals", "0.05"), abs=5e-4) and spec.amplitude[
-        120
-    ] == pytest.approx(quoted("signals", "0.1"), abs=5e-4)
-    assert float(np.mean(x**2)) == pytest.approx(quoted("signals", "0.505")) and float(
-        np.sum(spec.psd) * spec.df
-    ) == pytest.approx(quoted("signals", "0.505"))
+    assert props.coherent_gain == quoted("signals", "0.5")
+    assert spec.amplitude[49] == pytest.approx(quoted("signals", "0.5"), abs=5e-4)
+    assert spec.amplitude[119] == pytest.approx(quoted("signals", "0.05"), abs=5e-4)
+    assert spec.amplitude[120] == pytest.approx(quoted("signals", "0.1"), abs=5e-4)
+    assert float(np.mean(x**2)) == pytest.approx(quoted("signals", "0.505"))
+    assert float(np.sum(spec.psd) * spec.df) == pytest.approx(quoted("signals", "0.505"))
     assert (
         spec.psd[50]
         == pytest.approx(quoted("signals", "0.5") / quoted("signals", "1.5"))
@@ -4146,11 +4139,9 @@ def test_modal_test_worked_example():
     )
     from vib_tutorial.core.measurement import AA_CUTOFF, Processing
 
-    assert (
-        100 * AA_CUTOFF == quoted("modal_test", "80 %")
-        and AA_CUTOFF == quoted("modal_test", "0.8")
-        and 2 / AA_CUTOFF == quoted("modal_test", "2.5")
-    )  # fs = 2.5 f_max
+    assert 100 * AA_CUTOFF == quoted("modal_test", "80 %")
+    assert AA_CUTOFF == quoted("modal_test", "0.8")
+    assert 2 / AA_CUTOFF == quoted("modal_test", "2.5")  # fs = 2.5 f_max
     assert 100 / quoted("modal_test", "2.56") * 2 == pytest.approx(
         quoted("modal_test", "78 %"), abs=0.5
     )  # the analyzers' 2.56
@@ -4397,9 +4388,8 @@ def test_model_updating_worked_example():
     assert quoted("model_updating", "1.1") == 1.1  # every mass and spring by 1.1: no frequency moves
     assert [m.fn_hz for m in modal_analysis(scaled).modes] == pytest.approx(f0)
     assert min(macs) > quoted("model_updating", "0.9")  # a good correlation
-    assert np.sum(springs, axis=1) == pytest.approx(quoted("model_updating", "0.5")) and np.sum(
-        masses, axis=1
-    ) == pytest.approx(-quoted("model_updating", "0.5"))
+    assert np.sum(springs, axis=1) == pytest.approx(quoted("model_updating", "0.5"))
+    assert np.sum(masses, axis=1) == pytest.approx(-quoted("model_updating", "0.5"))
     share = 2 * springs[:, 2]
     assert 100 * share == pytest.approx([18, 33, 5, 43], abs=0.5)
     linear = 100 * (1.3 ** springs[:, 2] - 1)
@@ -4478,9 +4468,8 @@ def test_test_planning_worked_example():
     assert [s.dropped for s in place(T, hz[:3], Method.EFI, 3).steps] == [1]
     assert driving_point_residue(T, hz[:3]).shape == (4,)
     q = quality(T, np.array([0, 2, 3]))
-    assert q.information == pytest.approx(1 - E[1]) and 100 * q.information == pytest.approx(
-        quoted("test_planning", "43.1 %"), abs=0.05
-    )
+    assert q.information == pytest.approx(1 - E[1])
+    assert 100 * q.information == pytest.approx(quoted("test_planning", "43.1 %"), abs=0.05)
     a = T[1] * np.sign(T[1, 0])
     assert a == pytest.approx(
         [quoted("test_planning", "0.4285"), quoted("test_planning", "0.5774"), -quoted("test_planning", "0.2280")],
@@ -4506,7 +4495,8 @@ def test_test_planning_worked_example():
     sizes = [np.sqrt(np.linalg.eigvalsh(c)) for c in ellipse_axes()]
     assert sizes[0] == pytest.approx([1, 1]) and 1 < sizes[1].max() < 2 < 3 < sizes[2].max()
     # where to excite: mass 3 is mode 2's node, mass 4 has every target
-    assert abs(T[2, 1]) < 1e-12 and np.abs(T[3]) == pytest.approx(
+    assert abs(T[2, 1]) < 1e-12
+    assert np.abs(T[3]) == pytest.approx(
         [quoted("test_planning", "0.6565"), quoted("test_planning", "0.5774"), quoted("test_planning", "0.4285")],
         abs=5e-5,
     )
@@ -4523,14 +4513,12 @@ def test_test_planning_worked_example():
     )
     assert chain.damping[0] / chain.stiffness[0] == quoted("test_planning", "0.005")
     assert w1**2 - w**2 == pytest.approx(quoted("test_planning", "8.77"), abs=0.005)
-    assert w * 0.005 * w1**2 == pytest.approx(quoted("test_planning", "1.52"), abs=5e-3) and 0.6565**2 == pytest.approx(
-        quoted("test_planning", "0.4310"), abs=5e-5
-    )
+    assert w * 0.005 * w1**2 == pytest.approx(quoted("test_planning", "1.52"), abs=5e-3)
+    assert 0.6565**2 == pytest.approx(quoted("test_planning", "0.4310"), abs=5e-5)
     x = ods(chain, 3, 1.0)
     one = 0.4310 / (48.25 - 39.48 + 1j * 1.52)
-    assert abs(one) == pytest.approx(quoted("test_planning", "0.0484"), abs=5e-5) and abs(x[3]) == pytest.approx(
-        quoted("test_planning", "0.0496"), abs=5e-5
-    )
+    assert abs(one) == pytest.approx(quoted("test_planning", "0.0484"), abs=5e-5)
+    assert abs(x[3]) == pytest.approx(quoted("test_planning", "0.0496"), abs=5e-5)
     parts = ods_parts(chain, 3, 1.0)
     assert abs(parts[3, 0]) == pytest.approx(quoted("test_planning", "0.0484"), abs=5e-5)
     share = np.max(np.abs(parts), axis=0) / np.max(np.abs(x))
@@ -4555,7 +4543,8 @@ def test_nonlinear_forces_worked_example():
     w1 = 2 * np.pi * hz[0]
     assert (hz[0], w1) == pytest.approx(
         (quoted("nonlinear_forces", "2.240"), quoted("nonlinear_forces", "14.07")), abs=5e-3
-    ) and w1**2 == pytest.approx(quoted("nonlinear_forces", "198.1"), abs=0.05)
+    )
+    assert w1**2 == pytest.approx(quoted("nonlinear_forces", "198.1"), abs=0.05)
     assert phi[:, 0] == pytest.approx(
         [
             quoted("nonlinear_forces", "0.3280"),
@@ -4588,11 +4577,9 @@ def test_nonlinear_forces_worked_example():
     )
     # friction's fade
     t = TRIALS[3]
-    assert (
-        t.friction[2] == quoted("nonlinear_forces", "0.1")
-        and t.levels[0] == quoted("nonlinear_forces", "0.2")
-        and t.levels[2] == 2.0
-    )
+    assert t.friction[2] == quoted("nonlinear_forces", "0.1")
+    assert t.levels[0] == quoted("nonlinear_forces", "0.2")
+    assert t.levels[2] == 2.0
     for F, X3, ceq, tol, added, peak in (
         (
             0.2,
@@ -4613,9 +4600,8 @@ def test_nonlinear_forces_worked_example():
     ):
         sw = nl.stepped_sine(t.system(), t.element, 2, F, freqs)
         i = int(np.argmax(np.abs(sw.X[:, 2])))
-        assert sw.hz[i] == pytest.approx(quoted("nonlinear_forces", "2.234"), abs=5e-4) and 2 * np.pi * sw.hz[
-            i
-        ] == pytest.approx(quoted("nonlinear_forces", "14.04"), abs=5e-3)
+        assert sw.hz[i] == pytest.approx(quoted("nonlinear_forces", "2.234"), abs=5e-4)
+        assert 2 * np.pi * sw.hz[i] == pytest.approx(quoted("nonlinear_forces", "14.04"), abs=5e-3)
         assert 1000 * abs(sw.X[i, 2]) == pytest.approx(X3, abs=0.05)
         assert 4 * 0.1 / (np.pi * 14.04 * X3 / 1000) == pytest.approx(ceq, abs=tol)
         assert F > 1 or X3 / 1000 == pytest.approx(quoted("nonlinear_forces", "0.00355"))
@@ -4641,19 +4627,17 @@ def test_nonlinear_forces_worked_example():
     )
     truth = fid.force_history(t.shape, fid.SAMPLES, h, t.width)
     G = fid.markov(s, t.hit, t.sensors, t.output, h, fid.SAMPLES)
-    assert (
-        t.sensors == (0,) and t.output is fid.Output.DISPLACEMENT and t.noise == quoted("nonlinear_forces", "2 %")
-    )  # %
+    assert t.sensors == (0,)
+    assert t.output is fid.Output.DISPLACEMENT
+    assert t.noise == quoted("nonlinear_forces", "2 %")  # %
     p = fid.set_up(G, truth, t.noise / 100)
-    assert (p.s[0] * 1e3, p.s[-3] * 1e10) == pytest.approx((7.7, quoted("nonlinear_forces", "1.4")), rel=0.02) and p.s[
-        -2
-    ] < 1e-17
+    assert (p.s[0] * 1e3, p.s[-3] * 1e10) == pytest.approx((7.7, quoted("nonlinear_forces", "1.4")), rel=0.02)
+    assert p.s[-2] < 1e-17
     assert np.log10(p.s[0] / p.s[-3]) == pytest.approx(quoted("nonlinear_forces", "7.7"), abs=0.05)
     assert p.noise * 1e4 == pytest.approx(quoted("nonlinear_forces", "1.70"), abs=5e-3)
     lam = fid.l_curve(p).corner
-    assert lam * 1e5 == pytest.approx(quoted("nonlinear_forces", "5.44"), abs=5e-3) and 10**t.log_lam == pytest.approx(
-        lam, abs=5e-8
-    )
+    assert lam * 1e5 == pytest.approx(quoted("nonlinear_forces", "5.44"), abs=5e-3)
+    assert 10**t.log_lam == pytest.approx(lam, abs=5e-8)
     assert int((p.s > lam).sum()) == 37
     f = fid.tikhonov(p, lam)
     assert np.linalg.norm(G @ f - p.y) * 1e4 == pytest.approx(quoted("nonlinear_forces", "1.63"), abs=5e-3)
@@ -4669,9 +4653,8 @@ def test_nonlinear_forces_worked_example():
     t = TRIALS[7]
     G = fid.markov(s, t.hit, t.sensors, t.output, h, fid.SAMPLES)
     p = fid.set_up(G, truth, t.noise / 100)
-    assert G[0, 0] == pytest.approx(quoted("nonlinear_forces", "0.98"), abs=5e-3) and np.log10(
-        p.s[0] / p.s[-1]
-    ) == pytest.approx(quoted("nonlinear_forces", "3.0"), abs=0.05)
+    assert G[0, 0] == pytest.approx(quoted("nonlinear_forces", "0.98"), abs=5e-3)
+    assert np.log10(p.s[0] / p.s[-1]) == pytest.approx(quoted("nonlinear_forces", "3.0"), abs=0.05)
     assert 10**t.log_lam == pytest.approx(quoted("nonlinear_forces", "0.024"), abs=5e-4)
     assert 100 * fid.error(fid.tikhonov(p, 10**t.log_lam), truth) < quoted("nonlinear_forces", "6 %")
 
@@ -4685,16 +4668,16 @@ def test_rotor_equations_of_motion():
     d, L = s.diameter, s.length
     inertia, area = math.pi * d**4 / 64, math.pi * d**2 / 4
     ei = s.youngs * inertia
-    assert round(ei, 2) == 98.17
+    assert round(ei, 2) == quoted("rotor_notes", "98.17")
     assert (s.ip, s.id) == (1.25e-3, 6.25e-4)
     # The disc's own tilt on rigid bearings: k_θ = 12EI/L, the θx entry of K_shaft.
     k_theta = 12 * ei / L
     ks = s.shaft_stiffness()
     assert round(k_theta) == 2356 and ks[2, 2] == pytest.approx(k_theta)
-    assert round(math.sqrt(k_theta / s.id) / (2 * math.pi), 1) == 309.0
+    assert round(math.sqrt(k_theta / s.id) / (2 * math.pi), 1) == quoted("rotor_notes", "309.0")
     rpm = 2 * math.pi / 60
     w = 6000 * rpm
-    assert round(s.ip * w, 3) == 0.785
+    assert round(s.ip * w, 3) == quoted("rotor_notes", "0.785")
 
     def split(ip: float) -> tuple[float, float]:
         a = ip * w
@@ -4716,37 +4699,43 @@ def test_rotor_equations_of_motion():
     sm = s.with_(density=STEEL)
     le = L / sm.elements
     assert (sm.elements, le) == (8, 0.0625)
-    assert round(12 * ei / le**3 / 1e6, 2) == 4.83
+    assert round(12 * ei / le**3 / 1e6, 2) == quoted("rotor_notes", "4.83")
     rho_a, rho_i = STEEL * area, STEEL * inertia
-    assert round(rho_a, 4) == 0.6165
+    assert round(rho_a, 4) == quoted("rotor_notes", "0.6165")
     mt, mr = beam_mass(rho_a, rho_i, le)
     shift = np.array([1.0, 0.0, 1.0, 0.0])
-    assert round(shift @ mt @ shift, 4) == 0.0385 and round(8 * shift @ mt @ shift, 3) == 0.308
+    assert round(shift @ mt @ shift, 4) == quoted("rotor_notes", "0.0385")
+    assert round(8 * shift @ mt @ shift, 3) == quoted("rotor_notes", "0.308")
     assert np.allclose(beam_stiffness(ei, le) @ shift, 0.0)
-    assert round(100 * mr[0, 0] / mt[0, 0], 2) == 0.52 and round(100 * mr[1, 1] / mt[1, 1], 1) == 2.2
-    assert f"{2 * rho_i * L:.2e}" == "3.85e-06" and round(100 * 2 * rho_i * L / s.ip, 1) == 0.3
+    assert round(100 * mr[0, 0] / mt[0, 0], 2) == quoted("rotor_notes", "0.52")
+    assert round(100 * mr[1, 1] / mt[1, 1], 1) == quoted("rotor_notes", "2.2")
+    assert f"{2 * rho_i * L:.2e}" == "3.85e-06" and round(100 * 2 * rho_i * L / s.ip, 1) == quoted("rotor_notes", "0.3")
     kappa = 6 * (1 + POISSON) / (7 + 6 * POISSON)
-    assert round(kappa, 3) == 0.886
+    assert round(kappa, 3) == quoted("rotor_notes", "0.886")
 
     def phi(length: float) -> float:
         return 1.5 * (1 + POISSON) / kappa * (d / length) ** 2
 
     shear = s.youngs / (2 * (1 + POISSON))
     assert phi(le) == pytest.approx(12 * ei / (kappa * shear * area * le**2))
-    assert round(phi(le), 3) == 0.056 and round(phi(L), 5) == 0.00088
+    assert round(phi(le), 3) == quoted("rotor_notes", "0.056") and round(phi(L), 5) == quoted("rotor_notes", "0.00088")
     assert 1 - 1 / math.sqrt(1 + phi(L)) < 0.0005
     assert (2 * 2 * (sm.elements + 1), sm.n_dof, sm.n_states) == (36, 12, 24)
     # The eigenproblem at 3000 rpm: the first pair, the conical mode, and the spin reversed.
     w = 3000 * rpm
     lam = np.linalg.eigvals(s.state_matrix(w))
     first = lam[np.argmin(np.abs(lam))]
-    assert (round(first.real, 3), round(abs(first.imag), 1)) == (-7.714, 165.9)
-    assert round(abs(first.imag) / (2 * math.pi), 2) == 26.40 and round(-first.real / abs(first), 4) == 0.0464
+    assert (round(first.real, 3), round(abs(first.imag), 1)) == (
+        -quoted("rotor_notes", "7.714"),
+        quoted("rotor_notes", "165.9"),
+    )
+    assert round(abs(first.imag) / (2 * math.pi), 2) == quoted("rotor_notes", "26.40")
+    assert round(-first.real / abs(first), 4) == quoted("rotor_notes", "0.0464")
     assert s.n_states == 16
     for sign, back in ((1, 271.5), (-1, 368.0)):
         m = whirl_modes(s, sign * w)
         conical = {round(f, 1): wr > 0 for f, wr in zip(m.freq_hz, m.whirl, strict=True) if f > 200}
-        assert conical == {271.5: sign < 0, 368.0: sign > 0}, back
+        assert conical == {quoted("rotor_notes", "271.5"): sign < 0, quoted("rotor_notes", "368.0"): sign > 0}, back
     # Left eigenvectors at Ω are the right ones at −Ω (M, C, K symmetric; G, H skew).
     M, C, G, K = s.matrices()
     H = s.circulatory()
@@ -4766,20 +4755,24 @@ def test_rotor_worked_example():
     rpm = 60 / (2 * math.pi)
     ei = s.youngs * math.pi * s.diameter**4 / 64
     ks = 48 * ei / s.length**3
-    assert round(ei, 2) == 98.17 and round(ks) == 37699 == round(s.disc_stiffness)
+    assert round(ei, 2) == quoted("rotor_notes", "98.17") and round(ks) == 37699 == round(s.disc_stiffness)
     kb = s.bearing_a.kx
     keq = 1 / (1 / ks + 1 / (2 * kb))
     wc = math.sqrt(keq / s.disc_mass)
-    assert (kb, round(keq), round(wc, 2), round(wc * rpm)) == (50000.0, 27378, 165.46, 1580)
+    assert (kb, round(keq), round(wc, 2), round(wc * rpm)) == (50000.0, 27378, quoted("rotor_notes", "165.46"), 1580)
     crit = campbell(s, 3000 / rpm, n_speeds=121, n_modes=4).criticals
     assert {round(w * rpm) for w, _, _ in crit} == {1584}
     m = whirl_modes(s, 0.0)
-    assert [round(f, 2) for f in m.freq_hz[:2]] == [26.40, 26.40] and round(m.zeta[0], 4) == 0.0464
+    assert [round(f, 2) for f in m.freq_hz[:2]] == [
+        quoted("rotor_notes", "26.40"),
+        quoted("rotor_notes", "26.40"),
+    ]
+    assert round(m.zeta[0], 4) == quoted("rotor_notes", "0.0464")
     zeta = 0.0464
-    assert round(2 * math.pi * zeta / math.sqrt(1 - zeta**2), 3) == 0.292
+    assert round(2 * math.pi * zeta / math.sqrt(1 - zeta**2), 3) == quoted("rotor_notes", "0.292")
     e = 20.0  # µm
     assert s.unbalance == pytest.approx(e * 1e-6)
-    assert round(s.disc_mass * s.unbalance * (3000 / rpm) ** 2, 2) == 1.97
+    assert round(s.disc_mass * s.unbalance * (3000 / rpm) ** 2, 2) == quoted("rotor_notes", "1.97")
     for speed, r, amp, lag, page_amp, page_lag in (
         (3000, 1.894, 27.7, 176.1, 28.0, 175.9),
         (500, 0.3157, 2.21, 1.9, 2.22, 1.8),
@@ -4788,23 +4781,25 @@ def test_rotor_worked_example():
         assert round(e * r * r / math.sqrt((1 - r * r) ** 2 + (2 * zeta * r) ** 2), 2 if amp < 10 else 1) == amp
         assert round(math.degrees(math.atan2(2 * zeta * r, 1 - r * r)), 1) == lag
         X = synchronous_response(s, np.array([speed / rpm]))[0, XD]
-        assert (
-            round(abs(X) * 1e6, 2 if page_amp < 10 else 1) == page_amp
-            and round(-math.degrees(np.angle(X)), 1) == page_lag
-        )
+        assert round(abs(X) * 1e6, 2 if page_amp < 10 else 1) == page_amp
+        assert round(-math.degrees(np.angle(X)), 1) == page_lag
     assert round(e / (2 * zeta)) == 216
     X = synchronous_response(s, np.array([1584 / rpm]))[0, XD]
     assert round(abs(X) * 1e6) == 217 and round(-math.degrees(np.angle(X))) == 88
     first = np.linalg.eigvals(s.state_matrix(3000 / rpm))
     first = first[np.argmin(np.abs(first))]
-    assert (round(first.real, 3), round(abs(first.imag), 1)) == (-7.714, 165.9)
+    assert (round(first.real, 3), round(abs(first.imag), 1)) == (
+        -quoted("rotor_notes", "7.714"),
+        quoted("rotor_notes", "165.9"),
+    )
     # A squeeze-film damper: πηRL³/(2c³(1 − ε²)^1.5).
     eta, radius, length, clearance = 0.02, 0.05, 0.02, 0.2e-3
 
     def squeeze(eps: float) -> float:
         return math.pi * eta * radius * length**3 / (2 * clearance**3 * (1 - eps**2) ** 1.5)
 
-    assert (round(squeeze(0.0)), round(squeeze(0.5))) == (1571, 2418) and round(squeeze(0.0) / 100) == 16
+    assert (round(squeeze(0.0)), round(squeeze(quoted("rotor_notes", "0.5")))) == (1571, 2418)
+    assert round(squeeze(0.0) / 100) == 16
     # Rolling bearings: stiffness ∝ load^(1/3) for balls, ^0.1 for rollers.
     assert round(100 * (2 ** (1 / 3) - 1)) == 26 and round(100 * (2**0.1 - 1)) == 7
 
@@ -4821,7 +4816,7 @@ def test_rotor_builder_worked_example():
     mat = s.material
     assert (mat.E, mat.nu, mat.rho, s.outer, s.inner, len(rotor.sections), s.elements) == (
         210e9,
-        0.3,
+        quoted("rotor_builder", "0.3"),
         7850.0,
         0.05,
         0.0,
@@ -4830,10 +4825,21 @@ def test_rotor_builder_worked_example():
     )
     asm = rb.assemble(rotor)
     assert rotor.nodes.size == 13 and asm.M.shape == (52, 52)
-    assert round(s.area * 1e6, 1) == 1963.5 and f"{s.inertia:.3e}" == "3.068e-07"
+    assert round(s.area * 1e6, 1) == quoted("rotor_builder", "1963.5") and round(s.inertia * 1e7, 3) == quoted(
+        "rotor_builder", "3.068"
+    )
     ei, rho_a, length = mat.E * s.inertia, mat.rho * s.area, 1.0
-    assert round(ei / 1e3, 2) == 64.43 and round(rho_a, 2) == 15.41
+    assert round(ei / 1e3, 2) == quoted("rotor_builder", "64.43") and round(rho_a, 2) == quoted(
+        "rotor_builder", "15.41"
+    )
     hz = rb.modes(asm, 0.0).hz
+    from vib_tutorial.core.rotor_builder_sweep import CRITICALLY_DAMPED
+    from vib_tutorial.gui.rotor_builder import API_LOG_DEC
+
+    assert API_LOG_DEC == quoted("rotor_builder", "0.1") and 100 * CRITICALLY_DAMPED == quoted(
+        "rotor_builder", "20 %"
+    )  # API 684's
+    assert 1 / (2 * CRITICALLY_DAMPED) == quoted("rotor_builder", "2.5")  # the amplification factor there
     assert [round(f, 2) for f in hz[:6]] == [101.25, 101.25, 401.5, 401.5, 891.33, 891.33]
     eb = rb.modes(rb.assemble(dataclasses.replace(rotor, theory=rb.Theory.RAYLEIGH)), 0.0).hz
     assert [round(eb[0], 2), round(eb[4], 1)] == [101.48, 908.0]
@@ -4842,19 +4848,37 @@ def test_rotor_builder_worked_example():
     rg = s.outer / 4
     assert rg == pytest.approx(math.sqrt(s.inertia / s.area)) and rg == 0.0125
     rot = [0.5 * (n * math.pi * rg / length) ** 2 for n in (1, 3)]
-    assert [round(100 * rot[0], 3), round(100 * rot[1], 2)] == [0.077, 0.69]
-    assert [round(euler[0] * (1 - rot[0]), 2), round(euler[2] * (1 - rot[1]), 1)] == [101.48, 907.7]
-    assert round(s.kappa, 3) == 0.886 and round(mat.E / mat.G, 1) == 2.6
+    assert [round(100 * rot[0], 3), round(100 * rot[1], 2)] == [
+        quoted("rotor_builder", "0.077 %"),
+        quoted("rotor_builder", "0.69 %"),
+    ]
+    assert [round(euler[0] * (1 - rot[0]), 2), round(euler[2] * (1 - rot[1]), 1)] == [
+        101.48,
+        quoted("rotor_builder", "907.7"),
+    ]
+    assert round(s.kappa, 3) == quoted("rotor_builder", "0.886") and round(mat.E / mat.G, 1) == quoted(
+        "rotor_builder", "2.6"
+    )
     factor = 1 + mat.E / (s.kappa * mat.G)
-    assert round(factor, 3) == 3.933
-    assert [round(100 * rot[0] * factor, 2), round(100 * rot[1] * factor, 1)] == [0.30, 2.7]
-    assert [round(euler[0] * (1 - rot[0] * factor), 2), round(euler[2] * (1 - rot[1] * factor), 1)] == [101.25, 889.1]
+    assert round(factor, 3) == quoted("rotor_builder", "3.933")
+    assert [round(100 * rot[0] * factor, 2), round(100 * rot[1] * factor, 1)] == [
+        quoted("rotor_builder", "0.30 %"),
+        quoted("rotor_builder", "2.7 %"),
+    ]
+    assert [round(euler[0] * (1 - rot[0] * factor), 2), round(euler[2] * (1 - rot[1] * factor), 1)] == [
+        101.25,
+        quoted("rotor_builder", "889.1"),
+    ]
 
     def phi(span: float) -> float:
         return 12 * ei / (s.kappa * mat.G * s.area * span**2)
 
-    assert round(length / 12 * 1e3, 1) == 83.3 and round(phi(length / 12), 3) == 0.792
-    assert round(phi(length), 4) == 0.0055 and phi(length / 3) == pytest.approx(9 * phi(length))
+    assert round(length / 12 * 1e3, 1) == quoted("rotor_builder", "83.3") and round(phi(length / 12), 3) == quoted(
+        "rotor_builder", "0.792"
+    )
+    assert round(phi(length), 4) == quoted("rotor_builder", "0.0055") and phi(length / 3) == pytest.approx(
+        9 * phi(length)
+    )
 
     # Timoshenko's exact pinned frequencies (the 2 × 2 determinant), and the mesh converging on them.
     def exact(n: int) -> float:
@@ -4864,7 +4888,7 @@ def test_rotor_builder_worked_example():
         c = kg * k * k * ei * k * k
         return math.sqrt((-b - math.sqrt(b * b - 4 * a * c)) / (2 * a)) / (2 * math.pi)
 
-    assert (round(exact(1), 2), round(exact(3), 1)) == (101.25, 890.3)
+    assert (round(exact(1), 2), round(exact(3), 1)) == (101.25, quoted("rotor_builder", "890.3"))
     thirds = []
     for n in (1, 2, 3, 6):
         mesh = rb.pinned_ends(rb.Rotor(rb.uniform(1.0, 0.05, 4, n)))
@@ -4873,8 +4897,13 @@ def test_rotor_builder_worked_example():
         assert f[4] > exact(3) and f[0] > exact(1) - 1e-6
         if n == 1:
             assert abs(f[0] - exact(1)) < 0.045
-    assert thirds == [912.7, 893.2, 891.3, 890.5]
-    assert round(100 * (hz[4] / exact(3) - 1), 2) == 0.12
+    assert thirds == [
+        quoted("rotor_builder", "912.7"),
+        quoted("rotor_builder", "893.2"),
+        891.3,
+        quoted("rotor_builder", "890.5"),
+    ]
+    assert round(100 * (hz[4] / exact(3) - 1), 2) == quoted("rotor_builder", "0.12 %")
 
 
 def test_diagnostics_worked_example():
@@ -4882,61 +4911,100 @@ def test_diagnostics_worked_example():
     from vib_tutorial.core import diagnostics as dg
 
     m = dg.Machine()
-    assert (m.speed, m.teeth, round(m.mesh_hz, 2)) == (29.95, 27, 808.65)
-    assert (round(2 * m.mesh_hz, 1), round(3 * m.mesh_hz, 2)) == (1617.3, 2425.95)
-    assert (dg.FS, dg.DURATION, dg.FS / dg.BLOCK) == (20480.0, 4.0, 2.5)
+    assert (m.speed, m.teeth, round(m.mesh_hz, 2)) == (quoted("diagnostics", "29.95"), 27, 808.65)
+    assert (round(2 * m.mesh_hz, 1), round(3 * m.mesh_hz, 2)) == (
+        quoted("diagnostics", "1617.3"),
+        quoted("diagnostics", "2425.95"),
+    )
+    assert (dg.FS, dg.DURATION, dg.FS / dg.BLOCK) == (20480.0, 4.0, quoted("diagnostics", "2.5"))
     rec = dg.record(m)
+    assert dg.SHAFT == (quoted("diagnostics", "0.3"), quoted("diagnostics", "0.1")) and dg.MESH_HARMONICS == (
+        1.0,
+        quoted("diagnostics", "0.4"),
+        0.15,
+    )  # the model's
+    assert m.noise == quoted("diagnostics", "0.2") and m.zeta == quoted("diagnostics", "0.05")
     sp = dg.amplitude_spectrum(rec.x, rec.fs)
     read = [round(dg.line_amplitude(sp.freqs, sp.amplitude, f), 3) for f in (m.speed, 2 * m.speed)]
     read += [round(dg.line_amplitude(sp.freqs, sp.amplitude, h * m.mesh_hz), 3) for h in (1, 2, 3)]
-    assert read == [0.301, 0.102, 1.001, 0.399, 0.149]
-    assert round(dg.kurtosis(rec.x), 2) == 2.40
+    assert read == [
+        quoted("diagnostics", "0.301"),
+        quoted("diagnostics", "0.102"),
+        quoted("diagnostics", "1.001"),
+        quoted("diagnostics", "0.399"),
+        quoted("diagnostics", "0.149"),
+    ]
+    assert round(dg.kurtosis(rec.x), 2) == quoted("diagnostics", "2.4")
     # The 6205's frequencies, from rolling without slip.
     b = m.bearing
     rb = b.ball / b.pitch
-    assert (b.balls, b.ball, b.pitch, b.contact_deg, round(rb, 4)) == (9, 7.94e-3, 39.04e-3, 0.0, 0.2034)
+    assert (b.balls, b.contact_deg, round(rb, 4)) == (9, 0.0, quoted("diagnostics", "0.2034"))
+    assert (b.ball * 1e3, b.pitch * 1e3) == pytest.approx(
+        (quoted("diagnostics", "7.94"), quoted("diagnostics", "39.04"))
+    )
     f = b.frequencies(m.speed)
     assert (round(f["FTF"], 2), round(f["BPFO"], 1), round(f["BPFI"], 1), round(2 * f["BSF"], 1)) == (
-        11.93,
+        quoted("diagnostics", "11.93"),
         107.4,
         162.2,
         141.2,
     )
-    assert (round(f["BPFO"] / m.speed, 3), round(f["BPFI"] / m.speed, 3)) == (3.585, 5.415)
+    assert (round(f["BPFO"] / m.speed, 3), round(f["BPFI"] / m.speed, 3)) == (3.585, quoted("diagnostics", "5.415"))
     assert f["BPFO"] + f["BPFI"] == pytest.approx(b.balls * m.speed)
     # An eccentric pinion: sidebands (s ± β)/2 beside the unit mesh line.
     s, beta = m.gear_severity, 0.5 * m.gear_severity
-    assert (s, beta) == (0.3, 0.15) and (round((s + beta) / 2, 3), round((s - beta) / 2, 3)) == (0.225, 0.075)
+    assert (s, beta) == (quoted("diagnostics", "0.3"), 0.15) and (
+        round((s + beta) / 2, 3),
+        round((s - beta) / 2, 3),
+    ) == (quoted("diagnostics", "0.225"), quoted("diagnostics", "0.075"))
     e = dg.Machine(gear=dg.GearFault.ECCENTRIC)
     r2 = dg.record(e)
     s2 = dg.amplitude_spectrum(r2.x, r2.fs)
     lines = [round(dg.line_amplitude(s2.freqs, s2.amplitude, e.mesh_hz + k * e.speed), 3) for k in (-1, 0, 1)]
-    assert lines == [0.076, 0.995, 0.226]
+    assert lines == [quoted("diagnostics", "0.076"), quoted("diagnostics", "0.995"), quoted("diagnostics", "0.226")]
     # The envelope's band: the resonance's half-power band, and about 3ζ either side.
     assert (round(2 * m.zeta * m.resonance), round(3 * m.zeta * m.resonance)) == (300, 450)
     # Severity: each line's RMS velocity, the noise's over 10–1000 Hz, and the total.
     rms = [a / (2 * math.pi * fq) / math.sqrt(2) * 1e3 for a, fq in ((0.3, m.speed), (0.1, 2 * m.speed))]
     rms += [a / (2 * math.pi * h * m.mesh_hz) / math.sqrt(2) * 1e3 for h, a in zip((1, 2, 3), dg.MESH_HARMONICS)]
-    assert round(0.3 / (2 * math.pi * m.speed) * 1e3, 3) == 1.594
-    assert [round(v, 3) for v in rms] == [1.127, 0.188, 0.139, 0.028, 0.007]
+    assert round(0.3 / (2 * math.pi * m.speed) * 1e3, 3) == quoted("diagnostics", "1.594")
+    assert [round(v, 3) for v in rms] == [
+        quoted("diagnostics", "1.127"),
+        quoted("diagnostics", "0.188"),
+        quoted("diagnostics", "0.139"),
+        quoted("diagnostics", "0.028"),
+        quoted("diagnostics", "0.007"),
+    ]
     noise = math.sqrt(m.noise**2 / (dg.FS / 2) / (4 * math.pi**2) * (1 / 10 - 1 / 1000)) * 1e3
-    assert round(noise, 3) == 0.099
-    assert round(math.sqrt(sum(v * v for v in rms) + noise**2), 2) == 1.16
-    assert 1.16 < 1.4 and round(0.25 * 2.8, 1) == 0.7  # zone A; a significant change
+    assert round(noise, 3) == quoted("diagnostics", "0.099")
+    assert round(math.sqrt(sum(v * v for v in rms) + noise**2), 2) == quoted("diagnostics", "1.16")
+    assert 1.16 < quoted("diagnostics", "1.4")  # zone A (ISO 20816-3's A/B boundary on a rigid support)
+    assert round(0.25 * quoted("diagnostics", "2.8"), 1) == quoted("diagnostics", "0.7")  # a significant change
+    t = np.linspace(0, 1, 100_000, endpoint=False)
+    assert dg.kurtosis(np.sin(2 * math.pi * 50 * t)) == pytest.approx(
+        quoted("diagnostics", "1.5"), abs=1e-3
+    )  # a sine's
     # Time-synchronous averaging over the record's whole revolutions.
     revs = int(dg.DURATION * m.speed)
-    assert (revs, round(math.sqrt(revs), 1), round(m.noise / math.sqrt(revs), 3)) == (119, 10.9, 0.018)
+    assert (revs, round(math.sqrt(revs), 1), round(m.noise / math.sqrt(revs), 3)) == (
+        119,
+        quoted("diagnostics", "10.9"),
+        quoted("diagnostics", "0.018"),
+    )
     # The run-up: Q, the half-power band, and how many of the mode's cycles the 1X spends crossing it.
     run = dg.RunUp()
     assert (run.mode, run.zeta, round(1 / (2 * run.zeta), 1), round(2 * run.zeta * run.mode, 1)) == (
         40.0,
-        0.03,
-        16.7,
-        2.4,
+        quoted("diagnostics", "0.03"),
+        quoted("diagnostics", "16.7"),
+        quoted("diagnostics", "2.4"),
     )
-    for seconds, crossing, cycles in ((20.0, 0.8, 32.0), (4.0, 0.16, 6.4)):
+    for seconds, crossing, cycles in ((20.0, quoted("diagnostics", "0.8"), 32.0), (4.0, 0.16, 6.4)):
         rate = (run.end - run.start) / seconds
-        assert (round(2.4 / rate, 2), round(2.4 / rate * run.mode, 1)) == (crossing, cycles)
+        assert (
+            round(quoted("diagnostics", "2.4") / rate, 2),
+            round(quoted("diagnostics", "2.4") / rate * run.mode, 1),
+        ) == (crossing, cycles)
     assert (dg.PER_REV // 2, dg.REVS) == (16, 8)
 
 

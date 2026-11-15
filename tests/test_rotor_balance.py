@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 from vib_tutorial.core.rotor import STEEL, XD, YD, Bearing, PlaneWeight, RotorSystem
 from vib_tutorial.core.rotor_balance import (
@@ -96,7 +97,10 @@ def test_theory_slow_roll_taken_too_fast():
         w = correction(v0, influence(v0, v1, TRIAL), reading(s, slow_rpm, DISC))
         v = reading(s.with_(weights=(w,)), 1584.0, DISC)
         out[slow_rpm] = (round(abs(w) / 0.02 * 1e3, 2), round(abs(v) * 1e6, 1), round(abs(v - runout) * 1e6, 1))
-    assert out == {100.0: (1.41, 19.5, 0.9), 300.0: (1.37, 16.6, 8.6)}
+    assert out == {
+        100.0: (quoted("rotor_notes", "1.41"), quoted("rotor_notes", "19.5"), quoted("rotor_notes", "0.9")),
+        300.0: (quoted("rotor_notes", "1.37"), quoted("rotor_notes", "16.6"), quoted("rotor_notes", "8.6")),
+    }
 
 
 def test_theory_off_centre_bow_leaves_only_a_skew():
@@ -130,7 +134,7 @@ def test_theory_asymmetric_shaft_needs_two_trials():
 
     one = correction(v0, influence(v0, v1, TRIAL), slow)
     mass, angle = weight_parts(one, 0.02)
-    assert (round(mass * 1e3, 2), round(math.degrees(angle))) == (1.18, 237)
+    assert (round(mass * 1e3, 2), round(math.degrees(angle))) == (quoted("rotor_notes", "1.18"), 237)
     assert abs(reading(s.with_(weights=(one,)), 1200.0, DISC)) == pytest.approx(9.3e-6, abs=0.1e-6)
     assert (round(peak(s) * 1e6), round(peak(s.with_(weights=(one,))) * 1e6)) == (201, 283)
 
@@ -145,7 +149,7 @@ def test_theory_asymmetric_shaft_needs_two_trials():
     two = (minus * np.conj(r) - np.conj(plus) * r) / (abs(plus) ** 2 - abs(minus) ** 2)
     mass, angle = weight_parts(two, 0.02)
     assert (round(mass * 1e3, 2), round(math.degrees(angle))) == (1.00, 225)
-    assert round(peak(s.with_(weights=(two,))) * 1e6, 1) == 0.7
+    assert round(peak(s.with_(weights=(two,))) * 1e6, 1) == quoted("rotor_notes", "0.7")
     # A trial in line with the heavy spot happens to work on its own.
     in_line = weight(0.5e-3, 0.02, math.radians(45.0))
     w = correction(v0, influence(v0, reading(s.with_(weights=(in_line,)), 1200.0, DISC), in_line))
@@ -262,8 +266,8 @@ def test_two_planes_on_the_disc_balance_it_at_every_speed():
     found = np.abs(readings(s, grid, [(DISC, "x")]))[:, 0]
     assert round(found.max() * 1e6) == 72 and grid[found.argmax()] == pytest.approx(1752.5)
     fixed, w, alpha = balance_two(s, 1200.0, faces(s, 0.04))
-    assert [grams(x) for x in w] == [(7.32, 180), (6.32, 0)]
-    assert round(np.linalg.cond(alpha), 1) == 27.6
+    assert [grams(x) for x in w] == [(quoted("rotor_notes", "7.32"), 180), (quoted("rotor_notes", "6.32"), 0)]
+    assert round(np.linalg.cond(alpha), 1) == quoted("rotor_notes", "27.6")
     assert abs(fixed.mass_unbalance) < 1e-9 * abs(s.mass_unbalance)
     assert abs(fixed.couple_unbalance) < 1e-9 * abs(s.couple_unbalance)
     assert np.abs(readings(fixed, grid, [(DISC, "x"), *PROBES])).max() < 1e-9 * found.max()
@@ -278,15 +282,21 @@ def test_two_planes_on_the_shaft_balance_only_at_the_balancing_speed():
         return abs(readings(system, rpm, [(DISC, "x")])[0, 0]) * 1e6
 
     near, w, _ = balance_two(s, 1200.0, (PlaneWeight(0.1, 0j), PlaneWeight(0.2, 0j)))
-    assert [grams(x) for x in w] == [(3.23, 180), (2.22, 0)]
-    assert [grams(x) for x in balance_two(s, 1200.0, faces(s, 0.1))[1]] == [(3.23, 180), (2.23, 0)]
+    assert [grams(x) for x in w] == [(quoted("rotor_notes", "3.23"), 180), (quoted("rotor_notes", "2.22"), 0)]
+    assert [grams(x) for x in balance_two(s, 1200.0, faces(s, 0.1))[1]] == [
+        (quoted("rotor_notes", "3.23"), 180),
+        (quoted("rotor_notes", "2.23"), 0),
+    ]
     assert np.abs(readings(near, 1200.0)).max() < 1e-12
-    assert round(disc(near, crit), 1) == 2.7 and round(disc(near, 6000.0), 1) == 1.2
+    assert round(disc(near, crit), 1) == quoted("rotor_notes", "2.7") and round(disc(near, 6000.0), 1) == 1.2
     far, w, alpha = balance_two(s, 1200.0, (PlaneWeight(0.02, 0j), PlaneWeight(0.48, 0j)))
-    assert [grams(x) for x in w] == [(1.25, 180), (0.33, 0)] and round(np.linalg.cond(alpha), 1) == 1.5
+    assert [grams(x) for x in w] == [
+        (quoted("rotor_notes", "1.25"), 180),
+        (quoted("rotor_notes", "0.33"), 0),
+    ] and round(np.linalg.cond(alpha), 1) == quoted("rotor_notes", "1.5")
     assert np.abs(readings(far, 1200.0)).max() < 1e-12
-    assert round(disc(far, crit), 1) == 12.8
-    assert round(disc(s, 6000.0), 1) == 13.6
+    assert round(disc(far, crit), 1) == quoted("rotor_notes", "12.8")
+    assert round(disc(s, 6000.0), 1) == quoted("rotor_notes", "13.6")
 
 
 def test_planes_close_together_amplify_errors_in_the_readings():

@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 from vib_tutorial.core import rotor
 from vib_tutorial.core.fluid_bearing import JournalBearing
@@ -136,10 +137,12 @@ def test_journal_bearing_preset():
     forward = [round(w * RPM) for w, r, z in c.criticals if z < 0.3 and r > 0]
     assert forward == [1845]
     onset = stability_onset(p.system, p.top_rpm / RPM)
-    assert round(onset.omega * RPM) == 3576 and round(onset.freq_hz, 1) == 30.5
+    assert round(onset.omega * RPM) == 3576 and round(onset.freq_hz, 1) == quoted("rotor_notes", "30.5")
     assert least_damped(p.system, p.target_rpm / RPM)[0] > 0  # it starts out stable
     zeta, f, _ = least_damped(p.system, 5000.0 / RPM)
-    assert f == pytest.approx(30.7, abs=0.05) and 1 / (-zeta * 2 * math.pi * f) == pytest.approx(0.85, abs=0.01)
+    assert f == pytest.approx(quoted("rotor_notes", "30.7"), abs=0.05) and 1 / (
+        -zeta * 2 * math.pi * f
+    ) == pytest.approx(quoted("rotor_notes", "0.85"), abs=0.01)
     q = p.system.static_deflection(2500.0 / RPM)
     assert q[XA] * 1e6 == pytest.approx(3.98, abs=0.005) and q[YA] * 1e6 == pytest.approx(-1.50, abs=0.005)
     assert q[YD] < q[YA]  # the disc sags below the journals
@@ -150,7 +153,7 @@ def test_journal_bearing_preset_splits_its_critical():
     p = next(p for p in rotor_presets() if p.name == "Journal bearings (oil whip)")
     c = campbell(p.system, p.top_rpm / RPM)
     lightly = sorted((round(w * RPM), r > 0, round(z, 3)) for w, r, z in c.criticals if z < 0.3)
-    assert lightly == [(1845, True, 0.007), (1853, False, 0.002)]
+    assert lightly == [(1845, True, quoted("rotor_notes", "0.007")), (1853, False, quoted("rotor_notes", "0.002"))]
     # The linear response ignores the clearance: the journals' orbits peak at about 28 µm, beyond 15 µm.
     rpm = np.arange(1800.0, 1900.0, 0.25)
     q = synchronous_response(p.system, rpm / RPM)
@@ -168,11 +171,14 @@ def test_heavier_loaded_films_whirl_later():
     # The Theory's Things to try: a looser bearing with thinner oil sinks lower and holds off oil whip.
     loose = Bearing(film=JournalBearing(clearance=30e-6, viscosity=0.01))
     s = ON_FILMS.with_(bearing_a=loose, bearing_b=loose)
-    assert round(ON_FILMS.bearing_states(3000.0 / RPM)[0].eccentricity, 2) == 0.25
-    assert round(s.bearing_states(3000.0 / RPM)[0].eccentricity, 2) == 0.71
+    assert round(ON_FILMS.bearing_states(3000.0 / RPM)[0].eccentricity, 2) == quoted("rotor_notes", "0.25")
+    assert round(s.bearing_states(3000.0 / RPM)[0].eccentricity, 2) == quoted("rotor_notes", "0.71")
     assert round(stability_onset(s, 10_000.0 / RPM).omega * RPM) == 4358
     q = ON_FILMS.static_deflection(0.0)
-    assert (round(q[XA] * 1e6, 1), round(q[YA] * 1e6, 1)) == (4.8, -12.6)
+    assert (round(q[XA] * 1e6, 1), round(q[YA] * 1e6, 1)) == (
+        quoted("rotor_notes", "4.8"),
+        -quoted("rotor_notes", "12.6"),
+    )
 
 
 def test_film_terms_are_cached_per_speed():
