@@ -241,7 +241,7 @@ def test_editing():
 
 # ------------------------------------------------------------------ the trials' numbers
 def test_trials():
-    from vib_tutorial.gui.frame_builder import SQUARE, TRIALS
+    from vib_tutorial.gui.frame_builder_trials import SQUARE, TRIALS
 
     by = {t.name: t for t in TRIALS}
     m = modes(by["A cantilever in four beams"].frame)
