@@ -34,9 +34,10 @@ and the pivot that swings fastest), a disc on a torsion wire, and an inverted pe
 spring, each linearized into the single oscillator's formula with J for m and the moment's stiffness for
 k. Kept whole, sin θ softens the hanging pendulum: the exact period by quadrature beside Duffing's
 estimate, the phase plane's orbits out to the separatrix, and an inverted pendulum that leans over and
-buckles once gravity's negative stiffness beats the spring.
+buckles once gravity's negative stiffness beats the spring. The pendulum itself swings above the plots
+beside the linearized swing's ghost; turn it and let go to start it from there.
 
-![Pendulums page, large swings: a 1 m pendulum (T₀ = 2.006 s) let go from 90° swings with a period of 2.368 s, 18 % longer (Duffing's estimate +20.2 %), and the linearized swing drifts ahead of it](images/pendulums.png)
+![Pendulums page, large swings: a 1 m pendulum (T₀ = 2.006 s) let go from 90°, drawn 0.7 s in beside the linearized swing's ghost, swings with a period of 2.368 s, 18 % longer (Duffing's estimate +20.2 %), and the linearized swing drifts ahead of it](images/pendulums.png)
 
 ## Transient response
 

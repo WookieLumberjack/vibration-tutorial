@@ -1021,7 +1021,7 @@ def signals_spectra():
 
 
 def pendulums():
-    lesson("pendulum_page", 1, "pendulums")  # large swings are slower
+    lesson("pendulum_page", 1, "pendulums", at=0.7)  # large swings are slower, the pendulum 0.7 s in
 
 
 def periodic_forcing():

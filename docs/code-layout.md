@@ -175,7 +175,8 @@
   only as many ticks as fit. What the reader drags on a plot is `gui/drag.py`'s: a `DragLine` (a value,
   with a grip) or a `DragDot` (a point sliding along a curve), each a signal the page binds to its box.
   A closed-form response is played back in time by `gui/playback.py`'s `Playback` (Start, Reset, a
-  speed, and a time cursor on its plots), which moves the page's body: the Single oscillator's mass.
+  speed, and a time cursor on its plots), which moves the page's body: the Single oscillator's mass, and
+  Pendulums' pendulum (`gui/pendulum_view.py`, each kind drawn and turned with the mouse).
 - `view_models/`: what a page shows, worked out without Qt (its curves, markers, ranges and readout
   texts, from its settings), so its readouts are tested as printed and its plots could be drawn
   elsewhere; the page's widget only binds them. Vibration isolation and Duffing & Mathieu have one

@@ -1,7 +1,9 @@
 """Pendulums page: oscillators whose stiffness is gravity, and the rotational form of every one-mass formula.
 
 Left: the pendulum (simple, a rod on a pivot, a disc on a wire, or inverted on a spring), its size, the spring,
-gravity and damping, and the angle it is let go from. Centre: the swing, whole and linearized, and the restoring
+gravity and damping, and the angle it is let go from. Centre: the pendulum itself, swinging with the whole
+swing beside the linearized one's ghost (pluck it to let it go from another angle; a `Playback` walks the
+time, with a cursor on the swing), then the swing, whole and linearized, and the restoring
 moment against the angle. Right: the period against the amplitude (exact, Duffing's approximation and linear), the
 phase plane's energy curves, the rod's period against where it is pivoted, and the Theory. The page has its own
 model (core/pendulum.py).
@@ -33,6 +35,7 @@ from ..core.pendulum import (
 from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
 from . import pendulum_figures, settle_plots
 from .lesson import (
+    Dot,
     Form,
     TrialBox,
     column,
@@ -51,6 +54,8 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .pendulum_view import PendulumView
+from .playback import Playback
 from .style import colors
 from .theming import add_legend
 
@@ -412,7 +417,16 @@ class PendulumPage(QtWidgets.QWidget):
             self._on_inputs,
         )
 
-        # --- centre
+        # --- centre: the pendulum itself, swinging, and the time walked along the swing
+        self.side = 1.0  # +1 let go to the right, -1 to the left (a pluck): the swing is mirrored
+        self._swing = (np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1))  # t, θ, θ̇, θ linearized, as drawn
+        self.view = PendulumView()
+        self.view.setFixedHeight(200)
+        self.view.grabbed.connect(self._on_grabbed)
+        self.view.turned.connect(self._on_turned)
+        self.view.released.connect(self._on_let_go)
+        self.playback = Playback(self, "Pendulums", speed=1.0)
+        self.playback.moved.connect(self._place)
         self.swing_plot = plot("Angle θ", None, "Time", "s", height=150)
         self.swing_plot.setToolTip(SWING_TIP)
         add_legend(self.swing_plot.getPlotItem(), offset=(-10, 10))
@@ -427,6 +441,9 @@ class PendulumPage(QtWidgets.QWidget):
         self.range_lines = [pg.InfiniteLine(angle=90), pg.InfiniteLine(angle=90)]
         for item in (*self.range_lines, self.tangent_item, self.moment_item):
             self.moment_plot.addItem(item)
+        self.swing_cursor = self.playback.add_cursor(self.swing_plot)
+        self.moment_now = Dot(10)  # where the pendulum is on the moment curve
+        self.moment_plot.addItem(self.moment_now, ignoreBounds=True)
         self.readout = readout_label()
 
         # --- right
@@ -449,6 +466,8 @@ class PendulumPage(QtWidgets.QWidget):
         self.start_dot = marker(10)
         for item in (self.separatrix, self.trace_item, self.start_dot):
             self.phase_plot.addItem(item)
+        self.phase_now = Dot(10)
+        self.phase_plot.addItem(self.phase_now, ignoreBounds=True)
         self.phase_note = note_label()
 
         self.pivot_plot = plot("Period", "s", "Pivot from the centre", "m", height=200)
@@ -473,7 +492,13 @@ class PendulumPage(QtWidgets.QWidget):
         three_panes(
             self,
             column(self.trials, body, release),
-            stack((self.swing_plot, 3), (self.moment_plot, 2), (self.readout, 0)),
+            stack(
+                (self.view, 0),
+                (self.playback.bar(), 0),
+                (self.swing_plot, 3),
+                (self.moment_plot, 2),
+                (self.readout, 0),
+            ),
             self.tabs,
         )
         self._on_inputs()
@@ -515,9 +540,11 @@ class PendulumPage(QtWidgets.QWidget):
             (self.angle, t.angle),
         ):
             set_quietly(box, value)
+        self.side = 1.0
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self._on_inputs()
+        self.playback.play()  # a trial starts the motion
 
     def _on_inputs(self) -> None:
         kind = KINDS[self.kind.currentIndex()]
@@ -534,6 +561,7 @@ class PendulumPage(QtWidgets.QWidget):
             self.gravity.value(),
         )
         p = self.pendulum
+        self.view.set_pendulum(p, self.theta0)
         if p.stable:
             extra = f", L<sub>eq</sub> = {fmt(p.equivalent_length, 'm')}" if kind in (Kind.SIMPLE, Kind.ROD) else ""
             self.info.setText(
@@ -572,12 +600,48 @@ class PendulumPage(QtWidgets.QWidget):
         mark(self.pivot_best, c.grey, filled=True)
         mark(self.pivot_now, c.strong, filled=True)
         mark(self.pivot_twin, c.force)
+        for dot in (self.moment_now, self.phase_now):
+            dot.setPen(pg.mkPen(c.background, width=1.5))
+            dot.setBrush(pg.mkBrush(c.mass[0]))
+        self.view.apply_theme()
+        self.playback.apply_theme()
         self.redraw()
 
     def redraw(self) -> None:
         self._draw_swing()
         self._draw_tab()
+        self.playback.set_span(self._duration())  # places the pendulum
         settle_plots(self)
+
+    # ------------------------------------------------------------- the pendulum itself
+    def angle_at(self, t: float) -> tuple[float, float, float]:
+        """θ, θ̇ and the linearized θ (rad) at time t, from the swing as drawn (NaN where it ran away)."""
+        ts, th, dth, tl = self._swing
+        return float(np.interp(t, ts, th)), float(np.interp(t, ts, dth)), float(np.interp(t, ts, tl))
+
+    def _place(self, t: float) -> None:
+        if self.view.held:  # the reader's hand has it
+            return
+        th, dth, tl = self.angle_at(t)
+        if not math.isfinite(th):
+            return
+        ghost = tl if math.isfinite(tl) and abs(tl) < 4 * math.pi else None
+        self.view.set_angle(th, ghost)
+        self.moment_now.setData([math.degrees(th)], [float(self.pendulum.moment(th))])
+        if math.isfinite(dth):
+            self.phase_now.setData([math.degrees(th)], [math.degrees(dth)])
+
+    def _on_grabbed(self) -> None:
+        self.playback.pause()
+
+    def _on_turned(self, theta: float) -> None:
+        """Held at θ: the start box follows (the swing is worked out when it's let go)."""
+        self.side = -1.0 if theta < 0 else 1.0
+        set_quietly(self.angle, min(max(abs(math.degrees(theta)), 0.1), 179.0))
+
+    def _on_let_go(self) -> None:
+        self._on_inputs()
+        self.playback.play()
 
     @property
     def theta0(self) -> float:
@@ -593,6 +657,8 @@ class PendulumPage(QtWidgets.QWidget):
         p, a = self.pendulum, self.theta0
         duration = self._duration()
         t, th, tl = swing(p, a, duration, 2400)
+        th, tl = self.side * th, self.side * tl  # let go to the left: the mirror image
+        self._swing = (t, th, np.gradient(th, t), tl)
         lim = 4 * math.pi
         self.whole_item.setData(t, np.degrees(np.clip(th, -lim, lim)))
         self.linear_item.setData(t, np.degrees(np.clip(tl, -lim, lim)))
@@ -712,10 +778,11 @@ class PendulumPage(QtWidgets.QWidget):
         else:
             self.separatrix.setData([], [])
         t, th, _ = swing(p, a, self._duration(), 3000)
+        th = self.side * th
         dth = np.gradient(th, t)
         keep = np.isfinite(th) & (np.abs(th) < 2 * reach)
         self.trace_item.setData(np.degrees(th[keep]), np.degrees(dth[keep]))
-        self.start_dot.setData([math.degrees(a)], [0.0])
+        self.start_dot.setData([self.side * math.degrees(a)], [0.0])
         self.phase_plot.setXRange(-math.degrees(reach), math.degrees(reach), padding=0.02)
         self.phase_plot.setLabel("bottom", "θ (°)")
         self.phase_plot.setLabel("left", "θ̇ (°/s)")
