@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 from vib_tutorial.core.fluid_bearing import (
     GRAVITY,
@@ -117,22 +118,31 @@ def test_theory_numbers():
     # The numbers quoted in the rotor page's Theory, for the tab's default bearing.
     b = JournalBearing()
     eps = {rpm: b.state(rpm / RPM).eccentricity for rpm in (100, 1000, 3000)}
-    assert [round(eps[r], 2) for r in (100, 1000, 3000)] == [0.80, 0.44, 0.22]
+    assert [round(eps[r], 2) for r in (100, 1000, 3000)] == [
+        quoted("rotor_notes", "0.80"),
+        quoted("rotor_notes", "0.44"),
+        quoted("rotor_notes", "0.22"),
+    ]
     s = b.state(3000 / RPM)
-    assert b.clearance * (1 - s.eccentricity) * 1e6 == pytest.approx(11.7, abs=0.05)
-    assert s.k[0, 1] / 1e6 == pytest.approx(1.36, abs=0.005) and s.k[1, 0] / 1e6 == pytest.approx(-1.81, abs=0.005)
-    assert b.load / GRAVITY == pytest.approx(0.51, abs=0.005)
+    assert b.clearance * (1 - s.eccentricity) * 1e6 == pytest.approx(quoted("rotor_notes", "11.7"), abs=0.05)
+    assert s.k[0, 1] / 1e6 == pytest.approx(quoted("rotor_notes", "1.36"), abs=0.005)
+    assert s.k[1, 0] / 1e6 == pytest.approx(-quoted("rotor_notes", "1.81"), abs=0.005)
+    assert b.load / GRAVITY == pytest.approx(quoted("rotor_notes", "0.51"), abs=0.005)
     omega = b.threshold(60_000 / RPM)
     assert round(omega * RPM) == 21_324
     t = b.state(omega)
-    assert math.sqrt(rigid_threshold(t.k, t.c)[1]) / omega == pytest.approx(0.50, abs=0.005)
+    assert math.sqrt(rigid_threshold(t.k, t.c)[1]) / omega == pytest.approx(quoted("rotor_notes", "0.50"), abs=0.005)
     # The search: the heaviest rotor the film holds, K_eq/ω_w², falls fast as the speed rises.
-    for rpm, eps, ratio, mass in ((1000, 0.44, 0.52, 195.0), (5000, 0.14, 0.51, 9.0)):
+    for rpm, eps, ratio, mass in (
+        (1000, 0.44, quoted("rotor_notes", "0.52"), 195.0),
+        (5000, quoted("rotor_notes", "0.14"), 0.51, quoted("rotor_notes", "9.0")),
+    ):
         s = b.state(rpm / RPM)
         k_eq, w2 = rigid_threshold(s.k, s.c)
         assert (round(s.eccentricity, 2), round(math.sqrt(w2) / s.omega, 2)) == (eps, ratio)
         assert round(k_eq / w2, 1 if mass < 100 else 0) == mass
-    assert nu2(0.7555) > 0.0 > nu2(0.7565)
+    limit = quoted("rotor_notes", "0.756")  # past it a rigid rotor is stable at any speed
+    assert nu2(limit - 0.0005) > 0.0 > nu2(limit + 0.0005)
 
 
 def test_short_bearing_depends_on_s_times_l_over_d_squared():
@@ -147,8 +157,8 @@ def test_short_bearing_depends_on_s_times_l_over_d_squared():
     for x, y in zip(dimensionless(wide, a), dimensionless(narrow, b)):
         np.testing.assert_allclose(x, y, rtol=1e-9)
     # At the same S = 1, halving L moves ε from 0.32 to 0.60 (the Theory).
-    assert round(wide.state(wide.omega_at(1.0)).eccentricity, 2) == 0.32
-    assert round(narrow.state(narrow.omega_at(1.0)).eccentricity, 2) == 0.60
+    assert round(wide.state(wide.omega_at(1.0)).eccentricity, 2) == quoted("rotor_notes", "0.32")
+    assert round(narrow.state(narrow.omega_at(1.0)).eccentricity, 2) == quoted("rotor_notes", "0.60")
 
 
 def test_lunds_whirl_ratio_depends_on_the_eccentricity_alone():

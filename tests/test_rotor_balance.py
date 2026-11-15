@@ -27,6 +27,10 @@ TRIAL = weight(0.5e-3, 0.02, 0.0)
 SKEWED = RotorSystem(position=0.3, skew=math.radians(0.5))  # the theory notes' example
 
 
+def test_the_notes_skewed_rotor():
+    assert SKEWED.position == quoted("rotor_notes", "0.3")  # a/L
+
+
 def reading(system: RotorSystem, rpm: float, station: int = BEARING_A, direction: str = "x") -> complex:
     """The steady-state 1X reading of a probe."""
     return complex(probe(steady_vectors(system, np.array([rpm / RPM]))[0, station], direction))
@@ -101,6 +105,9 @@ def test_theory_slow_roll_taken_too_fast():
         100.0: (quoted("rotor_notes", "1.41"), quoted("rotor_notes", "19.5"), quoted("rotor_notes", "0.9")),
         300.0: (quoted("rotor_notes", "1.37"), quoted("rotor_notes", "16.6"), quoted("rotor_notes", "8.6")),
     }
+    # balanced on the raw reading instead: zero at 1200 rpm by leaving the rotor out of balance
+    v0, v1 = reading(s, 1200.0, DISC), reading(s.with_(weights=(TRIAL,)), 1200.0, DISC)
+    assert grams(correction(v0, influence(v0, v1, TRIAL))) == (quoted("rotor_notes", "1.95"), 243)
 
 
 def test_theory_off_centre_bow_leaves_only_a_skew():
@@ -115,7 +122,7 @@ def test_theory_off_centre_bow_leaves_only_a_skew():
         return max(abs(reading(fixed, r, DISC) - reading(fixed, 1.0, DISC)) for r in speeds)
 
     bowed = RotorSystem(position=0.3, bow=20e-6, bow_angle=math.radians(90.0))
-    assert 0.06e-6 < left(bowed) < 0.085e-6
+    assert round(left(bowed) * 1e6, 2) == quoted("rotor_notes", "0.08")
     assert left(bowed.with_(ip=1e-3, id=1e-3)) < 1e-3 * left(bowed)
     assert left(RotorSystem(bow=20e-6, bow_angle=math.radians(90.0))) < 0.15 * left(bowed)
 
@@ -148,7 +155,7 @@ def test_theory_asymmetric_shaft_needs_two_trials():
     r = v0 - slow
     two = (minus * np.conj(r) - np.conj(plus) * r) / (abs(plus) ** 2 - abs(minus) ** 2)
     mass, angle = weight_parts(two, 0.02)
-    assert (round(mass * 1e3, 2), round(math.degrees(angle))) == (1.00, 225)
+    assert (round(mass * 1e3, 2), round(math.degrees(angle))) == (quoted("rotor_notes", "1.00"), 225)
     assert round(peak(s.with_(weights=(two,))) * 1e6, 1) == quoted("rotor_notes", "0.7")
     # A trial in line with the heavy spot happens to work on its own.
     in_line = weight(0.5e-3, 0.02, math.radians(45.0))
@@ -161,6 +168,18 @@ def test_one_plane_cannot_cancel_a_couple_unbalance_at_every_speed():
     fixed = balance(s, 1200.0, weight(0.5e-3, 0.02, 0.0))
     assert abs(reading(fixed, 1200.0)) < 1e-12
     assert abs(reading(fixed, 3000.0)) > 0.1 * abs(reading(s, 3000.0))
+    # the notes' skewed disc, read at the disc and balanced at 1200 rpm: 72 µm at the critical falls only so far
+    v0, v1 = reading(SKEWED, 1200.0, DISC), reading(SKEWED.with_(weights=(TRIAL,)), 1200.0, DISC)
+    one = SKEWED.with_(weights=(correction(v0, influence(v0, v1, TRIAL)),))
+    assert round(abs(reading(one, 1752.5, DISC)) * 1e6, 1) == quoted("rotor_notes", "5.7")
+    assert round(abs(reading(one, 6000.0, DISC)) * 1e6) == 9
+
+
+def test_the_default_trial_weight_moves_the_reading_enough():
+    """The page's trial (0.5 g at 20 mm) changes the defaults' reading by the notes' 30 % or more."""
+    s = RotorSystem()
+    v0, v1 = reading(s, 1200.0, DISC), reading(s.with_(weights=(TRIAL,)), 1200.0, DISC)
+    assert abs(v1 - v0) / abs(v0) >= quoted("rotor_notes", "30 %") / 100
 
 
 def test_the_measurement_settles_to_the_steady_state():
@@ -288,7 +307,9 @@ def test_two_planes_on_the_shaft_balance_only_at_the_balancing_speed():
         (quoted("rotor_notes", "2.23"), 0),
     ]
     assert np.abs(readings(near, 1200.0)).max() < 1e-12
-    assert round(disc(near, crit), 1) == quoted("rotor_notes", "2.7") and round(disc(near, 6000.0), 1) == 1.2
+    assert round(disc(near, crit), 1) == quoted("rotor_notes", "2.7") and round(disc(near, 6000.0), 1) == quoted(
+        "rotor_notes", "1.2"
+    )
     far, w, alpha = balance_two(s, 1200.0, (PlaneWeight(0.02, 0j), PlaneWeight(0.48, 0j)))
     assert [grams(x) for x in w] == [
         (quoted("rotor_notes", "1.25"), 180),
@@ -304,7 +325,8 @@ def test_planes_close_together_amplify_errors_in_the_readings():
     rng = np.random.default_rng(0)
 
     def noisy(v: np.ndarray) -> np.ndarray:
-        return v * (1 + 0.01 * (rng.standard_normal(v.shape) + 1j * rng.standard_normal(v.shape)) / math.sqrt(2))
+        error = quoted("rotor_notes", "1 %") / 100  # in every reading
+        return v * (1 + error * (rng.standard_normal(v.shape) + 1j * rng.standard_normal(v.shape)) / math.sqrt(2))
 
     def left(apart: float) -> float:
         out = [

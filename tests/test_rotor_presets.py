@@ -42,6 +42,15 @@ def test_overhung_rotor():
     s = PRESETS["Overhung rotor"].system
     assert s.overhang == pytest.approx(0.1)
     assert round(whirl_modes(s, 0.0).freq_hz[0] * 60) == 870
+    assert whirl_modes(s, 0.0).freq_hz[0] == pytest.approx(quoted("rotor_notes", "14.5"), abs=0.05)
+    # spinning, the forward whirl stiffens and the backward one softens
+    for rpm, backward, forward in (
+        (1284, 8.6, quoted("rotor_notes", "21.4")),
+        (5000, quoted("rotor_notes", "3.1"), quoted("rotor_notes", "28.9")),
+    ):
+        m = whirl_modes(s, rpm / RPM)
+        assert m.freq_hz[:2] == pytest.approx([backward, forward], abs=0.05) and m.whirl[0] < 0 < m.whirl[1]
+    assert 1284 / 870 - 1 == pytest.approx(quoted("rotor_notes", "48 %") / 100, abs=0.005)
     assert criticals("Overhung rotor", forward=False)[0] == 664
     assert criticals("Overhung rotor", forward=True) == [1284]
     assert abs(s.mass_unbalance) / s.disc_mass == pytest.approx(20e-6)  # e = 20 µm, as the classic rotor's
@@ -65,6 +74,7 @@ def test_long_shaft_needs_its_mass():
     assert criticals("Long shaft, with its mass", forward=True) == [1589, 6582]
     massless = campbell(s.with_(density=0.0), 10_000.0 / RPM, n_modes=8).criticals
     assert [round(w * RPM) for w, r, z in massless if z < 0.3 and r > 0.1] == [2146]
+    assert 2146 / 1589 - 1 == pytest.approx(quoted("rotor_notes", "35 %") / 100, abs=0.005)
 
 
 def test_two_pole_rotor():

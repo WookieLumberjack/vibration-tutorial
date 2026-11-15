@@ -1,6 +1,7 @@
 """The rotor on active magnetic bearings: the actuator, the controller's states and the analyses that use them."""
 
 import math
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -177,3 +178,32 @@ def test_magnet_and_film_cannot_share_a_bearing():
     assert ON_MAGNETS.n_states == 2 * ON_MAGNETS.n_dof + 4 * MAGNET.n_states
     assert XA in (d for d, _ in ON_MAGNETS._axes) and XB in (d for d, _ in ON_MAGNETS._axes)
     assert XD not in (d for d, _ in ON_MAGNETS._axes)
+
+
+def test_the_notes_magnetic_bearing_figures():
+    """The default bearing's gains and damped band, and the Magnetic bearings preset's onset, as the notes quote them."""
+    from notes_quoting import quoted
+
+    from vib_tutorial.core.rotor_presets import rotor_presets
+    from vib_tutorial.core.rotor_stability import least_damped
+
+    m = MagneticBearing()
+    gains = (m.negative_stiffness / 1e3, m.current_gain, m.capacity)  # kN/m, N/A, N
+    assert [round(x, 1) for x in gains] == [quoted("rotor_notes", "20.1")] * 3
+    assert round((m.current_gain * m.kp - m.negative_stiffness) / 1e3, 1) == quoted("rotor_notes", "50.3")
+    assert round(m.current_gain * m.kd) == 101
+    lo, hi = m.damped_band()
+    assert (round(lo, 1), round(hi)) == (quoted("rotor_notes", "14.1"), 1297)
+    p = next(p for p in rotor_presets() if p.name == "Magnetic bearings")
+    onset = stability_onset(p.system, p.top_rpm / RPM)
+    rpm = onset.omega * RPM
+    assert (round(rpm), round(onset.freq_hz)) == (8894, 739)
+    assert round(onset.freq_hz * 60 / rpm, 2) == quoted("rotor_notes", "4.99")
+    zeta, f, _ = least_damped(p.system, 12_000.0 / RPM)
+    assert round(f) == 778 and round(1 / (-zeta * 2 * math.pi * f), 2) == quoted("rotor_notes", "0.41")
+    # Its trial: bearing B's share of the weight, held by the integral as current; ten times the integral gain.
+    load_b = p.system.bearing_loads[1]
+    assert round(load_b, 1) == quoted("rotor_notes", "12.3")
+    assert round(load_b / p.system.bearing_b.magnet.current_gain, 2) == quoted("rotor_notes", "0.61")
+    stiff_integral = replace(p.system.bearing_b.magnet, ki=10 * m.ki)
+    assert round(stiff_integral.damped_band()[0], 1) == quoted("rotor_notes", "49.7")

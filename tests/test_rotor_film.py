@@ -138,8 +138,10 @@ def test_journal_bearing_preset():
     assert forward == [1845]
     onset = stability_onset(p.system, p.top_rpm / RPM)
     assert round(onset.omega * RPM) == 3576 and round(onset.freq_hz, 1) == quoted("rotor_notes", "30.5")
+    assert round(onset.freq_hz * 60 / 3576, 2) == 0.51  # ×, a little below ½X
     assert least_damped(p.system, p.target_rpm / RPM)[0] > 0  # it starts out stable
     zeta, f, _ = least_damped(p.system, 5000.0 / RPM)
+    assert round(f * 60 / 5000, 2) == quoted("rotor_notes", "0.37")
     assert f == pytest.approx(quoted("rotor_notes", "30.7"), abs=0.05) and 1 / (
         -zeta * 2 * math.pi * f
     ) == pytest.approx(quoted("rotor_notes", "0.85"), abs=0.01)

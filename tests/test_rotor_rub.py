@@ -11,7 +11,7 @@ from notes_quoting import quoted
 
 from vib_tutorial.core.fluid_bearing import JournalBearing
 from vib_tutorial.core.rotor import XD, YD, Bearing, RotorSystem, Stator, stator_force
-from vib_tutorial.core.rotor_modes import _rotating_force
+from vib_tutorial.core.rotor_modes import _rotating_force, campbell
 from vib_tutorial.core.rotor_presets import rotor_presets
 from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
 
@@ -154,7 +154,8 @@ def test_partial_rub_preset_whirls_at_half_the_speed():
     assert 0.05 < np.mean(rub[last, 2] > 0) < 0.5  # a partial rub: in contact only now and then
     freqs, amps = full_spectrum(t[last], x[last], y[last])
     top = abs(freqs[np.argmax(amps)])
-    assert top == pytest.approx(0.5 * 4400.0 / 60.0, abs=0.4)  # 36.7 Hz
+    assert top == pytest.approx(0.5 * 4400.0 / 60.0, abs=0.4)
+    assert round(0.5 * 4400.0 / 60.0, 1) == quoted("rotor_notes", "36.7")  # ½X
     half = amps[np.abs(np.abs(freqs) - top) < 0.5].max()
     once = amps[np.abs(freqs - 4400.0 / 60.0) < 0.5].max()
     assert half > once
@@ -229,6 +230,8 @@ def test_thermal_bow_moves_with_the_heat():
 
 def test_newkirk_preset_spirals_out_below_the_critical_and_heals_above():
     p = PRESETS["Newkirk effect (thermal bow)"]
+    critical = min(w for w, r, _ in campbell(p.system, 3000.0 / RPM).criticals if r > 0) * RPM
+    assert round(p.target_rpm / critical, 2) == quoted("rotor_notes", "0.82")  # running below the critical
     sim = RotorSimulator(p.system)
     sim.target = p.target_rpm / RPM
     lags, sizes = [], []

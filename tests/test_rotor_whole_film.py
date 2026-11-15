@@ -104,7 +104,9 @@ def test_oil_whirl_settles_to_a_limit_cycle():
     e1, e2 = eccentricity(q[late]).max(), eccentricity(q[later]).max()
     assert 0.9 < e1 < e2 < 0.97
     disc = [np.hypot(q[m, XD], q[m, YD]).max() for m in (late, later)]
-    assert disc[1] == pytest.approx(disc[0], rel=0.03) and disc[1] == pytest.approx(0.16e-3, abs=0.005e-3)
+    assert disc[1] == pytest.approx(disc[0], rel=0.03) and disc[1] * 1e3 == pytest.approx(
+        quoted("rotor_notes", "0.16"), abs=0.005
+    )
 
 
 def test_oil_whip_grows_with_the_journals_inside_their_clearance():
@@ -149,7 +151,7 @@ def test_whole_films_hold_the_journals_through_the_critical():
     # The Theory: run up through the critical at 500 rpm/s from the 1X steady state at 1200 rpm, the
     # linearized films carry the journals within 1% of the wall, the whole ones to ε = 0.63. The disc's
     # peak is much the same.
-    for whole, eps in ((False, 0.99), (True, 0.63)):
+    for whole, eps in ((False, quoted("rotor_notes", "0.99")), (True, quoted("rotor_notes", "0.63"))):
         s = WHIP.system.with_(nonlinear_films=whole)
         w0 = 1200.0 / RPM
         Q = synchronous_response(s, [w0])[0]
@@ -165,4 +167,4 @@ def test_whole_films_hold_the_journals_through_the_critical():
         q, w = np.concatenate([r.q for r in out]), np.concatenate([r.omega for r in out])
         vib = q - s.static_deflection(w)
         assert round(eccentricity(q).max(), 2) == eps
-        assert np.hypot(vib[:, XD], vib[:, YD]).max() == pytest.approx(0.66e-3, abs=0.01e-3)
+        assert np.hypot(vib[:, XD], vib[:, YD]).max() * 1e3 == pytest.approx(quoted("rotor_notes", "0.66"), abs=0.01)
