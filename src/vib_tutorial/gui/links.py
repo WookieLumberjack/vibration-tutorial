@@ -157,6 +157,11 @@ COURSE = (
                 "free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum",
             ),
             (
+                "rigid_body_page",
+                "3D rigid body",
+                "a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip",
+            ),
+            (
                 "sim_page",
                 "Simulation && modal analysis",
                 "one mass, then a chain of them: modes, damping, energy, forcing, absorbers, friction",
@@ -433,6 +438,7 @@ PAGE_TITLES = {
     "damping_page": "Damping models page",
     "isolation_page": "Vibration isolation page",
     "deriving_page": "Deriving the equations page",
+    "rigid_body_page": "3D rigid body page",
     "sim_page": "Simulation page",
     "energy_page": "Energy methods page",
     "frf_page": "FRF matrix page",

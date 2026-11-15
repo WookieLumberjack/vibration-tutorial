@@ -5,6 +5,7 @@
 The pages in the order the app's tabs take them.
 
 - [Deriving the equations](#deriving-the-equations): free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum
+- [3D rigid body](#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 - [Simulation & modal analysis](#simulation--modal-analysis): one mass, then a chain of them: modes, damping, energy, forcing, absorbers, friction
 - [Energy methods](#energy-methods): Rayleigh, Dunkerley, Rayleigh–Ritz and Holzer: frequencies from the energies, and how good they are
 - [FRF matrix](#frf-matrix): every receptance H<sub>jk</sub>, and how the modes add up to it
@@ -32,6 +33,19 @@ further over drifts away exponentially: chaos.
 ![Deriving the equations page, moments about the front axle: in x<sub>P</sub> and θ at P = 1.2 m ahead of G both M and K couple, the free-body diagram's moment balance about P keeps G's inertia force, and leaving it out (J<sub>P</sub>θ̈ = ΣM<sub>P</sub>) would give 0.932 and 1.38 Hz instead of 1.25 and 1.41](images/deriving_equations.png)
 
 ![Deriving the equations page, the double pendulum released at 120° and 120°: two releases 10⁻⁶ rad apart drift apart exponentially, the difference doubling every 0.49 s, until by 8 s they are radians apart; the lower bob's trail loops over the top](images/deriving_pendulum.png)
+
+## 3D rigid body
+
+A body free to turn any way, with no gravity and no support: a box, a cylinder or a sphere, with a point
+mass that can sit anywhere on it. Its inertia tensor about the centre of mass comes from the shape's own
+moved there by parallel axes plus the point mass's, products of inertia and all, and its eigenvectors are
+the principal axes (the *Inertia* tab writes both out). Spun about one of them, L is along ω; about any
+other they point apart, L fixed in space and ω wandering round it. The notes derive L = Iω, the transport
+theorem for vectors in turning axes and Euler's equations, and why a body spun about its middle axis turns
+over and back (the tennis-racket effect: 1° off at 6 rad/s, the default box turns over in about 1.4 s).
+A torque held in space or in the body for a set time (or a *Kick*) changes L by its impulse. The
+*Components* tab plots ω, L, τ or the tensor in fixed, body or principal axes, with the equations written
+out with numbers at any instant, and *Check* compares the energy and L with what the torque put in.
 
 ## Simulation & modal analysis
 

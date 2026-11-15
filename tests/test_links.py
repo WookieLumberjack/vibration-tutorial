@@ -37,6 +37,7 @@ def notes() -> dict[str, str]:
         periodic,
         quarter_car,
         random_vibration,
+        rigid_body,
         rigid_mounts,
         rotor_builder,
         rotor_notes,
@@ -93,6 +94,7 @@ def notes() -> dict[str, str]:
         "energy_page": energy_methods.NOTES_HTML,
         "periodic_page": periodic.NOTES_HTML,
         "gyroscope_page": gyroscope.NOTES_HTML,
+        "rigid_body_page": rigid_body.NOTES_HTML,
     }
 
 

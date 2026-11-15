@@ -2106,6 +2106,50 @@ SYMBOLS = (
         "skyhook",
     ),
     Symbol(
+        "rigid_rates",
+        "L, I, ω, τ, ω₁, ω₂, ω₃",
+        "a turning body: its angular momentum and inertia tensor about G; its angular velocity; the torque about G; "
+        "ω along each principal axis",
+        "kg·m²/s, kg·m², rad/s, N·m, rad/s, rad/s, rad/s",
+        "rigid_body_page",
+        "inertia-tensor",
+    ),
+    Symbol(
+        "rb_tensor",
+        "r, I<sub>xx</sub>, I<sub>xy</sub>, P, d",
+        "a bit of the body's position from G; a moment and a product of inertia; the principal axes, as a rotation "
+        "matrix's columns; from G to the shape's centre",
+        "m, kg·m², kg·m², –, m",
+        "rigid_body_page",
+        "inertia-tensor",
+    ),
+    Symbol(
+        "top_frames",
+        "B, A, Ω",
+        "a turning body's axes in space, as a rotation matrix's columns; another frame's axes, likewise; how fast a "
+        "frame's axes turn",
+        "–, –, rad/s",
+        "rigid_body_page",
+        "turning-axes",
+    ),
+    Symbol(
+        "rb_body",
+        "m, a, b, c, m<sub>p</sub>, p, G, E",
+        "a body: a bit of it, or the shape's mass; a box's sides (a cylinder's or sphere's radius a, a cylinder's "
+        "length c); a point mass and where it sits from the shape's centre; the centre of mass; the kinetic energy",
+        "kg, m, m, m, kg, m, –, J",
+        "rigid_body_page",
+        "inertia-tensor",
+    ),
+    Symbol(
+        "rb_flip",
+        "ω₀, λ, t",
+        "the spin about a principal axis; how fast a nudge off it grows (or, imaginary, circles); time",
+        "rad/s, 1/s, s",
+        "rigid_body_page",
+        "intermediate-axis",
+    ),
+    Symbol(
         "top_body",
         "m, r, l, s, w, b, g, I<sub>x</sub>, I<sub>y</sub>, β",
         "a top: its mass; a disc's radius; its centre's height up the stem; a square's side; a rectangle's sides; "
@@ -2116,19 +2160,9 @@ SYMBOLS = (
     ),
     Symbol(
         "top_rates",
-        "L, I, ω, ω₁, ω₂, ω₃, L₂, L₃, τ, e₂, e₃, ẑ",
-        "a turning body: its angular momentum and inertia tensor; its angular velocity and that along each principal "
-        "axis (ω₃ the spin); L along e₂ and e₃; gravity's moment; the body's axes as unit vectors; the vertical",
-        "kg·m²/s, kg·m², rad/s, rad/s, rad/s, rad/s, kg·m²/s, kg·m²/s, N·m, –, –, –",
-        "gyroscope_page",
-        "rigid-body",
-    ),
-    Symbol(
-        "top_frames",
-        "B, A, Ω",
-        "a turning body's axes in space, as a rotation matrix's columns; another frame's axes, likewise; how fast a "
-        "frame's axes turn",
-        "–, –, rad/s",
+        "L₂, L₃, e₂, e₃, ẑ",
+        "a top: L along e₂ and e₃; the body's axes as unit vectors (e₃ the axis, ω₃ the spin); the vertical",
+        "kg·m²/s, kg·m²/s, –, –, –",
         "gyroscope_page",
         "rigid-body",
     ),
@@ -2613,7 +2647,8 @@ SYMBOLS = (
         "I₁, I₂, I₃",
         "a body's principal moments of inertia (a symmetric top's I₁ = I₂ across its axis, I₃ along it)",
         "kg·m²",
-        "gyroscope_page",
+        "rigid_body_page",
+        "principal-axes",
     ),
     Symbol(
         "J_top",

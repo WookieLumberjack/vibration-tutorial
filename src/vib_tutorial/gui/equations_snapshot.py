@@ -1,13 +1,14 @@
-"""The Gyroscope page's *Components* tab snapshot: the equations of motion at one instant, written out with numbers.
+"""The equations of motion at one instant, written out with numbers (the *Gyroscope* and *3D rigid body* pages).
 
-`snapshot_html` takes a `core.gyroscope.Snapshot` and writes, in the axes picked: the rotation matrices that place
-the body (B, its axes in space; in the axis frame also A, the frame's, and AᵀB, the turn by ψ about e₃ between
-them), the inertia tensor I = (AᵀB) I_body (AᵀB)ᵀ, L = Iω, and the transport theorem dL/dt + Ω × L = τ (Euler's
-equations in the body's axes, dL/dt = τ in space), each vector and matrix as a bracketed table of numbers and how
-closely the two sides agree. Each bracket has its own power of ten, so a 10⁻⁴ kg·m² inertia reads as 2.083.
+`snapshot_html` takes a `core.rotation.Snapshot` and writes, in the axes picked: the rotation matrices that place
+the body (B, its axes in space; in a frame of its own also A, the frame's, and AᵀB, the body in it), the inertia
+tensor I = (AᵀB) I_body (AᵀB)ᵀ, L = Iω, and the transport theorem dL/dt + Ω × L = τ (Euler's equations in axes
+fixed in the body, dL/dt = τ in space), each vector and matrix as a bracketed table of numbers and how closely
+the two sides agree. Each bracket has its own power of ten, so a 10⁻⁴ kg·m² inertia reads as 2.083. The page
+says in words where its axes are and, for a frame of its own, what A and AᵀB are and how the frame turns.
 
-Working on it: `tests/test_gyroscope.py`'s `test_a_snapshot_of_the_equations` checks the numbers, and
-`tests/test_gui_smoke.py`'s `test_gyroscope_snapshot` the tab.
+Working on it: `tests/test_gyroscope.py`'s `test_a_snapshot_of_the_equations` and `tests/test_rotation.py` check
+the numbers, and `tests/test_gui_smoke.py`'s `test_gyroscope_snapshot` and the rigid body page's test the tabs.
 """
 
 from __future__ import annotations
@@ -16,15 +17,10 @@ import math
 
 import numpy as np
 
-from ..core.gyroscope import Frame, Snapshot
+from ..core.rotation import Snapshot, Turning
 
 SUPERSCRIPT = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
 BRACKETS = {3: ("⎡⎢⎣", "⎤⎥⎦")}  # rows: top, middle, bottom
-WHERE = {
-    Frame.SPACE: "in fixed axes (x, y, z up)",
-    Frame.BODY: "in the body's axes (e₁ the mark, e₃ the axis)",
-    Frame.AXIS: "in the axis frame (e₃ the axis, e₁′ horizontal across it)",
-}
 
 
 def _power(values: np.ndarray) -> int:
@@ -86,42 +82,47 @@ def equation(*parts: str) -> str:
     return f"<table cellspacing='0' cellpadding='0'><tr>{cells}</tr></table>"
 
 
-def snapshot_html(s: Snapshot) -> str:
-    """The equations at `s`'s instant, in its axes (see the module's docstring)."""
-    frame = s.kind
-    out = [f"<p><b>At t = {s.t:.3f} s</b>, {WHERE[frame]}:</p>"]
-    if frame is Frame.AXIS:
+def snapshot_html(s: Snapshot, where: str, frame_note: str = "", turning_note: str = "") -> str:
+    """The equations at `s`'s instant, in its axes, `where` saying which ("in fixed axes (x, y, z up)"). For a
+    frame that isn't space's or the body's own, `frame_note` says what A and AᵀB are; for one that turns its own
+    way, `turning_note` how (see the module's docstring)."""
+    out = [f"<p><b>At t = {s.t:.3f} s</b>, {where}:</p>"]
+    own = s.turning is Turning.FIXED or np.allclose(s.frame, s.orientation)
+    if own:
         out += [
-            "<p>Where the body is: A, the axis frame's axes in space (its columns), and AᵀB, the body's axes in "
-            "the frame's, a turn by ψ about e₃. B = A·(AᵀB) is the body's axes in space.</p>",
+            "<p>Where the body is: B, its axes in space, as columns.</p>",
+            equation("B =", bracket(s.orientation)),
+        ]
+        if s.turning is Turning.FIXED:
+            inertia = "I = B I<sub>body</sub> Bᵀ ="
+        else:
+            inertia = "I = I<sub>body</sub> ="
+    else:
+        out += [
+            f"<p>Where the body is: A, the frame's axes in space (its columns), and AᵀB, the body's axes in the "
+            f"frame's. {frame_note} B = A·(AᵀB) is the body's axes in space.</p>",
             equation("A =", bracket(s.frame), "AᵀB =", bracket(s.turn)),
         ]
         inertia = "I = (AᵀB) I<sub>body</sub> (AᵀB)ᵀ ="
-    else:
-        out += [
-            "<p>Where the body is: B, its axes e₁, e₂, e₃ in space, as columns.</p>",
-            equation("B =", bracket(s.orientation)),
-        ]
-        inertia = "I = B I<sub>body</sub> Bᵀ =" if frame is Frame.SPACE else "I = I<sub>body</sub> ="
+    diagonal = np.allclose(s.body_inertia, np.diag(np.diag(s.body_inertia)))
+    source = _diag(s.body_inertia) if diagonal else "the tensor in the body's own axes (the Inertia tab)"
     out += [
-        f"<p>The inertia tensor, kg·m² (products of inertia in bold), from I<sub>body</sub> = {_diag(s.body_inertia)}:"
-        "</p>",
+        f"<p>The inertia tensor, kg·m² (products of inertia in bold), from I<sub>body</sub> = {source}:</p>",
         equation(inertia, bracket(s.inertia, bold_off_diagonal=True)),
         "<p>L = Iω: angular momentum (N·m·s) from the angular velocity (rad/s).</p>",
         equation("L =", bracket(s.momentum), "=", bracket(s.inertia, bold_off_diagonal=True), bracket(s.omega)),
     ]
-    if frame is Frame.SPACE:
+    if s.turning is Turning.FIXED:
         out += [
             "<p>dL/dt = τ (N·m): fixed axes don't turn (Ω = 0), so L's components change only by the torque.</p>",
             equation("dL/dt", bracket(s.rate), "=", "τ", bracket(s.torque)),
         ]
     else:
-        name = "ω" if frame is Frame.BODY else "Ω"
+        name = "ω" if s.turning is Turning.BODY else "Ω"
         lead = (
             "Euler's equations: the axes turn with the body (Ω = ω), and I is constant in them, so dL/dt = Iω̇."
-            if frame is Frame.BODY
-            else "The axes turn at Ω (precession and nodding, not the spin), so L's components change by the "
-            "torque less Ω × L."
+            if s.turning is Turning.BODY
+            else f"The axes turn at Ω ({turning_note}), so L's components change by the torque less Ω × L."
         )
         out += [
             f"<p>{lead} dL/dt + {name} × L = τ (N·m), with {name} = "
