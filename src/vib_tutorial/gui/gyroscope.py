@@ -49,6 +49,7 @@ from ..core.gyroscope import (
 from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator, contact_torque
 from . import gyroscope_figures
 from .cms_time import SampleBuffer
+from .drag import DragLine
 from .equations_snapshot import snapshot_html
 from .frame_loop import FrameLoop
 from .gyroscope_trials import (
@@ -404,7 +405,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.comp_size = pg.PlotDataItem()  # the vector's magnitude
         for item in (*self.comp_items, self.comp_size):
             self.comp_plot.addItem(item)
-        self.comp_cursor = pg.InfiniteLine(angle=90, movable=True)  # the snapshot's instant
+        self.comp_cursor = DragLine(SNAPSHOT_TIP, role="strong")  # the snapshot's instant
         self.comp_cursor.setToolTip(SNAPSHOT_TIP)
         self.comp_cursor.sigDragged.connect(self._on_snapshot_dragged)
         self.comp_plot.addItem(self.comp_cursor, ignoreBounds=True)
@@ -794,8 +795,7 @@ class GyroscopePage(QtWidgets.QWidget):
         for k, item in enumerate(self.comp_items):  # 1 px, as the Check tab's: the body's components swing at the spin
             item.setPen(pg.mkPen(c.mass[k % len(c.mass)], width=1))
         self.comp_size.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        self.comp_cursor.setPen(pg.mkPen(c.strong, width=1))
-        self.comp_cursor.setHoverPen(pg.mkPen(c.strong, width=3))
+        self.comp_cursor.apply_theme()
         mark(self.section_item, c.mass[0], filled=True)
         self.apart_item.setPen(pg.mkPen(c.mass[1], width=1.5))
         self._draw_tab()

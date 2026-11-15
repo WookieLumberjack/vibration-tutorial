@@ -15,6 +15,7 @@ from ..core.rotor_sweep import (
     STATIONS,
 )
 from . import weak
+from .drag import DragLine
 from .lesson import Dot
 from .rotor_notes import whirl_name
 from .style import colors
@@ -296,8 +297,7 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
         p.addItem(self.onset_line)
         p.addItem(self.end_line)
         p.addItem(self.onset_label)
-        self.speed_line = pg.InfiniteLine(angle=90, movable=True)
-        self.speed_line.setToolTip("The speed now. Drag it to set the target speed.")
+        self.speed_line = DragLine("<p>The speed now. Drag it to set the target speed.</p>")
         self.speed_line.sigPositionChangeFinished.connect(
             weak.slot(self, lambda self, line: self.speed_dragged.emit(max(0.0, line.value())))
         )
@@ -329,8 +329,7 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
         self.crit.setPen(pg.mkPen(colors.force, width=2))
         self.uncrit.setBrush(pg.mkBrush(None))
         self.uncrit.setPen(pg.mkPen(colors.grey, width=2))
-        self.speed_line.setPen(pg.mkPen(colors.force, width=2))
-        self.speed_line.setHoverPen(pg.mkPen(colors.force, width=4))
+        self.speed_line.apply_theme()
         self.unstable.setBrush(pg.mkBrush(colors.force))
         self.unstable.setPen(pg.mkPen(None))
         self.onset_line.setPen(pg.mkPen(colors.force, width=1.5, style=DASH))

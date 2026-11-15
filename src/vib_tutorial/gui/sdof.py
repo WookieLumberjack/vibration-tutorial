@@ -28,6 +28,7 @@ from ..core.sdof import (
     settling_time,
 )
 from . import sdof_figures, settle_plots
+from .drag import DragLine
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -460,10 +461,15 @@ TIPS = {
     "amplitude": "<p>The force's amplitude F, or the unbalance m<sub>e</sub>e.</p>",
     "freq": "<p>The drive's frequency Ω/2π.</p>",
 }
+DRIVE_LINE_TIP = (
+    "<p>The drive's frequency. Drag it to sweep the drive across the resonance: the circle, the time response and "
+    "the Drive box follow.</p>"
+)
 FRF_TIP = (
     "<p>The steady amplitude over the static one, |X|k/F (the dynamic amplification), or for the unbalance "
     "m|X|/m<sub>e</sub>e, against the drive's frequency, and the phase by which the response lags. The band "
-    "is the half-power width, the dotted line f<sub>n</sub>, the circle the drive.</p>"
+    "is the half-power width, the dotted line f<sub>n</sub>, the circle the drive; drag the drive's line (◀▶) to "
+    "sweep it.</p>"
 )
 NYQUIST_TIP = (
     "<p>The receptance H = X/F in the complex plane, Im against Re, from low frequency (near 1/k on the real "
@@ -612,6 +618,11 @@ class SdofPage(QtWidgets.QWidget):
             self.mag_plot.addItem(item)
         for item in (self.lag_item, self.fn_lines[1], self.drive_items[1]):
             self.phase_plot.addItem(item)
+        # The drive's frequency, dragged on either plot: the Drive box follows, and the other line.
+        self.drive_lines = [DragLine(DRIVE_LINE_TIP, log=True, bounds=(0.001, 1e4)) for _ in range(2)]
+        for line, p in zip(self.drive_lines, (self.mag_plot, self.phase_plot)):
+            p.addItem(line)
+            line.dragged.connect(self._on_drive_dragged)
         self.phase_plot.setYRange(0, 180, padding=0.05)
         self.phase_plot.getAxis("left").setTicks([[(v, f"{v}") for v in (0, 45, 90, 135, 180)]])
         fv.addWidget(self.mag_plot, 3)
@@ -822,6 +833,11 @@ class SdofPage(QtWidgets.QWidget):
         self.pole_item.setPen(pg.mkPen(c.force, width=2.5))
         self.pole_item.setBrush(pg.mkBrush(c.force))
         self.redraw()
+        for line in self.drive_lines:
+            line.apply_theme()
+
+    def _on_drive_dragged(self, hz: float) -> None:
+        self.freq.setValue(hz)  # redraws, the lines with it
 
     def redraw(self) -> None:
         self._show_info()
@@ -991,6 +1007,8 @@ class SdofPage(QtWidgets.QWidget):
             self.band.setVisible(False)
             self.half_item.setData([], [])
         f = self.freq.value()
+        for line in self.drive_lines:
+            line.set_value(f)
         hd = receptance(o, np.array([f]))[0]
         if np.isfinite(hd):
             nd = o.mass * (TWO_PI * f) ** 2 if unbalance else o.stiffness

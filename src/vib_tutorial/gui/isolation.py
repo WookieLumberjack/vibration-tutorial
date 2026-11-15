@@ -34,6 +34,7 @@ from ..view_models.isolation import (
     isolator,
 )
 from . import isolation_figures, settle_plots
+from .drag import DragLine
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -317,7 +318,12 @@ TIPS = {
 TR_TIP = (
     "<p>The force on the floor over the machine's force (equally, the motion that reaches an instrument over the "
     "floor's), against the frequency over f<sub>n</sub>. Thin: plain mounts at ζ = 0, 0.1, 0.3, 0.7; bold: this "
-    "isolator. It crosses 1 at √2 f<sub>n</sub>; the circle is the running speed.</p>"
+    "isolator. It crosses 1 at √2 f<sub>n</sub>; the circle is the running speed: drag its line (◀▶) to change the "
+    "speed.</p>"
+)
+SPEED_LINE_TIP = (
+    "<p>The running speed over f<sub>n</sub>. Drag it to run the machine faster or slower: the Speed box, the force "
+    "on the floor and the readout follow. Below √2 the mounts pass on more force than the unbalance makes; well above, less.</p>"
 )
 FORCE_TIP = (
     "<p>The force reaching the floor against the machine's speed, against the unbalance's own force (the "
@@ -401,6 +407,10 @@ class IsolationPage(QtWidgets.QWidget):
         self.tr_now = pg.PlotDataItem(pen=None, symbol="o", symbolSize=12)
         for item in (self.unit_line, self.root2_line, *self.family_items, self.tr_item, self.tr_now):
             self.tr_plot.addItem(item)
+        # The running speed as a frequency ratio: dragged, it sets the Speed box (rpm = r f_n × 60).
+        self.speed_line = DragLine(SPEED_LINE_TIP, log=True, bounds=(view.RATIOS[0], view.RATIOS[-1]))
+        self.speed_line.dragged.connect(self._on_speed_dragged)
+        self.tr_plot.addItem(self.speed_line)
         self.tr_note = readout_label()
         self.force_plot = plot("Force on the floor", "N", "Speed", "rpm", log_y=True, height=150)
         self.force_plot.setToolTip(FORCE_TIP)
@@ -556,7 +566,11 @@ class IsolationPage(QtWidgets.QWidget):
         self.sf_rigid.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         for item, color in zip(self.chart_items, (c.mode[0], c.mode[1], c.mode[2], c.mode[3], c.mass[4])):
             item.setPen(pg.mkPen(color, width=2))
+        self.speed_line.apply_theme()
         self.redraw()
+
+    def _on_speed_dragged(self, ratio: float) -> None:
+        self.rpm.setValue(round(ratio * self.iso.natural_hz * 60.0))  # redraws, the line with it
 
     def redraw(self) -> None:
         self.mount_info.setText(view.mount_info(self.iso))
@@ -571,6 +585,7 @@ class IsolationPage(QtWidgets.QWidget):
             item.setData(*curve, connect="finite")
         self.tr_item.setData(*v.isolator, connect="finite")
         self.tr_now.setData(*v.now)
+        self.speed_line.set_value(self.iso.speed_hz / self.iso.natural_hz)
         self.tr_plot.setXRange(math.log10(view.RATIOS[0]), math.log10(view.RATIOS[-1]), padding=0)
         self.tr_plot.setYRange(*view.T_RANGE, padding=0)
         self.tr_note.setText(v.note)

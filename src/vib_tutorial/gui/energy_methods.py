@@ -39,6 +39,7 @@ from ..core.energy_methods import (
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick, rounded
 from . import energy_figures, settle_plots
+from .drag import DragLine
 from .lesson import (
     Form,
     TrialBox,
@@ -481,7 +482,9 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.holzer_plot.setMouseEnabled(x=True, y=False)
         self.holzer_curve = pg.PlotDataItem()
         self.holzer_zero = pg.InfiniteLine(angle=0, pos=0)
-        self.holzer_trial = pg.InfiniteLine(angle=90, movable=True)
+        self.holzer_trial = DragLine(
+            "<p>The trial frequency. Drag it along the axis: the residual reaches zero at each natural frequency.</p>"
+        )
         self.holzer_trial.sigPositionChanged.connect(self._on_holzer_line)
         self.holzer_roots: list[pg.InfiniteLine] = []
         for item in (self.holzer_zero, self.holzer_curve, self.holzer_trial):
@@ -600,7 +603,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.ritz_now.setPen(pg.mkPen(c.grey, width=1, style=dot))
         self.holzer_curve.setPen(pg.mkPen(c.mass[0], width=2))
         self.holzer_zero.setPen(pg.mkPen(c.grey, width=1))
-        self.holzer_trial.setPen(pg.mkPen(c.force, width=1.5))
+        self.holzer_trial.apply_theme()
         self._ritz_built = -1  # rebuild the per-mode items in the new colours
         self._dirty = True
         if self.isVisible():

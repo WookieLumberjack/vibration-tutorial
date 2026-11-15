@@ -72,6 +72,12 @@ the plot's axes and the curve's legend; **Save image as PNG…** saves the plot 
 fits the plot to its data again after a zoom. (The frame and rotor builders' canvases keep their own
 right-click, which edits them.)
 
+A line with a ◆ grip, or a dot that grows under the mouse, can be dragged: the drive's frequency on the
+Single oscillator's Bode plot, the running speed on Vibration isolation's transmissibility, the damper on
+Quarter-car's trade-off and damper sweep, the speed on the Jeffcott rotor's Campbell diagram, the trial
+frequency in Energy methods' Holzer tab, the oscillator picked on the Shock spectrum, and the instant on the
+Gyroscope's and 3D rigid body's component plots. The page's own box follows the drag, and the drag the box.
+
 ## Themes
 
 *Theme* (top right) switches the whole app between **Light**, **Dark**, **Solarized** and
