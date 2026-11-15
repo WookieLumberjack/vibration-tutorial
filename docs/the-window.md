@@ -64,6 +64,14 @@ page's symbols and books to read further (the pages are being brought to this fo
 *Things to try* are one click: pick one from the box at the top left and the page sets itself up. All of
 them are described below.
 
+## A plot's data
+
+Right-click a plot for its menu: **Copy data as CSV** puts its curves on the clipboard, to paste into a
+spreadsheet; **Save data as CSV…** writes them to a file, an x and a y column for each curve, named after
+the plot's axes and the curve's legend; **Save image as PNG…** saves the plot as it shows; **Show all**
+fits the plot to its data again after a zoom. (The frame and rotor builders' canvases keep their own
+right-click, which edits them.)
+
 ## Themes
 
 *Theme* (top right) switches the whole app between **Light**, **Dark**, **Solarized** and

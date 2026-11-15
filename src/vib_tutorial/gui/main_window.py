@@ -39,6 +39,7 @@ from .lesson import TrialCombo
 from .modes import Method, mode_entries
 from .notes_view import NotesBrowser
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
+from .plot_export import install as install_plot_menus
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
 from .sim_trials import TRIALS as SIM_TRIALS
 from .sim_trials import SimTrial, chain
@@ -601,6 +602,7 @@ class MainWindow(QtWidgets.QMainWindow):
         splitter.addWidget(center)
         splitter.addWidget(tabs)
         splitter.setSizes([400, 750, 550])
+        install_plot_menus(splitter)  # a right-click on a plot: its data as CSV, a PNG
         self.sim_page = splitter
         accessible.name_plots(splitter)
 
@@ -768,6 +770,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return page
         page = self._built[name] = _page_class(name)()
         self._give_chain(page)
+        install_plot_menus(page)
         # Put the page in its placeholder's tab (showing, if that was): only the real page is ever shown.
         holder = self._placeholders.pop(name)
         self.pages.replace(holder, page)
