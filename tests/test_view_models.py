@@ -16,6 +16,7 @@ from notes_quoting import quoted
 
 import vib_tutorial.view_models as view_models
 from vib_tutorial.core.isolation import Isolator, Mount, deflection_for
+from vib_tutorial.view_models import duffing
 from vib_tutorial.view_models import isolation as view
 from vib_tutorial.view_models.isolation import TRIALS, IsolationTrial, isolator
 
@@ -129,3 +130,107 @@ def test_isolation_chart():
     sags = np.array([c.y for c in v.levels])
     assert (np.diff(sags, axis=0) > 0).all() and (np.diff(sags, axis=1) < 0).all()
     assert (float(v.now.x[0]), float(v.now.y[0])) == pytest.approx((1500.0, 5.0))
+
+
+# ------------------------------------------------------------------ Duffing & Mathieu
+# The page's run without the page: the simulator set up as a preset sets it, its stretches taken into a Record.
+
+
+def preset_run(name: str):
+    from vib_tutorial.core.duffing import PRESETS, DuffingSimulator, Sweep
+
+    p = next(p for p in PRESETS if p.name == name)
+    sim = DuffingSimulator(p.osc)
+    d = sim.drive
+    d.freq_hz, d.start_hz, d.end_hz, d.sweep_time = p.freq_hz, p.start_hz, p.end_hz, p.sweep_time
+    d.start(p.mode)
+    if p.mode is Sweep.HOLD:
+        d.freq_hz = p.freq_hz
+    return sim, duffing.Record()
+
+
+def duffing_readout(sim, record) -> str:
+    shown = duffing.response(sim.osc, duffing.x_range(sim.drive))
+    return duffing.readout(sim.osc, shown.curve, shown.p_curve, record.cycles, sim.escaped, sim.runaway)
+
+
+def test_duffing_sweep_readout_and_points():
+    """A sweep up and down the hardening spring: harmonic balance's folds as the notes quote them, then the jumps the
+    run measured, each leg's points, and the section only once it holds."""
+    from vib_tutorial.core.duffing import Sweep
+
+    sim, record = preset_run("Hardening spring: the jump")
+    text = duffing_readout(sim, record)
+    assert f"between {quoted('duffing', '3.64')} and {quoted('duffing', '4.45')} Hz" in text
+    assert f"ends at 4.45 Hz ({quoted('duffing', '71.4')} mm) and drops to {quoted('duffing', '5.23')} mm" in text
+    assert f"ends at 3.64 Hz ({quoted('duffing', '24.0')} mm) and jumps to {quoted('duffing', '46.2')} mm" in text
+    assert "Measured" not in text
+    while sim.drive.mode is not Sweep.HOLD:
+        record.add(sim.advance(5.0))
+    text = duffing_readout(sim, record)
+    assert "Measured: the jump at 4." in text and "and 3.5" in text
+    shown = duffing.response(sim.osc, duffing.x_range(sim.drive))
+    v = duffing.points(sim.osc, record, shown.y_top, sim.runaway)
+    assert len(v.first["up"]) > 100 and len(v.first["down"]) > 100 and not any(len(h) for h in v.half.values())
+    assert len(v.section) == sum(c.leg == "hold" for c in record.cycles)  # Poincaré dots only once it holds
+    assert v.now.shape == (1, 2)
+
+
+def test_duffing_live_is_cheap():
+    """Every frame: the strip chart decimated to its buckets, the phase plane a view of the trace, not a copy."""
+    sim, record = preset_run("Hardening spring: the jump")
+    for _ in range(10):
+        record.add(sim.advance(5.0))
+    v = duffing.live(record.trace, sim.t, sim.drive.freq_hz)
+    assert v.strip.x.size <= 2 * duffing.PLOT_POINTS + 2
+    assert v.strip_range == pytest.approx((sim.t - duffing.WINDOW, sim.t))
+    assert np.shares_memory(v.orbit.x, record.trace.data) and np.shares_memory(v.orbit.y, record.trace.data)
+    assert duffing.live(duffing.Trace(), 0.0, 2.0).strip_range is None
+
+
+def test_duffing_branches():
+    from vib_tutorial.core.duffing import Duffing
+
+    sim, _ = preset_run("Two stable states")
+    b = duffing.branches(sim.osc, 4.0)
+    assert b.enabled == (True, True, True)
+    assert b.note == "At 4 Hz, steady amplitudes: 8.80 mm, 52.0 mm (unstable), 58.3 mm."
+    amplitudes = 1e3 * duffing.steady_states(sim.osc, 4.0)[0]  # as the notes print them
+    assert amplitudes == pytest.approx(
+        [quoted("duffing", "8.80"), quoted("duffing", "52.0"), quoted("duffing", "58.3")], abs=0.05
+    )
+    assert duffing.branches(sim.osc, 5.0).enabled[:2] == (True, False)  # outside the band: one amplitude
+    pumped, _ = preset_run("Parametric resonance, hardening")
+    b = duffing.branches(pumped.osc, pumped.drive.freq_hz)
+    assert b.enabled == (True, False, True) and "rest (unstable)" in b.note
+    shown = duffing.response(pumped.osc, duffing.x_range(pumped.drive))
+    assert "p_stable" in shown.legend and "up" not in shown.legend
+    assert shown.y_label.startswith("Amplitude (½X")
+    soft = Duffing(cubic=-1e5)
+    assert duffing.response(soft, (2.0, 6.0)).legend_right
+
+
+def test_duffing_escapes():
+    sim, record = preset_run("Escape from the well")
+    while not sim.escaped:
+        record.add(sim.advance(5.0))
+    assert "ran away" in duffing_readout(sim, record)
+    sim, record = preset_run("Parametric resonance")
+    while not sim.escaped:
+        record.add(sim.advance(5.0))
+    text = duffing_readout(sim, record)
+    assert "without bound" in text and "km" in text
+
+
+def test_duffing_chart():
+    from vib_tutorial.core.duffing import Duffing
+
+    c = duffing.chart(Duffing().zeta)
+    assert c.growth.shape == (186, 61)
+    assert c.rect[0] < duffing.CHART_RATIOS[0] and c.rect[0] + c.rect[2] > duffing.CHART_RATIOS[-1]
+    pumped = Duffing(pump=0.8)
+    at_fn = pumped.natural_hz
+    assert "rest is unstable" in duffing.chart_point(pumped, at_fn).note  # the second tongue, at f_n
+    assert "rest is stable" in duffing.chart_point(Duffing(pump=0.8, damping=4.0), at_fn).note  # lifted off it
+    bare = duffing.chart_point(Duffing(stiffness=0.0, cubic=1e5), 2.0)
+    assert bare.now.size == 0 and bare.note == duffing.NO_SPRING
