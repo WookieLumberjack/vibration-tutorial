@@ -6,12 +6,13 @@ out in closed form or by the exact step when a control changes, and has no frame
 
 from __future__ import annotations
 
-import math
 from collections.abc import Callable, Sequence
 
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..view_models.text import db as db  # re-exported for the pages
+from ..view_models.text import fmt as fmt
 from . import accessible, weak
 from .axes import log_axes
 from .layouts import form_layout, plot_height
@@ -259,21 +260,6 @@ def set_quietly(box: QtWidgets.QWidget, value) -> None:
     elif isinstance(box, (QtWidgets.QSpinBox, QtWidgets.QDoubleSpinBox, QtWidgets.QAbstractSlider)):
         box.setValue(value)
     box.blockSignals(False)
-
-
-def fmt(value: float, unit: str, digits: int = 3) -> str:
-    """A number with an SI prefix (µ to k), e.g. fmt(0.0251, "m") is "25.1 mm"."""
-    if value == 0 or not math.isfinite(value):
-        return f"{value:.{digits}g} {unit}" if math.isfinite(value) else f"∞ {unit}"
-    for scale, prefix in ((1e3, "k"), (1.0, ""), (1e-3, "m"), (1e-6, "µ"), (1e-9, "n")):
-        if abs(value) >= scale * 0.9995:
-            return f"{value / scale:.{digits}g} {prefix}{unit}"
-    return f"{value:.{digits}g} {unit}"
-
-
-def db(ratio: float) -> float:
-    """20 log10 of an amplitude ratio."""
-    return 20.0 * math.log10(ratio) if ratio > 0 else -math.inf
 
 
 def connect_all(boxes: Sequence[QtWidgets.QWidget], slot: Callable[[], None]) -> None:
