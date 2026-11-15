@@ -2534,6 +2534,51 @@ def test_every_theory_tab_fits_a_1280_px_window(app):
     assert not wide, "\n".join(wide)
 
 
+def test_deriving_derivations_fit_a_1280_px_window(main_window, app):
+    """The Free body and Lagrange tabs' matrices sit two to a line: three side by side overflowed the tab at
+    1280 px, and before that wrapped their numbers ("12 / 00" for 1200)."""
+    from PySide6 import QtGui
+
+    from vib_tutorial.gui import deriving
+
+    def wrapped_cells(doc: QtGui.QTextDocument) -> list[str]:
+        """The text of every table cell laid out on more than one line."""
+        out = []
+        for frame in doc.rootFrame().childFrames():
+            stack = [frame]
+            while stack:
+                f = stack.pop()
+                stack.extend(f.childFrames())
+                if not isinstance(f, QtGui.QTextTable):
+                    continue
+                for r in range(f.rows()):
+                    for c in range(f.columns()):
+                        cell = f.cellAt(r, c)
+                        block = cell.firstCursorPosition().block()
+                        while block.isValid() and block.position() <= cell.lastCursorPosition().position():
+                            if block.text().strip() and block.layout().lineCount() > 1:
+                                out.append(block.text())
+                            block = block.next()
+        return out
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.deriving_page
+    w.pages.setCurrentWidget(p)
+    bad = []
+    for system in (deriving.CAR, deriving.PENDULUM):
+        p.system.setCurrentIndex(system)
+        for browser in (p.fbd, p.lagrange):
+            p.tabs.setCurrentWidget(browser)
+            for _ in range(3):
+                app.processEvents()
+            where = f"{p.system.currentText()}, {p.tabs.tabText(p.tabs.currentIndex())}"
+            if browser.horizontalScrollBar().maximum() > 0:
+                bad.append(f"{where}: too wide")
+            bad += [f"{where}: {text!r} wraps" for text in wrapped_cells(browser.document())]
+    assert not bad, bad
+
+
 def _windows_font(app) -> None:
     """Measure in Segoe UI 9 pt, as on a Windows desktop, where the offscreen platform has no fonts.
 

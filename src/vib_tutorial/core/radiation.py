@@ -68,11 +68,6 @@ def bending_wavenumber(plate: Plate, f: float | np.ndarray) -> np.ndarray:
     return np.sqrt(TWO_PI * np.asarray(f, dtype=float) / plate.scale)
 
 
-def bending_speed(plate: Plate, f: float | np.ndarray) -> np.ndarray:
-    """The bending wave's phase speed ω/k_b = √(ω √(D/ρh)): it grows as √f."""
-    return np.sqrt(TWO_PI * np.asarray(f, dtype=float) * plate.scale)
-
-
 def wave_efficiency(f: float | np.ndarray, fc: float) -> np.ndarray:
     """An infinite plate's free bending wave: no sound below f_c, 1/√(1 − f_c/f) above (∞ at f_c)."""
     f = np.asarray(f, dtype=float)

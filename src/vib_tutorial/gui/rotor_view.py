@@ -120,8 +120,16 @@ class RotorView(pg.PlotWidget):
         plot.addItem(self.heavy, ignoreBounds=True)
         self.scale_label = pg.TextItem(anchor=(1.0, 0.0))
         plot.addItem(self.scale_label)
+        # The aspect lock widens the range set in `_place_static` to the widget's shape, so the label follows the
+        # range it gets (pinned to the range set, a scaled-up window left it above the top edge, clipped).
+        plot.getViewBox().sigRangeChanged.connect(self._place_scale_label)
         self.apply_theme()
         self._place_static()
+
+    def _place_scale_label(self, *_) -> None:
+        """The "motion ×" label in the view's top right corner."""
+        (_, right), (_, top) = self.getViewBox().viewRange()
+        self.scale_label.setPos(right, top)
 
     # ------------------------------------------------------------- geometry
     def project(self, p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -193,8 +201,7 @@ class RotorView(pg.PlotWidget):
         )
         px, py = self.project(corners)
         self.setRange(xRange=(px.min(), px.max()), yRange=(py.min(), py.max()), padding=0.02)
-        vr = self.getViewBox().viewRange()
-        self.scale_label.setPos(vr[0][1], vr[1][1])
+        self._place_scale_label()
         if self._state is not None:  # the rotor from the new angle too, as the gyroscope's and the mounts' views do
             self.update_state(*self._state)
 

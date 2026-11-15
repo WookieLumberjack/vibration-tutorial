@@ -335,14 +335,3 @@ def order_track(m: OrderMap, order: float) -> np.ndarray:
     """Each block's amplitude of an order (on its line: a whole number of revolutions per block)."""
     j = round(order / (m.axis[1] - m.axis[0]))
     return m.amplitude[:, j]
-
-
-def frequency_track(m: OrderMap, order: float) -> np.ndarray:
-    """Each block's amplitude read at the order's frequency at the block's mean speed, from the plain spectrum:
-    the largest of the nearest line and its neighbours."""
-    df = m.axis[1] - m.axis[0]
-    out = np.empty(m.speed.size)
-    for i, s in enumerate(m.speed):
-        j = round(order * s / df)
-        out[i] = m.amplitude[i, max(j - 1, 0) : j + 2].max()
-    return out

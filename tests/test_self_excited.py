@@ -84,3 +84,28 @@ def test_flutter_poles_without_wind_are_the_structures():
     assert f.divergence_speed() == pytest.approx(Flutter().divergence_speed())
     Uf = Flutter().flutter_speed()
     assert np.max(Flutter().poles(0.999 * Uf).real) < 0 < np.max(Flutter().poles(1.001 * Uf).real)
+
+
+def test_steady_lift_flutters_by_coalescence_and_quasi_steady_without():
+    """Steady lift is a stiffness: undamped, the two frequencies merge at the flutter speed into a pair of equal and
+    opposite damping. Quasi-steady lift's ḣ/U is a damping: the pitch-like mode goes alone, the frequencies apart."""
+    undamped = Flutter(zeta=0.0)
+    Uf = undamped.flutter_speed()
+    below, above = undamped.poles(0.999 * Uf), undamped.poles(1.001 * Uf)
+    assert np.allclose(below.real, 0.0, atol=1e-9 * np.abs(below).max())  # no damping anywhere below it
+    up = above[above.imag > 0]
+    assert up.imag == pytest.approx([up.imag[0]] * 2, rel=1e-9) and up.real.sum() == pytest.approx(0.0, abs=1e-9)
+    q = Flutter(quasi_steady=True)
+    f, z = q.modes(np.array([0.999 * q.flutter_speed()]))
+    assert f[0, 1] - f[0, 0] > 1.0  # Hz apart
+    assert z[0, 1] < 1e-3 < 0.05 < z[0, 0]  # the pitch at zero, the plunge damped by the flow
+
+
+def test_divergence_is_not_flutter():
+    """`flutter_speed` counts oscillating poles only, and only below divergence: with the centre of mass on the axis
+    the steady section only diverges (a real pole crosses at `divergence_speed`)."""
+    f = Flutter(x_cg=0.0)
+    assert math.isnan(f.flutter_speed())
+    Ud = f.divergence_speed()
+    lam = f.poles(1.001 * Ud)
+    assert np.any((lam.real > 0) & (np.abs(lam.imag) < 1e-6))

@@ -2217,14 +2217,27 @@ def test_self_excited_trials():
     assert freq[1:4] == pytest.approx([1.0, 1.0, 1.0], abs=0.04) and abs(freq[4] - 1) > 0.04
     assert abs(freq[0] - 1) > 0.04
     assert amp[5] == pytest.approx(0.019, abs=0.0005) and freq[5] == pytest.approx(1.7, abs=0.02)
+    # steady lift: coalescence, mass balance removes it
     f = Flutter()
-    assert f.flutter_speed() == pytest.approx(quoted("self_excited", "19.1"), abs=0.05)
+    assert f.flutter_speed() == pytest.approx(quoted("self_excited", "20.7"), abs=0.05)
     assert f.divergence_speed() == pytest.approx(39, abs=0.5)
-    fr, _ = f.modes(np.array([0.0, 19.0]))
+    fr, _ = f.modes(np.array([0.0, 20.0]))
     assert fr[0] == pytest.approx([quoted("self_excited", "2.93"), quoted("self_excited", "6.71")], abs=0.1)
-    assert fr[1] == pytest.approx([3.4, 5.0], abs=0.05)
-    assert Flutter(x_cg=-0.2).flutter_speed() == pytest.approx(f.divergence_speed(), abs=0.05)
-    assert Flutter(x_cg=0.0).flutter_speed() == pytest.approx(quoted("self_excited", "17.7"), abs=0.05)
+    assert fr[1] == pytest.approx([3.6, 4.7], abs=0.05)
+    undamped = Flutter(zeta=0.0)
+    U0 = undamped.flutter_speed()
+    assert U0 == pytest.approx(quoted("self_excited", "20.9"), abs=0.05)
+    fr, _ = undamped.modes(np.array([1.0001 * U0]))
+    assert fr[0] == pytest.approx([quoted("self_excited", "4.07")] * 2, abs=0.01)  # merged
+    assert math.isnan(Flutter(x_cg=0.0).flutter_speed()) and math.isnan(Flutter(x_cg=-0.2).flutter_speed())
+    assert Flutter(x_cg=0.1).flutter_speed() == pytest.approx(22.8, abs=0.05)
+    # quasi-steady lift: the pitch-like mode alone, the frequencies apart; mass balance doesn't save it
+    q = Flutter(quasi_steady=True)
+    assert q.flutter_speed() == pytest.approx(quoted("self_excited", "19.1"), abs=0.05)
+    fr, z = q.modes(np.array([19.0]))
+    assert fr[0] == pytest.approx([quoted("self_excited", "3.4"), quoted("self_excited", "5.0")], abs=0.05)
+    assert z[0, 0] == pytest.approx(0.1, abs=0.01) and z[0, 1] < 0.002  # the plunge damped, the pitch near zero
+    assert q.at(x_cg=0.0).flutter_speed() == pytest.approx(quoted("self_excited", "17.7"), abs=0.05)
 
 
 def test_pendulum_trials():
@@ -3452,14 +3465,22 @@ def test_self_excited_worked_example():
     )
     fr, _ = f.modes(np.array([0.0]))
     assert fr[0] == pytest.approx([quoted("self_excited", "2.93"), quoted("self_excited", "6.71")], abs=0.005)
-    # divergence 39.2 m/s; flutter 19.1 m/s (17.7 with the cg on the axis, none 0.2 ahead)
+    # divergence 39.2 m/s; steady flutter 20.7 m/s at 3.8 and 4.4 Hz (none with the cg on the axis); quasi-steady
+    # 19.1 m/s at 3.4 and 5.0 Hz, 17.7 with the cg on the axis
     assert math.sqrt(79.94 / (2 * math.pi * 1.225 * 0.15**2 * 0.3)) == pytest.approx(
         quoted("self_excited", "39.2"), abs=0.05
     )
     assert f.divergence_speed() == pytest.approx(quoted("self_excited", "39.2"), abs=0.05)
-    assert f.flutter_speed() == pytest.approx(quoted("self_excited", "19.1"), abs=0.05)
-    assert f.at(x_cg=0.0).flutter_speed() == pytest.approx(quoted("self_excited", "17.7"), abs=0.05)
-    assert f.at(x_cg=-0.2).flutter_speed() == pytest.approx(f.divergence_speed(), rel=1e-3)
+    Uf = f.flutter_speed()
+    assert Uf == pytest.approx(quoted("self_excited", "20.7"), abs=0.05)
+    fr, _ = f.modes(np.array([0.999 * Uf]))
+    assert fr[0] == pytest.approx([quoted("self_excited", "3.8"), quoted("self_excited", "4.4")], abs=0.05)
+    assert math.isnan(f.at(x_cg=0.0).flutter_speed())
+    q = f.at(quasi_steady=True)
+    assert q.flutter_speed() == pytest.approx(quoted("self_excited", "19.1"), abs=0.05)
+    fr, _ = q.modes(np.array([0.999 * q.flutter_speed()]))
+    assert fr[0] == pytest.approx([3.4, 5.0], abs=0.05)
+    assert q.at(x_cg=0.0).flutter_speed() == pytest.approx(quoted("self_excited", "17.7"), abs=0.05)
 
 
 def test_active_control_worked_example():

@@ -1240,7 +1240,7 @@ class DerivingPage(QtWidgets.QWidget):
         q1, q2 = q_names(coords)
         self.matrix_label.setText(
             f"<b>M q̈ + C q̇ + K q = 0</b>, q = ({q1}, {q2}), from Lagrange's equations (bold: coupling):"
-            + matrices_html(matrices(car, coords, e))
+            + matrices_html(matrices(car, coords, e), per_row=3)
         )
         parts = []
         for i, m in enumerate(self.modes):
@@ -1269,7 +1269,7 @@ class DerivingPage(QtWidgets.QWidget):
         q1, q2 = dp.q_names(angles)
         self.matrix_label.setText(
             f"<b>M q̈ + K q = 0</b> for small swings, q = ({q1}, {q2}), from Lagrange's equations (bold: coupling):"
-            + matrices_html(pendulum_matrices(p, angles))
+            + matrices_html(pendulum_matrices(p, angles), per_row=3)
         )
         parts = [
             f"Mode {i + 1}: <b>{m.frequency:.3g} Hz</b>, θ₂ = {m.ratio:.3g} θ₁ ".replace("-", "−")
