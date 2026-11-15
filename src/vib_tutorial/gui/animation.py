@@ -110,6 +110,7 @@ class ChainView(pg.PlotWidget):
         self._masses: np.ndarray = np.ones(1)
         self._centers = np.zeros(0)  # drawn mass centers (display units)
         self.held: int | None = None  # mass being dragged
+        self.max_drag = MAX_DRAG  # farthest a mass can be dragged from rest (display units)
         self._recovered: set[int] = set()  # masses drawn as recovered (back-expanded), not solved for
 
         # Ground wall with hatching; it moves with base excitation.
@@ -272,7 +273,7 @@ class ChainView(pg.PlotWidget):
     def _drag_to(self, pos: QtCore.QPointF) -> None:
         i = self.held
         assert i is not None, "dragging only once a mass is held"
-        offset = float(np.clip(pos.x() - (i + 1) * SPACING, -MAX_DRAG, MAX_DRAG))
+        offset = float(np.clip(pos.x() - (i + 1) * SPACING, -self.max_drag, self.max_drag))
         self.mass_dragged.emit(i, offset / self.gain)
 
     def mousePressEvent(self, event) -> None:

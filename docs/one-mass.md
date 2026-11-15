@@ -17,14 +17,15 @@ The pages in the order the app's tabs take them.
 
 ## Single oscillator
 
-m ẍ + c ẋ + k x = f, from every side. The free vibration from any start, with its envelope, its peaks
+m ẍ + c ẋ + k x = f, from every side. The mass itself moves above the plots, with the free vibration or the
+driven response and a time cursor on its plot; drag it and let go to pluck it. The free vibration from any start, with its envelope, its peaks
 and the log decrement measured from them (or ζ = 0.1, 1 and 2 side by side); a harmonic force or a
 rotating unbalance switched on from rest, beside its steady state; and four views of the receptance:
 amplification and lag with the half-power band marked, the Nyquist circle, the phase plane, and the
 poles in the s-plane, where a click puts them and the page works out k and c. Nine trials include
 critical damping, beats, the undamped resonance's straight-line growth and the unbalance's 180° turn.
 
-![Single oscillator page, resonance from rest: 1 N at f<sub>n</sub> = 3.18 Hz on m = 1 kg, k = 400 N/m, ζ = 0.05; the free decay's peaks give δ = 0.3146 (each 1.37 times the next), the forced swing grows over a few time constants to the steady 25 mm, ten times the static 2.5 mm, lagging 90°; the half-power points are 3.012 and 3.331 Hz](images/single_oscillator.png)
+![Single oscillator page, resonance from rest: 1 N at f<sub>n</sub> = 3.18 Hz on m = 1 kg, k = 400 N/m, ζ = 0.05, the mass drawn above the plots 1.6 s in, with the force on it; the free decay's peaks give δ = 0.3146 (each 1.37 times the next), the forced swing grows over a few time constants to the steady 25 mm, ten times the static 2.5 mm, lagging 90°; the half-power points are 3.012 and 3.331 Hz](images/single_oscillator.png)
 
 ## Pendulums
 
