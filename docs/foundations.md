@@ -50,7 +50,11 @@ out with numbers at any instant, and *Check* compares the energy and L with what
 The *Orientation* tab writes how the body is turned four ways at once: the rotation matrix, Euler's z-x-z
 angles (with their rates, which blow up near the gimbal lock at θ = 0), the quaternion with its axis and angle,
 and the 4 × 4 homogeneous transform that carries the point mass to space. Its start pose is set there as
-Euler angles: at θ = 0 changing φ or ψ turns the body the same way. The body is drawn with shaded faces, lit
+Euler angles: at θ = 0 changing φ or ψ turns the body the same way. The *Drift* tab steps the same torque-free run as a
+rotation matrix, as Euler angles and as a quaternion at one coarse step and plots how far each drifts from the
+true orientation: the quaternion least, the matrix more (and it stops being a rotation), the Euler angles most,
+and from a start near the lock they fail. The view can trace ω's path in space or on the body itself, where,
+torque-free, it runs round a closed loop (Poinsot's polhode). The body is drawn with shaded faces, lit
 from the upper left, so its turning reads at a glance.
 
 ## Simulation & modal analysis

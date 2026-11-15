@@ -72,6 +72,13 @@ principal axis (two of the three rates zero) or the moments are equal. Torque-fr
 in space (its rate is the torque), so |<b>L</b>|, and the energy <m>E</m> = ½<m>ω</m>·<b>L</b> (its rate is
 <m>τ</m>·<m>ω</m>, the torque's power).</p>
 
+<p>Where <m>ω</m> points, torque-free, follows from those two alone. In the body's axes <m>ω</m> must keep both
+2<m>E</m> = <m>ω</m>·<b>I</b><m>ω</m> and |<b>L</b>|² = |<b>I</b><m>ω</m>|², two ellipsoids' worth of conditions,
+so its tip runs round the closed curve where they meet: Poinsot's <b>polhode</b> <cite>poinsot</cite>, a loop round
+the least or the greatest axis, or, spun about the middle one, a path from that axis's one end to the other. In
+space it traces another curve round the fixed <b>L</b>. The view's <i>ω's path</i> draws either: on the body it
+turns with it.</p>
+
 <h3><a name="intermediate-axis"></a>The intermediate axis</h3>
 <p>Spin the body at <m>ω₀</m> about principal axis 1 and nudge it: <m>ω₂</m> and <m>ω₃</m> small. To first order
 <m>ω₁</m> stays <m>ω₀</m> and the second and third equations give</p>
@@ -119,6 +126,12 @@ such a place: aircraft use z-y-x (yaw, pitch, roll), which locks at a pitch of �
 body turning at <m>ω</m> moves <m>q</m> at <m>q̇</m> = ½<m>q</m> ⊗ (0, <m>ω</m>): smooth everywhere, no locked place, and
 only one condition to keep (|<m>q</m>| = 1, by dividing by it). That is why the page steps <m>q</m>, and why
 spacecraft and games do.</p>
+<p>The <i>Drift</i> tab steps the same torque-free run all three ways at one coarse step (RK4 at 1/20 of a
+turn) and compares each with a fine reference. The page's last trial, tipped 50° and spun 20° off its least axis,
+ends 10 s later with the quaternion 0.047° off, the matrix 0.29° off and no longer quite a rotation
+(‖<m>B</m>ᵀ<m>B</m> − <b>1</b>‖ = 0.0038, which nothing pulls back), and the Euler angles 13° off, worst where
+1/sin <m>θ</m> was largest. From the rates trial's start, which passes the lock within 1.7°, the quaternion ends
+0.006° off and the Euler angles 173°.</p>
 <p><b>A homogeneous transform</b> adds a place to a turn: the 4 × 4 matrix</p>
 <eq>T = \begin{bmatrix} B & B\mathbf{d} \\ 0\;0\;0 & 1 \end{bmatrix}:</eq>
 <p>the turn, and in its fourth column where the frame's origin is in space. Here the frame is the shape's own,

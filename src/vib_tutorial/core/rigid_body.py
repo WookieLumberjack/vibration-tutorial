@@ -219,3 +219,96 @@ class Tumbler:
             tau_out[i] = self._torque(on, q)  # what acted over the step that ends here
         self.q, self.L, self.t = [float(v) for v in q], [float(v) for v in L], t
         return Samples(t_out, q_out, L_out, tau_out)
+
+
+@dataclass
+class Drift:
+    """The same torque-free run stepped three ways (`compare`), each against a fine reference, at times t: how far
+    each orientation has turned from the true one (degrees), how far the matrix has strayed from being a rotation
+    (‖BᵀB − 1‖), how far an unnormalized quaternion's length has (| |q| − 1 |), and the Euler angles' 1/sin θ. The
+    Euler angles' error is NaN once a step met the lock (an infinite rate)."""
+
+    t: np.ndarray
+    matrix: np.ndarray
+    euler: np.ndarray
+    quaternion: np.ndarray
+    orthogonality: np.ndarray
+    length: np.ndarray
+    lock: np.ndarray
+
+
+def _skew(w: np.ndarray) -> np.ndarray:
+    return np.array([[0.0, -w[2], w[1]], [w[2], 0.0, -w[0]], [-w[1], w[0], 0.0]])
+
+
+def _rk4(f, y: np.ndarray, h: float) -> np.ndarray:
+    k1 = f(y)
+    k2 = f(y + h / 2 * k1)
+    k3 = f(y + h / 2 * k2)
+    k4 = f(y + h * k3)
+    return y + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+
+
+def _qdot(q: np.ndarray, w: np.ndarray) -> np.ndarray:
+    a, b, c, d = q
+    x, y, z = w
+    return 0.5 * np.array([-b * x - c * y - d * z, a * x + c * z - d * y, a * y - b * z + d * x, a * z + b * y - c * x])
+
+
+def _apart(B: np.ndarray, R: np.ndarray) -> float:
+    """The angle (degrees) of the turn from rotation R to B (B made the nearest rotation first)."""
+    U, _, Vt = np.linalg.svd(B)
+    nearest = U @ Vt
+    c = (np.trace(nearest.T @ R) - 1.0) / 2.0
+    return math.degrees(math.acos(max(-1.0, min(1.0, c))))
+
+
+def compare(body: Body, omega: np.ndarray, q0: np.ndarray, duration: float, h: float, fine: int = 8) -> Drift:
+    """Step the torque-free body from q0 and ω (in its axes) for `duration` with RK4 at step h, three ways: its
+    rotation matrix (Ḃ = B[ω]×, never corrected), its Euler angles (z-x-z, their rates), and its quaternion
+    (q̇ = ½q ⊗ ω, made unit after each step; and once not, for |q|'s drift). L stays fixed in space, and ω =
+    I⁻¹BᵀL from each one's own orientation. The reference is the quaternion stepped at h/fine."""
+    I_inv = np.linalg.inv(body.inertia())
+    q0 = np.asarray(q0, dtype=float) / np.linalg.norm(q0)
+    B0 = rotation.matrix(q0)
+    L = B0 @ body.inertia() @ np.asarray(omega, dtype=float)
+
+    def rate(B: np.ndarray) -> np.ndarray:
+        return I_inv @ (B.T @ L)
+
+    n = max(1, round(duration / h))
+    out = {k: np.empty(n + 1) for k in ("matrix", "euler", "quaternion", "orthogonality", "length", "lock")}
+    B = B0.copy()
+    angles = np.array(rotation.to_euler(B0)[:3])
+    q, raw, ref = q0.copy(), q0.copy(), q0.copy()
+    euler_ok = True
+
+    def euler_rates(y: np.ndarray) -> np.ndarray:
+        if not np.all(np.isfinite(y)):  # a stage already past the lock
+            return np.full(3, np.nan)
+        Be = rotation.from_euler(*y)
+        return np.array(rotation.euler_rates(y[1], y[2], rate(Be)))
+
+    for i in range(n + 1):
+        R = rotation.matrix(ref)
+        out["matrix"][i] = _apart(B, R)
+        out["orthogonality"][i] = float(np.linalg.norm(B.T @ B - np.eye(3)))
+        out["quaternion"][i] = _apart(rotation.matrix(q), R)
+        out["length"][i] = abs(float(np.linalg.norm(raw)) - 1.0)
+        s = math.sin(angles[1])
+        out["lock"][i] = 1.0 / abs(s) if abs(s) > rotation.LOCK else math.inf
+        out["euler"][i] = _apart(rotation.from_euler(*angles), R) if euler_ok else math.nan
+        if i == n:
+            break
+        B = _rk4(lambda M: M @ _skew(rate(M)), B, h)  # Ḃ = B[ω]×: the body's axes turn at ω
+        if euler_ok:
+            with np.errstate(all="ignore"):
+                angles = _rk4(euler_rates, angles, h)
+            euler_ok = bool(np.all(np.isfinite(angles)))
+        q = _rk4(lambda p: _qdot(p, rate(rotation.matrix(p / np.linalg.norm(p)))), q, h)
+        q /= np.linalg.norm(q)
+        raw = _rk4(lambda p: _qdot(p, rate(rotation.matrix(p / np.linalg.norm(p)))), raw, h)
+        for _ in range(fine):
+            ref = _rk4(lambda p: _qdot(p, rate(rotation.matrix(p))), ref, h / fine)
+            ref /= np.linalg.norm(ref)
+    return Drift(np.arange(n + 1) * h, **out)

@@ -3688,3 +3688,24 @@ def test_rigid_body_worked_example():
     moments, P = off.principal()
     assert [round(v * 1e3, 3 if v < 0.01 else 2) for v in moments] == [5.036, 11.25, 14.62]
     assert round(math.degrees(math.atan2(P[1, 0], P[0, 0])), 1) == 18.2
+
+
+def test_rigid_body_drift_numbers():
+    """The notes' and the trial's drift numbers: the last trial at 1/20 of a turn for 10 s, and the rates trial's
+    start, which passes the lock."""
+    from vib_tutorial.core import rotation
+    from vib_tutorial.core.rigid_body import compare
+    from vib_tutorial.gui import rigid_body as page
+
+    names = [t.name for t in page.TRIALS]
+    ends = {}
+    for name in ("Step it three ways", "Euler's rates blow up at the lock"):
+        t = page.TRIALS[names.index(name)]
+        w = page.start_rate(t.body, t.spin_axis, t.rate, t.nudge)
+        q0 = rotation.quaternion(rotation.from_euler(*np.radians(t.pose)))
+        ends[name] = compare(t.body, w, q0, 10.0, 2 * math.pi / np.linalg.norm(w) / 20)
+    d = ends["Step it three ways"]
+    assert (round(d.quaternion[-1], 3), round(d.matrix[-1], 2), round(d.orthogonality[-1], 4)) == (0.047, 0.29, 0.0038)
+    assert round(d.euler[-1]) == 13 and d.euler[-1] > d.matrix[-1] > d.quaternion[-1]
+    d = ends["Euler's rates blow up at the lock"]
+    assert (round(d.quaternion[-1], 3), round(d.euler[-1])) == (0.006, 173)

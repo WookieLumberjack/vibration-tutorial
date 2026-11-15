@@ -5033,3 +5033,42 @@ def test_rigid_body_orientation(main_window, app):
     page.offset[0].setValue(100.0)
     page._draw_orientation()
     assert "T(p, 1) in space" in page.orient_text.text()
+
+
+def test_rigid_body_paths_and_drift(main_window, app):
+    """ω's path: in space, on the body (turning with it), both or none; the Drift tab steps the start three ways
+    from its trial, clears when the start changes, and says the Euler angles failed from a start at the lock."""
+    import numpy as np
+
+    from vib_tutorial.gui import rigid_body as r
+
+    w = main_window
+    page = w.rigid_body_page
+    w.pages.setCurrentWidget(page)
+    names = [t.name for t in r.TRIALS]
+    page.load_trial(names.index("ω's path on the body"))
+    page.step(2.0)
+    view = page.view
+    shown = {}
+    for mode in range(len(r.PATHS)):
+        page.path_box.setCurrentIndex(mode)
+        shown[mode] = tuple(item.xData is not None and len(item.xData) > 0 for item in (view.trail, view.polhode))
+    assert shown == {
+        r.PATH_SPACE: (True, False),
+        r.PATH_BODY: (False, True),
+        r.PATH_BOTH: (True, True),
+        r.PATH_NONE: (False, False),
+    }
+
+    page.load_trial(names.index("Step it three ways"))
+    assert page.tabs.currentIndex() == r.TAB_DRIFT and page.drift is not None
+    assert all(len(item.yData) > 10 for item in page.drift_items)
+    assert "0.047° off" in page.drift_note.text() and "13° off" in page.drift_note.text()
+    page.rate.setValue(5.0)
+    assert page.drift is None and "Step them" in page.drift_note.text(), "a new start clears it"
+    page.pose[1].setValue(0.0)  # θ = 0: at the lock
+    page.step_three()
+    assert "met the lock" in page.drift_note.text() and np.isnan(page.drift.euler).any()
+    page.rate.setValue(0.0)
+    page.step_three()
+    assert "isn't turning" in page.drift_note.text()

@@ -1,5 +1,7 @@
 """core/rigid_body.py: the inertia tensor of a shape and a point mass, its principal axes, and the body tumbling."""
 
+import math
+
 import numpy as np
 import pytest
 
@@ -147,3 +149,24 @@ def test_a_start_turned_away_keeps_omega_in_the_body():
     tm = Tumbler(BOX, (1.0, 2.0, 3.0), q=list(q))
     assert np.allclose(tm.body_rate(), [1.0, 2.0, 3.0])
     assert np.allclose(tm.L, rotation.matrix(q) @ (BOX.inertia() @ [1.0, 2.0, 3.0]))
+
+
+def test_stepping_three_ways():
+    """The three representations against a fine reference: at step 0 none is off; the quaternion stays a rotation
+    exactly; the matrix strays from one; RK4's errors fall about as the step's fourth power; and an Euler start at
+    the lock fails at once (an infinite rate)."""
+    from vib_tutorial.core.rigid_body import compare
+
+    w = np.array([1.0, 0.3, 5.0])
+    q0 = rotation.quaternion(rotation.from_euler(*np.radians([30.0, 50.0, 20.0])))
+    turn = 2 * math.pi / np.linalg.norm(w)
+    coarse, fine = compare(BOX, w, q0, 5.0, turn / 20), compare(BOX, w, q0, 5.0, turn / 40)
+    for d in (coarse, fine):
+        assert d.matrix[0] < 1e-6 and d.euler[0] < 1e-6 and d.quaternion[0] < 1e-6
+        assert np.all(np.isfinite(d.euler))
+    assert coarse.orthogonality[-1] > 1e-4 and coarse.length[-1] > 1e-7
+    for name in ("matrix", "quaternion"):
+        ratio = getattr(coarse, name)[-1] / getattr(fine, name)[-1]
+        assert 8 < ratio < 40, (name, ratio)  # 16 for fourth order
+    locked = compare(BOX, w, rotation.quaternion(np.eye(3)), 1.0, turn / 20)
+    assert np.isnan(locked.euler[1]) and np.isfinite(locked.quaternion).all(), "θ = 0: φ̇ = ω₂/0"
