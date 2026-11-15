@@ -51,7 +51,8 @@ def notes_numbers(notes: str) -> frozenset[str]:
     """The decimals and percentages `theory/<notes>.html` shows outside its `<eq>`s ("0.19 %", "2.010")."""
     text = (THEORY / f"{notes}.html").read_text(encoding="utf-8")
     text = re.sub(r"<eq>.*?</eq>|<!--.*?-->", " ", text, flags=re.S)
-    text = re.sub(r"</?(?:td|th|tr|li|p|br|div|table|h\d)\b[^>]*>", " ", text)  # table cells and blocks stay apart
+    # table cells, blocks and exponents stay apart ("0.878<sup>2</sup>" isn't 0.8782)
+    text = re.sub(r"</?(?:td|th|tr|li|p|br|div|table|h\d|sup|sub)\b[^>]*>", " ", text)
     text = html.unescape(re.sub(r"<[^>]+>", "", text))
     return frozenset(re.sub(r"\s*%", " %", n) for n in NUMBER.findall(text))
 
@@ -1209,17 +1210,21 @@ def test_single_oscillator_trials():
     from vib_tutorial.core.sdof import Oscillator, receptance
 
     osc = Oscillator()
-    assert osc.natural_hz == pytest.approx(3.18, abs=0.005) and osc.zeta == pytest.approx(0.05)
-    assert math.exp(osc.log_decrement) == pytest.approx(1.37, abs=0.005)
-    assert osc.log_decrement == pytest.approx(0.315, abs=0.0005) and osc.time_constant == pytest.approx(1.0)
+    assert osc.natural_hz == pytest.approx(quoted("sdof", "3.18"), abs=0.005)
+    assert osc.zeta == pytest.approx(quoted("sdof", "0.05"))
+    assert math.exp(osc.log_decrement) == pytest.approx(quoted("sdof", "1.37"), abs=0.005)
+    assert osc.log_decrement == pytest.approx(quoted("sdof", "0.315"), abs=0.0005)
+    assert osc.time_constant == pytest.approx(1.0)
     slow = Oscillator(1, 400, 80).poles()
     assert sorted(slow.real) == pytest.approx([-74.6, -5.4], abs=0.05)
     two = Oscillator(1, 400, 80).poles().real.max()  # ζ = 2
     assert -two / osc.omega_n == pytest.approx(0.27, abs=0.005) and -1 / two == pytest.approx(0.19, abs=0.005)
-    assert 1 / 20 == pytest.approx(0.05)  # critical: a double root at −ω_n
-    assert (1 / 400) / (2 * 0.05) == pytest.approx(0.025)  # 25 mm at resonance, Q = 10
+    assert 1 / 20 == pytest.approx(quoted("sdof", "0.05"))  # critical: a double root at −ω_n
+    static = 1e3 / osc.stiffness  # mm, for 1 N
+    assert static == pytest.approx(quoted("sdof", "2.5")) and 2 * osc.zeta == pytest.approx(quoted("sdof", "0.1"))
+    assert static / (2 * osc.zeta) == pytest.approx(25.0)  # mm at resonance, Q = 10
     lo, hi = osc.half_power_hz()
-    assert (lo, hi) == pytest.approx((3.01, 3.33), abs=0.005)
+    assert (lo, hi) == pytest.approx((quoted("sdof", "3.01"), quoted("sdof", "3.33")), abs=0.005)
     beat = osc.natural_hz - 3.0
     assert beat == pytest.approx(0.18, abs=0.005) and 1 / beat == pytest.approx(5.5, abs=0.05)
     undamped = Oscillator(1, 400, 0)
@@ -1236,24 +1241,30 @@ def test_single_oscillator_worked_example_and_springs():
     osc = Oscillator()
     assert (osc.mass, osc.stiffness, osc.damping) == (1.0, 400.0, 2.0)
     assert osc.omega_n == pytest.approx(20.0) and osc.critical == pytest.approx(40.0)
-    assert osc.omega_d == pytest.approx(19.97, abs=0.005)
-    assert 1 - osc.omega_d / osc.omega_n == pytest.approx(0.0013, abs=0.00005)
-    assert osc.log_decrement == pytest.approx(0.315, abs=0.0005)
+    assert 100 * osc.zeta == pytest.approx(quoted("sdof", "5 %"))
+    assert osc.omega_d == pytest.approx(quoted("sdof", "19.97"), abs=0.005)
+    # 0.13 % below ω_n at ζ = 5 %, the most of the 0.5–5 % of most structures
+    assert 100 * (1 - osc.omega_d / osc.omega_n) == pytest.approx(quoted("sdof", "0.13 %"), abs=0.005)
+    assert osc.log_decrement == pytest.approx(quoted("sdof", "0.315"), abs=0.0005)
     omega = 2 * math.pi * 3.0
     r = omega / osc.omega_n
-    assert omega == pytest.approx(18.85, abs=0.005) and r == pytest.approx(0.942, abs=0.0005)
-    assert 1 - r**2 == pytest.approx(0.1117, abs=0.00005) and 2 * osc.zeta * r == pytest.approx(0.0942, abs=0.00005)
+    assert omega == pytest.approx(quoted("sdof", "18.85"), abs=0.005)
+    assert r == pytest.approx(quoted("sdof", "0.942"), abs=0.0005)
+    assert 1 - r**2 == pytest.approx(quoted("sdof", "0.1117"), abs=0.00005)
+    assert 2 * osc.zeta * r == pytest.approx(quoted("sdof", "0.0942"), abs=0.00005)
     assert math.hypot(1 - r**2, 2 * osc.zeta * r) == pytest.approx(0.1462, abs=0.00005)
     assert 2.5 / 0.1462 == pytest.approx(17.1, abs=0.05)  # mm, from the rounded numbers
     h = receptance(osc, np.array([3.0]))[0]
     assert abs(h) * 1e3 == pytest.approx(17.1, abs=0.05)  # mm, for 1 N
-    assert abs(h) * osc.stiffness == pytest.approx(6.84, abs=0.005)
-    assert -math.degrees(math.atan2(h.imag, h.real)) == pytest.approx(40.1, abs=0.05)
-    assert math.degrees(math.atan2(0.0942, 0.1117)) == pytest.approx(40.1, abs=0.05)  # from the rounded numbers too
-    assert 2 * osc.zeta * osc.natural_hz == pytest.approx(0.32, abs=0.005)
+    assert abs(h) * osc.stiffness == pytest.approx(quoted("sdof", "6.84"), abs=0.005)
+    assert -math.degrees(math.atan2(h.imag, h.real)) == pytest.approx(quoted("sdof", "40.1"), abs=0.05)
+    assert math.degrees(math.atan2(0.0942, 0.1117)) == pytest.approx(
+        quoted("sdof", "40.1"), abs=0.05
+    )  # from the rounded numbers too
+    assert 2 * osc.zeta * osc.natural_hz == pytest.approx(quoted("sdof", "0.32"), abs=0.005)
     # Two of its springs side by side, and end to end.
-    assert Oscillator(1, 800, 0).natural_hz == pytest.approx(4.50, abs=0.005)
-    assert Oscillator(1, 200, 0).natural_hz == pytest.approx(2.25, abs=0.005)
+    assert Oscillator(1, 800, 0).natural_hz == pytest.approx(quoted("sdof", "4.50"), abs=0.005)
+    assert Oscillator(1, 200, 0).natural_hz == pytest.approx(quoted("sdof", "2.25"), abs=0.005)
 
 
 def test_transient_trials():
@@ -1262,12 +1273,16 @@ def test_transient_trials():
 
     osc = Oscillator()
     m = step_metrics(osc)
-    assert m.overshoot == pytest.approx(0.85, abs=0.005) and 2.5 * (1 + m.overshoot) == pytest.approx(4.64, abs=0.005)
-    assert m.peak_time == pytest.approx(0.157, abs=0.0005) and m.settling == pytest.approx(3.8, abs=0.05)
+    assert m.overshoot == pytest.approx(0.85, abs=0.005)
+    assert 2.5 * (1 + m.overshoot) == pytest.approx(quoted("transient", "4.64"), abs=0.005)
+    assert m.peak_time == pytest.approx(quoted("transient", "0.157"), abs=0.0005)
+    assert m.settling == pytest.approx(quoted("transient", "3.8"), abs=0.05)
     assert step_metrics(Oscillator(1, 400, 40)).settling == pytest.approx(0.29, abs=0.005)
     assert 2 * np.sin(np.pi / 20) == pytest.approx(0.31, abs=0.005)
     r = 0.26 / osc.period
-    assert peak_ratio(0.0, PulseKind.HALF_SINE, np.array([r]))[0] == pytest.approx(1.77, abs=0.005)
+    assert peak_ratio(0.0, PulseKind.HALF_SINE, np.array([r]))[0] == pytest.approx(
+        quoted("transient", "1.77"), abs=0.005
+    )
     assert peak_ratio(0.05, PulseKind.HALF_SINE, np.array([r]))[0] == pytest.approx(1.65, abs=0.005)
     r = 0.864 / osc.period
     assert r == pytest.approx(2.75, abs=0.005)
@@ -1285,9 +1300,12 @@ def test_transient_worked_example_and_pulses():
     assert (osc.mass, osc.stiffness, osc.damping) == (1.0, 400.0, 2.0)
     assert (pulse.kind, pulse.amplitude) == (PulseKind.STEP, 1.0)
     zw, wd = osc.zeta * osc.omega_n, osc.omega_d
-    assert osc.natural_hz == pytest.approx(3.18, abs=0.005) and osc.period == pytest.approx(0.314, abs=0.0005)
-    assert osc.zeta == pytest.approx(0.05) and zw == pytest.approx(1.0) and wd == pytest.approx(19.97, abs=0.005)
-    assert zw / wd == pytest.approx(0.0501, abs=0.00005)
+    assert osc.natural_hz == pytest.approx(quoted("transient", "3.18"), abs=0.005)
+    assert osc.period == pytest.approx(quoted("transient", "0.314"), abs=0.0005)
+    assert osc.zeta == pytest.approx(quoted("transient", "0.05"))
+    assert zw == pytest.approx(1.0)
+    assert wd == pytest.approx(quoted("transient", "19.97"), abs=0.005)
+    assert zw / wd == pytest.approx(quoted("transient", "0.0501"), abs=0.00005)
     # the partial fractions: (1/400)(1/s − (s + 2)/((s + 1)² + ω_d²)) is 1/(s(s² + 2s + 400))
     for s in (0.3 + 2j, 5.0, -1 + 7j):
         assert (1 / s - (s + 2) / ((s + 1) ** 2 + wd**2)) / 400 == pytest.approx(1 / (s * (s * s + 2 * s + 400)))
@@ -1296,25 +1314,39 @@ def test_transient_worked_example_and_pulses():
     np.testing.assert_allclose(step_response(osc, t), closed, atol=1e-12)
     # the overshoot
     m = step_metrics(osc)
-    assert 0.05 * math.pi / math.sqrt(1 - 0.05**2) == pytest.approx(0.1573, abs=0.00005)
-    assert math.exp(-0.1573) == pytest.approx(0.854, abs=0.0005) and m.overshoot == pytest.approx(0.854, abs=0.0005)
-    assert 2.5 * 1.854 == pytest.approx(4.64, abs=0.005) and 2.5 * (1 + m.overshoot) == pytest.approx(4.64, abs=0.005)
-    assert math.pi / 19.97 == pytest.approx(0.157, abs=0.0005) and m.peak_time == pytest.approx(0.157, abs=0.0005)
-    assert m.settling_estimate == pytest.approx(4.0) and m.settling == pytest.approx(3.8, abs=0.05)
-    assert math.log(50) == pytest.approx(3.9, abs=0.05)  # the 2 % rule: ln 50, rounded to 4
+    assert 0.05 * math.pi / math.sqrt(1 - 0.05**2) == pytest.approx(quoted("transient", "0.1573"), abs=0.00005)
+    assert math.exp(-0.1573) == pytest.approx(quoted("transient", "0.854"), abs=0.0005)
+    assert m.overshoot == pytest.approx(quoted("transient", "0.854"), abs=0.0005)
+    assert 1e3 / osc.stiffness == pytest.approx(quoted("transient", "2.5"))  # mm, the static deflection
+    assert 100 * m.overshoot == pytest.approx(quoted("transient", "85.4 %"), abs=0.05)
+    assert 1 + 0.854 == pytest.approx(quoted("transient", "1.854"))
+    assert 2.5 * 1.854 == pytest.approx(quoted("transient", "4.64"), abs=0.005)
+    assert 2.5 * (1 + m.overshoot) == pytest.approx(quoted("transient", "4.64"), abs=0.005)
+    assert math.pi / 19.97 == pytest.approx(quoted("transient", "0.157"), abs=0.0005)
+    assert m.peak_time == pytest.approx(quoted("transient", "0.157"), abs=0.0005)
+    assert m.settling_estimate == pytest.approx(4.0)
+    assert m.settling == pytest.approx(quoted("transient", "3.8"), abs=0.05)
+    band = quoted("transient", "2 %") / 100  # the settling band, which the envelope reaches at 0.02
+    assert band == pytest.approx(quoted("transient", "0.02"))
+    assert math.log(1 / band) == pytest.approx(3.9, abs=0.05)  # the 2 % rule: ln 50, rounded to 4
+    assert step_metrics(Oscillator(1, 400, 2)).settling == pytest.approx(m.settling)
     # at 0.3 s, where the convolution is drawn
-    assert wd * 0.3 == pytest.approx(5.9925, abs=0.00005)
-    assert math.cos(5.9925) == pytest.approx(0.95805, abs=0.000005)
-    assert math.sin(5.9925) == pytest.approx(-0.28661, abs=0.000005)
-    assert math.exp(-0.3) == pytest.approx(0.74082, abs=0.000005)
+    from vib_tutorial.gui.transient import TransientTrial
+
+    assert TransientTrial.at == quoted("transient", "0.3")  # its default
+    assert wd * 0.3 == pytest.approx(quoted("transient", "5.9925"), abs=0.00005)
+    assert math.cos(5.9925) == pytest.approx(quoted("transient", "0.95805"), abs=0.000005)
+    assert math.sin(5.9925) == pytest.approx(-quoted("transient", "0.28661"), abs=0.000005)
+    assert math.exp(-0.3) == pytest.approx(quoted("transient", "0.74082"), abs=0.000005)
     bracket = 1 - 0.74082 * (0.95805 - 0.0501 * 0.28661)
-    assert bracket == pytest.approx(0.3009, abs=0.00005) and 2.5 * bracket == pytest.approx(0.752, abs=0.0005)
+    assert bracket == pytest.approx(quoted("transient", "0.3009"), abs=0.00005)
+    assert 2.5 * bracket == pytest.approx(quoted("transient", "0.752"), abs=0.0005)
     x = float(pulse_response(osc, pulse, np.array([0.0, 0.3]))[-1])
-    assert x * 1e3 == pytest.approx(0.752, abs=0.0005)
-    assert convolution(osc, pulse, 0.3)[3] * 1e3 == pytest.approx(0.752, abs=0.0005)
+    assert x * 1e3 == pytest.approx(quoted("transient", "0.752"), abs=0.0005)
+    assert convolution(osc, pulse, 0.3)[3] * 1e3 == pytest.approx(quoted("transient", "0.752"), abs=0.0005)
     # h and H
     assert osc.time_constant == pytest.approx(1.0)
-    assert 2 * osc.zeta * osc.natural_hz == pytest.approx(0.318, abs=0.0005)
+    assert 2 * osc.zeta * osc.natural_hz == pytest.approx(quoted("transient", "0.318"), abs=0.0005)
     assert 1 / (osc.damping * osc.omega_n) == pytest.approx(0.025)
     # the impulse trial's first swing, 4.6 mm, a little under I/mω_n = 5 mm
     t = np.linspace(0, 0.1, 2001)
@@ -1334,7 +1366,8 @@ def test_transient_worked_example_and_pulses():
     # the half-sine's worst: 1.77 times static near T = 0.8 T_n
     ratios = np.linspace(0.7, 0.9, 201)
     peaks = peak_ratio(0.0, PulseKind.HALF_SINE, ratios)
-    assert peaks.max() == pytest.approx(1.77, abs=0.005) and ratios[peaks.argmax()] == pytest.approx(0.8, abs=0.03)
+    assert peaks.max() == pytest.approx(quoted("transient", "1.77"), abs=0.005)
+    assert ratios[peaks.argmax()] == pytest.approx(quoted("transient", "0.8"), abs=0.03)
 
 
 def test_damping_models_trials():
@@ -1346,7 +1379,7 @@ def test_damping_models_trials():
     assert m.friction == pytest.approx(0.31, abs=0.005)
     assert m.energy_per_cycle(Model.VISCOUS, np.array([2 * wn]))[0] == pytest.approx(0.0251, abs=5e-5)
     assert m.energy_per_cycle(Model.ZENER, np.array([2 * wn]))[0] == pytest.approx(0.0107, abs=5e-5)
-    assert 4 * m.friction / np.pi == pytest.approx(0.4, abs=0.005)
+    assert 4 * m.friction / np.pi == pytest.approx(quoted("damping_models", "0.4"), abs=0.005)
     assert 4 * m.friction / m.stiffness == pytest.approx(0.0031, abs=5e-5)
     half_cycles, where = coulomb_stop(m.stiffness, m.friction, 0.01)
     assert half_cycles == 6 and abs(where) == pytest.approx(0.00058, abs=5e-6)
@@ -1361,55 +1394,98 @@ def test_damping_models_worked_example():
     from vib_tutorial.core.sdof import Oscillator
 
     m = Matched()
-    assert (m.mass, m.stiffness, m.zeta, m.amplitude, m.relax) == (1.0, 400.0, 0.05, 0.01, 1.0)
+    assert (m.mass, m.stiffness, m.relax) == (1.0, 400.0, 1.0)
+    assert (m.zeta, m.amplitude) == (quoted("damping_models", "0.05"), quoted("damping_models", "0.01"))
     wn = m.omega_n
-    assert wn == pytest.approx(20.0) and m.natural_hz == pytest.approx(3.18, abs=0.005) and m.c == pytest.approx(2.0)
+    assert wn == pytest.approx(20.0)
+    assert m.natural_hz == pytest.approx(quoted("damping_models", "3.18"), abs=0.005)
+    assert m.c == pytest.approx(2.0)
     U = 0.5 * m.stiffness * m.amplitude**2
-    assert U == pytest.approx(0.020) and m.eta == pytest.approx(0.1)
+    assert U == pytest.approx(0.020) and m.eta == pytest.approx(quoted("damping_models", "0.1"))
     w = np.array([wn])
     for model in Model:
-        assert m.energy_per_cycle(model, w)[0] * 1e3 == pytest.approx(12.57, abs=0.005)
+        assert m.energy_per_cycle(model, w)[0] * 1e3 == pytest.approx(quoted("damping_models", "12.57"), abs=0.005)
+        assert m.energy_per_cycle(model, w)[0] * 1e3 == pytest.approx(
+            quoted("damping_models", "12.6"), abs=0.05
+        )  # the loops' readout
         K = m.dynamic_stiffness(model, w)[0]
         assert m.energy_per_cycle(model, w)[0] / (2 * math.pi * 0.5 * K.real * m.amplitude**2) == pytest.approx(
             K.imag / K.real
         )  # η = W_d/2πU = K''/K'
-    assert 2 * math.pi * 0.1 * 20 == pytest.approx(12.57, abs=0.005)  # mJ, from the rounded numbers
-    assert math.pi * 2 * 20 * 0.01**2 * 1e3 == pytest.approx(12.57, abs=0.005)
+    assert 2 * math.pi * 0.1 * 20 == pytest.approx(
+        quoted("damping_models", "12.57"), abs=0.005
+    )  # mJ, from the rounded numbers
+    assert math.pi * 2 * 20 * 0.01**2 * 1e3 == pytest.approx(quoted("damping_models", "12.57"), abs=0.005)
     # friction
-    assert m.friction == pytest.approx(0.314, abs=0.0005) and 12.57 / 40 == pytest.approx(0.314, abs=0.0005)
-    assert m.friction == pytest.approx(0.3142, abs=0.00005) and m.zener()[2] == pytest.approx(0.04525, abs=5e-6)
+    assert m.friction == pytest.approx(quoted("damping_models", "0.314"), abs=0.0005)
+    assert 12.57 / 40 == pytest.approx(quoted("damping_models", "0.314"), abs=0.0005)
+    assert m.friction == pytest.approx(quoted("damping_models", "0.3142"), abs=0.00005)
+    assert m.zener()[2] == pytest.approx(quoted("damping_models", "0.04525"), abs=5e-6)
     assert abs(coulomb_stop(m.stiffness, m.friction, m.amplitude)[1]) * 1e6 == pytest.approx(575, abs=0.5)
-    assert 4 * m.friction / m.stiffness * 1e3 == pytest.approx(3.14, abs=0.005)
-    assert m.friction / m.stiffness * 1e3 == pytest.approx(0.785, abs=0.0005)
-    turns = [10 - 1.57 * n for n in range(1, 7)]  # from the rounded 1.57 mm a half cycle
-    assert turns == pytest.approx([8.43, 6.86, 5.29, 3.72, 2.15, 0.58], abs=0.005)
+    assert 4 * m.friction / m.stiffness * 1e3 == pytest.approx(quoted("damping_models", "3.14"), abs=0.005)
+    assert m.friction / m.stiffness * 1e3 == pytest.approx(quoted("damping_models", "0.785"), abs=0.0005)
+    half_cycle = quoted("damping_models", "1.57")
+    assert 2 * m.friction / m.stiffness * 1e3 == pytest.approx(half_cycle, abs=0.005)
+    turns = [10 - half_cycle * n for n in range(1, 7)]  # from the rounded 1.57 mm a half cycle
+    assert turns == pytest.approx(
+        [
+            quoted("damping_models", "8.43"),
+            quoted("damping_models", "6.86"),
+            quoted("damping_models", "5.29"),
+            quoted("damping_models", "3.72"),
+            quoted("damping_models", "2.15"),
+            quoted("damping_models", "0.58"),
+        ],
+        abs=0.005,
+    )
     halves, stop = coulomb_stop(m.stiffness, m.friction, m.amplitude)
-    assert halves == 6 and abs(stop) * 1e3 == pytest.approx(0.58, abs=0.005)
+    assert halves == 6 and abs(stop) * 1e3 == pytest.approx(quoted("damping_models", "0.58"), abs=0.005)
     t = np.linspace(0, 2.5 * 2 * math.pi / wn, 50001)  # its turns, every half period: 8.43, 6.86, … mm
     x = coulomb_decay(m.mass, m.stiffness, m.friction, m.amplitude, t)
     half = np.searchsorted(t, [n * math.pi / wn for n in range(1, 5)])
-    assert np.abs(x[half]) * 1e3 == pytest.approx([8.43, 6.86, 5.29, 3.72], abs=0.005)
+    assert np.abs(x[half]) * 1e3 == pytest.approx(
+        [
+            quoted("damping_models", "8.43"),
+            quoted("damping_models", "6.86"),
+            quoted("damping_models", "5.29"),
+            quoted("damping_models", "3.72"),
+        ],
+        abs=0.005,
+    )
     delta = Oscillator(1, 400, 2).log_decrement
-    assert delta == pytest.approx(0.315, abs=0.0005) and math.exp(-delta) == pytest.approx(0.730, abs=0.0005)
-    assert math.exp(-0.315) == pytest.approx(0.730, abs=0.0005)
+    assert delta == pytest.approx(quoted("damping_models", "0.315"), abs=0.0005)
+    assert math.exp(-delta) == pytest.approx(quoted("damping_models", "0.730"), abs=0.0005)
+    assert math.exp(-0.315) == pytest.approx(quoted("damping_models", "0.730"), abs=0.0005)
     # driven by 1 N
-    assert abs(m.receptance(Model.HYSTERETIC, np.array([m.natural_hz]), 1.0)[0]) * 1e3 == pytest.approx(25.0)
+    assert abs(m.receptance(Model.HYSTERETIC, np.array([m.natural_hz]), 1.0)[0]) * 1e3 == pytest.approx(
+        quoted("damping_models", "25.0")
+    )
     f = np.linspace(3.0, 3.3, 300001)
-    assert np.abs(m.receptance(Model.VISCOUS, f, 1.0)).max() * 1e3 == pytest.approx(25.03, abs=0.005)
-    assert 2.5 / (0.1 * math.sqrt(1 - 0.05**2)) == pytest.approx(25.03, abs=0.005)
+    assert np.abs(m.receptance(Model.VISCOUS, f, 1.0)).max() * 1e3 == pytest.approx(
+        quoted("damping_models", "25.03"), abs=0.005
+    )
+    assert 2.5 / (0.1 * math.sqrt(1 - 0.05**2)) == pytest.approx(quoted("damping_models", "25.03"), abs=0.005)
     assert np.abs(m.receptance(Model.HYSTERETIC, f, 1.0)).max() == pytest.approx(0.025, rel=1e-6)
-    assert 4 * m.friction / math.pi == pytest.approx(0.4)
+    assert 4 * m.friction / math.pi == pytest.approx(quoted("damping_models", "0.4"))
     # the Zener element
     k0, k1, tau = m.zener()
     a = k1 / k0
-    assert a == pytest.approx(0.221, abs=0.0005) and a / (2 * math.sqrt(1 + a)) == pytest.approx(0.1)
-    assert 0.221 / (2 * math.sqrt(1.221)) == pytest.approx(0.1, abs=0.0005)  # η_max = k1/2√(k0(k0 + k1))
-    assert k1 / (2 * math.sqrt(k0 * (k0 + k1))) == pytest.approx(0.1)
-    assert k0 == pytest.approx(363.8, abs=0.05) and k1 == pytest.approx(80.4, abs=0.05)
-    assert 400 / (1 + 0.221 / 2.221) == pytest.approx(363.8, abs=0.05)
-    assert tau * 1e3 == pytest.approx(45.2, abs=0.05) and 1e3 / (20 * math.sqrt(1.221)) == pytest.approx(45.2, abs=0.05)
-    assert m.loss_factor(Model.ZENER, w)[0] == pytest.approx(0.1)
-    assert m.loss_factor(Model.ZENER, np.geomspace(0.1, 10, 2001) * wn).max() == pytest.approx(0.1, rel=1e-5)
+    assert a == pytest.approx(quoted("damping_models", "0.221"), abs=0.0005)
+    assert a / (2 * math.sqrt(1 + a)) == pytest.approx(quoted("damping_models", "0.1"))
+    assert 1 + a == pytest.approx(quoted("damping_models", "1.221"), abs=0.0005)
+    assert 0.221 / (2 * math.sqrt(1.221)) == pytest.approx(
+        quoted("damping_models", "0.1"), abs=0.0005
+    )  # η_max = k1/2√(k0(k0 + k1))
+    assert k1 / (2 * math.sqrt(k0 * (k0 + k1))) == pytest.approx(quoted("damping_models", "0.1"))
+    assert k0 == pytest.approx(quoted("damping_models", "363.8"), abs=0.05)
+    assert k1 == pytest.approx(quoted("damping_models", "80.4"), abs=0.05)
+    assert 400 / (1 + 0.221 / 2.221) == pytest.approx(quoted("damping_models", "363.8"), abs=0.05)
+    assert tau * 1e3 == pytest.approx(quoted("damping_models", "45.2"), abs=0.05)
+    assert 1e3 / (20 * math.sqrt(1.221)) == pytest.approx(quoted("damping_models", "45.2"), abs=0.05)
+    assert m.loss_factor(Model.ZENER, w)[0] == pytest.approx(quoted("damping_models", "0.1"))
+    assert m.loss_factor(Model.ZENER, np.geomspace(0.1, 10, 2001) * wn).max() == pytest.approx(
+        quoted("damping_models", "0.1"), rel=1e-5
+    )
     # equivalent viscous damping: velocity-squared drag a ẋ|ẋ| takes (8/3) a Ω² X³ a cycle
     drag, omega, X = 0.7, 13.0, 0.02
     th = np.linspace(0, 2 * math.pi, 400001)
@@ -1453,35 +1529,48 @@ def test_isolation_worked_example():
     from vib_tutorial.core.isolation import G, Isolator, start_up
 
     iso = Isolator()
-    assert (iso.mass, iso.rpm, iso.unbalance, iso.deflection, iso.zeta) == (100.0, 1500.0, 0.01, 0.005, 0.05)
+    assert (iso.mass, iso.rpm, iso.unbalance) == (100.0, 1500.0, 0.01)
+    assert (iso.deflection, iso.zeta) == (quoted("isolation", "0.005"), quoted("isolation", "0.05"))
+    assert G == pytest.approx(quoted("isolation", "9.807"), abs=0.0005)
     assert iso.stiffness == pytest.approx(196_100, abs=50) and 100 * 9.807 / 0.005 == pytest.approx(196_100, abs=50)
-    assert iso.natural_hz == pytest.approx(7.048, abs=0.0005) and 15.76 / math.sqrt(5) == pytest.approx(
-        7.048, abs=0.0005
-    )
-    assert 60 * iso.natural_hz == pytest.approx(423, abs=0.5) and iso.damping == pytest.approx(442.9, abs=0.05)
-    assert math.sqrt(G / 0.001) / (2 * math.pi) == pytest.approx(15.76, abs=0.005)
-    assert 2 * math.pi * 25 == pytest.approx(157.08, abs=0.005)
+    assert iso.natural_hz == pytest.approx(quoted("isolation", "7.048"), abs=0.0005)
+    assert 15.76 / math.sqrt(5) == pytest.approx(quoted("isolation", "7.048"), abs=0.0005)
+    assert 60 * iso.natural_hz == pytest.approx(423, abs=0.5)
+    assert iso.damping == pytest.approx(quoted("isolation", "442.9"), abs=0.05)
+    assert math.sqrt(G / 0.001) / (2 * math.pi) == pytest.approx(quoted("isolation", "15.76"), abs=0.005)
+    assert 2 * math.pi * 25 == pytest.approx(quoted("isolation", "157.08"), abs=0.005)
     F = float(iso.force_at(25.0))
-    assert F == pytest.approx(246.7, abs=0.05) and 0.01 * 157.08**2 == pytest.approx(246.7, abs=0.05)
+    assert F == pytest.approx(quoted("isolation", "246.7"), abs=0.05)
+    assert 0.01 * 157.08**2 == pytest.approx(quoted("isolation", "246.7"), abs=0.05)
     r = 25 / iso.natural_hz
-    assert r == pytest.approx(3.547, abs=0.0005) and 25 / 7.048 == pytest.approx(3.547, abs=0.0005)
-    assert 3.547**2 == pytest.approx(12.58, abs=0.005) and 0.1 * 3.547 == pytest.approx(0.3547)
+    assert r == pytest.approx(quoted("isolation", "3.547"), abs=0.0005)
+    assert 25 / 7.048 == pytest.approx(quoted("isolation", "3.547"), abs=0.0005)
+    assert 3.547**2 == pytest.approx(quoted("isolation", "12.58"), abs=0.005)
+    assert 0.1 * 3.547 == pytest.approx(quoted("isolation", "0.3547"))
     assert math.sqrt(1 + 0.3547**2) == pytest.approx(1.0610, abs=0.00005)
-    assert math.hypot(11.58, 0.3547) == pytest.approx(11.585, abs=0.0005)
-    assert 1.0610 / 11.585 == pytest.approx(0.0916, abs=0.00005)
+    assert 1 - r**2 == pytest.approx(-quoted("isolation", "11.58"), abs=0.005)
+    assert math.hypot(11.58, 0.3547) == pytest.approx(quoted("isolation", "11.585"), abs=0.0005)
+    assert 1.0610 / 11.585 == pytest.approx(quoted("isolation", "0.0916"), abs=0.00005)
     X, floor, T = iso.at_speed()
-    assert T == pytest.approx(0.0916, abs=0.00005) and floor == pytest.approx(22.6, abs=0.05)
-    assert 246.7 * 0.0916 == pytest.approx(22.6, abs=0.05)
-    assert 100 * (1 - T) == pytest.approx(90.8, abs=0.05) and 20 * math.log10(0.0916) == pytest.approx(-20.8, abs=0.05)
+    assert T == pytest.approx(quoted("isolation", "0.0916"), abs=0.00005)
+    assert floor == pytest.approx(quoted("isolation", "22.6"), abs=0.05)
+    assert 246.7 * 0.0916 == pytest.approx(quoted("isolation", "22.6"), abs=0.05)
+    assert 100 * (1 - T) == pytest.approx(quoted("isolation", "90.8 %"), abs=0.05)
+    assert 20 * math.log10(0.0916) == pytest.approx(-quoted("isolation", "20.8"), abs=0.05)
     assert X * 1e6 == pytest.approx(109, abs=0.5) and 100 * 12.58 / 11.585 == pytest.approx(109, abs=0.5)
-    assert (iso.natural_hz / 25) ** 2 == pytest.approx(0.0795, abs=0.00005)
-    assert (7.048 / 25) ** 2 * 246.7 == pytest.approx(19.6, abs=0.05) and 19.6 / 0.1 == pytest.approx(196)
+    assert (iso.natural_hz / 25) ** 2 == pytest.approx(quoted("isolation", "0.0795"), abs=0.00005)
+    assert (7.048 / 25) ** 2 * 246.7 == pytest.approx(quoted("isolation", "19.6"), abs=0.05)
+    assert 19.6 / 0.1 == pytest.approx(196)
     s = start_up(iso, 2.0, 1.0)
     assert np.abs(s.floor[s.t <= 2.0]).max() == pytest.approx(111, abs=0.5)
     # the static-deflection examples and 90 % isolation
-    for mm, hz in ((1, 15.8), (5, 7.0), (25, 3.2)):
+    for mm, hz in ((1, quoted("isolation", "15.8")), (5, 7.0), (25, quoted("isolation", "3.2"))):
         assert Isolator(deflection=mm * 1e-3).natural_hz == pytest.approx(hz, abs=0.05)
-    assert 25 / math.sqrt(11) == pytest.approx(7.5, abs=0.05) and (15.76 / 7.54) ** 2 == pytest.approx(4.4, abs=0.05)
+    T = 1 - quoted("isolation", "90 %") / 100
+    assert T == pytest.approx(quoted("isolation", "0.1")) and 1 + 1 / T == pytest.approx(11)
+    assert math.sqrt(11) == pytest.approx(quoted("isolation", "3.3"), abs=0.05)
+    assert 25 / math.sqrt(11) == pytest.approx(quoted("isolation", "7.5"), abs=0.05)
+    assert (15.76 / 7.54) ** 2 == pytest.approx(quoted("isolation", "4.4"), abs=0.05)
     # base motion: M x'' + c x' + k x = k y + c y' passes |X|/|Y| = T
     k, c, M = iso.stiffness, iso.damping, iso.mass
     for f in (2.0, 7.0, 25.0, 80.0):
@@ -1490,19 +1579,22 @@ def test_isolation_worked_example():
             float(iso.transmissibility(np.array([f]))[0])
         )
     # far above resonance: √(1 + (2ζr)²)/r², 2ζ/r once 2ζr ≫ 1; a hysteretic mount keeps falling as 1/r²
+    # 2ζ/r from r ≫ 1/2ζ: about 10 f_n up at ζ = 0.05, 2 f_n at ζ = 0.3
+    assert 1 / (2 * iso.zeta) == pytest.approx(10) and 1 / (2 * quoted("isolation", "0.3")) == pytest.approx(2, abs=0.4)
     for r in (30.0, 300.0):
         f = r * iso.natural_hz
         assert float(iso.transmissibility(np.array([f]))[0]) == pytest.approx(
-            math.sqrt(1 + (0.1 * r) ** 2) / r**2, rel=2e-3
+            math.sqrt(1 + (2 * iso.zeta * r) ** 2) / r**2, rel=2e-3
         )
     assert math.sqrt(1 + 30.0**2) / 300**2 == pytest.approx(0.1 / 300, rel=1e-3)
     eta, r = 0.1, 30.0
     hyst = abs((1 + 1j * eta) / (1 - r * r + 1j * eta))
-    assert hyst == pytest.approx(math.sqrt(1 + eta**2) / math.hypot(1 - r * r, eta)) and hyst * r * r == pytest.approx(
-        1, abs=0.01
-    )
+    assert hyst == pytest.approx(math.sqrt(1 + eta**2) / math.hypot(1 - r * r, eta))
+    assert hyst * r * r == pytest.approx(1, abs=0.01)
     # the machine's motion tends to m_e e/M
-    assert Isolator(rpm=60 * 50 * iso.natural_hz).at_speed()[0] == pytest.approx(0.01 / 100, rel=1e-3)
+    assert Isolator(rpm=60 * 50 * iso.natural_hz).at_speed()[0] == pytest.approx(
+        quoted("isolation", "0.01") / 100, rel=1e-3
+    )
 
 
 def test_signals_trials():
@@ -1567,7 +1659,7 @@ def test_periodic_trials():
     sq = Forcing(Wave.SQUARE)
     assert np.max(series(sq.coefficients(5), 1.0, t)) - 1 == pytest.approx(0.19, abs=0.005)
     fine = np.linspace(0.0, 0.01, 20001)
-    assert np.max(series(sq.coefficients(401), 1.0, fine)) - 1 == pytest.approx(0.18, abs=0.005)
+    assert np.max(series(sq.coefficients(401), 1.0, fine)) - 1 == pytest.approx(quoted("periodic", "0.18"), abs=0.005)
     third = Forcing(Wave.SQUARE, freq_hz=osc.natural_hz / 3)
     assert 4 / (3 * math.pi) == pytest.approx(0.42, abs=0.005) and 1 / (2 * osc.omega_n) == pytest.approx(0.025)
     X = np.abs(response_coefficients(osc, third, 3))
@@ -1602,10 +1694,13 @@ def test_periodic_worked_example_and_series():
     # the series overshoots a jump by 8.95 % of it.
     sq = Forcing(Wave.SQUARE)
     C = np.abs(sq.coefficients(20000))
-    assert C[1] ** 2 / 2 == pytest.approx(8 / math.pi**2) and 8 / math.pi**2 == pytest.approx(0.811, abs=0.0005)
+    assert C[1] ** 2 / 2 == pytest.approx(8 / math.pi**2)
+    assert 100 * 8 / math.pi**2 == pytest.approx(quoted("periodic", "81.1 %"), abs=0.05)
     assert np.sum(C[1:] ** 2) / 2 == pytest.approx(1.0, abs=1e-4)  # Parseval: the mean square F²
-    assert np.sum(C[1:6] ** 2) / 2 == pytest.approx(0.933, abs=0.0005)
-    assert sici(math.pi)[0] / math.pi - 0.5 == pytest.approx(0.0895, abs=0.00005)
+    assert 100 * np.sum(C[1:6] ** 2) / 2 == pytest.approx(quoted("periodic", "93.3 %"), abs=0.05)
+    gibbs = 100 * (sici(math.pi)[0] / math.pi - 0.5)
+    assert gibbs == pytest.approx(quoted("periodic", "8.95 %"), abs=0.005)
+    assert gibbs == pytest.approx(quoted("periodic", "9 %"), abs=0.5)  # the Background's round figure
     t = np.linspace(0.0, 1.0, 40001)
     assert np.mean(sq.force(t[:-1]) * np.sin(2 * math.pi * t[:-1])) == pytest.approx(2 / math.pi, abs=1e-4)
     assert np.mean(sq.force(t[:-1]) * np.sin(4 * math.pi * t[:-1])) == pytest.approx(0.0, abs=1e-4)
@@ -1614,38 +1709,54 @@ def test_periodic_worked_example_and_series():
     osc, fo = Oscillator(), Forcing()
     assert (osc.mass, osc.stiffness, osc.damping) == (1.0, 400.0, 2.0)
     assert (fo.wave, fo.amplitude, fo.freq_hz) == (Wave.SQUARE, 1.0, 1.0)
-    assert osc.natural_hz == pytest.approx(3.18, abs=0.005) and osc.zeta == pytest.approx(0.05)
+    assert osc.natural_hz == pytest.approx(quoted("periodic", "3.18"), abs=0.005)
+    assert osc.zeta == pytest.approx(quoted("periodic", "0.05"))
     C = fo.coefficients(5)
-    assert np.all(np.abs(np.abs(C[[1, 3, 5]]) - [1.273, 0.4244, 0.255]) <= [5e-4, 5e-5, 5e-4])
+    harmonics = [quoted("periodic", "1.273"), quoted("periodic", "0.4244"), quoted("periodic", "0.255")]
+    assert np.all(np.abs(np.abs(C[[1, 3, 5]]) - harmonics) <= [5e-4, 5e-5, 5e-4])
+    assert 1e3 / osc.stiffness == pytest.approx(quoted("periodic", "2.5"))  # mm/N, the static
     assert np.all(C[[0, 2, 4]] == 0)
     r = 2 * math.pi * np.array([1, 3, 5]) / osc.omega_n
-    assert r == pytest.approx([0.314, 0.942, 1.571], abs=5e-4)
-    assert 1 - r[0] ** 2 == pytest.approx(0.9013, abs=5e-5) and 2 * osc.zeta * r[0] == pytest.approx(0.0314, abs=5e-5)
-    assert 1 - r[2] ** 2 == pytest.approx(-1.4674, abs=5e-5) and 2 * osc.zeta * r[2] == pytest.approx(0.1571, abs=5e-5)
-    assert math.hypot(0.9013, 0.0314) == pytest.approx(0.902, abs=5e-4)
-    assert math.hypot(1.4674, 0.1571) == pytest.approx(1.476, abs=5e-4)
+    assert r == pytest.approx(
+        [quoted("periodic", "0.314"), quoted("periodic", "0.942"), quoted("periodic", "1.571")], abs=5e-4
+    )
+    assert 1 - r[0] ** 2 == pytest.approx(quoted("periodic", "0.9013"), abs=5e-5)
+    assert 2 * osc.zeta * r[0] == pytest.approx(quoted("periodic", "0.0314"), abs=5e-5)
+    assert 1 - r[2] ** 2 == pytest.approx(-quoted("periodic", "1.4674"), abs=5e-5)
+    assert 2 * osc.zeta * r[2] == pytest.approx(quoted("periodic", "0.1571"), abs=5e-5)
+    assert math.hypot(0.9013, 0.0314) == pytest.approx(quoted("periodic", "0.902"), abs=5e-4)
+    assert math.hypot(1.4674, 0.1571) == pytest.approx(quoted("periodic", "1.476"), abs=5e-4)
     H = np.abs(receptance(osc, np.array([1.0, 3.0, 5.0]))) * 1e3  # mm/N
-    assert H == pytest.approx([2.77, 17.10, 1.69], abs=0.005)
-    assert (2.5 / 0.902, 2.5 / 1.476) == pytest.approx((2.77, 1.69), abs=0.005)  # from the rounded figures
+    assert H == pytest.approx(
+        [quoted("periodic", "2.77"), quoted("periodic", "17.10"), quoted("periodic", "1.69")], abs=0.005
+    )
+    assert (2.5 / 0.902, 2.5 / 1.476) == pytest.approx(
+        (quoted("periodic", "2.77"), quoted("periodic", "1.69")), abs=0.005
+    )  # from the rounded figures
     X = response_coefficients(osc, fo, 5)
     amps = np.abs(X[[1, 3, 5]]) * 1e3
-    assert np.all(np.abs(amps - [3.53, 7.26, 0.431]) <= [0.005, 0.005, 0.0005])
+    shown = np.array([quoted("periodic", "3.53"), quoted("periodic", "7.26"), quoted("periodic", "0.431")])
+    assert np.all(np.abs(amps - shown) <= [0.005, 0.005, 0.0005])
     rounded = (1.273 * 2.77, 0.4244 * 17.10, 0.255 * 1.69)
-    assert np.all(np.abs(np.array(rounded) - [3.53, 7.26, 0.431]) <= [0.005, 0.005, 0.0005])
+    assert np.all(np.abs(np.array(rounded) - shown) <= [0.005, 0.005, 0.0005])
     lags = -np.degrees(np.angle(X[[1, 3, 5]] / C[[1, 3, 5]]))
-    assert lags == pytest.approx([2.0, 40.1, 173.9], abs=0.05)
+    assert lags == pytest.approx(
+        [quoted("periodic", "2.0"), quoted("periodic", "40.1"), quoted("periodic", "173.9")], abs=0.05
+    )
     assert amps[1] / amps[0] == pytest.approx(2, abs=0.1)  # "about twice its fundamental"
-    for parts in (amps, np.array([3.53, 7.26, 0.431])):
+    for parts in (amps, shown):
         shares = 100 * parts**2 / np.sum(parts**2)
-        assert shares == pytest.approx([19.1, 80.6, 0.3], abs=0.05)
+        assert shares == pytest.approx(
+            [quoted("periodic", "19.1 %"), quoted("periodic", "80.6 %"), quoted("periodic", "0.3 %")], abs=0.05
+        )
         assert math.sqrt(np.sum(parts**2) / 2) == pytest.approx(5.72, abs=0.005)
-        assert np.sum(parts) == pytest.approx(11.2, abs=0.05)
+        assert np.sum(parts) == pytest.approx(quoted("periodic", "11.2"), abs=0.05)
     t = np.linspace(0.0, 1.0, 4000, endpoint=False)
     exact = periodic_steady(osc, fo, t)
     assert np.sqrt(np.mean(exact**2)) * 1e3 == pytest.approx(5.72, abs=0.005)
     assert (exact.min() * 1e3, exact.max() * 1e3) == pytest.approx((-10.0, 10.0), abs=0.05)
     err = np.max(np.abs(series(X, 1.0, t) - exact)) / np.max(np.abs(exact))
-    assert 100 * err == pytest.approx(2.02, abs=0.005)
+    assert 100 * err == pytest.approx(quoted("periodic", "2.02 %"), abs=0.005)
 
 
 def test_energy_methods_trials():
