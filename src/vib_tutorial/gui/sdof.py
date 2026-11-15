@@ -17,7 +17,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import (
     TWO_PI,
     Oscillator,
@@ -77,6 +77,7 @@ class SdofTrial:
     tune: bool = False  # drive at f_n
     tab: int = TAB_FRF
     body: int = BODY_FREE  # the mass moves with the free vibration or the driven response
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -89,6 +90,11 @@ TRIALS = (
         "under the decay measures it from the curve's peaks. The dashed envelope falls by e in the time "
         "constant <m>1/ζω<sub>n</sub></m> = 1 s.",
         tab=TAB_PHASE,
+        predict=Prediction(
+            "Released from 10 mm with ζ = 0.05, how much smaller is each peak than the one before?",
+            ("5 % smaller", "About 27 % smaller", "Half the size"),
+            1,
+        ),
     ),
     SdofTrial(
         "Critical damping: the quickest return",
@@ -100,6 +106,11 @@ TRIALS = (
         damping=40.0,
         compare=True,
         tab=TAB_POLES,
+        predict=Prediction(
+            "The same mass and spring, released from the same place: ζ = 1 or ζ = 2, which is back at rest sooner?",
+            ("ζ = 1", "ζ = 2", "They settle together"),
+            0,
+        ),
     ),
     SdofTrial(
         "Overdamped: two real poles",
@@ -118,6 +129,12 @@ TRIALS = (
         tune=True,
         tab=TAB_FRF,
         body=BODY_DRIVEN,
+        predict=Prediction(
+            "1 N on a 400 N/m spring is 2.5 mm, pushed slowly. Driven at f<sub>n</sub> with ζ = 0.05, how big does "
+            "the steady swing grow?",
+            ("2.5 mm", "5 mm", "25 mm", "250 mm"),
+            2,
+        ),
     ),
     SdofTrial(
         "Half-power bandwidth",
@@ -138,6 +155,11 @@ TRIALS = (
         freq_hz=3.0,
         tab=TAB_FRF,
         body=BODY_DRIVEN,
+        predict=Prediction(
+            "No damping, driven from rest 0.18 Hz below f<sub>n</sub>. What does the swing do?",
+            ("Grows for ever", "Settles to a steady swing", "Swells and fades, over and over"),
+            2,
+        ),
     ),
     SdofTrial(
         "Exactly at resonance, undamped",
@@ -147,6 +169,11 @@ TRIALS = (
         tune=True,
         tab=TAB_FRF,
         body=BODY_DRIVEN,
+        predict=Prediction(
+            "No damping, driven from rest exactly at f<sub>n</sub>. What does the swing do?",
+            ("Grows steadily, for ever", "Settles to a steady swing", "Swells and fades, over and over"),
+            0,
+        ),
     ),
     SdofTrial(
         "A rotating unbalance",
@@ -160,6 +187,11 @@ TRIALS = (
         tune=True,
         tab=TAB_FRF,
         body=BODY_DRIVEN,
+        predict=Prediction(
+            "An unbalanced machine run faster and faster, far past its resonance: its swing…",
+            ("keeps growing, as the speed squared", "levels off", "falls back to nothing"),
+            1,
+        ),
     ),
     SdofTrial(
         "The Nyquist circle",
@@ -542,7 +574,9 @@ class SdofPage(QtWidgets.QWidget):
         # --- left
         self.trials = TrialBox(
             [t.name for t in TRIALS],
-            "<p>Each sets up the oscillator and the plots to show one idea from the Theory tab.</p>",
+            "<p>Each sets up the oscillator and the plots to show one idea from the Theory tab. Some ask you to "
+            "predict what you'll see first.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

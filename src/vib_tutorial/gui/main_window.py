@@ -883,7 +883,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from .theory_window import TheoryWindow
 
         if self.theory_window is None:
-            self.theory_window = TheoryWindow(self.show_page, self)
+            self.theory_window = TheoryWindow(self.show_page, self, act=self.act)
         if self.theory_window.page is None:
             self.theory_window.show_page(self.page_name(self.pages.currentWidget()) or "sim_page")
         self.theory_window.show()
@@ -966,9 +966,22 @@ class MainWindow(QtWidgets.QMainWindow):
         if browser is not None and anchor:
             QtCore.QTimer.singleShot(0, browser, lambda: browser.scrollToAnchor(anchor))  # once it's laid out
 
+    def act(self, scheme: str, name: str, what: str) -> None:
+        """A goal's link (notes_view.ACTIONS): `trial` sets up page `name`'s trial number `what` as its Things to try
+        would (asking its prediction first), `practice` asks its problem `what` in the Practice window."""
+        if scheme == "trial":
+            self.show_page(name)
+            page = self.pages.currentWidget()
+            assert page is not None, "show_page shows it"
+            combo = page.findChild(TrialCombo)
+            assert combo is not None, f"{name} has Things to try"
+            combo.pick(combo.names[int(what) - 1])
+        elif scheme == "practice":
+            self.open_practice_window().show_problem(name, what)
+
     def _wire_links(self, page: QtWidgets.QWidget) -> None:
         for browser in page.findChildren(QtWidgets.QTextBrowser):
-            notes_view.wire(browser, self.go_to)
+            notes_view.wire(browser, self.go_to, self.act)
 
     def _about(self) -> None:
         from importlib.metadata import PackageNotFoundError, version

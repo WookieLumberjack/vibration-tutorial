@@ -32,7 +32,7 @@ from ..core.pendulum import (
     rod_period,
     swing,
 )
-from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, kept, number, pick, rounded
 from . import pendulum_figures, settle_plots
 from .lesson import (
     Dot,
@@ -76,6 +76,7 @@ class PendulumTrial:
     zeta: float = 0.0
     angle: float = 10.0  # degrees
     tab: int = TAB_PERIOD
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -85,6 +86,11 @@ TRIALS = (
         "moment of inertia <m>mL²</m>, so <m>ω<sub>n</sub> = √(g/L)</m>: 0.498 Hz, a period of 2.006 s, whatever "
         "the mass (change it). At 10° the whole and the linearized swings can't be told apart.",
         angle=10.0,
+        predict=Prediction(
+            "A 1 kg bob on a 1 m string, let go from 10°. How long does one swing there and back take?",
+            ("About 1 s", "About 2 s", "About 6 s"),
+            1,
+        ),
     ),
     PendulumTrial(
         "Large swings are slower",
@@ -93,6 +99,11 @@ TRIALS = (
         "(Centre). The Period tab gives the exact period (an elliptic integral), and Duffing's first "
         "approximation, <m>T ≈ T<sub>0</sub>(1 + A²/16)</m>, which holds to 1 % up to about 75°.",
         angle=90.0,
+        predict=Prediction(
+            "The same pendulum let go from 90° instead of 10°. Its period is…",
+            ("shorter", "the same", "longer"),
+            2,
+        ),
     ),
     PendulumTrial(
         "Nearly over the top",
@@ -113,6 +124,11 @@ TRIALS = (
         kind=Kind.ROD,
         angle=10.0,
         tab=TAB_PIVOT,
+        predict=Prediction(
+            "A 1 m rod swinging from one end, or a bob on a 1 m string: which swings faster?",
+            ("The rod", "The bob on the string", "Neither: the same"),
+            0,
+        ),
     ),
     PendulumTrial(
         "A disc on a wire: no softening",
@@ -124,6 +140,11 @@ TRIALS = (
         length=0.1,
         spring=0.5,
         angle=120.0,
+        predict=Prediction(
+            "The disc twisted 120° instead of 10° and let go. Its period is…",
+            ("longer", "the same", "shorter"),
+            1,
+        ),
     ),
     PendulumTrial(
         "Inverted: gravity as a negative spring",
@@ -133,6 +154,11 @@ TRIALS = (
         kind=Kind.INVERTED,
         spring=15.0,
         angle=60.0,
+        predict=Prediction(
+            "Upright on its spring, let go from 60° rather than a few degrees. Its period is…",
+            ("longer, as a hanging pendulum's", "the same", "shorter"),
+            2,
+        ),
     ),
     PendulumTrial(
         "Inverted: buckling",
@@ -144,6 +170,11 @@ TRIALS = (
         spring=9.0,
         angle=1.0,
         zeta=0.1,
+        predict=Prediction(
+            "A spring of 9 N·m/rad under a weight's 9.81 N·m/rad, let go from 1° with a little damping. It…",
+            ("swings about upright", "falls over and settles leaning part-way", "falls flat, to 90°"),
+            1,
+        ),
     ),
     PendulumTrial(
         "On the Moon",
@@ -151,6 +182,11 @@ TRIALS = (
         "4.94 s. A pendulum clock is a gravimeter.",
         gravity=1.62,
         angle=10.0,
+        predict=Prediction(
+            "The 1 m pendulum on the Moon, where g is 1.62 m/s², a sixth of Earth's. Its period is…",
+            ("the same", "about 2.5 times longer", "about 6 times longer"),
+            1,
+        ),
     ),
 )
 
@@ -393,7 +429,10 @@ class PendulumPage(QtWidgets.QWidget):
         self.pendulum = Pendulum()
 
         self.trials = TrialBox(
-            [t.name for t in TRIALS], "<p>Each sets up the pendulum to show one idea from the Theory tab.</p>"
+            [t.name for t in TRIALS],
+            "<p>Each sets up the pendulum to show one idea from the Theory tab. Some ask you to predict what you'll "
+            "see first.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 
