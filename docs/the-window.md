@@ -81,7 +81,9 @@ Gyroscope's and 3D rigid body's component plots. The page's own box follows the 
 The Single oscillator draws the mass itself above its time plots, moving with the free vibration or the
 driven response: **Start** plays it (Space; at ¼ speed to begin with, as a 3 Hz swing is a blur), **Reset**
 takes it back to t = 0, and the time cursor on the plot it follows can be dragged to scrub. Drag the mass
-sideways and let go to pluck it: it vibrates freely from where you let go.
+sideways and let go to pluck it: it vibrates freely from where you let go. Pendulums does the same with
+the pendulum (a bob, a rod, a disc on its wire seen from above, an inverted arm), swinging beside a faint
+ghost of the linearized swing: turn it about its pivot and let go to start it from that angle, either side.
 
 ## Themes
 

@@ -121,3 +121,52 @@ def test_the_sdof_mass_moves_with_the_response_and_a_pluck_sets_x0(main_window, 
     # Defaults: back to the free vibration, at rest.
     w.restore_defaults()
     assert p.follow.currentIndex() == sdof.BODY_FREE and not pb.running and pb.run.text() == "Start" and pb.t == 0.0
+
+
+def test_the_pendulum_swings_with_its_curve_and_a_pluck_lets_it_go_from_there(main_window, app):
+    import math
+
+    from vib_tutorial.core.pendulum import Kind
+    from vib_tutorial.gui import pendulum
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.pendulum_page
+    w.pages.setCurrentWidget(p)
+    for _ in range(5):
+        app.processEvents()
+    pb, view = p.playback, p.view
+    pb.loop.enabled = False
+    assert not pb.running and pb.run.text() == "Start" and view.theta == pytest.approx(math.radians(10.0))
+
+    # A trial plays it: the pendulum is where the whole swing is, the ghost where the linearized one is.
+    p.load_trial(next(i for i, tr in enumerate(pendulum.TRIALS) if tr.name.startswith("Large swings")))
+    assert pb.running and pb.t == 0.0
+    pb._tick(0.7)
+    t, th, _, tl = (np.asarray(a) for a in p._swing)
+    assert view.theta == pytest.approx(np.interp(pb.t, t, th)) and view.ghost.isVisible()
+    gx, gy = view.ghost.getData()
+    assert math.atan2(gx[1], -gy[1]) == pytest.approx(np.interp(pb.t, t, tl))
+    assert p.moment_now.pos().x() == pytest.approx(math.degrees(view.theta))
+    x, y = p.whole_item.getData()
+    assert np.allclose(np.degrees(np.interp(pb.t, t, th)), np.interp(pb.t, x, y))  # on the curve drawn
+
+    # Pluck it to the left, to 40°: the start box says 40°, the swing is mirrored and plays from t = 0.
+    for _ in range(5):
+        app.processEvents()
+    view.grab()  # laid out: the handle has its place on screen
+    pb.seek(0.0)
+    vb = view.plotItem.vb
+    hand = vb.mapViewToScene(QtCore.QPointF(*view._point(view.theta)))
+    to = vb.mapViewToScene(QtCore.QPointF(*view._point(-math.radians(40.0))))
+    drag(view, hand, to, app)
+    assert not view.held and pb.running and pb.t == 0.0 and p.side == -1.0
+    assert p.angle.value() == pytest.approx(40.0, abs=1.5)
+    x, y = p.whole_item.getData()
+    assert y[0] == pytest.approx(-p.angle.value()) and view.theta == pytest.approx(math.radians(y[0]))
+
+    # A kind drawn its own way: the disc twists about its wire, its mark at θ.
+    p.load_trial(next(i for i, tr in enumerate(pendulum.TRIALS) if tr.kind is Kind.TORSION))
+    assert p.side == 1.0 and view.disc.isVisible() and not view.bob.isVisible()
+    xs, ys = view.body.getData()
+    assert math.atan2(xs[1], ys[1]) == pytest.approx(math.radians(120.0))
