@@ -16,7 +16,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI, Oscillator, impulse_response, receptance, step_response
 from ..core.transient import (
     Pulse,
@@ -65,6 +65,7 @@ class TransientTrial:
     tab: int = TAB_SPECTRUM
     mass: float = 1.0
     stiffness: float = 400.0
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -78,6 +79,11 @@ TRIALS = (
         amplitude=0.1,
         at=0.4,
         tab=TAB_FOURIER,
+        predict=Prediction(
+            "A blow of 0.1 N·s on the 1 kg oscillator: I/mωₙ is 5 mm. How far does its first swing go?",
+            ("Exactly 5 mm", "A little under 5 mm", "About 10 mm"),
+            1,
+        ),
     ),
     TransientTrial(
         "A step: overshoot and settling",
@@ -88,6 +94,11 @@ TRIALS = (
         PulseKind.STEP,
         at=0.157,
         tab=TAB_STEP,
+        predict=Prediction(
+            "1 N switched on and left, with a static deflection of 2.5 mm. How far does the mass get?",
+            ("2.5 mm: it settles there", "About 4.6 mm", "Further than 5 mm"),
+            1,
+        ),
     ),
     TransientTrial(
         "A step, critically damped",
@@ -97,6 +108,11 @@ TRIALS = (
         damping=40.0,
         at=0.1,
         tab=TAB_STEP,
+        predict=Prediction(
+            "The same step with critical damping (ζ = 1). Does the mass overshoot 2.5 mm?",
+            ("Yes, a little", "No: it rises to 2.5 mm and stays"),
+            1,
+        ),
     ),
     TransientTrial(
         "Watch the convolution build",
@@ -118,6 +134,11 @@ TRIALS = (
         duration=0.0157,
         at=0.08,
         tab=TAB_SPECTRUM,
+        predict=Prediction(
+            "10 N for a twentieth of a period, which would sag the spring 25 mm if left on. How far does the mass swing?",
+            ("About 25 mm", "About 50 mm", "About 8 mm"),
+            2,
+        ),
     ),
     TransientTrial(
         "Half a period or longer: twice the static",
@@ -128,6 +149,11 @@ TRIALS = (
         duration=0.157,
         at=0.2,
         tab=TAB_SPECTRUM,
+        predict=Prediction(
+            "A 1 N rectangle half a period long (static: 2.5 mm). How far does the mass swing?",
+            ("About 2.5 mm", "About twice that", "About half that"),
+            1,
+        ),
     ),
     TransientTrial(
         "A half-sine's worst length",
@@ -138,6 +164,11 @@ TRIALS = (
         duration=0.26,
         at=0.25,
         tab=TAB_SPECTRUM,
+        predict=Prediction(
+            "A 1 N half-sine about 0.8 of a period long, the worst length. Is its peak above twice the static 2.5 mm?",
+            ("Yes, above twice", "No: between 1.5 and 2 times", "No: under static"),
+            1,
+        ),
     ),
     TransientTrial(
         "A slow ramp is nearly static",
@@ -148,6 +179,11 @@ TRIALS = (
         duration=0.864,
         at=0.6,
         tab=TAB_SPECTRUM,
+        predict=Prediction(
+            "1 N reached over 2.75 periods. How far past the static 2.5 mm does the mass overshoot?",
+            ("Twice it, as a step does", "A few per cent", "About half of it"),
+            1,
+        ),
     ),
 )
 
@@ -443,7 +479,9 @@ class TransientPage(QtWidgets.QWidget):
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
-            "<p>Each sets up the oscillator and the input to show one idea from the Theory tab.</p>",
+            "<p>Each sets up the oscillator and the input to show one idea from the Theory tab. Some ask you to "
+            "predict what you'll see first.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 
