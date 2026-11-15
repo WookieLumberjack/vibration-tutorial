@@ -181,7 +181,7 @@ def test_the_reduced_model_matches_the_full_one():
 
 
 def test_a_critical_is_where_a_branch_meets_1x():
-    from vib_tutorial.gui.rotor_builder import OVERHUNG
+    from vib_tutorial.gui.rotor_builder_trials import OVERHUNG
 
     a = assemble(OVERHUNG)
     s = sweep(a, 12000.0)
