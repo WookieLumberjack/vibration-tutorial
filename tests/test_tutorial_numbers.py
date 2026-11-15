@@ -51,6 +51,8 @@ def notes_numbers(notes: str) -> frozenset[str]:
     """The decimals and percentages `theory/<notes>.html` shows outside its `<eq>`s ("0.19 %", "2.010")."""
     text = (THEORY / f"{notes}.html").read_text(encoding="utf-8")
     text = re.sub(r"<eq>.*?</eq>|<!--.*?-->", " ", text, flags=re.S)
+    # table cells, blocks and exponents stay apart ("0.878<sup>2</sup>" isn't 0.8782)
+    text = re.sub(r"</?(?:td|th|tr|li|p|br|div|table|h\d|sup|sub)\b[^>]*>", " ", text)
     text = html.unescape(re.sub(r"<[^>]+>", "", text))
     return frozenset(re.sub(r"\s*%", " %", n) for n in NUMBER.findall(text))
 
@@ -124,18 +126,32 @@ def with_c1(c1: float) -> ChainSystem:
 
 
 @pytest.mark.parametrize(
-    ("c1", "coupling", "modal", "exact"),
+    ("c1", "coupling", "modal", "exact", "apart"),
     [
-        (5, 0.36, 0.0977, 0.0979),
-        (15, 0.71, 0.168, 0.180),
-        (50, 0.90, 0.45, 0.98),
+        (
+            5,
+            quoted("background", "0.36"),
+            quoted("background", "0.0977"),
+            quoted("background", "0.0979"),
+            quoted("background", "0.2 %"),
+        ),
+        (
+            15,
+            quoted("background", "0.71"),
+            quoted("background", "0.168"),
+            quoted("background", "0.180"),
+            quoted("background", "7 %"),
+        ),
+        (50, quoted("background", "0.90"), quoted("background", "0.45"), quoted("background", "0.98"), None),
     ],
 )
-def test_background_coupling_table(c1, coupling, modal, exact):
+def test_background_coupling_table(c1, coupling, modal, exact, apart):
     r = modal_analysis(with_c1(c1))
     assert r.coupling == pytest.approx(coupling, abs=0.005)
     pairs = [(m.zeta_modal, m.damped.zeta) for m in r.modes if m.damped]
     assert any(z_m == pytest.approx(modal, rel=0.01) and z_e == pytest.approx(exact, rel=0.01) for z_m, z_e in pairs)
+    if apart is not None:  # how far apart, as the table rounds it
+        assert 100 * (1 - modal / exact) == pytest.approx(apart, abs=0.5 if apart > 1 else 0.05)
 
 
 def test_background_try_it_overdamped_at_c1_200():
@@ -166,7 +182,9 @@ def test_presets_absorber_and_tuned_mass_damper():
     assert max(peaks(tmd.resized(1), 0, 400.0)) == pytest.approx(40.0, rel=0.01)  # "40 times"
     assert max(peaks(tmd, 0, 400.0)) < 6.0  # "under 6"
     undamped = ChainSystem(tmd.masses, tmd.stiffness, [0.0, tmd.damping[1]])
-    assert peaks(undamped, 0, 400.0) == pytest.approx([6.4, 6.4], rel=0.005)  # "about 6.4", equal
+    assert peaks(undamped, 0, 400.0) == pytest.approx(
+        [quoted("background", "6.4"), quoted("background", "6.4")], rel=0.005
+    )  # "about 6.4", equal
     for c2, count in ((0.0, 2), (5.0, 1)):  # "Set c2 to 0: two sharp peaks. Set it to 5: one"
         assert len(peaks(ChainSystem(tmd.masses, tmd.stiffness, [tmd.damping[0], c2]), 0, 400.0)) == count
 
@@ -335,18 +353,24 @@ def test_background_single_mass_numbers():
     m, k, c = s.masses[0], s.stiffness[0], s.damping[0]
     wn = (k / m) ** 0.5
     zeta = c / (2 * (k * m) ** 0.5)
-    assert (wn, wn / (2 * np.pi), zeta) == pytest.approx((20.0, 3.18, 0.05), rel=0.002)
+    assert (wn, wn / (2 * np.pi), zeta) == pytest.approx(
+        (20.0, quoted("background", "3.18"), quoted("background", "0.05")), rel=0.002
+    )
     assert 1 / (zeta * wn) == pytest.approx(1.0)  # time constant
-    assert 2 * np.pi * zeta / (1 - zeta**2) ** 0.5 == pytest.approx(0.31, abs=0.005)  # log decrement
+    assert 2 * np.pi * zeta / (1 - zeta**2) ** 0.5 == pytest.approx(
+        quoted("background", "0.31"), abs=0.005
+    )  # log decrement
     assert max(peaks(s, 0, k, 1.0, 6.0)) == pytest.approx(1 / (2 * zeta), rel=0.002)  # Q = 10
-    assert 2 * zeta * wn / (2 * np.pi) == pytest.approx(0.32, abs=0.005)  # half-power bandwidth, Hz
+    assert 2 * zeta * wn / (2 * np.pi) == pytest.approx(
+        quoted("background", "0.32"), abs=0.005
+    )  # half-power bandwidth, Hz
 
 
 def test_background_rayleigh_damping_of_the_default_chain():
     zetas = [m.zeta_modal for m in modal_analysis(ChainSystem.uniform(4)).modes]
     assert zetas[0] == pytest.approx(0.017, abs=0.0005) and zetas[3] == pytest.approx(0.094, abs=0.0005)
     for m in modal_analysis(ChainSystem.uniform(4)).modes:
-        assert m.zeta_modal == pytest.approx(0.005 * m.omega_n / 2)  # zeta = beta omega / 2
+        assert m.zeta_modal == pytest.approx(quoted("background", "0.005") * m.omega_n / 2)  # zeta = beta omega / 2
 
 
 def test_background_isolation_above_root_2_fn():
@@ -357,7 +381,7 @@ def test_background_isolation_above_root_2_fn():
         assert t[0] > 1 > t[1]
     f = np.linspace(0.01, 20, 20001)
     t3 = np.abs(transmissibility(ChainSystem.uniform(4), f))[:, 2]
-    assert f[np.nonzero(t3 > 1)[0][-1]] == pytest.approx(1.65, abs=0.01)  # m3's crossover
+    assert f[np.nonzero(t3 > 1)[0][-1]] == pytest.approx(quoted("background", "1.65"), abs=0.01)  # m3's crossover
 
 
 def test_frf_matrix_three_forms_and_residual_mass():
@@ -383,7 +407,7 @@ def test_background_rigid_body_root_with_k1_zero():
     roots = modal_analysis(s).overdamped_roots
     assert min(roots, key=abs) == pytest.approx(0.0, abs=1e-6)
     second = sorted(roots, key=abs)[1]
-    assert second == pytest.approx(-0.50, abs=0.005)  # close to −c1/(m1 + … + mN)
+    assert second == pytest.approx(-quoted("complex_modes", "0.50"), abs=0.005)  # close to −c1/(m1 + … + mN)
 
 
 def test_frf_matrix_antiresonances_of_h22():
@@ -392,7 +416,9 @@ def test_frf_matrix_antiresonances_of_h22():
     f = np.linspace(0.5, 8.0, 200001)
     h = np.abs(frf(s, f, 1)[:, 1])
     dips = [float(f[i]) for i in find_peaks(-np.log(h))[0]]
-    assert dips == pytest.approx([1.97, 4.50, 5.15], abs=0.01)
+    assert dips == pytest.approx(
+        [quoted("frf_matrix", "1.97"), quoted("frf_matrix", "4.50"), quoted("frf_matrix", "5.15")], abs=0.01
+    )
 
 
 def test_frf_matrix_worked_example():
@@ -407,31 +433,80 @@ def test_frf_matrix_worked_example():
     p1 = 2 / 3 * np.sin(gamma)
     assert np.abs(phi[0]) == pytest.approx(np.abs(p1))
     assert p1 == pytest.approx([0.2280, 0.5774, 0.6565, 0.4285], abs=0.00005)
-    assert p1**2 == pytest.approx([0.0520, 0.3333, 0.4310, 0.1836], abs=0.00005) and np.sum(p1**2) == pytest.approx(1)
-    assert w2 == pytest.approx([48.25, 400, 938.9, 1412.8], abs=0.05)
+    assert p1**2 == pytest.approx([quoted("frf_matrix", "0.0520"), 0.3333, 0.4310, 0.1836], abs=0.00005) and np.sum(
+        p1**2
+    ) == pytest.approx(1)
+    assert w2 == pytest.approx(
+        [quoted("frf_matrix", "48.25"), 400, quoted("frf_matrix", "938.9"), quoted("frf_matrix", "1412.8")], abs=0.05
+    )
     share = p1**2 / w2
     assert np.sum(share) == pytest.approx(1 / 400) == np.linalg.inv(K)[0, 0]
-    assert share * 1e3 == pytest.approx([1.078, 0.833, 0.459, 0.130], abs=0.0005)
-    assert 100 * share * 400 == pytest.approx([43.1, 33.3, 18.4, 5.2], abs=0.05)
-    assert 100 * share[2:].sum() * 400 == pytest.approx(23.6, abs=0.05)
+    assert share * 1e3 == pytest.approx(
+        [
+            quoted("frf_matrix", "1.078"),
+            quoted("frf_matrix", "0.833"),
+            quoted("frf_matrix", "0.459"),
+            quoted("frf_matrix", "0.130"),
+        ],
+        abs=0.0005,
+    )
+    assert 100 * share * 400 == pytest.approx(
+        [
+            quoted("frf_matrix", "43.1"),
+            quoted("frf_matrix", "33.3"),
+            quoted("frf_matrix", "18.4"),
+            quoted("frf_matrix", "5.2 %"),
+        ],
+        abs=0.05,
+    )
+    assert 100 * share[2:].sum() * 400 == pytest.approx(quoted("frf_matrix", "23.6 %"), abs=0.05)
     assert np.allclose(C, K / 200)
     zeta = np.diag(phi.T @ C @ phi) / (2 * np.sqrt(w2))
-    assert zeta == pytest.approx(0.0025 * np.sqrt(w2)) and zeta[0] == pytest.approx(0.0174, abs=0.00005)
-    assert zeta[2:] == pytest.approx([0.08, 0.09], abs=0.005)
+    assert zeta == pytest.approx(quoted("frf_matrix", "0.0025") * np.sqrt(w2)) and zeta[0] == pytest.approx(
+        quoted("frf_matrix", "0.0174"), abs=0.00005
+    )
+    assert zeta[2:] == pytest.approx([quoted("frf_matrix", "0.08"), quoted("frf_matrix", "0.09")], abs=0.005)
     peak = 0.0520 / (2 * 0.0174 * 48.25)
-    assert peak == pytest.approx(0.0310, abs=0.00005) and peak / 0.0025 == pytest.approx(12.4, abs=0.05)
+    assert peak == pytest.approx(quoted("frf_matrix", "0.0310"), abs=0.00005) and peak / 0.0025 == pytest.approx(
+        quoted("frf_matrix", "12.4"), abs=0.05
+    )
     h11 = abs(np.linalg.inv(K - w2[0] * M + 1j * np.sqrt(w2[0]) * C)[0, 0])
-    assert h11 == pytest.approx(0.0311, abs=0.00005)
+    assert h11 == pytest.approx(quoted("frf_matrix", "0.0311"), abs=0.00005)
+    peaks_hz = np.sqrt(w2) / (2 * np.pi)
+    shown = [
+        quoted("frf_matrix", "1.105"),
+        quoted("frf_matrix", "3.183"),
+        quoted("frf_matrix", "4.877"),
+        quoted("frf_matrix", "5.982"),
+    ]
+    assert peaks_hz == pytest.approx(shown, abs=0.0005)
+    assert peaks_hz[2:] == pytest.approx([quoted("frf_matrix", "4.88"), quoted("frf_matrix", "5.98")], abs=0.005)
     held = 40 * np.sin(np.array([1, 3, 5]) * np.pi / 14)
-    assert held == pytest.approx([8.90, 24.94, 36.04], abs=0.005)
-    assert held / (2 * np.pi) == pytest.approx([1.417, 3.969, 5.736], abs=0.0005)
+    assert np.all((peaks_hz[:-1] < held / (2 * np.pi)) & (held / (2 * np.pi) < peaks_hz[1:]))  # they interlace
+    assert held == pytest.approx(
+        [quoted("frf_matrix", "8.90"), quoted("frf_matrix", "24.94"), quoted("frf_matrix", "36.04")], abs=0.005
+    )
+    assert held / (2 * np.pi) == pytest.approx(
+        [quoted("frf_matrix", "1.417"), quoted("frf_matrix", "3.969"), quoted("frf_matrix", "5.736")], abs=0.0005
+    )
     assert held**2 == pytest.approx(scipy.linalg.eigvalsh(K[1:, 1:], M[1:, 1:]))
     f = np.linspace(0.5, 7.0, 130001)
     h = np.abs(frf(s, f, 0)[:, 0])
     dips = [float(f[i]) for i in find_peaks(-np.log(h))[0]]
-    assert dips == pytest.approx([1.42, 3.99], abs=0.005)  # the third is washed out
+    assert dips == pytest.approx(
+        [quoted("frf_matrix", "1.42"), quoted("frf_matrix", "3.99")], abs=0.005
+    )  # the third is washed out
     assert len(find_peaks(np.log(h))[0]) == 3  # and so is the fourth peak
     assert abs(-((2 * np.pi * 50) ** 2) * frf(s, np.array([50.0]), 0)[0, 0]) == pytest.approx(1, abs=0.01)
+
+
+def test_complex_modes_base_damper_peak():
+    """A damper at the base of the default chain, its others taken out: mode 1's ζ peaks at 0.147, near 60 N·s/m."""
+    from vib_tutorial.core.complex_modes import Parameter, sweep
+
+    base = ChainSystem(np.ones(4), np.full(4, 400.0), np.array([20.0, 0, 0, 0]))
+    value, zeta = sweep(base, Parameter.DAMPER, 0).peak(0)
+    assert value == pytest.approx(60, abs=1) and zeta == pytest.approx(quoted("complex_modes", "0.147"), abs=0.0005)
 
 
 def test_complex_modes_worked_example():
@@ -448,7 +523,7 @@ def test_complex_modes_worked_example():
     assert r.coupling == pytest.approx(1.0)  # a rank-one C_m
     phi = np.column_stack([m.shape_mass_normalized for m in r.modes])
     w = np.array([m.omega_n for m in r.modes])
-    assert w == pytest.approx([6.946, 20.00, 30.64, 37.59], abs=0.005)
+    assert w == pytest.approx([quoted("complex_modes", "6.946"), 20.00, 30.64, 37.59], abs=0.005)
     assert w == pytest.approx(40 * np.sin(np.radians([10, 30, 50, 70])))
     phi2 = np.array([0.0520, 0.3333, 0.4310, 0.1836])
     assert phi[0] ** 2 == pytest.approx(phi2, abs=5e-5)
@@ -458,30 +533,59 @@ def test_complex_modes_worked_example():
     approx = [0.0748, 0.167, 0.141, 0.0489]
     assert [c.zeta_approx for c in rows] == pytest.approx(approx, rel=0.004)
     assert 10 * phi2 / np.array([6.946, 20.00, 30.64, 37.59]) == pytest.approx(approx, rel=0.004)
-    assert [c.zeta_exact for c in rows] == pytest.approx([0.0726, 0.178, 0.168, 0.0225], rel=0.004)
-    assert [c.fn_exact for c in rows] == pytest.approx([1.124, 3.434, 4.569, 5.823], abs=0.0005)
-    assert [c.fn_hz for c in rows] == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=0.0005)
+    assert [c.zeta_exact for c in rows] == pytest.approx(
+        [
+            quoted("complex_modes", "0.0726"),
+            quoted("complex_modes", "0.178"),
+            quoted("complex_modes", "0.168"),
+            quoted("complex_modes", "0.0225"),
+        ],
+        rel=0.004,
+    )
+    assert [c.fn_exact for c in rows] == pytest.approx(
+        [
+            quoted("complex_modes", "1.124"),
+            quoted("complex_modes", "3.434"),
+            quoted("complex_modes", "4.569"),
+            quoted("complex_modes", "5.823"),
+        ],
+        abs=0.0005,
+    )
+    assert [c.fn_hz for c in rows] == pytest.approx(
+        [
+            quoted("complex_modes", "1.105"),
+            quoted("complex_modes", "3.183"),
+            quoted("complex_modes", "4.877"),
+            quoted("complex_modes", "5.982"),
+        ],
+        abs=0.0005,
+    )
     # mode 1, first order: a_s1 = iω₁C_s1/(ω₁² − ω_s²)
     a = np.array([1j * w[0] * cm[s, 0] / (w[0] ** 2 - w[s] ** 2) for s in range(1, 4)])
-    assert a == pytest.approx([-0.052j, -0.023j, 0.010j], abs=0.0005)
+    shown = [-quoted("complex_modes", "0.052"), -quoted("complex_modes", "0.023"), quoted("complex_modes", "0.010")]
+    assert a == pytest.approx(1j * np.array(shown), abs=0.0005)
     guess = phi[:, 0] + phi[:, 1:] @ a
-    assert complexity(guess).mpd == pytest.approx(2.97, abs=0.005)
-    assert rows[0].measures.mpd == pytest.approx(2.98, abs=0.005)
+    assert complexity(guess).mpd == pytest.approx(quoted("complex_modes", "2.97"), abs=0.005)
+    assert rows[0].measures.mpd == pytest.approx(quoted("complex_modes", "2.98"), abs=0.005)
     terms = [cm[0, s] ** 2 / (w[s] ** 2 - w[0] ** 2) for s in range(1, 4)]
     assert terms == pytest.approx([0.0197, 0.0101, 0.0028], abs=0.00005)
     assert w[0] * math.sqrt(1 + sum(terms)) == pytest.approx(7.058, abs=0.0005)
     assert math.sqrt(6.946**2 * (1 + 0.0197 + 0.0101 + 0.0028)) == pytest.approx(7.058, abs=0.0005)
-    assert abs(rows[0].exact) == pytest.approx(7.061, abs=0.0005)
+    assert abs(rows[0].exact) == pytest.approx(quoted("complex_modes", "7.061"), abs=0.0005)
     assert rows[0].exact.real == pytest.approx(-cm[0, 0] / 2, rel=0.02)  # the decay rate kept to this order
     # modes 2 to 4: not small; mode 3 the most complex
-    assert abs(1j * w[1] * cm[2, 1] / (w[1] ** 2 - w[2] ** 2)) == pytest.approx(0.28, abs=0.005)
-    assert rows[2].measures.mpc == pytest.approx(0.20, abs=0.005)
-    assert rows[2].measures.mpd == pytest.approx(28.9, abs=0.05)
+    assert abs(1j * w[1] * cm[2, 1] / (w[1] ** 2 - w[2] ** 2)) == pytest.approx(
+        quoted("complex_modes", "0.28"), abs=0.005
+    )
+    assert rows[2].measures.mpc == pytest.approx(quoted("complex_modes", "0.20"), abs=0.005)
+    assert rows[2].measures.mpd == pytest.approx(quoted("complex_modes", "28.9"), abs=0.05)
     assert min(rows, key=lambda c: c.measures.mpc).index == 3
-    assert free_decay(base, r, 1).leak[0] == pytest.approx(0.45, abs=0.005)
+    assert free_decay(base, r, 1).leak[0] == pytest.approx(quoted("complex_modes", "45 %") / 100, abs=0.005)
     # locked at the base: the 3-mass chain above m1, H11's dips
     held = modal_analysis(ChainSystem(np.ones(3), np.full(3, 400.0), np.zeros(3)))
-    assert [m.fn_hz for m in held.modes] == pytest.approx([1.42, 3.97, 5.74], abs=0.005)
+    assert [m.fn_hz for m in held.modes] == pytest.approx(
+        [quoted("complex_modes", "1.42"), quoted("complex_modes", "3.97"), quoted("complex_modes", "5.74")], abs=0.005
+    )
 
 
 def test_continuum_worked_example():
@@ -491,37 +595,50 @@ def test_continuum_worked_example():
 
     p = PRESETS[0]
     c = p.continuum
-    assert p.elements == 12 and (c.length, c.tension, c.line_density) == (0.648, 73.0, 6.40e-3)
+    assert p.elements == 12 and c.tension == 73.0
+    assert (c.length, 1e3 * c.line_density) == pytest.approx(
+        (quoted("continuum", "0.648"), quoted("continuum", "6.40"))
+    )
     assert math.sqrt(73 / 0.0064) == pytest.approx(106.8, abs=0.05) and c.speed == pytest.approx(106.8, abs=0.05)
-    assert c.exact_hz(1)[0] == pytest.approx(82.41, abs=0.005)
-    assert 106.8 / (2 * 0.648) == pytest.approx(82.41, abs=0.005)
+    assert c.exact_hz(1)[0] == pytest.approx(quoted("continuum", "82.41"), abs=0.005)
+    assert 106.8 / (2 * 0.648) == pytest.approx(quoted("continuum", "82.41"), abs=0.005)
     h = c.length / 12
-    assert h == pytest.approx(0.054) and math.pi / 12 == pytest.approx(0.262, abs=0.0005)
-    assert (math.pi / 12) ** 2 / 24 == pytest.approx(0.0029, abs=0.00005)
+    assert h == pytest.approx(quoted("continuum", "0.054")) and math.pi / 12 == pytest.approx(
+        quoted("continuum", "0.262"), abs=0.0005
+    )
+    assert (math.pi / 12) ** 2 / 24 == pytest.approx(quoted("continuum", "0.29 %") / 100, abs=0.00005)
     f = {s: flexible_hz(FEModel(c, 12, s)) for s in Scheme}
     err = {s: errors(FEModel(c, 12, s))[1] for s in Scheme}
-    assert f[Scheme.LUMPED][0] == pytest.approx(82.17, abs=0.005)
-    assert f[Scheme.CONSISTENT][0] == pytest.approx(82.64, abs=0.005)
-    assert f[Scheme.MIXED][0] == pytest.approx(82.41, abs=0.005) and abs(err[Scheme.MIXED][0]) < 0.000015
+    assert f[Scheme.LUMPED][0] == pytest.approx(quoted("continuum", "82.17"), abs=0.005)
+    assert f[Scheme.CONSISTENT][0] == pytest.approx(quoted("continuum", "82.64"), abs=0.005)
+    assert f[Scheme.MIXED][0] == pytest.approx(quoted("continuum", "82.41"), abs=0.005)
+    assert 100 * abs(err[Scheme.MIXED][0]) == pytest.approx(quoted("continuum", "0.001 %"), abs=0.0005)
     assert 100 * err[Scheme.LUMPED][0] == pytest.approx(-0.29, abs=0.005)
     assert 100 * err[Scheme.CONSISTENT][0] == pytest.approx(0.29, abs=0.005)
     assert 6 * 82.407 == pytest.approx(494.4, abs=0.05)
     assert math.sin(math.pi / 4) / (math.pi / 4) == pytest.approx(0.900, abs=0.0005)
     assert 494.4 * 0.900 == pytest.approx(445, abs=0.5) and f[Scheme.LUMPED][5] == pytest.approx(445, abs=0.5)
-    assert 100 * err[Scheme.LUMPED][5] == pytest.approx(-10.0, abs=0.05)
-    assert 100 * err[Scheme.CONSISTENT][5] == pytest.approx(10.3, abs=0.05)
-    assert 100 * err[Scheme.MIXED][5] == pytest.approx(-1.4, abs=0.05)
+    assert 100 * err[Scheme.LUMPED][5] == pytest.approx(-quoted("continuum", "10.0 %"), abs=0.05)
+    assert 100 * err[Scheme.CONSISTENT][5] == pytest.approx(quoted("continuum", "10.3 %"), abs=0.05)
+    assert 100 * err[Scheme.MIXED][5] == pytest.approx(-quoted("continuum", "1.4 %"), abs=0.05)
     assert f[Scheme.LUMPED].size == 11
-    assert c.speed / (math.pi * h) == pytest.approx(629.5, abs=0.05)
-    assert f[Scheme.LUMPED][10] == pytest.approx(624.2, abs=0.05) and c.exact_hz(11)[10] == pytest.approx(
-        906.5, abs=0.05
-    )
-    assert 100 * err[Scheme.LUMPED][10] == pytest.approx(-31, abs=0.5)
-    assert math.sqrt(c.tension * c.line_density) == pytest.approx(0.684, abs=0.0005)
+    assert c.speed / (math.pi * h) == pytest.approx(quoted("continuum", "629.5"), abs=0.05)
+    assert f[Scheme.LUMPED][10] == pytest.approx(quoted("continuum", "624.2"), abs=0.05)
+    assert c.exact_hz(11)[10] == pytest.approx(quoted("continuum", "906.5"), abs=0.05)
+    assert 100 * err[Scheme.LUMPED][10] == pytest.approx(-quoted("continuum", "31 %"), abs=0.5)
+    assert math.sqrt(c.tension * c.line_density) == pytest.approx(quoted("continuum", "0.684"), abs=0.0005)
     # the notes' general claims: the cut-off error and a cantilever's ratios
-    assert 2 / math.pi - 1 == pytest.approx(-0.36, abs=0.005)
+    assert 2 / math.pi - 1 == pytest.approx(-quoted("continuum", "36 %") / 100, abs=0.005)
+    import scipy.optimize
+
+    roots = [scipy.optimize.brentq(lambda b: math.cos(b) * math.cosh(b) + 1, a, a + 2) for a in (1.0, 4.0, 7.0)]
+    shown = [quoted("continuum", "1.875"), quoted("continuum", "4.694"), quoted("continuum", "7.855")]
+    assert roots == pytest.approx(shown, abs=0.0005)  # a cantilever's βL: cos βL cosh βL = −1
+    # ten elements a wavelength, κh ≈ 0.63, keep a string's lumped error, (κh)²/24, under 2 %
+    assert 2 * math.pi / 10 == pytest.approx(quoted("continuum", "0.63"), abs=0.005)
+    assert 100 * (2 * math.pi / 10) ** 2 / 24 < quoted("continuum", "2 %")
     assert [(b / 1.87510) ** 2 for b in (4.69409, 7.85476)] == pytest.approx(
-        [6.27, 17.5], abs=0.05
+        [quoted("continuum", "6.27"), quoted("continuum", "17.5")], abs=0.05
     )  # roots to 5 figures; 17.55 to 3
 
 
@@ -542,30 +659,46 @@ def test_beams_plates_worked_example():
     from vib_tutorial.gui.beams_plates import STEEL, BeamPlateTrial
 
     t = BeamPlateTrial("", "")
-    assert (t.length, t.depth, t.mode, t.E, t.rho, t.nu) == (1.0, 0.1, 1, 210.0, 7850.0, 0.3)
+    assert (t.length, t.depth, t.mode, t.E, t.rho) == (1.0, 0.1, 1, 210.0, 7850.0) and t.nu == quoted(
+        "beams_plates", "0.3"
+    )
+    assert t.length / t.depth == pytest.approx(10)  # L/h = 10
     b = Beam(1.0, 0.1, 0.05, STEEL)
-    assert b.area == pytest.approx(0.005) and b.inertia == pytest.approx(4.167e-6, abs=5e-10)
+    assert b.area == pytest.approx(quoted("beams_plates", "0.005"))
+    assert b.inertia * 1e6 == pytest.approx(quoted("beams_plates", "4.167"), abs=5e-4)
     scale = math.sqrt(210e9 * b.inertia / (7850 * b.area))
     assert scale == pytest.approx(149.3, abs=0.05)
     assert math.pi**2 * 149.3 == pytest.approx(1474, abs=0.5)
     f = {th: float(beam_frequencies(b, 1, th)[0]) for th in Theory}
-    assert f[Theory.EULER] == pytest.approx(234.5, abs=0.05) and 1474 / TWO_PI == pytest.approx(234.5, abs=0.1)
-    assert (math.pi * 0.1) ** 2 / 12 == pytest.approx(0.00822, abs=0.000005)
-    assert f[Theory.RAYLEIGH] == pytest.approx(233.6, abs=0.05)
+    assert f[Theory.EULER] == pytest.approx(
+        quoted("beams_plates", "234.5"), abs=0.05
+    ) and 1474 / TWO_PI == pytest.approx(quoted("beams_plates", "234.5"), abs=0.1)
+    assert (math.pi * 0.1) ** 2 / 12 == pytest.approx(quoted("beams_plates", "0.00822"), abs=0.000005)
+    assert f[Theory.RAYLEIGH] == pytest.approx(quoted("beams_plates", "233.6"), abs=0.05)
     G = STEEL.G
-    assert G == pytest.approx(80.8e9, rel=0.001) and 5 / 6 * G == pytest.approx(67.3e9, rel=0.001)
-    assert 210 / 67.3 == pytest.approx(3.12, abs=0.005)
-    assert f[Theory.SHEAR] == pytest.approx(231.6, abs=0.05)
-    assert (math.pi * 0.1) ** 2 / 24 == pytest.approx(0.00411, abs=0.000005)
+    assert G / 1e9 == pytest.approx(quoted("beams_plates", "80.8"), abs=0.05)
+    assert 5 / 6 * G / 1e9 == pytest.approx(quoted("beams_plates", "67.3"), abs=0.05)
+    assert 210 / 67.3 == pytest.approx(quoted("beams_plates", "3.12"), abs=0.005)
+    assert f[Theory.SHEAR] == pytest.approx(quoted("beams_plates", "231.6"), abs=0.05)
+    assert (math.pi * 0.1) ** 2 / 24 == pytest.approx(quoted("beams_plates", "0.00411"), abs=0.000005)
+    assert 1 + 210 / 67.3 == pytest.approx(quoted("beams_plates", "4.12"), abs=0.005)  # 1 + E/κ_sG
     first = 1 - 0.00411 * 4.12
-    assert first == pytest.approx(0.9831, abs=0.00005) and first * 234.5 == pytest.approx(230.5, abs=0.05)
+    assert first == pytest.approx(quoted("beams_plates", "0.9831"), abs=0.00005) and first * 234.5 == pytest.approx(
+        quoted("beams_plates", "230.5"), abs=0.05
+    )
     assert 1 - (math.pi * 0.1) ** 2 / 24 * (1 + 210e9 / (5 / 6 * G)) == pytest.approx(
         f[Theory.TIMOSHENKO] / f[Theory.EULER], abs=1e-3
     )
-    assert f[Theory.TIMOSHENKO] == pytest.approx(230.7, abs=0.05)
-    assert 100 * (f[Theory.TIMOSHENKO] / f[Theory.EULER] - 1) == pytest.approx(-1.64, abs=0.005)
-    assert float(beam_omega(b, math.pi, branch=1)) / TWO_PI == pytest.approx(16.4e3, abs=50)
-    assert math.sqrt(5 / 6 * G * b.area / (7850 * b.inertia)) / TWO_PI == pytest.approx(16.1e3, abs=50)
+    assert f[Theory.TIMOSHENKO] == pytest.approx(quoted("beams_plates", "230.7"), abs=0.05)
+    assert 100 * (f[Theory.TIMOSHENKO] / f[Theory.EULER] - 1) == pytest.approx(
+        -quoted("beams_plates", "1.64 %"), abs=0.005
+    )
+    assert 100 * (1 - f[Theory.TIMOSHENKO] / f[Theory.EULER]) < quoted("beams_plates", "2 %")  # mode 1 at L/h = 10
+    assert float(beam_omega(b, math.pi, branch=1)) / TWO_PI / 1e3 == pytest.approx(
+        quoted("beams_plates", "16.4"), abs=0.05
+    )
+    cut_off = math.sqrt(5 / 6 * G * b.area / (7850 * b.inertia)) / TWO_PI / 1e3
+    assert cut_off == pytest.approx(quoted("beams_plates", "16.1"), abs=0.05)
     assert wave_speeds(b) == pytest.approx((5172, 2928), abs=0.5)
     # the bending wave's speed levels off at c_s, the thickness-shear branch's at c_b
     k = 1e4
@@ -573,13 +706,16 @@ def test_beams_plates_worked_example():
     assert float(beam_omega(b, k, branch=1)) / k == pytest.approx(5172, rel=1e-3)
 
     p = Plate(0.6, 0.4, 0.003, STEEL)
-    assert p.rigidity == pytest.approx(519, abs=0.5) and p.surface_mass == pytest.approx(23.55, abs=0.005)
-    assert p.scale == pytest.approx(4.696, abs=0.0005)
-    assert math.pi**2 * (1 / 0.36 + 1 / 0.16) * 4.696 == pytest.approx(418.4, abs=0.05)
-    assert rect_modes(p, 1)[0].freq_hz == pytest.approx(66.6, abs=0.05)
-    assert 0.24 / 2 / 4.696 == pytest.approx(0.026, abs=0.0005) and 0.24 / 2 / p.scale == pytest.approx(
-        0.026, abs=0.0005
+    assert (p.a**2, p.b**2) == pytest.approx((quoted("beams_plates", "0.36"), quoted("beams_plates", "0.16")))
+    assert p.a * p.b == pytest.approx(quoted("beams_plates", "0.24"))
+    assert p.rigidity == pytest.approx(519, abs=0.5) and p.surface_mass == pytest.approx(
+        quoted("beams_plates", "23.55"), abs=0.005
     )
+    assert p.scale == pytest.approx(quoted("beams_plates", "4.696"), abs=0.0005)
+    assert math.pi**2 * (1 / 0.36 + 1 / 0.16) * 4.696 == pytest.approx(quoted("beams_plates", "418.4"), abs=0.05)
+    assert rect_modes(p, 1)[0].freq_hz == pytest.approx(quoted("beams_plates", "66.6"), abs=0.05)
+    assert 0.24 / 2 / 4.696 == pytest.approx(quoted("beams_plates", "0.026"), abs=0.0005)
+    assert 0.24 / 2 / p.scale == pytest.approx(quoted("beams_plates", "0.026"), abs=0.0005)
     assert 1 / (0.24 / 2 / p.scale) == pytest.approx(39, abs=0.5)
 
 
@@ -593,41 +729,45 @@ def test_integration_worked_example():
     assert (t.mass, t.stiffness, t.damping, t.x0, t.per_period, t.periods, t.force) == (1, 400, 0, 0.01, 10, 10, 0)
     model, load = Model(), Load()
     w = math.sqrt(400)
-    assert w == 20 and w / (2 * math.pi) == pytest.approx(3.18, abs=0.005)
+    assert w == 20 and w / (2 * math.pi) == pytest.approx(quoted("integration", "3.18"), abs=0.005)
     T = 2 * math.pi / w
     h = T / 10
-    assert T == pytest.approx(0.314, abs=0.0005) and h == pytest.approx(0.0314, abs=0.00005)
+    assert T == pytest.approx(quoted("integration", "0.314"), abs=0.0005) and h == pytest.approx(
+        quoted("integration", "0.0314"), abs=0.00005
+    )
     O = w * h
-    assert O == pytest.approx(0.628, abs=0.0005) and O / 2 == pytest.approx(0.314, abs=0.0005)
+    assert O == pytest.approx(quoted("integration", "0.628"), abs=0.0005) and O / 2 == pytest.approx(
+        quoted("integration", "0.314"), abs=0.0005
+    )
     cd, aa = 2 * math.asin(O / 2), 2 * math.atan(O / 2)
-    assert cd == pytest.approx(0.639, abs=0.0005) and 0.628 / 0.639 == pytest.approx(0.983, abs=0.0005)
-    assert aa == pytest.approx(0.609, abs=0.0005)
+    assert cd == pytest.approx(quoted("integration", "0.639"), abs=0.0005) and 0.628 / 0.639 == pytest.approx(
+        quoted("integration", "0.983"), abs=0.0005
+    )
+    assert aa == pytest.approx(quoted("integration", "0.609"), abs=0.0005)
     sp = {s: spectral(s, O) for s in (Scheme.CENTRAL, Scheme.AVERAGE, Scheme.LINEAR, Scheme.RK4)}
-    assert O / cd - 1 == pytest.approx(sp[Scheme.CENTRAL].period_error) and 100 * sp[
-        Scheme.CENTRAL
-    ].period_error == pytest.approx(-1.7, abs=0.05)
-    assert O / aa - 1 == pytest.approx(sp[Scheme.AVERAGE].period_error) and 100 * sp[
-        Scheme.AVERAGE
-    ].period_error == pytest.approx(3.2, abs=0.05)
-    assert 100 * O**2 / 12 == pytest.approx(3.3, abs=0.05)
+    assert O / cd - 1 == pytest.approx(sp[Scheme.CENTRAL].period_error)
+    assert 100 * sp[Scheme.CENTRAL].period_error == pytest.approx(-1.7, abs=0.05)
+    assert O / aa - 1 == pytest.approx(sp[Scheme.AVERAGE].period_error)
+    assert 100 * sp[Scheme.AVERAGE].period_error == pytest.approx(3.2, abs=0.05)
+    assert 100 * O**2 / 12 == pytest.approx(quoted("integration", "3.3 %"), abs=0.05)
     assert 100 * sp[Scheme.LINEAR].period_error == pytest.approx(1.6, abs=0.05)
-    assert sp[Scheme.RK4].radius == pytest.approx(0.99959, abs=0.000005)
+    assert sp[Scheme.RK4].radius == pytest.approx(quoted("integration", "0.99959"), abs=0.000005)
     assert 100 * sp[Scheme.RK4].period_error == pytest.approx(0.11, abs=0.005)
     assert 100 * sp[Scheme.RK4].damping == pytest.approx(0.065, abs=0.0005)
     rk = sum((1j * O) ** k / math.factorial(k) for k in range(5))
     assert abs(rk) ** 2 == pytest.approx(1 - O**6 / 72 + O**8 / 576)
     assert 1 - 8**3 / 72 + 8**4 / 576 == pytest.approx(1.0)  # ρ = 1 at ωΔt = 2√2
     # ten periods: 100 steps of phase
-    assert 100 * aa == pytest.approx(60.9, abs=0.05) and 20 * math.pi == pytest.approx(62.8, abs=0.05)
-    assert 20 * math.pi - 100 * aa == pytest.approx(1.95, abs=0.005) and 1.95 / (2 * math.pi) == pytest.approx(
-        0.31, abs=0.005
+    assert 100 * aa == pytest.approx(quoted("integration", "60.9"), abs=0.05) and 20 * math.pi == pytest.approx(
+        quoted("integration", "62.8"), abs=0.05
     )
-    assert 10 * math.cos(1.95) == pytest.approx(-3.7, abs=0.05)
-    assert 100 * cd - 20 * math.pi == pytest.approx(1.08, abs=0.005) and 10 * math.cos(1.08) == pytest.approx(
-        4.7, abs=0.05
-    )
-    assert 20 * math.pi - 100 * float(np.angle(rk)) == pytest.approx(0.07, abs=0.005)
-    assert abs(rk) ** 100 == pytest.approx(0.960, abs=0.0005)
+    assert 20 * math.pi - 100 * aa == pytest.approx(quoted("integration", "1.95"), abs=0.005)
+    assert 1.95 / (2 * math.pi) == pytest.approx(quoted("integration", "0.31"), abs=0.005)
+    assert 10 * math.cos(1.95) == pytest.approx(-quoted("integration", "3.7"), abs=0.05)
+    assert 100 * cd - 20 * math.pi == pytest.approx(quoted("integration", "1.08"), abs=0.005)
+    assert 10 * math.cos(1.08) == pytest.approx(quoted("integration", "4.7"), abs=0.05)
+    assert 20 * math.pi - 100 * float(np.angle(rk)) == pytest.approx(quoted("integration", "0.07"), abs=0.005)
+    assert abs(rk) ** 100 == pytest.approx(quoted("integration", "0.960"), abs=0.0005)
     steps = 100
     times = np.arange(steps + 1) * h
     reference = exact(model, load, times)
@@ -636,11 +776,21 @@ def test_integration_worked_example():
         x = simulate(s, model, load, h, steps, t.alpha)
         largest[s] = 100 * float(np.max(np.abs(x - reference))) / float(np.max(np.abs(reference)))
         assert 1000 * x[-1] == pytest.approx(
-            {Scheme.CENTRAL: 4.7, Scheme.AVERAGE: -3.7, Scheme.LINEAR: 5.5, Scheme.RK4: 9.6}[s], abs=0.05
+            {
+                Scheme.CENTRAL: quoted("integration", "4.7"),
+                Scheme.AVERAGE: -quoted("integration", "3.7"),
+                Scheme.LINEAR: 5.5,
+                Scheme.RK4: quoted("integration", "9.6"),
+            }[s],
+            abs=0.05,
         )
-    assert [round(largest[s], 1) for s in sp] == pytest.approx([98.0, 164.5, 91.9, 7.6], abs=0.06)
-    assert f"{largest[Scheme.AVERAGE]:.3g}" == "165" and f"{largest[Scheme.CENTRAL]:.3g}" == "98"
-    assert f"{largest[Scheme.LINEAR]:.3g}" == "91.9" and f"{largest[Scheme.RK4]:.3g}" == "7.58"
+    assert [round(largest[s], 1) for s in sp] == pytest.approx(
+        [98.0, 164.5, quoted("integration", "91.9 %"), 7.6], abs=0.06
+    )
+    assert float(f"{largest[Scheme.AVERAGE]:.3g}") == quoted("integration", "165 %")  # the readout's 3 figures
+    assert float(f"{largest[Scheme.CENTRAL]:.3g}") == quoted("integration", "98 %")
+    assert float(f"{largest[Scheme.LINEAR]:.3g}") == quoted("integration", "91.9 %")
+    assert float(f"{largest[Scheme.RK4]:.3g}") == quoted("integration", "7.58 %")
 
 
 def test_random_vibration_worked_example():
@@ -905,10 +1055,11 @@ def test_background_rayleigh_quotient_and_effective_masses():
     s = ChainSystem.uniform(4)
     M, _, K = s.matrices()
     v = np.array([1.0, 2.0, 3.0, 4.0])
-    assert np.sqrt(v @ K @ v / (v @ M @ v)) / (2 * np.pi) == pytest.approx(1.162, abs=5e-4)
-    assert modal_analysis(s).modes[0].omega_n / (2 * np.pi) == pytest.approx(1.105, abs=5e-4)
+    assert np.sqrt(v @ K @ v / (v @ M @ v)) / (2 * np.pi) == pytest.approx(quoted("background", "1.162"), abs=5e-4)
+    assert modal_analysis(s).modes[0].omega_n / (2 * np.pi) == pytest.approx(quoted("background", "1.105"), abs=5e-4)
     gamma2 = [(m.shape_mass_normalized @ M @ np.ones(4)) ** 2 for m in modal_analysis(s).modes]
-    np.testing.assert_allclose(gamma2, [3.57, 0.33, 0.08, 0.01], atol=0.006)
+    quoted_masses = [3.57, quoted("background", "0.33"), quoted("background", "0.08"), quoted("background", "0.01")]
+    np.testing.assert_allclose(gamma2, quoted_masses, atol=0.006)
 
 
 def test_background_worked_example():
@@ -924,36 +1075,107 @@ def test_background_worked_example():
     gammas = [(2 * k - 1) * math.pi / 9 for k in range(1, 5)]
     assert np.degrees(gammas) == pytest.approx([20, 60, 100, 140])
     w = [40 * math.sin(g / 2) for g in gammas]
-    assert w == pytest.approx([6.946, 20.00, 30.64, 37.59], abs=0.005)
+    assert w == pytest.approx(
+        [
+            quoted("background", "6.946"),
+            quoted("background", "20.00"),
+            quoted("background", "30.64"),
+            quoted("background", "37.59"),
+        ],
+        abs=0.005,
+    )
     assert [m.omega_n for m in r.modes] == pytest.approx(w)
     assert np.array([6.946, 20.00, 30.64, 37.59]) / (2 * math.pi) == pytest.approx(
-        [1.105, 3.183, 4.877, 5.982], abs=0.001
+        [
+            quoted("background", "1.105"),
+            quoted("background", "3.183"),
+            quoted("background", "4.877"),
+            quoted("background", "5.982"),
+        ],
+        abs=0.001,
     )
-    assert [m.fn_hz for m in r.modes] == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=0.0005)
+    assert [m.fn_hz for m in r.modes] == pytest.approx(
+        [
+            quoted("background", "1.105"),
+            quoted("background", "3.183"),
+            quoted("background", "4.877"),
+            quoted("background", "5.982"),
+        ],
+        abs=0.0005,
+    )
     for k, (g, m) in enumerate(zip(gammas, r.modes)):
         shape = 2 * np.sin(np.arange(1, 5) * g) / 3
         assert np.abs(m.shape_mass_normalized) == pytest.approx(np.abs(shape)), k
-    assert 2 / 3 * np.sin(np.radians(20 * np.arange(1, 5))) == pytest.approx([0.228, 0.429, 0.577, 0.657], abs=5e-4)
+    assert 2 / 3 * np.sin(np.radians(20 * np.arange(1, 5))) == pytest.approx(
+        [
+            quoted("background", "0.228"),
+            quoted("background", "0.429"),
+            quoted("background", "0.577"),
+            quoted("background", "0.657"),
+        ],
+        abs=5e-4,
+    )
     # damping: ζ_r = βω_r/2, exact; the damped frequencies
+    assert np.diag(C, 1) == pytest.approx(-2.0) and quoted("background", "0.0025") == pytest.approx(1 / 200 / 2)  # β/2
     zetas = 0.0025 * np.array([6.946, 20.00, 30.64, 37.59])
-    assert zetas == pytest.approx([0.0174, 0.0500, 0.0766, 0.0940], abs=5e-5)
+    assert zetas == pytest.approx(
+        [
+            quoted("background", "0.0174"),
+            quoted("background", "0.0500"),
+            quoted("background", "0.0766"),
+            quoted("background", "0.0940"),
+        ],
+        abs=5e-5,
+    )
     assert [m.zeta_modal for m in r.modes] == pytest.approx([m.damped.zeta for m in r.modes])
-    assert [m.zeta_modal for m in r.modes] == pytest.approx([0.0174, 0.0500, 0.0766, 0.0940], abs=5e-5)
+    assert [m.zeta_modal for m in r.modes] == pytest.approx(
+        [
+            quoted("background", "0.0174"),
+            quoted("background", "0.0500"),
+            quoted("background", "0.0766"),
+            quoted("background", "0.0940"),
+        ],
+        abs=5e-5,
+    )
     fd = np.array([1.105, 3.183, 4.877, 5.982]) * np.sqrt(1 - np.array([0.0174, 0.0500, 0.0766, 0.0940]) ** 2)
-    assert fd == pytest.approx([1.105, 3.179, 4.862, 5.956], abs=0.001)
-    assert [m.damped.fd_hz for m in r.modes] == pytest.approx([1.105, 3.179, 4.862, 5.956], abs=0.0005)
+    assert fd == pytest.approx(
+        [
+            quoted("background", "1.105"),
+            quoted("background", "3.179"),
+            quoted("background", "4.862"),
+            quoted("background", "5.956"),
+        ],
+        abs=0.001,
+    )
+    assert [m.damped.fd_hz for m in r.modes] == pytest.approx(
+        [
+            quoted("background", "1.105"),
+            quoted("background", "3.179"),
+            quoted("background", "4.862"),
+            quoted("background", "5.956"),
+        ],
+        abs=0.0005,
+    )
     # the straight-line guess
     v = np.arange(1.0, 5.0)
     assert v @ K @ v == 1600 and v @ M @ v == 30
-    assert math.sqrt(1600 / 30) == pytest.approx(7.303, abs=5e-4)
-    assert 7.303 / (2 * math.pi) == pytest.approx(1.162, abs=5e-4)
-    assert 1.162 / 1.105 - 1 == pytest.approx(0.05, abs=0.005)
-    assert 6.946**2 == pytest.approx(48.25, abs=0.005) and 53.33 / 48.25 - 1 == pytest.approx(0.105, abs=0.0005)
+    assert math.sqrt(1600 / 30) == pytest.approx(quoted("background", "7.303"), abs=5e-4)
+    assert 7.303 / (2 * math.pi) == pytest.approx(quoted("background", "1.162"), abs=5e-4)
+    assert 100 * (1.162 / 1.105 - 1) == pytest.approx(quoted("background", "5 %"), abs=0.5)
+    assert 1600 / 30 == pytest.approx(quoted("background", "53.33"), abs=0.005)
+    assert 6.946**2 == pytest.approx(quoted("background", "48.25"), abs=0.005) and 100 * (
+        53.33 / 48.25 - 1
+    ) == pytest.approx(quoted("background", "10.5 %"), abs=0.05)
     # the ground: mode 1's participation and effective mass
-    assert 0.228 + 0.429 + 0.577 + 0.657 == pytest.approx(1.890, abs=0.0015)
-    assert 1.890**2 == pytest.approx(3.57, abs=0.005) and 3.57 / 4 == pytest.approx(0.89, abs=0.005)
+    assert 0.228 + 0.429 + 0.577 + 0.657 == pytest.approx(quoted("background", "1.890"), abs=0.0015)
+    assert 1.890**2 == pytest.approx(quoted("background", "3.57"), abs=0.005) and 100 * 3.57 / 4 == pytest.approx(
+        quoted("background", "89 %"), abs=0.5
+    )
     # the tuned mass damper at μ = 5 %
-    assert math.sqrt(1 + 2 / 0.05) == pytest.approx(math.sqrt(41)) and math.sqrt(41) == pytest.approx(6.4, abs=0.05)
+    mu = quoted("background", "5 %") / 100
+    assert math.sqrt(1 + 2 / mu) == pytest.approx(math.sqrt(41)) and math.sqrt(41) == pytest.approx(
+        quoted("background", "6.4"), abs=0.05
+    )
 
 
 def test_frf_and_coupling_trials():
@@ -1559,28 +1781,48 @@ def test_energy_methods_trials():
 
     s = chain()
     f = exact(s)[0] / (2 * np.pi)
-    assert f == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=0.0005)
+    assert f == pytest.approx(
+        [
+            quoted("energy_methods", "1.105"),
+            quoted("energy_methods", "3.183"),
+            quoted("energy_methods", "4.877"),
+            quoted("energy_methods", "5.982"),
+        ],
+        abs=0.0005,
+    )
 
     def ray(shape, eps=0.0, passes=0, system=s):
         return hz(rayleigh(system, iterate(system, contaminated(system, trial_shape(system, shape), eps), passes)))
 
-    assert ray(Shape.STATIC) == pytest.approx(1.112, abs=0.0005)
-    assert ray(Shape.STATIC) / f[0] - 1 == pytest.approx(0.0055, abs=0.00005)
+    assert ray(Shape.STATIC) == pytest.approx(quoted("energy_methods", "1.112"), abs=0.0005)
+    assert ray(Shape.STATIC) / f[0] - 1 == pytest.approx(quoted("energy_methods", "0.55 %") / 100, abs=0.00005)
     assert ray(Shape.LINEAR) / f[0] - 1 == pytest.approx(0.051, abs=0.0005)
     assert ray(Shape.LINEAR, passes=1) / f[0] - 1 == pytest.approx(0.00063, abs=0.000005)
     assert ray(Shape.SINE) == pytest.approx(f[0], rel=1e-12)
     assert ray(Shape.SINE, 0.1) / f[0] - 1 == pytest.approx(0.046, abs=0.0005)
-    assert ray(Shape.SINE, 0.2) / f[0] - 1 == pytest.approx(0.166, abs=0.0005)
-    assert ray(Shape.TIP) == pytest.approx(3.18, abs=0.005) and ray(Shape.TIP) / f[0] - 1 == pytest.approx(
-        1.88, abs=0.005
+    # 10 % of mode 2 (ε = 0.1) puts ω² about ε² = 1 % times (ω₂/ω₁)² − 1 high
+    eps = quoted("energy_methods", "0.1")
+    assert 100 * eps == quoted("energy_methods", "10 %") and 100 * eps**2 == pytest.approx(
+        quoted("energy_methods", "1 %")
     )
+    assert (ray(Shape.SINE, eps) / f[0]) ** 2 - 1 == pytest.approx(eps**2 * ((f[1] / f[0]) ** 2 - 1), rel=0.3)
+    assert ray(Shape.SINE, 0.2) / f[0] - 1 == pytest.approx(0.166, abs=0.0005)
+    assert ray(Shape.TIP) == pytest.approx(quoted("energy_methods", "3.18"), abs=0.005)
+    assert ray(Shape.TIP) / f[0] - 1 == pytest.approx(1.88, abs=0.005)
     assert ray(Shape.TIP, passes=1) / f[0] - 1 == pytest.approx(0.051, abs=0.0005)
     assert ray(Shape.TIP, passes=2) / f[0] - 1 == pytest.approx(0.00063, abs=0.000005)
     assert (f[0] / f[1]) ** 2 == pytest.approx(0.12, abs=0.005)
-    assert hz(dunkerley_terms(s)) == pytest.approx([3.18, 2.25, 1.84, 1.59], abs=0.005)
-    assert hz(dunkerley(s)) == pytest.approx(1.007, abs=0.0005) and hz(dunkerley(s)) / f[0] - 1 == pytest.approx(
-        -0.089, abs=0.0005
+    assert hz(dunkerley_terms(s)) == pytest.approx(
+        [
+            quoted("energy_methods", "3.18"),
+            quoted("energy_methods", "2.25"),
+            quoted("energy_methods", "1.84"),
+            quoted("energy_methods", "1.59"),
+        ],
+        abs=0.005,
     )
+    assert hz(dunkerley(s)) == pytest.approx(quoted("energy_methods", "1.007"), abs=0.0005)
+    assert hz(dunkerley(s)) / f[0] - 1 == pytest.approx(-quoted("energy_methods", "8.9 %") / 100, abs=0.0005)
     tip = chain(masses=(1.0, 1.0, 1.0, 5.0))
     ft = exact(tip)[0] / (2 * np.pi)
     assert hz(dunkerley_terms(tip))[-1] == pytest.approx(0.71, abs=0.005)
@@ -1589,7 +1831,9 @@ def test_energy_methods_trials():
     assert ray(Shape.STATIC, system=tip) / ft[0] - 1 == pytest.approx(0.0025, abs=0.00005)
     table = ritz_table(s, Basis.KRYLOV)
     assert table[1, 0] == pytest.approx(f[0], abs=0.00005)
-    assert table[1, 1] == pytest.approx(3.30, abs=0.005) and table[1, 1] / f[1] - 1 == pytest.approx(0.036, abs=0.0005)
+    assert table[1, 1] == pytest.approx(3.30, abs=0.005) and table[1, 1] / f[1] - 1 == pytest.approx(
+        quoted("energy_methods", "3.6 %") / 100, abs=0.0005
+    )
     assert (table[2, 1], table[2, 2]) == pytest.approx((3.184, 5.02), abs=0.005)
     stiff = chain(stiffness=(4000.0, 400.0, 400.0, 400.0))
     fs = exact(stiff)[0] / (2 * np.pi)
@@ -1620,18 +1864,24 @@ def test_energy_methods_worked_example():
     s = chain()
     M, _, K = s.matrices()
     w, _ = exact(s)
-    assert w[0] ** 2 == pytest.approx(48.246, abs=0.0005)
+    assert w[0] ** 2 == pytest.approx(quoted("energy_methods", "48.246"), abs=0.0005)
     v = static_deflection(s, s.masses)
     assert 400 * v == pytest.approx([4, 7, 9, 10])
     assert np.diag(np.linalg.inv(K)) * 400 == pytest.approx([1, 2, 3, 4])
     assert 12000 / 246 == pytest.approx(48.78, abs=0.005) == rayleigh(s, v)
-    assert math.sqrt(48.78) == pytest.approx(6.984, abs=0.0005)
-    assert math.sqrt(rayleigh(s, v)) / (2 * math.pi) == pytest.approx(1.112, abs=0.0005)
-    assert math.sqrt(rayleigh(s, v)) / w[0] - 1 == pytest.approx(0.0055, abs=0.00005)
-    assert np.sqrt(dunkerley_terms(s)) == pytest.approx([20, 14.14, 11.55, 10], abs=0.005)
-    assert dunkerley(s) == pytest.approx(40) and math.sqrt(40) == pytest.approx(6.325, abs=0.0005)
-    assert math.sqrt(40) / (2 * math.pi) == pytest.approx(1.007, abs=0.0005)
-    assert np.sum(1 / w**2) == pytest.approx(0.025) and 1 / w[0] ** 2 == pytest.approx(0.0207, abs=0.00005)
+    assert math.sqrt(48.78) == pytest.approx(quoted("energy_methods", "6.984"), abs=0.0005)
+    assert math.sqrt(rayleigh(s, v)) / (2 * math.pi) == pytest.approx(quoted("energy_methods", "1.112"), abs=0.0005)
+    assert math.sqrt(rayleigh(s, v)) / w[0] - 1 == pytest.approx(quoted("energy_methods", "0.55 %") / 100, abs=0.00005)
+    assert np.sqrt(dunkerley_terms(s)) == pytest.approx(
+        [20, quoted("energy_methods", "14.14"), quoted("energy_methods", "11.55"), 10], abs=0.005
+    )
+    assert dunkerley(s) == pytest.approx(40) and math.sqrt(40) == pytest.approx(
+        quoted("energy_methods", "6.325"), abs=0.0005
+    )
+    assert math.sqrt(40) / (2 * math.pi) == pytest.approx(quoted("energy_methods", "1.007"), abs=0.0005)
+    assert np.sum(1 / w**2) == pytest.approx(quoted("energy_methods", "0.025")) and 1 / w[0] ** 2 == pytest.approx(
+        quoted("energy_methods", "0.0207"), abs=0.00005
+    )
     # two Krylov shapes, as the notes scale them
     w1 = np.array([4.0, 7, 9, 10])
     w2 = 400 * np.linalg.solve(K, M @ w1)
@@ -1640,19 +1890,46 @@ def test_energy_methods_worked_example():
     assert W.T @ M @ W == pytest.approx(np.array([[246, 2037], [2037, 16886]]))
     assert W.T @ K @ W == pytest.approx(400 * np.array([[30, 246], [246, 2037]]))
     a, b, c = 246 * 16886 - 2037**2, 400 * (30 * 16886 + 2037 * 246 - 2 * 246 * 2037), 400**2 * (30 * 2037 - 246**2)
-    assert (a, b / 1e6, c / 1e7) == pytest.approx((4587, 2.1912, 9.504), abs=0.00005)
+    assert (a, b / 1e6, c / 1e7) == pytest.approx(
+        (4587, quoted("energy_methods", "2.1912"), quoted("energy_methods", "9.504")), abs=0.00005
+    )
     roots = np.sort(np.roots([a, -b, c]))
-    assert roots == pytest.approx([48.246, 429.45], abs=0.005)
+    assert roots == pytest.approx([quoted("energy_methods", "48.246"), quoted("energy_methods", "429.45")], abs=0.005)
     ritz = ritz_table(s, Basis.KRYLOV)[1, :2]
     assert ritz**2 * (2 * math.pi) ** 2 == pytest.approx(roots, rel=1e-9)
-    assert ritz == pytest.approx([1.105, 3.298], abs=0.0005) and ritz[0] / w[0] * 2 * math.pi - 1 < 1e-5
-    assert ritz[1] / (w[1] / (2 * math.pi)) - 1 == pytest.approx(0.036, abs=0.0005)
-    # Holzer at 1 Hz
-    assert (2 * math.pi) ** 2 == pytest.approx(39.48, abs=0.005)
+    assert (
+        ritz == pytest.approx([quoted("energy_methods", "1.105"), quoted("energy_methods", "3.298")], abs=0.0005)
+        and ritz[0] / w[0] * 2 * math.pi - 1 < 1e-5
+    )
+    assert ritz[1] / (w[1] / (2 * math.pi)) - 1 == pytest.approx(quoted("energy_methods", "3.6 %") / 100, abs=0.0005)
+    # Holzer at 1 Hz, the tab's start
+    from vib_tutorial.gui.energy_methods import EnergyTrial
+
+    assert EnergyTrial.holzer_hz == quoted("energy_methods", "1.00")
+    assert (2 * math.pi) ** 2 == pytest.approx(quoted("energy_methods", "39.48"), abs=0.005)
     rows = holzer(s, 2 * math.pi)
-    assert [r.inertia for r in rows] == pytest.approx([39.5, 75.1, 103.2, 121.2], abs=0.05)
-    assert [r.spring for r in rows] == pytest.approx([360.5, 285.5, 182.2, 61.0], abs=0.05)
-    assert [r.x for r in rows][1:] == pytest.approx([1.901, 2.615, 3.071], abs=0.0005)
+    assert [r.inertia for r in rows] == pytest.approx(
+        [
+            quoted("energy_methods", "39.5"),
+            quoted("energy_methods", "75.1"),
+            quoted("energy_methods", "103.2"),
+            quoted("energy_methods", "121.2"),
+        ],
+        abs=0.05,
+    )
+    assert [r.spring for r in rows] == pytest.approx(
+        [
+            quoted("energy_methods", "360.5"),
+            quoted("energy_methods", "285.5"),
+            quoted("energy_methods", "182.2"),
+            quoted("energy_methods", "61.0"),
+        ],
+        abs=0.05,
+    )
+    assert [r.x for r in rows][1:] == pytest.approx(
+        [quoted("energy_methods", "1.901"), quoted("energy_methods", "2.615"), quoted("energy_methods", "3.071")],
+        abs=0.0005,
+    )
 
 
 def test_integration_trials():
@@ -1671,12 +1948,12 @@ def test_integration_trials():
     def at(per_period, scheme, alpha=-0.1):
         return spectral(scheme, 2 * math.pi / per_period, 0.0, alpha)
 
-    assert Model().frequencies_hz()[0] == pytest.approx(3.18, abs=0.005)
-    assert at(10, Scheme.CENTRAL).period_error == pytest.approx(-0.017, abs=0.0005)
-    assert at(10, Scheme.AVERAGE).period_error == pytest.approx(0.032, abs=0.0005)
-    assert at(10, Scheme.LINEAR).period_error == pytest.approx(0.016, abs=0.0005)
-    assert at(10, Scheme.RK4).period_error == pytest.approx(0.0011, abs=0.00005)
-    assert at(10, Scheme.RK4).damping == pytest.approx(0.00065, abs=0.000005)
+    assert Model().frequencies_hz()[0] == pytest.approx(quoted("integration", "3.18"), abs=0.005)
+    assert at(10, Scheme.CENTRAL).period_error == pytest.approx(-quoted("integration", "1.7 %") / 100, abs=0.0005)
+    assert at(10, Scheme.AVERAGE).period_error == pytest.approx(quoted("integration", "3.2 %") / 100, abs=0.0005)
+    assert at(10, Scheme.LINEAR).period_error == pytest.approx(quoted("integration", "1.6 %") / 100, abs=0.0005)
+    assert at(10, Scheme.RK4).period_error == pytest.approx(quoted("integration", "0.11 %") / 100, abs=0.00005)
+    assert at(10, Scheme.RK4).damping == pytest.approx(quoted("integration", "0.065 %") / 100, abs=0.000005)
     assert 10 * at(10, Scheme.AVERAGE).period_error == pytest.approx(1 / 3, abs=0.02)
     assert 2 * math.pi / 3.0 == pytest.approx(2.09, abs=0.005) and at(3.0, Scheme.CENTRAL).radius > 1
     assert 2 * math.pi / 3.2 == pytest.approx(1.96, abs=0.005)
@@ -1685,9 +1962,8 @@ def test_integration_trials():
     assert at(3.0, Scheme.AVERAGE).period_error == pytest.approx(0.30, abs=0.005)
     assert at(1.0, Scheme.AVERAGE).period_error + 1 == pytest.approx(2.5, abs=0.05)
     assert at(1.0, Scheme.AVERAGE).radius == pytest.approx(1.0)
-    assert stable_limit(Scheme.LINEAR) == pytest.approx(2 * math.sqrt(3)) and 2 * math.sqrt(3) / (2 * math.pi) == (
-        pytest.approx(0.55, abs=0.005)
-    )
+    assert stable_limit(Scheme.LINEAR) == pytest.approx(2 * math.sqrt(3))
+    assert 2 * math.sqrt(3) / (2 * math.pi) == (pytest.approx(0.55, abs=0.005))
     assert at(1.0, Scheme.LINEAR).radius > 1
     rk = at(5, Scheme.RK4)
     assert rk.period_error == pytest.approx(0.011, abs=0.0005) and 1 - rk.radius == pytest.approx(0.022, abs=0.0005)
@@ -1948,7 +2224,9 @@ def test_beams_plates_trials():
     assert float(beam_omega(b, math.pi, branch=1)) / (2 * math.pi) == pytest.approx(16.4e3, rel=0.01)
     plate = Plate()
     modes = rect_modes(plate, 6)
-    assert [round(m.freq_hz, 1) for m in modes[:4]] == pytest.approx([66.6, 128.1, 204.9, 230.5], abs=0.1)
+    assert [round(m.freq_hz, 1) for m in modes[:4]] == pytest.approx(
+        [quoted("beams_plates", "66.6"), 128.1, 204.9, quoted("beams_plates", "230.5")], abs=0.1
+    )
     assert (modes[5].m, modes[5].n) == (3, 2)
     square = rect_modes(Plate(0.4, 0.4), 6)
     assert (square[4].m, square[4].n, square[5].m, square[5].n) == (1, 3, 3, 1)
@@ -1957,7 +2235,7 @@ def test_beams_plates_trials():
     assert [m.root**2 for m in circle] == pytest.approx([10.22, 21.26, 34.88, 39.77], abs=0.005)
     assert [m.freq_hz for m in circle] == pytest.approx([191, 397, 652, 743], abs=0.5)
     per_hz = plate.area / (2 * plate.scale)
-    assert (per_hz, 1 / per_hz) == pytest.approx((0.026, 39), rel=0.02)
+    assert (per_hz, 1 / per_hz) == pytest.approx((quoted("beams_plates", "0.026"), 39), rel=0.02)
 
 
 def test_seismic_trials():
@@ -3079,22 +3357,26 @@ def test_deriving_trials():
 
     car = Car()
     m1, m2 = modes(car)
-    assert (m1.frequency, m2.frequency) == pytest.approx((1.25, 1.41), abs=0.005)
-    assert (m1.node, m2.node) == pytest.approx((-1.92, 0.88), abs=0.005)
+    assert (m1.frequency, m2.frequency) == pytest.approx(
+        (quoted("deriving", "1.25"), quoted("deriving", "1.41")), abs=0.005
+    )
+    assert (m1.node, m2.node) == pytest.approx((-quoted("deriving", "1.92"), quoted("deriving", "0.88")), abs=0.005)
     assert not m1.inside(car) and m2.inside(car)
     # no static coupling
     level = replace(car, k_rear=32e3)
     assert level.k_front * level.front == pytest.approx(level.k_rear * level.rear) == pytest.approx(48e3)
-    assert hz(level) == pytest.approx((1.23, 1.27), abs=0.005)
+    assert hz(level) == pytest.approx((quoted("deriving", "1.23"), 1.27), abs=0.005)
     # the elastic centre
-    assert car.elastic_centre() == pytest.approx(-0.15)
+    assert car.elastic_centre() == pytest.approx(-quoted("deriving", "0.15"))
     at = matrices(car, Coordinates.POINT, -0.15)
     assert abs(at.K[0, 1]) < 1e-9 and at.M[0, 1] == pytest.approx(180.0)
-    assert hz(car, Coordinates.POINT, -0.15) == pytest.approx((1.25, 1.41), abs=0.005)
+    assert hz(car, Coordinates.POINT, -0.15) == pytest.approx(
+        (quoted("deriving", "1.25"), quoted("deriving", "1.41")), abs=0.005
+    )
     # moments about the front axle, and the slip
     s = slipped(car, 1.2)
     wrong = np.sort(np.sqrt(np.linalg.eigvals(np.linalg.solve(s.M, s.K)).real)) / (2 * np.pi)
-    assert wrong == pytest.approx((0.93, 1.38), abs=0.005)
+    assert wrong == pytest.approx((0.93, quoted("deriving", "1.38")), abs=0.005)
     # the ends' coordinates
     assert matrices(car, Coordinates.ENDS).M[0, 1] == pytest.approx(18.1, abs=0.05)
     rows = newton(car, Coordinates.ENDS).M
@@ -3104,8 +3386,10 @@ def test_deriving_trials():
     assert one.dynamic_index == pytest.approx(1.0, abs=0.002) and math.sqrt(1.2 * 1.5) == pytest.approx(1.34, abs=0.005)
     assert one.end_masses == pytest.approx((666.7, 533.3), abs=0.05)
     assert hz(one) == pytest.approx(one.end_frequencies(), abs=0.002)
-    assert one.end_frequencies() == pytest.approx((1.23, 1.38), abs=0.005)
-    assert [m.node for m in modes(one)] == pytest.approx((-1.5, 1.2), abs=0.005)
+    assert one.end_frequencies() == pytest.approx((quoted("deriving", "1.23"), quoted("deriving", "1.38")), abs=0.005)
+    assert [m.node for m in modes(one)] == pytest.approx(
+        (-quoted("deriving", "1.5"), quoted("deriving", "1.2")), abs=0.005
+    )
     # over a hump, either way round
     hump = Bump()
     assert car.wheelbase / hump.speed == pytest.approx(0.32, abs=0.005)
@@ -3132,19 +3416,27 @@ def test_deriving_pendulum_trials():
 
     p = DoublePendulum()
     slow, fast = modes(p)
-    assert (slow.frequency, fast.frequency) == pytest.approx((0.540, 1.30), abs=0.005)
-    assert (slow.ratio, fast.ratio) == pytest.approx((1.41, -1.41), abs=0.005)
-    assert p.separate_frequencies() == pytest.approx((0.705, 0.705), abs=0.0005)
+    assert (slow.frequency, fast.frequency) == pytest.approx(
+        (quoted("deriving", "0.540"), quoted("deriving", "1.30")), abs=0.005
+    )
+    assert (slow.ratio, fast.ratio) == pytest.approx(
+        (quoted("deriving", "1.41"), -quoted("deriving", "1.41")), abs=0.005
+    )
+    assert p.separate_frequencies() == pytest.approx(
+        (quoted("deriving", "0.705"), quoted("deriving", "0.705")), abs=0.0005
+    )
     assert matrices(p).M[0, 1] == pytest.approx(0.25) and matrices(p).K[0, 1] == 0
     # the free-body diagram's rows, and the slip
     np.testing.assert_allclose(newton(p).M, [[0.5, 0], [0.5, 0.5]])
     s = slipped(p)
     wrong = np.sqrt(np.linalg.eigvals(np.linalg.solve(s.M, s.K)).real) / (2 * np.pi)
-    assert wrong == pytest.approx((0.705, 0.705), abs=0.0005)
+    assert wrong == pytest.approx((quoted("deriving", "0.705"), quoted("deriving", "0.705")), abs=0.0005)
     # the elbow's bend
     bend = matrices(p, Angles.RELATIVE)
     assert (bend.K[0, 1], bend.M[0, 0]) == pytest.approx((4.91, 1.25), abs=0.005)
-    assert [m.frequency for m in modes(p, Angles.RELATIVE)] == pytest.approx((0.540, 1.30), abs=0.005)
+    assert [m.frequency for m in modes(p, Angles.RELATIVE)] == pytest.approx(
+        (quoted("deriving", "0.540"), quoted("deriving", "1.30")), abs=0.005
+    )
     assert modes(p, Angles.RELATIVE)[0].shape[1] == pytest.approx(0.41, abs=0.005)
     # released in the slower mode, at 10° and at 40°
     for start, whole, apart in (((10, 14.1), 1.858, 1.8), ((40, 56.6), 1.924, 77)):
@@ -3153,6 +3445,7 @@ def test_deriving_pendulum_trials():
         assert measured_period(r.t, r.linear[:, 0]) == pytest.approx(1.853, abs=0.0005)
         assert np.degrees(np.abs(r.whole[:, 0] - r.linear[:, 0]).max()) == pytest.approx(apart, rel=0.03)
     assert 1.924 / 1.853 - 1 == pytest.approx(0.038, abs=0.0005)
+    assert 100 * (1.924 / 1.853 - 1) == pytest.approx(quoted("deriving_pendulum", "4 %"), abs=0.5)  # "about 4 %"
     # chaos
     start = (np.radians(120), np.radians(120))
     d = divergence(p, start, 15.0)
@@ -3170,6 +3463,8 @@ def test_deriving_worked_example():
 
     car = DerivingTrial("", "").car
     assert car == Car()
+    assert car.gyration == quoted("deriving", "1.3") and car.gyration**2 == pytest.approx(quoted("deriving", "1.69"))
+    assert car.front + car.rear == pytest.approx(quoted("deriving", "2.7"))
     m, J, a, b, k = 1200.0, 1200 * 1.3**2, 1.2, 1.5, 40e3
     assert J == pytest.approx(2028) and car.inertia == pytest.approx(J)
     K = [[2 * k, k * a - k * b], [k * a - k * b, k * a**2 + k * b**2]]
@@ -3179,45 +3474,65 @@ def test_deriving_worked_example():
     np.testing.assert_allclose(mats.K, K)
     np.testing.assert_allclose(mats.C, [[5000, -750], [-750, 9225]])
     # uncoupled
-    assert math.sqrt(80_000 / 1200) == pytest.approx(8.165, abs=5e-4)
-    assert math.sqrt(147_600 / 2028) == pytest.approx(8.531, abs=5e-4)
-    assert car.uncoupled_frequencies() == pytest.approx((1.30, 1.36), abs=0.005)
-    assert (8.165 / (2 * math.pi), 8.531 / (2 * math.pi)) == pytest.approx((1.30, 1.36), abs=0.005)
+    assert math.sqrt(80_000 / 1200) == pytest.approx(quoted("deriving", "8.165"), abs=5e-4)
+    assert math.sqrt(147_600 / 2028) == pytest.approx(quoted("deriving", "8.531"), abs=5e-4)
+    assert car.uncoupled_frequencies() == pytest.approx(
+        (quoted("deriving", "1.30"), quoted("deriving", "1.36")), abs=0.005
+    )
+    assert (8.165 / (2 * math.pi), 8.531 / (2 * math.pi)) == pytest.approx(
+        (quoted("deriving", "1.30"), quoted("deriving", "1.36")), abs=0.005
+    )
     # the quadratic, its coefficients as quoted, and its roots from them
     A, B, C = m * J, m * 147_600 + J * 80_000, 80_000 * 147_600 - 12_000**2
     assert (A, B, C) == pytest.approx((2.434e6, 3.394e8, 1.166e10), rel=5e-4)
     roots = np.sort(np.roots([A, -B, C]))
-    assert roots == pytest.approx((61.45, 78.00), abs=0.005)
+    assert roots == pytest.approx((quoted("deriving", "61.45"), quoted("deriving", "78.00")), abs=0.005)
     rounded = np.sort(np.roots([2.434e6, -3.394e8, 1.166e10]))
-    assert rounded == pytest.approx((61.45, 78.00), rel=0.01)
-    assert np.sqrt([61.45, 78.00]) / (2 * math.pi) == pytest.approx((1.25, 1.41), abs=0.005)
-    assert [md.frequency for md in modes(car)] == pytest.approx((1.25, 1.41), abs=0.005)
+    assert rounded == pytest.approx((quoted("deriving", "61.45"), quoted("deriving", "78.00")), rel=0.01)
+    assert np.sqrt([61.45, 78.00]) / (2 * math.pi) == pytest.approx(
+        (quoted("deriving", "1.25"), quoted("deriving", "1.41")), abs=0.005
+    )
+    assert [md.frequency for md in modes(car)] == pytest.approx(
+        (quoted("deriving", "1.25"), quoted("deriving", "1.41")), abs=0.005
+    )
     assert 1.25 < 1.30 and 1.41 > 1.36  # one below both uncoupled, one above
     # the nodes, from the first row
     assert 61.45 * 1200 == pytest.approx(73_740) and 78.00 * 1200 == pytest.approx(93_600)
-    assert 12_000 / (80_000 - 73_740) == pytest.approx(1.92, abs=0.005)
-    assert 12_000 / (80_000 - 93_600) == pytest.approx(-0.88, abs=0.005)
-    assert [md.node for md in modes(car)] == pytest.approx((-1.92, 0.88), abs=0.005)
+    assert 12_000 / (80_000 - 73_740) == pytest.approx(quoted("deriving", "1.92"), abs=0.005)
+    assert 12_000 / (80_000 - 93_600) == pytest.approx(-quoted("deriving", "0.88"), abs=0.005)
+    assert [md.node for md in modes(car)] == pytest.approx(
+        (-quoted("deriving", "1.92"), quoted("deriving", "0.88")), abs=0.005
+    )
     # the other coordinates
     assert -12_000 / 80_000 == car.elastic_centre() == -0.15
-    assert 1.69 / (1.2 * 1.5) == pytest.approx(0.939, abs=5e-4) and car.dynamic_index == pytest.approx(0.939, abs=5e-4)
+    assert 1.69 / (1.2 * 1.5) == pytest.approx(
+        quoted("deriving", "0.939"), abs=5e-4
+    ) and car.dynamic_index == pytest.approx(quoted("deriving", "0.939"), abs=5e-4)
     assert 1200 * 1.5 / 2.7 == pytest.approx(667, abs=0.5) and car.end_masses == pytest.approx((666.7, 533.3), abs=0.05)
-    assert car.end_frequencies() == pytest.approx((1.23, 1.38), abs=0.005)
+    assert car.end_frequencies() == pytest.approx((quoted("deriving", "1.23"), quoted("deriving", "1.38")), abs=0.005)
     assert (math.sqrt(40e3 / 667) / (2 * math.pi), math.sqrt(40e3 / 533) / (2 * math.pi)) == pytest.approx(
-        (1.23, 1.38), abs=0.005
+        (quoted("deriving", "1.23"), quoted("deriving", "1.38")), abs=0.005
     )
     # Olley: 30 % more static deflection at the front is a ride frequency 12 % lower
-    assert 1 / math.sqrt(1.3) == pytest.approx(0.88, abs=0.005) and 1 - 1 / math.sqrt(1.3) == pytest.approx(
-        0.12, abs=0.005
-    )
+    assert 1 / math.sqrt(1.3) == pytest.approx(quoted("deriving", "0.88"), abs=0.005)
+    assert 100 * (1 - 1 / math.sqrt(1.3)) == pytest.approx(quoted("deriving", "12 %"), abs=0.5)
+    assert 1 + quoted("deriving", "30 %") / 100 == pytest.approx(quoted("deriving", "1.3"))
     # the equal double pendulum: (ω²L/g)² − 4(ω²L/g) + 2 = 0
     assert np.sort(np.roots([1, -4, 2])) == pytest.approx((2 - math.sqrt(2), 2 + math.sqrt(2)))
-    w2 = (2 - math.sqrt(2)) * 9.807 / 0.5, (2 + math.sqrt(2)) * 9.807 / 0.5
-    assert w2 == pytest.approx((11.49, 66.97), abs=0.005)
     p = DoublePendulum()
-    assert [md.frequency for md in pendulum_modes(p)] == pytest.approx((0.540, 1.30), abs=0.005)
-    assert np.sqrt([11.49, 66.97]) / (2 * math.pi) == pytest.approx((0.540, 1.30), abs=0.005)
-    assert p.separate_frequencies() == pytest.approx((0.705, 0.705), abs=0.0005)
+    assert p.upper_length == p.lower_length == quoted("deriving", "0.5")
+    assert p.gravity == quoted("deriving", "9.81")
+    w2 = (2 - math.sqrt(2)) * 9.81 / 0.5, (2 + math.sqrt(2)) * 9.81 / 0.5
+    assert w2 == pytest.approx((quoted("deriving", "11.49"), quoted("deriving", "66.99")), abs=0.005)
+    assert [md.frequency for md in pendulum_modes(p)] == pytest.approx(
+        (quoted("deriving", "0.540"), quoted("deriving", "1.30")), abs=0.005
+    )
+    assert np.sqrt([11.49, 66.99]) / (2 * math.pi) == pytest.approx(
+        (quoted("deriving", "0.540"), quoted("deriving", "1.30")), abs=0.005
+    )
+    assert p.separate_frequencies() == pytest.approx(
+        (quoted("deriving", "0.705"), quoted("deriving", "0.705")), abs=0.0005
+    )
 
 
 def test_frame_builder_worked_example():
