@@ -537,13 +537,14 @@ class TorsionalPage(QtWidgets.QWidget):
         self.set_train(p.train, custom=False)
 
     def load_setup(self, setup: dict) -> None:
-        """Set the page up as a practice problem's `setup` says: the preset, then its train and speeds if given.
-        The start-up isn't started."""
+        """Set the page up as a practice problem's `setup` says: the preset, then its train and speeds if given
+        (Custom, unless they're the preset's own). The start-up isn't started."""
         t = TorsionalSetup(**setup)
         self.load_preset(_preset(t.preset).name)
-        if t.train is not None:
+        if t.train is not None and t.train != self.train:  # the preset's own: still the preset
             self.set_train(t.train)
-        if t.operating_rpm is not None or t.top_rpm is not None:
+        speeds = (self.operating.value(), self.top.value())
+        if (t.operating_rpm, t.top_rpm) != (None, None) and (t.operating_rpm, t.top_rpm) != speeds:
             self._loading = True
             if t.operating_rpm is not None:
                 self.operating.setValue(t.operating_rpm)

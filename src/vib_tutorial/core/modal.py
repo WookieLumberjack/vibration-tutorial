@@ -305,8 +305,18 @@ def transmissibility(system: ChainSystem, freqs_hz: np.ndarray) -> np.ndarray:
 
 
 def receptance(M: np.ndarray, C: np.ndarray, K: np.ndarray, freqs_hz: np.ndarray, f: np.ndarray) -> np.ndarray:
-    """(K - w^2 M + i w C)^-1 f at each frequency, shape (len(freqs), len(f))."""
+    """(K - w^2 M + i w C)^-1 f at each frequency, shape (len(freqs), len(f)): NaN at a frequency where it is
+    unbounded (an undamped chain driven at a natural frequency, which a frequency grid can land on exactly)."""
     w = TWO_PI * np.asarray(freqs_hz, dtype=float)
     Z = K[None, :, :] - (w**2)[:, None, None] * M[None] + 1j * w[:, None, None] * C[None]
     rhs = np.broadcast_to(np.asarray(f, dtype=complex)[None, :, None], (w.size, f.size, 1))
-    return np.linalg.solve(Z, rhs)[:, :, 0]
+    try:
+        return np.linalg.solve(Z, rhs)[:, :, 0]
+    except np.linalg.LinAlgError:
+        out = np.full((w.size, f.size), np.nan, dtype=complex)
+        for i in range(w.size):
+            try:
+                out[i] = np.linalg.solve(Z[i], rhs[i])[:, 0]
+            except np.linalg.LinAlgError:
+                pass  # singular here: left NaN
+        return out

@@ -53,6 +53,7 @@ EQ = re.compile(r"<eq>(.*?)</eq>", re.S)  # a display equation, in LaTeX (`maths
 KEYS = (
     ("Space", "start, pause or resume the page's motion (on the Simulation page, its force)"),
     ("F1", "the page's Theory tab"),
+    ("Ctrl+R", "the page's controls back as it opened (Defaults)"),
     ("Ctrl+F1", "the Theory window: any page's notes beside the page, the search and the glossary"),
     ("Ctrl+F2", "the Practice window: problems with new numbers each time"),
     ("Ctrl+1 … Ctrl+6", "a group of pages, at the page it last showed"),

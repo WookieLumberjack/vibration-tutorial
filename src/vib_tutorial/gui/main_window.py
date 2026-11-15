@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import time
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import fields, replace
 from typing import TYPE_CHECKING, Any, Protocol, TypeGuard, runtime_checkable
 
 import numpy as np
@@ -35,7 +35,7 @@ from .energy import EnergyPanel, EnergyState
 from .frame_loop import FrameLoop
 from .history import History
 from .layouts import ColumnScroll, FlowLayout, group
-from .lesson import TrialCombo
+from .lesson import RunButton, TrialBox, TrialCombo
 from .modes import Method, mode_entries
 from .notes_view import NotesBrowser
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
@@ -89,10 +89,25 @@ class PracticePage(Protocol):
 
 
 @runtime_checkable
+class DefaultsPage(Protocol):
+    """A page *Defaults* can put back as it opened: `practice_state` read when it's built, `load_setup` given it."""
+
+    def load_setup(self, setup: dict) -> None: ...
+
+    def practice_state(self) -> Any: ...
+
+
+@runtime_checkable
 class SpecPage(Protocol):
     """A page with practice specs: `practice_state` reads its settings back, for the spec to check."""
 
     def practice_state(self) -> Any: ...
+
+
+def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
+    return a.n == b.n and all(
+        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
+    )
 
 
 def _follows_chain(page: QtWidgets.QWidget) -> TypeGuard[ChainPage]:
@@ -366,6 +381,10 @@ SIZE_TIP = (
     "the room, try 150 %. The app restarts to change it, back on this page.</p>"
     "<p>The notes' text has a size of its own too (Ctrl+= and Ctrl+-).</p>"
 )
+DEFAULTS_TIP = (
+    "<p>Put this page's controls back as they were when it opened (Ctrl+R): its motion at rest, waiting for "
+    "Start. A page that shows the chain puts back the chain it opened with too, on every page.</p>"
+)
 THEORY_TIP = (
     "<p>Show this page's <i>Theory</i> tab: what the page shows, the ideas behind it, things to try, "
     "and its symbols. (F1)</p>"
@@ -610,6 +629,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # holds each tab until the page is first opened (see _page).
         self.pages = PageGroups()
         self._built: dict[str, QtWidgets.QWidget] = {}
+        self._opening: dict[str, Any] = {}  # each page built's practice_state then: what Defaults puts back
+        self._opening_chain: dict[str, ChainSystem] = {}  # and the chain then, for a page that follows it
         self._placeholders: dict[str, QtWidgets.QWidget] = {}
         for group_title, pages in PAGE_GROUPS:
             tabs_in_group: list[tuple[QtWidgets.QWidget, str]] = []
@@ -661,6 +682,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.practice_button.setToolTip(PRACTICE_TIP)
         self.practice_button.clicked.connect(self.open_practice_window)
         self.practice_window: PracticeWindow | None = None  # built when first opened
+        self.defaults_button = QtWidgets.QToolButton()
+        self.defaults_button.setText("Defaults")
+        self.defaults_button.setToolTip(DEFAULTS_TIP)
+        self.defaults_button.clicked.connect(self.restore_defaults)
+        cl.addWidget(self.defaults_button)
         cl.addWidget(self.theory_button)
         cl.addWidget(self.theory_window_button)
         cl.addWidget(self.practice_button)
@@ -678,6 +704,7 @@ class MainWindow(QtWidgets.QMainWindow):
         QtGui.QShortcut(QtGui.QKeySequence("F1"), self, self.show_theory)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F1"), self, self.open_theory_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+R"), self, self.restore_defaults)
         notes_view.add_zoom_keys(self)  # the notes' text size
         for i in range(len(PAGE_GROUPS)):  # Ctrl+1 … Ctrl+6: a group, at the page it last showed
             QtGui.QShortcut(
@@ -720,6 +747,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # the other pages. `_tick` keeps its own clock (the mode animation's phase), and tests call it.
         self.loop = FrameLoop(self.sim_page, "Simulation", self._on_frame, self._runs, self._sim_t)
         self.frame_overlay = frame_stats.install(self)  # only with VIB_FRAME_STATS set
+        self._sim_opening = self.sim_practice_state()  # what the Simulation page's Defaults puts back
 
     # --------------------------------------------------------------- pages
     sdof_page = property(lambda self: self._page("sdof_page"))
@@ -807,6 +835,42 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(page, "system_requested"):
             page.system_requested.connect(self.params.set_system)
         page.set_system(self.sim.system, self.modal)
+
+    def restore_defaults(self) -> None:
+        """The page showing's controls back as they were when it opened (`_opening`), its motion at rest and
+        waiting for Start, its Things to try back at the prompt. A page that follows the chain gets the chain it
+        opened with back too (on the Simulation page as well): its settings may make no sense on another."""
+        page = self.pages.currentWidget()
+        if page is self.sim_page:
+            self.apply_sim_trial(self._sim_opening)
+            self.force.switch_off()
+            self._reset()
+        else:
+            opening = self._opening.get(self.page_name(page) or "")
+            if opening is None or not isinstance(page, DefaultsPage):
+                return
+            now = page.practice_state()
+            setup = {f.name: getattr(opening, f.name) for f in fields(opening) if f.name not in ("name", "note")}
+            if "tab" in setup:
+                setup["tab"] = now.tab  # the tab the reader is on stays
+            # The chain as it was first (a page works some settings out from it), and again after if the setup
+            # changed it (a setup may describe only the page's own chain).
+            chain = self._opening_chain.get(self.page_name(page) or "")
+            if chain is not None:
+                self.params.set_system(chain.copy())
+            page.load_setup(setup)
+            if chain is not None and not _same_chain(self.sim.system, chain):
+                self.params.set_system(chain.copy())
+        if any(run.isChecked() or run.started for run in page.findChildren(RunButton)):
+            for button in page.findChildren(QtWidgets.QPushButton):
+                if button.text() == "Reset":  # beside its Start: back to t = 0, waiting for Start
+                    button.click()
+        for combo in page.findChildren(TrialCombo):
+            combo.unpick()
+        for box in page.findChildren(TrialBox):
+            box.show_note("")
+        if page is self.sim_page:
+            self.trial_note.setText("")
 
     def page_name(self, page: QtWidgets.QWidget | None) -> str | None:
         """The attribute in PAGE_GROUPS of a page built (or the Simulation page)."""
@@ -944,7 +1008,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
                 QtCore.QTimer.singleShot(0, QtWidgets.QApplication.restoreOverrideCursor)
                 self._page(name)
-        showing = self.page_name(self.pages.currentWidget())
+        page, showing = self.pages.currentWidget(), self.page_name(self.pages.currentWidget())
+        if showing is not None and showing not in self._opening and isinstance(page, DefaultsPage):
+            # What Defaults puts back: as it first shows (a page may settle its controls in its showEvent).
+            self._opening[showing] = page.practice_state()
+            if _follows_chain(page):
+                self._opening_chain[showing] = self.sim.system.copy()
         if showing is not None:
             theming.settings().setValue(LAST_PAGE, showing)
             for window in (self.theory_window, self.practice_window):
