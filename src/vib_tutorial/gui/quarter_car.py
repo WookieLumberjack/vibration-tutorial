@@ -28,6 +28,7 @@ from ..core.quarter_car import (
     tradeoff,
 )
 from . import quarter_figures, settle_plots
+from .drag import DragDot, DragLine
 from .lesson import (
     Form,
     TrialBox,
@@ -345,9 +346,18 @@ PSD_TIP = (
 )
 TRADE_TIP = (
     "<p>The RMS body acceleration (comfort) against the tyre load's RMS over its static load (grip): "
-    "a curve per spring, the damper rising along it. Lower left is better.</p>"
+    "a curve per spring, the damper rising along it. Lower left is better. Drag the dot along its curve to change "
+    "the damper.</p>"
 )
-DAMPER_TIP = "<p>Each output's RMS against the damper, over its value at the car's damper.</p>"
+DAMPER_TIP = (
+    "<p>Each output's RMS against the damper, over its value at the car's damper. Drag the car's damper line (◀▶) "
+    "to change it.</p>"
+)
+TRADE_DOT_TIP = (
+    "<p>This car. Drag it along its spring's curve to try a softer or a firmer damper: the Damper box and the PSDs "
+    "follow.</p>"
+)
+DAMPER_LINE_TIP = "<p>The car's damper. Drag it to try another: the Damper box and the PSDs follow.</p>"
 DRIVE_TIP = "<p>The road's height (top) and the body's acceleration (bottom) on the synthesized road.</p>"
 
 NOTES_HTML = load_notes("quarter_car", figures=quarter_figures.FIGURES, trials=trials_html(TRIALS))
@@ -407,7 +417,8 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.trade_plot.setToolTip(TRADE_TIP)
         add_legend(self.trade_plot.getPlotItem(), offset=(-10, 10))
         self.trade_items = [pg.PlotDataItem(name=f"spring × {s:g}") for s in SPRING_FACTORS]
-        self.trade_now = marker(13)
+        self.trade_now = DragDot(TRADE_DOT_TIP)
+        self.trade_now.dragged.connect(self._on_damper_dragged)
         self.trade_best = (marker(10, "t"), marker(10, "s"))
         for item in (*self.trade_items, *self.trade_best, self.trade_now):
             self.trade_plot.addItem(item)
@@ -417,7 +428,8 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.damper_plot.setToolTip(DAMPER_TIP)
         add_legend(self.damper_plot.getPlotItem(), offset=(-10, 10))
         self.damper_items = {o: pg.PlotDataItem(name=o.value) for o in Output}
-        self.damper_now = pg.InfiniteLine(angle=90)
+        self.damper_now = DragLine(DAMPER_LINE_TIP, log=True, bounds=(float(DAMPERS[0]), float(DAMPERS[-1])))
+        self.damper_now.dragged.connect(self._on_damper_dragged)
         self.damper_mins = {o: marker(10) for o in (Output.BODY, Output.TYRE)}
         for item in (self.damper_now, *self.damper_items.values(), *self.damper_mins.values()):
             self.damper_plot.addItem(item)
@@ -512,14 +524,14 @@ class QuarterCarPage(QtWidgets.QWidget):
                 line.setPen(pg.mkPen(c.fit, width=1, style=QtCore.Qt.PenStyle.DotLine))
         for item, color in zip(self.trade_items, (c.mode[1], c.mass[0], c.mode[2], c.mode[3])):
             item.setPen(pg.mkPen(color, width=2))
-        mark(self.trade_now, c.force, filled=True)
+        self.trade_now.apply_theme()
         mark(self.trade_best[0], c.mass[0])
         mark(self.trade_best[1], c.mass[1])
         for item, color in zip(self.damper_items.values(), (c.mass[0], c.mode[2], c.mass[1])):
             item.setPen(pg.mkPen(color, width=2))
         mark(self.damper_mins[Output.BODY], c.mass[0], filled=True)
         mark(self.damper_mins[Output.TYRE], c.mass[1], filled=True)
-        self.damper_now.setPen(pg.mkPen(c.force, width=1.5, style=QtCore.Qt.PenStyle.DotLine))
+        self.damper_now.apply_theme()
         self.road_item.setPen(pg.mkPen(c.grey, width=1.5))
         self.acc_item.setPen(pg.mkPen(c.mass[0], width=1))
         self.redraw()
@@ -560,20 +572,25 @@ class QuarterCarPage(QtWidgets.QWidget):
         elif i == TAB_DRIVE:
             self._draw_drive()
 
+    def _on_damper_dragged(self, damper: float) -> None:
+        self.damper.setValue(round(damper))  # redraws, the dot and the line with it
+
     def _draw_tradeoff(self) -> None:
         car, road, r = self.car, self.road, self.result
         t = tradeoff(car, road, car.spring * np.array(SPRING_FACTORS), DAMPERS)
         for i, item in enumerate(self.trade_items):
             item.setData(t.body[i], t.tyre[i])
-        self.trade_now.setData([r.rms[Output.BODY]], [r.load_ratio])
         row = SPRING_FACTORS.index(1.0)
+        self.trade_now.set_path(t.body[row], t.tyre[row], DAMPERS)
+        self.trade_now.place(r.rms[Output.BODY], r.load_ratio, car.damper)
         jb, jt = int(np.argmin(t.body[row])), int(np.argmin(t.tyre[row]))
         self.trade_best[0].setData([t.body[row, jb]], [t.tyre[row, jb]])
         self.trade_best[1].setData([t.body[row, jt]], [t.tyre[row, jt]])
         x = t.body[np.isfinite(t.body)]
         y = t.tyre[np.isfinite(t.tyre)]
-        self.trade_plot.setXRange(0.0, min(float(np.percentile(x, 95)), 3 * r.rms[Output.BODY]), padding=0.02)
-        self.trade_plot.setYRange(0.0, min(float(np.percentile(y, 95)), 3 * r.load_ratio), padding=0.02)
+        if not self.trade_now.moving:  # held still under the hand while it drags the dot
+            self.trade_plot.setXRange(0.0, min(float(np.percentile(x, 95)), 3 * r.rms[Output.BODY]), padding=0.02)
+            self.trade_plot.setYRange(0.0, min(float(np.percentile(y, 95)), 3 * r.load_ratio), padding=0.02)
         self.trade_note.setText(
             f"Dot: this car. On its spring, the most comfortable damper (triangle) is "
             f"{DAMPERS[jb]:.0f} N·s/m and the best for grip (square) {DAMPERS[jt]:.0f} N·s/m. Each curve runs "
@@ -590,7 +607,7 @@ class QuarterCarPage(QtWidgets.QWidget):
         for o, dot in self.damper_mins.items():
             j = int(np.argmin(values[o]))
             dot.setData([DAMPERS[j]], [values[o][j] / now[o]])
-        self.damper_now.setPos(math.log10(max(car.damper, DAMPERS[0])))
+        self.damper_now.set_value(max(car.damper, float(DAMPERS[0])))
         self.damper_plot.setXRange(math.log10(DAMPERS[0]), math.log10(DAMPERS[-1]), padding=0)
         self.damper_plot.setYRange(0.0, 3.0, padding=0)
         jb, jt = int(np.argmin(values[Output.BODY])), int(np.argmin(values[Output.TYRE]))

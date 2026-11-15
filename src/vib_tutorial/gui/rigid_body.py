@@ -35,6 +35,7 @@ from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbl
 from ..core.rotation import Turning
 from . import rigid_body_figures
 from .cms_time import SampleBuffer
+from .drag import DragLine
 from .equations_snapshot import bracket, equation, snapshot_html
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, form_layout, form_row
@@ -942,7 +943,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.comp_size = pg.PlotDataItem()
         for item in (*self.comp_items, self.comp_size):
             self.comp_plot.addItem(item)
-        self.comp_cursor = pg.InfiniteLine(angle=90, movable=True)
+        self.comp_cursor = DragLine(SNAPSHOT_TIP, role="strong")
         self.comp_cursor.setToolTip(SNAPSHOT_TIP)
         self.comp_cursor.sigDragged.connect(self._on_snapshot_dragged)
         self.comp_plot.addItem(self.comp_cursor, ignoreBounds=True)
@@ -1196,8 +1197,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         for k, item in enumerate(self.comp_items):
             item.setPen(pg.mkPen(c.mass[k % len(c.mass)], width=1))
         self.comp_size.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        self.comp_cursor.setPen(pg.mkPen(c.strong, width=1))
-        self.comp_cursor.setHoverPen(pg.mkPen(c.strong, width=3))
+        self.comp_cursor.apply_theme()
         for item, color in zip(self.drift_items, (c.mass[0], c.mass[1], c.mass[2])):
             item.setPen(pg.mkPen(color, width=1.5))
         for item, color in zip(self.strayed_items, (c.mass[0], c.mass[2])):

@@ -172,7 +172,8 @@
   the simulator by wall-clock time × speed. `gui/style.py` holds the colour themes; every
   widget reads its colours from the current one (`colors.mass[i]`, `colors.force`) and
   redraws in a new one through its `apply_theme()`. Log axes use `gui/axes.py`, which labels
-  only as many ticks as fit.
+  only as many ticks as fit. What the reader drags on a plot is `gui/drag.py`'s: a `DragLine` (a value,
+  with a grip) or a `DragDot` (a point sliding along a curve), each a signal the page binds to its box.
 - `view_models/`: what a page shows, worked out without Qt (its curves, markers, ranges and readout
   texts, from its settings), so its readouts are tested as printed and its plots could be drawn
   elsewhere; the page's widget only binds them. Vibration isolation and Duffing & Mathieu have one

@@ -47,6 +47,7 @@ from ..core.shock import (
 )
 from . import maths, shock_figures, weak
 from .axes import log_axes
+from .drag import DragLine
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
@@ -622,8 +623,10 @@ class ShockPage(QtWidgets.QWidget):
         self.srs_plot.setToolTip(SRS_TIP)
         plot_height(self.srs_plot, 220)
         self.srs_legend = add_legend(self.srs_plot.getPlotItem(), offset=(-10, -10))
-        self.pick_line = pg.InfiniteLine(0.0, angle=90, movable=True)
-        self.pick_line.setZValue(10)
+        self.pick_line = DragLine(
+            "<p>The oscillator picked. Drag it across the spectrum: its response (right) and the readout follow.</p>",
+            log=True,
+        )
         self.srs_plot.addItem(self.pick_line)
         self.readout = QtWidgets.QLabel()
         self.readout.setWordWrap(True)
@@ -1090,7 +1093,7 @@ class ShockPage(QtWidgets.QWidget):
                         pen=pg.mkPen(colors.mode[i % len(colors.mode)], width=1, style=dot),
                     )
                 )
-        self.pick_line.setPen(pg.mkPen(colors.force, width=2))
+        self.pick_line.apply_theme()
         self.pick_line.blockSignals(True)
         self.pick_line.setValue(math.log10(self.f_pick.value()))
         self.pick_line.blockSignals(False)
