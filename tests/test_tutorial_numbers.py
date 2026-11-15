@@ -218,9 +218,8 @@ def test_modal_coupling_worked_example():
 
     chain = ChainSystem.uniform(4)
     A, B = subsystems(chain, 2)
-    assert A.fn_hz[0] == pytest.approx(quoted("coupling_notes", "1.967"), abs=5e-4) and B.fn_hz[0] == pytest.approx(
-        quoted("coupling_notes", "1.967"), abs=5e-4
-    )
+    assert A.fn_hz[0] == pytest.approx(quoted("coupling_notes", "1.967"), abs=5e-4)
+    assert B.fn_hz[0] == pytest.approx(quoted("coupling_notes", "1.967"), abs=5e-4)
     assert abs(A.Phi[:, 0]) == pytest.approx(
         [quoted("coupling_notes", "0.526"), quoted("coupling_notes", "0.851")], abs=5e-4
     )
@@ -243,15 +242,13 @@ def test_modal_coupling_worked_example():
     assert (1 + mu / 2, math.sqrt(mu + mu * mu / 4)) == pytest.approx((1.685, 1.356), abs=5e-4)
     assert roots == pytest.approx((quoted("coupling_notes", "0.329"), quoted("coupling_notes", "3.04")), abs=0.005)
     f = (1.967 * math.sqrt(0.329), 1.967 * math.sqrt(3.04))
-    assert f == pytest.approx((quoted("coupling_notes", "1.13"), quoted("coupling_notes", "3.43")), abs=0.005) and f[
-        1
-    ] - f[0] == pytest.approx(quoted("coupling_notes", "2.30"), abs=0.005)
+    assert f == pytest.approx((quoted("coupling_notes", "1.13"), quoted("coupling_notes", "3.43")), abs=0.005)
+    assert f[1] - f[0] == pytest.approx(quoted("coupling_notes", "2.30"), abs=0.005)
     assert math.sqrt(mu) * 1.967 == pytest.approx(quoted("coupling_notes", "2.30"), abs=0.005)
     bare = coupled_model(chain, 2, residual=False)
     assert bare.fn_hz == pytest.approx((quoted("coupling_notes", "1.13"), quoted("coupling_notes", "3.43")), abs=0.005)
-    assert m.mass_ratio == pytest.approx(quoted("coupling_notes", "1.27"), abs=0.005) and m.fn_hz == pytest.approx(
-        (quoted("coupling_notes", "1.117"), quoted("coupling_notes", "3.339")), abs=5e-4
-    )
+    assert m.mass_ratio == pytest.approx(quoted("coupling_notes", "1.27"), abs=0.005)
+    assert m.fn_hz == pytest.approx((quoted("coupling_notes", "1.117"), quoted("coupling_notes", "3.339")), abs=5e-4)
     errs = compare_coupled(m, modal_analysis(chain))
     assert [c.fn_full for c in errs] == pytest.approx(
         [quoted("coupling_notes", "1.105"), quoted("coupling_notes", "3.183")], abs=5e-4
@@ -265,9 +262,8 @@ def test_modal_coupling_worked_example():
     assert [c.error for c in compare_coupled(bare, modal_analysis(chain))] == pytest.approx(
         [quoted("coupling_notes", "2.0 %") / 100, quoted("coupling_notes", "7.8 %") / 100], abs=5e-4
     )
-    assert B.fn_hz[1] == pytest.approx(quoted("coupling_notes", "5.15"), abs=0.005) and A.fn_hz[1] == pytest.approx(
-        quoted("coupling_notes", "5.15"), abs=0.005
-    )
+    assert B.fn_hz[1] == pytest.approx(quoted("coupling_notes", "5.15"), abs=0.005)
+    assert A.fn_hz[1] == pytest.approx(quoted("coupling_notes", "5.15"), abs=0.005)
     # the "Two equal halves" trial: μ = 1.27, the upper mode 4.9% high, a MAC of 0.96
     assert errs[1].mac == pytest.approx(0.96, abs=0.005)
 
@@ -329,7 +325,8 @@ def test_substructuring_worked_example():
     )
     K = np.array([[800.0, -400, 0], [-400, 800, -400], [0, -400, 800]])
     w2, phi = np.linalg.eigh(K)
-    assert math.sqrt(w2[0]) == pytest.approx(w1) and abs(phi[:, 0]) == pytest.approx(
+    assert math.sqrt(w2[0]) == pytest.approx(w1)
+    assert abs(phi[:, 0]) == pytest.approx(
         [quoted("cms_notes", "0.5"), quoted("cms_notes", "0.707"), quoted("cms_notes", "0.5")], abs=5e-4
     )
     psi = -np.linalg.solve(K, np.array([0.0, 0, -400]))
@@ -1188,9 +1185,8 @@ def test_substructuring_a_light_interior():
 def test_modal_coupling_absorber_damping_is_shared():
     s = preset("absorber").system
     machine = s.damping[0] / (2 * math.sqrt(s.stiffness[0] * s.masses[0]))
-    assert (
-        machine == pytest.approx(quoted("coupling_notes", "0.025"), abs=5e-4) and s.damping[1] == 0
-    )  # the absorber none
+    assert machine == pytest.approx(quoted("coupling_notes", "0.025"), abs=5e-4)
+    assert s.damping[1] == 0  # the absorber none
     r = modal_analysis(s)
     assert [m.zeta_modal for m in r.modes] == pytest.approx(
         [quoted("coupling_notes", "0.012"), quoted("coupling_notes", "0.012")], abs=0.0015
@@ -2217,35 +2213,39 @@ def test_self_excited_trials():
 
     v = VanDerPol()
     t, x, _ = v.simulate(60)
-    assert settled_amplitude(x) == pytest.approx(0.0089, abs=0.00005) and -v.eps / 2 == pytest.approx(-0.1)
+    assert settled_amplitude(x) == pytest.approx(0.0089, abs=0.00005)
+    assert -v.eps / 2 == pytest.approx(-quoted("self_excited", "0.1"))
     t, x, _ = VanDerPol(eps=5.0).simulate(20)
     assert 1 / dominant_hz(x, t[1] - t[0]) == pytest.approx(1.84, abs=0.03)
     g = Galloping()
-    assert g.onset == pytest.approx(3.81, abs=0.005)
+    assert g.onset == pytest.approx(quoted("self_excited", "3.81"), abs=0.005)
     U = np.linspace(4.0, 7.5, 351)
     pairs = [b for b in galloping_branches(g, U) if not b.stable]
     band = U[np.isfinite(pairs[0].amplitude)]
     assert (band.min(), band.max()) == pytest.approx((4.7, 7.0), abs=0.05)
     at6 = sorted(b.amplitude[0] / g.side for b in galloping_branches(g, np.array([6.0])) if b.stable)
-    assert at6 == pytest.approx([0.51, 1.28], abs=0.005)
+    assert at6 == pytest.approx([quoted("self_excited", "0.51"), quoted("self_excited", "1.28")], abs=0.005)
     for start, want in ((0.001, 0.51), (0.12, 1.28)):
         _, y, _ = Galloping(speed=6.0, start=start).simulate(600)
         assert settled_amplitude(y) / g.side == pytest.approx(want, abs=0.01)
     _, y, _ = Galloping(speed=12.0).simulate(200)
     assert settled_amplitude(y) / g.side == pytest.approx(2.7, abs=0.05) and 12 / g.onset == pytest.approx(3.1, abs=0.1)
     viv = Viv()
-    assert viv.mass_ratio == pytest.approx(10.2, abs=0.05) and viv.strouhal * 5.5 == pytest.approx(1.1)
+    assert viv.mass_ratio == pytest.approx(quoted("self_excited", "10.2"), abs=0.05)
+    assert viv.strouhal * 5.5 == pytest.approx(quoted("self_excited", "1.1"))
     amp, freq = viv.sweep(np.array([4.0, 4.5, 5.5, 6.25, 6.5, 9.0]))
     assert amp[2] == pytest.approx(0.21, abs=0.005) and freq[2] == pytest.approx(1.0, abs=0.01)
     assert freq[1:4] == pytest.approx([1.0, 1.0, 1.0], abs=0.04) and abs(freq[4] - 1) > 0.04
     assert abs(freq[0] - 1) > 0.04
     assert amp[5] == pytest.approx(0.019, abs=0.0005) and freq[5] == pytest.approx(1.7, abs=0.02)
     f = Flutter()
-    assert f.flutter_speed() == pytest.approx(19.1, abs=0.05) and f.divergence_speed() == pytest.approx(39, abs=0.5)
+    assert f.flutter_speed() == pytest.approx(quoted("self_excited", "19.1"), abs=0.05)
+    assert f.divergence_speed() == pytest.approx(39, abs=0.5)
     fr, _ = f.modes(np.array([0.0, 19.0]))
-    assert fr[0] == pytest.approx([2.93, 6.71], abs=0.1) and fr[1] == pytest.approx([3.4, 5.0], abs=0.05)
+    assert fr[0] == pytest.approx([quoted("self_excited", "2.93"), quoted("self_excited", "6.71")], abs=0.1)
+    assert fr[1] == pytest.approx([3.4, 5.0], abs=0.05)
     assert Flutter(x_cg=-0.2).flutter_speed() == pytest.approx(f.divergence_speed(), abs=0.05)
-    assert Flutter(x_cg=0.0).flutter_speed() == pytest.approx(17.7, abs=0.05)
+    assert Flutter(x_cg=0.0).flutter_speed() == pytest.approx(quoted("self_excited", "17.7"), abs=0.05)
 
 
 def test_pendulum_trials():
@@ -2803,18 +2803,23 @@ def test_fluid_structure_trials():
     assert air.mass / air.added_mass == pytest.approx(6500, rel=0.01)
     assert 1 - wet(air) / 20 < 1e-4
     pipe = Body(Shape.CYLINDER, 0.025, outer=0.03)
-    assert (pipe.coefficient, pipe.added_mass, wet(pipe)) == pytest.approx((5.55, 10.9, 15.3), rel=0.0025)
+    assert (pipe.coefficient, pipe.added_mass, wet(pipe)) == pytest.approx(
+        (quoted("fluid_structure", "5.55"), 10.9, 15.3), rel=0.0025
+    )
     tight = Body(Shape.CYLINDER, 0.025, outer=0.025 * 1.05)
     assert (tight.coefficient, tight.added_mass / tight.mass, wet(tight)) == pytest.approx((20.5, 2.6, 10.5), abs=0.05)
     r = 1.05  # the speed beside the rod: |A + B/R²| = C_a
     assert (r**2 + 1) / (r**2 - 1) == pytest.approx(20.5, abs=0.05)
 
     plate = Plate()
-    assert plate_added_mass(plate, 1, 1) == pytest.approx(11.9, abs=0.05)
+    assert plate_added_mass(plate, 1, 1) == pytest.approx(quoted("fluid_structure", "11.9"), abs=0.05)
     assert plate_modal_mass(plate) == pytest.approx(1.41, abs=0.005)
     beta = avmi(plate, 1, 1)
     f11 = plate_dry_frequency(plate, 1, 1)
-    assert (beta, f11, f11 / math.sqrt(1 + beta)) == pytest.approx((8.43, 66.6, 21.7), rel=0.0025)
+    assert (beta, f11, f11 / math.sqrt(1 + beta)) == pytest.approx(
+        (quoted("fluid_structure", "8.43"), quoted("fluid_structure", "66.6"), quoted("fluid_structure", "21.7")),
+        rel=0.0025,
+    )
     beta32 = avmi(plate, 3, 2)
     f32 = plate_dry_frequency(plate, 3, 2)
     assert (beta32, f32, f32 / math.sqrt(1 + beta32)) == pytest.approx((2.18, 369, 207), abs=0.5)
@@ -2844,7 +2849,7 @@ def test_sloshing_trials():
     )
 
     tank = Tank(1.0, 0.5)
-    assert slosh_frequency(tank, 1) == pytest.approx(0.846, abs=5e-4)
+    assert slosh_frequency(tank, 1) == pytest.approx(quoted("fluid_structure", "0.846"), abs=5e-4)
     assert (float(slosh_mass(tank, 1)), rigid_mass(tank)) == pytest.approx((237, 250), abs=0.5)
     assert tank.liquid_mass == 500
     shallow = Tank(1.0, 0.05)
@@ -2859,19 +2864,19 @@ def test_sloshing_trials():
     assert float(slosh_mass(deep, 1)) / deep.liquid_mass == pytest.approx(0.13, abs=0.005)
     assert rigid_mass(deep) == pytest.approx(1729, abs=0.5)
     assert slosh_frequency(tank, 3) == pytest.approx(1.53, abs=0.005)
-    assert float(slosh_mass(tank, 3)) == pytest.approx(9.55, abs=0.005)
+    assert float(slosh_mass(tank, 3)) == pytest.approx(quoted("fluid_structure", "9.55"), abs=0.005)
     assert float(slosh_mass(tank, 3)) / 500 == pytest.approx(0.02, abs=0.001)
     assert slosh_frequency(tank, 2) == pytest.approx(1.25, abs=0.005)
     assert float(slosh_mass(tank, 2)) == 0
 
     structure = Structure(20000, 0.5, 0.01)
     damper = Damper(Tank(2.0, 0.4, 2.0), 1, 0.13)
-    assert slosh_frequency(damper.tank, 1) == pytest.approx(0.466, abs=5e-4)
+    assert slosh_frequency(damper.tank, 1) == pytest.approx(quoted("fluid_structure", "0.466"), abs=5e-4)
     assert (damper.liquid, float(damper.masses[0])) == pytest.approx((1600, 1149), abs=0.5)
-    assert mass_ratio(structure, damper) == pytest.approx(0.0562, abs=5e-5)
+    assert mass_ratio(structure, damper) == pytest.approx(quoted("fluid_structure", "0.0562"), abs=5e-5)
     f = response_band(structure)
     assert float(np.abs(frozen_response(structure, damper, f)).max()) == pytest.approx(52.0, abs=0.05)
-    assert peak(structure, damper) == pytest.approx(5.58, abs=0.005)
+    assert peak(structure, damper) == pytest.approx(quoted("fluid_structure", "5.58"), abs=0.005)
     bare = Damper(Tank(2.0, 0.4, 2.0), 1, 0.005)
     r = np.abs(damper_response(structure, bare, f))
     tops, _ = find_peaks(r)
@@ -3138,47 +3143,64 @@ def test_torsional_worked_example():
 
     w2 = 180_000 * 12 / 20
     assert w2 == pytest.approx(108_000)
-    assert math.sqrt(w2) == pytest.approx(328.6, abs=0.05)
+    assert math.sqrt(w2) == pytest.approx(quoted("torsional", "328.6"), abs=0.05)
     mode = modes(FAN)[0]
-    assert mode.freq_hz == pytest.approx(52.3, abs=0.05)
-    assert mode.shape == pytest.approx([1.0, -0.2])
-    assert node_fraction() == pytest.approx(10 / 12) and 100 * 10 / 12 == pytest.approx(83, abs=0.5)
-    assert 2 * w2 == pytest.approx(216_000) and 216_000 / 180_000 == pytest.approx(1.2)
+    assert mode.freq_hz == pytest.approx(quoted("torsional", "52.3"), abs=0.05)
+    assert mode.shape == pytest.approx([1.0, -quoted("torsional", "0.2")])
+    assert node_fraction() == pytest.approx(10 / 12)
+    assert 100 * node_fraction() == pytest.approx(quoted("torsional", "83 %"), abs=0.5)
+    assert 2 * w2 == pytest.approx(216_000) and 216_000 / 180_000 == pytest.approx(quoted("torsional", "1.2"))
     assert 2 * w2 + 10 * w2 * (1 - 1.2) == pytest.approx(0.0, abs=1e-9)
 
-    assert mode.zeta == pytest.approx(0.0183, abs=5e-5)
-    assert 1 / (2 * mode.zeta) == pytest.approx(27.3, abs=0.05)
+    assert mode.zeta == pytest.approx(quoted("torsional", "0.0183"), abs=5e-5)
+    assert 1 / (2 * mode.zeta) == pytest.approx(quoted("torsional", "27.3"), abs=0.05)
     crit = criticals(FAN, 3600)[0]
     assert (crit.order, crit.rpm) == pytest.approx((2.0, 1569), abs=0.5)
     assert 60 * 52.3 / 2 == pytest.approx(1569, abs=0.5)
-    assert 100 * separation(crit.rpm, 1480) == pytest.approx(6.0, abs=0.05)
+    assert 100 * separation(crit.rpm, 1480) == pytest.approx(quoted("torsional", "6.0 %"), abs=0.05)
+    from vib_tutorial.gui.torsional import MARGIN
 
-    assert 50 * 2 / 12 == pytest.approx(8.33, abs=5e-3)
+    assert MARGIN == quoted("torsional", "10 %")
+    assert 100 * separation(crit.rpm, 1480) < MARGIN  # API 617's band: inside it
+
+    assert 50 * 2 / 12 == pytest.approx(quoted("torsional", "8.33"), abs=5e-3)
     rpm = response_speeds(FAN, 3600)
     peak = forced_response(FAN, rpm).total()[0].max()
     assert peak == pytest.approx(228, abs=0.5)
     assert 8.33 * 27.3 == pytest.approx(227, abs=0.5)
     r = 2 * 1480 / 60 / mode.freq_hz
-    assert 2 * 1480 / 60 == pytest.approx(49.3, abs=0.05)
-    assert r == pytest.approx(0.943, abs=5e-4)
-    assert 8.33 / math.sqrt((1 - 0.943**2) ** 2 + (2 * 0.0183 * 0.943) ** 2) == pytest.approx(71.8, abs=0.05)
-    assert forced_response(FAN, np.array([1480.0])).total()[0, 0] == pytest.approx(72.1, abs=0.05)
-    assert 0.9 * 49.3 == pytest.approx(44.4, abs=0.05)
+    assert 2 * 1480 / 60 == pytest.approx(quoted("torsional", "49.3"), abs=0.05)
+    assert r == pytest.approx(quoted("torsional", "0.943"), abs=5e-4)
+    assert 8.33 / math.sqrt((1 - 0.943**2) ** 2 + (2 * 0.0183 * 0.943) ** 2) == pytest.approx(
+        quoted("torsional", "71.8"), abs=0.05
+    )
+    assert forced_response(FAN, np.array([1480.0])).total()[0, 0] == pytest.approx(
+        quoted("torsional", "72.1"), abs=0.05
+    )
+    assert 1 - MARGIN / 100 == pytest.approx(quoted("torsional", "0.9"))
+    assert 0.9 * 49.3 == pytest.approx(quoted("torsional", "44.4"), abs=0.05)
     assert (2 * math.pi * 44.4) ** 2 * 20 / 12 / 1000 == pytest.approx(130, abs=0.5)
 
     motor = FAN_START.motor
     assert motor.sync_rpm == pytest.approx(1500)
     assert motor.cage(1.0)[0] == pytest.approx(615, abs=0.5)
+    assert 1 + motor.breakdown_slip**2 == pytest.approx(quoted("torsional", "1.04"))
     assert 2 * 1600 * 0.2 / 1.04 == pytest.approx(615, abs=0.5)
     w = steady_speed(FAN, FAN_START)
     assert 60 * w / (2 * math.pi) == pytest.approx(1444, abs=0.5)
-    assert 100 * (1 - w / motor.sync_speed) == pytest.approx(3.75, abs=5e-3)
+    assert 100 * (1 - w / motor.sync_speed) == pytest.approx(quoted("torsional", "3.75 %"), abs=5e-3)
     assert running_torques(FAN, FAN_START)[0] == pytest.approx(580, abs=0.5)
 
-    assert 3 / 4**2 == pytest.approx(0.1875)
-    assert 2e9 * 0.075**2 == pytest.approx(1.125e7)
+    mesh = COMPRESSOR.links[1]
+    assert COMPRESSOR.discs[2].inertia == quoted("torsional", "0.05") and mesh.base_radius == quoted("torsional", "0.3")
+    assert mesh.base_radius * mesh.teeth_out / mesh.teeth_in == pytest.approx(
+        quoted("torsional", "0.075")
+    )  # the pinion's
+    assert 3 / 4**2 == pytest.approx(quoted("torsional", "0.1875"))
+    assert 2e9 * 0.075**2 / 1e7 == pytest.approx(quoted("torsional", "1.125"))
+    assert 0.05 + 0.1875 == pytest.approx(quoted("torsional", "0.2375"))
     w2_mesh = 1.125e7 * 0.2375 / (0.05 * 0.1875)
-    assert w2_mesh == pytest.approx(2.85e8, rel=5e-3)
+    assert w2_mesh / 1e8 == pytest.approx(quoted("torsional", "2.85"), rel=5e-3)
     assert math.sqrt(w2_mesh) / (2 * math.pi) == pytest.approx(2687, abs=0.5)
     assert natural_hz(COMPRESSOR)[2] == pytest.approx(2688, abs=0.5)
     tooth = next(c for c in criticals(COMPRESSOR, 1800) if c.mode == 2)
@@ -3192,60 +3214,93 @@ def test_duffing_worked_example():
     osc = d.PRESETS[0].osc
     assert (osc.mass, osc.stiffness, osc.damping, osc.cubic, osc.force) == (1.0, 400.0, 1.0, 1e5, 2.0)
     # small swings: f_n 3.18 Hz, ζ 0.025, 2m/c = 2 s
-    assert osc.natural_hz == pytest.approx(3.18, abs=0.005)
-    assert osc.zeta == pytest.approx(0.025)
+    assert osc.natural_hz == pytest.approx(quoted("duffing", "3.18"), abs=0.005)
+    assert osc.zeta == pytest.approx(quoted("duffing", "0.025"))
+    assert 100 * osc.zeta == pytest.approx(quoted("duffing", "2.5 %"))
     assert 2 * osc.mass / osc.damping == 2.0
     # the backbone at 50 mm: κ 587.5 N/m, 3.86 Hz
-    assert osc.kappa(0.05) == pytest.approx(587.5)
-    assert float(osc.backbone_hz(0.05)) == pytest.approx(3.86, abs=0.005)
+    assert osc.stiffness + quoted("duffing", "0.75") * osc.cubic * quoted("duffing", "0.05") ** 2 == pytest.approx(
+        quoted("duffing", "587.5")
+    )
+    assert osc.kappa(0.05) == pytest.approx(quoted("duffing", "587.5"))
+    assert float(osc.backbone_hz(0.05)) == pytest.approx(quoted("duffing", "3.86"), abs=0.005)
     # the peak: 71.5 mm on the backbone, κ 783.4, Ω 27.99 rad/s (4.45 Hz), F/cΩ = 71.5 mm, the cubic +96 %
     curve = d.response_curve(osc, 6.0)
-    assert curve.tip == pytest.approx(0.0715, abs=0.00005)
-    assert osc.kappa(0.0715) == pytest.approx(783.4, abs=0.05)
-    assert math.sqrt(783.4) == pytest.approx(27.99, abs=0.005)
-    assert math.sqrt(783.4) / (2 * math.pi) == pytest.approx(4.45, abs=0.005)
-    assert 2 / 27.99 == pytest.approx(0.0715, abs=0.00005)
-    assert 383.4 / 400 == pytest.approx(0.96, abs=0.005)
-    assert 0.75 * osc.cubic * curve.tip**2 / osc.stiffness == pytest.approx(0.958, abs=0.0005)  # the page's readout
-    assert osc.force / (osc.damping * 20.0) == pytest.approx(0.1)
+    assert curve.tip == pytest.approx(quoted("duffing", "0.0715"), abs=0.00005)
+    assert curve.tip * 1e3 == pytest.approx(quoted("duffing", "71.5"), abs=0.05)
+    assert osc.kappa(0.0715) == pytest.approx(quoted("duffing", "783.4"), abs=0.05)
+    assert osc.kappa(0.0715) - osc.stiffness == pytest.approx(quoted("duffing", "383.4"), abs=0.05)
+    assert math.sqrt(783.4) == pytest.approx(quoted("duffing", "27.99"), abs=0.005)
+    assert math.sqrt(783.4) / (2 * math.pi) == pytest.approx(quoted("duffing", "4.45"), abs=0.005)
+    assert 2 / 27.99 == pytest.approx(quoted("duffing", "0.0715"), abs=0.00005)
+    assert 100 * 383.4 / 400 == pytest.approx(quoted("duffing", "96 %"), abs=0.5)
+    assert 100 * 0.75 * osc.cubic * curve.tip**2 / osc.stiffness == pytest.approx(
+        quoted("duffing", "95.8 %"), abs=0.05
+    )  # the readout
+    assert osc.force / (osc.damping * 20.0) == pytest.approx(quoted("duffing", "0.1"))
     # the folds: 4.45 Hz (71.4 mm drops to 5.23 mm) and 3.64 Hz (24.0 mm jumps to 46.2 mm)
     hi, lo = sorted(curve.folds, key=lambda f: -f.freq_hz)
-    assert (hi.freq_hz, hi.amplitude * 1e3, hi.lands_at * 1e3) == pytest.approx((4.45, 71.4, 5.23), abs=0.005, rel=2e-3)
+    assert (hi.freq_hz, hi.amplitude * 1e3, hi.lands_at * 1e3) == pytest.approx(
+        (quoted("duffing", "4.45"), quoted("duffing", "71.4"), quoted("duffing", "5.23")), abs=0.005, rel=2e-3
+    )
     assert hi.down and not lo.down
-    assert lo.freq_hz == pytest.approx(3.64, abs=0.005)
-    assert lo.amplitude == pytest.approx(0.0240, abs=0.00005)
-    assert lo.lands_at == pytest.approx(0.0462, abs=0.00005)
+    assert lo.freq_hz == pytest.approx(quoted("duffing", "3.64"), abs=0.005)
+    assert lo.amplitude * 1e3 == pytest.approx(quoted("duffing", "24.0"), abs=0.05)
+    assert lo.lands_at * 1e3 == pytest.approx(quoted("duffing", "46.2"), abs=0.05)
     # inside the band at 4 Hz: 8.80, 52.0 (unstable), 58.3 mm; the upper checks to 1.99 N
     a, stable = d.amplitudes(osc, 4.0)
-    assert a * 1e3 == pytest.approx([8.80, 52.0, 58.3], abs=0.05)
+    assert a * 1e3 == pytest.approx(
+        [quoted("duffing", "8.80"), quoted("duffing", "52.0"), quoted("duffing", "58.3")], abs=0.05
+    )
     assert list(stable) == [True, False, True]
+    # the simulated dots sit on the curve to about 1 %, on the upper branch too (κ 1.6 times k)
+    for start in (a[0], a[2]):
+        sim = d.DuffingSimulator(osc, d.Drive(freq_hz=4.0))
+        sim.start_on(start)
+        cycles = []
+        while sim.t < 40.0 - 1e-9:
+            cycles += sim.advance(min(5.0, 40.0 - sim.t)).cycles
+        settled = np.mean([c.amplitude for c in cycles[-10:]])
+        assert 100 * abs(settled / start - 1) < quoted("duffing", "1 %")
     w = 2 * math.pi * 4.0
-    assert w == pytest.approx(25.13, abs=0.005)
-    assert w * w == pytest.approx(631.7, abs=0.05)
-    assert osc.kappa(0.0583) == pytest.approx(654.9, abs=0.05)
-    assert 654.9 - 631.7 == pytest.approx(23.2)
-    assert 0.0583 * math.hypot(23.2, 25.13) == pytest.approx(1.99, abs=0.005)
+    assert w == pytest.approx(quoted("duffing", "25.13"), abs=0.005)
+    assert w * w == pytest.approx(quoted("duffing", "631.7"), abs=0.05)
+    assert a[2] == pytest.approx(quoted("duffing", "0.0583"), abs=5e-5)
+    assert osc.kappa(0.0583) == pytest.approx(quoted("duffing", "654.9"), abs=0.05)
+    assert 654.9 - 631.7 == pytest.approx(quoted("duffing", "23.2"))
+    assert 0.0583 * math.hypot(23.2, 25.13) == pytest.approx(quoted("duffing", "1.99"), abs=0.005)
     # the pump: μ 0.3 at 6.37 Hz, threshold 4ζ = 0.1, growth 1.0 /s against Floquet's 0.0498 ω_n = 0.996 /s
     lin = next(p.osc for p in d.PRESETS if p.name == "Parametric resonance")
     hard = next(p for p in d.PRESETS if p.name == "Parametric resonance, hardening")
-    assert lin.pump == 0.3 and hard.osc.pump == 0.3
-    assert hard.freq_hz == pytest.approx(6.37, abs=0.005)
-    assert 4 * lin.zeta == pytest.approx(0.1)
-    assert (0.3 / 4 - 0.025) * 20 == pytest.approx(1.0)
+    assert lin.pump == quoted("duffing", "0.3") and hard.osc.pump == 0.3
+    assert hard.freq_hz == pytest.approx(quoted("duffing", "6.37"), abs=0.005)
+    assert 4 * lin.zeta == pytest.approx(quoted("duffing", "0.1"))
+    assert (0.3 / 4 - 0.025) * 20 == pytest.approx(quoted("duffing", "1.0"))
     growth = float(d.floquet_growth(lin.zeta, np.array([2.0]), np.array([0.3]))[0, 0])
-    assert growth == pytest.approx(0.0498, abs=0.00005)
-    assert 0.0498 * 20 == pytest.approx(0.996)
+    assert growth == pytest.approx(quoted("duffing", "0.0498"), abs=0.00005)
+    assert 0.0498 * 20 == pytest.approx(quoted("duffing", "0.996"))
     # the tongue: undamped 5.87 to 6.83 Hz, the page's 5.89 to 6.80
-    assert 6.37 * math.sqrt(0.85) == pytest.approx(5.87, abs=0.005)
-    assert 6.37 * math.sqrt(1.15) == pytest.approx(6.83, abs=0.005)
-    assert d.tongue_hz(lin) == pytest.approx((5.89, 6.80), abs=0.005)
+    assert (1 - lin.pump / 2, 1 + lin.pump / 2) == pytest.approx(
+        (quoted("duffing", "0.85"), quoted("duffing", "1.15"))
+    )  # 1 ± μ/2
+    assert 6.37 * math.sqrt(0.85) == pytest.approx(quoted("duffing", "5.87"), abs=0.005)
+    assert 6.37 * math.sqrt(1.15) == pytest.approx(quoted("duffing", "6.83"), abs=0.005)
+    assert d.tongue_hz(lin) == pytest.approx((quoted("duffing", "5.89"), quoted("duffing", "6.80")), abs=0.005)
     # the hardening spring's settled swing: mΩ²/4 = 400, √(60² − 20²) = 56.6, κ 456.6, a = 27.5 mm
     w = 2 * math.pi * hard.freq_hz
     assert w * w / 4 == pytest.approx(400.0)
-    assert math.sqrt(60.0**2 - 20.0**2) == pytest.approx(56.6, abs=0.05)
-    assert math.sqrt(56.6 / 75_000) == pytest.approx(0.0275, abs=0.00005)
+    assert math.sqrt(60.0**2 - 20.0**2) == pytest.approx(quoted("duffing", "56.6"), abs=0.05)
+    assert 400 + 56.6 == pytest.approx(quoted("duffing", "456.6"))
+    assert math.sqrt(56.6 / 75_000) * 1e3 == pytest.approx(quoted("duffing", "27.5"), abs=0.05)
     swing = d.parametric_amplitudes(hard.osc, hard.freq_hz)[0].max()
-    assert swing == pytest.approx(0.0275, abs=0.00005)
+    assert swing * 1e3 == pytest.approx(quoted("duffing", "27.5"), abs=0.05)
+    ueda = next(p.osc for p in d.PRESETS if p.name == "Chaos (Ueda)")
+    assert (ueda.stiffness, ueda.damping, ueda.cubic, ueda.force) == (
+        0.0,
+        quoted("duffing", "0.05"),
+        1.0,
+        quoted("duffing", "7.5"),
+    )
 
 
 def test_fluid_structure_worked_example():
@@ -3256,74 +3311,108 @@ def test_fluid_structure_worked_example():
     from vib_tutorial.gui.fluid_structure import TRIALS, FluidTrial
 
     t = FluidTrial("", "")
-    assert (t.radius, t.density, t.f_dry, t.fluid, t.ratio) == (25.0, 7850.0, 20.0, 1000.0, 1.5)
+    assert (t.radius, t.density, t.f_dry, t.fluid) == (25.0, 7850.0, 20.0, 1000.0)
+    assert t.ratio == quoted("fluid_structure", "1.5")
+    assert t.radius / 1e3 == quoted("fluid_structure", "0.025")
+    assert t.ratio**2 == pytest.approx(quoted("fluid_structure", "2.25"))
+    assert t.fluid / t.density == pytest.approx(quoted("fluid_structure", "0.1274"), abs=5e-5)
+    # Fritz's C_a: 1.67 with the pipe at twice the radius, 5.55 at 1.2 times
+    assert am.Body(am.Shape.CYLINDER, 0.025, outer=0.05).coefficient == pytest.approx(
+        quoted("fluid_structure", "1.67"), abs=0.005
+    )
+    assert am.Body(
+        am.Shape.CYLINDER, 0.025, outer=0.025 * quoted("fluid_structure", "1.2")
+    ).coefficient == pytest.approx(5.55, abs=0.005)
     # the rod: 15.41 kg and 1.963 kg a metre, 18.84 Hz
     rod = am.Body(am.Shape.CYLINDER, 0.025, 7850.0)
-    assert rod.mass == pytest.approx(15.41, abs=0.005)
-    assert rod.added_mass == pytest.approx(1.963, abs=0.0005)
-    assert am.wet_frequency(20.0, rod.mass, rod.added_mass) == pytest.approx(18.84, abs=0.005)
-    assert 20 / math.sqrt(1 + 1000 / 7850) == pytest.approx(18.84, abs=0.005)
+    assert rod.mass == pytest.approx(quoted("fluid_structure", "15.41"), abs=0.005)
+    assert rod.added_mass == pytest.approx(quoted("fluid_structure", "1.963"), abs=0.0005)
+    assert am.wet_frequency(20.0, rod.mass, rod.added_mass) == pytest.approx(
+        quoted("fluid_structure", "18.84"), abs=0.005
+    )
+    assert 20 / math.sqrt(1 + 1000 / 7850) == pytest.approx(quoted("fluid_structure", "18.84"), abs=0.005)
     # in a pipe at 1.5R: C_a 2.6, 5.11 kg, 17.33 Hz
     piped = am.Body(am.Shape.CYLINDER, 0.025, 7850.0, outer=0.0375)
-    assert piped.coefficient == pytest.approx(2.6)
-    assert piped.added_mass == pytest.approx(5.11, abs=0.005)
-    assert 20 / math.sqrt(1 + 2.6 * 0.1274) == pytest.approx(17.33, abs=0.005)
-    assert am.wet_frequency(20.0, piped.mass, piped.added_mass) == pytest.approx(17.33, abs=0.005)
+    assert piped.coefficient == pytest.approx(quoted("fluid_structure", "2.6"))
+    assert piped.added_mass == pytest.approx(quoted("fluid_structure", "5.11"), abs=0.005)
+    assert 20 / math.sqrt(1 + 2.6 * 0.1274) == pytest.approx(quoted("fluid_structure", "17.33"), abs=0.005)
+    assert am.wet_frequency(20.0, piped.mass, piped.added_mass) == pytest.approx(
+        quoted("fluid_structure", "17.33"), abs=0.005
+    )
     # the plate: D 519.2, ρh 23.55, (1, 1) at 66.6 Hz; modal 1.413 kg, 11.9 kg of water, β 8.43, 21.7 Hz
-    assert (t.a, t.b, t.thickness, t.plate_rho, t.E, t.sides) == (0.6, 0.4, 3.0, 7850.0, 210.0, 1)
+    assert (t.plate_rho, t.E, t.sides) == (7850.0, 210.0, 1)
+    assert (t.a, t.b, t.thickness / 1e3) == (
+        quoted("fluid_structure", "0.6"),
+        quoted("fluid_structure", "0.4"),
+        quoted("fluid_structure", "0.003"),
+    )
+    assert 1 - 0.3**2 == pytest.approx(quoted("fluid_structure", "0.91"))
     plate = Plate(0.6, 0.4, 0.003, Material(210e9, 0.3, 7850.0))
-    assert plate.rigidity == pytest.approx(519.2, abs=0.05)
-    assert plate.surface_mass == pytest.approx(23.55)
-    assert am.plate_dry_frequency(plate, 1, 1) == pytest.approx(66.6, abs=0.05)
-    assert math.pi / 2 * (1 / 0.6**2 + 1 / 0.4**2) * math.sqrt(519.2 / 23.55) == pytest.approx(66.6, abs=0.05)
-    assert am.plate_modal_mass(plate) == pytest.approx(1.413, abs=0.0005)
-    assert am.plate_added_mass(plate, 1, 1) == pytest.approx(11.9, abs=0.05)
-    assert am.avmi(plate, 1, 1) == pytest.approx(8.43, abs=0.005)
-    assert 66.6 / math.sqrt(9.43) == pytest.approx(21.7, abs=0.05)
-    assert am.avmi(plate, 1, 1, sides=2) == pytest.approx(16.86, abs=0.005)
-    assert 66.6 / math.sqrt(17.86) == pytest.approx(15.8, abs=0.05)
+    assert plate.rigidity == pytest.approx(quoted("fluid_structure", "519.2"), abs=0.05)
+    assert plate.surface_mass == pytest.approx(quoted("fluid_structure", "23.55"))
+    assert am.plate_dry_frequency(plate, 1, 1) == pytest.approx(quoted("fluid_structure", "66.6"), abs=0.05)
+    assert math.pi / 2 * (1 / 0.6**2 + 1 / 0.4**2) * math.sqrt(519.2 / 23.55) == pytest.approx(
+        quoted("fluid_structure", "66.6"), abs=0.05
+    )
+    assert am.plate_modal_mass(plate) == pytest.approx(quoted("fluid_structure", "1.413"), abs=0.0005)
+    assert am.plate_added_mass(plate, 1, 1) == pytest.approx(quoted("fluid_structure", "11.9"), abs=0.05)
+    assert am.avmi(plate, 1, 1) == pytest.approx(quoted("fluid_structure", "8.43"), abs=0.005)
+    assert 1 + 8.43 == pytest.approx(quoted("fluid_structure", "9.43"))
+    assert 66.6 / math.sqrt(9.43) == pytest.approx(quoted("fluid_structure", "21.7"), abs=0.05)
+    assert am.avmi(plate, 1, 1, sides=2) == pytest.approx(quoted("fluid_structure", "16.86"), abs=0.005)
+    assert 66.6 / math.sqrt(17.86) == pytest.approx(quoted("fluid_structure", "15.8"), abs=0.05)
     # the tank: tanh(π/2) 0.91715, ω² 28.27, 0.846 Hz; m_L 500, m₁ 236.6, m₃ 9.55, m₀ 250
-    assert (t.length, t.depth, t.breadth) == (1.0, 0.5, 1.0)
+    assert (t.length, t.depth, t.breadth) == (1.0, quoted("fluid_structure", "0.5"), 1.0)
     tank = sl.Tank(1.0, 0.5, 1.0)
-    assert math.tanh(math.pi * 0.5) == pytest.approx(0.91715, abs=0.000005)
-    assert 9.81 * math.pi * 0.91715 == pytest.approx(28.27, abs=0.005)
-    assert math.sqrt(28.27) / (2 * math.pi) == pytest.approx(0.846, abs=0.0005)
-    assert sl.slosh_frequency(tank, 1) == pytest.approx(0.846, abs=0.0005)
+    assert math.tanh(math.pi * 0.5) == pytest.approx(quoted("fluid_structure", "0.91715"), abs=0.000005)
+    assert sl.G == pytest.approx(quoted("fluid_structure", "9.81"))
+    assert math.sqrt(28.27) == pytest.approx(quoted("fluid_structure", "5.317"), abs=5e-4)
+    assert 9.81 * math.pi * 0.91715 == pytest.approx(quoted("fluid_structure", "28.27"), abs=0.005)
+    assert math.sqrt(28.27) / (2 * math.pi) == pytest.approx(quoted("fluid_structure", "0.846"), abs=0.0005)
+    assert sl.slosh_frequency(tank, 1) == pytest.approx(quoted("fluid_structure", "0.846"), abs=0.0005)
     assert tank.liquid_mass == pytest.approx(500.0)
-    assert 500 * 8 * 0.91715 / (math.pi**3 * 0.5) == pytest.approx(236.6, abs=0.05)
-    assert float(sl.slosh_mass(tank, 1)) == pytest.approx(236.6, abs=0.05)
-    assert float(sl.slosh_mass(tank, 3)) == pytest.approx(9.55, abs=0.005)
+    assert 500 * 8 * 0.91715 / (math.pi**3 * 0.5) == pytest.approx(quoted("fluid_structure", "236.6"), abs=0.05)
+    assert float(sl.slosh_mass(tank, 1)) == pytest.approx(quoted("fluid_structure", "236.6"), abs=0.05)
+    assert float(sl.slosh_mass(tank, 3)) == pytest.approx(quoted("fluid_structure", "9.55"), abs=0.005)
     assert sl.rigid_mass(tank) == pytest.approx(250.0, abs=0.5)
     # as a damper on the default structure: μ 0.0117, f′ 0.497, Den Hartog 0.491 Hz; peak 50.0 → 47.7
-    assert (t.structure_mass, t.structure_f, t.structure_zeta, t.damper_zeta) == (20.0, 0.5, 1.0, 13.0)
+    assert (t.structure_mass, t.structure_f) == (20.0, 0.5)
+    assert (t.structure_zeta, t.damper_zeta) == (
+        quoted("fluid_structure", "1 %"),
+        quoted("fluid_structure", "13 %"),
+    )  # %
     structure = sl.Structure(20000.0, 0.5, 0.01)
     damper = sl.Damper(tank, 1, 0.13)
-    assert sl.mass_ratio(structure, damper) == pytest.approx(0.0117, abs=0.00005)
-    assert 236.6 / (20000 + 500 - 236.6) == pytest.approx(0.0117, abs=0.00005)
-    assert 0.5 * math.sqrt(20000 / 20263) == pytest.approx(0.497, abs=0.0005)
-    assert sl.loaded_frequency(structure, damper) == pytest.approx(0.497, abs=0.0005)
-    assert 0.497 / 1.0117 == pytest.approx(0.491, abs=0.0005)
-    assert sl.peak(structure, None) == pytest.approx(50.0, abs=0.05)
-    assert sl.peak(structure, damper) == pytest.approx(47.7, abs=0.05)
+    assert sl.mass_ratio(structure, damper) == pytest.approx(quoted("fluid_structure", "0.0117"), abs=0.00005)
+    assert 236.6 / (20000 + 500 - 236.6) == pytest.approx(quoted("fluid_structure", "0.0117"), abs=0.00005)
+    assert 0.5 * math.sqrt(20000 / 20263) == pytest.approx(quoted("fluid_structure", "0.497"), abs=0.0005)
+    assert sl.loaded_frequency(structure, damper) == pytest.approx(quoted("fluid_structure", "0.497"), abs=0.0005)
+    assert 1 + 0.0117 == pytest.approx(quoted("fluid_structure", "1.0117"))
+    assert 0.497 / 1.0117 == pytest.approx(quoted("fluid_structure", "0.491"), abs=0.0005)
+    assert sl.peak(structure, None) == pytest.approx(quoted("fluid_structure", "50.0"), abs=0.05)
+    assert sl.peak(structure, damper) == pytest.approx(quoted("fluid_structure", "47.7"), abs=0.05)
     # tuned: the trial's 2 × 2 m tank at 0.4 m
     trial = next(tr for tr in TRIALS if tr.name == "A tuned liquid damper")
     assert (trial.length, trial.depth, trial.breadth) == (2.0, 0.4, 2.0)
+    assert trial.depth / trial.length == pytest.approx(quoted("fluid_structure", "0.2"))  # κ₁h = (π/L)h = 0.2π
     big = sl.Tank(2.0, 0.4, 2.0)
     assert big.liquid_mass == pytest.approx(1600.0)
-    assert math.tanh(0.2 * math.pi) == pytest.approx(0.5569, abs=0.00005)
-    assert math.sqrt(9.81 * math.pi / 2 * 0.5569) / (2 * math.pi) == pytest.approx(0.466, abs=0.0005)
+    assert math.tanh(0.2 * math.pi) == pytest.approx(quoted("fluid_structure", "0.5569"), abs=0.00005)
+    assert math.sqrt(9.81 * math.pi / 2 * 0.5569) / (2 * math.pi) == pytest.approx(
+        quoted("fluid_structure", "0.466"), abs=0.0005
+    )
     assert 1600 * 8 * 0.5569 / (math.pi**3 * 0.2) == pytest.approx(1149, abs=0.5)
     assert float(sl.slosh_mass(big, 1)) == pytest.approx(1149, abs=0.5)
     tuned = sl.Damper(big, 1, 0.13)
-    assert 1149 / 20451 == pytest.approx(0.0562, abs=0.00005)
-    assert sl.mass_ratio(structure, tuned) == pytest.approx(0.0562, abs=0.00005)
-    assert 0.5 * math.sqrt(20000 / 20451) == pytest.approx(0.4945, abs=0.00005)
-    assert 0.4945 / 1.0562 == pytest.approx(0.468, abs=0.0005)
+    assert 1149 / 20451 == pytest.approx(quoted("fluid_structure", "0.0562"), abs=0.00005)
+    assert sl.mass_ratio(structure, tuned) == pytest.approx(quoted("fluid_structure", "0.0562"), abs=0.00005)
+    assert 0.5 * math.sqrt(20000 / 20451) == pytest.approx(quoted("fluid_structure", "0.4945"), abs=0.00005)
+    assert 0.4945 / 1.0562 == pytest.approx(quoted("fluid_structure", "0.468"), abs=0.0005)
     ratio, zd, top = sl.den_hartog(0.0562)
-    assert ratio == pytest.approx(1 / 1.0562)
-    assert zd == pytest.approx(0.134, abs=0.0005)
-    assert top == pytest.approx(6.05, abs=0.005)
-    assert sl.peak(structure, tuned) == pytest.approx(5.58, abs=0.005)
+    assert ratio == pytest.approx(1 / quoted("fluid_structure", "1.0562"))
+    assert 100 * zd == pytest.approx(quoted("fluid_structure", "13.4 %"), abs=0.05)
+    assert top == pytest.approx(quoted("fluid_structure", "6.05"), abs=0.005)
+    assert sl.peak(structure, tuned) == pytest.approx(quoted("fluid_structure", "5.58"), abs=0.005)
 
 
 def test_self_excited_worked_example():
@@ -3333,51 +3422,66 @@ def test_self_excited_worked_example():
 
     d = DEFAULTS
     # van der Pol: ζ −0.1 at rest, 2 × 10 × √0.2 = 8.94 mm
-    assert (d["vdp_freq"], d["vdp_eps"], d["vdp_ref"]) == (1.0, 0.2, 0.01)
+    assert (d["vdp_freq"], d["vdp_eps"], d["vdp_ref"]) == (1.0, quoted("self_excited", "0.2"), 0.01)
     vdp = se.VanDerPol(1.0, 0.2, 0.01)
-    assert -vdp.eps / 2 == pytest.approx(-0.1)
-    assert float(vdp.theory_amplitude(0.2)) == pytest.approx(0.00894, abs=0.000005)
+    assert -vdp.eps / 2 == pytest.approx(-quoted("self_excited", "0.1"))
+    assert float(vdp.theory_amplitude(0.2)) * 1e3 == pytest.approx(quoted("self_excited", "8.94"), abs=0.005)
     # galloping: 0.628 against the wind's 0.989 at 6 m/s; U_g 3.81 m/s; 0.51 D, 0.91 D (unstable), 1.28 D
-    assert (d["g_side"], d["g_mass"], d["g_fn"], d["g_zeta"], d["g_speed"]) == (0.1, 5.0, 2.0, 0.005, 6.0)
+    assert (d["g_side"], d["g_mass"], d["g_fn"], d["g_speed"]) == (0.1, 5.0, 2.0, 6.0)
+    assert d["g_zeta"] == quoted("self_excited", "0.005")
+    assert 100 * d["g_zeta"] == pytest.approx(quoted("self_excited", "0.5 %"))
     g = se.Galloping(0.1, 5.0, 2.0, 0.005, 6.0)
-    assert 2 * math.pi * 2 == pytest.approx(12.57, abs=0.005)
-    assert 2 * 5 * 0.005 * 4 * math.pi == pytest.approx(0.628, abs=0.0005)
-    assert 4 * 5 * 0.005 * 12.57 / (1.225 * 0.1 * 2.69) == pytest.approx(3.81, abs=0.005)
-    assert g.onset == pytest.approx(3.81, abs=0.005)
-    assert 0.5 * 1.225 * 6 * 0.1 * 2.69 == pytest.approx(0.989, abs=0.0005)
+    assert g.rho == quoted("self_excited", "1.225") and se.PARKINSON[0] == quoted("self_excited", "2.69")
+    assert 2 * math.pi * 2 == pytest.approx(quoted("self_excited", "12.57"), abs=0.005)
+    assert 2 * 5 * 0.005 * 4 * math.pi == pytest.approx(quoted("self_excited", "0.628"), abs=0.0005)
+    assert 4 * 5 * 0.005 * 12.57 / (1.225 * 0.1 * 2.69) == pytest.approx(quoted("self_excited", "3.81"), abs=0.005)
+    assert g.onset == pytest.approx(quoted("self_excited", "3.81"), abs=0.005)
+    assert 0.5 * 1.225 * 6 * 0.1 * 2.69 == pytest.approx(quoted("self_excited", "0.989"), abs=0.0005)
     branches = se.galloping_branches(g, np.array([6.0]))
     found = sorted((float(b.amplitude[0]) / g.side, b.stable) for b in branches)
-    assert [a for a, _ in found] == pytest.approx([0.51, 0.91, 1.28], abs=0.005)
+    assert [a for a, _ in found] == pytest.approx(
+        [quoted("self_excited", "0.51"), quoted("self_excited", "0.91"), quoted("self_excited", "1.28")], abs=0.005
+    )
     assert [s for _, s in found] == [True, False, True]
     # vortex shedding: m* 10.2, m_a 1.96 kg/m, 0.275 m/s, 1.1 f_n, lock-in near 5
-    assert (d["v_d"], d["v_mass"], d["v_fn"], d["v_reduced"]) == (0.05, 20.0, 1.0, 5.5)
+    assert (d["v_d"], d["v_mass"], d["v_fn"], d["v_reduced"]) == (
+        quoted("self_excited", "0.05"),
+        20.0,
+        1.0,
+        quoted("self_excited", "5.5"),
+    )
     v = se.Viv(0.05, 20.0, 1.0)
-    assert v.mass_ratio == pytest.approx(10.2, abs=0.05)
-    assert v.added_mass == pytest.approx(1.96, abs=0.005)
-    assert 5.5 * 1 * 0.05 == pytest.approx(0.275)
-    assert v.strouhal * 5.5 == pytest.approx(1.1)
+    assert v.strouhal == quoted("self_excited", "0.2") and v.gamma == quoted("self_excited", "0.8")
+    assert v.mass_ratio == pytest.approx(quoted("self_excited", "10.2"), abs=0.05)
+    assert v.added_mass == pytest.approx(quoted("self_excited", "1.96"), abs=0.005)
+    assert 5.5 * 1 * 0.05 == pytest.approx(quoted("self_excited", "0.275"))
+    assert v.strouhal * 5.5 == pytest.approx(quoted("self_excited", "1.1"))
     assert v.lock_in_at == pytest.approx(5.0)
     # flutter at rest: S 0.3, I 0.05625, k_h 3553, k_θ 79.94; 0.4725ω⁴ − 999.3ω² + 284 000 = 0 → 2.93, 6.71 Hz
     assert (d["f_plunge"], d["f_pitch"], d["f_cg"], d["f_e"]) == (3.0, 6.0, 0.2, 0.3)
     f = se.Flutter()
-    assert (f.semichord, f.mass, f.radius) == (0.15, 10.0, 0.5)
+    assert (f.semichord, f.mass, f.radius) == (quoted("self_excited", "0.15"), 10.0, quoted("self_excited", "0.5"))
     M, _, K = f.matrices(0.0)
-    assert M[0, 1] == pytest.approx(0.3)
-    assert M[1, 1] == pytest.approx(0.05625)
+    assert M[0, 1] == pytest.approx(quoted("self_excited", "0.3"))
+    assert M[1, 1] == pytest.approx(quoted("self_excited", "0.05625"))
     assert K[0, 0] == pytest.approx(3553, abs=0.5)
-    assert K[1, 1] == pytest.approx(79.94, abs=0.005)
-    assert 10 * 0.05625 - 0.3**2 == pytest.approx(0.4725)
-    assert 3553 * 0.05625 + 79.94 * 10 == pytest.approx(999.3, abs=0.05)
+    assert K[1, 1] == pytest.approx(quoted("self_excited", "79.94"), abs=0.005)
+    assert 10 * 0.05625 - 0.3**2 == pytest.approx(quoted("self_excited", "0.4725"))
+    assert 3553 * 0.05625 + 79.94 * 10 == pytest.approx(quoted("self_excited", "999.3"), abs=0.05)
     assert 3553 * 79.94 == pytest.approx(284_000, abs=500)
     roots = np.sort(np.roots([0.4725, -999.3, 284_000.0]))
-    assert np.sqrt(roots) / (2 * math.pi) == pytest.approx([2.93, 6.71], abs=0.005)
+    assert np.sqrt(roots) / (2 * math.pi) == pytest.approx(
+        [quoted("self_excited", "2.93"), quoted("self_excited", "6.71")], abs=0.005
+    )
     fr, _ = f.modes(np.array([0.0]))
-    assert fr[0] == pytest.approx([2.93, 6.71], abs=0.005)
+    assert fr[0] == pytest.approx([quoted("self_excited", "2.93"), quoted("self_excited", "6.71")], abs=0.005)
     # divergence 39.2 m/s; flutter 19.1 m/s (17.7 with the cg on the axis, none 0.2 ahead)
-    assert math.sqrt(79.94 / (2 * math.pi * 1.225 * 0.15**2 * 0.3)) == pytest.approx(39.2, abs=0.05)
-    assert f.divergence_speed() == pytest.approx(39.2, abs=0.05)
-    assert f.flutter_speed() == pytest.approx(19.1, abs=0.05)
-    assert f.at(x_cg=0.0).flutter_speed() == pytest.approx(17.7, abs=0.05)
+    assert math.sqrt(79.94 / (2 * math.pi * 1.225 * 0.15**2 * 0.3)) == pytest.approx(
+        quoted("self_excited", "39.2"), abs=0.05
+    )
+    assert f.divergence_speed() == pytest.approx(quoted("self_excited", "39.2"), abs=0.05)
+    assert f.flutter_speed() == pytest.approx(quoted("self_excited", "19.1"), abs=0.05)
+    assert f.at(x_cg=0.0).flutter_speed() == pytest.approx(quoted("self_excited", "17.7"), abs=0.05)
     assert f.at(x_cg=-0.2).flutter_speed() == pytest.approx(f.divergence_speed(), rel=1e-3)
 
 
@@ -3394,63 +3498,98 @@ def test_active_control_worked_example():
     assert np.allclose(chain.damping, 2.0)
     # the modes: 1.105 … 5.982 Hz, 1.74 … 9.40 %; shapes at m4 0.657, −0.577, −0.429, 0.228
     w, phi = ac.undamped_modes(chain)
-    assert w / (2 * math.pi) == pytest.approx([1.105, 3.183, 4.877, 5.982], abs=0.0005)
+    assert w / (2 * math.pi) == pytest.approx(
+        [
+            quoted("active_control", "1.105"),
+            quoted("active_control", "3.183"),
+            quoted("active_control", "4.877"),
+            quoted("active_control", "5.982"),
+        ],
+        abs=0.0005,
+    )
     open_loop = ac.oscillating_poles(ac.closed_loop(chain, None)[0])
-    assert [p.zeta for p in open_loop] == pytest.approx([0.0174, 0.0500, 0.0766, 0.0940], abs=0.00005)
+    assert [p.zeta for p in open_loop] == pytest.approx(
+        [0.0174, quoted("active_control", "0.05"), 0.0766, 0.0940], abs=0.00005
+    )
+    shown = [
+        quoted("active_control", "1.74"),
+        quoted("active_control", "5.00"),
+        quoted("active_control", "7.66"),
+        quoted("active_control", "9.40 %"),
+    ]
+    assert [100 * p.zeta for p in open_loop] == pytest.approx(shown, abs=0.005)
     sign = np.sign(phi[3, 0])
-    assert sign * phi[3] == pytest.approx([0.657, -0.577, -0.429, 0.228], abs=0.0005)
+    assert sign * phi[3] == pytest.approx(
+        [
+            quoted("active_control", "0.657"),
+            -quoted("active_control", "0.577"),
+            -quoted("active_control", "0.429"),
+            quoted("active_control", "0.228"),
+        ],
+        abs=0.0005,
+    )
     assert w[1] == pytest.approx(20.0)
     assert phi[3, 1] ** 2 == pytest.approx(1 / 3)
     # velocity feedback at the tip, g = 20: mode 2 0.167 → 0.217 (page 0.214); mode 1 0.622 → 0.639 (page 0.719)
     tip = ac.Controller(3, 3, 20.0)
     est = ac.modal_damping_estimate(chain, tip)
-    assert 20 * (1 / 3) / (2 * 20) == pytest.approx(0.167, abs=0.0005)
-    assert est[1] == pytest.approx(0.167, abs=0.0005)
-    assert 20 * 0.657**2 / (2 * 2 * math.pi * 1.105) == pytest.approx(0.622, abs=0.0005)
-    assert 0.0174 + 0.622 == pytest.approx(0.639, abs=0.0005)
+    assert 20 * (1 / 3) / (2 * 20) == pytest.approx(quoted("active_control", "0.167"), abs=0.0005)
+    assert est[1] == pytest.approx(quoted("active_control", "0.167"), abs=0.0005)
+    assert 0.05 + est[1] == pytest.approx(quoted("active_control", "0.217"), abs=0.0005)  # with its own damping
+    assert 20 * 0.657**2 / (2 * 2 * math.pi * 1.105) == pytest.approx(quoted("active_control", "0.622"), abs=0.0005)
+    assert 0.0174 + 0.622 == pytest.approx(quoted("active_control", "0.639"), abs=0.0005)
     closed = ac.oscillating_poles(ac.closed_loop(chain, tip)[0])
-    assert closed[0].zeta == pytest.approx(0.719, abs=0.0005)
-    assert closed[1].zeta == pytest.approx(0.214, abs=0.0005)
+    assert closed[0].zeta == pytest.approx(quoted("active_control", "0.719"), abs=0.0005)
+    assert closed[1].zeta == pytest.approx(quoted("active_control", "0.214"), abs=0.0005)
     g, z = ac.best_gain(chain, tip)
-    assert (g, z) == pytest.approx((25, 0.98), abs=0.5)
-    assert z == pytest.approx(0.98, abs=0.005)
+    assert (g, z) == pytest.approx((25, quoted("active_control", "0.98")), abs=0.5)
+    assert z == pytest.approx(quoted("active_control", "0.98"), abs=0.005)
     # spillover: −0.167 → −0.117 by the estimate, −0.10 exactly
     spill = ac.Controller(0, 3, 20.0)
-    assert ac.modal_damping_estimate(chain, spill)[1] == pytest.approx(-0.167, abs=0.0005)
-    assert 0.05 - 0.167 == pytest.approx(-0.117)
+    assert ac.modal_damping_estimate(chain, spill)[1] == pytest.approx(-quoted("active_control", "0.167"), abs=0.0005)
+    assert 0.05 - 0.167 == pytest.approx(-quoted("active_control", "0.117"))
     poles = np.linalg.eigvals(ac.closed_loop(chain, spill)[0])
     mode2 = poles[np.argmin(np.abs(np.abs(poles) - 20.0) + (poles.imag <= 0) * 1e9)]
-    assert -mode2.real / abs(mode2) == pytest.approx(-0.10, abs=0.005)
+    assert -mode2.real / abs(mode2) == pytest.approx(-quoted("active_control", "0.10"), abs=0.005)
     # lag: 1/τ = 50 rad/s = 7.96 Hz
-    assert 1 / 0.02 / (2 * math.pi) == pytest.approx(7.96, abs=0.005)
+    assert 1 / 0.02 / (2 * math.pi) == pytest.approx(quoted("active_control", "7.96"), abs=0.005)
     # the TMD: 2.32 kg modal, 0.116 kg, 1.053 Hz, ζ 0.127
-    assert 1 / 0.657**2 == pytest.approx(2.32, abs=0.005)
-    j, mt, kt, ct = ac.tmd_for(chain, 3, 0.05)
+    assert 1 / 0.657**2 == pytest.approx(quoted("active_control", "2.32"), abs=0.005)
+    mu = quoted("active_control", "5 %") / 100
+    j, mt, kt, ct = ac.tmd_for(chain, 3, mu)
+    assert (1 + mu, 3 * mu) == pytest.approx(
+        (quoted("active_control", "1.05"), quoted("active_control", "0.15"))
+    )  # Den Hartog's f ratio and 3μ
+    assert w[0] / (2 * math.pi) == pytest.approx(quoted("active_control", "1.1055"), abs=5e-5)
     assert j == 3
-    assert mt == pytest.approx(0.116, abs=0.0005)
-    assert math.sqrt(kt / mt) / (2 * math.pi) == pytest.approx(1.053, abs=0.0005)
-    assert 1.1055 / 1.05 == pytest.approx(1.053, abs=0.0005)
-    assert ct / (2 * math.sqrt(kt * mt)) == pytest.approx(0.127, abs=0.0005)
+    assert mt == pytest.approx(quoted("active_control", "0.116"), abs=0.0005)
+    assert math.sqrt(kt / mt) / (2 * math.pi) == pytest.approx(quoted("active_control", "1.053"), abs=0.0005)
+    assert 1.1055 / 1.05 == pytest.approx(quoted("active_control", "1.053"), abs=0.0005)
+    assert ct / (2 * math.sqrt(kt * mt)) == pytest.approx(quoted("active_control", "0.127"), abs=0.0005)
     # skyhook: peak 1.155, 0.0408 against the passive 0.0589 at 5 f_n
-    assert 1 / (2 * 0.5 * math.sqrt(0.75)) == pytest.approx(1.155, abs=0.0005)
+    sky_zeta, passive_zeta = quoted("active_control", "0.5"), quoted("active_control", "0.1")
+    assert 1 - sky_zeta**2 == pytest.approx(quoted("active_control", "0.75"))
+    assert 1 / (2 * 0.5 * math.sqrt(0.75)) == pytest.approx(quoted("active_control", "1.155"), abs=0.0005)
     r = np.linspace(0.01, 3, 30001)
-    assert ac.skyhook(r, 0.1, 0.5)[1].max() == pytest.approx(1.155, abs=0.0005)
-    passive, sky, _ = ac.skyhook(np.array([5.0]), 0.1, 0.5)
-    assert sky[0] == pytest.approx(0.0408, abs=0.00005)
-    assert passive[0] == pytest.approx(0.0589, abs=0.00005)
+    assert ac.skyhook(r, passive_zeta, sky_zeta)[1].max() == pytest.approx(
+        quoted("active_control", "1.155"), abs=0.0005
+    )
+    passive, sky, _ = ac.skyhook(np.array([5.0]), passive_zeta, sky_zeta)
+    assert sky[0] == pytest.approx(quoted("active_control", "0.0408"), abs=0.00005)
+    assert passive[0] == pytest.approx(quoted("active_control", "0.0589"), abs=0.00005)
     # state feedback on 1 kg, 400 N/m, 2 N·s/m to 30 rad/s, ζ 0.7: k_p 500, k_v 40
     kp, kv = 1 * 30**2 - 400, 2 * 1 * 0.7 * 30 - 2
     assert (kp, kv) == pytest.approx((500, 40))
     lam = np.roots([1.0, 2 + kv, 400 + kp])
     assert np.abs(lam) == pytest.approx([30, 30])
-    assert -lam[0].real / abs(lam[0]) == pytest.approx(0.7)
+    assert -lam[0].real / abs(lam[0]) == pytest.approx(quoted("active_control", "0.7"))
     # its observer at 100 rad/s, 0.7: l1 138, l2 9324
     l1, l2 = 140 - 2, 10_000 - 400 - 2 * 138
     assert (l1, l2) == (138, 9324)
     A = np.array([[0.0, 1.0], [-400.0, -2.0]])
     err = np.linalg.eigvals(A - np.outer([l1, l2], [1.0, 0.0]))
     assert np.abs(err) == pytest.approx([100, 100])
-    assert -err[0].real / abs(err[0]) == pytest.approx(0.7)
+    assert -err[0].real / abs(err[0]) == pytest.approx(quoted("active_control", "0.7"))
 
     # positive position feedback: stable for γ < 1 (here on mode 2, ζ 0.05, the filter at its frequency, ζ_f 0.3)
     def ppf_max_real(gamma: float) -> float:
@@ -3858,7 +3997,8 @@ def test_frame_builder_worked_example():
         abs=0.0005,
     )
     euler = np.array([b * b * c / (2 * math.pi) for b in roots])
-    assert c == pytest.approx(quoted("frame_builder", "74.65"), abs=0.005) and euler == pytest.approx(
+    assert c == pytest.approx(quoted("frame_builder", "74.65"), abs=0.005)
+    assert euler == pytest.approx(
         [quoted("frame_builder", "41.78"), quoted("frame_builder", "261.8"), quoted("frame_builder", "733.1")], abs=0.05
     )
     hz = modes(frame).hz
