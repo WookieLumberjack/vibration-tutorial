@@ -64,7 +64,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
 - Building models:
   - Modal coupling (`coupling_page`): `gui/modal_coupling.py`; core `modal_coupling`
   - Substructuring (CMS) (`cms_page`): `gui/substructuring.py`; core `substructure`, `back_expansion`
-  - Frame builder (`frame_page`): `gui/frame_builder.py`; core `frame`, `frame_response`
+  - Frame builder (`frame_page`): `gui/frame_builder.py` (with `frame_builder_trials.py`, its trials and problems; `frame_builder_canvas.py`, the canvas); core `frame`, `frame_response`
 - Testing:
   - Signals & spectra (`signals_page`): `gui/signals.py`; core `signals`
   - Virtual modal test (`test_page`): `gui/modal_test.py` (with `modal_test_setup.py`, `modal_test_views.py`); core `identification`, `measurement`
