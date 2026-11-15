@@ -34,7 +34,10 @@ how you checked it.
 ## Notes and numbers
 
 A page's notes live in `src/vib_tutorial/theory/<module>.html`. A number the notes quote
-is checked in `tests/test_tutorial_numbers.py`. A result named after someone gets a
+is checked in `tests/test_tutorial_numbers.py`, tied to the notes with
+`quoted("<notes file>", "1.7 %")`: a test fails on a decimal or percentage in the notes
+that no `quoted` call ties and `tests/notes_unchecked_numbers.txt` (the older ones, still
+to tie) doesn't list. A result named after someone gets a
 citation from `gui/references.py`. A new symbol goes in `gui/notation.py`'s `SYMBOLS`.
 CLAUDE.md lists the full quality bar a page's notes are held to.
 
