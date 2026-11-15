@@ -212,7 +212,7 @@ class TheoryWindow(QtWidgets.QWidget):
             top.setExpanded(True)
 
         self.browser = NotesBrowser()
-        links.wire(self.browser, self.show_page)  # another page's notes stay in this window
+        notes_view.wire(self.browser, self.show_page)  # another page's notes stay in this window
 
         self.hits = QtWidgets.QListWidget()  # the search's hits, in the tree's place while there's a search
         self.hits.setWordWrap(True)

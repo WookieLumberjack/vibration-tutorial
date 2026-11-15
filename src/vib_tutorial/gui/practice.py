@@ -23,7 +23,7 @@ from typing import Any
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.practice import Problem, Question, check
-from . import links
+from . import links, notes_view
 from .style import colors
 from .theming import settings
 
@@ -156,7 +156,7 @@ class PracticeWindow(QtWidgets.QWidget):
         font.setPointSizeF(font.pointSizeF() * 1.15)
         self.title.setFont(font)
         self.text = QtWidgets.QTextBrowser()
-        links.wire(self.text, read)
+        notes_view.wire(self.text, read)
 
         self.number = QtWidgets.QLineEdit()
         self.number.setPlaceholderText("Your answer")

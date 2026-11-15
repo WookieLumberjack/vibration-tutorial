@@ -968,7 +968,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _wire_links(self, page: QtWidgets.QWidget) -> None:
         for browser in page.findChildren(QtWidgets.QTextBrowser):
-            links.wire(browser, self.go_to)
+            notes_view.wire(browser, self.go_to)
 
     def _about(self) -> None:
         from importlib.metadata import PackageNotFoundError, version
