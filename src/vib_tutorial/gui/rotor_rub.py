@@ -17,6 +17,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.rotor import XD, YD, RotorSystem, Stator
+from . import accessible
 from .layouts import plot_height
 from .panels import spin
 from .rotor_bearing import _si
@@ -93,10 +94,13 @@ class RubPanel(QtWidgets.QWidget):
             label = QtWidgets.QLabel(text)
             label.setToolTip(INPUT_TIPS[key])
             form.addWidget(label, r, 0)
+            name = accessible.plain(text)
             for c, box in enumerate(boxes):
                 if isinstance(box, str):
                     form.addWidget(QtWidgets.QLabel(box), r, 1 + c)
+                    name = f"{accessible.plain(text)}, {box}"
                     continue
+                box.setAccessibleName(name)
                 box.setToolTip(INPUT_TIPS[key])
                 box.valueChanged.connect(self._on_params)
                 form.addWidget(box, r, 1 + c, 1, 1 if len(boxes) > 1 else 3)

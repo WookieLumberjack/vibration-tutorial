@@ -48,7 +48,7 @@ from ..core.random_vibration import (
 )
 from . import maths, random_figures, weak
 from .axes import log_axes
-from .layouts import ColumnScroll, form_layout, group, plot_height
+from .layouts import ColumnScroll, form_layout, form_row, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
@@ -435,13 +435,6 @@ def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | No
     return p
 
 
-def _form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip: str) -> None:
-    box.setToolTip(tip)
-    label = QtWidgets.QLabel(text)
-    label.setToolTip(tip)
-    form.addRow(label, box)
-
-
 def fmt(value: float, unit: str) -> str:
     return f"{value:.4g} {unit}"
 
@@ -480,14 +473,14 @@ class RandomVibrationPage(QtWidgets.QWidget):
         for k in Input:
             self.kind.addItem(k.value, k)
         self.kind.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        _form_row(form, "Random:", self.kind, TIPS["input"])
+        form_row(form, "Random:", self.kind, TIPS["input"])
         self.mass = QtWidgets.QComboBox()
-        _form_row(form, "On:", self.mass, TIPS["input"])
+        form_row(form, "On:", self.mass, TIPS["input"])
         self.level = spin(1e-6, 1e6, 0.01, 6, " g²/Hz")
-        _form_row(form, "Level:", self.level, TIPS["level"])
+        form_row(form, "Level:", self.level, TIPS["level"])
         self.f_lo = spin(0.0, 1e5, 0.0, 2, " Hz")
         self.f_hi = spin(0.01, 1e5, 10.0, 2, " Hz")
-        _form_row(form, "Band:", group(self.f_lo, "to", self.f_hi), TIPS["band"])
+        form_row(form, "Band:", group(self.f_lo, "to", self.f_hi), TIPS["band"])
         self.input_info = QtWidgets.QLabel()
         self.input_info.setWordWrap(True)
         mute(self.input_info)
@@ -504,16 +497,16 @@ class RandomVibrationPage(QtWidgets.QWidget):
         for q in Quantity:
             self.quantity.addItem(q.value, q)
         self.index = QtWidgets.QComboBox()
-        _form_row(form, "Look at:", group(self.quantity, "of", self.index), TIPS["output"])
+        form_row(form, "Look at:", group(self.quantity, "of", self.index), TIPS["output"])
 
         rec_box = QtWidgets.QGroupBox("Record")
         form = form_layout(rec_box)
         self.duration = spin(1.0, 1e6, 600.0, 0, " s")
-        _form_row(form, "Length:", self.duration, TIPS["duration"])
+        form_row(form, "Length:", self.duration, TIPS["duration"])
         self.block = QtWidgets.QComboBox()
         for b in BLOCKS:
             self.block.addItem(f"{b:,}", b)
-        _form_row(form, "Welch block:", self.block, TIPS["block"])
+        form_row(form, "Welch block:", self.block, TIPS["block"])
         self.new_record = QtWidgets.QPushButton("New record")
         self.new_record.setToolTip(TIPS["new"])
         form.addRow(self.new_record)
@@ -615,7 +608,6 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.stats_table.setWordWrap(True)
         self.stats_table.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.largest_over = spin(0.1, 1e6, 60.0, 1, " s")
-        self.largest_over.setToolTip(LARGEST_TIP)
         self.largest_note = QtWidgets.QLabel()
         self.largest_note.setWordWrap(True)
         self.largest_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
@@ -625,9 +617,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         sv.addWidget(self.peaks_plot, 1)
         sv.addWidget(self.stats_table)
         row = form_layout()
-        label = QtWidgets.QLabel("Largest peak over:")
-        label.setToolTip(LARGEST_TIP)
-        row.addRow(label, self.largest_over)
+        form_row(row, "Largest peak over:", self.largest_over, LARGEST_TIP)
         sv.addLayout(row)
         sv.addWidget(self.largest_note)
         stats_scroll = ColumnScroll(stats_tab)

@@ -22,6 +22,7 @@ from ..core.rotor import RotorSystem
 from ..core.rotor_modes import whirl_modes
 from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
+from . import accessible
 from .layouts import plot_height
 from .panels import spin
 from .rotor_bearing import _si
@@ -118,6 +119,7 @@ class MagnetPanel(QtWidgets.QWidget):
             row = 1 + (i if i < 4 else i - 4)
             form.addWidget(label, row, 2 * col)
             form.addWidget(box, row, 2 * col + 1)
+            box.setAccessibleName(accessible.plain(text))
             box.valueChanged.connect(self._on_params)
         form.setColumnStretch(1, 1)
         form.setColumnStretch(3, 1)

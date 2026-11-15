@@ -811,8 +811,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         for i in range(n):
             label = QtWidgets.QLabel(f"{i + 1}")
             m, k, c = (spin(0.05, 20.0, values[i][col] if i < len(values) else 1.0, 3) for col in range(3))
-            for factor in (m, k, c):
+            for factor, what in ((m, "mass"), (k, "spring"), (c, "damper")):
                 factor.setToolTip(TIPS["errors"])
+                factor.setAccessibleName(f"Error on {what} {i + 1}")
                 factor.valueChanged.connect(self._on_errors)
             for col, cell in enumerate((label, m, k, c)):
                 self.error_grid.addWidget(cell, i + 1, col)

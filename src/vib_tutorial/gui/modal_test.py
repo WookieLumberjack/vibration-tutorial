@@ -480,6 +480,7 @@ class ModalTestPage(QtWidgets.QWidget):
         self.again.setToolTip("Repeat the test with new random signals and noise.")
         self.again.clicked.connect(self.restart)
         self.speed = QtWidgets.QComboBox()
+        self.speed.setAccessibleName("Playback speed")
         for label, speed in SPEEDS:
             self.speed.addItem(label, speed)
         self.speed.setCurrentIndex(max(0, self.speed.findText(saved_playback())))  # the last one picked
@@ -518,6 +519,7 @@ class ModalTestPage(QtWidgets.QWidget):
         self.signals = SignalView()
         self.frf_view = FrfView()
         self.output = QtWidgets.QComboBox()
+        self.output.setAccessibleName("Show response of")
         self.output.currentIndexChanged.connect(self.redraw)
         out_row = QtWidgets.QHBoxLayout()
         out_row.setContentsMargins(6, 0, 0, 0)

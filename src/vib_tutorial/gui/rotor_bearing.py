@@ -20,6 +20,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.fluid_bearing import GRAVITY, JournalBearing, attitude, rigid_threshold
 from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
+from . import accessible
 from .layouts import plot_height
 from .panels import spin
 from .style import colors
@@ -128,9 +129,11 @@ class BearingPanel(QtWidgets.QWidget):
                 w.setToolTip(INPUT_TIPS[key])
             form.addWidget(label, i // 2, 2 * (i % 2))
             form.addWidget(box, i // 2, 2 * (i % 2) + 1)
+            box.setAccessibleName(accessible.plain(text))
             box.valueChanged.connect(self._on_params)
         form.addWidget(QtWidgets.QLabel("Against:"), 2, 2)
         form.addWidget(self.against, 2, 3)
+        self.against.setAccessibleName("Against")
         form.addWidget(self.which, 3, 1)
         form.addWidget(self.rotor_note, 3, 2, 1, 2)
         self.which.setVisible(False)
@@ -140,6 +143,7 @@ class BearingPanel(QtWidgets.QWidget):
 
         self.locus = pg.PlotWidget()
         self.locus.setToolTip(LOCUS_TIP)
+        self.locus.setAccessibleName("The journal in its clearance circle")
         lp = self.locus.getPlotItem()
         lp.setAspectLocked(True)
         lp.setMenuEnabled(False)

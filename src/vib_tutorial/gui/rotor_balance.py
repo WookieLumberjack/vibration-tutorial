@@ -116,6 +116,7 @@ class BalancingPanel(QtWidgets.QWidget):
         row = FlowLayout()
         row.add(self.mode, self.spacing, group(*(w for pair in zip(self.plane_labels, self.plane_z) for w in pair)))
         form.addRow("Planes:", row)
+        self.mode.setAccessibleName("Planes")
         self.mode.currentIndexChanged.connect(self._on_mode)
         for box in (self.spacing, *self.plane_z):
             box.valueChanged.connect(self._on_planes)
@@ -136,6 +137,8 @@ class BalancingPanel(QtWidgets.QWidget):
         row = FlowLayout()
         row.add(group(self.station, self.direction), group(self.second_label, self.station2, self.direction2))
         form.addRow("Probe:", row)
+        self.station.setAccessibleName("Probe")
+        self.direction.setAccessibleName("Probe direction")
         self.speed = spin(60.0, 10_000.0, BALANCE_RPM, 0, " rpm")
         self.speed.setToolTip("The speed the rotor is balanced at")
         self.slow_speed = spin(10.0, 10_000.0, SLOW_RPM, 0, " rpm")
@@ -153,6 +156,7 @@ class BalancingPanel(QtWidgets.QWidget):
         row = FlowLayout()
         row.add(group(self.speed, "slow roll", self.slow_speed), self.subtract)
         form.addRow("Balancing at:", row)
+        self.speed.setAccessibleName("Balancing at")
         self.trial_mass = spin(0.01, 100.0, 0.5, 2, " g")
         self.trial_radius = spin(1.0, 500.0, 20.0, 0, " mm")
         self.trial_angle = spin(0.0, 359.0, 0.0, 0, "°")
@@ -162,6 +166,7 @@ class BalancingPanel(QtWidgets.QWidget):
         row = FlowLayout()
         row.add(group(self.trial_mass, "at radius", self.trial_radius), group("angle", self.trial_angle))
         form.addRow("Trial weight:", row)
+        self.trial_mass.setAccessibleName("Trial weight")
 
         steps = FlowLayout()
         self._buttons = {key: QtWidgets.QPushButton() for key in ("slow", "found", "trial", "trial2", "verify")}

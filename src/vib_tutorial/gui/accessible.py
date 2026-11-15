@@ -11,10 +11,12 @@ label beside a control name it as they build the row:
   front of their own ("Pulse, wide at").
 
 A control with no label beside it (a page's preset, a playback speed) gets `setAccessibleName` where it's made.
+A plot is named when its page is built (`name_plots`, from `MainWindow._page`) after its title or its axes
+("Amplitude against Frequency"), unless it has a name already; Qt reads its tooltip as its description.
 This names nothing by walking the layouts after the fact: reading a form's item positions while a page is built
 changed how Qt laid it out.
 
-Working on it: `tests/test_accessible.py` checks every page's controls have a name of their own.
+Working on it: `tests/test_accessible.py` checks every page's controls and plots have a name of their own.
 """
 
 from __future__ import annotations
@@ -98,3 +100,33 @@ def name_field(label: QtWidgets.QLabel, field: QtWidgets.QWidget) -> None:
             continue
         own = control.accessibleName()
         control.setAccessibleName(f"{text}, {own}" if own and own != text else text)
+
+
+def plot_name(view: QtWidgets.QWidget) -> str:
+    """A pyqtgraph view's name: its plots' titles, or their axes ("Amplitude against Frequency")."""
+    import pyqtgraph as pg
+
+    items = [view.getPlotItem()] if isinstance(view, pg.PlotWidget) else []
+    if isinstance(view, pg.GraphicsLayoutWidget):
+        items = [i for i in view.ci.items if isinstance(i, pg.PlotItem)]
+    names = []
+    for item in items:
+        title = plain(item.titleLabel.text or "")
+        if title:
+            names.append(title)
+            continue
+        left, bottom = (plain(item.getAxis(side).labelText or "") for side in ("left", "bottom"))
+        if left and bottom:
+            names.append(f"{left} against {bottom}")
+        elif left or bottom:
+            names.append(left or bottom)
+    return "; ".join(dict.fromkeys(names))
+
+
+def name_plots(root: QtWidgets.QWidget) -> None:
+    """Name each pyqtgraph view under `root` that has no name yet after its plots (`plot_name`)."""
+    import pyqtgraph as pg
+
+    for view in root.findChildren(pg.GraphicsView):
+        if not view.accessibleName() and (text := plot_name(view)):
+            view.setAccessibleName(text)

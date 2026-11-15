@@ -50,7 +50,7 @@ from ..core.oma import (
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import oma_figures
-from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import TrialCombo, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
@@ -455,13 +455,6 @@ def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | No
     return p
 
 
-def _form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip: str) -> None:
-    box.setToolTip(tip)
-    label = QtWidgets.QLabel(text)
-    label.setToolTip(tip)
-    form.addRow(label, box)
-
-
 def _cell(fn: float, zeta: float) -> str:
     return f"{fn:.4g} Hz\nζ {100 * zeta:.2g} %"
 
@@ -509,19 +502,19 @@ class OmaPage(QtWidgets.QWidget):
         self.dof.valueChanged.connect(self.dof_requested)
         form.addRow("Number of masses:", self.dof)
         self.input = QtWidgets.QComboBox()
-        _form_row(form, "Ambient forces on:", self.input, TIPS["input"])
+        form_row(form, "Ambient forces on:", self.input, TIPS["input"])
         self.colour = QtWidgets.QComboBox()
         for c in Colour:
             self.colour.addItem(c.value, c)
         self.corner = spin(0.01, 1e4, 5.0, 2, " Hz")
-        _form_row(form, "Their spectrum:", group(self.colour, "corner", self.corner), TIPS["colour"])
+        form_row(form, "Their spectrum:", group(self.colour, "corner", self.corner), TIPS["colour"])
         self.response = QtWidgets.QComboBox()
         for r in (Response.ACCELERATION, Response.DISPLACEMENT):
             self.response.addItem(r.value, r)
-        _form_row(form, "Sensors:", self.response, TIPS["response"])
+        form_row(form, "Sensors:", self.response, TIPS["response"])
         self.machine_hz = spin(0.0, 1e4, 0.0, 3, " Hz")
         self.machine_force = spin(0.0, 1e6, 1.0, 2, " N")
-        _form_row(form, "Machine on m1:", group(self.machine_hz, "at", self.machine_force), TIPS["machine"])
+        form_row(form, "Machine on m1:", group(self.machine_hz, "at", self.machine_force), TIPS["machine"])
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
@@ -533,9 +526,9 @@ class OmaPage(QtWidgets.QWidget):
         self.fs = spin(0.5, 10000.0, 20.0, 2, " Hz")
         self.duration = spin(1.0, 1e6, 900.0, 0, " s")
         self.noise = spin(0.0, 500.0, 2.0, 1, " %")
-        _form_row(form, "Sample rate fs:", self.fs, TIPS["fs"])
-        _form_row(form, "Record length:", self.duration, TIPS["duration"])
-        _form_row(form, "Sensor noise:", self.noise, TIPS["noise"])
+        form_row(form, "Sample rate fs:", self.fs, TIPS["fs"])
+        form_row(form, "Record length:", self.duration, TIPS["duration"])
+        form_row(form, "Sensor noise:", self.noise, TIPS["noise"])
         self.new_record = QtWidgets.QPushButton("New record")
         self.new_record.setToolTip(TIPS["new"])
         form.addRow(self.new_record)
@@ -548,22 +541,22 @@ class OmaPage(QtWidgets.QWidget):
         form = self.proc_form = form_layout(proc)
         self.method = QtWidgets.QComboBox()
         self.method.addItems([FDD, SSI])
-        _form_row(form, "Method:", self.method, TIPS["method"])
+        form_row(form, "Method:", self.method, TIPS["method"])
         self.block = QtWidgets.QComboBox()
         for b in BLOCKS:
             self.block.addItem(str(b), b)
-        _form_row(form, "Block length:", self.block, TIPS["block"])
+        form_row(form, "Block length:", self.block, TIPS["block"])
         self.mac_min = spin(0.1, 0.999, MAC_MIN, 3, "")
-        _form_row(form, "EFDD bell MAC ≥", self.mac_min, TIPS["mac"])
+        form_row(form, "EFDD bell MAC ≥", self.mac_min, TIPS["mac"])
         self.rows = QtWidgets.QSpinBox()
         self.rows.setRange(2, 400)
         self.rows.setKeyboardTracking(False)
-        _form_row(form, "SSI block rows:", self.rows, TIPS["rows"])
+        form_row(form, "SSI block rows:", self.rows, TIPS["rows"])
         self.max_order = QtWidgets.QSpinBox()
         self.max_order.setRange(2, 400)
         self.max_order.setSingleStep(2)
         self.max_order.setKeyboardTracking(False)
-        _form_row(form, "SSI max order:", self.max_order, TIPS["order"])
+        form_row(form, "SSI max order:", self.max_order, TIPS["order"])
         self.auto_peaks = QtWidgets.QPushButton("Pick automatically")
         self.auto_peaks.setToolTip(
             "<p>Forget the peaks (FDD) or poles (SSI) clicked by hand and pick them "

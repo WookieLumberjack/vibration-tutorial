@@ -578,6 +578,7 @@ class SignalsPage(QtWidgets.QWidget):
             self.time_plot.addItem(item)
 
         self.scale = QtWidgets.QComboBox()
+        self.scale.setAccessibleName("Spectrum as")
         self.scale.addItems(SCALES)
         self.scale.setToolTip(TIPS["scale"])
         self.scale.currentIndexChanged.connect(self._draw_spectrum)

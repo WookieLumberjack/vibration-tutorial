@@ -563,6 +563,7 @@ class MountView(pg.PlotWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setAccessibleName("The body on its mounts")
         self.setToolTip(VIEW_TIP)
         self.setAspectLocked(True)
         for side in ("left", "bottom"):

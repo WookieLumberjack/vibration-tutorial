@@ -189,13 +189,15 @@ def header_tip(table: QtWidgets.QTableWidget, column: int, tip: str) -> None:
     item.setToolTip(tip)
 
 
-def form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip: str) -> None:
-    """A form's row: `text`'s label and `box`, both with the tooltip `tip`."""
+def form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip: str) -> QtWidgets.QLabel:
+    """A form's row: `text`'s label and `box`, both with the tooltip `tip`, its controls named after the label.
+    Returns the label (to hide with its row)."""
     box.setToolTip(tip)
     label = QtWidgets.QLabel(text)
     label.setToolTip(tip)
     form.addRow(label, box)
     accessible.name_field(label, box)
+    return label
 
 
 def show_in_stack(stack: QtWidgets.QStackedWidget, page: int) -> None:

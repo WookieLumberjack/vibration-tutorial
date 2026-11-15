@@ -116,6 +116,7 @@ class ParameterPanel(QtWidgets.QGroupBox):
         for p in self.presets:
             self.preset.addItem(p.name, p)
         self.preset.setToolTip(PRESET_TIP)
+        self.preset.setAccessibleName("Preset")
         self.preset.activated.connect(self._on_preset)
         preset_row.addWidget(self.preset, 1)
         layout.addLayout(preset_row)
@@ -157,6 +158,7 @@ class ParameterPanel(QtWidgets.QGroupBox):
         ratio_label = QtWidgets.QLabel("Static / sliding friction:")
         self.static_ratio = spin(1.0, 5.0, system.static_ratio, 2)
         self.static_ratio.setPrefix("× ")
+        self.static_ratio.setAccessibleName("Static / sliding friction")
         self.static_ratio.setSingleStep(0.1)
         for w in (ratio_label, self.static_ratio):
             w.setToolTip(STATIC_TIP)
@@ -182,6 +184,8 @@ class ParameterPanel(QtWidgets.QGroupBox):
             c = spin(0.0, 1e5, system.damping[i], 3)
             f = spin(0.0, 1e5, system.friction[i], 3)
             f.setToolTip(FRICTION_TIP)
+            for box, what in ((m, "Mass"), (k, "Spring"), (c, "Damper"), (f, "Friction")):
+                box.setAccessibleName(f"{what} {i + 1}")
             for col, cell in enumerate((label, m, k, c, f)):
                 self.grid.addWidget(cell, i + 1, col)
             for box in (m, k, c, f):
@@ -307,6 +311,7 @@ class ForcePanel(QtWidgets.QGroupBox):
         self.target = QtWidgets.QComboBox()
         self.target_label = QtWidgets.QLabel("Apply to:")
         form.addRow(self.target_label, self.target)
+        self.target_label.setBuddy(self.target)
 
         self.kind = QtWidgets.QComboBox()
         for k in ForceKind:
@@ -317,12 +322,15 @@ class ForcePanel(QtWidgets.QGroupBox):
         amp_row = QtWidgets.QHBoxLayout()
         self.amplitude = spin(-1e5, 1e5, s.amplitude, 3, " N")
         self.base_amplitude = spin(-1e4, 1e4, s.base_amplitude * 1e3, 3, " mm")
+        self.amplitude.setAccessibleName("Force amplitude")
+        self.base_amplitude.setAccessibleName("Base amplitude")
         amp_row.addWidget(self.amplitude)
         amp_row.addWidget(self.base_amplitude)
         form.addRow("Amplitude:", amp_row)
 
         freq_row = QtWidgets.QHBoxLayout()
         self.freq = spin(0.001, 1000.0, s.freq_hz, 3, " Hz")
+        self.freq.setAccessibleName("Frequency")
         freq_row.addWidget(self.freq, 1)
         self.tune = QtWidgets.QComboBox()
         self.tune.setToolTip(
@@ -330,6 +338,7 @@ class ForcePanel(QtWidgets.QGroupBox):
             "The response lags the force by 90° there; the displacement peak "
             "is slightly lower, at fₙ√(1 − 2ζ²)."
         )
+        self.tune.setAccessibleName("Tune to a natural frequency")
         freq_row.addWidget(self.tune)
         self.freq_label = QtWidgets.QLabel("Frequency:")
         form.addRow(self.freq_label, freq_row)
@@ -337,11 +346,14 @@ class ForcePanel(QtWidgets.QGroupBox):
         self.duration = spin(1e-4, 10.0, s.pulse_duration, 4, " s")
         self.duration_label = QtWidgets.QLabel("Pulse length:")
         form.addRow(self.duration_label, self.duration)
+        self.duration_label.setBuddy(self.duration)
 
         sweep_row = QtWidgets.QHBoxLayout()
         self.sweep_start = spin(0.001, 1000.0, s.sweep_start_hz, 3, " Hz")
         self.sweep_end = spin(0.001, 1000.0, s.sweep_end_hz, 3, " Hz")
         sweep_to = QtWidgets.QLabel("to")
+        self.sweep_start.setAccessibleName("Sweep from")
+        self.sweep_end.setAccessibleName("Sweep to")
         sweep_row.addWidget(self.sweep_start, 1)
         sweep_row.addWidget(sweep_to)
         sweep_row.addWidget(self.sweep_end, 1)
@@ -351,6 +363,7 @@ class ForcePanel(QtWidgets.QGroupBox):
         self.sweep_time = spin(0.1, 3600.0, s.sweep_time, 1, " s")
         self.sweep_log = QtWidgets.QCheckBox("Log sweep")
         self.sweep_log.setChecked(s.sweep_log)
+        self.sweep_time.setAccessibleName("Sweep time")
         time_row.addWidget(self.sweep_time, 1)
         time_row.addWidget(self.sweep_log)
         self.sweep_time_label = QtWidgets.QLabel("Sweep time:")
@@ -546,6 +559,8 @@ class SimControls(QtWidgets.QGroupBox):
         )
         for w in (self.cycles, self.fit_window):
             w.setToolTip(fit_tip)
+        self.cycles.setAccessibleName("Fit window cycles")
+        self.fit_window.setAccessibleName("Fit window mode")
         form.addRow("Fit window:", fit_row)
         self._fit_mode: str | None = None  # key of the last mode fitted to
         self._mode_freqs: dict[str, float] = {}  # mode key -> frequency [Hz]

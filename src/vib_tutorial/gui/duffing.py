@@ -38,7 +38,7 @@ from ..core.duffing import (
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
 from . import duffing_figures, weak
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, FlowLayout, form_layout, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height
 from .lesson import RunButton
 from .links import load_notes, page_link
 from .maths import markup
@@ -485,11 +485,8 @@ class DuffingPage(QtWidgets.QWidget):
             ("Pump μ:", self.pump, "pump"),
             ("Noise (rms):", self.noise, "noise"),
         ):
-            box.setToolTip(TIPS[key])
             box.valueChanged.connect(self._on_params)
-            label = QtWidgets.QLabel(text)
-            label.setToolTip(TIPS[key])
-            form.addRow(label, box)
+            form_row(form, text, box, TIPS[key])
         self.osc_info = QtWidgets.QLabel()
         self.osc_info.setWordWrap(True)
         mute(self.osc_info)
@@ -507,10 +504,8 @@ class DuffingPage(QtWidgets.QWidget):
             ("to:", self.end_hz, "range"),
             ("Each leg takes:", self.sweep_time, "time"),
         ):
-            box.setToolTip(TIPS[key])
-            label = QtWidgets.QLabel(text)
-            label.setToolTip(TIPS[key])
-            dv.addRow(label, box)
+            form_row(dv, text, box, TIPS[key])
+        self.end_hz.setAccessibleName("Sweep to")
         self.freq.valueChanged.connect(self._on_freq)
         for box in (self.start_hz, self.end_hz, self.sweep_time):
             box.valueChanged.connect(self._on_sweep_range)

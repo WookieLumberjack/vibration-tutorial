@@ -42,39 +42,42 @@ def test_a_control_is_named_after_the_label_beside_it(app):
     panel.close()
 
 
-# Controls not named yet, by page: their rows are built by hand (a sub-layout in a form row, a grid), outside the
-# helpers that name them. Each count may only go down: name a page's controls and drop its entry.
-GAPS = {
-    "rotor_page": 63,
-    "sim_page": 26,
-    "updating_page": 12,
-    "test_page": 11,
-    "duffing_page": 11,
-    "oma_page": 10,
-    "random_page": 8,
-    "shock_page": 5,
-    "coupling_page": 5,
-    "complex_page": 2,
-    "frf_page": 1,
-    "frame_page": 1,
-    "signals_page": 1,
-}
+def test_every_pages_controls_and_plots_have_names(main_window, app):
+    import pyqtgraph as pg
 
-
-def test_every_pages_controls_have_names(main_window, app):
     w = main_window
     for i in range(w.pages.count()):
         w.pages.setCurrentIndex(i)  # builds each page
     app.processEvents()
     assert accessible.labelled(w.theme_combo) and accessible.labelled(w.size_combo), "the top bar's"
-    over = []
+    missing = []
     for i in range(w.pages.count()):
         page = w.pages.widget(i)
         name = w.page_name(page)
-        unnamed = [c for c in accessible.controls(page) if not accessible.labelled(c)]
-        if len(unnamed) > GAPS.get(name, 0):
-            tips = "; ".join(f"{type(c).__name__} {c.toolTip()[:50]!r}" for c in unnamed[:5])
-            over.append(f"{name}: {len(unnamed)} unnamed, {GAPS.get(name, 0)} allowed ({tips})")
-        elif len(unnamed) < GAPS.get(name, 0):
-            over.append(f"{name}: only {len(unnamed)} unnamed now: lower its GAPS entry")
-    assert not over, "\n".join(over)
+        for c in accessible.controls(page):
+            if not accessible.labelled(c):
+                missing.append(f"{name}: {type(c).__name__} {c.toolTip()[:50]!r}")
+        for view in page.findChildren(pg.GraphicsView):
+            if not view.accessibleName():
+                missing.append(f"{name}: a {type(view).__name__} with no title or axes: name it where it's made")
+    assert not missing, "\n".join(missing)
+
+
+def test_a_plot_is_named_after_its_title_or_axes(app):
+    from vib_tutorial.gui.lesson import plot
+
+    p = plot("Amplitude", "m", "Frequency", "Hz")
+    titled = plot("x", "m", "t", "s")
+    titled.setTitle("The <b>response</b>")
+    named = plot("x", "m", "t", "s")
+    named.setAccessibleName("Its own")
+    box = QtWidgets.QWidget()
+    for view in (p, titled, named):
+        view.setParent(box)
+    accessible.name_plots(box)
+    assert [v.accessibleName() for v in (p, titled, named)] == [
+        "Amplitude against Frequency",
+        "The response",
+        "Its own",
+    ]
+    box.close()

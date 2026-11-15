@@ -53,7 +53,7 @@ from ..core.rotor_sweep import (
     probe,
 )
 from ..core.rotor_waterfall import Waterfall
-from . import rotor_practice, weak
+from . import accessible, rotor_practice, weak
 from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
@@ -299,6 +299,7 @@ class RotorPage(QtWidgets.QWidget):
         st = QtWidgets.QVBoxLayout(stability_tab)
         measure_row = QtWidgets.QHBoxLayout()
         measure_row.addWidget(QtWidgets.QLabel("Stability map:"))
+        self.measure.setAccessibleName("Stability map")
         measure_row.addWidget(self.measure)
         measure_row.addStretch(1)
         st.addLayout(measure_row)
@@ -485,6 +486,7 @@ class RotorPage(QtWidgets.QWidget):
         self.tap_every.setToolTip(REPEAT_TAP_TIP)
         taps = QtWidgets.QHBoxLayout()
         taps.addWidget(self.repeat_taps)
+        self.tap_every.setAccessibleName("Tap the disc every")
         taps.addWidget(self.tap_every)
         taps.addWidget(QtWidgets.QLabel("of simulated time"))
         taps.addStretch(1)
@@ -504,6 +506,8 @@ class RotorPage(QtWidgets.QWidget):
         speeds.addWidget(QtWidgets.QLabel("to"))
         speeds.addWidget(self.sweep_to, 1)
         form.addRow("From:", speeds)
+        self.sweep_from.setAccessibleName("Sweep from")
+        self.sweep_to.setAccessibleName("Sweep to")
         buttons = QtWidgets.QHBoxLayout()
         self.sweep_button = QtWidgets.QPushButton("Run up and coast down")
         self.sweep_button.setToolTip(SWEEP_TIP)
@@ -544,6 +548,9 @@ class RotorPage(QtWidgets.QWidget):
         probe_row.addWidget(self.probe_direction, 3)
         probe_row.addWidget(self.probe_order, 1)
         form.addRow("Plot:", probe_row)
+        self.probe_station.setAccessibleName("Plot station")
+        self.probe_direction.setAccessibleName("Plot direction")
+        self.probe_order.setAccessibleName("Plot order")
         self.show_peaks = QtWidgets.QCheckBox("Per-revolution peaks (dots)")
         self.show_peaks.setChecked(True)
         self.show_peaks.setToolTip(
@@ -605,6 +612,7 @@ class RotorPage(QtWidgets.QWidget):
         row.addWidget(self.shaft_mass)
         row.addWidget(self.density, 1)
         form.addRow("Shaft:", row)
+        self.density.setAccessibleName("Shaft density")
         self.elements = QtWidgets.QSpinBox()
         self.elements.setRange(2, 60)
         self.elements.setValue(s.elements)
@@ -617,6 +625,8 @@ class RotorPage(QtWidgets.QWidget):
         row.addWidget(self.elements, 1)
         row.addWidget(self.mass_matrix, 1)
         form.addRow("Beam elements:", row)
+        self.elements.setAccessibleName("Beam elements")
+        self.mass_matrix.setAccessibleName("Mass matrix")
         self.shaft_mass.toggled.connect(self._on_params)
         self.mass_matrix.currentIndexChanged.connect(self._on_params)
         form.addRow("Disc position a/L:", self.position)
@@ -656,6 +666,8 @@ class RotorPage(QtWidgets.QWidget):
                 size.setToolTip(tip)
                 angle.setToolTip(tip)
             form.addRow(label, row)
+            size.setAccessibleName(accessible.plain(label))
+            angle.setAccessibleName(f"{accessible.plain(label)}, at")
         self.crack_position = spin(-1.0, 2.0, crack.position, 3, "")
         self.crack_position.setSingleStep(0.05)
         self.crack_breathing = QtWidgets.QCheckBox("Breathing")
@@ -667,6 +679,7 @@ class RotorPage(QtWidgets.QWidget):
         row.addWidget(self.crack_position, 3)
         row.addWidget(self.crack_breathing, 2)
         form.addRow("Crack at z/L:", row)
+        self.crack_position.setAccessibleName("Crack at z/L")
         self.internal_damping = spin(0.0, 1e5, s.internal_damping, 1, " N·s/m")
         self.internal_damping.setToolTip(INTERNAL_TIP)
         form.addRow("Internal damping c<sub>i</sub>:", self.internal_damping)
@@ -727,6 +740,7 @@ class RotorPage(QtWidgets.QWidget):
             label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
             grid.addWidget(label, 0, c + 1)
         self.bearing_rows: list[list[QtWidgets.QDoubleSpinBox]] = []
+        BEARING_NAMES = ("kx", "ky", "cx", "cy", "mass", "kxy", "swirl λ")
         for r, name in enumerate("AB"):
             grid.addWidget(QtWidgets.QLabel(f"<b>{name}</b>"), r + 1, 0)
             row = [
@@ -747,6 +761,7 @@ class RotorPage(QtWidgets.QWidget):
                 w.setMinimumWidth(BEARING_WIDTHS[c])
                 w.valueChanged.connect(self._on_params)
                 grid.addWidget(w, r + 1, c + 1)
+                w.setAccessibleName(f"Bearing {name}, {BEARING_NAMES[c]}")
             self.bearing_rows.append(row)
         self.isotropic = QtWidgets.QCheckBox("Isotropic (ky = kx, cy = cx)")
         self.isotropic.setChecked(True)

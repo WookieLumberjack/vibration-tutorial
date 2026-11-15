@@ -152,6 +152,7 @@ class FrfGrid(pg.GraphicsLayoutWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setAccessibleName("The FRF matrix: each force to each response")
         self.n = 0
         self.cells: list[list[pg.PlotItem]] = []
         self.full: list[list[pg.PlotDataItem]] = []
@@ -789,6 +790,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         out_row = QtWidgets.QHBoxLayout()
         out_row.addWidget(QtWidgets.QLabel("Response of:"))
         self.output_combo = QtWidgets.QComboBox()
+        self.output_combo.setAccessibleName("Response of")
         self.output_combo.currentIndexChanged.connect(self._on_output)
         out_row.addWidget(self.output_combo, 1)
         iv.addLayout(out_row)

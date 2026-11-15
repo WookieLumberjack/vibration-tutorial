@@ -441,6 +441,7 @@ class TorsionalPage(QtWidgets.QWidget):
 
         # --- right: the train drawn, the mode shapes, the notes
         self.drawing = pg.PlotWidget()
+        self.drawing.setAccessibleName("The train: motor, shafts, discs and gears")
         self.drawing.setMenuEnabled(False)
         self.drawing.hideButtons()
         self.drawing.hideAxis("left")

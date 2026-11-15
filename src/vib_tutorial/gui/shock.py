@@ -47,7 +47,7 @@ from ..core.shock import (
 )
 from . import maths, shock_figures, weak
 from .axes import log_axes
-from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
@@ -490,14 +490,6 @@ def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | No
     return p
 
 
-def _form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip: str) -> QtWidgets.QLabel:
-    box.setToolTip(tip)
-    label = QtWidgets.QLabel(text)
-    label.setToolTip(tip)
-    form.addRow(label, box)
-    return label
-
-
 def duration_for(result: ModalResult) -> float:
     """A pulse that spreads the chain's modes across the spectrum: 0.6 of its fastest mode's period, rounded to
     1, 2 or 5 ms times a power of ten."""
@@ -557,19 +549,19 @@ class ShockPage(QtWidgets.QWidget):
         for s in Shape:
             self.shape.addItem(s.value, s)
         self.shape.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        _form_row(form, "Shape:", self.shape, TIPS["shape"])
+        form_row(form, "Shape:", self.shape, TIPS["shape"])
         self.peak = spin(0.001, 1e5, 10.0, 3, " g")
-        self.peak_label = _form_row(form, "Peak:", self.peak, TIPS["peak"])
+        self.peak_label = form_row(form, "Peak:", self.peak, TIPS["peak"])
         self.duration = spin(0.01, 1e5, 100.0, 2, " ms")
-        self.duration_label = _form_row(form, "Duration:", self.duration, TIPS["duration"])
+        self.duration_label = form_row(form, "Duration:", self.duration, TIPS["duration"])
         self.knee = spin(1e-3, 1e6, 5.0, 3, " Hz")
-        self.knee_label = _form_row(form, "Knee:", self.knee, TIPS["knee"])
+        self.knee_label = form_row(form, "Knee:", self.knee, TIPS["knee"])
         self.mass = QtWidgets.QComboBox()
-        self.mass_label = _form_row(form, "Measured on:", self.mass, TIPS["mass"])
+        self.mass_label = form_row(form, "Measured on:", self.mass, TIPS["mass"])
         self.noise = spin(0.0, 50.0, 0.0, 2, " %")
-        self.noise_label = _form_row(form, "Noise:", self.noise, TIPS["noise"])
+        self.noise_label = form_row(form, "Noise:", self.noise, TIPS["noise"])
         self.offset = spin(-50.0, 50.0, 0.0, 2, " %")
-        self.offset_label = _form_row(form, "Offset:", self.offset, TIPS["offset"])
+        self.offset_label = form_row(form, "Offset:", self.offset, TIPS["offset"])
         self.again = QtWidgets.QPushButton("New noise")
         self.again.setToolTip(TIPS["again"])
         form.addRow(self.again)
@@ -586,7 +578,7 @@ class ShockPage(QtWidgets.QWidget):
         spec_box = QtWidgets.QGroupBox("Spectrum")
         form = form_layout(spec_box)
         self.q = spin(1.0, 500.0, DEFAULT_Q, 1, "")
-        _form_row(form, "Q:", self.q, TIPS["q"])
+        form_row(form, "Q:", self.q, TIPS["q"])
         self.split_time = QtWidgets.QCheckBox("Primary and residual")
         self.split_time.setToolTip(TIPS["split"])
         self.split_sign = QtWidgets.QCheckBox("Positive and negative")
@@ -594,7 +586,7 @@ class ShockPage(QtWidgets.QWidget):
         form.addRow(group(self.split_time))
         form.addRow(group(self.split_sign))
         self.f_pick = spin(1e-4, 1e7, 1.0, 3, " Hz")
-        _form_row(form, "Oscillator:", self.f_pick, TIPS["f"])
+        form_row(form, "Oscillator:", self.f_pick, TIPS["f"])
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)

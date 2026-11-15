@@ -28,7 +28,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import display_size, frame_stats, links, maths, notes_view, theming, weak
+from . import accessible, display_size, frame_stats, links, maths, notes_view, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
@@ -481,6 +481,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.element_combo.setToolTip(FORCES_COORDS_TIP)
         self.element_combo.setVisible(False)
         coords_label = QtWidgets.QLabel("Plot coordinates:")
+        coords_label.setBuddy(self.coords_combo)
+        self.element_combo.setAccessibleName("Element forces of")
         self._modal_map = np.zeros((0, 0))  # states -> modal coordinates, set with the modes
         plot_box = QtWidgets.QWidget()
         pv = QtWidgets.QVBoxLayout(plot_box)
@@ -516,6 +518,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.method_combo.setMinimumContentsLength(16)
         method_label = QtWidgets.QLabel("Method:")
         method_label.setToolTip(METHOD_TIP)
+        method_label.setBuddy(self.method_combo)
         self.table = ModalTable()
         self.mode_plot = ModeShapePlot()
         self.phasor_plot = PhasorPanel()
@@ -599,6 +602,7 @@ class MainWindow(QtWidgets.QMainWindow):
         splitter.addWidget(tabs)
         splitter.setSizes([400, 750, 550])
         self.sim_page = splitter
+        accessible.name_plots(splitter)
 
         # --- the other pages: same chain, each its own layout. An empty placeholder
         # holds each tab until the page is first opened (see _page).
@@ -768,6 +772,7 @@ class MainWindow(QtWidgets.QMainWindow):
         holder = self._placeholders.pop(name)
         self.pages.replace(holder, page)
         self._wire_links(page)
+        accessible.name_plots(page)
         holder.deleteLater()
         return page
 
