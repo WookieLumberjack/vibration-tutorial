@@ -9,8 +9,12 @@ Right: the *Inertia* tab (the tensor about G in the body's axes, its principal m
 written out below: `equations_snapshot`), *Check* (the energy and L against what the torque put in) and the
 Theory. The model is core/rigid_body.py (shared maths in core/rotation.py), stepped on the page's frame loop.
 
+Its `PROBLEMS` (the Practice window) ask for a box's moments, a point mass's shift of G and product of inertia,
+whether a spin flips and how fast, an Euler angle's rate and a quaternion's turn, set up through `load_setup`.
+
 Working on it: `tests/test_rigid_body.py` checks the model, `tests/test_gui_smoke.py`'s
-`test_rigid_body_page` the page, and `tests/test_tutorial_numbers.py` the notes' numbers.
+`test_rigid_body_page` and `test_rigid_body_orientation` the page, `tests/test_practice.py` the problems, and
+`tests/test_tutorial_numbers.py` the notes' numbers (the worked example's among them).
 """
 
 from __future__ import annotations
@@ -25,6 +29,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import rotation
+from ..core.practice import Problem, Question, number, pick, rounded
 from ..core.rigid_body import SHAPES, TORQUES, Body, Shape, Torque, Tumbler
 from ..core.rotation import Turning
 from . import rigid_body_figures
@@ -50,7 +55,7 @@ from .lesson import (
     three_panes,
     trials_html,
 )
-from .links import load_notes
+from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
@@ -261,6 +266,169 @@ TIPS = {
     "nodes (where x has got to), then ψ about the body's own z. B = R<sub>z</sub>(φ) R<sub>x</sub>(θ) "
     "R<sub>z</sub>(ψ).</p>",
 }
+SIDES = (100.0, 150.0, 200.0, 250.0, 300.0, 400.0)  # mm, a problem's box's
+
+
+def _box(rng: np.random.Generator) -> tuple[float, float, float, float]:
+    """A problem's box: its mass (kg) and three different sides (mm), largest first."""
+    a, b, c = sorted(rng.choice(SIDES, 3, replace=False), reverse=True)
+    return pick(rng, (0.5, 1.0, 2.0, 4.0)), float(a), float(b), float(c)
+
+
+def _box_moment(rng: np.random.Generator) -> Question:
+    m, a, b, c = _box(rng)
+    k = int(rng.integers(3))
+    axis = "xyz"[k]
+    others = [s for j, s in enumerate((a, b, c)) if j != k]
+    body = Body(Shape.CUBOID, m, a / 1000, b / 1000, c / 1000)
+    answer = float(body.inertia()[k, k])
+    return Question(
+        f"A uniform {m:g} kg box, {a:g} × {b:g} × {c:g} mm along its x, y, z. What is its moment of inertia about "
+        f"its {axis} axis, through its centre?",
+        answer,
+        f"I<sub>{axis}{axis}</sub> = m(s₁² + s₂²)/12 with the two sides across that axis: {m:g} × ({others[0] / 1000:g}² + "
+        f"{others[1] / 1000:g}²)/12 = {number(answer)} kg·m².",
+        unit="kg·m²",
+        setup=dict(mass=m, a=a / 1000, b=b / 1000, c=c / 1000, rate=0.0, nudge=0.0, tab=TAB_INERTIA),
+    )
+
+
+def _point_centre(rng: np.random.Generator) -> Question:
+    m, a, b, c = _box(rng)
+    mp = pick(rng, (0.1, 0.2, 0.5, 1.0))
+    x = pick(rng, (50.0, 80.0, 100.0, 120.0))
+    G = Body(Shape.CUBOID, m, a / 1000, b / 1000, c / 1000, mp, (x / 1000, 0.0, 0.0)).centre()[0] * 1000
+    return Question(
+        f"A {m:g} kg box carries a {mp:g} kg point mass {x:g} mm along x from its centre. How far from the box's "
+        "centre is the centre of mass G?",
+        G,
+        f"G is the masses' average place: {mp:g} × {x:g}/({m:g} + {mp:g}) = {number(G)} mm along x.",
+        unit="mm",
+        setup=dict(
+            mass=m,
+            a=a / 1000,
+            b=b / 1000,
+            c=c / 1000,
+            point=mp,
+            offset=(x / 1000, 0.0, 0.0),
+            rate=0.0,
+            nudge=0.0,
+            tab=TAB_INERTIA,
+        ),
+    )
+
+
+def _point_product(rng: np.random.Generator) -> Question:
+    m, a, b, c = _box(rng)
+    mp = pick(rng, (0.1, 0.2, 0.3, 0.5))
+    x, y = pick(rng, (50.0, 80.0, 100.0)), pick(rng, (40.0, 60.0, 80.0))
+    body = Body(Shape.CUBOID, m, a / 1000, b / 1000, c / 1000, mp, (x / 1000, y / 1000, 0.0))
+    answer = float(body.inertia()[0, 1]) * 1e4  # kg·cm²: a few, where kg·m² would be 10⁻⁴
+    reduced = m * mp / (m + mp)
+    return Question(
+        f"A {m:g} kg box carries a {mp:g} kg point mass at ({x:g}, {y:g}, 0) mm from its centre. How big is the "
+        "product of inertia I<sub>xy</sub> about the centre of mass, in the box's axes, in kg·cm²? (It is "
+        "negative: give its size.)",
+        -answer,
+        f"I<sub>xy</sub> = −Σmxy about G. The box alone has none; moved to G and with the point mass it comes to "
+        f"−(m m<sub>p</sub>/(m + m<sub>p</sub>))xy = −{number(reduced)} × {x / 10:g} × {y / 10:g} = "
+        f"{number(answer)} kg·cm² (lengths in cm), of size {number(-answer)}.",
+        unit="kg·cm²",
+        setup=dict(
+            mass=m,
+            a=a / 1000,
+            b=b / 1000,
+            c=c / 1000,
+            point=mp,
+            offset=(x / 1000, y / 1000, 0.0),
+            rate=0.0,
+            nudge=0.0,
+            tab=TAB_INERTIA,
+        ),
+    )
+
+
+def _flip_predict(rng: np.random.Generator) -> Question:
+    m, a, b, c = _box(rng)
+    k = int(rng.integers(3))  # principal axis k: the longest side's (least I), the middle's, the shortest's
+    side = ("longest", "middle", "shortest")[k]
+    flips, keeps = "It turns over and back, again and again", "It keeps spinning about that axis, wobbling a little"
+    return Question(
+        f"A box {a:g} × {b:g} × {c:g} mm, free in space, is spun about the axis along its {side} side, a little off "
+        "it. What does it do?",
+        0,
+        f"The moment about an axis is m(s₁² + s₂²)/12 over the two sides across it, so the {side} side's axis has the "
+        + ("least" if k == 0 else "middle" if k == 1 else "greatest")
+        + " moment. "
+        + (
+            "Spin about the middle axis is unstable: a nudge grows, and it flips (the tennis-racket effect)."
+            if k == 1
+            else "Spin about the least or the greatest is stable: a nudge only circles."
+        ),
+        choices=(flips, keeps) if k == 1 else (keeps, flips),
+        setup=dict(mass=m, a=a / 1000, b=b / 1000, c=c / 1000, spin_axis=k, rate=6.0, nudge=2.0, show=SHOW_W),
+        predict=True,
+    )
+
+
+def _flip_rate(rng: np.random.Generator) -> Question:
+    m, a, b, c = _box(rng)
+    rate = pick(rng, (2.0, 4.0, 6.0, 10.0))
+    I1, I2, I3 = (rounded(v, 4) for v in Body(Shape.CUBOID, m, a / 1000, b / 1000, c / 1000).principal()[0])
+    lam = rate * math.sqrt((I2 - I1) * (I3 - I2) / (I1 * I3))
+    return Question(
+        f"A box with principal moments {number(I1 * 1e3, 4)}, {number(I2 * 1e3, 4)} and {number(I3 * 1e3, 4)} "
+        f"×10⁻³ kg·m² is spun at {rate:g} rad/s about its middle axis. At what rate λ does a small nudge grow?",
+        lam,
+        f"λ = ω₀√((I₂ − I₁)(I₃ − I₂)/(I₁I₃)) = {rate:g} × √(({number(I2 * 1e3, 4)} − {number(I1 * 1e3, 4)})"
+        f"({number(I3 * 1e3, 4)} − {number(I2 * 1e3, 4)})/({number(I1 * 1e3, 4)} × {number(I3 * 1e3, 4)})) = "
+        f"{number(lam)} /s: it grows e-fold every {number(1 / lam)} s.",
+        unit="1/s",
+        setup=dict(mass=m, a=a / 1000, b=b / 1000, c=c / 1000, spin_axis=1, rate=rate, nudge=1.0, show=SHOW_W),
+    )
+
+
+def _euler_rate(rng: np.random.Generator) -> Question:
+    theta = pick(rng, (2.0, 5.0, 10.0, 30.0, 60.0))
+    psi = pick(rng, (0.0, 30.0, 45.0, 90.0))
+    w1, w2 = pick(rng, (0.5, 1.0, 2.0)), pick(rng, (0.5, 1.0, 3.0))  # both > 0: φ̇ > 0
+    answer = rotation.euler_rates(math.radians(theta), math.radians(psi), np.array([w1, w2, 0.0]))[0]
+    return Question(
+        f"A body's Euler angles (z-x-z) are θ = {theta:g}° and ψ = {psi:g}°, and it turns at ω₁ = {w1:g}, ω₂ = "
+        f"{w2:g} rad/s in its own axes. How fast is φ changing?",
+        answer,
+        f"φ̇ = (ω₁ sin ψ + ω₂ cos ψ)/sin θ = ({w1:g} sin {psi:g}° + {w2:g} cos {psi:g}°)/sin {theta:g}° = "
+        f"{number(answer)} rad/s" + (": the smaller θ, the faster, whatever ω does." if theta <= 5 else "."),
+        unit="rad/s",
+    )
+
+
+def _quaternion_angle(rng: np.random.Generator) -> Question:
+    q0 = pick(rng, (0.966, 0.866, 0.707, 0.5, 0.259))
+    answer = math.degrees(2.0 * math.acos(q0))
+    return Question(
+        f"An orientation's unit quaternion has q₀ = {q0:g}. Through what angle χ does it turn the body, about its "
+        "axis?",
+        answer,
+        f"q₀ = cos(χ/2), so χ = 2 cos⁻¹ {q0:g} = {number(answer)}°. The other three components are sin(χ/2) times "
+        "the axis.",
+        unit="°",
+    )
+
+
+PROBLEMS = tuple(
+    Problem(key, title, "rigid_body_page", f"See {page_link('rigid_body_page', anchor, section)}.", make)
+    for key, title, anchor, section, make in (
+        ("box-moment", "A box's moment of inertia", "inertia-tensor", "The inertia tensor", _box_moment),
+        ("point-centre", "A point mass moves G", "inertia-tensor", "The inertia tensor", _point_centre),
+        ("point-product", "A product of inertia", "inertia-tensor", "The inertia tensor", _point_product),
+        ("flip-predict", "Predict: does it flip?", "intermediate-axis", "The intermediate axis", _flip_predict),
+        ("flip-rate", "How fast a nudge grows", "intermediate-axis", "The intermediate axis", _flip_rate),
+        ("euler-rate", "Euler's rates", "orientation", "Writing down how it's turned", _euler_rate),
+        ("quaternion-angle", "A quaternion's turn", "orientation", "Writing down how it's turned", _quaternion_angle),
+    )
+)
+
 VIEW_TIP = (
     "<p>The body in 3D, about its centre of mass G: drag to turn the view, double-click to reset it. The coloured "
     "lines are its own axes x, y, z (dashed: its principal axes 1, 2, 3); the dot, the point mass. With "
@@ -776,6 +944,10 @@ class RigidBodyPage(QtWidgets.QWidget):
     def load_trial(self, index: int) -> None:
         self.apply_trial(TRIALS[index])
 
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(RigidTrial("", "", **setup))
+
     def apply_trial(self, t: RigidTrial) -> None:
         for box, value in (
             (self.shape, SHAPES.index(t.shape)),
@@ -805,8 +977,8 @@ class RigidBodyPage(QtWidgets.QWidget):
         self._on_view_options()
         self._on_inputs()
 
-    def state(self) -> RigidTrial:
-        """The page's settings, as a trial."""
+    def practice_state(self) -> RigidTrial:
+        """The page's settings, as a trial (what a practice problem reads)."""
         return RigidTrial(
             "",
             "",
@@ -842,14 +1014,14 @@ class RigidBodyPage(QtWidgets.QWidget):
         for box, on in ((self.side_b, shape is Shape.CUBOID), (self.side_c, shape is not Shape.SPHERE)):
             box.setVisible(on)
             form.label(box).setVisible(on)
-        self.body = self.state().body
+        self.body = self.practice_state().body
         self.view.set_body(self.body)
         self._draw_inertia()
         self.restart()
 
     def _on_torque(self) -> None:
         """A new torque acts at once, for what is left of its time (a run in progress isn't let go again)."""
-        s = self.state()
+        s = self.practice_state()
         self.sim.held, self.sim.torque = s.held, s.torque
         self._draw_now()
 
@@ -869,7 +1041,7 @@ class RigidBodyPage(QtWidgets.QWidget):
 
     def restart(self) -> None:
         """Let the body go again from the start (if it is running; held there if not)."""
-        s = self.state()
+        s = self.practice_state()
         self._snap_t = None
         omega = start_rate(self.body, s.spin_axis, s.rate, s.nudge)
         start = rotation.quaternion(rotation.from_euler(*np.radians(s.pose)))

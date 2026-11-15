@@ -1295,6 +1295,13 @@ REFERENCES = (
         "",
     ),
     Reference(
+        "euler-1776",
+        "Euler 1776",
+        "L. Euler, Formulae generales pro translatione quacunque corporum rigidorum, <i>Novi Commentarii "
+        "academiae scientiarum Petropolitanae</i> 20, 189–207, 1776 (E478)",
+        "",
+    ),
+    Reference(
         "kovalevskaya",
         "Kovalevskaya 1889",
         "S. Kowalevski, Sur le problème de la rotation d'un corps solide autour d'un point fixe, <i>Acta "
@@ -1347,6 +1354,14 @@ REFERENCES = (
         "Goldstein, Poole and Safko 2002",
         "H. Goldstein, C. Poole and J. Safko, <i>Classical Mechanics</i>, 3rd edition, Addison-Wesley, 2002",
         "the rigid body, Euler's angles and equations, and the heavy symmetric top (its section 5.7)",
+    ),
+    Reference(
+        "kuipers",
+        "Kuipers 1999",
+        "J. B. Kuipers, <i>Quaternions and Rotation Sequences: A Primer with Applications to Orbits, Aerospace and "
+        "Virtual Reality</i>, Princeton University Press, 1999",
+        "rotation matrices, Euler angles and their sequences, and quaternions, worked through for aerospace and "
+        "graphics",
     ),
     Reference(
         "jeffcott-1919",

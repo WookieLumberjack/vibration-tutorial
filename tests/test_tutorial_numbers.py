@@ -3661,3 +3661,30 @@ def test_rigid_body_euler_rates_trial():
         least = min(least, math.degrees(theta))
         fastest = max(fastest, abs(rotation.euler_rates(theta, psi, w)[0]))
     assert round(least, 1) == 1.7 and round(fastest) == 67 and round(fastest / t.rate) == 33
+
+
+def test_rigid_body_worked_example():
+    """The worked example: the start's ω, L, |L|, energy and their angles (the readout's), and the off-centre mass's
+    G, I_xx, I_xy (the Inertia tab's) and principal moments and axis."""
+    from vib_tutorial.core.rigid_body import Body
+    from vib_tutorial.gui import rigid_body as page
+
+    box = Body()
+    w = page.start_rate(box, 1, 6.0, 1.0)
+    L = box.inertia() @ w
+    assert [round(v, 4) for v in w] == [0.0, 5.9991, 0.1047] and round(w[1], 3) == 5.999
+    assert (round(L[1], 5), round(L[2], 6), round(float(np.linalg.norm(L)), 5)) == (0.04999, 0.001134, 0.05001)
+    assert round(0.5 * float(w @ L), 4) == 0.15
+    assert round(math.degrees(math.atan(10.83 / 8.333 * math.tan(math.radians(1.0)))), 2) == 1.30
+    apart = math.degrees(math.acos(float(w @ L) / float(np.linalg.norm(w) * np.linalg.norm(L))))
+    assert round(apart, 2) == 0.30
+    off = Body(point=0.3, offset=(0.1, 0.08, 0.0))
+    G = off.centre()
+    assert [round(v * 1000, 1) for v in G[:2]] == [23.1, 18.5] and round(0.3 / 1.3 * 0.08, 5) == 0.01846
+    I = off.inertia()
+    assert round(4.167e-3 + 0.01846**2 + 0.3 * (0.08 - 0.01846) ** 2, 6) == round(I[0, 0], 6) == 0.005644
+    assert round(-0.02308 * 0.01846 - 0.3 * (0.1 - 0.02308) * (0.08 - 0.01846), 6) == round(I[0, 1], 6) == -0.001846
+    assert round(-(0.3 / 1.3) * 0.1 * 0.08, 6) == -0.001846
+    moments, P = off.principal()
+    assert [round(v * 1e3, 3 if v < 0.01 else 2) for v in moments] == [5.036, 11.25, 14.62]
+    assert round(math.degrees(math.atan2(P[1, 0], P[0, 0])), 1) == 18.2
