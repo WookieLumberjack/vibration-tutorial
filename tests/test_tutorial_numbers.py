@@ -3,14 +3,29 @@
 Each test recomputes what a page tells the student they will see, so a change to a
 default, a preset or a solver cannot silently make the text wrong. If one fails, fix
 the text (or the change), and quote the new value.
+
+A test ties a figure to the notes that quote it with `quoted("<notes file>", "1.7 %")`, which fails unless the
+notes (`theory/<notes file>.html`, outside its `<eq>`s) show that number, and gives its value (1.7) to check
+against what the code works out. `test_every_quoted_number_is_checked` reads the `quoted` calls here and fails
+on a decimal or a percentage in the notes that none ties and `notes_unchecked_numbers.txt` doesn't list: the
+numbers written before the guard, to tie as their pages are next touched (delete a line's number when it's
+tied). So an edited figure (Pendulums' 1.8 %, #220) or a new one needs a test. Run this file as a script to
+rewrite the list, only for a number that has nothing to check (a section number, a value taken as given).
 """
 
+import ast
+import functools
+import html
 import math
+import re
+import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
 from scipy.signal import find_peaks
 
+import vib_tutorial
 from vib_tutorial.core import (
     ChainSystem,
     Simulator,
@@ -25,6 +40,71 @@ from vib_tutorial.core import (
     transmissibility,
 )
 from vib_tutorial.core.presets import presets
+
+THEORY = Path(vib_tutorial.__file__).parent / "theory"
+UNCHECKED = Path(__file__).with_name("notes_unchecked_numbers.txt")
+NUMBER = re.compile(r"(?<![\w.])\d+\.\d+(?:\s*%)?|(?<![\w.])\d+\s*%")
+
+
+@functools.cache
+def notes_numbers(notes: str) -> frozenset[str]:
+    """The decimals and percentages `theory/<notes>.html` shows outside its `<eq>`s ("0.19 %", "2.010")."""
+    text = (THEORY / f"{notes}.html").read_text(encoding="utf-8")
+    text = re.sub(r"<eq>.*?</eq>|<!--.*?-->", " ", text, flags=re.S)
+    text = html.unescape(re.sub(r"<[^>]+>", "", text))
+    return frozenset(re.sub(r"\s*%", " %", n) for n in NUMBER.findall(text))
+
+
+def quoted(notes: str, number: str) -> float:
+    """`number`, as `theory/<notes>.html` shows it ("1.7 %" gives 1.7): fails if the notes don't."""
+    assert number in notes_numbers(notes), f"{notes}.html doesn't quote {number}"
+    return float(number.removesuffix(" %"))
+
+
+def tied_numbers() -> dict[str, set[str]]:
+    """The numbers each notes file has tied by a `quoted(...)` call in this file (its literal arguments)."""
+    tied: dict[str, set[str]] = {}
+    for node in ast.walk(ast.parse(Path(__file__).read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "quoted":
+            args = [a.value for a in node.args if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+            assert len(args) == 2 == len(node.args), f"line {node.lineno}: quoted takes two string literals"
+            tied.setdefault(args[0], set()).add(args[1])
+    return tied
+
+
+def unchecked_numbers() -> dict[str, list[str]]:
+    """Each notes file's numbers no `quoted` call ties, smallest first."""
+    tied = tied_numbers()
+    out = {}
+    for path in sorted(THEORY.glob("*.html")):
+        left = notes_numbers(path.stem) - tied.get(path.stem, set())
+        if left:
+            out[path.stem] = sorted(left, key=lambda n: (float(n.removesuffix(" %")), n))
+    return out
+
+
+def listing(unchecked: dict[str, list[str]]) -> str:
+    head = "# The notes' numbers no test ties yet (see tests/test_tutorial_numbers.py's docstring).\n"
+    return head + "".join(f"{notes}: {' | '.join(nums)}\n" for notes, nums in unchecked.items())
+
+
+def test_every_quoted_number_is_checked():
+    listed = {}
+    for line in UNCHECKED.read_text(encoding="utf-8").splitlines():
+        if line and not line.startswith("#"):
+            notes, _, nums = line.partition(": ")
+            listed[notes] = nums.split(" | ")
+    tied = tied_numbers()
+    for notes, nums in tied.items():
+        missing = nums - notes_numbers(notes)
+        assert not missing, f"{notes}.html doesn't quote {sorted(missing)}"
+    now = unchecked_numbers()
+    new = {n: sorted(set(v) - set(listed.get(n, []))) for n, v in now.items()}
+    new = {n: v for n, v in new.items() if v}
+    assert not new, f"numbers in the notes no test checks: tie each with quoted(...): {new}"
+    stale = {n: sorted(set(v) - set(now.get(n, []))) for n, v in listed.items()}
+    stale = {n: v for n, v in stale.items() if v}
+    assert not stale, f"tied or gone: take them off {UNCHECKED.name}: {stale}"
 
 
 def peaks(system: ChainSystem, dof: int, scale: float, lo: float = 0.5, hi: float = 8.0) -> list[float]:
@@ -1630,13 +1710,13 @@ def test_pendulum_trials():
     assert (p.natural_hz, p.period0) == pytest.approx((0.498, 2.006), abs=5e-4)
     assert Pendulum(mass=7.0).period0 == pytest.approx(p.period0)
     assert period(p, math.radians(90)) == pytest.approx(2.368, abs=5e-4)
-    assert period(p, math.radians(30)) / p.period0 - 1 == pytest.approx(0.017, abs=0.0005)
-    assert period(p, math.radians(90)) / p.period0 - 1 == pytest.approx(0.18, abs=0.005)
+    assert 100 * (period(p, math.radians(30)) / p.period0 - 1) == pytest.approx(quoted("pendulum", "1.7 %"), abs=0.05)
+    assert 100 * (period(p, math.radians(90)) / p.period0 - 1) == pytest.approx(quoted("pendulum", "18 %"), abs=0.5)
     # Duffing's estimate (either form) within 1 % up to about 75°
     for a, inside in ((70, True), (80, False)):
         T = period(p, math.radians(a))
         for guess in (duffing_period(p, math.radians(a)), p.period0 * (1 + math.radians(a) ** 2 / 16)):
-            assert (abs(guess / T - 1) < 0.01) == inside
+            assert (100 * abs(guess / T - 1) < quoted("pendulum", "1 %")) == inside
     assert period(p, math.radians(170)) / p.period0 == pytest.approx(2.44, abs=0.005)
     rod = Pendulum(Kind.ROD)
     assert (rod.inertia, rod.equivalent_length, rod.period0) == pytest.approx((1 / 3, 0.667, 1.638), abs=5e-4)
@@ -1664,23 +1744,41 @@ def test_pendulum_worked_example_and_inertia():
     from vib_tutorial.core.pendulum import Kind, Pendulum, duffing_period, period, swing
 
     p = Pendulum()
-    assert (p.kind, p.mass, p.length, p.gravity, p.zeta) == (Kind.SIMPLE, 1.0, 1.0, 9.81, 0.0)
+    assert (p.kind, p.mass, p.length, p.gravity, p.zeta) == (Kind.SIMPLE, 1.0, 1.0, quoted("pendulum", "9.81"), 0.0)
     assert (p.inertia, p.stiffness) == pytest.approx((1.0, 9.81))
-    assert p.omega0 == pytest.approx(3.132, abs=5e-4) and p.natural_hz == pytest.approx(0.4985, abs=5e-5)
-    assert p.period0 == pytest.approx(2.006, abs=5e-4)
-    assert 3.132 / (2 * math.pi) == pytest.approx(0.4985, abs=5e-5)  # from the rounded ω_n
-    assert 2 * math.pi / 3.132 == pytest.approx(2.006, abs=5e-4)
+    w0, f0, T0 = quoted("pendulum", "3.132"), quoted("pendulum", "0.4985"), quoted("pendulum", "2.006")
+    assert p.omega0 == pytest.approx(w0, abs=5e-4) and p.natural_hz == pytest.approx(f0, abs=5e-5)
+    assert p.period0 == pytest.approx(T0, abs=5e-4)
+    assert w0 / (2 * math.pi) == pytest.approx(f0, abs=5e-5)  # from the rounded ω_n
+    assert 2 * math.pi / w0 == pytest.approx(T0, abs=5e-4)
     a = math.radians(10)
-    assert a == pytest.approx(0.1745, abs=5e-5)
-    assert float(p.moment(a)) == pytest.approx(1.703, abs=5e-4) and p.stiffness * a == pytest.approx(1.712, abs=5e-4)
-    assert 9.81 * 0.1745 == pytest.approx(1.712, abs=5e-4)
-    assert 1 - 1.703 / 1.712 == pytest.approx(0.005, abs=5e-4)  # 0.5 % less
-    assert a * a / 16 == pytest.approx(0.0019, abs=5e-5) and 0.1745**2 / 16 == pytest.approx(0.0019, abs=5e-5)
+    a_, moment, linear_moment, g = (
+        quoted("pendulum", "0.1745"),
+        quoted("pendulum", "1.703"),
+        quoted("pendulum", "1.712"),
+        quoted("pendulum", "9.81"),
+    )
+    assert a == pytest.approx(a_, abs=5e-5)
+    assert float(p.moment(a)) == pytest.approx(moment, abs=5e-4) and p.stiffness * a == pytest.approx(
+        linear_moment, abs=5e-4
+    )
+    assert g * a_ == pytest.approx(linear_moment, abs=5e-4)
+    assert 100 * (1 - moment / linear_moment) == pytest.approx(quoted("pendulum", "0.5 %"), abs=0.05)  # less
+    grow = quoted("pendulum", "0.0019")
+    assert a * a / 16 == pytest.approx(grow, abs=5e-5) and a_**2 / 16 == pytest.approx(grow, abs=5e-5)
+    assert 100 * grow == pytest.approx(quoted("pendulum", "0.19 %")) and 1 + grow == pytest.approx(
+        quoted("pendulum", "1.0019")
+    )
     exact = period(p, a)
-    assert exact == pytest.approx(2.010, abs=5e-4) and 2.006 * 1.0019 == pytest.approx(2.010, abs=5e-4)
-    assert 100 * (exact / p.period0 - 1) == pytest.approx(0.191, abs=0.0005)  # the readout's +0.191 %
-    assert 100 * (duffing_period(p, a) / p.period0 - 1) == pytest.approx(0.191, abs=0.0005)
-    assert 8 * (exact - p.period0) == pytest.approx(0.03, abs=0.005)  # behind after the eight swings drawn
+    T = quoted("pendulum", "2.010")
+    assert exact == pytest.approx(T, abs=5e-4) and T0 * 1.0019 == pytest.approx(T, abs=5e-4)
+    assert round(exact, 2) == quoted("pendulum", "2.01")  # the readout
+    longer = quoted("pendulum", "0.191 %")  # the readout's +0.191 %
+    assert 100 * (exact / p.period0 - 1) == pytest.approx(longer, abs=0.0005)
+    assert 100 * (duffing_period(p, a) / p.period0 - 1) == pytest.approx(longer, abs=0.0005)
+    assert 8 * (exact - p.period0) == pytest.approx(
+        quoted("pendulum", "0.03"), abs=0.005
+    )  # behind after the eight swings drawn
     _, whole, linear = swing(p, a, 8 * p.period0, 4000)
     assert np.max(np.abs(whole - linear)) < 0.1 * a  # too little to see
     # The series for large swings
@@ -1690,16 +1788,25 @@ def test_pendulum_worked_example_and_inertia():
         assert series == pytest.approx(period(p, A) / p.period0, rel=0.012)
     # Measuring J: the 1 m rod hung from its end
     rod = Pendulum(Kind.ROD)
-    assert rod.period0 == pytest.approx(1.638, abs=5e-4)
-    J = rod.mass * rod.gravity * 0.5 * rod.period0**2 / (4 * math.pi**2)
-    assert J == pytest.approx(1 / 3) and J - 0.25 == pytest.approx(1 / 12)
-    J_rounded = 1 * 9.81 * 0.5 * 1.638**2 / (4 * math.pi**2)
-    assert J_rounded == pytest.approx(0.3334, abs=5e-5) and 0.3334 - 0.25 == pytest.approx(0.0834, abs=5e-5)
-    assert J_rounded - 0.25 == pytest.approx(0.0834, abs=5e-5) and 1 / 12 == pytest.approx(0.0833, abs=5e-5)
+    Tr, d, mdd = (
+        quoted("pendulum", "1.638"),
+        quoted("pendulum", "0.5"),
+        quoted("pendulum", "0.25"),
+    )  # its period, G's distance from the pivot, md²
+    assert rod.period0 == pytest.approx(Tr, abs=5e-4) and d * d * rod.mass == mdd
+    J = rod.mass * rod.gravity * d * rod.period0**2 / (4 * math.pi**2)
+    assert J == pytest.approx(1 / 3) and J - mdd == pytest.approx(1 / 12)
+    J_rounded, JG = 1 * 9.81 * d * Tr**2 / (4 * math.pi**2), quoted("pendulum", "0.0834")
+    assert J_rounded == pytest.approx(quoted("pendulum", "0.3334"), abs=5e-5) and quoted(
+        "pendulum", "0.3334"
+    ) - mdd == pytest.approx(JG, abs=5e-5)
+    assert J_rounded - mdd == pytest.approx(JG, abs=5e-5) and 1 / 12 == pytest.approx(
+        quoted("pendulum", "0.0833"), abs=5e-5
+    )
     assert J / (J - 0.25) == pytest.approx(4.0)
-    slow = 1 * 9.81 * 0.5 * (1.001 * rod.period0) ** 2 / (4 * math.pi**2)
-    assert slow / J - 1 == pytest.approx(0.002, abs=5e-5)
-    assert (slow - 0.25) / (1 / 12) - 1 == pytest.approx(0.008, abs=5e-4)
+    slow = 1 * 9.81 * 0.5 * ((1 + quoted("pendulum", "0.1 %") / 100) * rod.period0) ** 2 / (4 * math.pi**2)
+    assert 100 * (slow / J - 1) == pytest.approx(quoted("pendulum", "0.2 %"), abs=5e-3)  # from 0.1 % slower
+    assert 100 * ((slow - 0.25) / (1 / 12) - 1) == pytest.approx(quoted("pendulum", "0.8 %"), abs=0.05)
     # Kater: the two pivots are L_eq apart
     assert 0.4 + (1 / 12) / 0.4 == pytest.approx(Pendulum(Kind.ROD, pivot=0.4).equivalent_length)
 
@@ -3625,12 +3732,18 @@ def test_rigid_body_notes():
 
     box = Body()
     I1, I2, I3 = box.principal()[0]
-    assert [round(v * 1e3, 3 if v < 0.01 else 2) for v in (I1, I2, I3)] == [4.167, 8.333, 10.83]
+    assert [round(v * 1e3, 3 if v < 0.01 else 2) for v in (I1, I2, I3)] == [
+        quoted("rigid_body", "4.167"),
+        quoted("rigid_body", "8.333"),
+        quoted("rigid_body", "10.83"),
+    ]
     lam = 6 * math.sqrt((I2 - I1) * (I3 - I2) / (I1 * I3))
-    assert round(lam, 2) == 2.88
-    assert round(math.radians(1.0), 5) == 0.01745 and round(1 / math.radians(1.0), 1) == 57.3
-    assert round(math.log(57.3) / 2.88, 1) == 1.4
-    assert round(6 * math.sqrt((I3 - I1) * (I3 - I2) / (I1 * I2)), 2) == 4.16
+    assert round(lam, 2) == quoted("rigid_body", "2.88")
+    assert round(math.radians(1.0), 5) == quoted("rigid_body", "0.01745") and round(1 / math.radians(1.0), 1) == quoted(
+        "rigid_body", "57.3"
+    )
+    assert round(math.log(57.3) / 2.88, 1) == quoted("rigid_body", "1.4")
+    assert round(6 * math.sqrt((I3 - I1) * (I3 - I2) / (I1 * I2)), 2) == quoted("rigid_body", "4.16")
     # The flip takes about that long: the middle axis first points the other way near 1.4 s plus a little.
     trial = page.TRIALS[0]
     tm = Tumbler(box, tuple(page.start_rate(box, trial.spin_axis, trial.rate, trial.nudge)))
@@ -3660,7 +3773,7 @@ def test_rigid_body_euler_rates_trial():
         w = np.linalg.solve(body.inertia(), B.T @ L)
         least = min(least, math.degrees(theta))
         fastest = max(fastest, abs(rotation.euler_rates(theta, psi, w)[0]))
-    assert round(least, 1) == 1.7 and round(fastest) == 67 and round(fastest / t.rate) == 33
+    assert round(least, 1) == quoted("rigid_body", "1.7") and round(fastest) == 67 and round(fastest / t.rate) == 33
 
 
 def test_rigid_body_worked_example():
@@ -3670,24 +3783,53 @@ def test_rigid_body_worked_example():
     from vib_tutorial.gui import rigid_body as page
 
     box = Body()
+    sides = (quoted("rigid_body", "0.3"), quoted("rigid_body", "0.2"), quoted("rigid_body", "0.1"))
+    assert (box.mass, box.a, box.b, box.c) == (1.0, *sides)
     w = page.start_rate(box, 1, 6.0, 1.0)
     L = box.inertia() @ w
-    assert [round(v, 4) for v in w] == [0.0, 5.9991, 0.1047] and round(w[1], 3) == 5.999
-    assert (round(L[1], 5), round(L[2], 6), round(float(np.linalg.norm(L)), 5)) == (0.04999, 0.001134, 0.05001)
-    assert round(0.5 * float(w @ L), 4) == 0.15
-    assert round(math.degrees(math.atan(10.83 / 8.333 * math.tan(math.radians(1.0)))), 2) == 1.30
+    assert [round(v, 4) for v in w] == [0.0, 5.9991, quoted("rigid_body", "0.1047")] and round(w[1], 3) == quoted(
+        "rigid_body", "5.999"
+    )
+    assert (round(L[1], 5), round(L[2], 6), round(float(np.linalg.norm(L)), 5)) == (
+        quoted("rigid_body", "0.04999"),
+        quoted("rigid_body", "0.001134"),
+        quoted("rigid_body", "0.05001"),
+    )
+    assert round(0.5 * float(w @ L), 4) == quoted("rigid_body", "0.1500")
+    Ix, Iy = quoted("rigid_body", "8.333"), quoted("rigid_body", "10.83")
+    tilt = math.degrees(math.atan(Iy / Ix * math.tan(math.radians(1.0))))
+    assert round(tilt, 2) == quoted("rigid_body", "1.30")
     apart = math.degrees(math.acos(float(w @ L) / float(np.linalg.norm(w) * np.linalg.norm(L))))
-    assert round(apart, 2) == 0.30
-    off = Body(point=0.3, offset=(0.1, 0.08, 0.0))
+    assert round(apart, 2) == quoted("rigid_body", "0.30")
+    mp, x, y = quoted("rigid_body", "0.3"), quoted("rigid_body", "0.1"), quoted("rigid_body", "0.08")
+    off = Body(point=mp, offset=(x, y, 0.0))
+    assert 1 + mp == quoted("rigid_body", "1.3")
     G = off.centre()
-    assert [round(v * 1000, 1) for v in G[:2]] == [23.1, 18.5] and round(0.3 / 1.3 * 0.08, 5) == 0.01846
+    gx, gy = quoted("rigid_body", "0.02308"), quoted("rigid_body", "0.01846")
+    assert [round(v * 1000, 1) for v in G[:2]] == [
+        quoted("rigid_body", "23.1"),
+        quoted("rigid_body", "18.5"),
+    ] and round(mp / 1.3 * y, 5) == gy
+    assert round(mp / 1.3 * x, 5) == gx
     I = off.inertia()
-    assert round(4.167e-3 + 0.01846**2 + 0.3 * (0.08 - 0.01846) ** 2, 6) == round(I[0, 0], 6) == 0.005644
-    assert round(-0.02308 * 0.01846 - 0.3 * (0.1 - 0.02308) * (0.08 - 0.01846), 6) == round(I[0, 1], 6) == -0.001846
-    assert round(-(0.3 / 1.3) * 0.1 * 0.08, 6) == -0.001846
+    Ixx = round(I[0, 0] * 1e3, 3)
+    assert (
+        round((quoted("rigid_body", "4.167") * 1e-3 + gy**2 + mp * (y - gy) ** 2) * 1e3, 3)
+        == Ixx
+        == quoted("rigid_body", "5.644")
+    )
+    Ixy = round(-I[0, 1] * 1e3, 3)
+    assert round((gx * gy + mp * (x - gx) * (y - gy)) * 1e3, 3) == Ixy == quoted("rigid_body", "1.846")
+    assert round(mp / 1.3 * x * y, 6) == round(Ixy * 1e-3, 6) and round(Ixy * 1e-3, 5) == quoted(
+        "rigid_body", "0.00185"
+    )
     moments, P = off.principal()
-    assert [round(v * 1e3, 3 if v < 0.01 else 2) for v in moments] == [5.036, 11.25, 14.62]
-    assert round(math.degrees(math.atan2(P[1, 0], P[0, 0])), 1) == 18.2
+    assert [round(v * 1e3, 3 if v < 0.01 else 2) for v in moments] == [
+        quoted("rigid_body", "5.036"),
+        quoted("rigid_body", "11.25"),
+        quoted("rigid_body", "14.62"),
+    ]
+    assert round(math.degrees(math.atan2(P[1, 0], P[0, 0])), 1) == quoted("rigid_body", "18.2")
 
 
 def test_rigid_body_drift_numbers():
@@ -3705,7 +3847,16 @@ def test_rigid_body_drift_numbers():
         q0 = rotation.quaternion(rotation.from_euler(*np.radians(t.pose)))
         ends[name] = compare(t.body, w, q0, 10.0, 2 * math.pi / np.linalg.norm(w) / 20)
     d = ends["Step it three ways"]
-    assert (round(d.quaternion[-1], 3), round(d.matrix[-1], 2), round(d.orthogonality[-1], 4)) == (0.047, 0.29, 0.0038)
+    assert (round(d.quaternion[-1], 3), round(d.matrix[-1], 2), round(d.orthogonality[-1], 4)) == (
+        quoted("rigid_body", "0.047"),
+        quoted("rigid_body", "0.29"),
+        quoted("rigid_body", "0.0038"),
+    )
     assert round(d.euler[-1]) == 13 and d.euler[-1] > d.matrix[-1] > d.quaternion[-1]
     d = ends["Euler's rates blow up at the lock"]
-    assert (round(d.quaternion[-1], 3), round(d.euler[-1])) == (0.006, 173)
+    assert (round(d.quaternion[-1], 3), round(d.euler[-1])) == (quoted("rigid_body", "0.006"), 173)
+
+
+if __name__ == "__main__":
+    UNCHECKED.write_text(listing(unchecked_numbers()), encoding="utf-8")
+    print(f"wrote {UNCHECKED}", file=sys.stderr)
