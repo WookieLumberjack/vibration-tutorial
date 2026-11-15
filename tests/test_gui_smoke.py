@@ -4985,8 +4985,51 @@ def test_rigid_body_page(main_window, app):
     assert page.energy_item.yData.max() < 1e-3 and page.momentum_item.yData.max() < 1e-9
     assert "work" in page.check_note.text()
 
-    for shape in range(len(r.SHAPES)):
-        page.shape.setCurrentIndex(shape)
+    for shape in r.SHAPES:
+        page.shape.setCurrentIndex(r.SHAPES.index(shape))
         page.step(0.1)
-        assert page.view.outline.xData is not None and len(page.view.outline.xData) > 10
+        faces = [face for face in page.view.faces if face.isVisible()]
+        if shape is r.Shape.CUBOID:
+            assert 1 <= len(faces) <= 3, "a box shows the faces turned toward the viewer, at most three"
+        elif shape is r.Shape.CYLINDER:
+            assert faces and len(page.view.outline.xData) > 10
+        else:
+            assert not faces and page.view.ball.isVisible() and len(page.view.outline.xData) > 10
     assert not page.side_b.isVisibleTo(page) and not page.side_c.isVisibleTo(page), "a sphere has a radius only"
+
+
+def test_rigid_body_orientation(main_window, app):
+    """The Orientation tab: the gimbal-lock trial says it's locked, and moving φ for ψ leaves the body where it
+    was; a start pose turns the body and keeps ω in its axes; the rates trial runs and writes all four forms."""
+    import numpy as np
+
+    from vib_tutorial.core import rotation
+    from vib_tutorial.gui import rigid_body as r
+
+    w = main_window
+    page = w.rigid_body_page
+    w.pages.setCurrentWidget(page)
+    names = [t.name for t in r.TRIALS]
+    page.load_trial(names.index("Gimbal lock"))
+    page._on_pause(False)
+    assert page.tabs.currentIndex() == r.TAB_ORIENTATION
+    text = page.orient_text.text()
+    assert "Locked" in text and "θ = 0.0°" in text
+    before = rotation.matrix(np.array(page.sim.q))
+    page.pose[0].setValue(30.0)
+    page.pose[2].setValue(10.0)  # φ + ψ still 40°
+    assert np.allclose(rotation.matrix(np.array(page.sim.q)), before), "locked: only φ + ψ counts"
+    page.pose[1].setValue(30.0)
+    assert not np.allclose(rotation.matrix(np.array(page.sim.q)), before)
+
+    page.load_trial(names.index("Euler's rates blow up at the lock"))
+    assert np.allclose(page.sim.body_rate(), r.start_rate(page.body, 0, 2.0, 0.0)), "ω is in the body's axes"
+    page.step(0.1)
+    page._on_pause(False)
+    text = page.orient_text.text()
+    for part in ("Rotation matrix", "Euler's angles", "1/sin θ", "Quaternion", "Homogeneous transform"):
+        assert part in text, part
+    page.point.setValue(0.3)
+    page.offset[0].setValue(100.0)
+    page._draw_orientation()
+    assert "T(p, 1) in space" in page.orient_text.text()

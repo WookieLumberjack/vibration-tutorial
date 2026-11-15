@@ -132,7 +132,8 @@ def _empty() -> Samples:
 
 @dataclass
 class Tumbler:
-    """The body about G, from `omega` (rad/s, in the body's axes) with its axes along space's."""
+    """The body about G, from `omega` (rad/s, in the body's axes), turned by `q` (its axes along space's unless
+    given)."""
 
     body: Body
     omega: tuple[float, float, float]
@@ -147,8 +148,9 @@ class Tumbler:
     def __post_init__(self) -> None:
         self.I = self.body.inertia()
         self.I_inv = np.linalg.inv(self.I)
-        if not self.L:
-            self.L = [float(v) for v in self.I @ np.asarray(self.omega, dtype=float)]
+        if not self.L:  # L in space: B I ω, ω in the body's axes
+            B = rotation.matrix(np.asarray(self.q, dtype=float))
+            self.L = [float(v) for v in B @ (self.I @ np.asarray(self.omega, dtype=float))]
 
     def kick(self, duration: float) -> None:
         """Apply the torque from now for `duration` s."""

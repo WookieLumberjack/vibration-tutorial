@@ -139,3 +139,11 @@ def test_a_snapshot_of_the_tumbling_body():
         s.t, B, np.einsum("ji,njk->nik", P, B), s.momentum, s.torque, I, rotation.Turning.BODY, 10
     )
     assert np.allclose(principal.inertia, np.diag(np.diag(principal.inertia)), atol=1e-12)
+
+
+def test_a_start_turned_away_keeps_omega_in_the_body():
+    """Started turned by q, ω is still the one asked for in the body's axes, and L = B I ω in space."""
+    q = rotation.quaternion(rotation.from_euler(0.4, 1.0, -0.3))
+    tm = Tumbler(BOX, (1.0, 2.0, 3.0), q=list(q))
+    assert np.allclose(tm.body_rate(), [1.0, 2.0, 3.0])
+    assert np.allclose(tm.L, rotation.matrix(q) @ (BOX.inertia() @ [1.0, 2.0, 3.0]))
