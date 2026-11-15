@@ -77,6 +77,7 @@ class SubstructureSchematic(pg.PlotWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setAccessibleName("The substructures and their interfaces")
         self.setMenuEnabled(False)
         self.setMouseEnabled(x=False, y=False)
         self.hideButtons()

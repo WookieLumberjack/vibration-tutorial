@@ -929,6 +929,7 @@ class TopView(pg.PlotWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setAccessibleName("The top in 3D")
         self.setToolTip(VIEW_TIP)
         self.setAspectLocked(True)
         for side in ("left", "bottom"):
@@ -1418,6 +1419,7 @@ class GyroscopePage(QtWidgets.QWidget):
 
         self.path_plot = plot("", None, "", None, height=260)
         self.path_plot.setToolTip(PATH_TIP)
+        self.path_plot.setAccessibleName("The end of the axis, seen from above")
         self.path_plot.setAspectLocked(True)
         self.path_circles = pg.PlotDataItem(connect="finite")
         self.path_item = pg.PlotDataItem()

@@ -1316,6 +1316,7 @@ class Properties(QtWidgets.QGroupBox):
         self.member_info = note_label()
         m.row(self.member_info)
         self.parts = QtWidgets.QSpinBox()
+        self.parts.setAccessibleName("Divide into parts")
         self.parts.setRange(2, 16)
         self.parts.setValue(2)
         self.divide = QtWidgets.QPushButton("Divide")

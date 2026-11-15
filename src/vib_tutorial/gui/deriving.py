@@ -758,6 +758,7 @@ class CarView(pg.PlotWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setAccessibleName("The car on its springs")
         self.setMenuEnabled(False)
         self.hideButtons()
         self.setAspectLocked(True)

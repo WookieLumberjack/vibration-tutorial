@@ -76,6 +76,8 @@ class ExtractionControls(QtWidgets.QGroupBox):
         )
         for w in (self.lo, self.hi):
             w.setToolTip(band_tip)
+        self.lo.setAccessibleName("Fit band from")
+        self.hi.setAccessibleName("Fit band to")
         form.addRow("Fit band:", band_row)
         self.order = QtWidgets.QSpinBox()
         self.order.setRange(4, 80)
@@ -87,6 +89,7 @@ class ExtractionControls(QtWidgets.QGroupBox):
         )
         self.order_label = QtWidgets.QLabel("Max model order:")
         form.addRow(self.order_label, self.order)
+        self.order_label.setBuddy(self.order)
         self.auto = QtWidgets.QPushButton("Auto-select poles")
         self.auto.setToolTip(
             "Pick one pole from each column of the diagram that stays stable over "

@@ -149,6 +149,7 @@ class TestSetup(QtWidgets.QWidget):
         level_row = QtWidgets.QHBoxLayout()
         self.force_level = spin(1.0, 10000.0, 100.0, 0, " %")
         self.force_level.setToolTip(FORCE_LEVEL_TIP)
+        self.force_level.setAccessibleName("Force level")
         self.force_level_info = QtWidgets.QLabel()
         mute(self.force_level_info)
         level_row.addWidget(self.force_level, 1)
@@ -163,10 +164,12 @@ class TestSetup(QtWidgets.QWidget):
         )
         self.tip_label = QtWidgets.QLabel("Hammer pulse τₚ:")
         form.addRow(self.tip_label, self.tip)
+        self.tip_label.setBuddy(self.tip)
         self.burst = spin(5.0, 100.0, 50.0, 0, " %")
         self.burst.setToolTip("How much of each block the shaker is on. The rest lets the response die away.")
         self.burst_label = QtWidgets.QLabel("Burst length:")
         form.addRow(self.burst_label, self.burst)
+        self.burst_label.setBuddy(self.burst)
         self.overlap = QtWidgets.QComboBox()
         for o in OVERLAPS:
             self.overlap.addItem(f"{o:.0%}", o)
@@ -178,6 +181,7 @@ class TestSetup(QtWidgets.QWidget):
         )
         self.overlap_label = QtWidgets.QLabel("Block overlap:")
         form.addRow(self.overlap_label, self.overlap)
+        self.overlap_label.setBuddy(self.overlap)
         self.points = QtWidgets.QSpinBox()
         self.points.setRange(10, 400)
         self.points.setValue(100)
@@ -185,6 +189,7 @@ class TestSetup(QtWidgets.QWidget):
         self.points.setToolTip("Frequencies measured, evenly spaced up to the band edge.")
         self.points_label = QtWidgets.QLabel("Frequencies:")
         form.addRow(self.points_label, self.points)
+        self.points_label.setBuddy(self.points)
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
@@ -206,6 +211,7 @@ class TestSetup(QtWidgets.QWidget):
             "Follow the chain: choose fs so the highest mode is well inside "
             f"the anti-alias passband ({AA_CUTOFF:.0%} of Nyquist)."
         )
+        self.fs.setAccessibleName("Sample rate fs")
         fs_row.addWidget(self.fs, 1)
         fs_row.addWidget(self.fs_auto)
         form.addRow("Sample rate fs:", fs_row)
@@ -219,6 +225,7 @@ class TestSetup(QtWidgets.QWidget):
         )
         self.block_label = QtWidgets.QLabel("Block size Nb:")
         form.addRow(self.block_label, self.block)
+        self.block_label.setBuddy(self.block)
         self.averages = QtWidgets.QSpinBox()
         self.averages.setRange(1, 100)
         self.averages.setValue(10)
@@ -226,6 +233,7 @@ class TestSetup(QtWidgets.QWidget):
         self.averages.setToolTip("Blocks averaged. Noise in the estimate falls as 1/√(averages).")
         self.averages_label = QtWidgets.QLabel("Averages:")
         form.addRow(self.averages_label, self.averages)
+        self.averages_label.setBuddy(self.averages)
         self.anti_alias = QtWidgets.QCheckBox("Anti-alias filter")
         self.anti_alias.setChecked(True)
         self.anti_alias.setToolTip(
@@ -276,6 +284,7 @@ class TestSetup(QtWidgets.QWidget):
         )
         self.exp_label = QtWidgets.QLabel("Exponential at block end:")
         form.addRow(self.exp_label, self.exp_end)
+        self.exp_label.setBuddy(self.exp_end)
         self.estimator_combo = QtWidgets.QComboBox()
         for estimator in Estimator:
             self.estimator_combo.addItem(estimator.value, estimator)

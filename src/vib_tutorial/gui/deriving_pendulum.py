@@ -172,6 +172,7 @@ class PendulumView(pg.PlotWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setAccessibleName("The double pendulum")
         self.setMenuEnabled(False)
         self.hideButtons()
         self.setAspectLocked(True)

@@ -1099,6 +1099,7 @@ class WhirlView(pg.PlotWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setAccessibleName("The whirl shape along the shaft")
         self.setToolTip(WHIRL_TIP)
         self.setAspectLocked(True)
         for side in ("left", "bottom"):

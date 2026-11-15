@@ -423,6 +423,7 @@ class CouplingSchematic(pg.PlotWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setAccessibleName("The two subsystems and their coupling")
         self.setMenuEnabled(False)
         self.setMouseEnabled(x=False, y=False)
         self.hideButtons()
@@ -579,6 +580,7 @@ class VeeringPlot(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.kind = QtWidgets.QComboBox()
+        self.kind.setAccessibleName("Sweep")
         for k in SWEEPS:
             self.kind.addItem(SWEEP_NAMES[k], k)
         self.kind.setToolTip(SWEEP_TIP)
@@ -787,6 +789,7 @@ class DrivePointFrf(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.point = QtWidgets.QComboBox()
+        self.point.setAccessibleName("Force and response at")
         for p in FRF_POINTS:
             self.point.addItem(FRF_POINT_NAMES[p], p)
         self.point.setToolTip(FRF_POINT_TIP)
@@ -906,6 +909,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.mode_a = QtWidgets.QComboBox()
         self.mode_b = QtWidgets.QComboBox()
         for s, combo in enumerate((self.mode_a, self.mode_b)):
+            combo.setAccessibleName(f"{'AB'[s]}'s mode")
             combo.setToolTip(
                 "The mode of this subsystem that becomes its oscillator. Or click its row in the table below."
             )
@@ -914,6 +918,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         form.addRow(self.mode_labels[0], self.mode_a)
         form.addRow(self.mode_labels[1], self.mode_b)
         self.a_mass = QtWidgets.QComboBox()
+        self.a_mass.setAccessibleName("Mass of A's oscillator")
         for key in A_MASSES:
             self.a_mass.addItem(A_MASS_NAMES[key][0].upper() + A_MASS_NAMES[key][1:], key)
         self.a_mass.setToolTip(A_MASS_TIP)

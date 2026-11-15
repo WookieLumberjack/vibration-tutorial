@@ -433,6 +433,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         mode_box = QtWidgets.QGroupBox("Mode")
         form = form_layout(mode_box)
         self.mode = QtWidgets.QComboBox()
+        self.mode.setAccessibleName("Mode shown")
         self.mode.setToolTip(TIPS["mode"])
         label = QtWidgets.QLabel("Show:")
         label.setToolTip(TIPS["mode"])
@@ -481,6 +482,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
         # --- right: the FRF, the free decay, the phase scatter, the notes
         self.frf_in = QtWidgets.QComboBox()
+        self.frf_in.setAccessibleName("Force on")
         self.frf_out = QtWidgets.QComboBox()
         for b in (self.frf_in, self.frf_out):
             b.setToolTip(TIPS["frf"])

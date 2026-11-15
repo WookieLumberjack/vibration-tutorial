@@ -93,6 +93,7 @@ class ChainView(pg.PlotWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None, draggable: bool = True) -> None:
         super().__init__(parent)
+        self.setAccessibleName("The chain of masses, moving")
         self.draggable = draggable
         if draggable:
             self.setToolTip(DRAG_TIP)
