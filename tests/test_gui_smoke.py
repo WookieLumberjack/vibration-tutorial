@@ -1948,11 +1948,11 @@ def test_rotor_page(app):
     p.ramp.setValue(500.0)
 
     # Off centre, anisotropic, different bearings: the panels describe it and the analysis follows.
-    p.position.setValue(0.3)
-    p.isotropic.setChecked(False)
-    p.bearing_rows[0][1].setValue(8e4)
-    p.same_bearings.setChecked(False)
-    p.bearing_rows[1][0].setValue(3e4)
+    p.editor.position.setValue(0.3)
+    p.editor.isotropic.setChecked(False)
+    p.editor.bearing_rows[0][1].setValue(8e4)
+    p.editor.same_bearings.setChecked(False)
+    p.editor.bearing_rows[1][0].setValue(3e4)
     s = p.sim.system
     assert s.position == 0.3 and s.bearing_a.ky == 8e4 and s.bearing_b.kx == 3e4 and s.bearing_b.ky == 8e4
     assert p.orbits.plots[2].isVisible()
@@ -1987,7 +1987,7 @@ def test_rotor_page(app):
         skew_angle=math.radians(-90.0),
     )
     p.set_system(system)
-    assert p.sim.system == system and not p.isotropic.isChecked() and p.same_bearings.isChecked()
+    assert p.sim.system == system and not p.editor.isotropic.isChecked() and p.editor.same_bearings.isChecked()
     p.reset()
     assert p.sim.t == 0.0 and p.history.size == 0
     assert p.sim.q[1] == pytest.approx(30e-6 * math.cos(math.radians(45.0)))  # at rest in its bowed shape
@@ -1998,9 +1998,9 @@ def test_rotor_page(app):
     # Gravity: the rotor rests sagged and whirls about the sag; unticking Static sag draws the vibration.
     p.set_system(RotorSystem())
     assert not p.show_sag.isEnabled()
-    p.gravity.setChecked(True)
+    p.editor.gravity.setChecked(True)
     assert p.sim.system.gravity == pytest.approx(9.81) and p.show_sag.isEnabled()
-    assert "Static sag at rest: disc 378 µm" in p.shaft_note.text()
+    assert "Static sag at rest: disc 378 µm" in p.editor.shaft_note.text()
     p.reset()
     sag = p.sim.system.static_deflection()
     np.testing.assert_allclose(p.sim.q, sag)
@@ -2014,7 +2014,7 @@ def test_rotor_page(app):
     disc = p.orbits.trails[1].getData()
     assert abs(np.mean(disc[1])) < 0.1 * abs(sag[5])
     assert "about its sag" in p.readout.text()
-    p.gravity.setChecked(False)
+    p.editor.gravity.setChecked(False)
     assert not p.show_sag.isEnabled()
 
     # Balancing: a hidden unbalance, found in four measured steps and cancelled by one weight.
@@ -2023,7 +2023,7 @@ def test_rotor_page(app):
     b._rng = np.random.default_rng(3)
     b.new_mystery()
     hidden_u = p.sim.system.mass_unbalance
-    assert p.unbalance.text() == "hidden" and not p.unbalance.isEnabled() and not p.view.show_heavy
+    assert p.editor.unbalance.text() == "hidden" and not p.editor.unbalance.isEnabled() and not p.view.show_heavy
     p.tabs.show_page(p.matrices)
     p._refresh_matrices()
     assert "hidden" in p.matrices.toPlainText() and f"{abs(hidden_u) * 1e6:.4g} g·mm" not in p.matrices.toPlainText()
@@ -2045,7 +2045,7 @@ def test_rotor_page(app):
     b.station.setCurrentIndex(1)  # the readings are kept at every station: switch the probe after
     assert abs(b.reading("verify")) < 0.02 * abs(b.reading("found"))
     p.reveal_unbalance()
-    assert p.unbalance.isEnabled() and p.unbalance.value() == pytest.approx(abs(hidden_u) * 1e6, abs=0.05)
+    assert p.editor.unbalance.isEnabled() and p.editor.unbalance.value() == pytest.approx(abs(hidden_u) * 1e6, abs=0.05)
     assert p.view.show_heavy and b.show_heavy.isChecked()
     b.remove_weights()
     assert p.sim.system.weights == () and b.reading("found") is None
@@ -2055,7 +2055,7 @@ def test_rotor_page(app):
     assert len(b.step_buttons) == 5 and b.station2.isVisible() == b.station.isVisible()
     b.new_mystery()
     hidden = p.sim.system
-    assert hidden.skew > 0 and p.skew.text() == "hidden" and not p.skew.isEnabled()
+    assert hidden.skew > 0 and p.editor.skew.text() == "hidden" and not p.editor.skew.isEnabled()
     p.tabs.show_page(p.matrices)
     p._refresh_matrices()
     assert "skew τ (hidden)" in p.matrices.toPlainText()
@@ -2076,7 +2076,7 @@ def test_rotor_page(app):
     assert np.all(np.abs(b.readings("verify") - slow) < 0.03 * np.abs(b.readings("found") - slow))
     assert "influence matrix" in b.results.text().lower() and "W<sub>c2</sub>" in b.results.text()
     p.reveal_unbalance()
-    assert p.skew.isEnabled() and p.skew.value() == pytest.approx(math.degrees(hidden.skew), abs=1e-3)
+    assert p.editor.skew.isEnabled() and p.editor.skew.value() == pytest.approx(math.degrees(hidden.skew), abs=1e-3)
     # The planes changed: the trial runs no longer apply.
     b.mode.setCurrentIndex(2)
     assert b.reading("trial") is None and b.reading("found") is not None
@@ -2094,7 +2094,7 @@ def test_rotor_page(app):
     # diagram and the stability map; past it a tap grows at the natural frequency until it pauses.
     p.set_system(RotorSystem())
     assert "stable up to 10,000 rpm" in p.crit_label.text() and not p.campbell_plot.onset_line.isVisible()
-    p.internal_damping.setValue(20.0)
+    p.editor.internal_damping.setValue(20.0)
     p._refresh_analysis()
     assert p.sim.system.internal_damping == 20.0
     assert "unstable above 3,910 rpm" in p.crit_label.text() and "3,910 rpm" in p.stability_note.text()
@@ -2120,7 +2120,7 @@ def test_rotor_page(app):
     p.reset()
     assert not p.rubbed
     # The cross-coupling goes through the panels and round-trips.
-    p.bearing_rows[0][5].setValue(1.5e4)
+    p.editor.bearing_rows[0][5].setValue(1.5e4)
     assert p.sim.system.bearing_a.kxy == 1.5e4 and p.sim.system.bearing_b.kxy == 1.5e4  # B same as A
     system = RotorSystem(bearing_a=Bearing(kxy=-2e3), bearing_b=Bearing(kxy=5e3), internal_damping=7.5)
     p.set_system(system)
@@ -2156,21 +2156,21 @@ def test_rotor_presets_speed_range_and_overhung_disc(app):
     # The overhung rotor: the disc past bearing B, drawn beyond it; one forward critical.
     p.load_preset("Overhung rotor")
     p._refresh_analysis()
-    assert p.sim.system.overhung and "3EI/(c²(L + c))" in p.shaft_note.text()
+    assert p.sim.system.overhung and "3EI/(c²(L + c))" in p.editor.shaft_note.text()
     assert "1,284 rpm" in p.crit_label.text()
     disc, bearing_b = p.view._z(p.sim.system.a), p.view._z(p.sim.system.length)
     assert disc > bearing_b and disc == pytest.approx(2.0)  # the overhang's end is the shaft's end
     p.tabs.show_page(p.matrices)
     assert "overhang" in p.matrices.toHtml()
     # Editing a parameter makes it the user's own rotor.
-    p.disc_mass.setValue(2.0)
+    p.editor.disc_mass.setValue(2.0)
     assert p.preset.currentText() == CUSTOM
 
     # The position steps over the bearings, and a typed value on one is moved off it.
     p.set_system(RotorSystem(position=0.95))
-    p.position.stepBy(1)
-    assert p.position.value() == pytest.approx(1.05) and p.sim.system.position == pytest.approx(1.05)
-    p.position.setValue(0.0)
+    p.editor.position.stepBy(1)
+    assert p.editor.position.value() == pytest.approx(1.05) and p.sim.system.position == pytest.approx(1.05)
+    p.editor.position.setValue(0.0)
     assert p.sim.system.position == pytest.approx(0.02)
 
     # The speed range: the controls and the analysis follow it, and a target above it comes down.
@@ -2191,7 +2191,7 @@ def test_rotor_presets_speed_range_and_overhung_disc(app):
     assert x[-1] == 30_000.0 and y[-1] == pytest.approx(0.5 * 30_000.0 / 60.0)
 
     # The swirl ratio goes through the panel (B follows A) and onto the stability note.
-    p.bearing_rows[0][6].setValue(0.5)
+    p.editor.bearing_rows[0][6].setValue(0.5)
     assert p.sim.system.bearing_a.swirl == 0.5 == p.sim.system.bearing_b.swirl
     p._refresh_analysis()
     assert "swirl λ = 0.5" in p.stability_note.text() and "unstable above" in p.stability_note.text()
@@ -2245,7 +2245,7 @@ def test_rotor_waterfall(app):
     assert not p.waterfall.blocks and p.waterfall.block == 0.25
     p.step(0.5)
     assert p.waterfall.blocks
-    p.disc_mass.setValue(2.0)
+    p.editor.disc_mass.setValue(2.0)
     assert not p.waterfall.blocks and p.waterfall.system.disc_mass == 2.0
     p.step(0.5)
     p.reset()
@@ -2262,15 +2262,15 @@ def test_rotor_shaft_mass(app):
     p.loop.timer.stop()
     p.running = False
     p._refresh_analysis()
-    assert not p.elements.isEnabled() and not p.campbell_plot.reference[0:1]
+    assert not p.editor.elements.isEnabled() and not p.campbell_plot.reference[0:1]
     p.set_target_rpm(1500.0)
     p.step(0.2)
     # Ticked: the shaft has mass, the stations keep their motion and the massless model is drawn dashed.
-    p.shaft_mass.setChecked(True)
+    p.editor.shaft_mass.setChecked(True)
     p._refresh_analysis()
     s = p.sim.system
     assert s.density == 7850.0 and s.n_dof > 8 and p.sim.q.size == s.n_dof
-    assert p.elements.isEnabled() and "Shaft 0.308 kg" in p.shaft_note.text()
+    assert p.editor.elements.isEnabled() and "Shaft 0.308 kg" in p.editor.shaft_note.text()
     assert any(line.isVisible() for line in p.campbell_plot.reference)
     assert "With a massless shaft (the Jeffcott model, dashed): 1,584 rpm" in p.crit_label.text()
     assert "1,458 rpm" in p.crit_label.text()
@@ -2281,23 +2281,23 @@ def test_rotor_shaft_mass(app):
     text = p.matrices.toPlainText()
     assert "ξ" in html and "Craig–Bampton" in text and f"A is {2 * s.n_dof} × {2 * s.n_dof}" in text
     assert f"modal coordinates ξ, {s.modes_kept} in each plane" in text
-    p.mass_matrix.setCurrentIndex(1)
+    p.editor.mass_matrix.setCurrentIndex(1)
     assert p.sim.system.lumped
-    p.elements.setValue(4)
+    p.editor.elements.setValue(4)
     assert p.sim.system.nodes.size == 5
     w.set_theme("Dark")
     # The preset, and back to a massless shaft: whatever the mesh, the classic preset again.
     p.load_preset("Long shaft, with its mass")
-    assert p.shaft_mass.isChecked() and p.elements.value() == 8 and p.mass_matrix.currentIndex() == 0
+    assert p.editor.shaft_mass.isChecked() and p.editor.elements.value() == 8 and p.editor.mass_matrix.currentIndex() == 0
     p.step(0.2)
     p.load_preset("Classic Jeffcott rotor")
-    assert not p.shaft_mass.isChecked() and p.sim.q.size == 8
-    p.elements.setValue(12)
+    assert not p.editor.shaft_mass.isChecked() and p.sim.q.size == 8
+    p.editor.elements.setValue(12)
     assert p.preset.currentText() == "Classic Jeffcott rotor"
     p._refresh_analysis()
     assert not any(line.isVisible() for line in p.campbell_plot.reference)
     p.set_system(RotorSystem(density=2700.0, elements=6, lumped=True))
-    assert p.density.value() == 2700.0 and p.elements.value() == 6 and p.mass_matrix.currentIndex() == 1
+    assert p.editor.density.value() == 2700.0 and p.editor.elements.value() == 6 and p.editor.mass_matrix.currentIndex() == 1
 
 
 def test_rotor_asymmetric_shaft(app):
@@ -2312,8 +2312,8 @@ def test_rotor_asymmetric_shaft(app):
     p.load_preset("Two-pole rotor (asymmetric shaft)")
     p._refresh_analysis()
     s = p.sim.system
-    assert s.asymmetry == pytest.approx(0.15) and p.asymmetry.value() == pytest.approx(15.0)
-    assert "Asymmetric: EI" in p.shaft_note.text()
+    assert s.asymmetry == pytest.approx(0.15) and p.editor.asymmetry.value() == pytest.approx(15.0)
+    assert "Asymmetric: EI" in p.editor.shaft_note.text()
     assert "unstable from 1,527 to 1,631 rpm" in p.crit_label.text()
     assert "1,491 rpm" in p.crit_label.text() and "1,665 rpm" in p.crit_label.text()
     assert p.campbell_plot.end_line.isVisible() and p.stability_map.end_line.isVisible()
@@ -2345,14 +2345,14 @@ def test_rotor_asymmetric_shaft(app):
     for _ in range(5):
         p._draw()
     assert chart._next > 0 and "Working it out" in p.stability_note.text()
-    p.asymmetry.setValue(10.0)  # only the asymmetry: the same chart
+    p.editor.asymmetry.setValue(10.0)  # only the asymmetry: the same chart
     p._refresh_analysis()
     p._draw()
     assert p.asym_chart is chart and p.asymmetry_plot.here[1] == pytest.approx(0.1)
     chart.run()
     p._draw()
     assert p.asymmetry_plot.drawn == chart.growth.size and "Working it out" not in p.stability_note.text()
-    p.disc_mass.setValue(1.2)  # a new rotor: a new chart
+    p.editor.disc_mass.setValue(1.2)  # a new rotor: a new chart
     p._refresh_analysis()
     assert p.asym_chart is not chart
     w.set_theme("Dark")
@@ -2366,7 +2366,7 @@ def test_rotor_asymmetric_shaft(app):
     p.set_system(RotorSystem())
     p._refresh_analysis()
     p._draw()
-    assert p.asymmetry.value() == 0.0 and not len(p.view.stiff_axis.getData()[0])
+    assert p.editor.asymmetry.value() == 0.0 and not len(p.view.stiff_axis.getData()[0])
     assert p.probe_order.currentIndex() == 1
     assert "nothing drives 2X on a round shaft" in p.sweep_summary.text()
 
@@ -2384,8 +2384,8 @@ def test_rotor_cracked_shaft(app):
     p._refresh_analysis()
     s = p.sim.system
     assert p.preset.currentText() == "Cracked shaft (breathing crack)"
-    assert s.crack.depth == pytest.approx(0.4) and s.crack.breathing and p.crack_depth.value() == pytest.approx(40.0)
-    assert "Crack 40% deep" in p.shaft_note.text() and "opened by the weight" in p.shaft_note.text()
+    assert s.crack.depth == pytest.approx(0.4) and s.crack.breathing and p.editor.crack_depth.value() == pytest.approx(40.0)
+    assert "Crack 40% deep" in p.editor.shaft_note.text() and "opened by the weight" in p.editor.shaft_note.text()
     assert "1,562 rpm" in p.crit_label.text() and "1,574 rpm" in p.crit_label.text()
     # The Bode plot tracks 3X: the weight drives it most near a third of the critical speed.
     p.probe_direction.setCurrentIndex(2)
@@ -2417,20 +2417,20 @@ def test_rotor_cracked_shaft(app):
     text = p.matrices.toPlainText()
     assert "The crack" in text and "It breathes" in text and "Floquet" in text
     # Held open: a softened asymmetric shaft, no 3X.
-    p.crack_breathing.setChecked(False)
+    p.editor.crack_breathing.setChecked(False)
     p._refresh_analysis()
     assert not p.sim.system.crack.breathing and p.sim.system.spacing == 2
     assert "nothing drives 3X on an asymmetric shaft" in p.sweep_summary.text()
     # A vertical rotor: nothing opens a breathing crack.
-    p.crack_breathing.setChecked(True)
-    p.gravity.setChecked(False)
+    p.editor.crack_breathing.setChecked(True)
+    p.editor.gravity.setChecked(False)
     p._refresh_analysis()
-    assert not p.sim.system.periodic and "but shut" in p.shaft_note.text()
+    assert not p.sim.system.periodic and "but shut" in p.editor.shaft_note.text()
     # A crack is kept inside the shaft, and depth 0 takes it away.
-    p.crack_position.setValue(1.5)
+    p.editor.crack_position.setValue(1.5)
     assert p.sim.system.crack.position < 1.0
-    p.crack_depth.setValue(0.0)
-    assert p.sim.system.crack is None and not p.crack_angle.isEnabled()
+    p.editor.crack_depth.setValue(0.0)
+    assert p.sim.system.crack is None and not p.editor.crack_angle.isEnabled()
     p.set_system(RotorSystem())
     p._refresh_analysis()
     p._draw()
@@ -2639,7 +2639,8 @@ def test_rotor_on_oil_film_bearings(app):
     from vib_tutorial.core.fluid_bearing import JournalBearing
     from vib_tutorial.core.rotor_simulator import RPM
     from vib_tutorial.gui.main_window import MainWindow
-    from vib_tutorial.gui.rotor import CUSTOM, FILMS, SPRINGS
+    from vib_tutorial.gui.rotor import CUSTOM
+    from vib_tutorial.gui.rotor_editor import FILMS, SPRINGS
 
     w = MainWindow()
     p = w.rotor_page
@@ -2651,9 +2652,9 @@ def test_rotor_on_oil_film_bearings(app):
     p.load_preset("Journal bearings (oil whip)")
     p._refresh_analysis()
     s = p.sim.system
-    assert s.films and p.supports.currentIndex() == FILMS and p.preset.currentText() == "Journal bearings (oil whip)"
-    assert s.whole_films and p.nonlinear_film.isChecked() and p.nonlinear_film.isEnabled()
-    row = p.bearing_rows[0]
+    assert s.films and p.editor.supports.currentIndex() == FILMS and p.preset.currentText() == "Journal bearings (oil whip)"
+    assert s.whole_films and p.editor.nonlinear_film.isChecked() and p.editor.nonlinear_film.isEnabled()
+    row = p.editor.bearing_rows[0]
     assert row[4].isEnabled() and not any(row[c].isEnabled() for c in (0, 1, 2, 3, 5, 6))
     assert panel.loads == s.bearing_loads and not panel.load.isEnabled() and panel.which.isVisibleTo(panel)
     assert panel.load.value() == pytest.approx(abs(s.bearing_loads[0]), abs=0.01)
@@ -2676,7 +2677,7 @@ def test_rotor_on_oil_film_bearings(app):
     p.step(0.1, budget=0.004)
     assert 0.0 < p.sim.t - t0 <= 0.004 + 1e-3
     # Linearized, past the onset the whirl grows until a journal reaches its clearance, and the page pauses.
-    p.nonlinear_film.setChecked(False)
+    p.editor.nonlinear_film.setChecked(False)
     assert not p.sim.system.whole_films and p.sim.system.films
     p.reset()
     p.running = True
@@ -2689,15 +2690,15 @@ def test_rotor_on_oil_film_bearings(app):
     assert p.rubbed and p.touched is not None and p.touched[1] == pytest.approx(15e-6)
     assert "reached the wall of its bearing" in p.readout.text() and "Nonlinear film" in p.readout.text()
     # A turning shaft keeps the films linear.
-    p.nonlinear_film.setChecked(True)
-    p.asymmetry.setValue(5.0)
-    assert not p.nonlinear_film.isEnabled() and not p.sim.system.whole_films
-    p.asymmetry.setValue(0.0)
-    assert p.nonlinear_film.isEnabled() and p.sim.system.whole_films
+    p.editor.nonlinear_film.setChecked(True)
+    p.editor.asymmetry.setValue(5.0)
+    assert not p.editor.nonlinear_film.isEnabled() and not p.sim.system.whole_films
+    p.editor.asymmetry.setValue(0.0)
+    assert p.editor.nonlinear_film.isEnabled() and p.sim.system.whole_films
     # Unticked, the rotor is back on its springs and the tab has its own load again.
-    p.supports.setCurrentIndex(SPRINGS)
+    p.editor.supports.setCurrentIndex(SPRINGS)
     assert not p.sim.system.films and panel.loads is None and panel.load.isEnabled()
-    assert not p.nonlinear_film.isEnabled() and not p.nonlinear_film.isVisibleTo(p)
+    assert not p.editor.nonlinear_film.isEnabled() and not p.editor.nonlinear_film.isVisibleTo(p)
     assert all(row[c].isEnabled() for c in (0, 2, 4, 5, 6))  # (k_y and c_y follow k_x and c_x: isotropic)
     w.set_theme("Dark")
 
@@ -2709,7 +2710,8 @@ def test_rotor_on_magnetic_bearings(app):
     from vib_tutorial.core.rotor import XA, XB, YA, YB
     from vib_tutorial.core.rotor_simulator import RPM
     from vib_tutorial.gui.main_window import MainWindow
-    from vib_tutorial.gui.rotor import CUSTOM, MAGNETS, SPRINGS
+    from vib_tutorial.gui.rotor import CUSTOM
+    from vib_tutorial.gui.rotor_editor import MAGNETS, SPRINGS
     from vib_tutorial.gui.rotor_notes import matrices_html
 
     w = MainWindow()
@@ -2727,10 +2729,10 @@ def test_rotor_on_magnetic_bearings(app):
     p.load_preset("Magnetic bearings")
     p._refresh_analysis()
     s = p.sim.system
-    assert s.magnets and p.supports.currentIndex() == MAGNETS and p.preset.currentText() == "Magnetic bearings"
+    assert s.magnets and p.editor.supports.currentIndex() == MAGNETS and p.preset.currentText() == "Magnetic bearings"
     assert panel.bearing() == s.bearing_a.magnet and panel.amplifier.value() == 400.0
-    assert not p.nonlinear_film.isVisibleTo(p)
-    row = p.bearing_rows[0]
+    assert not p.editor.nonlinear_film.isVisibleTo(p)
+    row = p.editor.bearing_rows[0]
     assert row[4].isEnabled() and not any(row[c].isEnabled() for c in (0, 1, 2, 3, 5, 6))
     assert abs(p.sim.q[[XA, YA, XB, YB]]).max() < 1e-12 and p.sim.control.size == s.n_control
     assert panel.onset is not None and round(panel.onset.omega * RPM) == 8894
@@ -2770,7 +2772,7 @@ def test_rotor_on_magnetic_bearings(app):
     assert p.rubbed and p.touched is not None and p.touched[1] == pytest.approx(0.5e-3)
     assert "landed on its backup bearing" in p.readout.text()
     # Back on springs: the tab forgets the rotor.
-    p.supports.setCurrentIndex(SPRINGS)
+    p.editor.supports.setCurrentIndex(SPRINGS)
     assert not p.sim.system.magnets and panel.system is None and p.sim.control.size == 0
     assert all(row[c].isEnabled() for c in (0, 2, 4, 5, 6))
     w.set_theme("Dark")
@@ -2779,7 +2781,8 @@ def test_rotor_on_magnetic_bearings(app):
 def test_rotor_rub(app):
     from vib_tutorial.core.rotor import Stator
     from vib_tutorial.gui.main_window import MainWindow
-    from vib_tutorial.gui.rotor import CUSTOM, FILMS, PUSH
+    from vib_tutorial.gui.rotor import CUSTOM, PUSH
+    from vib_tutorial.gui.rotor_editor import FILMS
 
     w = MainWindow()
     p = w.rotor_page
@@ -2794,13 +2797,13 @@ def test_rotor_rub(app):
     panel.friction.setValue(0.2)
     assert p.sim.system.stator.friction == 0.2
     # A turning shaft, or the oil films' whole force, can't have one.
-    p.asymmetry.setValue(10.0)
+    p.editor.asymmetry.setValue(10.0)
     assert p.sim.system.stator is None and not panel.enabled.isEnabled()
-    p.asymmetry.setValue(0.0)
+    p.editor.asymmetry.setValue(0.0)
     assert p.sim.system.stator is not None
-    p.supports.setCurrentIndex(FILMS)
-    assert p.nonlinear_film.isChecked() and p.sim.system.stator is None
-    p.nonlinear_film.setChecked(False)
+    p.editor.supports.setCurrentIndex(FILMS)
+    assert p.editor.nonlinear_film.isChecked() and p.sim.system.stator is None
+    p.editor.nonlinear_film.setChecked(False)
     assert p.sim.system.stator is not None and p.sim.system.films
     # The preset: rubbing under the sag; the push plotted while the tab shows.
     p.load_preset("Partial rub (½X)")
@@ -2921,7 +2924,7 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
         for _ in range(3):
             app.processEvents()
         page = w.pages.currentWidget()
-        QTest.mouseClick(page.gravity, QtCore.Qt.MouseButton.LeftButton, pos=QtCore.QPoint(8, 8))
+        QTest.mouseClick(page.editor.gravity, QtCore.Qt.MouseButton.LeftButton, pos=QtCore.QPoint(8, 8))
         app.processEvents()
         w.frame_overlay.refresh()
         rows = list(csv.DictReader(log.open(encoding="utf-8")))
@@ -2935,7 +2938,7 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
         assert views[-1]["detail"].startswith("Beyond the chain > Jeffcott rotor > [Custom] > ")
         # A combo alone in its group is named by its tooltip, not by a label outside the group;
         # scrolling a panel isn't an input.
-        assert frame_stats.describe_input(page.supports, "click") == ("What holds the journals", "Springs and dampers")
+        assert frame_stats.describe_input(page.editor.supports, "click") == ("What holds the journals", "Springs and dampers")
         bars = w.findChildren(QtWidgets.QScrollBar)
         assert bars and all(w.frame_overlay.inputs._control(b) is None for b in bars)
     finally:
@@ -3140,7 +3143,7 @@ def test_rotor_analysis_runs_in_the_worker(app, monkeypatch):
     assert p.campbell.criticals == analyse(p.sim.system, p.top_rpm).campbell.criticals
     assert "1,584 rpm" in p.crit_label.text()
 
-    p.gravity.setChecked(not p.gravity.isChecked())
+    p.editor.gravity.setChecked(not p.editor.gravity.isChecked())
     shown = p.campbell
     settle()
     assert p.campbell is not shown
@@ -3150,11 +3153,11 @@ def test_rotor_analysis_runs_in_the_worker(app, monkeypatch):
 
     # Superseded: the worker drops the old job, and the page shows the rotor it has now.
     monkeypatch.setattr(rotor_page, "RESTART_S", 0.0)
-    p.unbalance.setValue(p.unbalance.value() * 2.0)
+    p.editor.unbalance.setValue(p.editor.unbalance.value() * 2.0)
     p._analysis_timer.stop()
     p._start_analysis()
     first = p._job[2]
-    p.gravity.toggle()
+    p.editor.gravity.toggle()
     settle()
     assert rotor_page.WORKER.lost(first)
     assert p.campbell.criticals == analyse(p.sim.system, p.top_rpm).campbell.criticals
