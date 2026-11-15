@@ -2150,6 +2150,24 @@ SYMBOLS = (
         "intermediate-axis",
     ),
     Symbol(
+        "rb_orient",
+        "φ, θ, ψ, n̂, R<sub>z</sub>, q, q₀, χ",
+        "Euler's z-x-z angles: a turn about Z, then about the line of nodes n̂, then about the body's own z (a "
+        "top's precession, tilt and spin); a turn about one axis, as a matrix; a unit quaternion and its first "
+        "(scalar) part; the angle it turns by, about n̂",
+        "rad, rad, rad, –, –, –, –, rad",
+        "rigid_body_page",
+        "orientation",
+    ),
+    Symbol(
+        "rb_transform",
+        "T, v",
+        "a homogeneous transform, 4 × 4: a turn and, in its fourth column, a place; a direction",
+        "–, –",
+        "rigid_body_page",
+        "orientation",
+    ),
+    Symbol(
         "top_body",
         "m, r, l, s, w, b, g, I<sub>x</sub>, I<sub>y</sub>, β",
         "a top: its mass; a disc's radius; its centre's height up the stem; a square's side; a rectangle's sides; "
@@ -2168,10 +2186,9 @@ SYMBOLS = (
     ),
     Symbol(
         "euler_angles",
-        "φ, θ, ψ, θ₀, q, χ, n̂, h",
-        "Euler's angles: precession about the vertical, tilt from it, spin about the axis; the tilt let go at; a "
-        "unit quaternion, the angle it turns by and the axis about which; the simulation's step",
-        "rad, rad, rad, rad, –, rad, –, s",
+        "θ₀, h",
+        "a top: the tilt let go at; the simulation's step",
+        "rad, s",
         "gyroscope_page",
         "euler-angles",
     ),

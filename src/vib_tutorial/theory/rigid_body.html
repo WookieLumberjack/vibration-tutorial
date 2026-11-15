@@ -93,6 +93,40 @@ body (a thruster fixed to it), the torque turns with the body: across a spin it 
 <b>L</b> only wobbles round, which is why a spinning spacecraft fires its thrusters in pulses timed to the spin.
 The <i>Check</i> tab compares the simulation's energy and <b>L</b> with what the torque put in.</p>
 
+<h3><a name="orientation"></a>Writing down how it's turned</h3>
+<p>Where the body points needs three numbers, and there are several ways to write them, each with its use. The
+<i>Orientation</i> tab writes the running body's all four ways at once.</p>
+<p><b>A rotation matrix</b> <m>B</m>, whose columns are the body's axes in space: nine numbers, tied together by
+<m>B</m>ᵀ<m>B</m> = <b>1</b> (six conditions) so that three are free. It takes a vector's components from the
+body's axes to space's, <m>v</m> = <m>B</m><m>v</m><sub>b</sub>, and turns compose by multiplying matrices. It
+has no awkward places, but stepped numerically it drifts from being a rotation and has to be put right.</p>
+<p><img src="fig:euler"></p>
+<p><b>Euler's angles</b>, three turns in a row: here z-x-z, as on the Gyroscope page later. Turn <m>φ</m> about
+<m>Z</m>, which carries <m>x</m> to the <b>line of nodes</b> <m>n̂</m>; then <m>θ</m> about <m>n̂</m>, which tips
+the body's <m>z</m> from <m>Z</m>; then <m>ψ</m> about the body's own <m>z</m>:</p>
+<eq>B = R_z(\varphi)\,R_x(\theta)\,R_z(\psi).</eq>
+<p>Three numbers, as few as can be, and easy to picture: a top's precession, tilt and spin. But at <m>θ</m> = 0
+(or 180°) the first and third turns are about the same axis, only <m>φ</m> + <m>ψ</m> counts, and a way to turn
+is lost: <b>gimbal lock</b>. Near it the angles' rates blow up whatever the body does,</p>
+<eq>\dot\varphi = \frac{\omega_1\sin\psi + \omega_2\cos\psi}{\sin\theta},</eq>
+<eq>\dot\theta = \omega_1\cos\psi - \omega_2\sin\psi,\quad \dot\psi = \omega_3 - \dot\varphi\cos\theta,</eq>
+<p>(<m>ω</m> in the body's axes) so a simulation that steps the angles fails there. Every set of three angles has
+such a place: aircraft use z-y-x (yaw, pitch, roll), which locks at a pitch of ±90°.</p>
+<p><b>A quaternion.</b> Euler's rotation theorem says every orientation is a single turn <m>χ</m> about a single
+axis <m>n̂</m>. Hamilton's quaternion <cite>hamilton</cite> stores it as four numbers,</p>
+<eq>q = \left(\cos\tfrac{\chi}{2},\ \sin\tfrac{\chi}{2}\,\hat{\mathbf n}\right),\quad |q| = 1,</eq>
+<p>with <m>q</m> and −<m>q</m> the same turn. Turns compose by Hamilton's product, <m>q</m> ⊗ <m>p</m>, and the
+body turning at <m>ω</m> moves <m>q</m> at q̇ = ½<m>q</m> ⊗ (0, <m>ω</m>): smooth everywhere, no locked place, and
+only one condition to keep (|<m>q</m>| = 1, by dividing by it). That is why the page steps <m>q</m>, and why
+spacecraft and games do.</p>
+<p><b>A homogeneous transform</b> adds a place to a turn: the 4 × 4 matrix</p>
+<eq>T = \begin{bmatrix} B & B\mathbf{d} \\ 0\;0\;0 & 1 \end{bmatrix}:</eq>
+<p>the turn, and in its fourth column where the frame's origin is in space. Here the frame is the shape's own,
+with its origin at the shape's centre, which sits at <m>B</m><m>d</m> from <m>G</m>. A point of the body
+<m>p</m>, written (<m>p</m>, 1), goes to (<m>B</m><m>p</m> + <m>B</m><m>d</m>, 1) in space, and a direction,
+written (<m>v</m>, 0), only turns. Frames chained one after another (a robot arm's links, a camera on a moving
+car) multiply. The tab carries the point mass through <m>T</m>.</p>
+
 <h3><a name="simulation"></a>The simulation</h3>
 <p>The page keeps the body's orientation as a unit quaternion <m>q</m>, from which <m>B</m> follows, and <b>L</b>
 in space, and steps q̇ = ½<m>q</m> ⊗ (0, <m>ω</m>) and d<b>L</b>/d<m>t</m> = <m>τ</m> by classical Runge–Kutta
@@ -109,7 +143,8 @@ torque's end falls on a step's, so its impulse is exact.</p>
 <li>A vector's rate in fixed axes is its rate in turning axes plus Ω × it; in the body's axes, where I is constant, dL/dt = τ becomes Euler's equations, Iω̇ + ω × Iω = τ.</li>
 <li>Torque-free, L and the energy are kept; spun about its middle principal axis a body turns over and back, about the least or greatest it only wobbles.</li>
 <li>A torque changes L by its impulse; held in the body across a spin, it turns with it and L only wobbles.</li>
+<li>An orientation can be written as a rotation matrix, three Euler angles (which lock where two of their turns line up, and whose rates blow up near it), a unit quaternion (one turn about one axis, never singular: what simulations step) or, with a place, a 4 × 4 homogeneous transform.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
-<notation>rigid_rates rb_tensor I_principal top_frames rb_body rb_flip</notation>
+<notation>rigid_rates rb_tensor I_principal top_frames rb_body rb_flip rb_orient rb_transform</notation>
 <reading>goldstein</reading>

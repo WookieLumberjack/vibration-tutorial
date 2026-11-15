@@ -47,6 +47,12 @@ A torque held in space or in the body for a set time (or a *Kick*) changes L by 
 *Components* tab plots ω, L, τ or the tensor in fixed, body or principal axes, with the equations written
 out with numbers at any instant, and *Check* compares the energy and L with what the torque put in.
 
+The *Orientation* tab writes how the body is turned four ways at once: the rotation matrix, Euler's z-x-z
+angles (with their rates, which blow up near the gimbal lock at θ = 0), the quaternion with its axis and angle,
+and the 4 × 4 homogeneous transform that carries the point mass to space. Its start pose is set there as
+Euler angles: at θ = 0 changing φ or ψ turns the body the same way. The body is drawn with shaded faces, lit
+from the upper left, so its turning reads at a glance.
+
 ## Simulation & modal analysis
 
 - **Edit any mass, stiffness, or damping value while the simulation runs.** The state is

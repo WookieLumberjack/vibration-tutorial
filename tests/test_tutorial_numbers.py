@@ -3641,3 +3641,23 @@ def test_rigid_body_notes():
     assert 1.4 < s.t[np.argmax(along < 0)] < 2.2
     push = page.TRIALS[5]
     assert (push.held, push.torque[2], push.duration) == (Torque.SPACE, 0.02, 1.0)
+
+
+def test_rigid_body_euler_rates_trial():
+    """The trial's z passes 1.7° from Z, where φ̇ reaches about 67 rad/s, 33 times its 2 rad/s."""
+    from vib_tutorial.core import rotation
+    from vib_tutorial.core.rigid_body import Tumbler
+    from vib_tutorial.gui import rigid_body as page
+
+    t = next(t for t in page.TRIALS if t.name == "Euler's rates blow up at the lock")
+    body = t.body
+    q = rotation.quaternion(rotation.from_euler(*np.radians(t.pose)))
+    s = Tumbler(body, tuple(page.start_rate(body, t.spin_axis, t.rate, t.nudge)), q=list(q)).advance(1.0)
+    least, fastest = 180.0, 0.0
+    for qq, L in zip(s.q, s.momentum):
+        B = rotation.matrix(qq)
+        _, theta, psi, _ = rotation.to_euler(B)
+        w = np.linalg.solve(body.inertia(), B.T @ L)
+        least = min(least, math.degrees(theta))
+        fastest = max(fastest, abs(rotation.euler_rates(theta, psi, w)[0]))
+    assert round(least, 1) == 1.7 and round(fastest) == 67 and round(fastest / t.rate) == 33

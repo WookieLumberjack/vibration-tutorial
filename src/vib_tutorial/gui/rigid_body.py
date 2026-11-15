@@ -16,6 +16,7 @@ Working on it: `tests/test_rigid_body.py` checks the model, `tests/test_gui_smok
 from __future__ import annotations
 
 import enum
+import itertools
 import math
 from dataclasses import dataclass
 
@@ -53,7 +54,7 @@ from .links import load_notes
 from .style import colors
 from .theming import add_legend
 
-TAB_INERTIA, TAB_COMPONENTS, TAB_CHECK = range(3)
+TAB_INERTIA, TAB_COMPONENTS, TAB_ORIENTATION, TAB_CHECK = range(4)
 PLAYBACK = (0.02, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0)
 REAL_TIME = PLAYBACK.index(1.0)
 HISTORY = 200_000  # samples kept
@@ -65,6 +66,7 @@ SHOWS = ("ω, angular velocity", "L, angular momentum", "τ, torque", "I, inerti
 SHOW_W, SHOW_L, SHOW_TAU, SHOW_I = range(4)
 UNITS = ("rad/s", "N·m·s", "N·m", "kg·m²")
 SPANS = (("the last 2 s", 2.0), ("the last 10 s", 10.0), ("the whole run", None))
+STRIPS = 24  # a cylinder's side, in flat faces
 BODY_AXES = 6  # the body's axes' colour, colors.mass[k], as on the Gyroscope page
 
 
@@ -105,6 +107,7 @@ class RigidTrial:
     show: int = SHOW_W
     frame: Axes = Axes.PRINCIPAL
     principal: bool = False  # draw the principal axes
+    pose: tuple[float, float, float] = (0.0, 0.0, 0.0)  # the start's Euler angles φ, θ, ψ, degrees
 
     @property
     def body(self) -> Body:
@@ -204,6 +207,29 @@ TRIALS = (
         show=SHOW_W,
         frame=Axes.SPACE,
     ),
+    RigidTrial(
+        "Gimbal lock",
+        "The box at rest, upright: Euler's θ = 0. Its first and third turns, φ and ψ, are then both about Z, so in "
+        "the Orientation tab changing either turns it the same way: only φ + ψ counts, and one of the three angles "
+        "is lost. B and q have no such place.",
+        rate=0.0,
+        nudge=0.0,
+        pose=(40.0, 0.0, 0.0),
+        tab=TAB_ORIENTATION,
+    ),
+    RigidTrial(
+        "Euler's rates blow up at the lock",
+        "The box turning steadily at 2 rad/s about its x, which carries its z within 1.7° of Z, at 0.1× "
+        "playback. Its ω is steady, but φ̇ = (ω₁ sin ψ + ω₂ cos ψ)/sin θ climbs to about 67 rad/s, 33 times ω, "
+        "as θ passes its least, and φ and ψ swing through half a turn in a moment; through Z itself they'd be "
+        "unbounded. The quaternion's rates, ½q ⊗ ω, stay as steady as ω.",
+        spin_axis=0,
+        rate=2.0,
+        nudge=0.0,
+        pose=(0.0, 20.0, 175.0),
+        playback=PLAYBACK.index(0.1),
+        tab=TAB_ORIENTATION,
+    ),
 )
 
 TIPS = {
@@ -231,6 +257,9 @@ TIPS = {
     "y, z, turning with it. <b>Principal</b>: the body's principal axes, turning with it too, in which I is "
     "diagonal.</p>",
     "comp_span": "<p>How much of the run to plot.</p>",
+    "pose": "<p>How the body is turned at the start, as Euler's z-x-z angles: φ about Z, then θ about the line of "
+    "nodes (where x has got to), then ψ about the body's own z. B = R<sub>z</sub>(φ) R<sub>x</sub>(θ) "
+    "R<sub>z</sub>(ψ).</p>",
 }
 VIEW_TIP = (
     "<p>The body in 3D, about its centre of mass G: drag to turn the view, double-click to reset it. The coloured "
@@ -247,6 +276,20 @@ CHECK_TIP = (
 )
 
 NOTES_HTML = load_notes("rigid_body", figures=rigid_body_figures.FIGURES, trials=trials_html(TRIALS))
+
+
+def _shade(base: QtGui.QColor, lit: float) -> QtGui.QColor:
+    """`base` lit from a side `lit` (the cosine of its angle to the light: 1 full on, 0 or less in shadow): toward
+    white in the light and black in the shade, a little see-through so the axes inside still show."""
+    k = max(0.0, min(1.0, lit))
+    if k > 0.6:
+        mix, toward = (k - 0.6) / 0.4 * 0.5, 1.0
+    else:
+        mix, toward = (0.6 - k) / 0.6 * 0.6, 0.0
+    r, g, b = (base.redF(), base.greenF(), base.blueF())
+    out = QtGui.QColor.fromRgbF(*(v + (toward - v) * mix for v in (r, g, b)))
+    out.setAlphaF(0.82)
+    return out
 
 
 def _matrices(q: np.ndarray) -> np.ndarray:
@@ -288,8 +331,10 @@ class BodyView(pg.PlotWidget):
         plot = self.getPlotItem()
         self.space = pg.PlotCurveItem(connect="finite")  # X, Y, Z, dotted
         self.space_labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in "XYZ"]
-        self.outline = pg.PlotCurveItem(connect="finite")
+        self.outline = pg.PlotCurveItem(connect="finite")  # lines on the body, its visible side only
         self.far = pg.PlotCurveItem(connect="finite")  # a sphere's screen outline
+        self.faces = [QtWidgets.QGraphicsPathItem() for _ in range(STRIPS + 2)]  # those facing the viewer, shaded
+        self.ball = QtWidgets.QGraphicsPathItem()  # a sphere's disc, shaded by a gradient
         self.axes = [pg.PlotCurveItem() for _ in range(3)]
         self.axis_labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in "xyz"]
         self.principal = [pg.PlotCurveItem() for _ in range(3)]
@@ -303,9 +348,14 @@ class BodyView(pg.PlotWidget):
         bigger.setPointSizeF(bigger.pointSizeF() * 1.15)
         for label in (*self.axis_labels, *self.principal_labels, *self.labels):
             label.setFont(bigger)
+        for face in (self.ball, *self.faces):
+            face.setZValue(-1)  # under the lines: the axes and vectors show over the body
+        self.space.setZValue(-2)  # space's axes, behind it
         for item in (
             self.space,
             *self.space_labels,
+            self.ball,
+            *self.faces,
             self.far,
             self.outline,
             self.trail,
@@ -353,46 +403,144 @@ class BodyView(pg.PlotWidget):
         if self._last is not None:
             self.draw(*self._last)
 
-    def _shape_lines(self) -> np.ndarray:
-        """The shape's edges in its own axes, from G, as one polyline with NaN breaks."""
+    def toward(self) -> np.ndarray:
+        """The unit vector from the body toward the viewer, in space."""
+        cy, sy = math.cos(self.yaw), math.sin(self.yaw)
+        return np.array([-sy * math.cos(self.pitch), -cy * math.cos(self.pitch), math.sin(self.pitch)])
+
+    def light(self) -> np.ndarray:
+        """Where the light comes from: toward the viewer, from the upper left of the screen."""
+        cy, sy = math.cos(self.yaw), math.sin(self.yaw)
+        across = np.array([cy, -sy, 0.0])  # the screen's x, in space
+        up = np.cross(self.toward(), across)  # its y
+        v = self.toward() + 0.6 * up - 0.4 * across
+        return v / np.linalg.norm(v)
+
+    def _faces(self) -> list[tuple[np.ndarray, np.ndarray]]:
+        """The body's flat faces in its own axes from G, each (corners (k, 3), outward normal): a box's six, a
+        cylinder's STRIPS around its side and its two ends; none for a sphere."""
+        body = self.body
+        if body.shape is Shape.CUBOID:
+            c = body.corners()
+            sides = (
+                ((4, 5, 7, 6), (1, 0, 0)),
+                ((0, 2, 3, 1), (-1, 0, 0)),
+                ((2, 6, 7, 3), (0, 1, 0)),
+                ((0, 1, 5, 4), (0, -1, 0)),
+                ((1, 3, 7, 5), (0, 0, 1)),
+                ((0, 4, 6, 2), (0, 0, -1)),
+            )
+            return [(c[list(k)], np.array(n, dtype=float)) for k, n in sides]
+        if body.shape is Shape.CYLINDER:
+            a, h, G = body.a, 0.5 * body.c, body.centre()
+            out = []
+            edges = np.linspace(0.0, 2.0 * math.pi, STRIPS + 1)
+            for t0, t1 in itertools.pairwise(edges):
+                p0, p1 = (a * math.cos(t0), a * math.sin(t0)), (a * math.cos(t1), a * math.sin(t1))
+                quad = np.array([[*p0, -h], [*p1, -h], [*p1, h], [*p0, h]]) - G
+                mid = 0.5 * (t0 + t1)
+                out.append((quad, np.array([math.cos(mid), math.sin(mid), 0.0])))
+            ring = np.linspace(0.0, 2.0 * math.pi, self.RIM, endpoint=False)
+            for z in (h, -h):
+                cap = np.column_stack([a * np.cos(ring), a * np.sin(ring), np.full_like(ring, z)]) - G
+                out.append((cap, np.array([0.0, 0.0, math.copysign(1.0, z)])))
+            return out
+        return []
+
+    def _shape_lines(self) -> tuple[np.ndarray, np.ndarray]:
+        """Lines fixed on the body, so its turning shows, in its own axes from G, as one polyline with NaN breaks,
+        and each point's outward normal (drawn only where it faces the viewer): a cylinder's rims, four lines
+        along its side and a mark on its end, a sphere's three great circles. A box's edges are its faces'."""
         body, nan = self.body, np.full((1, 3), np.nan)
         G = body.centre()
         ring = np.linspace(0.0, 2.0 * math.pi, self.RIM + 1)
+        points: list[np.ndarray] = []
+        normals: list[np.ndarray] = []
         if body.shape is Shape.CUBOID:
-            c = body.corners()
-            edges = [(0, 1), (2, 3), (4, 5), (6, 7), (0, 2), (1, 3), (4, 6), (5, 7), (0, 4), (1, 5), (2, 6), (3, 7)]
-            parts = [np.vstack([c[i], c[j], nan[0]]) for i, j in edges]
-            return np.vstack(parts)
+            return np.zeros((0, 3)), np.zeros((0, 3))
         if body.shape is Shape.CYLINDER:
             a, h = body.a, 0.5 * body.c
-            parts = []
-            for z in (-h, h):
-                parts += [np.column_stack([a * np.cos(ring), a * np.sin(ring), np.full_like(ring, z)]), nan]
-            for k in range(4):  # lines along its side, so its turning shows
-                x, y = a * math.cos(k * math.pi / 2), a * math.sin(k * math.pi / 2)
-                parts += [np.array([[x, y, -h], [x, y, h]]), nan]
-            parts += [np.array([[0.0, 0.0, h], [a, 0.0, h]]), nan]  # a mark on its end
-            return np.vstack(parts) - G
+            radial = np.column_stack([np.cos(ring), np.sin(ring), np.zeros_like(ring)])
+            for z in (-h, h):  # a rim shows if its side or its end faces the viewer
+                points += [np.column_stack([a * np.cos(ring), a * np.sin(ring), np.full_like(ring, z)]), nan]
+                normals += [radial + [0.0, 0.0, math.copysign(1.0, z)], nan]
+            for k in range(4):
+                c, s_ = math.cos(k * math.pi / 2), math.sin(k * math.pi / 2)
+                points += [np.array([[a * c, a * s_, -h], [a * c, a * s_, h]]), nan]
+                normals += [np.array([[c, s_, 0.0], [c, s_, 0.0]]), nan]
+            points += [np.array([[0.0, 0.0, h], [a, 0.0, h]]), nan]
+            normals += [np.array([[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]), nan]
+            return np.vstack(points) - G, np.vstack(normals)
         a = body.a
-        circles = []
         for i, j in ((0, 1), (1, 2), (2, 0)):  # three great circles, fixed in it
             pts = np.zeros((len(ring), 3))
-            pts[:, i], pts[:, j] = a * np.cos(ring), a * np.sin(ring)
-            circles += [pts, nan]
-        return np.vstack(circles) - G
+            pts[:, i], pts[:, j] = np.cos(ring), np.sin(ring)
+            points += [a * pts, nan]
+            normals += [pts, nan]
+        return np.vstack(points) - G, np.vstack(normals)
+
+    def _draw_body(self, B: np.ndarray) -> None:
+        """The faces toward the viewer, filled and lit (a convex body hides the rest), and the lines on its
+        visible side."""
+        c = colors
+        toward, light = self.toward(), self.light()
+        base = QtGui.QColor(c.mass[0])
+        edge = (
+            pg.mkPen(c.mass[0], width=1.5) if self.body.shape is Shape.CUBOID else QtGui.QPen(QtCore.Qt.PenStyle.NoPen)
+        )
+        faces = self._faces()
+        for k, item in enumerate(self.faces):
+            if k >= len(faces):
+                item.hide()
+                continue
+            corners, normal = faces[k]
+            n = B @ normal
+            if float(n @ toward) <= 0.0:
+                item.hide()
+                continue
+            x, y = self.project(corners @ B.T)
+            path = QtGui.QPainterPath()
+            path.moveTo(float(x[0]), float(y[0]))
+            for u, v in zip(x[1:], y[1:]):
+                path.lineTo(float(u), float(v))
+            path.closeSubpath()
+            item.setPath(path)
+            item.setBrush(QtGui.QBrush(_shade(base, float(n @ light))))
+            item.setPen(edge)
+            item.show()
+        points, normals = self._shape_lines()
+        if len(points):
+            facing = (normals @ B.T) @ toward
+            shown = np.where((facing > 0.0)[:, None], points, np.nan)
+            self.outline.setData(*self.project(shown @ B.T))
+        else:
+            self.outline.setData([], [])
+        if self.body.shape is Shape.SPHERE:
+            a = self.body.a
+            sx, sy = self.project(B @ -self.body.centre())
+            cx, cy = float(sx), float(sy)
+            path = QtGui.QPainterPath()
+            path.addEllipse(QtCore.QPointF(cx, cy), a, a)
+            self.ball.setPath(path)
+            lx, ly = self.project(light)  # the bright spot, toward the light on the screen
+            glow = QtGui.QRadialGradient(QtCore.QPointF(cx + 0.45 * a * float(lx), cy + 0.45 * a * float(ly)), 1.4 * a)
+            glow.setColorAt(0.0, _shade(base, 1.0))
+            glow.setColorAt(1.0, _shade(base, 0.0))
+            self.ball.setBrush(QtGui.QBrush(glow))
+            self.ball.setPen(QtGui.QPen(QtCore.Qt.PenStyle.NoPen))
+            self.ball.show()
+            ring = np.linspace(0.0, 2.0 * math.pi, self.RIM + 1)
+            self.far.setData(cx + a * np.cos(ring), cy + a * np.sin(ring))
+        else:
+            self.ball.hide()
+            self.far.setData([], [])
 
     def draw(self, q: np.ndarray, momentum: np.ndarray, torque: np.ndarray, trail: np.ndarray) -> None:
         """The body turned by the quaternion q, with L and τ (space), and `trail`: where ω has pointed (n, 3)."""
         self._last = (q, momentum, torque, trail)
         body, R = self.body, self.reach
         B = rotation.matrix(np.asarray(q)[None])[0]
-        self.outline.setData(*self.project(self._shape_lines() @ B.T))
-        if body.shape is Shape.SPHERE:
-            ring = np.linspace(0.0, 2.0 * math.pi, self.RIM + 1)
-            cx, cy = self.project(B @ -body.centre())
-            self.far.setData(cx + body.a * np.cos(ring), cy + body.a * np.sin(ring))
-        else:
-            self.far.setData([], [])
+        self._draw_body(B)
         cx, cy = self.project(np.zeros((1, 3)))
         self.centre.setData(cx, cy)
         if body.point > 0:
@@ -590,6 +738,17 @@ class RigidBodyPage(QtWidgets.QWidget):
         for item in (self.energy_item, self.momentum_item):
             self.check_plot.addItem(item)
         self.check_note = note_label()
+        # Orientation tab
+        pose = Form("Start pose (Euler's angles, z-x-z)")
+        self.pose = [
+            pose.number("φ, about Z:", -180.0, 180.0, 0.0, 1, "°", TIPS["pose"]),
+            pose.number("θ, then about x:", 0.0, 180.0, 0.0, 1, "°", TIPS["pose"]),
+            pose.number("ψ, then about z:", -180.0, 180.0, 0.0, 1, "°", TIPS["pose"]),
+        ]
+        for turn in self.pose[0::2]:
+            turn.setWrapping(True)
+        pose.changed.connect(self.restart)
+        self.orient_text = readout_label()
 
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
@@ -597,6 +756,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.tabs.addTab(
             ColumnScroll(column(comp_row, self.comp_plot, self.comp_note, self.comp_snapshot)), "Components"
         )
+        self.tabs.addTab(ColumnScroll(column(pose, self.orient_text)), "Orientation")
         self.tabs.addTab(column(self.check_plot, self.check_note, stretch=False), "Check")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(self._draw_tab)
@@ -631,6 +791,7 @@ class RigidBodyPage(QtWidgets.QWidget):
             (self.held, TORQUES.index(t.held)),
             *((box, v) for box, v in zip(self.torque, t.torque)),
             (self.duration, t.duration),
+            *((box, v) for box, v in zip(self.pose, t.pose)),
             (self.playback, t.playback),
             (self.comp_show, t.show),
             (self.comp_frame, FRAMES.index(t.frame)),
@@ -662,6 +823,7 @@ class RigidBodyPage(QtWidgets.QWidget):
             held=TORQUES[self.held.currentIndex()],
             torque=tuple(box.value() for box in self.torque),  # type: ignore[arg-type]
             duration=self.duration.value(),
+            pose=tuple(box.value() for box in self.pose),  # type: ignore[arg-type]
             playback=self.playback.currentIndex(),
             tab=self.tabs.currentIndex(),
         )
@@ -710,7 +872,10 @@ class RigidBodyPage(QtWidgets.QWidget):
         s = self.state()
         self._snap_t = None
         omega = start_rate(self.body, s.spin_axis, s.rate, s.nudge)
-        self.sim = Tumbler(self.body, (float(omega[0]), float(omega[1]), float(omega[2])), s.torque, s.held)
+        start = rotation.quaternion(rotation.from_euler(*np.radians(s.pose)))
+        self.sim = Tumbler(
+            self.body, (float(omega[0]), float(omega[1]), float(omega[2])), s.torque, s.held, q=list(start)
+        )
         self.sim.kick(s.duration)
         self.history.clear()
         self.history.extend(np.array([0.0]), np.concatenate([self.sim.q, self.sim.L, self._torque_now()])[None])
@@ -730,6 +895,8 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.running = on
         if not on and self.tabs.currentIndex() == TAB_COMPONENTS:
             self._draw_snapshot()
+        if not on and self.tabs.currentIndex() == TAB_ORIENTATION:
+            self._draw_orientation()
         self.loop.start()
 
     def reset(self) -> None:
@@ -802,6 +969,8 @@ class RigidBodyPage(QtWidgets.QWidget):
         i = self.tabs.currentIndex()
         if i == TAB_COMPONENTS:
             self._draw_components()
+        elif i == TAB_ORIENTATION:
+            self._draw_orientation()
         elif i == TAB_CHECK:
             self._draw_check()
 
@@ -810,6 +979,8 @@ class RigidBodyPage(QtWidgets.QWidget):
         i = self.tabs.currentIndex()
         if i == TAB_COMPONENTS:
             self._draw_components()
+        elif i == TAB_ORIENTATION and (not self.running or self._frames % SNAPSHOT_FRAMES == 0):
+            self._draw_orientation()
         elif i == TAB_CHECK and self._frames % 30 == 0:
             self._draw_check()
 
@@ -936,6 +1107,88 @@ class RigidBodyPage(QtWidgets.QWidget):
             )
         return "The torque, in the axes it's held in or turned into these." if torque else "No torque."
 
+    def _instant(self) -> int:
+        """The sample the snapshot and the Orientation tab show: the one dragged to (paused), else the latest with
+        two samples after it."""
+        n = self.history.size
+        if self._snap_t is None or self.running:
+            return max(n - 3, 0)
+        return min(int(np.searchsorted(self.history.t[:n], self._snap_t)), n - 1)
+
+    def _draw_orientation(self) -> None:
+        """The body's orientation at that instant written four ways: B, Euler's angles (and their rates, with how
+        near the lock), the quaternion (and its axis and angle), and the homogeneous transform with the point
+        mass carried through it."""
+        n = self.history.size
+        if n == 0:
+            self.orient_text.setText("")
+            return
+        k = self._instant()
+        t, y = float(self.history.t[k]), self.history.y[k]
+        q = y[0:4] / np.linalg.norm(y[0:4])
+        q = -q if q[0] < 0 else q
+        B = rotation.matrix(q)
+        phi, theta, psi, locked = rotation.to_euler(B)
+        w_body = np.linalg.solve(self.body.inertia(), B.T @ y[4:7])
+        rates = rotation.euler_rates(theta, psi, w_body)
+        chi, axis = rotation.axis_angle(q)
+        g = self.body.centre()
+        T = rotation.homogeneous(B, -B @ g)  # the shape's frame (origin at its centre) to space's (origin at G)
+        deg = math.degrees
+        sin = math.sin(theta)
+
+        def rate(v: float) -> str:
+            if not math.isfinite(v):
+                return "∞"
+            return "0" if abs(v) < 1e-9 else f"{v:.3g}".replace("-", "−")
+
+        out = [
+            f"<p><b>At t = {t:.3f} s</b>, the body's orientation four ways.</p>",
+            "<p><b>1. Rotation matrix</b> B: its columns are the body's axes x, y, z in space. Nine numbers, held "
+            "to three by BᵀB = 1; turns compose by multiplying, and a vector's components go from the body's axes "
+            "to space's as v = B v<sub>b</sub>.</p>",
+            equation("B =", bracket(B)),
+            "<p><b>2. Euler's angles</b>, z-x-z: turn φ about Z, then θ about the line of nodes (where x has got "
+            "to), then ψ about the body's z, so B = R<sub>z</sub>(φ) R<sub>x</sub>(θ) R<sub>z</sub>(ψ). Three "
+            "numbers, as few as there can be, and easy to picture.</p>",
+            f"<p>φ = {deg(phi):.1f}°, θ = {deg(theta):.1f}°, ψ = {deg(psi):.1f}°.".replace("-", "−")
+            + (
+                " <b>Locked:</b> sin θ = 0, so φ and ψ turn about the same axis and only their "
+                + ("sum" if theta < 1.0 else "difference")
+                + " is set (ψ is taken as 0)."
+                if locked
+                else ""
+            )
+            + "</p>",
+            f"<p>Their rates from ω: φ̇ = (ω₁ sin ψ + ω₂ cos ψ)/sin θ = {rate(rates[0])}, θ̇ = {rate(rates[1])}, "
+            f"ψ̇ = ω₃ − φ̇ cos θ = {rate(rates[2])} rad/s; 1/sin θ = "
+            + ("∞" if sin < rotation.LOCK else f"{1 / sin:.3g}")
+            + ". Near θ = 0 or 180° φ̇ and ψ̇ grow without bound, whatever ω is: a simulation stepping the angles "
+            "fails there.</p>",
+            "<p><b>3. Quaternion</b> q = (q₀, q₁, q₂, q₃) = (cos χ/2, sin χ/2 n̂): Euler's rotation theorem says "
+            "every orientation is one turn χ about one axis n̂. Four numbers with |q| = 1, and q and −q are the "
+            "same turn. q̇ = ½ q ⊗ (0, ω) has no singular place, which is why the page steps it.</p>",
+            equation("q =", bracket(q), "n̂ =", bracket(axis)),
+            f"<p>A turn of χ = {deg(chi):.1f}° about n̂.</p>",
+            "<p><b>4. Homogeneous transform</b> T, 4 × 4: B with the shape's centre's place in space as a fourth "
+            "column, Bd (d from G to the shape's centre, in the body's axes), so a point of the body p (from the "
+            "shape's centre, with a 1 as fourth component) is at T(p, 1) in space, and a direction (0) only "
+            "turns. A robot arm's links chain these, one per joint.</p>",
+            equation("T =", bracket(T)),
+        ]
+        if self.body.point > 0:
+            p = np.append(np.asarray(self.body.offset, dtype=float), 1.0)
+            out += [
+                "<p>The point mass, at p in the body, is at T(p, 1) in space (mm):</p>",
+                equation("T", bracket(1000 * p[:3]), "→", bracket(1000 * (T @ p)[:3])),
+            ]
+        else:
+            out.append(
+                "<p>With no point mass G is the shape's centre, d = 0, and T's fourth column is (0, 0, 0, 1): add one "
+                "to see the translation.</p>"
+            )
+        self.orient_text.setText("".join(out))
+
     def snapshot_now(self) -> rotation.Snapshot | None:
         """The `Snapshot` the Components tab shows: at the instant dragged to (paused), else the latest with two
         samples after it; None before a run."""
@@ -943,10 +1196,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         if n < 2:
             return None
         t = self.history.t[:n]
-        if self._snap_t is None or self.running:
-            k = max(n - 3, 0)
-        else:
-            k = min(int(np.searchsorted(t, self._snap_t)), n - 1)
+        k = self._instant()
         near = slice(max(k - 2, 0), min(k + 3, n))
         y = self.history.y[near]
         rows = _matrices(y[:, 0:4])

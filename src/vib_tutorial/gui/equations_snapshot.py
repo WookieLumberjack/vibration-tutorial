@@ -20,7 +20,6 @@ import numpy as np
 from ..core.rotation import Snapshot, Turning
 
 SUPERSCRIPT = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
-BRACKETS = {3: ("⎡⎢⎣", "⎤⎥⎦")}  # rows: top, middle, bottom
 
 
 def _power(values: np.ndarray) -> int:
@@ -40,17 +39,19 @@ def _entry(value: float, scale: float, top: float) -> str:
 
 
 def bracket(values: np.ndarray, bold_off_diagonal: bool = False) -> str:
-    """A 3-vector (a column) or a 3 × 3 matrix in square brackets, with its power of ten in front if it needs one.
-    A matrix's non-zero off-diagonal entries are bold when asked (the products of inertia)."""
+    """A vector (a column) or a matrix in square brackets, with its power of ten in front if it needs one. A
+    matrix's non-zero off-diagonal entries are bold when asked (the products of inertia)."""
     A = np.atleast_2d(np.asarray(values, dtype=float))
     if A.shape[0] == 1:
         A = A.T
     power = _power(A)
     scale = 10.0**power
     top = float(np.abs(A).max())
-    left, right = BRACKETS[3]
+    n = A.shape[0]
+    left = "⎡" + "⎢" * (n - 2) + "⎣"
+    right = "⎤" + "⎥" * (n - 2) + "⎦"
     rows = []
-    for i in range(3):
+    for i in range(n):
         cells = []
         for j in range(A.shape[1]):
             text = _entry(A[i, j], scale, top)

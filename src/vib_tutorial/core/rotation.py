@@ -2,6 +2,10 @@
 
 Shared by the *Gyroscope* page and the *3D rigid body* page. An orientation is stored as a unit quaternion
 q = (w, x, y, z), body to space (`matrix`: its rotation matrix, whose columns are the body's axes in space).
+The *3D rigid body* page's Orientation tab writes it four ways: the matrix, Euler's z-x-z angles (`to_euler`,
+`from_euler`; their rates `euler_rates`, unbounded at the gimbal lock, sin θ = 0), the quaternion and its axis
+and angle (`quaternion`, `axis_angle`; `multiply` composes turns), and a 4 × 4 homogeneous transform with the
+body's origin (`homogeneous`).
 A frame's axes are given as rows, (n, 3, 3): row i is axis i in space, so a space vector's components in
 the frame are `axes @ v`.
 
@@ -18,6 +22,7 @@ Working on it: `tests/test_rotation.py`, and the pages' snapshot tests (`test_gy
 from __future__ import annotations
 
 import enum
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -44,6 +49,98 @@ def matrix(q: np.ndarray) -> np.ndarray:
         ],
         axis=-2,
     )
+
+
+LOCK = 1e-6  # sin θ below this: the Euler angles' φ and ψ turn about the same axis (gimbal lock)
+
+
+def about(axis: int, angle: float) -> np.ndarray:
+    """The rotation matrix of a turn by `angle` about space's axis `axis` (0, 1, 2: x, y, z)."""
+    c, s = math.cos(angle), math.sin(angle)
+    i, j = [(1, 2), (2, 0), (0, 1)][axis]
+    R = np.eye(3)
+    R[i, i] = R[j, j] = c
+    R[i, j], R[j, i] = -s, s
+    return R
+
+
+def from_euler(phi: float, theta: float, psi: float) -> np.ndarray:
+    """B from Euler's angles, z-x-z (the Gyroscope page's): precession φ about z, tilt θ about the line of nodes,
+    spin ψ about the body's own axis, B = R_z(φ) R_x(θ) R_z(ψ)."""
+    return about(2, phi) @ about(0, theta) @ about(2, psi)
+
+
+def to_euler(B: np.ndarray) -> tuple[float, float, float, bool]:
+    """φ, θ, ψ (rad; θ in [0, π]) from B, and whether they're locked: there sin θ = 0, φ and ψ turn about the same
+    axis, only their sum (θ = 0) or difference (θ = π) is set, and ψ is taken as 0."""
+    theta = math.acos(max(-1.0, min(1.0, float(B[2, 2]))))
+    if math.sin(theta) < LOCK:
+        return math.atan2(float(B[1, 0]), float(B[0, 0])), theta, 0.0, True
+    phi = math.atan2(float(B[0, 2]), -float(B[1, 2]))
+    psi = math.atan2(float(B[2, 0]), float(B[2, 1]))
+    return phi, theta, psi, False
+
+
+def euler_rates(theta: float, psi: float, w: np.ndarray) -> tuple[float, float, float]:
+    """φ̇, θ̇, ψ̇ from ω in the body's axes: φ̇ = (ω₁ sin ψ + ω₂ cos ψ)/sin θ, θ̇ = ω₁ cos ψ − ω₂ sin ψ,
+    ψ̇ = ω₃ − φ̇ cos θ. φ̇ and ψ̇ grow without bound as sin θ → 0: the lock (inf there)."""
+    w1, w2, w3 = (float(v) for v in w)
+    s = math.sin(theta)
+    across = w1 * math.sin(psi) + w2 * math.cos(psi)
+    phi_dot = across / s if abs(s) > LOCK else math.copysign(math.inf, across) if across else 0.0
+    return phi_dot, w1 * math.cos(psi) - w2 * math.sin(psi), w3 - phi_dot * math.cos(theta)
+
+
+def quaternion(B: np.ndarray) -> np.ndarray:
+    """The unit quaternion (w, x, y, z), w ≥ 0, of a rotation matrix (Shepperd's: from its largest term)."""
+    t = float(np.trace(B))
+    terms = [t, float(B[0, 0]), float(B[1, 1]), float(B[2, 2])]
+    k = int(np.argmax(terms))
+    if k == 0:
+        w = 0.5 * math.sqrt(1.0 + t)
+        q = [w, (B[2, 1] - B[1, 2]) / (4 * w), (B[0, 2] - B[2, 0]) / (4 * w), (B[1, 0] - B[0, 1]) / (4 * w)]
+    else:
+        i = k - 1
+        j, m = (i + 1) % 3, (i + 2) % 3
+        r = 0.5 * math.sqrt(max(1.0 + 2.0 * float(B[i, i]) - t, 0.0))
+        q = [0.0] * 4
+        q[0] = (B[m, j] - B[j, m]) / (4 * r)
+        q[1 + i] = r
+        q[1 + j] = (B[j, i] + B[i, j]) / (4 * r)
+        q[1 + m] = (B[m, i] + B[i, m]) / (4 * r)
+    out = np.array(q, dtype=float)
+    return -out if out[0] < 0 else out
+
+
+def multiply(p: np.ndarray, q: np.ndarray) -> np.ndarray:
+    """Hamilton's product p ⊗ q: the turn q, then p (as matrix(p ⊗ q) = matrix(p) matrix(q))."""
+    a, b, c, d = p
+    e, f, g, h = q
+    return np.array(
+        [
+            a * e - b * f - c * g - d * h,
+            a * f + b * e + c * h - d * g,
+            a * g - b * h + c * e + d * f,
+            a * h + b * g - c * f + d * e,
+        ]
+    )
+
+
+def axis_angle(q: np.ndarray) -> tuple[float, np.ndarray]:
+    """The angle χ (0 to π, as w ≥ 0 after choosing q or −q) and unit axis n of the turn q = (cos χ/2, sin χ/2 n);
+    any axis for no turn (x)."""
+    q = -q if q[0] < 0 else q
+    half = math.atan2(float(np.linalg.norm(q[1:])), float(q[0]))
+    s = math.sin(half)
+    return 2.0 * half, (q[1:] / s if s > 1e-12 else np.array([1.0, 0.0, 0.0]))
+
+
+def homogeneous(B: np.ndarray, t: np.ndarray) -> np.ndarray:
+    """The 4 × 4 transform [[B, t], [0 0 0 1]]: a point p (in the body's axes, from its origin) is at B p + t in
+    space; written with a 1 as its fourth component it is T (p, 1), and a direction (fourth component 0) only turns."""
+    T = np.eye(4)
+    T[:3, :3], T[:3, 3] = B, t
+    return T
 
 
 @dataclass(frozen=True)
