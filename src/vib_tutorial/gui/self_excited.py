@@ -60,6 +60,7 @@ class Kind(enum.Enum):
 
 
 KINDS = tuple(Kind)
+LIFTS = ("Steady", "Quasi-steady")  # the tip gives each one's L
 TAB_SWEEP = 0
 VIV_SWEEP = np.linspace(2.0, 14.0, 41)
 
@@ -71,6 +72,7 @@ class SelfTrial:
     kind: Kind
     values: dict = field(default_factory=dict)  # control name → value
     tab: int = TAB_SWEEP
+    quasi_steady: bool = False  # flutter's lift: steady (θ) or quasi-steady (θ + ḣ/U)
 
 
 TRIALS = (
@@ -144,22 +146,36 @@ TRIALS = (
     ),
     SelfTrial(
         "Flutter: two modes coalesce",
-        "A wing section with plunge at 3 Hz and pitch at 6 Hz, its centre of mass behind the elastic axis. As the "
-        "speed rises the lift couples the two modes: their frequencies close in (3 and 6.7 Hz at rest, 3.4 and "
-        "5.0 Hz at 19 m/s) and the pitch-like mode's damping falls to zero at 19.1 m/s, the flutter speed, well "
-        "below the 39 m/s at which the pitch spring alone would diverge.",
+        "A wing section with plunge at 3 Hz and pitch at 6 Hz, its centre of mass behind the elastic axis, in steady "
+        "lift. As the speed rises the lift, a stiffness growing as <m>U</m>², couples the two modes: their "
+        "frequencies close in (2.93 and 6.71 Hz at rest, 3.6 and 4.7 Hz at 20 m/s) and at 20.7 m/s, nearly met, "
+        "the plunge-like mode's damping falls to zero: the flutter speed, well below the 39 m/s at which the pitch "
+        "spring alone would diverge. Without structural damping (<m>ζ</m> = 0) they meet exactly, at 4.07 Hz and "
+        "20.9 m/s.",
         Kind.FLUTTER,
-        {"f_speed": 15.0},
+        {"f_speed": 20.0},
     ),
     SelfTrial(
         "Mass balance",
-        "Move the centre of mass ahead of the elastic axis, to <m>x<sub>cg</sub></m> = −0.2 semichords: the inertia now "
-        "couples plunge and pitch the other way, and the section no longer flutters at all; it only diverges, at "
-        "39 m/s, where the pitch spring gives out. Mass-balancing control surfaces (lead in the leading edge) "
-        "does this. The trend isn't monotonic in this quasi-steady model: with the centre of mass on the axis "
-        "(<m>x<sub>cg</sub></m> = 0) flutter comes earlier, at 17.7 m/s.",
+        "Move the centre of mass onto the elastic axis, <m>x<sub>cg</sub></m> = 0: the inertia no longer couples plunge "
+        "and pitch, their frequencies never meet, and the section no longer flutters; it only diverges, at 39 m/s, "
+        "where the pitch spring gives out. Mass-balancing control surfaces (lead in the leading edge) does this. "
+        "Halfway, at <m>x<sub>cg</sub></m> = 0.1, flutter waits until 22.8 m/s.",
         Kind.FLUTTER,
-        {"f_cg": -0.2, "f_speed": 15.0},
+        {"f_cg": 0.0, "f_speed": 20.0},
+    ),
+    SelfTrial(
+        "Quasi-steady lift: flutter without coalescence",
+        "The same section, its lift now following the plunge's <m>ḣ</m>/<m>U</m> too, the angle the plunging "
+        "section sees. That term is a damping: it damps the plunge (<m>ζ</m> = 0.1 at 19 m/s) and, through the "
+        "lift's moment, feeds the pitch from the plunge's velocity. The pitch-like mode goes unstable on its own, at "
+        "19.1 m/s, its frequency still well apart from the plunge's (5.0 and 3.4 Hz), and mass balance no longer "
+        "saves it: with <m>x<sub>cg</sub></m> = 0 it flutters at 17.7 m/s. The lift model decides how a wing "
+        "flutters: this one leaves out the lag and the pitch-rate terms of unsteady aerodynamics, which damp the "
+        "pitch.",
+        Kind.FLUTTER,
+        {"f_speed": 19.0},
+        quasi_steady=True,
     ),
 )
 
@@ -344,17 +360,18 @@ def _coalescence(rng: np.random.Generator) -> Question:
         "A wing section's plunge and pitch modes are at 2.9 and 6.7 Hz in still air. As the airspeed rises towards "
         "flutter, what do their frequencies do?",
         0,
-        "They close in, 3.4 and 5.0 Hz at 19 m/s, as the lift couples them; one mode's damping reaches zero there, "
-        "the flutter speed.",
+        "They close in, 3.6 and 4.7 Hz at 20 m/s, as the steady lift couples them; one mode's damping reaches zero "
+        "at 20.7 m/s, the flutter speed.",
         choices=("They close in", "They move apart", "They stay where they are", "Both fall to zero"),
-        setup=dict(kind=Kind.FLUTTER, values={"f_speed": 19.0}),
+        setup=dict(kind=Kind.FLUTTER, values={"f_speed": 20.0}),
         predict=True,
     )
 
 
 def _mass_balance(rng: np.random.Generator) -> Question:
     return Question(
-        "A wing section flutters at 19 m/s with its centre of mass 0.2 semichords behind the elastic axis. The centre "
+        "A wing section in steady lift flutters at 21 m/s with its centre of mass 0.2 semichords behind the elastic "
+        "axis. The centre "
         "of mass is moved to 0.2 semichords ahead of it. What happens?",
         0,
         "It no longer flutters: the inertia now couples plunge and pitch the other way, and only divergence is left, "
@@ -442,6 +459,8 @@ TIPS = {
     "pitch": "<p>The pitch (torsion) mode's frequency, without wind.</p>",
     "cg": "<p>The centre of mass behind the elastic axis, in semichords.</p>",
     "e": "<p>The elastic axis behind the quarter chord (where the lift acts), in semichords.</p>",
+    "lift": "<p>Steady, L ∝ θ: the lift follows the pitch alone, a stiffness. Quasi-steady, L ∝ θ + ḣ/U: it also "
+    "follows the plunge's ḣ/U, the angle the plunging section sees, which acts as a damping.</p>",
 }
 SWEEP_TIP = "<p>The settled motion against the parameter that drives it; the dotted line is the value set.</p>"
 
@@ -495,10 +514,12 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self._add(fl, "f_e", "e:", -0.5, 1.0, 0.3, 2, " b", "e")
         self._add(fl, "f_zeta", "ζ:", 0.0, 0.2, 0.01, 3, "", "zeta")
         self._add(fl, "f_speed", "Speed U:", 0.0, 200.0, 15.0, 1, " m/s", "speed")
+        self.lift = combo(LIFTS, TIPS["lift"])
+        fl.add("Lift:", self.lift, TIPS["lift"])
         for form in (vdp, gal, viv, fl):
             self.pages.addWidget(form)
         self.info = note_label()
-        connect_all((self.kind, *self.boxes.values()), self._on_inputs)
+        connect_all((self.kind, self.lift, *self.boxes.values()), self._on_inputs)
 
         # --- centre
         self.top_plot = plot("x", "m", "Time", "s", height=150)
@@ -571,13 +592,19 @@ class SelfExcitedPage(QtWidgets.QWidget):
     def practice_state(self) -> SelfTrial:
         """The page's settings, as a trial: what a practice spec checks."""
         return SelfTrial(
-            "", "", KINDS[self.kind.currentIndex()], {k: self.v(k) for k in self.boxes}, self.tabs.currentIndex()
+            "",
+            "",
+            KINDS[self.kind.currentIndex()],
+            {k: self.v(k) for k in self.boxes},
+            self.tabs.currentIndex(),
+            quasi_steady=self.lift.currentIndex() == 1,
         )
 
     def apply_trial(self, t: SelfTrial) -> None:
         for key, value in {**DEFAULTS, **t.values}.items():
             set_quietly(self.boxes[key], value)
         set_quietly(self.kind, KINDS.index(t.kind))
+        set_quietly(self.lift, int(t.quasi_steady))
         self.trials.show_note(t.note)
         # a practice setup on a hidden page: the stepping waits until it shows
         self._stale = not (t.name or self.isVisible())
@@ -623,6 +650,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
             plunge_hz=self.v("f_plunge"),
             pitch_hz=self.v("f_pitch"),
             zeta=self.v("f_zeta"),
+            quasi_steady=self.lift.currentIndex() == 1,
         )
 
     # ------------------------------------------------------------- drawing
@@ -765,7 +793,11 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.bottom_plot.setYRange(max(-0.1, float(finite.min()) - 0.02), float(finite.max()) + 0.02, padding=0)
         lam = m.poles(self.v("f_speed"))
         up = lam[lam.imag > 0]
-        self.info.setText(f"Flutter at {Uf:.3g} m/s; the pitch spring alone diverges at {Ud:.3g} m/s.")
+        self.info.setText(
+            f"Flutter at {Uf:.3g} m/s; the pitch spring alone diverges at {Ud:.3g} m/s."
+            if np.isfinite(Uf)
+            else f"No flutter: the section only diverges, at {Ud:.3g} m/s, where the pitch spring gives out."
+        )
         self.readout.setText(
             f"At {self.v('f_speed'):.3g} m/s: "
             + ", ".join(f"{abs(p) / (2 * np.pi):.3g} Hz with ζ = {-p.real / abs(p):.3g}" for p in sorted(up, key=abs))
@@ -851,19 +883,24 @@ class SelfExcitedPage(QtWidgets.QWidget):
         else:
             flutter = self.flutter()
             Uf = flutter.flutter_speed()
-            top = 1.3 * (Uf if np.isfinite(Uf) else 100.0)
+            top = 1.3 * (Uf if np.isfinite(Uf) else min(flutter.divergence_speed(), 100.0))
             U = np.linspace(0.0, top, 160)
             poles = np.array([flutter.poles(float(u)) for u in U])
             up = np.where(poles.imag > 0, poles, np.nan)
             self.sweep_stable.setData(up.real.ravel(), (up.imag / (2 * np.pi)).ravel())
-            legend.addItem(self.sweep_stable, "poles, 0 to 1.3 × the flutter speed")
+            legend.addItem(
+                self.sweep_stable, f"poles, 0 to 1.3 × the {'flutter' if np.isfinite(Uf) else 'divergence'} speed"
+            )
             relabel(self.sweep_plot, "left", "Im λ / 2π (Hz)")
             relabel(self.sweep_plot, "bottom", "Re λ (1/s)")
             self.sweep_line.setValue(0.0)
             self.sweep2_plot.setVisible(False)
             self.sweep_note.setText(
-                "The root locus: as the speed rises the two modes' poles approach, and one "
-                "crosses Re λ = 0 (dotted) at the flutter speed."
+                "The root locus: with quasi-steady lift the plunge's poles move left (the flow damps it) while the "
+                "pitch's cross Re λ = 0 (dotted) on their own, at a frequency of their own."
+                if flutter.quasi_steady
+                else "The root locus: as the speed rises the two modes' poles approach, and where they nearly meet "
+                "one crosses Re λ = 0 (dotted), at the flutter speed."
             )
         self.sweep_plot.enableAutoRange()
         self.sweep2_plot.enableAutoRange(axis="x")

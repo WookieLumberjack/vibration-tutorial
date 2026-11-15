@@ -602,9 +602,6 @@ class DampingModelsPage(QtWidgets.QWidget):
             line.setPen(pg.mkPen(c.force, width=1, style=QtCore.Qt.PenStyle.DotLine))
         self.redraw()
 
-    def _visible(self) -> list[Model]:
-        return [m for m in MODELS if self.shown[m].isChecked()]
-
     def redraw(self) -> None:
         mm = self.model
         k0, k1, tau = mm.zener()

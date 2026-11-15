@@ -30,25 +30,31 @@ def matrix_html(name: str, A: np.ndarray) -> str:
         text = num(A[i, j]).replace("-", "−")
         return f"<b>{text}</b>" if i != j and text != "0" else text
 
-    bracket = "<td rowspan='2' valign='middle'><span style='font-size:22pt; font-weight:200'>{}</span></td>"
+    bracket = "<td rowspan='2' valign='middle' style='white-space:nowrap'><span style='font-size:22pt; font-weight:200'>{}</span></td>"
     rows = [
-        f"<td align='right'>{cell(i, 0)}</td><td>&nbsp;&nbsp;</td><td align='right'>{cell(i, 1)}</td>" for i in range(2)
+        f"<td align='right' style='white-space:nowrap'>{cell(i, 0)}</td><td>&nbsp;&nbsp;</td><td align='right' style='white-space:nowrap'>{cell(i, 1)}</td>"
+        for i in range(2)
     ]
     return (
-        f"<table cellspacing='0' cellpadding='1'><tr><td rowspan='2' valign='middle'>{name} =&nbsp;</td>"
+        f"<table cellspacing='0' cellpadding='1'><tr><td rowspan='2' valign='middle' style='white-space:nowrap'>{name} =&nbsp;</td>"
         f"{bracket.format('[')}{rows[0]}{bracket.format(']')}</tr><tr>{rows[1]}</tr></table>"
     )
 
 
-def matrices_html(m) -> str:
-    """M, C and K side by side (M and K, if `m` has no C)."""
-    named = [("M", m.M), ("C", getattr(m, "C", None)), ("K", m.K)]
+def matrices_html(m, per_row: int = 2) -> str:
+    """M, C and K, `per_row` to a line (M and K, if `m` has no C): two fit the right-hand tabs at 1280 px, three
+    the panel under the drawing."""
+    named = [(n, A) for n, A in (("M", m.M), ("C", getattr(m, "C", None)), ("K", m.K)) if A is not None]
+    rows = [named[i : i + per_row] for i in range(0, len(named), per_row)]
     return (
-        "<table><tr>"
+        "<table>"
         + "".join(
-            f"<td valign='middle'>{matrix_html(n, A)}</td><td>&nbsp;&nbsp;</td>" for n, A in named if A is not None
+            "<tr>"
+            + "".join(f"<td valign='middle'>{matrix_html(n, A)}</td><td>&nbsp;&nbsp;</td>" for n, A in row)
+            + "</tr>"
+            for row in rows
         )
-        + "</tr></table>"
+        + "</table>"
     )
 
 

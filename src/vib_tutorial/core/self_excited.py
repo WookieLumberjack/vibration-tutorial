@@ -11,8 +11,10 @@ motion that follows (a limit cycle).
   (`galloping_branches`), stable and unstable.
 * `Viv`: a cylinder in a current, with Facchinetti, de Langre and Biolley's wake oscillator: lock-in, where the
   shedding follows the structure.
-* `Flutter`: a typical section in plunge and pitch with quasi-steady lift; the two modes' frequencies approach as
-  the speed grows and one's damping crosses zero (`flutter_speed`).
+* `Flutter`: a typical section in plunge and pitch. With steady lift (L ∝ θ, the default) the lift is a stiffness:
+  the two modes' frequencies approach as the speed grows and, where they meet, one's damping crosses zero
+  (coalescence flutter, `flutter_speed`). Quasi-steady lift (`quasi_steady`) adds the plunge's ḣ/U, a damping: it
+  damps the plunge and feeds the pitch from it, and the pitch goes unstable on its own, the frequencies still apart.
 
 The time responses are fixed-step RK4 over many parameters at once (`rk4`): they are checked against solve_ivp.
 """
@@ -282,8 +284,8 @@ class Viv:
 @dataclass(frozen=True)
 class Flutter:
     """A typical section: plunge h and pitch θ about an elastic axis `e` semichords behind the quarter chord,
-    the centre of mass `x_cg` semichords behind the elastic axis, radius of gyration `r` semichords; quasi-steady
-    lift L = ½ρU²(2b)2π(θ + ḣ/U) at the quarter chord."""
+    the centre of mass `x_cg` semichords behind the elastic axis, radius of gyration `r` semichords; lift at the
+    quarter chord, steady L = ½ρU²(2b)2πθ or, `quasi_steady`, ½ρU²(2b)2π(θ + ḣ/U)."""
 
     semichord: float = 0.15
     mass: float = 10.0  # kg per m of span
@@ -294,6 +296,7 @@ class Flutter:
     pitch_hz: float = 6.0
     zeta: float = 0.01
     rho: float = 1.225
+    quasi_steady: bool = False
 
     def matrices(self, speed: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         b, m = self.semichord, self.mass
@@ -305,10 +308,12 @@ class Flutter:
         q = 0.5 * self.rho * speed * speed
         lift = q * 2 * b * TWO_PI  # dL/dθ
         arm = self.e * b  # the lift acts this far ahead of the elastic axis
-        # m ḧ + S θ̈ + k_h h = −L;  S ḧ + I θ̈ + k_θ θ = L·arm;  L = lift (θ + ḣ/U)
+        # m ḧ + S θ̈ + k_h h = −L;  S ḧ + I θ̈ + k_θ θ = L·arm;  L = lift θ (+ lift ḣ/U, quasi-steady)
         K = np.array([[kh, lift], [0.0, kt - lift * arm]])
-        U = max(speed, 1e-9)
-        C = np.array([[ch + lift / U, 0.0], [-lift * arm / U, ct]])
+        C = np.array([[ch, 0.0], [0.0, ct]])
+        if self.quasi_steady:
+            U = max(speed, 1e-9)
+            C += np.array([[lift / U, 0.0], [-lift * arm / U, 0.0]])
         return M, C, K
 
     def poles(self, speed: float) -> np.ndarray:
@@ -343,12 +348,15 @@ class Flutter:
         return f, z
 
     def flutter_speed(self, top: float = 200.0) -> float:
-        """The lowest speed at which a pole crosses into the right half plane (bisection), NaN if none to `top`."""
+        """The lowest speed at which an oscillating pole crosses into the right half plane (bisection), NaN if none
+        before divergence (a real pole crossing, `divergence_speed`) or `top`."""
 
         def growing(U: float) -> bool:
-            return bool(np.max(self.poles(U).real) > 0)
+            lam = self.poles(U)
+            lam = lam[np.abs(lam.imag) > 1e-6]  # oscillating; rounding leaves an undamped pole ~1e-15|λ| off the axis
+            return bool(np.any(lam.real > 1e-9 * np.abs(lam)))
 
-        U = np.linspace(0.0, top, 801)
+        U = np.linspace(0.0, min(top, self.divergence_speed()), 801)
         for lo, hi in itertools.pairwise(U):
             if growing(hi):
                 for _ in range(60):

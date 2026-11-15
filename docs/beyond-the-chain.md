@@ -146,9 +146,10 @@ damp it, and the peak against depth shows where Den Hartog's tuning lies.
 Motion that feeds itself, four ways: van der Pol's oscillator (negative damping that grows to a limit
 cycle, and relaxation oscillations), galloping of a square section in a wind (Den Hartog's criterion and
 the hysteresis between its branches), vortex-induced vibration with a wake oscillator (lock-in), and
-two-mode flutter of a wing section, its root locus crossing into instability as the airspeed rises.
+two-mode flutter of a wing section, its root locus crossing into instability as the airspeed rises (in steady
+lift by coalescence; in quasi-steady lift the pitch mode goes on its own).
 
-![Self-excited vibration page, flutter: a wing section with plunge at 3 Hz and pitch at 6 Hz; as the airspeed rises their frequencies close in and the pitch-like mode's damping crosses zero at 19.1 m/s, half the 39 m/s divergence speed](images/self_excited.png)
+![Self-excited vibration page, flutter: a wing section with plunge at 3 Hz and pitch at 6 Hz; in steady lift; as the airspeed rises their frequencies close in and, nearly met, the plunge-like mode's damping crosses zero at 20.7 m/s, about half the 39 m/s divergence speed](images/self_excited.png)
 
 ## Active control
 

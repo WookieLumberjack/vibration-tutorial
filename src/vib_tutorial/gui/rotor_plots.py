@@ -84,6 +84,7 @@ class OrbitPlots(pg.GraphicsLayoutWidget):
             _clip_title(p.titleLabel)
             p.setLabel("bottom", "x", units="m")
             p.setLabel("left", "y", units="m")
+            p.getAxis("bottom").setTickDensity(0.6)  # ~100 px wide at 1280: "-200" and "200" ran together
             # Not narrowing the axes when the labels do: as the orbits rescale each frame, a
             # narrower label would re-lay out the plots (and paint them again).
             p.getAxis("bottom").setStyle(maxTickLevel=0, autoReduceTextSpace=False)
@@ -190,10 +191,12 @@ class TimePlots(pg.GraphicsLayoutWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.x_plot = self.addPlot(row=0, col=0)
-        self.x_plot.setLabel("left", "Displacement", units="m")
+        # Short labels and sparse ticks: at 1280 × 800 the plots are ~60 px tall, where "Displacement (nm)" ran
+        # into the speed's label and the ticks stacked.
+        self.x_plot.setLabel("left", "x, y", units="m")
         add_legend(self.x_plot, offset=(-5, 5), colCount=2)
         self.w_plot = self.addPlot(row=1, col=0)
-        self.w_plot.setLabel("left", "Speed", units="rpm")
+        self.w_plot.setLabel("left", "rpm")
         self.w_plot.getAxis("left").enableAutoSIPrefix(False)
         self.w_plot.setLabel("bottom", "Time", units="s")
         self.w_plot.setXLink(self.x_plot)
@@ -205,6 +208,7 @@ class TimePlots(pg.GraphicsLayoutWidget):
             p.setDownsampling(auto=True, mode="peak")
             p.setMouseEnabled(x=False, y=False)
             p.hideButtons()
+            p.getAxis("left").setTickDensity(0.5)
         self.x_curve = self.x_plot.plot(name="x (horizontal)")
         self.y_curve = self.x_plot.plot(name="y (vertical)")
         self.w_curve = self.w_plot.plot()
