@@ -2288,7 +2288,9 @@ def test_rotor_shaft_mass(app):
     w.set_theme("Dark")
     # The preset, and back to a massless shaft: whatever the mesh, the classic preset again.
     p.load_preset("Long shaft, with its mass")
-    assert p.editor.shaft_mass.isChecked() and p.editor.elements.value() == 8 and p.editor.mass_matrix.currentIndex() == 0
+    assert (
+        p.editor.shaft_mass.isChecked() and p.editor.elements.value() == 8 and p.editor.mass_matrix.currentIndex() == 0
+    )
     p.step(0.2)
     p.load_preset("Classic Jeffcott rotor")
     assert not p.editor.shaft_mass.isChecked() and p.sim.q.size == 8
@@ -2297,7 +2299,11 @@ def test_rotor_shaft_mass(app):
     p._refresh_analysis()
     assert not any(line.isVisible() for line in p.campbell_plot.reference)
     p.set_system(RotorSystem(density=2700.0, elements=6, lumped=True))
-    assert p.editor.density.value() == 2700.0 and p.editor.elements.value() == 6 and p.editor.mass_matrix.currentIndex() == 1
+    assert (
+        p.editor.density.value() == 2700.0
+        and p.editor.elements.value() == 6
+        and p.editor.mass_matrix.currentIndex() == 1
+    )
 
 
 def test_rotor_asymmetric_shaft(app):
@@ -2384,7 +2390,11 @@ def test_rotor_cracked_shaft(app):
     p._refresh_analysis()
     s = p.sim.system
     assert p.preset.currentText() == "Cracked shaft (breathing crack)"
-    assert s.crack.depth == pytest.approx(0.4) and s.crack.breathing and p.editor.crack_depth.value() == pytest.approx(40.0)
+    assert (
+        s.crack.depth == pytest.approx(0.4)
+        and s.crack.breathing
+        and p.editor.crack_depth.value() == pytest.approx(40.0)
+    )
     assert "Crack 40% deep" in p.editor.shaft_note.text() and "opened by the weight" in p.editor.shaft_note.text()
     assert "1,562 rpm" in p.crit_label.text() and "1,574 rpm" in p.crit_label.text()
     # The Bode plot tracks 3X: the weight drives it most near a third of the critical speed.
@@ -2652,7 +2662,11 @@ def test_rotor_on_oil_film_bearings(app):
     p.load_preset("Journal bearings (oil whip)")
     p._refresh_analysis()
     s = p.sim.system
-    assert s.films and p.editor.supports.currentIndex() == FILMS and p.preset.currentText() == "Journal bearings (oil whip)"
+    assert (
+        s.films
+        and p.editor.supports.currentIndex() == FILMS
+        and p.preset.currentText() == "Journal bearings (oil whip)"
+    )
     assert s.whole_films and p.editor.nonlinear_film.isChecked() and p.editor.nonlinear_film.isEnabled()
     row = p.editor.bearing_rows[0]
     assert row[4].isEnabled() and not any(row[c].isEnabled() for c in (0, 1, 2, 3, 5, 6))
@@ -2938,7 +2952,10 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
         assert views[-1]["detail"].startswith("Beyond the chain > Jeffcott rotor > [Custom] > ")
         # A combo alone in its group is named by its tooltip, not by a label outside the group;
         # scrolling a panel isn't an input.
-        assert frame_stats.describe_input(page.editor.supports, "click") == ("What holds the journals", "Springs and dampers")
+        assert frame_stats.describe_input(page.editor.supports, "click") == (
+            "What holds the journals",
+            "Springs and dampers",
+        )
         bars = w.findChildren(QtWidgets.QScrollBar)
         assert bars and all(w.frame_overlay.inputs._control(b) is None for b in bars)
     finally:
