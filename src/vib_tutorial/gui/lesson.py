@@ -123,6 +123,13 @@ class TrialCombo(QtWidgets.QComboBox):
         else:
             self.setCurrentIndex(index)
 
+    def unpick(self) -> None:
+        """Back to the prompt, picking nothing (a page put back as it opened)."""
+        if self.first:
+            self.blockSignals(True)
+            self.setCurrentIndex(0)
+            self.blockSignals(False)
+
     def _on_change(self, index: int) -> None:
         if index < self.first:
             return

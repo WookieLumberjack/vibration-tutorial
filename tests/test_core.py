@@ -1118,3 +1118,12 @@ def test_drag_shape_lets_friction_hold_the_other_masses():
         x = drag_shape(s, x, 3, target)
     assert x[3] == 0.0 and np.all(x[:3] > 0.0)
     assert np.all(np.abs(-(K @ x)[:3]) <= 3.0 + 1e-12)
+
+
+def test_receptance_is_nan_where_an_undamped_chain_is_driven_at_resonance():
+    """A grid that lands on an undamped natural frequency gives NaN there, not a singular-matrix error."""
+    from vib_tutorial.core.modal import receptance
+
+    M, C, K = np.eye(1), np.zeros((1, 1)), np.array([[4 * np.pi**2]])  # 1 Hz
+    H = receptance(M, C, K, np.array([0.5, 1.0, 2.0]), np.array([1.0]))
+    assert np.isnan(H[1, 0]) and H[0, 0] == pytest.approx(1 / (K[0, 0] * 0.75))

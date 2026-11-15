@@ -92,6 +92,13 @@ it, back on the page it showed; the choice is remembered. At 150 % the window ne
 a smaller screen than the size was picked for, it goes back to 100 %. The notes' text has its own size as
 well (Ctrl+= and Ctrl+-), for reading closely at any size.
 
+## Defaults
+
+*Defaults* (top right, or Ctrl+R) puts the page showing back as it first opened: every control as it was,
+*Things to try* back at *Pick one…*, the motion at rest waiting for *Start* (or a mode shape swinging, on
+a page that opens showing one). A page that shows the chain puts back the chain it opened with too, on the
+Simulation page and every other page that shows it. The tab you're on stays.
+
 ---
 
 [Contents](../README.md#contents)
