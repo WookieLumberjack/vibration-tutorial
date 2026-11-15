@@ -79,7 +79,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Fluid–structure (`fluid_page`): `gui/fluid_structure.py`; core `added_mass`, `beams_plates`, `sloshing`
   - Self-excited vibration (`self_excited_page`): `gui/self_excited.py`; core `self_excited`
   - Active control (`active_control_page`): `gui/active_control.py`; core `active_control`
-  - Gyroscope (`gyroscope_page`): `gui/gyroscope.py` (with `equations_snapshot.py`); core `gyroscope`, `rotation`, `sliding_top`
+  - Gyroscope (`gyroscope_page`): `gui/gyroscope.py` (with `gyroscope_trials.py`, its trials and problems; `gyroscope_view.py`, the 3D view; `equations_snapshot.py`); core `gyroscope`, `rotation`, `sliding_top`
   - Jeffcott rotor (`rotor_page`): `gui/rotor.py` (with `rotor_editor.py`, the rotor's boxes; `rotor_readouts.py`, its notes' texts; `rotor_waterfall.py`'s `WaterfallTab`; and the other `rotor_*.py` tabs and panels); core `rotor`, `rotor_modes`, `rotor_simulator`, `rotor_sweep`, `rotor_stability`, `rotor_analysis`, `rotor_balance`, `rotor_waterfall`, `rotor_presets`, `fluid_bearing`, `magnetic_bearing`
   - Rotor builder (`rotor_builder_page`): `gui/rotor_builder.py`; core `rotor_builder`, `rotor_builder_sweep`, `fluid_bearing`, `magnetic_bearing`
   - Machinery diagnostics (`diagnostics_page`): `gui/diagnostics.py`; core `diagnostics`

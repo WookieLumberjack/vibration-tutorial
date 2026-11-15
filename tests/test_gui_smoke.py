@@ -4279,7 +4279,7 @@ def test_gyroscope_frame_axes_drawn(main_window, app):
     centre; the body's e₁ along the mark, the axis frame's e₁′ level, and e₃ named only with some drawn."""
     import numpy as np
 
-    from vib_tutorial.gui import gyroscope as g
+    from vib_tutorial.gui import gyroscope_view as g
 
     w = main_window
     page = w.gyroscope_page
