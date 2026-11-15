@@ -62,7 +62,7 @@ Every page has a *Theory* tab (the *Theory* button or F1 opens it) that starts w
 links to the sections it builds on, and ends with *Things to try*, *What to take away*, a table of the
 page's symbols and books to read further (the pages are being brought to this form one by one). Most pages'
 *Things to try* are one click: pick one from the box at the top left and the page sets itself up. On the
-Single oscillator and Pendulums (so far) some ask you to predict first: the question and its choices show in the box, and the page
+One mass pages (so far) some ask you to predict first: the question and its choices show in the box, and the page
 sets up only once you've picked one (or pressed *Just run it*), with the verdict above the note that
 explains it. Their notes also open with *On this page you'll*, two or three goals, each with a link
 that sets up its Thing to try and one that asks its practice problem. All of them are described below.

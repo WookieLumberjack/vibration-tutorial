@@ -16,7 +16,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.damping_models import MODELS, Matched, Model, coulomb_stop
-from ..core.practice import Problem, Question, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
 from . import damping_figures, settle_plots
 from .layouts import ColumnScroll, FlowLayout
@@ -53,6 +53,7 @@ class DampingTrial:
     tab: int = TAB_LOSS
     mass: float = 1.0
     stiffness: float = 400.0
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 def matched(t: DampingTrial) -> Matched:
@@ -70,6 +71,11 @@ TRIALS = (
         "rectangle, <m>±F<sub>f</sub></m> = ±0.31 N, flipping at each end of the stroke, which doesn't shrink as "
         "the motion does.",
         tab=TAB_LOSS,
+        predict=Prediction(
+            "Viscous, hysteretic, friction and Zener damping, matched at fₙ and cycled there through ±10 mm. Which takes out the most energy a cycle?",
+            ("Viscous", "Friction", "All the same"),
+            2,
+        ),
     ),
     DampingTrial(
         "Twice the frequency",
@@ -77,6 +83,11 @@ TRIALS = (
         "the velocity), the hysteretic and friction loops are unchanged (12.6 mJ), and the Zener element's, "
         "past its loss peak, is thinner (10.7 mJ).",
         ratio=2.0,
+        predict=Prediction(
+            "The same cycle at twice fₙ. Which loops grow?",
+            ("All of them", "Only the viscous one", "None of them"),
+            1,
+        ),
     ),
     DampingTrial(
         "With the spring: what a test machine draws",
@@ -92,6 +103,11 @@ TRIALS = (
         "puts in <m>πFX</m>: since <m>F</m> = 1 N &gt; <m>4F<sub>f</sub>/π</m> = 0.4 N, the resonance runs away. Set the drive below "
         "0.4 N and friction holds the mass still (to this approximation).",
         tab=TAB_FRF,
+        predict=Prediction(
+            "1 N at resonance, friction matched to the viscous damper at 10 mm. Where does friction's swing stop?",
+            ("At 25 mm, as viscous does", "Lower: friction holds it", "It doesn't: it runs away"),
+            2,
+        ),
     ),
     DampingTrial(
         "A straight-line decay",
@@ -99,6 +115,15 @@ TRIALS = (
         "for ever. Friction's falls by the same amount, <m>4F<sub>f</sub>/k</m> = 3.1 mm, and stops dead after three "
         "cycles, 0.58 mm off centre, where the spring can no longer beat the friction.",
         tab=TAB_DECAY,
+        predict=Prediction(
+            "Released from 10 mm against friction. How does its swing die away?",
+            (
+                "By the same fraction each cycle, for ever",
+                "By the same amount each cycle, then it stops",
+                "It doesn't die away",
+            ),
+            1,
+        ),
     ),
     DampingTrial(
         "A viscoelastic loss peak",
@@ -107,6 +132,11 @@ TRIALS = (
         "<m>k<sub>0</sub> + k<sub>1</sub></m> = 444 N/m does. In between, at its relaxation frequency (here <m>f<sub>n</sub></m>), the loss "
         "factor peaks at 0.1. Rubber mounts and polymers behave like this.",
         tab=TAB_LOSS,
+        predict=Prediction(
+            "A spring beside a spring and dashpot in series (Zener). Where is its loss factor largest?",
+            ("At low frequency", "At its relaxation frequency", "It grows for ever with frequency"),
+            1,
+        ),
     ),
     DampingTrial(
         "Relaxing well above resonance",
@@ -379,7 +409,9 @@ class DampingModelsPage(QtWidgets.QWidget):
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
-            "<p>Each sets up the oscillator and the plots to show one idea from the Theory tab.</p>",
+            "<p>Each sets up the oscillator and the plots to show one idea from the Theory tab. Some ask you to "
+            "predict what you'll see first.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

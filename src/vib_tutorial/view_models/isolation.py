@@ -22,6 +22,7 @@ from dataclasses import dataclass, replace
 import numpy as np
 
 from ..core.isolation import G, Isolator, Mount, deflection_for, start_up
+from ..core.practice import Prediction
 from ..core.sdof import TWO_PI
 from .plot import Curve
 from .text import db, fmt
@@ -50,6 +51,7 @@ class IsolationTrial:
     tab: int = TAB_START
     mass: float = 100.0
     unbalance: float = 0.01
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 def isolator(t: IsolationTrial) -> Isolator:
@@ -73,6 +75,11 @@ TRIALS = (
         "A 100 kg machine with a 0.01 kg·m unbalance at 1500 rpm (25 Hz) on mounts that sag 5 mm: <m>f<sub>n</sub></m> "
         "= <m>15.76/√5</m> = 7.05 Hz, so the speed is <m>3.5f<sub>n</sub></m>. The unbalance pulls with 247 N; only 23 N, 9 %, "
         "reaches the floor (−21 dB): 91 % isolation.",
+        predict=Prediction(
+            "A machine running at 3.5 times its mounts' natural frequency. How much of its unbalance force reaches the floor?",
+            ("All of it", "About a tenth", "More than all of it"),
+            1,
+        ),
     ),
     IsolationTrial(
         "Stiff mounts: amplification",
@@ -80,6 +87,11 @@ TRIALS = (
         "speed. The mounts now amplify: 3.9 times the unbalance's force reaches the floor. Below <m>√2 f<sub>n</sub></m> "
         "a mount can only make things worse.",
         deflection_mm=0.3,
+        predict=Prediction(
+            "The same machine on mounts sagging only 0.3 mm: their natural frequency is just above the speed. The floor now gets?",
+            ("Less than on soft mounts", "About the unbalance's force", "Several times the unbalance's force"),
+            2,
+        ),
     ),
     IsolationTrial(
         "Damping costs isolation",
@@ -87,6 +99,11 @@ TRIALS = (
         "to the floor in proportion to the speed: 20 % now reaches it instead of 9 %. Damping only helps at "
         "resonance, which the machine passes through at start-up.",
         zeta=0.3,
+        predict=Prediction(
+            "Back on the soft mounts, with ζ = 0.3 instead of 0.05. Does the floor get more or less?",
+            ("Less: damping always helps", "More: about twice as much", "The same"),
+            1,
+        ),
     ),
     IsolationTrial(
         "Running up through resonance",
@@ -113,6 +130,11 @@ TRIALS = (
         "above them the transmissibility falls as <m>1/r⁴</m> (80 dB a decade) instead of <m>1/r²</m>: 3.8 % reaches the "
         "floor here (one stage: 9 %), and at 3000 rpm the two stages pass 0.2 % against one stage's 2.5 %.",
         mount=Mount.TWO_STAGE,
+        predict=Prediction(
+            "One stage passes 9 %. The same total sag split over two stages, with a mass between. They pass?",
+            ("More than 9 %", "About 4 %", "About 9 %"),
+            1,
+        ),
     ),
     IsolationTrial(
         "An inertia block",
@@ -121,6 +143,11 @@ TRIALS = (
         "moves a quarter as much (±27 µm instead of ±109 µm): a block steadies the machine, it doesn't "
         "isolate better.",
         block=300.0,
+        predict=Prediction(
+            "Bolt the machine to a 300 kg block, the mounts stiffened to sag the same 5 mm. What changes?",
+            ("Less force reaches the floor", "The machine moves less; the floor's force stays", "Nothing at all"),
+            1,
+        ),
     ),
 )
 

@@ -25,7 +25,7 @@ from ..core.periodic import (
     series,
     series_error,
 )
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import Oscillator, frequency_grid, receptance
 from . import periodic_figures, settle_plots
 from .lesson import (
@@ -70,6 +70,7 @@ class PeriodicTrial:
     tune: int = 0  # set f₀ to f_n / tune when not 0
     mass: float = 1.0
     stiffness: float = 400.0
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -82,6 +83,11 @@ TRIALS = (
         "<m>F</m>, 9 % of the jump (Gibbs). The response is smoother: above <m>f<sub>n</sub></m> the oscillator "
         "divides harmonic <m>j</m> by about <m>j²</m> more than the force's.",
         harmonics=5,
+        predict=Prediction(
+            "Keep more and more harmonics of the square wave. What does the overshoot at each jump do?",
+            ("Shrinks away to nothing", "Narrows, but stays about 9 % of the jump", "Grows"),
+            1,
+        ),
     ),
     PeriodicTrial(
         "Resonance through the third harmonic",
@@ -91,6 +97,11 @@ TRIALS = (
         "three times the drive: slow machines excite fast modes this way.",
         tune=3,
         harmonics=7,
+        predict=Prediction(
+            "The square wave at a third of the natural frequency. Which harmonic swings the mass most?",
+            ("The fundamental, the largest", "The third, on resonance", "Neither: it's far below resonance"),
+            1,
+        ),
     ),
     PeriodicTrial(
         "No even harmonics, no resonance",
@@ -99,6 +110,11 @@ TRIALS = (
         "drive is closer to resonance.",
         tune=2,
         harmonics=7,
+        predict=Prediction(
+            "Now at half the natural frequency, closer to resonance. Is the swing larger than at a third?",
+            ("Yes, larger", "No: about a third of it", "About the same"),
+            1,
+        ),
     ),
     PeriodicTrial(
         "Hammer blows",
@@ -109,6 +125,11 @@ TRIALS = (
         wave=Wave.IMPULSES,
         amplitude=0.1,
         harmonics=20,
+        predict=Prediction(
+            "A blow every second. How do the impulse train's harmonics fall with their number j?",
+            ("As 1/j", "As 1/j²", "They don't: all the same height"),
+            2,
+        ),
     ),
     PeriodicTrial(
         "A rectified sine",
@@ -117,6 +138,11 @@ TRIALS = (
         "cam, puts on its mounts.",
         wave=Wave.RECTIFIED,
         harmonics=5,
+        predict=Prediction(
+            "F|sin πt/T|, never negative. What does its mean do to the oscillator?",
+            ("Nothing: the oscillator ignores it", "Sags the spring, and nothing more", "Resonates it"),
+            1,
+        ),
     ),
     PeriodicTrial(
         "Smooth waves converge faster",
@@ -126,6 +152,11 @@ TRIALS = (
         wave=Wave.TRIANGLE,
         harmonics=3,
         tab=TAB_CONVERGENCE,
+        predict=Prediction(
+            "A triangle and a square, three harmonics each. Whose response series is closer to the exact one?",
+            ("The square's", "The triangle's", "Both the same"),
+            1,
+        ),
     ),
     PeriodicTrial(
         "Starting from rest",
@@ -402,7 +433,9 @@ class PeriodicPage(QtWidgets.QWidget):
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
-            "<p>Each sets up the force and the oscillator to show one idea from the Theory tab.</p>",
+            "<p>Each sets up the force and the oscillator to show one idea from the Theory tab. Some ask you to "
+            "predict what you'll see first.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

@@ -352,7 +352,9 @@ class IsolationPage(QtWidgets.QWidget):
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
-            "<p>Each sets up the machine and its mounts to show one idea from the Theory tab.</p>",
+            "<p>Each sets up the machine and its mounts to show one idea from the Theory tab. Some ask you to "
+            "predict what you'll see first.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

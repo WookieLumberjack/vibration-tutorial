@@ -214,6 +214,36 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     assert not box.ask.isVisible() and not box.verdict.isVisible() and box.asking is None
 
 
+@pytest.mark.parametrize(
+    ("attr", "module"),
+    [
+        ("transient_page", "transient"),
+        ("periodic_page", "periodic"),
+        ("damping_page", "damping_models"),
+        ("isolation_page", "isolation"),
+    ],
+)
+def test_the_one_mass_pages_ask_their_predictions_first(main_window, app, attr, module):
+    import importlib
+
+    trials = importlib.import_module(f"vib_tutorial.gui.{module}").TRIALS
+    w = main_window
+    p = getattr(w, attr)
+    w.pages.setCurrentWidget(p)
+    box = p.trials
+    asked = [k for k, t in enumerate(trials) if t.predict is not None]
+    assert len(asked) >= len(trials) // 2  # most of them ask
+    before = p.practice_state()
+    for i in asked:
+        box.combo.pick(trials[i].name)
+        assert box.asking == i and box.ask.isVisible()
+        assert p.practice_state() == before  # nothing set up until it's answered
+        box.answer(trials[i].predict.answer)
+        assert "Right" in box.verdict.text() and box.note.isVisible()
+        w.restore_defaults()
+        before = p.practice_state()
+
+
 def test_a_goals_links_set_up_its_trial_and_ask_its_problem(main_window, app):
     """(conftest points the settings at the worker's own file: the Practice window reads them.)"""
     from PySide6 import QtCore as Core
