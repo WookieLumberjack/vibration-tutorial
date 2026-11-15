@@ -48,15 +48,22 @@ def close_graphics(widget) -> None:
     plot's menu) resolves to that wrapper in QMenu.addAction and segfaults. Taking the item
     out with takeAt() first hands it to Python, which deletes it and unregisters it.
 
+    Then deletes each closed view at once. close() leaves it parentless, so Python owns it and `gc` used to free
+    it with the rest of the window, in its own order: a scene's teardown then reached an item already gone and
+    segfaulted (once the 3D rigid body page joined the course, after the vibroacoustics screenshot test, two
+    runs in three). Deleted here the window is still whole.
+
     Blocks every signal in `widget` last, so the window can be freed: `gc` clears its Python
     objects' attributes in no set order, and the children Qt deletes after (a tab widget losing
     its tabs, a table its selection) would signal into a page that's half gone, which segfaulted.
     """
     import pyqtgraph as pg
+    import shiboken6
     from PySide6 import QtCore, QtWidgets
 
     for timer in widget.findChildren(QtCore.QTimer):
         timer.stop()
+    closed: list = []
     for view in widget.findChildren(pg.GraphicsView):
         if view.closed:
             continue
@@ -68,8 +75,12 @@ def close_graphics(widget) -> None:
                     layout.takeAt(index)  # the returned item is Python's and freed right away
                     break
         view.close()
+        closed.append(view)
     for obj in (widget, *widget.findChildren(QtCore.QObject)):
         obj.blockSignals(True)
+    for view in closed:  # now, with the window whole, not by `gc` later in its own order
+        if shiboken6.isValid(view):
+            shiboken6.delete(view)
 
 
 def settle_plots(widget) -> None:
