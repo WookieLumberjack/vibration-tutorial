@@ -14,6 +14,7 @@ from vib_tutorial.core.rotor_simulator import RPM, RotorSamples, RotorSimulator
 from vib_tutorial.core.rotor_stability import AsymmetryChart, growth_rate, least_damped, stability_onset
 from vib_tutorial.core.rotor_sweep import (
     RevolutionTracker,
+    RunUpCoastDown,
     TrackedSweep,
     probe,
     station_motion,
@@ -187,8 +188,8 @@ def test_damping_sets_a_threshold_asymmetry():
         b = Bearing(cx=c, cy=c)
         return stability_onset(RotorSystem(asymmetry=delta, bearing_a=b, bearing_b=b), 3000.0 / RPM) is not None
 
-    assert not unstable(0.122, 100.0) and unstable(0.124, 100.0)
-    assert not unstable(0.177, 400.0) and unstable(0.179, 400.0)
+    for delta, c in ((quoted("rotor_notes", "0.123"), 100.0), (quoted("rotor_notes", "0.178"), 400.0)):
+        assert not unstable(delta - 0.001, c) and unstable(delta + 0.001, c)
 
 
 def test_inside_the_band_a_whirl_grows_locked_to_1x():
@@ -218,6 +219,12 @@ def test_two_pole_preset_numbers():
     i = int(np.argmax(v2))
     assert round(v2[i] * 1e6) == 447 and round(w[i] * RPM) == 785
     assert round(-s.static_deflection(0.0)[YD] * 1e6) == 384
+    # run up and coast down from 500 to 1200 rpm at 200 rpm/s: the 2X nearly reaches its steady-state peak
+    sim = RotorSimulator(s)
+    sim.accel = 200.0 / RPM
+    legs = RunUpCoastDown(sim, 500.0 / RPM, 1200.0 / RPM).run()
+    shares = [100 * leg.peak(1, "orbit", 2)[0] / v2[i] for leg in legs]
+    assert shares == pytest.approx([quoted("rotor_notes", "93 %"), quoted("rotor_notes", "94 %")], abs=0.5)
 
 
 def test_unbalance_angle_from_the_stiff_axis():
@@ -225,7 +232,9 @@ def test_unbalance_angle_from_the_stiff_axis():
 
     w = np.linspace(1300.0, 1900.0, 6001) / RPM
 
-    def peaks(angle: float, delta: float = 0.1) -> list[tuple[int, int]]:
+    assert 100 * quoted("rotor_notes", "0.10") == quoted("rotor_notes", "10 %")  # the trial's asymmetry
+
+    def peaks(angle: float, delta: float = quoted("rotor_notes", "0.10")) -> list[tuple[int, int]]:
         s = RotorSystem(asymmetry=delta, unbalance_angle=math.radians(angle))
         v = np.abs(probe(steady_vectors(s, w)[:, 1], "orbit"))
         return [(round(w[i] * RPM), round(v[i] * 1e6)) for i in find_peaks(v)[0]]

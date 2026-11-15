@@ -205,10 +205,12 @@ def test_cracked_preset_numbers():
     assert [round(w * RPM) for w, r, z in campbell(s, 3000.0 / RPM).criticals if r > 0.1] == [1562, 1574]
     assert stability_onset(s, 3000.0 / RPM) is None
     assert growth_rate(s, 783.0 / RPM) < 0
-    np.testing.assert_allclose(s.crack_compliances, [1.45e-4, 0.60e-4], rtol=0.01)
+    assert 100 * s.crack.depth == quoted("rotor_notes", "40 %")
+    kappa = np.array(s.crack_compliances) * 1e4
+    assert kappa == pytest.approx([quoted("rotor_notes", "1.45"), quoted("rotor_notes", "0.60")], abs=0.005)
     r0 = s.with_(crack=None)
     loss = [1.0 - s.axis_system(k).stiffness(0.0)[XD, XD] / r0.stiffness(0.0)[XD, XD] for k in (False, True)]
-    assert [round(x * 1000) for x in loss] == [36, 17]
+    assert [round(x * 100, 1) for x in loss] == [quoted("rotor_notes", "3.6 %"), quoted("rotor_notes", "1.7 %")]
     w = np.linspace(300.0, 2000.0, 17001) / RPM
     assert orbit_peak(s, 2, w) == (quoted("rotor_notes", "37.6"), 783)
     assert orbit_peak(s, 3, w) == (quoted("rotor_notes", "18.6"), 522)
@@ -218,7 +220,8 @@ def test_cracked_preset_numbers():
     assert round(orbit_peak(opposite, 1, w)[0]) == 52
     held = s.with_(crack=Crack(position=0.5, depth=0.4, breathing=False))
     assert orbit_peak(held, 2, w) == (quoted("rotor_notes", "75.3"), 775) and orbit_peak(held, 3, w)[0] == 0.0
-    assert [orbit_peak(s.with_(crack=Crack(position=0.5, depth=d)), 2, w)[0] for d in (0.2, 0.3, 0.5)] == [
+    depths = (quoted("rotor_notes", "0.2"), 0.3, 0.5)
+    assert [orbit_peak(s.with_(crack=Crack(position=0.5, depth=d)), 2, w)[0] for d in depths] == [
         quoted("rotor_notes", "9.5"),
         quoted("rotor_notes", "21.8"),
         quoted("rotor_notes", "51.5"),

@@ -188,3 +188,32 @@ def test_swirl_turns_the_static_sag_with_speed():
     q = s.static_deflection(np.array([0.0, 2000.0 / RPM]))
     assert q[0, XD] == pytest.approx(0.0, abs=1e-12) and q[1, XD] > 1e-6  # pushed sideways, with the spin
     np.testing.assert_allclose(q[1], s.static_deflection(2000.0 / RPM))
+
+
+def test_the_notes_stability_figures():
+    """Stability's figures as the notes quote them: the cross-coupling's damping trade, oil whip on its preset,
+    and internal damping below and above the onset."""
+    from vib_tutorial.core.rotor_presets import rotor_presets
+    from vib_tutorial.core.rotor_stability import log_decrement
+
+    def first_pair(kxy: float) -> tuple[float, float]:
+        m = whirl_modes(cross_coupled(kxy), 1000.0 / RPM)  # the same at every speed
+        return m.zeta[(m.whirl > 0.5) & (m.zeta < 0.3)][0], m.zeta[(m.whirl < -0.5) & (m.zeta < 0.3)][0]
+
+    forward = [round(first_pair(k)[0], 3) for k in (5e3, 1e4, 1.5e4)]
+    assert forward == [quoted("rotor_notes", "0.033"), quoted("rotor_notes", "0.019"), quoted("rotor_notes", "0.004")]
+    assert round(first_pair(1.5e4)[1], 3) == quoted("rotor_notes", "0.074")
+    # The oil swirl preset: unstable at twice the forward whirl, then locked near the natural frequency.
+    whip = next(p for p in rotor_presets() if p.name.startswith("Oil swirl")).system
+    onset = stability_onset(whip, MAX)
+    assert round(onset.freq_hz, 1) == quoted("rotor_notes", "26.1")
+    for rpm, order in ((4000.0, quoted("rotor_notes", "0.39")), (5000.0, quoted("rotor_notes", "0.32"))):
+        f = least_damped(whip, rpm / RPM)[1]
+        assert round(f * 60 / rpm, 2) == order
+    # Internal damping: more damping at rest, a subsynchronous whirl past the onset.
+    s = RotorSystem(internal_damping=20.0)
+    assert round(whirl_modes(s, 0.0).zeta[0], 3) == quoted("rotor_notes", "0.078")
+    assert round(log_decrement(whirl_modes(RotorSystem(), 0.0).zeta[0]), 2) == quoted("rotor_notes", "0.29")
+    zeta, f, _ = least_damped(s, 5000.0 / RPM)
+    assert (round(f, 1), round(f * 60 / 5000, 2)) == (quoted("rotor_notes", "26.9"), 0.32)
+    assert round(1 / (-zeta * 2 * math.pi * f), 2) == quoted("rotor_notes", "0.28")

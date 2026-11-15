@@ -4669,7 +4669,7 @@ def test_rotor_equations_of_motion():
     inertia, area = math.pi * d**4 / 64, math.pi * d**2 / 4
     ei = s.youngs * inertia
     assert round(ei, 2) == quoted("rotor_notes", "98.17")
-    assert (s.ip, s.id) == (1.25e-3, 6.25e-4)
+    assert (s.ip, s.id) == (1.25e-3, quoted("rotor_notes", "6.25") * 1e-4)
     # The disc's own tilt on rigid bearings: k_θ = 12EI/L, the θx entry of K_shaft.
     k_theta = 12 * ei / L
     ks = s.shaft_stiffness()
@@ -4685,7 +4685,10 @@ def test_rotor_equations_of_motion():
         return (a + r) / (2 * s.id) / (2 * math.pi), (r - a) / (2 * s.id) / (2 * math.pi)
 
     rigid = Bearing(kx=1e10, ky=1e10, cx=100.0, cy=100.0, mass=0.1)
-    for ip, fw, bw in ((s.ip, 424.8, 224.8), (s.id, 363.0, 263.0)):
+    for ip, fw, bw in (
+        (s.ip, quoted("rotor_notes", "424.8"), quoted("rotor_notes", "224.8")),
+        (s.id, quoted("rotor_notes", "363.0"), quoted("rotor_notes", "263.0")),
+    ):
         assert [round(f, 1) for f in split(ip)] == [fw, bw]
         m = whirl_modes(s.with_(bearing_a=rigid, bearing_b=rigid, ip=ip), w)
         tilt = sorted((round(f, 1), wr > 0) for f, wr in zip(m.freq_hz, m.whirl, strict=True) if 100 < f < 1000)
@@ -4694,11 +4697,14 @@ def test_rotor_equations_of_motion():
     # K_shaft on the defaults, in kN/m, kN/rad and kN·m/rad; a rigid shift takes no force.
     assert [round(ks[i, j] / 1e3, 3) for i, j in ((0, 0), (1, 1), (0, 2), (2, 2))] == [18.85, 37.699, 4.712, 2.356]
     assert round(ks[1, 1]) == round(48 * ei / L**3) == 37699
+    assert round(ks[1, 1] / 1e3, 2) == quoted("rotor_notes", "37.70")  # on x_D, in kN/m
+    # the ramp's gyroscopic term I_p Ω̇ θ left out, against the disc's tilt stiffness, at 5000 rpm/s
+    assert round(100 * s.ip * 5000 * rpm / k_theta, 2) == quoted("rotor_notes", "0.03 %")
     assert np.allclose(ks @ [1, 1, 0, 1], 0.0, atol=1e-9)
     # The beam elements on the defaults with shaft mass.
     sm = s.with_(density=STEEL)
     le = L / sm.elements
-    assert (sm.elements, le) == (8, 0.0625)
+    assert (sm.elements, 1e3 * le) == (8, quoted("rotor_notes", "62.5"))
     assert round(12 * ei / le**3 / 1e6, 2) == quoted("rotor_notes", "4.83")
     rho_a, rho_i = STEEL * area, STEEL * inertia
     assert round(rho_a, 4) == quoted("rotor_notes", "0.6165")
@@ -4707,9 +4713,10 @@ def test_rotor_equations_of_motion():
     assert round(shift @ mt @ shift, 4) == quoted("rotor_notes", "0.0385")
     assert round(8 * shift @ mt @ shift, 3) == quoted("rotor_notes", "0.308")
     assert np.allclose(beam_stiffness(ei, le) @ shift, 0.0)
-    assert round(100 * mr[0, 0] / mt[0, 0], 2) == quoted("rotor_notes", "0.52")
-    assert round(100 * mr[1, 1] / mt[1, 1], 1) == quoted("rotor_notes", "2.2")
-    assert f"{2 * rho_i * L:.2e}" == "3.85e-06" and round(100 * 2 * rho_i * L / s.ip, 1) == quoted("rotor_notes", "0.3")
+    assert round(100 * mr[0, 0] / mt[0, 0], 2) == quoted("rotor_notes", "0.52 %")
+    assert round(100 * mr[1, 1] / mt[1, 1], 1) == quoted("rotor_notes", "2.2 %")
+    assert round(2 * rho_i * L * 1e6, 2) == quoted("rotor_notes", "3.85")
+    assert round(100 * 2 * rho_i * L / s.ip, 1) == quoted("rotor_notes", "0.3 %")
     kappa = 6 * (1 + POISSON) / (7 + 6 * POISSON)
     assert round(kappa, 3) == quoted("rotor_notes", "0.886")
 
@@ -4719,7 +4726,7 @@ def test_rotor_equations_of_motion():
     shear = s.youngs / (2 * (1 + POISSON))
     assert phi(le) == pytest.approx(12 * ei / (kappa * shear * area * le**2))
     assert round(phi(le), 3) == quoted("rotor_notes", "0.056") and round(phi(L), 5) == quoted("rotor_notes", "0.00088")
-    assert 1 - 1 / math.sqrt(1 + phi(L)) < 0.0005
+    assert 1 - 1 / math.sqrt(1 + phi(L)) < quoted("rotor_notes", "0.05 %") / 100  # shear: the critical's change
     assert (2 * 2 * (sm.elements + 1), sm.n_dof, sm.n_states) == (36, 12, 24)
     # The eigenproblem at 3000 rpm: the first pair, the conical mode, and the spin reversed.
     w = 3000 * rpm
@@ -4760,6 +4767,8 @@ def test_rotor_worked_example():
     keq = 1 / (1 / ks + 1 / (2 * kb))
     wc = math.sqrt(keq / s.disc_mass)
     assert (kb, round(keq), round(wc, 2), round(wc * rpm)) == (50000.0, 27378, quoted("rotor_notes", "165.46"), 1580)
+    assert round(wc, 1) == quoted("rotor_notes", "165.5")
+    assert s.bearing_a.mass == s.bearing_b.mass == quoted("rotor_notes", "0.1")  # the journals' 0.1 kg
     crit = campbell(s, 3000 / rpm, n_speeds=121, n_modes=4).criticals
     assert {round(w * rpm) for w, _, _ in crit} == {1584}
     m = whirl_modes(s, 0.0)
@@ -4774,18 +4783,35 @@ def test_rotor_worked_example():
     assert s.unbalance == pytest.approx(e * 1e-6)
     assert round(s.disc_mass * s.unbalance * (3000 / rpm) ** 2, 2) == quoted("rotor_notes", "1.97")
     for speed, r, amp, lag, page_amp, page_lag in (
-        (3000, 1.894, 27.7, 176.1, 28.0, 175.9),
-        (500, 0.3157, 2.21, 1.9, 2.22, 1.8),
+        (
+            3000,
+            quoted("rotor_notes", "1.894"),
+            quoted("rotor_notes", "27.7"),
+            quoted("rotor_notes", "176.1"),
+            quoted("rotor_notes", "28.0"),
+            quoted("rotor_notes", "175.9"),
+        ),
+        (
+            500,
+            quoted("rotor_notes", "0.3157"),
+            quoted("rotor_notes", "2.21"),
+            quoted("rotor_notes", "1.9"),
+            2.22,
+            quoted("rotor_notes", "1.8"),
+        ),
     ):
         assert round(speed / 1584, 4 if r < 1 else 3) == r
         assert round(e * r * r / math.sqrt((1 - r * r) ** 2 + (2 * zeta * r) ** 2), 2 if amp < 10 else 1) == amp
         assert round(math.degrees(math.atan2(2 * zeta * r, 1 - r * r)), 1) == lag
         X = synchronous_response(s, np.array([speed / rpm]))[0, XD]
         assert round(abs(X) * 1e6, 2 if page_amp < 10 else 1) == page_amp
+        if speed == 500:
+            assert round(abs(X) * 1e6, 1) == quoted("rotor_notes", "2.2")  # "the disc whirls 2.2 µm at 500 rpm"
         assert round(-math.degrees(np.angle(X)), 1) == page_lag
     assert round(e / (2 * zeta)) == 216
     X = synchronous_response(s, np.array([1584 / rpm]))[0, XD]
     assert round(abs(X) * 1e6) == 217 and round(-math.degrees(np.angle(X))) == 88
+    assert abs(216 / 217 - 1) < quoted("rotor_notes", "1 %") / 100  # e/2ζ, within 1 % of the peak
     first = np.linalg.eigvals(s.state_matrix(3000 / rpm))
     first = first[np.argmin(np.abs(first))]
     assert (round(first.real, 3), round(abs(first.imag), 1)) == (
@@ -4801,7 +4827,38 @@ def test_rotor_worked_example():
     assert (round(squeeze(0.0)), round(squeeze(quoted("rotor_notes", "0.5")))) == (1571, 2418)
     assert round(squeeze(0.0) / 100) == 16
     # Rolling bearings: stiffness ∝ load^(1/3) for balls, ^0.1 for rollers.
-    assert round(100 * (2 ** (1 / 3) - 1)) == 26 and round(100 * (2**0.1 - 1)) == 7
+    assert round(100 * (2 ** (1 / 3) - 1)) == quoted("rotor_notes", "26 %")
+    assert round(100 * (2**0.1 - 1)) == quoted("rotor_notes", "7 %")
+
+
+def test_rotor_damping_and_measuring():
+    """Jeffcott rotor's support damping trial, the run-up's ramp against 2ζ², and the overhung rotor's waterfall."""
+    from vib_tutorial.core.rotor import Bearing, RotorSystem
+    from vib_tutorial.core.rotor_modes import whirl_modes
+    from vib_tutorial.core.rotor_presets import rotor_presets
+    from vib_tutorial.core.rotor_simulator import RPM
+
+    def first_zeta(c: float) -> float:
+        b = Bearing(cx=c, cy=c)
+        return float(whirl_modes(RotorSystem(bearing_a=b, bearing_b=b), 0.0).zeta[0])
+
+    zeta = first_zeta(100.0)
+    assert round(zeta, 3) == quoted("rotor_notes", "0.046")
+    assert round(first_zeta(400.0), 3) == quoted("rotor_notes", "0.089")
+    assert round(first_zeta(10_000.0), 3) == quoted("rotor_notes", "0.005")  # the journals locked
+    assert round(2 * zeta**2, 4) == quoted("rotor_notes", "0.0043")
+    wc = 2 * math.pi * whirl_modes(RotorSystem(), 0.0).freq_hz[0]
+    for rate, ratio, digits in (
+        (100, quoted("rotor_notes", "0.0004"), 4),
+        (500, quoted("rotor_notes", "0.0019"), 4),
+        (5000, quoted("rotor_notes", "0.019"), 3),
+    ):
+        assert round((rate / RPM) / wc**2, digits) == ratio  # Ω̇/ω_c²
+    # The overhung rotor's first mode from rest to 2,500 rpm, as the taps trace it.
+    overhung = next(p for p in rotor_presets() if p.name == "Overhung rotor").system
+    back, forward = whirl_modes(overhung, 2500.0 / RPM).freq_hz[:2]
+    assert (round(back, 1), round(forward, 1)) == (quoted("rotor_notes", "5.6"), quoted("rotor_notes", "25.5"))
+    assert round(200 * 0.5 / 60, 1) == quoted("rotor_notes", "1.7")  # Ω̇T_b: 100 rpm over a 0.5 s block
 
 
 def test_rotor_builder_worked_example():

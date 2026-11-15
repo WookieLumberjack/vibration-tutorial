@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 from vib_tutorial.core.rotor import Bearing, RotorSystem
 from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
@@ -150,3 +151,26 @@ def test_steady_state_lag_passes_90_degrees_at_the_critical(direction):
     lag = lag_degrees(probe(steady_vectors(s, w)[:, 1], direction))
     offset = 90.0 if direction == "y" else 0.0
     assert np.all(np.abs(lag - offset - [0.0, 90.0, 180.0]) < [5.0, 3.0, 10.0])
+
+
+def test_the_notes_run_up_peaks():
+    """Measuring the response: each sweep's peak against the steady state's, as the notes quote them (800 to 2400
+    rpm on the defaults, then at 500 rpm/s with 400 N·s/m supports)."""
+    s = RotorSystem()
+    ss_amp, _ = steady_peak(s)
+    for rate, up_share, down_share in (
+        (100.0, quoted("rotor_notes", "100 %"), None),
+        (500.0, quoted("rotor_notes", "95 %"), quoted("rotor_notes", "87 %")),
+        (2000.0, quoted("rotor_notes", "78 %"), None),
+        (5000.0, quoted("rotor_notes", "60 %"), quoted("rotor_notes", "50 %")),  # "about"
+    ):
+        up, down = sweep(s, rate, 800.0, 2400.0)
+        loose = 3.0 if rate == 5000.0 else 0.5
+        assert 100 * up.peak(1, "x")[0] / ss_amp == pytest.approx(up_share, abs=loose)
+        if down_share is not None:
+            assert 100 * down.peak(1, "x")[0] / ss_amp == pytest.approx(down_share, abs=loose)
+    damped = RotorSystem(bearing_a=DAMPED, bearing_b=DAMPED)
+    ss_amp, _ = steady_peak(damped)
+    up, down = sweep(damped, 500.0, 800.0, 2400.0)
+    assert 100 * up.peak(1, "x")[0] / ss_amp == pytest.approx(quoted("rotor_notes", "101 %"), abs=0.5)
+    assert 100 * down.peak(1, "x")[0] / ss_amp == pytest.approx(quoted("rotor_notes", "96 %"), abs=0.5)

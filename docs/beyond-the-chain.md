@@ -444,7 +444,7 @@ the spin; above the critical the bow pulls the high spot away, and the same rub 
 
 ![Bode plot of the disc's 1X response, run up and coasted down between 800 and 2400 rpm at 500 and 5000 rpm/s over the steady-state curve: the steady peak is 217 µm at 1590 rpm; the 500 rpm/s run-up reaches 95% of it at 1672 rpm, the 5000 rpm/s run-up 62% at 1957 rpm, and the coast-downs peak lower and below the critical speed](images/jeffcott_run_up.png)
 
-![Cascade of the overhung rotor's disc orbit, run up from rest to 2500 rpm at 200 rpm/s with the disc tapped every 0.5 s: 49 full spectra on a log scale. The taps' peaks follow the first mode's backward whirl down from −14.5 to −5.7 Hz and its forward whirl up to 25.5 Hz, and the 1X ridge peaks at 209 µm at 1350 rpm, just past the forward critical](images/jeffcott_waterfall.png)
+![Cascade of the overhung rotor's disc orbit, run up from rest to 2500 rpm at 200 rpm/s with the disc tapped every 0.5 s: 49 full spectra on a log scale. The taps' peaks follow the first mode's backward whirl down from −14.5 to −5.6 Hz and its forward whirl up to 25.5 Hz, and the 1X ridge peaks at 209 µm at 1350 rpm, just past the forward critical](images/jeffcott_waterfall.png)
 
 A cascade plot stacks the spectra taken through a run-up at their speeds. The unbalance makes a
 ridge along 1X; a tap rings the free whirl frequencies, which move only as the gyroscopic effect

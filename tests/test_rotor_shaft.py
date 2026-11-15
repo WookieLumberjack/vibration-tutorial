@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from notes_quoting import quoted
 
 import vib_tutorial.core.rotor as rotor
 from vib_tutorial.core.rotor import MODE_LIMIT, STEEL, XD, YD, Bearing, RotorSystem
@@ -54,12 +55,13 @@ def test_the_reduction_keeps_the_full_element_models_modes(position, monkeypatch
     full = whirl_modes(unreduced(s, monkeypatch), 3000.0 / RPM).freq_hz
     k = int(np.sum(full < MODE_LIMIT))
     error = np.abs(reduced[:k] / full[:k] - 1.0)
-    assert error[full[:k] < 500.0].max() < 2e-3 and error.max() < 1e-2  # as the theory notes say
+    assert error[full[:k] < 500.0].max() < quoted("rotor_notes", "0.2 %") / 100
+    assert error.max() < quoted("rotor_notes", "1 %") / 100  # up to 1000 Hz
 
 
 def test_a_light_shaft_adds_about_17_35_of_its_mass_to_the_disc():
     s = RotorSystem(density=STEEL)
-    assert s.shaft_mass == pytest.approx(0.308, abs=5e-4)
+    assert s.shaft_mass == pytest.approx(0.308, abs=5e-4) == pytest.approx(quoted("rotor_notes", "0.31"), abs=0.005)
     assert forward_criticals(s) == [1458]
     assert forward_criticals(RotorSystem()) == [1584]
     rule = 1584 / math.sqrt(1 + 17 / 35 * s.shaft_mass / s.disc_mass)

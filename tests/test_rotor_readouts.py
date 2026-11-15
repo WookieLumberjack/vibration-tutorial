@@ -35,3 +35,11 @@ def test_onset_text():
     assert onset_text(None, 6000.0) == "stable up to 6,000 rpm."
     grows = Onset(omega=1000 * math.pi / 30, freq_hz=10.0, whirl=1.0)
     assert onset_text(grows, 6000.0).startswith("<b>unstable above 1,000 rpm</b>")
+
+
+def test_a_whirl_of_2_percent_of_the_span_pauses_the_page():
+    from notes_quoting import quoted
+
+    from vib_tutorial.gui.rotor import RUB
+
+    assert 100 * RUB == quoted("rotor_notes", "2 %")
