@@ -20,6 +20,8 @@ new theme.
 from __future__ import annotations
 
 import re
+import weakref
+from collections.abc import Callable
 from functools import partial
 
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -168,3 +170,25 @@ class NotesBrowser(QtWidgets.QTextBrowser):
             if key.startswith("fig:") and (draw := figures.build(key)) is not None:
                 return figures.render(draw(), self._zoom)
         return super().loadResource(kind, name)
+
+
+def wire(browser: QtWidgets.QTextBrowser, go: Callable[[str, str], None]) -> None:
+    """Have `browser` follow its own #anchors, send page: links to `go(page, anchor)`, open the web outside."""
+    if browser.property("links_wired"):
+        return
+    browser.setProperty("links_wired", True)
+    browser.setOpenLinks(False)
+    # Neither held strongly: the slot lives as long as the browser, and `go` is often its window's method.
+    held = weakref.WeakMethod(go) if hasattr(go, "__self__") else (lambda: go)
+    ref = weakref.ref(browser)
+
+    def follow(url: QtCore.QUrl) -> None:
+        if url.scheme() == "page":
+            if (to := held()) is not None:
+                to(url.path(), url.fragment())
+        elif url.scheme() in ("http", "https"):
+            QtGui.QDesktopServices.openUrl(url)
+        elif url.fragment() and (shown := ref()) is not None:
+            shown.scrollToAnchor(url.fragment())
+
+    browser.anchorClicked.connect(follow)

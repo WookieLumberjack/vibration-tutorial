@@ -3,7 +3,8 @@
 A note links to another page's Theory with `page:<attribute>#<anchor>`, the attribute as in
 `main_window.PAGE_GROUPS` (`page:frf_page#three-forms`); `#anchor` alone stays on its own page,
 and http(s) links open in the browser. `before(...)` writes a page's "Before this page" line.
-The main window calls `wire` on every Theory browser and handles the `page:` links.
+The main window calls `notes_view.wire` on every Theory browser and handles the `page:` links. This module has
+no Qt (`tests/test_view_models.py` checks), so the course's order, paths, keys and notes load headless.
 
 A page's notes live in `theory/<name>.html` (`load_notes`), Qt's rich text but for the tags the
 loader writes out: `<before>`, the page: links to read first; `<takeaways>`, one `<li>` each; `<eq>` (a
@@ -16,11 +17,8 @@ from __future__ import annotations
 
 import re
 import sys
-import weakref
 from collections.abc import Callable
 from importlib import resources
-
-from PySide6 import QtCore, QtGui, QtWidgets
 
 
 def page_link(page: str, anchor: str, text: str) -> str:
@@ -474,25 +472,3 @@ PAGE_TITLES = {
     "rotor_builder_page": "Rotor builder page",
     "diagnostics_page": "Machinery diagnostics page",
 }
-
-
-def wire(browser: QtWidgets.QTextBrowser, go: Callable[[str, str], None]) -> None:
-    """Have `browser` follow its own #anchors, send page: links to `go(page, anchor)`, open the web outside."""
-    if browser.property("links_wired"):
-        return
-    browser.setProperty("links_wired", True)
-    browser.setOpenLinks(False)
-    # Neither held strongly: the slot lives as long as the browser, and `go` is often its window's method.
-    held = weakref.WeakMethod(go) if hasattr(go, "__self__") else (lambda: go)
-    ref = weakref.ref(browser)
-
-    def follow(url: QtCore.QUrl) -> None:
-        if url.scheme() == "page":
-            if (to := held()) is not None:
-                to(url.path(), url.fragment())
-        elif url.scheme() in ("http", "https"):
-            QtGui.QDesktopServices.openUrl(url)
-        elif url.fragment() and (shown := ref()) is not None:
-            shown.scrollToAnchor(url.fragment())
-
-    browser.anchorClicked.connect(follow)
