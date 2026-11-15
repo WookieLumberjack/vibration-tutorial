@@ -1,6 +1,8 @@
 """Single oscillator page: one mass on a spring and a damper, free and forced, worked out in closed form.
 
-Left: the oscillator, its start and its drive. Centre: the free decay (with its envelope and peaks, or
+Left: the oscillator, its start and its drive. Centre: the mass itself on its spring and damper, moving with
+the free or the driven response (pluck it to start it from where you let go; a `Playback` walks the time,
+with a cursor on the time plot), then the free decay (with its envelope and peaks, or
 three dampings side by side) and the response to a harmonic force switched on from rest. Right: the
 frequency response with its half-power band, the Nyquist plot, the phase plane, the poles (click to move
 them) and the Theory. The page has its own model (core/sdof.py), not the chain.
@@ -28,11 +30,14 @@ from ..core.sdof import (
     settling_time,
 )
 from . import sdof_figures, settle_plots
+from .animation import ChainView
 from .drag import DragLine
-from .layouts import ColumnScroll
+from .layouts import ColumnScroll, group
 from .lesson import (
+    Dot,
     Form,
     TrialBox,
+    combo,
     fmt,
     note_label,
     plot,
@@ -42,6 +47,7 @@ from .lesson import (
 )
 from .links import course_map, keys_html, load_notes, page_link, paths_html
 from .notes_view import NotesBrowser
+from .playback import Playback
 from .style import colors
 from .theming import add_legend
 
@@ -49,6 +55,10 @@ POINTS = 3000  # samples on each time plot
 COMPARE_ZETAS = (0.1, 1.0, 2.0)  # the damping ratios drawn side by side
 FORCE, UNBALANCE = 0, 1  # the drive's kinds, as the combo lists them
 TAB_FRF, TAB_NYQUIST, TAB_PHASE, TAB_POLES = range(4)
+BODY_FREE, BODY_DRIVEN = 0, 1  # what the mass moves with, as the combo lists them
+# The moving mass's scale (display units: the mass is 0.4 wide, 0.8 from the wall): the response's peak is drawn
+# SWING across, and kept to the SCALED band, so a pluck let go inside it doesn't rescale (the mass jumping).
+SWING, SCALED, DRAG = 0.5, (0.25, 0.65), 0.6
 
 
 @dataclass(frozen=True)
@@ -66,6 +76,7 @@ class SdofTrial:
     freq_hz: float = 3.0
     tune: bool = False  # drive at f_n
     tab: int = TAB_FRF
+    body: int = BODY_FREE  # the mass moves with the free vibration or the driven response
 
 
 TRIALS = (
@@ -106,6 +117,7 @@ TRIALS = (
         "the force by 90°, where the phase plot crosses −90°.",
         tune=True,
         tab=TAB_FRF,
+        body=BODY_DRIVEN,
     ),
     SdofTrial(
         "Half-power bandwidth",
@@ -125,6 +137,7 @@ TRIALS = (
         damping=0.0,
         freq_hz=3.0,
         tab=TAB_FRF,
+        body=BODY_DRIVEN,
     ),
     SdofTrial(
         "Exactly at resonance, undamped",
@@ -133,6 +146,7 @@ TRIALS = (
         damping=0.0,
         tune=True,
         tab=TAB_FRF,
+        body=BODY_DRIVEN,
     ),
     SdofTrial(
         "A rotating unbalance",
@@ -145,6 +159,7 @@ TRIALS = (
         amplitude=1e-4,
         tune=True,
         tab=TAB_FRF,
+        body=BODY_DRIVEN,
     ),
     SdofTrial(
         "The Nyquist circle",
@@ -460,7 +475,14 @@ TIPS = {
     "at radius e inside the machine, whose force m<sub>e</sub>eΩ² cos Ωt grows with the speed.</p>",
     "amplitude": "<p>The force's amplitude F, or the unbalance m<sub>e</sub>e.</p>",
     "freq": "<p>The drive's frequency Ω/2π.</p>",
+    "body": "<p>What the mass above the plots moves with: the free vibration from x₀ and v₀, or the drive switched "
+    "on from rest. Its time cursor (on that plot) shows where it is.</p>",
 }
+PLUCK_TIP = (
+    "<p>The mass on its spring and damper, moving with the response below it (drawn to the scale bar).</p>"
+    "<p><b>Pluck it:</b> drag the mass sideways and let go. While you hold it, the arrow is the force your hand "
+    "needs, kx; let go and it vibrates freely from there (x₀ is where you let it go, v₀ = 0).</p>"
+)
 DRIVE_LINE_TIP = (
     "<p>The drive's frequency. Drag it to sweep the drive across the resonance: the circle, the time response and "
     "the Drive box follow.</p>"
@@ -514,6 +536,8 @@ class SdofPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.osc = Oscillator()
+        self._spans = [1.0, 1.0]  # the free and driven plots' spans (s), as last drawn
+        self._peaks = [0.0, 0.0]  # and their largest |x| (m)
 
         # --- left
         self.trials = TrialBox(
@@ -589,6 +613,25 @@ class SdofPage(QtWidgets.QWidget):
         center = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(center)
         cv.setContentsMargins(0, 0, 0, 0)
+        # The mass itself, moving with one of the two responses, and the time walked along it.
+        self.body = ChainView()
+        self.body.set_masses(np.ones(1))
+        self.body.auto_scale = False  # the scale is the response's peak, so its decay shows
+        self.body.max_drag = DRAG
+        self.body.setToolTip(PLUCK_TIP)
+        self.body.setAccessibleName("The mass on its spring and damper, moving")
+        self.body.setFixedHeight(120)
+        self.body.mass_grabbed.connect(self._on_grabbed)
+        self.body.mass_dragged.connect(self._on_plucked)
+        self.body.mass_released.connect(self._on_let_go)
+        self.follow = combo(["Free vibration", "Driven from rest"], TIPS["body"])
+        self.follow.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.follow.currentIndexChanged.connect(self._on_follow)
+        self.playback = Playback(self, "Single oscillator")
+        self.playback.moved.connect(self._place_body)
+        self.cursors = [self.playback.add_cursor(self.free_plot), self.playback.add_cursor(self.forced_plot)]
+        cv.addWidget(self.body)
+        cv.addWidget(self.playback.bar(group("Moves with:", self.follow)))
         title = QtWidgets.QLabel("<b>Free vibration</b>")
         cv.addWidget(title)
         cv.addWidget(self.free_plot, 1)
@@ -654,6 +697,8 @@ class SdofPage(QtWidgets.QWidget):
         self.plane_start = pg.ScatterPlotItem(size=9)
         self.plane.addItem(self.plane_item)
         self.plane.addItem(self.plane_start)
+        self.plane_now = Dot(10)  # where the moving mass is on the path
+        self.plane.addItem(self.plane_now, ignoreBounds=True)
         pv.addWidget(self.plane, 1)
         pv.addWidget(note_label("The free vibration's path: a circle undamped, a spiral damped. The dot is the start."))
 
@@ -736,9 +781,11 @@ class SdofPage(QtWidgets.QWidget):
         self.osc = Oscillator(t.mass, t.stiffness, t.damping)
         if t.tune:
             set_quietly(self.freq, round(self.osc.natural_hz, 6))
+        set_quietly(self.follow, t.body)
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self.redraw()
+        self.playback.play()  # a trial starts the motion
 
     def practice_state(self) -> SdofTrial:
         """The page's settings, as a trial: what a practice spec checks."""
@@ -755,6 +802,7 @@ class SdofPage(QtWidgets.QWidget):
             amplitude=self.amplitude.value(),
             freq_hz=self.freq.value(),
             tab=self.tabs.currentIndex(),
+            body=self.follow.currentIndex(),
         )
 
     def _on_oscillator(self) -> None:
@@ -832,6 +880,10 @@ class SdofPage(QtWidgets.QWidget):
         self.arc.setPen(pg.mkPen(c.faint, width=1))
         self.pole_item.setPen(pg.mkPen(c.force, width=2.5))
         self.pole_item.setBrush(pg.mkBrush(c.force))
+        self.plane_now.setPen(pg.mkPen(c.background, width=1.5))
+        self.plane_now.setBrush(pg.mkBrush(c.mass[0]))
+        self.body.apply_theme()
+        self.playback.apply_theme()
         self.redraw()
         for line in self.drive_lines:
             line.apply_theme()
@@ -845,7 +897,64 @@ class SdofPage(QtWidgets.QWidget):
         self._draw_forced()
         self._draw_frf()
         self._draw_poles()
+        self._on_follow()
         settle_plots(self)
+
+    # ------------------------------------------------------------- the moving mass
+    @property
+    def driven(self) -> bool:
+        return self.follow.currentIndex() == BODY_DRIVEN
+
+    def _on_follow(self, *_: object) -> None:
+        """The mass follows the response picked: its plot's cursor shows, and its span is the playback's."""
+        for line, on in zip(self.cursors, (not self.driven, self.driven)):
+            line.setVisible(on)
+        self.playback.set_span(self._spans[BODY_DRIVEN if self.driven else BODY_FREE])  # places the mass
+
+    def body_at(self, t: float) -> tuple[float, float, float]:
+        """The mass's displacement, velocity and the force on it at time t, in the response it follows."""
+        o = self.osc
+        ts = np.array([t])
+        if not self.driven:
+            x, v = free_response(o, 1e-3 * self.x0.value(), 1e-3 * self.v0.value(), ts)
+            return float(x[0]), float(v[0]), 0.0
+        f = self.freq.value()
+        F = float(self.force_amplitude(f))
+        h = 1e-6 * max(1.0, t)
+        x, _ = harmonic_from_rest(o, F, f, np.array([t, t + h]))
+        return float(x[0]), float((x[1] - x[0]) / h), F * math.cos(TWO_PI * f * t)
+
+    def _place_body(self, t: float) -> None:
+        x, v, force = self.body_at(t)
+        peak = self._peaks[BODY_DRIVEN if self.driven else BODY_FREE]
+        if self.body.held is None:  # under the hand the scale holds still
+            if not SCALED[0] <= peak * self.body.gain <= SCALED[1]:
+                self.body.gain = SWING / max(peak, 1e-9)
+        else:
+            force = self.osc.stiffness * x  # the hand holds the spring stretched
+        scale = float(self.force_amplitude(self.freq.value())) if self.driven else self.osc.stiffness * peak
+        self.body.update_state(np.array([x]), peak, force, 0, scale)
+        if self.driven:
+            self.plane_now.hide()
+        else:
+            self.plane_now.setData([x], [v / self.osc.omega_n])
+
+    def _on_grabbed(self, _: int) -> None:
+        """A pluck: the mass follows the free vibration, held at t = 0, and the scale gives room to pull."""
+        self.playback.pause()
+        set_quietly(self.follow, BODY_FREE)
+        self.playback.seek(0.0)
+        x0 = 1e-3 * abs(self.x0.value())
+        if x0 * self.body.gain > 0.7 * DRAG or self.body.gain * 0.005 > DRAG:  # room to pull it 5 mm or further
+            self.body.gain = 0.7 * DRAG / max(x0, 0.005)
+
+    def _on_plucked(self, _: int, x: float) -> None:
+        set_quietly(self.x0, round(1e3 * x, 2))
+        set_quietly(self.v0, 0.0)
+        self.redraw()
+
+    def _on_let_go(self, _: int) -> None:
+        self.playback.play()
 
     def _show_info(self) -> None:
         o = self.osc
@@ -887,6 +996,7 @@ class SdofPage(QtWidgets.QWidget):
         t = np.linspace(0.0, span, POINTS)
         x, v = free_response(o, x0, v0, t)
         self.free_item.setData(t, x)
+        self._spans[BODY_FREE], self._peaks[BODY_FREE] = span, float(np.max(np.abs(x)))
         if 0 < o.zeta < 1:
             amp = math.hypot(x0, (v0 + o.zeta * o.omega_n * x0) / o.omega_d)
             env = amp * np.exp(-o.zeta * o.omega_n * t)
@@ -949,6 +1059,7 @@ class SdofPage(QtWidgets.QWidget):
         t = t if t.size <= 40000 else np.linspace(0.0, span, 40000)
         x, steady = harmonic_from_rest(o, F, f, t, x0, v0)
         self.forced_item.setData(t, x)
+        self._spans[BODY_DRIVEN], self._peaks[BODY_DRIVEN] = span, float(np.max(np.abs(x)))
         self.steady_item.setData(t, steady, connect="finite")
         self.forced_plot.setXRange(0, span, padding=0)
         h = receptance(o, np.array([f]))[0]

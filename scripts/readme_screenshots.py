@@ -980,14 +980,17 @@ def shock_synthesis():
     save(w, "shock_synthesis")
 
 
-def lesson(attr, trial, name, tab=None):
-    """A One mass or Signals page with one of its trials loaded (its readouts printed for the caption)."""
+def lesson(attr, trial, name, tab=None, at=None):
+    """A One mass or Signals page with one of its trials loaded (its readouts printed for the caption); `at`, the
+    time its moving body is held at (the trial starts it)."""
     w = window()
     page = getattr(w, attr)
     w.pages.setCurrentWidget(page)
     page.load_trial(trial)
     if tab is not None:
         page.tabs.setCurrentIndex(tab)
+    if at is not None:
+        page.playback.seek(at)
     settle()
     from PySide6 import QtWidgets
 
@@ -998,7 +1001,7 @@ def lesson(attr, trial, name, tab=None):
 
 
 def single_oscillator():
-    lesson("sdof_page", 3, "single_oscillator")  # resonance from rest
+    lesson("sdof_page", 3, "single_oscillator", at=1.6)  # resonance from rest, the mass 1.6 s in
 
 
 def transient_response():
