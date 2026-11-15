@@ -1166,6 +1166,34 @@ def test_substructuring_a_light_interior():
     M, _, K = s.matrices()
     held = np.sqrt(np.sort(np.linalg.eigvals(np.linalg.solve(M[:3, :3], K[:3, :3])).real)) / (2 * math.pi)
     assert held[0] == pytest.approx(quoted("cms_notes", "10.9"), abs=0.05)
+    # the steady state there, driven at the tip: the true chain, the coupled reduced model (no modes in A, 1 in
+    # B), and each interior re-solved with the coupled boundary motion imposed (the enhanced recovery)
+    w = 2 * math.pi * held[0]
+    force = np.eye(8)[7]
+
+    def dynamic(M, C, K):
+        return K - w * w * M + 1j * w * C
+
+    M, C, K = s.matrices()
+    x = np.linalg.solve(dynamic(M, C, K), force)
+    model = component_mode_synthesis(s, [3], [0, 1])
+    coupled = model.T @ np.linalg.solve(dynamic(model.M, model.C, model.K), model.T.T @ force)
+
+    def enhanced(inside, boundary):
+        ii, ib = np.ix_(inside, inside), np.ix_(inside, boundary)
+        return -np.linalg.solve(dynamic(M[ii], C[ii], K[ii]), (K[ib] + 1j * w * C[ib]) @ coupled[boundary])
+
+    tip = abs(x[7])
+    assert 100 * abs(x[3]) / tip == pytest.approx(quoted("cms_notes", "0.012 %"), abs=5e-4)  # A holds it still
+    assert 100 * abs(coupled[3]) / tip == pytest.approx(quoted("cms_notes", "9 %"), abs=0.5)
+    assert 100 * (1 - abs(coupled[7]) / tip) == pytest.approx(quoted("cms_notes", "15 %"), abs=0.5)
+    in_a, in_b = enhanced([0, 1, 2], [3]), enhanced([4, 5, 6], [3, 7])
+    off_enhanced, off_coupled = abs(in_a[0] - x[0]), abs(coupled[0] - x[0])
+    assert off_enhanced / off_coupled == pytest.approx(quoted("cms_notes", "4.9"), abs=0.05)
+    assert 100 * off_enhanced / tip == pytest.approx(quoted("cms_notes", "11 %"), abs=0.5)
+    assert 100 * off_coupled / tip == pytest.approx(quoted("cms_notes", "2.3 %"), abs=0.05)
+    assert 100 * abs(in_b[2] - x[6]) / tip == pytest.approx(quoted("cms_notes", "1.7 %"), abs=0.05)
+    assert 100 * abs(coupled[6] - x[6]) / tip == pytest.approx(quoted("cms_notes", "34 %"), abs=0.5)
 
 
 def test_modal_coupling_absorber_damping_is_shared():

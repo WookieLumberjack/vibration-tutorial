@@ -507,9 +507,18 @@ next to the system run.</p>
 fixed-interface resonances, so near one of them a small error in <m>x<sub>b</sub></m> is amplified
 by the resonance, and the enhanced recovery can be worse than the coupled one. Try a light
 interior: 8 masses, <m>m<sub>1</sub></m> to <m>m<sub>3</sub></m> set to 0.05 kg, the interface at
-m4, no modes in A and 1 in B, driven at A's first fixed-interface frequency (10.9 Hz). In A the
-enhanced recovery of <m>x<sub>1</sub></m> is about 27% off against 6% for the coupled one; in B,
-where nothing resonates, it is within 1% against 7%.</p>
+m4, no modes in A and 1 in B, driven at the tip at A's first fixed-interface frequency (10.9 Hz).
+There the real A is a tuned absorber: it holds the interface still (in the steady state
+<m>x<sub>4</sub></m> moves 0.012 % as much as the tip) and barely moves itself. The reduced model,
+with no modes in A, can't: its interface moves 9 % as much as the tip, and its tip 15 % too little.
+The enhanced recovery drives A at its own resonance with that wrong <m>x<sub>b</sub></m>, and its
+<m>x<sub>1</sub></m> ends up 4.9 times further off than the coupled one's (by 11 % of the tip's
+motion, against 2.3 %). In B, where nothing resonates, it is the other way round:
+<m>x<sub>7</sub></m> off by 1.7 % of the tip's motion, against 34 %.</p>
+<p>The <i>Back expansion</i> tab's percentages (below) are of each mass's own motion, and here <m>x<sub>1</sub></m>'s
+own motion is only the start-up transient, dying away (it halves about every 20 s). So its
+percentages climb without bound as you watch: a relative error means little on a mass that, in
+truth, stands still. Read its <i>Error</i> plot, in metres, instead.</p>
 <p>The <i>Back expansion</i> tab steps the full chain, the coupled reduced model and the enhanced
 recovery together in one exact update, and compares all three recoveries of one interior mass and
 one spring with the truth.</p>
