@@ -170,3 +170,60 @@ def test_the_pendulum_swings_with_its_curve_and_a_pluck_lets_it_go_from_there(ma
     assert p.side == 1.0 and view.disc.isVisible() and not view.bob.isVisible()
     xs, ys = view.body.getData()
     assert math.atan2(xs[1], ys[1]) == pytest.approx(math.radians(120.0))
+
+
+def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
+    from vib_tutorial.gui import sdof
+
+    w = main_window
+    p = w.sdof_page
+    w.pages.setCurrentWidget(p)
+    box = p.trials
+    i = next(k for k, t in enumerate(sdof.TRIALS) if t.name.startswith("Resonance"))
+    prediction = sdof.TRIALS[i].predict
+    assert prediction is not None
+    before = p.practice_state()
+    box.combo.pick(sdof.TRIALS[i].name)
+    assert box.asking == i and box.ask.isVisible() and "Predict first" in box.question.text()
+    assert p.practice_state() == before and not p.playback.running  # nothing set up yet
+    buttons = [box.choices.itemAt(k).widget() for k in range(box.choices.count())]
+    assert [b.text() for b in buttons] == list(prediction.choices)
+
+    wrong = next(k for k in range(len(prediction.choices)) if k != prediction.answer)
+    buttons[wrong].click()
+    assert box.asking is None and not box.ask.isVisible() and "Not quite" in box.verdict.text()
+    assert prediction.choices[prediction.answer] in box.verdict.text()
+    assert p.freq.value() == pytest.approx(p.osc.natural_hz, abs=1e-3) and p.playback.running  # it ran
+    assert box.note.isVisible() and "quality factor" in box.note.text()
+
+    box.combo.pick(sdof.TRIALS[i].name)  # again: asked again
+    assert box.ask.isVisible() and not box.verdict.isVisible()
+    box.answer(prediction.answer)
+    assert "Right" in box.verdict.text()
+
+    box.combo.pick(sdof.TRIALS[i].name)
+    box.skip.click()  # Just run it: no verdict
+    assert not box.verdict.isVisible() and box.note.isVisible()
+
+    plain = next(k for k, t in enumerate(sdof.TRIALS) if t.predict is None)
+    box.combo.pick(sdof.TRIALS[plain].name)  # no prediction: runs at once
+    assert not box.ask.isVisible() and box.note.text()
+
+    box.combo.pick(sdof.TRIALS[i].name)
+    w.restore_defaults()  # put back as it opened: no question, no verdict
+    assert not box.ask.isVisible() and not box.verdict.isVisible() and box.asking is None
+
+
+def test_a_goals_links_set_up_its_trial_and_ask_its_problem(main_window, app):
+    """(conftest points the settings at the worker's own file: the Practice window reads them.)"""
+    from PySide6 import QtCore as Core
+
+    w = main_window
+    browser = w.pendulum_page.notes
+    w._wire_links(w.pendulum_page)
+    browser.anchorClicked.emit(Core.QUrl("trial:pendulum_page#2"))
+    p = w.pendulum_page
+    assert w.pages.currentWidget() is p and p.trials.asking == 1 and p.trials.ask.isVisible()
+    browser.anchorClicked.emit(Core.QUrl("practice:pendulum_page#large-swing"))
+    pw = w.practice_window
+    assert pw is not None and pw.problem is not None and pw.problem.key == "large-swing"

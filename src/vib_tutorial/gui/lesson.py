@@ -11,6 +11,7 @@ from collections.abc import Callable, Sequence
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.practice import Prediction
 from ..view_models.text import db as db  # re-exported for the pages
 from ..view_models.text import fmt as fmt
 from . import accessible, weak
@@ -188,28 +189,128 @@ class RunButton(QtWidgets.QPushButton):
 
 
 class TrialBox(QtWidgets.QGroupBox):
-    """Things to try: a `TrialCombo` and the picked one's note below it; `picked(i)` with the trial's index."""
+    """Things to try: a `TrialCombo` and the picked one's note below it; `picked(i)` with the trial's index.
+
+    A trial with a `Prediction` (`predictions[i]`, from its `predict` field) asks it first: its question and a
+    button per choice (and *Just run it*) take the note's place, and the page isn't touched until one is pressed.
+    Then the verdict shows, `picked(i)` sets the trial up, and its note (the explanation) shows below. Calling
+    the page's `load_trial` directly (tests, the Practice window) skips the question.
+    """
 
     picked = QtCore.Signal(int)
 
-    def __init__(self, names: Sequence[str], tip: str, parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(
+        self,
+        names: Sequence[str],
+        tip: str,
+        parent: QtWidgets.QWidget | None = None,
+        predictions: Sequence[Prediction | None] = (),
+    ) -> None:
         super().__init__("Things to try", parent)
         layout = QtWidgets.QVBoxLayout(self)
+        self.predictions = list(predictions) + [None] * (len(names) - len(predictions))
         self.combo = TrialCombo(names, tip)
-        self.combo.picked.connect(self.picked)
+        self.combo.picked.connect(self._on_pick)
         layout.addWidget(self.combo)
+        self.asking: int | None = None  # the trial whose prediction is being asked
+        self.ask = QtWidgets.QWidget()  # the question, its choices and Just run it
+        ask = QtWidgets.QVBoxLayout(self.ask)
+        ask.setContentsMargins(0, 0, 0, 0)
+        self.question = QtWidgets.QLabel()
+        self.question.setWordWrap(True)
+        self.question.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        ask.addWidget(self.question)
+        self.choices = QtWidgets.QVBoxLayout()
+        ask.addLayout(self.choices)
+        self.skip = QtWidgets.QPushButton("Just run it")
+        self.skip.setFlat(True)
+        self.skip.setToolTip("<p>Set the trial up without predicting.</p>")
+        self.skip.clicked.connect(self._on_skip)
+        ask.addWidget(self.skip)
+        self.ask.setVisible(False)
+        layout.addWidget(self.ask)
+        self.verdict = QtWidgets.QLabel()
+        self.verdict.setWordWrap(True)
+        self.verdict.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        self.verdict.setVisible(False)
+        layout.addWidget(self.verdict)
         self.note = note_label()
         self.note.setVisible(False)
         layout.addWidget(self.note)
 
     def show_note(self, text: str) -> None:
+        """The trial's note; none puts the box back as it opened (no question, no verdict)."""
         self.note.setText(markup(text))
         self.note.setVisible(bool(text))
+        if not text:
+            self.asking = None
+            self.ask.setVisible(False)
+            self.verdict.setVisible(False)
+
+    def answer(self, choice: int) -> None:
+        """Answer the prediction being asked with choice `choice` (a button's click): the verdict, then the trial."""
+        i = self.asking
+        assert i is not None, "answered only while a prediction is asked"
+        p = self.predictions[i]
+        assert p is not None, "asked only for a trial with a prediction"
+        right = choice == p.answer
+        self.verdict.setText(
+            markup(
+                "<b>✓ Right.</b> Here it is:"
+                if right
+                else f"<b>✗ Not quite:</b> it's <i>{p.choices[p.answer]}</i>. See why:"
+            )
+        )
+        self._run(i)
+
+    def _on_pick(self, i: int) -> None:
+        p = self.predictions[i] if i < len(self.predictions) else None
+        self.verdict.setVisible(False)
+        if p is None:
+            self.asking = None
+            self.ask.setVisible(False)
+            self.picked.emit(i)
+            return
+        self.asking = i
+        self.note.setVisible(False)
+        self.question.setText(markup(f"<b>Predict first:</b> {p.prompt}"))
+        while self.choices.count():
+            item = self.choices.takeAt(0)
+            if item is not None and (widget := item.widget()) is not None:
+                widget.deleteLater()
+        for k, text in enumerate(p.choices):
+            button = QtWidgets.QPushButton(text)  # plain text: a button shows no rich text
+            button.setProperty("choice", k)
+            button.clicked.connect(self._on_choice)
+            self.choices.addWidget(button)
+        self.ask.setVisible(True)
+
+    def _on_choice(self) -> None:
+        button = self.sender()
+        if isinstance(button, QtWidgets.QPushButton):
+            self.answer(int(button.property("choice")))
+
+    def _on_skip(self) -> None:
+        assert self.asking is not None, "Just run it shows only while a prediction is asked"
+        self.verdict.setText("")
+        self._run(self.asking)
+
+    def _run(self, i: int) -> None:
+        self.asking = None
+        self.ask.setVisible(False)
+        self.verdict.setVisible(bool(self.verdict.text()))
+        self.picked.emit(i)
 
 
 def trials_html(trials) -> str:
     """The trials as the Theory tab lists them."""
-    return "<ol>" + "".join(f"<li><b>{t.name}.</b> {markup(t.note)}</li>" for t in trials) + "</ol>"
+
+    def item(t) -> str:
+        p = getattr(t, "predict", None)
+        ask = f"<i>Predict first: {markup(p.prompt)}</i> " if p is not None else ""
+        return f"<li><b>{t.name}.</b> {ask}{markup(t.note)}</li>"
+
+    return "<ol>" + "".join(item(t) for t in trials) + "</ol>"
 
 
 class Form(QtWidgets.QGroupBox):

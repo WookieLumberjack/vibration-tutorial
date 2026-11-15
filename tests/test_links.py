@@ -199,7 +199,7 @@ NOTES_TAGS = {
     "tr",
     "ul",
 }
-NOTES_TAGS |= {"before", "takeaways", "eq", "m", "rm", "notation", "cite", "reading"}
+NOTES_TAGS |= {"before", "goals", "takeaways", "eq", "m", "rm", "notation", "cite", "reading"}
 ENTITIES = {"amp", "lt", "gt", "nbsp"}
 
 
@@ -284,3 +284,38 @@ def test_headings_without_an_anchor_get_one_for_the_contents():
         '<h3><a name="section-3"></a>Three</h3>'
     )
     assert anchored(html) == html  # anchoring twice changes nothing
+
+
+@pytest.mark.parametrize("page", ORDER)
+def test_goals_set_up_the_pages_own_trials_and_problems(page):
+    """A goal's `trial:` and `practice:` links name its own page, a Thing to try it has and a problem it asks."""
+    import sys
+
+    from vib_tutorial.gui.main_window import _page_class
+    from vib_tutorial.gui.practice import problems
+
+    text = notes()[page]
+    found = re.findall(r'href="(trial|practice):([a-z_]+)#([^"]+)"', text)
+    if not found:
+        return
+    trials = getattr(sys.modules[_page_class(page).__module__], "TRIALS", ())
+    keys = {p.key for p in problems(page)}
+    assert '<a name="goals"></a>' in text
+    for scheme, target, what in found:
+        assert target == page, f"{page}'s goal links to {target}"
+        if scheme == "trial":
+            assert 1 <= int(what) <= len(trials), f"{page} has no trial {what}"
+        else:
+            assert what in keys, f"{page} has no problem {what}"
+
+
+def test_goals_are_written_out_with_their_links():
+    from vib_tutorial.gui.links import GOAL, GOALS, goals
+
+    html = '<goals page="sdof_page">\n<li trial="2" problem="quickest-return">see it;</li>\n</goals>'
+    out = GOALS.sub(lambda m: goals(m.group(1), *GOAL.findall(m.group(2))), html)
+    assert out == (
+        '<h3><a name="goals"></a>On this page you\'ll</h3><ul><li>see it; '
+        '<a href="trial:sdof_page#2">Try it</a> · <a href="practice:sdof_page#quickest-return">Practise it</a>'
+        "</li></ul>"
+    )

@@ -7,7 +7,9 @@ The main window calls `notes_view.wire` on every Theory browser and handles the 
 no Qt (`tests/test_view_models.py` checks), so the course's order, paths, keys and notes load headless.
 
 A page's notes live in `theory/<name>.html` (`load_notes`), Qt's rich text but for the tags the
-loader writes out: `<before>`, the page: links to read first; `<takeaways>`, one `<li>` each; `<eq>` (a
+loader writes out: `<before>`, the page: links to read first; `<goals page="…">`, what the page sets out
+to teach, an `<li trial="n" problem="key">` each, whose links set up its Thing to try number n and ask its
+practice problem `key` (`trial:` and `practice:` links, `notes_view.ACTIONS`); `<takeaways>`, one `<li>` each; `<eq>` (a
 display equation in LaTeX) and `<m>` (inline maths), see `maths`; `<notation>`, the page's table of
 symbols, see `notation`; `<cite>` and `<reading>`, its Further reading, see `references`. Figures are
 `<img src="fig:…">`, see `figures`. Show the notes in a `notes_view.NotesBrowser`, which draws them.
@@ -32,6 +34,16 @@ def before(*refs: tuple[str, str, str]) -> str:
     return f"<p><i>Before this page: {text}.</i></p>"
 
 
+def goals(page: str, *items: tuple[str, str, str]) -> str:
+    """A page's opening "On this page you'll" list: (trial number, problem key, text) each, with its links."""
+    lines = "".join(
+        f'<li>{text.strip()} <a href="trial:{page}#{trial}">Try it</a> · '
+        f'<a href="practice:{page}#{problem}">Practise it</a></li>'
+        for trial, problem, text in items
+    )
+    return f'<h3><a name="goals"></a>On this page you\'ll</h3><ul>{lines}</ul>'
+
+
 def takeaways(*points: str) -> str:
     """A page's closing list of what to remember."""
     return (
@@ -42,6 +54,8 @@ def takeaways(*points: str) -> str:
 THEORY = resources.files("vib_tutorial") / "theory"
 BEFORE = re.compile(r"<before>(.*?)</before>", re.S)
 TAKEAWAYS = re.compile(r"<takeaways>(.*?)</takeaways>", re.S)
+GOALS = re.compile(r'<goals page="([a-z_]+)">(.*?)</goals>', re.S)
+GOAL = re.compile(r'<li trial="(\d+)" problem="([a-z0-9-]+)">(.*?)</li>', re.S)
 LINK = re.compile(r'<a href="page:([a-z_]+)#([^"]+)">(.*?)</a>', re.S)
 ITEM = re.compile(r"<li>(.*?)</li>", re.S)
 PART = re.compile(r"<!--([A-Z_]+)-->")
@@ -93,6 +107,7 @@ def load_notes(name: str, figures: dict[str, Callable[[], str]] | None = None, *
     html = EQ.sub(lambda m: maths.display(m.group(1)), html)  # first: its LaTeX is raw, & and < as they are
     html = BEFORE.sub(lambda m: before(*LINK.findall(m.group(1))), html)
     html = TAKEAWAYS.sub(lambda m: takeaways(*ITEM.findall(m.group(1))), html)
+    html = GOALS.sub(lambda m: goals(m.group(1), *GOAL.findall(m.group(2))), html)
     html = notation.NOTATION.sub(lambda m: notation.notation_html(m.group(1).split()), html)
     reading = list(dict.fromkeys(references.CITE.findall(html)))
     for found in references.READING.findall(html):

@@ -8,6 +8,9 @@ that show the answer, as its trials take them) is held back until it's answered:
 has a `goal` instead: the reader tunes the page's own controls until its settings (the page's `practice_state`,
 its trial's fields) meet every `Requirement`, and `design` is settings that do.
 
+A trial on a page may carry a `Prediction`: one question the Things to try box asks before it sets the trial
+up (predict first, then see), whose explanation is the trial's own note, shown once it runs.
+
 `check` marks an answer and, when a number is wrong, says if it's off by one of the usual slips (2π: rad/s for
 Hz; 1000: a unit's prefix; 2: amplitude for peak to peak). No Qt here: the Practice window shows them.
 """
@@ -73,6 +76,20 @@ class Question:
     @property
     def is_spec(self) -> bool:
         return self.goal is not None
+
+
+@dataclass(frozen=True)
+class Prediction:
+    """A trial's question, asked before it runs: `choices` in the order shown, `answer` the right one's index. The
+    trial's note, shown as it runs, is the explanation."""
+
+    prompt: str  # rich text
+    choices: tuple[str, ...]
+    answer: int
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.answer < len(self.choices):
+            raise ValueError(f"answer {self.answer} isn't one of {len(self.choices)} choices")
 
 
 @dataclass(frozen=True)

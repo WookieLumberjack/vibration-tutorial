@@ -146,7 +146,12 @@ def search(query: str, limit: int = MAX_HITS) -> list[Hit]:
 class TheoryWindow(QtWidgets.QWidget):
     """The notes of any page, in their own window. `open_page(name)` shows a page in the main window."""
 
-    def __init__(self, open_page: Callable[[str], None], parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(
+        self,
+        open_page: Callable[[str], None],
+        parent: QtWidgets.QWidget | None = None,
+        act: Callable[[str, str, str], None] | None = None,
+    ) -> None:
         super().__init__(parent, QtCore.Qt.WindowType.Window)
         self.setWindowTitle("Theory")
         self._open_page = open_page
@@ -212,7 +217,7 @@ class TheoryWindow(QtWidgets.QWidget):
             top.setExpanded(True)
 
         self.browser = NotesBrowser()
-        notes_view.wire(self.browser, self.show_page)  # another page's notes stay in this window
+        notes_view.wire(self.browser, self.show_page, act)  # another page's notes stay in this window; goals act
 
         self.hits = QtWidgets.QListWidget()  # the search's hits, in the tree's place while there's a search
         self.hits.setWordWrap(True)

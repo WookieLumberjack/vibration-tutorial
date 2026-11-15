@@ -172,20 +172,32 @@ class NotesBrowser(QtWidgets.QTextBrowser):
         return super().loadResource(kind, name)
 
 
-def wire(browser: QtWidgets.QTextBrowser, go: Callable[[str, str], None]) -> None:
-    """Have `browser` follow its own #anchors, send page: links to `go(page, anchor)`, open the web outside."""
+ACTIONS = ("trial", "practice")  # a page's goals' links: set up its trial n, ask its problem `key`
+
+
+def wire(
+    browser: QtWidgets.QTextBrowser,
+    go: Callable[[str, str], None],
+    act: Callable[[str, str, str], None] | None = None,
+) -> None:
+    """Have `browser` follow its own #anchors, send page: links to `go(page, anchor)`, open the web outside, and
+    send a goal's `trial:<page>#<n>` and `practice:<page>#<key>` links to `act(scheme, page, what)`."""
     if browser.property("links_wired"):
         return
     browser.setProperty("links_wired", True)
     browser.setOpenLinks(False)
     # Neither held strongly: the slot lives as long as the browser, and `go` is often its window's method.
     held = weakref.WeakMethod(go) if hasattr(go, "__self__") else (lambda: go)
+    acts = None if act is None else weakref.WeakMethod(act) if hasattr(act, "__self__") else (lambda: act)
     ref = weakref.ref(browser)
 
     def follow(url: QtCore.QUrl) -> None:
         if url.scheme() == "page":
             if (to := held()) is not None:
                 to(url.path(), url.fragment())
+        elif url.scheme() in ACTIONS:
+            if acts is not None and (do := acts()) is not None:
+                do(url.scheme(), url.path(), url.fragment())
         elif url.scheme() in ("http", "https"):
             QtGui.QDesktopServices.openUrl(url)
         elif url.fragment() and (shown := ref()) is not None:
