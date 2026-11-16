@@ -191,7 +191,7 @@ class Chart:
 def mount_info(iso: Isolator) -> str:
     fn = iso.natural_hz
     return (
-        f"k = {iso.stiffness:.4g} N/m, c = {iso.damping:.4g} N·s/m, f<sub>n</sub> = {fn:.4g} Hz "
+        f"k = {fmt(iso.stiffness, 'N/m', 4)}, c = {fmt(iso.damping, 'N·s/m', 4)}, f<sub>n</sub> = {fn:.4g} Hz "
         f"({60 * fn:.0f} rpm); running at r = {iso.speed_hz / fn:.3g}."
     )
 
