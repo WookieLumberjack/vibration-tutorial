@@ -48,6 +48,7 @@ from .lesson import TrialCombo
 from .modes import Method, mode_entries
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
+from .scrub import Scrub
 from .sim_trials import TRIALS as SIM_TRIALS
 from .sim_trials import SimTrial, chain
 from .style import colors
@@ -233,6 +234,7 @@ class SimulationPage(QtWidgets.QWidget):
         self.chain = ChainView()
         self.energy = EnergyPanel()
         self.time_plot = TimeHistoryPlot()
+        self.scrub = Scrub(self.time_plot.x_plot, self.time_plot.f_plot)  # paused: back through the record
         self.coords_combo = QtWidgets.QComboBox()
         self.coords_combo.addItem("Physical: mass displacements x", "physical")
         self.coords_combo.addItem("Modal: one curve per mode", "modal")
@@ -408,6 +410,7 @@ class SimulationPage(QtWidgets.QWidget):
             self.energy,
         ):
             w.apply_theme()
+        self.scrub.apply_theme()
         self.force_panel.refresh()
         self._refresh_modal_views()  # mode colours: table, shapes, time and FRF curves
 
@@ -683,6 +686,7 @@ class SimulationPage(QtWidgets.QWidget):
         self._sim_target = self.sim.t
 
     def _reset(self) -> None:
+        self.scrub.hide()
         self.sim.reset()  # drops the steps in flight
         self._started = None
         self.history.reset(self.sim.system.n)
@@ -706,6 +710,7 @@ class SimulationPage(QtWidgets.QWidget):
             self.controls.fit_to_mode(entry.key)
 
     def _on_mass_grabbed(self, _: int) -> None:
+        self.scrub.hide()  # back to now: the mass is moved from where the chain is
         self.force.switch_off()
         self.force_panel.refresh()
 
@@ -779,7 +784,16 @@ class SimulationPage(QtWidgets.QWidget):
         window = self.controls.time_window.value()
         t, x, v, f, e, s_el, g = self.history.window(window)
         peak = float(np.abs(x[-min(len(x), 20_000) :]).max()) if x.size else 0.0
-        if held is None:
+        if self.running or held is not None or not t.size:
+            self.scrub.hide()
+        elif not self.scrub.shown:
+            self.scrub.show(float(t[-1]), float(t[0]))
+        if self.scrub.t is not None and t.size:  # paused and scrubbed: the chain as the record had it then
+            i = min(int(np.searchsorted(t, self.scrub.t)), t.size - 1)
+            s = self.force.settings
+            force = 0.0 if s.base else float(f[i])
+            self.chain.update_state(x[i], peak, force, s.target, abs(s.amplitude), ground=float(g[i, 0]))
+        elif held is None:
             s = self.force.settings
             force = 0.0 if s.base else self.force.value()  # a moving ground shows as the wall
             self.chain.update_state(
@@ -796,7 +810,10 @@ class SimulationPage(QtWidgets.QWidget):
             self._set_drive()
         if self.animate_modes.isChecked():
             self._animate_modes(2 * math.pi * MODE_ANIMATION_HZ * now)
-        self.controls.time_label.setText(f"{self.sim.t:8.3f} s   (step {self.sim.step_size() * 1e3:.3g} ms)")
+        if self.scrub.t is not None:
+            self.controls.time_label.setText(f"{self.scrub.t:8.3f} s   (looking back; paused at {self.sim.t:.3f} s)")
+        else:
+            self.controls.time_label.setText(f"{self.sim.t:8.3f} s   (step {self.sim.step_size() * 1e3:.3g} ms)")
         if steps and self._started is None:
             self._start()  # last, so that its steps run while this frame paints
 

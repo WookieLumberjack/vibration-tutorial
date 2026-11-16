@@ -40,6 +40,7 @@ from .layouts import FlowLayout, form_layout, form_row, group, plot_height, show
 from .lesson import RunButton, connect_all, plot, set_quietly
 from .panels import spin
 from .plots import Decimator, decimate
+from .scrub import Scrub
 from .style import colors
 from .theming import add_legend, mute
 
@@ -172,6 +173,8 @@ class StartUpView(QtWidgets.QWidget):
         self.startup_torque.addItem(self.running_line)
         self.speed_curve = self.startup_speed.plot([], [])
         self._marks: list[tuple[pg.PlotWidget, pg.InfiniteLine]] = []  # the crossings' speeds, when the run passed them
+        self.scrub = Scrub(self.startup_torque, self.startup_speed)  # paused or done: back along the run
+        self.scrub.scrubbed.connect(self._on_scrubbed)
         self.apply_theme()
         self.startup_status = QtWidgets.QLabel()
         self.startup_status.setWordWrap(True)
@@ -376,6 +379,22 @@ class StartUpView(QtWidgets.QWidget):
             self.pause_button.rest()
         else:
             self.pause_button.set_running(self.running)
+        if self.running or self._k == 0:
+            self.scrub.hide()
+        else:  # paused, or run to the end: the cursors at its end
+            self.scrub.show(float(self._t[self._k - 1]), 0.0)
+
+    def _on_scrubbed(self, t: float) -> None:
+        """The link's and the motor's torques and the speed at `t`, in the status line."""
+        k, j = self._k, self.startup_link.currentIndex()
+        ts = self._t[:k]
+        link = float(np.interp(t, ts, self._links[j, :k])) if 0 <= j < self._links.shape[0] else math.nan
+        name = self.train.links[j].name if 0 <= j < len(self.train.links) else "the link"
+        self.startup_status.setText(
+            f"Looking back at t = {t:.3f} s: {name} at {fmt_torque(link)}, the motor's air-gap torque "
+            f"{fmt_torque(float(np.interp(t, ts, self._motor[:k])))}, the motor at "
+            f"{float(np.interp(t, ts, self._rpm[:k])):.0f} rpm."
+        )
 
     def _runs(self) -> bool:
         return self.running
@@ -534,6 +553,7 @@ class StartUpView(QtWidgets.QWidget):
         self.startup_info.setText(" ".join(parts))
 
     def apply_theme(self) -> None:
+        self.scrub.apply_theme()
         self.link_curve.setPen(pg.mkPen(colors.strong, width=1))
         self.motor_curve.setPen(pg.mkPen(colors.force, width=1))
         self.speed_curve.setPen(pg.mkPen(colors.mass[0], width=2))
