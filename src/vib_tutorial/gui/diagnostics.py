@@ -294,6 +294,13 @@ def _envelope_shows(rng: np.random.Generator) -> Question:
         "0.45 m/s² at BPFO, ten times its floor. The plain spectrum reads 0.049 m/s² there, on a floor of 0.043: "
         "lost.",
         choices=("In the envelope spectrum", "In the plain spectrum", "In both", "In neither"),
+        why=(
+            "",
+            "In the plain spectrum BPFO reads 0.049 m/s² on a floor of 0.043: lost in the gearbox's noise.",
+            "The plain spectrum loses it in the noise (0.049 on 0.043); only the envelope, round the 3 kHz "
+            "resonance, shows it.",
+            "The envelope of the band round the 3 kHz resonance reads 0.45 m/s² at BPFO, ten times its floor.",
+        ),
         setup=dict(bearing=BearingFault.OUTER, noise=1.0, tab=TAB_ENVELOPE),
         predict=True,
     )
@@ -306,6 +313,15 @@ def _inner_sidebands(rng: np.random.Generator) -> Question:
         "± 1X: the defect passes through the load zone once a turn of the shaft, so its strikes swell and fade at "
         "the shaft's speed (0.16 and 0.13 m/s² beside 0.31). A ball's defect gives ± FTF, the cage's.",
         choices=("± 1X, the shaft's speed", "± FTF, the cage's speed", "± BPFO", "None"),
+        why=(
+            "",
+            "That's a ball's defect, which turns with the cage. An inner-race defect turns with the shaft, through "
+            "the load zone once a turn: ± 1X.",
+            "The sidebands are the rate the strikes swell and fade at: the defect's pass through the load zone, "
+            "once a turn of the shaft.",
+            "The defect passes through the load zone once a turn of the shaft, so its strikes swell and fade at 1X: "
+            "sidebands at ± 1X.",
+        ),
         setup=dict(bearing=BearingFault.INNER, noise=1.0, tab=TAB_ENVELOPE),
         predict=True,
     )
@@ -318,6 +334,11 @@ def _healthy_kurtosis(rng: np.random.Generator) -> Question:
         0,
         "Below 3 (2.4): a sum of steady sines is flatter-topped than noise (a sine alone has 1.5). Impacts raise it.",
         choices=("Below 3", "About 3", "Well above 3"),
+        why=(
+            "",
+            "That's Gaussian noise; a sum of steady sines is flatter-topped (a sine alone has 1.5).",
+            "Impacts raise it well above 3; a healthy gearbox's steady sines keep it below.",
+        ),
         setup=dict(),
         predict=True,
     )
@@ -331,6 +352,11 @@ def _fast_run(rng: np.random.Generator) -> Question:
         "It peaks lower and later: 179 m/s² at 2531 rpm against the steady curve's 211 at 2406. The 1X crosses the "
         "mode's half-power band in about six of its cycles, too few for the response to build up.",
         choices=("It peaks lower and later", "It peaks higher and earlier", "It doesn't change"),
+        why=(
+            "",
+            "A fast run gives the response too few cycles to build up: it peaks lower, and late, as the build-up lags.",
+            "The 1X crosses the half-power band in about six of its cycles, too few to build up: lower and later.",
+        ),
         setup=dict(run_s=4.0, tab=TAB_ORDERS),
         predict=True,
     )

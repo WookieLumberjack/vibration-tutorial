@@ -336,6 +336,12 @@ def _double_eps(rng: np.random.Generator) -> Question:
         0,
         "It grows √2 times, 8.9 mm to 12.6 mm: the amplitude is 2x<sub>r</sub>√ε.",
         choices=("It grows √2 times", "It doubles", "It stays the same", "It grows four times"),
+        why=(
+            "",
+            "The amplitude is 2x<sub>r</sub>√ε: twice the ε is √2 times the swing.",
+            "ε sets the cycle's size: 2x<sub>r</sub>√ε grows with it.",
+            "The amplitude goes as √ε, not as ε²: √2 times.",
+        ),
         setup=dict(kind=Kind.VDP, values={"vdp_eps": 0.4, "vdp_periods": 120.0}),
         predict=True,
     )
@@ -349,6 +355,12 @@ def _heavier(rng: np.random.Generator) -> Question:
         "At twice the speed, 7.6 m/s: U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) is proportional to the mass–damping (Scruton) "
         "number mζ.",
         choices=("At twice the speed", "At √2 times the speed", "At the same speed", "At half the speed"),
+        why=(
+            "",
+            "U<sub>g</sub> is in proportion to the mass–damping number mζ itself, not its root: twice.",
+            "A heavier section takes more of the wind's energy to move: U<sub>g</sub> grows with mζ.",
+            "More mass resists galloping: U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) grows with it.",
+        ),
         setup=dict(kind=Kind.GALLOP, values={"g_mass": 10.0, "g_speed": 6.0}),
         predict=True,
     )
@@ -366,6 +378,12 @@ def _past_lock_in(rng: np.random.Generator) -> Question:
             "It keeps growing with the current",
             "It stays about the same",
         ),
+        why=(
+            "",
+            "Vortex-induced vibration lives in a band of speeds: past lock-in the wake sheds at its own Strouhal "
+            "frequency, 1.8 f<sub>n</sub>, and no longer drives the structure at resonance.",
+            "Past the lock-in band the wake stops following the structure, so the large swing goes.",
+        ),
         setup=dict(kind=Kind.VIV, values={"v_reduced": 9.0}),
         predict=True,
     )
@@ -379,6 +397,13 @@ def _coalescence(rng: np.random.Generator) -> Question:
         "They close in, 3.6 and 4.7 Hz at 20 m/s, as the steady lift couples them; one mode's damping reaches zero "
         "at 20.7 m/s, the flutter speed.",
         choices=("They close in", "They move apart", "They stay where they are", "Both fall to zero"),
+        why=(
+            "",
+            "The steady lift couples plunge and pitch, pulling their frequencies together: flutter comes as they "
+            "close in.",
+            "The airflow adds stiffness and coupling: 2.9 and 6.7 Hz move to 3.6 and 4.7 Hz at 20 m/s.",
+            "A frequency falling to zero is divergence, the pitch spring giving out; flutter is two modes closing in.",
+        ),
         setup=dict(kind=Kind.FLUTTER, values={"f_speed": 20.0}),
         predict=True,
     )
@@ -396,6 +421,13 @@ def _mass_balance(rng: np.random.Generator) -> Question:
             "It no longer flutters; it only diverges, at 39 m/s",
             "It flutters at a lower speed",
             "Nothing changes",
+        ),
+        why=(
+            "",
+            "Moved ahead of the elastic axis, the centre of mass couples plunge and pitch the other way, and they no "
+            "longer feed each other: that's mass balance.",
+            "The centre of mass's place sets the inertial coupling between plunge and pitch: moved ahead of the "
+            "axis, it stops the flutter.",
         ),
         setup=dict(kind=Kind.FLUTTER, values={"f_cg": -0.2}),
         predict=True,

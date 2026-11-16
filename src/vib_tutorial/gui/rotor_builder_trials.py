@@ -370,6 +370,15 @@ def _spin_split(rng: np.random.Generator) -> Question:
             "Both fall",
             "Nothing: the spin does no work",
         ),
+        why=(
+            "",
+            "The gyroscopic moment stiffens the forward whirl but softens the backward one: they split, one up and "
+            "one down.",
+            "The gyroscopic moment stiffens the forward whirl but softens the backward one: they split, one up and "
+            "one down.",
+            "It does no work, but it couples the tilts: the moment I<sub>p</sub>Ω × tilt rate stiffens one whirl "
+            "and softens the other.",
+        ),
         setup=dict(rotor=QUARTER_DISC, rpm=rpm, picked=("disc", 0)),
         predict=True,
     )
@@ -504,6 +513,14 @@ def _backward(rng: np.random.Generator) -> Question:
             "Infinite: the backward branch has no damping",
             "Zero exactly, at any bearings",
         ),
+        why=(
+            "The unbalance turns with the shaft, forward: on round bearings it does no work on a backward whirl.",
+            "",
+            "The unbalance does no work on a backward whirl on round bearings, so it barely moves it: 12.5 and 13.7 "
+            "µm, only the forward branch's tail.",
+            "On anisotropic bearings the modes are ellipses, part forward, and a backward critical does respond; on "
+            "round ones what's left is the forward branch's tail.",
+        ),
         setup=dict(rotor=OVERHUNG, rpm=4091.0, tab=TAB_UNBALANCE, picked=("disc", 0), swing=Swing.UNBALANCE),
         predict=True,
     )
@@ -523,6 +540,14 @@ def _internal(rng: np.random.Generator) -> Question:
             "Nothing: damping can't drive",
             "Drives it: past some speed above the critical the whirl grows",
             "Stiffens it, like the gyroscopic moment",
+        ),
+        why=(
+            "It resists the bending rate the shaft feels, the whirl's less the spin's: above the critical the shaft "
+            "outruns the whirl, and it drags the whirl on.",
+            "Damping that turns with the shaft can drive a whirl the shaft outruns: past the critical it feeds it.",
+            "",
+            "The gyroscopic moment stiffens; internal damping is a force on the bending rate, which feeds the whirl "
+            "above the critical.",
         ),
         setup=dict(rotor=INTERNAL, rpm=3000.0, tab=TAB_STABILITY, top_rpm=8000.0),
         predict=True,

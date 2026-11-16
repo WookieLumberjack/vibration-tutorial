@@ -321,6 +321,12 @@ def _faster_sampling(rng: np.random.Generator) -> Question:
         "It doubles: Δf = f<sub>s</sub>/N, or 1/T with the block now half as long. A higher f<sub>s</sub> reaches "
         "higher frequencies, but only a longer block resolves finer.",
         choices=("It doubles (coarser)", "It halves (finer)", "It stays the same"),
+        why=(
+            "",
+            "A higher f<sub>s</sub> reaches higher frequencies, not finer ones: Δf = f<sub>s</sub>/N doubles, the "
+            "block now half as long in time.",
+            "Δf = f<sub>s</sub>/N: twice the sample rate over the same N samples is twice the spacing.",
+        ),
         setup=dict(fs=2048.0, f2=51.0, a2=0.5),
         predict=True,
     )
@@ -339,6 +345,12 @@ def _more_averages(rng: np.random.Generator) -> Question:
             f"The level falls to 1/√{n}",
             "Nothing changes",
         ),
+        why=(
+            "",
+            "Averaging takes the mean of the blocks' PSDs, which is the same density: only its scatter falls.",
+            "That's how the scatter falls; the level, the mean of the blocks' densities, stays.",
+            f"The level stays, but each line's scatter falls, to 1/√{n} of a single block's 100 %.",
+        ),
         setup=dict(a1=0.0, a2=0.0, noise=1.0, averages=n, scale=1),
         predict=True,
     )
@@ -356,6 +368,15 @@ def _longer_block(rng: np.random.Generator) -> Question:
             "Both stay the same",
             "The tone grows 4 times; the noise stays",
             "Both halve",
+        ),
+        why=(
+            "",
+            "Each line now holds the noise of a band a quarter as wide, so the noise in it falls by √4; the tone, "
+            "all in one line, keeps its amplitude.",
+            "A peak amplitude spectrum reads a tone at its amplitude whatever the block; it's the noise per line "
+            "that falls, by √4.",
+            "The tone's power sits in one line however fine the lines are, so its amplitude stays; only the noise "
+            "per line falls.",
         ),
         setup=dict(a2=0.0, noise=2.0, block=4096),
         predict=True,

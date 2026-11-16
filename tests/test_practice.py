@@ -97,9 +97,10 @@ def test_every_question_marks_its_own_answer(problem):
             assert 0 <= q.answer < len(q.choices) and len(set(q.choices)) == len(q.choices)
             assert check(q, q.answer).right
             assert not any(check(q, i).right for i in range(len(q.choices)) if i != q.answer)
-            if q.why:  # a reason for each wrong choice, said when it's picked
-                assert q.why[q.answer] == "" and all(q.why[i] for i in range(len(q.choices)) if i != q.answer)
-                assert all(q.why[i] in check(q, i).details for i in range(len(q.choices)) if i != q.answer)
+            # A reason for each wrong choice, said when it's picked (#316 B14).
+            assert q.why, "a choice says why each wrong one is wrong (Question.why)"
+            assert q.why[q.answer] == "" and all(q.why[i] for i in range(len(q.choices)) if i != q.answer)
+            assert all(q.why[i] in check(q, i).details for i in range(len(q.choices)) if i != q.answer)
         else:
             assert math.isfinite(q.answer) and q.answer > 0
             assert check(q, repr(q.answer)).right and check(q, number(q.answer)).right

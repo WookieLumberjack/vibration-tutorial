@@ -207,6 +207,13 @@ def _gap_level(rng: np.random.Generator) -> Question:
             "Jumps between sweeping up and down",
             "Odd harmonics in the response",
         ),
+        why=(
+            "",
+            "A peak leans when the stiffness changes with the amplitude; the gap never closes here, so the "
+            "stiffness is the linear one.",
+            "Jumps come with a leaning peak, at levels where the gap closes; here it never does.",
+            "Harmonics need a force that isn't in proportion to the motion; with the gap open, every force is.",
+        ),
         setup=dict(kind=nl.Kind.GAP, levels=(0.02, 0.05, 0.1)),
         predict=True,
     )
@@ -220,6 +227,14 @@ def _friction_level(rng: np.random.Generator) -> Question:
         "and damps less (its describing function is an equivalent damper <m>c<sub>eq</sub> = 4F<sub>f</sub>/πΩX</m>, falling as <m>X</m> "
         "grows).",
         choices=("It rises", "It falls", "It doesn't change", "It leans to a higher frequency"),
+        why=(
+            "",
+            "Friction is a fixed force: at a higher level it's a smaller share of the motion's forces and damps "
+            "less, so the peak rises.",
+            "Friction's equivalent damper, 4F<sub>f</sub>/πΩX, falls as X grows, so the FRF depends on the level: "
+            "the peak rises.",
+            "Friction changes the damping, not the stiffness: the peak grows taller; it doesn't lean.",
+        ),
         setup=dict(levels=(0.2, 0.5, 2.0), friction=(0.0, 0.0, 0.1)),
         predict=True,
     )

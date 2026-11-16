@@ -262,6 +262,13 @@ def _too_much_gain(rng: np.random.Generator) -> Question:
         "It falls again: the actuator holds m4 nearly still, and the chain vibrates round it as the chain with m4 "
         "fixed, lightly damped. Each mode's damping has an optimal gain, as a damper's does.",
         choices=("It falls again", "It keeps growing", "It stays where it was at 20 N·s/m", "The loop goes unstable"),
+        why=(
+            "",
+            "At a very high gain the actuator holds m4 nearly still, and the chain vibrates round it, lightly "
+            "damped: each mode's damping has an optimal gain.",
+            "The damping does change with the gain: it rises to an optimum, then falls as the actuator pins m4.",
+            "Collocated velocity feedback with no lag only takes energy out, at any gain: it can't go unstable.",
+        ),
         setup=dict(**UNIFORM, gain=2000.0, tab=TAB_GAIN),
         predict=True,
     )
@@ -274,6 +281,13 @@ def _non_collocated(rng: np.random.Generator) -> Question:
         "It goes unstable (from 6.1 N·s/m): in mode 2 m1 and m4 move against each other, so the force feeds mode 2 "
         "energy faster than its damping takes it out.",
         choices=("It goes unstable", "It damps every mode", "It damps mode 1 only, the rest unchanged"),
+        why=(
+            "",
+            "Measured at m1 and pushed at m4, the force works against the motion only where they move together; in "
+            "mode 2 they move against each other, and it feeds that mode.",
+            "It does damp mode 1, but in mode 2 m1 and m4 move against each other, so the force feeds that mode, "
+            "past its damping from 6.1 N·s/m.",
+        ),
         setup=dict(**UNIFORM, sensor=1, actuator=4, gain=20.0, tab=TAB_LOCUS),
         predict=True,
     )
@@ -287,6 +301,11 @@ def _lagged(rng: np.random.Generator) -> Question:
         "No: above 96 N·s/m the two lags turn the force far enough at a high mode that it feeds the motion. "
         "Collocation alone doesn't guarantee stability; lag limits the gain.",
         choices=("No, it's unstable", "Yes: collocated loops are stable at any gain"),
+        why=(
+            "",
+            "Collocation guarantees stability only with no lag in the loop: two 20 ms lags turn the force at a high "
+            "mode until it feeds the motion, above 96 N·s/m.",
+        ),
         setup=dict(**UNIFORM, gain=100.0, lag_ms=20.0, tab=TAB_LOCUS),
         predict=True,
     )
@@ -301,6 +320,13 @@ def _passive_damping(rng: np.random.Generator) -> Question:
         f"It gets worse, {number(float(low))} to {number(float(high))}: above √2 f<sub>n</sub> the damper carries the "
         "floor's motion through. A skyhook damper doesn't.",
         choices=("It gets worse", "It gets better", "It stays the same"),
+        why=(
+            "",
+            "Damping helps only near resonance. Above √2 f<sub>n</sub> the damper to the floor carries the floor's "
+            "motion through, more of it the more damping.",
+            "Above √2 f<sub>n</sub> the damper's force grows with the damping, so more of the floor's motion comes "
+            "through.",
+        ),
         setup=dict(zeta_passive=0.5, zeta_sky=0.0, tab=TAB_SKYHOOK),
         predict=True,
     )
