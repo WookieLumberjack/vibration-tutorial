@@ -297,8 +297,12 @@ impl RubSteps {
     }
 }
 
+/// A motor: (col, angle, speed, [sync_speed, line, breakdown, breakdown_slip, transient, time_constant,
+/// pole_pairs, pulsating, field, field_slip], synchronous, field_on), as `newton::Motor` names them.
+type Motor = (usize, usize, usize, [f64; 10], bool, bool);
+
 /// A linear update under force laws, Newton at each step's end (`newton::NewtonSteps`). Each law kind is a
-/// keyword: `cubic`, a (col, i, k3, k1) per spring.
+/// keyword: `cubic`, a (col, i, k3, k1) per spring; `quadratic`, a (col, i, k, reference) per drag; `motor`.
 #[pyclass(module = "vib_tutorial._native")]
 struct NewtonSteps(newton::NewtonSteps);
 
@@ -306,7 +310,7 @@ struct NewtonSteps(newton::NewtonSteps);
 impl NewtonSteps {
     #[new]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (phi, g0, g1, tol, iterations, watch=None, cubic=vec![]))]
+    #[pyo3(signature = (phi, g0, g1, tol, iterations, watch=None, cubic=vec![], quadratic=vec![], motor=None))]
     fn new(
         phi: PyReadonlyArray2<f64>,
         g0: PyReadonlyArray2<f64>,
@@ -315,11 +319,49 @@ impl NewtonSteps {
         iterations: usize,
         watch: Option<(usize, f64)>,
         cubic: Vec<(usize, usize, f64, f64)>,
+        quadratic: Vec<(usize, usize, f64, f64)>,
+        motor: Option<Motor>,
     ) -> PyResult<Self> {
-        let laws = cubic
+        let mut laws: Vec<newton::Law> = cubic
             .into_iter()
             .map(|(col, i, k3, k1)| newton::Law::Cubic { col, i, k3, k1 })
             .collect();
+        laws.extend(
+            quadratic
+                .into_iter()
+                .map(|(col, i, k, reference)| newton::Law::Quadratic { col, i, k, reference }),
+        );
+        if let Some((col, angle, speed, terms, synchronous, field_on)) = motor {
+            let [
+                sync_speed,
+                line,
+                breakdown,
+                breakdown_slip,
+                transient,
+                time_constant,
+                pole_pairs,
+                pulsating,
+                field,
+                field_slip,
+            ] = terms;
+            laws.push(newton::Law::Motor(newton::Motor {
+                col,
+                angle,
+                speed,
+                sync_speed,
+                line,
+                breakdown,
+                breakdown_slip,
+                transient,
+                time_constant,
+                synchronous,
+                pole_pairs,
+                pulsating,
+                field,
+                field_slip,
+                field_on,
+            }));
+        }
         raise(newton::NewtonSteps::new(
             mat(&phi),
             mat(&g0),
@@ -336,21 +378,28 @@ impl NewtonSteps {
     /// returns how many steps it took.
     #[allow(clippy::too_many_arguments)]
     fn run(
-        &self,
+        &mut self,
         py: Python<'_>,
         z: PyReadonlyArray1<f64>,
         u0: PyReadonlyArray1<f64>,
         applied: PyReadonlyArray2<f64>,
-        modulation: PyReadonlyArray1<f64>,
+        clock: PyReadonlyArray1<f64>,
         mut out: PyReadwriteArray2<f64>,
         mut inputs: PyReadwriteArray2<f64>,
     ) -> PyResult<usize> {
-        let (z, u0, applied, modulation) = (vec1(&z), vec1(&u0), mat(&applied), vec1(&modulation));
+        let (z, u0, applied, clock) = (vec1(&z), vec1(&u0), mat(&applied), vec1(&clock));
+        let kernel = &mut self.0;
         raise(with_rows(&mut out, |out| {
             with_rows(&mut inputs, |inputs| {
-                py.detach(|| self.0.run(&z, &u0, &applied, &modulation, out, inputs))
+                py.detach(|| kernel.run(&z, &u0, &applied, &clock, out, inputs))
             })
         }))
+    }
+
+    /// Whether the motor's field is on (None without a motor).
+    #[getter]
+    fn field_on(&self) -> Option<bool> {
+        self.0.field_on()
     }
 }
 

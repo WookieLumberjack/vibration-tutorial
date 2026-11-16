@@ -1,6 +1,5 @@
 //! A linear system with nonlinear forces, stepped by the exact first-order hold with Newton at each step's
-//! end: `DuffingSimulator._steps_reference`, which this mirrors (and, as more pages come over, the others that
-//! step the same way).
+//! end: `DuffingSimulator._steps_reference` and `StartUpSimulator._steps_reference`, which this mirrors.
 //!
 //! The linear part is z' = A z + B u, stepped exactly with u linear over the step: z₁ = Φ z₀ + Γ₀ u₀ + Γ₁ u₁.
 //! The inputs are an applied part, given for every step, plus the force laws' part, which depends on the
@@ -14,27 +13,105 @@ use crate::linalg::{Mat, RowsMut, solve};
 /// A force law: what it adds to the inputs at a state, and how that changes with the state.
 #[derive(Clone, Debug)]
 pub enum Law {
-    /// A cubic spring with a pumped linear part on coordinate `i`: −(k₃ x² + k₁ m) x into input `col`,
-    /// m the step's modulation (`run`'s `modulation`: a pump's cos φ).
+    /// A cubic spring with a pumped linear part on coordinate `i`: −(k₃ x² + k₁ c) x into input `col`,
+    /// c the step's clock (a pump's cos φ).
     Cubic { col: usize, i: usize, k3: f64, k1: f64 },
+    /// A drag rising as the square of a speed: k r |r| into input `col`, r = z_i / `reference`.
+    Quadratic {
+        col: usize,
+        i: usize,
+        k: f64,
+        reference: f64,
+    },
+    /// A motor's air-gap torque into input `col` (`torsional_startup.Motor.torque`), the clock the time.
+    Motor(Motor),
+}
+
+/// An induction motor started direct on line, or a synchronous one on its cage with a field that latches
+/// on below `field_slip` (`torsional_startup.Motor`; its docstring has the model).
+#[derive(Clone, Debug)]
+pub struct Motor {
+    pub col: usize,
+    pub angle: usize, // the shaft's angle and speed in the state
+    pub speed: usize,
+    pub sync_speed: f64, // rad/s
+    pub line: f64,       // ω_e, rad/s
+    pub breakdown: f64,  // Kloss's T_b at the slip s_b
+    pub breakdown_slip: f64,
+    pub transient: f64, // induction: the switch-on torque, decaying over the time constant
+    pub time_constant: f64,
+    pub synchronous: bool,
+    pub pole_pairs: f64,
+    pub pulsating: f64, // synchronous: the poles' T_p, and the field's T_f once on
+    pub field: f64,
+    pub field_slip: f64,
+    pub field_on: bool,
+}
+
+impl Motor {
+    /// (T, dT/dθ, dT/dΩ) at time t, shaft angle and speed: `Motor.torque`, line for line.
+    fn torque(&self, t: f64, angle: f64, speed: f64) -> (f64, f64, f64) {
+        let ws = self.sync_speed;
+        let (s, sb) = (1.0 - speed / ws, self.breakdown_slip);
+        let d = s * s + sb * sb;
+        let tc = 2.0 * self.breakdown * s * sb / d;
+        let slope = 2.0 * self.breakdown * sb * (sb * sb - s * s) / (d * d);
+        let d_speed = -slope / ws;
+        if !self.synchronous {
+            return (
+                tc + self.transient * (-t / self.time_constant).exp() * (self.line * t).sin(),
+                0.0,
+                d_speed,
+            );
+        }
+        let delta = self.line * t - self.pole_pairs * angle;
+        let tf = if self.field_on { self.field } else { 0.0 };
+        let (s2, c2) = (2.0 * delta).sin_cos();
+        let poles = self.pulsating * s2 + tf * delta.sin();
+        let d_angle = -self.pole_pairs * (2.0 * self.pulsating * c2 + tf * delta.cos());
+        (tc + poles, d_angle, d_speed)
+    }
 }
 
 impl Law {
-    /// Add the law's inputs at z (modulation m) into u, and their derivatives into du (inputs × states).
-    fn add(&self, z: &[f64], m: f64, u: &mut [f64], du: &mut Mat) {
-        match *self {
-            Law::Cubic { col, i, k3, k1 } => {
+    /// Add the law's inputs at z (clock c) into u, and their derivatives into du (inputs × states).
+    fn add(&self, z: &[f64], c: f64, u: &mut [f64], du: &mut Mat) {
+        match self {
+            &Law::Cubic { col, i, k3, k1 } => {
                 let x = z[i];
-                u[col] -= (k3 * x * x + k1 * m) * x;
-                let d = du.at(col, i) - (3.0 * k3 * x * x + k1 * m);
-                du.set(col, i, d);
+                u[col] -= (k3 * x * x + k1 * c) * x;
+                du.set(col, i, du.at(col, i) - (3.0 * k3 * x * x + k1 * c));
+            }
+            &Law::Quadratic { col, i, k, reference } => {
+                let r = z[i] / reference;
+                u[col] += k * r * r.abs();
+                du.set(col, i, du.at(col, i) + 2.0 * k * r.abs() / reference);
+            }
+            Law::Motor(m) => {
+                let (t, d_angle, d_speed) = m.torque(c, z[m.angle], z[m.speed]);
+                u[m.col] += t;
+                du.set(m.col, m.angle, du.at(m.col, m.angle) + d_angle);
+                du.set(m.col, m.speed, du.at(m.col, m.speed) + d_speed);
             }
         }
     }
 
+    /// At a step's start: a synchronous motor's field latches on once the slip is below `field_slip`.
+    fn start_step(&mut self, z: &[f64]) {
+        if let Law::Motor(m) = self
+            && m.synchronous
+            && m.field > 0.0
+            && !m.field_on
+            && 1.0 - z[m.speed] / m.sync_speed < m.field_slip
+        {
+            m.field_on = true;
+        }
+    }
+
     fn check(&self, ns: usize, nu: usize) -> bool {
-        match *self {
-            Law::Cubic { col, i, .. } => col < nu && i < ns,
+        match self {
+            &Law::Cubic { col, i, .. } | &Law::Quadratic { col, i, .. } => col < nu && i < ns,
+            Law::Motor(m) => m.col < nu && m.angle < ns && m.speed < ns,
         }
     }
 }
@@ -83,7 +160,15 @@ impl NewtonSteps {
         })
     }
 
-    /// The laws' inputs at z (modulation m), and their derivatives (inputs × states).
+    /// Whether the motor's field is on (None without a motor).
+    pub fn field_on(&self) -> Option<bool> {
+        self.laws.iter().find_map(|law| match law {
+            Law::Motor(m) => Some(m.field_on),
+            _ => None,
+        })
+    }
+
+    /// The laws' inputs at z (clock c), and their derivatives (inputs × states).
     fn laws(&self, z: &[f64], m: f64) -> (Vec<f64>, Mat) {
         let mut u = vec![0.0; self.g0.cols];
         let mut du = Mat::zeros(self.g0.cols, self.phi.rows);
@@ -94,15 +179,15 @@ impl NewtonSteps {
     }
 
     /// From the state z with the inputs u0, a step per row of `applied` (the inputs' applied part at each
-    /// step's end; `modulation` the laws' m there): each step's state into `out` and its inputs into
-    /// `inputs`. Returns how many steps it took: all of them, or up to the one where the watched
-    /// coordinate passed its limit.
+    /// step's end; `clock` what the laws read that varies in time, there: a pump's cos φ, a motor's time):
+    /// each step's state into `out` and its inputs into `inputs`. Returns how many steps it took: all of
+    /// them, or up to the one where the watched coordinate passed its limit.
     pub fn run(
-        &self,
+        &mut self,
         z: &[f64],
         u0: &[f64],
         applied: &Mat,
-        modulation: &[f64],
+        clock: &[f64],
         mut out: RowsMut,
         mut inputs: RowsMut,
     ) -> Result<usize> {
@@ -110,7 +195,7 @@ impl NewtonSteps {
         if z.len() != ns
             || u0.len() != nu
             || applied.cols != nu
-            || modulation.len() != steps
+            || clock.len() != steps
             || out.dim() != (steps, ns)
             || inputs.dim() != (steps, nu)
         {
@@ -120,8 +205,9 @@ impl NewtonSteps {
         let mut u = u0.to_vec();
         let mut p = vec![0.0; ns];
         let mut zt = vec![0.0; ns];
-        for (k, &m) in modulation.iter().enumerate() {
+        for (k, &m) in clock.iter().enumerate() {
             let a = applied.row(k);
+            self.laws.iter_mut().for_each(|law| law.start_step(&z));
             p.fill(0.0);
             self.phi.mul_add(&z, &mut p);
             self.g0.mul_add(&u, &mut p);
@@ -171,7 +257,7 @@ mod tests {
             Mat::from_rows(2, 1, vec![0.01, 0.1]),
             Mat::from_rows(2, 1, vec![0.02, 0.2]),
         );
-        let steps = NewtonSteps::new(phi, g0, g1, vec![], 1e-14, 10, None).unwrap();
+        let mut steps = NewtonSteps::new(phi, g0, g1, vec![], 1e-14, 10, None).unwrap();
         let (mut out, mut inputs) = ([0.0; 2], [0.0; 1]);
         let n = steps
             .run(
@@ -209,7 +295,7 @@ mod tests {
             k3: 50.0,
             k1: 3.0,
         };
-        let steps = NewtonSteps::new(phi, g0, g1, vec![law], 1e-14, 20, Some((0, 0.5))).unwrap();
+        let mut steps = NewtonSteps::new(phi, g0, g1, vec![law], 1e-14, 20, Some((0, 0.5))).unwrap();
         let (mut out, mut inputs) = ([0.0; 4], [0.0; 2]);
         let n = steps
             .run(

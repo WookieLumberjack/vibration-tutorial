@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from vib_tutorial.core import duffing, fluid_bearing, foh, native
+from vib_tutorial.core import duffing, fluid_bearing, foh, native, torsional, torsional_startup
 from vib_tutorial.core.foh import foh_discretize
 from vib_tutorial.core.forcing import ForceKind
 from vib_tutorial.core.model import ChainSystem, state_space
@@ -416,3 +416,22 @@ def test_duffing_steps_match_the_reference(name):
         assert [c.leg for c in g.cycles] == [c.leg for c in w.cycles]
         np.testing.assert_allclose([c.amplitude for c in g.cycles], [c.amplitude for c in w.cycles], rtol=1e-8)
     assert sims[0].escaped == sims[1].escaped and sims[0].t == sims[1].t
+
+
+@needs_native
+@pytest.mark.parametrize("name", list(torsional_startup.STARTUPS))
+def test_startup_steps_match_the_reference(name):
+    # The kernel steps as _steps_reference does, both torques' Newton and the field's latch: the same speeds,
+    # torques and peaks over the whole start-up. Their Newton stops measure 1e-12 differently, and the start-up's
+    # resonances (the compressor passes two) grow that to ~1e-8 of the torques by the end.
+    train = next(p for p in torsional.PRESETS if p.name == name).train
+    startup = torsional_startup.STARTUPS[name].startup
+    sims = [torsional_startup.StartUpSimulator(train, startup) for _ in range(2)]
+    sims[1]._steps = sims[1]._steps_reference
+    while not sims[0].done:
+        got, want = (s.advance(0.25) for s in sims)
+        np.testing.assert_allclose(got.rpm, want.rpm, rtol=1e-7, atol=1e-6)
+        np.testing.assert_allclose(got.motor, want.motor, rtol=0, atol=1e-6 * np.abs(want.motor).max())
+        np.testing.assert_allclose(got.links, want.links, rtol=0, atol=1e-6 * np.abs(want.links).max())
+    assert sims[0].field_on == sims[1].field_on
+    np.testing.assert_allclose(sims[0].peaks, sims[1].peaks, rtol=1e-6)
