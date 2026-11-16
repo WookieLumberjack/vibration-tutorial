@@ -44,6 +44,7 @@ from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
 from .layouts import ColumnScroll, form_layout, header_tip
 from .lesson import TrialCombo
 from .links import page_link
+from .mode_swing import ModeSwing
 from .notes_view import NotesBrowser
 from .style import MAX_DOF, colors, text_on
 from .substructuring import error_color, zeta_text
@@ -716,6 +717,7 @@ class ShapePlots(pg.GraphicsLayoutWidget):
             p.setLabel("left", "Normalized amplitude")
             self.plots.append(p)
             self.legends.append(add_legend(p, offset=(5, 2), colCount=2))
+        self.swings = [ModeSwing(p, "Modal coupling", host=self) for p in self.plots]
         self.plots[1].setLabel("bottom", "Position along chain (0 = ground)")
         self.apply_theme()
 
@@ -724,10 +726,11 @@ class ShapePlots(pg.GraphicsLayoutWidget):
             legend.setBrush(colors.legend_brush())
 
     def set_model(self, model: CoupledModel | None, full: ModalResult, comparisons: list[CoupledComparison]) -> None:
-        for p, legend in zip(self.plots, self.legends):
+        for p, legend, swing in zip(self.plots, self.legends, self.swings):
             p.clear()
             legend.clear()
             p.setTitle("")
+            swing.set_shape(np.zeros(0), np.zeros(0, complex))
         if model is None:
             return
         n = model.system.n
@@ -776,6 +779,7 @@ class ShapePlots(pg.GraphicsLayoutWidget):
                 else f"2-DOF mode {r + 1}: m_a still · error {err}, MAC {c.mac:.3f}",
                 size="10pt",
             )
+            self.swings[r].set_shape(xs, np.concatenate([[0.0], true / np.abs(true).max()]), color)
             p.setXRange(0, n, padding=0.05)
             p.getAxis("bottom").setTicks([[(0, "ground")] + [(i, f"m{i}") for i in range(1, n + 1)]])
 

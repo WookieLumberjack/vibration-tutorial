@@ -301,6 +301,8 @@ The **Complex modes** page looks at what the damping does to the chain's modes. 
 damping (Φ<sup>T</sup>CΦ diagonal: here, a damper per spring in proportion to it) every mode keeps its
 real, undamped shape; a damper on its own couples the modes, and the exact (state-space) shapes become
 complex: each mass peaks at its own time, and the nodes move. It follows the chain on the Simulation page.
+The mode looked at swings on its snapshots with its nodes marked, standing still or sliding, and *One damper
+at* gathers the chain's damping into one damper and slides it along the chain.
 
 - **The mode in the complex plane**: one arrow per mass, with the best-fit line, and its snapshots over
   half a cycle: one shape, scaled, for a real mode; changing shape, the nodes wandering, for a complex one.
