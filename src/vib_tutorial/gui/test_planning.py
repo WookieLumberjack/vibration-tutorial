@@ -262,6 +262,68 @@ def _hand_spec(rng: np.random.Generator) -> Question:
     )
 
 
+def _par(x: float) -> str:
+    """A number as a factor in a printed sum: in brackets when it's negative, so (−1)² isn't read as −1²."""
+    return f"({x:g})" if x < 0 else f"{x:g}"
+
+
+def _two_mode_share(rng: np.random.Generator) -> Question:
+    while True:
+        rows = [tuple(float(pick(rng, (-1, -0.5, 0.5, 1, 2))) for _ in range(2)) for _ in range(3)]
+        phi = np.array(rows)
+        G = phi.T @ phi
+        if abs(np.linalg.det(G)) > 0.5:
+            break
+    i = int(rng.integers(3))
+    e = float(shares(phi)[i])
+    a, b, c = (float(G[0, 0]), float(G[0, 1]), float(G[1, 1]))
+    det = a * c - b * b
+    p, q = rows[i]
+    shown = ", ".join(f"({x:g}, {y:g})" for x, y in rows)
+    return Question(
+        f"A test targets two modes. At three candidate sensors their shapes are, row by row (mode 1, mode 2), "
+        f"{shown}. What is sensor {i + 1}'s effective independence E<sub>{i + 1}</sub>?",
+        e,
+        f"E<sub>j</sub> = φ<sub>j</sub>ᵀ(ΦᵀΦ)⁻¹φ<sub>j</sub>, the projector's diagonal. ΦᵀΦ = [{a:g}, {b:g}; {b:g}, {c:g}], "
+        f"determinant {det:g}, so E<sub>{i + 1}</sub> = ({c:g}·{_par(p)}² − 2·{_par(b)}·{_par(p)}·{_par(q)} + "
+        f"{a:g}·{_par(q)}²)/{det:g} = {number(e)}. The three add up to 2, the number of targets.",
+    )
+
+
+def _mac_pair(rng: np.random.Generator) -> Question:
+    while True:
+        a = tuple(float(pick(rng, (1, 2, 3))) for _ in range(3))
+        b = tuple(float(pick(rng, (-2, -1, 1, 2))) for _ in range(3))
+        if abs(np.dot(a, b)) > 0:
+            break
+    m = mac(np.array(a), np.array(b))
+    dot, aa, bb = float(np.dot(a, b)), float(np.dot(a, a)), float(np.dot(b, b))
+    return Question(
+        f"Two modes measured at three sensors read ({a[0]:g}, {a[1]:g}, {a[2]:g}) and ({b[0]:g}, {b[1]:g}, "
+        f"{b[2]:g}). What is their MAC?",
+        m,
+        f"MAC = (φ<sub>1</sub>ᵀφ<sub>2</sub>)² / (φ<sub>1</sub>ᵀφ<sub>1</sub> · φ<sub>2</sub>ᵀφ<sub>2</sub>) = "
+        f"{_par(dot)}² / ({aa:g} × {bb:g}) = {number(m)}. Near 1, the two would look alike at these sensors.",
+    )
+
+
+def _excite_point(rng: np.random.Generator) -> Question:
+    while True:
+        shapes = [tuple(float(pick(rng, (-1, -0.6, -0.2, 0, 0.3, 0.7, 1))) for _ in range(2)) for _ in range(4)]
+        worst = [min(abs(x), abs(y)) for x, y in shapes]
+        best = int(np.argmax(worst))
+        if sorted(worst)[-1] > sorted(worst)[-2] + 0.05:  # one clear choice
+            break
+    shown = "; ".join(f"point {k + 1}: ({x:g}, {y:g})" for k, (x, y) in enumerate(shapes))
+    return Question(
+        f"Two target modes' shapes at four points where a shaker could go are {shown}. Which point drives both best?",
+        best + 1,
+        "The one whose smaller |φ| over the targets is the largest: "
+        + ", ".join(f"{w:g}" for w in worst)
+        + f", so point {best + 1}. A point near a node of either mode would hardly drive it, whatever the other.",
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "planning_page", f"See {page_link('planning_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -270,6 +332,9 @@ PROBLEMS = tuple(
         ("ods-at-mode", "Predict: an ODS at a mode", "ods", "Operational deflection shapes", _ods_at_mode),
         ("reference", "Where the reference goes", "reference", "Measuring an ODS", _reference),
         ("hand-spec", "Spec: three sensors by hand", "efi", "Effective independence", _hand_spec),
+        ("two-mode-share", "EfI with two targets", "efi", "Effective independence", _two_mode_share),
+        ("mac-pair", "The MAC of two shapes", "aliasing", "Noise and spatial aliasing", _mac_pair),
+        ("excite-point", "Where to put the shaker", "exciting", "Where to excite", _excite_point),
     )
 )
 
