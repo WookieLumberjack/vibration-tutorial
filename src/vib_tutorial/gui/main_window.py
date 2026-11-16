@@ -28,7 +28,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import accessible, display_size, frame_stats, links, maths, notes_view, plot_export, theming, weak
+from . import accessible, display_size, frame_stats, links, maths, notes_view, plot_export, present, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .challenge import ChallengeBox
@@ -702,10 +702,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pages.setCornerWidget(corner, QtCore.Qt.Corner.TopRightCorner)
         self.setCentralWidget(self.pages)
         self.resize(1700, 900)
+        self.present_level = 0
+        if (level := present.saved()) != 0:
+            self.set_present(level)
         QtGui.QShortcut(QtGui.QKeySequence("F1"), self, self.show_theory)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F1"), self, self.open_theory_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+R"), self, self.restore_defaults)
+        QtGui.QShortcut(QtGui.QKeySequence("F5"), self, self.step_present)
         notes_view.add_zoom_keys(self)  # the notes' text size
         for i in range(len(PAGE_GROUPS)):  # Ctrl+1 … Ctrl+6: a group, at the page it last showed
             QtGui.QShortcut(
@@ -805,8 +809,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pages.replace(holder, page)
         self._wire_links(page)
         accessible.name_plots(page)
+        present.apply(page, self.present_level)
         holder.deleteLater()
         return page
+
+    def step_present(self) -> None:
+        """F5: the next of `present.LEVELS` on every page (the side panes folded away, then back)."""
+        self.set_present((self.present_level + 1) % len(present.LEVELS))
+
+    def set_present(self, level: int) -> None:
+        self.present_level = level
+        present.save(level)
+        for page in (self.sim_page, *self._built.values()):
+            present.apply(page, level)
 
     def show_page(self, name: str) -> None:
         """Show page `name` (an attribute in PAGE_GROUPS), building it if it isn't yet."""

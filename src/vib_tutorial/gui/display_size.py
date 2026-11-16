@@ -9,7 +9,8 @@ page last shown). A factor set in the environment already wins, and isn't saved.
 
 At 150 % the window needs 1.5 times the screen it needs at 100 %: `fits` compares the window's minimum size at
 the new scale with its screen's, so a size the screen can't hold is refused when picked, and a saved size that
-the screen it opens on can't hold (a projector unplugged) goes back to 100 % (`check_fits`).
+the screen it opens on can't hold (a projector unplugged) goes back to 100 % (`check_fits`). With the side
+panes folded away (`present`, F5) the window's minimum is smaller, so a larger size fits.
 
 Working on it: `tests/test_display_size.py` checks the setting, the environment and the fit.
 """

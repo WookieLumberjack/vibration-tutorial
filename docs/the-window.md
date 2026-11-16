@@ -120,6 +120,12 @@ it, back on the page it showed; the choice is remembered. At 150 % the window ne
 a smaller screen than the size was picked for, it goes back to 100 %. The notes' text has its own size as
 well (Ctrl+= and Ctrl+-), for reading closely at any size.
 
+**F5** (*Present*) folds every page's side panes away: once for the controls (the plots take their room), again
+for the right-hand tabs too (the main plots the whole width), and once more for all of them back. The window
+then needs less room: about 760 px wide without the controls and 740 without either side, against 1,184, so a
+larger *Size* fits a smaller screen (its height, about 660 px, is still the plots'). The choice is remembered,
+across the restart a new *Size* takes.
+
 ## Defaults
 
 *Defaults* (top right, or Ctrl+R) puts the page showing back as it first opened: every control as it was,
