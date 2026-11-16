@@ -119,169 +119,6 @@ def _follows_chain(page: QtWidgets.QWidget) -> TypeGuard[ChainPage]:
     return getattr(page, "follows_chain", True)
 
 
-def _page_class(name: str) -> type[QtWidgets.QWidget]:
-    # Plain imports, not importlib, so PyInstaller still finds these modules.
-    if name == "sdof_page":
-        from .sdof import SdofPage
-
-        return SdofPage
-    if name == "damping_page":
-        from .damping_models import DampingModelsPage
-
-        return DampingModelsPage
-    if name == "transient_page":
-        from .transient import TransientPage
-
-        return TransientPage
-    if name == "signals_page":
-        from .signals import SignalsPage
-
-        return SignalsPage
-    if name == "isolation_page":
-        from .isolation import IsolationPage
-
-        return IsolationPage
-    if name == "frf_page":
-        from .frf_matrix import FrfMatrixPage
-
-        return FrfMatrixPage
-    if name == "shock_page":
-        from .shock import ShockPage
-
-        return ShockPage
-    if name == "updating_page":
-        from .model_updating import ModelUpdatingPage
-
-        return ModelUpdatingPage
-    if name == "planning_page":
-        from .test_planning import TestPlanningPage
-
-        return TestPlanningPage
-    if name == "nonlinear_page":
-        from .nonlinear_forces import NonlinearForcesPage
-
-        return NonlinearForcesPage
-    if name == "complex_page":
-        from .complex_modes import ComplexModesPage
-
-        return ComplexModesPage
-    if name == "coupling_page":
-        from .modal_coupling import ModalCouplingPage
-
-        return ModalCouplingPage
-    if name == "cms_page":
-        from .substructuring import SubstructuringPage
-
-        return SubstructuringPage
-    if name == "duffing_page":
-        from .duffing import DuffingPage
-
-        return DuffingPage
-    if name == "fluid_page":
-        from .fluid_structure import FluidStructurePage
-
-        return FluidStructurePage
-    if name == "torsional_page":
-        from .torsional import TorsionalPage
-
-        return TorsionalPage
-    if name == "continuum_page":
-        from .continuum import ContinuumPage
-
-        return ContinuumPage
-    if name == "rotor_page":
-        from .rotor import RotorPage
-
-        return RotorPage
-    if name == "oma_page":
-        from .oma import OmaPage
-
-        return OmaPage
-    if name == "random_page":
-        from .random_vibration import RandomVibrationPage
-
-        return RandomVibrationPage
-    if name == "periodic_page":
-        from .periodic import PeriodicPage
-
-        return PeriodicPage
-    if name == "energy_page":
-        from .energy_methods import EnergyMethodsPage
-
-        return EnergyMethodsPage
-    if name == "integration_page":
-        from .integration import IntegrationPage
-
-        return IntegrationPage
-    if name == "fatigue_page":
-        from .fatigue import FatiguePage
-
-        return FatiguePage
-    if name == "self_excited_page":
-        from .self_excited import SelfExcitedPage
-
-        return SelfExcitedPage
-    if name == "active_control_page":
-        from .active_control import ActiveControlPage
-
-        return ActiveControlPage
-    if name == "pendulum_page":
-        from .pendulum import PendulumPage
-
-        return PendulumPage
-    if name == "beams_page":
-        from .beams_plates import BeamsPlatesPage
-
-        return BeamsPlatesPage
-    if name == "acoustics_page":
-        from .vibroacoustics import VibroAcousticsPage
-
-        return VibroAcousticsPage
-    if name == "seismic_page":
-        from .seismic import SeismicPage
-
-        return SeismicPage
-    if name == "rigid_body_page":
-        from .rigid_body import RigidBodyPage
-
-        return RigidBodyPage
-    if name == "deriving_page":
-        from .deriving import DerivingPage
-
-        return DerivingPage
-    if name == "quarter_car_page":
-        from .quarter_car import QuarterCarPage
-
-        return QuarterCarPage
-    if name == "frame_page":
-        from .frame_builder import FramePage
-
-        return FramePage
-    if name == "rotor_builder_page":
-        from .rotor_builder import RotorBuilderPage
-
-        return RotorBuilderPage
-    if name == "mounts_page":
-        from .rigid_mounts import MountsPage
-
-        return MountsPage
-    if name == "variability_page":
-        from .variability import VariabilityPage
-
-        return VariabilityPage
-    if name == "gyroscope_page":
-        from .gyroscope import GyroscopePage
-
-        return GyroscopePage
-    if name == "diagnostics_page":
-        from .diagnostics import DiagnosticsPage
-
-        return DiagnosticsPage
-    from .modal_test import ModalTestPage
-
-    return ModalTestPage
-
-
 MODE_ANIMATION_HZ = 0.5  # visual rate for the animated mode-shape plot
 
 METHOD_TIP = (
@@ -768,53 +605,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self._sim_opening = self.sim_practice_state()  # what the Simulation page's Defaults puts back
 
     # --------------------------------------------------------------- pages
-    sdof_page = property(lambda self: self._page("sdof_page"))
-    transient_page = property(lambda self: self._page("transient_page"))
-    damping_page = property(lambda self: self._page("damping_page"))
-    isolation_page = property(lambda self: self._page("isolation_page"))
-    signals_page = property(lambda self: self._page("signals_page"))
-    frf_page = property(lambda self: self._page("frf_page"))
-    coupling_page = property(lambda self: self._page("coupling_page"))
-    cms_page = property(lambda self: self._page("cms_page"))
-    test_page = property(lambda self: self._page("test_page"))
-    oma_page = property(lambda self: self._page("oma_page"))
-    rotor_page = property(lambda self: self._page("rotor_page"))
-    duffing_page = property(lambda self: self._page("duffing_page"))
-    fluid_page = property(lambda self: self._page("fluid_page"))
-    torsional_page = property(lambda self: self._page("torsional_page"))
-    continuum_page = property(lambda self: self._page("continuum_page"))
-    random_page = property(lambda self: self._page("random_page"))
-    complex_page = property(lambda self: self._page("complex_page"))
-    updating_page = property(lambda self: self._page("updating_page"))
-    planning_page = property(lambda self: self._page("planning_page"))
-    nonlinear_page = property(lambda self: self._page("nonlinear_page"))
-    shock_page = property(lambda self: self._page("shock_page"))
-    diagnostics_page = property(lambda self: self._page("diagnostics_page"))
-    variability_page = property(lambda self: self._page("variability_page"))
-    deriving_page = property(lambda self: self._page("deriving_page"))
-    rigid_body_page = property(lambda self: self._page("rigid_body_page"))
-    quarter_car_page = property(lambda self: self._page("quarter_car_page"))
-    mounts_page = property(lambda self: self._page("mounts_page"))
-    frame_page = property(lambda self: self._page("frame_page"))
-    rotor_builder_page = property(lambda self: self._page("rotor_builder_page"))
-    seismic_page = property(lambda self: self._page("seismic_page"))
-    acoustics_page = property(lambda self: self._page("acoustics_page"))
-    beams_page = property(lambda self: self._page("beams_page"))
-    pendulum_page = property(lambda self: self._page("pendulum_page"))
-    active_control_page = property(lambda self: self._page("active_control_page"))
-    self_excited_page = property(lambda self: self._page("self_excited_page"))
-    fatigue_page = property(lambda self: self._page("fatigue_page"))
-    integration_page = property(lambda self: self._page("integration_page"))
-    energy_page = property(lambda self: self._page("energy_page"))
-    periodic_page = property(lambda self: self._page("periodic_page"))
-    gyroscope_page = property(lambda self: self._page("gyroscope_page"))
 
     def _page(self, name: str) -> QtWidgets.QWidget:
         """The page `name` from LAZY_PAGES, built and put in its tab on first use."""
         page = self._built.get(name)
         if page is not None:
             return page
-        page = self._built[name] = _page_class(name)()
+        page = self._built[name] = links.page_class(name)()
         self._give_chain(page)
         install_plot_menus(page)
         # Put the page in its placeholder's tab (showing, if that was): only the real page is ever shown.
@@ -1615,6 +1412,15 @@ class MainWindow(QtWidgets.QMainWindow):
             # This thread's work and the steps' (where they run beside it): the slower sets the pace.
             cost = max(spent + time.perf_counter() - began, self.sim.steps_time) / steps
             self._step_cost = cost if cost > self._step_cost else 0.8 * self._step_cost + 0.2 * cost
+
+
+def _lazy_page(name: str) -> property:
+    return property(lambda self: self._page(name), doc=f"The {links.title(name)} page, built on first use.")
+
+
+# `window.sdof_page` and the rest: each of links.PAGE_CLASSES's pages, built when first asked for.
+for _name in links.PAGE_CLASSES:
+    setattr(MainWindow, _name, _lazy_page(_name))
 
 
 def energy_curves(e: np.ndarray) -> np.ndarray:

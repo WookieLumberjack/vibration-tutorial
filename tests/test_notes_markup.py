@@ -35,12 +35,12 @@ def all_notes() -> dict[str, str]:
 
 def files_of(page: str) -> list[str]:
     """The notes files page `page`'s module loads (`load_notes("name"`)."""
-    from vib_tutorial.gui.main_window import _page_class
+    from vib_tutorial.gui.links import page_module
 
     if page == "sim_page":
         module = "vib_tutorial.gui.background"
     else:
-        module = _page_class(page).__module__
+        module = page_module(page).__name__
     return _notes_in(module)
 
 

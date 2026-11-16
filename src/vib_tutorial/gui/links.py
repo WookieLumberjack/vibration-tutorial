@@ -17,6 +17,7 @@ symbols, see `notation`; `<cite>` and `<reading>`, its Further reading, see `ref
 
 from __future__ import annotations
 
+import importlib
 import re
 import sys
 from collections.abc import Callable
@@ -511,3 +512,60 @@ PAGE_TITLES = {
     "rotor_builder_page": "Rotor builder page",
     "diagnostics_page": "Machinery diagnostics page",
 }
+
+
+# Where each page's class lives: its module in gui/ and the class, by the page's attribute in COURSE (the
+# Simulation page is the main window's own). A page's module is imported when the page is first built, or when
+# its notes or problems are wanted without building it.
+PAGE_CLASSES = {
+    "sdof_page": "sdof.SdofPage",
+    "pendulum_page": "pendulum.PendulumPage",
+    "transient_page": "transient.TransientPage",
+    "periodic_page": "periodic.PeriodicPage",
+    "damping_page": "damping_models.DampingModelsPage",
+    "isolation_page": "isolation.IsolationPage",
+    "deriving_page": "deriving.DerivingPage",
+    "energy_page": "energy_methods.EnergyMethodsPage",
+    "frf_page": "frf_matrix.FrfMatrixPage",
+    "complex_page": "complex_modes.ComplexModesPage",
+    "continuum_page": "continuum.ContinuumPage",
+    "beams_page": "beams_plates.BeamsPlatesPage",
+    "integration_page": "integration.IntegrationPage",
+    "rigid_body_page": "rigid_body.RigidBodyPage",
+    "random_page": "random_vibration.RandomVibrationPage",
+    "fatigue_page": "fatigue.FatiguePage",
+    "quarter_car_page": "quarter_car.QuarterCarPage",
+    "mounts_page": "rigid_mounts.MountsPage",
+    "shock_page": "shock.ShockPage",
+    "seismic_page": "seismic.SeismicPage",
+    "acoustics_page": "vibroacoustics.VibroAcousticsPage",
+    "coupling_page": "modal_coupling.ModalCouplingPage",
+    "cms_page": "substructuring.SubstructuringPage",
+    "frame_page": "frame_builder.FramePage",
+    "signals_page": "signals.SignalsPage",
+    "test_page": "modal_test.ModalTestPage",
+    "oma_page": "oma.OmaPage",
+    "updating_page": "model_updating.ModelUpdatingPage",
+    "planning_page": "test_planning.TestPlanningPage",
+    "nonlinear_page": "nonlinear_forces.NonlinearForcesPage",
+    "variability_page": "variability.VariabilityPage",
+    "torsional_page": "torsional.TorsionalPage",
+    "duffing_page": "duffing.DuffingPage",
+    "fluid_page": "fluid_structure.FluidStructurePage",
+    "self_excited_page": "self_excited.SelfExcitedPage",
+    "active_control_page": "active_control.ActiveControlPage",
+    "gyroscope_page": "gyroscope.GyroscopePage",
+    "rotor_page": "rotor.RotorPage",
+    "rotor_builder_page": "rotor_builder.RotorBuilderPage",
+    "diagnostics_page": "diagnostics.DiagnosticsPage",
+}
+
+
+def page_module(attr: str):
+    """The module of page `attr` (imported now if it isn't yet: it imports Qt)."""
+    return importlib.import_module(f"vib_tutorial.gui.{PAGE_CLASSES[attr].split('.')[0]}")
+
+
+def page_class(attr: str) -> type:
+    """The class of page `attr`, its module imported."""
+    return getattr(page_module(attr), PAGE_CLASSES[attr].split(".")[1])

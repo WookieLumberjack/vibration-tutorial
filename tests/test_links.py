@@ -106,6 +106,16 @@ def test_the_course_lists_every_page_once():
     assert sorted(ORDER) == sorted(PAGE_TITLES) == sorted(notes())
 
 
+def test_every_page_but_the_main_windows_names_its_class():
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui.links import PAGE_CLASSES, page_class
+
+    assert list(PAGE_CLASSES) == [name for name in ORDER if name != "sim_page"], "in the course's order"
+    for name in PAGE_CLASSES:
+        assert issubclass(page_class(name), QtWidgets.QWidget), name
+
+
 @pytest.mark.parametrize("page", ORDER)
 def test_page_links_land_on_a_section(page):
     html = notes()
@@ -290,16 +300,14 @@ def test_headings_without_an_anchor_get_one_for_the_contents():
 @pytest.mark.parametrize("page", ORDER)
 def test_goals_set_up_the_pages_own_trials_and_problems(page):
     """A goal's `trial:` and `practice:` links name its own page, a Thing to try it has and a problem it asks."""
-    import sys
-
-    from vib_tutorial.gui.main_window import _page_class
+    from vib_tutorial.gui.links import page_module
     from vib_tutorial.gui.practice import problems
 
     text = notes()[page]
     found = re.findall(r'href="(trial|practice):([a-z_]+)#([^"]+)"', text)
     if not found:
         return
-    trials = getattr(sys.modules[_page_class(page).__module__], "TRIALS", ())
+    trials = getattr(page_module(page), "TRIALS", ())
     keys = {p.key for p in problems(page)}
     assert '<a name="goals"></a>' in text
     for scheme, target, what in found:
