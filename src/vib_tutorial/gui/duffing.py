@@ -37,11 +37,12 @@ from ..view_models.duffing import CHART_DEPTHS, CHART_RATIOS, GROWTH_TOP, LEGEND
 from . import duffing_figures, weak
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height
-from .lesson import RunButton
+from .lesson import Dot, RunButton
 from .links import load_notes, page_link
 from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import spin
+from .scrub import Scrub
 from .style import colors
 from .theming import add_legend, mute
 
@@ -555,6 +556,11 @@ class DuffingPage(QtWidgets.QWidget):
         self.section_item = pg.ScatterPlotItem(size=3)
         self.phase.addItem(self.orbit_item)
         self.phase.addItem(self.section_item)
+        self.scrub = Scrub(self.strip)  # paused: back along the strip chart, the state on the phase plane
+        self.scrub.scrubbed.connect(self._on_scrubbed)
+        self.scrub_dot = Dot(11)
+        self.scrub_dot.hide()
+        self.phase.addItem(self.scrub_dot, ignoreBounds=True)
         self.phase_note = QtWidgets.QLabel(
             "The last few drive cycles; the dots are the Poincaré section, the state once per cycle (while the "
             "frequency is held)."
@@ -791,6 +797,30 @@ class DuffingPage(QtWidgets.QWidget):
     def _on_run(self, on: bool) -> None:
         self.running = on
         self.loop.start()
+        if on:
+            self._hide_scrub()
+        else:
+            self._show_scrub()
+
+    def _show_scrub(self) -> None:
+        """Paused: a cursor at the strip chart's end, to drag back along it."""
+        trace = self.record.trace
+        if trace.n:
+            t = trace.data[0, : trace.n]
+            self.scrub.show(float(t[-1]), max(float(t[0]), float(t[-1]) - view.WINDOW))
+
+    def _hide_scrub(self) -> None:
+        self.scrub.hide()
+        self.scrub_dot.hide()
+        self._show_drive_state()
+
+    def _on_scrubbed(self, t: float) -> None:
+        """The state at `t` on the phase plane, and the time in the drive's line."""
+        trace = self.record.trace
+        ts, xs, vs = trace.data[:, : trace.n]
+        self.scrub_dot.setData([np.interp(t, ts, xs)], [np.interp(t, ts, vs)])
+        self.scrub_dot.show()
+        self.drive_state.setText(f"Looking back at t = {t:.2f} s (paused at {self.sim.t:.2f} s).")
 
     def _run(self, on: bool) -> None:
         self.run_button.set_running(on)
@@ -805,6 +835,7 @@ class DuffingPage(QtWidgets.QWidget):
         self._target_t = 0.0
         self.record.clear()
         self.clear_points()
+        self._hide_scrub()
         self.running = False
         self.run_button.rest()
         self._sync_freq()
@@ -869,6 +900,9 @@ class DuffingPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
         c = colors
+        self.scrub.apply_theme()
+        self.scrub_dot.setPen(pg.mkPen(c.strong, width=1.5))
+        self.scrub_dot.setBrush(pg.mkBrush(c.force))
         self.linear_item.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.backbone_item.setPen(pg.mkPen(c.muted, width=1, style=QtCore.Qt.PenStyle.DotLine))
         self.stable_item.setPen(pg.mkPen(c.strong, width=2))

@@ -80,6 +80,7 @@ from .rotor_tips import (
 )
 from .rotor_view import RotorView
 from .rotor_waterfall import WaterfallTab
+from .scrub import Scrub
 from .style import colors
 from .tab_groups import TabGroups
 from .theming import mute
@@ -190,6 +191,8 @@ class RotorPage(QtWidgets.QWidget):
         self.view = RotorView()
         self.orbits = OrbitPlots()
         self.time = TimePlots()
+        self.scrub = Scrub(self.time.x_plot, self.time.w_plot)  # paused: back along the strip chart
+        self.scrub.scrubbed.connect(self._on_scrubbed)
         self.station = QtWidgets.QComboBox()
         self.station.addItems(STATIONS)
         self.station.setCurrentIndex(1)
@@ -802,6 +805,7 @@ class RotorPage(QtWidgets.QWidget):
         self.view.apply_theme()
         self.orbits.apply_theme()
         self.time.apply_theme()
+        self.scrub.apply_theme()
         self.campbell_plot.apply_theme()
         self.stability_map.apply_theme()
         self.spectrum.apply_theme()
@@ -857,6 +861,24 @@ class RotorPage(QtWidgets.QWidget):
         if self.running:
             self.rubbed = False
             self.loop.start()
+            if self.scrub.t is not None:  # the orbits' dots back where the rotor is
+                self.scrub.hide()
+                self._draw()
+            self.scrub.hide()
+        else:
+            t, _ = self.history.window(self.time_window.value())
+            if t.size:
+                self.scrub.show(float(t[-1]), float(t[0]))
+
+    def _on_scrubbed(self, t: float) -> None:
+        """Each station's dot on its orbit where the record had it at `t`."""
+        ts, hist = self.history.window(self.time_window.value())
+        if not ts.size:
+            return
+        i = min(int(np.searchsorted(ts, t)), ts.size - 1)
+        row = self._shown(hist[i : i + 1])[0]
+        for k, dot in enumerate(self.orbits.dots):
+            dot.setData([row[2 * k]], [row[2 * k + 1]])
 
     def _run(self, on: bool) -> None:
         self.run_button.set_running(on)
@@ -879,6 +901,7 @@ class RotorPage(QtWidgets.QWidget):
         self._next_tap = 0.0
         self.running = False
         self.run_button.rest()
+        self.scrub.hide()
         self._draw()
 
     def tap(self) -> None:
