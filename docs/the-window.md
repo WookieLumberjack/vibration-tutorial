@@ -130,6 +130,9 @@ for the right-hand tabs too (the main plots the whole width), and once more for 
 then needs less room: about 760 px wide without the controls and 740 without either side, against 1,184, so a
 larger *Size* fits a smaller screen (its height, about 660 px, is still the plots'). The choice is remembered,
 across the restart a new *Size* takes.
+With the controls folded away, **Alt+PgDown** and **Alt+PgUp** still step through the page's *Things to try*,
+and each step's note shows large over the top of the page, so the room can read it; a step that asks a
+prediction shows its question and choices there, to answer from the front. The × or **Esc** hides it.
 
 **F6** turns on a pointer, a large dot in the force colour that follows the mouse, for pointing at a curve
 across the room. **F7** is ink: drag to draw on the page (circle a peak, sketch the curve you expect before

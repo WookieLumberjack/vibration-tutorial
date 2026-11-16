@@ -104,3 +104,56 @@ def test_ink_draws_on_the_page_the_pointer_follows_and_esc_clears_them(window):
     ink.grab()
     w.ink_escape.activated.emit()  # Esc
     assert ink.mode is Mode.OFF and ink.pointer is None and not ink.isVisible() and not ink.timer.isActive()
+
+
+def test_stepping_trials_while_presenting_shows_the_note_large(window):
+    """B15: with the controls folded away, Alt+PgDown shows the step's note over the page; Esc hides it."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import sim_trials
+
+    w = window
+    w.show()
+    overlay = w.trial_overlay
+    w.next_trial()  # all panes: the box's own note shows, not the overlay
+    assert not overlay.isVisible()
+    w.set_present(1)
+    w.next_trial()
+    QtWidgets.QApplication.processEvents()
+    first, second = sim_trials.TRIALS[:2]
+    assert overlay.isVisible() and f"2 / {len(sim_trials.TRIALS)} · {second.name}" == overlay.title.text()
+    assert overlay.body.text() == w.sim_page.trial_note.text() != ""
+    assert overlay.geometry().right() <= w.pages.width() and overlay.height() > 0
+    assert w.ink_escape.isEnabled()
+    w.previous_trial()
+    assert first.name in overlay.title.text()
+    w.clear_ink()  # Esc
+    assert not overlay.isVisible() and not w.ink_escape.isEnabled()
+    w.next_trial()
+    w.set_present(0)  # back to all panes: the box shows its note again
+    assert not overlay.isVisible()
+
+
+def test_a_prediction_is_answered_from_the_large_note(window):
+    """A step that asks a prediction shows its question and choices; a choice answers it and the note follows."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import sdof
+
+    w = window
+    w.show()
+    w.show_page("sdof_page")
+    w.set_present(1)
+    w.next_trial()  # the first trial asks first
+    overlay, box = w.trial_overlay, w.sdof_page.trials
+    assert box.asking == 0 and overlay.isVisible()
+    assert overlay.body.text() == box.question.text()
+    buttons = [overlay.choices.itemAt(k).widget() for k in range(overlay.choices.count())]
+    p = sdof.TRIALS[0].predict
+    assert [b.text() for b in buttons] == [*p.choices, "Just run it"]
+    buttons[p.answer].click()
+    QtWidgets.QApplication.processEvents()
+    assert box.asking is None and "Right" in overlay.body.text() and box.note.text() in overlay.body.text()
+    assert overlay.choices.count() == 0
+    w.show_page("sim_page")  # a new page hides it
+    assert not overlay.isVisible()

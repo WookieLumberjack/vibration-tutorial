@@ -24,6 +24,7 @@ from .plot_export import install as install_plot_menus
 from .simulation_page import SimulationPage
 from .style import SYSTEM, colors
 from .tab_groups import PageGroups
+from .trial_overlay import TrialOverlay
 
 if TYPE_CHECKING:
     from .practice import PracticeWindow
@@ -230,9 +231,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ink = InkOverlay(self.pages)
         QtGui.QShortcut(QtGui.QKeySequence("F6"), self, self.toggle_pointer)
         QtGui.QShortcut(QtGui.QKeySequence("F7"), self, self.toggle_ink)
+        self.trial_overlay = TrialOverlay(self.pages)  # a step's note, large, while presenting
         self.ink_escape = QtGui.QShortcut(QtGui.QKeySequence("Esc"), self, self.clear_ink)
-        self.ink_escape.setEnabled(False)  # only while there's a pointer or ink: Esc is the dialogs' and popups'
+        self.ink_escape.setEnabled(False)  # Esc is the dialogs' and popups' but while there's a pointer, ink or a note
         self.ink.changed.connect(self._on_ink_changed)
+        self.trial_overlay.shown.connect(self._on_ink_changed)
         self.pages.currentChanged.connect(self._clear_ink)
         notes_view.add_zoom_keys(self)  # the notes' text size
         for i in range(len(PAGE_GROUPS)):  # Ctrl+1 … Ctrl+6: a group, at the page it last showed
@@ -303,6 +306,9 @@ class MainWindow(QtWidgets.QMainWindow):
         combo = page.findChild(TrialCombo) if page is not None else None
         if combo is not None:
             combo.step(by)
+            if self.present_level >= 1:  # its note is folded away with the controls: shown large
+                assert page is not None, "a combo found on it"
+                self.trial_overlay.show_for(page, combo)
 
     def _step_page(self, step: int) -> None:
         pages = links.order()
@@ -317,14 +323,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ink.toggle(InkMode.INK)
 
     def clear_ink(self) -> None:
-        """Esc: the ink gone, the pointer and ink off."""
+        """Esc: the ink gone, the pointer and ink off, a trial's large note hidden."""
         self.ink.clear()
+        self.trial_overlay.dismiss()
 
     def _clear_ink(self, _index: int) -> None:
         self.ink.clear_ink()  # it was drawn on the page before
+        self.trial_overlay.dismiss()  # and so was the note
 
-    def _on_ink_changed(self) -> None:
-        self.ink_escape.setEnabled(self.ink.active)
+    def _on_ink_changed(self, *_) -> None:
+        self.ink_escape.setEnabled(self.ink.active or self.trial_overlay.isVisible())
 
     def step_present(self) -> None:
         """F5: the next of `present.LEVELS` on every page (the side panes folded away, then back)."""
@@ -333,6 +341,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def set_present(self, level: int) -> None:
         self.present_level = level
         present.save(level)
+        if level == 0:
+            self.trial_overlay.dismiss()  # the box's own note shows again
         for page in self._built.values():
             present.apply(page, level)
 

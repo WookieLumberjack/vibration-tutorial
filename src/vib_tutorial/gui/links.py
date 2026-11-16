@@ -69,12 +69,15 @@ KEYS = (
     ("Ctrl+R", "the page's controls back as it opened (Defaults)"),
     ("F5", "Present: the controls folded away, then the right-hand tabs too (the plots the whole width), then back"),
     ("F6 / F7", "a pointer that follows the mouse / ink: drag to draw on the page (F7 again to use the page)"),
-    ("Esc", "the ink cleared, and the pointer and ink off"),
+    ("Esc", "the ink cleared, the pointer and ink off, and a Thing to try's large note hidden"),
     ("Ctrl+F1", "the Theory window: any page's notes beside the page, the search and the glossary"),
     ("Ctrl+F2", "the Practice window: problems with new numbers each time"),
     ("Ctrl+1 … Ctrl+6", "a group of pages, at the page it last showed"),
     ("Ctrl+PgDown / Ctrl+PgUp", "the next or the previous page in the course"),
-    ("Alt+PgDown / Alt+PgUp", "the page's next or previous Thing to try (◂ ▸ beside them)"),
+    (
+        "Alt+PgDown / Alt+PgUp",
+        "the page's next or previous Thing to try (◂ ▸ beside them); presenting, its note shows large",
+    ),
     ("Ctrl+F", "search the notes, in the Theory window"),
     ("Alt+← / Alt+→", "back and forward in the Theory window"),
     (
