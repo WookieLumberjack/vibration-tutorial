@@ -712,10 +712,10 @@ class MainWindow(QtWidgets.QMainWindow):
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+R"), self, self.restore_defaults)
         QtGui.QShortcut(QtGui.QKeySequence("F5"), self, self.step_present)
-        self.ink = InkOverlay(self)
+        self.ink = InkOverlay(self.pages)
         QtGui.QShortcut(QtGui.QKeySequence("F6"), self, self.toggle_pointer)
         QtGui.QShortcut(QtGui.QKeySequence("F7"), self, self.toggle_ink)
-        self.ink_escape = QtGui.QShortcut(QtGui.QKeySequence("Esc"), self, self.ink.clear)
+        self.ink_escape = QtGui.QShortcut(QtGui.QKeySequence("Esc"), self, self.clear_ink)
         self.ink_escape.setEnabled(False)  # only while there's a pointer or ink: Esc is the dialogs' and popups'
         self.ink.changed.connect(self._on_ink_changed)
         self.pages.currentChanged.connect(self._clear_ink)
@@ -827,6 +827,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggle_ink(self) -> None:
         self.ink.toggle(InkMode.INK)
+
+    def clear_ink(self) -> None:
+        """Esc: the ink gone, the pointer and ink off."""
+        self.ink.clear()
 
     def _clear_ink(self, _index: int) -> None:
         self.ink.clear_ink()  # it was drawn on the page before

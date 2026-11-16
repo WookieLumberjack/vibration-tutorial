@@ -52,7 +52,6 @@ def test_f5_steps_every_page_through_the_levels_and_back(window):
 def test_every_page_has_panes_to_fold(window):
     """Each page's outermost splitter is found, so F5 reaches it."""
     from vib_tutorial.gui import present
-
     from vib_tutorial.gui.main_window import PAGE_GROUPS
 
     w = window
@@ -75,7 +74,7 @@ def test_ink_draws_on_the_page_the_pointer_follows_and_esc_clears_them(window):
 
     w.toggle_ink()  # F7: the overlay takes the mouse
     assert ink.mode is Mode.INK and ink.isVisible() and w.ink_escape.isEnabled()
-    assert ink.geometry() == w.centralWidget().geometry()
+    assert ink.parentWidget() is w.pages and ink.geometry() == w.pages.rect()
     assert not ink.testAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
     QtTest.QTest.mousePress(ink, QtCore.Qt.MouseButton.LeftButton, pos=QtCore.QPoint(100, 100))
     move = QtGui.QMouseEvent(
@@ -99,8 +98,9 @@ def test_ink_draws_on_the_page_the_pointer_follows_and_esc_clears_them(window):
 
     w.toggle_pointer()  # F6
     assert ink.mode is Mode.POINTER and ink.isVisible()
+    assert ink.timer.isActive()
     QtGui.QCursor.setPos(ink.mapToGlobal(QtCore.QPoint(50, 60)))
-    ink.eventFilter(ink, QtCore.QEvent(QtCore.QEvent.Type.MouseMove))
+    ink._tick()
     ink.grab()
     w.ink_escape.activated.emit()  # Esc
-    assert ink.mode is Mode.OFF and ink.pointer is None and not ink.isVisible()
+    assert ink.mode is Mode.OFF and ink.pointer is None and not ink.isVisible() and not ink.timer.isActive()
