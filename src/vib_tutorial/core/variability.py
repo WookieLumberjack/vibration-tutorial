@@ -27,6 +27,7 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.linalg
 
+from .modal import receptance as modal_receptance
 from .model import ChainSystem
 from .random_vibration import linear
 
@@ -73,12 +74,9 @@ def natural_hz(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
 
 
 def receptance(system: ChainSystem, f: np.ndarray, out: int, inp: int) -> np.ndarray:
-    M, C, K = system.matrices()
-    w = TWO_PI * np.asarray(f, dtype=float)
-    Z = K[None] - (w * w)[:, None, None] * M[None] + 1j * w[:, None, None] * C[None]
-    rhs = np.zeros((w.size, system.n, 1), dtype=complex)
-    rhs[:, inp, 0] = 1.0
-    return np.linalg.solve(Z, rhs)[:, out, 0]
+    e = np.zeros(system.n)
+    e[inp] = 1.0
+    return modal_receptance(*system.matrices(), f, e)[:, out]
 
 
 @dataclass(frozen=True)
@@ -174,10 +172,8 @@ def forced(ring: Ring, engine_order: int, f: np.ndarray, deltas: np.ndarray | No
     """Each blade's |x| (m) per newton of an engine-order force, F_j = e^{i 2π E j / N}: (frequencies, blades)."""
     M, C, K = ring.matrices(deltas)
     n = ring.blades
-    w = TWO_PI * np.asarray(f, dtype=float)
-    Z = K[None] - (w * w)[:, None, None] * M[None] + 1j * w[:, None, None] * C[None]
     F = np.exp(2j * math.pi * engine_order * np.arange(n) / n)
-    return np.abs(np.linalg.solve(Z, np.broadcast_to(F[:, None], (w.size, n, 1)))[..., 0])
+    return np.abs(modal_receptance(M, C, K, f, F))
 
 
 def sweep_grid(ring: Ring, points: int = 1500) -> np.ndarray:

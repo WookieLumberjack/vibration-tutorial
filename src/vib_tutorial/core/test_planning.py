@@ -50,6 +50,7 @@ from enum import Enum
 import numpy as np
 import scipy.linalg
 
+from .modal import receptance
 from .model import ChainSystem
 
 TWO_PI = 2.0 * np.pi
@@ -179,11 +180,7 @@ def quality(phi: np.ndarray, sensors: np.ndarray) -> Quality:
 # -------------------------------------------------------------------- operational deflection shapes
 def ods(system: ChainSystem, force: int, hz: float) -> np.ndarray:
     """X = H(ω) F for a unit force on mass `force` (index from 0): every mass's complex amplitude, m/N."""
-    M, C, K = system.matrices()
-    w = TWO_PI * hz
-    f = np.zeros(system.n)
-    f[force] = 1.0
-    return np.linalg.solve(K - w * w * M + 1j * w * C, f.astype(complex))
+    return ods_spectrum(system, force, np.array([hz]))[0]
 
 
 def ods_parts(system: ChainSystem, force: int, hz: float) -> np.ndarray:
@@ -199,12 +196,9 @@ def ods_parts(system: ChainSystem, force: int, hz: float) -> np.ndarray:
 
 def ods_spectrum(system: ChainSystem, force: int, freqs: np.ndarray) -> np.ndarray:
     """(len(freqs), n): every mass's response to a unit force on `force`, over frequency."""
-    M, C, K = system.matrices()
-    w = TWO_PI * np.asarray(freqs, dtype=float)
-    Z = K[None] - (w**2)[:, None, None] * M[None] + 1j * w[:, None, None] * C[None]
-    f = np.zeros((w.size, system.n, 1), dtype=complex)
-    f[:, force] = 1.0
-    return np.linalg.solve(Z, f)[:, :, 0]
+    f = np.zeros(system.n)
+    f[force] = 1.0
+    return receptance(*system.matrices(), freqs, f)
 
 
 def at_phase(x: np.ndarray) -> np.ndarray:

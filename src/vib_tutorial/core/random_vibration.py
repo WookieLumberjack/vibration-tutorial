@@ -106,7 +106,7 @@ import numpy as np
 
 from .foh import FohSteps
 from .measurement import settle_time
-from .modal import TWO_PI, ModalResult, modal_analysis
+from .modal import TWO_PI, ModalResult, modal_analysis, receptance
 from .model import ChainSystem, state_space
 
 G = 9.80665  # m/s² per g
@@ -219,10 +219,7 @@ def transfer(system: ChainSystem, inp: RandomInput, out: Output, f: np.ndarray) 
     b = inp.patterns(system)
     row = out.row(system)
     w = TWO_PI * np.asarray(f, dtype=float)
-    t = np.empty((w.size, b.shape[1]), dtype=complex)
-    for k, wk in enumerate(w):
-        x = np.linalg.solve(K - wk * wk * M + 1j * wk * C, b)
-        t[k] = row @ x
+    t = row @ receptance(M, C, K, f, b)
     if out.quantity is Quantity.ACCELERATION:
         t *= -(w * w)[:, None]
         if inp.kind is Input.BASE:

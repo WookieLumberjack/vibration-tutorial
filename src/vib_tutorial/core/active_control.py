@@ -23,6 +23,7 @@ import numpy as np
 import scipy.linalg
 import scipy.optimize
 
+from .modal import state_receptance
 from .model import ChainSystem
 
 TWO_PI = 2.0 * math.pi
@@ -91,8 +92,7 @@ def closed_loop(
 
 def frf(A: np.ndarray, B: np.ndarray, Cx: np.ndarray, out: int, inp: int, f: np.ndarray) -> np.ndarray:
     """Receptance x_out / f_inp at the frequencies f (Hz)."""
-    I = np.eye(A.shape[0])
-    return np.array([(Cx[out] @ np.linalg.solve(2j * math.pi * fk * I - A, B[:, inp])) for fk in f])
+    return state_receptance(A, B[:, inp], Cx[out], f)
 
 
 @dataclass(frozen=True)

@@ -1127,3 +1127,25 @@ def test_receptance_is_nan_where_an_undamped_chain_is_driven_at_resonance():
     M, C, K = np.eye(1), np.zeros((1, 1)), np.array([[4 * np.pi**2]])  # 1 Hz
     H = receptance(M, C, K, np.array([0.5, 1.0, 2.0]), np.array([1.0]))
     assert np.isnan(H[1, 0]) and H[0, 0] == pytest.approx(1 / (K[0, 0] * 0.75))
+
+
+def test_one_receptance_in_every_shape():
+    """modal.receptance for one load, a column of loads each and the whole matrix agree; so do the complex
+    frequency's form on the axis and the state space's c (iωI − A)⁻¹ b."""
+    from vib_tutorial.core.modal import receptance, receptance_at, state_receptance
+    from vib_tutorial.core.model import state_space
+
+    system = ChainSystem([1.0, 2.0, 1.5], [400.0, 300.0, 500.0], [2.0, 1.0, 3.0])
+    M, C, K = system.matrices()
+    f = np.linspace(0.5, 8.0, 40)
+    H = receptance(M, C, K, f)
+    assert H.shape == (40, 3, 3)
+    loads = np.array([[1.0, 0.0], [0.0, 0.0], [0.5, 1.0]])
+    np.testing.assert_allclose(receptance(M, C, K, f, loads), H @ loads, rtol=1e-12)
+    np.testing.assert_allclose(receptance(M, C, K, f, loads[:, 1]), H @ loads[:, 1], rtol=1e-12)
+    s = 1j * 2 * np.pi * f + 1e-300  # off the axis by nothing: the general M s² + C s + K
+    np.testing.assert_allclose(receptance_at(M, C, K, s), H, rtol=1e-12)
+    A, B = state_space(system)
+    c = np.zeros(6)
+    c[1] = 1.0
+    np.testing.assert_allclose(state_receptance(A, B[:, 2], c, f), H[:, 1, 2], rtol=1e-9)

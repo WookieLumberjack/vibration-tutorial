@@ -55,6 +55,7 @@ import scipy.optimize
 from .complex_modes import Complexity, complexity
 from .foh import free
 from .frame import TWO_PI, Assembly, Frame, FrameError, Modes, assemble, condense, modes
+from .modal import state_receptance
 
 SAMPLES = 2400  # in a time response
 RECORD_PERIODS = 12  # of the first mode, in a response's record
@@ -286,8 +287,7 @@ def frf(model: StateModel, freqs_hz: np.ndarray, inp: int, out: int) -> np.ndarr
     if np.linalg.cond(V) < WELL_POSED:
         weight = (c @ V) * np.linalg.solve(V, b)
         return np.sum(weight / (s[:, None] - lam), axis=1)
-    eye = np.eye(model.size)
-    return np.array([c @ np.linalg.solve(si * eye - model.A, b) for si in s])
+    return state_receptance(model.A, b, c, freqs_hz)
 
 
 # -------------------------------------------------------------------- time response
