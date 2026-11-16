@@ -64,6 +64,7 @@ from ..core.sea import (
 from . import acoustics_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
+    TAB_ROOM,
     Form,
     TrialBox,
     column,
@@ -808,7 +809,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
             },
         )
 
-        three_panes(self, column(self.trials, panel, material, mode), centre, self.tabs)
+        three_panes(self, column(self.trials, panel, material, mode), centre, self.tabs, sizes=TAB_ROOM)
         self.modes: ModeSet | None = None
         self.drive: PointDrive | None = None
         self._on_panel()

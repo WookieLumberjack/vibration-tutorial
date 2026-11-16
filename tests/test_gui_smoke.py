@@ -5144,3 +5144,27 @@ def test_rigid_body_paths_and_drift(main_window, app):
     page.rate.setValue(0.0)
     page.step_three()
     assert "isn't turning" in page.drift_note.text()
+
+
+def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window):
+    """At 1280×800 each page's tab bars show every tab's name: a page whose tabs need it gives its right pane
+    `lesson.TAB_ROOM`."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui.main_window import PAGE_GROUPS
+
+    w = main_window
+    w.resize(1280, 800)
+    over = []
+    for _, pages in PAGE_GROUPS:
+        for name, _ in pages:
+            w.show_page(name)
+            QtWidgets.QApplication.processEvents()
+            page = w.pages.currentWidget()
+            for tabs in page.findChildren(QtWidgets.QTabWidget):
+                if tabs.isVisible():
+                    bar = tabs.tabBar()
+                    need = sum(bar.tabSizeHint(i).width() for i in range(bar.count()))
+                    if need > tabs.width() + 1:
+                        over.append((name, need, tabs.width()))
+    assert not over

@@ -41,7 +41,7 @@ from ..core.model_updating import (
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from . import updating_figures, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TrialCombo, trials_html
+from .lesson import TAB_ROOM, TrialCombo, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .notes_view import NotesBrowser
@@ -749,7 +749,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         splitter.addWidget(left_scroll)
         splitter.addWidget(center)
         splitter.addWidget(self.tabs)
-        splitter.setSizes([360, 700, 640])
+        splitter.setSizes(list(TAB_ROOM))
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(splitter)
