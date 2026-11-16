@@ -415,3 +415,39 @@ def test_a_live_label_lays_the_page_out_again_only_when_it_needs_more_room(app, 
     assert label.height() >= label.heightForWidth(label.width()) if wrap else label.width() >= label.sizeHint().width()
     page.removeEventFilter(watch)
     page.close()
+
+
+def test_the_quarter_car_drives_over_its_road(main_window, app):
+    from vib_tutorial.core.quarter_car import drive
+    from vib_tutorial.gui.quarter_car import DRIVE_S, TAB_DRIVE, TRIALS, WINDOW_S
+    from vib_tutorial.gui.quarter_car_view import SUSP_H, SWING, TYRE_H, WHEEL_H
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.quarter_car_page
+    w.pages.setCurrentWidget(p)
+    pb, view = p.playback, p.car_view
+    pb.loop.enabled = False
+    p.tabs.setCurrentIndex(TAB_DRIVE)
+    app.processEvents()
+    assert not pb.running and pb.span == WINDOW_S  # at rest, waiting for Start
+
+    # A trial on the Drive tab drives it from the start.
+    p.load_trial(next(i for i, tr in enumerate(TRIALS) if tr.tab == TAB_DRIVE))
+    app.processEvents()
+    assert pb.running and pb.t == 0.0
+    pb._tick(0.6)
+    d = drive(p.car, p.road, DRIVE_S)
+    road, wheel, body = (float(np.interp(pb.t, d.t, a)) for a in (d.road, d.wheel_x, d.body_x))
+    g = view.gain
+    n = int(WINDOW_S / (d.t[1] - d.t[0]))
+    assert g == pytest.approx(SWING / max(np.max(np.abs(a[:n])) for a in (d.road, d.body_x, d.wheel_x)))
+    # each box's underside (Qt's top(): the smaller y, here the lower edge)
+    assert view.wheel_rect.rect().top() == pytest.approx(TYRE_H + g * wheel)
+    assert view.body_rect.rect().top() == pytest.approx(TYRE_H + WHEEL_H + SUSP_H + g * body)
+    x, y = view.road_line.getData()
+    assert np.interp(0.0, x, y) == pytest.approx(g * road, abs=1e-6 * g)  # the road under the tyre, now
+
+    # Scrubbing the cursor moves the car with it.
+    pb.cursors[0].dragged.emit(3.0)
+    assert not pb.running and view.now == pytest.approx(3.0)

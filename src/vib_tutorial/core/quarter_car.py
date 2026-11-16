@@ -178,6 +178,8 @@ class Drive:
     body: np.ndarray  # m/s²
     travel: np.ndarray  # m
     tyre: np.ndarray  # N
+    body_x: np.ndarray  # m, up from rest
+    wheel_x: np.ndarray  # m
 
 
 def road_profile(road: Road, duration: float, fs: float, seed: int = 1) -> tuple[np.ndarray, np.ndarray]:
@@ -204,4 +206,5 @@ def drive(car: Car, road: Road, duration: float = 60.0, fs: float = 400.0, seed:
     # start on the road's steady state at its first height (both masses lifted by z[0])
     states = respond(A, B, 1.0 / fs, z, np.array([z[0], z[0], 0.0, 0.0]))
     acc = states @ A[2].T + B[2, 0] * z
-    return Drive(t, z, acc, states[:, 0] - states[:, 1], car.tyre * (z - states[:, 1]))
+    x, w = states[:, 0], states[:, 1]
+    return Drive(t, z, acc, x - w, car.tyre * (z - w), x, w)

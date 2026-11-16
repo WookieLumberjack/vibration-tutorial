@@ -69,7 +69,8 @@ reversals (Step, Back, Play), the stack ringed and each cycle drawn as it's coun
 A suspension on an ISO 8608 road: the road's PSD in space becomes a PSD in time at the car's speed, and
 the body's acceleration (comfort), the tyre's dynamic load (grip) and the suspension's travel follow as
 |H|² G<sub>z</sub>. The conflict diagram over springs and dampers, each output against the damper, and a
-drive over a synthesized road stepped exactly, as the check.
+drive over a synthesized road stepped exactly, as the check, with the car drawn driving it (the wheel on its
+tyre, the body on its suspension) and played back against a time cursor.
 
 ![Quarter-car page: a quarter of a family car at 72 km/h on a class C road; body bounce at 1.24 Hz and wheel hop at 11.8 Hz, 1.48 m/s² RMS at the body, 10.7 mm of travel, the tyre's load swinging 24 % of its static 3.33 kN; on the trade-off, comfort is best at 819 N·s/m and grip at 2394](images/quarter_car.png)
 
