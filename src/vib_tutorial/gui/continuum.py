@@ -240,6 +240,12 @@ def _consistent_side(rng: np.random.Generator) -> Question:
         "Above the exact ones, every one: the consistent mesh is a Rayleigh–Ritz model, and Rayleigh–Ritz frequencies "
         "are upper bounds. (Lumped masses come out below.)",
         choices=("Above the exact ones", "Below the exact ones", "Some above, some below"),
+        why=(
+            "",
+            "That's the lumped mesh. Consistent masses make the mesh a Rayleigh–Ritz model, whose frequencies are "
+            "upper bounds.",
+            "A Rayleigh–Ritz model's frequencies are each above the exact one they stand for, every one.",
+        ),
         setup=ContinuumSetup(PRESETS[1].continuum, 10, VIEW_ERRORS).__dict__,
         predict=True,
     )
@@ -252,6 +258,12 @@ def _halved_elements(rng: np.random.Generator) -> Question:
         "They fall to a quarter: the lumped error is −(κh)²/24 for long waves, second order in h. (The mixed mass's "
         "falls 16 times.)",
         choices=("They fall to a quarter", "They halve", "They fall 16 times"),
+        why=(
+            "",
+            "The lumped mesh's error is second order in the element's length, (κh)²/24: half the length, a "
+            "quarter of the error.",
+            "That's the mixed mass, whose error is fourth order. The lumped mesh's is second order: a quarter.",
+        ),
         setup=ContinuumSetup(_string(), 24, VIEW_ERRORS).__dict__,
         predict=True,
     )
@@ -264,6 +276,13 @@ def _beam_overtones(rng: np.random.Generator) -> Question:
         "No: 1 : 6.27 : 17.5. Bending waves are dispersive, ω = aκ², and the clamped and free ends give a "
         "transcendental equation for κ, not a whole number of half wavelengths.",
         choices=("No: 1 : 6.27 : 17.5", "Yes: 1 : 2 : 3", "Yes, the odd ones: 1 : 3 : 5"),
+        why=(
+            "",
+            "That's a string's: its waves travel at one speed whatever their length. Bending waves are "
+            "dispersive, ω = aκ², so a beam's overtones spread far wider and aren't whole multiples.",
+            "Odd multiples are a string or bar fixed at one end and free at the other. Bending waves are "
+            "dispersive, ω = aκ², and a beam's overtones spread far wider.",
+        ),
         setup=ContinuumSetup(Continuum(Kind.BEAM, 1.0, End.CLAMPED, End.FREE), 8).__dict__,
         predict=True,
     )

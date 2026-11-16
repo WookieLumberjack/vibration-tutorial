@@ -294,6 +294,13 @@ def _heavier_bob(rng: np.random.Generator) -> Question:
         "Nothing: the restoring moment mgL and the inertia mL² grow together, so ω<sub>n</sub> = √(g/L) has no "
         "mass in it.",
         choices=("It stays the same", f"It grows √{n} times", f"It falls to 1/√{n}"),
+        why=(
+            "",
+            "That's a mass on a spring, whose spring stays the same as the mass grows. A pendulum's spring is the "
+            "bob's own weight, which grows with it.",
+            "The heavier bob is pulled back harder, but it is harder to move in the same proportion: the mass "
+            "cancels out of g/L.",
+        ),
         setup=dict(kind=Kind.SIMPLE, mass=float(n)),
         predict=True,
     )
@@ -307,6 +314,13 @@ def _on_the_moon(rng: np.random.Generator) -> Question:
         "It grows √6 ≈ 2.4 times: gravity is the spring, ω<sub>n</sub> = √(g/L). (A disc on a torsion wire "
         "wouldn't change: its spring isn't gravity.)",
         choices=("It grows about 2.4 times", "It grows 6 times", "It stays the same", "It falls to a sixth"),
+        why=(
+            "",
+            "The period goes as 1/√g, not as 1/g: a sixth of the gravity gives √6 ≈ 2.4 times the period.",
+            "That holds for a mass on a spring or a disc on a wire, whose springs aren't gravity; a pendulum's "
+            "spring is gravity.",
+            "Weaker gravity pulls the bob back more gently, so it swings more slowly, not faster.",
+        ),
         setup=dict(kind=Kind.SIMPLE, gravity=1.62),
         predict=True,
     )
@@ -319,6 +333,13 @@ def _wire_large_twist(rng: np.random.Generator) -> Question:
         "Nothing: a wire's moment is k<sub>t</sub>θ at any twist, so it is linear and its period doesn't depend "
         "on the swing. Only gravity's sin θ makes a pendulum's lengthen.",
         choices=("It stays the same", "It lengthens, as a pendulum's does", "It shortens"),
+        why=(
+            "",
+            "A pendulum's lengthens because its restoring moment, mgL sin θ, grows more slowly than θ at a large "
+            "swing. A wire's, k<sub>t</sub>θ, keeps in proportion at any twist.",
+            "That would take a spring that stiffens as it's twisted; a wire's moment stays in proportion to the "
+            "twist (until it yields).",
+        ),
         setup=dict(kind=Kind.TORSION, angle=90.0, tab=TAB_PERIOD),
         predict=True,
     )

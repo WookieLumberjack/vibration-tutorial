@@ -296,6 +296,14 @@ def _sudden_load(rng: np.random.Generator) -> Question:
         "Twice as far. A force switched on suddenly overshoots its static deflection by e<sup>−ζπ/√(1 − ζ²)</sup>, "
         "all of it with no damping: x = (F/k)(1 − cos ω<sub>n</sub>t) swings between 0 and 2F/k.",
         choices=("Twice as far", "As far", "√2 times as far", "Half as far again"),
+        why=(
+            "",
+            "That's lowering it gently, the mass never moving fast. Let go at once, it reaches the static deflection "
+            "moving, and carries on.",
+            "No √2 here: with no damping the mass swings as far past the static deflection as it started above it.",
+            "That would need damping to take some of the energy out; with none, the overshoot is the whole static "
+            "deflection.",
+        ),
         setup=dict(kind=PulseKind.STEP, damping=0.0, at=0.157, tab=TAB_STEP),
         predict=True,
     )
@@ -316,6 +324,14 @@ def _short_pulse(rng: np.random.Generator) -> Question:
             f"About 1/{n} as large",
             f"About {n * n} times as large",
         ),
+        why=(
+            "",
+            "A push much longer than the period leaves the same swing whatever its length. One much shorter is an "
+            "impulse, and its swing grows with its area FT.",
+            "A longer push gives more impulse, not less: the area FT grows with it.",
+            "The swing grows with the impulse FT, which grows as the length itself; it's the energy that goes as "
+            "its square.",
+        ),
         setup=dict(kind=PulseKind.RECTANGLE, amplitude=10.0, duration=rounded(n * 0.0157), at=0.08),
         predict=True,
     )
@@ -332,6 +348,13 @@ def _whole_periods(rng: np.random.Generator) -> Question:
         f"|sin πr|/πr of the static, with r = {n} the ramp's length in periods, and sin {n}π = 0. The ramp ends "
         "just as the mass has swung back onto it, at rest.",
         choices=("It doesn't overshoot", f"By about 1/{n}π of the static", "To twice the static, as a step would"),
+        why=(
+            "",
+            "That's the envelope, the most a ramp of that length can leave: |sin πr|/πr. With r a whole number, "
+            "sin πr = 0 and nothing is left.",
+            "A step is a ramp of no length. A ramp over whole periods lets the mass catch up: it ends just as the "
+            "mass is back on the load, at rest.",
+        ),
         setup=dict(kind=PulseKind.RAMP, duration=rounded(n * TWO_PI / 20.0, 4), damping=0.0, at=0.6),
         predict=True,
     )

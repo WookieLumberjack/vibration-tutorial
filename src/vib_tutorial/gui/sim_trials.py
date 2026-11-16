@@ -294,6 +294,12 @@ def _proportional_release(rng: np.random.Generator) -> Question:
         "Nothing: proportional damping doesn't couple the modes, so each modal coordinate obeys its own "
         f"equation and only mode {r}'s has started moving. It decays in one clean shape.",
         choices=("They stay still", f"They pick up energy from mode {r}", "They all decay together"),
+        why=(
+            "",
+            "That takes damping that couples the modes. C = βK is diagonal in the modal coordinates, so no energy "
+            "passes between them.",
+            "Only one mode was started: the others have nothing to decay from.",
+        ),
         setup=dict(coords="Modal", by_mode=True, speed=0.25, window=2.05, release=r - 1),
         predict=True,
     )
@@ -307,6 +313,12 @@ def _one_strong_damper(rng: np.random.Generator) -> Question:
         "They pick up energy: the damping is no longer proportional, φᵀCφ has terms off the diagonal, and they "
         "couple the modes. Mode 1, the least damped, ends up with most of what is left.",
         choices=("They pick up energy from mode 3", "They stay still", "They lose energy to mode 3"),
+        why=(
+            "",
+            "That holds for proportional damping. One strong damper makes φᵀCφ non-diagonal, and its terms off the "
+            "diagonal pass energy between the modes.",
+            "They start with none to lose: only mode 3 was released.",
+        ),
         setup=dict(damping={0: 15.0}, coords="Modal", by_mode=True, speed=0.25, window=2.05, release=2),
         predict=True,
     )
@@ -320,6 +332,12 @@ def _absorber_at_tuning(rng: np.random.Generator) -> Question:
         "It stands still: the absorber swings so that its spring pushes on the machine with exactly the "
         "opposite of the applied force. (The absorber adds two new resonances either side, though.)",
         choices=("It stands still", "It swings at resonance", "It swings half as much as without the absorber"),
+        why=(
+            "",
+            "The absorber splits the machine's resonance into two, either side of the tuning; at the tuning itself "
+            "the machine sits at an antiresonance.",
+            "Undamped and tuned exactly, the absorber cancels the force on the machine wholly, not by half.",
+        ),
         setup=dict(preset="Vibration absorber", apply=True, frf_tab=True),
         predict=True,
     )

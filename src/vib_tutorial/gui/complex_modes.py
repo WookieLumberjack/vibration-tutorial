@@ -278,6 +278,12 @@ def _made_proportional(rng: np.random.Generator) -> Question:
         "Every one becomes 1: with C = βK, ΦᵀCΦ is diagonal, the modes don't couple, and the exact shapes are the "
         "real undamped ones.",
         choices=("They all become 1", "They stay as they were", "They all fall"),
+        why=(
+            "",
+            "The single damper made them complex. With C = βK, ΦᵀCΦ is diagonal and the modes are the real "
+            "undamped ones: an MPC of 1.",
+            "Proportional damping makes the modes real, every point moving in phase or in antiphase: an MPC of 1.",
+        ),
         setup=dict(tab=TAB_PHASES),
         predict=True,
     )
@@ -291,6 +297,13 @@ def _damper_at_top(rng: np.random.Generator) -> Question:
         "About ten times too high (0.17 against 0.017): the approximation counts the damper's stretch in the "
         "undamped mode 4, but in the exact mode m3 and m4 move nearly together, so the damper hardly works.",
         choices=("Far too high", "About right", "Far too low"),
+        why=(
+            "",
+            "The approximation counts the damper's stretch in the undamped mode 4, but in the exact mode m3 and m4 "
+            "move nearly together, so the damper hardly works.",
+            "The approximation keeps the undamped shape, which stretches the damper hard. The exact mode avoids "
+            "stretching it, so it's the exact ζ that's lower.",
+        ),
         setup=dict(damping=(0.0, 0.0, 0.0, 20.0)),
         predict=True,
     )
@@ -303,6 +316,12 @@ def _stiffer_damper(rng: np.random.Generator) -> Question:
         "It rises to a peak and falls again: a stiff damper holds its ends together and stops working, and the "
         "chain's modes become those with that joint locked. The approximation's ζ keeps rising.",
         choices=("It rises, then falls", "It keeps rising", "It rises, then levels off"),
+        why=(
+            "",
+            "That's the proportional approximation, which keeps the undamped shape. A very stiff damper locks its "
+            "ends together and stops working, so the exact ζ falls again.",
+            "A damper too stiff to stretch takes no energy: the exact ζ falls back towards zero as it locks its joint.",
+        ),
         setup=dict(damping=(20.0, 0.0, 0.0, 0.0), tab=TAB_SWEEP),
         predict=True,
     )

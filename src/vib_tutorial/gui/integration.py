@@ -255,6 +255,12 @@ def _halve_step(rng: np.random.Generator) -> Question:
         0,
         "It falls about four times, to 0.41 %: central difference is second order, its period error ≈ −(ωΔt)²/24.",
         choices=("It falls about four times", "It halves", "It stays about the same", "It falls about sixteen times"),
+        why=(
+            "",
+            "Central difference is second order: its period error goes as (ωΔt)², so half the step gives a quarter.",
+            "The error depends on the step, as (ωΔt)²/24: half the step, a quarter of the error.",
+            "That would be a fourth-order method; central difference is second order.",
+        ),
         setup=dict(per_period=20.0, schemes=(Scheme.CENTRAL,), tab=TAB_PERIOD),
         predict=True,
     )
@@ -272,6 +278,13 @@ def _one_step(rng: np.random.Generator) -> Question:
             "It blows up",
             "It dies away",
             "It follows the true motion closely",
+        ),
+        why=(
+            "",
+            "Average acceleration is unconditionally stable: ρ = 1 at any step, for an undamped oscillator.",
+            "Average acceleration adds no numerical damping: ρ = 1 at any step.",
+            "One step a period can't follow a swing: the scheme's period comes out 2.5 times too long. Stable "
+            "isn't accurate.",
         ),
         setup=dict(per_period=1.0, schemes=(Scheme.AVERAGE,), tab=TAB_RADIUS),
         predict=True,
@@ -291,6 +304,13 @@ def _stiff_explicit(rng: np.random.Generator) -> Question:
             "It runs, the stiff mode damped out",
             "It runs, the stiff mode's period wrong",
         ),
+        why=(
+            "",
+            "An explicit step has to resolve every mode in the model. The stiff one's ωΔt = 43 is far past "
+            "central difference's limit of 2, so it blows up whatever the slow mode does.",
+            "Central difference adds no damping: past its limit of ωΔt = 2 a mode grows every step; it isn't damped.",
+            "Below ωΔt = 2 it would be; at 43 the stiff mode is unstable and grows every step.",
+        ),
         setup=dict(per_period=50.0, periods=5.0, stiff_hz=1000.0, schemes=(Scheme.CENTRAL,), tab=TAB_RADIUS),
         predict=True,
     )
@@ -304,6 +324,14 @@ def _exact_big_step(rng: np.random.Generator) -> Question:
         "Not at all, round-off aside: e<sup>AΔt</sup> is the oscillator's own free motion over a step, at any Δt. "
         "Only a force varying between samples brings in an error.",
         choices=("They're exact", "A few percent", "It's unstable at that step", "Its period comes out long"),
+        why=(
+            "",
+            "The exact update is the oscillator's own free motion over a step, e<sup>AΔt</sup>, at any Δt: "
+            "nothing is approximated.",
+            "e<sup>AΔt</sup> of a damped oscillator shrinks at any step: it can't be unstable.",
+            "That's what an approximate scheme such as average acceleration does at a big step; the exact update "
+            "has no period error.",
+        ),
         setup=dict(per_period=2.0, damping=0.8, schemes=(Scheme.FOH, Scheme.AVERAGE), tab=TAB_PERIOD),
         predict=True,
     )

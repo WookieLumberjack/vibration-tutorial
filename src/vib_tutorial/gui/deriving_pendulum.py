@@ -291,6 +291,14 @@ def _small_release(rng: np.random.Generator) -> Question:
             "Mixes both modes irregularly",
             "Tumbles over the top",
         ),
+        why=(
+            "",
+            "In the faster mode the rods lean opposite ways, the lower −√2 times the upper. Here they lean the same "
+            "way, √2 times as far: the slower mode's shape.",
+            "A release that isn't a mode's shape mixes them; this one is the slower mode's own shape, and at 10° "
+            "the equations are near enough linear to keep it.",
+            "At 10° it has far too little energy to go over the top.",
+        ),
         setup=dict(system=PENDULUM, theta1=10.0, theta2=14.1, show=SHOW_MOTION, tab=TAB_SWING),
         predict=True,
     )
@@ -308,6 +316,14 @@ def _twins(rng: np.random.Generator) -> Question:
             "Still a millionth of a radian apart",
             "About a thousandth of a radian apart",
             "Identical: the equations are deterministic",
+        ),
+        why=(
+            "",
+            "That's how a linear system behaves, a small difference staying small. At 120° the motion is "
+            "chaotic: the difference doubles about every 0.49 s.",
+            "Doubling every 0.49 s for ten seconds is about twenty doublings, a million times over: past a radian.",
+            "Deterministic, yes, but the starts differ by a millionth of a radian, and chaos makes that grow "
+            "exponentially.",
         ),
         setup=dict(system=PENDULUM, theta1=120.0, theta2=120.0, show=SHOW_MOTION, tab=TAB_CHAOS),
         predict=True,

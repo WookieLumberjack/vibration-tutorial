@@ -129,6 +129,11 @@ def _stiff_or_soft(rng: np.random.Generator) -> Question:
         f"times it, {'below' if r < math.sqrt(2.0) else 'above'} √2: T = {number(T)}. Only above √2 f<sub>n</sub> "
         "does a mount isolate.",
         choices=("More: the mounts amplify it", "Less: the mounts isolate it", "The same"),
+        why=(
+            "" if T > 1 else f"Mounts amplify only below √2 f<sub>n</sub>, and here r = {number(r)} is above it.",
+            "" if T <= 1 else f"Mounts isolate only above √2 f<sub>n</sub>, and here r = {number(r)} is below it.",
+            f"The force is the same only at r = √2 exactly; here r = {number(r)}.",
+        ),
         setup=dict(deflection_mm=sag, rpm=rpm, tab=TAB_START),
         predict=True,
     )
@@ -145,6 +150,13 @@ def _damping_above(rng: np.random.Generator) -> Question:
         f"It rises: T goes from {number(100 * before_)} % to {number(100 * after)} %. Above √2 f<sub>n</sub> the "
         "damper pushes on the floor in proportion to the speed; damping only helps near resonance, at start-up.",
         choices=("It rises", "It falls", "It stays the same"),
+        why=(
+            "",
+            "Damping helps only near resonance, at start-up. Above √2 f<sub>n</sub> the damper's force grows with "
+            "the speed and goes straight to the floor, so more of it lets more through.",
+            "The damper's force adds to the spring's on the floor: above √2 f<sub>n</sub>, more damping lets more "
+            "through.",
+        ),
         setup=dict(zeta=zeta, tab=TAB_START),
         predict=True,
     )

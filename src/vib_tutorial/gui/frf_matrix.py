@@ -654,6 +654,13 @@ def _reciprocity(rng: np.random.Generator) -> Question:
         0,
         "They are identical, magnitude and phase (Maxwell–Betti): M, C and K are symmetric, so H is.",
         choices=("Identical", "The same magnitude, phases opposite", "Different"),
+        why=(
+            "",
+            "Reciprocity holds for the phase too: H<sub>jk</sub> = H<sub>kj</sub> as complex numbers, as M, C and K "
+            "are symmetric.",
+            "M, C and K are symmetric, so H is: pushing at one point and measuring at the other gives the same as "
+            "the other way round (Maxwell–Betti).",
+        ),
         setup=dict(output=j, inputs=(k,)),
         predict=True,
     )
@@ -667,6 +674,13 @@ def _truncated_static(rng: np.random.Generator) -> Question:
         "Too small: at a driving point every mode's term starts positive (φ<sub>jr</sub>²/ω<sub>r</sub>²), so leaving "
         "one out loses its share of the static compliance, its residual flexibility.",
         choices=("Too small", "Too large", "The same"),
+        why=(
+            "",
+            "At a driving point every mode's term starts positive at low frequency, φ<sub>jr</sub>²/ω<sub>r</sub>²: "
+            "leaving one out can only take some away.",
+            "The highest mode still adds φ<sub>jr</sub>²/ω<sub>r</sub>² to the static compliance: without it the "
+            "sum falls short by that, its residual flexibility.",
+        ),
         setup=dict(output=0, inputs=(0,), quantity=Quantity.REAL, unticked=(4,), expansion=Expansion.CLASSICAL),
         predict=True,
     )
@@ -679,6 +693,13 @@ def _driving_point_dips(rng: np.random.Generator) -> Question:
         "Always an antiresonance: both modes' constants φ<sub>jr</sub>² are positive, and between the peaks the "
         "lower is already mass-like and the upper still spring-like, so they cancel somewhere.",
         choices=("Always an antiresonance", "Sometimes one, sometimes not", "Never one"),
+        why=(
+            "",
+            "That's a transfer FRF, whose modes' constants can have either sign. At a driving point they're all "
+            "positive, φ<sub>jr</sub>², so neighbouring modes always cancel between their peaks.",
+            "Between two peaks the lower mode is mass-like and the upper spring-like, opposite in sign; with both "
+            "constants positive they cancel somewhere.",
+        ),
         setup=dict(output=1, inputs=(1,)),
         predict=True,
     )

@@ -590,6 +590,15 @@ def _same_frequencies(rng: np.random.Generator) -> Question:
         "Nothing: the coordinates describe the same motion, so the frequencies (1.25 and 1.41 Hz) don't change. "
         "Only where the coupling shows does: the mass matrix now couples them too (−m e).",
         choices=("They stay the same", "They rise", "They fall", "One rises and one falls"),
+        why=(
+            "",
+            "New coordinates describe the same car: M and K change together, and the frequencies, the eigenvalues "
+            "of M<sup>−1</sup>K, stay where they were.",
+            "New coordinates describe the same car: M and K change together, and the frequencies, the eigenvalues "
+            "of M<sup>−1</sup>K, stay where they were.",
+            "That's what changing a spring does. Here nothing physical changes, only what's measured, so neither "
+            "frequency moves.",
+        ),
         setup=dict(coords=Coordinates.POINT, offset=1.2),
         predict=True,
     )
@@ -606,6 +615,15 @@ def _pure_modes(rng: np.random.Generator) -> Question:
             "Each end bouncing on its own",
             "Both pitch about the axles",
             "They stay mixed as before",
+        ),
+        why=(
+            "",
+            "Each end bouncing on its own would take the mass, not just the springs, to leave front and rear "
+            "apart. Making k<sub>f</sub>a = k<sub>r</sub>b decouples bounce from pitch at G instead.",
+            "With k<sub>f</sub>a = k<sub>r</sub>b a bounce of G pulls no moment and a pitch about G no force, so "
+            "the modes are about G, not about an axle.",
+            "The term in K that couples bounce and pitch is in proportion to k<sub>f</sub>a − k<sub>r</sub>b: it's "
+            "now zero, so they no longer drive each other.",
         ),
         setup=dict(k_rear=32.0, tab=TAB_MODES),
         predict=True,
