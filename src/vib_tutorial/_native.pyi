@@ -78,6 +78,21 @@ class LinearSteps:
     def __init__(self, phi: Floats, g0: Floats, g1: Floats) -> None: ...
     def advance(self, z: Floats, u0: float, u: Floats, out: Floats) -> None: ...
 
+class NewtonSteps:
+    """A linear update under force laws, Newton at each step's end (`DuffingSimulator._steps_reference`)."""
+
+    def __init__(
+        self,
+        phi: Floats,
+        g0: Floats,
+        g1: Floats,
+        tol: float,
+        iterations: int,
+        watch: tuple[int, float] | None = None,
+        cubic: list[tuple[int, int, float, float]] = ...,
+    ) -> None: ...
+    def run(self, z: Floats, u0: Floats, applied: Floats, modulation: Floats, out: Floats, inputs: Floats) -> int: ...
+
 class RubSteps:
     """The disc rubbing on its stator ring (`RotorSimulator._rub_steps_reference`)."""
 

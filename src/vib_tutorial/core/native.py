@@ -34,11 +34,12 @@ def kernel[F: Callable](name: str, reference: F) -> F:
 # The kernels' classes, typed by vib_tutorial/_native.pyi: use them only where `module` is set. (A module held
 # in a variable, as `module` is, has no attributes for mypy, so its calls would go unchecked.)
 if TYPE_CHECKING:
-    from vib_tutorial._native import FilmSteps, FrictionSteps, LinearSteps, RubSteps
+    from vib_tutorial._native import FilmSteps, FrictionSteps, LinearSteps, NewtonSteps, RubSteps
 else:
     FilmSteps = getattr(module, "FilmSteps", None)
     FrictionSteps = getattr(module, "FrictionSteps", None)
     LinearSteps = getattr(module, "LinearSteps", None)
+    NewtonSteps = getattr(module, "NewtonSteps", None)
     RubSteps = getattr(module, "RubSteps", None)
 
-__all__ = ["FilmSteps", "FrictionSteps", "LinearSteps", "RubSteps", "kernel", "module"]
+__all__ = ["FilmSteps", "FrictionSteps", "LinearSteps", "NewtonSteps", "RubSteps", "kernel", "module"]

@@ -12,7 +12,7 @@ use numpy::{PyArrayMethods, PyReadonlyArray1, PyReadonlyArray2, PyReadwriteArray
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use vib_kernels::linalg::{Mat, RowsMut, expm, expm_foh};
-use vib_kernels::{film, friction, linear, rub};
+use vib_kernels::{film, friction, linear, newton, rub};
 
 fn mat(a: &PyReadonlyArray2<f64>) -> Mat {
     let a = a.as_array();
@@ -297,6 +297,63 @@ impl RubSteps {
     }
 }
 
+/// A linear update under force laws, Newton at each step's end (`newton::NewtonSteps`). Each law kind is a
+/// keyword: `cubic`, a (col, i, k3, k1) per spring.
+#[pyclass(module = "vib_tutorial._native")]
+struct NewtonSteps(newton::NewtonSteps);
+
+#[pymethods]
+impl NewtonSteps {
+    #[new]
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (phi, g0, g1, tol, iterations, watch=None, cubic=vec![]))]
+    fn new(
+        phi: PyReadonlyArray2<f64>,
+        g0: PyReadonlyArray2<f64>,
+        g1: PyReadonlyArray2<f64>,
+        tol: f64,
+        iterations: usize,
+        watch: Option<(usize, f64)>,
+        cubic: Vec<(usize, usize, f64, f64)>,
+    ) -> PyResult<Self> {
+        let laws = cubic
+            .into_iter()
+            .map(|(col, i, k3, k1)| newton::Law::Cubic { col, i, k3, k1 })
+            .collect();
+        raise(newton::NewtonSteps::new(
+            mat(&phi),
+            mat(&g0),
+            mat(&g1),
+            laws,
+            tol,
+            iterations,
+            watch,
+        ))
+        .map(NewtonSteps)
+    }
+
+    /// From z with the inputs u0, a step per row of `applied`: states into `out`, inputs into `inputs`;
+    /// returns how many steps it took.
+    #[allow(clippy::too_many_arguments)]
+    fn run(
+        &self,
+        py: Python<'_>,
+        z: PyReadonlyArray1<f64>,
+        u0: PyReadonlyArray1<f64>,
+        applied: PyReadonlyArray2<f64>,
+        modulation: PyReadonlyArray1<f64>,
+        mut out: PyReadwriteArray2<f64>,
+        mut inputs: PyReadwriteArray2<f64>,
+    ) -> PyResult<usize> {
+        let (z, u0, applied, modulation) = (vec1(&z), vec1(&u0), mat(&applied), vec1(&modulation));
+        raise(with_rows(&mut out, |out| {
+            with_rows(&mut inputs, |inputs| {
+                py.detach(|| self.0.run(&z, &u0, &applied, &modulation, out, inputs))
+            })
+        }))
+    }
+}
+
 type Array<'py> = Bound<'py, numpy::PyArray2<f64>>;
 
 fn to_numpy<'py>(py: Python<'py>, m: Mat) -> PyResult<Array<'py>> {
@@ -342,6 +399,7 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<FrictionSteps>()?;
     m.add_class::<RubSteps>()?;
     m.add_class::<LinearSteps>()?;
+    m.add_class::<NewtonSteps>()?;
     m.add_function(wrap_pyfunction!(expm_py, m)?)?;
     m.add_function(wrap_pyfunction!(foh_discretize_py, m)?)?;
     Ok(())

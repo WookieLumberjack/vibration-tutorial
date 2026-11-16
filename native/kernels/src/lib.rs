@@ -14,6 +14,7 @@ pub mod film;
 pub mod friction;
 pub mod linalg;
 pub mod linear;
+pub mod newton;
 pub mod rub;
 
 /// A kernel's result: a shape mismatch is an error naming it.
