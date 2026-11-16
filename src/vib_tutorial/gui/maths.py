@@ -5,11 +5,11 @@ inline maths as ``<m>…</m>`` (the notes' usual Unicode and HTML: ``ω<sub>n</s
 `links.load_notes` turns them into HTML with `display` and `inline`:
 
 - A display equation becomes ``<img src="eq:<key>" alt="<plain text>">`` in a centred paragraph, its
-  LaTeX kept in `EQUATIONS`. `notes_view.NotesBrowser` draws it with `render` (ziamath, in STIX Two Math)
+  LaTeX kept in `EQUATIONS`. `notes_view.NotesBrowser` draws it with `notes_render.equation` (ziamath's SVG, in STIX Two Math)
   at the size of the browser's text, in its text colour, so it follows the theme. The alt text
   (`plain`) is what the Theory window's search reads.
 - Inline maths stays text, kept on one line, set in STIX Two Text (`FONT`, bundled in ``vib_tutorial/fonts`` with its
-  licence, registered by `register_fonts` from `make_app`): letters italic as variables, upper-case Greek,
+  licence, registered by `notes_render.install` from `make_app`): letters italic as variables, upper-case Greek,
   digits, the functions and units in `UPRIGHT` and a word of two or more letters in a sub- or superscript
   (a label, ``F<sub>floor</sub>``) upright, and so is an ``e`` raised to a power: Euler's number, as ISO 80000-2
   writes it, apart from a variable e (an eccentricity). In ``<eq>`` write it ``\\mathrm{e}``. ``<rm>…</rm>``
@@ -28,11 +28,8 @@ import re
 import unicodedata
 from importlib import resources
 
-from PySide6 import QtCore, QtGui, QtSvg
-
 FONT = "STIX Two Text"
 FONTS = resources.files("vib_tutorial") / "fonts"
-SCALE = 2  # equations rendered at twice their size, for high-density screens
 EQ_SIZE = 1.15  # an equation's size over the text's (STIX's x-height is smaller than most UI fonts')
 INLINE_SIZE = 1.1  # inline maths' size over the text's, for the same reason
 
@@ -56,20 +53,6 @@ JOIN = str.maketrans({"|": "|" + JOINER, "/": "/" + JOINER})
 # A minus that starts an operand (after =, a bracket, a comma or a relation) is a sign: TeX spaces it as one
 # when it's written {-}, and ziamath otherwise spaces it as a binary minus.
 SIGN = re.compile(r"(^|[=(\[,<>]|\\(?:pm|mp|approx|le|ge|lt|gt|quad|qquad|left\(|left\[)\s?)\s*-")
-
-
-_registered = False
-
-
-def register_fonts() -> None:
-    """Make the bundled maths text font available to the app (once a QGuiApplication exists)."""
-    global _registered
-    if _registered:
-        return
-    _registered = True
-    for file in sorted(FONTS.iterdir(), key=lambda f: f.name):
-        if file.name.endswith(".otf"):
-            QtGui.QFontDatabase.addApplicationFontFromData(QtCore.QByteArray(file.read_bytes()))
 
 
 # ------------------------------------------------------------------ inline maths
@@ -126,23 +109,12 @@ def display(latex: str) -> str:
     return f'<p align="center"><img src="eq:{key}" alt="{alt}"></p>'
 
 
-@functools.lru_cache(maxsize=512)
-def render(latex: str, px: float, color: str) -> QtGui.QImage:
-    """`latex` typeset at `px` (the text's pixel size) in `color`, at SCALE times, marked to show at its size."""
+def equation_svg(latex: str, px: float, color: str) -> str:
+    """`latex` typeset as SVG at `px` (the text's pixel size) in `color` (`notes_render.equation` draws it)."""
     import ziamath
 
     ziamath.config.svg2 = False  # Qt's SVG renderer doesn't follow SVG 2's <symbol>/<use> glyphs
-    svg = ziamath.Latex(latex, size=px * EQ_SIZE, color=color).svg()
-    renderer = QtSvg.QSvgRenderer(QtCore.QByteArray(svg.encode()))
-    size = renderer.defaultSize()
-    image = QtGui.QImage(size * SCALE, QtGui.QImage.Format.Format_ARGB32_Premultiplied)
-    image.fill(QtCore.Qt.GlobalColor.transparent)
-    painter = QtGui.QPainter(image)
-    painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-    renderer.render(painter)
-    painter.end()
-    image.setDevicePixelRatio(SCALE)
-    return image
+    return ziamath.Latex(latex, size=px * EQ_SIZE, color=color).svg()
 
 
 def mathml(latex: str) -> str:

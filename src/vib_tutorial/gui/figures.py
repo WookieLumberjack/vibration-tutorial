@@ -5,7 +5,8 @@ figure module builds it (``gui/<page>_figures.py``): a function returning SVG te
 the theme, as the plots do), named in that module's ``FIGURES`` dict. The page module passes that dict to the
 notes that show it, ``load_notes(<file>, figures=<page>_figures.FIGURES, …)``, which `register`s it, so a
 new figure module touches no shared list. `notes_view.NotesBrowser` finds a name (`build`) and draws it
-with `render`.
+with `notes_render.figure`. Nothing here needs Qt (#316 D7): a label's width, which places its sub- and
+superscripts, comes from `measure`, Qt's metrics in the app and `font_metrics`' tables without it.
 
 The house style, so the figures read as one set:
 
@@ -30,13 +31,11 @@ import math
 import re
 from collections.abc import Callable
 
-from PySide6 import QtCore, QtGui, QtSvg
-
+from . import font_metrics
 from .maths import FONT as MATH_FONT
 from .style import colors
 
 FONT = 13  # px, the labels' size
-SCALE = 2  # rendered at twice the size, for high-density screens
 
 
 # Every figure loaded, by name: `links.load_notes(name, figures=…)` adds the figures of the notes it loads.
@@ -67,20 +66,6 @@ def build(name: str) -> Callable[[], str] | None:
     return FIGURES.get(name)
 
 
-def render(svg_text: str, zoom: float = 1.0) -> QtGui.QImage:
-    """The SVG as an image at SCALE times its size, marked so it shows at its own size (`zoom` times that)."""
-    renderer = QtSvg.QSvgRenderer(QtCore.QByteArray(svg_text.encode()))
-    size = renderer.defaultSize()
-    image = QtGui.QImage(size * (SCALE * zoom), QtGui.QImage.Format.Format_ARGB32_Premultiplied)
-    image.fill(QtCore.Qt.GlobalColor.transparent)
-    painter = QtGui.QPainter(image)
-    painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-    renderer.render(painter)
-    painter.end()
-    image.setDevicePixelRatio(SCALE)
-    return image
-
-
 # ------------------------------------------------------------------ primitives
 SCRIPT = re.compile(r"<(sub|sup)>(.*?)</\1>")
 SCRIPT_SIZE = 0.72  # a sub- or superscript's size over its text's
@@ -101,12 +86,12 @@ def _text(x: float, y: float, s: str, color: str, anchor: str, italic: bool, siz
     return f"<text x='{x:.1f}' y='{y:.1f}' fill='{color}' font-size='{size:g}' text-anchor='{anchor}'{style}>{s}</text>"
 
 
+# How wide a label sets, in px: `font_metrics`' tables, or the toolkit's own measure (`notes_render.install`).
+measure: Callable[[str, bool, float], float] = font_metrics.width
+
+
 def _width(s: str, italic: bool, size: float) -> float:
-    """How wide `s` sets (its markup dropped), in px."""
-    font = QtGui.QFont(MATH_FONT) if italic else QtGui.QFont()
-    font.setItalic(italic)
-    font.setPixelSize(max(1, round(size)))
-    return QtGui.QFontMetricsF(font).horizontalAdvance(re.sub(r"<[^>]+>", "", s))
+    return measure(s, italic, size)
 
 
 def _scripted(x: float, y: float, s: str, color: str, anchor: str, italic: bool, size: float) -> str:
