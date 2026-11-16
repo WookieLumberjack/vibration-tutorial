@@ -8,6 +8,9 @@ units on a log axis too (pyqtgraph's items sit in log10 coordinates there).
   they let go; `set_value` moves it without either (from the page's own box, a trial).
 - `DragDot`: a dot on a path given point by point, each with a parameter (the damper along a trade-off curve); a
   drag snaps it to the nearest point on screen and emits that point's parameter.
+- `DragPoint`: a dot free to go anywhere on the plot (a pole in the s-plane). A drag emits where the pointer is,
+  `dragged(x, y)`, and leaves the dot to the page, which works out what that point means, clamps it and puts the
+  dot where it ended up (`place`).
 
 The page calls `apply_theme()` from its own (`MainWindow._restyle`), as for any item that keeps pens.
 
@@ -139,3 +142,31 @@ class DragDot(pg.TargetItem):
         self.setHoverPen(pg.mkPen(colors.strong, width=3))
         self.setHoverBrush(pg.mkBrush(QtGui.QColor(color).lighter(130)))
         self.update()
+
+
+class DragPoint(DragDot):
+    """A dot the reader drags anywhere: `dragged(x, y)` (view coordinates) as it moves, `released()` at the end.
+
+    The dot doesn't move itself: the page sets what the point means and `place`s it, so a point the page can't
+    take (a pole in the right half plane) is clamped where the page puts it.
+    """
+
+    dragged = QtCore.Signal(float, float)
+    released = QtCore.Signal()
+
+    def place(self, x: float, y: float, param: float = math.nan) -> None:
+        super().place(x, y, param)
+
+    def mouseDragEvent(self, ev) -> None:
+        if ev.button() != QtCore.Qt.MouseButton.LeftButton:
+            return
+        ev.accept()
+        if ev.isStart():
+            self.moving = True
+        if not self.moving or (vb := self.getViewBox()) is None:
+            return
+        at = vb.mapSceneToView(ev.scenePos())
+        self.dragged.emit(float(at.x()), float(at.y()))
+        if ev.isFinish():
+            self.moving = False
+            self.released.emit()

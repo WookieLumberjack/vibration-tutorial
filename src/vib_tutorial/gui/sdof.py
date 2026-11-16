@@ -4,8 +4,8 @@ Left: the oscillator, its start and its drive. Centre: the mass itself on its sp
 the free or the driven response (pluck it to start it from where you let go; a `Playback` walks the time,
 with a cursor on the time plot), then the free decay (with its envelope and peaks, or
 three dampings side by side) and the response to a harmonic force switched on from rest. Right: the
-frequency response with its half-power band, the Nyquist plot, the phase plane, the poles (click to move
-them) and the Theory. The page has its own model (core/sdof.py), not the chain.
+frequency response with its half-power band, the Nyquist plot, the phase plane, the poles (drag
+them, `DragPoint`s, or click, to set k and c) and the Theory. The page has its own model (core/sdof.py), not the chain.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ from ..core.sdof import (
 )
 from . import sdof_figures, settle_plots
 from .animation import ChainView
-from .drag import DragLine
+from .drag import DragLine, DragPoint
 from .layouts import ColumnScroll, group
 from .lesson import (
     Dot,
@@ -115,8 +115,8 @@ TRIALS = (
     SdofTrial(
         "Overdamped: two real poles",
         "<m>c</m> = 80 N·s/m, <m>ζ = 2</m>. The poles have left the imaginary axis for two points on the real one, at "
-        "−5.4 and −74.6 s<sup>−1</sup>: two decays and no oscillation. Click in the Poles plot to put them "
-        "anywhere; the page works out the <m>k</m> and <m>c</m> that put them there.",
+        "−5.4 and −74.6 s<sup>−1</sup>: two decays and no oscillation. Drag either along the real axis, "
+        "or off it, and the page works out the <m>k</m> and <m>c</m> that put them there.",
         damping=80.0,
         tab=TAB_POLES,
     ),
@@ -533,11 +533,13 @@ PHASE_TIP = (
     "<p>The free vibration as a path in the phase plane: velocity over ω<sub>n</sub> against displacement. "
     "Undamped it is a circle; damping winds it into a spiral, a turn per cycle.</p>"
 )
+POLE_SNAP = 0.02  # a pole dragged this close to the real axis (of the plot's height) lands on it
 POLES_TIP = (
     "<p>The roots of m s² + c s + k in the complex plane: −ζω<sub>n</sub> ± iω<sub>d</sub>. Their distance "
     "from the origin is ω<sub>n</sub>, the angle from the imaginary axis is sin⁻¹ζ. The rays are ζ = 0.05, "
-    "0.2, 0.5 and 0.8, the arc the current ω<sub>n</sub>. Click to put the upper pole there (the mass is "
-    "kept, k and c follow).</p>"
+    "0.2, 0.5 and 0.8, the arc the current ω<sub>n</sub>. Drag a pole (or click where it should go) and k and c "
+    "follow, the mass kept; the free and driven responses beside change as it moves. Drag one onto the real axis "
+    "for critical damping, then along it to split the pair.</p>"
 )
 
 NOTES_HTML = load_notes(
@@ -744,9 +746,14 @@ class SdofPage(QtWidgets.QWidget):
         self.s_plot.setToolTip(POLES_TIP)
         self.rays = [pg.PlotDataItem() for _ in range(4)]
         self.arc = pg.PlotDataItem()
-        self.pole_item = pg.ScatterPlotItem(size=12, symbol="x")
-        for item in (*self.rays, self.arc, self.pole_item):
+        self.pole_dots = [DragPoint("<p>Drag the pole: k and c follow (the mass is kept).</p>") for _ in range(2)]
+        self.pole_dots[0].dragged.connect(self._on_upper_dragged)
+        self.pole_dots[1].dragged.connect(self._on_lower_dragged)
+        for item in (*self.rays, self.arc, *self.pole_dots):
             self.s_plot.addItem(item)
+        for dot in self.pole_dots:
+            dot.released.connect(self._on_pole_released)
+        self._held: complex | None = None  # the pole not being dragged, while one is
         self.s_plot.scene().sigMouseClicked.connect(self._on_pole_click)
         sv.addWidget(self.s_plot, 1)
         self.pole_note = note_label()
@@ -862,10 +869,45 @@ class SdofPage(QtWidgets.QWidget):
         sigma, w = pos.x(), abs(pos.y())
         if sigma >= 0 or w <= 0:
             return
-        wn = math.hypot(sigma, w)
+        self._set_pair(sigma, w)
+
+    def _set_pair(self, sigma: float, w: float) -> None:
+        """k and c for the poles σ ± iw (or two real ones, `_set_real`), the mass kept."""
         m = self.osc.mass
-        set_quietly(self.stiffness, m * wn * wn)
+        set_quietly(self.stiffness, m * (sigma * sigma + w * w))
         set_quietly(self.damping, -2.0 * sigma * m)
+        self._on_oscillator()
+
+    def _on_pole_released(self) -> None:
+        self._held = None
+        self._draw_poles()  # the range held while dragging, fitted again
+
+    def _on_upper_dragged(self, x: float, y: float) -> None:
+        self._drag_pole(0, x, y)
+
+    def _on_lower_dragged(self, x: float, y: float) -> None:
+        self._drag_pole(1, x, y)
+
+    def _drag_pole(self, i: int, x: float, y: float) -> None:
+        """Pole `i` dragged to x + iy: off the real axis the pair goes there (its mirror image too); within a few
+        pixels of it, a real pole, the other staying where it is if it's on the axis too (or meeting it there,
+        from a complex pair: critical damping). Never into the right half plane, nor onto the origin (k = 0)."""
+        vb = self.s_plot.getPlotItem().getViewBox()
+        (x0, x1), (y0, y1) = vb.viewRange()
+        x = min(x, 0.0)
+        if abs(y) > POLE_SNAP * (y1 - y0):
+            self._set_pair(x, abs(y))
+            return
+        tiny = 1e-3 * (x1 - x0)
+        x = min(x, -tiny)
+        if self._held is None:  # the other pole as the drag began (the dots swap as real poles pass)
+            self._held = complex(self.osc.poles()[1 - i])
+        held = self._held  # stays where it is if it's on the axis (critical's rounding too)
+        other = held.real if abs(held.imag) <= POLE_SNAP * (y1 - y0) else x
+        other = min(other, -tiny)
+        m = self.osc.mass
+        set_quietly(self.stiffness, m * x * other)
+        set_quietly(self.damping, -m * (x + other))
         self._on_oscillator()
 
     def force_amplitude(self, freq_hz: float | np.ndarray) -> float | np.ndarray:
@@ -912,8 +954,8 @@ class SdofPage(QtWidgets.QWidget):
         for ray in self.rays:
             ray.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.arc.setPen(pg.mkPen(c.faint, width=1))
-        self.pole_item.setPen(pg.mkPen(c.force, width=2.5))
-        self.pole_item.setBrush(pg.mkBrush(c.force))
+        for dot in self.pole_dots:
+            dot.apply_theme()
         self.plane_now.setPen(pg.mkPen(c.background, width=1.5))
         self.plane_now.setBrush(pg.mkBrush(c.mass[0]))
         self.body.apply_theme()
@@ -1210,7 +1252,8 @@ class SdofPage(QtWidgets.QWidget):
     def _draw_poles(self) -> None:
         o = self.osc
         s = o.poles()
-        self.pole_item.setData(s.real, s.imag)
+        for dot, p in zip(self.pole_dots, s):
+            dot.place(float(p.real), float(p.imag))
         wn = o.omega_n
         reach = max(1.3 * wn, 1.1 * float(np.max(np.abs(s.real))))
         for ray, z in zip(self.rays, (0.05, 0.2, 0.5, 0.8)):
@@ -1222,7 +1265,8 @@ class SdofPage(QtWidgets.QWidget):
             )
         th = np.linspace(math.pi / 2, 3 * math.pi / 2, 200)
         self.arc.setData(wn * np.cos(th), wn * np.sin(th))
-        self.s_plot.setRange(xRange=(-reach, 0.15 * reach), yRange=(-1.2 * wn, 1.2 * wn), padding=0.02)
+        if not any(dot.moving for dot in self.pole_dots):  # held still under the reader's drag
+            self.s_plot.setRange(xRange=(-reach, 0.15 * reach), yRange=(-1.2 * wn, 1.2 * wn), padding=0.02)
         if o.zeta < 1:
             self.pole_note.setText(
                 f"s = {s[0].real:.4g} ± {abs(s[0].imag):.4g}i s⁻¹: decay rate ζω<sub>n</sub> = "

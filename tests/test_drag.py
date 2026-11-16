@@ -75,6 +75,46 @@ def test_dragging_the_sdof_drive_line_sweeps_the_drive(main_window, app):
     assert line.data_value() == pytest.approx(5.0) and not seen
 
 
+def test_dragging_the_sdof_poles_sets_k_and_c(main_window, app):
+    """Off the real axis the pair follows the pointer; onto it, critical damping; along it, two real poles."""
+    w = main_window
+    w.resize(1280, 800)
+    p = w.sdof_page
+    w.pages.setCurrentWidget(p)
+    p.tabs.setCurrentIndex(3)  # Poles
+    p.s_plot.grab()
+    for _ in range(5):
+        app.processEvents()
+    m = p.mass.value()
+    upper, lower = p.pole_dots
+    s = p.osc.poles()
+    assert (upper.pos().x(), upper.pos().y()) == pytest.approx((s[0].real, s[0].imag))
+    range_before = p.s_plot.getPlotItem().getViewBox().viewRange()
+
+    drag(p.s_plot, scene_at(p.s_plot, s[0].real, s[0].imag), scene_at(p.s_plot, -6.0, 12.0), app)
+    s = p.osc.poles()  # σ ± iω_d where it was let go: k = m(σ² + ω²), c = −2mσ
+    assert s[0] == pytest.approx(complex(-6.0, 12.0), rel=0.02)
+    assert p.stiffness.value() == pytest.approx(m * 180.0, rel=0.03)
+    assert p.damping.value() == pytest.approx(12.0 * m, rel=0.03)
+    assert (lower.pos().x(), lower.pos().y()) == pytest.approx((s[1].real, s[1].imag), rel=1e-6)
+    assert p.free_item.getData()[1] is not None  # the free response beside was redrawn ...
+    t, x = p.free_item.getData()
+    assert np.ptp(x[t > 1.0]) < 0.01 * np.ptp(x)  # ... decaying at e^(−6t) now
+
+    drag(p.s_plot, scene_at(p.s_plot, -6.0, -12.0), scene_at(p.s_plot, -9.0, 0.0), app)  # the lower one
+    assert p.osc.zeta == pytest.approx(1.0, abs=0.01)  # met on the axis: critical
+    assert p.osc.omega_n == pytest.approx(9.0, rel=0.02)
+
+    drag(p.s_plot, scene_at(p.s_plot, -9.0, 0.0), scene_at(p.s_plot, -3.0, 0.0), app)
+    s = np.sort(p.osc.poles().real)  # one went to −3, the other stayed at −9
+    assert s == pytest.approx([-9.0, -3.0], rel=0.03)
+    assert p.stiffness.value() == pytest.approx(m * 27.0, rel=0.03)
+
+    drag(p.s_plot, scene_at(p.s_plot, -3.0, 0.0), scene_at(p.s_plot, 5.0, 8.0), app)  # into the right half
+    assert p.damping.value() == 0.0 and p.osc.poles()[0].real == pytest.approx(0.0, abs=1e-9)
+    assert p.s_plot.getPlotItem().getViewBox().viewRange() != range_before  # refitted once let go
+
+
 def test_a_drag_dot_snaps_to_its_path_and_emits_the_parameter(app):
     import pyqtgraph as pg
 
@@ -152,3 +192,28 @@ def test_dragging_the_quarter_car_dot_changes_the_damper(main_window, app):
     p.tabs.setCurrentIndex(next(k for k in range(p.tabs.count()) if p.tabs.tabText(k).startswith("Damper")))
     app.processEvents()
     assert p.damper_now.data_value() == pytest.approx(p.damper.value(), rel=1e-6)  # the sweep's line, once shown
+
+
+def test_dragging_a_pole_along_the_active_control_locus_sets_the_gain(main_window, app):
+    from vib_tutorial.gui.active_control import TAB_LOCUS
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.active_control_page
+    w.pages.setCurrentWidget(p)
+    p.tabs.setCurrentIndex(TAB_LOCUS)
+    p.locus_plot.grab()
+    for _ in range(5):
+        app.processEvents()
+    shown = [d for d in p.locus_now if d.isVisible()]
+    assert shown and all(d.param == pytest.approx(p.gain.value()) for d in shown)
+    dot = shown[0]
+    x, y, g = dot._x, dot._y, dot._p
+    near = np.flatnonzero(np.abs(np.log(np.maximum(g, 1e-9) / 300.0)) < 0.05)  # each branch's point at ~300 N·s/m
+    start = scene_at(p.locus_plot, dot.pos().x(), dot.pos().y())
+    far = [(scene_at(p.locus_plot, x[i], y[i]) - start).manhattanLength() for i in near]
+    target = int(near[np.argmax(far)])  # the one farthest from the dot on screen
+    assert max(far) > 40
+    drag(p.locus_plot, start, scene_at(p.locus_plot, x[target], y[target]), app)
+    assert p.gain.value() == pytest.approx(g[target], rel=0.02)  # the box follows ...
+    assert all(d.param == pytest.approx(p.gain.value()) for d in shown)  # ... and every pole moves to it
