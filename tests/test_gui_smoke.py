@@ -1221,11 +1221,23 @@ def test_modal_test_with_friction_holds_one_level_for_comparison(app):
 
 def test_modal_test_playback_draws_each_record_as_it_is_recorded(app):
     from vib_tutorial.gui.main_window import MainWindow
+    from vib_tutorial.gui.modal_test import SPEEDS, save_playback
 
     def size(curve):
         x = curve.getData()[0]
         return 0 if x is None else x.size
 
+    def measured(view):
+        # no curve yet if the page's first record outlasted its first frame's budget (a slow runner)
+        return size(view.measured[0]) if view.measured else 0
+
+    try:
+        _modal_test_playback(MainWindow, size, measured)
+    finally:
+        save_playback(SPEEDS[0][0])  # back to Instant for the other tests, whatever failed
+
+
+def _modal_test_playback(MainWindow, size, measured):
     w = MainWindow()
     w.show()
     p = w.test_page
@@ -1236,14 +1248,14 @@ def test_modal_test_playback_draws_each_record_as_it_is_recorded(app):
     # One hit recorded; its time plots are drawn from the start, the FRF waits for it.
     assert p.acq.progress[0] == 1 and p._shown is not None
     full = p._live.t.size
-    assert size(p.signals.f_curve) < full and size(p.frf_view.measured[0]) == 0
+    assert size(p.signals.f_curve) < full and measured(p.frf_view) == 0
     assert "recording 1" in p.progress.text()
     p._shown = 0.5 * p._live.t[-1]
     p._measure_some()
     assert full // 3 < size(p.signals.f_curve) < full
     p._shown = p._live.t[-1]  # the record is complete: spectrum and FRF follow
     p._measure_some()
-    assert p._shown is None and size(p.signals.f_curve) == full and size(p.frf_view.measured[0]) > 0
+    assert p._shown is None and size(p.signals.f_curve) == full and measured(p.frf_view) > 0
     # Instant finishes the rest at once.
     p.speed.setCurrentIndex(0)
     while not p.acq.done:
@@ -1255,7 +1267,6 @@ def test_modal_test_playback_draws_each_record_as_it_is_recorded(app):
     w.close()
     w = MainWindow()
     assert w.test_page.speed.currentText() == "3× real time"
-    w.test_page.speed.setCurrentIndex(0)  # back to Instant for the other tests
     w.close()
 
 
