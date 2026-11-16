@@ -15,8 +15,9 @@ it as a curve. A `Playback` walks a time `t` along that span so the page can mov
 Its `FrameLoop` runs only while the page shows and the motion runs (CLAUDE.md's run state). The page calls
 `apply_theme()` from its own.
 
-Working on it: `tests/test_playback.py` checks the clock, the end, the scrub and the rewind; the pages that
-use it (Single oscillator) are in `test_lesson_pages_trials_and_tabs` and the run-state tests.
+Working on it: `tests/test_playback.py` checks the clock, the end, the scrub and the rewind, and each page's body
+following it and plucked (Single oscillator, Pendulums, Damping models); those pages are in
+`test_lesson_pages_trials_and_tabs` and the run-state tests.
 """
 
 from __future__ import annotations

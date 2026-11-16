@@ -1,4 +1,4 @@
-"""`gui/playback.py`: a response walked in time, and the Single oscillator's mass moving with it."""
+"""`gui/playback.py`: a response walked in time, and the One mass pages' bodies moving with it."""
 
 from __future__ import annotations
 
@@ -170,6 +170,53 @@ def test_the_pendulum_swings_with_its_curve_and_a_pluck_lets_it_go_from_there(ma
     assert p.side == 1.0 and view.disc.isVisible() and not view.bob.isVisible()
     xs, ys = view.body.getData()
     assert math.atan2(xs[1], ys[1]) == pytest.approx(math.radians(120.0))
+
+
+def test_the_damped_masses_move_with_their_decays_and_a_pluck_releases_them_all(main_window, app):
+    from vib_tutorial.core.damping_models import MODELS, Model, coulomb_stop
+    from vib_tutorial.gui import damping_models
+    from vib_tutorial.gui.damping_view import REST, SWING
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.damping_page
+    w.pages.setCurrentWidget(p)
+    pb, view = p.playback, p.body
+    pb.loop.enabled = False
+
+    # A trial plays it: each mass is where its own decay is, as drawn.
+    p.load_trial(next(i for i, tr in enumerate(damping_models.TRIALS) if tr.name.startswith("A straight-line")))
+    for _ in range(5):
+        app.processEvents()
+    assert pb.running and pb.t == 0.0 and p.tabs.currentIndex() == damping_models.TAB_DECAY
+    pb._tick(0.3)
+    for m in MODELS:
+        t, x = p.decay_items[m].getData()
+        assert view._x[m] == pytest.approx(np.interp(pb.t, t, x))
+    friction = p.model.friction
+    assert view.gain == pytest.approx(SWING / p.model.amplitude)
+
+    # Pull a mass in to 3 mm and let go: all four start from there, friction still matched at X = 10 mm, so it
+    # sticks after fewer swings.
+    view.grab()  # laid out: the masses have their places on screen
+    pb.seek(0.0)
+    vb = view.plotItem.vb
+    y = view._rows[Model.VISCOUS]
+    hand = vb.mapViewToScene(QtCore.QPointF(REST + SWING, y))
+    to = vb.mapViewToScene(QtCore.QPointF(REST + 0.3 * SWING, y))
+    drag(view, hand, to, app)
+    assert not view.held and pb.running and pb.t == 0.0
+    assert p.release == pytest.approx(3e-3, rel=0.05) and p.model.friction == friction
+    for m in MODELS:
+        t, x = p.decay_items[m].getData()
+        assert x[0] == pytest.approx(p.release)
+    halves, _ = coulomb_stop(p.model.stiffness, friction, p.release)
+    assert halves < coulomb_stop(p.model.stiffness, friction, p.model.amplitude)[0]
+    assert f"stops after {halves / 2:g} cycles" in p.decay_note.text()
+
+    # A control change (or Defaults) releases them from X again.
+    w.restore_defaults()
+    assert p.release is None and p.decay_items[Model.VISCOUS].getData()[1][0] == pytest.approx(p.model.amplitude)
 
 
 def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
