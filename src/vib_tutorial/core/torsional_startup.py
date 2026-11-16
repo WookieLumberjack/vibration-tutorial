@@ -38,7 +38,9 @@ Its start-up (`core/torsional_startup.py`, the page's *Start-up* tab) steps the 
 twist, from rest: the exact FOH update of the train with the motor's torque (first disc; induction by Kloss
 plus the switch-on transient, or synchronous with its 2× slip pulsation and latched field) and the load's
 (last disc, ∝ speed²) as the input, their end values found by Newton on the two torques, as `DuffingSimulator`
-does; second order, checked against `solve_ivp`. The step resolves 2× the line frequency and the modes below
+does; second order, checked against `solve_ivp`. The steps run in Rust where it's built (`native.NewtonSteps`
+with a `motor` and a `quadratic` law, the field latching in the kernel); `_steps_reference` is the Python, and
+`tests/test_native.py` compares them over both start-ups. The step resolves 2× the line frequency and the modes below
 `MODE_CAP`. `STARTUPS` pairs a train preset (by name) with its start-up; the page plays it on its own frame
 loop only once started.
 """
@@ -53,6 +55,7 @@ from enum import Enum
 import numpy as np
 import scipy.optimize
 
+from . import native
 from .foh import foh_discretize
 from .torsional import TWO_PI, DriveTrain, modes
 
@@ -281,21 +284,75 @@ class StartUpSimulator:
         h = self.h
         steps = min(round(duration / h), MAX_STEPS_PER_ADVANCE, max(0, round((self.startup.duration - self.t) / h)))
         motor = self.startup.motor
+        if self.t == 0.0:
+            self._u = np.array([motor.torque(0.0, self.z[0], self.z[n], self.field_on)[0], self._load(self.z[-1])[0]])
+        # np.cumsum adds h in order, as `t += h` would
+        ts = np.cumsum(np.concatenate([[self.t], np.full(steps, h)]))[1:]
+        zs, us, self.field_on = self._steps(self.z, self._u, ts, self.field_on)
+        if steps:
+            self.z, self._u, self.t = zs[-1].copy(), us[-1].copy(), float(ts[-1])
+        links = self._links @ zs.T if steps else np.zeros((n - 1, 0))
+        if steps:
+            big = np.abs(links)
+            at = np.argmax(big, axis=1)
+            top = big[np.arange(n - 1), at]
+            more = top > self.peaks
+            self.peaks[more] = top[more]
+            self.peak_t[more] = ts[at[more]]
+        return StartUpSamples(ts, zs[:, n] * 60.0 / TWO_PI, us[:, 0], us[:, 1], links)
+
+    def _steps(
+        self, z: np.ndarray, u: np.ndarray, ts: np.ndarray, field_on: bool
+    ) -> tuple[np.ndarray, np.ndarray, bool]:
+        """The states and the (motor, load) torques at the step ends ts, from z under the torques u, and whether
+        the field is on after: in Rust (`native.NewtonSteps`) where it's built."""
+        if native.module is None or not ts.size:
+            return self._steps_reference(z, u, ts, field_on)
+        n, m = self.train.n, self.startup.motor
+        synchronous = m.kind is MotorKind.SYNCHRONOUS
+        terms = [
+            m.sync_speed,
+            TWO_PI * m.line_hz,
+            m.breakdown,
+            m.breakdown_slip,
+            m.transient,
+            m.time_constant,
+            float(m.pole_pairs),
+            m.pulsating,
+            m.field,
+            m.field_slip,
+        ]
+        kernel = native.NewtonSteps(
+            self._phi,
+            self._g0,
+            self._g1,
+            1e-12,
+            NEWTON_ITERATIONS,
+            quadratic=[(1, 2 * n - 1, self.startup.load, self._load_speed)],
+            motor=(0, 0, n, terms, synchronous, field_on),
+        )
+        zs, us = np.empty((ts.size, 2 * n)), np.empty((ts.size, 2))
+        kernel.run(z, u, np.zeros((ts.size, 2)), ts, zs, us)
+        latched = kernel.field_on
+        assert latched is not None, "the kernel has a motor"
+        return zs, us, latched
+
+    def _steps_reference(
+        self, z: np.ndarray, u: np.ndarray, ts: np.ndarray, field_on: bool
+    ) -> tuple[np.ndarray, np.ndarray, bool]:
+        """`_steps` in Python: Newton on the two torques at each step's end."""
+        n = self.train.n
+        motor = self.startup.motor
         phi, g0, g1 = self._phi, self._g0, self._g1
         rows = (0, n, 2 * n - 1)  # the motor's angle and speed, the load's speed
         (a0, a1), (b0, b1), (c0, c1) = (tuple(g1[r]) for r in rows)
         field_slip = motor.field_slip if motor.kind is MotorKind.SYNCHRONOUS and motor.field > 0 else -math.inf
-        z, u, t, field_on = self.z, self._u, self.t, self.field_on
-        zs = np.empty((steps, 2 * n))
-        ts = np.empty(steps)
-        us = np.empty((steps, 2))
-        if t == 0.0:
-            u = np.array([motor.torque(0.0, z[0], z[n], field_on)[0], self._load(z[-1])[0]])
-        for i in range(steps):
+        zs = np.empty((ts.size, 2 * n))
+        us = np.empty((ts.size, 2))
+        for i, t1 in enumerate(ts.tolist()):
             if not field_on and 1.0 - z[n] / motor.sync_speed < field_slip:
                 field_on = True
             p = phi @ z + g0 @ u
-            t1 = t + h
             tm, tl = u  # the start's torques as the first guess
             p0, p1, p2 = p[0], p[n], p[-1]
             for _ in range(NEWTON_ITERATIONS):
@@ -318,20 +375,9 @@ class StartUpSimulator:
                     break
             u = np.array([tm, tl])
             z = p + g1 @ u
-            t = t1
             zs[i] = z
-            ts[i] = t
             us[i] = u
-        self.z, self._u, self.t, self.field_on = z, u, t, field_on
-        links = self._links @ zs.T if steps else np.zeros((n - 1, 0))
-        if steps:
-            big = np.abs(links)
-            at = np.argmax(big, axis=1)
-            top = big[np.arange(n - 1), at]
-            more = top > self.peaks
-            self.peaks[more] = top[more]
-            self.peak_t[more] = ts[at[more]]
-        return StartUpSamples(ts, zs[:, n] * 60.0 / TWO_PI, us[:, 0], us[:, 1], links)
+        return zs, us, field_on
 
 
 # ------------------------------------------------------------------ presets
