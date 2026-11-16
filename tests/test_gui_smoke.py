@@ -3406,6 +3406,15 @@ def test_duffing_page(app):
     assert len(p.up_item.data) > 20 and not len(p.down_item.data) and len(p.now_item.data) == 1
     assert p.x_item.getData()[0].size <= 2 * 1200 + 2 and p.orbit_item.getData()[0].size > 0
     assert "Sweeping up" in p.drive_state.text() and "t = 60" in p.drive_state.text()
+    # Its live plots' ranges hold the data but don't follow it every frame; the response's curves are held (#316 E7).
+    from PySide6 import QtWidgets as Qw
+
+    shown = (p.strip_y.shown, *(r.shown for r in p.phase_ranges))
+    xs = p.x_item.getData()[1]
+    assert shown[0][0] <= xs.min() and xs.max() <= shown[0][1]
+    p.step(0.05)
+    assert (p.strip_y.shown, *(r.shown for r in p.phase_ranges)) == shown
+    assert p.stable_item.curve.cacheMode() == Qw.QGraphicsItem.CacheMode.DeviceCoordinateCache
 
     w.set_theme("Dark")
     p.step(1.0)

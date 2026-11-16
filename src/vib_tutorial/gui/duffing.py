@@ -34,7 +34,7 @@ from ..core.duffing import (
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
 from ..view_models import duffing as view
 from ..view_models.duffing import CHART_DEPTHS, CHART_RATIOS, GROWTH_TOP, LEGEND, LEGS, DuffingSetup
-from . import duffing_figures, weak
+from . import duffing_figures, plot_patches, weak
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height
 from .lesson import Dot, RunButton
@@ -42,6 +42,7 @@ from .links import load_notes, page_link
 from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import spin
+from .plots import SteadyRange
 from .scrub import Scrub
 from .style import colors
 from .theming import add_legend, mute
@@ -375,6 +376,14 @@ PROBLEMS = tuple(
 )
 
 
+def _fit(steady: SteadyRange, values) -> None:
+    """`steady`'s axis to the finite ones of `values`, if any."""
+    v = np.asarray(values, dtype=float)
+    v = v[np.isfinite(v)]
+    if v.size:
+        steady.fit(float(v.min()), float(v.max()))
+
+
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None) -> pg.PlotWidget:
     p = pg.PlotWidget()
     p.setMenuEnabled(False)
@@ -555,6 +564,7 @@ class DuffingPage(QtWidgets.QWidget):
             self.now_item,
         ):
             self.response.addItem(item)
+        plot_patches.hold_still(self.response)  # its dashed curves stay put while the dots move over them
         plot_height(self.response, 220)
         self.readout = QtWidgets.QLabel()
         self.readout.setWordWrap(True)
@@ -565,6 +575,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.strip.setToolTip("<p>The mass's displacement over the last 20 s of simulated time.</p>")
         self.x_item = pg.PlotDataItem()
         self.strip.addItem(self.x_item)
+        self.strip_y = SteadyRange(self.strip, "y")  # not rescaled every frame (#316 E7)
         plot_height(self.strip, 140)
 
         center = QtWidgets.QWidget()
@@ -581,6 +592,8 @@ class DuffingPage(QtWidgets.QWidget):
         self.section_item = pg.ScatterPlotItem(size=3)
         self.phase.addItem(self.orbit_item)
         self.phase.addItem(self.section_item)
+        self.phase_ranges = (SteadyRange(self.phase, "x"), SteadyRange(self.phase, "y"))
+        self._section = np.empty((0, 2))
         self.scrub = Scrub(self.strip)  # paused: back along the strip chart, the state on the phase plane
         self.scrub.scrubbed.connect(self._on_scrubbed)
         self.scrub_dot = Dot(11)
@@ -1016,6 +1029,7 @@ class DuffingPage(QtWidgets.QWidget):
             self._y_top = v.y_top
             self.response.setYRange(0.0, self._y_top, padding=0)
         self.section_item.setData(pos=v.section)
+        self._section = np.asarray(v.section, dtype=float).reshape(-1, 2)
 
     def _draw_live(self) -> None:
         v = view.live(self.record.trace, self.sim.t, self.sim.drive.freq_hz)
@@ -1023,6 +1037,10 @@ class DuffingPage(QtWidgets.QWidget):
         if v.strip_range is not None:
             self.strip.setXRange(*v.strip_range, padding=0)
         self.orbit_item.setData(*v.orbit)
+        _fit(self.strip_y, v.strip.y)
+        x_range, v_range = self.phase_ranges
+        _fit(x_range, np.concatenate([v.orbit.x, self._section[:, 0]]))
+        _fit(v_range, np.concatenate([v.orbit.y, self._section[:, 1]]))
 
     def _draw_chart(self) -> None:
         """The Ince–Strutt chart at the page's damping, when it shows (it takes ~0.1 s)."""
