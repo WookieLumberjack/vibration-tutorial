@@ -9,8 +9,8 @@ import scipy.integrate
 
 from vib_tutorial.core import force_id as fid
 from vib_tutorial.core import nonlinear_test as nl
+from vib_tutorial.core.foh import foh_discretize
 from vib_tutorial.core.model import ChainSystem
-from vib_tutorial.core.simulator import foh_discretize
 
 CHAIN = ChainSystem(np.ones(3), np.full(3, 1000.0), np.full(3, 4.0))
 CUBIC = nl.Element(nl.Kind.CUBIC, 0, k3=2e6)

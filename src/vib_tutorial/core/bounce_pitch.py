@@ -53,7 +53,7 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.linalg
 
-from .simulator import foh_discretize
+from .foh import respond
 
 TWO_PI = 2.0 * math.pi
 RIDE_PER_PERIOD = 60  # the ride's samples per period of the faster mode (and per bump's passing, at least)
@@ -272,9 +272,6 @@ def ride(car: Car, bump: Bump, lead: float = 0.3) -> Ride:
     t = np.arange(n) * h
     s = bump.speed * (t - lead)
     y = np.column_stack([bump.profile(s), bump.profile(s - car.wheelbase)])
-    Phi, G0, G1 = foh_discretize(A, B, h)
-    z = np.zeros((n, 4))
-    for k in range(1, n):
-        z[k] = Phi @ z[k - 1] + G0 @ y[k - 1] + G1 @ y[k]
+    z = respond(A, B, h, y)
     centre = z[:, :2]
     return Ride(t, y, centre, centre @ E.T, lead, leaves)

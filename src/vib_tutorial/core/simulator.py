@@ -96,20 +96,6 @@ EVENTS_PER_MASS = 4  # stick-slip events handled within one step, per mass (then
 _STEPS = ThreadPoolExecutor(max_workers=1, thread_name_prefix="vib-steps")
 
 
-def foh_discretize(A: np.ndarray, B: np.ndarray, h: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Return (Phi, Gamma0, Gamma1): z1 = Phi z0 + Gamma0 u0 + Gamma1 u1."""
-    ns, nu = B.shape
-    aug = np.zeros((ns + 2 * nu, ns + 2 * nu))
-    aug[:ns, :ns] = A * h
-    aug[:ns, ns : ns + nu] = B * h
-    aug[ns : ns + nu, ns + nu :] = np.eye(nu)
-    E = scipy.linalg.expm(aug)
-    Phi = E[:ns, :ns]
-    G1 = E[:ns, ns : ns + nu]
-    G2 = E[:ns, ns + nu :]
-    return Phi, G1 - G2, G2
-
-
 def input_system(A: np.ndarray, b: np.ndarray, b_du: np.ndarray | None = None) -> np.ndarray:
     """Aw for w = [z, u, du] over a step with u(s) = u0 + du s: z' = A z + b u + b_du du."""
     ns = A.shape[0]

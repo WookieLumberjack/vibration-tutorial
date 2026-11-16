@@ -6,6 +6,7 @@ notebooks, and tests.
 
 from .describing import FrictionResponse, friction_frf, friction_response, friction_transmissibility
 from .energy import kinetic_energy, modal_energies, potential_energy, stored_energy
+from .foh import foh_discretize
 from .forcing import ForceController, ForceKind, ForceSettings
 from .frf_matrix import ModalTerm, frf_matrix, modal_frf_terms
 from .measurement import (
@@ -38,7 +39,7 @@ from .modal import (
 )
 from .modal_coupling import CoupledModel, compare_coupled, coupled_model, subsystems
 from .model import ChainSystem, assemble_chain, drag_shape, element_forces, pluck_shape, state_space
-from .simulator import Simulator, foh_discretize, foh_quadratic_integrals
+from .simulator import Simulator, foh_quadratic_integrals
 from .substructure import (
     METHOD_NAMES,
     METHODS,

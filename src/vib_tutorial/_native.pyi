@@ -26,7 +26,7 @@ def expm(a: Floats) -> Floats:
     """e^A, for the tests to check against SciPy's."""
 
 def foh_discretize(a: Floats, b: Floats, h: float) -> tuple[Floats, Floats, Floats]:
-    """(Φ, Γ0, Γ1) as `simulator.foh_discretize` returns them, for the tests to check."""
+    """(Φ, Γ0, Γ1) as `foh.foh_discretize` returns them, for the tests to check."""
 
 class FilmSteps:
     """The rotor on oil films (`RotorSimulator._film_steps_reference`)."""

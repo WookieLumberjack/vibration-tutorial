@@ -9,13 +9,14 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from vib_tutorial.core import fluid_bearing, native
+from vib_tutorial.core import fluid_bearing, foh, native
+from vib_tutorial.core.foh import foh_discretize
 from vib_tutorial.core.forcing import ForceKind
-from vib_tutorial.core.model import ChainSystem
+from vib_tutorial.core.model import ChainSystem, state_space
 from vib_tutorial.core.rotor import RotorSystem
 from vib_tutorial.core.rotor_presets import JOURNAL_BEARING, rotor_presets
 from vib_tutorial.core.rotor_simulator import RPM, RotorSimulator
-from vib_tutorial.core.simulator import Simulator, foh_discretize
+from vib_tutorial.core.simulator import Simulator
 
 needs_native = pytest.mark.skipif(native.module is None, reason="Rust kernels not loaded")
 
@@ -145,7 +146,7 @@ def test_expm_matches_scipy():
 @pytest.mark.parametrize("density", [0.0, 7800.0])
 def test_foh_discretize_matches_the_python(density):
     # The film step's update, worked out in the augmented matrix's blocks, on the rotor's own A and B with
-    # its films' damping bound: as simulator.foh_discretize's dense expm gives it.
+    # its films' damping bound: as foh.foh_discretize's dense expm gives it.
     system = RotorSystem(
         bearing_a=JOURNAL_BEARING, bearing_b=JOURNAL_BEARING, gravity=9.81, density=density, nonlinear_films=True
     )
@@ -277,6 +278,22 @@ def test_linear_steps_match_the_reference(case, monkeypatch):
         np.testing.assert_allclose(sim.ledger, ref.ledger, rtol=0, atol=1e-11 * np.abs(ref.ledger).max())
     assert sim.work != 0.0  # the force did work, as the ledger says
     assert sim.t == ref.t
+
+
+@needs_native
+@pytest.mark.parametrize("inputs", [1, 2])
+def test_respond_matches_the_reference(inputs, monkeypatch):
+    # foh.respond runs the kernel once per input and adds the states: as the Python steps them, from a set state.
+    A, B = state_space(ChainSystem([1.0, 2.0, 1.5], [400.0, 300.0, 500.0], [2.0, 1.0, 3.0]))
+    B = B[:, [0, 2][:inputs]]
+    u = np.random.default_rng(1).standard_normal((2000, inputs))
+    z0 = np.array([0.01, -0.02, 0.005, 0.0, 0.1, 0.0])
+    got = foh.respond(A, B, 1 / 500, u, z0)
+    with monkeypatch.context() as m:
+        m.setattr(native, "module", None)
+        want = foh.respond(A, B, 1 / 500, u, z0)
+    np.testing.assert_allclose(got, want, rtol=0, atol=1e-12 * np.abs(want).max())
+    np.testing.assert_array_equal(got[0], z0)
 
 
 FRICTION_CASES = {

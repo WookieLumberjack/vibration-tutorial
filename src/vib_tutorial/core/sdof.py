@@ -21,7 +21,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.optimize import brentq
 
-from .simulator import foh_discretize
+from .foh import respond
 
 TWO_PI = 2.0 * math.pi
 CRITICAL_BAND = 1e-6  # |zeta - 1| below this is critical damping (the two roots' formula loses precision)
@@ -256,22 +256,6 @@ def measured_decrement(t: np.ndarray, x: np.ndarray) -> float | None:
     if p.size < 2:
         return None
     return float(math.log(p[0] / p[-1]) / (p.size - 1))
-
-
-def respond(A: np.ndarray, B: np.ndarray, h: float, u: np.ndarray, z0: np.ndarray | None = None) -> np.ndarray:
-    """The states (len(u), n) of z' = A z + B u under u sampled every h and linear between samples (FOH).
-
-    Exact for such an input: the same update the chain's simulator uses. z[0] is z0 (rest by default).
-    """
-    Phi, G0, G1 = foh_discretize(A, B, h)
-    u = np.asarray(u, dtype=float)
-    n = A.shape[0]
-    z = np.empty((u.size, n))
-    z[0] = 0.0 if z0 is None else z0
-    g0, g1 = G0[:, 0], G1[:, 0]
-    for k in range(1, u.size):
-        z[k] = Phi @ z[k - 1] + g0 * u[k - 1] + g1 * u[k]
-    return z
 
 
 def response(osc: Oscillator, h: float, u: np.ndarray, x0: float = 0.0, v0: float = 0.0) -> np.ndarray:

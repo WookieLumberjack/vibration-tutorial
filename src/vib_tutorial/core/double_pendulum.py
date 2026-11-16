@@ -49,6 +49,8 @@ import numpy as np
 import scipy.integrate
 import scipy.linalg
 
+from .foh import free
+
 TWO_PI = 2.0 * math.pi
 G = 9.81
 TWIN = 1e-6  # rad: how much further over the twin starts
@@ -209,11 +211,7 @@ def swing(p: DoublePendulum, start: tuple[float, float], duration: float = 20.0,
     whole = _whole(p, start, t)
     m = matrices(p)
     A = np.block([[np.zeros((2, 2)), np.eye(2)], [-np.linalg.solve(m.M, m.K), np.zeros((2, 2))]])
-    Phi = scipy.linalg.expm(A / fs)
-    linear = np.empty((t.size, 4))
-    linear[0] = (start[0], start[1], 0.0, 0.0)
-    for k in range(1, t.size):
-        linear[k] = Phi @ linear[k - 1]
+    linear = free(A, 1.0 / fs, t.size - 1, np.array([start[0], start[1], 0.0, 0.0]))
     kinetic, potential = p.energies(*whole.T)
     rest = float(sum(p.energies(0.0, 0.0, 0.0, 0.0)))
     return Swing(t, whole, linear, kinetic + potential, rest)

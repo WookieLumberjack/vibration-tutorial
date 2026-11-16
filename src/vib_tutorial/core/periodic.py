@@ -21,7 +21,8 @@ from enum import Enum
 
 import numpy as np
 
-from .sdof import TWO_PI, Oscillator, free_response, receptance, respond
+from .foh import respond
+from .sdof import TWO_PI, Oscillator, free_response, receptance
 
 STEPS = 4000  # first-order-hold steps per period for the exact steady state
 
@@ -189,7 +190,7 @@ def from_rest(
 
 
 def _step(osc: Oscillator, h: float):
-    from .simulator import foh_discretize
+    from .foh import foh_discretize
 
     A, B = osc.matrices()
     return foh_discretize(A, B, h)

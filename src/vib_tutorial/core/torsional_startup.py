@@ -53,7 +53,7 @@ from enum import Enum
 import numpy as np
 import scipy.optimize
 
-from .simulator import foh_discretize
+from .foh import foh_discretize
 from .torsional import TWO_PI, DriveTrain, modes
 
 STEPS_PER_PERIOD = 40

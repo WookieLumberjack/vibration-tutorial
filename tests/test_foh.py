@@ -5,9 +5,9 @@ and up)."""
 import numpy as np
 import pytest
 
-from vib_tutorial.core.foh import FohSteps
+from vib_tutorial.core.foh import FohSteps, foh_discretize, free, respond
 from vib_tutorial.core.model import ChainSystem
-from vib_tutorial.core.simulator import foh_discretize, state_space
+from vib_tutorial.core.simulator import state_space
 
 CHAIN = ChainSystem([1.0, 2.0, 1.5], [400.0, 300.0, 500.0], [2.0, 1.0, 3.0])
 FREE = ChainSystem([1.0] * 3, [0.0, 400.0, 400.0], [0.0, 2.0, 2.0])
@@ -43,3 +43,20 @@ def test_a_state_set_is_where_it_carries_on(h):
     np.testing.assert_allclose(steps.state, start, atol=1e-15)
     Phi, _, _ = foh_discretize(A, B[:, :1], h)
     np.testing.assert_allclose(steps.run(np.zeros(1))[0], Phi @ start, atol=1e-12)
+
+
+def test_respond_and_free_step_the_update():
+    # respond's states from a set state, two inputs, against stepping Φ, Γ₀, Γ₁; free's against powers of expm(A h).
+    A, B = state_space(CHAIN)
+    B = B[:, [0, 2]]
+    h = 1 / 300
+    f = np.random.default_rng(2).standard_normal((400, 2))
+    z0 = np.array([0.01, -0.02, 0.005, 0.0, 0.1, 0.0])
+    Phi, G0, G1 = foh_discretize(A, B, h)
+    ref = [z0]
+    for k in range(1, len(f)):
+        ref.append(Phi @ ref[-1] + G0 @ f[k - 1] + G1 @ f[k])
+    np.testing.assert_allclose(respond(A, B, h, f, z0), ref, rtol=0, atol=1e-12 * np.abs(ref).max())
+    zf = free(A, h, 50, z0)
+    np.testing.assert_allclose(zf[-1], np.linalg.matrix_power(Phi, 50) @ z0, rtol=0, atol=1e-12)
+    assert zf.shape == (51, 6)
