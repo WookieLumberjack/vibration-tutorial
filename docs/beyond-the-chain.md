@@ -148,7 +148,9 @@ cycle, and relaxation oscillations), galloping of a square section in a wind (De
 the hysteresis between its branches), vortex-induced vibration with a wake oscillator (lock-in), and
 two-mode flutter of a wing section, its root locus crossing into instability as the airspeed rises (in steady
 lift by coalescence; in quasi-steady lift the pitch mode goes on its own). Drag a pole along the locus and
-the speed follows, so you can walk it across Re λ = 0.
+the speed follows, so you can walk it across Re λ = 0. The *Motion* tab plays the body itself (the mass,
+the galloping square and the cylinder to scale, the wing plunging and pitching in its least stable mode), with
+a slider for what drives it that moves the poles as you drag.
 
 ![Self-excited vibration page, flutter: a wing section with plunge at 3 Hz and pitch at 6 Hz; in steady lift; as the airspeed rises their frequencies close in and, nearly met, the plunge-like mode's damping crosses zero at 20.7 m/s, about half the 39 m/s divergence speed](images/self_excited.png)
 
