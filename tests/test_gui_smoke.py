@@ -3927,11 +3927,11 @@ def test_random_vibration_page(app):
     p.worker.wait()
     assert p.record is not record and p.record.input.level == p.level.value()
 
-    for name, _, note in TRIALS:
-        p.trial.pick(name)
+    for t in TRIALS:
+        p.trial.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == note and p.prediction is not None and "RMS" in p.readout.text()
-    p.trial.pick(TRIALS[1][0])  # a force on the last mass: its own acceleration's mass line
+        assert p.trial_note.text() == t.note and p.prediction is not None and "RMS" in p.readout.text()
+    p.trial.pick(TRIALS[1].name)  # a force on the last mass: its own acceleration's mass line
     p.recompute()
     assert p.mass.isEnabled() and p.mass.currentText() == "m4" and p.level.suffix() == " N²/Hz"
     assert "Miles 0.4163 g (-18 %)" in p.readout.text()
