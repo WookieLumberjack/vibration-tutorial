@@ -23,7 +23,8 @@ from enum import Enum
 import numpy as np
 from scipy.optimize import brentq
 
-from .sdof import TWO_PI, Oscillator, free_response, respond
+from .foh import respond
+from .sdof import TWO_PI, Oscillator, free_response
 
 
 class Model(Enum):

@@ -33,8 +33,8 @@ from enum import Enum
 
 import numpy as np
 
+from .foh import foh_discretize
 from .model import ChainSystem
-from .simulator import foh_discretize
 
 TWO_PI = 2.0 * math.pi
 SAMPLES = 300

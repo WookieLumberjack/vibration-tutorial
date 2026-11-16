@@ -30,7 +30,8 @@ from enum import Enum
 import numpy as np
 from scipy.optimize import minimize_scalar
 
-from .sdof import TWO_PI, respond
+from .foh import respond
+from .sdof import TWO_PI
 
 G = 9.80665  # m/s²
 

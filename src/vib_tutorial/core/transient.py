@@ -17,11 +17,11 @@ from enum import Enum
 
 import numpy as np
 
+from .foh import respond
 from .sdof import (
     Oscillator,
     free_response,
     impulse_response,
-    respond,
     response,
     step_overshoot,
     step_response,

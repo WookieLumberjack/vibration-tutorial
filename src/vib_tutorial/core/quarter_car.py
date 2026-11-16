@@ -22,7 +22,7 @@ from dataclasses import dataclass, replace
 import numpy as np
 import scipy.special
 
-from .simulator import foh_discretize
+from .foh import respond
 
 TWO_PI = 2.0 * math.pi
 G = 9.80665
@@ -201,13 +201,7 @@ def drive(car: Car, road: Road, duration: float = 60.0, fs: float = 400.0, seed:
     Mi = np.linalg.inv(M)
     A = np.block([[np.zeros((2, 2)), np.eye(2)], [-Mi @ K, -Mi @ C]])
     B = np.concatenate([np.zeros(2), Mi @ np.array([0.0, car.tyre])])[:, None]
-    Phi, G0, G1 = foh_discretize(A, B, 1.0 / fs)
     # start on the road's steady state at its first height (both masses lifted by z[0])
-    s = np.array([z[0], z[0], 0.0, 0.0])
-    states = np.empty((z.size, 4))
-    states[0] = s
-    for k in range(1, z.size):
-        s = Phi @ s + G0[:, 0] * z[k - 1] + G1[:, 0] * z[k]
-        states[k] = s
+    states = respond(A, B, 1.0 / fs, z, np.array([z[0], z[0], 0.0, 0.0]))
     acc = states @ A[2].T + B[2, 0] * z
     return Drive(t, z, acc, states[:, 0] - states[:, 1], car.tyre * (z - states[:, 1]))

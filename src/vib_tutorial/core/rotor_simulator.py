@@ -47,6 +47,7 @@ import numpy as np
 
 from . import native
 from .fluid_bearing import full_film_damping, pi_film
+from .foh import foh_discretize
 from .rotor import (
     N_DOF,
     SLIP,
@@ -58,7 +59,7 @@ from .rotor import (
     Stator,
     stator_force,
 )
-from .simulator import MAX_STEP, MAX_STEPS_PER_ADVANCE, STEPS_PER_PERIOD, foh_discretize
+from .simulator import MAX_STEP, MAX_STEPS_PER_ADVANCE, STEPS_PER_PERIOD
 
 CHUNK_TIME = 2e-3  # s; while the speed ramps, A(Ω) is held over chunks this long
 RPM = 60.0 / (2.0 * math.pi)  # rpm per rad/s

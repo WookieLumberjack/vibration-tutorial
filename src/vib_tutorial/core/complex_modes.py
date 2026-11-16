@@ -77,6 +77,7 @@ import numpy as np
 import scipy.linalg
 import scipy.optimize
 
+from .foh import free
 from .identification import IdentifiedMode, lsfd
 from .modal import TWO_PI, ModalResult, _mac, modal_analysis, receptance
 from .model import ChainSystem, state_space
@@ -239,11 +240,7 @@ def free_decay(
     dt = TWO_PI / w / per_period
     steps = round(periods * per_period)
     A, _ = state_space(system)
-    step = scipy.linalg.expm(A * dt)
-    z = np.zeros((steps + 1, 2 * n))
-    z[0, :n] = phi[:, mode]
-    for k in range(steps):
-        z[k + 1] = step @ z[k]
+    z = free(A, dt, steps, np.concatenate([phi[:, mode], np.zeros(n)]))
     q = z[:, :n] @ M @ phi  # φ_sᵀ M x for each s
     t = np.arange(steps + 1) * dt
     zeta = m.zeta_modal

@@ -53,6 +53,7 @@ import scipy.linalg
 import scipy.optimize
 
 from .complex_modes import Complexity, complexity
+from .foh import free
 from .frame import TWO_PI, Assembly, Frame, FrameError, Modes, assemble, condense, modes
 
 SAMPLES = 2400  # in a time response
@@ -320,11 +321,7 @@ def response(model: StateModel, load: Load, t: np.ndarray) -> np.ndarray:
         z0 = np.zeros(n + 2)
         z0[n + 1] = 1.0
     h = float(t[1] - t[0]) if t.size > 1 else 0.0
-    E = scipy.linalg.expm(A * h)
-    z = np.empty((t.size, z0.size))
-    z[0] = z0
-    for k in range(1, t.size):
-        z[k] = E @ z[k - 1]
+    z = free(A, h, t.size - 1, z0)
     return z[:, :n] @ model.out.T
 
 

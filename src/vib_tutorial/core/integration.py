@@ -23,7 +23,7 @@ from enum import Enum
 import numpy as np
 import scipy.linalg
 
-from .simulator import foh_discretize
+from .foh import foh_discretize
 
 TWO_PI = 2.0 * math.pi
 

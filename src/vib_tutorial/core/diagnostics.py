@@ -37,8 +37,8 @@ import scipy.interpolate
 import scipy.signal
 import scipy.stats
 
+from .foh import foh_discretize
 from .signals import Window, spectrum
-from .simulator import foh_discretize
 
 TWO_PI = 2.0 * math.pi
 FS = 20480.0  # Hz, the steady record's sample rate
