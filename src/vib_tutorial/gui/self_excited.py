@@ -2,7 +2,8 @@
 
 Left: the model and its parameters. Centre: its motion from a small start (time history and phase plane), or for
 flutter the two modes' frequencies and damping against the speed. Right: the sweep (the steady amplitude against
-the parameter that drives it, which shows the Hopf point and any hysteresis), and the Theory (its figures:
+the parameter that drives it, which shows the Hopf point and any hysteresis; for flutter the root locus, a pole
+dragged along it setting the speed), and the Theory (its figures:
 gui/self_excited_figures.py). The page has its own models (core/self_excited.py).
 """
 
@@ -29,6 +30,7 @@ from ..core.self_excited import (
     settled_amplitude,
 )
 from . import self_excited_figures, settle_plots
+from .drag import DragDot
 from .lesson import (
     Form,
     TrialBox,
@@ -462,7 +464,10 @@ TIPS = {
     "lift": "<p>Steady, L ∝ θ: the lift follows the pitch alone, a stiffness. Quasi-steady, L ∝ θ + ḣ/U: it also "
     "follows the plunge's ḣ/U, the angle the plunging section sees, which acts as a damping.</p>",
 }
-SWEEP_TIP = "<p>The settled motion against the parameter that drives it; the dotted line is the value set.</p>"
+SWEEP_TIP = (
+    "<p>The settled motion against the parameter that drives it; the dotted line is the value set. For flutter, "
+    "the root locus as the speed rises: drag a pole along it to set the speed, and watch one cross Re λ = 0.</p>"
+)
 
 NOTES_HTML = load_notes("self_excited", figures=self_excited_figures.FIGURES, trials=trials_html(TRIALS))
 
@@ -549,8 +554,21 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.sweep_stable = marker(7)
         self.sweep_unstable = marker(7)
         self.sweep_line = pg.InfiniteLine(angle=90)
-        for item in (self.sweep_line, self.sweep_theory, self.sweep_curve, self.sweep_stable, self.sweep_unstable):
+        self.flutter_dots = [
+            DragDot("<p>Drag the pole along its locus to set the speed.</p>", size=12) for _ in range(2)
+        ]
+        for item in (
+            self.sweep_line,
+            self.sweep_theory,
+            self.sweep_curve,
+            self.sweep_stable,
+            self.sweep_unstable,
+            *self.flutter_dots,
+        ):
             self.sweep_plot.addItem(item)
+        for dot in self.flutter_dots:
+            dot.setVisible(False)
+            dot.dragged.connect(self._on_flutter_dragged)
         self.sweep2_curve = pg.PlotDataItem()
         self.sweep2_ref = pg.PlotDataItem()
         self.sweep2_line = pg.InfiniteLine(angle=90)
@@ -627,6 +645,19 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.pages.setCurrentIndex(self.kind.currentIndex())
         self.redraw()
 
+    def _on_flutter_dragged(self, speed: float) -> None:
+        self.boxes["f_speed"].setValue(speed)  # redraws when it changes ...
+        self._place_flutter_dots(self.flutter())  # ... but rounded to the box it may not: the dots at its value
+
+    def _place_flutter_dots(self, flutter: Flutter) -> None:
+        """The poles at the speed set, on the locus."""
+        now = flutter.poles(self.v("f_speed"))
+        now = now[now.imag > 0]
+        for k, grip in enumerate(self.flutter_dots):
+            grip.setVisible(k < now.size)
+            if k < now.size:
+                grip.place(float(now[k].real), float(now[k].imag) / (2 * np.pi), self.v("f_speed"))
+
     def vdp(self) -> VanDerPol:
         return VanDerPol(self.v("vdp_freq"), self.v("vdp_eps"), self.v("vdp_ref"), self.v("vdp_start"))
 
@@ -660,6 +691,8 @@ class SelfExcitedPage(QtWidgets.QWidget):
             item.setPen(pg.mkPen(color, width=1.5))
         for item, color in zip(self.bottom_items, (c.mass[0], c.mass[1])):
             item.setPen(pg.mkPen(color, width=1.5))
+        for grip in self.flutter_dots:
+            grip.apply_theme()
         dot = QtCore.Qt.PenStyle.DotLine
         for line in (self.top_line, self.bottom_line, self.sweep_line, self.sweep2_line):
             line.setPen(pg.mkPen(c.grey, width=1.5, style=dot))
@@ -816,6 +849,8 @@ class SelfExcitedPage(QtWidgets.QWidget):
             self.sweep2_ref,
         ):
             item.setData([], [])
+        for grip in self.flutter_dots:  # shown on flutter's locus only
+            grip.setVisible(False)
         for p in (self.sweep_plot, self.sweep2_plot):
             p.getPlotItem().legend.clear()
         legend = self.sweep_plot.getPlotItem().legend
@@ -888,6 +923,11 @@ class SelfExcitedPage(QtWidgets.QWidget):
             poles = np.array([flutter.poles(float(u)) for u in U])
             up = np.where(poles.imag > 0, poles, np.nan)
             self.sweep_stable.setData(up.real.ravel(), (up.imag / (2 * np.pi)).ravel())
+            on = np.isfinite(up)  # the dots' path: every pole on the locus, its parameter the speed
+            speeds = np.broadcast_to(U[:, None], up.shape)[on]
+            for grip in self.flutter_dots:
+                grip.set_path(up[on].real, up[on].imag / (2 * np.pi), speeds)
+            self._place_flutter_dots(flutter)
             legend.addItem(
                 self.sweep_stable, f"poles, 0 to 1.3 × the {'flutter' if np.isfinite(Uf) else 'divergence'} speed"
             )

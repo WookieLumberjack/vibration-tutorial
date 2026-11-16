@@ -252,3 +252,35 @@ def test_dragging_a_pole_along_the_complex_modes_sweep_sets_the_element_on_relea
     for _ in range(3):
         app.processEvents()
     assert all(d.param == pytest.approx(seen[-1]) for d in p.sweep_dots if d.isVisible())  # redrawn there
+
+
+def test_dragging_a_pole_along_the_flutter_locus_sets_the_speed(main_window, app):
+    from vib_tutorial.gui.self_excited import Kind
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.self_excited_page
+    w.pages.setCurrentWidget(p)
+    p.load_setup(dict(kind=Kind.FLUTTER, values={"f_speed": 25.0}))  # past flutter: one pole right of Re = 0
+    p.sweep_plot.grab()
+    for _ in range(5):
+        app.processEvents()
+    dots = p.flutter_dots
+    assert all(d.isVisible() and d.param == pytest.approx(25.0) for d in dots)
+    assert max(d.pos().x() for d in dots) > 0  # unstable
+    dot = max(dots, key=lambda d: d.pos().x())
+    x, y, u = dot._x, dot._y, dot._p
+    start = scene_at(p.sweep_plot, dot.pos().x(), dot.pos().y())
+    near = np.flatnonzero(np.abs(u - 10.0) < 0.5)  # each pole at ~10 m/s, below the flutter speed
+    far = [(scene_at(p.sweep_plot, x[i], y[i]) - start).manhattanLength() for i in near]
+    target = int(near[np.argmax(far)])
+    assert max(far) > 40
+    drag(p.sweep_plot, start, scene_at(p.sweep_plot, x[target], y[target]), app)
+    assert p.v("f_speed") == pytest.approx(u[target], abs=0.1)  # the box follows (to its 0.1 m/s) ...
+    assert all(d.isVisible() and d.param == pytest.approx(p.v("f_speed")) for d in dots)  # ... the poles too
+    assert max(d.pos().x() for d in dots) < 0  # below flutter: both stable
+
+    p.load_setup(dict(kind=Kind.VDP, values={}))  # another model's sweep: no locus, no dots
+    for _ in range(3):
+        app.processEvents()
+    assert not any(d.isVisible() for d in dots)
