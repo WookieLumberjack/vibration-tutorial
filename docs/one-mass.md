@@ -66,7 +66,10 @@ Viscous, hysteretic (structural), Coulomb friction and viscoelastic (Zener) damp
 same oscillator so it loses the same energy per cycle at f<sub>n</sub>. The hysteresis loops (damping
 force alone, or with the spring as a test machine draws them), the energy per cycle, storage stiffness
 and loss factor against frequency, the forced response (friction's by its describing function, which
-can't bound a resonance) and the free decays (friction's a straight line that stops off centre).
+can't bound a resonance) and the free decays (friction's a straight line that stops off centre). The Free decay tab draws the four
+masses side by side, each with its own damper (friction's on a floor, with the band it sticks in), moving
+with their decays: pull one and let go to release them all from there. Friction stays matched at X, so
+a smaller release sticks sooner.
 
 ![Damping models page: the four models matched to ζ = 0.05 at f<sub>n</sub> = 3.18 Hz; cycled through ±10 mm there each loop encloses 12.6 mJ, three ellipses and friction's ±0.31 N rectangle; the Zener element relaxes from 444 to 364 N/m with its loss peak of 0.1 at f<sub>n</sub>](images/damping_models.png)
 

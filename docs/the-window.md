@@ -87,6 +87,8 @@ takes it back to t = 0, and the time cursor on the plot it follows can be dragge
 sideways and let go to pluck it: it vibrates freely from where you let go. Pendulums does the same with
 the pendulum (a bob, a rod, a disc on its wire seen from above, an inverted arm), swinging beside a faint
 ghost of the linearized swing: turn it about its pivot and let go to start it from that angle, either side.
+Damping models' *Free decay* tab draws its four masses side by side, each on its own damper, moving with
+their decays: pull one and let go, and all four start from there.
 
 ## Themes
 

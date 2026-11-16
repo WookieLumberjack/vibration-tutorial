@@ -4,6 +4,12 @@ Left: the oscillator, the damping they're all matched to at f_n, the loop's ampl
 the drive for the response. Centre: the hysteresis loops (force against displacement over a cycle) and the
 energy per cycle against frequency. Right: storage stiffness and loss factor against frequency, the
 frequency response, the free decay, and the Theory. The page has its own model (core/damping_models.py).
+
+The Free decay tab draws the four oscillators side by side (`damping_view.DampingView`), moving with their
+decays under a `playback.Playback` (Start, Reset, speed, and a time cursor on the decay plot). Pull a mass
+and let go to release them all from there: the release (`self.release`) is apart from the matching
+amplitude X, so friction stays matched at X and a smaller release sticks sooner. An oscillator box (m, k,
+ζ, X, the Zener peak), a trial or Defaults puts the release back at X; a trial starts the motion.
 """
 
 from __future__ import annotations
@@ -19,6 +25,7 @@ from ..core.damping_models import MODELS, Matched, Model, coulomb_stop
 from ..core.practice import Prediction, Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
 from . import damping_figures, settle_plots
+from .damping_view import DampingView
 from .layouts import ColumnScroll, FlowLayout
 from .lesson import (
     Form,
@@ -32,6 +39,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
+from .playback import Playback
 from .style import colors
 from .theming import add_legend
 
@@ -406,6 +414,8 @@ class DampingModelsPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.model = Matched()
+        self.release: float | None = None  # where a pluck let the masses go (m); None: from X
+        self._decay: tuple[np.ndarray, dict[Model, np.ndarray]] = (np.zeros(1), {m: np.zeros(1) for m in MODELS})
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -516,6 +526,15 @@ class DampingModelsPage(QtWidgets.QWidget):
 
         decay = QtWidgets.QWidget()
         dv = QtWidgets.QVBoxLayout(decay)
+        self.body = DampingView()
+        self.body.setFixedHeight(170)
+        self.body.grabbed.connect(self._on_grabbed)
+        self.body.pulled.connect(self._on_pulled)
+        self.body.released.connect(self._on_let_go)
+        self.playback = Playback(self, "Damping models")
+        self.playback.moved.connect(self._place)
+        dv.addWidget(self.body)
+        dv.addWidget(self.playback.bar())
         self.decay_plot = plot("Displacement x", "m", "Time", "s", height=200)
         self.decay_plot.setToolTip(DECAY_TIP)
         add_legend(self.decay_plot.getPlotItem(), offset=(-10, 10))
@@ -527,6 +546,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.decay_plot.addItem(self.stick_band)
         for item in self.decay_items.values():
             self.decay_plot.addItem(item)
+        self.decay_cursor = self.playback.add_cursor(self.decay_plot)
         dv.addWidget(self.decay_plot, 1)
         self.decay_note = note_label()
         dv.addWidget(self.decay_note)
@@ -592,6 +612,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self._on_model()
+        self.playback.play()  # a trial starts the motion
 
     def _on_model(self) -> None:
         self.model = Matched(
@@ -601,6 +622,7 @@ class DampingModelsPage(QtWidgets.QWidget):
             1e-3 * self.amplitude.value(),
             self.relax.value(),
         )
+        self.release = None  # released from X again
         self.redraw()
 
     # ------------------------------------------------------------- drawing
@@ -629,6 +651,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         )
         self.spring_item.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.energy_now.setPen(pg.mkPen(c.muted, width=1, style=QtCore.Qt.PenStyle.DotLine))
+        self.playback.apply_theme()
         self.stick_band.setBrush(pg.mkBrush(*pg.mkColor(c.force).getRgb()[:3], 30))
         for line in self.stick_band.lines:
             line.setPen(pg.mkPen(c.force, width=1, style=QtCore.Qt.PenStyle.DotLine))
@@ -644,6 +667,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         )
         self._draw_loops()
         self._draw_energy()
+        self._work_decay()
         self._draw_tab()
         settle_plots(self)
 
@@ -749,21 +773,58 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.frf_note.setText(text)
         self.drive_note.setText(f"Friction's threshold 4F<sub>f</sub>/π = {fmt(threshold, 'N')}.")
 
-    def _draw_decay(self) -> None:
+    def released_from(self) -> float:
+        """Where the masses start (m): a pluck's release, or the matching amplitude X."""
+        return self.model.amplitude if self.release is None else self.release
+
+    def _work_decay(self) -> None:
+        """Each model's free decay from the release, over the span the plot and the masses play."""
         mm = self.model
         T = TWO_PI / mm.omega_n
         span = min(max(5.0 / (mm.zeta * mm.omega_n), 3 * T), 60 * T)
         t = np.linspace(0.0, span, 3000)
+        x0 = self.released_from()
+        self._decay = (t, {m: mm.free_decay(m, x0, t) for m in MODELS})
+        shown = {m: self.shown[m].isChecked() for m in MODELS}
+        self.body.set_rows(self._colors(), shown, SHORT)
+        self.body.set_scale(x0, mm.friction / mm.stiffness)
+        self.playback.set_span(span)  # places the masses
+
+    def _place(self, t: float) -> None:
+        if self.body.held:  # under the hand: the masses are where it holds them
+            return
+        times, x = self._decay
+        self.body.set_positions({m: float(np.interp(t, times, x[m])) for m in MODELS})
+
+    def _on_grabbed(self) -> None:
+        self.playback.pause()
+
+    def _on_pulled(self, x: float) -> None:
+        self.body.set_positions({m: x for m in MODELS})
+        self.release = x
+
+    def _on_let_go(self) -> None:
+        if self.release is not None and abs(self.release) < 1e-7:  # let go at rest: nothing to release
+            self.release = None
+        self._work_decay()
+        self._draw_tab()
+        settle_plots(self)
+        self.playback.play()
+
+    def _draw_decay(self) -> None:
+        mm = self.model
+        t, x = self._decay
+        span = float(t[-1])
         for m in MODELS:
             if self.shown[m].isChecked():
-                self.decay_items[m].setData(t, mm.free_decay(m, mm.amplitude, t))
+                self.decay_items[m].setData(t, x[m])
             else:
                 self.decay_items[m].setData([], [])
         d = mm.friction / mm.stiffness
         self.stick_band.setRegion((-d, d))
         self.stick_band.setVisible(self.shown[Model.COULOMB].isChecked())
         self.decay_plot.setXRange(0, span, padding=0)
-        halves, stop = coulomb_stop(mm.stiffness, mm.friction, mm.amplitude)
+        halves, stop = coulomb_stop(mm.stiffness, mm.friction, self.released_from())
         self.decay_note.setText(
             f"Viscous: each peak e<sup>−δ</sup> = {math.exp(-2 * math.pi * mm.zeta / math.sqrt(1 - mm.zeta**2)):.3g}"
             f" of the last. Friction: {fmt(4 * d, 'm')} less each cycle; it stops after {halves / 2:g} cycles, "
