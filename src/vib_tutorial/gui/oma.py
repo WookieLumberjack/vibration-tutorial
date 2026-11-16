@@ -9,11 +9,17 @@ the peaks whose kurtosis says harmonic crossed; below, the responses. Right: the
 modes against the exact ones, the chosen mode's autocorrelation with the decay fitted, SSI's
 stabilization diagram, the three methods side by side (with the virtual modal test's hammer
 test), and the notes. The page follows the chain (core/oma.py).
+
+Working on it: a control's change makes the record (0.1 s) and processes it (FDD, EFDD, SSI: ~70 ms) on a
+`recompute.Recompute` worker (`_job`, `_processor`: plain values in), the plots keeping the last ones meanwhile;
+`recompute()`, a new record and a click on a peak or a pole do it at once. `test_gui_smoke`'s `test_oma_page`
+checks both.
 """
 
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any
@@ -57,6 +63,7 @@ from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
 from .notes_view import NotesBrowser
 from .panels import spin
+from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
@@ -65,6 +72,27 @@ CYCLES = 2000  # the record's default length, in periods of the slowest mode
 SHOWN_S = 60.0  # s of the record drawn
 RECOMPUTE_MS = 150  # the parameters settle this long before the record is made again
 FDD, SSI = "FDD + EFDD", "SSI-cov"
+
+
+@dataclass(frozen=True)
+class Processed:
+    """A record processed: its cross-spectra, FDD's peaks (each one's kurtosis, and whether it's a harmonic), SSI's
+    stabilization and the poles and modes picked from it (the same)."""
+
+    spectra: Any
+    fdd: Fdd
+    modes: list[FddMode]
+    kurt: list[float]
+    harmonic: list[bool]
+    stab: SsiStabilization
+    ssi_poles: list[tuple[int, int]]
+    ssi: list
+    ssi_kurt: list[float]
+    ssi_harmonic: list[bool]
+
+
+# What the worker gives back: the record, its processing, and an error to show instead (or "").
+Computed = tuple[AmbientRecord | None, Processed | None, str]
 
 TIPS = {
     "input": "<p>Where the ambient forces act: independent random forces on every mass (wind, traffic, "
@@ -491,10 +519,7 @@ class OmaPage(QtWidgets.QWidget):
         self._loading = False
         self._dirty = False  # the record is stale (made again when the page shows)
         self._remeasure = True  # the next recompute makes a new record (not just reprocesses)
-        self._recompute = QtCore.QTimer(self)
-        self._recompute.setSingleShot(True)
-        self._recompute.setInterval(RECOMPUTE_MS)
-        self._recompute.timeout.connect(self.recompute)
+        self.worker = Recompute(self._on_computed, self, RECOMPUTE_MS)  # the record off the GUI thread
 
         # --- left: the test, the acquisition, the processing
         test = QtWidgets.QGroupBox("Test")
@@ -898,12 +923,13 @@ class OmaPage(QtWidgets.QWidget):
         self.method.setCurrentText(SSI)
         self._process()
 
-    def _pick(self, stab: SsiStabilization) -> list[tuple[int, int]]:
+    @staticmethod
+    def _pick(stab: SsiStabilization, ssi_picked: list[tuple[int, float]] | None) -> list[tuple[int, int]]:
         """The SSI poles to use: automatic, or the ones picked by hand found again (the virtual modal test's way)."""
-        if self.ssi_picked is None:
+        if ssi_picked is None:
             return auto_select(stab)
         out = []
-        for order, f in self.ssi_picked:
+        for order, f in ssi_picked:
             for o in sorted(stab.orders, key=lambda o: abs(o - order)):
                 fs = np.abs(stab.poles[stab.orders.index(o)]) / (2 * math.pi)
                 if fs.size and abs(fs - f).min() <= 0.02 * f:
@@ -918,8 +944,8 @@ class OmaPage(QtWidgets.QWidget):
             return
         if now:
             self.recompute()
-        else:
-            self._recompute.start()
+        elif self.system is not None:
+            self.worker.request(self._job())
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -928,41 +954,95 @@ class OmaPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- computing
     def recompute(self) -> None:
-        """Record again if asked for (or stale), then process; the plots and results follow."""
-        self._recompute.stop()
+        """Record again if asked for (or stale), then process; the plots and results follow. Now, dropping any
+        pending."""
         self._dirty = False
-        if self.system is None:
+        if self.system is not None:
+            self.worker.now(self._job())
+
+    def _job(self) -> Callable[[], Computed]:
+        """The record (again if asked for, or stale) and its processing as a job: plain values in, touching no
+        widget. It gives (record, processed, error): no record if making it failed."""
+        assert self.system is not None, "a job is made once the page has a chain"
+        system, settings, result, record = self.system, self.settings(), self.result, self.record
+        measure = self._remeasure or record is None
+        process = self._processor()
+
+        def job() -> Computed:
+            made = record
+            if measure:
+                try:
+                    made = ambient_record(system, settings, result)
+                except ValueError as e:
+                    return None, None, f"<b>{e}</b>."
+            assert made is not None, "measured when there was none"
+            return made, process(made), ""
+
+        return job
+
+    def _on_computed(self, computed: Computed) -> None:
+        record, processed, error = computed
+        if error:
+            self.record = None
+            self.readout.setText(error)
             return
-        if self._remeasure or self.record is None:
-            try:
-                self.record = ambient_record(self.system, self.settings(), self.result)
-            except ValueError as e:
-                self.record = None
-                self.readout.setText(f"<b>{e}</b>.")
-                return
-            self._remeasure = False
+        assert record is not None and processed is not None, "made with no error"
+        self._remeasure = False  # the latest settings' record: a newer request would have dropped this one
+        if record is not self.record:
+            self.record = record
             self._draw_records()
-        self._process()
+        self._show(processed)
+
+    def _processor(self) -> Callable[[AmbientRecord], Processed]:
+        """The processing as a function of the record, its settings read now: FDD's peaks and EFDD, SSI."""
+        assert self.system is not None, "processed for the chain"
+        noise, block, mac_min = self.noise.value() / 100.0, self.block.currentData(), self.mac_min.value()
+        rows, max_order, peaks, ssi_picked = self.rows.value(), self.max_order.value(), self.peaks, self.ssi_picked
+        most = self.system.n + (self.machine_hz.value() > 0)  # one per mass, and one for the machine
+
+        def process(record: AmbientRecord) -> Processed:
+            fs = record.settings.fs
+            y = record.measured(noise)
+            spectra = cross_spectra(y, fs, block)
+            f = fdd(spectra)
+            band = (0.0, AA_CUTOFF * fs / 2.0)
+            modes = identify(f, pick_peaks(f, band, most) if peaks is None else peaks, mac_min)
+            kurt = harmonic_flags(y, fs, f, modes)
+            stab = ssi_cov(y, fs, rows, max_order, band)
+            poles = OmaPage._pick(stab, ssi_picked)
+            ssi = ssi_modes(stab, poles)
+            ssi_kurt = [kurtosis(y, fs, m.shape, m.fn_hz, 2.0 * m.zeta * m.fn_hz) for m in ssi]
+            return Processed(
+                spectra,
+                f,
+                modes,
+                kurt,
+                harmonics([m.zeta for m in modes], kurt),
+                stab,
+                poles,
+                ssi,
+                ssi_kurt,
+                harmonics([m.zeta for m in ssi], ssi_kurt),
+            )
+
+        return process
 
     def _process(self) -> None:
+        """The record processed again, now (a peak or pole clicked)."""
         if self.record is None or self.system is None:
             return
-        y = self.record.measured(self.noise.value() / 100.0)
-        spectra = cross_spectra(y, self.record.settings.fs, self.block.currentData())
-        self.fdd = fdd(spectra)
-        band = self._band()
-        most = self.system.n + (self.machine_hz.value() > 0)  # one per mass, and one for the machine
-        lines = pick_peaks(self.fdd, band, most) if self.peaks is None else self.peaks
-        self.modes = identify(self.fdd, lines, self.mac_min.value())
-        fs = self.record.settings.fs
-        self.kurt = harmonic_flags(y, fs, self.fdd, self.modes)
-        self.harmonic = harmonics([m.zeta for m in self.modes], self.kurt)
-        self.stab = ssi_cov(y, fs, self.rows.value(), self.max_order.value(), band)
-        self.ssi_poles = self._pick(self.stab)
-        self.ssi = ssi_modes(self.stab, self.ssi_poles)
-        self.ssi_kurt = [kurtosis(y, fs, m.shape, m.fn_hz, 2.0 * m.zeta * m.fn_hz) for m in self.ssi]
-        self.ssi_harmonic = harmonics([m.zeta for m in self.ssi], self.ssi_kurt)
-        self._show_daq_info(spectra)
+        self._show(self._processor()(self.record))
+
+    def _show(self, p: Processed) -> None:
+        self.fdd, self.modes, self.kurt, self.harmonic = p.fdd, p.modes, p.kurt, p.harmonic
+        self.stab, self.ssi_poles, self.ssi, self.ssi_kurt, self.ssi_harmonic = (
+            p.stab,
+            p.ssi_poles,
+            p.ssi,
+            p.ssi_kurt,
+            p.ssi_harmonic,
+        )
+        self._show_daq_info(p.spectra)
         self._fill_mode_pick()
         self._draw_sv()
         self._show_results()

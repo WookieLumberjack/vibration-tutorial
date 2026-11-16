@@ -3652,6 +3652,11 @@ def test_oma_page(app):
     assert p.record is record  # processing only: the same record
     p.new_record.click()
     assert p.record is not record and p.seed == 2
+    record, fdd = p.record, p.fdd  # a control: processed again on the worker, the plots keeping the last meanwhile
+    p.noise.setValue(20.0)
+    assert p.worker.busy and p.fdd is fdd
+    p.worker.wait()
+    assert p.record is record and p.fdd is not fdd, "the same record, processed again"
 
     # click on mode 1's peak: dropped; click there again: picked again
     vb = p.sv.getPlotItem().getViewBox()
