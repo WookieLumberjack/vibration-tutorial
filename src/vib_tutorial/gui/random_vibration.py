@@ -7,11 +7,16 @@ response's PSD (exact H G Hᴴ and the record's Welch estimate) and its cumulati
 Miles' estimate. Right: Miles' equation mode by mode, the record itself, its statistics against
 Rice's and the largest peak's (Davenport's, Vanmarcke's), and the notes.
 Follows the chain from the Simulation page (friction left out: all of this is linear).
+
+Working on it: a control's change makes the record (0.1–1 s) and the prediction on a `recompute.Recompute`
+worker (`_job`, plain values in), the plots keeping the last ones meanwhile; `recompute()` and a new record do
+it at once. `test_gui_smoke`'s `test_random_vibration_page` checks both.
 """
 
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -53,10 +58,14 @@ from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
+from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
 RECOMPUTE_MS = 150  # the parameters settle this long before the record is made again
+
+# What the worker gives back: the record, the prediction, and an error to show instead (or "").
+Computed = tuple[RandomRecord | None, Prediction | None, str]
 SHOWN_PERIODS = 30  # of mode 1, on the record's plot
 TWO_PI = 2.0 * math.pi
 PSD_UNITS = {Input.BASE: "g²/Hz", Input.FORCE_ONE: "N²/Hz", Input.FORCE_ALL: "N²/Hz"}
@@ -459,10 +468,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self._loading = False
         self._dirty = False
         self._remeasure = True
-        self._recompute = QtCore.QTimer(self)
-        self._recompute.setSingleShot(True)
-        self._recompute.setInterval(RECOMPUTE_MS)
-        self._recompute.timeout.connect(self.recompute)
+        self.worker = Recompute(self._on_computed, self, RECOMPUTE_MS)  # the record off the GUI thread
 
         # --- left: the input, the response, the record, things to try
         box = QtWidgets.QGroupBox("Input")
@@ -808,14 +814,16 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self._schedule(measure=True, now=True)
 
     def _schedule(self, measure: bool, now: bool = False) -> None:
+        """A control changed: the record (0.1–1 s) made and predicted on the worker, the plots keeping the last
+        ones meanwhile; `now` (a trial, a new record) on the GUI thread, as the reader waits for it."""
         self._remeasure |= measure
         if not self.isVisible():
             self._dirty = True
             return
         if now:
             self.recompute()
-        else:
-            self._recompute.start()
+        elif self.system is not None:
+            self.worker.request(self._job())
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -824,25 +832,42 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- computing
     def recompute(self) -> None:
-        """Record again if asked for (or stale), then predict and draw."""
-        self._recompute.stop()
+        """Record again if asked for (or stale), then predict and draw: now, dropping any pending."""
         self._dirty = False
-        if self.system is None:
-            return
+        if self.system is not None:
+            self.worker.now(self._job())
+
+    def _job(self) -> Callable[[], Computed]:
+        """The record (again if asked for, or stale) and the prediction as a job: plain values in, touching no
+        widget. It gives (record, prediction, error): the record kept on a bad input, none if making it failed."""
+        assert self.system is not None, "a job is made once the page has a chain"
+        system, result, out, seed = self.system, self.result, self.output(), self.seed
+        record, duration = self.record, self.duration.value()
+        measure = self._remeasure or record is None
         try:
             inp = self.random_input()
         except ValueError as e:
-            self.readout.setText(f"<b>{e}</b>.")
+            error = f"<b>{e}</b>."
+            return lambda: (record, None, error)
+
+        def job() -> Computed:
+            made = record
+            if measure:
+                try:
+                    made = simulate(system, inp, duration, seed, result)
+                except ValueError as e:
+                    return None, None, f"<b>{e}</b>."
+            return made, predict(system, inp, out, result), ""
+
+        return job
+
+    def _on_computed(self, computed: Computed) -> None:
+        self.record, prediction, error = computed
+        if error:
+            self.readout.setText(error)
             return
-        if self._remeasure or self.record is None:
-            try:
-                self.record = simulate(self.system, inp, self.duration.value(), self.seed, self.result)
-            except ValueError as e:
-                self.record = None
-                self.readout.setText(f"<b>{e}</b>.")
-                return
-            self._remeasure = False
-        self.prediction = predict(self.system, inp, self.output(), self.result)
+        self._remeasure = False  # the latest settings' record: a newer request would have dropped this one
+        self.prediction = prediction
         self.redraw()
 
     # ------------------------------------------------------------- drawing

@@ -3882,6 +3882,12 @@ def test_random_vibration_page(app):
     p.new_record.click()
     assert p.record is not record and p.seed == 2
 
+    record = p.record  # a control: the record made again on the worker, the plots keeping the last one meanwhile
+    p.level.setValue(2 * p.level.value())
+    assert p.worker.busy and p.record is record
+    p.worker.wait()
+    assert p.record is not record and p.record.input.level == p.level.value()
+
     for name, _, note in TRIALS:
         p.trial.pick(name)
         p.recompute()
