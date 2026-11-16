@@ -282,6 +282,9 @@ plots (row: response, column: force), on shared axes so their sizes compare dire
   in its own colour. The real part shows best how the terms add. The large plot shades the
   frequency band where the sum differs most from the full solution, and lists the **static
   compliance** (ω = 0): the ticked modes' sum against K⁻¹, and each mode's share of it.
+- **Build H mode by mode**: the *First* slider ticks the first r terms and leaves the rest out, and the
+  button steps it from one term to all of them: each term adds its peak, and the dips appear where
+  neighbouring terms cancel.
 - **Exact or classical terms**: the exact expansion uses the complex (state-space) modes and
   always sums to the full solution. The classical one uses the real modes with ζ modal, and
   misses even with every mode when damping is non-proportional.
