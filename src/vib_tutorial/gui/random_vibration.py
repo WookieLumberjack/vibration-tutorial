@@ -331,6 +331,12 @@ def _double_damping(rng: np.random.Generator) -> Question:
         "It falls by √2, to 71 %: Miles' a<sub>RMS</sub> = √((π/2) f<sub>n</sub> Q G) goes as √Q. The peak halves, "
         "but it's twice as wide.",
         choices=("It falls to about 71 %", "It halves", "It falls to a quarter", "It stays the same"),
+        why=(
+            "",
+            "The peak halves, but it's twice as wide: the area, the mean square, halves, so the RMS falls by √2.",
+            "Miles' mean square goes as Q and the RMS as √Q: half the Q is 1/√2 of the RMS, not a quarter.",
+            "A broadband input feeds the resonance, whose area goes as Q: less Q, less response.",
+        ),
         setup=dict(**_one_mass(10.0, 0.04), f_hi=50.0, tab=TAB_MILES),
         predict=True,
     )
@@ -343,6 +349,13 @@ def _longer_record(rng: np.random.Generator) -> Question:
         "It grows a little: the largest peak goes as about √(2 ln ν₀T), so ten times the time adds only 10–20 % (3.2σ "
         "over a hundred cycles, 3.9σ over a thousand).",
         choices=("It grows a little", "It stays the same", "It grows about √10 times", "It grows ten times"),
+        why=(
+            "",
+            "A longer record has more cycles, and more chances of a rare large peak: it grows, as √(2 ln ν₀T).",
+            "The largest peak grows only as √(2 ln ν₀T): 10–20 % for ten times the time.",
+            "The response's σ doesn't change with the record's length, only the chance of a rare peak, which grows "
+            "slowly, as √(2 ln ν₀T).",
+        ),
         setup=dict(tab=TAB_STATISTICS),
         predict=True,
     )
@@ -361,6 +374,13 @@ def _coarse_lines(rng: np.random.Generator) -> Question:
             "The peak comes out high; the RMS low",
             "Neither changes",
         ),
+        why=(
+            "",
+            "Coarse lines smear the peak sideways, but the area under the PSD, the mean square, is kept: only the "
+            "peak's height suffers.",
+            "Smearing over wide lines can only spread the peak out, lowering it; the area, and so the RMS, stays.",
+            "A line wider than the peak can't show its height: the window spreads it, and it comes out low and wide.",
+        ),
         setup=dict(**_one_mass(5.0, 0.01), f_hi=20.0, duration=2000.0, block=256),
         predict=True,
     )
@@ -375,6 +395,13 @@ def _mass_line(rng: np.random.Generator) -> Question:
         "(the mass line), flat, so every hertz of the band adds to it. Miles' equation, which only sees the peak, "
         "stays at 0.64 g.",
         choices=("It grows a lot", "It hardly changes: the resonance dominates", "It falls"),
+        why=(
+            "",
+            "That's Miles' view, which sees only the peak. Above resonance a mass's acceleration is F/m, flat, so "
+            "every hertz the band adds adds to it.",
+            "A wider band at the same level adds force, and above resonance all of it shows in the acceleration "
+            "(F/m): it can only grow.",
+        ),
         setup=dict(
             **_one_mass(5.0, 0.1), kind=Input.FORCE_ONE, level=1.0, f_hi=100.0, duration=60.0, block=256, tab=TAB_MILES
         ),

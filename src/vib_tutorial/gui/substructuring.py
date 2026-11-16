@@ -902,6 +902,11 @@ def _upper_bound(rng: np.random.Generator) -> Question:
         "Each is at or above the true one (0.02 % up to 7 % here): Craig–Bampton is a Rayleigh–Ritz projection, so "
         "it can only stiffen.",
         choices=("Each at or above the true one", "Each at or below", "Some above, some below"),
+        why=(
+            "",
+            "Craig–Bampton is a Rayleigh–Ritz projection: restricting the motion can only stiffen, never soften.",
+            "A Rayleigh–Ritz model's frequencies are each at or above the true one they stand for, every one.",
+        ),
         setup=dict(interfaces=(3,), kept=(1,)),
         predict=True,
     )
@@ -914,6 +919,12 @@ def _all_modes(rng: np.random.Generator) -> Question:
         "Not at all: the basis then spans every motion the chain has, so it's the same model in other coordinates, "
         "however different its matrices look.",
         choices=("They're exact", "Within a percent", "A few percent high"),
+        why=(
+            "",
+            "With every mode kept the basis spans every motion the chain has: it's the same model in other "
+            "coordinates, exact.",
+            "The error comes from the modes left out; with none left out there's nothing to stiffen it.",
+        ),
         setup=dict(interfaces=(3,), kept=(8,), tab=5),
         predict=True,
     )
@@ -926,6 +937,11 @@ def _macneal_all(rng: np.random.Generator) -> Question:
         "No: MacNeal's residual flexibility has no mass, so the boundary DOFs carry no inertia, and the model has only "
         "six modes (mode 5 is 3.9 % high, mode 6 66 %). Rubin, which keeps the residual mass, is exact here.",
         choices=("No: it drops the boundary's inertia", "Yes, as Craig–Bampton would be"),
+        why=(
+            "",
+            "MacNeal's residual flexibility has no mass, so the boundary carries no inertia and the model has "
+            "fewer modes than the chain: it isn't exact (Rubin's, with the residual mass, is).",
+        ),
         setup=dict(interfaces=(3,), kept=(8,), method="macneal"),
         predict=True,
     )
@@ -939,6 +955,12 @@ def _late_cut(rng: np.random.Generator) -> Question:
         "Badly off, 51 % high (MAC 0.27): B has no interior, so all the reduction is in A, and one mode can't describe "
         "the third mode across A's six interior masses. Keep three in A and modes 1 to 4 are within 0.2 %.",
         choices=("Badly off", "Within a percent", "Exact"),
+        why=(
+            "",
+            "B has no interior, so all the reduction is in A, and one mode of A's six interior masses can't "
+            "describe mode 3.",
+            "Exact needs every interior mode kept, and A keeps one of its six.",
+        ),
         setup=dict(interfaces=(6,), kept=(1, 0)),
         predict=True,
     )

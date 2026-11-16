@@ -226,6 +226,13 @@ def _wrong_mass(rng: np.random.Generator) -> Question:
             "They stay upper bounds, just less close",
             "Nothing: either mass will do",
         ),
+        why=(
+            "",
+            "Only the modal mass at the interface (with the residual mass) makes the model Rayleigh–Ritz, whose "
+            "frequencies are bounds; with the effective mass mode 2 comes out low.",
+            "The two masses differ, and only the modal mass at the interface keeps the model a Rayleigh–Ritz one: "
+            "the effective mass moves both frequencies.",
+        ),
         setup=dict(**LIGHT, a_mass="effective"),
         predict=True,
     )
@@ -238,6 +245,13 @@ def _no_residual(rng: np.random.Generator) -> Question:
         "Up: the model loses mass that does move with A's tip (B's other modes, riding rigidly on it), so both "
         "frequencies rise, here from 0.2 % to 0.35 % high and from 0.33 % to 0.55 % high.",
         choices=("Both up", "Both down", "They don't move"),
+        why=(
+            "",
+            "Leaving out mass raises a frequency: the residual mass rides with A's tip, and without it the model is "
+            "lighter there.",
+            "B's other modes ride rigidly on A's tip; their mass, the residual, moves with it, and leaving it off "
+            "lightens the model.",
+        ),
         setup=dict(**LIGHT, residual=False),
         predict=True,
     )
@@ -251,6 +265,13 @@ def _heavier_b(rng: np.random.Generator) -> Question:
         "They split further apart: at tuning they're √μ f<sub>A</sub> apart, and μ grew four times, so the gap "
         "about doubles (the chain's 1.63 and 2.35 Hz become 1.35 and 2.75 Hz).",
         choices=("They split about twice as far apart", "They split four times as far", "They move closer", "Nothing"),
+        why=(
+            "",
+            "The split at tuning is √μ f<sub>A</sub>: four times the mass ratio is √4 = 2 times the split.",
+            "A heavier absorber couples more strongly, pushing the two modes further apart, not closer.",
+            "Tuned the same, B's frequency stays, but the mass ratio μ sets the split, √μ f<sub>A</sub>, and it "
+            "grew four times.",
+        ),
         setup=dict(masses=(1.0, 1.0, 0.4, 0.4), springs=(400.0, 400.0, 160.0, 160.0), dampers=(2.0, 2.0, 0.8, 0.8)),
         predict=True,
     )
@@ -269,6 +290,13 @@ def _detuned(rng: np.random.Generator) -> Question:
             "Both move up",
             "They meet in the middle",
         ),
+        why=(
+            "",
+            "Coupling always pushes the modes apart: far from tuning they don't split, but each still shifts "
+            "outwards a little.",
+            "Coupling pushes the two apart: the lower goes down, the upper up.",
+            "Coupled modes repel, never meet: the lower goes below A's, the upper above B's.",
+        ),
         setup=dict(masses=(1.0, 1.0, 0.1, 0.1), springs=(400.0, 400.0, 160.0, 160.0), dampers=(2.0, 2.0, 0.8, 0.8)),
         predict=True,
     )
@@ -282,6 +310,13 @@ def _shared_damping(rng: np.random.Generator) -> Question:
         "About half each, the average: at exact tuning each coupled mode is half machine and half absorber, and here "
         "both come out at ζ = 0.012. That's how a tuned mass damper shares damping.",
         choices=("About half the machine's each", "The machine's 0.025 and 0", "None", "0.025 each"),
+        why=(
+            "",
+            "At exact tuning each coupled mode is half machine and half absorber, so each gets about half the "
+            "machine's damping.",
+            "The machine's damper still works in both coupled modes, each of which is half machine.",
+            "The machine's damping is shared, not copied: each mode is half machine, so it gets about half, 0.012.",
+        ),
         setup=dict(**absorber, split=1),
         predict=True,
     )

@@ -251,6 +251,14 @@ def _soft_damper(rng: np.random.Generator) -> Question:
             "Both worsen",
             "Comfort worsens, grip improves",
         ),
+        why=(
+            "",
+            "The damper is the conflict: softer lets the body ride more gently, but it also lets the wheel hop more "
+            "freely, so the tyre's load swings more.",
+            "A softer damper passes less of the road's harshness to the body: comfort improves; it's grip that "
+            "suffers.",
+            "That's a harder damper. Softening it takes the harshness out but lets the wheel hop, worsening grip.",
+        ),
         setup=dict(damper=830.0, tab=TAB_DAMPER),
         predict=True,
     )
@@ -263,6 +271,12 @@ def _heavy_wheel(rng: np.random.Generator) -> Question:
         "It worsens: the wheel hops lower and harder (9.6 Hz, not 11.8), and the tyre's load swings by 26 % of its "
         "static load, not 24 %. Unsprung mass costs grip.",
         choices=("It worsens", "It improves", "It stays the same"),
+        why=(
+            "",
+            "A heavier wheel is harder for the tyre to keep on the road: it hops lower and harder, and the tyre's "
+            "load swings more.",
+            "Unsprung mass moves the wheel hop (9.6 Hz, not 11.8), and with it the swing in the tyre's load.",
+        ),
         setup=dict(unsprung=60.0),
         predict=True,
     )
@@ -274,6 +288,13 @@ def _faster(rng: np.random.Generator) -> Question:
         0,
         "It doubles (1.05 to 2.09 m/s²): the road's PSD in time grows as v, so every RMS grows as √v.",
         choices=("It doubles", "It grows four times", "It grows sixteen times", "It stays the same"),
+        why=(
+            "",
+            "The road's PSD in time grows as v, and the mean square with it: the RMS grows as √v, so twice.",
+            "Even the mean square grows only four times (the PSD in time goes as v); the RMS, its square root, "
+            "doubles.",
+            "Faster over the same road the bumps come quicker, and the PSD in time grows as v: the RMS grows as √v.",
+        ),
         setup=dict(speed_kmh=144.0),
         predict=True,
     )
