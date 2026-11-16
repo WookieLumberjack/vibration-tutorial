@@ -253,6 +253,15 @@ def _frequency_doubled(rng: np.random.Generator) -> Question:
         "Viscous: its force grows with the velocity, so it takes twice as much. Hysteretic and friction take the "
         "same as before, and the Zener element, past its peak, a little less.",
         choices=("Viscous", "Hysteretic", "Friction", "Zener"),
+        why=(
+            "",
+            "Hysteretic damping takes the same energy per cycle at any frequency: its force is sized by the "
+            "displacement, not the velocity.",
+            "Friction's force is the same at any speed, so over the same stroke it takes 4F<sub>f</sub>X a cycle at "
+            "any frequency.",
+            "Past its loss peak at f<sub>n</sub>, the Zener element's loss falls a little; the viscous damper's "
+            "doubles.",
+        ),
         setup=dict(ratio=2.0, tab=TAB_LOSS),
         predict=True,
     )
@@ -266,6 +275,13 @@ def _amplitude_halved(rng: np.random.Generator) -> Question:
         "It halves: W<sub>d</sub> = 4F<sub>f</sub>X, the same force over half the stroke. A viscous or hysteretic "
         "damper's (∝ X²) falls to a quarter; so friction is relatively heavier damping for small motions.",
         choices=("It halves", "It falls to a quarter", "It stays the same", "It doubles"),
+        why=(
+            "",
+            "That's a viscous or hysteretic damper, whose force grows with the motion (∝ X²). Friction's force "
+            "stays the same, over half the stroke.",
+            "The force is the same, but it acts over half the distance: 4F<sub>f</sub>X halves with X.",
+            "Less motion can't take more energy: the same friction force acts over half the stroke.",
+        ),
         setup=dict(amplitude_mm=5.0, tab=TAB_LOSS),
         predict=True,
     )
@@ -280,6 +296,13 @@ def _friction_resonance(rng: np.random.Generator) -> Question:
         "friction takes 4F<sub>f</sub>X: both grow as X, so if F &gt; 4F<sub>f</sub>/π the input wins at every "
         "amplitude.",
         choices=("It grows without bound", "It settles where friction balances the force", "It stays stuck"),
+        why=(
+            "",
+            "A balance needs the loss to grow faster than the input. At resonance both grow as X (πFX in, "
+            "4F<sub>f</sub>X out), so past 4/π times the friction no swing balances.",
+            "It sticks only while the force can't beat the friction. This force is more than 4/π times it, so the "
+            "mass slips and the swing builds.",
+        ),
         setup=dict(force=1.0, tab=TAB_FRF),
         predict=True,
     )

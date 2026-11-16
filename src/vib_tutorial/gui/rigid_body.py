@@ -404,6 +404,17 @@ def _flip_predict(rng: np.random.Generator) -> Question:
             else "Spin about the least or the greatest is stable: a nudge only circles."
         ),
         choices=(flips, keeps) if k == 1 else (keeps, flips),
+        why=(
+            "",
+            (
+                "Spin about the least or the greatest axis is stable, but this is the middle one: a nudge grows "
+                "(the tennis-racket effect)."
+                if k == 1
+                else f"It flips only about the middle axis; the {side} side's has the "
+                + ("least" if k == 0 else "greatest")
+                + " moment, where a nudge only circles."
+            ),
+        ),
         setup=dict(mass=m, a=a / 1000, b=b / 1000, c=c / 1000, spin_axis=k, rate=6.0, nudge=2.0, show=SHOW_W),
         predict=True,
     )

@@ -269,6 +269,13 @@ def _square_at_half(rng: np.random.Generator) -> Question:
         "No: a square wave has odd harmonics only (it repeats upside down every half period), so nothing lands on "
         "2f₀ = f<sub>n</sub>. A sawtooth there would resonate through its second harmonic.",
         choices=("No: it has no even harmonics", "Yes: its 2nd harmonic", "Yes: every harmonic adds up"),
+        why=(
+            "",
+            "A square wave has no 2nd harmonic: it repeats upside down every half period, which cancels its even "
+            "harmonics. A sawtooth's 2nd would resonate it.",
+            "Only a harmonic at f<sub>n</sub> resonates it, and the one that would land there, the 2nd, a square "
+            "wave doesn't have.",
+        ),
         setup=dict(wave=Wave.SQUARE, tune=2, harmonics=9),
         predict=True,
     )
@@ -281,6 +288,14 @@ def _fastest_falling(rng: np.random.Generator) -> Question:
         "The triangle's: it has no jump, only kinks, so its harmonics fall as 1/k² (1/81 here). The square's and "
         "the sawtooth's jumps make theirs fall as 1/k, and an impulse train's don't fall at all.",
         choices=("Triangle", "Square wave", "Sawtooth", "Impulse train"),
+        why=(
+            "",
+            "A square wave jumps, and a jump's harmonics fall only as 1/k (1/9 here). The triangle has kinks, not "
+            "jumps, so its fall as 1/k².",
+            "A sawtooth jumps once a period, so its harmonics fall as 1/k, as the square's do; the triangle's fall "
+            "as 1/k².",
+            "An impulse train's harmonics don't fall at all: every one is the same height.",
+        ),
         setup=dict(wave=Wave.TRIANGLE, harmonics=9),
         predict=True,
     )
@@ -293,6 +308,12 @@ def _gibbs(rng: np.random.Generator) -> Question:
         "It stays about 9 % of the jump (Gibbs), only narrower: the series never matches a jump, it just squeezes "
         "the ripple towards it.",
         choices=("It stays about 9 %, only narrower", "It shrinks to nothing", "It shrinks to a tenth"),
+        why=(
+            "",
+            "The series matches the wave everywhere but at the jump, yet the overshoot beside the jump never goes: "
+            "it stays about 9 % of the jump, only squeezed closer (Gibbs).",
+            "The ripple gets ten times narrower, not lower: its height stays about 9 % of the jump.",
+        ),
         setup=dict(wave=Wave.SQUARE, harmonics=50),
         predict=True,
     )

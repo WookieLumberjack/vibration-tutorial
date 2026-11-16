@@ -245,6 +245,13 @@ def _thicker_plate(rng: np.random.Generator) -> Question:
         0,
         "They double: D ∝ h³ while ρh ∝ h, so √(D/ρh) ∝ h. (Its modal density halves.)",
         choices=("They double", "They grow √8 times", "They grow 8 times", "They stay the same"),
+        why=(
+            "",
+            "The stiffness D grows as h³, but the mass per area ρh grows too, as h: √(D/ρh) grows as h.",
+            "D grows 8 times, but the mass per area doubles too, and the frequency goes as the square root of "
+            "their ratio: √(8/2) = 2.",
+            "Stiffness grows faster than mass with thickness: D ∝ h³ against ρh ∝ h.",
+        ),
         setup=dict(structure=RECT, thickness=6.0),
         predict=True,
     )
@@ -257,6 +264,13 @@ def _euler_side(rng: np.random.Generator) -> Question:
         "Euler–Bernoulli's, always: it leaves out rotary inertia (more mass) and shear deflection (more flexibility), "
         "and both lower a frequency.",
         choices=("Euler–Bernoulli", "Timoshenko", "Either, depending on the mode"),
+        why=(
+            "",
+            "Timoshenko's beam adds rotary inertia and shear flexibility to Euler–Bernoulli's, and both lower the "
+            "frequencies.",
+            "Both of Timoshenko's additions, rotary inertia and shear, lower every mode's frequency; the gap only "
+            "grows with the mode.",
+        ),
         setup=dict(structure=BEAM, depth=0.2, mode=5),
         predict=True,
     )
@@ -269,6 +283,11 @@ def _density_trend(rng: np.random.Generator) -> Question:
         "It stays about the same: a plate's modal density, (S/2)√(ρh/D), doesn't depend on frequency. (A beam's falls "
         "as 1/√f; a room's grows as f².)",
         choices=("It stays about the same", "It grows", "It falls"),
+        why=(
+            "",
+            "That's a room's (∝ f²). A plate's modal density, (S/2)√(ρh/D), has no f in it.",
+            "That's a beam's (∝ 1/√f). A plate's, (S/2)√(ρh/D), doesn't depend on frequency.",
+        ),
         setup=dict(structure=RECT, tab=TAB_DENSITY),
         predict=True,
     )

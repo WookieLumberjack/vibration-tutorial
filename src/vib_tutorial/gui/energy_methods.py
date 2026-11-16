@@ -266,6 +266,12 @@ def _rayleigh_side(rng: np.random.Generator) -> Question:
         "Above it, always: the other modes' shares only add to xᵀKx faster than to xᵀMx. And close, since the "
         "error is second order in the shape's.",
         choices=("Above the exact value", "Below the exact value", "Either side, depending on the shape"),
+        why=(
+            "",
+            "Rayleigh's quotient can't fall below ω<sub>1</sub>²: every other mode in the shape has a higher ratio "
+            "of stiffness to mass, and only raises it.",
+            "A shape off mode 1 is mode 1 plus some higher modes, each of which raises the ratio: it's always above.",
+        ),
         setup=dict(shape=Shape.LINEAR, eps=0.2, tab=TAB_ERROR),
         predict=True,
     )
@@ -279,6 +285,12 @@ def _dunkerley_side(rng: np.random.Generator) -> Question:
         "than 1/ω₁² by the higher "
         "modes' terms. With Rayleigh's above, the two bracket it.",
         choices=("Below the exact value", "Above the exact value", "Either side"),
+        why=(
+            "",
+            "The sum Σ 1/ω<sub>r</sub>² counts the higher modes' terms as if they were mode 1's, so it "
+            "overestimates 1/ω<sub>1</sub>²: the frequency comes out low.",
+            "The higher modes' terms are all positive, so the sum always overestimates 1/ω<sub>1</sub>²: always below.",
+        ),
         setup=dict(tab=TAB_ERROR),
         predict=True,
     )
@@ -291,6 +303,13 @@ def _more_ritz_shapes(rng: np.random.Generator) -> Question:
         "It falls or stays, never rising and never going below the exact value: more shapes give the motion "
         "more freedom to find its lowest energy ratio (interlacing).",
         choices=("It falls or stays, never below exact", "It rises", "It can go either way"),
+        why=(
+            "",
+            "With one more shape the model can still use the old shapes alone, so its lowest ratio can only be as "
+            "low or lower.",
+            "It can't rise (the old shapes are still there to use), nor go below exact (it's still a constrained "
+            "model): it falls or stays.",
+        ),
         setup=dict(basis=Basis.POWERS, shapes=3, tab=TAB_RITZ),
         predict=True,
     )
