@@ -8,7 +8,9 @@ Long curves, one policy by kind of curve (#316 E2):
   Peak downsampling would join a path's minima and maxima, and clipping to view assumes x increases.
 - The Simulation page's live strip chart: `Decimator`, which keeps each bucket's min and max as samples come in.
 
-A plot whose curves stay still under a moving cursor is `plot_patches.hold_still` besides.
+A plot whose curves stay still under a moving cursor is `plot_patches.hold_still` besides. A live plot whose data
+wanders a little every frame takes a `SteadyRange` per axis rather than autoranging: a new range lays out its
+axes and repaints the whole plot, so it moves only when the data outgrows it or shrinks well inside it.
 """
 
 from __future__ import annotations
@@ -165,6 +167,39 @@ class TimeHistoryPlot(pg.GraphicsLayoutWidget):
                 self.x_plot.setYRange(-self.min_span, self.min_span, padding=0.05)
             else:
                 self.x_plot.enableAutoRange(axis="y")
+
+
+class SteadyRange:
+    """One axis of `plot` (`"x"` or `"y"`) following its data's span, with `HEADROOM` round it, but set only when the
+    data passes the range or shrinks to under `SHRINK` of it (autoranging every frame re-lays out the axis)."""
+
+    HEADROOM = 1.15
+    SHRINK = 0.5
+
+    def __init__(self, plot, axis: str) -> None:
+        self.plot = plot.getPlotItem() if isinstance(plot, pg.PlotWidget) else plot
+        self.axis = axis
+        self.shown: tuple[float, float] | None = None
+        self.plot.enableAutoRange(axis=axis, enable=False)
+
+    def fit(self, lo: float, hi: float) -> None:
+        """The data now spans lo to hi."""
+        if not (math.isfinite(lo) and math.isfinite(hi)) or hi - lo <= 0:
+            return  # no data, or none that spans anything: keep what shows
+        if self.shown is not None:
+            a, b = self.shown
+            if a <= lo and hi <= b and hi - lo >= self.SHRINK * (b - a):
+                return
+        mid, half = (lo + hi) / 2, (hi - lo) / 2 * self.HEADROOM
+        self.shown = (mid - half, mid + half)
+        if self.axis == "x":
+            self.plot.setXRange(*self.shown, padding=0)
+        else:
+            self.plot.setYRange(*self.shown, padding=0)
+
+    def reset(self) -> None:
+        """Fit afresh at the next `fit`."""
+        self.shown = None
 
 
 def decimation_index(y: np.ndarray, max_points: int) -> list[np.ndarray]:
