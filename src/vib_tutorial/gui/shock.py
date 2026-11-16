@@ -45,6 +45,7 @@ from ..core.shock import (
     target,
     target_band,
 )
+from ..view_models.text import fmt
 from . import maths, shock_figures, weak
 from .axes import log_axes
 from .drag import DragLine
@@ -1460,9 +1461,7 @@ def _time(x: float) -> str:
 
 
 def _length(x: float) -> str:
-    if x >= 1.0:
-        return f"{x:.3g} m"
-    return f"{1e3 * x:.3g} mm" if x >= 1e-3 else f"{1e6 * x:.3g} µm"
+    return fmt(x, "m", largest="", smallest="µ")
 
 
 def _positive(x: float) -> float:

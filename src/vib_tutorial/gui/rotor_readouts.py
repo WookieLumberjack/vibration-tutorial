@@ -15,16 +15,13 @@ import math
 from ..core.rotor import MODE_LIMIT, XD, YA, YB, YD, RotorSystem
 from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
+from ..view_models.text import fmt
 from .rotor_notes import whirl_name
 
 
 def fmt_len(meters: float) -> str:
     """A length in mm, µm or nm, three figures."""
-    if meters >= 1e-3:
-        return f"{meters * 1e3:.3g} mm"
-    if meters >= 1e-6:
-        return f"{meters * 1e6:.3g} µm"
-    return f"{meters * 1e9:.3g} nm"
+    return fmt(meters, "m", largest="m", smallest="n")
 
 
 def shaft_note(system: RotorSystem) -> str:

@@ -42,6 +42,7 @@ from ..core.duffing import (
     tongue_hz,
 )
 from .plot import Curve
+from .text import fmt, number
 
 WINDOW = 20.0  # s of simulated time on the strip chart
 PLOT_POINTS = 1200  # the strip chart's buckets (min and max of each)
@@ -99,16 +100,12 @@ class DuffingSetup:
 
 def sig3(value: float) -> str:
     """Three significant figures, trailing zeros kept as the notes print them: 24.0, 8.80, 5.23, 112."""
-    if value == 0 or not math.isfinite(value):
-        return f"{value:g}"
-    return f"{value:.{max(0, 2 - math.floor(math.log10(abs(float(f'{value:.3g}')))))}f}"
+    return number(value, 3, zeros=True)
 
 
 def fmt_length(a: float) -> str:
-    """A length in mm below a metre, in km from one, else in m (three significant figures)."""
-    if abs(a) < 1.0:
-        return f"{sig3(a * 1e3)} mm"
-    return f"{sig3(a)} m" if abs(a) < 1e3 else f"{sig3(a / 1e3)} km"
+    """A length in mm below a metre, in km from one, else in m (three significant figures, zeros kept)."""
+    return fmt(a, "m", largest="k", smallest="m", zeros=True)
 
 
 def pumped_only(osc: Duffing) -> bool:

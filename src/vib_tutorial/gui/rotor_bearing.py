@@ -20,6 +20,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.fluid_bearing import GRAVITY, JournalBearing, attitude, rigid_threshold
 from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
+from ..view_models.text import fmt
 from . import accessible
 from .layouts import plot_height
 from .panels import spin
@@ -577,8 +578,4 @@ def _locus(eps: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 def _si(value: float, unit: str) -> str:
     """`value` with an SI prefix: 1.23 MN/m."""
-    if value == 0.0:
-        return f"0 {unit}"
-    exp = min(max(math.floor(math.log10(abs(value)) / 3.0), -2), 3)
-    prefix = {-2: "µ", -1: "m", 0: "", 1: "k", 2: "M", 3: "G"}[exp]
-    return f"{value / 10.0 ** (3 * exp):.3g} {prefix}{unit}"
+    return fmt(value, unit, largest="G", smallest="µ")

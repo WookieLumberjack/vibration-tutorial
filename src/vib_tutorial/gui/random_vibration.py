@@ -51,6 +51,7 @@ from ..core.random_vibration import (
     suggested_duration,
     welch,
 )
+from ..view_models.text import plain
 from . import maths, random_figures, weak
 from .axes import log_axes
 from .drag import DragLine
@@ -499,7 +500,7 @@ def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | No
 
 
 def fmt(value: float, unit: str) -> str:
-    return f"{value:.4g} {unit}"
+    return plain(value, unit, 4)
 
 
 class RandomVibrationPage(QtWidgets.QWidget):
