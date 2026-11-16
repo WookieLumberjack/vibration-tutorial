@@ -17,6 +17,7 @@ from ..core.rotor_sweep import (
 from . import weak
 from .drag import DragLine
 from .lesson import Dot
+from .plots import decimate
 from .rotor_notes import whirl_name
 from .style import colors
 from .theming import add_legend
@@ -205,8 +206,7 @@ class TimePlots(pg.GraphicsLayoutWidget):
         self.ci.layout.setRowStretchFactor(1, 1)
         # As the other strip charts: no grid, 1 px pens, clipped and downsampled.
         for p in (self.x_plot, self.w_plot):
-            p.setClipToView(True)
-            p.setDownsampling(auto=True, mode="peak")
+            decimate(p)
             p.setMouseEnabled(x=False, y=False)
             p.hideButtons()
             p.getAxis("left").setTickDensity(0.5)

@@ -39,7 +39,7 @@ from .frame_loop import FrameLoop
 from .layouts import FlowLayout, form_layout, form_row, group, plot_height, show_in_stack
 from .lesson import RunButton, connect_all, plot, set_quietly
 from .panels import spin
-from .plots import Decimator
+from .plots import Decimator, decimate
 from .style import colors
 from .theming import add_legend, mute
 
@@ -163,9 +163,7 @@ class StartUpView(QtWidgets.QWidget):
         self.startup_speed.setToolTip(STARTUP_TIP)
         self.startup_speed.setXLink(self.startup_torque)
         plot_height(self.startup_speed, 130)
-        for p in (self.startup_torque, self.startup_speed):
-            p.setClipToView(True)
-            p.setDownsampling(auto=True, mode="peak")
+        decimate(self.startup_torque, self.startup_speed)
         self.motor_curve = self.startup_torque.plot([], [])
         self.link_curve = self.startup_torque.plot([], [])
         self.startup_legend.addItem(self.link_curve, "Link")

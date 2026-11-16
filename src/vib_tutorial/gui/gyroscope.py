@@ -92,6 +92,7 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes
+from .plots import thin
 from .style import colors
 from .theming import add_legend
 
@@ -213,10 +214,6 @@ CHECK_TIP = (
 )
 
 NOTES_HTML = load_notes("gyroscope", figures=gyroscope_figures.FIGURES, trials=trials_html(TRIALS))
-
-
-def _thin(n: int, most: int) -> slice:
-    return slice(None, None, max(1, -(-n // most)))
 
 
 def _section(axis: np.ndarray, mark: np.ndarray, momentum: np.ndarray, top: Top) -> tuple[np.ndarray, np.ndarray]:
@@ -909,7 +906,7 @@ class GyroscopePage(QtWidgets.QWidget):
             s.friction[-1],
         )
         t, y = self.slides.window(SLIDE_TILT_SPAN)
-        k = _thin(t.size, 2000)
+        k = thin(t.size, 2000)
         self.tilt_item.setData(t[k], np.degrees(np.arccos(np.clip(y[k, 2], -1, 1))))
         t1 = max(float(t[-1]), 10.0)
         self.tilt_plot.setXRange(max(0.0, t1 - SLIDE_TILT_SPAN), t1, padding=0)
@@ -933,7 +930,7 @@ class GyroscopePage(QtWidgets.QWidget):
             mean = abs(self.motion.mean_precession())
             span = min(2 * math.pi / mean, 20.0) if mean > 1e-9 else 3 * self.motion.nutation_period()
             t, y = self.history.window(SKEW_TRAIL if skewed else span)
-            trail = y[_thin(t.size, TRAIL_POINTS), 0:3]
+            trail = y[thin(t.size, TRAIL_POINTS), 0:3]
         self.view.draw(axis, mark_, momentum, trail)
         if skewed:
             self._skewed_tilt()
@@ -941,7 +938,7 @@ class GyroscopePage(QtWidgets.QWidget):
         if n:
             window = min(NODS * self.motion.nutation_period(), 20.0)
             t, y = self.history.window(window)
-            k = _thin(t.size, 2000)
+            k = thin(t.size, 2000)
             self.tilt_item.setData(t[k], np.degrees(np.arccos(np.clip(y[k, 2], -1, 1))))
             t1 = max(float(t[-1]), window)
             self.tilt_plot.setXRange(t1 - window, t1, padding=0)
@@ -958,7 +955,7 @@ class GyroscopePage(QtWidgets.QWidget):
         if not t.size:
             self.tilt_item.setData([], [])
             return
-        k = _thin(t.size, 2000)
+        k = thin(t.size, 2000)
         theta = np.degrees(np.arccos(np.clip(y[k, 2], -1, 1)))
         self.tilt_item.setData(t[k], theta)
         t1 = max(float(t[-1]), SKEW_TILT)
@@ -1217,7 +1214,7 @@ class GyroscopePage(QtWidgets.QWidget):
     def _energy_dot(self) -> None:
         n = self.slides.size
         y = self.slides.y[:n]
-        k = _thin(n, 2000)
+        k = thin(n, 2000)
         theta = np.degrees(np.arccos(np.clip(y[k, 2], -1, 1)))
         self.potential_trace.setData(theta, y[k, 11])
         last = y[n - 1]
@@ -1234,7 +1231,7 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _track_trace(self) -> None:
         s = self.table_samples(TRACK_SPAN)
-        k = _thin(s.t.size, TRACK_POINTS)
+        k = thin(s.t.size, TRACK_POINTS)
         tip, centre = 1000 * s.contact[k], 1000 * s.centre[k, :2]
         self.path_item.setData(tip[:, 0], tip[:, 1])
         self.path_circles.setData(centre[:, 0], centre[:, 1])
@@ -1255,7 +1252,7 @@ class GyroscopePage(QtWidgets.QWidget):
         assert rt is not None  # only on a table
         s = self.table_samples()
         start, J0 = self._launch_energy, self._launch_jellett
-        k = _thin(s.t.size, CHECK_POINTS)
+        k = thin(s.t.size, CHECK_POINTS)
         ledger = (s.energy + s.work - start) / start
         drift = (s.jellett - J0) / (abs(J0) or 1.0)
         self.energy_item.setData(s.t[k], ledger[k])
@@ -1414,7 +1411,7 @@ class GyroscopePage(QtWidgets.QWidget):
         else:
             span = min(4 * math.pi / mean, 40.0) if mean > 1e-9 else 6 * self.motion.nutation_period()
         _, y = self.history.window(span)
-        k = _thin(len(y), PATH_POINTS)
+        k = thin(len(y), PATH_POINTS)
         self.path_item.setData(y[k, 0], y[k, 1])
         self.path_now.setData([y[-1, 0]], [y[-1, 1]])
 
@@ -1472,7 +1469,7 @@ class GyroscopePage(QtWidgets.QWidget):
             self.check_note.setText("Run it to compare.")
             return
         t, y = self.history.t[:n], self.history.y[:n]
-        k = _thin(n, CHECK_POINTS)
+        k = thin(n, CHECK_POINTS)
         self.energy_item.setData(t[k], (y[k, 6] - m.total_energy) / scale_e)
         along = np.sum(y[k, 7:10] * y[k, 0:3], axis=1)
         drift = np.abs(y[k, 9] - m.vertical_momentum) / scale_l

@@ -1,4 +1,15 @@
-"""Strip charts, mode-shape plot, modal table, and frequency-response plot."""
+"""Strip charts, mode-shape plot, modal table, and frequency-response plot; and how a long curve is drawn.
+
+Long curves, one policy by kind of curve (#316 E2):
+
+- Its x increases (a time history, a spectrum) and it's far longer than its plot is wide: `decimate(plot)`,
+  each pixel column's min and max of the stretch in view (pyqtgraph's peak downsampling and clip to view).
+- A path (an orbit, a phase plane, a 3D trail: x goes back and forth): `thin(n, most)`, every k-th point.
+  Peak downsampling would join a path's minima and maxima, and clipping to view assumes x increases.
+- The Simulation page's live strip chart: `Decimator`, which keeps each bucket's min and max as samples come in.
+
+A plot whose curves stay still under a moving cursor is `plot_patches.hold_still` besides.
+"""
 
 from __future__ import annotations
 
@@ -25,6 +36,22 @@ from .style import colors
 from .theming import add_legend
 
 MAX_POINTS = 3000
+
+
+def decimate(*plots) -> None:
+    """Draw these plots' curves (x increasing) as each pixel column's min and max, only the stretch in view.
+
+    Set on the plot: its `addItem` gives each item the plot's own settings, so an item's would be undone."""
+    for p in plots:
+        p.setClipToView(True)
+        p.setDownsampling(auto=True, mode="peak")
+
+
+def thin(n: int, most: int) -> slice:
+    """Every k-th of n points, at most about `most` of them: for a path, which `decimate` can't reduce."""
+    return slice(None, None, max(1, -(-n // most)))
+
+
 MIN_Y_SPAN = 1e-6  # m
 
 

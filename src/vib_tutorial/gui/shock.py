@@ -53,6 +53,7 @@ from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
+from .plots import decimate
 from .style import MAX_DOF, colors
 from .tab_groups import LazyTabs
 from .theming import add_legend, mute
@@ -1248,9 +1249,7 @@ class ShockPage(QtWidgets.QWidget):
         reach = max(float(np.max(np.abs(y))), float(np.max(np.abs(terms), initial=0.0)) * scale) or 1.0
         h.setYRange(-1.1 * reach, 1.45 * reach, padding=0.0)
         h.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
-        for item in h.getPlotItem().listDataItems():
-            item.setDownsampling(auto=True, method="peak")
-            item.setClipToView(True)
+        decimate(h)
         h.setXRange(
             0.0, min(cp.t[-1], self.record.duration + HISTORY_PERIODS / float(cp.f.min(initial=math.inf))), padding=0.0
         )

@@ -63,6 +63,7 @@ from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
 from .notes_view import NotesBrowser
 from .panels import spin
+from .plots import decimate
 from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -628,8 +629,7 @@ class OmaPage(QtWidgets.QWidget):
             "<p>The start of the record: every mass's response to the ambient forces "
             "(no force is measured). It looks like noise; the modes are in its spectra.</p>"
         )
-        self.records.setClipToView(True)
-        self.records.setDownsampling(auto=True, mode="peak")
+        decimate(self.records)
         plot_height(self.records, 120)
         center = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(center)

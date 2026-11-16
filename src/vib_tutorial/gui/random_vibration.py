@@ -58,6 +58,7 @@ from .lesson import TrialCombo
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
+from .plots import decimate
 from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -554,6 +555,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         plot_height(self.psd_plot, 200)
         self.psd_legend = add_legend(self.psd_plot.getPlotItem(), offset=(-10, 10))
         self.cumulative = _plot("Cumulative RMS", None, "Frequency", "Hz")
+        decimate(self.psd_plot, self.cumulative)  # 5,000 lines over ~430 px
         self.cumulative.setLogMode(x=True, y=False)
         self.cumulative.setToolTip(CUMULATIVE_TIP)
         plot_height(self.cumulative, 140)
@@ -593,8 +595,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.record_plot = _plot("Response", None, "Time", "s", log=False)
         self.record_plot.setToolTip(RECORD_TIP)
         plot_height(self.record_plot, 200)
-        self.record_plot.setClipToView(True)
-        self.record_plot.setDownsampling(auto=True, mode="peak")
+        decimate(self.record_plot)
         record_tab = QtWidgets.QWidget()
         rv = QtWidgets.QVBoxLayout(record_tab)
         rv.addWidget(self.record_plot, 1)
