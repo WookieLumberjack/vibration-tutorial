@@ -1,10 +1,16 @@
 """Seismic response spectrum page: the Simulation page's chain as a building, a design spectrum, and the modes'
 peaks combined, against the building stepped on records that match the spectrum.
 
-Left: the design spectrum (peak ground acceleration, ground type, damping) and the combination rule. Centre: the
-spectrum with each mode on it, and the modes' table (period, participation, effective mass, base shear). Right:
-each floor's peak displacement and each storey's shear by every rule and by the records, the modes' correlation,
-the ground motions, and the Theory.
+Left: the trials, the challenges (`ChallengeBox`: the damping and base-isolation specs), the building (its floors,
+and storey 1's stiffness k₁, the bearings' when it stands on a slab, with the period of the whole building
+rigid on it), the design spectrum (peak ground acceleration, ground type, damping) and the combination rule.
+Centre: the spectrum with each mode on it, and the modes' table (period, participation, effective mass, base
+shear). Right: the building swaying under the first record (`seismic_view.BuildingView`, played by a `Playback`
+with a time cursor on the record; a trial starts it), each floor's peak displacement and each storey's shear by
+every rule and by the records, the modes' correlation, the ground motions, and the Theory.
+
+Working on it: `tests/test_seismic.py` checks the building follows the playback with the drifting storey
+reddened, and the k₁ box edits the chain; `tests/test_challenge.py` the challenges.
 """
 
 from __future__ import annotations
@@ -774,6 +780,8 @@ class SeismicPage(QtWidgets.QWidget):
         )
 
     def _draw_tab(self) -> None:
+        if self._dirty:  # a tab picked before the page has drawn (hidden): it draws when it shows
+            return
         i = self.tabs.currentIndex()
         if i == TAB_BUILDING:
             self._draw_building()

@@ -60,3 +60,39 @@ def test_the_record_matches_the_spectrum_and_one_mode_is_exact():
 
     sd = srs(g.record, m.f, d.zeta).displacement[0]
     assert h.peak_displacement[0] == pytest.approx(sd, rel=3e-3)  # sampled peaks; the SRS refines its own
+
+
+def test_the_building_sways_under_the_record_its_drifting_storey_reddened(main_window):
+    """The Building tab plays the first record: the floors placed from its history, the storey drifting most the
+    force colour; storey 1's box edits the chain (the Simulation page's too)."""
+    from PySide6 import QtGui, QtWidgets
+
+    from vib_tutorial.gui.seismic import TAB_BUILDING, TRIALS
+    from vib_tutorial.gui.style import colors
+
+    w = main_window
+    page = w.seismic_page
+    w.pages.setCurrentWidget(page)
+    QtWidgets.QApplication.processEvents()
+    for name, storey in (("A soft storey", 0), ("Base isolation", 0), ("A five-storey building", None)):
+        page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == name))
+        page.tabs.setCurrentIndex(TAB_BUILDING)
+        h = page.history
+        assert h is not None and page.playback.span == pytest.approx(h.t[-1])
+        drift = np.abs(np.diff(h.displacement, prepend=0.0, axis=1))
+        k = int(np.argmax(np.max(drift, axis=1)))  # the instant of the record's largest drift
+        page.playback.seek(float(h.t[k]))
+        assert not page.playback.running  # a scrub pauses it
+        assert np.allclose(page.building.u, h.displacement[k])
+        share = page.building.drifts()
+        top = int(np.argmax(share))
+        assert share[top] == pytest.approx(1.0)
+        if storey is not None:  # the soft storey and the bearings take the drift
+            assert top == storey
+        pen = page.building.columns[top].opts["pen"].color()
+        assert pen.name() == QtGui.QColor(colors.force).name()
+        assert "Base shear" in page.building_note.text()
+
+    page.k1.setValue(2e6)
+    assert w.sim.system.stiffness[0] == pytest.approx(2e6) and page.system.stiffness[0] == pytest.approx(2e6)
+    assert "T = 2π√(Σm/k₁) = 0.993 s" in page.k1_info.text()  # 2π √(5 × 10 t / 2 MN/m)
