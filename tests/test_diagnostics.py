@@ -108,3 +108,19 @@ def test_impacts_come_at_the_defect_rate():
     fs, n = 20480.0, 81920
     hits = np.flatnonzero(impacts(m, n, fs, np.random.default_rng(1)))
     assert np.mean(np.diff(hits)) / fs == pytest.approx(1 / m.defect_hz(), rel=1e-3)
+
+
+def test_the_run_up_maps_have_a_colour_bar_in_db_below_the_peak(main_window):
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui.diagnostics import MAP_DB, TAB_RUNUP
+
+    w = main_window
+    page = w.diagnostics_page
+    w.pages.setCurrentWidget(page)
+    page.tabs.setCurrentIndex(TAB_RUNUP)
+    QtWidgets.QApplication.processEvents()
+    for bar, image in zip(page.map_bars, (page.freq_image, page.order_image)):
+        assert bar.levels() == (-MAP_DB, 0.0) and image.getLevels() is not None
+        assert tuple(image.getLevels()) == (-MAP_DB, 0.0)
+        assert float(image.image.max()) == 0.0  # the peak at the top of the bar

@@ -546,10 +546,14 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.order_map_plot.setXLink(self.freq_map)
         self.freq_image = pg.ImageItem(axisOrder="row-major")
         self.order_image = pg.ImageItem(axisOrder="row-major")
+        self.map_bars: list[pg.ColorBarItem] = []
         for p, image in ((self.freq_map, self.freq_image), (self.order_map_plot, self.order_image)):
             p.setToolTip(MAP_TIP)
             p.setMouseEnabled(x=False, y=False)
             p.addItem(image)
+            bar = pg.ColorBarItem(values=(-MAP_DB, 0.0), label="dB below the peak", interactive=False, width=12)
+            bar.setImageItem(image, insert_in=p.getPlotItem())  # the colour's key, beside the map
+            self.map_bars.append(bar)
         self.mode_line = pg.InfiniteLine(angle=0)
         self.freq_map.addItem(self.mode_line)
         self.map_note = note_label()
@@ -732,11 +736,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
             line.setPen(pg.mkPen(c.fit, width=1, style=dotted))
         self.cep_mesh_line.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.mode_line.setPen(pg.mkPen(c.strong, width=1, style=dotted))
-        lut = pg.ColorMap(
-            [0.0, 0.5, 1.0], [pg.mkColor(c.background), pg.mkColor(c.mode[1]), pg.mkColor(c.force)]
-        ).getLookupTable(nPts=256)
-        for image in (self.freq_image, self.order_image):
-            image.setLookupTable(lut)
+        cmap = pg.ColorMap([0.0, 0.5, 1.0], [pg.mkColor(c.background), pg.mkColor(c.mode[1]), pg.mkColor(c.force)])
+        for bar in self.map_bars:
+            bar.setColorMap(cmap)  # and its map's
         for item, color in zip(self.track_items, (c.mass[0], c.mass[1])):
             item.setPen(pg.mkPen(color, width=2))
         for item, color in zip(self.steady_items, (c.mass[0], c.mass[1])):
@@ -814,8 +816,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
                     np.interp(np.linspace(m.speed[0], m.speed[-1], m.speed.size), m.speed, np.arange(m.speed.size))
                 ).astype(int)
                 level = 20 * np.log10(np.maximum(m.amplitude[rows][:, cols].T, 1e-9))
-                peak = float(level.max())
-                image.setImage(level, autoLevels=False, levels=(peak - MAP_DB, peak))
+                image.setImage(level - level.max(), autoLevels=False, levels=(-MAP_DB, 0.0))  # dB below the peak
                 s0, s1 = 60 * float(m.speed[0]), 60 * float(m.speed[-1])
                 da = m.axis[1] - m.axis[0]
                 image.setRect(QtCore.QRectF(s0, -da / 2, max(s1 - s0, 1.0), da * cols.sum()))
@@ -825,7 +826,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
             self.order_map_plot.setYRange(0.0, MAP_TOP_ORDER, padding=0)
             self.map_note.setText(
                 f"{60 * run.start:.0f} to {60 * run.end:.0f} rpm in {run.duration:.3g} s; the casing's mode at "
-                f"{run.mode:.3g} Hz (dotted). Colour: dB, {MAP_DB:.0f} dB below the peak to the peak."
+                f"{run.mode:.3g} Hz (dotted). Colour: dB below the peak (the bar beside each map)."
             )
             return
         fine = np.linspace(run.start, run.end, 2000)
