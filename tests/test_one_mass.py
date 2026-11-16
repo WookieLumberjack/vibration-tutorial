@@ -14,7 +14,7 @@ from vib_tutorial.core.damping_models import (
     coulomb_decay,
     coulomb_stop,
 )
-from vib_tutorial.core.isolation import Isolator, Mount, deflection_for, start_up
+from vib_tutorial.core.isolation import Isolator, Mount, deflection_for, let_go, start_up
 from vib_tutorial.core.sdof import (
     Oscillator,
     free_response,
@@ -192,6 +192,35 @@ def test_start_up_settles_to_the_transmissibility(mount):
     run = start_up(iso, 2.0, 6.0)
     tail = run.t > 6.0
     assert np.max(np.abs(run.floor[tail])) == pytest.approx(floor, rel=0.01)
+
+
+def test_start_up_turns_the_unbalance_through_its_phase():
+    iso = Isolator()
+    run = start_up(iso, 2.0, 1.0)
+    # the force along the mount is m_e e (Ω² cos φ + Ω' sin φ), with φ the integral of Ω
+    w = 2 * math.pi * run.speed_hz
+    dw = np.where(run.t < 2.0, 2 * math.pi * iso.speed_hz / 2.0, 0.0)
+    assert np.allclose(run.force, iso.unbalance * (w * w * np.cos(run.phase) + dw * np.sin(run.phase)))
+    assert np.allclose(np.gradient(run.phase, run.t)[5:-5], w[5:-5], rtol=1e-3, atol=1e-3)
+    assert not run.stage.any()
+    assert start_up(Isolator(mount=Mount.TWO_STAGE), 2.0, 1.0).stage.any()
+
+
+@pytest.mark.parametrize("mount", list(Mount))
+def test_let_go_rings_down_from_where_it_was_held(mount):
+    iso = Isolator(mount=mount)
+    run = let_go(iso, 1e-3, 3.0)  # time constant 1/ζω_n = 0.45 s
+    assert run.x[0] == pytest.approx(1e-3) and not run.speed_hz.any() and not run.force.any()
+    assert abs(run.x[-1]) < 0.05e-3  # dying away
+    if mount is Mount.VISCOUS:  # the exact free vibration
+        x, _ = free_response(Oscillator(iso.total, iso.stiffness, iso.damping), 1e-3, 0.0, run.t)
+        assert np.max(np.abs(run.x - x)) < 1e-9
+    if mount is Mount.TWO_STAGE:  # held, the intermediate mass had settled: its springs balanced
+        assert run.stage[0] == pytest.approx(iso.held_stage(1e-3)) and 0 < run.stage[0] < 1e-3
+        k2 = iso._two_stage()[2][1, 1] - iso.stiffness  # the lower mounts
+        assert run.floor[0] == pytest.approx(k2 * run.stage[0])
+    else:  # held still, the mounts push on the floor with k x: the damper is at rest (relaxed, on its spring)
+        assert run.floor[0] == pytest.approx(iso.stiffness * 1e-3)
 
 
 def test_isolation_numbers():

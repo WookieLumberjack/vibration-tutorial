@@ -122,6 +122,18 @@ def test_isolation_start_up_view():
     assert "running, 22.6 N and ±109 µm" in v.note
 
 
+def test_isolation_let_go_view():
+    iso = defaults()
+    v = view.let_go_view(iso, -0.5e-3)
+    assert v.x.y[0] == pytest.approx(-0.5e-3) and not v.speed.y.any() and not v.force.y.any()
+    crossings = np.flatnonzero(np.diff(np.sign(v.x.y)) != 0)
+    period = 2 * np.mean(np.diff(v.x.x[crossings]))
+    assert 1 / period == pytest.approx(iso.natural_hz * math.sqrt(1 - iso.zeta**2), rel=0.01)
+    assert "rings on its mounts and dies away, at f<sub>n</sub> = 7.05 Hz" in v.note
+    two = isolator(IsolationTrial("", "", mount=Mount.TWO_STAGE))
+    assert "one stage of plain mounts would ring" in view.let_go_view(two, 1e-3).note
+
+
 def test_isolation_chart():
     iso = isolator(IsolationTrial("", "", mount=Mount.TWO_STAGE))
     v = view.chart(iso)

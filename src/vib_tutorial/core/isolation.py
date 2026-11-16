@@ -12,7 +12,8 @@ weight (k = Mg/δ, so f_n = √(g/δ)/2π whatever M is) and a damping ratio, as
 The transmissibility (the force on the floor over the force the machine makes, which is also the motion that
 reaches the machine over the floor's) is worked out exactly from each kind's dynamic stiffness. `start_up`
 runs the machine up to speed through the mount's resonance by the exact first-order-hold update, the
-unbalance's force including its tangential part as the speed changes.
+unbalance's force including its tangential part as the speed changes; `let_go` releases it, stopped, from a
+pull, to ring at the mounts' natural frequency.
 
 Working on it
 -------------
@@ -100,6 +101,13 @@ class Isolator:
         C = np.array([[c1, -c1], [-c1, c1 + c2]])
         return M, C, K
 
+    def held_stage(self, x: float) -> float:
+        """Where the intermediate mass settles while the machine is held at x (m): zero but on two stages."""
+        if self.mount is not Mount.TWO_STAGE:
+            return 0.0
+        K = self._two_stage()[2]
+        return float(-K[1, 0] * x / K[1, 1])
+
     def mount_stiffness(self, omega: np.ndarray) -> np.ndarray:
         """A single stage's dynamic stiffness K*(ω): the force on the floor per metre of the machine's motion."""
         w = np.asarray(omega, dtype=float)
@@ -171,14 +179,17 @@ class Isolator:
 
 @dataclass(frozen=True)
 class StartUp:
-    """A run up from rest: time, speed (Hz), the unbalance's force, the machine's displacement and the floor's
-    force."""
+    """A run up from rest (or a `let_go`): time, speed (Hz), the unbalance's force, the machine's displacement
+    and the floor's force; the angle the unbalance has turned through (rad, from the top: its force along the
+    mount is m_e e Ω² cos φ), and the intermediate mass's displacement (zero but on two stages)."""
 
     t: np.ndarray
     speed_hz: np.ndarray
     force: np.ndarray
     x: np.ndarray
     floor: np.ndarray
+    phase: np.ndarray
+    stage: np.ndarray
 
 
 def start_up(iso: Isolator, ramp: float, hold: float, per_period: int = 40) -> StartUp:
@@ -199,7 +210,33 @@ def start_up(iso: Isolator, ramp: float, hold: float, per_period: int = 40) -> S
     dw = np.where(t < ramp, alpha, 0.0)
     f = iso.unbalance * (w * w * np.cos(phi) + dw * np.sin(phi))
     z = respond(A, B, h, f)
-    return StartUp(t, w / TWO_PI, f, z[:, 0], z @ D)
+    return StartUp(t, w / TWO_PI, f, z[:, 0], z @ D, phi, _stage(iso, z))
+
+
+def _stage(iso: Isolator, z: np.ndarray) -> np.ndarray:
+    return z[:, 1] if iso.mount is Mount.TWO_STAGE else np.zeros(z.shape[0])
+
+
+def let_go(iso: Isolator, x0: float, duration: float, per_period: int = 40) -> StartUp:
+    """The machine, stopped, held at x0 from rest (long enough for everything else to settle) and let go.
+
+    Held, the relaxation damper has relaxed (its spring's end where the machine is) and the intermediate mass
+    has settled where its springs balance; let go, it rings at the mounts' natural frequency and dies away.
+    """
+    A, B, D = iso.state_space()
+    fastest = max(float(np.max(np.abs(np.linalg.eigvals(A)))) / TWO_PI, 1e-3)
+    h = 1.0 / (per_period * fastest)
+    n = math.ceil(duration / h) + 1
+    t = np.arange(n) * h
+    if iso.mount is Mount.VISCOUS:
+        z0 = np.array([x0, 0.0])
+    elif iso.mount is Mount.RELAXATION:
+        z0 = np.array([x0, 0.0, x0 if iso.damping > 0 else 0.0])
+    else:
+        z0 = np.array([x0, iso.held_stage(x0), 0.0, 0.0])
+    z = respond(A, B, h, np.zeros(n), z0)
+    zero = np.zeros(n)
+    return StartUp(t, zero, zero, z[:, 0], z @ D, zero, _stage(iso, z))
 
 
 def deflection_for(speed_hz: float, isolation: float) -> float:
