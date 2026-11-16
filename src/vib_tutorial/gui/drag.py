@@ -65,6 +65,14 @@ class DragLine(pg.InfiniteLine):
         v = float(self.value())
         return 10.0**v if self.log else v
 
+    def set_scale(self, log: bool, bounds: tuple[float, float] | None = None) -> None:
+        """Follow the plot's axis to (or from) a log scale, keeping the value; `bounds` in data units."""
+        value = self.data_value()
+        self.log = log
+        if bounds is not None:
+            self.setBounds([self._to_view(b) for b in bounds])
+        self.set_value(value)
+
     def set_value(self, value: float) -> None:
         """Move the line without emitting `dragged` or `released`: the page's box or a trial set it."""
         if self.log and not value > 0:

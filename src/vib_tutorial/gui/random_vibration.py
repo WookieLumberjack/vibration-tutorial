@@ -53,6 +53,7 @@ from ..core.random_vibration import (
 )
 from . import maths, random_figures, weak
 from .axes import log_axes
+from .drag import DragLine
 from .layouts import ColumnScroll, form_layout, form_row, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
@@ -87,6 +88,12 @@ TIPS = {
     "new": "<p>A new record: the same spectrum, other random numbers.</p>",
 }
 INPUT_TIP = "<p>The input's PSD: the level asked for (flat over the band), and the record's input by Welch.</p>"
+BAND_LINE_TIP = (
+    "<p>An edge of the input's band. Drag it to narrow or widen the band: the Band boxes follow, and the record is "
+    "made again when you let go. Drag the top past the modes to see the mass line, or in round one mode to see "
+    "Miles' equation overestimate.</p>"
+)
+BAND_ROOM = 1.5  # the plots run on past the band's top, by this factor, so its edge can be dragged out
 PSD_TIP = (
     "<p>The response's power spectral density: exact, G<sub>y</sub> = H G<sub>u</sub> H<sup>H</sup>, and the "
     "simulated record's by Welch's method. Each mode is a peak; the dotted lines mark them.</p>"
@@ -565,6 +572,14 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.input_plot.setLogMode(x=True, y=True)
         self.input_plot.setToolTip(INPUT_TIP)
         plot_height(self.input_plot, 110)
+        self.band_lines = (DragLine(BAND_LINE_TIP, log=True), DragLine(BAND_LINE_TIP, log=True))
+        self.band_lines[0].dragged.connect(self._on_lo_dragged)
+        self.band_lines[1].dragged.connect(self._on_hi_dragged)
+        for line in self.band_lines:
+            line.released.connect(self._on_band_released)
+        self._band_curve: pg.PlotDataItem | None = None
+        self._band_shown = (0.0, 0.0)  # where the band's line starts, and its level
+        self._held_redraw = False  # a result came in while an edge was held: drawn when it's let go
         self.psd_plot = _plot("Response PSD", None, "Frequency", "Hz")
         self.psd_plot.setLogMode(x=True, y=True)
         self.psd_plot.setToolTip(PSD_TIP)
@@ -811,6 +826,29 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self._show_controls()
         self._schedule(measure=True)
 
+    def _on_lo_dragged(self, f: float) -> None:
+        self._drag_band(min(f, 0.9 * self.f_hi.value()), self.f_hi.value())
+
+    def _on_hi_dragged(self, f: float) -> None:
+        self._drag_band(self.f_lo.value(), max(f, 1.1 * self.f_lo.value(), self.f_hi.minimum()))
+
+    def _drag_band(self, lo: float, hi: float) -> None:
+        """The boxes and the band's line follow an edge while it's dragged; the record waits for the release (a
+        redraw now would take the line from under the pointer)."""
+        self._loading = True
+        self.f_lo.setValue(lo)
+        self.f_hi.setValue(hi)
+        self._loading = False
+        if self._band_curve is not None:  # from where it's drawn (the view's left end, for a band from 0)
+            start, level = self._band_shown
+            self._band_curve.setData([lo if lo > 0 else start, hi], [level, level])
+
+    def _on_band_released(self, _f: float) -> None:
+        if self._held_redraw:
+            self._held_redraw = False
+            self.redraw()
+        self._on_input()
+
     def _on_output(self, *_args) -> None:
         if self._loading:
             return
@@ -881,10 +919,15 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
+        for line in self.band_lines:
+            line.apply_theme()
         if self.prediction is not None and not self._dirty:  # a new chain while hidden: redrawn when it shows
             self.redraw()
 
     def redraw(self) -> None:
+        if any(line.moving for line in self.band_lines):
+            self._held_redraw = True
+            return
         assert self.record is not None and self.prediction is not None and self.result is not None, (
             "drawn after recompute"
         )
@@ -909,8 +952,12 @@ class RandomVibrationPage(QtWidgets.QWidget):
         p.setLabel("left", f"Input PSD ({PSD_UNITS[inp.kind]})")
         p.plot(fu, np.maximum(gu, 1e-300), pen=pg.mkPen(colors.grey, width=1))
         band = np.array([max(inp.f_lo, lo), inp.f_hi])
-        p.plot(band, np.full(2, inp.level), pen=pg.mkPen(colors.force, width=2))
-        p.setXRange(math.log10(lo), math.log10(hi), padding=0.02)
+        self._band_curve = p.plot(band, np.full(2, inp.level), pen=pg.mkPen(colors.force, width=2))
+        self._band_shown = (float(band[0]), inp.level)
+        for line, edge in zip(self.band_lines, band):
+            line.set_value(float(edge))
+            p.addItem(line)
+        p.setXRange(math.log10(lo), math.log10(BAND_ROOM * hi), padding=0.02)
         p.setYRange(math.log10(inp.level) - 1.5, math.log10(inp.level) + 0.7, padding=0.0)
 
         # the response

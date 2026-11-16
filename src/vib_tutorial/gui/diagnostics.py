@@ -39,6 +39,7 @@ from ..core.diagnostics import (
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick
 from . import diagnostics_figures, settle_plots
+from .drag import DragLine
 from .lesson import (
     Form,
     TrialBox,
@@ -448,6 +449,11 @@ SPECTRUM_TIP = (
     "<p>The amplitude spectrum (flat-top window, averaged): each tone reads its amplitude. Dotted: the "
     "mesh's harmonics.</p>"
 )
+SPEED_LINE_TIP = (
+    "<p>The shaft's speed now: the record in the centre is the machine running steadily at it. Drag it along the "
+    "run-up to run the machine there: the Shaft speed box, the spectrum and the readout follow, and the mesh's "
+    "lines move with it.</p>"
+)
 MAP_TIP = (
     "<p>The run-up's spectrum, each block's line against the speed then. Top: against frequency (the orders "
     "fan out). Bottom: against order, from the record resampled at equal angles (they stand still).</p>"
@@ -556,6 +562,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
             self.map_bars.append(bar)
         self.mode_line = pg.InfiniteLine(angle=0)
         self.freq_map.addItem(self.mode_line)
+        self.speed_lines = [
+            DragLine(SPEED_LINE_TIP, bounds=(300.0, 6000.0), role="strong") for _ in range(3)
+        ]  # clear of the maps' red
         self.map_note = note_label()
 
         # --- right: order tracks
@@ -567,6 +576,10 @@ class DiagnosticsPage(QtWidgets.QWidget):
         for item in (*self.steady_items, *self.track_items):
             self.orders_plot.addItem(item)
         self.orders_note = note_label()
+        for p, line in zip((self.freq_map, self.order_map_plot, self.orders_plot), self.speed_lines):
+            p.addItem(line)
+            line.dragged.connect(self._on_speed_dragged)
+            line.released.connect(self._on_speed_released)
 
         # --- right: sidebands
         self.side_plot = plot("Amplitude", "m/s²", "Frequency", "Hz", log_y=True, height=230)
@@ -722,6 +735,13 @@ class DiagnosticsPage(QtWidgets.QWidget):
         nyquist = 0.45 * self.rec.fs
         return min(lo, nyquist - 100), min(max(hi, lo + 50), nyquist)
 
+    def _on_speed_dragged(self, rpm: float) -> None:
+        self.rpm.setValue(rpm)
+
+    def _on_speed_released(self, _rpm: float) -> None:
+        for line in self.speed_lines:
+            line.set_value(self.rpm.value())  # to the box's whole rpm
+
     def _on_run(self) -> None:
         self._draw_tab()
         settle_plots(self)
@@ -750,6 +770,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.env_spec.setPen(pg.mkPen(c.mass[0], width=1.2))
         mark(self.env_dots, c.force)
         self.cep_item.setPen(pg.mkPen(c.mass[0], width=1.2))
+        for line in self.speed_lines:
+            line.apply_theme()
         self.redraw()
 
     def redraw(self) -> None:
@@ -769,6 +791,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.spec_item.setData(spec.freqs[keep], np.maximum(spec.amplitude[keep], 1e-6))
         for h, line in enumerate(self.mesh_lines, start=1):
             line.setPos(h * m.mesh_hz)
+        for line in self.speed_lines:
+            if not line.moving:  # the one being dragged is already there
+                line.set_value(self.rpm.value())
         self.spec_plot.setXRange(0.0, TOP_HZ, padding=0)
         top = float(spec.amplitude[keep].max())
         self.spec_plot.setYRange(math.log10(top) - 3.5, math.log10(top) + 0.2, padding=0)
