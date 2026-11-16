@@ -275,6 +275,54 @@ def _identify_spec(rng: np.random.Generator) -> Question:
     )
 
 
+def _gap_stiffness(rng: np.random.Generator) -> Question:
+    k = pick(rng, (5e3, 1e4, 2e4))
+    gap = pick(rng, (1.0, 2.0))
+    amp = gap * pick(rng, (1.5, 2.0, 3.0, 5.0))
+    r = gap / amp
+    keq = float(nl.gap_stiffness(k, gap * 1e-3, np.array(amp * 1e-3)))
+    return Question(
+        f"A spring of {k:g} N/m behind a {gap:g} mm gap (it pushes only once the stretch passes the gap) swings at "
+        f"{amp:g} mm amplitude. What stiffness does its first harmonic add, in N/m?",
+        keq,
+        f"With r = g/A = {gap:g}/{amp:g} = {number(r)}, k<sub>eq</sub> = k(1 − (2/π)(arcsin r + r√(1 − r²))) = "
+        f"{k:g} × (1 − 0.6366 × ({number(math.asin(r))} + {number(r * math.sqrt(1 - r * r))})) = {number(keq)} N/m. "
+        "It rises from 0 at the gap toward k far past it: a gap stiffens as the level grows.",
+        unit="N/m",
+    )
+
+
+def _friction_damper(rng: np.random.Generator) -> Question:
+    F = pick(rng, (1.0, 2.0, 5.0))
+    amp = pick(rng, (1.0, 2.0, 5.0))
+    f = pick(rng, (2.0, 5.0, 10.0))
+    c = 4 * F / (math.pi * 2 * math.pi * f * amp * 1e-3)
+    return Question(
+        f"A mass slides against {F:g} N of friction, swinging at {amp:g} mm amplitude at {f:g} Hz. What viscous "
+        "damper takes out the same energy each cycle, in N·s/m?",
+        c,
+        f"Friction's first harmonic is a damper c<sub>eq</sub> = 4F<sub>f</sub>/(πΩA) = 4 × {F:g} / (π × 2π × "
+        f"{f:g} × {amp:g} × 10⁻³) = {number(c)} N·s/m. Smaller swings get more of it: friction damps small "
+        "motions hardest.",
+        unit="N·s/m",
+    )
+
+
+def _third_harmonic(rng: np.random.Generator) -> Question:
+    k3 = pick(rng, (1e6, 2e6, 5e6))
+    amp = pick(rng, (2.0, 5.0, 10.0))
+    f3 = 0.25 * k3 * (amp / 1000) ** 3
+    return Question(
+        f"A cubic spring k₃δ³ with k₃ = {k3:.0e} N/m³ swings at {amp:g} mm amplitude. How large is its force's third "
+        "harmonic (the 3X a spectrum shows), in N?",
+        f3,
+        f"cos³θ = ¾cos θ + ¼cos 3θ, so k₃(A cos θ)³ has ¼k₃A³ at 3θ: ¼ × {k3:.0e} × ({amp:g} × 10⁻³)³ = "
+        f"{number(f3)} N, a third of its first harmonic. It grows as A³: distortion shows the nonlinearity at "
+        "a single level.",
+        unit="N",
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "nonlinear_page", f"See {page_link('nonlinear_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -283,6 +331,9 @@ PROBLEMS = tuple(
         ("friction-level", "Predict: friction at two levels", "describing", "Harmonic balance", _friction_level),
         ("filter-factor", "Tikhonov's filter factor", "regularization", "Regularization", _filter_factor),
         ("identify-spec", "Spec: identify an impact", "regularization", "Regularization", _identify_spec),
+        ("gap-stiffness", "A gap's stiffness", "describing", "Harmonic balance", _gap_stiffness),
+        ("friction-damper", "Friction as a damper", "describing", "Harmonic balance", _friction_damper),
+        ("third-harmonic", "A cubic spring's 3X", "distortion", "Distortion", _third_harmonic),
     )
 )
 

@@ -30,7 +30,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import rotation
-from ..core.practice import Problem, Question, number, pick, rounded
+from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbler, compare
 from ..core.rotation import Turning
 from . import rigid_body_figures
@@ -454,6 +454,74 @@ def _quaternion_angle(rng: np.random.Generator) -> Question:
     )
 
 
+def _cylinder_length(rng: np.random.Generator) -> Question:
+    r = pick(rng, (20.0, 30.0, 50.0, 80.0))
+    m = pick(rng, (0.5, 1.0, 2.0))
+    length = math.sqrt(3.0) * r
+    return Question(
+        f"A uniform {m:g} kg cylinder is {r:g} mm in radius. How long must it be for its moment across (about a "
+        "diameter, through its centre) to equal its moment along its axis, in mm?",
+        length,
+        f"Across, m(3r² + L²)/12; along, ½mr². Equal when 3r² + L² = 6r², L = √3 r = 1.732 × {r:g} = "
+        f"{number(length)} mm. Then every axis through G is principal, as for a sphere: no axis is the middle one.",
+        unit="mm",
+        setup=dict(
+            shape=Shape.CYLINDER, mass=m, a=r / 1000, c=round(length) / 1000, rate=0.0, nudge=0.0, tab=TAB_INERTIA
+        ),
+    )
+
+
+def _momentum_angle(rng: np.random.Generator) -> Question:
+    m, a, b, c = _box(rng)
+    I1, I2, _ = (rounded(v, 3) for v in Body(Shape.CUBOID, m, a / 1000, b / 1000, c / 1000).principal()[0])
+    w1, w2 = pick(rng, (1.0, 2.0, 3.0)), pick(rng, (1.0, 2.0, 3.0))
+    L1, L2 = I1 * w1, I2 * w2
+    angle = math.degrees(math.atan2(L2, L1) - math.atan2(w2, w1))
+    return Question(
+        f"A box with principal moments I₁ = {number(I1 * 1e3, 3)} and I₂ = {number(I2 * 1e3, 3)} ×10⁻³ kg·m² turns "
+        f"at ω = ({w1:g}, {w2:g}, 0) rad/s in its principal axes. By how many degrees does its angular momentum L "
+        "lean away from ω?",
+        abs(angle),
+        f"L = Iω = (I₁ω₁, I₂ω₂, 0) = ({number(L1 * 1e3, 3)}, {number(L2 * 1e3, 3)}, 0) ×10⁻³: at "
+        f"atan({number(L2 * 1e3, 3)}/{number(L1 * 1e3, 3)}) = {number(math.degrees(math.atan2(L2, L1)))}° from "
+        f"axis 1, against ω's atan({w2:g}/{w1:g}) = {number(math.degrees(math.atan2(w2, w1)))}°: "
+        f"{number(abs(angle))}° apart. Only about a principal axis are L and ω parallel.",
+        unit="°",
+    )
+
+
+def _flip_rate_of(t: RigidTrial) -> float:
+    """How fast a nudge grows about the middle axis, for `t`'s body at its rate (1/s)."""
+    I1, I2, I3 = t.body.principal()[0]
+    return t.rate * math.sqrt(max(0.0, (I2 - I1) * (I3 - I2)) / (I1 * I3))
+
+
+def _slow_flip_spec(rng: np.random.Generator) -> Question:
+    rate = pick(rng, (4.0, 6.0))
+    most = pick(rng, (0.5, 0.6))
+
+    def goal(t: RigidTrial):
+        return (
+            Requirement("A box", t.shape.value, t.shape is Shape.CUBOID),
+            Requirement("Spun about the middle axis", "yes" if t.spin_axis == 1 else "no", t.spin_axis == 1),
+            kept("The rate", t.rate, rate, "rad/s"),
+            Requirement("No point mass", f"{t.point:g} kg", t.point == 0.0),
+            at_most("The nudge's growth rate λ", _flip_rate_of(t), most, "1/s"),
+        )
+
+    return Question(
+        f"The box spins at {rate:g} rad/s about its middle axis, and a nudge flips it. Change its sides (no point "
+        f"mass, the same rate) until a nudge grows no faster than λ = {most:g} /s.",
+        0,
+        "λ = ω₀√((I₂ − I₁)(I₃ − I₂)/(I₁I₃)) is small when the middle moment nearly equals one of the others: make "
+        "two sides nearly equal. 300 × 200 × 198 mm gives λ = 0.373 /s at 6 rad/s; with two sides equal the body is "
+        "symmetric and its spin about the odd axis is steady.",
+        setup=dict(rate=rate, nudge=1.0, spin_axis=1, show=SHOW_W),
+        goal=goal,
+        design=dict(rate=rate, nudge=1.0, spin_axis=1, c=0.198, show=SHOW_W),
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "rigid_body_page", f"See {page_link('rigid_body_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -464,6 +532,9 @@ PROBLEMS = tuple(
         ("flip-rate", "How fast a nudge grows", "intermediate-axis", "The intermediate axis", _flip_rate),
         ("euler-rate", "Euler's rates", "orientation", "Writing down how it's turned", _euler_rate),
         ("quaternion-angle", "A quaternion's turn", "orientation", "Writing down how it's turned", _quaternion_angle),
+        ("cylinder-length", "A cylinder with no middle axis", "principal-axes", "Principal axes", _cylinder_length),
+        ("momentum-angle", "L leans away from ω", "inertia-tensor", "The inertia tensor", _momentum_angle),
+        ("slow-flip-spec", "Spec: a slow flip", "intermediate-axis", "The intermediate axis", _slow_flip_spec),
     )
 )
 
