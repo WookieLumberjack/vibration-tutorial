@@ -2,7 +2,7 @@
 
 Left: the sensor and actuator masses, the gain and the actuator's lag, the disturbance and response masses, and a
 tuned mass damper to compare. Centre: the receptance without control, with it, and with the TMD, and each mode's
-damping. Right: the root locus as the gain rises, each mode's damping against the gain, skyhook isolation, and the
+damping. Right: the root locus as the gain rises (drag a pole along it to set the gain: `DragDot`s), each mode's damping against the gain, skyhook isolation, and the
 Theory (its figures: gui/active_control_figures.py).
 """
 
@@ -31,6 +31,7 @@ from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
 from . import active_control_figures, settle_plots
 from .challenge import ChallengeBox
+from .drag import DragDot
 from .lesson import (
     Form,
     TrialBox,
@@ -393,8 +394,8 @@ TIPS = {
 }
 FRF_TIP = "<p>The receptance from the disturbance to the response: open loop, closed loop, and with the TMD.</p>"
 LOCUS_TIP = (
-    "<p>The closed-loop poles as the gain rises from 0 (open dots) to 2000 N·s/m; the filled dots are at "
-    "the gain set. Right of Re = 0 is unstable.</p>"
+    "<p>The closed-loop poles as the gain rises from 0 (open dots) to 2000 N·s/m; the large dots are at "
+    "the gain set: drag one along its locus to set the gain. Right of Re = 0 is unstable.</p>"
 )
 GAIN_TIP = (
     "<p>Each mode's damping ratio against the gain (followed by continuity); the dotted line is the gain set.</p>"
@@ -471,10 +472,14 @@ class ActiveControlPage(QtWidgets.QWidget):
         self.locus_plot.setToolTip(LOCUS_TIP)
         self.locus_items = marker(4)
         self.locus_open = marker(9)
-        self.locus_now = marker(9)
+        self.locus_now = [
+            DragDot("<p>Drag the pole along its locus to set the gain.</p>", size=12) for _ in range(MAX_DOF)
+        ]
         self.locus_axis = pg.InfiniteLine(angle=90, pos=0)
-        for item in (self.locus_axis, self.locus_items, self.locus_open, self.locus_now):
+        for item in (self.locus_axis, self.locus_items, self.locus_open, *self.locus_now):
             self.locus_plot.addItem(item)
+        for dot in self.locus_now:
+            dot.dragged.connect(self._on_locus_dragged)
         self.gain_plot = plot("Damping ratio ζ (%)", None, "Gain g (N·s/m)", None, log_x=True, height=200)
         self.gain_plot.setToolTip(GAIN_TIP)
         add_legend(self.gain_plot.getPlotItem(), offset=(-10, 10))
@@ -619,7 +624,8 @@ class ActiveControlPage(QtWidgets.QWidget):
         self.tmd_item.setPen(pg.mkPen(c.mass[1], width=2, style=QtCore.Qt.PenStyle.DashLine))
         mark(self.locus_items, c.mass[0], filled=True)
         mark(self.locus_open, c.grey)
-        mark(self.locus_now, c.force, filled=True)
+        for dot in self.locus_now:
+            dot.apply_theme()
         self.locus_axis.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DotLine))
         self.gain_line.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DotLine))
         self.gain_zero.setPen(pg.mkPen(c.faint, width=1))
@@ -633,6 +639,9 @@ class ActiveControlPage(QtWidgets.QWidget):
         self._dirty = True
         if self.isVisible():
             self.redraw()
+
+    def _on_locus_dragged(self, gain: float) -> None:
+        self.gain.setValue(gain)  # redraws, the dots with it
 
     def redraw(self) -> None:
         self._dirty = False
@@ -704,12 +713,17 @@ class ActiveControlPage(QtWidgets.QWidget):
                 roots.append(lam[lam.imag >= 0])
             pts = np.concatenate(roots)
             self.locus_items.setData(pts.real, pts.imag / (2 * np.pi))
+            gains = np.repeat(GAINS, [len(r) for r in roots])  # each point's gain, for the dots dragged along it
             lam0 = np.linalg.eigvals(closed_loop(s, None)[0])
             lam0 = lam0[lam0.imag >= 0]
             self.locus_open.setData(lam0.real, lam0.imag / (2 * np.pi))
             lam = np.linalg.eigvals(closed_loop(s, ctrl)[0])
             lam = lam[lam.imag >= 0]
-            self.locus_now.setData(lam.real, lam.imag / (2 * np.pi))
+            for j, dot in enumerate(self.locus_now):
+                dot.setVisible(j < len(lam))
+                dot.set_path(pts.real, pts.imag / (2 * np.pi), gains)
+                if j < len(lam):
+                    dot.place(float(lam[j].real), float(lam[j].imag) / (2 * np.pi), ctrl.gain)
             w = undamped_modes(s)[0]
             fmax = float(w[-1]) / (2 * np.pi) * 1.3
             reals = pts.real[np.abs(pts.real) < 5 * fmax * 2 * np.pi]
@@ -718,8 +732,8 @@ class ActiveControlPage(QtWidgets.QWidget):
             )
             self.locus_plot.setYRange(0.0, fmax, padding=0.02)
             self.tab_note.setText(
-                "Open dots: the open-loop poles; small dots: g from 0 to 2000 N·s/m; red: the gain "
-                "set. "
+                "Open dots: the open-loop poles; small dots: g from 0 to 2000 N·s/m; large: the gain "
+                "set (drag one along its locus). "
                 + (
                     "All stay left of Re λ = 0."
                     if max(pts.real) < 0
