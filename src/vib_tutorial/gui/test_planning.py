@@ -192,6 +192,14 @@ def _bunched(rng: np.random.Generator) -> Question:
             "The sensors overload",
             "Only the highest mode is lost",
         ),
+        why=(
+            "",
+            "Three sensors can do it, but not bunched near the ground, where every mode starts out the same way: "
+            "there the modes look alike.",
+            "Near the ground the motion is smallest, if anything; the trouble is that the modes look alike there.",
+            "All three suffer: at those sensors every mode looks alike, and the noise in every estimate grows (240 "
+            "times for mode 1).",
+        ),
         setup=dict(method=Method.HAND, hand=(0, 1, 2), tab=TAB_NOISE),
         predict=True,
     )
@@ -210,6 +218,15 @@ def _ods_at_mode(rng: np.random.Generator) -> Question:
             "Mode 1's shape, the largest",
             "The static deflection under the force",
             "An even mix of all the modes",
+        ),
+        why=(
+            "",
+            "Mode 1 is the largest statically, but at mode 2's frequency mode 2's response is 1/(2ζ) times its "
+            "static share: it outweighs the rest.",
+            "That's the ODS near 0 Hz. At a natural frequency a lightly damped mode is amplified 1/(2ζ) times, and "
+            "dominates.",
+            "A mix is what a frequency between modes, or heavy damping, gives; at a light mode's own frequency it "
+            "dominates.",
         ),
         setup=dict(hz=2.755, tab=TAB_ODS),
         predict=True,

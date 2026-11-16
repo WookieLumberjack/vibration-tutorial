@@ -206,6 +206,13 @@ def _high_spot(rng: np.random.Generator) -> Question:
         "Nearly opposite it: the disc lags 176° there. Above the critical the shaft deflects away from the heavy spot, "
         "and the disc tends to spin about its own centre of mass (self-centring).",
         choices=("Nearly opposite it", "At it", "About 90° behind it", "About 45° behind it"),
+        why=(
+            "",
+            "That's below the critical, where the shaft bends towards the heavy spot. Above it the disc lags nearly "
+            "180°, turning about its own centre of mass.",
+            "90° is at the critical speed itself; at twice the critical the lag is nearly 180°.",
+            "45° is below the critical; the lag grows through 90° at it, to nearly 180° above.",
+        ),
         setup=dict(target_rpm=3200.0),
         predict=True,
     )
@@ -219,6 +226,12 @@ def _overhung(rng: np.random.Generator) -> Question:
         "Above it, at 1284 rpm: the overhung disc tilts as it whirls, and the gyroscopic moment stiffens the forward "
         "whirl as the speed rises. The backward branch meets 1X lower, at 664 rpm, but the unbalance doesn't drive it.",
         choices=("Above 870 rpm", "At 870 rpm", "Below 870 rpm"),
+        why=(
+            "",
+            "Spinning changes the rotor's frequencies: the gyroscopic moment stiffens the forward whirl, so the "
+            "unbalance finds it higher.",
+            "Below, at 664 rpm, is the backward branch, which the unbalance, turning forward, doesn't drive.",
+        ),
         setup=dict(preset="Overhung rotor"),
         predict=True,
     )
@@ -231,6 +244,12 @@ def _anisotropic(rng: np.random.Generator) -> Question:
         0,
         "Two, 1365 rpm (horizontal) and 1668 rpm (vertical), and between them the shaft whirls backward on an ellipse.",
         choices=("Two, with backward whirl between them", "One, between the two stiffnesses'", "None: it's damped out"),
+        why=(
+            "",
+            "With different stiffnesses each direction has its own frequency, and the unbalance drives both: two "
+            "criticals.",
+            "The supports' damping only limits the peaks; with different stiffnesses there are two of them.",
+        ),
         setup=dict(preset="Anisotropic supports"),
         predict=True,
     )
@@ -244,6 +263,14 @@ def _oil_damping(rng: np.random.Generator) -> Question:
         "Nowhere: it stays at 3136 rpm. The swirl's cross-coupling is λcΩ, so doubling c doubles the force driving the "
         "whirl as well as the one damping it: the whirl grows once λΩ > ω, whatever c is.",
         choices=("It stays put", "Up, about twice as high", "Up a little", "Down"),
+        why=(
+            "",
+            "The swirl's cross-coupling is λcΩ: doubling c doubles the force driving the whirl as well as the "
+            "damping, so the onset stays.",
+            "The swirl's cross-coupling is λcΩ: doubling c doubles the force driving the whirl as well as the "
+            "damping, so the onset stays.",
+            "It doesn't fall either: c drives and damps alike, and the whirl grows once λΩ > ω, whatever c is.",
+        ),
         setup=dict(preset="Oil swirl λ = ½ (oil whip)", cx=200.0),
         predict=True,
     )

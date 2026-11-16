@@ -236,6 +236,12 @@ def _lean(rng: np.random.Generator) -> Question:
         "Above the linear resonance, at 4.45 Hz: the curve leans right along the backbone, a big swing being a stiff "
         "one, and the upper branch carries the mass past 3.18 Hz to its fold.",
         choices=("Above 3.18 Hz", "At 3.18 Hz", "Below 3.18 Hz"),
+        why=(
+            "",
+            "That's a linear spring's peak. A hardening spring is stiffer at a big swing, so the curve leans right "
+            "and the upper branch carries on past 3.18 Hz.",
+            "That's a softening spring, leaning left. A hardening one leans right, and jumps down above 3.18 Hz.",
+        ),
         setup=dict(mode=Sweep.UP),
         predict=True,
     )
@@ -249,6 +255,12 @@ def _hysteresis(rng: np.random.Generator) -> Question:
         "Lower: the lower branch's fold is at 3.64 Hz, the upper one's at 4.45 Hz. Between them both branches are "
         "stable, and which the mass is on depends on where it came from.",
         choices=("Lower", "At the same frequency", "Higher"),
+        why=(
+            "",
+            "The two folds are at different frequencies, 3.64 and 4.45 Hz; between them both branches are stable, "
+            "and which one it's on depends on where it came from.",
+            "On the way down the mass is on the lower branch, whose fold, at 3.64 Hz, is below the upper's 4.45 Hz.",
+        ),
         setup=dict(mode=Sweep.UP_DOWN),
         predict=True,
     )
@@ -261,6 +273,12 @@ def _softening(rng: np.random.Generator) -> Question:
         "Up, below 3.18 Hz (at 2.97 Hz): a softening spring's curve leans left, so the lower branch reaches its fold "
         "first and the mass jumps up to the upper one.",
         choices=("Up, below 3.18 Hz", "Down, above 3.18 Hz", "Nowhere: it softens smoothly"),
+        why=(
+            "",
+            "That's a hardening spring, leaning right. A softening spring's curve leans left, so on the way up the "
+            "lower branch folds first, below 3.18 Hz, and the swing jumps up.",
+            "Driven hard enough, a softening spring's curve leans left far enough to fold, so the swing jumps.",
+        ),
         setup=dict(damping=0.8, cubic=-2e4, force=1.25, start_hz=1.5, end_hz=4.5, freq_hz=1.5, mode=Sweep.UP),
         predict=True,
     )
@@ -274,6 +292,13 @@ def _half_frequency(rng: np.random.Generator) -> Question:
         "At half the pump's, 3.18 Hz: each pulse comes when the stretch adds energy, twice a swing. Rest is unstable "
         "there, and the noise grows into the swing.",
         choices=("3.18 Hz, half the pump's", "6.37 Hz, the pump's", "12.7 Hz, twice the pump's", "It stays at rest"),
+        why=(
+            "",
+            "The pump changes the stiffness, it doesn't push: the swing it grows is at the natural frequency, half "
+            "the pump's, each pulse adding energy twice a swing.",
+            "Pumping at twice f<sub>n</sub> grows a swing at f<sub>n</sub>: the stiffness pulses twice a swing.",
+            "At twice the natural frequency rest is unstable: the slightest noise grows into the swing.",
+        ),
         setup=dict(
             cubic=0.0,
             force=0.0,

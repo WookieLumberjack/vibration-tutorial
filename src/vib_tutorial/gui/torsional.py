@@ -217,6 +217,12 @@ def _softer_coupling(rng: np.random.Generator) -> Question:
         "It halves, 52.3 Hz to 26.2 Hz: f ∝ √k. The 2× critical moves from 1569 to 785 rpm, below the running speed, "
         "passed on the way up.",
         choices=("It halves", "It falls to a quarter", "It falls by about a quarter", "It stays the same"),
+        why=(
+            "",
+            "f ∝ √k: a quarter of the stiffness is half the frequency, not a quarter of it.",
+            "f ∝ √k, so four times softer halves it: 52.3 to 26.2 Hz.",
+            "The coupling is the train's spring: softer, and its frequency falls, as √k.",
+        ),
         setup=dict(preset=FAN_PRESET, train=_fan(2.0, 10.0, FAN.links[0].stiffness / 4)),
         predict=True,
     )
@@ -230,6 +236,14 @@ def _rigid_gears(rng: np.random.Generator) -> Question:
         "They barely move (0.05 % and 0.01 %): the mesh is far stiffer than the couplings, so they hardly twist it. "
         "Only the 2688 Hz mode, the gears bouncing on their teeth, is lost.",
         choices=("They barely move", "They rise a lot", "They fall a lot", "They disappear"),
+        why=(
+            "",
+            "The mesh was already far stiffer than the couplings, so the lower modes hardly twist it: making it "
+            "rigid barely moves them.",
+            "Merging the gears keeps their inertia, and the lower modes hardly twist the mesh: they barely move.",
+            "Only the mode of the gears bouncing on their teeth, at 2688 Hz, is lost; the lower two hardly twist "
+            "the mesh.",
+        ),
         setup=dict(preset=COMPRESSOR_PRESET, shapes=True),
         predict=True,
     )
@@ -246,6 +260,14 @@ def _faster_running(rng: np.random.Generator) -> Question:
             "They rise 10 %",
             "They fall 10 %",
             "They rise as the speed squared",
+        ),
+        why=(
+            "",
+            "The train's frequencies come from its inertias and stiffnesses, not its speed: the criticals stay, and "
+            "the running speed moves towards them.",
+            "The train's frequencies come from its inertias and stiffnesses, not its speed: the criticals stay, and "
+            "the running speed moves towards them.",
+            "A forcing's size can grow with the speed; the frequencies, from J and k, don't move.",
         ),
         setup=dict(preset=FAN_PRESET, operating_rpm=1630.0),
         predict=True,

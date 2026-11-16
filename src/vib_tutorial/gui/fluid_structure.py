@@ -361,6 +361,14 @@ def _gap(rng: np.random.Generator) -> Question:
         "the added mass, (R<sub>o</sub>² + R²)/(R<sub>o</sub>² − R²) times ρπR², grows without bound as the gap "
         "closes.",
         choices=("It falls", "It rises", "It stays the same", "It rises, then falls"),
+        why=(
+            "",
+            "The wall adds no stiffness; it forces the water through the gap faster, adding mass, so the frequency "
+            "falls.",
+            "The added mass, (R<sub>o</sub>² + R²)/(R<sub>o</sub>² − R²) times ρπR², grows as the gap closes: the "
+            "frequency falls.",
+            "The added mass only grows as the gap closes, without bound: the frequency only falls.",
+        ),
         setup=dict(walled=True, ratio=1.05),
         predict=True,
     )
@@ -373,6 +381,14 @@ def _thicker(rng: np.random.Generator) -> Question:
         "It halves: the water's added mass depends on the mode's shape and the plate's size, not its thickness, "
         "while the plate's modal mass ρ<sub>p</sub>hab/4 doubles.",
         choices=("It doubles", "It halves", "It stays the same", "It falls by 8"),
+        why=(
+            "β is the water's added mass over the plate's own. The plate's doubles with its thickness while the "
+            "water's stays, so β halves.",
+            "",
+            "The water's added mass depends on the mode's shape and the plate's size, not its thickness; the "
+            "plate's own mass doubles.",
+            "That's the stiffness, which goes as h³. β compares masses: the water's stays, the plate's doubles.",
+        ),
         setup=dict(thickness=6.0, tab=TAB_PLATE),
         predict=True,
     )
@@ -470,6 +486,13 @@ def _deeper(rng: np.random.Generator) -> Question:
         "It stays the same: the mode's flow dies away as e<sup>κz</sup> below the surface, within about L/π, and "
         "tanh(κd) is already 1. Only the rigid mass grows.",
         choices=("It rises", "It falls", "It stays the same", "It falls by √(2/3)"),
+        why=(
+            "The first mode's flow dies away within about L/π below the surface; at 2 m deep tanh(κd) is already "
+            "1, so more water below adds nothing.",
+            "The frequency doesn't depend on the depth once it's deeper than about L/π: tanh(κd) is already 1.",
+            "",
+            "That would hold if the depth mattered all the way down; at 2 m the mode's flow never reaches the bottom.",
+        ),
         setup=dict(depth=3.0, tab=TAB_SLOSH),
         predict=True,
     )
@@ -483,6 +506,13 @@ def _even(rng: np.random.Generator) -> Question:
         "Hardly at all: the second mode is symmetric (the surface rises at both walls together), and a sideways "
         "shake pushes the walls the same way, so it does no work on that mode. Its analogue mass is 0.",
         choices=("Hardly at all", "A lot: it's at resonance", "As much as at the first mode", "Twice as much"),
+        why=(
+            "",
+            "At resonance only if the shake does work on the mode. The second mode is symmetric, and a sideways "
+            "shake pushes the walls the same way: its analogue mass is 0.",
+            "The first mode is antisymmetric and takes the shake's work; the second, symmetric, takes none.",
+            "A sideways shake does no work on the symmetric second mode: its analogue mass is 0.",
+        ),
         setup=dict(slosh=2, tab=TAB_SLOSH),
         predict=True,
     )

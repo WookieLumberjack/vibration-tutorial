@@ -326,6 +326,13 @@ def _square_swap(rng: np.random.Generator) -> Question:
             "It precesses faster",
             "It nods more deeply",
         ),
+        why=(
+            "",
+            "A top's motion depends only on its moments of inertia, and the square's, ms²/6 and ms²/12, equal the "
+            "disc's: the corners don't show.",
+            "The precession depends on the moments I₃ and I₁, and the square's equal the disc's.",
+            "The nod depends on the moments too, and with s = √3 × 40 mm the square's are the disc's.",
+        ),
         setup=dict(shape=Shape.SQUARE, radius=0.06928, tab=TAB_PATH),
         predict=True,
     )
@@ -364,6 +371,16 @@ def _racket(rng: np.random.Generator) -> Question:
         + ("middle one, and spin about the middle axis is unstable: the tennis-racket flip." if middle else "")
         + ("" if middle else f"{'largest' if i3 > max(i1, i2) else 'smallest'}, and spin about it is stable."),
         choices=(flips, keeps) if middle else (keeps, flips),
+        why=(
+            "",
+            (
+                "I₃ is the middle moment here, and spin about the middle axis is unstable: a nudge grows into the flip."
+                if middle
+                else "It flips only about the middle axis; here I₃ is the "
+                + ("largest" if i3 > max(i1, i2) else "smallest")
+                + ", and a nudge only circles."
+            ),
+        ),
         setup=dict(
             shape=Shape.RECTANGLE,
             radius=0.1,
@@ -477,6 +494,13 @@ def _faster_spin(rng: np.random.Generator) -> Question:
         f"It precesses {n} times more slowly: the rate is about mgl/I₃ω₃. Gravity's moment is the same, and turns "
         f"an angular momentum {n} times larger.",
         choices=(f"{n} times more slowly", f"{n} times faster", "No change", f"{n * n} times more slowly"),
+        why=(
+            "",
+            "The rate is about mgl/I₃ω₃: a larger spin is a larger angular momentum for the same moment to turn, "
+            "so it's slower.",
+            f"Gravity's moment is the same, but it turns an angular momentum {n} times larger: {n} times slower.",
+            f"The rate goes as 1/ω₃, not 1/ω₃²: {n} times slower.",
+        ),
         setup=dict(spin_rpm=1500.0 * n, tilt=30.0, launch=Launch.SLOW, tab=TAB_PRECESSION),
         predict=True,
     )
@@ -489,6 +513,13 @@ def _at_rest_path(rng: np.random.Generator) -> Question:
         "Cusps: it starts at rest, so at the top of every nod it stops (φ̇ = 0) before it falls and is turned "
         "round again.",
         choices=("Cusps", "Loops", "Smooth waves", "A circle"),
+        why=(
+            "",
+            "Loops need the precession to run backward at a turning point, which takes a push against it; let go "
+            "at rest, φ̇ only falls to 0 there.",
+            "Smooth waves need it pushed round to start; let go at rest, it stops at the top of every nod: a cusp.",
+            "A circle is steady precession, which needs just the right push round; let go at rest, it nods.",
+        ),
         setup=dict(tilt=30.0, launch=Launch.REST, tab=TAB_PATH),
         predict=True,
     )
@@ -502,6 +533,13 @@ def _pushed_back(rng: np.random.Generator) -> Question:
         "Loops: the precession rate φ̇ = (a<sub>φ</sub> − a<sub>ψ</sub> cos θ)/sin²θ changes sign between the turning points, so it runs "
         "backward at one of them.",
         choices=("Loops", "Cusps", "Smooth waves", "A circle"),
+        why=(
+            "",
+            "Cusps are a top let go at rest, φ̇ = 0 at the top of each nod. Pushed against its precession, φ̇ "
+            "changes sign: loops.",
+            "Pushed the opposite way, φ̇ changes sign between the turning points, so the path runs backward: loops.",
+            "A circle needs the push that matches steady precession; the opposite one makes it nod and loop.",
+        ),
         setup=dict(tilt=30.0, launch=Launch.SET, precession=-2.0, tab=TAB_PATH),
         predict=True,
     )
@@ -518,6 +556,12 @@ def _too_slow(rng: np.random.Generator) -> Question:
             "It stands upright",
             "It precesses at 2° without nodding",
         ),
+        why=(
+            "",
+            "Under 467 rpm upright is unstable: a 2° lean isn't held but grows, to 62°, before it comes back.",
+            "To stand upright it has to spin faster than 467 rpm; at 400 upright is unstable.",
+            "Steady precession at 2° needs a fast enough spin; under 467 rpm upright is unstable, and it falls far.",
+        ),
         setup=dict(spin_rpm=400.0, tilt=2.0, tab=TAB_POTENTIAL),
         predict=True,
     )
@@ -530,6 +574,11 @@ def _reverse(rng: np.random.Generator) -> Question:
         "The other way: the precession turns L toward gravity's moment, and with L reversed it has to turn the "
         "other way to get there.",
         choices=("The other way", "The same way", "It doesn't precess"),
+        why=(
+            "",
+            "Precession turns L towards gravity's moment; with L reversed, it has to turn the other way to get there.",
+            "Gravity's moment is still there, and turns the reversed L: it precesses, the other way.",
+        ),
         setup=dict(spin_rpm=-1500.0, tilt=30.0, launch=Launch.SLOW),
         predict=True,
     )
@@ -686,12 +735,22 @@ def _tippe_turns(rng: np.random.Generator) -> Question:
             (side, over, up),
             "over 1 + α, so turned over is no minimum either: E<sub>J</sub> is least past its side, and it ends there.",
         )
+    reasons = {
+        up: ""
+        if ratio < 0.7
+        else f"Upright stays E<sub>J</sub>'s least only for I₁/I₃ under 1 − α = 0.7; here it's {ratio:g}.",
+        over: ""
+        if 0.7 <= ratio < 1.3
+        else f"Turned over is E<sub>J</sub>'s least only for I₁/I₃ between 0.7 and 1.3; here it's {ratio:g}.",
+        side: "" if ratio >= 1.3 else f"It ends on its side only for I₁/I₃ over 1 + α = 1.3; here it's {ratio:g}.",
+    }
     return Question(
         f"A tippe top's weight sits 0.3 of its radius below the ball's centre (α = 0.3), and I₁/I₃ = {ratio:g} about "
         "its centre of mass. Spun fast (1200 rpm) on its bottom on a table, what does it do?",
         0,
         f"1 − α = 0.7 and 1 + α = 1.3; I₁/I₃ = {ratio:g} is {why}",
         choices=choices,
+        why=tuple(reasons[c] for c in choices),
         setup=dict(
             setting=Setting.TIPPE,
             mass=0.02,

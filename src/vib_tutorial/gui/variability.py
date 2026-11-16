@@ -275,6 +275,14 @@ def _damping_only(rng: np.random.Generator) -> Question:
         "They don't move at all: the undamped frequencies depend only on M and K. The peaks' heights scatter, by "
         "about the damping's scatter, and the band opens only at the resonances.",
         choices=("They don't move", "They scatter by about 15 %", "They scatter by about 30 %", "They all drop"),
+        why=(
+            "",
+            "That would be a stiffness scatter of 30 %, the frequency going as √k. The undamped frequencies depend "
+            "only on M and K.",
+            "The undamped frequencies depend only on M and K, which are exact here: they don't move.",
+            "Damping lowers a damped frequency only by √(1 − ζ²), and the scatter goes both ways; the natural "
+            "frequencies, from M and K, stay.",
+        ),
         setup=dict(**_uniform(4), stiffness=0.0, damping=30.0),
         predict=True,
     )
@@ -288,6 +296,12 @@ def _weak_coupling(rng: np.random.Generator) -> Question:
         "About one (1.3): the mistuning is twice the coupling, the waves can't get past the blades that differ, and "
         "the mode collapses onto one blade. Tuned, it moves all twelve.",
         choices=("About one", "About half of them", "All twelve"),
+        why=(
+            "",
+            "The mistuning is twice the coupling: waves can't get past the blades that differ, and the mode "
+            "collapses onto about one.",
+            "That's the tuned assembly. With the mistuning twice the coupling the mode localizes onto about one blade.",
+        ),
         setup=dict(coupling=0.5, mistuning=1.0, tab=TAB_MODES),
         predict=True,
     )
@@ -301,6 +315,13 @@ def _strong_coupling(rng: np.random.Generator) -> Question:
         "Nearly all twelve (12.0), as tuned: what localizes a mode is the mistuning over the coupling (here 0.05), "
         "not the mistuning alone.",
         choices=("Nearly all twelve", "About half of them", "About one"),
+        why=(
+            "",
+            "What localizes a mode is the mistuning over the coupling, here 0.05: far too little, so it stays spread "
+            "over all twelve.",
+            "That's weak coupling's case, the mistuning twice the coupling; at 20 % the ratio is 0.05 and the mode "
+            "spreads over all twelve.",
+        ),
         setup=dict(coupling=20.0, mistuning=1.0, tab=TAB_MODES),
         predict=True,
     )

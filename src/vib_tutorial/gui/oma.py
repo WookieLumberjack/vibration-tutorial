@@ -358,6 +358,12 @@ def _node(rng: np.random.Generator) -> Question:
         "Nothing: a force at a node does no work on the mode, so it isn't excited and s₁ has no peak there. "
         "OMA needs the forces spread over the structure.",
         choices=("Nothing: it isn't excited", "It, with too much damping", "It, as usual", "It, twice over"),
+        why=(
+            "",
+            "A force at the node does no work on the mode: it isn't excited at all, so there's no peak to fit.",
+            "OMA finds only the modes the ambient forces excite, and a force at a node excites none of that mode.",
+            "A force at its node doesn't excite mode 2 at all, so there's nothing to find, let alone twice.",
+        ),
         setup=dict(**DEFAULT, input=3),
         predict=True,
     )
@@ -371,6 +377,12 @@ def _short_blocks(rng: np.random.Generator) -> Question:
         "It comes out too high (about 3.3 % against 1.7 %): the lines are coarse beside the peak, and the Hann "
         "window's leakage widens it. Long blocks resolve it.",
         choices=("It comes out too high", "It comes out too low", "It comes out right, only noisier"),
+        why=(
+            "",
+            "Coarse lines and the Hann window's leakage widen the peak, and a wide peak reads as more damping.",
+            "Short blocks do lower the scatter, but they bias the estimate: the coarse lines and leakage widen the "
+            "peak, raising ζ.",
+        ),
         setup=dict(**DEFAULT, block=512, tab=TAB_EFDD),
         predict=True,
     )
@@ -387,6 +399,13 @@ def _machine(rng: np.random.Generator) -> Question:
             "Nothing: a sine isn't random",
             "A broad bump",
             "It shifts the modes beside it",
+        ),
+        why=(
+            "",
+            "FDD sees the spectrum, and a sine puts all its power into one line: a sharp peak, like a lightly "
+            "damped mode.",
+            "A sine is a single frequency: in s₁ it's a sharp peak, narrower than any mode's.",
+            "A sine is a force, not part of the structure: it adds its own peak and leaves the modes where they were.",
         ),
         setup=dict(**DEFAULT, machine_hz=2.144, machine_force=1.0),
         predict=True,
@@ -406,6 +425,15 @@ def _harmonic_block(rng: np.random.Generator) -> Question:
             "Both stay the same",
             "Both double",
             "The mode's grows; the sine's stays",
+        ),
+        why=(
+            "",
+            "A sine's power sits in one line however fine, so finer lines make it taller; a mode's is a density, "
+            "and stays once resolved.",
+            "A mode's peak is a density: once the lines resolve it, finer ones don't raise it. Only the sine's, all "
+            "in one line, doubles.",
+            "It's the other way round: the sine's power, in one line, rises as the lines narrow; the mode's density "
+            "stays once resolved.",
         ),
         setup=dict(**DEFAULT, machine_hz=2.144, machine_force=1.0, block=8192),
         predict=True,

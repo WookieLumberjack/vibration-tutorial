@@ -286,6 +286,11 @@ def _node(rng: np.random.Generator) -> Question:
         "Three: a force at a mode's node puts nothing into it, so mode 2 drops out of every FRF in the column. Hit "
         "m4 and it's back.",
         choices=("Three", "All four", "Two"),
+        why=(
+            "",
+            "A force at a mode's node puts nothing into it: mode 2 drops out of every FRF in the column.",
+            "Only mode 2 has its node at m3; the other three are still excited.",
+        ),
         setup=dict(input=2, tab=TAB_MODES),
         predict=True,
     )
@@ -298,6 +303,13 @@ def _force_noise(rng: np.random.Generator) -> Question:
         "It reads low: noise on the force inflates G<sub>ff</sub>, most where the force is smallest, at the "
         "resonances, and the coherence dips there. H2 leaves it out.",
         choices=("It reads low", "It reads high", "It's unaffected"),
+        why=(
+            "",
+            "Noise on the force adds to G<sub>ff</sub>, the denominator of H1 = G<sub>fx</sub>/G<sub>ff</sub>: it can "
+            "only read low.",
+            "Noise on the force inflates G<sub>ff</sub>, most where the force is smallest, at the resonances, so H1 "
+            "reads low there.",
+        ),
         setup=dict(force_noise=5.0, tab=TAB_MODES),
         predict=True,
     )
@@ -310,6 +322,12 @@ def _short_block(rng: np.random.Generator) -> Question:
         0,
         "Too high: the block cuts the ringing off, the peaks leak, low and wide, and a wide peak looks damped.",
         choices=("Too high", "Too low", "About right"),
+        why=(
+            "",
+            "Cutting the ringing off spreads the peak out, low and wide, and a wide peak looks more damped, not less.",
+            "The block ends while the response still rings: leakage widens the peaks, and the fit reads the width as "
+            "damping.",
+        ),
         setup=dict(block=256, window=Window.RECTANGULAR, tab=TAB_MODES),
         predict=True,
     )
@@ -322,6 +340,12 @@ def _one_average(rng: np.random.Generator) -> Question:
         "1 at every frequency: with one block, |XF*|² = |X|²|F|² exactly, whatever the noise. It takes several "
         "averages before noise can show.",
         choices=("1 at every frequency", "Low at the antiresonances", "Low everywhere"),
+        why=(
+            "",
+            "That's what several averages show. With one block |XF*|² = |X|²|F|² exactly, so the coherence is 1 "
+            "whatever the noise.",
+            "With one block the coherence is 1 by its definition: it takes several averages before noise can show.",
+        ),
         setup=dict(averages=1, response_noise=5.0, tab=TAB_SETUP),
         predict=True,
     )

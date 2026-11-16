@@ -363,6 +363,25 @@ def _pairing(rng: np.random.Generator) -> Question:
     found = {p.test: p.model for p in pairs}
     answer = found.get(t, 3)
     rows = "; ".join(f"test {i + 1}: " + ", ".join(f"{v:.2f}" for v in M[i]) for i in range(3))
+    owner = {model: test for test, model in found.items()}
+
+    def wrong(i: int) -> str:
+        if i == answer:
+            return ""
+        if i == 3:
+            return (
+                f"Test mode {t + 1} still has a MAC of {M[t, answer]:.2f} with model mode {answer + 1}, above 0.5, "
+                "once the better pairs are taken."
+            )
+        if i in owner:
+            s = owner[i]
+            best = f"test mode {t + 1}'s best match, but " if i == perm[other] else ""
+            return (
+                f"Model mode {i + 1} is {best}taken first by test mode {s + 1}, whose MAC with it, "
+                f"{M[s, i]:.2f}, is higher than {M[t, i]:.2f}."
+            )
+        return f"Test mode {t + 1}'s MAC with model mode {i + 1} is only {M[t, i]:.2f}."
+
     return Question(
         f"A MAC table, each test mode's row against model modes 1, 2 and 3: {rows}. Pairing best MAC first (none "
         f"under 0.5), which model mode does test mode {t + 1} pair with?",
@@ -372,6 +391,7 @@ def _pairing(rng: np.random.Generator) -> Question:
         f"takes it; test mode {t + 1} goes with "
         + (f"model mode {answer + 1}." if answer < 3 else "none: what's left is under 0.5."),
         choices=("Model mode 1", "Model mode 2", "Model mode 3", "None"),
+        why=tuple(wrong(i) for i in range(4)),
     )
 
 
@@ -387,6 +407,13 @@ def _uniform_shapes(rng: np.random.Generator) -> Question:
             "They drop most for the highest modes",
             "They drop evenly to about 0.9",
         ),
+        why=(
+            "",
+            "Scaling every spring scales every frequency by √0.9 and leaves every shape exactly as it was: the MACs "
+            "stay at 1.",
+            "The MAC compares shapes, not sizes: a uniform scale of the springs leaves the shapes alone, and the "
+            "MACs at 1.",
+        ),
         setup=dict(**_uniform(4), spring_factors=(0.9,) * 4),
         predict=True,
     )
@@ -399,6 +426,14 @@ def _dampers(rng: np.random.Generator) -> Question:
         "They don't move (the paired frequencies agree to the test's noise): the undamped frequencies don't depend on "
         "the dampers, and light damping hardly moves the damped ones. Only the damping ratios, doubled, show it.",
         choices=("They don't move", "They all fall", "They all rise", "The higher modes' fall most"),
+        why=(
+            "",
+            "The undamped frequencies depend only on M and K, and light damping hardly moves the damped ones: only "
+            "the damping ratios show it.",
+            "The undamped frequencies depend only on M and K, and light damping hardly moves the damped ones: only "
+            "the damping ratios show it.",
+            "Damping lowers a damped frequency only by √(1 − ζ²), a tiny amount when it's light: the frequencies stay.",
+        ),
         setup=dict(**_uniform(4), damper_factors=(2.0,) * 4),
         predict=True,
     )
@@ -415,6 +450,13 @@ def _two_sensors(rng: np.random.Generator) -> Question:
             "Every mode still looks distinct",
             "Every off-diagonal term is exactly 0",
         ),
+        why=(
+            "",
+            "Two numbers per shape can't keep four shapes apart: modes 2 and 4 have an auto-MAC of 0.91 (spatial "
+            "aliasing).",
+            "The shapes are orthogonal over every mass; seen at two points only, four of them can't stay apart, and "
+            "some MACs come out near 1.",
+        ),
         setup=dict(**_uniform(4), sensors=(0, 3), tab=TAB_AUTO),
         predict=True,
     )
@@ -427,6 +469,15 @@ def _least_moved(rng: np.random.Generator) -> Question:
         "Mode 3, only 0.6 % high (the others 2.2, 4.1 and 6.6 %; the test's noise moves these a little): a spring "
         "moves a mode's frequency by half its share of the strain energy, and k3 hardly stretches in mode 3.",
         choices=("Mode 1", "Mode 2", "Mode 3", "Mode 4"),
+        why=(
+            "k3 stretches more in mode 1 than in mode 3: a spring moves a mode's frequency by half its share of the "
+            "strain energy.",
+            "k3 stretches more in mode 2 than in mode 3: a spring moves a mode's frequency by half its share of the "
+            "strain energy.",
+            "",
+            "k3 stretches more in mode 4 than in mode 3: a spring moves a mode's frequency by half its share of the "
+            "strain energy.",
+        ),
         setup=dict(**_uniform(4), spring_factors=_one_factor(4, 2, 1.3), tab=TAB_SENSITIVITY),
         predict=True,
     )
