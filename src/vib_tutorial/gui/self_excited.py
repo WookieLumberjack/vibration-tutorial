@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import enum
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 import pyqtgraph as pg
@@ -73,6 +73,7 @@ VIV_SWEEP = np.linspace(2.0, 14.0, 41)
 MM = frozenset({"vdp_ref", "vdp_start", "g_start"})  # shown in mm, as the plots and readouts are; kept in m
 DRIVE_STEPS = 200
 FLUTTER_CYCLES = 16  # the flutter mode played this many cycles
+DENSE_PER_PX = 4  # samples a pixel past which the time plot draws without antialiasing
 FLUTTER_START, FLUTTER_CAP = 0.15, 0.6  # its amplitude at the start, and where growth stops being drawn
 
 
@@ -500,6 +501,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self._viv_cache: tuple | None = None
+        self._vdp_cache: tuple | None = None  # (the oscillator and its ε grid, the amplitudes): a tab change redraws
         self._stale = False
         self.trials = TrialBox(
             [t.name for t in TRIALS], "<p>Each picks a model and sets it up to show one idea from the Theory tab.</p>"
@@ -552,6 +554,11 @@ class SelfExcitedPage(QtWidgets.QWidget):
         add_legend(self.top_plot.getPlotItem(), offset=(-10, 10))
         add_legend(self.bottom_plot.getPlotItem(), offset=(-10, 10))
         self.top_items = [pg.PlotDataItem(), pg.PlotDataItem()]
+        # Up to 30,000 steps: drawn as each pixel column's min and max (set on the plot: its addItem gives each item
+        # the plot's own), and without antialiasing where they're dense (`_dense`): antialiased, a swing a pixel or
+        # two wide took Qt 0.4–0.85 s a paint.
+        self.top_plot.setDownsampling(auto=True, mode="peak")
+        self.top_plot.setClipToView(True)
         self.bottom_items = [pg.PlotDataItem(), pg.PlotDataItem()]
         self.top_line = pg.InfiniteLine(angle=90)
         self.bottom_line = pg.InfiniteLine(angle=90)
@@ -878,12 +885,16 @@ class SelfExcitedPage(QtWidgets.QWidget):
         relabel(self.top_plot, "bottom", "Time", "s")
         relabel(self.bottom_plot, "left", "Velocity", "m/s")
         relabel(self.bottom_plot, "bottom", name, unit)
-        self.top_items[0].setData(t, x / scale)
+        self.top_items[0].setData(t, x / scale, antialias=not self._dense(t))
         last = t >= t[-1] - 10.0 * (t[-1] / max(self._periods(), 1.0))  # the phase plane: the last ten periods
         self.bottom_items[0].setData(x[last] / scale, v[last])
         self.top_plot.setXRange(0.0, float(t[-1]), padding=0)
         self.top_plot.enableAutoRange(axis="y")
         self.bottom_plot.enableAutoRange()
+
+    def _dense(self, t: np.ndarray) -> bool:
+        """More than a few samples a pixel across the time plot: drawn without antialiasing (see `top_plot`)."""
+        return t.size > DENSE_PER_PX * max(self.top_plot.width(), 1)
 
     def _periods(self) -> float:
         return {Kind.VDP: self.v("vdp_periods"), Kind.GALLOP: self.v("g_periods"), Kind.VIV: 150.0}.get(
@@ -931,7 +942,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self._trace = (t, y / m.diameter)
         legend = self.top_plot.getPlotItem().legend
         scale = max(float(np.max(np.abs(y))) / m.diameter, 1e-6) / max(float(np.max(np.abs(q))), 1e-9)
-        self.top_items[1].setData(t, q * scale)
+        self.top_items[1].setData(t, q * scale, antialias=not self._dense(t))
         legend.addItem(self.top_items[0], "y / D")
         legend.addItem(self.top_items[1], "wake q (scaled)")
         amp = float(settled_amplitude(y)) / m.diameter
@@ -1071,7 +1082,10 @@ class SelfExcitedPage(QtWidgets.QWidget):
         if self.current is Kind.VDP:
             m = self.vdp()
             eps = np.linspace(-0.5, max(3.0, m.eps * 1.2), 36)
-            amp = m.sweep(eps)
+            grid = (replace(m, eps=0.0), float(eps[-1]))  # the sweep is over ε: the oscillator's own doesn't matter
+            if self._vdp_cache is None or self._vdp_cache[0] != grid:
+                self._vdp_cache = (grid, m.sweep(eps))
+            amp = self._vdp_cache[1]
             self.sweep_curve.setData(eps, amp * 1e3, symbol="o", symbolSize=5)
             fine = np.linspace(eps[0], eps[-1], 300)
             self.sweep_theory.setData(fine, m.theory_amplitude(fine) * 1e3)

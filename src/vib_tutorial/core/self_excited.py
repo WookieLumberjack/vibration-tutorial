@@ -17,6 +17,9 @@ motion that follows (a limit cycle).
   damps the plunge and feeds the pitch from it, and the pitch goes unstable on its own, the frequencies still apart.
 
 The time responses are fixed-step RK4 over many parameters at once (`rk4`): they are checked against solve_ivp.
+A single run steps its state as Python floats, a component at a time (8× faster than NumPy's 2-element arrays,
+and the same arithmetic in the same order: the same numbers); a sweep steps arrays, a row per state component. So
+each `rhs` takes its state by component and gives a tuple, and keeps a scalar parameter a Python float (`_scalar`).
 """
 
 from __future__ import annotations
@@ -25,25 +28,55 @@ import itertools
 import math
 from collections.abc import Callable
 from dataclasses import dataclass, replace
+from typing import Any
 
 import numpy as np
 
 TWO_PI = 2.0 * math.pi
 
 
-def rk4(rhs: Callable[[np.ndarray], np.ndarray], z0: np.ndarray, h: float, steps: int, keep: int = 1) -> np.ndarray:
-    """Classical RK4 of z' = rhs(z) (autonomous; z may hold many systems side by side), every `keep`-th state."""
-    z = np.array(z0, dtype=float)
+Rhs = Callable[[Any], tuple[Any, ...]]  # the state's components (floats, or arrays of cases) → their derivatives
+
+
+def rk4(rhs: Rhs, z0: np.ndarray, h: float, steps: int, keep: int = 1) -> np.ndarray:
+    """Classical RK4 of z' = rhs(z) (autonomous; z may hold many systems side by side, z[state, case]), every
+    `keep`-th state."""
+    z0 = np.asarray(z0, dtype=float)
+    if z0.ndim == 1:
+        return _rk4_floats(rhs, z0, h, steps, keep)
+    z = z0.copy()
     out = [z.copy()]
     for i in range(1, steps + 1):
-        k1 = rhs(z)
-        k2 = rhs(z + 0.5 * h * k1)
-        k3 = rhs(z + 0.5 * h * k2)
-        k4 = rhs(z + h * k3)
+        k1 = np.asarray(rhs(z))
+        k2 = np.asarray(rhs(z + 0.5 * h * k1))
+        k3 = np.asarray(rhs(z + 0.5 * h * k2))
+        k4 = np.asarray(rhs(z + h * k3))
         z = z + h / 6.0 * (k1 + 2 * k2 + 2 * k3 + k4)
         if i % keep == 0:
             out.append(z.copy())
     return np.array(out)
+
+
+def _rk4_floats(rhs: Rhs, z0: np.ndarray, h: float, steps: int, keep: int) -> np.ndarray:
+    """`rk4` for one system, its state a tuple of Python floats (the same operations in the same order)."""
+    z = tuple(float(c) for c in z0)
+    out = [z]
+    half, sixth = 0.5 * h, h / 6.0
+    for i in range(1, steps + 1):
+        k1 = rhs(z)
+        k2 = rhs(tuple(a + half * b for a, b in zip(z, k1)))
+        k3 = rhs(tuple(a + half * b for a, b in zip(z, k2)))
+        k4 = rhs(tuple(a + h * b for a, b in zip(z, k3)))
+        z = tuple(a + sixth * (b1 + 2 * b2 + 2 * b3 + b4) for a, b1, b2, b3, b4 in zip(z, k1, k2, k3, k4))
+        if i % keep == 0:
+            out.append(z)
+    return np.array(out)
+
+
+def _scalar(value: np.ndarray | float) -> Any:
+    """A parameter as a Python float if it's one number (a single run), else an array (a sweep)."""
+    a = np.asarray(value, dtype=float)
+    return float(a) if a.ndim == 0 else a
 
 
 def settled_amplitude(x: np.ndarray, tail: float = 0.25) -> np.ndarray:
@@ -78,12 +111,12 @@ class VanDerPol:
     def omega(self) -> float:
         return TWO_PI * self.freq_hz
 
-    def rhs(self, eps: np.ndarray | float) -> Callable[[np.ndarray], np.ndarray]:
-        w, xr = self.omega, self.x_ref
+    def rhs(self, eps: np.ndarray | float) -> Rhs:
+        w, xr, e = self.omega, self.x_ref, _scalar(eps)
 
-        def f(z: np.ndarray) -> np.ndarray:
+        def f(z: Any) -> tuple[Any, ...]:
             x, v = z[0], z[1]
-            return np.array([v, -w * w * x + w * (eps - (x / xr) ** 2) * v])
+            return v, -w * w * x + w * (e - (x / xr) ** 2) * v
 
         return f
 
@@ -114,9 +147,9 @@ class VanDerPol:
 PARKINSON = (2.69, 168.0, 6270.0, 59900.0)
 
 
-def force_coefficient(alpha: np.ndarray) -> np.ndarray:
+def force_coefficient(alpha: Any) -> Any:
     a1, a3, a5, a7 = PARKINSON
-    a = np.asarray(alpha, dtype=float)
+    a = alpha if isinstance(alpha, float) else np.asarray(alpha, dtype=float)
     return a1 * a - a3 * a**3 + a5 * a**5 - a7 * a**7
 
 
@@ -141,14 +174,15 @@ class Galloping:
         """U_g = 4mζω/(ρDA₁): where the wind's negative damping ½ρUDA₁ beats the structure's 2mζω."""
         return 4 * self.mass * self.zeta * self.omega / (self.rho * self.side * PARKINSON[0])
 
-    def rhs(self, speed: np.ndarray | float) -> Callable[[np.ndarray], np.ndarray]:
+    def rhs(self, speed: np.ndarray | float) -> Rhs:
         m, w, z_, D, rho = self.mass, self.omega, self.zeta, self.side, self.rho
-        U = np.asarray(speed, dtype=float)
+        U = _scalar(speed)
+        seen = max(U, 1e-9) if isinstance(U, float) else np.maximum(U, 1e-9)
 
-        def f(z: np.ndarray) -> np.ndarray:
+        def f(z: Any) -> tuple[Any, ...]:
             y, v = z[0], z[1]
-            F = 0.5 * rho * U * U * D * force_coefficient(-v / np.maximum(U, 1e-9))  # α = −ẏ/U (the wind seen)
-            return np.array([v, -w * w * y - 2 * z_ * w * v - F / m])
+            F = 0.5 * rho * U * U * D * force_coefficient(-v / seen)  # α = −ẏ/U (the wind seen)
+            return v, -w * w * y - 2 * z_ * w * v - F / m
 
         return f
 
@@ -243,20 +277,22 @@ class Viv:
         """The reduced velocity at which the shedding frequency St U/D meets f_n: 1/St."""
         return 1.0 / self.strouhal
 
-    def rhs(self, reduced: np.ndarray | float) -> Callable[[np.ndarray], np.ndarray]:
+    def rhs(self, reduced: np.ndarray | float) -> Rhs:
         D, rho = self.diameter, self.rho
-        U = np.asarray(reduced, dtype=float) * self.freq_hz * D
+        U = _scalar(reduced) * self.freq_hz * D
         Wf = TWO_PI * self.strouhal * U / D
         mt = self.mass + self.added_mass
         r = 2 * mt * self.zeta * self.omega + self.gamma * Wf * rho * D * D
         k = mt * self.omega**2
 
-        def f(z: np.ndarray) -> np.ndarray:
+        lift, A, eps = self.lift, self.A, self.eps
+
+        def f(z: Any) -> tuple[Any, ...]:
             y, v, q, p = z
-            S = 0.25 * rho * U * U * D * self.lift * q
+            S = 0.25 * rho * U * U * D * lift * q
             acc = (S - r * v - k * y) / mt
-            dp = self.A / D * acc - self.eps * Wf * (q * q - 1) * p - Wf * Wf * q
-            return np.array([v, acc, p, dp])
+            dp = A / D * acc - eps * Wf * (q * q - 1) * p - Wf * Wf * q
+            return v, acc, p, dp
 
         return f
 
@@ -270,7 +306,10 @@ class Viv:
         z0 = np.array(
             [np.zeros_like(reduced), np.zeros_like(reduced), np.full_like(reduced, 2.0), np.zeros_like(reduced)]
         )
-        z = rk4(self.rhs(reduced), z0, h, n, keep=keep)
+        if reduced.size == 1:  # one case: stepped as floats (`rk4`), the case axis put back
+            z = rk4(self.rhs(float(reduced[0])), z0[:, 0], h, n, keep=keep)[:, :, None]
+        else:
+            z = rk4(self.rhs(reduced), z0, h, n, keep=keep)
         return np.arange(z.shape[0]) * h * keep, z
 
     def sweep(self, reduced: np.ndarray, periods: float = 150.0) -> tuple[np.ndarray, np.ndarray]:

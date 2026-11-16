@@ -34,6 +34,22 @@ def test_rk4_steps_many_systems_at_once():
         assert z[:, :, j] == pytest.approx(alone)
 
 
+@pytest.mark.parametrize(
+    ("model", "values", "z0"),
+    [
+        (VanDerPol(), [0.1, 2.0], [1e-3, 0.0]),
+        (Galloping(), [5.0, 9.0], [1e-3, 0.0]),
+        (Viv(), [4.0, 5.5], [0.0, 0.0, 2.0, 0.0]),
+    ],
+)
+def test_one_system_stepped_as_floats_is_the_same_as_in_a_sweep(model, values, z0):
+    """A single run steps Python floats, a sweep arrays: the same arithmetic in the same order, to the last bit."""
+    swept = rk4(model.rhs(np.array(values)), np.array([[c, c] for c in z0]), 1e-3, 500, keep=5)
+    for j, value in enumerate(values):
+        alone = rk4(model.rhs(value), np.array(z0), 1e-3, 500, keep=5)
+        assert np.array_equal(alone, swept[:, :, j])
+
+
 def test_van_der_pol_limit_cycle_is_2_xr_root_eps():
     for eps in (0.05, 0.2):
         m = VanDerPol(eps=eps)
