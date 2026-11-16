@@ -59,6 +59,7 @@ import scipy.integrate
 import scipy.optimize
 
 from .gyroscope import G, Top
+from .ode import rk4_step_floats
 
 SMOOTHING = 0.005  # m/s: friction is smoothed below this slip, μN v/√(v² + ε²)
 BALL = 0.4  # a tippe top's I₃ over mR²: a uniform ball's
@@ -377,15 +378,16 @@ class SlidingSimulator:
         h, rates, s, t = self.h, self._rates, self.state, self.t
         top, rim, stride = self.top, self._rim, self.stride
         rim_cos = math.cos(rim)
+
+        def derivative(z):
+            return rates(z)[0]
+
         for _ in range(n):
             k1, N, Fx, Fy = rates(s)
             if N < 0:
                 self.event = Event.HOPS
                 break
-            k2 = rates([a + 0.5 * h * b for a, b in zip(s, k1)])[0]
-            k3 = rates([a + 0.5 * h * b for a, b in zip(s, k2)])[0]
-            k4 = rates([a + h * b for a, b in zip(s, k3)])[0]
-            s = [a + h / 6 * (b1 + 2 * (b2 + b3) + b4) for a, b1, b2, b3, b4 in zip(s, k1, k2, k3, k4)]
+            s = list(rk4_step_floats(derivative, s, h, k1))
             norm = math.sqrt(s[0] * s[0] + s[1] * s[1] + s[2] * s[2] + s[3] * s[3])
             s[0:4] = [v / norm for v in s[0:4]]
             t += h

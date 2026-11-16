@@ -26,51 +26,14 @@ from __future__ import annotations
 
 import itertools
 import math
-from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
 
+from .ode import Rhs, rk4
+
 TWO_PI = 2.0 * math.pi
-
-
-Rhs = Callable[[Any], tuple[Any, ...]]  # the state's components (floats, or arrays of cases) → their derivatives
-
-
-def rk4(rhs: Rhs, z0: np.ndarray, h: float, steps: int, keep: int = 1) -> np.ndarray:
-    """Classical RK4 of z' = rhs(z) (autonomous; z may hold many systems side by side, z[state, case]), every
-    `keep`-th state."""
-    z0 = np.asarray(z0, dtype=float)
-    if z0.ndim == 1:
-        return _rk4_floats(rhs, z0, h, steps, keep)
-    z = z0.copy()
-    out = [z.copy()]
-    for i in range(1, steps + 1):
-        k1 = np.asarray(rhs(z))
-        k2 = np.asarray(rhs(z + 0.5 * h * k1))
-        k3 = np.asarray(rhs(z + 0.5 * h * k2))
-        k4 = np.asarray(rhs(z + h * k3))
-        z = z + h / 6.0 * (k1 + 2 * k2 + 2 * k3 + k4)
-        if i % keep == 0:
-            out.append(z.copy())
-    return np.array(out)
-
-
-def _rk4_floats(rhs: Rhs, z0: np.ndarray, h: float, steps: int, keep: int) -> np.ndarray:
-    """`rk4` for one system, its state a tuple of Python floats (the same operations in the same order)."""
-    z = tuple(float(c) for c in z0)
-    out = [z]
-    half, sixth = 0.5 * h, h / 6.0
-    for i in range(1, steps + 1):
-        k1 = rhs(z)
-        k2 = rhs(tuple(a + half * b for a, b in zip(z, k1)))
-        k3 = rhs(tuple(a + half * b for a, b in zip(z, k2)))
-        k4 = rhs(tuple(a + h * b for a, b in zip(z, k3)))
-        z = tuple(a + sixth * (b1 + 2 * b2 + 2 * b3 + b4) for a, b1, b2, b3, b4 in zip(z, k1, k2, k3, k4))
-        if i % keep == 0:
-            out.append(z)
-    return np.array(out)
 
 
 def _scalar(value: np.ndarray | float) -> Any:
