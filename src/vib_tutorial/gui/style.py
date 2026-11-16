@@ -8,7 +8,7 @@ proxy; the widgets then redraw with it (see ``MainWindow.set_theme``).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 MAX_DOF = 8
 
@@ -58,6 +58,8 @@ class Theme:
     mac_high: str = "#264653"  # MAC matrix colour at 1 (0 is the background)
     block_tints: dict[tuple[str, str], str] = field(default_factory=dict)  # CMS matrix partitions
     dim_tint: str = "#f4f4f4"  # CMS matrix: discarded columns
+    line_scale: float = 1.0  # every pen's width times this (`plot_patches`): the projector's 2–3 px lines
+    marker_scale: float = 1.0  # every scatter marker's size times this
 
     @property
     def energy_colors(self) -> dict[str, str]:
@@ -265,7 +267,13 @@ NORD = Theme(
     dim_tint="#353a45",
 )
 
-THEMES = {t.name: t for t in (LIGHT, DARK, SOLARIZED, NORD)}
+# A projector washes out thin and pale lines: Light's colours, its greys darker, every line twice as wide and
+# every marker 40 % larger.
+PROJECTOR = replace(
+    LIGHT, name="Projector", muted="#444444", faint="#8a8a8a", grey="#5f5f5f", line_scale=2.0, marker_scale=1.4
+)
+
+THEMES = {t.name: t for t in (LIGHT, DARK, SOLARIZED, NORD, PROJECTOR)}
 SYSTEM = "System"  # follow the desktop: Light or Dark
 
 

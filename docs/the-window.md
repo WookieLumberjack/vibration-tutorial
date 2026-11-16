@@ -102,8 +102,10 @@ on its mounts.
 
 ## Themes
 
-*Theme* (top right) switches the whole app between **Light**, **Dark**, **Solarized** and
-**Nord**, live, without resetting the simulation. **System** (the default) follows the
+*Theme* (top right) switches the whole app between **Light**, **Dark**, **Solarized**,
+**Nord** and **Projector**, live, without resetting the simulation. **Projector** is Light with darker
+greys, every line twice as wide and every marker 40 % larger, which a projector's washed-out picture
+needs. **System** (the default) follows the
 desktop's light or dark setting, and changes with it. Each theme has its own palettes for
 the masses, modes and substructures, chosen so every curve, label and table entry stays
 legible on its background. The choice is remembered.
