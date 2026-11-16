@@ -255,13 +255,15 @@ def test_dragging_a_pole_along_the_complex_modes_sweep_sets_the_element_on_relea
 
 
 def test_dragging_a_pole_along_the_flutter_locus_sets_the_speed(main_window, app):
-    from vib_tutorial.gui.self_excited import Kind
+    from vib_tutorial.gui.self_excited import TAB_SWEEP, Kind
 
     w = main_window
     w.resize(1280, 800)
     p = w.self_excited_page
     w.pages.setCurrentWidget(p)
-    p.load_setup(dict(kind=Kind.FLUTTER, values={"f_speed": 25.0}))  # past flutter: one pole right of Re = 0
+    p.load_setup(
+        dict(kind=Kind.FLUTTER, values={"f_speed": 25.0}, tab=TAB_SWEEP)
+    )  # past flutter: one pole right of Re = 0
     p.sweep_plot.grab()
     for _ in range(5):
         app.processEvents()
@@ -280,7 +282,7 @@ def test_dragging_a_pole_along_the_flutter_locus_sets_the_speed(main_window, app
     assert all(d.isVisible() and d.param == pytest.approx(p.v("f_speed")) for d in dots)  # ... the poles too
     assert max(d.pos().x() for d in dots) < 0  # below flutter: both stable
 
-    p.load_setup(dict(kind=Kind.VDP, values={}))  # another model's sweep: no locus, no dots
+    p.load_setup(dict(kind=Kind.VDP, values={}, tab=TAB_SWEEP))  # another model's sweep: no locus, no dots
     for _ in range(3):
         app.processEvents()
     assert not any(d.isVisible() for d in dots)
