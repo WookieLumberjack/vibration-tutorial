@@ -41,10 +41,19 @@ jobs:
 
       # The runners come with rustup.
       - name: Install Rust
-        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
+          rustup default stable
 
       - name: rustfmt
-        run: cargo fmt --check
+        run: cargo fmt --all --check
 
       - name: clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # The kernels are plain Rust: their own tests, and they must keep building for WebAssembly.
+      - name: kernels' tests
+        run: cargo test -p vib-kernels
+
+      - name: kernels for WebAssembly
+        run: cargo build -p vib-kernels --target wasm32-unknown-unknown

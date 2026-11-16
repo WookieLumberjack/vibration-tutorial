@@ -1,8 +1,6 @@
 //! Small dense matrices: products, solves and the matrix exponential, for the kernels' few-dozen-state systems.
 
-use numpy::{PyArrayMethods, PyReadonlyArray2};
-use pyo3::exceptions::PyValueError;
-use pyo3::prelude::*;
+use crate::Result;
 
 /// A dense row-major matrix.
 #[derive(Clone)]
@@ -29,14 +27,10 @@ impl Mat {
         m
     }
 
-    pub fn from_numpy(a: &PyReadonlyArray2<f64>) -> Self {
-        let a = a.as_array();
-        let (rows, cols) = a.dim();
-        Mat {
-            rows,
-            cols,
-            data: a.iter().copied().collect(),
-        }
+    /// A matrix from its row-major entries.
+    pub fn from_rows(rows: usize, cols: usize, data: Vec<f64>) -> Self {
+        assert_eq!(data.len(), rows * cols, "{rows}x{cols} entries");
+        Mat { rows, cols, data }
     }
 
     pub fn at(&self, i: usize, j: usize) -> f64 {
@@ -112,14 +106,11 @@ impl Mat {
             .fold(0.0, f64::max)
     }
 
-    pub fn check(&self, name: &str, rows: usize, cols: usize) -> PyResult<()> {
+    pub fn check(&self, name: &str, rows: usize, cols: usize) -> Result<()> {
         if self.rows == rows && self.cols == cols {
             Ok(())
         } else {
-            Err(PyValueError::new_err(format!(
-                "{name} is {}x{}, not {rows}x{cols}",
-                self.rows, self.cols
-            )))
+            Err(format!("{name} is {}x{}, not {rows}x{cols}", self.rows, self.cols))
         }
     }
 }
@@ -286,7 +277,9 @@ fn abs_transpose(a: &Mat) -> Mat {
 
 /// The first-order hold's augmented matrices, and every polynomial and ratio of them:
 ///
-///     [[T, R], [0, s I + s' N]],   N = [[0, I], [0, 0]] (2nu × 2nu, N² = 0),
+/// ```text
+/// [[T, R], [0, s I + s' N]],   N = [[0, I], [0, 0]] (2nu × 2nu, N² = 0),
+/// ```
 ///
 /// T (ns × ns), R (ns × 2nu). `foh_discretize`'s [[A h, B h, 0], [0, 0, I], [0, 0, 0]] is one, with
 /// T = A h, R = [B h, 0], s = 0, s' = 1; so is its exponential, [[Φ, Γ1, Γ2], [0, I, I], [0, 0, I]].
@@ -565,38 +558,19 @@ pub fn expm_balanced(a: &Mat) -> Mat {
     e
 }
 
-type Array<'py> = Bound<'py, numpy::PyArray2<f64>>;
-
-fn to_numpy<'py>(py: Python<'py>, m: Mat) -> PyResult<Array<'py>> {
-    numpy::PyArray1::from_vec(py, m.data).reshape([m.rows, m.cols])
+/// Rows written in place: a row-major (rows × cols) block of the caller's memory.
+pub struct RowsMut<'a> {
+    pub data: &'a mut [f64],
+    pub rows: usize,
+    pub cols: usize,
 }
 
-/// e^A, for the tests to check against SciPy's.
-#[pyfunction(name = "expm")]
-pub fn expm_py<'py>(py: Python<'py>, a: PyReadonlyArray2<'py, f64>) -> PyResult<Array<'py>> {
-    let m = Mat::from_numpy(&a);
-    if m.rows != m.cols {
-        return Err(PyValueError::new_err("expm needs a square matrix"));
+impl RowsMut<'_> {
+    pub fn row(&mut self, j: usize) -> &mut [f64] {
+        &mut self.data[j * self.cols..(j + 1) * self.cols]
     }
-    to_numpy(py, expm(&m))
-}
 
-/// (Φ, Γ0, Γ1) as `simulator.foh_discretize(A, B, h)` returns them, for the tests to check.
-#[pyfunction(name = "foh_discretize")]
-pub fn foh_discretize_py<'py>(
-    py: Python<'py>,
-    a: PyReadonlyArray2<'py, f64>,
-    b: PyReadonlyArray2<'py, f64>,
-    h: f64,
-) -> PyResult<(Array<'py>, Array<'py>, Array<'py>)> {
-    let (a, b) = (Mat::from_numpy(&a), Mat::from_numpy(&b));
-    if a.rows != a.cols || b.rows != a.rows {
-        return Err(PyValueError::new_err("A must be square, and B have its rows"));
+    pub fn dim(&self) -> (usize, usize) {
+        (self.rows, self.cols)
     }
-    let (phi, g1, g2) = expm_foh(&a, &b, h);
-    Ok((
-        to_numpy(py, phi)?,
-        to_numpy(py, g1.combine(1.0, &g2, -1.0))?,
-        to_numpy(py, g2)?,
-    ))
 }

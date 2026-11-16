@@ -1,0 +1,11 @@
+[package]
+name = "vib-kernels"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "vib_tutorial's numerical kernels in plain Rust: no Python, so they build for WebAssembly too"
+license = "MIT"
+
+[dependencies]
+# SIMD matrix products picked at run time (AVX, FMA, NEON); plain loops on wasm32.
+matrixmultiply = "0.3.11"

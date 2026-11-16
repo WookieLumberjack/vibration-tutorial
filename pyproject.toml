@@ -24,7 +24,7 @@ vib-tutorial = "vib_tutorial:main"
 requires = ["maturin>=1.15,<2.0"]
 build-backend = "maturin"
 
-# The Rust kernels (native/) build into vib_tutorial._native; the pure-Python code in
+# The Rust kernels (native/kernels, plain Rust) and their binding (native/src) build into vib_tutorial._native; the pure-Python code in
 # vib_tutorial.core stays the reference, and VIB_NATIVE=0 runs it instead.
 [tool.maturin]
 manifest-path = "native/Cargo.toml"
@@ -39,6 +39,8 @@ cache-keys = [
     { file = "native/Cargo.toml" },
     { file = "native/Cargo.lock" },
     { file = "native/src/**/*.rs" },
+    { file = "native/kernels/Cargo.toml" },
+    { file = "native/kernels/src/**/*.rs" },
 ]
 
 [dependency-groups]

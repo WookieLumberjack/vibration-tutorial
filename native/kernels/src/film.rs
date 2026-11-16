@@ -3,12 +3,8 @@
 
 use std::f64::consts::PI;
 
-use numpy::ndarray::Array2;
-use numpy::{PyReadonlyArray1, PyReadonlyArray2, PyReadwriteArray2};
-
-use crate::linalg::{Mat, dot, expm_foh, max_abs, solve};
-use pyo3::exceptions::PyValueError;
-use pyo3::prelude::*;
+use crate::Result;
+use crate::linalg::{Mat, RowsMut, dot, expm_foh, max_abs, solve};
 
 /// The whole film's force is worked out no nearer the wall than this
 /// (`fluid_bearing.ECCENTRICITY_MAX`; a test checks they agree).
@@ -19,7 +15,6 @@ pub type Film = (f64, f64, f64, f64, f64, f64, f64, f64, f64, f64);
 
 /// The π-film's whole force on the journal, its derivatives and its dissipation:
 /// `fluid_bearing.pi_film`, line for line (its docstring has the derivation).
-#[pyfunction]
 pub fn pi_film(k: f64, c: f64, x: f64, y: f64, vx: f64, vy: f64, omega: f64) -> Film {
     let mut e = x.hypot(y);
     let (cp, sp);
@@ -89,7 +84,6 @@ pub fn pi_film(k: f64, c: f64, x: f64, y: f64, vx: f64, vy: f64, omega: f64) -> 
 }
 
 /// (c_xx, c_xy, c_yy): the whole uncavitated film's damping at (x, y): `fluid_bearing.full_film_damping`.
-#[pyfunction]
 pub fn full_film_damping(k: f64, c: f64, x: f64, y: f64) -> (f64, f64, f64) {
     let e = x.hypot(y);
     let (cp, sp) = if e > 0.0 { (x / e, y / e) } else { (1.0, 0.0) };
@@ -106,7 +100,6 @@ pub fn full_film_damping(k: f64, c: f64, x: f64, y: f64) -> (f64, f64, f64) {
 
 /// The rotor's nonlinear film steps at one held speed and step length: `_Films` (`take`, `remainder`,
 /// `solve`) and `RotorSimulator._film_steps_reference`'s loop, which these mirror step for step.
-#[pyclass(module = "vib_tutorial._native")]
 pub struct FilmSteps {
     // At the held speed, from Python:
     a: Mat,    // the state matrix A(Ω)
@@ -347,19 +340,16 @@ impl FilmSteps {
     }
 }
 
-#[pymethods]
 impl FilmSteps {
     /// The film steps at a held speed: its A, B and the films' terms there (`_Films.hold`), over steps of h.
-    #[new]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (a, b, minv, cf, kf, p, h, idx, films, drift, tol, correction, iterations))]
-    fn new(
-        a: PyReadonlyArray2<f64>,
-        b: PyReadonlyArray2<f64>,
-        minv: PyReadonlyArray2<f64>,
-        cf: PyReadonlyArray2<f64>,
-        kf: PyReadonlyArray2<f64>,
-        p: PyReadonlyArray1<f64>,
+    pub fn new(
+        a: Mat,
+        b: Mat,
+        minv: Mat,
+        cf: Mat,
+        kf: Mat,
+        p: Vec<f64>,
         h: f64,
         idx: Vec<usize>,
         films: Vec<(f64, f64, f64)>,
@@ -367,14 +357,14 @@ impl FilmSteps {
         tol: f64,
         correction: f64,
         iterations: usize,
-    ) -> PyResult<Self> {
+    ) -> Result<Self> {
         let s = FilmSteps {
-            a: Mat::from_numpy(&a),
-            b: Mat::from_numpy(&b),
-            minv: Mat::from_numpy(&minv),
-            cf: Mat::from_numpy(&cf),
-            kf: Mat::from_numpy(&kf),
-            p: p.as_array().to_vec(),
+            a,
+            b,
+            minv,
+            cf,
+            kf,
+            p,
             h,
             idx,
             films,
@@ -397,9 +387,7 @@ impl FilmSteps {
             || 2 * s.films.len() != m
             || s.idx[m..].iter().any(|&i| i < n || i >= 2 * n)
         {
-            return Err(PyValueError::new_err(
-                "the journals' indices and films don't match the matrices",
-            ));
+            return Err("the journals' indices and films don't match the matrices".into());
         }
         Ok(s)
     }
@@ -407,85 +395,63 @@ impl FilmSteps {
     /// `_film_steps_reference`'s loop: from the state z, steps to the speeds w1 (Ω was omega0 at z) under
     /// the loads u0 (before the first step) and u (n × n_dof, after each), writing q into `out`'s rows.
     /// Takes the bound where it first steps and afresh as the journals drift; returns the last state.
-    /// Steps without the GIL, so other threads run meanwhile.
-    #[allow(clippy::too_many_arguments)]
-    fn steps(
+    pub fn steps(
         &mut self,
-        py: Python<'_>,
-        z: PyReadonlyArray1<f64>,
-        u0: PyReadonlyArray1<f64>,
-        u: PyReadonlyArray2<f64>,
-        w1: PyReadonlyArray1<f64>,
+        z: &[f64],
+        u0: &[f64],
+        u: &Mat,
+        w1: &[f64],
         omega0: f64,
-        mut out: PyReadwriteArray2<f64>,
-    ) -> PyResult<Vec<f64>> {
-        let (z, u0, u, w1) = (
-            z.as_array().to_vec(),
-            u0.as_array().to_vec(),
-            u.as_array().to_owned(),
-            w1.as_array().to_vec(),
-        );
-        let mut out = out.as_array_mut();
+        mut out: RowsMut,
+    ) -> Result<Vec<f64>> {
         let ns = self.a.rows;
-        let (n, nu) = u.dim();
-        if z.len() != ns || u0.len() != nu || nu != self.b.cols || w1.len() != n || out.nrows() != n || out.ncols() > ns
-        {
-            return Err(PyValueError::new_err(
-                "the state, loads or output don't match the matrices",
-            ));
+        let (n, nu) = (u.rows, u.cols);
+        if z.len() != ns || u0.len() != nu || nu != self.b.cols || w1.len() != n || out.rows != n || out.cols > ns {
+            return Err("the state, loads or output don't match the matrices".into());
         }
-        let n_out = out.ncols();
-        let (z, qs) = py.detach(|| {
-            let mut qs = Array2::zeros((n, n_out));
-            let mut z = z;
-            if self.bound.is_none() {
+        let n_out = out.cols;
+        let mut z = z.to_vec();
+        if self.bound.is_none() {
+            self.take(&z);
+        }
+        let m = self.m();
+        let mut r = self.remainder(&z, omega0);
+        let (mut last, mut older) = (r.clone(), r.clone());
+        let mut zb = vec![0.0; ns];
+        let mut before = u0.to_vec();
+        for j in 0..n {
+            if self.drifted(&z) {
                 self.take(&z);
+                r = self.remainder(&z, if j > 0 { w1[j - 1] } else { omega0 });
+                (last, older) = (r.clone(), r.clone());
             }
-            let m = self.m();
-            let mut r = self.remainder(&z, omega0);
-            let (mut last, mut older) = (r.clone(), r.clone());
-            let mut zb = vec![0.0; ns];
-            let mut before = u0;
-            for j in 0..n {
-                if self.drifted(&z) {
-                    self.take(&z);
-                    r = self.remainder(&z, if j > 0 { w1[j - 1] } else { omega0 });
-                    (last, older) = (r.clone(), r.clone());
-                }
-                let t = self.bound.as_ref().unwrap();
-                let after = u.row(j).to_vec();
-                zb.fill(0.0);
-                t.phi.mul_add(&z, &mut zb);
-                t.g0.mul_add(&before, &mut zb);
-                t.g1.mul_add(&after, &mut zb);
-                t.r0.mul_add(&r, &mut zb);
-                // r on the parabola through the last three steps
-                let guess: Vec<f64> = (0..m).map(|i| 3.0 * (r[i] - last[i]) + older[i]).collect();
-                let new = self.solve(&zb, guess, w1[j]);
-                (older, last, r) = (last, r, new);
-                let t = self.bound.as_ref().unwrap();
-                z.copy_from_slice(&zb);
-                t.r1.mul_add(&r, &mut z);
-                for (i, v) in z.iter().take(n_out).enumerate() {
-                    qs[[j, i]] = *v;
-                }
-                before = after;
-            }
-            (z, qs)
-        });
-        out.assign(&qs);
+            let t = self.bound.as_ref().unwrap();
+            let after = u.row(j).to_vec();
+            zb.fill(0.0);
+            t.phi.mul_add(&z, &mut zb);
+            t.g0.mul_add(&before, &mut zb);
+            t.g1.mul_add(&after, &mut zb);
+            t.r0.mul_add(&r, &mut zb);
+            // r on the parabola through the last three steps
+            let guess: Vec<f64> = (0..m).map(|i| 3.0 * (r[i] - last[i]) + older[i]).collect();
+            let new = self.solve(&zb, guess, w1[j]);
+            (older, last, r) = (last, r, new);
+            let t = self.bound.as_ref().unwrap();
+            z.copy_from_slice(&zb);
+            t.r1.mul_add(&r, &mut z);
+            out.row(j).copy_from_slice(&z[..n_out]);
+            before = after;
+        }
         Ok(z)
     }
 
     /// How many times the damping bound has been taken (once where it first steps, then as the journals drift).
-    #[getter]
-    fn takes(&self) -> usize {
+    pub fn takes(&self) -> usize {
         self.takes
     }
 
     /// Each film's damping bound (c_xx, c_xy, c_yy) as last taken, or None before the first step.
-    #[getter]
-    fn taken(&self) -> Option<Vec<(f64, f64, f64)>> {
+    pub fn taken(&self) -> Option<Vec<(f64, f64, f64)>> {
         self.bound.as_ref().map(|t| t.taken.clone())
     }
 }

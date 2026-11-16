@@ -1,15 +1,11 @@
 //! The disc rubbing on a stator ring (`rotor.stator_force`, `_rub_solve`) and the rotor's rub step
 //! (`RotorSimulator._rub_steps_reference`).
 
-use numpy::ndarray::Array2;
-use numpy::{PyReadonlyArray1, PyReadonlyArray2, PyReadwriteArray2};
-
-use crate::linalg::{Mat, max_abs};
-use pyo3::exceptions::PyValueError;
-use pyo3::prelude::*;
+use crate::Result;
+use crate::linalg::{Mat, RowsMut, max_abs};
 
 /// The ring: (clearance, stiffness, damping, friction μ, centre x, centre y), as `rotor.Stator` gives them.
-type Ring = (f64, f64, f64, f64, f64, f64);
+pub type Ring = (f64, f64, f64, f64, f64, f64);
 
 /// (f_x, f_y, N, J): `rotor.stator_force`, line for line (its docstring has the derivation).
 fn stator_force(ring: &Ring, slip0: f64, radius: f64, y: &[f64; 4], omega: f64) -> (f64, f64, f64, [f64; 8]) {
@@ -50,7 +46,6 @@ fn stator_force(ring: &Ring, slip0: f64, radius: f64, y: &[f64; 4], omega: f64) 
     (-normal * gx, -normal * gy, normal, jac)
 }
 
-#[pyclass]
 pub struct RubSteps {
     phi: Mat,
     r0: Mat,          // (n_states × 2): Γ0's columns at the disc
@@ -108,16 +103,13 @@ impl RubSteps {
     }
 }
 
-#[pymethods]
 impl RubSteps {
     /// The rub steps over the FOH update Φ, Γ0, Γ1 at a held speed, the disc at `xd`, `yd` of q (n_dof long).
-    #[new]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (phi, g0, g1, n_dof, xd, yd, ring, slip, radius, tol, iterations))]
-    fn new(
-        phi: PyReadonlyArray2<f64>,
-        g0: PyReadonlyArray2<f64>,
-        g1: PyReadonlyArray2<f64>,
+    pub fn new(
+        phi: Mat,
+        g0: Mat,
+        g1: Mat,
         n_dof: usize,
         xd: usize,
         yd: usize,
@@ -126,15 +118,13 @@ impl RubSteps {
         radius: f64,
         tol: f64,
         iterations: usize,
-    ) -> PyResult<Self> {
-        let phi = Mat::from_numpy(&phi);
-        let (g0, g1) = (Mat::from_numpy(&g0), Mat::from_numpy(&g1));
+    ) -> Result<Self> {
         let ns = phi.rows;
         phi.check("Phi", ns, ns)?;
         g0.check("G0", ns, n_dof)?;
         g1.check("G1", ns, n_dof)?;
         if 2 * n_dof > ns || xd >= n_dof || yd >= n_dof {
-            return Err(PyValueError::new_err("the disc's DOFs don't match the matrices"));
+            return Err("the disc's DOFs don't match the matrices".into());
         }
         let all: Vec<usize> = (0..ns).collect();
         let (r0, r1) = (g0.select(&all, &[xd, yd]), g1.select(&all, &[xd, yd]));
@@ -160,71 +150,54 @@ impl RubSteps {
 
     /// `_rub_steps_reference`'s loop: from the state z (Ω was omega0 there), steps to the speeds w1 under
     /// the loads' part of the update, `drive` (n_states × n), writing q into `out`'s rows and the ring's
-    /// force, push and heat into `rubs`' (n × 4). Returns the last state. Steps without the GIL.
-    #[allow(clippy::too_many_arguments)]
-    fn steps(
+    /// force, push and heat into `rubs`' (n × 4). Returns the last state.
+    pub fn steps(
         &self,
-        py: Python<'_>,
-        z: PyReadonlyArray1<f64>,
-        drive: PyReadonlyArray2<f64>,
-        w1: PyReadonlyArray1<f64>,
+        z: &[f64],
+        drive: &Mat,
+        w1: &[f64],
         omega0: f64,
-        mut out: PyReadwriteArray2<f64>,
-        mut rubs: PyReadwriteArray2<f64>,
-    ) -> PyResult<Vec<f64>> {
-        let (z, drive, w1) = (
-            z.as_array().to_vec(),
-            drive.as_array().to_owned(),
-            w1.as_array().to_vec(),
-        );
-        let mut out = out.as_array_mut();
-        let mut rubs = rubs.as_array_mut();
+        mut out: RowsMut,
+        mut rubs: RowsMut,
+    ) -> Result<Vec<f64>> {
         let ns = self.phi.rows;
         let n = w1.len();
-        if z.len() != ns || drive.dim() != (ns, n) || out.nrows() != n || out.ncols() > ns || rubs.dim() != (n, 4) {
-            return Err(PyValueError::new_err(
-                "the state, loads or outputs don't match the matrices",
-            ));
+        if z.len() != ns
+            || (drive.rows, drive.cols) != (ns, n)
+            || out.rows != n
+            || out.cols > ns
+            || rubs.dim() != (n, 4)
+        {
+            return Err("the state, loads or outputs don't match the matrices".into());
         }
-        let n_out = out.ncols();
-        let (z, qs, rs) = py.detach(|| {
-            let mut qs = Array2::zeros((n, n_out));
-            let mut rs = Array2::zeros((n, 4));
-            let mut z = z;
-            let pick = |z: &[f64]| [z[self.rows[0]], z[self.rows[1]], z[self.rows[2]], z[self.rows[3]]];
-            let (fx, fy, _, _) = stator_force(&self.ring, self.slip, self.radius, &pick(&z), omega0);
-            let mut r = [fx, fy];
-            let mut zb = vec![0.0; ns];
-            let (mu, cx, cy) = (self.ring.3, self.ring.4, self.ring.5);
-            for j in 0..n {
-                for (i, v) in zb.iter_mut().enumerate() {
-                    *v = drive[[i, j]];
-                }
-                self.phi.mul_add(&z, &mut zb);
-                self.r0.mul_add(&r, &mut zb);
-                let (new, normal) = self.solve(&pick(&zb), r, w1[j]);
-                r = new;
-                z.copy_from_slice(&zb);
-                self.r1.mul_add(&r, &mut z);
-                for (i, v) in z.iter().take(n_out).enumerate() {
-                    qs[[j, i]] = *v;
-                }
-                let mut heat = 0.0;
-                if normal != 0.0 {
-                    // the drag's work on the slip, μ N sat(s) s
-                    let [x, y, vx, vy] = pick(&z);
-                    let rho = (x - cx).hypot(y - cy);
-                    let slip = self.radius * w1[j] + ((x - cx) * vy - (y - cy) * vx) / rho;
-                    heat = mu * normal * slip * slip / (slip * slip + self.slip * self.slip).sqrt();
-                }
-                for (i, v) in [r[0], r[1], normal, heat].into_iter().enumerate() {
-                    rs[[j, i]] = v;
-                }
+        let n_out = out.cols;
+        let mut z = z.to_vec();
+        let pick = |z: &[f64]| [z[self.rows[0]], z[self.rows[1]], z[self.rows[2]], z[self.rows[3]]];
+        let (fx, fy, _, _) = stator_force(&self.ring, self.slip, self.radius, &pick(&z), omega0);
+        let mut r = [fx, fy];
+        let mut zb = vec![0.0; ns];
+        let (mu, cx, cy) = (self.ring.3, self.ring.4, self.ring.5);
+        for (j, &omega) in w1.iter().enumerate() {
+            for (i, v) in zb.iter_mut().enumerate() {
+                *v = drive.at(i, j);
             }
-            (z, qs, rs)
-        });
-        out.assign(&qs);
-        rubs.assign(&rs);
+            self.phi.mul_add(&z, &mut zb);
+            self.r0.mul_add(&r, &mut zb);
+            let (new, normal) = self.solve(&pick(&zb), r, omega);
+            r = new;
+            z.copy_from_slice(&zb);
+            self.r1.mul_add(&r, &mut z);
+            out.row(j).copy_from_slice(&z[..n_out]);
+            let mut heat = 0.0;
+            if normal != 0.0 {
+                // the drag's work on the slip, μ N sat(s) s
+                let [x, y, vx, vy] = pick(&z);
+                let rho = (x - cx).hypot(y - cy);
+                let slip = self.radius * omega + ((x - cx) * vy - (y - cy) * vx) / rho;
+                heat = mu * normal * slip * slip / (slip * slip + self.slip * self.slip).sqrt();
+            }
+            rubs.row(j).copy_from_slice(&[r[0], r[1], normal, heat]);
+        }
         Ok(z)
     }
 }

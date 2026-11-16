@@ -3,7 +3,7 @@ name = "vib-native"
 version = "0.1.4"
 edition = "2024"
 publish = false
-description = "Rust kernels for vib_tutorial's hot loops, imported as vib_tutorial._native"
+description = "The Python binding of vib_tutorial's Rust kernels (native/kernels), imported as vib_tutorial._native"
 license = "MIT"
 
 [lib]
@@ -14,8 +14,11 @@ crate-type = ["cdylib"]
 # abi3: one build serves every Python from 3.12 on.
 pyo3 = { version = "0.30.1", features = ["abi3-py312"] }
 numpy = "0.30.0"
-# Already in through numpy (ndarray): SIMD matrix products picked at run time (AVX, FMA, NEON).
-matrixmultiply = "0.3.11"
+vib-kernels = { path = "kernels" }
+
+# The kernels (plain Rust) and this binding over them.
+[workspace]
+members = ["kernels"]
 
 [profile.release]
 codegen-units = 1
