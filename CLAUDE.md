@@ -46,7 +46,6 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Vibration isolation (`isolation_page`): `gui/isolation.py` (its view model `view_models/isolation.py`; `isolation_view.py`, the machine on its mounts, drawn and pulled); core `isolation`, `sdof`
 - Foundations:
   - Deriving the equations (`deriving_page`): `gui/deriving.py`; core `bounce_pitch`, `double_pendulum`, `pendulum`
-  - 3D rigid body (`rigid_body_page`): `gui/rigid_body.py` (with `equations_snapshot.py`); core `rigid_body`, `rotation`
   - Simulation & modal analysis (`sim_page`): `gui/main_window.py`; core `simulator`, `modal`, `model`, `forcing`, `energy`, `presets`
   - Energy methods (`energy_page`): `gui/energy_methods.py`; core `energy_methods`
   - FRF matrix (`frf_page`): `gui/frf_matrix.py`; core `frf_matrix`
@@ -54,6 +53,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Continuous systems (`continuum_page`): `gui/continuum.py` (with `continuum_waves_view.py`); core `continuum`, `continuum_waves`
   - Beams & plates (`beams_page`): `gui/beams_plates.py`; core `beams_plates`
   - Numerical integration (`integration_page`): `gui/integration.py`; core `integration`
+  - 3D rigid body (`rigid_body_page`): `gui/rigid_body.py` (with `equations_snapshot.py`); core `rigid_body`, `rotation`
 - Responses:
   - Random vibration (`random_page`): `gui/random_vibration.py`; core `random_vibration`
   - Fatigue (`fatigue_page`): `gui/fatigue.py`; core `fatigue`
