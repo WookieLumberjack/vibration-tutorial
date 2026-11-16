@@ -4,7 +4,9 @@ Left: the chain's damping (its coupling index, a button that makes it proportion
 try, and the mode looked at. Centre: that mode's exact shape ψ in the complex plane with its
 best-fit line, its snapshots over half a cycle, and every mode's exact pole and shape against
 the proportional approximation's. Right: the FRF, exact and approximated; a free decay from an
-undamped mode's shape, and what leaks to the others; each mode's phase scatter; the notes.
+undamped mode's shape, and what leaks to the others; each mode's phase scatter; one element swept, with
+its root locus (drag a pole along it: the other modes' poles slide with it, and letting go sets the element,
+through the Simulation page, `_on_sweep_released`); the notes.
 Follows the chain from the Simulation page (friction left out: modes are linear).
 """
 
@@ -38,6 +40,7 @@ from ..core.practice import Problem, Question, Requirement, at_least, number, pi
 from ..core.presets import tuned_mass_damper
 from . import complex_figures, maths, weak
 from .axes import log_axes
+from .drag import DragDot
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
@@ -88,7 +91,9 @@ SWEEP_TIP = (
 )
 LOCUS_TIP = (
     "<p>The root locus: each mode's exact pole λ as the element changes, Re λ across (the decay rate), "
-    "Im λ/2π up (the damped frequency). Grey crosses: real roots, where a mode is overdamped.</p>"
+    "Im λ/2π up (the damped frequency). Grey crosses: real roots, where a mode is overdamped. The large dots "
+    "are the chain's own value: drag one along its locus and every mode's pole slides with it; let go and the "
+    "chain takes that value.</p>"
 )
 IDENT_TIP = (
     "<p>The FRF column for a force on one mass, with a little noise, fitted by LSFD on the exact poles two ways: "
@@ -610,6 +615,13 @@ class ComplexModesPage(QtWidgets.QWidget):
         iv.addWidget(self.ident_table, 2)
         iv.addWidget(self.ident_note)
         self.sweep_result: Sweep | None = None
+        self.sweep_dots = [
+            DragDot("<p>Drag the pole along its locus; let go to set the element.</p>", size=12) for _ in range(MAX_DOF)
+        ]
+        for dot in self.sweep_dots:
+            dot.dragged.connect(self._on_sweep_dragged)
+            dot.released.connect(self._on_sweep_released)
+        self.sweep_marks: list[pg.InfiniteLine] = []  # the element's value on the ζ and MPD plots
         self.ident_result: IdentificationResult | None = None
 
         self.notes = NotesBrowser()
@@ -761,6 +773,34 @@ class ComplexModesPage(QtWidgets.QWidget):
                 self.system, self.sweep_parameter.currentData(), max(self.sweep_element.currentIndex(), 0)
             )
             self._draw_sweep()
+
+    def _on_sweep_dragged(self, value: float) -> None:
+        """A pole dragged along the locus: every mode's pole to that value (no chain change until let go)."""
+        sw = self.sweep_result
+        if sw is None:
+            return
+        j = int(np.argmin(np.abs(sw.values - value)))
+        for k, dot in enumerate(self.sweep_dots[: sw.poles.shape[1]]):
+            lam = sw.poles[j, k]
+            dot.setVisible(bool(np.isfinite(lam)))
+            if np.isfinite(lam):
+                dot.place(float(lam.real), float(lam.imag) / TWO_PI, float(sw.values[j]))
+        for line in self.sweep_marks:
+            line.setValue(math.log10(sw.values[j]))
+
+    def _on_sweep_released(self, value: float) -> None:
+        """Let go: the chain takes the swept element at that value, through the Simulation page."""
+        sw = self.sweep_result
+        if sw is None or self.system is None or not np.isfinite(value):
+            return
+        s = self.system
+        damping, stiffness = np.array(s.damping, dtype=float), np.array(s.stiffness, dtype=float)
+        (damping if sw.parameter is Parameter.DAMPER else stiffness)[sw.element] = value
+        system = ChainSystem(np.array(s.masses, dtype=float), stiffness, damping, s.friction, s.static_ratio)
+        self.trial_note.setVisible(False)
+        self.system_requested.emit(system.copy())
+        if not np.allclose(self.system.damping, damping) or not np.allclose(self.system.stiffness, stiffness):
+            self.set_system(system)  # nobody passed it back: show it here alone
 
     def _work_identification(self) -> None:
         if self.system is not None:
@@ -1029,12 +1069,17 @@ class ComplexModesPage(QtWidgets.QWidget):
             colour = colors.mode[k % len(colors.mode)]
             lam = sw.poles[:, k]
             p.plot(lam.real, lam.imag / TWO_PI, pen=pg.mkPen(colour, width=2), connect="finite")
-            if np.isfinite(lam[at]):
-                p.addItem(
-                    pg.ScatterPlotItem(
-                        [lam[at].real], [lam[at].imag / TWO_PI], size=9, pen=None, brush=pg.mkBrush(colour)
-                    )
-                )
+        finite = np.isfinite(sw.poles)  # every mode's locus is each dot's path, a point's parameter its value
+        path = sw.poles[finite]
+        values = np.broadcast_to(sw.values[:, None], sw.poles.shape)[finite]
+        for k, grip in enumerate(self.sweep_dots):
+            p.addItem(grip)
+            grip.apply_theme()
+            grip.set_path(path.real, path.imag / TWO_PI, values)
+            lam_k = sw.poles[at, k] if k < n else complex(np.nan)
+            grip.setVisible(bool(np.isfinite(lam_k)))
+            if np.isfinite(lam_k):
+                grip.place(float(lam_k.real), float(lam_k.imag) / TWO_PI, float(sw.values[at]))
         real = np.concatenate(sw.roots) if sw.roots else np.zeros(0)
         if real.size:
             p.addItem(
@@ -1068,9 +1113,12 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.sweep_zeta_legend.addItem(
             pg.PlotDataItem(pen=pg.mkPen(colors.grey, width=1, style=QtCore.Qt.PenStyle.DashLine)), "Approx."
         )
+        self.sweep_marks = []
         for p in (z, m):
             if own > 0:
-                p.addItem(pg.InfiniteLine(math.log10(own), angle=90, pen=pg.mkPen(colors.muted, width=1, style=dot)))
+                line = pg.InfiniteLine(math.log10(own), angle=90, pen=pg.mkPen(colors.muted, width=1, style=dot))
+                p.addItem(line)
+                self.sweep_marks.append(line)
             p.setXRange(math.log10(sw.values[0]), math.log10(sw.values[-1]), padding=0)
         z.setYRange(0.0, 1.05, padding=0)
         m.setYRange(0.0, max(5.0, 1.1 * float(np.nanmax(sw.mpd, initial=0.0))), padding=0)

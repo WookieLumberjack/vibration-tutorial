@@ -641,7 +641,10 @@ class ActiveControlPage(QtWidgets.QWidget):
             self.redraw()
 
     def _on_locus_dragged(self, gain: float) -> None:
-        self.gain.setValue(gain)  # redraws, the dots with it
+        if not self.gain.value() == round(gain, self.gain.decimals()):
+            self.gain.setValue(gain)  # redraws, the dots with it
+        else:  # the box rounds it to what it has: the dots back where it is
+            self._draw_tab()
 
     def redraw(self) -> None:
         self._dirty = False

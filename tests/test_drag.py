@@ -217,3 +217,70 @@ def test_dragging_a_pole_along_the_active_control_locus_sets_the_gain(main_windo
     drag(p.locus_plot, start, scene_at(p.locus_plot, x[target], y[target]), app)
     assert p.gain.value() == pytest.approx(g[target], rel=0.02)  # the box follows ...
     assert all(d.param == pytest.approx(p.gain.value()) for d in shown)  # ... and every pole moves to it
+
+
+def test_dragging_a_pole_along_the_complex_modes_sweep_sets_the_element_on_release(main_window, app):
+    from vib_tutorial.gui.complex_modes import TAB_SWEEP
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.complex_page
+    w.pages.setCurrentWidget(p)
+    p.load_setup({"damping": (20.0, 0.0, 0.0, 0.0), "tab": TAB_SWEEP})  # c1 = 20 N·s/m, swept
+    p.locus.grab()
+    for _ in range(5):
+        app.processEvents()
+    sw = p.sweep_result
+    assert sw is not None and sw.element == 0
+    shown = [d for d in p.sweep_dots if d.isVisible()]
+    assert shown and all(d.param == pytest.approx(20.0, rel=0.1) for d in shown)
+    dot = shown[0]
+    start = scene_at(p.locus, dot.pos().x(), dot.pos().y())
+    j = int(np.argmin(np.abs(sw.values - 200.0)))  # to the top mode's pole at c1 ≈ 200 N·s/m, well away on screen
+    lam = sw.poles[j, -1]
+    assert np.isfinite(lam)
+    seen = []
+    dot.dragged.connect(seen.append)
+    end = scene_at(p.locus, lam.real, lam.imag / (2 * np.pi))
+    assert (end - start).manhattanLength() > 40
+    drag(p.locus, start, end, app)
+    assert seen and abs(math.log(seen[-1] / sw.values[j])) < 0.5  # a point of that locus near there on screen
+    snapped = sw.poles[int(np.argmin(np.abs(sw.values - seen[-1]))), -1]
+    assert (scene_at(p.locus, snapped.real, snapped.imag / (2 * np.pi)) - end).manhattanLength() < 6
+    assert p.system.damping[0] == pytest.approx(seen[-1])  # let go: the chain took it
+    assert w.sim.system.damping[0] == pytest.approx(seen[-1])  # through the Simulation page
+    for _ in range(3):
+        app.processEvents()
+    assert all(d.param == pytest.approx(seen[-1]) for d in p.sweep_dots if d.isVisible())  # redrawn there
+
+
+def test_dragging_a_pole_along_the_flutter_locus_sets_the_speed(main_window, app):
+    from vib_tutorial.gui.self_excited import Kind
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.self_excited_page
+    w.pages.setCurrentWidget(p)
+    p.load_setup(dict(kind=Kind.FLUTTER, values={"f_speed": 25.0}))  # past flutter: one pole right of Re = 0
+    p.sweep_plot.grab()
+    for _ in range(5):
+        app.processEvents()
+    dots = p.flutter_dots
+    assert all(d.isVisible() and d.param == pytest.approx(25.0) for d in dots)
+    assert max(d.pos().x() for d in dots) > 0  # unstable
+    dot = max(dots, key=lambda d: d.pos().x())
+    x, y, u = dot._x, dot._y, dot._p
+    start = scene_at(p.sweep_plot, dot.pos().x(), dot.pos().y())
+    near = np.flatnonzero(np.abs(u - 10.0) < 0.5)  # each pole at ~10 m/s, below the flutter speed
+    far = [(scene_at(p.sweep_plot, x[i], y[i]) - start).manhattanLength() for i in near]
+    target = int(near[np.argmax(far)])
+    assert max(far) > 40
+    drag(p.sweep_plot, start, scene_at(p.sweep_plot, x[target], y[target]), app)
+    assert p.v("f_speed") == pytest.approx(u[target], abs=0.1)  # the box follows (to its 0.1 m/s) ...
+    assert all(d.isVisible() and d.param == pytest.approx(p.v("f_speed")) for d in dots)  # ... the poles too
+    assert max(d.pos().x() for d in dots) < 0  # below flutter: both stable
+
+    p.load_setup(dict(kind=Kind.VDP, values={}))  # another model's sweep: no locus, no dots
+    for _ in range(3):
+        app.processEvents()
+    assert not any(d.isVisible() for d in dots)

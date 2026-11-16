@@ -311,7 +311,8 @@ complex: each mass peaks at its own time, and the nodes move. It follows the cha
 - **Sweep**: one damper (or spring) swept over four decades, the rest of the chain as it is: each mode's
   exact pole (the root locus), its damping ratio exact and approximated, and its MPD. A damper's modes damp
   more as it grows, peak, and fall again as it locks its joint and the modes become the locked chain's,
-  one pair leaving as overdamped roots; the approximation's ζ grows for ever.
+  one pair leaving as overdamped roots; the approximation's ζ grows for ever. Drag a pole along its
+  locus and every mode's pole slides with it; let go and the chain takes that value.
 - **Identification**: an FRF column with a little noise fitted by LSFD on the exact poles, with complex
   modes and with real (normal) modes: their shapes' MAC with the exact ψ and the undamped φ, the
   complex fit's MPC, and how far each fit's FRF misses.
