@@ -40,7 +40,7 @@ from ..core.model_updating import (
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from . import updating_figures, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TAB_ROOM, TrialCombo, trials_html
+from .lesson import TAB_ROOM, TrialCombo, TrialSteps, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .notes_view import NotesBrowser
@@ -617,7 +617,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.trial.setToolTip(
             "<p>Model errors (and tests) that show something about correlation, set on the chain as it is now.</p>"
         )
-        tv.addWidget(self.trial)
+        tv.addWidget(TrialSteps(self.trial))
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
         mute(self.trial_note)

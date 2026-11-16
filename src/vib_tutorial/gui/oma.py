@@ -56,7 +56,7 @@ from ..core.oma import (
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import oma_figures
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import TrialCombo, trials_html
+from .lesson import TrialCombo, TrialSteps, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
@@ -618,7 +618,7 @@ class OmaPage(QtWidgets.QWidget):
         self.trial.setToolTip(
             "<p>Settings that show one of OMA's strengths or pitfalls, set from the chain as it is now.</p>"
         )
-        tv.addWidget(self.trial)
+        tv.addWidget(TrialSteps(self.trial))
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
         mute(self.trial_note)

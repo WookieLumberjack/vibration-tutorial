@@ -5220,3 +5220,28 @@ def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window
                     if need > tabs.width() + 1:
                         over.append((name, need, tabs.width()))
     assert not over
+
+
+def test_things_to_try_step_in_order(main_window):
+    """◂ ▸ beside a page's Things to try, and Alt+PgUp / Alt+PgDown on the page showing, walk its trials in the
+    notes' order: ▸ from the prompt is the first, and they stop at the ends."""
+    from vib_tutorial.gui.lesson import TrialCombo, TrialSteps
+
+    w = main_window
+    for page in (w.sim_page, w.random_page):  # a combo of its own, and the Simulation page's
+        w.pages.setCurrentWidget(page)
+        combo = page.findChild(TrialCombo)
+        steps = page.findChild(TrialSteps)
+        assert steps is not None and steps.combo is combo and combo.chosen() is None
+        assert steps.on.isEnabled() and not steps.back.isEnabled()
+        w.previous_trial()  # nothing before the prompt
+        assert combo.chosen() is None
+        steps.on.click()
+        assert combo.chosen() == 0 and not steps.back.isEnabled()
+        w.next_trial()
+        assert combo.chosen() == 1 and steps.back.isEnabled()
+        for _ in range(len(combo.names) + 2):
+            w.next_trial()
+        assert combo.chosen() == len(combo.names) - 1 and not steps.on.isEnabled()  # stops at the last
+        steps.back.click()
+        assert combo.chosen() == len(combo.names) - 2

@@ -43,7 +43,7 @@ from . import complex_figures, maths, weak
 from .axes import log_axes
 from .drag import DragDot
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TrialCombo
+from .lesson import TrialCombo, TrialSteps
 from .links import load_notes, page_link
 from .mode_swing import ModeSwing
 from .notes_view import NotesBrowser
@@ -460,7 +460,7 @@ class ComplexModesPage(QtWidgets.QWidget):
             "<p>Chains that show something about complex modes. Loading one replaces the Simulation page's chain.</p>",
             prompt="Load a chain…",
         )
-        tv.addWidget(self.trial)
+        tv.addWidget(TrialSteps(self.trial))
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
         self.trial_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
