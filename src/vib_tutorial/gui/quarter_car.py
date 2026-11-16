@@ -317,7 +317,14 @@ def _damper_spec(rng: np.random.Generator) -> Question:
 
 
 PROBLEMS = tuple(
-    Problem(key, title, "quarter_car_page", f"See {page_link('quarter_car_page', anchor, section)}.", make)
+    Problem(
+        key,
+        title,
+        "quarter_car_page",
+        f"See {page_link('quarter_car_page', anchor, section)}.",
+        make,
+        figure="" if anchor == "road" else "fig:quarter",  # the car, for what its masses and springs do
+    )
     for key, title, anchor, section, make in (
         ("road-psd", "A road's PSD in time", "road", "A road as a random input", _road_psd),
         ("rougher-faster", "Rougher and faster", "road", "A road as a random input", _rougher_faster),

@@ -97,6 +97,9 @@ def test_every_question_marks_its_own_answer(problem):
             assert 0 <= q.answer < len(q.choices) and len(set(q.choices)) == len(q.choices)
             assert check(q, q.answer).right
             assert not any(check(q, i).right for i in range(len(q.choices)) if i != q.answer)
+            if q.why:  # a reason for each wrong choice, said when it's picked
+                assert q.why[q.answer] == "" and all(q.why[i] for i in range(len(q.choices)) if i != q.answer)
+                assert all(q.why[i] in check(q, i).details for i in range(len(q.choices)) if i != q.answer)
         else:
             assert math.isfinite(q.answer) and q.answer > 0
             assert check(q, repr(q.answer)).right and check(q, number(q.answer)).right
@@ -115,6 +118,30 @@ def test_check_a_spec():
     assert not v.right and "1 of 2" in v.message and "x ≤ 2.00 mm" in v.details and "now 2.50 mm" in v.details
     assert not kept("y", 5.0, 5.1).met and at_least("z", 3.0, 2.0).met
     assert isinstance(at_most("x", 1, 2), Requirement)
+
+
+def test_a_wrong_choice_says_why_and_the_reasons_shuffle_with_the_choices():
+    q = Question("Which?", 1, "", choices=("a", "b", "c"), why=("not a", "", "not c"))
+    v = check(q, 2)
+    assert not v.right and v.message == "Not that one." and "not c" in v.details
+    assert check(q, 1).right and check(Question("Which?", 0, "", choices=("a", "b")), 1).details == ""
+    with pytest.raises(ValueError):
+        Question("Which?", 0, "", choices=("a", "b"), why=("",))
+    from vib_tutorial.core.practice import Problem
+
+    shuffled = Problem("k", "t", "sdof_page", "", lambda rng: q)
+    for seed in range(10):
+        s = shuffled.question(seed)
+        assert s.why[s.choices.index("a")] == "not a" and s.why[s.answer] == ""
+
+
+def test_every_problems_figure_is_drawn():
+    from vib_tutorial.gui import figures
+
+    with_figure = [p for p in ALL if p.figure]
+    assert len(with_figure) >= 4
+    for p in with_figure:
+        assert figures.build(p.figure) is not None, (p.page, p.key, p.figure)
 
 
 def test_choices_are_shuffled():
@@ -254,6 +281,33 @@ def test_practice_window(app):
     w.isolation_page.deflection.setValue(p.question.design["deflection_mm"])  # tuned by hand
     p.check()
     assert p._problem_items["isolation_page", "isolate-spec"].text(0).startswith(TICK)
+
+    # A wrong choice says why; a figure shows above its question.
+    p.show_problem("sdof_page", "heavier", seed=0)
+    q = p.question
+    wrong = next(i for i in range(len(q.choices)) if i != q.answer)
+    p._choices[wrong].setChecked(True)
+    p.check()
+    assert "Not that one" in p.text.toPlainText() and q.why[wrong][:30] in p.text.toPlainText()
+    p.show_problem("sdof_page", "natural-frequency", seed=0)
+    assert 'src="fig:oscillator"' in p.text.toHtml()
+    assert all(b.isHidden() for b in p.findChildren(QtWidgets.QRadioButton) if b not in p._choices)
+
+    # The filter keeps the pages and problems that match; Next unsolved skips the solved ones.
+    p.filter.setText("wheel hop")
+    shown = [k for k, item in p._problem_items.items() if not item.isHidden()]
+    assert shown == [("quarter_car_page", "wheel-hop")]
+    assert not p._page_items["quarter_car_page"].isHidden() and p._page_items["sdof_page"].isHidden()
+    p.filter.setText("single oscillator")  # a page's name: all its problems
+    assert all(not p._problem_items["sdof_page", x.key].isHidden() for x in problems("sdof_page"))
+    p.filter.clear()
+    assert not any(item.isHidden() for item in p._problem_items.values())
+    p.show_problem("sdof_page", "log-decrement", seed=0)
+    p.next_unsolved()  # natural-frequency, before it, is solved; the next one after it isn't
+    after = [x.key for x in problems("sdof_page")]
+    assert p.problem.key == after[after.index("log-decrement") + 1]
+    p.show_problem("isolation_page", "isolate-spec", seed=2)
+    w.pages.setCurrentWidget(w.isolation_page)  # (checking the prediction above ran it on the sdof page)
 
     # New numbers ask again; following the page turns to its problems.
     p.new_numbers()

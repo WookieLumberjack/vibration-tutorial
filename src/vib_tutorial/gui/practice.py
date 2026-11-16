@@ -3,7 +3,9 @@
 A tree of the pages that have problems (in the course's order) and their problems, ticked once solved. A
 question is a number typed in its unit, or a choice. *Check* marks it (and says if a number is out by one of
 the usual slips), *Hint* points into the page's notes (its links open the Theory window there), *Solution* shows
-the working, *New numbers* asks it again. *Show on the page* sets the page up as the question describes; for a
+the working, *New numbers* asks it again, *Next unsolved* goes on to the next problem not yet solved (in the
+course's order). A wrong choice says why it's wrong, where the problem gives its reasons (`Question.why`); a
+problem's `figure` is drawn above its question. The box above the tree filters it by page or problem. *Show on the page* sets the page up as the question describes; for a
 prediction it's offered only once answered, and checking a prediction runs it on the page: predict, then see.
 A spec is answered on the page itself: tune its controls, and *Check* reads them (the page's `practice_state`)
 and lists each requirement, met or not; once the solution shows, *Show on the page* loads a design that meets it.
@@ -23,6 +25,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.practice import Problem, Question, check
 from . import links, notes_view
+from .notes_view import NotesBrowser
 from .style import colors
 from .theming import settings
 
@@ -43,6 +46,11 @@ def problems(name: str) -> tuple[Problem, ...]:
 def pages() -> tuple[str, ...]:
     """The pages that have problems, in the course's order (their modules imported, the pages not built)."""
     return tuple(name for _, group in links.COURSE for name, _, _ in group if problems(name))
+
+
+def order() -> list[tuple[str, str]]:
+    """Every problem, (page, key), in the course's order."""
+    return [(name, p.key) for name in pages() for p in problems(name)]
 
 
 def _solved() -> set[str]:
@@ -107,6 +115,11 @@ class PracticeWindow(QtWidgets.QWidget):
             "Forget which problems are solved: their ticks, here and on the course map.",
             self._ask_reset,
         )
+        self.filter = QtWidgets.QLineEdit()
+        self.filter.setPlaceholderText("Filter: a page or a problem")
+        self.filter.setClearButtonEnabled(True)
+        self.filter.setAccessibleName("Filter the problems")
+        self.filter.textChanged.connect(self.apply_filter)
         bar = QtWidgets.QHBoxLayout()
         bar.addWidget(self.follow)
         bar.addStretch(1)
@@ -152,7 +165,7 @@ class PracticeWindow(QtWidgets.QWidget):
         font.setBold(True)
         font.setPointSizeF(font.pointSizeF() * 1.15)
         self.title.setFont(font)
-        self.text = QtWidgets.QTextBrowser()
+        self.text = NotesBrowser()
         notes_view.wire(self.text, read)
 
         self.number = QtWidgets.QLineEdit()
@@ -180,11 +193,14 @@ class PracticeWindow(QtWidgets.QWidget):
         )
         self.solution_button = self._button("Solution", "The working and the answer.", self.show_solution)
         self.new_button = self._button("New numbers", "The same problem with new numbers.", self.new_numbers)
+        self.next_button = self._button(
+            "Next unsolved", "The next problem you haven't solved yet, in the course's order.", self.next_unsolved
+        )
         self.page_button = self._button(
             "Show on the page", "Set the page up as the question describes, to see it for yourself.", self.show_on_page
         )
         buttons = QtWidgets.QHBoxLayout()
-        for b in (self.check_button, self.hint_button, self.solution_button, self.new_button):
+        for b in (self.check_button, self.hint_button, self.solution_button, self.new_button, self.next_button):
             buttons.addWidget(b)
         buttons.addStretch(1)
         buttons.addWidget(self.page_button)
@@ -197,8 +213,13 @@ class PracticeWindow(QtWidgets.QWidget):
         rl.addWidget(self.answer_area)
         rl.addLayout(buttons)
 
+        tree_pane = QtWidgets.QWidget()
+        tl = QtWidgets.QVBoxLayout(tree_pane)
+        tl.setContentsMargins(0, 0, 0, 0)
+        tl.addWidget(self.filter)
+        tl.addWidget(self.tree)
         split = QtWidgets.QSplitter()
-        split.addWidget(self.tree)
+        split.addWidget(tree_pane)
         split.addWidget(right)
         split.setStretchFactor(1, 1)
         split.setSizes([260, 560])
@@ -231,6 +252,7 @@ class PracticeWindow(QtWidgets.QWidget):
         for b in self._choices:
             self._choice_group.removeButton(b)
             self._choice_layout.removeWidget(b)
+            b.hide()  # out of the layout, it would show where it was until it's deleted
             b.deleteLater()
         self._choices = []
         for i, text in enumerate(self.question.choices):
@@ -260,6 +282,45 @@ class PracticeWindow(QtWidgets.QWidget):
         """The main window turned to page `name`: show its problems if following."""
         if self.follow.isChecked():
             self.show_page(name)
+
+    def next_unsolved(self) -> None:
+        """The first problem after this one (round to the start) not yet solved."""
+        found = order()
+        at = found.index((self.problem.page, self.problem.key)) + 1 if self.problem is not None else 0
+        solved = _solved()
+        for page, key in found[at:] + found[:at]:
+            if f"{page}/{key}" not in solved:
+                self.show_problem(page, key)
+                return
+        self._verdict = "<p><i>Every problem is solved.</i></p>"
+        self._render()
+
+    def apply_filter(self, text: str) -> None:
+        """Show the pages and problems whose names hold `text` (a page's problems with it; a problem's page)."""
+        words = text.casefold().split()
+
+        def matches(item: QtWidgets.QTreeWidgetItem) -> bool:
+            name = (item.toolTip(0) if item.childCount() == 0 else item.text(0)).casefold()
+            return all(w in name for w in words)
+
+        for g in range(self.tree.topLevelItemCount()):
+            group = self.tree.topLevelItem(g)
+            assert group is not None, "within the count"
+            any_page = False
+            for i in range(group.childCount()):
+                page = group.child(i)
+                assert page is not None, "within the count"
+                whole = matches(page)
+                any_problem = False
+                for k in range(page.childCount()):
+                    item = page.child(k)
+                    assert item is not None, "within the count"
+                    show = whole or matches(item)
+                    item.setHidden(not show)
+                    any_problem |= show
+                page.setHidden(not any_problem)
+                any_page |= any_problem
+            group.setHidden(not any_page)
 
     def new_numbers(self) -> None:
         if self.problem is not None:
@@ -337,7 +398,10 @@ class PracticeWindow(QtWidgets.QWidget):
             )
         else:
             self.title.setText(p.title)
-            parts = [f"<p>{q.prompt}</p>"]
+            parts = []
+            if p.figure:  # registered as the page's module loaded its notes
+                parts.append(f'<table width="100%"><tr><td align="center"><img src="{p.figure}"></td></tr></table>')
+            parts.append(f"<p>{q.prompt}</p>")
             if q.predict:
                 parts.append("<p><i>Predict it first: once you've answered, the page shows it.</i></p>")
             if q.is_spec:
@@ -356,6 +420,7 @@ class PracticeWindow(QtWidgets.QWidget):
         asked = q is not None
         for b in (self.check_button, self.hint_button, self.solution_button, self.new_button):
             b.setEnabled(asked)
+        self.next_button.setEnabled(True)
         self.page_button.setEnabled(q is not None and q.setup is not None and (not q.predict or self._answered))
         self.page_button.setText("Show a design on the page" if self._shows_design() else "Show on the page")
         self.answer_area.setVisible(q is not None and not q.is_spec)
@@ -385,7 +450,7 @@ class PracticeWindow(QtWidgets.QWidget):
 
     # --------------------------------------------------------------- window
     def apply_theme(self) -> None:
-        self._render()  # the verdict's colour
+        self._render()  # the verdict's colour, the figure's
 
     def save_geometry(self) -> None:
         settings().setValue("practice_window/geometry", self.saveGeometry())
