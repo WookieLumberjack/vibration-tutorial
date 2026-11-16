@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from vib_tutorial.core import duffing, fluid_bearing, foh, native, torsional, torsional_startup
+from vib_tutorial.core import duffing, fluid_bearing, foh, native, nonlinear_test, torsional, torsional_startup
 from vib_tutorial.core.foh import foh_discretize
 from vib_tutorial.core.forcing import ForceKind
 from vib_tutorial.core.model import ChainSystem, state_space
@@ -435,3 +435,27 @@ def test_startup_steps_match_the_reference(name):
         np.testing.assert_allclose(got.links, want.links, rtol=0, atol=1e-6 * np.abs(want.links).max())
     assert sims[0].field_on == sims[1].field_on
     np.testing.assert_allclose(sims[0].peaks, sims[1].peaks, rtol=1e-6)
+
+
+STEADY_CASES = {
+    "cubic between masses": (ChainSystem([1.0] * 3, [1000.0] * 3, [4.0] * 3), nonlinear_test.Kind.CUBIC, 1, 2.3),
+    "cubic to the ground": (ChainSystem([1.0] * 3, [1000.0] * 3, [4.0] * 3), nonlinear_test.Kind.CUBIC, 0, 2.3),
+    "gap": (ChainSystem([1.0] * 3, [1000.0] * 3, [4.0] * 3), nonlinear_test.Kind.GAP, 1, 2.1),
+    "friction": (ChainSystem([1.0] * 3, [1000.0] * 3, [1.0] * 3, [0.05, 0.0, 0.08]), nonlinear_test.Kind.NONE, 0, 2.2),
+}
+
+
+@needs_native
+@pytest.mark.parametrize("case", STEADY_CASES)
+def test_steady_response_matches_the_reference(case, monkeypatch):
+    # The kernel's cycle steps as _cycle_reference does, springs between masses and to the ground, a gap and
+    # smoothed friction: the same settled cycle, harmonics and count of cycles to rounding.
+    system, kind, spring, hz = STEADY_CASES[case]
+    element = nonlinear_test.Element(kind, spring, k3=2e6, gap=0.002, k_gap=5000.0)
+    got = nonlinear_test.steady_response(system, element, 2, 0.5, hz)
+    with monkeypatch.context() as m:
+        m.setattr(native, "module", None)
+        want = nonlinear_test.steady_response(system, element, 2, 0.5, hz)
+    assert got.cycles == want.cycles
+    np.testing.assert_allclose(got.x, want.x, rtol=0, atol=1e-8 * np.abs(want.x).max())
+    np.testing.assert_allclose(got.harmonics, want.harmonics, rtol=0, atol=1e-8 * want.harmonics.max())
