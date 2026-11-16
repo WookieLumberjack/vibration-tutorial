@@ -360,6 +360,13 @@ def _thicker(rng: np.random.Generator) -> Question:
         "It halves: f<sub>c</sub> = (c²/2π)√(ρh/D), and √(ρh/D) ∝ √(h/h³) = 1/h. A thicker panel's bending waves "
         "travel faster, so they catch up with sound at a lower frequency.",
         choices=("It doubles", "It halves", "It stays the same", "It falls by √8"),
+        why=(
+            "f<sub>c</sub> goes as √(ρh/D) ∝ 1/h: a thicker panel's bending waves are faster, and catch sound up at "
+            "a lower frequency.",
+            "",
+            "The bending stiffness D grows as h³ against the mass ρh's h, so f<sub>c</sub> ∝ √(ρh/D) ∝ 1/h moves.",
+            "D grows 8 times, but the mass per area doubles too: √(ρh/D) falls by √(8/2) = 2.",
+        ),
         setup=dict(thickness=6.0),
         predict=True,
     )
@@ -372,6 +379,13 @@ def _double_mass(rng: np.random.Generator) -> Question:
         "6 dB: the mass law's TL ≈ 20 log(ωm″/2ρc), and 20 log 2 = 6.0 dB. (Doubling the thickness doubles the "
         "mass but also halves f<sub>c</sub>, bringing the dip down.)",
         choices=("6 dB", "3 dB", "12 dB", "Nothing: it's set by stiffness"),
+        why=(
+            "",
+            "3 dB is twice the power; the mass law's TL goes as 20 log m″, and 20 log 2 = 6 dB.",
+            "12 dB is four times the mass: the mass law gives 20 log 2 = 6 dB for twice.",
+            "Below coincidence a panel is mass-controlled: its stiffness matters near f<sub>c</sub> and its first "
+            "modes, not here.",
+        ),
         setup=dict(thickness=6.0, tab=TAB_TRANSMISSION),
         predict=True,
     )
@@ -384,6 +398,13 @@ def _even_mode(rng: np.random.Generator) -> Question:
         "(1, 1): the whole panel moves in phase, a piston. In (2, 1) the halves push and pull, and their sound "
         "cancels to a dipole's; in (2, 2), to a quadrupole's. Each even index costs two more powers of k.",
         choices=("(1, 1)", "(2, 1)", "(2, 2)", "All the same"),
+        why=(
+            "",
+            "In (2, 1) the halves push and pull, and at a low frequency their sound cancels to a dipole's.",
+            "In (2, 2) the four quarters cancel to a quadrupole's, the weakest of the three at a low frequency.",
+            "At a low frequency the panel is small against the wavelength, and parts moving in antiphase cancel: "
+            "the in-phase (1, 1) radiates best.",
+        ),
         setup=dict(m=2, n=2),
         predict=True,
     )
@@ -481,6 +502,12 @@ def _flow_direction(rng: np.random.Generator) -> Question:
         "From 1 to 2: P₁₂ = β(E₁ − E₂), whatever drives them. Power flows from the oscillator with more energy to "
         "the one with less, as heat flows from hot to cold.",
         choices=("From 1 to 2", "From 2 to 1", "Neither", "It depends on the forces' phases"),
+        why=(
+            "",
+            "The power flows by energy, not by drive: P₁₂ = β(E₁ − E₂), and oscillator 1 holds more.",
+            "Unequal energies drive a net flow, P₁₂ = β(E₁ − E₂), from the more energetic to the less.",
+            "With independent noise the phases average out: the mean flow is β(E₁ − E₂), set by the energies alone.",
+        ),
         setup=dict(zeta1=0.002, zeta2=0.05, drive_ratio=2.0, tab=TAB_OSCILLATORS),
         predict=True,
     )
@@ -494,6 +521,13 @@ def _equipartition(rng: np.random.Generator) -> Question:
         "Plate 1's: E₂/n₂ → E₁/n₁. With nothing else to lose it by, plate 2 returns what it gets, ωη₂₁E₂ = "
         "ωη₁₂E₁, and reciprocity (n₁η₁₂ = n₂η₂₁) makes that equal modal energies: equipartition.",
         choices=("Plate 1's", "Zero", "Without limit", "Plate 1's energy, not per mode"),
+        why=(
+            "",
+            "With almost no damping of its own, plate 2 loses energy only back to plate 1, so it fills until it "
+            "returns what it gets.",
+            "What it returns to plate 1, ωη₂₁E₂, grows with E₂: it levels off at plate 1's energy per mode.",
+            "Reciprocity, n₁η₁₂ = n₂η₂₁, makes the balance one of energy per mode: E₂/n₂ → E₁/n₁, not E₂ → E₁.",
+        ),
         setup=dict(loss2=0.0001, tab=TAB_SEA),
         predict=True,
     )

@@ -317,6 +317,15 @@ def _lowered(rng: np.random.Generator) -> Question:
             "Sway with yaw",
             "None: they stay pure",
         ),
+        why=(
+            "",
+            "Bounce and pitch couple when the mounts sit unevenly fore and aft. Lowering them keeps them even, and "
+            "the vertical forces still act through the centre of mass.",
+            "Sway and yaw couple when the mounts sit unevenly about the vertical through the centre of mass. "
+            "Lowering them puts their shear below it instead.",
+            "Below the centre of mass the mounts' shear turns the box: a sideways push now rolls it, and a "
+            "fore-and-aft one pitches it.",
+        ),
         setup=dict(drop=0.08, mode=0),
         predict=True,
     )
@@ -334,6 +343,15 @@ def _offset(rng: np.random.Generator) -> Question:
             "Sway with roll",
             "Fore-and-aft with pitch",
             "None: they stay pure",
+        ),
+        why=(
+            "",
+            "Sway and roll couple when the mounts sit above or below the centre of mass; moving it forward keeps "
+            "them level with it.",
+            "Fore-and-aft and pitch couple when the mounts sit above or below the centre of mass; moving it forward "
+            "keeps them level with it.",
+            "With the mounts uneven fore and aft, a vertical force through the centre of mass loads the front and "
+            "rear differently, and pitches the box.",
         ),
         setup=dict(offset=0.08, mode=4, sweep=Sweep.OFFSET),
         predict=True,
@@ -409,6 +427,13 @@ def _torque_modes(rng: np.random.Generator) -> Question:
         "The roll mode alone: the modes are pure, and only the roll mode's shape turns about x, so only its modal "
         "force φᵀQ is not zero.",
         choices=("Roll alone", "Roll and sway", "All six", "Bounce and pitch"),
+        why=(
+            "",
+            "Roll couples with sway only when the mounts sit above or below the centre of mass; these are level "
+            "with it, so the modes are pure.",
+            "With pure modes only the roll mode's shape turns about x, so only its modal force φᵀQ isn't zero.",
+            "A torque about x turns the block about x, which is roll; the bounce and pitch shapes don't turn about x.",
+        ),
         setup=dict(excitation=Excitation.TORQUE, mode=FORCED, tab=TAB_DRIVE),
         predict=True,
     )
@@ -422,6 +447,15 @@ def _lossier(rng: np.random.Generator) -> Question:
         "Almost nothing: hysteretic damping adds iη to the stiffness at every frequency, and well above resonance "
         "|1 + iη|/(r² − 1) hardly changes. It cuts the resonances (passed on start-up) instead.",
         choices=("It hardly changes", "It drops to a third", "It triples", "It drops to a ninth"),
+        why=(
+            "",
+            "Damping matters much only near resonance. Well above it the force goes as |1 + iη|/(r² − 1), and "
+            "η = 0.3 makes |1 + iη| only a few percent more than 1.",
+            "A viscous damper's force would grow with the speed; hysteretic damping adds iη to the stiffness, and "
+            "|1 + iη| is barely more than 1.",
+            "Well above resonance the force is set by r² − 1, not by the damping: three times the η changes "
+            "|1 + iη| by a few percent.",
+        ),
         setup=dict(rpm=3000.0, loss=0.3, mode=FORCED, tab=TAB_RESPONSE),
         predict=True,
     )

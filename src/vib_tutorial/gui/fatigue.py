@@ -231,6 +231,12 @@ def _second_mode(rng: np.random.Generator) -> Question:
         "…too high (1.6 times here): it counts every up-crossing as a cycle of the whole σ's Rayleigh, but the fast "
         "mode's crossings are mostly small ripples on the slow swing.",
         choices=("Too high", "About right", "Too low"),
+        why=(
+            "",
+            "The narrow-band formula counts every up-crossing as a cycle of the whole σ, but the fast mode's "
+            "crossings are mostly small ripples on the slow swing: it counts too much.",
+            "It errs the other way: counting every fast crossing as a large cycle overcounts the damage.",
+        ),
         setup=dict(stress=Stress(sigma2=10.0), tab=TAB_DAMAGE),
         predict=True,
     )
@@ -247,6 +253,12 @@ def _steep_slope(rng: np.random.Generator) -> Question:
             "The many small ones",
             "The ones near the RMS, evenly",
         ),
+        why=(
+            "",
+            "Small cycles are many, but each does damage as S<sup>5</sup>: half the range does 1/32 of the damage.",
+            "The damage per cycle grows as S<sup>5</sup>, so it's weighted hard towards the largest, rarest ranges, "
+            "far above the RMS.",
+        ),
         setup=dict(stress=Stress(sigma2=10.0), b=5.0, tab=TAB_DAMAGE),
         predict=True,
     )
@@ -260,6 +272,12 @@ def _short_record(rng: np.random.Generator) -> Question:
         "It scatters widely (0.67 to 1.53 times the long record's over ten seeds): a few large cycles do most of the "
         "damage, and a short record may or may not catch them. The spectral methods give one number.",
         choices=("It scatters widely", "It stays within a few percent", "It's always low", "It's always high"),
+        why=(
+            "",
+            "A few large cycles do most of the damage, and 20 s may or may not catch them: the scatter is wide.",
+            "It's low when the record misses the large cycles and high when it catches one: it scatters both ways.",
+            "It's low when the record misses the large cycles and high when it catches one: it scatters both ways.",
+        ),
         setup=dict(stress=Stress(sigma2=10.0), b=5.0, duration=20.0, seed=2),
         predict=True,
     )

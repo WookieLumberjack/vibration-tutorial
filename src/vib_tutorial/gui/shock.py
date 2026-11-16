@@ -394,6 +394,14 @@ def _more_q(rng: np.random.Generator) -> Question:
         "Hardly more, 1.74 ×: the shock is over before the damping has acted on the primary peak. A steady sine's "
         "resonance would be five times higher.",
         choices=("Hardly more", "About five times as much", "About √5 times as much", "Less"),
+        why=(
+            "",
+            "That's a steady sine's resonance, which builds over many cycles. A shock is over before the damping "
+            "has acted on the first peak.",
+            "Damping hardly touches the first swing a shock sets off, whatever the Q: the peak barely moves, 1.65 "
+            "to 1.74.",
+            "Less damping can't lower the peak; it barely raises it, as the shock is over before damping acts.",
+        ),
         setup=dict(q=50.0),
         predict=True,
     )
@@ -407,6 +415,13 @@ def _square_top(rng: np.random.Generator) -> Question:
         "Nearly twice it, 1.85 × at Q = 10: a stiff oscillator overshoots a step, to 2 × undamped. A half-sine's top "
         "falls to 1 ×.",
         choices=("Nearly twice it", "About the same", "Far below it"),
+        why=(
+            "",
+            "That's a half-sine's top, whose rise is gradual. A square pulse is a step, and a stiff oscillator "
+            "overshoots a step to twice.",
+            "A stiff oscillator follows a pulse closely and overshoots a sudden step, to nearly twice; only a soft "
+            "one stays below the pulse.",
+        ),
         setup=dict(shape=Shape.SQUARE, duration=11.0),
         predict=True,
     )
@@ -420,6 +435,13 @@ def _srss_short(rng: np.random.Generator) -> Question:
         "…short: 6.62 g against 9.14 g exactly, −28 %. A shock sets every mode off at once and they peak nearly "
         "together, early; the SRSS assumes unrelated times. ABS gives 11.0 g, NRL 9.27 g.",
         choices=("Short", "About right", "Over"),
+        why=(
+            "",
+            "SRSS assumes the modes peak at unrelated times. A shock sets them all off at once and they peak "
+            "nearly together, early, so it comes out short.",
+            "That's ABS, which adds the peaks (11.0 g). SRSS, assuming unrelated times, falls short of a shock's "
+            "peaks in step.",
+        ),
         setup=dict(**UNIFORM, duration=100.0, tab=TAB_CHAIN),
         predict=True,
     )
@@ -433,6 +455,12 @@ def _zero_shift(rng: np.random.Generator) -> Question:
         "It rises, about ten times at 0.2 Hz: integrated over the record the offset is a velocity change the shock "
         "didn't have, and the soft oscillators ring with it (the 2π f Δv line).",
         choices=("It rises a lot", "It hardly changes", "It falls"),
+        why=(
+            "",
+            "Integrated over the record the offset is a velocity change the shock didn't have, and the soft "
+            "oscillators ring with it.",
+            "An offset adds a false velocity change, which can only add response at the low end.",
+        ),
         setup=dict(shape=Shape.TRANSIENT, duration=100.0, noise=2.0, offset=1.0),
         predict=True,
     )

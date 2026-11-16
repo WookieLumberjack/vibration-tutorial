@@ -299,6 +299,14 @@ def _square(rng: np.random.Generator) -> Question:
         "DOFs, and the square folds into a parallelogram with no bar stretched. Maxwell's 2j = b + r holds (8 = 4 "
         "+ 4), but it's needed, not enough.",
         choices=("One", "None", "Two", "Four"),
+        why=(
+            "",
+            "Maxwell's count (8 = 4 + 4) is needed but not enough: the bottom bar between two pins does nothing, "
+            "and the square folds into a parallelogram.",
+            "The three bars that work leave one of the top joints' four DOFs free: a single fold into a parallelogram.",
+            "The three bars that work hold three of the top joints' four DOFs; only one, the fold into a "
+            "parallelogram, is free.",
+        ),
         setup=dict(frame=SQUARE),
         predict=True,
     )
@@ -313,6 +321,15 @@ def _lumped(rng: np.random.Generator) -> Question:
         "lumped puts the mass at the nodes, where it moves most, and the turns get none. For a cantilever in four "
         "beams: 41.78 → 40.61 Hz, 262.1 → 238.7, 738.7 → 632.1.",
         choices=("They fall", "They rise", "They don't change", "Only the axial modes change"),
+        why=(
+            "",
+            "Consistent masses make the mesh a Rayleigh–Ritz model, whose frequencies are upper bounds; lumped "
+            "masses at the nodes come out below them.",
+            "The mass matrix sets the frequencies as much as the stiffness does: lumping it moves them, by several "
+            "percent at the higher modes.",
+            "The bending modes change most: lumping gives the sections' turning no inertia and puts each element's "
+            "mass at its ends.",
+        ),
         setup=dict(frame=dataclasses.replace(cantilever(1.0, 4), lumped=True), matrix=Matrix.M, grid=0.125),
         predict=True,
     )
@@ -330,6 +347,13 @@ def _pinned_bases(rng: np.random.Generator) -> Question:
             "It rises",
             "It hardly changes",
             "It falls to 0 Hz: a mechanism",
+        ),
+        why=(
+            "",
+            "Pins free the columns' feet to turn, which can only make the frame softer.",
+            "Pinned at the foot, each column bends in single curvature, like a cantilever, instead of double: 4 "
+            "times as soft, half the frequency.",
+            "The girder still holds the columns' tops, so the frame still resists sway: softer, not a mechanism.",
         ),
         setup=dict(frame=portal(2.0, 1.5, 4, base=Support.PINNED)),
         predict=True,
@@ -349,6 +373,13 @@ def _timoshenko(rng: np.random.Generator) -> Question:
             "They fall, all by the same fraction",
             "They rise, the higher modes most",
             "They don't change",
+        ),
+        why=(
+            "",
+            "Shear and rotary inertia matter more as the half waves shorten towards the depth, so the higher modes "
+            "fall most.",
+            "Shear flexibility and rotary inertia both lower a frequency, and Timoshenko's beam adds both.",
+            "At five depths long, shear and the sections' turning matter: −6 % for mode 1, more above.",
         ),
         setup=dict(frame=dataclasses.replace(simply_supported(1.0, 8, DEEP), theory=Theory.TIMOSHENKO), grid=0.125),
         predict=True,

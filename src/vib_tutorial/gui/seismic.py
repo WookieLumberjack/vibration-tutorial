@@ -295,6 +295,14 @@ def _soft_soil(rng: np.random.Generator) -> Question:
         "It rises by more than half, 229 to 357 kN: S goes from 1.15 to 1.35, and the plateau now runs to "
         "T<sub>C</sub> = 0.8 s, nearer mode 1, whose S<sub>a</sub> rises from 0.52 to 0.82 g.",
         choices=("It rises by more than half", "It rises a little (S: 1.15 to 1.35)", "It stays the same", "It falls"),
+        why=(
+            "",
+            "The soil factor is only part of it: the plateau now runs to T<sub>C</sub> = 0.8 s, nearer mode 1's "
+            "0.99 s, and S<sub>a</sub> rises from 0.52 to 0.82 g.",
+            "Softer ground raises both the soil factor and the plateau's end, T<sub>C</sub>, towards mode 1.",
+            "Softer ground amplifies the shaking (S from 1.15 to 1.35) and stretches the plateau towards mode 1: "
+            "the shear rises.",
+        ),
         setup=dict(ground=3),
         predict=True,
     )
@@ -308,6 +316,12 @@ def _stiffer(rng: np.random.Generator) -> Question:
         "It rises, 229 to 322 kN: T₁ falls by √2 to 0.70 s, still on the 1/T branch, so S<sub>a</sub> rises by √2. A "
         "stiffer building attracts more force (its drifts still fall).",
         choices=("It rises", "It falls", "It stays the same"),
+        why=(
+            "",
+            "The drifts fall, but the force rises: T₁ moves left on the 1/T branch, where S<sub>a</sub> grows as 1/T.",
+            "On the 1/T branch S<sub>a</sub> grows as the period falls: twice the stiffness is 1/√2 of T₁ and √2 "
+            "of the force.",
+        ),
         setup=dict(stiffness=1e7),
         predict=True,
     )
@@ -321,6 +335,11 @@ def _tank_srss(rng: np.random.Generator) -> Question:
         "Less, 165 kN against CQC's 200, which is near the records' mean: SRSS treats the two modes as independent, but with ρ = "
         "0.50 they move together much of the time, and CQC keeps the cross term.",
         choices=("Less", "About the same", "More"),
+        why=(
+            "",
+            "Two close modes (ρ = 0.50) move together much of the time; SRSS drops their cross term, which CQC keeps.",
+            "SRSS leaves out the positive cross term of two close modes in step, so it comes out under CQC, not over.",
+        ),
         setup=dict(tank=0.01, rule=Rule.SRSS),
         predict=True,
     )
@@ -334,6 +353,12 @@ def _abs(rng: np.random.Generator) -> Question:
         "Too much, 277 kN against the records' 235: ABS assumes every mode peaks at the same moment, and modes this "
         "far apart (ρ₁₂ = 0.007) don't.",
         choices=("Too much", "About the records' mean", "Too little"),
+        why=(
+            "",
+            "ABS assumes every mode peaks at the same moment; modes this far apart (ρ₁₂ = 0.007) don't, so it "
+            "overestimates.",
+            "Adding every mode's peak is the most they could give together, never less than what they do.",
+        ),
         setup=dict(rule=Rule.ABS),
         predict=True,
     )
