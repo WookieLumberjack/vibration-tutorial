@@ -86,8 +86,9 @@ def readout_label() -> QtWidgets.QLabel:
 
 
 class TrialCombo(QtWidgets.QComboBox):
-    """The Things to try, numbered in the order the notes take them, after a prompt ("Pick one…"; none on a
-    page that always shows one).
+    """The Things to try, numbered in the order the notes take them, after a prompt ("Pick one…"): `chosen()`
+    is the trial shown, or None at the prompt (a page that works its settings out from the chain sets up its
+    own opening ones there, and a trial's when one shows).
 
     `picked(i)` fires with the trial's index, and the combo keeps showing it. Picking the shown one again sets
     it up again: Qt only says so through `activated`, which also follows a change, so a change marks the
@@ -124,6 +125,11 @@ class TrialCombo(QtWidgets.QComboBox):
             self.picked.emit(index - self.first)
         else:
             self.setCurrentIndex(index)
+
+    def chosen(self) -> int | None:
+        """The trial shown, or None at the prompt."""
+        index = self.currentIndex() - self.first
+        return index if index >= 0 else None
 
     def unpick(self) -> None:
         """Back to the prompt, picking nothing (a page put back as it opened)."""

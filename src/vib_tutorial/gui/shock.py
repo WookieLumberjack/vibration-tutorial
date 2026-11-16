@@ -121,6 +121,9 @@ SHAPES_TIP = (
     "the page's Q.</p>"
 )
 
+# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
+OPENING: dict[str, Any] = {}
+
 # Things to try: (name, what it sets, note). The duration is set from the chain (`duration_for`).
 TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
@@ -591,7 +594,7 @@ class ShockPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([name for name, _, _ in TRIALS], prompt=None)
+        self.trial = TrialCombo([name for name, _, _ in TRIALS])
         self.trial.setToolTip(
             "<p>Pulses that show something about shock spectra, the duration set from the chain as it is now.</p>"
         )
@@ -793,7 +796,8 @@ class ShockPage(QtWidgets.QWidget):
         so the notes' numbers hold."""
         if self.result is None or self.system is None:
             return
-        _, changes, note = TRIALS[self.trial.currentIndex()]
+        chosen = self.trial.chosen()
+        _, changes, note = TRIALS[chosen] if chosen is not None else ("", OPENING, "")
         self._loading = True
         self.shape.setCurrentIndex(self.shape.findData(changes.get("shape", Shape.HALF_SINE)))
         self.peak.setValue(10.0)
@@ -815,6 +819,7 @@ class ShockPage(QtWidgets.QWidget):
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then the
         pulse and the spectrum's Q; the seed goes back to 1."""
+        self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = ShockSetup(**setup)
         system = t.system()
         if system is not None:
