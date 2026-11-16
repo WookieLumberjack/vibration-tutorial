@@ -1,7 +1,10 @@
 """Self-excited vibration page: van der Pol, galloping, vortex-induced vibration and flutter.
 
 Left: the model and its parameters. Centre: its motion from a small start (time history and phase plane), or for
-flutter the two modes' frequencies and damping against the speed. Right: the sweep (the steady amplitude against
+flutter the two modes' frequencies and damping against the speed. Right: the Motion tab (the body drawn moving,
+`self_excited_view.SectionView`, played by a `Playback` over the run, or over flutter's least stable mode,
+`Flutter.mode`; a slider for the drive whose linearized poles follow it as it's dragged, the model rerun when
+it's let go), the sweep (the steady amplitude against
 the parameter that drives it, which shows the Hopf point and any hysteresis; for flutter the root locus, a pole
 dragged along it setting the speed), and the Theory (its figures:
 gui/self_excited_figures.py). The page has its own models (core/self_excited.py).
@@ -50,6 +53,8 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .playback import Playback
+from .self_excited_view import Body, SectionView
 from .style import colors
 from .theming import add_legend
 
@@ -63,8 +68,11 @@ class Kind(enum.Enum):
 
 KINDS = tuple(Kind)
 LIFTS = ("Steady", "Quasi-steady")  # the tip gives each one's L
-TAB_SWEEP = 0
+TAB_MOTION, TAB_SWEEP = range(2)
 VIV_SWEEP = np.linspace(2.0, 14.0, 41)
+DRIVE_STEPS = 200
+FLUTTER_CYCLES = 16  # the flutter mode played this many cycles
+FLUTTER_START, FLUTTER_CAP = 0.15, 0.6  # its amplitude at the start, and where growth stops being drawn
 
 
 @dataclass(frozen=True)
@@ -73,7 +81,7 @@ class SelfTrial:
     note: str
     kind: Kind
     values: dict = field(default_factory=dict)  # control name → value
-    tab: int = TAB_SWEEP
+    tab: int = TAB_MOTION
     quasi_steady: bool = False  # flutter's lift: steady (θ) or quasi-steady (θ + ḣ/U)
 
 
@@ -94,6 +102,7 @@ TRIALS = (
         "pair of poles crosses the imaginary axis: a (supercritical) Hopf bifurcation.",
         Kind.VDP,
         {"vdp_eps": -0.1},
+        tab=TAB_SWEEP,
     ),
     SelfTrial(
         "Relaxation oscillations",
@@ -119,6 +128,7 @@ TRIALS = (
         "the motion jumps to the upper, and stays there until the wind drops below 4.7 m/s.",
         Kind.GALLOP,
         {"g_speed": 6.0, "g_start": 0.001, "g_periods": 600.0},
+        tab=TAB_SWEEP,
     ),
     SelfTrial(
         "Galloping grows with the wind",
@@ -137,6 +147,7 @@ TRIALS = (
         "resonance.",
         Kind.VIV,
         {"v_reduced": 5.5},
+        tab=TAB_SWEEP,
     ),
     SelfTrial(
         "Out of lock-in",
@@ -464,6 +475,14 @@ TIPS = {
     "lift": "<p>Steady, L ∝ θ: the lift follows the pitch alone, a stiffness. Quasi-steady, L ∝ θ + ḣ/U: it also "
     "follows the plunge's ḣ/U, the angle the plunging section sees, which acts as a damping.</p>",
 }
+DRIVE_TIP = (
+    "<p>What drives the model: ε for van der Pol, the wind speed for galloping and flutter, the reduced velocity "
+    "for VIV. Drag it and the poles below follow at once; the model is run again when you let go.</p>"
+)
+POLES_TIP = (
+    "<p>The poles of the model at small motion, linearized, at the slider's value (grey: over the slider's "
+    "range). A pole right of Re λ = 0 grows: filled in the force colour.</p>"
+)
 SWEEP_TIP = (
     "<p>The settled motion against the parameter that drives it; the dotted line is the value set. For flutter, "
     "the root locus as the speed rises: drag a pole along it to set the speed, and watch one cross Re λ = 0.</p>"
@@ -575,11 +594,50 @@ class SelfExcitedPage(QtWidgets.QWidget):
         for item in (self.sweep2_line, self.sweep2_ref, self.sweep2_curve):
             self.sweep2_plot.addItem(item)
         self.sweep_note = note_label()
+
+        # --- right: the body moving, and the drive's slider moving the poles
+        self.playback = Playback(self, "Self-excited vibration")
+        self.playback.moved.connect(self._place)
+        self.time_cursor = self.playback.add_cursor(self.top_plot)
+        self.section = SectionView()
+        self.section.setMinimumHeight(190)
+        self.drive = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.drive.setRange(0, DRIVE_STEPS)
+        self.drive.setToolTip(DRIVE_TIP)
+        self.drive.valueChanged.connect(self._on_drive)
+        self.drive.sliderReleased.connect(self._commit_drive)
+        self.drive_label = QtWidgets.QLabel()
+        self.drive_label.setBuddy(self.drive)
+        self.drive.setAccessibleName("Drive")
+        self.drive_value = QtWidgets.QLabel()
+        self.drive_range = (0.0, 1.0)
+        drive = QtWidgets.QWidget()
+        dl = QtWidgets.QHBoxLayout(drive)
+        dl.setContentsMargins(0, 0, 0, 0)
+        dl.addWidget(self.drive_label)
+        dl.addWidget(self.drive, 1)
+        dl.addWidget(self.drive_value)
+        self.pole_plot = plot("Im λ / 2π", "Hz", "Re λ", "1/s", height=150)
+        self.pole_plot.setToolTip(POLES_TIP)
+        self.pole_plot.getAxis("bottom").enableAutoSIPrefix(False)  # not "m1/s"
+        self.pole_axis = pg.InfiniteLine(angle=90, pos=0)
+        self.pole_locus = pg.PlotDataItem(pen=None, symbol="o", symbolSize=3)
+        self.pole_now = marker(11)
+        for item in (self.pole_axis, self.pole_locus, self.pole_now):
+            self.pole_plot.addItem(item)
+        self.motion_note = note_label()
+        self.motion: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None  # t, y, θ
+
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
+        self.tabs.addTab(
+            column(self.playback.bar(), self.section, drive, self.pole_plot, self.motion_note, stretch=False),
+            "Motion",
+        )
         self.tabs.addTab(column(self.sweep_plot, self.sweep2_plot, self.sweep_note, stretch=False), "Sweep")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(self._draw_sweep)
+        self.tabs.currentChanged.connect(self._draw_motion)
 
         three_panes(
             self,
@@ -632,6 +690,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
             self.pages.setCurrentIndex(self.kind.currentIndex())
         else:
             self._on_inputs()
+        self.playback.play()  # a trial starts the motion
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -657,6 +716,82 @@ class SelfExcitedPage(QtWidgets.QWidget):
             grip.setVisible(k < now.size)
             if k < now.size:
                 grip.place(float(now[k].real), float(now[k].imag) / (2 * np.pi), self.v("f_speed"))
+
+    # ------------------------------------------------------------- the drive
+    def _drive(self) -> tuple[str, str, float, float]:
+        """The current model's drive: its box, its label, and the slider's range."""
+        if self.current is Kind.VDP:
+            return "vdp_eps", "ε:", -0.5, 3.0
+        if self.current is Kind.GALLOP:
+            onset = self.galloping().onset
+            return "g_speed", "Wind U:", 0.0, max(3.0 * onset, 1.2 * self.v("g_speed"))
+        if self.current is Kind.VIV:
+            return "v_reduced", "U/f<sub>n</sub>D:", 2.0, 14.0
+        m = self.flutter()
+        Uf, Ud = m.flutter_speed(), m.divergence_speed()
+        return "f_speed", "Speed U:", 0.0, 1.3 * (Uf if np.isfinite(Uf) else min(Ud, 100.0))
+
+    def _drive_value(self) -> float:
+        lo, hi = self.drive_range
+        return lo + (hi - lo) * self.drive.value() / DRIVE_STEPS
+
+    def _set_drive(self) -> None:
+        """The slider at the drive box's value, over the model's range, and the poles there."""
+        key, label, lo, hi = self._drive()
+        self.drive_label.setText(label)
+        self.drive_range = (lo, hi)
+        value = self.v(key)
+        self.drive.blockSignals(True)
+        self.drive.setValue(round(DRIVE_STEPS * min(max((value - lo) / (hi - lo), 0.0), 1.0)))
+        self.drive.blockSignals(False)
+        self.drive_value.setText(f"{value:.3g}")
+        values = np.linspace(lo, hi, 61)
+        locus = [p for x in values for p in self._poles(float(x))]
+        re = np.array([p.real for p in locus] or [0.0])
+        hz = np.array([p.imag / TWO_PI for p in locus] or [1.0])
+        self.pole_locus.setData(re, hz)
+        self.pole_plot.setVisible(self.current is not Kind.VIV)
+        self._show_poles(value)
+        lo_x, hi_x = min(float(re.min()), 0.0), max(float(re.max()), 0.0)
+        pad = 0.08 * max(hi_x - lo_x, 1e-6)
+        self.pole_plot.setXRange(lo_x - pad, hi_x + pad, padding=0)
+        self.pole_plot.setYRange(0.0, 1.15 * max(float(hz.max()), 1e-6), padding=0)
+
+    def _poles(self, value: float) -> np.ndarray:
+        """The linearized poles (Im ≥ 0) at the drive's `value`: none for VIV, whose wake is nonlinear."""
+        if self.current is Kind.FLUTTER:
+            lam = self.flutter().poles(value)
+            return lam[lam.imag >= 0]
+        if self.current is Kind.VIV:
+            return np.zeros(0, complex)
+        if self.current is Kind.VDP:
+            w = self.vdp().omega
+            a = -value * w  # ẍ − εω ẋ + ω² x at small x
+        else:
+            g = self.galloping()
+            w = g.omega
+            a = 2 * g.zeta * w - g.rho * value * g.side * PARKINSON[0] / (2 * g.mass)
+        lam = np.roots([1.0, a, w * w])
+        return lam[lam.imag >= 0]
+
+    def _show_poles(self, value: float) -> None:
+        lam = self._poles(value)
+        self.pole_now.setData(lam.real, lam.imag / TWO_PI)
+        grows = bool(np.any(lam.real > 1e-9 * np.maximum(np.abs(lam), 1.0)))
+        mark(self.pole_now, colors.force if grows else colors.mass[0], filled=True)
+
+    def _on_drive(self, step: int) -> None:
+        """The slider moved: the poles follow at once; the model is run again when it's let go (or by a key)."""
+        value = self._drive_value()
+        self.drive_value.setText(f"{value:.3g}")
+        self._show_poles(value)
+        if not self.drive.isSliderDown():
+            self._commit_drive()
+
+    def _commit_drive(self) -> None:
+        key = self._drive()[0]
+        self.boxes[key].setValue(self._drive_value())  # redraws when it changes
+        self._set_drive()
 
     def vdp(self) -> VanDerPol:
         return VanDerPol(self.v("vdp_freq"), self.v("vdp_eps"), self.v("vdp_ref"), self.v("vdp_start"))
@@ -693,6 +828,11 @@ class SelfExcitedPage(QtWidgets.QWidget):
             item.setPen(pg.mkPen(color, width=1.5))
         for grip in self.flutter_dots:
             grip.apply_theme()
+        self.section.apply_theme()
+        self.playback.apply_theme()
+        self.pole_axis.setPen(pg.mkPen(c.faint, width=1.5))
+        self.pole_locus.setSymbolBrush(pg.mkBrush(c.grey))
+        self.pole_locus.setSymbolPen(None)
         dot = QtCore.Qt.PenStyle.DotLine
         for line in (self.top_line, self.bottom_line, self.sweep_line, self.sweep2_line):
             line.setPen(pg.mkPen(c.grey, width=1.5, style=dot))
@@ -723,6 +863,9 @@ class SelfExcitedPage(QtWidgets.QWidget):
             Kind.VIV: self._draw_viv,
             Kind.FLUTTER: self._draw_flutter,
         }[self.current]()
+        self.time_cursor.setVisible(self.current is not Kind.FLUTTER)  # flutter's plots are against the speed
+        self._set_drive()
+        self._draw_motion()
         self._draw_sweep()
         settle_plots(self)
 
@@ -749,6 +892,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         m = self.vdp()
         t, x, v = m.simulate(self.v("vdp_periods"))
         self._time_and_phase(t, x, v, 1.0, "m", "x")
+        self._trace = (t, x)
         amp = float(settled_amplitude(x))
         self.info.setText(
             f"Damping at rest ζ = {-m.eps / 2:.3g}; averaging's limit cycle: "
@@ -767,6 +911,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         m = self.galloping()
         t, y, v = m.simulate(self.v("g_periods"))
         self._time_and_phase(t, y, v, m.side, None, "y / D")
+        self._trace = (t, y / m.side)
         amp = float(settled_amplitude(y))
         self.info.setText(
             f"Onset U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) = {m.onset:.3g} m/s; U/U<sub>g</sub> = {m.speed / m.onset:.3g}."
@@ -781,6 +926,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         t, z = m.run(np.array([m.reduced]), periods=150.0)
         y, v, q = z[:, 0, 0], z[:, 1, 0], z[:, 2, 0]
         self._time_and_phase(t, y, v, m.diameter, None, "y / D")
+        self._trace = (t, y / m.diameter)
         legend = self.top_plot.getPlotItem().legend
         scale = max(float(np.max(np.abs(y))) / m.diameter, 1e-6) / max(float(np.max(np.abs(q))), 1e-9)
         self.top_items[1].setData(t, q * scale)
@@ -836,6 +982,71 @@ class SelfExcitedPage(QtWidgets.QWidget):
             + ", ".join(f"{abs(p) / (2 * np.pi):.3g} Hz with ζ = {-p.real / abs(p):.3g}" for p in sorted(up, key=abs))
             + "."
         )
+
+    def _draw_motion(self) -> None:
+        """The body's motion for the Motion tab: the run the centre shows, or flutter's least stable mode."""
+        if self.tabs.currentIndex() != TAB_MOTION or not hasattr(self, "current") or self._stale:
+            return
+        axis = 0.0
+        if self.current is Kind.FLUTTER:
+            m = self.flutter()
+            speed = self.v("f_speed")
+            lam, h, theta = m.mode(speed)
+            body, axis = Body.WING, -0.5 + m.e  # the elastic axis, e semichords behind the quarter chord
+            if lam.imag <= 0:
+                t = np.array([0.0, 1.0])
+                y = th = np.zeros(2)
+                self.motion_note.setText(f"At {speed:.3g} m/s neither mode oscillates.")
+            else:
+                w = lam.imag
+                t = np.linspace(0.0, FLUTTER_CYCLES * TWO_PI / w, FLUTTER_CYCLES * 48 + 1)
+                amp = np.minimum(FLUTTER_START * np.exp(lam.real * t), FLUTTER_CAP)
+                e = np.exp(1j * w * t)
+                y = -(h / m.semichord * e).real * amp  # h is down; drawn up
+                th = (theta * e).real * amp
+                lead = math.degrees(math.atan2((-h).imag, (-h).real))
+                per = math.exp(TWO_PI * lam.real / w)
+                self.motion_note.setText(
+                    f"The least stable mode at {speed:.3g} m/s, {w / TWO_PI:.3g} Hz: the plunge (up) "
+                    f"{'leads' if lead >= 0 else 'lags'} the pitch (nose up) by {abs(lead):.3g}°, and the motion "
+                    + (
+                        f"grows {per:.3g}× a cycle (drawn until it reaches {FLUTTER_CAP:g} b)."
+                        if per > 1
+                        else f"decays to {per:.3g} of itself each cycle."
+                    )
+                )
+            grows = bool(lam.real > 0)
+        else:
+            t, y = self._trace
+            th = np.zeros_like(y)
+            body = {Kind.VDP: Body.BLOCK, Kind.GALLOP: Body.SQUARE, Kind.VIV: Body.CIRCLE}[self.current]
+            if self.current is Kind.VDP:
+                grows = self.v("vdp_eps") > 0
+                self.motion_note.setText("The mass on its spring, as the time history shows it.")
+            elif self.current is Kind.GALLOP:
+                g = self.galloping()
+                grows = g.speed > g.onset
+                self.motion_note.setText(
+                    f"The square to scale, in a {g.speed:.3g} m/s wind from the left (the onset is {g.onset:.3g} m/s)."
+                )
+            else:
+                grows = float(settled_amplitude(y)) > 0.05
+                self.motion_note.setText(
+                    "The cylinder to scale, in the flow from the left. Its wake is a nonlinear oscillator of its "
+                    "own, so there are no poles to show."
+                )
+        self.section.unstable = grows
+        self.section.set_body(body, axis)
+        self.section.set_range(max(float(np.max(np.abs(y))), 0.3 if body is not Body.BLOCK else 1e-9))
+        self.motion = (t, y, th)
+        self.playback.set_span(float(t[-1]))  # places the body
+
+    def _place(self, t: float) -> None:
+        if self.motion is None:
+            return
+        ts, y, th = self.motion
+        k = min(int(np.searchsorted(ts, t)), ts.size - 1)
+        self.section.set_state(float(y[k]), float(th[k]))
 
     def _draw_sweep(self) -> None:
         if self.tabs.currentIndex() != TAB_SWEEP or not hasattr(self, "current") or self._stale:

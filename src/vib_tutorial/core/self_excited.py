@@ -368,6 +368,24 @@ class Flutter:
                 return hi
         return math.nan
 
+    def mode(self, speed: float) -> tuple[complex, complex, complex]:
+        """The least stable oscillating mode at this speed: its pole λ (Im > 0), and its plunge h and pitch θ as
+        complex amplitudes (the motion is Re(h e^{λt}), Re(θ e^{λt})), scaled so the larger of |h|/b and |θ| is 1
+        and θ is real (h's phase is then its lead on the pitch). (0, 0, 0) when no mode oscillates."""
+        M, C, K = self.matrices(speed)
+        Mi = np.linalg.inv(M)
+        A = np.block([[np.zeros((2, 2)), np.eye(2)], [-Mi @ K, -Mi @ C]])
+        lam, vec = np.linalg.eig(A)
+        up = np.flatnonzero(lam.imag > 1e-9)
+        if not up.size:
+            return 0j, 0j, 0j
+        k = int(up[np.argmax(lam.real[up])])
+        h, theta = complex(vec[0, k]), complex(vec[1, k])
+        if abs(theta) > 0:
+            h, theta = h * abs(theta) / theta, complex(abs(theta))  # θ real: the phases relative to the pitch
+        scale = max(abs(h) / self.semichord, abs(theta))
+        return complex(lam[k]), h / scale, theta / scale
+
     def divergence_speed(self) -> float:
         """Where the pitch spring is used up by the lift's moment: k_θ = q 2b 2π e b."""
         if self.e <= 0:

@@ -109,3 +109,56 @@ def test_divergence_is_not_flutter():
     Ud = f.divergence_speed()
     lam = f.poles(1.001 * Ud)
     assert np.any((lam.real > 0) & (np.abs(lam.imag) < 1e-6))
+
+
+def test_flutter_mode_solves_the_sections_equations():
+    """λ and (h, θ) satisfy (λ²M + λC + K)(h, θ) = 0, θ real and the larger of |h|/b, |θ| one; the least stable
+    mode crosses into the right half plane at the flutter speed."""
+    m = Flutter(quasi_steady=True)
+    Uf = m.flutter_speed()
+    for U in (0.5 * Uf, 1.1 * Uf):
+        lam, h, theta = m.mode(U)
+        M, C, K = m.matrices(U)
+        v = np.array([h, theta])
+        assert np.linalg.norm((lam * lam * M + lam * C + K) @ v) < 1e-9 * np.linalg.norm(K) * np.linalg.norm(v)
+        assert theta.imag == 0 and max(abs(h) / m.semichord, abs(theta)) == pytest.approx(1.0)
+        assert lam.imag > 0 and lam.real == pytest.approx(max(p.real for p in m.poles(U) if p.imag > 1e-9))
+        assert (lam.real > 0) == (U > Uf)
+
+
+def test_the_motion_tab_plays_the_body_and_the_slider_moves_the_poles(main_window):
+    """The Motion tab plays the run the centre shows (the galloping square at y / D), or flutter's least stable
+    mode; dragging the slider moves the poles at once and sets the wind speed only when let go."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui.self_excited import TAB_MOTION, TRIALS, Kind
+    from vib_tutorial.gui.self_excited_view import Body
+
+    w = main_window
+    page = w.self_excited_page
+    w.pages.setCurrentWidget(page)
+    QtWidgets.QApplication.processEvents()
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Galloping grows with the wind"))
+    assert page.tabs.currentIndex() == TAB_MOTION and page.playback.running  # a trial starts it
+    assert page.section.body is Body.SQUARE and page.section.unstable
+    t, y, _ = page.motion
+    page.playback.seek(float(t[-1]) * 0.8)
+    k = int(np.searchsorted(t, page.playback.t))
+    assert page.section.state[0] == pytest.approx(y[k])
+    assert np.max(np.abs(y)) > 2.0  # 2.7 D, drawn to scale
+
+    speed = page.v("g_speed")
+    page.drive.setSliderDown(True)
+    page.drive.setValue(10)  # near no wind: the pole moves left of Re λ = 0 ...
+    assert page.pole_now.getData()[0][0] < 0 and page.v("g_speed") == speed  # ... but the model isn't rerun
+    chosen = page._drive_value()
+    page.drive.setSliderDown(False)  # let go: Qt emits sliderReleased
+    assert page.v("g_speed") == pytest.approx(chosen, abs=0.01) and page.v("g_speed") < speed
+    assert not page.section.unstable
+
+    page.kind.setCurrentIndex(list(Kind).index(Kind.FLUTTER))
+    assert page.section.body is Body.WING
+    lam, _, _ = page.flutter().mode(page.v("f_speed"))
+    assert page.section.unstable == (lam.real > 0)
+    _, y, th = page.motion
+    assert np.max(np.abs(th)) > 0 and page.time_cursor.isVisible() is False  # flutter's plots are against U
