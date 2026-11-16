@@ -1,7 +1,6 @@
 """The FRF matrix page's build-up: the first r modal terms summed, stepped from one to all."""
 
 import numpy as np
-import pytest
 
 
 def test_the_build_up_sums_the_first_terms_and_steps_to_all(main_window):

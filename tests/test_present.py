@@ -52,9 +52,55 @@ def test_f5_steps_every_page_through_the_levels_and_back(window):
 def test_every_page_has_panes_to_fold(window):
     """Each page's outermost splitter is found, so F5 reaches it."""
     from vib_tutorial.gui import present
+    from vib_tutorial.gui.main_window import PAGE_GROUPS
 
     w = window
-    for i in range(w.pages.count()):
-        w.pages.setCurrentIndex(i)  # builds it
-        page = w.pages.widget(i)
-        assert page is not None and present.splitter(page) is not None, w.pages.tabText(i)
+    for _, pages in PAGE_GROUPS:
+        for name, _ in pages:
+            page = getattr(w, name)  # built now
+            assert present.splitter(page) is not None, name
+
+
+def test_ink_draws_on_the_page_the_pointer_follows_and_esc_clears_them(window):
+    from PySide6 import QtCore, QtGui, QtTest, QtWidgets
+
+    from vib_tutorial.gui.ink import Mode
+
+    w = window
+    w.show()
+    QtWidgets.QApplication.processEvents()
+    ink = w.ink
+    assert not ink.isVisible() and not w.ink_escape.isEnabled()
+
+    w.toggle_ink()  # F7: the overlay takes the mouse
+    assert ink.mode is Mode.INK and ink.isVisible() and w.ink_escape.isEnabled()
+    assert ink.parentWidget() is w.pages and ink.geometry() == w.pages.rect()
+    assert not ink.testAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    QtTest.QTest.mousePress(ink, QtCore.Qt.MouseButton.LeftButton, pos=QtCore.QPoint(100, 100))
+    move = QtGui.QMouseEvent(
+        QtCore.QEvent.Type.MouseMove,
+        QtCore.QPointF(160, 130),
+        QtCore.QPointF(ink.mapToGlobal(QtCore.QPoint(160, 130))),
+        QtCore.Qt.MouseButton.NoButton,
+        QtCore.Qt.MouseButton.LeftButton,
+        QtCore.Qt.KeyboardModifier.NoModifier,
+    )
+    QtWidgets.QApplication.sendEvent(ink, move)
+    QtTest.QTest.mouseRelease(ink, QtCore.Qt.MouseButton.LeftButton, pos=QtCore.QPoint(160, 130))
+    assert len(ink.strokes) == 1 and ink.strokes[0].size() == 2
+    ink.grab()  # paints
+
+    w.toggle_ink()  # F7 again: the page has the mouse back, the ink stays
+    assert ink.mode is Mode.OFF and ink.isVisible() and len(ink.strokes) == 1
+    assert ink.testAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+    w.pages.setCurrentWidget(w.sdof_page)  # another page: its ink goes
+    assert not ink.strokes and not ink.isVisible() and not w.ink_escape.isEnabled()
+
+    w.toggle_pointer()  # F6
+    assert ink.mode is Mode.POINTER and ink.isVisible()
+    assert ink.timer.isActive()
+    QtGui.QCursor.setPos(ink.mapToGlobal(QtCore.QPoint(50, 60)))
+    ink._tick()
+    ink.grab()
+    w.ink_escape.activated.emit()  # Esc
+    assert ink.mode is Mode.OFF and ink.pointer is None and not ink.isVisible() and not ink.timer.isActive()

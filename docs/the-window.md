@@ -128,6 +128,11 @@ then needs less room: about 760 px wide without the controls and 740 without eit
 larger *Size* fits a smaller screen (its height, about 660 px, is still the plots'). The choice is remembered,
 across the restart a new *Size* takes.
 
+**F6** turns on a pointer, a large dot in the force colour that follows the mouse, for pointing at a curve
+across the room. **F7** is ink: drag to draw on the page (circle a peak, sketch the curve you expect before
+showing it); F7 again gives the mouse back to the page with the ink left on it. **Esc** clears the ink and
+turns both off, and changing page clears the ink.
+
 ## Defaults
 
 *Defaults* (top right, or Ctrl+R) puts the page showing back as it first opened: every control as it was,

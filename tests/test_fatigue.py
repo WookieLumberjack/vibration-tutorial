@@ -98,7 +98,7 @@ def test_the_rainflow_tab_steps_through_the_count(main_window):
         page.rf_step.click()
         assert page.rf_k == k
     assert not page.rf_step.isEnabled() and "Done." in page.rf_note.text()
-    ranges, counts = rainflow(page.rf_p)
+    _, counts = rainflow(page.rf_p)
     full, half = int(np.sum(counts == 1.0)), int(np.sum(counts == 0.5))
     assert f"Counted: {full} full and {half} half cycles" in page.rf_tally.text()
     xs = page.rf_full.getData()[0]
