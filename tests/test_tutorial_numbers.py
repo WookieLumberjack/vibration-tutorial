@@ -4310,7 +4310,7 @@ def test_model_updating_worked_example():
     from vib_tutorial.gui.model_updating import TRIALS as UPDATING
 
     factor = quoted("model_updating", "1.3")
-    assert UPDATING[0][1] == {"k": {2: factor}}  # the first trial, the page's opening error
+    assert UPDATING[0].changes == (("k", 2, factor),)  # the first trial, the page's opening error
     assert 100 * (factor - 1) == pytest.approx(quoted("model_updating", "30 %"))
     stiff[2] *= factor
     model = modal_analysis(ChainSystem(chain.masses, stiff, chain.damping))

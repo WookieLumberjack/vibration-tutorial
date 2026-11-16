@@ -11,8 +11,7 @@ from __future__ import annotations
 
 import itertools
 import math
-from dataclasses import dataclass
-from types import SimpleNamespace
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 import numpy as np
@@ -104,102 +103,32 @@ SENSITIVITY_TIP = (
 )
 DEFAULT_UPDATE = {"kinds": (Kind.SPRING,), "shapes": True, "damping": False, "weight": 0.1, "reg": 0.0}
 
-# At the prompt: the model's k3 30 % too stiff (the first trial's errors), so there is something to update.
-OPENING: dict[str, Any] = {"k": {2: 1.3}}
-
-# Errors to try: (name, {"k": {element: factor}, "m": ..., "c": ..., "all_k": factor, "sensors": [...],
-# "source": Source}, note). Elements count from 0; -1 is the last.
-TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
-    (
-        "One spring 30 % too stiff",
-        {"k": {2: 1.3}},
-        "The model's k3 is 1.3 times the structure's. Its frequencies are all too high, by 2.2, 4.1, 0.6 and 6.6 % "
-        "(the hammer test finds the first three; the table compares the model with that test, whose own errors "
-        "shift these a little, so mode 3 reads +0.3 % there): mode 3's least, since k3 stretches little in it. The shapes "
-        "barely change (MACs of 0.99 and up), so they are little help in finding it.",
-    ),
-    (
-        "One mass 20 % too heavy",
-        {"m": {1: 1.2}},
-        "The model's m2 is 1.2 times the structure's: its frequencies are too low, by 1.8, 3.2, 0.5 and 3.5 %. A "
-        "mass error and a spring error both just move the frequencies; which one it is, and where, takes the "
-        "pattern of the errors over the modes.",
-    ),
-    (
-        "Every spring 10 % too soft",
-        {"all_k": 0.9},
-        "Every frequency is √0.9 − 1 = −5.1 % off, and every shape exactly right: a uniform stiffness (or mass) "
-        "error scales the frequencies and leaves the shapes alone, so the MACs see nothing.",
-    ),
-    (
-        "Dampers twice too strong",
-        {"all_c": 2.0},
-        "The model's dampers are twice the structure's: its damping ratios are double the test's, and its "
-        "frequencies and shapes don't move. Damping can only be checked against the measured ζ.",
-    ),
-    (
-        "Two sensors",
-        {"k": {2: 1.3}, "sensors": [0, -1], "source": Source.EXACT},
-        "The same spring error, every mode measured, but on m1 and the last mass only. Each shape is now two "
-        "numbers, and four modes can't all look different in two: modes 2 and 4 have an auto-MAC of 0.91 without noise "
-        "(spatial aliasing), and only their frequencies tell them apart.",
-    ),
-    (
-        "No error: the test's own noise",
-        {"source": Source.HAMMER},
-        "The model is exactly the structure. Every difference left is the test's: its frequencies within "
-        "0.3 %, and the highest mode it finds (mode 3) at a MAC of only 0.92, its curve fit's error. The model "
-        "can't be correlated more finely than that.",
-    ),
-    (
-        "Update: find the stiff spring",
-        {"k": {2: 1.3}, "source": Source.HAMMER},
-        "The springs updated against the hammer test's three frequencies and shapes (Updating tab): k3 comes down "
-        "from 1.30 to 1.02 in a few steps, and the other springs stay within 3.5 % of the truth. What is left is "
-        "the test's: its shapes' errors pull the springs a little. Apply it to the model and correlate again.",
-    ),
-    (
-        "Update: masses too, not unique",
-        {"k": {2: 1.3}, "source": Source.EXACT, "update": {"kinds": (Kind.SPRING, Kind.MASS)}},
-        "Springs and masses updated together against every mode: the fit is near perfect, but every factor comes "
-        "out 2 to 4 % high instead of k3 alone coming down. Scaling every mass and spring together changes no "
-        "frequency and no shape: one singular value is 0, and the data can't fix that direction. Pin it with a "
-        "known mass (untick masses) or regularization.",
-    ),
-    (
-        "Update: regularized",
-        {"k": {2: 1.3}, "source": Source.HAMMER, "update": {"reg": 1.0}},
-        "The same springs, regularization λ = 1: the fit is held near where it started, and k3 only comes down to "
-        "1.29. Regularization trades the fit for the smallest change; it settles what the data can't, but here "
-        "it keeps the model's error. Lower it and watch k3 come down.",
-    ),
-    (
-        "Update: the dampers",
-        {"all_c": 2.0, "source": Source.HAMMER, "update": {"kinds": (Kind.DAMPER,), "shapes": False, "damping": True}},
-        "The model's dampers are twice the structure's; the dampers updated against the measured damping ratios. "
-        "They come back to within 15 % of the truth: the hammer test's ζ are its least accurate numbers.",
-    ),
-)
-
-# ------------------------------------------------------------------ practice problems
-# Each question's numbers are printed round, and its answer is worked from them as printed.
 TAB_FREQUENCIES, TAB_SHAPES, TAB_AUTO, TAB_COMAC, TAB_UPDATING, TAB_SENSITIVITY = range(6)
 
 
 @dataclass(frozen=True)
 class UpdatingSetup:
-    """A practice problem's setup: the structure (a chain; none: the one there is), the test, the sensors (0-based;
-    none: every mass), the model's error factors (none: all 1) and the tab to show."""
+    """The page's settings: a Thing to try (its name and note), a practice problem's setup or what the page shows.
+    The structure (a chain; none: the one there is), the test (None: the one there is), the sensors (0-based, −1
+    the last; none: every mass), the model's error factors (none: all 1, then `changes`, each (m, k or c, element,
+    factor), and `scale_springs` and `scale_dampers` on top), the Updating tab's settings (`update`, over
+    DEFAULT_UPDATE) and the tab to show (None: where it is)."""
 
+    name: str = ""
+    note: str = ""
     masses: tuple[float, ...] = ()
     springs: tuple[float, ...] = ()
     dampers: tuple[float, ...] = ()
-    source: Source = Source.EXACT
+    source: Source | None = Source.EXACT
     sensors: tuple[int, ...] = ()
     mass_factors: tuple[float, ...] = ()
     spring_factors: tuple[float, ...] = ()
     damper_factors: tuple[float, ...] = ()
-    tab: int = TAB_FREQUENCIES
+    tab: int | None = TAB_FREQUENCIES
+    changes: tuple[tuple[str, int, float], ...] = ()
+    scale_springs: float = 1.0
+    scale_dampers: float = 1.0
+    update: dict[str, Any] = field(default_factory=dict)
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -210,10 +139,111 @@ class UpdatingSetup:
         def factors(given: tuple[float, ...]) -> np.ndarray:
             return np.array(given, dtype=float) if given else np.ones(n)
 
-        return Errors(factors(self.mass_factors), factors(self.spring_factors), factors(self.damper_factors))
+        e = Errors(factors(self.mass_factors), factors(self.spring_factors), factors(self.damper_factors))
+        for kind, i, f in self.changes:
+            {"m": e.mass, "k": e.stiffness, "c": e.damping}[kind][min(i % n, n - 1)] = f
+        e.stiffness[:] *= self.scale_springs
+        e.damping[:] *= self.scale_dampers
+        return e
 
 
-PRACTICE_SETUP = UpdatingSetup  # what a practice problem's setup and the page's practice_state are
+def _trial(name: str, note: str, **changes: Any) -> UpdatingSetup:
+    """A Thing to try: errors on the chain as it is, the test left as it is unless named."""
+    return UpdatingSetup(name, note, **{"source": None, "tab": None, **changes})
+
+
+# Errors to try: each on the chain as it is.
+TRIALS = (
+    _trial(
+        "One spring 30 % too stiff",
+        "The model's k3 is 1.3 times the structure's. Its frequencies are all too high, by 2.2, 4.1, 0.6 and 6.6 % "
+        "(the hammer test finds the first three; the table compares the model with that test, whose own errors "
+        "shift these a little, so mode 3 reads +0.3 % there): mode 3's least, since k3 stretches little in it. The shapes "
+        "barely change (MACs of 0.99 and up), so they are little help in finding it.",
+        changes=(("k", 2, 1.3),),
+    ),
+    _trial(
+        "One mass 20 % too heavy",
+        "The model's m2 is 1.2 times the structure's: its frequencies are too low, by 1.8, 3.2, 0.5 and 3.5 %. A "
+        "mass error and a spring error both just move the frequencies; which one it is, and where, takes the "
+        "pattern of the errors over the modes.",
+        changes=(("m", 1, 1.2),),
+    ),
+    _trial(
+        "Every spring 10 % too soft",
+        "Every frequency is √0.9 − 1 = −5.1 % off, and every shape exactly right: a uniform stiffness (or mass) "
+        "error scales the frequencies and leaves the shapes alone, so the MACs see nothing.",
+        scale_springs=0.9,
+    ),
+    _trial(
+        "Dampers twice too strong",
+        "The model's dampers are twice the structure's: its damping ratios are double the test's, and its "
+        "frequencies and shapes don't move. Damping can only be checked against the measured ζ.",
+        scale_dampers=2.0,
+    ),
+    _trial(
+        "Two sensors",
+        "The same spring error, every mode measured, but on m1 and the last mass only. Each shape is now two "
+        "numbers, and four modes can't all look different in two: modes 2 and 4 have an auto-MAC of 0.91 without noise "
+        "(spatial aliasing), and only their frequencies tell them apart.",
+        changes=(("k", 2, 1.3),),
+        sensors=(0, -1),
+        source=Source.EXACT,
+    ),
+    _trial(
+        "No error: the test's own noise",
+        "The model is exactly the structure. Every difference left is the test's: its frequencies within "
+        "0.3 %, and the highest mode it finds (mode 3) at a MAC of only 0.92, its curve fit's error. The model "
+        "can't be correlated more finely than that.",
+        source=Source.HAMMER,
+    ),
+    _trial(
+        "Update: find the stiff spring",
+        "The springs updated against the hammer test's three frequencies and shapes (Updating tab): k3 comes down "
+        "from 1.30 to 1.02 in a few steps, and the other springs stay within 3.5 % of the truth. What is left is "
+        "the test's: its shapes' errors pull the springs a little. Apply it to the model and correlate again.",
+        changes=(("k", 2, 1.3),),
+        source=Source.HAMMER,
+    ),
+    _trial(
+        "Update: masses too, not unique",
+        "Springs and masses updated together against every mode: the fit is near perfect, but every factor comes "
+        "out 2 to 4 % high instead of k3 alone coming down. Scaling every mass and spring together changes no "
+        "frequency and no shape: one singular value is 0, and the data can't fix that direction. Pin it with a "
+        "known mass (untick masses) or regularization.",
+        changes=(("k", 2, 1.3),),
+        source=Source.EXACT,
+        update={
+            "kinds": (
+                Kind.SPRING,
+                Kind.MASS,
+            )
+        },
+    ),
+    _trial(
+        "Update: regularized",
+        "The same springs, regularization λ = 1: the fit is held near where it started, and k3 only comes down to "
+        "1.29. Regularization trades the fit for the smallest change; it settles what the data can't, but here "
+        "it keeps the model's error. Lower it and watch k3 come down.",
+        changes=(("k", 2, 1.3),),
+        source=Source.HAMMER,
+        update={"reg": 1.0},
+    ),
+    _trial(
+        "Update: the dampers",
+        "The model's dampers are twice the structure's; the dampers updated against the measured damping ratios. "
+        "They come back to within 15 % of the truth: the hammer test's ζ are its least accurate numbers.",
+        scale_dampers=2.0,
+        source=Source.HAMMER,
+        update={"kinds": (Kind.DAMPER,), "shapes": False, "damping": True},
+    ),
+)
+
+# At the prompt: the model's k3 30 % too stiff (the first trial's errors), so there is something to update.
+OPENING = replace(TRIALS[0], name="", note="")
+
+# ------------------------------------------------------------------ practice problems
+# Each question's numbers are printed round, and its answer is worked from them as printed.
 
 
 def _uniform(n: int) -> dict:
@@ -480,7 +510,7 @@ PROBLEMS = tuple(
 NOTES_HTML = load_notes(
     "model_updating",
     figures=updating_figures.FIGURES,
-    trials=trials_html(SimpleNamespace(name=name, note=note) for name, _, note in TRIALS),
+    trials=trials_html(TRIALS),
 )
 
 
@@ -583,7 +613,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([name for name, _, _ in TRIALS])
+        self.trial = TrialCombo([t.name for t in TRIALS])
         self.trial.setToolTip(
             "<p>Model errors (and tests) that show something about correlation, set on the chain as it is now.</p>"
         )
@@ -837,31 +867,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
 
     def apply_trial(self) -> None:
         """Set the errors (and the test) the chosen trial asks for, on the chain as it is, measured with the first
-        seed: the notes quote that measurement."""
-        if self.system is None:
-            return
+        seed: the notes quote that measurement. It measures again only if the test changed."""
         chosen = self.trial.chosen()
-        _, changes, note = TRIALS[chosen] if chosen is not None else ("", OPENING, "")
-        n = self.system.n
-        e = Errors.none(n)
-        for key, arr in (("m", e.mass), ("k", e.stiffness), ("c", e.damping)):
-            for i, f in changes.get(key, {}).items():
-                arr[min(i % n, n - 1)] = f
-        e.stiffness[:] *= changes.get("all_k", 1.0)
-        e.damping[:] *= changes.get("all_c", 1.0)
-        self._set_errors(e)
-        want = {i % n for i in changes.get("sensors", range(n))}
-        self._loading = True
-        for i, box in enumerate(self.sensors):
-            box.setChecked(i in want)
-        if "source" in changes:
-            self.source.setCurrentIndex(self.source.findData(changes["source"]))
-        self._set_update_settings({**DEFAULT_UPDATE, **changes.get("update", {})})
-        self._loading = False
-        self.trial_note.setText(note)
-        again = self.test is None or self.test.source is not self.source.currentData() or self.seed != 1
-        self.seed = 1  # the notes' numbers are this measurement's
-        self._schedule(measure=again)
+        self._load(TRIALS[chosen] if chosen is not None else OPENING, measure=False)
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its structure (through the Simulation page), then
@@ -873,35 +881,42 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             self.system_requested.emit(system)
             if self.system is None or not _same_chain(self.system, system):
                 self.set_system(system)  # nobody passed it back: show it here alone
+        self._load(t, measure=True)
+
+    def _load(self, t: UpdatingSetup, measure: bool) -> None:
         if self.system is None:
             return
         n = self.system.n
         self._set_errors(t.errors(n))
-        want = set(t.sensors) if t.sensors else set(range(n))
+        want = {i % n for i in t.sensors} if t.sensors else set(range(n))
         self._loading = True
         for i, box in enumerate(self.sensors):
             box.setChecked(i in want)
-        self.source.setCurrentIndex(self.source.findData(t.source))
-        self._set_update_settings(DEFAULT_UPDATE)
+        if t.source is not None:
+            self.source.setCurrentIndex(self.source.findData(t.source))
+        self._set_update_settings({**DEFAULT_UPDATE, **t.update})
         self._loading = False
-        self.trial_note.setText("")
-        self.tabs.setCurrentIndex(t.tab)
-        self.seed = 1
-        self._schedule(measure=True)
+        self.trial_note.setText(t.note)
+        if t.tab is not None:
+            self.tabs.setCurrentIndex(t.tab)
+        again = measure or self.test is None or self.test.source is not self.source.currentData() or self.seed != 1
+        self.seed = 1  # the notes' numbers are this measurement's
+        self._schedule(measure=again)
 
     def practice_state(self) -> UpdatingSetup:
-        """The structure, the test and the model's errors, as a setup: what a practice spec checks."""
+        """The structure, the test and the model's errors, as a setup: what a practice spec checks and Defaults
+        puts back."""
         s, e = self.system, self.errors
         return UpdatingSetup(
-            tuple(float(v) for v in s.masses) if s is not None else (),
-            tuple(float(v) for v in s.stiffness) if s is not None else (),
-            tuple(float(v) for v in s.damping) if s is not None else (),
-            self.source.currentData(),
-            tuple(i for i, box in enumerate(self.sensors) if box.isChecked()),
-            tuple(float(v) for v in e.mass) if e is not None else (),
-            tuple(float(v) for v in e.stiffness) if e is not None else (),
-            tuple(float(v) for v in e.damping) if e is not None else (),
-            self.tabs.currentIndex(),
+            masses=tuple(float(v) for v in s.masses) if s is not None else (),
+            springs=tuple(float(v) for v in s.stiffness) if s is not None else (),
+            dampers=tuple(float(v) for v in s.damping) if s is not None else (),
+            source=self.source.currentData(),
+            sensors=tuple(i for i, box in enumerate(self.sensors) if box.isChecked()),
+            mass_factors=tuple(float(v) for v in e.mass) if e is not None else (),
+            spring_factors=tuple(float(v) for v in e.stiffness) if e is not None else (),
+            damper_factors=tuple(float(v) for v in e.damping) if e is not None else (),
+            tab=self.tabs.currentIndex(),
         )
 
     def _set_update_settings(self, settings: dict) -> None:

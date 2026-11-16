@@ -4110,10 +4110,10 @@ def test_model_updating_page(app):
     p.table.selectRow(1)
     assert "Test mode 2" in p.shape_note.text()
 
-    for name, _, note in TRIALS:
-        p.trial.pick(name)
+    for t in TRIALS:
+        p.trial.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == note and p.corr.pairs
+        assert p.trial_note.text() == t.note and p.corr.pairs
     p.trial.pick("Two sensors")
     p.recompute()
     assert p.source.currentData() is Source.EXACT and [b.isChecked() for b in p.sensors] == [True, False, False, True]
