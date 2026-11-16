@@ -21,7 +21,7 @@ from __future__ import annotations
 import enum
 import functools
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 import scipy.linalg
@@ -269,10 +269,18 @@ def time_history(system: ChainSystem, design: Design, ground: Accelerogram, tail
 
 
 @functools.lru_cache(maxsize=8)
-def records(design: Design, count: int = RECORDS) -> tuple[Accelerogram, ...]:
-    """`count` ground motions to the design spectrum (seeds 1 … count); they depend on the spectrum alone, so
-    they're kept while only the building changes."""
+def _unit_records(design: Design, count: int) -> tuple[Accelerogram, ...]:
     return tuple(accelerogram(design, seed) for seed in range(1, count + 1))
+
+
+def records(design: Design, count: int = RECORDS) -> tuple[Accelerogram, ...]:
+    """`count` ground motions to the design spectrum (seeds 1 … count). They depend on the spectrum alone, so
+    they're kept while only the building changes; and the synthesis is linear in a_g (its every step scales
+    with the target), so they're made at a_g = 1 g, kept by ground type and ζ, and scaled: a new PGA costs
+    nothing."""
+    unit = _unit_records(replace(design, pga_g=1.0), count)
+    s = design.pga_g
+    return tuple(replace(g, a=g.a * s, spectrum=g.spectrum * s) for g in unit)
 
 
 @dataclass(frozen=True)

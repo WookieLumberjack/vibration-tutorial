@@ -96,3 +96,13 @@ def test_the_building_sways_under_the_record_its_drifting_storey_reddened(main_w
     page.k1.setValue(2e6)
     assert w.sim.system.stiffness[0] == pytest.approx(2e6) and page.system.stiffness[0] == pytest.approx(2e6)
     assert "T = 2π√(Σm/k₁) = 0.993 s" in page.k1_info.text()  # 2π √(5 × 10 t / 2 MN/m)
+
+
+def test_the_records_are_made_at_one_g_and_scaled():
+    """The synthesis is linear in a_g: the records kept at 1 g, scaled, are the ones made at the PGA itself."""
+    from vib_tutorial.core.seismic import records
+
+    d = Design(0.37)
+    for kept, made in zip(records(d, 3), (accelerogram(d, seed) for seed in (1, 2, 3))):
+        assert np.allclose(kept.a, made.a, rtol=1e-10, atol=1e-12 * np.max(np.abs(made.a)))
+        assert np.allclose(kept.spectrum, made.spectrum, rtol=1e-10)
