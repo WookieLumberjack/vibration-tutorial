@@ -49,7 +49,7 @@ from . import maths, shock_figures, weak
 from .axes import log_axes
 from .drag import DragLine
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import TrialCombo
+from .lesson import TrialCombo, TrialSteps
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -609,7 +609,7 @@ class ShockPage(QtWidgets.QWidget):
         self.trial.setToolTip(
             "<p>Pulses that show something about shock spectra, the duration set from the chain as it is now.</p>"
         )
-        tv.addWidget(self.trial)
+        tv.addWidget(TrialSteps(self.trial))
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
         mute(self.trial_note)

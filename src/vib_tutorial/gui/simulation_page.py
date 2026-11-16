@@ -44,7 +44,7 @@ from .energy import EnergyPanel, EnergyState
 from .frame_loop import FrameLoop
 from .history import History
 from .layouts import ColumnScroll, FlowLayout, group
-from .lesson import TrialCombo
+from .lesson import TrialCombo, TrialSteps
 from .modes import Method, mode_entries
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
@@ -215,7 +215,7 @@ class SimulationPage(QtWidgets.QWidget):
             "for. The Theory tab (F1) lists them all.</p>",
         )
         self.trial.picked.connect(weak.slot(self, lambda self, i: self.apply_trial(SIM_TRIALS[i])))
-        tv.addWidget(self.trial)
+        tv.addWidget(TrialSteps(self.trial))
         self.trial_note = QtWidgets.QLabel(
             "New here? Press <b>Space</b> to switch the force on, or pick one of these. Then read the "
             "<i>Theory</i> tab (F1)."

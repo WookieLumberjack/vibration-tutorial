@@ -58,7 +58,7 @@ from ..core.measurement import AA_CUTOFF
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick
 from . import frame_stats, modal_test_figures, settle_plots
 from .layouts import ColumnScroll
-from .lesson import TrialCombo, trials_html
+from .lesson import TrialCombo, TrialSteps, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ExtractionControls, ResultsView, StabilizationPlot
 from .modal_test_setup import BLOCK_SIZES, TestSetup, setup_check, suggested_fs
@@ -463,7 +463,7 @@ class ModalTestPage(QtWidgets.QWidget):
             "go wrong (or right). Loading one replaces the Simulation page's chain.</p>",
         )
         self.trial.picked.connect(self.load_trial)
-        tv.addWidget(self.trial)
+        tv.addWidget(TrialSteps(self.trial))
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
         mute(self.trial_note)

@@ -220,6 +220,21 @@ class TrialCombo(QtWidgets.QComboBox):
         index = self.currentIndex() - self.first
         return index if index >= 0 else None
 
+    def step(self, by: int) -> None:
+        """The next (`by` = 1) or previous (−1) trial, as if picked: from the prompt, the first. It stops at the
+        ends."""
+        now = self.chosen()
+        to = 0 if now is None else min(max(now + by, 0), len(self.names) - 1)
+        if (now is None and by < 0) or to == now:
+            return
+        self.setCurrentIndex(to + self.first)
+
+    def next(self) -> None:
+        self.step(1)
+
+    def previous(self) -> None:
+        self.step(-1)
+
     def unpick(self) -> None:
         """Back to the prompt, picking nothing (a page put back as it opened)."""
         if self.first:
@@ -283,6 +298,38 @@ class RunButton(QtWidgets.QPushButton):
         self.setText("Pause" if on else "Resume" if self._started else "Start")
 
 
+class TrialSteps(QtWidgets.QWidget):
+    """A `TrialCombo` with ◂ and ▸ beside it: the previous and the next Thing to try, in the notes' order
+    (Alt+PgUp, Alt+PgDown on the page showing: `MainWindow.step_trial`)."""
+
+    def __init__(self, combo: TrialCombo, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.combo = combo
+        row = QtWidgets.QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(2)
+        row.addWidget(combo, 1)
+        self.back = QtWidgets.QToolButton()
+        self.back.setText("◂")
+        self.back.setToolTip("<p>The Thing to try before this one (Alt+PgUp).</p>")
+        self.back.setAccessibleName("Previous thing to try")
+        self.back.clicked.connect(combo.previous)
+        self.on = QtWidgets.QToolButton()
+        self.on.setText("▸")
+        self.on.setToolTip("<p>The next Thing to try: they build on each other in this order (Alt+PgDown).</p>")
+        self.on.setAccessibleName("Next thing to try")
+        self.on.clicked.connect(combo.next)
+        row.addWidget(self.back)
+        row.addWidget(self.on)
+        combo.currentIndexChanged.connect(self._update)
+        self._update()
+
+    def _update(self, *_) -> None:
+        now = self.combo.chosen()
+        self.back.setEnabled(now is not None and now > 0)
+        self.on.setEnabled(now is None or now < len(self.combo.names) - 1)
+
+
 class TrialBox(QtWidgets.QGroupBox):
     """Things to try: a `TrialCombo` and the picked one's note below it; `picked(i)` with the trial's index.
 
@@ -306,7 +353,7 @@ class TrialBox(QtWidgets.QGroupBox):
         self.predictions = list(predictions) + [None] * (len(names) - len(predictions))
         self.combo = TrialCombo(names, tip)
         self.combo.picked.connect(self._on_pick)
-        layout.addWidget(self.combo)
+        layout.addWidget(TrialSteps(self.combo))
         self.asking: int | None = None  # the trial whose prediction is being asked
         self.ask = QtWidgets.QWidget()  # the question, its choices and Just run it
         ask = QtWidgets.QVBoxLayout(self.ask)
@@ -372,6 +419,7 @@ class TrialBox(QtWidgets.QGroupBox):
         while self.choices.count():
             item = self.choices.takeAt(0)
             if item is not None and (widget := item.widget()) is not None:
+                widget.hide()  # out of the layout, it would show where it was until it's deleted
                 widget.deleteLater()
         for k, text in enumerate(p.choices):
             button = QtWidgets.QPushButton(text)  # plain text: a button shows no rich text

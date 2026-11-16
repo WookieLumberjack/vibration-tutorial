@@ -225,6 +225,8 @@ class MainWindow(QtWidgets.QMainWindow):
         QtGui.QShortcut(QtGui.QKeySequence("F5"), self, self.step_present)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+PgDown"), self, self.next_page)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+PgUp"), self, self.previous_page)
+        QtGui.QShortcut(QtGui.QKeySequence("Alt+PgDown"), self, self.next_trial)
+        QtGui.QShortcut(QtGui.QKeySequence("Alt+PgUp"), self, self.previous_trial)
         self.ink = InkOverlay(self.pages)
         QtGui.QShortcut(QtGui.QKeySequence("F6"), self, self.toggle_pointer)
         QtGui.QShortcut(QtGui.QKeySequence("F7"), self, self.toggle_ink)
@@ -286,6 +288,20 @@ class MainWindow(QtWidgets.QMainWindow):
     def previous_page(self) -> None:
         """Ctrl+PgUp: the page before."""
         self._step_page(-1)
+
+    def next_trial(self) -> None:
+        """Alt+PgDown: the page showing's next Thing to try."""
+        self.step_trial(1)
+
+    def previous_trial(self) -> None:
+        """Alt+PgUp: the one before."""
+        self.step_trial(-1)
+
+    def step_trial(self, by: int) -> None:
+        page = self.pages.currentWidget()
+        combo = page.findChild(TrialCombo) if page is not None else None
+        if combo is not None:
+            combo.step(by)
 
     def _step_page(self, step: int) -> None:
         pages = links.order()

@@ -42,7 +42,7 @@ from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
 from .layouts import ColumnScroll, form_layout, header_tip
-from .lesson import TrialCombo
+from .lesson import TrialCombo, TrialSteps
 from .links import page_link
 from .mode_swing import ModeSwing
 from .notes_view import NotesBrowser
@@ -884,7 +884,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
             "show one idea from the Theory tab.</p>",
         )
         self.trial.picked.connect(self.load_trial)
-        tv.addWidget(self.trial)
+        tv.addWidget(TrialSteps(self.trial))
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
         mute(self.trial_note)

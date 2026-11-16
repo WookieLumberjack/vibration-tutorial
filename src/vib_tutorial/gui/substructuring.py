@@ -44,7 +44,7 @@ from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
 from .cms_recovery import BackExpansionView
 from .cms_time import CMSTimeView
 from .layouts import ColumnScroll, form_layout, header_tip
-from .lesson import TrialCombo
+from .lesson import TrialCombo, TrialSteps
 from .links import page_link
 from .notes_view import NotesBrowser
 from .style import MAX_DOF, colors, current, text_on
@@ -1053,7 +1053,7 @@ class SubstructuringPage(QtWidgets.QWidget):
             "modes kept and the method to show one idea from the Theory tab.</p>",
         )
         self.trial.picked.connect(self.load_trial)
-        tv.addWidget(self.trial)
+        tv.addWidget(TrialSteps(self.trial))
         self.trial_note = QtWidgets.QLabel()
         self.trial_note.setWordWrap(True)
         mute(self.trial_note)

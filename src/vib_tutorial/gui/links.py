@@ -74,6 +74,7 @@ KEYS = (
     ("Ctrl+F2", "the Practice window: problems with new numbers each time"),
     ("Ctrl+1 … Ctrl+6", "a group of pages, at the page it last showed"),
     ("Ctrl+PgDown / Ctrl+PgUp", "the next or the previous page in the course"),
+    ("Alt+PgDown / Alt+PgUp", "the page's next or previous Thing to try (◂ ▸ beside them)"),
     ("Ctrl+F", "search the notes, in the Theory window"),
     ("Alt+← / Alt+→", "back and forward in the Theory window"),
     (
@@ -82,7 +83,7 @@ KEYS = (
     ),
     ("Ctrl+Z / Ctrl+Shift+Z", "undo and redo, in the Frame and Rotor builders"),
 )
-MAC_KEYS = (("Ctrl+", "⌘"), ("Alt+← / Alt+→", "⌘[ / ⌘]"))
+MAC_KEYS = (("Alt+", "⌥"), ("Ctrl+", "⌘"), ("Alt+← / Alt+→", "⌘[ / ⌘]"))  # applied last to first: Alt is ⌥ there
 
 
 def keys_html(mac: bool | None = None) -> str:
