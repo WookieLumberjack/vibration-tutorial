@@ -1,6 +1,6 @@
 """Types for the Rust kernels (native/, built into vib_tutorial._native), so mypy checks the calls into them.
 
-Keep it in step with native/src: `tests/test_native.py` checks every name here is in the built module, and
+Keep it in step with native/src/lib.rs (the binding over native/kernels): `tests/test_native.py` checks every name here is in the built module, and
 every name the module has is here. A `PyReadonlyArray`/`PyReadwriteArray` argument takes a float64 NumPy
 array only (no conversion); a `Vec` takes any sequence.
 """
