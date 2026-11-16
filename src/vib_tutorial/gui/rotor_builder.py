@@ -59,6 +59,7 @@ from .frame_builder import matrix_html
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
 from .lesson import (
+    TAB_ROOM,
     Form,
     RunButton,
     TrialBox,
@@ -608,7 +609,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         v.addWidget(self.canvas, 4)
         v.addWidget(self.table, 0)
         v.addWidget(self.readout, 0)
-        three_panes(self, column(self.trials, self.props, model, show), centre, self.tabs)
+        three_panes(self, column(self.trials, self.props, model, show), centre, self.tabs, sizes=TAB_ROOM)
 
         self.loop = FrameLoop(self, "Rotor builder", self._tick, self._runs, self._sim_t)
         self._on_tool(0)

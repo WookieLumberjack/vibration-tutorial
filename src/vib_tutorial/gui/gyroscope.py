@@ -70,6 +70,7 @@ from .gyroscope_trials import TRIALS as TRIALS
 from .gyroscope_view import AXES_SHOWN, TopView
 from .layouts import ColumnScroll, form_layout, form_row
 from .lesson import (
+    TAB_ROOM,
     Dot,
     Form,
     RunButton,
@@ -452,6 +453,7 @@ class GyroscopePage(QtWidgets.QWidget):
             column(self.trials, body, release, play),
             stack((self.view, 4), (self.tilt_plot, 2), (self.readout, 0)),
             self.tabs,
+            sizes=TAB_ROOM,
         )
 
         self.loop = FrameLoop(self, "Gyroscope", self._tick, self._runs, self._sim_t)

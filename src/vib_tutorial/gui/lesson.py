@@ -417,6 +417,9 @@ def stack(*items: tuple[QtWidgets.QWidget, int]) -> QtWidgets.QWidget:
     return w
 
 
+TAB_ROOM = (320, 560, 760)  # `three_panes` sizes for a page whose tabs need the room at 1280 px (no scroll arrows)
+
+
 def three_panes(
     page: QtWidgets.QWidget,
     left: QtWidgets.QWidget,

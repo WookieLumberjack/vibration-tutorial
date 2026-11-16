@@ -486,7 +486,7 @@ def setup_check(a: Acquisition, w: Window) -> str:
             if a.stepped
             else "<th style='white-space:nowrap'>Lines<br>in it</th><th style='white-space:nowrap'>Left<br>at T</th>"
         )
-        + ("<th style='white-space:nowrap'>Hammer<br>level</th>" if s.excitation is Excitation.IMPACT else "")
+        + ("<th style='white-space:nowrap'>Tip<br>level</th>" if s.excitation is Excitation.IMPACT else "")
         + "</tr>"
     )
     e = s.excitation
@@ -515,7 +515,7 @@ def setup_check(a: Acquisition, w: Window) -> str:
     return (
         f"<p><b>{e.value}</b>, force at m{s.input_dof + 1}, {s.response.value.lower()} measured "
         f"({s.response.frf_name}). {EXCITATION_TIPS[e]}</p>{warn}"
-        f"<table border='1' cellspacing='0' cellpadding='3' width='100%'>{head}{''.join(rows)}</table>"
+        f"<table border='1' cellspacing='0' cellpadding='2' width='100%'>{head}{''.join(rows)}</table>"
         f"<p style='color:{colors.muted}'>2ζf<sub>n</sub> is the half-power bandwidth of each peak; "
         "with fewer than about 2 lines (Δf apart, or stepped-sine frequencies) across it, the peak is missed. "
         "<i>Left at T</i> is how much of a free decay is left at the end of a block "

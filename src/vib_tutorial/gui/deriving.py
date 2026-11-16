@@ -61,6 +61,7 @@ from .deriving_text import (
 )
 from .frame_loop import FrameLoop
 from .lesson import (
+    TAB_ROOM,
     Dot,
     Form,
     RunButton,
@@ -1063,6 +1064,7 @@ class DerivingPage(QtWidgets.QWidget):
             column(self.trials, chosen, *self.car_forms, *self.pendulum_forms, show),
             stack((self.views, 4), (self.matrix_label, 0), (self.readout, 0)),
             self.tabs,
+            sizes=TAB_ROOM,
         )
 
         self._phase = math.pi / 2  # a mode starts at its full swing
