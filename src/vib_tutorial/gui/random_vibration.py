@@ -529,7 +529,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for b in (box, out_box, rec_box, trials):
+        for b in (trials, box, out_box, rec_box):  # Things to try first, as on every page
             lv.addWidget(b)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)

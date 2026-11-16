@@ -603,7 +603,7 @@ class ShockPage(QtWidgets.QWidget):
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for b in (box, spec_box, trials):
+        for b in (trials, box, spec_box):  # Things to try first, as on every page
             lv.addWidget(b)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
