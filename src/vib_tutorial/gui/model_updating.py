@@ -104,6 +104,9 @@ SENSITIVITY_TIP = (
 )
 DEFAULT_UPDATE = {"kinds": (Kind.SPRING,), "shapes": True, "damping": False, "weight": 0.1, "reg": 0.0}
 
+# At the prompt: the model's k3 30 % too stiff (the first trial's errors), so there is something to update.
+OPENING: dict[str, Any] = {"k": {2: 1.3}}
+
 # Errors to try: (name, {"k": {element: factor}, "m": ..., "c": ..., "all_k": factor, "sensors": [...],
 # "source": Source}, note). Elements count from 0; -1 is the last.
 TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
@@ -580,7 +583,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([name for name, _, _ in TRIALS], prompt=None)
+        self.trial = TrialCombo([name for name, _, _ in TRIALS])
         self.trial.setToolTip(
             "<p>Model errors (and tests) that show something about correlation, set on the chain as it is now.</p>"
         )
@@ -837,7 +840,8 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         seed: the notes quote that measurement."""
         if self.system is None:
             return
-        _, changes, note = TRIALS[self.trial.currentIndex()]
+        chosen = self.trial.chosen()
+        _, changes, note = TRIALS[chosen] if chosen is not None else ("", OPENING, "")
         n = self.system.n
         e = Errors.none(n)
         for key, arr in (("m", e.mass), ("k", e.stiffness), ("c", e.damping)):
@@ -862,6 +866,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its structure (through the Simulation page), then
         the test, the sensors and the model's errors, measured with the first seed."""
+        self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = UpdatingSetup(**setup)
         system = t.system()
         if system is not None:

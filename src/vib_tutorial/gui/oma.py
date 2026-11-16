@@ -108,6 +108,9 @@ SV_TIP = (
     "shaded bells are each mode's lines for EFDD. Click near a peak to add or drop it.</p>"
 )
 
+# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
+OPENING: dict[str, Any] = {}
+
 # Things to try: (name, what it sets, note)
 TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
@@ -567,7 +570,7 @@ class OmaPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([name for name, _, _ in TRIALS], prompt=None)
+        self.trial = TrialCombo([name for name, _, _ in TRIALS])
         self.trial.setToolTip(
             "<p>Settings that show one of OMA's strengths or pitfalls, set from the chain as it is now.</p>"
         )
@@ -740,7 +743,8 @@ class OmaPage(QtWidgets.QWidget):
         """Set the settings the chosen trial asks for, from the chain as it is."""
         if self.result is None or self.system is None:
             return
-        _name, changes, note = TRIALS[self.trial.currentIndex()]
+        chosen = self.trial.chosen()
+        _name, changes, note = TRIALS[chosen] if chosen is not None else ("", OPENING, "")
         fs, duration, block = self._suggested()
         freqs = sorted(m.fn_hz for m in self.result.modes if m.fn_hz > 0) or [1.0]
         slow = freqs[0]
@@ -778,6 +782,7 @@ class OmaPage(QtWidgets.QWidget):
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then
         the settings. The record is made when the page shows, not now."""
+        self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = OmaSetup(**setup)
         system = t.system()
         if system is not None:

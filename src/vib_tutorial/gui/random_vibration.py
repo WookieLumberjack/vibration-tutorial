@@ -102,6 +102,9 @@ LARGEST_TIP = (
 AMPLITUDE_BINS = 60
 PEAK_BINS = 40
 
+# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
+OPENING: dict[str, Any] = {}
+
 # Things to try: (name, what it sets, note)
 TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
     (
@@ -517,7 +520,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([name for name, _, _ in TRIALS], prompt=None)
+        self.trial = TrialCombo([name for name, _, _ in TRIALS])
         self.trial.setToolTip(
             "<p>Settings that show something about random vibration, set from the chain as it is now.</p>"
         )
@@ -688,7 +691,8 @@ class RandomVibrationPage(QtWidgets.QWidget):
         """Set the settings the chosen trial asks for, from the chain as it is."""
         if self.result is None or self.system is None:
             return
-        _, changes, note = TRIALS[self.trial.currentIndex()]
+        chosen = self.trial.chosen()
+        _, changes, note = TRIALS[chosen] if chosen is not None else ("", OPENING, "")
         n = self.system.n
         freqs = sorted(m.fn_hz for m in self.result.modes if m.fn_hz > 0) or [1.0]
         kind = changes.get("input", Input.BASE)
@@ -723,6 +727,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then
         the settings."""
+        self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = RandomSetup(**setup)
         system = t.system()
         if system is not None:

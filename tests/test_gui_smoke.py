@@ -3672,8 +3672,8 @@ def test_oma_page(app):
     p.auto_peaks.click()
     assert p.peaks is None
 
-    for i in range(p.trial.count()):
-        p.trial.setCurrentIndex(i)
+    for name in p.trial.names:
+        p.trial.pick(name)
         p.recompute()
         assert p.trial_note.text()
     p.trial.pick("Forces at m3 only")
@@ -3882,11 +3882,11 @@ def test_random_vibration_page(app):
     p.new_record.click()
     assert p.record is not record and p.seed == 2
 
-    for i, (_name, _, note) in enumerate(TRIALS):
-        p.trial.setCurrentIndex(i)
+    for name, _, note in TRIALS:
+        p.trial.pick(name)
         p.recompute()
         assert p.trial_note.text() == note and p.prediction is not None and "RMS" in p.readout.text()
-    p.trial.setCurrentIndex(1)  # a force on the last mass: its own acceleration's mass line
+    p.trial.pick(TRIALS[1][0])  # a force on the last mass: its own acceleration's mass line
     p.recompute()
     assert p.mass.isEnabled() and p.mass.currentText() == "m4" and p.level.suffix() == " N²/Hz"
     assert "Miles 0.4163 g (-18 %)" in p.readout.text()
@@ -4063,8 +4063,8 @@ def test_model_updating_page(app):
     p.table.selectRow(1)
     assert "Test mode 2" in p.shape_note.text()
 
-    for i, (_, _, note) in enumerate(TRIALS):
-        p.trial.setCurrentIndex(i)
+    for name, _, note in TRIALS:
+        p.trial.pick(name)
         p.recompute()
         assert p.trial_note.text() == note and p.corr.pairs
     p.trial.pick("Two sensors")
@@ -4141,8 +4141,8 @@ def test_shock_page(app):
     p.recompute()
     assert p.record is not rec and p.record.duration == pytest.approx(0.05)
 
-    for i, (_, _, note) in enumerate(TRIALS):
-        p.trial.setCurrentIndex(i)
+    for name, _, note in TRIALS:
+        p.trial.pick(name)
         p.recompute()
         assert p.trial_note.text() == maths.markup(note) and p.spectrum is not None and "Maximax" in p.readout.text()
     p.trial.pick("A component on the last mass")
