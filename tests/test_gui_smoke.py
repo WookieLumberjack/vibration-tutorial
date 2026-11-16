@@ -3993,7 +3993,7 @@ def test_complex_modes_page(app):
     assert p.table.rowCount() == 4 and "Every mode is real" in p.readout.text()
     assert "stays there" in p.decay_note.text() and "the same" in p.frf_note.text()
 
-    names = [name for name, _, _ in TRIALS]
+    names = [t.name for t in TRIALS]
     p.trial.setCurrentIndex(1 + names.index("One damper, at the base"))
     app.processEvents()
     assert p.trial.currentIndex() == 1 + names.index("One damper, at the base") and p.trial_note.isVisible()
