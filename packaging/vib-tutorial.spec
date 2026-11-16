@@ -3,7 +3,7 @@
 # because a one-file build unpacks Qt and SciPy to a temp directory on every launch.
 import sys
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 # Qt modules the app never imports. PySide6 ships them all, and they would add ~100 MB+.
 EXCLUDES = [
@@ -26,6 +26,9 @@ EXCLUDES = [
 a = Analysis(
     ["launcher.py"],
     excludes=EXCLUDES,
+    # The pages' modules are imported by name when a page is first built (links.PAGE_CLASSES), which
+    # PyInstaller can't follow.
+    hiddenimports=collect_submodules("vib_tutorial.gui"),
     # The pages' notes and their maths font; ziamath's maths font and latex2mathml's symbol table.
     datas=collect_data_files("vib_tutorial", includes=["theory/*.html", "fonts/*"])
     + collect_data_files("ziamath")

@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import html as html_lib
 import re
-import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -58,9 +57,7 @@ def page_html(name: str) -> str:
 
         html = notes_html()  # its course map with the problems solved
     else:
-        from .main_window import _page_class
-
-        module = sys.modules[_page_class(name).__module__]
+        module = links.page_module(name)
         html = getattr(module, "NOTES_HTML", None) or module.THEORY_HTML
     return anchored(html) + links.next_html(name)
 

@@ -57,7 +57,6 @@ def test_number_prints_as_rounded_keeps():
 
 # ------------------------------------------------------------------ the problems
 def test_the_pages_with_problems_are_listed():
-    from vib_tutorial.gui.main_window import _page_class  # noqa: F401 (the pages' modules)
     from vib_tutorial.gui.practice import problems as found
 
     course = [name for _, group in COURSE for name, _, _ in group]
@@ -70,15 +69,14 @@ def test_the_pages_with_problems_are_listed():
 def _state(page: str, setup: dict):
     """What the page's `practice_state` would give once set up as `setup` says: its trial (or, where its trials
     aren't a class, its setup class) with those fields."""
-    import sys
 
     if page == "sim_page":
         from vib_tutorial.gui.sim_trials import SimTrial
 
         return SimTrial("", "", **setup)
-    from vib_tutorial.gui.main_window import _page_class
+    from vib_tutorial.gui.links import page_module
 
-    module = sys.modules[_page_class(page).__module__]
+    module = page_module(page)
     setup_class = getattr(module, "PRACTICE_SETUP", None)  # where the trials aren't a class to set up
     return setup_class(**setup) if setup_class else type(module.TRIALS[0])("", "", **setup)
 
@@ -166,14 +164,15 @@ def test_hints_link_to_sections_that_exist():
 # ------------------------------------------------------------------ the window
 def test_every_setup_loads_on_its_page(app):
     from vib_tutorial.gui import close_graphics
-    from vib_tutorial.gui.main_window import MainWindow, _page_class
+    from vib_tutorial.gui.links import page_class
+    from vib_tutorial.gui.main_window import MainWindow
 
     for name in pages():
         if name == "sim_page":  # the main window's own page: set up and read through the window
             window = MainWindow()
             load, state = partial(window.set_up_page, "sim_page"), window.sim_practice_state
         else:
-            window = page = _page_class(name)()
+            window = page = page_class(name)()
             load, state = page.load_setup, page.practice_state
         for problem in problems(name):
             for seed in range(10):

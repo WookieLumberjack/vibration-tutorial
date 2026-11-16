@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import functools
 import random
-import sys
 from collections.abc import Callable
 from typing import Any
 
@@ -37,9 +36,7 @@ def problems(name: str) -> tuple[Problem, ...]:
         from .sim_trials import PROBLEMS
 
         return PROBLEMS
-    from .main_window import _page_class
-
-    return getattr(sys.modules[_page_class(name).__module__], "PROBLEMS", ())
+    return getattr(links.page_module(name), "PROBLEMS", ())
 
 
 @functools.cache
