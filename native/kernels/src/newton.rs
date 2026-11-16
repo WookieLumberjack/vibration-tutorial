@@ -1,5 +1,6 @@
 //! A linear system with nonlinear forces, stepped by the exact first-order hold with Newton at each step's
-//! end: `DuffingSimulator._steps_reference` and `StartUpSimulator._steps_reference`, which this mirrors.
+//! end: `DuffingSimulator._steps_reference`, `StartUpSimulator._steps_reference` and
+//! `nonlinear_test._cycle_reference`, which this mirrors.
 //!
 //! The linear part is z' = A z + B u, stepped exactly with u linear over the step: z₁ = Φ z₀ + Γ₀ u₀ + Γ₁ u₁.
 //! The inputs are an applied part, given for every step, plus the force laws' part, which depends on the
@@ -25,6 +26,48 @@ pub enum Law {
     },
     /// A motor's air-gap torque into input `col` (`torsional_startup.Motor.torque`), the clock the time.
     Motor(Motor),
+    /// A spring's force f(d) on the stretch d = z_i − z_j (z_i alone without j): −f into input `col`, +f into
+    /// `back` (the mass at its other end, if not the ground).
+    Spring {
+        col: usize,
+        back: Option<usize>,
+        i: usize,
+        j: Option<usize>,
+        force: Spring,
+    },
+    /// Coulomb friction smoothed over a speed v_s: −F tanh(v / v_s) into input `col`, v = z_i.
+    Friction {
+        col: usize,
+        i: usize,
+        force: f64,
+        smooth: f64,
+    },
+}
+
+/// A spring's force on its stretch.
+#[derive(Clone, Copy, Debug)]
+pub enum Spring {
+    /// k₃ d³.
+    Cubic(f64),
+    /// k (|d| − gap) sign d once the gap has closed, nothing before.
+    Gap { gap: f64, k: f64 },
+}
+
+impl Spring {
+    /// (f(d), f'(d)).
+    fn at(self, d: f64) -> (f64, f64) {
+        match self {
+            Spring::Cubic(k3) => (k3 * d * d * d, 3.0 * k3 * d * d),
+            Spring::Gap { gap, k } => {
+                let over = d.abs() - gap;
+                if over > 0.0 {
+                    (k * over * 1.0_f64.copysign(d), k)
+                } else {
+                    (0.0, 0.0)
+                }
+            }
+        }
+    }
 }
 
 /// An induction motor started direct on line, or a synchronous one on its cage with a field that latches
@@ -93,6 +136,26 @@ impl Law {
                 du.set(m.col, m.angle, du.at(m.col, m.angle) + d_angle);
                 du.set(m.col, m.speed, du.at(m.col, m.speed) + d_speed);
             }
+            &Law::Spring { col, back, i, j, force } => {
+                let (f, slope) = force.at(z[i] - j.map_or(0.0, |j| z[j]));
+                // the stretch's derivative is +1 in z_i and −1 in z_j; the force goes −f on col, +f on back
+                let mut put = |row: usize, sign: f64| {
+                    u[row] += sign * f;
+                    du.set(row, i, du.at(row, i) + sign * slope);
+                    if let Some(j) = j {
+                        du.set(row, j, du.at(row, j) - sign * slope);
+                    }
+                };
+                put(col, -1.0);
+                if let Some(back) = back {
+                    put(back, 1.0);
+                }
+            }
+            &Law::Friction { col, i, force, smooth } => {
+                let t = (z[i] / smooth).tanh();
+                u[col] -= force * t;
+                du.set(col, i, du.at(col, i) - force * (1.0 - t * t) / smooth);
+            }
         }
     }
 
@@ -112,6 +175,10 @@ impl Law {
         match self {
             &Law::Cubic { col, i, .. } | &Law::Quadratic { col, i, .. } => col < nu && i < ns,
             Law::Motor(m) => m.col < nu && m.angle < ns && m.speed < ns,
+            &Law::Spring { col, back, i, j, .. } => {
+                col < nu && back.is_none_or(|b| b < nu) && i < ns && j.is_none_or(|j| j < ns)
+            }
+            &Law::Friction { col, i, .. } => col < nu && i < ns,
         }
     }
 }
@@ -318,5 +385,95 @@ mod tests {
         let x = out[0];
         assert!((inputs[0] - (1.0 - (50.0 * x * x + 1.5) * x)).abs() < 1e-12);
         assert_eq!(n, 1, "x = {x} is past the watch's 0.5");
+    }
+
+    #[test]
+    fn every_laws_derivatives_are_its_slopes() {
+        // Each law's du/dz against central differences, at a state where every one is working (the gap closed,
+        // the motor slipping, the field on).
+        let motor = Motor {
+            col: 2,
+            angle: 0,
+            speed: 3,
+            sync_speed: 157.0,
+            line: 314.0,
+            breakdown: 1000.0,
+            breakdown_slip: 0.2,
+            transient: 300.0,
+            time_constant: 0.05,
+            synchronous: true,
+            pole_pairs: 2.0,
+            pulsating: 200.0,
+            field: 500.0,
+            field_slip: 0.05,
+            field_on: true,
+        };
+        let laws = vec![
+            Law::Cubic {
+                col: 0,
+                i: 0,
+                k3: 40.0,
+                k1: 3.0,
+            },
+            Law::Quadratic {
+                col: 1,
+                i: 3,
+                k: 50.0,
+                reference: 150.0,
+            },
+            Law::Motor(motor.clone()),
+            Law::Motor(Motor {
+                synchronous: false,
+                ..motor
+            }),
+            Law::Spring {
+                col: 1,
+                back: Some(0),
+                i: 1,
+                j: Some(0),
+                force: Spring::Cubic(7.0),
+            },
+            Law::Spring {
+                col: 0,
+                back: None,
+                i: 0,
+                j: None,
+                force: Spring::Gap { gap: 0.1, k: 9.0 },
+            },
+            Law::Friction {
+                col: 2,
+                i: 2,
+                force: 0.7,
+                smooth: 0.3,
+            },
+        ];
+        let ns = 4;
+        let steps = NewtonSteps::new(
+            Mat::eye(ns),
+            Mat::zeros(ns, 3),
+            Mat::zeros(ns, 3),
+            laws,
+            1e-12,
+            10,
+            None,
+        )
+        .unwrap();
+        let z = [0.3, -0.4, 0.2, 120.0];
+        let (_, du) = steps.laws(&z, 0.04);
+        for j in 0..ns {
+            let e = 1e-6 * z[j].abs().max(1.0);
+            let (mut hi, mut lo) = (z, z);
+            hi[j] += e;
+            lo[j] -= e;
+            let (uh, ul) = (steps.laws(&hi, 0.04).0, steps.laws(&lo, 0.04).0);
+            for r in 0..3 {
+                let fd = (uh[r] - ul[r]) / (2.0 * e);
+                assert!(
+                    (du.at(r, j) - fd).abs() <= 1e-6 * (1.0 + fd.abs()),
+                    "du[{r},{j}] {} vs {fd}",
+                    du.at(r, j)
+                );
+            }
+        }
     }
 }

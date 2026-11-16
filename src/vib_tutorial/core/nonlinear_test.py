@@ -38,8 +38,10 @@ the gap's sweep went from 5.5 s to 0.6 s with the same answers) (friction's near
 is taken when no halving helps, or Newton sits in the dip a vanished fold leaves), each step from the last;
 where it fails or the Jacobian's determinant is negative (the middle branch), the stable solution nearest the
 last from other starts (`SEEDS`, `RESCUE` iterations) is the jump. `steady_response` is the exact FOH update
-with the nonlinear forces as an input linear over the step, end value by Newton on the whole state, from
-harmonic balance's state until a cycle repeats. Force identification: `markov` builds y = Gf from the FOH
+with the nonlinear forces as an input linear over the step, end value by Newton, from harmonic balance's state
+until a cycle repeats: a cycle at a time in Rust where it's built (`native.NewtonSteps`, a `spring` law for
+the element and a `friction` law per rubbing mass), or `_cycle_reference`, Newton on the whole state
+(`tests/test_native.py` compares them). Force identification: `markov` builds y = Gf from the FOH
 update (a displacement, or an acceleration with its direct term), `set_up` adds seeded noise and takes G's SVD
 once; `tikhonov`, `tsvd`, `inverse`, `l_curve` (its corner searched only where the curve moves: below the
 singular values that matter it stands still and round-off makes false corners), `discrepancy`. The trials set
@@ -53,9 +55,11 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
 
 import numpy as np
 
+from . import native
 from .foh import foh_discretize
 from .model import ChainSystem
 
@@ -352,30 +356,18 @@ def steady_response(
     vs = SMOOTH * omega * max(float(np.abs(X).max()), 1e-12)
     drive = np.zeros(n)
     drive[force] = F
-    eye = np.eye(2 * n)
-
-    def load(z_: np.ndarray, s: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        g, gx, gv = _forces(system, element, z_[:n], z_[n:], vs)
-        return drive * math.cos(TWO_PI * s / STEPS_PER_CYCLE) - g, gx, gv
-
-    u0, _, _ = load(z, 0)
+    # the drive at each step's end over a cycle (the last ends where the first began)
+    applied = np.outer(np.cos(TWO_PI * np.arange(1, STEPS_PER_CYCLE + 1) / STEPS_PER_CYCLE), drive)
+    one_cycle = _cycle_steps(system, element, Phi, G0, G1, vs, applied)
+    u0 = drive - _forces(system, element, z[:n], z[n:], vs)[0]
     previous: np.ndarray | None = None
     cycle = np.zeros((STEPS_PER_CYCLE, n))
     cycles = 0
     while cycles < MAX_CYCLES:
         cycles += 1
-        for s in range(STEPS_PER_CYCLE):
-            base = Phi @ z + G0 @ u0
-            z1 = base + G1 @ u0  # a guess: the load held
-            for _ in range(20):
-                u1, gx, gv = load(z1, s + 1)
-                r = z1 - base - G1 @ u1
-                if np.linalg.norm(r) <= 1e-13 * (np.linalg.norm(z1) + 1e-300):
-                    break
-                J = eye + G1 @ np.hstack([gx, gv])
-                z1 = z1 - np.linalg.solve(J, r)
-            z, u0 = z1, load(z1, s + 1)[0]
-            cycle[s] = z[:n]
+        zs, u0 = one_cycle(z, u0)
+        z = zs[-1]
+        cycle = zs[:, :n]
         top = float(np.abs(cycle).max())
         if previous is not None and float(np.abs(cycle - previous).max()) <= SETTLED * top:
             break
@@ -384,6 +376,58 @@ def steady_response(
     spectrum = np.fft.rfft(x, axis=0) * 2 / STEPS_PER_CYCLE
     t = np.arange(STEPS_PER_CYCLE) * h
     return Waveform(t, x, np.abs(spectrum[1 : HARMONICS + 1]), cycles)
+
+
+def _cycle_steps(system: ChainSystem, element: Element, Phi, G0, G1, vs: float, applied: np.ndarray):
+    """One cycle's steps, (z, u0) → (each step's state, the inputs at the last): `_cycle_reference`, in Rust
+    (`native.NewtonSteps`, a `spring` law for the element and a `friction` law per rubbing mass) where it's
+    built."""
+    if native.module is None:
+        return partial(_cycle_reference, system, element, Phi, G0, G1, vs, applied)
+    n = system.n
+    springs = []
+    if element.active:
+        s = element.spring
+        back = s - 1 if s > 0 else None
+        kind = ("cubic", element.k3, 0.0) if element.kind is Kind.CUBIC else ("gap", element.gap, element.k_gap)
+        springs.append((s, back, s, back, *kind))
+    friction = [(i, n + i, float(f), vs) for i, f in enumerate(system.friction) if f > 0]
+    kernel = native.NewtonSteps(Phi, G0, G1, 1e-13, 20, spring=springs, friction=friction)
+    clock = np.zeros(len(applied))
+
+    def run(z: np.ndarray, u0: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        zs, us = np.empty((len(applied), 2 * n)), np.empty((len(applied), n))
+        kernel.run(z, u0, applied, clock, zs, us)
+        return zs, us[-1]
+
+    return run
+
+
+def _cycle_reference(
+    system: ChainSystem, element: Element, Phi, G0, G1, vs: float, applied: np.ndarray, z: np.ndarray, u0: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """`_cycle_steps` in Python: Newton on each step's end state."""
+    n = system.n
+    eye = np.eye(2 * n)
+
+    def load(z_: np.ndarray, s: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        g, gx, gv = _forces(system, element, z_[:n], z_[n:], vs)
+        return applied[s] - g, gx, gv
+
+    zs = np.empty((len(applied), 2 * n))
+    for s in range(len(applied)):
+        base = Phi @ z + G0 @ u0
+        z1 = base + G1 @ u0  # a guess: the load held
+        for _ in range(20):
+            u1, gx, gv = load(z1, s)
+            r = z1 - base - G1 @ u1
+            if np.linalg.norm(r) <= 1e-13 * (np.linalg.norm(z1) + 1e-300):
+                break
+            J = eye + G1 @ np.hstack([gx, gv])
+            z1 = z1 - np.linalg.solve(J, r)
+        z, u0 = z1, load(z1, s)[0]
+        zs[s] = z
+    return zs, u0
 
 
 def homogeneity(sweeps: list[Sweep], out: int, levels: list[float]) -> float:

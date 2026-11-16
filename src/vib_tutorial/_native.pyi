@@ -80,7 +80,7 @@ class LinearSteps:
 
 class NewtonSteps:
     """A linear update under force laws, Newton at each step's end (`DuffingSimulator._steps_reference`,
-    `StartUpSimulator._steps_reference`)."""
+    `StartUpSimulator._steps_reference`, `nonlinear_test._cycle_reference`)."""
 
     def __init__(
         self,
@@ -93,6 +93,8 @@ class NewtonSteps:
         cubic: list[tuple[int, int, float, float]] = ...,
         quadratic: list[tuple[int, int, float, float]] = ...,
         motor: tuple[int, int, int, list[float], bool, bool] | None = None,
+        spring: list[tuple[int, int | None, int, int | None, str, float, float]] = ...,
+        friction: list[tuple[int, int, float, float]] = ...,
     ) -> None: ...
     def run(self, z: Floats, u0: Floats, applied: Floats, clock: Floats, out: Floats, inputs: Floats) -> int: ...
     @property

@@ -301,8 +301,12 @@ impl RubSteps {
 /// pole_pairs, pulsating, field, field_slip], synchronous, field_on), as `newton::Motor` names them.
 type Motor = (usize, usize, usize, [f64; 10], bool, bool);
 
+/// A spring: (col, back, i, j, "cubic" or "gap", k3 or the gap, the gap's k), as `newton::Law::Spring`.
+type SpringLaw = (usize, Option<usize>, usize, Option<usize>, String, f64, f64);
+
 /// A linear update under force laws, Newton at each step's end (`newton::NewtonSteps`). Each law kind is a
-/// keyword: `cubic`, a (col, i, k3, k1) per spring; `quadratic`, a (col, i, k, reference) per drag; `motor`.
+/// keyword: `cubic`, a (col, i, k3, k1) per spring; `quadratic`, a (col, i, k, reference) per drag; `motor`;
+/// `spring`, a `SpringLaw` each; `friction`, a (col, i, force, smooth) each.
 #[pyclass(module = "vib_tutorial._native")]
 struct NewtonSteps(newton::NewtonSteps);
 
@@ -310,7 +314,10 @@ struct NewtonSteps(newton::NewtonSteps);
 impl NewtonSteps {
     #[new]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (phi, g0, g1, tol, iterations, watch=None, cubic=vec![], quadratic=vec![], motor=None))]
+    #[pyo3(signature = (
+        phi, g0, g1, tol, iterations, watch=None, cubic=vec![], quadratic=vec![], motor=None, spring=vec![],
+        friction=vec![]
+    ))]
     fn new(
         phi: PyReadonlyArray2<f64>,
         g0: PyReadonlyArray2<f64>,
@@ -321,6 +328,8 @@ impl NewtonSteps {
         cubic: Vec<(usize, usize, f64, f64)>,
         quadratic: Vec<(usize, usize, f64, f64)>,
         motor: Option<Motor>,
+        spring: Vec<SpringLaw>,
+        friction: Vec<(usize, usize, f64, f64)>,
     ) -> PyResult<Self> {
         let mut laws: Vec<newton::Law> = cubic
             .into_iter()
@@ -330,6 +339,19 @@ impl NewtonSteps {
             quadratic
                 .into_iter()
                 .map(|(col, i, k, reference)| newton::Law::Quadratic { col, i, k, reference }),
+        );
+        for (col, back, i, j, kind, a, b) in spring {
+            let force = match kind.as_str() {
+                "cubic" => newton::Spring::Cubic(a),
+                "gap" => newton::Spring::Gap { gap: a, k: b },
+                _ => return Err(PyValueError::new_err(format!("no spring {kind:?}: cubic or gap"))),
+            };
+            laws.push(newton::Law::Spring { col, back, i, j, force });
+        }
+        laws.extend(
+            friction
+                .into_iter()
+                .map(|(col, i, force, smooth)| newton::Law::Friction { col, i, force, smooth }),
         );
         if let Some((col, angle, speed, terms, synchronous, field_on)) = motor {
             let [
