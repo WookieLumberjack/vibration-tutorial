@@ -15,6 +15,7 @@ from vib_tutorial.core.fatigue import (
     rainflow,
     rates,
     rayleigh_range_pdf,
+    reversals,
     synthesize,
 )
 
@@ -60,3 +61,55 @@ def test_the_range_densities_integrate_to_the_damage(stress):
     assert narrow_band_damage(stress, c) == pytest.approx(
         r.nu0 * np.trapezoid(S**c.b * rayleigh_range_pdf(stress, S), S) / c.K, rel=1e-6
     )
+
+
+def test_rainflow_steps_count_what_rainflow_counts():
+    """A step for each reversal read and each cycle let go: their counts are `rainflow`'s, the stack after each
+    step what's still open."""
+    from vib_tutorial.core.fatigue import rainflow_steps
+
+    rng = np.random.default_rng(4)
+    for _ in range(100):
+        x = rng.normal(size=int(rng.integers(3, 60))).cumsum()
+        p = reversals(x)
+        steps = rainflow_steps(p)
+        ranges, counts = rainflow(x)
+        got = sorted((s.range, s.count) for s in steps if s.count)
+        assert np.allclose(got, sorted(zip(ranges, counts)))
+        assert sum(s.read >= 0 for s in steps) == p.size and steps[-1].stack == (p.size - 1,)
+
+
+def test_the_rainflow_tab_steps_through_the_count(main_window):
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui.fatigue import RF_SHOW, TAB_RAINFLOW
+
+    w = main_window
+    page = w.fatigue_page
+    w.pages.setCurrentWidget(page)
+    page.tabs.setCurrentIndex(TAB_RAINFLOW)
+    QtWidgets.QApplication.processEvents()
+    page.load_trial(1)  # two modes: ripples on the slow swing
+    page.tabs.setCurrentIndex(TAB_RAINFLOW)
+    assert page.rf_k == 0 and page.rf_p.size == RF_SHOW and not page.rf_back.isEnabled()
+    assert "Step 0 of" in page.rf_tally.text()
+    n = len(page.rf_steps)
+    for k in range(1, n + 1):
+        page.rf_step.click()
+        assert page.rf_k == k
+    assert not page.rf_step.isEnabled() and "Done." in page.rf_note.text()
+    ranges, counts = rainflow(page.rf_p)
+    full, half = int(np.sum(counts == 1.0)), int(np.sum(counts == 0.5))
+    assert f"Counted: {full} full and {half} half cycles" in page.rf_tally.text()
+    xs = page.rf_full.getData()[0]
+    assert xs is not None and np.sum(np.isfinite(xs)) == 2 * full  # a line per full cycle
+    page.rf_back.click()
+    assert page.rf_k == n - 1
+
+    page.rf_reset.click()
+    assert page.rf_k == 0
+    page.rf_play.click()  # a step at once, then one a tick; hidden, it stops
+    assert page.rf_k == 1
+    assert page.rf_timer.isActive() and page.rf_play.text() == "Pause"
+    w.pages.setCurrentWidget(w.sim_page)
+    assert not page.rf_timer.isActive() and page.rf_play.text() == "Play"

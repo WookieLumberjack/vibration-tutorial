@@ -1,7 +1,9 @@
 """Fatigue page: a random stress counted by rainflow, against the narrow-band and Dirlik estimates.
 
 Left: the stress PSD (one or two resonant peaks), the S–N curve and the record. Centre: the PSD and a stretch of
-the record with the reversals rainflow counts. Right: the range distributions (the record's rainflow histogram,
+the record with the reversals rainflow counts. Right: the count a step at a time over the record's first
+`RF_SHOW` reversals (`core.fatigue.rainflow_steps`; Step, Back, Play on a timer that stops when the page hides),
+the range distributions (the record's rainflow histogram,
 Rayleigh's and Dirlik's), where the damage comes from, the S–N curve, and the Theory. The page has its own model
 (core/fatigue.py).
 """
@@ -13,10 +15,11 @@ from dataclasses import dataclass
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6 import QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from ..core.fatigue import (
     Curve,
+    RainflowStep,
     Record,
     Stress,
     dirlik_damage,
@@ -24,6 +27,7 @@ from ..core.fatigue import (
     life_text,
     narrow_band_damage,
     rainflow,
+    rainflow_steps,
     rates,
     rayleigh_range_pdf,
     record,
@@ -31,6 +35,7 @@ from ..core.fatigue import (
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import fatigue_figures, settle_plots
+from .layouts import FlowLayout
 from .lesson import (
     Form,
     TrialBox,
@@ -49,7 +54,9 @@ from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 
-TAB_RANGES, TAB_DAMAGE, TAB_SN = range(3)
+TAB_RAINFLOW, TAB_RANGES, TAB_DAMAGE, TAB_SN = range(4)
+RF_SHOW = 20  # the record's first reversals, counted a step at a time
+RF_MS = 700  # a step while it plays
 SHOWN = 4.0  # periods of the slower peak drawn of the record
 BINS = 40
 
@@ -88,7 +95,7 @@ TRIALS = (
         "The same record, zoomed in. Rainflow treats the stress as rain running down a pagoda roof: each small "
         "ripple closes a small cycle, and the slow swing underneath is still counted at its full range. The "
         "Ranges tab shows the two families, many small ranges and the large ones, which Rayleigh's single hump "
-        "can't describe.",
+        "can't describe. The Rainflow tab counts the record's first reversals a step at a time.",
         stress=Stress(sigma2=10.0),
         duration=60.0,
         tab=TAB_RANGES,
@@ -339,6 +346,12 @@ TIPS = {
     "seed": "<p>The random phases' seed.</p>",
 }
 PSD_TIP = "<p>The stress PSD (one-sided, MPa²/Hz).</p>"
+RF_TIP = (
+    "<p>The three-point (ASTM) rainflow count of the record's first reversals, a step at a time: each reversal "
+    "is read onto a stack; when the last range X is at least the one before it, Y, the stress has gone over Y "
+    "and back, and Y is counted (a full cycle, or half when it holds the record's start). What's left at the end "
+    "counts as half cycles. Red lines join a full cycle's two reversals, dashed ones a half's.</p>"
+)
 RECORD_TIP = "<p>The start of the synthesized record, with the reversals rainflow counts.</p>"
 RANGES_TIP = (
     "<p>The record's rainflow ranges as a density (bars), Rayleigh's (narrow-band) and Dirlik's "
@@ -431,8 +444,47 @@ class FatiguePage(QtWidgets.QWidget):
             self.sn_plot.addItem(item)
         self.tab_note = note_label()
 
+        # --- right: rainflow a step at a time
+        self.rf_plot = plot("Stress", "MPa", "Reversal", None, height=220)
+        self.rf_plot.setToolTip(RF_TIP)
+        add_legend(self.rf_plot.getPlotItem(), offset=(-10, 10))
+        self.rf_path = pg.PlotDataItem()
+        self.rf_full = pg.PlotDataItem(connect="finite", name="full cycles (1)")
+        self.rf_half = pg.PlotDataItem(connect="finite", name="half cycles (½)")
+        self.rf_last = pg.PlotDataItem()
+        self.rf_points = pg.PlotDataItem(pen=None, symbol="o", symbolSize=6)
+        self.rf_stack = pg.PlotDataItem(pen=None, symbol="o", symbolSize=13, name="on the stack")
+        for item in (self.rf_path, self.rf_full, self.rf_half, self.rf_last, self.rf_points, self.rf_stack):
+            self.rf_plot.addItem(item)
+        self.rf_back = QtWidgets.QPushButton("◀ Back")
+        self.rf_step = QtWidgets.QPushButton("Step ▶")
+        self.rf_play = QtWidgets.QPushButton("Play")
+        self.rf_reset = QtWidgets.QPushButton("Start over")
+        for button, slot in (
+            (self.rf_back, self._rf_back),
+            (self.rf_step, self._rf_forward),
+            (self.rf_play, self._rf_toggle),
+            (self.rf_reset, self._rf_start_over),
+        ):
+            button.setToolTip(RF_TIP)
+            button.clicked.connect(slot)
+        rf_bar = QtWidgets.QWidget()
+        bar = FlowLayout(rf_bar)
+        bar.setContentsMargins(0, 0, 0, 0)
+        for button in (self.rf_back, self.rf_step, self.rf_play, self.rf_reset):
+            bar.addWidget(button)
+        self.rf_note = note_label()
+        self.rf_tally = readout_label()
+        self.rf_timer = QtCore.QTimer(self)
+        self.rf_timer.setInterval(RF_MS)
+        self.rf_timer.timeout.connect(self._rf_tick)
+        self.rf_p = np.zeros(0)  # the reversals counted
+        self.rf_steps: list[RainflowStep] = []
+        self.rf_k = 0  # steps taken
+
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
+        self.tabs.addTab(column(rf_bar, self.rf_plot, self.rf_note, self.rf_tally, stretch=False), "Rainflow")
         self.tabs.addTab(column(self.ranges_plot, stretch=False), "Ranges")
         self.tabs.addTab(column(self.dmg_plot, stretch=False), "Damage by range")
         self.tabs.addTab(column(self.sn_plot, stretch=False), "S–N curve")
@@ -516,11 +568,125 @@ class FatiguePage(QtWidgets.QWidget):
             self.rec = None
         else:
             self.rec = record(self.stress, self.duration.value(), int(self.seed.value()))
+        self._rf_load()
         self._on_curve()
 
     def _on_curve(self) -> None:
         self.curve = Curve(self.b.value(), self.s_ref.value(), self.n_ref.value())
         self.redraw()
+
+    # ------------------------------------------------------------- rainflow, a step at a time
+    def _rf_load(self) -> None:
+        """The record's first reversals, counted from the start."""
+        self._rf_stop()
+        self.rf_p = reversals(self.rec.x)[:RF_SHOW] if self.rec is not None else np.zeros(0)
+        self.rf_steps = rainflow_steps(self.rf_p)
+        self.rf_k = 0
+
+    def _rf_go(self, k: int) -> None:
+        self.rf_k = min(max(k, 0), len(self.rf_steps))
+        self._draw_rainflow()
+
+    def _rf_forward(self) -> None:
+        self._rf_go(self.rf_k + 1)
+
+    def _rf_back(self) -> None:
+        self._rf_stop()
+        self._rf_go(self.rf_k - 1)
+
+    def _rf_start_over(self) -> None:
+        self._rf_stop()
+        self._rf_go(0)
+
+    def _rf_toggle(self) -> None:
+        if self.rf_timer.isActive():
+            self._rf_stop()
+            return
+        if self.rf_k >= len(self.rf_steps):
+            self.rf_k = 0
+        self.rf_play.setText("Pause")
+        self.rf_timer.start()
+        self._rf_tick()
+
+    def _rf_tick(self) -> None:
+        self._rf_forward()
+        if self.rf_k >= len(self.rf_steps):
+            self._rf_stop()
+
+    def _rf_stop(self) -> None:
+        self.rf_timer.stop()
+        self.rf_play.setText("Play")
+
+    def hideEvent(self, event) -> None:
+        self._rf_stop()
+        super().hideEvent(event)
+
+    def _draw_rainflow(self) -> None:
+        p, steps, k = self.rf_p, self.rf_steps, self.rf_k
+        idx = np.arange(1, p.size + 1)  # reversals numbered from 1
+        self.rf_path.setData(idx, p)
+        self.rf_points.setData(idx, p)
+        done = steps[:k]
+        lines: dict[float, tuple[list[float], list[float]]] = {1.0: ([], []), 0.5: ([], [])}
+        for st in done:
+            if st.count:
+                xs, ys = lines[st.count]
+                xs += [st.pair[0] + 1, st.pair[1] + 1, np.nan]
+                ys += [p[st.pair[0]], p[st.pair[1]], np.nan]
+        self.rf_full.setData(*lines[1.0])
+        self.rf_half.setData(*lines[0.5])
+        now = done[-1] if done else None
+        stack = list(now.stack) if now else []
+        self.rf_stack.setData(np.array(stack, dtype=float) + 1, p[stack])
+        if now and now.count:
+            self.rf_last.setData([now.pair[0] + 1, now.pair[1] + 1], [p[now.pair[0]], p[now.pair[1]]])
+        else:
+            self.rf_last.setData([], [])
+        self.rf_plot.setXRange(0.5, max(p.size, 2) + 0.5, padding=0)
+        self.rf_back.setEnabled(k > 0)
+        self.rf_step.setEnabled(k < len(steps))
+        self.rf_note.setText(self._rf_text(now, k == len(steps)))
+        full = sum(1 for st in done if st.count == 1.0)
+        half = sum(1 for st in done if st.count == 0.5)
+        counted = sorted((st.range for st in done if st.count), reverse=True)
+        shown = ", ".join(f"{r:.3g}" for r in counted[:8]) + (" …" if len(counted) > 8 else "")
+        self.rf_tally.setText(
+            f"Step {k} of {len(steps)}. Counted: {full} full and {half} half cycles"
+            + (f": ranges {shown} MPa." if counted else ".")
+        )
+
+    def _rf_text(self, st: RainflowStep | None, end: bool) -> str:
+        p = self.rf_p
+        if st is None:
+            return (
+                f"The record's first {p.size} reversals (its peaks and valleys). Step through the three-point count: "
+                "each reversal goes on a stack, and the last three on it are compared."
+            )
+        stack = ", ".join(str(i + 1) for i in st.stack)
+        if st.read >= 0:
+            text = f"Read reversal {st.read + 1} ({p[st.read]:.3g} MPa). Stack: {stack}."
+            if math.isfinite(st.X):
+                text += (
+                    f" X = {st.X:.3g} (the last two) is less than Y = {st.Y:.3g} (the two before): nothing closes yet."
+                    if st.X < st.Y
+                    else f" X = {st.X:.3g} ≥ Y = {st.Y:.3g}: the range Y has been passed, so it closes."
+                )
+            return text
+        a, b = st.pair[0] + 1, st.pair[1] + 1
+        if math.isnan(st.X):
+            return (
+                f"The end of the record: what's left on the stack counts as half cycles, one between each pair. "
+                f"Reversals {a} to {b}: {st.range:.3g} MPa, ½." + (" Done." if end else "")
+            )
+        if st.count == 0.5:
+            return (
+                f"Y ({st.range:.3g} MPa, reversals {a} to {b}) starts at the first reversal: half a cycle, ½, and the "
+                f"first one leaves the stack. Stack: {stack}."
+            )
+        return (
+            f"Y ({st.range:.3g} MPa, reversals {a} to {b}) is a full cycle, counted 1: the stress went from {a} to "
+            f"{b} and back past it. Both leave the stack. Stack: {stack}."
+        )
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
@@ -541,6 +707,14 @@ class FatiguePage(QtWidgets.QWidget):
             item.setPen(pg.mkPen(color, width=2))
         self.sn_item.setPen(pg.mkPen(c.strong, width=2))
         self.cycles_item.setPen(pg.mkPen(c.force, width=2))
+        self.rf_path.setPen(pg.mkPen(c.faint, width=1.5))
+        self.rf_full.setPen(pg.mkPen(c.force, width=3))
+        self.rf_half.setPen(pg.mkPen(c.mass[1], width=3, style=QtCore.Qt.PenStyle.DashLine))
+        self.rf_last.setPen(pg.mkPen(c.strong, width=5))
+        self.rf_points.setSymbolBrush(pg.mkBrush(c.mass[0]))
+        self.rf_points.setSymbolPen(None)
+        self.rf_stack.setSymbolBrush(None)
+        self.rf_stack.setSymbolPen(pg.mkPen(c.strong, width=2))
         if hasattr(self, "notes"):
             self.redraw()
 
@@ -588,6 +762,10 @@ class FatiguePage(QtWidgets.QWidget):
         rec, s, c = self.rec, self.stress, self.curve
         i = self.tabs.currentIndex()
         if rec is None or i > TAB_SN:
+            return
+        if i == TAB_RAINFLOW:
+            self._draw_rainflow()
+            self.tab_note.setText("")
             return
         sigma = rates(s).sigma
         top = max(float(rec.ranges.max()), 6 * sigma)

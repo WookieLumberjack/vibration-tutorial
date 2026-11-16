@@ -204,6 +204,60 @@ def rainflow(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return np.array(ranges), np.array(counts)
 
 
+@dataclass(frozen=True)
+class RainflowStep:
+    """One step of the three-point count over a run of reversals `p`: the stack after it (indices into `p`), the
+    reversal just read (`read`, or −1), the pair just counted (indices, or ()), and its range and count (1 a full
+    cycle, ½ a half; 0 when nothing was counted). `X` and `Y` are the two ranges compared (NaN with fewer than
+    three on the stack)."""
+
+    stack: tuple[int, ...]
+    read: int
+    pair: tuple[int, ...]
+    range: float
+    count: float
+    X: float
+    Y: float
+
+
+def rainflow_steps(p: np.ndarray) -> list[RainflowStep]:
+    """`rainflow` taken a step at a time over the reversals `p` (`reversals(x)`): a step for each reversal read,
+    one for each cycle it lets go, and at the end one for each half cycle left on the stack. Their counted ranges
+    are `rainflow`'s."""
+    p = np.asarray(p, dtype=float)
+    steps: list[RainflowStep] = []
+    stack: list[int] = []
+    nan = math.nan
+
+    def compare() -> tuple[float, float]:
+        if len(stack) < 3:
+            return nan, nan
+        return abs(p[stack[-1]] - p[stack[-2]]), abs(p[stack[-2]] - p[stack[-3]])
+
+    for i in range(p.size):
+        stack.append(i)
+        X, Y = compare()
+        steps.append(RainflowStep(tuple(stack), i, (), 0.0, 0.0, X, Y))
+        while len(stack) >= 3:
+            X, Y = compare()
+            if X < Y:
+                break
+            pair = (stack[-3], stack[-2])
+            if len(stack) == 3:  # Y holds the start: half a cycle, and the start goes
+                stack.pop(0)
+                steps.append(RainflowStep(tuple(stack), -1, pair, Y, 0.5, X, Y))
+            else:
+                last = stack.pop()
+                del stack[-2:]
+                stack.append(last)
+                steps.append(RainflowStep(tuple(stack), -1, pair, Y, 1.0, X, Y))
+    while len(stack) >= 2:  # the residue: half cycles, start to end
+        a, b = stack[0], stack[1]
+        stack.pop(0)
+        steps.append(RainflowStep(tuple(stack), -1, (a, b), abs(p[b] - p[a]), 0.5, nan, nan))
+    return steps
+
+
 def miner(ranges: np.ndarray, counts: np.ndarray, curve: Curve) -> float:
     """Σ nᵢ / Nᵢ."""
     keep = ranges > 0
