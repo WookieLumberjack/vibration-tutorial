@@ -312,6 +312,14 @@ def _more_damping(rng: np.random.Generator) -> Question:
         f"F/(cω<sub>n</sub>), and {n} times the c gives 1/{n} of the swing. (Off resonance damping matters far "
         "less.)",
         choices=(f"It falls to 1/{n}", f"It falls to 1/√{n}", "It stays the same", f"It grows {n} times"),
+        why=(
+            "",
+            "A square root comes in where the frequency depends on stiffness or mass; the amplitude at resonance "
+            "is inversely proportional to the damping itself.",
+            "That holds well away from resonance, where the spring or the mass carries the force; at resonance "
+            "they cancel, and the damper alone holds it.",
+            "Damping takes energy out every cycle: more of it can only lower the swing.",
+        ),
         setup=dict(damping=2.0 * n, tune=True, tab=TAB_FRF),
         predict=True,
     )
@@ -325,6 +333,13 @@ def _heavier(rng: np.random.Generator) -> Question:
         0,
         f"f<sub>n</sub> = √(k/m)/2π: {n} times the mass gives 1/√{n} = 1/{root} of the frequency.",
         choices=(f"It falls to 1/{root}", f"It falls to 1/{n}", "It stays the same", f"It rises {root} times"),
+        why=(
+            "",
+            "The frequency goes as the square root of k/m, not as k/m itself.",
+            "A pendulum's frequency doesn't depend on its mass, as gravity pulls the heavier bob harder in step; "
+            "a spring's force doesn't grow with the mass.",
+            "The heavier mass is slower to move: the same spring swings it less often, not more.",
+        ),
         setup=dict(mass=float(n), tab=TAB_PHASE),
         predict=True,
     )
@@ -338,6 +353,12 @@ def _quickest_return(rng: np.random.Generator) -> Question:
         "Critical damping. More damping slows the return: ζ = 2's slow root at −0.27ω<sub>n</sub> holds it back "
         "(a time constant of 0.19 s here, against critical's 0.05 s).",
         choices=("ζ = 1", "ζ = 2", "They settle together"),
+        why=(
+            "",
+            "More damping takes energy out faster, but it also holds the mass back: past critical, the slow root "
+            "moves towards zero and the creep back takes longer.",
+            "Their slowest roots differ: −ω<sub>n</sub> for ζ = 1 and −0.27ω<sub>n</sub> for ζ = 2.",
+        ),
         setup=dict(damping=40.0, compare=True, tab=TAB_POLES),
         predict=True,
     )
@@ -425,6 +446,7 @@ PROBLEMS = (
         "sdof_page",
         f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}: ω<sub>n</sub> = √(k/m), in rad/s.",
         _natural_frequency,
+        figure="fig:oscillator",
     ),
     Problem(
         "critical-damping",

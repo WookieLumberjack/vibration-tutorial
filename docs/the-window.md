@@ -76,6 +76,11 @@ speed, a damper for comfort and grip). Pick one and the page sets up where it st
 requirement is ticked or crossed with what the page has now, and once all are met it counts as solved,
 as in the Practice window. *Start over* sets it up again, *New numbers* asks it afresh.
 
+The *Practice* window (Ctrl+F2) asks every page's problems with new numbers each time. The box above its list
+filters it by page or problem, *Next unsolved* goes on to the next one you haven't solved in the course's
+order, a wrong choice says why it's wrong (on the pages whose problems give their reasons so far), and some
+problems show a figure of the situation above the question.
+
 ## A plot's data
 
 Right-click a plot for its menu: **Copy data as CSV** puts its curves on the clipboard, to paste into a

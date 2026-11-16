@@ -301,7 +301,14 @@ def _stiff_shaft(rng: np.random.Generator) -> Question:
 
 
 PROBLEMS = tuple(
-    Problem(key, title, "rotor_page", f"See {page_link('rotor_page', anchor, section)}.", make)
+    Problem(
+        key,
+        title,
+        "rotor_page",
+        f"See {page_link('rotor_page', anchor, section)}.",
+        make,
+        figure="fig:spots" if key == "phase-lag" else "",  # heavy spot, high spot
+    )
     for key, title, anchor, section, make in (
         ("critical", "A critical speed", "classic", "The classic case", _critical),
         ("whirl-radius", "The unbalance's whirl", "unbalance", "Unbalance response", _whirl_radius),
