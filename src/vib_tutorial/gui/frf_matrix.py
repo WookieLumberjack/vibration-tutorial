@@ -5,6 +5,12 @@ matrix H(w) (row j = response x_j, column k = force at m_k). The controls
 choose which modal terms are summed, and which forces act together; the
 selected cell is drawn large on the right with its individual terms, their
 sum, and the full solution.
+
+Working on it: `FrfGrid` keeps its cells across a new n (it adds and removes only the rows and columns that
+change, the layout worked out once at the end), and its cells are bare `ViewBox`es with `PlotCurveItem`s that
+take log10 of their data themselves: n² PlotItems with n + 2 PlotDataItems each took 0.4–0.9 s to make
+(#316 E3). A new theme builds it again from scratch. `tests/test_frf_matrix.py` checks a new n keeps the
+shared cells and leaves nothing behind.
 """
 
 from __future__ import annotations
@@ -153,6 +159,17 @@ def swatch(color: str) -> QtGui.QIcon:
     return QtGui.QIcon(pix)
 
 
+def _curve(plot: pg.ViewBox, pen: QtGui.QPen, z: float = 0.0) -> pg.PlotCurveItem:
+    curve = pg.PlotCurveItem(pen=pen)
+    curve.setZValue(z)
+    plot.addItem(curve)
+    return curve
+
+
+def _no_activation() -> None:
+    """`FrfGrid.build`'s stand-in for the layout's `activate` while it adds its items."""
+
+
 class FrfGrid(pg.GraphicsLayoutWidget):
     """N x N small plots of H_jk: row j = response x_j, column k = force at m_k."""
 
@@ -162,74 +179,126 @@ class FrfGrid(pg.GraphicsLayoutWidget):
         super().__init__(parent)
         self.setAccessibleName("The FRF matrix: each force to each response")
         self.n = 0
-        self.cells: list[list[pg.PlotItem]] = []
+        self.n_terms = 0
+        self.cells: list[list[pg.ViewBox]] = []  # bare views: a PlotItem (its axes, buttons, menu) took 5 ms
         self.full: list[list[pg.PlotDataItem]] = []
         self.total: list[list[pg.PlotDataItem]] = []
         self.terms: list[list[list[pg.PlotDataItem]]] = []
+        self.headers: list[pg.LabelItem] = []  # "F at m_k" over each column
+        self.row_labels: list[pg.LabelItem] = []  # "x_j" by each row
         self.left_axes: list[pg.AxisItem] = []
         self.bottom_axes: list[pg.AxisItem] = []
         self.corner: pg.LabelItem | None = None
+        self.footer: pg.LabelItem | None = None
+        self.font = QtGui.QFont()
+        self.font.setPointSize(7)
         self.scene().sigMouseClicked.connect(self._on_click)
 
     def build(self, n: int, n_terms: int, force: bool = False) -> None:
-        """Lay out the grid for n masses and n_terms modal terms per cell (again if `force`)."""
-        if not force and n == self.n and self.terms and len(self.terms[0][0]) == n_terms:
+        """Lay out the grid for n masses and n_terms modal terms per cell (from scratch if `force`: a new theme).
+
+        A new n keeps the cells both sizes share and adds or removes the rest, and the layout is worked out
+        once at the end (pyqtgraph's `addItem` does it after every item): building all n² cells and their
+        curves anew took 0.4 s at n = 5, 0.9 s at 7."""
+        if force:
+            self.clear()
+            self.n = self.n_terms = 0
+            self.cells, self.full, self.total, self.terms = [], [], [], []
+            self.headers, self.row_labels, self.left_axes, self.bottom_axes = [], [], [], []
+            self.corner = self.footer = None
+        if n == self.n and n_terms <= self.n_terms:
             return
-        self.clear()
-        self.n = n
-        font = QtGui.QFont()
-        font.setPointSize(7)
-        self.corner = pg.LabelItem("", size="8pt")
-        self.addItem(self.corner, row=0, col=0, colspan=2)
-        for k in range(n):
-            self.addItem(pg.LabelItem(f"<b>F at m{k + 1}</b>", size="9pt", color=colors.mass[k]), row=0, col=k + 2)
-        self.cells, self.full, self.total, self.terms, self.left_axes = [], [], [], [], []
-        thin = pg.mkPen(colors.cell_border, width=1)
+        layout = self.ci.layout
+        layout.activate = _no_activation  # an instance attribute shadows the C++ method until deleted
+        try:
+            if n != self.n:
+                self._resize(n)
+            self._set_term_count(n_terms)
+        finally:
+            del layout.activate
+            layout.activate()
+
+    def _resize(self, n: int) -> None:
+        old = self.n
+        if self.corner is None:
+            self.corner = pg.LabelItem("", size="8pt")
+            self.addItem(self.corner, row=0, col=0, colspan=2)
+        for item in [*self.bottom_axes[n:], *([self.footer] if self.footer is not None else [])]:
+            self.removeItem(item)
+        self.bottom_axes = self.bottom_axes[:n]
+        for item in self.bottom_axes:
+            self.removeItem(item)  # back below the last row
+        # Fewer: the rows and columns past n go.
+        for j in range(old):
+            for k in range(old):
+                if j >= n or k >= n:
+                    p = self.cells[j][k]
+                    p.setXLink(None)
+                    p.setYLink(None)
+                    self.removeItem(p)
+        for item in [*self.headers[n:], *self.row_labels[n:], *self.left_axes[n:]]:
+            self.removeItem(item)
+        del self.headers[n:], self.row_labels[n:], self.left_axes[n:]
+        for grid in (self.cells, self.full, self.total, self.terms):
+            del grid[n:]
+            for row in grid:
+                del row[n:]
+        # More: new columns on the rows kept, then new rows.
+        for k in range(old, n):
+            header = pg.LabelItem(f"<b>F at m{k + 1}</b>", size="9pt", color=colors.mass[k])
+            self.addItem(header, row=0, col=k + 2)
+            self.headers.append(header)
         for j in range(n):
-            self.addItem(pg.LabelItem(f"<b>x{j + 1}</b>", size="9pt", color=colors.mass[j]), row=j + 1, col=0)
-            cells: list[pg.PlotItem] = []
-            full: list[pg.PlotDataItem] = []
-            total: list[pg.PlotDataItem] = []
-            terms: list[list[pg.PlotDataItem]] = []
-            for k in range(n):
-                p = pg.PlotItem()
-                p.hideAxis("left")
-                p.hideAxis("bottom")
-                p.hideButtons()
-                p.setMenuEnabled(False)
-                p.setMouseEnabled(x=False, y=False)
-                p.setLogMode(x=True, y=False)
-                vb = p.getViewBox()
-                vb.setBorder(thin)
-                if j == k:
-                    vb.setBackgroundColor(colors.diagonal_tint)
-                if cells or self.cells:
-                    p.setXLink(self.cells[0][0] if self.cells else cells[0])
-                    p.setYLink(self.cells[0][0] if self.cells else cells[0])
-                self.addItem(p, row=j + 1, col=k + 2)
-                # 1 px pens: up to a few hundred curves are drawn at once.
-                terms.append([p.plot(pen=pg.mkPen(colors.grey, width=1)) for _ in range(n_terms)])
-                full.append(p.plot(pen=pg.mkPen(colors.strong, width=1)))
-                total.append(p.plot(pen=pg.mkPen(colors.force, width=1, style=QtCore.Qt.PenStyle.DashLine)))
-                cells.append(p)
-            self.cells.append(cells)
-            self.full.append(full)
-            self.total.append(total)
-            self.terms.append(terms)
-            axis = pg.AxisItem("left", linkView=cells[0].getViewBox())
-            axis.setStyle(tickFont=font, tickTextOffset=2)
-            axis.setWidth(44)
-            axis.enableAutoSIPrefix(False)
-            self.addItem(axis, row=j + 1, col=1)
-            self.left_axes.append(axis)
-        self.bottom_axes = []
+            if j >= old:
+                label = pg.LabelItem(f"<b>x{j + 1}</b>", size="9pt", color=colors.mass[j])
+                self.addItem(label, row=j + 1, col=0)
+                self.row_labels.append(label)
+                for grid in (self.cells, self.full, self.total, self.terms):
+                    grid.append([])
+            for k in range(len(self.cells[j]), n):
+                self._add_cell(j, k)
+            if j >= old:
+                axis = pg.AxisItem("left", linkView=self.cells[j][0])
+                axis.setStyle(tickFont=self.font, tickTextOffset=2)
+                axis.setWidth(44)
+                axis.enableAutoSIPrefix(False)
+                self.addItem(axis, row=j + 1, col=1)
+                self.left_axes.append(axis)
         for k in range(n):
-            axis = pg.AxisItem("bottom", linkView=self.cells[0][k].getViewBox())
-            axis.setStyle(tickFont=font, tickTextOffset=2)
-            axis.setLogMode(x=True, y=False)
-            self.addItem(axis, row=n + 1, col=k + 2)
-            self.bottom_axes.append(axis)
-        self.addItem(pg.LabelItem("Frequency [Hz]", size="8pt"), row=n + 2, col=2, colspan=n)
+            if k >= len(self.bottom_axes):
+                axis = pg.AxisItem("bottom", linkView=self.cells[0][k])
+                axis.setStyle(tickFont=self.font, tickTextOffset=2)
+                axis.setLogMode(x=True, y=False)
+                self.bottom_axes.append(axis)
+            self.addItem(self.bottom_axes[k], row=n + 1, col=k + 2)
+        if self.footer is None:
+            self.footer = pg.LabelItem("Frequency [Hz]", size="8pt")
+        self.addItem(self.footer, row=n + 2, col=2, colspan=n)
+        self.n = n
+
+    def _add_cell(self, j: int, k: int) -> None:
+        p = pg.ViewBox(enableMenu=False)
+        p.setMouseEnabled(x=False, y=False)
+        p.setBorder(pg.mkPen(colors.cell_border, width=1))
+        if j == k:
+            p.setBackgroundColor(colors.diagonal_tint)
+        if self.cells[0]:
+            p.setXLink(self.cells[0][0])
+            p.setYLink(self.cells[0][0])
+        self.addItem(p, row=j + 1, col=k + 2)
+        # 1 px pens: up to a few hundred curves are drawn at once. The sum and the full solution over the terms.
+        self.full[j].append(_curve(p, pg.mkPen(colors.strong, width=1), z=1))
+        self.total[j].append(_curve(p, pg.mkPen(colors.force, width=1, style=QtCore.Qt.PenStyle.DashLine), z=2))
+        self.cells[j].append(p)
+        self.terms[j].append([])
+
+    def _set_term_count(self, n_terms: int) -> None:
+        """At least n_terms term curves in each cell: set_curves colours them and hides those past the terms."""
+        for row, terms_row in zip(self.cells, self.terms):
+            for p, terms in zip(row, terms_row):
+                while len(terms) < n_terms:
+                    terms.append(_curve(p, pg.mkPen(colors.grey, width=1)))
+        self.n_terms = n_terms
 
     def set_curves(
         self,
@@ -241,25 +310,32 @@ class FrfGrid(pg.GraphicsLayoutWidget):
     ) -> None:
         """Real (F, n, n) arrays of the plotted quantity; `terms` entries are (color, values) or None (hidden)."""
         log_y = q is Quantity.MAGNITUDE
-        for row in self.cells:
-            for p in row:
-                p.setLogMode(x=True, y=log_y)
         for axis in self.left_axes:
             axis.setLogMode(x=False, y=log_y)
             set_phase_ticks(axis, q is Quantity.PHASE)
         ticks = log_ticks(f[0], f[-1], (1, 2, 5) if self.n <= 4 else (1,))
         for axis in self.bottom_axes:
             axis.setTicks(ticks)
+        # The curves are PlotCurveItems (a PlotDataItem costs 0.7 ms to make, and n² × n of them were made on a
+        # new n): they take log10 of the data themselves where the axes are logarithmic.
+        x = np.log10(f)
+
+        def y(values: np.ndarray) -> np.ndarray:
+            return np.log10(values) if log_y else values  # magnitudes: positive, or NaN where zero
+
+        ys = [y(full), y(total)]
+        shown = [None if t is None else (t[0], y(t[1])) for t in terms]
         for j in range(self.n):
             for k in range(self.n):
-                self.full[j][k].setData(f, full[:, j, k], connect="finite")
-                self.total[j][k].setData(f, total[:, j, k], connect="finite")
-                for curve, term in zip(self.terms[j][k], terms):
+                self.full[j][k].setData(x, ys[0][:, j, k], connect="finite")
+                self.total[j][k].setData(x, ys[1][:, j, k], connect="finite")
+                for i, curve in enumerate(self.terms[j][k]):
+                    term = shown[i] if i < len(shown) else None
                     curve.setVisible(term is not None)
                     if term is not None:
                         color, values = term
                         curve.setPen(pg.mkPen(color, width=1))
-                        curve.setData(f, values[:, j, k], connect="finite")
+                        curve.setData(x, values[:, j, k], connect="finite")
         lo, hi = y_range(q, [full, total])
         self.cells[0][0].setXRange(math.log10(f[0]), math.log10(f[-1]), padding=0)
         self.cells[0][0].setYRange(lo, hi, padding=0)
@@ -271,7 +347,7 @@ class FrfGrid(pg.GraphicsLayoutWidget):
         bold = pg.mkPen(colors.force, width=3)
         for j, row in enumerate(self.cells):
             for k, p in enumerate(row):
-                p.getViewBox().setBorder(bold if j == output and k in inputs else thin)
+                p.setBorder(bold if j == output and k in inputs else thin)
 
     def _on_click(self, event) -> None:
         pos = event.scenePos()
