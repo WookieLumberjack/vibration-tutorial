@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from vib_tutorial.core import fluid_bearing, foh, native
+from vib_tutorial.core import duffing, fluid_bearing, foh, native
 from vib_tutorial.core.foh import foh_discretize
 from vib_tutorial.core.forcing import ForceKind
 from vib_tutorial.core.model import ChainSystem, state_space
@@ -393,3 +393,26 @@ def test_started_steps_finish_whenever_the_state_is_touched():
     assert sim.t == 0.0 and not sim.displacement.any()
     with pytest.raises(RuntimeError):
         sim.collect()
+
+
+@needs_native
+@pytest.mark.parametrize("name", [p.name for p in duffing.PRESETS])
+def test_duffing_steps_match_the_reference(name):
+    # The kernel steps as _steps_reference does, Newton and all, sweeps, pump, noise and runaways: the same
+    # motion and the same cycles, to rounding (a chaotic preset is compared over a short run).
+    p = next(q for q in duffing.PRESETS if q.name == name)
+    sims = []
+    for _ in range(2):
+        drive = duffing.Drive(freq_hz=p.freq_hz, start_hz=p.start_hz, end_hz=p.end_hz, sweep_time=p.sweep_time)
+        sim = duffing.DuffingSimulator(p.osc, drive)
+        sim.drive.start(p.mode)
+        sims.append(sim)
+    sims[1]._steps = sims[1]._steps_reference
+    got, want = ([s.advance(0.5) for _ in range(8)] for s in sims)
+    for g, w in zip(got, want, strict=True):
+        scale = max(np.abs(w.x).max(initial=0.0), 1e-300)
+        np.testing.assert_allclose(g.x, w.x, rtol=0, atol=1e-9 * scale)
+        np.testing.assert_allclose(g.v, w.v, rtol=0, atol=1e-9 * max(np.abs(w.v).max(initial=0.0), 1e-300))
+        assert [c.leg for c in g.cycles] == [c.leg for c in w.cycles]
+        np.testing.assert_allclose([c.amplitude for c in g.cycles], [c.amplitude for c in w.cycles], rtol=1e-8)
+    assert sims[0].escaped == sims[1].escaped and sims[0].t == sims[1].t

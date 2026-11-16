@@ -55,7 +55,11 @@ harmonic balance traced by amplitude (`response_curve`: the two roots in Ω² at
 the unstable branch is one curve with the rest), stability by the sign of dG/ds, folds refined by `brentq`.
 `DuffingSimulator` keeps the exact FOH update for the linear part and puts the cubic's force in as the input,
 linear over the step, its end value by scalar Newton; second order (a test checks the error quarters with the
-step), so the step resolves the stiffness at `REACH` times the largest amplitude in sight. Each drive cycle's
+step), so the step resolves the stiffness at `REACH` times the largest amplitude in sight. An advance plans the
+drive first (`Drive.plan`, a leg at a time, the same numbers as `Drive.advance`, which a test checks), steps
+the motion in Rust where it's built (`native.NewtonSteps` with a `cubic` law; `_steps_reference` is the Python,
+and `tests/test_native.py` compares them on every preset), then sums each closed cycle's harmonics
+(`_cycles`). Each drive cycle's
 first and half harmonics (`Cycle`, both over the cycle and the one before, so a ½X swing doesn't leak into the
 1X) are what the page plots against harmonic balance; Poincaré dots only while the frequency is held. The pump
 μ (k(1 + μ cos φ), sharing the drive's phase) goes into the same Newton remainder;
@@ -75,6 +79,8 @@ from enum import Enum
 import numpy as np
 import scipy.linalg
 import scipy.optimize
+
+from . import native
 
 TWO_PI = 2.0 * math.pi
 MAX_STEP = 0.01  # s
@@ -545,6 +551,44 @@ class Drive:
         self.phase += dphi
         return dphi
 
+    def plan(self, dt: float, steps: int) -> tuple[list[str], np.ndarray, np.ndarray]:
+        """`advance` `steps` times, a leg at a time: each step's leg, phase advance and frequency at its end.
+        The same sums in the same order (`np.cumsum` adds as `+=` does), so the same numbers."""
+        legs: list[str] = []
+        dphi, freqs = np.empty(steps), np.empty(steps)
+        k = 0
+        while k < steps:
+            if not self.legs:
+                legs += ["hold"] * (steps - k)
+                dphi[k:] = TWO_PI * self.freq_hz * dt
+                freqs[k:] = self.freq_hz
+                break
+            n = steps - k
+            elapsed = np.cumsum(np.concatenate([[self.elapsed], np.full(n, dt)]))  # before each step, and after
+            ends = np.flatnonzero(elapsed[1:] >= self.sweep_time - 1e-12)
+            if ends.size:
+                n = int(ends[0]) + 1
+            dphi[k : k + n] = TWO_PI * self._frequencies(elapsed[:n] + 0.5 * dt) * dt
+            freqs[k : k + n] = self._frequencies(elapsed[1 : n + 1])
+            legs += [self.legs[0]] * n
+            self.phase += float(dphi[k : k + n].sum())  # (DuffingSimulator.advance keeps its own, wrapped)
+            self.elapsed = float(elapsed[n])
+            self.freq_hz = float(freqs[k + n - 1])
+            if ends.size:
+                self.legs.pop(0)
+                self.elapsed = 0.0
+                if not self.legs:
+                    self.mode = Sweep.HOLD
+            k += n
+        return legs, dphi, freqs
+
+    def _frequencies(self, elapsed: np.ndarray) -> np.ndarray:
+        """`frequency_at` at each of the elapsed times, in the current leg."""
+        frac = np.minimum(np.maximum(elapsed / self.sweep_time, 0.0), 1.0)
+        if self.legs[0] == "down":
+            frac = 1.0 - frac
+        return self.start_hz + (self.end_hz - self.start_hz) * frac
+
 
 # ------------------------------------------------------------------ simulation
 @dataclass
@@ -678,88 +722,163 @@ class DuffingSimulator:
         """Step on by about `duration` s (whole steps, at most MAX_STEPS_PER_ADVANCE); every step's samples.
 
         The input u = F cos phi + noise - k3 x^3 - mu k cos(phi) x is linear over each step; its end
-        value depends on x1, found by Newton.
+        value depends on x1, found by Newton (`_steps`).
         """
         h = self.step_size()
         steps = min(round(duration / h), MAX_STEPS_PER_ADVANCE)
-        p00, p01, p10, p11, g0x, g0v, g1x, g1v = self._discrete(h)
         osc, drive = self.osc, self.drive
-        F, k3, pk = osc.force, osc.cubic, osc.pump * osc.stiffness
         noise = osc.noise * self._rng.standard_normal(steps) if osc.noise > 0 else np.zeros(steps)
+        if self.escaped:
+            steps = 0
+        # The drive over the steps: each step's leg, the phase at its start (wrapped) and end, the frequency.
+        before = dataclasses.replace(drive, legs=list(drive.legs))
+        legs, dphi, freqs = drive.plan(h, steps)
+        start = np.empty(steps)
+        phi = before.phase % TWO_PI
+        for i, d in enumerate(dphi.tolist()):
+            start[i] = phi
+            phi += d
+            if phi >= TWO_PI:
+                phi -= TWO_PI
+        end = start + dphi  # unwrapped: ≥ 2π where a cycle closes within the step
+        c1 = np.cos(end)
+        applied = osc.force * c1 + noise[:steps]
+        x0, v0, n0 = self.x, self.v, self._noise
+        c0 = math.cos(before.phase % TWO_PI)
+        u0 = osc.force * c0 + n0 - (osc.cubic * x0 * x0 + osc.pump * osc.stiffness * c0) * x0
+        xs, vs, done = self._steps(h, x0, v0, u0, applied, c1)
+        if done:
+            self.escaped = bool(abs(xs[done - 1]) > self.runaway or not math.isfinite(xs[done - 1]))
+        if done < steps:  # escaped part way: the drive only got as far as the mass did
+            drive.__dict__.update(before.__dict__)
+            phi = drive.phase % TWO_PI
+            for i in range(done):
+                drive.advance(h)
+                phi = end[i] - TWO_PI if end[i] >= TWO_PI else end[i]
+        xs, vs = xs[:done], vs[:done]
+        ts = np.cumsum(np.concatenate([[self.t], np.full(done, h)]))[1:]
+        cycles = self._cycles(h, x0, v0, xs, vs, ts, start[:done], end[:done], legs)
+        if done:
+            self.x, self.v, self.t = float(xs[-1]), float(vs[-1]), float(ts[-1])
+            self._noise = float(noise[done - 1])
+        drive.phase = phi
+        return Samples(ts, xs, vs, applied[:done], freqs[:done], cycles)
+
+    def _steps(
+        self, h: float, x: float, v: float, u0: float, applied: np.ndarray, c1: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, int]:
+        """(x, v) at each step's end from (x, v) under the input u0, the applied force at each step's end and
+        the pump's cos φ there; and how many steps it took (to where the mass ran away, or all): in Rust
+        (`native.NewtonSteps`) where it's built."""
+        if native.module is None or not applied.size:
+            return self._steps_reference(h, x, v, u0, applied, c1)
+        p00, p01, p10, p11, g0x, g0v, g1x, g1v = self._discrete(h)
+        osc = self.osc
+        kernel = native.NewtonSteps(
+            np.array([[p00, p01], [p10, p11]]),
+            np.array([[g0x], [g0v]]),
+            np.array([[g1x], [g1v]]),
+            1e-13,
+            NEWTON_ITERATIONS,
+            watch=(0, self.runaway),
+            cubic=[(0, 0, osc.cubic, osc.pump * osc.stiffness)],
+        )
+        z = np.empty((applied.size, 2))
+        done = kernel.run(np.array([x, v]), np.array([u0]), applied[:, None], c1, z, np.empty((applied.size, 1)))
+        return z[:, 0], z[:, 1], done
+
+    def _steps_reference(
+        self, h: float, x: float, v: float, u0: float, applied: np.ndarray, c1: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, int]:
+        """`_steps` in Python: scalar Newton on each step's end x."""
+        p00, p01, p10, p11, g0x, g0v, g1x, g1v = self._discrete(h)
+        k3, pk = self.osc.cubic, self.osc.pump * self.osc.stiffness
         limit = self.runaway
-        x, v, t = self.x, self.v, self.t
-        sc, ss, hc, hs, span = self._sums
-        last, parity, began = self._last, self._parity, self._began
-        ts, xs, vs, fs, freqs = [], [], [], [], []
-        cycles: list[Cycle] = []
-        phi = drive.phase % TWO_PI
-        c0 = math.cos(phi)
-        n0 = self._noise
-        for i in range(steps):
-            if self.escaped:
-                break
-            leg = drive.leg
-            dphi = drive.advance(h)
-            phi1 = phi + dphi
-            c1 = math.cos(phi1)
-            n1 = float(noise[i])
-            u0 = F * c0 + n0 - (k3 * x * x + pk * c0) * x
-            e1 = F * c1 + n1  # the end's applied force
+        xs, vs = np.empty(applied.size), np.empty(applied.size)
+        for i, (e1, c) in enumerate(zip(applied.tolist(), c1.tolist(), strict=True)):
             px = p00 * x + p01 * v + g0x * u0
             pv = p10 * x + p11 * v + g0v * u0
-            x1 = px + g1x * (e1 - (k3 * x * x + pk * c1) * x)
+            x1 = px + g1x * (e1 - (k3 * x * x + pk * c) * x)
             for _ in range(NEWTON_ITERATIONS):
-                r = x1 - px - g1x * (e1 - (k3 * x1 * x1 + pk * c1) * x1)
-                x1 -= r / (1.0 + g1x * (3.0 * k3 * x1 * x1 + pk * c1))
+                r = x1 - px - g1x * (e1 - (k3 * x1 * x1 + pk * c) * x1)
+                x1 -= r / (1.0 + g1x * (3.0 * k3 * x1 * x1 + pk * c))
                 if abs(r) <= 1e-13 * (abs(x1) + 1e-12):
                     break
-            v1 = pv + g1v * (e1 - (k3 * x1 * x1 + pk * c1) * x1)
-            # the first and half harmonics over the cycle, by the trapezoidal rule
-            psi0, psi1 = 0.5 * phi + math.pi * parity, 0.5 * phi1 + math.pi * parity
-            sc += 0.5 * h * (x * c0 + x1 * c1)
-            ss += 0.5 * h * (x * math.sin(phi) + x1 * math.sin(phi1))
-            hc += 0.5 * h * (x * math.cos(psi0) + x1 * math.cos(psi1))
-            hs += 0.5 * h * (x * math.sin(psi0) + x1 * math.sin(psi1))
-            span += h
-            if phi1 >= TWO_PI:  # a cycle ends within the step: close it at phi = 2 pi
-                frac = (TWO_PI - phi) / dphi
-                pair = span + last[4]
-                pc, ps = sc + last[0], ss + last[1]
-                half = 2.0 * math.hypot(hc + last[2], hs + last[3]) / pair if last[4] > 0 else math.nan
-                ended = t + frac * h
-                length = ended - began if ended > began else span  # the first cycle's start isn't known
-                cycles.append(
-                    Cycle(
-                        ended,
-                        1.0 / length,
-                        2.0 * math.hypot(pc, ps) / pair,
-                        math.atan2(ps, pc),
-                        leg,
-                        x + frac * (x1 - x),
-                        v + frac * (v1 - v),
-                        half,
-                    )
-                )
-                began = ended
-                last = (sc, ss, hc, hs, span)
-                sc = ss = hc = hs = span = 0.0
-                phi1 -= TWO_PI
-                parity ^= 1
-            x, v, phi, c0, n0 = x1, v1, phi1, math.cos(phi1), n1
-            t += h
-            ts.append(t)
-            xs.append(x)
-            vs.append(v)
-            fs.append(e1)
-            freqs.append(drive.freq_hz)
+            u0 = e1 - (k3 * x1 * x1 + pk * c) * x1
+            x, v = x1, pv + g1v * u0
+            xs[i], vs[i] = x, v
             if abs(x) > limit or not math.isfinite(x):
-                self.escaped = True
-        self.x, self.v, self.t = x, v, t
-        drive.phase = phi
-        self._noise = n0
-        self._sums = [sc, ss, hc, hs, span]
+                return xs, vs, i + 1
+        return xs, vs, applied.size
+
+    def _cycles(
+        self,
+        h: float,
+        x0: float,
+        v0: float,
+        xs: np.ndarray,
+        vs: np.ndarray,
+        ts: np.ndarray,
+        start: np.ndarray,
+        end: np.ndarray,
+        legs: list[str],
+    ) -> list[Cycle]:
+        """The drive cycles that closed over the steps: each one's first and half harmonics by the trapezoidal
+        rule, over it and the one before (carried across advances in `_sums`, `_last`, `_parity`, `_began`)."""
+        if not xs.size:
+            return []
+        xa = np.concatenate([[x0], xs[:-1]])  # each step's start
+        va = np.concatenate([[v0], vs[:-1]])
+        closes = np.flatnonzero(end >= TWO_PI)
+        # ψ = φ/2 + π × parity: the parity flips after each step that closes a cycle
+        flips = np.zeros(xs.size, dtype=int)
+        flips[closes[closes + 1 < xs.size] + 1] = 1
+        sign = np.where((self._parity + np.cumsum(flips)) % 2, -1.0, 1.0)
+        terms = (
+            0.5
+            * h
+            * np.stack(
+                [
+                    xa * np.cos(start) + xs * np.cos(end),
+                    xa * np.sin(start) + xs * np.sin(end),
+                    sign * (xa * np.cos(0.5 * start) + xs * np.cos(0.5 * end)),
+                    sign * (xa * np.sin(0.5 * start) + xs * np.sin(0.5 * end)),
+                    np.full(xs.size, 2.0),
+                ]
+            )
+        )
+        sums, last, parity, began = list(self._sums), self._last, self._parity, self._began
+        cycles: list[Cycle] = []
+        first = 0
+        for i in closes.tolist():
+            sc, ss, hc, hs, span = (a + b for a, b in zip(sums, terms[:, first : i + 1].sum(axis=1), strict=True))
+            frac = (TWO_PI - start[i]) / (end[i] - start[i])
+            pair = span + last[4]
+            pc, ps = sc + last[0], ss + last[1]
+            half = 2.0 * math.hypot(hc + last[2], hs + last[3]) / pair if last[4] > 0 else math.nan
+            ended = float((ts[i - 1] if i else self.t) + frac * h)
+            length = ended - began if ended > began else span  # the first cycle's start isn't known
+            cycles.append(
+                Cycle(
+                    ended,
+                    1.0 / length,
+                    2.0 * math.hypot(pc, ps) / pair,
+                    math.atan2(ps, pc),
+                    legs[i],
+                    float(xa[i] + frac * (xs[i] - xa[i])),
+                    float(va[i] + frac * (vs[i] - va[i])),
+                    half,
+                )
+            )
+            began = ended
+            last = (sc, ss, hc, hs, span)
+            sums = [0.0] * 5
+            parity ^= 1
+            first = i + 1
+        rest = terms[:, first:].sum(axis=1)
+        self._sums = [a + float(b) for a, b in zip(sums, rest, strict=True)]
         self._last, self._parity, self._began = last, parity, began
-        return Samples(np.array(ts), np.array(xs), np.array(vs), np.array(fs), np.array(freqs), cycles)
+        return cycles
 
 
 # ------------------------------------------------------------------ measured jumps

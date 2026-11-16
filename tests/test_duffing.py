@@ -292,3 +292,20 @@ def test_parametric_presets():
     assert hi - 0.4 < down < hi and lo < up < lo + 0.4
     top = [c for c in cycles if c.leg == "up"][-5:]  # 8 Hz, far past the tongue, still on the branch
     assert np.mean([c.half for c in top]) == pytest.approx(parametric_amplitudes(p.osc, 7.95)[0][-1], rel=0.03)
+
+
+@pytest.mark.parametrize("mode", list(Sweep))
+def test_a_drive_planned_ahead_is_the_drive_advanced(mode):
+    # Drive.plan's legs, phase advances and frequencies are advance's, step for step, across the legs' ends.
+    drives = [Drive(freq_hz=3.0, start_hz=2.0, end_hz=6.0, sweep_time=0.3) for _ in range(2)]
+    for d in drives:
+        d.start(mode)
+    legs, dphi, freqs = drives[0].plan(0.001, 700)
+    want = []
+    for _ in range(700):
+        leg = drives[1].leg
+        want.append((leg, drives[1].advance(0.001), drives[1].freq_hz))
+    assert legs == [w[0] for w in want]
+    np.testing.assert_array_equal(dphi, [w[1] for w in want])
+    np.testing.assert_array_equal(freqs, [w[2] for w in want])
+    assert (drives[0].legs, drives[0].mode, drives[0].elapsed) == (drives[1].legs, drives[1].mode, drives[1].elapsed)
