@@ -40,6 +40,7 @@ from ..view_models.isolation import (
     isolator,
 )
 from . import isolation_figures, settle_plots
+from .challenge import ChallengeBox
 from .drag import DragLine
 from .isolation_view import IsolationView
 from .layouts import ColumnScroll
@@ -403,7 +404,8 @@ class IsolationPage(QtWidgets.QWidget):
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for w in (self.trials, machine, mounts, design):
+        self.challenge = ChallengeBox(self, PROBLEMS)
+        for w in (self.trials, self.challenge, machine, mounts, design):
             lv.addWidget(w)
         lv.addStretch(1)
 

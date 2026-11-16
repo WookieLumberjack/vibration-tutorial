@@ -46,6 +46,7 @@ from ..core.frame import (
 from ..core.frame_response import LOAD_KINDS, Formulations, Load, LoadKind, Responses, formulations, responses
 from ..core.practice import number
 from . import frame_figures, weak
+from .challenge import ChallengeBox
 from .frame_builder_canvas import NAN2, TOOL_HINTS, TOOLS, FrameCanvas, Tool, _segments
 from .frame_builder_trials import (
     MATRICES,
@@ -393,6 +394,7 @@ class FramePage(QtWidgets.QWidget):
             "<p>Each loads a frame, to show one idea from the Theory tab. It's then yours to change.</p>",
         )
         self.trials.picked.connect(self.load_trial)
+        self.challenge = ChallengeBox(self, PROBLEMS)
 
         self.props = Properties()
         p = self.props
@@ -573,7 +575,7 @@ class FramePage(QtWidgets.QWidget):
         v.addWidget(self.canvas, 4)
         v.addWidget(self.table, 0)
         v.addWidget(self.readout, 0)
-        three_panes(self, column(self.trials, self.props, model, loading, show), centre, self.tabs)
+        three_panes(self, column(self.trials, self.challenge, self.props, model, loading, show), centre, self.tabs)
 
         self.loop = FrameLoop(self, "Frame builder", self._tick, self._runs, self._sim_t)
         self._on_tool(0)

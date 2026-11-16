@@ -28,6 +28,7 @@ from ..core.quarter_car import (
     tradeoff,
 )
 from . import quarter_figures, settle_plots
+from .challenge import ChallengeBox
 from .drag import DragDot, DragLine
 from .lesson import (
     Form,
@@ -374,6 +375,7 @@ class QuarterCarPage(QtWidgets.QWidget):
             [t.name for t in TRIALS], "<p>Each sets up the road and the car to show one idea from the Theory tab.</p>"
         )
         self.trials.picked.connect(self.load_trial)
+        self.challenge = ChallengeBox(self, PROBLEMS)
 
         road = Form("Road")
         self.grade = combo([f"{c}: G_d(n₀) = {CLASSES[c] * 1e6:g}×10⁻⁶ m³" for c in CLASS_NAMES], TIPS["grade"])
@@ -455,7 +457,7 @@ class QuarterCarPage(QtWidgets.QWidget):
 
         three_panes(
             self,
-            column(self.trials, road, car),
+            column(self.trials, self.challenge, road, car),
             stack((self.body_plot, 1), (self.tyre_plot, 1), (self.readout, 0)),
             self.tabs,
         )

@@ -67,6 +67,12 @@ sets up only once you've picked one (or pressed *Just run it*), with the verdict
 explains it. Their notes also open with *On this page you'll*, two or three goals, each with a link
 that sets up its Thing to try and one that asks its practice problem. All of them are described below.
 
+Vibration isolation, Quarter-car, Active control, the Frame builder and the Jeffcott rotor also have a
+*Challenge* box under their Things to try: a spec to meet with the page's own controls (an isolation at a
+speed, a damper for comfort and grip). Pick one and the page sets up where it starts; as you tune, each
+requirement is ticked or crossed with what the page has now, and once all are met it counts as solved,
+as in the Practice window. *Start over* sets it up again, *New numbers* asks it afresh.
+
 ## A plot's data
 
 Right-click a plot for its menu: **Copy data as CSV** puts its curves on the clipboard, to paste into a
