@@ -35,6 +35,14 @@ FREQ_POINTS = 600  # per curve; the grid draws up to N^2 (2 + modes) curves
 WORST_FRACTION = 0.5  # the shaded band is where the difference is at least this share of its largest
 
 
+BUILD_MS = 900  # each step of the build-up
+BUILD_TIP = (
+    "<p>Sum the modal terms from the first: the slider ticks the first ones and leaves the rest out, and "
+    "<i>Build H mode by mode</i> steps it from one term to all of them, so each mode's term can be seen "
+    "adding its peak, and the dips appearing where neighbouring terms cancel.</p>"
+)
+
+
 class Quantity(enum.Enum):
     MAGNITUDE = "Magnitude |H|"
     PHASE = "Phase ∠H"
@@ -775,6 +783,26 @@ class FrfMatrixPage(QtWidgets.QWidget):
         buttons.addWidget(self.all_button)
         buttons.addWidget(self.none_button)
         mv.addLayout(buttons)
+        build = QtWidgets.QHBoxLayout()
+        self.build_label = QtWidgets.QLabel("First:")
+        self.build = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.build.setAccessibleName("Modes summed, from the first")
+        self.build_label.setBuddy(self.build)
+        self.build.setToolTip(BUILD_TIP)
+        self.build.setPageStep(1)
+        self.build.valueChanged.connect(self._on_build)
+        self.build_count = QtWidgets.QLabel()
+        build.addWidget(self.build_label)
+        build.addWidget(self.build, 1)
+        build.addWidget(self.build_count)
+        mv.addLayout(build)
+        self.build_play = QtWidgets.QPushButton("Build H mode by mode")
+        self.build_play.setToolTip(BUILD_TIP)
+        self.build_play.clicked.connect(self._on_build_play)
+        mv.addWidget(self.build_play)
+        self.build_timer = QtCore.QTimer(self)
+        self.build_timer.setInterval(BUILD_MS)
+        self.build_timer.timeout.connect(self._build_step)
         self.show_terms = QtWidgets.QCheckBox("Draw each mode's term in the grid too")
         self.show_terms.setToolTip("The large plot always draws them. In the grid they can crowd the small plots.")
         self.show_terms.toggled.connect(self.redraw)
@@ -911,6 +939,8 @@ class FrfMatrixPage(QtWidgets.QWidget):
             c.blockSignals(True)
             c.setChecked(t.label not in self._unchecked)
             c.blockSignals(False)
+        self._stop_build()
+        self._sync_build()
         self.output, self.inputs = trial.output, set(trial.inputs)
         self._sync_io()
         self.redraw()
@@ -940,7 +970,52 @@ class FrfMatrixPage(QtWidgets.QWidget):
 
     def _on_mode_toggled(self) -> None:
         self._unchecked = {t.label for t, c in zip(self.terms, self.mode_checks) if not c.isChecked()}
+        self._sync_build()
         self.redraw()
+
+    # ------------------------------------------------------------- building H up
+    def _sync_build(self) -> None:
+        """The slider at how many terms are ticked, when they're the first ones (otherwise a pick of its own)."""
+        on = self.selected_terms()
+        r = int(on.sum())
+        first = bool(on[:r].all()) if on.size else True
+        self.build.blockSignals(True)
+        self.build.setRange(0, len(self.mode_checks))
+        self.build.setValue(r if first else self.build.value())
+        self.build.blockSignals(False)
+        self.build_count.setText(f"{r} of {len(self.mode_checks)}" if first else "a pick")
+
+    def _on_build(self, r: int) -> None:
+        """The slider: the first `r` terms ticked, the rest not."""
+        for i, c in enumerate(self.mode_checks):
+            c.blockSignals(True)
+            c.setChecked(i < r)
+            c.blockSignals(False)
+        self._on_mode_toggled()
+
+    def _on_build_play(self) -> None:
+        if self.build_timer.isActive():
+            self._stop_build()
+            return
+        self.build.setValue(1)
+        self.build_play.setText("Stop")
+        self.build_timer.start()
+
+    def _build_step(self) -> None:
+        if self.build.value() >= self.build.maximum():
+            self._stop_build()
+            return
+        self.build.setValue(self.build.value() + 1)
+        if self.build.value() >= self.build.maximum():
+            self._stop_build()
+
+    def _stop_build(self) -> None:
+        self.build_timer.stop()
+        self.build_play.setText("Build H mode by mode")
+
+    def hideEvent(self, event) -> None:
+        self._stop_build()
+        super().hideEvent(event)
 
     def _check_all(self, on: bool) -> None:
         for c in self.mode_checks:
@@ -1043,6 +1118,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
             c.toggled.connect(self._on_mode_toggled)
             self.mode_list.addWidget(c)
             self.mode_checks.append(c)
+        self._sync_build()
 
     def selected_terms(self) -> np.ndarray:
         return np.array([c.isChecked() for c in self.mode_checks], dtype=bool)
