@@ -265,7 +265,8 @@ Frequencies from the energies, on the Simulation page's chain: Rayleigh's quotie
 deflection, a straight line, or a pass of inverse iteration), always above f₁ by a margin second order in
 the shape's error; Dunkerley's sum, below it; Rayleigh–Ritz with r shapes, every estimate above its mode
 and falling as r grows; and Holzer's table, stepping from the ground to the free end at a trial
-frequency until the force left over is zero.
+frequency until the force left over is zero. Drag the trial shape's points to draw your own, and watch
+Rayleigh's estimate follow and never go under f₁.
 
 ![Energy methods page, Rayleigh–Ritz on the uniform chain: Rayleigh's quotient from the static deflection gives f₁ = 1.112 Hz (+0.55 %), Dunkerley 1.007 Hz (−8.95 %) from below, and two Ritz shapes give f₁ exact to four figures and f₂ = 3.298 Hz, 3.6 % above 3.183](images/energy_methods.png)
 

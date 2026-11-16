@@ -2,7 +2,8 @@
 on the Simulation page's chain.
 
 Left: the trial shape for Rayleigh's quotient (with some of mode 2 mixed in, and passes of inverse iteration),
-and the shapes Rayleigh–Ritz keeps. Centre: the trial shape against mode 1's, and every estimate of f₁ on one
+and the shapes Rayleigh–Ritz keeps. Centre: the trial shape against mode 1's (its points `DragPoint`s: dragging
+one makes the shape the reader's own, `drawn`, and the readout tracks the lowest it reaches), and every estimate of f₁ on one
 axis. Right: Rayleigh's error against the shape's, Rayleigh–Ritz's estimates as shapes are added, Holzer's
 residual, the energies Lagrange's equations start from, and the Theory.
 """
@@ -39,7 +40,7 @@ from ..core.energy_methods import (
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick, rounded
 from . import energy_figures, settle_plots
-from .drag import DragLine
+from .drag import DragLine, DragPoint
 from .lesson import (
     Form,
     TrialBox,
@@ -61,6 +62,12 @@ from .links import load_notes, page_link
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
+DRAWN = "Your own: drag its points"
+DRAWN_LIMIT = 1.5  # a drawn point's reach, of the largest the shapes are drawn at
+GRIP_TIP = (
+    "<p><b>Drag</b> a mass's point to draw your own trial shape. Rayleigh's f₁ follows as you drag, and never "
+    "drops below the exact f₁: R(v) ≥ ω₁² for any shape.</p>"
+)
 TAB_ERROR, TAB_RITZ, TAB_HOLZER, TAB_LAGRANGE = range(4)
 EPS_SPAN = 0.5  # the Shape error tab's ε runs over ±this
 
@@ -83,6 +90,7 @@ class EnergyTrial:
     masses: tuple[float, ...] = (1.0, 1.0, 1.0, 1.0)
     stiffness: tuple[float, ...] = (400.0, 400.0, 400.0, 400.0)
     holzer_hz: float = 1.0
+    drawn: tuple[float, ...] = ()  # a shape the reader drew (each mass's displacement), in place of `shape`
 
     def system(self) -> ChainSystem:
         return chain(self.masses, self.stiffness)
@@ -421,7 +429,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         ch.row(self.chain_info)
 
         ray = Form("Rayleigh's quotient")
-        self.shape = combo([s.value for s in SHAPES], TIPS["shape"])
+        self.shape = combo([s.value for s in SHAPES] + [DRAWN], TIPS["shape"])
         ray.add("Trial shape:", self.shape, TIPS["shape"])
         self.eps = ray.number("Plus ε of mode 2:", -1.0, 1.0, 0.0, 2, "", TIPS["eps"])
         self.eps.setSingleStep(0.05)
@@ -444,6 +452,12 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.ritz_item = pg.PlotDataItem(name="Rayleigh–Ritz mode 1", symbol="s", symbolSize=7)
         for item in (self.mode_item, self.ritz_item, self.trial_item):
             self.shape_plot.addItem(item)
+        self.drawn: np.ndarray | None = None  # the shape drawn, while the combo says so
+        self.lowest = math.inf  # the lowest f / f₁ the drawn shapes have reached, for this chain
+        self.grips = [DragPoint(GRIP_TIP, size=13) for _ in range(MAX_DOF)]
+        for grip in self.grips:
+            self.shape_plot.addItem(grip)
+            grip.dragged.connect(self._on_grip)
         self.est_plot = plot("", None, "Frequency f₁", "Hz", height=120)
         self.est_plot.setToolTip(ESTIMATES_TIP)
         self.est_plot.setMouseEnabled(x=False, y=False)
@@ -519,6 +533,11 @@ class EnergyMethodsPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- inputs
     def set_system(self, system: ChainSystem, result=None) -> None:
         """The Simulation page's chain. Drawn now if the page shows, else when it does."""
+        if self.drawn is not None and self.drawn.size != system.n:
+            self.drawn = None  # a drawn shape for another number of masses
+            if self.drawing:
+                set_quietly(self.shape, 0)
+        self.lowest = math.inf
         self.system = system
         set_quietly(self.dof, system.n)
         self.r.setMaximum(system.n)
@@ -543,7 +562,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         return EnergyTrial(
             "",
             "",
-            shape=SHAPES[self.shape.currentIndex()],
+            shape=SHAPES[self.shape.currentIndex()] if not self.drawing else Shape.STATIC,
             eps=self.eps.value(),
             iterations=int(self.iterations.value()),
             basis=BASES[self.basis.currentIndex()],
@@ -552,6 +571,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
             masses=tuple(float(m) for m in self.system.masses),
             stiffness=tuple(float(k) for k in self.system.stiffness),
             holzer_hz=self.holzer_hz.value(),
+            drawn=tuple(float(v) for v in self.drawn) if self.drawing and self.drawn is not None else (),
         )
 
     def apply_trial(self, t: EnergyTrial) -> None:
@@ -563,8 +583,10 @@ class EnergyMethodsPage(QtWidgets.QWidget):
             or not np.allclose(self.system.stiffness, system.stiffness)
         ):
             self.set_system(system)  # nobody passed it back: show it here alone
+        self.drawn = np.array(t.drawn, dtype=float) if t.drawn else None
+        self.lowest = math.inf
         for box, value in (
-            (self.shape, SHAPES.index(t.shape)),
+            (self.shape, SHAPES.index(t.shape) if not t.drawn else len(SHAPES)),
             (self.eps, t.eps),
             (self.iterations, t.iterations),
             (self.basis, BASES.index(t.basis)),
@@ -626,12 +648,44 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self._draw_lagrange()
         settle_plots(self)
 
+    @property
+    def drawing(self) -> bool:
+        return self.shape.currentIndex() == len(SHAPES)
+
+    def _base(self) -> np.ndarray:
+        """The trial shape picked, or the one drawn."""
+        s = self.system
+        if self.drawing:
+            if self.drawn is None or self.drawn.size != s.n:
+                self.drawn = trial_shape(s, Shape.STATIC)
+                self.drawn = self.drawn / np.max(np.abs(self.drawn))
+            return self.drawn.copy()
+        return trial_shape(s, SHAPES[self.shape.currentIndex()])
+
     def _trial(self) -> np.ndarray:
         s = self.system
-        x = trial_shape(s, SHAPES[self.shape.currentIndex()])
-        x = contaminated(s, x, self.eps.value())
-        x = iterate(s, x, int(self.iterations.value())) if self.held else x
-        return x / np.max(np.abs(x))
+        x = self._base()
+        eps, passes = self.eps.value(), int(self.iterations.value())
+        if self.drawing and not eps and not passes:
+            return x  # as drawn: Rayleigh's quotient doesn't mind its size
+        x = contaminated(s, x, eps)
+        x = iterate(s, x, passes) if self.held else x
+        top = float(np.max(np.abs(x)))
+        return x / top if top > 0 else x
+
+    def _on_grip(self, _x: float, y: float) -> None:
+        """A mass's point dragged: the shape is now the reader's, that mass where the pointer is."""
+        sender = self.sender()
+        i = next(k for k, grip in enumerate(self.grips) if grip is sender)
+        if not self.drawing:  # start from the shape shown, as it is drawn
+            x = self._trial()
+            phi1 = self.phi[:, 0]
+            self.drawn = -x if x @ phi1 < 0 else x
+            for box, value in ((self.shape, len(SHAPES)), (self.eps, 0.0), (self.iterations, 0)):
+                set_quietly(box, value)
+        assert self.drawn is not None, "set as the drawing starts"
+        self.drawn[i] = min(max(y, -DRAWN_LIMIT), DRAWN_LIMIT)
+        self.redraw()
 
     def _draw_main(self) -> None:
         s, f = self.system, self.f
@@ -639,15 +693,22 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         idx = np.arange(n + 1)
         phi1 = self.phi[:, 0] / self.phi[np.argmax(np.abs(self.phi[:, 0])), 0]
         x = self._trial()
-        if x @ phi1 < 0:
+        if x @ phi1 < 0 and not self.drawing:
             x = -x
+        if not np.any(x):
+            x = np.ones(n) * 1e-9  # a shape drawn flat: no quotient
         self.mode_item.setData(idx, np.concatenate([[0.0], phi1]))
+        for i, grip in enumerate(self.grips):
+            grip.setVisible(i < n)
+            if i < n:  # a grip doesn't move itself: placed where the shape has it
+                grip.place(float(i + 1), float(x[i]))
         self.trial_item.setData(idx, np.concatenate([[0.0], x]))
         r = min(int(self.r.value()), n)
         wr, shapes = rayleigh_ritz(s, ritz_basis(s, BASES[self.basis.currentIndex()], r))
         y = shapes[:, 0] / shapes[np.argmax(np.abs(shapes[:, 0])), 0]
         self.ritz_item.setData(idx, np.concatenate([[0.0], y]))
         self.shape_plot.setXRange(0, n, padding=0.03)
+        self.shape_plot.setYRange(-DRAWN_LIMIT - 0.1, DRAWN_LIMIT + 0.1, padding=0)  # still under a dragged point
         self.shape_plot.getAxis("bottom").setTicks([[(i, "ground" if i == 0 else f"m{i}") for i in idx]])
 
         f_ray = math.sqrt(max(rayleigh(s, x), 0.0)) / TWO_PI
@@ -670,6 +731,12 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.est_plot.setYRange(-0.6, 2.8, padding=0)
 
         parts = [f"Exact f₁ = {f[0]:.4g} Hz.", f"Rayleigh: {f_ray:.4g} Hz ({self._pct(f_ray)})."]
+        if self.drawing and f[0] > 0 and np.isfinite(f_ray):
+            self.lowest = min(self.lowest, f_ray / f[0])
+            parts.append(
+                f"Your shape: R(v) = ω² ≥ ω₁² whatever you draw; the lowest you've reached is "
+                f"{100 * (self.lowest - 1):+.3g} % (only mode 1's own shape gets to 0)."
+            )
         if self.held:
             parts.append(f"Dunkerley: {f_dunk:.4g} Hz ({self._pct(f_dunk)}).")
         parts.append(
@@ -702,7 +769,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
             self.err_now.setData([], [])
             self.err_note.setText("One mass: its only shape is exact.")
             return
-        base = trial_shape(s, SHAPES[self.shape.currentIndex()])
+        base = self._base()
         passes = int(self.iterations.value()) if self.held else 0
         eps = np.linspace(-EPS_SPAN, EPS_SPAN, 201)
         now = float(self.eps.value())
