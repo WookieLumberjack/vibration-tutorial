@@ -164,7 +164,9 @@ def test_every_reference_is_used_and_every_citation_known():
 
 
 def test_further_reading_closes_a_page_and_its_citations_land():
-    html = all_notes()["sdof_page"]
+    from vib_tutorial.gui.links import next_html
+
+    html = all_notes()["sdof_page"].removesuffix(next_html("sdof_page"))  # then the link on to the next page
     assert html.rstrip().endswith("</ul>") and '<a name="further-reading"></a>Further reading' in html
     for key in ("inman", "rao", "thomson", "den-hartog"):
         assert f'<a name="ref-{key}"></a>' in html

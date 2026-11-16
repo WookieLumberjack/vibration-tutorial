@@ -102,6 +102,7 @@ class NotesBrowser(QtWidgets.QTextBrowser):
     def __init__(self, html: str = "", parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self._html = ""
+        self.footer = ""  # after the notes, whatever they're set to: the page's "Next: …" (`links.next_html`)
         self._base = self.font().pointSizeF()  # the text's size at zoom 1
         self._wheel = 0
         self._zoom = 1.0
@@ -117,7 +118,7 @@ class NotesBrowser(QtWidgets.QTextBrowser):
         self._html = text
         size = round(self.text_px() * maths.INLINE_SIZE)
         self.document().setDefaultStyleSheet(f".m {{ font-size: {size}px; }}")
-        super().setHtml(sized(text, self._zoom))
+        super().setHtml(sized(text + self.footer, self._zoom))
 
     def refresh(self) -> None:
         """Draw the equations and figures again (in a new theme), at the same place."""

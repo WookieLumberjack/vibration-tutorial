@@ -1,6 +1,7 @@
 """The Theory notes' links: every page link lands on a section that exists, and "Before this page" only
 sends the reader back to pages earlier in the course."""
 
+import itertools
 import re
 
 import pytest
@@ -319,3 +320,30 @@ def test_goals_are_written_out_with_their_links():
         '<a href="trial:sdof_page#2">Try it</a> · <a href="practice:sdof_page#quickest-return">Practise it</a>'
         "</li></ul>"
     )
+
+
+def test_every_page_closes_with_a_link_to_the_next_and_the_keys_step_through_them(main_window):
+    """The notes end on "Next: … →" (the last page's on nothing), in the Theory window and the page's tab alike;
+    Ctrl+PgDown and Ctrl+PgUp step through the course in its order."""
+    from PySide6 import QtGui
+
+    from vib_tutorial.gui.links import next_html, order, title
+    from vib_tutorial.gui.theory_window import page_html
+
+    pages = order()
+    for name, after in itertools.pairwise(pages):
+        assert page_html(name).endswith(f'<a href="page:{after}"><b>Next: {title(after)} →</b></a></p>'), name
+    assert next_html(pages[-1]) == "" and "Next:" not in page_html(pages[-1])[-300:]
+
+    w = main_window
+    keys = {s.key().toString(): s for s in w.findChildren(QtGui.QShortcut)}
+    w.show_page("sim_page")
+    assert f"Next: {title(pages[pages.index('sim_page') + 1])} →" in w.background.toPlainText()
+    keys["Ctrl+PgDown"].activated.emit()
+    assert w.page_name(w.pages.currentWidget()) == pages[pages.index("sim_page") + 1]
+    keys["Ctrl+PgUp"].activated.emit()
+    keys["Ctrl+PgUp"].activated.emit()
+    assert w.page_name(w.pages.currentWidget()) == pages[pages.index("sim_page") - 1]
+    w.show_page(pages[0])
+    keys["Ctrl+PgUp"].activated.emit()  # the first has none before it
+    assert w.page_name(w.pages.currentWidget()) == pages[0]
