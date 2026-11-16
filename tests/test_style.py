@@ -53,3 +53,31 @@ def test_mode_1_is_not_the_reference_curve(theme):
     """Mode 1's term and the full solution (strong) are drawn together, both 1 px. Light's old slate
     mode 1 (#264653) was 31 from its black and read as black; Nord's mauve on white is 38."""
     assert np.linalg.norm(_lab(_linear(theme.mode[0])) - _lab(_linear(theme.strong))) >= 35.0
+
+
+def test_the_projector_theme_scales_every_pen_and_marker(main_window):
+    """Projector: a pen twice as wide (a copy of a pen not again, the axes not at all) and markers 40 % larger;
+    Light leaves them as they are (`plot_patches`, installed by `make_app`)."""
+    import pyqtgraph as pg
+
+    from vib_tutorial.gui import plot_patches
+
+    plot_patches.install()  # as make_app does
+    plot = main_window.findChildren(pg.PlotWidget)[0]  # items on a plot of the window, freed with it
+    before = style.current()
+    try:
+        style.set_theme(style.THEMES["Projector"])
+        pen = pg.mkPen("#000000", width=1.5)
+        assert pen.widthF() == pytest.approx(3.0) and pg.mkPen(pen).widthF() == pytest.approx(3.0)
+        assert pg.mkPen("#000000").widthF() == pytest.approx(2.0)  # a cosmetic pen counts as 1 px
+        assert plot.getAxis("left").pen().widthF() <= 1.0
+        item = pg.PlotDataItem([0, 1], [0, 1], symbol="o", symbolSize=10)
+        plot.addItem(item)
+        assert item.scatter.opts["size"] == pytest.approx(14.0)
+        style.set_theme(style.THEMES["Light"])
+        assert pg.mkPen("#000000", width=1.5).widthF() == pytest.approx(1.5)
+        item.setData([0, 1], [1, 0])
+        assert item.scatter.opts["size"] == pytest.approx(10.0)
+        plot.removeItem(item)
+    finally:
+        style.set_theme(before)
