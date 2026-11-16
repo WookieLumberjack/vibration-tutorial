@@ -1,16 +1,23 @@
 """Seismic response spectrum page: the Simulation page's chain as a building, a design spectrum, and the modes'
 peaks combined, against the building stepped on records that match the spectrum.
 
-Left: the design spectrum (peak ground acceleration, ground type, damping) and the combination rule. Centre: the
-spectrum with each mode on it, and the modes' table (period, participation, effective mass, base shear). Right:
-each floor's peak displacement and each storey's shear by every rule and by the records, the modes' correlation,
-the ground motions, and the Theory.
+Left: the trials, the challenges (`ChallengeBox`: the damping and base-isolation specs), the building (its floors,
+and storey 1's stiffness k₁, the bearings' when it stands on a slab, with the period of the whole building
+rigid on it), the design spectrum (peak ground acceleration, ground type, damping) and the combination rule.
+Centre: the spectrum with each mode on it, and the modes' table (period, participation, effective mass, base
+shear). Right: the building swaying under the first record (`seismic_view.BuildingView`, played by a `Playback`
+with a time cursor on the record; a trial starts it), each floor's peak displacement and each storey's shear by
+every rule and by the records, the modes' correlation, the ground motions, and the Theory.
+
+Working on it: `tests/test_seismic.py` checks the building follows the playback with the drifting storey
+reddened, and the k₁ box edits the chain; `tests/test_challenge.py` the challenges.
 """
 
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
@@ -24,6 +31,7 @@ from ..core.seismic import (
     RECORDS,
     RULES,
     Design,
+    History,
     Rule,
     building,
     combine,
@@ -31,10 +39,13 @@ from ..core.seismic import (
     design_sa,
     modal,
     records,
+    rigid_period,
     suite,
+    time_history,
     with_tank,
 )
 from . import seismic_figures, settle_plots
+from .challenge import ChallengeBox
 from .lesson import (
     Form,
     TrialBox,
@@ -54,10 +65,12 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .playback import Playback
+from .seismic_view import BuildingView
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
-TAB_FLOORS, TAB_CORRELATION, TAB_GROUND = range(3)
+TAB_BUILDING, TAB_FLOORS, TAB_CORRELATION, TAB_GROUND = range(4)
 PERIODS = np.linspace(0.0, 4.0, 801)[1:]
 
 
@@ -140,6 +153,7 @@ TRIALS = (
         "70 % of the roof's 227 mm: the whole building's sway in one storey, which is where it yields and fails.",
         masses=(1e4,) * 5,
         springs=(1e6,) + (5e6,) * 4,
+        tab=TAB_BUILDING,
     ),
     SeismicTrial(
         "Base isolation",
@@ -151,6 +165,7 @@ TRIALS = (
         zeta=15.0,
         masses=(1e4,) * 6,
         springs=(3e5,) + (5e6,) * 5,
+        tab=TAB_BUILDING,
     ),
 )
 
@@ -370,6 +385,55 @@ def _damping_spec(rng: np.random.Generator) -> Question:
     )
 
 
+def _isolated(t: SeismicTrial) -> tuple[float, float]:
+    """The shear in the storey above the bearings and the bearings' own displacement, by CQC (N, m)."""
+    m = modal(t.system(), t.design)
+    rho = correlation(m.f, t.design.zeta)
+    return float(combine(m.shear, Rule.CQC, rho)[1]), float(combine(m.displacement, Rule.CQC, rho)[0])
+
+
+def _isolation_spec(rng: np.random.Generator) -> Question:
+    n = int(pick(rng, (4, 5, 6)))
+    ground = int(pick(rng, (1, 2)))
+    pga = pick(rng, (0.2, 0.3, 0.4))
+    period = pick(rng, (2.0, 2.5, 3.0))  # s, the design's
+    masses = (1e4,) * (n + 1)  # the floors on a slab of the same mass
+    kb = rounded(sum(masses) * (2 * math.pi / period) ** 2)
+    common: dict[str, Any] = dict(storeys=n + 1, pga=pga, ground=ground, zeta=15.0, tab=TAB_BUILDING, masses=masses)
+    start = dict(common, springs=(5e6,) * (n + 1))  # the slab fixed to the ground as a storey
+    design = dict(common, springs=(kb,) + (5e6,) * n)
+    shear, drift = _isolated(SeismicTrial("", "", **design))
+    shear_limit = rounded(1.15 * shear / 1000)  # kN
+    move_limit = rounded(1.05 * drift * 1000)  # mm
+
+    def goal(t: SeismicTrial):
+        system = t.system()
+        same = system.n == n + 1 and np.allclose(system.masses, masses) and np.allclose(system.stiffness[1:], 5e6)
+        above, move = _isolated(t)
+        return (
+            Requirement(f"The {n} storeys on their slab as given", f"{system.n} masses", bool(same)),
+            kept("a<sub>g</sub>", t.pga, pga, "g"),
+            Requirement("Ground type", GROUNDS[t.ground], t.ground == ground),
+            kept("Damping ζ", t.zeta, 15.0, "%"),
+            at_most("Shear above the bearings", above / 1000, shear_limit, "kN"),
+            at_most("The bearings' displacement", move * 1000, move_limit, "mm"),
+        )
+
+    return Question(
+        f"The uniform {n}-storey building (10 t floors, 5 MN/m storeys) stands on a 10 t slab, on ground type "
+        f"{GROUNDS[ground]}, a<sub>g</sub> = {pga:g} g, ζ = 15 %. Choose the bearings under the slab (storey 1's "
+        f"k<sub>1</sub>) so that the storey above them carries {number(shear_limit)} kN or less, by CQC, while the "
+        f"bearings move {number(move_limit)} mm or less.",
+        0,
+        f"The whole {number(sum(masses) / 1000)} t moves on the bearings at T<sub>b</sub> = 2π√(Σm/k<sub>1</sub>). "
+        f"A longer period lowers the shear (S<sub>a</sub> falls), but the bearings move more, up to the spectrum's "
+        f"T<sub>D</sub>: a period of about {period:g} s, k<sub>1</sub> ≈ {number(kb)} N/m, meets both.",
+        setup=start,
+        goal=goal,
+        design=design,
+    )
+
+
 PROBLEMS = tuple(
     Problem(key, title, "seismic_page", f"See {page_link('seismic_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
@@ -385,11 +449,15 @@ PROBLEMS = tuple(
         ("tank-srss", "Predict: close modes by SRSS", "combination", "Combining the modes", _tank_srss),
         ("abs", "Predict: ABS", "combination", "Combining the modes", _abs),
         ("damping-spec", "Spec: damping for a base shear", "design-spectrum", "A design spectrum", _damping_spec),
+        ("isolation-spec", "Spec: isolate the base", "isolation", "Base isolation", _isolation_spec),
     )
 )
 
 TIPS = {
     "dof": "<p>The number of floors: the Simulation page's chain is the building, m1 the first floor.</p>",
+    "k1": "<p>Storey 1's stiffness, the Simulation page's k1: soften it for an open ground floor, or put the "
+    "building on a slab on bearings and it's the bearings' stiffness. T is the period of the whole building as "
+    "a rigid block on it: the base isolation's.</p>",
     "pga": "<p>The design peak ground acceleration a<sub>g</sub> on rock, in g.</p>",
     "ground": "<p>The ground type: soft soil amplifies the motion (S) and widens the plateau (T<sub>C</sub>).</p>",
     "zeta": "<p>The damping ratio of every mode, for the spectrum (η) and the records' response.</p>",
@@ -437,12 +505,17 @@ class SeismicPage(QtWidgets.QWidget):
             "one idea from the Theory tab.</p>",
         )
         self.trials.picked.connect(self.load_trial)
+        self.challenge = ChallengeBox(self, PROBLEMS)
 
         ch = Form("Building (the chain)")
         self.dof = QtWidgets.QSpinBox()
         self.dof.setRange(1, MAX_DOF)
         self.dof.valueChanged.connect(self.dof_requested)
         ch.add("Floors:", self.dof, TIPS["dof"])
+        self.k1 = ch.number("Storey 1 k₁:", 1e4, 1e9, 5e6, 0, " N/m", TIPS["k1"])
+        self.k1.valueChanged.connect(self._on_k1)
+        self.k1_info = note_label()
+        ch.row(self.k1_info)
         link = QtWidgets.QLabel("Masses and storey stiffnesses are edited on the <a href='#sim'>Simulation page</a>.")
         link.setWordWrap(True)
         mute(link)
@@ -513,15 +586,36 @@ class SeismicPage(QtWidgets.QWidget):
             p.setToolTip(GROUND_TIP)
         self.ground_note = note_label()
 
+        # --- right: the building swaying under the first record
+        self.playback = Playback(self, "Seismic response", speed=1.0)
+        self.playback.moved.connect(self._place)
+        self.building = BuildingView()
+        self.building.setMinimumHeight(220)
+        self.sway_plot = plot("Ground acc.", "m/s²", "Time", "s", height=110)
+        self.sway_plot.setToolTip(GROUND_TIP)
+        self.sway_item = pg.PlotDataItem()
+        self.sway_plot.addItem(self.sway_item)
+        self.sway_cursor = self.playback.add_cursor(self.sway_plot)
+        self.building_note = note_label()
+        self.history: History | None = None
+
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
+        self.tabs.addTab(
+            column(self.playback.bar(), self.building, self.sway_plot, self.building_note, stretch=False), "Building"
+        )
         self.tabs.addTab(column(floors, self.floor_note, stretch=False), "Floors")
         self.tabs.addTab(column(self.rho_label, self.rho_note), "Correlation")
         self.tabs.addTab(column(self.record_plot, self.match_plot, self.ground_note, stretch=False), "Records")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(self._draw_tab)
 
-        three_panes(self, column(self.trials, ch, spec), stack((self.spectrum_plot, 1), (self.table, 0)), self.tabs)
+        three_panes(
+            self,
+            column(self.trials, self.challenge, ch, spec),
+            stack((self.spectrum_plot, 1), (self.table, 0)),
+            self.tabs,
+        )
         self.apply_theme()
         self.set_system(self.system)
 
@@ -529,6 +623,8 @@ class SeismicPage(QtWidgets.QWidget):
     def set_system(self, system: ChainSystem, result=None) -> None:
         self.system = system
         set_quietly(self.dof, system.n)
+        set_quietly(self.k1, float(system.stiffness[0]))
+        self.k1_info.setText(f"T = 2π√(Σm/k₁) = {rigid_period(system):.3g} s: the building rigid on storey 1.")
         self._dirty = True
         if self.isVisible():
             self.redraw()
@@ -578,6 +674,17 @@ class SeismicPage(QtWidgets.QWidget):
         self._dirty = True
         if self.isVisible():  # the records are stepped only once it shows
             self.redraw()
+        self.playback.play()  # a trial starts the motion
+
+    def _on_k1(self, value: float) -> None:
+        """Storey 1's stiffness typed: the chain changes, through the Simulation page."""
+        s = self.system
+        k = s.stiffness.copy()
+        k[0] = value
+        system = ChainSystem(s.masses.copy(), k, s.damping.copy(), s.friction.copy(), s.static_ratio)
+        self.system_requested.emit(system)
+        if not _same(self.system, system):  # no Simulation page (a test)
+            self.set_system(system)
 
     @property
     def design(self) -> Design:
@@ -609,6 +716,9 @@ class SeismicPage(QtWidgets.QWidget):
         self.record_item.setPen(pg.mkPen(c.mass[0], width=1))
         self.target_item.setPen(pg.mkPen(c.strong, width=2.5))
         self.match_mean.setPen(pg.mkPen(c.force, width=2, style=QtCore.Qt.PenStyle.DashLine))
+        self.sway_item.setPen(pg.mkPen(c.mass[0], width=1))
+        self.building.apply_theme()
+        self.playback.apply_theme()
         self._dirty = True
         if self.isVisible():
             self.redraw()
@@ -670,8 +780,12 @@ class SeismicPage(QtWidgets.QWidget):
         )
 
     def _draw_tab(self) -> None:
+        if self._dirty:  # a tab picked before the page has drawn (hidden): it draws when it shows
+            return
         i = self.tabs.currentIndex()
-        if i == TAB_FLOORS:
+        if i == TAB_BUILDING:
+            self._draw_building()
+        elif i == TAB_FLOORS:
             self._draw_floors()
         elif i == TAB_CORRELATION:
             self._draw_correlation()
@@ -702,6 +816,31 @@ class SeismicPage(QtWidgets.QWidget):
             f"Base shear by {rule.value} {fmt(mine, 'N')}, {100 * (mine / s.base_shear - 1):+.3g} % against the "
             f"mean of {RECORDS} records ({fmt(s.base_shear, 'N')}); the top floor's displacement "
             f"{fmt(top, 'm')}, {100 * (top / s.displacement[-1] - 1):+.3g} %."
+        )
+
+    def _draw_building(self) -> None:
+        d = self.design
+        ground = records(d)[0]
+        h = time_history(self.system, d, ground)
+        self.history = h
+        self.building.set_history(h.displacement)
+        self.sway_item.setData(ground.t, ground.a)
+        self.sway_plot.setXRange(0.0, float(h.t[-1]), padding=0)
+        self.playback.set_span(float(h.t[-1]))  # places the building
+
+    def _place(self, t: float) -> None:
+        h = self.history
+        if h is None or self.tabs.currentIndex() != TAB_BUILDING:
+            return
+        k = min(int(np.searchsorted(h.t, t)), h.t.size - 1)
+        self.building.set_state(h.displacement[k])
+        drift = np.abs(np.diff(h.displacement[k], prepend=0.0))
+        worst = int(np.argmax(drift))
+        self.building_note.setText(
+            f"Base shear {fmt(abs(float(h.base_shear[k])), 'N')} (its peak on this record "
+            f"{fmt(h.peak_base_shear, 'N')}); storey {worst + 1} drifts most now, {fmt(float(drift[worst]), 'm')} "
+            f"(its peak {fmt(float(h.peak_drift[worst]), 'm')}). Sway drawn ×{self.building.exaggeration:.3g}, "
+            f"storeys as 3 m."
         )
 
     def _draw_correlation(self) -> None:

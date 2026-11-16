@@ -9,7 +9,7 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 
-PAGES = ("isolation_page", "quarter_car_page", "active_control_page", "frame_page", "rotor_page")
+PAGES = ("isolation_page", "quarter_car_page", "active_control_page", "frame_page", "rotor_page", "seismic_page")
 
 
 @pytest.fixture(scope="module")

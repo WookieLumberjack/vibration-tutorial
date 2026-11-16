@@ -70,7 +70,9 @@ the frame are racked by each storey's drift, so a code limits it as a fraction o
 Eurocode 8 takes that as the design one scaled by <m>ν</m> (0.5 for ordinary buildings) and asks for
 <m>νΔ</m> ≤ 0.005<m>h</m> with brittle partitions fixed to the frame, 0.0075<m>h</m> with ductile ones and
 0.010<m>h</m> where they are fixed so they don't feel it. A soft storey, much less stiff than those above it
-(the open ground floor of a car park or shop), takes most of the drift (Things to try, 7).</p>
+(the open ground floor of a car park or shop), takes most of the drift (Things to try, 7). The <b>Building</b>
+tab plays the building on the first record: each storey's columns redden as its drift nears the largest any
+storey reaches on it.</p>
 
 <h3><a name="ductility"></a>Ductility and the behaviour factor</h3>
 <p>The elastic spectrum's forces are large: this page's five storeys would need a base shear of nearly half their
@@ -106,7 +108,9 @@ where <m>S<sub>a</sub></m> is a fraction of the plateau, and it carries almost a
 which would bend the building, are barely driven. The price is the bearings' displacement, a few hundred
 millimetres, which the services and the gap round the building must allow, and which the bearings' damping (10
 to 30 %) is there to keep down. It works on firm ground; on soft soil, whose spectrum stays high to long periods,
-it gains less.</p>
+it gains less. On this page, put the building on a slab (one more mass, on the Simulation page) and storey
+1's stiffness, in its own box, is the bearings': the box gives <m>T<sub>b</sub></m> beside it, and the
+challenge <i>Isolate the base</i> asks for bearings that cut the shear above them without moving too far.</p>
 
 <h3><a name="worked-example"></a>Worked example</h3>
 <p>The page opens on five 10 t floors on 5 MN/m storeys, under <m>a<sub>g</sub></m> = 0.3 g on ground type C

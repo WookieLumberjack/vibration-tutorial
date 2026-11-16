@@ -70,6 +70,12 @@ def with_tank(system: ChainSystem, ratio: float) -> ChainSystem:
     return with_absorber(system, ratio * modal_mass(lin, 0, lin.n - 1), f1)
 
 
+def rigid_period(system: ChainSystem) -> float:
+    """The period of the whole building as one rigid block on its first storey, T = 2π √(Σm / k₁): a base
+    isolation's period, when k₁ is the bearings under a slab and the storeys above are far stiffer."""
+    return TWO_PI * math.sqrt(float(np.sum(system.masses)) / float(system.stiffness[0]))
+
+
 @dataclass(frozen=True)
 class Design:
     """The design spectrum: peak ground acceleration a_g (in g), ground type, damping ratio ζ."""
