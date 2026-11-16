@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from . import rotation
+from .ode import rk4_step
 
 STEPS_PER_TURN = 400
 MAX_STEP = 5e-3  # s
@@ -241,14 +242,6 @@ def _skew(w: np.ndarray) -> np.ndarray:
     return np.array([[0.0, -w[2], w[1]], [w[2], 0.0, -w[0]], [-w[1], w[0], 0.0]])
 
 
-def _rk4(f, y: np.ndarray, h: float) -> np.ndarray:
-    k1 = f(y)
-    k2 = f(y + h / 2 * k1)
-    k3 = f(y + h / 2 * k2)
-    k4 = f(y + h * k3)
-    return y + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-
-
 def _qdot(q: np.ndarray, w: np.ndarray) -> np.ndarray:
     a, b, c, d = q
     x, y, z = w
@@ -301,15 +294,15 @@ def compare(body: Body, omega: np.ndarray, q0: np.ndarray, duration: float, h: f
         out["euler"][i] = _apart(rotation.from_euler(*angles), R) if euler_ok else math.nan
         if i == n:
             break
-        B = _rk4(lambda M: M @ _skew(rate(M)), B, h)  # Ḃ = B[ω]×: the body's axes turn at ω
+        B = rk4_step(lambda M: M @ _skew(rate(M)), B, h)  # Ḃ = B[ω]×: the body's axes turn at ω
         if euler_ok:
             with np.errstate(all="ignore"):
-                angles = _rk4(euler_rates, angles, h)
+                angles = rk4_step(euler_rates, angles, h)
             euler_ok = bool(np.all(np.isfinite(angles)))
-        q = _rk4(lambda p: _qdot(p, rate(rotation.matrix(p / np.linalg.norm(p)))), q, h)
+        q = rk4_step(lambda p: _qdot(p, rate(rotation.matrix(p / np.linalg.norm(p)))), q, h)
         q /= np.linalg.norm(q)
-        raw = _rk4(lambda p: _qdot(p, rate(rotation.matrix(p / np.linalg.norm(p)))), raw, h)
+        raw = rk4_step(lambda p: _qdot(p, rate(rotation.matrix(p / np.linalg.norm(p)))), raw, h)
         for _ in range(fine):
-            ref = _rk4(lambda p: _qdot(p, rate(rotation.matrix(p))), ref, h / fine)
+            ref = rk4_step(lambda p: _qdot(p, rate(rotation.matrix(p))), ref, h / fine)
             ref /= np.linalg.norm(ref)
     return Drift(np.arange(n + 1) * h, **out)
