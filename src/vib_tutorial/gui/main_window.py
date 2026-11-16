@@ -14,7 +14,7 @@ from ..core import (
     ChainSystem,
     ModalResult,
 )
-from . import accessible, display_size, frame_stats, links, notes_view, plot_export, present, theming, weak
+from . import accessible, crosshair, display_size, frame_stats, links, notes_view, plot_export, present, theming, weak
 from .challenge import ChallengeBox
 from .ink import InkOverlay
 from .ink import Mode as InkMode
@@ -263,10 +263,11 @@ class MainWindow(QtWidgets.QMainWindow):
         return page
 
     def _adopt(self, name: str, page: QtWidgets.QWidget) -> None:
-        """What the window does for every page it builds: the chain, the plots' menus and names, the notes'
+        """What the window does for every page it builds: the chain, the plots' menus, crosshairs and names, the notes'
         links and closing line, the present mode, room for its tabs."""
         self._give_chain(page)
         install_plot_menus(page)
+        crosshair.install(page)
         self._wire_links(page)
         accessible.name_plots(page)
         present.apply(page, self.present_level)
