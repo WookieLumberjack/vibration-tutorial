@@ -705,6 +705,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.pages)
         self.resize(1700, 900)
         self.present_level = 0
+        self._close_notes("sim_page", self.sim_page)
         if (level := present.saved()) != 0:
             self.set_present(level)
         QtGui.QShortcut(QtGui.QKeySequence("F1"), self, self.show_theory)
@@ -712,6 +713,8 @@ class MainWindow(QtWidgets.QMainWindow):
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+R"), self, self.restore_defaults)
         QtGui.QShortcut(QtGui.QKeySequence("F5"), self, self.step_present)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+PgDown"), self, self.next_page)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+PgUp"), self, self.previous_page)
         self.ink = InkOverlay(self.pages)
         QtGui.QShortcut(QtGui.QKeySequence("F6"), self, self.toggle_pointer)
         QtGui.QShortcut(QtGui.QKeySequence("F7"), self, self.toggle_ink)
@@ -819,8 +822,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wire_links(page)
         accessible.name_plots(page)
         present.apply(page, self.present_level)
+        self._close_notes(name, page)
         holder.deleteLater()
         return page
+
+    def _close_notes(self, name: str, page: QtWidgets.QWidget) -> None:
+        """The page's Theory tab ends with a link on to the next page."""
+        notes = (
+            self.background if page is self.sim_page else getattr(page, "notes", None) or getattr(page, "theory", None)
+        )
+        if isinstance(notes, NotesBrowser):
+            notes.footer = links.next_html(name)
+            notes.refresh()
+
+    def next_page(self) -> None:
+        """Ctrl+PgDown: the next page in the course."""
+        self._step_page(1)
+
+    def previous_page(self) -> None:
+        """Ctrl+PgUp: the page before."""
+        self._step_page(-1)
+
+    def _step_page(self, step: int) -> None:
+        pages = links.order()
+        name = self.page_name(self.pages.currentWidget())
+        if name in pages and 0 <= (to := pages.index(name) + step) < len(pages):
+            self.show_page(pages[to])
 
     def toggle_pointer(self) -> None:
         self.ink.toggle(InkMode.POINTER)

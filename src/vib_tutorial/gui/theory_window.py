@@ -62,7 +62,7 @@ def page_html(name: str) -> str:
 
         module = sys.modules[_page_class(name).__module__]
         html = getattr(module, "NOTES_HTML", None) or module.THEORY_HTML
-    return anchored(html)
+    return anchored(html) + links.next_html(name)
 
 
 def anchored(html: str) -> str:

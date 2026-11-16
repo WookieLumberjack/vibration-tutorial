@@ -72,6 +72,7 @@ KEYS = (
     ("Ctrl+F1", "the Theory window: any page's notes beside the page, the search and the glossary"),
     ("Ctrl+F2", "the Practice window: problems with new numbers each time"),
     ("Ctrl+1 … Ctrl+6", "a group of pages, at the page it last showed"),
+    ("Ctrl+PgDown / Ctrl+PgUp", "the next or the previous page in the course"),
     ("Ctrl+F", "search the notes, in the Theory window"),
     ("Alt+← / Alt+→", "back and forward in the Theory window"),
     (
@@ -350,6 +351,26 @@ def course_map(progress: dict[str, tuple[int, int]] | None = None) -> str:
 # Shorter ways through the course: (name, who it's for, its pages). Each page in a path has every page it builds
 # on (its "Before this page", and theirs) in the path too, so a path reads front to back like the course
 # (tests/test_links.py checks it).
+
+
+def order() -> tuple[str, ...]:
+    """Every page's attribute, in the course's order."""
+    return tuple(attr for _, pages in COURSE for attr, _, _ in pages)
+
+
+def title(attr: str) -> str:
+    return next(name for _, pages in COURSE for a, name, _ in pages if a == attr)
+
+
+def next_html(attr: str) -> str:
+    """The line closing a page's notes: a link on to the next page in the course (none after the last)."""
+    pages = order()
+    if attr not in pages or attr == pages[-1]:
+        return ""
+    after = pages[pages.index(attr) + 1]
+    return f'<p align="right"><a href="page:{after}"><b>Next: {title(after)} →</b></a></p>'
+
+
 PATHS = (
     (
         "Essentials",
