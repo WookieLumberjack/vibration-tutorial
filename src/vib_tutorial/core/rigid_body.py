@@ -258,9 +258,10 @@ def _qdot(q: np.ndarray, w: np.ndarray) -> np.ndarray:
 def _apart(B: np.ndarray, R: np.ndarray) -> float:
     """The angle (degrees) of the turn from rotation R to B (B made the nearest rotation first)."""
     U, _, Vt = np.linalg.svd(B)
-    nearest = U @ Vt
-    c = (np.trace(nearest.T @ R) - 1.0) / 2.0
-    return math.degrees(math.acos(max(-1.0, min(1.0, c))))
+    M = (U @ Vt).T @ R  # the turn between them: trace 1 + 2 cos χ, and M − Mᵀ = 2 sin χ [n]×
+    # atan2 of the two, not acos of the cosine alone: that loses half the digits near χ = 0 (1e-16 → 1e-6°)
+    sine = math.hypot(M[2, 1] - M[1, 2], M[0, 2] - M[2, 0], M[1, 0] - M[0, 1])
+    return math.degrees(math.atan2(sine, float(np.trace(M)) - 1.0))
 
 
 def compare(body: Body, omega: np.ndarray, q0: np.ndarray, duration: float, h: float, fine: int = 8) -> Drift:

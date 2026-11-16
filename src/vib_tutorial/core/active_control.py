@@ -38,10 +38,13 @@ class Controller:
 
 
 def undamped_modes(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
-    """(ω, Φ) mass-normalized."""
+    """(ω, Φ) mass-normalized, each shape's first mass that moves moving positive (an eigenvector's sign is
+    LAPACK's to pick, and macOS's picks differently)."""
     M, _, K = system.matrices()
     w2, phi = scipy.linalg.eigh(K, M)
-    return np.sqrt(np.clip(w2, 0.0, None)), phi
+    moves = np.abs(phi) > 1e-9 * np.abs(phi).max(axis=0)
+    first = phi[moves.argmax(axis=0), np.arange(phi.shape[1])]
+    return np.sqrt(np.clip(w2, 0.0, None)), phi * np.where(first < 0, -1.0, 1.0)
 
 
 def closed_loop(

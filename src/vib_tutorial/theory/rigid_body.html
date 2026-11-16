@@ -132,7 +132,8 @@ turn) and compares each with a fine reference. The page's last trial, tipped 50�
 ends 10 s later with the quaternion 0.047° off, the matrix 0.29° off and no longer quite a rotation
 (‖<m>B</m>ᵀ<m>B</m> − <b>1</b>‖ = 0.0038, which nothing pulls back), and the Euler angles 13° off, worst where
 1/sin <m>θ</m> was largest. From the rates trial's start, which passes the lock within 1.7°, the quaternion ends
-0.006° off and the Euler angles 173°.</p>
+0.006° off and the Euler angles more than 150°: how much more depends on the computer's last digits, since
+passing that close to the lock magnifies every rounding error.</p>
 <p><b>A homogeneous transform</b> adds a place to a turn: the 4 × 4 matrix</p>
 <eq>T = \begin{bmatrix} B & B\mathbf{d} \\ 0\;0\;0 & 1 \end{bmatrix}:</eq>
 <p>the turn, and in its fourth column where the frame's origin is in space. Here the frame is the shape's own,

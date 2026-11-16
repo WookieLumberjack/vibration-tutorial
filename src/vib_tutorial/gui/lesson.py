@@ -536,6 +536,89 @@ def three_panes(
     return splitter
 
 
+class TabRoom(QtCore.QObject):
+    """Widens a splitter's last pane, taking from the panes before it (the nearest first, each down to its
+    minimum), until every tab bar in it shows all its tabs' names (no scroll arrows), as it's shown or resized,
+    until the reader moves the splitter themselves; and its notes (a Theory tab) until they need no sideways
+    scroll. `MainWindow._page` gives every page's panes one.
+
+    `sizes` and `TAB_ROOM` lay the panes out for this machine's font; another's (macOS's 13 pt system font,
+    Ubuntu's DejaVu Sans) is wider, and the tabs' names with it."""
+
+    def __init__(self, splitter: QtWidgets.QSplitter) -> None:
+        super().__init__(splitter)
+        self._splitter = splitter
+        self._moved = False
+        self._pending = False
+        splitter.splitterMoved.connect(self._on_moved)
+        last = splitter.widget(splitter.count() - 1)
+        assert last is not None, "a splitter with panes"
+        last.installEventFilter(self)
+        for tabs in last.findChildren(QtWidgets.QTabWidget):
+            tabs.installEventFilter(self)  # a tab page's own tabs show when it's picked
+        for notes in last.findChildren(QtWidgets.QTextBrowser):
+            bar = notes.horizontalScrollBar()
+            assert bar is not None, "a text browser's scroll bar"
+            bar.rangeChanged.connect(self._on_range)  # the notes laid out wider than their pane
+
+    def _on_moved(self, _pos: int, _index: int) -> None:
+        self._moved = True
+
+    def _on_range(self, _lo: int, _hi: int) -> None:
+        self._schedule()
+
+    def _schedule(self) -> None:
+        # after the splitter's own layout pass, which would undo sizes set in the middle of it
+        if not self._moved and not self._pending:
+            self._pending = True
+            QtCore.QTimer.singleShot(0, self, self.fit)
+
+    def eventFilter(self, watched: QtCore.QObject, event: QtCore.QEvent) -> bool:
+        if event.type() in (QtCore.QEvent.Type.Resize, QtCore.QEvent.Type.Show):
+            self._schedule()
+        return False
+
+    def short(self) -> int:
+        """How many pixels the last pane is short of: for its visible tab bars' names, and its visible notes'
+        widest table or figure."""
+        last = self._splitter.widget(self._splitter.count() - 1)
+        if last is None or not last.isVisible() or last.width() == 0:
+            return 0
+        short = 0
+        for tabs in [last, *last.findChildren(QtWidgets.QTabWidget)]:
+            if isinstance(tabs, QtWidgets.QTabWidget) and tabs.isVisible():
+                bar = tabs.tabBar()
+                need = sum(bar.tabSizeHint(i).width() for i in range(bar.count()) if bar.isTabVisible(i))
+                short = max(short, need - tabs.width())
+        for notes in last.findChildren(QtWidgets.QTextBrowser):
+            scroll = notes.horizontalScrollBar()
+            if notes.isVisible() and scroll is not None:
+                short = max(short, scroll.maximum())
+        return short
+
+    def fit(self) -> None:
+        self._pending = False
+        short = self.short()
+        n = self._splitter.count()
+        if short <= 0 or n < 2:
+            return
+        sizes = self._splitter.sizes()
+        want = short + 2
+        for i in range(n - 2, -1, -1):
+            pane = self._splitter.widget(i)
+            if pane is None or not pane.isVisible():
+                continue
+            give = min(want, sizes[i] - pane.minimumSizeHint().width())
+            if give > 0:
+                sizes[i] -= give
+                sizes[n - 1] += give
+                want -= give
+            if want <= 0:
+                break
+        if sizes != self._splitter.sizes():
+            self._splitter.setSizes(sizes)
+
+
 def theory(html: str) -> NotesBrowser:
     """A Theory tab showing the notes `html` (their equations and figures drawn)."""
     return NotesBrowser(html)

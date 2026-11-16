@@ -38,7 +38,7 @@ from .history import History
 from .ink import InkOverlay
 from .ink import Mode as InkMode
 from .layouts import ColumnScroll, FlowLayout, group
-from .lesson import RunButton, TrialBox, TrialCombo
+from .lesson import RunButton, TabRoom, TrialBox, TrialCombo
 from .modes import Method, mode_entries
 from .notes_view import NotesBrowser
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
@@ -624,6 +624,7 @@ class MainWindow(QtWidgets.QMainWindow):
         splitter.addWidget(center)
         splitter.addWidget(tabs)
         splitter.setSizes([400, 750, 550])
+        TabRoom(splitter)  # its tabs' names and notes in full, whatever the font
         install_plot_menus(splitter)  # a right-click on a plot: its data as CSV, a PNG
         self.sim_page = splitter
         accessible.name_plots(splitter)
@@ -822,6 +823,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._wire_links(page)
         accessible.name_plots(page)
         present.apply(page, self.present_level)
+        if (panes := present.splitter(page)) is not None:
+            TabRoom(panes)  # its tabs' names in full, whatever the font
         self._close_notes(name, page)
         holder.deleteLater()
         return page

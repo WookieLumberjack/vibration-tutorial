@@ -1077,6 +1077,9 @@ class SubstructuringPage(QtWidgets.QWidget):
             ),
         ):
             self.method.addItem(text, m)
+        # sized to its longest item, the combo set the pane's minimum and left the tabs too little on macOS
+        self.method.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.method.setMinimumContentsLength(22)
         self.method.setToolTip(
             "Craig–Bampton: modes of each substructure with its boundary held, plus static constraint "
             "modes.\nRubin: modes with the boundary free, plus the residual flexibility of the "
@@ -1113,6 +1116,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         presets.addWidget(exact)
         form.addRow(presets)
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
+        link.setWordWrap(True)  # on one line it set the pane's minimum, leaving the tabs too little on macOS
         mute(link)
         link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
