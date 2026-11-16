@@ -20,8 +20,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from dataclasses import dataclass
-from types import SimpleNamespace
+from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
@@ -137,92 +136,40 @@ SV_TIP = (
     "shaded bells are each mode's lines for EFDD. Click near a peak to add or drop it.</p>"
 )
 
-# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
-OPENING: dict[str, Any] = {}
-
-# Things to try: (name, what it sets, note)
-TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
-    (
-        "Long record, every mass",
-        {},
-        "Random forces at every mass, two thousand periods of the slowest mode: every mode found. The lightly "
-        "damped ones' damping comes out within a few per cent; on the default chain, modes 3 and 4 are close "
-        "and heavily damped, their bells overlap and cut each other short, and mode 4's damping comes out low.",
-    ),
-    (
-        "Short record",
-        {"cycles": 100},
-        "A hundred periods: few blocks to average, so the spectra are rough and the damping scatters. "
-        "Press New record a few times.",
-    ),
-    (
-        "Short blocks",
-        {"block": 1 / 8},
-        "Blocks an eighth as long: smooth spectra but coarse lines, and the window's leakage widens every "
-        "peak: the damping comes out too high, the lightest damped mode's most.",
-    ),
-    (
-        "Forces at m3 only",
-        {"input": 2},
-        "On the default chain m3 sits on a node of mode 2: nothing excites it, so it is missing from <m>s<sub>1</sub></m>.",
-    ),
-    (
-        "Coloured forces",
-        {"corner": 1.5, "response": Response.DISPLACEMENT},
-        "Forces low-passed at 1.5× the first mode, measured as displacements: the higher modes are barely "
-        "driven and sink toward the noise, and the input's slope across their bells (OMA assumes it flat) "
-        "spoils their damping, or loses the mode.",
-    ),
-    (
-        "Noisy sensors",
-        {"noise": 200.0},
-        "Noise at twice each channel's RMS fills the troughs between the peaks: the more damped modes' bells "
-        "drown in it, and their damping comes out far too low, or the mode is lost.",
-    ),
-    (
-        "SSI on close, damped modes",
-        {"method": SSI},
-        "SSI fits every mode at once, so close, heavily damped modes don't cut each other's bells short: on the "
-        "default chain, modes 3 and 4's damping comes out far closer than EFDD's (compare the Methods tab).",
-    ),
-    (
-        "A machine running",
-        {"machine": ("between", 1.0)},
-        "A sine force on m1 halfway between modes 1 and 2: a sharp peak with almost no damping, like a lightly "
-        "damped mode. Its filtered response has a kurtosis of about 1.5, a sine's, so it is crossed out.",
-    ),
-    (
-        "A machine near a mode",
-        {"machine": ("near", 3.0)},
-        "The sine 2 % above mode 2: FDD's peak there is the sine's (kurtosis 1.5, no damping), and mode 2 hides "
-        "under it. Switch to SSI-cov: it fits mode 2 beside the sine.",
-    ),
-)
-
 
 @dataclass(frozen=True)
 class OmaSetup:
-    """A practice problem's setup: a chain (none: the one there is) and the page's settings. `input` is the
-    forces' box: 0 every mass, i + 1 mass i."""
+    """The page's settings: a Thing to try (its name and note), a practice problem's setup or what the page shows.
+    A chain (none: the one there is) and the boxes' values; `input` is the forces' box: 0 every mass, i + 1 mass i.
+    A trial leaves the rest to the chain (None): the sample rate, the record (or `cycles` periods of the slowest
+    mode) and the block (`_suggested`, the block times `block_scale`), the corner (`corner_scale` × the slowest
+    mode), the machine's speed (`machine`: halfway between modes 1 and 2, or 2 % above mode 2), SSI's rows (two
+    periods of the slowest mode) and order; and the MAC threshold and the tab where they are."""
 
+    name: str = ""
+    note: str = ""
     masses: tuple[float, ...] = ()
     springs: tuple[float, ...] = ()
     dampers: tuple[float, ...] = ()
     input: int = 0
     colour: Colour = Colour.WHITE
-    corner_hz: float = 5.0
+    corner_hz: float | None = 5.0
     response: Response = Response.ACCELERATION
-    machine_hz: float = 0.0
+    machine_hz: float | None = 0.0
     machine_force: float = 1.0
-    fs: float = 19.0
-    duration: float = 1809.0
+    fs: float | None = 19.0
+    duration: float | None = 1809.0
     noise: float = 2.0
     method: str = FDD
-    block: int = 4096
-    mac_min: float = MAC_MIN
-    rows: int = 34
-    max_order: int = 60
-    tab: int = 0
+    block: int | None = 4096
+    mac_min: float | None = MAC_MIN
+    rows: int | None = 34
+    max_order: int | None = 60
+    tab: int | None = 0
+    cycles: float | None = None  # a trial's record, in periods of the slowest mode
+    block_scale: float = 1.0
+    corner_scale: float = 1.5
+    machine: str = ""  # a trial's machine: "between" modes 1 and 2, or "near" mode 2
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -230,7 +177,77 @@ class OmaSetup:
         return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
 
 
-PRACTICE_SETUP = OmaSetup  # what a practice problem's setup and the page's practice_state are
+def _trial(name: str, note: str, **changes: Any) -> OmaSetup:
+    """A Thing to try: worked out from the chain as it is, with `changes`."""
+    unset = dict.fromkeys(("corner_hz", "machine_hz", "fs", "duration", "block", "mac_min", "rows", "max_order", "tab"))
+    return OmaSetup(name, note, **{**unset, **changes})
+
+
+# Things to try: each worked out from the chain as it is.
+TRIALS = (
+    _trial(
+        "Long record, every mass",
+        "Random forces at every mass, two thousand periods of the slowest mode: every mode found. The lightly "
+        "damped ones' damping comes out within a few per cent; on the default chain, modes 3 and 4 are close "
+        "and heavily damped, their bells overlap and cut each other short, and mode 4's damping comes out low.",
+    ),
+    _trial(
+        "Short record",
+        "A hundred periods: few blocks to average, so the spectra are rough and the damping scatters. "
+        "Press New record a few times.",
+        cycles=100,
+    ),
+    _trial(
+        "Short blocks",
+        "Blocks an eighth as long: smooth spectra but coarse lines, and the window's leakage widens every "
+        "peak: the damping comes out too high, the lightest damped mode's most.",
+        block_scale=1 / 8,
+    ),
+    _trial(
+        "Forces at m3 only",
+        "On the default chain m3 sits on a node of mode 2: nothing excites it, so it is missing from <m>s<sub>1</sub></m>.",
+        input=3,
+    ),
+    _trial(
+        "Coloured forces",
+        "Forces low-passed at 1.5× the first mode, measured as displacements: the higher modes are barely "
+        "driven and sink toward the noise, and the input's slope across their bells (OMA assumes it flat) "
+        "spoils their damping, or loses the mode.",
+        colour=Colour.LOW_PASS,
+        corner_scale=1.5,
+        response=Response.DISPLACEMENT,
+    ),
+    _trial(
+        "Noisy sensors",
+        "Noise at twice each channel's RMS fills the troughs between the peaks: the more damped modes' bells "
+        "drown in it, and their damping comes out far too low, or the mode is lost.",
+        noise=200.0,
+    ),
+    _trial(
+        "SSI on close, damped modes",
+        "SSI fits every mode at once, so close, heavily damped modes don't cut each other's bells short: on the "
+        "default chain, modes 3 and 4's damping comes out far closer than EFDD's (compare the Methods tab).",
+        method=SSI,
+    ),
+    _trial(
+        "A machine running",
+        "A sine force on m1 halfway between modes 1 and 2: a sharp peak with almost no damping, like a lightly "
+        "damped mode. Its filtered response has a kurtosis of about 1.5, a sine's, so it is crossed out.",
+        machine="between",
+        machine_force=1.0,
+    ),
+    _trial(
+        "A machine near a mode",
+        "The sine 2 % above mode 2: FDD's peak there is the sine's (kurtosis 1.5, no damping), and mode 2 hides "
+        "under it. Switch to SSI-cov: it fits mode 2 beside the sine.",
+        machine="near",
+        machine_force=3.0,
+    ),
+)
+
+# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
+OPENING = replace(TRIALS[0], name="", note="")
+
 
 # ------------------------------------------------------------------ practice problems
 # Each question's numbers are printed round, and its answer is worked from them as printed.
@@ -413,6 +430,7 @@ def _acquisition_spec(rng: np.random.Generator) -> Question:
     longest = 10 * math.ceil(1.3 * need / 10)
 
     def goal(t: OmaSetup):
+        assert t.fs is not None and t.block is not None and t.duration is not None, "the page's state has them all"
         system = t.system()
         modes = modal_analysis(system).modes if system is not None else []
         first = min(modes, key=lambda m: m.fn_hz) if modes else None
@@ -473,7 +491,7 @@ PROBLEMS = tuple(
 NOTES_HTML = load_notes(
     "oma",
     figures=oma_figures.FIGURES,
-    trials=trials_html(SimpleNamespace(name=name, note=note) for name, _, note in TRIALS),
+    trials=trials_html(TRIALS),
 )
 
 
@@ -596,7 +614,7 @@ class OmaPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([name for name, _, _ in TRIALS])
+        self.trial = TrialCombo([t.name for t in TRIALS])
         self.trial.setToolTip(
             "<p>Settings that show one of OMA's strengths or pitfalls, set from the chain as it is now.</p>"
         )
@@ -766,43 +784,8 @@ class OmaPage(QtWidgets.QWidget):
 
     def apply_trial(self) -> None:
         """Set the settings the chosen trial asks for, from the chain as it is."""
-        if self.result is None or self.system is None:
-            return
         chosen = self.trial.chosen()
-        _name, changes, note = TRIALS[chosen] if chosen is not None else ("", OPENING, "")
-        fs, duration, block = self._suggested()
-        freqs = sorted(m.fn_hz for m in self.result.modes if m.fn_hz > 0) or [1.0]
-        slow = freqs[0]
-        if "cycles" in changes:
-            duration = round(changes["cycles"] / slow)
-        if "block" in changes:
-            block = max(BLOCKS[0], int(block * changes["block"]))
-        self._loading = True
-        self.fs.setValue(fs)
-        self.duration.setValue(duration)
-        self.block.setCurrentIndex(BLOCKS.index(block) if block in BLOCKS else 0)
-        self.noise.setValue(changes.get("noise", 2.0))
-        n = self.system.n
-        self.input.setCurrentIndex(changes["input"] + 1 if "input" in changes and changes["input"] < n else 0)
-        self.colour.setCurrentIndex(1 if "corner" in changes else 0)
-        self.response.setCurrentIndex(self.response.findData(changes.get("response", Response.ACCELERATION)))
-        self.corner.setValue(changes.get("corner", 1.5) * slow)
-        self.corner.setEnabled("corner" in changes)
-        machine_hz, force = 0.0, 1.0
-        if "machine" in changes:
-            where, force = changes["machine"]
-            second = freqs[1] if len(freqs) > 1 else 2.0 * slow
-            machine_hz = 0.5 * (slow + second) if where == "between" else 1.02 * second
-        self.machine_hz.setValue(machine_hz)
-        self.machine_force.setValue(force)
-        self.method.setCurrentText(changes.get("method", FDD))
-        self.rows.setValue(max(4, min(100, round(2.0 * fs / slow))))  # lags over two periods of the slowest
-        self.max_order.setValue(min(15 * self.system.n, 120))
-        self._loading = False
-        self._on_method(redraw=False)
-        self.trial_note.setText(note)
-        self.peaks = None
-        self._schedule(measure=True)
+        self._load(TRIALS[chosen] if chosen is not None else OPENING)
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then
@@ -814,54 +797,74 @@ class OmaPage(QtWidgets.QWidget):
             self.system_requested.emit(system)
             if self.system is None or not _same_chain(self.system, system):
                 self.set_system(system)  # nobody passed it back: show it here alone
-        if self.system is None:
+        self._load(t)
+
+    def _load(self, t: OmaSetup) -> None:
+        """Set the boxes as `t` says, working out from the chain what it leaves to it."""
+        if self.result is None or self.system is None:
             return
+        fs, duration, block = self._suggested()
+        freqs = sorted(m.fn_hz for m in self.result.modes if m.fn_hz > 0) or [1.0]
+        slow = freqs[0]
+        second = freqs[1] if len(freqs) > 1 else 2.0 * slow
+        fs = fs if t.fs is None else t.fs
+        if t.duration is not None:
+            duration = t.duration
+        elif t.cycles is not None:
+            duration = round(t.cycles / slow)
+        block = max(BLOCKS[0], int(block * t.block_scale)) if t.block is None else t.block
+        machine_hz = t.machine_hz
+        if machine_hz is None:
+            machine_hz = {"between": 0.5 * (slow + second), "near": 1.02 * second}.get(t.machine, 0.0)
+        n = self.system.n
         self._loading = True
-        self.input.setCurrentIndex(t.input if 0 <= t.input <= self.system.n else 0)
+        self.input.setCurrentIndex(t.input if 0 <= t.input <= n else 0)
         self.colour.setCurrentIndex(self.colour.findData(t.colour))
-        self.corner.setValue(t.corner_hz)
+        self.corner.setValue(t.corner_scale * slow if t.corner_hz is None else t.corner_hz)
         self.corner.setEnabled(t.colour is Colour.LOW_PASS)
         self.response.setCurrentIndex(self.response.findData(t.response))
-        self.machine_hz.setValue(t.machine_hz)
+        self.machine_hz.setValue(machine_hz)
         self.machine_force.setValue(t.machine_force)
-        self.fs.setValue(t.fs)
-        self.duration.setValue(t.duration)
+        self.fs.setValue(fs)
+        self.duration.setValue(duration)
         self.noise.setValue(t.noise)
         self.method.setCurrentText(t.method)
-        self.block.setCurrentIndex(BLOCKS.index(t.block))
-        self.mac_min.setValue(t.mac_min)
-        self.rows.setValue(t.rows)
-        self.max_order.setValue(t.max_order)
+        self.block.setCurrentIndex(BLOCKS.index(block) if block in BLOCKS else 0)
+        if t.mac_min is not None:
+            self.mac_min.setValue(t.mac_min)
+        self.rows.setValue(max(4, min(100, round(2.0 * fs / slow))) if t.rows is None else t.rows)
+        self.max_order.setValue(min(15 * n, 120) if t.max_order is None else t.max_order)
         self._loading = False
         self._on_method(redraw=False)
-        self.trial_note.setText("")
-        self.tabs.setCurrentIndex(t.tab)
+        self.trial_note.setText(t.note)
+        if t.tab is not None:
+            self.tabs.setCurrentIndex(t.tab)
         self.peaks = None
         self.ssi_picked = None
         self._schedule(measure=True)
 
     def practice_state(self) -> OmaSetup:
-        """The chain and the page's settings, as a setup: what a practice spec checks."""
+        """The chain and the page's settings, as a setup: what a practice spec checks and Defaults puts back."""
         s = self.system
         return OmaSetup(
-            tuple(float(v) for v in s.masses) if s is not None else (),
-            tuple(float(v) for v in s.stiffness) if s is not None else (),
-            tuple(float(v) for v in s.damping) if s is not None else (),
-            self.input.currentIndex(),
-            self.colour.currentData(),
-            self.corner.value(),
-            self.response.currentData(),
-            self.machine_hz.value(),
-            self.machine_force.value(),
-            self.fs.value(),
-            self.duration.value(),
-            self.noise.value(),
-            self.method.currentText(),
-            self.block.currentData(),
-            self.mac_min.value(),
-            self.rows.value(),
-            self.max_order.value(),
-            self.tabs.currentIndex(),
+            masses=tuple(float(v) for v in s.masses) if s is not None else (),
+            springs=tuple(float(v) for v in s.stiffness) if s is not None else (),
+            dampers=tuple(float(v) for v in s.damping) if s is not None else (),
+            input=self.input.currentIndex(),
+            colour=self.colour.currentData(),
+            corner_hz=self.corner.value(),
+            response=self.response.currentData(),
+            machine_hz=self.machine_hz.value(),
+            machine_force=self.machine_force.value(),
+            fs=self.fs.value(),
+            duration=self.duration.value(),
+            noise=self.noise.value(),
+            method=self.method.currentText(),
+            block=self.block.currentData(),
+            mac_min=self.mac_min.value(),
+            rows=self.rows.value(),
+            max_order=self.max_order.value(),
+            tab=self.tabs.currentIndex(),
         )
 
     def settings(self) -> AmbientSettings:

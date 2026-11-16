@@ -202,14 +202,12 @@ def test_the_trials_notes():
     r = modal_analysis(UNIFORM)
     T = duration_for(r)
     assert T == pytest.approx(0.1)
-    note = {name: text for name, _, text in TRIALS}
+    note = {t.name: t.note for t in TRIALS}
 
     def run(name):
-        changes = next(c for n, c, _ in TRIALS if n == name)
-        pulse = Pulse(
-            changes.get("shape", Shape.HALF_SINE), 10.0, T, -1, changes.get("noise", 0.0), changes.get("offset", 0.0), 1
-        )
-        rec, sp = _spectrum(pulse, 1.0 / (2.0 * changes.get("q", 10.0)), r, UNIFORM)
+        t = next(t for t in TRIALS if t.name == name)
+        pulse = Pulse(t.shape, 10.0, T, -1, 0.01 * t.noise, 0.01 * t.offset, 1)
+        rec, sp = _spectrum(pulse, 1.0 / (2.0 * t.q), r, UNIFORM)
         return rec, sp, float(np.max(np.abs(rec.a)))
 
     def peak(sp, top):

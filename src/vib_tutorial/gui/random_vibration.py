@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
@@ -112,75 +112,33 @@ LARGEST_TIP = (
 AMPLITUDE_BINS = 60
 PEAK_BINS = 40
 
-# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
-OPENING: dict[str, Any] = {}
-
-# Things to try: (name, what it sets, note)
-TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
-    (
-        "Base shake",
-        {},
-        "The base shaken flat at 0.01 g²/Hz over the chain's modes, the last mass's acceleration: each mode a "
-        "peak, and Miles' equation, mode by mode, within a few per cent of the exact RMS. The record's RMS "
-        "agrees to its scatter.",
-    ),
-    (
-        "Force on the last mass",
-        {"input": Input.FORCE_ONE, "mass": -1},
-        "A random force on the last mass, its own acceleration: above the modes it is the force over the mass "
-        "(the mass line), not a resonance, and Miles' equation misses it: the wider the band, the more.",
-    ),
-    (
-        "Forces on every mass",
-        {"input": Input.FORCE_ALL, "output": Quantity.DISPLACEMENT},
-        "Independent forces on every mass (wind, say), the last mass's displacement: dominated by mode 1, the "
-        "most flexible.",
-    ),
-    (
-        "The base spring's force",
-        {"output": Quantity.SPRING, "index": 0},
-        "Spring 1, which carries the whole chain off the base: the force a fatigue check would need. Its RMS is "
-        "almost all mode 1.",
-    ),
-    (
-        "Short record",
-        {"duration": 1 / 16},
-        "A sixteenth of the record: few blocks to average, and the Welch estimate is rough; its RMS scatters "
-        "round the exact one (press New record a few times).",
-    ),
-    (
-        "Coarse lines",
-        {"block": 1 / 16},
-        "Blocks a sixteenth as long: lines coarser than mode 1's peak, which comes out low and wide (the window "
-        "smears it). The RMS is still right: the area is kept.",
-    ),
-    (
-        "Narrow band on mode 2",
-        {"band": (0.9, 1.1)},
-        "Only ±10 % round mode 2: one peak, its skirts cut off. Miles' equation, which counts the whole of a "
-        "mode's peak, now overestimates.",
-    ),
-)
-
 
 @dataclass(frozen=True)
 class RandomSetup:
-    """A practice problem's setup: a chain (none: the one there is) and the page's settings. `mass` and `index`
-    count from the end when negative, as the trials' do."""
+    """The page's settings: a Thing to try (its name and note), a practice problem's setup or what the page shows.
+    A chain (none: the one there is) and the boxes' values; `mass` and `index` count from the end when negative.
+    A trial leaves the rest to the chain (None): the level (0.01 g²/Hz for the base, 1 N²/Hz for a force), the band
+    (up to 1.5 × the top mode, or `band` × mode 2), the record and the block (`suggested_duration`,
+    `suggested_block`, times `duration_scale` and `block_scale`), and the tab where it is."""
 
+    name: str = ""
+    note: str = ""
     masses: tuple[float, ...] = ()
     springs: tuple[float, ...] = ()
     dampers: tuple[float, ...] = ()
     kind: Input = Input.BASE
-    level: float = 0.01
-    f_lo: float = 0.0
-    f_hi: float = 10.0
+    level: float | None = 0.01
+    f_lo: float | None = 0.0
+    f_hi: float | None = 10.0
     mass: int = -1
     quantity: Quantity = Quantity.ACCELERATION
     index: int = -1
-    duration: float = 600.0
-    block: int = 4096
-    tab: int = 0
+    duration: float | None = 600.0
+    block: int | None = 4096
+    tab: int | None = 0
+    band: tuple[float, float] | None = None  # a trial's band, × mode 2's frequency
+    duration_scale: float = 1.0
+    block_scale: float = 1.0
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -188,7 +146,64 @@ class RandomSetup:
         return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
 
 
-PRACTICE_SETUP = RandomSetup  # what a practice problem's setup and the page's practice_state are
+def _trial(name: str, note: str, **changes: Any) -> RandomSetup:
+    """A Thing to try: its level, band, record, block and tab from the chain, with `changes`."""
+    unset = dict.fromkeys(("level", "f_lo", "f_hi", "duration", "block", "tab"))
+    return RandomSetup(name, note, **{**unset, **changes})
+
+
+# Things to try: each worked out from the chain as it is.
+TRIALS = (
+    _trial(
+        "Base shake",
+        "The base shaken flat at 0.01 g²/Hz over the chain's modes, the last mass's acceleration: each mode a "
+        "peak, and Miles' equation, mode by mode, within a few per cent of the exact RMS. The record's RMS "
+        "agrees to its scatter.",
+    ),
+    _trial(
+        "Force on the last mass",
+        "A random force on the last mass, its own acceleration: above the modes it is the force over the mass "
+        "(the mass line), not a resonance, and Miles' equation misses it: the wider the band, the more.",
+        kind=Input.FORCE_ONE,
+        mass=-1,
+    ),
+    _trial(
+        "Forces on every mass",
+        "Independent forces on every mass (wind, say), the last mass's displacement: dominated by mode 1, the "
+        "most flexible.",
+        kind=Input.FORCE_ALL,
+        quantity=Quantity.DISPLACEMENT,
+    ),
+    _trial(
+        "The base spring's force",
+        "Spring 1, which carries the whole chain off the base: the force a fatigue check would need. Its RMS is "
+        "almost all mode 1.",
+        quantity=Quantity.SPRING,
+        index=0,
+    ),
+    _trial(
+        "Short record",
+        "A sixteenth of the record: few blocks to average, and the Welch estimate is rough; its RMS scatters "
+        "round the exact one (press New record a few times).",
+        duration_scale=1 / 16,
+    ),
+    _trial(
+        "Coarse lines",
+        "Blocks a sixteenth as long: lines coarser than mode 1's peak, which comes out low and wide (the window "
+        "smears it). The RMS is still right: the area is kept.",
+        block_scale=1 / 16,
+    ),
+    _trial(
+        "Narrow band on mode 2",
+        "Only ±10 % round mode 2: one peak, its skirts cut off. Miles' equation, which counts the whole of a "
+        "mode's peak, now overestimates.",
+        band=(0.9, 1.1),
+    ),
+)
+
+# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
+OPENING = replace(TRIALS[0], name="", note="")
+
 
 # ------------------------------------------------------------------ practice problems
 # Each question's numbers are printed round, and its answer is worked from them as printed.
@@ -377,6 +392,7 @@ def _welch_spec(rng: np.random.Generator) -> Question:
     longest = 10 * math.ceil(1.3 * need / 10)
 
     def goal(t: RandomSetup):
+        assert t.f_hi is not None and t.block is not None and t.duration is not None, "the page's state has them all"
         rate = sample_rate(RandomInput(f_hi=t.f_hi))
         system = t.system()
         modes = modal_analysis(system).modes if system is not None else []
@@ -433,7 +449,7 @@ PROBLEMS = tuple(
 NOTES_HTML = load_notes(
     "random_vibration",
     figures=random_figures.FIGURES,
-    trials="<ol>" + "".join(f"<li><b>{name}.</b> {maths.markup(note)}</li>" for name, _, note in TRIALS) + "</ol>",
+    trials="<ol>" + "".join(f"<li><b>{t.name}.</b> {maths.markup(t.note)}</li>" for t in TRIALS) + "</ol>",
 )
 
 
@@ -527,7 +543,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([name for name, _, _ in TRIALS])
+        self.trial = TrialCombo([t.name for t in TRIALS])
         self.trial.setToolTip(
             "<p>Settings that show something about random vibration, set from the chain as it is now.</p>"
         )
@@ -696,40 +712,8 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
     def apply_trial(self) -> None:
         """Set the settings the chosen trial asks for, from the chain as it is."""
-        if self.result is None or self.system is None:
-            return
         chosen = self.trial.chosen()
-        _, changes, note = TRIALS[chosen] if chosen is not None else ("", OPENING, "")
-        n = self.system.n
-        freqs = sorted(m.fn_hz for m in self.result.modes if m.fn_hz > 0) or [1.0]
-        kind = changes.get("input", Input.BASE)
-        lo, hi = 0.0, _nice(1.5 * freqs[-1])
-        if "band" in changes:
-            f2 = freqs[1] if len(freqs) > 1 else freqs[0]
-            lo, hi = changes["band"][0] * f2, changes["band"][1] * f2
-        inp = RandomInput(kind, 0.01 if kind is Input.BASE else 1.0, lo, hi)
-        duration = suggested_duration(inp, self.result)
-        samples = round(duration * sample_rate(inp))
-        block = suggested_block(inp, self.result, samples)
-        if "duration" in changes:
-            duration *= changes["duration"]
-        if "block" in changes:
-            block = max(BLOCKS[0], int(block * changes["block"]))
-        self._loading = True
-        self.kind.setCurrentIndex(self.kind.findData(kind))
-        self.mass.setCurrentIndex(changes.get("mass", -1) % n)
-        self.level.setValue(inp.level)
-        self.f_lo.setValue(lo)
-        self.f_hi.setValue(hi)
-        self.duration.setValue(round(duration))
-        self.block.setCurrentIndex(BLOCKS.index(block))
-        self.quantity.setCurrentIndex(self.quantity.findData(changes.get("output", Quantity.ACCELERATION)))
-        self._fill_index()
-        self.index.setCurrentIndex(changes.get("index", n - 1))
-        self._loading = False
-        self._show_controls()
-        self.trial_note.setText(maths.markup(note))
-        self._schedule(measure=True)
+        self._load(TRIALS[chosen] if chosen is not None else OPENING)
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then
@@ -741,43 +725,67 @@ class RandomVibrationPage(QtWidgets.QWidget):
             self.system_requested.emit(system)
             if self.system is None or not _same_chain(self.system, system):
                 self.set_system(system)  # nobody passed it back: show it here alone
-        if self.system is None:
+        self._load(t)
+
+    def _load(self, t: RandomSetup) -> None:
+        """Set the boxes as `t` says, working out from the chain what it leaves to it."""
+        if self.result is None or self.system is None:
             return
         n = self.system.n
+        freqs = sorted(m.fn_hz for m in self.result.modes if m.fn_hz > 0) or [1.0]
+        lo, hi = 0.0, _nice(1.5 * freqs[-1])
+        if t.band is not None:
+            f2 = freqs[1] if len(freqs) > 1 else freqs[0]
+            lo, hi = t.band[0] * f2, t.band[1] * f2
+        lo = lo if t.f_lo is None else t.f_lo
+        hi = hi if t.f_hi is None else t.f_hi
+        level = (0.01 if t.kind is Input.BASE else 1.0) if t.level is None else t.level
+        inp = RandomInput(t.kind, level, lo, hi)
+        duration, block = t.duration, t.block
+        if duration is None or block is None:
+            suggested = suggested_duration(inp, self.result)
+            if block is None:
+                block = max(
+                    BLOCKS[0],
+                    int(suggested_block(inp, self.result, round(suggested * sample_rate(inp))) * t.block_scale),
+                )
+            if duration is None:
+                duration = suggested * t.duration_scale
         self._loading = True
         self.kind.setCurrentIndex(self.kind.findData(t.kind))
         self.mass.setCurrentIndex(t.mass % n)
-        self.level.setValue(t.level)
-        self.f_lo.setValue(t.f_lo)
-        self.f_hi.setValue(t.f_hi)
-        self.duration.setValue(t.duration)
-        self.block.setCurrentIndex(BLOCKS.index(t.block))
+        self.level.setValue(level)
+        self.f_lo.setValue(lo)
+        self.f_hi.setValue(hi)
+        self.duration.setValue(round(duration) if t.duration is None else duration)
+        self.block.setCurrentIndex(BLOCKS.index(block))
         self.quantity.setCurrentIndex(self.quantity.findData(t.quantity))
         self._fill_index()
         self.index.setCurrentIndex(t.index % n)
         self._loading = False
         self._show_controls()
-        self.trial_note.setText("")
-        self.tabs.setCurrentIndex(t.tab)
+        self.trial_note.setText(maths.markup(t.note))
+        if t.tab is not None:
+            self.tabs.setCurrentIndex(t.tab)
         self._schedule(measure=True)
 
     def practice_state(self) -> RandomSetup:
-        """The chain and the page's settings, as a setup: what a practice spec checks."""
+        """The chain and the page's settings, as a setup: what a practice spec checks and Defaults puts back."""
         s = self.system
         return RandomSetup(
-            tuple(float(v) for v in s.masses) if s is not None else (),
-            tuple(float(v) for v in s.stiffness) if s is not None else (),
-            tuple(float(v) for v in s.damping) if s is not None else (),
-            self.kind.currentData(),
-            self.level.value(),
-            self.f_lo.value(),
-            self.f_hi.value(),
-            self.mass.currentIndex(),
-            self.quantity.currentData(),
-            self.index.currentIndex(),
-            self.duration.value(),
-            self.block.currentData(),
-            self.tabs.currentIndex(),
+            masses=tuple(float(v) for v in s.masses) if s is not None else (),
+            springs=tuple(float(v) for v in s.stiffness) if s is not None else (),
+            dampers=tuple(float(v) for v in s.damping) if s is not None else (),
+            kind=self.kind.currentData(),
+            level=self.level.value(),
+            f_lo=self.f_lo.value(),
+            f_hi=self.f_hi.value(),
+            mass=self.mass.currentIndex(),
+            quantity=self.quantity.currentData(),
+            index=self.index.currentIndex(),
+            duration=self.duration.value(),
+            block=self.block.currentData(),
+            tab=self.tabs.currentIndex(),
         )
 
     def random_input(self) -> RandomInput:

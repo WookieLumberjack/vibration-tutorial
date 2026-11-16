@@ -117,8 +117,8 @@ def test_first_order_shapes():
 def test_the_trials_notes():
     from vib_tutorial.gui.complex_modes import TRIALS
 
-    trial = {name: system for name, system, _ in TRIALS}
-    note = {name: text for name, _, text in TRIALS}
+    trial = {t.name: t.system() for t in TRIALS}
+    note = {t.name: t.note for t in TRIALS}
 
     def rows(name):
         return compare(trial[name], modal_analysis(trial[name]))

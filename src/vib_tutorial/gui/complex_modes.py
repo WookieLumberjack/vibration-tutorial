@@ -115,64 +115,78 @@ def _chain(damping: list[float]) -> ChainSystem:
     return ChainSystem(np.ones(4), np.full(4, 400.0), np.array(damping, dtype=float))
 
 
-# Things to try: (name, chain, note)
-TRIALS = (
-    (
-        "A damper per spring, in proportion",
-        ChainSystem.uniform(4),
-        "Four equal masses, springs and dampers: <m>c<sub>i</sub> = k<sub>i</sub>/200</m>, so <m>C = K/200</m> and "
-        "the damping is proportional. Every mode is real (MPC 1, MPD 0°), the approximation is exact, and a mode "
-        "released stays alone.",
-    ),
-    (
-        "One damper, at the base",
-        _chain([20.0, 0, 0, 0]),
-        "The same chain with a single 20 N·s/m damper, on spring 1. Mode 3 is the most complex (MPC 0.20, "
-        "MPD 29°), and the approximation puts mode 4's <m>ζ</m> at 0.049, twice the exact 0.023. Released in mode 2's "
-        "shape, the chain passes 45 % of it to mode 1.",
-    ),
-    (
-        "One damper, at the top",
-        _chain([0, 0, 0, 20.0]),
-        "The damper between <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m>: mode 4's <m>ζ</m> is 0.017, not the approximation's 0.17, ten times less. "
-        "The approximation counts the damper's stretch in the undamped mode 4, but the exact mode 4 shakes "
-        "<m>m<sub>1</sub></m> and <m>m<sub>2</sub></m> and leaves <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> moving nearly together (under a third of the stretch), so the damper barely "
-        "works.",
-    ),
-    (
-        "A strong damper locks a joint",
-        _chain([0, 200.0, 0, 0]),
-        "200 N·s/m between <m>m<sub>1</sub></m> and <m>m<sub>2</sub></m>: so stiff a damper that the two move "
-        "together, and it hardly works. Mode 1's <m>ζ</m> is 0.050, not the approximation's 0.58; mode 3's 0.0018, "
-        "not 2.6; mode 4 has become a pair of real roots. Mode 2, where <m>m<sub>1</sub></m> and "
-        "<m>m<sub>2</sub></m> already move together, is untouched.",
-    ),
-    (
-        "Tuned mass damper",
-        tuned_mass_damper(ChainSystem.uniform(4), 0.05),
-        "The default chain with a Den Hartog damper on <m>m<sub>4</sub></m> (<m>m<sub>5</sub></m>). Modes 1 and 2 are the structure's mode 1 split in "
-        "two, close together, and the damper couples them: the most complex (MPD 10° and 17°), while the "
-        "modes above, far from them, stay nearly real.",
-    ),
-)
-
 TAB_FRF, TAB_DECAY, TAB_PHASES, TAB_SWEEP, TAB_IDENTIFICATION = range(5)
 
 
 @dataclass(frozen=True)
 class ComplexSetup:
-    """A practice problem's setup: a chain (the default 4-mass one, its dampers given) and the tab to show."""
+    """The page's settings: a Thing to try (its name and note), a practice problem's setup or what the page shows.
+    A chain (the default 4-mass one, its dampers given) and the tab to show (None: where it is)."""
 
+    name: str = ""
+    note: str = ""
     damping: tuple[float, ...] = (2.0, 2.0, 2.0, 2.0)
     masses: tuple[float, ...] = (1.0, 1.0, 1.0, 1.0)
     stiffness: tuple[float, ...] = (400.0, 400.0, 400.0, 400.0)
-    tab: int = TAB_FRF
+    tab: int | None = TAB_FRF
 
     def system(self) -> ChainSystem:
         return ChainSystem(np.array(self.masses), np.array(self.stiffness), np.array(self.damping))
 
 
-PRACTICE_SETUP = ComplexSetup  # what a practice problem's setup and the page's practice_state are
+def _trial(name: str, note: str, system: ChainSystem) -> ComplexSetup:
+    """A Thing to try: a chain, the tab left where it is."""
+    return ComplexSetup(
+        name,
+        note,
+        tuple(float(c) for c in system.damping),
+        tuple(float(m) for m in system.masses),
+        tuple(float(k) for k in system.stiffness),
+        tab=None,
+    )
+
+
+# Things to try: each a chain.
+TRIALS = (
+    _trial(
+        "A damper per spring, in proportion",
+        "Four equal masses, springs and dampers: <m>c<sub>i</sub> = k<sub>i</sub>/200</m>, so <m>C = K/200</m> and "
+        "the damping is proportional. Every mode is real (MPC 1, MPD 0°), the approximation is exact, and a mode "
+        "released stays alone.",
+        ChainSystem.uniform(4),
+    ),
+    _trial(
+        "One damper, at the base",
+        "The same chain with a single 20 N·s/m damper, on spring 1. Mode 3 is the most complex (MPC 0.20, "
+        "MPD 29°), and the approximation puts mode 4's <m>ζ</m> at 0.049, twice the exact 0.023. Released in mode 2's "
+        "shape, the chain passes 45 % of it to mode 1.",
+        _chain([20.0, 0, 0, 0]),
+    ),
+    _trial(
+        "One damper, at the top",
+        "The damper between <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m>: mode 4's <m>ζ</m> is 0.017, not the approximation's 0.17, ten times less. "
+        "The approximation counts the damper's stretch in the undamped mode 4, but the exact mode 4 shakes "
+        "<m>m<sub>1</sub></m> and <m>m<sub>2</sub></m> and leaves <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> moving nearly together (under a third of the stretch), so the damper barely "
+        "works.",
+        _chain([0, 0, 0, 20.0]),
+    ),
+    _trial(
+        "A strong damper locks a joint",
+        "200 N·s/m between <m>m<sub>1</sub></m> and <m>m<sub>2</sub></m>: so stiff a damper that the two move "
+        "together, and it hardly works. Mode 1's <m>ζ</m> is 0.050, not the approximation's 0.58; mode 3's 0.0018, "
+        "not 2.6; mode 4 has become a pair of real roots. Mode 2, where <m>m<sub>1</sub></m> and "
+        "<m>m<sub>2</sub></m> already move together, is untouched.",
+        _chain([0, 200.0, 0, 0]),
+    ),
+    _trial(
+        "Tuned mass damper",
+        "The default chain with a Den Hartog damper on <m>m<sub>4</sub></m> (<m>m<sub>5</sub></m>). Modes 1 and 2 are the structure's mode 1 split in "
+        "two, close together, and the damper couples them: the most complex (MPD 10° and 17°), while the "
+        "modes above, far from them, stay nearly real.",
+        tuned_mass_damper(ChainSystem.uniform(4), 0.05),
+    ),
+)
+
 
 # ------------------------------------------------------------------ practice problems
 # Each question's numbers are printed round, and its answer is worked from them as printed.
@@ -218,7 +232,7 @@ def _approx_zeta(rng: np.random.Generator) -> Question:
             f"(2 × {number(w)}) = {number(zeta)}. Whether the exact mode agrees depends on how much the damper "
             "changes the shape.",
             tolerance=0.03,
-            setup=ComplexSetup(damping=tuple(c if i == e - 1 else 0.0 for i in range(4))).__dict__,
+            setup=dict(damping=tuple(c if i == e - 1 else 0.0 for i in range(4))),
         )
         if abs(stretch) > 0.05
         else _approx_zeta(rng)
@@ -264,7 +278,7 @@ def _made_proportional(rng: np.random.Generator) -> Question:
         "Every one becomes 1: with C = βK, ΦᵀCΦ is diagonal, the modes don't couple, and the exact shapes are the "
         "real undamped ones.",
         choices=("They all become 1", "They stay as they were", "They all fall"),
-        setup=ComplexSetup(tab=TAB_PHASES).__dict__,
+        setup=dict(tab=TAB_PHASES),
         predict=True,
     )
 
@@ -277,7 +291,7 @@ def _damper_at_top(rng: np.random.Generator) -> Question:
         "About ten times too high (0.17 against 0.017): the approximation counts the damper's stretch in the "
         "undamped mode 4, but in the exact mode m3 and m4 move nearly together, so the damper hardly works.",
         choices=("Far too high", "About right", "Far too low"),
-        setup=ComplexSetup(damping=(0.0, 0.0, 0.0, 20.0)).__dict__,
+        setup=dict(damping=(0.0, 0.0, 0.0, 20.0)),
         predict=True,
     )
 
@@ -289,7 +303,7 @@ def _stiffer_damper(rng: np.random.Generator) -> Question:
         "It rises to a peak and falls again: a stiff damper holds its ends together and stops working, and the "
         "chain's modes become those with that joint locked. The approximation's ζ keeps rising.",
         choices=("It rises, then falls", "It keeps rising", "It rises, then levels off"),
-        setup=ComplexSetup(damping=(20.0, 0.0, 0.0, 0.0), tab=TAB_SWEEP).__dict__,
+        setup=dict(damping=(20.0, 0.0, 0.0, 0.0), tab=TAB_SWEEP),
         predict=True,
     )
 
@@ -324,9 +338,9 @@ def _best_damper_spec(rng: np.random.Generator) -> Question:
         0,
         "Mode 1's ζ rises with c<sub>1</sub> to a peak of 0.147 at about 60 N·s/m, then falls as the damper locks m1 "
         "to the ground (the Sweep tab draws it); a stiffer damper is worse, not better. Anything near 60 N·s/m does.",
-        setup=ComplexSetup(damping=(5.0, 0.0, 0.0, 0.0), tab=TAB_SWEEP).__dict__,
+        setup=dict(damping=(5.0, 0.0, 0.0, 0.0), tab=TAB_SWEEP),
         goal=goal,
-        design=ComplexSetup(damping=(60.0, 0.0, 0.0, 0.0), tab=TAB_SWEEP).__dict__,
+        design=dict(damping=(60.0, 0.0, 0.0, 0.0), tab=TAB_SWEEP),
     )
 
 
@@ -362,7 +376,7 @@ PROBLEMS = tuple(
 NOTES_HTML = load_notes(
     "complex_modes",
     figures=complex_figures.FIGURES,
-    trials="<ol>" + "".join(f"<li><b>{name}.</b> {maths.markup(note)}</li>" for name, _, note in TRIALS) + "</ol>",
+    trials="<ol>" + "".join(f"<li><b>{t.name}.</b> {maths.markup(t.note)}</li>" for t in TRIALS) + "</ol>",
 )
 
 
@@ -442,7 +456,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
         self.trial = TrialCombo(
-            [name for name, _, _ in TRIALS],
+            [t.name for t in TRIALS],
             "<p>Chains that show something about complex modes. Loading one replaces the Simulation page's chain.</p>",
             prompt="Load a chain…",
         )
@@ -723,30 +737,31 @@ class ComplexModesPage(QtWidgets.QWidget):
 
     def load_trial(self, index: int) -> None:
         """Ask for chain `index` of TRIALS, and show its note."""
-        _, system, note = TRIALS[index]
-        self.trial_note.setText(maths.markup(note))
-        self.trial_note.setVisible(True)
-        self.system_requested.emit(system.copy())
+        self._load(TRIALS[index])
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says (a `ComplexSetup`'s fields): its chain through the
         Simulation page, and its tab."""
-        t = ComplexSetup(**setup)
+        self._load(ComplexSetup(**setup))
+
+    def _load(self, t: ComplexSetup) -> None:
         system = t.system()
-        self.trial_note.setVisible(False)
+        self.trial_note.setText(maths.markup(t.note))
+        self.trial_note.setVisible(bool(t.note))
         self.system_requested.emit(system.copy())
         if self.system is None or self.system.n != system.n or not np.allclose(self.system.damping, system.damping):
             self.set_system(system)  # nobody passed it back: show it here alone
-        self.tabs.setCurrentIndex(t.tab)
+        if t.tab is not None:
+            self.tabs.setCurrentIndex(t.tab)
 
     def practice_state(self) -> ComplexSetup:
-        """The chain the page follows and its tab: what a practice spec checks."""
+        """The chain the page follows and its tab: what a practice spec checks and Defaults puts back."""
         system, _ = self._chain()
         return ComplexSetup(
-            tuple(float(c) for c in system.damping),
-            tuple(float(m) for m in system.masses),
-            tuple(float(k) for k in system.stiffness),
-            self.tabs.currentIndex(),
+            damping=tuple(float(c) for c in system.damping),
+            masses=tuple(float(m) for m in system.masses),
+            stiffness=tuple(float(k) for k in system.stiffness),
+            tab=self.tabs.currentIndex(),
         )
 
     def _sync_damper_at(self) -> None:

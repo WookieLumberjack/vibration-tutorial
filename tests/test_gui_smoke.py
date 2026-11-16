@@ -3927,11 +3927,11 @@ def test_random_vibration_page(app):
     p.worker.wait()
     assert p.record is not record and p.record.input.level == p.level.value()
 
-    for name, _, note in TRIALS:
-        p.trial.pick(name)
+    for t in TRIALS:
+        p.trial.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == note and p.prediction is not None and "RMS" in p.readout.text()
-    p.trial.pick(TRIALS[1][0])  # a force on the last mass: its own acceleration's mass line
+        assert p.trial_note.text() == t.note and p.prediction is not None and "RMS" in p.readout.text()
+    p.trial.pick(TRIALS[1].name)  # a force on the last mass: its own acceleration's mass line
     p.recompute()
     assert p.mass.isEnabled() and p.mass.currentText() == "m4" and p.level.suffix() == " N²/Hz"
     assert "Miles 0.4163 g (-18 %)" in p.readout.text()
@@ -3993,7 +3993,7 @@ def test_complex_modes_page(app):
     assert p.table.rowCount() == 4 and "Every mode is real" in p.readout.text()
     assert "stays there" in p.decay_note.text() and "the same" in p.frf_note.text()
 
-    names = [name for name, _, _ in TRIALS]
+    names = [t.name for t in TRIALS]
     p.trial.setCurrentIndex(1 + names.index("One damper, at the base"))
     app.processEvents()
     assert p.trial.currentIndex() == 1 + names.index("One damper, at the base") and p.trial_note.isVisible()
@@ -4110,10 +4110,10 @@ def test_model_updating_page(app):
     p.table.selectRow(1)
     assert "Test mode 2" in p.shape_note.text()
 
-    for name, _, note in TRIALS:
-        p.trial.pick(name)
+    for t in TRIALS:
+        p.trial.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == note and p.corr.pairs
+        assert p.trial_note.text() == t.note and p.corr.pairs
     p.trial.pick("Two sensors")
     p.recompute()
     assert p.source.currentData() is Source.EXACT and [b.isChecked() for b in p.sensors] == [True, False, False, True]
@@ -4193,10 +4193,10 @@ def test_shock_page(app):
     p.recompute()
     assert p.record is not rec and p.record.duration == pytest.approx(0.05)
 
-    for name, _, note in TRIALS:
-        p.trial.pick(name)
+    for t in TRIALS:
+        p.trial.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == maths.markup(note) and p.spectrum is not None and "Maximax" in p.readout.text()
+        assert p.trial_note.text() == maths.markup(t.note) and p.spectrum is not None and "Maximax" in p.readout.text()
     p.trial.pick("A component on the last mass")
     p.recompute()
     assert p.mass.isVisibleTo(p) and p.mass.currentText() == "m4" and "3.32 ×" in p.readout.text()

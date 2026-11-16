@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import functools
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
@@ -122,132 +122,30 @@ SHAPES_TIP = (
     "the page's Q.</p>"
 )
 
-# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
-OPENING: dict[str, Any] = {}
-
-# Things to try: (name, what it sets, note). The duration is set from the chain (`duration_for`).
-TRIALS: tuple[tuple[str, dict[str, Any], str], ...] = (
-    (
-        "Half-sine",
-        {},
-        "A 10 g half-sine. At <m>Q</m> = 10 the spectrum peaks at 1.65 × the pulse's peak, at <m>fT</m> = 0.83: an oscillator "
-        "whose period is a little longer than the pulse. Stiff oscillators follow the pulse (1 ×); soft ones take it as "
-        "an impulse and ring with <m>ωΔv</m>, the dashed line at the left.",
-    ),
-    (
-        "Square",
-        {"shape": Shape.SQUARE},
-        "A square pulse: a step up and one down. Every stiff oscillator overshoots the step, to 1.85 × at <m>Q</m> = 10 "
-        "(2 × undamped), so the spectrum stays high across the top. Its <m>Δv</m> is the largest of the pulses (the area "
-        "<m>AT</m>), so it is highest at the left too.",
-    ),
-    (
-        "Terminal-peak sawtooth",
-        {"shape": Shape.TERMINAL_PEAK},
-        "Rising slowly, dropping at once: the drop makes stiff oscillators ring the other way, so above <m>fT</m> ≈ 2 "
-        "the negative spectrum is 0.85–0.86 × the positive one. Tests like it for that: a part is loaded both ways.",
-    ),
-    (
-        "Haversine",
-        {"shape": Shape.HAVERSINE},
-        "A smooth pulse: no corner, so stiff oscillators don't ring and the negative spectrum at the top is "
-        "nearly nothing. Its peak, 1.60 × at <m>fT</m> = 1.0, is close to the half-sine's.",
-    ),
-    (
-        "Light damping, Q = 50",
-        {"q": 50.0},
-        "The half-sine at <m>Q</m> = 50: the spectrum hardly changes (1.74 × at the peak against 1.65 ×). A shock is over "
-        "before damping has time to act on the primary peak, unlike a steady sine, whose response grows with Q.",
-    ),
-    (
-        "A component on the last mass",
-        {"shape": Shape.AT_A_MASS},
-        "The last mass's acceleration with the base given the half-sine: it rings at the chain's modes, and its "
-        "spectrum peaks there, 3.3 × the record's own peak at mode 1. A component tuned near the chain's mode "
-        "would be hit far harder than the record's peak suggests.",
-    ),
-    (
-        "Pyrotechnic transient",
-        {"shape": Shape.TRANSIENT, "noise": 0.02},
-        "A burst of damped sines with a little noise: the spectrum peaks among its frequencies, at 4.5 × the "
-        "record's peak (<m>fT</m> ≈ 38). It ends at rest, with no net <m>Δv</m>, so the soft oscillators at the left feel only "
-        "their dampers' push: at <m>fT</m> = 0.02 the spectrum is 10⁻⁴ of the peak.",
-    ),
-    (
-        "Zero shift",
-        {"shape": Shape.TRANSIENT, "noise": 0.02, "offset": 0.01},
-        "The same record with a 1 % offset, an accelerometer's zero shift: integrated over the record it is a "
-        "velocity change the shock didn't have, and the spectrum's low end climbs to the <m>2πfΔv</m> line, ten times "
-        "what it was at <m>fT</m> = 0.02. A measured spectrum whose low end follows that line is suspect.",
-    ),
-    (
-        "Modes combined",
-        {"tab": "chain_tab"},
-        "The half-sine on the chain. Each mode is an oscillator at its own <m>f</m> and <m>ζ</m>, driven by <m>Γ</m> times the base, so "
-        "the SRS gives each mode's peak but not when it comes. On m4, exactly 9.14 g; ABS (their sum) 11 g, +20 %; "
-        "SRSS 6.62 g, −28 %; NRL 9.27 g, +1 %. The SRSS assumes the modes peak at unrelated times, but a shock sets "
-        "them all off at once: each one's part peaks within the first 0.3 s, a third of mode 1's period.",
-    ),
-    (
-        "Four-way paper",
-        {"tab": "tri_tab"},
-        "The half-sine's spectrum as a pseudo-velocity, read against diagonals of constant displacement and "
-        "acceleration. At the left it tends to the base's <m>Δv = 2AT/π</m>, 6.24 m/s; at the right it falls along the "
-        "10 g line. Between, it says how far each oscillator's spring stretches: 4.6 m at the softest, the rattle "
-        "space a soft mount would need.",
-    ),
-    (
-        "Pulse shapes compared",
-        {"tab": "shapes_tab"},
-        "The six pulses at the same peak and duration. The square has the most area, so it is highest at the left "
-        "(0.12 × at <m>fT</m> = 0.02) and, overshooting, near the top (1.86 ×). The terminal-peak sawtooth rises gently "
-        "and peaks at only 1.19 ×. Tick Same velocity change: the low ends meet, and the narrower pulses, now "
-        "taller, take the top: the initial-peak sawtooth reaches 2.33 ×, the square only 1.18 ×.",
-    ),
-    (
-        "Damped sines to a spectrum",
-        {"shape": Shape.SINES},
-        "A test is specified by its spectrum: here 10 g above a 5 Hz knee, rising 6 dB an octave below it. 28 "
-        "damped sines, scaled round by round, meet it within ±3 dB over the band, though the record's own peak is "
-        "only 4.8 g: each oscillator rings up on the sine at its frequency. But each sine carries a net velocity, so "
-        "the record ends at 0.51 m/s, 6 m from where it began, which no shaker can follow.",
-    ),
-    (
-        "Wavelets to a spectrum",
-        {"shape": Shape.WAVELETS},
-        "The same target met by 28 wavelets, each <m>sin(ωt/N<sub>w</sub>) sin ωt</m> over <m>N<sub>w</sub></m> half-cycles, <m>N<sub>w</sub></m> odd: each starts and ends at "
-        "rest, so the record does too, within a micrometre, and a shaker can play it: the table moves at most "
-        "0.54 m and comes back.",
-    ),
-)
-
-NOTES_HTML = load_notes(
-    "shock",
-    figures=shock_figures.FIGURES,
-    trials="<ol>" + "".join(f"<li><b>{name}.</b> {maths.markup(note)}</li>" for name, _, note in TRIALS) + "</ol>",
-)
-
-
 TAB_OSCILLATOR, TAB_CHAIN, TAB_TRIPARTITE, TAB_SHAPES = range(4)
 
 
 @dataclass(frozen=True)
 class ShockSetup:
-    """A practice problem's setup: a chain (none: the one there is) and the page's settings, in the boxes' units
-    (the duration in ms, noise and offset in %). `mass` counts from the end when negative."""
+    """The page's settings: a Thing to try (its name and note), a practice problem's setup or what the page shows.
+    A chain (none: the one there is) and the boxes' values, in their units (the duration in ms, noise and offset
+    in %). `mass` counts from the end when negative. A trial leaves the duration and the knee to the chain (None:
+    `duration_for`, `knee_for`), and the tab where it is unless it names one."""
 
+    name: str = ""
+    note: str = ""
     masses: tuple[float, ...] = ()
     springs: tuple[float, ...] = ()
     dampers: tuple[float, ...] = ()
     shape: Shape = Shape.HALF_SINE
     peak: float = 10.0
-    duration: float = 100.0
-    knee: float = 5.0
+    duration: float | None = 100.0
+    knee: float | None = 5.0
     mass: int = -1
     noise: float = 0.0
     offset: float = 0.0
     q: float = DEFAULT_Q
-    tab: int = TAB_OSCILLATOR
+    tab: int | None = TAB_OSCILLATOR
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -255,7 +153,118 @@ class ShockSetup:
         return ChainSystem(np.array(self.masses), np.array(self.springs), np.array(self.dampers))
 
 
-PRACTICE_SETUP = ShockSetup  # what a practice problem's setup and the page's practice_state are
+def _trial(name: str, note: str, **changes: Any) -> ShockSetup:
+    """A Thing to try: the half-sine at 10 g, its duration and knee from the chain, with `changes`."""
+    return ShockSetup(name, note, **{"duration": None, "knee": None, "tab": None, **changes})
+
+
+# Things to try. The duration and the knee are set from the chain (`duration_for`, `knee_for`).
+TRIALS = (
+    _trial(
+        "Half-sine",
+        "A 10 g half-sine. At <m>Q</m> = 10 the spectrum peaks at 1.65 × the pulse's peak, at <m>fT</m> = 0.83: an oscillator "
+        "whose period is a little longer than the pulse. Stiff oscillators follow the pulse (1 ×); soft ones take it as "
+        "an impulse and ring with <m>ωΔv</m>, the dashed line at the left.",
+    ),
+    _trial(
+        "Square",
+        "A square pulse: a step up and one down. Every stiff oscillator overshoots the step, to 1.85 × at <m>Q</m> = 10 "
+        "(2 × undamped), so the spectrum stays high across the top. Its <m>Δv</m> is the largest of the pulses (the area "
+        "<m>AT</m>), so it is highest at the left too.",
+        shape=Shape.SQUARE,
+    ),
+    _trial(
+        "Terminal-peak sawtooth",
+        "Rising slowly, dropping at once: the drop makes stiff oscillators ring the other way, so above <m>fT</m> ≈ 2 "
+        "the negative spectrum is 0.85–0.86 × the positive one. Tests like it for that: a part is loaded both ways.",
+        shape=Shape.TERMINAL_PEAK,
+    ),
+    _trial(
+        "Haversine",
+        "A smooth pulse: no corner, so stiff oscillators don't ring and the negative spectrum at the top is "
+        "nearly nothing. Its peak, 1.60 × at <m>fT</m> = 1.0, is close to the half-sine's.",
+        shape=Shape.HAVERSINE,
+    ),
+    _trial(
+        "Light damping, Q = 50",
+        "The half-sine at <m>Q</m> = 50: the spectrum hardly changes (1.74 × at the peak against 1.65 ×). A shock is over "
+        "before damping has time to act on the primary peak, unlike a steady sine, whose response grows with Q.",
+        q=50.0,
+    ),
+    _trial(
+        "A component on the last mass",
+        "The last mass's acceleration with the base given the half-sine: it rings at the chain's modes, and its "
+        "spectrum peaks there, 3.3 × the record's own peak at mode 1. A component tuned near the chain's mode "
+        "would be hit far harder than the record's peak suggests.",
+        shape=Shape.AT_A_MASS,
+    ),
+    _trial(
+        "Pyrotechnic transient",
+        "A burst of damped sines with a little noise: the spectrum peaks among its frequencies, at 4.5 × the "
+        "record's peak (<m>fT</m> ≈ 38). It ends at rest, with no net <m>Δv</m>, so the soft oscillators at the left feel only "
+        "their dampers' push: at <m>fT</m> = 0.02 the spectrum is 10⁻⁴ of the peak.",
+        shape=Shape.TRANSIENT,
+        noise=2.0,
+    ),
+    _trial(
+        "Zero shift",
+        "The same record with a 1 % offset, an accelerometer's zero shift: integrated over the record it is a "
+        "velocity change the shock didn't have, and the spectrum's low end climbs to the <m>2πfΔv</m> line, ten times "
+        "what it was at <m>fT</m> = 0.02. A measured spectrum whose low end follows that line is suspect.",
+        shape=Shape.TRANSIENT,
+        noise=2.0,
+        offset=1.0,
+    ),
+    _trial(
+        "Modes combined",
+        "The half-sine on the chain. Each mode is an oscillator at its own <m>f</m> and <m>ζ</m>, driven by <m>Γ</m> times the base, so "
+        "the SRS gives each mode's peak but not when it comes. On m4, exactly 9.14 g; ABS (their sum) 11 g, +20 %; "
+        "SRSS 6.62 g, −28 %; NRL 9.27 g, +1 %. The SRSS assumes the modes peak at unrelated times, but a shock sets "
+        "them all off at once: each one's part peaks within the first 0.3 s, a third of mode 1's period.",
+        tab=TAB_CHAIN,
+    ),
+    _trial(
+        "Four-way paper",
+        "The half-sine's spectrum as a pseudo-velocity, read against diagonals of constant displacement and "
+        "acceleration. At the left it tends to the base's <m>Δv = 2AT/π</m>, 6.24 m/s; at the right it falls along the "
+        "10 g line. Between, it says how far each oscillator's spring stretches: 4.6 m at the softest, the rattle "
+        "space a soft mount would need.",
+        tab=TAB_TRIPARTITE,
+    ),
+    _trial(
+        "Pulse shapes compared",
+        "The six pulses at the same peak and duration. The square has the most area, so it is highest at the left "
+        "(0.12 × at <m>fT</m> = 0.02) and, overshooting, near the top (1.86 ×). The terminal-peak sawtooth rises gently "
+        "and peaks at only 1.19 ×. Tick Same velocity change: the low ends meet, and the narrower pulses, now "
+        "taller, take the top: the initial-peak sawtooth reaches 2.33 ×, the square only 1.18 ×.",
+        tab=TAB_SHAPES,
+    ),
+    _trial(
+        "Damped sines to a spectrum",
+        "A test is specified by its spectrum: here 10 g above a 5 Hz knee, rising 6 dB an octave below it. 28 "
+        "damped sines, scaled round by round, meet it within ±3 dB over the band, though the record's own peak is "
+        "only 4.8 g: each oscillator rings up on the sine at its frequency. But each sine carries a net velocity, so "
+        "the record ends at 0.51 m/s, 6 m from where it began, which no shaker can follow.",
+        shape=Shape.SINES,
+    ),
+    _trial(
+        "Wavelets to a spectrum",
+        "The same target met by 28 wavelets, each <m>sin(ωt/N<sub>w</sub>) sin ωt</m> over <m>N<sub>w</sub></m> half-cycles, <m>N<sub>w</sub></m> odd: each starts and ends at "
+        "rest, so the record does too, within a micrometre, and a shaker can play it: the table moves at most "
+        "0.54 m and comes back.",
+        shape=Shape.WAVELETS,
+    ),
+)
+
+# At the prompt: the settings worked out from the chain, as a trial's are (the first trial's).
+OPENING = replace(TRIALS[0], name="", note="")
+
+NOTES_HTML = load_notes(
+    "shock",
+    figures=shock_figures.FIGURES,
+    trials="<ol>" + "".join(f"<li><b>{t.name}.</b> {maths.markup(t.note)}</li>" for t in TRIALS) + "</ol>",
+)
+
 
 # ------------------------------------------------------------------ practice problems
 # Each question's numbers are printed round, and its answer is worked from them as printed.
@@ -441,6 +450,7 @@ def _test_spec(rng: np.random.Generator) -> Question:
     most_dv = rounded(1.1 * dv, 2)
 
     def goal(t: ShockSetup):
+        assert t.duration is not None, "the page's state has its duration"
         pulse = Pulse(t.shape, t.peak, 1e-3 * t.duration)
         rec = record(pulse, sample_rate(pulse, fc))
         at = float(srs(rec, np.array([fc]), 1 / (2 * t.q)).maximax[0]) / G
@@ -595,7 +605,7 @@ class ShockPage(QtWidgets.QWidget):
 
         trials = QtWidgets.QGroupBox("Things to try")
         tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([name for name, _, _ in TRIALS])
+        self.trial = TrialCombo([t.name for t in TRIALS])
         self.trial.setToolTip(
             "<p>Pulses that show something about shock spectra, the duration set from the chain as it is now.</p>"
         )
@@ -793,33 +803,13 @@ class ShockPage(QtWidgets.QWidget):
         self.apply_trial()
 
     def apply_trial(self) -> None:
-        """Set the pulse the chosen trial asks for, its duration from the chain as it is; the seed goes back to 1
-        so the notes' numbers hold."""
-        if self.result is None or self.system is None:
-            return
+        """Set the pulse the chosen trial asks for, its duration from the chain as it is."""
         chosen = self.trial.chosen()
-        _, changes, note = TRIALS[chosen] if chosen is not None else ("", OPENING, "")
-        self._loading = True
-        self.shape.setCurrentIndex(self.shape.findData(changes.get("shape", Shape.HALF_SINE)))
-        self.peak.setValue(10.0)
-        self.duration.setValue(1e3 * duration_for(self.result))
-        self.knee.setValue(knee_for(self.result))
-        self.mass.setCurrentIndex(self.system.n - 1)
-        self.noise.setValue(100.0 * changes.get("noise", 0.0))
-        self.offset.setValue(100.0 * changes.get("offset", 0.0))
-        self.q.setValue(changes.get("q", DEFAULT_Q))
-        self.seed = 1
-        self._loading = False
-        self._pick_peak = True
-        self._show_controls()
-        self.trial_note.setText(maths.markup(note))
-        if "tab" in changes:
-            self.tabs.setCurrentWidget(getattr(self, changes["tab"]))
-        self._schedule(rerecord=True)
+        self._load(TRIALS[chosen] if chosen is not None else OPENING)
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then the
-        pulse and the spectrum's Q; the seed goes back to 1."""
+        pulse and the spectrum's Q."""
         self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = ShockSetup(**setup)
         system = t.system()
@@ -827,13 +817,18 @@ class ShockPage(QtWidgets.QWidget):
             self.system_requested.emit(system)
             if self.system is None or not _same_chain(self.system, system):
                 self.set_system(system)  # nobody passed it back: show it here alone
-        if self.system is None:
+        self._load(t)
+
+    def _load(self, t: ShockSetup) -> None:
+        """Set the boxes as `t` says, the duration and knee from the chain where it leaves them; the seed goes back
+        to 1 so the notes' numbers hold."""
+        if self.result is None or self.system is None:
             return
         self._loading = True
         self.shape.setCurrentIndex(self.shape.findData(t.shape))
         self.peak.setValue(t.peak)
-        self.duration.setValue(t.duration)
-        self.knee.setValue(t.knee)
+        self.duration.setValue(1e3 * duration_for(self.result) if t.duration is None else t.duration)
+        self.knee.setValue(knee_for(self.result) if t.knee is None else t.knee)
         self.mass.setCurrentIndex(t.mass % self.system.n)
         self.noise.setValue(t.noise)
         self.offset.setValue(t.offset)
@@ -842,26 +837,27 @@ class ShockPage(QtWidgets.QWidget):
         self._loading = False
         self._pick_peak = True
         self._show_controls()
-        self.trial_note.setText("")
-        self.tabs.setCurrentIndex(t.tab)
+        self.trial_note.setText(maths.markup(t.note))
+        if t.tab is not None:
+            self.tabs.setCurrentIndex(t.tab)
         self._schedule(rerecord=True)
 
     def practice_state(self) -> ShockSetup:
-        """The chain and the page's settings, as a setup: what a practice spec checks."""
+        """The chain and the page's settings, as a setup: what a practice spec checks and Defaults puts back."""
         s = self.system
         return ShockSetup(
-            tuple(float(v) for v in s.masses) if s is not None else (),
-            tuple(float(v) for v in s.stiffness) if s is not None else (),
-            tuple(float(v) for v in s.damping) if s is not None else (),
-            self.shape.currentData(),
-            self.peak.value(),
-            self.duration.value(),
-            self.knee.value(),
-            self.mass.currentIndex(),
-            self.noise.value(),
-            self.offset.value(),
-            self.q.value(),
-            self.tabs.currentIndex(),
+            masses=tuple(float(v) for v in s.masses) if s is not None else (),
+            springs=tuple(float(v) for v in s.stiffness) if s is not None else (),
+            dampers=tuple(float(v) for v in s.damping) if s is not None else (),
+            shape=self.shape.currentData(),
+            peak=self.peak.value(),
+            duration=self.duration.value(),
+            knee=self.knee.value(),
+            mass=self.mass.currentIndex(),
+            noise=self.noise.value(),
+            offset=self.offset.value(),
+            q=self.q.value(),
+            tab=self.tabs.currentIndex(),
         )
 
     def pulse(self) -> Pulse:

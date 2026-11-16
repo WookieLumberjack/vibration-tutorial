@@ -68,7 +68,7 @@ def test_uniform_errors_leave_the_shapes():
 def test_the_trials_notes():
     from vib_tutorial.gui.model_updating import TRIALS
 
-    note = {name: text for name, _, text in TRIALS}
+    note = {t.name: t.note for t in TRIALS}
     r = modal_analysis(CHAIN)
 
     def shifts(e: Errors) -> list[float]:
@@ -154,7 +154,7 @@ def test_the_update_trials_notes():
     from vib_tutorial.core.model_updating import Kind, Residuals, parameters, update
     from vib_tutorial.gui.model_updating import DEFAULT_UPDATE, TRIALS
 
-    note = {name: text for name, _, text in TRIALS}
+    note = {t.name: t.note for t in TRIALS}
     hammer = measure(CHAIN, Source.HAMMER, ALL, seed=1)
     exact = measure(CHAIN, Source.EXACT, ALL, seed=1)
     wrong = errors(stiffness=(2, 1.3))
