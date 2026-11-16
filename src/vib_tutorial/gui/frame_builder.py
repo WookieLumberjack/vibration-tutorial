@@ -45,7 +45,7 @@ from ..core.frame import (
 )
 from ..core.frame_response import LOAD_KINDS, Formulations, Load, LoadKind, Responses, formulations, responses
 from ..core.practice import number
-from . import frame_figures, weak
+from . import frame_figures, plot_patches, weak
 from .challenge import ChallengeBox
 from .frame_builder_canvas import NAN2, TOOL_HINTS, TOOLS, FrameCanvas, Tool, _segments
 from .frame_builder_trials import (
@@ -530,6 +530,7 @@ class FramePage(QtWidgets.QWidget):
         self.frf_legend = add_legend(self.frf_mag, offset=(-10, 10))
         self.playhead = pg.InfiniteLine(angle=90)
         self.time_plot.addItem(self.playhead, ignoreBounds=True)
+        plot_patches.hold_still(self.time_plot)  # the playhead moves over still curves (16 ms a frame → 0.5)
         self.drive_line = pg.InfiniteLine(angle=90)
         self.frf_mag.addItem(self.drive_line, ignoreBounds=True)
         self.curves = {name: (p.plot(), p.plot()) for name, p in (("mag", self.frf_mag), ("phase", self.frf_phase))}

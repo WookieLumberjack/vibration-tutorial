@@ -24,10 +24,11 @@ from __future__ import annotations
 
 from PySide6 import QtCore, QtWidgets
 
+from . import plot_patches
 from .drag import DragLine
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
-from .lesson import RunButton, combo
+from .lesson import LiveLabel, RunButton, combo
 
 SPEEDS = (("1×", 1.0), ("½×", 0.5), ("¼×", 0.25), ("⅒×", 0.1))
 SPEED_TIP = (
@@ -53,7 +54,7 @@ class Playback(QtCore.QObject):
         self.speed.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents)  # short items
         self.speed.setCurrentIndex(next(i for i, (_, s) in enumerate(SPEEDS) if s == speed))
         self.speed.setAccessibleName("Playback speed")
-        self.clock = QtWidgets.QLabel()
+        self.clock = LiveLabel()  # rewritten every frame: no layout pass each time
         self.clock.setAccessibleName("Time")
         self.cursors: list[DragLine] = []
         self.loop = FrameLoop(page, name, self._tick, self._runs, self._sim_t)
@@ -76,6 +77,7 @@ class Playback(QtCore.QObject):
         """A time cursor on `plot` that follows `t`, and scrubs it when dragged."""
         line = DragLine(CURSOR_TIP, bounds=(0.0, self.span), role="strong")
         plot.addItem(line, ignoreBounds=True)
+        plot_patches.hold_still(plot)  # the cursor moves over still curves: each one drawn from its pixmap
         line.dragged.connect(self.seek)
         line.set_value(self.t)
         self.cursors.append(line)
