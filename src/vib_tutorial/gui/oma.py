@@ -579,7 +579,7 @@ class OmaPage(QtWidgets.QWidget):
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for box in (test, daq, proc, trials):
+        for box in (trials, test, daq, proc):  # Things to try first, as on every page
             lv.addWidget(box)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
