@@ -54,6 +54,7 @@ from ..core.torsional_startup import (
     crossings,
 )
 from . import torsional_figures
+from .drag import DragLine
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import RunButton, plot
@@ -330,6 +331,11 @@ INTERFERENCE_TIP = (
     "a standard asks to check). Where an order crosses a mode is a torsional critical speed; filled red "
     "inside the band round the running speed.</p>"
 )
+SPEED_LINE_TIP = (
+    "<p>The running speed. Drag it along the diagram to run the train faster or slower: the band of ±10 % "
+    "round it, the Running speed box and the response follow, and an order crossing a mode inside the band "
+    "turns red when you let go.</p>"
+)
 RESPONSE_TIP = (
     "<p>The steady dynamic torque in the chosen link (a mesh: its force times the near gear's base radius), "
     "the amplitude of each order on its own and their sum (the peak when they line up), against the motor's "
@@ -405,6 +411,11 @@ class TorsionalPage(QtWidgets.QWidget):
         self.interference = plot("Frequency", "Hz", "Motor speed", "rpm", log_ready=True)
         self.interference.setToolTip(INTERFERENCE_TIP)
         plot_height(self.interference, 220)
+        self.speed_line = DragLine(SPEED_LINE_TIP, bounds=(1.0, 3600.0))
+        self.speed_line.dragged.connect(self._on_speed_dragged)
+        self.speed_line.released.connect(self._on_speed_released)
+        self._dragging = False
+        self._interference_band: pg.LinearRegionItem | None = None
         self.readout = QtWidgets.QLabel()
         self.readout.setWordWrap(True)
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
@@ -645,11 +656,24 @@ class TorsionalPage(QtWidgets.QWidget):
         if self._loading:
             return
         self._to_custom()
-        self.redraw()
+        if self._dragging:  # the diagram stays (redrawing it would drop the line from under the pointer)
+            self._place_band()
+            self._draw_response()
+        else:
+            self.redraw()
+
+    def _on_speed_dragged(self, rpm: float) -> None:
+        self._dragging = True
+        self.operating.setValue(rpm)
+
+    def _on_speed_released(self, _rpm: float) -> None:
+        self._dragging = False
+        self.redraw()  # the criticals in the band, red
 
     # ------------------------------------------------------------- start-up
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
+        self.speed_line.apply_theme()
         self.redraw()
         self.startup_view.apply_theme()
 
@@ -669,6 +693,14 @@ class TorsionalPage(QtWidgets.QWidget):
         for line in band.lines:
             line.setPen(pg.mkPen(None))
         return band
+
+    def _place_band(self) -> None:
+        """The interference diagram's band round the running speed, where it is now."""
+        if self._interference_band is None:
+            return
+        log = self.speed_line.log
+        lo, hi = (math.log10(v) if log else v for v in self._band())
+        self._interference_band.setRegion((lo, hi))
 
     def _draw_interference(self) -> None:
         p = self.interference
@@ -693,18 +725,15 @@ class TorsionalPage(QtWidgets.QWidget):
             doesn't map itself (text, lines)."""
             return (math.log10(x), math.log10(y)) if log else (x, y)
 
-        lo, hi = self._band()
-        band = pg.LinearRegionItem((at(lo, 1)[0], at(hi, 1)[0]), movable=False, brush=pg.mkBrush(*colors.band_shade))
+        band = pg.LinearRegionItem((0.0, 1.0), movable=False, brush=pg.mkBrush(*colors.band_shade))
         for line in band.lines:
             line.setPen(pg.mkPen(None))
         p.addItem(band)
-        p.addItem(
-            pg.InfiniteLine(
-                at(self.operating.value(), 1)[0],
-                angle=90,
-                pen=pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine),
-            )
-        )
+        self._interference_band = band
+        self.speed_line.set_scale(log, (max(1.0, x_lo), top))  # first: the band reads its scale
+        self._place_band()
+        self.speed_line.set_value(self.operating.value())
+        p.addItem(self.speed_line)
         n_sources = len(sources(t))  # order_lines puts them first
         for j, (label, order) in enumerate(lines):
             own = j < n_sources
@@ -750,6 +779,7 @@ class TorsionalPage(QtWidgets.QWidget):
             text = pg.TextItem(f"Mode {j + 1}, {f:.4g} Hz", color=colors.strong, anchor=(0, 1))
             text.setPos(*at(max(x_lo, 1e-9), f))
             p.addItem(text)
+        lo, hi = self._band()
         inside = [c for c in crits if lo <= c.rpm <= hi]
         outside = [c for c in crits if not lo <= c.rpm <= hi and c.rpm >= x_lo]
         if outside:

@@ -39,11 +39,20 @@ def drag(view: QtWidgets.QGraphicsView, start: QtCore.QPointF, end: QtCore.QPoin
         QtWidgets.QApplication.sendEvent(vp, ev)
         app.processEvents()
 
-    send(QtCore.QEvent.Type.MouseButtonPress, start, Left, Left)
-    for k in range(1, steps + 1):
-        f = k / steps
-        send(QtCore.QEvent.Type.MouseMove, start + (end - start) * f, NoButton, Left)
-    send(QtCore.QEvent.Type.MouseButtonRelease, end, Left, NoButton)
+    import pyqtgraph as pg
+
+    # pyqtgraph drops moves closer together than its rate limit: these come at once, and only the first (if it
+    # cleared the 5 px a drag needs) and the release would count. A hand's moves are spread out: let all through.
+    limit = pg.getConfigOption("mouseRateLimit")
+    pg.setConfigOption("mouseRateLimit", 0)
+    try:
+        send(QtCore.QEvent.Type.MouseButtonPress, start, Left, Left)
+        for k in range(1, steps + 1):
+            f = k / steps
+            send(QtCore.QEvent.Type.MouseMove, start + (end - start) * f, NoButton, Left)
+        send(QtCore.QEvent.Type.MouseButtonRelease, end, Left, NoButton)
+    finally:
+        pg.setConfigOption("mouseRateLimit", limit)
 
 
 def scene_at(plot, x: float, y: float) -> QtCore.QPointF:
@@ -320,3 +329,71 @@ def test_drawing_the_energy_methods_trial_shape_keeps_rayleigh_above_f1(main_win
     assert p.shape.currentText() != DRAWN
     p.load_setup({k: v for k, v in vars(state).items() if k not in ("name", "note")})
     assert p.shape.currentText() == DRAWN and np.allclose(p.drawn, state.drawn)
+
+
+@pytest.mark.parametrize("log", [False, True])
+def test_dragging_the_torsional_speed_line_sets_the_running_speed(main_window, app, log):
+    p = main_window.torsional_page
+    _show(main_window, p, app)
+    p.log_scales.setChecked(log)
+    app.processEvents()
+    line = p.speed_line
+    assert line.data_value() == pytest.approx(p.operating.value()) and line.getViewBox() is not None
+    lo, hi = p._interference_band.getRegion()  # the band drawn on the scale just switched to
+    edges = [10**v for v in (lo, hi)] if log else [lo, hi]
+    assert edges == pytest.approx([0.9 * p.operating.value(), 1.1 * p.operating.value()], rel=1e-6)
+    (_, _), (y0, y1) = p.interference.getPlotItem().getViewBox().viewRange()
+    y = 0.5 * (y0 + y1)
+    target = 2000.0
+    end = math.log10(target) if log else target
+    drag(p.interference, scene_at(p.interference, line.value(), y), scene_at(p.interference, end, y), app)
+    assert p.operating.value() == pytest.approx(target, rel=0.02)
+    lo, hi = p._interference_band.getRegion()
+    edges = [10**v for v in (lo, hi)] if log else [lo, hi]
+    assert edges == pytest.approx([0.9 * p.operating.value(), 1.1 * p.operating.value()], rel=1e-6)
+    assert line.getViewBox() is not None and line.data_value() == pytest.approx(p.operating.value())
+
+
+def test_dragging_the_random_band_edges_sets_the_band(main_window, app):
+    p = main_window.random_page
+    _show(main_window, p, app)
+    p.recompute()
+    app.processEvents()
+    lo_line, hi_line = p.band_lines
+    hi0 = p.f_hi.value()
+    assert hi_line.data_value() == pytest.approx(hi0) and hi_line.getViewBox() is not None
+    (_, _), (y0, y1) = p.input_plot.getPlotItem().getViewBox().viewRange()
+    y = 0.5 * (y0 + y1)
+    target = 0.5 * hi0
+    drag(p.input_plot, scene_at(p.input_plot, hi_line.value(), y), scene_at(p.input_plot, math.log10(target), y), app)
+    assert p.f_hi.value() == pytest.approx(target, rel=0.03)
+    p.worker.wait()
+    app.processEvents()
+    assert p.record.input.f_hi == p.f_hi.value()  # made again with the new band, once let go
+    assert hi_line.getViewBox() is not None and hi_line.data_value() == pytest.approx(p.f_hi.value())
+    # The bottom edge: the band from 0 starts where the plot does; dragged in, it starts there.
+    lo = 0.3 * p.f_hi.value()
+    drag(p.input_plot, scene_at(p.input_plot, lo_line.value(), y), scene_at(p.input_plot, math.log10(lo), y), app)
+    assert p.f_lo.value() == pytest.approx(lo, rel=0.03) and p.f_lo.value() < p.f_hi.value()
+    p.worker.wait()
+    assert p.record.input.f_lo == p.f_lo.value()
+
+
+@pytest.mark.parametrize("which", [0, 2])  # the frequency map (the Run-up tab) and the order tracks (Orders)
+def test_dragging_the_diagnostics_speed_line_sets_the_shaft_speed(main_window, app, which):
+    from vib_tutorial.gui.diagnostics import TAB_ORDERS, TAB_RUNUP
+
+    p = main_window.diagnostics_page
+    _show(main_window, p, app)
+    p.tabs.setCurrentIndex(TAB_RUNUP if which == 0 else TAB_ORDERS)
+    for _ in range(5):
+        app.processEvents()
+    plot = (p.freq_map, p.order_map_plot, p.orders_plot)[which]
+    line = p.speed_lines[which]
+    assert line.data_value() == pytest.approx(p.rpm.value())
+    (_, _), (y0, y1) = plot.getPlotItem().getViewBox().viewRange()
+    y = 0.5 * (y0 + y1)
+    drag(plot, scene_at(plot, line.value(), y), scene_at(plot, 3000.0, y), app)
+    assert p.rpm.value() == pytest.approx(3000.0, rel=0.02)
+    assert p.mesh_lines[0].value() == pytest.approx(p.machine.mesh_hz)  # the record at the new speed
+    assert all(other.data_value() == pytest.approx(p.rpm.value()) for other in p.speed_lines)
