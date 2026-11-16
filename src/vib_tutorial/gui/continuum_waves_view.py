@@ -16,13 +16,13 @@ import math
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtWidgets
 
 from ..core.continuum import PRESETS, SCHEMES, Continuum, Kind, Scheme
 from ..core.continuum_waves import PLAYBACK, WaveRun, Waves, end_reflection, step_coefficients
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import RunButton, plot
+from .lesson import LiveLabel, RunButton, plot
 from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
@@ -117,9 +117,7 @@ class WavesView(QtWidgets.QWidget):
             self.playback.addItem(f"{x:g}×", x)
         self.playback.setCurrentIndex(PLAYBACK.index(1.0))
         self.playback.setToolTip(TIPS["playback"])
-        self.wave_status = QtWidgets.QLabel()
-        self.wave_status.setWordWrap(True)
-        self.wave_status.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        self.wave_status = LiveLabel(wrap=True)  # rewritten every frame: no layout pass each time
         wv = QtWidgets.QVBoxLayout(self)
         wv.addWidget(self.waves_plot, 1)
         row = FlowLayout()

@@ -352,3 +352,66 @@ def test_a_goals_links_set_up_its_trial_and_ask_its_problem(main_window, app):
     browser.anchorClicked.emit(Core.QUrl("practice:pendulum_page#large-swing"))
     pw = w.practice_window
     assert pw is not None and pw.problem is not None and pw.problem.key == "large-swing"
+
+
+def test_a_cursors_plot_draws_its_curves_from_pixmaps(app):
+    """The cursor moves over still curves: `plot_patches.hold_still` caches them, those plotted later too, so a
+    frame repaints a strip of each pixmap rather than every curve's whole path (#316 E2)."""
+    import pyqtgraph as pg
+
+    from vib_tutorial.gui import close_graphics, plot_patches
+    from vib_tutorial.gui.lesson import plot
+    from vib_tutorial.gui.playback import Playback
+
+    plot_patches.install()  # as make_app does
+    cached = QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache
+    page = QtWidgets.QWidget()
+    layout = QtWidgets.QVBoxLayout(page)
+    held, free = plot("x", "m", "t", "s"), plot("y", "m", "t", "s")
+    before = held.plot([0.0, 1.0], [0.0, 1.0])
+    pb = Playback(page, "test")
+    layout.addWidget(held)
+    layout.addWidget(free)
+    pb.add_cursor(held)
+    held.clear()  # a redraw: the curves plotted again
+    after, curve = held.plot([0.0, 1.0], [1.0, 0.0]), pg.PlotCurveItem([0.0, 1.0], [0.5, 0.5])
+    held.addItem(curve)
+    assert before.curve.cacheMode() == cached and after.curve.cacheMode() == cached and curve.cacheMode() == cached
+    assert free.plot([0.0, 1.0], [0.0, 1.0]).curve.cacheMode() == QtWidgets.QGraphicsItem.CacheMode.NoCache
+    close_graphics(page)
+
+
+@pytest.mark.parametrize("wrap", [False, True])
+def test_a_live_label_lays_the_page_out_again_only_when_it_needs_more_room(app, wrap):
+    """`lesson.LiveLabel`: a frame's new text repaints the label, and asks for a layout pass (a QLabel's would,
+    every frame) only when it needs another line, or a line a wider box."""
+    from vib_tutorial.gui.lesson import LiveLabel
+
+    page = QtWidgets.QWidget()
+    layout = QtWidgets.QVBoxLayout(page)
+    label = LiveLabel("t = 0.00 s", wrap=wrap)
+    layout.addWidget(label)
+    layout.addStretch()
+    page.resize(200 if wrap else 400, 300)
+    page.show()
+    app.processEvents()
+    asked: list[int] = []
+
+    class Watch(QtCore.QObject):
+        def eventFilter(self, obj, event):
+            if event.type() == QtCore.QEvent.Type.LayoutRequest:
+                asked.append(1)
+            return False
+
+    watch = Watch()
+    page.installEventFilter(watch)
+    for t in (0.25, 0.5, 0.75):
+        label.setText(f"t = {t:.2f} s")
+        app.processEvents()
+    assert asked == [] and label.text() == "t = 0.75 s" and label.accessibleDescription() == "t = 0.75 s"
+    label.setText("t = 0.75 s, and a much longer status that needs " + "more room " * 8)
+    app.processEvents()
+    assert asked, "more room: laid out again"
+    assert label.height() >= label.heightForWidth(label.width()) if wrap else label.width() >= label.sizeHint().width()
+    page.removeEventFilter(watch)
+    page.close()

@@ -1,4 +1,4 @@
-"""Two changes to how every pyqtgraph plot draws, installed once by make_app (`install`).
+"""Changes to how every pyqtgraph plot draws, installed once by make_app (`install`), and `hold_still`.
 
 Grids. pyqtgraph draws a plot's grid as its axes' ticks stretched across the plot, in the
 foreground colour at a low alpha, and above the data (the axes sit at z 0.5, over the ViewBox).
@@ -16,13 +16,21 @@ Scale. The Projector theme draws every line wider and every marker larger (`Them
 `marker_scale`): `mkPen` (pyqtgraph's own, which its items call too) scales the width it makes, and a
 scatter's `setSize` the size it's given (its `addPoints` and `setData` set sizes through it). Pens are made when a page draws or takes a
 theme (`apply_theme`), so a theme change rescales them; at 1 nothing changes.
+
+Still curves (`hold_still(plot)`). Something moving over a plot (a time cursor, a playhead, a body's marker)
+dirties the strip it passes, and Qt then paints every curve under it again: the whole path, stroked and only
+then clipped. The Single oscillator's three 3,000-point responses took 37 ms a frame that way while they played,
+the Frame builder's two dashed ones 16 ms. A held plot's curves (those it has, and those added later: `plot()`,
+`addItem`) keep a pixmap of themselves (`DeviceCoordinateCache`), and the strip is copied from it: 2 ms. Hold
+only a plot whose curves stay put while something moves: a curve redrawn every frame redraws its pixmap too (the
+Simulation page's strip chart, cached, went 4.8 → 7.9 ms). `Playback.add_cursor` holds its plot.
 """
 
 from __future__ import annotations
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6 import QtCore, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import style
 
@@ -96,6 +104,7 @@ _generate_draw_specs = pg.AxisItem.generateDrawSpecs
 _set_grid_original = pg.AxisItem.setGrid
 _resize_original = pg.LabelItem.resizeEvent
 _update_min_original = pg.LabelItem.updateMin
+_plot_add_item = pg.PlotItem.addItem
 
 
 _mk_pen = pg.functions.mkPen
@@ -140,6 +149,26 @@ def _scaled_set_size(self, size, *args, **kargs):
     return _set_size(self, _scaled(size), *args, **kargs)
 
 
+def _hold(item) -> None:
+    curve = item.curve if isinstance(item, pg.PlotDataItem) else item
+    if isinstance(curve, pg.PlotCurveItem):
+        curve.setCacheMode(QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache)
+
+
+def hold_still(plot) -> None:
+    """Draw `plot`'s curves from a pixmap of each (see the module's docstring), those added later too."""
+    item = plot.getPlotItem() if isinstance(plot, pg.PlotWidget) else plot
+    item.held_still = True
+    for child in item.items:
+        _hold(child)
+
+
+def _add_item(self, item, *args, **kargs) -> None:
+    _plot_add_item(self, item, *args, **kargs)
+    if getattr(self, "held_still", False):
+        _hold(item)
+
+
 def install() -> None:
     """Grids opaque and under the data, titles that wrap, pens and markers to the theme's scale; see the module's
     docstring."""
@@ -150,3 +179,4 @@ def install() -> None:
     pg.AxisItem.setGrid = _set_grid
     pg.LabelItem.resizeEvent = _wrap_to_width
     pg.LabelItem.updateMin = _update_min
+    pg.PlotItem.addItem = _add_item
