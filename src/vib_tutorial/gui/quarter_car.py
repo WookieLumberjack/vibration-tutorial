@@ -49,6 +49,8 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .playback import Playback
+from .quarter_car_view import QuarterCarView
 from .style import colors
 from .theming import add_legend
 
@@ -437,6 +439,10 @@ class QuarterCarPage(QtWidgets.QWidget):
             self.damper_plot.addItem(item)
         self.damper_note = note_label()
 
+        self.car_view = QuarterCarView()
+        self.car_view.setMinimumHeight(150)
+        self.playback = Playback(self, "Quarter-car drive", speed=0.5)
+        self.playback.moved.connect(self.car_view.set_time)
         self.road_plot = plot("Road height", "m", "Time", "s", height=110)
         self.acc_plot = plot("Body acceleration", "m/s²", "Time", "s", height=150)
         self.acc_plot.setXLink(self.road_plot)
@@ -445,13 +451,17 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.acc_plot.addItem(self.acc_item)
         for p in (self.road_plot, self.acc_plot):
             p.setToolTip(DRIVE_TIP)
+            self.playback.add_cursor(p)
         self.drive_note = note_label()
 
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(column(self.trade_plot, self.trade_note, stretch=False), "Trade-off")
         self.tabs.addTab(column(self.damper_plot, self.damper_note, stretch=False), "Damper")
-        self.tabs.addTab(column(self.road_plot, self.acc_plot, self.drive_note, stretch=False), "Drive")
+        self.tabs.addTab(
+            column(self.car_view, self.playback.bar(), self.road_plot, self.acc_plot, self.drive_note, stretch=False),
+            "Drive",
+        )
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(self._draw_tab)
 
@@ -501,6 +511,8 @@ class QuarterCarPage(QtWidgets.QWidget):
             self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self.redraw()
+        if t.tab == TAB_DRIVE:
+            self.playback.play()  # the car driven from the start
 
     @property
     def car(self) -> Car:
@@ -536,6 +548,8 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.damper_now.apply_theme()
         self.road_item.setPen(pg.mkPen(c.grey, width=1.5))
         self.acc_item.setPen(pg.mkPen(c.mass[0], width=1))
+        self.car_view.apply_theme()
+        self.playback.apply_theme()
         self.redraw()
 
     def redraw(self) -> None:
@@ -626,6 +640,8 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.road_item.setData(d.t[:n], d.road[:n])
         self.acc_item.setData(d.t[:n], d.body[:n])
         self.road_plot.setXRange(0.0, WINDOW_S, padding=0)
+        self.car_view.set_record(d.t[:n], d.road[:n], d.body_x[:n], d.wheel_x[:n], road.speed)
+        self.playback.set_span(WINDOW_S)
         skip = int(2.0 / (d.t[1] - d.t[0]))  # let the start settle
         rms = {
             Output.BODY: float(np.std(d.body[skip:])),
