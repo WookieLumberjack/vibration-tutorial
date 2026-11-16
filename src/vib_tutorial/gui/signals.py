@@ -52,6 +52,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
+from .plots import decimate
 from .style import colors
 from .theming import add_legend
 
@@ -569,6 +570,7 @@ class SignalsPage(QtWidgets.QWidget):
 
         # --- centre
         self.time_plot = plot("Signal", "m/s²", "Time", "s", height=150)
+        decimate(self.time_plot)  # up to 20,000 samples
         self.time_plot.setToolTip(TIME_TIP)
         self.time_plot.setMouseEnabled(x=True, y=False)
         self.analog_item = pg.PlotDataItem()

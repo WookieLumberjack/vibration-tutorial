@@ -17,6 +17,7 @@ from .animation import ChainView
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
 from .panels import spin
+from .plots import decimate
 from .style import colors
 from .theming import add_legend, mute
 
@@ -258,8 +259,7 @@ class CMSTimeView(CMSRunView):
         # (Qt's fast path): wide pens made each frame ~90 ms once the window filled,
         # several times that on a Retina display. See TimeHistoryPlot.
         for p in (self.x_plot, self.e_plot):
-            p.setClipToView(True)
-            p.setDownsampling(auto=True, mode="peak")
+            decimate(p)
             p.setMouseEnabled(x=False, y=False)
             p.hideButtons()
         self.x_curves: list[pg.PlotDataItem] = []  # per plotted mass: full, reduced

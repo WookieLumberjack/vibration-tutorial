@@ -54,6 +54,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .playback import Playback
+from .plots import decimate
 from .self_excited_view import Body, SectionView
 from .style import colors
 from .theming import add_legend
@@ -554,11 +555,9 @@ class SelfExcitedPage(QtWidgets.QWidget):
         add_legend(self.top_plot.getPlotItem(), offset=(-10, 10))
         add_legend(self.bottom_plot.getPlotItem(), offset=(-10, 10))
         self.top_items = [pg.PlotDataItem(), pg.PlotDataItem()]
-        # Up to 30,000 steps: drawn as each pixel column's min and max (set on the plot: its addItem gives each item
-        # the plot's own), and without antialiasing where they're dense (`_dense`): antialiased, a swing a pixel or
-        # two wide took Qt 0.4–0.85 s a paint.
-        self.top_plot.setDownsampling(auto=True, mode="peak")
-        self.top_plot.setClipToView(True)
+        # Up to 30,000 steps: decimated, and without antialiasing where they're dense (`_dense`): antialiased, a
+        # swing a pixel or two wide took Qt 0.4–0.85 s a paint.
+        decimate(self.top_plot)
         self.bottom_items = [pg.PlotDataItem(), pg.PlotDataItem()]
         self.top_line = pg.InfiniteLine(angle=90)
         self.bottom_line = pg.InfiniteLine(angle=90)

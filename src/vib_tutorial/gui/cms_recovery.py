@@ -19,6 +19,7 @@ from ..core.back_expansion import RECOVERIES, RECOVERY_NAMES, Recovery, Recovery
 from .animation import ChainView
 from .cms_time import MIN_SPAN, CMSRunView, SampleBuffer, _fmt
 from .layouts import FlowLayout, group
+from .plots import decimate
 from .style import colors
 from .theming import add_legend, mute
 
@@ -96,8 +97,7 @@ class BackExpansionView(CMSRunView):
         # No grid and 1 px pens: these redraw every frame (see CMSTimeView._build).
         for p in (self.x_plot, self.e_plot, self.f_plot):
             add_legend(p, offset=(5, 2), colCount=4)  # one row along the top, over the headroom
-            p.setClipToView(True)
-            p.setDownsampling(auto=True, mode="peak")
+            decimate(p)
             p.setMouseEnabled(x=False, y=False)
             p.hideButtons()
             if p is not self.x_plot:
