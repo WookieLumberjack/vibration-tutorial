@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ..view_models.text import fmt
 from .style import colors
 
 # Below this the motion has decayed to float noise, so shares are meaningless
@@ -47,11 +48,7 @@ BY_MODE_TIP = (
 
 
 def fmt_energy(joules: float) -> str:
-    a = abs(joules)
-    for scale, unit in ((1.0, "J"), (1e-3, "mJ"), (1e-6, "µJ"), (1e-9, "nJ")):
-        if a >= scale:
-            return f"{joules / scale:.3g} {unit}"
-    return "0 J" if a < 1e-15 else f"{joules * 1e12:.3g} pJ"
+    return "0 J" if abs(joules) < 1e-15 else fmt(joules, "J", largest="", smallest="p")
 
 
 @dataclass

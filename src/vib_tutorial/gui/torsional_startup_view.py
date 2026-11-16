@@ -34,6 +34,7 @@ from ..core.torsional_startup import (
     running_torques,
     steady_speed,
 )
+from ..view_models.text import fmt
 from . import weak
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, form_layout, form_row, group, plot_height, show_in_stack
@@ -74,7 +75,7 @@ STARTUP_TIP = (
 
 
 def fmt_torque(t: float) -> str:
-    return f"{t / 1e3:.3g} kN·m" if abs(t) >= 1e3 else f"{t:.3g} N·m"
+    return fmt(t, "N·m", largest="k", smallest="")
 
 
 class StartUpView(QtWidgets.QWidget):

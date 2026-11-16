@@ -39,6 +39,7 @@ from ..core.rigid_mounts import (
     sweep,
     torque_roll_axis,
 )
+from ..view_models.text import fixed
 from . import mounts_figures
 from .frame_loop import FrameLoop
 from .layouts import form_layout
@@ -576,8 +577,7 @@ NOTES_HTML = load_notes("rigid_mounts", figures=mounts_figures.FIGURES, trials=t
 
 def _mm(value: float) -> str:
     """A length in m as mm to a tenth, without a −0."""
-    text = f"{1000 * value:.1f}"
-    return "0" if text in ("0.0", "-0.0") else text.removesuffix(".0")
+    return fixed(1000 * value, 1)
 
 
 def _rotate(points: np.ndarray, theta: np.ndarray) -> np.ndarray:

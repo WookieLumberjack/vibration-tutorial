@@ -246,3 +246,29 @@ def test_duffing_chart():
     assert "rest is stable" in duffing.chart_point(Duffing(pump=0.8, damping=4.0), at_fn).note  # lifted off it
     bare = duffing.chart_point(Duffing(stiffness=0.0, cubic=1e5), 2.0)
     assert bare.now.size == 0 and bare.note == duffing.NO_SPRING
+
+
+def test_numbers_print_one_way():
+    """`view_models/text.py` (#316 D8): figures with trailing zeros dropped unless asked, no −0, SI prefixes in
+    a range, and the pages' own formatters are calls to it."""
+    from vib_tutorial.gui.energy import fmt_energy
+    from vib_tutorial.gui.rotor_readouts import fmt_len
+    from vib_tutorial.gui.torsional_startup_view import fmt_torque
+    from vib_tutorial.view_models.duffing import fmt_length, sig3
+    from vib_tutorial.view_models.text import fixed, fmt, number, plain
+
+    assert number(2.5) == "2.5" and number(2.5, zeros=True) == "2.50" and number(-1e-9, 2) == "-1e-09"
+    assert number(-0.0001, 1) == "-0.0001" and number(float("inf")) == "∞" and number(float("nan")) == "–"
+    assert sig3(24.0) == "24.0" and sig3(8.8) == "8.80" and sig3(112.4) == "112"
+    assert fmt(0.0251, "m") == "25.1 mm" and fmt(0.0, "m") == "0 m" and fmt(9.996e-4, "m") == "1 mm"
+    assert fmt(1.234e7, "N/m", largest="G", smallest="µ") == "12.3 MN/m" and fmt(1.234e7, "N/m") == "1.23e+04 kN/m"
+    assert fmt(1e-10, "m") == "0.1 nm"  # past the smallest prefix: kept at it
+    assert fmt_length(0.024) == "24.0 mm" and fmt_length(2.0) == "2.00 m" and fmt_length(2500.0) == "2.50 km"
+    assert fmt_len(2.5e-5) == "25 µm" and fmt_torque(1500.0) == "1.5 kN·m" and fmt_torque(12.0) == "12 N·m"
+    assert fmt_energy(0.0) == "0 J" and fmt_energy(2e-12) == "2 pJ" and fmt_energy(3e-4) == "300 µJ"
+    assert (
+        plain(0.6612, "g", 4) == "0.6612 g"
+        and fixed(-0.04, 1) == "0"
+        and fixed(2.0, 1) == "2"
+        and fixed(2.25, 2) == "2.25"
+    )

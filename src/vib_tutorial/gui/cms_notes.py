@@ -16,6 +16,7 @@ from ..core import (
     substructure_damping,
 )
 from ..core.modal import TWO_PI
+from ..view_models.text import number
 from . import cms_figures
 from .lesson import trials_html
 from .links import load_notes
@@ -216,7 +217,7 @@ def fmt(v: float, scale: float) -> str:
     """Four significant figures; entries negligible relative to the matrix are shown as 0."""
     if abs(v) <= 1e-10 * scale:
         return "0"
-    return f"{v:.4g}"
+    return number(v, 4)
 
 
 def matrix_html(
