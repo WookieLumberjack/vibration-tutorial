@@ -1,4 +1,5 @@
-"""`gui/plot_export.py`: a plot's right-click menu copies or saves its data as CSV, or saves it as a PNG (#218 U3)."""
+"""`gui/plot_export.py`: a plot's right-click menu copies or saves its data as CSV, saves it as a PNG (#218 U3), or
+holds its curves to compare (#316 B6)."""
 
 from __future__ import annotations
 
@@ -47,6 +48,8 @@ def test_a_plots_curves_as_csv(app, monkeypatch):
         "Save data as CSV…": True,
         "Save image as PNG…": True,
         "Show all": True,
+        "Hold these curves": True,
+        "Clear held curves": False,
     }
     shown = []
     box = QtWidgets.QWidget()
@@ -77,3 +80,75 @@ def test_every_pages_plots_have_the_menu(main_window, app):
                 missing.append(f"{w.page_name(page)}: {type(view).__name__} {view.accessibleName()!r}")
     assert not missing, "\n".join(missing)
     assert plot_export.handles_mouse(w.frame_page.canvas), "a right-click edits the frame: no menu"
+
+
+def test_holding_a_plots_curves_keeps_grey_copies_behind_them(app):
+    p = plot("Amplitude", "m", "Frequency", "Hz", log_y=True)
+    p.addLegend()
+    live = p.plot([1.0, 2.0, 3.0], [0.1, 0.2, 0.3], name="mass 1")
+    dots = p.plot([1.5], [0.15], pen=None, symbol="o")
+    plot_export.hold(p)
+    held = plot_export.held(p)
+    assert len(held) == 2 and all(h.zValue() < live.zValue() for h in held)
+    assert held[0].line and not held[1].line and held[1].opts["symbol"] == "o"  # a marker held as markers
+    assert len(p.getPlotItem().legend.items) == 1  # no legend entry of their own
+    live.setData([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])  # the page redraws: the held copy stays as it was
+    assert list(held[0].yData) == [0.1, 0.2, 0.3]
+    names = next(csv.reader(io.StringIO(plot_export.csv_text(p))))
+    assert "Amplitude (m), held: mass 1" in names
+
+    p.clear()  # a page's redraw that clears the plot keeps them
+    assert len(plot_export.held(p)) == 2 and live not in p.getPlotItem().items
+    live, dots = p.plot([1.0, 2.0], [0.5, 0.6], name="mass 1"), p.plot([1.5], [0.15], pen=None, symbol="o")
+    plot_export.hold(p)  # holding again adds the live curves, never the held ones
+    assert len(plot_export.held(p)) == 4
+    labels = {a.text(): a.isEnabled() for a in plot_export.menu(p).actions()}
+    assert labels["Hold these curves"] and labels["Clear held curves"]
+    plot_export.clear_held(p)
+    assert not plot_export.held(p) and live in p.getPlotItem().items and dots in p.getPlotItem().items
+    assert not {a.text(): a.isEnabled() for a in plot_export.menu(p).actions()}["Clear held curves"]
+
+
+@pytest.mark.parametrize(
+    "name", ["isolation_page", "quarter_car_page", "damping_page", "signals_page", "continuum_page"]
+)
+def test_held_curves_stay_as_the_page_redraws_and_defaults_clears_them(main_window, app, name):
+    """The audit's pages (#316 B6): hold every plot after one trial, pick another, and the held curves are still
+    there to compare against; Defaults takes them off."""
+    w = main_window
+    page = getattr(w, name)
+    w.pages.setCurrentWidget(page)
+
+    def trial(i: int) -> None:  # from code (a prediction isn't asked), or the Continuum's preset
+        if hasattr(page, "load_trial"):
+            page.load_trial(i)
+        else:
+            from vib_tutorial.gui.continuum import PRESETS
+
+            page.load_preset(PRESETS[i].name)
+
+    trial(0)
+    for _ in range(3):
+        app.processEvents()
+    views = [v for v in page.findChildren(pg.GraphicsView) if v.property(plot_export.MENU)]
+    for v in views:
+        plot_export.hold(v)
+    before = {v: [(h, np.array(h.yData)) for h in plot_export.held(v)] for v in views}
+    assert sum(len(b) for b in before.values()) > 0
+    trial(1)
+    for _ in range(3):
+        app.processEvents()
+    changed = False
+    for v in views:
+        for h, y in before[v]:
+            assert h in plot_export.held(v) and np.array_equal(np.array(h.yData), y, equal_nan=True)
+        for item in plot_export.plots(v):
+            for curve in plot_export._live(item):
+                if not any(
+                    len(h.yData) == len(curve.yData) and np.allclose(h.yData, curve.yData, equal_nan=True)
+                    for h, _ in before[v]
+                ):
+                    changed = True
+    assert changed  # the trial moved a curve off its held copy
+    w.restore_defaults()
+    assert not any(plot_export.held(v) for v in views)

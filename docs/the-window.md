@@ -78,8 +78,10 @@ as in the Practice window. *Start over* sets it up again, *New numbers* asks it 
 Right-click a plot for its menu: **Copy data as CSV** puts its curves on the clipboard, to paste into a
 spreadsheet; **Save data as CSV…** writes them to a file, an x and a y column for each curve, named after
 the plot's axes and the curve's legend; **Save image as PNG…** saves the plot as it shows; **Show all**
-fits the plot to its data again after a zoom. (The frame and rotor builders' canvases keep their own
-right-click, which edits them.)
+fits the plot to its data again after a zoom. **Hold these curves** keeps a grey dashed copy of what the plot
+shows behind it: change a control and compare the new curves with the held ones (hold again to add more).
+**Clear held curves** takes them off, as *Defaults* does. (The frame and rotor builders' canvases keep their
+own right-click, which edits them.)
 
 A line with a ◆ grip, or a dot that grows under the mouse, can be dragged: the drive's frequency on the
 Single oscillator's Bode plot, the running speed on Vibration isolation's transmissibility, the damper on

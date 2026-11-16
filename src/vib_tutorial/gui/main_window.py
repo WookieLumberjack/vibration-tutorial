@@ -28,7 +28,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import accessible, display_size, frame_stats, links, maths, notes_view, theming, weak
+from . import accessible, display_size, frame_stats, links, maths, notes_view, plot_export, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .challenge import ChallengeBox
@@ -872,6 +872,7 @@ class MainWindow(QtWidgets.QMainWindow):
             box.show_note("")
         for challenge in page.findChildren(ChallengeBox):
             challenge.clear()
+        plot_export.clear_all_held(page)
         if page is self.sim_page:
             self.trial_note.setText("")
 
@@ -1096,6 +1097,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for page in self._built.values():
             assert isinstance(page, Themed), "every page follows the theme"
             page.apply_theme()
+        plot_export.restyle(self)
         for window in (self.theory_window, self.practice_window):
             if window is not None:
                 window.apply_theme()
