@@ -5,7 +5,6 @@
 The pages in the order the app's tabs take them.
 
 - [Deriving the equations](#deriving-the-equations): free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum
-- [3D rigid body](#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 - [Simulation & modal analysis](#simulation--modal-analysis): one mass, then a chain of them: modes, damping, energy, forcing, absorbers, friction
 - [Energy methods](#energy-methods): Rayleigh, Dunkerley, Rayleigh–Ritz and Holzer: frequencies from the energies, and how good they are
 - [FRF matrix](#frf-matrix): every receptance H<sub>jk</sub>, and how the modes add up to it
@@ -13,6 +12,7 @@ The pages in the order the app's tabs take them.
 - [Continuous systems](#continuous-systems): a string, a bar or a beam cut into a chain: which of its modes to trust
 - [Beams & plates](#beams--plates): Timoshenko's thick beam, a plate's modes and nodal lines, and modal density
 - [Numerical integration](#numerical-integration): central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping
+- [3D rigid body](#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 
 ## Deriving the equations
 
@@ -33,31 +33,6 @@ further over drifts away exponentially: chaos.
 ![Deriving the equations page, moments about the front axle: in x<sub>P</sub> and θ at P = 1.2 m ahead of G both M and K couple, the free-body diagram's moment balance about P keeps G's inertia force, and leaving it out (J<sub>P</sub>θ̈ = ΣM<sub>P</sub>) would give 0.932 and 1.38 Hz instead of 1.25 and 1.41](images/deriving_equations.png)
 
 ![Deriving the equations page, the double pendulum released at 120° and 120°: two releases 10⁻⁶ rad apart drift apart exponentially, the difference doubling every 0.49 s, until by 8 s they are radians apart; the lower bob's trail loops over the top](images/deriving_pendulum.png)
-
-## 3D rigid body
-
-A body free to turn any way, with no gravity and no support: a box, a cylinder or a sphere, with a point
-mass that can sit anywhere on it. Its inertia tensor about the centre of mass comes from the shape's own
-moved there by parallel axes plus the point mass's, products of inertia and all, and its eigenvectors are
-the principal axes (the *Inertia* tab writes both out). Spun about one of them, L is along ω; about any
-other they point apart, L fixed in space and ω wandering round it. The notes derive L = Iω, the transport
-theorem for vectors in turning axes and Euler's equations, and why a body spun about its middle axis turns
-over and back (the tennis-racket effect: 1° off at 6 rad/s, the default box turns over in about 1.4 s).
-A torque held in space or in the body for a set time (or a *Kick*) changes L by its impulse. The
-*Components* tab plots ω, L, τ or the tensor in fixed, body or principal axes, with the equations written
-out with numbers at any instant, and *Check* compares the energy and L with what the torque put in.
-
-The *Orientation* tab writes how the body is turned four ways at once: the rotation matrix, Euler's z-x-z
-angles (with their rates, which blow up near the gimbal lock at θ = 0), the quaternion with its axis and angle,
-and the 4 × 4 homogeneous transform that carries the point mass to space. Its start pose is set there as
-Euler angles: at θ = 0 changing φ or ψ turns the body the same way. The *Drift* tab steps the same torque-free run as a
-rotation matrix, as Euler angles and as a quaternion at one coarse step and plots how far each drifts from the
-true orientation: the quaternion least, the matrix more (and it stops being a rotation), the Euler angles most,
-and from a start near the lock they fail. The view can trace ω's path in space or on the body itself, where,
-torque-free, it runs round a closed loop (Poinsot's polhode). The body is drawn with shaded faces, lit
-from the upper left, so its turning reads at a glance.
-
-![3D rigid body page, the default 30 × 20 × 10 cm box spun at 6 rad/s 1° off its middle axis: 2.5 s on it has turned over, its middle-axis rate ω<sub>2</sub> gone from +6 to −5.8 rad/s while |L| holds at 0.05001 N·m·s, and the Components tab writes Euler's equations out with that instant's numbers](images/rigid_body.png)
 
 ## Simulation & modal analysis
 
@@ -419,3 +394,28 @@ and numerical damping against ωΔt, and a stiff second mode that breaks the exp
 ---
 
 ← [One mass](one-mass.md) · [Contents](../README.md#contents) · [Responses](responses.md) →
+
+## 3D rigid body
+
+A body free to turn any way, with no gravity and no support: a box, a cylinder or a sphere, with a point
+mass that can sit anywhere on it. Its inertia tensor about the centre of mass comes from the shape's own
+moved there by parallel axes plus the point mass's, products of inertia and all, and its eigenvectors are
+the principal axes (the *Inertia* tab writes both out). Spun about one of them, L is along ω; about any
+other they point apart, L fixed in space and ω wandering round it. The notes derive L = Iω, the transport
+theorem for vectors in turning axes and Euler's equations, and why a body spun about its middle axis turns
+over and back (the tennis-racket effect: 1° off at 6 rad/s, the default box turns over in about 1.4 s).
+A torque held in space or in the body for a set time (or a *Kick*) changes L by its impulse. The
+*Components* tab plots ω, L, τ or the tensor in fixed, body or principal axes, with the equations written
+out with numbers at any instant, and *Check* compares the energy and L with what the torque put in.
+
+The *Orientation* tab writes how the body is turned four ways at once: the rotation matrix, Euler's z-x-z
+angles (with their rates, which blow up near the gimbal lock at θ = 0), the quaternion with its axis and angle,
+and the 4 × 4 homogeneous transform that carries the point mass to space. Its start pose is set there as
+Euler angles: at θ = 0 changing φ or ψ turns the body the same way. The *Drift* tab steps the same torque-free run as a
+rotation matrix, as Euler angles and as a quaternion at one coarse step and plots how far each drifts from the
+true orientation: the quaternion least, the matrix more (and it stops being a rotation), the Euler angles most,
+and from a start near the lock they fail. The view can trace ω's path in space or on the body itself, where,
+torque-free, it runs round a closed loop (Poinsot's polhode). The body is drawn with shaded faces, lit
+from the upper left, so its turning reads at a glance.
+
+![3D rigid body page, the default 30 × 20 × 10 cm box spun at 6 rad/s 1° off its middle axis: 2.5 s on it has turned over, its middle-axis rate ω<sub>2</sub> gone from +6 to −5.8 rad/s while |L| holds at 0.05001 N·m·s, and the Components tab writes Euler's equations out with that instant's numbers](images/rigid_body.png)

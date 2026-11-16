@@ -175,11 +175,6 @@ COURSE = (
                 "free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum",
             ),
             (
-                "rigid_body_page",
-                "3D rigid body",
-                "a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip",
-            ),
-            (
                 "sim_page",
                 "Simulation && modal analysis",
                 "one mass, then a chain of them: modes, damping, energy, forcing, absorbers, friction",
@@ -209,6 +204,11 @@ COURSE = (
                 "integration_page",
                 "Numerical integration",
                 "central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping",
+            ),
+            (
+                "rigid_body_page",
+                "3D rigid body",
+                "a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip",
             ),
         ),
     ),

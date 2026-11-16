@@ -64,7 +64,8 @@ through the band's width <m>δ<sub>b</sub> = √(1 − m<sub>1</sub><sup>2</sup>
 
 <h3><a name="welch"></a>Estimating it from a record</h3>
 <p><b>Welch's method</b> <cite>welch</cite> cuts the record into blocks, windows each (Hann), Fourier transforms
-them and averages <m>|Y|<sup>2</sup></m>. Two errors trade against each other:</p>
+them and averages <m>|Y|<sup>2</sup></m>. (<a href="page:signals_page#windows">Signals &amp; spectra</a>, later in
+the course, takes the windows and the averaging apart.) Two errors trade against each other:</p>
 <ul>
 <li><b>Bias</b>: the lines are <m>Δf = f<sub>s</sub></m>/block apart, and the window smears each over a few. A
 peak narrower than that comes out low and wide. Put four or more lines across the half-power width

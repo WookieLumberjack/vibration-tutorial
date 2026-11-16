@@ -68,7 +68,6 @@ The course runs through six groups of pages, in the order the app's tabs take th
 **[Foundations](docs/foundations.md)**
 
 - [Deriving the equations](docs/foundations.md#deriving-the-equations): free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum
-- [3D rigid body](docs/foundations.md#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 - [Simulation & modal analysis](docs/foundations.md#simulation--modal-analysis): one mass, then a chain of them: modes, damping, energy, forcing, absorbers, friction
 - [Energy methods](docs/foundations.md#energy-methods): Rayleigh, Dunkerley, Rayleigh–Ritz and Holzer: frequencies from the energies, and how good they are
 - [FRF matrix](docs/foundations.md#frf-matrix): every receptance H<sub>jk</sub>, and how the modes add up to it
@@ -76,6 +75,7 @@ The course runs through six groups of pages, in the order the app's tabs take th
 - [Continuous systems](docs/foundations.md#continuous-systems): a string, a bar or a beam cut into a chain: which of its modes to trust
 - [Beams & plates](docs/foundations.md#beams--plates): Timoshenko's thick beam, a plate's modes and nodal lines, and modal density
 - [Numerical integration](docs/foundations.md#numerical-integration): central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping
+- [3D rigid body](docs/foundations.md#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 
 **[Responses](docs/responses.md)**
 
