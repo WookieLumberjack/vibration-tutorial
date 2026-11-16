@@ -1,8 +1,9 @@
 """Complex modes page: when the chain's damping is not proportional, and what that does to its modes.
 
-Left: the chain's damping (its coupling index, a button that makes it proportional), chains to
-try, and the mode looked at. Centre: that mode's exact shape ψ in the complex plane with its
-best-fit line, its snapshots over half a cycle, and every mode's exact pole and shape against
+Left: the chain's damping (its coupling index, a button that makes it proportional, a slider that gathers it
+into one damper and slides it along, `_on_damper_at`), chains to try, and the mode looked at. Centre: that
+mode's exact shape ψ in the complex plane with its best-fit line, its snapshots over half a cycle with the
+shape swinging over them and its nodes marked (`mode_swing.ModeSwing`), and every mode's exact pole and shape against
 the proportional approximation's. Right: the FRF, exact and approximated; a free decay from an
 undamped mode's shape, and what leaks to the others; each mode's phase scatter; one element swept, with
 its root locus (drag a pole along it: the other modes' poles slide with it, and letting go sets the element,
@@ -44,6 +45,7 @@ from .drag import DragDot
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TrialCombo
 from .links import load_notes, page_link
+from .mode_swing import ModeSwing
 from .notes_view import NotesBrowser
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -53,6 +55,9 @@ from .theming import add_legend, mute
 SNAPSHOTS = 8  # over half a cycle, on the snapshots plot
 
 TIPS = {
+    "damper_at": "<p>Gather all the chain's damping into one damper and slide it along: between the ground and "
+    "m1, or between two masses. One damper is never proportional, and where it sits decides how complex each "
+    "mode gets: watch the mode's nodes slide (travelling) or stay put (standing).</p>",
     "coupling": "<p>The largest off-diagonal term of Φ<sup>T</sup>CΦ against its diagonal's, "
     "|c<sub>rs</sub>|/√(c<sub>rr</sub>c<sub>ss</sub>): 0 when the damping is proportional, near 1 or "
     "more when it couples the modes strongly.</p>",
@@ -414,6 +419,20 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.make_proportional = QtWidgets.QPushButton("Make it proportional")
         self.make_proportional.setToolTip(TIPS["proportional"])
         form.addRow(self.make_proportional)
+        self.damper_at = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.damper_at.setRange(1, 2)
+        self.damper_at.setPageStep(1)
+        self.damper_at.setToolTip(TIPS["damper_at"])
+        self.damper_at.setAccessibleName("One damper, at element")
+        self.damper_at.valueChanged.connect(self._on_damper_at)
+        damper_label = QtWidgets.QLabel("One damper at:")
+        damper_label.setToolTip(TIPS["damper_at"])
+        damper_label.setBuddy(self.damper_at)
+        form.addRow(damper_label, self.damper_at)
+        self.damper_info = QtWidgets.QLabel()
+        self.damper_info.setWordWrap(True)
+        mute(self.damper_info)
+        form.addRow(self.damper_info)
         link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
         mute(link)
         link.setWordWrap(True)
@@ -463,6 +482,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.strobe = _plot("Re(ψ e<sup>iθ</sup>)", None, "Mass", None)
         self.strobe.setMouseEnabled(x=False, y=False)
         self.strobe.setToolTip(STROBE_TIP)
+        self.swing = ModeSwing(self.strobe, "Complex modes")
         for p in (self.argand, self.strobe):
             plot_height(p, 220)
         shapes = QtWidgets.QWidget()
@@ -695,6 +715,7 @@ class ComplexModesPage(QtWidgets.QWidget):
             self.sweep_element.blockSignals(True)  # sweep a damper the chain has
             self.sweep_element.setCurrentIndex(int(np.argmax(system.damping)))
             self.sweep_element.blockSignals(False)
+        self._sync_damper_at()
         if self.isVisible():
             self.recompute()
         else:
@@ -726,6 +747,39 @@ class ComplexModesPage(QtWidgets.QWidget):
             tuple(float(m) for m in system.masses),
             tuple(float(k) for k in system.stiffness),
             self.tabs.currentIndex(),
+        )
+
+    def _sync_damper_at(self) -> None:
+        """The slider at the chain's lone damper (if it has one), and what moving it would do."""
+        assert self.system is not None, "set with the chain"
+        c = self.system.damping
+        n = self.system.n
+        self.damper_at.blockSignals(True)
+        self.damper_at.setRange(1, n)
+        lone = np.flatnonzero(c)
+        if lone.size == 1:
+            self.damper_at.setValue(int(lone[0]) + 1)
+        self.damper_at.blockSignals(False)
+        self.damper_at.setEnabled(bool(c.any()) and n > 1)
+        k = self.damper_at.value()
+        where = f"between m{k - 1} and m{k}" if k > 1 else "between the ground and m1"
+        self.damper_info.setText(
+            f"All the damping ({float(c.sum()):.3g} N·s/m) in one damper, {where}"
+            + ("." if lone.size == 1 else ": move the slider to gather it there.")
+            if c.any()
+            else "No dampers: the modes are real (standing)."
+        )
+
+    def _on_damper_at(self, k: int) -> None:
+        """Every damper's c gathered into one, at element k: the chain changes, through the Simulation page."""
+        if self.system is None:
+            return
+        s = self.system
+        c = np.zeros(s.n)
+        c[k - 1] = float(s.damping.sum())
+        self.trial_note.setVisible(False)
+        self.system_requested.emit(
+            ChainSystem(s.masses.copy(), s.stiffness.copy(), c, s.friction.copy(), s.static_ratio)
         )
 
     def _on_make_proportional(self) -> None:
@@ -914,6 +968,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         a.clear()
         s.clear()
         if c.shape is None:
+            self.swing.set_shape(np.zeros(0), np.zeros(0, complex))
             self.mode_info.setText(
                 f"Mode {c.index} has no oscillating pole: the damping has made it a pair of real roots."
             )
@@ -953,7 +1008,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         s.setXRange(-0.25, n + 0.25, padding=0)
         s.setYRange(-1.1, 1.1, padding=0)
         s.getAxis("bottom").setTicks([[(0, "ground")] + [(i + 1, f"m{i + 1}") for i in range(n)]])
-        s.setTitle("Half a cycle, 8 snapshots", size="9pt")
+        s.setTitle("Half a cycle, 8 snapshots; bold: now, ◆ its nodes", size="9pt")
+        self.swing.set_shape(xs, np.concatenate([[0.0], psi]), colour)
         self.mode_info.setText(
             f"Exact: {c.fn_exact:.4g} Hz, ζ = {c.zeta_exact:.3g} (λ = {lam.real:.3g} ± {lam.imag:.4g}i). "
             f"Approximation: {c.fn_hz:.4g} Hz, ζ = {c.zeta_approx:.3g}."

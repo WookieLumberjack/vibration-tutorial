@@ -49,7 +49,7 @@ modes veer apart instead of crossing; two oscillators tuned exactly end up √μ
 whatever μ.
 
 The notes work the default split through by hand (the masses, the tuned-oscillator split, the
-model's errors) and close with frequency-based substructuring: joining two parts by their FRFs.
+model's errors) and close with frequency-based substructuring: joining two parts by their FRFs. The *Mode shapes* tab swings the chain's two modes, standing waves whose nodes stay put.
 
 ![Modal coupling: m3–m4 made light (0.1 kg) and tuned to m1–m2; the 2-DOF model (dashed) follows the chain's two lowest modes through the veering, within 0.33%](images/modal_coupling.png)
 

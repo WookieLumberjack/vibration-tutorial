@@ -203,3 +203,46 @@ def test_identification_real_and_complex_modes():
     noisy = identify(UNIFORM, modal_analysis(UNIFORM), noise=0.01, seed=0)
     mpc = [complexity(m.shape).mpc for m in noisy.complex_fit.modes]
     assert min(mpc) < 0.995 and noisy.real_fit.error < 0.01
+
+
+def test_one_damper_slides_along_the_chain_and_the_mode_swings_travelling_or_standing(main_window):
+    """The slider gathers the damping into one damper at the element picked (the Simulation page's chain too);
+    the mode looked at swings on the snapshots, its node staying put when the damping is proportional and
+    sliding along when it isn't."""
+    import math
+
+    from PySide6 import QtWidgets
+
+    w = main_window
+    page = w.complex_page
+    w.pages.setCurrentWidget(page)
+    QtWidgets.QApplication.processEvents()
+    total = float(w.sim.system.damping.sum())
+    page.damper_at.setValue(4)
+    assert np.allclose(w.sim.system.damping, [0, 0, 0, total]) and "between m3 and m4" in page.damper_info.text()
+    page.mode.setCurrentIndex(1)  # mode 2: one node
+
+    def node_path(swing):
+        out = []
+        for theta in np.linspace(0.0, math.pi, 9)[:-1]:
+            swing.theta = float(theta)
+            nodes = swing.nodes()
+            if nodes.size:
+                out.append(float(nodes[0]))
+        return np.array(out)
+
+    travelling = node_path(page.swing)
+    assert np.ptp(travelling) > 0.05  # complex: the node moves along the chain over the cycle
+
+    page.make_proportional.click()
+    standing = node_path(page.swing)
+    assert standing.size and np.ptp(standing) < 1e-6  # real: it stays put
+    page.swing.theta = 0.0
+    page.swing._tick(0.5)  # a quarter of a cycle on
+    assert page.swing.theta == pytest.approx(math.pi / 2)
+
+    page = w.coupling_page  # the coupled chain's modes swing too, standing
+    w.pages.setCurrentWidget(page)
+    page.tabs.setCurrentWidget(page.shapes)
+    QtWidgets.QApplication.processEvents()
+    assert all(s.x.size for s in page.shapes.swings)

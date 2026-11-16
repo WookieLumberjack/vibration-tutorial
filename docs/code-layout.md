@@ -174,6 +174,8 @@
   redraws in a new one through its `apply_theme()`. Log axes use `gui/axes.py`, which labels
   only as many ticks as fit. What the reader drags on a plot is `gui/drag.py`'s: a `DragLine` (a value,
   with a grip) a `DragDot` (a point sliding along a curve) or a `DragPoint` (a point dragged anywhere, a pole), each a signal the page binds to its box.
+  A mode shape swings on a plot by `gui/mode_swing.py`'s `ModeSwing` (Re(ψ e<sup>iθ</sup>) and its moving
+  nodes, on its own frame loop): Complex modes and Modal coupling.
   A closed-form response is played back in time by `gui/playback.py`'s `Playback` (Start, Reset, a
   speed, and a time cursor on its plots), which moves the page's body: the Single oscillator's mass,
   Pendulums' pendulum (`gui/pendulum_view.py`, each kind drawn and turned with the mouse), and Damping
