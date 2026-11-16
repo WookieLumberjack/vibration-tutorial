@@ -70,6 +70,7 @@ KINDS = tuple(Kind)
 LIFTS = ("Steady", "Quasi-steady")  # the tip gives each one's L
 TAB_MOTION, TAB_SWEEP = range(2)
 VIV_SWEEP = np.linspace(2.0, 14.0, 41)
+MM = frozenset({"vdp_ref", "vdp_start", "g_start"})  # shown in mm, as the plots and readouts are; kept in m
 DRIVE_STEPS = 200
 FLUTTER_CYCLES = 16  # the flutter mode played this many cycles
 FLUTTER_START, FLUTTER_CAP = 0.15, 0.6  # its amplitude at the start, and where growth stops being drawn
@@ -514,8 +515,8 @@ class SelfExcitedPage(QtWidgets.QWidget):
         vdp = Form("Van der Pol")
         self._add(vdp, "vdp_freq", "Frequency:", 0.05, 100.0, 1.0, 3, " Hz", "vdp_freq")
         self._add(vdp, "vdp_eps", "ε:", -2.0, 20.0, 0.2, 3, "", "vdp_eps")
-        self._add(vdp, "vdp_ref", "x_r:", 1e-4, 1.0, 0.01, 4, " m", "vdp_ref")
-        self._add(vdp, "vdp_start", "Start:", 0.0, 1.0, 0.0005, 4, " m", "start")
+        self._add(vdp, "vdp_ref", "x_r:", 0.1, 1000.0, 10.0, 2, " mm", "vdp_ref")
+        self._add(vdp, "vdp_start", "Start:", 0.0, 1000.0, 0.5, 2, " mm", "start")
         self._add(vdp, "vdp_periods", "Periods:", 2.0, 400.0, 60.0, 0, "", "periods")
         gal = Form("Galloping")
         self._add(gal, "g_side", "Side D:", 0.01, 2.0, 0.1, 3, " m", "side")
@@ -523,7 +524,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self._add(gal, "g_fn", "f_n:", 0.05, 50.0, 2.0, 3, " Hz", "fn")
         self._add(gal, "g_zeta", "ζ:", 0.0, 0.2, 0.005, 4, "", "zeta")
         self._add(gal, "g_speed", "Wind U:", 0.0, 60.0, 6.0, 2, " m/s", "speed")
-        self._add(gal, "g_start", "Start:", 0.0, 2.0, 0.001, 4, " m", "start")
+        self._add(gal, "g_start", "Start:", 0.0, 2000.0, 1.0, 2, " mm", "start")
         self._add(gal, "g_periods", "Periods:", 10.0, 1000.0, 300.0, 0, "", "periods")
         viv = Form("Vortex-induced vibration (in water)")
         self._add(viv, "v_d", "Diameter D:", 0.005, 2.0, 0.05, 3, " m", "side")
@@ -654,7 +655,8 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.boxes[key] = form.number(label, lo, hi, value, decimals, suffix, TIPS[tip])
 
     def v(self, key: str) -> float:
-        return float(self.boxes[key].value())
+        """A control's value in SI (the boxes in mm hold `MM` of them)."""
+        return float(self.boxes[key].value()) / (1000.0 if key in MM else 1.0)
 
     # ------------------------------------------------------------- inputs
     def load_trial(self, index: int) -> None:
@@ -678,7 +680,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
 
     def apply_trial(self, t: SelfTrial) -> None:
         for key, value in {**DEFAULTS, **t.values}.items():
-            set_quietly(self.boxes[key], value)
+            set_quietly(self.boxes[key], value * (1000.0 if key in MM else 1.0))
         set_quietly(self.kind, KINDS.index(t.kind))
         set_quietly(self.lift, int(t.quasi_steady))
         self.trials.show_note(t.note)

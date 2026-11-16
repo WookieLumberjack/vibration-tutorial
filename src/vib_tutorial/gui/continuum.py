@@ -52,7 +52,7 @@ from . import continuum_figures, maths
 from .continuum_waves_view import WavesView
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import RunButton, plot, trials_html
+from .lesson import RunButton, fmt, plot, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -711,7 +711,7 @@ class ContinuumPage(QtWidgets.QWidget):
         else:
             speed = f"wave speed c = {c.speed:.4g} m/s"
         rigid = {0: "", 1: "; one rigid-body mode", 2: "; two rigid-body modes"}[c.rigid_modes]
-        self.medium_info.setText(f"{speed}; mass {c.mass_per_length * c.length:.4g} kg{rigid}.")
+        self.medium_info.setText(f"{speed}; mass {fmt(1000 * c.mass_per_length * c.length, 'g', 4)}{rigid}.")
         cut = math.pi / h
         tops = []
         for s in SCHEMES:
