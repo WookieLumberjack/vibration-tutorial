@@ -304,19 +304,52 @@ def transmissibility(system: ChainSystem, freqs_hz: np.ndarray) -> np.ndarray:
     return frf(system, freqs_hz, 0) * (k1 + 1j * w * c1)[:, None]
 
 
-def receptance(M: np.ndarray, C: np.ndarray, K: np.ndarray, freqs_hz: np.ndarray, f: np.ndarray) -> np.ndarray:
-    """(K - w^2 M + i w C)^-1 f at each frequency, shape (len(freqs), len(f)): NaN at a frequency where it is
-    unbounded (an undamped chain driven at a natural frequency, which a frequency grid can land on exactly)."""
-    w = TWO_PI * np.asarray(freqs_hz, dtype=float)
-    Z = K[None, :, :] - (w**2)[:, None, None] * M[None] + 1j * w[:, None, None] * C[None]
-    rhs = np.broadcast_to(np.asarray(f, dtype=complex)[None, :, None], (w.size, f.size, 1))
+def receptance(
+    M: np.ndarray, C: np.ndarray, K: np.ndarray, freqs_hz: np.ndarray, f: np.ndarray | None = None
+) -> np.ndarray:
+    """(K - w^2 M + i w C)^-1 f at each frequency: every chain's receptance.
+
+    f is a load (n,), giving (len(freqs), n); loads, a column each (n, k), giving (len(freqs), n, k); or None,
+    the whole matrix (len(freqs), n, n). NaN at a frequency where it is unbounded (an undamped chain driven at a
+    natural frequency, which a frequency grid can land on exactly)."""
+    return receptance_at(M, C, K, 1j * TWO_PI * np.asarray(freqs_hz, dtype=float), f)
+
+
+def receptance_at(
+    M: np.ndarray, C: np.ndarray, K: np.ndarray, s: np.ndarray, f: np.ndarray | None = None
+) -> np.ndarray:
+    """(M s^2 + C s + K)^-1 f at the complex frequencies s, shaped as `receptance` (which is s = i w)."""
+    s = np.asarray(s, dtype=complex)
+    if s.imag.any() and not s.real.any():  # on the axis: K - w^2 M + i w C, as written
+        w = s.imag
+        Z = K[None, :, :] - (w**2)[:, None, None] * M[None] + 1j * w[:, None, None] * C[None]
+    else:
+        Z = K[None] + s[:, None, None] * C[None] + (s**2)[:, None, None] * M[None]
+    return _solve(Z, f)
+
+
+def state_receptance(A: np.ndarray, b: np.ndarray, c: np.ndarray, freqs_hz: np.ndarray) -> np.ndarray:
+    """c (i w I - A)^-1 b at each frequency: the receptance of a state-space model z' = A z + b f, x = c z."""
+    s = 1j * TWO_PI * np.asarray(freqs_hz, dtype=float)
+    Z = s[:, None, None] * np.eye(A.shape[0])[None] - A[None]
+    return _solve(Z, np.asarray(b, dtype=complex)) @ np.asarray(c)
+
+
+def _solve(Z: np.ndarray, f: np.ndarray | None) -> np.ndarray:
+    """Z^-1 f for each Z in the stack, shaped as `receptance` says; NaN where a Z is singular."""
+    n = Z.shape[1]
+    if f is None:
+        rhs = np.eye(n, dtype=complex)
+    else:
+        rhs = np.asarray(f, dtype=complex).reshape(n, -1)
+    rhs = np.broadcast_to(rhs[None], (Z.shape[0], *rhs.shape))
     try:
-        return np.linalg.solve(Z, rhs)[:, :, 0]
+        out = np.linalg.inv(Z) if f is None else np.linalg.solve(Z, rhs)
     except np.linalg.LinAlgError:
-        out = np.full((w.size, f.size), np.nan, dtype=complex)
-        for i in range(w.size):
+        out = np.full(rhs.shape, np.nan, dtype=complex)
+        for i in range(Z.shape[0]):
             try:
-                out[i] = np.linalg.solve(Z[i], rhs[i])[:, 0]
+                out[i] = np.linalg.solve(Z[i], rhs[i])
             except np.linalg.LinAlgError:
                 pass  # singular here: left NaN
-        return out
+    return out[:, :, 0] if f is not None and np.ndim(f) == 1 else out

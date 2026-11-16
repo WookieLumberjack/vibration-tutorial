@@ -25,7 +25,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .modal import TWO_PI, ModalResult
+from .modal import TWO_PI, ModalResult, receptance
 from .model import ChainSystem
 
 # V is effectively singular when an eigenvalue is defective (a free chain's
@@ -61,10 +61,7 @@ class ModalTerm:
 
 def frf_matrix(system: ChainSystem, freqs_hz: np.ndarray) -> np.ndarray:
     """Receptance matrix H(w) = (K - w^2 M + i w C)^-1, shape (len(freqs), n, n)."""
-    M, C, K = system.matrices()
-    w = TWO_PI * np.asarray(freqs_hz, dtype=float)
-    Z = K[None, :, :] - (w**2)[:, None, None] * M[None] + 1j * w[:, None, None] * C[None]
-    return np.linalg.inv(Z)
+    return receptance(*system.matrices(), freqs_hz)
 
 
 def modal_frf_terms(system: ChainSystem, result: ModalResult, exact: bool = True) -> list[ModalTerm]:

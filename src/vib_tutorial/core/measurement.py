@@ -65,7 +65,7 @@ import numpy as np
 
 from .foh import FohSteps
 from .forcing import ForceController, ForceSettings
-from .modal import TWO_PI, ModalResult, modal_analysis
+from .modal import TWO_PI, ModalResult, modal_analysis, receptance_at
 from .model import ChainSystem, state_space
 from .simulator import Simulator
 
@@ -202,12 +202,9 @@ def transfer(system: ChainSystem, s: np.ndarray, input_dof: int) -> np.ndarray:
     by the exponential window e^{-t/tau} measures H(iw + 1/tau): every pole
     moves 1/tau further into the left half plane.
     """
-    M, C, K = system.matrices()
-    s = np.asarray(s, dtype=complex)
-    Z = K[None] + s[:, None, None] * C[None] + (s**2)[:, None, None] * M[None]
-    e = np.zeros((s.size, system.n, 1), dtype=complex)
-    e[:, input_dof] = 1.0
-    return np.linalg.solve(Z, e)[:, :, 0]
+    e = np.zeros(system.n)
+    e[input_dof] = 1.0
+    return receptance_at(*system.matrices(), s, e)
 
 
 def from_receptance(freqs_hz: np.ndarray, H: np.ndarray, response: Response) -> np.ndarray:
