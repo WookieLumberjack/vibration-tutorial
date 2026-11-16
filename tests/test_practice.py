@@ -170,7 +170,7 @@ def test_every_setup_loads_on_its_page(app):
     for name in pages():
         if name == "sim_page":  # the main window's own page: set up and read through the window
             window = MainWindow()
-            load, state = partial(window.set_up_page, "sim_page"), window.sim_practice_state
+            load, state = partial(window.set_up_page, "sim_page"), window.sim_page.practice_state
         else:
             window = page = page_class(name)()
             load, state = page.load_setup, page.practice_state
@@ -199,11 +199,11 @@ def test_practice_window(app):
     shortcuts["Ctrl+F2"].activated.emit()
     p = w.practice_window
     assert p.isVisible() and p.problem.page == "sim_page"  # the page showing's first problem
-    assert not w._built and p.check_button.isEnabled()
+    assert list(w._built) == ["sim_page"] and p.check_button.isEnabled()
 
     # A number: wrong, then right, and the problem is ticked.
     p.show_problem("sdof_page", "natural-frequency", seed=3)
-    assert not w._built  # asking builds no page
+    assert list(w._built) == ["sim_page"]  # asking builds no page
     q = p.question
     p.number.setText(str(q.answer * 2 * math.pi))
     p.check()

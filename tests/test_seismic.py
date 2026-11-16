@@ -94,7 +94,7 @@ def test_the_building_sways_under_the_record_its_drifting_storey_reddened(main_w
         assert "Base shear" in page.building_note.text()
 
     page.k1.setValue(2e6)
-    assert w.sim.system.stiffness[0] == pytest.approx(2e6) and page.system.stiffness[0] == pytest.approx(2e6)
+    assert w.sim_page.sim.system.stiffness[0] == pytest.approx(2e6) and page.system.stiffness[0] == pytest.approx(2e6)
     assert "T = 2π√(Σm/k₁) = 0.993 s" in page.k1_info.text()  # 2π √(5 × 10 t / 2 MN/m)
 
 

@@ -31,49 +31,49 @@ def test_window_interactions(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w.force_panel.button.click()  # harmonic force on
-    assert w.force.on
-    w._sim_target = 1.0
-    w._tick()
-    assert w.sim.t > 0.1 and w.history.size > 0  # one frame advances at most ~0.3 s
+    w.sim_page.force_panel.button.click()  # harmonic force on
+    assert w.sim_page.force.on
+    w.sim_page._sim_target = 1.0
+    w.sim_page._tick()
+    assert w.sim_page.sim.t > 0.1 and w.sim_page.history.size > 0  # one frame advances at most ~0.3 s
 
     # Live parameter edit keeps running and updates the modal table.
-    w.params.rows[0][2].setValue(800.0)
-    assert w.sim.system.stiffness[0] == 800.0
-    assert w.table.item(0, 1).text() != ""
+    w.sim_page.params.rows[0][2].setValue(800.0)
+    assert w.sim_page.sim.system.stiffness[0] == 800.0
+    assert w.sim_page.table.item(0, 1).text() != ""
 
     # Fit the plot window to N cycles of mode 2; changing N re-fits.
-    w.controls.fit_window.activated.emit(2)
-    assert w.controls.time_window.value() == pytest.approx(10 / w.modal.modes[1].fn_hz, abs=0.005)
-    assert w.controls.fit_window.currentIndex() == 0
-    w.controls.cycles.setValue(4)
-    assert w.controls.time_window.value() == pytest.approx(4 / w.modal.modes[1].fn_hz, abs=0.005)
+    w.sim_page.controls.fit_window.activated.emit(2)
+    assert w.sim_page.controls.time_window.value() == pytest.approx(10 / w.sim_page.modal.modes[1].fn_hz, abs=0.005)
+    assert w.sim_page.controls.fit_window.currentIndex() == 0
+    w.sim_page.controls.cycles.setValue(4)
+    assert w.sim_page.controls.time_window.value() == pytest.approx(4 / w.sim_page.modal.modes[1].fn_hz, abs=0.005)
 
     # Non-proportional damping: note explains coupling; its link opens the Background tab.
-    w.params.rows[0][3].setValue(15.0)
-    assert "non-proportional" in w.modal_note.text()
-    w.modal_note.linkActivated.emit("#background")
-    assert w.tabs.currentWidget() is w.background
+    w.sim_page.params.rows[0][3].setValue(15.0)
+    assert "non-proportional" in w.sim_page.modal_note.text()
+    w.sim_page.modal_note.linkActivated.emit("#background")
+    assert w.sim_page.tabs.currentWidget() is w.sim_page.theory
 
     # Change number of masses.
-    w.params.dof.setValue(6)
-    assert w.sim.system.n == 6 and w.table.rowCount() == 6
-    w._tick()
+    w.sim_page.params.dof.setValue(6)
+    assert w.sim_page.sim.system.n == 6 and w.sim_page.table.rowCount() == 6
+    w.sim_page._tick()
 
     # Pulse and mode release.
-    w.force_panel.kind.setCurrentIndex(list(ForceKind).index(ForceKind.PULSE))
-    w.force_panel.button.click()
-    assert w.force.active
-    w.table.selectRow(2)
-    w._release_mode()
-    assert abs(w.sim.displacement).max() == pytest.approx(0.02)
+    w.sim_page.force_panel.kind.setCurrentIndex(list(ForceKind).index(ForceKind.PULSE))
+    w.sim_page.force_panel.button.click()
+    assert w.sim_page.force.active
+    w.sim_page.table.selectRow(2)
+    w.sim_page._release_mode()
+    assert abs(w.sim_page.sim.displacement).max() == pytest.approx(0.02)
     # Releasing a mode fits the plot window to it (auto-scale on by default)...
-    assert w.controls.time_window.value() == pytest.approx(4 / w.modal.modes[2].fn_hz, abs=0.005)
+    assert w.sim_page.controls.time_window.value() == pytest.approx(4 / w.sim_page.modal.modes[2].fn_hz, abs=0.005)
     # ...but not when auto-scale is off.
-    w.controls.auto_scale.setChecked(False)
-    w.table.selectRow(5)
-    w._release_mode()
-    assert w.controls.time_window.value() == pytest.approx(4 / w.modal.modes[2].fn_hz, abs=0.005)
+    w.sim_page.controls.auto_scale.setChecked(False)
+    w.sim_page.table.selectRow(5)
+    w.sim_page._release_mode()
+    assert w.sim_page.controls.time_window.value() == pytest.approx(4 / w.sim_page.modal.modes[2].fn_hz, abs=0.005)
     w.close()
 
 
@@ -82,14 +82,14 @@ def test_secondary_pages_build_when_opened(app):
     from vib_tutorial.gui.modal_coupling import ModalCouplingPage
 
     w = MainWindow()
-    assert not w._built  # startup builds only the Simulation page
+    assert list(w._built) == ["sim_page"]  # startup builds only the Simulation page
     titles = [w.pages.tabText(i) for i in range(w.pages.count())]
-    w.params.dof.setValue(5)  # a page built later gets the current system
+    w.sim_page.params.dof.setValue(5)  # a page built later gets the current system
 
     w.pages.groups.setCurrentIndex(3)  # as a click on the group's tab does: its first page shows
     page = w.pages.currentWidget()
     assert isinstance(page, ModalCouplingPage) and page is w.coupling_page
-    assert list(w._built) == ["coupling_page"]
+    assert list(w._built) == ["sim_page", "coupling_page"]
     assert w.pages.group_title(w.pages.currentIndex()) == "Building models"
     assert page.system.n == 5
     assert [w.pages.tabText(i) for i in range(w.pages.count())] == titles
@@ -109,16 +109,16 @@ def test_hidden_pages_take_a_new_chain_and_a_new_theme(app, main_window):
         w.pages.setCurrentIndex(i)
         app.processEvents()
     w.pages.setCurrentWidget(w.sim_page)
-    dof = w.params.dof.value()
+    dof = w.sim_page.params.dof.value()
     for n in (dof + 2, max(2, dof - 1)):
-        w.params.dof.setValue(n)
+        w.sim_page.params.dof.setValue(n)
         app.processEvents()
         w.set_theme("Dark")
         w.set_theme("Light")
     for page in (w.complex_page, w.random_page, w.oma_page, w.test_page, w.updating_page):
         w.pages.setCurrentWidget(page)  # each catches up when it shows
         app.processEvents()
-    w.params.dof.setValue(dof)
+    w.sim_page.params.dof.setValue(dof)
 
 
 def test_every_page_builds_in_its_tab_with_its_notes(app, main_window):
@@ -134,7 +134,7 @@ def test_every_page_builds_in_its_tab_with_its_notes(app, main_window):
     # The Theory window reads each page's notes from its module: the same as its Theory tab shows.
     for name in ["sim_page", *(name for name, _ in LAZY_PAGES)]:
         page = getattr(w, name)
-        shown = w.background if name == "sim_page" else getattr(page, "notes", None) or page.theory
+        shown = w.sim_page.theory if name == "sim_page" else getattr(page, "notes", None) or page.theory
         doc = QtGui.QTextDocument()
         doc.setHtml(page_html(name))
         assert doc.toPlainText() == shown.toPlainText(), name
@@ -171,7 +171,7 @@ def test_app_opens_on_the_course_s_first_page(app):
     assert w.page_name(w.pages.currentWidget()) == links.COURSE[0][1][0][0] == "sdof_page"
     browser = w.show_theory()
     assert "The pages, in order" in browser.toPlainText()  # the course map heads the first page's notes
-    assert 'href="page:sdof_page#course-map"' in w.background.toHtml()  # the Simulation page links to it
+    assert 'href="page:sdof_page#course-map"' in w.sim_page.theory.toHtml()  # the Simulation page links to it
     # The map's own page links past the map, to its first section (a link to itself went nowhere).
     assert 'href="page:sdof_page#equation"' in links.course_map()
     # Each group opens on its first page, Foundations too (the window was built showing the Simulation page).
@@ -280,7 +280,7 @@ def test_theory_window(app):
     shortcuts["Ctrl+F1"].activated.emit()
     t = w.theory_window
     assert t.isVisible() and t.page == "sim_page"  # opens at the page showing
-    assert not w._built  # without building any page
+    assert list(w._built) == ["sim_page"]  # without building any page
     pages = [
         t.tree.topLevelItem(g).child(i)
         for g in range(t.tree.topLevelItemCount())
@@ -300,11 +300,11 @@ def test_theory_window(app):
     assert cms.childCount() > 5
     assert all(cms.child(i).data(0, QtCore.Qt.ItemDataRole.UserRole)[1] for i in range(cms.childCount()))
     t.tree.itemClicked.emit(cms.child(2), 0)
-    assert t.page == "cms_page" and w.pages.currentWidget() is w.sim_page and not w._built
+    assert t.page == "cms_page" and w.pages.currentWidget() is w.sim_page and list(w._built) == ["sim_page"]
 
     # A link to another page stays in the window; Back and Forward return to each place.
     t.browser.anchorClicked.emit(QtCore.QUrl("page:frf_page#three-forms"))
-    assert t.page == "frf_page" and not w._built
+    assert t.page == "frf_page" and list(w._built) == ["sim_page"]
     t.back()
     assert t.page == "cms_page" and t.forward_button.isEnabled()
     t.forward()
@@ -340,10 +340,10 @@ def test_one_click_trials_set_up_their_pages(app):
     w = MainWindow()
     w.show()
     for i, trial in enumerate(SIM_TRIALS):
-        w.trial.setCurrentIndex(i + 1)
-        assert w.trial_note.text() == maths.markup(trial.note)
+        w.sim_page.trial.setCurrentIndex(i + 1)
+        assert w.sim_page.trial_note.text() == maths.markup(trial.note)
         if not trial.preset:
-            assert w.params.system().n == trial.n
+            assert w.sim_page.params.system().n == trial.n
 
     p = w.frf_page
     w.pages.setCurrentWidget(p)
@@ -352,7 +352,7 @@ def test_one_click_trials_set_up_their_pages(app):
         p.trial.setCurrentIndex(i + 1)
         assert (p.output, p.inputs) == (trial.output, set(trial.inputs))
         assert [c.isChecked() for c in p.mode_checks] == [r + 1 not in trial.unticked for r in range(4)]
-        assert np.allclose(w.params.system().damping, trial.system().damping)
+        assert np.allclose(w.sim_page.params.system().damping, trial.system().damping)
 
     p = w.coupling_page
     w.pages.setCurrentWidget(p)
@@ -388,46 +388,46 @@ def test_state_space_method(app):
     from vib_tutorial.gui.modes import Method
 
     w = MainWindow()
-    w.params.rows[0][3].setValue(15.0)  # non-proportional
-    n = w.sim.system.n
-    w.method_combo.setCurrentIndex(list(Method).index(Method.STATE_SPACE))
-    assert w.table.rowCount() == 2 * n
-    assert w.phasor_plot.isVisibleTo(w) and "2N" in w.modal_note.text()
-    assert w.table.item(1, 0).text() == "2 = λ1*"
+    w.sim_page.params.rows[0][3].setValue(15.0)  # non-proportional
+    n = w.sim_page.sim.system.n
+    w.sim_page.method_combo.setCurrentIndex(list(Method).index(Method.STATE_SPACE))
+    assert w.sim_page.table.rowCount() == 2 * n
+    assert w.sim_page.phasor_plot.isVisibleTo(w) and "2N" in w.sim_page.modal_note.text()
+    assert w.sim_page.table.item(1, 0).text() == "2 = λ1*"
     # Combos list one entry per conjugate pair, at the damped frequency.
-    assert w.force_panel.tune.count() == 1 + n
-    assert w.force_panel.tune.itemData(1) == pytest.approx(w.modal.complex_modes[0].fd_hz)
+    assert w.sim_page.force_panel.tune.count() == 1 + n
+    assert w.sim_page.force_panel.tune.itemData(1) == pytest.approx(w.sim_page.modal.complex_modes[0].fd_hz)
 
     # Releasing a complex mode sets displacement Re(psi) and velocity Re(lambda psi);
     # its conjugate releases the same motion.
-    w.table.selectRow(2)
-    w._release_mode()
-    m = w.modal.complex_modes[2]
-    amp = w.release_amp.value() * 1e-3
-    np.testing.assert_allclose(w.sim.state, amp * m.state_vector.real)
-    assert w.controls.time_window.value() == pytest.approx(10 / m.fd_hz, abs=0.005)
-    state = w.sim.state.copy()
-    w.table.selectRow(3)
-    w._release_mode()
-    np.testing.assert_allclose(w.sim.state, state)
-    assert w.phasor_plot.table.rowCount() == n
+    w.sim_page.table.selectRow(2)
+    w.sim_page._release_mode()
+    m = w.sim_page.modal.complex_modes[2]
+    amp = w.sim_page.release_amp.value() * 1e-3
+    np.testing.assert_allclose(w.sim_page.sim.state, amp * m.state_vector.real)
+    assert w.sim_page.controls.time_window.value() == pytest.approx(10 / m.fd_hz, abs=0.005)
+    state = w.sim_page.sim.state.copy()
+    w.sim_page.table.selectRow(3)
+    w.sim_page._release_mode()
+    np.testing.assert_allclose(w.sim_page.sim.state, state)
+    assert w.sim_page.phasor_plot.table.rowCount() == n
 
-    w.animate_modes.setChecked(True)
-    w._tick()
+    w.sim_page.animate_modes.setChecked(True)
+    w.sim_page._tick()
 
     # Overdamped and rigid-body systems produce real eigenvalues; they must display.
-    w.params.rows[0][3].setValue(200.0)
-    w.params.rows[0][2].setValue(0.0)
-    assert w.table.rowCount() == 2 * n
-    assert any("τ" in w.table.item(r, 4).text() for r in range(2 * n))
-    w.table.selectRow(0)
-    w._release_mode()
-    w._tick()
+    w.sim_page.params.rows[0][3].setValue(200.0)
+    w.sim_page.params.rows[0][2].setValue(0.0)
+    assert w.sim_page.table.rowCount() == 2 * n
+    assert any("τ" in w.sim_page.table.item(r, 4).text() for r in range(2 * n))
+    w.sim_page.table.selectRow(0)
+    w.sim_page._release_mode()
+    w.sim_page._tick()
 
     # Switching back restores the classical table.
-    w.method_combo.setCurrentIndex(list(Method).index(Method.CLASSICAL))
-    assert w.table.rowCount() == n and not w.phasor_plot.isVisibleTo(w)
-    assert w.table.horizontalHeaderItem(2).text() == "ζ modal"
+    w.sim_page.method_combo.setCurrentIndex(list(Method).index(Method.CLASSICAL))
+    assert w.sim_page.table.rowCount() == n and not w.sim_page.phasor_plot.isVisibleTo(w)
+    assert w.sim_page.table.horizontalHeaderItem(2).text() == "ζ modal"
     w.close()
 
 
@@ -580,7 +580,7 @@ def test_substructuring_page(app):
 
     # N set on this page drives the shared chain; the interface starts in the middle.
     page.dof.setValue(8)
-    assert w.sim.system.n == 8 and w.params.dof.value() == 8
+    assert w.sim_page.sim.system.n == 8 and w.sim_page.params.dof.value() == 8
     assert page.interfaces == [] and len(page.cut_buttons) == 7  # starts as one substructure
     assert page.model.labels == ["q_A1", "x8"]
     page.cut_buttons[3].click()  # cut at m4
@@ -610,20 +610,20 @@ def test_substructuring_page(app):
     assert not page.kept[1].isEnabled() and page.model.substructures[1].ni == 0
 
     # A parameter edit on the Simulation page reaches this page; a floating interior is reported.
-    w.params.rows[0][2].setValue(0.0)
-    w.params.rows[1][2].setValue(0.0)
+    w.sim_page.params.rows[0][2].setValue(0.0)
+    w.sim_page.params.rows[1][2].setValue(0.0)
     assert page.model is None and "K_ii" in page.summary.text()
-    w.params.rows[1][2].setValue(400.0)
+    w.sim_page.params.rows[1][2].setValue(400.0)
     assert page.model is not None
 
     # The simulation pauses behind this page and resumes on its own.
-    t0 = w.sim.t
-    w._sim_target = t0 + 0.5
-    w._tick()
-    assert w.sim.t == t0
+    t0 = w.sim_page.sim.t
+    w.sim_page._sim_target = t0 + 0.5
+    w.sim_page._tick()
+    assert w.sim_page.sim.t == t0
     w.pages.setCurrentWidget(w.sim_page)
-    w._tick()
-    assert w.sim.t > t0 + 0.1
+    w.sim_page._tick()
+    assert w.sim_page.sim.t > t0 + 0.1
     w.close()
 
 
@@ -668,7 +668,7 @@ def test_substructuring_time_response(app):
     tv.kind.setCurrentIndex(1)
     assert tv.freq.isVisibleTo(tv) and not tv.force.on
     tv.tune.activated.emit(2)
-    assert tv.freq.value() == pytest.approx(w.modal.modes[1].fn_hz, abs=1e-3)
+    assert tv.freq.value() == pytest.approx(w.sim_page.modal.modes[1].fn_hz, abs=1e-3)
     tv.kind.setCurrentIndex(2)
     tv.button.click()
     assert tv.force.active
@@ -681,8 +681,8 @@ def test_substructuring_time_response(app):
     assert page.interfaces == [] and page.model.labels == ["x1"] and tv.sim is not None
     # No model at all (Craig-Bampton with a floating interior): the tab says why.
     page.dof.setValue(4)
-    w.params.rows[0][2].setValue(0.0)
-    w.params.rows[1][2].setValue(0.0)
+    w.sim_page.params.rows[0][2].setValue(0.0)
+    w.sim_page.params.rows[1][2].setValue(0.0)
     assert tv.sim is None and "K_ii" in tv.header.text()
     w.pages.setCurrentWidget(w.sim_page)
     assert not tv.loop.timer.isActive()
@@ -804,8 +804,8 @@ def test_substructuring_free_interface(app):
     assert "Mode 3" in page.compare.plot.getPlotItem().titleLabel.text
 
     # A floating interior (k1 = k2 = 0): Craig-Bampton fails, the free-interface methods do not.
-    w.params.rows[0][2].setValue(0.0)
-    w.params.rows[1][2].setValue(0.0)
+    w.sim_page.params.rows[0][2].setValue(0.0)
+    w.sim_page.params.rows[1][2].setValue(0.0)
     assert page.model is not None and page.model.substructures[0].n_rigid == 2
     assert page.compare.current["craig-bampton"] is None and "Craig–Bampton" in page.compare.header.text()
     page.method.setCurrentIndex(page.method.findData("craig-bampton"))
@@ -824,7 +824,7 @@ def test_frf_matrix_page(app):
     w.show()
     w.pages.setCurrentWidget(page)
     app.processEvents()
-    n = w.sim.system.n
+    n = w.sim_page.sim.system.n
     assert len(page.grid.cells) == n and len(page.mode_checks) == n
     assert (page.output, page.inputs) == (n - 1, {n - 1})
     assert "none" in page.detail.header.text()  # all modes: the sum is the full solution
@@ -837,10 +837,10 @@ def test_frf_matrix_page(app):
     assert page.selected_terms().tolist() == [True] + [False] * (n - 1)
     assert "%" in page.detail.header.text() and "Shaded" in page.detail.header.text()
     # Static compliance of mode 1 alone, against K^-1.
-    K = w.sim.system.matrices()[2]
-    phi = w.modal.modes[0].shape_mass_normalized
+    K = w.sim_page.sim.system.matrices()[2]
+    phi = w.sim_page.modal.modes[0].shape_mass_normalized
     static = np.linalg.inv(K)[n - 1, n - 1]
-    one = phi[n - 1] ** 2 / w.modal.modes[0].omega_n ** 2
+    one = phi[n - 1] ** 2 / w.sim_page.modal.modes[0].omega_n ** 2
     assert f"{100 * (one - static) / static:+.3g}%" in page.detail.header.text()
 
     # Clicking selects a cell; Ctrl+click adds another force in the same row.
@@ -859,7 +859,7 @@ def test_frf_matrix_page(app):
 
     # Non-proportional damping: classical misses even with every mode; exact does not.
     page._check_all(True)
-    w.params.rows[0][3].setValue(15.0)
+    w.sim_page.params.rows[0][3].setValue(15.0)
     page.expansion.setCurrentIndex(list(Expansion).index(Expansion.CLASSICAL))
     assert "none" not in page.detail.header.text()
     page.expansion.setCurrentIndex(list(Expansion).index(Expansion.EXACT))
@@ -867,12 +867,12 @@ def test_frf_matrix_page(app):
 
     # N set on this page drives the shared chain; the grid follows.
     page.dof.setValue(6)
-    assert w.sim.system.n == 6 and len(page.grid.cells) == 6 and len(page.input_checks) == 6
+    assert w.sim_page.sim.system.n == 6 and len(page.grid.cells) == 6 and len(page.input_checks) == 6
     np.testing.assert_allclose(page.H[:, 2, 4], page.H[:, 4, 2])
 
     # A free (rigid-body) chain falls back to the classical expansion.
-    w.params.rows[0][2].setValue(0.0)
-    w.params.rows[0][3].setValue(0.0)
+    w.sim_page.params.rows[0][2].setValue(0.0)
+    w.sim_page.params.rows[0][3].setValue(0.0)
     assert "not available" in page.detail.header.text() and "rigid body" in page.detail.header.text()
     app.processEvents()  # let queued axis relayouts run before teardown
     w.close()
@@ -900,20 +900,20 @@ def test_modal_coordinates_view(app):
     from vib_tutorial.gui.modes import Method
 
     w = MainWindow()
-    w.params.rows[0][3].setValue(15.0)  # non-proportional: classical coordinates couple
-    n = w.sim.system.n
-    w.coords_combo.setCurrentIndex(1)
-    assert w.modal_view and len(w.time_plot.x_curves) == n
-    assert w.time_plot.x_curves[0].name() == "Mode 1"
+    w.sim_page.params.rows[0][3].setValue(15.0)  # non-proportional: classical coordinates couple
+    n = w.sim_page.sim.system.n
+    w.sim_page.coords_combo.setCurrentIndex(1)
+    assert w.sim_page.modal_view and len(w.sim_page.time_plot.x_curves) == n
+    assert w.sim_page.time_plot.x_curves[0].name() == "Mode 1"
 
     def release_and_run(row):
-        w._reset()
-        w.table.selectRow(row)
-        w._release_mode()
+        w.sim_page._reset()
+        w.sim_page.table.selectRow(row)
+        w.sim_page._release_mode()
         for _ in range(5):
-            w._sim_target = w.sim.t + 0.2
-            w._tick()
-        return np.array([np.abs(c.getData()[1]).max() for c in w.time_plot.x_curves])
+            w.sim_page._sim_target = w.sim_page.sim.t + 0.2
+            w.sim_page._tick()
+        return np.array([np.abs(c.getData()[1]).max() for c in w.sim_page.time_plot.x_curves])
 
     # Classical release of mode 3 with coupled damping: the other coordinates pick up motion.
     amp = release_and_run(2)
@@ -921,18 +921,18 @@ def test_modal_coordinates_view(app):
     assert np.delete(amp, 2).max() > 1e-4
 
     # State-space: one curve per conjugate pair, and a released complex mode stays in its own.
-    w.method_combo.setCurrentIndex(list(Method).index(Method.STATE_SPACE))
-    assert len(w.time_plot.x_curves) == n
-    assert w.time_plot.x_curves[2].name() == "λ5,6"
+    w.sim_page.method_combo.setCurrentIndex(list(Method).index(Method.STATE_SPACE))
+    assert len(w.sim_page.time_plot.x_curves) == n
+    assert w.sim_page.time_plot.x_curves[2].name() == "λ5,6"
     amp = release_and_run(4)
     assert amp[2] > 0.015 and np.delete(amp, 2).max() < 1e-9
 
     # Changing the number of masses rebuilds the modal curves.
-    w.params.dof.setValue(6)
-    w._tick()
-    assert len(w.time_plot.x_curves) == 6
-    w.coords_combo.setCurrentIndex(0)
-    assert w.time_plot.x_curves[0].name() == "x1"
+    w.sim_page.params.dof.setValue(6)
+    w.sim_page._tick()
+    assert len(w.sim_page.time_plot.x_curves) == 6
+    w.sim_page.coords_combo.setCurrentIndex(0)
+    assert w.sim_page.time_plot.x_curves[0].name() == "x1"
     w.close()
 
 
@@ -940,9 +940,9 @@ def _energy_rows(w):
     """The energy curves' whole rows (not the decimated points each curve shows), checked against the curves."""
     import numpy as np
 
-    t, *rows = w.history.window(w.controls.time_window.value())
-    y = w._plot_values(*rows)(slice(None))
-    for i, c in enumerate(w.time_plot.x_curves):
+    t, *rows = w.sim_page.history.window(w.sim_page.controls.time_window.value())
+    y = w.sim_page._plot_values(*rows)(slice(None))
+    for i, c in enumerate(w.sim_page.time_plot.x_curves):
         tc, yc = c.getData()
         np.testing.assert_array_equal(yc, y[np.searchsorted(t, tc), i])
     return y[:, :-1].T
@@ -951,36 +951,37 @@ def _energy_rows(w):
 def test_energy_time_history(app):
     import numpy as np
 
-    from vib_tutorial.gui.main_window import ENERGY_CURVES, MainWindow
+    from vib_tutorial.gui.main_window import MainWindow
+    from vib_tutorial.gui.simulation_page import ENERGY_CURVES
 
     w = MainWindow()
-    w.coords_combo.setCurrentIndex(2)
-    assert w.energy_view and not w.modal_view
-    assert [c.name() for c in w.time_plot.x_curves] == [name for name, _ in ENERGY_CURVES]
-    w.table.selectRow(0)
-    w._release_mode()
+    w.sim_page.coords_combo.setCurrentIndex(2)
+    assert w.sim_page.energy_view and not w.sim_page.modal_view
+    assert [c.name() for c in w.sim_page.time_plot.x_curves] == [name for name, _ in ENERGY_CURVES]
+    w.sim_page.table.selectRow(0)
+    w.sim_page._release_mode()
     for _ in range(5):
-        w._sim_target = w.sim.t + 0.2
-        w._tick()
+        w.sim_page._sim_target = w.sim_page.sim.t + 0.2
+        w.sim_page._tick()
     _, _, stored, added, work, dissipated, rubbed = _energy_rows(w)
     assert added.max() > 0 and np.abs(work).max() == 0.0 and dissipated[-1] > 0 and rubbed.max() == 0.0
     np.testing.assert_allclose(added + work, stored + dissipated, rtol=0, atol=1e-12)
     # The balance still closes across a parameter edit (T, V use the parameters of the time),
     # and with friction.
-    w.params.rows[0][2].setValue(800.0)
-    w.params.rows[1][4].setValue(0.05)
+    w.sim_page.params.rows[0][2].setValue(800.0)
+    w.sim_page.params.rows[1][4].setValue(0.05)
     for _ in range(3):
-        w._sim_target = w.sim.t + 0.2
-        w._tick()
-        w._collect()  # with friction the steps run beside the frame: wait for them
-    assert w.sim.system.friction[1] == 0.05
+        w.sim_page._sim_target = w.sim_page.sim.t + 0.2
+        w.sim_page._tick()
+        w.sim_page._collect()  # with friction the steps run beside the frame: wait for them
+    assert w.sim_page.sim.system.friction[1] == 0.05
     _T, _V, stored, added, work, dissipated, rubbed = _energy_rows(w)
     assert rubbed[-1] > 0
     np.testing.assert_allclose(added + work, stored + dissipated + rubbed, rtol=0, atol=1e-12)
     # Changing the number of masses keeps the energy curves.
-    w.params.dof.setValue(6)
-    w._tick()
-    assert len(w.time_plot.x_curves) == len(ENERGY_CURVES)
+    w.sim_page.params.dof.setValue(6)
+    w.sim_page._tick()
+    assert len(w.sim_page.time_plot.x_curves) == len(ENERGY_CURVES)
     w.close()
 
 
@@ -988,16 +989,16 @@ def test_static_friction_ratio_reaches_the_simulator(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    params = w.params
+    params = w.sim_page.params
     params.static_ratio.setValue(1.8)
-    assert w.sim.system.static_ratio == 1.8
+    assert w.sim_page.sim.system.static_ratio == 1.8
     params.dof.setValue(3)  # kept when the chain is resized
-    assert w.sim.system.static_ratio == 1.8 and w.sim.system.n == 3
+    assert w.sim_page.sim.system.static_ratio == 1.8 and w.sim_page.sim.system.n == 3
     params.rows[0][4].setValue(0.4)
     params._copy_first_row()
-    assert list(w.sim.system.friction) == [0.4] * 3 and w.sim.system.static_ratio == 1.8
+    assert list(w.sim_page.sim.system.friction) == [0.4] * 3 and w.sim_page.sim.system.static_ratio == 1.8
     params._reset_defaults()
-    assert w.sim.system.static_ratio == 1.0 and not w.sim.system.friction.any()
+    assert w.sim_page.sim.system.static_ratio == 1.0 and not w.sim_page.sim.system.friction.any()
     w.close()
 
 
@@ -1006,18 +1007,18 @@ def test_modal_table_friction_column(app):
     from vib_tutorial.gui.modes import Method
 
     w = MainWindow()
-    table, column = w.table, w.table.FRICTION_COLUMN
+    table, column = w.sim_page.table, w.sim_page.table.FRICTION_COLUMN
     assert table.isColumnHidden(column)  # no friction by default
-    w.params.rows[0][4].setValue(0.5)
-    w.params._copy_first_row()
+    w.sim_page.params.rows[0][4].setValue(0.5)
+    w.sim_page.params._copy_first_row()
     assert not table.isColumnHidden(column)
     zeta = float(table.item(0, column).text())
-    w.release_amp.setValue(2 * w.release_amp.value())  # twice the amplitude, half the damping
+    w.sim_page.release_amp.setValue(2 * w.sim_page.release_amp.value())  # twice the amplitude, half the damping
     assert float(table.item(0, column).text()) == pytest.approx(zeta / 2, abs=1e-4)
     # The state-space table has one column fewer; coming back restores the friction column.
-    w.method_combo.setCurrentIndex(list(Method).index(Method.STATE_SPACE))
+    w.sim_page.method_combo.setCurrentIndex(list(Method).index(Method.STATE_SPACE))
     assert table.columnCount() == len(table.STATE_SPACE_HEADERS)
-    w.method_combo.setCurrentIndex(list(Method).index(Method.CLASSICAL))
+    w.sim_page.method_combo.setCurrentIndex(list(Method).index(Method.CLASSICAL))
     assert table.columnCount() == len(table.CLASSICAL_HEADERS) and not table.isColumnHidden(column)
     w.close()
 
@@ -1029,31 +1030,31 @@ def test_element_forces_view(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    assert not w.element_combo.isVisibleTo(w)
-    w.coords_combo.setCurrentIndex(3)
-    assert w.forces_view and w.element_combo.isVisibleTo(w)
-    n = w.sim.system.n
-    assert [c.name() for c in w.time_plot.x_curves] == [f"k{i + 1}" for i in range(n)]
+    assert not w.sim_page.element_combo.isVisibleTo(w)
+    w.sim_page.coords_combo.setCurrentIndex(3)
+    assert w.sim_page.forces_view and w.sim_page.element_combo.isVisibleTo(w)
+    n = w.sim_page.sim.system.n
+    assert [c.name() for c in w.sim_page.time_plot.x_curves] == [f"k{i + 1}" for i in range(n)]
     # A step force at the tip: once the motion settles, every spring carries it.
-    w.force.settings.kind = ForceKind.STEP
-    w.force.switch_on()
-    while w.sim.t < 150.0:  # mode 1 decays at zeta * omega_n = 0.12 1/s
-        w._sim_target = w.sim.t + 2.0
-        w._tick()
-    springs = np.array([c.getData()[1][-1] for c in w.time_plot.x_curves])
-    np.testing.assert_allclose(springs, w.force.value(), rtol=1e-6)
-    w.element_combo.setCurrentIndex(1)
-    w._tick()  # new curves fill on the next frame
-    assert w.time_plot.x_curves[0].name() == "c1"
-    assert max(abs(c.getData()[1][-1]) for c in w.time_plot.x_curves) < 1e-6
-    w.element_combo.setCurrentIndex(2)
-    assert w.time_plot.x_curves[0].name() == "k1 + c1"
+    w.sim_page.force.settings.kind = ForceKind.STEP
+    w.sim_page.force.switch_on()
+    while w.sim_page.sim.t < 150.0:  # mode 1 decays at zeta * omega_n = 0.12 1/s
+        w.sim_page._sim_target = w.sim_page.sim.t + 2.0
+        w.sim_page._tick()
+    springs = np.array([c.getData()[1][-1] for c in w.sim_page.time_plot.x_curves])
+    np.testing.assert_allclose(springs, w.sim_page.force.value(), rtol=1e-6)
+    w.sim_page.element_combo.setCurrentIndex(1)
+    w.sim_page._tick()  # new curves fill on the next frame
+    assert w.sim_page.time_plot.x_curves[0].name() == "c1"
+    assert max(abs(c.getData()[1][-1]) for c in w.sim_page.time_plot.x_curves) < 1e-6
+    w.sim_page.element_combo.setCurrentIndex(2)
+    assert w.sim_page.time_plot.x_curves[0].name() == "k1 + c1"
     # Changing the number of masses gives one curve per element.
-    w.params.dof.setValue(6)
-    w._tick()
-    assert len(w.time_plot.x_curves) == 6
-    w.coords_combo.setCurrentIndex(0)
-    assert not w.element_combo.isVisibleTo(w)
+    w.sim_page.params.dof.setValue(6)
+    w.sim_page._tick()
+    assert len(w.sim_page.time_plot.x_curves) == 6
+    w.sim_page.coords_combo.setCurrentIndex(0)
+    assert not w.sim_page.element_combo.isVisibleTo(w)
     w.close()
 
 
@@ -1064,32 +1065,32 @@ def test_energy_bars(app):
 
     w = MainWindow()
     w.show()
-    w.force_panel.button.click()  # harmonic force on
+    w.sim_page.force_panel.button.click()  # harmonic force on
     for _ in range(5):
-        w._sim_target = w.sim.t + 0.2
-        w._tick()
-    s = w.energy.bars.state
+        w.sim_page._sim_target = w.sim_page.sim.t + 0.2
+        w.sim_page._tick()
+    s = w.sim_page.energy.bars.state
     assert s.work > 0 and s.dissipated > 0 and s.stored > 0
     assert s.added + s.work == pytest.approx(s.stored + s.dissipated, rel=1e-9)
     assert s.modal.sum() == pytest.approx(s.stored, rel=1e-9)
-    w.energy.bars.grab()  # paints without error
+    w.sim_page.energy.bars.grab()  # paints without error
 
     # Release mode 3 with coupled damping: energy moves to other modes.
-    w.params.rows[0][3].setValue(15.0)
-    w.energy.view.setCurrentIndex(1)
-    assert w.energy.bars.by_mode
-    w._reset()
-    w.table.selectRow(2)
-    w._release_mode()
-    w._sim_target = w.sim.t + 0.02
-    w._tick()
-    early = w.energy.bars.state.modal / w.energy.bars.state.stored
+    w.sim_page.params.rows[0][3].setValue(15.0)
+    w.sim_page.energy.view.setCurrentIndex(1)
+    assert w.sim_page.energy.bars.by_mode
+    w.sim_page._reset()
+    w.sim_page.table.selectRow(2)
+    w.sim_page._release_mode()
+    w.sim_page._sim_target = w.sim_page.sim.t + 0.02
+    w.sim_page._tick()
+    early = w.sim_page.energy.bars.state.modal / w.sim_page.energy.bars.state.stored
     for _ in range(4):
-        w._sim_target = w.sim.t + 0.2
-        w._tick()
-    late = w.energy.bars.state.modal / w.energy.bars.state.stored
+        w.sim_page._sim_target = w.sim_page.sim.t + 0.2
+        w.sim_page._tick()
+    late = w.sim_page.energy.bars.state.modal / w.sim_page.energy.bars.state.stored
     assert early[2] > 0.85 and late[0] > 0.5  # mode 3 loses ~10% to the others within 0.02 s
-    w.energy.bars.grab()
+    w.sim_page.energy.bars.grab()
     w.close()
 
 
@@ -1170,7 +1171,7 @@ def test_modal_test_page(app):
 
     # The chain changes on the Simulation page: the test follows, with fs re-chosen.
     fs = p.test_setup.fs.value()
-    w.params.dof.setValue(6)
+    w.sim_page.params.dof.setValue(6)
     assert p.acq.n == 6 and p.output.count() == 6 and p.test_setup.fs.value() > fs
     p.output.setCurrentIndex(0)
     p.test_setup.anti_alias.setChecked(False)
@@ -1186,7 +1187,7 @@ def test_modal_test_with_friction_holds_one_level_for_comparison(app):
     p = w.test_page
     p.seed = 1
     w.pages.setCurrentWidget(p)
-    for row in w.params.rows:
+    for row in w.sim_page.params.rows:
         row[4].setValue(0.5)
     assert "Friction on m1, m2, m3, m4" in p.check.toPlainText()
     legend = p.frf_view.mag.legend
@@ -1368,33 +1369,35 @@ def test_drag_a_mass_and_let_go(app):
 
     w = MainWindow()
     w.show()
-    w.force_panel.button.click()  # a running force is switched off by the grab
-    w._sim_target = 0.5
-    w._tick()
+    w.sim_page.force_panel.button.click()  # a running force is switched off by the grab
+    w.sim_page._sim_target = 0.5
+    w.sim_page._tick()
     app.processEvents()
-    view = w.chain
+    view = w.sim_page.chain
 
     def pixel(x: float, y: float = 0.0) -> QtCore.QPoint:
         return view.mapFromScene(view.plotItem.vb.mapViewToScene(QtCore.QPointF(x, y)))
 
     # Grab m2 and pull it right, past the limit: it stops at MAX_DRAG.
     QTest.mousePress(view.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=pixel(view._centers[1]))
-    assert view.held == 1 and not w.force.active
+    assert view.held == 1 and not w.sim_page.force.active
     QTest.mouseMove(view.viewport(), pixel(2 * SPACING + 2 * MAX_DRAG))
-    x = w.sim.displacement.copy()
-    assert x[1] == pytest.approx(MAX_DRAG / view.gain) and np.all(w.sim.velocity == 0)
+    x = w.sim_page.sim.displacement.copy()
+    assert x[1] == pytest.approx(MAX_DRAG / view.gain) and np.all(w.sim_page.sim.velocity == 0)
     np.testing.assert_allclose(x[0], x[1] / 2)  # uniform chain: m1 halfway
-    t_held = w.sim.t
-    w._tick()
-    assert w.sim.t == t_held  # time stands still while the mass is held
+    t_held = w.sim_page.sim.t
+    w.sim_page._tick()
+    assert w.sim_page.sim.t == t_held  # time stands still while the mass is held
     assert view._force_text.isVisible() and view._force_text.toPlainText().startswith("F = +")
 
     QTest.mouseRelease(view.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=pixel(2 * SPACING + MAX_DRAG))
     assert view.held is None
-    w._sim_target = w.sim.t + 0.2
-    w._tick()
-    assert w.sim.t > t_held and np.any(w.sim.velocity != 0)
-    assert w.sim.energy_added + w.sim.work == pytest.approx(w.sim.stored_energy + w.sim.dissipated)
+    w.sim_page._sim_target = w.sim_page.sim.t + 0.2
+    w.sim_page._tick()
+    assert w.sim_page.sim.t > t_held and np.any(w.sim_page.sim.velocity != 0)
+    assert w.sim_page.sim.energy_added + w.sim_page.sim.work == pytest.approx(
+        w.sim_page.sim.stored_energy + w.sim_page.sim.dissipated
+    )
 
     # A press away from the masses is not a grab.
     QTest.mousePress(view.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=pixel(0.5 * SPACING, 0.4))
@@ -1409,22 +1412,22 @@ def test_dragging_with_friction_leaves_the_chain_where_friction_holds_it(app):
 
     w = MainWindow()
     w.show()
-    for row in w.params.rows:
+    for row in w.sim_page.params.rows:
         row[4].setValue(2.0)
-    w.params.static_ratio.setValue(1.5)
-    w._on_mass_grabbed(3)
+    w.sim_page.params.static_ratio.setValue(1.5)
+    w.sim_page._on_mass_grabbed(3)
     for x in np.linspace(0.0, 0.05, 11):  # out and back, as a hand would
-        w._on_mass_dragged(3, x)
+        w.sim_page._on_mass_dragged(3, x)
     for x in np.linspace(0.05, 0.0, 11):
-        w._on_mass_dragged(3, x)
-    w._on_mass_released(3)
-    held = w.sim.displacement.copy()
+        w.sim_page._on_mass_dragged(3, x)
+    w.sim_page._on_mass_released(3)
+    held = w.sim_page.sim.displacement.copy()
     assert held[3] == 0.0 and np.all(held[:3] > 0.0)  # the others stayed out
     # Let go: friction holds every mass, so nothing moves.
-    w._sim_target = w.sim.t + 0.5
-    w._tick()
-    np.testing.assert_array_equal(w.sim.displacement, held)
-    assert not w.sim.velocity.any()
+    w.sim_page._sim_target = w.sim_page.sim.t + 0.5
+    w.sim_page._tick()
+    np.testing.assert_array_equal(w.sim_page.sim.displacement, held)
+    assert not w.sim_page.sim.velocity.any()
     w.close()
 
 
@@ -1437,27 +1440,29 @@ def test_base_excitation_and_chirp(app):
 
     w = MainWindow()
     w.show()
-    p = w.force_panel
+    p = w.sim_page.force_panel
     p.button.click()  # a running force stops when the input changes
     p.input.setCurrentIndex(1)
-    assert w.force.settings.base and not w.force.on
+    assert w.sim_page.force.settings.base and not w.sim_page.force.on
     assert not p.target.isVisibleTo(p) and p.base_amplitude.isVisibleTo(p) and not p.amplitude.isVisibleTo(p)
     assert p.button.text().startswith("Move ground")
-    assert w.frf_plot.mag.titleLabel.text.startswith("Ground motion")
-    assert "Ground" in w.time_plot.f_plot.getAxis("left").labelText
+    assert w.sim_page.frf_plot.mag.titleLabel.text.startswith("Ground motion")
+    assert "Ground" in w.sim_page.time_plot.f_plot.getAxis("left").labelText
 
     p.base_amplitude.setValue(5.0)
     p.button.click()
     for _ in range(4):
-        w._sim_target = w.sim.t + 0.1
-        w._tick()
-    assert w.force.settings.base_amplitude == 0.005 and w.sim.ground != 0.0
-    assert w.chain._wall[0].pos().x() == pytest.approx(w.chain.gain * w.sim.ground)
-    assert w.sim.work != 0.0
-    assert w.sim.energy_added + w.sim.work == pytest.approx(w.sim.stored_energy + w.sim.dissipated)
+        w.sim_page._sim_target = w.sim_page.sim.t + 0.1
+        w.sim_page._tick()
+    assert w.sim_page.force.settings.base_amplitude == 0.005 and w.sim_page.sim.ground != 0.0
+    assert w.sim_page.chain._wall[0].pos().x() == pytest.approx(w.sim_page.chain.gain * w.sim_page.sim.ground)
+    assert w.sim_page.sim.work != 0.0
+    assert w.sim_page.sim.energy_added + w.sim_page.sim.work == pytest.approx(
+        w.sim_page.sim.stored_energy + w.sim_page.sim.dissipated
+    )
     for key in ("modal", "forces", "energy"):
-        w.coords_combo.setCurrentIndex(w.coords_combo.findData(key))
-        w._tick()
+        w.sim_page.coords_combo.setCurrentIndex(w.sim_page.coords_combo.findData(key))
+        w.sim_page._tick()
 
     # A short chirp: the drive line follows it, and the panel notices when it ends.
     p.sweep_time.setValue(0.5)
@@ -1465,23 +1470,28 @@ def test_base_excitation_and_chirp(app):
     assert p.sweep_start.isVisibleTo(p) and not p.freq.isVisibleTo(p)
     p.button.click()
     assert "sweeping" in p.button.text()
-    drive = w.frf_plot.drive_lines[0]
-    w._sim_target = w.sim.t + 0.25
-    w._tick()
+    drive = w.sim_page.frf_plot.drive_lines[0]
+    w.sim_page._sim_target = w.sim_page.sim.t + 0.25
+    w.sim_page._tick()
     assert drive.isVisible()
-    assert 10 ** drive.value() == pytest.approx(w.force.frequency(), rel=1e-6) and w.force.frequency() > 1.0
-    while w.force.on:
-        w._sim_target = w.sim.t + 0.1
-        w._tick()
+    assert (
+        10 ** drive.value() == pytest.approx(w.sim_page.force.frequency(), rel=1e-6)
+        and w.sim_page.force.frequency() > 1.0
+    )
+    while w.sim_page.force.on:
+        w.sim_page._sim_target = w.sim_page.sim.t + 0.1
+        w.sim_page._tick()
     assert p.button.text().startswith("Start sweep") and not drive.isVisible()
-    assert not math.isnan(w.sim.stored_energy)
+    assert not math.isnan(w.sim_page.sim.stored_energy)
 
     # Back to a force: the ground returns and the FRF is a receptance again.
     p.input.setCurrentIndex(0)
-    w._sim_target = w.sim.t + 0.1
-    w._tick()
-    assert w.sim.ground == 0.0 and w.frf_plot.mag.titleLabel.text.startswith("Force at")
-    assert np.isclose(w.sim.energy_added + w.sim.work, w.sim.stored_energy + w.sim.dissipated)
+    w.sim_page._sim_target = w.sim_page.sim.t + 0.1
+    w.sim_page._tick()
+    assert w.sim_page.sim.ground == 0.0 and w.sim_page.frf_plot.mag.titleLabel.text.startswith("Force at")
+    assert np.isclose(
+        w.sim_page.sim.energy_added + w.sim_page.sim.work, w.sim_page.sim.stored_energy + w.sim_page.sim.dissipated
+    )
     w.close()
 
 
@@ -1515,20 +1525,20 @@ def test_switch_themes_live(app):
 
     w = MainWindow()
     w.show()
-    w.force_panel.button.click()
-    w._sim_target = 0.5
-    w._tick()
+    w.sim_page.force_panel.button.click()
+    w.sim_page._sim_target = 0.5
+    w.sim_page._tick()
     try:
         for name in THEMES:
             w.theme_combo.textActivated.emit(name)
             assert theming.saved_name() == name and colors.name == name
             # Plots, the animation and the curves pick up the theme.
-            assert w.chain.backgroundBrush().color().name() == colors.background
-            assert w.time_plot.x_plot.getAxis("left").pen().color().name() == colors.foreground
-            assert w.time_plot.x_curves[0].opts["pen"].color().name() == colors.mass[0]
-            assert w.chain._rects[0].brush().color().name() == colors.mass[0]
-            assert w.table.item(0, 0).foreground().color().name() == colors.mode[0]
-            assert w.energy.bars.grab().toImage().pixelColor(2, 2).name() == colors.background
+            assert w.sim_page.chain.backgroundBrush().color().name() == colors.background
+            assert w.sim_page.time_plot.x_plot.getAxis("left").pen().color().name() == colors.foreground
+            assert w.sim_page.time_plot.x_curves[0].opts["pen"].color().name() == colors.mass[0]
+            assert w.sim_page.chain._rects[0].brush().color().name() == colors.mass[0]
+            assert w.sim_page.table.item(0, 0).foreground().color().name() == colors.mode[0]
+            assert w.sim_page.energy.bars.grab().toImage().pixelColor(2, 2).name() == colors.background
             # Every page redraws in it when shown.
             for page in (w.frf_page, w.cms_page, w.coupling_page, w.test_page):
                 w.pages.setCurrentWidget(page)
@@ -1541,10 +1551,12 @@ def test_switch_themes_live(app):
             assert w.coupling_page.veering.plot.getAxis("left").pen().color().name() == colors.foreground
             while not w.test_page.acq.done:
                 w.test_page._measure_some()
-            assert w.test_page.frf_view.measured[0].opts["pen"].color().name() == colors.mass[w.sim.system.n - 1]
+            assert (
+                w.test_page.frf_view.measured[0].opts["pen"].color().name() == colors.mass[w.sim_page.sim.system.n - 1]
+            )
             w.pages.setCurrentWidget(w.sim_page)
-            w._tick()
-            assert np.isfinite(w.sim.displacement).all()
+            w.sim_page._tick()
+            assert np.isfinite(w.sim_page.sim.displacement).all()
             for view in w.findChildren(pg.GraphicsView):
                 assert view.backgroundBrush().color().name() == colors.background
     finally:
@@ -1556,36 +1568,40 @@ def test_load_presets(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    names = [w.params.preset.itemText(i) for i in range(w.params.preset.count())]
+    names = [w.sim_page.params.preset.itemText(i) for i in range(w.sim_page.params.preset.count())]
     tmd = names.index("Tuned mass damper (Den Hartog)")
-    w.force_panel.button.click()
-    w._sim_target = 0.5
-    w._tick()
-    w.params.preset.activated.emit(tmd)
-    assert w.params.preset.currentIndex() == 0  # a one-shot menu
-    preset = w.params.presets[tmd - 1]
-    assert w.sim.system.n == 2 and len(w.params.rows) == 2
-    assert list(w.sim.system.stiffness) == pytest.approx(list(preset.system.stiffness), rel=1e-3)
-    assert w.sim.t == 0.0 and not w.force.on  # starts from rest, force off
-    assert w.force.settings.target == 0 and w.force.settings.freq_hz == pytest.approx(preset.force.freq_hz, abs=1e-3)
-    assert w.frf_compare.isChecked() and w.tabs.currentWidget() is w.frf_tab
-    assert "without m2" in w.frf_plot.mag.titleLabel.text
-    assert len(w.frf_plot.mag_curves) == 3  # x1, x2 and x1 without the absorber
-    assert "Den Hartog" in w.params.preset_note.text()
+    w.sim_page.force_panel.button.click()
+    w.sim_page._sim_target = 0.5
+    w.sim_page._tick()
+    w.sim_page.params.preset.activated.emit(tmd)
+    assert w.sim_page.params.preset.currentIndex() == 0  # a one-shot menu
+    preset = w.sim_page.params.presets[tmd - 1]
+    assert w.sim_page.sim.system.n == 2 and len(w.sim_page.params.rows) == 2
+    assert list(w.sim_page.sim.system.stiffness) == pytest.approx(list(preset.system.stiffness), rel=1e-3)
+    assert w.sim_page.sim.t == 0.0 and not w.sim_page.force.on  # starts from rest, force off
+    assert w.sim_page.force.settings.target == 0 and w.sim_page.force.settings.freq_hz == pytest.approx(
+        preset.force.freq_hz, abs=1e-3
+    )
+    assert w.sim_page.frf_compare.isChecked() and w.sim_page.tabs.currentWidget() is w.sim_page.frf_tab
+    assert "without m2" in w.sim_page.frf_plot.mag.titleLabel.text
+    assert len(w.sim_page.frf_plot.mag_curves) == 3  # x1, x2 and x1 without the absorber
+    assert "Den Hartog" in w.sim_page.params.preset_note.text()
 
     # The building: ground motion, five masses.
-    w.params.preset.activated.emit(names.index("TMD on a 4-storey building"))
-    assert w.sim.system.n == 5 and w.force.settings.base
-    assert w.force_panel.target.isHidden()  # no mass to pick for ground motion
-    w.force_panel.button.click()
-    w._sim_target = 0.5
-    w._tick()
-    assert w.sim.t > 0.1
+    w.sim_page.params.preset.activated.emit(names.index("TMD on a 4-storey building"))
+    assert w.sim_page.sim.system.n == 5 and w.sim_page.force.settings.base
+    assert w.sim_page.force_panel.target.isHidden()  # no mass to pick for ground motion
+    w.sim_page.force_panel.button.click()
+    w.sim_page._sim_target = 0.5
+    w.sim_page._tick()
+    assert w.sim_page.sim.t > 0.1
 
     # Back to the plain chain: no comparison.
-    w.params.preset.activated.emit(names.index("Uniform chain (4 masses)"))
-    assert w.sim.system.n == 4 and not w.force.settings.base and not w.frf_compare.isChecked()
-    assert len(w.frf_plot.mag_curves) == 4
+    w.sim_page.params.preset.activated.emit(names.index("Uniform chain (4 masses)"))
+    assert (
+        w.sim_page.sim.system.n == 4 and not w.sim_page.force.settings.base and not w.sim_page.frf_compare.isChecked()
+    )
+    assert len(w.sim_page.frf_plot.mag_curves) == 4
 
 
 def test_substructuring_back_expansion(app):
@@ -1647,8 +1663,8 @@ def test_substructuring_back_expansion(app):
     v.step(0.2)
     # No model at all: the tab says why.
     page.set_interfaces([2])
-    w.params.rows[0][2].setValue(0.0)
-    w.params.rows[1][2].setValue(0.0)
+    w.sim_page.params.rows[0][2].setValue(0.0)
+    w.sim_page.params.rows[1][2].setValue(0.0)
     assert v.sim is None and "K_ii" in v.header.text()
     w.pages.setCurrentWidget(w.sim_page)
     assert not v.loop.timer.isActive()
@@ -1682,7 +1698,7 @@ def test_modal_coupling_page(app):
     text = page.matrices.toPlainText()
     assert "Participation" in text and "r = [1, 1]" in text and "Notation" in text
     assert f"{page.model.osc_a.m:.4g} kg" in text and "These are the 2-DOF K and M" in text
-    w.params.rows[0][1].setValue(2.0)  # m1 = 2 kg
+    w.sim_page.params.rows[0][1].setValue(2.0)  # m1 = 2 kg
     assert page.matrices.toPlainText() != text
 
     # Split after m1, couple B's mode 2 by clicking its row.
@@ -1713,7 +1729,7 @@ def test_modal_coupling_page(app):
         app.processEvents()
 
     # N changed on the Simulation page: the split follows, kept where it was.
-    w.params.dof.setValue(8)
+    w.sim_page.params.dof.setValue(8)
     assert len(page.split_buttons) == 7 and page.split == 1 and page.model.B.dofs.size == 7
     page.set_split(6)
     page.set_modes(1, 0)
@@ -1722,13 +1738,13 @@ def test_modal_coupling_page(app):
 
     # A parameter edit on the Simulation page reaches this page.
     k_before = page.model.osc_b.k
-    w.params.rows[6][2].setValue(800.0)
+    w.sim_page.params.rows[6][2].setValue(800.0)
     assert page.model.osc_b.k != k_before
 
     # One mass cannot be split.
-    w.params.dof.setValue(1)
+    w.sim_page.params.dof.setValue(1)
     assert page.model is None and "at least 2 masses" in page.summary.text()
-    w.params.dof.setValue(4)
+    w.sim_page.params.dof.setValue(4)
     assert page.model is not None
     w.pages.setCurrentWidget(w.sim_page)
     w.close()
@@ -1809,30 +1825,30 @@ def test_frequency_response_with_friction(app):
 
     w = MainWindow()
     w.show()
-    plot = w.frf_plot
-    w.params.rows[0][4].setValue(0.5)
-    w.params._copy_first_row()
+    plot = w.sim_page.frf_plot
+    w.sim_page.params.rows[0][4].setValue(0.5)
+    w.sim_page.params._copy_first_row()
     assert not plot.friction_curves  # the Modal analysis tab is in front: not worked out yet
-    w.tabs.setCurrentWidget(w.frf_tab)
-    assert len(plot.friction_curves) == 2 * w.sim.system.n and w.frf_friction_note.isVisible()
+    w.sim_page.tabs.setCurrentWidget(w.sim_page.frf_tab)
+    assert len(plot.friction_curves) == 2 * w.sim_page.sim.system.n and w.sim_page.frf_friction_note.isVisible()
     assert "friction at 10 N" in plot.mag.titleLabel.text
-    w.force_panel.amplitude.setValue(2.0)
-    assert "friction at 2 N" in plot.mag.titleLabel.text and len(plot.friction_curves) == 2 * w.sim.system.n
+    w.sim_page.force_panel.amplitude.setValue(2.0)
+    assert "friction at 2 N" in plot.mag.titleLabel.text and len(plot.friction_curves) == 2 * w.sim_page.sim.system.n
     drawn = list(plot.friction_curves)
-    w.tabs.setCurrentIndex(0)
-    w.tabs.setCurrentWidget(w.frf_tab)
+    w.sim_page.tabs.setCurrentIndex(0)
+    w.sim_page.tabs.setCurrentWidget(w.sim_page.frf_tab)
     assert plot.friction_curves == drawn  # nothing changed while hidden: kept, not worked out again
-    w.tabs.setCurrentIndex(0)
-    w.force_panel.amplitude.setValue(3.0)
+    w.sim_page.tabs.setCurrentIndex(0)
+    w.sim_page.force_panel.amplitude.setValue(3.0)
     assert plot.friction_curves == drawn  # changed while hidden: drawn when shown
-    w.tabs.setCurrentWidget(w.frf_tab)
-    assert plot.friction_curves != drawn and len(plot.friction_curves) == 2 * w.sim.system.n
-    w.force_panel.input.setCurrentIndex(1)  # ground motion
-    w.force_panel.base_amplitude.setValue(5.0)
+    w.sim_page.tabs.setCurrentWidget(w.sim_page.frf_tab)
+    assert plot.friction_curves != drawn and len(plot.friction_curves) == 2 * w.sim_page.sim.system.n
+    w.sim_page.force_panel.input.setCurrentIndex(1)  # ground motion
+    w.sim_page.force_panel.base_amplitude.setValue(5.0)
     assert "friction at 5 mm" in plot.mag.titleLabel.text
-    w.params._reset_defaults()
+    w.sim_page.params._reset_defaults()
     assert not plot.friction_curves and "friction" not in plot.mag.titleLabel.text
-    assert not w.frf_friction_note.isVisible()
+    assert not w.sim_page.frf_friction_note.isVisible()
     w.close()
 
 
@@ -1842,11 +1858,11 @@ def test_every_legend_has_the_theme_background(app, main_window):
     import pyqtgraph as pg
 
     w = main_window
-    dof = w.params.dof.value()
+    dof = w.sim_page.params.dof.value()
     for i in range(w.pages.count()):
         w.pages.setCurrentIndex(i)
         app.processEvents()
-    w.params.dof.setValue(6)  # rebuilds the plots that have one panel per mass
+    w.sim_page.params.dof.setValue(6)  # rebuilds the plots that have one panel per mass
     app.processEvents()
     legends = [
         item
@@ -1857,7 +1873,7 @@ def test_every_legend_has_the_theme_background(app, main_window):
     assert len(legends) > 10
     bare = [legend for legend in legends if legend.opts["brush"].style() == QtCore.Qt.BrushStyle.NoBrush]
     assert not bare
-    w.params.dof.setValue(dof)
+    w.sim_page.params.dof.setValue(dof)
 
 
 def test_modal_test_draws_the_describing_function_for_a_stepped_sine(app):
@@ -1879,7 +1895,7 @@ def test_modal_test_draws_the_describing_function_for_a_stepped_sine(app):
     p.test_setup.excitation.setCurrentIndex(p.test_setup.excitation.findData(Excitation.STEPPED_SINE))
     first_frequency()
     assert not any(t.startswith("Describing function") for t in labels())  # no friction
-    for row in w.params.rows:
+    for row in w.sim_page.params.rows:
         row[4].setValue(0.5)
     first_frequency()
     assert "Describing function at 10 N" in labels()
@@ -1905,7 +1921,7 @@ def test_rotor_page(app):
     # The page opens with its analysis on its way from the worker; work it out here instead.
     assert p.campbell is None and "working them out" in p.crit_label.text()
     p._refresh_analysis()
-    w.params.dof.setValue(3)  # the chain's edits leave the rotor alone
+    w.sim_page.params.dof.setValue(3)  # the chain's edits leave the rotor alone
     assert p.sim.system == RotorSystem()
 
     # It ramps toward the target and the plots fill.
@@ -2509,7 +2525,9 @@ def test_window_fits_a_1280_px_screen(app, request):
     w = MainWindow()
     for i in range(w.pages.count()):
         w.pages.setCurrentIndex(i)  # builds each page
-    w.method_combo.setCurrentIndex(list(Method).index(Method.STATE_SPACE))  # the complex plane beside the shapes
+    w.sim_page.method_combo.setCurrentIndex(
+        list(Method).index(Method.STATE_SPACE)
+    )  # the complex plane beside the shapes
     p = w.rotor_page
     p.loop.timer.stop()
     p.balancing.mode.setCurrentIndex(2)  # two planes on the shaft: two probes, five steps
@@ -2530,7 +2548,7 @@ def test_every_theory_tab_fits_a_1280_px_window(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w.loop.enabled = False
+    w.sim_page.loop.enabled = False
     w.resize(1280, 800)
     w.show()
     wide = []
@@ -2955,18 +2973,18 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
     monkeypatch.delenv(frame_stats.ENV, raising=False)
     w = MainWindow()
     assert w.frame_overlay is None and frame_stats.STATS is None
-    w.loop.enabled = False  # or its frames would count with the next window's
+    w.sim_page.loop.enabled = False  # or its frames would count with the next window's
     w.close()
 
     log = tmp_path / "frames.csv"
     monkeypatch.setenv(frame_stats.ENV, str(log))
     w = MainWindow()
     try:
-        w.loop.enabled = False  # the test runs the frames
+        w.sim_page.loop.enabled = False  # the test runs the frames
         w.show()
         for _ in range(6):
             time.sleep(0.02)  # a frame's worth of time, so there's something new to draw
-            w.loop._frame()
+            w.sim_page.loop._frame()
             for _ in range(2):  # the repaint the frame asked for (posted while the first pass runs)
                 app.processEvents()
         w.frame_overlay.refresh()
@@ -2982,7 +3000,7 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
         # What the user does is logged between the frames, with what the control is called.
         from PySide6.QtTest import QTest
 
-        box = next(b for b in w.params.rows[0] if isinstance(b, QtWidgets.QAbstractSpinBox))
+        box = next(b for b in w.sim_page.params.rows[0] if isinstance(b, QtWidgets.QAbstractSpinBox))
         box.setFocus()
         QTest.keyClick(box, QtCore.Qt.Key.Key_Up)
         rotor = next(i for i in range(w.pages.count()) if "rotor" in w.pages.tabText(i).lower())
@@ -3255,36 +3273,36 @@ def test_simulation_page_steps_friction_beside_the_frame(app):
         pytest.skip("Rust kernels not loaded")
     w = MainWindow()
     w.pages.setCurrentWidget(w.sim_page)
-    w.params.rows[0][4].setValue(0.3)
-    w.params._copy_first_row()
-    system = w.sim.system
-    w.force_panel.button.click()
-    w.running = True
-    w._sim_target = 0.1
-    w._tick()
-    assert w._started is not None and w.history.size == 0
-    t = w.sim.t
-    while not w.sim.ready:
+    w.sim_page.params.rows[0][4].setValue(0.3)
+    w.sim_page.params._copy_first_row()
+    system = w.sim_page.sim.system
+    w.sim_page.force_panel.button.click()
+    w.sim_page.running = True
+    w.sim_page._sim_target = 0.1
+    w.sim_page._tick()
+    assert w.sim_page._started is not None and w.sim_page.history.size == 0
+    t = w.sim_page.sim.t
+    while not w.sim_page.sim.ready:
         time.sleep(1e-3)
-    w.running = False
-    w._tick()  # records them, and starts no more
-    w.running = True
-    assert w._started is None and w.history.size == round(t / w.sim.step_size())
+    w.sim_page.running = False
+    w.sim_page._tick()  # records them, and starts no more
+    w.sim_page.running = True
+    assert w.sim_page._started is None and w.sim_page.history.size == round(t / w.sim_page.sim.step_size())
 
-    ref = Simulator(system, ForceController(w.force.settings))
+    ref = Simulator(system, ForceController(w.sim_page.force.settings))
     ref.force.switch_on()
     want = ref.advance(t)
-    np.testing.assert_allclose(w.history.window(1.0)[1], want[1], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(w.sim_page.history.window(1.0)[1], want[1], rtol=0, atol=1e-12)
 
-    w._sim_target = t + 0.05
-    w._tick()
-    assert w._started is not None
-    w.params.rows[0][1].setValue(2.0)  # a heavier first mass: the steps before it are recorded first
-    assert w._started is None and w.history.size > round(t / w.sim.step_size())
-    w._sim_target = w.sim.t + 0.05
-    w._tick()
-    w._reset()
-    assert w._started is None and w.history.size == 0 and w.sim.t == 0.0
+    w.sim_page._sim_target = t + 0.05
+    w.sim_page._tick()
+    assert w.sim_page._started is not None
+    w.sim_page.params.rows[0][1].setValue(2.0)  # a heavier first mass: the steps before it are recorded first
+    assert w.sim_page._started is None and w.sim_page.history.size > round(t / w.sim_page.sim.step_size())
+    w.sim_page._sim_target = w.sim_page.sim.t + 0.05
+    w.sim_page._tick()
+    w.sim_page._reset()
+    assert w.sim_page._started is None and w.sim_page.history.size == 0 and w.sim_page.sim.t == 0.0
     w.close()
 
 
@@ -3294,26 +3312,27 @@ def test_history_keeps_every_stride_th_step_of_a_fast_chain(app):
     import numpy as np
 
     from vib_tutorial.core.model import ChainSystem
-    from vib_tutorial.gui.main_window import STORE_PER_PERIOD, MainWindow
+    from vib_tutorial.gui.main_window import MainWindow
+    from vib_tutorial.gui.simulation_page import STORE_PER_PERIOD
 
     w = MainWindow()
     w.pages.setCurrentWidget(w.sim_page)
-    w.coords_combo.setCurrentIndex(2)  # energy
-    w._on_system_changed(ChainSystem([0.01] * 4, [3.6e5] * 4, [0.1] * 4, [0.5] * 4))
-    w.force.settings.freq_hz, w.force.settings.amplitude = 1000.0, 50.0
-    w.force_panel.button.click()
-    h, stride = w.sim.step_size(), w._store_stride()
-    assert stride > 1 and 1.0 / (stride * h * w.sim.fastest_hz()) >= STORE_PER_PERIOD
-    assert w.history.capacity * stride * h > 9.0  # most of the 10 s window, not 2.3 s
+    w.sim_page.coords_combo.setCurrentIndex(2)  # energy
+    w.sim_page._on_system_changed(ChainSystem([0.01] * 4, [3.6e5] * 4, [0.1] * 4, [0.5] * 4))
+    w.sim_page.force.settings.freq_hz, w.sim_page.force.settings.amplitude = 1000.0, 50.0
+    w.sim_page.force_panel.button.click()
+    h, stride = w.sim_page.sim.step_size(), w.sim_page._store_stride()
+    assert stride > 1 and 1.0 / (stride * h * w.sim_page.sim.fastest_hz()) >= STORE_PER_PERIOD
+    assert w.sim_page.history.capacity * stride * h > 9.0  # most of the 10 s window, not 2.3 s
     for steps in (7, 1, 3000, 2):  # advances shorter and longer than the stride
-        w._sim_target = w.sim.t + (steps + 0.4) * h
-        w._start()
-        w._collect()
-    t = w.history.t[: w.history.size]
+        w.sim_page._sim_target = w.sim_page.sim.t + (steps + 0.4) * h
+        w.sim_page._start()
+        w.sim_page._collect()
+    t = w.sim_page.history.t[: w.sim_page.history.size]
     np.testing.assert_allclose(np.diff(t), stride * h, rtol=1e-9)
-    assert t[-1] <= w.sim.t < t[-1] + stride * h
-    w.running = False
-    w._tick()  # draws them
+    assert t[-1] <= w.sim_page.sim.t < t[-1] + stride * h
+    w.sim_page.running = False
+    w.sim_page._tick()  # draws them
     _T, _V, stored, added, work, dissipated, rubbed = _energy_rows(w)
     assert rubbed[-1] > 0
     np.testing.assert_allclose(added + work, stored + dissipated + rubbed, rtol=0, atol=1e-12 * work.max())
@@ -3326,39 +3345,40 @@ def test_simulation_page_keeps_to_its_compute_budget(app, monkeypatch):
     frames. A new system is measured afresh, with PROBE_STEPS; a dearer step counts at once."""
     import time
 
-    from vib_tutorial.gui.main_window import FRAME_BUDGET, PROBE_STEPS, MainWindow
+    from vib_tutorial.gui.main_window import MainWindow
+    from vib_tutorial.gui.simulation_page import FRAME_BUDGET, PROBE_STEPS
 
     w = MainWindow()
     w.pages.setCurrentWidget(w.sim_page)
-    w.running = True
+    w.sim_page.running = True
 
     def tick():
-        w._last_wall = w._clock.elapsed() / 1000.0 - 0.1
-        w._sim_target = w.sim.t + 10.0  # far behind: only the caps hold it
-        before = w.sim.t
-        w._tick()
-        return round((w.sim.t - before) / w.sim.step_size())
+        w.sim_page._last_wall = w.sim_page._clock.elapsed() / 1000.0 - 0.1
+        w.sim_page._sim_target = w.sim_page.sim.t + 10.0  # far behind: only the caps hold it
+        before = w.sim_page.sim.t
+        w.sim_page._tick()
+        return round((w.sim_page.sim.t - before) / w.sim_page.sim.step_size())
 
-    w._on_system_changed(w.sim.system)
-    assert w._step_cost == 0.0
+    w.sim_page._on_system_changed(w.sim_page.sim.system)
+    assert w.sim_page._step_cost == 0.0
     assert tick() <= PROBE_STEPS
-    assert w._step_cost > 0.0
+    assert w.sim_page._step_cost > 0.0
 
-    collect = w.sim.collect
+    collect = w.sim_page.sim.collect
 
     def slow():  # 1 ms per step
         out = collect()
         time.sleep(1e-3 * out[0].size)
         return out
 
-    monkeypatch.setattr(w.sim, "collect", slow)
+    monkeypatch.setattr(w.sim_page.sim, "collect", slow)
     tick()
-    assert w._step_cost >= 1e-3  # dearer: taken at once
+    assert w.sim_page._step_cost >= 1e-3  # dearer: taken at once
     assert tick() <= FRAME_BUDGET / 1e-3 + 1
-    slow_cost = w._step_cost  # ≥ 1 ms: more where sleeps overshoot (macOS runners)
-    monkeypatch.setattr(w.sim, "collect", collect)
+    slow_cost = w.sim_page._step_cost  # ≥ 1 ms: more where sleeps overshoot (macOS runners)
+    monkeypatch.setattr(w.sim_page.sim, "collect", collect)
     tick()
-    assert 0.0 < w._step_cost < slow_cost  # cheaper: gradually
+    assert 0.0 < w.sim_page._step_cost < slow_cost  # cheaper: gradually
     w.close()
 
 
@@ -3725,7 +3745,7 @@ def test_oma_page(app):
     p.method.setCurrentText("SSI-cov")
     assert "mode 2" in p.readout.text()  # SSI fits mode 2 beside the sine
 
-    w.params.dof.setValue(3)  # the chain changes: the page follows
+    w.sim_page.params.dof.setValue(3)  # the chain changes: the page follows
     app.processEvents()
     p.recompute()
     assert p.system.n == 3 and p.input.count() == 4 and p.record.y.shape[1] == 3
@@ -3919,7 +3939,7 @@ def test_random_vibration_page(app):
     p.dof.setValue(3)  # the Simulation page's chain follows, and the page with it
     app.processEvents()
     p.recompute()
-    assert w.sim.system.n == 3 and p.mass.count() == 3 and p.record.x.shape[1] == 3
+    assert w.sim_page.sim.system.n == 3 and p.mass.count() == 3 and p.record.x.shape[1] == 3
     p.f_hi.setValue(0.0)  # an empty band
     p.f_lo.setValue(1.0)
     p.recompute()
@@ -3977,7 +3997,7 @@ def test_complex_modes_page(app):
     p.trial.setCurrentIndex(1 + names.index("One damper, at the base"))
     app.processEvents()
     assert p.trial.currentIndex() == 1 + names.index("One damper, at the base") and p.trial_note.isVisible()
-    assert list(w.sim.system.damping) == [20.0, 0, 0, 0]
+    assert list(w.sim_page.sim.system.damping) == [20.0, 0, 0, 0]
     assert "not proportional" in p.coupling.text() and "mode 3, MPC 0.20" in p.readout.text()
     p.mode.setCurrentIndex(1)
     assert p.table.selectedItems()[0].row() == 1 and "45 %</b> of it reaches mode 1" in p.decay_note.text()
@@ -3991,7 +4011,9 @@ def test_complex_modes_page(app):
 
     p.make_proportional.click()
     app.processEvents()
-    assert w.sim.system.damping == pytest.approx(w.sim.system.damping[0] / 400.0 * w.sim.system.stiffness)
+    assert w.sim_page.sim.system.damping == pytest.approx(
+        w.sim_page.sim.system.damping[0] / 400.0 * w.sim_page.sim.system.stiffness
+    )
     assert "proportional" in p.coupling.text() and not p.make_proportional.isEnabled()
 
     p.trial.setCurrentIndex(1 + names.index("A strong damper locks a joint"))
@@ -4005,7 +4027,7 @@ def test_complex_modes_page(app):
     assert p.dof.value() == 5 and p.mode.count() == 5 and p.table.rowCount() == 5
     p.dof.setValue(2)
     app.processEvents()
-    assert w.sim.system.n == 2 and p.table.rowCount() == 2 and p.frf_in.count() == 2
+    assert w.sim_page.sim.system.n == 2 and p.table.rowCount() == 2 and p.frf_in.count() == 2
     w.set_theme("Dark")
     w.set_theme("Light")
     w.close()
@@ -4120,7 +4142,12 @@ def test_model_updating_page(app):
     p.dof.setValue(6)
     app.processEvents()
     p.recompute()
-    assert w.sim.system.n == 6 and len(p.sensors) == 6 and len(p.error_rows) == 6 and len(p.corr.result.modes) == 6
+    assert (
+        w.sim_page.sim.system.n == 6
+        and len(p.sensors) == 6
+        and len(p.error_rows) == 6
+        and len(p.corr.result.modes) == 6
+    )
     for b in p.sensors:
         b.setChecked(False)
     p.recompute()
@@ -4173,7 +4200,7 @@ def test_shock_page(app):
     p.trial.pick("A component on the last mass")
     p.recompute()
     assert p.mass.isVisibleTo(p) and p.mass.currentText() == "m4" and "3.32 ×" in p.readout.text()
-    assert p.f_pick.value() == pytest.approx(w.modal.modes[0].fn_hz, abs=1e-3)
+    assert p.f_pick.value() == pytest.approx(w.sim_page.modal.modes[0].fn_hz, abs=1e-3)
     p.trial.pick("Zero shift")
     p.recompute()
     assert p.offset.value() == pytest.approx(1.0) and p.again.isEnabled()
@@ -4223,7 +4250,7 @@ def test_shock_page(app):
     p.dof.setValue(6)
     app.processEvents()
     p.recompute()
-    assert w.sim.system.n == 6 and p.mass.count() == 6 and p.readout.text().count(" Hz ") >= 6
+    assert w.sim_page.sim.system.n == 6 and p.mass.count() == 6 and p.readout.text().count(" Hz ") >= 6
     w.set_theme("Dark")
     w.set_theme("Light")
     w.close()
@@ -4385,7 +4412,7 @@ def test_gyroscope_on_a_table(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w.loop.enabled = False
+    w.sim_page.loop.enabled = False
     w.show()
     page = w.gyroscope_page
     w.pages.setCurrentWidget(page)
@@ -4438,13 +4465,13 @@ def test_single_undamped_mass_draws_its_frf(app):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w.loop.enabled = False
+    w.sim_page.loop.enabled = False
     system = ChainSystem.uniform(1)
     system.damping[0] = 0.0
-    w.params.set_system(system)
-    w.tabs.setCurrentWidget(w.frf_tab)
+    w.sim_page.params.set_system(system)
+    w.sim_page.tabs.setCurrentWidget(w.sim_page.frf_tab)
     app.processEvents()
-    assert len(w.modal.modes) == 1
+    assert len(w.sim_page.modal.modes) == 1
     w.close()
 
 
@@ -4779,7 +4806,7 @@ def test_test_planning_controls(app, main_window):
     page.force.setValue(4)
     assert "The reference, mass 1, moves" in page.ods_readout.text() and "force on mass 4" in page.ods_readout.text()
     # a smaller chain from the Simulation page
-    w.params.dof.setValue(4)
+    w.sim_page.params.dof.setValue(4)
     assert page.system.n == 4 and page.hand[5].isHidden() and page.force.maximum() == 4
     page.load_trial(0)
     assert page.system.n == 8
@@ -4963,9 +4990,9 @@ def test_space_switches_the_force_on(app):
     QTest.qWaitForWindowExposed(w)
     w.activateWindow()
     app.processEvents()
-    assert not w.force_panel.force.on
+    assert not w.sim_page.force_panel.force.on
     QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
-    assert w.force_panel.force.on
+    assert w.sim_page.force_panel.force.on
     w.close()
 
 

@@ -36,7 +36,7 @@ def main_window(request):
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
-    w.loop.enabled = False
+    w.sim_page.loop.enabled = False
     w.show()
     yield w
     w.close()

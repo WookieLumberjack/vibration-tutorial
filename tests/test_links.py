@@ -346,7 +346,7 @@ def test_every_page_closes_with_a_link_to_the_next_and_the_keys_step_through_the
     w = main_window
     keys = {s.key().toString(): s for s in w.findChildren(QtGui.QShortcut)}
     w.show_page("sim_page")
-    assert f"Next: {title(pages[pages.index('sim_page') + 1])} →" in w.background.toPlainText()
+    assert f"Next: {title(pages[pages.index('sim_page') + 1])} →" in w.sim_page.theory.toPlainText()
     keys["Ctrl+PgDown"].activated.emit()
     assert w.page_name(w.pages.currentWidget()) == pages[pages.index("sim_page") + 1]
     keys["Ctrl+PgUp"].activated.emit()

@@ -54,8 +54,8 @@ def _sim(w, **trial):
     from vib_tutorial.gui.sim_trials import SimTrial
 
     w.pages.setCurrentWidget(w.sim_page)
-    w.apply_sim_trial(SimTrial("timing", "", **trial))
-    return w.sim_page, w.controls.speed_factor
+    w.sim_page.apply_trial(SimTrial("timing", "", **trial))
+    return w.sim_page, w.sim_page.controls.speed_factor
 
 
 def _stiff(friction: float):
@@ -78,8 +78,8 @@ def _sim_trial(w):
     from vib_tutorial.gui.sim_trials import TRIALS
 
     w.pages.setCurrentWidget(w.sim_page)
-    w.apply_sim_trial(TRIALS[0])
-    return w.sim_page, w.controls.speed_factor
+    w.sim_page.apply_trial(TRIALS[0])
+    return w.sim_page, w.sim_page.controls.speed_factor
 
 
 def _rotor(preset: str, rpm: float | None = None, speed: float = 1.0):
@@ -302,8 +302,8 @@ def main() -> int:
         stats.note("input", MARK + "end " + s.label)
         if hasattr(page, "_run"):
             page._run(False)
-        elif page is w.sim_page and w.force.active:
-            w.force.switch_off()
+        elif page is w.sim_page and w.sim_page.force.active:
+            w.sim_page.force.switch_off()
     gui.close_graphics(w)
     frame_stats.uninstall()
 

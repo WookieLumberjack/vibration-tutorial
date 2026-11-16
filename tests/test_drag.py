@@ -250,7 +250,7 @@ def test_dragging_a_pole_along_the_complex_modes_sweep_sets_the_element_on_relea
     assert (scene_at(p.locus, snapped.real, snapped.imag / (2 * np.pi)) - end).manhattanLength() < 6
     # let go: the chain took it (as its box shows it, to 0.001 N·s/m), through the Simulation page
     assert p.system.damping[0] == pytest.approx(seen[-1], abs=5.01e-4)
-    assert w.sim.system.damping[0] == pytest.approx(seen[-1], abs=5.01e-4)
+    assert w.sim_page.sim.system.damping[0] == pytest.approx(seen[-1], abs=5.01e-4)
     for _ in range(3):
         app.processEvents()
     assert all(d.param == pytest.approx(seen[-1], abs=5.01e-4) for d in p.sweep_dots if d.isVisible())  # redrawn

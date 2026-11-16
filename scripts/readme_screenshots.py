@@ -48,24 +48,24 @@ def window(theme="Light"):
     # The script drives time (run), so every shot is at a known moment. Stop the timer before
     # the window shows: frames run while it settles would advance History.offset by a
     # wall-clock-dependent count, and the strip chart's decimation buckets are aligned to it.
-    w.loop.enabled = False
+    w.sim_page.loop.enabled = False
     w.set_theme(theme)
     w.resize(1700, 900)
     w.show()
     QTest.qWait(200)
-    running, w.running = w.running, False
-    w._tick()  # draw the chain (its masses' positions) without advancing time
-    w.running = running
-    w.controls.reset.click()
+    running, w.sim_page.running = w.sim_page.running, False
+    w.sim_page._tick()  # draw the chain (its masses' positions) without advancing time
+    w.sim_page.running = running
+    w.sim_page.controls.reset.click()
     return w
 
 
 def run(w, seconds):
     """Advance the Simulation page by `seconds` of simulated time (at the chosen speed) through its tick."""
-    speed = w.controls.speed_factor
+    speed = w.sim_page.controls.speed_factor
     for _ in range(round(seconds / (0.1 * speed))):
-        w._last_wall = w._clock.elapsed() / 1000.0 - 0.1
-        w._tick()
+        w.sim_page._last_wall = w.sim_page._clock.elapsed() / 1000.0 - 0.1
+        w.sim_page._tick()
     app.processEvents()
 
 
@@ -90,7 +90,7 @@ def save(w, name):
 
 
 def done(w):
-    w.loop.enabled = False
+    w.sim_page.loop.enabled = False
     w.close()
     gui.close_graphics(w)
     w.deleteLater()
@@ -98,7 +98,7 @@ def done(w):
 
 
 def set_c1(w, c):
-    w.params.rows[0][3].setValue(c)
+    w.sim_page.params.rows[0][3].setValue(c)
 
 
 def kind(panel, k):
@@ -111,29 +111,29 @@ def tune(panel, mode):
 
 
 def coords(w, text):
-    w.coords_combo.setCurrentIndex(w.coords_combo.findText(text, QtCore.Qt.MatchFlag.MatchStartsWith))
+    w.sim_page.coords_combo.setCurrentIndex(w.sim_page.coords_combo.findText(text, QtCore.Qt.MatchFlag.MatchStartsWith))
 
 
 def energy_view(w, by_mode):
-    w.energy.view.setCurrentIndex(1 if by_mode else 0)
+    w.sim_page.energy.view.setCurrentIndex(1 if by_mode else 0)
 
 
 def release(w, row):
-    w.table.selectRow(row)
-    w._release_mode()
+    w.sim_page.table.selectRow(row)
+    w.sim_page._release_mode()
 
 
 def method(w, state_space):
-    w.method_combo.setCurrentIndex(1 if state_space else 0)
+    w.sim_page.method_combo.setCurrentIndex(1 if state_space else 0)
 
 
 # ------------------------------------------------------------------ Simulation page
 def main_window():
     w = window()
-    tune(w.force_panel, 2)
-    w.force_panel.button.click()
+    tune(w.sim_page.force_panel, 2)
+    w.sim_page.force_panel.button.click()
     run(w, 6.0)
-    w.table.selectRow(1)
+    w.sim_page.table.selectRow(1)
     save(w, "main_window")
 
 
@@ -142,10 +142,10 @@ def dark_theme():
     set_c1(w, 15.0)
     method(w, True)
     coords(w, "Modal")
-    tune(w.force_panel, 2)
-    w.force_panel.button.click()
+    tune(w.sim_page.force_panel, 2)
+    w.sim_page.force_panel.button.click()
     run(w, 11.0)
-    w.table.selectRow(2)
+    w.sim_page.table.selectRow(2)
     save(w, "dark_theme")
 
 
@@ -154,8 +154,8 @@ def pluck():
 
     w = window()
     energy_view(w, True)
-    w.controls.time_window.setValue(4.0)
-    view = w.chain
+    w.sim_page.controls.time_window.setValue(4.0)
+    view = w.sim_page.chain
 
     def pixel(x):
         return view.mapFromScene(view.plotItem.vb.mapViewToScene(QtCore.QPointF(x, 0.0)))
@@ -168,20 +168,20 @@ def pluck():
     QTest.mousePress(view.viewport(), left, pos=pixel(view._centers[1]))
     QTest.mouseMove(view.viewport(), pixel(2 * SPACING - 0.5 * MAX_DRAG))
     for _ in range(5):
-        w._tick()
+        w.sim_page._tick()
     save(w, "pluck")
 
 
 def chirp():
     w = window()
-    p = w.force_panel
+    p = w.sim_page.force_panel
     kind(p, ForceKind.CHIRP)
     p.sweep_start.setValue(2.0)
     p.sweep_end.setValue(7.0)
     p.sweep_time.setValue(40.0)
-    w.controls.time_window.setValue(40.0)
+    w.sim_page.controls.time_window.setValue(40.0)
     coords(w, "Modal")
-    w.tabs.setCurrentWidget(w.frf_tab)
+    w.sim_page.tabs.setCurrentWidget(w.sim_page.frf_tab)
     p.button.click()
     run(w, 36.3)
     save(w, "chirp")
@@ -189,12 +189,12 @@ def chirp():
 
 def base_excitation():
     w = window()
-    p = w.force_panel
+    p = w.sim_page.force_panel
     p.input.setCurrentIndex(1)
     p.base_amplitude.setValue(5.0)
     p.freq.setValue(1.6)
-    w.controls.time_window.setValue(4.0)
-    w.tabs.setCurrentWidget(w.frf_tab)
+    w.sim_page.controls.time_window.setValue(4.0)
+    w.sim_page.tabs.setCurrentWidget(w.sim_page.frf_tab)
     p.button.click()
     run(w, 30.3)
     save(w, "base_excitation")
@@ -202,9 +202,9 @@ def base_excitation():
 
 def tuned_mass_damper():
     w = window()
-    w.params.load_preset(next(pr for pr in w.params.presets if "Den Hartog" in pr.name))
+    w.sim_page.params.load_preset(next(pr for pr in w.sim_page.params.presets if "Den Hartog" in pr.name))
     settle()
-    w.force_panel.button.click()
+    w.sim_page.force_panel.button.click()
     run(w, 12.7)
     save(w, "tuned_mass_damper")
 
@@ -212,7 +212,7 @@ def tuned_mass_damper():
 def classical_release_nonproportional():
     w = window()
     set_c1(w, 15.0)
-    w.controls.time_window.setValue(2.05)
+    w.sim_page.controls.time_window.setValue(2.05)
     release(w, 2)
     run(w, 1.96)
     save(w, "classical_release_nonproportional")
@@ -222,7 +222,7 @@ def state_space_release():
     w = window()
     set_c1(w, 15.0)
     method(w, True)
-    w.controls.time_window.setValue(2.12)
+    w.sim_page.controls.time_window.setValue(2.12)
     release(w, 4)
     run(w, 1.97)
     save(w, "state_space_release")
@@ -232,7 +232,7 @@ def modal_coordinates():
     w = window()
     set_c1(w, 15.0)
     coords(w, "Modal")
-    w.controls.time_window.setValue(2.05)
+    w.sim_page.controls.time_window.setValue(2.05)
     release(w, 2)
     run(w, 2.07)
     save(w, "modal_coordinates")
@@ -243,7 +243,7 @@ def energy_by_mode():
     set_c1(w, 15.0)
     coords(w, "Modal")
     energy_view(w, True)
-    w.controls.time_window.setValue(2.05)
+    w.sim_page.controls.time_window.setValue(2.05)
     release(w, 2)
     run(w, 0.8)
     save(w, "energy_by_mode")
@@ -252,28 +252,28 @@ def energy_by_mode():
 def energy_history():
     w = window()
     coords(w, "Energy")
-    w.force_panel.freq.setValue(1.0)
-    w.force_panel.button.click()
+    w.sim_page.force_panel.freq.setValue(1.0)
+    w.sim_page.force_panel.button.click()
     run(w, 8.3)
-    w.table.selectRow(0)
+    w.sim_page.table.selectRow(0)
     save(w, "energy_history")
 
 
 def element_forces():
     w = window()
-    kind(w.force_panel, ForceKind.STEP)
+    kind(w.sim_page.force_panel, ForceKind.STEP)
     coords(w, "Element forces")
-    w.force_panel.button.click()
+    w.sim_page.force_panel.button.click()
     run(w, 9.3)
     save(w, "element_forces")
 
 
 def frequency_response():
     w = window()
-    w.tabs.setCurrentWidget(w.frf_tab)
-    tune(w.force_panel, 2)
+    w.sim_page.tabs.setCurrentWidget(w.sim_page.frf_tab)
+    tune(w.sim_page.force_panel, 2)
     settle(500)
-    write_png(w.frf_plot.grab(), OUT / "frequency_response.png")
+    write_png(w.sim_page.frf_plot.grab(), OUT / "frequency_response.png")
     print("saved frequency_response")
     done(w)
 
@@ -292,15 +292,15 @@ def frf_matrix():
 def modal_coupling():
     w = window()
     for i in (2, 3):
-        w.params.rows[i][1].setValue(0.1)
-        w.params.rows[i][2].setValue(40.0)
-        w.params.rows[i][3].setValue(0.2)
+        w.sim_page.params.rows[i][1].setValue(0.1)
+        w.sim_page.params.rows[i][2].setValue(40.0)
+        w.sim_page.params.rows[i][3].setValue(0.2)
     w.pages.setCurrentWidget(w.coupling_page)
     save(w, "modal_coupling")
 
 
 def cms(w, n, interfaces, kept, method_name="Craig"):
-    w.params.dof.setValue(n)
+    w.sim_page.params.dof.setValue(n)
     page = w.cms_page
     w.pages.setCurrentWidget(page)
     settle()
@@ -324,7 +324,7 @@ def drive_cms(view, w, seconds):
     view.loop.enabled = False
     view.reset()
     view.kind.setCurrentIndex(view.kind.findData(ForceKind.HARMONIC))
-    view.freq.setValue(w.modal.modes[3].fn_hz)
+    view.freq.setValue(w.sim_page.modal.modes[3].fn_hz)
     view.button.click()
     for _ in range(round(seconds / 0.05)):
         view.step(0.05)

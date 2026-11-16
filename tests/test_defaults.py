@@ -43,7 +43,7 @@ def test_defaults_puts_a_page_back_as_it_opened(main_window, app, name):
     w.show_page(name)
     page = w.pages.currentWidget()
     app.processEvents()
-    opening, runs, chain = _fields(page.practice_state()), _runs(page), w.sim.system.copy()
+    opening, runs, chain = _fields(page.practice_state()), _runs(page), w.sim_page.sim.system.copy()
     combos = page.findChildren(TrialCombo)
     pick = combos[0] if combos else page.preset  # its Things to try, or its presets
     pick.setCurrentIndex(pick.count() - 1)  # the last: other settings, often another chain
@@ -54,7 +54,7 @@ def test_defaults_puts_a_page_back_as_it_opened(main_window, app, name):
     assert {k: v for k, v in now.items() if v != opening[k]} == {}, "every setting as it opened"
     assert _runs(page) == runs, "the motion as it opened: at rest, or a mode swinging"
     assert all(c.currentIndex() == 0 for c in combos if c.first), "Things to try back at its prompt"
-    assert w.sim.system.n == chain.n and np.allclose(w.sim.system.stiffness, chain.stiffness), (
+    assert w.sim_page.sim.system.n == chain.n and np.allclose(w.sim_page.sim.system.stiffness, chain.stiffness), (
         "the chain it opened with"
     )
 
@@ -62,13 +62,13 @@ def test_defaults_puts_a_page_back_as_it_opened(main_window, app, name):
 def test_defaults_on_the_simulation_page(main_window, app):
     w = main_window
     w.pages.setCurrentWidget(w.sim_page)
-    opening = w.sim_practice_state()
-    w.trial.setCurrentIndex(w.trial.count() - 1)
+    opening = w.sim_page.practice_state()
+    w.sim_page.trial.setCurrentIndex(w.sim_page.trial.count() - 1)
     app.processEvents()
-    assert w.sim_practice_state() != opening
+    assert w.sim_page.practice_state() != opening
     w.restore_defaults()
     app.processEvents()
-    assert w.sim_practice_state() == opening and not w.force.on
+    assert w.sim_page.practice_state() == opening and not w.sim_page.force.on
 
 
 @pytest.mark.parametrize("name", ["random_page", "oma_page", "updating_page", "shock_page"])
