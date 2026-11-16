@@ -26,10 +26,7 @@ KEY = "display/present"
 
 
 def splitter(page: QtWidgets.QWidget) -> QtWidgets.QSplitter | None:
-    """The page's outermost horizontal splitter of two panes or more (its panes), if it has one: the page itself
-    for the Simulation page."""
-    if isinstance(page, QtWidgets.QSplitter) and page.orientation() == QtCore.Qt.Orientation.Horizontal:
-        return page
+    """The page's outermost horizontal splitter of two panes or more (its panes), if it has one."""
     for s in page.findChildren(QtWidgets.QSplitter):
         if s.orientation() != QtCore.Qt.Orientation.Horizontal or s.count() < 2:
             continue

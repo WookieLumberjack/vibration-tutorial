@@ -515,7 +515,7 @@ PAGE_TITLES = {
 
 
 # Where each page's class lives: its module in gui/ and the class, by the page's attribute in COURSE (the
-# Simulation page is the main window's own). A page's module is imported when the page is first built, or when
+# Simulation page is built with the main window). A page's module is imported when the page is first built, or when
 # its notes or problems are wanted without building it.
 PAGE_CLASSES = {
     "sdof_page": "sdof.SdofPage",

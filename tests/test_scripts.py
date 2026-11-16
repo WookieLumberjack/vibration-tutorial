@@ -88,7 +88,7 @@ def test_mac_timings_scenarios_set_up(main_window):
     for scenario in timings.SCENARIOS:
         page, speed = scenario.setup(w)
         assert page is w.pages.currentWidget() and speed > 0, scenario.label
-        for loop in (getattr(page, "loop", None), w.loop):
+        for loop in (getattr(page, "loop", None), w.sim_page.loop):
             if loop is not None:
                 loop.enabled = False  # set up, not run
         _pump()

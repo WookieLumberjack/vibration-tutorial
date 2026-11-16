@@ -217,9 +217,11 @@ def test_one_damper_slides_along_the_chain_and_the_mode_swings_travelling_or_sta
     page = w.complex_page
     w.pages.setCurrentWidget(page)
     QtWidgets.QApplication.processEvents()
-    total = float(w.sim.system.damping.sum())
+    total = float(w.sim_page.sim.system.damping.sum())
     page.damper_at.setValue(4)
-    assert np.allclose(w.sim.system.damping, [0, 0, 0, total]) and "between m3 and m4" in page.damper_info.text()
+    assert (
+        np.allclose(w.sim_page.sim.system.damping, [0, 0, 0, total]) and "between m3 and m4" in page.damper_info.text()
+    )
     page.mode.setCurrentIndex(1)  # mode 2: one node
 
     def node_path(swing):

@@ -1,6 +1,6 @@
 """Things to try on the Simulation page: each sets up the chain and the controls, and says what to look for.
 
-`MainWindow.apply_sim_trial` applies a trial's settings; the Theory tab lists the same notes.
+`SimulationPage.apply_trial` applies a trial's settings; the Theory tab lists the same notes.
 `tests/test_tutorial_numbers.py` checks their numbers.
 """
 
