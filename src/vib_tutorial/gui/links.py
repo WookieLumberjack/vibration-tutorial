@@ -66,6 +66,7 @@ KEYS = (
     ("Space", "start, pause or resume the page's motion (on the Simulation page, its force)"),
     ("F1", "the page's Theory tab"),
     ("Ctrl+R", "the page's controls back as it opened (Defaults)"),
+    ("F5", "Present: the controls folded away, then the right-hand tabs too (the plots the whole width), then back"),
     ("Ctrl+F1", "the Theory window: any page's notes beside the page, the search and the glossary"),
     ("Ctrl+F2", "the Practice window: problems with new numbers each time"),
     ("Ctrl+1 … Ctrl+6", "a group of pages, at the page it last showed"),
