@@ -4,6 +4,7 @@ linked to it (#316 B10)."""
 from __future__ import annotations
 
 import os
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -48,6 +49,13 @@ def hover(view: pg.GraphicsView, scene_pt: QtCore.QPointF, app) -> None:
         pg.setConfigOption("mouseRateLimit", limit)
 
 
+def first_number(text: str) -> float:
+    """The readout's x (the pointer lands on whole pixels, a step of the data on a small plot)."""
+    m = re.match(r"\s*(-?[\d.]+)", text)
+    assert m is not None, text
+    return float(m.group(1))
+
+
 def at(p: pg.PlotWidget, x: float, y: float) -> QtCore.QPointF:
     return p.getPlotItem().vb.mapViewToScene(QtCore.QPointF(x, y))
 
@@ -83,14 +91,14 @@ def test_the_plot_under_the_pointer_shows_both_lines_and_its_linked_plot_the_sam
     hover(top, at(top, 1.5, 0.25), app)
     over, linked, apart = hair(hairs, top), hair(hairs, below), hair(hairs, other)
     assert over.v.isVisible() and over.h.isVisible() and over.label.isVisible()
-    assert over.v.value() == pytest.approx(1.5, abs=0.01) and over.h.value() == pytest.approx(0.25, abs=0.01)
-    assert over.label.textItem.toPlainText().replace(" ", " ").startswith("1.5")
-    assert linked.v.isVisible() and linked.v.value() == pytest.approx(1.5, abs=0.01)
+    assert over.v.value() == pytest.approx(1.5, abs=0.02) and over.h.value() == pytest.approx(0.25, abs=0.02)
+    assert first_number(over.label.textItem.toPlainText()) == pytest.approx(1.5, abs=0.02)
+    assert linked.v.isVisible() and linked.v.value() == pytest.approx(1.5, abs=0.02)
     assert not linked.h.isVisible() and not linked.label.isVisible()
     assert not apart.v.isVisible()
 
     hover(below, at(below, 0.5, -0.5), app)  # the link works both ways
-    assert hair(hairs, top).v.value() == pytest.approx(0.5, abs=0.01) and not hair(hairs, top).h.isVisible()
+    assert hair(hairs, top).v.value() == pytest.approx(0.5, abs=0.02) and not hair(hairs, top).h.isVisible()
     assert hair(hairs, below).h.isVisible()
 
 
@@ -98,7 +106,7 @@ def test_a_log_axis_reads_its_value_not_its_log(page, app):
     top, other, hairs = page.top, page.other, page.hairs
     hover(other, at(other, 1.0, 1.5), app)  # view x 1.0 is 10 Hz
     text = hair(hairs, other).label.textItem.toPlainText()
-    assert text.startswith("10") and "Hz" in text, text
+    assert first_number(text) == pytest.approx(10, rel=0.03) and "Hz" in text, text
     assert not hair(hairs, top).v.isVisible()
 
 
