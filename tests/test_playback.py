@@ -219,6 +219,54 @@ def test_the_damped_masses_move_with_their_decays_and_a_pluck_releases_them_all(
     assert p.release is None and p.decay_items[Model.VISCOUS].getData()[1][0] == pytest.approx(p.model.amplitude)
 
 
+def test_the_machine_runs_up_on_its_mounts_and_a_pull_lets_it_ring(main_window, app):
+    from vib_tutorial.gui.isolation_view import MOST, SWING
+    from vib_tutorial.view_models.isolation import TAB_CHART, TAB_START, TRIALS
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.isolation_page
+    w.pages.setCurrentWidget(p)
+    pb, view = p.playback, p.body
+    pb.loop.enabled = False
+
+    # A trial plays the run-up: the machine, its unbalance and the forces are the record's, as drawn.
+    p.load_trial(next(i for i, tr in enumerate(TRIALS) if tr.name.startswith("Running up")))
+    for _ in range(5):
+        app.processEvents()
+    assert pb.running and pb.t == 0.0 and p.tabs.currentIndex() == TAB_START and p.pulled_to is None
+    pb._tick(0.3)
+    v = p.record
+    x, stage, phase, floor, force = view.state
+    assert force == pytest.approx(np.interp(pb.t, *v.force))
+    t, xs = p.sx_item.getData()
+    assert x == pytest.approx(np.interp(pb.t, t, xs)) and floor == pytest.approx(np.interp(pb.t, *v.floor))
+    assert phase == pytest.approx(np.interp(pb.t, *v.phase)) and phase > 0 and stage == 0.0
+    assert view.gain == pytest.approx(SWING / np.max(np.abs(xs)))
+
+    # Pull it down and let go: stopped, it rings on its mounts, from there.
+    view.grab()  # laid out: the machine has its place on screen
+    pb.seek(0.0)
+    vb = view.plotItem.vb
+    centre = view.machine.rect().center()
+    gain = view.gain  # (let go, it's drawn to the new record's scale)
+    hand = vb.mapViewToScene(centre)
+    to = vb.mapViewToScene(QtCore.QPointF(centre.x(), centre.y() - 0.5 * MOST))
+    drag(view, hand, to, app)
+    assert not view.held and pb.running and pb.t == 0.0
+    assert p.pulled_to == pytest.approx(-0.5 * MOST / gain, rel=0.05)
+    t, s = p.speed_item.getData()
+    assert not s.any() and p.sx_item.getData()[1][0] == pytest.approx(p.pulled_to)
+    assert "let go, stopped" in p.start_note.text()
+
+    # Another tab and back keeps it; a box runs it up again.
+    p.tabs.setCurrentIndex(TAB_CHART)
+    p.tabs.setCurrentIndex(TAB_START)
+    assert p.pulled_to is not None and not p.speed_item.getData()[1].any()
+    p.rpm.setValue(1200.0)
+    assert p.pulled_to is None and p.speed_item.getData()[1][-1] == pytest.approx(1200.0)
+
+
 def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     from vib_tutorial.gui import sdof
 

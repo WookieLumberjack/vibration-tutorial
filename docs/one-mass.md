@@ -79,9 +79,12 @@ A machine with a rotating unbalance on mounts sized by their static deflection (
 15.76/√δ<sub>mm</sub> Hz). The transmissibility against frequency over f<sub>n</sub> (crossing 1 at √2
 whatever the damping), the force on the floor against speed, a run-up through the mounts' resonance
 stepped exactly, and a design chart of the sag each isolation needs. Mounts can be a spring and damper, a
-relaxation mount (the damper on a spring) or two stages, and an inertia block can be added.
+relaxation mount (the damper on a spring) or two stages, and an inertia block can be added. The Start-up
+tab draws the machine on its mounts above the run-up, moving with it, its unbalance turning, with the force
+on the floor beside what a rigid mount would pass at that instant; pull the machine and let go and,
+stopped, it rings on its mounts.
 
-![Vibration isolation page: a 100 kg machine with a 0.01 kg·m unbalance on mounts that sag 5 mm (f<sub>n</sub> = 7.05 Hz, 423 rpm), run up to 1500 rpm in 2 s; through resonance the floor force peaks at 111 N, and running, 22.6 N of the unbalance's 247 N reaches the floor, 90.8 % isolation](images/vibration_isolation.png)
+![Vibration isolation page: a 100 kg machine with a 0.01 kg·m unbalance on mounts that sag 5 mm (f<sub>n</sub> = 7.05 Hz, 423 rpm), run up to 1500 rpm in 2 s, the machine drawn at its largest swing, 0.8 s in, as it passes resonance; there the floor force peaks at 111 N, and running, 22.6 N of the unbalance's 247 N reaches the floor, 90.8 % isolation](images/vibration_isolation.png)
 
 ---
 

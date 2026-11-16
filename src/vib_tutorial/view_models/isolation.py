@@ -7,7 +7,9 @@ The page's settings are an `IsolationTrial` (its trials, `practice_state()` and 
 - `transmissibility(iso)`: the centre: T against f/f<sub>n</sub> with the plain mounts' family behind it, the
   running point, its readout, and the force on the floor against the speed.
 - `design_note(iso, target)`: the sag an isolation needs, under the Design box ("" when none can give it).
-- `start_up_view(iso, ramp)`: the Start-up tab's run up through resonance (the costly one: drawn only when it shows).
+- `start_up_view(iso, ramp)`: the Start-up tab's run up through resonance (the costly one: drawn only when it shows),
+  with what the machine drawn above it needs (the unbalance's angle and force, the intermediate mass).
+- `let_go_view(iso, x0)`: the same tab after a pluck: the machine, stopped, rings on its mounts.
 - `chart(iso)`: the Design chart tab.
 
 Working on it: keep it free of Qt (see the package's docstring). `tests/test_view_models.py` checks the
@@ -21,7 +23,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
-from ..core.isolation import G, Isolator, Mount, deflection_for, start_up
+from ..core.isolation import G, Isolator, Mount, deflection_for, let_go, start_up
 from ..core.practice import Prediction
 from ..core.sdof import TWO_PI
 from .plot import Curve
@@ -131,7 +133,7 @@ TRIALS = (
         "floor here (one stage: 9 %), and at 3000 rpm the two stages pass 0.2 % against one stage's 2.5 %.",
         mount=Mount.TWO_STAGE,
         predict=Prediction(
-            "One stage passes 9 %. The same total sag split over two stages, with a mass between. They pass?",
+            "One stage passes 9 %. Now two stages, a 50 kg mass between them, each on mounts sagging 5 mm. They pass?",
             ("More than 9 %", "About 4 %", "About 9 %"),
             1,
         ),
@@ -169,10 +171,13 @@ class StartUp:
     speed: Curve  # rpm against time
     x: Curve  # the machine's displacement
     floor: Curve  # the force on the floor
-    rigid: Curve  # what a rigid mount would pass
+    rigid: Curve  # what a rigid mount would pass (the unbalance's force's amplitude)
     resonance_rpm: float
     t_end: float
     note: str
+    force: Curve  # the unbalance's force along the mount, at each instant (what a rigid mount would pass then)
+    phase: Curve  # the angle the unbalance has turned through (rad, from the top)
+    stage: Curve  # the intermediate mass's displacement (zero but on two stages)
 
 
 @dataclass(frozen=True)
@@ -264,6 +269,40 @@ def start_up_view(iso: Isolator, ramp: float) -> StartUp:
             f"and the machine at ±{fmt(peak_x, 'm')}; running, {fmt(Ff, 'N')} and ±{fmt(X, 'm')}. Dashed: the "
             "unbalance's own force."
         ),
+        force=Curve(t, s.force[k]),
+        phase=Curve(t, s.phase[k]),
+        stage=Curve(t, s.stage[k]),
+    )
+
+
+def let_go_view(iso: Isolator, x0: float) -> StartUp:
+    """The machine, stopped, pulled to x0 (m) and let go: it rings at the mounts' natural frequency."""
+    fn = iso.natural_hz
+    decay = 5.0 / max(iso.zeta * TWO_PI * fn, 1e-3)  # five time constants
+    duration = min(max(decay, 5.0 / fn), 40.0 / fn)
+    s = let_go(iso, x0, duration)
+    k = slice(None, None, max(1, s.t.size // 6000))
+    t = s.t[k]
+    peak_f = float(np.max(np.abs(s.floor)))
+    return StartUp(
+        speed=Curve(t, 60.0 * s.speed_hz[k]),
+        x=Curve(t, s.x[k]),
+        floor=Curve(t, s.floor[k]),
+        rigid=Curve(t, np.zeros(t.size)),
+        resonance_rpm=60.0 * fn,
+        t_end=float(s.t[-1]),
+        note=(
+            f"Pulled to {fmt(x0, 'm')} and let go, stopped: it rings on its mounts and dies away"
+            + (
+                f", at f<sub>n</sub> = {fn:.3g} Hz (a period of {fmt(1.0 / fn, 's')})"
+                if iso.mount is Mount.VISCOUS
+                else f" (one stage of plain mounts would ring at f<sub>n</sub> = {fn:.3g} Hz)"
+            )
+            + f"; the floor force peaks at {fmt(peak_f, 'N')}. A trial, or any box, runs it up again."
+        ),
+        force=Curve(t, np.zeros(t.size)),
+        phase=Curve(t, np.zeros(t.size)),
+        stage=Curve(t, s.stage[k]),
     )
 
 

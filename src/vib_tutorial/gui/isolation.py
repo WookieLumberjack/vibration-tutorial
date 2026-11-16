@@ -9,6 +9,12 @@ has its own model (core/isolation.py).
 What it draws and prints is worked out in its view model (`view_models/isolation.py`, no Qt), which also holds
 its settings (`IsolationTrial`) and `TRIALS`; this module binds the controls to it and keeps the practice
 problems. Change a readout or a curve there, and its tests in `tests/test_view_models.py`.
+
+The Start-up tab draws the machine on its mounts (`isolation_view.IsolationView`), moving with the run-up
+under a `playback.Playback` (Start, Reset, speed, and a time cursor on the machine's plot), its unbalance
+turning. Pull the machine and let go and the tab's plots show it, stopped, ringing on its mounts
+(`view.let_go_view`) until a trial or a box runs it up again (`self.pulled_to` back to None). A trial starts
+the motion.
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ from ..view_models.isolation import (
 )
 from . import isolation_figures, settle_plots
 from .drag import DragLine
+from .isolation_view import IsolationView
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -47,6 +54,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
+from .playback import Playback
 from .style import colors
 from .theming import add_legend
 
@@ -349,6 +357,8 @@ class IsolationPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.iso = Isolator()
+        self.pulled_to: float | None = None  # where a pull let the machine go (m); None: the run-up
+        self.record: view.StartUp | None = None  # what the Start-up tab shows, and the machine moves with
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -436,13 +446,24 @@ class IsolationPage(QtWidgets.QWidget):
         sv = QtWidgets.QVBoxLayout(start)
         row = Form("Run up")
         self.ramp = row.number("Run up in:", 0.1, 600.0, 2.0, 1, " s", TIPS["ramp"])
-        row.changed.connect(self._draw_tab)
+        row.changed.connect(self._on_ramp)
+        self.body = IsolationView()
+        self.body.setFixedHeight(132)
+        self.body.grabbed.connect(self._on_grabbed)
+        self.body.pulled.connect(self._on_pulled)
+        self.body.released.connect(self._on_let_go)
+        self.playback = Playback(self, "Vibration isolation")
+        self.playback.moved.connect(self._place)
+        row.row(self.playback.bar())
         sv.addWidget(row)
+        sv.addWidget(self.body)
         self.speed_plot = plot("Speed", "rpm", "Time", "s", height=80)
         self.x_plot = plot("Machine x", "m", "Time", "s", height=110)
         self.floor_plot = plot("Floor force", "N", "Time", "s", height=110)
         for p in (self.x_plot, self.floor_plot):
             p.setXLink(self.speed_plot)
+        for p in (self.speed_plot, self.x_plot):
+            p.getAxis("bottom").showLabel(False)  # the time axis is named once, under the floor force
         for p in (self.speed_plot, self.x_plot, self.floor_plot):
             p.setToolTip(START_TIP)
             sv.addWidget(p, 1)
@@ -456,6 +477,7 @@ class IsolationPage(QtWidgets.QWidget):
         self.sf_rigid = pg.PlotDataItem()
         self.floor_plot.addItem(self.sf_rigid)
         self.floor_plot.addItem(self.sf_item)
+        self.x_cursor = self.playback.add_cursor(self.x_plot)
         self.start_note = note_label()
         sv.addWidget(self.start_note)
 
@@ -518,6 +540,7 @@ class IsolationPage(QtWidgets.QWidget):
         self.trials.show_note(t.note)
         self.tabs.setCurrentIndex(t.tab)
         self._on_inputs()
+        self.playback.play()  # a trial starts the motion
 
     def practice_state(self) -> IsolationTrial:
         """The page's settings, as a trial: what a practice spec checks."""
@@ -542,7 +565,13 @@ class IsolationPage(QtWidgets.QWidget):
         mount = self.iso.mount
         self.stiffness_ratio.setEnabled(mount is Mount.RELAXATION)
         self.stage_mass.setEnabled(mount is Mount.TWO_STAGE)
+        self.pulled_to = None  # run up again
         self.redraw()
+
+    def _on_ramp(self) -> None:
+        self.pulled_to = None
+        self._draw_tab()
+        settle_plots(self)
 
     def _on_apply_design(self) -> None:
         self.deflection.setValue(round(1e3 * deflection_for(self.iso.speed_hz, self.target.value() / 100.0), 2))
@@ -569,6 +598,8 @@ class IsolationPage(QtWidgets.QWidget):
         for item, color in zip(self.chart_items, (c.mode[0], c.mode[1], c.mode[2], c.mode[3], c.mass[4])):
             item.setPen(pg.mkPen(color, width=2))
         self.speed_line.apply_theme()
+        self.body.apply_theme()
+        self.playback.apply_theme()
         self.redraw()
 
     def _on_speed_dragged(self, ratio: float) -> None:
@@ -609,7 +640,16 @@ class IsolationPage(QtWidgets.QWidget):
             self._draw_chart()
 
     def _draw_start(self) -> None:
-        v = view.start_up_view(self.iso, self.ramp.value())
+        iso = self.iso
+        if self.pulled_to is None:
+            v = view.start_up_view(iso, self.ramp.value())
+        else:
+            v = view.let_go_view(iso, self.pulled_to)
+        self.record = v
+        self.body.set_layout(iso.mount, iso.block > 0)
+        peak_force = max(float(np.max(np.abs(v.force.y))), float(np.max(np.abs(v.floor.y))))
+        self.body.set_scale(float(np.max(np.abs(v.x.y))), peak_force)
+        self.playback.set_span(v.t_end)  # places the machine
         self.speed_item.setData(*v.speed)
         self.res_line.setPos(v.resonance_rpm)
         self.sx_item.setData(*v.x)
@@ -617,6 +657,32 @@ class IsolationPage(QtWidgets.QWidget):
         self.sf_rigid.setData(*v.rigid)
         self.speed_plot.setXRange(0, v.t_end, padding=0)
         self.start_note.setText(v.note)
+
+    def _place(self, t: float) -> None:
+        v = self.record
+        if v is None or self.body.held:  # not drawn yet, or under the hand
+            return
+
+        def at(curve) -> float:
+            return float(np.interp(t, curve.x, curve.y))
+
+        self.body.set_state(at(v.x), at(v.stage), at(v.phase), at(v.floor), at(v.force))
+
+    def _on_grabbed(self) -> None:
+        self.playback.pause()
+
+    def _on_pulled(self, x: float) -> None:
+        self.pulled_to = x
+        _, _, phase, _, _ = self.body.state
+        self.body.set_state(x, self.iso.held_stage(x), phase, 0.0, 0.0)
+
+    def _on_let_go(self) -> None:
+        if self.pulled_to is not None and abs(self.pulled_to) < 1e-9:  # let go where it rests: run up again
+            self.pulled_to = None
+        self.tabs.setCurrentIndex(TAB_START)  # (it shows: the machine is on it)
+        self._draw_start()
+        settle_plots(self)
+        self.playback.play()
 
     def _draw_chart(self) -> None:
         v = view.chart(self.iso)

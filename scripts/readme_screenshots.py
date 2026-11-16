@@ -1013,7 +1013,7 @@ def damping_models():
 
 
 def vibration_isolation():
-    lesson("isolation_page", 3, "vibration_isolation")  # running up through resonance
+    lesson("isolation_page", 3, "vibration_isolation", at=0.8)  # through resonance, the machine at its largest swing
 
 
 def signals_spectra():
