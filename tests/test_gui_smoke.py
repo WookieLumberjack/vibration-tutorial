@@ -4193,10 +4193,10 @@ def test_shock_page(app):
     p.recompute()
     assert p.record is not rec and p.record.duration == pytest.approx(0.05)
 
-    for name, _, note in TRIALS:
-        p.trial.pick(name)
+    for t in TRIALS:
+        p.trial.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == maths.markup(note) and p.spectrum is not None and "Maximax" in p.readout.text()
+        assert p.trial_note.text() == maths.markup(t.note) and p.spectrum is not None and "Maximax" in p.readout.text()
     p.trial.pick("A component on the last mass")
     p.recompute()
     assert p.mass.isVisibleTo(p) and p.mass.currentText() == "m4" and "3.32 ×" in p.readout.text()
