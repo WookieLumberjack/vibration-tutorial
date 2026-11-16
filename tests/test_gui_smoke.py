@@ -2514,7 +2514,8 @@ def test_window_fits_a_1280_px_screen(app, request):
 
 def test_every_theory_tab_fits_a_1280_px_window(app):
     """Every page's notes, shown in its Theory tab with the window 1280×800, need no sideways scroll: their
-    figures and equations fit the narrowest tab (it differs by page, ~400 px)."""
+    figures and equations fit the narrowest tab (it differs by page, ~400 px), and where a wider font (macOS's,
+    Ubuntu's) makes a table a few pixels wider, `lesson.TabRoom` gives the pane them."""
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
@@ -2526,9 +2527,11 @@ def test_every_theory_tab_fits_a_1280_px_window(app):
         w.pages.setCurrentIndex(i)  # builds each page
         browser = w.show_theory()
         assert browser is not None, w.pages.tabText(i)
-        for _ in range(3):
-            app.processEvents()
         bar = browser.horizontalScrollBar()
+        for _ in range(10):  # the notes lay out, then `lesson.TabRoom` widens the pane if they need it
+            app.processEvents()
+            if bar.maximum() == 0:
+                break
         if bar.maximum() > 0:
             wide.append(f"{w.pages.tabText(i)}: {bar.maximum()} px too wide for its {browser.viewport().width()} px")
     w.close()
@@ -5159,7 +5162,7 @@ def test_rigid_body_paths_and_drift(main_window, app):
 
 def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window):
     """At 1280×800 each page's tab bars show every tab's name: a page whose tabs need it gives its right pane
-    `lesson.TAB_ROOM`."""
+    `lesson.TAB_ROOM`, and `lesson.TabRoom` widens it further where the font is wider (macOS's, Ubuntu's)."""
     from PySide6 import QtWidgets
 
     from vib_tutorial.gui.main_window import PAGE_GROUPS
@@ -5175,7 +5178,7 @@ def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window
             for tabs in page.findChildren(QtWidgets.QTabWidget):
                 if tabs.isVisible():
                     bar = tabs.tabBar()
-                    need = sum(bar.tabSizeHint(i).width() for i in range(bar.count()))
+                    need = sum(bar.tabSizeHint(i).width() for i in range(bar.count()) if bar.isTabVisible(i))
                     if need > tabs.width() + 1:
                         over.append((name, need, tabs.width()))
     assert not over

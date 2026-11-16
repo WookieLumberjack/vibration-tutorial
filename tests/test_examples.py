@@ -55,4 +55,5 @@ def test_the_scripting_example_in_code_layout_runs():
     assert ns["heavy"].n_dof == 12
     W = ns["W"]
     assert np.abs(W) / 0.02 * 1e3 == pytest.approx([7.32, 6.32], abs=5e-3), "grams at 20 mm"
-    assert np.degrees(np.angle(W)) % 360 == pytest.approx([180.0, 0.0], abs=0.1)
+    off = (np.degrees(np.angle(W)) - [180.0, 0.0] + 180.0) % 360.0 - 180.0  # wrapped: −1e-13° is 0°, not 360°
+    assert np.abs(off).max() < 0.1
