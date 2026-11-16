@@ -286,3 +286,33 @@ def test_dragging_a_pole_along_the_flutter_locus_sets_the_speed(main_window, app
     for _ in range(3):
         app.processEvents()
     assert not any(d.isVisible() for d in dots)
+
+
+def test_drawing_the_energy_methods_trial_shape_keeps_rayleigh_above_f1(main_window, app):
+    """Dragging a mass's point makes the shape the reader's own (the combo says so): Rayleigh's f₁ follows and
+    stays above the exact f₁; the drawn shape survives the practice state's round trip."""
+    import math
+
+    from vib_tutorial.core.energy_methods import rayleigh
+    from vib_tutorial.gui.energy_methods import DRAWN, TWO_PI
+
+    w = main_window
+    w.resize(1280, 800)
+    p = w.energy_page
+    w.pages.setCurrentWidget(p)
+    p.shape_plot.grab()
+    for _ in range(3):
+        app.processEvents()
+    g = p.grips[1]
+    drag(p.shape_plot, scene_at(p.shape_plot, 2.0, g.pos().y()), scene_at(p.shape_plot, 2.0, -0.8), app)
+    assert p.shape.currentText() == DRAWN and p.drawn is not None
+    assert p.drawn[1] == pytest.approx(-0.8, abs=0.15)  # to a few pixels and g.pos().y() == pytest.approx(p.drawn[1])
+    f_ray = math.sqrt(rayleigh(p.system, p.drawn)) / TWO_PI
+    assert f_ray > p.f[0] and f"{f_ray:.4g} Hz" in p.readout.text() and "Your shape" in p.readout.text()
+
+    state = p.practice_state()
+    assert state.drawn == tuple(p.drawn)
+    p.load_trial(0)
+    assert p.shape.currentText() != DRAWN
+    p.load_setup({k: v for k, v in vars(state).items() if k not in ("name", "note")})
+    assert p.shape.currentText() == DRAWN and np.allclose(p.drawn, state.drawn)
