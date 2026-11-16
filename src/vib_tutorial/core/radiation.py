@@ -27,6 +27,7 @@ balance of the point drive and the mass law.
 
 from __future__ import annotations
 
+import functools
 import itertools
 import math
 from dataclasses import dataclass
@@ -58,6 +59,16 @@ AIR = Fluid()
 
 
 # --------------------------------------------------------------------------------------------- waves
+@functools.lru_cache(maxsize=64)
+def gauss(n: int) -> tuple[np.ndarray, np.ndarray]:
+    """Gauss–Legendre nodes and weights on (−1, 1), kept: `modal_efficiency` asks for the same few hundreds of
+    times as a page opens (`leggauss` was half its time). Read-only, as they're shared."""
+    x, w = np.polynomial.legendre.leggauss(n)
+    x.flags.writeable = False
+    w.flags.writeable = False
+    return x, w
+
+
 def critical_frequency(plate: Plate, fluid: Fluid = AIR) -> float:
     """f_c = (c²/2π)√(ρh/D): where the plate's bending wave travels at the speed of sound."""
     return fluid.c**2 / TWO_PI / plate.scale
@@ -77,8 +88,9 @@ def wave_efficiency(f: float | np.ndarray, fc: float) -> np.ndarray:
 
 # --------------------------------------------------------------------------------------------- one mode
 def _nodes(ka: float) -> int:
-    """Gauss–Legendre nodes per angle: enough for the integrand's ka/2π oscillations, six to each."""
-    return int(min(400, 24 + 1.2 * ka))
+    """Gauss–Legendre nodes per angle: enough for the integrand's ka/2π oscillations, six to each, rounded up to a
+    multiple of 8 so a sweep asks `gauss` for a few sets, not one per frequency."""
+    return min(400, 8 * math.ceil((24 + 1.2 * ka) / 8))
 
 
 def _factor(alpha: np.ndarray, orders: np.ndarray) -> np.ndarray:
@@ -111,7 +123,7 @@ def modal_efficiency(plate: Plate, ms: np.ndarray, ns: np.ndarray, f: float, flu
     k = TWO_PI * f / fluid.c
     a, b = plate.a, plate.b
     n_theta = _nodes(k * math.hypot(a, b))
-    x, w = np.polynomial.legendre.leggauss(n_theta)
+    x, w = gauss(n_theta)
     t = 0.25 * math.pi * (x + 1.0)  # θ and φ on (0, π/2)
     wt = 0.25 * math.pi * w
     th, ph = np.meshgrid(t, t, indexing="ij")
@@ -318,7 +330,7 @@ def transmission_loss(
     The coincidence dip, at the angle where the trace of sound matches the bending wave, is narrow (as narrow
     as η), so the integral is split there."""
     f = np.atleast_1d(np.asarray(f, dtype=float))
-    x, w = np.polynomial.legendre.leggauss(64)
+    x, w = gauss(64)
     fc = critical_frequency(plate, fluid)
     out = np.empty(f.size)
     for i, fi in enumerate(f):
