@@ -35,6 +35,8 @@ from .challenge import ChallengeBox
 from .energy import EnergyPanel, EnergyState
 from .frame_loop import FrameLoop
 from .history import History
+from .ink import InkOverlay
+from .ink import Mode as InkMode
 from .layouts import ColumnScroll, FlowLayout, group
 from .lesson import RunButton, TrialBox, TrialCombo
 from .modes import Method, mode_entries
@@ -710,6 +712,13 @@ class MainWindow(QtWidgets.QMainWindow):
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+R"), self, self.restore_defaults)
         QtGui.QShortcut(QtGui.QKeySequence("F5"), self, self.step_present)
+        self.ink = InkOverlay(self)
+        QtGui.QShortcut(QtGui.QKeySequence("F6"), self, self.toggle_pointer)
+        QtGui.QShortcut(QtGui.QKeySequence("F7"), self, self.toggle_ink)
+        self.ink_escape = QtGui.QShortcut(QtGui.QKeySequence("Esc"), self, self.ink.clear)
+        self.ink_escape.setEnabled(False)  # only while there's a pointer or ink: Esc is the dialogs' and popups'
+        self.ink.changed.connect(self._on_ink_changed)
+        self.pages.currentChanged.connect(self._clear_ink)
         notes_view.add_zoom_keys(self)  # the notes' text size
         for i in range(len(PAGE_GROUPS)):  # Ctrl+1 … Ctrl+6: a group, at the page it last showed
             QtGui.QShortcut(
@@ -812,6 +821,18 @@ class MainWindow(QtWidgets.QMainWindow):
         present.apply(page, self.present_level)
         holder.deleteLater()
         return page
+
+    def toggle_pointer(self) -> None:
+        self.ink.toggle(InkMode.POINTER)
+
+    def toggle_ink(self) -> None:
+        self.ink.toggle(InkMode.INK)
+
+    def _clear_ink(self, _index: int) -> None:
+        self.ink.clear_ink()  # it was drawn on the page before
+
+    def _on_ink_changed(self) -> None:
+        self.ink_escape.setEnabled(self.ink.active)
 
     def step_present(self) -> None:
         """F5: the next of `present.LEVELS` on every page (the side panes folded away, then back)."""
