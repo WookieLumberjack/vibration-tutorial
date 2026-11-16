@@ -50,6 +50,7 @@ from ..core.rotor_sweep import (
     probe,
 )
 from . import rotor_practice, weak
+from .challenge import ChallengeBox
 from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
@@ -168,6 +169,8 @@ class RotorPage(QtWidgets.QWidget):
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
         lv.addWidget(self._preset_box())
+        self.challenge = ChallengeBox(self, PROBLEMS)
+        lv.addWidget(self.challenge)
         lv.addWidget(self._speed_box())
         self.readout = QtWidgets.QLabel()
         self.readout.setWordWrap(True)

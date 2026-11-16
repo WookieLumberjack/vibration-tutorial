@@ -281,7 +281,7 @@ def test_course_map_counts_the_problems_solved(app, main_window):
     assert sdof.notes_html() is sdof.NOTES_HTML
     first, second = practice.problems("transient_page")[:2]
     total = len(practice.problems("transient_page"))
-    practice._mark_solved(first)
+    practice.mark_solved(first)
     assert practice.progress() == {"transient_page": (1, total)}
     assert f"(1 of {total} solved)" in page_html("sdof_page")
     main_window.show_page("sdof_page")
@@ -289,7 +289,7 @@ def test_course_map_counts_the_problems_solved(app, main_window):
     main_window.show_theory()
     assert f"(1 of {total} solved)" in page.notes.toPlainText()
     for p in practice.problems("transient_page"):
-        practice._mark_solved(p)
+        practice.mark_solved(p)
     page.tabs.setCurrentIndex(0)
     main_window.show_theory()  # the map is redrawn as the notes show
     assert f"all {total} problems solved" in page.notes.toPlainText()

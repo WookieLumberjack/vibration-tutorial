@@ -31,6 +31,7 @@ from ..core.presets import Preset, without_absorber
 from . import accessible, display_size, frame_stats, links, maths, notes_view, theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
+from .challenge import ChallengeBox
 from .energy import EnergyPanel, EnergyState
 from .frame_loop import FrameLoop
 from .history import History
@@ -869,6 +870,8 @@ class MainWindow(QtWidgets.QMainWindow):
             combo.unpick()
         for box in page.findChildren(TrialBox):
             box.show_note("")
+        for challenge in page.findChildren(ChallengeBox):
+            challenge.clear()
         if page is self.sim_page:
             self.trial_note.setText("")
 

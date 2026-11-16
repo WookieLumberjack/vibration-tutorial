@@ -30,6 +30,7 @@ from ..core.active_control import (
 from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
 from . import active_control_figures, settle_plots
+from .challenge import ChallengeBox
 from .lesson import (
     Form,
     TrialBox,
@@ -421,6 +422,7 @@ class ActiveControlPage(QtWidgets.QWidget):
             "show one idea from the Theory tab.</p>",
         )
         self.trials.picked.connect(self.load_trial)
+        self.challenge = ChallengeBox(self, PROBLEMS)
 
         ch = Form("Chain")
         self.dof = QtWidgets.QSpinBox()
@@ -516,7 +518,12 @@ class ActiveControlPage(QtWidgets.QWidget):
         rv.addWidget(self.tabs, 1)
         rv.addWidget(self.tab_note)
 
-        three_panes(self, column(self.trials, ch, loop, plotting), stack((self.frf_plot, 1), (self.readout, 0)), right)
+        three_panes(
+            self,
+            column(self.trials, self.challenge, ch, loop, plotting),
+            stack((self.frf_plot, 1), (self.readout, 0)),
+            right,
+        )
         self.apply_theme()
         self.set_system(self.system)
 

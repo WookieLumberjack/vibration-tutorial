@@ -37,11 +37,13 @@ KEEP = 0.005  # how near a spec's given number has to stay to what it says (the 
 
 @dataclass(frozen=True)
 class Requirement:
-    """One condition of a spec: what's wanted, what the page has now, and whether that meets it (rich text)."""
+    """One condition of a spec: what's wanted, what the page has now, and whether that meets it (rich text).
+    `given`: a number the spec gives, to be left as it is (`kept`), which a list may leave out while it's met."""
 
     wanted: str
     now: str
     met: bool
+    given: bool = False
 
 
 @dataclass(frozen=True)
@@ -183,7 +185,10 @@ def at_least(what: str, value: float, limit: float, unit: str = "") -> Requireme
 def kept(what: str, value: float, given: float, unit: str = "") -> Requirement:
     """A number the spec gives, left as it is (within `KEEP`)."""
     return Requirement(
-        f"{what} kept at {_with_unit(given, unit, 4)}", _with_unit(value, unit, 4), is_close(value, given, KEEP)
+        f"{what} kept at {_with_unit(given, unit, 4)}",
+        _with_unit(value, unit, 4),
+        is_close(value, given, KEEP),
+        given=True,
     )
 
 

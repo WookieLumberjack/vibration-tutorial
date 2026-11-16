@@ -74,7 +74,7 @@ def reset_progress() -> None:
     settings().remove("practice/solved")
 
 
-def _mark_solved(problem: Problem) -> None:
+def mark_solved(problem: Problem) -> None:
     solved = _solved() | {f"{problem.page}/{problem.key}"}
     settings().setValue("practice/solved", ",".join(sorted(solved)))
 
@@ -297,7 +297,7 @@ class PracticeWindow(QtWidgets.QWidget):
         self._verdict = f'<p><b class="{colour}">{verdict.message}</b></p>'
         self._details = verdict.details
         if verdict.right and not self._solution:
-            _mark_solved(p)
+            mark_solved(p)
             self._show_ticks()
         if q.is_choice:  # a choice, right or wrong, is answered: the working and the run follow
             self._answered = True
