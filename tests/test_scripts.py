@@ -92,3 +92,11 @@ def test_mac_timings_scenarios_set_up(main_window):
             if loop is not None:
                 loop.enabled = False  # set up, not run
         _pump()
+
+
+def test_mac_timings_splits_the_paint_by_plot():
+    timings = _import("mac_timings")
+    frames = [{"paint_ms": "10"}, {"paint_ms": "6"}]
+    row = timings.split_rows("Rub", {"Orbits": 6.0, "Push": 4.0, "Speed": 0.2}, frames, top=2)
+    assert row == ["| Rub | 8.0 | Orbits 3.0; Push 2.0; 1 more plots 0.1; other 2.9 |"]
+    assert timings.split_rows("None", {}, []) == []
