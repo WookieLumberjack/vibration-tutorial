@@ -106,3 +106,25 @@ def test_the_records_are_made_at_one_g_and_scaled():
     for kept, made in zip(records(d, 3), (accelerogram(d, seed) for seed in (1, 2, 3))):
         assert np.allclose(kept.a, made.a, rtol=1e-10, atol=1e-12 * np.max(np.abs(made.a)))
         assert np.allclose(kept.spectrum, made.spectrum, rtol=1e-10)
+
+
+def test_a_new_spectrums_records_are_made_on_the_worker(main_window):
+    """Damping ζ changed: the spectrum and the table follow at once, the Floors tab once its records are in (made
+    off the GUI thread, 0.5–1 s); a tab picked meanwhile draws now."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui.seismic import TAB_FLOORS, TAB_GROUND
+
+    w = main_window
+    page = w.seismic_page
+    w.pages.setCurrentWidget(page)
+    page.tabs.setCurrentIndex(TAB_FLOORS)
+    QtWidgets.QApplication.processEvents()
+    floors, table = page.floor_note.text(), page.table.text()
+    page.zeta.setValue(7.3)  # a ζ no test has made records for
+    assert page.table.text() != table and page.worker.busy and page.floor_note.text() == floors
+    page.worker.wait()
+    assert page.floor_note.text() != floors
+    page.zeta.setValue(7.7)
+    page.tabs.setCurrentIndex(TAB_GROUND)  # now: the reader waits for it
+    assert not page.worker.busy and "synthesized records" in page.ground_note.text()

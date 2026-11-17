@@ -9,12 +9,19 @@ shear). Right: the building swaying under the first record (`seismic_view.Buildi
 with a time cursor on the record; a trial starts it), each floor's peak displacement and each storey's shear by
 every rule and by the records, the modes' correlation, the ground motions, and the Theory.
 
+The Building, Floors and Records tabs draw from the spectrum's synthesized records (`core.seismic.records`, kept
+by ground type and ζ). A new pair takes 0.5–1 s to make, so a spectrum's control has them made on a `Recompute`
+worker and the tab drawn when they're in (the spectrum and the table at once); a trial, a new chain, a tab picked
+or the page showing make them now.
+
 Working on it: `tests/test_seismic.py` checks the building follows the playback with the drifting storey
-reddened, and the k₁ box edits the chain; `tests/test_challenge.py` the challenges.
+reddened, the k₁ box edits the chain, and a new spectrum's records are made off the GUI thread;
+`tests/test_challenge.py` the challenges.
 """
 
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass
 from typing import Any
@@ -30,9 +37,11 @@ from ..core.seismic import (
     GROUNDS,
     RECORDS,
     RULES,
+    Accelerogram,
     Design,
     History,
     Rule,
+    Suite,
     building,
     combine,
     correlation,
@@ -40,7 +49,6 @@ from ..core.seismic import (
     modal,
     records,
     rigid_period,
-    suite,
     time_history,
     with_tank,
 )
@@ -66,6 +74,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .playback import Playback
+from .recompute import Recompute
 from .seismic_view import BuildingView
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
@@ -558,7 +567,7 @@ class SeismicPage(QtWidgets.QWidget):
         spec.add("Combine by:", self.rule, TIPS["rule"])
         self.spec_info = note_label()
         spec.row(self.spec_info)
-        connect_all((self.pga, self.ground, self.zeta, self.rule), self.redraw)
+        connect_all((self.pga, self.ground, self.zeta, self.rule), self._on_spec)
 
         # --- centre
         self.spectrum_plot = plot("S<sub>a</sub> (g)", None, "Period T", "s", height=150)
@@ -633,7 +642,7 @@ class SeismicPage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.rho_label, self.rho_note), "Correlation")
         self.tabs.addTab(column(self.record_plot, self.match_plot, self.ground_note, stretch=False), "Records")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(self._draw_tab)
+        self.tabs.currentChanged.connect(self._on_tab)
 
         three_panes(
             self,
@@ -641,6 +650,7 @@ class SeismicPage(QtWidgets.QWidget):
             stack((self.spectrum_plot, 1), (self.table, 0)),
             self.tabs,
         )
+        self.worker = Recompute(self._on_records, self)  # a new spectrum's records (0.5–1 s) off the GUI thread
         self.apply_theme()
         self.set_system(self.system)
 
@@ -748,7 +758,19 @@ class SeismicPage(QtWidgets.QWidget):
         if self.isVisible():
             self.redraw()
 
-    def redraw(self) -> None:
+    def _on_spec(self) -> None:
+        """A design spectrum's control: drawn at once, but for its records, made on the worker (`_draw_tab`)."""
+        if not self.isVisible():
+            self._dirty = True
+            return
+        self.redraw(now=False)
+
+    def _on_tab(self) -> None:
+        self._draw_tab()
+
+    def redraw(self, now: bool = True) -> None:
+        """The spectrum, the table and the tab showing: the records a tab draws from on the worker unless `now` (a
+        trial, a new chain, the page showing: the reader waits for those, and the tests read them at once)."""
         self._dirty = False
         d = self.design
         S, TB, TC, TD = d.corners
@@ -760,7 +782,7 @@ class SeismicPage(QtWidgets.QWidget):
         self.rho = correlation(self.modal.f, d.zeta)
         self._draw_spectrum()
         self._draw_table()
-        self._draw_tab()
+        self._draw_tab(now)
         settle_plots(self)
 
     def _draw_spectrum(self) -> None:
@@ -804,20 +826,33 @@ class SeismicPage(QtWidgets.QWidget):
             f"the mass ({m.total_mass / 1000:.4g} t)."
         )
 
-    def _draw_tab(self) -> None:
+    def _draw_tab(self, now: bool = True) -> None:
+        """The tab showing; the Building, Floors and Records tabs once the spectrum's records are made (`records`
+        keeps them by ground type and ζ: a new pair takes 0.5–1 s to synthesize, on the worker unless `now`)."""
         if self._dirty:  # a tab picked before the page has drawn (hidden): it draws when it shows
             return
         i = self.tabs.currentIndex()
-        if i == TAB_BUILDING:
-            self._draw_building()
-        elif i == TAB_FLOORS:
-            self._draw_floors()
-        elif i == TAB_CORRELATION:
+        if i == TAB_CORRELATION:
             self._draw_correlation()
-        elif i == TAB_GROUND:
-            self._draw_ground()
+        elif i in (TAB_BUILDING, TAB_FLOORS, TAB_GROUND):
+            job = functools.partial(records, self.design)
+            if now:
+                self.worker.now(job)
+            else:
+                self.worker.request(job)
 
-    def _draw_floors(self) -> None:
+    def _on_records(self, recs: tuple[Accelerogram, ...]) -> None:
+        """The latest spectrum's records: the tab showing drawn from them."""
+        i = self.tabs.currentIndex()
+        if i == TAB_BUILDING:
+            self._draw_building(recs)
+        elif i == TAB_FLOORS:
+            self._draw_floors(recs)
+        elif i == TAB_GROUND:
+            self._draw_ground(recs)
+        settle_plots(self)
+
+    def _draw_floors(self, recs: tuple[Accelerogram, ...]) -> None:
         m, rho = self.modal, self.rho
         rule = RULES[self.rule.currentIndex()]
         floors = np.arange(1, m.f.size + 1)
@@ -829,7 +864,7 @@ class SeismicPage(QtWidgets.QWidget):
                 item.setPen(pen)
             di.setData(combine(m.displacement, r, rho), floors)
             si.setData(combine(m.shear, r, rho), floors)
-        s = suite(self.system, self.design)
+        s = Suite(tuple(time_history(self.system, self.design, g) for g in recs))
         self.th_items[0].setData(s.displacement, floors)
         self.th_items[1].setData(s.shear, floors)
         for p in (self.disp_plot, self.shear_plot):
@@ -843,10 +878,9 @@ class SeismicPage(QtWidgets.QWidget):
             f"{fmt(top, 'm')}, {100 * (top / s.displacement[-1] - 1):+.3g} %."
         )
 
-    def _draw_building(self) -> None:
-        d = self.design
-        ground = records(d)[0]
-        h = time_history(self.system, d, ground)
+    def _draw_building(self, recs: tuple[Accelerogram, ...]) -> None:
+        ground = recs[0]
+        h = time_history(self.system, self.design, ground)
         self.history = h
         self.building.set_history(h.displacement)
         self.sway_item.setData(ground.t, ground.a)
@@ -892,9 +926,8 @@ class SeismicPage(QtWidgets.QWidget):
             f"ρ = {off[i, j]:.3g}). Above about 0.1 SRSS and CQC part; bold."
         )
 
-    def _draw_ground(self) -> None:
+    def _draw_ground(self, recs: tuple[Accelerogram, ...]) -> None:
         d = self.design
-        recs = records(d)
         g = recs[0]
         self.record_item.setData(g.t, g.a)
         self.record_plot.setXRange(0.0, float(g.t[-1]), padding=0)
