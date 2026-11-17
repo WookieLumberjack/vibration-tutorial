@@ -12,15 +12,21 @@ core/sea.py).
 
 Working on it
 -------------
-Each tab is worked out only while it shows (`LazyTabs`); the driven panel's modal sum is the slow part (~0.5 s
-for the default panel; `radiation._sigma_block` caches its σ_mn(f), which depends only on the panel's size). Trials' numbers are in
-`tests/test_tutorial_numbers.py`, the core's in `tests/test_radiation.py` and `tests/test_sea.py`. The SEA tab
-solves its network three times (both plates radiating, then each alone), ~0.3 s.
+Each tab is worked out only while it shows (`LazyTabs`). The Radiation, Driven panel and SEA tabs' work takes
+0.15–0.3 s (every mode's σ at its resonance, `radiation._sigma_block` caching σ_mn(f), which depends only on the
+panel's size; the driven panel's modal sum; SEA's network solved three times, both plates radiating, then each
+alone): it's `view_models/vibroacoustics.py`'s, run on each tab's `Recompute` worker after a control's change
+(`_deferring`) and now for a trial, Defaults or a tab picked. The modes are kept for the panel they were worked out
+for (`_keep_modes`): Radiation and Driven panel both use them. Trials' numbers are in
+`tests/test_tutorial_numbers.py`, the core's in `tests/test_radiation.py` and `tests/test_sea.py`;
+`tests/test_gui_smoke.py`'s `test_vibroacoustics_slow_tabs_work_on_their_workers` the workers.
 """
 
 from __future__ import annotations
 
+import functools
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -33,7 +39,6 @@ from ..core.radiation import (
     AIR,
     P_REF,
     ModeSet,
-    PointDrive,
     band_edges,
     bending_wavenumber,
     classify,
@@ -43,8 +48,6 @@ from ..core.radiation import (
     maidanik,
     mass_law,
     modal_efficiency,
-    mode_set,
-    point_drive,
     radiation_loss_factor,
     resonant_average,
     third_octaves,
@@ -58,9 +61,10 @@ from ..core.sea import (
     coupling_beta,
     group_speed,
     junction_transmission,
-    network,
     oscillator_pair,
 )
+from ..view_models import vibroacoustics as view
+from ..view_models.vibroacoustics import F_LOW, MAX_MODES
 from . import acoustics_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
@@ -82,21 +86,17 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .recompute import Recompute
 from .style import colors
 from .tab_groups import LazyTabs
 from .theming import add_legend
 
 TAB_RADIATION, TAB_DRIVEN, TAB_TRANSMISSION, TAB_OSCILLATORS, TAB_SEA = range(5)
-F_LOW = 20.0  # Hz, the plots' lowest frequency
-F_TOP = 20e3  # and their highest
-MAX_MODES = 600  # modes the driven panel sums (its top frequency comes down to keep it to these)
-CURVE_POINTS = 120  # frequencies σ_mn(f) of one mode is worked out at
-DRIVE_POINTS = 700  # frequencies the driven panel is worked out at
+F_TOP = 20e3  # Hz, the plots' highest frequency (their lowest is the view model's F_LOW)
 GRID = 121  # image points across the panel
 F1 = 100.0  # Hz, oscillator 1's blocked frequency (both 1 kg)
 DRIVE_RATIOS = np.linspace(0.0, 4.0, 17)  # P₂/P₁ for the flow's dots
 RATIO_DOTS = np.linspace(0.5, 2.0, 16)  # f₂/f₁ for β's exact dots
-SEA_LOW, SEA_TOP = 63.0, 10e3  # the SEA tab's third-octave bands
 SEA_AT = 1000.0  # the band its note quotes
 
 
@@ -665,10 +665,10 @@ class VibroAcousticsPage(QtWidgets.QWidget):
 
         connect_all(
             (self.side_a, self.side_b, self.thickness, self.loss, self.E, self.rho, self.nu),
-            self._on_panel,
+            self._panel_changed,
         )
-        connect_all((self.mode_m, self.mode_n), self._on_mode)
-        connect_all((self.drive_x, self.drive_y), self._on_drive)
+        connect_all((self.mode_m, self.mode_n), self._mode_changed)
+        connect_all((self.drive_x, self.drive_y), self._drive_changed)
 
         # --- centre
         self.shape_plot = plot("y", "m", "x", "m", height=180)
@@ -798,7 +798,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         self.loss2 = sea.number("Plate 2 loss η₂:", 0.0001, 0.5, 0.01, 4, "", SEA_TIPS["loss2"])
         self.volume = sea.number("Room volume:", 1.0, 10000.0, 50.0, 1, " m³", SEA_TIPS["volume"])
         self.t60 = sea.number("Reverberation T₆₀:", 0.05, 20.0, 0.5, 2, " s", SEA_TIPS["t60"])
-        connect_all((self.h2, self.a2, self.loss2, self.volume, self.t60), self._on_sea)
+        connect_all((self.h2, self.a2, self.loss2, self.volume, self.t60), self._sea_changed)
         self.eta_plot = plot("Loss factor", None, "Frequency", "Hz", log_x=True, log_y=True, height=170)
         self.eta_plot.setToolTip(ETA_TIP)
         add_legend(self.eta_plot.getPlotItem(), offset=(-10, 5), colCount=5)
@@ -822,7 +822,6 @@ class VibroAcousticsPage(QtWidgets.QWidget):
             self.room_plot.addItem(item)
         self.sea_note = note_label()
         self.sea_tab = column(sea, self.eta_plot, self.sea_v_plot, self.room_plot, self.sea_note, stretch=False)
-        self.sea: NetworkResponse | None = None
 
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
@@ -844,8 +843,14 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         )
 
         three_panes(self, column(self.trials, panel, material, mode), centre, self.tabs, sizes=TAB_ROOM)
-        self.modes: ModeSet | None = None
-        self.drive: PointDrive | None = None
+        self.modes: ModeSet | None = None  # the panel's, once a tab has worked them out
+        # The slow tabs' work, each on its own worker: a control's change there (`_deferred`), now otherwise
+        self._deferred = False
+        self.workers = {
+            self.radiation_tab: Recompute(self._show_radiation, self),
+            self.driven_tab: Recompute(self._show_driven, self),
+            self.sea_tab: Recompute(self._show_sea, self),
+        }
         self._on_panel()
         self.apply_theme()
 
@@ -931,8 +936,6 @@ class VibroAcousticsPage(QtWidgets.QWidget):
             f"D = {p.rigidity:.4g} N·m, m″ = ρh = {p.surface_mass:.4g} kg/m²; f<sub>c</sub> = {fmt(self.fc, 'Hz')}."
         )
         self.modes = None  # worked out when a tab wants them
-        self.drive = None
-        self.sea = None
         self.lazy.stale()
         self._draw_centre()
 
@@ -941,7 +944,6 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         self.lazy.stale(self.radiation_tab)
 
     def _on_drive(self) -> None:
-        self.drive = None
         self._draw_shape()
         self.lazy.stale(self.driven_tab)
         settle_plots(self)
@@ -950,8 +952,38 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         self.lazy.stale(self.oscillators_tab)
 
     def _on_sea(self) -> None:
-        self.sea = None
         self.lazy.stale(self.sea_tab)
+
+    # A control turned: as above, the slow tabs' work on their workers (a trial's, Defaults' or a tab shown: now)
+    def _panel_changed(self) -> None:
+        self._deferring(self._on_panel)
+
+    def _mode_changed(self) -> None:
+        self._deferring(self._on_mode)
+
+    def _drive_changed(self) -> None:
+        self._deferring(self._on_drive)
+
+    def _sea_changed(self) -> None:
+        self._deferring(self._on_sea)
+
+    def _deferring(self, handler: Callable[[], None]) -> None:
+        self._deferred = True
+        try:
+            handler()
+        finally:
+            self._deferred = False
+
+    def _work(self, tab: QtWidgets.QWidget, job: Callable[[], object]) -> None:
+        """`tab`'s slow part: on its worker after a control's change, else now (the reader waits for a trial)."""
+        if self._deferred:
+            self.workers[tab].request(job)
+        else:
+            self.workers[tab].now(job)
+
+    def _keep_modes(self, plate: Plate, modes: ModeSet) -> None:
+        if plate == self.plate:  # not a panel since changed
+            self.modes = modes
 
     @property
     def oscillators(self) -> Oscillators:
@@ -967,12 +999,6 @@ class VibroAcousticsPage(QtWidgets.QWidget):
     def f_top(self) -> float:
         """The plots' top frequency: 2.5 f_c, at most 20 kHz."""
         return min(F_TOP, max(2.5 * self.fc, 400.0))
-
-    def _modes(self) -> ModeSet:
-        """Every mode up to the top frequency, each with σ at its own resonance (worked out once per panel)."""
-        if self.modes is None:
-            self.modes = mode_set(self.plate, self.f_top, count=4 * MAX_MODES)
-        return self.modes
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
@@ -1086,11 +1112,15 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         )
 
     def _draw_radiation(self) -> None:
-        p = self.plate
+        m, n = int(self.mode_m.value()), int(self.mode_n.value())
+        self._work(self.radiation_tab, functools.partial(view.radiation, self.plate, m, n, self.f_top, self.modes))
+
+    def _show_radiation(self, r: view.Radiation) -> None:
+        self._keep_modes(r.plate, r.modes)
+        p = r.plate
         m, n = int(self.mode_m.value()), int(self.mode_n.value())
         top = self.f_top
-        f = np.geomspace(F_LOW, top, CURVE_POINTS)
-        one = np.array([modal_efficiency(p, np.array([m]), np.array([n]), fi)[0, 0] for fi in f])
+        f, one = r.one
         self.one_item.setData(f, one)
         if m % 2 and n % 2:
             low = low_frequency_efficiency(p, m, n, f)
@@ -1109,7 +1139,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         self.one_plot.setXRange(math.log10(F_LOW), math.log10(top), padding=0)
         self.one_plot.setYRange(math.log10(lo), math.log10(max(3.0, float(one.max()))), padding=0.05)
 
-        modes = self._modes()
+        modes = r.modes
         parity = (modes.m % 2) + (modes.n % 2)  # 2 odd–odd, 1 mixed, 0 even–even
         for item, which in zip(self.parity_items, (2, 1, 0)):
             sel = parity == which
@@ -1140,24 +1170,14 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         )
         settle_plots(self)
 
-    def _point_drive(self) -> PointDrive:
-        if self.drive is None:
-            p = self.plate
-            modes = self._modes()
-            # keep to MAX_MODES: the top frequency comes down if there are more modes than that
-            top = self.f_top
-            if modes.freq.size > MAX_MODES:
-                top = min(top, float(modes.freq[MAX_MODES - 1]) / 1.5)
-            sub = ModeSet(*(arr[modes.freq <= 1.5 * top] for arr in (modes.m, modes.n, modes.freq, modes.sigma)))
-            f = np.geomspace(F_LOW, top, DRIVE_POINTS)
-            self.drive_top = top
-            self.drive = point_drive(
-                p, self.loss.value(), (self.drive_x.value() * p.a, self.drive_y.value() * p.b), f, modes=sub
-            )
-        return self.drive
-
     def _draw_driven(self) -> None:
-        d = self._point_drive()
+        p = self.plate
+        at = (self.drive_x.value() * p.a, self.drive_y.value() * p.b)
+        self._work(self.driven_tab, functools.partial(view.driven, p, self.loss.value(), at, self.f_top, self.modes))
+
+    def _show_driven(self, r: view.Driven) -> None:
+        self._keep_modes(r.plate, r.modes)
+        d = r.drive
         f = d.freq
         self.input_item.setData(f, np.maximum(d.input_power, 1e-30))
         self.radiated_item.setData(f, np.maximum(d.radiated_power, 1e-30))
@@ -1178,7 +1198,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         self.power_plot.setYRange(math.log10(hi_p) - 8, math.log10(hi_p) + 0.3, padding=0)
         v2 = d.mean_square_velocity
         self.velocity_plot.setYRange(math.log10(float(v2.min())), math.log10(float(v2.max())), padding=0.05)
-        p, eta = self.plate, self.loss.value()
+        p, eta = r.plate, self.loss.value()
         parts = []
         for at in (0.25 * self.fc, 1.5 * self.fc):
             if at <= f[-1]:
@@ -1186,7 +1206,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
                 parts.append(
                     f"{rad:.2g} at {fmt(at, 'Hz')}, the sound {10 * math.log10(1 + eta / rad):.3g} dB below the input"
                 )
-        cut = f" (to {fmt(f[-1], 'Hz')}: {MAX_MODES} modes)" if self.drive_top < self.f_top else ""
+        cut = f" (to {fmt(f[-1], 'Hz')}: {MAX_MODES} modes)" if r.top < self.f_top else ""
         self.driven_note.setText(
             f"The infinite plate takes F²/16√(Dρh) = {fmt(d.infinite_input, 'W')} from 1 N. The radiation's own loss "
             f"factor ρcσ/ωm″ (Maidanik's σ) against η = {eta:.3g}: "
@@ -1251,14 +1271,12 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         )
         settle_plots(self)
 
-    def _network(self) -> NetworkResponse:
-        if self.sea is None:
-            self.sea = network(self.network, third_octaves(SEA_LOW, SEA_TOP))
-        return self.sea
-
     def _draw_sea(self) -> None:
+        self._work(self.sea_tab, functools.partial(view.sea, self.network))
+
+    def _show_sea(self, s: view.Sea) -> None:
         net = self.network
-        r = self._network()
+        r = s.response
         f = r.centres
         for item, (i, j) in zip(self.eta_items, ((0, 1), (1, 0), (0, 2), (1, 2), (1, 1))):
             item.setData(f, r.eta[:, i, j])
@@ -1272,8 +1290,8 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         self.sea_alone.setData(f, r.input_power / (TWO_PI * f * net.loss1 * r.masses[0]))
         spl = _spl(r.pressure)
         self.room_item.setData(*_steps(lo, hi, spl))
-        for item, silent in zip(self.room_from, (1, 0)):
-            item.setData(*_steps(lo, hi, _spl(network(net, f, silent=silent).pressure)))
+        for item, alone in zip(self.room_from, s.alone):
+            item.setData(*_steps(lo, hi, _spl(alone.pressure)))
         for p_ in (self.eta_plot, self.sea_v_plot, self.room_plot):
             p_.setXRange(math.log10(lo[0]), math.log10(hi[-1]), padding=0)
         top = float(max(spl.max(), 0.0))
