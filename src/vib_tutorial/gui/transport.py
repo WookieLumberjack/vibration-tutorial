@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from shiboken6 import isValid
 
 POLL_MS = 150  # how often the bar reads the page's controls back
@@ -32,6 +32,67 @@ class Transport:
     speed: QtWidgets.QComboBox | None = None
     clock: QtWidgets.QWidget | None = None  # anything with text(): a QLabel, a LiveLabel
     label: str = ""  # what it runs, where a page has more than one motion ("Start-up")
+    space: bool = True  # Space runs it (not the Simulation page's, whose Space is its force)
+
+    def widgets(self) -> list[QtWidgets.QWidget]:
+        return [w for w in (self.run, self.reset, self.speed, self.clock) if w is not None]
+
+
+def hide_own(t: Transport) -> None:
+    """Hide the page's own controls that the bar stands in for, with what belongs to them alone: a form's row, a
+    `layouts.group` holder with its label, a label naming one of them."""
+    targets = t.widgets()
+    for w in targets:
+        w.hide()
+        parent = w.parentWidget()
+        if parent is None:
+            continue
+        layout = parent.layout()
+        if isinstance(layout, QtWidgets.QFormLayout):
+            for row in range(layout.rowCount()):
+                if _row_only(layout, row, targets):
+                    layout.setRowVisible(row, False)
+        elif parent.property("transport_holder") is None and _holder_only(parent, targets):
+            parent.hide()
+        top = w.window()
+        for label in top.findChildren(QtWidgets.QLabel):
+            if label.buddy() is w:
+                label.hide()
+
+
+def _row_only(layout: QtWidgets.QFormLayout, row: int, targets: list[QtWidgets.QWidget]) -> bool:
+    """Whether a form's row holds nothing but `targets` (its label aside)."""
+    field = layout.itemAt(row, QtWidgets.QFormLayout.ItemRole.FieldRole) or layout.itemAt(
+        row, QtWidgets.QFormLayout.ItemRole.SpanningRole
+    )
+    if field is None:
+        return False
+    found = _widgets_in(field)
+    return bool(found) and all(w in targets for w in found)
+
+
+def _widgets_in(item: QtWidgets.QLayoutItem) -> list[QtWidgets.QWidget]:
+    if (w := item.widget()) is not None:
+        return [w]
+    layout = item.layout()
+    if layout is None:
+        return []
+    out: list[QtWidgets.QWidget] = []
+    for i in range(layout.count()):
+        sub = layout.itemAt(i)
+        if sub is not None:
+            out += _widgets_in(sub)
+    return out
+
+
+def _holder_only(holder: QtWidgets.QWidget, targets: list[QtWidgets.QWidget]) -> bool:
+    """Whether `holder` is a small row of `targets` and their labels (`layouts.group`), nothing else."""
+    layout = holder.layout()
+    if not isinstance(layout, QtWidgets.QHBoxLayout):
+        return False
+    found = [w for w in _widgets_in(layout)]
+    others = [w for w in found if w not in targets]
+    return bool(found) and len(found) <= 4 and all(isinstance(w, QtWidgets.QLabel) for w in others)
 
 
 def transport_of(page: QtWidgets.QWidget | None) -> Transport | None:
@@ -92,6 +153,10 @@ class TransportBar(QtWidgets.QFrame):
         row.addWidget(self.clock)
         row.addStretch(1)
         row.addWidget(self.what)
+        self.space = QtGui.QShortcut(QtGui.QKeySequence("Space"), self)  # where the page's own Start is hidden
+        self.space.setContext(QtCore.Qt.ShortcutContext.WindowShortcut)
+        self.space.activated.connect(self._on_space)
+        self.space.setEnabled(False)
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(POLL_MS)
         self.timer.timeout.connect(self.sync)
@@ -102,6 +167,9 @@ class TransportBar(QtWidgets.QFrame):
         """Drive `transport` (None: nothing to run here)."""
         self.source = transport
         self._speeds: list[str] = []
+        if transport is not None:
+            hide_own(transport)
+        self.space.setEnabled(transport is not None and transport.space)
         self.sync()
 
     def sync(self) -> None:
@@ -150,6 +218,10 @@ class TransportBar(QtWidgets.QFrame):
         if t is not None and isValid(t.run) and t.run.isEnabled():
             t.run.click()
         self.sync()
+
+    def _on_space(self) -> None:
+        if self.run.isEnabled():
+            self.run.click()
 
     def _on_reset(self) -> None:
         t = self.source

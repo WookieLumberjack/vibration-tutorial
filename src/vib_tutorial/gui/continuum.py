@@ -389,7 +389,11 @@ class ContinuumPage(QtWidgets.QWidget):
     def transport(self) -> Transport | None:
         """The run bar drives the Waves tab's run while it shows (the mode shapes swing on their own)."""
         w = self.waves_view
-        return Transport(w.play_button, w.restart_button, label="Waves") if self.views.currentWidget() is w else None
+        return (
+            Transport(w.play_button, w.restart_button, w.playback, label="Waves")
+            if self.views.currentWidget() is w
+            else None
+        )
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
