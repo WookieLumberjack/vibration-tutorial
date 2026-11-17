@@ -3,7 +3,7 @@
 What changed in each release, in brief. The pull requests have the detail, and each
 [release](https://github.com/WookieLumberjack/vibration-tutorial/releases) lists them.
 
-## Unreleased
+## 0.1.5 (2026-11-17)
 
 - **New pages:**
   - Gyroscope;
@@ -29,12 +29,25 @@ What changed in each release, in brief. The pull requests have the detail, and e
   - the app reopens on the page last shown;
   - one way to start a page's motion (Start / Pause, Space).
 - **Presenter mode:** a *Size* box scales the whole app to 125–200 % for a projector.
-- **Speed:** more Rust kernels, a shared frame loop on every page, and the rotor's analysis off
-  the UI thread.
+- **Speed:** more Rust kernels, a shared frame loop on every page, the rotor's analysis and
+  slow controls (Nonlinearity & forces, Seismic, Vibro-acoustics, Variability) off the UI
+  thread, faster wide lines, and Duffing at 50× back to 60 fps.
 - **Code:** ruff and mypy over the whole package, with a pre-commit hook. The large pages are
   split into smaller modules. The GUI tests free their windows. The README is split into
   `docs/` pages, with screenshots that a test keeps working.
-- **Fixed:** errors the course audit found in the notes; a deadlock in the rotor's analysis
+- **Interactive lessons** (the second audit, #316):
+  - predict first: most trials ask a question before they run, and each page's notes open
+    with three goals;
+  - on-page challenges with a live pass or fail; drag a value on a plot (lines, dots, the
+    s-plane's poles);
+  - a moving body on the One mass pages, and step-through trials;
+  - hover crosshairs with linked time cursors, and a scrub back through a paused run;
+  - hold a plot's curves in grey to compare;
+  - a Present view, with the trial's note large;
+  - one run bar along the window's foot.
+- **Consistency:** next and previous page keys, matching units, every tab's name shown at
+  1280 px, and legends kept off the data.
+- **Fixed:** errors both course audits found in the notes; a deadlock in the rotor's analysis
   worker that hung the macOS builds.
 
 ## 0.1.4 (2026-10-28)

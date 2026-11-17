@@ -1,6 +1,6 @@
 [package]
 name = "vib-native"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 publish = false
 description = "The Python binding of vib_tutorial's Rust kernels (native/kernels), imported as vib_tutorial._native"
