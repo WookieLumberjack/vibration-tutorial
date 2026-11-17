@@ -46,6 +46,7 @@ from .plots import SteadyRange
 from .scrub import Scrub
 from .style import colors
 from .theming import add_legend, mute
+from .transport import Transport
 
 FRAME_BUDGET = 0.008  # s of computing per frame: past it the page runs slower than asked
 SPEEDS = (0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
@@ -398,6 +399,10 @@ class DuffingPage(QtWidgets.QWidget):
     """Controls on the left, the response and the strip chart in the centre, phase plane and notes on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the sweep's run and its speed."""
+        return Transport(self.run_button, self.reset_button, self.sim_speed)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)

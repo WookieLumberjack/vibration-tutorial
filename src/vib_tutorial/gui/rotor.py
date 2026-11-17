@@ -84,6 +84,7 @@ from .scrub import Scrub
 from .style import colors
 from .tab_groups import TabGroups
 from .theming import mute
+from .transport import Transport
 
 SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0)  # simulation speed, × real time
 TOP_RPM = 10_000.0  # the default speed range
@@ -120,6 +121,10 @@ class RotorPage(QtWidgets.QWidget):
     """Parameters and speed on the left; 3D view, orbits and time on the centre; Campbell, matrices, theory."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the simulation's run (it ramps up to the target speed) and its speed."""
+        return Transport(self.run_button, self.reset_button, self.sim_speed)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
