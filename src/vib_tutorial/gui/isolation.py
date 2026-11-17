@@ -472,8 +472,8 @@ class IsolationPage(QtWidgets.QWidget):
         sv.addWidget(row)
         sv.addWidget(self.body)
         self.speed_plot = plot("Speed", "rpm", "Time", "s", height=80)
-        self.x_plot = plot("Machine x", "m", "Time", "s", height=110)
-        self.floor_plot = plot("Floor force", "N", "Time", "s", height=110)
+        self.x_plot = plot("Machine x", "m", "Time", "s", height=95)
+        self.floor_plot = plot("Floor force", "N", "Time", "s", height=95)  # 95: the window fits 720 px on macOS
         for p in (self.x_plot, self.floor_plot):
             p.setXLink(self.speed_plot)
         for p in (self.speed_plot, self.x_plot):

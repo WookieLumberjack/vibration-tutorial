@@ -2534,7 +2534,14 @@ def test_window_fits_a_1280_px_screen(app, request):
     p.orbits.set_midspan_shown(True)  # four orbits
     app.processEvents()
     size = w.minimumSizeHint()
-    assert size.width() <= 1280 and size.height() <= 720, _widest(w.pages, size.width() // 3) + "\n" + _font_report(app)
+    assert size.width() <= 1280 and size.height() <= 720, (
+        f"{size.width()} × {size.height()}\n"
+        + _widest(w.pages, size.width() // 3)
+        + "\n"
+        + _tallest(w)
+        + "\n"
+        + _font_report(app)
+    )
     names = [p.tabs.tabText(i) for i in range(p.tabs.count())]
     bar = p.tabs.tabBar()
     assert sum(bar.tabSizeHint(i).width() for i in range(bar.count())) < p.tabs.minimumSizeHint().width(), names
@@ -2628,6 +2635,25 @@ def _windows_font(app) -> None:
         os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "segoeui.ttf")
     )
     app.setFont(QtGui.QFont("Segoe UI", 9))
+
+
+def _tallest(w) -> str:
+    """The window's height, part by part, and the tallest pages' panes: what holds it taller than 720."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import present
+
+    lines = [f"pages {w.pages.minimumSizeHint().height()}, run bar {w.run_bar.minimumSizeHint().height()}"]
+    pages = sorted((w.pages.widget(i) for i in range(w.pages.count())), key=lambda p: -p.minimumSizeHint().height())
+    for page in pages[:5]:
+        panes = present.splitter(page)
+        heights = (
+            [panes.widget(i).minimumSizeHint().height() for i in range(panes.count())]  # type: ignore[union-attr]
+            if isinstance(panes, QtWidgets.QSplitter)
+            else []
+        )
+        lines.append(f"{type(page).__name__}: {page.minimumSizeHint().height()} (panes {heights})")
+    return "\n".join(lines)
 
 
 def _font_report(app) -> str:

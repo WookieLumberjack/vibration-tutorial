@@ -126,7 +126,8 @@ class TransportBar(QtWidgets.QFrame):
         self.setAccessibleName("Run bar")
         self.source: Transport | None = None
         row = QtWidgets.QHBoxLayout(self)
-        row.setContentsMargins(8, 3, 8, 3)
+        row.setContentsMargins(6, 1, 6, 1)  # as short as a button: every pixel here comes off the pages (720 px tall)
+        row.setSpacing(4)
         self.run = QtWidgets.QPushButton("Start")
         self.run.setCheckable(True)
         self.run.setToolTip("<p>Start, pause or resume the page's motion (Space).</p>")
@@ -144,6 +145,7 @@ class TransportBar(QtWidgets.QFrame):
         self.clock = QtWidgets.QLabel()
         self.clock.setAccessibleName("Time")
         self.what = QtWidgets.QLabel()
+        self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         for w in (self.run, self.reset):
             row.addWidget(w)
         row.addSpacing(12)
