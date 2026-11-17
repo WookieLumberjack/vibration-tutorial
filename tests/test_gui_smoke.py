@@ -360,14 +360,14 @@ def test_one_click_trials_set_up_their_pages(app):
 
     p = w.coupling_page
     w.pages.setCurrentWidget(p)
-    for i, trial in enumerate(coupling_notes.TRIALS):
-        p.trials.combo.setCurrentIndex(i + 1)
+    for trial in coupling_notes.TRIALS:
+        _pick(p, trial.name)
         assert p.split == trial.split and p.a_mass.currentData() == trial.a_mass and p.system.n == trial.system().n
 
     p = w.cms_page
     w.pages.setCurrentWidget(p)
-    for i, trial in enumerate(CMS_TRIALS):
-        p.trials.combo.setCurrentIndex(i + 1)
+    for trial in CMS_TRIALS:
+        _pick(p, trial.name)
         assert p.interfaces == list(trial.interfaces) and p.method.currentData() == trial.method
         assert p.tabs.currentIndex() == trial.tab
     p.time.reset()

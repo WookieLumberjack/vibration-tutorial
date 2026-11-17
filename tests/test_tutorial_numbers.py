@@ -1335,8 +1335,8 @@ def test_frf_and_coupling_trials():
             model(system, t.split, t.mode_a, t.mode_b, t.a_mass, True), modal_analysis(system)
         )
         errors[t.name] = [100 * c.error for c in comparisons]
-    np.testing.assert_allclose(errors["Two equal halves: pushed far apart"][1], 4.9, atol=0.05)
-    np.testing.assert_allclose(errors["A light half, tuned: splitting"], [0.2, 0.3], atol=0.05)
+    np.testing.assert_allclose(errors["Two equal halves"][1], 4.9, atol=0.05)
+    np.testing.assert_allclose(errors["A light half, tuned"], [0.2, 0.3], atol=0.05)
     np.testing.assert_allclose(errors["The wrong mass for A"], [2.9, -2.2], atol=0.06)
     assert errors["A mode left out (8 masses)"][0] == pytest.approx(-14, abs=0.5)
 

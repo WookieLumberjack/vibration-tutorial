@@ -16,6 +16,7 @@ from ..core import (
     substructure_damping,
 )
 from ..core.modal import TWO_PI
+from ..core.practice import Prediction
 from ..view_models.text import number
 from . import cms_figures
 from .lesson import trials_html
@@ -39,6 +40,7 @@ class CmsTrial:
     mode: int = 0  # the comparison table's row to select (1-based), 0 to leave it
     n: int = 8  # masses in the uniform chain
     changed: bool = False  # the chain isn't this uniform one (a practice spec's state: edited on the Simulation page)
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         system = ChainSystem.uniform(self.n)
@@ -106,6 +108,16 @@ TRIALS = (
         interfaces=(3,),
         kept=(2,),
         tab=5,
+        predict=Prediction(
+            "The 8-mass chain cut at m4, two fixed-interface modes kept in each half. How do the reduced model's "
+            "frequencies compare with the chain's?",
+            (
+                "Some above, some below",
+                "Each at or below the true one",
+                "Each at or above the true one",
+            ),
+            2,
+        ),
     ),
     CmsTrial(
         "The interface at m7: the rule of thumb",
@@ -114,6 +126,16 @@ TRIALS = (
         "3 is 50% too high (MAC 0.27).",
         interfaces=(6,),
         kept=(3, 1),
+        predict=Prediction(
+            "The interface at m7 (B is just the last spring). If A keeps only one fixed-interface mode, how good is "
+            "mode 3?",
+            (
+                "Exact",
+                "Within a percent",
+                "Badly off",
+            ),
+            2,
+        ),
     ),
     CmsTrial(
         "Driving at mode 4",
@@ -150,6 +172,15 @@ TRIALS = (
         "matters on a mode this lightly damped, and the tip error grows to about half the motion.",
         interfaces=(3,),
         method="macneal",
+        predict=Prediction(
+            "Cut at m4 by MacNeal's method. If it kept every free-interface mode of both halves, would the reduced "
+            "model be exact?",
+            (
+                "Yes, as Craig–Bampton's would be",
+                "No: it drops the boundary's inertia",
+            ),
+            1,
+        ),
     ),
     CmsTrial(
         "Three methods compared",

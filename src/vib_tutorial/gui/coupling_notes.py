@@ -8,6 +8,7 @@ import numpy as np
 
 from ..core import ChainSystem, ModalResult
 from ..core.modal_coupling import CoupledModel
+from ..core.practice import Prediction
 from ..core.presets import presets
 from . import coupling_figures, links, notation
 from .cms_notes import _side_by_side, fmt, matrix_html
@@ -28,6 +29,7 @@ class CouplingTrial:
     mode_b: int = 0
     a_mass: str = "tip"
     tab: int = 0  # the right-hand tab: veering, shapes, FRF
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         if self.chain == "absorber":
@@ -52,21 +54,40 @@ TRIALS = (
         split=1,
     ),
     CouplingTrial(
-        "Two equal halves: pushed far apart",
+        "Two equal halves",
         "The uniform chain split after m2. Both halves have the same mode 1, so <m>f<sub>B</sub> = "
         "f<sub>A</sub></m>, but <m>μ</m> = 1.27 is large: the modes are pushed far apart. The upper one is 4.9% too "
         "high, with a MAC of 0.96, because the halves' second modes aren't far off and are left out.",
         "uniform",
         split=2,
+        predict=Prediction(
+            "The uniform chain split after m2: both halves have the same mode 1 (f<sub>B</sub> = f<sub>A</sub>), but "
+            "B is heavy (μ = 1.27). How far apart are the two coupled modes?",
+            (
+                "Close together, as under a light absorber",
+                "Far apart",
+                "At the same frequency",
+            ),
+            1,
+        ),
     ),
     CouplingTrial(
-        "A light half, tuned: splitting",
+        "A light half, tuned",
         "m3 and m4 at 0.1 kg on 40 N/m springs: B is tuned to A with <m>μ</m> = 0.14, and the 2-DOF model is "
         "within 0.2% and 0.3%, both above the chain (the Rayleigh–Ritz bound). The Veering tab sweeps B's "
         "frequency: the two curves veer apart instead of crossing. Switch it to the mass ratio to see the "
         "splitting shrink as B gets lighter.",
         "light",
         split=2,
+        predict=Prediction(
+            "A light B (μ = 0.14) tuned to A. Where do the 2-DOF model's two frequencies fall against the chain's?",
+            (
+                "Below them",
+                "One either side",
+                "At or above them, within a fraction of a percent",
+            ),
+            2,
+        ),
     ),
     CouplingTrial(
         "The wrong mass for A",
@@ -75,6 +96,16 @@ TRIALS = (
         "light",
         split=2,
         a_mass="effective",
+        predict=Prediction(
+            "A's oscillator given its effective mass instead of its modal mass at the interface. What happens to the "
+            "2-DOF model's frequencies against the chain's?",
+            (
+                "Nothing: either mass will do",
+                "They stay upper bounds, just less close",
+                "Their errors grow, and can have either sign",
+            ),
+            2,
+        ),
     ),
     CouplingTrial(
         "A mode left out (8 masses)",

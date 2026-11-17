@@ -35,7 +35,7 @@ from ..core.frame import (
     warren,
 )
 from ..core.frame_response import Load, LoadKind, formulations, rayleigh
-from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, kept, number, pick
 from .links import page_link
 
 TAB_ASSEMBLY, TAB_ELEMENT, TAB_RESPONSE, TAB_FORMULATIONS, TAB_THEORY = range(5)
@@ -73,6 +73,7 @@ class FrameTrial:
     load: Load | None = None  # None: a vertical impulse at the last node free to move so (`default_load`)
     out: int | None = None  # the DOF the Response tab plots (None: the load's)
     swing: Swing = Swing.MODE
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 SQUARE = Frame(
@@ -119,6 +120,17 @@ TRIALS = (
         frame=dataclasses.replace(cantilever(1.0, 4), lumped=True),
         matrix=Matrix.M,
         grid=0.125,
+        predict=Prediction(
+            "The four-beam cantilever's mass switched from consistent to lumped (half each beam's at each end). What "
+            "happens to its frequencies?",
+            (
+                "Only the axial modes change",
+                "They don't change",
+                "They rise",
+                "They fall",
+            ),
+            3,
+        ),
     ),
     FrameTrial(
         "A deep beam: Timoshenko",
@@ -128,6 +140,17 @@ TRIALS = (
         "−18 %, −29 %. The Beams & plates page's closed forms are 440.8, 1529 and 2921 Hz.",
         frame=dataclasses.replace(simply_supported(1.0, 8, DEEP), theory=Theory.TIMOSHENKO),
         grid=0.125,
+        predict=Prediction(
+            "A deep beam (its length 5 times its depth) switched from Euler–Bernoulli to Timoshenko beams. What "
+            "happens to its bending frequencies?",
+            (
+                "They don't change",
+                "They rise, the higher modes most",
+                "They fall, all by the same fraction",
+                "They fall, the higher modes most",
+            ),
+            3,
+        ),
     ),
     FrameTrial(
         "A portal frame: sway",
@@ -136,6 +159,17 @@ TRIALS = (
         "base, Support on the left) and it drops to 6.78 Hz: the columns now bend in single curvature, like "
         "cantilevers held at the top by the girder.",
         frame=portal(2.0, 1.5, 4),
+        predict=Prediction(
+            "The portal frame, its bases clamped, sways at 14.90 Hz. If its bases were pinned instead, what would the"
+            " sway mode do?",
+            (
+                "Fall to 0 Hz: a mechanism",
+                "Hardly change",
+                "Rise",
+                "Fall to about half",
+            ),
+            3,
+        ),
     ),
     FrameTrial(
         "A Warren truss: bars only",
@@ -148,12 +182,22 @@ TRIALS = (
         grid=0.1,
     ),
     FrameTrial(
-        "A square of bars: a mechanism",
+        "A square of bars",
         "Four bars, the bottom two corners pinned: four free DOFs, but mode 1 is at 0 Hz, a parallelogram folding "
         "with no bar stretching. Maxwell's count, <m>2j = b + r</m> (2 × 4 = 4 + 4), says it might be rigid, but the "
         "bottom bar joins two pins and holds nothing (a state of self-stress): the count is needed, not enough. Add a diagonal (the Bar "
         "tool, node 1 to node 3) and the first mode is at 276.9 Hz.",
         frame=SQUARE,
+        predict=Prediction(
+            'Four bars make a square, its bottom two corners pinned. How many of its modes are at 0 Hz?',
+            (
+                "Four",
+                "Two",
+                "None",
+                "One",
+            ),
+            3,
+        ),
     ),
     FrameTrial(
         "Two storeys: the chain again",
@@ -189,7 +233,7 @@ TRIALS = (
         swing=Swing.COMPLEX,
     ),
     FrameTrial(
-        "A step: twice as far",
+        "A step at the tip",
         "The four-beam cantilever, undamped, and a step of 1000 N up at its tip. Held there slowly, the tip would "
         "rise <m>Fℓ<sup>3</sup>/3EI</m> = 3.05 mm; put on at once, it overshoots to 6.08 mm, 1.997 times as far, and swings about "
         "3.05 mm for ever. Give it some damping (Damping ζ, on the left) and it settles there.",
@@ -198,6 +242,16 @@ TRIALS = (
         load=Load(4, 1, LoadKind.STEP, 1000.0),
         swing=Swing.RESPONSE,
         grid=0.125,
+        predict=Prediction(
+            "1000 N put on the cantilever's tip at once, undamped. Held there slowly, the tip would rise 3.05 mm. How"
+            " far does it go?",
+            (
+                "3.05 mm, and it settles there",
+                "About twice as far, and it swings on",
+                "About ten times as far",
+            ),
+            1,
+        ),
     ),
     FrameTrial(
         "Resonance from rest",

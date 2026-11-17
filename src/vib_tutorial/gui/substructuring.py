@@ -1071,6 +1071,7 @@ class SubstructuringPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Each loads the 8-mass chain into the Simulation page and sets the cut, the "
             "modes kept and the method to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

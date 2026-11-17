@@ -397,6 +397,7 @@ class FramePage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each loads a frame, to show one idea from the Theory tab. It's then yours to change.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
         self.challenge = ChallengeBox(self, PROBLEMS)

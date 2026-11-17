@@ -218,7 +218,7 @@ def test_trials():
     r = responses(forms, t.load, t.load.index)
     assert np.abs(r.frf_exact - r.frf_conventional).max() / np.abs(r.frf_exact).max() == pytest.approx(0.258, abs=5e-4)
 
-    t = by["A step: twice as far"]
+    t = by["A step at the tip"]
     e = t.frame.elements[0]
     static = 1000.0 / (3 * e.material.E * e.section.inertia)
     r = responses(formulations(t.frame), t.load, t.load.index)
