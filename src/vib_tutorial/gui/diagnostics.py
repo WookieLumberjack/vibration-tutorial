@@ -37,7 +37,7 @@ from ..core.diagnostics import (
     run_up,
     sidebands,
 )
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick
 from . import diagnostics_figures, settle_plots
 from .drag import DragLine
 from .lesson import (
@@ -97,6 +97,7 @@ class DiagnosticsTrial:
     low: float = 2550.0  # Hz, the envelope's band
     high: float = 3450.0
     mode: float = 40.0  # Hz, the run-up's casing mode
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -106,6 +107,16 @@ TRIALS = (
         "harmonics at 1617 and 2426 Hz. The spectrum has those, the shaft's 1X and 2X, and noise; round the "
         "mesh nothing stands above the floor. The record's kurtosis is 2.4, below a Gaussian's 3: a sum of "
         "steady sines is flatter-topped than noise.",
+        predict=Prediction(
+            "A healthy gearbox: its shafts, its mesh and a little noise. What is the record's kurtosis, against a "
+            "Gaussian's 3?",
+            (
+                "Well above 3",
+                "About 3",
+                "Below 3",
+            ),
+            2,
+        ),
     ),
     DiagnosticsTrial(
         "An eccentric pinion",
@@ -133,6 +144,17 @@ TRIALS = (
         bearing=BearingFault.OUTER,
         noise=1.0,
         tab=TAB_ENVELOPE,
+        predict=Prediction(
+            "A spall on a bearing's outer race in a noisy gearbox (1 m/s² RMS). Where does its strike rate, BPFO, "
+            "stand out clearly?",
+            (
+                "In neither spectrum",
+                "In both",
+                "In the plain spectrum",
+                "In the envelope spectrum",
+            ),
+            3,
+        ),
     ),
     DiagnosticsTrial(
         "Inner race defect",
@@ -142,6 +164,17 @@ TRIALS = (
         bearing=BearingFault.INNER,
         noise=1.0,
         tab=TAB_ENVELOPE,
+        predict=Prediction(
+            "The spall on the inner race instead, turning with the shaft. What sidebands does BPFI have in the "
+            "envelope spectrum?",
+            (
+                "None",
+                "± BPFO",
+                "± FTF, the cage's speed",
+                "± 1X, the shaft's speed",
+            ),
+            3,
+        ),
     ),
     DiagnosticsTrial(
         "Ball defect",
@@ -169,6 +202,16 @@ TRIALS = (
         "steady 211) and later (2531 rpm), and rings after (Orders tab). Run up slowly to read a resonance.",
         run_s=4.0,
         tab=TAB_ORDERS,
+        predict=Prediction(
+            "The run-up through the 40 Hz casing mode made five times faster (4 s, not 20). What happens to the 1X's "
+            "peak as tracked?",
+            (
+                "It doesn't change",
+                "It peaks higher and earlier",
+                "It peaks lower and later",
+            ),
+            2,
+        ),
     ),
 )
 
@@ -506,7 +549,9 @@ class DiagnosticsPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.trials = TrialBox(
-            [t.name for t in TRIALS], "<p>Each sets up the machine to show one idea from the Theory tab.</p>"
+            [t.name for t in TRIALS],
+            "<p>Each sets up the machine to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

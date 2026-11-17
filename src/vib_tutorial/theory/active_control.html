@@ -3,6 +3,11 @@
 <a href="page:isolation_page#damping-trade-off">Isolation's damping trade-off</a>
 <a href="page:complex_page#state-space">The state-space form</a>
 </before>
+<goals page="active_control_page">
+<li trial="1" problem="modal-estimate">add damping by collocated velocity feedback, and estimate it mode by mode;</li>
+<li trial="3" problem="spillover">see a non-collocated loop spill over and go unstable;</li>
+<li trial="6" problem="skyhook">isolate a machine with a skyhook damper.</li>
+</goals>
 <h3><a name="feedback"></a>Feedback</h3>
 <p>Active control measures the motion and pushes back through an actuator. The simplest law is <b>direct velocity
 feedback</b>: a force on mass <m>a</m> from the velocity of mass <m>s</m>,</p>

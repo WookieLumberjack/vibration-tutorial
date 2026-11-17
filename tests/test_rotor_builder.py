@@ -296,7 +296,7 @@ def test_trials():
     assert euler == pytest.approx([812.4, 3250, 7312], abs=0.5)
     assert m.hz[4] / euler[2] == pytest.approx(0.75, abs=0.01)
 
-    name = "A disc off centre: the gyroscopic split"
+    name = "A disc off centre"
     assert by[name].rotor.discs[0].mass == pytest.approx(22.2, abs=0.05)
     _, m = at(name, 0.0)
     assert m.hz[0:6:2] == pytest.approx([62.28, 265.2, 501.4], abs=0.05)
@@ -390,7 +390,7 @@ def test_the_sweeps_trials():
     assert s.criticals[1].amplification == pytest.approx(116, abs=0.5)
     assert 100 * (s.criticals[0].rpm - t.rpm) / t.rpm == pytest.approx(36.4, abs=0.05)
 
-    t, a, s = run("Unbalance: only the forward critical")
+    t, a, s = run("The fan's unbalance")
     disc = t.rotor.discs[0]
     assert disc.unbalance * 1e6 == pytest.approx(174, abs=0.5) and disc.mass == pytest.approx(17.4, abs=0.05)
     node = t.rotor.node_at(disc.z)

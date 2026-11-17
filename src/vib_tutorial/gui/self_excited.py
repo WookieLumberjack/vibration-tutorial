@@ -20,7 +20,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..core.self_excited import (
     PARKINSON,
     TWO_PI,
@@ -86,17 +86,28 @@ class SelfTrial:
     values: dict = field(default_factory=dict)  # control name → value
     tab: int = TAB_MOTION
     quasi_steady: bool = False  # flutter's lift: steady (θ) or quasi-steady (θ + ḣ/U)
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
     SelfTrial(
-        "Negative damping grows to a limit cycle",
+        "Negative damping at rest",
         "<m>ẍ + ω<sub>n</sub>²x = ω<sub>n</sub>(ε − x²/x<sub>r</sub>²)ẋ</m> with <m>ε</m> = 0.2: at small amplitude the damping is negative (<m>ζ</m> = −0.1), "
         "so a 0.5 mm start grows; at large amplitude it is positive. It settles where the cycle's energy in and out "
         "balance: 8.9 mm, 2<m>x<sub>r</sub></m>√<m>ε</m>. Start it anywhere and it ends on the same closed curve in the phase "
         "plane: a limit cycle.",
         Kind.VDP,
         {"vdp_eps": 0.2},
+        predict=Prediction(
+            "ε = 0.2: negative damping at small amplitude, positive at large. Started at 0.5 mm, what does the motion"
+            " do?",
+            (
+                "It dies away",
+                "It grows without limit",
+                "It grows and settles at one amplitude, wherever it starts",
+            ),
+            2,
+        ),
     ),
     SelfTrial(
         "The Hopf point",
@@ -134,12 +145,20 @@ TRIALS = (
         tab=TAB_SWEEP,
     ),
     SelfTrial(
-        "Galloping grows with the wind",
+        "Galloping at 12 m/s",
         "At 12 m/s, three times the onset speed, the section swings 2.7 <m>D</m> from side to side. Unlike flutter or "
         "resonance there is no upper limit: the amplitude keeps growing with the wind. Damping only moves the "
         "onset (<m>U<sub>g</sub></m> ∝ <m>mζ</m>, the Scruton number).",
         Kind.GALLOP,
         {"g_speed": 12.0, "g_start": 0.001, "g_periods": 200.0},
+        predict=Prediction(
+            'The square section in a 12 m/s wind, three times its galloping onset. Does its motion level off?',
+            (
+                "Yes, at about one diameter, as vortex shedding does",
+                "No: it keeps growing with the wind",
+            ),
+            1,
+        ),
     ),
     SelfTrial(
         "Lock-in",
@@ -153,15 +172,25 @@ TRIALS = (
         tab=TAB_SWEEP,
     ),
     SelfTrial(
-        "Out of lock-in",
+        "A reduced velocity of 9",
         "<m>U<sub>r</sub></m> = 9: the wake sheds near its own Strouhal frequency, 1.8 <m>f<sub>n</sub></m>, far above the "
         "structure's (the response is at 1.7 <m>f<sub>n</sub></m>), and it is a forced one: 0.019 <m>D</m>. Vortex-induced vibration is self-limited "
         "(about one diameter at most, in practice), unlike galloping.",
         Kind.VIV,
         {"v_reduced": 9.0},
+        predict=Prediction(
+            "The cylinder swung 0.21 D at a reduced velocity of 5.5, locked in. The current rises to a reduced "
+            "velocity of 9. What does the motion do?",
+            (
+                "It stays about the same",
+                "It keeps growing with the current",
+                "It falls to a small forced motion",
+            ),
+            2,
+        ),
     ),
     SelfTrial(
-        "Flutter: two modes coalesce",
+        "A wing section towards flutter",
         "A wing section with plunge at 3 Hz and pitch at 6 Hz, its centre of mass behind the elastic axis, in steady "
         "lift. As the speed rises the lift, a stiffness growing as <m>U</m>², couples the two modes: their "
         "frequencies close in (2.93 and 6.71 Hz at rest, 3.6 and 4.7 Hz at 20 m/s) and at 20.7 m/s, nearly met, "
@@ -170,6 +199,17 @@ TRIALS = (
         "20.9 m/s.",
         Kind.FLUTTER,
         {"f_speed": 20.0},
+        predict=Prediction(
+            "The wing section's plunge and pitch modes are at 2.9 and 6.7 Hz in still air. As the airspeed rises "
+            "towards flutter, what do their frequencies do?",
+            (
+                "Both fall to zero",
+                "They stay where they are",
+                "They move apart",
+                "They close in",
+            ),
+            3,
+        ),
     ),
     SelfTrial(
         "Mass balance",
@@ -179,6 +219,16 @@ TRIALS = (
         "Halfway, at <m>x<sub>cg</sub></m> = 0.1, flutter waits until 22.8 m/s.",
         Kind.FLUTTER,
         {"f_cg": 0.0, "f_speed": 20.0},
+        predict=Prediction(
+            "The section's centre of mass moved onto its elastic axis (x<sub>cg</sub> = 0). What happens to its "
+            "flutter?",
+            (
+                "Nothing changes",
+                "It flutters at a lower speed",
+                "It no longer flutters; it only diverges, at 39 m/s",
+            ),
+            2,
+        ),
     ),
     SelfTrial(
         "Quasi-steady lift: flutter without coalescence",
@@ -537,7 +587,9 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self._vdp_cache: tuple | None = None  # (the oscillator and its ε grid, the amplitudes): a tab change redraws
         self._stale = False
         self.trials = TrialBox(
-            [t.name for t in TRIALS], "<p>Each picks a model and sets it up to show one idea from the Theory tab.</p>"
+            [t.name for t in TRIALS],
+            "<p>Each picks a model and sets it up to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 
