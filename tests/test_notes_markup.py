@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from vib_tutorial.gui import links, maths, notation, references
+from vib_tutorial.gui import links, maths, notation, notes_render, references
 
 GUI = Path(links.__file__).parent
 
@@ -104,7 +104,7 @@ def test_every_equation_renders_and_fits_the_theory_tab(app):
 
     all_notes()
     for latex in maths.EQUATIONS.values():
-        image = maths.render(latex, 12.0, "#000000")
+        image = notes_render.equation(latex, 12.0, "#000000")
         assert not image.isNull(), latex
         assert image.deviceIndependentSize().width() <= 360, f"{latex}: too wide for the Theory tab"
 
@@ -207,6 +207,30 @@ def test_figures_follow_the_theme(app):
     finally:
         style.set_theme(before)
         browser.deleteLater()
+
+
+def test_a_figures_labels_are_measured_without_qt_as_qt_would(app):
+    """`font_metrics` has every character a figure's labels use, and measures a label as Qt does with the same
+    fonts (#316 D7): within 1 % for the bundled maths font, and for the sans-serif on the machine that generated
+    the tables (another machine's UI font may differ: in the app, Qt measures)."""
+    from PySide6 import QtGui
+
+    from vib_tutorial.gui import figures, font_metrics, notes_render
+
+    used = set()
+    for draw in figures.all_figures().values():
+        for text in re.findall(r"<text[^>]*>(.*?)</text>", draw(), re.S):
+            used |= set(re.sub(r"<[^>]+>", "", text))
+    missing = used - font_metrics.SANS.keys()
+    assert not missing, f"rerun scripts/font_metrics.py: {sorted(missing)}"
+    notes_render.install()  # as make_app does: the fonts registered, the labels measured by Qt
+    assert figures.measure is notes_render.text_width
+    for s in ("ω<sub>n</sub>", "k₁ = 400 N/m", "Heavy spot", "x(t)"):
+        # at 200 px: at 13 px Windows hints each glyph's advance to a whole pixel (3 % off on a short label)
+        assert font_metrics.width(s, True, 200) == pytest.approx(notes_render.text_width(s, True, 200), rel=0.01)
+    if QtGui.QFontInfo(QtGui.QFont()).family() == font_metrics.SANS_FAMILY:
+        for s in ("Heavy spot", "keyphasor", "whirl orbit"):
+            assert font_metrics.width(s, False, 200) == pytest.approx(notes_render.text_width(s, False, 200), rel=0.01)
 
 
 # ------------------------------------------------------------------ the browser

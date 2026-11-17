@@ -25,9 +25,9 @@ def make_app(theme: str | None = None):
     if app is None:
         display_size.apply_saved()  # Qt reads its scale factor as the app is created
         app = QtWidgets.QApplication(sys.argv)
-    from .maths import register_fonts
+    from . import notes_render
 
-    register_fonts()
+    notes_render.install()
     app.setApplicationName("Vibration Tutorial")
     theming.apply(theme or theming.saved_name())
     return app
@@ -178,11 +178,11 @@ def run() -> int:
     preload = threading.Thread(target=_preload_scipy, name="preload-scipy", daemon=True)
     QtCore.QTimer.singleShot(0, preload.start)  # after the first paint
     if "--smoke-test" in sys.argv:  # release builds check the packaged app starts, then quit
-        from . import figures, maths  # the pages are built lazily: check QtSvg and ziamath's font are packaged
+        from . import figures, notes_render  # the pages are built lazily: check QtSvg and ziamath's font are packaged
 
-        if any(figures.render(build()).isNull() for build in figures.all_figures().values()):
+        if any(notes_render.figure(build()).isNull() for build in figures.all_figures().values()):
             return 1
-        if maths.render(r"\omega_n = \sqrt{k/m}", 13.0, "#000000").isNull():
+        if notes_render.equation(r"\omega_n = \sqrt{k/m}", 13.0, "#000000").isNull():
             return 1
         if not _analysis_worker_runs():
             return 1

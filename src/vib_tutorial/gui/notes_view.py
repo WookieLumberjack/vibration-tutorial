@@ -1,6 +1,6 @@
 """The browser every page's Theory notes show in: it draws their equations and figures.
 
-`NotesBrowser` is a QTextBrowser that answers the notes' ``eq:`` images (`maths.render`, at its text's size
+`NotesBrowser` is a QTextBrowser that answers the notes' ``eq:`` images (`notes_render.equation`, at its text's size
 and colour) and ``fig:`` images (`figures`), and sets inline maths (``<span class="m">``) a little larger
 than the text around it (`maths.INLINE_SIZE`). The document caches the images until its HTML is set again,
 so `refresh` sets it again (keeping the place read) after a theme change: `MainWindow._restyle` calls it on
@@ -26,7 +26,7 @@ from functools import partial
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from . import figures, maths
+from . import figures, maths, notes_render
 from .style import colors
 from .theming import settings
 
@@ -167,9 +167,9 @@ class NotesBrowser(QtWidgets.QTextBrowser):
         if kind == QtGui.QTextDocument.ResourceType.ImageResource:
             key = name.toString() if isinstance(name, QtCore.QUrl) else name
             if key.startswith("eq:") and (latex := maths.EQUATIONS.get(key[3:])) is not None:
-                return maths.render(latex, self.text_px(), ink())
+                return notes_render.equation(latex, self.text_px(), ink())
             if key.startswith("fig:") and (draw := figures.build(key)) is not None:
-                return figures.render(draw(), self._zoom)
+                return notes_render.figure(draw(), self._zoom)
         return super().loadResource(kind, name)
 
 

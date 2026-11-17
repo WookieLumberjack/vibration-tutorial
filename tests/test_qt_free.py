@@ -13,6 +13,7 @@ import subprocess
 import sys
 
 import vib_tutorial.core as core
+import vib_tutorial.gui as gui
 
 CORE = [f"vib_tutorial.core.{m.name}" for m in pkgutil.iter_modules(core.__path__)]
 
@@ -31,7 +32,12 @@ COURSE_DATA = [
         "rotor_tips",
         "deriving_text",
         "equations_snapshot",
+        "figures",  # the notes' figures as SVG (#316 D7), measured by font_metrics
+        "font_metrics",
+        "maths",  # the notes' maths: inline markup, equations as SVG
     )
+] + [  # every page's figures
+    f"vib_tutorial.gui.{m.name}" for m in pkgutil.iter_modules(gui.__path__) if m.name.endswith("_figures")
 ]
 
 
@@ -60,3 +66,23 @@ def test_core_loads_no_qt():
 
 def test_the_course_data_loads_no_qt():
     assert qt_loaded_by(COURSE_DATA) == {}
+
+
+def test_the_notes_figures_and_equations_draw_without_qt():
+    """Every figure as SVG, its labels placed by `font_metrics`, and an equation by ziamath, with no Qt loaded
+    (#316 D7): what a browser or a handout would show."""
+    figure_modules = [name for name in COURSE_DATA if name.endswith("_figures")]
+    code = (
+        "import sys, importlib\n"
+        "from vib_tutorial.gui import maths\n"
+        "n = 0\n"
+        f"for name in {figure_modules!r}:\n"
+        "    for draw in importlib.import_module(name).FIGURES.values():\n"
+        "        assert draw().startswith('<svg'), name\n"
+        "        n += 1\n"
+        "assert maths.equation_svg(r'\\omega_n = \\sqrt{k/m}', 13.0, '#000000').lstrip().startswith('<svg')\n"
+        "qt = [m for m in sys.modules if m.split('.')[0] in ('PySide6', 'shiboken6', 'pyqtgraph')]\n"
+        "print(n, len(qt))\n"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout.split()
+    assert int(out[0]) > 60 and out[1] == "0"
