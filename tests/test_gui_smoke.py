@@ -341,6 +341,8 @@ def test_one_click_trials_set_up_their_pages(app):
     w.show()
     for i, trial in enumerate(SIM_TRIALS):
         w.sim_page.trials.combo.setCurrentIndex(i + 1)
+        if trial.predict is not None:  # asked first: answered, it runs
+            w.sim_page.trials.answer(trial.predict.answer)
         assert w.sim_page.trials.note.text() == maths.markup(trial.note)
         if not trial.preset:
             assert w.sim_page.params.system().n == trial.n
@@ -350,6 +352,8 @@ def test_one_click_trials_set_up_their_pages(app):
     QTest.qWait(50)
     for i, trial in enumerate(frf_matrix.TRIALS):
         p.trials.combo.setCurrentIndex(i + 1)
+        if trial.predict is not None:  # asked first: answered, it runs
+            p.trials.answer(trial.predict.answer)
         assert (p.output, p.inputs) == (trial.output, set(trial.inputs))
         assert [c.isChecked() for c in p.mode_checks] == [r + 1 not in trial.unticked for r in range(4)]
         assert np.allclose(w.sim_page.params.system().damping, trial.system().damping)
@@ -4055,7 +4059,7 @@ def test_complex_modes_page(app):
     )
     assert "proportional" in p.coupling.text() and not p.make_proportional.isEnabled()
 
-    p.trials.combo.setCurrentIndex(1 + names.index("A strong damper locks a joint"))
+    p.load_trial(names.index("A strong damper locks a joint"))
     app.processEvents()
     assert "Overdamped (no oscillating pole): mode 4." in p.readout.text()
     assert p.table.item(3, 1).text() == "overdamped"
@@ -4082,7 +4086,9 @@ def test_complex_modes_sweep_and_identification(app):
     w.show()
     p = w.complex_page
     w.pages.setCurrentWidget(p)
-    p.trials.combo.pick("One damper, at the top")
+    from vib_tutorial.gui.complex_modes import TRIALS
+
+    p.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "One damper, at the top"))
     app.processEvents()
     assert p.sweep_result is None and p.ident_result is None  # not worked out while hidden
     p.tabs.setCurrentWidget(p.sweep_tab)

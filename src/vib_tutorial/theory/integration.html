@@ -4,6 +4,11 @@
 <a href="page:sim_page#exact-damped-modes-are-complex">The state-space form</a>
 <a href="page:continuum_page#dispersion">A mesh's modes against the continuum's</a>
 </before>
+<goals page="integration_page">
+<li trial="1" problem="average-period">compare the schemes' period errors at ten steps a period;</li>
+<li trial="2" problem="central-limit">find central difference's stability limit;</li>
+<li trial="6" problem="stiff-steps">see why a stiff mode needs an implicit scheme.</li>
+</goals>
 <h3><a name="stepping"></a>Stepping an equation of motion</h3>
 <p>Most structures are solved in time by stepping <m>Mẍ + Cẋ + Kx = f(t)</m> with a fixed time step
 <m>Δt</m>, from <m>x<sub>n</sub></m> at <m>t<sub>n</sub> = nΔt</m> to <m>x<sub>n+1</sub></m>. A scheme replaces

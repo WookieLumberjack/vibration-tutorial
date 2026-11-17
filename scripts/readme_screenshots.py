@@ -1029,7 +1029,7 @@ def periodic_forcing():
 
 
 def energy_methods():
-    lesson("energy_page", 6, "energy_methods")  # Rayleigh–Ritz from above
+    lesson("energy_page", 6, "energy_methods")  # Rayleigh–Ritz: two shapes, then three
 
 
 def beams_plates():
@@ -1070,7 +1070,7 @@ def deriving_pendulum():
     w = window()
     page = w.deriving_page
     w.pages.setCurrentWidget(page)
-    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name.startswith("Chaos")))
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Released at 120° and 120°"))
     page.loop.enabled = False
     for _ in range(int(7.5 / 0.05)):  # well into the chaos, its trail looping
         page.step(0.05)

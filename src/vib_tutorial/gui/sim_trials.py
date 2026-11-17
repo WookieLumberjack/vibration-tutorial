@@ -13,7 +13,7 @@ import numpy as np
 
 from ..core import ChainSystem, ForceKind
 from ..core.modal import frf, modal_analysis
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from .links import page_link
 
 TWO_PI = 2.0 * math.pi
@@ -47,6 +47,7 @@ class SimTrial:
     target: int | None = None  # the mass the force is on (0-based), else the last
     freq_hz: float | None = None  # the harmonic force's frequency
     force: float | None = None  # its amplitude, N
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 def chain(t: SimTrial) -> ChainSystem:
@@ -74,7 +75,7 @@ TRIALS = (
         window=30.0,
     ),
     SimTrial(
-        "Proportional damping: one mode stays one mode",
+        "Proportional damping: mode 3 released",
         "Every damper is 0.005 times its spring (<m>C = βK</m>), the default chain. Mode 3 is released at 0.25× "
         "speed: it decays in one clean shape, only its curve moves in modal coordinates, and it keeps 100% "
         "of the energy (Energy: by mode) while the total decays.",
@@ -83,9 +84,19 @@ TRIALS = (
         speed=0.25,
         window=2.05,
         release=2,
+        predict=Prediction(
+            "The default chain, every damper in proportion to its spring (C = βK), let go in mode 3's shape. What do "
+            "the other modes do as it decays?",
+            (
+                "They stay still",
+                "They decay along with it",
+                "They pick up energy from mode 3",
+            ),
+            0,
+        ),
     ),
     SimTrial(
-        "Non-proportional damping: modes trade energy",
+        "Non-proportional damping: mode 3 released",
         "<m>c<sub>1</sub></m> = 15 N·s/m, the other dampers at 2. The note under the modal table says "
         "non-proportional, and <m>ζ</m> modal and <m>ζ</m> exact separate. Mode 3's real shape is no longer an exact mode of the damped chain: "
         "released, it feeds modes 1 and 2, and within a second most of the energy left is in mode 1, which "
@@ -96,6 +107,16 @@ TRIALS = (
         speed=0.25,
         window=2.05,
         release=2,
+        predict=Prediction(
+            "Only the first damper made strong (c₁ = 15 N·s/m, the others 2), and mode 3's shape let go. What do "
+            "modes 1 and 2 do?",
+            (
+                "They stay still",
+                "They lose energy to mode 3",
+                "They pick up energy from mode 3",
+            ),
+            2,
+        ),
     ),
     SimTrial(
         "A complex mode, released",
@@ -159,6 +180,16 @@ TRIALS = (
         preset="Vibration absorber",
         coords="Element forces",
         apply=True,
+        predict=Prediction(
+            "A small undamped absorber tuned to the drive's frequency, on a machine driven there. Once the start-up "
+            "has died away, what does the machine (m1) do?",
+            (
+                "It swings half as much as without the absorber",
+                "It swings at resonance",
+                "It stands still",
+            ),
+            2,
+        ),
     ),
     SimTrial(
         "Tuned mass damper (Den Hartog)",

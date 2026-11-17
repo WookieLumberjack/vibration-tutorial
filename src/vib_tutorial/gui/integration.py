@@ -27,7 +27,7 @@ from ..core.integration import (
     spectral,
     spectral_curves,
 )
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from . import integration_figures, settle_plots
 from .lesson import (
     Form,
@@ -70,6 +70,7 @@ class IntegrationTrial:
     tab: int = TAB_PERIOD
     mass: float = 1.0
     stiffness: float = 400.0
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -99,6 +100,16 @@ TRIALS = (
         periods=10.0,
         schemes=(Scheme.AVERAGE, Scheme.LINEAR),
         tab=TAB_RADIUS,
+        predict=Prediction(
+            "Δt = T: one step a period. What does the motion Newmark's average acceleration computes do?",
+            (
+                "It follows the true motion closely",
+                "It dies away",
+                "It blows up",
+                "It keeps its amplitude, its period far too long",
+            ),
+            3,
+        ),
     ),
     IntegrationTrial(
         "RK4's numerical damping",
@@ -120,7 +131,7 @@ TRIALS = (
         tab=TAB_RADIUS,
     ),
     IntegrationTrial(
-        "A stiff mode breaks the explicit schemes",
+        "A stiff mode beside the slow one",
         "A 0.1 kg mass on a stiff spring hangs from the first: a 1049 Hz mode beside the 3.03 Hz one, as a fine "
         "mesh has. The run takes 50 steps per period of the slow mode, which gives the stiff one <m>ωΔt</m> = 43, a "
         "seventh of a step per period. Central difference and RK4 blow up within 20 ms, although nothing that "
@@ -131,6 +142,17 @@ TRIALS = (
         stiff_hz=1000.0,
         schemes=(Scheme.CENTRAL, Scheme.RK4, Scheme.AVERAGE),
         tab=TAB_RADIUS,
+        predict=Prediction(
+            "A light mass on a stiff spring adds a 1049 Hz mode beside the 3.03 Hz one. Stepped by central difference"
+            " with 50 steps per period of the slow mode, what happens?",
+            (
+                "It runs, the stiff mode's period wrong",
+                "It runs, the stiff mode damped out",
+                "It runs, the slow mode accurate",
+                "It blows up",
+            ),
+            3,
+        ),
     ),
     IntegrationTrial(
         "HHT-α damps what it can't resolve",
@@ -446,6 +468,7 @@ class IntegrationPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each sets up the oscillator, the step and the schemes to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 
