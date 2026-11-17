@@ -38,7 +38,7 @@ from ..core.energy_methods import (
     trial_shape,
 )
 from ..core.model import ChainSystem
-from ..core.practice import Problem, Question, Requirement, at_most, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick, rounded
 from . import energy_figures, settle_plots
 from .drag import DragLine, DragPoint
 from .lesson import (
@@ -91,6 +91,7 @@ class EnergyTrial:
     stiffness: tuple[float, ...] = (400.0, 400.0, 400.0, 400.0)
     holzer_hz: float = 1.0
     drawn: tuple[float, ...] = ()  # a shape the reader drew (each mass's displacement), in place of `shape`
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         return chain(self.masses, self.stiffness)
@@ -103,6 +104,16 @@ TRIALS = (
         "1's shape. Its Rayleigh quotient <m>vᵀKv / vᵀMv</m> gives <m>f<sub>1</sub></m> = 1.112 Hz against the exact 1.105 Hz: 0.55 % "
         "high. The shapes are hard to tell apart; the error in frequency is smaller still, because it is "
         "second order in the shape's.",
+        predict=Prediction(
+            "Rayleigh's quotient from the chain's sag under its own weight, a shape a little off mode 1's. Where does"
+            " its estimate of f₁ lie?",
+            (
+                "Either side, depending on the shape",
+                "Below the exact f₁",
+                "Above the exact f₁",
+            ),
+            2,
+        ),
     ),
     EnergyTrial(
         "A straight line, then one pass of iteration",
@@ -131,11 +142,20 @@ TRIALS = (
         iterations=1,
     ),
     EnergyTrial(
-        "Dunkerley from below",
+        "Dunkerley's sum",
         "Dunkerley adds up each mass alone on the massless chain: <m>1/ω<sub>1</sub>² ≈ Σ m<sub>i</sub>(K<sup>−1</sup>)<sub>ii</sub></m>, "
         "from the flexibility matrix <m>K<sup>−1</sup></m>. On the uniform chain the four alone are at 3.18, 2.25, 1.84 and 1.59 Hz and the sum gives "
         "1.007 Hz, 8.9 % low. With Rayleigh's static estimate the exact <m>f<sub>1</sub></m> is bracketed: 1.007 ≤ 1.105 ≤ 1.112 "
         "Hz.",
+        predict=Prediction(
+            'Dunkerley adds up each mass alone on the massless chain. Where does its estimate of f₁ lie?',
+            (
+                "Either side",
+                "Above the exact f₁",
+                "Below the exact f₁",
+            ),
+            2,
+        ),
     ),
     EnergyTrial(
         "A heavy tip: Dunkerley does better",
@@ -145,13 +165,22 @@ TRIALS = (
         masses=(1.0, 1.0, 1.0, 5.0),
     ),
     EnergyTrial(
-        "Rayleigh–Ritz from above",
+        "Rayleigh–Ritz: two shapes, then three",
         "Two Ritz shapes (the static deflection and one more pass of <m>K<sup>−1</sup>M</m>) on the uniform chain: <m>f<sub>1</sub></m> is exact to "
         "four figures, and <m>f<sub>2</sub></m> is 3.30 Hz against 3.18, 3.6 % high. With three, <m>f<sub>2</sub></m> is 3.184 and <m>f<sub>3</sub></m> 5.02 Hz "
         "against 4.88. Every estimate sits above its mode and comes down as shapes are added; with all <m>N</m> it is "
         "exact.",
         tab=TAB_RITZ,
         shapes=2,
+        predict=Prediction(
+            'A Rayleigh–Ritz model keeps two shapes, then three. As shapes are added, what does each estimate do?',
+            (
+                "It can go either way",
+                "It rises toward the exact value",
+                "It comes down, never below the exact value",
+            ),
+            2,
+        ),
     ),
     EnergyTrial(
         "A poor basis: a stiff first spring",
@@ -430,6 +459,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Each loads a chain into the Simulation page and sets up the estimates to show "
             "one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

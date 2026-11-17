@@ -122,7 +122,8 @@ def test_stepping_trials_while_presenting_shows_the_note_large(window):
     QtWidgets.QApplication.processEvents()
     first, second = sim_trials.TRIALS[:2]
     assert overlay.isVisible() and f"2 / {len(sim_trials.TRIALS)} · {second.name}" == overlay.title.text()
-    assert overlay.body.text() == w.sim_page.trials.note.text() != ""
+    box = w.sim_page.trials  # what its box shows: the question, if it asks one first
+    assert overlay.body.text() == (box.question if box.asking is not None else box.note).text() != ""
     assert overlay.geometry().right() <= w.pages.width() and overlay.height() > 0
     assert w.ink_escape.isEnabled()
     w.previous_trial()

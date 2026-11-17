@@ -37,7 +37,7 @@ from ..core.complex_modes import (
 )
 from ..core.modal import TWO_PI, ModalResult, modal_analysis
 from ..core.model import ChainSystem
-from ..core.practice import Problem, Question, Requirement, at_least, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, number, pick, rounded
 from ..core.presets import tuned_mass_damper
 from . import complex_figures, maths, weak
 from .axes import log_axes
@@ -129,12 +129,13 @@ class ComplexSetup:
     masses: tuple[float, ...] = (1.0, 1.0, 1.0, 1.0)
     stiffness: tuple[float, ...] = (400.0, 400.0, 400.0, 400.0)
     tab: int | None = TAB_FRF
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         return ChainSystem(np.array(self.masses), np.array(self.stiffness), np.array(self.damping))
 
 
-def _trial(name: str, note: str, system: ChainSystem) -> ComplexSetup:
+def _trial(name: str, note: str, system: ChainSystem, predict: Prediction | None = None) -> ComplexSetup:
     """A Thing to try: a chain, the tab left where it is."""
     return ComplexSetup(
         name,
@@ -143,6 +144,7 @@ def _trial(name: str, note: str, system: ChainSystem) -> ComplexSetup:
         tuple(float(m) for m in system.masses),
         tuple(float(k) for k in system.stiffness),
         tab=None,
+        predict=predict,
     )
 
 
@@ -154,6 +156,15 @@ TRIALS = (
         "the damping is proportional. Every mode is real (MPC 1, MPD 0°), the approximation is exact, and a mode "
         "released stays alone.",
         ChainSystem.uniform(4),
+        predict=Prediction(
+            'Every damper in proportion to its spring (c<sub>i</sub> = k<sub>i</sub>/200). How complex are the modes?',
+            (
+                "Somewhat: damping always makes modes complex",
+                "Not at all: every mode is real (MPC 1)",
+                "Only the highest mode",
+            ),
+            1,
+        ),
     ),
     _trial(
         "One damper, at the base",
@@ -169,6 +180,16 @@ TRIALS = (
         "<m>m<sub>1</sub></m> and <m>m<sub>2</sub></m> and leaves <m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> moving nearly together (under a third of the stretch), so the damper barely "
         "works.",
         _chain([0, 0, 0, 20.0]),
+        predict=Prediction(
+            "A single 20 N·s/m damper, between m3 and m4. How does the proportional approximation's ζ of mode 4 "
+            "compare with the exact one?",
+            (
+                "Far too low",
+                "About right",
+                "Far too high",
+            ),
+            2,
+        ),
     ),
     _trial(
         "A strong damper locks a joint",
@@ -177,6 +198,16 @@ TRIALS = (
         "not 2.6; mode 4 has become a pair of real roots. Mode 2, where <m>m<sub>1</sub></m> and "
         "<m>m<sub>2</sub></m> already move together, is untouched.",
         _chain([0, 200.0, 0, 0]),
+        predict=Prediction(
+            "200 N·s/m between m1 and m2, a very strong damper. How much does it damp mode 1, against the "
+            "approximation's ζ = 0.58?",
+            (
+                "About as much as that",
+                "Far less: the damper hardly works",
+                "More still",
+            ),
+            1,
+        ),
     ),
     _trial(
         "Tuned mass damper",
@@ -476,6 +507,7 @@ class ComplexModesPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Chains that show something about complex modes. Loading one replaces the Simulation page's chain.</p>",
             prompt="Load a chain…",
+            predictions=[t.predict for t in TRIALS],
         )
 
         mode_box = QtWidgets.QGroupBox("Mode")

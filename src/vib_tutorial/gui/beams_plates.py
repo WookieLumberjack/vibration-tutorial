@@ -33,7 +33,7 @@ from ..core.beams_plates import (
     rect_shape,
     wave_speeds,
 )
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import beams_figures, settle_plots
 from .lesson import (
     Form,
@@ -80,6 +80,7 @@ class BeamPlateTrial:
     E: float = 210.0  # GPa
     rho: float = 7850.0
     nu: float = 0.3
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -90,6 +91,15 @@ TRIALS = (
         "(Timoshenko: 0.75 of it). Shear deflection costs more than the sections' rotary inertia (0.78 against "
         "0.91 at mode 5), and the two together cost most.",
         mode=5,
+        predict=Prediction(
+            'A steel beam 100 mm deep on a 1 m span (L/h = 10). Which theory gives the higher bending frequencies?',
+            (
+                "Either, depending on the mode",
+                "Timoshenko",
+                "Euler–Bernoulli",
+            ),
+            2,
+        ),
     ),
     BeamPlateTrial(
         "A slender beam",
@@ -148,6 +158,15 @@ TRIALS = (
         side=0.4,
         mode=1,
         tab=TAB_DENSITY,
+        predict=Prediction(
+            "Counting the plate's modes in each 100 Hz band, higher and higher up. How does the count per band change?",
+            (
+                "It falls",
+                "It grows",
+                "It stays about the same",
+            ),
+            2,
+        ),
     ),
 )
 
@@ -379,7 +398,9 @@ class BeamsPlatesPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.trials = TrialBox(
-            [t.name for t in TRIALS], "<p>Each sets up the structure to show one idea from the Theory tab.</p>"
+            [t.name for t in TRIALS],
+            "<p>Each sets up the structure to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

@@ -212,6 +212,7 @@ class SimulationPage(QtWidgets.QWidget):
             [t.name for t in SIM_TRIALS],
             "<p>Sets up the chain and the controls to show one idea, and says what to look "
             "for. The Theory tab (F1) lists them all.</p>",
+            predictions=[t.predict for t in SIM_TRIALS],
         )
         self.trials.picked.connect(weak.slot(self, lambda self, i: self.apply_trial(SIM_TRIALS[i])))
         self.trials.show_note(

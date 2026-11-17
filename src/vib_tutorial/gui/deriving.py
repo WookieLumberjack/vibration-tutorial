@@ -37,7 +37,7 @@ from ..core.double_pendulum import matrices as pendulum_matrices
 from ..core.double_pendulum import modes as pendulum_modes
 from ..core.double_pendulum import sweep as pendulum_sweep
 from ..core.pendulum import measured_period
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick
 from . import deriving_figures, settle_plots
 from . import deriving_pendulum as dp
 from .deriving_text import (
@@ -135,6 +135,7 @@ class DerivingTrial:
     theta2: float = 14.1  # degrees
     show: int = SHOW_MODE1
     tab: int = TAB_LAGRANGE
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     @property
     def car(self) -> Car:
@@ -177,6 +178,17 @@ TRIALS = (
         "tab's nodes run off to infinity there.",
         k_rear=32.0,
         tab=TAB_MODES,
+        predict=Prediction(
+            "The rear spring softened to 32 kN/m, so k<sub>f</sub>a = k<sub>r</sub>b. What do the car's two modes "
+            "become?",
+            (
+                "They stay mixed, as before",
+                "Both pitch, about the axles",
+                "Each end bouncing on its own",
+                "Pure bounce, and pure pitch about G",
+            ),
+            3,
+        ),
     ),
     DerivingTrial(
         "Coordinates at the elastic centre",
@@ -186,6 +198,17 @@ TRIALS = (
         "1.41 Hz: coupling belongs to the coordinates, not the car.",
         coords=Coordinates.POINT,
         offset=-0.15,
+        predict=Prediction(
+            "The car's equations derived again in x<sub>P</sub> and θ at the elastic centre, instead of x<sub>G</sub>"
+            " and θ. M and K change: what happens to the natural frequencies?",
+            (
+                "One rises and one falls",
+                "They both fall",
+                "They both rise",
+                "They stay the same",
+            ),
+            3,
+        ),
     ),
     DerivingTrial(
         "Moments about the front axle",
@@ -264,13 +287,24 @@ TRIALS = (
         angles=Angles.RELATIVE,
     ),
     DerivingTrial(
-        "Released in its slower mode",
+        "Released at 10° and 14.1°",
         "Released from rest at 10° and 14.1° (√2 times as far), the mode's own shape: it swings in that mode, "
         "with a period of 1.858 s against the linear 1.853, and after 20 s the upper rod is within 1.8° of the "
         "linear model's.",
         system=PENDULUM,
         show=SHOW_MOTION,
         tab=TAB_SWING,
+        predict=Prediction(
+            "The double pendulum let go from rest with the upper rod at 10° and the lower at 14.1°, √2 times as far. "
+            "What does it do?",
+            (
+                "Tumbles over the top",
+                "Mixes both modes irregularly",
+                "Swings in its faster mode",
+                "Swings in its slower mode, the shape held",
+            ),
+            3,
+        ),
     ),
     DerivingTrial(
         "A larger swing in the same shape",
@@ -283,7 +317,7 @@ TRIALS = (
         tab=TAB_SWING,
     ),
     DerivingTrial(
-        "Chaos: released at 120° and 120°",
+        "Released at 120° and 120°",
         "High up the motion is chaotic. A twin released 10⁻⁶ rad further over drifts away, the difference doubling "
         "every 0.49 s, and by 10 s nothing about one predicts the other. The equations are exact and the "
         "integration tight (the energy holds to 10⁻¹⁰): the sensitivity is the pendulum's own.",
@@ -292,6 +326,17 @@ TRIALS = (
         theta2=120.0,
         show=SHOW_MOTION,
         tab=TAB_CHAOS,
+        predict=Prediction(
+            "Two double pendulums let go at 120° and 120°, the second's lower rod a millionth of a radian further "
+            "over. Ten seconds later, how do their motions compare?",
+            (
+                "Identical: the equations are exact",
+                "Still a millionth of a radian apart",
+                "About a thousandth of a radian apart",
+                "Wholly different",
+            ),
+            3,
+        ),
     ),
 )
 
@@ -885,6 +930,7 @@ class DerivingPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each sets up the car or the pendulum to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

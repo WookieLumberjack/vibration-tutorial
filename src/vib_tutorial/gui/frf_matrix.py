@@ -25,7 +25,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
-from ..core.practice import Problem, Question, Requirement, at_most, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from . import frf_figures, weak
 from .layouts import ColumnScroll, form_layout
 from .lesson import TrialBox, trials_html
@@ -464,6 +464,7 @@ class FrfTrial:
     unticked: tuple[int, ...] = ()  # modes (1-based) left out of the sum
     damping: tuple[float, ...] = ()  # c_i, else the default 2 N·s/m each
     expansion: Expansion = Expansion.EXACT
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         system = ChainSystem.uniform(4)
@@ -474,13 +475,22 @@ class FrfTrial:
 
 TRIALS = (
     FrfTrial(
-        "Antiresonances at a driving point (H22)",
+        "A driving point (H22)",
         "Force and response both at <m>m<sub>2</sub></m>. Peaks and dips alternate, and the phase falls 180° at each peak and "
         "climbs back at each dip. Undamped, the dips would be at 1.97 Hz and 5.15 Hz (<m>m<sub>3</sub></m> and <m>m<sub>4</sub></m> vibrating on "
         "their own with <m>m<sub>2</sub></m> held) and 4.50 Hz (<m>m<sub>1</sub></m> between the ground and <m>m<sub>2</sub></m>). With the dampers the one at "
         "5.15 Hz, squeezed between the peaks at 4.88 and 5.98 Hz, is washed out to a shoulder.",
         output=1,
         inputs=(1,),
+        predict=Prediction(
+            'Force and response both at m2: a driving point. Between two neighbouring peaks of its FRF, what is there?',
+            (
+                "Never a dip",
+                "Sometimes a dip, sometimes not",
+                "Always an antiresonance",
+            ),
+            2,
+        ),
     ),
     FrfTrial(
         "A force at a node (m3 in mode 2)",
@@ -508,6 +518,15 @@ TRIALS = (
         inputs=(0,),
         quantity=Quantity.REAL,
         unticked=(3, 4),
+        predict=Prediction(
+            "Modes 3 and 4 left out of H11's sum. Below modes 1 and 2, how does the sum compare with the full FRF?",
+            (
+                "The same",
+                "Too large",
+                "Too small",
+            ),
+            2,
+        ),
     ),
     FrfTrial(
         "Leave out mode 1 (H44)",
@@ -820,6 +839,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Each sets up the chain and the plots to show one idea from the Theory tab. "
             "Loading one replaces the Simulation page's chain.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

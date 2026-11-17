@@ -308,7 +308,9 @@ def test_goals_set_up_the_pages_own_trials_and_problems(page):
     found = re.findall(r'href="(trial|practice):([a-z_]+)#([^"]+)"', text)
     if not found:
         return
-    trials = getattr(page_module(page), "TRIALS", ())
+    from vib_tutorial.gui import sim_trials
+
+    trials = sim_trials.TRIALS if page == "sim_page" else getattr(page_module(page), "TRIALS", ())
     keys = {p.key for p in problems(page)}
     if any(scheme == "trial" for scheme, _, _ in found):
         assert '<a name="goals"></a>' in text  # a recap links problems only

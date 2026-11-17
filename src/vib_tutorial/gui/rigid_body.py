@@ -30,7 +30,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import rotation
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbler, compare
 from ..core.rotation import Turning
 from . import rigid_body_figures
@@ -122,6 +122,7 @@ class RigidTrial:
     principal: bool = False  # draw the principal axes
     pose: tuple[float, float, float] = (0.0, 0.0, 0.0)  # the start's Euler angles φ, θ, ψ, degrees
     path: int = PATH_SPACE  # where the view traces ω
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     @property
     def body(self) -> Body:
@@ -137,19 +138,35 @@ def start_rate(body: Body, axis: int, rate: float, nudge_deg: float) -> np.ndarr
 
 TRIALS = (
     RigidTrial(
-        "Spun about the middle axis, it flips",
+        "Spun about the middle axis",
         "A 30 × 20 × 10 cm box spun at 6 rad/s about its middle axis (2), nudged 1° off it. The nudge grows, and "
         "the box turns over and back again and again: the intermediate-axis (tennis-racket) effect. Watch "
         "<m>ω</m>'s components in the principal axes, and L staying put in space.",
         spin_axis=1,
         nudge=1.0,
+        predict=Prediction(
+            'A 30 × 20 × 10 cm box spun about its middle axis, nudged 1° off it. What does it do?',
+            (
+                "It keeps spinning about that axis, wobbling a little",
+                "It turns over and back, again and again",
+            ),
+            1,
+        ),
     ),
     RigidTrial(
-        "About the least or greatest, it doesn't",
+        "Spun about the greatest axis",
         "The same box spun about its greatest axis (3), nudged 5° off it: the nudge only circles, and the box "
         "wobbles but never turns over. Try axis 1 too.",
         spin_axis=2,
         nudge=5.0,
+        predict=Prediction(
+            'The same box spun about its greatest axis, nudged 5° off it. What does it do?',
+            (
+                "It keeps spinning about that axis, wobbling a little",
+                "It turns over and back, again and again",
+            ),
+            0,
+        ),
     ),
     RigidTrial(
         "ω and L point apart",
@@ -954,7 +971,9 @@ class RigidBodyPage(QtWidgets.QWidget):
         self._snap_t: float | None = None  # the instant dragged to; None: the latest
 
         self.trials = TrialBox(
-            [t.name for t in TRIALS], "<p>Each sets the body up and lets it go, to show one idea from the Theory.</p>"
+            [t.name for t in TRIALS],
+            "<p>Each sets the body up and lets it go, to show one idea from the Theory.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 
