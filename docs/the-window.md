@@ -97,6 +97,10 @@ Quarter-car's trade-off and damper sweep, the speed on the Jeffcott rotor's Camp
 frequency in Energy methods' Holzer tab, the oscillator picked on the Shock spectrum, and the instant on the
 Gyroscope's and 3D rigid body's component plots. The page's own box follows the drag, and the drag the box.
 
+The **run bar** along the foot of the window holds the motion's controls on every page: **Start** /
+**Pause**, **Reset**, the speed and the time. It drives whatever the page and tab showing can run (a page with
+nothing that plays in time says so). Space does the same.
+
 The Single oscillator draws the mass itself above its time plots, moving with the free vibration or the
 driven response: **Start** plays it (Space; at ¼ speed to begin with, as a 3 Hz swing is a blur), **Reset**
 takes it back to t = 0, and the time cursor on the plot it follows can be dragged to scrub. Drag the mass

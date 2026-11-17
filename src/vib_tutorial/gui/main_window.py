@@ -36,6 +36,7 @@ from .plot_export import install as install_plot_menus
 from .simulation_page import SimulationPage
 from .style import SYSTEM, colors
 from .tab_groups import PageGroups
+from .transport import TransportBar, transport_of
 from .trial_overlay import TrialOverlay
 
 if TYPE_CHECKING:
@@ -225,10 +226,18 @@ class MainWindow(QtWidgets.QMainWindow):
         theme_label.setBuddy(self.theme_combo)  # their names for a screen reader
         size_label.setBuddy(self.size_combo)
         self.pages.setCornerWidget(corner, QtCore.Qt.Corner.TopRightCorner)
-        self.setCentralWidget(self.pages)
+        self.run_bar = TransportBar()  # the motion's controls, in one place on every page (#316 B13)
+        central = QtWidgets.QWidget()
+        column = QtWidgets.QVBoxLayout(central)
+        column.setContentsMargins(0, 0, 0, 0)
+        column.setSpacing(0)
+        column.addWidget(self.pages, 1)
+        column.addWidget(self.run_bar)
+        self.setCentralWidget(central)
         self.resize(1700, 900)
         self.present_level = 0
         self._adopt("sim_page", self.sim_page)
+        self._follow_transport()
         self._opening["sim_page"] = self.sim_page.practice_state()  # it shows as built
         if (level := present.saved()) != 0:
             self.set_present(level)
@@ -290,6 +299,12 @@ class MainWindow(QtWidgets.QMainWindow):
         if (panes := present.splitter(page)) is not None:
             TabRoom(panes)  # its tabs' names in full, whatever the font
         self._close_notes(name, page)
+        for tabs in page.findChildren(QtWidgets.QTabWidget):  # a tab may hold the motion (Torsional's Start-up)
+            tabs.currentChanged.connect(self._follow_transport)
+
+    def _follow_transport(self, *_) -> None:
+        """The run bar drives what's runnable on the page and tab showing."""
+        self.run_bar.follow(transport_of(self.pages.currentWidget()))
 
     def _close_notes(self, name: str, page: QtWidgets.QWidget) -> None:
         """The page's Theory tab ends with a link on to the next page."""
@@ -557,6 +572,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._opening[showing] = page.practice_state()
             if _follows_chain(page):
                 self._opening_chain[showing] = self.sim_page.sim.system.copy()
+        self._follow_transport()
         if showing is not None:
             theming.settings().setValue(LAST_PAGE, showing)
             for window in (self.theory_window, self.practice_window):

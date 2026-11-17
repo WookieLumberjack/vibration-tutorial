@@ -52,6 +52,7 @@ from .scrub import Scrub
 from .sim_trials import TRIALS as SIM_TRIALS
 from .sim_trials import SimTrial, chain
 from .style import colors
+from .transport import Transport
 
 FRAME_BUDGET = 0.012  # s of computing per frame: past it (friction on a stiff chain) the simulation runs slower
 PROBE_STEPS = 200  # steps in a frame while the cost of a step isn't known yet (a new system)
@@ -413,6 +414,11 @@ class SimulationPage(QtWidgets.QWidget):
         self.scrub.apply_theme()
         self.force_panel.refresh()
         self._refresh_modal_views()  # mode colours: table, shapes, time and FRF curves
+
+    def transport(self) -> Transport:
+        """The run bar drives the simulation's Pause/Resume, Reset and speed (its force, Space, is the Start)."""
+        c = self.controls
+        return Transport(c.run, c.reset, c.speed, label="Space switches the force on and off")
 
     def practice_state(self) -> SimTrial:
         """The page's chain and force, as a trial: what a practice spec checks and Defaults puts back."""
