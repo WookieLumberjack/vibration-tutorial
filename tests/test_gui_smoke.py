@@ -4574,7 +4574,7 @@ def test_frame_builder_by_hand(app, main_window):
     assert page.frame.elements[0].section.depth == pytest.approx(0.08) and page.result.hz[0] > before
     # drag a node; undo puts it back, redo moves it again
     c.press(np.array([1.0, 0.0]))
-    c.move(np.array([1.5, 0.0]))
+    c.drag_to(np.array([1.5, 0.0]))
     c.release()
     assert page.frame.nodes[1].x == 1.5
     page.undo()
@@ -4653,7 +4653,7 @@ def test_rotor_builder_by_hand(app, main_window):
     page.props.library.setCurrentIndex(2)
     assert page.rotor.discs[0].name == DISC_LIBRARY[1].name
     c.press(at(0.5, 0.05))
-    c.move(at(0.7, 0.05))
+    c.drag_to(at(0.7, 0.05))
     c.release()
     assert page.rotor.discs[0].z == pytest.approx(0.7)
     page.undo()

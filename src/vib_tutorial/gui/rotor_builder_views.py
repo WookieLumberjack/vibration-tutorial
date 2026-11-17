@@ -233,7 +233,7 @@ class RotorCanvas(pg.PlotWidget):
             return
         self._commit(r.with_part(kind, self.new_part(kind, z)), (kind, len(r.parts(kind))))
 
-    def move(self, p: np.ndarray) -> None:
+    def drag_to(self, p: np.ndarray) -> None:
         if self._drag is None:
             return
         kind, i = self._drag
@@ -272,7 +272,7 @@ class RotorCanvas(pg.PlotWidget):
         event.accept()
 
     def mouseMoveEvent(self, event) -> None:
-        self.move(self._view_point(event))
+        self.drag_to(self._view_point(event))
         event.accept()
 
     def mouseReleaseEvent(self, event) -> None:

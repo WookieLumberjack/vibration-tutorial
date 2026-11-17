@@ -227,7 +227,7 @@ class FrameCanvas(pg.PlotWidget):
         self.grid = 0.25
         self.selection: tuple[str, int] | None = None
         self.pending: int | None = None  # the first node of a two-click tool
-        self.cursor: np.ndarray | None = None
+        self.pointer: np.ndarray | None = None
         self.q: np.ndarray | None = None  # the displacement drawn
         self.load: Load | None = None  # drawn as an arrow
         self.probe: int | None = None  # the DOF whose response is plotted: a square round its node
@@ -408,8 +408,8 @@ class FrameCanvas(pg.PlotWidget):
             support = Support.FREE if node.support is self.support else self.support
             self._commit(f.replace_node(hit, dataclasses.replace(node, support=support)), ("node", hit))
 
-    def move(self, p: np.ndarray) -> None:
-        self.cursor = p
+    def drag_to(self, p: np.ndarray) -> None:
+        self.pointer = p
         if self._drag is not None:
             s = self.snap(p)
             other = self.frame.node_at(*s)
@@ -446,7 +446,7 @@ class FrameCanvas(pg.PlotWidget):
         event.accept()
 
     def mouseMoveEvent(self, event) -> None:
-        self.move(self._view_point(event))
+        self.drag_to(self._view_point(event))
         event.accept()
 
     def mouseReleaseEvent(self, event) -> None:
@@ -542,9 +542,9 @@ class FrameCanvas(pg.PlotWidget):
         self.arrow.setData(*_segments(arrow))
         probe = self.probe if self.probe is not None and self.probe // 3 < len(f.nodes) else None
         self.probe_mark.setData(*(([at(probe // 3)[0]], [at(probe // 3)[1]]) if probe is not None else ([], [])))
-        if self.pending is not None and self.cursor is not None and self.pending < len(f.nodes):
-            hit = self.node_near(self.cursor)
-            end = f.point(hit) if hit is not None else self.snap(self.cursor)
+        if self.pending is not None and self.pointer is not None and self.pending < len(f.nodes):
+            hit = self.node_near(self.pointer)
+            end = f.point(hit) if hit is not None else self.snap(self.pointer)
             a = f.point(self.pending)
             self.rubber.setData([a[0], end[0]], [a[1], end[1]])
         else:

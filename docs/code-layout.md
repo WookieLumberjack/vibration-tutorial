@@ -385,6 +385,32 @@ W = corrections(v0, alpha)  # [7.32 g, 6.32 g] at 20 mm, 180° and 0°
 balanced = skewed.with_(plane_weights=tuple(p._replace(weight=w) for p, w in zip(planes, W)))
 ```
 
+
+## Running in a browser (Pyodide)
+
+The numerics (`core/`), the course's data, the view models and the notes' figures and maths load without Qt
+(`tests/test_qt_free.py`), so a browser front end could run them under [Pyodide](https://pyodide.org). Recorded
+2026-11-16 (#316 D9), what stands in the way, each with the change it would take:
+
+- **Threads.** Pyodide's standard build can't start a thread. Two pools would: the Simulation page's stepping
+  worker (`core/simulator.py`, `_STEPS`, a one-thread `ThreadPoolExecutor` that steps ahead while a frame draws)
+  and `gui/recompute.py`'s `Recompute` (a slow control change worked out off the UI thread). The stepper needs
+  no change: it hands steps to its worker only for friction in Rust (`Simulator.steps_aside`), and without
+  `_native` (below) it steps inline already. A `Recompute` would run its job inline as its `now(job)` does (the
+  job is a pure function of the controls' values), the page waiting for it.
+- **A second process.** The rotor's background analysis (`core/rotor_analysis.py`) runs in a spawned process, so a
+  cancelled analysis can be stopped mid-way. A browser has no processes: it would run in the page's own thread
+  (or a Web Worker from the front end), losing only the mid-way stop.
+- **Version floors.** `pyproject.toml` asks for numpy ≥ 2.5.3 and scipy ≥ 1.18.1, the versions it's tested on.
+  Pyodide ships its own builds, often a release or two behind: check its package list, and run the suite on its
+  versions before lowering a floor.
+- **The Rust kernels.** `_native` is built for desktop Pythons, not Pyodide. `core/native.py` falls back to the
+  Python reference of every kernel when the module isn't built (as `VIB_NATIVE=0` forces), so the numbers are the
+  same, only slower (the torsional start-up, the films' stepping). The kernel crate (`native/kernels/`) already
+  builds for `wasm32-unknown-unknown`, so a front end could call it directly instead.
+
+Nothing else in `core/` touches the file system, the network or a native library beyond numpy and scipy.
+
 ---
 
 [Contents](../README.md#contents)
