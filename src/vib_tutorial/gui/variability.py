@@ -5,10 +5,16 @@ the ring (blades, coupling, mistuning, the engine order, the mode). Centre: the 
 nominal and the band the scattered chains span, and each mode's spread by Monte Carlo and to first order. Right:
 the frequencies' histograms, the ring's modes tuned and mistuned, its forced response and the amplification against
 mistuning, and the Theory.
+
+Working on it: the scattered chains (`core.variability.monte_carlo`, 85 ms for the default 200, 0.85 s for 2,000) are
+worked out on a `Recompute` worker when a scatter or the count changes (`_draw_chain(now=False)`), and now for a
+trial, a new chain or the page showing; `_on_chains` draws them. `tests/test_gui_smoke.py`'s
+`test_variability_chains_are_drawn_on_the_worker` checks it.
 """
 
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass
 
@@ -20,6 +26,7 @@ from ..core.model import ChainSystem
 from ..core.practice import Problem, Question, at_least, at_most, kept, number, pick, rounded
 from ..core.random_vibration import linear
 from ..core.variability import (
+    MonteCarlo,
     Ring,
     Scatter,
     amplification,
@@ -52,6 +59,7 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
@@ -523,6 +531,7 @@ class VariabilityPage(QtWidgets.QWidget):
         self.tabs.currentChanged.connect(self._on_tab)
 
         three_panes(self, column(self.trials, ch, sc, ring), stack((self.frf_plot, 1), (self.readout, 0)), self.tabs)
+        self.worker = Recompute(self._on_chains, self)  # the scattered chains off the GUI thread
         self.apply_theme()
         self.set_system(self.system)
 
@@ -619,10 +628,8 @@ class VariabilityPage(QtWidgets.QWidget):
             self._draw_tab()
 
     def _on_scatter(self) -> None:
-        self._draw_chain()
-        if self.tabs.currentIndex() == TAB_HISTOGRAM:
-            self._draw_histogram()
-        settle_plots(self)
+        """A scatter or the count changed: the chains drawn on the worker (85 ms for 200, 0.85 s for 2,000)."""
+        self._draw_chain(now=False)
 
     def _on_ring(self) -> None:
         self.mode.setMaximum(int(self.blades.value()))
@@ -659,19 +666,34 @@ class VariabilityPage(QtWidgets.QWidget):
 
     def redraw(self) -> None:
         self._dirty = False
-        self._draw_chain()
-        self._draw_tab()
+        self._draw_chain()  # the histogram too, if it shows
+        if self.tabs.currentIndex() != TAB_HISTOGRAM:
+            self._draw_tab()
         settle_plots(self)
 
-    def _draw_chain(self) -> None:
+    def _draw_chain(self, now: bool = True) -> None:
+        """The scattered chains (`monte_carlo`, a pure function of the chain and the scatter) worked out on the
+        worker, or now (a trial, a new chain, the page showing: the reader waits for those); `_on_chains` draws
+        them."""
         s = self.system
-        n = s.n
         f0 = natural_hz(linear(s))[0]
         fpos = f0[f0 > 1e-6]
         lo = 0.3 * float(fpos[0]) if fpos.size else 0.1
         hi = 1.8 * float(f0[-1]) if f0[-1] > 0 else 10.0
         f = np.geomspace(lo, hi, 900)
-        self.mc = mc = monte_carlo(s, self.scatter, int(self.count.value()), f, n - 1, n - 1)
+        job = functools.partial(_chains, s, self.scatter, int(self.count.value()), f)
+        if now:
+            self.worker.now(job)
+        else:
+            self.worker.request(job)
+
+    def _on_chains(self, worked: tuple[np.ndarray, MonteCarlo]) -> None:
+        """The chains drawn: their band, a few of them, the table, and the histogram if it shows."""
+        f, mc = worked
+        self.mc = mc
+        s = self.system
+        n = s.n
+        lo, hi = float(f[0]), float(f[-1])
         low, high = mc.band()
         self.band_low.setData(f, low)
         self.band_high.setData(f, high)
@@ -694,6 +716,9 @@ class VariabilityPage(QtWidgets.QWidget):
             f"At the nominal peak ({f[peak]:.3g} Hz) the band spans {low[peak] / mc.nominal_frf[peak]:.2g} to "
             f"{high[peak] / mc.nominal_frf[peak]:.2g} times the nominal receptance; {mc.freqs.shape[0]} chains."
         )
+        if self.tabs.currentIndex() == TAB_HISTOGRAM:
+            self._draw_histogram()
+        settle_plots(self)
 
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
@@ -796,3 +821,9 @@ class VariabilityPage(QtWidgets.QWidget):
             f"level the worst reaches {float(top.max()):.3g} (at {levels[int(np.argmax(top))]:.3g} %); Whitehead's "
             f"bound for {n} blades is {bound:.3g} (dotted)."
         )
+
+
+def _chains(system: ChainSystem, scatter: Scatter, count: int, f: np.ndarray) -> tuple[np.ndarray, MonteCarlo]:
+    """The page's Monte Carlo, the top mass's receptance (a worker's job: plain values in, no widget)."""
+    n = system.n
+    return f, monte_carlo(system, scatter, count, f, n - 1, n - 1)

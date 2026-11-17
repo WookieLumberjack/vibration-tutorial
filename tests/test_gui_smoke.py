@@ -5292,6 +5292,26 @@ def test_things_to_try_step_in_order(main_window):
         assert combo.chosen() == len(combo.names) - 2
 
 
+def test_variability_chains_are_drawn_on_the_worker(main_window, app):
+    """A scatter or the count changed: the chains are drawn on the worker, the band keeping the last meanwhile; the
+    histogram follows when they're in; a new chain draws them now."""
+    from vib_tutorial.gui.variability import TAB_HISTOGRAM
+
+    w = main_window
+    p = w.variability_page
+    w.pages.setCurrentWidget(p)
+    p.tabs.setCurrentIndex(TAB_HISTOGRAM)
+    app.processEvents()
+    mc, readout = p.mc, p.readout.text()
+    p.count.setValue(1000)
+    assert p.worker.busy and p.mc is mc and p.readout.text() == readout
+    p.worker.wait()
+    assert p.mc.freqs.shape[0] == 1000 and "1000 chains" in p.readout.text() and p.hist_items
+    mc = p.mc
+    p.dof.setValue(p.dof.value() + 1)  # a new chain, through the Simulation page: now
+    assert not p.worker.busy and p.mc is not mc and p.mc.freqs.shape[1] == p.dof.value()
+
+
 def test_vibroacoustics_slow_tabs_work_on_their_workers(main_window, app):
     """A panel control changed: the Radiation, Driven panel and SEA tabs work out on their workers (0.15–0.3 s),
     the plots keeping the last meanwhile; a tab picked draws now; the mode set kept is the panel's showing."""
