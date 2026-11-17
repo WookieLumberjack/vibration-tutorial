@@ -1242,7 +1242,7 @@ def gyroscope_table():
     w = window()
     page = w.gyroscope_page
     w.pages.setCurrentWidget(page)
-    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A tippe top turns over"))
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "A tippe top spun fast"))
     page.loop.enabled = False
     page.running = False
     page.step(4.0)

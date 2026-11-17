@@ -121,7 +121,7 @@ def test_trials():
     across = np.max(np.hypot(s.centre[:, 0], s.centre[:, 1]))  # let go on the circle: its diameter
     assert across == pytest.approx(1.35, abs=0.025)
 
-    top, J, s, theta = go("A tippe top turns over", 12.0)
+    top, J, s, theta = go("A tippe top spun fast", 12.0)
     assert top.turning_spin() / RPM == pytest.approx(468, abs=0.5) and top.inverts
     assert first(s.t, theta > 90) == pytest.approx(1.8, abs=0.05) and theta[-1] > 175
     over = top.end_spin(J, upright=False) / RPM

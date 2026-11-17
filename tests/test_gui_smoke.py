@@ -4484,7 +4484,7 @@ def test_gyroscope_on_a_table(app):
     # an asymmetric top (the same window: every one a test builds is kept): the closed forms' tabs off, the Chaos
     # tab and Jacobi's check on; no rectangle on a table
     names = [t.name for t in g.TRIALS]
-    page.load_trial(names.index("No gravity: the tennis-racket flip"))
+    page.load_trial(names.index("No gravity: spun about the middle axis"))
     assert not page.tabs.isTabEnabled(g.TAB_POTENTIAL) and not page.tabs.isTabEnabled(g.TAB_PRECESSION)
     assert page.body_form.isRowVisible(page.breadth) and not page.turn_lines[0].isVisible()
     for _ in range(10):
