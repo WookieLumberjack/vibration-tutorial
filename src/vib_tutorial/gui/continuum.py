@@ -48,11 +48,11 @@ from ..core.continuum_waves import (
     Waves,
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
-from . import continuum_figures, maths
+from . import continuum_figures
 from .continuum_waves_view import WavesView
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import RunButton, fmt, plot, trials_html
+from .lesson import RunButton, TrialBox, fmt, plot, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -63,6 +63,7 @@ from .transport import Transport
 
 CUSTOM = "Custom"
 ALL_PRESETS = (*PRESETS, *WAVE_PRESETS)
+TRIALS = ALL_PRESETS  # its Things to try are the presets (goals' trial: links count them)
 KAPPA_POINTS = 241  # samples of each mesh's dispersion curve
 SHAPE_POINTS = 801
 PAST_CUTOFF = 1.25  # the dispersion plot runs this far past the mesh's cut-off, π/h
@@ -402,14 +403,14 @@ class ContinuumPage(QtWidgets.QWidget):
         self._loading = False
 
         # --- left: the preset, the medium, the mesh
-        self.preset = QtWidgets.QComboBox()
-        self.preset.setAccessibleName("Preset")
-        self.preset.addItems([p.name for p in ALL_PRESETS] + [CUSTOM])
-        self.preset.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.preset_note = QtWidgets.QLabel()
-        self.preset_note.setWordWrap(True)
-        self.preset_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        mute(self.preset_note)
+        # The presets are the Things to try: one with a `predict` asks it before it loads.
+        self.trials = TrialBox(
+            [p.name for p in ALL_PRESETS],
+            "<p>Load a medium and mesh that show one effect clearly (a wave preset starts its pulse). Change any "
+            "setting and it becomes your own.</p>",
+            predictions=[p.predict for p in ALL_PRESETS],
+        )
+        self._preset_name = CUSTOM  # the preset loaded, or CUSTOM
 
         medium = QtWidgets.QGroupBox("Medium")
         mf = form_layout(medium)
@@ -477,11 +478,7 @@ class ContinuumPage(QtWidgets.QWidget):
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        presets = QtWidgets.QGroupBox("Things to try")
-        preset_layout = QtWidgets.QVBoxLayout(presets)
-        preset_layout.addWidget(self.preset)
-        preset_layout.addWidget(self.preset_note)
-        lv.addWidget(presets)
+        lv.addWidget(self.trials)
         lv.addWidget(medium)
         lv.addWidget(mesh)
         lv.addWidget(self.waves_view.controls)
@@ -574,7 +571,7 @@ class ContinuumPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         # --- wiring
-        self.preset.currentIndexChanged.connect(self._on_preset)
+        self.trials.picked.connect(self._on_preset)
         self.kind.currentIndexChanged.connect(self._on_kind)
         for box in (
             self.length,
@@ -617,8 +614,7 @@ class ContinuumPage(QtWidgets.QWidget):
 
     def _load(self, c: Continuum, elements: int, name: str, note: str, waves: Waves) -> None:
         self._loading = True
-        self.preset.setCurrentText(name)
-        self.preset_note.setText(maths.markup(note))
+        self._show_preset(name, note)
         self.kind.setCurrentText(c.kind.value)
         self._fill_ends(c.kind)
         self.length.setValue(c.length)
@@ -640,11 +636,27 @@ class ContinuumPage(QtWidgets.QWidget):
 
     def frame_context(self) -> str:
         """For the frame log (frame_stats): the preset showing."""
-        return self.preset.currentText()
+        return self.preset_name()
+
+    def preset_name(self) -> str:
+        """The preset loaded, or CUSTOM (not the combo's text: a preset asking its prediction isn't loaded)."""
+        return self._preset_name
+
+    def _show_preset(self, name: str, note: str) -> None:
+        """Show `name` picked in Things to try, with its note, or none for CUSTOM."""
+        self._preset_name = name
+        combo = self.trials.combo
+        if name == CUSTOM:
+            combo.unpick()
+            self.trials.show_note("")
+            return
+        combo.blockSignals(True)
+        combo.setCurrentIndex([p.name for p in ALL_PRESETS].index(name) + combo.first)
+        combo.blockSignals(False)
+        self.trials.show_note(note)
 
     def _on_preset(self, index: int) -> None:
-        if not self._loading and index < len(ALL_PRESETS):
-            self.load_preset(ALL_PRESETS[index].name)
+        self.load_preset(ALL_PRESETS[index].name)
 
     def _fill_ends(self, kind: Kind) -> None:
         for box in (self.left_end, self.right_end):
@@ -693,10 +705,7 @@ class ContinuumPage(QtWidgets.QWidget):
     def _on_edit(self, *_args) -> None:
         if self._loading:
             return
-        self.preset.blockSignals(True)
-        self.preset.setCurrentText(CUSTOM)
-        self.preset.blockSignals(False)
-        self.preset_note.setText("")
+        self._show_preset(CUSTOM, "")
         self.set_continuum(self._read(), self.elements.value())
 
     def set_continuum(self, c: Continuum, elements: int) -> None:

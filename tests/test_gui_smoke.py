@@ -3542,29 +3542,29 @@ def test_torsional_page(app):
     w.pages.setCurrentWidget(p)
     app.processEvents()
     assert w.pages.tabText(w.pages.currentIndex()) == "Torsional vibration"
-    assert p.preset.currentText() == "Motor and fan: two inertias" and p.frame_context() == p.preset.currentText()
+    assert p.preset_name() == "Motor and fan: two inertias" and p.frame_context() == p.preset_name()
     assert "Misalignment 2× meets mode 1 (52.3 Hz) at 1569 rpm" in p.readout.text()
     assert "6.0 % above" in p.readout.text() and not p.log_scales.isChecked()
     assert "Coupling: ±72.1 N·m at 1480 rpm" in p.response_note.text()
 
-    p.preset.setCurrentText("Geared compressor")
+    p.load_preset("Geared compressor")
     assert p.log_scales.isChecked() and "Tooth pass (Gear mesh) meets mode 3 (2688 Hz) at 1344 rpm" in p.readout.text()
     assert p.response_link.currentText() == "High-speed coupling"  # the slowest mode's
     assert "38.92, 83.09, 2688 Hz, the same" in p.check.text() and "1 mode lost" in p.check.text()
     p.log_scales.setChecked(False)
     p.log_scales.setChecked(True)
 
-    p.preset.setCurrentText("Diesel generator set")
+    p.load_preset("Diesel generator set")
     assert "No torsional critical within ±10 % of 1500 rpm" in p.readout.text()
     assert "6 faster modes no order reaches" in p.readout.text()
     assert p.response_link.currentText() == "Flexible coupling"
 
     # edit the fan's coupling: Custom, and the mode moves as sqrt(k)
-    p.preset.setCurrentText("Motor and fan: two inertias")
+    p.load_preset("Motor and fan: two inertias")
     p.select(1)
     assert p.train_editor.editor.currentIndex() == 1 and p.train_editor.shaft_stiffness.value() == pytest.approx(180.0)
     p.train_editor.shaft_stiffness.setValue(120.0)
-    assert p.preset.currentText() == "Custom" and p.train.links[0].stiffness == pytest.approx(1.2e5)
+    assert p.preset_name() == "Custom" and p.train.links[0].stiffness == pytest.approx(1.2e5)
     assert "No torsional critical within ±10 %" in p.readout.text()
     f = p._modes[0].freq_hz
     p.train_editor.to_mesh.click()  # the same referred stiffness: the same mode
@@ -3651,7 +3651,7 @@ def test_torsional_start_up(app):
         assert curve.xData.size <= 2 * width + 6 < p.startup_view._k
         assert (curve.yData.max(), curve.yData.min()) == (y[: p.startup_view._k].max(), y[: p.startup_view._k].min())
 
-    p.preset.setCurrentText("Geared compressor")
+    p.load_preset("Geared compressor")
     assert p.startup_view.motor_kind.currentText() == "Synchronous" and p.startup_view._k == 0 and not p.running
     assert "meets mode 2 (83.1 Hz) at 254 rpm, mode 1 (38.9 Hz) at 916 rpm" in p.startup_view.startup_info.text()
     assert len(p.startup_view._marks) == 2  # the two crossings' speeds
@@ -3667,11 +3667,11 @@ def test_torsional_start_up(app):
     p.startup_view.step(0.2)
     p.select(3)  # the mesh: a stiffer one starts the run again from rest, still playing
     p.train_editor.mesh_stiffness.setValue(3000.0)
-    assert p.preset.currentText() == "Custom" and p.running and p.startup_view.sim.t == 0.0 and p.startup_view._k == 0
+    assert p.preset_name() == "Custom" and p.running and p.startup_view.sim.t == 0.0 and p.startup_view._k == 0
     p.startup_view.breakdown.setValue(7000.0)
     assert p.startup_view.startup.motor.breakdown == 7000.0 and p.startup_view.sim.t == 0.0
 
-    p.preset.setCurrentText("Diesel generator set")
+    p.load_preset("Diesel generator set")
     assert (
         p.startup_view.sim is None
         and not p.pause_button.isEnabled()
@@ -3685,7 +3685,7 @@ def test_torsional_start_up(app):
         and p.startup_view.sim is not None
         and p.pause_button.isEnabled()
     )
-    assert p.preset.currentText() == "Custom"
+    assert p.preset_name() == "Custom"
     p.start()
     p.startup_view.step(0.1)
     assert p.startup_view._k > 0
@@ -3812,7 +3812,7 @@ def test_continuum_page(app):
     w.pages.setCurrentWidget(p)
     app.processEvents()
     assert w.pages.tabText(w.pages.currentIndex()) == "Continuous systems"
-    assert p.preset.currentText() == "Guitar string (low E)" and p.frame_context() == p.preset.currentText()
+    assert p.preset_name() == "Guitar string (low E)" and p.frame_context() == p.preset_name()
     assert "wave speed c = 106.8 m/s" in p.medium_info.text()
     p.mode.setValue(6)
     assert "<b>Mode 6</b>" in p.readout.text() and "4 elements</b>" in p.readout.text()
@@ -3838,12 +3838,12 @@ def test_continuum_page(app):
     assert p.mode.value() == 9
 
     for preset in (*PRESETS[1:], PRESETS[0]):
-        p.preset.setCurrentText(preset.name)
+        p.load_preset(preset.name)
         assert p.continuum == preset.continuum and p.elements.value() == preset.elements
-        assert p.preset_note.text() == maths.markup(preset.note) and p.mode.value() == 1
+        assert p.trials.note.text() == maths.markup(preset.note) and p.mode.value() == 1
 
     p.kind.setCurrentText("Bar")
-    assert p.preset.currentText() == "Custom" and p.continuum.kind is Kind.BAR
+    assert p.preset_name() == "Custom" and p.continuum.kind is Kind.BAR
     assert [p.left_end.itemText(i) for i in range(p.left_end.count())] == ["Fixed", "Free"]
     assert p.continuum.left is End.FIXED and p.material.currentIndex() == 1
     p.kind.setCurrentText("String")
@@ -3874,7 +3874,7 @@ def test_continuum_waves_tab(app):
     w.pages.setCurrentWidget(p)
     app.processEvents()
     assert p.waves_view.run is None  # not built until the tab shows
-    p.preset.setCurrentText("Waves: a pulse on 40 beads")
+    p.load_preset("Waves: a pulse on 40 beads")
     assert p.views.currentWidget() is p.waves_tab and p.waves_view.run is not None and p.loop.timer.isActive()
     assert p.waves_view.run.elements == 40 and p.waves_view.run.waves.moving and p.play_button.text() == "Pause"
     p.loop.timer.stop()
@@ -3889,7 +3889,7 @@ def test_continuum_waves_tab(app):
     p.waves_view.restart_button.click()
     assert p.waves_view.run.t == 0.0 and not p.loop.timer.isActive() and p.play_button.text() == "Start"
 
-    p.preset.setCurrentText("Waves: a matched end")
+    p.load_preset("Waves: a matched end")
     assert (
         p.waves_view.run.waves.dashpot == 1.0
         and p.waves_view.end_line.isVisible()
@@ -3902,12 +3902,12 @@ def test_continuum_waves_tab(app):
     assert (
         p.waves_view.run.waves.scheme is Scheme.CONSISTENT
         and p.waves_view.run.t == 0.0
-        and p.preset.currentText() == "Waves: a matched end"
+        and p.preset_name() == "Waves: a matched end"
     )
     p.waves_view.playback.setCurrentIndex(0)
     assert p.waves_view.run.playback == 0.25
 
-    p.preset.setCurrentText("Waves: a light string tied to a heavy one")
+    p.load_preset("Waves: a light string tied to a heavy one")
     assert p.waves_view.step_region.isVisible() and p.waves_view.run.step_x == pytest.approx(0.5)
     assert "reflects -0.333 and passes 0.667" in p.waves_view.wave_info.text()
     p.waves_view.step_on.setChecked(False)

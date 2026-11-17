@@ -49,6 +49,8 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.linalg
 
+from .practice import Prediction
+
 TWO_PI = 2.0 * math.pi
 RIGID_HZ = 1e-6  # a mode below this (relative to the highest) is the rigid-body one
 
@@ -427,6 +429,7 @@ class TorsionalPreset:
     operating_rpm: float  # the motor's
     top_rpm: float  # the speed range shown
     note: str
+    predict: Prediction | None = None  # asked before it loads (Things to try); the note is the explanation
 
 
 FAN = DriveTrain(
@@ -462,6 +465,12 @@ PRESETS = (
         "One mode, the motor and the fan twisting the coupling against each other at "
         "<m>√(k(J<sub>1</sub> + J<sub>2</sub>)/J<sub>1</sub>J<sub>2</sub>)</m>/2π = 52.3 Hz. A misaligned coupling's 2× torque meets it at 1569 rpm, "
         "6 % above the running speed: inside a 10 % margin. A softer coupling moves it below.",
+        predict=Prediction(
+            "A motor at 1480 rpm drives a fan through a coupling, their one mode at 52.3 Hz. A misaligned coupling "
+            "twists it twice a turn. At what speed does that meet the mode?",
+            ("Far below the running speed", "Just above it, inside a 10 % margin", "Far above it"),
+            1,
+        ),
     ),
     TorsionalPreset(
         "Geared compressor",
@@ -471,6 +480,12 @@ PRESETS = (
         "A 4:1 speed-up gearbox. The two lower modes twist the couplings; the mesh's own, 2688 Hz, "
         "twists the teeth. The gears made rigid (the n² reflection) keep the lower two to within 0.1 % "
         "but lose that one, which the tooth-pass meets at 1344 rpm, 10 % below the running speed.",
+        predict=Prediction(
+            "A 4:1 gearbox between a motor and a compressor. If the gears were made rigid, merged into one "
+            "inertia, what would the train's two lowest modes do?",
+            ("Barely move", "Rise a lot", "Fall a lot", "Disappear"),
+            0,
+        ),
     ),
     TorsionalPreset(
         "Diesel generator set",
@@ -480,5 +495,15 @@ PRESETS = (
         "A six-cylinder four-stroke engine's firing orders, 3× and 6× (lumped on crank 3), against the "
         "crankshaft's modes and the flexible coupling's (18.9 Hz). The coupling's mode is far below the "
         "running speed, passed on the way up at 378 rpm (3×); the crankshaft's first, 97.3 Hz, at 973 rpm (6×).",
+        predict=Prediction(
+            "A six-cylinder diesel runs a generator at 1500 rpm through a flexible coupling, whose mode is at "
+            "18.9 Hz. Does the engine's firing meet that mode on the way up?",
+            (
+                "No: it runs at 1500 rpm, far above it",
+                "Yes, at 378 rpm, by its 3× order",
+                "No: firing is too fast for it",
+            ),
+            1,
+        ),
     ),
 )

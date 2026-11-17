@@ -778,7 +778,7 @@ def torsional_compressor():
     w = window()
     page = w.torsional_page
     w.pages.setCurrentWidget(page)
-    page.preset.setCurrentText("Geared compressor")
+    page.load_preset("Geared compressor")
     page.tabs.setCurrentWidget(page.shapes_tab)
     settle()
     print(page.readout.text())
@@ -789,7 +789,7 @@ def torsional_startup():
     w = window()
     page = w.torsional_page
     w.pages.setCurrentWidget(page)
-    page.preset.setCurrentText("Geared compressor")
+    page.load_preset("Geared compressor")
     page.start()
     page.startup_view.step(page.startup_view.startup.duration)
     settle()
@@ -826,7 +826,7 @@ def continuum_waves():
     w = window()
     page = w.continuum_page
     w.pages.setCurrentWidget(page)
-    page.preset.setCurrentText("Waves: a light string tied to a heavy one")
+    page.load_preset("Waves: a light string tied to a heavy one")
     page.loop.enabled = False
     page.waves_view.running = False
     page.waves_view.step(120)  # half a crossing: the reflection and the transmitted pulse apart

@@ -63,6 +63,8 @@ import numpy as np
 import scipy.linalg
 import scipy.optimize
 
+from .practice import Prediction
+
 TWO_PI = 2.0 * math.pi
 MAX_ELEMENTS = 200
 CONVERGENCE_COUNTS = (1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192)
@@ -465,6 +467,7 @@ class Preset:
     continuum: Continuum
     elements: int
     note: str
+    predict: Prediction | None = None  # asked before it loads (Things to try); the note is the explanation
 
 
 PRESETS = (
@@ -475,6 +478,16 @@ PRESETS = (
         "A 648 mm scale at 73 N: 82.4 Hz, every harmonic a whole multiple. As 12 beads (lumped) the "
         "harmonics fall flat, more the higher they go: the 6th, at two elements a half wavelength, "
         "is 10.0 % low and the 11th 31 %.",
+        predict=Prediction(
+            "A low E string, 648 mm at 73 N, cut into 12 beads (lumped masses). Against the string's own harmonics, "
+            "whole multiples of 82.4 Hz, what do the beads' harmonics do?",
+            (
+                "They stay whole multiples",
+                "Sharp, more the higher they go",
+                "Flat, more the higher they go",
+            ),
+            2,
+        ),
     ),
     Preset(
         "Steel bar, fixed–free",
@@ -483,6 +496,11 @@ PRESETS = (
         "A 1 m steel bar held at one end, rung lengthwise: <m>c</m> = 5172 m/s, so a quarter wavelength fits at "
         "1293 Hz and the modes go 1 : 3 : 5. Ten elements: lumped is low and consistent high by the same, "
         "and their average (mixed) far closer than either.",
+        predict=Prediction(
+            "A steel bar held at one end and free at the other, rung lengthwise. How do its modes' frequencies go?",
+            ("1 : 2 : 3, as a string's", "1 : 3 : 5, odd multiples only", "1 : 6.3 : 17.5, as a beam's"),
+            1,
+        ),
     ),
     Preset(
         "Steel ruler, clamped–free",
@@ -491,6 +509,11 @@ PRESETS = (
         "300 mm of a 1 mm steel ruler held over a desk's edge: 9.28 Hz, then 58.2 and 163 Hz, not "
         "whole multiples (a beam's waves are dispersive, <m>ω ∝ κ<sup>2</sup></m>). Consistent Hermite beams "
         "converge as <m>N<sup>−4</sup></m>, lumped masses only as <m>N<sup>−2</sup></m>.",
+        predict=Prediction(
+            "A steel ruler held over a desk's edge bends at 9.28 Hz. Are its overtones whole multiples of that?",
+            ("Yes: 1 : 2 : 3", "Yes, the odd ones: 1 : 3 : 5", "No: they spread far wider"),
+            2,
+        ),
     ),
     Preset(
         "Vibraphone bar, free–free",
@@ -499,6 +522,11 @@ PRESETS = (
         "A plain 300 × 12 mm aluminium bar on its nodes: 693 Hz, overtones 2.76 and 5.40 times that "
         "(a real vibraphone's bars are undercut to bring them to 4 and 10). Two rigid modes: it slides "
         "and tips.",
+        predict=Prediction(
+            "An aluminium bar resting on its nodes, free at both ends. How many of its modes are at 0 Hz?",
+            ("None", "One", "Two"),
+            2,
+        ),
     ),
     Preset(
         "Pinned–pinned beam",
