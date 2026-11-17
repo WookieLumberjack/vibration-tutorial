@@ -28,7 +28,7 @@ from ..core.active_control import (
     undamped_modes,
 )
 from ..core.model import ChainSystem
-from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, kept, number, pick
 from . import active_control_figures, settle_plots
 from .challenge import ChallengeBox
 from .drag import DragDot
@@ -74,6 +74,7 @@ class ControlTrial:
     masses: tuple[float, ...] = ()  # the chain, element by element; none: the uniform four-mass one
     springs: tuple[float, ...] = ()
     dampers: tuple[float, ...] = ()
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         if not self.masses:
@@ -91,7 +92,7 @@ TRIALS = (
         tab=TAB_GAIN,
     ),
     ControlTrial(
-        "Too much gain pins the mass",
+        "A high gain",
         "Collocated feedback is stable at any gain, but more isn't better. Mode 1 turns overdamped at about "
         "26 N·s/m (its curve ends), and the other modes' damping peaks near there and falls again: the actuator "
         "holds m4 nearly still, and the chain vibrates around it as the chain with m4 fixed, three lightly "
@@ -99,9 +100,20 @@ TRIALS = (
         "points does.",
         gain=200.0,
         tab=TAB_GAIN,
+        predict=Prediction(
+            "Collocated velocity feedback at the tip, its gain raised far past 20 N·s/m. What happens to the higher "
+            "modes' damping?",
+            (
+                "The loop goes unstable",
+                "It stays where it was",
+                "It keeps growing",
+                "It falls again",
+            ),
+            3,
+        ),
     ),
     ControlTrial(
-        "Non-collocated: spillover",
+        "Sensor and actuator apart",
         "Sensor on <m>m<sub>1</sub></m>, actuator on <m>m<sub>4</sub></m>, <m>g</m> = 20 N·s/m. In mode 1 the two move together, so mode 1 is damped; in "
         "mode 2 they move against each other, so the feedback pushes with the motion: the estimate takes 0.17 "
         "off mode 2's <m>ζ</m> of 0.05, and exactly its <m>ζ</m> is −0.10. The chain is unstable from g = 6.1 N·s/m. Control "
@@ -110,6 +122,15 @@ TRIALS = (
         actuator=4,
         gain=20.0,
         tab=TAB_LOCUS,
+        predict=Prediction(
+            'Velocity measured at m1, the force on m4, g = 20 N·s/m. What does the loop do?',
+            (
+                "It damps mode 1 only, the rest unchanged",
+                "It damps every mode",
+                "It goes unstable",
+            ),
+            2,
+        ),
     ),
     ControlTrial(
         "Actuator lag",
@@ -120,6 +141,15 @@ TRIALS = (
         lag_ms=20.0,
         gain=100.0,
         tab=TAB_LOCUS,
+        predict=Prediction(
+            "Collocated again, but the sensor filter and the actuator each lag by 20 ms. Is the loop stable at any "
+            "gain?",
+            (
+                "Yes: a collocated loop always is",
+                "No: above some gain it goes unstable",
+            ),
+            1,
+        ),
     ),
     ControlTrial(
         "Active against a tuned mass damper",
@@ -141,6 +171,16 @@ TRIALS = (
         tab=TAB_SKYHOOK,
         zeta_passive=0.1,
         zeta_sky=0.5,
+        predict=Prediction(
+            "A machine on a mount over a vibrating floor, its passive damper raised from ζ = 0.1 to 0.5. What happens"
+            " to the isolation at 5 times its natural frequency?",
+            (
+                "It stays the same",
+                "It gets better",
+                "It gets worse",
+            ),
+            2,
+        ),
     ),
 )
 
@@ -447,6 +487,7 @@ class ActiveControlPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Each loads the uniform chain into the Simulation page and sets up the loop to "
             "show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
         self.challenge = ChallengeBox(self, PROBLEMS)

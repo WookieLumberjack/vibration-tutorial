@@ -154,7 +154,7 @@ def test_the_motion_tab_plays_the_body_and_the_slider_moves_the_poles(main_windo
     page = w.self_excited_page
     w.pages.setCurrentWidget(page)
     QtWidgets.QApplication.processEvents()
-    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Galloping grows with the wind"))
+    page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == "Galloping at 12 m/s"))
     assert page.tabs.currentIndex() == TAB_MOTION and page.playback.running  # a trial starts it
     assert page.section.body is Body.SQUARE and page.section.unstable
     t, y, _ = page.motion

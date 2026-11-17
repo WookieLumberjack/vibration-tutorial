@@ -98,7 +98,7 @@ def test_active_control_trials():
     assert open_z[0] == pytest.approx(0.017, abs=0.001)
     z = [p.zeta for p in oscillating_poles(closed_loop(s, Controller(3, 3, 20.0))[0])]
     assert z[0] == pytest.approx(0.72, abs=0.005)
-    # Too much gain pins the mass
+    # A high gain
     g, _ = best_gain(s, Controller(3, 3, 0.0))
     assert g == pytest.approx(25, rel=0.1)
     g = np.geomspace(1.0, 1000.0, 600)
@@ -109,7 +109,7 @@ def test_active_control_trials():
     fixed = np.sqrt(np.linalg.eigvals(np.linalg.solve(M[:3, :3], K[:3, :3])).real) / (2 * np.pi)
     assert np.sort(fixed) == pytest.approx(f, abs=0.05)
     assert f == pytest.approx([2.4, 4.5, 5.9], abs=0.05)
-    # Non-collocated: spillover
+    # Sensor and actuator apart
     est = modal_damping_estimate(s, Controller(0, 3, 20.0))
     assert est[1] == pytest.approx(-0.17, abs=0.005)
     z = [p.zeta for p in oscillating_poles(closed_loop(s, Controller(0, 3, 20.0))[0])]

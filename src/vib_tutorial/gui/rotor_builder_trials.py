@@ -19,7 +19,7 @@ import numpy as np
 from ..core.fluid_bearing import JournalBearing
 from ..core.frame import STEEL
 from ..core.magnetic_bearing import MagneticBearing
-from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, kept, number, pick
 from ..core.rotor_builder import (
     DISC_LIBRARY,
     RPM,
@@ -78,6 +78,7 @@ class RotorTrial:
     top_rpm: float = 12000.0  # the sweeps' (Campbell, unbalance, stability) top speed
     probe: int | None = None  # the node the Unbalance tab plots (None: the first disc's)
     swing: Swing = Swing.MODE
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 # ------------------------------------------------------------------ the trials' rotors
@@ -157,7 +158,7 @@ TRIALS = (
         STUBBY,
     ),
     RotorTrial(
-        "A disc off centre: the gyroscopic split",
+        "A disc off centre",
         "The pinned shaft with a steel disc 300 × 40 mm (22.2 kg) a quarter along, at 3000 rpm. At rest its pairs "
         "are at 62.28, 265.2 and 501.4 Hz; spinning, each splits, backward below and forward above: 60.83 and "
         "63.70, 261.2 and 268.6, 468.2 and 538.2 Hz. The disc tilts as the shaft bends, most in the third mode, "
@@ -167,6 +168,17 @@ TRIALS = (
         rpm=3000.0,
         picked=("disc", 0),
         matrix=Matrix.G,
+        predict=Prediction(
+            "A disc a quarter along the pinned shaft, spinning at 3000 rpm. At rest each mode is a pair at one "
+            "frequency. What does the spin do to each pair?",
+            (
+                "Both fall",
+                "Both rise",
+                "Nothing: the spin does no work",
+                "The forward whirl rises, the backward one falls",
+            ),
+            3,
+        ),
     ),
     RotorTrial(
         "An overhung fan",
@@ -261,7 +273,7 @@ TRIALS = (
         picked=("disc", 0),
     ),
     RotorTrial(
-        "Unbalance: only the forward critical",
+        "The fan's unbalance",
         "The fan's unbalance, 174 g·mm (10 µm of its 17.4 kg). Its orbit peaks at the forward critical, 1003 µm "
         "at 5480 rpm, lagging the heavy spot by 90°; at the backward criticals (4091 and 9507 rpm, grey) it is "
         "12.5 and 13.7 µm, nothing to see. An unbalance turns forward with the shaft, and on round bearings it "
@@ -272,6 +284,16 @@ TRIALS = (
         tab=TAB_UNBALANCE,
         picked=("disc", 0),
         swing=Swing.UNBALANCE,
+        predict=Prediction(
+            "The overhung fan run up with its unbalance through its criticals: 4091 rpm (backward), 5480 rpm "
+            "(forward) and 9507 rpm (backward). How big is its orbit at the backward ones?",
+            (
+                "As big as at the forward one",
+                "Bigger: the backward whirls are less damped",
+                "Tiny: an unbalance turns forward, with the shaft",
+            ),
+            2,
+        ),
     ),
     RotorTrial(
         "The compressor's criticals",
@@ -309,6 +331,16 @@ TRIALS = (
         rpm=3000.0,
         tab=TAB_STABILITY,
         top_rpm=8000.0,
+        predict=Prediction(
+            "The shaft's internal damping damps every mode at rest. What does it do to the forward whirl above the "
+            "first critical speed?",
+            (
+                "Damps it more",
+                "Nothing",
+                "Drives it: past some speed the whirl grows",
+            ),
+            2,
+        ),
     ),
 )
 

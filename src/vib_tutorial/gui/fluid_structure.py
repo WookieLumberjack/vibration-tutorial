@@ -45,7 +45,7 @@ from ..core.added_mass import (
     wet_frequency,
 )
 from ..core.beams_plates import Material, Plate
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..core.sloshing import (
     Damper,
     G,
@@ -133,6 +133,7 @@ class FluidTrial:
     tanks: int = 1
     damper_zeta: float = 13.0  # %, the sloshing's
     tab: int = TAB_BODY
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -182,6 +183,17 @@ TRIALS = (
         "here 20.5 times, and its energy goes as the square of that.",
         walled=True,
         ratio=1.05,
+        predict=Prediction(
+            "The rod's pipe narrowed from 1.2 to 1.05 times its radius, a gap of 1.25 mm. What happens to the rod's "
+            "natural frequency?",
+            (
+                "It rises, then falls",
+                "It stays the same",
+                "It rises",
+                "It falls",
+            ),
+            3,
+        ),
     ),
     FluidTrial(
         "A plate in water",
@@ -206,6 +218,16 @@ TRIALS = (
         "falls to 118 Hz, 0.53 of it.",
         thickness=10.0,
         tab=TAB_PLATE,
+        predict=Prediction(
+            "The plate in water 10 mm thick instead of 3. What happens to its fundamental's AVMI factor β, the "
+            "water's added mass over the plate's?",
+            (
+                "It stays the same",
+                "It rises",
+                "It falls, about as the thickness rises",
+            ),
+            2,
+        ),
     ),
     FluidTrial(
         "Sloshing in a tank",
@@ -229,6 +251,16 @@ TRIALS = (
         "the water, but the sloshing mass is only 258 kg, 13 %: the rest, 1729 kg, rides along with the tank.",
         depth=2.0,
         tab=TAB_SLOSH,
+        predict=Prediction(
+            "The 1 m tank filled to 2 m, four times the 0.5 m fill's depth (0.846 Hz). What does its first sloshing "
+            "frequency do?",
+            (
+                "Doubles, as √d would",
+                "Rises a little, then stops depending on the depth",
+                "Falls",
+            ),
+            1,
+        ),
     ),
     FluidTrial(
         "A higher mode",
@@ -245,6 +277,17 @@ TRIALS = (
         "pushes the walls the same way, not towards each other).",
         slosh=2,
         tab=TAB_SLOSH,
+        predict=Prediction(
+            "The tank shaken sideways at its second sloshing mode's frequency, the surface up at both walls and down "
+            "in the middle. How much does the water slosh?",
+            (
+                "Twice as much as at the first mode",
+                "As much as at the first mode",
+                "A lot: it's at resonance",
+                "Hardly at all",
+            ),
+            3,
+        ),
     ),
     FluidTrial(
         "A tuned liquid damper",
@@ -268,6 +311,16 @@ TRIALS = (
         breadth=2.0,
         damper_zeta=0.5,
         tab=TAB_DAMPER,
+        predict=Prediction(
+            "The liquid damper's tank with no screens: the water's own damping, 0.5 %. What happens to the "
+            "structure's peak?",
+            (
+                "It falls further: a sharper absorber",
+                "It splits in two, both still tall",
+                "It vanishes",
+            ),
+            1,
+        ),
     ),
     FluidTrial(
         "Mistuned",
@@ -674,7 +727,9 @@ class FluidStructurePage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.trials = TrialBox(
-            [t.name for t in TRIALS], "<p>Each sets up the body or the plate to show one idea from the Theory tab.</p>"
+            [t.name for t in TRIALS],
+            "<p>Each sets up the body or the plate to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 
