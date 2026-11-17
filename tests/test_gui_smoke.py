@@ -5290,3 +5290,38 @@ def test_things_to_try_step_in_order(main_window):
         assert combo.chosen() == len(combo.names) - 1 and not steps.on.isEnabled()  # stops at the last
         steps.back.click()
         assert combo.chosen() == len(combo.names) - 2
+
+
+def test_vibroacoustics_slow_tabs_work_on_their_workers(main_window, app):
+    """A panel control changed: the Radiation, Driven panel and SEA tabs work out on their workers (0.15–0.3 s),
+    the plots keeping the last meanwhile; a tab picked draws now; the mode set kept is the panel's showing."""
+    from vib_tutorial.gui.vibroacoustics import TAB_DRIVEN, TAB_RADIATION, TAB_SEA
+    from vib_tutorial.view_models.vibroacoustics import modes_for
+
+    w = main_window
+    p = w.acoustics_page
+    w.pages.setCurrentWidget(p)
+    p.tabs.setCurrentIndex(TAB_RADIATION)
+    app.processEvents()
+    radiation = p.workers[p.radiation_tab]
+    note = p.radiation_note.text()
+    p.side_a.setValue(0.8)
+    assert radiation.busy and p.radiation_note.text() == note
+    radiation.wait()
+    assert p.radiation_note.text() != note
+    assert p.modes is not None and p.modes.freq.size == modes_for(p.plate, p.f_top).freq.size
+
+    p.thickness.setValue(4.0)  # radiation on its worker, for this panel …
+    assert radiation.busy
+    p.tabs.setCurrentIndex(TAB_DRIVEN)  # … the driven panel now …
+    assert not p.workers[p.driven_tab].busy and "infinite plate" in p.driven_note.text()
+    p.side_b.setValue(0.6)  # … and a new panel, the radiation's work for the last one still to come
+    for worker in p.workers.values():
+        worker.wait()
+    assert p.modes is not None and p.modes.freq.size == modes_for(p.plate, p.f_top).freq.size
+
+    p.volume.setValue(p.volume.value() * 1.5)
+    p.tabs.setCurrentIndex(TAB_SEA)
+    assert not p.workers[p.sea_tab].busy and p.sea_note.text()
+    p.tabs.setCurrentIndex(TAB_RADIATION)  # stale since the panel changed: drawn now
+    assert not radiation.busy and f"{p.modes.freq.size} modes below" in p.radiation_note.text()
