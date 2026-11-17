@@ -406,7 +406,7 @@ def oma_ssi():
     p = w.oma_page
     w.pages.setCurrentWidget(p)
     settle()
-    p.trial.pick("A machine near a mode")
+    p.trials.combo.pick("A machine near a mode")
     p.recompute()
     p.method.setCurrentText("SSI-cov")
     p.tabs.setCurrentWidget(p.stab_plot)
@@ -840,7 +840,7 @@ def random_vibration():
     w = window()
     page = w.random_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("Base shake")
+    page.trials.combo.pick("Base shake")
     page.recompute()
     settle()
     print(page.readout.text())
@@ -852,7 +852,7 @@ def random_statistics():
     w = window()
     page = w.random_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("The base spring's force")
+    page.trials.combo.pick("The base spring's force")
     page.tabs.setCurrentWidget(page.stats_tab)
     page.recompute()
     settle()
@@ -864,7 +864,7 @@ def complex_modes():
     w = window()
     page = w.complex_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("One damper, at the base")
+    page.trials.combo.pick("One damper, at the base")
     page.mode.setCurrentIndex(2)
     page.tabs.setCurrentWidget(page.decay_tab)
     settle()
@@ -877,7 +877,7 @@ def complex_sweep():
     w = window()
     page = w.complex_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("One damper, at the base")
+    page.trials.combo.pick("One damper, at the base")
     page.tabs.setCurrentWidget(page.sweep_tab)
     settle()
     print(page.sweep_note.text())
@@ -893,7 +893,7 @@ def model_updating():
     w = window()
     page = w.updating_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("One spring 30 % too stiff")
+    page.trials.combo.pick("One spring 30 % too stiff")
     page.recompute()
     settle()
     print(page.readout.text())
@@ -905,7 +905,7 @@ def model_updating_springs():
     w = window()
     page = w.updating_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("Update: find the stiff spring")
+    page.trials.combo.pick("Update: find the stiff spring")
     page.recompute()
     page.tabs.setCurrentWidget(page.update_tab)
     settle()
@@ -947,7 +947,7 @@ def shock_spectrum():
     w = window()
     page = w.shock_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("Half-sine")
+    page.trials.combo.pick("Half-sine")
     page.split_time.setChecked(True)
     page.recompute()
     settle()
@@ -960,7 +960,7 @@ def shock_chain():
     w = window()
     page = w.shock_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("Modes combined")
+    page.trials.combo.pick("Modes combined")
     page.recompute()
     settle()
     print(page.chain_note.text())
@@ -971,7 +971,7 @@ def shock_synthesis():
     w = window()
     page = w.shock_page
     w.pages.setCurrentWidget(page)
-    page.trial.pick("Wavelets to a spectrum")
+    page.trials.combo.pick("Wavelets to a spectrum")
     page.recompute()
     page.tabs.setCurrentWidget(page.tri_tab)
     settle()

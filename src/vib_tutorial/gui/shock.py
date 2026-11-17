@@ -50,7 +50,7 @@ from . import maths, shock_figures, weak
 from .axes import log_axes
 from .drag import DragLine
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import TrialCombo, TrialSteps
+from .lesson import TrialBox
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -632,21 +632,14 @@ class ShockPage(QtWidgets.QWidget):
         self.f_pick = spin(1e-4, 1e7, 1.0, 3, " Hz")
         form_row(form, "Oscillator:", self.f_pick, TIPS["f"])
 
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([t.name for t in TRIALS])
-        self.trial.setToolTip(
-            "<p>Pulses that show something about shock spectra, the duration set from the chain as it is now.</p>"
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Pulses that show something about shock spectra, the duration set from the chain as it is now.</p>",
         )
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        mute(self.trial_note)
-        tv.addWidget(self.trial_note)
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for b in (trials, box, spec_box):  # Things to try first, as on every page
+        for b in (self.trials, box, spec_box):  # Things to try first, as on every page
             lv.addWidget(b)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
@@ -803,7 +796,7 @@ class ShockPage(QtWidgets.QWidget):
         for c in (self.split_time, self.split_sign):
             c.toggled.connect(self._draw_srs)
         self.again.clicked.connect(self._on_again)
-        self.trial.picked.connect(self.apply_trial)
+        self.trials.picked.connect(self.apply_trial)
         self.pick_line.sigPositionChanged.connect(self._on_line)
         self.f_pick.valueChanged.connect(self._on_pick)
         self.srs_plot.scene().sigMouseClicked.connect(self._on_click)
@@ -833,13 +826,13 @@ class ShockPage(QtWidgets.QWidget):
 
     def apply_trial(self) -> None:
         """Set the pulse the chosen trial asks for, its duration from the chain as it is."""
-        chosen = self.trial.chosen()
+        chosen = self.trials.combo.chosen()
         self._load(TRIALS[chosen] if chosen is not None else OPENING)
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then the
         pulse and the spectrum's Q."""
-        self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
+        self.trials.combo.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = ShockSetup(**setup)
         system = t.system()
         if system is not None:
@@ -866,7 +859,7 @@ class ShockPage(QtWidgets.QWidget):
         self._loading = False
         self._pick_peak = True
         self._show_controls()
-        self.trial_note.setText(maths.markup(t.note))
+        self.trials.show_note(t.note)
         if t.tab is not None:
             self.tabs.setCurrentIndex(t.tab)
         self._schedule(rerecord=True)

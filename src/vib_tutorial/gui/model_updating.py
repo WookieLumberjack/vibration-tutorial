@@ -40,7 +40,7 @@ from ..core.model_updating import (
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from . import updating_figures, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TAB_ROOM, TrialCombo, TrialSteps, trials_html
+from .lesson import TAB_ROOM, TrialBox, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .notes_view import NotesBrowser
@@ -662,21 +662,14 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.clear_errors.setToolTip("<p>Set every factor to 1: the model is then the structure.</p>")
         mv.addWidget(self.clear_errors)
 
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([t.name for t in TRIALS])
-        self.trial.setToolTip(
-            "<p>Model errors (and tests) that show something about correlation, set on the chain as it is now.</p>"
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Model errors (and tests) that show something about correlation, set on the chain as it is now.</p>",
         )
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        mute(self.trial_note)
-        tv.addWidget(self.trial_note)
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for b in (trials, box, model_box):  # Things to try first, as on every page
+        for b in (self.trials, box, model_box):  # Things to try first, as on every page
             lv.addWidget(b)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
@@ -842,7 +835,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.source.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._schedule(measure=True)))
         self.again.clicked.connect(self._on_again)
         self.clear_errors.clicked.connect(self._on_clear)
-        self.trial.picked.connect(self.apply_trial)
+        self.trials.picked.connect(self.apply_trial)
         self.table.itemSelectionChanged.connect(self._draw_shapes)
         for w in (*self.update_kind.values(), self.fit_shapes, self.fit_damping):
             w.toggled.connect(self._on_update_settings)
@@ -919,13 +912,13 @@ class ModelUpdatingPage(QtWidgets.QWidget):
     def apply_trial(self) -> None:
         """Set the errors (and the test) the chosen trial asks for, on the chain as it is, measured with the first
         seed: the notes quote that measurement. It measures again only if the test changed."""
-        chosen = self.trial.chosen()
+        chosen = self.trials.combo.chosen()
         self._load(TRIALS[chosen] if chosen is not None else OPENING, measure=False)
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its structure (through the Simulation page), then
         the test, the sensors and the model's errors, measured with the first seed."""
-        self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
+        self.trials.combo.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = UpdatingSetup(**setup)
         system = t.system()
         if system is not None:
@@ -947,7 +940,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             self.source.setCurrentIndex(self.source.findData(t.source))
         self._set_update_settings({**DEFAULT_UPDATE, **t.update})
         self._loading = False
-        self.trial_note.setText(t.note)
+        self.trials.show_note(t.note)
         if t.tab is not None:
             self.tabs.setCurrentIndex(t.tab)
         again = measure or self.test is None or self.test.source is not self.source.currentData() or self.seed != 1

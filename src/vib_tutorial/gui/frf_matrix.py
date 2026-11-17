@@ -26,9 +26,9 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
-from . import frf_figures, maths, weak
+from . import frf_figures, weak
 from .layouts import ColumnScroll, form_layout
-from .lesson import TrialCombo, TrialSteps, trials_html
+from .lesson import TrialBox, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .plots import frequency_grid
@@ -816,20 +816,12 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self._rebuild_grid = False  # the theme changed: build the grid again
 
         # --- controls
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo(
+        self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each sets up the chain and the plots to show one idea from the Theory tab. "
             "Loading one replaces the Simulation page's chain.</p>",
         )
-        self.trial.picked.connect(self.load_trial)
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        mute(self.trial_note)
-        self.trial_note.setVisible(False)
-        tv.addWidget(self.trial_note)
+        self.trials.picked.connect(self.load_trial)
 
         box = QtWidgets.QGroupBox("FRF matrix H(Ω) = (K − Ω²M + iΩC)⁻¹")
         form = form_layout(box)
@@ -932,12 +924,12 @@ class FrfMatrixPage(QtWidgets.QWidget):
         mute(io_note)
         iv.addWidget(io_note)
 
-        for combo in (self.trial, self.quantity, self.expansion, self.output_combo):
+        for combo in (self.trials.combo, self.quantity, self.expansion, self.output_combo):
             combo.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
             combo.setMinimumContentsLength(10)
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        lv.addWidget(trials)
+        lv.addWidget(self.trials)
         lv.addWidget(box)
         lv.addWidget(self.mode_box)
         lv.addWidget(io_box)
@@ -1020,8 +1012,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         )
 
     def apply_trial(self, trial: FrfTrial) -> None:
-        self.trial_note.setText(maths.markup(trial.note))
-        self.trial_note.setVisible(True)
+        self.trials.show_note(trial.note)
         self._unchecked = set()
         system = trial.system()
         self.system_requested.emit(system)

@@ -37,14 +37,14 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
-from . import maths, theming, weak
+from . import theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
 from .frame_loop import FrameLoop
 from .history import History
 from .layouts import ColumnScroll, FlowLayout, group
-from .lesson import TrialCombo, TrialSteps
+from .lesson import TrialBox
 from .modes import Method, mode_entries
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
 from .plots import FrfPlot, ModalTable, ModeShapePlot, PhasorPanel, TimeHistoryPlot
@@ -208,25 +208,19 @@ class SimulationPage(QtWidgets.QWidget):
         self.params = ParameterPanel(system)
         self.force_panel = ForcePanel(self.force)
         self.controls = SimControls()
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo(
+        self.trials = TrialBox(
             [t.name for t in SIM_TRIALS],
             "<p>Sets up the chain and the controls to show one idea, and says what to look "
             "for. The Theory tab (F1) lists them all.</p>",
         )
-        self.trial.picked.connect(weak.slot(self, lambda self, i: self.apply_trial(SIM_TRIALS[i])))
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel(
+        self.trials.picked.connect(weak.slot(self, lambda self, i: self.apply_trial(SIM_TRIALS[i])))
+        self.trials.show_note(
             "New here? Press <b>Space</b> to switch the force on, or pick one of these. Then read the "
             "<i>Theory</i> tab (F1)."
         )
-        self.trial_note.setWordWrap(True)
-        theming.mute(self.trial_note)
-        tv.addWidget(self.trial_note)
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for w in (trials, self.params, self.force_panel, self.controls):
+        for w in (self.trials, self.params, self.force_panel, self.controls):
             lv.addWidget(w)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
@@ -466,7 +460,7 @@ class SimulationPage(QtWidgets.QWidget):
 
     def apply_trial(self, t: SimTrial) -> None:
         """Set the page up as a trial (or a practice problem's setup) says, and run it."""
-        self.trial_note.setText(maths.markup(t.note))
+        self.trials.show_note(t.note)
         self.force.switch_off()
         if t.preset:
             self.params.load_preset(next(p for p in self.params.presets if p.name.startswith(t.preset)))

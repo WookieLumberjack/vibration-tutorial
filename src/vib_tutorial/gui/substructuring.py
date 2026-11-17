@@ -44,7 +44,7 @@ from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
 from .cms_recovery import BackExpansionView
 from .cms_time import CMSTimeView
 from .layouts import ColumnScroll, form_layout, header_tip
-from .lesson import TrialCombo, TrialSteps
+from .lesson import TrialBox
 from .links import page_link
 from .notes_view import NotesBrowser
 from .style import MAX_DOF, colors, current, text_on
@@ -1067,20 +1067,12 @@ class SubstructuringPage(QtWidgets.QWidget):
         self._kept_wanted = [1] * len(SUB_NAMES)  # per substructure, remembered across changes; clipped to fit
 
         # --- controls
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo(
+        self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each loads the 8-mass chain into the Simulation page and sets the cut, the "
             "modes kept and the method to show one idea from the Theory tab.</p>",
         )
-        self.trial.picked.connect(self.load_trial)
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        mute(self.trial_note)
-        self.trial_note.setVisible(False)
-        tv.addWidget(self.trial_note)
+        self.trials.picked.connect(self.load_trial)
 
         box = QtWidgets.QGroupBox("Component mode synthesis")
         form = form_layout(box)
@@ -1157,7 +1149,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         self.summary.setWordWrap(True)
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        lv.addWidget(trials)
+        lv.addWidget(self.trials)
         lv.addWidget(box)
         lv.addWidget(self.schematic)
         lv.addWidget(self.summary)
@@ -1331,8 +1323,7 @@ class SubstructuringPage(QtWidgets.QWidget):
     def load_trial(self, index: int) -> None:
         """Load TRIALS[index]: its chain (through the Simulation page), cut, modes kept, method and tab."""
         trial = TRIALS[index]
-        self.trial_note.setText(trial.note)
-        self.trial_note.setVisible(True)
+        self.trials.show_note(trial.note)
         system = trial.system()
         self.system_requested.emit(system)
         if self.system is None or self.system.n != system.n or not np.allclose(self.system.stiffness, system.stiffness):
@@ -1363,7 +1354,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         modes kept, method and tab. Worked out now only if the page shows."""
         t = CmsTrial("", "", **setup)
         system = t.system()
-        self.trial_note.setVisible(False)
+        self.trials.show_note("")
         self.system_requested.emit(system)
         if self.system is None or self.system.n != system.n or not np.allclose(self.system.stiffness, system.stiffness):
             self.set_system(system)  # nobody passed it back: show it here alone

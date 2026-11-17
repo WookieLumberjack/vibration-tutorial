@@ -340,8 +340,8 @@ def test_one_click_trials_set_up_their_pages(app):
     w = MainWindow()
     w.show()
     for i, trial in enumerate(SIM_TRIALS):
-        w.sim_page.trial.setCurrentIndex(i + 1)
-        assert w.sim_page.trial_note.text() == maths.markup(trial.note)
+        w.sim_page.trials.combo.setCurrentIndex(i + 1)
+        assert w.sim_page.trials.note.text() == maths.markup(trial.note)
         if not trial.preset:
             assert w.sim_page.params.system().n == trial.n
 
@@ -349,7 +349,7 @@ def test_one_click_trials_set_up_their_pages(app):
     w.pages.setCurrentWidget(p)
     QTest.qWait(50)
     for i, trial in enumerate(frf_matrix.TRIALS):
-        p.trial.setCurrentIndex(i + 1)
+        p.trials.combo.setCurrentIndex(i + 1)
         assert (p.output, p.inputs) == (trial.output, set(trial.inputs))
         assert [c.isChecked() for c in p.mode_checks] == [r + 1 not in trial.unticked for r in range(4)]
         assert np.allclose(w.sim_page.params.system().damping, trial.system().damping)
@@ -357,13 +357,13 @@ def test_one_click_trials_set_up_their_pages(app):
     p = w.coupling_page
     w.pages.setCurrentWidget(p)
     for i, trial in enumerate(coupling_notes.TRIALS):
-        p.trial.setCurrentIndex(i + 1)
+        p.trials.combo.setCurrentIndex(i + 1)
         assert p.split == trial.split and p.a_mass.currentData() == trial.a_mass and p.system.n == trial.system().n
 
     p = w.cms_page
     w.pages.setCurrentWidget(p)
     for i, trial in enumerate(CMS_TRIALS):
-        p.trial.setCurrentIndex(i + 1)
+        p.trials.combo.setCurrentIndex(i + 1)
         assert p.interfaces == list(trial.interfaces) and p.method.currentData() == trial.method
         assert p.tabs.currentIndex() == trial.tab
     p.time.reset()
@@ -372,7 +372,7 @@ def test_one_click_trials_set_up_their_pages(app):
     p = w.test_page
     w.pages.setCurrentWidget(p)
     p.speed.setCurrentIndex(0)  # Instant
-    p.trial.setCurrentIndex(1)  # a force at the node of mode 2
+    p.trials.combo.setCurrentIndex(1)  # a force at the node of mode 2
     for _ in range(400):
         if not p.running:
             break
@@ -3756,11 +3756,11 @@ def test_oma_page(app):
     p.auto_peaks.click()
     assert p.peaks is None
 
-    for name in p.trial.names:
-        p.trial.pick(name)
+    for name in p.trials.combo.names:
+        p.trials.combo.pick(name)
         p.recompute()
-        assert p.trial_note.text()
-    p.trial.pick("Forces at m3 only")
+        assert p.trials.note.text()
+    p.trials.combo.pick("Forces at m3 only")
     p.recompute()
     assert p.input.currentText() == "m3" and "missed: mode 2" in p.results.notes.text()
 
@@ -3769,7 +3769,7 @@ def test_oma_page(app):
     assert p.selected == 1 and "Bell of" in p.efdd_note.text()
 
     # SSI, its stabilization diagram (click a pole to drop it, again to take it back), the machine
-    p.trial.pick("SSI on close, damped modes")
+    p.trials.combo.pick("SSI on close, damped modes")
     p.recompute()
     assert p.method.currentText() == "SSI-cov" and p.rows.isVisible() and not p.mac_min.isVisible()
     assert p.readout.text().startswith("SSI-cov found: mode 1") and "mode 4" in p.readout.text()
@@ -3783,7 +3783,7 @@ def test_oma_page(app):
     p.tabs.setCurrentWidget(p.methods_tab)
     assert p.methods.rowCount() == 4 and p._hammer is not None
     assert p.methods.item(0, 4).text().startswith("1.1")  # the hammer test's mode 1
-    p.trial.pick("A machine near a mode")
+    p.trials.combo.pick("A machine near a mode")
     p.recompute()
     assert p.machine_hz.value() > 0 and p.method.currentText() == "FDD + EFDD"
     assert "<b>Harmonic</b> at" in p.readout.text() and "mode 2" not in p.readout.text()
@@ -3973,10 +3973,10 @@ def test_random_vibration_page(app):
     assert p.record is not record and p.record.input.level == p.level.value()
 
     for t in TRIALS:
-        p.trial.pick(t.name)
+        p.trials.combo.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == t.note and p.prediction is not None and "RMS" in p.readout.text()
-    p.trial.pick(TRIALS[1].name)  # a force on the last mass: its own acceleration's mass line
+        assert p.trials.note.text() == t.note and p.prediction is not None and "RMS" in p.readout.text()
+    p.trials.combo.pick(TRIALS[1].name)  # a force on the last mass: its own acceleration's mass line
     p.recompute()
     assert p.mass.isEnabled() and p.mass.currentText() == "m4" and p.level.suffix() == " N²/Hz"
     assert "Miles 0.4163 g (-18 %)" in p.readout.text()
@@ -4006,7 +4006,7 @@ def test_random_vibration_statistics(app):
     w.pages.setCurrentWidget(p)
     p.tabs.setCurrentWidget(p.stats_tab)
     app.processEvents()
-    p.trial.pick("The base spring's force")
+    p.trials.combo.pick("The base spring's force")
     p.recompute()
     table = p.stats_table.text()
     assert (
@@ -4039,9 +4039,9 @@ def test_complex_modes_page(app):
     assert "stays there" in p.decay_note.text() and "the same" in p.frf_note.text()
 
     names = [t.name for t in TRIALS]
-    p.trial.setCurrentIndex(1 + names.index("One damper, at the base"))
+    p.trials.combo.setCurrentIndex(1 + names.index("One damper, at the base"))
     app.processEvents()
-    assert p.trial.currentIndex() == 1 + names.index("One damper, at the base") and p.trial_note.isVisible()
+    assert p.trials.combo.currentIndex() == 1 + names.index("One damper, at the base") and p.trials.note.isVisible()
     assert list(w.sim_page.sim.system.damping) == [20.0, 0, 0, 0]
     assert "not proportional" in p.coupling.text() and "mode 3, MPC 0.20" in p.readout.text()
     p.mode.setCurrentIndex(1)
@@ -4061,13 +4061,13 @@ def test_complex_modes_page(app):
     )
     assert "proportional" in p.coupling.text() and not p.make_proportional.isEnabled()
 
-    p.trial.setCurrentIndex(1 + names.index("A strong damper locks a joint"))
+    p.trials.combo.setCurrentIndex(1 + names.index("A strong damper locks a joint"))
     app.processEvents()
     assert "Overdamped (no oscillating pole): mode 4." in p.readout.text()
     assert p.table.item(3, 1).text() == "overdamped"
     p.mode.setCurrentIndex(3)
     assert "real roots" in p.mode_info.text()
-    p.trial.setCurrentIndex(1 + names.index("Tuned mass damper"))
+    p.trials.combo.setCurrentIndex(1 + names.index("Tuned mass damper"))
     app.processEvents()
     assert p.dof.value() == 5 and p.mode.count() == 5 and p.table.rowCount() == 5
     p.dof.setValue(2)
@@ -4088,7 +4088,7 @@ def test_complex_modes_sweep_and_identification(app):
     w.show()
     p = w.complex_page
     w.pages.setCurrentWidget(p)
-    p.trial.pick("One damper, at the top")
+    p.trials.combo.pick("One damper, at the top")
     app.processEvents()
     assert p.sweep_result is None and p.ident_result is None  # not worked out while hidden
     p.tabs.setCurrentWidget(p.sweep_tab)
@@ -4100,7 +4100,7 @@ def test_complex_modes_sweep_and_identification(app):
     assert p.sweep_result.parameter is Parameter.SPRING and p.sweep_element.currentText() == "k4"
     assert "most complex" in p.sweep_note.text()
 
-    p.trial.pick("One damper, at the base")
+    p.trials.combo.pick("One damper, at the base")
     app.processEvents()
     assert p.sweep_result.parameter is Parameter.SPRING  # worked out again for the new chain, as it shows
     p.tabs.setCurrentWidget(p.ident_tab)
@@ -4156,10 +4156,10 @@ def test_model_updating_page(app):
     assert "Test mode 2" in p.shape_note.text()
 
     for t in TRIALS:
-        p.trial.pick(t.name)
+        p.trials.combo.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == t.note and p.corr.pairs
-    p.trial.pick("Two sensors")
+        assert p.trials.note.text() == t.note and p.corr.pairs
+    p.trials.combo.pick("Two sensors")
     p.recompute()
     assert p.source.currentData() is Source.EXACT and [b.isChecked() for b in p.sensors] == [True, False, False, True]
     assert "test modes 2 and 4. At 2 sensors" in p.auto_note.text()
@@ -4167,7 +4167,7 @@ def test_model_updating_page(app):
     p.recompute()
     assert all(box.value() == 1.0 for row in p.error_rows for box in row[1:])
 
-    p.trial.pick("Update: find the stiff spring")
+    p.trials.combo.pick("Update: find the stiff spring")
     p.recompute()
     assert p.update_result is None  # worked out only while its tab shows
     p.tabs.setCurrentWidget(p.update_tab)
@@ -4176,7 +4176,7 @@ def test_model_updating_page(app):
     p.apply_update.click()
     assert p.error_rows[2][2].value() == pytest.approx(1.023, abs=0.001) and p.update_result is not u
     assert max(abs(x.error) for x in p.corr.pairs) < 0.01
-    p.trial.pick("Update: masses too, not unique")
+    p.trials.combo.pick("Update: masses too, not unique")
     p.recompute()
     assert p.update_kind[Kind.MASS].isChecked() and "1 of the 8 directions" in p.update_note.text()
     p.regularization.setValue(1.0)
@@ -4239,14 +4239,14 @@ def test_shock_page(app):
     assert p.record is not rec and p.record.duration == pytest.approx(0.05)
 
     for t in TRIALS:
-        p.trial.pick(t.name)
+        p.trials.combo.pick(t.name)
         p.recompute()
-        assert p.trial_note.text() == maths.markup(t.note) and p.spectrum is not None and "Maximax" in p.readout.text()
-    p.trial.pick("A component on the last mass")
+        assert p.trials.note.text() == maths.markup(t.note) and p.spectrum is not None and "Maximax" in p.readout.text()
+    p.trials.combo.pick("A component on the last mass")
     p.recompute()
     assert p.mass.isVisibleTo(p) and p.mass.currentText() == "m4" and "3.32 ×" in p.readout.text()
     assert p.f_pick.value() == pytest.approx(w.sim_page.modal.modes[0].fn_hz, abs=1e-3)
-    p.trial.pick("Zero shift")
+    p.trials.combo.pick("Zero shift")
     p.recompute()
     assert p.offset.value() == pytest.approx(1.0) and p.again.isEnabled()
     rec = p.record
@@ -4254,7 +4254,7 @@ def test_shock_page(app):
     assert p.seed == 2 and p.record is not rec
 
     # the chain's peaks: worked out only when the tab shows, kept while only the output or response changes
-    p.trial.pick("Half-sine")
+    p.trials.combo.pick("Half-sine")
     p.tabs.setCurrentWidget(p.osc_tab)
     p.recompute()
     assert p.chain is None and p.lazy.is_stale(p.chain_tab)
@@ -4278,7 +4278,7 @@ def test_shock_page(app):
     assert "the same Δv" in p.shapes_note.text()
 
     # a synthesis: the knee instead of the duration, the target drawn, other delays
-    p.trial.pick("Wavelets to a spectrum")
+    p.trials.combo.pick("Wavelets to a spectrum")
     p.recompute()
     assert p.knee.isVisibleTo(p) and not p.duration.isVisibleTo(p) and p.peak_label.text() == "Plateau:"
     assert p.again.text() == "New delays" and p.again.isEnabled() and not p.noise.isVisibleTo(p)
@@ -4288,7 +4288,7 @@ def test_shock_page(app):
     rec = p.record
     p.again.click()
     assert p.record is not rec and not np.allclose(p.record.synthesis.delay, rec.synthesis.delay)
-    p.trial.pick("Modes combined")
+    p.trials.combo.pick("Modes combined")
     p.recompute()
     assert p.tabs.currentWidget() is p.chain_tab and p.chain is not None
 

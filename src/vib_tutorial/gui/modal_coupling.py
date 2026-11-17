@@ -42,7 +42,7 @@ from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
 from .layouts import ColumnScroll, form_layout, header_tip
-from .lesson import TrialCombo, TrialSteps
+from .lesson import TrialBox
 from .links import page_link
 from .mode_swing import ModeSwing
 from .notes_view import NotesBrowser
@@ -911,20 +911,12 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self._split_wanted: int | None = None  # None: the middle of the chain
         self._modes_wanted = [0, 0]
 
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo(
+        self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each loads a chain into the Simulation page and splits and couples it to "
             "show one idea from the Theory tab.</p>",
         )
-        self.trial.picked.connect(self.load_trial)
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        mute(self.trial_note)
-        self.trial_note.setVisible(False)
-        tv.addWidget(self.trial_note)
+        self.trials.picked.connect(self.load_trial)
 
         box = QtWidgets.QGroupBox("Modal coupling")
         form = form_layout(box)
@@ -1017,7 +1009,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         mute(self.result_note)
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        lv.addWidget(trials)
+        lv.addWidget(self.trials)
         lv.addWidget(box)
         lv.addWidget(self.schematic)
         lv.addWidget(self.summary)
@@ -1105,8 +1097,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
     def load_trial(self, index: int) -> None:
         """Load TRIALS[index]: its chain (through the Simulation page), split, modes and A's mass."""
         trial = TRIALS[index]
-        self.trial_note.setText(trial.note)
-        self.trial_note.setVisible(True)
+        self.trials.show_note(trial.note)
         system = trial.system()
         self.system_requested.emit(system)
         if self.system is None or self.system.n != system.n or not np.allclose(self.system.masses, system.masses):
@@ -1126,7 +1117,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then how
         it's split and coupled. Worked out now only if the page shows."""
         t = CouplingSetup(**setup)
-        self.trial_note.setVisible(False)
+        self.trials.show_note("")
         system = t.system()
         self.system_requested.emit(system)
         if self.system is None or not _same_chain(self.system, system):
