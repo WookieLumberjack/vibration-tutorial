@@ -43,7 +43,7 @@ from . import complex_figures, maths, weak
 from .axes import log_axes
 from .drag import DragDot
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TrialCombo, TrialSteps
+from .lesson import TrialBox
 from .links import load_notes, page_link
 from .mode_swing import ModeSwing
 from .notes_view import NotesBrowser
@@ -472,20 +472,11 @@ class ComplexModesPage(QtWidgets.QWidget):
         link.linkActivated.connect(self.edit_parameters)
         form.addRow(link)
 
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo(
+        self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Chains that show something about complex modes. Loading one replaces the Simulation page's chain.</p>",
             prompt="Load a chain…",
         )
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        self.trial_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        mute(self.trial_note)
-        self.trial_note.setVisible(False)
-        tv.addWidget(self.trial_note)
 
         mode_box = QtWidgets.QGroupBox("Mode")
         form = form_layout(mode_box)
@@ -502,7 +493,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for pane in (box, mode_box, trials):
+        for pane in (box, mode_box, self.trials):
             lv.addWidget(pane)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
@@ -701,7 +692,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
         # --- wiring
         self.make_proportional.clicked.connect(self._on_make_proportional)
-        self.trial.picked.connect(self.load_trial)
+        self.trials.picked.connect(self.load_trial)
         self.mode.currentIndexChanged.connect(self._on_mode)
         self.table.itemSelectionChanged.connect(self._on_table_selection)
         self.frf_in.currentIndexChanged.connect(self._draw_frf)
@@ -765,8 +756,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
     def _load(self, t: ComplexSetup) -> None:
         system = t.system()
-        self.trial_note.setText(maths.markup(t.note))
-        self.trial_note.setVisible(bool(t.note))
+        self.trials.show_note(t.note)
         self.system_requested.emit(system.copy())
         if self.system is None or self.system.n != system.n or not np.allclose(self.system.damping, system.damping):
             self.set_system(system)  # nobody passed it back: show it here alone
@@ -811,14 +801,14 @@ class ComplexModesPage(QtWidgets.QWidget):
         s = self.system
         c = np.zeros(s.n)
         c[k - 1] = float(s.damping.sum())
-        self.trial_note.setVisible(False)
+        self.trials.show_note("")
         self.system_requested.emit(
             ChainSystem(s.masses.copy(), s.stiffness.copy(), c, s.friction.copy(), s.static_ratio)
         )
 
     def _on_make_proportional(self) -> None:
         if self.system is not None:
-            self.trial_note.setVisible(False)
+            self.trials.show_note("")
             self.system_requested.emit(made_proportional(self.system, self.result))
 
     def _on_mode(self, index: int) -> None:
@@ -885,7 +875,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         damping, stiffness = np.array(s.damping, dtype=float), np.array(s.stiffness, dtype=float)
         (damping if sw.parameter is Parameter.DAMPER else stiffness)[sw.element] = value
         system = ChainSystem(np.array(s.masses, dtype=float), stiffness, damping, s.friction, s.static_ratio)
-        self.trial_note.setVisible(False)
+        self.trials.show_note("")
         self.system_requested.emit(system.copy())
         if not np.allclose(self.system.damping, damping) or not np.allclose(self.system.stiffness, stiffness):
             self.set_system(system)  # nobody passed it back: show it here alone

@@ -56,7 +56,7 @@ from ..core.oma import (
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import oma_figures
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import TrialCombo, TrialSteps, trials_html
+from .lesson import TrialBox, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
@@ -640,21 +640,14 @@ class OmaPage(QtWidgets.QWidget):
         )
         form.addRow(self.auto_peaks)
 
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([t.name for t in TRIALS])
-        self.trial.setToolTip(
-            "<p>Settings that show one of OMA's strengths or pitfalls, set from the chain as it is now.</p>"
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Settings that show one of OMA's strengths or pitfalls, set from the chain as it is now.</p>",
         )
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        mute(self.trial_note)
-        tv.addWidget(self.trial_note)
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for box in (trials, test, daq, proc):  # Things to try first, as on every page
+        for box in (self.trials, test, daq, proc):  # Things to try first, as on every page
             lv.addWidget(box)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
@@ -772,7 +765,7 @@ class OmaPage(QtWidgets.QWidget):
         self._on_method(redraw=False)
         self.new_record.clicked.connect(self._on_new_record)
         self.auto_peaks.clicked.connect(self._on_auto_peaks)
-        self.trial.picked.connect(self.apply_trial)
+        self.trials.picked.connect(self.apply_trial)
         self.mode_pick.currentIndexChanged.connect(self._on_mode_pick)
 
     # ------------------------------------------------------------- inputs
@@ -814,13 +807,13 @@ class OmaPage(QtWidgets.QWidget):
 
     def apply_trial(self) -> None:
         """Set the settings the chosen trial asks for, from the chain as it is."""
-        chosen = self.trial.chosen()
+        chosen = self.trials.combo.chosen()
         self._load(TRIALS[chosen] if chosen is not None else OPENING)
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then
         the settings. The record is made when the page shows, not now."""
-        self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
+        self.trials.combo.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = OmaSetup(**setup)
         system = t.system()
         if system is not None:
@@ -866,7 +859,7 @@ class OmaPage(QtWidgets.QWidget):
         self.max_order.setValue(min(15 * n, 120) if t.max_order is None else t.max_order)
         self._loading = False
         self._on_method(redraw=False)
-        self.trial_note.setText(t.note)
+        self.trials.show_note(t.note)
         if t.tab is not None:
             self.tabs.setCurrentIndex(t.tab)
         self.peaks = None

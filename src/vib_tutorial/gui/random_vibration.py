@@ -56,7 +56,7 @@ from . import maths, random_figures, weak
 from .axes import log_axes
 from .drag import DragLine
 from .layouts import ColumnScroll, form_layout, form_row, group, plot_height
-from .lesson import TrialCombo, TrialSteps
+from .lesson import TrialBox
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -576,21 +576,14 @@ class RandomVibrationPage(QtWidgets.QWidget):
         mute(self.record_info)
         form.addRow(self.record_info)
 
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo([t.name for t in TRIALS])
-        self.trial.setToolTip(
-            "<p>Settings that show something about random vibration, set from the chain as it is now.</p>"
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Settings that show something about random vibration, set from the chain as it is now.</p>",
         )
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        mute(self.trial_note)
-        tv.addWidget(self.trial_note)
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for b in (trials, box, out_box, rec_box):  # Things to try first, as on every page
+        for b in (self.trials, box, out_box, rec_box):  # Things to try first, as on every page
             lv.addWidget(b)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
@@ -721,7 +714,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.block.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._on_output()))
         self.largest_over.valueChanged.connect(self._show_largest)
         self.new_record.clicked.connect(self._on_new_record)
-        self.trial.picked.connect(self.apply_trial)
+        self.trials.picked.connect(self.apply_trial)
 
     # ------------------------------------------------------------- inputs
     def set_system(self, system: ChainSystem, result: ModalResult | None = None) -> None:
@@ -755,13 +748,13 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
     def apply_trial(self) -> None:
         """Set the settings the chosen trial asks for, from the chain as it is."""
-        chosen = self.trial.chosen()
+        chosen = self.trials.combo.chosen()
         self._load(TRIALS[chosen] if chosen is not None else OPENING)
 
     def load_setup(self, setup: dict) -> None:
         """Set the page up as a practice problem's `setup` says: its chain (through the Simulation page), then
         the settings."""
-        self.trial.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
+        self.trials.combo.unpick()  # a chain change sets the page up for this chain, not for a trial it no longer shows
         t = RandomSetup(**setup)
         system = t.system()
         if system is not None:
@@ -807,7 +800,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.index.setCurrentIndex(t.index % n)
         self._loading = False
         self._show_controls()
-        self.trial_note.setText(maths.markup(t.note))
+        self.trials.show_note(t.note)
         if t.tab is not None:
             self.tabs.setCurrentIndex(t.tab)
         self._schedule(measure=True)

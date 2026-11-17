@@ -58,13 +58,13 @@ from ..core.measurement import AA_CUTOFF
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick
 from . import frame_stats, modal_test_figures, settle_plots
 from .layouts import ColumnScroll
-from .lesson import TrialCombo, TrialSteps, trials_html
+from .lesson import TrialBox, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ExtractionControls, ResultsView, StabilizationPlot
 from .modal_test_setup import BLOCK_SIZES, TestSetup, setup_check, suggested_fs
 from .modal_test_views import FrfView, SignalView
 from .notes_view import NotesBrowser
-from .theming import mute, settings
+from .theming import settings
 
 FRAME_MS = 30
 STEP_BUDGET_MS = 25  # measuring per frame, so the page stays responsive
@@ -479,20 +479,12 @@ class ModalTestPage(QtWidgets.QWidget):
         self._frame = QtCore.QElapsedTimer()
 
         # --- things to try
-        trials = QtWidgets.QGroupBox("Things to try")
-        tv = QtWidgets.QVBoxLayout(trials)
-        self.trial = TrialCombo(
+        self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each sets up a test of the uniform 4-mass chain that shows one thing that can "
             "go wrong (or right). Loading one replaces the Simulation page's chain.</p>",
         )
-        self.trial.picked.connect(self.load_trial)
-        tv.addWidget(TrialSteps(self.trial))
-        self.trial_note = QtWidgets.QLabel()
-        self.trial_note.setWordWrap(True)
-        mute(self.trial_note)
-        self.trial_note.setVisible(False)
-        tv.addWidget(self.trial_note)
+        self.trials.picked.connect(self.load_trial)
 
         # --- the test's settings: the Test, Acquisition, Measurement noise and Processing panes
         self.test_setup = TestSetup()
@@ -529,7 +521,7 @@ class ModalTestPage(QtWidgets.QWidget):
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
         self.extract = ExtractionControls()
-        for w in (trials, self.test_setup):
+        for w in (self.trials, self.test_setup):
             lv.addWidget(w)
         lv.addLayout(speed_row)
         lv.addLayout(run_row)
@@ -712,8 +704,7 @@ class ModalTestPage(QtWidgets.QWidget):
     def apply_trial(self, trial: ModalTestTrial, measure_hidden: bool = True) -> None:
         """Set every control as `trial` says and its chain (through the Simulation page), then measure: now, or,
         if hidden and not `measure_hidden`, once shown."""
-        self.trial_note.setText(trial.note)
-        self.trial_note.setVisible(bool(trial.note))
+        self.trials.show_note(trial.note)
         values = (
             (self.test_setup.excitation, trial.excitation),
             (self.test_setup.response, trial.response),

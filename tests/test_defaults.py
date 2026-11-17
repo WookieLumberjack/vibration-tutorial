@@ -63,7 +63,7 @@ def test_defaults_on_the_simulation_page(main_window, app):
     w = main_window
     w.pages.setCurrentWidget(w.sim_page)
     opening = w.sim_page.practice_state()
-    w.sim_page.trial.setCurrentIndex(w.sim_page.trial.count() - 1)
+    w.sim_page.trials.combo.setCurrentIndex(w.sim_page.trials.combo.count() - 1)
     app.processEvents()
     assert w.sim_page.practice_state() != opening
     w.restore_defaults()
@@ -79,13 +79,15 @@ def test_a_page_set_up_from_the_chain_opens_at_its_prompt(main_window, app, name
     w.show_page(name)
     page = w.pages.currentWidget()
     app.processEvents()
-    assert page.trial.chosen() is None and page.trial_note.text() == ""
+    assert page.trials.combo.chosen() is None and page.trials.note.text() == ""
     opening = _fields(page.practice_state())
-    page.trial.pick(page.trial.names[0])
+    page.trials.combo.pick(page.trials.combo.names[0])
     app.processEvents()
-    assert page.trial.chosen() == 0 and page.trial_note.text()
+    assert page.trials.combo.chosen() == 0 and page.trials.note.text()
     assert _fields(page.practice_state()) == opening, "the first trial is the opening setup, with its note"
-    page.trial.pick(page.trial.names[-1])
+    page.trials.combo.pick(page.trials.combo.names[-1])
     app.processEvents()
     page.load_setup({})
-    assert page.trial.chosen() is None, "a practice setup is no trial: a new chain won't set the last one up again"
+    assert page.trials.combo.chosen() is None, (
+        "a practice setup is no trial: a new chain won't set the last one up again"
+    )

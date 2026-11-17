@@ -7,8 +7,8 @@ shows its question and a button per choice (and *Just run it*): pressing one ans
 buttons would, and the panel then shows the verdict and the note. The × button, Esc, a new page or leaving
 Present mode hide it.
 
-The text is read from the page's own box after the step, so it is what the box shows: a `TrialBox`'s note (or
-question), or the page's `trial_note` label (the pages that lay out a `TrialSteps` themselves).
+The text is read from the page's own `TrialBox` after the step, so it is what the box shows: its note (or
+question).
 
 Working on it: `tests/test_present.py` steps trials with the panes folded and answers a prediction from here.
 """
@@ -115,8 +115,7 @@ class TrialOverlay(QtWidgets.QFrame):
             verdict = box.verdict.text() if box.verdict.isVisibleTo(box) else ""
             self.body.setText(" ".join(t for t in (verdict, box.note.text()) if t))
         else:
-            note = getattr(page, "trial_note", None)
-            self.body.setText(note.text() if isinstance(note, QtWidgets.QLabel) else "")
+            self.body.setText("")
         self.fit()
         self.show()
         self.raise_()

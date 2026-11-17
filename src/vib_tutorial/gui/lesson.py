@@ -347,11 +347,12 @@ class TrialBox(QtWidgets.QGroupBox):
         tip: str,
         parent: QtWidgets.QWidget | None = None,
         predictions: Sequence[Prediction | None] = (),
+        prompt: str | None = "Pick one…",
     ) -> None:
         super().__init__("Things to try", parent)
         layout = QtWidgets.QVBoxLayout(self)
         self.predictions = list(predictions) + [None] * (len(names) - len(predictions))
-        self.combo = TrialCombo(names, tip)
+        self.combo = TrialCombo(names, tip, prompt)
         self.combo.picked.connect(self._on_pick)
         layout.addWidget(TrialSteps(self.combo))
         self.asking: int | None = None  # the trial whose prediction is being asked
