@@ -208,8 +208,8 @@ def test_film_steps_match_the_reference(gravity, density, rpm, drifts):
     "name, density, rpm",
     [
         ("Partial rub (½X)", 0.0, 4400.0),  # under gravity, hitting the ring's bottom now and then
-        ("Full rub (backward whirl)", 0.0, 2000.0),  # held against it all round, the friction's drag stiff
-        ("Full rub (backward whirl)", 7800.0, 2000.0),  # a shaft with mass: more states than the stations'
+        ("Full rub (a tight seal)", 0.0, 2000.0),  # held against it all round, the friction's drag stiff
+        ("Full rub (a tight seal)", 7800.0, 2000.0),  # a shaft with mass: more states than the stations'
         ("Newkirk effect (thermal bow)", 0.0, 1300.0),  # the thermal bow moving the load between chunks
     ],
 )

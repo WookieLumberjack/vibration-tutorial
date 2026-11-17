@@ -162,7 +162,7 @@ def test_partial_rub_preset_whirls_at_half_the_speed():
 
 
 def test_full_rub_preset_flips_to_backward_whirl():
-    p = PRESETS["Full rub (backward whirl)"]
+    p = PRESETS["Full rub (a tight seal)"]
     s = p.system
     t, x, y, w, _rub = run(s, p.target_rpm, 6.0)
     r = np.hypot(x, y)
@@ -180,7 +180,7 @@ def test_full_rub_preset_flips_to_backward_whirl():
 
 def test_things_to_try():
     """The theory notes' Things to try for rub."""
-    s = PRESETS["Full rub (backward whirl)"].system
+    s = PRESETS["Full rub (a tight seal)"].system
     t, x, y, _, _ = run(s.with_(stator=replace(s.stator, friction=0.1)), 2000.0, 6.0)
     last = t > 5.0
     swept = x[:-1] * np.diff(y) - y[:-1] * np.diff(x)

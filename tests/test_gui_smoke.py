@@ -2168,13 +2168,13 @@ def test_rotor_presets_speed_range_and_overhung_disc(app):
     w.pages.setCurrentWidget(p)
     p.loop.timer.stop()
     # The defaults are the classic preset.
-    assert p.preset.currentText() == "Classic Jeffcott rotor" and "1584 rpm" in p.preset_note.text()
+    assert p.preset_name() == "Classic Jeffcott rotor" and "1584 rpm" in p.trials.note.text()
 
     # Each preset loads its rotor, speed range and target, from rest, and the panels show it exactly.
     for preset in p.presets:
         p.load_preset(preset.name)
         p._refresh_analysis()
-        assert p.preset.currentText() == preset.name
+        assert p.preset_name() == preset.name
         assert p.top_rpm == preset.top_rpm and p.speed_slider.maximum() == int(preset.top_rpm)
         assert p.sim.target == pytest.approx(preset.target_rpm / RPM) and p.sim.t == 0.0
         assert p.campbell.omega[-1] == pytest.approx(preset.top_rpm / RPM)
@@ -2192,7 +2192,7 @@ def test_rotor_presets_speed_range_and_overhung_disc(app):
     assert "overhang" in p.matrices.toHtml()
     # Editing a parameter makes it the user's own rotor.
     p.editor.disc_mass.setValue(2.0)
-    assert p.preset.currentText() == CUSTOM
+    assert p.preset_name() == CUSTOM
 
     # The position steps over the bearings, and a typed value on one is moved off it.
     p.set_system(RotorSystem(position=0.95))
@@ -2323,7 +2323,7 @@ def test_rotor_shaft_mass(app):
     p.load_preset("Classic Jeffcott rotor")
     assert not p.editor.shaft_mass.isChecked() and p.sim.q.size == 8
     p.editor.elements.setValue(12)
-    assert p.preset.currentText() == "Classic Jeffcott rotor"
+    assert p.preset_name() == "Classic Jeffcott rotor"
     p._refresh_analysis()
     assert not any(line.isVisible() for line in p.campbell_plot.reference)
     p.set_system(RotorSystem(density=2700.0, elements=6, lumped=True))
@@ -2417,7 +2417,7 @@ def test_rotor_cracked_shaft(app):
     p.load_preset("Cracked shaft (breathing crack)")
     p._refresh_analysis()
     s = p.sim.system
-    assert p.preset.currentText() == "Cracked shaft (breathing crack)"
+    assert p.preset_name() == "Cracked shaft (breathing crack)"
     assert (
         s.crack.depth == pytest.approx(0.4)
         and s.crack.breathing
@@ -2766,11 +2766,7 @@ def test_rotor_on_oil_film_bearings(app):
     p.load_preset("Journal bearings (oil whip)")
     p._refresh_analysis()
     s = p.sim.system
-    assert (
-        s.films
-        and p.editor.supports.currentIndex() == FILMS
-        and p.preset.currentText() == "Journal bearings (oil whip)"
-    )
+    assert s.films and p.editor.supports.currentIndex() == FILMS and p.preset_name() == "Journal bearings (oil whip)"
     assert s.whole_films and p.editor.nonlinear_film.isChecked() and p.editor.nonlinear_film.isEnabled()
     row = p.editor.bearing_rows[0]
     assert row[4].isEnabled() and not any(row[c].isEnabled() for c in (0, 1, 2, 3, 5, 6))
@@ -2786,9 +2782,9 @@ def test_rotor_on_oil_film_bearings(app):
     # Changing the bearing on the tab changes the rotor's (and makes it the user's own rotor).
     panel.clearance.setValue(20.0)
     assert p.sim.system.bearing_a.film.clearance == pytest.approx(20e-6)
-    assert p.preset.currentText() == CUSTOM
+    assert p.preset_name() == CUSTOM
     panel.set_bearing(JournalBearing())
-    assert p.preset.currentText() == "Journal bearings (oil whip)"
+    assert p.preset_name() == "Journal bearings (oil whip)"
     # A frame's budget caps how far a slow simulation advances: the page falls behind instead.
     p._cost = 1.0  # s of computing per simulated s
     t0 = p.sim.t
@@ -2847,7 +2843,7 @@ def test_rotor_on_magnetic_bearings(app):
     p.load_preset("Magnetic bearings")
     p._refresh_analysis()
     s = p.sim.system
-    assert s.magnets and p.editor.supports.currentIndex() == MAGNETS and p.preset.currentText() == "Magnetic bearings"
+    assert s.magnets and p.editor.supports.currentIndex() == MAGNETS and p.preset_name() == "Magnetic bearings"
     assert panel.bearing() == s.bearing_a.magnet and panel.amplifier.value() == 400.0
     assert not p.editor.nonlinear_film.isVisibleTo(p)
     row = p.editor.bearing_rows[0]
@@ -2867,11 +2863,11 @@ def test_rotor_on_magnetic_bearings(app):
     assert "the journals at (0, 0) µm vertically" in html
     # Changing the bearing on the tab changes the rotor's (and makes it the user's own rotor).
     panel.amplifier.setValue(1000.0)
-    assert p.sim.system.bearing_a.magnet.amplifier_hz == 1000.0 and p.preset.currentText() == CUSTOM
+    assert p.sim.system.bearing_a.magnet.amplifier_hz == 1000.0 and p.preset_name() == CUSTOM
     p._refresh_analysis()
     assert panel.onset is None and "stays stable up to 20,000 rpm" in panel.readout.text()
     panel.set_bearing(replace(MagneticBearing(), amplifier_hz=400.0))
-    assert p.preset.currentText() == "Magnetic bearings"
+    assert p.preset_name() == "Magnetic bearings"
     # Too weak a magnet: flagged on the tab.
     panel.kp.setValue(900.0)
     assert "the magnets outpull the controller" in panel.readout.text()
@@ -2910,7 +2906,7 @@ def test_rotor_rub(app):
     assert p.sim.system.stator is None and not panel.clearance.isEnabled()
     # Ticking the ring puts it on the rotor (the user's own rotor), drawn round the disc.
     panel.enabled.setChecked(True)
-    assert p.sim.system.stator == Stator() and p.preset.currentText() == CUSTOM
+    assert p.sim.system.stator == Stator() and p.preset_name() == CUSTOM
     assert "At rest it has 200 µm to the ring" in panel.readout.text() and "227 Hz" in panel.readout.text()
     panel.friction.setValue(0.2)
     assert p.sim.system.stator.friction == 0.2
@@ -2925,9 +2921,7 @@ def test_rotor_rub(app):
     assert p.sim.system.stator is not None and p.sim.system.films
     # The preset: rubbing under the sag; the push plotted while the tab shows.
     p.load_preset("Partial rub (½X)")
-    assert (
-        panel.enabled.isChecked() and panel.clearance.value() == 385.0 and p.preset.currentText() == "Partial rub (½X)"
-    )
+    assert panel.enabled.isChecked() and panel.clearance.value() == 385.0 and p.preset_name() == "Partial rub (½X)"
     assert "sags 378 µm" in panel.readout.text() and "leaving 7.06 µm" in panel.readout.text()
     p.tabs.show_page(panel)
     p._catch_up_tab()

@@ -160,7 +160,7 @@ SCENARIOS = (
         _rotor("Cracked shaft (breathing crack)", 3000.0),
     ),
     Scenario("Rotor: oil whirl (vertical rotor), 1×", "#94 film kernel", _rotor("Oil whirl (vertical rotor)")),
-    Scenario("Rotor: full rub, 1×", "rub kernel", _rotor("Full rub (backward whirl)")),
+    Scenario("Rotor: full rub, 1×", "rub kernel", _rotor("Full rub (a tight seal)")),
     Scenario(
         "Duffing: hardening spring, 50×",
         "FOH + Newton stepper (#130, low priority)",

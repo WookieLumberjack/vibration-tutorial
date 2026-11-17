@@ -54,8 +54,7 @@ from .challenge import ChallengeBox
 from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
-from .lesson import RunButton
-from .maths import markup
+from .lesson import RunButton, TrialBox
 from .notes_view import NotesBrowser
 from .panels import spin
 from .rotor_balance import BalancingPanel
@@ -90,6 +89,7 @@ SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0)  # simulation speed, × real time
 TOP_RPM = 10_000.0  # the default speed range
 MAX_TOP_RPM = 60_000.0  # the widest it can be set to
 PROBLEMS = rotor_practice.PROBLEMS  # the page's practice problems, kept beside it in rotor_practice
+TRIALS = tuple(rotor_presets())  # its Things to try are the presets (goals' trial: links count them)
 PRACTICE_SETUP = RotorSetup  # what a practice problem's setup and the page's practice_state are
 CUSTOM = "Custom"  # the preset box's entry for a rotor that is none of the presets  # other orders of the speed the Campbell diagram can draw
 DIRECTION_NAMES = ("x (horizontal probe)", "y (vertical probe)", "Orbit (major axis)")
@@ -360,24 +360,22 @@ class RotorPage(QtWidgets.QWidget):
         self._draw()
 
     # ------------------------------------------------------------- panels
-    def _preset_box(self) -> QtWidgets.QGroupBox:
-        box = QtWidgets.QGroupBox("Things to try")
-        v = QtWidgets.QVBoxLayout(box)
+    def _preset_box(self) -> TrialBox:
+        """The presets as Things to try: a preset with a `predict` asks it before it loads."""
         self.presets = rotor_presets()
-        self.preset = QtWidgets.QComboBox()
-        self.preset.setAccessibleName("Rotor preset")
-        self.preset.addItems([p.name for p in self.presets] + [CUSTOM])
-        self.preset.setToolTip(
+        self._matched: int | None = None  # the preset the rotor is (`_show_preset`), None: the reader's own
+        self.trials = TrialBox(
+            [p.name for p in self.presets],
             "<p>Load a rotor that shows one effect clearly, with a speed range to suit it. It starts from "
-            "rest and runs up to its target speed. Change any parameter and it becomes your own rotor.</p>"
+            "rest and runs up to its target speed. Change any parameter and it becomes your own rotor.</p>",
+            predictions=[p.predict for p in self.presets],
         )
-        self.preset.activated.connect(self._on_preset)
-        self.preset_note = QtWidgets.QLabel()
-        self.preset_note.setWordWrap(True)
-        mute(self.preset_note)
-        v.addWidget(self.preset)
-        v.addWidget(self.preset_note)
-        return box
+        self.trials.picked.connect(self._on_preset)
+        return self.trials
+
+    def preset_name(self) -> str:
+        """The preset the rotor is, or CUSTOM (not the combo's text: a preset asking its prediction isn't loaded)."""
+        return self.presets[self._matched].name if self._matched is not None else CUSTOM
 
     def _speed_box(self) -> QtWidgets.QGroupBox:
         box = QtWidgets.QGroupBox("Speed")
@@ -536,31 +534,29 @@ class RotorPage(QtWidgets.QWidget):
     def practice_state(self) -> RotorSetup:
         """The page's rotor and speeds, as a setup: what a practice spec checks."""
         return RotorSetup(
-            self.preset.currentText(), target_rpm=self.target_rpm.value(), top_rpm=self.top_rpm, rotor=self.system()
+            self.preset_name(), target_rpm=self.target_rpm.value(), top_rpm=self.top_rpm, rotor=self.system()
         )
 
     def frame_context(self) -> str:
         """For the frame log (frame_stats): the preset showing."""
-        return self.preset.currentText()
+        return self.preset_name()
 
     def _on_preset(self, index: int) -> None:
-        if index < len(self.presets):
-            self.load_preset(self.presets[index].name)
-            self._run(True)  # the reader picked it, as a trial
-        else:
-            self._show_preset(self.sim.system)  # Custom is not a rotor: show what is loaded
+        self.load_preset(self.presets[index].name)
+        self._run(True)  # the reader picked it, as a trial
 
     def _show_preset(self, system: RotorSystem) -> None:
-        """Select the preset this rotor is, or Custom, and show its note."""
-        index = next((i for i, p in enumerate(self.presets) if _same_rotor(p.system, system)), len(self.presets))
-        self.preset.blockSignals(True)
-        self.preset.setCurrentIndex(index)
-        self.preset.blockSignals(False)
-        self.preset_note.setText(
-            markup(self.presets[index].note)
-            if index < len(self.presets)
-            else "Your own rotor: pick a preset to start again from one."
-        )
+        """Show the preset this rotor is, with its note, or the reader's own rotor."""
+        self._matched = next((i for i, p in enumerate(self.presets) if _same_rotor(p.system, system)), None)
+        combo = self.trials.combo
+        if self._matched is None:
+            combo.unpick()
+            self.trials.show_note("Your own rotor: pick a preset to start again from one.")
+        else:
+            combo.blockSignals(True)
+            combo.setCurrentIndex(self._matched + combo.first)
+            combo.blockSignals(False)
+            self.trials.show_note(self.presets[self._matched].note)
 
     def set_weights(self, weights: tuple[complex, ...], plane_weights: tuple[PlaneWeight, ...] = ()) -> None:
         """Put these balance weights on the disc (kg·m each) and in these planes, in place of any there."""
