@@ -10,7 +10,9 @@ where it's put first (the offset it was made with) wins ties. Where every spot c
 it goes above the plot (`OUTSIDE`), in as few rows as fit, in the row a PlotItem keeps for its top axis
 (the ViewBox clips what it holds); it comes back in once a spot is clear.
 
-It works at most every `THROTTLE_MS` (a frame loop's `setData` only starts the timer), on the displayed
+It works at most every `THROTTLE_MS` (a frame loop's `setData` only starts the timer), doubling up to
+`SLOWEST_MS` while its plot keeps changing and the legend stays put (back to `THROTTLE_MS` after a second's
+quiet, or when it moves), on the displayed
 data (decimated, in log units on a log axis), and only while the plot has a size: a placement costs well
 under a millisecond (`tests/test_legend_place.py`). Dragging the legend by hand turns it off for that legend.
 
@@ -22,6 +24,7 @@ walks every page's tabs at 1280×800 for a legend over more than a sliver of its
 from __future__ import annotations
 
 import math
+import time
 
 import numpy as np
 import pyqtgraph as pg
@@ -33,6 +36,7 @@ KEEP = 2  # cells a legend may cover before it looks for a better spot
 SLIVER = 8  # cells a legend may cover inside its plot, where no spot is clearer, before it goes above the plot
 OUTSIDE = -1  # the spot above the plot, the legend in a row
 THROTTLE_MS = 300
+SLOWEST_MS = 2400  # the throttle, doubled after each placement that left it put while its plot keeps changing
 MAX_SAMPLES = 200_000  # samples along a plot's lines, at most: coarser beyond
 # (where on the legend, where on the plot) as fractions of their widths and heights
 SPOTS = (
@@ -161,6 +165,7 @@ class Placer(QtCore.QObject):
         self.timer.setSingleShot(True)
         self.timer.setInterval(THROTTLE_MS)
         self.timer.timeout.connect(self.place)
+        self._last = 0.0  # time.monotonic() of the last placement
         self.vb.sigRangeChanged.connect(self.soon)
         self.vb.sigResized.connect(self.soon)
         self.vb.childGroup.itemsChangedListeners.append(self)
@@ -173,8 +178,11 @@ class Placer(QtCore.QObject):
         self.soon()
 
     def soon(self, *_) -> None:
-        if not self.manual and not self.timer.isActive():
-            self.timer.start()
+        if self.manual or self.timer.isActive():
+            return
+        if time.monotonic() - self._last > (self.timer.interval() + 1000) / 1000:
+            self.timer.setInterval(THROTTLE_MS)  # quiet a while: a control's change, placed promptly
+        self.timer.start()
 
     def _dragged(self, event) -> None:
         self.manual = True
@@ -231,9 +239,11 @@ class Placer(QtCore.QObject):
         """Move the legend to its best spot now (the timer calls it)."""
         if self.manual or not all(shiboken6.isValid(o) for o in (self.legend, self.vb, self.plot) if o is not None):
             return  # its plot torn down while the timer ran
+        self._last = time.monotonic()
         grid = self.grid()
         if grid is None:
             return
+        before = self.spot
         rect = self.legend.boundingRect()
         size = self.inside_size or (rect.width(), rect.height())
         plot = (self.vb.width(), self.vb.height())
@@ -249,6 +259,9 @@ class Placer(QtCore.QObject):
             self.legend.anchor(
                 (ix, iy), (px, py), (m * (1 - 2 * ix) if ix != 0.5 else 0, m * (1 - 2 * iy) if iy != 0.5 else 0)
             )
+        # A live plot's legend that stays put is placed ever less often, down to every SLOWEST_MS.
+        moved = self.spot != before
+        self.timer.setInterval(THROTTLE_MS if moved else min(2 * self.timer.interval(), SLOWEST_MS))
 
     def _above(self, inside: tuple[float, float]) -> None:
         """Above the plot, in as few rows as fit its width, the plot's top-axis row made room for it."""
