@@ -451,3 +451,37 @@ def test_the_quarter_car_drives_over_its_road(main_window, app):
     # Scrubbing the cursor moves the car with it.
     pb.cursors[0].dragged.emit(3.0)
     assert not pb.running and view.now == pytest.approx(3.0)
+
+
+def test_every_pages_predictions_are_asked_before_its_trials_run(main_window, app):
+    """Every page whose trials carry a `Prediction` asks it through its Things to try first (#316 B3): nothing is
+    set up until it's answered, the verdict and the note (the explanation) follow, and a trial's name doesn't give
+    the answer away (it shows before the question)."""
+    from vib_tutorial.gui import links, sim_trials
+
+    w = main_window
+    checked = 0
+    for attr in links.order():
+        trials = sim_trials.TRIALS if attr == "sim_page" else getattr(links.page_module(attr), "TRIALS", ())
+        asked = [k for k, t in enumerate(trials) if getattr(t, "predict", None) is not None]
+        for k in asked:
+            p = trials[k].predict
+            answer = p.choices[p.answer].split(":")[0].lower()
+            if len(answer) >= 6:  # a "Yes" or "No" may well be in a name
+                assert answer not in trials[k].name.lower(), f"{trials[k].name!r} gives its answer away"
+        if not asked:
+            continue
+        page = getattr(w, attr)
+        w.pages.setCurrentWidget(page)
+        box = page.trials
+        before = page.practice_state()
+        for i in asked:
+            box.combo.pick(trials[i].name)
+            assert box.asking == i and box.ask.isVisible(), f"{attr}: {trials[i].name}"
+            assert page.practice_state() == before, f"{attr}: set up before it was answered"
+            box.answer(trials[i].predict.answer)
+            assert "Right" in box.verdict.text() and box.note.isVisible()
+            w.restore_defaults()
+            before = page.practice_state()
+        checked += 1
+    assert checked >= 7  # the One mass group and the Gyroscope at least

@@ -16,7 +16,7 @@ import numpy as np
 import scipy.optimize
 
 from ..core.gyroscope import RPM, Launch, Motion, Shape, Top, least_spin, steady_precession
-from ..core.practice import Problem, Question, Requirement, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, kept, number, pick, rounded
 from ..core.sliding_top import RoundTop
 from .links import page_link
 
@@ -55,6 +55,7 @@ class GyroTrial:
     ratio: float = 0.8  # a tippe top's I₁/I₃
     shape: Shape = Shape.DISC  # radius is a square's side, or a rectangle's w
     breadth: float = 0.04  # m, a rectangle's other side b
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     @property
     def top(self) -> Top:
@@ -80,11 +81,16 @@ class GyroTrial:
 
 TRIALS = (
     GyroTrial(
-        "Let go at rest: cusps",
+        "Let go at rest",
         "A 0.5 kg disc 40 mm in radius, 30 mm up its stem, spun at 1500 rpm and let go at 30° without pushing it "
         "round. It doesn't fall: it drops only to 31.5° and comes back, nodding 14.7 times a second, while the "
         "whole top precesses round at 2.39 rad/s (a turn in 2.63 s). Each nod starts from rest, so the axis's "
         "path (the Path tab) has a cusp at the top of each.",
+        predict=Prediction(
+            "Let go at 30° spinning at 1500 rpm, without being pushed round. What does the tip of its axis trace?",
+            ("A circle", "Cusps: it stops, dips and goes on", "Loops", "Smooth waves"),
+            1,
+        ),
     ),
     GyroTrial(
         "Steady precession",
@@ -101,19 +107,29 @@ TRIALS = (
         playback=PLAYBACK.index(0.05),
     ),
     GyroTrial(
-        "Pushed back: loops",
+        "Pushed back",
         "Let go precessing backward at −2 rad/s: it drops to 32.7°, and the precession turns forward on the way "
         "down and back at the top of each nod, so the path loops. On average it still precesses forward at "
         "2.39 rad/s.",
         launch=Launch.SET,
         precession=-2.0,
+        predict=Prediction(
+            "The same top let go pushed backward, against the way it precesses, at 2 rad/s. What does the tip of its axis trace?",
+            ("Cusps", "Loops", "Smooth waves", "A circle, the other way round"),
+            1,
+        ),
     ),
     GyroTrial(
-        "Pushed along: waves",
+        "Pushed along",
         "Let go precessing forward at 1.2 rad/s, half the steady rate: it drops less, to 30.7°, and never stops "
         "precessing, so the path waves. Faster than the steady rate (try 4 rad/s) it rises instead.",
         launch=Launch.SET,
         precession=1.2,
+        predict=Prediction(
+            "Let go pushed forward at 1.2 rad/s, half its steady precession rate. What does the tip of its axis trace?",
+            ("Cusps", "Loops", "Smooth waves", "A circle"),
+            2,
+        ),
     ),
     GyroTrial(
         "Spun slowly: deep nods",
@@ -132,13 +148,23 @@ TRIALS = (
         tilt=2.0,
     ),
     GyroTrial(
-        "Too slow to sleep",
+        "Nearly upright at 400 rpm",
         "At 400 rpm, under 467, upright is unstable: let go at 2°, it falls to 62.2° before it comes back up, "
         "nearly a second a nod. A real top's spin dies away in the friction at its tip, and once under 467 rpm it "
         "starts to wobble.",
         spin_rpm=400.0,
         tilt=2.0,
         tab=TAB_POTENTIAL,
+        predict=Prediction(
+            "At 1000 rpm the top sleeps upright; it needs 467. Let go at 2° spinning at only 400 rpm, what does it do?",
+            (
+                "It stays near 2°, nodding a little",
+                "It falls far and comes back up",
+                "It stands upright",
+                "It precesses at 2° without nodding",
+            ),
+            1,
+        ),
     ),
     GyroTrial(
         "Lying flat",
@@ -153,6 +179,11 @@ TRIALS = (
         "At −1500 rpm it does everything in mirror: the precession is −2.39 rad/s. The precession always "
         "turns the angular momentum toward the moment.",
         spin_rpm=-1500.0,
+        predict=Prediction(
+            "The first trial's top, spun the other way (−1500 rpm) and let go the same way. Which way does it precess?",
+            ("The same way as before", "The opposite way", "It doesn't precess: it falls"),
+            1,
+        ),
     ),
     GyroTrial(
         "No gravity: nutation is the free wobble",
@@ -189,7 +220,7 @@ TRIALS = (
         tab=TAB_CHAOS,
     ),
     GyroTrial(
-        "No gravity: the tennis-racket flip",
+        "No gravity: spun about the middle axis",
         "A plate 100 × 20 mm, 15 mm up its stem, with g = 0: <m>I₁</m> = 1.29 &lt; <m>I₃</m> = 4.33 &lt; <m>I₂</m> = 5.29 kg·cm², so it "
         "spins about its middle axis, with nothing acting on it. It flips upside down and back, crossing the "
         "horizontal every 0.455 s: half the period 4<m>K</m>(<m>k</m>)/<m>λ</m> = 0.910 s of Euler–Poinsot's solution in Jacobi's "
@@ -206,6 +237,15 @@ TRIALS = (
         precession=0.5,
         playback=PLAYBACK.index(0.1),
         tab=TAB_CHECK,
+        predict=Prediction(
+            "A plate 100 × 20 mm spun about its stem, its middle axis, with no gravity and a little off the axis. What does it do?",
+            (
+                "It keeps spinning steadily about its stem",
+                "It flips over and back, again and again",
+                "It slowly settles onto its longest axis",
+            ),
+            1,
+        ),
     ),
     GyroTrial(
         "Gravity and the middle axis: chaos",
@@ -246,7 +286,7 @@ TRIALS = (
         tab=TAB_PATH,
     ),
     GyroTrial(
-        "A tippe top turns over",
+        "A tippe top spun fast",
         "A 20 g ball 15 mm in radius, weighted 4.5 mm below its centre (<m>α</m> = 0.3), with <m>I₁</m>/<m>I₃</m> = 0.8, spun at "
         "1200 rpm on its bottom, 5° off upright. 1 − <m>α</m> &lt; <m>I₁</m>/<m>I₃</m> &lt; 1 + <m>α</m> and it spins faster than 468 rpm, so "
         "turned over is the least energy Jellett's <m>J</m> allows: friction turns it over, past 90° in 1.8 s, and it ends "
@@ -259,6 +299,15 @@ TRIALS = (
         tilt=5.0,
         playback=PLAYBACK.index(0.25),
         tab=TAB_POTENTIAL,
+        predict=Prediction(
+            "A ball weighted below its centre, spun at 1200 rpm on its bottom, 5° off upright, on a table. What does it do?",
+            (
+                "It stays upright, its weight low",
+                "It turns over onto its top, the weight up",
+                "It rolls onto its side and spins there",
+            ),
+            1,
+        ),
     ),
     GyroTrial(
         "A tippe top spun too slowly",

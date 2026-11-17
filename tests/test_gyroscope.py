@@ -160,7 +160,7 @@ def test_trials():
 
     by = {t.name: t for t in TRIALS}
     assert all(0 <= t.playback < len(PLAYBACK) for t in TRIALS)
-    m = by["Let go at rest: cusps"].motion
+    m = by["Let go at rest"].motion
     assert math.degrees(m.turning()[1]) == pytest.approx(31.5, abs=0.05)
     assert m.nutation_hz() == pytest.approx(14.7, abs=0.05) and m.mean_precession() == pytest.approx(2.39, abs=0.005)
     assert 2 * math.pi / m.mean_precession() == pytest.approx(2.63, abs=0.005) and m.path() is Path.CUSPS
@@ -176,10 +176,10 @@ def test_trials():
     m = by["Fast precession"].motion
     assert m.precession == pytest.approx(109, abs=0.5) and m.precession / (2 * math.pi) == pytest.approx(17, abs=0.5)
     assert TOP.polar * 1500 * RPM / (TOP.transverse * math.cos(math.radians(30))) == pytest.approx(112, abs=0.5)
-    m = by["Pushed back: loops"].motion
+    m = by["Pushed back"].motion
     assert math.degrees(m.turning()[1]) == pytest.approx(32.7, abs=0.05) and m.path() is Path.LOOPS
     assert m.mean_precession() == pytest.approx(2.39, abs=0.005)
-    m = by["Pushed along: waves"].motion
+    m = by["Pushed along"].motion
     assert math.degrees(m.turning()[1]) == pytest.approx(30.7, abs=0.05) and m.path() is Path.WAVES
     assert Motion(TOP, 1500 * RPM, math.radians(30), 4.0).turning()[0] < math.radians(30)  # it rises
     m = by["Spun slowly: deep nods"].motion
@@ -192,7 +192,7 @@ def test_trials():
     m = by["A sleeping top"].motion
     assert TOP.sleeping_spin / RPM == pytest.approx(467, abs=0.5)
     assert math.degrees(m.turning()[1]) == pytest.approx(2.26, abs=0.005)
-    m = by["Too slow to sleep"].motion
+    m = by["Nearly upright at 400 rpm"].motion
     assert math.degrees(m.turning()[1]) == pytest.approx(62.2, abs=0.05) and 0.9 < m.nutation_period() < 1.1
     m = by["Lying flat"].motion
     assert m.precession == pytest.approx(2.34, abs=0.005) and 2 * math.pi / m.precession == pytest.approx(
@@ -295,7 +295,7 @@ def test_asymmetric_trials():
     assert (theta.min(), theta.max()) == pytest.approx((28.0, 40.7), abs=0.05)
     assert apart[-1] == pytest.approx(1e-7, rel=0.3)
 
-    m, s, _, _ = run("No gravity: the tennis-racket flip", 3.0)
+    m, s, _, _ = run("No gravity: spun about the middle axis", 3.0)
     i1, i2, i3 = (round(v * 1e4, 2) for v in m.top.moments)
     assert (i1, i3, i2) == (1.29, 4.33, 5.29)
     free = FreeSpin.of(m.top, np.array([0.0, m.precession * math.sin(m.tilt), m.spin]))
