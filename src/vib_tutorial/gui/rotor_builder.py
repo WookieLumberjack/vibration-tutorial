@@ -94,6 +94,7 @@ from .rotor_builder_trials import TRIALS as TRIALS
 from .rotor_builder_views import TOOL_HINTS, TOOLS, RotorCanvas, Tool, WhirlView
 from .style import colors
 from .theming import add_legend, mute
+from .transport import Transport
 
 SWEEP_TABS = (TAB_CAMPBELL, TAB_UNBALANCE, TAB_STABILITY)
 RESPONSE_SPEEDS = 241  # the unbalance response's speeds, 0 to the top one
@@ -399,6 +400,10 @@ class RotorBuilderPage(QtWidgets.QWidget):
     right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the rotor's whirl."""
+        return Transport(self.run_button, self.reset_button)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)

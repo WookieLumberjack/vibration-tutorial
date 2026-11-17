@@ -60,6 +60,7 @@ from .lesson import (
 from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
+from .transport import Transport
 
 TAB_INERTIA, TAB_COMPONENTS, TAB_ORIENTATION, TAB_DRIFT, TAB_CHECK = range(5)
 PATHS = ("In space", "On the body", "Both", "None")  # where the view traces ω's direction
@@ -938,6 +939,10 @@ class RigidBodyPage(QtWidgets.QWidget):
     """Controls on the left, the body in the centre, its inertia, components and check on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the body's tumble and its playback speed."""
+        return Transport(self.pause_button, self.restart_button, self.playback)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)

@@ -81,6 +81,7 @@ from .lesson import (
 from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
+from .transport import Transport
 
 SYSTEMS = ("A car in bounce and pitch", "A double pendulum")
 SYSTEM_TABS = {  # the tabs each system shows
@@ -874,6 +875,10 @@ class DerivingPage(QtWidgets.QWidget):
     tabs on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the release's run."""
+        return Transport(self.run_button, self.reset_button)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)

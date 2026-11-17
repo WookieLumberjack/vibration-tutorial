@@ -59,6 +59,7 @@ from .panels import spin
 from .style import colors
 from .tab_groups import LazyTabs
 from .theming import add_legend, mute
+from .transport import Transport
 
 CUSTOM = "Custom"
 ALL_PRESETS = (*PRESETS, *WAVE_PRESETS)
@@ -384,6 +385,11 @@ class ContinuumPage(QtWidgets.QWidget):
     """Controls on the left, dispersion and errors in the centre, the mode's shape, the table and the notes on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport | None:
+        """The run bar drives the Waves tab's run while it shows (the mode shapes swing on their own)."""
+        w = self.waves_view
+        return Transport(w.play_button, w.restart_button, label="Waves") if self.views.currentWidget() is w else None
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)

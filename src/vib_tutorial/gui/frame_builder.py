@@ -81,6 +81,7 @@ from .lesson import (
 from .links import load_notes
 from .style import colors, rgb
 from .theming import add_legend, mute
+from .transport import Transport
 
 SHOW_HZ = 0.6  # the animation's own pace: every mode swings at it
 SWING = 0.08  # the largest displacement drawn, as a fraction of the frame's size
@@ -369,6 +370,10 @@ class FramePage(QtWidgets.QWidget):
     """Controls on the left, the canvas and its modes in the centre, the matrices on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the frame's swing."""
+        return Transport(self.run_button, self.reset_button)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)

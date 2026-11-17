@@ -95,6 +95,7 @@ from .links import load_notes
 from .plots import thin
 from .style import colors
 from .theming import add_legend
+from .transport import Transport
 
 NODS = 6  # nutation periods the tilt plot spans
 TRAIL_POINTS = 1500  # at most, on the 3D view's trail
@@ -237,6 +238,10 @@ class GyroscopePage(QtWidgets.QWidget):
     """Controls on the left, the top and its tilt in the centre, the closed forms and the check on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the top's run and its playback speed."""
+        return Transport(self.pause_button, self.restart_button, self.playback)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)

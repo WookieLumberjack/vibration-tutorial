@@ -64,6 +64,7 @@ from .lesson import (
 from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
+from .transport import Transport
 
 TAB_SWEEP, TAB_CENTRE, TAB_RESPONSE, TAB_DRIVE = range(4)
 FORCED = 6  # the Show combo's item after the six modes: the steady response at the speed
@@ -797,6 +798,10 @@ class MountsPage(QtWidgets.QWidget):
     """Controls on the left, the box in 3D and its modes in the centre, the sweep and the elastic centre right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the block's motion."""
+        return Transport(self.run_button, self.reset_button)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)

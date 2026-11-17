@@ -66,6 +66,7 @@ from .style import colors
 from .theming import add_legend, mute
 from .torsional_editor import TrainEditor
 from .torsional_startup_view import StartUpView, fmt_torque
+from .transport import Transport
 
 CUSTOM = "Custom"
 SHAPES_SHOWN = 6  # modes drawn on the shape plot
@@ -382,6 +383,11 @@ class TorsionalPage(QtWidgets.QWidget):
     """Controls on the left, the interference diagram and the response in the centre, drawing and shapes on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
+
+    def transport(self) -> Transport:
+        """The run bar drives the start-up's run (its controls are in the left pane; Start shows its tab)."""
+        s = self.startup_view
+        return Transport(s.pause_button, s.reset_button, s.playback, label="Start-up")
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
