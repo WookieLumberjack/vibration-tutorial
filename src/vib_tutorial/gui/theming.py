@@ -12,7 +12,7 @@ import os
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from . import style
+from . import legend_place, style
 from .style import SYSTEM, THEMES, Theme
 
 SETTINGS = ("vib-tutorial", "vib-tutorial")  # QSettings organization, application
@@ -128,9 +128,11 @@ def add_legend(plot: pg.PlotItem, **kwargs) -> pg.LegendItem:
 
     restyle() updates legends on a theme switch, but only those that exist then: one made
     later (a page built on first use, a plot rebuilt) would keep pyqtgraph's bare legend,
-    its text crossed by the curves.
+    its text crossed by the curves. It's kept where it hides least of the data (`legend_place`).
     """
-    return plot.addLegend(brush=style.current().legend_brush(), labelTextColor=style.colors.foreground, **kwargs)
+    legend = plot.addLegend(brush=style.current().legend_brush(), labelTextColor=style.colors.foreground, **kwargs)
+    legend_place.follow(legend)  # kept off the data (once: a plot's second call gets its first legend)
+    return legend
 
 
 def mute(widget: QtWidgets.QWidget) -> None:

@@ -5267,6 +5267,50 @@ def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window
     assert not over
 
 
+def test_no_legend_hides_data(main_window):
+    """At 1280×800, on every page's every tab, no legend covers more than a sliver of its plot's data
+    (`legend_place.SLIVER` cells of 4 px): each moves to its plot's clearest spot, or above it (#316 B16)."""
+    import pyqtgraph as pg
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import legend_place
+    from vib_tutorial.gui.main_window import PAGE_GROUPS
+
+    w = main_window
+    w.resize(1280, 800)
+    over, checked = [], 0
+
+    def check(name: str, tab: str) -> None:
+        nonlocal checked
+        page = w.pages.currentWidget()
+        for view in page.findChildren(pg.GraphicsView):
+            if not view.isVisible():
+                continue
+            for item in view.scene().items():
+                placer = item.findChild(legend_place.Placer) if isinstance(item, pg.LegendItem) else None
+                if placer is None or not item.isVisible():
+                    continue
+                placer.place()
+                covered, filled = placer.covered()
+                checked += filled > 0
+                if covered > legend_place.SLIVER:
+                    over.append((name, tab, covered))
+
+    for _, pages in PAGE_GROUPS:
+        for name, _ in pages:
+            w.show_page(name)
+            QtWidgets.QApplication.processEvents()
+            page = w.pages.currentWidget()
+            check(name, "")
+            for tabs in page.findChildren(QtWidgets.QTabWidget):
+                for i in range(tabs.count()):
+                    if tabs.isVisible():
+                        tabs.setCurrentIndex(i)
+                        QtWidgets.QApplication.processEvents()
+                        check(name, tabs.tabText(i))
+    assert checked > 50 and not over
+
+
 def test_things_to_try_step_in_order(main_window):
     """◂ ▸ beside a page's Things to try, and Alt+PgUp / Alt+PgDown on the page showing, walk its trials in the
     notes' order: ▸ from the prompt is the first, and they stop at the ends."""
