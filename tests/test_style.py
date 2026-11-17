@@ -81,3 +81,19 @@ def test_the_projector_theme_scales_every_pen_and_marker(main_window):
         plot.removeItem(item)
     finally:
         style.set_theme(before)
+
+
+def test_a_wide_solid_curve_is_drawn_in_segments(main_window):
+    """A solid, opaque pen wider than 1 px from `mkPen` (flat caps) is drawn as segments, fast even antialiased;
+    a dashed, translucent, thin or square-capped one strokes its polyline (`plot_patches`' *Wide lines*)."""
+    import pyqtgraph as pg
+    from PySide6 import QtCore, QtGui
+
+    curve = pg.PlotCurveItem([0, 1, 2], [0, 1, 0], antialias=True)
+    segmented = curve._shouldUseDrawLineSegments
+    assert segmented(pg.mkPen("#000000", width=2))
+    assert not segmented(pg.mkPen("#000000", width=2, style=QtCore.Qt.PenStyle.DashLine))
+    assert not segmented(pg.mkPen("#00000080", width=2))
+    assert not segmented(pg.mkPen("#000000", width=1))
+    assert not segmented(QtGui.QPen(QtGui.QColor("#000000"), 2))  # square caps: they'd overlap at every joint
+    assert pg.mkPen(pg.mkPen("#000000", width=2)).capStyle() == QtCore.Qt.PenCapStyle.FlatCap  # copies keep it

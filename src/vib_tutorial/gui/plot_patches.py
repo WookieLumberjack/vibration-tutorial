@@ -24,6 +24,15 @@ the Frame builder's two dashed ones 16 ms. A held plot's curves (those it has, a
 `addItem`) keep a pixmap of themselves (`DeviceCoordinateCache`), and the strip is copied from it: 2 ms. Hold
 only a plot whose curves stay put while something moves: a curve redrawn every frame redraws its pixmap too (the
 Simulation page's strip chart, cached, went 4.8 → 7.9 ms). `Playback.add_cursor` holds its plot.
+
+Wide lines. Qt strokes a polyline wider than 1 px as one outline, and a curve that zigzags (a response with a
+stiff mode in it, a noisy signal) makes that outline slow: the Numerical integration page's 2 px responses took
+~35 ms a paint, against ~1 ms at 1 px. pyqtgraph draws a solid, opaque, wide pen as separate segments instead,
+which is fast, but only without antialiasing (where segments overlap, a translucent pen's joints show darker);
+the app antialiases, so a solid opaque pen wider than 1 px is drawn in segments here too (`_segmented`): its
+overlaps are the same colour. Only with flat caps, which `mkPen` gives (a polyline's caps are only its two ends):
+square or round ones overlap at every joint, and the line came out visibly heavier. A dashed pen still strokes one polyline (its dashes run along the whole curve), so
+keep a dense dashed curve at 1 px: the integration page's dashed closed form at 2 px took 220 ms.
 """
 
 from __future__ import annotations
@@ -116,9 +125,12 @@ _unscaled = [0]  # inside an axis's pen: left as it is
 
 
 def _scaled_pen(*args, **kwargs) -> QtGui.QPen:
-    """`mkPen`, its width times the theme's `line_scale` (a cosmetic 0 counts as 1 px). A pen made from a pen
-    (an item's `setPen(pen)` copies it) is already scaled, and the axes and their grid keep their width."""
+    """`mkPen`, its width times the theme's `line_scale` (a cosmetic 0 counts as 1 px), with flat caps (a wide
+    curve is drawn in segments: `_segmented`). A pen made from a pen (an item's `setPen(pen)` copies it) is
+    already scaled, and the axes and their grid keep their width."""
     pen = _mk_pen(*args, **kwargs)
+    if not (args and isinstance(args[0], QtGui.QPen)):
+        pen.setCapStyle(QtCore.Qt.PenCapStyle.FlatCap)
     scale = style.current().line_scale
     if (
         scale != 1.0
@@ -169,9 +181,24 @@ def _add_item(self, item, *args, **kargs) -> None:
         _hold(item)
 
 
+def _segmented(self, pen: QtGui.QPen) -> bool:
+    """Draw the curve as separate segments (fast) for a solid, opaque, flat-capped pen wider than 1 px, antialiased
+    or not (square or round caps overlap at each joint, and the line looks heavier: `mkPen`'s are flat)."""
+    mode = self.opts["segmentedLineMode"]
+    if mode != "auto":
+        return mode == "on"
+    return (
+        pen.widthF() > 1.0
+        and pen.capStyle() == QtCore.Qt.PenCapStyle.FlatCap
+        and pen.style() == QtCore.Qt.PenStyle.SolidLine
+        and pen.isSolid()
+        and pen.color().alphaF() == 1.0
+    )
+
+
 def install() -> None:
-    """Grids opaque and under the data, titles that wrap, pens and markers to the theme's scale; see the module's
-    docstring."""
+    """Grids opaque and under the data, titles that wrap, pens and markers to the theme's scale, wide lines in
+    segments; see the module's docstring."""
     pg.mkPen = pg.functions.mkPen = _scaled_pen
     pg.AxisItem.pen = _plain_axis_pen
     pg.ScatterPlotItem.setSize = _scaled_set_size
@@ -180,3 +207,4 @@ def install() -> None:
     pg.LabelItem.resizeEvent = _wrap_to_width
     pg.LabelItem.updateMin = _update_min
     pg.PlotItem.addItem = _add_item
+    pg.PlotCurveItem._shouldUseDrawLineSegments = _segmented
