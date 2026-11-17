@@ -56,6 +56,7 @@ from .continuum import (
     _condense,
     element_matrices,
 )
+from .practice import Prediction
 
 FRAMES_PER_TRANSIT = 240  # frames for the pulse to cross the length, at 1× playback
 CELLS_PER_FRAME = 8  # the waveguide's steps a frame at 1×: ~2000 cells along the length
@@ -337,6 +338,7 @@ class WavePreset:
     elements: int
     waves: Waves
     note: str
+    predict: Prediction | None = None  # asked before it loads (Things to try); the note is the explanation
 
 
 _STRING = Continuum(Kind.STRING, 1.0, End.FIXED, End.FIXED, tension=100.0, line_density=0.01)
@@ -351,6 +353,12 @@ WAVE_PRESETS = (
         "the fixed end upside down and whole; on the beads, after one crossing, it is down to 66 % of "
         "its height and 5 cm behind, the ripples it sheds trailing it: the short waves it is made of go "
         "slower on the beads. Consistent masses make them faster (53 %, ahead), mixed keep 81 %.",
+        predict=Prediction(
+            "A pulse four beads wide runs along a string and along 40 beads (lumped). After one crossing, how does "
+            "the beads' pulse compare with the string's?",
+            ("Just the same", "Lower and behind, trailing ripples", "Taller and ahead"),
+            1,
+        ),
     ),
     WavePreset(
         "Waves: a matched end",
@@ -360,6 +368,11 @@ WAVE_PRESETS = (
         "A dashpot <m>c<sub>d</sub> = ρcA</m> on the bar's far end is its impedance: the continuum's pulse runs into it and "
         "is gone, as if the bar went on for ever. Matched to the long waves, it isn't to the 20 "
         "elements' short ones, which slow down: 17 % of the mesh's energy comes back (5 % consistent).",
+        predict=Prediction(
+            "A dashpot of ρcA on the bar's far end. How much of the continuum's pulse comes back from it?",
+            ("All of it, upside down", "All of it, the same way up", "Half of it", "None of it"),
+            3,
+        ),
     ),
     WavePreset(
         "Waves: a light string tied to a heavy one",
@@ -370,6 +383,16 @@ WAVE_PRESETS = (
         "splits: a third of it comes back upside down (<m>R</m> = −1/3, 1/9 of the energy) and two thirds "
         "go on (<m>τ</m> = 2/3), at half the speed and so half as long. There it spans five elements, and the "
         "mesh carries 0.49 of it, not 0.67.",
+        predict=Prediction(
+            "Halfway along, the string becomes four times heavier. What comes back from the join?",
+            (
+                "Nothing: it all goes on",
+                "A third of the pulse, upside down",
+                "A third of the pulse, the same way up",
+                "All of it",
+            ),
+            1,
+        ),
     ),
     WavePreset(
         "Waves: a bending pulse",
@@ -380,5 +403,14 @@ WAVE_PRESETS = (
         "short ones twice as fast as waves twice as long, so ripples run ahead, on the beam itself. "
         "Half a crossing later the beam's peak is 0.22; 20 lumped elements, slowing the short waves, "
         "still hold 0.26 there (consistent 0.23).",
+        predict=Prediction(
+            "A bump released on a beam, at rest. What does it do?",
+            (
+                "Splits in two, each keeping its shape",
+                "Splits and spreads, ripples running ahead",
+                "Stays where it is and dies away",
+            ),
+            1,
+        ),
     ),
 )

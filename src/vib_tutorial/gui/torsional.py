@@ -57,7 +57,7 @@ from . import torsional_figures
 from .drag import DragLine
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import RunButton, plot
+from .lesson import RunButton, TrialBox, plot
 from .links import load_notes, page_link
 from .maths import markup
 from .notes_view import NotesBrowser
@@ -69,6 +69,7 @@ from .torsional_startup_view import StartUpView, fmt_torque
 from .transport import Transport
 
 CUSTOM = "Custom"
+TRIALS = PRESETS  # its Things to try are the presets (goals' trial: links count them)
 SHAPES_SHOWN = 6  # modes drawn on the shape plot
 MARGIN = 10.0  # % either side of the running speed a critical should stay out of (API 617's 10 %)
 TWO_PI = 2.0 * math.pi
@@ -397,13 +398,14 @@ class TorsionalPage(QtWidgets.QWidget):
         self._unreached = 0  # modes above every order in the speed range, left off the interference diagram
 
         # --- left: the preset, the train, the excitation, the speeds
-        self.preset = QtWidgets.QComboBox()
-        self.preset.setAccessibleName("Preset")
-        self.preset.addItems([p.name for p in PRESETS] + [CUSTOM])
-        self.preset.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.preset_note = QtWidgets.QLabel()
-        self.preset_note.setWordWrap(True)
-        mute(self.preset_note)
+        # The presets are the Things to try: one with a `predict` asks it before it loads.
+        self.trials = TrialBox(
+            [p.name for p in PRESETS],
+            "<p>Load a drive train with its running speed, and its start-up where it has one. Change any disc, "
+            "link or speed and it becomes your own train.</p>",
+            predictions=[p.predict for p in PRESETS],
+        )
+        self._preset_name = CUSTOM  # the preset loaded, or CUSTOM
 
         self.train_editor = TrainEditor()  # the Drive train and Excitation panes
 
@@ -425,11 +427,7 @@ class TorsionalPage(QtWidgets.QWidget):
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        presets = QtWidgets.QGroupBox("Things to try")
-        preset_layout = QtWidgets.QVBoxLayout(presets)
-        preset_layout.addWidget(self.preset)
-        preset_layout.addWidget(self.preset_note)
-        lv.addWidget(presets)
+        lv.addWidget(self.trials)
         for pane in (self.train_editor, self.train_editor.excitation_box, speeds, self.startup_view.controls):
             lv.addWidget(pane)
         lv.addStretch(1)
@@ -541,7 +539,7 @@ class TorsionalPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         # --- wiring
-        self.preset.currentIndexChanged.connect(self._on_preset)
+        self.trials.picked.connect(self._on_preset)
         self.train_editor.built.connect(self.set_train)
         self.train_editor.picked.connect(self._on_picked)
         self.startup_view.edited.connect(self._on_startup_edited)
@@ -559,10 +557,12 @@ class TorsionalPage(QtWidgets.QWidget):
         self._loading = True
         self.operating.setValue(p.operating_rpm)
         self.top.setValue(p.top_rpm)
-        self.preset.blockSignals(True)
-        self.preset.setCurrentText(name)
-        self.preset.blockSignals(False)
-        self.preset_note.setText(markup(p.note))
+        self._preset_name = name
+        combo = self.trials.combo
+        combo.blockSignals(True)
+        combo.setCurrentIndex(PRESETS.index(p) + combo.first)
+        combo.blockSignals(False)
+        self.trials.show_note(p.note)
         self._loading = False
         self.train_editor.selected = 0
         self.response_link.blockSignals(True)
@@ -597,7 +597,7 @@ class TorsionalPage(QtWidgets.QWidget):
     def practice_state(self) -> TorsionalSetup:
         """The train and the speeds, as a setup: what a practice spec checks."""
         return TorsionalSetup(
-            self.preset.currentText(),
+            self.preset_name(),
             self.train,
             self.operating.value(),
             self.top.value(),
@@ -606,17 +606,19 @@ class TorsionalPage(QtWidgets.QWidget):
 
     def frame_context(self) -> str:
         """For the frame log (frame_stats): the preset showing."""
-        return self.preset.currentText()
+        return self.preset_name()
+
+    def preset_name(self) -> str:
+        """The preset loaded, or CUSTOM (not the combo's text: a preset asking its prediction isn't loaded)."""
+        return self._preset_name
 
     def _on_preset(self, index: int) -> None:
-        if index < len(PRESETS):
-            self.load_preset(PRESETS[index].name)
+        self.load_preset(PRESETS[index].name)
 
     def _to_custom(self) -> None:
-        self.preset.blockSignals(True)
-        self.preset.setCurrentText(CUSTOM)
-        self.preset.blockSignals(False)
-        self.preset_note.setText("")
+        self._preset_name = CUSTOM
+        self.trials.combo.unpick()
+        self.trials.show_note("")
         self.startup_view.clear_note()
 
     def set_train(self, train: DriveTrain, custom: bool = True) -> None:
