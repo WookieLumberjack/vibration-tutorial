@@ -189,7 +189,7 @@
   record there too), and `tests/test_view_models.py` checks them.
 - The Theory notes are HTML files in `theory/`, read by `gui/links.py`'s `load_notes`. Their display
   equations are written in LaTeX and typeset by [ziamath](https://github.com/cdelker/ziamath)
-  (`gui/maths.py`); inline maths is set in the bundled STIX Two Text font (`fonts/`, under the SIL Open
+  (`gui/maths.py`); the app's text is set in the bundled IBM Plex Sans and inline maths in the bundled STIX Two Text font (`fonts/`, both under the SIL Open
   Font Licence). Each page's table of symbols and the glossary come from one list, `gui/notation.py`, and
   its *Further reading* from `gui/references.py`. The figures are SVG drawn in the theme's colours
   (`gui/figures.py`), and `gui/notes_view.py`'s browser draws the equations and figures.

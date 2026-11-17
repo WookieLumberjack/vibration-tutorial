@@ -14,7 +14,19 @@ from ..core import (
     ChainSystem,
     ModalResult,
 )
-from . import accessible, crosshair, display_size, frame_stats, links, notes_view, plot_export, present, theming, weak
+from . import (
+    accessible,
+    crosshair,
+    display_size,
+    frame_stats,
+    links,
+    notes_render,
+    notes_view,
+    plot_export,
+    present,
+    theming,
+    weak,
+)
 from .challenge import ChallengeBox
 from .ink import InkOverlay
 from .ink import Mode as InkMode
@@ -136,6 +148,7 @@ GUIDED = "window/guided"  # the first run's Theory tab has been shown (guide_fir
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self) -> None:
         super().__init__()
+        notes_render.install()  # the bundled fonts and the UI font, as make_app does (tests build a bare app)
         self.setWindowTitle("Vibration Tutorial — lumped mass-spring-damper chain")
         # --- the pages: the Simulation page, then the rest, which follow its chain. An empty placeholder
         # holds each of the rest until it's first opened (see _page).

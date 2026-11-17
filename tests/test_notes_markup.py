@@ -287,5 +287,24 @@ def test_notes_browser_redraws_its_equations_in_a_new_colour(app):
 
 def test_fonts_are_bundled_with_their_licence():
     names = sorted(p.name for p in maths.FONTS.iterdir())
-    assert "OFL.txt" in names and sum(n.endswith(".otf") for n in names) == 4
-    assert os.path.getsize(str(maths.FONTS / "STIXTwoText-Regular.otf")) > 100_000
+    # STIX Two Text (the maths, OFL.txt) and IBM Plex Sans (the UI, #316 D10), four faces each
+    assert {"OFL.txt", "OFL-IBMPlexSans.txt"} <= set(names)
+    for family in ("STIXTwoText", "IBMPlexSans"):
+        faces = [n for n in names if n.startswith(family + "-") and n.endswith(".otf")]
+        assert len(faces) == 4, faces
+        assert os.path.getsize(str(maths.FONTS / f"{family}-Regular.otf")) > 100_000
+
+
+def test_the_app_sets_its_text_in_the_bundled_ui_font(app):
+    """#316 D10: IBM Plex Sans at 12 logical px on every platform, so the layouts measure the same everywhere."""
+    from PySide6 import QtGui
+
+    from vib_tutorial.gui import notes_render
+
+    notes_render.install()
+    font = QtGui.QGuiApplication.font()
+    assert QtGui.QFontInfo(font).family() == notes_render.UI_FONT == "IBM Plex Sans"
+    assert QtGui.QFontInfo(font).pixelSize() == notes_render.UI_PX
+    bold = QtGui.QFont(font)
+    bold.setBold(True)
+    assert QtGui.QFontInfo(bold).family() == "IBM Plex Sans"  # its own bold face, not a synthesized one
