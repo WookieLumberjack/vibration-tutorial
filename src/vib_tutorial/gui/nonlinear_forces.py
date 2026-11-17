@@ -391,7 +391,7 @@ FRF_TIP = (
     "<p>The FRF |X/F| at each level: swept up (solid) and down (dashed). Dotted: the linear chain's. A linear "
     "chain's levels all lie on it; the dots mark where a sweep jumped.</p>"
 )
-FORCE_TIP = "<p>The true force (solid) and the one identified from the noisy measurement (dashed).</p>"
+FORCE_TIP = "<p>The true force (dashed) and the one identified from the noisy measurement (solid).</p>"
 
 NOTES_HTML = load_notes("nonlinear_forces", figures=nonlinear_figures.FIGURES, trials=trials_html(TRIALS))
 
@@ -843,8 +843,10 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             self.down_items[k].setPen(pg.mkPen(c, width=2, style=dash))
             mark(self.jump_items[k], c, filled=True)
         self.dist_line.setPen(pg.mkPen(colors.grey, width=1, style=dash))
-        self.truth_item.setPen(pg.mkPen(colors.strong, width=2))
-        self.estimate_item.setPen(pg.mkPen(colors.fit, width=2, style=dash))
+        # The true force dashed and the identified one solid: the identified one zigzags with the noise, and a dashed
+        # zigzag is slow to stroke (20 ms a paint even without antialiasing; solid, 2 ms: see `_draw_force`)
+        self.truth_item.setPen(pg.mkPen(colors.strong, width=2, style=dash))
+        self.estimate_item.setPen(pg.mkPen(colors.fit, width=2))
         self.wave_item.setPen(pg.mkPen(colors.strong, width=2))
         self.sine_item.setPen(pg.mkPen(colors.grey, width=1.5, style=dash))
         self.harm_bars.setOpts(brush=pg.mkBrush(colors.mode[0]), pen=None)
@@ -921,9 +923,11 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             self.estimate_item.setData([], [])
             self.force_readout.setText("No sensors: tick at least one mass.")
             return
-        self.estimate_item.setData(t, self.estimate)
         top = float(np.abs(self.truth).max())
         big = float(np.abs(self.estimate).max())
+        # Blown up (the plain inverse's noise), it zigzags far past the plot: antialiased, Qt took 70 ms to stroke it
+        # (400 ms dashed), without it 2 ms. Its look then hardly matters.
+        self.estimate_item.setData(t, self.estimate, antialias=big <= 3 * top)
         self.force_plot.setXRange(0, t[-1], padding=0)
         if big > 3 * top:
             self.force_plot.setYRange(-1.5 * top, 1.5 * top, padding=0)
