@@ -9,7 +9,9 @@ no Qt (`tests/test_view_models.py` checks), so the course's order, paths, keys a
 A page's notes live in `theory/<name>.html` (`load_notes`), Qt's rich text but for the tags the
 loader writes out: `<before>`, the page: links to read first; `<goals page="…">`, what the page sets out
 to teach, an `<li trial="n" problem="key">` each, whose links set up its Thing to try number n and ask its
-practice problem `key` (`trial:` and `practice:` links, `notes_view.ACTIONS`); `<takeaways>`, one `<li>` each; `<eq>` (a
+practice problem `key` (`trial:` and `practice:` links, `notes_view.ACTIONS`); `<recap problems="key …">`, a
+part's closing points (an `<li>` each) and links to its problems (`load_notes(..., problems=PROBLEMS)`); `<takeaways>`,
+one `<li>` each; `<eq>` (a
 display equation in LaTeX) and `<m>` (inline maths), see `maths`; `<notation>`, the page's table of
 symbols, see `notation`; `<cite>` and `<reading>`, its Further reading, see `references`. Figures are
 `<img src="fig:…">`, see `figures`. Show the notes in a `notes_view.NotesBrowser`, which draws them.
@@ -20,8 +22,9 @@ from __future__ import annotations
 import importlib
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from importlib import resources
+from typing import Any
 
 
 def page_link(page: str, anchor: str, text: str) -> str:
@@ -52,9 +55,19 @@ def takeaways(*points: str) -> str:
     )
 
 
+def recap(points: list[str], problems: list[tuple[str, str, str]]) -> str:
+    """A part's closing points and its problems (page, key, title): "From this part", with a link to each."""
+    html = "<p><b>From this part</b></p><ul>" + "".join(f"<li>{p}</li>" for p in points) + "</ul>"
+    if problems:
+        links = " · ".join(f'<a href="practice:{page}#{key}">{title}</a>' for page, key, title in problems)
+        html += f"<p><i>Practise it:</i> {links}</p>"
+    return html
+
+
 THEORY = resources.files("vib_tutorial") / "theory"
 BEFORE = re.compile(r"<before>(.*?)</before>", re.S)
 TAKEAWAYS = re.compile(r"<takeaways>(.*?)</takeaways>", re.S)
+RECAP = re.compile(r'<recap problems="([a-z0-9 -]*)">(.*?)</recap>', re.S)
 GOALS = re.compile(r'<goals page="([a-z_]+)">(.*?)</goals>', re.S)
 GOAL = re.compile(r'<li trial="(\d+)" problem="([a-z0-9-]+)">(.*?)</li>', re.S)
 LINK = re.compile(r'<a href="page:([a-z_]+)#([^"]+)">(.*?)</a>', re.S)
@@ -102,10 +115,13 @@ def keys_html(mac: bool | None = None) -> str:
     return '<table cellspacing="0" cellpadding="3">' + "".join(rows) + "</table>"
 
 
-def load_notes(name: str, figures: dict[str, Callable[[], str]] | None = None, **parts: str) -> str:
+def load_notes(
+    name: str, figures: dict[str, Callable[[], str]] | None = None, problems: Sequence[Any] = (), **parts: str
+) -> str:
     """The notes in `theory/<name>.html`, its tags written out (see the module's docstring) and each
     `<!--PART-->` filled by the keyword `part` (what the code works out: the trials, the course map). `figures`
-    is the figure module's FIGURES the notes show (`figures.register`)."""
+    is the figure module's FIGURES the notes show (`figures.register`); `problems` the page's practice problems,
+    which a `<recap problems="key …">` links by their titles."""
     from . import figures as figure_registry
     from . import maths, notation, references
 
@@ -117,6 +133,15 @@ def load_notes(name: str, figures: dict[str, Callable[[], str]] | None = None, *
     html = BEFORE.sub(lambda m: before(*LINK.findall(m.group(1))), html)
     html = TAKEAWAYS.sub(lambda m: takeaways(*ITEM.findall(m.group(1))), html)
     html = GOALS.sub(lambda m: goals(m.group(1), *GOAL.findall(m.group(2))), html)
+    by_key = {p.key: p for p in problems}
+
+    def _recap(m: re.Match[str]) -> str:
+        keys = m.group(1).split()
+        if missing := [k for k in keys if k not in by_key]:
+            raise ValueError(f"{name}.html's recap names problems it wasn't given: {missing}")
+        return recap(ITEM.findall(m.group(2)), [(by_key[k].page, k, by_key[k].title) for k in keys])
+
+    html = RECAP.sub(_recap, html)
     html = notation.NOTATION.sub(lambda m: notation.notation_html(m.group(1).split()), html)
     reading = list(dict.fromkeys(references.CITE.findall(html)))
     for found in references.READING.findall(html):

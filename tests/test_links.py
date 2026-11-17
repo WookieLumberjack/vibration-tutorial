@@ -210,7 +210,7 @@ NOTES_TAGS = {
     "tr",
     "ul",
 }
-NOTES_TAGS |= {"before", "goals", "takeaways", "eq", "m", "rm", "notation", "cite", "reading"}
+NOTES_TAGS |= {"before", "goals", "recap", "takeaways", "eq", "m", "rm", "notation", "cite", "reading"}
 ENTITIES = {"amp", "lt", "gt", "nbsp"}
 
 
@@ -299,7 +299,8 @@ def test_headings_without_an_anchor_get_one_for_the_contents():
 
 @pytest.mark.parametrize("page", ORDER)
 def test_goals_set_up_the_pages_own_trials_and_problems(page):
-    """A goal's `trial:` and `practice:` links name its own page, a Thing to try it has and a problem it asks."""
+    """A goal's or a recap's `trial:` and `practice:` links name its own page, a Thing to try it has and a problem
+    it asks."""
     from vib_tutorial.gui.links import page_module
     from vib_tutorial.gui.practice import problems
 
@@ -309,13 +310,32 @@ def test_goals_set_up_the_pages_own_trials_and_problems(page):
         return
     trials = getattr(page_module(page), "TRIALS", ())
     keys = {p.key for p in problems(page)}
-    assert '<a name="goals"></a>' in text
+    if any(scheme == "trial" for scheme, _, _ in found):
+        assert '<a name="goals"></a>' in text  # a recap links problems only
     for scheme, target, what in found:
         assert target == page, f"{page}'s goal links to {target}"
         if scheme == "trial":
             assert 1 <= int(what) <= len(trials), f"{page} has no trial {what}"
         else:
             assert what in keys, f"{page} has no problem {what}"
+
+
+def test_a_parts_recap_links_its_problems_by_title():
+    from vib_tutorial.core.practice import Problem
+    from vib_tutorial.gui import links
+
+    found = Problem("spin", "A spin", "rotor_page", "", lambda rng: None)  # type: ignore[arg-type, return-value]
+    html = links.RECAP.sub(
+        lambda m: links.recap(
+            links.ITEM.findall(m.group(2)), [(found.page, k, found.title) for k in m.group(1).split()]
+        ),
+        '<recap problems="spin">\n<li>One.</li>\n<li>Two.</li>\n</recap>',
+    )
+    assert html == (
+        "<p><b>From this part</b></p><ul><li>One.</li><li>Two.</li></ul>"
+        '<p><i>Practise it:</i> <a href="practice:rotor_page#spin">A spin</a></p>'
+    )
+    assert links.recap(["Only."], []) == "<p><b>From this part</b></p><ul><li>Only.</li></ul>"
 
 
 def test_goals_are_written_out_with_their_links():
