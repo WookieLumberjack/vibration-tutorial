@@ -3700,6 +3700,16 @@ def test_oma_page(app):
     assert p.worker.busy and p.fdd is fdd
     p.worker.wait()
     assert p.record is record and p.fdd is not fdd, "the same record, processed again"
+    # A chain of another size, and the method switched before it's processed: the last chain's modes aren't
+    # compared with its (they were: a ValueError, shapes of 4 against 5)
+    p.dof.setValue(5)
+    p.method.setCurrentIndex(1 - p.method.currentIndex())
+    p.method.setCurrentIndex(1 - p.method.currentIndex())
+    p.worker.wait()
+    assert p.results.table.rowCount() == 5
+    p.dof.setValue(4)
+    p.worker.wait()
+    record = p.record
 
     # click on mode 1's peak: dropped; click there again: picked again
     vb = p.sv.getPlotItem().getViewBox()

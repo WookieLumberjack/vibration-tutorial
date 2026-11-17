@@ -781,6 +781,8 @@ class OmaPage(QtWidgets.QWidget):
         n_changed = self.system is None or system.n != self.system.n
         self.system = system
         self.result = result or modal_analysis(system)
+        if n_changed:
+            self.fdd = None  # the old chain's modes: nothing compares them with this one's until it's processed
         self._loading = True
         self.dof.blockSignals(True)
         self.dof.setValue(system.n)
