@@ -23,6 +23,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core.rotor_modes import Campbell, WhirlModes
 from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import AsymmetryChart, Onset, log_decrement, whirl_lines
+from . import legend_place
 from .style import colors
 
 DASH = QtCore.Qt.PenStyle.DashLine
@@ -267,6 +268,7 @@ class AsymmetryPlot(pg.PlotWidget):
             p.addItem(item)
         self.legend = pg.LegendItem(offset=(-5, 5), brush=colors.legend_brush(), labelTextColor=colors.foreground)
         self.legend.setParentItem(p.vb)
+        legend_place.follow(self.legend)
         self.legend.addItem(self.soft, "soft axis's critical")
         self.legend.addItem(self.stiff, "stiff axis's critical")
         self.chart: AsymmetryChart | None = None
