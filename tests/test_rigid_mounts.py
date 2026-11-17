@@ -144,16 +144,14 @@ def test_trials():
 
     level, _ = table("Level with the centre of mass: six pure modes")
     assert sorted(level.values()) == pytest.approx([7.96, 7.96, 8.47, 9.79, 15.92, 16.24], abs=0.006)
-    dropped, _ = table("Mounts below the centre of mass: sway and roll couple")
+    dropped, _ = table("Mounts below the centre of mass")
     assert dropped["y 67 %, roll 33 %"] == pytest.approx(6.90) and dropped["roll 67 %, y 33 %"] == pytest.approx(9.77)
     assert dropped["x 99 %"] == pytest.approx(7.83)
-    assert elastic_centre(by["Mounts below the centre of mass: sway and roll couple"].layout.mounts())[0][
-        2
-    ] == pytest.approx(-0.08)
+    assert elastic_centre(by["Mounts below the centre of mass"].layout.mounts())[0][2] == pytest.approx(-0.08)
     assert FOCUS == pytest.approx(16.95)
     focused, _ = table("Tilted to the focus: decoupled again")
     assert focused["roll 100 %"] == pytest.approx(7.56) and focused["y 100 %"] == pytest.approx(8.91, abs=0.015)
-    offset, _ = table("Centre of mass off-centre: bounce and pitch couple")
+    offset, _ = table("Centre of mass off-centre")
     assert offset["z 61 %, pitch 39 %"] == pytest.approx(13.68, abs=0.015)
     assert offset["pitch 61 %, z 39 %"] == pytest.approx(18.89)
     assert offset["y 83 %, yaw 17 %"] == pytest.approx(7.30) and offset["yaw 83 %, y 17 %"] == pytest.approx(10.67)
@@ -239,13 +237,13 @@ def test_drive_trials():
     assert sp.rpm[np.flatnonzero(sp.total < sp.applied)[0]] == pytest.approx(1350, abs=10)
     applied, floor = through("Running at the bounce: amplified")
     assert (applied, floor, floor / applied) == pytest.approx((20.0, 201, 10.1), abs=0.05 * 10)
-    applied, floor = through("Lossier rubber: less at resonance, as much isolation")
+    applied, floor = through("Lossier rubber")
     assert (floor, floor / applied) == pytest.approx((70.0, 3.5), abs=0.05)
-    lossy = by["Lossier rubber: less at resonance, as much isolation"]
+    lossy = by["Lossier rubber"]
     t = lossy.layout
     q = response(t.body, t.mounts(), 0.3, Drive(rpm=3000.0).frequency(), Drive(rpm=3000.0).load())
     assert amplitude(mount_forces(t.mounts(), 0.3, q).sum(axis=0)) == pytest.approx(23.2, abs=0.05)
-    t = by["A firing torque: roll alone"]
+    t = by["A firing torque"]
     shares = participation(t.layout.modes(), t.drive.load())
     assert (shares > 1e-9).sum() == 1
     t = by["Mounts below: the torque drives two modes"]

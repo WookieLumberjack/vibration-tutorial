@@ -15,7 +15,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick
 from ..core.quarter_car import (
     CLASS_NAMES,
     CLASSES,
@@ -73,6 +73,7 @@ class CarTrial:
     damper: float = 1500.0  # N·s/m
     tyre: float = 200.0  # kN/m
     tab: int = TAB_TRADEOFF
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -92,19 +93,39 @@ TRIALS = (
         speed_kmh=108.0,
     ),
     CarTrial(
-        "Soft damper: comfort",
+        "A softer damper",
         "The damper at 830 N·s/m, the best for comfort on this spring (<m>ζ</m> = 0.17 on the body): 1.36 m/s², 8 % "
         "better. But the wheel hop is now lightly damped: the tyre's load swings by 29 %, and the suspension "
         "travels 14.4 mm.",
         damper=830.0,
         tab=TAB_DAMPER,
+        predict=Prediction(
+            "The damper softened from 1.5 to 0.83 kN·s/m. What happens to comfort, and to the tyre's grip?",
+            (
+                "Comfort worsens, grip improves",
+                "Both worsen",
+                "Both improve",
+                "Comfort improves, grip worsens",
+            ),
+            3,
+        ),
     ),
     CarTrial(
-        "Firm damper: grip",
+        "A firmer damper",
         "The damper at 2.3 kN·s/m, the best for the tyre's grip (<m>ζ</m> = 0.48): its load swings by 23 %, while the "
         "body's acceleration rises to 1.72 m/s². No damper is best for both: the classic conflict.",
         damper=2340.0,
         tab=TAB_DAMPER,
+        predict=Prediction(
+            "The damper firmed up from 1.5 to 2.3 kN·s/m. What happens to comfort, and to the tyre's grip?",
+            (
+                "Comfort worsens, grip improves",
+                "Both worsen",
+                "Both improve",
+                "Comfort improves, grip worsens",
+            ),
+            0,
+        ),
     ),
     CarTrial(
         "A softer spring",
@@ -120,6 +141,15 @@ TRIALS = (
         "the tyre's load swings by 26 % instead of 24 %. Unsprung mass costs grip, which is why racing cars "
         "chase light wheels and inboard brakes.",
         unsprung=60.0,
+        predict=Prediction(
+            "The wheel up from 40 to 60 kg (heavier wheels, a solid axle). What happens to the tyre's grip?",
+            (
+                "It stays the same",
+                "It improves",
+                "It worsens",
+            ),
+            2,
+        ),
     ),
     CarTrial(
         "A drive to check the spectra",
@@ -402,7 +432,9 @@ class QuarterCarPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.trials = TrialBox(
-            [t.name for t in TRIALS], "<p>Each sets up the road and the car to show one idea from the Theory tab.</p>"
+            [t.name for t in TRIALS],
+            "<p>Each sets up the road and the car to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
         self.challenge = ChallengeBox(self, PROBLEMS)

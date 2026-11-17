@@ -33,7 +33,7 @@ from ..core.fatigue import (
     record,
     reversals,
 )
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import fatigue_figures, settle_plots
 from .layouts import FlowLayout
 from .lesson import (
@@ -72,6 +72,7 @@ class FatigueTrial:
     tab: int = TAB_RANGES
     s_ref: float = 80.0
     n_ref: float = 2e6
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -83,12 +84,22 @@ TRIALS = (
         "within 1.5 %: a life of 25 days.",
     ),
     FatigueTrial(
-        "Two modes: the narrow-band formula is pessimistic",
+        "Two modes",
         "Add a 15 Hz mode with 10 MPa RMS. The record now has small fast cycles riding on the slow ones, <m>α<sub>i</sub></m> = "
         "0.46. The narrow-band formula counts every up-crossing (6.9 a second) as a cycle of the whole σ's "
         "Rayleigh, and overestimates the damage 1.6 times; Dirlik, fitted to rainflow counts, is 8 % under the "
         "record's.",
         stress=Stress(sigma2=10.0),
+        predict=Prediction(
+            "A 15 Hz mode with 10 MPa RMS added to the 2 Hz one. Against the record's rainflow count, the narrow-band"
+            " formula's damage comes out…",
+            (
+                "Too low",
+                "About right",
+                "Too high",
+            ),
+            2,
+        ),
     ),
     FatigueTrial(
         "Rainflow pairs the ripples",
@@ -108,14 +119,33 @@ TRIALS = (
         stress=Stress(sigma2=10.0),
         b=5.0,
         tab=TAB_DAMAGE,
+        predict=Prediction(
+            "The two modes on an S–N slope of 5. Which of the stress's cycles do most of the damage?",
+            (
+                "The ones near the RMS, evenly",
+                "The many small ones",
+                "The few largest",
+            ),
+            2,
+        ),
     ),
     FatigueTrial(
-        "Double the stress, eight times the damage",
+        "Double the stress",
         "One mode at 40 MPa RMS instead of 20. With slope 3 the damage rate goes up <m>2<sup>3</sup></m> = 8 times: the life "
         "falls from 25 days to 3.1. A load that is 10 % high costs a third of the life (<m>1.1<sup>3</sup></m> = 1.33); the RMS "
         "has to be right before anything else is.",
         stress=Stress(sigma1=40.0),
         tab=TAB_SN,
+        predict=Prediction(
+            'One mode at 40 MPa RMS instead of 20, on a slope of 3. How much faster does it build damage?',
+            (
+                "Twice",
+                "Four times",
+                "Eight times",
+                "Sixteen times",
+            ),
+            2,
+        ),
     ),
     FatigueTrial(
         "A broad peak",
@@ -125,7 +155,7 @@ TRIALS = (
         stress=Stress(zeta1=0.3),
     ),
     FatigueTrial(
-        "A short record scatters",
+        "A 20 s record",
         "Two modes on slope 5, but only 20 s of record. Rainflow's damage depends on which seed made the record: "
         "over seeds 1 to 10 it runs from 0.67 to 1.53 times the 600 s record's, because a few large cycles do "
         "most of the damage and a short record may or may not catch them. The spectral methods give one number "
@@ -134,6 +164,17 @@ TRIALS = (
         b=5.0,
         duration=20.0,
         seed=1,
+        predict=Prediction(
+            "Only 20 s of the two-mode stress, on a slope of 5. What does the rainflow damage do as the record's seed"
+            " changes?",
+            (
+                "It's always high",
+                "It's always low",
+                "It stays within a few per cent",
+                "It scatters widely",
+            ),
+            3,
+        ),
     ),
 )
 
@@ -395,6 +436,7 @@ class FatiguePage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each sets up the stress, the S–N curve and the record to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

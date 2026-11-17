@@ -26,6 +26,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.modal import ModalResult, modal_analysis
 from ..core.model import ChainSystem
+from ..core.practice import Prediction as TrialPrediction  # this page's Prediction is its RMS's
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick
 from ..core.random_vibration import (
     BLOCKS,
@@ -147,6 +148,7 @@ class RandomSetup:
     band: tuple[float, float] | None = None  # a trial's band, × mode 2's frequency
     duration_scale: float = 1.0
     block_scale: float = 1.0
+    predict: TrialPrediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -174,6 +176,16 @@ TRIALS = (
         "(the mass line), not a resonance, and Miles' equation misses it: the wider the band, the more.",
         kind=Input.FORCE_ONE,
         mass=-1,
+        predict=TrialPrediction(
+            "A random force on the last mass, its own acceleration measured. Does Miles' equation, mode by mode, get "
+            "its RMS right?",
+            (
+                "Yes, within a few per cent",
+                "No: it misses what the force does above the modes",
+                "It overestimates, counting the peaks twice",
+            ),
+            1,
+        ),
     ),
     _trial(
         "Forces on every mass",
@@ -200,12 +212,33 @@ TRIALS = (
         "Blocks a sixteenth as long: lines coarser than mode 1's peak, which comes out low and wide (the window "
         "smears it). The RMS is still right: the area is kept.",
         block_scale=1 / 16,
+        predict=TrialPrediction(
+            "Welch's blocks cut to a sixteenth, so the lines are coarser than mode 1's peak. What happens to the "
+            "estimated peak, and to the RMS?",
+            (
+                "Neither changes",
+                "The peak comes out high, the RMS low",
+                "Both come out low",
+                "The peak comes out low; the RMS is still right",
+            ),
+            3,
+        ),
     ),
     _trial(
         "Narrow band on mode 2",
         "Only ±10 % round mode 2: one peak, its skirts cut off. Miles' equation, which counts the whole of a "
         "mode's peak, now overestimates.",
         band=(0.9, 1.1),
+        predict=TrialPrediction(
+            "Only ±10 % round mode 2 is shaken: one peak, its skirts cut off. How does Miles' equation's RMS compare "
+            "with the exact one?",
+            (
+                "About right",
+                "Too low",
+                "Too high",
+            ),
+            2,
+        ),
     ),
 )
 
@@ -579,6 +612,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Settings that show something about random vibration, set from the chain as it is now.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
 
         left = QtWidgets.QWidget()

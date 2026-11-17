@@ -23,7 +23,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.modal import TWO_PI, ModalResult, modal_analysis
 from ..core.model import ChainSystem
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..core.random_vibration import G, linear
 from ..core.shock import (
     CLASSICAL,
@@ -147,6 +147,7 @@ class ShockSetup:
     offset: float = 0.0
     q: float = DEFAULT_Q
     tab: int | None = TAB_OSCILLATOR
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -173,6 +174,16 @@ TRIALS = (
         "(2 × undamped), so the spectrum stays high across the top. Its <m>Δv</m> is the largest of the pulses (the area "
         "<m>AT</m>), so it is highest at the left too.",
         shape=Shape.SQUARE,
+        predict=Prediction(
+            "A square pulse: a step up and one down. At the top of its spectrum (stiff oscillators), how high is the "
+            "SRS against the pulse's peak?",
+            (
+                "Far below it",
+                "About the same",
+                "Nearly twice it",
+            ),
+            2,
+        ),
     ),
     _trial(
         "Terminal-peak sawtooth",
@@ -191,6 +202,16 @@ TRIALS = (
         "The half-sine at <m>Q</m> = 50: the spectrum hardly changes (1.74 × at the peak against 1.65 ×). A shock is over "
         "before damping has time to act on the primary peak, unlike a steady sine, whose response grows with Q.",
         q=50.0,
+        predict=Prediction(
+            "The half-sine's spectrum peaked at 1.65 × the pulse at Q = 10. What does it peak at with Q = 50?",
+            (
+                "Less",
+                "About √5 times as much",
+                "About five times as much",
+                "Hardly more",
+            ),
+            3,
+        ),
     ),
     _trial(
         "A component on the last mass",
@@ -215,6 +236,16 @@ TRIALS = (
         shape=Shape.TRANSIENT,
         noise=2.0,
         offset=1.0,
+        predict=Prediction(
+            "The pyrotechnic record with a 1 % offset, an accelerometer's zero shift. What happens to its spectrum's "
+            "low end?",
+            (
+                "It falls",
+                "It hardly changes",
+                "It rises a lot",
+            ),
+            2,
+        ),
     ),
     _trial(
         "Modes combined",
@@ -223,6 +254,16 @@ TRIALS = (
         "SRSS 6.62 g, −28 %; NRL 9.27 g, +1 %. The SRSS assumes the modes peak at unrelated times, but a shock sets "
         "them all off at once: each one's part peaks within the first 0.3 s, a third of mode 1's period.",
         tab=TAB_CHAIN,
+        predict=Prediction(
+            "The half-sine on the chain, its modes' peaks from the SRS combined by SRSS. Against the exact peak "
+            "acceleration at m4, the SRSS comes out…",
+            (
+                "Over",
+                "About right",
+                "Short",
+            ),
+            2,
+        ),
     ),
     _trial(
         "Four-way paper",
@@ -635,6 +676,7 @@ class ShockPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Pulses that show something about shock spectra, the duration set from the chain as it is now.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
 
         left = QtWidgets.QWidget()

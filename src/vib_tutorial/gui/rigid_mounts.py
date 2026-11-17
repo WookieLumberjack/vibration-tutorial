@@ -18,7 +18,7 @@ import pyqtgraph as pg
 import scipy.optimize
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from ..core.practice import Problem, Question, Requirement, kept, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, kept, number, pick
 from ..core.rigid_mounts import (
     DOF,
     EXCITATIONS,
@@ -110,6 +110,7 @@ class MountTrial:
     order: int = 2
     crank: float = 0.0  # degrees, the crank axis up from x
     loss: float = 0.1  # η, the mounts' loss factor
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     @property
     def drive(self) -> Drive:
@@ -150,13 +151,23 @@ TRIALS = (
         mode=4,
     ),
     MountTrial(
-        "Mounts below the centre of mass: sway and roll couple",
+        "Mounts below the centre of mass",
         "The same mounts 80 mm below the centre of mass. Pushed sideways at the mounts, the box also rolls, so "
         "sway and roll share two modes: 6.90 Hz (y 67 %, roll 33 %), the box rocking about a point below it, and "
         "9.77 Hz (roll 67 %, y 33 %), rocking about a point above. The elastic centre has dropped to the mounts' "
         "plane. Fore-and-aft and pitch couple too, but hardly (99 %): their frequencies are far apart.",
         drop=0.08,
         mode=0,
+        predict=Prediction(
+            "The same mounts moved 80 mm below the box's centre of mass. Which of its six modes couple?",
+            (
+                "None: they stay pure",
+                "Sway with yaw",
+                "Bounce with pitch",
+                "Sway with roll, and fore-and-aft with pitch",
+            ),
+            3,
+        ),
     ),
     MountTrial(
         "Tilted to the focus: decoupled again",
@@ -171,7 +182,7 @@ TRIALS = (
         tab=TAB_CENTRE,
     ),
     MountTrial(
-        "Centre of mass off-centre: bounce and pitch couple",
+        "Centre of mass off-centre",
         "The mounts level again, but the centre of mass 80 mm ahead of their middle: a weight pushes the rear "
         "mounts less than the front, so bounce and pitch couple, 13.7 Hz (z 61 %, pitch 39 %) and 18.9 Hz, and so "
         "do sway and yaw, 7.30 Hz (y 83 %, yaw 17 %) and 10.7 Hz. The elastic centre is 80 mm behind the centre of "
@@ -179,6 +190,16 @@ TRIALS = (
         offset=0.08,
         mode=4,
         sweep=Sweep.OFFSET,
+        predict=Prediction(
+            'The mounts level again, but the centre of mass 80 mm ahead of their middle. Which modes couple?',
+            (
+                "None: they stay pure",
+                "Fore-and-aft with pitch",
+                "Sway with roll",
+                "Bounce with pitch, and sway with yaw",
+            ),
+            3,
+        ),
     ),
     MountTrial(
         "Stiff in shear: no focus to be had",
@@ -210,7 +231,7 @@ TRIALS = (
         tab=TAB_RESPONSE,
     ),
     MountTrial(
-        "Lossier rubber: less at resonance, as much isolation",
+        "Lossier rubber",
         "<m>η</m> = 0.3: at 955 rpm the floor gets 70.0 N (3.5 times the unbalance's), not 201; at 3000 rpm 23.2 N, "
         "hardly more than <m>η</m> = 0.1's 22.4. Rubber's hysteretic damping (the Damping models page's) stiffens a mount "
         "by <m>|1 + iη|</m> at every frequency, not more at high ones as a viscous damper's <m>iωc</m> does, so it costs little "
@@ -219,14 +240,35 @@ TRIALS = (
         loss=0.3,
         mode=FORCED,
         tab=TAB_RESPONSE,
+        predict=Prediction(
+            "The mounts' loss factor from 0.1 to 0.3. At 3000 rpm, well above their modes, what happens to the force "
+            "reaching the floor?",
+            (
+                "It drops to a third",
+                "It drops to a ninth",
+                "It triples",
+                "It hardly changes",
+            ),
+            3,
+        ),
     ),
     MountTrial(
-        "A firing torque: roll alone",
+        "A firing torque",
         "A torque about the crank axis (<m>x</m>), twice a turn at 1500 rpm (50 Hz), on the level mounts: it drives the "
         "roll mode and nothing else (the Drive tab), so the box only rolls. That is what decoupling buys.",
         excitation=Excitation.TORQUE,
         mode=FORCED,
         tab=TAB_DRIVE,
+        predict=Prediction(
+            'A torque about the crank (along x), twice a turn, on the level mounts. Which modes does it drive?',
+            (
+                "Bounce and pitch",
+                "All six",
+                "Roll and sway",
+                "Roll alone",
+            ),
+            3,
+        ),
     ),
     MountTrial(
         "Mounts below: the torque drives two modes",
@@ -813,6 +855,7 @@ class MountsPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each sets up the box and its mounts, to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 
