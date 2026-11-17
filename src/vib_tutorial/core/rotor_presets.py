@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from .fluid_bearing import JournalBearing
 from .magnetic_bearing import MagneticBearing
+from .practice import Prediction
 from .rotor import STEEL, Bearing, Crack, RotorSystem, Stator
 
 # The overhung rotor: a 3 kg disc of radius 150 mm (I_p = m R²/2, I_d = m R²/4), 100 mm past
@@ -34,6 +35,7 @@ class RotorPreset:
     top_rpm: float  # the speed range shown (Campbell diagram, stability map, Bode plot)
     target_rpm: float  # the speed it runs up to when loaded
     note: str  # one or two sentences: what to look for
+    predict: Prediction | None = None  # asked before it loads (Things to try); the note is the explanation
 
 
 def rotor_presets() -> list[RotorPreset]:
@@ -64,6 +66,15 @@ def rotor_presets() -> list[RotorPreset]:
             1500.0,
             "Supports four times stiffer vertically: the critical splits into 1365 rpm (horizontal) and "
             "1668 rpm (vertical), and between them the shaft whirls backward on an ellipse.",
+            predict=Prediction(
+                "The supports are four times stiffer vertically than horizontally. Running up through the first mode, how many critical speeds does the unbalance find?",
+                (
+                    "One, between the two stiffnesses' speeds",
+                    "Two, with backward whirl between them",
+                    "None: the supports damp it out",
+                ),
+                1,
+            ),
         ),
         RotorPreset(
             "Overhung rotor",
@@ -81,6 +92,11 @@ def rotor_presets() -> list[RotorPreset]:
             "A large disc 100 mm past bearing B tilts as much as it moves, so the gyroscopic moment "
             "dominates: the first mode, 870 rpm at rest, meets 1X backward at 664 rpm and forward at "
             "1284 rpm, the only one the unbalance drives.",
+            predict=Prediction(
+                "A large disc overhung past bearing B, its first mode 870 rpm at rest. Spinning, where does the unbalance find its critical speed?",
+                ("Below 870 rpm", "At 870 rpm", "Above 870 rpm"),
+                2,
+            ),
         ),
         RotorPreset(
             "Long shaft, with its mass",
@@ -130,6 +146,15 @@ def rotor_presets() -> list[RotorPreset]:
             "The oil swirls round at half the shaft's speed, so the cross-coupling grows as <m>cΩ</m>/2. Past "
             "twice the first natural frequency, 3136 rpm, the forward whirl grows: oil whip, locked at "
             "26 Hz whatever the speed.",
+            predict=Prediction(
+                "The oil in the bearings swirls round at half the shaft's speed. What happens past twice the first natural frequency?",
+                (
+                    "Nothing: the oil damps the whirl",
+                    "A forward whirl grows, at a frequency that stays put as the speed rises",
+                    "A backward whirl grows, at half the speed",
+                ),
+                1,
+            ),
         ),
         RotorPreset(
             "Journal bearings (oil whip)",
@@ -164,7 +189,7 @@ def rotor_presets() -> list[RotorPreset]:
             "revolutions, and the spectrum shows ½X (36.7 Hz at 4400 rpm) and its harmonics.",
         ),
         RotorPreset(
-            "Full rub (backward whirl)",
+            "Full rub (a tight seal)",
             RotorSystem(stator=Stator(clearance=30e-6, friction=0.3)),
             10_000.0,
             2000.0,
@@ -173,6 +198,11 @@ def rotor_presets() -> list[RotorPreset]:
             "into backward whirl at 227 Hz, the disc's frequency on the ring, far above the speed. The "
             "rim rolls round the ring, so the orbit's radius is <m>RΩ</m>/<m>ω</m>, 7.3 mm at 2000 rpm, pushing the "
             "ring back far past its clearance: dry whirl, which would wreck a real machine.",
+            predict=Prediction(
+                "A seal ring 30 µm round the disc, with dry friction. Running up through the critical, the whirl reaches the ring and rubs all round. Which way does the disc whirl then?",
+                ("Forward, with the spin", "Backward, against the spin", "Not at all: the ring holds it still"),
+                1,
+            ),
         ),
         RotorPreset(
             "Newkirk effect (thermal bow)",
