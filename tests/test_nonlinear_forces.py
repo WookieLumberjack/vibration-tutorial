@@ -206,20 +206,20 @@ def test_trials():
     assert [round(up.hz[k], 3) for k in up.jumps] == [2.450] and [round(down.hz[k], 3) for k in down.jumps] == [2.422]
     assert 100 * nl.homogeneity([u for u, _ in runs], 2, list(t.levels)) == pytest.approx(67, abs=0.5)
 
-    t = by["A gap: linear, until it closes"]
+    t = by["A gap of 5 mm"]
     _, runs = sweeps(t)
     assert nl.homogeneity([runs[0][0], runs[1][0]], 2, list(t.levels[:2])) < 1e-12
     up, down = runs[2]
     assert [round(up.hz[k], 3) for k in up.jumps] == [2.553] and [round(down.hz[k], 3) for k in down.jumps] == [2.356]
 
-    t = by["Friction: damping that fades"]
+    t = by["Friction at two levels"]
     _, runs = sweeps(t)
     assert peak(runs[0][0], 0.2)[1] == pytest.approx(0.0177, abs=5e-5)
     assert peak(runs[2][0], 2.0)[1] == pytest.approx(0.0456, abs=5e-5)
     assert peak(sweeps(by["Linear: every level agrees"])[1][0][0], 0.05)[1] == pytest.approx(0.0487, abs=5e-5)
     assert t.friction[2] / t.levels[2] == pytest.approx(1 / 20)
 
-    t = by["Distortion: odd harmonics"]
+    t = by["Held just below the peak"]
     F = t.levels[t.level]
     start = nl.harmonic_balance(t.system(), t.element, t.force, F, t.hz).X
     w = nl.steady_response(t.system(), t.element, t.force, F, t.hz, start)

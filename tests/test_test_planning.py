@@ -126,7 +126,7 @@ def test_trials():
     assert 100 * q.information == pytest.approx(7.75, abs=0.005)
     assert q.auto_mac[1, 2] == pytest.approx(0.188, abs=5e-4) and q.worst == q.auto_mac[1, 2]
 
-    p, q = placed(by["Sensors bunched at the ground: aliasing"])
+    p, q = placed(by["Sensors bunched at the ground"])
     assert list(p.sensors + 1) == [1, 2, 3]
     assert q.auto_mac[0, 1] == pytest.approx(0.976, abs=5e-4)
     assert q.information == pytest.approx(7.8e-7, abs=5e-9) and q.noise[0] == pytest.approx(240, abs=0.5)
@@ -136,7 +136,7 @@ def test_trials():
     assert list(p.sensors + 1) == [2, 3, 5, 8] and 100 * q.information == pytest.approx(19.9, abs=0.05)
     assert q.noise[1] == pytest.approx(1.23, abs=0.005)
 
-    t = by["An ODS at a mode is the mode"]
+    t = by["An ODS at mode 2's frequency"]
     assert t.hz == pytest.approx(hz[1], abs=5e-4)
     x = ods(t.system(), t.force, t.hz)
     assert mac(x, phi[:, 1]) == pytest.approx(0.999, abs=5e-4)

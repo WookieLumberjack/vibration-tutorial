@@ -82,6 +82,8 @@ def test_a_page_set_up_from_the_chain_opens_at_its_prompt(main_window, app, name
     assert page.trials.combo.chosen() is None and page.trials.note.text() == ""
     opening = _fields(page.practice_state())
     page.trials.combo.pick(page.trials.combo.names[0])
+    if page.trials.asking is not None:  # it asks a prediction first (#316 B3): answered, it runs
+        page.trials.answer(0)
     app.processEvents()
     assert page.trials.combo.chosen() == 0 and page.trials.note.text()
     assert _fields(page.practice_state()) == opening, "the first trial is the opening setup, with its note"

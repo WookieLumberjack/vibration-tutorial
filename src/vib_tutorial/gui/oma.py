@@ -53,7 +53,7 @@ from ..core.oma import (
     ssi_cov,
     ssi_modes,
 )
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import oma_figures
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import TrialBox, trials_html
@@ -170,6 +170,7 @@ class OmaSetup:
     block_scale: float = 1.0
     corner_scale: float = 1.5
     machine: str = ""  # a trial's machine: "between" modes 1 and 2, or "near" mode 2
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -202,11 +203,30 @@ TRIALS = (
         "Blocks an eighth as long: smooth spectra but coarse lines, and the window's leakage widens every "
         "peak: the damping comes out too high, the lightest damped mode's most.",
         block_scale=1 / 8,
+        predict=Prediction(
+            "Blocks an eighth as long: smoother spectra, coarser lines. What happens to the modes' damping?",
+            (
+                "It comes out right, only noisier",
+                "It comes out too low",
+                "It comes out too high",
+            ),
+            2,
+        ),
     ),
     _trial(
         "Forces at m3 only",
         "On the default chain m3 sits on a node of mode 2: nothing excites it, so it is missing from <m>s<sub>1</sub></m>.",
         input=3,
+        predict=Prediction(
+            'The ambient forces on m3 alone, which sits on a node of mode 2. What does FDD find of mode 2?',
+            (
+                "It, as usual",
+                "It, with too much damping",
+                "It, twice over",
+                "Nothing: it isn't excited",
+            ),
+            3,
+        ),
     ),
     _trial(
         "Coloured forces",
@@ -235,6 +255,16 @@ TRIALS = (
         "damped mode. Its filtered response has a kurtosis of about 1.5, a sine's, so it is crossed out.",
         machine="between",
         machine_force=1.0,
+        predict=Prediction(
+            "A machine on m1, a sine between the chain's first two modes. What does FDD make of it?",
+            (
+                "It shifts the modes beside it",
+                "A broad bump",
+                "Nothing: a sine isn't random",
+                "A sharp, nearly undamped peak, like a mode",
+            ),
+            3,
+        ),
     ),
     _trial(
         "A machine near a mode",
@@ -643,6 +673,7 @@ class OmaPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Settings that show one of OMA's strengths or pitfalls, set from the chain as it is now.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
 
         left = QtWidgets.QWidget()

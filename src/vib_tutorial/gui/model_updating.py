@@ -37,7 +37,7 @@ from ..core.model_updating import (
     parameters,
     update,
 )
-from ..core.practice import Problem, Question, Requirement, at_most, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from . import updating_figures, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TAB_ROOM, TrialBox, trials_html
@@ -129,6 +129,7 @@ class UpdatingSetup:
     scale_springs: float = 1.0
     scale_dampers: float = 1.0
     update: dict[str, Any] = field(default_factory=dict)
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -161,6 +162,17 @@ TRIALS = (
         "shift these a little, so mode 3 reads +0.3 % there): mode 3's least, since k3 stretches little in it. The shapes "
         "barely change (MACs of 0.99 and up), so they are little help in finding it.",
         changes=(("k", 2, 1.3),),
+        predict=Prediction(
+            "The model's k3 is 30 % too stiff, on the uniform four-mass chain. Which mode's frequency is least "
+            "affected?",
+            (
+                "Mode 4",
+                "Mode 3",
+                "Mode 2",
+                "Mode 1",
+            ),
+            1,
+        ),
     ),
     _trial(
         "One mass 20 % too heavy",
@@ -174,12 +186,31 @@ TRIALS = (
         "Every frequency is √0.9 − 1 = −5.1 % off, and every shape exactly right: a uniform stiffness (or mass) "
         "error scales the frequencies and leaves the shapes alone, so the MACs see nothing.",
         scale_springs=0.9,
+        predict=Prediction(
+            "Every spring of the model 10 % too soft. What do the MACs between the test's shapes and the model's say?",
+            (
+                "They drop evenly, to about 0.9",
+                "They drop most for the highest modes",
+                "Nothing: they stay at about 1",
+            ),
+            2,
+        ),
     ),
     _trial(
         "Dampers twice too strong",
         "The model's dampers are twice the structure's: its damping ratios are double the test's, and its "
         "frequencies and shapes don't move. Damping can only be checked against the measured ζ.",
         scale_dampers=2.0,
+        predict=Prediction(
+            "The model's dampers twice the structure's. What happens to its frequencies against the test's?",
+            (
+                "The higher modes' fall most",
+                "They all rise",
+                "They all fall",
+                "They don't move",
+            ),
+            3,
+        ),
     ),
     _trial(
         "Two sensors",
@@ -189,6 +220,15 @@ TRIALS = (
         changes=(("k", 2, 1.3),),
         sensors=(0, -1),
         source=Source.EXACT,
+        predict=Prediction(
+            "Every mode measured, but with sensors on m1 and the last mass only. What does the test's auto-MAC show?",
+            (
+                "Every off-diagonal term exactly 0",
+                "Every mode still looks distinct",
+                "Some modes look alike: high off-diagonal terms",
+            ),
+            2,
+        ),
     ),
     _trial(
         "No error: the test's own noise",
@@ -665,6 +705,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Model errors (and tests) that show something about correlation, set on the chain as it is now.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
 
         left = QtWidgets.QWidget()

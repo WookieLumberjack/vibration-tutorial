@@ -23,7 +23,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core import force_id as fid
 from ..core import nonlinear_test as nl
 from ..core.model import ChainSystem
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick
 from . import nonlinear_figures, settle_plots, weak
 from .layouts import FlowLayout
 from .lesson import (
@@ -95,6 +95,7 @@ class NonlinearTrial:
     stiffness: tuple[float, ...] = SPRINGS
     damping: tuple[float, ...] = DAMPERS
     friction: tuple[float, ...] = NONE
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         return chain(self.masses, self.stiffness, self.damping, self.friction)
@@ -122,30 +123,61 @@ TRIALS = (
         levels=(0.05, 0.5, 1.0),
     ),
     NonlinearTrial(
-        "A gap: linear, until it closes",
+        "A gap of 5 mm",
         "A 5000 N/m spring that only touches once the first spring stretches 5 mm either way. At 0.05 and "
         "0.2 N the stretch stays inside the gap and the FRFs agree; at 0.5 N it closes near the peak, which "
         "leans and jumps (swept up at 2.553 Hz, down at 2.356 Hz). A test at the two low levels alone would call "
         "this chain linear.",
         kind=nl.Kind.GAP,
+        predict=Prediction(
+            "A spring that only touches once the first spring stretches 5 mm, tested at 0.05 and 0.2 N, where the "
+            "stretch stays inside the gap. What do the FRFs at the two levels show?",
+            (
+                "Odd harmonics in the response",
+                "Jumps between sweeping up and down",
+                "A peak leaning to a higher frequency",
+                "The same, linear FRF",
+            ),
+            3,
+        ),
     ),
     NonlinearTrial(
-        "Friction: damping that fades",
+        "Friction at two levels",
         "No extra element, but 0.1 N of Coulomb friction on mass 3 (the Simulation page's). At 0.2 N the "
         "friction takes most of the force: the peak FRF is 0.0177 m/N. At 2 N it's a twentieth of the force, "
         "and the peak reaches 0.0456 m/N, near the linear 0.0487. Friction's FRF rises with the level: it "
         "damps a small motion more, as a share.",
         levels=(0.2, 0.5, 2.0),
         friction=(0.0, 0.0, 0.1),
+        predict=Prediction(
+            '0.1 N of Coulomb friction on mass 3, tested at 0.2 N and then at 2 N. How does the peak FRF |X/F| change?',
+            (
+                "It leans to a higher frequency",
+                "It doesn't change",
+                "It falls",
+                "It rises",
+            ),
+            3,
+        ),
     ),
     NonlinearTrial(
-        "Distortion: odd harmonics",
+        "Held just below the peak",
         "The hardening spring at 0.5 N, held at 2.269 Hz just below its leaning peak: the steady response "
         "isn't a sine. Its 3X is 1.9 % of its 1X at mass 3 and its 5X smaller still, and there's no 2X: a "
         "symmetric nonlinearity makes odd harmonics only. Harmonic balance's one harmonic gives 1X within "
         "3 % of the time response's.",
         kind=nl.Kind.CUBIC,
         hz=2.269,
+        predict=Prediction(
+            "The hardening spring at 0.5 N, held just below its leaning peak. Which harmonics does its steady "
+            "response hold besides 1X?",
+            (
+                "Every one: 2X, 3X, 4X…",
+                "Odd ones only: 3X, 5X…",
+                "None: it's still a sine",
+            ),
+            1,
+        ),
     ),
     NonlinearTrial(
         "Force identification: the plain inverse",
@@ -421,6 +453,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Each loads a chain into the Simulation page and sets up the test to show one idea from the Theory "
             "tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

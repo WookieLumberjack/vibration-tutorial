@@ -16,7 +16,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick, rounded
 from ..core.signals import (
     FILTER_RATIO,
     WINDOWS,
@@ -89,6 +89,7 @@ class SignalsTrial:
     tab: int = TAB_WINDOWS
     sensor_hz: float = 30000.0
     sensor_zeta: float = 0.01
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -102,7 +103,7 @@ TRIALS = (
         window=Window.RECTANGULAR,
     ),
     SignalsTrial(
-        "Between lines: leakage",
+        "A tone between lines",
         "The tone moved to 50.5 Hz, half-way between lines, still unwindowed. It reads 0.64 (−3.9 dB, the "
         "rectangular window's scalloping loss), and its energy leaks across the whole spectrum, falling only as "
         "1/f: at 70 Hz the leak reads 0.015, fifteen times a 0.001 tone that is there and can't be seen.",
@@ -110,6 +111,15 @@ TRIALS = (
         f2=70.0,
         a2=0.001,
         window=Window.RECTANGULAR,
+        predict=Prediction(
+            'The tone moved to 50.5 Hz, half-way between two lines, with no window. What does the spectrum show?',
+            (
+                "The same 1.000, on one line",
+                "A lower reading, and energy leaking across every line",
+                "Two lines reading 0.5 each",
+            ),
+            1,
+        ),
     ),
     SignalsTrial(
         "A Hann window",
@@ -140,6 +150,15 @@ TRIALS = (
         a2=0.0,
         filtered=False,
         zoom=True,
+        predict=Prediction(
+            'A 900 Hz tone sampled at 1024 Hz with the anti-alias filter off. Where does it show?',
+            (
+                "Nowhere: it's above Nyquist",
+                "At 900 Hz",
+                "At 124 Hz, at its full amplitude",
+            ),
+            2,
+        ),
     ),
     SignalsTrial(
         "The anti-alias filter",
@@ -165,9 +184,20 @@ TRIALS = (
         block=4096,
         averages=8,
         scale=0,
+        predict=Prediction(
+            "A tone in noise, read as an amplitude spectrum: the block made 4 times longer (the same sample rate). "
+            "What happens to the tone's line, and to the noise round it?",
+            (
+                "Both halve",
+                "The tone grows 4 times; the noise stays",
+                "Both stay the same",
+                "The tone stays; the noise halves",
+            ),
+            3,
+        ),
     ),
     SignalsTrial(
-        "Averaging smooths",
+        "Noise, averaged",
         "Noise alone, of RMS 0.5, as a PSD from one block of 256: each line scatters by 100 %. Raise the averages "
         "to 64 and the scatter falls to an eighth (<m>1/√n<sub>d</sub></m>), but the level stays at 4.9 × 10⁻⁴: averaging doesn't "
         "lower the noise, it makes its level certain. The PSD's area, 0.25, is the RMS².",
@@ -177,6 +207,16 @@ TRIALS = (
         block=256,
         averages=1,
         scale=1,
+        predict=Prediction(
+            'Noise alone, its PSD averaged over 64 blocks instead of one. What happens to it?',
+            (
+                "The level stays; the scatter falls to an eighth",
+                "The level falls to an eighth",
+                "The level falls to 1/64",
+                "Nothing changes",
+            ),
+            0,
+        ),
     ),
     SignalsTrial(
         "A chirp's spectrogram",
@@ -527,6 +567,7 @@ class SignalsPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each sets up the signal and its acquisition to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

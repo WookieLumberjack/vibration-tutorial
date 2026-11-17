@@ -376,7 +376,7 @@ def test_one_click_trials_set_up_their_pages(app):
     p = w.test_page
     w.pages.setCurrentWidget(p)
     p.speed.setCurrentIndex(0)  # Instant
-    p.trials.combo.setCurrentIndex(1)  # a force at the node of mode 2
+    _pick(p, p.trials.combo.names[0])  # a force at the node of mode 2
     for _ in range(400):
         if not p.running:
             break
@@ -4884,7 +4884,7 @@ def test_nonlinear_forces_controls(app, main_window):
     page.sweeper.wait()
     assert not form.isRowVisible(page.spring) and "<b>0 %</b>" in page.frf_readout.text()
     # the Distortion tab steps the chain in time only when it shows, and again when its point moves
-    page.load_trial(names.index("Distortion: odd harmonics"))
+    page.load_trial(names.index("Held just below the peak"))
     assert page.tabs.currentIndex() == nf.TAB_DISTORTION and page.waveform is not None
     assert "3X is 1.91 %" in page.dist_note.text()
     page.dist_hz.setValue(2.2)
