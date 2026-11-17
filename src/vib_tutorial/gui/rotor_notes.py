@@ -11,7 +11,7 @@ import numpy as np
 from ..core.rotor import DOF_NAMES, MODE_LIMIT, XD, YA, YB, YD, RotorSystem
 from ..core.rotor_modes import periodic_steady, whirl_modes
 from ..core.rotor_simulator import RPM
-from . import rotor_figures
+from . import rotor_figures, rotor_practice
 from .cms_notes import fmt
 from .links import load_notes
 from .style import colors
@@ -539,7 +539,9 @@ bearings' share of it back on the journals, {bow_journals}.</p>
 """
 
 
-THEORY_HTML = load_notes("rotor_notes", figures=rotor_figures.FIGURES)
+THEORY_HTML = load_notes(
+    "rotor_notes", figures=rotor_figures.FIGURES, problems=rotor_practice.PROBLEMS
+)  # its parts' recaps link their problems
 
 
 def _crack_note(s: RotorSystem) -> str:

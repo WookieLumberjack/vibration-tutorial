@@ -327,6 +327,77 @@ def _stiff_shaft(rng: np.random.Generator) -> Question:
     )
 
 
+def _gyro_matrix(rng: np.random.Generator) -> Question:
+    return Question(
+        "The rotor's equations are M q̈ + (C + ΩG) q̇ + (K + ΩH) q = f. Which term makes each mode's forward and "
+        "backward whirl frequencies split apart as the speed rises?",
+        0,
+        "ΩG, the gyroscopic term: skew-symmetric and growing with the speed, it comes from the spin's angular "
+        "momentum I<sub>p</sub>Ω turned by the disc's tilt, and it stiffens the forward whirl and softens the "
+        "backward one. At rest the two share one frequency.",
+        choices=("ΩG, the gyroscopic term", "C, the damping", "K, the stiffness", "ΩH, internal damping's term"),
+        why=(
+            "",
+            "Damping sets how fast a whirl dies away; light damping hardly moves its frequency, and C doesn't "
+            "grow with the speed.",
+            "On round supports K treats every direction alike, so it can't tell a forward whirl from a backward "
+            "one, and it doesn't change with the speed.",
+            "ΩH is a cross-coupled stiffness that feeds or damps a whirl (it drives the forward one above the "
+            "critical); the frequencies' split is the gyroscopic term's.",
+        ),
+    )
+
+
+def _ramp_rate(rng: np.random.Generator) -> Question:
+    zeta = pick(rng, (0.02, 0.03, 0.046, 0.06))
+    crit = pick(rng, (1200, 1589, 2400, 3000))
+    wc = crit * 2 * math.pi / 60
+    rate = 2 * zeta**2 * wc**2  # rad/s²
+    rpm_s = rate * 60 / (2 * math.pi)
+    return Question(
+        f"A rotor's critical speed is {crit:g} rpm, its damping ζ = {zeta:g}. At what ramp rate does "
+        "Ω̇/ω<sub>c</sub>² reach 2ζ², the scale past which a run-up's peak falls clearly short of the steady "
+        "state's?",
+        rpm_s,
+        f"ω<sub>c</sub> = {crit:g} × 2π/60 = {number(wc)} rad/s, so Ω̇ = 2ζ²ω<sub>c</sub>² = {number(rate)} rad/s², "
+        f"× 60/2π = {number(rpm_s)} rpm/s. Well below it the run-up reaches the steady-state peak; the faster, the "
+        "lower and later the peak.",
+        unit="rpm/s",
+        tolerance=0.03,
+    )
+
+
+def _gravity_critical(rng: np.random.Generator) -> Question:
+    crit = pick(rng, (1584, 2000, 2700, 3600))
+    return Question(
+        f"A horizontal rotor's shaft is a little stiffer one way across than the other (a two-pole rotor), and its "
+        f"critical speed is {crit:g} rpm. At what running speed does its own weight drive a resonance?",
+        crit / 2,
+        f"Half the critical, {number(crit / 2)} rpm. Seen from the bearings, a stiffness that turns with the shaft "
+        "changes twice a revolution, so the constant weight on it drives 2X, and 2X meets the critical at half its "
+        "speed: the gravity critical.",
+        unit="rpm",
+    )
+
+
+def _rub_whirl(rng: np.random.Generator) -> Question:
+    return Question(
+        "A disc rubs all the way round its stator ring, its rim slipping forward over the ring. Which way does the "
+        "friction push the disc round the ring?",
+        0,
+        "Backward. The rim's speed R<sub>d</sub>Ω is far faster than the whirl, so it slips forward over the ring "
+        "and the friction on it acts backward; enough of it flips the whirl backward, to the disc's frequency on "
+        "the ring, far above the speed: dry whirl.",
+        choices=("Backward round the ring", "Forward, with the spin", "Neither: friction only damps the whirl"),
+        why=(
+            "",
+            "Friction acts against the slip, and the rim slips forward over the ring: so on the disc it acts backward.",
+            "Friction at a slipping contact acts along the tangent, a cross-coupled stiffness: it drives a whirl, "
+            "it doesn't only damp it.",
+        ),
+    )
+
+
 PROBLEMS = tuple(
     Problem(
         key,
@@ -361,5 +432,15 @@ PROBLEMS = tuple(
             _oil_damping,
         ),
         ("stiff-shaft", "Spec: a stiff shaft", "classic", "The classic case", _stiff_shaft),
+        (
+            "gyro-matrix",
+            "Which term splits the whirls",
+            "solving",
+            "Solving: modes that move with the speed",
+            _gyro_matrix,
+        ),
+        ("ramp-rate", "A ramp slow enough", "run-up", "Run-up and coast-down", _ramp_rate),
+        ("gravity-critical", "The gravity critical", "asymmetric", "The asymmetric shaft", _gravity_critical),
+        ("rub-whirl", "Which way a rub pushes", "rub", "Rotor–stator rub", _rub_whirl),
     )
 )

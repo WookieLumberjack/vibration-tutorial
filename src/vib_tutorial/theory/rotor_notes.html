@@ -194,6 +194,12 @@ because with few elements much of the mass sits on the bearings, where it hardly
 branches dashed beside the real ones. How the elements are built is under <i>Beam finite elements</i> in
 part 2, and how the model is kept fast under <i>Numerics</i>.</p>
 
+<recap problems="critical whirl-radius phase-lag high-spot conical overhung anisotropic stiff-shaft">
+<li>A disc on a massless shaft whirls at its critical speed, <m>√(k/m)</m> with the shaft and the supports in series; the unbalance drives it once a revolution, so the response peaks when the speed reaches it.</li>
+<li>The high spot lags the heavy spot: a little below the critical, 90° at it and nearly 180° well above, where the disc spins about its own centre of mass.</li>
+<li>Spin splits each mode into a forward and a backward whirl, and the unbalance finds the critical speeds where 1X crosses the forward branches; an overhung disc's tilt and anisotropic supports move and split them.</li>
+</recap>
+
 <h2><a name="equations"></a>2. The equations of motion</h2>
 <p>Part 1 showed what the gyroscopic effect does. This part derives it, twice: from the disc's angular
 momentum, then from its energy by Lagrange's equations, which also show why the gyroscopic matrix is
@@ -419,6 +425,12 @@ has to stay below about 2/<m>ω</m> of the fastest of them, or it blows up. The 
 update (see <a href="page:integration_page#exact">The exact update</a>, Numerical integration page) is
 stable at any step, so the step only has to resolve what the rotor does (see <i>Numerics</i>).</p>
 
+<recap problems="gyro-matrix">
+<li>The gyroscopic moment is the spin's angular momentum turned by the disc's tilt: a skew term <m>ΩG</m> that grows with the speed (Lagrange's equations give the same).</li>
+<li><m>M</m>, <m>C</m>, <m>G</m>, <m>K</m> and <m>H</m> are assembled part by part, and beam elements give the shaft its own mass and its higher modes.</li>
+<li>The modes come from a quadratic eigenvalue problem that changes with the speed and isn't symmetric: complex modes, found again at every speed.</li>
+</recap>
+
 <h2>3. Measuring the response</h2>
 
 <h3><a name="run-up"></a>Run-up and coast-down: Bode and polar plots</h3>
@@ -488,6 +500,12 @@ speed. The Bode plot's once-per-revolution 1X vector is that kind of measurement
 <p><b>On the page.</b> The <i>Waterfall</i> tab takes the full spectrum of the orbit at a station, in
 blocks of 0.5 s by default, each starting halfway through the last. <i>Tap the disc every</i> taps it as
 it runs.</p>
+
+<recap problems="ramp-rate">
+<li>A tracking filter takes each revolution's 1X: the Bode plot draws its amplitude and lag against speed, the polar plot its vector, nearly a circle through a critical.</li>
+<li>Swept at a finite rate, a run-up peaks lower and later than the steady state and a coast-down lower and earlier; <m>Ω̇/ω<sub>c</sub>²</m> against <m>2ζ²</m> says how much.</li>
+<li>A waterfall or cascade stacks spectra against time or speed: the 1X ridge moves with the speed, a free whirl stays at its frequency.</li>
+</recap>
 
 <h2>4. Once-per-revolution forces and balancing</h2>
 
@@ -620,6 +638,12 @@ apart about 8 µm. Real balancing machines put the planes as far apart as the ro
 <p><b>On the page.</b> Choose <i>Two planes</i> on the <i>Balancing</i> tab, on the disc's faces or on
 the shaft.</p>
 
+<recap problems="balance">
+<li>Anything fixed to the rotor off its axis drives 1X: unbalance, a bent shaft, a skewed disc.</li>
+<li>Single-plane balancing reads the 1X vector with and without a trial weight; the influence coefficient then gives the weight that cancels it.</li>
+<li>A rigid rotor's unbalance is a force and a couple: two weights in two planes, read by two probes through an influence matrix.</li>
+</recap>
+
 <h2>5. Gravity, and stiffness that turns</h2>
 
 <h3>Gravity on a horizontal rotor</h3>
@@ -644,7 +668,7 @@ damping resists that. With <m>c<sub>i</sub></m> = 20 N·s/m the disc moves sidew
 <p><b>On the page.</b> Tick <i>Horizontal rotor</i>. The <i>Static sag</i> box switches the drawing
 between the two probes' views. The tracking, the spectrum and the phase are always of the vibration.</p>
 
-<h3>The asymmetric shaft: a two-pole rotor</h3>
+<h3><a name="asymmetric"></a>The asymmetric shaft: a two-pole rotor</h3>
 <p>The rotor of a two-pole generator has slots for its winding cut along two sides, so it is stiffer
 bending one way than the other. A keyway or a flat does the same on a smaller scale, and a crack that
 opens and closes is a cousin. Bending toward its stiff axis the shaft has EI(1 + <m>Δ</m>), and across it
@@ -788,6 +812,12 @@ The 2X and 3X grow fast with the depth: at <m>a<sub>c</sub>/d</m> = 0.2, 0.3, 0.
 with its mouth's angle from the keyphasor mark and its place along the shaft. Untick <i>Breathing</i> to
 hold it open, as a sawn notch. The 3D view draws it as a dark tick on the shaft, pointing at its mouth,
 thick while it is open.</p>
+
+<recap problems="gravity-critical">
+<li>On a round shaft gravity only moves the equilibrium: the rotor whirls about its sagged position.</li>
+<li>A shaft stiffer one way than the other (a two-pole rotor, a keyway) turns its stiffness with it, so its weight drives 2X, with a resonance at half a critical.</li>
+<li>A crack is a hinge that opens and closes as the shaft turns: under gravity it too drives 2X and above.</li>
+</recap>
 
 <h2>6. Stability</h2>
 
@@ -1054,9 +1084,15 @@ geared machine's model the mesh spring joins the torsional DOFs to the lateral o
 mode mix, and a torsional resonance can show at the bearings, and a lateral one in the torque. Neither
 this page nor the Torsional page models that coupling.</p>
 
+<recap problems="oil-whip internal-onset oil-damping">
+<li>Cross-coupled stiffness, from oil films, seals or internal damping, can make a free whirl grow by itself: above an onset speed the rotor is unstable, whatever its balance.</li>
+<li>Oil swirling round at a fraction <m>λ</m> of the speed drives the forward whirl once <m>λΩ</m> passes its frequency, and more damping in the bearings doesn't move that onset.</li>
+<li>A fluid-film bearing's stiffness and damping come from Reynolds' equation and change with the speed; a magnetic bearing's come from its controller.</li>
+</recap>
+
 <h2>7. Rub</h2>
 
-<h3>Rotor–stator rub</h3>
+<h3><a name="rub"></a>Rotor–stator rub</h3>
 <p>Seals and casings sit close round a rotor. A ring round the disc, a radial clearance <m>δ<sub>c</sub></m> larger
 than it, does nothing until the disc's centre moves <m>δ<sub>c</sub></m> off the ring's centre. Past that, by <m>δ<sub>p</sub></m>,
 the ring pushes the disc back toward its centre with <m>F<sub>N</sub> = k<sub>ring</sub>δ<sub>p</sub> + c<sub>ring</sub>δ̇<sub>p</sub></m>, never
@@ -1110,6 +1146,11 @@ frequency on the ring, and plots the ring's push on the disc. With a thermal gai
 spiral: each revolution's 1X vector at the disc (in the probe's direction) and the thermal bow, from
 when the speed settled. The ring is drawn round the disc in the 3D
 view and on its orbit. A ring needs a round shaft, with the oil films linearized.</p>
+
+<recap problems="rub-whirl">
+<li>A ring pushes back only once the disc passes the clearance, and its friction drags the rim against its slip: enough of it flips the whirl backward, into dry whirl.</li>
+<li>A rub heats the shaft on one side and bows it; below the critical the bow feeds the rub (the Newkirk effect).</li>
+</recap>
 
 <h2>8. Numerics</h2>
 
@@ -1192,6 +1233,11 @@ close but not exact (see <i>Unbalance response</i>).</li>
 10<sup>−3</sup> kg·m² between <m>θ<sub>x</sub></m> and <m>θ<sub>y</sub></m>. At 3000 rpm the first pair of
 eigenvalues of the 16 × 16 <m>A(Ω)</m> is −7.714 ± 165.9i 1/s.</li>
 </ol>
+
+<recap problems="">
+<li>The rotor's matrices aren't symmetric and change with the speed, so it's solved in state space and stepped exactly; the films' and the rub's forces go in as loads, found by Newton's method each step.</li>
+<li>A shaft with mass is reduced as a substructure (Craig–Bampton), so its highest modes don't slow the stepping.</li>
+</recap>
 
 <h2>Things to try</h2>
 <h3>1. Fundamentals</h3>
