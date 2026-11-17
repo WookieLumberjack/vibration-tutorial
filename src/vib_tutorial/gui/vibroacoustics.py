@@ -34,7 +34,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.beams_plates import TWO_PI, Material, Plate, PlateMode, rect_shape
-from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, kept, number, pick, rounded
 from ..core.radiation import (
     AIR,
     P_REF,
@@ -128,6 +128,7 @@ class AcousticsTrial:
     loss2: float = 0.01
     volume: float = 50.0  # m³
     t60: float = 0.5  # s
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
 
 GLASS: dict[str, float] = dict(E=70.0, rho=2500.0, nu=0.22)  # a practice setup's material
@@ -149,13 +150,24 @@ TRIALS = (
         "wavelength (0.76 m) is about the panel's diagonal, peaks at 1.28 near 720 Hz and settles to 1.",
     ),
     AcousticsTrial(
-        "Even modes cancel",
+        "Mode (2, 2)",
         "Mode (2, 2), 266 Hz: four cells, each pushing the air its neighbours pull. At 100 Hz <m>σ<sub>22</sub></m> is "
         "1.4 × 10<sup>−5</sup>, against (1, 1)'s 0.082 at the same frequency: an even index cancels to two more "
         "powers of k, and here both are even. The modes' dots (right, bottom) fall in three bands: odd–odd "
         "highest, even–even lowest.",
         m=2,
         n=2,
+        predict=Prediction(
+            "At 100 Hz, far below their resonances, which of the panel's modes radiates best: (1, 1), (2, 1) or (2, "
+            "2)?",
+            (
+                "All the same",
+                "(2, 2)",
+                "(2, 1)",
+                "(1, 1)",
+            ),
+            3,
+        ),
     ),
     AcousticsTrial(
         "An edge mode",
@@ -184,6 +196,16 @@ TRIALS = (
         "incidence, to 78°) gets through more easily: 33.8 dB. Double the mass or the frequency and the TL rises "
         "6 dB, until the coincidence dip at <m>f<sub>c</sub></m>.",
         tab=TAB_TRANSMISSION,
+        predict=Prediction(
+            "Below coincidence, how much does doubling the panel's mass per area add to its transmission loss?",
+            (
+                "Nothing: its stiffness sets it",
+                "12 dB",
+                "3 dB",
+                "6 dB",
+            ),
+            3,
+        ),
     ),
     AcousticsTrial(
         "Thicker glass, a dip in the speech band",
@@ -249,13 +271,24 @@ TRIALS = (
         tab=TAB_SEA,
     ),
     AcousticsTrial(
-        "Equipartition",
+        "An undamped second plate",
         "Plate 2's own loss factor down to 0.0001, far below what it hands back across the corner "
         "(<m>η<sub>21</sub></m> = 0.00647): it can only lose its energy by returning it, and its energy per mode comes to 0.967 of "
         "plate 1's. Its <m>⟨v<sup>2</sup>⟩</m> is now 3.4 dB above the driven plate's (it is lighter), and the room 66.2 dB. With "
         "<m>η<sub>2</sub></m> = 0.1 instead the share falls to 0.061: a damped receiver drains the energy it is sent.",
         loss2=0.0001,
         tab=TAB_SEA,
+        predict=Prediction(
+            "Plate 2's own loss factor cut to 0.0001, far below what it hands back across the corner. What does its "
+            "energy per mode tend to?",
+            (
+                "Zero",
+                "Growing without limit",
+                "Plate 1's energy, not per mode",
+                "Plate 1's energy per mode",
+            ),
+            3,
+        ),
     ),
     AcousticsTrial(
         "A heavy wall",
@@ -640,7 +673,9 @@ class VibroAcousticsPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.trials = TrialBox(
-            [t.name for t in TRIALS], "<p>Each sets up the panel to show one idea from the Theory tab.</p>"
+            [t.name for t in TRIALS],
+            "<p>Each sets up the panel to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

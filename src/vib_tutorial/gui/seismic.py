@@ -31,7 +31,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.model import ChainSystem
-from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.random_vibration import G
 from ..core.seismic import (
     GROUNDS,
@@ -98,6 +98,7 @@ class SeismicTrial:
     stiffness: float = 5e6  # each storey's (N/m)
     masses: tuple[float, ...] = ()  # a chain element by element instead (a practice state's), its springs with it
     springs: tuple[float, ...] = ()
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         if self.masses:
@@ -120,20 +121,40 @@ TRIALS = (
         rule=Rule.CQC,
     ),
     SeismicTrial(
-        "ABS is too safe",
+        "Combined by ABS",
         "The same building by ABS: every mode's peak added as if they all arrived together, 277 kN, 18 % over "
         "the records' mean. Modes this far apart (<m>ρ<sub>12</sub></m> = 0.007) peak at different moments, and "
         "SRSS (229 kN) is right.",
         rule=Rule.ABS,
+        predict=Prediction(
+            "The five-storey building's modes combined by ABS, adding their peaks. Against the mean of seven records,"
+            " what does ABS give?",
+            (
+                "Too little",
+                "About the records' mean",
+                "Too much",
+            ),
+            2,
+        ),
     ),
     SeismicTrial(
-        "Close modes need CQC",
+        "A tuned tank on the roof",
         "A tank on the roof, 1 % of mode 1's modal mass there, tuned to mode 1, splits it into two modes "
         "0.96 and 1.06 Hz apart, with <m>ρ</m> = 0.50: they move together much of the time. SRSS treats them as "
         "independent: 21 % low on the base shear, and 54 % high on the tank's own swing, where the two modes "
         "nearly cancel. CQC keeps the cross term, with its sign, and is within 11 % of the records' mean on both.",
         tank=0.01,
         rule=Rule.SRSS,
+        predict=Prediction(
+            "A tank on the roof, tuned to mode 1, splits it into two close modes (0.96 and 1.06 Hz). Against CQC, "
+            "what does SRSS give for the base shear?",
+            (
+                "More",
+                "About the same",
+                "Less",
+            ),
+            2,
+        ),
     ),
     SeismicTrial(
         "Soft soil",
@@ -141,6 +162,17 @@ TRIALS = (
         "sits near it. Its <m>S<sub>a</sub></m> rises from 0.52 g to 0.82 g, and the base shear from 230 to "
         "357 kN: a site's soil matters as much as its seismicity.",
         ground=3,
+        predict=Prediction(
+            "The five-storey building (T₁ = 0.99 s) moved from ground type C to D, the same a<sub>g</sub>. What does "
+            "its base shear do?",
+            (
+                "It falls",
+                "It stays the same",
+                "It rises a little, as S does (1.15 to 1.35)",
+                "It rises by more than half",
+            ),
+            3,
+        ),
     ),
     SeismicTrial(
         "A taller building",
@@ -537,6 +569,7 @@ class SeismicPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Each loads a building into the Simulation page and sets up the spectrum to show "
             "one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
         self.challenge = ChallengeBox(self, PROBLEMS)
