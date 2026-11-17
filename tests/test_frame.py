@@ -280,7 +280,7 @@ def test_trials():
     assert (int(a.unused.sum()), int(a.fixed.sum()), int(a.free.sum())) == (9, 3, 15)
     assert modes(truss).hz[0] == pytest.approx(112.6, abs=0.05)
     m = modes(SQUARE)
-    assert by["A square of bars: a mechanism"].frame == SQUARE and m.mechanisms == 1 and m.hz.size == 4
+    assert by["A square of bars"].frame == SQUARE and m.mechanisms == 1 and m.hz.size == 4
     braced = SQUARE.with_element(Element(Kind.BAR, 0, 2))  # node 1 to node 3
     assert modes(braced).hz[0] == pytest.approx(276.9, abs=0.05)
     two = by["Two storeys: the chain again"].frame
