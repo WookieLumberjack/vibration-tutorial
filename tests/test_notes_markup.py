@@ -226,10 +226,11 @@ def test_a_figures_labels_are_measured_without_qt_as_qt_would(app):
     notes_render.install()  # as make_app does: the fonts registered, the labels measured by Qt
     assert figures.measure is notes_render.text_width
     for s in ("ω<sub>n</sub>", "k₁ = 400 N/m", "Heavy spot", "x(t)"):
-        assert font_metrics.width(s, True, 13) == pytest.approx(notes_render.text_width(s, True, 13), rel=0.01)
+        # at 200 px: at 13 px Windows hints each glyph's advance to a whole pixel (3 % off on a short label)
+        assert font_metrics.width(s, True, 200) == pytest.approx(notes_render.text_width(s, True, 200), rel=0.01)
     if QtGui.QFontInfo(QtGui.QFont()).family() == font_metrics.SANS_FAMILY:
         for s in ("Heavy spot", "keyphasor", "whirl orbit"):
-            assert font_metrics.width(s, False, 13) == pytest.approx(notes_render.text_width(s, False, 13), rel=0.01)
+            assert font_metrics.width(s, False, 200) == pytest.approx(notes_render.text_width(s, False, 200), rel=0.01)
 
 
 # ------------------------------------------------------------------ the browser
