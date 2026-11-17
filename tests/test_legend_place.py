@@ -69,19 +69,27 @@ def test_a_plots_legend_moves_off_its_curve_and_stays_where_dragged(app, free_wi
     x = np.linspace(0, 1, 200)
     plot.plot(x, 1 - x, name="falling")  # through the top left
     view.show()
-    placer = legend.findChild(lp.Placer)
-    assert placer is not None
-    for _ in range(3):
-        app.processEvents()
-    placer.place()
-    assert placer.spot == 1  # top right: the line falls from the top left to the bottom right
-    began = time.perf_counter()
-    for _ in range(20):
+    try:
+        placer = legend.findChild(lp.Placer)
+        assert placer is not None
+        for _ in range(3):
+            app.processEvents()
         placer.place()
-    assert (time.perf_counter() - began) / 20 < 0.005  # a placement, well under a frame
-    placer.manual = True  # dragged: it stays there
-    spot = placer.spot
-    plot.listDataItems()[0].setData(x, x)
-    placer.place()
-    assert placer.spot == spot
-    gui.close_graphics(view)
+        assert placer.spot == 1  # top right: the line falls from the top left to the bottom right
+        began = time.perf_counter()
+        for _ in range(20):
+            placer.place()
+        assert (time.perf_counter() - began) / 20 < 0.005  # a placement, well under a frame
+        assert placer.timer.interval() == lp.SLOWEST_MS  # put, again and again: placed ever less often
+        placer.timer.stop()
+        placer._last = 0.0  # then quiet a while
+        placer.soon()
+        assert placer.timer.interval() == lp.THROTTLE_MS  # a change after a quiet spell is placed promptly
+        placer.timer.stop()
+        placer.manual = True  # dragged: it stays there
+        spot = placer.spot
+        plot.listDataItems()[0].setData(x, x)
+        placer.place()
+        assert placer.spot == spot
+    finally:
+        gui.close_graphics(view)  # torn down even when it fails: a view left to gc segfaults

@@ -87,8 +87,14 @@ def test_mac_timings_scenarios_set_up(main_window):
     w = main_window
     for scenario in timings.SCENARIOS:
         page, speed = scenario.setup(w)
-        assert page is w.pages.currentWidget() and speed > 0, scenario.label
-        for loop in (getattr(page, "loop", None), w.sim_page.loop):
+        assert page is w.pages.currentWidget() and not speed <= 0, scenario.label  # nan: the page's own pace
+        playback, waves = getattr(page, "playback", None), getattr(page, "waves_view", None)
+        for loop in (
+            getattr(page, "loop", None),
+            getattr(playback, "loop", None),
+            getattr(waves, "loop", None),
+            w.sim_page.loop,
+        ):
             if loop is not None:
                 loop.enabled = False  # set up, not run
         _pump()

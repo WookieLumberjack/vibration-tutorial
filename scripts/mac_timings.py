@@ -1,6 +1,6 @@
 """Frame timings on this machine's own display, scenario by scenario, as a report to paste into #316.
 
-    uv run python scripts/mac_timings.py                    # every scenario, ~2 minutes
+    uv run python scripts/mac_timings.py                    # every scenario, ~3 minutes
     uv run python scripts/mac_timings.py --seconds 4 rotor  # just the scenarios whose label has "rotor"
     uv run python scripts/mac_timings.py rub                # the full rub, on its opening tabs and on the Rub tab
     uv run python scripts/mac_timings.py --app "dist/Vibration Tutorial.app/Contents/MacOS/vib-tutorial"
@@ -16,6 +16,9 @@ display's scale), the most costly first, and the rest of the window (controls, l
 "other". The rotor page's opening is timed too, and with `--app` the packaged app's start-up, cold then
 warm, as the release workflow measures it.
 
+Each scenario's legend placements are timed too (*Legend placement*: they run on their own timer between
+frames, so they show in neither column).
+
 Leave the window alone while it runs: a click or a key press is logged as an input but changes the run.
 `scripts/frame_report.py <out>/frames.csv` cuts the same log by what was on screen instead. To share a
 run, paste <out>/report.md into the issue as it is (the CSV only if asked: it's large).
@@ -26,6 +29,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import math
 import os
 import platform
 import subprocess
@@ -136,6 +140,54 @@ def _startup(preset: str, speed: float = 1.0):
     return setup
 
 
+def _playback(attribute: str, view: str | None = None):
+    """A small page's closed-form response played back (its `Playback`), at the page's own speed; `view`, the
+    page's attribute its playback draws, brought to the front if it's in a tab."""
+
+    def setup(w):
+        from PySide6 import QtWidgets
+
+        from vib_tutorial.gui import playback
+
+        page = getattr(w, attribute)
+        w.pages.setCurrentWidget(page)
+        if view is not None:
+            for tabs in page.findChildren(QtWidgets.QTabWidget):
+                for i in range(tabs.count()):
+                    if tabs.widget(i).isAncestorOf(getattr(page, view)):
+                        tabs.setCurrentIndex(i)
+        page.playback.play()
+        return page, playback.SPEEDS[page.playback.speed.currentIndex()][1]
+
+    return setup
+
+
+def _waves(preset: str):
+    """A wave preset on the Continuous systems page's Waves tab (it starts the pulse); its speed is the page's."""
+
+    def setup(w):
+        page = w.continuum_page
+        w.pages.setCurrentWidget(page)
+        page.load_preset(preset)
+        return page, float("nan")
+
+    return setup
+
+
+def stop(w, page) -> None:
+    """Stop the scenario's motion, whichever kind the page has."""
+    from vib_tutorial.gui.playback import Playback
+
+    if isinstance(getattr(page, "playback", None), Playback):
+        page.playback.pause()
+    elif page is w.continuum_page:
+        page.waves_view.reset()
+    elif hasattr(page, "_run"):
+        page._run(False)
+    elif page is w.sim_page and w.sim_page.force.active:
+        w.sim_page.force.switch_off()
+
+
 def _gyroscope(tab: str):
     def setup(w):
         from vib_tutorial.gui import gyroscope
@@ -188,6 +240,15 @@ SCENARIOS = (
         _startup("Geared compressor"),
         seconds=2.5,
     ),
+    Scenario("Single oscillator: played back", "a held plot under a moving cursor (#316 E)", _playback("sdof_page")),
+    Scenario(
+        "Quarter-car: driven over its road",
+        "the car's view and its held plots",
+        _playback("quarter_car_page", "car_view"),
+    ),
+    Scenario(
+        "Continuous systems: a pulse on 40 beads", "the Waves tab's frame loop", _waves("Waves: a pulse on 40 beads")
+    ),
     Scenario("Gyroscope: the first trial, Potential tab", "baseline for the Check tab", _gyroscope("TAB_POTENTIAL")),
     Scenario(
         "Gyroscope: the first trial, Check tab", "the Check plot, reported slow on the Mac", _gyroscope("TAB_CHECK")
@@ -230,6 +291,38 @@ class PaintSplit:
 
     def uninstall(self) -> None:
         self._cls.paintEvent = self._paint
+
+
+class PlaceTimer:
+    """Each legend placement's time (`legend_place.Placer.place`, on its own timer between frames), while `on`.
+    Installed before the window is built: a placer's timer holds the method it was given then."""
+
+    def __init__(self) -> None:
+        from vib_tutorial.gui import legend_place
+
+        self.on = False
+        self.ms: list[float] = []
+        self._cls = legend_place.Placer
+        self._place = legend_place.Placer.place
+        timer = self
+
+        def place(placer):
+            if not timer.on:
+                return timer._place(placer)
+            began = time.perf_counter()
+            try:
+                return timer._place(placer)
+            finally:
+                timer.ms.append((time.perf_counter() - began) * 1e3)
+
+        legend_place.Placer.place = place
+
+    def take(self) -> list[float]:
+        ms, self.ms = self.ms, []
+        return ms
+
+    def uninstall(self) -> None:
+        self._cls.place = self._place
 
 
 def _view_name(view) -> str:
@@ -318,7 +411,7 @@ def summarize(frames: list[dict[str, str]], asked: float) -> str:
     speed = ""
     if len(sims) > 1 and sims[-1][0] > sims[0][0]:
         ran = (sims[-1][1] - sims[0][1]) / (sims[-1][0] - sims[0][0])
-        speed = f"{ran:.2f}× of {asked:g}×"
+        speed = f"{ran:.2f}× of {asked:g}×" if math.isfinite(asked) else f"{ran:.3g}×"
     return (
         f"| {fps:.1f} | {np.median(work):.1f} / {np.percentile(work, 95):.1f} "
         f"| {np.median(paint):.1f} / {np.percentile(paint, 95):.1f} | {late:.0%} | {speed} |"
@@ -349,6 +442,7 @@ def main() -> int:
 
     app = gui.make_app(args.theme)
     split = PaintSplit()  # before any plot is built: PySide looks up a view's paintEvent when it's made
+    placing = PlaceTimer()
     w = MainWindow()
     width, height = (int(x) for x in args.size.split("x"))
     screen = app.primaryScreen()
@@ -372,6 +466,7 @@ def main() -> int:
 
     asked: dict[str, float] = {}
     painted: dict[str, dict[str, float]] = {}
+    placed: dict[str, list[float]] = {}
     for s in picked:
         print(f"{s.label} …", flush=True)
         try:
@@ -384,17 +479,18 @@ def main() -> int:
         stats = frame_stats.STATS
         assert stats is not None, "VIB_FRAME_STATS was set before the window was built"
         split.take()
+        placing.take()
         stats.note("input", MARK + "start " + s.label)
-        split.on = True
-        wait(app, min(args.seconds, s.seconds or args.seconds))
-        split.on = False
+        split.on = placing.on = True
+        counted = min(args.seconds, s.seconds or args.seconds)
+        wait(app, counted)
+        split.on = placing.on = False
         stats.note("input", MARK + "end " + s.label)
         painted[s.label] = split.take()
-        if hasattr(page, "_run"):
-            page._run(False)
-        elif page is w.sim_page and w.sim_page.force.active:
-            w.sim_page.force.switch_off()
+        placed[s.label] = [counted, *placing.take()]
+        stop(w, page)
     split.uninstall()
+    placing.uninstall()
     gui.close_graphics(w)
     frame_stats.uninstall()
 
@@ -427,6 +523,19 @@ def main() -> int:
     ]
     for s in picked:
         lines += split_rows(s.label, painted.get(s.label, {}), frames.get(s.label, []))
+    lines += [
+        "",
+        "### Legend placement",
+        "",
+        "Each legend's placement (#316 B16), on its own timer between frames: how often, and ms each.",
+        "",
+        "| Scenario | Placements a second | ms each (median / max) |",
+        "| --- | --- | --- |",
+    ]
+    for s in picked:
+        seconds, *ms = placed.get(s.label, [1.0])
+        each = f"{np.median(ms):.2f} / {max(ms):.2f}" if ms else ""
+        lines.append(f"| {s.label} | {len(ms) / seconds:.1f} | {each} |")
     if args.app:
         lines += ["", "### Packaged start-up", "", *startup(args.app, out)]
     report = "\n".join(lines) + "\n"
