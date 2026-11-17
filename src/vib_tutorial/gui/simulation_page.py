@@ -418,7 +418,7 @@ class SimulationPage(QtWidgets.QWidget):
     def transport(self) -> Transport:
         """The run bar drives the simulation's Pause/Resume, Reset and speed (its force, Space, is the Start)."""
         c = self.controls
-        return Transport(c.run, c.reset, c.speed, label="Space switches the force on and off")
+        return Transport(c.run, c.reset, c.speed, label="Space switches the force on and off", space=False)
 
     def practice_state(self) -> SimTrial:
         """The page's chain and force, as a trial: what a practice spec checks and Defaults puts back."""

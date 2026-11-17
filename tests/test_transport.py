@@ -80,3 +80,23 @@ def test_every_page_with_a_start_gives_the_bar_its_motion(main_window):
                     driven.add(name)
     assert not missed, f"a Start the bar doesn't drive: {missed}"
     assert {"duffing_page", "rotor_page", "gyroscope_page", "torsional_page", "continuum_page", "sdof_page"} <= driven
+
+
+def test_the_pages_own_controls_hide_and_space_runs_through_the_bar(main_window):
+    """The bar stands in for the page's Start, Reset, speed and clock: they're hidden, and Space presses the bar's
+    Start, but on the Simulation page, whose Space is its force."""
+    from PySide6 import QtCore, QtTest
+
+    w = main_window
+    w.activateWindow()
+    w.show_page("sdof_page")
+    _settle(w)
+    pb = w.sdof_page.playback
+    assert all(x.isHidden() for x in (pb.run, pb.reset, pb.speed, pb.clock))
+    assert w.run_bar.space.isEnabled()
+    QtTest.QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
+    _settle(w)
+    assert pb.run.running and w.run_bar.run.isChecked()
+    w.show_page("sim_page")
+    _settle(w)
+    assert w.sim_page.controls.run.isHidden() and not w.run_bar.space.isEnabled()  # Space stays the force's
