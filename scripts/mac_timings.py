@@ -1,7 +1,8 @@
-"""Frame timings on this machine's own display, scenario by scenario, as a report to paste into #130.
+"""Frame timings on this machine's own display, scenario by scenario, as a report to paste into #316.
 
     uv run python scripts/mac_timings.py                    # every scenario, ~2 minutes
     uv run python scripts/mac_timings.py --seconds 4 rotor  # just the scenarios whose label has "rotor"
+    uv run python scripts/mac_timings.py rub                # the full rub, on its opening tabs and on the Rub tab
     uv run python scripts/mac_timings.py --app "dist/Vibration Tutorial.app/Contents/MacOS/vib-tutorial"
 
 It opens the window on the real display (not offscreen: the point is the display's own painting, which
@@ -9,11 +10,15 @@ on a Retina Mac is most of a frame), runs each scenario through the pages' own c
 frame (`VIB_FRAME_STATS`) to <out>/frames.csv. Each scenario gets a second to settle, then `--seconds` of
 frames are counted. <out>/report.md has a line per scenario: frames per second, the computing (work) and
 drawing (paint) per frame, median and 95th percentile, how many frames were late, and how fast the
-simulation ran against what was asked. The rotor page's opening is timed too, and with `--app` the
-packaged app's start-up, cold then warm, as the release workflow measures it.
+simulation ran against what was asked. Under it, *Where the paint goes* splits each scenario's paint by
+plot: the milliseconds a frame each plot took to repaint (its items, held pixmaps and the raster at the
+display's scale), the most costly first, and the rest of the window (controls, labels, the 3D views) as
+"other". The rotor page's opening is timed too, and with `--app` the packaged app's start-up, cold then
+warm, as the release workflow measures it.
 
 Leave the window alone while it runs: a click or a key press is logged as an input but changes the run.
-`scripts/frame_report.py <out>/frames.csv` cuts the same log by what was on screen instead.
+`scripts/frame_report.py <out>/frames.csv` cuts the same log by what was on screen instead. To share a
+run, paste <out>/report.md into the issue as it is (the CSV only if asked: it's large).
 """
 
 from __future__ import annotations
@@ -82,13 +87,17 @@ def _sim_trial(w):
     return w.sim_page, w.sim_page.controls.speed_factor
 
 
-def _rotor(preset: str, rpm: float | None = None, speed: float = 1.0):
+def _rotor(preset: str, rpm: float | None = None, speed: float = 1.0, tab: str | None = None):
+    """A rotor preset run at `speed`, at `rpm` if given; on its own tabs, or on the page's `tab` (an attribute)."""
+
     def setup(w):
         from vib_tutorial.gui import rotor
 
         page = w.rotor_page
         w.pages.setCurrentWidget(page)
         page.load_preset(preset)
+        if tab is not None:
+            page.tabs.show_page(getattr(page, tab))
         page.sim_speed.setCurrentIndex(rotor.SPEEDS.index(speed))
         if rpm is not None:
             page.ramp.setValue(page.ramp.maximum())
@@ -160,7 +169,14 @@ SCENARIOS = (
         _rotor("Cracked shaft (breathing crack)", 3000.0),
     ),
     Scenario("Rotor: oil whirl (vertical rotor), 1×", "#94 film kernel", _rotor("Oil whirl (vertical rotor)")),
-    Scenario("Rotor: full rub, 1×", "rub kernel", _rotor("Full rub (a tight seal)")),
+    Scenario(
+        "Rotor: full rub, 1×", "rub kernel; its paint, 12 ms on the Mac (#316 E)", _rotor("Full rub (a tight seal)")
+    ),
+    Scenario(
+        "Rotor: full rub, Rub tab, 1×",
+        "the ring's push drawn every frame too (#316 E)",
+        _rotor("Full rub (a tight seal)", tab="rub_panel"),
+    ),
     Scenario(
         "Duffing: hardening spring, 50×",
         "FOH + Newton stepper (#130, low priority)",
@@ -177,6 +193,74 @@ SCENARIOS = (
         "Gyroscope: the first trial, Check tab", "the Check plot, reported slow on the Mac", _gyroscope("TAB_CHECK")
     ),
 )
+
+
+class PaintSplit:
+    """Each plot's repaint time, while `on`: pyqtgraph's views (every plot) timed round their paintEvent."""
+
+    def __init__(self) -> None:
+        from pyqtgraph.widgets.GraphicsView import GraphicsView
+
+        self.on = False
+        self.ms: dict[str, float] = {}
+        self._names: dict[int, str] = {}
+        self._cls = GraphicsView
+        self._paint = GraphicsView.paintEvent
+        split = self
+
+        def paintEvent(view, event):
+            if not split.on:
+                return split._paint(view, event)
+            began = time.perf_counter()
+            try:
+                return split._paint(view, event)
+            finally:
+                key = id(view)
+                name = split._names.get(key)
+                if name is None:
+                    name = split._names[key] = _view_name(view)
+                split.ms[name] = split.ms.get(name, 0.0) + (time.perf_counter() - began) * 1e3
+
+        GraphicsView.paintEvent = paintEvent
+
+    def take(self) -> dict[str, float]:
+        """The times gathered since the last take, and a fresh start (a new page may reuse an id)."""
+        ms, self.ms, self._names = self.ms, {}, {}
+        return ms
+
+    def uninstall(self) -> None:
+        self._cls.paintEvent = self._paint
+
+
+def _view_name(view) -> str:
+    """A plot's title, its axes' labels, or its accessible name, for the paint split."""
+    from vib_tutorial.gui import frame_stats
+
+    name = frame_stats._plot_name(view).removeprefix("plot ")
+    if name == type(view).__name__ and view.accessibleName():
+        name = view.accessibleName()
+    if name == type(view).__name__:
+        for item in view.scene().items() if view.scene() is not None else ():
+            label = getattr(item, "labelText", "")
+            if label:
+                return frame_stats._plain(label)[:60]
+    return name
+
+
+def split_rows(label: str, ms: dict[str, float], frames: list[dict[str, str]], top: int = 6) -> list[str]:
+    """Where a scenario's paint went, a frame's ms by plot, the costliest `top` and the rest as "other"."""
+    n = len(frames)
+    if n == 0:
+        return []
+    paint = sum(float(f["paint_ms"]) for f in frames) / n
+    ranked = sorted(ms.items(), key=lambda kv: -kv[1])
+    cells = [f"{name} {total / n:.1f}" for name, total in ranked[:top]]
+    rest = sum(total for _, total in ranked[top:]) / n
+    if rest >= 0.05:
+        cells.append(f"{len(ranked) - top} more plots {rest:.1f}")
+    other = paint - sum(ms.values()) / n
+    cells.append(f"other {max(other, 0.0):.1f}")
+    return [f"| {label} | {paint:.1f} | " + "; ".join(cells) + " |"]
 
 
 def wait(app, seconds: float) -> None:
@@ -264,6 +348,7 @@ def main() -> int:
     from vib_tutorial.gui.main_window import MainWindow
 
     app = gui.make_app(args.theme)
+    split = PaintSplit()  # before any plot is built: PySide looks up a view's paintEvent when it's made
     w = MainWindow()
     width, height = (int(x) for x in args.size.split("x"))
     screen = app.primaryScreen()
@@ -286,6 +371,7 @@ def main() -> int:
         lines += [f"Rotor page opening (#204): {rotor_opening(app, w)}", ""]
 
     asked: dict[str, float] = {}
+    painted: dict[str, dict[str, float]] = {}
     for s in picked:
         print(f"{s.label} …", flush=True)
         try:
@@ -297,13 +383,18 @@ def main() -> int:
         wait(app, SETTLE_S)
         stats = frame_stats.STATS
         assert stats is not None, "VIB_FRAME_STATS was set before the window was built"
+        split.take()
         stats.note("input", MARK + "start " + s.label)
+        split.on = True
         wait(app, min(args.seconds, s.seconds or args.seconds))
+        split.on = False
         stats.note("input", MARK + "end " + s.label)
+        painted[s.label] = split.take()
         if hasattr(page, "_run"):
             page._run(False)
         elif page is w.sim_page and w.sim_page.force.active:
             w.sim_page.force.switch_off()
+    split.uninstall()
     gui.close_graphics(w)
     frame_stats.uninstall()
 
@@ -325,6 +416,17 @@ def main() -> int:
     ]
     for s in picked:
         lines.append(f"| {s.label} | {s.note} " + summarize(frames.get(s.label, []), asked[s.label]))
+    lines += [
+        "",
+        "### Where the paint goes",
+        "",
+        "A frame's paint (ms, mean), then each plot's repaint, the costliest first; other: the rest of the window.",
+        "",
+        "| Scenario | Paint | By plot |",
+        "| --- | --- | --- |",
+    ]
+    for s in picked:
+        lines += split_rows(s.label, painted.get(s.label, {}), frames.get(s.label, []))
     if args.app:
         lines += ["", "### Packaged start-up", "", *startup(args.app, out)]
     report = "\n".join(lines) + "\n"
