@@ -5,6 +5,11 @@
 <a href="page:signals_page#leakage">Leakage</a>
 <a href="page:signals_page#windows">Windows</a>
 </before>
+<goals page="test_page">
+<li trial="5" problem="half-power">find a mode's damping from its half-power points;</li>
+<li trial="2" problem="coherence">read the coherence, and pick H1 or H2 against the noise;</li>
+<li trial="4" problem="exp-window">use an exponential window, and take its damping off again.</li>
+</goals>
 <h3><a name="virtual-test"></a>A virtual modal test</h3>
 <p>In a lab the FRF is not computed from M, C and K: it is <i>measured</i>. A known force
 excites the structure, sensors record the force and the responses, and the FRF is estimated

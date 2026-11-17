@@ -4,6 +4,11 @@
 <a href="page:random_page#psd">The power spectral density</a>
 <a href="page:random_page#welch">Estimating it from a record</a>
 </before>
+<goals page="signals_page">
+<li trial="1" problem="line-spacing">set a block and a sample rate, and read the lines and the Nyquist frequency;</li>
+<li trial="3" problem="scalloping">see leakage, and pick a window against it;</li>
+<li trial="6" problem="alias">keep aliases out with an anti-alias filter.</li>
+</goals>
 <h3><a name="sampling"></a>Sampling</h3>
 <p>A transducer's signal is continuous; the analyzer keeps its value <m>f<sub>s</sub></m> times a second. A
 sine of frequency <m>f</m> is pinned down by its samples only if there are more than two per cycle: up to

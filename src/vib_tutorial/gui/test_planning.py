@@ -18,7 +18,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.model import ChainSystem
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick
 from ..core.test_planning import (
     METHODS,
     Method,
@@ -83,6 +83,7 @@ class PlanningTrial:
     masses: tuple[float, ...] = UNIFORM
     stiffness: tuple[float, ...] = SPRINGS
     damping: tuple[float, ...] = DAMPERS
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         return chain(self.masses, self.stiffness, self.damping)
@@ -108,7 +109,7 @@ TRIALS = (
         hz=0.929,
     ),
     PlanningTrial(
-        "Sensors bunched at the ground: aliasing",
+        "Sensors bunched at the ground",
         "Three sensors on masses 1, 2 and 3, where every mode starts out the same way, as a sine's first quarter. "
         "Modes 1 and 2 look nearly alike there (MAC 0.976): the fit can hardly tell them apart, the Fisher "
         "information is 7.8 × 10⁻⁷ of eight sensors', and mode 1's noise is 240 times as large. That's spatial "
@@ -117,6 +118,17 @@ TRIALS = (
         hand=(0, 1, 2),
         tab=TAB_NOISE,
         hz=0.929,
+        predict=Prediction(
+            "Three sensors for the chain's first three modes, put on the three masses nearest the ground. What goes "
+            "wrong?",
+            (
+                "Only the highest mode is lost",
+                "The sensors overload",
+                "Nothing: three sensors do for three modes",
+                "The modes look alike at the sensors, and the fit can't tell them apart",
+            ),
+            3,
+        ),
     ),
     PlanningTrial(
         "One sensor more",
@@ -127,12 +139,23 @@ TRIALS = (
         hz=0.929,
     ),
     PlanningTrial(
-        "An ODS at a mode is the mode",
+        "An ODS at mode 2's frequency",
         "The chain driven at mode 2's frequency, 2.755 Hz, by a force on mass 8. With 1 N·s/m dampers the mode "
         "is lightly damped, and it is nearly the whole response: its share is 49.5 times the next largest, and "
         "the ODS's MAC with it is 0.999. That's why ODSs are measured at the peaks.",
         hz=2.755,
         tab=TAB_ODS,
+        predict=Prediction(
+            "The lightly damped chain driven at exactly its second natural frequency. What does its operational "
+            "deflection shape look like?",
+            (
+                "An even mix of every mode",
+                "The static deflection under the force",
+                "Mode 1's, the largest",
+                "Mode 2's shape",
+            ),
+            3,
+        ),
     ),
     PlanningTrial(
         "Between two modes: a mix",
@@ -426,6 +449,7 @@ class TestPlanningPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Each loads a chain into the Simulation page and sets up the sensors or the operating point to "
             "show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

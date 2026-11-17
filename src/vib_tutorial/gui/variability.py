@@ -23,7 +23,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.model import ChainSystem
-from ..core.practice import Problem, Question, at_least, at_most, kept, number, pick, rounded
+from ..core.practice import Prediction, Problem, Question, at_least, at_most, kept, number, pick, rounded
 from ..core.random_vibration import linear
 from ..core.variability import (
     MonteCarlo,
@@ -86,6 +86,7 @@ class VariabilityTrial:
     masses: tuple[float, ...] = ()  # a chain element by element (none: the one there is)
     springs: tuple[float, ...] = ()
     dampers: tuple[float, ...] = ()
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem | None:
         if not self.masses:
@@ -116,6 +117,16 @@ TRIALS = (
         "do, by about the damping's scatter. The band only opens at the resonances.",
         stiffness=0.0,
         damping=30.0,
+        predict=Prediction(
+            'Only the dampers scatter, by 30 %; the masses and springs are exact. What do the natural frequencies do?',
+            (
+                "They all drop",
+                "They scatter by about 30 %",
+                "They scatter by about 15 %",
+                "They don't move",
+            ),
+            3,
+        ),
     ),
     VariabilityTrial(
         "A tuned bladed disc",
@@ -125,7 +136,7 @@ TRIALS = (
         tab=TAB_MODES,
     ),
     VariabilityTrial(
-        "Weak coupling: 1 % mistuning localizes",
+        "Weak coupling, 1 % mistuning",
         "The coupling cut to 0.5 % and each blade's stiffness scattered by 1 %: the scatter is now twice the "
         "coupling, the waves can't get past the blades that differ, and the lowest mode moves 1.3 blades "
         "(<m>P</m> = 1.3): "
@@ -133,14 +144,33 @@ TRIALS = (
         coupling=0.5,
         mistuning=1.0,
         tab=TAB_MODES,
+        predict=Prediction(
+            "Twelve blades with 1 % mistuning, joined by springs of only 0.5 % of their own. How many blades does the"
+            " lowest mode move?",
+            (
+                "All twelve",
+                "About half of them",
+                "About one",
+            ),
+            2,
+        ),
     ),
     VariabilityTrial(
-        "Strong coupling resists",
+        "Strong coupling, 1 % mistuning",
         "The same 1 % mistuning with a 20 % coupling: every mode still spreads over 6 to 12 blades. What "
         "matters is the mistuning over the coupling, not the mistuning alone.",
         coupling=20.0,
         mistuning=1.0,
         tab=TAB_MODES,
+        predict=Prediction(
+            'The same 1 % mistuning, but the coupling raised to 20 %. How many blades does the lowest mode move?',
+            (
+                "About one",
+                "About half of them",
+                "Most of the twelve",
+            ),
+            2,
+        ),
     ),
     VariabilityTrial(
         "Forced response: one blade takes more",
@@ -436,6 +466,7 @@ class VariabilityPage(QtWidgets.QWidget):
         self.trials = TrialBox(
             [t.name for t in TRIALS],
             "<p>Each sets up the scatter or the ring to show one idea from the Theory tab.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

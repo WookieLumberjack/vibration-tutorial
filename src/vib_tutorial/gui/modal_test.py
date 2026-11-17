@@ -55,7 +55,7 @@ from ..core.identification import (
     peak_picking,
 )
 from ..core.measurement import AA_CUTOFF
-from ..core.practice import Problem, Question, Requirement, at_least, at_most, number, pick
+from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick
 from . import frame_stats, modal_test_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import TrialBox, trials_html
@@ -104,6 +104,7 @@ class ModalTestTrial:
     averages: int = 10
     tip: float = 50.0  # ms, the hammer's pulse
     exp_end: float = 100.0  # %, the exponential window's value at the block's end
+    predict: Prediction | None = None  # asked before it runs (Things to try)
 
     def system(self) -> ChainSystem:
         if not self.masses:
@@ -121,6 +122,15 @@ TRIALS = (
         "out of every FRF, and no method can find it: the Modes tab lists three. Move the "
         "force to m4 and it's back.",
         input=2,
+        predict=Prediction(
+            "The hammer hits m3, which doesn't move in mode 2 of the uniform chain. How many modes can the test find?",
+            (
+                "Two",
+                "All four",
+                "Three",
+            ),
+            2,
+        ),
     ),
     ModalTestTrial(
         "Force noise: H1 against H2",
@@ -128,6 +138,15 @@ TRIALS = (
         "force and the force signal is smallest, and the coherence dips there. Switch the estimator to H2: "
         "the peaks come back.",
         force_noise=5.0,
+        predict=Prediction(
+            '5 % noise on the force channel, the FRF estimated by H1. What does H1 do at the resonances?',
+            (
+                "It's unaffected",
+                "It reads high",
+                "It reads low",
+            ),
+            2,
+        ),
     ),
     ModalTestTrial(
         "Response noise: the antiresonances",
@@ -136,13 +155,23 @@ TRIALS = (
         response_noise=5.0,
     ),
     ModalTestTrial(
-        "A short block: leakage",
+        "A short block",
         "<m>N<sub>b</sub></m> = 256 with no window: the hit is still ringing when the block ends, so the peaks leak, low and "
         "wide, and the damping comes out too high. Pick the Force + exponential window: the leakage goes, but "
         "every mode gains <m>Δζ = 1/τ<sub>w</sub>ω<sub>n</sub></m> (the dashed grey curve), which the extraction takes off "
         "again unless you untick <i>Remove the exponential window's damping</i>.",
         block=256,
         window=Window.RECTANGULAR,
+        predict=Prediction(
+            "Nb = 256 and no window: the response is still ringing when the block ends. How does the identified "
+            "damping come out?",
+            (
+                "About right",
+                "Too low",
+                "Too high",
+            ),
+            2,
+        ),
     ),
     ModalTestTrial(
         "Peak picking on coarse lines",
@@ -483,6 +512,7 @@ class ModalTestPage(QtWidgets.QWidget):
             [t.name for t in TRIALS],
             "<p>Each sets up a test of the uniform 4-mass chain that shows one thing that can "
             "go wrong (or right). Loading one replaces the Simulation page's chain.</p>",
+            predictions=[t.predict for t in TRIALS],
         )
         self.trials.picked.connect(self.load_trial)
 

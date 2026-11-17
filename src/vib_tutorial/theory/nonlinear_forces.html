@@ -3,6 +3,11 @@
 <a href="page:test_page#friction">Nonlinearity: friction</a>
 <a href="page:updating_page#sensitivities">Updating by sensitivities</a>
 </before>
+<goals page="nonlinear_page">
+<li trial="1" problem="gap-level">check a structure's linearity by testing at several levels;</li>
+<li trial="2" problem="cubic-stiffness">see a hardening spring's peak lean and jump;</li>
+<li trial="7" problem="filter-factor">identify a force from a response, regularized at the L-curve's corner.</li>
+</goals>
 <h3><a name="homogeneity"></a>Is it linear? Homogeneity</h3>
 <p>Everything a modal test fits assumes the structure is linear: double the force and every response doubles,
 so the FRF <m>X/F</m> is the same at any level. That's <b>homogeneity</b>, and the first check is to measure the
