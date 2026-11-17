@@ -623,7 +623,8 @@ class IntegrationPage(QtWidgets.QWidget):
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
         c = colors
-        self.exact_item.setPen(pg.mkPen(c.strong, width=2, style=QtCore.Qt.PenStyle.DashLine))
+        # 1 px: dashed, it's stroked as one line, and at 2 px a stiff mode's zigzag took 220 ms a paint (plot_patches)
+        self.exact_item.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DashLine))
         for i, s in enumerate(SCHEMES):
             color = c.mass[i % len(c.mass)]
             for item in (self.run_items[s], self.radius_items[s], self.period_items[s], self.damp_items[s]):
