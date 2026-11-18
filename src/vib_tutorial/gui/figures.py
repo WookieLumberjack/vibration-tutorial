@@ -17,7 +17,9 @@ The house style, so the figures read as one set:
   that colour for the same thing (the mass, the force).
 - Label symbols with `math_label` (`text(..., italic=True)`): set in the notes' maths font (`maths.FONT`), as
   ``<m>`` is; ``k<sub>1</sub>``, ``Ω<sup>2</sup>`` and `UPRIGHT` work in it (drawn as separate texts, since Qt's SVG
-  ignores a tspan's shift: never ``baseline-shift`` or ``dy``). Words stay in the UI's sans-serif.
+  ignores a tspan's shift: never ``baseline-shift`` or ``dy``). Words stay in the UI's font, named
+  (``font_metrics.SANS_FAMILY``, the one their widths were measured in), not a generic ``sans-serif``: macOS has
+  no such family, and Qt then searched its aliases (41 ms) and drew them in the system's.
 - 13 px labels (`FONT`), lines 1.5 px (1 px for guides), about 360 px wide: the narrowest Theory tab is ~400 px
   with the window at 1280 px, less its table cell's padding (`test_every_theory_tab_fits_a_1280_px_window`) (the rotor's older figures are wider, and scroll there).
 
@@ -163,7 +165,7 @@ def arc(
 def svg(width: int, height: int, body: str) -> str:
     return (
         f"<svg xmlns='http://www.w3.org/2000/svg' width='{width}' height='{height}' "
-        f"viewBox='0 0 {width} {height}' font-family='sans-serif'>"
+        f"viewBox='0 0 {width} {height}' font-family='{font_metrics.SANS_FAMILY}'>"
         f"<rect x='0.5' y='0.5' width='{width - 1}' height='{height - 1}' fill='{colors.background}' "
         f"stroke='{colors.faint}'/>{body}</svg>"
     )

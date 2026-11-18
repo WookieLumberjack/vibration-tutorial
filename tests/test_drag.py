@@ -397,3 +397,61 @@ def test_dragging_the_diagnostics_speed_line_sets_the_shaft_speed(main_window, a
     assert p.rpm.value() == pytest.approx(3000.0, rel=0.02)
     assert p.mesh_lines[0].value() == pytest.approx(p.machine.mesh_hz)  # the record at the new speed
     assert all(other.data_value() == pytest.approx(p.rpm.value()) for other in p.speed_lines)
+
+
+def _turn_by_hand(view, dx: float, app) -> None:
+    """Press in the middle of a 3D view, move `dx` px sideways with the button held, release."""
+    vp = view.viewport()
+    mid = QtCore.QPointF(vp.width() / 2, vp.height() / 2)
+    for kind, at, button, buttons in (
+        (QtCore.QEvent.Type.MouseButtonPress, mid, Left, Left),
+        (QtCore.QEvent.Type.MouseMove, mid + QtCore.QPointF(dx / 2, 0), NoButton, Left),
+        (QtCore.QEvent.Type.MouseMove, mid + QtCore.QPointF(dx, 0), NoButton, Left),
+        (QtCore.QEvent.Type.MouseButtonRelease, mid + QtCore.QPointF(dx, 0), Left, NoButton),
+    ):
+        ev = QtGui.QMouseEvent(kind, at, vp.mapToGlobal(at), button, buttons, QtCore.Qt.KeyboardModifier.NoModifier)
+        QtWidgets.QApplication.sendEvent(vp, ev)
+    app.processEvents()
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        "rigid_body.BodyView",
+        "gyroscope_view.TopView",
+        "rigid_mounts.MountView",
+        "rotor_view.RotorView",
+    ],
+)
+@pytest.mark.parametrize("pitch", [0.0, 0.5, math.pi / 2])
+def test_a_sideways_drag_turns_the_near_side_with_the_cursor(app, where, pitch):
+    """In each 3D view, dragging left moves the side nearest you left (#409 N-4: it went right), seen level, from
+    a tilt, and from straight above (the near side then at the bottom: the body turns clockwise)."""
+    import importlib
+
+    from vib_tutorial import gui
+
+    module, name = where.split(".")
+    view = getattr(importlib.import_module(f"vib_tutorial.gui.{module}"), name)()
+    view.resize(400, 300)
+    view.show()
+    try:
+        view.pitch = pitch
+        around = np.linspace(0, 2 * math.pi, 360, endpoint=False)
+        upright = name == "RotorView"  # its vertical is y and it turns about it; the others' is z
+
+        sy, cy = math.sin(view.yaw), math.cos(view.yaw)
+        if upright:
+            p = np.stack([np.cos(around), np.zeros_like(around), np.sin(around)], axis=-1)
+            toward = -p[:, 0] * sy + p[:, 2] * cy
+        else:
+            p = np.stack([np.cos(around), np.sin(around), np.zeros_like(around)], axis=-1)
+            toward = -(p[:, 0] * sy + p[:, 1] * cy)
+        near = p[int(np.argmax(toward))]  # the point of the circle nearest you, followed as it turns
+        before = float(view.project(near)[0])
+        _turn_by_hand(view, -20, app)
+        assert float(view.project(near)[0]) < before - 0.05
+        _turn_by_hand(view, 40, app)
+        assert float(view.project(near)[0]) > before + 0.05
+    finally:
+        gui.close_graphics(view)

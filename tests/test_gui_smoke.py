@@ -5266,14 +5266,16 @@ def test_rigid_body_paths_and_drift(main_window, app):
 
 def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window):
     """At 1280×800 each page's tab bars show every tab's name: a page whose tabs need it gives its right pane
-    `lesson.TAB_ROOM`, and `lesson.TabRoom` widens it further where the font is wider (macOS's, Ubuntu's)."""
+    `lesson.TAB_ROOM`, and `lesson.TabRoom` widens it further where the font is wider (macOS's, Ubuntu's). And no
+    column of controls is narrower than its controls (a splitter that kept a stale minimum clipped them)."""
     from PySide6 import QtWidgets
 
+    from vib_tutorial.gui.layouts import ColumnScroll
     from vib_tutorial.gui.main_window import PAGE_GROUPS
 
     w = main_window
     w.resize(1280, 800)
-    over = []
+    over, clipped = [], []
     for _, pages in PAGE_GROUPS:
         for name, _ in pages:
             w.show_page(name)
@@ -5285,7 +5287,12 @@ def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window
                     need = sum(bar.tabSizeHint(i).width() for i in range(bar.count()) if bar.isTabVisible(i))
                     if need > tabs.width() + 1:
                         over.append((name, need, tabs.width()))
+            QtWidgets.QApplication.processEvents()  # a column's new minimum reaches its splitter a pass later
+            for column in page.findChildren(ColumnScroll):
+                if column.isVisible() and column.width() < column.minimumSizeHint().width():
+                    clipped.append((name, column.width(), column.minimumSizeHint().width()))
     assert not over
+    assert not clipped
 
 
 def test_no_legend_hides_data(main_window):

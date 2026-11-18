@@ -353,7 +353,7 @@ class TopView(pg.PlotWidget):
             return
         d = event.position() - self._drag
         self._drag = event.position()
-        self.yaw = (self.yaw - 0.01 * d.x()) % (2 * math.pi)
+        self.yaw = (self.yaw + 0.01 * d.x()) % (2 * math.pi)  # the side nearest you follows the cursor
         self.pitch = float(np.clip(self.pitch + 0.01 * d.y(), -math.pi / 2, math.pi / 2))
         self._place_static()
         event.accept()
