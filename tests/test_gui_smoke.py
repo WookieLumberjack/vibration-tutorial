@@ -2935,6 +2935,13 @@ def test_rotor_rub(app):
     assert hist[:, PUSH].max() > 0.0
     assert panel.curve.xData is not None and panel.curve.xData.size == t.size
     assert "In contact" in panel.contact.text()
+    # Drawn cheaply (#409 P-3): the pixel columns' peaks, not 12,000 points, and the y range held while it fits.
+    item = panel.plot.getPlotItem()
+    assert item.clipToViewMode() and item.downsampleMode()[1] and item.downsampleMode()[2] == "peak"
+    y_range = panel.plot.viewRange()[1]
+    assert y_range[1] >= hist[:, PUSH].max() and not item.getViewBox().autoRangeEnabled()[1]
+    p.step(0.05)
+    assert panel.plot.viewRange()[1] == y_range
     assert "rubbing the stator ring" in p.readout.text()
     assert p.view.ring is not None and p.view.stator_ring.xData.size and p.orbits.ring.xData.size
     p.show_sag.setChecked(False)  # drawn about the sag: the ring moves up by it

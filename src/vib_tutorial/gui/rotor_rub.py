@@ -19,7 +19,9 @@ from PySide6 import QtCore, QtWidgets
 from ..core.rotor import XD, YD, RotorSystem, Stator
 from . import accessible
 from .layouts import plot_height
+from .lesson import LiveLabel
 from .panels import spin
+from .plots import SteadyRange, decimate
 from .polar_grid import PolarGrid
 from .rotor_bearing import _si
 from .style import colors
@@ -125,11 +127,14 @@ class RubPanel(QtWidgets.QWidget):
             "<p>The ring's push on the disc, normal to the ring, over the strip chart's window "
             "(each point the largest over the samples it stands for).</p>"
         )
+        # Its curve holds the strip chart's window at every step (12,000 points over 400 px): drawn as each pixel
+        # column's min and max, and its y range set only when the push outgrows it (#409 P-3).
+        decimate(self.plot)
+        self.push_range = SteadyRange(self.plot, "y")
         self.curve = pg.PlotDataItem()
         self.plot.addItem(self.curve)
         plot_height(self.plot, 160)
-        self.contact = QtWidgets.QLabel()
-        self.contact.setWordWrap(True)
+        self.contact = LiveLabel(wrap=True)  # rewritten every frame
         self.spiral = pg.PlotWidget()
         self.spiral.setMenuEnabled(False)
         self.spiral_grid = PolarGrid(self.spiral.getPlotItem())
@@ -280,6 +285,7 @@ class RubPanel(QtWidgets.QWidget):
         """The ring's push over the last `window` s (`t` and `normal` from the page's history)."""
         if t.size:
             self.curve.setData(t, normal)
+            self.push_range.fit(0.0, float(normal.max()))
             end = float(t[-1])
             self.plot.setXRange(max(end - window, 0.0), max(end, window), padding=0)
             touching = normal > 0.0
