@@ -23,6 +23,7 @@ from __future__ import annotations
 import enum
 import itertools
 import math
+import time
 from dataclasses import dataclass
 
 import numpy as np
@@ -71,6 +72,8 @@ DRIFT_SPANS = (5.0, 10.0, 20.0)  # s
 PLAYBACK = (0.02, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0)
 REAL_TIME = PLAYBACK.index(1.0)
 HISTORY = 200_000  # samples kept
+FRAME_BUDGET = 0.012  # s of stepping per frame: past it (a fast spin's tiny steps) the run plays slower than asked
+PROBE_STEPS = 200  # steps in a frame while the cost of a step isn't known yet
 CHECK_POINTS = 2000  # the plots' samples, at most
 TRAIL = 3.0  # s of ω's direction drawn
 SNAPSHOT_FRAMES = 10  # while it runs the snapshot is rewritten every this many frames
@@ -969,6 +972,8 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.running = False  # held at the start until started
         self._frames = 0
         self._snap_t: float | None = None  # the instant dragged to; None: the latest
+        self._step_cost = 0.0  # s of computing per step, measured; 0 = not known yet
+        self._pace = 1.0  # the share of the time asked for that the frames step, smoothed (below 1: slowed)
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -1247,6 +1252,7 @@ class RigidBodyPage(QtWidgets.QWidget):
             self.body, (float(omega[0]), float(omega[1]), float(omega[2])), s.torque, s.held, q=list(start)
         )
         self.sim.kick(s.duration)
+        self._pace = 1.0
         self.history.clear()
         self.history.extend(np.array([0.0]), np.concatenate([self.sim.q, self.sim.L, self._torque_now()])[None])
         self._draw_tab()
@@ -1283,14 +1289,31 @@ class RigidBodyPage(QtWidgets.QWidget):
         return self.sim.t
 
     def _tick(self, dt: float) -> None:
-        self.step(dt * PLAYBACK[self.playback.currentIndex()])
+        self.step(dt * PLAYBACK[self.playback.currentIndex()], FRAME_BUDGET)
 
     def frame_context(self) -> str:
         return f"{self.shape.currentText()}, {self.spin_axis.currentText()}, {self.rate.value():g} rad/s"
 
-    def step(self, duration: float) -> None:
-        """Run the body on by `duration` s of simulated time and redraw."""
-        s = self.sim.advance(duration)
+    def step(self, duration: float, budget: float | None = None) -> None:
+        """Run the body on by `duration` s of simulated time and redraw.
+
+        With a `budget` (s of computing; the frame loop's), no more steps than it allows at the cost seen so far:
+        past it the rest is dropped, so a fast spin plays slower than asked but every frame still ends (and Pause
+        answers). None: all of it.
+        """
+        if budget is None:
+            steps = 10**9  # all of it (MAX_STEPS_PER_ADVANCE still caps a call)
+        elif self._step_cost:
+            steps = max(1, int(budget / self._step_cost))
+        else:
+            steps = PROBE_STEPS
+        began = time.perf_counter()
+        s = self.sim.advance(duration, max_steps=steps, thin=True)
+        if self.sim.last_steps:
+            cost = (time.perf_counter() - began) / self.sim.last_steps
+            self._step_cost = cost if cost > self._step_cost else 0.8 * self._step_cost + 0.2 * cost
+        if duration > 0:  # the share of what was asked that ran, smoothed for the readout
+            self._pace = 0.8 * self._pace + 0.2 * (1.0 - self.sim.dropped / duration)
         if s.t.size:
             self.history.extend(s.t, np.column_stack([s.q, s.momentum, s.torque]))
         self._draw_now()
@@ -1341,6 +1364,12 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.readout.setText(
             f"t = {self.sim.t:.2f} s: |ω| = {wn:.3g} rad/s, |L| = {Ln:.4g} N·m·s, energy ½ω·L = {energy:.4g} J; "
             f"ω is {apart:.1f}° from L."
+            + (
+                f" Playing at {self._pace:.0%} of the speed asked: this fast a spin needs more steps a second "
+                "than a frame has time for."
+                if self._pace < 0.95
+                else ""
+            )
         )
 
     def _draw_tab(self) -> None:

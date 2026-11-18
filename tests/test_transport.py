@@ -82,6 +82,44 @@ def test_every_page_with_a_start_gives_the_bar_its_motion(main_window):
     assert {"duffing_page", "rotor_page", "gyroscope_page", "torsional_page", "continuum_page", "sdof_page"} <= driven
 
 
+def test_space_goes_to_a_control_reached_by_the_keyboard(main_window):
+    """With a check box tabbed to, Space ticks it and the run stays put; clicked (a click keeps a button's focus
+    on Linux and Windows), Space runs the page as before. The same for a page's own Start (the Simulation's force
+    button), not just the bar's."""
+    from PySide6 import QtCore, QtTest
+
+    w = main_window
+    w.activateWindow()
+    w.show_page("sdof_page")
+    _settle(w)
+    page, pb = w.sdof_page, w.sdof_page.playback
+    box = page.compare
+    ticked = box.isChecked()
+    box.setFocus(QtCore.Qt.FocusReason.TabFocusReason)
+    _settle(w)
+    QtTest.QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
+    _settle(w)
+    assert box.isChecked() is not ticked and not pb.run.running
+    box.clearFocus()
+    QtTest.QTest.mouseClick(box, QtCore.Qt.MouseButton.LeftButton)  # clicked: focused by the mouse
+    _settle(w)
+    assert box.hasFocus() and box.isChecked() is ticked
+    QtTest.QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
+    _settle(w)
+    assert box.isChecked() is ticked and pb.run.running
+    w.show_page("sim_page")
+    _settle(w)
+    force = w.sim_page.force_panel.force
+    on = force.on
+    w.sim_page.force_panel.kind.setFocus(QtCore.Qt.FocusReason.TabFocusReason)
+    _settle(w)
+    QtTest.QTest.keyClick(w, QtCore.Qt.Key.Key_Space)  # the combo box opens; the force stays as it was
+    _settle(w)
+    assert force.on is on
+    QtTest.QTest.keyClick(w, QtCore.Qt.Key.Key_Escape)
+    _settle(w)
+
+
 def test_the_pages_own_controls_hide_and_space_runs_through_the_bar(main_window):
     """The bar stands in for the page's Start, Reset, speed and clock: they're hidden, and Space presses the bar's
     Start, but on the Simulation page, whose Space is its force."""

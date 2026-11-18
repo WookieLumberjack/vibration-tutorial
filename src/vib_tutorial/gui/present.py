@@ -10,9 +10,12 @@ steps every page through three levels (`LEVELS`), and back:
 A page whose outermost splitter has only two panes loses its left one at level 1 and keeps the other. A hidden
 pane gives its minimum width back, so the window's minimum shrinks with the level: a larger *Size* fits a
 smaller screen (`display_size.fits` reads the window as it is). The level is kept in the settings (`KEY`), as
-a new *Size* needs a restart, and pages built later (`MainWindow._page`) take it as they are built.
+a new *Size* needs a restart, and pages built later (`MainWindow._page`) take it as they are built. So the
+window says when it's on: the corner bar's *Show panes* (`MainWindow.present_button`) shows only then, and takes
+every page back to all panes (a reader who pressed F5 once mustn't relaunch to a page with no way back).
 
-Working on it: `tests/test_present.py` checks the levels on every page and the window's minimum with them.
+Working on it: `tests/test_present.py` checks the levels on every page, the window's minimum with them, and the
+corner's way back.
 """
 
 from __future__ import annotations

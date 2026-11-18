@@ -13,6 +13,7 @@ from .layouts import FlowLayout, form_layout, group
 from .modes import ModeEntry
 from .style import MAX_DOF, colors, text_on
 from .theming import mute
+from .transport import space_to_focus, watch_focus
 
 
 def spin(lo: float, hi: float, value: float, decimals: int, suffix: str = "") -> QtWidgets.QDoubleSpinBox:
@@ -82,10 +83,17 @@ STATIC_TIP = (
 
 
 def space_bar(button: QtWidgets.QAbstractButton) -> None:
-    """Space clicks `button` while its page shows. Not `setShortcut`: `setText` resets that to the text's
-    mnemonic, so a button that relabels itself loses it."""
+    """Space clicks `button` while its page shows, unless a control that uses Space has the focus
+    (`space_to_focus`). Not `setShortcut`: `setText` resets that to the text's mnemonic, so a button that relabels
+    itself loses it."""
     space = QtGui.QShortcut(QtGui.QKeySequence("Space"), button)
-    space.activated.connect(weak.slot(button, lambda button: button.click() if button.isEnabled() else None))
+    space.activated.connect(weak.slot(button, _on_space))
+    watch_focus()
+
+
+def _on_space(button: QtWidgets.QAbstractButton) -> None:
+    if not space_to_focus() and button.isEnabled():
+        button.click()
 
 
 # A row of the parameter grid: (label, m, k, c, friction).

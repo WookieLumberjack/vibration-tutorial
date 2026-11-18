@@ -162,11 +162,12 @@ def record_startup(window, path: str, launched_at: float | None = None) -> None:
 def run() -> int:
     from PySide6 import QtCore
 
-    from . import display_size, frame_stats
+    from . import display_size, errors, frame_stats
     from .main_window import MainWindow
 
     app = make_app()
     window = MainWindow()
+    errors.install(window.error_banner)  # a release build has no console: log an error and say so
     window.open_start_page()
     if path := os.environ.get("VIB_TUTORIAL_STARTUP_FILE"):  # set by the release builds' smoke test
         launched = os.environ.get("VIB_TUTORIAL_LAUNCHED_AT")

@@ -20,7 +20,52 @@ from dataclasses import dataclass
 from PySide6 import QtCore, QtGui, QtWidgets
 from shiboken6 import isValid
 
+from . import theming
+
 POLL_MS = 150  # how often the bar reads the page's controls back
+
+
+# Controls that do something with Space themselves: a button presses, a check box toggles, a combo box opens, a
+# list picks; a field types it (those already take it before a shortcut does: forwarding them is harmless).
+SPACE_TAKERS = (
+    QtWidgets.QAbstractButton,
+    QtWidgets.QComboBox,
+    QtWidgets.QAbstractItemView,
+    QtWidgets.QAbstractSpinBox,
+    QtWidgets.QLineEdit,
+)
+
+
+_clicked: list[QtWidgets.QWidget | None] = [None]  # the control the mouse last focused (a weak hold isn't needed:
+# it's replaced at the next focus change, and only compared, never called)
+_watching: list[bool] = [False]
+
+
+def _on_focus_changed(_old: QtWidgets.QWidget | None, now: QtWidgets.QWidget | None) -> None:
+    clicked = QtGui.QGuiApplication.mouseButtons() != QtCore.Qt.MouseButton.NoButton
+    _clicked[0] = now if clicked else None
+
+
+def watch_focus() -> None:
+    """Note which control a click focuses (`space_to_focus` leaves those be); once per application."""
+    if not _watching[0]:
+        theming.application().focusChanged.connect(_on_focus_changed)
+        _watching[0] = True
+
+
+def space_to_focus() -> bool:
+    """Give Space to the control the keyboard moved to (Tab) if it uses Space itself (`SPACE_TAKERS`), and say
+    so. A window-wide Space shortcut calls it first: otherwise the shortcut always wins, and a keyboard user can't
+    press a focused button or tick a focused box. A control focused by a click is left out: on Linux and Windows a
+    clicked button keeps the focus, and Space after clicking Reset should still start the run."""
+    w = QtWidgets.QApplication.focusWidget()
+    if not isinstance(w, SPACE_TAKERS) or not w.isEnabled() or w is _clicked[0]:
+        return False
+    # Its own handlers, not sendEvent: an event sent goes through the shortcut map again, back to this.
+    space, none = QtCore.Qt.Key.Key_Space, QtCore.Qt.KeyboardModifier.NoModifier
+    w.keyPressEvent(QtGui.QKeyEvent(QtCore.QEvent.Type.KeyPress, space, none, " "))
+    w.keyReleaseEvent(QtGui.QKeyEvent(QtCore.QEvent.Type.KeyRelease, space, none, " "))
+    return True
 
 
 @dataclass
@@ -158,6 +203,7 @@ class TransportBar(QtWidgets.QFrame):
         self.space = QtGui.QShortcut(QtGui.QKeySequence("Space"), self)  # where the page's own Start is hidden
         self.space.setContext(QtCore.Qt.ShortcutContext.WindowShortcut)
         self.space.activated.connect(self._on_space)
+        watch_focus()
         self.space.setEnabled(False)
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(POLL_MS)
@@ -222,7 +268,7 @@ class TransportBar(QtWidgets.QFrame):
         self.sync()
 
     def _on_space(self) -> None:
-        if self.run.isEnabled():
+        if not space_to_focus() and self.run.isEnabled():
             self.run.click()
 
     def _on_reset(self) -> None:

@@ -158,3 +158,18 @@ def test_a_prediction_is_answered_from_the_large_note(window):
     assert overlay.choices.count() == 0
     w.show_page("sim_page")  # a new page hides it
     assert not overlay.isVisible()
+
+
+def test_presenting_shows_a_way_back_in_the_corner(window):
+    """The level outlives a launch (a new Size needs one), so while it's on the corner bar says so, and its button
+    shows every pane again; at all panes it takes no room."""
+    from vib_tutorial.gui import present
+
+    w = window
+    w.show()
+    assert w.present_button.isHidden()
+    w.set_present(2)
+    assert not w.present_button.isHidden() and "centre only" in w.present_button.toolTip()
+    w.present_button.click()
+    assert w.present_level == 0 and present.saved() == 0 and w.present_button.isHidden()
+    assert all(not p.isHidden() for p in _panes(w.sim_page))
