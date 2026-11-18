@@ -20,6 +20,12 @@ the body's axes (it turns with the body: a thruster) or in space's (a fixed push
 `torque_until`, so a kick is a torque for a set time. The step is a set fraction of a turn at the body's
 current rate (`STEPS_PER_TURN`), capped at `MAX_STEP`.
 
+A fast spin needs many steps a second (a kick to 250 rad/s: ~16,000), so `advance` takes at most `max_steps`
+and drops the rest of what was asked when it hits it (the page's compute budget: the run slows below real time
+rather than owing more each frame), and with `thin` keeps a sample only every `store_stride` steps while no
+torque acts (`STORE_PER_TURN` a turn), carried across calls. Every step under a torque is kept, so the work and
+impulse summed over the samples (the *Check* tab) stay exact: the steps left out had none.
+
 Working on it: `tests/test_rigid_body.py` checks the tensors against the standard formulas, the principal axes,
 the conservation laws, the intermediate-axis flip and a kick's change in L.
 """
@@ -38,6 +44,7 @@ from .ode import rk4_step
 STEPS_PER_TURN = 400
 MAX_STEP = 5e-3  # s
 MAX_STEPS_PER_ADVANCE = 100_000
+STORE_PER_TURN = 50  # samples a turn kept with `thin` (a step is 1/STEPS_PER_TURN of one)
 
 
 class Shape(enum.Enum):
@@ -145,6 +152,10 @@ class Tumbler:
     q: list[float] = field(default_factory=lambda: [1.0, 0.0, 0.0, 0.0])
     L: list[float] = field(default_factory=list)
     _owed: float = 0.0
+    _skipped: int = 0  # torque-free steps since the last one kept (`thin`)
+    last_steps: int = 0  # the steps the last `advance` took
+    dropped: float = 0.0  # s of the time asked for that it left out, at `max_steps`
+    _lead: bool = False  # a kick came after a step left out: the next thinned advance starts with the state now
 
     def __post_init__(self) -> None:
         self.I = self.body.inertia()
@@ -156,6 +167,7 @@ class Tumbler:
     def kick(self, duration: float) -> None:
         """Apply the torque from now for `duration` s."""
         self.torque_until = self.t + duration
+        self._lead = self._skipped > 0
 
     def body_rate(self) -> np.ndarray:
         """ω in the body's axes now."""
@@ -189,21 +201,35 @@ class Tumbler:
         )
         return qdot, self._torque(on, q)
 
-    def advance(self, duration: float) -> Samples:
+    def store_stride(self, h: float) -> int:
+        """Keep every this many torque-free steps of size h: at most STORE_PER_TURN a turn, none closer than
+        MAX_STEP (a slow spin keeps them all)."""
+        return max(1, min(int(MAX_STEP / h + 1e-9), STEPS_PER_TURN // STORE_PER_TURN))
+
+    def advance(self, duration: float, max_steps: int = MAX_STEPS_PER_ADVANCE, thin: bool = False) -> Samples:
         """Step on by `duration` (whole steps, the part of one left over carried to the next call), a sample a
-        step."""
+        step (with `thin`, a sample every `store_stride` steps while no torque acts). At most `max_steps`: past
+        them the rest of `duration` is dropped, not owed."""
         h = self.step_size()
         owed = self._owed + duration
-        n = min(int(owed / h + 1e-9), MAX_STEPS_PER_ADVANCE)
-        self._owed = owed - n * h if n < MAX_STEPS_PER_ADVANCE else 0.0
+        want = int(owed / h + 1e-9)
+        n = max(0, min(want, max_steps, MAX_STEPS_PER_ADVANCE))
+        self._owed = owed - n * h if n == want else 0.0
+        self.last_steps, self.dropped = n, 0.0 if n == want else owed - n * h
         if n == 0:
             return _empty()
-        t_out = np.empty(n)
-        q_out = np.empty((n, 4))
-        L_out = np.empty((n, 3))
-        tau_out = np.empty((n, 3))
+        stride = self.store_stride(h) if thin else 1
+        lead = int(thin and self._lead)  # the kick's start, so its first step's work sums from there
+        self._lead = False
+        keep = np.zeros(n + lead, dtype=bool)
+        t_out = np.empty(n + lead)
+        q_out = np.empty((n + lead, 4))
+        L_out = np.empty((n + lead, 3))
+        tau_out = np.zeros((n + lead, 3))
         q, L, t = np.asarray(self.q, dtype=float), np.asarray(self.L, dtype=float), self.t
-        for i in range(n):
+        if lead:
+            keep[0], t_out[0], q_out[0], L_out[0] = True, t, q, L  # no torque acted over the step ending here
+        for i in range(lead, n + lead):
             hh = h
             if t < self.torque_until < t + h:  # the torque stops within this step: end the step there instead,
                 hh = self.torque_until - t  # so a kick's impulse is τ times its duration
@@ -218,8 +244,13 @@ class Tumbler:
             t += hh
             t_out[i], q_out[i], L_out[i] = t, q, L
             tau_out[i] = self._torque(on, q)  # what acted over the step that ends here
+            self._skipped += 1
+            if on or self._skipped >= stride:  # a step under a torque is always kept (the Check's sums)
+                keep[i], self._skipped = True, 0
         self.q, self.L, self.t = [float(v) for v in q], [float(v) for v in L], t
-        return Samples(t_out, q_out, L_out, tau_out)
+        if stride == 1 and not lead:
+            return Samples(t_out, q_out, L_out, tau_out)
+        return Samples(t_out[keep], q_out[keep], L_out[keep], tau_out[keep])
 
 
 @dataclass

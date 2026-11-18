@@ -5167,6 +5167,27 @@ def test_rigid_body_page(main_window, app):
     assert not page.side_b.isVisibleTo(page) and not page.side_c.isVisibleTo(page), "a sphere has a radius only"
 
 
+def test_rigid_body_fast_spin_keeps_to_the_frame_budget(main_window, app):
+    """A strong kick (1 N·m for 1 s about axis 1: 246 rad/s, ~16,000 steps a second) mustn't freeze the window: a
+    late frame steps no more than the budget allows, drops the rest, and the readout says it's playing slower."""
+    from vib_tutorial.core.rigid_body import Torque
+    from vib_tutorial.gui import rigid_body as r
+
+    w = main_window
+    page = w.rigid_body_page
+    w.pages.setCurrentWidget(page)
+    page.load_setup(dict(spin_axis=0, held=Torque.BODY, torque=(1.0, 0.0, 0.0), duration=1.0))
+    page.step(1.05)  # through the kick
+    assert np.linalg.norm(page.sim.body_rate()) > 200
+    for _ in range(5):
+        began = time.perf_counter()
+        page._tick(0.5)  # a late frame: all of it would be ~8,000 steps, most of a second
+        assert time.perf_counter() - began < 0.25
+        assert page.sim.dropped > 0
+    assert "Playing at" in page.readout.text()
+    assert page.history.size < 1100 + 5 * r.PROBE_STEPS  # the free spin's samples thinned
+
+
 def test_rigid_body_orientation(main_window, app):
     """The Orientation tab: the gimbal-lock trial says it's locked, and moving φ for ψ leaves the body where it
     was; a start pose turns the body and keeps ω in its axes; the rates trial runs and writes all four forms."""

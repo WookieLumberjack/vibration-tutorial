@@ -138,7 +138,7 @@ well (Ctrl+= and Ctrl+-), for reading closely at any size.
 for the right-hand tabs too (the main plots the whole width), and once more for all of them back. The window
 then needs less room: about 760 px wide without the controls and 740 without either side, against 1,184, so a
 larger *Size* fits a smaller screen (its height, about 660 px, is still the plots'). The choice is remembered,
-across the restart a new *Size* takes.
+across the restart a new *Size* takes; while it's on, *Show panes* in the top-right corner brings every pane back.
 With the controls folded away, **Alt+PgDown** and **Alt+PgUp** still step through the page's *Things to try*,
 and each step's note shows large over the top of the page, so the room can read it; a step that asks a
 prediction shows its question and choices there, to answer from the front. The × or **Esc** hides it.

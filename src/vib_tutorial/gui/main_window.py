@@ -18,6 +18,7 @@ from . import (
     accessible,
     crosshair,
     display_size,
+    errors,
     frame_stats,
     links,
     notes_render,
@@ -114,6 +115,9 @@ SIZE_TIP = (
 DEFAULTS_TIP = (
     "<p>Put this page's controls back as they were when it opened (Ctrl+R): its motion at rest, waiting for "
     "Start. A page that shows the chain puts back the chain it opened with too, on every page.</p>"
+)
+PRESENT_TIP = (
+    "Presenting: the pages' side panes are folded away (F5 steps through the levels). Click to show them all again."
 )
 THEORY_TIP = (
     "<p>Show this page's <i>Theory</i> tab: what the page shows, the ideas behind it, things to try, "
@@ -213,6 +217,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.defaults_button.setText("Defaults")
         self.defaults_button.setToolTip(DEFAULTS_TIP)
         self.defaults_button.clicked.connect(self.restore_defaults)
+        # While presenting, the way back: F5 is easy to miss, and the level is kept for the next launch (#409 U-5)
+        self.present_button = QtWidgets.QToolButton()
+        self.present_button.setText("Show panes")
+        self.present_button.setToolTip(PRESENT_TIP)
+        self.present_button.clicked.connect(self.end_present)
+        self.present_button.hide()
+        cl.addWidget(self.present_button)
         cl.addWidget(self.defaults_button)
         cl.addWidget(self.theory_button)
         cl.addWidget(self.theory_window_button)
@@ -231,6 +242,8 @@ class MainWindow(QtWidgets.QMainWindow):
         column = QtWidgets.QVBoxLayout(central)
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(0)
+        self.error_banner = errors.ErrorBanner()  # what went wrong, once `gui.run()` installs the hook
+        column.addWidget(self.error_banner)
         column.addWidget(self.pages, 1)
         column.addWidget(self.run_bar)
         self.setCentralWidget(central)
@@ -366,9 +379,15 @@ class MainWindow(QtWidgets.QMainWindow):
         """F5: the next of `present.LEVELS` on every page (the side panes folded away, then back)."""
         self.set_present((self.present_level + 1) % len(present.LEVELS))
 
+    def end_present(self) -> None:
+        """Every page's panes back (the corner's *Show panes*)."""
+        self.set_present(0)
+
     def set_present(self, level: int) -> None:
         self.present_level = level
         present.save(level)
+        self.present_button.setVisible(level != 0)
+        self.present_button.setToolTip(f"{PRESENT_TIP} Now: {present.LEVELS[level]}.")
         if level == 0:
             self.trial_overlay.dismiss()  # the box's own note shows again
         for page in self._built.values():

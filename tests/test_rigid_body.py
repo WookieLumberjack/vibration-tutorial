@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from vib_tutorial.core import rotation
-from vib_tutorial.core.rigid_body import Body, Shape, Torque, Tumbler
+from vib_tutorial.core.rigid_body import STEPS_PER_TURN, STORE_PER_TURN, Body, Shape, Torque, Tumbler
 
 BOX = Body()  # 0.3 × 0.2 × 0.1 m, 1 kg: three different moments
 
@@ -170,3 +170,33 @@ def test_stepping_three_ways():
         assert 8 < ratio < 40, (name, ratio)  # 16 for fourth order
     locked = compare(BOX, w, rotation.quaternion(np.eye(3)), 1.0, turn / 20)
     assert np.isnan(locked.euler[1]) and np.isfinite(locked.quaternion).all(), "θ = 0: φ̇ = ω₂/0"
+
+
+def test_thinned_samples_keep_every_kicked_step():
+    """With `thin`, a fast free spin keeps a sample every `store_stride` steps, but every step under a torque, and
+    the state just before a kick that comes after a step left out: the impulse summed over the kept samples is
+    still the change in L."""
+    tm = Tumbler(BOX, (200.0, 0.0, 0.0))
+    s = tm.advance(0.05, thin=True)
+    h = tm.step_size()
+    stride = tm.store_stride(h)
+    assert stride == STEPS_PER_TURN // STORE_PER_TURN and s.t.size == tm.last_steps // stride
+    tm.advance(3 * h, thin=True)  # end on a step left out
+    tm.torque, tm.held = (0.0, 0.5, 0.0), Torque.SPACE
+    L0, t0 = np.array(tm.L), tm.t
+    tm.kick(0.01)
+    s = tm.advance(0.05, thin=True)
+    assert s.t[0] == t0 and np.allclose(s.momentum[0], L0)  # the kick's start, kept
+    impulse = np.sum(s.torque[1:] * np.diff(s.t)[:, None], axis=0)
+    assert np.allclose(np.array(tm.L) - L0, impulse, atol=1e-12)
+    assert np.allclose(impulse, [0.0, 0.005, 0.0], atol=1e-12)
+
+
+def test_max_steps_drops_the_rest():
+    """Past `max_steps` an advance stops and drops what's left of the time asked (it isn't owed to the next)."""
+    tm = Tumbler(BOX, (200.0, 0.0, 0.0))
+    h = tm.step_size()
+    tm.advance(1.0, max_steps=10)
+    assert tm.last_steps == 10 and tm.dropped == pytest.approx(1.0 - 10 * h)
+    tm.advance(h)
+    assert tm.last_steps == 1 and tm.dropped == 0.0
