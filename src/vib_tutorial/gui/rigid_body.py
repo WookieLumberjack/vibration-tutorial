@@ -34,12 +34,13 @@ from ..core import rotation
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbler, compare
 from ..core.rotation import Turning
+from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
 from . import rigid_body_figures
 from .cms_time import SampleBuffer
-from .drag import DragLine
+from .components_tab import ComponentsTab
 from .equations_snapshot import bracket, equation, snapshot_html
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, form_layout, form_row
+from .layouts import ColumnScroll
 from .lesson import (
     Dot,
     Form,
@@ -51,7 +52,6 @@ from .lesson import (
     note_label,
     plot,
     readout_label,
-    relabel,
     set_quietly,
     stack,
     theory,
@@ -79,10 +79,6 @@ CHECK_POINTS = 2000  # the plots' samples, at most
 TRAIL = 3.0  # s of ω's direction drawn
 SNAPSHOT_FRAMES = 10  # while it runs the snapshot is rewritten every this many frames
 SPIN_AXES = ("Principal axis 1 (least I)", "Principal axis 2 (middle I)", "Principal axis 3 (greatest I)")
-SHOWS = ("ω, angular velocity", "L, angular momentum", "τ, torque", "I, inertia tensor")
-SHOW_W, SHOW_L, SHOW_TAU, SHOW_I = range(4)
-UNITS = ("rad/s", "N·m·s", "N·m", "kg·m²")
-SPANS = (("the last 2 s", 2.0), ("the last 10 s", 10.0), ("the whole run", None))
 STRIPS = 24  # a cylinder's side, in flat faces
 BODY_AXES = 6  # the body's axes' colour, colors.mass[k], as on the Gyroscope page
 
@@ -1045,29 +1041,13 @@ class RigidBodyPage(QtWidgets.QWidget):
         # Inertia tab
         self.inertia_text = readout_label()
         # Components tab
-        self.comp_show = combo(SHOWS, TIPS["comp_show"])
-        self.comp_frame = combo([f.value for f in FRAMES], TIPS["comp_frame"])
-        self.comp_span = combo([name for name, _ in SPANS], TIPS["comp_span"])
-        self.comp_span.setCurrentIndex(1)
-        self.comp_plot = plot("ω", "rad/s", "Time", "s", height=240)
-        self.comp_legend = add_legend(self.comp_plot.getPlotItem(), offset=(10, 10), colCount=4)
-        self.comp_items = [pg.PlotDataItem() for _ in range(6)]
-        self.comp_size = pg.PlotDataItem()
-        for item in (*self.comp_items, self.comp_size):
-            self.comp_plot.addItem(item)
-        self.comp_cursor = DragLine(SNAPSHOT_TIP, role="strong")
-        self.comp_cursor.setToolTip(SNAPSHOT_TIP)
-        self.comp_cursor.sigDragged.connect(self._on_snapshot_dragged)
-        self.comp_plot.addItem(self.comp_cursor, ignoreBounds=True)
-        self.comp_note = note_label()
-        self.comp_snapshot = readout_label()
-        self.comp_snapshot.setToolTip(SNAPSHOT_TIP)
-        comp_row = QtWidgets.QWidget()
-        rows = form_layout(comp_row)
-        rows.setContentsMargins(0, 0, 0, 0)
-        for text, box in (("Show:", self.comp_show), ("In axes:", self.comp_frame), ("Over:", self.comp_span)):
-            form_row(rows, text, box, box.toolTip())
-            box.currentIndexChanged.connect(self._draw_components)
+        self.components = ComponentsTab(
+            [f.value for f in FRAMES],
+            {"show": TIPS["comp_show"], "frame": TIPS["comp_frame"], "span": TIPS["comp_span"]},
+            SNAPSHOT_TIP,
+        )
+        self.components.changed.connect(self._draw_components)
+        self.components.dragged.connect(self._on_snapshot_dragged)
         # Check tab
         self.check_plot = plot("Strayed", None, "Time", "s", log_y=True, height=220)
         self.check_plot.setToolTip(CHECK_TIP)
@@ -1119,9 +1099,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(ColumnScroll(column(self.inertia_text)), "Inertia")
-        self.tabs.addTab(
-            ColumnScroll(column(comp_row, self.comp_plot, self.comp_note, self.comp_snapshot)), "Components"
-        )
+        self.tabs.addTab(self.components, "Components")
         self.tabs.addTab(ColumnScroll(column(pose, self.orient_text)), "Orientation")
         self.tabs.addTab(ColumnScroll(column(drift, self.drift_plot, self.strayed_plot, self.drift_note)), "Drift")
         self.tabs.addTab(column(self.check_plot, self.check_note, stretch=False), "Check")
@@ -1164,8 +1142,8 @@ class RigidBodyPage(QtWidgets.QWidget):
             (self.duration, t.duration),
             *((box, v) for box, v in zip(self.pose, t.pose)),
             (self.playback, t.playback),
-            (self.comp_show, t.show),
-            (self.comp_frame, FRAMES.index(t.frame)),
+            (self.components.show_box, t.show),
+            (self.components.frame_box, FRAMES.index(t.frame)),
             (self.principal_box, t.principal),
             (self.path_box, t.path),
         ):
@@ -1324,10 +1302,7 @@ class RigidBodyPage(QtWidgets.QWidget):
     def apply_theme(self) -> None:
         c = colors
         self.view.apply_theme()
-        for k, item in enumerate(self.comp_items):
-            item.setPen(pg.mkPen(c.mass[k % len(c.mass)], width=1))
-        self.comp_size.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        self.comp_cursor.apply_theme()
+        self.components.apply_theme()
         for item, color in zip(self.drift_items, (c.mass[0], c.mass[1], c.mass[2])):
             item.setPen(pg.mkPen(color, width=1.5))
         for item, color in zip(self.strayed_items, (c.mass[0], c.mass[2])):
@@ -1435,60 +1410,35 @@ class RigidBodyPage(QtWidgets.QWidget):
         n = self.history.size
         if n < 2:
             return None
-        span = SPANS[self.comp_span.currentIndex()][1]
+        span = self.components.span()
         t, y = self.history.t[:n], self.history.y[:n]
         first = 0 if span is None else int(np.searchsorted(t, t[-1] - span))
         k = slice(first, n, max(1, -(-(n - first) // CHECK_POINTS)))
         return t[k], _matrices(y[k, 0:4]), y[k, 4:7], y[k, 7:10]
 
     def _draw_components(self) -> None:
-        show = self.comp_show.currentIndex()
-        frame = FRAMES[self.comp_frame.currentIndex()]
-        relabel(self.comp_plot, "left", SHOWS[show].split(",")[0], UNITS[show])
-        self.comp_legend.clear()
+        tab = self.components
+        show = tab.show_box.currentIndex()
+        frame = FRAMES[tab.frame_box.currentIndex()]
         data = self._samples()
         if data is None:
-            for item in (*self.comp_items, self.comp_size):
-                item.setData([], [])
-            self.comp_note.setText("Start it to see its components.")
-            self.comp_snapshot.setText("")
-            self.comp_cursor.hide()
+            tab.clear("Start it to see its components.")
             return
         t, rows, momentum, torque = data
         I_body = self.body.inertia()
         _, P = self.body.principal()
         axes = frame_rows(frame, rows, P)
-        names = AXIS_NAMES[frame]
         if show == SHOW_I:
             turn = np.einsum("nij,nkj->nik", axes, rows)  # the body's axes in the frame's: columns
-            tensor = np.einsum("nik,kl,njl->nij", turn, I_body, turn)
-            pairs = ((0, 0), (1, 1), (2, 2), (0, 1), (0, 2), (1, 2))
-            series = [(f"I {names[i]}{names[j]}", tensor[:, i, j]) for i, j in pairs]
-            size = None
+            in_axes = np.einsum("nik,kl,njl->nij", turn, I_body, turn)
         else:
             if show == SHOW_W:
                 body_L = np.einsum("nij,nj->ni", rows, momentum)
                 vector = np.einsum("nji,nj->ni", rows, np.linalg.solve(I_body, body_L.T).T)
             else:
                 vector = momentum if show == SHOW_L else torque
-            parts = np.einsum("nij,nj->ni", axes, vector)
-            symbol = SHOWS[show][0]
-            series = [(f"{symbol} {names[i]}", parts[:, i]) for i in range(3)]
-            size = np.linalg.norm(vector, axis=1)
-        for k, item in enumerate(self.comp_items):
-            if k < len(series):
-                label, values = series[k]
-                item.setData(t, values)
-                self.comp_legend.addItem(item, label)
-            else:
-                item.setData([], [])
-        if size is None:
-            self.comp_size.setData([], [])
-        else:
-            self.comp_size.setData(t, size)
-            self.comp_legend.addItem(self.comp_size, f"|{SHOWS[show][0]}|")
-        self.comp_note.setText(self._components_note(show, frame))
-        self.comp_cursor.show()
+            in_axes = np.einsum("nij,nj->ni", axes, vector)
+        tab.draw(t, series(show, AXIS_NAMES[frame], in_axes), self._components_note(show, frame))
         if not self.running or self._frames % SNAPSHOT_FRAMES == 0:
             self._draw_snapshot()
 
@@ -1608,7 +1558,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         near = slice(max(k - 2, 0), min(k + 3, n))
         y = self.history.y[near]
         rows = _matrices(y[:, 0:4])
-        frame = FRAMES[self.comp_frame.currentIndex()]
+        frame = FRAMES[self.components.frame_box.currentIndex()]
         _, P = self.body.principal()
         turning = Turning.FIXED if frame is Axes.SPACE else Turning.BODY
         return rotation.snapshot(
@@ -1626,19 +1576,19 @@ class RigidBodyPage(QtWidgets.QWidget):
     def _draw_snapshot(self) -> None:
         s = self.snapshot_now()
         if s is None:
-            self.comp_snapshot.setText("")
+            self.components.set_snapshot(None, "")
             return
-        self.comp_cursor.setValue(s.t)
-        self.comp_snapshot.setText(
+        self.components.set_snapshot(
+            s.t,
             snapshot_html(
                 s,
-                WHERE[FRAMES[self.comp_frame.currentIndex()]],
+                WHERE[FRAMES[self.components.frame_box.currentIndex()]],
                 frame_note="AᵀB = Pᵀ, the body's axes in its principal ones: constant, as both turn with it.",
-            )
+            ),
         )
 
-    def _on_snapshot_dragged(self) -> None:
-        self._snap_t = float(self.comp_cursor.value())
+    def _on_snapshot_dragged(self, t: float) -> None:
+        self._snap_t = t
         self._draw_snapshot()
 
     def _clear_drift(self) -> None:
