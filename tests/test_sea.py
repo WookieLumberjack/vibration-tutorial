@@ -112,3 +112,16 @@ def test_strong_coupling_shares_modal_energy():
     share = [(r.energy[0, 1] / r.density[0, 1]) / (r.energy[0, 0] / r.density[0, 0]) for r in (light, heavy)]
     assert 0.9 < share[0] < 1.0
     assert share[1] < 0.1
+
+
+def test_the_corners_transmission_doesnt_depend_on_frequency():
+    """Every wavenumber goes as √ω, so τ̄ is the same in every band: worked out once per pair of plates (#409 P-5:
+    it was 26,688 small solves a draw)."""
+    from vib_tutorial.core import sea
+
+    taus = [float(np.mean([junction_waves(P1, P2, f, t)[0] for t in (0.1, 0.5, 0.9)])) for f in (50.0, 20_000.0)]
+    assert taus[0] == pytest.approx(taus[1], rel=1e-12)
+    sea._transmission.cache_clear()
+    first = junction_transmission(P1, P2, 50.0)
+    assert junction_transmission(P1, P2, 20_000.0) == first
+    assert sea._transmission.cache_info().hits == 1

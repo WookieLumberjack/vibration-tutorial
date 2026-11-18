@@ -4,7 +4,8 @@ The *Beams & plates* page. A simply supported beam of rectangular section has th
 every theory, so each theory's frequency is a root of a small determinant: Euler–Bernoulli (bending only),
 Rayleigh (with the sections' rotary inertia), shear only (with the shear deflection), and Timoshenko (both, whose
 2 × 2 determinant has a second root, the thickness-shear branch). A simply supported rectangular plate's modes are
-sin(mπx/a) sin(nπy/b), a clamped circular plate's Bessel functions J_n and I_n with cos nθ. `counting` gives the
+sin(mπx/a) sin(nπy/b), a clamped circular plate's Bessel functions J_n and I_n with cos nθ (its roots λ don't
+depend on the plate, so the lowest are found once, `_lowest`, and every plate scales them). `counting` gives the
 number of modes below f, against the asymptotes: ∝ √f for a beam, ∝ f for a plate.
 
 Working on it
@@ -15,6 +16,7 @@ Timoshenko's frequencies come from his determinant; the plates are in closed for
 from __future__ import annotations
 
 import enum
+import functools
 import math
 from dataclasses import dataclass
 
@@ -185,17 +187,18 @@ def rect_shape(mode: PlateMode, plate: Plate, x: np.ndarray, y: np.ndarray, mix:
     return w
 
 
-def _clamped(n: int, lam: float) -> float:
+def _clamped(n: int, lam):
     """J_n(λ) I_{n+1}(λ) + I_n(λ) J_{n+1}(λ): zero at the clamped circular plate's roots (scaled by e^−λ)."""
     jv, ive = scipy.special.jv, scipy.special.ive
     return jv(n, lam) * ive(n + 1, lam) + ive(n, lam) * jv(n + 1, lam)
 
 
-def circular_roots(n: int, count: int) -> list[float]:
-    """The first `count` λ (ω = λ² √(D/ρh) / a²) with n nodal diameters."""
-    grid = np.linspace(0.5, 4.0 * (count + n + 2), 4000)
-    vals = np.array([_clamped(n, x) for x in grid])
-    roots = []
+def circular_roots(n: int, count: int, top: float | None = None) -> list[float]:
+    """The first `count` λ (ω = λ² √(D/ρh) / a²) with n nodal diameters (those below `top`, if given)."""
+    end = 4.0 * (count + n + 2) if top is None else top
+    grid = np.linspace(0.5, end, max(int(4000 * end / (4.0 * (count + n + 2))), 50))  # the spacing of the old
+    vals = _clamped(n, grid)  # the whole grid at once: Bessel functions take arrays
+    roots: list[float] = []
     for i in np.nonzero(np.sign(vals[:-1]) * np.sign(vals[1:]) < 0)[0]:
         roots.append(float(scipy.optimize.brentq(lambda t: _clamped(n, t), grid[i], grid[i + 1], xtol=1e-14)))
         if len(roots) == count:
@@ -203,14 +206,29 @@ def circular_roots(n: int, count: int) -> list[float]:
     return roots
 
 
+@functools.cache
+def _lowest(count: int) -> tuple[tuple[float, int, int], ...]:
+    """The `count` smallest roots of the clamped circular plate, (λ, n, s), in order. They don't depend on the
+    plate (its size and material only scale them into frequencies), so they're found once. A nodal diameter's
+    first root rises with n, so n goes up until one has no root below `top`; `top` starts at an estimate and
+    doubles if that leaves fewer than `count`."""
+    top = 4.0 * math.sqrt(count) + 10.0
+    while True:
+        found: list[tuple[float, int, int]] = []
+        n = 0
+        while roots := circular_roots(n, count, top):
+            found.extend((lam, n, s) for s, lam in enumerate(roots, 1))
+            n += 1
+        if len(found) >= count:
+            found.sort(key=lambda r: (r[0], r[1]))
+            return tuple(found[:count])
+        top *= 2
+
+
 def circular_modes(plate: Plate, count: int) -> list[PlateMode]:
     """The clamped circular plate's lowest `count` modes (each n ≥ 1 is a pair, cos nθ and sin nθ, listed once)."""
-    modes = []
-    for n in range(count + 1):
-        for s, lam in enumerate(circular_roots(n, count), 1):
-            modes.append(PlateMode(n, s, lam * lam * plate.scale / (plate.a**2 * TWO_PI), lam))
-    modes.sort(key=lambda p: (p.freq_hz, p.m))
-    return modes[:count]
+    scale = plate.scale / (plate.a**2 * TWO_PI)
+    return [PlateMode(n, s, lam * lam * scale, lam) for lam, n, s in _lowest(count)]
 
 
 def circular_shape(mode: PlateMode, x: np.ndarray, y: np.ndarray, edge: float = 1.0) -> np.ndarray:

@@ -74,3 +74,22 @@ def test_plate_count_approaches_its_asymptote():
     f = np.array([modes[-1].freq_hz * 0.8])
     n = counting(np.array([m.freq_hz for m in modes]), f)
     assert n[0] / plate_asymptote(p, f)[0] == pytest.approx(1, abs=0.05)
+
+
+def test_circular_roots_are_found_once_for_every_plate():
+    """The roots λ don't depend on the plate: a new plate's modes reuse them (#409 P-1: 3 s a control), and the
+    lowest are those every nodal diameter's own roots give, as found one diameter at a time."""
+    import time
+
+    from vib_tutorial.core.beams_plates import circular_roots
+
+    small, large = Plate(0.2, 0.2, circular=True), Plate(0.35, 0.35, 0.005, circular=True)
+    modes = circular_modes(small, 40)
+    every = sorted((lam, n) for n in range(41) for lam in circular_roots(n, 40))[:40]
+    assert [m.m for m in modes] == [n for _, n in every]
+    assert [m.root for m in modes] == pytest.approx([lam for lam, _ in every], rel=1e-12)
+    began = time.perf_counter()
+    other = circular_modes(large, 40)
+    assert time.perf_counter() - began < 0.01
+    assert [m.root for m in other] == [m.root for m in modes]
+    assert other[0].freq_hz / modes[0].freq_hz == pytest.approx(large.scale / small.scale * (0.2 / 0.35) ** 2)
