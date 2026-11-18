@@ -23,7 +23,11 @@ then clipped. The Single oscillator's three 3,000-point responses took 37 ms a f
 the Frame builder's two dashed ones 16 ms. A held plot's curves (those it has, and those added later: `plot()`,
 `addItem`) keep a pixmap of themselves (`DeviceCoordinateCache`), and the strip is copied from it: 2 ms. Hold
 only a plot whose curves stay put while something moves: a curve redrawn every frame redraws its pixmap too (the
-Simulation page's strip chart, cached, went 4.8 → 7.9 ms). `Playback.add_cursor` holds its plot.
+Simulation page's strip chart, cached, went 4.8 → 7.9 ms). `Playback.add_cursor` holds its plot. The pixmaps
+live in Qt's QPixmapCache, 10 MB unless told otherwise, and at a Retina display's 2× each is four times the
+size: a 1700 px window's Single oscillator holds 10.6 MB of them, so the cache dropped them as fast as it made
+them and every frame drew the curves again, and then copied them too (20 ms a frame on the Mac, 36.8 fps;
+#409 N-2). `install` gives it `PIXMAP_CACHE_MB`, room for a few pages' held plots at 2× on a large screen.
 
 Wide lines. Qt strokes a polyline wider than 1 px as one outline, and a curve that zigzags (a response with a
 stiff mode in it, a noisy signal) makes that outline slow: the Numerical integration page's 2 px responses took
@@ -45,6 +49,8 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import style
+
+PIXMAP_CACHE_MB = 96  # QPixmapCache's limit: held curves' pixmaps (see the module's docstring)
 
 GRID_Z = -200.0  # below the ViewBox (z -100): the grid goes under the data
 AXIS_Z = 0.5  # pyqtgraph's own
@@ -220,3 +226,4 @@ def install() -> None:
     pg.PlotItem.addItem = _add_item
     pg.PlotCurveItem._shouldUseDrawLineSegments = _segmented
     pg.LegendItem.paint = _paint_legend
+    QtGui.QPixmapCache.setCacheLimit(PIXMAP_CACHE_MB * 1024)
