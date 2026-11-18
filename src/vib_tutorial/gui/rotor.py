@@ -46,7 +46,7 @@ from ..core.rotor_sweep import (
     STATIONS,
     RunUpCoastDown,
     TrackedSweep,
-    lag_degrees,
+    phase_degrees,
     probe,
 )
 from . import rotor_practice, weak
@@ -263,9 +263,10 @@ class RotorPage(QtWidgets.QWidget):
         bt.addWidget(self.bode, 1)
         bt.addWidget(self.sweep_summary)
         self.polar_note = QtWidgets.QLabel(
-            "The 1X vector at the chosen station: its length is the amplitude, its angle clockwise from "
-            "the right the phase lag. Through a lightly damped critical speed the steady-state vector "
-            "traces a circle, lagging 90° at its lowest point. With a bowed shaft the curve starts from the "
+            "The 1X vector at the chosen station: its length is the amplitude, its angle the phase, counted as "
+            "a lead: counter-clockwise from the keyphasor mark at 0°, the way the shaft turns, so a lag turns it "
+            "clockwise. Through a lightly damped critical speed the steady-state vector traces a circle, at −90° "
+            "(lagging 90°) at its lowest point. With a bowed shaft the curve starts from the "
             "bow (the slow-roll runout), not from the origin. The labels give the speed in rpm."
         )
         self.polar_note.setWordWrap(True)
@@ -467,9 +468,10 @@ class RotorPage(QtWidgets.QWidget):
         self.probe_direction.addItems(DIRECTION_NAMES)
         self.probe_direction.setToolTip(
             "<p>What the Bode and polar plots show: a probe reading x or y, or the orbit's major axis. "
-            "The phase lag is the angle the shaft turns from the keyphasor (the mark on the shaft passing +x) "
-            "to the probe's positive peak, so on a circular orbit the y probe reads 90° more than the x "
-            "probe. For the orbit, it is the angle from the mark back to the high spot.</p>"
+            "The phase is counted as a lead, the way the shaft turns: minus the angle the shaft turns from the "
+            "keyphasor (the mark on the shaft passing +x) to the probe's positive peak, so a lag is negative, and "
+            "on a circular orbit the y probe reads 90° less than the x probe. For the orbit, it is the high spot's "
+            "angle from the mark, the way the shaft turns.</p>"
         )
         self.probe_order = QtWidgets.QComboBox()
         self.probe_order.addItems(ORDER_NAMES)
@@ -1083,30 +1085,29 @@ class RotorPage(QtWidgets.QWidget):
         pad = 0.04 * max(hi - lo, 1.0)
         self.bode.amp.setXRange(max(lo - pad, 0.0), hi + pad, padding=0)
         self._draw_tracking(full=True)
-        self.polar.getPlotItem().enableAutoRange()
 
     def _steady_probe(self) -> tuple[np.ndarray, np.ndarray]:
-        """The steady-state 1X (or 2X, 3X) values at the chosen station and direction, and their unwrapped lag."""
+        """The steady-state 1X (or 2X, 3X) values at the chosen station and direction, and their unwrapped phase."""
         station, direction = self._probe()
         vectors = self._steady_orders[self._order() - 1]
         values = probe(vectors[:, station], direction)
-        return values, lag_degrees(values)
+        return values, phase_degrees(values)
 
     def _draw_tracking(self, full: bool = False) -> None:
         """The Bode and polar plots: the steady-state curve and summary (if `full`), the sweeps, the marker."""
         if not self._steady_rpm.size:
             return
         rpm = self._steady_rpm
-        values, lag = self._steady_probe()
+        values, phase = self._steady_probe()
         if full:
-            self.bode.set_steady(rpm, values, lag)
+            self.bode.set_steady(rpm, values, phase)
             lo, hi = self._tracking_range()
             shown = (rpm >= lo) & (rpm <= hi)
             self.polar.set_steady(rpm[shown], values[shown], nice_marks(lo, hi))
-        self.sweep_plots.redraw(*self._probe(), rpm, lag, full)
+        self.sweep_plots.redraw(*self._probe(), rpm, phase, full)
         here = self.sim.omega * RPM
         v = complex(np.interp(here, rpm, values.real), np.interp(here, rpm, values.imag))
-        self.bode.set_here(here, abs(v), float(np.interp(here, rpm, lag)))
+        self.bode.set_here(here, abs(v), float(np.interp(here, rpm, phase)))
         self.polar.set_here(v)
         if full or (self.run_up is not None and self.run_up.stage in ("out", "back")):
             text = self._summary_html(rpm, values)

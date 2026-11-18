@@ -21,7 +21,8 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.rotor_simulator import RPM
-from ..core.rotor_sweep import TrackedSweep, lag_degrees
+from ..core.rotor_sweep import TrackedSweep, phase_degrees
+from .polar_grid import PolarGrid
 from .style import colors
 from .theming import add_legend
 
@@ -29,19 +30,21 @@ DASH = QtCore.Qt.PenStyle.DashLine
 SWEEP_COLORS = (1, 3, 5, 2, 4, 6, 7, 0)  # indices into colors.mode, one per sweep pair in turn
 
 BODE_TIP = (
-    "<p>Top: the 1X amplitude at the chosen station and direction against speed; bottom: its phase lag, "
-    "the degrees the shaft turns from the keyphasor (the mark on the shaft passing +x) to the probe's positive "
-    "peak. The thick line is the steady state, each speed held until the response settles; the red line "
+    "<p>Top: the 1X amplitude at the chosen station and direction against speed; bottom: its phase, counted "
+    "as a <b>lead</b>, the way the shaft turns, from the keyphasor (the mark on the shaft passing +x). So a lag "
+    "is negative: at −90° the probe's positive peak comes a quarter turn after the mark passes. (Instruments "
+    "in the field mostly show the lag, +90° there: see the notes' <i>Which way phase is counted</i>.) The thick line is the steady state, each speed held until the response settles; the red line "
     "and dot are the speed now.</p><p>The thin lines are run-ups (solid) and coast-downs (dashed), "
     "tracked once per revolution like a tracking filter on a real machine. The dots, if shown, are the "
     "largest displacement over each revolution, free vibration included.</p>"
 )
 POLAR_TIP = (
-    "<p>The same 1X vector drawn as a point: its length is the amplitude, and the angle clockwise from "
-    "the right is the phase lag (the direction of rotation is counterclockwise). As the speed passes a "
+    "<p>The same 1X vector drawn as a point: its distance from the centre is the amplitude (the rings), and "
+    "its angle the phase, counted as a <b>lead</b>: counter-clockwise from the keyphasor mark at 0°, the way "
+    "the shaft turns (the disc is seen from beyond bearing B). A lag turns it clockwise. As the speed passes a "
     "critical, the steady-state vector traces a loop: very nearly a circle for a single lightly damped "
-    "mode, though not exactly one (the mobility, velocity over force, would be). The lag is 90° at the "
-    "bottom of the loop, close to the critical speed.</p>"
+    "mode, though not exactly one (the mobility, velocity over force, would be). The phase is −90° (a lag "
+    "of 90°) at the bottom of the loop, close to the critical speed.</p>"
     "<p>The labelled dots on the steady-state curve mark the speed in rpm.</p>"
 )
 
@@ -54,9 +57,10 @@ class SweepCurves:
     color: int  # index into SWEEP_COLORS
     amp: pg.PlotDataItem
     peaks: pg.ScatterPlotItem
-    lag: pg.PlotDataItem
+    phase: pg.PlotDataItem
     polar: pg.PlotDataItem
     drawn: int = 0  # revolutions drawn so far
+    largest: float = 0.0  # its largest amplitude
 
 
 def _major_grid(plot: pg.PlotItem) -> None:
@@ -73,20 +77,20 @@ def _pen(sweep: TrackedSweep, color: int, width: float = 1.5) -> QtCore.QObject:
 
 
 class BodePlots(pg.GraphicsLayoutWidget):
-    """1X amplitude and phase lag against speed."""
+    """1X amplitude and phase (a lead: a lag is negative) against speed."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.setToolTip(BODE_TIP)
         self.amp = self.addPlot(row=0, col=0)
         self.amp.setLabel("left", "1X amplitude", units="m")
-        self.lag = self.addPlot(row=1, col=0)
-        self.lag.setLabel("left", "Phase lag", units="°")
-        self.lag.getAxis("left").enableAutoSIPrefix(False)
-        self.lag.setLabel("bottom", "Spin speed", units="rpm")
-        self.lag.getAxis("bottom").enableAutoSIPrefix(False)
-        self.lag.setXLink(self.amp)
-        for p in (self.amp, self.lag):
+        self.phase = self.addPlot(row=1, col=0)
+        self.phase.setLabel("left", "Phase (lead +, lag −)", units="°")
+        self.phase.getAxis("left").enableAutoSIPrefix(False)
+        self.phase.setLabel("bottom", "Spin speed", units="rpm")
+        self.phase.getAxis("bottom").enableAutoSIPrefix(False)
+        self.phase.setXLink(self.amp)
+        for p in (self.amp, self.phase):
             _major_grid(p)
             p.setAutoVisible(y=True)
             p.setMenuEnabled(False)
@@ -94,58 +98,55 @@ class BodePlots(pg.GraphicsLayoutWidget):
         self.ci.layout.setRowStretchFactor(1, 2)
         self.legend = add_legend(self.amp, offset=(-5, 5))
         self.steady_amp = self.amp.plot(name="Steady state")
-        self.steady_lag = self.lag.plot()
+        self.steady_phase = self.phase.plot()
         self.here_lines = [pg.InfiniteLine(angle=90) for _ in range(2)]
         self.here_dots = [pg.ScatterPlotItem(size=9) for _ in range(2)]
         self._here: tuple[float, float, float] | None = None
-        for p, line, dot in zip((self.amp, self.lag), self.here_lines, self.here_dots):
+        for p, line, dot in zip((self.amp, self.phase), self.here_lines, self.here_dots):
             p.addItem(line)
             p.addItem(dot)
         self.apply_theme()
 
     def apply_theme(self) -> None:
         self.legend.setBrush(colors.legend_brush())
-        for curve in (self.steady_amp, self.steady_lag):
+        for curve in (self.steady_amp, self.steady_phase):
             curve.setPen(pg.mkPen(colors.strong, width=2.5))
         for line, dot in zip(self.here_lines, self.here_dots):
             line.setPen(pg.mkPen(colors.force, width=1))
             dot.setBrush(pg.mkBrush(colors.force))
             dot.setPen(pg.mkPen(colors.background, width=1))
-        self.lag.getAxis("left").setTickSpacing(90.0, 45.0)
+        self.phase.getAxis("left").setTickSpacing(90.0, 45.0)
 
     def set_order(self, order: int) -> None:
         """Label the plots for the 1X or the 2X vector."""
         self.amp.setLabel("left", f"{order}X amplitude", units="m")
 
-    def set_steady(self, rpm: np.ndarray, values: np.ndarray, lag: np.ndarray) -> None:
+    def set_steady(self, rpm: np.ndarray, values: np.ndarray, phase: np.ndarray) -> None:
         self.steady_amp.setData(rpm, np.abs(values))
-        self.steady_lag.setData(rpm, lag)
+        self.steady_phase.setData(rpm, phase)
 
-    def set_here(self, rpm: float, amp: float, lag: float) -> None:
-        if (rpm, amp, lag) == self._here:
+    def set_here(self, rpm: float, amp: float, phase: float) -> None:
+        if (rpm, amp, phase) == self._here:
             return  # at a steady speed: don't make the plots repaint every frame for nothing
-        self._here = (rpm, amp, lag)
+        self._here = (rpm, amp, phase)
         for line in self.here_lines:
             line.setValue(rpm)
         self.here_dots[0].setData([rpm], [amp])
-        self.here_dots[1].setData([rpm], [lag])
+        self.here_dots[1].setData([rpm], [phase])
 
 
 class PolarPlot(pg.PlotWidget):
-    """The 1X vector as a point: amplitude out from the centre, phase lag clockwise from +x."""
+    """The 1X vector as a point on a polar grid (`PolarGrid`): amplitude out from the centre, phase (a lead)
+    counter-clockwise from the keyphasor mark at +x."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.setToolTip(POLAR_TIP)
         p = self.getPlotItem()
-        p.setAspectLocked(True)
         p.setMenuEnabled(False)
-        p.setLabel("bottom", "In phase with the keyphasor", units="m")
-        p.setLabel("left", "Quadrature (down: lagging 90°)", units="m")
-        _major_grid(p)
-        self.axes = [pg.InfiniteLine(pos=0, angle=a) for a in (0, 90)]
-        for line in self.axes:
-            p.addItem(line)
+        self.grid = PolarGrid(p)
+        self.setAccessibleName("Polar plot: the 1X vector, phase as a lead")
+        self._steady_r = self._sweep_r = 0.0  # the largest amplitudes drawn: the rings hold both
         self.steady = p.plot()
         self.marks = pg.ScatterPlotItem(size=5)
         p.addItem(self.marks)
@@ -157,8 +158,7 @@ class PolarPlot(pg.PlotWidget):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        for line in self.axes:
-            line.setPen(pg.mkPen(colors.faint, width=1))
+        self.grid.apply_theme()
         self.steady.setPen(pg.mkPen(colors.strong, width=2.5))
         self.marks.setBrush(pg.mkBrush(colors.strong))
         self.marks.setPen(pg.mkPen(None))
@@ -169,12 +169,14 @@ class PolarPlot(pg.PlotWidget):
 
     @staticmethod
     def xy(values: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Plot coordinates of 1X vectors V = |V| e^{-i lag}: the lag runs clockwise from +x."""
+        """Plot coordinates of 1X vectors V = |V| e^{i phase}: the phase (a lead) runs counter-clockwise from +x."""
         return np.real(values), np.imag(values)
 
     def set_steady(self, rpm: np.ndarray, values: np.ndarray, marks: np.ndarray) -> None:
         """The steady-state curve over the speeds shown, and dots labelled at the speeds `marks` (rpm)."""
         self.steady.setData(*self.xy(values))
+        self._steady_r = float(np.abs(values).max()) if values.size else 0.0
+        self.fit()
         p = self.getPlotItem()
         for label in self.mark_labels:
             p.removeItem(label)
@@ -190,6 +192,12 @@ class PolarPlot(pg.PlotWidget):
             p.addItem(label)
             self.mark_labels.append(label)
         self.apply_theme()
+
+    def fit(self, sweep_r: float | None = None) -> None:
+        """Rings to hold the steady state and the sweeps (the largest of their amplitudes, `sweep_r` if new)."""
+        if sweep_r is not None:
+            self._sweep_r = sweep_r
+        self.grid.fit(max(self._steady_r, self._sweep_r))
 
     def set_here(self, value: complex) -> None:
         if value != self._here:  # unchanged at a steady speed: no repaint
@@ -208,7 +216,7 @@ class SweepPlots:
 
     def add(self, sweep: TrackedSweep, color: int) -> None:
         c = SweepCurves(
-            sweep, color, self.bode.amp.plot(), pg.ScatterPlotItem(size=4), self.bode.lag.plot(), self.polar.plot()
+            sweep, color, self.bode.amp.plot(), pg.ScatterPlotItem(size=4), self.bode.phase.plot(), self.polar.plot()
         )
         self.bode.amp.addItem(c.peaks)
         c.peaks.setVisible(self.show_peaks)
@@ -220,14 +228,14 @@ class SweepPlots:
             for plot, item in (
                 (self.bode.amp, c.amp),
                 (self.bode.amp, c.peaks),
-                (self.bode.lag, c.lag),
+                (self.bode.phase, c.phase),
                 (self.polar.getPlotItem(), c.polar),
             ):
                 plot.removeItem(item)
         self.curves = []
 
     def _style(self, c: SweepCurves) -> None:
-        for item in (c.amp, c.lag, c.polar):
+        for item in (c.amp, c.phase, c.polar):
             item.setPen(_pen(c.sweep, c.color))
         c.peaks.setBrush(pg.mkBrush(colors.mode[SWEEP_COLORS[c.color % len(SWEEP_COLORS)]]))
         c.peaks.setPen(pg.mkPen(None))
@@ -241,7 +249,9 @@ class SweepPlots:
         for c in self.curves:
             c.peaks.setVisible(on)
 
-    def redraw(self, station: int, direction: str, steady_rpm: np.ndarray, steady_lag: np.ndarray, full: bool) -> None:
+    def redraw(
+        self, station: int, direction: str, steady_rpm: np.ndarray, steady_phase: np.ndarray, full: bool
+    ) -> None:
         """Draw each sweep's revolutions; only the sweeps with new ones unless `full`."""
         for c in self.curves:
             if not full and len(c.sweep) == c.drawn:
@@ -249,11 +259,14 @@ class SweepPlots:
             c.drawn = len(c.sweep)
             w, v, peak = c.sweep.trace(station, direction, self.order)
             rpm = w * RPM
-            lag = lag_degrees(v, np.interp(rpm, steady_rpm, steady_lag)) if steady_rpm.size else lag_degrees(v)
+            near = np.interp(rpm, steady_rpm, steady_phase) if steady_rpm.size else None
             c.amp.setData(rpm, np.abs(v))
             c.peaks.setData(rpm, peak)
-            c.lag.setData(rpm, lag)
+            c.phase.setData(rpm, phase_degrees(v, near))
             c.polar.setData(*PolarPlot.xy(v))
+            c.largest = float(np.abs(v).max()) if v.size else 0.0
+        largest = max((c.largest for c in self.curves), default=0.0)
+        self.polar.fit(largest)
 
 
 def nice_marks(lo: float, hi: float, count: int = 8) -> np.ndarray:

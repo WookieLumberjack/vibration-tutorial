@@ -83,7 +83,8 @@ spins about its own centre of mass, and the shaft's centre whirls on a circle of
 </table>
 <p>With the defaults (<m>e</m> = 20 µm) the disc whirls 2.2 µm at 500 rpm, with 2° of lag. At the 1584 rpm
 critical the lag is 88°, and the peak, 217 µm, comes at 1589 rpm. At 3000 rpm the whirl is 28 µm, with
-176° of lag. At <m>r</m> = 1 the equation gives <m>X = e/(2iζ)</m>: a lag of 90° and a whirl of <m>e/(2ζ)</m>. The first mode's
+176° of lag. (The page's Bode plot counts phase as a lead, so it shows these as −2°, −88° and −176°: see
+<a href="#phase-convention">Which way phase is counted</a>.) At <m>r</m> = 1 the equation gives <m>X = e/(2iζ)</m>: a lag of 90° and a whirl of <m>e/(2ζ)</m>. The first mode's
 <m>ζ</m> is 0.0464, so <m>e/(2ζ)</m> = 216 µm, within 1% of the peak.</p>
 <p>The lag reaches 90° at 1586 rpm, not quite at the critical, and the peak comes later still. The peak
 is late even for one mass on a spring: an unbalance response peaks at <m>r = 1/√(1 − 2ζ²)</m>, just above the
@@ -442,13 +443,38 @@ stable at any step, so the step only has to resolve what the rotor does (see <i>
 <p>On a real machine the response is measured as the speed changes. A <b>keyphasor</b>, a once-per-turn
 mark on the shaft, starts each revolution as it passes +x. (The heavy spot is at the mark unless you move
 it.) A <b>tracking filter</b> takes the 1X component over one revolution:</p>
-<eq>V = \frac{1}{\pi}\int x(\varphi)\,\mathrm{e}^{-\mathrm{i}\varphi}\,\mathrm{d}\varphi, \qquad x \approx |V|\cos(\varphi - \text{lag})</eq>
-<p>|V| is the 1X amplitude. The <b>phase lag</b> is the angle the shaft turns from the keyphasor to the
-probe's positive peak. The <b>Bode plot</b> draws both against speed. The <b>polar plot</b> draws <m>V</m> as a
-point, its angle the lag (clockwise, against the rotation). In steady state, through a lightly damped
-critical speed, <m>V</m> traces very nearly a circle, lowest (lagging 90°) near the critical. A probe in <m>y</m> reads
-90° more lag than one in <m>x</m> on a circular orbit, since the shaft turns 90° more before the high spot
-reaches it.</p>
+<eq>V = \frac{1}{\pi}\int x(\varphi)\,\mathrm{e}^{-\mathrm{i}\varphi}\,\mathrm{d}\varphi, \qquad x \approx |V|\cos(\varphi + \arg V)</eq>
+<p>|V| is the 1X amplitude and <m>arg V</m> its <b>phase</b>, counted on this page as a lead (see below): the
+probe's positive peak comes when the shaft has turned <m>−arg V</m> past the keyphasor, so a lag shows as a
+negative phase. The <b>Bode plot</b> draws both against speed. The <b>polar plot</b> draws <m>V</m> as a point, its
+angle the phase, counter-clockwise from the keyphasor at 0°: a lag turns it clockwise. In steady state,
+through a lightly damped critical speed, <m>V</m> traces very nearly a circle, at −90° (lagging 90°) near the
+critical. A probe in <m>y</m> reads 90° less than one in <m>x</m> on a circular orbit, since the shaft turns 90° more
+before the high spot reaches it.</p>
+<h3><a name="phase-convention"></a>Which way phase is counted</h3>
+<p>An angle on a rotor can be counted either way round, and both ways are in use. This page counts every
+angle one way: <b>counter-clockwise, the way the shaft turns</b>, seen from beyond bearing B, as the polar
+plots' keys show (an arrow for the rotation and one for a positive phase, from the keyphasor mark at 0°). A
+reading's phase is a <b>lead</b>, <m>arg V</m>: positive if the probe's peak comes before the mark passes,
+negative, a lag, if after. The heavy spot's angle, a weight's, the bow's and every other on the rotor count
+from the keyphasor mark the same way. Solvers count like this: they write the response as
+<m>x = Re(X e<sup>iΩt</sup>)</m>, so <m>arg X</m> is a lead, and the phase plots elsewhere in the course fall as the
+response lags.</p>
+<p>Field instruments mostly count the other way. A balancing instrument times the probe's peak after the
+keyphasor's pulse and calls that delay the <b>phase lag</b>, positive. Its polar plot runs clockwise,
+against the rotation, and weights are placed by angles counted against the rotation from the mark, so
+that the plot lies over the machine. To convert, lag = −lead, or 360° − lead for an angle between 0° and
+360°; an angle against the rotation is 360° minus the same angle with it. A plot drawn one way is the
+other's mirror image, flipped about its 0° line.</p>
+<p>Either works if the readings and the weights are counted the same way. Then, read at an <m>x</m> probe
+beside the keyphasor (0° here), a reading points at the high spot, and below the critical, where the high
+spot is near the heavy spot, the correction lands about opposite the reading. Mixed, the numbers mislead.
+Take the defaults with the heavy spot at 60°, read at the disc at 1200 rpm with a 0.5 g trial at 30°. Here
+the reading as found is 26.6 µm ∠ 51° (a lead: 9° behind the heavy spot) and the correction 1.00 g at
+20 mm, 240°: opposite the high spot. A field instrument shows the same reading as 309° of lag and puts the
+correction at 120° against the rotation: 189° from the reading, opposite again. But read 309° of lag beside
+a weight at 240° with the spin, and the weight looks only 69° from the reading, though it sits opposite the
+high spot. So each tab here says how it counts, and so should any balancing record.</p>
 <p>Swept through a critical at a finite rate, the response differs from the steady state in four
 ways:</p>
 <ul>
@@ -507,7 +533,7 @@ blocks of 0.5 s by default, each starting halfway through the last. <i>Tap the d
 it runs.</p>
 
 <recap problems="ramp-rate">
-<li>A tracking filter takes each revolution's 1X: the Bode plot draws its amplitude and lag against speed, the polar plot its vector, nearly a circle through a critical.</li>
+<li>A tracking filter takes each revolution's 1X: the Bode plot draws its amplitude and phase against speed, the polar plot its vector, nearly a circle through a critical.</li>
 <li>Swept at a finite rate, a run-up peaks lower and later than the steady state and a coast-down lower and earlier; <m>Ω̇/ω<sub>c</sub>²</m> against <m>2ζ²</m> says how much.</li>
 <li>A waterfall or cascade stacks spectra against time or speed: the 1X ridge moves with the speed, a free whirl stays at its frequency.</li>
 </recap>
@@ -573,12 +599,15 @@ causes (a bow, or on a real machine a scratch or a magnetic spot on the probe's 
 <li>Stop, add a known <b>trial weight</b> <m>T</m> (mass × radius, at an angle from the keyphasor mark), run
 again and read <m>V<sub>1</sub></m>. The rotor is linear, so the weight's effect is <m>V<sub>1</sub> − V<sub>0</sub></m>,
 and the <b>influence coefficient</b> is <m>α = (V<sub>1</sub> − V<sub>0</sub>)/T</m>: microns, and degrees of
-lag, per g·mm of weight.</li>
+phase, per g·mm of weight.</li>
 <li>Take the trial off, put on the <b>correction</b> <m>W<sub>c</sub> = −(V<sub>0</sub> − V<sub>s</sub>)/α</m>,
 then run and check.</li>
 </ol>
-<p>All the quantities are vectors (complex numbers). A reading's angle is its phase lag from the
-keyphasor, and a weight's is its angle on the rotor. A trial weight should change the reading by a good
+<p>All the quantities are vectors (complex numbers). A reading's angle is its phase lead from the
+keyphasor, and a weight's is its angle on the rotor from the mark, both counter-clockwise, the way the
+shaft turns (<a href="#phase-convention">Which way phase is counted</a> says why, and how to convert to
+the lag most instruments show). Read at the <m>x</m> probe below the critical, the correction lands about
+opposite the reading. A trial weight should change the reading by a good
 fraction (30% or more) without making the rotor unsafe to run. For an unbalance at the disc alone, the
 one weight balances the rotor at every speed, since unbalance and weight both make forces growing as <m>Ω²</m>
 at the same place.</p>
@@ -1144,7 +1173,7 @@ is nearly opposite to it: the bow pulls the high spot away from the hot spot, th
 itself. So the effect depends on which side of the critical the rotor runs, not on how hard it rubs. On
 the <i>Newkirk effect</i> preset (a seal 15 µm round the disc, set 10 µm low, <m>a<sub>T</sub></m> = 120 µm/W, <m>τ<sub>T</sub></m> = 5 s, so
 much faster than a real shaft's minutes) the 1X at 1300 rpm, 0.82 of the critical, grows from 10 µm past
-100 µm in 15 s, its lag from 13° to 40°. Run at 3200 rpm, the bow built going through the critical
+100 µm in 15 s, its phase from −13° to −40° (a lag of 13° growing to 40°). Run at 3200 rpm, the bow built going through the critical
 fades to 2.4 µm, and the disc runs at 5.9 µm.</p>
 <p><b>On the page.</b> The <i>Rub</i> tab sets the ring, says how much gap the disc has at rest and its
 frequency on the ring, and plots the ring's push on the disc. With a thermal gain <m>a<sub>T</sub></m> it also draws the

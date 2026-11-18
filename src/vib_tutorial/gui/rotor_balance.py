@@ -7,10 +7,22 @@ trials taken off) and check. Each reading runs the simulation: the page ramps
 to the speed, waits for the transient to die away and averages the 1X vector
 over some revolutions. The vectors are kept at every station, so the probes can
 be changed afterwards and the arithmetic redone.
+
+Every angle on the tab counts one way, said on it (`CONVENTION`), in its tooltips and in the notes' *Which way
+phase is counted*: counter-clockwise seen from beyond bearing B, the way the shaft turns. A reading's phase is a
+lead from the keyphasor (arg V, as the solvers count it; a lag is clockwise), and a weight's angle is from the
+keyphasor mark, the same way. The polar plot (`PolarGrid`) is the disc as the mark passes the keyphasor, so read at
+the x probe a reading points at the high spot, and the weights (squares on its outer ring: the trial T, the
+correction W, the heavy spot H while shown) sit where they are on the disc: below the critical, the correction lands
+about opposite the reading. Under it, the Bode plot: amplitude and phase against speed, as found and now.
+
+Working on it: `tests/test_rotor_balance.py` checks the arithmetic and that the correction lands opposite the
+reading below the critical; `tests/test_gui_smoke.py` balances a mystery rotor through the tab.
 """
 
 from __future__ import annotations
 
+import cmath
 import math
 from typing import TypeGuard
 
@@ -21,10 +33,11 @@ from PySide6 import QtCore, QtWidgets
 from ..core.rotor import PlaneWeight
 from ..core.rotor_balance import PROBES, corrections, influence_matrix, weight, weight_parts
 from ..core.rotor_simulator import RPM
-from ..core.rotor_sweep import STATIONS, lag_degrees, probe, steady_vectors
+from ..core.rotor_sweep import STATIONS, phase_degrees, probe, steady_vectors
 from . import weak
 from .layouts import FlowLayout, form_layout, group, plot_height
 from .panels import spin
+from .polar_grid import PolarGrid
 from .style import colors
 from .tab_groups import Deferred
 from .theming import add_legend, mute
@@ -48,6 +61,12 @@ READINGS = (
     ("trial2", "V₂", 4),
     ("verify", "V₂", "strong"),
 )
+# The weights drawn on the polar plot's outer ring: label and colour, as READINGS'.
+WEIGHT_MARKS: dict[str, tuple[str, str | int]] = {
+    "trial": ("T", 3),
+    "correction": ("W", "strong"),
+    "heavy": ("H", "force"),
+}
 TRIALS = ("trial", "trial2")  # the readings with a trial weight in plane 1, plane 2
 SECOND = "′"  # marks the second probe's readings
 
@@ -65,6 +84,26 @@ MYSTERY_TIP = (
     "balancing. With two planes the disc is skewed too, by a hidden angle: a couple unbalance. "
     "<i>Reveal</i> shows them in the panel again.</p>"
 )
+CONVENTION = (
+    "<b>Angles</b> count counter-clockwise, the way the shaft turns, seen from beyond bearing B. A reading's "
+    "phase is a <b>lead</b> from the keyphasor: a lag turns it clockwise. A weight's angle is from the keyphasor "
+    "mark on the shaft, the same way. Field instruments mostly count both as lag, clockwise: lag = 360° − lead "
+    "(see the notes' <i>Which way phase is counted</i>)."
+)
+ANGLE_TIP = (
+    "<p>Where the trial weight goes: its angle from the keyphasor mark on the shaft, counter-clockwise seen from "
+    "beyond bearing B (the way the shaft turns), as every angle on this tab counts.</p>"
+)
+VECTOR_TIP = (
+    "<p>The readings as vectors on a polar plot: the distance from the centre is the amplitude (the rings), "
+    "the angle the phase, counted as a lead, counter-clockwise from the keyphasor at 0°. The plot is the disc "
+    "seen from beyond bearing B as the mark passes the keyphasor, so read at the x probe a vector points at the "
+    "high spot, and the squares on the outer ring are weights where they sit on the disc: <b>T</b> the trial, "
+    "<b>W</b> the correction, <b>H</b> the heavy spot as found (while shown). Below the critical the high spot is near "
+    "the heavy spot, so the correction lands about opposite the reading; above it, the high spot swings round "
+    "toward the far side. A y probe, a quarter turn on, reads 90° less.</p><p>The dashed lines from V₀ are "
+    "the trial weights' effects. With two probes the second's readings are dashed, their names primed.</p>"
+)
 MODE_TIP = (
     "<p><b>One plane</b>: one weight on the disc, read at one probe.<br><b>Two planes on the disc</b>: "
     "weights on its two faces, a set distance apart, read at two probes. Together they make a force and "
@@ -79,9 +118,14 @@ def _color(key: str | int) -> str:
     return colors.mode[key] if isinstance(key, int) else getattr(colors, key)
 
 
+def _lead(v: complex) -> int:
+    """A vector's angle in degrees, [0, 360), counter-clockwise: a reading's phase lead, a weight's from the mark."""
+    return round(math.degrees(cmath.phase(v))) % 360  # whole degrees: 359.6 shows as 0, not 360
+
+
 def _vec(v: complex) -> str:
-    """A 1X reading as amplitude ∠ phase lag."""
-    return f"{abs(v) * 1e6:.3g} µm ∠ {float(lag_degrees(np.array(v))) % 360.0:.0f}°"
+    """A 1X reading as amplitude ∠ phase lead."""
+    return f"{abs(v) * 1e6:.3g} µm ∠ {_lead(v):.0f}°"
 
 
 class BalancingPanel(QtWidgets.QWidget):
@@ -163,6 +207,7 @@ class BalancingPanel(QtWidgets.QWidget):
         self.trial_angle.setWrapping(True)
         self.trial_angle.setStepType(QtWidgets.QAbstractSpinBox.StepType.DefaultStepType)
         self.trial_angle.setSingleStep(15.0)
+        self.trial_angle.setToolTip(ANGLE_TIP)
         row = FlowLayout()
         row.add(group(self.trial_mass, "at radius", self.trial_radius), group("angle", self.trial_angle))
         form.addRow("Trial weight:", row)
@@ -199,21 +244,14 @@ class BalancingPanel(QtWidgets.QWidget):
         self.status = QtWidgets.QLabel()
         mute(self.status)
 
+        self.convention = QtWidgets.QLabel(CONVENTION)
+        self.convention.setWordWrap(True)
         self.vector_plot = pg.PlotWidget()
         vp = self.vector_plot.getPlotItem()
-        vp.setAspectLocked(True)
         vp.setMenuEnabled(False)
-        vp.setLabel("bottom", "In phase with the keyphasor", units="m")
-        vp.setLabel("left", "Quadrature (down: lagging 90°)", units="m")
-        vp.showGrid(x=True, y=True, alpha=0.15)
-        self.vector_plot.setToolTip(
-            "<p>The readings as vectors, as on the polar plot: length the amplitude, angle clockwise from the "
-            "right the phase lag. The dashed lines from V₀ are the trial weights' effects. With two probes "
-            "the second's readings are dashed, their names primed.</p>"
-        )
-        self.axes = [pg.InfiniteLine(pos=0, angle=a) for a in (0, 90)]
-        for line in self.axes:
-            vp.addItem(line)
+        self.grid = PolarGrid(vp)
+        self.vector_plot.setAccessibleName("Balancing readings and weights, polar plot")
+        self.vector_plot.setToolTip(VECTOR_TIP)
         self.arrows, self.tips, self.labels = {}, {}, {}
         for key, sym, _ in READINGS:
             for k in range(2):
@@ -224,23 +262,41 @@ class BalancingPanel(QtWidgets.QWidget):
                 vp.addItem(self.tips[key, k])
                 vp.addItem(self.labels[key, k])
         self.effects = {(key, k): vp.plot() for key in TRIALS for k in range(2)}
+        # The weights where they sit on the disc, on the outer ring: the trial, the corrections, the heavy spot.
+        self.weight_marks = {name: pg.ScatterPlotItem(size=11, symbol="s") for name in WEIGHT_MARKS}
+        self.weight_labels = {name: pg.TextItem(text, anchor=(0.5, 0.5)) for name, (text, _) in WEIGHT_MARKS.items()}
+        for name in WEIGHT_MARKS:
+            vp.addItem(self.weight_marks[name])
+            vp.addItem(self.weight_labels[name])
 
-        self.curve_plot = pg.PlotWidget()
-        cp = self.curve_plot.getPlotItem()
-        cp.setMenuEnabled(False)
-        cp.setLabel("left", "1X amplitude", units="m")
-        cp.setLabel("bottom", "Speed (rpm)")
-        cp.getAxis("bottom").enableAutoSIPrefix(False)
-        cp.showGrid(x=True, y=True, alpha=0.15)
+        self.curve_plot = pg.GraphicsLayoutWidget()
+        cp = self.amp_plot = self.curve_plot.addPlot(row=0, col=0)
+        pp = self.phase_plot = self.curve_plot.addPlot(row=1, col=0)
+        cp.setLabel("left", "1X", units="m")
+        pp.setLabel("left", "Phase, lead", units="°")
+        pp.setLabel("bottom", "Speed (rpm)")
+        pp.setXLink(cp)
+        for plot in (cp, pp):
+            plot.setMenuEnabled(False)
+            plot.getAxis("bottom").enableAutoSIPrefix(False)
+            plot.getAxis("left").enableAutoSIPrefix(plot is cp)
+            plot.showGrid(x=True, y=True, alpha=0.15)
+            plot.getAxis("left").setWidth(52)  # the two plots' speeds line up
+        self.curve_plot.ci.layout.setRowStretchFactor(0, 3)
+        self.curve_plot.ci.layout.setRowStretchFactor(1, 2)
         add_legend(cp, offset=(-5, 5))
         self.curve_found = [cp.plot(name="As found"), cp.plot()]
         self.curve_now = [cp.plot(name="Now"), cp.plot()]
-        self.speed_lines = [pg.InfiniteLine(angle=90) for _ in range(2)]
-        for line in self.speed_lines:
-            cp.addItem(line)
+        self.phase_found = [pp.plot(), pp.plot()]
+        self.phase_now = [pp.plot(), pp.plot()]
+        self.speed_lines = [pg.InfiniteLine(angle=90) for _ in range(4)]  # balancing, slow roll; on each plot
+        for k, line in enumerate(self.speed_lines):
+            (cp if k < 2 else pp).addItem(line)
         self.curve_plot.setToolTip(
-            "<p>The steady-state 1X amplitude at the probe against speed: as found (at step 2), and with the "
-            "weights on now; the second probe's dashed. The lines mark the balancing and slow-roll speeds.</p>"
+            "<p>The steady-state 1X response at the probe against speed, as found (at step 2) and with the weights "
+            "on now; the second probe's dashed. Top, its amplitude; bottom, its phase, counted as a lead from the "
+            "keyphasor, as on the polar plot, so a lag is negative: it falls through −90° at a critical. The lines "
+            "mark the balancing and slow-roll speeds.</p>"
         )
         self.results = QtWidgets.QLabel()
         self.results.setWordWrap(True)
@@ -251,8 +307,9 @@ class BalancingPanel(QtWidgets.QWidget):
         layout.addLayout(steps)
         layout.addLayout(extras)
         layout.addWidget(self.status)
-        plot_height(self.vector_plot, 220)
-        plot_height(self.curve_plot, 160)
+        plot_height(self.vector_plot, 260)
+        plot_height(self.curve_plot, 300)
+        layout.addWidget(self.convention)
         layout.addWidget(self.vector_plot, 3)
         layout.addWidget(self.results)
         layout.addWidget(self.curve_plot, 2)
@@ -264,8 +321,11 @@ class BalancingPanel(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- theme
     def apply_theme(self) -> None:
-        for line in self.axes:
-            line.setPen(pg.mkPen(colors.faint, width=1))
+        self.grid.apply_theme()
+        for name, (_, c) in WEIGHT_MARKS.items():
+            self.weight_marks[name].setBrush(pg.mkBrush(_color(c)))
+            self.weight_marks[name].setPen(pg.mkPen(colors.background, width=1))
+            self.weight_labels[name].setColor(_color(c))
         for key, _, c in READINGS:
             color = _color(c)
             for k in range(2):
@@ -277,11 +337,14 @@ class BalancingPanel(QtWidgets.QWidget):
             line.setPen(pg.mkPen(_color(dict((r[0], r[2]) for r in READINGS)[key]), width=1.5, style=DASH))
         for k in range(2):
             style = DASH if k else QtCore.Qt.PenStyle.SolidLine
-            self.curve_found[k].setPen(pg.mkPen(colors.grey, width=2, style=style))
-            self.curve_now[k].setPen(pg.mkPen(colors.strong, width=2, style=style))
-        self.curve_plot.getPlotItem().legend.setBrush(colors.legend_brush())
-        self.speed_lines[0].setPen(pg.mkPen(colors.force, width=1.5))
-        self.speed_lines[1].setPen(pg.mkPen(colors.grey, width=1, style=DASH))
+            for curve in (self.curve_found[k], self.phase_found[k]):
+                curve.setPen(pg.mkPen(colors.grey, width=2, style=style))
+            for curve in (self.curve_now[k], self.phase_now[k]):
+                curve.setPen(pg.mkPen(colors.strong, width=2, style=style))
+        self.amp_plot.legend.setBrush(colors.legend_brush())
+        for k, line in enumerate(self.speed_lines):
+            line.setPen(pg.mkPen(colors.force, width=1.5) if k % 2 == 0 else pg.mkPen(colors.grey, width=1, style=DASH))
+        self.phase_plot.getAxis("left").setTickSpacing(90.0, 45.0)
         self.refresh()
 
     # ------------------------------------------------------------- planes and probes
@@ -482,8 +545,8 @@ class BalancingPanel(QtWidgets.QWidget):
         self.drawing.catch_up()
 
     def _place_speed_lines(self) -> None:
-        self.speed_lines[0].setValue(self.speed.value())
-        self.speed_lines[1].setValue(self.slow_speed.value())
+        for k, line in enumerate(self.speed_lines):
+            line.setValue(self.speed.value() if k % 2 == 0 else self.slow_speed.value())
         self.refresh()
 
     def refresh(self) -> None:
@@ -496,6 +559,8 @@ class BalancingPanel(QtWidgets.QWidget):
         values = {key: self.readings(key) for key, _, _ in READINGS}
         shown = {key for key, _, _ in READINGS if key != "trial2" or self.two_planes}
         n = len(self.probes())
+        drawn = [abs(v[k]) for key, v in values.items() if v is not None and key in shown for k in range(n)]
+        self.grid.fit(max(drawn, default=0.0))
         for key, _, _ in READINGS:
             for k in range(2):
                 v = values[key]
@@ -515,8 +580,37 @@ class BalancingPanel(QtWidgets.QWidget):
                 line.setData([v0[k].real, v1[k].real], [v0[k].imag, v1[k].imag])
             else:
                 line.setData([], [])
+        self._draw_weights()
         self.results.setText(self._results_html(values))
         self._draw_curves()
+
+    def weight_angles(self) -> dict[str, list[float]]:
+        """The angles (rad, from the mark, counter-clockwise) of the weights drawn on the polar plot, by mark."""
+        out: dict[str, list[float]] = {name: [] for name in WEIGHT_MARKS}
+        if self.trial is not None:
+            out["trial"].append(cmath.phase(self.trial))
+        w = self.correction_weights()
+        if w is not None:
+            out["correction"] += [cmath.phase(complex(x)) for x in w if x]
+        system = self.found_system or self.page.sim.system
+        net = system.mass_unbalance
+        if self.page.view.show_heavy and net:
+            out["heavy"].append(cmath.phase(net))
+        return out
+
+    def _draw_weights(self) -> None:
+        placed: list[float] = []  # the labels' angles so far: one near another steps inward
+        for name, angles in self.weight_angles().items():
+            points = [self.grid.ring_point(a) for a in angles]
+            self.weight_marks[name].setData([x for x, _ in points], [y for _, y in points])
+            label = self.weight_labels[name]
+            label.setVisible(bool(points))
+            if points:
+                a = angles[0]
+                near = sum(abs(math.remainder(a - b, 2 * math.pi)) < math.radians(12.0) for b in placed)
+                r = (0.86 - 0.12 * near) * self.grid.radius
+                label.setPos(r * math.cos(a), r * math.sin(a))
+                placed.append(a)
 
     def _results_html(self, values: dict[str, np.ndarray | None]) -> str:
         two = self.two_planes
@@ -554,7 +648,7 @@ class BalancingPanel(QtWidgets.QWidget):
             heads = [f"{self._probe_name(k)}{SECOND * k}" for k in range(2)]
             heads += [f"less slow roll{SECOND * k}" for k in range(2)] if subtract else []
         else:
-            heads = ["1X", "less slow roll" if subtract else ""]
+            heads = ["1X (∠ lead)", "less slow roll" if subtract else ""]
         out = (
             "<table cellspacing='0' cellpadding='2'><tr><th align='left'>Reading</th>"
             + "".join(f"<th>{h}</th>" for h in heads)
@@ -572,7 +666,7 @@ class BalancingPanel(QtWidgets.QWidget):
             else:
                 a = complex(alpha[0, 0])
                 out += (
-                    f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}°: influence coefficient "
+                    f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}° from the mark: influence coefficient "
                     f"α = (V₁ − V₀)/T = {_per_weight(a)}<br>"
                 )
             w = self.correction_weights()
@@ -599,7 +693,7 @@ class BalancingPanel(QtWidgets.QWidget):
 
     def _matrix_html(self, alpha: np.ndarray, mass: float, angle: float) -> str:
         """The influence matrix, a column per plane, and how well it tells the planes apart."""
-        cells = [[f"{abs(a):.3g} ∠ {float(lag_degrees(np.array(a))) % 360.0:.0f}°" for a in row] for row in alpha]
+        cells = [[f"{abs(a):.3g} ∠ {_lead(a):.0f}°" for a in row] for row in alpha]
         cond = np.linalg.cond(alpha)
         note = (
             ": the planes are hard to tell apart, so the weights come out large and small errors in the "
@@ -608,8 +702,8 @@ class BalancingPanel(QtWidgets.QWidget):
             else ""
         )
         return (
-            f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}° in each plane in turn. Influence matrix "
-            f"α (µm per g·mm ∠ lag), column j = (V<sub>j</sub> − V₀)/T: "
+            f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}° from the mark in each plane in turn. Influence "
+            f"matrix α (µm per g·mm ∠ lead), column j = (V<sub>j</sub> − V₀)/T: "
             f"[{cells[0][0]}, {cells[0][1]}; {cells[1][0]}, {cells[1][1]}], condition number {cond:.3g}{note}.<br>"
         )
 
@@ -618,15 +712,23 @@ class BalancingPanel(QtWidgets.QWidget):
         rpm = np.linspace(top / CURVE_POINTS, top, CURVE_POINTS)
         probes = self.probes()
 
-        def amplitude(system) -> list[np.ndarray]:
+        def response(system) -> list[np.ndarray]:
             v = steady_vectors(system, rpm / RPM)
-            return [np.abs(probe(v[:, station], direction)) for station, direction in probes]
+            return [probe(v[:, station], direction) for station, direction in probes]
 
-        now = amplitude(self.page.sim.system)
-        found: list[np.ndarray] = amplitude(self.found_system) if self.found_system is not None else []
+        now = response(self.page.sim.system)
+        found: list[np.ndarray] = response(self.found_system) if self.found_system is not None else []
         for k in range(2):
-            self.curve_now[k].setData(rpm, now[k]) if k < len(now) else self.curve_now[k].setData([], [])
-            self.curve_found[k].setData(rpm, found[k]) if k < len(found) else self.curve_found[k].setData([], [])
+            for values, amp, phase in (
+                (now, self.curve_now[k], self.phase_now[k]),
+                (found, self.curve_found[k], self.phase_found[k]),
+            ):
+                if k < len(values):
+                    amp.setData(rpm, np.abs(values[k]))
+                    phase.setData(rpm, phase_degrees(values[k]))
+                else:
+                    amp.setData([], [])
+                    phase.setData([], [])
 
 
 def v0_ok(v0: np.ndarray | None, runout) -> TypeGuard[np.ndarray]:
@@ -636,7 +738,7 @@ def v0_ok(v0: np.ndarray | None, runout) -> TypeGuard[np.ndarray]:
 
 def _per_weight(a: complex) -> str:
     """An influence coefficient, in µm per g·mm with its lag."""
-    return f"{abs(a):.3g} µm per g·mm ∠ {float(lag_degrees(np.array(a))) % 360.0:.0f}°"
+    return f"{abs(a):.3g} µm per g·mm ∠ {_lead(a):.0f}°"
 
 
 def _weight(w: complex, radius: float) -> str:

@@ -348,3 +348,39 @@ def test_two_planes_on_the_disc_balance_the_long_shaft_and_the_overhung_rotor():
         before = np.abs(readings(s, grid, [(DISC, "x"), *PROBES])).max()
         assert np.abs(readings(fixed, grid, [(DISC, "x"), *PROBES])).max() < 1e-8 * before
     assert presets["Long shaft, with its mass"].density == STEEL
+
+
+def _apart(a: complex, b: complex) -> float:
+    """The angle between two vectors (degrees, 0 to 180)."""
+    return abs(math.degrees(np.angle(a / b)))
+
+
+def test_below_the_critical_the_correction_lands_opposite_the_reading():
+    """Read at the x probe, beside the keyphasor, a reading's phase lead points at the high spot. Below the critical
+    (1584 rpm) the high spot is near the heavy spot, so the correction, opposite the heavy spot, is opposite the
+    reading; well above, the high spot is opposite the heavy spot, and the correction lands near the reading."""
+    for heavy in (0.0, 60.0, 150.0, 250.0):
+        s = RotorSystem(unbalance_angle=math.radians(heavy))
+        for rpm, apart in ((800.0, 180.0), (1200.0, 180.0), (3000.0, 0.0)):
+            v0 = reading(s, rpm, DISC)
+            w = correction(v0, influence(v0, reading(s.with_(weights=(TRIAL,)), rpm, DISC), TRIAL))
+            assert _apart(w, v0) == pytest.approx(apart, abs=15.0), (heavy, rpm)
+            assert _apart(w, -s.mass_unbalance) < 1e-6  # and it cancels the unbalance
+
+
+def test_the_notes_phase_conventions_example():
+    """*Which way phase is counted*: the heavy spot at 60°, read at the disc at 1200 rpm, a 0.5 g trial at 30°."""
+    s = RotorSystem(unbalance_angle=math.radians(60.0))
+    trial = weight(0.5e-3, 0.02, math.radians(30.0))
+    assert quoted("rotor_notes", "0.5") == 0.5  # g (the whole degrees below are checked, not tied: only decimals are)
+    v0 = reading(s, 1200.0, DISC)
+    w = correction(v0, influence(v0, reading(s.with_(weights=(trial,)), 1200.0, DISC), trial))
+    lead = round(math.degrees(np.angle(v0))) % 360
+    mass, angle = weight_parts(w, 0.02)
+    at = round(math.degrees(angle)) % 360
+    assert round(abs(v0) * 1e6, 1) == quoted("rotor_notes", "26.6")
+    assert (lead, 60 - lead) == (51, 9)
+    assert round(mass * 1e3, 2) == quoted("rotor_notes", "1.00") and at == 240
+    lag, against = (360 - lead) % 360, (360 - at) % 360  # the field's way round
+    assert (lag, against) == (309, 120)
+    assert lag - against == 189 and lag - at == 69

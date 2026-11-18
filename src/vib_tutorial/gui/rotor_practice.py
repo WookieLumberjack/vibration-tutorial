@@ -159,12 +159,14 @@ def _balance(rng: np.random.Generator) -> Question:
     v0_deg = round(math.degrees(cmath.phase(v0))) % 360
     return Question(
         f"Balancing at one speed: the disc reads {number(abs(v0))} µm at {v0_deg}° as found, and {number(v1_amp)} µm "
-        f"at {v1_deg}° with a {trial:g} g·mm trial weight at 0°. With the trial off, what mass of correction goes at "
-        f"{radius:g} mm radius?",
+        f"at {v1_deg}° with a {trial:g} g·mm trial weight at 0°. (Every angle counts counter-clockwise, the way the "
+        f"shaft turns: a reading's phase as a lead from the keyphasor, a weight's from the mark.) With the trial off, "
+        f"what mass of correction goes at {radius:g} mm radius?",
         grams,
         f"The trial's effect is V<sub>1</sub> − V<sub>0</sub>, so the influence coefficient is α = (V<sub>1</sub> − "
         f"V<sub>0</sub>)/T = {number(abs(a))} µm per g·mm at {round(math.degrees(cmath.phase(a))) % 360}°. The "
-        f"correction is W = −V<sub>0</sub>/α = {number(abs(w))} g·mm at {round(math.degrees(cmath.phase(w))) % 360}°: "
+        f"correction is W = −V<sub>0</sub>/α = {number(abs(w))} g·mm at {round(math.degrees(cmath.phase(w))) % 360}° from "
+        f"the mark: "
         f"{number(grams)} g at {radius:g} mm.",
         unit="g",
     )

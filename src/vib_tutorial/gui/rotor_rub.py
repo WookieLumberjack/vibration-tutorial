@@ -20,6 +20,7 @@ from ..core.rotor import XD, YD, RotorSystem, Stator
 from . import accessible
 from .layouts import plot_height
 from .panels import spin
+from .polar_grid import PolarGrid
 from .rotor_bearing import _si
 from .style import colors
 from .theming import mute
@@ -51,10 +52,11 @@ INPUT_TIPS = {
 }
 SPIRAL_TIP = (
     "<p>The Newkirk spiral: the disc's 1X vector (at the probe direction chosen under Run-up and coast-down), "
-    "each revolution's since the speed settled, and the thermal bow's, as 1X runout in the same direction. Angles clockwise from the "
-    "right are phase lag, as on the polar plot. Below the critical the bow pushes the high spot toward the hot "
-    "spot, so both grow and turn, against the spin (more lag); above it the bow pushes the high spot away, and "
-    "the rub heals.</p>"
+    "each revolution's since the speed settled, and the thermal bow's, as 1X runout in the same direction. As on "
+    "the polar plot, the angle is the phase, counted as a lead: counter-clockwise from the keyphasor mark at 0°, "
+    "the way the shaft turns. Below the critical the bow pushes the high spot toward the hot spot, so both grow "
+    "and turn clockwise, against the spin (more lag: the phase falls); above it the bow pushes the high spot "
+    "away, and the rub heals.</p>"
 )
 SPIRAL_POINTS = 4000  # the spiral keeps at most this many points (halving its density as it fills)
 
@@ -130,12 +132,8 @@ class RubPanel(QtWidgets.QWidget):
         self.contact.setWordWrap(True)
         self.spiral = pg.PlotWidget()
         self.spiral.setMenuEnabled(False)
-        self.spiral.setMouseEnabled(x=False, y=False)
-        self.spiral.hideButtons()
-        self.spiral.setAspectLocked(True)
-        self.spiral.showGrid(x=True, y=True, alpha=0.15)
-        self.spiral.setLabel("left", "Im", units="m")
-        self.spiral.setLabel("bottom", "Re", units="m")
+        self.spiral_grid = PolarGrid(self.spiral.getPlotItem())
+        self.spiral.setAccessibleName("Newkirk spiral, polar plot")
         self.spiral.setToolTip(SPIRAL_TIP)
         self.vector_curve = pg.PlotDataItem()
         self.bow_curve = pg.PlotDataItem()
@@ -304,6 +302,7 @@ class RubPanel(QtWidgets.QWidget):
                 "The spiral is recorded at a steady speed: it starts once the speed reaches its target."
             )
             return
+        self.spiral_grid.fit(float(max(np.abs(vectors).max(), np.abs(bows).max())))
         self.vector_curve.setData(vectors.real, vectors.imag)
         self.bow_curve.setData(bows.real, bows.imag)
         self.ends.setData(
@@ -312,15 +311,17 @@ class RubPanel(QtWidgets.QWidget):
             brush=[pg.mkBrush(colors.mass[1]), pg.mkBrush(colors.force)],
         )
         turned = math.degrees(np.unwrap(np.angle(vectors))[-1] - np.angle(vectors[0]))
+        lead = math.degrees(np.angle(vectors[-1]))
         self.spiral_note.setText(
-            f"<span style='color:{colors.mass[1]}'><b>1X</b></span> {_fmt_um(abs(vectors[-1]))} at "
-            f"{-math.degrees(np.angle(vectors[-1])):.0f}° lag (from {_fmt_um(abs(vectors[0]))}, "
-            f"{'more' if turned < 0 else 'less'} lag by {abs(turned):.0f}°) · "
+            f"<span style='color:{colors.mass[1]}'><b>1X</b></span> {_fmt_um(abs(vectors[-1]))} "
+            f"∠ {lead:.0f}° lead{f' ({-lead:.0f}° lag)' if round(lead) < 0 else ''}, from {_fmt_um(abs(vectors[0]))}, "
+            f"turned {abs(turned):.0f}° {'clockwise (more lag)' if turned < 0 else 'counter-clockwise (less lag)'} · "
             f"<span style='color:{colors.force}'><b>thermal bow</b></span> {_fmt_um(abs(bows[-1]))} · "
             f"rub heat {_si(heat, 'W')}"
         )
 
     def apply_theme(self) -> None:
+        self.spiral_grid.apply_theme()
         self.curve.setPen(pg.mkPen(colors.force, width=1.5))
         self.vector_curve.setPen(pg.mkPen(colors.mass[1], width=1.5))
         self.bow_curve.setPen(pg.mkPen(colors.force, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
