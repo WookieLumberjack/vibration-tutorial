@@ -19,6 +19,7 @@ from ..core.back_expansion import RECOVERIES, RECOVERY_NAMES, Recovery, Recovery
 from .animation import ChainView
 from .cms_time import MIN_SPAN, CMSRunView, SampleBuffer, _fmt
 from .layouts import FlowLayout, group
+from .live_label import LiveLabel
 from .plots import decimate
 from .style import colors
 from .theming import add_legend, mute
@@ -111,8 +112,7 @@ class BackExpansionView(CMSRunView):
         for plot, curves in ((self.x_plot, self.x_curves), (self.e_plot, self.e_curves), (self.f_plot, self.f_curves)):
             for key, curve in curves.items():
                 plot.legend.addItem(curve, key)
-        self.error_note = QtWidgets.QLabel()
-        self.error_note.setWordWrap(True)
+        self.error_note = LiveLabel(wrap=True)  # rewritten every frame (#409 P-2)
         mute(self.error_note)
 
         layout = QtWidgets.QVBoxLayout(self)

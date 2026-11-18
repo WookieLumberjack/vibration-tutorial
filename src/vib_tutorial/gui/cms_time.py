@@ -16,6 +16,7 @@ from ..core.cms_response import CMSResponse
 from .animation import ChainView
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
+from .live_label import LiveLabel
 from .panels import spin
 from .plots import decimate
 from .style import colors
@@ -264,7 +265,7 @@ class CMSTimeView(CMSRunView):
             p.hideButtons()
         self.x_curves: list[pg.PlotDataItem] = []  # per plotted mass: full, reduced
         self.e_curves: list[pg.PlotDataItem] = []  # per plotted mass: reduced - full
-        self.error_note = QtWidgets.QLabel()
+        self.error_note = LiveLabel(wrap=True)  # rewritten every frame (#409 P-2)
         mute(self.error_note)
 
         layout = QtWidgets.QVBoxLayout(self)

@@ -92,9 +92,10 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes
+from .live_label import LiveLabel
 from .plots import thin
 from .style import colors
-from .theming import add_legend
+from .theming import add_legend, mute
 from .transport import Transport
 
 NODS = 6  # nutation periods the tilt plot spans
@@ -436,7 +437,8 @@ class GyroscopePage(QtWidgets.QWidget):
         self.apart_plot.setToolTip(APART_TIP)
         self.apart_item = pg.PlotDataItem()
         self.apart_plot.addItem(self.apart_item)
-        self.chaos_note = note_label()
+        self.chaos_note = LiveLabel(wrap=True)  # the count of peaks grows as it runs (#409 P-2)
+        mute(self.chaos_note)
 
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()

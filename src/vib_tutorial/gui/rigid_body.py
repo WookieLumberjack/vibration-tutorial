@@ -59,6 +59,7 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .live_label import LiveLabel
 from .style import colors
 from .theming import add_legend
 from .transport import Transport
@@ -1039,7 +1040,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         connect_all((self.held, *self.torque), self._on_torque)
 
         self.view = BodyView()
-        self.readout = readout_label()
+        self.readout = LiveLabel(wrap=True)  # rewritten every frame (#409 P-2)
 
         # Inertia tab
         self.inertia_text = readout_label()
