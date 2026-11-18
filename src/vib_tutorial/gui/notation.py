@@ -2474,9 +2474,9 @@ SYMBOLS = (
         "balancing",
         "V, V<sub>s</sub>, V<sub>0</sub>, V<sub>j</sub>, ΔV, T, W<sub>c</sub>, U<sub>w</sub>, α, α<sub>+</sub>, "
         "α<sub>−</sub>, T<sub>b</sub>",
-        "a 1X vector (amplitude |V|, phase lag −arg V); the readings at slow roll, as found and with the trial "
+        "a 1X vector (amplitude |V|, phase arg V, a lead: the lag is −arg V); the readings at slow roll, as found and with the trial "
         "weight in plane j; V<sub>0</sub> − V<sub>s</sub>; the trial and correction weights and any other balance "
-        "weight (mass × radius at an angle); the influence coefficient (V<sub>1</sub> − V<sub>0</sub>)/T, or "
+        "weight (mass × radius at an angle from the keyphasor mark, the way the shaft turns); the influence coefficient (V<sub>1</sub> − V<sub>0</sub>)/T, or "
         "matrix, and on an asymmetric shaft those of U and Ū; a spectrum's block length",
         "m; kg·m (g·mm); m per kg·m; s",
         "rotor_page",

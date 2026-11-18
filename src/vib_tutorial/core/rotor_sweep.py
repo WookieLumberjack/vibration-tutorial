@@ -11,8 +11,11 @@ are of the vibration, about where gravity holds the rotor (an AC-coupled probe).
 Both are taken at four stations (the two bearings, the disc and midspan) and
 read in one of three directions: a probe in x, a probe in y, or the orbit's
 major axis. A 1X vector V is complex: the probe reads Re(V e^{iφ}). |V| is
-the amplitude and -arg V the phase lag, the degrees of rotation from the
-keyphasor to the probe's positive peak. For the orbit, (x + iy) = F e^{iφ} +
+the amplitude and arg V its phase, counted as a lead, in the direction of spin
+(`phase_degrees`), so a lag is negative. The lag, -arg V (`lag_degrees`), is
+the degrees of rotation from the keyphasor to the probe's positive peak. The
+page shows the lead, the solvers' convention and the one its angles on the
+rotor use; instruments in the field mostly show the lag. For the orbit, (x + iy) = F e^{iφ} +
 B e^{-iφ}: F is the forward whirl, B the backward, |F| + |B| the major
 semi-axis and -arg F the angle from the mark back to the high spot.
 
@@ -114,6 +117,14 @@ def probe(vectors: np.ndarray, direction: str) -> np.ndarray:
 def peak_column(direction: str) -> int:
     """Column of TrackedSweep.peak for a direction: max |x|, max |y| or the largest orbit radius."""
     return DIRECTIONS.index(direction)
+
+
+def phase_degrees(values: np.ndarray, near: np.ndarray | None = None) -> np.ndarray:
+    """Phase (degrees, a lead: arg V) of complex values, as the page shows it: minus `lag_degrees`.
+
+    Unwrapped, the first value lies in (-270, 90], so a lag that grows through 180° keeps falling on the plot.
+    """
+    return -lag_degrees(values, None if near is None else -np.asarray(near))
 
 
 def lag_degrees(values: np.ndarray, near: np.ndarray | None = None) -> np.ndarray:

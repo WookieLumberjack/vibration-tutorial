@@ -50,6 +50,14 @@ BEARING_GAP = 0.02  # of the span: the closest the disc may be put to a bearing
 GRAVITY = 9.81  # m/s²
 
 
+# Every angle on the rotor counts the same way, said on each angle box.
+ANGLE_NOTE = (
+    "<p><i>Angles</i> on this page count from the keyphasor mark, counter-clockwise seen from beyond bearing B: "
+    "the way the shaft turns. A phase counts the same way, as a lead, so a lag is negative (field instruments "
+    "mostly count lag: see the notes' <i>Which way phase is counted</i>).</p>"
+)
+
+
 class RotorEditor(QtWidgets.QWidget):
     """The rotor's boxes: Shaft and disc, then Bearing supports (see the module's docstring)."""
 
@@ -145,7 +153,7 @@ class RotorEditor(QtWidgets.QWidget):
         self.unbalance_angle = spin(-180.0, 180.0, math.degrees(s.unbalance_angle), 0, "°")
         self.unbalance_angle.setToolTip(
             "<p>Where the heavy spot is: its angle from the keyphasor mark on the shaft, in the direction "
-            "of spin. The probes' phase is measured from the mark, as on a real machine.</p>"
+            "of spin. The probes' phase is measured from the mark, as on a real machine.</p>" + ANGLE_NOTE
         )
         self.bow = spin(0.0, 5000.0, s.bow * 1e6, 1, " µm")
         self.bow_angle = spin(-180.0, 180.0, math.degrees(s.bow_angle), 0, "°")
@@ -173,7 +181,7 @@ class RotorEditor(QtWidgets.QWidget):
             row.addWidget(angle, 2)
             if tip:
                 size.setToolTip(tip)
-                angle.setToolTip(tip)
+                angle.setToolTip(tip + ANGLE_NOTE)
             form.addRow(label, row)
             size.setAccessibleName(accessible.plain(label))
             angle.setAccessibleName(f"{accessible.plain(label)}, at")

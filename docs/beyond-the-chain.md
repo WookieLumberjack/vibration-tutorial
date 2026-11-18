@@ -234,10 +234,13 @@ the speed ramps to a target.
   displacement over the revolution. Each leg becomes its own trace; earlier sweeps can be held
   to compare ramp rates, and a table gives each one's peak and the speed it came at against
   the steady state.
-- **Bode and polar plots**: the steady-state 1X (or 2X) amplitude and phase lag against speed at
+- **Bode and polar plots**: the steady-state 1X (or 2X) amplitude and phase against speed at
   either bearing, the disc or midspan, read by an x or a y probe or as the orbit's major axis,
   with the tracked sweeps over it and a marker at the current speed. On the polar plot the
-  steady-state vector traces a near-circle through each critical speed.
+  steady-state vector traces a near-circle through each critical speed. Phase counts as a lead,
+  counter-clockwise, the way the shaft turns, as every angle on the page does (a lag is negative);
+  each polar plot draws a key (the keyphasor mark at 0°, the rotation, positive phase, the probes),
+  and the notes' *Which way phase is counted* converts to the lag most field instruments show.
 - **Bent shaft and skewed disc**: two more sources that turn with the shaft. The bow, a set
   bend δ<sub>b</sub> at the disc at an angle from the keyphasor mark, drives the rotor with a force
   kδ<sub>b</sub> that does not grow with speed: the probes read it at slow roll, the polar curve
@@ -270,8 +273,10 @@ the speed ramps to a target.
   slow roll, the 1X vector as found, then with a trial weight, and the page works out the
   correction weight (grams at a radius and an angle from the keyphasor mark), puts it on and
   checks it. Each reading is a measurement on the running simulation: ramp, settle, average
-  ten revolutions. *Mystery unbalance* hides the heavy spot to find. The response before and
-  after against speed shows what one weight can and cannot do: subtract the slow roll and a
+  ten revolutions. *Mystery unbalance* hides the heavy spot to find. A polar plot draws the
+  readings with the weights where they sit on the disc (trial, correction, heavy spot), so read
+  below the critical the correction lands opposite the reading. The response before and after
+  against speed (amplitude and phase) shows what one weight can and cannot do: subtract the slow roll and a
   bowed rotor is balanced at every speed, leaving only its runout; balance the raw reading and
   it is out of balance away from the balancing speed; a skewed disc's couple needs two planes.
   - **Two planes**: two probes, a trial run in each plane in turn, the 2 × 2 influence matrix
