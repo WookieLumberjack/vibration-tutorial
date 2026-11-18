@@ -186,7 +186,9 @@ def test_the_damped_masses_move_with_their_decays_and_a_pluck_releases_them_all(
     pb.loop.enabled = False
 
     # A trial plays it: each mass is where its own decay is, as drawn.
-    p.load_trial(next(i for i, tr in enumerate(damping_models.TRIALS) if tr.name.startswith("Released against friction")))
+    p.load_trial(
+        next(i for i, tr in enumerate(damping_models.TRIALS) if tr.name.startswith("Released against friction"))
+    )
     for _ in range(5):
         app.processEvents()
     assert pb.running and pb.t == 0.0 and p.tabs.currentIndex() == damping_models.TAB_DECAY
