@@ -2169,7 +2169,8 @@ def test_fatigue_trials():
     average = np.mean([record(two, 600.0, k).damage_rate(c5) for k in range(1, 21)])
     assert dirlik_damage(two, c5) / average == pytest.approx(0.85, abs=0.005)
     assert life_text(record(Stress(sigma1=40.0), 600.0).damage_rate(c)) == "3.13 days"
-    assert 1.1**3 == pytest.approx(1.33, abs=0.005)
+    assert 1.1**3 == pytest.approx(1.33, abs=0.005)  # the damage rises by a third…
+    assert 1 / 1.1**3 == pytest.approx(0.75, abs=0.005)  # …so a quarter of the life goes (#409 C-1)
     wide = Stress(zeta1=0.3)
     rw = record(wide, 600.0)
     assert rates(wide).alpha2 == pytest.approx(0.64, abs=0.005)

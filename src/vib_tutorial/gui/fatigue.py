@@ -133,7 +133,8 @@ TRIALS = (
     FatigueTrial(
         "Double the stress",
         "One mode at 40 MPa RMS instead of 20. With slope 3 the damage rate goes up <m>2<sup>3</sup></m> = 8 times: the life "
-        "falls from 25 days to 3.1. A load that is 10 % high costs a third of the life (<m>1.1<sup>3</sup></m> = 1.33); the RMS "
+        "falls from 25 days to 3.1. A load that is 10 % high raises the damage by a third (<m>1.1<sup>3</sup></m> = 1.33) and so costs a "
+        "quarter of the life (1/1.33 = 0.75); the RMS "
         "has to be right before anything else is.",
         stress=Stress(sigma1=40.0),
         tab=TAB_SN,

@@ -427,8 +427,9 @@ TIPS = {
     "blades": "<p>The number of blades round the disc.</p>",
     "coupling": "<p>The springs between neighbouring blades, as a share of each blade's own.</p>",
     "mistuning": "<p>The scatter (σ) of the blades' stiffnesses; the pattern is seeded, its mean removed.</p>",
-    "eo": "<p>The engine order E: the force on blade j has phase 2πEj/N, a wave E times round the disc.</p>",
-    "mode": "<p>Which of the ring's modes to draw, from the lowest.</p>",
+    "eo": "<p>The engine order E: the force on blade j has phase 2πEj/N, a wave E times round the disc (shown on the "
+    "Forced ring tab, which a change turns to).</p>",
+    "mode": "<p>Which of the ring's modes to draw, from the lowest (on the Ring modes tab, which a change turns to).</p>",
 }
 FRF_TIP = (
     "<p>The receptance at the last mass from a force there: nominal (bold), the 5–95 % band of the "
@@ -499,7 +500,9 @@ class VariabilityPage(QtWidgets.QWidget):
         self.mode = ring.number("Mode:", 1, 48, 1, 0, "", TIPS["mode"])
 
         connect_all((self.cov_m, self.cov_k, self.cov_c, self.count), self._on_scatter)
-        connect_all((self.blades, self.coupling, self.mistuning, self.eo, self.mode), self._on_ring)
+        connect_all((self.blades, self.coupling, self.mistuning), self._on_ring)
+        self.mode.valueChanged.connect(self._on_mode)
+        self.eo.valueChanged.connect(self._on_engine_order)
 
         # --- centre
         self.frf_plot = plot("|Receptance|", "m/N", "Frequency", "Hz", log_x=True, log_y=True, height=200)
@@ -622,8 +625,10 @@ class VariabilityPage(QtWidgets.QWidget):
                 for a, b in ((s.masses, system.masses), (s.stiffness, system.stiffness), (s.damping, system.damping))
             ):
                 self.set_system(system)  # nobody passed it back: show it here alone
-        self.mode.setMaximum(int(t.blades))
-        self.eo.setMaximum(int(t.blades) // 2)
+        for box, top in ((self.mode, int(t.blades)), (self.eo, int(t.blades) // 2)):
+            box.blockSignals(True)  # their values are set below
+            box.setMaximum(top)
+            box.blockSignals(False)
         for box, value in (
             (self.cov_m, t.mass),
             (self.cov_k, t.stiffness),
@@ -665,8 +670,28 @@ class VariabilityPage(QtWidgets.QWidget):
         self._draw_chain(now=False)
 
     def _on_ring(self) -> None:
-        self.mode.setMaximum(int(self.blades.value()))
-        self.eo.setMaximum(int(self.blades.value()) // 2)
+        """The blades, coupling or mistuning changed: they show on both ring tabs, so turn to the ring's modes only
+        from a tab that doesn't show the ring (#409 I-5: the change was invisible on the Frequencies tab)."""
+        self._ring_changed(TAB_MODES if self.tabs.currentIndex() not in (TAB_MODES, TAB_FORCED) else None)
+
+    def _on_mode(self) -> None:
+        """The mode drawn shows on the Ring modes tab only."""
+        self._ring_changed(TAB_MODES)
+
+    def _on_engine_order(self) -> None:
+        """The engine order drives the Forced ring tab only."""
+        self._ring_changed(TAB_FORCED)
+
+    def _ring_changed(self, tab: int | None) -> None:
+        """Turn to `tab` (if given) and draw the tab showing, once."""
+        for box, top in ((self.mode, int(self.blades.value())), (self.eo, int(self.blades.value()) // 2)):
+            box.blockSignals(True)  # a value clamped to it is drawn below, with the rest
+            box.setMaximum(top)
+            box.blockSignals(False)
+        if tab is not None and tab != self.tabs.currentIndex():
+            self.tabs.blockSignals(True)  # drawn below, once
+            self.tabs.setCurrentIndex(tab)
+            self.tabs.blockSignals(False)
         self._draw_tab()
         settle_plots(self)
 
