@@ -47,9 +47,10 @@ from ..core.gyroscope import (
     tilt_and_azimuth,
 )
 from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator, contact_torque
+from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
 from . import gyroscope_figures
 from .cms_time import SampleBuffer
-from .drag import DragLine
+from .components_tab import ComponentsTab
 from .equations_snapshot import snapshot_html
 from .frame_loop import FrameLoop
 from .gyroscope_trials import (
@@ -68,7 +69,6 @@ from .gyroscope_trials import (
 from .gyroscope_trials import PROBLEMS as PROBLEMS
 from .gyroscope_trials import TRIALS as TRIALS
 from .gyroscope_view import AXES_SHOWN, TopView
-from .layouts import ColumnScroll, form_layout, form_row
 from .lesson import (
     TAB_ROOM,
     Dot,
@@ -102,12 +102,8 @@ NODS = 6  # nutation periods the tilt plot spans
 TRAIL_POINTS = 1500  # at most, on the 3D view's trail
 PATH_POINTS = 4000  # at most, on the path from above
 CHECK_POINTS = 2000
-SHOWS = ("ω, angular velocity", "L, angular momentum", "τ, torque", "I, inertia tensor")
-SHOW_W, SHOW_L, SHOW_TAU, SHOW_I = range(4)
 FRAMES = tuple(Frame)
-SPANS = (("the last 2 s", 2.0), ("the last 10 s", 10.0), ("the whole run", None))
 AXIS_NAMES = {Frame.SPACE: ("x", "y", "z"), Frame.BODY: ("1", "2", "3"), Frame.AXIS: ("1′", "2′", "3")}
-UNITS = ("rad/s", "N·m·s", "N·m", "kg·m²")
 WHERE = {
     Frame.SPACE: "in fixed axes (x, y, z up)",
     Frame.BODY: "in the body's axes (e₁ the mark, e₃ the axis)",
@@ -399,32 +395,15 @@ class GyroscopePage(QtWidgets.QWidget):
         self.check_legend = self.check_plot.getPlotItem().legend
         self.check_note = note_label()
 
-        self.comp_show = combo(SHOWS, TIPS["comp_show"])
-        self.comp_frame = combo([f.value for f in FRAMES], TIPS["comp_frame"])
-        self.comp_span = combo([name for name, _ in SPANS], TIPS["comp_span"])
-        self.comp_span.setCurrentIndex(1)
-        self.comp_plot = plot("ω", "rad/s", "Time", "s", height=240)
-        self.comp_plot.setToolTip(COMPONENTS_TIP)
-        self.comp_legend = add_legend(self.comp_plot.getPlotItem(), offset=(10, 10), colCount=4)
-        self.comp_items = [pg.PlotDataItem() for _ in range(6)]
-        self.comp_size = pg.PlotDataItem()  # the vector's magnitude
-        for item in (*self.comp_items, self.comp_size):
-            self.comp_plot.addItem(item)
-        self.comp_cursor = DragLine(SNAPSHOT_TIP, role="strong")  # the snapshot's instant
-        self.comp_cursor.setToolTip(SNAPSHOT_TIP)
-        self.comp_cursor.sigDragged.connect(self._on_snapshot_dragged)
-        self.comp_plot.addItem(self.comp_cursor, ignoreBounds=True)
-        self.comp_note = note_label()
-        self.comp_snapshot = readout_label()
-        self.comp_snapshot.setToolTip(SNAPSHOT_TIP)
+        self.components = ComponentsTab(
+            [f.value for f in FRAMES],
+            {"show": TIPS["comp_show"], "frame": TIPS["comp_frame"], "span": TIPS["comp_span"]},
+            SNAPSHOT_TIP,
+            COMPONENTS_TIP,
+        )
+        self.components.changed.connect(self._draw_components)
+        self.components.dragged.connect(self._on_snapshot_dragged)
         self._snap_t: float | None = None  # the instant dragged to; None: the latest
-        comp_row = QtWidgets.QWidget()
-        form = form_layout(comp_row)
-        form.setContentsMargins(0, 0, 0, 0)
-        for text, box in (("Show:", self.comp_show), ("In axes:", self.comp_frame), ("Over:", self.comp_span)):
-            form_row(form, text, box, box.toolTip())
-        for box in (self.comp_show, self.comp_frame, self.comp_span):
-            box.currentIndexChanged.connect(self._draw_components)
 
         self.section_plot = plot("ω₃", "rpm", "ψ at each peak of the tilt", None, height=220)
         self.section_plot.setToolTip(SECTION_TIP)
@@ -445,9 +424,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.tabs.addTab(column(self.potential_plot, self.potential_note, stretch=False), "Potential")
         self.tabs.addTab(column(self.precession_plot, self.precession_note, stretch=False), "Precession")
         self.tabs.addTab(column(self.path_plot, self.path_note, stretch=False), "Path")
-        self.tabs.addTab(
-            ColumnScroll(column(comp_row, self.comp_plot, self.comp_note, self.comp_snapshot)), "Components"
-        )
+        self.tabs.addTab(self.components, "Components")
         self.tabs.addTab(column(self.check_plot, self.check_note, stretch=False), "Check")
         self.tabs.addTab(column(self.section_plot, self.apart_plot, self.chaos_note, stretch=False), "Chaos")
         self.tabs.addTab(self.notes, "Theory")
@@ -799,10 +776,7 @@ class GyroscopePage(QtWidgets.QWidget):
         # tab painted in 140 ms a frame at 2 px and 1.5 px, 1.5 ms at 1 px).
         self.energy_item.setPen(pg.mkPen(c.mass[0], width=1))
         self.momentum_item.setPen(pg.mkPen(c.grey, width=1))
-        for k, item in enumerate(self.comp_items):  # 1 px, as the Check tab's: the body's components swing at the spin
-            item.setPen(pg.mkPen(c.mass[k % len(c.mass)], width=1))
-        self.comp_size.setPen(pg.mkPen(c.strong, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        self.comp_cursor.apply_theme()
+        self.components.apply_theme()
         mark(self.section_item, c.mass[0], filled=True)
         self.apart_item.setPen(pg.mkPen(c.mass[1], width=1.5))
         self._draw_tab()
@@ -1028,7 +1002,7 @@ class GyroscopePage(QtWidgets.QWidget):
     # ------------------------------------------------------------- components
     def _component_samples(self):
         """(t, axis, mark, L, τ, moments) over the span picked, thinned to CHECK_POINTS; None before a run."""
-        span = SPANS[self.comp_span.currentIndex()][1]
+        span = self.components.span()
         if self.round is None:
             buffer = self.history
         else:
@@ -1049,27 +1023,17 @@ class GyroscopePage(QtWidgets.QWidget):
         return t, axis, mark, y[:, 17:20], torque, (rt.central, rt.central, rt.polar)
 
     def _draw_components(self) -> None:
-        show = self.comp_show.currentIndex()
-        frame = FRAMES[self.comp_frame.currentIndex()]
-        relabel(self.comp_plot, "left", SHOWS[show].split(",")[0], UNITS[show])
+        tab = self.components
+        show = tab.show_box.currentIndex()
+        frame = FRAMES[tab.frame_box.currentIndex()]
         data = self._component_samples()
-        self.comp_legend.clear()
         if data is None:
-            for item in (*self.comp_items, self.comp_size):
-                item.setData([], [])
-            self.comp_note.setText("Start the top to see its components.")
-            self.comp_snapshot.setText("")
-            self.comp_cursor.hide()
+            tab.clear("Start the top to see its components.")
             return
         t, axis, mark, momentum, torque, moments = data
         axes = frame_axes(axis, mark, frame)
-        names = AXIS_NAMES[frame]
-        symbol = SHOWS[show][0]
         if show == SHOW_I:
-            tensor = inertia_in(axis, mark, moments, axes)
-            pairs = ((0, 0), (1, 1), (2, 2), (0, 1), (0, 2), (1, 2))
-            series = [(f"I {names[i]}{names[j]}", tensor[:, i, j]) for i, j in pairs]
-            size = None
+            in_axes = inertia_in(axis, mark, moments, axes)
         else:
             vector = (
                 angular_velocity(axis, mark, momentum, moments)
@@ -1078,23 +1042,8 @@ class GyroscopePage(QtWidgets.QWidget):
                 if show == SHOW_L
                 else torque
             )
-            parts = in_frame(vector, axes)
-            series = [(f"{symbol} {names[i]}", parts[:, i]) for i in range(3)]
-            size = np.linalg.norm(vector, axis=1)
-        for k, item in enumerate(self.comp_items):
-            if k < len(series):
-                label, values = series[k]
-                item.setData(t, values)
-                self.comp_legend.addItem(item, label)
-            else:
-                item.setData([], [])
-        if size is None:
-            self.comp_size.setData([], [])
-        else:
-            self.comp_size.setData(t, size)
-            self.comp_legend.addItem(self.comp_size, f"|{symbol}|")
-        self.comp_note.setText(self._components_note(show, frame))
-        self.comp_cursor.show()
+            in_axes = in_frame(vector, axes)
+        tab.draw(t, series(show, AXIS_NAMES[frame], in_axes), self._components_note(show, frame))
         if not self.running or self._frames % SNAPSHOT_FRAMES == 0:
             self._draw_snapshot()
 
@@ -1120,26 +1069,26 @@ class GyroscopePage(QtWidgets.QWidget):
             rt = self.round
             momentum, moments = y[:, 17:20], (rt.central, rt.central, rt.polar)
             torque = contact_torque(y[:, 6:9], y[:, 9:11], y[:, 14], y[:, 15:17])
-        frame = FRAMES[self.comp_frame.currentIndex()]
+        frame = FRAMES[self.components.frame_box.currentIndex()]
         return snapshot(t, axis, mark, momentum, torque, moments, frame, k - near.start)
 
     def _draw_snapshot(self) -> None:
         s = self.snapshot_now()
         if s is None:
-            self.comp_snapshot.setText("")
+            self.components.set_snapshot(None, "")
             return
-        self.comp_cursor.setValue(s.t)
-        self.comp_snapshot.setText(
+        self.components.set_snapshot(
+            s.t,
             snapshot_html(
                 s,
                 WHERE[s.kind],
                 frame_note="AᵀB is a turn by ψ about e₃.",
                 turning_note="precession and nodding, not the spin",
-            )
+            ),
         )
 
-    def _on_snapshot_dragged(self) -> None:
-        self._snap_t = float(self.comp_cursor.value())
+    def _on_snapshot_dragged(self, t: float) -> None:
+        self._snap_t = t
         self._draw_snapshot()
 
     def _components_note(self, show: int, frame: Frame) -> str:

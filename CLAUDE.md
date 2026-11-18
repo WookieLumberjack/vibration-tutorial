@@ -53,7 +53,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Continuous systems (`continuum_page`): `gui/continuum.py` (with `continuum_waves_view.py`); core `continuum`, `continuum_waves`
   - Beams & plates (`beams_page`): `gui/beams_plates.py`; core `beams_plates`
   - Numerical integration (`integration_page`): `gui/integration.py`; core `integration`
-  - 3D rigid body (`rigid_body_page`): `gui/rigid_body.py` (with `equations_snapshot.py`); core `rigid_body`, `rotation`
+  - 3D rigid body (`rigid_body_page`): `gui/rigid_body.py` (with `equations_snapshot.py`; `components_tab.py`, the Components tab it shares with the Gyroscope); core `rigid_body`, `rotation`
 - Responses:
   - Random vibration (`random_page`): `gui/random_vibration.py`; core `random_vibration`
   - Fatigue (`fatigue_page`): `gui/fatigue.py`; core `fatigue`
@@ -80,7 +80,7 @@ Each page in the course's order (`links.COURSE`): its GUI module and the core mo
   - Fluid–structure (`fluid_page`): `gui/fluid_structure.py`; core `added_mass`, `beams_plates`, `sloshing`
   - Self-excited vibration (`self_excited_page`): `gui/self_excited.py`; core `self_excited`
   - Active control (`active_control_page`): `gui/active_control.py`; core `active_control`
-  - Gyroscope (`gyroscope_page`): `gui/gyroscope.py` (with `gyroscope_trials.py`, its trials and problems; `gyroscope_view.py`, the 3D view; `equations_snapshot.py`); core `gyroscope`, `rotation`, `sliding_top`
+  - Gyroscope (`gyroscope_page`): `gui/gyroscope.py` (with `gyroscope_trials.py`, its trials and problems; `gyroscope_view.py`, the 3D view; `equations_snapshot.py`; `components_tab.py`); core `gyroscope`, `rotation`, `sliding_top`
   - Jeffcott rotor (`rotor_page`): `gui/rotor.py` (with `rotor_editor.py`, the rotor's boxes; `rotor_readouts.py`, its notes' texts; `rotor_waterfall.py`'s `WaterfallTab`; and the other `rotor_*.py` tabs and panels); core `rotor`, `rotor_modes`, `rotor_simulator`, `rotor_sweep`, `rotor_stability`, `rotor_analysis`, `rotor_balance`, `rotor_waterfall`, `rotor_presets`, `fluid_bearing`, `magnetic_bearing`
   - Rotor builder (`rotor_builder_page`): `gui/rotor_builder.py` (with `rotor_builder_trials.py`, its trials and problems; `rotor_builder_views.py`, the side view and the 3D whirl); core `rotor_builder`, `rotor_builder_sweep`, `fluid_bearing`, `magnetic_bearing`
   - Machinery diagnostics (`diagnostics_page`): `gui/diagnostics.py`; core `diagnostics`

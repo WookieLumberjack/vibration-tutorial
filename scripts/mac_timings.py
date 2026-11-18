@@ -188,6 +188,21 @@ def stop(w, page) -> None:
         w.sim_page.force.switch_off()
 
 
+def _rigid_body(tab: str):
+    def setup(w):
+        from vib_tutorial.gui import rigid_body
+
+        page = w.rigid_body_page
+        w.pages.setCurrentWidget(page)
+        page.trials.combo.pick(rigid_body.TRIALS[0].name)  # starts it
+        page.tabs.setCurrentIndex(getattr(rigid_body, tab))  # a TAB_ name
+        if not page.running:
+            page.pause_button.click()
+        return page, rigid_body.PLAYBACK[page.playback.currentIndex()]
+
+    return setup
+
+
 def _gyroscope(tab: str):
     def setup(w):
         from vib_tutorial.gui import gyroscope
@@ -252,6 +267,16 @@ SCENARIOS = (
     Scenario("Gyroscope: the first trial, Potential tab", "baseline for the Check tab", _gyroscope("TAB_POTENTIAL")),
     Scenario(
         "Gyroscope: the first trial, Check tab", "the Check plot, reported slow on the Mac", _gyroscope("TAB_CHECK")
+    ),
+    Scenario(
+        "Gyroscope: the first trial, Components tab",
+        "its legend kept between frames (#409 P-4: 44 fps)",
+        _gyroscope("TAB_COMPONENTS"),
+    ),
+    Scenario(
+        "3D rigid body: the first trial, Components tab",
+        "its legend kept between frames (#409 P-4: 38 fps)",
+        _rigid_body("TAB_COMPONENTS"),
     ),
 )
 

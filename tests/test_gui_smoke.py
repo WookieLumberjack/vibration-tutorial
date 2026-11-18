@@ -15,6 +15,7 @@ from PySide6 import QtCore  # noqa: E402
 
 from vib_tutorial.core import ForceKind  # noqa: E402
 from vib_tutorial.gui import maths  # noqa: E402
+from vib_tutorial.view_models.components import SHOWS  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -4372,23 +4373,23 @@ def test_gyroscope_components(main_window, app):
         page.load_setup(setup)
         page.tabs.setCurrentIndex(g.TAB_COMPONENTS)
         page._draw_components()
-        assert "Start the top" in page.comp_note.text()
+        assert "Start the top" in page.components.note.text()
         for _ in range(3):
             page.step(0.3)
-        for show in range(len(g.SHOWS)):
+        for show in range(len(SHOWS)):
             for frame in range(len(g.FRAMES)):
-                page.comp_show.setCurrentIndex(show)
-                page.comp_frame.setCurrentIndex(frame)
-                drawn = [item for item in page.comp_items if item.yData is not None and len(item.yData)]
+                page.components.show_box.setCurrentIndex(show)
+                page.components.frame_box.setCurrentIndex(frame)
+                drawn = [item for item in page.components.items if item.yData is not None and len(item.yData)]
                 assert len(drawn) == (6 if show == g.SHOW_I else 3), (setup, show, frame)
                 assert all(np.isfinite(item.yData).all() for item in drawn)
-                sized = page.comp_size.yData is not None and len(page.comp_size.yData) > 0
+                sized = page.components.size_item.yData is not None and len(page.components.size_item.yData) > 0
                 assert sized == (show != g.SHOW_I), "a vector's size, dashed"
-                assert len(page.comp_legend.items) == (6 if show == g.SHOW_I else 4)
-                assert page.comp_note.text()
-        page.comp_show.setCurrentIndex(g.SHOW_I)
-        page.comp_frame.setCurrentIndex(g.FRAMES.index(g.Frame.BODY))
-        assert all(np.ptp(item.yData) < 1e-12 for item in page.comp_items), "constant in the body's axes"
+                assert len(page.components.legend.items) == (6 if show == g.SHOW_I else 4)
+                assert page.components.note.text()
+        page.components.show_box.setCurrentIndex(g.SHOW_I)
+        page.components.frame_box.setCurrentIndex(g.FRAMES.index(g.Frame.BODY))
+        assert all(np.ptp(item.yData) < 1e-12 for item in page.components.items), "constant in the body's axes"
 
 
 def test_gyroscope_snapshot(main_window, app):
@@ -4404,23 +4405,23 @@ def test_gyroscope_snapshot(main_window, app):
         page.tabs.setCurrentIndex(g.TAB_COMPONENTS)
         page.running = False
         page.restart()
-        assert page.snapshot_now() is None and not page.comp_snapshot.text()
+        assert page.snapshot_now() is None and not page.components.snapshot.text()
         page.running = True
         for _ in range(3):
             page.step(0.3)
         page._on_pause(False)
         for frame in range(len(g.FRAMES)):
-            page.comp_frame.setCurrentIndex(frame)
+            page.components.frame_box.setCurrentIndex(frame)
             snap = page.snapshot_now()
             assert snap is not None and snap.kind is g.FRAMES[frame]
             assert snap.t == pytest.approx(page.sim.t, abs=0.01), "the latest"
-            assert page.comp_cursor.value() == pytest.approx(snap.t)
-            assert f"At t = {snap.t:.3f} s" in page.comp_snapshot.text()
+            assert page.components.time_line.value() == pytest.approx(snap.t)
+            assert f"At t = {snap.t:.3f} s" in page.components.snapshot.text()
             assert snap.mismatch < 2e-2, (setup, frame, snap.mismatch)
-        page.comp_cursor.setValue(0.4)
-        page._on_snapshot_dragged()
+        page.components.time_line.setValue(0.4)
+        page.components._on_dragged()  # as a drag does
         assert page.snapshot_now().t == pytest.approx(0.4, abs=0.01), "dragged to"
-        assert "At t = 0.4" in page.comp_snapshot.text()
+        assert "At t = 0.4" in page.components.snapshot.text()
 
 
 def test_gyroscope_frame_axes_drawn(main_window, app):
@@ -5124,27 +5125,37 @@ def test_rigid_body_page(main_window, app):
     w.pages.setCurrentWidget(page)
     page.reset()
     page.tabs.setCurrentIndex(r.TAB_COMPONENTS)
-    assert "Start it" in page.comp_note.text() and page.snapshot_now() is None
+    assert "Start it" in page.components.note.text() and page.snapshot_now() is None
     page.apply_trial(r.TRIALS[3])  # the off-centre mass: products of inertia
     page.tabs.setCurrentIndex(r.TAB_COMPONENTS)
     for _ in range(4):
         page.step(0.25)
     page._on_pause(False)
-    for show in range(len(r.SHOWS)):
+    for show in range(len(SHOWS)):
         for frame in range(len(r.FRAMES)):
-            page.comp_show.setCurrentIndex(show)
-            page.comp_frame.setCurrentIndex(frame)
-            drawn = [item for item in page.comp_items if item.yData is not None and len(item.yData)]
+            page.components.show_box.setCurrentIndex(show)
+            page.components.frame_box.setCurrentIndex(frame)
+            drawn = [item for item in page.components.items if item.yData is not None and len(item.yData)]
             assert len(drawn) == (6 if show == r.SHOW_I else 3)
             snap = page.snapshot_now()
             assert snap is not None and snap.mismatch < 1e-3, (show, frame)
-            assert f"At t = {snap.t:.3f} s" in page.comp_snapshot.text()
-    page.comp_show.setCurrentIndex(r.SHOW_I)
-    page.comp_frame.setCurrentIndex(r.FRAMES.index(r.Axes.PRINCIPAL))
-    products = [item for item in page.comp_items[3:]]
+            assert f"At t = {snap.t:.3f} s" in page.components.snapshot.text()
+    page.components.show_box.setCurrentIndex(r.SHOW_I)
+    page.components.frame_box.setCurrentIndex(r.FRAMES.index(r.Axes.PRINCIPAL))
+    products = [item for item in page.components.items[3:]]
     assert all(np.abs(item.yData).max() < 1e-12 for item in products), "no products of inertia in principal axes"
-    page.comp_frame.setCurrentIndex(r.FRAMES.index(r.Axes.BODY))
-    assert np.abs(page.comp_items[3].yData).max() > 1e-4, "but in the body's own axes"
+    page.components.frame_box.setCurrentIndex(r.FRAMES.index(r.Axes.BODY))
+    assert np.abs(page.components.items[3].yData).max() > 1e-4, "but in the body's own axes"
+    # Each frame redraws the curves only: the legend's entries stay as they are, and the y range while they fit
+    # (#409 P-4: rebuilding the legend every frame held the page to 38 fps).
+    entries = [id(sample) for sample, _ in page.components.legend.items]
+    page.components.y_range.reset()
+    page._draw_components()
+    y_range = page.components.plot.viewRange()[1]
+    page._draw_components()
+    assert [id(sample) for sample, _ in page.components.legend.items] == entries
+    assert page.components.plot.viewRange()[1] == y_range
+    assert not page.components.plot.getPlotItem().getViewBox().autoRangeEnabled()[1]
     assert "−0.00185" in page.inertia_text.text()
 
     set_torque = (Torque.SPACE, (0.0, 0.0, 0.05))
