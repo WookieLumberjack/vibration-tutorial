@@ -135,6 +135,7 @@ TRIALS = (
                 "Badly off",
             ),
             2,
+            ordered=True,
         ),
     ),
     CmsTrial(

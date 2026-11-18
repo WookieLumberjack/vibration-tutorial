@@ -73,7 +73,7 @@ def isolator(t: IsolationTrial) -> Isolator:
 
 TRIALS = (
     IsolationTrial(
-        "Soft mounts: isolation",
+        "Soft mounts",
         "A 100 kg machine with a 0.01 kg·m unbalance at 1500 rpm (25 Hz) on mounts that sag 5 mm: <m>f<sub>n</sub></m> "
         "= <m>15.76/√5</m> = 7.05 Hz, so the speed is <m>3.5f<sub>n</sub></m>. The unbalance pulls with 247 N; only 23 N, 9 %, "
         "reaches the floor (−21 dB): 91 % isolation.",
@@ -84,7 +84,7 @@ TRIALS = (
         ),
     ),
     IsolationTrial(
-        "Stiff mounts: amplification",
+        "Stiff mounts",
         "The same machine on mounts that sag only 0.3 mm: <m>f<sub>n</sub></m> = 28.8 Hz, just above the running "
         "speed. The mounts now amplify: 3.9 times the unbalance's force reaches the floor. Below <m>√2 f<sub>n</sub></m> "
         "a mount can only make things worse.",
@@ -96,7 +96,7 @@ TRIALS = (
         ),
     ),
     IsolationTrial(
-        "Damping costs isolation",
+        "Soft mounts, more damping",
         "Back on the soft mounts, with <m>ζ</m> = 0.3 instead of 0.05. Above <m>√2 f<sub>n</sub></m> the damper passes force "
         "to the floor in proportion to the speed: 20 % now reaches it instead of 9 %. Damping only helps at "
         "resonance, which the machine passes through at start-up.",

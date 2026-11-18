@@ -183,6 +183,7 @@ TRIALS = (
                 "Nearly twice it",
             ),
             2,
+            ordered=True,
         ),
     ),
     _trial(
@@ -245,6 +246,7 @@ TRIALS = (
                 "It rises a lot",
             ),
             2,
+            ordered=True,
         ),
     ),
     _trial(
@@ -263,6 +265,7 @@ TRIALS = (
                 "Short",
             ),
             2,
+            ordered=True,
         ),
     ),
     _trial(

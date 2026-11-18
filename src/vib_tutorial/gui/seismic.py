@@ -135,6 +135,7 @@ TRIALS = (
                 "Too much",
             ),
             2,
+            ordered=True,
         ),
     ),
     SeismicTrial(
@@ -154,6 +155,7 @@ TRIALS = (
                 "Less",
             ),
             2,
+            ordered=True,
         ),
     ),
     SeismicTrial(
@@ -172,6 +174,7 @@ TRIALS = (
                 "It rises by more than half",
             ),
             3,
+            ordered=True,
         ),
     ),
     SeismicTrial(

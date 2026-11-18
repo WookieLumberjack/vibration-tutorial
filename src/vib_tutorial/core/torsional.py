@@ -470,6 +470,7 @@ PRESETS = (
             "twists it twice a turn. At what speed does that meet the mode?",
             ("Far below the running speed", "Just above it, inside a 10 % margin", "Far above it"),
             1,
+            ordered=True,
         ),
     ),
     TorsionalPreset(

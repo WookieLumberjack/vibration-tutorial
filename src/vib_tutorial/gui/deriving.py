@@ -336,6 +336,7 @@ TRIALS = (
                 "Wholly different",
             ),
             3,
+            ordered=True,
         ),
     ),
 )

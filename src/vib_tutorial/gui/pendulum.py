@@ -90,10 +90,11 @@ TRIALS = (
             "A 1 kg bob on a 1 m string, let go from 10°. How long does one swing there and back take?",
             ("About 1 s", "About 2 s", "About 6 s"),
             1,
+            ordered=True,
         ),
     ),
     PendulumTrial(
-        "Large swings are slower",
+        "Let go from 90°",
         "The same pendulum from 90°. <m>sin θ</m> falls below <m>θ</m>, so the spring softens as the swing grows: "
         "the period is 2.368 s, 18 % longer than the small swing's, and the linearized swing drifts ahead "
         "(Centre). The Period tab gives the exact period (an elliptic integral), and Duffing's first "
@@ -103,6 +104,7 @@ TRIALS = (
             "The same pendulum let go from 90° instead of 10°. Its period is…",
             ("shorter", "the same", "longer"),
             2,
+            ordered=True,
         ),
     ),
     PendulumTrial(
@@ -131,7 +133,7 @@ TRIALS = (
         ),
     ),
     PendulumTrial(
-        "A disc on a wire: no softening",
+        "A disc on a wire, twisted 120°",
         "A 1 kg disc of radius 0.1 m on a wire of torsional stiffness <m>k<sub>t</sub></m> = 0.5 N·m/rad: "
         "<m>J = mr²/2</m>, <m>f<sub>n</sub> = √(k<sub>t</sub>/J)/2π</m> = 1.59 Hz. The wire's twist is linear, "
         "so the period is the same at 10° as at 170°: the softening above came from gravity's <m>sin θ</m>, not "
@@ -144,10 +146,11 @@ TRIALS = (
             "The disc twisted 120° instead of 10° and let go. Its period is…",
             ("longer", "the same", "shorter"),
             1,
+            ordered=True,
         ),
     ),
     PendulumTrial(
-        "Inverted: gravity as a negative spring",
+        "Inverted, let go from 60°",
         "A 1 kg mass on a 1 m arm balanced upright on a 15 N·m/rad spring. Gravity now pushes it over: the "
         "stiffness is <m>k<sub>θ</sub> = k<sub>t</sub> − mgL</m> = 5.19 N·m/rad, <m>f<sub>n</sub></m> = 0.363 Hz. "
         "And it hardens: from 60° the period is 10 % shorter than the small swing's.",
@@ -158,10 +161,11 @@ TRIALS = (
             "Upright on its spring, let go from 60° rather than a few degrees. Its period is…",
             ("longer, as a hanging pendulum's", "the same", "shorter"),
             2,
+            ordered=True,
         ),
     ),
     PendulumTrial(
-        "Inverted: buckling",
+        "Inverted, on a weaker spring",
         "The spring at 9 N·m/rad, under <m>mgL</m> = 9.81 N·m/rad: the stiffness is negative and upright is "
         "unstable. Let go from 1° with a little damping, it falls over and settles leaning at 40.8°, where the "
         "spring's <m>9θ</m> balances the weight's <m>9.81 sin θ</m>. A column under a load past its buckling "
@@ -186,6 +190,7 @@ TRIALS = (
             "The 1 m pendulum on the Moon, where g is 1.62 m/s², a sixth of Earth's. Its period is…",
             ("the same", "about 2.5 times longer", "about 6 times longer"),
             1,
+            ordered=True,
         ),
     ),
 )

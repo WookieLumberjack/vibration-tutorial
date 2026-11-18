@@ -19,6 +19,7 @@ Hz; 1000: a unit's prefix; 2: amplitude for peak to peak). No Qt here: the Pract
 from __future__ import annotations
 
 import math
+import zlib
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -86,12 +87,26 @@ class Question:
 
 @dataclass(frozen=True)
 class Prediction:
-    """A trial's question, asked before it runs: `choices` in the order shown, `answer` the right one's index. The
-    trial's note, shown as it runs, is the explanation."""
+    """A trial's question, asked before it runs: `choices` as written, `answer` the right one's index. The trial's
+    note, shown as it runs, is the explanation.
+
+    They show in `shown_order()`: shuffled, as the right one was most often written last (#409 C-7), but the same
+    each time the trial is picked. An `ordered` scale (shorter, the same, longer; 1 s, 2 s, 6 s) stays a scale:
+    shown as written or reversed."""
 
     prompt: str  # rich text
     choices: tuple[str, ...]
     answer: int
+    ordered: bool = False
+
+    def shown_order(self) -> tuple[int, ...]:
+        """The choices' indices in the order they show, seeded by the prompt: a re-pick, or another window, shows
+        the same order."""
+        rng = np.random.default_rng(zlib.crc32(self.prompt.encode("utf-8")))
+        n = len(self.choices)
+        if self.ordered:
+            return tuple(range(n))[:: -1 if rng.random() < 0.5 else 1]
+        return tuple(int(k) for k in rng.permutation(n))
 
     def __post_init__(self) -> None:
         if not 0 <= self.answer < len(self.choices):

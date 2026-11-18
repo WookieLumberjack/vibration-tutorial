@@ -422,8 +422,8 @@ class TrialBox(QtWidgets.QGroupBox):
             if item is not None and (widget := item.widget()) is not None:
                 widget.hide()  # out of the layout, it would show where it was until it's deleted
                 widget.deleteLater()
-        for k, text in enumerate(p.choices):
-            button = QtWidgets.QPushButton(text)  # plain text: a button shows no rich text
+        for k in p.shown_order():  # shuffled, the same each time (a scale stays a scale)
+            button = QtWidgets.QPushButton(p.choices[k])  # plain text: a button shows no rich text
             button.setProperty("choice", k)
             button.clicked.connect(self._on_choice)
             self.choices.addWidget(button)

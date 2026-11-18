@@ -251,6 +251,7 @@ TRIALS = (
                 "About ten times as far",
             ),
             1,
+            ordered=True,
         ),
     ),
     FrameTrial(
