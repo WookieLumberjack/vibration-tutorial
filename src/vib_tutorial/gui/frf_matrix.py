@@ -483,7 +483,8 @@ TRIALS = (
         output=1,
         inputs=(1,),
         predict=Prediction(
-            'Force and response both at m2: a driving point. Between two neighbouring peaks of its FRF, what is there?',
+            "Force and response both at m2: a driving point. Undamped, between two neighbouring peaks of its FRF, "
+            "what is there? (The plot has the chain's dampers: compare it after.)",
             (
                 "Never a dip",
                 "Sometimes a dip, sometimes not",
@@ -707,10 +708,11 @@ def _truncated_static(rng: np.random.Generator) -> Question:
 
 def _driving_point_dips(rng: np.random.Generator) -> Question:
     return Question(
-        "Between two neighbouring resonances of a lightly damped driving-point FRF, what is there?",
+        "Between two neighbouring resonances of an undamped driving-point FRF, what is there?",
         0,
         "Always an antiresonance: both modes' constants φ<sub>jr</sub>² are positive, and between the peaks the "
-        "lower is already mass-like and the upper still spring-like, so they cancel somewhere.",
+        "lower is already mass-like and the upper still spring-like, so they cancel somewhere. (Damped, a dip "
+        "squeezed between two close peaks can wash out to a shoulder, as H22's at 5.15 Hz does.)",
         choices=("Always an antiresonance", "Sometimes one, sometimes not", "Never one"),
         why=(
             "",

@@ -500,8 +500,10 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         flow = FlowLayout(holder)
         flow.setContentsMargins(0, 0, 0, 0)
         self.sensor_boxes: list[QtWidgets.QCheckBox] = []
+        opening = NonlinearTrial("", "").sensors  # ticked as the page's state starts (#409 U-21: not "No sensors")
         for i in range(MAX_DOF):
             box = QtWidgets.QCheckBox(f"m{i + 1}")
+            box.setChecked(i in opening)
             box.setToolTip(TIPS["sensors"])
             self.sensor_boxes.append(box)
             flow.add(box)
