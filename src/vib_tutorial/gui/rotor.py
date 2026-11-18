@@ -55,6 +55,7 @@ from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, group
 from .lesson import RunButton, TrialBox
+from .live_label import LiveLabel
 from .notes_view import NotesBrowser
 from .panels import spin
 from .rotor_balance import BalancingPanel
@@ -178,9 +179,7 @@ class RotorPage(QtWidgets.QWidget):
         self.challenge = ChallengeBox(self, PROBLEMS)
         lv.addWidget(self.challenge)
         lv.addWidget(self._speed_box())
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
-        self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        self.readout = LiveLabel(wrap=True)  # the speed: rewritten every frame (#409 P-2)
         lv.addWidget(self.readout)
         lv.addWidget(self._sweep_box())
         self.editor = RotorEditor(self.bearing_panel, self.magnet_panel, self.rub_panel)

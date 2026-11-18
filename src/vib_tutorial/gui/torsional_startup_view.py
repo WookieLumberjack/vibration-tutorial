@@ -39,6 +39,7 @@ from . import weak
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, form_layout, form_row, group, plot_height, show_in_stack
 from .lesson import RunButton, connect_all, plot, set_quietly
+from .live_label import LiveLabel
 from .panels import spin
 from .plots import Decimator, decimate
 from .scrub import Scrub
@@ -177,8 +178,7 @@ class StartUpView(QtWidgets.QWidget):
         self.scrub = Scrub(self.startup_torque, self.startup_speed)  # paused or done: back along the run
         self.scrub.scrubbed.connect(self._on_scrubbed)
         self.apply_theme()
-        self.startup_status = QtWidgets.QLabel()
-        self.startup_status.setWordWrap(True)
+        self.startup_status = LiveLabel(wrap=True)  # rewritten every frame (#409 P-2)
         mute(self.startup_status)
         self.startup_note = QtWidgets.QLabel()
         self.startup_note.setWordWrap(True)

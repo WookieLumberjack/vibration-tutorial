@@ -23,6 +23,7 @@ from ..core.rotor_stability import Onset
 from ..view_models.text import fmt
 from . import accessible
 from .layouts import plot_height
+from .live_label import LiveLabel
 from .panels import spin
 from .style import colors
 from .tab_groups import Deferred
@@ -174,10 +175,7 @@ class BearingPanel(QtWidgets.QWidget):
         ):
             lp.addItem(item)
         self.locus.setFixedSize(LOCUS_SIZE, LOCUS_SIZE)
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
-        self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        self.readout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        self.readout = LiveLabel(wrap=True)  # at the speed now: rewritten every frame (#409 P-2)
         self.top = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.Direction.LeftToRight)  # see resizeEvent
         self.top.addWidget(self.locus, 0, QtCore.Qt.AlignmentFlag.AlignTop)
         self.top.addWidget(self.readout, 1)

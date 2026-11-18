@@ -10,6 +10,7 @@ from ..core.model import DEFAULT_DAMPING, DEFAULT_MASS, DEFAULT_STIFFNESS
 from ..core.presets import Preset, presets
 from . import weak
 from .layouts import FlowLayout, form_layout, group
+from .live_label import LiveLabel
 from .modes import ModeEntry
 from .style import MAX_DOF, colors, text_on
 from .theming import mute
@@ -581,7 +582,7 @@ class SimControls(QtWidgets.QGroupBox):
         )
         form.addRow(self.auto_scale)
 
-        self.time_label = QtWidgets.QLabel()
+        self.time_label = LiveLabel()  # the clock: rewritten every frame (#409 P-2)
         form.addRow("Sim time:", self.time_label)
 
     def set_modes(self, entries: list[ModeEntry]) -> None:

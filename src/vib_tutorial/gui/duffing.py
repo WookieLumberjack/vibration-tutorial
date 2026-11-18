@@ -39,6 +39,7 @@ from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height
 from .lesson import Dot, RunButton
 from .links import load_notes, page_link
+from .live_label import LiveLabel
 from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -478,7 +479,7 @@ class DuffingPage(QtWidgets.QWidget):
             b.clicked.connect(weak.slot(self, lambda self, _=False, m=mode: self.start_sweep(m)))
             row.add(b)
         dv.addRow(row)
-        self.drive_state = QtWidgets.QLabel()
+        self.drive_state = LiveLabel()  # rewritten every frame (#409 P-2)
         mute(self.drive_state)
         dv.addRow(self.drive_state)
 
@@ -494,8 +495,7 @@ class DuffingPage(QtWidgets.QWidget):
             self.branch_buttons.append(b)
             row.add(b)
         bv.addLayout(row)
-        self.branch_note = QtWidgets.QLabel()
-        self.branch_note.setWordWrap(True)
+        self.branch_note = LiveLabel(wrap=True)  # rewritten as the sweep moves (#409 P-2)
         mute(self.branch_note)
         bv.addWidget(self.branch_note)
 
