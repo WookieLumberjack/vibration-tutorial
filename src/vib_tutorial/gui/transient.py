@@ -86,7 +86,7 @@ TRIALS = (
         ),
     ),
     TransientTrial(
-        "A step: overshoot and settling",
+        "A step",
         "1 N switched on and left. The mass overshoots its static 2.5 mm by "
         "<m>M<sub>p</sub> = e<sup>−ζπ/√(1 − ζ²)</sup></m> = 85 %, to 4.64 mm, at <m>t<sub>p</sub> = π/ω<sub>d</sub></m> "
         "= 0.157 s, and settles within 2 % after 3.8 s (the rule <m>4/ζω<sub>n</sub></m> says 4 s). The "
@@ -98,6 +98,7 @@ TRIALS = (
             "1 N switched on and left, with a static deflection of 2.5 mm. How far does the mass get?",
             ("2.5 mm: it settles there", "About 4.6 mm", "Further than 5 mm"),
             1,
+            ordered=True,
         ),
     ),
     TransientTrial(
@@ -125,7 +126,7 @@ TRIALS = (
         tab=TAB_SPECTRUM,
     ),
     TransientTrial(
-        "A short pulse is an impulse",
+        "A short pulse",
         "10 N for 0.0157 s, a twentieth of the period. Only its area, 0.157 N·s, matters: the response is "
         "that impulse's, peaking at <m>2 sin(π/20) = 0.31</m> times the static 25 mm (undamped). On the pulse "
         "spectrum the point sits on the rising, impulse-like part, where the peak is proportional to the length.",
@@ -141,7 +142,7 @@ TRIALS = (
         ),
     ),
     TransientTrial(
-        "Half a period or longer: twice the static",
+        "A pulse half a period long",
         "A 1 N rectangle 0.16 s long, half the period. Undamped, a rectangle of half a period or more throws "
         "the mass to twice its static deflection, as a step would: the most a rectangle can do. Its "
         "pulse-spectrum curve rises to 2 at <m>T = T<sub>n</sub>/2</m> and stays there.",
@@ -171,7 +172,7 @@ TRIALS = (
         ),
     ),
     TransientTrial(
-        "A slow ramp is nearly static",
+        "A slow ramp",
         "1 N reached over 0.87 s, 2.75 periods. The mass follows the ramp, lagging, and overshoots the end by "
         "only <m>|sin πr|/πr</m> = 8 % of the static 2.5 mm (undamped, <m>r = T/T<sub>n</sub></m>; 6 % with "
         "<m>ζ = 0.05</m>). A ramp of a whole number of periods leaves no swing at all.",

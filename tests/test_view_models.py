@@ -61,10 +61,10 @@ def test_isolation_trials_readouts_say_what_their_notes_do():
     """Each trial's note, against the page's readout once the trial is set up."""
     notes = {t.name: view.transmissibility(isolator(t)).note for t in TRIALS}
     infos = {t.name: view.mount_info(isolator(t)) for t in TRIALS}
-    assert "isolation 90.8 %" in notes["Soft mounts: isolation"]  # "91 % isolation"
-    assert "f<sub>n</sub> = 28.78 Hz" in infos["Stiff mounts: amplification"]  # 28.8 Hz
-    assert "amplified 3.86 times" in notes["Stiff mounts: amplification"]  # 3.9 times
-    assert "T = 0.2," in notes["Damping costs isolation"]  # 20 %
+    assert "isolation 90.8 %" in notes["Soft mounts"]  # "91 % isolation"
+    assert "f<sub>n</sub> = 28.78 Hz" in infos["Stiff mounts"]  # 28.8 Hz
+    assert "amplified 3.86 times" in notes["Stiff mounts"]  # 3.9 times
+    assert "T = 0.2," in notes["Soft mounts, more damping"]  # 20 %
     assert "T = 0.0701" in notes["An elastically supported damper"]  # 7.0 %
     assert "T = 0.038," in notes["Two stages"]  # 3.8 %
     assert "±27.1 µm" in notes["An inertia block"]  # ±27 µm instead of ±109 µm

@@ -4059,7 +4059,7 @@ def test_complex_modes_page(app):
     )
     assert "proportional" in p.coupling.text() and not p.make_proportional.isEnabled()
 
-    p.load_trial(names.index("A strong damper locks a joint"))
+    p.load_trial(names.index("A very strong damper"))
     app.processEvents()
     assert "Overdamped (no oscillating pole): mode 4." in p.readout.text()
     assert p.table.item(3, 1).text() == "overdamped"

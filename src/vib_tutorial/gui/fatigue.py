@@ -99,6 +99,7 @@ TRIALS = (
                 "Too high",
             ),
             2,
+            ordered=True,
         ),
     ),
     FatigueTrial(
@@ -145,6 +146,7 @@ TRIALS = (
                 "Sixteen times",
             ),
             2,
+            ordered=True,
         ),
     ),
     FatigueTrial(

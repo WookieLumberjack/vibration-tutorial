@@ -90,7 +90,7 @@ TRIALS = (
         ),
     ),
     PeriodicTrial(
-        "Resonance through the third harmonic",
+        "A square wave at a third",
         "The square wave at <m>f<sub>n</sub>/3</m> = 1.06 Hz. Its fundamental is far below resonance, but its third "
         "harmonic, <m>4/3π</m> = 0.42 N, sits on <m>f<sub>n</sub></m>, where <m>|H| = 1/cω<sub>n</sub></m> = "
         "25 mm/N: it alone swings the mass 10.6 mm, three times the fundamental's 3.6 mm. The response rings at "
@@ -104,7 +104,7 @@ TRIALS = (
         ),
     ),
     PeriodicTrial(
-        "No even harmonics, no resonance",
+        "A square wave at a half",
         "The same square wave at <m>f<sub>n</sub>/2</m>. A square wave has no second harmonic, so nothing reaches "
         "<m>f<sub>n</sub></m>: the response is 5.0 mm, a third of the 13.9 mm at <m>f<sub>n</sub>/3</m>, though the "
         "drive is closer to resonance.",
@@ -145,7 +145,7 @@ TRIALS = (
         ),
     ),
     PeriodicTrial(
-        "Smooth waves converge faster",
+        "Triangle against square",
         "A triangle's harmonics fall as <m>1/j²</m>, a square's as <m>1/j</m>: with 3 harmonics the triangle's "
         "response series is within 1.9 % of the exact steady state, the square's 5.7 %; with 9, 0.10 % against "
         "0.65 %. A jump in the force costs <m>1/j</m>, a kink <m>1/j²</m>. The Convergence tab draws it.",

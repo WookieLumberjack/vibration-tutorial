@@ -87,6 +87,7 @@ TRIALS = (
                 "At or above them, within a fraction of a percent",
             ),
             2,
+            ordered=True,
         ),
     ),
     CouplingTrial(

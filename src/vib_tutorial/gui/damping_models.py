@@ -105,7 +105,7 @@ TRIALS = (
         damping_only=False,
     ),
     DampingTrial(
-        "Friction can't stop a resonance",
+        "Friction at resonance",
         "1 N at every frequency. The viscous, hysteretic and Zener peaks stop at 25 mm, <m>(F/k)/2ζ</m>. Friction, "
         "matched to them at 10 mm, takes at most <m>4F<sub>f</sub>X</m> a cycle, which grows only as <m>X</m> while the force "
         "puts in <m>πFX</m>: since <m>F</m> = 1 N &gt; <m>4F<sub>f</sub>/π</m> = 0.4 N, the resonance runs away. Set the drive below "
@@ -118,7 +118,7 @@ TRIALS = (
         ),
     ),
     DampingTrial(
-        "A straight-line decay",
+        "Released against friction",
         "Released from 10 mm. The viscous swing falls by the same fraction each cycle, <m>e<sup>−δ</sup></m> = 0.73, "
         "for ever. Friction's falls by the same amount, <m>4F<sub>f</sub>/k</m> = 3.1 mm, and stops dead after three "
         "cycles, 0.58 mm off centre, where the spring can no longer beat the friction.",

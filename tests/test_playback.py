@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 
 import numpy as np
 import pytest
@@ -140,7 +141,7 @@ def test_the_pendulum_swings_with_its_curve_and_a_pluck_lets_it_go_from_there(ma
     assert not pb.running and pb.run.text() == "Start" and view.theta == pytest.approx(math.radians(10.0))
 
     # A trial plays it: the pendulum is where the whole swing is, the ghost where the linearized one is.
-    p.load_trial(next(i for i, tr in enumerate(pendulum.TRIALS) if tr.name.startswith("Large swings")))
+    p.load_trial(next(i for i, tr in enumerate(pendulum.TRIALS) if tr.name.startswith("Let go from 90")))
     assert pb.running and pb.t == 0.0
     pb._tick(0.7)
     t, th, _, tl = (np.asarray(a) for a in p._swing)
@@ -185,7 +186,9 @@ def test_the_damped_masses_move_with_their_decays_and_a_pluck_releases_them_all(
     pb.loop.enabled = False
 
     # A trial plays it: each mass is where its own decay is, as drawn.
-    p.load_trial(next(i for i, tr in enumerate(damping_models.TRIALS) if tr.name.startswith("A straight-line")))
+    p.load_trial(
+        next(i for i, tr in enumerate(damping_models.TRIALS) if tr.name.startswith("Released against friction"))
+    )
     for _ in range(5):
         app.processEvents()
     assert pb.running and pb.t == 0.0 and p.tabs.currentIndex() == damping_models.TAB_DECAY
@@ -282,10 +285,12 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     assert box.asking == i and box.ask.isVisible() and "Predict first" in box.question.text()
     assert p.practice_state() == before and not p.playback.running  # nothing set up yet
     buttons = [box.choices.itemAt(k).widget() for k in range(box.choices.count())]
-    assert [b.text() for b in buttons] == list(prediction.choices)
+    order = prediction.shown_order()  # shuffled, the same each time
+    assert [b.text() for b in buttons] == [prediction.choices[k] for k in order]
+    assert [int(b.property("choice")) for b in buttons] == list(order)
 
     wrong = next(k for k in range(len(prediction.choices)) if k != prediction.answer)
-    buttons[wrong].click()
+    buttons[order.index(wrong)].click()
     assert box.asking is None and not box.ask.isVisible() and "Not quite" in box.verdict.text()
     assert prediction.choices[prediction.answer] in box.verdict.text()
     assert p.freq.value() == pytest.approx(p.osc.natural_hz, abs=1e-3) and p.playback.running  # it ran
@@ -453,6 +458,16 @@ def test_the_quarter_car_drives_over_its_road(main_window, app):
     assert not pb.running and view.now == pytest.approx(3.0)
 
 
+# Words that say what a trial shows, which its name mustn't: it shows before the question (#409 C-8). "Twice",
+# "static", "impulse" and "negative" name setups too (Dampers twice too strong, The impulse response), so aren't here.
+OUTCOME_WORDS = re.compile(
+    r"\b(slower|faster|longer|shorter|higher|lower|larger|smaller|bigger|can't|cannot|won't|never|always|costs?|"
+    r"quickest|locks?|converges?|amplif\w*|buckl\w*|beats|straight-line|softening|stiffening|overshoot\w*|unstable|"
+    r"instability|grows?|falls?|rises?|runs away|stops?|cancels?|no resonance|resonates)\b",
+    re.IGNORECASE,
+)
+
+
 def test_every_pages_predictions_are_asked_before_its_trials_run(main_window, app):
     """Every page whose trials carry a `Prediction` asks it through its Things to try first (#316 B3): nothing is
     set up until it's answered, the verdict and the note (the explanation) follow, and a trial's name doesn't give
@@ -469,6 +484,9 @@ def test_every_pages_predictions_are_asked_before_its_trials_run(main_window, ap
             answer = p.choices[p.answer].split(":")[0].lower()
             if len(answer) >= 6:  # a "Yes" or "No" may well be in a name
                 assert answer not in trials[k].name.lower(), f"{trials[k].name!r} gives its answer away"
+            # Nor in other words: a name says what's set up, not what happens (#409 C-8).
+            said = OUTCOME_WORDS.search(trials[k].name)
+            assert said is None, f"{trials[k].name!r} says what happens ({said and said.group(0)!r}): name the setup"
         if not asked:
             continue
         page = getattr(w, attr)

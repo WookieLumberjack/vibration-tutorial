@@ -96,6 +96,7 @@ def rotor_presets() -> list[RotorPreset]:
                 "A large disc overhung past bearing B, its first mode 870 rpm at rest. Spinning, where does the unbalance find its critical speed?",
                 ("Below 870 rpm", "At 870 rpm", "Above 870 rpm"),
                 2,
+                ordered=True,
             ),
         ),
         RotorPreset(

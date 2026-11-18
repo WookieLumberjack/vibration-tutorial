@@ -94,10 +94,11 @@ TRIALS = (
             "Released from 10 mm with ζ = 0.05, how much smaller is each peak than the one before?",
             ("5 % smaller", "About 27 % smaller", "Half the size"),
             1,
+            ordered=True,
         ),
     ),
     SdofTrial(
-        "Critical damping: the quickest return",
+        "ζ = 1 against ζ = 2",
         "<m>c</m> = 40 N·s/m, the critical damping <m>2√(km)</m>, with <m>ζ</m> = 0.1, 1 and 2 drawn beside it. "
         "<m>ζ = 0.1</m> overshoots "
         "and rings; <m>ζ = 1</m> comes back without crossing zero, the fastest that does; <m>ζ = 2</m> creeps back, "
@@ -134,6 +135,7 @@ TRIALS = (
             "the steady swing grow?",
             ("2.5 mm", "5 mm", "25 mm", "250 mm"),
             2,
+            ordered=True,
         ),
     ),
     SdofTrial(
@@ -147,7 +149,7 @@ TRIALS = (
         tab=TAB_FRF,
     ),
     SdofTrial(
-        "Beats: undamped, just off resonance",
+        "Undamped, just off resonance",
         "<m>c = 0</m>, a 1 N force at 3.0 Hz, 0.18 Hz below <m>f<sub>n</sub></m>. The free vibration the start sets off never "
         "dies, and it drifts in and out of step with the forced one: the swing beats at <m>|f − f<sub>n</sub>|</m> = "
         "0.18 Hz, every 5.5 s, between zero and twice the steady 22 mm.",

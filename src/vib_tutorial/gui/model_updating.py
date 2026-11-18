@@ -172,6 +172,7 @@ TRIALS = (
                 "Mode 1",
             ),
             1,
+            ordered=True,
         ),
     ),
     _trial(

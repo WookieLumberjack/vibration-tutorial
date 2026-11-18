@@ -116,6 +116,7 @@ TRIALS = (
                 "Below 3",
             ),
             2,
+            ordered=True,
         ),
     ),
     DiagnosticsTrial(

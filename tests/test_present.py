@@ -151,8 +151,9 @@ def test_a_prediction_is_answered_from_the_large_note(window):
     assert overlay.body.text() == box.question.text()
     buttons = [overlay.choices.itemAt(k).widget() for k in range(overlay.choices.count())]
     p = sdof.TRIALS[0].predict
-    assert [b.text() for b in buttons] == [*p.choices, "Just run it"]
-    buttons[p.answer].click()
+    order = p.shown_order()  # as the box shows them
+    assert [b.text() for b in buttons] == [*(p.choices[k] for k in order), "Just run it"]
+    buttons[order.index(p.answer)].click()
     QtWidgets.QApplication.processEvents()
     assert box.asking is None and "Right" in overlay.body.text() and box.note.text() in overlay.body.text()
     assert overlay.choices.count() == 0

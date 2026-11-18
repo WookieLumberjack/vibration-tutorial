@@ -500,6 +500,7 @@ PRESETS = (
             "A steel bar held at one end and free at the other, rung lengthwise. How do its modes' frequencies go?",
             ("1 : 2 : 3, as a string's", "1 : 3 : 5, odd multiples only", "1 : 6.3 : 17.5, as a beam's"),
             1,
+            ordered=True,
         ),
     ),
     Preset(
@@ -526,6 +527,7 @@ PRESETS = (
             "An aluminium bar resting on its nodes, free at both ends. How many of its modes are at 0 Hz?",
             ("None", "One", "Two"),
             2,
+            ordered=True,
         ),
     ),
     Preset(

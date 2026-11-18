@@ -189,10 +189,11 @@ TRIALS = (
                 "Far too high",
             ),
             2,
+            ordered=True,
         ),
     ),
     _trial(
-        "A strong damper locks a joint",
+        "A very strong damper",
         "200 N·s/m between <m>m<sub>1</sub></m> and <m>m<sub>2</sub></m>: so stiff a damper that the two move "
         "together, and it hardly works. Mode 1's <m>ζ</m> is 0.050, not the approximation's 0.58; mode 3's 0.0018, "
         "not 2.6; mode 4 has become a pair of real roots. Mode 2, where <m>m<sub>1</sub></m> and "

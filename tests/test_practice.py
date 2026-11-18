@@ -352,3 +352,34 @@ def test_course_map_counts_the_problems_solved(app, main_window):
     window.reset()
     assert practice.progress() == {} and "(0/" in window._page_items["transient_page"].text(0)
     assert second.key  # two problems at least, so "1 of" was a part
+
+
+def _trial_predictions():
+    """Every trial's Prediction in the course, once each."""
+    from vib_tutorial.gui import links, sim_trials
+
+    found = {}
+    for attr in links.order():
+        trials = sim_trials.TRIALS if attr == "sim_page" else getattr(links.page_module(attr), "TRIALS", ())
+        for t in trials:
+            p = getattr(t, "predict", None)
+            if p is not None:
+                found[p.prompt] = p
+    return list(found.values())
+
+
+def test_the_right_prediction_isnt_where_the_buttons_give_it_away():
+    """The trials' choices are shuffled as they show (#409 C-7: the right one was written last in 98 of 157), the
+    same each time, and an ordered scale only reversed or not."""
+    predictions = _trial_predictions()
+    assert len(predictions) >= 150
+    shown = [p.shown_order() for p in predictions]
+    for p, order in zip(predictions, shown):
+        assert sorted(order) == list(range(len(p.choices))) and order == p.shown_order()  # the same each time
+        if p.ordered:
+            assert order in (tuple(range(len(order))), tuple(reversed(range(len(order))))), p.prompt
+    at = [order.index(p.answer) for p, order in zip(predictions, shown)]
+    last = sum(a == len(o) - 1 for a, o in zip(at, shown)) / len(at)
+    first = sum(a == 0 for a in at) / len(at)
+    assert last < 0.4 and first < 0.4 and 1 - last - first > 0.25, (first, last)
+    assert sum(p.ordered for p in predictions) >= 20  # the scales are marked

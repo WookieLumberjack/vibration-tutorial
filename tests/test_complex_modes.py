@@ -140,7 +140,7 @@ def test_the_trials_notes():
     phi = modal_analysis(trial[name]).modes[3].shape
     assert 0.25 < abs(r[3].shape[3] - r[3].shape[2]) / abs(phi[3] - phi[2]) < 1 / 3  # both 1 at m2
 
-    name = "A strong damper locks a joint"
+    name = "A very strong damper"
     r = rows(name)
     assert (r[0].zeta_exact, r[0].zeta_approx) == pytest.approx((0.050, 0.58), abs=0.5e-3, rel=0.01)
     assert (r[2].zeta_exact, r[2].zeta_approx) == pytest.approx((0.0018, 2.6), abs=0.5e-4, rel=0.02)

@@ -153,6 +153,7 @@ TRIALS = (
                 "About one",
             ),
             2,
+            ordered=True,
         ),
     ),
     VariabilityTrial(
@@ -170,6 +171,7 @@ TRIALS = (
                 "Most of the twelve",
             ),
             2,
+            ordered=True,
         ),
     ),
     VariabilityTrial(

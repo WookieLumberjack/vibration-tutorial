@@ -190,7 +190,7 @@ TRIALS = (
         ),
     ),
     SelfTrial(
-        "A wing section towards flutter",
+        "A wing section, speeding up",
         "A wing section with plunge at 3 Hz and pitch at 6 Hz, its centre of mass behind the elastic axis, in steady "
         "lift. As the speed rises the lift, a stiffness growing as <m>U</m>², couples the two modes: their "
         "frequencies close in (2.93 and 6.71 Hz at rest, 3.6 and 4.7 Hz at 20 m/s) and at 20.7 m/s, nearly met, "

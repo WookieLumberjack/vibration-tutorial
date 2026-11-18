@@ -102,7 +102,8 @@ class TrialOverlay(QtWidgets.QFrame):
             prediction = box.predictions[box.asking]
             assert prediction is not None, "asking only a trial with a prediction"
             self.body.setText(box.question.text())
-            for k, text in enumerate(prediction.choices):
+            for k in prediction.shown_order():  # as the box shows them
+                text = prediction.choices[k]
                 button = QtWidgets.QPushButton(text)
                 button.setProperty("choice", k)
                 button.clicked.connect(self._on_choice)
