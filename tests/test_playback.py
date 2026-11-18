@@ -386,6 +386,34 @@ def test_a_cursors_plot_draws_its_curves_from_pixmaps(app):
     close_graphics(page)
 
 
+def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
+    """A held curve's pixmap lives in QPixmapCache: at 2× the Single oscillator's, in a 1700 px window, outgrew its
+    default 10 MB, so the cache dropped them every frame (20 ms a frame on the Mac, #409 N-2). The limit holds
+    a few pages' worth."""
+    import pyqtgraph as pg
+    from PySide6 import QtGui
+
+    from vib_tutorial.gui import plot_patches
+
+    assert QtGui.QPixmapCache.cacheLimit() == plot_patches.PIXMAP_CACHE_MB * 1024  # make_app installed it
+    w = main_window
+    w.resize(1700, 1000)
+    p = w.sdof_page
+    w.pages.setCurrentWidget(p)
+    QtWidgets.QApplication.processEvents()
+    cached = QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache
+    retina = 0  # bytes: each held curve's pixmap over the plot's view, at 2×
+    for plot in p.findChildren(pg.PlotWidget):
+        for item in plot.getPlotItem().items:
+            curve = item.curve if isinstance(item, pg.PlotDataItem) else item
+            if isinstance(curve, pg.PlotCurveItem) and curve.cacheMode() == cached:
+                view = plot.mapFromScene(curve.mapRectToScene(curve.boundingRect())).boundingRect()
+                view = view.intersected(plot.viewport().rect())
+                retina += 4 * view.width() * view.height() * 4
+    assert retina > 10 * 2**20, "the case the default limit lost"
+    assert 3 * retina < plot_patches.PIXMAP_CACHE_MB * 2**20
+
+
 @pytest.mark.parametrize("wrap", [False, True])
 def test_a_live_label_lays_the_page_out_again_only_when_it_needs_more_room(app, wrap):
     """`lesson.LiveLabel`: a frame's new text repaints the label, and asks for a layout pass (a QLabel's would,
