@@ -15,6 +15,7 @@ resonant in a band, it becomes SEA's power balance: ω η_ij E_i − ω η_ji E_
 The coupling between two plates at a right angle (`junction_transmission`) is a bending-wave problem: the corner
 line neither moves nor bends (each plate's in-plane stiffness holds the other's bending), so a wave arriving at θ
 is reflected and transmitted with a near field on each side, and τ(θ) + |r|² = 1. Its diffuse-field average τ̄
+doesn't depend on frequency (every wavenumber goes as √ω), so it's worked out once per pair of plates. It
 makes the coupling loss factor η₁₂ = c_g₁ L τ̄₁₂ / π ω S₁. A plate couples to a room by its radiation,
 η_pr = ρcσ/ωm″ (`radiation.radiation_loss_factor`), and the room back by reciprocity; the room's own loss is its
 reverberation time's, 2.2/f T₆₀. `network` solves the three subsystems' balance in each third-octave band.
@@ -28,6 +29,7 @@ network's power balance.
 
 from __future__ import annotations
 
+import functools
 import math
 from dataclasses import dataclass
 
@@ -142,15 +144,28 @@ def junction_waves(plate1: Plate, plate2: Plate, f: float, theta: float) -> tupl
     return float(tau), float(abs(r) ** 2)
 
 
-def junction_transmission(plate1: Plate, plate2: Plate, f: float, points: int = 96) -> float:
+def junction_transmission(plate1: Plate, plate2: Plate, f: float = 1.0, points: int = 96) -> float:
     """τ̄₁₂ = ∫ τ(θ) cos θ dθ over 0 to π/2: the diffuse field's share across the corner (its intensity at θ goes
-    as cos θ). Gauss–Legendre in θ, split at plate 2's cut-off angle sin θ = k₂/k₁ where there is one."""
+    as cos θ). Gauss–Legendre in θ, split at plate 2's cut-off angle sin θ = k₂/k₁ where there is one.
+
+    It doesn't depend on f: every wavenumber goes as √ω, so the corner's equations at θ scale row by row and τ
+    is a ratio. So it's worked out once per pair of plates (`_transmission`); `f` is kept for the callers."""
+    return _transmission(plate1, plate2, points)
+
+
+@functools.lru_cache(maxsize=64)
+def _transmission(plate1: Plate, plate2: Plate, points: int) -> float:
     k1, k2 = math.sqrt(1 / plate1.scale), math.sqrt(1 / plate2.scale)  # × √ω, which cancels
     top = math.pi / 2 if k2 >= k1 else math.asin(k2 / k1)
-    x, wts = np.polynomial.legendre.leggauss(points)
+    x, wts = _nodes(points)
     th = 0.5 * top * (x + 1)
-    tau = np.array([junction_waves(plate1, plate2, f, t)[0] for t in th])
+    tau = np.array([junction_waves(plate1, plate2, 1.0, t)[0] for t in th])
     return float(0.5 * top * np.sum(wts * tau * np.cos(th)))
+
+
+@functools.lru_cache(maxsize=8)
+def _nodes(points: int) -> tuple[np.ndarray, np.ndarray]:
+    return np.polynomial.legendre.leggauss(points)
 
 
 def group_speed(plate: Plate, f: float | np.ndarray) -> np.ndarray:
