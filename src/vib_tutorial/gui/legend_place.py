@@ -10,7 +10,9 @@ where it's put first (the offset it was made with) wins ties. Where every spot c
 it goes above the plot (`OUTSIDE`), in as few rows as fit, in the row a PlotItem keeps for its top axis
 (the ViewBox clips what it holds); it comes back in once a spot is clear.
 
-It works at most every `THROTTLE_MS` (a frame loop's `setData` only starts the timer), doubling up to
+Its first placement, once the plot has data and a size, comes at once (the next pass of the event loop, with the
+plot's new range applied first: `place`), so a legend doesn't show over the data and then jump. After that it
+works at most every `THROTTLE_MS` (a frame loop's `setData` only starts the timer), doubling up to
 `SLOWEST_MS` while its plot keeps changing and the legend stays put (back to `THROTTLE_MS` after a second's
 quiet, or when it moves), on the displayed
 data (decimated, in log units on a log axis), and only while the plot has a size: a placement costs well
@@ -166,6 +168,7 @@ class Placer(QtCore.QObject):
         self.timer.setInterval(THROTTLE_MS)
         self.timer.timeout.connect(self.place)
         self._last = 0.0  # time.monotonic() of the last placement
+        self._placed = False  # placed against data yet: until then, at once
         self.vb.sigRangeChanged.connect(self.soon)
         self.vb.sigResized.connect(self.soon)
         self.vb.childGroup.itemsChangedListeners.append(self)
@@ -180,7 +183,9 @@ class Placer(QtCore.QObject):
     def soon(self, *_) -> None:
         if self.manual or self.timer.isActive():
             return
-        if time.monotonic() - self._last > (self.timer.interval() + 1000) / 1000:
+        if not self._placed:
+            self.timer.setInterval(0)  # the first: as soon as this pass's setData calls are done
+        elif time.monotonic() - self._last > (self.timer.interval() + 1000) / 1000:
             self.timer.setInterval(THROTTLE_MS)  # quiet a while: a control's change, placed promptly
         self.timer.start()
 
@@ -240,9 +245,11 @@ class Placer(QtCore.QObject):
         if self.manual or not all(shiboken6.isValid(o) for o in (self.legend, self.vb, self.plot) if o is not None):
             return  # its plot torn down while the timer ran
         self._last = time.monotonic()
+        self.vb.prepareForPaint()  # the range pyqtgraph would apply at the paint: placed against it, not the old
         grid = self.grid()
         if grid is None:
             return
+        self._placed = True
         before = self.spot
         rect = self.legend.boundingRect()
         size = self.inside_size or (rect.width(), rect.height())
@@ -261,7 +268,7 @@ class Placer(QtCore.QObject):
             )
         # A live plot's legend that stays put is placed ever less often, down to every SLOWEST_MS.
         moved = self.spot != before
-        self.timer.setInterval(THROTTLE_MS if moved else min(2 * self.timer.interval(), SLOWEST_MS))
+        self.timer.setInterval(THROTTLE_MS if moved else min(max(2 * self.timer.interval(), THROTTLE_MS), SLOWEST_MS))
 
     def _above(self, inside: tuple[float, float]) -> None:
         """Above the plot, in as few rows as fit its width, the plot's top-axis row made room for it."""
@@ -274,8 +281,10 @@ class Placer(QtCore.QObject):
                 legend.setColumnCount(n)
                 if legend.boundingRect().width() <= self.vb.width() or n == 1:
                     break
-        rect, box = legend.boundingRect(), self.vb.geometry()
+        rect = legend.boundingRect()
         plot.layout.setRowMinimumHeight(1, rect.height() + 2)
+        plot.layout.activate()  # the row made now, not at the next layout pass: the ViewBox placed below it
+        box = self.vb.geometry()
         legend.anchor(
             (0, 0), (0, 0), (box.left() + max((box.width() - rect.width()) / 2, 0), box.top() - rect.height() - 1)
         )

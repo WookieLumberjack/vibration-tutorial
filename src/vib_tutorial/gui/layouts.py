@@ -161,7 +161,11 @@ def _holder(layout: QtWidgets.QLayout) -> QtWidgets.QWidget:
 
 
 class ColumnScroll(QtWidgets.QScrollArea):
-    """A column of controls: scrolls up and down, never sideways, and is as narrow as they allow."""
+    """A column of controls: scrolls up and down, never sideways, and is as narrow as they allow.
+
+    When its controls' minimum changes (a trial's text, a box shown), it says so to its own layout or splitter
+    (`eventFilter`): a scroll area doesn't, and a splitter kept the old minimum and clipped the controls
+    (the FRF matrix's at 1280 px, #409 U-9)."""
 
     def __init__(self, widget: QtWidgets.QWidget) -> None:
         super().__init__()
@@ -174,6 +178,11 @@ class ColumnScroll(QtWidgets.QScrollArea):
         assert widget is not None, "set in __init__"
         width = widget.minimumSizeHint().width() + self.verticalScrollBar().sizeHint().width() + 2 * self.frameWidth()
         return QtCore.QSize(width, super().minimumSizeHint().height())
+
+    def eventFilter(self, watched: QtCore.QObject, event: QtCore.QEvent) -> bool:
+        if watched is self.widget() and event.type() == QtCore.QEvent.Type.LayoutRequest:
+            self.updateGeometry()
+        return super().eventFilter(watched, event)
 
 
 def plot_height(plot: QtWidgets.QWidget, height: int) -> None:

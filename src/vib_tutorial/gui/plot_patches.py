@@ -33,6 +33,9 @@ the app antialiases, so a solid opaque pen wider than 1 px is drawn in segments 
 overlaps are the same colour. Only with flat caps, which `mkPen` gives (a polyline's caps are only its two ends):
 square or round ones overlap at every joint, and the line came out visibly heavier. A dashed pen still strokes one polyline (its dashes run along the whole curve), so
 keep a dense dashed curve at 1 px: the integration page's dashed closed form at 2 px took 220 ms.
+
+Empty legends. A legend with no entries yet (a page that adds them once it has something to show) drew an empty
+box over its plot: it draws nothing until it has one (`_paint_legend`).
 """
 
 from __future__ import annotations
@@ -196,6 +199,14 @@ def _segmented(self, pen: QtGui.QPen) -> bool:
     )
 
 
+_legend_paint = pg.LegendItem.paint
+
+
+def _paint_legend(self, p, *args) -> None:
+    if self.items:  # an empty legend's frame is a box over the data, saying nothing
+        _legend_paint(self, p, *args)
+
+
 def install() -> None:
     """Grids opaque and under the data, titles that wrap, pens and markers to the theme's scale, wide lines in
     segments; see the module's docstring."""
@@ -208,3 +219,4 @@ def install() -> None:
     pg.LabelItem.updateMin = _update_min
     pg.PlotItem.addItem = _add_item
     pg.PlotCurveItem._shouldUseDrawLineSegments = _segmented
+    pg.LegendItem.paint = _paint_legend

@@ -93,3 +93,67 @@ def test_a_plots_legend_moves_off_its_curve_and_stays_where_dragged(app, free_wi
         assert placer.spot == spot
     finally:
         gui.close_graphics(view)  # torn down even when it fails: a view left to gc segfaults
+
+
+def test_a_legend_is_placed_at_once_and_an_empty_one_draws_nothing(app, free_windows):
+    """The first placement doesn't wait for the throttle: a pass or two of the event loop after the data comes, the
+    legend is already off the curve. Before it has any entry, a legend draws no box (`plot_patches`)."""
+    import pyqtgraph as pg
+    from PySide6 import QtGui
+
+    from vib_tutorial import gui
+    from vib_tutorial.gui import plot_patches, theming
+
+    plot_patches.install()
+    view = pg.PlotWidget()
+    view.resize(400, 300)
+    plot = view.getPlotItem()
+    legend = theming.add_legend(plot, offset=(5, 5))  # top left
+    view.show()
+    try:
+        for _ in range(3):
+            app.processEvents()
+        assert legend.boundingRect().width() > 0  # its padding: a box, if drawn
+        image = QtGui.QImage(200, 100, QtGui.QImage.Format.Format_ARGB32)
+        image.fill(0)
+        painter = QtGui.QPainter(image)
+        legend.paint(painter, None, None)
+        painter.end()
+        assert not any(image.pixel(x, y) for x in range(0, 200, 4) for y in range(0, 100, 4)), "an empty legend's box"
+        x = np.linspace(0, 1, 200)
+        plot.plot(x, 1 - x, name="falling")  # through the top left
+        placer = legend.findChild(lp.Placer)
+        assert placer is not None and placer.spot == 0
+        began = time.perf_counter()
+        for _ in range(3):
+            app.processEvents()
+        assert placer.spot == 1  # top right, without waiting
+        assert time.perf_counter() - began < lp.THROTTLE_MS / 1000
+    finally:
+        gui.close_graphics(view)
+
+
+def test_a_legend_put_above_at_once_is_on_the_plot(app, free_windows):
+    """Where no spot inside is clear, the first placement (at once) puts the legend above the plot, in the row
+    it makes there: inside the plot's bounds, not above them (it was laid out before the row existed: y < 0)."""
+    import pyqtgraph as pg
+
+    from vib_tutorial import gui
+    from vib_tutorial.gui import theming
+
+    view = pg.PlotWidget()
+    view.resize(400, 300)
+    plot = view.getPlotItem()
+    legend = theming.add_legend(plot, offset=(5, 5))
+    x = np.linspace(0, 1, 400)
+    for k in range(3):
+        plot.plot(x, 0.5 + 0.5 * np.sin(2 * np.pi * (25 + k) * x), name=f"curve {k}")  # over every spot
+    view.show()
+    try:
+        for _ in range(3):
+            app.processEvents()
+        placer = legend.findChild(lp.Placer)
+        assert placer is not None and placer.spot == lp.OUTSIDE
+        assert legend.pos().y() >= 0 and legend.pos().y() + legend.boundingRect().height() <= plot.vb.pos().y() + 1
+    finally:
+        gui.close_graphics(view)

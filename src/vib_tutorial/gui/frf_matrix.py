@@ -27,8 +27,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from . import frf_figures, weak
-from .layouts import ColumnScroll, form_layout
-from .lesson import TrialBox, trials_html
+from .layouts import form_layout
+from .lesson import TrialBox, three_panes, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .plots import frequency_grid
@@ -954,8 +954,6 @@ class FrfMatrixPage(QtWidgets.QWidget):
         lv.addWidget(self.mode_box)
         lv.addWidget(io_box)
         lv.addStretch(1)
-        left_scroll = ColumnScroll(left)
-        left_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         # --- centre: the grid
         self.grid = FrfGrid()
@@ -976,14 +974,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self.tabs.addTab(self.detail, "Selected")
         self.tabs.addTab(self.theory, "Theory")
 
-        splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
-        splitter.addWidget(left_scroll)
-        splitter.addWidget(centre)
-        splitter.addWidget(self.tabs)
-        splitter.setSizes([350, 800, 550])
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(splitter)
+        three_panes(self, left, centre, self.tabs, sizes=(350, 800, 550))
 
     def apply_theme(self) -> None:
         """Swatches now; the grid, its curves and the large plot are redrawn when the page shows."""

@@ -183,10 +183,11 @@ def test_every_figure_named_in_the_notes_exists():
 
 
 def test_figures_follow_the_theme(app):
-    """The figures are SVG drawn from the theme's colours, rendered as the notes are laid out."""
+    """The figures are SVG drawn from the theme's colours, rendered as the notes are laid out, in the fonts the app
+    bundles (a generic family, `sans-serif`, made Qt search the Mac's aliases and draw in the system's)."""
     from PySide6 import QtCore, QtGui
 
-    from vib_tutorial.gui import figures, style
+    from vib_tutorial.gui import figures, font_metrics, maths, style
     from vib_tutorial.gui.notes_view import NotesBrowser
 
     browser = NotesBrowser()
@@ -197,6 +198,8 @@ def test_figures_follow_the_theme(app):
             for name, build in figures.all_figures().items():
                 svg = build()
                 assert "baseline-shift" not in svg and " dy=" not in svg, f"{name}: Qt ignores a tspan's shift"
+                families = set(re.findall(r"font-family=['\"]([^'\"]+)", svg))
+                assert families <= {font_metrics.SANS_FAMILY, maths.FONT}, f"{name} asks for {families}"
                 assert theme.background in svg and theme.foreground in svg
                 assert theme.mass[0] in svg or theme.force in svg, f"{name} draws its subject in the plots' colour"
                 image = browser.loadResource(QtGui.QTextDocument.ResourceType.ImageResource, QtCore.QUrl(name))
