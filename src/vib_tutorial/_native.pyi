@@ -26,6 +26,21 @@ def full_film_damping(k: float, c: float, x: float, y: float) -> tuple[float, fl
 def srs_peaks(a: Floats, h: float, f: Floats, zeta: float) -> Floats:
     """(5, f): the peaks of y and −y through the record, of the residual's, and of |z|: `shock.srs_peaks_reference`."""
 
+def viv_steps(
+    mt: float,
+    k: float,
+    a_d: float,
+    eps: float,
+    s: Floats,
+    r: Floats,
+    wf: Floats,
+    z0: Floats,
+    h: float,
+    steps: int,
+    keep: int,
+) -> Floats:
+    """(rows, 4 × cases): `self_excited.viv_steps_reference`."""
+
 def expm(a: Floats) -> Floats:
     """e^A, for the tests to check against SciPy's."""
 

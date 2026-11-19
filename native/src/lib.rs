@@ -12,7 +12,7 @@ use numpy::{PyArrayMethods, PyReadonlyArray1, PyReadonlyArray2, PyReadwriteArray
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use vib_kernels::linalg::{Mat, RowsMut, expm, expm_foh};
-use vib_kernels::{film, friction, linear, newton, rub, srs};
+use vib_kernels::{film, friction, linear, newton, rub, srs, viv};
 
 fn mat(a: &PyReadonlyArray2<f64>) -> Mat {
     let a = a.as_array();
@@ -446,6 +446,39 @@ fn srs_peaks<'py>(
     to_numpy(py, Mat::from_rows(5, n, rows.concat()))
 }
 
+/// `Viv`'s cases stepped by RK4: (rows, 4 × cases) (`viv::Viv::run`, `self_excited.viv_steps_reference`).
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn viv_steps<'py>(
+    py: Python<'py>,
+    mt: f64,
+    k: f64,
+    a_d: f64,
+    eps: f64,
+    s: PyReadonlyArray1<'py, f64>,
+    r: PyReadonlyArray1<'py, f64>,
+    wf: PyReadonlyArray1<'py, f64>,
+    z0: PyReadonlyArray1<'py, f64>,
+    h: f64,
+    steps: usize,
+    keep: usize,
+) -> PyResult<Array<'py>> {
+    let (s, r, wf, z0) = (vec1(&s), vec1(&r), vec1(&wf), vec1(&z0));
+    let cols = z0.len();
+    let model = viv::Viv {
+        mt,
+        k,
+        a_d,
+        eps,
+        s: &s,
+        r: &r,
+        wf: &wf,
+    };
+    let out = raise(py.detach(|| model.run(&z0, h, steps, keep)))?;
+    let rows = out.len().checked_div(cols).unwrap_or(0);
+    to_numpy(py, Mat::from_rows(rows, cols, out))
+}
+
 /// e^A, for the tests to check against SciPy's.
 #[pyfunction(name = "expm")]
 fn expm_py<'py>(py: Python<'py>, a: PyReadonlyArray2<'py, f64>) -> PyResult<Array<'py>> {
@@ -483,6 +516,7 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(pi_film, m)?)?;
     m.add_function(wrap_pyfunction!(full_film_damping, m)?)?;
     m.add_function(wrap_pyfunction!(srs_peaks, m)?)?;
+    m.add_function(wrap_pyfunction!(viv_steps, m)?)?;
     m.add_class::<FilmSteps>()?;
     m.add_class::<FrictionSteps>()?;
     m.add_class::<RubSteps>()?;
