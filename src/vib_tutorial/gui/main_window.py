@@ -98,6 +98,14 @@ def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
     )
 
 
+APP_TITLE = "Vibration Tutorial"
+
+
+def window_title(name: str) -> str:
+    """The main window's title while page `name` shows: "Single oscillator — Vibration Tutorial"."""
+    return f"{links.PAGE_TITLES[name].removesuffix(' page')} — {APP_TITLE}"
+
+
 def _follows_chain(page: QtWidgets.QWidget) -> TypeGuard[ChainPage]:
     """Whether a page shows the chain (and is given it); the rotor, Duffing & Mathieu, torsional and continuous
     systems pages have models of their own."""
@@ -157,7 +165,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._introducing = False  # a page's first show opens its Theory tab (introduce_pages): off until run's
         self._arriving = False  # a page shown to be set up (_arrive): its first show leaves the tab be
         notes_render.install()  # the bundled fonts and the UI font, as make_app does (tests build a bare app)
-        self.setWindowTitle("Vibration Tutorial — lumped mass-spring-damper chain")
+        self.setWindowTitle(APP_TITLE)  # and the page's before it, as each shows (`_on_page_changed`)
         # --- the pages: the Simulation page, then the rest, which follow its chain. An empty placeholder
         # holds each of the rest until it's first opened (see _page).
         self.sim_page = SimulationPage()
@@ -257,6 +265,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._adopt("sim_page", self.sim_page)
         self._follow_transport()
         self._opening["sim_page"] = self.sim_page.practice_state()  # it shows as built
+        self.setWindowTitle(window_title("sim_page"))
         if (level := present.saved()) != 0:
             self.set_present(level)
         QtGui.QShortcut(QtGui.QKeySequence("F1"), self, self.show_theory)
@@ -646,6 +655,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._follow_transport()
         self._introduce(showing)
         if showing is not None:
+            self.setWindowTitle(window_title(showing))
             theming.settings().setValue(LAST_PAGE, showing)
             for window in (self.theory_window, self.practice_window):
                 if window is not None and window.isVisible():

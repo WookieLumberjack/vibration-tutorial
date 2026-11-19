@@ -237,6 +237,14 @@ def test_theory_window_searches_the_notes_and_has_a_glossary(app):
     t.close()
 
 
+def test_the_window_is_titled_after_its_page(main_window):
+    """The main window's title names the page showing, then the app (#409 U-8)."""
+    w = main_window
+    assert w.windowTitle() == "Simulation — Vibration Tutorial"
+    w.show_page("duffing_page")
+    assert w.windowTitle() == "Duffing & Mathieu — Vibration Tutorial"
+
+
 def test_find_readies_the_theory_windows_search_from_either_window(main_window):
     """Find (⌘F on macOS, Ctrl+F elsewhere) on a page opens the Theory window with its search box focused and its
     text selected, so typing replaces it; in the Theory window, from its notes, the same. The box names the key
