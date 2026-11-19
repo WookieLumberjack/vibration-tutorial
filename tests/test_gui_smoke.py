@@ -237,6 +237,23 @@ def test_theory_window_searches_the_notes_and_has_a_glossary(app):
     t.close()
 
 
+def test_the_chain_drawing_labels_one_mass_m_and_keeps_its_scale_in_view(main_window):
+    """The Single oscillator's drawing calls its mass m, as its notes do, a chain's m1, m2, …; and the scale's
+    text ("= 6 mm") lies inside the view, descenders and all (#409 U-15)."""
+    w = main_window
+    assert [label.textItem.toPlainText() for label in w.sim_page.chain._labels] == ["m1", "m2", "m3", "m4"]
+    w.resize(1280, 800)
+    w.show_page("sdof_page")
+    for _ in range(5):
+        QtWidgets.QApplication.processEvents()
+    view = w.sdof_page.body
+    assert [label.textItem.toPlainText() for label in view._labels] == ["m"]
+    scale = view._scale_text
+    assert scale.textItem.toPlainText().startswith("= ")
+    box = view.getPlotItem().vb.sceneBoundingRect()
+    assert box.contains(scale.mapRectToScene(scale.boundingRect())), (box, scale.mapRectToScene(scale.boundingRect()))
+
+
 def test_the_window_is_titled_after_its_page(main_window):
     """The main window's title names the page showing, then the app (#409 U-8)."""
     w = main_window
