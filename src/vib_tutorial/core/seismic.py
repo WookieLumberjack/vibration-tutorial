@@ -72,8 +72,10 @@ def with_tank(system: ChainSystem, ratio: float) -> ChainSystem:
 
 def rigid_period(system: ChainSystem) -> float:
     """The period of the whole building as one rigid block on its first storey, T = 2π √(Σm / k₁): a base
-    isolation's period, when k₁ is the bearings under a slab and the storeys above are far stiffer."""
-    return TWO_PI * math.sqrt(float(np.sum(system.masses)) / float(system.stiffness[0]))
+    isolation's period, when k₁ is the bearings under a slab and the storeys above are far stiffer. A chain
+    with no first spring (a free one, from another page) isn't held: inf."""
+    k1 = float(system.stiffness[0])
+    return TWO_PI * math.sqrt(float(np.sum(system.masses)) / k1) if k1 > 0 else math.inf
 
 
 @dataclass(frozen=True)

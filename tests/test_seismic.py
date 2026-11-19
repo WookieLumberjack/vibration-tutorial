@@ -98,6 +98,34 @@ def test_the_building_sways_under_the_record_its_drifting_storey_reddened(main_w
     assert "T = 2π√(Σm/k₁) = 0.993 s" in page.k1_info.text()  # 2π √(5 × 10 t / 2 MN/m)
 
 
+def test_a_free_chain_from_another_page_is_shown_without_failing(main_window):
+    """A chain with no first spring (the substructuring page's free–free trials) reaches the built Seismic page
+    too: it isn't held to the ground, so there's no rigid period to quote (it divided by k₁ = 0)."""
+    import math
+    import warnings
+
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.core.model import ChainSystem
+    from vib_tutorial.core.seismic import rigid_period
+    from vib_tutorial.gui.seismic import TAB_BUILDING
+
+    w = main_window
+    page = w.seismic_page
+    free = ChainSystem(np.full(3, 1e4), np.array([0.0, 5e6, 5e6]), np.zeros(3))
+    assert rigid_period(free) == math.inf
+    w.sim_page.params.set_system(free)  # hidden, as a trial elsewhere sends it
+    assert page.system.stiffness[0] == 0 and "nothing holds the building" in page.k1_info.text()
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no 0 Hz mode divided by
+        w.pages.setCurrentWidget(page)
+        page.tabs.setCurrentIndex(TAB_BUILDING)
+        QtWidgets.QApplication.processEvents()
+    assert not page.tabs.isEnabled() and "nothing holds the building" in page.table.text()
+    page.k1.setValue(5e6)  # held again: the page draws it
+    assert page.tabs.isEnabled() and "Base shear" in page.table.text() and "Base shear" in page.building_note.text()
+
+
 def test_the_records_are_made_at_one_g_and_scaled():
     """The synthesis is linear in a_g: the records kept at 1 g, scaled, are the ones made at the PGA itself."""
     from vib_tutorial.core.seismic import records
