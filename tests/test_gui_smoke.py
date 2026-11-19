@@ -5191,6 +5191,28 @@ def test_notes_text_size_is_one_for_all_and_remembered(app):
         notes_view.set_zoom(1.0)
 
 
+def test_the_rigid_bodys_nudge_shows_on_the_view(main_window):
+    """A start nudged off its axis says so: the axis it was spun about is drawn (dashed) with the principal axes
+    off, and the readout gives the nudge; a plain spin (no nudge) draws neither (#409 N-5)."""
+    from vib_tutorial.gui import rigid_body as r
+
+    w = main_window
+    w.show_page("rigid_body_page")
+    page = w.rigid_body_page
+    page.principal_box.setChecked(False)
+    page.spin_axis.setCurrentIndex(0)
+    page.nudge.setValue(1.0)
+    page.restart()
+    page._draw_now()
+    view = page.view
+    assert view.nudged == 0 and view.principal_labels[0].isVisible() and not view.principal_labels[1].isVisible()
+    assert "1° off principal axis 1 (dashed), toward axis 2" in page.readout.text()
+    page.apply_trial(next(t for t in r.TRIALS if t.nudge == 0.0 and t.rate > 0 and not t.principal))
+    page._draw_now()
+    assert view.nudged is None and not any(label.isVisible() for label in view.principal_labels)
+    assert "off principal axis" not in page.readout.text()
+
+
 def test_rigid_body_page(main_window, app):
     """The 3D rigid body page: before a run nothing to plot; run, every quantity in every frame plots, the snapshot
     holds in each frame; the principal axes' tensor is diagonal; a kick changes L by its impulse; the shapes and

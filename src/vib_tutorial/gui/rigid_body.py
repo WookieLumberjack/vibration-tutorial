@@ -577,7 +577,8 @@ PROBLEMS = tuple(
 
 VIEW_TIP = (
     "<p>The body in 3D, about its centre of mass G: drag to turn the view, double-click to reset it. The coloured "
-    "lines are its own axes x, y, z (dashed: its principal axes 1, 2, 3); the dot, the point mass. With "
+    "lines are its own axes x, y, z (dashed: its principal axes 1, 2, 3, or the one it was spun about when the "
+    "<i>Nudge</i> tipped ω off it); the dot, the point mass. With "
     "<i>Vectors</i> ticked: L, ω and the torque τ, each scaled to fit, and the thin line where ω has pointed.</p>"
 )
 DRIFT_TIP = (
@@ -648,6 +649,8 @@ class BodyView(pg.PlotWidget):
         self.reach = 0.3
         self.show_vectors = True
         self.show_principal = False
+        self.nudged: int | None = None  # the principal axis ω was nudged off at the start: drawn (dashed) even
+        # with the principal axes off, so the small angle to L and ω reads as the nudge (#409 N-5)
         self._last: tuple | None = None
         plot = self.getPlotItem()
         self.space = pg.PlotCurveItem(connect="finite")  # X, Y, Z, dotted
@@ -879,7 +882,8 @@ class BodyView(pg.PlotWidget):
         _, P = body.principal()
         for k in range(3):
             self._line(self.axes[k], self.axis_labels[k], B[:, k], 0.8 * R, True)
-            self._line(self.principal[k], self.principal_labels[k], B @ P[:, k], 0.95 * R, self.show_principal)
+            shown = self.show_principal or k == self.nudged
+            self._line(self.principal[k], self.principal_labels[k], B @ P[:, k], 0.95 * R, shown)
         I_inv = np.linalg.inv(body.inertia())
         omega = B @ (I_inv @ (B.T @ momentum))
         for item, label, v, length in zip(self.vectors, self.labels, (momentum, omega, torque), (1.2, 1.05, 0.7)):
@@ -980,6 +984,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self._snap_t: float | None = None  # the instant dragged to; None: the latest
         self._step_cost = 0.0  # s of computing per step, measured; 0 = not known yet
         self._pace = 1.0  # the share of the time asked for that the frames step, smoothed (below 1: slowed)
+        self._nudge_note = ""  # the readout's word on the start's nudge (`restart`)
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -1235,6 +1240,14 @@ class RigidBodyPage(QtWidgets.QWidget):
         s = self.practice_state()
         self._snap_t = None
         omega = start_rate(self.body, s.spin_axis, s.rate, s.nudge)
+        nudged = s.rate != 0.0 and s.nudge != 0.0
+        self.view.nudged = s.spin_axis if nudged else None
+        self._nudge_note = (
+            f" ω started {s.nudge:g}° off principal axis {s.spin_axis + 1} (dashed), toward axis "
+            f"{(s.spin_axis + 1) % 3 + 1}: the Nudge."
+            if nudged
+            else ""
+        )
         start = rotation.quaternion(rotation.from_euler(*np.radians(s.pose)))
         self.sim = Tumbler(
             self.body, (float(omega[0]), float(omega[1]), float(omega[2])), s.torque, s.held, q=list(start)
@@ -1350,6 +1363,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.readout.setText(
             f"t = {self.sim.t:.2f} s: |ω| = {wn:.3g} rad/s, |L| = {Ln:.4g} N·m·s, energy ½ω·L = {energy:.4g} J; "
             f"ω is {apart:.1f}° from L."
+            + self._nudge_note
             + (
                 f" Playing at {self._pace:.0%} of the speed asked: this fast a spin needs more steps a second "
                 "than a frame has time for."
