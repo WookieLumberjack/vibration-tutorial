@@ -85,10 +85,17 @@ def apply(name: str) -> Theme:
 
 
 def palette(theme: Theme) -> QtGui.QPalette:
-    """The Qt palette for a theme; the platform's own for the Light theme."""
-    if theme.window is None:
-        return QtGui.QPalette()  # resets to the platform palette
+    """The Qt palette for a theme. The Light theme keeps the platform's own but for its secondary text and links:
+    the platform's muted grey is fainter than 4.5:1 on its window on some (#767676 on #ececec, 3.8:1)."""
     c = QtGui.QColor
+    if theme.window is None:
+        pal = QtGui.QPalette()  # the platform's: the roles not set here resolve to it
+        for group in (Group.Active, Group.Inactive):
+            pal.setColor(group, Role.PlaceholderText, c(theme.muted))
+            if theme.link is not None:
+                pal.setColor(group, Role.Link, c(theme.link))
+                pal.setColor(group, Role.LinkVisited, c(theme.link))
+        return pal
     button = c(theme.button)
     pal = QtGui.QPalette()
     for role, color in (

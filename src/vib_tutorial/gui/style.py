@@ -25,7 +25,7 @@ class Theme:
     text: str | None = None
     highlight: str | None = None
     highlighted_text: str | None = None
-    link: str | None = None
+    link: str | None = None  # set in the Light theme too
     disabled: str | None = None  # disabled text
     # --- plots and text
     background: str = "#ffffff"  # plots, animation, energy bars
@@ -79,6 +79,7 @@ class Theme:
 LIGHT = Theme(
     name="Light",
     dark=False,
+    link="#1a5fb4",  # set over the platform's palette, as the secondary text is (`theming.palette`)
     fair="#a35f00",
     mass=("#1f6fd1", "#d46a00", "#0f9a6e", "#a7479d", "#d62728", "#8c564b", "#6b7a00", "#0e9fae"),
     mode=("#3f51b5", "#2a9d8f", "#b08900", "#e76f51", "#6a4c93", "#1982c4", "#62a01a", "#ff595e"),
@@ -168,11 +169,11 @@ SOLARIZED = Theme(
     text="#34474f",
     highlight="#268bd2",
     highlighted_text="#fdf6e3",
-    link="#1a6fb0",
+    link="#17639e",
     disabled="#93a1a1",
     background="#fdf6e3",
     foreground="#3b4f57",
-    muted="#586e75",
+    muted="#52666c",  # 4.9:1 on the window (#586e75 was 4.4)
     faint="#d3cbb7",
     grey="#879696",
     strong="#073642",
