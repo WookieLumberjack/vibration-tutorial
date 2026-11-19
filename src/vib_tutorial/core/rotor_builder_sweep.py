@@ -4,13 +4,13 @@ the steady response to the discs' unbalance.
 The **Campbell diagram** (`sweep`) works the whirl modes out at `N_SPEEDS` speeds from 0 to the top one, each
 branch the k-th frequency in order. Where a branch's frequency meets the shaft's own, f = Ω/2π (the 1X line),
 an unbalance, which turns once a revolution, drives that mode at its own frequency: a **critical speed**, found
-by bisection between the two speeds either side. A forward branch's crossing is the one unbalance drives on
+between the two speeds either side by regula falsi (Illinois) on the branch's frequency less the shaft's. A forward branch's crossing is the one unbalance drives on
 round bearings; a backward one's only shows on anisotropic ones. Each sweep works in a Ritz basis of the
 rotor's lowest undamped modes (`Assembly.basis`, remade at each speed where an oil film changes the stiffness),
 so it costs about a millisecond a speed whatever the mesh.
 
 The **stability map** is the same sweep's damping: each branch's log decrement δ = 2πζ/√(1 - ζ²) against the
-speed, and the speed where the least damped mode of all first grows (`Sweep.onset`), by bisection. API 684 asks
+speed, and the speed where the least damped mode of all first grows (`Sweep.onset`), the same way on its ζ. API 684 asks
 for δ ≥ 0.1 at the running speed.
 
 The **unbalance response** (`unbalance_response`) is the steady state, exactly, in all the DOFs: each disc's
@@ -42,7 +42,8 @@ from .rotor_builder import RPM, TWO_PI, Assembly, Basis, Rotor, WhirlModes, mode
 
 N_SPEEDS = 121
 N_BRANCHES = 8  # the Campbell diagram's and the stability map's
-BISECT = 40  # halvings for a critical speed or an onset
+CROSSING_TOL = 1e-12  # a critical speed's or an onset's, relative to the speed
+CROSSING_STEPS = 60  # at most: regula falsi takes about six
 CRITICALLY_DAMPED = 0.2  # ζ: API 684 doesn't count a crossing whose amplification factor 1/2ζ is under 2.5
 
 
@@ -120,7 +121,7 @@ def sweep(assembly: Assembly, top_rpm: float, n_speeds: int = N_SPEEDS, branches
         gap = hz[:, j] - rpm / 60.0
         for i in range(n_speeds - 1):
             if np.isfinite(gap[i]) and np.isfinite(gap[i + 1]) and gap[i] > 0.0 >= gap[i + 1]:
-                c = _critical(at, j, float(rpm[i]), float(rpm[i + 1]))
+                c = _critical(at, j, float(rpm[i]), float(rpm[i + 1]), float(gap[i]), float(gap[i + 1]))
                 if c is not None:
                     criticals.append(c)
     criticals.sort(key=lambda c: c.rpm)
@@ -128,7 +129,11 @@ def sweep(assembly: Assembly, top_rpm: float, n_speeds: int = N_SPEEDS, branches
     unstable = np.flatnonzero(least < 0)
     if unstable.size:
         i = int(unstable[0])
-        onset = 0.0 if i == 0 else _bisect(lambda r: _least(at(r * RPM)) < 0, float(rpm[i - 1]), float(rpm[i]))
+        if i == 0:
+            onset = 0.0
+        else:
+            lo, hi = float(rpm[i - 1]), float(rpm[i])
+            onset = _crossing(lambda r: _least(at(r * RPM)), lo, hi, float(least[i - 1]), float(least[i]), False)
     return Sweep(rpm, hz, zeta, whirl, least, tuple(criticals), onset)
 
 
@@ -136,22 +141,46 @@ def _least(m: WhirlModes) -> float:
     return float(m.zeta.min()) if m.zeta.size else math.inf
 
 
-def _bisect(past, lo: float, hi: float) -> float:
-    """The speed (rpm) between lo (not past) and hi (past) where `past` turns true."""
-    for _ in range(BISECT):
-        mid = 0.5 * (lo + hi)
-        lo, hi = (lo, mid) if past(mid) else (mid, hi)
+def _crossing(g, lo: float, hi: float, g_lo: float, g_hi: float, zero_past: bool = True) -> float:
+    """The speed (rpm) between lo and hi where the continuous g turns from ahead (at lo, g_lo) to past (at hi,
+    g_hi): past is g ≤ 0, or g < 0 if not `zero_past` (the onset: a mode with ζ = 0 exactly, a free rotor's rigid
+    one, hasn't started to grow). Regula falsi with the Illinois step, about six modes' worth of work where
+    halving to the same width took forty; where g holds at 0 the step falls back to halving. A speed where g
+    can't be had (NaN: the branch has no mode there) counts as past, as the bisection it replaced did."""
+    tol = CROSSING_TOL * max(abs(lo), abs(hi), 1.0)
+    side = 0
+    for _ in range(CROSSING_STEPS):
+        if hi - lo <= tol:
+            break
+        known = math.isfinite(g_hi) and g_lo != g_hi
+        mid = hi - g_hi * (hi - lo) / (g_hi - g_lo) if known else 0.5 * (lo + hi)
+        if not lo < mid < hi:
+            mid = 0.5 * (lo + hi)
+        g_mid = g(mid)
+        if g_mid > 0.0 or (g_mid == 0.0 and not zero_past):  # NaN is past
+            lo, g_lo = mid, g_mid
+            if side == 1:
+                g_hi *= 0.5  # Illinois: an end kept twice counts half, so the steps don't stall against it
+            side = 1
+        else:
+            hi, g_hi = mid, g_mid
+            if side == -1:
+                g_lo *= 0.5
+            side = -1
+    if math.isfinite(g_hi) and g_lo != g_hi and lo < (r := hi - g_hi * (hi - lo) / (g_hi - g_lo)) < hi:
+        return r
     return 0.5 * (lo + hi)
 
 
-def _critical(at: _Speeds, branch: int, lo: float, hi: float) -> Critical | None:
-    """Where branch `branch` meets 1X between lo and hi (rpm)."""
+def _critical(at: _Speeds, branch: int, lo: float, hi: float, g_lo: float, g_hi: float) -> Critical | None:
+    """Where branch `branch` meets 1X between lo and hi (rpm), its frequency less the 1X line's g_lo above and g_hi
+    not, there."""
 
-    def past(r: float) -> bool:
+    def gap(r: float) -> float:
         f = at(r * RPM).hz
-        return branch >= f.size or f[branch] <= r / 60.0
+        return float(f[branch]) - r / 60.0 if branch < f.size else math.nan
 
-    r = _bisect(past, lo, hi)
+    r = _crossing(gap, lo, hi, g_lo, g_hi)
     m = at(r * RPM)
     if branch >= m.hz.size:
         return None

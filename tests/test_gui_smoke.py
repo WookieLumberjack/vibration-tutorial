@@ -4745,10 +4745,13 @@ def test_rotor_builder_by_hand(app, main_window):
     # the sweeps: worked out when their tab shows, again after a change
     page.load_trial(next(i for i, t in enumerate(rb.TRIALS) if t.name == "Campbell diagram: the overhung fan"))
     assert page.sweep_result is not None and "4091 rpm backward" in page.campbell_note.text()
-    page.top_rpm.setValue(6000.0)
+    page.top_rpm.setValue(6000.0)  # a control: swept on the worker, the tab keeping its curves meanwhile
+    assert page.sweep_result is None and page.campbell_note.text() == rb.WORKING
+    page.sweeper.wait()
     assert page.sweep_result is not None and "4091 rpm" in page.campbell_note.text()
     assert "9507" not in page.campbell_note.text()
     page.tabs.setCurrentIndex(rb.TAB_UNBALANCE)
+    page.responder.wait()
     assert page.response is not None and "peaks at" in page.unbalance_note.text()
     page.probe.setValue(1)  # the free end, on the left bearing
     assert "node 1 " in page.unbalance_note.text()
@@ -4757,6 +4760,7 @@ def test_rotor_builder_by_hand(app, main_window):
     assert c.selection == ("disc", 0)
     page.props.unbalance.setValue(0.0)
     page.props.unbalance.editingFinished.emit()
+    page.responder.wait()
     assert page.rotor.discs[0].unbalance == 0 and page.response is not None and "No disc" in page.unbalance_note.text()
     page.swing.setCurrentIndex(rb.SWINGS.index(rb.Swing.UNBALANCE))
     page.tabs.setCurrentIndex(rb.TAB_WHIRL)
@@ -4768,6 +4772,7 @@ def test_rotor_builder_by_hand(app, main_window):
     page.internal.editingFinished.emit()
     assert page.rotor.internal == pytest.approx(1e-4)
     page.tabs.setCurrentIndex(rb.TAB_STABILITY)
+    page.sweeper.wait()
     assert "δ" in page.stability_note.text()
     page.step(0.1)
     w.pages.setCurrentWidget(w.sim_page)  # hidden, the page's frame loop stops
