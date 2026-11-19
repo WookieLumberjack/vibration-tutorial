@@ -22,7 +22,9 @@ core's in `tests/test_added_mass.py` and `tests/test_sloshing.py`.
 
 from __future__ import annotations
 
+import functools
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -85,8 +87,9 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .recompute import Recompute
 from .style import colors
-from .tab_groups import LazyTabs
+from .tab_groups import LazyTabs, tucked_away
 from .theming import add_legend
 
 TAB_BODY, TAB_PLATE, TAB_SLOSH, TAB_DAMPER = range(4)
@@ -718,6 +721,12 @@ def _hz(f: float) -> str:
 NOTES_HTML = load_notes("fluid_structure", figures=fluid_structure_figures.FIGURES, trials=trials_html(TRIALS))
 
 
+def _tagged_modes(key: tuple) -> tuple[tuple, PlateModes]:
+    """The plate's first `PLATE_MODES` modes for key = (plate, fluid, sides): a pure job, for the worker."""
+    plate, fluid, sides = key
+    return key, plate_modes(plate, PLATE_MODES, fluid, sides)
+
+
 class FluidStructurePage(QtWidgets.QWidget):
     """Controls on the left, the flow about the body in the centre, the added mass and a plate in water on the
     right."""
@@ -827,6 +836,9 @@ class FluidStructurePage(QtWidgets.QWidget):
         self.plate_note = note_label()
         self.plate_tab = column(plate, self.beta_plot, self.wetdry_plot, self.plate_note, stretch=False)
         self.modes: PlateModes | None = None
+        # The plate's modes (an integral each, ~14 ms; 0.3 s for a new plate: #409 P-13) on a worker after a
+        # control's change, the tab keeping its dots meanwhile; at once when the tab is picked or a trial shows it.
+        self.plate_worker = Recompute(self._on_plate_modes, self)
 
         # --- right: sloshing
         tank = Form("Tank (rectangular)")
@@ -1057,7 +1069,10 @@ class FluidStructurePage(QtWidgets.QWidget):
 
     def _on_plate(self) -> None:
         self.modes = None
-        self.lazy.stale(self.plate_tab)
+        if not tucked_away(self.plate_tab):  # showing: on the worker, the tab keeping its dots
+            self.plate_worker.request(self._plate_job())
+        else:
+            self.lazy.stale(self.plate_tab)
 
     def _on_mode(self) -> None:
         self.lazy.stale(self.plate_tab)
@@ -1206,13 +1221,24 @@ class FluidStructurePage(QtWidgets.QWidget):
         )
         settle_plots(self)
 
-    def _plate_modes(self) -> PlateModes:
-        if self.modes is None:
-            self.modes = plate_modes(self.plate, PLATE_MODES, self.fluid.value(), int(self.sides.value()))
-        return self.modes
+    def _plate_job(self) -> Callable[[], tuple[tuple, PlateModes]]:
+        """The plate's modes as a pure job, tagged with what they're for."""
+        key = (self.plate, self.fluid.value(), int(self.sides.value()))
+        return functools.partial(_tagged_modes, key)
+
+    def _on_plate_modes(self, tagged: tuple[tuple, PlateModes]) -> None:
+        key, modes = tagged
+        if key != (self.plate, self.fluid.value(), int(self.sides.value())):
+            return  # for a plate since changed: its own job is coming
+        self.modes = modes
+        self._draw_plate()
 
     def _draw_plate(self) -> None:
-        modes = self._plate_modes()
+        if self.modes is None:
+            if not self.plate_worker.busy:  # the tab picked, or a trial: worked out now, which draws it
+                self.plate_worker.now(self._plate_job())
+            return
+        modes = self.modes
         parity = (modes.m % 2) + (modes.n % 2)
         for item, which in zip(self.beta_items, (2, 1, 0)):
             sel = parity == which

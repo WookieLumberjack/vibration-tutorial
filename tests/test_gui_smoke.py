@@ -5476,3 +5476,25 @@ def test_the_simulation_page_hidden_draws_a_chain_sent_from_elsewhere_when_it_sh
     w.pages.setCurrentWidget(sim)
     QtWidgets.QApplication.processEvents()
     assert drawn == [6] and sim.table.rowCount() == 6
+
+
+def test_fluid_plates_modes_work_on_their_worker(main_window, app):
+    """A plate control changed with the Plate tab showing: its modes (0.3 s for a new plate) on the worker, the
+    tab keeping its note and dots meanwhile; the tab picked after a change works them out now (#409 P-13)."""
+    from vib_tutorial.gui.fluid_structure import TAB_BODY, TAB_PLATE
+
+    w = main_window
+    p = w.fluid_page
+    w.pages.setCurrentWidget(p)
+    p.tabs.setCurrentIndex(TAB_PLATE)
+    app.processEvents()
+    note = p.plate_note.text()
+    p.side_a.setValue(p.side_a.value() * 1.3)
+    assert p.plate_worker.busy and p.modes is None and p.plate_note.text() == note
+    p.plate_worker.wait()
+    assert p.modes is not None and p.plate_note.text() != note
+    p.tabs.setCurrentIndex(TAB_BODY)
+    p.side_b.setValue(p.side_b.value() * 1.2)  # hidden: nothing asked for until it shows
+    assert not p.plate_worker.busy and p.modes is None
+    p.tabs.setCurrentIndex(TAB_PLATE)
+    assert p.modes is not None and not p.plate_worker.busy
