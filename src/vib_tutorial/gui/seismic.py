@@ -52,7 +52,7 @@ from ..core.seismic import (
     time_history,
     with_tank,
 )
-from . import seismic_figures, settle_plots
+from . import coalesce, seismic_figures, settle_plots
 from .challenge import ChallengeBox
 from .lesson import (
     Form,
@@ -809,6 +809,7 @@ class SeismicPage(QtWidgets.QWidget):
     def _on_tab(self) -> None:
         self._draw_tab()
 
+    @coalesce.coalesced
     def redraw(self, now: bool = True) -> None:
         """The spectrum, the table and the tab showing: the records a tab draws from on the worker unless `now` (a
         trial, a new chain, the page showing: the reader waits for those, and the tests read them at once)."""

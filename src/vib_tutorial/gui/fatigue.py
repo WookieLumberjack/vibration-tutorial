@@ -34,7 +34,7 @@ from ..core.fatigue import (
     reversals,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
-from . import fatigue_figures, settle_plots
+from . import coalesce, fatigue_figures, settle_plots
 from .layouts import FlowLayout
 from .lesson import (
     Form,
@@ -821,6 +821,7 @@ class FatiguePage(QtWidgets.QWidget):
             "rainflow)."
         )
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         rec, s, c = self.rec, self.stress, self.curve
         i = self.tabs.currentIndex()

@@ -20,6 +20,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from . import coalesce
 from .animation import damper_path, spring_path
 from .style import colors
 
@@ -99,6 +100,7 @@ class QuarterCarView(pg.PlotWidget):
     def _at(self, values: np.ndarray, t: float | np.ndarray):
         return np.interp(t, self.t, values)
 
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         g, t = self.gain, self.now
         x = np.linspace(-AHEAD, AHEAD, 241)  # m along the road, the car at 0

@@ -40,7 +40,7 @@ from ..core.rigid_mounts import (
     torque_roll_axis,
 )
 from ..view_models.text import fixed
-from . import mounts_figures
+from . import coalesce, mounts_figures
 from .frame_loop import FrameLoop
 from .layouts import form_layout
 from .lesson import (
@@ -758,6 +758,7 @@ class MountView(pg.PlotWidget):
         self.setRange(xRange=(-span, span), yRange=(mid - span * 0.75, mid + span * 0.75), padding=0)
         self.draw(self.motion)
 
+    @coalesce.coalesced(leaf=True)
     def draw(self, q: np.ndarray) -> None:
         """The box displaced by q = (u, θ) (a large rotation, so the drawing doesn't stretch)."""
         self.motion = q
@@ -1288,6 +1289,7 @@ class MountsPage(QtWidgets.QWidget):
         self._draw_tab()
         self._show_mode()
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_SWEEP:

@@ -14,12 +14,8 @@ import pytest
 
 pytestmark = pytest.mark.gui
 
-BUDGET = {  # 2026-11-18 (#409 P-7): One mass and Foundations marked; the rest by group
+BUDGET = {  # 2026-11-18 (#409 P-7): One mass, Foundations and Responses marked; the rest by group
     "rigid_body_page": 2,  # its last trial empties the drift plot on restart, then its steps fill it
-    "fatigue_page": 2,
-    "quarter_car_page": 5,
-    "mounts_page": 2,
-    "seismic_page": 6,
     "coupling_page": 4,
     "cms_page": 4,
     "frame_page": 3,
