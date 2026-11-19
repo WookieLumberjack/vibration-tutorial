@@ -103,8 +103,11 @@ class Deferred(QtCore.QObject):
 
     def catch_up(self) -> None:
         if coalesce.active():  # a trial being set up: drawn once, at its end, with its state
-            coalesce.defer(self, "catch_up", self.catch_up)
-            return
+            coalesce.defer(self, "catch_up", self._catch_up)
+        else:
+            self._catch_up()
+
+    def _catch_up(self) -> None:
         if self.stale and not tucked_away(self.widget):
             self.stale = False
             self.draw()

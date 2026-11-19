@@ -24,7 +24,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.damping_models import MODELS, Matched, Model, coulomb_stop
 from ..core.practice import Prediction, Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
-from . import damping_figures, settle_plots
+from . import coalesce, damping_figures, settle_plots
 from .damping_view import DampingView
 from .layouts import ColumnScroll, FlowLayout
 from .lesson import (
@@ -733,6 +733,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.energy_now.setPos(math.log10(self.ratio.value()))
         self.energy_plot.setXRange(math.log10(RATIOS[0]), math.log10(RATIOS[-1]), padding=0)
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_LOSS:

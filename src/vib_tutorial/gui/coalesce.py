@@ -8,6 +8,9 @@ view two to seven times, each with a state only partly loaded. Now:
   Batches nest; the outermost one's end runs what was asked for.
 - `@coalesced` on a page's redraw: called inside a batch, it's only noted (once per page and method, with the
   last call's arguments, after anything noted before it) and runs when the batch ends; outside one, at once.
+  `@coalesced(leaf=True)` on a view's own draw (`DampingView._draw`), which several of its page's setters ask
+  for: it waits until the page's redraws have all run. While the batch's end runs them it stays open, so what
+  they ask for merges with what's waiting.
 - `tab_groups.Deferred` (and so `LazyTabs`) catches up the same way: a tab shown mid-trial draws once, with the
   trial's state, not first with the old one.
 
@@ -21,12 +24,15 @@ redraws per trial against its budget; `tests/test_coalesce.py` checks the mechan
 from __future__ import annotations
 
 import functools
+import inspect
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from typing import Any, cast
 
+MOST_CALLS = 10_000  # a batch's end runs at most this many: past it, redraws are asking for each other in a loop
 _depth = 0
 _pending: dict[tuple[int, str], Callable[[], object]] = {}
+_leaves: dict[tuple[int, str], Callable[[], object]] = {}  # views' draws: after every page-level redraw
 
 
 def active() -> bool:
@@ -34,11 +40,13 @@ def active() -> bool:
     return _depth > 0
 
 
-def defer(owner: object, name: str, call: Callable[[], object]) -> None:
-    """`call` at the batch's end, once for `owner`'s `name` (a later one replaces it, and moves to the end)."""
+def defer(owner: object, name: str, call: Callable[[], object], leaf: bool = False) -> None:
+    """`call` at the batch's end, once for `owner`'s `name` (a later one replaces it, and moves to the end);
+    a `leaf` (a view's own draw) after everything else."""
+    queue = _leaves if leaf else _pending
     key = (id(owner), name)
-    _pending.pop(key, None)
-    _pending[key] = call
+    queue.pop(key, None)
+    queue[key] = call
 
 
 @contextmanager
@@ -55,21 +63,49 @@ def batch() -> Iterator[None]:
 
 
 def flush() -> None:
-    """Run what was deferred, in the order it was last asked for; what that asks for in turn runs too."""
-    while _pending:
-        key = next(iter(_pending))
-        _pending.pop(key)()
+    """Run what was deferred, in the order it was last asked for, the leaves last. The batch stays open while it
+    runs, so what those ask for in turn is deferred too, and merges with what's already waiting: a view asked to
+    draw by its page's redraw and again by its playback draws once."""
+    global _depth
+    _depth += 1
+    try:
+        for _ in range(MOST_CALLS):
+            if not (_pending or _leaves):
+                break
+            queue = _pending or _leaves
+            key = next(iter(queue))
+            queue.pop(key)()
+        else:
+            _pending.clear()
+            _leaves.clear()
+            raise RuntimeError("coalesce.flush: redraws kept asking for each other")
+    finally:
+        _depth -= 1
 
 
-def coalesced[F: Callable[..., Any]](method: F) -> F:
+def coalesced[F: Callable[..., Any]](method: F | None = None, *, leaf: bool = False) -> Any:
     """A page's redraw that runs once per batch, at its end (see the module's docstring); returns None when
-    deferred, so mark only a method whose callers don't use what it returns."""
+    deferred, so mark only a method whose callers don't use what it returns. `leaf=True` for a view's own draw,
+    which its page's redraws feed: it runs after them."""
 
-    @functools.wraps(method)
-    def wrapper(self, *args, **kwargs):
-        if _depth == 0:
-            return method(self, *args, **kwargs)
-        defer(self, method.__name__, functools.partial(method, self, *args, **kwargs))
-        return None
+    def mark(method: F) -> F:
+        # A signal passes what it carries (a tab's index) to a slot that takes it: PySide reads a method's
+        # signature for that, and this wrapper's would take anything, so it drops what the method can't take.
+        params = list(inspect.signature(method).parameters.values())[1:]
+        takes = (
+            None
+            if any(p.kind is p.VAR_POSITIONAL for p in params)
+            else sum(p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD) for p in params)
+        )
 
-    return cast(F, wrapper)
+        @functools.wraps(method)
+        def wrapper(self, *args, **kwargs):
+            args = args if takes is None else args[:takes]
+            if _depth == 0:
+                return method(self, *args, **kwargs)
+            defer(self, method.__name__, functools.partial(method, self, *args, **kwargs), leaf)
+            return None
+
+        return cast(F, wrapper)
+
+    return mark(method) if method is not None else mark
