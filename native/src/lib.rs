@@ -12,7 +12,7 @@ use numpy::{PyArrayMethods, PyReadonlyArray1, PyReadonlyArray2, PyReadwriteArray
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use vib_kernels::linalg::{Mat, RowsMut, expm, expm_foh};
-use vib_kernels::{film, friction, linear, newton, rub};
+use vib_kernels::{film, friction, linear, newton, rub, srs};
 
 fn mat(a: &PyReadonlyArray2<f64>) -> Mat {
     let a = a.as_array();
@@ -431,6 +431,21 @@ fn to_numpy<'py>(py: Python<'py>, m: Mat) -> PyResult<Array<'py>> {
     numpy::PyArray1::from_vec(py, m.data).reshape([m.rows, m.cols])
 }
 
+/// The SRS oscillators' peaks, (5, f) (`srs::srs_peaks`, `shock.srs_peaks_reference`).
+#[pyfunction]
+fn srs_peaks<'py>(
+    py: Python<'py>,
+    a: PyReadonlyArray1<'py, f64>,
+    h: f64,
+    f: PyReadonlyArray1<'py, f64>,
+    zeta: f64,
+) -> PyResult<Array<'py>> {
+    let (a, f) = (vec1(&a), vec1(&f));
+    let rows = raise(py.detach(|| srs::srs_peaks(&a, h, &f, zeta)))?;
+    let n = f.len();
+    to_numpy(py, Mat::from_rows(5, n, rows.concat()))
+}
+
 /// e^A, for the tests to check against SciPy's.
 #[pyfunction(name = "expm")]
 fn expm_py<'py>(py: Python<'py>, a: PyReadonlyArray2<'py, f64>) -> PyResult<Array<'py>> {
@@ -464,8 +479,10 @@ fn foh_discretize_py<'py>(
 #[pymodule]
 fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("ECCENTRICITY_MAX", film::ECCENTRICITY_MAX)?;
+    m.add("RESIDUAL_POINTS", srs::RESIDUAL_POINTS)?;
     m.add_function(wrap_pyfunction!(pi_film, m)?)?;
     m.add_function(wrap_pyfunction!(full_film_damping, m)?)?;
+    m.add_function(wrap_pyfunction!(srs_peaks, m)?)?;
     m.add_class::<FilmSteps>()?;
     m.add_class::<FrictionSteps>()?;
     m.add_class::<RubSteps>()?;

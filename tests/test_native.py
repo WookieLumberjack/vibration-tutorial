@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import scipy.linalg
 
-from vib_tutorial.core import duffing, fluid_bearing, foh, native, nonlinear_test, torsional, torsional_startup
+from vib_tutorial.core import duffing, fluid_bearing, foh, native, nonlinear_test, shock, torsional, torsional_startup
 from vib_tutorial.core.foh import foh_discretize
 from vib_tutorial.core.forcing import ForceKind
 from vib_tutorial.core.model import ChainSystem, state_space
@@ -64,6 +64,7 @@ def test_stub_names_what_the_module_has():
 @needs_native
 def test_constants_agree():
     assert native.module.ECCENTRICITY_MAX == fluid_bearing.ECCENTRICITY_MAX
+    assert native.module.RESIDUAL_POINTS == shock.RESIDUAL_POINTS
 
 
 @needs_native
@@ -459,3 +460,30 @@ def test_steady_response_matches_the_reference(case, monkeypatch):
     assert got.cycles == want.cycles
     np.testing.assert_allclose(got.x, want.x, rtol=0, atol=1e-8 * np.abs(want.x).max())
     np.testing.assert_allclose(got.harmonics, want.harmonics, rtol=0, atol=1e-8 * want.harmonics.max())
+
+
+@needs_native
+@pytest.mark.parametrize("shape", [shock.Shape.HALF_SINE, shock.Shape.SQUARE, shock.Shape.TRANSIENT, shock.Shape.SINES])
+@pytest.mark.parametrize("zeta", [0.0, 0.05, 0.3])
+def test_srs_peaks_match_the_reference(shape, zeta):
+    pulse = shock.Pulse(shape=shape, noise=0.05)
+    f = shock.bank(pulse)
+    rec = shock.record(pulse, shock.sample_rate(pulse, float(f[-1])))
+    want = shock.srs_peaks_reference(rec.a, rec.h, f, zeta)
+    got = native.module.srs_peaks(np.ascontiguousarray(rec.a), rec.h, f, zeta)
+    assert got.shape == want.shape == (5, f.size)
+    np.testing.assert_allclose(got, want, rtol=1e-9, atol=1e-12 * np.max(want))
+
+
+@needs_native
+def test_srs_peaks_at_the_records_edges_match_the_reference():
+    f = np.array([5.0, 50.0])
+    for a in (np.array([1.0]), np.array([0.0, 1.0]), np.array([2.0, 1.0, 0.0])):  # no inside peak to refine
+        want = shock.srs_peaks_reference(a, 1e-3, f, 0.05)
+        got = native.module.srs_peaks(a, 1e-3, f, 0.05)
+        np.testing.assert_allclose(got, want, rtol=1e-9, atol=1e-12 * np.max(np.abs(want)))
+    for bad in ((np.array([]), 0.05), (np.array([1.0]), 1.0)):
+        with pytest.raises(ValueError):
+            native.module.srs_peaks(bad[0], 1e-3, f, bad[1])
+        with pytest.raises(ValueError):
+            shock.srs_peaks_reference(bad[0], 1e-3, f, bad[1])

@@ -13,6 +13,7 @@ from numpy.typing import NDArray
 Floats = NDArray[np.float64]
 
 ECCENTRICITY_MAX: float
+RESIDUAL_POINTS: int
 
 def pi_film(
     k: float, c: float, x: float, y: float, vx: float, vy: float, omega: float
@@ -21,6 +22,9 @@ def pi_film(
 
 def full_film_damping(k: float, c: float, x: float, y: float) -> tuple[float, float, float]:
     """`fluid_bearing.full_film_damping_reference`."""
+
+def srs_peaks(a: Floats, h: float, f: Floats, zeta: float) -> Floats:
+    """(5, f): the peaks of y and −y through the record, of the residual's, and of |z|: `shock.srs_peaks_reference`."""
 
 def expm(a: Floats) -> Floats:
     """e^A, for the tests to check against SciPy's."""
