@@ -26,7 +26,7 @@ from functools import partial
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from . import figures, maths, notes_render
+from . import figures, maths, notes_render, progress
 from .style import colors
 from .theming import settings
 
@@ -102,6 +102,7 @@ class NotesBrowser(QtWidgets.QTextBrowser):
     def __init__(self, html: str = "", parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self._html = ""
+        self._marked = -1  # progress.version() as last drawn
         self.footer = ""  # after the notes, whatever they're set to: the page's "Next: …" (`links.next_html`)
         self._base = self.font().pointSizeF()  # the text's size at zoom 1
         self._wheel = 0
@@ -116,9 +117,15 @@ class NotesBrowser(QtWidgets.QTextBrowser):
 
     def setHtml(self, text: str) -> None:
         self._html = text
+        self._marked = progress.version()
         size = round(self.text_px() * maths.INLINE_SIZE)
         self.document().setDefaultStyleSheet(f".m {{ font-size: {size}px; }}")
-        super().setHtml(sized(text + self.footer, self._zoom))
+        super().setHtml(sized(progress.marks(text) + self.footer, self._zoom))  # the reader's goals ticked
+
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
+        super().showEvent(event)
+        if self._html and self._marked != progress.version():  # a trial tried or a problem solved since
+            self.refresh()
 
     def refresh(self) -> None:
         """Draw the equations and figures again (in a new theme), at the same place."""
