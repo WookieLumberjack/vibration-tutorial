@@ -30,6 +30,10 @@ them and every frame drew the curves again, and then copied them too (20 ms a fr
 #409 N-2). `size_pixmap_cache` gives it `PIXMAP_CACHE_MB`, room for a few pages' held plots at 2× on a large
 screen; make_app calls it once the app exists, since making the QApplication sets the limit back to 10 MB.
 
+Units. An axis scales its numbers to an SI prefix by default, and writes it before the units: "m%", "k°", "mdB",
+"krpm", none of them a unit. An axis labelled in one of `NO_PREFIX` (or in dB of anything) keeps its numbers
+as they are (`_set_label`; #409 U-18).
+
 Wide lines. Qt strokes a polyline wider than 1 px as one outline, and a curve that zigzags (a response with a
 stiff mode in it, a noisy signal) makes that outline slow: the Numerical integration page's 2 px responses took
 ~35 ms a paint, against ~1 ms at 1 px. pyqtgraph draws a solid, opaque, wide pen as separate segments instead,
@@ -214,6 +218,31 @@ def _paint_legend(self, p, *args) -> None:
         _legend_paint(self, p, *args)
 
 
+NO_PREFIX = frozenset({"%", "°", "deg", "rpm"})  # units an SI prefix makes nonsense of; dB… too
+
+
+def _prefixless(units: object) -> bool:
+    return isinstance(units, str) and (units in NO_PREFIX or units.startswith("dB"))
+
+
+_original_set_label = pg.AxisItem.setLabel
+
+
+def _set_label(self, text=None, units=None, unitPrefix=None, **args) -> None:
+    """`AxisItem.setLabel`, with no SI prefix for units it makes nonsense of (see the module's docstring)."""
+    _original_set_label(self, text, units, unitPrefix, **args)
+    if _prefixless(self.labelUnits):
+        self.enableAutoSIPrefix(False)  # which works out a prefix all the same, from the range now: drop it
+        self.autoSIPrefixScale, self.labelUnitPrefix = 1.0, ""
+        self._updateLabel()
+        self.picture = None  # the ticks, labelled again unscaled
+        self.update()
+        self._prefix_off = True
+    elif getattr(self, "_prefix_off", False):  # relabelled in units that take one
+        self.enableAutoSIPrefix(True)
+        self._prefix_off = False
+
+
 def install() -> None:
     """Grids opaque and under the data, titles that wrap, pens and markers to the theme's scale, wide lines in
     segments; see the module's docstring."""
@@ -222,6 +251,7 @@ def install() -> None:
     pg.ScatterPlotItem.setSize = _scaled_set_size
     pg.AxisItem.generateDrawSpecs = _opaque_grid_specs
     pg.AxisItem.setGrid = _set_grid
+    pg.AxisItem.setLabel = _set_label
     pg.LabelItem.resizeEvent = _wrap_to_width
     pg.LabelItem.updateMin = _update_min
     pg.PlotItem.addItem = _add_item
