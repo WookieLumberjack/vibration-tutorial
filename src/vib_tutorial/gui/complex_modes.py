@@ -39,7 +39,7 @@ from ..core.modal import TWO_PI, ModalResult, modal_analysis
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, number, pick, rounded
 from ..core.presets import tuned_mass_damper
-from . import complex_figures, maths, weak
+from . import coalesce, complex_figures, maths, weak
 from .axes import log_axes
 from .drag import DragDot
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
@@ -927,6 +927,7 @@ class ComplexModesPage(QtWidgets.QWidget):
             self.recompute()
 
     # ------------------------------------------------------------- computing
+    @coalesce.coalesced
     def recompute(self) -> None:
         self._dirty = False
         if self.system is None:

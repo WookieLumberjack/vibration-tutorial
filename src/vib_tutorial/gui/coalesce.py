@@ -8,6 +8,8 @@ view two to seven times, each with a state only partly loaded. Now:
   Batches nest; the outermost one's end runs what was asked for.
 - `@coalesced` on a page's redraw: called inside a batch, it's only noted (once per page and method, with the
   last call's arguments, after anything noted before it) and runs when the batch ends; outside one, at once.
+  `@coalesced(covers=("_draw_tab",))` on a redraw that draws the tab itself: a trial that switches the tab
+  (asking for `_draw_tab`) and then redraws runs `redraw` alone, `_draw_tab` once inside it.
   `@coalesced(leaf=True)` on a view's own draw (`DampingView._draw`), which several of its page's setters ask
   for: it waits until the page's redraws have all run. While the batch's end runs them it stays open, so what
   they ask for merges with what's waiting.
@@ -33,6 +35,7 @@ MOST_CALLS = 10_000  # a batch's end runs at most this many: past it, redraws ar
 _depth = 0
 _pending: dict[tuple[int, str], Callable[[], object]] = {}
 _leaves: dict[tuple[int, str], Callable[[], object]] = {}  # views' draws: after every page-level redraw
+_covers: dict[tuple[int, str], tuple[str, ...]] = {}  # what each waiting redraw runs itself
 
 
 def active() -> bool:
@@ -40,11 +43,19 @@ def active() -> bool:
     return _depth > 0
 
 
-def defer(owner: object, name: str, call: Callable[[], object], leaf: bool = False) -> None:
+def defer(
+    owner: object, name: str, call: Callable[[], object], leaf: bool = False, covers: tuple[str, ...] = ()
+) -> None:
     """`call` at the batch's end, once for `owner`'s `name` (a later one replaces it, and moves to the end);
-    a `leaf` (a view's own draw) after everything else."""
+    a `leaf` (a view's own draw) after everything else. `covers`: `owner`'s methods this one runs itself, so
+    waiting ones are dropped; and this one is dropped while one that covers it waits."""
     queue = _leaves if leaf else _pending
     key = (id(owner), name)
+    if any(name in _covers.get(k, ()) for k in _pending if k[0] == key[0] and k != key):
+        return  # a waiting redraw of the same owner draws it
+    for part in covers:
+        _pending.pop((key[0], part), None)
+    _covers[key] = covers
     queue.pop(key, None)
     queue[key] = call
 
@@ -74,19 +85,25 @@ def flush() -> None:
                 break
             queue = _pending or _leaves
             key = next(iter(queue))
-            queue.pop(key)()
+            call = queue.pop(key)
+            _covers.pop(key, None)
+            call()
         else:
             _pending.clear()
             _leaves.clear()
+            _covers.clear()
             raise RuntimeError("coalesce.flush: redraws kept asking for each other")
     finally:
         _depth -= 1
 
 
-def coalesced[F: Callable[..., Any]](method: F | None = None, *, leaf: bool = False) -> Any:
+def coalesced[F: Callable[..., Any]](
+    method: F | None = None, *, leaf: bool = False, covers: tuple[str, ...] = ()
+) -> Any:
     """A page's redraw that runs once per batch, at its end (see the module's docstring); returns None when
     deferred, so mark only a method whose callers don't use what it returns. `leaf=True` for a view's own draw,
-    which its page's redraws feed: it runs after them."""
+    which its page's redraws feed: it runs after them. `covers`: the page's other coalesced methods this one
+    calls itself (`redraw` covers `_draw_tab`), so asking for both runs this one alone."""
 
     def mark(method: F) -> F:
         # A signal passes what it carries (a tab's index) to a slot that takes it: PySide reads a method's
@@ -103,7 +120,7 @@ def coalesced[F: Callable[..., Any]](method: F | None = None, *, leaf: bool = Fa
             args = args if takes is None else args[:takes]
             if _depth == 0:
                 return method(self, *args, **kwargs)
-            defer(self, method.__name__, functools.partial(method, self, *args, **kwargs), leaf)
+            defer(self, method.__name__, functools.partial(method, self, *args, **kwargs), leaf, covers)
             return None
 
         return cast(F, wrapper)

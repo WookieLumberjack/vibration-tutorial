@@ -35,7 +35,7 @@ from ..core.practice import Prediction, Problem, Question, Requirement, at_most,
 from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbler, compare
 from ..core.rotation import Turning
 from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
-from . import rigid_body_figures
+from . import coalesce, rigid_body_figures
 from .cms_time import SampleBuffer
 from .components_tab import ComponentsTab
 from .equations_snapshot import bracket, equation, snapshot_html
@@ -851,6 +851,7 @@ class BodyView(pg.PlotWidget):
             self.ball.hide()
             self.far.setData([], [])
 
+    @coalesce.coalesced(leaf=True)
     def draw(
         self, q: np.ndarray, momentum: np.ndarray, torque: np.ndarray, trail: np.ndarray, on_body: np.ndarray
     ) -> None:
@@ -1313,6 +1314,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self._draw_tab()
         self._draw_now()
 
+    @coalesce.coalesced
     def _draw_now(self) -> None:
         n = self.history.size
         if n == 0:
@@ -1348,6 +1350,7 @@ class RigidBodyPage(QtWidgets.QWidget):
             )
         )
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_COMPONENTS:
