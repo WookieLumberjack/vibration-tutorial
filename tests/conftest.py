@@ -55,12 +55,18 @@ def free_windows(request):
     a failed test, whose traceback still holds its window.
 
     It fails a test in which a slot raised, too: Qt only prints the exception, and `sys.last_exc` keeps it,
-    with the frames that hold the window."""
+    with the frames that hold the window.
+
+    And it forgets what the test tried, answered and solved (`progress.reset`): the course map counts them, so
+    a later test in the worker would read another's progress in the first page's notes."""
     from PySide6 import QtCore, QtWidgets
+
+    from vib_tutorial.gui import progress
 
     _forget_exception()
     before = set(QtWidgets.QApplication.topLevelWidgets())
     yield
+    progress.reset()
     raised = _forget_exception()  # as text: the exception itself holds the frames, and so the window
     refs = _close_new(before)
     del before

@@ -92,7 +92,7 @@ KEYS = (
         "Alt+PgDown / Alt+PgUp",
         "the page's next or previous Thing to try (◂ ▸ beside them); presenting, its note shows large",
     ),
-    ("Ctrl+F", "search the notes, in the Theory window"),
+    ("Ctrl+F", "search every page's notes, in the Theory window (from a page, it opens the window there)"),
     ("Alt+← / Alt+→", "back and forward in the Theory window"),
     (
         "Ctrl+= or Ctrl++ / Ctrl+- / Ctrl+0 / Ctrl+wheel",
@@ -103,16 +103,20 @@ KEYS = (
 MAC_KEYS = (("Alt+", "⌥"), ("Ctrl+", "⌘"), ("Alt+← / Alt+→", "⌘[ / ⌘]"))  # applied last to first: Alt is ⌥ there
 
 
-def keys_html(mac: bool | None = None) -> str:
-    """`KEYS` as a table; with ⌘ for Ctrl on macOS (`mac` None: on this platform)."""
+def key_text(keys: str, mac: bool | None = None) -> str:
+    """`keys` (as `KEYS` writes them) as this platform writes them: ⌘ for Ctrl and ⌥ for Alt on macOS (`mac`
+    None: on this platform)."""
     if mac is None:
         mac = sys.platform == "darwin"
-    rows = []
-    for keys, what in KEYS:
-        if mac:
-            for pc, apple in reversed(MAC_KEYS):  # the whole Alt pair first: its ⌘ is no Ctrl+
-                keys = keys.replace(pc, apple)
-        rows.append(f"<tr><td><b>{keys}</b></td><td>{what}</td></tr>")
+    if mac:
+        for pc, apple in reversed(MAC_KEYS):  # the whole Alt pair first: its ⌘ is no Ctrl+
+            keys = keys.replace(pc, apple)
+    return keys
+
+
+def keys_html(mac: bool | None = None) -> str:
+    """`KEYS` as a table, as this platform writes them (`key_text`)."""
+    rows = [f"<tr><td><b>{key_text(keys, mac)}</b></td><td>{what}</td></tr>" for keys, what in KEYS]
     return '<table cellspacing="0" cellpadding="3">' + "".join(rows) + "</table>"
 
 
