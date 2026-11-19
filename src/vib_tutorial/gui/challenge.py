@@ -28,6 +28,7 @@ import numpy as np
 from PySide6 import QtCore, QtWidgets
 
 from ..core.practice import Problem, Question
+from . import coalesce
 from .lesson import note_label
 
 POLL_MS = 250  # how often the box reads the page's settings while it shows
@@ -124,7 +125,8 @@ class ChallengeBox(QtWidgets.QGroupBox):
     def start_over(self) -> None:
         q = self.question
         if q is not None and q.setup is not None:
-            self.page.load_setup(dict(q.setup))
+            with coalesce.batch():  # the page's redraws once, with the whole setup loaded
+                self.page.load_setup(dict(q.setup))
         self.poll(force=True)
 
     def _on_pick(self, index: int) -> None:

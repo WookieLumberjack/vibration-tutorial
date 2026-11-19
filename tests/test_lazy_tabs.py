@@ -62,3 +62,23 @@ def test_a_deferred_panel_draws_when_it_shows(app):
     deferred.request()
     assert drawn == [1, 1]
     window.close()
+
+
+def test_a_tab_shown_mid_trial_draws_once_at_its_end(app):
+    from vib_tutorial.gui import coalesce
+
+    tabs = QtWidgets.QTabWidget()
+    first, second = QtWidgets.QWidget(), QtWidgets.QWidget()
+    tabs.addTab(first, "1")
+    tabs.addTab(second, "2")
+    drawn: list[str] = []
+    lazy = LazyTabs(tabs, {first: lambda: drawn.append("1"), second: lambda: drawn.append("2")})
+    tabs.show()
+    lazy.stale()
+    assert drawn == ["1"]  # the one showing, at once
+    with coalesce.batch():
+        tabs.setCurrentWidget(second)  # a trial's tab, before its state
+        lazy.stale(second)  # its state loaded
+        assert drawn == ["1"]
+    assert drawn == ["1", "2"]  # once, after both
+    tabs.close()

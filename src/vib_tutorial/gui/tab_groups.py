@@ -15,7 +15,7 @@ tabs (ten in one row didn't fit). Reach a view with `tabs.show_page(widget)` and
 Balancing and bearing panels. Those panels draw only while their tab shows, through a `Deferred`
 (`tab_groups.py`): `request()` draws now or marks it stale (`tucked_away`, which checks the tabs above them
 too: a panel that's its group's current tab isn't `isHidden()` while another group shows), and it draws on the
-panel's Show event or `catch_up()` (the page calls it on a tab switch, since a window never shown gets no show
+panel's Show event or `catch_up()` (inside a `coalesce.batch()`, a trial's setup, once at its end) (the page calls it on a tab switch, since a window never shown gets no show
 events). A tab widget's tabs drawn only while they show are a `LazyTabs` (a `Deferred` per tab; `stale(*tabs)`
 after a change): use it, not a hand-kept stale set. They're still built with the page, so the right pane keeps
 their minimum widths. What they keep as state (the bearing panel's load box, the balancing buttons) stays
@@ -28,6 +28,8 @@ from collections.abc import Callable, Mapping
 from typing import TypeGuard
 
 from PySide6 import QtCore, QtWidgets
+
+from . import coalesce
 
 
 class TabGroups(QtWidgets.QTabWidget):
@@ -100,6 +102,9 @@ class Deferred(QtCore.QObject):
         self.catch_up()
 
     def catch_up(self) -> None:
+        if coalesce.active():  # a trial being set up: drawn once, at its end, with its state
+            coalesce.defer(self, "catch_up", self.catch_up)
+            return
         if self.stale and not tucked_away(self.widget):
             self.stale = False
             self.draw()

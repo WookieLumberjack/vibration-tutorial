@@ -16,6 +16,7 @@ from ..core import (
 )
 from . import (
     accessible,
+    coalesce,
     crosshair,
     display_size,
     errors,
@@ -444,11 +445,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # changed it (a setup may describe only the page's own chain).
         chain = self._opening_chain.get(self.page_name(page) or "")
         params = self.sim_page.params
-        if chain is not None:
-            params.set_system(chain.copy())
-        page.load_setup(setup)
-        if chain is not None and not _same_chain(self.sim_page.sim.system, chain):
-            params.set_system(chain.copy())
+        with coalesce.batch():  # the page's redraws once, with the whole setup loaded
+            if chain is not None:
+                params.set_system(chain.copy())
+            page.load_setup(setup)
+            if chain is not None and not _same_chain(self.sim_page.sim.system, chain):
+                params.set_system(chain.copy())
         if any(run.isChecked() or run.started for run in page.findChildren(RunButton)):
             for button in page.findChildren(QtWidgets.QPushButton):
                 if button.text() == "Reset":  # beside its Start: back to t = 0, waiting for Start
@@ -496,7 +498,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show_page(name)
         page = self._page(name)
         assert isinstance(page, PracticePage), "only pages with problems are set up"
-        page.load_setup(setup)
+        with coalesce.batch():
+            page.load_setup(setup)
 
     def _practice_state(self, name: str):
         """Page `name`'s settings, which a practice spec checks."""

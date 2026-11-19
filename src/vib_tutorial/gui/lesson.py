@@ -14,7 +14,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.practice import Prediction
 from ..view_models.text import db as db  # re-exported for the pages
 from ..view_models.text import fmt as fmt
-from . import accessible, weak
+from . import accessible, coalesce, weak
 from .axes import log_axes
 from .layouts import form_layout, plot_height
 from .live_label import LiveLabel as LiveLabel  # re-exported for the pages
@@ -324,7 +324,8 @@ class TrialBox(QtWidgets.QGroupBox):
         if p is None:
             self.asking = None
             self.ask.setVisible(False)
-            self.picked.emit(i)
+            with coalesce.batch():  # the page's redraws once, with the whole trial loaded
+                self.picked.emit(i)
             return
         self.asking = i
         self.note.setVisible(False)
@@ -355,7 +356,8 @@ class TrialBox(QtWidgets.QGroupBox):
         self.asking = None
         self.ask.setVisible(False)
         self.verdict.setVisible(bool(self.verdict.text()))
-        self.picked.emit(i)
+        with coalesce.batch():  # the page's redraws once, with the whole trial loaded
+            self.picked.emit(i)
 
 
 def trials_html(trials) -> str:
