@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from PySide6 import QtCore, QtWidgets
 
-from . import plot_patches
+from . import coalesce, plot_patches
 from .drag import DragLine
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
@@ -144,11 +144,16 @@ class Playback(QtCore.QObject):
 
     def _move(self, t: float) -> None:
         self.t = t
+        self._place()
+
+    @coalesce.coalesced
+    def _place(self) -> None:
+        """The cursors, the clock and the page's body at `t`: once a trial, at its end (`coalesce`)."""
         for line in self.cursors:
             if not line.moving:
-                line.set_value(t)
+                line.set_value(self.t)
         self._show_clock()
-        self.moved.emit(t)
+        self.moved.emit(self.t)
 
     def _show_clock(self) -> None:
         self.clock.setText(f"t = {self.t:.2f} s")

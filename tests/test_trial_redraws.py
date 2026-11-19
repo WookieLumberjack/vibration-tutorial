@@ -14,13 +14,7 @@ import pytest
 
 pytestmark = pytest.mark.gui
 
-BUDGET = {  # 2026-11-18, the mechanism in (#409 P-7); the pages' redraws marked next
-    "sdof_page": 2,
-    "pendulum_page": 3,
-    "transient_page": 2,
-    "periodic_page": 2,
-    "damping_page": 4,
-    "isolation_page": 4,
+BUDGET = {  # 2026-11-18 (#409 P-7): the One mass group marked; the rest by group
     "energy_page": 2,
     "frf_page": 3,
     "complex_page": 2,

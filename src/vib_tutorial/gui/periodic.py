@@ -27,7 +27,7 @@ from ..core.periodic import (
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import Oscillator, frequency_grid, receptance
-from . import periodic_figures, settle_plots
+from . import coalesce, periodic_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -699,6 +699,7 @@ class PeriodicPage(QtWidgets.QWidget):
         self.xseries_item.setData(t, np.where(np.isfinite(approx), approx, np.nan), connect="finite")
         self.force_plot.setXRange(0.0, 2 * T, padding=0)
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_LINES:

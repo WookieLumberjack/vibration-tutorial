@@ -33,7 +33,7 @@ from ..core.pendulum import (
     swing,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, kept, number, pick, rounded
-from . import pendulum_figures, settle_plots
+from . import coalesce, pendulum_figures, settle_plots
 from .lesson import (
     Dot,
     Form,
@@ -777,6 +777,7 @@ class PendulumPage(QtWidgets.QWidget):
         else:
             self.readout.setText("No restoring moment at θ = 0: nothing to oscillate about.")
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_PERIOD:

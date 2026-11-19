@@ -22,6 +22,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.pendulum import Kind, Pendulum
+from . import coalesce
 from .style import colors
 
 PLUCK_TIP = (
@@ -66,6 +67,7 @@ class PendulumView(pg.PlotWidget):
         self.pendulum = Pendulum()
         self.reach = 1.0
         self.theta = 0.0
+        self._ghost_at: float | None = None  # the linearized ghost's angle, or None
         self.held = False
         self.support = pg.PlotDataItem(connect="finite")
         self.rest = pg.PlotDataItem()
@@ -186,7 +188,12 @@ class PendulumView(pg.PlotWidget):
 
     def set_angle(self, theta: float, ghost: float | None = None) -> None:
         """Draw it at θ (rad), and the linearized ghost at `ghost` (hidden for None)."""
-        self.theta = theta
+        self.theta, self._ghost_at = theta, ghost
+        self._draw_body()
+
+    @coalesce.coalesced(leaf=True)
+    def _draw_body(self) -> None:
+        theta, ghost = self.theta, self._ghost_at
         r = 0.09
         xs, ys, bob = self._shape(theta)
         self.body.setData(xs, ys)

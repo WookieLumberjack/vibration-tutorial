@@ -28,7 +28,7 @@ from ..core.transient import (
     pulse_response,
     step_metrics,
 )
-from . import settle_plots, transient_figures
+from . import coalesce, settle_plots, transient_figures
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -829,6 +829,7 @@ class TransientPage(QtWidgets.QWidget):
         self.conv_plot.setXRange(0, span, padding=0)
         self.conv_plot.setYRange(-1.1, 1.1, padding=0)
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_SPECTRUM:

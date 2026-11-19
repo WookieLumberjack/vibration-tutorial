@@ -39,7 +39,7 @@ from ..view_models.isolation import (
     IsolationTrial,
     isolator,
 )
-from . import isolation_figures, settle_plots
+from . import coalesce, isolation_figures, settle_plots
 from .challenge import ChallengeBox
 from .drag import DragLine
 from .isolation_view import IsolationView
@@ -646,6 +646,7 @@ class IsolationPage(QtWidgets.QWidget):
         if self.tabs.currentIndex() == TAB_CHART:
             self._draw_chart()
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_START:

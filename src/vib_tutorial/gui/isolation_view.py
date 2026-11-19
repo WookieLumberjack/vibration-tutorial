@@ -28,6 +28,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.isolation import Mount
+from . import coalesce
 from .animation import damper_path, spring_path
 from .style import colors
 
@@ -194,6 +195,7 @@ class IsolationView(pg.PlotWidget):
             dy += [*b, np.nan]
         return sx, sy, dx, dy
 
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         x, stage, phase, floor, force = self.state
         lift = float(np.clip(self.gain * x, -MOST - 0.1, MOST + 0.1))

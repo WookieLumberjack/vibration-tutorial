@@ -23,6 +23,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.damping_models import MODELS, Model
+from . import coalesce
 from .animation import damper_path, spring_path
 from .style import colors
 
@@ -147,6 +148,7 @@ class DampingView(pg.PlotWidget):
         self._draw()
 
     # ---------------------------------------------------------------- drawing
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         if Model.COULOMB in self._rows:
             y = self._rows[Model.COULOMB] + FLOOR
