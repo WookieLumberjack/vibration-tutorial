@@ -1792,12 +1792,13 @@ def test_log_axis_labels(app):
 
 
 def test_startup_skips_scipy_signal():
-    """scipy.signal (and the scipy.stats it pulls in) costs ~0.9 s; only the modal test needs it."""
+    """scipy.signal (and the scipy.stats it pulls in) costs ~0.9 s; only the modal test needs it. scipy.optimize
+    ~90 ms, for one brentq on the first page (#409 P-16): the window and the course's first page load neither."""
     import subprocess
     import sys
 
     code = (
-        "import sys; import vib_tutorial.gui.main_window; "
+        "import sys; import vib_tutorial.gui.main_window; import vib_tutorial.gui.sdof; "
         "print([m for m in ('scipy.signal', 'scipy.stats', 'scipy.optimize') if m in sys.modules])"
     )
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
