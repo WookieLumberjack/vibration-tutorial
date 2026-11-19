@@ -148,12 +148,14 @@ decisions.</p>
 <p>Provided "as is", without warranty of any kind. Released under the MIT License.
 <a href="https://github.com/WookieLumberjack/vibration-tutorial">github.com/WookieLumberjack/vibration-tutorial</a></p>
 """
-GUIDED = "window/guided"  # the first run's Theory tab has been shown (guide_first_run)
+INTRODUCED = "window/introduced"  # the pages whose Theory tab their first show opened (introduce_pages)
 
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self) -> None:
         super().__init__()
+        self._introducing = False  # a page's first show opens its Theory tab (introduce_pages): off until run's
+        self._arriving = False  # a page shown to be set up (_arrive): its first show leaves the tab be
         notes_render.install()  # the bundled fonts and the UI font, as make_app does (tests build a bare app)
         self.setWindowTitle("Vibration Tutorial — lumped mass-spring-damper chain")
         # --- the pages: the Simulation page, then the rest, which follow its chain. An empty placeholder
@@ -495,7 +497,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def set_up_page(self, name: str, setup: dict) -> None:
         """Show page `name` set up as a practice problem's `setup` says."""
-        self.show_page(name)
+        self._arrive(name)
         page = self._page(name)
         assert isinstance(page, PracticePage), "only pages with problems are set up"
         with coalesce.batch():
@@ -537,7 +539,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """A goal's link (notes_view.ACTIONS): `trial` sets up page `name`'s trial number `what` as its Things to try
         would (asking its prediction first), `practice` asks its problem `what` in the Practice window."""
         if scheme == "trial":
-            self.show_page(name)
+            self._arrive(name)
             page = self.pages.currentWidget()
             assert page is not None, "show_page shows it"
             combo = page.findChild(TrialCombo)
@@ -564,14 +566,36 @@ class MainWindow(QtWidgets.QMainWindow):
         box.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
         box.exec()
 
-    def guide_first_run(self) -> None:
-        """On the app's first run, show the page's Theory tab: on the first page, the course map and how a page
-        works. Later runs open on the plots."""
-        store = theming.settings()
-        if store.value(GUIDED, "false") == "true":
+    def introduce_pages(self) -> None:
+        """From now on, a page's first show (ever: kept in the settings, INTRODUCED) opens its Theory tab at the top,
+        where its goals link to its trials and problems; later visits keep the tab the reader left. The first run
+        opens on the first page's, its Start here and how a page works. `run` turns it on, after the page it opens
+        on shows; a bare MainWindow (tests, screenshots) doesn't, nor do the Theory window, Defaults, a goal's
+        trial or a practice setup, which want the page's plots (`_arrive`)."""
+        self._introducing = True
+        self._introduce(self.page_name(self.pages.currentWidget()))
+
+    def _introduce(self, name: str | None) -> None:
+        if not self._introducing or name is None:
             return
-        self.show_theory()
-        store.setValue(GUIDED, "true")
+        store = theming.settings()
+        seen = set(filter(None, str(store.value(INTRODUCED, "")).split(",")))  # a string: a one-item list isn't
+        if name in seen:  # kept as a list on every platform
+            return
+        if not self._arriving:
+            browser = self.show_theory()
+            if browser is not None:
+                browser.verticalScrollBar().setValue(0)
+        store.setValue(INTRODUCED, ",".join(sorted(seen | {name})))
+
+    def _arrive(self, name: str) -> None:
+        """Show page `name` for something that sets it up (a goal's trial, a practice setup): on the tab the
+        setup picks, not its Theory, though this counts as its first show."""
+        self._arriving = True
+        try:
+            self.show_page(name)
+        finally:
+            self._arriving = False
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         for window in (self.theory_window, self.practice_window):
@@ -595,6 +619,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if _follows_chain(page):
                 self._opening_chain[showing] = self.sim_page.sim.system.copy()
         self._follow_transport()
+        self._introduce(showing)
         if showing is not None:
             theming.settings().setValue(LAST_PAGE, showing)
             for window in (self.theory_window, self.practice_window):

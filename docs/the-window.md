@@ -11,8 +11,9 @@
 
 The pages are grouped in the order they are meant to be read, each using only ideas from the pages
 before it (Ctrl+1 to Ctrl+6 jump to a group, Ctrl+PgDown and Ctrl+PgUp to the next or previous page, and
-every page's notes end with a link on to the next). The first run opens on the first, *Single oscillator*, at
-its Theory: the map of the course (which counts each page's practice problems solved), four shorter *paths*
+every page's notes end with a link on to the next). Each page opens on its Theory tab the first time it's shown, where its goals
+(*On this page you'll*) link to its Things to try and its problems; after that it opens on the tab you left. So
+the first run opens on the first page, *Single oscillator*, at its Theory: *Start here*, the map of the course (which counts each page's practice problems solved), four shorter *paths*
 through it (Essentials, Testing, Rotating machinery, Vibration environments: each with every page its pages
 build on), then *How a page works* and the keys (the *About* box lists the keys too). Ctrl+= and Ctrl+− (or Ctrl and the mouse wheel) make the notes' text, equations and figures larger or smaller in every Theory tab and the Theory window, and Ctrl+0 puts them back; the size is remembered. The *Theory window* (Ctrl+F1) shows any page's Theory in a
 window of its own, with the pages and their sections listed, a *Glossary of symbols* at the top, and a search

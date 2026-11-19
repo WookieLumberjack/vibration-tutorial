@@ -237,30 +237,53 @@ def test_theory_window_searches_the_notes_and_has_a_glossary(app):
     t.close()
 
 
-def test_first_run_opens_on_how_a_page_works(app):
-    """The first run shows the first page's Theory tab (the course map, how a page works, the keys); later runs
-    the plots. The notes and the About box list the keys, every main-window shortcut among them, ⌘ on macOS."""
+def test_a_pages_first_show_opens_its_theory(app):
+    """Once `run` turns it on, a page's first show (ever) opens its Theory tab at the top: on the first page, Start
+    here, the course map, how a page works and the keys. Later shows keep the tab the reader left, as does a page a
+    goal's trial or a practice setup brings up; a bare window (tests, screenshots) never switches. The notes and the
+    About box list the keys, every main-window shortcut among them, ⌘ on macOS."""
     from PySide6 import QtGui
 
     from vib_tutorial.gui import links, theming
-    from vib_tutorial.gui.main_window import ABOUT_HTML, GUIDED, MainWindow
+    from vib_tutorial.gui.main_window import ABOUT_HTML, INTRODUCED, MainWindow
 
-    theming.settings().remove(GUIDED)
+    theming.settings().remove(INTRODUCED)
     w = MainWindow()
     w.open_first_page()
     w.show()
-    w.guide_first_run()
-    theory = next(
-        t for t in w.pages.currentWidget().findChildren(QtWidgets.QTabWidget) if t.tabText(t.count() - 1) == "Theory"
-    )
-    assert theory.tabText(theory.currentIndex()) == "Theory"
-    practice = "⌘F2" if sys.platform == "darwin" else "Ctrl+F2"  # the keys as this platform writes them
+
+    def tab() -> str:
+        page = w.pages.currentWidget()
+        theory = next(t for t in page.findChildren(QtWidgets.QTabWidget) if t.tabText(t.count() - 1) == "Theory")
+        return theory.tabText(theory.currentIndex())
+
+    def leave_theory() -> None:
+        page = w.pages.currentWidget()
+        next(
+            t for t in page.findChildren(QtWidgets.QTabWidget) if t.tabText(t.count() - 1) == "Theory"
+        ).setCurrentIndex(0)
+
+    assert tab() != "Theory"  # a bare window leaves the plots showing
+    w.introduce_pages()
+    assert tab() == "Theory"
     text = w.show_theory().toPlainText()
-    assert "How a page works" in text and practice in text
-    theory.setCurrentIndex(0)
-    w.guide_first_run()  # not again
-    assert theory.currentIndex() == 0
-    assert practice in ABOUT_HTML.format(version="", keys=links.keys_html())
+    assert "Start here" in text and "How a page works" in text
+    leave_theory()
+    w.show_page("transient_page")
+    assert tab() == "Theory"  # its first show
+    leave_theory()
+    w.show_page("sdof_page")
+    assert tab() != "Theory"  # seen: the tab the reader left
+    w.show_page("transient_page")
+    assert tab() != "Theory"
+    w.act("trial", "periodic_page", "1")  # a goal's trial shows its page set up, not its notes
+    assert tab() != "Theory"
+    w.show_page("sdof_page")
+    w.show_page("periodic_page")
+    assert tab() != "Theory"  # and that was its first show
+    assert set(str(theming.settings().value(INTRODUCED)).split(",")) == {"sdof_page", "transient_page", "periodic_page"}
+    practice = "⌘F2" if sys.platform == "darwin" else "Ctrl+F2"  # the keys as this platform writes them
+    assert practice in text and practice in ABOUT_HTML.format(version="", keys=links.keys_html())
     listed = " ".join(keys for keys, _ in links.KEYS)
     shortcuts = {s.key().toString() for s in w.findChildren(QtGui.QShortcut) if s.parent() is w}
     assert shortcuts and all(key in listed for key in shortcuts - {f"Ctrl+{i}" for i in range(2, 6)}), shortcuts
