@@ -15,13 +15,9 @@ import pytest
 
 pytestmark = pytest.mark.gui
 
-BUDGET = {  # 2026-11-18 (#409 P-7): One mass to Testing marked; Beyond the chain next
+BUDGET = {  # 2026-11-18 (#409 P-7): every group marked; what's left is a curve emptied and then filled
     "rigid_body_page": 2,  # its last trial empties the drift plot on restart, then its steps fill it
-    "fluid_page": 2,
-    "self_excited_page": 4,
-    "active_control_page": 2,
-    "gyroscope_page": 2,
-    "rotor_builder_page": 4,
+    "self_excited_page": 2,  # its redraw empties every curve, then the oscillator's draw fills its own
 }
 
 UNCOUNTED = {"sim_page", "test_page"}

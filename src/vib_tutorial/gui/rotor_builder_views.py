@@ -14,6 +14,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.rotor_builder import DISC_LIBRARY, TWO_PI, Bearing, BearingKind, Disc, Rotor, Seal, Selection, deflection
+from . import coalesce
 from .rotor_builder_trials import EMPTY
 from .style import colors
 
@@ -292,6 +293,7 @@ class RotorCanvas(pg.PlotWidget):
             super().keyPressEvent(event)
 
     # --------------------------------------------------------- drawing
+    @coalesce.coalesced(leaf=True)
     def draw(self, rotor: Rotor | None = None) -> None:
         r = rotor if rotor is not None else self.rotor
         q = self.q if rotor is None and self.q is not None and self.q.size == r.n_dof else None
@@ -483,6 +485,7 @@ class WhirlView(pg.PlotWidget):
         self.setRange(xRange=(-0.6 * AXIAL, 0.6 * AXIAL), yRange=(-1.4, 1.2), padding=0)
         self.show_phase(0.0)
 
+    @coalesce.coalesced(leaf=True)
     def show_phase(self, phase: float) -> None:
         rotor = self.rotor
         if self.shape is not None:

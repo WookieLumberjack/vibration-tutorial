@@ -29,7 +29,7 @@ from ..core.active_control import (
 )
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, kept, number, pick
-from . import active_control_figures, settle_plots
+from . import active_control_figures, coalesce, settle_plots
 from .challenge import ChallengeBox
 from .drag import DragDot
 from .lesson import (
@@ -713,6 +713,7 @@ class ActiveControlPage(QtWidgets.QWidget):
         else:  # the box rounds it to what it has: the dots back where it is
             self._draw_tab()
 
+    @coalesce.coalesced
     def redraw(self) -> None:
         self._dirty = False
         s = self.system

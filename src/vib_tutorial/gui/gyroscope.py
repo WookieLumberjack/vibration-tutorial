@@ -48,7 +48,7 @@ from ..core.gyroscope import (
 )
 from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator, contact_torque
 from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
-from . import gyroscope_figures
+from . import coalesce, gyroscope_figures
 from .cms_time import SampleBuffer
 from .components_tab import ComponentsTab
 from .equations_snapshot import snapshot_html
@@ -946,6 +946,7 @@ class GyroscopePage(QtWidgets.QWidget):
         pad = max(0.1 * (hi - lo), 0.5)
         self.tilt_plot.setYRange(max(lo - pad, 0.0), min(hi + pad, 180.0), padding=0)
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_CHAOS:
@@ -1179,7 +1180,6 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def _draw_track(self) -> None:
         self._track_span = None
-        self.path_circles.setData([], [])
         self.path_note.setText(
             f"From above, in mm, the last {TRACK_SPAN:g} s: where the tip has touched the table (solid) and where its "
             "centre of mass has been (dotted). Sliding, the tip scrawls; rolling, it runs round smooth curves."

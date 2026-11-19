@@ -24,6 +24,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from . import coalesce
 from .style import colors
 
 
@@ -113,6 +114,7 @@ class SectionView(pg.PlotWidget):
         swing = 1.2 if self.body is Body.BLOCK else self.peak
         return swing + (0.6 if self.body is Body.WING else 0.5)
 
+    @coalesce.coalesced(leaf=True)
     def _fit(self) -> None:
         reach = self._half_height()
         base = -reach - 1.2  # the spring's foot
@@ -138,6 +140,7 @@ class SectionView(pg.PlotWidget):
             self.flow.setData(fx, fy)
         self._draw()
 
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         if not hasattr(self, "_base"):
             return
