@@ -491,6 +491,11 @@ TRIALS = (
                 "Always an antiresonance",
             ),
             2,
+            why=(
+                "At a driving point every mode's term φ<sub>jr</sub>²/(ω<sub>r</sub>² − ω²) has a positive numerator, so between two peaks the sum crosses zero: a dip.",
+                "That's a transfer FRF, whose numerators φ<sub>jr</sub>φ<sub>kr</sub> can change sign. At a driving point they're all positive: always a dip.",
+                '',
+            ),
         ),
     ),
     FrfTrial(
@@ -527,6 +532,11 @@ TRIALS = (
                 "Too small",
             ),
             2,
+            why=(
+                'The highest mode still adds φ<sub>jr</sub>²/ω<sub>r</sub>² to the static compliance: without it the sum falls short by that, its residual flexibility.',
+                "At a driving point every mode's term starts positive at low frequency, φ<sub>jr</sub>²/ω<sub>r</sub>²: leaving one out can only take some away.",
+                '',
+            ),
         ),
     ),
     FrfTrial(

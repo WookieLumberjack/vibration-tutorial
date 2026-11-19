@@ -358,6 +358,11 @@ WAVE_PRESETS = (
             "the beads' pulse compare with the string's?",
             ("Just the same", "Lower and behind, trailing ripples", "Taller and ahead"),
             1,
+            why=(
+                'A pulse four beads wide is made of waves only a few beads long, and on beads short waves go slower: it falls behind and sheds ripples.',
+                '',
+                "That's consistent masses, which make short waves faster (and the pulse lower too). Lumped beads slow them: lower and behind.",
+            ),
         ),
     ),
     WavePreset(
@@ -372,6 +377,12 @@ WAVE_PRESETS = (
             "A dashpot of ρcA on the bar's far end. How much of the continuum's pulse comes back from it?",
             ("All of it, upside down", "All of it, the same way up", "Half of it", "None of it"),
             3,
+            why=(
+                "That's a fixed end. A dashpot of ρcA takes exactly the force the bar would pass on: the pulse runs in as if the bar went on.",
+                "That's a free end. The dashpot matches the bar's impedance, so nothing is reflected.",
+                'R = (Z<sub>end</sub> − ρcA)/(Z<sub>end</sub> + ρcA) is zero when they match: none comes back.',
+                '',
+            ),
         ),
     ),
     WavePreset(
@@ -392,6 +403,12 @@ WAVE_PRESETS = (
                 "All of it",
             ),
             1,
+            why=(
+                'A change of impedance reflects: twice it here, so R = (1 − 2)/(1 + 2) = −1/3.',
+                '',
+                'Into a higher impedance the reflection is inverted, as at a fixed end: R = −1/3.',
+                'All would need a fixed end, an infinite impedance. Twice the impedance sends back a third, inverted.',
+            ),
         ),
     ),
     WavePreset(
@@ -411,6 +428,11 @@ WAVE_PRESETS = (
                 "Stays where it is and dies away",
             ),
             1,
+            why=(
+                "That's a string's or a bar's pulse. Bending waves are dispersive, the short ones faster: the halves spread, ripples running ahead.",
+                '',
+                'A beam carries bending waves away: the bump splits and spreads; nothing damps it here.',
+            ),
         ),
     ),
 )

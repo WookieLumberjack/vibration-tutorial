@@ -88,7 +88,8 @@ class Question:
 @dataclass(frozen=True)
 class Prediction:
     """A trial's question, asked before it runs: `choices` as written, `answer` the right one's index. The trial's
-    note, shown as it runs, is the explanation.
+    note, shown as it runs, is the explanation; `why` says, for each wrong choice, why it's wrong (in `choices`'
+    order, the right one's ""), shown when it's picked, as a Practice problem's are.
 
     They show in `shown_order()`: shuffled, as the right one was most often written last (#409 C-7), but the same
     each time the trial is picked. An `ordered` scale (shorter, the same, longer; 1 s, 2 s, 6 s) stays a scale:
@@ -98,6 +99,7 @@ class Prediction:
     choices: tuple[str, ...]
     answer: int
     ordered: bool = False
+    why: tuple[str, ...] = ()  # rich text
 
     def shown_order(self) -> tuple[int, ...]:
         """The choices' indices in the order they show, seeded by the prompt: a re-pick, or another window, shows
@@ -111,6 +113,8 @@ class Prediction:
     def __post_init__(self) -> None:
         if not 0 <= self.answer < len(self.choices):
             raise ValueError(f"answer {self.answer} isn't one of {len(self.choices)} choices")
+        if self.why and (len(self.why) != len(self.choices) or self.why[self.answer]):
+            raise ValueError(f"{len(self.why)} reasons for {len(self.choices)} choices, the right one's not empty")
 
 
 @dataclass(frozen=True)

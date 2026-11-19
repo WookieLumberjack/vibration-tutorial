@@ -487,6 +487,11 @@ PRESETS = (
                 "Flat, more the higher they go",
             ),
             2,
+            why=(
+                "The string's do; the beads' fall away as the half wavelength shortens to a few beads: 10 % low at the 6th.",
+                'Lumping the mass makes the beads too heavy for short waves, which slow down: flat. Consistent masses would err sharp.',
+                '',
+            ),
         ),
     ),
     Preset(
@@ -501,6 +506,11 @@ PRESETS = (
             ("1 : 2 : 3, as a string's", "1 : 3 : 5, odd multiples only", "1 : 6.3 : 17.5, as a beam's"),
             1,
             ordered=True,
+            why=(
+                "That's held at both ends. Held at one end, a quarter wave fits, then three quarters, five: odd multiples.",
+                '',
+                "That's bending, which is dispersive. Rung lengthwise the waves aren't, and a quarter, three and five quarter waves fit: 1 : 3 : 5.",
+            ),
         ),
     ),
     Preset(
@@ -514,6 +524,11 @@ PRESETS = (
             "A steel ruler held over a desk's edge bends at 9.28 Hz. Are its overtones whole multiples of that?",
             ("Yes: 1 : 2 : 3", "Yes, the odd ones: 1 : 3 : 5", "No: they spread far wider"),
             2,
+            why=(
+                "Whole multiples come from waves that all run at one speed. A beam's bending waves are faster the shorter they are, so the overtones spread: 1 : 6.3 : 17.5.",
+                "That's a bar rung lengthwise, held at one end. Bending waves are dispersive: 58.2 and 163 Hz, 6.3 and 17.5 times.",
+                '',
+            ),
         ),
     ),
     Preset(
@@ -528,6 +543,11 @@ PRESETS = (
             ("None", "One", "Two"),
             2,
             ordered=True,
+            why=(
+                'Nothing holds a free–free bar: it can slide without bending, and tip, both at 0 Hz.',
+                'It can slide without bending, and it can tip: two rigid motions, both at 0 Hz.',
+                '',
+            ),
         ),
     ),
     Preset(

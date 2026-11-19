@@ -128,6 +128,12 @@ TRIALS = (
                 "The modes look alike at the sensors, and the fit can't tell them apart",
             ),
             3,
+            why=(
+                "All three are measured, but near the ground every mode starts as a sine's first quarter: modes 1 and 2 look alike, MAC 0.976.",
+                'Near the ground the motion is smallest, if anything. The trouble is that the shapes look alike there.',
+                "Three can do, but only placed where the modes differ. Near the ground they all start alike, and the fit can't tell them apart.",
+                '',
+            ),
         ),
     ),
     PlanningTrial(
@@ -155,6 +161,12 @@ TRIALS = (
                 "Mode 2's shape",
             ),
             3,
+            why=(
+                "At a lightly damped mode's frequency that mode is amplified far beyond the rest: 49.5 times the next.",
+                "That's the response at 0 Hz. At resonance mode 2 is amplified by its 1/2ζ and swamps the rest.",
+                'Mode 1 is largest near its own frequency. At 2.755 Hz mode 2 is on resonance and swamps it.',
+                '',
+            ),
         ),
     ),
     PlanningTrial(

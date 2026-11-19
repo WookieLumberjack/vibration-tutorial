@@ -107,6 +107,11 @@ TRIALS = (
                 "It grows and settles at one amplitude, wherever it starts",
             ),
             2,
+            why=(
+                'At small amplitude the damping is negative, ζ = −0.1: a small start grows.',
+                'At large amplitude the damping turns positive. It settles where the energy in and out balance: 8.9 mm, a limit cycle.',
+                '',
+            ),
         ),
     ),
     SelfTrial(
@@ -158,6 +163,10 @@ TRIALS = (
                 "No: it keeps growing with the wind",
             ),
             1,
+            why=(
+                "Vortex shedding locks in and limits itself. Galloping draws on the wind's speed, and its amplitude keeps growing with it: 2.7 D here.",
+                '',
+            ),
         ),
     ),
     SelfTrial(
@@ -187,6 +196,11 @@ TRIALS = (
                 "It falls to a small forced motion",
             ),
             2,
+            why=(
+                'Past the lock-in band the wake stops following the structure, so the large swing goes.',
+                'Vortex-induced vibration lives in a band of speeds: past lock-in the wake sheds at its own Strouhal frequency, 1.8 f<sub>n</sub>, and no longer drives the structure at resonance.',
+                '',
+            ),
         ),
     ),
     SelfTrial(
@@ -209,6 +223,12 @@ TRIALS = (
                 "They close in",
             ),
             3,
+            why=(
+                'A frequency falling to zero is divergence, the pitch spring giving out; flutter is two modes closing in.',
+                'The airflow adds stiffness and coupling: 2.9 and 6.7 Hz move to 3.6 and 4.7 Hz at 20 m/s.',
+                'The steady lift couples plunge and pitch, pulling their frequencies together: flutter comes as they close in.',
+                '',
+            ),
         ),
     ),
     SelfTrial(
@@ -228,6 +248,11 @@ TRIALS = (
                 "It no longer flutters; it only diverges, at 39 m/s",
             ),
             2,
+            why=(
+                "The centre of mass's place sets the inertial coupling between plunge and pitch: moved ahead of the axis, it stops the flutter.",
+                "Moved ahead of the elastic axis, the centre of mass couples plunge and pitch the other way, and they no longer feed each other: that's mass balance.",
+                '',
+            ),
         ),
     ),
     SelfTrial(

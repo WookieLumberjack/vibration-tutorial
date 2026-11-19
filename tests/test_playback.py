@@ -293,6 +293,7 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     buttons[order.index(wrong)].click()
     assert box.asking is None and not box.ask.isVisible() and "Not quite" in box.verdict.text()
     assert prediction.choices[prediction.answer] in box.verdict.text()
+    assert prediction.why[wrong] and prediction.why[wrong][:20] in box.verdict.text()  # why the one picked is wrong
     assert p.freq.value() == pytest.approx(p.osc.natural_hz, abs=1e-3) and p.playback.running  # it ran
     assert box.note.isVisible() and "quality factor" in box.note.text()
 

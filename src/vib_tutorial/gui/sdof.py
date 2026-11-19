@@ -97,6 +97,11 @@ TRIALS = (
             ("5 % smaller", "About 27 % smaller", "Half the size"),
             1,
             ordered=True,
+            why=(
+                "ζ isn't the fraction lost a cycle: each peak is e<sup>−2πζ</sup> = 0.73 of the one before, so about 2π times as much goes.",
+                '',
+                'That would take ζ ≈ 0.11, twice this. At ζ = 0.05 each peak is e<sup>−2πζ</sup> = 0.73 of the one before.',
+            ),
         ),
     ),
     SdofTrial(
@@ -113,6 +118,11 @@ TRIALS = (
             "The same mass and spring, released from the same place: ζ = 1 or ζ = 2, which is back at rest sooner?",
             ("ζ = 1", "ζ = 2", "They settle together"),
             0,
+            why=(
+                '',
+                'More damping takes energy out faster, but it also holds the mass back: past critical, the slow root moves towards zero and the creep back takes longer.',
+                'Their slowest roots differ: −ω<sub>n</sub> for ζ = 1 and −0.27ω<sub>n</sub> for ζ = 2.',
+            ),
         ),
     ),
     SdofTrial(
@@ -138,6 +148,12 @@ TRIALS = (
             ("2.5 mm", "5 mm", "25 mm", "250 mm"),
             2,
             ordered=True,
+            why=(
+                "That's the force pushed slowly. At f<sub>n</sub> the spring's force and the mass's inertia cancel, and only the damper holds it back.",
+                'Twice static is what a step gives. Driven at f<sub>n</sub> the swing grows until the damper takes out what the force puts in: 1/2ζ = 10 times static.',
+                '',
+                "That's a factor of 100: the amplification at resonance is 1/2ζ = 10, not 1/ζ².",
+            ),
         ),
     ),
     SdofTrial(
@@ -163,6 +179,11 @@ TRIALS = (
             "No damping, driven from rest 0.18 Hz below f<sub>n</sub>. What does the swing do?",
             ("Grows for ever", "Settles to a steady swing", "Swells and fades, over and over"),
             2,
+            why=(
+                'Only exactly at f<sub>n</sub>. 0.18 Hz off, the forced swing drifts out of step with the free one, and they cancel every 5.5 s.',
+                'Settling needs damping to kill the free vibration the start sets off. With none it rings on, beating against the forced swing.',
+                '',
+            ),
         ),
     ),
     SdofTrial(
@@ -177,6 +198,11 @@ TRIALS = (
             "No damping, driven from rest exactly at f<sub>n</sub>. What does the swing do?",
             ("Grows steadily, for ever", "Settles to a steady swing", "Swells and fades, over and over"),
             0,
+            why=(
+                '',
+                'With no damping nothing takes out the energy the force puts in, and at resonance it puts some in every cycle.',
+                "Beating needs two frequencies apart. Here they're the same, so the free and forced swings never drift out of step.",
+            ),
         ),
     ),
     SdofTrial(
@@ -195,6 +221,11 @@ TRIALS = (
             "An unbalanced machine run faster and faster, far past its resonance: its swing…",
             ("keeps growing, as the speed squared", "levels off", "falls back to nothing"),
             1,
+            why=(
+                "The force does, but far above resonance the mass's inertia takes it all, x ≈ −F/mΩ²: the Ω² cancel, leaving m<sub>e</sub>e/m.",
+                '',
+                "That's a fixed force's response, falling as 1/Ω². The unbalance's force grows as Ω², and the two cancel: it levels off.",
+            ),
         ),
     ),
     SdofTrial(

@@ -81,6 +81,11 @@ TRIALS = (
             "A machine running at 3.5 times its mounts' natural frequency. How much of its unbalance force reaches the floor?",
             ("All of it", "About a tenth", "More than all of it"),
             1,
+            why=(
+                'Above √2 f<sub>n</sub> a mount passes less than all of it: at 3.5 f<sub>n</sub>, 1/(r² − 1) ≈ 9 %.',
+                '',
+                "Only below √2 f<sub>n</sub>. At 3.5 f<sub>n</sub> the machine's inertia takes most of the force.",
+            ),
         ),
     ),
     IsolationTrial(
@@ -93,6 +98,11 @@ TRIALS = (
             "The same machine on mounts sagging only 0.3 mm: their natural frequency is just above the speed. The floor now gets?",
             ("Less than on soft mounts", "About the unbalance's force", "Several times the unbalance's force"),
             2,
+            why=(
+                'Below √2 f<sub>n</sub> a mount amplifies, and 25 Hz is just under f<sub>n</sub> = 28.8 Hz: near resonance.',
+                "That's a far stiffer, rigid mount's. Just under f<sub>n</sub> the mounts amplify: 3.9 times.",
+                '',
+            ),
         ),
     ),
     IsolationTrial(
@@ -105,6 +115,11 @@ TRIALS = (
             "Back on the soft mounts, with ζ = 0.3 instead of 0.05. Does the floor get more or less?",
             ("Less: damping always helps", "More: about twice as much", "The same"),
             1,
+            why=(
+                "Only at resonance. Above √2 f<sub>n</sub> the damper's force grows with speed and passes more to the floor: 20 % against 9 %.",
+                '',
+                "Above √2 f<sub>n</sub> the damper's force, cΩX, adds to what the spring passes: more damping, more force on the floor.",
+            ),
         ),
     ),
     IsolationTrial(
@@ -136,6 +151,11 @@ TRIALS = (
             "One stage passes 9 %. Now two stages, a 50 kg mass between them, each on mounts sagging 5 mm. They pass?",
             ("More than 9 %", "About 4 %", "About 9 %"),
             1,
+            why=(
+                'Two stages bring two resonances, but well above both the transmissibility falls as 1/r⁴, not 1/r².',
+                '',
+                'The second stage isolates what the first passes, again: 3.8 %.',
+            ),
         ),
     ),
     IsolationTrial(
@@ -149,6 +169,11 @@ TRIALS = (
             "Bolt the machine to a 300 kg block, the mounts stiffened to sag the same 5 mm. What changes?",
             ("Less force reaches the floor", "The machine moves less; the floor's force stays", "Nothing at all"),
             1,
+            why=(
+                'The transmissibility depends only on f<sub>n</sub>, which the 5 mm sag sets: the same share of the unbalance gets through.',
+                '',
+                "The machine's swing is the unbalance over the whole mass: with 300 kg added it's a quarter as large.",
+            ),
         ),
     ),
 )

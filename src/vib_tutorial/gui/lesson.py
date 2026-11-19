@@ -308,14 +308,13 @@ class TrialBox(QtWidgets.QGroupBox):
         assert i is not None, "answered only while a prediction is asked"
         p = self.predictions[i]
         assert p is not None, "asked only for a trial with a prediction"
-        right = choice == p.answer
-        self.verdict.setText(
-            markup(
-                "<b>✓ Right.</b> Here it is:"
-                if right
-                else f"<b>✗ Not quite:</b> it's <i>{p.choices[p.answer]}</i>. See why:"
-            )
-        )
+        if choice == p.answer:
+            text = "<b>✓ Right.</b> Here it is:"
+        elif p.why:  # why the one picked is wrong, then the trial's note says why the answer is right
+            text = f"<b>✗ Not quite:</b> it's <i>{p.choices[p.answer]}</i>. {p.why[choice]} Here it is:"
+        else:
+            text = f"<b>✗ Not quite:</b> it's <i>{p.choices[p.answer]}</i>. See why:"
+        self.verdict.setText(markup(text))
         self._run(i)
 
     def _on_pick(self, i: int) -> None:
@@ -361,12 +360,14 @@ class TrialBox(QtWidgets.QGroupBox):
 
 
 def trials_html(trials) -> str:
-    """The trials as the Theory tab lists them."""
+    """The trials as the Theory tab lists them: a trial with a prediction by its question alone, as its note
+    gives the answer away (#409 C-9), and the notes are where a page first opens (`MainWindow.introduce_pages`)."""
 
     def item(t) -> str:
         p = getattr(t, "predict", None)
-        ask = f"<i>Predict first: {markup(p.prompt)}</i> " if p is not None else ""
-        return f"<li><b>{t.name}.</b> {ask}{markup(t.note)}</li>"
+        if p is not None:
+            return f"<li><b>{t.name}.</b> <i>Predict first: {markup(p.prompt)}</i> Pick it to answer and see.</li>"
+        return f"<li><b>{t.name}.</b> {markup(t.note)}</li>"
 
     return "<ol>" + "".join(item(t) for t in trials) + "</ol>"
 

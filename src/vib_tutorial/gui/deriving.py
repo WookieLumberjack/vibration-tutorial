@@ -188,6 +188,12 @@ TRIALS = (
                 "Pure bounce, and pure pitch about G",
             ),
             3,
+            why=(
+                'The mix came from k<sub>f</sub>a ≠ k<sub>r</sub>b: bouncing G tilted the body. Equal, K is diagonal in x<sub>G</sub> and θ, and nothing couples them.',
+                'With k<sub>f</sub>a = k<sub>r</sub>b, a bounce of G puts no moment on the body and a pitch about G no net force: one mode bounces, the other pitches about G, not an axle.',
+                'That needs the inertia to uncouple at the axles (k<sub>G</sub>² = ab). Here the springs balance about G, which uncouples bounce and pitch instead.',
+                '',
+            ),
         ),
     ),
     DerivingTrial(
@@ -208,6 +214,12 @@ TRIALS = (
                 "They stay the same",
             ),
             3,
+            why=(
+                "The coupling moves from K into M, but the car is the same: its natural frequencies don't depend on the coordinates that describe it.",
+                "M gains an off-diagonal term and K loses one, but they describe the same car: the frequencies can't change.",
+                "New coordinates only rewrite M and K; the motions, and their frequencies, stay the car's own.",
+                '',
+            ),
         ),
     ),
     DerivingTrial(
@@ -304,6 +316,12 @@ TRIALS = (
                 "Swings in its slower mode, the shape held",
             ),
             3,
+            why=(
+                'At 10° it has far too little energy to go over the top.',
+                "A release that isn't a mode's shape mixes them; this one is the slower mode's own shape, and at 10° the equations are near enough linear to keep it.",
+                "In the faster mode the rods lean opposite ways, the lower −√2 times the upper. Here they lean the same way, √2 times as far: the slower mode's shape.",
+                '',
+            ),
         ),
     ),
     DerivingTrial(
@@ -337,6 +355,12 @@ TRIALS = (
             ),
             3,
             ordered=True,
+            why=(
+                'Exact equations still carry the millionth of a radian forward, and high up the motion is chaotic: it doubles every 0.49 s.',
+                "That's how a stable, linear system keeps a difference. A chaotic one doubles it every 0.49 s: twenty doublings in ten seconds.",
+                'Twenty doublings take a millionth to the whole swing: by 10 s nothing about one predicts the other.',
+                '',
+            ),
         ),
     ),
 )

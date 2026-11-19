@@ -167,6 +167,12 @@ TRIALS = (
                 "Sway with roll, and fore-and-aft with pitch",
             ),
             3,
+            why=(
+                "Below the centre of mass the mounts' shear turns the box: a sideways push now rolls it, and a fore-and-aft one pitches it.",
+                'Sway and yaw couple when the mounts sit unevenly about the vertical through the centre of mass. Lowering them puts their shear below it instead.',
+                'Bounce and pitch couple when the mounts sit unevenly fore and aft. Lowering them keeps them even, and the vertical forces still act through the centre of mass.',
+                '',
+            ),
         ),
     ),
     MountTrial(
@@ -199,6 +205,12 @@ TRIALS = (
                 "Bounce with pitch, and sway with yaw",
             ),
             3,
+            why=(
+                'With the mounts uneven fore and aft, a vertical force through the centre of mass loads the front and rear differently, and pitches the box.',
+                'Fore-and-aft and pitch couple when the mounts sit above or below the centre of mass; moving it forward keeps them level with it.',
+                'Sway and roll couple when the mounts sit above or below the centre of mass; moving it forward keeps them level with it.',
+                '',
+            ),
         ),
     ),
     MountTrial(
@@ -250,6 +262,12 @@ TRIALS = (
                 "It hardly changes",
             ),
             3,
+            why=(
+                'Damping matters much only near resonance. Well above it the force goes as |1 + iη|/(r² − 1), and η = 0.3 makes |1 + iη| only a few percent more than 1.',
+                'Well above resonance the force is set by r² − 1, not by the damping: three times the η changes |1 + iη| by a few percent.',
+                "A viscous damper's force would grow with the speed; hysteretic damping adds iη to the stiffness, and |1 + iη| is barely more than 1.",
+                '',
+            ),
         ),
     ),
     MountTrial(
@@ -268,6 +286,12 @@ TRIALS = (
                 "Roll alone",
             ),
             3,
+            why=(
+                "A torque about x turns the block about x, which is roll; the bounce and pitch shapes don't turn about x.",
+                "With pure modes only the roll mode's shape turns about x, so only its modal force φᵀQ isn't zero.",
+                'Roll couples with sway only when the mounts sit above or below the centre of mass; these are level with it, so the modes are pure.',
+                '',
+            ),
         ),
     ),
     MountTrial(

@@ -100,6 +100,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                'It errs the other way: counting every fast crossing as a large cycle overcounts the damage.',
+                "The narrow-band formula counts every up-crossing as a cycle of the whole σ, but the fast mode's crossings are mostly small ripples on the slow swing: it counts too much.",
+                '',
+            ),
         ),
     ),
     FatigueTrial(
@@ -128,6 +133,11 @@ TRIALS = (
                 "The few largest",
             ),
             2,
+            why=(
+                "The damage per cycle grows as S<sup>5</sup>, so it's weighted hard towards the largest, rarest ranges, far above the RMS.",
+                'Small cycles are many, but each does damage as S<sup>5</sup>: half the range does 1/32 of the damage.',
+                '',
+            ),
         ),
     ),
     FatigueTrial(
@@ -148,6 +158,12 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                'Damage goes as S<sup>m</sup>, not S: on a slope of 3, 2³ = 8 times.',
+                "That's a slope of 2. On a slope of 3, doubling the stress multiplies the damage by 2³ = 8.",
+                '',
+                "That's a slope of 4. On a slope of 3, doubling the stress multiplies the damage by 2³ = 8.",
+            ),
         ),
     ),
     FatigueTrial(
@@ -177,6 +193,12 @@ TRIALS = (
                 "It scatters widely",
             ),
             3,
+            why=(
+                "A short record isn't biased either way: whether it catches the few large cycles that do most of the damage is chance. Over ten seeds, 0.67 to 1.53 times the long record's.",
+                "A short record misses the largest cycles only sometimes: over ten seeds it ran from 0.67 to 1.53 times the long record's.",
+                'On a slope of 5 the few largest cycles do most of the damage, and 20 s may or may not catch them: 0.67 to 1.53 times over ten seeds.',
+                '',
+            ),
         ),
     ),
 )

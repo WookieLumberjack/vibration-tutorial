@@ -164,6 +164,11 @@ TRIALS = (
                 "Only the highest mode",
             ),
             1,
+            why=(
+                "Only damping that isn't diagonal in the modes does. C = K/200 is, so every mode stays real.",
+                '',
+                'C = K/200 is diagonal in every mode alike: none is complex.',
+            ),
         ),
     ),
     _trial(
@@ -190,6 +195,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                "The approximation keeps the undamped shape, which stretches the damper hard. The exact mode avoids stretching it, so it's the exact ζ that's lower.",
+                "The approximation counts the damper's stretch in the undamped mode 4, but in the exact mode m3 and m4 move nearly together, so the damper hardly works.",
+                '',
+            ),
         ),
     ),
     _trial(
@@ -208,6 +218,11 @@ TRIALS = (
                 "More still",
             ),
             1,
+            why=(
+                "The approximation keeps the undamped shape, which stretches the damper. So strong a damper locks m1 to m2, and a damper that doesn't stretch takes no energy.",
+                '',
+                'A stronger damper damps more only while it still stretches. This one locks m1 and m2 together and hardly works: ζ = 0.050.',
+            ),
         ),
     ),
     _trial(

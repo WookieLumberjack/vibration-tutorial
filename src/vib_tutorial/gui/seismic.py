@@ -136,6 +136,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                "Adding every mode's peak is the most they could give together, never less than what they do.",
+                "ABS assumes every mode peaks at the same moment; modes this far apart (ρ₁₂ = 0.007) don't, so it overestimates.",
+                '',
+            ),
         ),
     ),
     SeismicTrial(
@@ -156,6 +161,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                'SRSS leaves out the positive cross term of two close modes in step, so it comes out under CQC, not over.',
+                'Two close modes (ρ = 0.50) move together much of the time; SRSS drops their cross term, which CQC keeps.',
+                '',
+            ),
         ),
     ),
     SeismicTrial(
@@ -175,6 +185,12 @@ TRIALS = (
             ),
             3,
             ordered=True,
+            why=(
+                "Softer ground amplifies the shaking: S rises, and the plateau runs on to T<sub>C</sub> = 0.8 s, close to the building's 0.99 s.",
+                "The ground type sets S and the spectrum's corners, and on D both work against this building: S<sub>a</sub> rises from 0.52 g to 0.82 g.",
+                'S alone would give 17 %. The plateau also runs on, to T<sub>C</sub> = 0.8 s, close to T₁ = 0.99 s: S<sub>a</sub> rises from 0.52 g to 0.82 g.',
+                '',
+            ),
         ),
     ),
     SeismicTrial(
