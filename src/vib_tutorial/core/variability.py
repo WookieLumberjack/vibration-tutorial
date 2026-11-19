@@ -170,10 +170,24 @@ def tuned_band(ring: Ring) -> tuple[float, float]:
 
 def forced(ring: Ring, engine_order: int, f: np.ndarray, deltas: np.ndarray | None = None) -> np.ndarray:
     """Each blade's |x| (m) per newton of an engine-order force, F_j = e^{i 2π E j / N}: (frequencies, blades)."""
-    M, C, K = ring.matrices(deltas)
+    d = ring.deltas() if deltas is None else np.asarray(deltas, dtype=float)
+    return forced_many(ring, engine_order, f, d[None])[0]
+
+
+def forced_many(ring: Ring, engine_order: int, f: np.ndarray, deltas: np.ndarray) -> np.ndarray:
+    """`forced` for many mistuning patterns at once, `deltas` (patterns, blades): (patterns, frequencies,
+    blades). The ring's M = mI and C = cI, so K's modes (one stacked eigh) diagonalize every frequency:
+    x(ω) = Φ diag(1/(λ − ω²m + iωc)) Φᵀ F, where a solve a frequency took 1500 of them a pattern (#409 P-10)."""
+    deltas = np.atleast_2d(np.asarray(deltas, dtype=float))
     n = ring.blades
+    Ks = np.array([ring.matrices(d)[2] for d in deltas])  # (patterns, n, n)
+    lam, phi = np.linalg.eigh(Ks)
     F = np.exp(2j * math.pi * engine_order * np.arange(n) / n)
-    return np.abs(modal_receptance(M, C, K, f, F))
+    g = np.einsum("pji,j->pi", phi, F)  # Φᵀ F
+    w = TWO_PI * np.asarray(f, dtype=float)
+    c = 2 * ring.zeta * ring.mass * TWO_PI * ring.blade_hz
+    q = g[:, None, :] / (lam[:, None, :] - (w * w * ring.mass)[None, :, None] + 1j * (w * c)[None, :, None])
+    return np.abs(q @ phi.transpose(0, 2, 1))  # Φ q at each frequency
 
 
 def sweep_grid(ring: Ring, points: int = 1500) -> np.ndarray:
@@ -198,13 +212,14 @@ def amplification_curve(
     ring: Ring, engine_order: int, levels: np.ndarray, seeds: int = 20
 ) -> tuple[np.ndarray, np.ndarray]:
     """(mean, largest) amplification over `seeds` mistuning patterns at each CoV."""
-    mean, top = np.empty(levels.size), np.empty(levels.size)
     f = sweep_grid(Ring(ring.blades, ring.mass, ring.stiffness, ring.coupling, ring.zeta, float(levels.max())))
     tuned = float(forced(ring, engine_order, f, np.zeros(ring.blades)).max())
-    for i, cov in enumerate(levels):
-        values = []
-        for s in range(1, seeds + 1):
-            r = Ring(ring.blades, ring.mass, ring.stiffness, ring.coupling, ring.zeta, float(cov), s)
-            values.append(float(forced(r, engine_order, f).max()) / tuned)
-        mean[i], top[i] = np.mean(values), np.max(values)
-    return mean, top
+    deltas = np.array(
+        [
+            Ring(ring.blades, ring.mass, ring.stiffness, ring.coupling, ring.zeta, float(cov), s).deltas()
+            for cov in levels
+            for s in range(1, seeds + 1)
+        ]
+    )
+    peaks = forced_many(ring, engine_order, f, deltas).max(axis=(1, 2)).reshape(levels.size, seeds) / tuned
+    return peaks.mean(axis=1), peaks.max(axis=1)
