@@ -187,7 +187,7 @@ class ChainView(pg.PlotWidget):
                 rect = QtWidgets.QGraphicsRectItem()
                 rect.setZValue(5)
                 self._rects.append(self._add(rect))
-                label = pg.TextItem(f"m{i + 1}", anchor=(0.5, 0.5))
+                label = pg.TextItem("m" if n == 1 else f"m{i + 1}", anchor=(0.5, 0.5))  # one mass: m, as its notes
                 label.setZValue(6)
                 self._labels.append(self._add(label))
             self.apply_theme()
@@ -195,7 +195,8 @@ class ChainView(pg.PlotWidget):
             # Set both axes in one call: with the aspect ratio locked, separate
             # setXRange/setYRange calls let the second one shrink the first,
             # cropping the chain once it's wider than the widget's shape.
-            self.setRange(QtCore.QRectF(-0.25, -0.6, n * SPACING + 0.85, 1.35), padding=0)
+            # Down to -0.7: the scale's text, centred at -0.55, is ~0.18 tall in a 120 px view (its descenders cut at -0.6).
+            self.setRange(QtCore.QRectF(-0.25, -0.7, n * SPACING + 0.85, 1.45), padding=0)
             self._scale_bar.setData([0.05, 0.05 + MAX_SWING], [-0.55, -0.55])
             self._scale_text.setPos(0.1 + MAX_SWING, -0.55)
 
