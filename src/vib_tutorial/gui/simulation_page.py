@@ -52,6 +52,7 @@ from .scrub import Scrub
 from .sim_trials import TRIALS as SIM_TRIALS
 from .sim_trials import SimTrial, chain
 from .style import colors
+from .tab_groups import Deferred
 from .transport import Transport
 
 FRAME_BUDGET = 0.012  # s of computing per frame: past it (friction on a stiff chain) the simulation runs slower
@@ -199,6 +200,7 @@ class SimulationPage(QtWidgets.QWidget):
         self.modal = modal_analysis(system)
         self.method = Method.CLASSICAL
         self.entries = mode_entries(self.modal, self.method)
+        self._modal_views = Deferred(self, self._draw_modal_views)  # the table and mode plots, drawn while shown
         self.running = True
         self._energy_scale = 0.0  # J at full bar height; follows the plot window while auto-scaling
         self._ground_velocity = 0.0  # m/s over the last step, for the motion relative to the ground
@@ -383,6 +385,8 @@ class SimulationPage(QtWidgets.QWidget):
 
         self._apply_dof(system.n)
         self._refresh_modal()
+        self._modal_views.stale = False
+        self._draw_modal_views()  # the first, now: not yet in a window, the page counts as hidden
 
         self._clock = QtCore.QElapsedTimer()
         self._clock.start()
@@ -517,8 +521,13 @@ class SimulationPage(QtWidgets.QWidget):
         self._refresh_modal_views()
 
     def _refresh_modal_views(self) -> None:
-        """Show the current modal result using the selected method."""
+        """The current modal result's modes by the method picked, drawn now if the page shows, else when it next
+        does: a trial on another page sends its chain through here (#409 P-7), and the page was redrawing its
+        table and mode plots unseen, 20–70 ms each time."""
         self.entries = mode_entries(self.modal, self.method)
+        self._modal_views.request()
+
+    def _draw_modal_views(self) -> None:
         state_space = self.method is Method.STATE_SPACE
         self._refresh_table()
         self.mode_plot.set_entries(self.entries, show_envelope=state_space)
