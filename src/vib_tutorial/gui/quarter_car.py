@@ -27,7 +27,7 @@ from ..core.quarter_car import (
     response,
     tradeoff,
 )
-from . import quarter_figures, settle_plots
+from . import coalesce, quarter_figures, settle_plots
 from .challenge import ChallengeBox
 from .drag import DragDot, DragLine
 from .lesson import (
@@ -639,6 +639,7 @@ class QuarterCarPage(QtWidgets.QWidget):
         self._draw_tab()
         settle_plots(self)
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_TRADEOFF:

@@ -19,6 +19,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtGui, QtWidgets
 
+from . import coalesce
 from .style import colors
 
 BAY = 1.0  # a column's x, either side
@@ -115,6 +116,7 @@ class BuildingView(pg.PlotWidget):
         hx[1::3] -= 0.15
         self.hatch.setData(hx, hy)
 
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         if not self.n or self.u.size != self.n:
             return
