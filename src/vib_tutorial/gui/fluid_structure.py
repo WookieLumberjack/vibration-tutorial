@@ -64,7 +64,7 @@ from ..core.sloshing import (
     slosh_mass,
     tank_flow,
 )
-from . import fluid_structure_figures, settle_plots
+from . import coalesce, fluid_structure_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -1122,6 +1122,7 @@ class FluidStructurePage(QtWidgets.QWidget):
         self._draw_centre()
         self.lazy.stale()
 
+    @coalesce.coalesced
     def _draw_centre(self) -> None:
         if self.showing_tank:
             self._draw_tank()

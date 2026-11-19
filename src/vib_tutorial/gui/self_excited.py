@@ -32,7 +32,7 @@ from ..core.self_excited import (
     galloping_branches,
     settled_amplitude,
 )
-from . import self_excited_figures, settle_plots
+from . import coalesce, self_excited_figures, settle_plots
 from .drag import DragDot
 from .lesson import (
     Form,
@@ -940,6 +940,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         if hasattr(self, "current"):
             self.redraw()
 
+    @coalesce.coalesced(covers=("_draw_sweep", "_draw_motion"))
     def redraw(self) -> None:
         for items in (self.top_items, self.bottom_items):
             for item in items:
@@ -1079,6 +1080,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
             + "."
         )
 
+    @coalesce.coalesced
     def _draw_motion(self) -> None:
         """The body's motion for the Motion tab: the run the centre shows, or flutter's least stable mode."""
         if self.tabs.currentIndex() != TAB_MOTION or not hasattr(self, "current") or self._stale:
@@ -1144,6 +1146,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         k = min(int(np.searchsorted(ts, t)), ts.size - 1)
         self.section.set_state(float(y[k]), float(th[k]))
 
+    @coalesce.coalesced
     def _draw_sweep(self) -> None:
         if self.tabs.currentIndex() != TAB_SWEEP or not hasattr(self, "current") or self._stale:
             return
