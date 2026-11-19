@@ -179,7 +179,7 @@ def run() -> int:
     window.show()
     if not display_size.check_fits(window):  # the size saved is too large for this screen: restarted at 100 %
         return 0
-    window.guide_first_run()
+    window.introduce_pages()
     preload = threading.Thread(target=_preload_scipy, name="preload-scipy", daemon=True)
     # Some seconds after the first paint: the imports hold the GIL in stretches (the UI stalled up to 178 ms
     # while the reader's first look at the page was still settling; #409 P-16).
