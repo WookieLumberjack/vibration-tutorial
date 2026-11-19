@@ -19,7 +19,10 @@ An exception in `job` is raised again in `done`'s place on the GUI thread, where
 Working on it: the page keeps the drawing; a `Recompute` only moves a pure function off the thread. The job
 holds the GIL while it runs Python, so the window stays responsive but not idle: keep jobs to a second or so.
 `tests/test_recompute.py` checks the debounce, latest-wins and the exception; the Nonlinearity page's sweep is
-the first user (#316 D2).
+the first user (#316 D2). Use one for a control's work over ~100 ms, not a page's own QTimer, which only
+debounces and still holds the window while the work runs (#409 P-14: Shock and Model updating moved off theirs).
+Users: Nonlinearity's sweeps, Random vibration, OMA, Seismic's records, Vibro-acoustics' slow tabs, Variability,
+the Rotor builder's sweeps, Fluid–structure's plate, Shock, Model updating.
 """
 
 from __future__ import annotations

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import functools
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -55,11 +56,37 @@ from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
 from .plots import decimate
+from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .tab_groups import LazyTabs
 from .theming import add_legend, mute
 
 RECOMPUTE_MS = 150  # the parameters settle this long before the spectrum is worked out again
+
+
+@dataclass(frozen=True)
+class _Worked:
+    """What `_work_out` gives: the bank, and the record and its spectrum, or why there's no record."""
+
+    pulse: Pulse
+    freqs: np.ndarray
+    record: Record | None
+    spectrum: Spectrum | None
+    error: str = ""
+
+
+def _work_out(pulse: Pulse, kept: Record | None, system, result, zeta: float) -> _Worked:
+    """The pulse's bank, its record (`kept`, or made again), and the spectrum: a pure function, for the worker."""
+    freqs = bank(pulse, result)
+    rec = kept
+    if rec is None:
+        try:
+            rec = record(pulse, sample_rate(pulse, freqs[-1]), system, result)
+        except ValueError as e:
+            return _Worked(pulse, freqs, None, None, str(e))
+    return _Worked(pulse, freqs, rec, srs(rec, freqs, zeta))
+
+
 DEFAULT_Q = 10.0
 TAIL_PERIODS = 2.0  # of the picked oscillator, shown after the record
 TOLERANCE_DB = 3.0  # the band drawn round a synthesis's target
@@ -620,10 +647,9 @@ class ShockPage(QtWidgets.QWidget):
         self._loading = False
         self._dirty = False
         self._rerecord = True
-        self._recompute = QtCore.QTimer(self)
-        self._recompute.setSingleShot(True)
-        self._recompute.setInterval(RECOMPUTE_MS)
-        self._recompute.timeout.connect(self.recompute)
+        # The record and its spectrum (up to ~250 ms) on a worker once the controls settle (#409 P-14), at once
+        # for a trial, a new chain or the page showing (`recompute`).
+        self.worker = Recompute(self._on_recomputed, self, delay_ms=RECOMPUTE_MS)
 
         # --- left: the pulse, the spectrum, things to try
         box = QtWidgets.QGroupBox("Pulse")
@@ -982,8 +1008,8 @@ class ShockPage(QtWidgets.QWidget):
             return
         if now:
             self.recompute()
-        else:
-            self._recompute.start()
+        elif self.system is not None and self.result is not None:
+            self.worker.request(self._job())
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -1025,26 +1051,36 @@ class ShockPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- computing
     def recompute(self) -> None:
-        """Record the pulse again if asked for (or stale), then its spectrum, and draw."""
-        self._recompute.stop()
+        """Record the pulse again if asked for (or stale), then its spectrum, and draw: now, on the GUI thread."""
         self._dirty = False
         if self.system is None or self.result is None:  # set together
             return
+        self.worker.now(self._job())
+
+    def _job(self) -> Callable[[], _Worked]:
+        """The pulse's record (kept unless asked again) and spectrum, as a pure job built from the controls."""
+        assert self.system is not None and self.result is not None, "asked for once the chain is in"
         pulse = self.pulse()
-        self.freqs = bank(pulse, self.result)
-        if self._rerecord or self.record is None:
-            try:
-                self.record = record(pulse, sample_rate(pulse, self.freqs[-1]), self.system, self.result)
-            except ValueError as e:
-                self.record = None
-                self.readout.setText(f"<b>{e}</b>.")
-                return
+        kept = None if self._rerecord or self.record is None else self.record
+        return functools.partial(_work_out, pulse, kept, self.system, self.result, self.zeta)
+
+    def _on_recomputed(self, worked: _Worked) -> None:
+        self.freqs = worked.freqs
+        if worked.error:
+            self.record = None
+            self.readout.setText(f"<b>{worked.error}</b>.")
+            return
+        assert worked.record is not None and worked.spectrum is not None, "both, without an error"
+        if worked.record is not self.record:
+            self.record = worked.record
             self._rerecord = False
             self.chain = None
-        self.spectrum = srs(self.record, self.freqs, self.zeta)
+        self.spectrum = worked.spectrum
+        pulse = worked.pulse
         if getattr(self, "_pick_peak", True):
             self._pick_peak = False
             if pulse.shape is Shape.AT_A_MASS:
+                assert self.result is not None, "worked out with it"
                 f = min(m.fn_hz for m in self.result.modes if m.fn_hz > 0)
             elif pulse.shape.synthesized:
                 f = pulse.knee

@@ -9,8 +9,10 @@ Follows the chain from the Simulation page, which is the structure tested.
 
 from __future__ import annotations
 
+import functools
 import itertools
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -45,10 +47,18 @@ from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .notes_view import NotesBrowser
 from .panels import spin
+from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
 
 RECOMPUTE_MS = 150  # the model's errors settle this long before it is correlated again
+
+
+def _measure_and_correlate(system, errors, source, mask, seed, result, kept) -> tuple[Test, Correlation]:
+    """The virtual test (`kept`, or measured again) and its correlation: a pure function, for the worker."""
+    test = kept if kept is not None else measure(system, source, mask, seed, result)
+    return test, correlate(system, errors, test.with_sensors(mask))
+
 
 TIPS = {
     "source": "<p><b>Virtual modal test</b>: a hammer on m1, every mass's displacement measured with a little "
@@ -645,10 +655,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self._remeasure = True
         self._dirty = False
         self._loading = False
-        self._recompute = QtCore.QTimer(self)
-        self._recompute.setSingleShot(True)
-        self._recompute.setInterval(RECOMPUTE_MS)
-        self._recompute.timeout.connect(self.recompute)
+        # The test and its correlation on a worker once the errors settle (#409 P-14), at once for a trial, a new
+        # chain or the page showing (`recompute`).
+        self.worker = Recompute(self._on_recomputed, self, delay_ms=RECOMPUTE_MS)
 
         # --- left: the structure, the test, the model's errors, errors to try
         box = QtWidgets.QGroupBox("Test")
@@ -1053,8 +1062,8 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             return
         if now:
             self.recompute()
-        else:
-            self._recompute.start()
+        elif (job := self._job()) is not None:
+            self.worker.request(job)
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -1063,19 +1072,37 @@ class ModelUpdatingPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- computing
     def recompute(self) -> None:
-        """Measure again if asked (or the structure changed), then correlate and draw."""
-        self._recompute.stop()
+        """Measure again if asked (or the structure changed), then correlate and draw: now, on the GUI thread."""
         self._dirty = False
+        if (job := self._job()) is not None:
+            self.worker.now(job)
+
+    def _job(self) -> Callable[[], tuple[Test, Correlation]] | None:
+        """The test (kept unless asked again) and its correlation, as a pure job; None if there's nothing to do."""
         if self.system is None or self.errors is None:
-            return
+            return None
         mask = self.sensor_mask()
         if mask.sum() == 0:
             self.readout.setText("<b>No sensors</b>: tick at least one mass.")
-            return
-        if self._remeasure or self.test is None:
-            self.test = measure(self.system, self.source.currentData(), mask, self.seed, self.result)
+            return None
+        kept = None if self._remeasure or self.test is None else self.test
+        return functools.partial(
+            _measure_and_correlate,
+            self.system,
+            self.errors,
+            self.source.currentData(),
+            mask,
+            self.seed,
+            self.result,
+            kept,
+        )
+
+    def _on_recomputed(self, worked: tuple[Test, Correlation]) -> None:
+        test, corr = worked
+        if test is not self.test:
+            self.test = test
             self._remeasure = False
-        self.corr = correlate(self.system, self.errors, self.test.with_sensors(mask))
+        self.corr = corr
         self.update_result = None
         self.redraw()
 

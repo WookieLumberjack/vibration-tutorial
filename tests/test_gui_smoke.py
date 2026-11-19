@@ -5498,3 +5498,28 @@ def test_fluid_plates_modes_work_on_their_worker(main_window, app):
     assert not p.plate_worker.busy and p.modes is None
     p.tabs.setCurrentIndex(TAB_PLATE)
     assert p.modes is not None and not p.plate_worker.busy
+
+
+def test_shock_and_model_updating_work_out_on_their_workers(main_window, app):
+    """A control changed: the Shock page's record and spectrum, and Model updating's correlation, on their workers
+    once the controls settle, the page keeping its plots and readout meanwhile (#409 P-14)."""
+    w = main_window
+    shock = w.shock_page
+    w.pages.setCurrentWidget(shock)
+    app.processEvents()
+    shock.recompute()
+    spectrum, readout = shock.spectrum, shock.readout.text()
+    shock.peak.setValue(shock.peak.value() * 2)
+    assert shock.worker.busy and shock.spectrum is spectrum and shock.readout.text() == readout
+    shock.worker.wait()
+    assert shock.spectrum is not spectrum and shock.readout.text() != readout
+
+    updating = w.updating_page
+    w.pages.setCurrentWidget(updating)
+    app.processEvents()
+    updating.recompute()
+    corr, test = updating.corr, updating.test
+    updating.error_rows[0][2].setValue(1.3)  # the first spring 30 % stiff in the model
+    assert updating.worker.busy and updating.corr is corr
+    updating.worker.wait()
+    assert updating.corr is not corr and updating.test is test  # correlated again, not measured again
