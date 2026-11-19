@@ -48,6 +48,7 @@ from .lesson import (
 from .links import course_map, keys_html, load_notes, page_link, paths_html
 from .notes_view import NotesBrowser
 from .playback import Playback
+from .plots import decimate
 from .style import colors
 from .theming import add_legend
 
@@ -668,6 +669,9 @@ class SdofPage(QtWidgets.QWidget):
         self.forced_item = pg.PlotDataItem(name="from rest")
         self.forced_plot.addItem(self.steady_item)
         self.forced_plot.addItem(self.forced_item)
+        # A long drive (16,000 samples at resonance) is each pixel column's extremes, and the steady line is dashed
+        # 1 px wide: at 1.5 Qt outlined every dash, 260 ms a paint (#409 P-18).
+        decimate(self.forced_plot)
         self.forced_note = readout_label()
 
         center = QtWidgets.QWidget()
@@ -952,7 +956,7 @@ class SdofPage(QtWidgets.QWidget):
         for item, color in zip(self.compare_items, (c.mode[0], c.mode[1], c.mode[2])):
             item.setPen(pg.mkPen(color, width=1.5))
         self.forced_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.steady_item.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
+        self.steady_item.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.mag_item.setPen(pg.mkPen(c.strong, width=2))
         self.lag_item.setPen(pg.mkPen(c.strong, width=2))
         self.band.setBrush(pg.mkBrush(*pg.mkColor(c.fit).getRgb()[:3], 45))

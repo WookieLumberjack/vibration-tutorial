@@ -340,6 +340,7 @@ class Chart:
     growth: np.ndarray  # (ratios, depths): sigma / omega_n of the pumped linear spring's swing
     rect: tuple[float, float, float, float]  # the image's x, y, width, height on the axes
     tongue: Curve  # harmonic balance's first tongue (NaN where it has none)
+    zeta: float = 0.0  # the damping ratio it's for
 
 
 def chart(zeta: float) -> Chart:
@@ -360,7 +361,7 @@ def chart(zeta: float) -> Chart:
         lo.append(math.sqrt(r2[0]) if r2.size == 2 else np.nan)
         hi.append(math.sqrt(r2[1]) if r2.size == 2 else np.nan)
     tongue = Curve(np.concatenate([lo[::-1], hi]), np.concatenate([CHART_DEPTHS[::-1], CHART_DEPTHS]))
-    return Chart(growth, rect, tongue)
+    return Chart(growth, rect, tongue, zeta)
 
 
 @dataclass(frozen=True)

@@ -35,6 +35,7 @@ from PySide6 import QtCore, QtWidgets
 from . import frame_stats, settle_plots
 
 FRAME_MS = 16  # ~60 fps
+SWING_MS = 33  # a mode swinging on its own (a cycle a second or two): 30 frames a second are smooth (#409 P-18)
 MAX_DT = 0.1  # s: the longest step a frame takes, however long since the last
 
 

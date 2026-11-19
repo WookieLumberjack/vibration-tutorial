@@ -27,7 +27,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore
 
 from . import coalesce
-from .frame_loop import FrameLoop
+from .frame_loop import SWING_MS, FrameLoop
 from .style import colors
 
 SECONDS_PER_CYCLE = 2.0
@@ -50,7 +50,7 @@ class ModeSwing(QtCore.QObject):
         self.attach()
         self.apply_theme()
         if loop is None:
-            self.loop = FrameLoop(host or plot, name, self._tick, self._runs, self._sim_t)
+            self.loop = FrameLoop(host or plot, name, self._tick, self._runs, self._sim_t, frame_ms=SWING_MS)
         else:
             loop.swings.append(self)
             self.loop = loop.loop
@@ -129,7 +129,7 @@ class SwingLoop(QtCore.QObject):
     def __init__(self, host, name: str) -> None:
         super().__init__(host)
         self.swings: list[ModeSwing] = []
-        self.loop = FrameLoop(host, name, self._tick, self._runs, self._sim_t)
+        self.loop = FrameLoop(host, name, self._tick, self._runs, self._sim_t, frame_ms=SWING_MS)
 
     def _runs(self) -> bool:
         return any(s._runs() for s in self.swings)

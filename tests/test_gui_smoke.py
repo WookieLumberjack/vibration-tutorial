@@ -5571,3 +5571,44 @@ def test_modal_couplings_two_swings_share_one_frame_loop(main_window, app):
     running[0].enabled = False
     running[0]._call(running[0]._tick, 0.1)
     assert all(s.theta != b for s, b in zip(shapes, before))
+
+
+def test_duffings_chart_works_out_on_its_worker_after_the_damping_changes(main_window, app):
+    """The Ince–Strutt chart (~0.1 s) on the worker after the damping's change, the chart keeping the last
+    meanwhile; picking its tab works it out now (#409 P-18)."""
+    w = main_window
+    p = w.duffing_page
+    w.pages.setCurrentWidget(p)
+    p.tabs.setCurrentWidget(p.chart_tab)
+    app.processEvents()
+    assert p._chart_zeta == p.sim.osc.zeta and not p.chart_worker.busy
+    p.damping.setValue(p.damping.value() * 1.5)
+    assert p.chart_worker.busy
+    p.chart_worker.wait()
+    assert p._chart_zeta == p.sim.osc.zeta and not p.chart_worker.busy
+    p.tabs.setCurrentIndex(0)
+    p.damping.setValue(p.damping.value() * 1.5)  # hidden: nothing asked for
+    assert not p.chart_worker.busy
+    p.tabs.setCurrentWidget(p.chart_tab)  # picked: now
+    assert p._chart_zeta == p.sim.osc.zeta and not p.chart_worker.busy
+
+
+def test_a_mode_swinging_on_its_own_runs_at_30_frames_a_second(main_window, app):
+    """A mode swing (a cycle a second or two) frames every SWING_MS, not FRAME_MS: Coupling's and Complex modes'
+    swings, the mounts' box, the rotor builder's whirl; the Frame builder only while it swings a mode, not while it
+    plays its response back (#409 P-18)."""
+    from vib_tutorial.gui import frame_builder as fb
+    from vib_tutorial.gui.frame_loop import FRAME_MS, SWING_MS
+
+    w = main_window
+    assert w.coupling_page.findChild(type(w.coupling_page.shapes.swing_loop)).loop.frame_ms == SWING_MS
+    assert w.complex_page.swing.loop.frame_ms == SWING_MS
+    assert w.mounts_page.loop.frame_ms == SWING_MS and w.rotor_builder_page.loop.frame_ms == SWING_MS
+    page = w.frame_page
+    page.loop.enabled = False
+    page.swing.setCurrentIndex(fb.SWINGS.index(fb.Swing.MODE))
+    page.step(0.02)
+    assert page.loop.frame_ms == SWING_MS
+    page.swing.setCurrentIndex(fb.SWINGS.index(fb.Swing.RESPONSE))
+    page.step(0.02)
+    assert page.loop.frame_ms == (FRAME_MS if page.runs is not None else SWING_MS)

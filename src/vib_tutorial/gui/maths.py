@@ -15,8 +15,14 @@ inline maths as ``<m>…</m>`` (the notes' usual Unicode and HTML: ``ω<sub>n</s
   writes it, apart from a variable e (an eccentricity). In ``<eq>`` write it ``\\mathrm{e}``. ``<rm>…</rm>``
   keeps a stretch upright.
 
-Working on it: `tests/test_maths.py` renders every equation in the notes, checks no LaTeX command is left
-unknown or in the alt text, and checks the inline rules.
+Typesetting is ~27 ms an equation (the Jeffcott rotor's notes: 1.4 s the first time their tab showed), so
+`equation_svg` keeps each one's SVG on disk (`cache_dir`: the platform's cache folder, or `VIB_CACHE`), typeset in a
+placeholder colour that's swapped for the theme's, keyed by the LaTeX, the size and ziamath's version: once
+typeset, any session and any theme reads it back (#409 P-18). A cache that can't be read or written is skipped.
+
+Working on it: `tests/test_notes_markup.py` renders every equation in the notes, checks no LaTeX command is left
+unknown or in the alt text, and checks the inline rules (and the cache; the suite's is a temporary folder,
+conftest's `VIB_CACHE`).
 """
 
 from __future__ import annotations
@@ -24,9 +30,13 @@ from __future__ import annotations
 import functools
 import hashlib
 import html as html_lib
+import os
 import re
+import sys
 import unicodedata
 from importlib import resources
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 FONT = "STIX Two Text"
 FONTS = resources.files("vib_tutorial") / "fonts"
@@ -109,17 +119,63 @@ def display(latex: str) -> str:
     return f'<p align="center"><img src="eq:{key}" alt="{alt}"></p>'
 
 
+CACHE_ENV = "VIB_CACHE"  # a folder for the typeset equations instead of the platform's cache folder
+PLACEHOLDER = "#010203"  # the colour equations are typeset and kept in, swapped for the theme's
+
+
+def cache_dir() -> Path:
+    """Where typeset equations are kept: `VIB_CACHE`, else the platform's cache folder."""
+    if root := os.environ.get(CACHE_ENV):
+        return Path(root) / "equations"
+    if sys.platform == "darwin":
+        base = Path.home() / "Library" / "Caches"
+    elif os.name == "nt":
+        base = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
+    else:
+        base = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
+    return base / "vib-tutorial" / "equations"
+
+
+@functools.cache
+def _ziamath_version() -> str:
+    try:
+        return version("ziamath")
+    except PackageNotFoundError:  # a frozen app without its metadata: typeset afresh each session
+        return f"unknown-{os.getpid()}"
+
+
 def equation_svg(latex: str, px: float, color: str) -> str:
-    """`latex` typeset as SVG at `px` (the text's pixel size) in `color` (`notes_render.equation` draws it)."""
+    """`latex` typeset as SVG at `px` (the text's pixel size) in `color` (`notes_render.equation` draws it): read
+    from the cache if it's been typeset before (see the module's docstring)."""
+    key = hashlib.sha1(f"{_ziamath_version()}|{EQ_SIZE}|{px!r}|{latex}".encode()).hexdigest()
+    path = cache_dir() / f"{key}.svg"
+    try:
+        svg = path.read_text(encoding="utf-8")
+    except OSError:
+        svg = _typeset(latex, px)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            part = path.with_name(f"{key}.{os.getpid()}.part")
+            part.write_text(svg, encoding="utf-8")
+            os.replace(part, path)  # whole or not at all: another window may be reading it
+        except OSError:
+            pass  # read-only or full: typeset each time
+    return svg.replace(f'fill="{PLACEHOLDER}"', f'fill="{color}"')
+
+
+def _typeset(latex: str, px: float) -> str:
     import ziamath
 
     ziamath.config.svg2 = False  # Qt's SVG renderer doesn't follow SVG 2's <symbol>/<use> glyphs
-    return ziamath.Latex(latex, size=px * EQ_SIZE, color=color).svg()
+    return ziamath.Latex(latex, size=px * EQ_SIZE, color=PLACEHOLDER).svg()
 
 
 def mathml(latex: str) -> str:
-    """`latex` as MathML (what ziamath lays out): the tests look in it for commands it didn't know."""
+    """`latex` as MathML (what ziamath lays out): the tests look in it for commands it didn't know. ziamath is
+    imported first: it teaches latex2mathml the commands it adds (`\\arg`), so without it the answer depended on
+    whether anything had typeset an equation yet."""
     import latex2mathml.converter
+    import ziamath  # noqa: F401
 
     return latex2mathml.converter.convert(latex)
 

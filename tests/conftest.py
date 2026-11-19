@@ -21,6 +21,7 @@ for name in ONE_THREAD:
 # set in every process that imports this, so each xdist worker has its own (on Windows the app's native store is
 # the registry, which all the workers shared, and QSettings.setPath doesn't reach it).
 os.environ["VIB_SETTINGS"] = tempfile.mkdtemp(prefix="vib-settings-")
+os.environ["VIB_CACHE"] = tempfile.mkdtemp(prefix="vib-cache-")  # typeset equations (maths.cache_dir), not the user's
 
 WARN_SHARE = 0.8  # warn when a worker's peak address space passes this share of `ulimit -v`
 

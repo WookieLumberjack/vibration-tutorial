@@ -39,16 +39,30 @@ class Turning(enum.Enum):
 
 def matrix(q: np.ndarray) -> np.ndarray:
     """The rotation matrices (n, 3, 3) of unit quaternions q (n, 4), body to space: their columns are the body's
-    axes in space."""
-    w, x, y, z = (np.asarray(q, dtype=float)[..., i] for i in range(4))
-    return np.stack(
-        [
-            np.stack([1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)], axis=-1),
-            np.stack([2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)], axis=-1),
-            np.stack([2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)], axis=-1),
-        ],
-        axis=-2,
-    )
+    axes in space; one quaternion (4,) gives one (3, 3). One is worked out in floats (the rigid body's step asks
+    for it at every RK4 stage: 2 µs, where four stacked arrays took 22; #409 P-18), many filled in place."""
+    q = np.asarray(q, dtype=float)
+    if q.ndim == 1:
+        w, x, y, z = (float(c) for c in q)
+        return np.array(
+            [
+                [1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)],
+                [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)],
+                [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)],
+            ]
+        )
+    qw, qx, qy, qz = (q[..., i] for i in range(4))
+    R = np.empty((*q.shape[:-1], 3, 3))
+    R[..., 0, 0] = 1 - 2 * (qy * qy + qz * qz)
+    R[..., 0, 1] = 2 * (qx * qy - qw * qz)
+    R[..., 0, 2] = 2 * (qx * qz + qw * qy)
+    R[..., 1, 0] = 2 * (qx * qy + qw * qz)
+    R[..., 1, 1] = 1 - 2 * (qx * qx + qz * qz)
+    R[..., 1, 2] = 2 * (qy * qz - qw * qx)
+    R[..., 2, 0] = 2 * (qx * qz - qw * qy)
+    R[..., 2, 1] = 2 * (qy * qz + qw * qx)
+    R[..., 2, 2] = 1 - 2 * (qx * qx + qy * qy)
+    return R
 
 
 LOCK = 1e-6  # sin θ below this: the Euler angles' φ and ψ turn about the same axis (gimbal lock)

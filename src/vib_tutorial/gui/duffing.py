@@ -15,6 +15,7 @@ a readout or a curve there, and its tests in `tests/test_view_models.py`.
 
 from __future__ import annotations
 
+import functools
 import math
 import time
 
@@ -44,6 +45,7 @@ from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import spin
 from .plots import SteadyRange
+from .recompute import Recompute
 from .scrub import Scrub
 from .style import colors
 from .theming import add_legend, mute
@@ -635,7 +637,10 @@ class DuffingPage(QtWidgets.QWidget):
         chv = QtWidgets.QVBoxLayout(chart_tab)
         chv.addWidget(self.chart, 1)
         chv.addWidget(self.chart_note)
-        self._chart_zeta: float | None = None  # the damping ratio the chart shows
+        self._chart_zeta: float | None = None  # the damping ratio the chart shows (or is being worked out for)
+        # The chart (~0.1 s) on a worker after the damping's change; at once for a preset, a setup or the tab
+        # picked (#409 P-18).
+        self.chart_worker = Recompute(self._on_chart, self)
         self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
@@ -643,7 +648,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.chart_tab = chart_tab
         self.tabs.addTab(chart_tab, "Ince–Strutt chart")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(self._draw_chart)
+        self.tabs.currentChanged.connect(self._on_tab)
 
         splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         splitter.addWidget(left_scroll)
@@ -739,7 +744,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.tabs.blockSignals(True)  # the chart, if it's the tab, is drawn once by _apply_params
         self.tabs.setCurrentIndex(t.tab)
         self.tabs.blockSignals(False)
-        self._apply_params()
+        self._apply_params(now=True)
         self._mode = t.mode
         self.reset()
 
@@ -763,7 +768,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.preset.blockSignals(False)
         self.preset_note.setText("")
 
-    def _apply_params(self) -> None:
+    def _apply_params(self, now: bool = False) -> None:
         try:
             osc = self.oscillator()
         except ValueError as e:
@@ -775,7 +780,7 @@ class DuffingPage(QtWidgets.QWidget):
         self._show_osc_info()
         self._update_branch_buttons()
         self._show_readout()
-        self._draw_chart()
+        self._draw_chart(now)
 
     def _on_freq(self, value: float) -> None:
         if self._loading:
@@ -1047,8 +1052,12 @@ class DuffingPage(QtWidgets.QWidget):
         _fit(x_range, np.concatenate([v.orbit.x, self._section[:, 0]]))
         _fit(v_range, np.concatenate([v.orbit.y, self._section[:, 1]]))
 
-    def _draw_chart(self) -> None:
-        """The Ince–Strutt chart at the page's damping, when it shows (it takes ~0.1 s)."""
+    def _on_tab(self, _index: int) -> None:
+        self._draw_chart(now=True)  # a tab picked draws now
+
+    def _draw_chart(self, now: bool = False) -> None:
+        """The Ince–Strutt chart at the page's damping, when it shows: ~0.1 s, so on the worker after a control's
+        change (the chart keeping the last damping's meanwhile), at once otherwise."""
         osc = self.sim.osc
         if self.tabs.currentWidget() is not self.chart_tab or osc.stiffness <= 0:
             if osc.stiffness <= 0:
@@ -1056,12 +1065,20 @@ class DuffingPage(QtWidgets.QWidget):
             return
         if self._chart_zeta != osc.zeta:
             self._chart_zeta = osc.zeta
-            c = view.chart(osc.zeta)
-            self.chart_image.setImage(c.growth, levels=(-0.05, GROWTH_TOP), autoLevels=False)
-            self.chart_image.setRect(QtCore.QRectF(*c.rect))
-            self.chart_zero.setData(c.growth)
-            self.chart_hb.setData(*c.tongue)
+            job = functools.partial(view.chart, osc.zeta)
+            if now:
+                self.chart_worker.now(job)
+            else:
+                self.chart_worker.request(job)
         self._draw_chart_point()
+
+    def _on_chart(self, c: view.Chart) -> None:
+        if c.zeta != self._chart_zeta:
+            return  # for a damping since changed: its own is coming
+        self.chart_image.setImage(c.growth, levels=(-0.05, GROWTH_TOP), autoLevels=False)
+        self.chart_image.setRect(QtCore.QRectF(*c.rect))
+        self.chart_zero.setData(c.growth)
+        self.chart_hb.setData(*c.tongue)
 
     def _draw_chart_point(self) -> None:
         v = view.chart_point(self.sim.osc, self.sim.drive.freq_hz)
