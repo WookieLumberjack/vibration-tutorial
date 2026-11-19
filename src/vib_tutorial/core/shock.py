@@ -91,7 +91,10 @@ velocity so it ends at rest; noise and offset seeded) sampled by `record` (fs ra
 number of samples; the input is linear between samples, zero before, a jump at the start a one-step ramp).
 `srs` steps each oscillator as one complex pole by the same FOH update in closed form (`_foh`; absolute
 acceleration 2 Re(λ²η)), peaks refined by a parabola, the residual the free decay from the last state over one
-damped period (its largest value lies there), in `CHUNK`s of oscillators. `bank` spans `LOW`/T to the pulse's
+damped period (its largest value lies there), in `CHUNK`s of oscillators. The peaks through the record are
+`srs_peaks`, the residual's too: the Rust kernel steps a few oscillators at a time and keeps only their running
+peaks (#409 P-6); `srs_peaks_reference`, the Python, keeps each chunk's whole history (`tests/test_native.py`
+compares them). `bank` spans `LOW`/T to the pulse's
 `high`/T, widened round the chain's modes; `sample_rate` keeps `PER_PERIOD` samples to its fastest. The
 pulse's duration comes from the chain (`duration_for`); trials reset the seed to 1. A synthesized pulse
 (`SINES`, `WAVELETS`; `synthesize`) meets `target` (a plateau above `knee`, ∝ f below, at `SYNTH_Q` whatever
@@ -114,6 +117,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from . import native
 from .foh import FohSteps
 from .modal import TWO_PI, ModalResult, modal_analysis
 from .model import ChainSystem, state_space
@@ -361,15 +365,15 @@ def _foh(lam: np.ndarray, h: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]
     return mu, beta * (i0 - i1), beta * i1
 
 
-def _states(rec: Record, f: np.ndarray, zeta: float) -> tuple[np.ndarray, np.ndarray]:
-    """Each oscillator's η at every sample, (f, samples), and its poles."""
+def _states(a: np.ndarray, h: float, f: np.ndarray, zeta: float) -> tuple[np.ndarray, np.ndarray]:
+    """Each oscillator's η at every sample of `a`, (f, samples), and its poles."""
     import scipy.signal  # deferred: scipy.signal adds ~0.9 s to startup
 
     lam = poles(f, zeta)
-    mu, c0, c1 = _foh(lam, rec.h)
-    eta = np.empty((f.size, rec.a.size), dtype=complex)
+    mu, c0, c1 = _foh(lam, h)
+    eta = np.empty((f.size, a.size), dtype=complex)
     for i in range(f.size):
-        eta[i] = scipy.signal.lfilter([c1[i], c0[i]], [1.0, -mu[i]], rec.a)
+        eta[i] = scipy.signal.lfilter([c1[i], c0[i]], [1.0, -mu[i]], a)
     return eta, lam
 
 
@@ -432,23 +436,38 @@ class Spectrum:
         return float(np.exp(np.interp(math.log(f), np.log(self.f), np.log(self.maximax))))
 
 
+def srs_peaks_reference(a: np.ndarray, h: float, f: np.ndarray, zeta: float) -> np.ndarray:
+    """Each oscillator's peaks, (5, f): while the record lasts, the largest absolute acceleration y = 2 Re(λ²η)
+    and the largest −y, each refined by a parabola; after it, the same of the residual (the free decay from the
+    last η over one damped period, where its largest values lie); and the largest |z| = |2 Re η| over both. The
+    Rust kernel (`srs_peaks`) keeps no history: each oscillator's running peaks only."""
+    if a.size == 0:
+        raise ValueError("the record has no samples")
+    if not 0 <= zeta < 1:
+        raise ValueError("the oscillators' damping must be below critical")
+    out = np.empty((5, f.size))
+    for lo in range(0, f.size, CHUNK):
+        part = slice(lo, lo + CHUNK)
+        eta, lam = _states(a, h, f[part], zeta)
+        y = 2.0 * np.real(lam[:, None] ** 2 * eta)
+        out[0, part], out[1, part] = _refined(y), _refined(-y)
+        end = eta[:, -1]
+        yr = _free(end, lam, 2)
+        out[2, part], out[3, part] = np.max(yr, axis=1), np.max(-yr, axis=1)
+        out[4, part] = np.maximum(_refined(np.abs(2.0 * np.real(eta))), np.max(np.abs(_free(end, lam, 0)), axis=1))
+    return out
+
+
+srs_peaks = native.kernel("srs_peaks", srs_peaks_reference)
+
+
 def srs(rec: Record, f: np.ndarray, zeta: float) -> Spectrum:
     """The shock response spectrum of the record over the oscillators at f (Hz), damping ζ < 1."""
     if not 0 <= zeta < 1:
         raise ValueError("the oscillators' damping must be below critical")
     f = np.asarray(f, dtype=float)
-    primary, residual = np.empty((2, f.size)), np.empty((2, f.size))
-    zmax = np.empty(f.size)
-    for lo in range(0, f.size, CHUNK):
-        part = slice(lo, lo + CHUNK)
-        eta, lam = _states(rec, f[part], zeta)
-        y = 2.0 * np.real(lam[:, None] ** 2 * eta)
-        primary[:, part] = _refined(y), _refined(-y)
-        end = eta[:, -1]
-        yr = _free(end, lam, 2)
-        residual[:, part] = np.max(yr, axis=1), np.max(-yr, axis=1)
-        zmax[part] = np.maximum(_refined(np.abs(2.0 * np.real(eta))), np.max(np.abs(_free(end, lam, 0)), axis=1))
-    return Spectrum(f, zeta, np.maximum(primary, 0.0), np.maximum(residual, 0.0), zmax)
+    peaks = np.maximum(srs_peaks(np.ascontiguousarray(rec.a, dtype=float), rec.h, f, zeta), 0.0)
+    return Spectrum(f, zeta, peaks[0:2], peaks[2:4], peaks[4])
 
 
 @dataclass(frozen=True)
@@ -465,7 +484,7 @@ class Oscillator:
 
 
 def oscillator(rec: Record, f: float, zeta: float, tail: float) -> Oscillator:
-    eta, lam = _states(rec, np.array([f]), zeta)
+    eta, lam = _states(rec.a, rec.h, np.array([f]), zeta)
     n = round(tail * rec.fs)
     tau = np.arange(1, n + 1) * rec.h
     eta = np.concatenate([eta[0], eta[0, -1] * np.exp(lam[0] * tau)])
@@ -660,7 +679,7 @@ def chain_peaks(system: ChainSystem, rec: Record, result: ModalResult | None = N
     for r in range(f.size):
         sp = srs(base, f[r : r + 1], zeta[r])
         acc_s[r], disp_s[r] = sp.maximax[0], sp.displacement[0]
-        eta, lam = _states(padded, f[r : r + 1], zeta[r])
+        eta, lam = _states(padded.a, padded.h, f[r : r + 1], zeta[r])
         acc_h[r], disp_h[r] = 2.0 * np.real(lam[0] ** 2 * eta[0]), 2.0 * np.real(eta[0])
     dphi = np.diff(phi, prepend=0.0, axis=0) * lin.stiffness[:, None]
     response = chain_response(lin, padded.a, padded.fs, result)
