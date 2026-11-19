@@ -267,3 +267,22 @@ def test_a_leaning_spring_keeps_its_zigzag_on_one_side():
         coil = _coil(bottom, np.array([math.sin(lean), 0.0, math.cos(lean)]), rest)
         sides.append(coil[2] - (coil[2] @ coil[-1]) * coil[-1])  # the first zig, off the axis
     assert all(s[1] > 0 for s in sides) or all(s[1] < 0 for s in sides)
+
+
+@pytest.mark.parametrize("kind", list(Excitation))
+def test_the_batched_spectrum_matches_a_solve_at_each_speed(kind):
+    """`spectrum` solves every speed in one batch (#409 P-9): the same as solving Z(ω) q = Q a speed at a time."""
+    from vib_tutorial.core.rigid_mounts import amplitude, mount_forces, response
+
+    drive = Drive(kind=kind, crank=0.3)
+    rpm = np.linspace(200.0, 4000.0, 37)
+    sp = spectrum(LEVEL, 0.12, drive, rpm)
+    Q_all, omega = drive.loads(rpm)
+    mounts = LEVEL.mounts()
+    for i, r in enumerate(rpm):
+        Q = drive.load(float(r))
+        assert np.allclose(Q_all[i], Q, rtol=1e-12) and omega[i] == pytest.approx(drive.frequency(float(r)))
+        f = mount_forces(mounts, 0.12, response(LEVEL.body, mounts, 0.12, drive.frequency(float(r)), Q))
+        assert np.allclose(sp.mounts[i], amplitude(f), rtol=1e-10)
+        assert sp.total[i] == pytest.approx(float(amplitude(f.sum(axis=0))), rel=1e-10)
+        assert sp.applied[i] == pytest.approx(float(amplitude(Q[:3])), rel=1e-10, abs=1e-300)
