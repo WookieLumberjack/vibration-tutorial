@@ -8,7 +8,8 @@ place it was read to, so going back to one carries on where it left off.
 The notes are the pages' own module-level HTML, so a page needn't be built to read its notes.
 
 The search box finds a word or a symbol in every page's notes and the glossary (`search`: their plain text,
-section by section, indexed the first time); a hit opens its section with the match selected. The *Glossary
+section by section, indexed the first time); a hit opens its section with the match selected. Find (⌘F on
+macOS, Ctrl+F elsewhere) raises the window and selects the box (`ready_search`), from the main window too. The *Glossary
 of symbols* (`theory/glossary.html`) heads the contents.
 """
 
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 import html as html_lib
 import re
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -173,7 +175,7 @@ class TheoryWindow(QtWidgets.QWidget):
         self.open_button.setToolTip("Show the page these notes belong to in the main window.")
         self.open_button.clicked.connect(weak.slot(self, lambda self: self.page and self._open_page(self.page)))
         self.search_box = QtWidgets.QLineEdit()
-        self.search_box.setPlaceholderText("Search the notes (Ctrl+F)")
+        self.search_box.setPlaceholderText(f"Search the notes ({links.key_text('Ctrl+F')})")
         self.search_box.setClearButtonEnabled(True)
         self.search_box.setToolTip("<p>Find a word or a symbol in every page's notes and the glossary.</p>")
         self.search_box.textChanged.connect(self._search)
@@ -238,10 +240,21 @@ class TheoryWindow(QtWidgets.QWidget):
         self.follow.setChecked(settings().value("theory_window/follow", "false") == "true")
         self.follow.toggled.connect(lambda on: settings().setValue("theory_window/follow", "true" if on else "false"))
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Back), self, self.back)
-        QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Find), self, self.search_box.setFocus)
+        QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Find), self, self.ready_search)
+        if sys.platform == "darwin":  # the Control key too, as the box once said "Ctrl+F" (it's Meta to Qt there)
+            QtGui.QShortcut(QtGui.QKeySequence("Meta+F"), self, self.ready_search)
         QtGui.QShortcut(QtGui.QKeySequence(QtGui.QKeySequence.StandardKey.Forward), self, self.forward)
         notes_view.add_zoom_keys(self)
         self._update_buttons()
+
+    def ready_search(self) -> None:
+        """Ready to search: the window raised and active, the search box focused with its text selected, so typing
+        replaces it (⌘F on macOS, Ctrl+F elsewhere; from a page too, `MainWindow.find_in_notes`)."""
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self.search_box.setFocus(QtCore.Qt.FocusReason.ShortcutFocusReason)
+        self.search_box.selectAll()
 
     # --------------------------------------------------------------- navigation
     def show_page(self, name: str, anchor: str = "", remember: bool = True) -> None:

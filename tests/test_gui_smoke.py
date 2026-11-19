@@ -237,6 +237,32 @@ def test_theory_window_searches_the_notes_and_has_a_glossary(app):
     t.close()
 
 
+def test_find_readies_the_theory_windows_search_from_either_window(main_window):
+    """Find (⌘F on macOS, Ctrl+F elsewhere) on a page opens the Theory window with its search box focused and its
+    text selected, so typing replaces it; in the Theory window, from its notes, the same. The box names the key
+    as the platform writes it."""
+    from PySide6.QtTest import QTest
+
+    from vib_tutorial.gui import links
+
+    w = main_window
+    w.show_page("sdof_page")
+    w.activateWindow()
+    QtWidgets.QApplication.processEvents()
+    QTest.keyClick(w, QtCore.Qt.Key.Key_F, QtCore.Qt.KeyboardModifier.ControlModifier)  # ⌘F on macOS
+    t = w.theory_window
+    assert t is not None and t.isVisible() and t.page == "sdof_page"
+    assert t.focusWidget() is t.search_box
+    t.search_box.setText("damping")
+    t.browser.setFocus()
+    QtWidgets.QApplication.processEvents()
+    QTest.keyClick(t.browser, QtCore.Qt.Key.Key_F, QtCore.Qt.KeyboardModifier.ControlModifier)
+    assert t.focusWidget() is t.search_box and t.search_box.selectedText() == "damping"
+    assert links.key_text("Ctrl+F") in t.search_box.placeholderText()
+    assert links.key_text("Ctrl+F", mac=True) == "⌘F" and links.key_text("Alt+PgUp", mac=True) == "⌥PgUp"
+    t.close()
+
+
 def test_a_pages_first_show_opens_its_theory(app):
     """Once `run` turns it on, a page's first show (ever) opens its Theory tab at the top: on the first page, Start
     here, the course map, how a page works and the keys. Later shows keep the tab the reader left, as does a page a

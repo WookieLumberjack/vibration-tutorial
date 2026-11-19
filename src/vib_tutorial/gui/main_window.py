@@ -261,6 +261,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.set_present(level)
         QtGui.QShortcut(QtGui.QKeySequence("F1"), self, self.show_theory)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F1"), self, self.open_theory_window)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F"), self, self.find_in_notes)  # ⌘F on macOS
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+R"), self, self.restore_defaults)
         QtGui.QShortcut(QtGui.QKeySequence("H"), self, self.hold_curves)
@@ -519,6 +520,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def _read_theory(self, name: str, anchor: str) -> None:
         """A hint's link: the Theory window at page `name`'s `anchor`."""
         self.open_theory_window().show_page(name, anchor)
+
+    def find_in_notes(self) -> None:
+        """The Theory window's search, ready to type (`TheoryWindow.ready_search`): a page has no find of its own, and
+        the window's searches every page's notes."""
+        self.open_theory_window().ready_search()
 
     def show_theory(self) -> QtWidgets.QTextBrowser | None:
         """Bring the page showing's Theory tab to the front (and any group of tabs it sits in); its browser."""
