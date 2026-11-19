@@ -200,7 +200,11 @@ class SimulationPage(QtWidgets.QWidget):
         self.modal = modal_analysis(system)
         self.method = Method.CLASSICAL
         self.entries = mode_entries(self.modal, self.method)
-        self._modal_views = Deferred(self, self._draw_modal_views)  # the table and mode plots, drawn while shown
+        # Drawn while the page shows, else when it next does. Qt asks the filter installed last first, so the modal
+        # views catch up first: their modes reach the force panel, which asks for the FRF then, once.
+        self._frf_view = Deferred(self, self._draw_frf)  # the FRF plot
+        self._chain_view = Deferred(self, self._draw_chain)  # the chain drawn
+        self._modal_views = Deferred(self, self._draw_modal_views)  # the table and mode plots
         self.running = True
         self._energy_scale = 0.0  # J at full bar height; follows the plot window while auto-scaling
         self._ground_velocity = 0.0  # m/s over the last step, for the motion relative to the ground
@@ -385,8 +389,9 @@ class SimulationPage(QtWidgets.QWidget):
 
         self._apply_dof(system.n)
         self._refresh_modal()
-        self._modal_views.stale = False
-        self._draw_modal_views()  # the first, now: not yet in a window, the page counts as hidden
+        for view in (self._modal_views, self._chain_view, self._frf_view):  # the first, now: not yet in a window,
+            view.stale = False  # the page counts as hidden
+            view.draw()
 
         self._clock = QtCore.QElapsedTimer()
         self._clock.start()
@@ -448,7 +453,7 @@ class SimulationPage(QtWidgets.QWidget):
         if n_changed:
             self._apply_dof(system.n)
         else:
-            self.chain.set_masses(system.masses)
+            self._chain_view.request()
         self._refresh_modal(modal)
 
     def _on_preset(self, preset: Preset) -> None:
@@ -508,8 +513,11 @@ class SimulationPage(QtWidgets.QWidget):
         self.history.reset(n)
         self._carry = 0
         self._sim_target = self.sim.t
-        self.chain.set_masses(self.sim.system.masses)
+        self._chain_view.request()
         self.force_panel.set_dof(n)
+
+    def _draw_chain(self) -> None:
+        self.chain.set_masses(self.sim.system.masses)
 
     def _refresh_modal(self, modal=None) -> None:
         self.modal = modal if modal is not None else modal_analysis(self.sim.system)
@@ -522,8 +530,8 @@ class SimulationPage(QtWidgets.QWidget):
 
     def _refresh_modal_views(self) -> None:
         """The current modal result's modes by the method picked, drawn now if the page shows, else when it next
-        does: a trial on another page sends its chain through here (#409 P-7), and the page was redrawing its
-        table and mode plots unseen, 20–70 ms each time."""
+        does: a trial on another page sends its chain through here (#409 P-7, P-11), and the page was redrawing
+        its table and mode plots unseen, 20–70 ms each time (its chain and FRF too: `_draw_chain`, `_draw_frf`)."""
         self.entries = mode_entries(self.modal, self.method)
         self._modal_views.request()
 
@@ -672,14 +680,21 @@ class SimulationPage(QtWidgets.QWidget):
         s = self.force.settings
         system = self.sim.system
         self.frf_compare.setEnabled(system.n > 1)
+        self.frf_friction_note.setVisible(bool(system.friction.any()))
+        self._frf_view.request()
+        self.time_plot.set_input(s.base)
+
+    def _draw_frf(self) -> None:
+        """The FRF for the chain, target and force: now if the page shows, else when it next does (a chain sent
+        from another page's trial redrew it unseen, 10–30 ms; #409 P-11)."""
+        s = self.force.settings
+        system = self.sim.system
         reference = without_absorber(system) if self.frf_compare.isChecked() else None
         amplitude = s.base_amplitude if s.base else s.amplitude
         self.frf_plot.set_system(
             system, self.modal, s.target, base=s.base, reference=reference, friction_amplitude=amplitude
         )
-        self.frf_friction_note.setVisible(bool(system.friction.any()))
         self._set_drive()
-        self.time_plot.set_input(s.base)
 
     def _set_drive(self) -> None:
         """Mark the drive frequency: the harmonic's, or where a running chirp has swept to."""
