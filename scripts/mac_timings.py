@@ -17,7 +17,10 @@ display's scale), the most costly first, and the rest of the window (controls, l
 warm, as the release workflow measures it.
 
 Each scenario's legend placements are timed too (*Legend placement*: they run on their own timer between
-frames, so they show in neither column).
+frames, so they show in neither column). *Held curves* counts how often a held curve (`plot_patches.hold_still`)
+was stroked again a frame, and the ms that took: about 0 when its pixmap is kept, one a frame when Qt's pixmap
+cache drops it (#409 N-2). The Single oscillator runs a second time with its curves not held, to show what holding
+gains on this display.
 
 Leave the window alone while it runs: a click or a key press is logged as an input but changes the run.
 `scripts/frame_report.py <out>/frames.csv` cuts the same log by what was on screen instead. To share a
@@ -140,9 +143,26 @@ def _startup(preset: str, speed: float = 1.0):
     return setup
 
 
-def _playback(attribute: str, view: str | None = None):
+_UNHELD: list = []  # the curves a not-held scenario let go of, held again when it stops
+
+
+def _cursor_curves(page) -> list:
+    """The curves under `page`'s playback cursors: the ones `Playback.add_cursor` held."""
+    import pyqtgraph as pg
+
+    curves = []
+    for line in page.playback.cursors:
+        for item in line.getViewBox().addedItems:
+            curve = item.curve if isinstance(item, pg.PlotDataItem) else item
+            if isinstance(curve, pg.PlotCurveItem):
+                curves.append(curve)
+    return curves
+
+
+def _playback(attribute: str, view: str | None = None, held: bool = True):
     """A small page's closed-form response played back (its `Playback`), at the page's own speed; `view`, the
-    page's attribute its playback draws, brought to the front if it's in a tab."""
+    page's attribute its playback draws, brought to the front if it's in a tab; `held` False draws the curves
+    under its cursors afresh each frame, as before `hold_still`."""
 
     def setup(w):
         from PySide6 import QtWidgets
@@ -156,6 +176,10 @@ def _playback(attribute: str, view: str | None = None):
                 for i in range(tabs.count()):
                     if tabs.widget(i).isAncestorOf(getattr(page, view)):
                         tabs.setCurrentIndex(i)
+        if not held:
+            for curve in _cursor_curves(page):
+                curve.setCacheMode(QtWidgets.QGraphicsItem.CacheMode.NoCache)
+                _UNHELD.append(curve)
         page.playback.play()
         return page, playback.SPEEDS[page.playback.speed.currentIndex()][1]
 
@@ -180,6 +204,10 @@ def stop(w, page) -> None:
 
     if isinstance(getattr(page, "playback", None), Playback):
         page.playback.pause()
+        from PySide6 import QtWidgets
+
+        while _UNHELD:
+            _UNHELD.pop().setCacheMode(QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache)
     elif page is w.continuum_page:
         page.waves_view.reset()
     elif hasattr(page, "_run"):
@@ -257,6 +285,11 @@ SCENARIOS = (
     ),
     Scenario("Single oscillator: played back", "a held plot under a moving cursor (#316 E)", _playback("sdof_page")),
     Scenario(
+        "Single oscillator: played back, not held",
+        "the same, its curves stroked every frame (#409 N-2)",
+        _playback("sdof_page", held=False),
+    ),
+    Scenario(
         "Quarter-car: driven over its road",
         "the car's view and its held plots",
         _playback("quarter_car_page", "car_view"),
@@ -316,6 +349,49 @@ class PaintSplit:
 
     def uninstall(self) -> None:
         self._cls.paintEvent = self._paint
+
+
+class CurveStrokes:
+    """Each curve's strokes while `on` (`PlotCurveItem.paint`), held ones (a pixmap kept, `DeviceCoordinateCache`)
+    apart: Qt calls a held curve's paint only to draw its pixmap again. Installed before the window is built."""
+
+    def __init__(self) -> None:
+        import pyqtgraph as pg
+        from PySide6 import QtWidgets
+
+        self.on = False
+        self.held = [0, 0.0]  # strokes, ms
+        self.free = [0, 0.0]
+        self._cls = pg.PlotCurveItem
+        self._paint = pg.PlotCurveItem.paint
+        no_cache = QtWidgets.QGraphicsItem.CacheMode.NoCache
+        strokes = self
+
+        def paint(curve, *args):
+            if not strokes.on:
+                return strokes._paint(curve, *args)
+            began = time.perf_counter()
+            try:
+                return strokes._paint(curve, *args)
+            finally:
+                tally = strokes.free if curve.cacheMode() == no_cache else strokes.held
+                tally[0] += 1
+                tally[1] += (time.perf_counter() - began) * 1e3
+
+        pg.PlotCurveItem.paint = paint
+
+    def take(self) -> tuple[list, list]:
+        taken, self.held, self.free = (self.held, self.free), [0, 0.0], [0, 0.0]
+        return taken
+
+    def uninstall(self) -> None:
+        self._cls.paint = self._paint
+
+
+def stroke_row(label: str, held: list, free: list, frames: int) -> str:
+    """A scenario's curve strokes a frame, held and not, with their ms a frame."""
+    n = max(frames, 1)
+    return f"| {label} | {held[0] / n:.1f} | {held[1] / n:.1f} | {free[0] / n:.1f} | {free[1] / n:.1f} |"
 
 
 class PlaceTimer:
@@ -461,6 +537,8 @@ def main() -> int:
     if args.offscreen:
         os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
+    from PySide6 import QtGui
+
     from vib_tutorial import gui
     from vib_tutorial.gui import frame_stats
     from vib_tutorial.gui.main_window import MainWindow
@@ -468,6 +546,7 @@ def main() -> int:
     app = gui.make_app(args.theme)
     split = PaintSplit()  # before any plot is built: PySide looks up a view's paintEvent when it's made
     placing = PlaceTimer()
+    strokes = CurveStrokes()
     w = MainWindow()
     width, height = (int(x) for x in args.size.split("x"))
     screen = app.primaryScreen()
@@ -482,7 +561,7 @@ def main() -> int:
         f"{platform.platform()}, {platform.machine()}, Python {platform.python_version()}; "
         f"screen {screen.size().width()}×{screen.size().height()} @{screen.devicePixelRatio():g}x, "
         f"{screen.refreshRate():.0f} Hz; window {w.width()}×{w.height()}; theme {args.theme}; "
-        f"git {_git_head()}",
+        f"pixmap cache {QtGui.QPixmapCache.cacheLimit() / 1024:g} MB; git {_git_head()}",
         "",
     ]
     picked = [s for s in SCENARIOS if not args.only or any(o.lower() in s.label.lower() for o in args.only)]
@@ -492,6 +571,7 @@ def main() -> int:
     asked: dict[str, float] = {}
     painted: dict[str, dict[str, float]] = {}
     placed: dict[str, list[float]] = {}
+    stroked: dict[str, tuple[list, list]] = {}
     for s in picked:
         print(f"{s.label} …", flush=True)
         try:
@@ -505,17 +585,20 @@ def main() -> int:
         assert stats is not None, "VIB_FRAME_STATS was set before the window was built"
         split.take()
         placing.take()
+        strokes.take()
         stats.note("input", MARK + "start " + s.label)
-        split.on = placing.on = True
+        split.on = placing.on = strokes.on = True
         counted = min(args.seconds, s.seconds or args.seconds)
         wait(app, counted)
-        split.on = placing.on = False
+        split.on = placing.on = strokes.on = False
         stats.note("input", MARK + "end " + s.label)
         painted[s.label] = split.take()
         placed[s.label] = [counted, *placing.take()]
+        stroked[s.label] = strokes.take()
         stop(w, page)
     split.uninstall()
     placing.uninstall()
+    strokes.uninstall()
     gui.close_graphics(w)
     frame_stats.uninstall()
 
@@ -561,6 +644,18 @@ def main() -> int:
         seconds, *ms = placed.get(s.label, [1.0])
         each = f"{np.median(ms):.2f} / {max(ms):.2f}" if ms else ""
         lines.append(f"| {s.label} | {len(ms) / seconds:.1f} | {each} |")
+    lines += [
+        "",
+        "### Held curves",
+        "",
+        "Curve strokes a frame (#409 N-2): held curves should be ~0 (drawn from their pixmaps); ms a frame each.",
+        "",
+        "| Scenario | Held strokes | Held ms | Other strokes | Other ms |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for s in picked:
+        if s.label in stroked:
+            lines.append(stroke_row(s.label, *stroked[s.label], len(frames.get(s.label, []))))
     if args.app:
         lines += ["", "### Packaged start-up", "", *startup(args.app, out)]
     report = "\n".join(lines) + "\n"

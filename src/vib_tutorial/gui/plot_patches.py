@@ -27,7 +27,8 @@ Simulation page's strip chart, cached, went 4.8 → 7.9 ms). `Playback.add_curso
 live in Qt's QPixmapCache, 10 MB unless told otherwise, and at a Retina display's 2× each is four times the
 size: a 1700 px window's Single oscillator holds 10.6 MB of them, so the cache dropped them as fast as it made
 them and every frame drew the curves again, and then copied them too (20 ms a frame on the Mac, 36.8 fps;
-#409 N-2). `install` gives it `PIXMAP_CACHE_MB`, room for a few pages' held plots at 2× on a large screen.
+#409 N-2). `size_pixmap_cache` gives it `PIXMAP_CACHE_MB`, room for a few pages' held plots at 2× on a large
+screen; make_app calls it once the app exists, since making the QApplication sets the limit back to 10 MB.
 
 Wide lines. Qt strokes a polyline wider than 1 px as one outline, and a curve that zigzags (a response with a
 stiff mode in it, a noisy signal) makes that outline slow: the Numerical integration page's 2 px responses took
@@ -226,4 +227,9 @@ def install() -> None:
     pg.PlotItem.addItem = _add_item
     pg.PlotCurveItem._shouldUseDrawLineSegments = _segmented
     pg.LegendItem.paint = _paint_legend
+
+
+def size_pixmap_cache() -> None:
+    """Room for held curves' pixmaps: called once the QApplication exists, which sets the cache back to its 10 MB
+    as it's made (set before it, #417's limit never held)."""
     QtGui.QPixmapCache.setCacheLimit(PIXMAP_CACHE_MB * 1024)
