@@ -80,6 +80,7 @@ KEYS = (
     ("Space", "start, pause or resume the page's motion (on the Simulation page, its force)"),
     ("F1", "the page's Theory tab"),
     ("Ctrl+R", "the page's controls back as it opened (Defaults)"),
+    ("H / Shift+H", "hold the curves on the plots showing, in grey, to compare a change against / clear them"),
     ("F5", "Present: the controls folded away, then the right-hand tabs too (the plots the whole width), then back"),
     ("F6 / F7", "a pointer that follows the mouse / ink: drag to draw on the page (F7 again to use the page)"),
     ("Esc", "the ink cleared, the pointer and ink off, and a Thing to try's large note hidden"),
