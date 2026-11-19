@@ -6,6 +6,7 @@ import itertools
 import numpy as np
 import pytest
 
+from vib_tutorial.core.modal import mac
 from vib_tutorial.core.model import ChainSystem
 from vib_tutorial.core.test_planning import (
     Method,
@@ -13,7 +14,6 @@ from vib_tutorial.core.test_planning import (
     driving_point_residue,
     effective_independence,
     evenly_spaced,
-    mac,
     ods,
     ods_parts,
     ods_spectrum,

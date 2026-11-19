@@ -48,9 +48,8 @@ from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
-import scipy.linalg
 
-from .modal import receptance
+from .modal import mac_matrix, normal_modes, receptance
 from .model import ChainSystem
 
 TWO_PI = 2.0 * np.pi
@@ -70,8 +69,7 @@ METHODS = tuple(Method)
 def undamped_modes(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
     """(f Hz, Φ mass-normalized, a column per mode), each column's largest entry positive."""
     M, _, K = system.matrices()
-    w2, phi = scipy.linalg.eigh(K, M)
-    phi *= np.sign(phi[np.argmax(np.abs(phi), axis=0), np.arange(phi.shape[1])])
+    w2, phi = normal_modes(K, M)
     return np.sqrt(np.clip(w2, 0.0, None)) / TWO_PI, phi
 
 
@@ -139,15 +137,9 @@ def _rank(A: np.ndarray) -> int:
     return int(np.linalg.matrix_rank(A)) if A.size else 0
 
 
-def mac(a: np.ndarray, b: np.ndarray) -> float:
-    den = float(np.vdot(a, a).real * np.vdot(b, b).real)
-    return float(abs(np.vdot(a, b)) ** 2 / den) if den > 0 else 0.0
-
-
 def auto_mac(shapes: np.ndarray) -> np.ndarray:
     """MAC between every pair of columns."""
-    m = shapes.shape[1]
-    return np.array([[mac(shapes[:, r], shapes[:, s]) for s in range(m)] for r in range(m)])
+    return mac_matrix(shapes, shapes)
 
 
 @dataclass(frozen=True)

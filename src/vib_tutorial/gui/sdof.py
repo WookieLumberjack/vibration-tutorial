@@ -17,6 +17,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ..core.modal import log_decrement
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import (
     TWO_PI,
@@ -243,7 +244,7 @@ def _log_decrement(rng: np.random.Generator) -> Question:
     zeta = pick(rng, (0.01, 0.02, 0.03, 0.05, 0.08, 0.1))
     n = int(pick(rng, (1, 2, 3, 5)))
     x0 = pick(rng, (5, 10, 20))
-    delta = TWO_PI * zeta / math.sqrt(1.0 - zeta * zeta)
+    delta = log_decrement(zeta)
     xn = rounded(x0 * math.exp(-n * delta))
     d = math.log(x0 / xn) / n  # from the printed peaks
     answer = d / math.sqrt(TWO_PI**2 + d * d)

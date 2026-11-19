@@ -81,6 +81,7 @@ import scipy.linalg
 import scipy.optimize
 
 from . import native
+from .foh import foh_discretize
 
 TWO_PI = 2.0 * math.pi
 MAX_STEP = 0.01  # s
@@ -706,16 +707,10 @@ class DuffingSimulator:
         key = (h, self.osc.mass, self.osc.stiffness, self.osc.damping)
         if key not in self._cache:
             m = self.osc.mass
-            aug = np.zeros((4, 4))
-            aug[0, 1] = 1.0
-            aug[1, 0] = -self.osc.stiffness / m
-            aug[1, 1] = -self.osc.damping / m
-            aug[1, 2] = 1.0 / m
-            aug[2, 3] = 1.0 / h
-            E = scipy.linalg.expm(aug * h)
-            g1 = E[:2, 3]
-            g0 = E[:2, 2] - g1
-            self._cache[key] = (E[0, 0], E[0, 1], E[1, 0], E[1, 1], g0[0], g0[1], g1[0], g1[1])
+            A = np.array([[0.0, 1.0], [-self.osc.stiffness / m, -self.osc.damping / m]])
+            Phi, G0, G1 = foh_discretize(A, np.array([[0.0], [1.0 / m]]), h)
+            g0, g1 = G0[:, 0], G1[:, 0]
+            self._cache[key] = (Phi[0, 0], Phi[0, 1], Phi[1, 0], Phi[1, 1], g0[0], g0[1], g1[0], g1[1])
         return self._cache[key]
 
     def advance(self, duration: float) -> Samples:

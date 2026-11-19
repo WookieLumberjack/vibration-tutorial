@@ -21,6 +21,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .foh import respond
+from .modal import log_decrement
 
 TWO_PI = 2.0 * math.pi
 CRITICAL_BAND = 1e-6  # |zeta - 1| below this is critical damping (the two roots' formula loses precision)
@@ -85,8 +86,7 @@ class Oscillator:
     @property
     def log_decrement(self) -> float:
         """ln(x_k / x_{k+1}) between successive peaks: 2πζ/√(1 − ζ²); inf at and above critical damping."""
-        z = self.zeta
-        return TWO_PI * z / math.sqrt(1.0 - z * z) if z < 1.0 else math.inf
+        return log_decrement(self.zeta) if self.zeta < 1.0 else math.inf
 
     @property
     def static(self) -> float:

@@ -17,6 +17,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.modal import mac
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick
 from ..core.test_planning import (
@@ -25,7 +26,6 @@ from ..core.test_planning import (
     Placement,
     Quality,
     at_phase,
-    mac,
     ods,
     ods_parts,
     ods_spectrum,

@@ -33,7 +33,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .modal import TWO_PI, ModalResult
+from .modal import TWO_PI, ModalResult, mac
 
 PEAK_PROMINENCE = 0.05  # decades of the mode indicator a peak must rise above its surroundings
 MIN_CIRCLE_POINTS = 5
@@ -427,12 +427,6 @@ class ModeMatch:
     exact: complex | None  # exact pole
     identified: IdentifiedMode | None  # None: missed
     mac: float
-
-
-def mac(a: np.ndarray, b: np.ndarray) -> float:
-    num = abs(np.vdot(a, b)) ** 2
-    den = np.vdot(a, a).real * np.vdot(b, b).real
-    return float(num / den) if den > 0 else 0.0
 
 
 def mac_matrix(modes: list[IdentifiedMode], result: ModalResult) -> np.ndarray:

@@ -17,6 +17,7 @@ from enum import Enum
 import numpy as np
 import scipy.linalg
 
+from .modal import normal_modes
 from .model import ChainSystem
 
 TWO_PI = 2.0 * np.pi
@@ -45,7 +46,7 @@ BASES = tuple(Basis)
 def exact(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
     """(ω, Φ): the undamped natural frequencies (rad/s), ascending, and mass-normalized shapes."""
     M, _, K = system.matrices()
-    w2, phi = scipy.linalg.eigh(K, M)
+    w2, phi = normal_modes(K, M)
     return np.sqrt(np.clip(w2, 0.0, None)), phi
 
 

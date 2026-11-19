@@ -59,7 +59,7 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.linalg
 
-from .modal import TWO_PI, ModalResult, receptance
+from .modal import TWO_PI, ModalResult, normal_modes, receptance
 from .model import ChainSystem, assemble_chain
 
 SUBSTRUCTURE_NAMES = "ABCDEFGH"
@@ -396,10 +396,7 @@ def _reduce_free(name, elements, interior, boundary, M, C, K, n_kept, residual_m
             C.copy(),
             K.copy(),
         )
-    w2, Phi = scipy.linalg.eigh(K, M)
-    # Sign: the largest entry positive (the first of them, if tied), e.g. a rigid-body mode all +.
-    peak = np.argmax(np.abs(Phi) >= np.abs(Phi).max(axis=0) - 1e-9, axis=0)
-    Phi = Phi * np.sign(Phi[peak, np.arange(Phi.shape[1])])
+    w2, Phi = normal_modes(K, M)  # the largest entry positive (the first, if tied): a rigid-body mode all +
     n_rigid = _rigid_count(w2)
     w2[:n_rigid] = 0.0
     if n_rigid > ni:

@@ -21,7 +21,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.complex_modes import complexity
-from ..core.modal import ModalResult, modal_analysis
+from ..core.modal import ModalResult, mac_matrix, modal_analysis
 from ..core.model import ChainSystem
 from ..core.model_updating import (
     Correlation,
@@ -33,7 +33,6 @@ from ..core.model_updating import (
     Update,
     correlate,
     frequency_sensitivity,
-    mac,
     measure,
     pair,
     parameters,
@@ -314,7 +313,7 @@ def _mac(rng: np.random.Generator) -> Question:
         a, b = pick(rng, (0.5, 0.8, 1.2, 1.5)), pick(rng, (-1, -0.5, 0.5, 1, 1.5))
         c, d = pick(rng, (0.4, 0.8, 1, 1.5)), pick(rng, (-1.2, -0.6, 0.3, 0.9, 2))
         psi, phi = np.array([1.0, a, b]), np.array([1.0, c, d])
-        value = float(mac(psi[:, None], phi[:, None])[0, 0])
+        value = float(mac_matrix(psi[:, None], phi[:, None])[0, 0])
         if 0.2 < value < 0.95:
             break
     dot, pp, ff = float(psi @ phi), float(psi @ psi), float(phi @ phi)
@@ -543,7 +542,7 @@ def _auto_mac(system: ChainSystem, sensors: tuple[int, ...], modes: int) -> floa
     shapes = np.column_stack([m.shape for m in result.modes[:modes]])[list(sensors)]
     if not len(sensors) or shapes.shape[1] < modes:
         return 1.0
-    M = mac(shapes, shapes)
+    M = mac_matrix(shapes, shapes)
     return float(np.max(M[~np.eye(modes, dtype=bool)]))
 
 

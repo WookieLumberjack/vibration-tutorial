@@ -56,7 +56,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .modal import ModalResult, modal_analysis
+from .modal import ModalResult, mac_matrix, modal_analysis
 from .model import ChainSystem
 from .oma import hammer_modes
 
@@ -164,14 +164,6 @@ def measure(
     return Test(source, out, sensors)
 
 
-def mac(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    """MAC of each column of a with each column of b: (a's columns, b's columns)."""
-    num = np.abs(a.conj().T @ b) ** 2
-    den = np.outer(np.sum(np.abs(a) ** 2, axis=0), np.sum(np.abs(b) ** 2, axis=0))
-    with np.errstate(divide="ignore", invalid="ignore"):
-        return np.where(den > 0, num / den, 0.0)
-
-
 @dataclass(frozen=True)
 class Pair:
     test: int  # 0-based, into Test.modes
@@ -235,11 +227,11 @@ def correlate(structure: ChainSystem, errors: Errors, test: Test, min_mac: float
     result = modal_analysis(model)
     shapes = test.shapes()
     model_shapes = np.column_stack([m.shape for m in result.modes])[test.sensors]
-    macs = mac(shapes, model_shapes)
+    macs = mac_matrix(shapes, model_shapes)
     # the model's |λ|/2π, as the test measures it (the undamped frequency where a mode is overdamped)
     f_model = [m.damped.fn_hz if m.damped is not None else m.fn_hz for m in result.modes]
     pairs = pair(macs, [m.fn_hz for m in test.modes], f_model, min_mac)
-    return Correlation(model, result, test, macs, pairs, mac(shapes, shapes), comac(shapes, model_shapes, pairs))
+    return Correlation(model, result, test, macs, pairs, mac_matrix(shapes, shapes), comac(shapes, model_shapes, pairs))
 
 
 # ------------------------------------------------------------------ updating

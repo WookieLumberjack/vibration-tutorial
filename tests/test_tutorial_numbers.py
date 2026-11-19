@@ -4437,10 +4437,10 @@ def test_model_updating_worked_example():
 
 
 def test_test_planning_worked_example():
+    from vib_tutorial.core.modal import mac
     from vib_tutorial.core.test_planning import (
         Method,
         driving_point_residue,
-        mac,
         ods,
         ods_parts,
         place,

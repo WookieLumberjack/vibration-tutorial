@@ -105,6 +105,64 @@ class ModalResult:
         return self.coupling < 1e-6
 
 
+SIGN_TIE = 1e-9  # entries within this fraction of a shape's largest count as tied for it
+
+
+def fix_signs(Phi: np.ndarray, reference: np.ndarray | None = None, first_moving: bool = False) -> np.ndarray:
+    """Each column of Φ with its sign fixed (an eigenvector's sign is LAPACK's to pick, and macOS's Accelerate
+    picks differently from OpenBLAS, so unfixed shapes can flip between machines; #409 S-7). By default its
+    largest entry positive, the first of them if several tie (a symmetric chain's); with `reference` (a value a
+    column), that positive where it isn't ~0 (Modal coupling's Γ); with `first_moving`, its first entry that
+    moves (Active control's)."""
+    Phi = np.array(Phi, dtype=float, copy=True)
+    if Phi.size == 0:
+        return Phi
+    size = np.abs(Phi).max(axis=0)
+    cols = np.arange(Phi.shape[1])
+    if first_moving:
+        pick = (np.abs(Phi) > SIGN_TIE * size).argmax(axis=0)
+    else:
+        pick = (np.abs(Phi) >= (1 - SIGN_TIE) * size).argmax(axis=0)
+    ref = Phi[pick, cols]
+    if reference is not None:
+        reference = np.asarray(reference, dtype=float)
+        ref = np.where(np.abs(reference) > 1e-12, reference, ref)
+    return Phi * np.where(ref < 0, -1.0, 1.0)
+
+
+def normal_modes(
+    K: np.ndarray, M: np.ndarray, reference: np.ndarray | None = None, first_moving: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
+    """(ω², Φ): the undamped modes of K and M, ascending, Φ mass-normalized, each column's sign fixed
+    (`fix_signs`; `reference`, a vector, is projected on each shape through M: Φᵀ M r)."""
+    w2, Phi = scipy.linalg.eigh(K, M)
+    ref = None if reference is None else Phi.T @ M @ np.asarray(reference, dtype=float)
+    return w2, fix_signs(Phi, ref, first_moving)
+
+
+def log_decrement(zeta):
+    """δ = 2πζ/√(1 − ζ²): the log of successive peaks' ratio for a mode with damping ratio ζ, ζ held within
+    ±0.999999 (finite at and past critical, where a plot would break on infinity)."""
+    z = np.clip(np.asarray(zeta, dtype=float), -0.999999, 0.999999)
+    out = TWO_PI * z / np.sqrt(1 - z * z)
+    return float(out) if out.ndim == 0 else out
+
+
+def mac(a: np.ndarray, b: np.ndarray) -> float:
+    """The modal assurance criterion of two shapes, real or complex: |aᴴb|² / (aᴴa bᴴb), 0 if either is 0."""
+    num = abs(np.vdot(a, b)) ** 2
+    den = np.vdot(a, a).real * np.vdot(b, b).real
+    return float(num / den) if den > 0 else 0.0
+
+
+def mac_matrix(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+    """`mac` of each column of A with each column of B: (A's columns, B's columns)."""
+    num = np.abs(np.asarray(A).conj().T @ np.asarray(B)) ** 2
+    den = np.outer(np.sum(np.abs(A) ** 2, axis=0), np.sum(np.abs(B) ** 2, axis=0))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return np.where(den > 0, num / den, 0.0)
+
+
 def _normalize_real(v: np.ndarray) -> np.ndarray:
     return v / v[np.argmax(np.abs(v))]
 
@@ -113,10 +171,7 @@ def modal_analysis(system: ChainSystem) -> ModalResult:
     M, C, K = system.matrices()
 
     # --- Undamped normal modes. eigh(K, M) returns M-orthonormal eigenvectors.
-    w2, Phi = scipy.linalg.eigh(K, M)
-    # Their signs depend on the LAPACK build (Accelerate on macOS differs from OpenBLAS):
-    # fix each so its largest entry is positive, like the peak-normalized shape.
-    Phi *= np.sign(Phi[np.argmax(np.abs(Phi), axis=0), np.arange(Phi.shape[1])])
+    w2, Phi = normal_modes(K, M)  # each shape's largest entry positive, like the peak-normalized shape
     omegas = np.sqrt(np.clip(w2, 0.0, None))
     Cm = Phi.T @ C @ Phi
     # Round-off below this is no coupling: a rigid-body mode's C_rr is ~1e-31, not 0, and dividing the
@@ -143,7 +198,7 @@ def modal_analysis(system: ChainSystem) -> ModalResult:
     for pole in poles:
         if not unmatched:
             break
-        best = max(unmatched, key=lambda r: _mac(Phi[:, r], pole.shape) - 1e-3 * r)
+        best = max(unmatched, key=lambda r: mac(Phi[:, r], pole.shape) - 1e-3 * r)
         matched[best] = pole
         unmatched.discard(best)
 
@@ -275,12 +330,6 @@ def friction_zeta(system: ChainSystem, result: ModalResult, amplitude: float) ->
     equivalent, mode by mode.
     """
     return friction_decay(system, result) / (2.0 * np.pi * amplitude)
-
-
-def _mac(real_shape: np.ndarray, complex_shape: np.ndarray) -> float:
-    num = abs(np.vdot(real_shape, complex_shape)) ** 2
-    den = np.vdot(real_shape, real_shape).real * np.vdot(complex_shape, complex_shape).real
-    return float(num / den) if den > 0 else 0.0
 
 
 def frf(system: ChainSystem, freqs_hz: np.ndarray, input_dof: int) -> np.ndarray:

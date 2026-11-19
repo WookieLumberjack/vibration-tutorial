@@ -49,7 +49,7 @@ from dataclasses import dataclass
 import numpy as np
 import scipy.linalg
 
-from .modal import TWO_PI, ModalResult, receptance
+from .modal import TWO_PI, ModalResult, mac_matrix, normal_modes, receptance
 from .model import ChainSystem, assemble_chain
 from .substructure import damped_poles
 
@@ -116,11 +116,7 @@ def subsystems(system: ChainSystem, split: int) -> tuple[Subsystem, Subsystem]:
     for name, sl in (("A", slice(0, split)), ("B", slice(split, n))):
         m, c, k = system.masses[sl], system.damping[sl], system.stiffness[sl]
         M, C, K = np.diag(m), assemble_chain(c), assemble_chain(k)
-        w2, Phi = scipy.linalg.eigh(K, M)
-        gamma = Phi.T @ M @ np.ones(m.size)
-        # Sign: Gamma positive; if it is 0, the largest entry positive.
-        ref = np.where(np.abs(gamma) > 1e-12, gamma, Phi[np.argmax(np.abs(Phi), axis=0), np.arange(m.size)])
-        Phi = Phi * np.sign(ref)
+        w2, Phi = normal_modes(K, M, reference=np.ones(m.size))  # Γ positive; if it is 0, the largest entry
         out.append(Subsystem(name, np.arange(n)[sl], M, C, K, np.sqrt(np.clip(w2, 0.0, None)), Phi))
     return out[0], out[1]
 
@@ -313,10 +309,10 @@ class CoupledComparison:
 def compare_coupled(model: CoupledModel, full: ModalResult) -> list[CoupledComparison]:
     """Pair each 2-DOF mode with a different chain mode, the pair with the larger total MAC."""
     Phi = np.array([m.shape for m in full.modes]).T  # (n, n_modes)
-    mac = np.array([[_mac(model.shapes[:, r], Phi[:, s]) for s in range(Phi.shape[1])] for r in range(2)])
+    macs = mac_matrix(model.shapes[:, :2], Phi)
     if Phi.shape[1] > 1:
         pairs = [(s, t) for s in range(Phi.shape[1]) for t in range(Phi.shape[1]) if s != t]
-        best = max(pairs, key=lambda p: mac[0, p[0]] + mac[1, p[1]] - 1e-9 * (p[0] + p[1]))
+        best = max(pairs, key=lambda p: macs[0, p[0]] + macs[1, p[1]] - 1e-9 * (p[0] + p[1]))
     else:
         best = (0, 0)
     out = []
@@ -330,15 +326,10 @@ def compare_coupled(model: CoupledModel, full: ModalResult) -> list[CoupledCompa
                 s + 1,
                 mode.fn_hz,
                 mode.damped.zeta if mode.damped is not None else None,
-                float(mac[r, s]),
+                float(macs[r, s]),
             )
         )
     return out
-
-
-def _mac(a: np.ndarray, b: np.ndarray) -> float:
-    den = (a @ a) * (b @ b)
-    return float((a @ b) ** 2 / den) if den > 0 else 0.0
 
 
 def point_vector(model: CoupledModel, point: str) -> np.ndarray:

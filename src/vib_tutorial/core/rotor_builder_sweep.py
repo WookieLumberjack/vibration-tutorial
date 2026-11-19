@@ -38,7 +38,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .rotor_builder import RPM, TWO_PI, Assembly, Basis, Rotor, WhirlModes, modes
+from .modal import log_decrement
+from .rotor_builder import RPM, Assembly, Basis, Rotor, WhirlModes, modes
 
 N_SPEEDS = 121
 N_BRANCHES = 8  # the Campbell diagram's and the stability map's
@@ -87,8 +88,7 @@ class Sweep:
 
     @property
     def log_dec(self) -> np.ndarray:
-        z = np.clip(self.zeta, -0.999999, 0.999999)
-        return TWO_PI * z / np.sqrt(1 - z * z)
+        return log_decrement(self.zeta)
 
 
 class _Speeds:
