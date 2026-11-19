@@ -44,7 +44,7 @@ from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
 from .layouts import ColumnScroll, form_layout, header_tip
 from .lesson import TrialBox
 from .links import page_link
-from .mode_swing import ModeSwing
+from .mode_swing import ModeSwing, SwingLoop
 from .notes_view import NotesBrowser
 from .style import MAX_DOF, colors, text_on
 from .substructuring import error_color, zeta_text
@@ -752,7 +752,8 @@ class ShapePlots(pg.GraphicsLayoutWidget):
             p.setLabel("left", "Normalized amplitude")
             self.plots.append(p)
             self.legends.append(add_legend(p, offset=(5, 2), colCount=2))
-        self.swings = [ModeSwing(p, "Modal coupling", host=self) for p in self.plots]
+        self.swing_loop = SwingLoop(self, "Modal coupling")  # the two swing in one loop: one paint a frame
+        self.swings = [ModeSwing(p, "Modal coupling", host=self, loop=self.swing_loop) for p in self.plots]
         self.plots[1].setLabel("bottom", "Position along chain (0 = ground)")
         self.apply_theme()
 
