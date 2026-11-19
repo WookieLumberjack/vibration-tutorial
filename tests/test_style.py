@@ -97,3 +97,35 @@ def test_a_wide_solid_curve_is_drawn_in_segments(main_window):
     assert not segmented(pg.mkPen("#000000", width=1))
     assert not segmented(QtGui.QPen(QtGui.QColor("#000000"), 2))  # square caps: they'd overlap at every joint
     assert pg.mkPen(pg.mkPen("#000000", width=2)).capStyle() == QtCore.Qt.PenCapStyle.FlatCap  # copies keep it
+
+
+@pytest.mark.gui
+@pytest.mark.parametrize("theme", style.THEMES.values(), ids=lambda t: t.name)
+def test_the_palettes_secondary_text_and_links_read(theme):
+    """The palette the app gets (after another theme: Light's is the platform's but for these), its muted text
+    (`theming.mute`'s) and links at least 4.5:1 on the window and on text fields, and on the window macOS gives
+    the Light theme (#ececec), where the platform's grey was 3.8:1 (#409 U-2)."""
+    import os
+
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    from PySide6 import QtGui, QtWidgets
+
+    from vib_tutorial.gui import theming
+
+    QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+    app = theming.application()
+    role = QtGui.QPalette.ColorRole
+    try:
+        theming.apply("Dark")
+        theming.apply(theme.name)
+        pal = app.palette()
+        grounds = {pal.color(r).name() for r in (role.Window, role.Base)} | (
+            {"#ececec"} if theme.window is None else set()
+        )
+        for r in (role.PlaceholderText, role.Link, role.Text, role.WindowText):
+            for ground in grounds:
+                assert style.contrast(pal.color(r).name(), ground) >= 4.5, (theme.name, r.name, ground)
+        if theme.window is None:  # the rest the platform's own
+            assert pal.color(role.Window) == QtGui.QPalette().color(role.Window) != QtGui.QColor(style.DARK.window)
+    finally:
+        theming.apply("Light")
