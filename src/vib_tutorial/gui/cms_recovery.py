@@ -16,6 +16,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core import CMSModel
 from ..core.back_expansion import RECOVERIES, RECOVERY_NAMES, Recovery, RecoveryResponse
+from . import coalesce
 from .animation import ChainView
 from .cms_time import MIN_SPAN, CMSRunView, SampleBuffer, _fmt
 from .layouts import FlowLayout, group
@@ -295,6 +296,7 @@ class BackExpansionView(CMSRunView):
         enhanced[:, self._interior] = x_enh_interior
         return {"coupled": coupled, "boundary": rec.boundary_only(r), "enhanced": enhanced}
 
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         sim = self.sim
         d, e = self.mass_dof, self.spring

@@ -25,6 +25,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore
 
+from . import coalesce
 from .frame_loop import FrameLoop
 from .style import colors
 
@@ -91,6 +92,7 @@ class ModeSwing(QtCore.QObject):
                 out.append(self.x[i] + (self.x[i + 1] - self.x[i]) * y[i] / (y[i] - y[i + 1]))
         return np.array(out)
 
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         if not self.x.size:
             for item in (self.line, self.dots, self.node_marks):

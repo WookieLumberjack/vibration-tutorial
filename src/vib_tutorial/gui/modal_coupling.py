@@ -37,7 +37,7 @@ from ..core.modal_coupling import (
     sweep,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
-from . import weak
+from . import coalesce, weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
@@ -1211,6 +1211,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         return chosen
 
     # ----------------------------------------------------------- compute
+    @coalesce.coalesced
     def refresh(self) -> None:
         if self.system is None:
             return
