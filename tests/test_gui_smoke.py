@@ -5546,3 +5546,28 @@ def test_the_gyroscopes_time_plots_are_decimated_not_thinned(main_window, app):
     shown = p.check_range.shown
     p.loop._call(p.loop._tick, 1 / 60)
     assert p.check_range.shown == shown  # a frame that fits leaves the range alone
+
+
+def test_modal_couplings_two_swings_share_one_frame_loop(main_window, app):
+    """The chain's two modes swing in one frame loop, so the page paints once a frame, not once for each (#409
+    P-17); a frame steps both."""
+    from vib_tutorial.gui.frame_loop import FrameLoop
+
+    w = main_window
+    p = w.coupling_page
+    w.pages.setCurrentWidget(p)
+    from vib_tutorial.gui.modal_coupling import TAB_SHAPES
+
+    p.load_trial(0)
+    p.tabs.setCurrentIndex(TAB_SHAPES)
+    app.processEvents()
+    running = [loop for loop in p.findChildren(FrameLoop) if loop._should_run()]
+    assert len(running) == 1
+    from vib_tutorial.gui.mode_swing import ModeSwing
+
+    shapes = [s for s in p.findChildren(ModeSwing) if s.x.size]
+    assert len(shapes) == 2 and all(s.loop is running[0] for s in shapes)
+    before = [s.theta for s in shapes]
+    running[0].enabled = False
+    running[0]._call(running[0]._tick, 0.1)
+    assert all(s.theta != b for s, b in zip(shapes, before))
