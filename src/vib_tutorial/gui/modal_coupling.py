@@ -81,7 +81,7 @@ SWEEP_TIP = (
     "while f<sub>B</sub> stays as it is.</p>"
     "<p>B's dampers are scaled with it, so its damping ratios stay the same.</p>"
 )
-SWEEP_NAMES = {"frequency": "B's frequency (f_B / f_A)", "mass": "Mass ratio (μ = m_b / m_a)"}
+SWEEP_NAMES = {"frequency": "B's frequency over A's", "mass": "Mass ratio μ (B's over A's)"}  # plain text: a combo's
 FRF_POINT_TIP = (
     "<p>Where the force is applied and the response read (a drive-point FRF).</p>"
     "<p><b>A's tip (the interface):</b> the 2-DOF model's u<sub>a</sub>.</p>"
@@ -489,7 +489,8 @@ class CouplingSchematic(pg.PlotWidget):
         rect.setPen(pg.mkPen(outline or colors.structure, width=2 if outline else 1))
         rect.setZValue(5)
         self._add(rect)
-        label = pg.TextItem(text, color=text_on(fill), anchor=(0.5, 0.5))
+        label = pg.TextItem(anchor=(0.5, 0.5))
+        label.setHtml(f"<span style='color:{text_on(fill)}'>{text}</span>")  # its subscripts (m<sub>a</sub>)
         label.setPos(xc, y)
         label.setZValue(6)
         self._add(label)
@@ -498,7 +499,8 @@ class CouplingSchematic(pg.PlotWidget):
         self._add(pg.PlotDataItem(*spring_path(x0, x1, y), pen=pg.mkPen(color, width=2)))
 
     def _text(self, text: str, x: float, y: float, color: str, anchor=(0.5, 0.5)) -> None:
-        item = pg.TextItem(text, color=color, anchor=anchor)
+        item = pg.TextItem(anchor=anchor)
+        item.setHtml(f"<span style='color:{color}'>{text}</span>")  # its subscripts (m<sub>a</sub>)
         item.setPos(x, y)
         self._add(item)
 
@@ -535,13 +537,17 @@ class CouplingSchematic(pg.PlotWidget):
         else:
             self._spring(0.0, xa - w / 2, y, sub_color("A"))
             self._spring(xa + w / 2, xb - w / 2, y, sub_color("B"))
-            self._mass(xa, y, sub_color("A"), "m_a", w=w)
-            self._mass(xb, y, sub_color("B"), "m_b", w=w)
+            self._mass(xa, y, sub_color("A"), "m<sub>a</sub>", w=w)
+            self._mass(xb, y, sub_color("B"), "m<sub>b</sub>", w=w)
             self._text(f"A{model.mode_a + 1}", xa / 2 - 0.1, y + 0.3, sub_color("A"))
             self._text(f"B{model.mode_b + 1}", (xa + xb) / 2, y + 0.3, sub_color("B"))
             res = f" + {model.m_residual:.3g}" if model.residual and model.m_residual > 1e-9 else ""
-            self._text(f"m_a = {model.osc_a.m:.3g}{res} kg", xa, y - 0.25, colors.foreground, anchor=(0.5, 0.0))
-            self._text(f"m_b = {model.osc_b.m:.3g} kg", xb + 0.2, y - 0.25, colors.foreground, anchor=(0.0, 0.0))
+            self._text(
+                f"m<sub>a</sub> = {model.osc_a.m:.3g}{res} kg", xa, y - 0.25, colors.foreground, anchor=(0.5, 0.0)
+            )
+            self._text(
+                f"m<sub>b</sub> = {model.osc_b.m:.3g} kg", xb + 0.2, y - 0.25, colors.foreground, anchor=(0.0, 0.0)
+            )
         self.setRange(QtCore.QRectF(-0.4, -1.45, n + 1.0 + self.GAP + 0.2, 2.55), padding=0)
 
 
@@ -698,7 +704,7 @@ class VeeringPlot(QtWidgets.QWidget):
         self.plot.setYRange(math.log10(bottom), math.log10(top), padding=0)
         self.plot.setXRange(math.log10(s.x[0]), math.log10(s.x[-1]), padding=0)
         if kind == "frequency":
-            self.plot.setLabel("bottom", "f_B / f_A (B's springs scaled)")
+            self.plot.setLabel("bottom", "f<sub>B</sub> / f<sub>A</sub> (B's springs scaled)")
             self.plot.setTitle(f"μ = {model.mass_ratio:.3g} fixed", size="10pt")
             gap = self._gap_at_tuning(s)
             self.note.setText(
@@ -716,8 +722,8 @@ class VeeringPlot(QtWidgets.QWidget):
                 + "Circles: the current parameters."
             )
         else:
-            self.plot.setLabel("bottom", "μ = m_b / m_a (all of B scaled)")
-            self.plot.setTitle(f"f_B / f_A = {model.freq_ratio:.3g} fixed", size="10pt")
+            self.plot.setLabel("bottom", "μ = m<sub>b</sub> / m<sub>a</sub> (all of B scaled)")
+            self.plot.setTitle(f"f<sub>B</sub> / f<sub>A</sub> = {model.freq_ratio:.3g} fixed", size="10pt")
             self.note.setText(
                 "Solid: the chain's natural frequencies (thick: the two the 2-DOF modes stand for). "
                 "Dashed: the 2-DOF model. Dotted: A's and B's modes on their own, which do not change. "
@@ -810,9 +816,10 @@ class ShapePlots(pg.GraphicsLayoutWidget):
             phase = "in phase" if ua * ub > 0 else "in opposite phase"
             err = "—" if c.error is None else f"{100 * c.error:+.3g}%"
             p.setTitle(
-                f"2-DOF mode {r + 1}: m_a and m_b {phase} (u_b/u_a = {ub / ua:.3g}) · error {err}, MAC {c.mac:.3f}"
+                f"2-DOF mode {r + 1}: m<sub>a</sub> and m<sub>b</sub> {phase} (u<sub>b</sub>/u<sub>a</sub> = {ub / ua:.3g}) · error {err}, "
+                f"MAC {c.mac:.3f}"
                 if abs(ua) > 1e-12
-                else f"2-DOF mode {r + 1}: m_a still · error {err}, MAC {c.mac:.3f}",
+                else f"2-DOF mode {r + 1}: m<sub>a</sub> still · error {err}, MAC {c.mac:.3f}",
                 size="10pt",
             )
             self.swings[r].set_shape(xs, np.concatenate([[0.0], true / np.abs(true).max()]), color)
@@ -879,7 +886,7 @@ class DrivePointFrf(QtWidgets.QWidget):
             f,
             np.abs(coupled_frf(model, f, point)),
             pen=pg.mkPen(colors.force, width=2, style=DASH),
-            name=f"2-DOF: {x}" if point == "free" else "2-DOF: u_a / F",
+            name=f"2-DOF: {x}" if point == "free" else "2-DOF: u<sub>a</sub> / F",
         )
         n = system.n
         for side, name in (
@@ -980,8 +987,8 @@ class ModalCouplingPage(QtWidgets.QWidget):
             ["Oscillator", "m [kg]", "k [N/m]", "c [N·s/m]", "fₙ [Hz]", "ζ"],
             [
                 "The mode each oscillator stands for",
-                "m_a: A's modal mass at the interface (or its effective mass), plus B's residual mass if "
-                "added. m_b: B's effective mass.",
+                "<p>m<sub>a</sub>: A's modal mass at the interface (or its effective mass), plus B's residual "
+                "mass if added. m<sub>b</sub>: B's effective mass.</p>",
                 "k = m ω²: the oscillator keeps its mode's natural frequency",
                 "c = m φᵀCφ = 2ζωm: the oscillator keeps its mode's modal damping ratio",
                 "Natural frequency of the oscillator on its own (without the residual mass)",
@@ -992,16 +999,16 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.result_table = _table(
             ["2-DOF\nmode", "fₙ 2-DOF\n[Hz]", "ζ 2-DOF", "Chain\nmode", "fₙ chain\n[Hz]", "ζ chain", "Error", "MAC"],
             [
-                "Mode of the 2-DOF model (ground – k_a – m_a – k_b – m_b)",
+                "<p>Mode of the 2-DOF model (ground – k<sub>a</sub> – m<sub>a</sub> – k<sub>b</sub> – m<sub>b</sub>)</p>",
                 "Natural frequency of the 2-DOF model",
                 "Exact damping ratio of the 2-DOF model (from its damped eigenvalues)",
                 "The chain's mode whose shape the 2-DOF mode matches best (each 2-DOF mode a different one)",
                 "Natural frequency of that mode of the whole chain",
                 "Exact damping ratio of that mode of the whole chain",
-                "(f_2DOF − f_chain) / f_chain. With the modal mass at the interface and the residual mass "
-                "the 2-DOF model is a Rayleigh–Ritz model, so its mode 1 is never below the chain's mode 1, "
-                "nor its mode 2 below the chain's mode 2. Paired by shape with higher chain modes, the "
-                "error can be negative.",
+                "<p>(f<sub>2-DOF</sub> − f<sub>chain</sub>) / f<sub>chain</sub>. With the modal mass at the "
+                "interface and the residual mass the 2-DOF model is a Rayleigh–Ritz model, so its mode 1 is "
+                "never below the chain's mode 1, nor its mode 2 below the chain's mode 2. Paired by shape with "
+                "higher chain modes, the error can be negative.</p>",
                 "Modal assurance criterion between the chain's mode and the 2-DOF mode drawn on the chain "
                 "(Mode shapes tab). Low: the two modes are too far apart for this pairing to mean much.",
             ],

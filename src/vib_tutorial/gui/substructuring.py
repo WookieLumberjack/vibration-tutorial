@@ -169,7 +169,7 @@ class ComparisonTable(QtWidgets.QTableWidget):
         "Natural frequency of the full N-DOF model (Kφ = ω²Mφ)",
         "Natural frequency of the {name} reduced model (K̂η = ω²M̂η). "
         "Blank when the reduced model has fewer modes than this mode number.",
-        "(f_{m} − f_true) / f_true. {bound}",
+        "<p>(f<sub>{m}</sub> − f<sub>true</sub>) / f<sub>true</sub>. {bound}</p>",
         "Exact damping ratio of the full model (from its damped eigenvalue λ: −Re λ / |λ|)",
         "Exact damping ratio of the reduced model M̂η̈ + Ĉη̇ + K̂η = 0. "
         "Coloured by its error relative to ζ true, which can have either sign. With stiffness-"
@@ -241,9 +241,10 @@ class ComponentTable(QtWidgets.QTableWidget):
     TIPS = {
         False: [
             "Fixed-interface mode r of substructure A, B, ...",
-            "Natural frequency of the substructure on its own, with its boundary masses held fixed: K_ii φ = ω² M_ii φ",
-            "Exact damping ratio of the substructure on its own (boundary held), from the damped "
-            "eigenvalues of M_ii, C_ii, K_ii",
+            "<p>Natural frequency of the substructure on its own, with its boundary masses held fixed: "
+            "K<sub>ii</sub> φ = ω² M<sub>ii</sub> φ</p>",
+            "<p>Exact damping ratio of the substructure on its own (boundary held), from the damped "
+            "eigenvalues of M<sub>ii</sub>, C<sub>ii</sub>, K<sub>ii</sub></p>",
             "Whether this mode is one of the fixed-interface modes kept in the reduced model",
             "The mode of the full, coupled chain that this component mode contributes most to",
             "Natural frequency of that coupled mode: compare with fₙ alone to see how coupling "
@@ -638,8 +639,8 @@ class MethodComparison(QtWidgets.QWidget):
             header_tip(
                 self.table,
                 col,
-                f"(f − f_true) / f_true for the {METHOD_NAMES[m]} model with the same interfaces and "
-                "the same number of modes kept in each substructure as on the left",
+                f"<p>(f − f<sub>true</sub>) / f<sub>true</sub> for the {METHOD_NAMES[m]} model with the same "
+                "interfaces and the same number of modes kept in each substructure as on the left</p>",
             )
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)

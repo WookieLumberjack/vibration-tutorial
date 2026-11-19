@@ -896,8 +896,8 @@ class MountsPage(QtWidgets.QWidget):
         self.drop = mounts.number("Drop below CoM h:", -1000.0, 1000.0, 0.0, 1, " mm", TIPS["drop"])
         self.offset = mounts.number("CoM ahead by:", -1000.0, 1000.0, 0.0, 1, " mm", TIPS["offset"])
         self.tilt = mounts.number("Tilt β:", 0.0, 80.0, 0.0, 2, "°", TIPS["tilt"])
-        self.stiffness = mounts.number("Axial k_a:", 0.1, 1e5, 50.0, 1, " kN/m", TIPS["stiffness"])
-        self.shear = mounts.number("Shear ρ = k_s/k_a:", 0.01, 1.0, 0.25, 2, "", TIPS["shear"])
+        self.stiffness = mounts.number("Axial k<sub>a</sub>:", 0.1, 1e5, 50.0, 1, " kN/m", TIPS["stiffness"])
+        self.shear = mounts.number("Shear ρ = k<sub>s</sub>/k<sub>a</sub>:", 0.01, 1.0, 0.25, 2, "", TIPS["shear"])
         self.focus_info = note_label()
         mounts.row(self.focus_info)
 

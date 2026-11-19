@@ -81,7 +81,7 @@ RELEASE_TIP_COMMON = (
 RELEASE_TIP = {
     Method.CLASSICAL: RELEASE_TIP_COMMON + "<p>The masses start at rest in the real (undamped) shape.</p>"
     "<p>With <b>proportional</b> damping only that mode responds: every mass oscillates "
-    "at the mode's damped frequency f_d, keeping the same shape while the motion "
+    "at the mode's damped frequency f<sub>d</sub>, keeping the same shape while the motion "
     "decays at the rate set by ζ.</p>"
     "<p>With <b>non-proportional</b> damping the real shape is not an exact "
     "mode, so other modes are excited too and the shape drifts as it decays.</p>",
@@ -292,7 +292,7 @@ class SimulationPage(QtWidgets.QWidget):
         self.phasor_plot.setToolTip(
             "<p>The selected mode shape ψ in the complex plane: one arrow per mass "
             "(mass colors), length = amplitude, angle = phase.</p>"
-            "<p>With <i>Animate mode shapes</i> on, the arrows rotate as ψe<sup>iω_d t</sup> "
+            "<p>With <i>Animate mode shapes</i> on, the arrows rotate as ψe<sup>iω<sub>d</sub>t</sup> "
             "(anticlockwise for Im λ &gt; 0, clockwise for its conjugate λ*). The circles on "
             "the real axis are the real parts, i.e. the masses' displacements.</p>"
             "<p>All arrows on one line (0° or 180° apart): a real mode, a standing wave. "

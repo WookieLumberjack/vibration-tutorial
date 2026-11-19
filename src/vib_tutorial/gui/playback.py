@@ -29,10 +29,11 @@ from .drag import DragLine
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
 from .lesson import LiveLabel, RunButton, combo
+from .transport import speed_text
 
-SPEEDS = (("1×", 1.0), ("½×", 0.5), ("¼×", 0.25), ("⅒×", 0.1))
+SPEEDS = tuple((speed_text(s), s) for s in (1.0, 0.5, 0.25, 0.1))
 SPEED_TIP = (
-    "<p>How fast the motion plays: ¼× shows a 3 Hz swing at less than 1 Hz. The plots and readouts are in real "
+    "<p>How fast the motion plays: 0.25× shows a 3 Hz swing at less than 1 Hz. The plots and readouts are in real "
     "time whatever the speed.</p>"
 )
 CURSOR_TIP = "<p><b>Drag</b> the time cursor to scrub through the motion (it pauses).</p>"

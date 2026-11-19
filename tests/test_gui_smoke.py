@@ -1306,7 +1306,7 @@ def _modal_test_playback(MainWindow, size, measured):
     p = w.test_page
     w.pages.setCurrentWidget(p)
     assert p.speed.currentData() is None  # instant by default
-    p.speed.setCurrentIndex(p.speed.findText("10× real time"))
+    p.speed.setCurrentIndex(p.speed.findText("10×"))
     p.restart()
     # One hit recorded; its time plots are drawn from the start, the FRF waits for it.
     assert p.acq.progress[0] == 1 and p._shown is not None
@@ -1326,10 +1326,10 @@ def _modal_test_playback(MainWindow, size, measured):
     assert p.progress.text().startswith("10 / 10") and not p.running
 
     # The choice is remembered for the next launch.
-    p.speed.setCurrentIndex(p.speed.findText("3× real time"))
+    p.speed.setCurrentIndex(p.speed.findText("3×"))
     w.close()
     w = MainWindow()
-    assert w.test_page.speed.currentText() == "3× real time"
+    assert w.test_page.speed.currentText() == "3×"
     w.close()
 
 

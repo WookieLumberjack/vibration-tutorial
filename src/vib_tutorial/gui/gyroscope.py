@@ -845,7 +845,7 @@ class GyroscopePage(QtWidgets.QWidget):
         least = math.degrees(rt.least_tilt(J))
         parts = [
             f"Jellett's J = I₃ω₃(a + R cos θ₀) = {J * 1e4:.3g} kg·cm²/s stays put while friction takes energy out, so "
-            f"it heads for E_J's least, at {least:.3g}°."
+            f"it heads for E<sub>J</sub>'s least, at {least:.3g}°."
         ]
         turn = rt.turning_spin()
         if rt.offset > 0:
@@ -1167,7 +1167,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.potential_plot.setYRange(base - pad, top + pad, padding=0)
         where = math.degrees(rt.least_tilt(J))
         self.potential_note.setText(
-            f"J = {J * 1e4:.3g} kg·cm²/s. E_J is least at {where:.3g}°: upright it is {fmt(float(least[0]), 'J')}"
+            f"J = {J * 1e4:.3g} kg·cm²/s. E<sub>J</sub> is least at {where:.3g}°: upright it is {fmt(float(least[0]), 'J')}"
             + (f", turned over {fmt(float(least[-1]), 'J')}." if self.view.ball else ".")
             + f" Let go, it has {fmt(start, 'J')}."
         )

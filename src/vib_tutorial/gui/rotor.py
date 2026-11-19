@@ -84,7 +84,7 @@ from .scrub import Scrub
 from .style import colors
 from .tab_groups import TabGroups
 from .theming import mute
-from .transport import Transport
+from .transport import Transport, speed_text
 
 SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0)  # simulation speed, × real time
 TOP_RPM = 10_000.0  # the default speed range
@@ -399,7 +399,7 @@ class RotorPage(QtWidgets.QWidget):
         form.addRow("Ramp rate:", self.ramp)
         self.sim_speed = QtWidgets.QComboBox()
         for s in SPEEDS:
-            self.sim_speed.addItem(f"{s:g}× real time", s)
+            self.sim_speed.addItem(speed_text(s), s)
         self.sim_speed.setCurrentIndex(SPEEDS.index(0.25))
         self.sim_speed.setToolTip("Slow motion, so the whirl stays visible at speed")
         form.addRow("Simulation:", self.sim_speed)
