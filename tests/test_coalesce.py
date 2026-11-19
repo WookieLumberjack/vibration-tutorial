@@ -95,3 +95,28 @@ def test_a_slot_given_more_than_it_takes_drops_the_rest_as_pyside_does():
     with coalesce.batch():
         t.draw(4)
     assert t.drawn == 2
+
+
+def test_a_redraw_that_covers_the_tab_draws_it_once_whichever_is_asked_first():
+    log: list[str] = []
+
+    class Page:
+        @coalesce.coalesced(covers=("draw_tab",))
+        def redraw(self) -> None:
+            log.append("redraw")
+            self.draw_tab()
+
+        @coalesce.coalesced
+        def draw_tab(self) -> None:
+            log.append("tab")
+
+    p = Page()
+    with coalesce.batch():
+        p.draw_tab()  # the trial switches tabs
+        p.redraw()  # then loads its state
+    assert log == ["redraw", "tab"]
+    log.clear()
+    with coalesce.batch():
+        p.redraw()
+        p.draw_tab()  # asked while the redraw waits: it draws it
+    assert log == ["redraw", "tab"]

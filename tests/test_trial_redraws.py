@@ -14,12 +14,8 @@ import pytest
 
 pytestmark = pytest.mark.gui
 
-BUDGET = {  # 2026-11-18 (#409 P-7): the One mass group marked; the rest by group
-    "energy_page": 2,
-    "frf_page": 3,
-    "complex_page": 2,
-    "beams_page": 2,
-    "rigid_body_page": 3,
+BUDGET = {  # 2026-11-18 (#409 P-7): One mass and Foundations marked; the rest by group
+    "rigid_body_page": 2,  # its last trial empties the drift plot on restart, then its steps fill it
     "fatigue_page": 2,
     "quarter_car_page": 5,
     "mounts_page": 2,
@@ -63,6 +59,16 @@ def test_each_pages_trials_set_each_curve_once(main_window, monkeypatch):
             counts[id(self)] += 1
         return set_curve(self, *args, **kwargs)
 
+    made = pg.PlotDataItem.__init__
+
+    def init(self, *args, **kwargs):  # a new curve's own setData (its data, or none yet): not a redraw
+        was, counting[0] = counting[0], False
+        try:
+            made(self, *args, **kwargs)
+        finally:
+            counting[0] = was
+
+    monkeypatch.setattr(pg.PlotDataItem, "__init__", init)
     monkeypatch.setattr(pg.PlotDataItem, "setData", data)
     monkeypatch.setattr(pg.PlotCurveItem, "setData", curve)
     monkeypatch.setattr(frame_loop.FrameLoop, "_should_run", lambda self: False)  # no animation while counting

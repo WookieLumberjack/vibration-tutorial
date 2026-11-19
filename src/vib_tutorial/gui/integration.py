@@ -28,7 +28,7 @@ from ..core.integration import (
     spectral_curves,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
-from . import integration_figures, settle_plots
+from . import coalesce, integration_figures, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -725,6 +725,7 @@ class IntegrationPage(QtWidgets.QWidget):
             f"{steps} steps of {fmt(h, 's')}. " + "; ".join(lines) + "." if lines else "Pick a scheme on the left."
         )
 
+    @coalesce.coalesced
     def _draw_curves(self) -> None:
         i = self.tabs.currentIndex()
         if i > TAB_DAMPING:

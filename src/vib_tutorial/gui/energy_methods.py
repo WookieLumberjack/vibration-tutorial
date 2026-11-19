@@ -39,7 +39,7 @@ from ..core.energy_methods import (
 )
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick, rounded
-from . import energy_figures, settle_plots
+from . import coalesce, energy_figures, settle_plots
 from .drag import DragLine, DragPoint
 from .lesson import (
     Form,
@@ -680,6 +680,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         if self.isVisible():
             self.redraw()
 
+    @coalesce.coalesced(covers=("_draw_tab",))
     def redraw(self) -> None:
         self._dirty = False
         s = self.system
@@ -802,6 +803,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         pct = 100 * (value / exact_f - 1)
         return "exact" if abs(pct) < 1e-9 else f"{pct:+.3g} %"  # round-off reads as exact
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_ERROR:

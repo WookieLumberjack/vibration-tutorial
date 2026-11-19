@@ -26,7 +26,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
-from . import frf_figures, weak
+from . import coalesce, frf_figures, weak
 from .layouts import form_layout
 from .lesson import TrialBox, three_panes, trials_html
 from .links import load_notes, page_link
@@ -1224,6 +1224,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
     def selected_terms(self) -> np.ndarray:
         return np.array([c.isChecked() for c in self.mode_checks], dtype=bool)
 
+    @coalesce.coalesced
     def redraw(self) -> None:
         if self.system is None or not self.term_H.size:
             return

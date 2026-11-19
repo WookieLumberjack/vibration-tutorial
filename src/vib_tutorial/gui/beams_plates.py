@@ -34,7 +34,7 @@ from ..core.beams_plates import (
     wave_speeds,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
-from . import beams_figures, settle_plots
+from . import beams_figures, coalesce, settle_plots
 from .lesson import (
     Form,
     TrialBox,
@@ -683,6 +683,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         self.shape_plot.setYRange(rect.top(), rect.bottom(), padding=0.04)
         self.readout.setText(f"Mode {int(self.mode.value())}, {fmt(mode.freq_hz, 'Hz')}: {what}.")
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_TABLE:
