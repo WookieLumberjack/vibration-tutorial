@@ -428,3 +428,43 @@ def test_the_sweeps_trials():
     assert 100 * modes(assemble(bare), 0.0).zeta[0] == pytest.approx(0.62, abs=0.005)
     double = dataclasses.replace(t.rotor, internal=2e-4)
     assert sweep(assemble(double), t.top_rpm).onset == pytest.approx(3596, abs=1)
+
+
+def test_a_crossing_is_found_in_a_few_steps_and_keeps_the_bisections_rules():
+    """`_crossing` (regula falsi, Illinois) finds a smooth root to its tolerance in a few evaluations; ζ held at 0
+    (a free rotor's rigid modes) isn't past for the onset; no mode (NaN) counts as past, as the bisection did."""
+    import math
+
+    from vib_tutorial.core.rotor_builder_sweep import CROSSING_TOL, _crossing
+
+    calls = []
+
+    def g(r):
+        calls.append(r)
+        return math.cos(r / 1000.0) - 0.5  # crosses at 1000 acos(0.5)
+
+    r = _crossing(g, 0.0, 2000.0, g(0.0), g(2000.0))
+    assert abs(r - 1000 * math.acos(0.5)) < 10 * CROSSING_TOL * 2000 and len(calls) < 15
+    flat = lambda r: 0.0 if r < 160.0 else -1e-3 * (r - 160.0)  # noqa: E731
+    assert abs(_crossing(flat, 100.0, 200.0, 0.0, -0.04, zero_past=False) - 160.0) < 1e-6
+    gone = lambda r: 1.0 - r / 100.0 if r < 70.0 else math.nan  # noqa: E731
+    assert abs(_crossing(gone, 0.0, 90.0, 1.0, math.nan) - 70.0) < 1e-6
+
+
+def test_a_sweep_solves_the_modes_at_its_speeds_and_a_few_more_for_each_crossing(monkeypatch):
+    from vib_tutorial.core import rotor_builder_sweep as rbs
+    from vib_tutorial.gui.rotor_builder_trials import TRIALS
+
+    t = TRIALS[0]
+    a = assemble(t.rotor)
+    solved = []
+    call = rbs._Speeds.__call__
+
+    def counted(self, omega):
+        solved.append(omega)
+        return call(self, omega)
+
+    monkeypatch.setattr(rbs._Speeds, "__call__", counted)
+    s = rbs.sweep(a, t.top_rpm)
+    crossings = len(s.criticals) + (s.onset is not None)
+    assert len(solved) <= rbs.N_SPEEDS + 12 * crossings  # bisection took 41 a crossing

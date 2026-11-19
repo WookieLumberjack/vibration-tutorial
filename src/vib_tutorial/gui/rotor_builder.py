@@ -6,7 +6,8 @@ stiffness, damping and swirl), the model's settings (beam theory, horizontal or 
 show (the mode or the unbalance response, and the node the Unbalance tab plots). Centre: the tools, the side view
 (click the shaft to split it or to put a part there, drag a part along it), bending in the mode picked, and the
 modes at the speed with their damping and whirl. Right: the mode whirling in 3D; the sweeps to the top speed
-(core/rotor_builder_sweep.py), worked out when their tab first shows after a change: the Campbell diagram with
+(core/rotor_builder_sweep.py), worked out when their tab first shows after a change (on a `Recompute`'s worker
+after a control's change, the tab saying so and keeping its curves; at once for a trial or a practice setup): the Campbell diagram with
 its critical speeds, the unbalance response's Bode plot, and the stability map; the global matrices with the
 picked part's share tinted, the part's own matrices, and the Theory. The page has its own model (core/rotor_builder.py) and swings the mode on its own frame loop while it
 shows.
@@ -19,6 +20,7 @@ the Theory tab look for them); the side view and the 3D whirl are gui/rotor_buil
 from __future__ import annotations
 
 import dataclasses
+import functools
 import math
 
 import numpy as np
@@ -54,7 +56,7 @@ from ..core.rotor_builder import (
     modes,
 )
 from ..core.rotor_builder_sweep import N_BRANCHES, Sweep, lag, orbit, sweep, unbalance_response
-from . import rotor_builder_figures, weak
+from . import rotor_builder_figures, settle_plots, weak
 from .frame_builder import matrix_html
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
@@ -75,6 +77,7 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes
+from .recompute import Recompute
 from .rotor_builder_trials import (
     EMPTY,
     MATRICES,
@@ -98,6 +101,7 @@ from .transport import Transport
 
 SWEEP_TABS = (TAB_CAMPBELL, TAB_UNBALANCE, TAB_STABILITY)
 RESPONSE_SPEEDS = 241  # the unbalance response's speeds, 0 to the top one
+WORKING = "Sweeping to the top speed…"  # a sweep's tab while its result is worked out on the worker
 API_LOG_DEC = 0.1  # API 684's least log decrement at the running speed
 SHOW_HZ = 0.6  # the animation's own pace: every mode whirls at it
 SWING = 0.15  # the largest lateral motion drawn, as a fraction of the side view's height
@@ -178,6 +182,27 @@ ASSEMBLY_TIP = (
 )
 
 NOTES_HTML = load_notes("rotor_builder", trials=trials_html(TRIALS), figures=rotor_builder_figures.FIGURES)
+
+
+def _tagged(change: int, job):
+    """`job()` with the change it was asked for, so a result for a rotor since changed is dropped."""
+    return change, job()
+
+
+def _swept(assembly: Assembly, top_rpm: float) -> tuple[Sweep | None, str]:
+    """The sweep, or why there's none: a pure function, run on the worker."""
+    try:
+        return sweep(assembly, top_rpm), ""
+    except np.linalg.LinAlgError as error:
+        return None, str(error)
+
+
+def _responded(assembly: Assembly, rpm: np.ndarray) -> tuple[tuple[np.ndarray, np.ndarray] | None, str]:
+    """The unbalance response at `rpm`, or why there's none."""
+    try:
+        return (rpm, unbalance_response(assembly, rpm)), ""
+    except np.linalg.LinAlgError as error:
+        return None, str(error)
 
 
 def _whirl_word(w: float) -> str:
@@ -592,6 +617,14 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.sweep_result: Sweep | None = None  # worked out when a sweep's tab shows (None: not since a change)
         self.response: np.ndarray | None = None  # the unbalance response at RESPONSE_SPEEDS speeds
         self.response_rpm = np.zeros(0)
+        # The sweeps on the worker after a control's change (~200 ms; #409 P-8), at once for a trial or a setup
+        # (`_now`). `_change` counts the changes that make them stale: a result for an older one is dropped.
+        self.sweeper = Recompute(self._on_sweep, self)
+        self.responder = Recompute(self._on_responses, self)
+        self._change = 0
+        self._now = 0
+        self._asked = {"sweep": -1, "response": -1}  # the change each was last asked for
+        self._got = {"sweep": -1, "response": -1}  # and the change its last result was for
 
         self.tabs = QtWidgets.QTabWidget()
         whirl_tab = QtWidgets.QWidget()
@@ -649,6 +682,13 @@ class RotorBuilderPage(QtWidgets.QWidget):
         )
 
     def apply_trial(self, t: RotorTrial, keep_history: bool = True) -> None:
+        self._now += 1  # a trial's sweeps at once: the reader waits for the whole setup (and tests read it)
+        try:
+            self._apply(t, keep_history)
+        finally:
+            self._now -= 1
+
+    def _apply(self, t: RotorTrial, keep_history: bool) -> None:
         set_quietly(self.matrix, MATRICES.index(t.matrix))
         set_quietly(self.rpm, t.rpm)
         set_quietly(self.top_rpm, t.top_rpm)
@@ -683,6 +723,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         set_quietly(self.gravity, 0 if rotor.gravity else 1)
         set_quietly(self.internal, rotor.internal * 1e6)
         self.sweep_result, self.response, self._steady = None, None, None
+        self._change += 1
         self._fit_probe()
         try:
             self.assembly = assemble(rotor)
@@ -776,6 +817,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
 
     def _on_top(self) -> None:
         self.sweep_result, self.response = None, None
+        self._change += 1
         self._draw_tabs()
 
     def _fit_probe(self) -> None:
@@ -1132,23 +1174,55 @@ class RotorBuilderPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------- the sweeps
     def _sweep(self) -> Sweep | None:
-        """The Campbell diagram and the stability map, worked out if they aren't since the last change."""
+        """The Campbell diagram and the stability map: worked out if they aren't since the last change, on the
+        worker unless a trial is being set up (None meanwhile: `_waiting`)."""
         if self.sweep_result is None and self.assembly is not None:
-            try:
-                self.sweep_result = sweep(self.assembly, self.top_rpm.value())
-            except np.linalg.LinAlgError as error:
-                self.error = str(error)
+            self._ask("sweep", self.sweeper, functools.partial(_swept, self.assembly, self.top_rpm.value()))
         return self.sweep_result
 
     def _responses(self) -> np.ndarray | None:
-        """The unbalance response from 0 to the top speed, worked out if it isn't since the last change."""
+        """The unbalance response from 0 to the top speed, worked out if it isn't since the last change (as
+        `_sweep`)."""
         if self.response is None and self.assembly is not None:
-            self.response_rpm = np.linspace(0.0, self.top_rpm.value(), RESPONSE_SPEEDS)
-            try:
-                self.response = unbalance_response(self.assembly, self.response_rpm)
-            except np.linalg.LinAlgError as error:
-                self.error = str(error)
+            rpm = np.linspace(0.0, self.top_rpm.value(), RESPONSE_SPEEDS)
+            self._ask("response", self.responder, functools.partial(_responded, self.assembly, rpm))
         return self.response
+
+    def _ask(self, what: str, worker: Recompute, job) -> None:
+        change = self._change
+        if self._now:
+            self._asked[what] = change
+            worker.now(functools.partial(_tagged, change, job))
+        elif self._asked[what] != change:  # once a change: a redraw meanwhile doesn't start it again
+            self._asked[what] = change
+            worker.request(functools.partial(_tagged, change, job))
+
+    def _waiting(self, what: str) -> bool:
+        """`what`'s result is being worked out on the worker: its tab keeps what it last drew."""
+        return self.assembly is not None and self._asked[what] == self._change != self._got[what]
+
+    def _on_sweep(self, tagged: tuple[int, tuple[Sweep | None, str]]) -> None:
+        change, (result, error) = tagged
+        if change != self._change:
+            return  # for a rotor since changed
+        self.sweep_result = result
+        self.error = error or self.error
+        self._got["sweep"] = change
+        if not self._now:
+            self._draw_tabs()
+            settle_plots(self)
+
+    def _on_responses(self, tagged: tuple[int, tuple[tuple[np.ndarray, np.ndarray] | None, str]]) -> None:
+        change, (result, error) = tagged
+        if change != self._change:
+            return
+        if result is not None:
+            self.response_rpm, self.response = result
+        self.error = error or self.error
+        self._got["response"] = change
+        if not self._now:
+            self._draw_tabs()
+            settle_plots(self)
 
     def steady(self) -> np.ndarray | None:
         """The unbalance response at the speed (complex, n_dof), kept until the rotor or the speed changes."""
@@ -1181,6 +1255,9 @@ class RotorBuilderPage(QtWidgets.QWidget):
     def _draw_campbell(self) -> None:
         self._place_speed()
         s = self._sweep()
+        if s is None and self._waiting("sweep"):
+            self.campbell_note.setText(WORKING)
+            return
         if s is None:
             self._clear("forward", "backward", "one_x")
             for item in (self.criticals, self.damped_criticals):
@@ -1222,6 +1299,9 @@ class RotorBuilderPage(QtWidgets.QWidget):
     def _draw_stability(self) -> None:
         self._place_speed()
         s = self._sweep()
+        if s is None and self._waiting("sweep"):
+            self.stability_note.setText(WORKING)
+            return
         if s is None:
             self._clear("d_forward", "d_backward")
             self.onset_line.hide()
@@ -1260,6 +1340,9 @@ class RotorBuilderPage(QtWidgets.QWidget):
         s = self._sweep()
         for line in self.critical_lines:
             line.hide()
+        if Q is None and self._waiting("response"):
+            self.unbalance_note.setText(WORKING)
+            return
         if Q is None:
             self._clear("orbit", "lag")
             self.unbalance_note.setText(self.error)
