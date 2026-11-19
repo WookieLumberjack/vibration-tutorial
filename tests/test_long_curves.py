@@ -28,20 +28,53 @@ def _free_windows(app, free_windows):
     """Each test's windows torn down and freed after it (conftest's `free_windows`)."""
 
 
+FRAMES = 60  # a second of a running page's frames, driven by hand
+DT = 1 / 60
+
+
 @pytest.mark.parametrize("name", ["sim_page", *(name for name, _ in LAZY_PAGES)])
 def test_a_long_curve_whose_x_increases_is_decimated(main_window, app, name):
+    """Each tab drawn, and run (its Start, its frame loops driven a second) where the page runs: a curve that grows
+    while it runs is long only then (#409 P-15: the Gyroscope's thinned ones)."""
     import pyqtgraph as pg
+
+    from vib_tutorial.gui import settle_plots
+    from vib_tutorial.gui.frame_loop import FrameLoop
 
     w = main_window
     w.show_page(name)
     page = w.pages.currentWidget()
     app.processEvents()
-    for tabs in page.findChildren(QtWidgets.QTabWidget):  # every tab drawn
-        for i in range(tabs.count()):
-            tabs.setCurrentIndex(i)
+    long: set[str] = set()
+    tab_widgets = page.findChildren(QtWidgets.QTabWidget)
+    for tabs in tab_widgets or [None]:
+        for i in range(tabs.count() if tabs is not None else 1):
+            if tabs is not None:
+                tabs.setCurrentIndex(i)
             app.processEvents()
-    long = []
+            transport = page.transport() if hasattr(page, "transport") else None
+            if transport is not None and not transport.run.isChecked():
+                transport.run.click()
+            loops = [loop for loop in page.findChildren(FrameLoop) if loop._should_run()]
+            for loop in loops:
+                loop.enabled = False  # driven here, not by its timer
+            for _ in range(FRAMES * bool(loops)):
+                for loop in loops:
+                    loop._call(loop._tick, DT)
+                settle_plots(page)
+            long |= set(_long_curves(page, pg))
+            for loop in loops:
+                loop.enabled = True
+            if transport is not None and transport.run.isChecked():
+                transport.run.click()
+    assert sorted(long) == [], "decimate these plots (plots.decimate)"
+
+
+def _long_curves(page, pg) -> list[str]:
+    found = []
     for plot in page.findChildren(pg.PlotWidget):
+        if not plot.isVisible():
+            continue
         width = max(plot.getPlotItem().getViewBox().width(), 1.0)
         for item in plot.getPlotItem().listDataItems():
             if not isinstance(item, pg.PlotDataItem):
@@ -51,5 +84,5 @@ def test_a_long_curve_whose_x_increases_is_decimated(main_window, app, name):
                 continue
             finite = x[np.isfinite(x)]
             if np.all(np.diff(finite) >= 0):
-                long.append(f"{plot.getPlotItem().getAxis('left').labelText!r}: {len(x)} points over {width:.0f} px")
-    assert long == [], "decimate these plots (plots.decimate)"
+                found.append(f"{plot.getPlotItem().getAxis('left').labelText!r}: {len(x)} points over {width:.0f} px")
+    return found
