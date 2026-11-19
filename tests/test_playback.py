@@ -386,6 +386,24 @@ def test_a_cursors_plot_draws_its_curves_from_pixmaps(app):
     close_graphics(page)
 
 
+@pytest.mark.gui
+def test_make_app_sizes_the_pixmap_cache_once_the_app_is_made():
+    """In a fresh interpreter, as the app starts: making the QApplication sets the cache's limit back to 10 MB, so
+    a limit set before it never held (#417 did, and the Mac's played-back plot stayed at 37 fps)."""
+    import subprocess
+    import sys
+
+    from vib_tutorial.gui import plot_patches
+
+    code = (
+        "from PySide6 import QtGui; from vib_tutorial import gui; gui.make_app('Light'); "
+        "print(QtGui.QPixmapCache.cacheLimit())"
+    )
+    env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
+    out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, timeout=60, check=True)
+    assert int(out.stdout.split()[-1]) == plot_patches.PIXMAP_CACHE_MB * 1024
+
+
 def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
     """A held curve's pixmap lives in QPixmapCache: at 2× the Single oscillator's, in a 1700 px window, outgrew its
     default 10 MB, so the cache dropped them every frame (20 ms a frame on the Mac, #409 N-2). The limit holds

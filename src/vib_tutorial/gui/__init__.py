@@ -25,6 +25,7 @@ def make_app(theme: str | None = None):
     if app is None:
         display_size.apply_saved()  # Qt reads its scale factor as the app is created
         app = QtWidgets.QApplication(sys.argv)
+    plot_patches.size_pixmap_cache()  # the app, as it's made, sets the cache's limit back to Qt's default
     from . import notes_render
 
     notes_render.install()

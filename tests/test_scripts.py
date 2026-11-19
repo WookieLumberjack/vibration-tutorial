@@ -106,3 +106,8 @@ def test_mac_timings_splits_the_paint_by_plot():
     row = timings.split_rows("Rub", {"Orbits": 6.0, "Push": 4.0, "Speed": 0.2}, frames, top=2)
     assert row == ["| Rub | 8.0 | Orbits 3.0; Push 2.0; 1 more plots 0.1; other 2.9 |"]
     assert timings.split_rows("None", {}, []) == []
+
+
+def test_mac_timings_counts_held_curves_strokes_a_frame():
+    timings = _import("mac_timings")
+    assert timings.stroke_row("Sdof", [0, 0.0], [12, 20.0], 4) == "| Sdof | 0.0 | 0.0 | 3.0 | 5.0 |"
