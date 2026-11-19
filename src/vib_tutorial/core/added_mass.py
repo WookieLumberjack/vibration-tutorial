@@ -165,6 +165,12 @@ def _shape_power(k: np.ndarray, m: int, a: float) -> np.ndarray:
     return np.where(near, 0.25 * a * a, value)
 
 
+@lru_cache(maxsize=8)
+def _gauss(n: int) -> tuple[np.ndarray, np.ndarray]:
+    """Gauss–Legendre nodes and weights on [−1, 1] (an eigenproblem each: 1 ms for 96, worked out once)."""
+    return np.polynomial.legendre.leggauss(n)
+
+
 @lru_cache(maxsize=4096)
 def _plate_integral(a: float, b: float, m: int, n: int) -> float:
     """∫∫ |Φ̂|²/|k| d²k / 4π² for sin(mπx/a) sin(nπy/b), m³ (times ρ: the added mass on one side). In polar
@@ -172,12 +178,12 @@ def _plate_integral(a: float, b: float, m: int, n: int) -> float:
     and over k in pieces, to 30 times the mode's own wavenumbers (the tail, ∝ 1/K³, is under 10⁻⁴)."""
     top = 30 * max(m * math.pi / a, n * math.pi / b, TWO_PI / min(a, b))
     pieces = int(top * max(a, b) / math.pi) + 4  # 16 nodes to each half oscillation
-    xs, ws = np.polynomial.legendre.leggauss(16)
+    xs, ws = _gauss(16)
     edges = np.linspace(0.0, top, pieces + 1)
     h = np.diff(edges)
     k = (0.5 * h[:, None] * (xs + 1) + edges[:-1, None]).ravel()
     wk = (0.5 * h[:, None] * ws).ravel()
-    xp, wp = np.polynomial.legendre.leggauss(96)
+    xp, wp = _gauss(96)
     phi = 0.25 * math.pi * (xp + 1)
     wphi = 0.25 * math.pi * wp
     kk, pp = np.meshgrid(k, phi, indexing="ij")
