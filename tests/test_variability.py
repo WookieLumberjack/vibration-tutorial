@@ -75,3 +75,22 @@ def test_mistuned_amplification_stays_under_whitehead():
 def test_deltas_have_zero_mean():
     d = Ring(mistuning=0.05, seed=4).deltas()
     assert d.mean() == pytest.approx(0.0, abs=1e-15)
+
+
+def test_the_ring_forced_through_its_modes_matches_a_solve_at_each_frequency():
+    """`forced_many` diagonalizes the ring (M and C multiples of I) for many patterns at once (#409 P-10): the same
+    as solving (K − ω²M + iωC) x = F a frequency at a time."""
+    import math
+
+    from vib_tutorial.core.modal import receptance
+    from vib_tutorial.core.variability import Ring, forced_many, sweep_grid
+
+    ring = Ring(mistuning=0.03)
+    f = sweep_grid(ring, 300)
+    rng = np.random.default_rng(3)
+    deltas = rng.normal(0.0, 0.03, (5, ring.blades))
+    got = forced_many(ring, 2, f, deltas)
+    F = np.exp(2j * math.pi * 2 * np.arange(ring.blades) / ring.blades)
+    for d, x in zip(deltas, got):
+        want = np.abs(receptance(*ring.matrices(d), f, F))
+        assert np.allclose(x, want, rtol=1e-9, atol=1e-12 * want.max())
