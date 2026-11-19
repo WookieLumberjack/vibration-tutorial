@@ -232,9 +232,15 @@ def test_practice_window(app):
     # A number: wrong, then right, and the problem is ticked.
     p.show_problem("sdof_page", "natural-frequency", seed=3)
     assert list(w._built) == ["sim_page"]  # asking builds no page
+    assert not p.solution_button.isEnabled() and p.check_button.isDefault()  # an answer first (#409 U-25)
+    p.show_hint()
+    assert p.solution_button.isEnabled()  # or the hint
+    p.show_problem("sdof_page", "natural-frequency", seed=3)
+    assert not p.solution_button.isEnabled()
     q = p.question
     p.number.setText(str(q.answer * 2 * math.pi))
     p.check()
+    assert p.solution_button.isEnabled()
     assert "2π" in p.text.toPlainText() and not p._problem_items["sdof_page", "natural-frequency"].text(0).startswith(
         TICK
     )

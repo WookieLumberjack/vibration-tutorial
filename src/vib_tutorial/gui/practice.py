@@ -107,6 +107,7 @@ class PracticeWindow(QtWidgets.QWidget):
         self.seed = 0
         self._verdict = self._details = self._hint = self._solution = ""
         self._answered = False
+        self._checked = False  # an answer checked: Solution offered (or after the Hint), not before (#409 U-25)
 
         self.follow = QtWidgets.QCheckBox("Follow the page")
         self.follow.setToolTip("<p>Turn to the problems of each page the main window turns to.</p>")
@@ -127,6 +128,8 @@ class PracticeWindow(QtWidgets.QWidget):
 
         self.tree = QtWidgets.QTreeWidget()
         self.tree.setHeaderHidden(True)
+        self.tree.setWordWrap(True)  # a long title wraps rather than being cut (#409 U-25)
+        self.tree.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.tree.itemClicked.connect(self._on_item)
         self.tree.itemActivated.connect(self._on_item)
         self._problem_items: dict[tuple[str, str], QtWidgets.QTreeWidgetItem] = {}
@@ -187,11 +190,19 @@ class PracticeWindow(QtWidgets.QWidget):
         self.answer_area.addWidget(self.choice_box)
         self.answer_area.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Maximum)
 
-        self.check_button = self._button("Check", "Mark your answer.", self.check)
+        self.check_button = self._button("Check", "Mark your answer (Enter).", self.check)
+        self.check_button.setDefault(True)  # drawn as the one to press
+        enter = QtGui.QShortcut(QtGui.QKeySequence("Return"), self.choice_box)  # a choice picked, Enter checks it
+        enter.setContext(QtCore.Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        enter.activated.connect(self.check)
         self.hint_button = self._button(
             "Hint", "Where the page's notes explain it (the links open the Theory window).", self.show_hint
         )
-        self.solution_button = self._button("Solution", "The working and the answer.", self.show_solution)
+        self.solution_button = self._button(
+            "Solution",
+            "The working and the answer, once you've checked an answer or seen the hint.",
+            self.show_solution,
+        )
         self.new_button = self._button("New numbers", "The same problem with new numbers.", self.new_numbers)
         self.next_button = self._button(
             "Next unsolved", "The next problem you haven't solved yet, in the course's order.", self.next_unsolved
@@ -222,11 +233,11 @@ class PracticeWindow(QtWidgets.QWidget):
         split.addWidget(tree_pane)
         split.addWidget(right)
         split.setStretchFactor(1, 1)
-        split.setSizes([260, 560])
+        split.setSizes([300, 600])
         layout = QtWidgets.QVBoxLayout(self)
         layout.addLayout(bar)
         layout.addWidget(split)
-        self.resize(850, 560)
+        self.resize(920, 580)
         geometry = settings().value("practice_window/geometry")
         if geometry is not None:
             self.restoreGeometry(geometry)
@@ -248,6 +259,7 @@ class PracticeWindow(QtWidgets.QWidget):
         self.question = self.problem.question(self.seed)
         self._verdict = self._details = self._hint = self._solution = ""
         self._answered = False
+        self._checked = False  # an answer checked: Solution offered (or after the Hint), not before (#409 U-25)
         self.number.clear()
         for b in self._choices:
             self._choice_group.removeButton(b)
@@ -351,6 +363,7 @@ class PracticeWindow(QtWidgets.QWidget):
             verdict = check(q, picked)
         else:
             verdict = check(q, self.number.text())
+        self._checked = True
         colour = "good" if verdict.right else "bad"
         self._verdict = f'<p><b class="{colour}">{verdict.message}</b></p>'
         self._details = verdict.details
@@ -418,8 +431,9 @@ class PracticeWindow(QtWidgets.QWidget):
             style = f"<style>.good {{ color: {colors.good}; }} .bad {{ color: {colors.poor}; }}</style>"
             self.text.setHtml(style + "".join(parts))
         asked = q is not None
-        for b in (self.check_button, self.hint_button, self.solution_button, self.new_button):
+        for b in (self.check_button, self.hint_button, self.new_button):
             b.setEnabled(asked)
+        self.solution_button.setEnabled(asked and (self._checked or bool(self._hint) or bool(self._solution)))
         self.next_button.setEnabled(True)
         self.page_button.setEnabled(q is not None and q.setup is not None and (not q.predict or self._answered))
         self.page_button.setText("Show a design on the page" if self._shows_design() else "Show on the page")
