@@ -61,7 +61,7 @@ from .frame_builder_trials import (
 )
 from .frame_builder_trials import PROBLEMS as PROBLEMS
 from .frame_builder_trials import TRIALS as TRIALS
-from .frame_loop import FrameLoop
+from .frame_loop import FRAME_MS, SWING_MS, FrameLoop
 from .layouts import FlowLayout, group
 from .lesson import (
     Form,
@@ -1290,7 +1290,10 @@ class FramePage(QtWidgets.QWidget):
         """Swing the mode on by dt seconds at the animation's own pace (not while a node is dragged)."""
         if self.canvas._drag is not None:
             return
-        if SWINGS[self.swing.currentIndex()] is Swing.RESPONSE and self.runs is not None:
+        playing = SWINGS[self.swing.currentIndex()] is Swing.RESPONSE and self.runs is not None
+        self.loop.frame_ms = FRAME_MS if playing else SWING_MS  # a response played back smoothly, a mode at 30
+        if playing:
+            assert self.runs is not None, "playing only with runs"
             end = float(self.runs.t[-1])
             self._played = (self._played + dt * end / PLAY_S) % end
             if self.tabs.currentIndex() == TAB_RESPONSE:

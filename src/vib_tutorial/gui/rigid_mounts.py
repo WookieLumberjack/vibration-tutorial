@@ -41,7 +41,7 @@ from ..core.rigid_mounts import (
 )
 from ..view_models.text import fixed
 from . import coalesce, mounts_figures
-from .frame_loop import FrameLoop
+from .frame_loop import SWING_MS, FrameLoop
 from .layouts import form_layout
 from .lesson import (
     Dot,
@@ -1029,7 +1029,7 @@ class MountsPage(QtWidgets.QWidget):
             self.tabs,
         )
 
-        self.loop = FrameLoop(self, "Rigid body on mounts", self._tick, self._runs, self._sim_t)
+        self.loop = FrameLoop(self, "Rigid body on mounts", self._tick, self._runs, self._sim_t, frame_ms=SWING_MS)
         self._on_inputs()
         self.apply_theme()
 

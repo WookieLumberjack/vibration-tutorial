@@ -311,3 +311,26 @@ def test_the_app_sets_its_text_in_the_bundled_ui_font(app):
     bold = QtGui.QFont(font)
     bold.setBold(True)
     assert QtGui.QFontInfo(bold).family() == "IBM Plex Sans"  # its own bold face, not a synthesized one
+
+
+def test_a_typeset_equation_is_kept_and_read_back_in_any_colour(tmp_path, monkeypatch):
+    """`equation_svg` typesets once, keeps it in the cache (`VIB_CACHE`), and reads it back in any colour."""
+    from vib_tutorial.gui import maths
+
+    monkeypatch.setenv(maths.CACHE_ENV, str(tmp_path))
+    typeset: list[str] = []
+    real = maths._typeset
+
+    def counted(latex: str, px: float) -> str:
+        typeset.append(latex)
+        return real(latex, px)
+
+    monkeypatch.setattr(maths, "_typeset", counted)
+    eq = r"\omega_n = \sqrt{k/m}"
+    red = maths.equation_svg(eq, 13.0, "#ff0000")
+    blue = maths.equation_svg(eq, 13.0, "#0000ff")
+    assert typeset == [eq] and len(list((tmp_path / "equations").glob("*.svg"))) == 1
+    assert 'fill="#ff0000"' in red and 'fill="#0000ff"' in blue and maths.PLACEHOLDER not in red
+    assert red.replace("#ff0000", "#0000ff") == blue
+    maths.equation_svg(eq, 14.0, "#ff0000")  # another size: typeset again
+    assert len(typeset) == 2

@@ -58,7 +58,7 @@ from ..core.rotor_builder import (
 from ..core.rotor_builder_sweep import N_BRANCHES, Sweep, lag, orbit, sweep, unbalance_response
 from . import rotor_builder_figures, settle_plots, weak
 from .frame_builder import matrix_html
-from .frame_loop import FrameLoop
+from .frame_loop import SWING_MS, FrameLoop
 from .layouts import FlowLayout, group
 from .lesson import (
     TAB_ROOM,
@@ -650,7 +650,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         v.addWidget(self.readout, 0)
         three_panes(self, column(self.trials, self.props, model, show), centre, self.tabs, sizes=TAB_ROOM)
 
-        self.loop = FrameLoop(self, "Rotor builder", self._tick, self._runs, self._sim_t)
+        self.loop = FrameLoop(self, "Rotor builder", self._tick, self._runs, self._sim_t, frame_ms=SWING_MS)
         self._on_tool(0)
         self._on_disc_kind(self.disc_kind.currentIndex())
         self.apply_trial(TRIALS[0], keep_history=False)
