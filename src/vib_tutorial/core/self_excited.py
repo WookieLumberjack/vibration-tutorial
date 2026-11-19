@@ -31,6 +31,7 @@ from typing import Any
 
 import numpy as np
 
+from . import native
 from .ode import Rhs, rk4
 
 TWO_PI = 2.0 * math.pi
@@ -50,13 +51,18 @@ def settled_amplitude(x: np.ndarray, tail: float = 0.25) -> np.ndarray:
 
 
 def dominant_hz(x: np.ndarray, dt: float, tail: float = 0.5) -> np.ndarray:
-    """The frequency of each history's largest spectral line over its last `tail` (zero-padded ×8, Hann)."""
+    """The frequency of each history's largest spectral line over its last `tail` (Hann, zero-padded at least ×8,
+    to a length the FFT factors: 8 × 6301 samples, a prime, took 130 ms for the Lock-in sweep, 14 a power of 2)."""
+    import scipy.fft
+
     n = x.shape[0]
     end = x[int((1 - tail) * n) :]
     end = end - end.mean(axis=0)
     w = np.hanning(end.shape[0])[:, None] if end.ndim == 2 else np.hanning(end.shape[0])
-    spec = np.abs(np.fft.rfft(end * w, 8 * end.shape[0], axis=0))
-    f = np.fft.rfftfreq(8 * end.shape[0], dt)
+    size = scipy.fft.next_fast_len(8 * end.shape[0], real=True)
+    windowed = np.ascontiguousarray((end * w).T)  # each history a contiguous row
+    spec = np.abs(np.fft.rfft(windowed, size, axis=-1)).T
+    f = np.fft.rfftfreq(size, dt)
     return f[np.argmax(spec, axis=0)]
 
 
@@ -262,24 +268,65 @@ class Viv:
     def run(
         self, reduced: np.ndarray, periods: float = 150.0, per_period: int = 60, keep: int = 2
     ) -> tuple[np.ndarray, np.ndarray]:
-        """(t, z[time, state, case]) at each reduced velocity, from rest with the wake at q = 2 (all at once)."""
+        """(t, z[time, state, case]) at each reduced velocity, from rest with the wake at q = 2 (all at once): in
+        Rust where it's built (`viv_steps`; the Lock-in sweep's 41 cases took 1.1 s in Python, #409 P-12)."""
         reduced = np.atleast_1d(np.asarray(reduced, dtype=float))
         h = 1.0 / (self.freq_hz * max(per_period, 1) * max(1.0, float(np.max(reduced)) * self.strouhal))
         n = round(periods / self.freq_hz / h)
         z0 = np.array(
             [np.zeros_like(reduced), np.zeros_like(reduced), np.full_like(reduced, 2.0), np.zeros_like(reduced)]
         )
-        if reduced.size == 1:  # one case: stepped as floats (`rk4`), the case axis put back
-            z = rk4(self.rhs(float(reduced[0])), z0[:, 0], h, n, keep=keep)[:, :, None]
-        else:
-            z = rk4(self.rhs(reduced), z0, h, n, keep=keep)
-        return np.arange(z.shape[0]) * h * keep, z
+        mt, k, a_d, S, r, wf = self.coefficients(reduced)
+        z = viv_steps(mt, k, a_d, self.eps, S, r, wf, z0.ravel(), h, n, keep)
+        return np.arange(z.shape[0]) * h * keep, z.reshape(z.shape[0], 4, reduced.size)
+
+    def coefficients(self, reduced: np.ndarray) -> tuple[float, float, float, np.ndarray, np.ndarray, np.ndarray]:
+        """`rhs`'s numbers at each reduced velocity: m_t, k and A/D shared; S (lift per unit q), r and Ω_f each."""
+        D, rho = self.diameter, self.rho
+        U = reduced * self.freq_hz * D
+        wf = TWO_PI * self.strouhal * U / D
+        mt = self.mass + self.added_mass
+        r = 2 * mt * self.zeta * self.omega + self.gamma * wf * rho * D * D
+        S = 0.25 * rho * U * U * D * self.lift
+        return mt, mt * self.omega**2, self.A / D, S, r, wf
 
     def sweep(self, reduced: np.ndarray, periods: float = 150.0) -> tuple[np.ndarray, np.ndarray]:
         """(amplitude / D, frequency / f_n) of the settled motion at each reduced velocity."""
         t, z = self.run(reduced, periods)
         dt = t[1] - t[0]
         return settled_amplitude(z[:, 0, :]) / self.diameter, dominant_hz(z[:, 0, :], dt) / self.freq_hz
+
+
+def viv_steps_reference(
+    mt: float,
+    k: float,
+    a_d: float,
+    eps: float,
+    S: np.ndarray,
+    r: np.ndarray,
+    wf: np.ndarray,
+    z0: np.ndarray,
+    h: float,
+    steps: int,
+    keep: int,
+) -> np.ndarray:
+    """`Viv`'s cases stepped by RK4 (`ode.rk4`, the cases side by side): z0 (4 × cases, state-major) →
+    (rows, 4 × cases), every `keep`-th state from the first. The Rust kernel (`viv_steps`) does the same
+    arithmetic, case by case."""
+    if keep < 1 or not (len(S) == len(r) == len(wf)) or len(z0) != 4 * len(S):
+        raise ValueError("viv_steps: S, r and Ω_f need a value a case, and the start 4 a case")
+
+    def f(z: Any) -> tuple[Any, ...]:
+        y, v, q, p = z
+        acc = (S * q - r * v - k * y) / mt
+        dp = a_d * acc - eps * wf * (q * q - 1) * p - wf * wf * q
+        return v, acc, p, dp
+
+    z = rk4(f, np.asarray(z0, dtype=float).reshape(4, len(S)), h, steps, keep=keep)
+    return z.reshape(z.shape[0], -1)
+
+
+viv_steps = native.kernel("viv_steps", viv_steps_reference)
 
 
 # ------------------------------------------------------------------ flutter

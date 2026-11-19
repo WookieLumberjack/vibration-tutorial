@@ -17,6 +17,7 @@ pub mod linear;
 pub mod newton;
 pub mod rub;
 pub mod srs;
+pub mod viv;
 
 /// A kernel's result: a shape mismatch is an error naming it.
 pub type Result<T> = std::result::Result<T, String>;

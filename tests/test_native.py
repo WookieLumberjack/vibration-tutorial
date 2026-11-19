@@ -487,3 +487,33 @@ def test_srs_peaks_at_the_records_edges_match_the_reference():
             native.module.srs_peaks(bad[0], 1e-3, f, bad[1])
         with pytest.raises(ValueError):
             shock.srs_peaks_reference(bad[0], 1e-3, f, bad[1])
+
+
+@needs_native
+def test_viv_steps_match_the_reference():
+    """The wake oscillator's RK4 (`self_excited.viv_steps`): the same arithmetic as `ode.rk4`'s, so the two agree to
+    rounding over a short run; over the Lock-in sweep's long one, where the van der Pol wake amplifies rounding, its
+    settled amplitude and frequency at every speed agree."""
+    from vib_tutorial.core import self_excited as se
+    from vib_tutorial.gui.self_excited import VIV_SWEEP
+
+    v = se.Viv()
+    reduced = VIV_SWEEP[::4]
+    mt, k, a_d, S, r, wf = v.coefficients(reduced)
+    z0 = np.concatenate(
+        [np.zeros(reduced.size), np.zeros(reduced.size), np.full(reduced.size, 2.0), np.zeros(reduced.size)]
+    )
+    args = (mt, k, a_d, v.eps, S, r, wf, z0, 2e-4, 3000, 3)
+    np.testing.assert_allclose(native.module.viv_steps(*args), se.viv_steps_reference(*args), rtol=1e-9, atol=1e-12)
+    with pytest.raises(ValueError):
+        native.module.viv_steps(mt, k, a_d, v.eps, S, r[:-1], wf, z0, 2e-4, 10, 1)
+    with pytest.raises(ValueError):
+        se.viv_steps_reference(mt, k, a_d, v.eps, S, r[:-1], wf, z0, 2e-4, 10, 1)
+    kernel = v.sweep(VIV_SWEEP)
+    try:
+        se.viv_steps = se.viv_steps_reference
+        reference = v.sweep(VIV_SWEEP)
+    finally:
+        se.viv_steps = native.module.viv_steps
+    np.testing.assert_allclose(kernel[0], reference[0], rtol=1e-6, atol=1e-9)
+    np.testing.assert_allclose(kernel[1], reference[1], rtol=1e-9)
