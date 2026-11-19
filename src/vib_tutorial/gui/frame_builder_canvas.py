@@ -15,6 +15,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.frame import MAX_NODES, TWO_PI, Element, Frame, Kind, Support, member_curve
 from ..core.frame_response import Load
+from . import coalesce
 from .style import colors
 
 NODE_PX, ELEMENT_PX = 10, 7  # how near a click has to be to pick a node or an element
@@ -469,6 +470,7 @@ class FrameCanvas(pg.PlotWidget):
             super().keyPressEvent(event)
 
     # --------------------------------------------------------- drawing
+    @coalesce.coalesced(leaf=True)
     def draw(self, frame: Frame | None = None) -> None:
         f = frame if frame is not None else self.frame
         q = self.q if frame is None and self.q is not None and self.q.size == f.n_dof else None

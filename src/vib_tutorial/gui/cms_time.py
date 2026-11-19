@@ -13,6 +13,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core import CMSModel, ForceController, ForceKind, ForceSettings, ModalResult
 from ..core.cms_response import CMSResponse
+from . import coalesce
 from .animation import ChainView
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, group
@@ -123,6 +124,7 @@ class CMSRunView(QtWidgets.QWidget):
     def _clear_display(self) -> None:
         """Drop the plotted history."""
 
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         raise NotImplementedError
 
@@ -339,6 +341,7 @@ class CMSTimeView(CMSRunView):
         cols = self._dofs
         self.history.extend(ts, np.hstack([xf[:, cols], xr[:, cols]]))
 
+    @coalesce.coalesced(leaf=True)
     def _draw(self) -> None:
         sim = self.sim
         if sim is None:

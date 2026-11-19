@@ -37,7 +37,7 @@ from ..core import (
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from ..core.substructure import METHOD_SHORT, SUBSTRUCTURE_NAMES
-from . import weak
+from . import coalesce, weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
@@ -1337,6 +1337,12 @@ class SubstructuringPage(QtWidgets.QWidget):
         self.method.blockSignals(False)
         self._apply_method()
         self.set_interfaces(list(trial.interfaces))
+        self._finish_trial(trial)
+
+    @coalesce.coalesced
+    def _finish_trial(self, trial) -> None:
+        """A trial's mode row, tab and response, on the model `refresh` made: in a trial's batch it waits for
+        that refresh, as it's asked for after it."""
         if trial.mode:
             self.table.selectRow(trial.mode - 1)
         view = (self.time, self.recovery)[trial.tab == 2] if trial.force is not None else None
@@ -1449,6 +1455,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         self.plots.set_highlight(comp.closest - 1)
         self.tabs.setCurrentWidget(self.plots)
 
+    @coalesce.coalesced
     def _on_row(self) -> None:
         if self.plots.component is not None and self.table.currentRow() != self.plots.component.closest - 1:
             self.component_table.clearSelection()  # a different coupled mode: drop the overlay
@@ -1457,11 +1464,12 @@ class SubstructuringPage(QtWidgets.QWidget):
 
     # ----------------------------------------------------------- compute
     def refresh(self) -> None:
+        """The controls fitted to the chain now (what's set next checks against them: the interfaces), the model
+        and its views rebuilt in `_rebuild` (once a trial, at its end)."""
         if self.system is None:
             return
         self._dirty = False
-        system = self.system
-        n = system.n
+        n = self.system.n
         self._updating = True
         try:
             self.dof.blockSignals(True)
@@ -1470,6 +1478,14 @@ class SubstructuringPage(QtWidgets.QWidget):
             self._sync_controls(n)
         finally:
             self._updating = False
+        self._rebuild()
+
+    @coalesce.coalesced
+    def _rebuild(self) -> None:
+        if self.system is None:
+            return
+        system = self.system
+        n = system.n
         full = self.full if self.full is not None else modal_analysis(system)
         self.full = full
 
