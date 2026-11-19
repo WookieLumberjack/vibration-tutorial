@@ -24,7 +24,7 @@ from ..core import force_id as fid
 from ..core import nonlinear_test as nl
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick
-from . import nonlinear_figures, settle_plots, weak
+from . import coalesce, nonlinear_figures, settle_plots, weak
 from .layouts import FlowLayout
 from .lesson import (
     Form,
@@ -787,6 +787,12 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         settle_plots(self)
 
     # ------------------------------------------------------------- working out
+    @coalesce.coalesced(
+        covers=(
+            "_draw_frf",
+            "_draw_tab",
+        )
+    )
     def redraw(self) -> None:
         self._dirty = False
         s = self.system
@@ -898,6 +904,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         if self.freqs.size:
             self.redraw()
 
+    @coalesce.coalesced
     def _draw_frf(self) -> None:
         s = self.system
         n = s.n
@@ -983,6 +990,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             text += f" Its largest is {big / top:.3g} times the true force's (clipped here)."
         self.force_readout.setText(text)
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_DISTORTION:

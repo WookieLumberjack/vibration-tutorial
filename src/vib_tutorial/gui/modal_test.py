@@ -56,7 +56,7 @@ from ..core.identification import (
 )
 from ..core.measurement import AA_CUTOFF
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick
-from . import frame_stats, modal_test_figures, settle_plots
+from . import coalesce, frame_stats, modal_test_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import TrialBox, trials_html
 from .links import load_notes, page_link
@@ -974,6 +974,7 @@ class ModalTestPage(QtWidgets.QWidget):
                     break
         return out
 
+    @coalesce.coalesced
     def identify(self) -> None:
         """Extract modal parameters from the finished measurement and compare them with the exact modes."""
         est, acq = self.estimate, self.acq
