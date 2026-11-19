@@ -151,6 +151,10 @@ TRIALS = (
                 "It turns over and back, again and again",
             ),
             1,
+            why=(
+                'Spin about the least or the greatest axis is stable, but this is the middle one: a nudge grows (the tennis-racket effect).',
+                '',
+            ),
         ),
     ),
     RigidTrial(
@@ -166,6 +170,10 @@ TRIALS = (
                 "It turns over and back, again and again",
             ),
             0,
+            why=(
+                '',
+                "It flips only about the middle axis. About the greatest, as about the least, a nudge only circles.",
+            ),
         ),
     ),
     RigidTrial(

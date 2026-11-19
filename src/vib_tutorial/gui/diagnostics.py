@@ -117,6 +117,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                "Impacts raise it well above 3; a healthy gearbox's steady sines keep it below.",
+                "That's Gaussian noise; a sum of steady sines is flatter-topped (a sine alone has 1.5).",
+                '',
+            ),
         ),
     ),
     DiagnosticsTrial(
@@ -155,6 +160,12 @@ TRIALS = (
                 "In the envelope spectrum",
             ),
             3,
+            why=(
+                "Each strike rings the casing's 3 kHz resonance. Its envelope, demodulated, beats at BPFO: 0.45 m/s², ten times the floor.",
+                "The plain spectrum's 0.049 m/s² at BPFO is barely above its floor, 0.043: lost in the noise.",
+                'The strikes are short and carry little at BPFO itself: 0.049 m/s² against a floor of 0.043. Their energy is up at the resonance they ring.',
+                '',
+            ),
         ),
     ),
     DiagnosticsTrial(
@@ -175,6 +186,12 @@ TRIALS = (
                 "± 1X, the shaft's speed",
             ),
             3,
+            why=(
+                'The defect passes through the load zone once a turn of the shaft, so its strikes swell and fade at 1X: sidebands at ± 1X.',
+                "The sidebands are the rate the strikes swell and fade at: the defect's pass through the load zone, once a turn of the shaft.",
+                "That's a ball's defect, which turns with the cage. An inner-race defect turns with the shaft, through the load zone once a turn: ± 1X.",
+                '',
+            ),
         ),
     ),
     DiagnosticsTrial(
@@ -212,6 +229,11 @@ TRIALS = (
                 "It peaks lower and later",
             ),
             2,
+            why=(
+                'The 1X crosses the half-power band in about six of its cycles, too few to build up: lower and later.',
+                'A fast run gives the response too few cycles to build up: it peaks lower, and late, as the build-up lags.',
+                '',
+            ),
         ),
     ),
 )

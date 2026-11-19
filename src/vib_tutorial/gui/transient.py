@@ -83,6 +83,11 @@ TRIALS = (
             "A blow of 0.1 N·s on the 1 kg oscillator: I/mωₙ is 5 mm. How far does its first swing go?",
             ("Exactly 5 mm", "A little under 5 mm", "About 10 mm"),
             1,
+            why=(
+                "That's undamped. With ζ = 0.05 the damper takes some of the energy in the first quarter period: 4.6 mm.",
+                '',
+                'Twice static is what a step does. A blow just starts the mass at I/m, and I/mω<sub>n</sub> is as far as that speed carries it.',
+            ),
         ),
     ),
     TransientTrial(
@@ -99,6 +104,11 @@ TRIALS = (
             ("2.5 mm: it settles there", "About 4.6 mm", "Further than 5 mm"),
             1,
             ordered=True,
+            why=(
+                'It gets there with speed to spare and overshoots: light damping lets it go 85 % past.',
+                '',
+                'Twice static is the undamped limit. Any damping keeps it under: 4.64 mm here.',
+            ),
         ),
     ),
     TransientTrial(
@@ -113,6 +123,10 @@ TRIALS = (
             "The same step with critical damping (ζ = 1). Does the mass overshoot 2.5 mm?",
             ("Yes, a little", "No: it rises to 2.5 mm and stays"),
             1,
+            why=(
+                'Critical damping is the least that stops any overshoot: it creeps up to 2.5 mm without passing it.',
+                '',
+            ),
         ),
     ),
     TransientTrial(
@@ -139,6 +153,11 @@ TRIALS = (
             "10 N for a twentieth of a period, which would sag the spring 25 mm if left on. How far does the mass swing?",
             ("About 25 mm", "About 50 mm", "About 8 mm"),
             2,
+            why=(
+                "That's the static deflection, which needs the force left on. Over a twentieth of a period only its area counts: it's an impulse.",
+                "Twice static is a step's, or a pulse's half a period or longer. This one ends long before the mass gets going.",
+                '',
+            ),
         ),
     ),
     TransientTrial(
@@ -154,6 +173,11 @@ TRIALS = (
             "A 1 N rectangle half a period long (static: 2.5 mm). How far does the mass swing?",
             ("About 2.5 mm", "About twice that", "About half that"),
             1,
+            why=(
+                "That's the force applied slowly. Suddenly, the mass overshoots as after a step, and the pulse ends with it at its peak.",
+                '',
+                "A pulse this long is no impulse: the mass reaches a step's full overshoot, twice static, as the force ends.",
+            ),
         ),
     ),
     TransientTrial(
@@ -169,6 +193,11 @@ TRIALS = (
             "A 1 N half-sine about 0.8 of a period long, the worst length. Is its peak above twice the static 2.5 mm?",
             ("Yes, above twice", "No: between 1.5 and 2 times", "No: under static"),
             1,
+            why=(
+                'Twice is the most even a rectangle, with its sudden start, can do. A half-sine starts gently: 1.77 times static undamped, 1.65 here.',
+                '',
+                "At 0.8 of a period it's near its worst. Under static is for pulses far shorter than the period.",
+            ),
         ),
     ),
     TransientTrial(
@@ -184,6 +213,11 @@ TRIALS = (
             "1 N reached over 2.75 periods. How far past the static 2.5 mm does the mass overshoot?",
             ("Twice it, as a step does", "A few per cent", "About half of it"),
             1,
+            why=(
+                'A step jumps. Over 2.75 periods the mass has time to follow, which leaves only |sin πr|/πr = 8 %.',
+                '',
+                '|sin πr|/πr at r = 2.75 is 0.08. Half would take a ramp only about 0.6 of a period long.',
+            ),
         ),
     ),
 )

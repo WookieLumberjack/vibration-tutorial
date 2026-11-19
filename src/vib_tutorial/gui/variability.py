@@ -126,6 +126,12 @@ TRIALS = (
                 "They don't move",
             ),
             3,
+            why=(
+                'Damping lowers a damped frequency only by √(1 − ζ²), and the scatter goes both ways; the natural frequencies, from M and K, stay.',
+                "The undamped frequencies depend only on M and K, which are exact here: they don't move.",
+                'That would be a stiffness scatter of 30 %, the frequency going as √k. The undamped frequencies depend only on M and K.',
+                '',
+            ),
         ),
     ),
     VariabilityTrial(
@@ -154,6 +160,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                "That's the tuned assembly. With the mistuning twice the coupling the mode localizes onto about one blade.",
+                "The mistuning is twice the coupling: waves can't get past the blades that differ, and the mode collapses onto about one.",
+                '',
+            ),
         ),
     ),
     VariabilityTrial(
@@ -172,6 +183,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                'Localization is set by the mistuning over the coupling. Against a 20 % coupling, 1 % is small: the modes spread over 6 to 12 blades.',
+                'With a 20 % coupling every mode spreads over 6 to 12 blades, and the lowest over most of the twelve.',
+                '',
+            ),
         ),
     ),
     VariabilityTrial(

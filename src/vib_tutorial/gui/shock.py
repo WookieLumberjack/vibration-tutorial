@@ -211,6 +211,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                'A stiff oscillator follows a pulse closely and overshoots a sudden step, to nearly twice; only a soft one stays below the pulse.',
+                "That's a half-sine's top, whose rise is gradual. A square pulse is a step, and a stiff oscillator overshoots a step to twice.",
+                '',
+            ),
         ),
     ),
     _trial(
@@ -239,6 +244,12 @@ TRIALS = (
                 "Hardly more",
             ),
             3,
+            why=(
+                "Less damping can't lower the peak; it barely raises it, as the shock is over before damping acts.",
+                'Damping hardly touches the first swing a shock sets off, whatever the Q: the peak barely moves, 1.65 to 1.74.',
+                "That's a steady sine's resonance, which builds over many cycles. A shock is over before the damping has acted on the first peak.",
+                '',
+            ),
         ),
     ),
     _trial(
@@ -274,6 +285,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                'An offset adds a false velocity change, which can only add response at the low end.',
+                "Integrated over the record the offset is a velocity change the shock didn't have, and the soft oscillators ring with it.",
+                '',
+            ),
         ),
     ),
     _trial(
@@ -293,6 +309,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                "That's ABS, which adds the peaks (11.0 g). SRSS, assuming unrelated times, falls short of a shock's peaks in step.",
+                'SRSS assumes the modes peak at unrelated times. A shock sets them all off at once and they peak nearly together, early, so it comes out short.',
+                '',
+            ),
         ),
     ),
     _trial(

@@ -74,6 +74,11 @@ def rotor_presets() -> list[RotorPreset]:
                     "None: the supports damp it out",
                 ),
                 1,
+                why=(
+                    'Each direction has its own stiffness, so each has its own critical: 1365 and 1668 rpm.',
+                    '',
+                    "Unequal stiffnesses split the critical in two; they don't damp it.",
+                ),
             ),
         ),
         RotorPreset(
@@ -97,6 +102,11 @@ def rotor_presets() -> list[RotorPreset]:
                 ("Below 870 rpm", "At 870 rpm", "Above 870 rpm"),
                 2,
                 ordered=True,
+                why=(
+                    "Below, at 664 rpm, is the backward branch, which the unbalance, turning forward, doesn't drive.",
+                    "Spinning changes the rotor's frequencies: the gyroscopic moment stiffens the forward whirl, so the unbalance finds it higher.",
+                    '',
+                ),
             ),
         ),
         RotorPreset(
@@ -155,6 +165,11 @@ def rotor_presets() -> list[RotorPreset]:
                     "A backward whirl grows, at half the speed",
                 ),
                 1,
+                why=(
+                    "Swirling oil pushes the shaft round with it, the cross-coupling cΩ/2: past 3136 rpm that outweighs the oil's damping.",
+                    '',
+                    'The oil swirls with the shaft, so the whirl it drives is forward, and it locks onto the natural frequency, 26 Hz.',
+                ),
             ),
         ),
         RotorPreset(
@@ -203,6 +218,11 @@ def rotor_presets() -> list[RotorPreset]:
                 "A seal ring 30 µm round the disc, with dry friction. Running up through the critical, the whirl reaches the ring and rubs all round. Which way does the disc whirl then?",
                 ("Forward, with the spin", "Backward, against the spin", "Not at all: the ring holds it still"),
                 1,
+                why=(
+                    "The friction drags the disc's rim backward against the ring, so the disc rolls round it backward: dry whirl.",
+                    '',
+                    'The ring stops the disc going out, not round. The friction rolls it backward round the ring.',
+                ),
             ),
         ),
         RotorPreset(

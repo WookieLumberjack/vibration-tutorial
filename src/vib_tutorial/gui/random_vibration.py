@@ -185,6 +185,11 @@ TRIALS = (
                 "It overestimates, counting the peaks twice",
             ),
             1,
+            why=(
+                "Miles' equation counts each mode's peak. Pushed and measured at the same mass, the acceleration above the modes is F/m, the mass line, which no peak includes.",
+                '',
+                'Each peak is counted once. What it leaves out is the mass line above the modes, so it comes out low.',
+            ),
         ),
     ),
     _trial(
@@ -222,6 +227,12 @@ TRIALS = (
                 "The peak comes out low; the RMS is still right",
             ),
             3,
+            why=(
+                "Lines coarser than the peak can't resolve it: the window smears it, low and wide.",
+                "Smearing lowers and widens a peak; it doesn't raise it. And it keeps the area, so the RMS holds.",
+                "Smearing spreads the peak's area over its neighbours but keeps it: the RMS, the area's root, holds.",
+                '',
+            ),
         ),
     ),
     _trial(
@@ -238,6 +249,11 @@ TRIALS = (
                 "Too high",
             ),
             2,
+            why=(
+                "Miles' equation assumes a flat input across the whole peak, skirts and all. Cut to ±10 %, the skirts get none, so it counts response that isn't there.",
+                'It counts the whole peak, skirts included, but the input reaches only its middle: it errs high.',
+                '',
+            ),
         ),
     ),
 )

@@ -211,6 +211,11 @@ TRIALS = (
                 "It comes out too high",
             ),
             2,
+            why=(
+                'Short blocks do lower the scatter, but they bias the estimate: the coarse lines and leakage widen the peak, raising ζ.',
+                "Coarse lines and the Hann window's leakage widen the peak, and a wide peak reads as more damping.",
+                '',
+            ),
         ),
     ),
     _trial(
@@ -226,6 +231,12 @@ TRIALS = (
                 "Nothing: it isn't excited",
             ),
             3,
+            why=(
+                'OMA finds only the modes the ambient forces excite, and a force at a node excites none of that mode.',
+                "A force at the node does no work on the mode: it isn't excited at all, so there's no peak to fit.",
+                "A force at its node doesn't excite mode 2 at all, so there's nothing to find, let alone twice.",
+                '',
+            ),
         ),
     ),
     _trial(
@@ -264,6 +275,12 @@ TRIALS = (
                 "A sharp, nearly undamped peak, like a mode",
             ),
             3,
+            why=(
+                'A sine is a force, not part of the structure: it adds its own peak and leaves the modes where they were.',
+                "A sine is a single frequency: in s₁ it's a sharp peak, narrower than any mode's.",
+                'FDD sees the spectrum, and a sine puts all its power into one line: a sharp peak, like a lightly damped mode.',
+                '',
+            ),
         ),
     ),
     _trial(

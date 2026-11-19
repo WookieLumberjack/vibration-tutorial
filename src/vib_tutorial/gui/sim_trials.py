@@ -93,6 +93,11 @@ TRIALS = (
                 "They pick up energy from mode 3",
             ),
             0,
+            why=(
+                '',
+                'They have nothing to decay: with C = βK the damping is diagonal in the modes, so mode 3 released stays alone, the others at rest.',
+                "Only a damping matrix that isn't diagonal in the modes passes energy between them. C = βK is.",
+            ),
         ),
     ),
     SimTrial(
@@ -116,6 +121,11 @@ TRIALS = (
                 "They pick up energy from mode 3",
             ),
             2,
+            why=(
+                'That holds for proportional damping. One strong damper makes φᵀCφ non-diagonal, and its terms off the diagonal pass energy between the modes.',
+                'They start with none to lose: only mode 3 was released.',
+                '',
+            ),
         ),
     ),
     SimTrial(
@@ -189,6 +199,11 @@ TRIALS = (
                 "It stands still",
             ),
             2,
+            why=(
+                'Undamped and tuned exactly, the absorber cancels the force on the machine wholly, not by half.',
+                "The absorber splits the machine's resonance into two, either side of the tuning; at the tuning itself the machine sits at an antiresonance.",
+                '',
+            ),
         ),
     ),
     SimTrial(

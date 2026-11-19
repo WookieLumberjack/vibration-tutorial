@@ -471,6 +471,11 @@ PRESETS = (
             ("Far below the running speed", "Just above it, inside a 10 % margin", "Far above it"),
             1,
             ordered=True,
+            why=(
+                'Twice a turn meets 52.3 Hz when the shaft turns at 52.3/2 Hz = 1569 rpm: above 1480, not below.',
+                '',
+                'Twice a turn halves the speed it takes: 52.3 Hz is met at 1569 rpm, only 6 % above 1480.',
+            ),
         ),
     ),
     TorsionalPreset(
@@ -486,6 +491,12 @@ PRESETS = (
             "inertia, what would the train's two lowest modes do?",
             ("Barely move", "Rise a lot", "Fall a lot", "Disappear"),
             0,
+            why=(
+                '',
+                'The lower two modes twist the soft couplings, not the teeth: making the mesh rigid hardly stiffens them (within 0.1 %).',
+                "Merging the gears, reflected by n², keeps the train's inertia: the coupling modes stay within 0.1 %.",
+                "Only the mesh's own mode, at 2688 Hz, goes with a rigid mesh. The coupling modes stay, within 0.1 %.",
+            ),
         ),
     ),
     TorsionalPreset(
@@ -505,6 +516,11 @@ PRESETS = (
                 "No: firing is too fast for it",
             ),
             1,
+            why=(
+                'Running above a mode means passing it on the way up: the 3× order meets 18.9 Hz at 378 rpm.',
+                '',
+                'Firing is fast at speed, but on the way up it starts slow: the 3× order meets 18.9 Hz at 18.9 × 60/3 = 378 rpm.',
+            ),
         ),
     ),
 )

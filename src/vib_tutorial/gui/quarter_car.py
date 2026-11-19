@@ -108,6 +108,12 @@ TRIALS = (
                 "Comfort improves, grip worsens",
             ),
             3,
+            why=(
+                "That's a harder damper. Softening it takes the harshness out but lets the wheel hop, worsening grip.",
+                "A softer damper passes less of the road's harshness to the body: comfort improves; it's grip that suffers.",
+                "The damper is the conflict: softer lets the body ride more gently, but it also lets the wheel hop more freely, so the tyre's load swings more.",
+                '',
+            ),
         ),
     ),
     CarTrial(
@@ -125,6 +131,12 @@ TRIALS = (
                 "Comfort improves, grip worsens",
             ),
             0,
+            why=(
+                '',
+                "A firmer damper holds the wheel to the road: the tyre's load swings less, by 23 %. It's comfort that pays.",
+                'A firmer damper passes more of the road to the body: its acceleration rises to 1.72 m/s². Only grip improves.',
+                "That's softening it. Firmed up, it passes more of the road to the body and holds the wheel down better.",
+            ),
         ),
     ),
     CarTrial(
@@ -149,6 +161,11 @@ TRIALS = (
                 "It worsens",
             ),
             2,
+            why=(
+                "Unsprung mass moves the wheel hop (9.6 Hz, not 11.8), and with it the swing in the tyre's load.",
+                "A heavier wheel is harder for the tyre to keep on the road: it hops lower and harder, and the tyre's load swings more.",
+                '',
+            ),
         ),
     ),
     CarTrial(

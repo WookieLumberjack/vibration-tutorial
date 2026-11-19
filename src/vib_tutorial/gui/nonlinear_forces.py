@@ -139,6 +139,12 @@ TRIALS = (
                 "The same, linear FRF",
             ),
             3,
+            why=(
+                'Inside the gap the second spring never touches: the chain is linear, and a linear system makes no harmonics.',
+                'The jumps come once the gap closes, at 0.5 N. At 0.05 and 0.2 N it never does.',
+                'The peak leans only once the stretch reaches 5 mm and the stiffer spring joins in.',
+                '',
+            ),
         ),
     ),
     NonlinearTrial(
@@ -158,6 +164,12 @@ TRIALS = (
                 "It rises",
             ),
             3,
+            why=(
+                "Friction changes the damping, not the stiffness: the peak grows taller; it doesn't lean.",
+                "Friction's equivalent damper, 4F<sub>f</sub>/πΩX, falls as X grows, so the FRF depends on the level: the peak rises.",
+                "Friction is a fixed force: at a higher level it's a smaller share of the motion's forces and damps less, so the peak rises.",
+                '',
+            ),
         ),
     ),
     NonlinearTrial(
@@ -177,6 +189,11 @@ TRIALS = (
                 "None: it's still a sine",
             ),
             1,
+            why=(
+                'Even harmonics need a spring that pulls back differently either way. This one is symmetric: odd harmonics only.',
+                '',
+                "A sine through a nonlinear spring isn't a sine out: its cubic term adds a 3X, 1.9 % of the 1X here.",
+            ),
         ),
     ),
     NonlinearTrial(

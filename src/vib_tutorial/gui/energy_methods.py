@@ -113,6 +113,11 @@ TRIALS = (
                 "Above the exact f₁",
             ),
             2,
+            why=(
+                "Rayleigh's quotient is never below ω<sub>1</sub>² for any shape: the lowest mode minimises it.",
+                "Any shape that isn't mode 1 mixes in higher modes, which only raise the quotient: it errs high.",
+                '',
+            ),
         ),
     ),
     EnergyTrial(
@@ -155,6 +160,11 @@ TRIALS = (
                 "Below the exact f₁",
             ),
             2,
+            why=(
+                "Dunkerley's sum, Σ m<sub>i</sub>(K<sup>−1</sup>)<sub>ii</sub>, is Σ 1/ω<sub>r</sub>² over every mode: more than 1/ω<sub>1</sub>² alone, so f<sub>1</sub> always comes out low.",
+                "Above would need the sum to fall short of 1/ω<sub>1</sub>²; it adds every higher mode's 1/ω<sub>r</sub>² to it.",
+                '',
+            ),
         ),
     ),
     EnergyTrial(
@@ -180,6 +190,11 @@ TRIALS = (
                 "It comes down, never below the exact value",
             ),
             2,
+            why=(
+                "Each added shape gives the model more freedom to lower its quotients, and none can fall below the exact mode's: they only come down.",
+                'A Ritz model is the structure held to a few shapes: stiffer than it is, so every estimate starts high and comes down.',
+                '',
+            ),
         ),
     ),
     EnergyTrial(

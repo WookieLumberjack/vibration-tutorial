@@ -11,7 +11,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from PySide6 import QtCore  # noqa: E402
 
-from vib_tutorial.core.practice import Question, check, number, parse_number, rounded  # noqa: E402
+from vib_tutorial.core.practice import Prediction, Question, check, number, parse_number, rounded  # noqa: E402
 from vib_tutorial.gui.links import COURSE  # noqa: E402
 from vib_tutorial.gui.practice import pages, problems  # noqa: E402
 
@@ -383,3 +383,28 @@ def test_the_right_prediction_isnt_where_the_buttons_give_it_away():
     first = sum(a == 0 for a in at) / len(at)
     assert last < 0.4 and first < 0.4 and 1 - last - first > 0.25, (first, last)
     assert sum(p.ordered for p in predictions) >= 20  # the scales are marked
+
+
+def test_every_wrong_prediction_says_why():
+    """A trial's Prediction gives a reason for each wrong choice, shown when it's picked (#409 I-7), as a Practice
+    choice does; the right one's is empty."""
+    from vib_tutorial.gui import links, sim_trials
+
+    missing = []
+    for _, members in links.COURSE:
+        for attr, _, _ in members:
+            trials = sim_trials.TRIALS if attr == "sim_page" else getattr(links.page_module(attr), "TRIALS", ())
+            for t in trials:
+                p = getattr(t, "predict", None)
+                if p is None:
+                    continue
+                if p.why:
+                    assert len(p.why) == len(p.choices) and not p.why[p.answer], t.name
+                    assert all(w for k, w in enumerate(p.why) if k != p.answer), t.name
+                else:
+                    missing.append(f"{attr}: {t.name}")
+    assert not missing, missing
+    with pytest.raises(ValueError):
+        Prediction("?", ("a", "b"), 0, why=("right", "wrong"))  # the right one has no reason
+    with pytest.raises(ValueError):
+        Prediction("?", ("a", "b"), 0, why=("",))

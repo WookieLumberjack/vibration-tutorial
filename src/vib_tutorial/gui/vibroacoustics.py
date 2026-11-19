@@ -167,6 +167,12 @@ TRIALS = (
                 "(1, 1)",
             ),
             3,
+            why=(
+                'At a low frequency the panel is small against the wavelength, and parts moving in antiphase cancel: the in-phase (1, 1) radiates best.',
+                "In (2, 2) the four quarters cancel to a quadrupole's, the weakest of the three at a low frequency.",
+                "In (2, 1) the halves push and pull, and at a low frequency their sound cancels to a dipole's.",
+                '',
+            ),
         ),
     ),
     AcousticsTrial(
@@ -205,6 +211,12 @@ TRIALS = (
                 "6 dB",
             ),
             3,
+            why=(
+                "Below coincidence (and above the panel's first resonance) its inertia holds the sound back: TL ≈ 20 log(ωm″/2ρc).",
+                'TL goes as 20 log m″: doubling adds 20 log 2 = 6 dB. 12 dB would take four times the mass.',
+                "That's 10 log 2, as for a power. TL goes as (ωm″/2ρc)², 20 log m″: 6 dB.",
+                '',
+            ),
         ),
     ),
     AcousticsTrial(
@@ -288,6 +300,12 @@ TRIALS = (
                 "Plate 1's energy per mode",
             ),
             3,
+            why=(
+                'Plate 2 is still fed from plate 1. With nothing of its own to lose it fills up until it hands back as much as it gets.',
+                "It can still lose energy back across the corner: it fills until it returns what it gets, at plate 1's energy per mode.",
+                "SEA shares energy per mode: with no loss of its own, plate 2 settles where its modal energy matches plate 1's, however many modes it has.",
+                '',
+            ),
         ),
     ),
     AcousticsTrial(

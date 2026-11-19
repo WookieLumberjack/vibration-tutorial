@@ -90,6 +90,12 @@ TRIALS = (
             "Let go at 30° spinning at 1500 rpm, without being pushed round. What does the tip of its axis trace?",
             ("A circle", "Cusps: it stops, dips and goes on", "Loops", "Smooth waves"),
             1,
+            why=(
+                'A circle is steady precession, which needs the right push round. Let go at rest, it nods, stopping at the top of each nod.',
+                '',
+                'Loops need the precession to turn backward at the top of each nod: let go pushed back. Let go at rest, it just stops there.',
+                'Waves need it never to stop precessing: let go pushed forward. At rest, each nod starts from a standstill, a cusp.',
+            ),
         ),
     ),
     GyroTrial(
@@ -117,6 +123,12 @@ TRIALS = (
             "The same top let go pushed backward, against the way it precesses, at 2 rad/s. What does the tip of its axis trace?",
             ("Cusps", "Loops", "Smooth waves", "A circle, the other way round"),
             1,
+            why=(
+                'Cusps come from starting at rest. Pushed back, the precession turns backward at the top of each nod, and the path loops.',
+                '',
+                'Waves need it never to stop precessing forward. Pushed back, it runs backward at the top of each nod: loops.',
+                'On average it still precesses forward, at 2.39 rad/s, nodding as it goes: loops.',
+            ),
         ),
     ),
     GyroTrial(
@@ -129,6 +141,12 @@ TRIALS = (
             "Let go pushed forward at 1.2 rad/s, half its steady precession rate. What does the tip of its axis trace?",
             ("Cusps", "Loops", "Smooth waves", "A circle"),
             2,
+            why=(
+                'Cusps come from starting at rest. Pushed forward at half the steady rate, it never stops precessing: waves.',
+                'Loops need the precession to turn backward at the top of each nod. Pushed forward, it never does.',
+                '',
+                'A circle needs the steady rate, 2.39 rad/s. At half of it, it still nods as it goes: waves.',
+            ),
         ),
     ),
     GyroTrial(
@@ -164,6 +182,12 @@ TRIALS = (
                 "It precesses at 2° without nodding",
             ),
             1,
+            why=(
+                "Under 467 rpm upright is unstable: a 2° lean isn't held but grows, to 62°, before it comes back.",
+                '',
+                'To stand upright it has to spin faster than 467 rpm; at 400 upright is unstable.',
+                'Steady precession at 2° needs a fast enough spin; under 467 rpm upright is unstable, and it falls far.',
+            ),
         ),
     ),
     GyroTrial(
@@ -183,6 +207,11 @@ TRIALS = (
             "The first trial's top, spun the other way (−1500 rpm) and let go the same way. Which way does it precess?",
             ("The same way as before", "The opposite way", "It doesn't precess: it falls"),
             1,
+            why=(
+                'The precession turns the angular momentum toward the moment. Spun the other way, L points the other way, and it precesses the other way.',
+                '',
+                'At −1500 rpm it has as much spin as before: it precesses just as well, the other way round.',
+            ),
         ),
     ),
     GyroTrial(
@@ -245,6 +274,11 @@ TRIALS = (
                 "It slowly settles onto its longest axis",
             ),
             1,
+            why=(
+                'Spin about the greatest or least axis is stable, but the stem is the middle one: a nudge grows, and it flips.',
+                '',
+                'Settling needs something to lose energy, and nothing does here: it flips over and back for ever.',
+            ),
         ),
     ),
     GyroTrial(
@@ -307,6 +341,11 @@ TRIALS = (
                 "It rolls onto its side and spins there",
             ),
             1,
+            why=(
+                "Spun this fast, friction at the table turns it over: inverted is the least energy its Jellett's J allows.",
+                '',
+                'It passes 90° on the way over, in 1.8 s, and goes on to its top.',
+            ),
         ),
     ),
     GyroTrial(

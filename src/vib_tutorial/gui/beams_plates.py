@@ -99,6 +99,11 @@ TRIALS = (
                 "Euler–Bernoulli",
             ),
             2,
+            why=(
+                "Both of Timoshenko's additions, rotary inertia and shear, lower every mode's frequency; the gap only grows with the mode.",
+                "Timoshenko's beam adds rotary inertia and shear flexibility to Euler–Bernoulli's, and both lower the frequencies.",
+                '',
+            ),
         ),
     ),
     BeamPlateTrial(
@@ -166,6 +171,11 @@ TRIALS = (
                 "It stays about the same",
             ),
             2,
+            why=(
+                "That's a beam's (∝ 1/√f). A plate's, (S/2)√(ρh/D), doesn't depend on frequency.",
+                "That's a room's (∝ f²). A plate's modal density, (S/2)√(ρh/D), has no f in it.",
+                '',
+            ),
         ),
     ),
 )

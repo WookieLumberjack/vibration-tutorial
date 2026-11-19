@@ -91,6 +91,11 @@ TRIALS = (
             ("About 1 s", "About 2 s", "About 6 s"),
             1,
             ordered=True,
+            why=(
+                "That's one way across. There and back is 2π√(L/g) = 2.0 s.",
+                '',
+                "That's 2π seconds, as if √(L/g) were 1 s. For a 1 m string it's 0.32 s, and 2π times that is 2.0 s.",
+            ),
         ),
     ),
     PendulumTrial(
@@ -105,6 +110,11 @@ TRIALS = (
             ("shorter", "the same", "longer"),
             2,
             ordered=True,
+            why=(
+                'sin θ falls below θ as the swing grows: gravity pulls back less than the linear spring would, so the period lengthens.',
+                'Only while sin θ ≈ θ, up to about 10°. From 90° the period is 18 % longer.',
+                '',
+            ),
         ),
     ),
     PendulumTrial(
@@ -130,6 +140,11 @@ TRIALS = (
             "A 1 m rod swinging from one end, or a bob on a 1 m string: which swings faster?",
             ("The rod", "The bob on the string", "Neither: the same"),
             0,
+            why=(
+                '',
+                "The rod's mass is spread along it, some of it near the pivot: it swings as a pendulum 2L/3 = 0.667 m long, so faster.",
+                "Only a point mass at 1 m swings as a 1 m pendulum. The rod's mass is spread along it: it swings as one 0.667 m long.",
+            ),
         ),
     ),
     PendulumTrial(
@@ -147,6 +162,11 @@ TRIALS = (
             ("longer", "the same", "shorter"),
             1,
             ordered=True,
+            why=(
+                "A pendulum softens because of gravity's sin θ. The wire's torque is k<sub>t</sub>θ at any twist, so nothing softens.",
+                '',
+                "Nothing hardens either: the wire's torque is k<sub>t</sub>θ at any twist, and a linear spring's period doesn't depend on the amplitude.",
+            ),
         ),
     ),
     PendulumTrial(
@@ -162,6 +182,11 @@ TRIALS = (
             ("longer, as a hanging pendulum's", "the same", "shorter"),
             2,
             ordered=True,
+            why=(
+                'Hanging, gravity pulls back and sin θ falling below θ softens it. Upright, gravity pushes over, and the same shortfall leaves the spring more to win by: it hardens.',
+                "Gravity's moment, mgL sin θ, isn't linear: at 60° it's 17 % short of mgLθ, so the spring wins by more and the swing is quicker.",
+                '',
+            ),
         ),
     ),
     PendulumTrial(
@@ -178,6 +203,11 @@ TRIALS = (
             "A spring of 9 N·m/rad under a weight's 9.81 N·m/rad, let go from 1° with a little damping. It…",
             ("swings about upright", "falls over and settles leaning part-way", "falls flat, to 90°"),
             1,
+            why=(
+                "Upright needs the spring to beat the weight, 9 against 9.81 N·m/rad. It doesn't, so upright is unstable.",
+                '',
+                "As it leans, the weight's moment, 9.81 sin θ, grows more slowly than the spring's 9θ: they balance at 40.8°, short of 90°.",
+            ),
         ),
     ),
     PendulumTrial(
@@ -191,6 +221,11 @@ TRIALS = (
             ("the same", "about 2.5 times longer", "about 6 times longer"),
             1,
             ordered=True,
+            why=(
+                "It's the mass that cancels, not g: ω<sub>n</sub> = √(g/L).",
+                '',
+                'The period goes as 1/√g: a sixth of g makes it √6 = 2.46 times longer, not 6.',
+            ),
         ),
     ),
 )

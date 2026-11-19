@@ -87,6 +87,11 @@ TRIALS = (
             "Keep more and more harmonics of the square wave. What does the overshoot at each jump do?",
             ("Shrinks away to nothing", "Narrows, but stays about 9 % of the jump", "Grows"),
             1,
+            why=(
+                "Each new term narrows the overshoot but can't flatten it: a sum of smooth sines never makes a jump without one (Gibbs).",
+                '',
+                'Its height settles at 9 % of the jump; more terms only squeeze it closer to the jump.',
+            ),
         ),
     ),
     PeriodicTrial(
@@ -101,6 +106,11 @@ TRIALS = (
             "The square wave at a third of the natural frequency. Which harmonic swings the mass most?",
             ("The fundamental, the largest", "The third, on resonance", "Neither: it's far below resonance"),
             1,
+            why=(
+                "It's the largest force, 1.27 N, but far below resonance: 3.6 mm. The third's 0.42 N, on resonance, is amplified ten times.",
+                '',
+                "The fundamental is, but the square wave's third harmonic, at 3 × f<sub>n</sub>/3, sits right on f<sub>n</sub>.",
+            ),
         ),
     ),
     PeriodicTrial(
@@ -114,6 +124,11 @@ TRIALS = (
             "Now at half the natural frequency, closer to resonance. Is the swing larger than at a third?",
             ("Yes, larger", "No: about a third of it", "About the same"),
             1,
+            why=(
+                "Closer only for the fundamental. A square wave's harmonics are odd, at 1.5 and 2.5 f<sub>n</sub> here: none reaches f<sub>n</sub>.",
+                '',
+                'At a third, the third harmonic sat on resonance and did most of it. At a half nothing does: 5.0 mm against 13.9.',
+            ),
         ),
     ),
     PeriodicTrial(
@@ -129,6 +144,11 @@ TRIALS = (
             "A blow every second. How do the impulse train's harmonics fall with their number j?",
             ("As 1/j", "As 1/j²", "They don't: all the same height"),
             2,
+            why=(
+                "That's a square wave's, with its jumps. A blow is sharper than any jump: its harmonics don't fall at all.",
+                "That's a triangle's, with its kinks. A train of blows has every harmonic at 2I/T.",
+                '',
+            ),
         ),
     ),
     PeriodicTrial(
@@ -142,6 +162,11 @@ TRIALS = (
             "F|sin πt/T|, never negative. What does its mean do to the oscillator?",
             ("Nothing: the oscillator ignores it", "Sags the spring, and nothing more", "Resonates it"),
             1,
+            why=(
+                'A steady force is the slowest of all, and the oscillator follows it: it sags the spring by F̄/k = 1.59 mm.',
+                '',
+                'Resonance needs a frequency at f<sub>n</sub>. The mean has none, and only sags the spring.',
+            ),
         ),
     ),
     PeriodicTrial(
@@ -156,6 +181,11 @@ TRIALS = (
             "A triangle and a square, three harmonics each. Whose response series is closer to the exact one?",
             ("The square's", "The triangle's", "Both the same"),
             1,
+            why=(
+                "A square's harmonics fall as 1/j, a triangle's as 1/j²: three terms leave far less of the triangle out.",
+                '',
+                "Three harmonics each, but the triangle's that are left out are far smaller: 1.9 % off against 5.7 %.",
+            ),
         ),
     ),
     PeriodicTrial(

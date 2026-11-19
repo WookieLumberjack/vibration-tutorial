@@ -109,6 +109,12 @@ TRIALS = (
                 "It keeps its amplitude, its period far too long",
             ),
             3,
+            why=(
+                "Stable isn't accurate: at one step a period the method can't follow a swing at all, and its period comes out 2.5 times too long.",
+                'Average acceleration adds no numerical damping at any step: the amplitude holds at 10 mm.',
+                "That's linear acceleration, which needs Δt ≤ 0.55T. Average acceleration is unconditionally stable.",
+                '',
+            ),
         ),
     ),
     IntegrationTrial(
@@ -152,6 +158,12 @@ TRIALS = (
                 "It blows up",
             ),
             3,
+            why=(
+                'Below ωΔt = 2 it would be; at 43 the stiff mode is unstable and grows every step.',
+                "Central difference adds no damping: past its limit of ωΔt = 2 a mode grows every step; it isn't damped.",
+                "An explicit step has to resolve every mode in the model. The stiff one's ωΔt = 43 is far past central difference's limit of 2, so it blows up whatever the slow mode does.",
+                '',
+            ),
         ),
     ),
     IntegrationTrial(

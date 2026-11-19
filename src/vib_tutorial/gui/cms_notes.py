@@ -117,6 +117,11 @@ TRIALS = (
                 "Each at or above the true one",
             ),
             2,
+            why=(
+                'Craig–Bampton keeps the boundary and a few fixed-interface modes: a Rayleigh–Ritz model, whose frequencies err high only.',
+                'Holding the halves to a few shapes stiffens the model: every frequency comes out at or above the true one.',
+                '',
+            ),
         ),
     ),
     CmsTrial(
@@ -136,6 +141,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                'Exact needs every interior mode kept, and A keeps one of its six.',
+                "B has no interior, so all the reduction is in A, and one mode of A's six interior masses can't describe mode 3.",
+                '',
+            ),
         ),
     ),
     CmsTrial(
@@ -181,6 +191,10 @@ TRIALS = (
                 "No: it drops the boundary's inertia",
             ),
             1,
+            why=(
+                "Craig–Bampton keeps the boundary's DOFs with their mass. MacNeal's are massless, so even with every mode kept the model lacks inertia: mode 6 is 66 % high.",
+                '',
+            ),
         ),
     ),
     CmsTrial(

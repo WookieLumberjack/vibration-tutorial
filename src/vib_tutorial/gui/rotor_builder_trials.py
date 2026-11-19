@@ -178,6 +178,12 @@ TRIALS = (
                 "The forward whirl rises, the backward one falls",
             ),
             3,
+            why=(
+                'The gyroscopic moment stiffens the forward whirl but softens the backward one: they split, one up and one down.',
+                'The gyroscopic moment stiffens the forward whirl but softens the backward one: they split, one up and one down.',
+                'It does no work, but it couples the tilts: the moment I<sub>p</sub>Ω × tilt rate stiffens one whirl and softens the other.',
+                '',
+            ),
         ),
     ),
     RotorTrial(
@@ -293,6 +299,11 @@ TRIALS = (
                 "Tiny: an unbalance turns forward, with the shaft",
             ),
             2,
+            why=(
+                "An unbalance turns with the shaft, forward. On round bearings it can't drive a backward whirl: 12.5 µm against 1003.",
+                'Damping hardly matters when nothing drives the mode. The unbalance turns forward, and the backward whirls barely move.',
+                '',
+            ),
         ),
     ),
     RotorTrial(
@@ -340,6 +351,11 @@ TRIALS = (
                 "Drives it: past some speed the whirl grows",
             ),
             2,
+            why=(
+                'It does at rest. But it turns with the shaft: above the critical the shaft turns faster than it whirls, and the internal damping drags the whirl on round.',
+                "At the critical a synchronous whirl doesn't flex the shaft, so there it does nothing. Above it, it drives the whirl: unstable from 4245 rpm.",
+                '',
+            ),
         ),
     ),
 )

@@ -130,6 +130,11 @@ TRIALS = (
                 "Three",
             ),
             2,
+            why=(
+                'Only mode 2 has its node at m3; the other three are still excited.',
+                "A force at a mode's node puts nothing into it: mode 2 drops out of every FRF in the column.",
+                '',
+            ),
         ),
     ),
     ModalTestTrial(
@@ -146,6 +151,11 @@ TRIALS = (
                 "It reads low",
             ),
             2,
+            why=(
+                'Noise on the force inflates G<sub>ff</sub>, most where the force is smallest, at the resonances, so H1 reads low there.',
+                'Noise on the force adds to G<sub>ff</sub>, the denominator of H1 = G<sub>fx</sub>/G<sub>ff</sub>: it can only read low.',
+                '',
+            ),
         ),
     ),
     ModalTestTrial(
@@ -171,6 +181,11 @@ TRIALS = (
                 "Too high",
             ),
             2,
+            why=(
+                'The block ends while the response still rings: leakage widens the peaks, and the fit reads the width as damping.',
+                'Cutting the ringing off spreads the peak out, low and wide, and a wide peak looks more damped, not less.',
+                '',
+            ),
         ),
     ),
     ModalTestTrial(

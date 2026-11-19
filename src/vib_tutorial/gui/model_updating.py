@@ -182,6 +182,12 @@ TRIALS = (
             ),
             1,
             ordered=True,
+            why=(
+                "k3 stretches more in mode 4 than in mode 3: a spring moves a mode's frequency by half its share of the strain energy.",
+                '',
+                "k3 stretches more in mode 2 than in mode 3: a spring moves a mode's frequency by half its share of the strain energy.",
+                "k3 stretches more in mode 1 than in mode 3: a spring moves a mode's frequency by half its share of the strain energy.",
+            ),
         ),
     ),
     _trial(
@@ -204,6 +210,11 @@ TRIALS = (
                 "Nothing: they stay at about 1",
             ),
             2,
+            why=(
+                'Every spring alike scales K, which scales every frequency and leaves every shape: the MACs stay at 1.',
+                'K scaled by 0.9 has exactly the same modes, high or low: only the frequencies move.',
+                '',
+            ),
         ),
     ),
     _trial(
@@ -220,6 +231,12 @@ TRIALS = (
                 "They don't move",
             ),
             3,
+            why=(
+                "Damping lowers a damped frequency only by √(1 − ζ²), a tiny amount when it's light: the frequencies stay.",
+                'The undamped frequencies depend only on M and K, and light damping hardly moves the damped ones: only the damping ratios show it.',
+                'The undamped frequencies depend only on M and K, and light damping hardly moves the damped ones: only the damping ratios show it.',
+                '',
+            ),
         ),
     ),
     _trial(
@@ -238,6 +255,11 @@ TRIALS = (
                 "Some modes look alike: high off-diagonal terms",
             ),
             2,
+            why=(
+                "Zeros need enough sensors to show the shapes are distinct. Seen in two numbers, four modes can't all differ: modes 2 and 4 reach 0.91.",
+                "Two numbers can't keep four shapes apart: modes 2 and 4 look alike, an auto-MAC of 0.91 (spatial aliasing).",
+                '',
+            ),
         ),
     ),
     _trial(

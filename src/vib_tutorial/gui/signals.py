@@ -119,6 +119,11 @@ TRIALS = (
                 "Two lines reading 0.5 each",
             ),
             1,
+            why=(
+                'Only a tone exactly on a line falls on it. Half-way between, the nearest lines read 0.64, and the rest leaks across the spectrum.',
+                '',
+                "The amplitude doesn't share out evenly: each neighbouring line reads 0.64 (scalloping), and the rest leaks across every line.",
+            ),
         ),
     ),
     SignalsTrial(
@@ -158,6 +163,11 @@ TRIALS = (
                 "At 124 Hz, at its full amplitude",
             ),
             2,
+            why=(
+                "Sampling doesn't drop what's above Nyquist, it folds it back. Removing it is the anti-alias filter's job.",
+                'Sampled at 1024 Hz, nothing above 512 Hz shows where it is: it folds back to 1024 − 900 = 124 Hz.',
+                '',
+            ),
         ),
     ),
     SignalsTrial(
@@ -194,6 +204,12 @@ TRIALS = (
                 "The tone stays; the noise halves",
             ),
             3,
+            why=(
+                "The tone's power sits in one line however fine the lines are, so its amplitude stays; only the noise per line falls.",
+                "A peak amplitude spectrum reads a tone at its amplitude whatever the block; it's the noise per line that falls, by √4.",
+                'Each line now holds the noise of a band a quarter as wide, so the noise in it falls by √4; the tone, all in one line, keeps its amplitude.',
+                '',
+            ),
         ),
     ),
     SignalsTrial(
@@ -216,6 +232,12 @@ TRIALS = (
                 "Nothing changes",
             ),
             0,
+            why=(
+                '',
+                "Every block has the same noise level, so their average does too. It's the scatter that falls, as 1/√64.",
+                "Averaging blocks doesn't lower the noise: each has the same level, and so does their mean. Only the scatter falls, as 1/√64.",
+                "The level stays, but averaging 64 blocks shrinks each line's scatter to 1/√64, an eighth.",
+            ),
         ),
     ),
     SignalsTrial(

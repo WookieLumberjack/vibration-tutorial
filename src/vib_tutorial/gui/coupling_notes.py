@@ -69,6 +69,11 @@ TRIALS = (
                 "At the same frequency",
             ),
             1,
+            why=(
+                'A close pair comes from a light B, μ small. Here B is the heavier half, μ = 1.27, and the splitting grows with √μ.',
+                '',
+                "Equal frequencies don't stay equal once coupled: the interface pushes them apart, the more the heavier B is.",
+            ),
         ),
     ),
     CouplingTrial(
@@ -88,6 +93,11 @@ TRIALS = (
             ),
             2,
             ordered=True,
+            why=(
+                "The 2-DOF model holds the chain to two shapes, a Rayleigh–Ritz model: its frequencies can't fall below the true ones.",
+                'Both err high: holding the structure to fewer shapes (Rayleigh–Ritz) only stiffens it.',
+                '',
+            ),
         ),
     ),
     CouplingTrial(
@@ -106,6 +116,11 @@ TRIALS = (
                 "Their errors grow, and can have either sign",
             ),
             2,
+            why=(
+                "The modal mass at the interface is what makes the oscillator A's mode. With the effective mass it's another model: 2.9 % and −2.2 % off.",
+                "The bound holds only for a Rayleigh–Ritz model. With the effective mass it's no longer one, and the errors take either sign.",
+                '',
+            ),
         ),
     ),
     CouplingTrial(

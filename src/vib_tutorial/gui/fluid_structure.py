@@ -196,6 +196,12 @@ TRIALS = (
                 "It falls",
             ),
             3,
+            why=(
+                'The added mass only grows as the gap closes, without bound: the frequency only falls.',
+                'The added mass, (R<sub>o</sub>² + R²)/(R<sub>o</sub>² − R²) times ρπR², grows as the gap closes: the frequency falls.',
+                'The wall adds no stiffness; it forces the water through the gap faster, adding mass, so the frequency falls.',
+                '',
+            ),
         ),
     ),
     FluidTrial(
@@ -230,6 +236,11 @@ TRIALS = (
                 "It falls, about as the thickness rises",
             ),
             2,
+            why=(
+                "The water's added mass stays, 11.9 kg, but the plate's own mass grows with its thickness: β, their ratio, falls.",
+                "β is the water's added mass over the plate's, and only the plate's grows: β ∝ ρ<sub>f</sub>/ρ<sub>p</sub>h falls.",
+                '',
+            ),
         ),
     ),
     FluidTrial(
@@ -263,6 +274,11 @@ TRIALS = (
                 "Falls",
             ),
             1,
+            why=(
+                "√(gd) is the shallow-water speed, for waves long against the depth. At 2 m deep the first mode's flow dies out within L/π of the surface, and the depth stops mattering.",
+                '',
+                "More water below the surface doesn't slow the sloshing: the first mode's flow keeps within L/π of the surface. It rises a little, to 0.884 Hz.",
+            ),
         ),
     ),
     FluidTrial(
@@ -290,6 +306,12 @@ TRIALS = (
                 "Hardly at all",
             ),
             3,
+            why=(
+                'Shaking sideways pushes both walls the same way. An even mode wants them towards each other, so the shake does no work on it.',
+                "The first mode is odd and a sideways shake drives it. The second is symmetric, and the shake can't.",
+                'At its frequency, but not excited by it: a sideways shake does no work on a symmetric mode, and it has no mass in the analogue.',
+                '',
+            ),
         ),
     ),
     FluidTrial(
@@ -323,6 +345,11 @@ TRIALS = (
                 "It vanishes",
             ),
             1,
+            why=(
+                "An undamped absorber doesn't take the peak away; it splits it into two tall peaks either side.",
+                '',
+                'An absorber needs damping to take energy out. Undamped, it only splits the peak in two: 34.5 and 32.8 times static.',
+            ),
         ),
     ),
     FluidTrial(

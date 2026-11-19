@@ -83,6 +83,11 @@ TRIALS = (
             "Viscous, hysteretic, friction and Zener damping, matched at fₙ and cycled there through ±10 mm. Which takes out the most energy a cycle?",
             ("Viscous", "Friction", "All the same"),
             2,
+            why=(
+                'Matched means taking the same energy a cycle, at f<sub>n</sub> and this amplitude: every loop encloses πcω<sub>n</sub>X² = 12.6 mJ.',
+                "Friction's loop is a rectangle and viscous damping's an ellipse, but matched they enclose the same 12.6 mJ.",
+                '',
+            ),
         ),
     ),
     DampingTrial(
@@ -95,6 +100,11 @@ TRIALS = (
             "The same cycle at twice fₙ. Which loops grow?",
             ("All of them", "Only the viscous one", "None of them"),
             1,
+            why=(
+                "Hysteretic and friction loops don't depend on frequency, and the Zener element's thins past its loss peak: only the viscous loop grows.",
+                '',
+                "The viscous damper's force grows with the velocity: at twice the frequency its loop is twice as fat, 25.1 mJ.",
+            ),
         ),
     ),
     DampingTrial(
@@ -115,6 +125,11 @@ TRIALS = (
             "1 N at resonance, friction matched to the viscous damper at 10 mm. Where does friction's swing stop?",
             ("At 25 mm, as viscous does", "Lower: friction holds it", "It doesn't: it runs away"),
             2,
+            why=(
+                "That's where viscous damping's loss, growing as X², catches the force's input. Friction's grows only as X, as the input does: it never catches up.",
+                "Friction holds the mass only under a force of 4F<sub>f</sub>/π = 0.4 N. At 1 N it can't.",
+                '',
+            ),
         ),
     ),
     DampingTrial(
@@ -131,6 +146,11 @@ TRIALS = (
                 "It doesn't die away",
             ),
             1,
+            why=(
+                "That's viscous damping, whose force shrinks with the motion. Friction's doesn't: it takes the same 4F<sub>f</sub>/k off each cycle.",
+                '',
+                'Friction takes 4F<sub>f</sub>/k = 3.1 mm off every cycle, until the spring can no longer beat it.',
+            ),
         ),
     ),
     DampingTrial(
@@ -144,6 +164,11 @@ TRIALS = (
             "A spring beside a spring and dashpot in series (Zener). Where is its loss factor largest?",
             ("At low frequency", "At its relaxation frequency", "It grows for ever with frequency"),
             1,
+            why=(
+                'Slowly, the dashpot gives and only the spring k<sub>0</sub> works: nothing is lost.',
+                '',
+                'Fast, the dashpot locks and the two springs work as one: nothing is lost then either. The loss peaks in between.',
+            ),
         ),
     ),
     DampingTrial(

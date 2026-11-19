@@ -130,6 +130,12 @@ TRIALS = (
                 "They fall",
             ),
             3,
+            why=(
+                "The bending modes change most: lumping gives the sections' turning no inertia and puts each element's mass at its ends.",
+                'The mass matrix sets the frequencies as much as the stiffness does: lumping it moves them, by several percent at the higher modes.',
+                'Consistent masses make the mesh a Rayleigh–Ritz model, whose frequencies are upper bounds; lumped masses at the nodes come out below them.',
+                '',
+            ),
         ),
     ),
     FrameTrial(
@@ -150,6 +156,12 @@ TRIALS = (
                 "They fall, the higher modes most",
             ),
             3,
+            why=(
+                "At five depths long, shear and the sections' turning matter: −6 % for mode 1, more above.",
+                "Shear flexibility and rotary inertia both lower a frequency, and Timoshenko's beam adds both.",
+                'Shear and rotary inertia matter more as the half waves shorten towards the depth, so the higher modes fall most.',
+                '',
+            ),
         ),
     ),
     FrameTrial(
@@ -169,6 +181,12 @@ TRIALS = (
                 "Fall to about half",
             ),
             3,
+            why=(
+                "Pinned bases let the columns' feet turn, but the girder's rigid joints still hold the frame square: it sways more easily, not freely.",
+                'Clamped, the columns bend in double curvature; pinned, as cantilevers held at the top, far softer: 6.78 Hz.',
+                "Freeing the bases to turn takes stiffness away; it can't add any.",
+                '',
+            ),
         ),
     ),
     FrameTrial(
@@ -197,6 +215,12 @@ TRIALS = (
                 "One",
             ),
             3,
+            why=(
+                "The three bars that work hold three of the top joints' four DOFs; only one, the fold into a parallelogram, is free.",
+                "The three bars that work leave one of the top joints' four DOFs free: a single fold into a parallelogram.",
+                "Maxwell's count (8 = 4 + 4) is needed but not enough: the bottom bar between two pins does nothing, and the square folds into a parallelogram.",
+                '',
+            ),
         ),
     ),
     FrameTrial(
@@ -252,6 +276,11 @@ TRIALS = (
             ),
             1,
             ordered=True,
+            why=(
+                "That's the force put on slowly, or with damping. Put on at once, undamped, the tip overshoots to twice and swings on.",
+                '',
+                'A sudden step at most doubles the static deflection: 6.08 mm.',
+            ),
         ),
     ),
     FrameTrial(

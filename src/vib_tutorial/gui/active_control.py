@@ -110,6 +110,12 @@ TRIALS = (
                 "It falls again",
             ),
             3,
+            why=(
+                'A collocated velocity loop is stable at any gain: it only ever takes energy out.',
+                'Past the optimum the actuator holds m4 almost still, and the chain rings around it with that point fixed: lightly damped again.',
+                "Each mode's damping has an optimum gain. Far past it the actuator pins m4, and the chain rings around it, lightly damped.",
+                '',
+            ),
         ),
     ),
     ControlTrial(
@@ -130,6 +136,11 @@ TRIALS = (
                 "It goes unstable",
             ),
             2,
+            why=(
+                'It does damp mode 1, but in mode 2 m1 and m4 move against each other, so the force feeds that mode, past its damping from 6.1 N·s/m.',
+                'Measured at m1 and pushed at m4, the force works against the motion only where they move together; in mode 2 they move against each other, and it feeds that mode.',
+                '',
+            ),
         ),
     ),
     ControlTrial(
@@ -149,6 +160,10 @@ TRIALS = (
                 "No: above some gain it goes unstable",
             ),
             1,
+            why=(
+                'Only without lag. The two 20 ms lags turn the force by 180° at high frequency, and the feedback feeds the motion: unstable above 96 N·s/m.',
+                '',
+            ),
         ),
     ),
     ControlTrial(
@@ -180,6 +195,11 @@ TRIALS = (
                 "It gets worse",
             ),
             2,
+            why=(
+                "Above √2 f<sub>n</sub> the damper's force grows with the damping, so more of the floor's motion comes through.",
+                "Damping helps only near resonance. Above √2 f<sub>n</sub> the damper to the floor carries the floor's motion through, more of it the more damping.",
+                '',
+            ),
         ),
     ),
 )
