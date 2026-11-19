@@ -5445,3 +5445,29 @@ def _pick(page, name: str) -> None:
         p = box.predictions[box.asking]
         assert p is not None, "asking one"
         box.answer(p.answer)
+
+
+def test_the_simulation_page_hidden_draws_a_chain_sent_from_elsewhere_when_it_shows(main_window, monkeypatch):
+    """A trial on another page sends its chain through the Simulation page: hidden, it takes the chain (its
+    modes, its size) but draws its FRF, chain and mode table only when it next shows, once (#409 P-11)."""
+    from vib_tutorial.core.model import ChainSystem
+    from vib_tutorial.gui import plots
+
+    drawn: list[int] = []
+    set_system = plots.FrfPlot.set_system
+
+    def counted(self, system, *args, **kwargs):
+        drawn.append(system.n)
+        return set_system(self, system, *args, **kwargs)
+
+    monkeypatch.setattr(plots.FrfPlot, "set_system", counted)
+    w = main_window
+    sim = w.sim_page
+    w.pages.setCurrentWidget(w.energy_page)
+    QtWidgets.QApplication.processEvents()
+    sim.params.set_system(ChainSystem.uniform(6))
+    assert sim.sim.system.n == 6 and len(sim.entries) == 6  # the state follows at once
+    assert drawn == [] and sim.table.rowCount() != 6  # the views wait
+    w.pages.setCurrentWidget(sim)
+    QtWidgets.QApplication.processEvents()
+    assert drawn == [6] and sim.table.rowCount() == 6
