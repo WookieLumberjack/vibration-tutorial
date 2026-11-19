@@ -308,6 +308,15 @@ class Drive:
         F = self.unbalance * speed * speed * (u - 1j * v)
         return np.concatenate([F, np.cross(np.array(self.at), F)])
 
+    def loads(self, rpm: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """`load` and `frequency` at every speed in `rpm` at once: Q (len(rpm), 6) and ω (len(rpm))."""
+        rpm = np.asarray(rpm, dtype=float)
+        speed = rpm * TWO_PI / 60.0
+        if self.kind is Excitation.TORQUE:
+            return np.tile(self.load(), (rpm.size, 1)), self.order * speed
+        unit = self.load(60.0 / TWO_PI)  # the load at Ω = 1 rad/s: it scales with Ω²
+        return (speed * speed)[:, None] * unit[None], speed
+
 
 def dynamic_stiffness(body: Body, mounts, loss: float, omega: float) -> np.ndarray:
     """Z(ω) = K(1 + iη) − ω²M: each mount's rubber with a loss factor η (hysteretic damping, as the Damping
@@ -346,16 +355,17 @@ class Spectrum:
 
 
 def spectrum(layout: Layout, loss: float, drive: Drive, rpm: np.ndarray) -> Spectrum:
+    """The forced response at every speed in `rpm` at once: Z(ω) q = Q solved for all of them in one batch, K, M
+    and each mount's K_m T_m built once (a Python loop rebuilt them per speed, ~80 ms a redraw; #409 P-9)."""
+    rpm = np.asarray(rpm, dtype=float)
     mounts = layout.mounts()
-    each, total, applied = [], [], []
-    for r in rpm:
-        Q = drive.load(float(r))
-        q = response(layout.body, mounts, loss, drive.frequency(float(r)), Q)
-        f = mount_forces(mounts, loss, q)
-        each.append(amplitude(f))
-        total.append(float(amplitude(f.sum(axis=0))))
-        applied.append(float(amplitude(Q[:3])))
-    return Spectrum(np.asarray(rpm), np.array(each), np.array(total), np.array(applied))
+    K, M = stiffness_matrix(mounts) * (1 + 1j * loss), layout.body.mass_matrix()
+    Q, omega = drive.loads(rpm)
+    Z = K[None] - (omega * omega)[:, None, None] * M[None]
+    q = np.linalg.solve(Z, Q[..., None])[..., 0]
+    KT = np.array([m.stiffness() @ m.transform() for m in mounts]).reshape(len(mounts), 3, 6)
+    f = (1 + 1j * loss) * np.einsum("mij,nj->nmi", KT, q)  # (speeds, mounts, 3)
+    return Spectrum(rpm, amplitude(f), amplitude(f.sum(axis=1)), amplitude(Q[:, :3]))
 
 
 def participation(modes: Modes, load: np.ndarray) -> np.ndarray:
