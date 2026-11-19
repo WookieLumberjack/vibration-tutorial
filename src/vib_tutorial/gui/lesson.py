@@ -16,7 +16,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.practice import Placement, Prediction
 from ..view_models.text import db as db  # re-exported for the pages
 from ..view_models.text import fmt as fmt
-from . import accessible, coalesce, drag, weak
+from . import accessible, coalesce, drag, progress, weak
 from .axes import log_axes
 from .layouts import form_layout, plot_height
 from .live_label import LiveLabel as LiveLabel  # re-exported for the pages
@@ -121,6 +121,11 @@ class TrialCombo(QtWidgets.QComboBox):
         self._changed = False
         self.currentIndexChanged.connect(self._on_change)
         self.activated.connect(self._on_activated)
+
+    def show_tried(self, numbers: set[int]) -> None:
+        """Tick the trials tried (`numbers` from 1, as listed: #409 I-9)."""
+        for i, name in enumerate(self.names, 1):
+            self.setItemText(i - 1 + self.first, f"{'✓ ' if i in numbers else ''}{i}. {name}")
 
     def pick(self, name: str) -> None:
         """Pick the trial called `name`, as the reader would (again, if it's the one shown)."""
@@ -275,6 +280,7 @@ class TrialBox(QtWidgets.QGroupBox):
         self.combo.picked.connect(self._on_pick)
         layout.addWidget(TrialSteps(self.combo))
         self.asking: int | None = None  # the trial whose prediction is being asked
+        self.page_name = ""  # the page's attribute, given by MainWindow as it builds the page: what's tried is kept
         self.ask = QtWidgets.QWidget()  # the question, its choices and Just run it
         ask = QtWidgets.QVBoxLayout(self.ask)
         ask.setContentsMargins(0, 0, 0, 0)
@@ -331,7 +337,21 @@ class TrialBox(QtWidgets.QGroupBox):
         else:
             text = f"<b>✗ Not quite:</b> it's <i>{p.choices[p.answer]}</i>. See why:"
         self.verdict.setText(markup(text))
-        self._run(i)
+        self._run(i, p.prompt)
+
+    def show_tried(self) -> None:
+        """The combo's ticks, from what's been tried (`progress`)."""
+        if self.page_name:
+            self.combo.show_tried(progress.tried_numbers(self.page_name))
+
+    def _record(self, i: int, prompt: str | None = None) -> None:
+        """Trial `i` run, after its prediction (`prompt`) was answered if it had one: kept, and ticked."""
+        if not self.page_name:  # a page built outside the window (a test's)
+            return
+        if prompt is not None:
+            progress.mark_answered(prompt)
+        progress.mark_tried(self.page_name, i + 1)
+        self.show_tried()
 
     def place_guess(self, value: float) -> None:
         """Answer the Placement being asked with `value` (data units), as dragging the line there and pressing
@@ -348,7 +368,7 @@ class TrialBox(QtWidgets.QGroupBox):
         guess = self.line.data_value()
         self.verdict.setText(markup(p.judge(guess)[1]))
         self._stop_placing()
-        self._run(i)
+        self._run(i, p.prompt)
         self._show_guess(p, guess)  # after the trial's redraw, which sets the plot's ranges
 
     def _plot_named(self, name: str):
@@ -426,6 +446,7 @@ class TrialBox(QtWidgets.QGroupBox):
             self.ask.setVisible(False)
             with coalesce.batch():  # the page's redraws once, with the whole trial loaded
                 self.picked.emit(i)
+            self._record(i)
             return
         self.asking = i
         self.note.setVisible(False)
@@ -459,12 +480,14 @@ class TrialBox(QtWidgets.QGroupBox):
         self.verdict.setText("")
         self._run(self.asking)
 
-    def _run(self, i: int) -> None:
+    def _run(self, i: int, answered: str | None = None) -> None:
+        """Set trial `i` up, its prediction answered (its prompt) or skipped (None)."""
         self.asking = None
         self.ask.setVisible(False)
         self.verdict.setVisible(bool(self.verdict.text()))
         with coalesce.batch():  # the page's redraws once, with the whole trial loaded
             self.picked.emit(i)
+        self._record(i, answered)
 
 
 def trials_html(trials) -> str:
@@ -473,8 +496,11 @@ def trials_html(trials) -> str:
 
     def item(t) -> str:
         p = getattr(t, "predict", None)
-        if p is not None:
-            return f"<li><b>{t.name}.</b> <i>Predict first: {markup(p.prompt)}</i> Pick it to answer and see.</li>"
+        if p is not None:  # its note once its prediction has been answered (progress.marks)
+            key = progress.prompt_key(p.prompt)
+            progress.NOTES[key] = markup(t.note)
+            ask = f"<i>Predict first: {markup(p.prompt)}</i>"
+            return f"<li><b>{t.name}.</b> {ask} Pick it to answer and see.{progress.ANSWER.format(key)}</li>"
         return f"<li><b>{t.name}.</b> {markup(t.note)}</li>"
 
     return "<ol>" + "".join(item(t) for t in trials) + "</ol>"

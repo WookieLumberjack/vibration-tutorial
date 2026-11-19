@@ -353,20 +353,25 @@ COURSE = (
 )
 
 
-def course_map(progress: dict[str, tuple[int, int]] | None = None) -> str:
+def course_map(
+    progress: dict[str, tuple[int, int]] | None = None, tried: dict[str, tuple[int, int]] | None = None
+) -> str:
     """The pages in order, as linked lists by group; with `progress` (practice.progress(): solved, of how many,
-    for each page with one solved), how far each page's problems are done."""
+    for each page with one solved), how far each page's problems are done, and with `tried` (the same for its
+    Things to try: `gui/progress.py`), how many of its trials have been tried."""
     html, start = [], 1
     first = COURSE[0][1][0][0]  # the page the map is on: its link goes past the map, to its first section
-    progress = progress or {}
+    progress, tried = progress or {}, tried or {}
 
     def done(name: str) -> str:
-        if name not in progress:
-            return ""
-        solved, total = progress[name]
-        return (
-            f" <i>(✓ all {total} problems solved)</i>" if solved == total else f" <i>({solved} of {total} solved)</i>"
-        )
+        parts = []
+        if name in progress:
+            solved, total = progress[name]
+            parts.append(f"✓ all {total} problems solved" if solved == total else f"{solved} of {total} solved")
+        if name in tried:
+            n, total = tried[name]
+            parts.append(f"✓ all {total} tried" if n == total else f"{n} of {total} tried")
+        return f" <i>({' · '.join(parts)})</i>" if parts else ""
 
     for group, pages in COURSE:
         items = "".join(
@@ -382,6 +387,15 @@ def course_map(progress: dict[str, tuple[int, int]] | None = None) -> str:
 # Shorter ways through the course: (name, who it's for, its pages). Each page in a path has every page it builds
 # on (its "Before this page", and theirs) in the path too, so a path reads front to back like the course
 # (tests/test_links.py checks it).
+
+
+def trials_of(attr: str) -> tuple:
+    """Page `attr`'s Things to try (its module imported, the page not built)."""
+    if attr == "sim_page":
+        from .sim_trials import TRIALS
+
+        return TRIALS
+    return getattr(page_module(attr), "TRIALS", ())
 
 
 def order() -> tuple[str, ...]:

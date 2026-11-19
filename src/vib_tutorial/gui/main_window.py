@@ -319,6 +319,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if (panes := present.splitter(page)) is not None:
             TabRoom(panes)  # its tabs' names in full, whatever the font
         self._close_notes(name, page)
+        for box in page.findChildren(TrialBox):  # what the reader tries there is kept (progress)
+            box.page_name = name
+            box.show_tried()
         for tabs in page.findChildren(QtWidgets.QTabWidget):  # a tab may hold the motion (Torsional's Start-up)
             tabs.currentChanged.connect(self._follow_transport)
 

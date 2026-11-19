@@ -25,6 +25,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.practice import Problem, Question, check
 from . import links, notes_view
+from . import progress as progress_record  # the module; `progress()` here is the course map's counts
 from .notes_view import NotesBrowser
 from .style import colors
 from .theming import settings
@@ -54,8 +55,7 @@ def order() -> list[tuple[str, str]]:
 
 
 def _solved() -> set[str]:
-    stored = settings().value("practice/solved", "")
-    return set(filter(None, str(stored).split(",")))
+    return progress_record.solved()
 
 
 def progress() -> dict[str, tuple[int, int]]:
@@ -75,13 +75,12 @@ def progress() -> dict[str, tuple[int, int]]:
 
 
 def reset_progress() -> None:
-    """Forget every problem solved."""
-    settings().remove("practice/solved")
+    """Forget every problem solved, and the trials tried and predictions answered (`progress`)."""
+    progress_record.reset()
 
 
 def mark_solved(problem: Problem) -> None:
-    solved = _solved() | {f"{problem.page}/{problem.key}"}
-    settings().setValue("practice/solved", ",".join(sorted(solved)))
+    progress_record.mark_solved(problem.page, problem.key)
 
 
 class PracticeWindow(QtWidgets.QWidget):
@@ -441,7 +440,10 @@ class PracticeWindow(QtWidgets.QWidget):
 
     def _ask_reset(self) -> None:
         answer = QtWidgets.QMessageBox.question(
-            self, "Reset progress", "Forget every problem solved? Their ticks go, here and on the course map."
+            self,
+            "Reset progress",
+            "Forget every problem solved, Thing to try tried and prediction answered? Their ticks go, here, on the "
+            "pages and on the course map.",
         )
         if answer == QtWidgets.QMessageBox.StandardButton.Yes:
             self.reset()

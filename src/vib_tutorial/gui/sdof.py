@@ -610,13 +610,18 @@ NOTES_HTML = load_notes(
 
 
 def notes_html() -> str:
-    """The notes with the course map's progress as it stands (the reader's problems solved)."""
+    """The notes with the course map's progress as it stands (the reader's problems solved, trials tried)."""
+    from . import links
+    from . import progress as record
     from .practice import progress
 
     solved = progress()
-    if not solved:  # nothing solved yet: the notes as built
+    pages = {item.partition("#")[0] for item in record.tried()} & set(links.order())  # a page since renamed: out
+    totals = {page: len(links.trials_of(page)) for page in pages}
+    tried = record.tried_counts(totals)
+    if not solved and not tried:  # nothing done yet: the notes as built
         return NOTES_HTML
-    return NOTES_HTML.replace(course_map(), course_map(solved))
+    return NOTES_HTML.replace(course_map(), course_map(solved, tried))
 
 
 class SdofPage(QtWidgets.QWidget):
