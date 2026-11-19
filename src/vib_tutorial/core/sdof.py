@@ -19,7 +19,6 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.optimize import brentq
 
 from .foh import respond
 
@@ -190,6 +189,8 @@ def settling_time(osc: Oscillator, band: float = 0.02, points: int = 20000) -> f
     i = int(out[-1])
     if i + 1 == t.size:
         return math.inf
+    from scipy.optimize import brentq  # deferred: scipy.optimize is ~90 ms of the app's start-up (#409 P-16)
+
     return float(brentq(lambda s: abs(free_response(osc, 1.0, 0.0, np.array([s]))[0][0]) - band, t[i], t[i + 1]))
 
 

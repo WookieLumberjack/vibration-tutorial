@@ -98,6 +98,9 @@ def settle_plots(widget) -> None:
             view.scene().prepareForPaint()
 
 
+PRELOAD_MS = 3000  # after the first paint, the SciPy modules the Virtual modal test uses are loaded behind it
+
+
 def _preload_scipy() -> None:
     """Import the SciPy modules that only the Virtual modal test uses.
 
@@ -178,7 +181,9 @@ def run() -> int:
         return 0
     window.guide_first_run()
     preload = threading.Thread(target=_preload_scipy, name="preload-scipy", daemon=True)
-    QtCore.QTimer.singleShot(0, preload.start)  # after the first paint
+    # Some seconds after the first paint: the imports hold the GIL in stretches (the UI stalled up to 178 ms
+    # while the reader's first look at the page was still settling; #409 P-16).
+    QtCore.QTimer.singleShot(PRELOAD_MS, preload.start)
     if "--smoke-test" in sys.argv:  # release builds check the packaged app starts, then quit
         from . import figures, notes_render  # the pages are built lazily: check QtSvg and ziamath's font are packaged
 
