@@ -582,7 +582,7 @@ class SeismicPage(QtWidgets.QWidget):
         self.dof.setRange(1, MAX_DOF)
         self.dof.valueChanged.connect(self.dof_requested)
         ch.add("Floors:", self.dof, TIPS["dof"])
-        self.k1 = ch.number("Storey 1 k₁:", 1e4, 1e9, 5e6, 0, " N/m", TIPS["k1"])
+        self.k1 = ch.number("Storey 1 k₁:", 0.0, 1e9, 5e6, 0, " N/m", TIPS["k1"])  # 0: a free chain, not held
         self.k1.valueChanged.connect(self._on_k1)
         self.k1_info = note_label()
         ch.row(self.k1_info)
@@ -695,7 +695,12 @@ class SeismicPage(QtWidgets.QWidget):
         self.system = system
         set_quietly(self.dof, system.n)
         set_quietly(self.k1, float(system.stiffness[0]))
-        self.k1_info.setText(f"T = 2π√(Σm/k₁) = {rigid_period(system):.3g} s: the building rigid on storey 1.")
+        T = rigid_period(system)
+        self.k1_info.setText(
+            f"T = 2π√(Σm/k₁) = {T:.3g} s: the building rigid on storey 1."
+            if math.isfinite(T)
+            else "k₁ = 0: nothing holds the building to the ground."
+        )
         self._dirty = True
         if self.isVisible():
             self.redraw()
@@ -814,12 +819,31 @@ class SeismicPage(QtWidgets.QWidget):
             f"S = {S:g}, T<sub>B</sub> = {TB:g} s, T<sub>C</sub> = {TC:g} s, T<sub>D</sub> = "
             f"{TD:g} s, η = {d.eta:.3g}: a plateau of {2.5 * d.eta * S * d.pga_g:.3g} g."
         )
+        held = math.isfinite(rigid_period(self.system))
+        self.tabs.setEnabled(held)  # every tab draws the building's response, and a free one has none
+        if not held:
+            self._draw_unheld()
+            settle_plots(self)
+            return
         self.modal = modal(self.system, d)
         self.rho = correlation(self.modal.f, d.zeta)
         self._draw_spectrum()
         self._draw_table()
         self._draw_tab(now)
         settle_plots(self)
+
+    def _draw_unheld(self) -> None:
+        """A chain with no first spring (a free one, from another page): the design spectrum alone, and why."""
+        d = self.design
+        self.spectrum_item.setData(PERIODS, design_sa(d, PERIODS) / G)
+        self.mode_dots.setData([], [])
+        for label in self.mode_labels:
+            self.spectrum_plot.removeItem(label)
+        self.mode_labels = []
+        self.table.setText(
+            "This chain has no spring under storey 1, so nothing holds the building to the ground and the ground "
+            "can't shake it. Give storey 1 a stiffness (its k₁ box), or pick a trial."
+        )
 
     def _draw_spectrum(self) -> None:
         d, m = self.design, self.modal
@@ -865,7 +889,7 @@ class SeismicPage(QtWidgets.QWidget):
     def _draw_tab(self, now: bool = True) -> None:
         """The tab showing; the Building, Floors and Records tabs once the spectrum's records are made (`records`
         keeps them by ground type and ζ: a new pair takes 0.5–1 s to synthesize, on the worker unless `now`)."""
-        if self._dirty:  # a tab picked before the page has drawn (hidden): it draws when it shows
+        if self._dirty or not self.tabs.isEnabled():  # hidden and not yet drawn, or a free chain's: nothing to draw
             return
         i = self.tabs.currentIndex()
         if i == TAB_CORRELATION:
