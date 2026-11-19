@@ -3,14 +3,13 @@
 import numpy as np
 import pytest
 
-from vib_tutorial.core.modal import modal_analysis
+from vib_tutorial.core.modal import mac_matrix, modal_analysis
 from vib_tutorial.core.model import ChainSystem
 from vib_tutorial.core.model_updating import (
     Errors,
     Source,
     comac,
     correlate,
-    mac,
     measure,
     pair,
 )
@@ -28,15 +27,15 @@ def errors(**factors) -> Errors:
 
 def test_mac_and_pairing():
     a = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
-    m = mac(a * np.exp(0.4j), a)
+    m = mac_matrix(a * np.exp(0.4j), a)
     assert m == pytest.approx(np.array([[1.0, 0.25], [0.25, 1.0]]))
-    assert mac(np.array([[1.0], [1.0]]), np.array([[1.0], [-1.0]]))[0, 0] == pytest.approx(0.0)
+    assert mac_matrix(np.array([[1.0], [1.0]]), np.array([[1.0], [-1.0]]))[0, 0] == pytest.approx(0.0)
     # by shape, best first, whatever the frequencies' order; nothing under the threshold
     pairs = pair(np.array([[0.1, 0.9, 0.0], [0.95, 0.2, 0.0], [0.3, 0.4, 0.45]]), [1.0, 2.0, 3.0], [1.5, 0.8, 3.0])
     assert [(p.test, p.model) for p in pairs] == [(0, 1), (1, 0)]
     assert pairs[0].error == pytest.approx(0.8 - 1.0)
     shapes = np.array([[1.0, 0.5], [0.4, -1.0], [-0.3, 0.2]])
-    assert comac(shapes * 2j, shapes, pair(mac(shapes, shapes), [1, 2], [1, 2])) == pytest.approx(np.ones(3))
+    assert comac(shapes * 2j, shapes, pair(mac_matrix(shapes, shapes), [1, 2], [1, 2])) == pytest.approx(np.ones(3))
 
 
 def test_the_tests():
@@ -88,7 +87,10 @@ def test_the_trials_notes():
     c = correlate(CHAIN, errors(stiffness=(2, 1.3)), two)
     assert c.auto_mac[1, 3] == pytest.approx(0.94, abs=0.03)  # with the test's noise
     shapes = np.column_stack([m.damped.shape for m in r.modes])[[0, 3]]
-    assert mac(shapes, shapes)[1, 3] == pytest.approx(0.91, abs=0.005) and "0.91 without noise" in note["Two sensors"]
+    assert (
+        mac_matrix(shapes, shapes)[1, 3] == pytest.approx(0.91, abs=0.005)
+        and "0.91 without noise" in note["Two sensors"]
+    )
     assert [(p.test, p.model) for p in c.pairs] == [(i, i) for i in range(4)]
 
     c = correlate(CHAIN, Errors.none(4), measure(CHAIN, Source.HAMMER, ALL, seed=1))

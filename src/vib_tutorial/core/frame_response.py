@@ -55,7 +55,7 @@ import scipy.optimize
 from .complex_modes import Complexity, complexity
 from .foh import free
 from .frame import TWO_PI, Assembly, Frame, FrameError, Modes, assemble, condense, modes
-from .modal import state_receptance
+from .modal import mac, state_receptance
 
 SAMPLES = 2400  # in a time response
 RECORD_PERIODS = 12  # of the first mode, in a response's record
@@ -217,11 +217,6 @@ class Formulations:
     proportional: bool  # ΦᵀCΦ diagonal (to round-off)
 
 
-def _mac(phi: np.ndarray, psi: np.ndarray) -> float:
-    den = float(phi @ phi) * float(np.vdot(psi, psi).real)
-    return float(abs(np.vdot(phi, psi)) ** 2 / den) if den > 0 else 0.0
-
-
 def formulations(frame: Frame, assembly: Assembly | None = None, result: Modes | None = None) -> Formulations:
     a = assembly if assembly is not None else assemble(frame)
     result = result if result is not None else modes(frame, a)
@@ -238,7 +233,7 @@ def formulations(frame: Frame, assembly: Assembly | None = None, result: Modes |
             [
                 [
                     1.0
-                    - _mac(result.shapes[:, r], psi[:, k])
+                    - mac(result.shapes[:, r], psi[:, k])
                     + abs(np.log(abs(lam[upper[k]]) / (TWO_PI * result.hz[r])))
                     for k in range(upper.size)
                 ]

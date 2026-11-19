@@ -28,16 +28,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .modal import log_decrement as log_decrement
 from .rotor import RotorSystem
 from .rotor_modes import WhirlModes, campbell, rotating_state_matrix, whirl_modes
 
 UNSTABLE = -1e-9  # a damping ratio below this is growing, not round-off
-
-
-def log_decrement(zeta: np.ndarray) -> np.ndarray:
-    """δ = 2πζ/√(1 − ζ²): the log of the ratio of successive peaks of a decaying mode."""
-    zeta = np.asarray(zeta, dtype=float)
-    return 2.0 * math.pi * zeta / np.sqrt(np.maximum(1.0 - zeta**2, 1e-12))
 
 
 @dataclass(frozen=True)

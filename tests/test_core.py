@@ -1149,3 +1149,26 @@ def test_one_receptance_in_every_shape():
     c = np.zeros(6)
     c[1] = 1.0
     np.testing.assert_allclose(state_receptance(A, B[:, 2], c, f), H[:, 1, 2], rtol=1e-9)
+
+
+def test_shapes_signs_are_fixed_one_way_whatever_the_lapack_build():
+    """`modal.fix_signs` (#409 S-7): the largest entry positive, the first of tied ones (a symmetric chain's ±
+    pair); with a reference, its sign; with `first_moving`, the first entry that moves. Flipping any column first
+    gives the same shapes, as a different LAPACK's pick would."""
+    from vib_tutorial.core.modal import fix_signs, log_decrement, mac, mac_matrix, normal_modes
+
+    Phi = np.array([[0.5, -0.0, 0.7], [-0.5, 0.3, 0.2], [0.2, -0.9, -0.7]])
+    fixed = fix_signs(Phi)
+    for flips in ([1, 1, 1], [-1, 1, -1], [-1, -1, -1]):
+        assert np.array_equal(fix_signs(Phi * np.array(flips)), fixed)
+    assert fixed[0, 0] > 0 and fixed[2, 1] > 0 and fixed[0, 2] > 0  # ties go to the first
+    assert fix_signs(Phi, reference=np.array([-1.0, 1.0, 0.0]))[0, 0] < 0  # the reference's sign, 0: the peak's
+    assert fix_signs(np.array([[0.0], [-0.1], [0.9]]), first_moving=True)[1, 0] > 0
+    s = ChainSystem.uniform(4)
+    M, _, K = s.matrices()
+    w2, phi = normal_modes(K, M)
+    assert np.allclose(phi.T @ M @ phi, np.eye(4)) and np.all(np.diff(w2) > 0)
+    assert np.allclose(mac_matrix(phi, phi), np.eye(4), atol=1e-12)
+    assert mac(phi[:, 0], phi[:, 0] * 1j) == pytest.approx(1.0) and mac(np.zeros(3), phi[:3, 0]) == 0.0
+    assert log_decrement(0.05) == pytest.approx(2 * np.pi * 0.05 / np.sqrt(1 - 0.0025))
+    assert np.isfinite(log_decrement(np.array([1.0, -1.5]))).all()  # held within ±0.999999: a plot stays drawable

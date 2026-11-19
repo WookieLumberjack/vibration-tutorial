@@ -79,7 +79,7 @@ import scipy.optimize
 
 from .foh import free
 from .identification import IdentifiedMode, lsfd
-from .modal import TWO_PI, ModalResult, _mac, modal_analysis, receptance
+from .modal import TWO_PI, ModalResult, mac, modal_analysis, receptance
 from .model import ChainSystem, state_space
 
 
@@ -172,7 +172,7 @@ def compare(system: ChainSystem, result: ModalResult) -> list[ModeComparison]:
                 m.zeta_modal,
                 d.eigenvalue if d is not None else None,
                 d.shape if d is not None else None,
-                _mac(m.shape, d.shape) if d is not None else float("nan"),
+                mac(m.shape, d.shape) if d is not None else float("nan"),
                 complexity(d.shape) if d is not None else None,
             )
         )
@@ -446,8 +446,8 @@ def identify(
     norm = np.linalg.norm(exact)
 
     def fit(modes: list[IdentifiedMode], Hf: np.ndarray) -> Fit:
-        macs = np.array([_mac(m.shape, d.shape) for m, d in zip(modes, damped)])
-        undamped = np.array([_mac(e.shape, m.shape) for m, e in zip(modes, fitted)])
+        macs = np.array([mac(m.shape, d.shape) for m, d in zip(modes, damped)])
+        undamped = np.array([mac(e.shape, m.shape) for m, e in zip(modes, fitted)])
         return Fit(modes, Hf, float(np.linalg.norm(Hf - exact) / norm), macs, undamped)
 
     ident = lsfd(freqs, H, band, poles)

@@ -25,8 +25,8 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
-import scipy.linalg
 
+from .modal import normal_modes
 from .modal import receptance as modal_receptance
 from .model import ChainSystem
 from .random_vibration import linear
@@ -69,7 +69,7 @@ def samples(system: ChainSystem, scatter: Scatter, count: int, seed: int = 1) ->
 def natural_hz(system: ChainSystem) -> tuple[np.ndarray, np.ndarray]:
     """(f, Φ): undamped, Φ mass-normalized."""
     M, _, K = system.matrices()
-    w2, phi = scipy.linalg.eigh(K, M)
+    w2, phi = normal_modes(K, M)
     return np.sqrt(np.clip(w2, 0, None)) / TWO_PI, phi
 
 
@@ -152,7 +152,7 @@ class Ring:
 
 def ring_modes(ring: Ring, deltas: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
     M, _, K = ring.matrices(deltas)
-    w2, phi = scipy.linalg.eigh(K, M)
+    w2, phi = normal_modes(K, M)
     return np.sqrt(w2) / TWO_PI, phi
 
 

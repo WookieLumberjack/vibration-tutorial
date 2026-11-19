@@ -71,6 +71,7 @@ from .fluid_bearing import BearingState, JournalBearing
 from .frame import MATERIALS, STEEL, Material, Shape, bending_matrices
 from .frame import Section as FrameSection
 from .magnetic_bearing import MagneticBearing
+from .modal import log_decrement
 
 TWO_PI = 2.0 * math.pi
 RPM = TWO_PI / 60.0  # rad/s per rpm
@@ -685,8 +686,7 @@ class WhirlModes:
     @property
     def log_dec(self) -> np.ndarray:
         """δ = 2πζ/√(1 - ζ²): the logarithmic decrement."""
-        z = np.clip(self.zeta, -0.999999, 0.999999)
-        return TWO_PI * z / np.sqrt(1 - z * z)
+        return log_decrement(self.zeta)
 
 
 def whirl_ratio(assembly: Assembly, Q: np.ndarray) -> np.ndarray:

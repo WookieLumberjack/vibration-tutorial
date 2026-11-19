@@ -48,6 +48,8 @@ from enum import Enum
 import numpy as np
 import scipy.linalg
 
+from .modal import fix_signs
+
 TWO_PI = 2.0 * math.pi
 DOF_NAMES = ("u", "v", "θ")
 MAX_NODES = 40
@@ -574,9 +576,7 @@ def modes(frame: Frame, assembly: Assembly | None = None) -> Modes:
     w2 = np.where(rigid, 0.0, np.maximum(w2, 0.0))
     shapes = np.zeros((frame.n_dof, w2.size))
     shapes[free] = R @ X
-    # each shape's sign: its largest entry positive, so redraws don't flip it
-    big = np.argmax(np.abs(shapes), axis=0)
-    shapes *= np.where(shapes[big, np.arange(w2.size)] < 0, -1.0, 1.0)
+    shapes = fix_signs(shapes)  # its largest entry positive, so redraws (and other machines) don't flip it
     return Modes(
         np.sqrt(w2) / TWO_PI,
         shapes,

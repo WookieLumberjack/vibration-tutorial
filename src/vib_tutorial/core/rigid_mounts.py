@@ -55,7 +55,8 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
-import scipy.linalg
+
+from .modal import normal_modes
 
 DOF = ("x", "y", "z", "roll", "pitch", "yaw")
 TWO_PI = 2.0 * math.pi
@@ -137,7 +138,7 @@ class Modes:
 def modes(body: Body, mounts) -> Modes:
     """The rigid body's six modes on its mounts."""
     M = body.mass_matrix()
-    lam, phi = scipy.linalg.eigh(stiffness_matrix(mounts), M)
+    lam, phi = normal_modes(stiffness_matrix(mounts), M)
     lam = np.maximum(lam, 0.0)
     kinetic = np.diag(M)[:, None] * phi * phi
     return Modes(np.sqrt(lam) / TWO_PI, phi, kinetic / kinetic.sum(axis=0))
