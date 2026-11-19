@@ -4,8 +4,9 @@ Each page's first and last Things to try are picked as the reader picks them (th
 `coalesce.batch()`), with every frame loop held still, and each curve's `setData` is counted: more than once is a
 view drawn again in the same setup. `BUDGET` is what each page still does at most, the most times one curve was
 set; a page not in it sets each once. Lower a page's entry when it's fixed (`@coalesced` on its redraw), and take
-it out at 1. The Simulation page isn't counted (`UNCOUNTED`): its trials start the simulation, and what its views
-draw while the setup runs depends on the machine's load (2 to 4).
+it out at 1. The Simulation page and the Virtual modal test aren't counted (`UNCOUNTED`): their trials start a run
+(the simulation, the measurement's paced hits), and what that draws while the setup runs depends on the machine's
+load.
 """
 
 import collections
@@ -14,13 +15,8 @@ import pytest
 
 pytestmark = pytest.mark.gui
 
-BUDGET = {  # 2026-11-18 (#409 P-7): One mass to Building models marked; the rest by group
+BUDGET = {  # 2026-11-18 (#409 P-7): One mass to Testing marked; Beyond the chain next
     "rigid_body_page": 2,  # its last trial empties the drift plot on restart, then its steps fill it
-    "signals_page": 2,
-    "test_page": 6,
-    "planning_page": 3,
-    "nonlinear_page": 2,
-    "variability_page": 2,
     "fluid_page": 2,
     "self_excited_page": 4,
     "active_control_page": 2,
@@ -28,7 +24,7 @@ BUDGET = {  # 2026-11-18 (#409 P-7): One mass to Building models marked; the res
     "rotor_builder_page": 4,
 }
 
-UNCOUNTED = {"sim_page"}
+UNCOUNTED = {"sim_page", "test_page"}
 
 
 def test_each_pages_trials_set_each_curve_once(main_window, monkeypatch):

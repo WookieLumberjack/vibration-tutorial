@@ -35,7 +35,7 @@ from ..core.test_planning import (
     spectrum_grid,
     undamped_modes,
 )
-from . import planning_figures, settle_plots
+from . import coalesce, planning_figures, settle_plots
 from .layouts import FlowLayout
 from .lesson import (
     Form,
@@ -663,6 +663,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         self.quality = quality(T, self.placement.sensors)
         self.raised = method in (Method.EFI, Method.EFI_DPR) and keep > int(self.count.value())
 
+    @coalesce.coalesced(covers=("_draw_tab",))
     def redraw(self) -> None:
         self._dirty = False
         self.hz, self.phi = undamped_modes(self.system)
@@ -798,6 +799,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         )
         self.ods_readout.setText(text)
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         if self._dirty:  # the modes aren't worked out for this chain yet (a trial turning to a tab): redraw will
             return

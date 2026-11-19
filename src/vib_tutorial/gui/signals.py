@@ -36,7 +36,7 @@ from ..core.signals import (
     window,
     window_props,
 )
-from . import settle_plots, signals_figures
+from . import coalesce, settle_plots, signals_figures
 from .layouts import ColumnScroll
 from .lesson import (
     Form,
@@ -991,6 +991,7 @@ class SignalsPage(QtWidgets.QWidget):
         if tones:
             self.spec_legend.addItem(self.tone_items, "true tones")
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_WINDOWS:

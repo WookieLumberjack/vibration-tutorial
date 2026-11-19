@@ -41,7 +41,7 @@ from ..core.variability import (
     tuned_band,
     whitehead,
 )
-from . import settle_plots, variability_figures
+from . import coalesce, settle_plots, variability_figures
 from .lesson import (
     Form,
     TrialBox,
@@ -722,6 +722,7 @@ class VariabilityPage(QtWidgets.QWidget):
         if self.isVisible():
             self.redraw()
 
+    @coalesce.coalesced(covers=("_draw_tab",))
     def redraw(self) -> None:
         self._dirty = False
         self._draw_chain()  # the histogram too, if it shows
@@ -778,6 +779,7 @@ class VariabilityPage(QtWidgets.QWidget):
             self._draw_histogram()
         settle_plots(self)
 
+    @coalesce.coalesced
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
         if i == TAB_HISTOGRAM:
