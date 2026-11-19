@@ -14,7 +14,7 @@ from .live_label import LiveLabel
 from .modes import ModeEntry
 from .style import MAX_DOF, colors, text_on
 from .theming import mute
-from .transport import space_to_focus, watch_focus
+from .transport import space_to_focus, speed_text, watch_focus
 
 
 def spin(lo: float, hi: float, value: float, decimals: int, suffix: str = "") -> QtWidgets.QDoubleSpinBox:
@@ -541,7 +541,7 @@ class SimControls(QtWidgets.QGroupBox):
 
         self.speed = QtWidgets.QComboBox()
         for s in self.SPEEDS:
-            self.speed.addItem(f"{s:g}× real time", s)
+            self.speed.addItem(speed_text(s), s)
         self.speed.setCurrentIndex(self.SPEEDS.index(1.0))
         form.addRow("Speed:", self.speed)
 
@@ -561,10 +561,10 @@ class SimControls(QtWidgets.QGroupBox):
         self.fit_window.activated.connect(self._on_fit_window)
         fit_row.addWidget(self.fit_window, 1)
         fit_tip = (
-            "Set the plot window to show this many cycles of a mode (window = cycles / f\u2099;\n"
-            "f_d for the state-space method).\n"
-            "Changing the cycle count re-fits to the last mode picked.\n"
-            "Releasing a mode also fits to it while auto-scale is on."
+            "<p>Set the plot window to show this many cycles of a mode (window = cycles / f\u2099; "
+            "f<sub>d</sub> for the state-space method).</p>"
+            "<p>Changing the cycle count re-fits to the last mode picked. "
+            "Releasing a mode also fits to it while auto-scale is on.</p>"
         )
         for w in (self.cycles, self.fit_window):
             w.setToolTip(fit_tip)

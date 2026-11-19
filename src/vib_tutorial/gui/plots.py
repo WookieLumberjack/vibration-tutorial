@@ -118,7 +118,7 @@ class TimeHistoryPlot(pg.GraphicsLayoutWidget):
     def set_input(self, base: bool) -> None:
         """Label the lower plot for a force (N) or a ground displacement (m)."""
         if base:
-            self.f_plot.setLabel("left", "Ground x_g", units="m")
+            self.f_plot.setLabel("left", "Ground x<sub>g</sub>", units="m")
         else:
             self.f_plot.setLabel("left", "Force", units="N")
 
@@ -299,14 +299,14 @@ class Decimator:
 
 
 class ModalTable(QtWidgets.QTableWidget):
-    CLASSICAL_HEADERS = ["Mode", "fₙ [Hz]", "ζ modal", "ζ exact", "f_d [Hz]", "ζ friction"]
+    CLASSICAL_HEADERS = ["Mode", "fₙ [Hz]", "ζ modal", "ζ exact", "f damped", "ζ friction"]
     CLASSICAL_TIPS = [
         "Mode number (ordered by undamped natural frequency)",
         "Undamped natural frequency: Kφ = ω²Mφ",
         "Modal damping ratio φᵀCφ / (2ωₙ) using the undamped (mass-normalized) mode shape. "
         "Exact only for proportional damping.",
         "Exact damping ratio from the complex eigenvalue λ of the state matrix: -Re(λ)/|λ|",
-        "Damped natural frequency Im(λ)/2π",
+        "Damped natural frequency Im(λ)/2π, in Hz",
         "<p>Equivalent viscous damping ratio of the Coulomb friction, for the mode vibrating with "
         "the <i>Initial displacement</i> below at the mass that moves most.</p>"
         "<p>Friction takes a fixed amplitude ΔA per cycle out of the mode (4F<sub>f</sub>/k for a "
@@ -317,15 +317,15 @@ class ModalTable(QtWidgets.QTableWidget):
         "friction, being nonlinear, only roughly allows.</p>",
     ]
     FRICTION_COLUMN = 5
-    STATE_SPACE_HEADERS = ["λ #", "λ = σ ± iω_d [1/s]", "|λ|/2π [Hz]", "ζ", "f_d [Hz]"]
+    STATE_SPACE_HEADERS = ["λ #", "λ [1/s]", "|λ|/2π [Hz]", "ζ", "f damped"]
     STATE_SPACE_TIPS = [
         "Eigenvalue number: all 2N eigenvalues of the state matrix A, ordered by |λ|. "
         "λ* marks the complex conjugate of another row.",
-        "Eigenvalue of A. Re(λ) = σ is the decay rate, Im(λ) = ±ω_d the oscillation frequency. "
-        "Oscillatory eigenvalues come in conjugate pairs; real ones are non-oscillatory.",
+        "<p>Eigenvalue of A. Re(λ) = σ is the decay rate, Im(λ) = ±ω<sub>d</sub> the oscillation frequency. "
+        "Oscillatory eigenvalues come in conjugate pairs; real ones are non-oscillatory.</p>",
         "Natural frequency ωₙ = |λ| (for a real eigenvalue this is only a decay rate)",
         "Damping ratio -Re(λ)/|λ|, exact for any damping",
-        "Damped frequency |Im(λ)|/2π. For a real eigenvalue: its decay time constant τ = -1/λ",
+        "Damped frequency |Im(λ)|/2π, in Hz. For a real eigenvalue: its decay time constant τ = -1/λ",
     ]
     MAX_VISIBLE_ROWS = 10  # the 2N table scrolls beyond this
 
@@ -720,7 +720,7 @@ class FrfPlot(pg.GraphicsLayoutWidget):
             f = np.union1d(f, [p for p in peaks if lo < p < hi])
         freqs_n = np.array([m.fn_hz for m in result.modes if lo < m.fn_hz])
         H = transmissibility(system, f) if base else frf(system, f, input_dof)
-        self.mag.setLabel("left", "|X / X_g|" if base else "|X / F|  [m/N]")
+        self.mag.setLabel("left", "|X / X<sub>g</sub>|" if base else "|X / F|  [m/N]")
 
         for c in self.mag_curves + self.mode_lines:
             self.mag.removeItem(c)

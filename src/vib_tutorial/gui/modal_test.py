@@ -65,17 +65,18 @@ from .modal_test_setup import BLOCK_SIZES, TestSetup, setup_check, suggested_fs
 from .modal_test_views import FrfView, SignalView
 from .notes_view import NotesBrowser
 from .theming import settings
+from .transport import speed_text
 
 FRAME_MS = 30
 STEP_BUDGET_MS = 25  # measuring per frame, so the page stays responsive
 # Playback: how fast each record is drawn, as a multiple of real time (None: all at once).
 SPEEDS = [
     ("Instant", None),
-    ("100× real time", 100.0),
-    ("30× real time", 30.0),
-    ("10× real time", 10.0),
-    ("3× real time", 3.0),
-    ("Real time", 1.0),
+    (speed_text(100.0), 100.0),
+    (speed_text(30.0), 30.0),
+    (speed_text(10.0), 10.0),
+    (speed_text(3.0), 3.0),
+    (speed_text(1.0), 1.0),
 ]
 
 

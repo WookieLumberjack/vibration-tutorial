@@ -45,6 +45,7 @@ from .plots import Decimator, decimate
 from .scrub import Scrub
 from .style import colors
 from .theming import add_legend, mute
+from .transport import speed_text
 
 FRAME_BUDGET = 0.008  # s of computing per frame: past it the start-up plays slower than asked
 PLAYBACK = (0.05, 0.1, 0.25, 0.5, 1.0)  # × real time
@@ -138,7 +139,7 @@ class StartUpView(QtWidgets.QWidget):
         self.playback = QtWidgets.QComboBox()
         self.playback.setAccessibleName("Playback speed")
         for x in PLAYBACK:
-            self.playback.addItem(f"{x:g}× real time", x)
+            self.playback.addItem(speed_text(x), x)
         self.playback.setCurrentIndex(PLAYBACK.index(0.25))
         self.playback.setToolTip(
             "<p>How fast the start-up plays: its first tenth of a second is what an "

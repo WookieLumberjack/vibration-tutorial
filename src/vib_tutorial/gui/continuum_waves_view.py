@@ -26,6 +26,7 @@ from .lesson import LiveLabel, RunButton, plot
 from .panels import spin
 from .style import colors
 from .theming import add_legend, mute
+from .transport import speed_text
 
 NODES_DRAWN = 80  # the mesh's nodes are dotted up to this many elements
 SHAPE_POINTS = 801
@@ -114,7 +115,7 @@ class WavesView(QtWidgets.QWidget):
         self.restart_button.setToolTip("<p>The pulse back where it began, waiting for Start.</p>")
         self.playback = QtWidgets.QComboBox()
         for x in PLAYBACK:
-            self.playback.addItem(f"{x:g}×", x)
+            self.playback.addItem(speed_text(x), x)
         self.playback.setCurrentIndex(PLAYBACK.index(1.0))
         self.playback.setToolTip(TIPS["playback"])
         self.wave_status = LiveLabel(wrap=True)  # rewritten every frame: no layout pass each time

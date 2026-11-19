@@ -22,6 +22,7 @@ from .panels import spin
 from .plots import decimate
 from .style import colors
 from .theming import add_legend, mute
+from .transport import speed_text
 
 KINDS = (ForceKind.STEP, ForceKind.HARMONIC, ForceKind.PULSE)
 SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0)
@@ -75,7 +76,7 @@ class CMSRunView(QtWidgets.QWidget):
         self.reset_button.setToolTip("Both models back to rest, force off")
         self.speed = QtWidgets.QComboBox()
         for s in SPEEDS:
-            self.speed.addItem(f"{s:g}× real time", s)
+            self.speed.addItem(speed_text(s), s)
         self.speed.setCurrentIndex(SPEEDS.index(1.0))
         self.speed.setToolTip("Simulation speed (× real time)")
         self.time_window = spin(0.1, 60.0, 5.0, 1, " s")

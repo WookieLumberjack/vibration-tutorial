@@ -49,7 +49,7 @@ from .recompute import Recompute
 from .scrub import Scrub
 from .style import colors
 from .theming import add_legend, mute
-from .transport import Transport
+from .transport import Transport, speed_text
 
 FRAME_BUDGET = 0.008  # s of computing per frame: past it the page runs slower than asked
 SPEEDS = (0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
@@ -506,7 +506,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.sim_speed = QtWidgets.QComboBox()
         self.sim_speed.setAccessibleName("Playback speed")
         for s in SPEEDS:
-            self.sim_speed.addItem(f"{s:g}× real time", s)
+            self.sim_speed.addItem(speed_text(s), s)
         self.sim_speed.setCurrentIndex(SPEEDS.index(5.0))
         self.sim_speed.setToolTip("<p>Simulated seconds per second. A sweep of 120 s a leg takes 48 s at 5×.</p>")
         self.run_button = RunButton()

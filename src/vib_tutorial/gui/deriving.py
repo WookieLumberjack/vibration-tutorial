@@ -749,7 +749,7 @@ PROBLEMS = (
                 "Coordinates and coupling",
                 _same_frequencies,
             ),
-            ("pure-modes", "Predict: k_f a = k_r b", "coupling", "Coordinates and coupling", _pure_modes),
+            ("pure-modes", "Predict: front k × a = rear k × b", "coupling", "Coordinates and coupling", _pure_modes),
             (
                 "uncouple-spec",
                 "Spec: uncouple bounce and pitch",
@@ -973,10 +973,12 @@ class DerivingPage(QtWidgets.QWidget):
         body.row(self.body_info)
 
         suspension = Form("Suspension (per axle)")
-        self.k_front = suspension.number("Front spring k_f:", 1.0, 500.0, 40.0, 1, " kN/m", TIPS["k_front"])
-        self.k_rear = suspension.number("Rear spring k_r:", 1.0, 500.0, 40.0, 1, " kN/m", TIPS["k_rear"])
-        self.c_front = suspension.number("Front damper c_f:", 0.0, 50000.0, 2500.0, 0, " N·s/m", TIPS["c_front"])
-        self.c_rear = suspension.number("Rear damper c_r:", 0.0, 50000.0, 2500.0, 0, " N·s/m", TIPS["c_rear"])
+        self.k_front = suspension.number("Front spring k<sub>f</sub>:", 1.0, 500.0, 40.0, 1, " kN/m", TIPS["k_front"])
+        self.k_rear = suspension.number("Rear spring k<sub>r</sub>:", 1.0, 500.0, 40.0, 1, " kN/m", TIPS["k_rear"])
+        self.c_front = suspension.number(
+            "Front damper c<sub>f</sub>:", 0.0, 50000.0, 2500.0, 0, " N·s/m", TIPS["c_front"]
+        )
+        self.c_rear = suspension.number("Rear damper c<sub>r</sub>:", 0.0, 50000.0, 2500.0, 0, " N·s/m", TIPS["c_rear"])
 
         coordinates = Form("Coordinates")
         self.coords = combo([c.value for c in COORDS], TIPS["coords"])

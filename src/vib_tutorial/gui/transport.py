@@ -25,6 +25,11 @@ from . import theming
 POLL_MS = 150  # how often the bar reads the page's controls back
 
 
+def speed_text(speed: float) -> str:
+    """A speed as every page's speed box and the bar write it: "0.25×", times real time (#409 U-20)."""
+    return f"{speed:g}×"
+
+
 # Controls that do something with Space themselves: a button presses, a check box toggles, a combo box opens, a
 # list picks; a field types it (those already take it before a shortcut does: forwarding them is harmless).
 SPACE_TAKERS = (
@@ -184,9 +189,14 @@ class TransportBar(QtWidgets.QFrame):
         self.speed_label = QtWidgets.QLabel("Speed:")
         self.speed = QtWidgets.QComboBox()
         self.speed.setAccessibleName("Speed")
+        self.speed.setToolTip("<p>How fast the motion plays, times real time.</p>")
         self.speed.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.speed.activated.connect(self._on_speed)
         self.speed_label.setBuddy(self.speed)
+        for kept in (self.speed, self.speed_label):
+            policy = kept.sizePolicy()
+            policy.setRetainSizeWhenHidden(True)  # the bar's other controls stay put as pages come and go
+            kept.setSizePolicy(policy)
         self.clock = QtWidgets.QLabel()
         self.clock.setAccessibleName("Time")
         self.what = QtWidgets.QLabel()
@@ -239,6 +249,8 @@ class TransportBar(QtWidgets.QFrame):
             self.run.setText("Start")
             for w in (self.reset, self.speed, self.speed_label):
                 w.setEnabled(False)
+            for w in (self.speed, self.speed_label):
+                w.setVisible(False)
             self.clock.setText("")
             self.what.setText("Nothing on this page runs in time")
             return
@@ -249,8 +261,9 @@ class TransportBar(QtWidgets.QFrame):
             self.run.setText(t.run.text())
         self.reset.setEnabled(t.reset is not None and t.reset.isEnabled())
         has_speed = t.speed is not None
-        self.speed.setEnabled(has_speed)
-        self.speed_label.setEnabled(has_speed)
+        for w in (self.speed, self.speed_label):  # hidden where there's none, not a blank box (its room kept)
+            w.setEnabled(has_speed)
+            w.setVisible(has_speed)
         if t.speed is not None:
             items = [t.speed.itemText(i) for i in range(t.speed.count())]
             if items != self._speeds:

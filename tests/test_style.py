@@ -1,6 +1,9 @@
 """The themes' colours: legible on their backgrounds, and the masses told apart by colour-blind eyes too."""
 
+import ast
 import itertools
+import pathlib
+import re
 
 import numpy as np
 import pytest
@@ -129,3 +132,32 @@ def test_the_palettes_secondary_text_and_links_read(theme):
             assert pal.color(role.Window) == QtGui.QPalette().color(role.Window) != QtGui.QColor(style.DARK.window)
     finally:
         theming.apply("Light")
+
+
+UNDERSCORED = re.compile(r"(?<![\w./{\[#'\"=])([A-Za-zωζθφλσμη]{1,2}_[A-Za-z0-9]{1,5})(?![\w(\[=])")
+NOT_SHOWN = {"notation.py", "frame_stats.py"}  # the symbols' keys; the timing overlay's log
+
+
+def test_no_underscored_symbols_in_what_the_reader_sees():
+    """A symbol in a label, a readout, a title or a tooltip has a proper subscript (k<sub>f</sub>, fₙ), not
+    an underscore (k_f) beside the real ones; plain text (a combo's items, a table's headers) says it in words
+    (#409 U-20). Docstrings, and strings with no space or colon (keys, names), are left out."""
+    root = pathlib.Path(style.__file__).parent
+    found = []
+    for path in sorted(root.glob("*.py")):
+        if path.name in NOT_SHOWN:
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        docs = {
+            id(node.body[0].value)
+            for node in ast.walk(tree)
+            if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+            and node.body
+            and isinstance(node.body[0], ast.Expr)
+            and isinstance(node.body[0].value, ast.Constant)
+        }
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docs:
+                if " " in node.value or ":" in node.value:
+                    found += [f"{path.name}:{node.lineno}: {m.group(1)}" for m in UNDERSCORED.finditer(node.value)]
+    assert not found, found

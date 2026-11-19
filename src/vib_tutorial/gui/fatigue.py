@@ -377,7 +377,7 @@ def _damping_spec(rng: np.random.Generator) -> Question:
             kept("Mode 2's ζ", s.zeta2, base.zeta2),
             kept("Mode 2's RMS", s.sigma2, base.sigma2, "MPa"),
             kept("The slope", t.b, curve.b),
-            kept("S_ref", t.s_ref, curve.s_ref, "MPa"),
+            kept("S<sub>ref</sub>", t.s_ref, curve.s_ref, "MPa"),
             kept("N_ref", t.n_ref, curve.n_ref, "cycles"),
             Requirement(
                 f"Mode 1's RMS follows its damping: 20 √(0.02/ζ₁) = {number(miles(s.zeta1))} MPa",
@@ -477,8 +477,8 @@ class FatiguePage(QtWidgets.QWidget):
 
         sn = Form("S–N curve")
         self.b = sn.number("Slope b:", 1.0, 20.0, 3.0, 1, "", TIPS["b"])
-        self.s_ref = sn.number("Range S_ref:", 1.0, 2000.0, 80.0, 1, " MPa", TIPS["s_ref"])
-        self.n_ref = sn.number("at N_ref:", 1e3, 1e9, 2e6, 0, " cycles", TIPS["n_ref"])
+        self.s_ref = sn.number("Range S<sub>ref</sub>:", 1.0, 2000.0, 80.0, 1, " MPa", TIPS["s_ref"])
+        self.n_ref = sn.number("at N<sub>ref</sub>:", 1e3, 1e9, 2e6, 0, " cycles", TIPS["n_ref"])
 
         rec = Form("Record")
         self.duration = rec.number("Length:", 5.0, 3600.0, 600.0, 0, " s", TIPS["duration"])
