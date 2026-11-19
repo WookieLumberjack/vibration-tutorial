@@ -93,7 +93,7 @@ from .lesson import (
 )
 from .links import load_notes
 from .live_label import LiveLabel
-from .plots import thin
+from .plots import SteadyRange, decimate, thin
 from .style import colors
 from .theming import add_legend, mute
 from .transport import Transport
@@ -393,6 +393,13 @@ class GyroscopePage(QtWidgets.QWidget):
         for item in (self.energy_item, self.momentum_item):
             self.check_plot.addItem(item)
         self.check_legend = self.check_plot.getPlotItem().legend
+        # Time plots drawn whole, each pixel column's extremes (thinning to every k-th sample dropped the nods'
+        # peaks; #409 P-15); the Check plot's error held until it outgrows its range, its time axis from 0 grown
+        # by a quarter as the run passes it, not autoranged every frame.
+        decimate(self.tilt_plot, self.check_plot)
+        self.check_range = SteadyRange(self.check_plot, "y")
+        self.check_plot.getPlotItem().enableAutoRange(axis="x", enable=False)
+        self._check_t = 0.0  # the Check plot's time axis runs 0 to this
         self.check_note = note_label()
 
         self.components = ComponentsTab(
@@ -888,8 +895,7 @@ class GyroscopePage(QtWidgets.QWidget):
             s.friction[-1],
         )
         t, y = self.slides.window(SLIDE_TILT_SPAN)
-        k = thin(t.size, 2000)
-        self.tilt_item.setData(t[k], np.degrees(np.arccos(np.clip(y[k, 2], -1, 1))))
+        self.tilt_item.setData(t, np.degrees(np.arccos(np.clip(y[:, 2], -1, 1))))
         t1 = max(float(t[-1]), 10.0)
         self.tilt_plot.setXRange(max(0.0, t1 - SLIDE_TILT_SPAN), t1, padding=0)
 
@@ -920,8 +926,7 @@ class GyroscopePage(QtWidgets.QWidget):
         if n:
             window = min(NODS * self.motion.nutation_period(), 20.0)
             t, y = self.history.window(window)
-            k = thin(t.size, 2000)
-            self.tilt_item.setData(t[k], np.degrees(np.arccos(np.clip(y[k, 2], -1, 1))))
+            self.tilt_item.setData(t, np.degrees(np.arccos(np.clip(y[:, 2], -1, 1))))
             t1 = max(float(t[-1]), window)
             self.tilt_plot.setXRange(t1 - window, t1, padding=0)
         else:
@@ -937,9 +942,8 @@ class GyroscopePage(QtWidgets.QWidget):
         if not t.size:
             self.tilt_item.setData([], [])
             return
-        k = thin(t.size, 2000)
-        theta = np.degrees(np.arccos(np.clip(y[k, 2], -1, 1)))
-        self.tilt_item.setData(t[k], theta)
+        theta = np.degrees(np.arccos(np.clip(y[:, 2], -1, 1)))
+        self.tilt_item.setData(t, theta)
         t1 = max(float(t[-1]), SKEW_TILT)
         self.tilt_plot.setXRange(t1 - SKEW_TILT, t1, padding=0)
         lo, hi = float(theta.min()), float(theta.max())
@@ -1209,11 +1213,11 @@ class GyroscopePage(QtWidgets.QWidget):
         assert rt is not None  # only on a table
         s = self.table_samples()
         start, J0 = self._launch_energy, self._launch_jellett
-        k = thin(s.t.size, CHECK_POINTS)
         ledger = (s.energy + s.work - start) / start
         drift = (s.jellett - J0) / (abs(J0) or 1.0)
-        self.energy_item.setData(s.t[k], ledger[k])
-        self.momentum_item.setData(s.t[k], drift[k])
+        self.energy_item.setData(s.t, ledger)
+        self.momentum_item.setData(s.t, drift)
+        self._fit_check(s.t, ledger, drift)
         if not text:
             return
         sim = self.sim
@@ -1414,6 +1418,16 @@ class GyroscopePage(QtWidgets.QWidget):
             "this log scale, until they're as far apart as two axes can be."
         )
 
+    def _fit_check(self, t: np.ndarray, *errors: np.ndarray) -> None:
+        """The Check plot's ranges: the errors' span held (`SteadyRange`), the time from 0 grown as the run goes."""
+        if not t.size:
+            return
+        self.check_range.fit(min(float(np.min(e)) for e in errors), max(float(np.max(e)) for e in errors))
+        t1 = float(t[-1])
+        if t1 > self._check_t or t1 < 0.5 * self._check_t:
+            self._check_t = max(1.25 * t1, 1.0)
+            self.check_plot.setXRange(0.0, self._check_t, padding=0)
+
     def _draw_check(self, text: bool = True) -> None:
         n = self.history.size
         m = self.motion
@@ -1423,16 +1437,19 @@ class GyroscopePage(QtWidgets.QWidget):
         if not n:
             self.energy_item.setData([], [])
             self.momentum_item.setData([], [])
+            self.check_range.reset()
+            self._check_t = 0.0
             self.check_note.setText("Run it to compare.")
             return
         t, y = self.history.t[:n], self.history.y[:n]
-        k = thin(n, CHECK_POINTS)
-        self.energy_item.setData(t[k], (y[k, 6] - m.total_energy) / scale_e)
-        along = np.sum(y[k, 7:10] * y[k, 0:3], axis=1)
-        drift = np.abs(y[k, 9] - m.vertical_momentum) / scale_l
+        energy = (y[:, 6] - m.total_energy) / scale_e
+        self.energy_item.setData(t, energy)
+        along = np.sum(y[:, 7:10] * y[:, 0:3], axis=1)
+        drift = np.abs(y[:, 9] - m.vertical_momentum) / scale_l
         if top.symmetric:
             drift = np.maximum(drift, np.abs(along - m.spin_momentum) / scale_l)
-        self.momentum_item.setData(t[k], drift)
+        self.momentum_item.setData(t, drift)
+        self._fit_check(t, energy, drift)
         if not text:
             return
         if not top.symmetric:

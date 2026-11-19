@@ -5523,3 +5523,25 @@ def test_shock_and_model_updating_work_out_on_their_workers(main_window, app):
     assert updating.worker.busy and updating.corr is corr
     updating.worker.wait()
     assert updating.corr is not corr and updating.test is test  # correlated again, not measured again
+
+
+def test_the_gyroscopes_time_plots_are_decimated_not_thinned(main_window, app):
+    """The tilt and Check plots get every sample, drawn as each pixel column's extremes (thinning dropped the nods'
+    peaks), the Check plot's ranges held while the run fits them (#409 P-15)."""
+    from vib_tutorial.gui import gyroscope as g
+
+    w = main_window
+    p = w.gyroscope_page
+    w.pages.setCurrentWidget(p)
+    p.loop.enabled = False
+    p.load_trial(0)
+    p.tabs.setCurrentIndex(g.TAB_CHECK)
+    for _ in range(240):
+        p.loop._call(p.loop._tick, 1 / 60)
+    for item in (p.tilt_item, p.energy_item):
+        assert item.opts["autoDownsample"] and item.opts["downsampleMethod"] == "peak" and item.opts["clipToView"]
+    x, _ = p.energy_item.getOriginalDataset()
+    assert len(x) == p.history.size  # every sample, not every k-th
+    shown = p.check_range.shown
+    p.loop._call(p.loop._tick, 1 / 60)
+    assert p.check_range.shown == shown  # a frame that fits leaves the range alone
