@@ -6,21 +6,24 @@ out in closed form or by the exact step when a control changes, and has no frame
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Sequence
+from typing import Any
 
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.practice import Prediction
+from ..core.practice import Placement, Prediction
 from ..view_models.text import db as db  # re-exported for the pages
 from ..view_models.text import fmt as fmt
-from . import accessible, coalesce, weak
+from . import accessible, coalesce, drag, weak
 from .axes import log_axes
 from .layouts import form_layout, plot_height
 from .live_label import LiveLabel as LiveLabel  # re-exported for the pages
 from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import space_bar, spin
+from .style import colors
 from .theming import mute
 
 
@@ -249,6 +252,10 @@ class TrialBox(QtWidgets.QGroupBox):
     button per choice (and *Just run it*) take the note's place, and the page isn't touched until one is pressed.
     Then the verdict shows, `picked(i)` sets the trial up, and its note (the explanation) shows below. Calling
     the page's `load_trial` directly (tests, the Practice window) skips the question.
+
+    A `Placement` is asked on a plot instead: the page's plot it names (an attribute of a widget above the box)
+    hides its curves, shows the span and a line to drag, and *That's my guess* runs the trial with the guess
+    left on the plot, dashed, until the next pick or Defaults (`guessed`).
     """
 
     picked = QtCore.Signal(int)
@@ -258,7 +265,7 @@ class TrialBox(QtWidgets.QGroupBox):
         names: Sequence[str],
         tip: str,
         parent: QtWidgets.QWidget | None = None,
-        predictions: Sequence[Prediction | None] = (),
+        predictions: Sequence[Prediction | Placement | None] = (),
         prompt: str | None = "Pick one…",
     ) -> None:
         super().__init__("Things to try", parent)
@@ -277,6 +284,13 @@ class TrialBox(QtWidgets.QGroupBox):
         ask.addWidget(self.question)
         self.choices = QtWidgets.QVBoxLayout()
         ask.addLayout(self.choices)
+        self.place = QtWidgets.QPushButton("That's my guess")
+        self.place.setToolTip("<p>Run the trial with the line where you've put it.</p>")
+        self.place.clicked.connect(self._on_place)
+        ask.addWidget(self.place)
+        self.line: drag.DragLine | None = None  # the line dragged to a Placement's guess, while it's asked
+        self.guessed: pg.InfiniteLine | None = None  # the guess, left on the plot after the trial runs
+        self._placing: tuple[Any, list, Any, Any] | None = None  # the plot, its hidden curves, its ranges then
         self.skip = QtWidgets.QPushButton("Just run it")
         self.skip.setFlat(True)
         self.skip.setToolTip("<p>Set the trial up without predicting.</p>")
@@ -298,6 +312,8 @@ class TrialBox(QtWidgets.QGroupBox):
         self.note.setText(markup(text))
         self.note.setVisible(bool(text))
         if not text:
+            self._stop_placing()
+            self._clear_guess()
             self.asking = None
             self.ask.setVisible(False)
             self.verdict.setVisible(False)
@@ -307,7 +323,7 @@ class TrialBox(QtWidgets.QGroupBox):
         i = self.asking
         assert i is not None, "answered only while a prediction is asked"
         p = self.predictions[i]
-        assert p is not None, "asked only for a trial with a prediction"
+        assert isinstance(p, Prediction), "a choice answers a Prediction"
         if choice == p.answer:
             text = "<b>✓ Right.</b> Here it is:"
         elif p.why:  # why the one picked is wrong, then the trial's note says why the answer is right
@@ -317,8 +333,93 @@ class TrialBox(QtWidgets.QGroupBox):
         self.verdict.setText(markup(text))
         self._run(i)
 
+    def place_guess(self, value: float) -> None:
+        """Answer the Placement being asked with `value` (data units), as dragging the line there and pressing
+        *That's my guess* would."""
+        assert self.line is not None, "placed only while a Placement is asked"
+        self.line.set_value(value)
+        self._on_place()
+
+    def _on_place(self) -> None:
+        i = self.asking
+        assert i is not None and self.line is not None, "placed only while a Placement is asked"
+        p = self.predictions[i]
+        assert isinstance(p, Placement), "a guess answers a Placement"
+        guess = self.line.data_value()
+        self.verdict.setText(markup(p.judge(guess)[1]))
+        self._stop_placing()
+        self._run(i)
+        self._show_guess(p, guess)  # after the trial's redraw, which sets the plot's ranges
+
+    def _plot_named(self, name: str):
+        """The page's plot `name`: an attribute of the nearest widget above the box that has one."""
+        w = self.parentWidget()
+        while w is not None and not hasattr(w, name):
+            w = w.parentWidget()
+        assert w is not None, f"no plot {name} above the Things to try"
+        found = getattr(w, name)
+        return found.getPlotItem() if hasattr(found, "getPlotItem") else found
+
+    def _start_placing(self, p: Placement) -> None:
+        item = self._plot_named(p.plot)
+        box = item.getViewBox()
+        hidden = [c for c in item.items if c.isVisible()]
+        self._placing = (item, hidden, box.viewRange(), box.autoRangeEnabled())
+        for c in hidden:  # the last trial's curves and markers would give the answer away, or mislead
+            c.setVisible(False)
+        lo, hi = (math.log10(v) for v in p.span) if p.log else p.span
+        if p.axis == "y":
+            item.setYRange(lo, hi, padding=0)
+        else:
+            item.setXRange(lo, hi, padding=0)
+        self.line = drag.DragLine(
+            "<p>Drag to your guess, then press <i>That's my guess</i>.</p>",
+            angle=0 if p.axis == "y" else 90,
+            log=p.log,
+            bounds=p.span,
+            role="strong",
+        )
+        item.addItem(self.line, ignoreBounds=True)
+        self.line.set_value(p.start())
+
+    def _stop_placing(self) -> None:
+        if self._placing is None:
+            return
+        item, hidden, ranges, auto = self._placing
+        self._placing = None
+        if self.line is not None:
+            item.removeItem(self.line)
+            self.line = None
+        for c in hidden:
+            c.setVisible(True)
+        box = item.getViewBox()
+        box.setRange(xRange=ranges[0], yRange=ranges[1], padding=0)
+        box.enableAutoRange(x=auto[0], y=auto[1])
+
+    def _show_guess(self, p: Placement, guess: float) -> None:
+        item = self._plot_named(p.plot)
+        line = pg.InfiniteLine(
+            math.log10(guess) if p.log else guess,
+            angle=0 if p.axis == "y" else 90,
+            pen=pg.mkPen(colors.strong, width=2, style=QtCore.Qt.PenStyle.DashLine),
+            label="your guess",
+            labelOpts={"position": 0.08 if p.axis == "y" else 0.92, "color": colors.strong},
+        )
+        line.setZValue(15)
+        item.addItem(line, ignoreBounds=True)
+        self.guessed = line
+
+    def _clear_guess(self) -> None:
+        if self.guessed is not None:
+            scene_item = self.guessed.getViewBox()
+            if scene_item is not None:
+                scene_item.removeItem(self.guessed)
+            self.guessed = None
+
     def _on_pick(self, i: int) -> None:
         p = self.predictions[i] if i < len(self.predictions) else None
+        self._stop_placing()
+        self._clear_guess()
         self.verdict.setVisible(False)
         if p is None:
             self.asking = None
@@ -328,12 +429,18 @@ class TrialBox(QtWidgets.QGroupBox):
             return
         self.asking = i
         self.note.setVisible(False)
-        self.question.setText(markup(f"<b>Predict first:</b> {p.prompt}"))
         while self.choices.count():
             item = self.choices.takeAt(0)
             if item is not None and (widget := item.widget()) is not None:
                 widget.hide()  # out of the layout, it would show where it was until it's deleted
                 widget.deleteLater()
+        self.place.setVisible(isinstance(p, Placement))
+        if isinstance(p, Placement):
+            self.question.setText(markup(f"<b>Predict first:</b> {p.prompt} Drag the line on the plot to your guess."))
+            self._start_placing(p)
+            self.ask.setVisible(True)
+            return
+        self.question.setText(markup(f"<b>Predict first:</b> {p.prompt}"))
         for k in p.shown_order():  # shuffled, the same each time (a scale stays a scale)
             button = QtWidgets.QPushButton(p.choices[k])  # plain text: a button shows no rich text
             button.setProperty("choice", k)
@@ -348,6 +455,7 @@ class TrialBox(QtWidgets.QGroupBox):
 
     def _on_skip(self) -> None:
         assert self.asking is not None, "Just run it shows only while a prediction is asked"
+        self._stop_placing()
         self.verdict.setText("")
         self._run(self.asking)
 

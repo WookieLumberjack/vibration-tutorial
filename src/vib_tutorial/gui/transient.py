@@ -16,7 +16,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Placement, Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI, Oscillator, impulse_response, receptance, step_response
 from ..core.transient import (
     Pulse,
@@ -65,7 +65,7 @@ class TransientTrial:
     tab: int = TAB_SPECTRUM
     mass: float = 1.0
     stiffness: float = 400.0
-    predict: Prediction | None = None  # asked before it runs (Things to try)
+    predict: Prediction | Placement | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -99,16 +99,17 @@ TRIALS = (
         PulseKind.STEP,
         at=0.157,
         tab=TAB_STEP,
-        predict=Prediction(
-            "1 N switched on and left, with a static deflection of 2.5 mm. How far does the mass get?",
-            ("2.5 mm: it settles there", "About 4.6 mm", "Further than 5 mm"),
-            1,
-            ordered=True,
-            why=(
-                'It gets there with speed to spare and overshoots: light damping lets it go 85 % past.',
-                '',
-                'Twice static is the undamped limit. Any damping keeps it under: 4.64 mm here.',
-            ),
+        predict=Placement(
+            "1 N switched on and left, with a static deflection of 2.5 mm. How far does the mass get? Put the line "
+            "at its farthest.",
+            plot="x_plot",
+            answer=0.00464,
+            span=(0.0, 0.008),
+            low="It reaches 2.5 mm with speed to spare and overshoots: light damping lets it go 85 % past, to 4.64 mm.",
+            high="Twice static, 5 mm, is the undamped limit. With ζ = 0.05 it stops short, at 4.64 mm.",
+            tolerance=0.06,
+            scale=1000.0,
+            unit="mm",
         ),
     ),
     TransientTrial(

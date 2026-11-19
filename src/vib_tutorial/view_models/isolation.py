@@ -24,7 +24,7 @@ from dataclasses import dataclass, replace
 import numpy as np
 
 from ..core.isolation import G, Isolator, Mount, deflection_for, let_go, start_up
-from ..core.practice import Prediction
+from ..core.practice import Placement, Prediction
 from ..core.sdof import TWO_PI
 from .plot import Curve
 from .text import db, fmt
@@ -53,7 +53,7 @@ class IsolationTrial:
     tab: int = TAB_START
     mass: float = 100.0
     unbalance: float = 0.01
-    predict: Prediction | None = None  # asked before it runs (Things to try)
+    predict: Prediction | Placement | None = None  # asked before it runs (Things to try)
 
 
 def isolator(t: IsolationTrial) -> Isolator:
@@ -94,15 +94,18 @@ TRIALS = (
         "speed. The mounts now amplify: 3.9 times the unbalance's force reaches the floor. Below <m>√2 f<sub>n</sub></m> "
         "a mount can only make things worse.",
         deflection_mm=0.3,
-        predict=Prediction(
-            "The same machine on mounts sagging only 0.3 mm: their natural frequency is just above the speed. The floor now gets?",
-            ("Less than on soft mounts", "About the unbalance's force", "Several times the unbalance's force"),
-            2,
-            why=(
-                'Below √2 f<sub>n</sub> a mount amplifies, and 25 Hz is just under f<sub>n</sub> = 28.8 Hz: near resonance.',
-                "That's a far stiffer, rigid mount's. Just under f<sub>n</sub> the mounts amplify: 3.9 times.",
-                '',
-            ),
+        predict=Placement(
+            "The same machine on mounts sagging only 0.3 mm: their natural frequency is just above the speed. What "
+            "share of the unbalance's force reaches the floor now? Put the line at that transmissibility.",
+            plot="tr_plot",
+            answer=3.86,
+            span=(0.001, 10.0),
+            log=True,
+            low="Below √2 f<sub>n</sub> a mount can only pass more than all of it, and 25 Hz is just under f<sub>n</sub> = 28.8 Hz, "
+            "near resonance: 3.9 times.",
+            high="Near resonance, but not on it: at r = 0.87, with ζ = 0.05, the mounts pass 1/(1 − r²) ≈ 3.9 times "
+            "the force.",
+            tolerance=0.3,
         ),
     ),
     IsolationTrial(

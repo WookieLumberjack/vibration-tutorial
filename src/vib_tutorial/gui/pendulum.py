@@ -32,7 +32,7 @@ from ..core.pendulum import (
     rod_period,
     swing,
 )
-from ..core.practice import Prediction, Problem, Question, Requirement, kept, number, pick, rounded
+from ..core.practice import Placement, Prediction, Problem, Question, Requirement, kept, number, pick, rounded
 from . import coalesce, pendulum_figures, settle_plots
 from .lesson import (
     Dot,
@@ -76,7 +76,7 @@ class PendulumTrial:
     zeta: float = 0.0
     angle: float = 10.0  # degrees
     tab: int = TAB_PERIOD
-    predict: Prediction | None = None  # asked before it runs (Things to try)
+    predict: Prediction | Placement | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -86,16 +86,17 @@ TRIALS = (
         "moment of inertia <m>mL²</m>, so <m>ω<sub>n</sub> = √(g/L)</m>: 0.498 Hz, a period of 2.006 s, whatever "
         "the mass (change it). At 10° the whole and the linearized swings can't be told apart.",
         angle=10.0,
-        predict=Prediction(
-            "A 1 kg bob on a 1 m string, let go from 10°. How long does one swing there and back take?",
-            ("About 1 s", "About 2 s", "About 6 s"),
-            1,
-            ordered=True,
-            why=(
-                "That's one way across. There and back is 2π√(L/g) = 2.0 s.",
-                '',
-                "That's 2π seconds, as if √(L/g) were 1 s. For a 1 m string it's 0.32 s, and 2π times that is 2.0 s.",
-            ),
+        predict=Placement(
+            "A 1 kg bob on a 1 m string, let go from 10°. How long does one swing there and back take? Put the line "
+            "at the time it's back where it started.",
+            plot="swing_plot",
+            answer=2.006,
+            span=(0.0, 6.0),
+            axis="x",
+            low="That's nearer one way across. There and back is 2π√(L/g) = 2.0 s.",
+            high="2π√(L/g), with L = 1 m and g = 9.81 m/s², is 2.0 s: there and back.",
+            tolerance=0.15,
+            unit="s",
         ),
     ),
     PendulumTrial(
@@ -216,16 +217,17 @@ TRIALS = (
         "4.94 s. A pendulum clock is a gravimeter.",
         gravity=1.62,
         angle=10.0,
-        predict=Prediction(
-            "The 1 m pendulum on the Moon, where g is 1.62 m/s², a sixth of Earth's. Its period is…",
-            ("the same", "about 2.5 times longer", "about 6 times longer"),
-            1,
-            ordered=True,
-            why=(
-                "It's the mass that cancels, not g: ω<sub>n</sub> = √(g/L).",
-                '',
-                'The period goes as 1/√g: a sixth of g makes it √6 = 2.46 times longer, not 6.',
-            ),
+        predict=Placement(
+            "The 1 m pendulum on the Moon, where g is 1.62 m/s², a sixth of Earth's (there it takes 2.0 s). How "
+            "long does a swing there and back take? Put the line at the time it's back.",
+            plot="swing_plot",
+            answer=4.94,
+            span=(0.0, 15.0),
+            axis="x",
+            low="The period goes as 1/√g: a sixth of g makes it √6 = 2.46 times Earth's 2.0 s, 4.94 s.",
+            high="Not six times: the period goes as 1/√g, so √6 = 2.46 times Earth's 2.0 s, 4.94 s.",
+            tolerance=0.15,
+            unit="s",
         ),
     ),
 )

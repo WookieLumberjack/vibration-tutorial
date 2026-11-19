@@ -277,7 +277,7 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     p = w.sdof_page
     w.pages.setCurrentWidget(p)
     box = p.trials
-    i = next(k for k, t in enumerate(sdof.TRIALS) if t.name.startswith("Resonance"))
+    i = next(k for k, t in enumerate(sdof.TRIALS) if t.name.startswith("Undamped, just off"))
     prediction = sdof.TRIALS[i].predict
     assert prediction is not None
     before = p.practice_state()
@@ -294,8 +294,8 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     assert box.asking is None and not box.ask.isVisible() and "Not quite" in box.verdict.text()
     assert prediction.choices[prediction.answer] in box.verdict.text()
     assert prediction.why[wrong] and prediction.why[wrong][:20] in box.verdict.text()  # why the one picked is wrong
-    assert p.freq.value() == pytest.approx(p.osc.natural_hz, abs=1e-3) and p.playback.running  # it ran
-    assert box.note.isVisible() and "quality factor" in box.note.text()
+    assert p.damping.value() == 0.0 and p.playback.running  # it ran
+    assert box.note.isVisible() and "beats" in box.note.text()
 
     box.combo.pick(sdof.TRIALS[i].name)  # again: asked again
     assert box.ask.isVisible() and not box.verdict.isVisible()
@@ -315,6 +315,36 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     assert not box.ask.isVisible() and not box.verdict.isVisible() and box.asking is None
 
 
+def test_a_placement_is_guessed_on_its_plot(main_window, app):
+    """A Placement (#409 I-6): the plot hides its curves and shows the span while the reader drags the line, the
+    trial runs on the guess, which stays on the plot, dashed, with the verdict; Defaults takes it away."""
+    from vib_tutorial.core.practice import Placement
+    from vib_tutorial.gui import sdof
+
+    w = main_window
+    p = w.sdof_page
+    w.pages.setCurrentWidget(p)
+    box = p.trials
+    t = next(t for t in sdof.TRIALS if isinstance(t.predict, Placement))
+    place = t.predict
+    assert isinstance(place, Placement)
+    item = p.forced_plot.getPlotItem()
+    shown = [c for c in item.listDataItems() if c.isVisible()]
+    assert shown
+    box.combo.pick(t.name)
+    assert box.place.isVisible() and box.line is not None and box.line in item.items
+    assert not any(c.isVisible() for c in shown)  # the last trial's curves would give it away
+    assert item.getViewBox().viewRange()[1] == pytest.approx(list(place.span))
+    box.place_guess(0.010)  # well short of 25 mm
+    assert box.line is None and all(c.isVisible() for c in shown) and p.playback.running
+    assert (
+        "Not quite" in box.verdict.text() and "10.0 mm" in box.verdict.text() and place.low[:20] in box.verdict.text()
+    )
+    assert box.guessed is not None and box.guessed in item.items and box.guessed.value() == pytest.approx(0.010)
+    w.restore_defaults()
+    assert box.guessed is None and not box.ask.isVisible()
+
+
 @pytest.mark.parametrize(
     ("attr", "module"),
     [
@@ -326,6 +356,8 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
 )
 def test_the_one_mass_pages_ask_their_predictions_first(main_window, app, attr, module):
     import importlib
+
+    from vib_tutorial.core.practice import Placement
 
     trials = importlib.import_module(f"vib_tutorial.gui.{module}").TRIALS
     w = main_window
@@ -339,8 +371,13 @@ def test_the_one_mass_pages_ask_their_predictions_first(main_window, app, attr, 
         box.combo.pick(trials[i].name)
         assert box.asking == i and box.ask.isVisible()
         assert p.practice_state() == before  # nothing set up until it's answered
-        box.answer(trials[i].predict.answer)
-        assert "Right" in box.verdict.text() and box.note.isVisible()
+        guess = trials[i].predict
+        if isinstance(guess, Placement):
+            box.place_guess(guess.answer)
+            assert "Close" in box.verdict.text() and box.note.isVisible()
+        else:
+            box.answer(guess.answer)
+            assert "Right" in box.verdict.text() and box.note.isVisible()
         w.restore_defaults()
         before = p.practice_state()
 
@@ -414,7 +451,9 @@ def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
 
     from vib_tutorial.gui import plot_patches
 
-    assert QtGui.QPixmapCache.cacheLimit() == plot_patches.PIXMAP_CACHE_MB * 1024  # make_app installed it
+    # make_app sizes the cache (the test above, in a fresh interpreter); this worker's app may not have come from it
+    plot_patches.size_pixmap_cache()
+    assert QtGui.QPixmapCache.cacheLimit() == plot_patches.PIXMAP_CACHE_MB * 1024
     w = main_window
     w.resize(1700, 1000)
     p = w.sdof_page
@@ -519,6 +558,7 @@ def test_every_pages_predictions_are_asked_before_its_trials_run(main_window, ap
     """Every page whose trials carry a `Prediction` asks it through its Things to try first (#316 B3): nothing is
     set up until it's answered, the verdict and the note (the explanation) follow, and a trial's name doesn't give
     the answer away (it shows before the question)."""
+    from vib_tutorial.core.practice import Placement
     from vib_tutorial.gui import links, sim_trials
 
     w = main_window
@@ -528,7 +568,7 @@ def test_every_pages_predictions_are_asked_before_its_trials_run(main_window, ap
         asked = [k for k, t in enumerate(trials) if getattr(t, "predict", None) is not None]
         for k in asked:
             p = trials[k].predict
-            answer = p.choices[p.answer].split(":")[0].lower()
+            answer = "" if isinstance(p, Placement) else p.choices[p.answer].split(":")[0].lower()
             if len(answer) >= 6:  # a "Yes" or "No" may well be in a name
                 assert answer not in trials[k].name.lower(), f"{trials[k].name!r} gives its answer away"
             # Nor in other words: a name says what's set up, not what happens (#409 C-8).
@@ -544,8 +584,15 @@ def test_every_pages_predictions_are_asked_before_its_trials_run(main_window, ap
             box.combo.pick(trials[i].name)
             assert box.asking == i and box.ask.isVisible(), f"{attr}: {trials[i].name}"
             assert page.practice_state() == before, f"{attr}: set up before it was answered"
-            box.answer(trials[i].predict.answer)
-            assert "Right" in box.verdict.text() and box.note.isVisible()
+            p = trials[i].predict
+            if isinstance(p, Placement):  # guessed on its plot: the guess stays there after it runs
+                assert box.place.isVisible() and box.line is not None
+                box.place_guess(p.answer)
+                assert box.guessed is not None and box.line is None
+                assert "Close" in box.verdict.text() and box.note.isVisible()
+            else:
+                box.answer(p.answer)
+                assert "Right" in box.verdict.text() and box.note.isVisible()
             w.restore_defaults()
             before = page.practice_state()
         checked += 1

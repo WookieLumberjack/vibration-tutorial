@@ -118,6 +118,49 @@ class Prediction:
 
 
 @dataclass(frozen=True)
+class Placement:
+    """A trial's question answered on a plot (#409 I-6): the reader drags a line on the page's `plot` (the page's
+    attribute) to where they think `answer` will be, on its `axis` ("y": a level, a horizontal line; "x": a time
+    or a frequency, a vertical one), within `span` (data units, the axis's range while they guess). Then the trial
+    runs and the guess stays on the plot beside the result. A guess within `tolerance` (relative) is right; `low`
+    and `high` say why one too low or too high is off, as a choice's `why` does. `scale` and `unit` print a value
+    (data × scale, in unit: 0.025 m as 25 mm)."""
+
+    prompt: str  # rich text
+    plot: str
+    answer: float
+    span: tuple[float, float]
+    low: str  # rich text
+    high: str
+    axis: str = "y"
+    log: bool = False
+    tolerance: float = 0.25
+    scale: float = 1.0
+    unit: str = ""
+
+    def __post_init__(self) -> None:
+        lo, hi = self.span
+        if self.axis not in ("x", "y") or not lo < self.answer < hi or not (self.low and self.high):
+            raise ValueError(f"{self.prompt!r}: the answer inside the span, an x or y axis, and both reasons")
+
+    def shown(self, value: float) -> str:
+        """`value` (data units) as the verdict prints it."""
+        return f"{number(value * self.scale)} {self.unit}".strip()
+
+    def start(self) -> float:
+        """Where the line starts: the span's middle (on a log axis, its geometric middle)."""
+        lo, hi = self.span
+        return math.sqrt(lo * hi) if self.log else (lo + hi) / 2
+
+    def judge(self, guess: float) -> tuple[bool, str]:
+        """Whether `guess` is right, and the verdict (rich text)."""
+        said = f"You placed it at {self.shown(guess)}; it's {self.shown(self.answer)}."
+        if is_close(guess, self.answer, self.tolerance):
+            return True, f"<b>✓ Close:</b> {said} Here it is:"
+        return False, f"<b>✗ Not quite:</b> {said} {self.low if guess < self.answer else self.high} Here it is:"
+
+
+@dataclass(frozen=True)
 class Problem:
     """A kind of question on a page: `make(rng)` gives a fresh one. `key` is stable (progress is kept by it).
     `figure`: a figure of the page's notes (`fig:…`) that shows the situation, drawn above the question."""
