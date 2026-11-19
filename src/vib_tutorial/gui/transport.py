@@ -190,6 +190,10 @@ class TransportBar(QtWidgets.QFrame):
         self.clock = QtWidgets.QLabel()
         self.clock.setAccessibleName("Time")
         self.what = QtWidgets.QLabel()
+        self.hold = QtWidgets.QPushButton("Hold curves")  # the window connects these (MainWindow.hold_curves)
+        self.hold.setToolTip("<p>Keep the plots' curves in grey, to compare a change against (H).</p>")
+        self.unhold = QtWidgets.QPushButton("Clear held")
+        self.unhold.setToolTip("<p>Take the held curves off (Shift+H).</p>")
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         for w in (self.run, self.reset):
             row.addWidget(w)
@@ -198,6 +202,9 @@ class TransportBar(QtWidgets.QFrame):
         row.addWidget(self.speed)
         row.addSpacing(12)
         row.addWidget(self.clock)
+        row.addSpacing(12)
+        row.addWidget(self.hold)
+        row.addWidget(self.unhold)
         row.addStretch(1)
         row.addWidget(self.what)
         self.space = QtGui.QShortcut(QtGui.QKeySequence("Space"), self)  # where the page's own Start is hidden

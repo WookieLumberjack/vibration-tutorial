@@ -241,6 +241,8 @@ class MainWindow(QtWidgets.QMainWindow):
         size_label.setBuddy(self.size_combo)
         self.pages.setCornerWidget(corner, QtCore.Qt.Corner.TopRightCorner)
         self.run_bar = TransportBar()  # the motion's controls, in one place on every page (#316 B13)
+        self.run_bar.hold.clicked.connect(self.hold_curves)
+        self.run_bar.unhold.clicked.connect(self.clear_held)
         central = QtWidgets.QWidget()
         column = QtWidgets.QVBoxLayout(central)
         column.setContentsMargins(0, 0, 0, 0)
@@ -261,6 +263,8 @@ class MainWindow(QtWidgets.QMainWindow):
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F1"), self, self.open_theory_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+F2"), self, self.open_practice_window)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+R"), self, self.restore_defaults)
+        QtGui.QShortcut(QtGui.QKeySequence("H"), self, self.hold_curves)
+        QtGui.QShortcut(QtGui.QKeySequence("Shift+H"), self, self.clear_held)
         QtGui.QShortcut(QtGui.QKeySequence("F5"), self, self.step_present)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+PgDown"), self, self.next_page)
         QtGui.QShortcut(QtGui.QKeySequence("Ctrl+PgUp"), self, self.previous_page)
@@ -565,6 +569,18 @@ class MainWindow(QtWidgets.QMainWindow):
         box.setText(ABOUT_HTML.format(version=v, keys=links.keys_html()))
         box.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
         box.exec()
+
+    def hold_curves(self) -> None:
+        """Hold the curves on every plot the page showing shows, in grey, to compare a change against (H)."""
+        page = self.pages.currentWidget()
+        assert page is not None, "a page always shows"
+        plot_export.hold_showing(page)
+
+    def clear_held(self) -> None:
+        """Take the page's held curves off (Shift+H)."""
+        page = self.pages.currentWidget()
+        assert page is not None, "a page always shows"
+        plot_export.clear_all_held(page)
 
     def introduce_pages(self) -> None:
         """From now on, a page's first show (ever: kept in the settings, INTRODUCED) opens its Theory tab at the top,

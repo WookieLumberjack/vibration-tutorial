@@ -8,7 +8,8 @@ builders' canvases, where a right-click edits). A view's curves are its `PlotDat
 with data, in its plots' order; CSV has an x and a y column for each, named after the plot's axes and the
 curve's legend name, as the curves needn't share their x.
 
-*Hold these curves* copies every curve the view shows into a grey dashed one behind them (`hold`: a `Held`, a
+*Hold these curves* (or H, or the run bar's *Hold curves*, for every plot the page shows: `hold_showing`) copies
+every curve the view shows into a grey dashed one behind them (`hold`: a `Held`, a
 plain `PlotDataItem` the page doesn't know of, so it stays as the page redraws its own), to compare a change
 against: hold, change a control, see both. Holding again adds another; *Clear held curves* (`clear_held`)
 takes them all off, as does *Defaults* (`MainWindow.restore_defaults`). Held curves take the theme's grey when it
@@ -121,6 +122,19 @@ def hold(view: pg.GraphicsView) -> None:
             item.clear = KeepHeld(item)  # a page's redraw clearing the plot keeps them
             if isinstance(view, pg.PlotWidget):
                 view.clear = item.clear  # (a PlotWidget binds its plot's methods when built)
+
+
+def hold_showing(root: QtWidgets.QWidget) -> int:
+    """Hold the curves of every plot under `root` that shows (H, the run bar's *Hold curves*: #409 I-11); how many
+    views had curves to hold."""
+    views = [
+        v
+        for v in root.findChildren(pg.GraphicsView)
+        if v.property(MENU) and v.isVisible() and any(_live(item) for item in plots(v))
+    ]
+    for view in views:
+        hold(view)
+    return len(views)
 
 
 def clear_held(view: pg.GraphicsView) -> None:

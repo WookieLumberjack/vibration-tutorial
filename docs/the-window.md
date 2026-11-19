@@ -89,7 +89,8 @@ spreadsheet; **Save data as CSV…** writes them to a file, an x and a y column 
 the plot's axes and the curve's legend; **Save image as PNG…** saves the plot as it shows; **Show all**
 fits the plot to its data again after a zoom. **Hold these curves** keeps a grey dashed copy of what the plot
 shows behind it: change a control and compare the new curves with the held ones (hold again to add more).
-**Clear held curves** takes them off, as *Defaults* does. (The frame and rotor builders' canvases keep their
+**Clear held curves** takes them off, as *Defaults* does. **Hold curves** on the run bar (H) holds every
+plot the page shows at once, and **Clear held** (Shift+H) takes them all off. (The frame and rotor builders' canvases keep their
 own right-click, which edits them.)
 
 A line with a ◆ grip, or a dot that grows under the mouse, can be dragged: the drive's frequency on the
@@ -99,7 +100,7 @@ frequency in Energy methods' Holzer tab, the oscillator picked on the Shock spec
 Gyroscope's and 3D rigid body's component plots. The page's own box follows the drag, and the drag the box.
 
 The **run bar** along the foot of the window holds the motion's controls on every page: **Start** /
-**Pause**, **Reset**, the speed and the time. It drives whatever the page and tab showing can run (a page with
+**Pause**, **Reset**, the speed and the time, and **Hold curves** / **Clear held**. It drives whatever the page and tab showing can run (a page with
 nothing that plays in time says so). Space does the same.
 
 The Single oscillator draws the mass itself above its time plots, moving with the free vibration or the

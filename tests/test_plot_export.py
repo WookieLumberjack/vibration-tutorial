@@ -152,3 +152,26 @@ def test_held_curves_stay_as_the_page_redraws_and_defaults_clears_them(main_wind
     assert changed  # the trial moved a curve off its held copy
     w.restore_defaults()
     assert not any(plot_export.held(v) for v in views)
+
+
+def test_h_holds_every_plot_the_page_shows(main_window, app):
+    """H (and the run bar's Hold curves) holds the curves of every plot the page shows, not its hidden tabs';
+    Shift+H (Clear held) takes them off (#409 I-11)."""
+    import pyqtgraph as pg
+
+    w = main_window
+    w.show_page("sdof_page")
+    p = w.sdof_page
+    app.processEvents()
+    views = [v for v in p.findChildren(pg.GraphicsView) if v.property(plot_export.MENU)]
+    showing = [v for v in views if v.isVisible() and plot_export.curves(v)]
+    hidden = [v for v in views if not v.isVisible()]
+    assert showing and hidden
+    w.run_bar.hold.click()
+    assert all(plot_export.held(v) for v in showing) and not any(plot_export.held(v) for v in hidden)
+    w.run_bar.unhold.click()
+    assert not any(plot_export.held(v) for v in views)
+    w.hold_curves()  # H
+    assert all(plot_export.held(v) for v in showing)
+    w.clear_held()  # Shift+H
+    assert not any(plot_export.held(v) for v in views)
