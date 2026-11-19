@@ -11,7 +11,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from PySide6 import QtCore  # noqa: E402
 
-from vib_tutorial.core.practice import Prediction, Question, check, number, parse_number, rounded  # noqa: E402
+from vib_tutorial.core.practice import Placement, Prediction, Question, check, number, parse_number, rounded  # noqa: E402
 from vib_tutorial.gui.links import COURSE  # noqa: E402
 from vib_tutorial.gui.practice import pages, problems  # noqa: E402
 
@@ -363,7 +363,7 @@ def _trial_predictions():
         trials = sim_trials.TRIALS if attr == "sim_page" else getattr(links.page_module(attr), "TRIALS", ())
         for t in trials:
             p = getattr(t, "predict", None)
-            if p is not None:
+            if isinstance(p, Prediction):  # a Placement is guessed on a plot, not chosen
                 found[p.prompt] = p
     return list(found.values())
 
@@ -372,7 +372,7 @@ def test_the_right_prediction_isnt_where_the_buttons_give_it_away():
     """The trials' choices are shuffled as they show (#409 C-7: the right one was written last in 98 of 157), the
     same each time, and an ordered scale only reversed or not."""
     predictions = _trial_predictions()
-    assert len(predictions) >= 150
+    assert len(predictions) >= 145
     shown = [p.shown_order() for p in predictions]
     for p, order in zip(predictions, shown):
         assert sorted(order) == list(range(len(p.choices))) and order == p.shown_order()  # the same each time
@@ -396,7 +396,7 @@ def test_every_wrong_prediction_says_why():
             trials = sim_trials.TRIALS if attr == "sim_page" else getattr(links.page_module(attr), "TRIALS", ())
             for t in trials:
                 p = getattr(t, "predict", None)
-                if p is None:
+                if p is None or isinstance(p, Placement):  # a Placement has its own low and high reasons
                     continue
                 if p.why:
                     assert len(p.why) == len(p.choices) and not p.why[p.answer], t.name
@@ -408,3 +408,43 @@ def test_every_wrong_prediction_says_why():
         Prediction("?", ("a", "b"), 0, why=("right", "wrong"))  # the right one has no reason
     with pytest.raises(ValueError):
         Prediction("?", ("a", "b"), 0, why=("",))
+
+
+def test_a_placement_is_judged_by_where_the_guess_lands():
+    """A Placement (#409 I-6) is right within its tolerance, and a guess too low or too high gets its reason."""
+    p = Placement(
+        "How far?", plot="x_plot", answer=0.025, span=(0.0, 0.05), low="LOW", high="HIGH", scale=1e3, unit="mm"
+    )
+    assert p.start() == 0.025 and p.shown(0.0123) == "12.3 mm"
+    right, said = p.judge(0.027)
+    assert right and "27.0 mm" in said and "25.0 mm" in said
+    assert p.judge(0.01) == (False, p.judge(0.01)[1]) and "LOW" in p.judge(0.01)[1]
+    assert "HIGH" in p.judge(0.04)[1]
+    assert Placement("?", "p", 1.0, (0.1, 10.0), "l", "h", log=True).start() == pytest.approx(1.0)
+    with pytest.raises(ValueError):
+        Placement("?", "p", 2.0, (0.0, 1.0), "l", "h")  # the answer off the span
+    with pytest.raises(ValueError):
+        Placement("?", "p", 0.5, (0.0, 1.0), "", "h")  # a reason missing
+
+
+def test_the_placements_answers_are_the_pages_numbers():
+    """Each trial asked as a Placement has the answer its page works out (and its notes quote)."""
+    from vib_tutorial.gui import pendulum, sdof, transient
+    from vib_tutorial.view_models import isolation
+
+    def placement(trials, start: str) -> Placement:
+        p = next(t.predict for t in trials if isinstance(t.predict, Placement) and t.predict.prompt.startswith(start))
+        assert isinstance(p, Placement)
+        return p
+
+    assert placement(sdof.TRIALS, "1 N on").answer == pytest.approx((1.0 / 400.0) / (2 * 0.05))
+    zeta = 0.05
+    step = 2.5e-3 * (1 + math.exp(-zeta * math.pi / math.sqrt(1 - zeta**2)))
+    assert placement(transient.TRIALS, "1 N switched").answer == pytest.approx(step, rel=2e-3)
+    assert placement(pendulum.TRIALS, "A 1 kg bob").answer == pytest.approx(2 * math.pi * math.sqrt(1 / 9.81), rel=2e-3)
+    assert placement(pendulum.TRIALS, "The 1 m pendulum").answer == pytest.approx(
+        2 * math.pi * math.sqrt(1 / 1.62), rel=2e-3
+    )
+    r = 25.0 / (math.sqrt(9.81 / 0.3e-3) / (2 * math.pi))  # 1500 rpm on mounts sagging 0.3 mm
+    t = math.sqrt(1 + (2 * zeta * r) ** 2) / math.sqrt((1 - r * r) ** 2 + (2 * zeta * r) ** 2)
+    assert placement(isolation.TRIALS, "The same machine").answer == pytest.approx(t, rel=0.01)

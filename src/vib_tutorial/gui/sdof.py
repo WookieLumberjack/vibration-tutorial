@@ -18,7 +18,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.modal import log_decrement
-from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..core.practice import Placement, Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import (
     TWO_PI,
     Oscillator,
@@ -79,7 +79,7 @@ class SdofTrial:
     tune: bool = False  # drive at f_n
     tab: int = TAB_FRF
     body: int = BODY_FREE  # the mass moves with the free vibration or the driven response
-    predict: Prediction | None = None  # asked before it runs (Things to try)
+    predict: Prediction | Placement | None = None  # asked before it runs (Things to try)
 
 
 TRIALS = (
@@ -142,18 +142,18 @@ TRIALS = (
         tune=True,
         tab=TAB_FRF,
         body=BODY_DRIVEN,
-        predict=Prediction(
-            "1 N on a 400 N/m spring is 2.5 mm, pushed slowly. Driven at f<sub>n</sub> with ζ = 0.05, how big does "
-            "the steady swing grow?",
-            ("2.5 mm", "5 mm", "25 mm", "250 mm"),
-            2,
-            ordered=True,
-            why=(
-                "That's the force pushed slowly. At f<sub>n</sub> the spring's force and the mass's inertia cancel, and only the damper holds it back.",
-                'Twice static is what a step gives. Driven at f<sub>n</sub> the swing grows until the damper takes out what the force puts in: 1/2ζ = 10 times static.',
-                '',
-                "That's a factor of 100: the amplification at resonance is 1/2ζ = 10, not 1/ζ².",
-            ),
+        predict=Placement(
+            "1 N on a 400 N/m spring is 2.5 mm, pushed slowly. Driven at f<sub>n</sub> with ζ = 0.05, how big does the steady "
+            "swing grow? Put the line at its peak.",
+            plot="forced_plot",
+            answer=0.025,
+            span=(0.0, 0.05),
+            low="Short of 25 mm the force still puts in more each cycle than the damper takes out, so the swing "
+            "grows on, to (F/k)/2ζ: ten times static.",
+            high="The damper's loss grows as the swing squared, the force's input only as the swing: they balance at "
+            "(F/k)/2ζ = 25 mm.",
+            scale=1000.0,
+            unit="mm",
         ),
     ),
     SdofTrial(

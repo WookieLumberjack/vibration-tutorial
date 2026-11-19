@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ..core.practice import Placement
 from .lesson import TrialBox, TrialCombo
 
 SCALE = 1.5  # the text's size over the app's
@@ -102,12 +103,16 @@ class TrialOverlay(QtWidgets.QFrame):
             prediction = box.predictions[box.asking]
             assert prediction is not None, "asking only a trial with a prediction"
             self.body.setText(box.question.text())
-            for k in prediction.shown_order():  # as the box shows them
-                text = prediction.choices[k]
-                button = QtWidgets.QPushButton(text)
-                button.setProperty("choice", k)
-                button.clicked.connect(self._on_choice)
+            if isinstance(prediction, Placement):  # guessed on the plot: the box's button, larger
+                button = QtWidgets.QPushButton(box.place.text())
+                button.clicked.connect(self._on_place)
                 self.choices.addWidget(button)
+            else:
+                for k in prediction.shown_order():  # as the box shows them
+                    button = QtWidgets.QPushButton(prediction.choices[k])
+                    button.setProperty("choice", k)
+                    button.clicked.connect(self._on_choice)
+                    self.choices.addWidget(button)
             skip = QtWidgets.QPushButton("Just run it")
             skip.setFlat(True)
             skip.clicked.connect(self._on_skip)
@@ -136,6 +141,9 @@ class TrialOverlay(QtWidgets.QFrame):
 
     def _on_skip(self) -> None:
         self._answered(lambda box: box.skip.click())
+
+    def _on_place(self) -> None:
+        self._answered(lambda box: box.place.click())
 
     def _answered(self, answer) -> None:
         box = self.box
