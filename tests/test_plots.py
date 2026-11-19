@@ -47,3 +47,30 @@ def test_a_steady_range_moves_only_when_it_has_to(app):
     assert vb.viewRange()[0] == pytest.approx([3.0 - 1.15, 3.0 + 1.15])
     x.reset()
     assert x.shown is None
+
+
+def test_no_si_prefix_on_percent_degrees_or_decibels(app):
+    """An axis in %, °, rpm or dB keeps its numbers: no "m%" or "k°" (`plot_patches._set_label`, #409 U-18).
+    Metres still take one, and an axis relabelled from % to metres takes one again."""
+    from vib_tutorial.gui import plot_patches
+
+    plot_patches.install()  # as make_app does
+    plots = []  # kept till the test's end: one freed with its items in their scene segfaults
+    for units, small in (("%", 0.04), ("°", 0.004), ("dB", 0.003), ("dB re 1 µPa", 0.003), ("rpm", 0.002)):
+        p = plot("Of 1X", units, "Harmonic", None)
+        plots.append(p)
+        p.plot([0, 1], [0, small])
+        p.getPlotItem().vb.autoRange()
+        axis = p.getAxis("left")
+        assert axis.labelString().count(units) == 1 and f"m{units}" not in axis.labelString(), axis.labelString()
+        assert axis.autoSIPrefixScale == 1.0, units
+    p = plot("Lift", "m", "Time", "s")
+    p.plot([0, 1], [0, 0.004])
+    p.getPlotItem().vb.autoRange()
+    axis = p.getAxis("left")
+    assert "(mm)" in axis.labelString()
+    axis.setLabel("Share", units="%")
+    assert "(%)" in axis.labelString() and axis.autoSIPrefixScale == 1.0
+    axis.setLabel("Lift", units="m")
+    p.getPlotItem().vb.autoRange()
+    assert "(mm)" in axis.labelString()
