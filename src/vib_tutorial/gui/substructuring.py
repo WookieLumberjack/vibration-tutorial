@@ -43,7 +43,7 @@ from .axes import log_axes
 from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
 from .cms_recovery import BackExpansionView
 from .cms_time import CMSTimeView
-from .layouts import ColumnScroll, form_layout, header_tip
+from .layouts import ColumnScroll, FitColumns, form_layout, header_tip
 from .lesson import TrialBox
 from .links import page_link
 from .notes_view import NotesBrowser
@@ -193,7 +193,7 @@ class ComparisonTable(QtWidgets.QTableWidget):
         self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self)
 
     def set_method(self, method: str) -> None:
         fill = {"m": METHOD_SHORT[method], "name": METHOD_NAMES[method], "bound": self.BOUNDS[method]}
@@ -284,7 +284,7 @@ class ComponentTable(QtWidgets.QTableWidget):
             "Click a row to draw this component mode over the coupled mode it becomes "
             "(Modes & FRF tab). Click it again to clear."
         )
-        self.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self)
 
     def mousePressEvent(self, event) -> None:
         # Clicking the selected row again clears the overlay.
@@ -645,7 +645,7 @@ class MethodComparison(QtWidgets.QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self.table)
         self.plot = pg.PlotWidget(axisItems=log_axes())
         self.plot.setLogMode(y=True)
         self.plot.showGrid(x=True, y=True, alpha=0.3)

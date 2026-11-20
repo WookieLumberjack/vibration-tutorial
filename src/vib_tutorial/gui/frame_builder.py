@@ -62,7 +62,7 @@ from .frame_builder_trials import (
 from .frame_builder_trials import PROBLEMS as PROBLEMS
 from .frame_builder_trials import TRIALS as TRIALS
 from .frame_loop import FRAME_MS, SWING_MS, FrameLoop
-from .layouts import FlowLayout, group
+from .layouts import FitColumns, FlowLayout, group
 from .lesson import (
     Form,
     RunButton,
@@ -516,7 +516,7 @@ class FramePage(QtWidgets.QWidget):
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self.table)
         self.table.itemSelectionChanged.connect(self._on_row)
         self.readout = readout_label()
 
@@ -552,7 +552,7 @@ class FramePage(QtWidgets.QWidget):
         self.forms_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.forms_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.forms_table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.forms_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self.forms_table)
         self.forms_table.itemSelectionChanged.connect(self._on_forms_row)
         self.argand = plot("Im ψ", None, "Re ψ", None, height=200)
         self.argand.setAspectLocked(True)

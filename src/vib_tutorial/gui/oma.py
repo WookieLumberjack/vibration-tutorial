@@ -55,7 +55,7 @@ from ..core.oma import (
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from . import oma_figures
-from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
+from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import TrialBox, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
@@ -765,7 +765,7 @@ class OmaPage(QtWidgets.QWidget):
         self.methods.verticalHeader().setVisible(False)
         self.methods.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.methods.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.methods.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self.methods)
         self.methods.setToolTip(
             "<p>Each exact mode as each method finds it: f<sub>n</sub> and ζ, coloured by the "
             "damping's error; hover for the frequency's error and the MAC.</p>"

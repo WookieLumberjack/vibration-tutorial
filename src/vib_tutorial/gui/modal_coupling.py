@@ -41,7 +41,7 @@ from . import coalesce, weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
-from .layouts import ColumnScroll, form_layout, header_tip
+from .layouts import ColumnScroll, FitColumns, form_layout, header_tip
 from .lesson import TrialBox
 from .links import page_link
 from .mode_swing import ModeSwing, SwingLoop
@@ -435,7 +435,7 @@ def _table(headers: list[str], tips: list[str], selectable: bool = False) -> QtW
         table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
     else:
         table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-    table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+    FitColumns(table)
     return table
 
 
@@ -583,7 +583,7 @@ class SubsystemTable(QtWidgets.QTableWidget):
         self.verticalHeader().setVisible(False)
         self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self)
         self.rows: list[tuple[str, int]] = []  # (subsystem, 0-based mode) of each row
 
     def set_subsystems(self, A: Subsystem, B: Subsystem, mode_a: int, mode_b: int, a_mass: str) -> None:

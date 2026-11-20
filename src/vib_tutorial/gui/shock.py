@@ -50,7 +50,7 @@ from ..view_models.text import fmt
 from . import maths, shock_figures, weak
 from .axes import log_axes
 from .drag import DragLine
-from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
+from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import TrialBox
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
@@ -809,7 +809,7 @@ class ShockPage(QtWidgets.QWidget):
         self.chain_table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
         self.chain_table.setColumnCount(4)
         self.chain_table.setHorizontalHeaderLabels(["Exact"] + [r.value for r in Rule])
-        self.chain_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self.chain_table)
         self.chain_table.setMinimumHeight(90)
         self.chain_note = QtWidgets.QLabel()
         self.chain_note.setWordWrap(True)
