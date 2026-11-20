@@ -187,17 +187,47 @@ class OrbitPlots(pg.GraphicsLayoutWidget):
             self.heavy.setData([x0, x0 + r * math.cos(heavy_angle)], [y0, y0 + r * math.sin(heavy_angle)])
 
 
+class SparseAxis(pg.AxisItem):
+    """An axis with only as many labels as its length has room for, at 1, 2 or 5 of a decade: on a plot ~40 px tall
+    (the strip chart's at 1280 × 800) pyqtgraph's density stacked "1584.6/1584.4/…" or "1500/1000/500/0" (#409 U-10).
+    A label takes `LABEL` px and the labels fill at most `FILL` of the axis (pyqtgraph drops a level that fills more);
+    where no step fits, the odd multiples of one (−1 and 1 µm, not −2, 0 and 2). `tickSpacing` gets the range in the
+    axis's shown units (after its SI prefix)."""
+
+    LABEL = 14.0  # px, a label's height and a little
+    FILL = 0.6
+
+    def tickSpacing(self, minVal: float, maxVal: float, size: float) -> list[tuple[float, float]]:
+        span = maxVal - minVal
+        if not (math.isfinite(span) and span > 0):
+            return super().tickSpacing(minVal, maxVal, size)
+        room = max(2, int(self.FILL * size / self.LABEL))
+
+        def count(spacing: float, offset: float) -> int:
+            return math.floor((maxVal - offset) / spacing) - math.ceil((minVal - offset) / spacing) + 1
+
+        decade = 10.0 ** math.floor(math.log10(span / room))
+        steps = [m * decade for m in (1, 2, 5, 10, 20, 50)]
+        for major in steps:
+            if 2 <= count(major, 0.0) <= room:
+                return [(major, 0.0), (major / 2, 0.0)]
+        for major in steps:
+            if 2 <= count(2 * major, major) <= room:
+                return [(2 * major, major), (major / 2, 0.0)]
+        return super().tickSpacing(minVal, maxVal, size)
+
+
 class TimePlots(pg.GraphicsLayoutWidget):
     """x and y at one station against time, and the speed."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.x_plot = self.addPlot(row=0, col=0)
+        self.x_plot = self.addPlot(row=0, col=0, axisItems={"left": SparseAxis("left")})
         # Short labels and sparse ticks: at 1280 × 800 the plots are ~60 px tall, where "Displacement (nm)" ran
         # into the speed's label and the ticks stacked.
         self.x_plot.setLabel("left", "x, y", units="m")
         add_legend(self.x_plot, offset=(-5, 5), colCount=2)
-        self.w_plot = self.addPlot(row=1, col=0)
+        self.w_plot = self.addPlot(row=1, col=0, axisItems={"left": SparseAxis("left")})
         self.w_plot.setLabel("left", "rpm")
         self.w_plot.getAxis("left").enableAutoSIPrefix(False)
         self.w_plot.setLabel("bottom", "Time", units="s")
@@ -209,11 +239,12 @@ class TimePlots(pg.GraphicsLayoutWidget):
             decimate(p)
             p.setMouseEnabled(x=False, y=False)
             p.hideButtons()
-            p.getAxis("left").setTickDensity(0.5)
         self.x_curve = self.x_plot.plot(name="x (horizontal)")
         self.y_curve = self.x_plot.plot(name="y (vertical)")
         self.w_curve = self.w_plot.plot()
         self.crit_lines: list[pg.InfiniteLine] = []
+        self._window = 3.0  # s, the window last drawn
+        self._recorded = False  # whether the curves hold anything
         self.apply_theme()
 
     def apply_theme(self) -> None:
@@ -231,18 +262,23 @@ class TimePlots(pg.GraphicsLayoutWidget):
         for line in self.crit_lines:
             self.w_plot.addItem(line)
         self.apply_theme()
+        if not self._recorded:  # nothing recorded yet: the speed's range up past the new first critical
+            self.update_curves(np.empty(0), np.empty((0, 2)), np.empty(0), self._window)
 
     def update_curves(self, t: np.ndarray, xy: np.ndarray, rpm: np.ndarray, window: float) -> None:
+        """The station's x and y and the speed over the last `window` seconds. With nothing recorded (at rest,
+        before Start) the axes still show the run's ranges: 0 to `window` s, ±`MIN_PEAK` and the speed up past
+        the first critical, not pyqtgraph's 0 to 1 (#409 U-10: the rpm ticks stacked round a lone critical)."""
         self.x_curve.setData(t, xy[:, 0])
         self.y_curve.setData(t, xy[:, 1])
         self.w_curve.setData(t, rpm)
-        if t.size:
-            x0 = max(t[-1] - window, 0.0) if t[-1] > window else 0.0
-            self.x_plot.setXRange(x0, x0 + window, padding=0)
-            span = max(float(np.abs(xy).max()), MIN_PEAK)
-            self.x_plot.setYRange(-span, span, padding=0.05)
-            top = max(float(rpm.max()), *(line.value() for line in self.crit_lines[:1]), 100.0)
-            self.w_plot.setYRange(0.0, 1.1 * top, padding=0)
+        self._window, self._recorded = window, bool(t.size)
+        x0 = max(t[-1] - window, 0.0) if t.size and t[-1] > window else 0.0
+        self.x_plot.setXRange(x0, x0 + window, padding=0)
+        span = max(float(np.abs(xy).max()) if xy.size else 0.0, MIN_PEAK)
+        self.x_plot.setYRange(-span, span, padding=0.05)
+        top = max(float(rpm.max()) if rpm.size else 0.0, *(line.value() for line in self.crit_lines[:1]), 100.0)
+        self.w_plot.setYRange(0.0, 1.1 * top, padding=0)
 
 
 class CampbellPlot(pg.GraphicsLayoutWidget):
