@@ -187,3 +187,29 @@ def test_the_modal_tests_measurement_runs_from_the_bar(main_window):
     done = page.acq
     w.run_bar.reset.click()  # Measure again
     assert page.acq is not done
+
+
+def test_the_bar_says_when_the_page_is_updating(main_window):
+    """A page's slow work (a `Recompute`) busy past `BUSY_MS`: the bar says "Updating…", on a page with nothing to
+    run too, and not on another page (#409 U-24)."""
+    import time
+
+    from vib_tutorial.gui import recompute
+
+    w = main_window
+    w.show_page("random_page")
+    page = w.random_page
+    _settle(w)
+    assert w.run_bar.source is None and not w.run_bar.updating.isVisible()
+    job = recompute.Recompute(lambda _result: None, page, delay_ms=0)
+    job.request(lambda: time.sleep(0.4))
+    time.sleep(recompute.BUSY_MS / 1000 + 0.02)
+    _settle(w)
+    assert w.run_bar.updating.isVisible()
+    w.show_page("sim_page")
+    _settle(w)
+    assert not w.run_bar.updating.isVisible()  # another page's work
+    w.show_page("random_page")
+    job.wait()
+    _settle(w)
+    assert not w.run_bar.updating.isVisible()

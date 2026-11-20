@@ -337,7 +337,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _follow_transport(self, *_) -> None:
         """The run bar drives what's runnable on the page and tab showing."""
-        self.run_bar.follow(transport_of(self.pages.currentWidget()))
+        page = self.pages.currentWidget()
+        self.run_bar.follow(transport_of(page), page)
 
     def _close_notes(self, name: str, page: QtWidgets.QWidget) -> None:
         """The page's Theory tab ends with a link on to the next page."""
