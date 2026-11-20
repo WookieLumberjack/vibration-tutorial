@@ -32,7 +32,7 @@ from ..core import (
     transmissibility,
 )
 from .axes import log_axes
-from .layouts import header_tip
+from .layouts import FitColumns, header_tip
 from .modes import Method, ModeEntry, time_constant_text
 from .style import colors
 from .theming import add_legend
@@ -335,7 +335,7 @@ class ModalTable(QtWidgets.QTableWidget):
         self.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self)
         self.method: Method | None = None
 
     def set_result(
@@ -588,7 +588,7 @@ class PhasorPanel(QtWidgets.QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
-        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self.table)
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.plot)

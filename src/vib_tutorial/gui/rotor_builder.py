@@ -59,7 +59,7 @@ from ..core.rotor_builder_sweep import N_BRANCHES, Sweep, lag, orbit, sweep, unb
 from . import rotor_builder_figures, settle_plots, weak
 from .frame_builder import matrix_html
 from .frame_loop import SWING_MS, FrameLoop
-from .layouts import FlowLayout, group
+from .layouts import FitColumns, FlowLayout, group
 from .lesson import (
     TAB_ROOM,
     Form,
@@ -561,7 +561,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self.table)
         self.table.itemSelectionChanged.connect(self._on_row)
         self.readout = readout_label()
 

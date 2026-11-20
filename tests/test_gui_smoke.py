@@ -5405,6 +5405,74 @@ def test_the_frame_builders_canvas_keeps_the_room_at_1280_px(main_window):
         assert header.sectionSize(c) >= header.fontMetrics().horizontalAdvance(text) + 8, text
 
 
+def _columns_cut_short(table) -> list[str]:
+    """The shown columns of `table` narrower than their widest cell or header (Qt cuts them short with …)."""
+    header = table.horizontalHeader()
+    return [
+        table.horizontalHeaderItem(c).text()
+        for c in range(header.count())
+        if not header.isSectionHidden(c)
+        and header.sectionSize(c) + 1 < max(table.sizeHintForColumn(c), header.sectionSizeHint(c))
+    ]
+
+
+def test_fit_columns_gives_each_its_contents_and_shares_the_rest(app):
+    """`layouts.FitColumns`: Qt's `Stretch` split the width evenly, cutting the wide cells short (#409 U-12)."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui.layouts import FitColumns
+
+    table = QtWidgets.QTableWidget(2, 4)
+    table.setHorizontalHeaderLabels(["Mode", "error", "not shown", "MAC"])
+    for r in range(2):
+        for c, text in enumerate(("1", "not in model", "x", "0.991")):
+            table.setItem(r, c, QtWidgets.QTableWidgetItem(text))
+    table.setColumnHidden(2, True)
+    FitColumns(table)
+    table.resize(400, 150)
+    table.show()
+    for _ in range(3):
+        QtWidgets.QApplication.processEvents()
+    header = table.horizontalHeader()
+    shown = [header.sectionSize(c) for c in (0, 1, 3)]
+    assert not _columns_cut_short(table)
+    assert abs(sum(shown) - table.viewport().width()) <= 1  # the rest shared out: no gap at the right
+    assert shown[1] > shown[0]  # "not in model" got its room
+    table.resize(150, 150)  # too narrow for them all: they keep their contents' widths and the table scrolls
+    for _ in range(3):
+        QtWidgets.QApplication.processEvents()
+    assert not _columns_cut_short(table) and table.horizontalScrollBar().maximum() > 0
+    table.setItem(0, 0, QtWidgets.QTableWidgetItem("a much longer cell"))  # new cells: fitted again
+    for _ in range(3):
+        QtWidgets.QApplication.processEvents()
+    assert not _columns_cut_short(table)
+    table.close()
+
+
+def test_no_table_splits_its_width_evenly():
+    """Every table's columns are a `FitColumns`, not Qt's `Stretch` (#409 U-12)."""
+    import pathlib
+
+    gui = pathlib.Path(__file__).parents[1] / "src" / "vib_tutorial" / "gui"
+    assert [p.name for p in sorted(gui.glob("*.py")) if "ResizeMode.Stretch" in p.read_text()] == []
+
+
+def test_the_oma_and_cms_tables_show_their_cells_whole_at_1280_px(main_window):
+    """OMA's results (shared with the modal test and model updating) cut "+0.06%" to "+0.0…", and CMS's comparison
+    cut "not in model" (#409 U-12)."""
+    from PySide6 import QtWidgets
+
+    w = main_window
+    w.resize(1280, 800)
+    for name, table in (("oma_page", lambda p: p.results.table), ("cms_page", lambda p: p.table)):
+        w.show_page(name)
+        for _ in range(5):
+            QtWidgets.QApplication.processEvents()
+        shown = table(getattr(w, name))
+        assert shown.isVisible() and shown.rowCount() > 0, name
+        assert not _columns_cut_short(shown), name
+
+
 def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window):
     """At 1280×800 each page's tab bars show every tab's name: a page whose tabs need it gives its right pane
     `lesson.TAB_ROOM`, and `lesson.TabRoom` widens it further where the font is wider (macOS's, Ubuntu's). And no

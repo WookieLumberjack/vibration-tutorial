@@ -198,6 +198,51 @@ def header_tip(table: QtWidgets.QTableWidget, column: int, tip: str) -> None:
     item.setToolTip(tip)
 
 
+class FitColumns(QtCore.QObject):
+    """A table's columns each as wide as its widest cell or header, with what's left of the table's width shared
+    out evenly: Qt's `Stretch` splits the width evenly whatever the columns hold, so "Mode" got as much as
+    "+0.09%" and the wide cells were cut short with … at 1280 px (#409 U-12). Fitted again when the cells or the
+    table's width change; where they don't fit, the table scrolls sideways rather than cut them."""
+
+    def __init__(self, table: QtWidgets.QTableWidget) -> None:
+        super().__init__(table)
+        self._table = table
+        self._pending = False
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
+        header.setStretchLastSection(False)
+        model = table.model()
+        for signal in (model.dataChanged, model.rowsInserted, model.rowsRemoved, model.headerDataChanged):
+            signal.connect(self._schedule)
+        viewport = table.viewport()
+        assert viewport is not None, "a table's viewport"
+        viewport.installEventFilter(self)
+
+    def _schedule(self, *_args: object) -> None:
+        if not self._pending:  # once, after a whole table's cells have been set
+            self._pending = True
+            QtCore.QTimer.singleShot(0, self, self.fit)
+
+    def eventFilter(self, watched: QtCore.QObject, event: QtCore.QEvent) -> bool:
+        if event.type() == QtCore.QEvent.Type.Resize:
+            self._schedule()
+        return False
+
+    def fit(self) -> None:
+        self._pending = False
+        table = self._table
+        header = table.horizontalHeader()
+        shown = [c for c in range(header.count()) if not header.isSectionHidden(c)]
+        if not shown:
+            return
+        need = [max(table.sizeHintForColumn(c), header.sectionSizeHint(c)) for c in shown]
+        viewport = table.viewport()
+        slack = (viewport.width() if viewport is not None else 0) - sum(need)
+        share, rest = divmod(max(slack, 0), len(shown))
+        for k, (c, width) in enumerate(zip(shown, need)):
+            header.resizeSection(c, width + share + (rest if k == len(shown) - 1 else 0))
+
+
 def form_row(form: QtWidgets.QFormLayout, text: str, box: QtWidgets.QWidget, tip: str) -> QtWidgets.QLabel:
     """A form's row: `text`'s label and `box`, both with the tooltip `tip`, its controls named after the label.
     Returns the label (to hide with its row)."""

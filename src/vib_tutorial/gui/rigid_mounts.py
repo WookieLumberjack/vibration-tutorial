@@ -42,7 +42,7 @@ from ..core.rigid_mounts import (
 from ..view_models.text import fixed
 from . import coalesce, mounts_figures
 from .frame_loop import SWING_MS, FrameLoop
-from .layouts import form_layout
+from .layouts import FitColumns, form_layout
 from .lesson import (
     Dot,
     Form,
@@ -963,7 +963,7 @@ class MountsPage(QtWidgets.QWidget):
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
-        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        FitColumns(self.table)
         self.table.itemSelectionChanged.connect(self._on_row)
         self.readout = readout_label()
 
