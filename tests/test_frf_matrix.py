@@ -22,17 +22,21 @@ def test_the_build_up_sums_the_first_terms_and_steps_to_all(main_window):
     assert page.build_count.text() == "a pick" and page.build.value() == 2
 
     page.build_play.click()  # from one term, a step at a time
-    assert page.build_timer.isActive() and page.build.value() == 1 and page.build_play.text() == "Stop"
+    assert page.build_timer.isActive() and page.build.value() == 1 and page.build_play.text() == "Pause"
     for r in range(2, n + 1):
         page._build_step()
         assert page.build.value() == r and page.selected_terms().sum() == r
-    assert not page.build_timer.isActive() and page.build_play.text() == "Build H mode by mode"
+    assert not page.build_timer.isActive() and page.build_play.text() == "Start"  # done: Start builds it again
     j, k = page.output, sorted(page.inputs)[0]
     assert np.allclose(page.term_H[:, :, j, k].sum(axis=0), page.H[:, j, k], rtol=1e-6, atol=1e-12)
 
     page.build_play.click()
-    w.pages.setCurrentWidget(w.sim_page)  # hidden: it stops
-    assert not page.build_timer.isActive()
+    page._build_step()
+    w.pages.setCurrentWidget(w.sim_page)  # hidden: it holds where it was
+    assert not page.build_timer.isActive() and page.build_play.text() == "Resume" and page.build.value() == 2
+    w.pages.setCurrentWidget(page)
+    page.build_reset.click()  # H whole again, at rest
+    assert page.build.value() == n and page.build_play.text() == "Start"
 
 
 def test_a_new_n_keeps_the_grids_shared_cells_and_draws_them_all(main_window):

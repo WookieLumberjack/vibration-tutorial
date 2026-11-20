@@ -28,12 +28,13 @@ from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analys
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from . import coalesce, frf_figures, weak
 from .layouts import form_layout
-from .lesson import TrialBox, three_panes, trials_html
+from .lesson import RunButton, TrialBox, three_panes, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .plots import frequency_grid
 from .style import MAX_DOF, colors
 from .theming import add_legend, mute
+from .transport import Transport
 
 # Colours: the full solution in colors.strong; the sum of the modal terms, the
 # selected cells and the worst band in colors.force.
@@ -44,8 +45,8 @@ WORST_FRACTION = 0.5  # the shaded band is where the difference is at least this
 BUILD_MS = 900  # each step of the build-up
 BUILD_TIP = (
     "<p>Sum the modal terms from the first: the slider ticks the first ones and leaves the rest out, and "
-    "<i>Build H mode by mode</i> steps it from one term to all of them, so each mode's term can be seen "
-    "adding its peak, and the dips appearing where neighbouring terms cancel.</p>"
+    "<i>Start</i> on the run bar (Build H, Space) steps it from one term to all of them, so each mode's term can "
+    "be seen adding its peak, and the dips appearing where neighbouring terms cancel. Reset sums them all.</p>"
 )
 
 
@@ -917,11 +918,20 @@ class FrfMatrixPage(QtWidgets.QWidget):
         build.addWidget(self.build, 1)
         build.addWidget(self.build_count)
         mv.addLayout(build)
-        self.build_play = QtWidgets.QPushButton("Build H mode by mode")
+        # Built mode by mode from the run bar (#409 U-16: it ran while the bar said nothing did), which stands in
+        # for these two and hides them.
+        self.build_play = RunButton()
         self.build_play.setToolTip(BUILD_TIP)
-        self.build_play.clicked.connect(self._on_build_play)
-        mv.addWidget(self.build_play)
+        self.build_play.toggled.connect(self._on_build_play)
+        self.build_reset = QtWidgets.QPushButton("Reset")
+        self.build_reset.setToolTip(BUILD_TIP)
+        self.build_reset.clicked.connect(self._on_build_reset)
+        build_run = QtWidgets.QHBoxLayout()
+        build_run.addWidget(self.build_play)
+        build_run.addWidget(self.build_reset)
+        mv.addLayout(build_run)
         self.build_timer = QtCore.QTimer(self)
+        self._build_paused = False  # paused mid-build: Resume carries on from the slider, Start from one term
         self.build_timer.setInterval(BUILD_MS)
         self.build_timer.timeout.connect(self._build_step)
         self.show_terms = QtWidgets.QCheckBox("Draw each mode's term in the grid too")
@@ -1104,13 +1114,25 @@ class FrfMatrixPage(QtWidgets.QWidget):
             c.blockSignals(False)
         self._on_mode_toggled()
 
-    def _on_build_play(self) -> None:
-        if self.build_timer.isActive():
-            self._stop_build()
+    def transport(self) -> Transport:
+        """The run bar builds H mode by mode, whichever tab shows."""
+        return Transport(self.build_play, self.build_reset, label="Build H")
+
+    def _on_build_play(self, on: bool) -> None:
+        """Start (from one term), Pause or Resume the build."""
+        if not on:
+            self.build_timer.stop()
+            self._build_paused = True
             return
-        self.build.setValue(1)
-        self.build_play.setText("Stop")
+        if not self._build_paused or self.build.value() >= self.build.maximum():
+            self.build.setValue(1)
+        self._build_paused = False
         self.build_timer.start()
+
+    def _on_build_reset(self) -> None:
+        """Back at rest with every term summed: H whole."""
+        self._stop_build()
+        self.build.setValue(self.build.maximum())
 
     def _build_step(self) -> None:
         if self.build.value() >= self.build.maximum():
@@ -1121,11 +1143,15 @@ class FrfMatrixPage(QtWidgets.QWidget):
             self._stop_build()
 
     def _stop_build(self) -> None:
+        """Back at Start (a build that's run to the end, a new trial)."""
         self.build_timer.stop()
-        self.build_play.setText("Build H mode by mode")
+        self._build_paused = False
+        self.build_play.rest()
 
     def hideEvent(self, event) -> None:
-        self._stop_build()
+        if self.build_timer.isActive():  # held where it is: Resume carries on
+            self._on_build_play(False)
+            self.build_play.set_running(False)
         super().hideEvent(event)
 
     def _check_all(self, on: bool) -> None:

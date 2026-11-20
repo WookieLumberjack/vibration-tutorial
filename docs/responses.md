@@ -60,7 +60,7 @@ A random stress of one or two resonant peaks: a record synthesized from its PSD 
 Basquin's S–N curve and Miner's sum, against the spectral estimates from its moments, the narrow-band
 (Rayleigh) formula and Dirlik's. Damage grows as the b-th power of the stress, and a short record's
 estimate scatters. The *Rainflow* tab steps the three-point count through the record's first
-reversals (Step, Back, Play), the stack ringed and each cycle drawn as it's counted.
+reversals (Step, Back, and Start on the run bar), the stack ringed and each cycle drawn as it's counted.
 
 ![Fatigue page: a stress of two modes (σ = 22.4 MPa, α₂ = 0.46); over 600 s rainflow counts 9057 cycles and a life of 8.29 days, the narrow-band formula 5.09 days (1.63 times the damage) and Dirlik 9.02 days](images/fatigue.png)
 

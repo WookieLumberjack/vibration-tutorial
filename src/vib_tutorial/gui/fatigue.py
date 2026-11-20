@@ -2,7 +2,8 @@
 
 Left: the stress PSD (one or two resonant peaks), the S–N curve and the record. Centre: the PSD and a stretch of
 the record with the reversals rainflow counts. Right: the count a step at a time over the record's first
-`RF_SHOW` reversals (`core.fatigue.rainflow_steps`; Step, Back, Play on a timer that stops when the page hides),
+`RF_SHOW` reversals (`core.fatigue.rainflow_steps`; Step, Back, and Start on the run bar while the tab shows, on a
+timer that stops when the page hides),
 the range distributions (the record's rainflow histogram,
 Rayleigh's and Dirlik's), where the damage comes from, the S–N curve, and the Theory. The page has its own model
 (core/fatigue.py).
@@ -38,6 +39,7 @@ from . import coalesce, fatigue_figures, settle_plots
 from .layouts import FlowLayout
 from .lesson import (
     Form,
+    RunButton,
     TrialBox,
     column,
     connect_all,
@@ -53,6 +55,7 @@ from .lesson import (
 from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
+from .transport import Transport
 
 TAB_RAINFLOW, TAB_RANGES, TAB_DAMAGE, TAB_SN = range(4)
 RF_SHOW = 20  # the record's first reversals, counted a step at a time
@@ -543,16 +546,17 @@ class FatiguePage(QtWidgets.QWidget):
             self.rf_plot.addItem(item)
         self.rf_back = QtWidgets.QPushButton("◀ Back")
         self.rf_step = QtWidgets.QPushButton("Step ▶")
-        self.rf_play = QtWidgets.QPushButton("Play")
+        self.rf_play = RunButton()  # the run bar's Start while the tab shows (#409 U-16)
+        self.rf_play.toggled.connect(self._rf_run)
         self.rf_reset = QtWidgets.QPushButton("Start over")
         for button, slot in (
             (self.rf_back, self._rf_back),
             (self.rf_step, self._rf_forward),
-            (self.rf_play, self._rf_toggle),
             (self.rf_reset, self._rf_start_over),
         ):
             button.setToolTip(RF_TIP)
             button.clicked.connect(slot)
+        self.rf_play.setToolTip(RF_TIP)
         rf_bar = QtWidgets.QWidget()
         bar = FlowLayout(rf_bar)
         bar.setContentsMargins(0, 0, 0, 0)
@@ -663,7 +667,7 @@ class FatiguePage(QtWidgets.QWidget):
     # ------------------------------------------------------------- rainflow, a step at a time
     def _rf_load(self) -> None:
         """The record's first reversals, counted from the start."""
-        self._rf_stop()
+        self._rf_stop(rest=True)
         self.rf_p = reversals(self.rec.x)[:RF_SHOW] if self.rec is not None else np.zeros(0)
         self.rf_steps = rainflow_steps(self.rf_p)
         self.rf_k = 0
@@ -680,27 +684,37 @@ class FatiguePage(QtWidgets.QWidget):
         self._rf_go(self.rf_k - 1)
 
     def _rf_start_over(self) -> None:
-        self._rf_stop()
+        self._rf_stop(rest=True)
         self._rf_go(0)
 
-    def _rf_toggle(self) -> None:
-        if self.rf_timer.isActive():
-            self._rf_stop()
+    def _rf_run(self, on: bool) -> None:
+        """Start (from the first step, if it had counted them all), Pause or Resume the count."""
+        if not on:
+            self.rf_timer.stop()
             return
         if self.rf_k >= len(self.rf_steps):
             self.rf_k = 0
-        self.rf_play.setText("Pause")
         self.rf_timer.start()
         self._rf_tick()
 
     def _rf_tick(self) -> None:
         self._rf_forward()
         if self.rf_k >= len(self.rf_steps):
-            self._rf_stop()
+            self._rf_stop(rest=True)  # counted to the end: Start counts again
 
-    def _rf_stop(self) -> None:
+    def _rf_stop(self, rest: bool = False) -> None:
+        """The count held where it is (Resume carries on), or back at Start (`rest`)."""
         self.rf_timer.stop()
-        self.rf_play.setText("Play")
+        if rest:
+            self.rf_play.rest()
+        else:
+            self.rf_play.set_running(False)
+
+    def transport(self) -> Transport | None:
+        """The run bar plays the rainflow count while its tab shows; nothing else on the page moves."""
+        if self.tabs.currentIndex() != 0:
+            return None
+        return Transport(self.rf_play, self.rf_reset, label="Rainflow")
 
     def hideEvent(self, event) -> None:
         self._rf_stop()

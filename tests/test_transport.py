@@ -80,6 +80,25 @@ def test_every_page_with_a_start_gives_the_bar_its_motion(main_window):
                     driven.add(name)
     assert not missed, f"a Start the bar doesn't drive: {missed}"
     assert {"duffing_page", "rotor_page", "gyroscope_page", "torsional_page", "continuum_page", "sdof_page"} <= driven
+    # what ran outside the bar (#409 U-16): the rainflow count, building H, the modal test's measurement
+    assert {"fatigue_page", "frf_page", "test_page"} <= driven
+
+
+def test_resuming_torsionals_start_up_shows_its_tab(main_window):
+    """The bar's Resume ran the start-up on a hidden tab; Start already showed it (#409 U-16)."""
+    w = main_window
+    w.show_page("torsional_page")
+    page = w.torsional_page
+    _settle(w)
+    w.run_bar.run.click()  # Start: its tab shows
+    _settle(w)
+    assert page.views.currentWidget() is page.startup_view and page.startup_view.running
+    w.run_bar.run.click()  # Pause, then look at the criticals
+    page.views.setCurrentIndex(0)
+    _settle(w)
+    w.run_bar.run.click()  # Resume: the start-up's tab again
+    _settle(w)
+    assert page.views.currentWidget() is page.startup_view and page.startup_view.running
 
 
 def test_space_goes_to_a_control_reached_by_the_keyboard(main_window):
@@ -138,3 +157,33 @@ def test_the_pages_own_controls_hide_and_space_runs_through_the_bar(main_window)
     w.show_page("sim_page")
     _settle(w)
     assert w.sim_page.controls.run.isHidden() and not w.run_bar.space.isEnabled()  # Space stays the force's
+
+
+def test_the_modal_tests_measurement_runs_from_the_bar(main_window):
+    """The test measures on its own, and the bar shows it: Pause holds it, Resume carries on, and once it's done
+    Start (or Reset) measures it again (#409 U-16: it ran while the bar said nothing did)."""
+    import time
+
+    w = main_window
+    w.show_page("test_page")
+    page = w.test_page
+    page.speed.setCurrentIndex(1)  # paced, so it takes a while
+    page.restart()
+    _settle(w)
+    assert w.run_bar.source is not None and w.run_bar.source.run is page.measure
+    assert page.measuring and page.measure.isChecked() and w.run_bar.run.isChecked()
+    w.run_bar.run.click()  # Pause
+    _settle(w)
+    assert page.measuring and not page.running and not page._timer.isActive() and page.measure.text() == "Resume"
+    w.run_bar.run.click()  # Resume
+    _settle(w)
+    assert page.running and page._timer.isActive()
+    page.speed.setCurrentIndex(page.speed.findText("Instant"))  # finish it now
+    end = time.perf_counter() + 30.0
+    while page.measuring and time.perf_counter() < end:
+        _settle(w)
+    _settle(w)
+    assert not page.measuring and page.measure.text() == "Start" and not w.run_bar.run.isChecked()
+    done = page.acq
+    w.run_bar.reset.click()  # Measure again
+    assert page.acq is not done
