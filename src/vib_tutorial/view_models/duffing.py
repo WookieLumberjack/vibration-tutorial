@@ -8,7 +8,8 @@ samples, each drive cycle's harmonics, the Poincaré section). Each panel has a 
   the folds and their jumps, the y range, the axis label and which legend entries show (`LEGEND` keys).
 - `points(osc, cycles, y_top, runaway)`: each drive cycle's measured amplitudes by sweep leg, the latest, and a
   taller y range if they outgrew it.
-- `live(trace, t, freq_hz)`: the strip chart (min/max per bucket) and the phase plane, every frame.
+- `live(trace, t, freq_hz, reach)`: the strip chart (min/max per bucket) and the phase plane, every frame; before any
+  samples, the ranges the run will need (`reach`, the response curve's peak) rather than empty 0-to-1 axes (#409 U-22).
 - `chart(zeta)`, `chart_point(osc, freq_hz)`: the Ince–Strutt chart's growth image and harmonic balance's tongue,
   and the page's pump on it.
 - `osc_info`, `drive_state`, `branches`, `readout`: the texts.
@@ -307,8 +308,9 @@ def points(osc: Duffing, record: Record, y_top: float, runaway: float) -> Points
 @dataclass(frozen=True)
 class Live:
     strip: Curve  # x against t over the last WINDOW s, min/max per bucket
-    strip_range: tuple[float, float] | None  # None before any samples
+    strip_range: tuple[float, float]  # s: the last WINDOW, or 0 to WINDOW before any samples
     orbit: Curve  # v against x over the last PHASE_CYCLES drive cycles
+    rest: tuple[float, float] | None = None  # before any samples: the x (m) and v (m/s) the run will reach, ±
 
 
 def min_max(t: np.ndarray, y: np.ndarray, buckets: int) -> tuple[np.ndarray, np.ndarray]:
@@ -324,12 +326,18 @@ def min_max(t: np.ndarray, y: np.ndarray, buckets: int) -> tuple[np.ndarray, np.
     return np.repeat(tt, 2), out.T.ravel()
 
 
-def live(trace: Trace, t_now: float, freq_hz: float) -> Live:
+def live(trace: Trace, t_now: float, freq_hz: float, reach: float) -> Live:
+    """The strip chart and the phase plane now. Before any samples (at rest, waiting for Start) they're empty, and
+    `rest` gives the ranges to show them in: ±`reach` (the amplitude the response curve peaks at) and the velocity
+    of a swing that size at the drive's frequency."""
     t, x, _ = trace.since(t_now - WINDOW)
     strip = Curve(*min_max(t, x, PLOT_POINTS))
     span = PHASE_CYCLES / freq_hz if freq_hz > 0 else 2.0
     _, x, v = trace.since(t_now - span)
-    return Live(strip, (max(t_now - WINDOW, 0.0), max(t_now, WINDOW)) if t.size else None, Curve(x, v))
+    if not t.size:
+        omega = 2 * math.pi * max(freq_hz, 0.1)
+        return Live(strip, (0.0, WINDOW), Curve(x, v), (reach, omega * reach))
+    return Live(strip, (max(t_now - WINDOW, 0.0), max(t_now, WINDOW)), Curve(x, v))
 
 
 # ------------------------------------------------------------------ the Ince–Strutt chart
