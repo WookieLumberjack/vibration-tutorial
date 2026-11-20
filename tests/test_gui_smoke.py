@@ -5384,6 +5384,27 @@ def test_rigid_body_paths_and_drift(main_window, app):
     assert "isn't turning" in page.drift_note.text()
 
 
+def test_the_frame_builders_canvas_keeps_the_room_at_1280_px(main_window):
+    """The Assembly tab's K matrix (~770 px wide) scrolls in its pane rather than widen it: `TabRoom` widens a pane
+    for its notes only, and widening it for K left the canvas ~210 px wide (#409 U-11). Its modes table shows all
+    its columns' names too (U-12)."""
+    from PySide6 import QtWidgets
+
+    w = main_window
+    w.resize(1280, 800)
+    w.show_page("frame_page")
+    for _ in range(5):
+        QtWidgets.QApplication.processEvents()
+    page = w.frame_page
+    assert page.tabs.currentIndex() == 0 and page.assembly_view.isVisible()
+    assert page.canvas.width() >= 450 and page.canvas.height() >= 350
+    assert page.assembly_view.horizontalScrollBar().maximum() > 0  # K scrolls instead
+    header = page.table.horizontalHeader()
+    names = [page.table.horizontalHeaderItem(c).text() for c in range(page.table.columnCount())]
+    for c, text in enumerate(names):
+        assert header.sectionSize(c) >= header.fontMetrics().horizontalAdvance(text) + 8, text
+
+
 def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window):
     """At 1280×800 each page's tab bars show every tab's name: a page whose tabs need it gives its right pane
     `lesson.TAB_ROOM`, and `lesson.TabRoom` widens it further where the font is wider (macOS's, Ubuntu's). And no

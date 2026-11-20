@@ -637,8 +637,9 @@ def three_panes(
 class TabRoom(QtCore.QObject):
     """Widens a splitter's last pane, taking from the panes before it (the nearest first, each down to its
     minimum), until every tab bar in it shows all its tabs' names (no scroll arrows), as it's shown or resized,
-    until the reader moves the splitter themselves; and its notes (a Theory tab) until they need no sideways
-    scroll. `MainWindow._page` gives every page's panes one.
+    until the reader moves the splitter themselves; and its notes (a Theory tab's `NotesBrowser`) until they need no
+    sideways scroll. Not a page's other text views (the Frame builder's K matrix, ~770 px): they scroll sideways in
+    their pane, which would otherwise take the room from the page's main view (#409 U-11). `MainWindow._page` gives every page's panes one.
 
     `sizes` and `TAB_ROOM` lay the panes out for this machine's font; another's (macOS's 13 pt system font,
     Ubuntu's DejaVu Sans) is wider, and the tabs' names with it."""
@@ -654,7 +655,7 @@ class TabRoom(QtCore.QObject):
         last.installEventFilter(self)
         for tabs in last.findChildren(QtWidgets.QTabWidget):
             tabs.installEventFilter(self)  # a tab page's own tabs show when it's picked
-        for notes in last.findChildren(QtWidgets.QTextBrowser):
+        for notes in last.findChildren(NotesBrowser):
             bar = notes.horizontalScrollBar()
             assert bar is not None, "a text browser's scroll bar"
             bar.rangeChanged.connect(self._on_range)  # the notes laid out wider than their pane
@@ -688,7 +689,7 @@ class TabRoom(QtCore.QObject):
                 bar = tabs.tabBar()
                 need = sum(bar.tabSizeHint(i).width() for i in range(bar.count()) if bar.isTabVisible(i))
                 short = max(short, need - tabs.width())
-        for notes in last.findChildren(QtWidgets.QTextBrowser):
+        for notes in last.findChildren(NotesBrowser):
             scroll = notes.horizontalScrollBar()
             if notes.isVisible() and scroll is not None:
                 short = max(short, scroll.maximum())
