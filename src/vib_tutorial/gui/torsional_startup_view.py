@@ -5,7 +5,7 @@ widget: a link's torque and the motor's speed against time, the status and the p
 It runs the train the page gives it (`set_train`, each new one starting a fresh run from rest), on its own
 `FrameLoop`: only while its tab shows. `load` sets a preset's motor (or none), `edited` tells the page the
 reader changed the motor (the train is then a custom one, and the interference diagram redraws its 2× slip
-line), `shown_wanted` asks it to show this tab (Start).
+line), `shown_wanted` asks it to show this tab (Start or Resume).
 
 Working on it: the curves keep each one's min and max per pixel column of the run's whole span (`plots.Decimator`,
 reset with the run or the link shown), and the ringing link's pen is 1 px: every step drawn, or a wider pen's
@@ -365,6 +365,8 @@ class StartUpView(QtWidgets.QWidget):
         self._new_run()
 
     def _on_pause(self, on: bool) -> None:
+        if on:
+            self.shown_wanted.emit()  # Resume too: it ran on a hidden tab (#409 U-16)
         if self.sim is None:
             self._update_buttons()
         elif on and (self.sim.done or self._k == 0):  # from rest (again, if it ran to the end), shown

@@ -108,8 +108,16 @@ def test_the_rainflow_tab_steps_through_the_count(main_window):
 
     page.rf_reset.click()
     assert page.rf_k == 0
-    page.rf_play.click()  # a step at once, then one a tick; hidden, it stops
+    page.rf_play.click()  # Start (the run bar's, on this tab): a step at once, then one a tick; hidden, it stops
     assert page.rf_k == 1
     assert page.rf_timer.isActive() and page.rf_play.text() == "Pause"
     w.pages.setCurrentWidget(w.sim_page)
-    assert not page.rf_timer.isActive() and page.rf_play.text() == "Play"
+    assert not page.rf_timer.isActive() and page.rf_play.text() == "Resume" and page.rf_k == 1
+    w.pages.setCurrentWidget(page)
+    page.rf_play.click()  # Resume carries on from there
+    assert page.rf_k == 2 and page.rf_timer.isActive()
+    for _ in range(len(page.rf_steps)):
+        page._rf_tick()
+    assert not page.rf_timer.isActive() and page.rf_play.text() == "Start"  # counted to the end: Start again
+    page.tabs.setCurrentIndex(1)
+    assert page.transport() is None  # the bar runs the count only while its tab shows

@@ -5,7 +5,9 @@ latest recorded block and force spectrum above the estimated FRF and its
 coherence. Right: a check of the settings against the chain's modes, and
 theory. The data are measured a few blocks per frame, so the average can be
 watched settling, or at a playback speed that draws each record as it is
-recorded; changing only noise or processing reuses the same data.
+recorded; changing only noise or processing reuses the same data. The run bar
+pauses and resumes the test (`measure`), Reset measures again, and its speed
+is the playback's.
 
 Working on it: the test's settings (the Test, Acquisition, Measurement noise and Processing panes, and the
 Setup tab's check) are `modal_test_setup.TestSetup`, which says `remeasure` or `reprocess`; the two plots are
@@ -58,14 +60,14 @@ from ..core.measurement import AA_CUTOFF
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick
 from . import coalesce, frame_stats, modal_test_figures, settle_plots
 from .layouts import ColumnScroll
-from .lesson import TrialBox, trials_html
+from .lesson import RunButton, TrialBox, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ExtractionControls, ResultsView, StabilizationPlot
 from .modal_test_setup import BLOCK_SIZES, TestSetup, setup_check, suggested_fs
 from .modal_test_views import FrfView, SignalView
 from .notes_view import NotesBrowser
 from .theming import settings
-from .transport import speed_text
+from .transport import Transport, speed_text
 
 FRAME_MS = 30
 STEP_BUDGET_MS = 25  # measuring per frame, so the page stays responsive
@@ -538,6 +540,12 @@ class ModalTestPage(QtWidgets.QWidget):
         self.test_setup.edit_parameters.connect(self.edit_parameters)
 
         run_row = QtWidgets.QHBoxLayout()
+        # The run bar's: Start/Pause/Resume, Reset (measure again) and the speed (#409 U-16: it measured while the
+        # bar said nothing ran). A test starts measuring on its own, as a mode shape swings on its own.
+        self.measure = RunButton()
+        self.measure.setToolTip("<p>Pause or resume the test; once it's done, Start measures it again.</p>")
+        self.measure.toggled.connect(self._on_measure)
+        self._paused = False  # held by the reader mid-test
         self.again = QtWidgets.QPushButton("Measure again")
         self.again.setToolTip("Repeat the test with new random signals and noise.")
         self.again.clicked.connect(self.restart)
@@ -554,6 +562,7 @@ class ModalTestPage(QtWidgets.QWidget):
         )
         self.progress = QtWidgets.QLabel()
         self.progress.setWordWrap(True)
+        run_row.addWidget(self.measure)
         run_row.addWidget(self.again)
         run_row.addWidget(self.progress, 1)
         self.hold = QtWidgets.QPushButton("Hold for comparison")
@@ -561,7 +570,9 @@ class ModalTestPage(QtWidgets.QWidget):
         self.hold.setToolTip(HOLD_TIP)
         self.hold.toggled.connect(self._on_hold)
         speed_row = QtWidgets.QHBoxLayout()
-        speed_row.addWidget(QtWidgets.QLabel("Playback:"))
+        speed_label = QtWidgets.QLabel("Playback:")
+        speed_label.setBuddy(self.speed)  # hidden with it, under the run bar's
+        speed_row.addWidget(speed_label)
         speed_row.addWidget(self.speed, 1)
 
         left = QtWidgets.QWidget()
@@ -680,9 +691,38 @@ class ModalTestPage(QtWidgets.QWidget):
             self._timer.start()
 
     @property
-    def running(self) -> bool:
-        """Still measuring, or still drawing the last record."""
+    def measuring(self) -> bool:
+        """Still measuring, or still drawing the last record (paused or not)."""
         return self.acq is not None and (not self.acq.done or self._shown is not None)
+
+    @property
+    def running(self) -> bool:
+        """Measuring, and not paused."""
+        return self.measuring and not self._paused
+
+    def transport(self) -> Transport:
+        return Transport(self.measure, self.again, self.speed, label="Measurement")
+
+    def _on_measure(self, on: bool) -> None:
+        """The reader's Start, Pause or Resume."""
+        if on and not self.measuring:  # done: measure it again
+            self.restart()
+            return
+        self._paused = not on
+        if on and self.isVisible():
+            self._frame.start()  # the record carries on from where it was paused
+            self._timer.start()
+        elif not on:
+            self._timer.stop()
+        self._sync_measure()
+
+    def _sync_measure(self) -> None:
+        """The run button as the test stands: Pause while measuring, Resume paused, Start once done."""
+        if self.measuring:
+            self.measure.set_running(not self._paused)
+        else:
+            self._paused = False
+            self.measure.rest()
 
     def hideEvent(self, event) -> None:
         super().hideEvent(event)
@@ -862,14 +902,18 @@ class ModalTestPage(QtWidgets.QWidget):
         self.identify()
         self.test_setup.show_info(self.acq)
         self.check.setHtml(self._check())
+        self._paused = False
         self._measure_some()
         if self.running and self.isVisible():
             self._timer.start()
+        self._sync_measure()
 
     def _measure_frame(self) -> None:
         with frame_stats.frame("Virtual modal test", target_ms=FRAME_MS):
             self._measure_some()
             settle_plots(self)
+        if not self.measuring:
+            self._sync_measure()  # done: back to Start
 
     def _measure_some(self) -> None:
         if self.acq is None:

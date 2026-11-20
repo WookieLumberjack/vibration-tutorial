@@ -6,9 +6,11 @@ whichever is runnable on the page and tab showing: its Start/Pause, Reset and sp
 clock and labels follow theirs (read back several times a second while it shows: a page changes its buttons in
 ways no signal reports, `RunButton.rest` among them). On a page with nothing to run it says so, greyed out.
 
-A page says what's runnable with `transport()`, a `Transport` or None (it may depend on the tab showing: the
-Torsional page's Start runs its Start-up tab); a page with one `playback.Playback` and no `transport()` gets the
-Playback's. The window asks again on a new page or tab.
+A page says what's runnable with `transport()`, a `Transport` or None (it may depend on the tab showing: Fatigue's
+rainflow count runs only while its tab shows; the Torsional page's Start and Resume run its Start-up tab, and show
+it); a page with one `playback.Playback` and no `transport()` gets the Playback's. The window asks again on a new
+page or tab. Anything that plays on a timer is a motion the bar drives (#409 U-16): building H on the FRF page, the
+modal test's measurement, the rainflow count.
 
 Working on it: `tests/test_transport.py` drives every page's motion from the bar.
 """
