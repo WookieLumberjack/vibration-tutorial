@@ -5405,6 +5405,38 @@ def test_the_frame_builders_canvas_keeps_the_room_at_1280_px(main_window):
         assert header.sectionSize(c) >= header.fontMetrics().horizontalAdvance(text) + 8, text
 
 
+def test_the_theory_tabs_room_goes_back_when_it_hides(main_window):
+    """`TabRoom` widens a page's right pane for its notes while they show, and gives the room back to the panes it
+    came from when they hide: one visit to Signals' Theory took 120 px from its plots for good (#409 U-13). Once
+    the reader has moved the splitter, it leaves their sizes alone."""
+    from PySide6 import QtWidgets
+
+    def settle():
+        for _ in range(10):
+            QtWidgets.QApplication.processEvents()
+
+    w = main_window
+    w.resize(1280, 800)
+    w.show_page("signals_page")
+    page = w.signals_page
+    splitter = page.findChild(QtWidgets.QSplitter)
+    settle()
+    before = splitter.sizes()
+    w.show_theory()
+    settle()
+    assert splitter.sizes()[2] > before[2]  # the notes' figures need more than the pane had
+    page.tabs.setCurrentIndex(0)
+    settle()
+    assert splitter.sizes() == before
+    w.show_theory()
+    settle()
+    widened = splitter.sizes()
+    splitter.splitterMoved.emit(widened[0] + widened[1], 2)  # as the reader's drag does
+    page.tabs.setCurrentIndex(0)
+    settle()
+    assert splitter.sizes() == widened
+
+
 def _columns_cut_short(table) -> list[str]:
     """The shown columns of `table` narrower than their widest cell or header (Qt cuts them short with …)."""
     header = table.horizontalHeader()
