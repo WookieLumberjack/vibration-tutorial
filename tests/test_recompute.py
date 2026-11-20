@@ -104,3 +104,22 @@ def test_a_failing_job_raises_on_the_gui_thread(app, monkeypatch):
     p.r.request(bad)
     p.r.wait()
     assert len(raised) == 1 and str(raised[0][0]) == "no" and raised[0][1] == threading.main_thread().name
+
+
+def test_busy_a_while_it_says_its_updating(app):
+    """`updating` once busy `BUSY_MS` (the run bar's "Updating…"), not for a quick job, and not once it's done
+    (#409 U-24)."""
+    from vib_tutorial.gui import recompute
+
+    page, other = Page(delay_ms=10), Page()
+    page.r.request(slow(1, seconds=0.2))
+    assert page.r.busy and not page.r.updating  # not yet: a quick job never says so
+    end = time.monotonic() + recompute.BUSY_MS / 1000 + 0.02
+    while time.monotonic() < end:
+        QtWidgets.QApplication.processEvents()
+        time.sleep(0.005)
+    assert page.r.updating and recompute.updating_under(page) and not recompute.updating_under(other)
+    page.r.wait()
+    assert page.got == [1] and not page.r.updating and not recompute.updating_under(page)
+    page.r.now(slow(2, seconds=0.0))
+    assert not page.r.updating

@@ -16,6 +16,10 @@ runs it on a worker thread:
 
 An exception in `job` is raised again in `done`'s place on the GUI thread, where the tests see it.
 
+Busy a while (`BUSY_MS`: from the request, through the debounce and the job), it's `updating`, and the run bar says
+"Updating…" while the page showing has one so (`updating_under`): the page shows its last result meanwhile, for up
+to a second (#409 U-24).
+
 Working on it: the page keeps the drawing; a `Recompute` only moves a pure function off the thread. The job
 holds the GIL while it runs Python, so the window stays responsive but not idle: keep jobs to a second or so.
 `tests/test_recompute.py` checks the debounce, latest-wins and the exception; the Nonlinearity page's sweep is
@@ -36,6 +40,8 @@ from typing import Any
 from PySide6 import QtCore, QtWidgets
 
 _POOL = ThreadPoolExecutor(max_workers=1, thread_name_prefix="recompute")
+BUSY_MS = 150  # busy this long, the run bar says it's updating
+_ALL: weakref.WeakSet[Recompute] = weakref.WeakSet()  # every one made, for `updating_under`
 
 
 class _Failed:
@@ -58,8 +64,12 @@ class Recompute(QtCore.QObject):
         self._job: Callable[[], Any] | None = None
         self._generation = 0
         self._running = False
+        self._since: float | None = None  # when it last became busy (monotonic s)
+        _ALL.add(self)
 
     def request(self, job: Callable[[], Any]) -> None:
+        if not self.busy:
+            self._since = time.monotonic()
         self._job = job
         self._generation += 1
         self._timer.start()
@@ -68,11 +78,18 @@ class Recompute(QtCore.QObject):
         self._timer.stop()
         self._job = None
         self._generation += 1  # whatever is running is stale now
+        if not self._running:
+            self._since = None
         self._deliver(job())
 
     @property
     def busy(self) -> bool:
         return self._running or self._job is not None
+
+    @property
+    def updating(self) -> bool:
+        """Busy for `BUSY_MS` or more: the page has shown its last result that long."""
+        return self.busy and self._since is not None and time.monotonic() - self._since >= BUSY_MS / 1000
 
     def wait(self, timeout: float = 30.0) -> None:
         end = time.monotonic() + timeout
@@ -101,6 +118,8 @@ class Recompute(QtCore.QObject):
 
     def _on_finished(self, payload: tuple[int, Any]) -> None:
         self._running = False
+        if self._job is None:
+            self._since = None
         generation, result = payload
         if generation == self._generation and self._job is None:
             self._deliver(result)
@@ -112,3 +131,15 @@ class Recompute(QtCore.QObject):
             raise result.error
         if (done := self._done()) is not None:
             done(result)
+
+
+def updating_under(widget: QtCore.QObject) -> bool:
+    """Whether a `Recompute` of `widget`'s (its child, at any depth) is `updating`."""
+    for r in list(_ALL):
+        if r.updating:
+            parent = r.parent()
+            while parent is not None:
+                if parent is widget:
+                    return True
+                parent = parent.parent()
+    return False

@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from PySide6 import QtCore, QtGui, QtWidgets
 from shiboken6 import isValid
 
-from . import theming
+from . import recompute, theming
 
 POLL_MS = 150  # how often the bar reads the page's controls back
 
@@ -202,6 +202,11 @@ class TransportBar(QtWidgets.QFrame):
         self.clock = QtWidgets.QLabel()
         self.clock.setAccessibleName("Time")
         self.what = QtWidgets.QLabel()
+        self.updating = QtWidgets.QLabel("Updating…")  # the page's slow work under way (#409 U-24)
+        self.updating.setToolTip("<p>The page is working out its plots again; they show the last result meanwhile.</p>")
+        theming.mute(self.updating)
+        self.updating.hide()
+        self.page: QtWidgets.QWidget | None = None
         self.hold = QtWidgets.QPushButton("Hold curves")  # the window connects these (MainWindow.hold_curves)
         self.hold.setToolTip("<p>Keep the plots' curves in grey, to compare a change against (H).</p>")
         self.unhold = QtWidgets.QPushButton("Clear held")
@@ -218,6 +223,8 @@ class TransportBar(QtWidgets.QFrame):
         row.addWidget(self.hold)
         row.addWidget(self.unhold)
         row.addStretch(1)
+        row.addWidget(self.updating)
+        row.addSpacing(12)
         row.addWidget(self.what)
         self.space = QtGui.QShortcut(QtGui.QKeySequence("Space"), self)  # where the page's own Start is hidden
         self.space.setContext(QtCore.Qt.ShortcutContext.WindowShortcut)
@@ -230,8 +237,9 @@ class TransportBar(QtWidgets.QFrame):
         self.timer.start()
         self.follow(None)
 
-    def follow(self, transport: Transport | None) -> None:
-        """Drive `transport` (None: nothing to run here)."""
+    def follow(self, transport: Transport | None, page: QtWidgets.QWidget | None = None) -> None:
+        """Drive `transport` (None: nothing to run here), and say when `page`'s slow work is under way."""
+        self.page = page
         self.source = transport
         self._speeds: list[str] = []
         if transport is not None:
@@ -243,6 +251,9 @@ class TransportBar(QtWidgets.QFrame):
         """Read the page's controls back into the bar."""
         if not self.isVisible() and self.source is not None:
             return
+        busy = self.page is not None and isValid(self.page) and recompute.updating_under(self.page)
+        if busy != self.updating.isVisible():
+            self.updating.setVisible(busy)
         t = self.source
         alive = t is not None and isValid(t.run)
         self.run.setEnabled(alive and t.run.isEnabled())  # type: ignore[union-attr]
