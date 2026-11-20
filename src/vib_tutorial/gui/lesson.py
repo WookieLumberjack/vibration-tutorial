@@ -637,9 +637,11 @@ def three_panes(
 class TabRoom(QtCore.QObject):
     """Widens a splitter's last pane, taking from the panes before it (the nearest first, each down to its
     minimum), until every tab bar in it shows all its tabs' names (no scroll arrows), as it's shown or resized,
-    until the reader moves the splitter themselves; and its notes (a Theory tab's `NotesBrowser`) until they need no
-    sideways scroll. Not a page's other text views (the Frame builder's K matrix, ~770 px): they scroll sideways in
-    their pane, which would otherwise take the room from the page's main view (#409 U-11). `MainWindow._page` gives every page's panes one.
+    until the reader moves the splitter themselves; and while its notes (a Theory tab's `NotesBrowser`) show,
+    until they need no sideways scroll, giving that room back to the panes it came from once they hide (it took
+    120 px from Signals' plots for good, #409 U-13). Not a page's other text views (the Frame builder's K matrix,
+    ~770 px): they scroll sideways in their pane, which would otherwise take the room from the page's main view
+    (#409 U-11). `MainWindow._page` gives every page's panes one.
 
     `sizes` and `TAB_ROOM` lay the panes out for this machine's font; another's (macOS's 13 pt system font,
     Ubuntu's DejaVu Sans) is wider, and the tabs' names with it."""
@@ -649,6 +651,7 @@ class TabRoom(QtCore.QObject):
         self._splitter = splitter
         self._moved = False
         self._pending = False
+        self._lent: dict[int, int] = {}  # px taken from each pane (by index) for the notes, given back as they hide
         splitter.splitterMoved.connect(self._on_moved)
         last = splitter.widget(splitter.count() - 1)
         assert last is not None, "a splitter with panes"
@@ -656,12 +659,14 @@ class TabRoom(QtCore.QObject):
         for tabs in last.findChildren(QtWidgets.QTabWidget):
             tabs.installEventFilter(self)  # a tab page's own tabs show when it's picked
         for notes in last.findChildren(NotesBrowser):
+            notes.installEventFilter(self)  # hidden: their room goes back
             bar = notes.horizontalScrollBar()
             assert bar is not None, "a text browser's scroll bar"
             bar.rangeChanged.connect(self._on_range)  # the notes laid out wider than their pane
 
     def _on_moved(self, _pos: int, _index: int) -> None:
         self._moved = True
+        self._lent.clear()  # the reader's sizes now: nothing to give back
 
     def _on_range(self, _lo: int, _hi: int) -> None:
         self._schedule()
@@ -673,49 +678,79 @@ class TabRoom(QtCore.QObject):
             QtCore.QTimer.singleShot(0, self, self.fit)
 
     def eventFilter(self, watched: QtCore.QObject, event: QtCore.QEvent) -> bool:
-        if event.type() in (QtCore.QEvent.Type.Resize, QtCore.QEvent.Type.Show):
+        if event.type() in (QtCore.QEvent.Type.Resize, QtCore.QEvent.Type.Show, QtCore.QEvent.Type.Hide):
             self._schedule()
         return False
 
-    def short(self) -> int:
-        """How many pixels the last pane is short of: for its visible tab bars' names, and its visible notes'
-        widest table or figure."""
+    def _last(self) -> QtWidgets.QWidget | None:
         last = self._splitter.widget(self._splitter.count() - 1)
-        if last is None or not last.isVisible() or last.width() == 0:
-            return 0
+        return last if last is not None and last.isVisible() and last.width() > 0 else None
+
+    def tabs_short(self) -> int:
+        """How many pixels the last pane is short of for its visible tab bars' names."""
+        last = self._last()
         short = 0
-        for tabs in [last, *last.findChildren(QtWidgets.QTabWidget)]:
+        for tabs in [last, *last.findChildren(QtWidgets.QTabWidget)] if last is not None else []:
             if isinstance(tabs, QtWidgets.QTabWidget) and tabs.isVisible():
                 bar = tabs.tabBar()
                 need = sum(bar.tabSizeHint(i).width() for i in range(bar.count()) if bar.isTabVisible(i))
                 short = max(short, need - tabs.width())
-        for notes in last.findChildren(NotesBrowser):
-            scroll = notes.horizontalScrollBar()
-            if notes.isVisible() and scroll is not None:
-                short = max(short, scroll.maximum())
         return short
+
+    def notes_short(self) -> int | None:
+        """How many pixels the last pane is short of for its visible notes' widest table or figure; None when no
+        notes show."""
+        last = self._last()
+        widths = [
+            scroll.maximum()
+            for notes in (last.findChildren(NotesBrowser) if last is not None else [])
+            if notes.isVisible() and (scroll := notes.horizontalScrollBar()) is not None
+        ]
+        return max(widths) if widths else None
 
     def fit(self) -> None:
         self._pending = False
-        short = self.short()
         n = self._splitter.count()
-        if short <= 0 or n < 2:
+        if n < 2 or self._last() is None:
             return
         sizes = self._splitter.sizes()
-        want = short + 2
+        tabs = self.tabs_short()
+        notes = self.notes_short()
+        if notes is None and self._lent:  # the notes hid: their room back, as far as the tab bars allow
+            spare = sizes[n - 1] - max(0, tabs) - self._minimum(n - 1)
+            for i, px in sorted(self._lent.items(), reverse=True):
+                give = min(px, spare)
+                sizes[i] += give
+                sizes[n - 1] -= give
+                spare -= give
+            self._lent.clear()
+        if tabs > 0:
+            self._take(sizes, tabs + 2, lend=False)
+        if notes is not None and notes > 0:
+            self._take(sizes, notes + 2, lend=True)
+        if sizes != self._splitter.sizes():
+            self._splitter.setSizes(sizes)
+
+    def _minimum(self, i: int) -> int:
+        pane = self._splitter.widget(i)
+        return pane.minimumSizeHint().width() if pane is not None else 0
+
+    def _take(self, sizes: list[int], want: int, lend: bool) -> None:
+        """`want` px for the last pane from the panes before it, the nearest first; kept in `_lent` if `lend`."""
+        n = len(sizes)
         for i in range(n - 2, -1, -1):
             pane = self._splitter.widget(i)
             if pane is None or not pane.isVisible():
                 continue
-            give = min(want, sizes[i] - pane.minimumSizeHint().width())
+            give = min(want, sizes[i] - self._minimum(i))
             if give > 0:
                 sizes[i] -= give
                 sizes[n - 1] += give
                 want -= give
+                if lend:
+                    self._lent[i] = self._lent.get(i, 0) + give
             if want <= 0:
                 break
-        if sizes != self._splitter.sizes():
-            self._splitter.setSizes(sizes)
 
 
 def theory(html: str) -> NotesBrowser:
