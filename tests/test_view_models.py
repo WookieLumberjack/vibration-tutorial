@@ -193,11 +193,14 @@ def test_duffing_live_is_cheap():
     sim, record = preset_run("Hardening spring: the jump")
     for _ in range(10):
         record.add(sim.advance(5.0))
-    v = duffing.live(record.trace, sim.t, sim.drive.freq_hz)
+    v = duffing.live(record.trace, sim.t, sim.drive.freq_hz, 0.07)
+    assert v.rest is None
     assert v.strip.x.size <= 2 * duffing.PLOT_POINTS + 2
     assert v.strip_range == pytest.approx((sim.t - duffing.WINDOW, sim.t))
     assert np.shares_memory(v.orbit.x, record.trace.data) and np.shares_memory(v.orbit.y, record.trace.data)
-    assert duffing.live(duffing.Trace(), 0.0, 2.0).strip_range is None
+    rest = duffing.live(duffing.Trace(), 0.0, 2.0, 0.07)  # waiting for Start: the run's ranges, not 0 to 1
+    assert rest.strip_range == (0.0, duffing.WINDOW)
+    assert rest.rest == pytest.approx((0.07, 2 * math.pi * 2.0 * 0.07))
 
 
 def test_duffing_branches():

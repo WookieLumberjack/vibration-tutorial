@@ -38,7 +38,7 @@ from ..view_models.duffing import CHART_DEPTHS, CHART_RATIOS, GROWTH_TOP, LEGEND
 from . import duffing_figures, plot_patches, weak
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height
-from .lesson import Dot, RunButton
+from .lesson import Dot, RunButton, StartHint
 from .links import load_notes, page_link
 from .live_label import LiveLabel
 from .maths import markup
@@ -606,6 +606,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.scrub_dot = Dot(11)
         self.scrub_dot.hide()
         self.phase.addItem(self.scrub_dot, ignoreBounds=True)
+        self.start_hints = (StartHint(self.strip), StartHint(self.phase))
         self.phase_note = QtWidgets.QLabel(
             "The last few drive cycles; the dots are the Poincaré section, the state once per cycle (while the "
             "frequency is held)."
@@ -1042,15 +1043,22 @@ class DuffingPage(QtWidgets.QWidget):
         self._section = np.asarray(v.section, dtype=float).reshape(-1, 2)
 
     def _draw_live(self) -> None:
-        v = view.live(self.record.trace, self.sim.t, self.sim.drive.freq_hz)
+        v = view.live(self.record.trace, self.sim.t, self.sim.drive.freq_hz, self._y_top / 1.15)
         self.x_item.setData(*v.strip)
-        if v.strip_range is not None:
-            self.strip.setXRange(*v.strip_range, padding=0)
+        self.strip.setXRange(*v.strip_range, padding=0)
         self.orbit_item.setData(*v.orbit)
-        _fit(self.strip_y, v.strip.y)
         x_range, v_range = self.phase_ranges
-        _fit(x_range, np.concatenate([v.orbit.x, self._section[:, 0]]))
-        _fit(v_range, np.concatenate([v.orbit.y, self._section[:, 1]]))
+        if v.rest is not None:  # waiting for Start: the ranges the run will need, and a word that it waits
+            x, xdot = v.rest
+            self.strip_y.fit(-x, x)
+            x_range.fit(-x, x)
+            v_range.fit(-xdot, xdot)
+        else:
+            _fit(self.strip_y, v.strip.y)
+            _fit(x_range, np.concatenate([v.orbit.x, self._section[:, 0]]))
+            _fit(v_range, np.concatenate([v.orbit.y, self._section[:, 1]]))
+        for hint in self.start_hints:
+            hint.waiting(v.rest is not None)
 
     def _on_tab(self, _index: int) -> None:
         self._draw_chart(now=True)  # a tab picked draws now

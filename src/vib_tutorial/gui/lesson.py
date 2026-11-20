@@ -634,6 +634,30 @@ def three_panes(
     return splitter
 
 
+class StartHint(QtWidgets.QLabel):
+    """A quiet line centred over a plot that waits for Start ("Start (Space) runs it from rest"), so its empty axes
+    read as waiting rather than broken (#409 U-22). The page shows it while it has nothing to draw: `waiting(bool)`.
+    A plot under ~60 px (the rotor's strip chart at 1280 × 800) has no room for one: its ranges at rest say enough."""
+
+    def __init__(self, plot: QtWidgets.QWidget, text: str = "Start (Space) runs it from rest") -> None:
+        super().__init__(text, plot)
+        mute(self)
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.setWordWrap(True)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        plot.installEventFilter(self)
+        self.resize(plot.size())
+
+    def eventFilter(self, watched: QtCore.QObject, event: QtCore.QEvent) -> bool:
+        if event.type() == QtCore.QEvent.Type.Resize and isinstance(watched, QtWidgets.QWidget):
+            self.resize(watched.size())
+        return False
+
+    def waiting(self, on: bool) -> None:
+        if on != self.isVisible():
+            self.setVisible(on)
+
+
 class TabRoom(QtCore.QObject):
     """Widens a splitter's last pane, taking from the panes before it (the nearest first, each down to its
     minimum), until every tab bar in it shows all its tabs' names (no scroll arrows), as it's shown or resized,

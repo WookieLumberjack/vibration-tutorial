@@ -74,6 +74,7 @@ from .lesson import (
     Dot,
     Form,
     RunButton,
+    StartHint,
     TrialBox,
     column,
     combo,
@@ -338,6 +339,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.view = TopView()
         self.tilt_plot = plot("Tilt θ", None, "Time", "s", height=130)
         self.tilt_plot.setToolTip(TILT_TIP)
+        self.start_hint = StartHint(self.tilt_plot)
         self.tilt_item = pg.PlotDataItem()
         self.turn_lines = [pg.InfiniteLine(angle=0), pg.InfiniteLine(angle=0)]
         for item in (*self.turn_lines, self.tilt_item):
@@ -920,6 +922,7 @@ class GyroscopePage(QtWidgets.QWidget):
             t, y = self.history.window(SKEW_TRAIL if skewed else span)
             trail = y[thin(t.size, TRAIL_POINTS), 0:3]
         self.view.draw(axis, mark_, momentum, trail)
+        self.start_hint.waiting(n == 0)
         if skewed:
             self._skewed_tilt()
             return

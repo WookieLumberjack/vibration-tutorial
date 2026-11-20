@@ -5405,6 +5405,37 @@ def test_the_frame_builders_canvas_keeps_the_room_at_1280_px(main_window):
         assert header.sectionSize(c) >= header.fontMetrics().horizontalAdvance(text) + 8, text
 
 
+def test_pages_waiting_for_start_say_so_on_their_empty_plots(main_window):
+    """Before Start, Duffing's strip chart and phase plane span what the run will need (not pyqtgraph's 0 to 1) and,
+    like Gyroscope's tilt plot, say that Start runs it; the word goes once it runs (#409 U-22)."""
+    from PySide6 import QtWidgets
+
+    w = main_window
+    w.resize(1280, 800)
+    w.show_page("duffing_page")
+    page = w.duffing_page
+    QtWidgets.QApplication.processEvents()
+    assert not page.running and all(h.isVisible() for h in page.start_hints)
+    (x0, x1), (y0, y1) = page.strip.getPlotItem().vb.viewRange()
+    reach = page._y_top / 1.15  # the response curve's peak
+    assert (x0, x1) == pytest.approx((0.0, 20.0)) and y1 == pytest.approx(-y0) and y1 > reach
+    (p0, p1), (v0, v1) = page.phase.getPlotItem().vb.viewRange()
+    assert p0 < -reach < reach < p1 and v0 < -2 * math.pi * page.sim.drive.freq_hz * reach < v1
+    page.run_button.click()
+    page._tick(0.05)
+    assert not any(h.isVisible() for h in page.start_hints)
+    page.reset()
+    assert all(h.isVisible() for h in page.start_hints)
+
+    w.show_page("gyroscope_page")
+    gyro = w.gyroscope_page
+    QtWidgets.QApplication.processEvents()
+    assert not gyro.running and gyro.start_hint.isVisible()
+    gyro.pause_button.click()
+    gyro._tick(0.05)
+    assert not gyro.start_hint.isVisible()
+
+
 def test_the_theory_tabs_room_goes_back_when_it_hides(main_window):
     """`TabRoom` widens a page's right pane for its notes while they show, and gives the room back to the panes it
     came from when they hide: one visit to Signals' Theory took 120 px from its plots for good (#409 U-13). Once
