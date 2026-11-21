@@ -31,6 +31,7 @@ from ..core import (
     impact_spectrum,
 )
 from ..core.measurement import AA_CUTOFF, FORCE_RMS, IMPACT_PEAK, SINE_AMPLITUDE
+from ..view_models.text import number as sig
 from .layouts import form_layout
 from .panels import spin
 from .style import MAX_DOF, colors
@@ -78,8 +79,8 @@ WINDOW_TIPS = {
 
 
 FORCE_LEVEL_TIP = (
-    f"<p>Scales the force. At 100% the hammer hits with a {IMPACT_PEAK:g} N peak, the shaker drives "
-    f"{FORCE_RMS:g} N RMS and the stepped sine has a {SINE_AMPLITUDE:g} N amplitude.</p>"
+    f"<p>Scales the force. At 100% the hammer hits with a {sig(IMPACT_PEAK, 6)} N peak, the shaker drives "
+    f"{sig(FORCE_RMS, 6)} N RMS and the stepped sine has a {sig(SINE_AMPLITUDE, 6)} N amplitude.</p>"
     "<p>A linear chain's FRF does not depend on it: the response scales with the force, and so "
     "does the noise, which is sized to each channel's range. With <b>friction</b> on a mass "
     "(F<sub>f</sub> on the Simulation page) it does. A lab checks linearity this way: measure at "
@@ -107,7 +108,7 @@ def suggested_fs(result: ModalResult) -> float:
 
 
 def percent(fraction: float) -> str:
-    return "&lt; 0.01%" if fraction < 1e-4 else f"{100 * fraction:.2g}%"
+    return "&lt; 0.01%" if fraction < 1e-4 else f"{sig(100 * fraction, 2)}%"
 
 
 class TestSetup(QtWidgets.QWidget):
@@ -374,10 +375,10 @@ class TestSetup(QtWidgets.QWidget):
     def _level_text(self, s: MeasurementSettings) -> str:
         e = s.excitation
         if e is Excitation.IMPACT:
-            return f"{s.force_level * IMPACT_PEAK:.4g} N peak"
+            return f"{sig(s.force_level * IMPACT_PEAK, 4)} N peak"
         if e is Excitation.STEPPED_SINE:
-            return f"{s.force_level * SINE_AMPLITUDE:.4g} N amplitude"
-        return f"{s.force_level * FORCE_RMS:.4g} N RMS"
+            return f"{sig(s.force_level * SINE_AMPLITUDE, 4)} N amplitude"
+        return f"{sig(s.force_level * FORCE_RMS, 4)} N RMS"
 
     def _on_excitation(self) -> None:
         self._select_window(self.excitation.currentData())
@@ -418,14 +419,14 @@ class TestSetup(QtWidgets.QWidget):
         """The acquisition's numbers under its pane: block length, line spacing, Nyquist, waits."""
         s = a.settings
         if a.stepped:
-            text = f"{s.sine_points} frequencies, {s.band / s.sine_points:.4g} Hz apart<br>"
+            text = f"{s.sine_points} frequencies, {sig(s.band / s.sine_points, 4)} Hz apart<br>"
         else:
-            text = f"T = Nb/fs = {s.duration:.4g} s · Δf = 1/T = {s.resolution:.4g} Hz<br>"
-        text += f"Nyquist fs/2 = {s.fs / 2:.4g} Hz · passband and excitation to {s.band:.4g} Hz"
+            text = f"T = Nb/fs = {sig(s.duration, 4)} s · Δf = 1/T = {sig(s.resolution, 4)} Hz<br>"
+        text += f"Nyquist fs/2 = {sig(s.fs / 2, 4)} Hz · passband and excitation to {sig(s.band, 4)} Hz"
         if s.excitation.settles:
-            text += f"<br>Waits {a.settle:.3g} s for steady state (transients down to 0.1%)"
+            text += f"<br>Waits {sig(a.settle)} s for steady state (transients down to 0.1%)"
         elif s.excitation.waits:
-            text += f"<br>Waits {a.settle:.3g} s between hits for the response to die away (to 0.1%)"
+            text += f"<br>Waits {sig(a.settle)} s between hits for the response to die away (to 0.1%)"
         self.daq_info.setText(text)
 
 
@@ -449,7 +450,7 @@ def setup_check(a: Acquisition, w: Window) -> str:
         if d.fd_hz > nyq:
             alias = abs(d.fd_hz - s.fs * round(d.fd_hz / s.fs))
             notes.append(
-                "above Nyquist: " + ("removed by the filter" if s.anti_alias else f"<b>aliases to {alias:.3g} Hz</b>")
+                "above Nyquist: " + ("removed by the filter" if s.anti_alias else f"<b>aliases to {sig(alias)} Hz</b>")
             )
         elif d.fd_hz > s.band:
             notes.append(
@@ -469,8 +470,8 @@ def setup_check(a: Acquisition, w: Window) -> str:
             if level < -20.0:
                 notes.append("<b>hardly excited by this tip</b>: noise will dominate")
         rows.append(
-            f"<tr><td style='white-space:nowrap; color:{color}'><b>{m.index}</b></td><td style='white-space:nowrap'>{d.fd_hz:.4g}</td>"
-            f"<td style='white-space:nowrap'>{d.zeta:.4f}</td><td style='white-space:nowrap'>{bw:.3g}</td><td style='white-space:nowrap'>{lines:.3g}</td>"
+            f"<tr><td style='white-space:nowrap; color:{color}'><b>{m.index}</b></td><td style='white-space:nowrap'>{sig(d.fd_hz, 4)}</td>"
+            f"<td style='white-space:nowrap'>{d.zeta:.4f}</td><td style='white-space:nowrap'>{sig(bw)}</td><td style='white-space:nowrap'>{sig(lines)}</td>"
             + ("" if a.stepped else f"<td style='white-space:nowrap'>{percent(left)}</td>")
             + (f"<td style='white-space:nowrap'>{tip}</td>" if s.excitation is Excitation.IMPACT else "")
             + "</tr>"

@@ -20,6 +20,7 @@ from ..core.rotor import Bearing, RotorSystem
 from ..core.rotor_modes import whirl_modes
 from ..core.rotor_presets import RotorPreset, rotor_presets
 from ..core.rotor_simulator import RPM
+from ..view_models.text import number as sig
 from .links import page_link
 
 CLASSIC = "Classic Jeffcott rotor"
@@ -91,7 +92,7 @@ def _critical(rng: np.random.Generator) -> Question:
     setup: dict[str, Any] = dict(length=length, diameter=d / 1000, disc_mass=m, kx=kb)
     model = critical_rpm(RotorSetup(**setup).system())
     return Question(
-        f"A {m:g} kg disc at the middle of a {length:g} m steel shaft (E = 200 GPa) {d:g} mm across, its bearings on "
+        f"A {sig(m, 6)} kg disc at the middle of a {sig(length, 6)} m steel shaft (E = 200 GPa) {sig(d, 6)} mm across, its bearings on "
         f"supports of {number(kb)} N/m each. The shaft's mass and the journals' aside, what is its critical speed?",
         rpm,
         f"EI = Eπd⁴/64 = {number(ei)} N·m², so the shaft at midspan is k<sub>s</sub> = 48EI/L³ = {number(ks)} N/m, in "
@@ -107,10 +108,10 @@ def _whirl_radius(rng: np.random.Generator) -> Question:
     e, r, zeta = pick(rng, (10, 20, 50)), pick(rng, (0.5, 0.8, 1.2, 2, 3)), pick(rng, (0.02, 0.05, 0.1))
     x = e * r * r / math.sqrt((1 - r * r) ** 2 + (2 * zeta * r) ** 2)
     return Question(
-        f"A disc's centre of mass is {e:g} µm off the shaft's axis, its mode's ζ = {zeta:g}. Running at {r:g} times the "
+        f"A disc's centre of mass is {sig(e, 6)} µm off the shaft's axis, its mode's ζ = {sig(zeta, 6)}. Running at {sig(r, 6)} times the "
         "critical speed, how far does the disc whirl?",
         x,
-        f"|X| = e r²/√((1 − r²)² + (2ζr)²) = {e:g} × {number(r * r)}/√({number((1 - r * r) ** 2)} + "
+        f"|X| = e r²/√((1 − r²)² + (2ζr)²) = {sig(e, 6)} × {number(r * r)}/√({number((1 - r * r) ** 2)} + "
         f"{number((2 * zeta * r) ** 2)}) = {number(x)} µm."
         + (" Well above the critical it tends to e: the disc spins about its own centre of mass." if r > 1.5 else ""),
         unit="µm",
@@ -121,7 +122,7 @@ def _phase_lag(rng: np.random.Generator) -> Question:
     r, zeta = pick(rng, (0.5, 0.8, 0.9, 1.1, 1.5, 2)), pick(rng, (0.02, 0.05, 0.1, 0.2))
     lag = math.degrees(math.atan2(2 * zeta * r, 1 - r * r))
     return Question(
-        f"A rotor runs at {r:g} times its critical speed, ζ = {zeta:g}. By how many degrees does the high spot lag the "
+        f"A rotor runs at {sig(r, 6)} times its critical speed, ζ = {sig(zeta, 6)}. By how many degrees does the high spot lag the "
         "heavy spot?",
         lag,
         f"tan(lag) = 2ζr/(1 − r²) = {number(2 * zeta * r)}/{number(1 - r * r)}, so the lag is {number(lag)}°"
@@ -135,11 +136,11 @@ def _conical(rng: np.random.Generator) -> Question:
     i_p = rounded(ratio * i_d)
     omega = math.sqrt(k_theta / (i_d - i_p))
     return Question(
-        f"A long rotor's tilt (I<sub>d</sub> = {i_d:g} kg·m², I<sub>p</sub> = {number(i_p)} kg·m²) sits on a "
-        f"rotational stiffness of {k_theta:g} N·m/rad. At what speed does its forward conical whirl meet the 1X line?",
+        f"A long rotor's tilt (I<sub>d</sub> = {sig(i_d, 6)} kg·m², I<sub>p</sub> = {number(i_p)} kg·m²) sits on a "
+        f"rotational stiffness of {sig(k_theta, 6)} N·m/rad. At what speed does its forward conical whirl meet the 1X line?",
         omega * RPM,
         f"The tilt whirls at I<sub>d</sub>ω² − I<sub>p</sub>Ωω − k<sub>θ</sub> = 0 forward; on the 1X line ω = Ω, so "
-        f"(I<sub>d</sub> − I<sub>p</sub>)Ω² = k<sub>θ</sub>: Ω = √({k_theta:g}/{number(i_d - i_p)}) = "
+        f"(I<sub>d</sub> − I<sub>p</sub>)Ω² = k<sub>θ</sub>: Ω = √({sig(k_theta, 6)}/{number(i_d - i_p)}) = "
         f"{number(omega)} rad/s, {number(omega * RPM)} rpm. A disc (I<sub>p</sub> ≥ I<sub>d</sub>) never meets it.",
         unit="rpm",
     )
@@ -159,15 +160,15 @@ def _balance(rng: np.random.Generator) -> Question:
     v0_deg = round(math.degrees(cmath.phase(v0))) % 360
     return Question(
         f"Balancing at one speed: the disc reads {number(abs(v0))} µm at {v0_deg}° as found, and {number(v1_amp)} µm "
-        f"at {v1_deg}° with a {trial:g} g·mm trial weight at 0°. (Every angle counts counter-clockwise, the way the "
+        f"at {v1_deg}° with a {sig(trial, 6)} g·mm trial weight at 0°. (Every angle counts counter-clockwise, the way the "
         f"shaft turns: a reading's phase as a lead from the keyphasor, a weight's from the mark.) With the trial off, "
-        f"what mass of correction goes at {radius:g} mm radius?",
+        f"what mass of correction goes at {sig(radius, 6)} mm radius?",
         grams,
         f"The trial's effect is V<sub>1</sub> − V<sub>0</sub>, so the influence coefficient is α = (V<sub>1</sub> − "
         f"V<sub>0</sub>)/T = {number(abs(a))} µm per g·mm at {round(math.degrees(cmath.phase(a))) % 360}°. The "
         f"correction is W = −V<sub>0</sub>/α = {number(abs(w))} g·mm at {round(math.degrees(cmath.phase(w))) % 360}° from "
         f"the mark: "
-        f"{number(grams)} g at {radius:g} mm.",
+        f"{number(grams)} g at {sig(radius, 6)} mm.",
         unit="g",
     )
 
@@ -176,10 +177,10 @@ def _oil_whip(rng: np.random.Generator) -> Question:
     lam, f = pick(rng, (0.42, 0.45, 0.48, 0.5)), pick(rng, (20, 26, 30, 40))
     rpm = 60 * f / lam
     return Question(
-        f"A rotor's first forward whirl is at {f:g} Hz, and its bearings' oil swirls round at λ = {lam:g} of the "
+        f"A rotor's first forward whirl is at {sig(f, 6)} Hz, and its bearings' oil swirls round at λ = {sig(lam, 6)} of the "
         "shaft's speed. Above what speed does the whirl grow (oil whip)?",
         rpm,
-        f"The swirl's cross-coupling λcΩ outruns the damping cω once λΩ > ω: Ω > ω/λ, {f:g}/{lam:g} = "
+        f"The swirl's cross-coupling λcΩ outruns the damping cω once λΩ > ω: Ω > ω/λ, {sig(f, 6)}/{sig(lam, 6)} = "
         f"{number(f / lam)} Hz, {number(rpm)} rpm. Whatever the damping: c is on both sides.",
         unit="rpm",
     )
@@ -189,11 +190,11 @@ def _internal_onset(rng: np.random.Generator) -> Question:
     fn, ce, ci = pick(rng, (20, 25, 30)), pick(rng, (10, 20, 50)), pick(rng, (10, 20, 40))
     rpm = 60 * fn * (1 + ce / ci)
     return Question(
-        f"A Jeffcott rotor on rigid bearings, its natural frequency {fn:g} Hz, has c<sub>e</sub> = {ce:g} N·s/m of "
-        f"damping at the disc and c<sub>i</sub> = {ci:g} N·s/m in the shaft. Above what speed does it whirl unstably?",
+        f"A Jeffcott rotor on rigid bearings, its natural frequency {sig(fn, 6)} Hz, has c<sub>e</sub> = {sig(ce, 6)} N·s/m of "
+        f"damping at the disc and c<sub>i</sub> = {sig(ci, 6)} N·s/m in the shaft. Above what speed does it whirl unstably?",
         rpm,
         f"Internal damping drives a forward whirl once the shaft turns faster than it whirls: the onset is "
-        f"Ω = ω<sub>n</sub>(1 + c<sub>e</sub>/c<sub>i</sub>) = {fn:g} Hz × {number(1 + ce / ci)} = "
+        f"Ω = ω<sub>n</sub>(1 + c<sub>e</sub>/c<sub>i</sub>) = {sig(fn, 6)} Hz × {number(1 + ce / ci)} = "
         f"{number(fn * (1 + ce / ci))} Hz, {number(rpm)} rpm: above the critical, however little c<sub>i</sub> is.",
         unit="rpm",
     )
@@ -316,13 +317,13 @@ def _stiff_shaft(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A {m:g} kg disc at the middle of a 0.5 m steel shaft, on supports of 200,000 N/m, is to run at {run:g} rpm "
+        f"A {sig(m, 6)} kg disc at the middle of a 0.5 m steel shaft, on supports of 200,000 N/m, is to run at {sig(run, 6)} rpm "
         f"with its critical speed at least 15 % above that ({number(lowest)} rpm), a stiff-shaft design. Choose the "
         f"shaft's diameter, no more than {number(widest)} mm.",
         0,
         f"The critical is √(k<sub>eq</sub>/m), the shaft (48EI/L³, ∝ d⁴) in series with the supports (2k<sub>b</sub>), "
         f"so a thicker shaft helps less and less as it outgrows the supports. From about {number(hi)} mm it meets the "
-        f"spec; {d:g} mm gives {number(critical_rpm(rotor(d)))} rpm.",
+        f"spec; {sig(d, 6)} mm gives {number(critical_rpm(rotor(d)))} rpm.",
         setup=dict(length=length, diameter=0.8 * d / 1000, disc_mass=m, kx=kb, target_rpm=float(run)),
         goal=goal,
         design=dict(length=length, diameter=d / 1000, disc_mass=m, kx=kb, target_rpm=float(run)),
@@ -357,11 +358,11 @@ def _ramp_rate(rng: np.random.Generator) -> Question:
     rate = 2 * zeta**2 * wc**2  # rad/s²
     rpm_s = rate * 60 / (2 * math.pi)
     return Question(
-        f"A rotor's critical speed is {crit:g} rpm, its damping ζ = {zeta:g}. At what ramp rate does "
+        f"A rotor's critical speed is {sig(crit, 6)} rpm, its damping ζ = {sig(zeta, 6)}. At what ramp rate does "
         "Ω̇/ω<sub>c</sub>² reach 2ζ², the scale past which a run-up's peak falls clearly short of the steady "
         "state's?",
         rpm_s,
-        f"ω<sub>c</sub> = {crit:g} × 2π/60 = {number(wc)} rad/s, so Ω̇ = 2ζ²ω<sub>c</sub>² = {number(rate)} rad/s², "
+        f"ω<sub>c</sub> = {sig(crit, 6)} × 2π/60 = {number(wc)} rad/s, so Ω̇ = 2ζ²ω<sub>c</sub>² = {number(rate)} rad/s², "
         f"× 60/2π = {number(rpm_s)} rpm/s. Well below it the run-up reaches the steady-state peak; the faster, the "
         "lower and later the peak.",
         unit="rpm/s",
@@ -373,7 +374,7 @@ def _gravity_critical(rng: np.random.Generator) -> Question:
     crit = pick(rng, (1584, 2000, 2700, 3600))
     return Question(
         f"A horizontal rotor's shaft is a little stiffer one way across than the other (a two-pole rotor), and its "
-        f"critical speed is {crit:g} rpm. At what running speed does its own weight drive a resonance?",
+        f"critical speed is {sig(crit, 6)} rpm. At what running speed does its own weight drive a resonance?",
         crit / 2,
         f"Half the critical, {number(crit / 2)} rpm. Seen from the bearings, a stiffness that turns with the shaft "
         "changes twice a revolution, so the constant weight on it drives 2X, and 2X meets the critical at half its "

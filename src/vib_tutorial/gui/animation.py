@@ -7,6 +7,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..view_models.text import fmt
+from ..view_models.text import number as sig
 from .style import colors, text_on
 
 SPACING = 1.0  # display units between mass centers at rest
@@ -253,7 +254,7 @@ class ChainView(pg.PlotWidget):
             self._force_shaft.setData([xc, tip], [y, y])
             self._force_head.setPos(tip, y)
             self._force_head.setStyle(angle=180 if force > 0 else 0)
-            self._force_text.setText(f"F = {force:+.3g} N")
+            self._force_text.setText(f"F = {sig(force, plus=True)} N")
             self._force_text.setPos(xc, y + 0.14)
             for item in (self._force_shaft, self._force_head, self._force_text):
                 item.setVisible(True)

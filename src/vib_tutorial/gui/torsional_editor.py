@@ -14,6 +14,7 @@ from __future__ import annotations
 from PySide6 import QtCore, QtWidgets
 
 from ..core.torsional import PRESETS, Disc, DriveTrain, Excitation, Mesh, Shaft
+from ..view_models.text import number as sig
 from .layouts import FlowLayout, form_layout, form_row, group, show_in_stack
 from .lesson import connect_all
 from .panels import spin
@@ -334,5 +335,5 @@ class TrainEditor(QtWidgets.QGroupBox):
         j = sum(d.inertia for d in ref.discs)
         self.train_info.setText(
             f"{t.n} discs, {len(t.meshes)} gear mesh{'es' if len(t.meshes) != 1 else ''}; "
-            f"{j:.4g} kg·m² referred to the motor's shaft."
+            f"{sig(j, 4)} kg·m² referred to the motor's shaft."
         )

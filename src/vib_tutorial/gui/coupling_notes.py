@@ -11,6 +11,7 @@ from ..core.modal_coupling import CoupledModel
 from ..core.practice import Prediction
 from ..core.presets import presets
 from ..view_models.text import entry
+from ..view_models.text import number as sig
 from . import coupling_figures, links, notation
 from .lesson import trials_html
 from .links import load_notes
@@ -176,7 +177,7 @@ def _mat(A: np.ndarray, labels: list[str], group: str, title: str) -> str:
 
 
 def _g(v: float) -> str:
-    return f"{v:.4g}"
+    return f"{sig(v, 4)}"
 
 
 def matrices_html(model: CoupledModel, full: ModalResult) -> str:
@@ -384,7 +385,7 @@ def matrices_html(model: CoupledModel, full: ModalResult) -> str:
             ["Mode", "f [Hz]", "Γ [√kg]", "Γ² [kg]", "share"],
             [B.fn_hz, B.participation, eff, eff / B.total_mass],
             [f"B{k + 1}" for k in range(eff.size)],
-            ["", "", f"{_g(eff.sum())}", f"{eff.sum() / B.total_mass:.3g}"],
+            ["", "", f"{_g(eff.sum())}", f"{sig(eff.sum() / B.total_mass)}"],
             bold_row=rb,
         )
     )

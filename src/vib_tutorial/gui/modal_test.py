@@ -58,6 +58,7 @@ from ..core.identification import (
 )
 from ..core.measurement import AA_CUTOFF
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick
+from ..view_models.text import number as sig
 from . import coalesce, frame_stats, modal_test_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import RunButton, TrialBox, trials_html
@@ -241,7 +242,7 @@ def _lines(rng: np.random.Generator) -> Question:
     width = 2 * zeta * fn
     lines = width * block / fs
     return Question(
-        f"A mode at {number(fn, 4)} Hz with ζ = {zeta:g}, measured at f<sub>s</sub> = {fs:g} Hz in blocks of "
+        f"A mode at {number(fn, 4)} Hz with ζ = {sig(zeta, 6)}, measured at f<sub>s</sub> = {sig(fs, 6)} Hz in blocks of "
         f"N<sub>b</sub> = {block}. How many spectral lines fall across its half-power bandwidth?",
         lines,
         f"The lines are Δf = f<sub>s</sub>/N<sub>b</sub> = {number(fs / block)} Hz apart (the block lasts "
@@ -260,10 +261,10 @@ def _exp_window(rng: np.random.Generator) -> Question:
     tau = T / math.log(100 / end)
     dz = 1 / (tau * TWO_PI * fn)
     return Question(
-        f"An impact test at f<sub>s</sub> = {fs:g} Hz, N<sub>b</sub> = {block}, with an exponential window that has "
-        f"fallen to {end:g} % at the block's end. How much damping ratio does it add to the mode at {number(fn, 4)} Hz?",
+        f"An impact test at f<sub>s</sub> = {sig(fs, 6)} Hz, N<sub>b</sub> = {block}, with an exponential window that has "
+        f"fallen to {sig(end, 6)} % at the block's end. How much damping ratio does it add to the mode at {number(fn, 4)} Hz?",
         100 * dz,
-        f"T = N<sub>b</sub>/f<sub>s</sub> = {number(T)} s and e<sup>−T/τ<sub>w</sub></sup> = {end / 100:g}, so "
+        f"T = N<sub>b</sub>/f<sub>s</sub> = {number(T)} s and e<sup>−T/τ<sub>w</sub></sup> = {sig(end / 100, 6)}, so "
         f"τ<sub>w</sub> = T/ln({number(100 / end)}) = {number(tau)} s. Every pole moves 1/τ<sub>w</sub> left: "
         f"Δζ = 1/(τ<sub>w</sub>ω) = 1/({number(tau)} × {number(TWO_PI * fn)}) = {number(100 * dz)} %.",
         unit="%",
@@ -288,8 +289,8 @@ def _tip(rng: np.random.Generator) -> Question:
     down = -20 * math.log10(float(impact_spectrum(tip / 1000, np.array([float(f)]))[0]))
     u = 2 * f * tip / 1000
     return Question(
-        f"A hammer's tip makes a {tip:g} ms half-sine pulse. How many dB below its level at 0 Hz is the force's spectrum "
-        f"at {f:g} Hz?",
+        f"A hammer's tip makes a {sig(tip, 6)} ms half-sine pulse. How many dB below its level at 0 Hz is the force's spectrum "
+        f"at {sig(f, 6)} Hz?",
         down,
         f"A half-sine of length τ<sub>p</sub> has |F(f)|/F(0) = |cos(πu/2)/(1 − u²)|, u = 2fτ<sub>p</sub> = {number(u)}: "
         f"{number(10 ** (-down / 20))}, {number(down)} dB down. It first reaches zero at 1.5/τ<sub>p</sub> = "
@@ -305,10 +306,10 @@ def _coherence(rng: np.random.Generator) -> Question:
     h2 = float(number(h1 * ratio))
     g = h1 / h2
     return Question(
-        f"At one frequency, H1 reads {h1:g} mm/N and H2 reads {number(h2)} mm/N (same phase). What is the coherence "
+        f"At one frequency, H1 reads {sig(h1, 6)} mm/N and H2 reads {number(h2)} mm/N (same phase). What is the coherence "
         "there?",
         g,
-        f"γ² = |G<sub>xf</sub>|²/(G<sub>ff</sub>G<sub>xx</sub>) = H1/H2 = {h1:g}/{number(h2)} = {number(g)}.",
+        f"γ² = |G<sub>xf</sub>|²/(G<sub>ff</sub>G<sub>xx</sub>) = H1/H2 = {sig(h1, 6)}/{number(h2)} = {number(g)}.",
     )
 
 
@@ -316,11 +317,11 @@ def _alias(rng: np.random.Generator) -> Question:
     f, fs = pick(rng, (4.877, 5.982)), pick(rng, (7, 8, 9))
     seen = abs(f - fs * round(f / fs))
     return Question(
-        f"A mode at {number(f, 4)} Hz, sampled at {fs:g} Hz with the anti-alias filter off. At what frequency does it "
+        f"A mode at {number(f, 4)} Hz, sampled at {sig(fs, 6)} Hz with the anti-alias filter off. At what frequency does it "
         "appear?",
         seen,
-        f"It's above the Nyquist frequency f<sub>s</sub>/2 = {fs / 2:g} Hz, so it folds back to |f − kf<sub>s</sub>| "
-        f"= |{number(f, 4)} − {fs:g}| = {number(seen)} Hz, looking like a real mode there.",
+        f"It's above the Nyquist frequency f<sub>s</sub>/2 = {sig(fs / 2, 6)} Hz, so it folds back to |f − kf<sub>s</sub>| "
+        f"= |{number(f, 4)} − {sig(fs, 6)}| = {number(seen)} Hz, looking like a real mode there.",
         unit="Hz",
         setup=dict(fs=float(fs), anti_alias=False, tab=TAB_SETUP),
     )
@@ -419,7 +420,7 @@ def _acquisition_spec(rng: np.random.Generator) -> Question:
         band = AA_CUTOFF * rate / 2
         return (
             Requirement(
-                f"The uniform 4-mass chain, {c:g} N·s/m dampers",
+                f"The uniform 4-mass chain, {sig(c, 6)} N·s/m dampers",
                 f"{len(t.masses)} masses",
                 _same_chain(t.system(), given),
             ),
@@ -431,13 +432,13 @@ def _acquisition_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The uniform 4-mass chain (1 kg, 400 N/m, {c:g} N·s/m each) is to be tested with every mode inside the usable "
+        f"The uniform 4-mass chain (1 kg, 400 N/m, {sig(c, 6)} N·s/m each) is to be tested with every mode inside the usable "
         f"band (the anti-alias filter on), four or more lines across each mode's half-power width and at least 10 "
-        f"averages, in no more than {longest:g} minutes. Choose the sample rate and the block size.",
+        f"averages, in no more than {sig(longest, 6)} minutes. Choose the sample rate and the block size.",
         0,
         f"The top mode is at {number(top)} Hz, so f<sub>s</sub> ≥ 2 × {number(top)}/0.8 = {number(2.5 * top)} Hz. "
         f"Mode 1 is the narrowest, 2ζf<sub>n</sub> = {number(width)} Hz, so a block must last 4/{number(width)} = "
-        f"{number(4 / width)} s or more. At Auto's {fs:g} Hz that's N<sub>b</sub> ≥ {number(4 * fs / width)}: "
+        f"{number(4 / width)} s or more. At Auto's {sig(fs, 6)} Hz that's N<sub>b</sub> ≥ {number(4 * fs / width)}: "
         f"{block}, {number(block / fs)} s a block, {number(10 * block / fs / 60)} minutes for 10 averages. A faster "
         "rate needs a longer block for the same lines.",
         setup=dict(**chain, block=256, tab=TAB_SETUP),
@@ -1083,7 +1084,7 @@ class ModalTestPage(QtWidgets.QWidget):
         if exp_window and self.extract.correct.isChecked():
             sigma = 1.0 / p.exp_tau(acq.settings)
             reported = ident.shifted(sigma)
-            notes.append(f"Poles moved {sigma:.3g} 1/s to the right to remove the exponential window's damping.")
+            notes.append(f"Poles moved {sig(sigma)} 1/s to the right to remove the exponential window's damping.")
         elif exp_window:
             notes.append("<b>Not corrected</b> for the exponential window: every ζ includes its extra damping.")
 
@@ -1097,7 +1098,7 @@ class ModalTestPage(QtWidgets.QWidget):
         )
         self.results.set_results(rows, mac_matrix(modes, acq.result), head + "<br>" + "<br>".join(notes))
         self.results.mac.set_matrix(
-            mac_matrix(modes, acq.result), [f"{m.fn_hz:.3g} Hz" for m in modes], [str(m.index) for m in exact]
+            mac_matrix(modes, acq.result), [f"{sig(m.fn_hz)} Hz" for m in modes], [str(m.index) for m in exact]
         )
 
         j = max(0, self.output.currentIndex())

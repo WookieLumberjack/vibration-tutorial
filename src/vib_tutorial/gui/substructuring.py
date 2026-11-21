@@ -37,6 +37,7 @@ from ..core import (
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from ..core.substructure import METHOD_SHORT, SUBSTRUCTURE_NAMES
+from ..view_models.text import number as sig
 from . import coalesce, weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
@@ -208,9 +209,9 @@ class ComparisonTable(QtWidgets.QTableWidget):
             err = c.error
             cells = [
                 str(c.index),
-                f"{c.fn_true:.4g}",
-                "—" if c.fn_red is None else f"{c.fn_red:.4g}",
-                "not in model" if c.fn_red is None else ("—" if err is None else f"{100 * err:+.3g}%"),
+                f"{sig(c.fn_true, 4)}",
+                "—" if c.fn_red is None else f"{sig(c.fn_red, 4)}",
+                "not in model" if c.fn_red is None else ("—" if err is None else f"{sig(100 * err, plus=True)}%"),
                 zeta_text(c.zeta_true),
                 "—" if c.fn_red is None else zeta_text(c.zeta_red),
                 "—" if c.mac is None else f"{c.mac:.3f}",
@@ -224,7 +225,7 @@ class ComparisonTable(QtWidgets.QTableWidget):
                     item.setForeground(pg.mkColor(error_color(err)))
                 elif col == 5 and c.zeta_error is not None:
                     item.setForeground(pg.mkColor(error_color(c.zeta_error)))
-                    item.setToolTip(f"{100 * c.zeta_error:+.3g}% vs ζ true")
+                    item.setToolTip(f"{sig(100 * c.zeta_error, plus=True)}% vs ζ true")
                 elif c.fn_red is None:
                     item.setForeground(pg.mkColor(colors.grey))
                 self.setItem(r, col, item)
@@ -305,11 +306,11 @@ class ComponentTable(QtWidgets.QTableWidget):
             rigid = m.fn_hz < 1e-9
             cells = [
                 f"{m.substructure}{m.index}",
-                "0 (rigid)" if rigid else f"{m.fn_hz:.4g}",
+                "0 (rigid)" if rigid else f"{sig(m.fn_hz, 4)}",
                 "—" if rigid else zeta_text(m.zeta),
                 "yes" if m.kept else "no",
                 f"mode {m.closest}",
-                f"{m.closest_fn_hz:.4g}",
+                f"{sig(m.closest_fn_hz, 4)}",
                 f"{100 * m.share:.0f}%",
             ]
             color = sub_color(m.substructure)
@@ -350,7 +351,7 @@ class ComparisonPlots(pg.GraphicsLayoutWidget):
         self.shape.setMouseEnabled(x=False, y=False)
         # Headroom above +1 for a one-row legend, so it never covers a shape.
         self.shape.setYRange(-1.15, 1.5, padding=0)
-        self.shape.getAxis("left").setTicks([[(v, f"{v:g}") for v in (-1, -0.5, 0, 0.5, 1)]])
+        self.shape.getAxis("left").setTicks([[(v, f"{sig(v, 6)}") for v in (-1, -0.5, 0, 0.5, 1)]])
         self.shape_legend = add_legend(self.shape, offset=(5, 2), colCount=3)
         self.frf = self.addPlot(row=1, col=0, axisItems=log_axes())
         self.frf.setLogMode(x=True, y=True)
@@ -408,7 +409,7 @@ class ComparisonPlots(pg.GraphicsLayoutWidget):
         self._true_curve.setData(xs, np.concatenate([[0.0], c.shape_true]))
         self._true_curve.setPen(pg.mkPen(color, width=3))
         self._true_curve.setSymbolBrush(color)
-        self.shape_legend.addItem(self._true_curve, f"Mode {c.index} true: {c.fn_true:.4g} Hz")
+        self.shape_legend.addItem(self._true_curve, f"Mode {c.index} true: {sig(c.fn_true, 4)} Hz")
         if c.shape_red is None:
             self._cb_curve.setData([], [])
             self.shape.setTitle(f"Mode {c.index} is not in the reduced model", size="10pt")
@@ -416,9 +417,9 @@ class ComparisonPlots(pg.GraphicsLayoutWidget):
             self._cb_curve.setData(xs, np.concatenate([[0.0], c.shape_red]))
             self._cb_curve.setPen(pg.mkPen(colors.strong, width=2, style=CB_PEN_STYLE))
             self._cb_curve.setSymbolPen(pg.mkPen(colors.strong, width=2))
-            self.shape_legend.addItem(self._cb_curve, f"Mode {c.index} {self.short}: {c.fn_red:.4g} Hz")
+            self.shape_legend.addItem(self._cb_curve, f"Mode {c.index} {self.short}: {sig(c.fn_red, 4)} Hz")
             # No relative error for a rigid-body mode (f_true = 0 when k1 = 0).
-            err = "—" if c.error is None else f"{100 * c.error:+.3g}%"
+            err = "—" if c.error is None else f"{sig(100 * c.error, plus=True)}%"
             self.shape.setTitle(f"Mode {c.index}: error {err}, MAC {c.mac:.3f}", size="10pt")
         # Keep an overlay only while it belongs to this coupled mode.
         keep = self.component is not None and self.component.closest == c.index
@@ -441,7 +442,7 @@ class ComparisonPlots(pg.GraphicsLayoutWidget):
         self.shape_legend.addItem(
             self._component_curve,
             f"{comp.substructure}{comp.index} alone, boundary {'free' if self.free else 'held'}: "
-            f"{comp.fn_hz:.4g} Hz "
+            f"{sig(comp.fn_hz, 4)} Hz "
             f"({100 * comp.share:.0f}% of mode {comp.closest})",
         )
 
@@ -568,11 +569,11 @@ class BasisPlots(QtWidgets.QWidget):
                 color = sub_color(name)
                 f = freqs[label]
                 if not model.free:
-                    what = f"clamped mode {label[3:]} ({f:.3g} Hz)"
+                    what = f"clamped mode {label[3:]} ({sig(f)} Hz)"
                 elif f < 1e-9:
                     what = f"free mode {label[3:]}, rigid body, minus its boundary part"
                 else:
-                    what = f"free mode {label[3:]} ({f:.3g} Hz) minus its boundary part"
+                    what = f"free mode {label[3:]} ({sig(f)} Hz) minus its boundary part"
                 title = f"q<sub>{label[2:]}</sub>: {name}'s {what}"
                 ys = col / np.abs(col).max()
                 p.setYRange(-1.15, 1.15, padding=0)
@@ -715,7 +716,7 @@ class MethodComparison(QtWidgets.QWidget):
         modes = self.full.modes
         self.table.setRowCount(len(modes))
         for r, mode in enumerate(modes):
-            cells = [(str(r + 1), colors.mode[r % len(colors.mode)]), (f"{mode.fn_hz:.4g}", None)]
+            cells = [(str(r + 1), colors.mode[r % len(colors.mode)]), (f"{sig(mode.fn_hz, 4)}", None)]
             for method in METHODS:
                 model = self.current[method]
                 err = self._errors(model)[r] if model is not None else np.nan
@@ -726,7 +727,7 @@ class MethodComparison(QtWidgets.QWidget):
                 elif np.isnan(err):
                     cells.append(("—", None))
                 else:
-                    cells.append((f"{100 * err:+.3g}%", error_color(err)))
+                    cells.append((f"{sig(100 * err, plus=True)}%", error_color(err)))
             for col, (text, color) in enumerate(cells):
                 item = QtWidgets.QTableWidgetItem(text)
                 item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -793,7 +794,7 @@ class MethodComparison(QtWidgets.QWidget):
         if sizes:
             self.plot.getAxis("bottom").setTicks([[(n, str(n)) for n in range(min(sizes), max(sizes) + 1)]])
         self.plot.setTitle(
-            f"Mode {r + 1} ({self.full.modes[r].fn_hz:.4g} Hz): error as more modes are kept", size="10pt"
+            f"Mode {r + 1} ({sig(self.full.modes[r].fn_hz, 4)} Hz): error as more modes are kept", size="10pt"
         )
         self.note.setText(
             "Each curve starts from the fewest modes (none for Craig–Bampton; B's rigid-body mode for "
@@ -1016,7 +1017,7 @@ def _fewest_spec(rng: np.random.Generator) -> Question:
         design = f"no cut, keeping {kept[0]} modes,"
     return Question(
         f"Reduce the 8-mass chain by Craig–Bampton (cut it where you like, keep what modes you like) so that its first "
-        f"{modes} modes are within {worst:g} %, with no more than {count} coordinates.",
+        f"{modes} modes are within {sig(worst, 6)} %, with no more than {count} coordinates.",
         0,
         f"Each cut adds a boundary coordinate that a kept mode could have used, so cutting rarely pays here: "
         f"{design} is {count} coordinates (the fewest with up to two cuts). A cut can pay where it leaves a "
@@ -1556,7 +1557,7 @@ class SubstructuringPage(QtWidgets.QWidget):
     def _fixed_text(sub) -> str:
         if not sub.ni:
             return "no interior DOFs"
-        freqs = [f"{f:.3g}" if f > 1e-9 else "0" for f in sub.omegas / (2 * math.pi)]
+        freqs = [f"{sig(f)}" if f > 1e-9 else "0" for f in sub.omegas / (2 * math.pi)]
         kept = ", ".join(freqs[: sub.n_kept]) or "none"
         rigid = f", {sub.n_rigid} rigid" if sub.n_rigid else ""
         nxt = f"  (next: {freqs[sub.n_kept]} Hz)" if sub.n_kept < sub.omegas.size else ""
@@ -1633,6 +1634,6 @@ class SubstructuringPage(QtWidgets.QWidget):
         return (
             f"{model.name} reduced model: <b>{model.n_red} DOF{'s' if model.n_red != 1 else ''}</b> instead of {n} "
             f"({model.n_modal} modal + {model.boundary.size} boundary): [{coords}]. {kind} "
-            f"Largest frequency error: <b style='color:{error_color(worst)}'>{100 * worst:+.3g}%</b>; "
-            f"damping ratio: <b style='color:{error_color(worst_zeta)}'>{100 * worst_zeta:+.3g}%</b>."
+            f"Largest frequency error: <b style='color:{error_color(worst)}'>{sig(100 * worst, plus=True)}%</b>; "
+            f"damping ratio: <b style='color:{error_color(worst_zeta)}'>{sig(100 * worst_zeta, plus=True)}%</b>."
         )

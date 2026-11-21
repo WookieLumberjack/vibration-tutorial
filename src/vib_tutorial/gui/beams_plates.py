@@ -34,6 +34,7 @@ from ..core.beams_plates import (
     wave_speeds,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..view_models.text import number as sig
 from . import beams_figures, coalesce, settle_plots
 from .lesson import (
     Form,
@@ -195,11 +196,11 @@ def _plate_mode(rng: np.random.Generator) -> Question:
     plate = Plate(a, b, h / 1000, STEEL)
     f = math.pi**2 * (m * m / a**2 + n * n / b**2) * plate.scale / TWO_PI
     return Question(
-        f"A steel plate (E = 210 GPa, ν = 0.3, ρ = 7850 kg/m³) {a:g} × {b:g} m, {h:g} mm thick, simply supported. At "
+        f"A steel plate (E = 210 GPa, ν = 0.3, ρ = 7850 kg/m³) {sig(a, 6)} × {sig(b, 6)} m, {sig(h, 6)} mm thick, simply supported. At "
         f"what frequency is its mode ({m}, {n}), {m} half waves along a and {n} along b?",
         f,
         f"D = Eh³/12(1 − ν²) = {number(plate.rigidity)} N·m and ρh = {number(plate.surface_mass)} kg/m², so "
-        f"√(D/ρh) = {number(plate.scale)} m²/s; ω = π²({m}²/{a:g}² + {n}²/{b:g}²) √(D/ρh) = {number(TWO_PI * f)} "
+        f"√(D/ρh) = {number(plate.scale)} m²/s; ω = π²({m}²/{sig(a, 6)}² + {n}²/{sig(b, 6)}²) √(D/ρh) = {number(TWO_PI * f)} "
         f"rad/s, f = {number(f)} Hz.",
         unit="Hz",
         setup=dict(structure=RECT, length=a, side=b, thickness=float(h)),
@@ -211,7 +212,7 @@ def _modal_density(rng: np.random.Generator) -> Question:
     plate = Plate(a, b, h / 1000, STEEL)
     density = a * b / 2 / plate.scale
     return Question(
-        f"A steel plate {a:g} × {b:g} m, {h:g} mm thick. How many modes does it have per hertz, high up?",
+        f"A steel plate {sig(a, 6)} × {sig(b, 6)} m, {sig(h, 6)} mm thick. How many modes does it have per hertz, high up?",
         density,
         f"N ≈ (S/4π) ω √(ρh/D), so dN/df = (S/2) √(ρh/D) = ({number(a * b)}/2)/{number(plate.scale)} = "
         f"{number(density)} per Hz, whatever the frequency and the shape.",
@@ -227,11 +228,11 @@ def _euler_beam(rng: np.random.Generator) -> Question:
     beam = Beam(length, depth, 0.05, STEEL)
     f = float(beam_frequencies(beam, n, Theory.EULER)[-1])
     return Question(
-        f"A steel beam {length:g} m long and {1000 * depth:g} mm deep, simply supported. By Euler–Bernoulli, where is "
+        f"A steel beam {sig(length, 6)} m long and {sig(1000 * depth, 6)} mm deep, simply supported. By Euler–Bernoulli, where is "
         f"its mode {n}?",
         f,
         f"ω = (nπ/L)² √(EI/ρA), and I/A = h²/12 for a rectangle: √(EI/ρA) = h √(E/12ρ) = {number(math.sqrt(beam.material.E * beam.inertia / (beam.material.rho * beam.area)))} m²/s, "
-        f"so f = ({n}π/{length:g})² × that /2π = {number(f)} Hz.",
+        f"so f = ({n}π/{sig(length, 6)})² × that /2π = {number(f)} Hz.",
         unit="Hz",
         setup=dict(structure=BEAM, length=length, depth=depth, mode=n),
     )
@@ -245,7 +246,7 @@ def _timoshenko_drop(rng: np.random.Generator) -> Question:
     tim = float(beam_frequencies(beam, n, Theory.TIMOSHENKO)[-1])
     drop = 100 * (1 - tim / euler)
     return Question(
-        f"A steel beam with L/h = {slender:g}, simply supported. By how many percent does Timoshenko's theory put mode "
+        f"A steel beam with L/h = {sig(slender, 6)}, simply supported. By how many percent does Timoshenko's theory put mode "
         f"{n} below Euler–Bernoulli's?",
         drop,
         f"The wavelength 2L/{n} against the depth sets it: rotary inertia and, more, shear deflection both lower the "
@@ -344,11 +345,11 @@ def _plate_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A steel panel {a:g} × {b:g} m, simply supported, must have its first mode at {number(lowest, 2)} Hz or above "
+        f"A steel panel {sig(a, 6)} × {sig(b, 6)} m, simply supported, must have its first mode at {number(lowest, 2)} Hz or above "
         f"and weigh no more than {number(heaviest, 2)} kg. Choose its thickness.",
         0,
         f"f<sub>11</sub> = π²(1/a² + 1/b²)√(D/ρh) grows in proportion to h (D ∝ h³, ρh ∝ h), and so does the mass: "
-        f"a window. {h:g} mm gives {number(f11)} Hz and {number(plate.surface_mass * a * b)} kg; anything from about "
+        f"a window. {sig(h, 6)} mm gives {number(f11)} Hz and {number(plate.surface_mass * a * b)} kg; anything from about "
         f"{number(h / 1.2)} to {number(1.2 * h)} mm does.",
         setup=dict(structure=RECT, length=a, side=b, thickness=1.0),
         goal=goal,
@@ -580,11 +581,11 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         self.centre.setCurrentIndex(0 if s == BEAM else 1)
         if s == BEAM:
             b = self.beam
-            self.info.setText(f"L/h = {b.length / b.depth:.3g}; slenderness L/r = {b.slenderness:.3g}.")
+            self.info.setText(f"L/h = {sig(b.length / b.depth)}; slenderness L/r = {sig(b.slenderness)}.")
             self.mix.setEnabled(False)
         else:
             p = self.plate
-            self.info.setText(f"D = {p.rigidity:.4g} N·m, ρh = {p.surface_mass:.4g} kg/m².")
+            self.info.setText(f"D = {sig(p.rigidity, 4)} N·m, ρh = {sig(p.surface_mass, 4)} kg/m².")
             mode = self._plate_modes()[int(self.mode.value()) - 1]
             square = s == RECT and math.isclose(p.a, p.b, rel_tol=1e-9) and mode.m != mode.n
             self.mix.setEnabled(square)
@@ -651,8 +652,8 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         fe, ft = float(euler[n - 1]), float(beam_frequencies(b, n)[n - 1])
         thick = float(beam_omega(b, kn, branch=1)) / (2 * math.pi)
         self.readout.setText(
-            f"Mode {n}: half wavelength {fmt(b.length / n, 'm')}, {b.length / n / b.depth:.3g} depths. "
-            f"Euler–Bernoulli {fmt(fe, 'Hz')}, Timoshenko {fmt(ft, 'Hz')} ({100 * (ft / fe - 1):+.3g} %); "
+            f"Mode {n}: half wavelength {fmt(b.length / n, 'm')}, {sig(b.length / n / b.depth)} depths. "
+            f"Euler–Bernoulli {fmt(fe, 'Hz')}, Timoshenko {fmt(ft, 'Hz')} ({sig(100 * (ft / fe - 1), plus=True)} %); "
             f"Timoshenko's thickness-shear branch at this n: {fmt(thick, 'Hz')}."
         )
 
@@ -668,7 +669,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             self.outline.setData(p.a * np.cos(th), p.a * np.sin(th))
             what = (
                 f"({mode.m}, {mode.n}): {mode.m} nodal diameter{'s' if mode.m != 1 else ''}, {mode.n - 1} "
-                f"nodal circle{'s' if mode.n != 2 else ''}, λ² = {mode.root**2:.4g}"
+                f"nodal circle{'s' if mode.n != 2 else ''}, λ² = {sig(mode.root**2, 4)}"
                 + ("; a pair (cos nθ, sin nθ)" if mode.m else "")
             )
         else:
@@ -709,7 +710,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             cols = {th: beam_frequencies(b, MODES, th) for th in THEORIES}
             head = "<tr><th>n</th>" + "".join(f"<th>{th.value}</th>" for th in THEORIES) + "</tr>"
             for i in range(MODES):
-                cells = "".join(f"<td align='right'>{cols[th][i]:.5g}</td>" for th in THEORIES)
+                cells = "".join(f"<td align='right'>{sig(cols[th][i], 5)}</td>" for th in THEORIES)
                 style = " style='font-weight:bold'" if i + 1 == n else ""
                 rows.append(f"<tr{style}><td>{i + 1}</td>{cells}</tr>")
             title = "Frequencies (Hz), simply supported"
@@ -722,7 +723,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
                 style = " style='font-weight:bold'" if i + 1 == n else ""
                 rows.append(
                     f"<tr{style}><td>{i + 1}</td><td>({m.m}, {m.n})</td><td align='right'>"
-                    f"{m.freq_hz:.5g}</td><td>{lines}</td></tr>"
+                    f"{sig(m.freq_hz, 5)}</td><td>{lines}</td></tr>"
                 )
             title = "Frequencies, lowest first"
         self.table.setHtml(f"<p><b>{title}</b></p><table cellspacing='4'>{head}{''.join(rows)}</table>")
@@ -751,7 +752,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             self.asym_item.setData(f, plate_asymptote(p, f))
             per_hz = p.area / (2 * p.scale)
             self.density_note.setText(
-                f"A plate's count grows in proportion to f: S/2 √(ρh/D) = {per_hz:.3g} modes "
+                f"A plate's count grows in proportion to f: S/2 √(ρh/D) = {sig(per_hz)} modes "
                 f"per Hz, a mode every {fmt(1 / per_hz, 'Hz')} on average"
                 + (" (each pair counted twice)" if p.circular else "")
                 + ". The boundary takes a few modes off the leading term."

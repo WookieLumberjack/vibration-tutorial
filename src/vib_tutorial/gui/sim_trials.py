@@ -14,6 +14,7 @@ import numpy as np
 from ..core import ChainSystem, ForceKind
 from ..core.modal import frf, modal_analysis
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..view_models.text import number as sig
 from .links import page_link
 
 TWO_PI = 2.0 * math.pi
@@ -239,8 +240,8 @@ def _lowest_frequency(rng: np.random.Generator) -> Question:
     m1, m2, k1, k2 = _two_masses(rng)
     w = modal_analysis(ChainSystem(np.array([m1, m2]), np.array([k1, k2]), np.zeros(2))).modes[0].omega_n
     return Question(
-        f"A chain of two masses: m<sub>1</sub> = {m1:g} kg on k<sub>1</sub> = {k1:g} N/m to the ground, and "
-        f"m<sub>2</sub> = {m2:g} kg on k<sub>2</sub> = {k2:g} N/m to m<sub>1</sub>. What is its lowest natural "
+        f"A chain of two masses: m<sub>1</sub> = {sig(m1, 6)} kg on k<sub>1</sub> = {sig(k1, 6)} N/m to the ground, and "
+        f"m<sub>2</sub> = {sig(m2, 6)} kg on k<sub>2</sub> = {sig(k2, 6)} N/m to m<sub>1</sub>. What is its lowest natural "
         "frequency?",
         w / TWO_PI,
         f"K = [[k<sub>1</sub> + k<sub>2</sub>, −k<sub>2</sub>], [−k<sub>2</sub>, k<sub>2</sub>]], M = "
@@ -258,12 +259,12 @@ def _shape_ratio(rng: np.random.Generator) -> Question:
     w2 = rounded(w2)
     ratio = (k1 + k2 - w2 * m1) / k2
     return Question(
-        f"The same kind of chain: m<sub>1</sub> = {m1:g} kg on k<sub>1</sub> = {k1:g} N/m, m<sub>2</sub> = "
-        f"{m2:g} kg on k<sub>2</sub> = {k2:g} N/m. Its first mode has ω² = {number(w2)} (rad/s)². In that mode, "
+        f"The same kind of chain: m<sub>1</sub> = {sig(m1, 6)} kg on k<sub>1</sub> = {sig(k1, 6)} N/m, m<sub>2</sub> = "
+        f"{sig(m2, 6)} kg on k<sub>2</sub> = {sig(k2, 6)} N/m. Its first mode has ω² = {number(w2)} (rad/s)². In that mode, "
         "how far does m<sub>2</sub> move for each unit m<sub>1</sub> moves?",
         ratio,
         f"The first row of (K − ω²M)φ = 0: (k<sub>1</sub> + k<sub>2</sub> − ω²m<sub>1</sub>)φ<sub>1</sub> = "
-        f"k<sub>2</sub>φ<sub>2</sub>, so φ<sub>2</sub>/φ<sub>1</sub> = ({k1 + k2:g} − {number(w2)} × {m1:g})/{k2:g} = "
+        f"k<sub>2</sub>φ<sub>2</sub>, so φ<sub>2</sub>/φ<sub>1</sub> = ({sig(k1 + k2, 6)} − {number(w2)} × {sig(m1, 6)})/{sig(k2, 6)} = "
         f"{number(ratio)}: positive, the masses move together.",
         setup=_two_mass_setup(m1, m2, k1, k2),
     )
@@ -279,11 +280,11 @@ def _rayleigh(rng: np.random.Generator) -> Question:
     w2 = float(x @ K @ x) / (m * float(x @ x))
     exact = modal_analysis(system).modes[0].fn_hz
     return Question(
-        f"Two {m:g} kg masses on two {k:g} N/m springs (ground, m<sub>1</sub>, m<sub>2</sub>). Guess the first "
-        f"mode's shape as x = (1, {guess:g}). What frequency does Rayleigh's quotient give?",
+        f"Two {sig(m, 6)} kg masses on two {sig(k, 6)} N/m springs (ground, m<sub>1</sub>, m<sub>2</sub>). Guess the first "
+        f"mode's shape as x = (1, {sig(guess, 6)}). What frequency does Rayleigh's quotient give?",
         math.sqrt(w2) / TWO_PI,
-        f"ω² ≈ xᵀKx / xᵀMx: the springs stretch by 1 and {number(guess - 1)}, so xᵀKx = {k:g}(1 + "
-        f"{number((guess - 1) ** 2)}) = {number(float(x @ K @ x))}; xᵀMx = {m:g}(1 + {number(guess**2)}) = "
+        f"ω² ≈ xᵀKx / xᵀMx: the springs stretch by 1 and {number(guess - 1)}, so xᵀKx = {sig(k, 6)}(1 + "
+        f"{number((guess - 1) ** 2)}) = {number(float(x @ K @ x))}; xᵀMx = {sig(m, 6)}(1 + {number(guess**2)}) = "
         f"{number(m * float(x @ x))}. ω² = {number(w2)}, f = {number(math.sqrt(w2) / TWO_PI)} Hz, above the exact "
         f"{number(exact)} Hz, as it always is.",
         unit="Hz",
@@ -297,10 +298,10 @@ def _proportional_zeta(rng: np.random.Generator) -> Question:
     w = modal_analysis(ChainSystem.uniform(4)).modes[r - 1].omega_n
     w = rounded(w)
     return Question(
-        f"The default chain (four 1 kg masses on 400 N/m springs) has every damper β = {beta:g} s times its "
+        f"The default chain (four 1 kg masses on 400 N/m springs) has every damper β = {sig(beta, 6)} s times its "
         f"spring. Mode {r} is at ω = {number(w)} rad/s. What is its damping ratio?",
         beta * w / 2.0,
-        f"C = βK keeps the modes real, and each mode's ζ = φᵀCφ/2ω = βω²/2ω = βω/2 = {beta:g} × {number(w)}/2 = "
+        f"C = βK keeps the modes real, and each mode's ζ = φᵀCφ/2ω = βω²/2ω = βω/2 = {sig(beta, 6)} × {number(w)}/2 = "
         f"{number(beta * w / 2)}: the higher modes are damped more.",
         setup=dict(damping={i: 400.0 * beta for i in range(4)}, coords="Modal", release=r - 1),
     )
@@ -313,7 +314,7 @@ def _absorber_stiffness(rng: np.random.Generator) -> Question:
     f = rounded(math.sqrt(k / m) / TWO_PI)
     ka = ma * (TWO_PI * f) ** 2
     return Question(
-        f"A {m:g} kg machine on {k:g} N/m is shaken at {number(f)} Hz. A {number(ma)} kg absorber is to be hung "
+        f"A {sig(m, 6)} kg machine on {sig(k, 6)} N/m is shaken at {number(f)} Hz. A {number(ma)} kg absorber is to be hung "
         "on it to hold it still at that frequency. What spring should the absorber have?",
         ka,
         f"Tuned to the drive, the absorber's spring pushes back with the whole force and the machine stands "
@@ -407,7 +408,7 @@ def _absorber_spec(rng: np.random.Generator) -> Question:
         system = chain(t)
         driven = t.kind in (None, ForceKind.HARMONIC) and t.base is None
         drive = Requirement(
-            f"The drive: {force:g} N at {number(f)} Hz on m<sub>1</sub>",
+            f"The drive: {sig(force, 6)} N at {number(f)} Hz on m<sub>1</sub>",
             f"{number(t.force or 0)} N at {number(t.freq_hz or 0)} Hz on m{(t.target or 0) + 1}",
             driven
             and t.target == 0
@@ -427,7 +428,7 @@ def _absorber_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A {m:g} kg machine on a {k:g} N/m mount with a {number(c)} N·s/m damper is shaken by {force:g} N at "
+        f"A {sig(m, 6)} kg machine on a {sig(k, 6)} N/m mount with a {number(c)} N·s/m damper is shaken by {sig(force, 6)} N at "
         f"{number(f)} Hz, its resonance. Hang an absorber on it (a second mass on its own spring) so the machine "
         f"swings no more than ±{number(still, 2)} mm. The absorber may weigh {number(cap)} kg at most, and has "
         f"room to swing ±{number(stroke, 2)} mm.",

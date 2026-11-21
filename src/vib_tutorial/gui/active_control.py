@@ -29,6 +29,7 @@ from ..core.active_control import (
 )
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, kept, number, pick
+from ..view_models.text import number as sig
 from . import active_control_figures, coalesce, settle_plots
 from .challenge import ChallengeBox
 from .drag import DragDot
@@ -224,10 +225,10 @@ def _one_mass(rng: np.random.Generator) -> Question:
     g = pick(rng, (2, 5, 10, 20))
     zeta = g / (2 * math.sqrt(k * m))
     return Question(
-        f"A {m:g} kg mass on a {k:g} N/m spring, undamped, with a velocity sensor and a force actuator on it: "
-        f"u = −g ẋ with g = {g:g} N·s/m. What damping ratio does the loop give it?",
+        f"A {sig(m, 6)} kg mass on a {sig(k, 6)} N/m spring, undamped, with a velocity sensor and a force actuator on it: "
+        f"u = −g ẋ with g = {sig(g, 6)} N·s/m. What damping ratio does the loop give it?",
         100 * zeta,
-        f"Collocated velocity feedback is a damper of c = g to the ground: ζ = g/2√(km) = {g:g}/(2√({number(k * m)})) "
+        f"Collocated velocity feedback is a damper of c = g to the ground: ζ = g/2√(km) = {sig(g, 6)}/(2√({number(k * m)})) "
         f"= {number(100 * zeta)} %.",
         unit="%",
         setup=dict(masses=(m,), springs=(k,), dampers=(0.0,), sensor=1, actuator=1, gain=g, inp=1, out=1, tab=TAB_GAIN),
@@ -242,11 +243,11 @@ def _modal_estimate(rng: np.random.Generator) -> Question:
     f, shape = round(float(w[r - 1]) / TWO_PI, 3), round(abs(float(phi[a - 1, r - 1])), 3)
     dz = g * shape * shape / (2 * TWO_PI * f)
     return Question(
-        f"The uniform chain (four 1 kg masses, 400 N/m): mode {r} is at {f:g} Hz, and its mass-normalized shape is "
-        f"{shape:g} at m{a} (in kg<sup>−½</sup>). Collocated velocity feedback at m{a}, g = {g:g} N·s/m: how much "
+        f"The uniform chain (four 1 kg masses, 400 N/m): mode {r} is at {sig(f, 6)} Hz, and its mass-normalized shape is "
+        f"{sig(shape, 6)} at m{a} (in kg<sup>−½</sup>). Collocated velocity feedback at m{a}, g = {sig(g, 6)} N·s/m: how much "
         f"damping does mode {r} gain, by the light-gain estimate?",
         100 * dz,
-        f"Δζ<sub>r</sub> = g φ<sub>r</sub>(a)²/2ω<sub>r</sub> = {g:g} × {shape:g}²/(2 × 2π × {f:g}) = "
+        f"Δζ<sub>r</sub> = g φ<sub>r</sub>(a)²/2ω<sub>r</sub> = {sig(g, 6)} × {sig(shape, 6)}²/(2 × 2π × {sig(f, 6)}) = "
         f"{number(100 * dz)} %: the modes that move m{a} most gain most.",
         unit="%",
         setup=dict(**UNIFORM, sensor=a, actuator=a, gain=g, tab=TAB_GAIN),
@@ -261,11 +262,11 @@ def _spillover(rng: np.random.Generator) -> Question:
     ps, pa = round(float(phi[sensor - 1, 1]), 3), round(float(phi[3, 1]), 3)
     loss = -g * ps * pa / (2 * TWO_PI * f)
     return Question(
-        f"The uniform chain's mode 2 is at {f:g} Hz, its mass-normalized shape {ps:g} at m{sensor} and {pa:g} at m4. "
-        f"Velocity measured at m{sensor} is fed back as a force on m4, g = {g:g} N·s/m. By how much does the light-gain "
+        f"The uniform chain's mode 2 is at {sig(f, 6)} Hz, its mass-normalized shape {sig(ps, 6)} at m{sensor} and {sig(pa, 6)} at m4. "
+        f"Velocity measured at m{sensor} is fed back as a force on m4, g = {sig(g, 6)} N·s/m. By how much does the light-gain "
         "estimate lower mode 2's damping ratio?",
         100 * loss,
-        f"Δζ = g φ(a)φ(s)/2ω = {g:g} × ({pa:g}) × {ps:g}/(2 × 2π × {f:g}) = −{number(100 * loss)} %: in mode 2 the two "
+        f"Δζ = g φ(a)φ(s)/2ω = {sig(g, 6)} × ({sig(pa, 6)}) × {sig(ps, 6)}/(2 × 2π × {sig(f, 6)}) = −{number(100 * loss)} %: in mode 2 the two "
         "masses move against each other, so the force pushes with m4's motion and feeds the mode energy (spillover).",
         unit="%",
         setup=dict(**UNIFORM, sensor=sensor, actuator=4, gain=g, tab=TAB_LOCUS),
@@ -276,10 +277,10 @@ def _den_hartog(rng: np.random.Generator) -> Question:
     mu = pick(rng, (0.01, 0.02, 0.05, 0.1))
     zeta = math.sqrt(3 * mu / (8 * (1 + mu) ** 3))
     return Question(
-        f"A tuned mass damper with {mu:g} of its mode's modal mass. What damping ratio does Den Hartog's tuning give "
+        f"A tuned mass damper with {sig(mu, 6)} of its mode's modal mass. What damping ratio does Den Hartog's tuning give "
         "it?",
         100 * zeta,
-        f"ζ = √(3μ/8(1 + μ)³) = √(3 × {mu:g}/(8 × {number((1 + mu) ** 3, 4)})) = {number(100 * zeta)} %, with the "
+        f"ζ = √(3μ/8(1 + μ)³) = √(3 × {sig(mu, 6)}/(8 × {number((1 + mu) ** 3, 4)})) = {number(100 * zeta)} %, with the "
         f"absorber tuned to f/(1 + μ) = {number(1 / (1 + mu), 4)} f.",
         unit="%",
         setup=dict(**UNIFORM, tmd=True, ratio=mu, gain=0.0),
@@ -290,8 +291,8 @@ def _skyhook(rng: np.random.Generator) -> Question:
     zs, r = pick(rng, (0.2, 0.5, 0.7, 1)), pick(rng, (1, 2, 3, 5))
     t = float(skyhook(np.array([r]), 0.1, zs)[1][0])
     return Question(
-        f"A machine on a spring mount, with a skyhook damper of ζ<sub>sky</sub> = {zs:g}. Leaving out its passive damper, what "
-        f"is its transmissibility from the floor at {r:g} times its natural frequency?",
+        f"A machine on a spring mount, with a skyhook damper of ζ<sub>sky</sub> = {sig(zs, 6)}. Leaving out its passive damper, what "
+        f"is its transmissibility from the floor at {sig(r, 6)} times its natural frequency?",
         t,
         f"|X/Y| = 1/|1 − r² + 2iζr| = 1/√(({number(1 - r * r)})² + ({number(2 * zs * r)})²) = {number(t)}: the "
         "skyhook damper pushes against the sky, so it never carries the floor's motion through.",
@@ -303,9 +304,9 @@ def _lag_phase(rng: np.random.Generator) -> Question:
     tau, f = pick(rng, (5, 10, 20)), pick(rng, (5, 10, 20, 50))
     phase = 2 * math.degrees(math.atan(TWO_PI * f * tau / 1000))
     return Question(
-        f"A loop has two first-order lags, each τ = {tau:g} ms. How far do they turn the feedback's phase at {f:g} Hz?",
+        f"A loop has two first-order lags, each τ = {sig(tau, 6)} ms. How far do they turn the feedback's phase at {sig(f, 6)} Hz?",
         phase,
-        f"Each lag 1/(1 + iωτ) turns it by arctan(ωτ) = arctan(2π × {f:g} × {tau / 1000:g}) = "
+        f"Each lag 1/(1 + iωτ) turns it by arctan(ωτ) = arctan(2π × {sig(f, 6)} × {sig(tau / 1000, 6)}) = "
         f"{number(phase / 2)}°, so the two by {number(phase)}°. Near 180° the force that should oppose the velocity "
         "helps it.",
         unit="°",
@@ -420,7 +421,7 @@ def _gain_spec(rng: np.random.Generator) -> Question:
             at_least("The least damped mode's ζ", 100 * least, 100 * target, "%"),
         )
 
-    lagged = f", with two {lag:g} ms lags in the loop" if lag else ""
+    lagged = f", with two {sig(lag, 6)} ms lags in the loop" if lag else ""
     return Question(
         f"The uniform chain (four 1 kg masses, 400 N/m, 2 N·s/m dampers), collocated velocity feedback at m{a}{lagged}. "
         f"Choose the gain so that every mode still oscillating has ζ ≥ {number(100 * target)} %.",
@@ -758,7 +759,7 @@ class ActiveControlPage(QtWidgets.QWidget):
             A2, B2, C2 = closed_loop(s, None, t)
             H2 = np.abs(frf(A2, B2, C2, out, inp, f))
             self.tmd_item.setData(f, H2)
-            tmd_text = f" TMD ({t[1] * 1e3:.3g} g on m{ctrl.actuator + 1}): peak {H2.max():.3g} m/N."
+            tmd_text = f" TMD ({sig(t[1] * 1e3)} g on m{ctrl.actuator + 1}): peak {sig(H2.max())} m/N."
         else:
             self.tmd_item.setData([], [])
         self.frf_plot.setXRange(np.log10(f[0]), np.log10(f[-1]), padding=0)
@@ -767,19 +768,19 @@ class ActiveControlPage(QtWidgets.QWidget):
         closed = oscillating_poles(A1)
         est = modal_damping_estimate(s, ctrl)
         rows = "".join(
-            f"<tr><td>mode {j + 1}</td><td align='right'>{p.freq_hz:.3g} Hz</td>"
-            f"<td align='right'>{100 * p.zeta:.3g} %</td><td align='right'>{100 * (p.zeta + est[j]):.3g} %</td></tr>"
+            f"<tr><td>mode {j + 1}</td><td align='right'>{sig(p.freq_hz)} Hz</td>"
+            f"<td align='right'>{sig(100 * p.zeta)} %</td><td align='right'>{sig(100 * (p.zeta + est[j]))} %</td></tr>"
             for j, p in enumerate(open_poles)
         )
-        closed_rows = ", ".join(f"{p.freq_hz:.3g} Hz at {100 * p.zeta:.3g} %" for p in closed)
+        closed_rows = ", ".join(f"{sig(p.freq_hz)} Hz at {sig(100 * p.zeta)} %" for p in closed)
         self.readout.setText(
             (
                 ""
                 if stable
                 else "<b>The loop is unstable</b> (a pole in the right half plane); no closed-loop receptance. "
             )
-            + f"Peak without control {H0.max():.3g} m/N"
-            + (f", with it {H1.max():.3g} m/N." if H1 is not None else ".")
+            + f"Peak without control {sig(H0.max())} m/N"
+            + (f", with it {sig(H1.max())} m/N." if H1 is not None else ".")
             + tmd_text
             + "<table cellspacing='0' cellpadding='2'><tr><th></th><th>f</th><th>ζ open</th>"
             "<th>ζ + gφ(a)φ(s)/2ω</th></tr>" + rows + "</table>" + f"Closed loop, exactly: {closed_rows}."
@@ -866,8 +867,8 @@ class ActiveControlPage(QtWidgets.QWidget):
             self.sky_plot.setXRange(-1, 1, padding=0)
             p, sk, _ = skyhook(np.array([1.0, 5.0]), self.zp.value(), self.zs.value())
             self.tab_note.setText(
-                f"At f<sub>n</sub>: passive {p[0]:.3g}, skyhook {sk[0]:.3g}. At 5 f<sub>n</sub>: "
-                f"passive {p[1]:.3g}, skyhook {sk[1]:.3g}."
+                f"At f<sub>n</sub>: passive {sig(p[0])}, skyhook {sig(sk[0])}. At 5 f<sub>n</sub>: "
+                f"passive {sig(p[1])}, skyhook {sig(sk[1])}."
             )
         else:
             self.tab_note.setText("")

@@ -35,6 +35,7 @@ from ..core.test_planning import (
     spectrum_grid,
     undamped_modes,
 )
+from ..view_models.text import number as sig
 from . import coalesce, planning_figures, settle_plots
 from .layouts import FlowLayout
 from .lesson import (
@@ -205,10 +206,10 @@ def _one_mode_share(rng: np.random.Generator) -> Question:
     i = int(rng.integers(3))
     e = float(shares(np.array(shape)[:, None])[i])
     return Question(
-        f"A test targets one mode, whose shape at three candidate sensors is ({shape[0]:g}, {shape[1]:g}, "
-        f"{shape[2]:g}). What is sensor {i + 1}'s effective independence E<sub>{i + 1}</sub>?",
+        f"A test targets one mode, whose shape at three candidate sensors is ({sig(shape[0], 6)}, {sig(shape[1], 6)}, "
+        f"{sig(shape[2], 6)}). What is sensor {i + 1}'s effective independence E<sub>{i + 1}</sub>?",
         e,
-        f"With one target, E<sub>j</sub> = φ<sub>j</sub>² / Σ φ<sub>k</sub>²: {shape[i]:g}² / "
+        f"With one target, E<sub>j</sub> = φ<sub>j</sub>² / Σ φ<sub>k</sub>²: {sig(shape[i], 6)}² / "
         f"{number(sum(x * x for x in shape))} = {number(e)}. The shares add up to 1, the number of targets.",
     )
 
@@ -275,7 +276,7 @@ def _reference(rng: np.random.Generator) -> Question:
     x = ods(system, force, hz)
     best = int(np.argmax(np.abs(x)))
     return Question(
-        f"The eight-mass chain (1 kg, 1000 N/m, 1 N·s/m) runs at {hz:g} Hz with a force on mass {force + 1}. On "
+        f"The eight-mass chain (1 kg, 1000 N/m, 1 N·s/m) runs at {sig(hz, 6)} Hz with a force on mass {force + 1}. On "
         "which mass should the ODS's reference sensor go?",
         best + 1,
         f"Where the ODS moves most, mass {best + 1}: every other sensor is divided by the reference, so a "
@@ -303,7 +304,7 @@ def _hand_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"Place three sensors by hand on the eight-mass chain for its first {targets} modes, with at least {floor:g} "
+        f"Place three sensors by hand on the eight-mass chain for its first {targets} modes, with at least {sig(floor, 6)} "
         "% of all eight's Fisher information and no auto-MAC off-diagonal above 0.1.",
         0,
         "Spread them, with one at the free end, where every mode moves: masses 2, 5 and 8 (effective "
@@ -316,7 +317,7 @@ def _hand_spec(rng: np.random.Generator) -> Question:
 
 def _par(x: float) -> str:
     """A number as a factor in a printed sum: in brackets when it's negative, so (−1)² isn't read as −1²."""
-    return f"({x:g})" if x < 0 else f"{x:g}"
+    return f"({sig(x, 6)})" if x < 0 else f"{sig(x, 6)}"
 
 
 def _two_mode_share(rng: np.random.Generator) -> Question:
@@ -331,14 +332,14 @@ def _two_mode_share(rng: np.random.Generator) -> Question:
     a, b, c = (float(G[0, 0]), float(G[0, 1]), float(G[1, 1]))
     det = a * c - b * b
     p, q = rows[i]
-    shown = ", ".join(f"({x:g}, {y:g})" for x, y in rows)
+    shown = ", ".join(f"({sig(x, 6)}, {sig(y, 6)})" for x, y in rows)
     return Question(
         f"A test targets two modes. At three candidate sensors their shapes are, row by row (mode 1, mode 2), "
         f"{shown}. What is sensor {i + 1}'s effective independence E<sub>{i + 1}</sub>?",
         e,
-        f"E<sub>j</sub> = φ<sub>j</sub>ᵀ(ΦᵀΦ)⁻¹φ<sub>j</sub>, the projector's diagonal. ΦᵀΦ = [{a:g}, {b:g}; {b:g}, {c:g}], "
-        f"determinant {det:g}, so E<sub>{i + 1}</sub> = ({c:g}·{_par(p)}² − 2·{_par(b)}·{_par(p)}·{_par(q)} + "
-        f"{a:g}·{_par(q)}²)/{det:g} = {number(e)}. The three add up to 2, the number of targets.",
+        f"E<sub>j</sub> = φ<sub>j</sub>ᵀ(ΦᵀΦ)⁻¹φ<sub>j</sub>, the projector's diagonal. ΦᵀΦ = [{sig(a, 6)}, {sig(b, 6)}; {sig(b, 6)}, {sig(c, 6)}], "
+        f"determinant {sig(det, 6)}, so E<sub>{i + 1}</sub> = ({sig(c, 6)}·{_par(p)}² − 2·{_par(b)}·{_par(p)}·{_par(q)} + "
+        f"{sig(a, 6)}·{_par(q)}²)/{sig(det, 6)} = {number(e)}. The three add up to 2, the number of targets.",
     )
 
 
@@ -351,11 +352,11 @@ def _mac_pair(rng: np.random.Generator) -> Question:
     m = mac(np.array(a), np.array(b))
     dot, aa, bb = float(np.dot(a, b)), float(np.dot(a, a)), float(np.dot(b, b))
     return Question(
-        f"Two modes measured at three sensors read ({a[0]:g}, {a[1]:g}, {a[2]:g}) and ({b[0]:g}, {b[1]:g}, "
-        f"{b[2]:g}). What is their MAC?",
+        f"Two modes measured at three sensors read ({sig(a[0], 6)}, {sig(a[1], 6)}, {sig(a[2], 6)}) and ({sig(b[0], 6)}, {sig(b[1], 6)}, "
+        f"{sig(b[2], 6)}). What is their MAC?",
         m,
         f"MAC = (φ<sub>1</sub>ᵀφ<sub>2</sub>)² / (φ<sub>1</sub>ᵀφ<sub>1</sub> · φ<sub>2</sub>ᵀφ<sub>2</sub>) = "
-        f"{_par(dot)}² / ({aa:g} × {bb:g}) = {number(m)}. Near 1, the two would look alike at these sensors.",
+        f"{_par(dot)}² / ({sig(aa, 6)} × {sig(bb, 6)}) = {number(m)}. Near 1, the two would look alike at these sensors.",
     )
 
 
@@ -366,12 +367,12 @@ def _excite_point(rng: np.random.Generator) -> Question:
         best = int(np.argmax(worst))
         if sorted(worst)[-1] > sorted(worst)[-2] + 0.05:  # one clear choice
             break
-    shown = "; ".join(f"point {k + 1}: ({x:g}, {y:g})" for k, (x, y) in enumerate(shapes))
+    shown = "; ".join(f"point {k + 1}: ({sig(x, 6)}, {sig(y, 6)})" for k, (x, y) in enumerate(shapes))
     return Question(
         f"Two target modes' shapes at four points where a shaker could go are {shown}. Which point drives both best?",
         best + 1,
         "The one whose smaller |φ| over the targets is the largest: "
-        + ", ".join(f"{w:g}" for w in worst)
+        + ", ".join(f"{sig(w, 6)}" for w in worst)
         + f", so point {best + 1}. A point near a node of either mode would hardly drive it, whatever the other.",
     )
 
@@ -430,13 +431,13 @@ def _share(information: float) -> str:
     """A Fisher information share in %, a tiny one as a power of ten."""
     pct = 100 * information
     if pct >= 0.01 or pct == 0:
-        return f"{pct:.3g} %"
+        return f"{sig(pct)} %"
     exponent = math.floor(math.log10(pct))
-    return f"{pct / 10**exponent:.2g} × 10<sup>{exponent}</sup> %"
+    return f"{sig(pct / 10**exponent, 2)} × 10<sup>{exponent}</sup> %"
 
 
 def _times(x: float) -> str:
-    return "∞" if not np.isfinite(x) else f"×{x:.3g}"
+    return "∞" if not np.isfinite(x) else f"×{sig(x)}"
 
 
 class TestPlanningPage(QtWidgets.QWidget):
@@ -682,7 +683,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         self.at_mode.blockSignals(True)
         self.at_mode.clear()
         self.at_mode.addItem("Pick a mode…")
-        self.at_mode.addItems([f"Mode {r + 1} ({f:.4g} Hz)" for r, f in enumerate(self.hz)])
+        self.at_mode.addItems([f"Mode {r + 1} ({sig(f, 4)} Hz)" for r, f in enumerate(self.hz)])
         self.at_mode.blockSignals(False)
         self._work_sensors()
         self._draw_shapes()
@@ -728,7 +729,7 @@ class TestPlanningPage(QtWidgets.QWidget):
                 item.setPen(pg.mkPen(colour, width=2))
                 dots.setData(sensors + 1, shape[sensors])
                 mark(dots, colour)
-                legend.addItem(item, f"mode {r + 1}, {self.hz[r]:.4g} Hz")
+                legend.addItem(item, f"mode {r + 1}, {sig(self.hz[r], 4)} Hz")
             else:
                 item.setData([], [])
                 dots.setData([], [])
@@ -787,7 +788,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         self.ods_mode.setData(idx, np.concatenate([[0.0], phi / np.max(np.abs(phi))]))
         legend = self.ods_plot.getPlotItem().legend
         legend.clear()
-        legend.addItem(self.ods_item, f"ODS at {f:.4g} Hz")
+        legend.addItem(self.ods_item, f"ODS at {sig(f, 4)} Hz")
         legend.addItem(self.ods_quad, "a quarter cycle on")
         legend.addItem(self.ods_mode, f"mode {best + 1} (MAC {macs[best]:.3f})")
         self.ods_ref.setData([ref + 1], [real[ref]])
@@ -799,12 +800,12 @@ class TestPlanningPage(QtWidgets.QWidget):
         others = sorted(range(n), key=lambda r: -macs[r])[:3]
         ratio = abs(x[ref]) / top
         text = (
-            f"At {f:.4g} Hz, a force on mass {force + 1}: MAC "
+            f"At {sig(f, 4)} Hz, a force on mass {force + 1}: MAC "
             + ", ".join(f"{macs[r]:.3f} with mode {r + 1}" for r in others)
-            + f". The reference, mass {ref + 1}, moves {100 * ratio:.3g} % as much as the most"
+            + f". The reference, mass {ref + 1}, moves {sig(100 * ratio)} % as much as the most"
         )
         text += (
-            f": every ratio X<sub>j</sub>/X<sub>ref</sub> is up to {1 / ratio:.3g} times its sensor's motion, its "
+            f": every ratio X<sub>j</sub>/X<sub>ref</sub> is up to {sig(1 / ratio)} times its sensor's motion, its "
             "noise with it."
             if ratio < 0.2
             else "."
@@ -841,12 +842,12 @@ class TestPlanningPage(QtWidgets.QWidget):
         for k, step in enumerate(p.steps):
             cells = [""] * n
             for c, v in zip(step.candidates, step.score, strict=True):
-                text = f"{v:.3g}"
+                text = f"{sig(v)}"
                 cells[c] = f"<b style='color:{colors.force}'>{text}</b>" if c == step.dropped else text
             rows.append([str(k + 1), *cells, f"m{step.dropped + 1}"])
         kept = [""] * n
         for c, v in zip(p.sensors, p.final, strict=True):
-            kept[c] = f"<b>{v:.3g}</b>"
+            kept[c] = f"<b>{sig(v)}</b>"
         rows.append(["kept", *kept, ""])
         self.steps_view.setHtml(_table(head, rows))
         self.steps_note.setText(
@@ -915,7 +916,7 @@ class TestPlanningPage(QtWidgets.QWidget):
         lead = int(np.argmax(size))
         self.parts_note.setText(
             f"Above: every mass's response to a unit force on mass {force + 1} (a colour per mass), the operating "
-            f"frequency dashed. Below: each mode's share of the ODS at {f:.4g} Hz, φ<sub>r</sub>η<sub>r</sub>'s "
-            f"largest against the ODS's: mode {lead + 1} leads with {size[lead]:.3g}. They add up (with their "
+            f"frequency dashed. Below: each mode's share of the ODS at {sig(f, 4)} Hz, φ<sub>r</sub>η<sub>r</sub>'s "
+            f"largest against the ODS's: mode {lead + 1} leads with {sig(size[lead])}. They add up (with their "
             "phases) to the ODS exactly."
         )

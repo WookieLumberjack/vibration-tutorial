@@ -16,6 +16,7 @@ from ..core.rotor import MODE_LIMIT, XD, YA, YB, YD, RotorSystem
 from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
 from ..view_models.text import fmt
+from ..view_models.text import number as sig
 from .rotor_notes import whirl_name
 
 
@@ -28,13 +29,13 @@ def shaft_note(system: RotorSystem) -> str:
     """The note under the Shaft and disc box."""
     ks = 48.0 * system.ei / system.length**3
     if system.overhung:
-        formula = f" = 3EI/(c²(L + c)), overhung by c = {system.overhang * 1e3:.4g} mm"
+        formula = f" = 3EI/(c²(L + c)), overhung by c = {sig(system.overhang * 1e3, 4)} mm"
     elif abs(system.position - 0.5) < 1e-9:
         formula = " = 48EI/L³"
     else:
         formula = f" (48EI/L³ = {ks:,.0f} N/m at midspan)"
     return (
-        f"EI = {system.ei:.4g} N·m²; shaft stiffness at the disc (bearings rigid) "
+        f"EI = {sig(system.ei, 4)} N·m²; shaft stiffness at the disc (bearings rigid) "
         f"{system.disc_stiffness:,.0f} N/m"
         + formula
         + _asymmetry(system)
@@ -49,8 +50,8 @@ def _asymmetry(system: RotorSystem) -> str:
         return ""
     d = system.asymmetry
     return (
-        f"<br>Asymmetric: EI = {system.ei * (1 + d):.4g} N·m² bending toward the stiff axis "
-        f"({math.degrees(system.asymmetry_angle):.0f}° from the mark), {system.ei * (1 - d):.4g} across it"
+        f"<br>Asymmetric: EI = {sig(system.ei * (1 + d), 4)} N·m² bending toward the stiff axis "
+        f"({math.degrees(system.asymmetry_angle):.0f}° from the mark), {sig(system.ei * (1 - d), 4)} across it"
     )
 
 
@@ -69,8 +70,8 @@ def _crack(system: RotorSystem) -> str:
         else "breathing, but shut: nothing opens it without gravity"
     )
     return (
-        f"<br>Crack {crack.depth:.0%} deep at z = {system.crack_z * 1e3:.4g} mm ({state}): compliance "
-        f"{c_open:.3g} rad/(N·m) opening it, {c_across:.3g} across; on average over a turn it takes "
+        f"<br>Crack {crack.depth:.0%} deep at z = {sig(system.crack_z * 1e3, 4)} mm ({state}): compliance "
+        f"{sig(c_open)} rad/(N·m) opening it, {sig(c_across)} across; on average over a turn it takes "
         f"{loss[0]:.2%} and {loss[1]:.2%} off the disc's stiffness along and across its mouth"
     )
 
@@ -86,7 +87,7 @@ def _shaft_mass(system: RotorSystem) -> str:
         else f"no modes with the stations held below {MODE_LIMIT:,.0f} Hz"
     )
     return (
-        f"<br>Shaft {system.shaft_mass:.3g} kg ({system.shaft_mass / system.disc_mass:.0%} of the disc), "
+        f"<br>Shaft {sig(system.shaft_mass)} kg ({system.shaft_mass / system.disc_mass:.0%} of the disc), "
         f"{system.nodes.size - 1} elements, reduced to the stations and {held}"
     )
 
@@ -102,15 +103,15 @@ def instability_causes(s: RotorSystem) -> str:
     """What could make this rotor unstable (the Stability note's first sentence), or that nothing could."""
     bearings = (("A", s.bearing_a), ("B", s.bearing_b))
     coupled = [f"k<sub>xy</sub> = {b.kxy:,.0f} N/m at {n}" for n, b in bearings if b.kxy and b.film is None]
-    coupled += [f"swirl λ = {b.swirl:g} at {n}" for n, b in bearings if b.swirling]
+    coupled += [f"swirl λ = {sig(b.swirl, 6)} at {n}" for n, b in bearings if b.swirling]
     if s.films:
         coupled.append("oil-film bearings (their oil swirling at half the speed)")
     if s.magnets:
         coupled.append("magnetic bearings (their controllers' lag)")
     if s.internal_damping:
-        coupled.append(f"internal damping c<sub>i</sub> = {s.internal_damping:g} N·s/m")
+        coupled.append(f"internal damping c<sub>i</sub> = {sig(s.internal_damping, 6)} N·s/m")
     if s.asymmetry:
-        coupled.append(f"the shaft's asymmetry Δ = {s.asymmetry:.3g}")
+        coupled.append(f"the shaft's asymmetry Δ = {sig(s.asymmetry)}")
     if s.crack_opening and s.crack is not None:
         coupled.append(f"a {'breathing' if s.crack.breathing else 'open'} crack {s.crack.depth:.0%} deep")
     return (
@@ -127,13 +128,13 @@ def onset_text(o: Onset | None, top_rpm: float) -> str:
         return f"stable up to {top_rpm:,.0f} rpm."
     whirl = whirl_name(o.whirl)
     if o.omega == 0.0:
-        return f"<b>unstable even at rest</b>: the {whirl} whirl at {o.freq_hz:.3g} Hz grows."
+        return f"<b>unstable even at rest</b>: the {whirl} whirl at {sig(o.freq_hz)} Hz grows."
     if math.isfinite(o.end):
         return (
             f"<b>unstable from {o.omega * RPM:,.0f} to {o.end * RPM:,.0f} rpm</b>, where the {whirl} whirl "
-            f"at {o.freq_hz:.3g} Hz ({o.order:.2f}×) grows; stable again above."
+            f"at {sig(o.freq_hz)} Hz ({o.order:.2f}×) grows; stable again above."
         )
     return (
         f"<b>unstable above {o.omega * RPM:,.0f} rpm</b>, where the {whirl} whirl at "
-        f"{o.freq_hz:.3g} Hz ({o.order:.2f}×) starts to grow."
+        f"{sig(o.freq_hz)} Hz ({o.order:.2f}×) starts to grow."
     )

@@ -45,6 +45,7 @@ from ..core.frame import (
 )
 from ..core.frame_response import LOAD_KINDS, Formulations, Load, LoadKind, Responses, formulations, responses
 from ..core.practice import number
+from ..view_models.text import number as sig
 from . import frame_figures, plot_patches, weak
 from .challenge import ChallengeBox
 from .frame_builder_canvas import NAN2, TOOL_HINTS, TOOLS, FrameCanvas, Tool, _segments
@@ -120,7 +121,7 @@ TIPS = {
     "on its own, the response to the load from Start. Space.</p>",
     "swing": "<p>What the frame swings in: the undamped mode picked in the table; the state space's mode beside "
     "it, each node with its own phase; or the exact response to the load, slowed so its record lasts "
-    f"{PLAY_S:g} s.</p>",
+    f"{sig(PLAY_S, 6)} s.</p>",
     "zeta": "<p>Rayleigh damping C = αM + βK, with this ζ at the first two modes (between them it's less, "
     "beyond them more). It's proportional: on its own it leaves the modes real. The dampers come on top.</p>",
     "load_kind": "<p>The load, from rest: a harmonic force F sin Ωt, an impulse (F × 1 s, in N·s), or a step F.</p>",
@@ -160,7 +161,7 @@ def _scale(A: np.ndarray) -> int:
 def _entry(v: float, scale: int, top: float) -> str:
     if v == 0 or abs(v) < 1e-12 * top:
         return "·"
-    return f"{v / 10.0**scale:.3g}".replace("-", "−")
+    return f"{sig(v / 10.0**scale)}".replace("-", "−")
 
 
 def _power(scale: int) -> str:
@@ -219,7 +220,7 @@ def element_html(frame: Frame, assembly: Assembly, k: int, matrix: Matrix) -> st
     if e.kind.member or e.kind.link:
         c, s = math.cos(part.angle), math.sin(part.angle)
         lines.append(
-            f" L = {fmt(part.length, 'm')}, γ = {math.degrees(part.angle):.4g}° (cos γ = {c:.3f}, sin γ = {s:.3f})."
+            f" L = {fmt(part.length, 'm')}, γ = {sig(math.degrees(part.angle), 4)}° (cos γ = {c:.3f}, sin γ = {s:.3f})."
         )
     if e.kind.member:
         sec, mat = e.section, e.material
@@ -230,10 +231,10 @@ def element_html(frame: Frame, assembly: Assembly, k: int, matrix: Matrix) -> st
         if e.kind is Kind.BEAM:
             lines.append(f", EI/L³ = {fmt(mat.E * sec.inertia / part.length**3, 'N/m')}")
             if frame.theory is Theory.TIMOSHENKO:
-                lines.append(f", φ<sub>s</sub> = 12EI/κ<sub>s</sub>GAL² = {part.phi:.3g}")
+                lines.append(f", φ<sub>s</sub> = 12EI/κ<sub>s</sub>GAL² = {sig(part.phi)}")
         lines.append(".")
     elif e.kind is Kind.MASS:
-        lines.append(f" m = {fmt(e.value, 'kg')}, J = {e.inertia:.4g} kg·m².")
+        lines.append(f" m = {fmt(e.value, 'kg')}, J = {sig(e.inertia, 4)} kg·m².")
     else:
         unit = {Kind.SPRING: "N/m", Kind.DAMPER: "N·s/m", Kind.TORSION_SPRING: "N·m/rad"}.get(e.kind, "N·m·s/rad")
         lines.append(f" {'c' if e.kind.damper else 'k'} = {fmt(e.value, unit)}.")
@@ -264,7 +265,9 @@ def node_html(frame: Frame, assembly: Assembly, i: int) -> str:
     names = ", ".join(dof_label(d) for d in dofs)
     held = [dof_label(d) for d in dofs if assembly.fixed[d]]
     unused = [dof_label(d) for d in dofs if assembly.unused[d]]
-    out = [f"<p><b>Node {i + 1}</b> at ({node.x:.4g}, {node.y:.4g}) m: DOFs {names}, rows {dofs[0] + 1}–{dofs[2] + 1}."]
+    out = [
+        f"<p><b>Node {i + 1}</b> at ({sig(node.x, 4)}, {sig(node.y, 4)}) m: DOFs {names}, rows {dofs[0] + 1}–{dofs[2] + 1}."
+    ]
     if held:
         out.append(f" {node.support.value}: {', '.join(held)} held, struck out.")
     if unused:
@@ -358,7 +361,7 @@ def default_load(frame: Frame, assembly: Assembly | None = None) -> Load:
 
 def _percent(zeta: float) -> str:
     """ζ in %, an axial mode's next to nothing said so rather than in full."""
-    return f"{100 * zeta:.3g} %" if zeta >= 1e-4 else "< 0.01 %"
+    return f"{sig(100 * zeta)} %" if zeta >= 1e-4 else "< 0.01 %"
 
 
 def _reach(q: np.ndarray) -> float:
@@ -421,7 +424,7 @@ class FramePage(QtWidgets.QWidget):
         self.theory = combo([t.value for t in THEORIES], TIPS["theory"])
         model.add("Beams:", self.theory, TIPS["theory"])
         self.zeta = model.number("Damping ζ:", 0.0, 50.0, 0.0, 2, " %", TIPS["zeta"])
-        self.grid = combo([f"{g:g} m" for g in GRIDS], TIPS["grid"])
+        self.grid = combo([f"{sig(g, 6)} m" for g in GRIDS], TIPS["grid"])
         model.add("Grid:", self.grid, TIPS["grid"])
         self.lumped.currentIndexChanged.connect(self._on_model)
         self.theory.currentIndexChanged.connect(self._on_model)
@@ -927,8 +930,8 @@ class FramePage(QtWidgets.QWidget):
             length = self.frame.length(e)
             r = math.sqrt(sec.inertia / sec.area)
             p.member_info.setText(
-                f"L = {length:.4g} m, A = {number(sec.area * 1e6, 4)} mm², I = {number(sec.inertia * 1e12, 4)} mm⁴, L/r = "
-                f"{length / r:.3g} (slenderness)."
+                f"L = {sig(length, 4)} m, A = {number(sec.area * 1e6, 4)} mm², I = {number(sec.inertia * 1e12, 4)} mm⁴, L/r = "
+                f"{sig(length / r)} (slenderness)."
             )
             p.member.setTitle(f"{e.kind.value} {index + 1}: nodes {e.i + 1}–{e.j + 1}")
             p.show_form(p.member)
@@ -940,7 +943,7 @@ class FramePage(QtWidgets.QWidget):
             p.value.setSuffix(" kN/m" if spring else " N·s/m")
             set_quietly(p.value, e.value / 1e3 if spring else e.value)
             end = f"node {e.j + 1}" if e.j is not None else "the ground"
-            p.link_info.setText(f"From node {e.i + 1} to {end}, {self.frame.length(e):.4g} m long.")
+            p.link_info.setText(f"From node {e.i + 1} to {end}, {sig(self.frame.length(e), 4)} m long.")
             p.link.setTitle(f"{e.kind.value} {index + 1}")
             p.show_form(p.link)
             return
@@ -953,7 +956,7 @@ class FramePage(QtWidgets.QWidget):
         self.table.setRowCount(count)
         for i in range(count):
             assert r is not None
-            texts = [str(i + 1), f"{r.hz[i]:.4g}" if r.hz[i] > 0 else "0 (mechanism)"]
+            texts = [str(i + 1), f"{sig(r.hz[i], 4)}" if r.hz[i] > 0 else "0 (mechanism)"]
             texts += [f"{100 * r.energy[j, i]:.0f} %" if r.hz[i] > 0 else "" for j in range(3)]
             for col, text in enumerate(texts):
                 item = QtWidgets.QTableWidgetItem(text)
@@ -1092,15 +1095,15 @@ class FramePage(QtWidgets.QWidget):
         reach = float(np.max(np.abs(r.exact[:, self.out]), initial=0.0))
         time_gap = float(np.max(np.abs(r.exact[:, self.out] - r.conventional[:, self.out]))) / reach if reach else 0.0
         kind = {
-            LoadKind.HARMONIC: f"F sin Ωt at {load.hz:.4g} Hz (the red line)",
+            LoadKind.HARMONIC: f"F sin Ωt at {sig(load.hz, 4)} Hz (the red line)",
             LoadKind.IMPULSE: "an impulse",
             LoadKind.STEP: "a step",
         }[load.kind]
         gap = (
             "The two models agree (the damping is proportional)."
             if frf_gap < 1e-6 and time_gap < 1e-6
-            else f"They part: the conventional FRF is off by up to <b>{100 * frf_gap:.3g} %</b> of the exact peak, "
-            f"its time response by <b>{100 * time_gap:.3g} %</b> of the exact one's largest."
+            else f"They part: the conventional FRF is off by up to <b>{sig(100 * frf_gap)} %</b> of the exact peak, "
+            f"its time response by <b>{sig(100 * time_gap)} %</b> of the exact one's largest."
         )
         undamped = (
             " No damping: each peak is infinite (the grid steps round them), and a harmonic load's response "
@@ -1139,14 +1142,14 @@ class FramePage(QtWidgets.QWidget):
             if m.hz == 0:
                 texts = [str(i + 1), "0 (mechanism)", "", "", "", ""]
             elif m.pole is None:
-                texts = [str(i + 1), f"{m.hz:.4g}", _percent(m.zeta_conventional), "overdamped", "", ""]
+                texts = [str(i + 1), f"{sig(m.hz, 4)}", _percent(m.zeta_conventional), "overdamped", "", ""]
             else:
                 assert m.measures is not None
                 texts = [
                     str(i + 1),
-                    f"{m.hz:.4g}",
+                    f"{sig(m.hz, 4)}",
                     _percent(m.zeta_conventional),
-                    f"{m.hz_exact:.4g}",
+                    f"{sig(m.hz_exact, 4)}",
                     _percent(m.zeta_exact),
                     f"{m.measures.mpc:.3f}",
                 ]
@@ -1197,7 +1200,7 @@ class FramePage(QtWidgets.QWidget):
         self.argand_note.setText(
             f"Mode {self.mode + 1}'s shape ψ in the state space: each node's u and v as a point in the complex "
             f"plane. A real mode's lie on one line through 0. MPC = {m.measures.mpc:.3f}, MPD = "
-            f"{m.measures.mpd:.3g}°."
+            f"{sig(m.measures.mpd)}°."
         )
 
     def _on_forms_row(self) -> None:

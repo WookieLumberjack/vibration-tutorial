@@ -16,6 +16,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core import CMSModel
 from ..core.back_expansion import RECOVERIES, RECOVERY_NAMES, Recovery, RecoveryResponse
+from ..view_models.text import number as sig
 from . import coalesce
 from .animation import ChainView
 from .cms_time import MIN_SPAN, CMSRunView, SampleBuffer, _fmt
@@ -371,7 +372,7 @@ class BackExpansionView(CMSRunView):
             rms = float(np.sqrt(np.mean(ref**2)))
             if rms <= 0 or rms < 1e-12 * max(1.0, float(np.abs(ref).max())):
                 return "–"
-            return f"{100 * float(np.sqrt(np.mean(err**2))) / rms:.3g}%"
+            return f"{sig(100 * float(np.sqrt(np.mean(err**2))) / rms)}%"
 
         parts = [
             f"{RECOVERY_NAMES[k].split(' (')[0].lower()} <b>{rel(errs[k], true_x)}</b> / <b>{rel(ferrs[k], true_f)}</b>"
@@ -383,10 +384,10 @@ class BackExpansionView(CMSRunView):
         xb_rel = float(np.sqrt(np.mean(xb_err**2))) / max(float(np.sqrt(np.mean(xf[:, b] ** 2))), 1e-300)
         missing = "" if "boundary" in errs else " (no boundary-only recovery: K<sub>ii</sub> is singular)"
         self.error_note.setText(
-            f"RMS error over the last {min(w, t[-1] - t[0]):.3g} s, of x{d + 1} / of the force in k{e + 1}: "
+            f"RMS error over the last {sig(min(w, t[-1] - t[0]))} s, of x{d + 1} / of the force in k{e + 1}: "
             + ", ".join(parts)
             + missing
-            + f". Boundary motion x<sub>b</sub> from the coupled solve: {100 * xb_rel:.3g}% "
+            + f". Boundary motion x<sub>b</sub> from the coupled solve: {sig(100 * xb_rel)}% "
             f"(largest |error| {_fmt(float(np.abs(xb_err).max()))}): the only error left in the enhanced recovery."
             f"   t = {sim.t:.2f} s"
         )

@@ -8,6 +8,7 @@ import numpy as np
 
 from ..core.practice import number
 from ..view_models.text import entry
+from ..view_models.text import number as sig
 
 TWO_PI = 2.0 * math.pi
 # The page's systems, tabs and Show items, shared by its modules (deriving.py, deriving_pendulum.py).
@@ -84,5 +85,5 @@ def frequencies_html(m) -> str:
         "<p>det(K − ω²M) = 0 is a quadratic in ω²: "
         f"<b>{number(a, 4)} ω⁴ − {number(b, 4)} ω² + {number(c, 4)} = 0</b>, so ω² = {number(roots[0], 4)} and "
         f"{number(roots[1], 4)} (rad/s)², "
-        f"<b>f = {f[0]:.3g} and {f[1]:.3g} Hz</b>.</p>"
+        f"<b>f = {sig(f[0])} and {sig(f[1])} Hz</b>.</p>"
     )

@@ -18,6 +18,7 @@ import math
 import numpy as np
 
 from ..core.rotation import Snapshot, Turning
+from ..view_models.text import number as sig
 
 SUPERSCRIPT = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
 
@@ -70,7 +71,7 @@ def _diag(I: np.ndarray) -> str:
     """diag(I₁, I₂, I₃) in one power of ten: 10⁻⁴ × diag(6.5, 6.5, 4)."""
     moments = np.diag(I)
     power = _power(moments)
-    text = f"diag({', '.join(f'{v / 10.0**power:.4g}' for v in moments)})"
+    text = f"diag({', '.join(f'{sig(v / 10.0**power, 4)}' for v in moments)})"
     return text if power == 0 else f"10{str(power).translate(SUPERSCRIPT)} × {text}"
 
 
@@ -127,11 +128,11 @@ def snapshot_html(s: Snapshot, where: str, frame_note: str = "", turning_note: s
         )
         out += [
             f"<p>{lead} dL/dt + {name} × L = τ (N·m), with {name} = "
-            f"({', '.join(f'{v:.4g}' for v in s.frame_rate)}) rad/s:</p>".replace("-", "−"),
+            f"({', '.join(f'{sig(v, 4)}' for v in s.frame_rate)}) rad/s:</p>".replace("-", "−"),
             equation("dL/dt", bracket(s.rate), "+", f"{name} × L", bracket(s.carried), "=", "τ", bracket(s.torque)),
         ]
     out.append(
-        f"<p>The two sides agree to {100 * s.mismatch:.2g} % (dL/dt is from the samples either side: "
+        f"<p>The two sides agree to {sig(100 * s.mismatch, 2)} % (dL/dt is from the samples either side: "
         "the rest is the simulation's step error).</p>"
     )
     return "".join(out)

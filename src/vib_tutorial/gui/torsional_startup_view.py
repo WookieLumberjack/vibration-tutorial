@@ -35,6 +35,7 @@ from ..core.torsional_startup import (
     steady_speed,
 )
 from ..view_models.text import fmt
+from ..view_models.text import number as sig
 from . import weak
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, form_layout, form_row, group, plot_height, show_in_stack
@@ -324,7 +325,7 @@ class StartUpView(QtWidgets.QWidget):
             owner.removeItem(mark)
         self._marks = []
         for c in self._crossings:
-            self._add_mark(self.startup_speed, c.rpm, 0, f"Mode {c.mode + 1}, {c.freq_hz:.3g} Hz")
+            self._add_mark(self.startup_speed, c.rpm, 0, f"Mode {c.mode + 1}, {sig(c.freq_hz)} Hz")
         self.startup_torque.setXRange(0.0, su.duration, padding=0)
         self.startup_torque.enableAutoRange(axis="y")
         self.startup_speed.setYRange(0.0, 1.1 * su.motor.sync_rpm, padding=0)
@@ -496,7 +497,7 @@ class StartUpView(QtWidgets.QWidget):
             if sim.field_on and abs(slip) < 1e-3:
                 text += ", in step"
             else:
-                text += f", its poles pulsing at {m.pulsation_hz(abs(slip)):.3g} Hz"
+                text += f", its poles pulsing at {sig(m.pulsation_hz(abs(slip)))} Hz"
             text += ", the field on" if sim.field_on else ""
         self.startup_status.setText(text + (". Done." if sim.done else "."))
 
@@ -540,7 +541,7 @@ class StartUpView(QtWidgets.QWidget):
             if near is not None:
                 j = self._modes.index(near)
                 parts.append(
-                    f"The switch-on rings at {m.line_hz:g} Hz; mode {j + 1} ({near.freq_hz:.3g} Hz) is "
+                    f"The switch-on rings at {sig(m.line_hz, 6)} Hz; mode {j + 1} ({sig(near.freq_hz)} Hz) is "
                     f"{100 * abs(near.freq_hz - m.line_hz) / m.line_hz:.0f} % from it."
                 )
         else:
@@ -549,11 +550,11 @@ class StartUpView(QtWidgets.QWidget):
             if cs:
                 parts.append(
                     "The poles' 2× slip pulsation meets "
-                    + ", ".join(f"mode {c.mode + 1} ({c.freq_hz:.3g} Hz) at {c.rpm:.0f} rpm" for c in cs)
+                    + ", ".join(f"mode {c.mode + 1} ({sig(c.freq_hz)} Hz) at {c.rpm:.0f} rpm" for c in cs)
                     + "."
                 )
             else:
-                parts.append(f"No mode below {2 * m.line_hz:g} Hz for the poles' pulsation to meet.")
+                parts.append(f"No mode below {sig(2 * m.line_hz, 6)} Hz for the poles' pulsation to meet.")
         self.startup_info.setText(" ".join(parts))
 
     def apply_theme(self) -> None:

@@ -40,6 +40,7 @@ from ..core.energy_methods import (
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick, rounded
 from ..view_models.text import entry
+from ..view_models.text import number as sig
 from . import coalesce, energy_figures, settle_plots
 from .drag import DragLine, DragPoint
 from .lesson import (
@@ -237,10 +238,10 @@ def _rigid_rayleigh(rng: np.random.Generator) -> Question:
     w2 = rayleigh(system, np.ones(n))
     exact_hz = exact(system)[0][0] / TWO_PI
     return Question(
-        f"A chain of {n} masses of {m:g} kg on {n} springs of {k:g} N/m (the first to the ground). Guess that mode 1 "
+        f"A chain of {n} masses of {sig(m, 6)} kg on {n} springs of {sig(k, 6)} N/m (the first to the ground). Guess that mode 1 "
         "moves every mass equally. What frequency does Rayleigh's quotient give?",
         float(np.sqrt(w2) / TWO_PI),
-        f"Moving together, only the ground spring stretches: xᵀKx = k = {k:g}, xᵀMx = Σm = {number(n * m)}. ω² = "
+        f"Moving together, only the ground spring stretches: xᵀKx = k = {sig(k, 6)}, xᵀMx = Σm = {number(n * m)}. ω² = "
         f"{number(w2)}, f = {number(np.sqrt(w2) / TWO_PI)} Hz: above the exact {number(exact_hz)} Hz, as Rayleigh's "
         "estimate always is, and far above, for a poor shape.",
         unit="Hz",
@@ -252,8 +253,8 @@ def _dunkerley(rng: np.random.Generator) -> Question:
     m1, m2, k1, k2 = _two(rng)
     s = 1 / k1 * m1 + (1 / k1 + 1 / k2) * m2
     return Question(
-        f"Two masses: m<sub>1</sub> = {m1:g} kg on k<sub>1</sub> = {k1:g} N/m to the ground, m<sub>2</sub> = {m2:g} "
-        f"kg on k<sub>2</sub> = {k2:g} N/m to m<sub>1</sub>. What lower bound on f<sub>1</sub> does Dunkerley's "
+        f"Two masses: m<sub>1</sub> = {sig(m1, 6)} kg on k<sub>1</sub> = {sig(k1, 6)} N/m to the ground, m<sub>2</sub> = {sig(m2, 6)} "
+        f"kg on k<sub>2</sub> = {sig(k2, 6)} N/m to m<sub>1</sub>. What lower bound on f<sub>1</sub> does Dunkerley's "
         "sum give?",
         float(1 / np.sqrt(s) / TWO_PI),
         f"The flexibilities at each mass: (K<sup>−1</sup>)<sub>11</sub> = 1/k<sub>1</sub>, (K<sup>−1</sup>)<sub>22</sub> = "
@@ -275,11 +276,11 @@ def _holzer_residual(rng: np.random.Generator) -> Question:
     x2 = 1 + after / k2
     left = after - m2 * w2 * x2
     return Question(
-        f"Holzer's table for m<sub>1</sub> = {m1:g} kg on k<sub>1</sub> = {k1:g} N/m and m<sub>2</sub> = {m2:g} kg on "
-        f"k<sub>2</sub> = {k2:g} N/m, at a trial {number(f, 2)} Hz with x<sub>1</sub> = 1. What force is left at the "
+        f"Holzer's table for m<sub>1</sub> = {sig(m1, 6)} kg on k<sub>1</sub> = {sig(k1, 6)} N/m and m<sub>2</sub> = {sig(m2, 6)} kg on "
+        f"k<sub>2</sub> = {sig(k2, 6)} N/m, at a trial {number(f, 2)} Hz with x<sub>1</sub> = 1. What force is left at the "
         "free end?",
         left,
-        f"ω² = {number(w2)}. The ground spring pulls k<sub>1</sub> = {k1:g} N; m<sub>1</sub> keeps "
+        f"ω² = {number(w2)}. The ground spring pulls k<sub>1</sub> = {sig(k1, 6)} N; m<sub>1</sub> keeps "
         f"m<sub>1</sub>ω² = {number(m1 * w2)} N and passes {number(after)} N, which stretches k<sub>2</sub> by "
         f"{number(after / k2)}: x<sub>2</sub> = {number(x2)}. m<sub>2</sub> keeps {number(m2 * w2 * x2)} N, "
         f"leaving {number(left)} N. Not zero, so not a natural frequency (and positive: below the first).",
@@ -293,11 +294,11 @@ def _lagrange_entry(rng: np.random.Generator) -> Question:
     i = int(pick(rng, (1, 2)))
     entry = ks[i - 1] + ks[i]
     return Question(
-        f"A chain of three masses on springs k<sub>1</sub> = {ks[0]:g}, k<sub>2</sub> = {ks[1]:g} and "
-        f"k<sub>3</sub> = {ks[2]:g} N/m (k<sub>1</sub> to the ground). What is K's diagonal entry for mass {i}?",
+        f"A chain of three masses on springs k<sub>1</sub> = {sig(ks[0], 6)}, k<sub>2</sub> = {sig(ks[1], 6)} and "
+        f"k<sub>3</sub> = {sig(ks[2], 6)} N/m (k<sub>1</sub> to the ground). What is K's diagonal entry for mass {i}?",
         entry,
         f"V = ½Σk<sub>j</sub>(x<sub>j</sub> − x<sub>j−1</sub>)²; mass {i} stretches the springs either side of it, so "
-        f"∂²V/∂x<sub>{i}</sub>² = k<sub>{i}</sub> + k<sub>{i + 1}</sub> = {entry:g} N/m.",
+        f"∂²V/∂x<sub>{i}</sub>² = k<sub>{i}</sub> + k<sub>{i + 1}</sub> = {sig(entry, 6)} N/m.",
         unit="N/m",
         setup=dict(masses=(1.0, 1.0, 1.0), stiffness=ks, tab=TAB_LAGRANGE),
     )
@@ -382,7 +383,7 @@ def _dunkerley_spec(rng: np.random.Generator) -> Question:
     return Question(
         f"The default chain (four 1 kg masses on four 400 N/m springs) has Dunkerley's estimate {number(start)} % "
         f"below its first frequency. Share the same 4 kg among the four masses (on the Simulation page) so that "
-        f"Dunkerley is within {most:g} %.",
+        f"Dunkerley is within {sig(most, 6)} %.",
         0,
         "Dunkerley's error is the higher modes' share of Σ1/ω<sub>r</sub>²: small when one mode's 1/ω² dominates the "
         "trace, which a single heavy mass far from the ground does. Put almost everything at the tip: "
@@ -707,7 +708,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.held = bool(np.all(self.w > 1e-9))
         self.chain_info.setText(
             "Exact: "
-            + ", ".join(f"{f:.4g}" for f in self.f)
+            + ", ".join(f"{sig(f, 4)}" for f in self.f)
             + " Hz"
             + ("" if self.held else " (a rigid-body mode at 0 Hz: the chain isn't held to the ground)")
         )
@@ -787,7 +788,9 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         for row, (item, label, v) in enumerate(zip(self.est_items, self.est_labels, values)):
             if np.isfinite(v):
                 item.setData([v], [row])
-                label.setText(f"{v:.4g} Hz ({100 * (v / f[0] - 1):+.3g} %)" if f[0] > 0 else f"{v:.4g} Hz")
+                label.setText(
+                    f"{sig(v, 4)} Hz ({sig(100 * (v / f[0] - 1), plus=True)} %)" if f[0] > 0 else f"{sig(v, 4)} Hz"
+                )
                 label.setPos(v, row)
             else:
                 item.setData([], [])
@@ -798,18 +801,18 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.est_plot.setXRange(lo - pad, hi + pad, padding=0)
         self.est_plot.setYRange(-0.6, 2.8, padding=0)
 
-        parts = [f"Exact f₁ = {f[0]:.4g} Hz.", f"Rayleigh: {f_ray:.4g} Hz ({self._pct(f_ray)})."]
+        parts = [f"Exact f₁ = {sig(f[0], 4)} Hz.", f"Rayleigh: {sig(f_ray, 4)} Hz ({self._pct(f_ray)})."]
         if self.drawing and f[0] > 0 and np.isfinite(f_ray):
             self.lowest = min(self.lowest, f_ray / f[0])
             parts.append(
                 f"Your shape: R(v) = ω² ≥ ω₁² whatever you draw; the lowest you've reached is "
-                f"{100 * (self.lowest - 1):+.3g} % (only mode 1's own shape gets to 0)."
+                f"{sig(100 * (self.lowest - 1), plus=True)} % (only mode 1's own shape gets to 0)."
             )
         if self.held:
-            parts.append(f"Dunkerley: {f_dunk:.4g} Hz ({self._pct(f_dunk)}).")
+            parts.append(f"Dunkerley: {sig(f_dunk, 4)} Hz ({self._pct(f_dunk)}).")
         parts.append(
             f"Rayleigh–Ritz with {r} shape{'s' if r > 1 else ''}: "
-            + ", ".join(f"f{j + 1} = {wr[j] / TWO_PI:.4g} ({self._pct(wr[j] / TWO_PI, j)})" for j in range(r))
+            + ", ".join(f"f{j + 1} = {sig(wr[j] / TWO_PI, 4)} ({self._pct(wr[j] / TWO_PI, j)})" for j in range(r))
             + "."
         )
         self.readout.setText(" ".join(parts))
@@ -819,7 +822,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         if exact_f <= 0:
             return "exact 0"
         pct = 100 * (value / exact_f - 1)
-        return "exact" if abs(pct) < 1e-9 else f"{pct:+.3g} %"  # round-off reads as exact
+        return "exact" if abs(pct) < 1e-9 else f"{sig(pct, plus=True)} %"  # round-off reads as exact
 
     @coalesce.coalesced
     def _draw_tab(self) -> None:
@@ -855,8 +858,8 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.err_now.setData([now], [fn])
         self.err_plot.setXRange(min(-EPS_SPAN, now), max(EPS_SPAN, now), padding=0.02)
         self.err_note.setText(
-            f"At ε = {now:.3g}: {fn:.4g} Hz, {self._pct(fn)}. The lowest point of the curve is "
-            f"{fs.min():.4g} Hz ({self._pct(float(fs.min()))}), never below the exact {self.f[0]:.4g} Hz."
+            f"At ε = {sig(now)}: {sig(fn, 4)} Hz, {self._pct(fn)}. The lowest point of the curve is "
+            f"{sig(fs.min(), 4)} Hz ({self._pct(float(fs.min()))}), never below the exact {sig(self.f[0], 4)} Hz."
             + (
                 f" After {passes} pass{'es' if passes > 1 else ''} of iteration the curve is flatter: each pass "
                 "shrinks mode 2's share."
@@ -903,7 +906,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         row = table[r - 1, :r]
         self.ritz_note.setText(
             f"With r = {r}: "
-            + ", ".join(f"f{j + 1} = {row[j]:.4g} Hz ({self._pct(row[j], j)})" for j in range(r))
+            + ", ".join(f"f{j + 1} = {sig(row[j], 4)} Hz ({self._pct(row[j], j)})" for j in range(r))
             + ". Each estimate is above its mode and comes down as shapes are added."
         )
 
@@ -930,23 +933,23 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.holzer_plot.setXRange(0.0, max(top, fh * 1.05), padding=0)
         rows = holzer(s, TWO_PI * fh)
         body = "".join(
-            f"<tr><td>m{i + 1}</td><td align='right'>{r.x:.4g}</td><td align='right'>{r.inertia:.4g}</td>"
-            f"<td align='right'>{r.spring:.4g}</td></tr>"
+            f"<tr><td>m{i + 1}</td><td align='right'>{sig(r.x, 4)}</td><td align='right'>{sig(r.inertia, 4)}</td>"
+            f"<td align='right'>{sig(r.spring, 4)}</td></tr>"
             for i, r in enumerate(rows)
         )
         self.holzer_table.setText(
-            f"<p>Holzer's table at {fh:.4g} Hz (x₁ = 1; the ground spring pulls {s.stiffness[0]:.4g} N):</p>"
+            f"<p>Holzer's table at {sig(fh, 4)} Hz (x₁ = 1; the ground spring pulls {sig(s.stiffness[0], 4)} N):</p>"
             "<table cellspacing='0' cellpadding='3'><tr><th>mass</th><th>x</th><th>m ω² x (N)</th>"
             f"<th>passed on (N)</th></tr>{body}</table>"
-            f"<p>Left at the free end: {rows[-1].spring:.4g} N. Its sign changes at "
-            + ", ".join(f"{r:.4g}" for r in roots)
+            f"<p>Left at the free end: {sig(rows[-1].spring, 4)} N. Its sign changes at "
+            + ", ".join(f"{sig(r, 4)}" for r in roots)
             + " Hz.</p>"
         )
 
     def _draw_lagrange(self) -> None:
         s = self.system
-        terms_T = " + ".join(f"{m:.3g} ẋ{i + 1}²" for i, m in enumerate(s.masses))
-        terms_V = " + ".join(f"{k:.3g} ({'x1' if i == 0 else f'x{i + 1} − x{i}'})²" for i, k in enumerate(s.stiffness))
+        terms_T = " + ".join(f"{sig(m)} ẋ{i + 1}²" for i, m in enumerate(s.masses))
+        terms_V = " + ".join(f"{sig(k)} ({'x1' if i == 0 else f'x{i + 1} − x{i}'})²" for i, k in enumerate(s.stiffness))
         M, _, K = s.matrices()
         self.lagrange.setHtml(
             "<p>For the chain on the Simulation page:</p>"
@@ -960,7 +963,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
             "Mẍ + Kx = f.</p>"
             + (
                 "<p>Dunkerley's terms, each mass alone on the massless chain: "
-                + ", ".join(f"m{i + 1} {math.sqrt(v) / TWO_PI:.3g} Hz" for i, v in enumerate(dunkerley_terms(s)))
+                + ", ".join(f"m{i + 1} {sig(math.sqrt(v) / TWO_PI)} Hz" for i, v in enumerate(dunkerley_terms(s)))
                 + ".</p>"
                 if self.held
                 else ""

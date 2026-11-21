@@ -24,6 +24,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.damping_models import MODELS, Matched, Model, coulomb_stop
 from ..core.practice import Prediction, Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
+from ..view_models.text import number as sig
 from . import coalesce, damping_figures, settle_plots
 from .damping_view import DampingView
 from .layouts import ColumnScroll, FlowLayout
@@ -191,11 +192,11 @@ def _viscous_energy(rng: np.random.Generator) -> Question:
     x = pick(rng, (1, 2, 5, 10))
     energy = math.pi * c * TWO_PI * f * (1e-3 * x) ** 2
     return Question(
-        f"A viscous damper of {c:g} N·s/m is cycled at {f:g} Hz through ±{x:g} mm. How much energy does it take "
+        f"A viscous damper of {sig(c, 6)} N·s/m is cycled at {sig(f, 6)} Hz through ±{sig(x, 6)} mm. How much energy does it take "
         "out per cycle?",
         1e3 * energy,
-        f"W<sub>d</sub> = πcΩX² with Ω = 2π × {f:g} = {number(TWO_PI * f)} rad/s and X = {number(1e-3 * x)} m: "
-        f"π × {c:g} × {number(TWO_PI * f)} × {number(1e-3 * x)}² = {number(1e3 * energy)} mJ.",
+        f"W<sub>d</sub> = πcΩX² with Ω = 2π × {sig(f, 6)} = {number(TWO_PI * f)} rad/s and X = {number(1e-3 * x)} m: "
+        f"π × {sig(c, 6)} × {number(TWO_PI * f)} × {number(1e-3 * x)}² = {number(1e3 * energy)} mJ.",
         unit="mJ",
     )
 
@@ -205,12 +206,12 @@ def _friction_from_decay(rng: np.random.Generator) -> Question:
     drop = pick(rng, (0.5, 1, 2, 3, 4))
     friction = k * 1e-3 * drop / 4.0
     return Question(
-        f"A mass on a spring of {k:g} N/m rings down in a straight line, its swing falling by {drop:g} mm every "
+        f"A mass on a spring of {sig(k, 6)} N/m rings down in a straight line, its swing falling by {sig(drop, 6)} mm every "
         "cycle. What friction force is it sliding against?",
         friction,
         f"Each half cycle swings about the point F<sub>f</sub>/k off centre on the side friction pushes to, so the "
         f"swing loses 2F<sub>f</sub>/k a half cycle, 4F<sub>f</sub>/k a cycle: F<sub>f</sub> = k × drop/4 = "
-        f"{k:g} × {number(1e-3 * drop)}/4 = {number(friction)} N.",
+        f"{sig(k, 6)} × {number(1e-3 * drop)}/4 = {number(friction)} N.",
         unit="N",
         setup=dict(stiffness=k, tab=TAB_DECAY),
     )
@@ -224,7 +225,7 @@ def _friction_swings(rng: np.random.Generator) -> Question:
     x0 = rounded(d * (2 * n + pick(rng, (-0.6, -0.3, 0.3, 0.6))), 2)
     swings, _ = coulomb_stop(k, friction, 1e-3 * x0)
     return Question(
-        f"A mass on a spring of {k:g} N/m slides against a friction force of {friction:g} N. Released from rest "
+        f"A mass on a spring of {sig(k, 6)} N/m slides against a friction force of {sig(friction, 6)} N. Released from rest "
         f"{number(x0, 2)} mm from centre, how many half cycles (swings from one turn to the next) does it make "
         "before it sticks?",
         swings,
@@ -242,11 +243,11 @@ def _equivalent_viscous(rng: np.random.Generator) -> Question:
     w = TWO_PI * f
     c = 4.0 * friction / (math.pi * w * 1e-3 * x)
     return Question(
-        f"A friction force of {friction:g} N is cycled at {f:g} Hz through ±{x:g} mm. What viscous damper takes the "
+        f"A friction force of {sig(friction, 6)} N is cycled at {sig(f, 6)} Hz through ±{sig(x, 6)} mm. What viscous damper takes the "
         "same energy per cycle?",
         c,
         f"Friction takes 4F<sub>f</sub>X, a viscous damper πcΩX²; equal when c<sub>eq</sub> = 4F<sub>f</sub>/πΩX = "
-        f"4 × {friction:g}/(π × {number(w)} × {number(1e-3 * x)}) = {number(c)} N·s/m. Half the amplitude, twice "
+        f"4 × {sig(friction, 6)}/(π × {number(w)} × {number(1e-3 * x)}) = {number(c)} N·s/m. Half the amplitude, twice "
         "the c<sub>eq</sub>: friction is heavy damping for small motions.",
         unit="N·s/m",
     )
@@ -259,7 +260,7 @@ def _zener_peak(rng: np.random.Generator) -> Question:
     a = k1 / k0
     eta = a / (2.0 * math.sqrt(1.0 + a))
     return Question(
-        f"A rubber mount behaves as a Zener element: {k0:g} N/m slowly (relaxed), {number(k0 + k1)} N/m fast "
+        f"A rubber mount behaves as a Zener element: {sig(k0, 6)} N/m slowly (relaxed), {number(k0 + k1)} N/m fast "
         "(unrelaxed). What is its loss factor at its peak?",
         eta,
         f"k<sub>1</sub> = {number(k1)} N/m, so a = k<sub>1</sub>/k<sub>0</sub> = {number(a)}. η(Ωτ) = "
@@ -356,14 +357,14 @@ def _friction_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A 1 kg mass on a spring of {k:g} N/m, released from {x0:g} mm, is to be stopped by friction alone (the "
+        f"A 1 kg mass on a spring of {sig(k, 6)} N/m, released from {sig(x0, 6)} mm, is to be stopped by friction alone (the "
         f"Free decay tab's Coulomb curve). It must stick within {swings} swings (half cycles), no more than "
         f"{number(off, 2)} mm off centre. The page sets the friction by matching it to ζ at the amplitude X: "
         "choose ζ.",
         0,
         f"More friction stops it sooner, but further off centre (anywhere within F<sub>f</sub>/k), and too much "
         f"never lets it move. Each swing takes 2F<sub>f</sub>/k off, so {swings} swings need about "
-        f"2F<sub>f</sub>/k ≈ {x0:g}/{swings} mm. F<sub>f</sub> = πcω<sub>n</sub>X/4 = πζkX/2 (c = 2ζ√(km), m = 1 "
+        f"2F<sub>f</sub>/k ≈ {sig(x0, 6)}/{swings} mm. F<sub>f</sub> = πcω<sub>n</sub>X/4 = πζkX/2 (c = 2ζ√(km), m = 1 "
         f"kg): ζ = "
         f"{number(z)} gives F<sub>f</sub> = {number(design.friction)} N, {n_d} swings, stuck "
         f"{number(1e3 * abs(end))} mm off centre. Much more friction does too: with F<sub>f</sub>/k just under X/2 "
@@ -709,9 +710,9 @@ class DampingModelsPage(QtWidgets.QWidget):
         mm = self.model
         k0, k1, tau = mm.zener()
         self.info.setText(
-            f"f<sub>n</sub> = {mm.natural_hz:.4g} Hz. Matched: c = {mm.c:.4g} N·s/m, η = {mm.eta:.4g}, "
-            f"F<sub>f</sub> = {mm.friction:.4g} N, Zener k<sub>0</sub> = {k0:.4g} N/m, "
-            f"k<sub>1</sub> = {k1:.4g} N/m, τ = {tau:.4g} s."
+            f"f<sub>n</sub> = {sig(mm.natural_hz, 4)} Hz. Matched: c = {sig(mm.c, 4)} N·s/m, η = {sig(mm.eta, 4)}, "
+            f"F<sub>f</sub> = {sig(mm.friction, 4)} N, Zener k<sub>0</sub> = {sig(k0, 4)} N/m, "
+            f"k<sub>1</sub> = {sig(k1, 4)} N/m, τ = {sig(tau, 4)} s."
         )
         self._draw_loops()
         self._draw_energy()
@@ -744,7 +745,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.loop_plot.setXRange(-1.1 * X, 1.1 * X, padding=0)
         self.loop_plot.enableAutoRange(axis="y")
         self.loop_note.setText(
-            f"Energy per cycle at {self.ratio.value():.3g} f<sub>n</sub>, X = {fmt(X, 'm')}: "
+            f"Energy per cycle at {sig(self.ratio.value())} f<sub>n</sub>, X = {fmt(X, 'm')}: "
             + ", ".join(lines)
             + ". (The area inside each loop.)"
         )
@@ -783,9 +784,9 @@ class DampingModelsPage(QtWidgets.QWidget):
         k0, k1, tau = mm.zener()
         peak = 1.0 / (tau * math.sqrt(1.0 + k1 / k0)) / mm.omega_n
         self.loss_note.setText(
-            f"Zener: relaxed stiffness k<sub>0</sub> = {k0:.4g} N/m, unrelaxed k<sub>0</sub> + k<sub>1</sub> = "
-            f"{k0 + k1:.4g} N/m; loss peak {k1 / (2 * math.sqrt(k0 * (k0 + k1))):.3g} at {peak:.3g} f<sub>n</sub>. "
-            f"Friction's η = 4F<sub>f</sub>/πkX = {mm.eta:.3g} holds at X = {fmt(mm.amplitude, 'm')} only."
+            f"Zener: relaxed stiffness k<sub>0</sub> = {sig(k0, 4)} N/m, unrelaxed k<sub>0</sub> + k<sub>1</sub> = "
+            f"{sig(k0 + k1, 4)} N/m; loss peak {sig(k1 / (2 * math.sqrt(k0 * (k0 + k1))))} at {sig(peak)} f<sub>n</sub>. "
+            f"Friction's η = 4F<sub>f</sub>/πkX = {sig(mm.eta)} holds at X = {fmt(mm.amplitude, 'm')} only."
         )
 
     def _draw_frf(self) -> None:
@@ -875,7 +876,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         self.decay_plot.setXRange(0, span, padding=0)
         halves, stop = coulomb_stop(mm.stiffness, mm.friction, self.released_from())
         self.decay_note.setText(
-            f"Viscous: each peak e<sup>−δ</sup> = {math.exp(-2 * math.pi * mm.zeta / math.sqrt(1 - mm.zeta**2)):.3g}"
-            f" of the last. Friction: {fmt(4 * d, 'm')} less each cycle; it stops after {halves / 2:g} cycles, "
+            f"Viscous: each peak e<sup>−δ</sup> = {sig(math.exp(-2 * math.pi * mm.zeta / math.sqrt(1 - mm.zeta**2)))}"
+            f" of the last. Friction: {fmt(4 * d, 'm')} less each cycle; it stops after {sig(halves / 2, 6)} cycles, "
             f"{fmt(abs(stop), 'm')} off centre, inside the band ±F<sub>f</sub>/k = ±{fmt(d, 'm')}."
         )

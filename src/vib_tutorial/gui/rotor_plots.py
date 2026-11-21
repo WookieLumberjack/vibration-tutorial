@@ -14,6 +14,7 @@ from ..core.rotor_stability import Onset
 from ..core.rotor_sweep import (
     STATIONS,
 )
+from ..view_models.text import number as sig
 from . import weak
 from .drag import DragLine
 from .lesson import Dot
@@ -307,7 +308,7 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
         ):
             self.points[key] = pg.ScatterPlotItem(size=size, name=name)
             p.addItem(self.points[key])
-        self.damped = pg.ScatterPlotItem(size=3, name=f"heavily damped (ζ > {DAMPED:g})")
+        self.damped = pg.ScatterPlotItem(size=3, name=f"heavily damped (ζ > {sig(DAMPED, 6)})")
         p.addItem(self.damped)
         self.sync = p.plot(name="1X (synchronous)")
         # The same rotor with a massless shaft, when its shaft has mass: one curve per branch.

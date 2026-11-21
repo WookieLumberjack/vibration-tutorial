@@ -47,6 +47,7 @@ from ..core.shock import (
     target_band,
 )
 from ..view_models.text import fmt
+from ..view_models.text import number as sig
 from . import maths, shock_figures, weak
 from .axes import log_axes
 from .drag import DragLine
@@ -386,9 +387,9 @@ def _velocity_change(rng: np.random.Generator) -> Question:
     dv = AREA[shape] * A * G * T / 1000
     area = {Shape.HALF_SINE: "2AT/π", Shape.SQUARE: "AT"}.get(shape, "AT/2")
     return Question(
-        f"A {shape.value.lower()} pulse, {A:g} g for {T:g} ms. What velocity change does it give the base?",
+        f"A {shape.value.lower()} pulse, {sig(A, 6)} g for {sig(T, 6)} ms. What velocity change does it give the base?",
         dv,
-        f"Δv is the pulse's area, {area}: A = {A:g} × 9.807 = {number(A * G)} m/s², T = {T / 1000:g} s, so Δv = "
+        f"Δv is the pulse's area, {area}: A = {sig(A, 6)} × 9.807 = {number(A * G)} m/s², T = {sig(T / 1000, 6)} s, so Δv = "
         f"{number(dv)} m/s.",
         unit="m/s",
         setup=dict(shape=shape, peak=A, duration=T),
@@ -402,7 +403,7 @@ def _soft_asymptote(rng: np.random.Generator) -> Question:
     peak = TWO_PI * f * dv / G
     page = float(_peak_srs(Pulse(Shape.HALF_SINE, A, T / 1000), np.array([f]))[0])
     return Question(
-        f"A {A:g} g, {T:g} ms half-sine. What peak acceleration does a soft oscillator at {number(f)} Hz see, by the "
+        f"A {sig(A, 6)} g, {sig(T, 6)} ms half-sine. What peak acceleration does a soft oscillator at {number(f)} Hz see, by the "
         "spectrum's low-frequency asymptote?",
         peak,
         f"f T = {number(f * T / 1000)} ≪ 1: it takes the pulse as an impulse, Δv = 2AT/π = {number(dv)} m/s, and "
@@ -419,7 +420,7 @@ def _rattle_space(rng: np.random.Generator) -> Question:
     dv = 2 * A * G * T / 1000 / math.pi
     z = dv / (TWO_PI * f)
     return Question(
-        f"A soft mount at {number(f)} Hz on a base given a {A:g} g, {T:g} ms half-sine. About how far does its spring "
+        f"A soft mount at {number(f)} Hz on a base given a {sig(A, 6)} g, {sig(T, 6)} ms half-sine. About how far does its spring "
         "stretch?",
         1000 * z,
         f"The mount stays put while the base moves off at Δv = 2AT/π = {number(dv)} m/s, then rings at that speed: "
@@ -434,10 +435,10 @@ def _hardest_hit(rng: np.random.Generator) -> Question:
     T = pick(rng, (2, 5, 6, 11, 20))
     x, _ = _half_sine_peak()
     return Question(
-        f"A {T:g} ms half-sine, Q = 10. A component of which natural frequency does it hit hardest?",
+        f"A {sig(T, 6)} ms half-sine, Q = 10. A component of which natural frequency does it hit hardest?",
         1000 * x / T,
         f"A half-sine's spectrum peaks at f T ≈ {number(x)}, an oscillator whose period is a little longer than the "
-        f"pulse: f = {number(x)}/{T / 1000:g} s = {number(1000 * x / T)} Hz.",
+        f"pulse: f = {number(x)}/{sig(T / 1000, 6)} s = {number(1000 * x / T)} Hz.",
         unit="Hz",
         tolerance=0.05,
         setup=dict(duration=float(T)),
@@ -448,11 +449,11 @@ def _component_force(rng: np.random.Generator) -> Question:
     m, S = pick(rng, (0.2, 0.5, 2, 5)), pick(rng, (15, 30, 80, 150))
     F = m * S * G
     return Question(
-        f"A {m:g} kg component's natural frequency is where a shock's SRS reads {S:g} g. What peak force does its "
+        f"A {sig(m, 6)} kg component's natural frequency is where a shock's SRS reads {sig(S, 6)} g. What peak force does its "
         "mount carry?",
         F,
         f"The SRS is the mass's peak absolute acceleration, and the mount's spring and damper push it there: "
-        f"F = m × SRS = {m:g} × {S:g} × 9.807 = {number(F)} N.",
+        f"F = m × SRS = {sig(m, 6)} × {sig(S, 6)} × 9.807 = {number(F)} N.",
         unit="N",
     )
 
@@ -466,12 +467,12 @@ def _combine(rng: np.random.Generator) -> Question:
         Rule.NRL: a + math.sqrt(b * b + c * c),
     }[rule]
     how = {
-        Rule.ABS: f"ABS adds them: {a:g} + {b:g} + {c:g}",
-        Rule.SRSS: f"SRSS is √({a:g}² + {b:g}² + {c:g}²)",
-        Rule.NRL: f"NRL is the largest plus the root of the others' squares: {a:g} + √({b:g}² + {c:g}²)",
+        Rule.ABS: f"ABS adds them: {sig(a, 6)} + {sig(b, 6)} + {sig(c, 6)}",
+        Rule.SRSS: f"SRSS is √({sig(a, 6)}² + {sig(b, 6)}² + {sig(c, 6)}²)",
+        Rule.NRL: f"NRL is the largest plus the root of the others' squares: {sig(a, 6)} + √({sig(b, 6)}² + {sig(c, 6)}²)",
     }[rule]
     return Question(
-        f"Three modes' peak terms at a mass, φΓ times the SRS at each mode: {a:g}, {b:g} and {c:g} g. What peak "
+        f"Three modes' peak terms at a mass, φΓ times the SRS at each mode: {sig(a, 6)}, {sig(b, 6)} and {sig(c, 6)} g. What peak "
         f"does the {rule.value} rule give?",
         value,
         f"{how} = {number(value)} g.",
@@ -585,11 +586,11 @@ def _test_spec(rng: np.random.Generator) -> Question:
 
     return Question(
         f"A shock test on a half-sine machine must put {number(lowest, 2)} g or more (SRS, Q = 10) into a component at "
-        f"{fc:g} Hz. The machine gives at most {number(highest, 2)} g and a velocity change of at most "
+        f"{sig(fc, 6)} Hz. The machine gives at most {number(highest, 2)} g and a velocity change of at most "
         f"{number(most_dv, 2)} m/s. Choose the pulse's peak and duration.",
         0,
         f"The spectrum is A times a curve in f T, highest ({number(top)} ×) at f T ≈ {number(x)}: T = "
-        f"{number(x)}/{fc:g} Hz = {T:g} ms. Then A = {A:g} g gives {number(reach)} g at {fc:g} Hz, with "
+        f"{number(x)}/{sig(fc, 6)} Hz = {sig(T, 6)} ms. Then A = {sig(A, 6)} g gives {number(reach)} g at {sig(fc, 6)} Hz, with "
         f"Δv = 2AT/π = {number(dv)} m/s. A shorter pulse at the peak limit does too, its Δv lower; a longer one soon "
         "runs out of velocity change.",
         setup=dict(peak=float(A), duration=round(10 * T, 2)),
@@ -1155,9 +1156,9 @@ class ShockPage(QtWidgets.QWidget):
         p.addItem(pg.InfiniteLine(0.0, angle=0, pen=pg.mkPen(colors.faint, width=1)))
         self.pulse_plot.setXRange(-0.02 * rec.duration, 1.02 * rec.duration, padding=0.0)
         self.pulse_info.setText(
-            f"Δv = {_minus(f'{rec.velocity_change:.4g}')} m/s over the record ({_time(rec.duration)}); "
-            f"{rec.a.size:,} samples at {rec.fs:.4g} Hz; {self.freqs.size} oscillators, {self.freqs[0]:.3g} to "
-            f"{self.freqs[-1]:.4g} Hz."
+            f"Δv = {_minus(f'{sig(rec.velocity_change, 4)}')} m/s over the record ({_time(rec.duration)}); "
+            f"{rec.a.size:,} samples at {sig(rec.fs, 4)} Hz; {self.freqs.size} oscillators, {sig(self.freqs[0])} to "
+            f"{sig(self.freqs[-1], 4)} Hz."
         )
 
     def _draw_srs(self) -> None:
@@ -1190,14 +1191,14 @@ class ShockPage(QtWidgets.QWidget):
         elif self.split_sign.isChecked():
             curve(sp.positive, colors.mass[0], name="Positive")
             curve(sp.negative, colors.mass[1], style=dash, name="Negative")
-        curve(sp.maximax, colors.strong, width=2.5, name=f"Maximax, Q = {sp.q:.3g}")
+        curve(sp.maximax, colors.strong, width=2.5, name=f"Maximax, Q = {sig(sp.q)}")
         synthesis = rec.synthesis
         if synthesis is not None:
             lo, hi = target_band(rec.pulse)
             ft = np.geomspace(lo, hi, 200)
             goal = target(rec.pulse, ft) / G
             item = p.plot(ft, goal, pen=pg.mkPen(colors.force, width=2, style=dot))
-            self.srs_legend.addItem(item, f"Target, Q = {SYNTH_Q:.3g}, ±{TOLERANCE_DB:.3g} dB")
+            self.srs_legend.addItem(item, f"Target, Q = {sig(SYNTH_Q)}, ±{sig(TOLERANCE_DB)} dB")
             band = pg.mkPen(colors.force, width=1)
             for sign in (-1.0, 1.0):
                 p.plot(ft, goal * 10.0 ** (sign * TOLERANCE_DB / 20.0), pen=band)
@@ -1229,18 +1230,18 @@ class ShockPage(QtWidgets.QWidget):
         p.setYRange(math.log10(bottom), math.log10(top) + 0.3, padding=0.0)
 
         k = int(np.argmax(sp.maximax))
-        modes = ", ".join(f"{m.fn_hz:.3g} Hz {sp.at(m.fn_hz) / G:.3g} g" for m in self.result.modes if m.fn_hz > 0)
+        modes = ", ".join(f"{sig(m.fn_hz)} Hz {sig(sp.at(m.fn_hz) / G)} g" for m in self.result.modes if m.fn_hz > 0)
         text = (
-            f"<b>Maximax</b> {sp.maximax[k] / G:.3g} g at {f[k]:.3g} Hz ({self._scaled(f[k], 2)}), "
-            f"{sp.maximax[k] / peak:.3g} × the record's peak {peak / G:.3g} g. At the chain's modes: {modes}."
+            f"<b>Maximax</b> {sig(sp.maximax[k] / G)} g at {sig(f[k])} Hz ({self._scaled(f[k], 2)}), "
+            f"{sig(sp.maximax[k] / peak)} × the record's peak {sig(peak / G)} g. At the chain's modes: {modes}."
         )
         if synthesis is not None:
             kind = "damped sines" if rec.pulse.shape is Shape.SINES else "wavelets"
             text += (
                 f" <b>Synthesis</b>: {synthesis.f.size} {kind}, within "
-                f"{synthesis.worst:.2g} dB of the target at their frequencies after {synthesis.iterations} "
+                f"{sig(synthesis.worst, 2)} dB of the target at their frequencies after {synthesis.iterations} "
                 f"rounds, {_worst(rec, self.spectrum) if abs(sp.q - SYNTH_Q) < 1e-9 else 'n/a'} dB over the "
-                f"bank; it ends at {_minus(f'{rec.velocity_change:.3g}')} m/s, "
+                f"bank; it ends at {_minus(f'{sig(rec.velocity_change)}')} m/s, "
                 f"{_length(abs(rec.displacement()[-1]))} "
                 f"from where it started."
             )
@@ -1251,8 +1252,8 @@ class ShockPage(QtWidgets.QWidget):
         assert self.record is not None, "drawn after recompute"
         pulse = self.record.pulse
         if pulse.shape.synthesized:
-            return f"f / knee = {f / pulse.knee:.{digits}g}"
-        return f"f T = {f * pulse.duration:.{digits}g}"
+            return f"f / knee = {sig(f / pulse.knee, digits)}"
+        return f"f T = {sig(f * pulse.duration, digits)}"
 
     def _draw_oscillator(self) -> None:
         rec = self.record
@@ -1269,7 +1270,7 @@ class ShockPage(QtWidgets.QWidget):
         base = p.plot(osc.t, a / G, pen=pg.mkPen(colors.grey, width=1))
         y = p.plot(osc.t, osc.acceleration / G, pen=pg.mkPen(colors.mass[0], width=2))
         self.osc_legend.addItem(base, "The pulse")
-        self.osc_legend.addItem(y, f"The oscillator, {f:.3g} Hz")
+        self.osc_legend.addItem(y, f"The oscillator, {sig(f)} Hz")
         k = int(np.argmax(np.abs(osc.acceleration)))
         p.plot(
             [osc.t[k]],
@@ -1294,10 +1295,10 @@ class ShockPage(QtWidgets.QWidget):
         y = osc.acceleration / G
         when = "record" if rec.end is None else "pulse"
         self.osc_note.setText(
-            f"f = {f:.4g} Hz, {self._scaled(f)}, Q = {self.q.value():.3g}. During the {when}: "
-            f"+{_positive(y[during].max()):.3g} / −{_positive(-y[during].min()):.3g} g; after it (residual): "
-            f"+{_positive(y[~during].max()):.3g} / −{_positive(-y[~during].min()):.3g} g. The dot marks the largest, "
-            f"{abs(y[k]):.3g} g. Its spring stretches up to {_length(np.max(np.abs(osc.displacement)))}."
+            f"f = {sig(f, 4)} Hz, {self._scaled(f)}, Q = {sig(self.q.value())}. During the {when}: "
+            f"+{sig(_positive(y[during].max()))} / −{sig(_positive(-y[during].min()))} g; after it (residual): "
+            f"+{sig(_positive(y[~during].max()))} / −{sig(_positive(-y[~during].min()))} g. The dot marks the largest, "
+            f"{sig(abs(y[k]))} g. Its spring stretches up to {_length(np.max(np.abs(osc.displacement)))}."
         )
 
     # ------------------------------------------------------------- the chain, the tripartite plot, the pulses
@@ -1378,14 +1379,14 @@ class ShockPage(QtWidgets.QWidget):
         t.setRowCount(n)
         t.setVerticalHeaderLabels([f"{'m' if acc else 'k'}{i + 1}" for i in range(n)])
         for i in range(n):
-            t.setItem(i, 0, _cell(f"{exact[i] * scale:.3g}"))
+            t.setItem(i, 0, _cell(f"{sig(exact[i] * scale)}"))
             for c, values in enumerate(rules.values(), start=1):
                 err = 100.0 * (values[i] / exact[i] - 1.0) if exact[i] > 0 else math.nan
-                t.setItem(i, c, _cell(_minus(f"{values[i] * scale:.3g} ({err:+.0f} %)")))
+                t.setItem(i, c, _cell(_minus(f"{sig(values[i] * scale)} ({err:+.0f} %)")))
         modes = "; ".join(
-            f"{r + 1}: {cp.f[r]:.3g} Hz, ζ {cp.zeta[r]:.2g}, Γ {_minus(f'{cp.gamma[r]:.3g}')}, "
+            f"{r + 1}: {sig(cp.f[r])} Hz, ζ {sig(cp.zeta[r], 2)}, Γ {_minus(f'{sig(cp.gamma[r])}')}, "
             f"{100.0 * cp.effective[r]:.0f} % of the "
-            f"mass, SRS {cp.spectrum[Response.ACCELERATION][r] / G:.3g} g"
+            f"mass, SRS {sig(cp.spectrum[Response.ACCELERATION][r] / G)} g"
             for r in range(cp.f.size)
         )
         self.chain_note.setText(
@@ -1423,7 +1424,7 @@ class ShockPage(QtWidgets.QWidget):
             self._grid_label(p, d * w, ends, _length(d), y0, y1, rising=True)
         for a in 10.0 ** np.arange(math.floor(y0 + math.log10(w[0] / G)), math.ceil(y1 + math.log10(w[1] / G)) + 1):
             p.plot(ends, a * G / w, pen=grid)
-            self._grid_label(p, a * G / w, ends, f"{a:g} g", y0, y1, rising=False)
+            self._grid_label(p, a * G / w, ends, f"{sig(a, 6)} g", y0, y1, rising=False)
         dash = pg.mkPen(colors.muted, width=1, style=QtCore.Qt.PenStyle.DashLine)
         dv = abs(rec.velocity_change)
         if dv > 0:
@@ -1444,20 +1445,20 @@ class ShockPage(QtWidgets.QWidget):
         k = int(np.argmax(d))
         if abs(pv[0] / dv - 1.0) < 0.2 if dv > 0 else False:
             left = (
-                f"At the left the pseudo-velocity tends to the base's Δv, {dv:.3g} m/s (dashed; {pv[0]:.3g} m/s "
-                f"at {f[0]:.3g} Hz): a soft oscillator stays put while the base moves off, then rings at about "
+                f"At the left the pseudo-velocity tends to the base's Δv, {sig(dv)} m/s (dashed; {sig(pv[0])} m/s "
+                f"at {sig(f[0])} Hz): a soft oscillator stays put while the base moves off, then rings at about "
                 f"that speed."
             )
         else:
             left = (
-                f"At the left it is {pv[0]:.3g} m/s at {f[0]:.3g} Hz, not the base's Δv, "
-                f"{_minus(f'{dv:.3g}')} m/s: an oscillator that slow isn't soft next to a "
+                f"At the left it is {sig(pv[0])} m/s at {sig(f[0])} Hz, not the base's Δv, "
+                f"{_minus(f'{sig(dv)}')} m/s: an oscillator that slow isn't soft next to a "
                 f"{_time(rec.duration)} record, which moves the base and brings it back while it swings."
             )
         self.tri_note.setText(
-            f"Q = {sp.q:.3g}. {left} At the right it falls along the line of the peak acceleration, "
-            f"{peak / G:.3g} g (dashed): a stiff oscillator follows the base. The relative displacement is largest, "
-            f"{_length(float(d[k]))}, at {f[k]:.3g} Hz: the room a mount that soft needs."
+            f"Q = {sig(sp.q)}. {left} At the right it falls along the line of the peak acceleration, "
+            f"{sig(peak / G)} g (dashed): a stiff oscillator follows the base. The relative displacement is largest, "
+            f"{_length(float(d[k]))}, at {sig(f[k])} Hz: the room a mount that soft needs."
         )
 
     @staticmethod
@@ -1509,11 +1510,11 @@ class ShockPage(QtWidgets.QWidget):
         rows = []
         for shape, (_scale, f, values) in spectra.items():
             k = int(np.argmax(values))
-            rows.append(f"{shape.value} {values[k]:.3g} (f T {f[k]:.2g}), {values[0]:.2g}, {values[-1]:.3g}")
+            rows.append(f"{shape.value} {sig(values[k])} (f T {sig(f[k], 2)}), {sig(values[0], 2)}, {sig(values[-1])}")
         basis = "the same Δv as the half-sine (their peaks then differ)" if same else "the same peak A"
         self.shapes_note.setText(
-            f"Q = {q:.3g}, {basis}; over A, the half-sine's peak. Largest, at f T = "
-            f"{f[0]:.2g}, at the top: " + "; ".join(rows) + "."
+            f"Q = {sig(q)}, {basis}; over A, the half-sine's peak. Largest, at f T = "
+            f"{sig(f[0], 2)}, at the top: " + "; ".join(rows) + "."
         )
 
 
@@ -1544,7 +1545,7 @@ def _worst(rec: Record, sp: Spectrum) -> str:
     """The SRS's largest distance from a synthesis's target over the bank, in dB."""
     goal = target(rec.pulse, sp.f)
     ok = np.isfinite(goal)
-    return f"{np.max(np.abs(20.0 * np.log10(sp.maximax[ok] / goal[ok]))):.2g}"
+    return f"{sig(np.max(np.abs(20.0 * np.log10(sp.maximax[ok] / goal[ok]))), 2)}"
 
 
 def _minus(text: str) -> str:
@@ -1552,7 +1553,7 @@ def _minus(text: str) -> str:
 
 
 def _time(x: float) -> str:
-    return f"{x:.4g} s" if x >= 1.0 else f"{1e3 * x:.4g} ms"
+    return f"{sig(x, 4)} s" if x >= 1.0 else f"{sig(1e3 * x, 4)} ms"
 
 
 def _length(x: float) -> str:

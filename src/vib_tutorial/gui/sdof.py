@@ -30,6 +30,7 @@ from ..core.sdof import (
     receptance,
     settling_time,
 )
+from ..view_models.text import number as sig
 from . import sdof_figures, settle_plots
 from .animation import ChainView
 from .drag import DragLine, DragPoint
@@ -248,9 +249,9 @@ def _natural_frequency(rng: np.random.Generator) -> Question:
     k = pick(rng, (50, 100, 200, 400, 800, 1000, 2500, 5000))
     osc = Oscillator(m, k, 0.0)
     return Question(
-        f"A {m:g} kg mass sits on a spring of {k:g} N/m. What is its natural frequency f<sub>n</sub>?",
+        f"A {sig(m, 6)} kg mass sits on a spring of {sig(k, 6)} N/m. What is its natural frequency f<sub>n</sub>?",
         osc.natural_hz,
-        f"ω<sub>n</sub> = √(k/m) = √({k:g}/{m:g}) = {number(osc.omega_n)} rad/s, and f<sub>n</sub> = "
+        f"ω<sub>n</sub> = √(k/m) = √({sig(k, 6)}/{sig(m, 6)}) = {number(osc.omega_n)} rad/s, and f<sub>n</sub> = "
         f"ω<sub>n</sub>/2π = {number(osc.natural_hz)} Hz.",
         unit="Hz",
         setup=dict(mass=m, stiffness=k, damping=rounded(0.1 * math.sqrt(k * m)), tab=TAB_PHASE),
@@ -262,9 +263,9 @@ def _critical_damping(rng: np.random.Generator) -> Question:
     k = pick(rng, (50, 100, 200, 400, 800, 1000, 2500, 5000))
     cc = Oscillator(m, k, 0.0).critical
     return Question(
-        f"A {m:g} kg mass on a spring of {k:g} N/m. What damping coefficient c makes it critically damped?",
+        f"A {sig(m, 6)} kg mass on a spring of {sig(k, 6)} N/m. What damping coefficient c makes it critically damped?",
         cc,
-        f"c<sub>c</sub> = 2√(km) = 2√({k:g} × {m:g}) = {number(cc)} N·s/m (that is, 2mω<sub>n</sub>).",
+        f"c<sub>c</sub> = 2√(km) = 2√({sig(k, 6)} × {sig(m, 6)}) = {number(cc)} N·s/m (that is, 2mω<sub>n</sub>).",
         unit="N·s/m",
         setup=dict(mass=m, stiffness=k, damping=rounded(cc), compare=True, tab=TAB_POLES),
     )
@@ -281,10 +282,10 @@ def _log_decrement(rng: np.random.Generator) -> Question:
     answer = d / math.sqrt(TWO_PI**2 + d * d)
     cycles = "the next peak" if n == 1 else f"the peak {n} cycles later"
     return Question(
-        f"A mass released from rest rings down. One peak is {x0:g} mm and {cycles} is {number(xn)} mm. What is "
+        f"A mass released from rest rings down. One peak is {sig(x0, 6)} mm and {cycles} is {number(xn)} mm. What is "
         "its damping ratio ζ?",
         answer,
-        f"The log decrement is δ = (1/{n}) ln({x0:g}/{number(xn)}) = {number(d)}, and ζ = δ/√(4π² + δ²) = "
+        f"The log decrement is δ = (1/{n}) ln({sig(x0, 6)}/{number(xn)}) = {number(d)}, and ζ = δ/√(4π² + δ²) = "
         f"{number(answer)} (δ/2π = {number(d / TWO_PI)} is near enough when ζ is small).",
         tolerance=0.03,
         setup=dict(mass=1.0, stiffness=k, damping=rounded(2.0 * zeta * math.sqrt(k)), x0_mm=x0, tab=TAB_PHASE),
@@ -299,11 +300,11 @@ def _resonant_amplitude(rng: np.random.Generator) -> Question:
     osc = Oscillator(m, k, c)
     x = force / (c * osc.omega_n)
     return Question(
-        f"m = {m:g} kg, k = {k:g} N/m and c = {number(c)} N·s/m, driven by {force:g} N at exactly its natural "
+        f"m = {sig(m, 6)} kg, k = {sig(k, 6)} N/m and c = {number(c)} N·s/m, driven by {sig(force, 6)} N at exactly its natural "
         "frequency. What is the steady amplitude?",
         1e3 * x,
         f"At ω<sub>n</sub> = {number(osc.omega_n)} rad/s the spring and the mass cancel, and only the damper "
-        f"holds the force: X = F/(cω<sub>n</sub>) = {force:g}/({number(c)} × {number(osc.omega_n)}) = "
+        f"holds the force: X = F/(cω<sub>n</sub>) = {sig(force, 6)}/({number(c)} × {number(osc.omega_n)}) = "
         f"{number(1e3 * x)} mm. That's (F/k)/2ζ: Q = 1/2ζ = {number(1.0 / (2.0 * osc.zeta))} times the static "
         f"{number(1e3 * force / k)} mm.",
         unit="mm",
@@ -419,7 +420,7 @@ def _settle_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A {m:g} kg mass on a spring of {k:g} N/m is a pointer that must come to rest quickly when released. "
+        f"A {sig(m, 6)} kg mass on a spring of {sig(k, 6)} N/m is a pointer that must come to rest quickly when released. "
         f"Choose the damper so that, released at rest from x<sub>0</sub>, it stays within 2 % of x<sub>0</sub> "
         f"of its rest position after {number(most, 2)} s.",
         0,
@@ -450,7 +451,7 @@ def _detune_spec(rng: np.random.Generator) -> Question:
             kept("The mass", t.mass, m, "kg"),
             kept("The damper", t.damping, c, "N·s/m"),
             Requirement(
-                f"The drive kept at {force:g} N",
+                f"The drive kept at {sig(force, 6)} N",
                 f"{number(_drive_force(t), 4)} N",
                 t.kind == FORCE and abs(t.amplitude - force) <= 0.005 * force,
             ),
@@ -459,7 +460,7 @@ def _detune_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A {m:g} kg mass on a spring of {k:g} N/m, with a {number(c)} N·s/m damper, is shaken by {force:g} N at "
+        f"A {sig(m, 6)} kg mass on a spring of {sig(k, 6)} N/m, with a {number(c)} N·s/m damper, is shaken by {sig(force, 6)} N at "
         f"{number(f)} Hz: right on its resonance. The mass, the damper and the drive can't change. Change the "
         f"spring so the steady amplitude is no more than {number(most, 2)} mm.",
         0,
@@ -691,7 +692,7 @@ class SdofPage(QtWidgets.QWidget):
         self.free_item = pg.PlotDataItem(name="x")
         self.envelope_items = [pg.PlotDataItem() for _ in range(2)]
         self.peak_item = pg.ScatterPlotItem(size=6)
-        self.compare_items = [pg.PlotDataItem(name=f"ζ = {z:g}") for z in COMPARE_ZETAS]
+        self.compare_items = [pg.PlotDataItem(name=f"ζ = {sig(z, 6)}") for z in COMPARE_ZETAS]
         for item in (*self.envelope_items, *self.compare_items, self.free_item, self.peak_item):
             self.free_plot.addItem(item)
         self.free_note = readout_label()
@@ -1100,17 +1101,19 @@ class SdofPage(QtWidgets.QWidget):
     def _show_info(self) -> None:
         o = self.osc
         z = o.zeta
-        parts = [f"f<sub>n</sub> = {o.natural_hz:.4g} Hz, ζ = {z:.4g} (c<sub>c</sub> = {o.critical:.4g} N·s/m)."]
+        parts = [
+            f"f<sub>n</sub> = {sig(o.natural_hz, 4)} Hz, ζ = {sig(z, 4)} (c<sub>c</sub> = {sig(o.critical, 4)} N·s/m)."
+        ]
         if 0 < z < 1:
             parts.append(
-                f"f<sub>d</sub> = {o.damped_hz:.4g} Hz, τ = {o.time_constant:.3g} s, δ = {o.log_decrement:.3g},"
-                f" Q = {1 / (2 * z):.3g}."
+                f"f<sub>d</sub> = {sig(o.damped_hz, 4)} Hz, τ = {sig(o.time_constant)} s, δ = {sig(o.log_decrement)},"
+                f" Q = {sig(1 / (2 * z))}."
             )
         elif z == 0:
             parts.append("Undamped: it rings for ever.")
         elif z >= 1:
             what = "Critically damped" if abs(z - 1) < 1e-6 else "Overdamped"
-            parts.append(f"{what}: no oscillation; slowest time constant {o.time_constant:.3g} s.")
+            parts.append(f"{what}: no oscillation; slowest time constant {sig(o.time_constant)} s.")
         self.info.setText(" ".join(parts))
 
     def _free_span(self) -> float:
@@ -1150,14 +1153,14 @@ class SdofPage(QtWidgets.QWidget):
         self.peak_item.setData(pt[:40], px[:40])
         self.free_legend.clear()
         if self.compare.isChecked():
-            self.free_legend.addItem(self.free_item, f"ζ = {o.zeta:.3g}")
+            self.free_legend.addItem(self.free_item, f"ζ = {sig(o.zeta)}")
             for item, z in zip(self.compare_items, COMPARE_ZETAS):
                 if abs(z - o.zeta) < 1e-3:  # it's the oscillator's own: drawn already
                     item.setData([], [])
                     continue
                 xc, _ = free_response(Oscillator(o.mass, o.stiffness, z * o.critical), x0, v0, t)
                 item.setData(t, xc)
-                self.free_legend.addItem(item, f"ζ = {z:g}")
+                self.free_legend.addItem(item, f"ζ = {sig(z, 6)}")
         else:
             for item in self.compare_items:
                 item.setData([], [])
@@ -1166,18 +1169,18 @@ class SdofPage(QtWidgets.QWidget):
         d = measured_decrement(t, x)
         if d is not None and 0 < o.zeta < 1:
             lines.append(
-                f"Measured from {min(len(px), 40)} peaks: δ = {d:.4g}, so ζ = δ/√(4π² + δ²) = "
-                f"{d / math.sqrt(4 * math.pi**2 + d * d):.4g} (the oscillator's ζ is {o.zeta:.4g}). "
-                f"Each peak is {math.exp(d):.4g} times the next."
+                f"Measured from {min(len(px), 40)} peaks: δ = {sig(d, 4)}, so ζ = δ/√(4π² + δ²) = "
+                f"{sig(d / math.sqrt(4 * math.pi**2 + d * d), 4)} (the oscillator's ζ is {sig(o.zeta, 4)}). "
+                f"Each peak is {sig(math.exp(d), 4)} times the next."
             )
         elif o.zeta == 0:
             lines.append(
-                f"No damping: it swings at {o.natural_hz:.4g} Hz for ever, its energy "
+                f"No damping: it swings at {sig(o.natural_hz, 4)} Hz for ever, its energy "
                 f"½kx₀² + ½mv₀² = {fmt(0.5 * o.stiffness * x0**2 + 0.5 * o.mass * v0**2, 'J')} kept."
             )
         elif o.zeta >= 1:
             s = o.poles().real
-            lines.append(f"No oscillation: the poles are real, s = {s[0]:.4g} and {s[1]:.4g} s⁻¹.")
+            lines.append(f"No oscillation: the poles are real, s = {sig(s[0], 4)} and {sig(s[1], 4)} s⁻¹.")
         self.free_note.setText(" ".join(lines))
         # the phase plane
         self.plane_item.setData(x, v / o.omega_n)
@@ -1212,15 +1215,15 @@ class SdofPage(QtWidgets.QWidget):
                 f"Unbalance force m<sub>e</sub>eΩ² = {fmt(F, 'N')}. " if self.kind.currentIndex() == UNBALANCE else ""
             )
             text = (
-                f"{what}Steady amplitude {fmt(X, 'm')} at r = f/f<sub>n</sub> = {r:.3g}, lagging the force by "
-                f"{lag:.1f}°: {X * o.stiffness / F:.3g} times the static {fmt(F / o.stiffness, 'm')}."
+                f"{what}Steady amplitude {fmt(X, 'm')} at r = f/f<sub>n</sub> = {sig(r)}, lagging the force by "
+                f"{lag:.1f}°: {sig(X * o.stiffness / F)} times the static {fmt(F / o.stiffness, 'm')}."
                 if F > 0
                 else "No force."
             )
             if o.damping == 0 and F > 0:
                 text += (
-                    f" Undamped, the start never dies away: it beats every {1 / abs(f - o.natural_hz):.3g} s, "
-                    f"at |f − f<sub>n</sub>| = {abs(f - o.natural_hz):.3g} Hz."
+                    f" Undamped, the start never dies away: it beats every {sig(1 / abs(f - o.natural_hz))} s, "
+                    f"at |f − f<sub>n</sub>| = {sig(abs(f - o.natural_hz))} Hz."
                 )
         else:
             text = (
@@ -1272,9 +1275,9 @@ class SdofPage(QtWidgets.QWidget):
                 item.setData([], [])
         if half is not None and not unbalance:
             self.frf_note.setText(
-                f"Half-power points {half[0]:.4g} and {half[1]:.4g} Hz, {half[1] - half[0]:.3g} Hz apart: "
-                f"Δf/2f<sub>n</sub> = {(half[1] - half[0]) / (2 * o.natural_hz):.4g} (ζ = {o.zeta:.4g}). "
-                f"Peak {top:.4g} times static, at {o.peak_hz():.4g} Hz."
+                f"Half-power points {sig(half[0], 4)} and {sig(half[1], 4)} Hz, {sig(half[1] - half[0])} Hz apart: "
+                f"Δf/2f<sub>n</sub> = {sig((half[1] - half[0]) / (2 * o.natural_hz), 4)} (ζ = {sig(o.zeta, 4)}). "
+                f"Peak {sig(top, 4)} times static, at {sig(o.peak_hz(), 4)} Hz."
             )
         elif unbalance:
             self.frf_note.setText(
@@ -1334,12 +1337,12 @@ class SdofPage(QtWidgets.QWidget):
             self.s_plot.setRange(xRange=(-reach, 0.15 * reach), yRange=(-1.2 * wn, 1.2 * wn), padding=0.02)
         if o.zeta < 1:
             self.pole_note.setText(
-                f"s = {s[0].real:.4g} ± {abs(s[0].imag):.4g}i s⁻¹: decay rate ζω<sub>n</sub> = "
-                f"{-s[0].real:.4g} s⁻¹, frequency ω<sub>d</sub> = {abs(s[0].imag):.4g} rad/s. "
-                f"|s| = ω<sub>n</sub> = {wn:.4g} rad/s."
+                f"s = {sig(s[0].real, 4)} ± {sig(abs(s[0].imag), 4)}i s⁻¹: decay rate ζω<sub>n</sub> = "
+                f"{sig(-s[0].real, 4)} s⁻¹, frequency ω<sub>d</sub> = {sig(abs(s[0].imag), 4)} rad/s. "
+                f"|s| = ω<sub>n</sub> = {sig(wn, 4)} rad/s."
             )
         else:
             self.pole_note.setText(
-                f"Two real poles, {s[0].real:.4g} and {s[1].real:.4g} s⁻¹ (their product is "
-                f"ω<sub>n</sub>² = {wn * wn:.4g})."
+                f"Two real poles, {sig(s[0].real, 4)} and {sig(s[1].real, 4)} s⁻¹ (their product is "
+                f"ω<sub>n</sub>² = {sig(wn * wn, 4)})."
             )

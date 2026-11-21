@@ -18,6 +18,7 @@ import scipy.optimize
 from ..core.gyroscope import RPM, Launch, Motion, Shape, Top, least_spin, steady_precession
 from ..core.practice import Prediction, Problem, Question, Requirement, kept, number, pick, rounded
 from ..core.sliding_top import RoundTop
+from ..view_models.text import number as sig
 from .links import page_link
 
 TAB_POTENTIAL, TAB_PRECESSION, TAB_PATH, TAB_COMPONENTS, TAB_CHECK, TAB_CHAOS = range(6)
@@ -389,12 +390,12 @@ def _square_moments(rng: np.random.Generator) -> Question:
     side = pick(rng, (0.05, 0.06, 0.08, 0.1))
     top = Top(m, side, l, shape=Shape.SQUARE)
     return Question(
-        f"A top is a {m:g} kg square plate {side * 1000:g} mm on a side on a light stem, its centre {l * 1000:g} mm "
+        f"A top is a {sig(m, 6)} kg square plate {sig(side * 1000, 6)} mm on a side on a light stem, its centre {sig(l * 1000, 6)} mm "
         "above the tip. What is its moment of inertia I₁ about a line across the axis through the tip, in kg·cm²?",
         top.transverse * 1e4,
         f"About a line through its centre parallel to a side a square plate has ms²/12, and a quarter turn leaves it "
         f"as it was, so it has that about every line across its axis; moved l up the axis it gains ml²: "
-        f"I₁ = m(s²/12 + l²) = {m:g} × ({number(side * side / 12)} + {number(l * l)}) m² = "
+        f"I₁ = m(s²/12 + l²) = {sig(m, 6)} × ({number(side * side / 12)} + {number(l * l)}) m² = "
         f"{number(top.transverse * 1e4)} kg·cm². (Along the axis, I₃ = ms²/6 = {number(top.polar * 1e4)} kg·cm².)",
         unit="kg·cm²",
         setup=dict(mass=m, radius=side, height=l, shape=Shape.SQUARE),
@@ -431,12 +432,12 @@ def _rectangle_moments(rng: np.random.Generator) -> Question:
     a, b = pick(rng, (0.08, 0.1, 0.12)), pick(rng, (0.02, 0.03, 0.04))
     top = Top(m, a, l, shape=Shape.RECTANGLE, breadth=b)
     return Question(
-        f"A top is a {m:g} kg rectangular plate {a * 1000:g} × {b * 1000:g} mm on a light stem, its centre "
-        f"{l * 1000:g} mm above the tip. What is its moment of inertia about the line through the tip parallel to "
-        f"its {b * 1000:g} mm sides, in kg·cm²?",
+        f"A top is a {sig(m, 6)} kg rectangular plate {sig(a * 1000, 6)} × {sig(b * 1000, 6)} mm on a light stem, its centre "
+        f"{sig(l * 1000, 6)} mm above the tip. What is its moment of inertia about the line through the tip parallel to "
+        f"its {sig(b * 1000, 6)} mm sides, in kg·cm²?",
         top.second * 1e4,
-        f"About a line through its centre parallel to the {b * 1000:g} mm sides the plate has mw²/12, w = "
-        f"{a * 1000:g} mm being how far it reaches across that line; moved l up the axis it gains ml²: I₂ = m(w²/12 + l²) = "
+        f"About a line through its centre parallel to the {sig(b * 1000, 6)} mm sides the plate has mw²/12, w = "
+        f"{sig(a * 1000, 6)} mm being how far it reaches across that line; moved l up the axis it gains ml²: I₂ = m(w²/12 + l²) = "
         f"{number(top.second * 1e4)} kg·cm². (Parallel to the other sides, I₁ = m(b²/12 + l²) = "
         f"{number(top.transverse * 1e4)} kg·cm²: unequal, an asymmetric top.)",
         unit="kg·cm²",
@@ -451,7 +452,7 @@ def _racket(rng: np.random.Generator) -> Question:
     middle = min(i1, i2) < i3 < max(i1, i2)
     flips, keeps = "It flips over and back, again and again", "It keeps spinning steadily about its axis"
     return Question(
-        f"A plate 100 × 20 mm on a stem, its centre {l * 1000:g} mm above the tip, is spun about its stem with no "
+        f"A plate 100 × 20 mm on a stem, its centre {sig(l * 1000, 6)} mm above the tip, is spun about its stem with no "
         "gravity, a little off the axis. What does it do?",
         0,
         f"I₁ = m(b²/12 + l²) = {number(i1 * 1e4)}, I₂ = m(w²/12 + l²) = {number(i2 * 1e4)} and I₃ = m(w² + b²)/12 = "
@@ -490,11 +491,11 @@ def _moments(rng: np.random.Generator) -> Question:
     m, r, l = _disc(rng)
     top = Top(m, r, l)
     return Question(
-        f"A top is a {m:g} kg disc of radius {r * 1000:g} mm on a light stem, its centre {l * 1000:g} mm above the "
+        f"A top is a {sig(m, 6)} kg disc of radius {sig(r * 1000, 6)} mm on a light stem, its centre {sig(l * 1000, 6)} mm above the "
         "tip. What is its moment of inertia I₁ about a line across the axis through the tip, in kg·cm²?",
         top.transverse * 1e4,
         f"About its own diameter a disc has mr²/4; moved l up the axis it gains ml² (parallel axes): "
-        f"I₁ = m(r²/4 + l²) = {m:g} × ({number(r * r / 4)} + {number(l * l)}) m² = {number(top.transverse)} kg·m² "
+        f"I₁ = m(r²/4 + l²) = {sig(m, 6)} × ({number(r * r / 4)} + {number(l * l)}) m² = {number(top.transverse)} kg·m² "
         f"= {number(top.transverse * 1e4)} kg·cm². (Along the axis, I₃ = mr²/2 = {number(top.polar * 1e4)} kg·cm².)",
         unit="kg·cm²",
         setup=dict(mass=m, radius=r, height=l),
@@ -507,8 +508,8 @@ def _flat_precession(rng: np.random.Generator) -> Question:
     top = Top(m, r, l)
     rate = top.weight_moment / (top.polar * rpm * RPM)
     return Question(
-        f"A {m:g} kg disc of radius {r * 1000:g} mm spins at {rpm:g} rpm on a light axle, its centre "
-        f"{l * 1000:g} mm from the end of the axle, which rests on a pivot with the axle horizontal. How long does "
+        f"A {sig(m, 6)} kg disc of radius {sig(r * 1000, 6)} mm spins at {sig(rpm, 6)} rpm on a light axle, its centre "
+        f"{sig(l * 1000, 6)} mm from the end of the axle, which rests on a pivot with the axle horizontal. How long does "
         "it take to precess once round the pivot?",
         2 * math.pi / rate,
         f"Gravity's moment mgl = {number(top.weight_moment)} N·m turns the angular momentum I₃ω₃ = "
@@ -528,8 +529,8 @@ def _steady_tilted(rng: np.random.Generator) -> Question:
     slow, fast = steady_precession(top, rpm * RPM, math.radians(tilt))
     return Question(
         f"A top has I₁ = {number(top.transverse)} kg·m², I₃ = {number(top.polar)} kg·m² and mgl = "
-        f"{number(top.weight_moment)} N·m. Spinning at {rpm:g} rpm, at what rate can it precess slowly and steadily "
-        f"at {tilt:g}° from the vertical?",
+        f"{number(top.weight_moment)} N·m. Spinning at {sig(rpm, 6)} rpm, at what rate can it precess slowly and steadily "
+        f"at {sig(tilt, 6)}° from the vertical?",
         slow,
         f"Held at θ, the tilt's equation leaves I₁ cos θ φ̇² − I₃ω₃ φ̇ + mgl = 0, with I₃ω₃ = "
         f"{number(top.polar * rpm * RPM)} N·m·s and I₁ cos θ = {number(top.transverse * math.cos(math.radians(tilt)))}. "
@@ -562,7 +563,7 @@ def _nutation(rng: np.random.Generator) -> Question:
     estimate = top.polar * rpm * RPM / top.transverse / (2 * math.pi)
     exact = Motion(top, rpm * RPM, math.radians(30)).nutation_hz()
     return Question(
-        f"A top has I₁ = {number(top.transverse)} kg·m² and I₃ = {number(top.polar)} kg·m². Spun fast, at {rpm:g} "
+        f"A top has I₁ = {number(top.transverse)} kg·m² and I₃ = {number(top.polar)} kg·m². Spun fast, at {sig(rpm, 6)} "
         "rpm, and let go, about how many times a second does its axis nod?",
         estimate,
         f"A fast top nods at the free top's wobble, I₃ω₃/I₁ = {number(top.polar * rpm * RPM / top.transverse)} rad/s: "
@@ -700,7 +701,7 @@ def _period_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"Spin this {m:g} kg top (radius {r * 1000:g} mm, {l * 1000:g} mm up the stem) and let it go at {tilt:g}° "
+        f"Spin this {sig(m, 6)} kg top (radius {sig(r * 1000, 6)} mm, {sig(l * 1000, 6)} mm up the stem) and let it go at {sig(tilt, 6)}° "
         f"so that it precesses steadily, once round in {number(target)} s, without nodding.",
         0,
         f"Steady at θ: I₁ cos θ φ̇² − I₃ω₃ φ̇ + mgl = 0 with φ̇ = 2π/{number(target)} s = "
@@ -738,7 +739,7 @@ def _sleep_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A {m:g} kg disc of radius {r * 1000:g} mm will spin at {rpm:g} rpm. Set how far up its stem it sits so it "
+        f"A {sig(m, 6)} kg disc of radius {sig(r * 1000, 6)} mm will spin at {sig(rpm, 6)} rpm. Set how far up its stem it sits so it "
         "sleeps with 20 % to spare in spin, as high as that allows (within 10 %).",
         0,
         f"It sleeps if I₃ω₃ &gt; 2√(I₁mgl), with I₁ = m(r²/4 + l²): raising the disc raises both I₁ and mgl, so it "
@@ -758,13 +759,13 @@ def _rising_end(rng: np.random.Generator) -> Question:
     a = l - R
     end = rpm * (a + R * math.cos(math.radians(tilt))) / (a + R)
     return Question(
-        f"A disc spins at {rpm:g} rpm on a stem whose tip is rounded to a radius of {R * 1000:g} mm, the disc's centre "
-        f"{l * 1000:g} mm above the end of the stem. Let go at {tilt:g}° on a slippery table, it rises. If it rose "
+        f"A disc spins at {sig(rpm, 6)} rpm on a stem whose tip is rounded to a radius of {sig(R * 1000, 6)} mm, the disc's centre "
+        f"{sig(l * 1000, 6)} mm above the end of the stem. Let go at {sig(tilt, 6)}° on a slippery table, it rises. If it rose "
         "all the way upright, how fast would it spin?",
         end,
         f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = l − R = {number(a * 1000)} mm the disc's centre "
-        f"above the tip's. Upright cos θ = 1: ω₃ = {rpm:g} × ({number(a * 1000)} + {R * 1000:g} cos {tilt:g}°)/"
-        f"({number(a * 1000)} + {R * 1000:g}) = {number(end)} rpm, a little slower.",
+        f"above the tip's. Upright cos θ = 1: ω₃ = {sig(rpm, 6)} × ({number(a * 1000)} + {sig(R * 1000, 6)} cos {sig(tilt, 6)}°)/"
+        f"({number(a * 1000)} + {sig(R * 1000, 6)}) = {number(end)} rpm, a little slower.",
         unit="rpm",
         setup=dict(
             setting=Setting.TABLE,
@@ -785,13 +786,13 @@ def _tippe_end(rng: np.random.Generator) -> Question:
     rpm, tilt = pick(rng, (800, 1000, 1200, 1500)), pick(rng, (5, 10))
     end = rpm * (R * math.cos(math.radians(tilt)) - low) / (R + low)
     return Question(
-        f"A tippe top is a ball {R * 1000:g} mm in radius, its centre of mass {low * 1000:g} mm below the ball's "
-        f"centre. Spun at {rpm:g} rpm on its bottom, {tilt:g}° off upright, it turns over. How fast does it spin on "
+        f"A tippe top is a ball {sig(R * 1000, 6)} mm in radius, its centre of mass {sig(low * 1000, 6)} mm below the ball's "
+        f"centre. Spun at {sig(rpm, 6)} rpm on its bottom, {sig(tilt, 6)}° off upright, it turns over. How fast does it spin on "
         "its top, seen from above?",
         end,
-        f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = −{low * 1000:g} mm (the weight below the centre). "
-        f"Turned over J = I₃Ω(R − a), so Ω = {rpm:g} × ({R * 1000:g} cos {tilt:g}° − {low * 1000:g})/"
-        f"({R * 1000:g} + {low * 1000:g}) = {number(end)} rpm. About its own axis it now spins the other way.",
+        f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = −{sig(low * 1000, 6)} mm (the weight below the centre). "
+        f"Turned over J = I₃Ω(R − a), so Ω = {sig(rpm, 6)} × ({sig(R * 1000, 6)} cos {sig(tilt, 6)}° − {sig(low * 1000, 6)})/"
+        f"({sig(R * 1000, 6)} + {sig(low * 1000, 6)}) = {number(end)} rpm. About its own axis it now spins the other way.",
         unit="rpm",
         setup=dict(
             setting=Setting.TIPPE,
@@ -826,17 +827,19 @@ def _tippe_turns(rng: np.random.Generator) -> Question:
     reasons = {
         up: ""
         if ratio < 0.7
-        else f"Upright stays E<sub>J</sub>'s least only for I₁/I₃ under 1 − α = 0.7; here it's {ratio:g}.",
+        else f"Upright stays E<sub>J</sub>'s least only for I₁/I₃ under 1 − α = 0.7; here it's {sig(ratio, 6)}.",
         over: ""
         if 0.7 <= ratio < 1.3
-        else f"Turned over is E<sub>J</sub>'s least only for I₁/I₃ between 0.7 and 1.3; here it's {ratio:g}.",
-        side: "" if ratio >= 1.3 else f"It ends on its side only for I₁/I₃ over 1 + α = 1.3; here it's {ratio:g}.",
+        else f"Turned over is E<sub>J</sub>'s least only for I₁/I₃ between 0.7 and 1.3; here it's {sig(ratio, 6)}.",
+        side: ""
+        if ratio >= 1.3
+        else f"It ends on its side only for I₁/I₃ over 1 + α = 1.3; here it's {sig(ratio, 6)}.",
     }
     return Question(
-        f"A tippe top's weight sits 0.3 of its radius below the ball's centre (α = 0.3), and I₁/I₃ = {ratio:g} about "
+        f"A tippe top's weight sits 0.3 of its radius below the ball's centre (α = 0.3), and I₁/I₃ = {sig(ratio, 6)} about "
         "its centre of mass. Spun fast (1200 rpm) on its bottom on a table, what does it do?",
         0,
-        f"1 − α = 0.7 and 1 + α = 1.3; I₁/I₃ = {ratio:g} is {why}",
+        f"1 − α = 0.7 and 1 + α = 1.3; I₁/I₃ = {sig(ratio, 6)} is {why}",
         choices=choices,
         why=tuple(reasons[c] for c in choices),
         setup=dict(

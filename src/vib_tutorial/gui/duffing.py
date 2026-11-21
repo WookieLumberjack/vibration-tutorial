@@ -35,6 +35,7 @@ from ..core.duffing import (
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
 from ..view_models import duffing as view
 from ..view_models.duffing import CHART_DEPTHS, CHART_RATIOS, GROWTH_TOP, LEGEND, LEGS, DuffingSetup
+from ..view_models.text import number as sig
 from . import duffing_figures, plot_patches, weak
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height
@@ -122,10 +123,10 @@ def _backbone(rng: np.random.Generator) -> Question:
     kap = float(osc.kappa(a / 1000))
     f = float(osc.backbone_hz(a / 1000))
     return Question(
-        f"A {m:g} kg mass on a hardening spring, k = {k:g} N/m and k₃ = {k3:g} N/m³, swings freely at {a:g} mm. At "
+        f"A {sig(m, 6)} kg mass on a hardening spring, k = {sig(k, 6)} N/m and k₃ = {sig(k3, 6)} N/m³, swings freely at {sig(a, 6)} mm. At "
         "what frequency, by harmonic balance?",
         f,
-        f"The spring acts on the first harmonic as κ(a) = k + ¾ k₃ a² = {k:g} + 0.75 × {k3:g} × {a / 1000:g}² = "
+        f"The spring acts on the first harmonic as κ(a) = k + ¾ k₃ a² = {sig(k, 6)} + 0.75 × {sig(k3, 6)} × {sig(a / 1000, 6)}² = "
         f"{number(kap)} N/m, so f = √(κ/m)/2π = {number(f)} Hz, against {number(osc.natural_hz)} Hz for small "
         "swings.",
         unit="Hz",
@@ -137,10 +138,10 @@ def _stiffening(rng: np.random.Generator) -> Question:
     k, k3, a = pick(rng, (200, 400, 1000)), pick(rng, (5e4, 1e5, 2e5, 5e5)), pick(rng, (10, 20, 30))
     added = 100 * 0.75 * k3 * (a / 1000) ** 2 / k
     return Question(
-        f"A spring with k = {k:g} N/m and k₃ = {k3:g} N/m³ swings at {a:g} mm. By how many percent does the cubic "
+        f"A spring with k = {sig(k, 6)} N/m and k₃ = {sig(k3, 6)} N/m³ swings at {sig(a, 6)} mm. By how many percent does the cubic "
         "stiffen it, as harmonic balance sees it?",
         added,
-        f"κ(a) = k + ¾ k₃ a²: the cubic adds ¾ k₃ a²/k = 0.75 × {k3:g} × {a / 1000:g}²/{k:g} = {number(added)} %.",
+        f"κ(a) = k + ¾ k₃ a²: the cubic adds ¾ k₃ a²/k = 0.75 × {sig(k3, 6)} × {sig(a / 1000, 6)}²/{sig(k, 6)} = {number(added)} %.",
         unit="%",
     )
 
@@ -149,10 +150,10 @@ def _escape(rng: np.random.Generator) -> Question:
     k, k3 = pick(rng, (100, 400, 1000, 2500)), pick(rng, (-1e4, -2e4, -4e4, -1e5))
     x = math.sqrt(k / -k3)
     return Question(
-        f"A softening spring, k = {k:g} N/m and k₃ = {f"{k3:g}".replace("-", "−")} N/m³. Past what amplitude does it push the mass "
+        f"A softening spring, k = {sig(k, 6)} N/m and k₃ = {f"{sig(k3, 6)}".replace("-", "−")} N/m³. Past what amplitude does it push the mass "
         "outwards (its escape amplitude)?",
         1000 * x,
-        f"k x + k₃ x³ is back to zero at x = √(k/−k₃) = √({k:g}/{number(-k3)}) = {number(1000 * x)} mm, the "
+        f"k x + k₃ x³ is back to zero at x = √(k/−k₃) = √({sig(k, 6)}/{number(-k3)}) = {number(1000 * x)} mm, the "
         "potential's hilltop. (The force peaks at 1/√3 of that.)",
         unit="mm",
         setup=dict(stiffness=k, cubic=k3, force=0.5, damping=0.8, start_hz=0.2, end_hz=2 * math.sqrt(k) / TWO_PI),
@@ -163,7 +164,7 @@ def _pump_frequency(rng: np.random.Generator) -> Question:
     m, k = pick(rng, (0.5, 1, 2, 5)), pick(rng, (100, 400, 1000, 4000))
     fn = math.sqrt(k / m) / TWO_PI
     return Question(
-        f"A {m:g} kg mass on a {k:g} N/m spring. At what frequency should its stiffness pulse to swing it hardest "
+        f"A {sig(m, 6)} kg mass on a {sig(k, 6)} N/m spring. At what frequency should its stiffness pulse to swing it hardest "
         "from rest (the first tongue's centre)?",
         2 * fn,
         f"f<sub>n</sub> = √(k/m)/2π = {number(fn)} Hz; the principal parametric resonance pumps at twice it, "
@@ -188,7 +189,7 @@ def _threshold(rng: np.random.Generator) -> Question:
     m, k, zeta = pick(rng, (0.5, 1, 2)), pick(rng, (100, 400, 1000)), pick(rng, (0.005, 0.01, 0.02, 0.05))
     c = 2 * zeta * math.sqrt(k * m)
     return Question(
-        f"A {m:g} kg mass on a {k:g} N/m spring with damping c = {number(c)} N·s/m. Pumped at exactly twice its "
+        f"A {sig(m, 6)} kg mass on a {sig(k, 6)} N/m spring with damping c = {number(c)} N·s/m. Pumped at exactly twice its "
         "natural frequency, how deep must the pump μ be to make rest unstable?",
         4 * zeta,
         f"At Ω = 2ω<sub>n</sub>, (k − mΩ²/4)² + (cΩ/2)² = (μk/2)² leaves c ω<sub>n</sub> = μk/2, so μ = 2cω<sub>n</sub>/k "
@@ -201,10 +202,10 @@ def _growth_time(rng: np.random.Generator) -> Question:
     fn, zeta, mu = pick(rng, (2, 3.18, 5, 10)), pick(rng, (0.005, 0.01, 0.02)), pick(rng, (0.1, 0.2, 0.3))
     rate = (mu / 4 - zeta) * TWO_PI * fn
     return Question(
-        f"A spring with f<sub>n</sub> = {fn:g} Hz and ζ = {zeta:g} is pumped at 2f<sub>n</sub> with μ = {mu:g}. How "
+        f"A spring with f<sub>n</sub> = {sig(fn, 6)} Hz and ζ = {sig(zeta, 6)} is pumped at 2f<sub>n</sub> with μ = {sig(mu, 6)}. How "
         "long does a small swing take to grow e times?",
         1 / rate,
-        f"σ ≈ (μ/4 − ζ) ω<sub>n</sub> = ({mu:g}/4 − {zeta:g}) × 2π × {fn:g} = {number(rate)} /s, so 1/σ = "
+        f"σ ≈ (μ/4 − ζ) ω<sub>n</sub> = ({sig(mu, 6)}/4 − {sig(zeta, 6)}) × 2π × {sig(fn, 6)} = {number(rate)} /s, so 1/σ = "
         f"{number(1 / rate)} s. (Floquet's exact rate is within 1 % of this here.)",
         unit="s",
     )
@@ -222,8 +223,8 @@ def _settled_swing(rng: np.random.Generator) -> Question:
     amps, stable = parametric_amplitudes(osc, f)
     assert abs(amps[stable].max() - a) < 1e-9 * a
     return Question(
-        f"A 1 kg mass on a hardening spring, k = 400 N/m, k₃ = {k3:g} N/m³, c = 1 N·s/m, its stiffness pumped by "
-        f"μ = {mu:g} at {f:g} Hz. What amplitude does its half-harmonic swing settle at?",
+        f"A 1 kg mass on a hardening spring, k = 400 N/m, k₃ = {sig(k3, 6)} N/m³, c = 1 N·s/m, its stiffness pumped by "
+        f"μ = {sig(mu, 6)} at {sig(f, 6)} Hz. What amplitude does its half-harmonic swing settle at?",
         1000 * a,
         f"x = a cos(Ωt/2 − θ): (κ(a) − mΩ²/4)² + (cΩ/2)² = (μk/2)². The stable branch is the one detuned the "
         f"cubic's way: κ(a) = mΩ²/4 + √((μk/2)² − (cΩ/2)²) = {number(m * w * w / 4)} + {number(d)} = {number(kap)} "
@@ -348,7 +349,7 @@ def _jump_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A 1 kg mass on a hardening spring (k = 400 N/m, k₃ = {k3:g} N/m³) driven by {F:g} N jumps on a sweep. "
+        f"A 1 kg mass on a hardening spring (k = 400 N/m, k₃ = {sig(k3, 6)} N/m³) driven by {sig(F, 6)} N jumps on a sweep. "
         f"Choose its damping so that it doesn't jump at all, but still swings to {number(lowest)} mm or more at its "
         "peak.",
         0,

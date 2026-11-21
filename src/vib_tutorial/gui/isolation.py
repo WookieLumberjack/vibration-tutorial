@@ -39,6 +39,7 @@ from ..view_models.isolation import (
     IsolationTrial,
     isolator,
 )
+from ..view_models.text import number as sig
 from . import coalesce, isolation_figures, settle_plots
 from .challenge import ChallengeBox
 from .drag import DragLine
@@ -67,7 +68,7 @@ def _mount_frequency(rng: np.random.Generator) -> Question:
     sag = pick(rng, (0.5, 1, 2, 3, 5, 8, 10, 20))
     fn = Isolator(deflection=1e-3 * sag).natural_hz
     return Question(
-        f"A machine sags {sag:g} mm on its mounts. What is its natural frequency on them?",
+        f"A machine sags {sig(sag, 6)} mm on its mounts. What is its natural frequency on them?",
         fn,
         f"k = Mg/δ, so ω<sub>n</sub> = √(k/M) = √(g/δ), whatever the machine weighs: f<sub>n</sub> = "
         f"√(9.81/{number(1e-3 * sag)})/2π = {number(fn)} Hz (15.76/√δ with δ in mm).",
@@ -84,10 +85,10 @@ def _transmissibility(rng: np.random.Generator) -> Question:
     r = iso.speed_hz / iso.natural_hz
     T = iso.at_speed()[2]
     return Question(
-        f"A machine runs at {rpm:g} rpm on mounts that sag {sag:g} mm, with ζ = {zeta:g}. What percentage of its "
+        f"A machine runs at {sig(rpm, 6)} rpm on mounts that sag {sig(sag, 6)} mm, with ζ = {sig(zeta, 6)}. What percentage of its "
         "unbalance's force reaches the floor?",
         100.0 * T,
-        f"f<sub>n</sub> = 15.76/√{sag:g} = {number(iso.natural_hz)} Hz and the speed is {number(iso.speed_hz)} Hz, "
+        f"f<sub>n</sub> = 15.76/√{sig(sag, 6)} = {number(iso.natural_hz)} Hz and the speed is {number(iso.speed_hz)} Hz, "
         f"so r = {number(r)}; T = √(1 + (2ζr)²)/√((1 − r²)² + (2ζr)²) = {number(T)}: {number(100.0 * T)} %.",
         unit="%",
         tolerance=0.03,
@@ -102,7 +103,7 @@ def _sag_for(rng: np.random.Generator) -> Question:
     T = 1.0 - isolation
     r = math.sqrt(1.0 + 1.0 / T)
     return Question(
-        f"Undamped mounts are to isolate {100 * isolation:g} % of a machine's unbalance at {rpm:g} rpm. How far must "
+        f"Undamped mounts are to isolate {sig(100 * isolation, 6)} % of a machine's unbalance at {sig(rpm, 6)} rpm. How far must "
         "they sag under it?",
         1e3 * sag,
         f"Undamped and above √2 f<sub>n</sub>, T = 1/(r² − 1) = {number(T)}, so r = √(1 + 1/T) = {number(r)}: "
@@ -122,7 +123,7 @@ def _stiff_or_soft(rng: np.random.Generator) -> Question:
     T = iso.at_speed()[2]
     r = iso.speed_hz / iso.natural_hz
     return Question(
-        f"A machine running at {rpm:g} rpm is put on mounts that sag {number(sag, 2)} mm (ζ = 0.05). Does more or "
+        f"A machine running at {sig(rpm, 6)} rpm is put on mounts that sag {number(sag, 2)} mm (ζ = 0.05). Does more or "
         "less force reach the floor than if it were bolted down?",
         0 if T > 1 else 1,
         f"f<sub>n</sub> = 15.76/√{number(sag, 2)} = {number(iso.natural_hz)} Hz, so the speed is r = {number(r)} "
@@ -144,7 +145,7 @@ def _damping_above(rng: np.random.Generator) -> Question:
     before_, after = (Isolator(zeta=z).at_speed()[2] for z in (0.05, zeta))
     return Question(
         f"A machine at 1500 rpm on mounts that sag 5 mm (f<sub>n</sub> = 7 Hz, well below its 25 Hz) has ζ = 0.05. "
-        f"The mounts are changed for ones that sag the same but have ζ = {zeta:g}. What happens to the force on "
+        f"The mounts are changed for ones that sag the same but have ζ = {sig(zeta, 6)}. What happens to the force on "
         "the floor while it runs?",
         0,
         f"It rises: T goes from {number(100 * before_)} % to {number(100 * after)} %. Above √2 f<sub>n</sub> the "
@@ -179,11 +180,11 @@ def _isolate_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The machine runs at {rpm:g} rpm and sits on stiff mounts. Choose mounts so no more than {allowed:g} % of "
-        f"its unbalance's force reaches the floor ({100 * isolation:g} % isolation), without letting it sag more "
+        f"The machine runs at {sig(rpm, 6)} rpm and sits on stiff mounts. Choose mounts so no more than {sig(allowed, 6)} % of "
+        f"its unbalance's force reaches the floor ({sig(100 * isolation, 6)} % isolation), without letting it sag more "
         f"than {number(most, 2)} mm (any more and its pipes won't line up).",
         0,
-        f"Undamped, T = 1/(r² − 1) = {1 - isolation:g} needs r = {number(math.sqrt(1 + 1 / (1 - isolation)))}, "
+        f"Undamped, T = 1/(r² − 1) = {sig(1 - isolation, 6)} needs r = {number(math.sqrt(1 + 1 / (1 - isolation)))}, "
         f"so a sag of at least {number(need)} mm; damping costs a little, so take a little more: {number(design, 2)} "
         f"mm with ζ = 0.05 lets {number(T)} % through. The Design chart's <i>Use that sag</i> gives the undamped "
         "sag for an isolation.",
@@ -211,13 +212,13 @@ def _trade_off_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The machine runs at {rpm:g} rpm on mounts that sag {sag:g} mm, with hardly any damping (ζ = 0.02): it "
+        f"The machine runs at {sig(rpm, 6)} rpm on mounts that sag {sig(sag, 6)} mm, with hardly any damping (ζ = 0.02): it "
         f"shakes the floor as it runs up through their resonance. Tune the mounts so the transmissibility never "
-        f"exceeds {number(peak, 2)} at any speed, while at {rpm:g} rpm no more than {number(allowed, 2)} % of the "
-        f"force reaches the floor. The mounts may sag {sag:g} mm at most.",
+        f"exceeds {number(peak, 2)} at any speed, while at {sig(rpm, 6)} rpm no more than {number(allowed, 2)} % of the "
+        f"force reaches the floor. The mounts may sag {sig(sag, 6)} mm at most.",
         0,
         f"Damping lowers the peak (about 1/2ζ) but raises T at speed (the damper's force grows with the speed), "
-        f"so there's a window: ζ = {zeta:g} at {sag:g} mm gives a peak of {number(iso.peak_transmissibility())} "
+        f"so there's a window: ζ = {sig(zeta, 6)} at {sig(sag, 6)} mm gives a peak of {number(iso.peak_transmissibility())} "
         f"and {number(100 * iso.at_speed()[2])} % at speed. Less sag (stiffer mounts) only makes T at speed worse.",
         setup=dict(rpm=rpm, deflection_mm=float(sag), zeta=0.02, tab=TAB_START),
         goal=goal,
@@ -244,14 +245,14 @@ def _block_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The 100 kg machine (0.01 kg·m of unbalance) runs at {rpm:g} rpm on mounts that sag {sag:g} mm. It swings "
+        f"The 100 kg machine (0.01 kg·m of unbalance) runs at {sig(rpm, 6)} rpm on mounts that sag {sig(sag, 6)} mm. It swings "
         f"too much for the pipes bolted to it: bring its motion down to ±{number(most, 2)} µm, keeping the mounts' "
         "sag (they're stiffened to suit whatever they carry).",
         0,
         f"High above resonance the mounts hardly hold the machine: it swings about its centre of mass, X = "
         f"m<sub>e</sub>e r²/((M + B)(r² − 1)) with r² = {number(r2)} fixed by the sag. So it needs M + B ≥ "
         f"0.01 × {number(r2)}/({number(r2 - 1)} × {number(most, 2)}×10<sup>−6</sup>): an inertia block of at least "
-        f"{number(max(least, 0.0), 2)} kg. A {block:g} kg block gives ±{number(1e6 * iso.at_speed()[0])} µm.",
+        f"{number(max(least, 0.0), 2)} kg. A {sig(block, 6)} kg block gives ±{number(1e6 * iso.at_speed()[0])} µm.",
         setup=dict(rpm=rpm, deflection_mm=float(sag), tab=TAB_START),
         goal=goal,
         design=dict(rpm=rpm, deflection_mm=float(sag), block=float(block), tab=TAB_START),
@@ -426,7 +427,7 @@ class IsolationPage(QtWidgets.QWidget):
         self.tr_plot.setToolTip(TR_TIP)
         self.tr_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.tr_plot.getPlotItem(), offset=(-10, 10))
-        self.family_items = [pg.PlotDataItem(name=f"ζ = {z:g}") for z in FAMILY]
+        self.family_items = [pg.PlotDataItem(name=f"ζ = {sig(z, 6)}") for z in FAMILY]
         self.tr_item = pg.PlotDataItem(name="this isolator")
         self.unit_line = pg.InfiniteLine(angle=0, pos=0.0)
         self.root2_line = pg.InfiniteLine(angle=90, pos=math.log10(math.sqrt(2)))
@@ -501,7 +502,7 @@ class IsolationPage(QtWidgets.QWidget):
         self.chart_plot.setToolTip(CHART_TIP)
         self.chart_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.chart_plot.getPlotItem(), offset=(-10, 10))
-        self.chart_items = [pg.PlotDataItem(name=f"{100 * level:g} %") for level in CHART_LEVELS]
+        self.chart_items = [pg.PlotDataItem(name=f"{sig(100 * level, 6)} %") for level in CHART_LEVELS]
         for item in self.chart_items:
             self.chart_plot.addItem(item)
         self.chart_now = pg.PlotDataItem(pen=None, symbol="o", symbolSize=12)

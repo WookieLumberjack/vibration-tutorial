@@ -49,6 +49,7 @@ from ..core.rotor_sweep import (
     phase_degrees,
     probe,
 )
+from ..view_models.text import number as sig
 from . import rotor_practice, weak
 from .challenge import ChallengeBox
 from .cms_time import SampleBuffer
@@ -665,7 +666,7 @@ class RotorPage(QtWidgets.QWidget):
         self._new_asymmetry_chart()
         crits = critical_speeds(self.campbell, iso)
         self.time.set_criticals([w * RPM for w, _ in crits])
-        lines = [f"{w * RPM:,.0f} rpm ({w / (2 * math.pi):.4g} Hz), {whirl_name(r)} whirl" for w, r in crits]
+        lines = [f"{w * RPM:,.0f} rpm ({sig(w / (2 * math.pi), 4)} Hz), {whirl_name(r)} whirl" for w, r in crits]
         # On oil films, far stiffer than most shafts, the textbook estimate takes the bearings as rigid.
         jeff = (math.sqrt(system.disc_stiffness / system.disc_mass) if system.films else system.jeffcott_speed()) * RPM
         self.crit_label.setText(
@@ -699,7 +700,7 @@ class RotorPage(QtWidgets.QWidget):
         self.stability_note.setText(self._stability_note())
         self.campbell_note.setText(
             "Each dot is a damped natural frequency at that speed, coloured by its whirl direction "
-            f"(modes damped more than ζ = {DAMPED:g}, here the journals bouncing on their supports, are "
+            f"(modes damped more than ζ = {sig(DAMPED, 6)}, here the journals bouncing on their supports, are "
             "hollow). A critical speed (circled) is where a lightly damped whirl frequency meets the 1X "
             "line: the unbalance, turning once per revolution, drives that mode at its natural "
             "frequency. An isotropic rotor's unbalance drives only its forward whirl."
@@ -733,7 +734,7 @@ class RotorPage(QtWidgets.QWidget):
             if self.asym_chart is not None and not self.asym_chart.done:
                 chart += f" Working it out: {self.asym_chart._next / self.asym_chart.growth.size:.0%}."
         else:
-            chart = f" Modes damped more than ζ = {DAMPED:g} are left off."
+            chart = f" Modes damped more than ζ = {sig(DAMPED, 6)} are left off."
         onset = onset_text(self.onset, self.top_rpm)
         return f"<small>{cause}{onset}{chart} Below: the full spectrum of the strip chart's station.</small>"
 
@@ -1148,7 +1149,7 @@ class RotorPage(QtWidgets.QWidget):
                 )
         elif zetas and min(zetas)[0] < 0.05 * wc:
             z = min(zetas)[1]
-            head += f"; its mode has ζ = {z:.3g}, ζ² = {z * z:.2g}"
+            head += f"; its mode has ζ = {sig(z)}, ζ² = {sig(z * z, 2)}"
         if not self.sweeps:
             return head + (f"<br><small>Run up and coast down to track the {order}X response over this curve.</small>")
         rows = []
@@ -1162,7 +1163,7 @@ class RotorPage(QtWidgets.QWidget):
             alpha = sweep.rate / RPM
             rows.append(
                 f"<tr><td><span style='color:{color}'><b>{line}</b></span> {sweep.label}</td>"
-                f"<td align='right'>{alpha / wc**2:.2g}</td><td align='right'>{fmt_len(amp)}</td>"
+                f"<td align='right'>{sig(alpha / wc**2, 2)}</td><td align='right'>{fmt_len(amp)}</td>"
                 f"<td align='right'>{100 * amp / ss_amp:.0f}%</td><td align='right'>{w * RPM:,.0f}</td>"
                 f"<td align='right'>{(w - wc) * RPM:+,.0f}</td></tr>"
             )
@@ -1315,7 +1316,7 @@ class RotorPage(QtWidgets.QWidget):
 
         # Readout.
         rpm = sim.omega * RPM
-        parts = [f"<b>Speed {rpm:,.0f} rpm</b> ({sim.omega / (2 * math.pi):.3g} Hz)"]
+        parts = [f"<b>Speed {rpm:,.0f} rpm</b> ({sig(sim.omega / (2 * math.pi))} Hz)"]
         if not steady and sim.omega != sim.target:
             parts[0] += f" → {sim.target * RPM:,.0f} rpm"
         crits = [c for c, _ in critical_speeds(self.campbell, _isotropic(sim.system))] if self.campbell else []
@@ -1364,8 +1365,8 @@ class RotorPage(QtWidgets.QWidget):
                 # With the films' whole force that is only how it starts: oil whirl settles to a limit cycle.
                 what = "linearized, the equilibrium is unstable" if sim.system.whole_films else "unstable"
                 parts.append(
-                    f"<span style='color:{colors.force}'>{what}: a whirl at {f:.3g} Hz "
-                    f"({2 * math.pi * f / w:.2f}×) grows ×e every {1 / grow:.2g} s</span>"
+                    f"<span style='color:{colors.force}'>{what}: a whirl at {sig(f)} Hz "
+                    f"({2 * math.pi * f / w:.2f}×) grows ×e every {sig(1 / grow, 2)} s</span>"
                 )
         if self.rubbed:
             where = (
@@ -1521,7 +1522,7 @@ class RotorPage(QtWidgets.QWidget):
             top=(3 if self.sim.system.spacing == 1 else 2) if self.sim.system.periodic else 1,
         )
         self.spectrum_note.setText(
-            f"Full spectrum of the {STATIONS[st].lower()} orbit over the last {self.time_window.value():g} s "
+            f"Full spectrum of the {STATIONS[st].lower()} orbit over the last {sig(self.time_window.value(), 6)} s "
             "(the strip chart's station and window): forward whirl on the right, backward on the left."
         )
 

@@ -26,6 +26,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
+from ..view_models.text import number as sig
 from . import coalesce, frf_figures, weak
 from .layouts import form_layout
 from .lesson import RunButton, TrialBox, three_panes, trials_html
@@ -144,7 +145,7 @@ def log_ticks(lo: float, hi: float, mantissas: tuple[int, ...]) -> list[list[tup
         for m in range(1, 10):
             v = m * 10.0**e
             if lo <= v <= hi:
-                (major if m in mantissas else minor).append((math.log10(v), f"{v:g}" if m in mantissas else ""))
+                (major if m in mantissas else minor).append((math.log10(v), f"{sig(v, 6)}" if m in mantissas else ""))
     return [major, minor]
 
 
@@ -621,7 +622,7 @@ def _mode_share(rng: np.random.Generator) -> Question:
 def _accelerance_limit(rng: np.random.Generator) -> Question:
     m = pick(rng, (0.5, 1, 2, 5, 10))
     return Question(
-        f"A force pushes a {m:g} kg mass in a chain of springs and masses. What does its driving-point accelerance "
+        f"A force pushes a {sig(m, 6)} kg mass in a chain of springs and masses. What does its driving-point accelerance "
         "level off at, far above every mode?",
         1.0 / m,
         f"Far above the modes the springs can't keep up and the mass is pushed alone: ẍ = F/m, so −Ω²H<sub>jj</sub> "
@@ -635,8 +636,8 @@ def _antiresonance(rng: np.random.Generator) -> Question:
     k2 = pick(rng, (100, 200, 400, 800))
     f = math.sqrt(k2 / m2) / (2 * math.pi)
     return Question(
-        f"Two masses: m<sub>1</sub> on a spring to the ground, and m<sub>2</sub> = {m2:g} kg on k<sub>2</sub> = "
-        f"{k2:g} N/m to m<sub>1</sub>. At what frequency does the driving-point FRF H<sub>11</sub> have its "
+        f"Two masses: m<sub>1</sub> on a spring to the ground, and m<sub>2</sub> = {sig(m2, 6)} kg on k<sub>2</sub> = "
+        f"{sig(k2, 6)} N/m to m<sub>1</sub>. At what frequency does the driving-point FRF H<sub>11</sub> have its "
         "antiresonance?",
         f,
         f"At an antiresonance m<sub>1</sub> stands still under the force: the chain beyond it vibrates on its own, "
@@ -669,9 +670,9 @@ def _mobility(rng: np.random.Generator) -> Question:
     f = pick(rng, (2, 5, 10, 20))
     v = 2 * math.pi * f * 1e-3 * h
     return Question(
-        f"A receptance measures {h:g} mm/N at {f:g} Hz. What is the mobility there?",
+        f"A receptance measures {sig(h, 6)} mm/N at {sig(f, 6)} Hz. What is the mobility there?",
         v,
-        f"For harmonic motion velocity is iΩ times displacement: |iΩH| = 2π × {f:g} × {number(1e-3 * h)} = "
+        f"For harmonic motion velocity is iΩ times displacement: |iΩH| = 2π × {sig(f, 6)} × {number(1e-3 * h)} = "
         f"{number(v)} m/(N·s).",
         unit="m/(N·s)",
     )
@@ -766,7 +767,7 @@ def _truncation_spec(rng: np.random.Generator) -> Question:
     kept_text = ", ".join(str(r + 1) for r in best)
     return Question(
         f"Show H<sub>{j + 1}{k + 1}</sub> of the default chain and untick as many modes as you can while the ticked "
-        f"ones' sum still gets its static compliance within {most:g} % (the large plot's header gives the error).",
+        f"ones' sum still gets its static compliance within {sig(most, 6)} % (the large plot's header gives the error).",
         0,
         "Each mode holds φ<sub>jr</sub>φ<sub>kr</sub>/ω<sub>r</sub>² of it: "
         + ", ".join(f"mode {r + 1} {number(v)} %" for r, v in enumerate(shares))
@@ -1246,9 +1247,9 @@ class FrfMatrixPage(QtWidgets.QWidget):
             c.deleteLater()
         self.mode_checks = []
         for t, color in zip(self.terms, self.term_colors):
-            detail = f"{t.fn_hz:.3g} Hz" if t.fn_hz > 0 else "non-oscillatory"
+            detail = f"{sig(t.fn_hz)} Hz" if t.fn_hz > 0 else "non-oscillatory"
             if math.isfinite(t.zeta):
-                detail += f", ζ {t.zeta:.3g}"
+                detail += f", ζ {sig(t.zeta)}"
             c = QtWidgets.QCheckBox(f"{t.label}   ({detail})")
             c.setIcon(swatch(color))
             c.setChecked(t.label not in self._unchecked)
@@ -1349,12 +1350,12 @@ class FrfMatrixPage(QtWidgets.QWidget):
             )
         err = float(np.abs(partial - full).max() / max(np.abs(full).max(), 1e-300))
         color = colors.good if err < 1e-6 else colors.fair if err < 0.05 else colors.poor
-        amount = "none (equal to rounding error)" if err < 1e-9 else f"{100 * err:.3g}%"
+        amount = "none (equal to rounding error)" if err < 1e-9 else f"{sig(100 * err)}%"
         verdict = f"Largest difference from the full solution: <b style='color:{color}'>{amount}</b> of the peak"
         if worst is not None:
             verdict += (
-                f", at <b>{worst[2]:.3g} Hz</b> (dashed red line). <span style='color:{colors.force}'>"
-                f"Shaded: {worst[0]:.3g}–{worst[1]:.3g} Hz</span>, where the difference is at "
+                f", at <b>{sig(worst[2])} Hz</b> (dashed red line). <span style='color:{colors.force}'>"
+                f"Shaded: {sig(worst[0])}–{sig(worst[1])} Hz</span>, where the difference is at "
                 f"least {WORST_FRACTION:.0%} of that."
             )
         else:
@@ -1376,7 +1377,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         partial = float(each[sel].sum())
         err = (partial - full) / full if full else 0.0
         color = colors.good if abs(err) < 1e-6 else colors.fair if abs(err) < 0.05 else colors.poor
-        amount = "0% (exact)" if abs(err) < 1e-9 else f"{100 * err:+.3g}%"
+        amount = "0% (exact)" if abs(err) < 1e-9 else f"{sig(100 * err, plus=True)}%"
         shares = []
         for t, c, value, on in zip(self.terms, self.term_colors, each, sel):
             share = (
@@ -1384,13 +1385,13 @@ class FrfMatrixPage(QtWidgets.QWidget):
                 if not (full and np.isfinite(value))
                 else "0%"
                 if abs(value / full) < 1e-9
-                else (f"{100 * value / full:.3g}%")
+                else (f"{sig(100 * value / full)}%")
             )  # a node's share is round-off
             style = "" if on else f" style='color:{colors.grey}'"
             shares.append(f"<span style='color:{c}'>■</span><span{style}>{t.label} {share}</span>")
         return (
-            f"<b>Static compliance</b> (Ω = 0): K<sup>−1</sup> gives {full:.4g} m/N; the ticked "
-            f"modes give {partial:.4g} m/N, error <b style='color:{color}'>{amount}</b>. "
+            f"<b>Static compliance</b> (Ω = 0): K<sup>−1</sup> gives {sig(full, 4)} m/N; the ticked "
+            f"modes give {sig(partial, 4)} m/N, error <b style='color:{color}'>{amount}</b>. "
             f"<span style='color:{colors.muted}'>Each mode's share (grey: not ticked):</span> {', '.join(shares)}."
         )
 

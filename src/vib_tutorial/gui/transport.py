@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from PySide6 import QtCore, QtGui, QtWidgets
 from shiboken6 import isValid
 
+from ..view_models.text import number as sig
 from . import recompute, theming
 
 POLL_MS = 150  # how often the bar reads the page's controls back
@@ -29,7 +30,7 @@ POLL_MS = 150  # how often the bar reads the page's controls back
 
 def speed_text(speed: float) -> str:
     """A speed as every page's speed box and the bar write it: "0.25×", times real time (#409 U-20)."""
-    return f"{speed:g}×"
+    return f"{sig(speed, 6)}×"
 
 
 # Controls that do something with Space themselves: a button presses, a check box toggles, a combo box opens, a

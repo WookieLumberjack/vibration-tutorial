@@ -35,6 +35,7 @@ from ..core.fatigue import (
     reversals,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..view_models.text import number as sig
 from . import coalesce, fatigue_figures, settle_plots
 from .layouts import FlowLayout
 from .lesson import (
@@ -216,10 +217,10 @@ def _basquin(rng: np.random.Generator) -> Question:
     S = pick(rng, (0.5, 0.8, 1.5, 2)) * s_ref
     N = float(Curve(b, s_ref).cycles(S)) / 1e6
     return Question(
-        f"A detail survives two million cycles of a {s_ref:g} MPa range, on an S–N slope of {b:g}. How many million "
-        f"cycles of a {S:g} MPa range does it survive?",
+        f"A detail survives two million cycles of a {sig(s_ref, 6)} MPa range, on an S–N slope of {sig(b, 6)}. How many million "
+        f"cycles of a {sig(S, 6)} MPa range does it survive?",
         N,
-        f"N = N<sub>ref</sub>(S/S<sub>ref</sub>)<sup>−b</sup> = 2 million × ({S:g}/{s_ref:g})<sup>−{b:g}</sup> = "
+        f"N = N<sub>ref</sub>(S/S<sub>ref</sub>)<sup>−b</sup> = 2 million × ({sig(S, 6)}/{sig(s_ref, 6)})<sup>−{sig(b, 6)}</sup> = "
         f"{number(N)} million cycles.",
         unit="million cycles",
         setup=dict(b=b, s_ref=s_ref, tab=TAB_SN),
@@ -232,8 +233,8 @@ def _miner(rng: np.random.Generator) -> Question:
     counts = (pick(rng, (1, 2, 5)) * 1e6, pick(rng, (1, 2, 5)) * 1e5, pick(rng, (1, 2, 5)) * 1e4)
     lives = [float(curve.cycles(S)) for S in ranges]
     D = sum(n / N for n, N in zip(counts, lives))
-    blocks = ", ".join(f"{n / 1e6:g} million cycles of {S:g} MPa" for S, n in zip(ranges, counts))
-    terms = " + ".join(f"{n / 1e6:g}/{number(N / 1e6)}" for n, N in zip(counts, lives))
+    blocks = ", ".join(f"{sig(n / 1e6, 6)} million cycles of {sig(S, 6)} MPa" for S, n in zip(ranges, counts))
+    terms = " + ".join(f"{sig(n / 1e6, 6)}/{number(N / 1e6)}" for n, N in zip(counts, lives))
     return Question(
         f"A welded detail (slope 3, 80 MPa range at two million cycles) takes {blocks}. What is its Miner's sum?",
         D,
@@ -247,11 +248,11 @@ def _narrow_life(rng: np.random.Generator) -> Question:
     curve = Curve()
     rate = nu0 * (2 * math.sqrt(2) * sigma) ** 3 * math.gamma(2.5) / curve.K
     return Question(
-        f"A narrow-band stress at {nu0:g} Hz, {sigma:g} MPa RMS, on a welded detail (slope 3, 80 MPa range at two "
+        f"A narrow-band stress at {sig(nu0, 6)} Hz, {sig(sigma, 6)} MPa RMS, on a welded detail (slope 3, 80 MPa range at two "
         "million cycles). By the narrow-band formula, how many days does it last?",
         1 / rate / DAY,
         f"Each up-crossing is a cycle, its amplitude Rayleigh: the damage a second is ν₀(2√2σ)<sup>b</sup>Γ(1 + b/2)/K "
-        f"= {nu0:g} × {number((2 * math.sqrt(2) * sigma) ** 3)} × {number(math.gamma(2.5))}/{number(curve.K)} = "
+        f"= {sig(nu0, 6)} × {number((2 * math.sqrt(2) * sigma) ** 3)} × {number(math.gamma(2.5))}/{number(curve.K)} = "
         f"{number(rate)}, so the life is {number(1 / rate)} s, {number(1 / rate / DAY)} days.",
         unit="days",
         setup=dict(stress=Stress(f1=nu0, sigma1=sigma), tab=TAB_SN),
@@ -263,16 +264,16 @@ def _rainflow(rng: np.random.Generator) -> Question:
     low, high = pick(rng, (20, 30, 40)), pick(rng, (60, 70))
     bottom = pick(rng, (-40, -20, 0))
     x = np.array([0.0, top, low, high, bottom])
-    fall = f"{bottom:g}".replace("-", "−")
+    fall = f"{sig(bottom, 6)}".replace("-", "−")
     ranges, counts = rainflow(x)
     full = float(ranges[counts == 1.0][0])
     halves = sorted(float(r) for r in ranges[counts == 0.5])
     return Question(
-        f"Rainflow-count the stress history 0, {top:g}, {low:g}, {high:g}, {fall} MPa. What range has the one "
+        f"Rainflow-count the stress history 0, {sig(top, 6)}, {sig(low, 6)}, {sig(high, 6)}, {fall} MPa. What range has the one "
         "full cycle it finds?",
         full,
-        f"The ripple {low:g} → {high:g} is no larger than the swing before it, and the fall to {fall} goes past "
-        f"it: it closes a full cycle of {number(full)} MPa and is taken out. What's left, 0, {top:g}, {fall}, is "
+        f"The ripple {sig(low, 6)} → {sig(high, 6)} is no larger than the swing before it, and the fall to {fall} goes past "
+        f"it: it closes a full cycle of {number(full)} MPa and is taken out. What's left, 0, {sig(top, 6)}, {fall}, is "
         f"two half cycles, {' and '.join(number(h) for h in halves)} MPa: the big swing still counted whole.",
         unit="MPa",
     )
@@ -282,11 +283,11 @@ def _overload(rng: np.random.Generator) -> Question:
     high, b = pick(rng, (5, 10, 15, 20)), pick(rng, (3, 4, 5))
     share = 100 / (1 + high / 100) ** b
     return Question(
-        f"The stress on a part turns out {high:g} % higher than designed for, its S–N slope {b:g}. What percentage "
+        f"The stress on a part turns out {sig(high, 6)} % higher than designed for, its S–N slope {sig(b, 6)}. What percentage "
         "of the life it was designed for does it have?",
         share,
         f"The damage goes as S<sup>b</sup>, so the life as S<sup>−b</sup>: 1/{number(1 + high / 100)}"
-        f"<sup>{b:g}</sup> = {number(share)} %.",
+        f"<sup>{sig(b, 6)}</sup> = {number(share)} %.",
         unit="%",
         tolerance=0.01,
     )
@@ -398,8 +399,8 @@ def _damping_spec(rng: np.random.Generator) -> Question:
         f"that Dirlik's life is {number(target, 2)} days or more.",
         0,
         f"σ₁ = 20 √(0.02/ζ₁). The damage would fall as ζ<sup>−1.5</sup> for mode 1 alone, but the 15 Hz mode's "
-        f"cycles don't change, so the returns diminish: ζ₁ from about {number(hi)} meets it (ζ₁ = {zd:g} gives "
-        f"σ₁ = {sd:g} MPa and {number(life(zd, sd))} days).",
+        f"cycles don't change, so the returns diminish: ζ₁ from about {number(hi)} meets it (ζ₁ = {sig(zd, 6)} gives "
+        f"σ₁ = {sig(sd, 6)} MPa and {number(life(zd, sd))} days).",
         setup=dict(stress=base, tab=TAB_DAMAGE),
         goal=goal,
         design=dict(stress=Stress(base.f1, zd, sd, base.f2, base.zeta2, base.sigma2), tab=TAB_DAMAGE),
@@ -748,7 +749,7 @@ class FatiguePage(QtWidgets.QWidget):
         full = sum(1 for st in done if st.count == 1.0)
         half = sum(1 for st in done if st.count == 0.5)
         counted = sorted((st.range for st in done if st.count), reverse=True)
-        shown = ", ".join(f"{r:.3g}" for r in counted[:8]) + (" …" if len(counted) > 8 else "")
+        shown = ", ".join(f"{sig(r)}" for r in counted[:8]) + (" …" if len(counted) > 8 else "")
         self.rf_tally.setText(
             f"Step {k} of {len(steps)}. Counted: {full} full and {half} half cycles"
             + (f": ranges {shown} MPa." if counted else ".")
@@ -763,27 +764,27 @@ class FatiguePage(QtWidgets.QWidget):
             )
         stack = ", ".join(str(i + 1) for i in st.stack)
         if st.read >= 0:
-            text = f"Read reversal {st.read + 1} ({p[st.read]:.3g} MPa). Stack: {stack}."
+            text = f"Read reversal {st.read + 1} ({sig(p[st.read])} MPa). Stack: {stack}."
             if math.isfinite(st.X):
                 text += (
-                    f" X = {st.X:.3g} (the last two) is less than Y = {st.Y:.3g} (the two before): nothing closes yet."
+                    f" X = {sig(st.X)} (the last two) is less than Y = {sig(st.Y)} (the two before): nothing closes yet."
                     if st.X < st.Y
-                    else f" X = {st.X:.3g} ≥ Y = {st.Y:.3g}: the range Y has been passed, so it closes."
+                    else f" X = {sig(st.X)} ≥ Y = {sig(st.Y)}: the range Y has been passed, so it closes."
                 )
             return text
         a, b = st.pair[0] + 1, st.pair[1] + 1
         if math.isnan(st.X):
             return (
                 f"The end of the record: what's left on the stack counts as half cycles, one between each pair. "
-                f"Reversals {a} to {b}: {st.range:.3g} MPa, ½." + (" Done." if end else "")
+                f"Reversals {a} to {b}: {sig(st.range)} MPa, ½." + (" Done." if end else "")
             )
         if st.count == 0.5:
             return (
-                f"Y ({st.range:.3g} MPa, reversals {a} to {b}) starts at the first reversal: half a cycle, ½, and the "
+                f"Y ({sig(st.range)} MPa, reversals {a} to {b}) starts at the first reversal: half a cycle, ½, and the "
                 f"first one leaves the stack. Stack: {stack}."
             )
         return (
-            f"Y ({st.range:.3g} MPa, reversals {a} to {b}) is a full cycle, counted 1: the stress went from {a} to "
+            f"Y ({sig(st.range)} MPa, reversals {a} to {b}) is a full cycle, counted 1: the stress went from {a} to "
             f"{b} and back past it. Both leave the stack. Stack: {stack}."
         )
 
@@ -836,7 +837,7 @@ class FatiguePage(QtWidgets.QWidget):
         self.psd_item.setData(f[keep], G[keep])
         r = rates(s)
         self.stress_info.setText(
-            f"σ = {r.sigma:.3g} MPa; {r.nu0:.3g} up-crossings and {r.nup:.3g} peaks a second; α<sub>i</sub> = {r.alpha2:.2f}."
+            f"σ = {sig(r.sigma)} MPa; {sig(r.nu0)} up-crossings and {sig(r.nup)} peaks a second; α<sub>i</sub> = {r.alpha2:.2f}."
         )
         span = min(SHOWN / min(p[0] for p in s.peaks()), rec.duration)
         n = int(np.searchsorted(rec.t, span))
@@ -851,9 +852,9 @@ class FatiguePage(QtWidgets.QWidget):
         nb, dk, rf = narrow_band_damage(s, c), dirlik_damage(s, c), rec.damage_rate(c)
         cycles = float(np.sum(rec.counts))
         self.readout.setText(
-            f"Record: {rec.duration:.4g} s, {len(reversals(rec.x))} reversals, {cycles:.4g} rainflow cycles. "
-            f"Damage a second, and the life: rainflow {rf:.3g} ({life_text(rf)}); narrow band {nb:.3g} "
-            f"({life_text(nb)}, {nb / rf:.2f} × rainflow); Dirlik {dk:.3g} ({life_text(dk)}, {dk / rf:.2f} × "
+            f"Record: {sig(rec.duration, 4)} s, {len(reversals(rec.x))} reversals, {sig(cycles, 4)} rainflow cycles. "
+            f"Damage a second, and the life: rainflow {sig(rf)} ({life_text(rf)}); narrow band {sig(nb)} "
+            f"({life_text(nb)}, {nb / rf:.2f} × rainflow); Dirlik {sig(dk)} ({life_text(dk)}, {dk / rf:.2f} × "
             "rainflow)."
         )
 
@@ -895,7 +896,7 @@ class FatiguePage(QtWidgets.QWidget):
             biggest = np.sort(rec.ranges[rec.ranges > 0] ** b * rec.counts[rec.ranges > 0])[::-1]
             tenth = max(1, round(0.1 * len(biggest)))
             self.tab_note.setText(
-                f"With b = {b:.3g}, the largest tenth of the record's cycles do "
+                f"With b = {sig(b)}, the largest tenth of the record's cycles do "
                 f"{100 * biggest[:tenth].sum() / biggest.sum():.0f} % of its damage."
             )
         else:

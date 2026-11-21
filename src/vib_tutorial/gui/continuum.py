@@ -48,6 +48,7 @@ from ..core.continuum_waves import (
     Waves,
 )
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
+from ..view_models.text import number as sig
 from . import continuum_figures
 from .continuum_waves_view import WavesView
 from .frame_loop import FrameLoop
@@ -145,10 +146,10 @@ def _string_fundamental(rng: np.random.Generator) -> Question:
     c = _string(length, tension, mu / 1e3)
     f = float(c.exact_hz(1)[0])
     return Question(
-        f"A string {length:g} m long, fixed at both ends, under {tension:g} N, weighing {mu:g} g/m. What is its "
+        f"A string {sig(length, 6)} m long, fixed at both ends, under {sig(tension, 6)} N, weighing {sig(mu, 6)} g/m. What is its "
         "fundamental frequency?",
         f,
-        f"c = √(T/μ) = √({tension:g}/{number(mu / 1e3)}) = {number(c.speed)} m/s, and half a wavelength fits: "
+        f"c = √(T/μ) = √({sig(tension, 6)}/{number(mu / 1e3)}) = {number(c.speed)} m/s, and half a wavelength fits: "
         f"f<sub>1</sub> = c/2L = {number(f)} Hz, the overtones whole multiples.",
         unit="Hz",
         setup=ContinuumSetup(c, 12).__dict__,
@@ -160,7 +161,7 @@ def _bar_fundamental(rng: np.random.Generator) -> Question:
     c = Continuum(Kind.BAR, length, End.FIXED, End.FREE, modulus=210e9, density=7850.0, width=0.02, depth=0.02)
     f = float(c.exact_hz(1)[0])
     return Question(
-        f"A steel bar (E = 210 GPa, ρ = 7850 kg/m³) {length:g} m long is fixed at one end and free at the other. "
+        f"A steel bar (E = 210 GPa, ρ = 7850 kg/m³) {sig(length, 6)} m long is fixed at one end and free at the other. "
         "What is its first axial natural frequency?",
         f,
         f"c = √(E/ρ) = {number(c.speed)} m/s; fixed–free, a quarter wavelength fits: f<sub>1</sub> = c/4L = "
@@ -175,10 +176,10 @@ def _cantilever_second(rng: np.random.Generator) -> Question:
     beam = Continuum(Kind.BEAM, 1.0, End.CLAMPED, End.FREE)
     ratio = float(beam.exact_hz(2)[1] / beam.exact_hz(1)[0])
     return Question(
-        f"A cantilever's first bending mode is at {f1:g} Hz. Where is its second?",
+        f"A cantilever's first bending mode is at {sig(f1, 6)} Hz. Where is its second?",
         f1 * ratio,
         f"cos βL cosh βL = −1 gives β<sub>1</sub>L = 1.875 and β<sub>2</sub>L = 4.694, and ω ∝ β²: f<sub>2</sub> = "
-        f"(4.694/1.875)² f<sub>1</sub> = {number(ratio)} × {f1:g} = {number(f1 * ratio)} Hz. A beam's overtones are "
+        f"(4.694/1.875)² f<sub>1</sub> = {number(ratio)} × {sig(f1, 6)} = {number(f1 * ratio)} Hz. A beam's overtones are "
         "no multiples.",
         unit="Hz",
         setup=ContinuumSetup(beam, 8, mode=2).__dict__,
@@ -210,10 +211,10 @@ def _cut_off(rng: np.random.Generator) -> Question:
     h = 1.0 / n_el
     f = speed / (math.pi * h)
     return Question(
-        f"A 1 m string with a wave speed of {speed:g} m/s is cut into {n_el} lumped elements. What is the highest "
+        f"A 1 m string with a wave speed of {sig(speed, 6)} m/s is cut into {n_el} lumped elements. What is the highest "
         "frequency a wave on the endless chain of such elements can have (its cut-off)?",
         f,
-        f"ω = (2c/h) sin(κh/2) tops out at κh = π: ω = 2c/h, f = c/πh = {speed:g}/(π × {number(h)}) = {number(f)} Hz. "
+        f"ω = (2c/h) sin(κh/2) tops out at κh = π: ω = 2c/h, f = c/πh = {sig(speed, 6)}/(π × {number(h)}) = {number(f)} Hz. "
         "Nothing faster travels on the mesh.",
         unit="Hz",
         setup=ContinuumSetup(_string(), n_el).__dict__,
@@ -225,11 +226,11 @@ def _matched_dashpot(rng: np.random.Generator) -> Question:
     mu = pick(rng, (1, 5, 10))
     z = math.sqrt(tension * mu / 1e3)
     return Question(
-        f"A string under {tension:g} N weighing {mu:g} g/m ends on a dashpot. What dashpot coefficient lets a wave "
+        f"A string under {sig(tension, 6)} N weighing {sig(mu, 6)} g/m ends on a dashpot. What dashpot coefficient lets a wave "
         "arrive without reflecting at all?",
         z,
         f"An end reflects (Z − c<sub>d</sub>)/(Z + c<sub>d</sub>) of a wave, so none when c<sub>d</sub> = Z, the "
-        f"string's impedance √(Tμ) = √({tension:g} × {number(mu / 1e3)}) = {number(z)} N·s/m: it takes the wave as "
+        f"string's impedance √(Tμ) = √({sig(tension, 6)} × {number(mu / 1e3)}) = {number(z)} N·s/m: it takes the wave as "
         "an endless string would.",
         unit="N·s/m",
     )
@@ -308,10 +309,10 @@ def _mesh_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"Mesh a string fixed at both ends with lumped masses: the fewest elements that get mode {n} within {most:g} %.",
+        f"Mesh a string fixed at both ends with lumped masses: the fewest elements that get mode {n} within {sig(most, 6)} %.",
         0,
-        f"The lumped error is about −(κh)²/24 with κ = nπ/L and h = L/N: (nπ/N)²/24 ≤ {most / 100:g} needs N ≥ "
-        f"nπ/√(24 × {most / 100:g}) ≈ {number(n * math.pi / math.sqrt(24 * most / 100))}, so {fewest} elements "
+        f"The lumped error is about −(κh)²/24 with κ = nπ/L and h = L/N: (nπ/N)²/24 ≤ {sig(most / 100, 6)} needs N ≥ "
+        f"nπ/√(24 × {sig(most / 100, 6)}) ≈ {number(n * math.pi / math.sqrt(24 * most / 100))}, so {fewest} elements "
         "(the Frequencies tab lists the errors).",
         setup=ContinuumSetup(c, n + 1).__dict__,
         goal=goal,
@@ -745,9 +746,9 @@ class ContinuumPage(QtWidgets.QWidget):
         c = self.continuum
         h = c.length / self.elements.value()
         if c.kind is Kind.BEAM:
-            speed = f"a = √(EI/ρA) = {c.speed:.4g} m²/s (ω = aκ²)"
+            speed = f"a = √(EI/ρA) = {sig(c.speed, 4)} m²/s (ω = aκ²)"
         else:
-            speed = f"wave speed c = {c.speed:.4g} m/s"
+            speed = f"wave speed c = {sig(c.speed, 4)} m/s"
         rigid = {0: "", 1: "; one rigid-body mode", 2: "; two rigid-body modes"}[c.rigid_modes]
         self.medium_info.setText(f"{speed}; mass {fmt(1000 * c.mass_per_length * c.length, 'g', 4)}{rigid}.")
         cut = math.pi / h
@@ -756,7 +757,7 @@ class ContinuumPage(QtWidgets.QWidget):
             top = self._mesh_omega(s, np.array([cut]))[0, 0] / TWO_PI
             tops.append(f"{s.value.lower()} {fmt_hz(top)}")
         self.mesh_info.setText(
-            f"h = {h * 1e3:.4g} mm. Cut-off at κ = π/h = {cut:.4g} rad/m (λ = 2h), where the "
+            f"h = {sig(h * 1e3, 4)} mm. Cut-off at κ = π/h = {sig(cut, 4)} rad/m (λ = 2h), where the "
             f"continuum is at {fmt_hz(float(c.omega(cut)) / TWO_PI)}; the meshes top out "
             f"at {', '.join(tops)}."
         )
@@ -783,7 +784,7 @@ class ContinuumPage(QtWidgets.QWidget):
             f = flexible_hz(self.models[s])
             for i, fi in enumerate(f):
                 self.table.setItem(i, 2 + 2 * j, _cell(fmt_hz(fi)))
-                self.table.setItem(i, 3 + 2 * j, _cell(f"{100 * (fi / exact[i] - 1):+.3g} %"))
+                self.table.setItem(i, 3 + 2 * j, _cell(f"{sig(100 * (fi / exact[i] - 1), plus=True)} %"))
         self.table.resizeColumnsToContents()
         self.table.blockSignals(False)
 
@@ -881,11 +882,11 @@ class ContinuumPage(QtWidgets.QWidget):
         for s in self._shown():
             f = flexible_hz(self.models[s])
             if f.size >= n:
-                parts.append(f"{s.value.lower()} {fmt_hz(f[n - 1])} ({100 * (f[n - 1] / exact - 1):+.3g} %)")
+                parts.append(f"{s.value.lower()} {fmt_hz(f[n - 1])} ({sig(100 * (f[n - 1] / exact - 1), plus=True)} %)")
         found = "; ".join(parts) if parts else "no mesh shown"
         self.readout.setText(
-            f"<b>Mode {n}</b>: κ = {k:.4g} rad/m, a wavelength of {2 * math.pi / k:.4g} m, "
-            f"<b>{per:.3g} elements</b> (κh = {k * h:.3g}). Exact {fmt_hz(exact)}; {found}."
+            f"<b>Mode {n}</b>: κ = {sig(k, 4)} rad/m, a wavelength of {sig(2 * math.pi / k, 4)} m, "
+            f"<b>{sig(per)} elements</b> (κh = {sig(k * h)}). Exact {fmt_hz(exact)}; {found}."
         )
 
     def _draw_errors(self) -> None:
@@ -941,7 +942,7 @@ class ContinuumPage(QtWidgets.QWidget):
             self.convergence_legend.addItem(curve, s.value)
             rate = order(counts, errs)
             if rate is not None:
-                rates.append(f"{s.value.lower()} N<sup>−{rate:.2g}</sup>")
+                rates.append(f"{s.value.lower()} N<sup>−{sig(rate, 2)}</sup>")
         p.addItem(
             pg.InfiniteLine(
                 math.log10(self.elements.value()),
@@ -1002,7 +1003,7 @@ class ContinuumPage(QtWidgets.QWidget):
         p.setYRange(-1.1 * reach, 1.65 * reach, padding=0.0)  # room for the legend at the top
         per = 2 * math.pi / (k * c.length / self.elements.value())
         self.shape_note.setText(
-            f"Mode {n}, {per:.3g} elements a wavelength. The MAC of each mesh's nodes against the exact shape "
+            f"Mode {n}, {sig(per)} elements a wavelength. The MAC of each mesh's nodes against the exact shape "
             "there (1: the same shape): " + ", ".join(notes) + "."
             if notes
             else f"Mode {n}: no mesh shown has it."

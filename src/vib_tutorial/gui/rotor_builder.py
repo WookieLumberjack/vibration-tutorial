@@ -56,6 +56,7 @@ from ..core.rotor_builder import (
     modes,
 )
 from ..core.rotor_builder_sweep import N_BRANCHES, Sweep, lag, orbit, sweep, unbalance_response
+from ..view_models.text import number as sig
 from . import rotor_builder_figures, settle_plots, weak
 from .frame_builder import matrix_html
 from .frame_loop import SWING_MS, FrameLoop
@@ -245,7 +246,7 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
             f"{fmt(part.length, 'm')} long, is shown"
         )
         lines.append(
-            f" (φ<sub>s</sub> = 12EI/κ<sub>s</sub>G<sub>m</sub>A<sub>s</sub>L<sub>e</sub>² = {part.phi:.3g}, κ<sub>s</sub> = {s.kappa:.3f})."
+            f" (φ<sub>s</sub> = 12EI/κ<sub>s</sub>G<sub>m</sub>A<sub>s</sub>L<sub>e</sub>² = {sig(part.phi)}, κ<sub>s</sub> = {s.kappa:.3f})."
             if rotor.theory is Theory.TIMOSHENKO
             else "."
         )
@@ -258,8 +259,8 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
         d = rotor.discs[i]
         lines.append(
             f"<p><b>Disc {i + 1}</b> ({d.name}) at z = {fmt(d.z, 'm')}: m = {fmt(d.mass, 'kg')}, I<sub>p</sub> = "
-            f"{d.ip:.4g} kg·m², I<sub>d</sub> = {d.id:.4g} kg·m² (I<sub>p</sub>/I<sub>d</sub> = "
-            f"{d.ip / d.id if d.id else math.inf:.3g}). Rigid: it adds to M on its node, and I<sub>p</sub> to G "
+            f"{sig(d.ip, 4)} kg·m², I<sub>d</sub> = {sig(d.id, 4)} kg·m² (I<sub>p</sub>/I<sub>d</sub> = "
+            f"{sig(d.ip / d.id if d.id else math.inf)}). Rigid: it adds to M on its node, and I<sub>p</sub> to G "
             "between the slopes.</p>"
         )
     elif kind == "bearing":
@@ -271,7 +272,7 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
             lines.append(
                 f", L<sub>b</sub> = {fmt(b.film.length, 'm')}, D<sub>b</sub> = {fmt(b.film.diameter, 'm')}, c<sub>r</sub> = {fmt(b.film.clearance, 'm')}, "
                 f"η = {fmt(b.film.viscosity, 'Pa·s')}, under {fmt(w, 'N')} of the rotor's weight. At "
-                f"{omega / RPM:.4g} rpm its journal sits at ε = {st.eccentricity:.3f}, {math.degrees(st.attitude):.3g}° "
+                f"{sig(omega / RPM, 4)} rpm its journal sits at ε = {st.eccentricity:.3f}, {sig(math.degrees(st.attitude))}° "
                 "from the load: its K and C are full, and change with the speed.</p>"
             )
         elif b.kind is BearingKind.MAGNET:
@@ -288,7 +289,7 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
         lines.append(
             f"<p><b>Seal {i + 1}</b> at z = {fmt(seal.z, 'm')}: k = {fmt(seal.k, 'N/m')}, c = {fmt(seal.c, 'N·s/m')}, "
             "swirl "
-            f"λ = {seal.swirl:.3g}: at {omega / RPM:.4g} rpm, k<sub>xy</sub> = λΩc = {fmt(seal.swirl * omega * seal.c, 'N/m')} "
+            f"λ = {sig(seal.swirl)}: at {sig(omega / RPM, 4)} rpm, k<sub>xy</sub> = λΩc = {fmt(seal.swirl * omega * seal.c, 'N/m')} "
             "(and k<sub>yx</sub> = −k<sub>xy</sub>), in K(Ω).</p>"
         )
     own = _matrix(part, which, omega)
@@ -408,7 +409,7 @@ class Properties(QtWidgets.QGroupBox):
 
 def _hz(f: float) -> str:
     """Four significant figures, trailing zeros kept (171.0, not 171)."""
-    return f"{f:#.4g}".rstrip(".")
+    return sig(f, 4, zeros=True)
 
 
 def _count(n: int, thing: str) -> str:
@@ -416,7 +417,7 @@ def _count(n: int, thing: str) -> str:
 
 
 def _percent(zeta: float) -> str:
-    return f"{100 * zeta:.3g} %"
+    return f"{sig(100 * zeta)} %"
 
 
 # ------------------------------------------------------------------ the page
@@ -476,7 +477,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.internal = model.number("Internal damping τ<sub>i</sub>:", 0.0, 1e4, 0.0, 2, " µs", TIPS["internal"])
         self.rpm = model.number("Speed:", 0.0, 100000.0, 0.0, 0, " rpm", TIPS["rpm"])
         self.top_rpm = model.number("Sweep to:", 100.0, 100000.0, 12000.0, 0, " rpm", TIPS["top_rpm"])
-        self.grid = combo([f"{1000 * g:g} mm" for g in GRIDS], TIPS["grid"])
+        self.grid = combo([f"{sig(1000 * g, 6)} mm" for g in GRIDS], TIPS["grid"])
         model.add("Grid:", self.grid, TIPS["grid"])
         self.theory.currentIndexChanged.connect(self._on_model)
         self.gravity.currentIndexChanged.connect(self._on_model)
@@ -990,8 +991,8 @@ class RotorBuilderPage(QtWidgets.QWidget):
                 set_quietly(box, value)
             a = self.rotor.ends[i]
             p.section_info.setText(
-                f"From z = {a:.4g} to {a + s.length:.4g} m: A = {number(s.area * 1e6, 4)} mm², I = "
-                f"{number(s.inertia * 1e12, 4)} mm⁴, {s.mass:.4g} kg, L/D = {s.length / s.outer:.3g}."
+                f"From z = {sig(a, 4)} to {sig(a + s.length, 4)} m: A = {number(s.area * 1e6, 4)} mm², I = "
+                f"{number(s.inertia * 1e12, 4)} mm⁴, {sig(s.mass, 4)} kg, L/D = {sig(s.length / s.outer)}."
             )
             p.section.setTitle(f"Section {i + 1}")
             p.show_form(p.section)
@@ -1059,7 +1060,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
                 return ""
             w = self.assembly.loads[i]
             st = film_state(b.film, w, self.omega)
-            return f"Load {w:.4g} N; at the speed, ε = {st.eccentricity:.3f}."
+            return f"Load {sig(w, 4)} N; at the speed, ε = {st.eccentricity:.3f}."
         if b.kind is BearingKind.MAGNET:
             m = b.magnet
             margin = m.current_gain * m.kp - m.negative_stiffness
@@ -1076,7 +1077,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.table.setRowCount(count)
         for i in range(count):
             assert r is not None
-            texts = [str(i + 1), _hz(r.hz[i]), _percent(r.zeta[i]), f"{r.log_dec[i]:.3g}", _whirl_word(r.whirl[i])]
+            texts = [str(i + 1), _hz(r.hz[i]), _percent(r.zeta[i]), f"{sig(r.log_dec[i])}", _whirl_word(r.whirl[i])]
             for col, text in enumerate(texts):
                 item = QtWidgets.QTableWidgetItem(text)
                 item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -1094,14 +1095,14 @@ class RotorBuilderPage(QtWidgets.QWidget):
         text = (
             f"{_count(len(r.sections), 'section')}, {_count(len(r.discs), 'disc')}, "
             f"{_count(len(r.bearings), 'bearing')}, {_count(len(r.seals), 'seal')}: {r.nodes.size} nodes, "
-            f"{r.n_dof} DOFs, {r.mass:.4g} kg"
+            f"{r.n_dof} DOFs, {sig(r.mass, 4)} kg"
         )
         a = self.assembly
         if a is not None and a.n_control:
             text += f" and {a.n_control} controller states"
         m = self.result
         if m is not None:
-            text += f". At {self.rpm.value():.5g} rpm: {m.hz.size} whirl modes"
+            text += f". At {sig(self.rpm.value(), 5)} rpm: {m.hz.size} whirl modes"
             if m.rigid:
                 text += f", <b>{m.rigid} roots at 0</b> (it isn't held: a rigid body)"
             if m.roots.size:
@@ -1144,7 +1145,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.whirl.show_phase(self._phase)
         stable = "decays" if m.zeta[self.mode] >= 0 else "<b>grows</b>"
         self.whirl_note.setText(
-            f"Mode {self.mode + 1} at {self.rpm.value():.5g} rpm: {m.hz[self.mode]:.4g} Hz, ζ = "
+            f"Mode {self.mode + 1} at {sig(self.rpm.value(), 5)} rpm: {sig(m.hz[self.mode], 4)} Hz, ζ = "
             f"{_percent(m.zeta[self.mode])} (it {stable}), whirling {_whirl_word(w)} (whirl ratio {w:+.2f}: +1 "
             "a circle with the spin, −1 against it, 0 a straight line)."
         )
@@ -1167,9 +1168,9 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.whirl.set_mode(self.rotor, Q / size[k])
         self.whirl.show_phase(self._phase)
         self.whirl_note.setText(
-            f"The steady response to the discs' unbalance at {self.rpm.value():.5g} rpm (once a revolution, so at "
-            f"{self.rpm.value() / 60:.4g} Hz): the largest orbit is {fmt(size[k], 'm')} across its major semi-axis, "
-            f"at node {k + 1} (z = {self.rotor.nodes[k]:.3g} m)."
+            f"The steady response to the discs' unbalance at {sig(self.rpm.value(), 5)} rpm (once a revolution, so at "
+            f"{sig(self.rpm.value() / 60, 4)} Hz): the largest orbit is {fmt(size[k], 'm')} across its major semi-axis, "
+            f"at node {k + 1} (z = {sig(self.rotor.nodes[k])} m)."
         )
 
     # ------------------------------------------------------------- the sweeps
@@ -1277,7 +1278,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.campbell.setYRange(0.0, 1.05 * max(1.4 * top / 60.0, low), padding=0)
         if sharp:
             listed = ", ".join(
-                f"{c.rpm:.0f} rpm {'forward' if c.forward else 'backward'} (AF {c.amplification:.3g})" for c in sharp
+                f"{c.rpm:.0f} rpm {'forward' if c.forward else 'backward'} (AF {sig(c.amplification)})" for c in sharp
             )
             text = f"Critical speeds, where a branch meets 1X (circles): {listed}."
         else:
@@ -1291,7 +1292,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         if sharp and rpm > 0:
             near = min(sharp, key=lambda c: abs(c.rpm - rpm))
             text += (
-                f" The speed, {rpm:.0f} rpm, is {100 * abs(near.rpm - rpm) / rpm:.3g} % from the nearest, "
+                f" The speed, {rpm:.0f} rpm, is {sig(100 * abs(near.rpm - rpm) / rpm)} % from the nearest, "
                 f"{near.rpm:.0f} rpm (its separation margin)."
             )
         self.campbell_note.setText(text)
@@ -1329,8 +1330,8 @@ class RotorBuilderPage(QtWidgets.QWidget):
             i = int(np.argmin(m.zeta[:N_BRANCHES]))  # of the low modes the map shows, not the mesh's highest
             ok = "meets" if m.log_dec[i] >= API_LOG_DEC else "<b>misses</b>"
             text += (
-                f" At {self.rpm.value():.0f} rpm the least damped mode, {m.hz[i]:.4g} Hz {_whirl_word(m.whirl[i])}, "
-                f"has δ = {m.log_dec[i]:.3g}: it {ok} API 684's δ ≥ {API_LOG_DEC:g} (dashed)."
+                f" At {self.rpm.value():.0f} rpm the least damped mode, {sig(m.hz[i], 4)} Hz {_whirl_word(m.whirl[i])}, "
+                f"has δ = {sig(m.log_dec[i])}: it {ok} API 684's δ ≥ {sig(API_LOG_DEC, 6)} (dashed)."
             )
         self.stability_note.setText(text)
 
@@ -1377,13 +1378,13 @@ class RotorBuilderPage(QtWidgets.QWidget):
         here = float(orbit(steady, node)) if steady is not None and self.omega > 0 else 0.0
         unbalanced = [d for d in rotor.discs if d.unbalance]
         listed = ", ".join(
-            f"disc {rotor.discs.index(d) + 1} {d.unbalance * 1e6:.4g} g·mm at {math.degrees(d.unbalance_angle):.0f}°"
+            f"disc {rotor.discs.index(d) + 1} {sig(d.unbalance * 1e6, 4)} g·mm at {math.degrees(d.unbalance_angle):.0f}°"
             for d in unbalanced
         )
         self.unbalance_note.setText(
-            f"The steady orbit at node {node + 1} (z = {rotor.nodes[node]:.3g} m; its major semi-axis) against the "
+            f"The steady orbit at node {node + 1} (z = {sig(rotor.nodes[node])} m; its major semi-axis) against the "
             f"speed, from the discs' unbalance ({listed}), and how far its x lags behind the heavy spot. It peaks at "
-            f"<b>{size[k] * 1e6:.4g} µm at {rpm[k]:.0f} rpm</b>; at {self.rpm.value():.0f} rpm, {here * 1e6:.3g} µm. "
+            f"<b>{sig(size[k] * 1e6, 4)} µm at {rpm[k]:.0f} rpm</b>; at {self.rpm.value():.0f} rpm, {sig(here * 1e6)} µm. "
             "The dotted lines are the critical speeds, red forward and grey backward: an unbalance turns forward, "
             "and through a forward critical the lag swings by about 180°."
         )
@@ -1425,7 +1426,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
             Matrix.G: "kg·m² (Ω G in the equations)",
         }[which]
         span = f"nodes {keep[0] // 4 + 1}–{keep[-1] // 4 + 1} of {n // 4}" if keep.size < n else f"all {n} DOFs"
-        speed = f" at {self.rpm.value():.5g} rpm" if which in (Matrix.K, Matrix.C) else ""
+        speed = f" at {sig(self.rpm.value(), 5)} rpm" if which in (Matrix.K, Matrix.C) else ""
         self.assembly_note.setText(f"{which.value}{speed} over {span} ({unit}).{picked}")
 
     def _draw_element(self) -> None:
@@ -1493,7 +1494,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         r = self.rotor
         return (
             f"{len(r.sections)} sections, {len(r.discs)} discs, {len(r.bearings)} bearings, {r.nodes.size} nodes, "
-            f"mode {self.mode + 1} at {self.rpm.value():g} rpm"
+            f"mode {self.mode + 1} at {sig(self.rpm.value(), 6)} rpm"
         )
 
     def step(self, dt: float) -> None:

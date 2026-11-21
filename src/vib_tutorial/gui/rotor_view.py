@@ -16,6 +16,7 @@ from ..core.rotor import (
 from ..core.rotor_sweep import (
     STATIONS,
 )
+from ..view_models.text import number as sig
 from .lesson import Dot
 from .rotor_plots import MIN_PEAK
 from .style import colors
@@ -423,4 +424,4 @@ def _spring_and_damper(p0: np.ndarray, p1: np.ndarray) -> list[np.ndarray]:
 def _round_gain(g: float) -> str:
     """A magnification for the label, to two significant figures: 0.52, 9.7, 970, 12,000."""
     g = float(f"{g:.2g}")
-    return f"{g:,.0f}" if g >= 10 else f"{g:.2g}"
+    return f"{g:,.0f}" if g >= 10 else f"{sig(g, 2)}"

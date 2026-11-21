@@ -40,6 +40,7 @@ from ..core.rigid_mounts import (
     torque_roll_axis,
 )
 from ..view_models.text import fixed
+from ..view_models.text import number as sig
 from . import coalesce, mounts_figures
 from .frame_loop import SWING_MS, FrameLoop
 from .layouts import FitColumns, form_layout
@@ -177,7 +178,7 @@ TRIALS = (
     ),
     MountTrial(
         "Tilted to the focus: decoupled again",
-        f"Each mount leaning {FOCUS:g}° toward the middle, the pair's lines of action meet above them, and the roll "
+        f"Each mount leaning {sig(FOCUS, 6)}° toward the middle, the pair's lines of action meet above them, and the roll "
         "plane's elastic centre, <m>t(k<sub>a</sub> − k<sub>s</sub>) sin β cos β/(k<sub>a</sub> sin<sup>2</sup>β + k<sub>s</sub> "
         "cos<sup>2</sup>β)</m> above the mounts, rises the 80 mm to the centre of mass: sway and roll are pure again (roll 7.56 Hz, "
         "y 8.91 Hz). That's a focalized mount system. The tilt is in the roll plane only, so the pitch plane's "
@@ -326,7 +327,7 @@ def _bounce(rng: np.random.Generator) -> Question:
     m, k = pick(rng, (10.0, 20.0, 50.0, 100.0)), pick(rng, (20.0, 50.0, 100.0, 200.0))
     f = math.sqrt(4 * k * 1e3 / m) / TWO_PI
     return Question(
-        f"A {m:g} kg machine sits on four mounts of {k:g} kN/m each, level with its centre of mass and evenly "
+        f"A {sig(m, 6)} kg machine sits on four mounts of {sig(k, 6)} kN/m each, level with its centre of mass and evenly "
         "spaced about it. At what frequency does it bounce?",
         f,
         f"Bounce is a pure mode here: the four mounts in parallel, 4k = {number(4 * k)} kN/m, carry m: "
@@ -343,8 +344,8 @@ def _roll(rng: np.random.Generator) -> Question:
     i_xx = m * (w * w + h * h) / 12
     f = math.sqrt(4 * k * 1e3 * t * t / i_xx) / TWO_PI
     return Question(
-        f"A {m:g} kg box, {w * 1000:g} mm wide and {h * 1000:g} mm tall, sits on four mounts of {k:g} kN/m along "
-        f"their axes, {t * 1000:g} mm either side of its centre and level with its centre of mass. At what "
+        f"A {sig(m, 6)} kg box, {sig(w * 1000, 6)} mm wide and {sig(h * 1000, 6)} mm tall, sits on four mounts of {sig(k, 6)} kN/m along "
+        f"their axes, {sig(t * 1000, 6)} mm either side of its centre and level with its centre of mass. At what "
         "frequency does it roll?",
         f,
         f"Level with the centre of mass, roll is pure: each mount stretches t θ, so the roll stiffness is "
@@ -360,8 +361,8 @@ def _focus(rng: np.random.Generator) -> Question:
     layout = Layout(track=t, drop=h, shear_ratio=rho)
     beta = math.degrees(layout.focus_tilt())
     return Question(
-        f"Mounts {t * 1000:g} mm either side of a machine's middle sit {h * 1000:g} mm below its centre of mass, "
-        f"their stiffness across {rho:g} of that along their axes. How far should each lean toward the middle, in "
+        f"Mounts {sig(t * 1000, 6)} mm either side of a machine's middle sit {sig(h * 1000, 6)} mm below its centre of mass, "
+        f"their stiffness across {sig(rho, 6)} of that along their axes. How far should each lean toward the middle, in "
         "degrees, to decouple sway from roll?",
         beta,
         f"The roll plane's elastic centre must rise h to the centre of mass: t(1 − ρ) sin β cos β/(sin²β + ρ cos²β) "
@@ -444,7 +445,7 @@ def _decouple_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"These mounts sit {drop * 1000:g} mm below the box's centre of mass, so sway and roll couple. Without "
+        f"These mounts sit {sig(drop * 1000, 6)} mm below the box's centre of mass, so sway and roll couple. Without "
         "moving them or changing their stiffness, make a mode at least 99 % sway and another at least 99 % roll.",
         0,
         f"Lean them toward the middle until the roll plane's elastic centre reaches the centre of mass: "
@@ -460,7 +461,7 @@ def _transmitted(rng: np.random.Generator) -> Question:
     r = f / fn
     t = abs(1 + 1j * eta) / abs(1 - r * r + 1j * eta)
     return Question(
-        f"A machine bounces on its mounts at {fn:g} Hz, the rubber's loss factor η = {eta:g}. Running at {f:g} Hz, "
+        f"A machine bounces on its mounts at {sig(fn, 6)} Hz, the rubber's loss factor η = {sig(eta, 6)}. Running at {sig(f, 6)} Hz, "
         "what fraction of its vertical out-of-balance force reaches the floor, in %?",
         100 * t,
         f"With K(1 + iη), the transmissibility is |1 + iη|/|1 − r² + iη|, r = f/f<sub>n</sub> = {number(r)}: "
@@ -475,8 +476,8 @@ def _roll_axis(rng: np.random.Generator) -> Question:
     i_xx, _, i_zz = body.inertia
     tra = math.degrees(math.atan(i_xx / i_zz * math.tan(math.radians(gamma))))
     return Question(
-        f"An engine block (a uniform box {length * 1000:g} mm long, 500 mm wide, 600 mm tall) has its crank tilted "
-        f"{gamma:g}° up from its length, in the length–height plane. Its firing torque is about the crank. About "
+        f"An engine block (a uniform box {sig(length * 1000, 6)} mm long, 500 mm wide, 600 mm tall) has its crank tilted "
+        f"{sig(gamma, 6)}° up from its length, in the length–height plane. Its firing torque is about the crank. About "
         "what axis would it turn, free: how many degrees up from its length?",
         tra,
         f"I α = T n, so α ∥ I⁻¹n: with n = (cos γ, 0, sin γ), tan γ' = (I<sub>xx</sub>/I<sub>zz</sub>) tan γ, "
@@ -558,7 +559,7 @@ def _isolation_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"This machine runs at {rpm:g} rpm, and too much of its unbalance reaches the floor. Choose its mounts' "
+        f"This machine runs at {sig(rpm, 6)} rpm, and too much of its unbalance reaches the floor. Choose its mounts' "
         "stiffness so that at most 10 % does.",
         0,
         "Softer mounts lower every mode; the force through them falls as (f<sub>n</sub>/f)² above √2 f<sub>n</sub>. "
@@ -1150,12 +1151,12 @@ class MountsPage(QtWidgets.QWidget):
         self.focus_info.setText(
             "Level with the centre of mass: no tilt needed."
             if self.layout_.drop <= 0
-            else f"Focal tilt: {math.degrees(focus):.4g}°."
+            else f"Focal tilt: {sig(math.degrees(focus), 4)}°."
             if math.isfinite(focus)
             else "No focal tilt: the mounts are too far below, or too stiff across (h > t(1 − ρ)/2√ρ)."
         )
         for i in range(6):
-            self.mode.setItemText(i, f"{i + 1}: {self.modes.frequencies[i]:.3g} Hz, {DOF[self.modes.dominant(i)]}")
+            self.mode.setItemText(i, f"{i + 1}: {sig(self.modes.frequencies[i])} Hz, {DOF[self.modes.dominant(i)]}")
         self.view.set_layout(self.layout_, point, self.drive)
         self.forced = self._forced()
         self._fill_table()
@@ -1165,7 +1166,7 @@ class MountsPage(QtWidgets.QWidget):
             (
                 f"Elastic centre at {where} from the centre of mass"
                 if left < 1e-6
-                else f"No single elastic centre: the best point, {where}, leaves {100 * left:.2g} % of the coupling"
+                else f"No single elastic centre: the best point, {where}, leaves {sig(100 * left, 2)} % of the coupling"
             )
             + f". The roll plane's is at z = {_mm(roll)} mm, the pitch plane's at x = {_mm(px)}, z = {_mm(pz)} mm. "
             + self._showing()
@@ -1188,14 +1189,14 @@ class MountsPage(QtWidgets.QWidget):
         f = mount_forces(self.layout_.mounts(), self.loss_factor, self.forced)
         hz = self.drive.frequency() / TWO_PI
         return (
-            f"Showing the response at {self.drive.rpm:g} rpm ({hz:.3g} Hz): {amplitude(f.sum(axis=0)):.3g} N through "
-            f"the floor, the most through one mount {amplitude(f).max():.3g} N."
+            f"Showing the response at {sig(self.drive.rpm, 6)} rpm ({sig(hz)} Hz): {sig(amplitude(f.sum(axis=0)))} N through "
+            f"the floor, the most through one mount {sig(amplitude(f).max())} N."
         )
 
     def _fill_table(self) -> None:
         self.table.blockSignals(True)
         for i in range(6):
-            cells = [str(i + 1), f"{self.modes.frequencies[i]:.3g}"] + [
+            cells = [str(i + 1), f"{sig(self.modes.frequencies[i])}"] + [
                 f"{100 * self.modes.energy[j, i]:.0f}" for j in range(6)
             ]
             for col, text in enumerate(cells):
@@ -1259,7 +1260,7 @@ class MountsPage(QtWidgets.QWidget):
         self.step(dt)
 
     def frame_context(self) -> str:
-        return f"mode {self.mode.currentIndex() + 1}, drop {self.drop.value():g} mm, tilt {self.tilt.value():g}°"
+        return f"mode {self.mode.currentIndex() + 1}, drop {sig(self.drop.value(), 6)} mm, tilt {sig(self.tilt.value(), 6)}°"
 
     def step(self, dt: float) -> None:
         """Swing the mode on by dt seconds at the animation's own pace."""
@@ -1351,13 +1352,14 @@ class MountsPage(QtWidgets.QWidget):
         if unbalance:
             applied = float(amplitude(drive.load()[:3]))
             ratio = total / applied if applied else math.nan
-            what = f"At {drive.rpm:g} rpm the unbalance pushes {applied:.3g} N; {total:.3g} N reaches the floor, " + (
-                f"{100 * ratio:.3g} % of it: isolated." if ratio < 1 else f"{ratio:.3g} times it: amplified."
+            what = (
+                f"At {sig(drive.rpm, 6)} rpm the unbalance pushes {sig(applied)} N; {sig(total)} N reaches the floor, "
+                + (f"{sig(100 * ratio)} % of it: isolated." if ratio < 1 else f"{sig(ratio)} times it: amplified.")
             )
         else:
             what = (
-                f"At {drive.rpm:g} rpm the torque turns at {drive.order}× ({drive.frequency() / TWO_PI:.3g} Hz): the "
-                f"mounts push {most:.3g} N at most, the floor {total:.3g} N in all (a torque is a couple: its forces "
+                f"At {sig(drive.rpm, 6)} rpm the torque turns at {drive.order}× ({sig(drive.frequency() / TWO_PI)} Hz): the "
+                f"mounts push {sig(most)} N at most, the floor {sig(total)} N in all (a torque is a couple: its forces "
                 "nearly cancel, but each mount carries its share)."
             )
         self.response_note.setText(
@@ -1373,8 +1375,8 @@ class MountsPage(QtWidgets.QWidget):
             n = self.drive.axis()
             a = torque_roll_axis(self.layout_.body, n)
             text += (
-                f" The torque is about the crank, {self.crank.value():.3g}° up from x, but a free body turns about "
-                f"I⁻¹n, the torque roll axis, {math.degrees(math.atan2(a[2], a[0])):.3g}° up (the line drawn in "
+                f" The torque is about the crank, {sig(self.crank.value())}° up from x, but a free body turns about "
+                f"I⁻¹n, the torque roll axis, {sig(math.degrees(math.atan2(a[2], a[0])))}° up (the line drawn in "
                 "the 3D view): only mounts whose roll mode turns about that axis leave the torque one mode to drive."
             )
         self.drive_note.setText(text)
@@ -1410,7 +1412,7 @@ class MountsPage(QtWidgets.QWidget):
         self.sweep_note.setText(
             "Each dot is coloured by the coordinate with most of its mode's energy. Where two modes come close, "
             "coupled ones veer apart and trade characters; decoupled ones cross."
-            + (f" Dashed: the focal tilt, {math.degrees(focus):.4g}°." if on else "")
+            + (f" Dashed: the focal tilt, {sig(math.degrees(focus), 4)}°." if on else "")
         )
 
     def _draw_centre(self) -> None:

@@ -37,6 +37,7 @@ from ..core.modal_coupling import (
     sweep,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..view_models.text import number as sig
 from . import coalesce, weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
@@ -140,11 +141,11 @@ def _tip_mass(rng: np.random.Generator) -> Question:
     psi = rounded(A.Phi[0, 0] / A.Phi[1, 0], 3)
     m_tip = m1 * psi * psi + m2
     return Question(
-        f"A is two masses, m1 = {m1:g} kg and m2 = {m2:g} kg (its tip). Its mode 1, scaled to 1 at the tip, is "
+        f"A is two masses, m1 = {sig(m1, 6)} kg and m2 = {sig(m2, 6)} kg (its tip). Its mode 1, scaled to 1 at the tip, is "
         f"ψ = ({number(psi)}, 1). What is its modal mass at the interface, the mass of A's oscillator?",
         m_tip,
-        f"m<sub>tip</sub> = 1/φ<sub>tip</sub>² = ψ<sup>T</sup>Mψ with ψ scaled to 1 at the tip: {m1:g} × "
-        f"{number(psi)}² + {m2:g} × 1² = {number(m_tip)} kg, less than A's {m1 + m2:g} kg: per unit of tip motion the "
+        f"m<sub>tip</sub> = 1/φ<sub>tip</sub>² = ψ<sup>T</sup>Mψ with ψ scaled to 1 at the tip: {sig(m1, 6)} × "
+        f"{number(psi)}² + {sig(m2, 6)} × 1² = {number(m_tip)} kg, less than A's {sig(m1 + m2, 6)} kg: per unit of tip motion the "
         "mode looks light.",
         unit="kg",
         setup=dict(**chain, tab=TAB_MATRICES),
@@ -160,12 +161,12 @@ def _effective_mass(rng: np.random.Generator) -> Question:
     psi = rounded(phi[0] / phi[1], 3)
     gamma2 = (m3 * psi + m4) ** 2 / (m3 * psi * psi + m4)
     return Question(
-        f"B is two masses on a held base, m3 = {m3:g} kg and m4 = {m4:g} kg. Its mode 1, scaled to 1 at m4, is "
+        f"B is two masses on a held base, m3 = {sig(m3, 6)} kg and m4 = {sig(m4, 6)} kg. Its mode 1, scaled to 1 at m4, is "
         f"ψ = ({number(psi)}, 1). What is its effective mass, the mass of B's oscillator?",
         gamma2,
-        f"For any scaling, Γ² = (ψ<sup>T</sup>M<b>1</b>)²/(ψ<sup>T</sup>Mψ) = ({m3:g} × {number(psi)} + {m4:g})² / "
-        f"({m3:g} × {number(psi)}² + {m4:g}) = {number((m3 * psi + m4) ** 2)}/{number(m3 * psi * psi + m4)} = "
-        f"{number(gamma2)} kg. The rest of B's {m3 + m4:g} kg, {number(m3 + m4 - gamma2)} kg, is residual mass.",
+        f"For any scaling, Γ² = (ψ<sup>T</sup>M<b>1</b>)²/(ψ<sup>T</sup>Mψ) = ({sig(m3, 6)} × {number(psi)} + {sig(m4, 6)})² / "
+        f"({sig(m3, 6)} × {number(psi)}² + {sig(m4, 6)}) = {number((m3 * psi + m4) ** 2)}/{number(m3 * psi * psi + m4)} = "
+        f"{number(gamma2)} kg. The rest of B's {sig(m3 + m4, 6)} kg, {number(m3 + m4 - gamma2)} kg, is residual mass.",
         unit="kg",
         setup=dict(**chain, tab=TAB_MATRICES),
     )
@@ -175,9 +176,9 @@ def _oscillator_stiffness(rng: np.random.Generator) -> Question:
     m, f = pick(rng, (0.05, 0.1, 0.2, 0.5, 1.4)), pick(rng, (2, 5, 10, 20))
     k = m * (TWO_PI * f) ** 2
     return Question(
-        f"A mode at {f:g} Hz has an effective mass of {m:g} kg. What stiffness does its equivalent oscillator get?",
+        f"A mode at {sig(f, 6)} Hz has an effective mass of {sig(m, 6)} kg. What stiffness does its equivalent oscillator get?",
         k,
-        f"The oscillator keeps the mode's frequency: k = mω² = {m:g} × (2π × {f:g})² = {number(k)} N/m.",
+        f"The oscillator keeps the mode's frequency: k = mω² = {sig(m, 6)} × (2π × {sig(f, 6)})² = {number(k)} N/m.",
         unit="N/m",
     )
 
@@ -186,11 +187,11 @@ def _tuned_gap(rng: np.random.Generator) -> Question:
     fa, mu = pick(rng, (2, 5, 10, 50)), pick(rng, (0.01, 0.02, 0.05, 0.1, 0.2))
     gap = math.sqrt(mu) * fa
     return Question(
-        f"Two oscillators are tuned to the same {fa:g} Hz and joined, B's on A's, with a mass ratio μ = {mu:g}. How "
+        f"Two oscillators are tuned to the same {sig(fa, 6)} Hz and joined, B's on A's, with a mass ratio μ = {sig(mu, 6)}. How "
         "far apart are the two modes they split into?",
         gap,
         f"Tuned, the roots' product is ω<sub>a</sub>⁴ and their sum (2 + μ)ω<sub>a</sub>², so (ω₂ − ω₁)² = "
-        f"μω<sub>a</sub>²: Δf = √μ f<sub>a</sub> = √{mu:g} × {fa:g} = {number(gap)} Hz, whatever μ is.",
+        f"μω<sub>a</sub>²: Δf = √μ f<sub>a</sub> = √{sig(mu, 6)} × {sig(fa, 6)} = {number(gap)} Hz, whatever μ is.",
         unit="Hz",
         tolerance=0.01,
     )
@@ -200,11 +201,11 @@ def _tuned_lower(rng: np.random.Generator) -> Question:
     fa, mu = pick(rng, (2, 5, 10, 50)), pick(rng, (0.01, 0.05, 0.1, 0.2, 0.5))
     lower = fa * math.sqrt(1 + mu / 2 - math.sqrt(mu + mu * mu / 4))
     return Question(
-        f"Two oscillators are tuned to {fa:g} Hz and joined, B's on A's, with μ = {mu:g}. Where is the lower of the "
+        f"Two oscillators are tuned to {sig(fa, 6)} Hz and joined, B's on A's, with μ = {sig(mu, 6)}. Where is the lower of the "
         "two modes?",
         lower,
         f"Tuned, ω²/ω<sub>a</sub>² = 1 + μ/2 ± √(μ + μ²/4): with the minus, "
-        f"{number(1 + mu / 2 - math.sqrt(mu + mu * mu / 4), 4)}, so f₁ = {fa:g} × √that = {number(lower)} Hz.",
+        f"{number(1 + mu / 2 - math.sqrt(mu + mu * mu / 4), 4)}, so f₁ = {sig(fa, 6)} × √that = {number(lower)} Hz.",
         unit="Hz",
         tolerance=0.01,
     )
@@ -373,7 +374,7 @@ def _split_spec(rng: np.random.Generator) -> Question:
         f"m<sub>tip</sub> = {number(float(A.tip_masses()[0]))} kg (B has no residual mass: it is one mass). So m3 ≥ "
         f"({number(wanted / 100, 3)})² × {number(float(A.tip_masses()[0]))} ≈ "
         f"{number((wanted / 100) ** 2 * float(A.tip_masses()[0]))} kg, and k3 = m3 (2π × {number(fa)})² keeps it "
-        f"tuned: m3 = {md:g} kg on k3 = {number(chain(md, 1.0)['springs'][2])} N/m splits them "
+        f"tuned: m3 = {sig(md, 6)} kg on k3 = {number(chain(md, 1.0)['springs'][2])} N/m splits them "
         f"{number(100 * gap(CouplingSetup(**chain(md, 1.0))))} %.",
         setup=dict(**chain(md, 1.5), split=2),
         goal=goal,
@@ -449,7 +450,7 @@ def _set_row(table: QtWidgets.QTableWidget, r: int, cells: list[tuple[str, str |
 
 
 def _g(value: float, digits: int = 4) -> str:
-    return f"{value:.{digits}g}"
+    return sig(value, digits)
 
 
 class CouplingSchematic(pg.PlotWidget):
@@ -541,12 +542,12 @@ class CouplingSchematic(pg.PlotWidget):
             self._mass(xb, y, sub_color("B"), "m<sub>b</sub>", w=w)
             self._text(f"A{model.mode_a + 1}", xa / 2 - 0.1, y + 0.3, sub_color("A"))
             self._text(f"B{model.mode_b + 1}", (xa + xb) / 2, y + 0.3, sub_color("B"))
-            res = f" + {model.m_residual:.3g}" if model.residual and model.m_residual > 1e-9 else ""
+            res = f" + {sig(model.m_residual)}" if model.residual and model.m_residual > 1e-9 else ""
             self._text(
-                f"m<sub>a</sub> = {model.osc_a.m:.3g}{res} kg", xa, y - 0.25, colors.foreground, anchor=(0.5, 0.0)
+                f"m<sub>a</sub> = {sig(model.osc_a.m)}{res} kg", xa, y - 0.25, colors.foreground, anchor=(0.5, 0.0)
             )
             self._text(
-                f"m<sub>b</sub> = {model.osc_b.m:.3g} kg", xb + 0.2, y - 0.25, colors.foreground, anchor=(0.0, 0.0)
+                f"m<sub>b</sub> = {sig(model.osc_b.m)} kg", xb + 0.2, y - 0.25, colors.foreground, anchor=(0.0, 0.0)
             )
         self.setRange(QtCore.QRectF(-0.4, -1.45, n + 1.0 + self.GAP + 0.2, 2.55), padding=0)
 
@@ -705,7 +706,7 @@ class VeeringPlot(QtWidgets.QWidget):
         self.plot.setXRange(math.log10(s.x[0]), math.log10(s.x[-1]), padding=0)
         if kind == "frequency":
             self.plot.setLabel("bottom", "f<sub>B</sub> / f<sub>A</sub> (B's springs scaled)")
-            self.plot.setTitle(f"μ = {model.mass_ratio:.3g} fixed", size="10pt")
+            self.plot.setTitle(f"μ = {sig(model.mass_ratio)} fixed", size="10pt")
             gap = self._gap_at_tuning(s)
             self.note.setText(
                 "Solid: the chain's natural frequencies (thick: the two the 2-DOF modes stand for). "
@@ -713,8 +714,8 @@ class VeeringPlot(QtWidgets.QWidget):
                 "f<sub>A</sub> each coupled mode follows one of them. Near it the two modes <i>veer</i> "
                 "apart instead of crossing, and trade shapes: the mode splitting of a vibration absorber. "
                 + (
-                    f"At f<sub>B</sub> = f<sub>A</sub> the 2-DOF modes are {100 * gap:.3g}% of f<sub>A</sub> "
-                    f"apart; two oscillators tuned exactly are √μ = {100 * math.sqrt(model.mass_ratio):.3g}% "
+                    f"At f<sub>B</sub> = f<sub>A</sub> the 2-DOF modes are {sig(100 * gap)}% of f<sub>A</sub> "
+                    f"apart; two oscillators tuned exactly are √μ = {sig(100 * math.sqrt(model.mass_ratio))}% "
                     "apart, whatever μ. "
                     if gap is not None
                     else ""
@@ -723,7 +724,7 @@ class VeeringPlot(QtWidgets.QWidget):
             )
         else:
             self.plot.setLabel("bottom", "μ = m<sub>b</sub> / m<sub>a</sub> (all of B scaled)")
-            self.plot.setTitle(f"f<sub>B</sub> / f<sub>A</sub> = {model.freq_ratio:.3g} fixed", size="10pt")
+            self.plot.setTitle(f"f<sub>B</sub> / f<sub>A</sub> = {sig(model.freq_ratio)} fixed", size="10pt")
             self.note.setText(
                 "Solid: the chain's natural frequencies (thick: the two the 2-DOF modes stand for). "
                 "Dashed: the 2-DOF model. Dotted: A's and B's modes on their own, which do not change. "
@@ -754,7 +755,7 @@ class ShapePlots(pg.GraphicsLayoutWidget):
             p.showGrid(x=True, y=True, alpha=0.3)
             p.setMouseEnabled(x=False, y=False)
             p.setYRange(-1.15, 1.6, padding=0)
-            p.getAxis("left").setTicks([[(v, f"{v:g}") for v in (-1, -0.5, 0, 0.5, 1)]])
+            p.getAxis("left").setTicks([[(v, f"{sig(v, 6)}") for v in (-1, -0.5, 0, 0.5, 1)]])
             p.setLabel("left", "Normalized amplitude")
             self.plots.append(p)
             self.legends.append(add_legend(p, offset=(5, 2), colCount=2))
@@ -800,7 +801,7 @@ class ShapePlots(pg.GraphicsLayoutWidget):
                 symbolSize=9,
                 symbolPen=None,
                 symbolBrush=color,
-                name=f"chain mode {c.full_index}: {c.fn_full:.4g} Hz",
+                name=f"chain mode {c.full_index}: {sig(c.fn_full, 4)} Hz",
             )
             p.plot(
                 xs,
@@ -810,13 +811,13 @@ class ShapePlots(pg.GraphicsLayoutWidget):
                 symbolSize=11,
                 symbolBrush=None,
                 symbolPen=pg.mkPen(colors.strong, width=2),
-                name=f"2-DOF mode {r + 1}: {c.fn:.4g} Hz",
+                name=f"2-DOF mode {r + 1}: {sig(c.fn, 4)} Hz",
             )
             ua, ub = model.eta[:, r] / np.abs(model.eta[:, r]).max()
             phase = "in phase" if ua * ub > 0 else "in opposite phase"
-            err = "—" if c.error is None else f"{100 * c.error:+.3g}%"
+            err = "—" if c.error is None else f"{sig(100 * c.error, plus=True)}%"
             p.setTitle(
-                f"2-DOF mode {r + 1}: m<sub>a</sub> and m<sub>b</sub> {phase} (u<sub>b</sub>/u<sub>a</sub> = {ub / ua:.3g}) · error {err}, "
+                f"2-DOF mode {r + 1}: m<sub>a</sub> and m<sub>b</sub> {phase} (u<sub>b</sub>/u<sub>a</sub> = {sig(ub / ua)}) · error {err}, "
                 f"MAC {c.mac:.3f}"
                 if abs(ua) > 1e-12
                 else f"2-DOF mode {r + 1}: m<sub>a</sub> still · error {err}, MAC {c.mac:.3f}",
@@ -1212,7 +1213,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
             combo.blockSignals(True)
             combo.clear()
             for k, f in enumerate(sub.fn_hz):
-                combo.addItem(f"{sub.name}{k + 1}: {f:.4g} Hz")
+                combo.addItem(f"{sub.name}{k + 1}: {sig(f, 4)} Hz")
             combo.setCurrentIndex(r)
             combo.blockSignals(False)
             chosen.append(r)
@@ -1264,7 +1265,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
                     (_g(c.fn_full), None),
                     (zeta_text(c.zeta_full), None),
                     (
-                        "—" if c.error is None else f"{100 * c.error:+.3g}%",
+                        "—" if c.error is None else f"{sig(100 * c.error, plus=True)}%",
                         None if c.error is None else error_color(c.error),
                     ),
                     (f"{c.mac:.3f}", colors.poor if c.mac < 0.8 else None),
@@ -1299,7 +1300,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
     def _fill_oscillators(self, model: CoupledModel) -> None:
         self.osc_table.setRowCount(2)
         a, b = model.osc_a, model.osc_b
-        res = f" + {model.m_residual:.3g}" if model.residual and model.m_residual > 1e-9 else ""
+        res = f" + {sig(model.m_residual)}" if model.residual and model.m_residual > 1e-9 else ""
         for r, (name, mode, osc, m_text) in enumerate(
             (("A", model.mode_a, a, _g(a.m, 3) + res), ("B", model.mode_b, b, _g(b.m, 3)))
         ):
@@ -1337,11 +1338,11 @@ class ModalCouplingPage(QtWidgets.QWidget):
                     "each coupled mode is mostly A's or B's, shifted a little."
                 )
         return (
-            f"A (m1–m{model.split}) mode {model.mode_a + 1} at {fa:.4g} Hz and B "
-            f"(m{model.split + 1}–m{model.system.n}) mode {model.mode_b + 1} at {fb:.4g} Hz, "
-            f"f<sub>B</sub>/f<sub>A</sub> = <b>{ratio:.3g}</b>, mass ratio "
-            f"μ = m<sub>b</sub>/m<sub>a</sub> = <b>{mu:.3g}</b>. Joined, they become <b>{f1:.4g}</b> and "
-            f"<b>{f2:.4g} Hz</b>. {tuned}"
+            f"A (m1–m{model.split}) mode {model.mode_a + 1} at {sig(fa, 4)} Hz and B "
+            f"(m{model.split + 1}–m{model.system.n}) mode {model.mode_b + 1} at {sig(fb, 4)} Hz, "
+            f"f<sub>B</sub>/f<sub>A</sub> = <b>{sig(ratio)}</b>, mass ratio "
+            f"μ = m<sub>b</sub>/m<sub>a</sub> = <b>{sig(mu)}</b>. Joined, they become <b>{sig(f1, 4)}</b> and "
+            f"<b>{sig(f2, 4)} Hz</b>. {tuned}"
         )
 
     @staticmethod
@@ -1358,8 +1359,8 @@ class ModalCouplingPage(QtWidgets.QWidget):
                 note += ". "
             else:
                 note += (
-                    f" ({model.fn_hz[0]:.4g} ≥ {full.modes[0].fn_hz:.4g} Hz and {model.fn_hz[1]:.4g} ≥ "
-                    f"{full.modes[1].fn_hz:.4g} Hz), not of the modes they are paired with here. "
+                    f" ({sig(model.fn_hz[0], 4)} ≥ {sig(full.modes[0].fn_hz, 4)} Hz and {sig(model.fn_hz[1], 4)} ≥ "
+                    f"{sig(full.modes[1].fn_hz, 4)} Hz), not of the modes they are paired with here. "
                 )
         else:
             note = (

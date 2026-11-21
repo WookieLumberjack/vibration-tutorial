@@ -53,6 +53,7 @@ from ..core.torsional_startup import (
     MotorKind,
     crossings,
 )
+from ..view_models.text import number as sig
 from . import torsional_figures
 from .drag import DragLine
 from .frame_loop import FrameLoop
@@ -116,10 +117,10 @@ def _two_discs(rng: np.random.Generator) -> Question:
     k = pick(rng, (20, 50, 100, 200, 500))  # kN·m/rad
     f = two_inertia_hz(j1, j2, 1000 * k)
     return Question(
-        f"A {j1:g} kg·m² motor drives a {j2:g} kg·m² fan through a coupling of {k:g} kN·m/rad. At what frequency "
+        f"A {sig(j1, 6)} kg·m² motor drives a {sig(j2, 6)} kg·m² fan through a coupling of {sig(k, 6)} kN·m/rad. At what frequency "
         "does the train twist?",
         f,
-        f"Two discs on one shaft: f = √(k (J₁ + J₂) / J₁J₂) / 2π = √({k:g}×10³ × {j1 + j2:g} / {j1 * j2:g}) / 2π = "
+        f"Two discs on one shaft: f = √(k (J₁ + J₂) / J₁J₂) / 2π = √({sig(k, 6)}×10³ × {sig(j1 + j2, 6)} / {sig(j1 * j2, 6)}) / 2π = "
         f"{number(TWO_PI * f)}/2π = {number(f)} Hz. (The train's other mode is the whole of it turning, at 0 Hz.)",
         unit="Hz",
         setup=dict(preset=FAN_PRESET, train=_fan(j1, j2, 1000 * k), shapes=True),
@@ -131,9 +132,9 @@ def _shaft_stiffness(rng: np.random.Generator) -> Question:
     J = math.pi * (d / 1000) ** 4 / 32
     k = 80e9 * J / length
     return Question(
-        f"A solid steel shaft (G = 80 GPa) {d:g} mm across and {length:g} m long. What is its torsional stiffness?",
+        f"A solid steel shaft (G = 80 GPa) {sig(d, 6)} mm across and {sig(length, 6)} m long. What is its torsional stiffness?",
         k / 1000,
-        f"J = πd⁴/32 = {number(J * 1e8)}×10⁻⁸ m⁴, so k = GJ/L = 80×10⁹ × {number(J * 1e8)}×10⁻⁸ / {length:g} = "
+        f"J = πd⁴/32 = {number(J * 1e8)}×10⁻⁸ m⁴, so k = GJ/L = 80×10⁹ × {number(J * 1e8)}×10⁻⁸ / {sig(length, 6)} = "
         f"{number(k / 1000)} kN·m/rad. It goes as d⁴: twice as thick is 16 times as stiff.",
         unit="kN·m/rad",
     )
@@ -145,11 +146,11 @@ def _referred(rng: np.random.Generator) -> Question:
     ratio = z_in / z_out
     referred = j * ratio**2
     return Question(
-        f"A compressor wheel of {j:g} kg·m² turns on a pinion of {z_out} teeth, driven by a bull gear of {z_in} on "
+        f"A compressor wheel of {sig(j, 6)} kg·m² turns on a pinion of {z_out} teeth, driven by a bull gear of {z_in} on "
         "the motor's shaft. What inertia does it add, referred to the motor's shaft?",
         referred,
         f"The pinion turns {z_in}/{z_out} = {number(ratio)} times as fast, so its kinetic energy is that of "
-        f"J n² on the motor's shaft: {j:g} × {number(ratio)}² = {number(referred)} kg·m². A small wheel at high speed "
+        f"J n² on the motor's shaft: {sig(j, 6)} × {number(ratio)}² = {number(referred)} kg·m². A small wheel at high speed "
         "weighs a lot on the motor.",
         unit="kg·m²",
         setup=dict(preset=COMPRESSOR_PRESET, shapes=True),
@@ -160,9 +161,9 @@ def _critical(rng: np.random.Generator) -> Question:
     f, order = pick(rng, (12, 20, 35, 52.3, 97.3)), pick(rng, (1, 2, 3, 6))
     rpm = 60 * f / order
     return Question(
-        f"A drive train's mode is at {f:g} Hz. At what speed does a {order:g}× excitation meet it?",
+        f"A drive train's mode is at {sig(f, 6)} Hz. At what speed does a {sig(order, 6)}× excitation meet it?",
         rpm,
-        f"The order's frequency is {order:g} × rpm/60; it equals {f:g} Hz at 60 × {f:g}/{order:g} = {number(rpm)} rpm.",
+        f"The order's frequency is {sig(order, 6)} × rpm/60; it equals {sig(f, 6)} Hz at 60 × {sig(f, 6)}/{sig(order, 6)} = {number(rpm)} rpm.",
         unit="rpm",
     )
 
@@ -173,11 +174,11 @@ def _margin(rng: np.random.Generator) -> Question:
     critical = 60 * f / order
     margin = 100 * separation(critical, rpm)
     return Question(
-        f"A misaligned coupling excites 2× the running speed of {rpm:g} rpm; the train's mode is at {f:g} Hz. How far "
+        f"A misaligned coupling excites 2× the running speed of {sig(rpm, 6)} rpm; the train's mode is at {sig(f, 6)} Hz. How far "
         "is that critical from the running speed, as a percentage of it?",
         margin,
-        f"The 2× line meets {f:g} Hz at 60 × {f:g}/2 = {number(critical)} rpm, {number(margin)} % "
-        f"{'above' if critical > rpm else 'below'} {rpm:g} rpm. API 617 asks for 10 %.",
+        f"The 2× line meets {sig(f, 6)} Hz at 60 × {sig(f, 6)}/2 = {number(critical)} rpm, {number(margin)} % "
+        f"{'above' if critical > rpm else 'below'} {sig(rpm, 6)} rpm. API 617 asks for 10 %.",
         unit="%",
         tolerance=0.02,
     )
@@ -187,10 +188,10 @@ def _tooth_pass(rng: np.random.Generator) -> Question:
     teeth, f = int(pick(rng, (40, 60, 90, 120))), pick(rng, (1500, 2000, 2688, 3000))
     rpm = 60 * f / teeth
     return Question(
-        f"A gear of {teeth} teeth turns at the motor's speed, and the mesh's own mode is at {f:g} Hz. At what motor "
+        f"A gear of {teeth} teeth turns at the motor's speed, and the mesh's own mode is at {sig(f, 6)} Hz. At what motor "
         "speed does the tooth-pass meet it?",
         rpm,
-        f"The teeth pass at z × rpm/60 = {teeth} × rpm/60 Hz, which is {f:g} Hz at 60 × {f:g}/{teeth} = "
+        f"The teeth pass at z × rpm/60 = {teeth} × rpm/60 Hz, which is {sig(f, 6)} Hz at 60 × {sig(f, 6)}/{teeth} = "
         f"{number(rpm)} rpm.",
         unit="rpm",
         setup=dict(preset=COMPRESSOR_PRESET),
@@ -201,10 +202,10 @@ def _node(rng: np.random.Generator) -> Question:
     j1, j2 = pick(rng, (1, 2, 4)), pick(rng, (5, 10, 20))
     share = 100 * j2 / (j1 + j2)
     return Question(
-        f"A {j1:g} kg·m² motor and a {j2:g} kg·m² fan on one shaft twist in their mode. How far along the shaft from "
+        f"A {sig(j1, 6)} kg·m² motor and a {sig(j2, 6)} kg·m² fan on one shaft twist in their mode. How far along the shaft from "
         "the motor is the node, the point that doesn't swing, as a percentage of its length?",
         share,
-        f"The two swing opposite, J₁θ₁ = −J₂θ₂ (no net momentum), so θ₁/θ₂ = −{j2:g}/{j1:g}, and the twist falls "
+        f"The two swing opposite, J₁θ₁ = −J₂θ₂ (no net momentum), so θ₁/θ₂ = −{sig(j2, 6)}/{sig(j1, 6)}, and the twist falls "
         f"linearly along the shaft: the node is J₂/(J₁ + J₂) = {number(share)} % of the way, near the heavier disc.",
         unit="%",
         tolerance=0.01,
@@ -302,7 +303,7 @@ def _coupling_spec(rng: np.random.Generator) -> Question:
             kept("The fan's inertia", train.discs[-1].inertia, j2, "kg·m²"),
             kept("The running speed", running, rpm, "rpm"),
             Requirement(
-                f"No critical within {MARGIN:g} % of the running speed",
+                f"No critical within {sig(MARGIN, 6)} % of the running speed",
                 f"the nearest {number(100 * near)} % away",
                 two and not band,
             ),
@@ -311,13 +312,13 @@ def _coupling_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A {j1:g} kg·m² motor drives a {j2:g} kg·m² fan at {rpm:g} rpm, and the coupling's misalignment excites 2×. "
+        f"A {sig(j1, 6)} kg·m² motor drives a {sig(j2, 6)} kg·m² fan at {sig(rpm, 6)} rpm, and the coupling's misalignment excites 2×. "
         f"Choose the coupling's stiffness, between {number(softest)} and {number(stiffest)} kN·m/rad, so no torsional "
-        f"critical is within {MARGIN:g} % of the running speed.",
+        f"critical is within {sig(MARGIN, 6)} % of the running speed.",
         0,
-        f"The 2× line meets f = √(k (J₁ + J₂)/J₁J₂)/2π at 30 f rpm, so the critical goes as √k. Within {MARGIN:g} % "
+        f"The 2× line meets f = √(k (J₁ + J₂)/J₁J₂)/2π at 30 f rpm, so the critical goes as √k. Within {sig(MARGIN, 6)} % "
         f"is from {number(k_at(0.9) / 1000)} to {number(k_at(1.1) / 1000)} kN·m/rad; the softest coupling allowed "
-        f"is above the lower end, so it has to be stiffer: {number(k_at(1.1) / 1000)} kN·m/rad or more ({design:g} "
+        f"is above the lower end, so it has to be stiffer: {number(k_at(1.1) / 1000)} kN·m/rad or more ({sig(design, 6)} "
         f"puts the critical 20 % above). The 1× critical is twice as fast, far above.",
         setup=dict(preset=FAN_PRESET, train=_fan(j1, j2, 1000 * start), operating_rpm=rpm, top_rpm=2 * rpm),
         goal=goal,
@@ -806,7 +807,7 @@ class TorsionalPage(QtWidgets.QWidget):
                 )
         for j, f in enumerate(freqs):
             p.plot([max(x_lo, 1e-9), top], [f, f], pen=pg.mkPen(colors.strong, width=1.5))
-            text = pg.TextItem(f"Mode {j + 1}, {f:.4g} Hz", color=colors.strong, anchor=(0, 1))
+            text = pg.TextItem(f"Mode {j + 1}, {sig(f, 4)} Hz", color=colors.strong, anchor=(0, 1))
             text.setPos(*at(max(x_lo, 1e-9), f))
             p.addItem(text)
         lo, hi = self._band()
@@ -848,19 +849,19 @@ class TorsionalPage(QtWidgets.QWidget):
             return
         if inside:
             listed = "; ".join(
-                f"<b>{c.label} meets mode {c.mode + 1} ({c.freq_hz:.4g} Hz) at {c.rpm:.0f} rpm</b>, "
+                f"<b>{c.label} meets mode {c.mode + 1} ({sig(c.freq_hz, 4)} Hz) at {c.rpm:.0f} rpm</b>, "
                 f"{100 * separation(c.rpm, op):.1f} % {'above' if c.rpm > op else 'below'}"
                 for c in inside
             )
-            lines.append(f"Inside ±{MARGIN:g} % of {op:.0f} rpm: {listed}.")
+            lines.append(f"Inside ±{sig(MARGIN, 6)} % of {op:.0f} rpm: {listed}.")
         else:
             near = min(crits, key=lambda c: separation(c.rpm, op), default=None)
             if near is None:
                 lines.append(f"No order meets a mode below {self.top.value():.0f} rpm.")
             else:
                 lines.append(
-                    f"No torsional critical within ±{MARGIN:g} % of {op:.0f} rpm: the nearest, {near.label} "
-                    f"on mode {near.mode + 1} ({near.freq_hz:.4g} Hz), is at {near.rpm:.0f} rpm, "
+                    f"No torsional critical within ±{sig(MARGIN, 6)} % of {op:.0f} rpm: the nearest, {near.label} "
+                    f"on mode {near.mode + 1} ({sig(near.freq_hz, 4)} Hz), is at {near.rpm:.0f} rpm, "
                     f"{100 * separation(near.rpm, op):.1f} % {'above' if near.rpm > op else 'below'}."
                 )
         if self._unreached:
@@ -921,7 +922,7 @@ class TorsionalPage(QtWidgets.QWidget):
         i = int(np.argmax(total))
         name = t.links[link].name
         self.response_note.setText(
-            f"{name}: ±{fmt_torque(at_op)} at {op:.0f} rpm, up to ±{fmt_torque(worst)} within ±{MARGIN:g} %; "
+            f"{name}: ±{fmt_torque(at_op)} at {op:.0f} rpm, up to ±{fmt_torque(worst)} within ±{sig(MARGIN, 6)} %; "
             f"the most, ±{fmt_torque(peak)}, at {rpm[i]:.0f} rpm."
         )
 
@@ -998,7 +999,7 @@ class TorsionalPage(QtWidgets.QWidget):
             speeds = (
                 "Each shaft's speed over the motor's: "
                 + ", ".join(
-                    f"{d.name} {s[i]:.3g}×" for i, d in enumerate(t.discs) if i and not math.isclose(s[i], s[i - 1])
+                    f"{d.name} {sig(s[i])}×" for i, d in enumerate(t.discs) if i and not math.isclose(s[i], s[i - 1])
                 )
                 + "."
             )
@@ -1045,7 +1046,7 @@ class TorsionalPage(QtWidgets.QWidget):
                 symbolBrush=pg.mkBrush(color),
                 symbolPen=None,
             )
-            self.shapes_legend.addItem(item, f"Mode {j + 1}, {md.freq_hz:.4g} Hz")
+            self.shapes_legend.addItem(item, f"Mode {j + 1}, {sig(md.freq_hz, 4)} Hz")
         p.getAxis("bottom").setTicks([[(i, d.name) for i, d in enumerate(t.discs)]])
         p.setXRange(-0.3, t.n - 0.7, padding=0)
         p.setYRange(-1.1, 1.1, padding=0)
@@ -1053,7 +1054,7 @@ class TorsionalPage(QtWidgets.QWidget):
         for j, md in enumerate(self._modes):
             share = md.twist[md.link]
             rows.append(
-                f"Mode {j + 1}: {md.freq_hz:.4g} Hz, ζ = {100 * md.zeta:.2g} %, twisting "
+                f"Mode {j + 1}: {sig(md.freq_hz, 4)} Hz, ζ = {sig(100 * md.zeta, 2)} %, twisting "
                 f"{t.links[md.link].name.lower()} ({100 * share:.0f} %)"
             )
         self.mode_list.setText("<br>".join(rows) if rows else "No flexible modes.")
@@ -1065,7 +1066,7 @@ class TorsionalPage(QtWidgets.QWidget):
         ref = natural_hz(t.referred())
         text = (
             "Referred to the motor's shaft (inertias and stiffnesses × s², each mesh a shaft of "
-            "k<sub>m</sub>(r s)²): " + ", ".join(f"{v:.4g}" for v in ref) + " Hz, the same."
+            "k<sub>m</sub>(r s)²): " + ", ".join(f"{sig(v, 4)}" for v in ref) + " Hz, the same."
         )
         if t.meshes:
             try:
@@ -1075,7 +1076,7 @@ class TorsionalPage(QtWidgets.QWidget):
             lost = f.size - rigid.size
             text += (
                 " With the gears rigid (the n² reflection): "
-                + (", ".join(f"{v:.4g}" for v in rigid) + " Hz" if rigid.size else "no modes")
+                + (", ".join(f"{sig(v, 4)}" for v in rigid) + " Hz" if rigid.size else "no modes")
                 + f", {lost} mode{'s' if lost != 1 else ''} lost."
             )
         self.check.setText(text)

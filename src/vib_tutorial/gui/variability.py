@@ -41,6 +41,7 @@ from ..core.variability import (
     tuned_band,
     whitehead,
 )
+from ..view_models.text import number as sig
 from . import coalesce, settle_plots, variability_figures
 from .lesson import (
     Form,
@@ -219,11 +220,11 @@ def _one_mass(rng: np.random.Generator) -> Question:
     cm, ck = pick(rng, (0, 2, 3, 5)), pick(rng, (2, 4, 5, 10))
     spread = 0.5 * math.hypot(cm, ck)
     return Question(
-        f"A single mass on a spring: the mass scatters by {cm:g} % and the spring by {ck:g} % (coefficients of "
+        f"A single mass on a spring: the mass scatters by {sig(cm, 6)} % and the spring by {sig(ck, 6)} % (coefficients of "
         "variation, independent). By how many percent does its natural frequency scatter, to first order?",
         spread,
         f"f ∝ √(k/m), so δf/f = ½(δk/k − δm/m): each source's share is half its own scatter, and independent ones add "
-        f"in quadrature: ½√({ck:g}² + {cm:g}²) = {number(spread)} %.",
+        f"in quadrature: ½√({sig(ck, 6)}² + {sig(cm, 6)}²) = {number(spread)} %.",
         unit="%",
         setup=dict(masses=(1.0,), springs=(400.0,), dampers=(2.0,), mass=cm, stiffness=ck),
     )
@@ -241,10 +242,10 @@ def _shares(rng: np.random.Generator) -> Question:
     listed = ", ".join(number(v) for v in shares)
     return Question(
         f"In one mode of a chain, its {n} springs carry these shares of the strain energy: {listed}. Every spring "
-        f"scatters by {c:g} %, independently. By how many percent does the mode's frequency scatter, to first order?",
+        f"scatters by {sig(c, 6)} %, independently. By how many percent does the mode's frequency scatter, to first order?",
         spread,
         f"A spring's relative change moves ω² by its share s<sub>i</sub> of that change, and f by half of it, so "
-        f"σ<sub>f</sub>/f = ½V<sub>k</sub>√Σs<sub>i</sub>² = ½ × {c:g} × √{number(sum(v * v for v in shares))} = "
+        f"σ<sub>f</sub>/f = ½V<sub>k</sub>√Σs<sub>i</sub>² = ½ × {sig(c, 6)} × √{number(sum(v * v for v in shares))} = "
         f"{number(spread)} %. "
         "Less than the springs' own: the mode averages over them.",
         unit="%",
@@ -257,10 +258,10 @@ def _percentile(rng: np.random.Generator) -> Question:
     s2 = math.log(1 + (c / 100) ** 2)
     top = 100 * (math.exp(-s2 / 2 + 1.645 * math.sqrt(s2)) - 1)
     return Question(
-        f"A spring's stiffness is lognormal with mean at its nominal value and a {c:g} % coefficient of variation. "
+        f"A spring's stiffness is lognormal with mean at its nominal value and a {sig(c, 6)} % coefficient of variation. "
         "How far above nominal is its 95th percentile?",
         top,
-        f"ln k is normal with σ² = ln(1 + {c / 100:g}²) = {number(s2)} and mean −σ²/2 (so the mean of k is "
+        f"ln k is normal with σ² = ln(1 + {sig(c / 100, 6)}²) = {number(s2)} and mean −σ²/2 (so the mean of k is "
         f"nominal): the 95th percentile is exp(−σ²/2 + 1.645σ) = {number(1 + top / 100, 4)}, {number(top)} % above.",
         unit="%",
     )
@@ -284,7 +285,7 @@ def _band(rng: np.random.Generator) -> Question:
     fb = rounded(BLADE_HZ)
     top = fb * math.sqrt(1 + 4 * c / 100)
     return Question(
-        f"A tuned ring of blades, each alone at {number(fb)} Hz, joined to its neighbours by springs of {c:g} % of "
+        f"A tuned ring of blades, each alone at {number(fb)} Hz, joined to its neighbours by springs of {sig(c, 6)} % of "
         "each blade's own. Where is the top of its band of modes?",
         top,
         f"The 0-nodal-diameter mode leaves the coupling springs unstretched, at the blade's {number(fb)} Hz; the "
@@ -315,10 +316,10 @@ def _draws(rng: np.random.Generator) -> Question:
     count = 1 + 1 / (2 * (e / 100) ** 2)
     return Question(
         f"Monte Carlo estimates a frequency's standard deviation from N scattered chains. About how many chains does "
-        f"it take for that estimate's own scatter to be {e:g} %?",
+        f"it take for that estimate's own scatter to be {sig(e, 6)} %?",
         count,
         f"A sample standard deviation from N normal draws scatters by about 1/√(2(N − 1)): N = 1 + 1/(2 × "
-        f"{e / 100:g}²) = {number(count)}.",
+        f"{sig(e / 100, 6)}²) = {number(count)}.",
         unit="chains",
         tolerance=0.03,
     )
@@ -405,12 +406,12 @@ def _ring_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A ring of {blades} blades with {mistuning:g} % mistuning (the page's pattern). Choose the coupling between "
+        f"A ring of {blades} blades with {sig(mistuning, 6)} % mistuning (the page's pattern). Choose the coupling between "
         f"them so that its lowest mode spreads over at least {number(least, 2)} blades, with the coupling springs no "
         f"more than {number(most)} % of the blades' own.",
         0,
         f"Localization is set by the mistuning over the coupling: the lowest mode moves {number(_spread(blades, coupling, mistuning))} "
-        f"blades at a coupling of {number(coupling)} % (ratio {ratio:g}), and fewer as the ratio grows: about "
+        f"blades at a coupling of {number(coupling)} % (ratio {sig(ratio, 6)}), and fewer as the ratio grows: about "
         f"{number(0.85 * coupling)} % is the least that does it.",
         setup=dict(blades=blades, coupling=0.5, mistuning=mistuning, tab=TAB_MODES),
         goal=goal,
@@ -778,18 +779,18 @@ class VariabilityPage(QtWidgets.QWidget):
         self.frf_plot.setXRange(np.log10(lo), np.log10(hi), padding=0)
         sigma = sensitivity_sigma(s, self.scatter)
         rows = "".join(
-            f"<tr><td>{r + 1}</td><td align='right'>{mc.nominal_freqs[r]:.4g}</td>"
-            f"<td align='right'>{mc.freqs[:, r].mean():.4g}</td><td align='right'>{mc.freqs[:, r].std():.3g}</td>"
-            f"<td align='right'>{sigma[r]:.3g}</td>"
-            f"<td align='right'>{100 * mc.freqs[:, r].std() / mc.nominal_freqs[r]:.3g} %</td></tr>"
+            f"<tr><td>{r + 1}</td><td align='right'>{sig(mc.nominal_freqs[r], 4)}</td>"
+            f"<td align='right'>{sig(mc.freqs[:, r].mean(), 4)}</td><td align='right'>{sig(mc.freqs[:, r].std())}</td>"
+            f"<td align='right'>{sig(sigma[r])}</td>"
+            f"<td align='right'>{sig(100 * mc.freqs[:, r].std() / mc.nominal_freqs[r])} %</td></tr>"
             for r in range(n)
         )
         peak = int(np.argmax(mc.nominal_frf))
         self.readout.setText(
             "<table cellspacing='5'><tr><th>mode</th><th>nominal (Hz)</th><th>mean</th><th>σ (Monte Carlo)</th>"
             f"<th>σ (first order)</th><th>σ/f</th></tr>{rows}</table>"
-            f"At the nominal peak ({f[peak]:.3g} Hz) the band spans {low[peak] / mc.nominal_frf[peak]:.2g} to "
-            f"{high[peak] / mc.nominal_frf[peak]:.2g} times the nominal receptance; {mc.freqs.shape[0]} chains."
+            f"At the nominal peak ({sig(f[peak])} Hz) the band spans {sig(low[peak] / mc.nominal_frf[peak], 2)} to "
+            f"{sig(high[peak] / mc.nominal_frf[peak], 2)} times the nominal receptance; {mc.freqs.shape[0]} chains."
         )
         if self.tabs.currentIndex() == TAB_HISTOGRAM:
             self._draw_histogram()
@@ -856,10 +857,10 @@ class VariabilityPage(QtWidgets.QWidget):
         self.pn_plot.setYRange(0, n + 0.5, padding=0)
         lo, hi = tuned_band(ring)
         self.modes_note.setText(
-            f"Mode {mode + 1}: tuned {ft[mode]:.4g} Hz, moving {nt[mode]:.2g} blades; mistuned {fm[mode]:.4g} Hz, "
-            f"moving {nm[mode]:.2g}. The tuned band runs {lo:.4g} to {hi:.4g} Hz; mistuning "
-            f"{100 * ring.mistuning:.3g} % against a coupling of {100 * ring.coupling:.3g} % (ratio "
-            f"{ring.mistuning / ring.coupling:.2g})."
+            f"Mode {mode + 1}: tuned {sig(ft[mode], 4)} Hz, moving {sig(nt[mode], 2)} blades; mistuned {sig(fm[mode], 4)} Hz, "
+            f"moving {sig(nm[mode], 2)}. The tuned band runs {sig(lo, 4)} to {sig(hi, 4)} Hz; mistuning "
+            f"{sig(100 * ring.mistuning)} % against a coupling of {sig(100 * ring.coupling)} % (ratio "
+            f"{sig(ring.mistuning / ring.coupling, 2)})."
         )
 
     def _draw_forced(self) -> None:
@@ -893,9 +894,9 @@ class VariabilityPage(QtWidgets.QWidget):
         self.amp_plot.setYRange(0.9, bound + 0.15, padding=0)
         a = amplification(ring, E)
         self.forced_note.setText(
-            f"This pattern: the worst blade peaks at {a:.3g} times the tuned ring's. Over {SEEDS} patterns per "
-            f"level the worst reaches {float(top.max()):.3g} (at {levels[int(np.argmax(top))]:.3g} %); Whitehead's "
-            f"bound for {n} blades is {bound:.3g} (dotted)."
+            f"This pattern: the worst blade peaks at {sig(a)} times the tuned ring's. Over {SEEDS} patterns per "
+            f"level the worst reaches {sig(float(top.max()))} (at {sig(levels[int(np.argmax(top))])} %); Whitehead's "
+            f"bound for {n} blades is {sig(bound)} (dotted)."
         )
 
 

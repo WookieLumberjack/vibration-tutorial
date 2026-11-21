@@ -27,6 +27,7 @@ from ..core.periodic import (
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.sdof import Oscillator, frequency_grid, receptance
+from ..view_models.text import number as sig
 from . import coalesce, periodic_figures, settle_plots
 from .lesson import (
     Form,
@@ -216,10 +217,10 @@ def _square_harmonic(rng: np.random.Generator) -> Question:
     f0 = pick(rng, (0.5, 1, 2))
     a = 4 * F / (math.pi * k)
     return Question(
-        f"A ±{F:g} N square wave repeats at {f0:g} Hz. How large is its harmonic at {number(k * f0)} Hz?",
+        f"A ±{sig(F, 6)} N square wave repeats at {sig(f0, 6)} Hz. How large is its harmonic at {number(k * f0)} Hz?",
         a,
         f"That is the {k}{'st' if k == 1 else 'th'} harmonic. A square wave is (4F/π) Σ sin jω₀t / j over odd j: "
-        f"4 × {F:g}/({k}π) = {number(a)} N.",
+        f"4 × {sig(F, 6)}/({k}π) = {number(a)} N.",
         unit="N",
         setup=dict(wave=Wave.SQUARE, amplitude=float(F), freq_hz=f0, harmonics=max(k, 5)),
     )
@@ -231,10 +232,10 @@ def _pulse_harmonic(rng: np.random.Generator) -> Question:
     k = int(pick(rng, (1, 2, 3)))
     a = 2 * F / (math.pi * k) * abs(math.sin(math.pi * k * d))
     return Question(
-        f"A train of rectangular pulses of {F:g} N, each on for {100 * d:g} % of the period. How large is "
+        f"A train of rectangular pulses of {sig(F, 6)} N, each on for {sig(100 * d, 6)} % of the period. How large is "
         f"its harmonic number {k}?",
         a,
-        f"|C<sub>j</sub>| = (2F/πj)|sin πjd| = (2 × {F:g}/{k}π) |sin({k}π × {d:g})| = {number(a)} N. (It is zero at "
+        f"|C<sub>j</sub>| = (2F/πj)|sin πjd| = (2 × {sig(F, 6)}/{k}π) |sin({k}π × {sig(d, 6)})| = {number(a)} N. (It is zero at "
         "every multiple of 1/d.)",
         unit="N",
         setup=dict(wave=Wave.PULSES, amplitude=float(F), duty=d, harmonics=8),
@@ -246,7 +247,7 @@ def _rectified_sag(rng: np.random.Generator) -> Question:
     k = pick(rng, (100, 400, 1000))
     sag = 2 * F / (math.pi * k)
     return Question(
-        f"A rectified sine force F|sin πt/T| with F = {F:g} N acts on a {k:g} N/m spring. About what mean deflection "
+        f"A rectified sine force F|sin πt/T| with F = {sig(F, 6)} N acts on a {sig(k, 6)} N/m spring. About what mean deflection "
         "does the mass swing around?",
         1e3 * sag,
         f"The mean of F|sin| is 2F/π = {number(2 * F / math.pi)} N, and the mean only sags the spring "
@@ -266,7 +267,7 @@ def _harmonic_resonance(rng: np.random.Generator) -> Question:
     x = 4 * F / (math.pi * n) * H
     ordinal = "3rd" if n == 3 else f"{n}th"
     return Question(
-        f"A ±{F:g} N square wave at {number(f0)} Hz drives a 1 kg mass on 400 N/m with c = {number(osc.damping)} "
+        f"A ±{sig(F, 6)} N square wave at {number(f0)} Hz drives a 1 kg mass on 400 N/m with c = {number(osc.damping)} "
         f"N·s/m (f<sub>n</sub> = {number(osc.natural_hz)} Hz). How large is the response at its {ordinal} harmonic?",
         1e3 * x,
         f"The {ordinal} harmonic, 4F/{n}π = {number(4 * F / (math.pi * n))} N, lands on f<sub>n</sub>, where |H| ≈ "
@@ -283,9 +284,9 @@ def _impulse_lines(rng: np.random.Generator) -> Question:
     f0 = pick(rng, (1, 2, 5, 10))
     a = 2 * blow * f0
     return Question(
-        f"A hammer strikes a blow of {blow:g} N·s {f0:g} times a second. How large is each of its harmonics?",
+        f"A hammer strikes a blow of {sig(blow, 6)} N·s {sig(f0, 6)} times a second. How large is each of its harmonics?",
         a,
-        f"An impulse train is I/T + (2I/T) Σ cos jω₀t: every harmonic the same, 2I/T = 2 × {blow:g} × {f0:g} = "
+        f"An impulse train is I/T + (2I/T) Σ cos jω₀t: every harmonic the same, 2I/T = 2 × {sig(blow, 6)} × {sig(f0, 6)} = "
         f"{number(a)} N (the mean is half that).",
         unit="N",
         setup=dict(wave=Wave.IMPULSES, amplitude=blow, freq_hz=float(f0), harmonics=8),
@@ -364,7 +365,7 @@ def _speed_spec(rng: np.random.Generator) -> Question:
             kept("The spring", t.stiffness, 400.0, "N/m"),
             kept("The damper", t.damping, c, "N·s/m"),
             Requirement(
-                f"A ±{F:g} N square wave",
+                f"A ±{sig(F, 6)} N square wave",
                 f"{t.wave.value}, {number(t.amplitude)}",
                 t.wave is Wave.SQUARE and abs(t.amplitude - F) <= 0.005 * F,
             ),
@@ -377,7 +378,7 @@ def _speed_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A machine's ±{F:g} N square-wave force can run anywhere from {number(lo)} to {number(hi)} Hz. It shakes "
+        f"A machine's ±{sig(F, 6)} N square-wave force can run anywhere from {number(lo)} to {number(hi)} Hz. It shakes "
         f"a 1 kg mass on 400 N/m with c = {number(c)} N·s/m (f<sub>n</sub> = {number(fn)} Hz). Pick a speed where "
         f"the mass's steady swing stays within ±{number(most, 2)} mm.",
         0,
@@ -656,8 +657,8 @@ class PeriodicPage(QtWidgets.QWidget):
         self.amplitude.setSuffix(" N·s" if wave is Wave.IMPULSES else " N")
         o = self.osc
         self.osc_info.setText(
-            f"f<sub>n</sub> = {o.natural_hz:.4g} Hz, ζ = {o.zeta:.3g}; f<sub>n</sub>/f₀ = "
-            f"{o.natural_hz / self.forcing.freq_hz:.3g}."
+            f"f<sub>n</sub> = {sig(o.natural_hz, 4)} Hz, ζ = {sig(o.zeta)}; f<sub>n</sub>/f₀ = "
+            f"{sig(o.natural_hz / self.forcing.freq_hz)}."
         )
         self.redraw()
 
@@ -718,7 +719,7 @@ class PeriodicPage(QtWidgets.QWidget):
             self.readout.setText(
                 f"Steady state from {fmt(float(exact.min()), 'm')} to {fmt(float(exact.max()), 'm')} (mean "
                 f"{fmt(mean, 'm')}); with {n} harmonic{'s' if n > 1 else ''} the series is within "
-                f"{100 * err:.3g} % of its swing."
+                f"{sig(100 * err)} % of its swing."
             )
         else:
             self.exact_item.setData([], [])
@@ -767,7 +768,7 @@ class PeriodicPage(QtWidgets.QWidget):
         total = float(np.sum(Xa[finite][ks > 0] ** 2)) or 1.0
         parts = [
             f"j = {ks[i]} ({fmt(f[keep][finite][i], 'Hz')}): {fmt(float(Xa[finite][i]), 'm')}"
-            + (f", {100 * Xa[finite][i] ** 2 / total:.3g} % of the swing's power" if ks[i] > 0 else " (mean)")
+            + (f", {sig(100 * Xa[finite][i] ** 2 / total)} % of the swing's power" if ks[i] > 0 else " (mean)")
             for i in order
         ]
         self.lines_note.setText("Largest response harmonics: " + "; ".join(parts) + ".")
@@ -817,6 +818,6 @@ class PeriodicPage(QtWidgets.QWidget):
         self.conv_plot.setXRange(0.0, math.log10(MOST), padding=0.02)
         self.conv_plot.setYRange(min(-4.0, math.floor(low - 0.3)), 0.5, padding=0)
         self.conv_note.setText(
-            f"{fo.wave.value}: with {n} harmonics kept the series is within {100 * now:.3g} % "
+            f"{fo.wave.value}: with {n} harmonics kept the series is within {sig(100 * now)} % "
             "of the exact steady state's swing."
         )

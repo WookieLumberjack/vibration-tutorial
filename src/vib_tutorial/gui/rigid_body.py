@@ -35,6 +35,7 @@ from ..core.practice import Prediction, Problem, Question, Requirement, at_most,
 from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbler, compare
 from ..core.rotation import Turning
 from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
+from ..view_models.text import number as sig
 from . import coalesce, rigid_body_figures
 from .cms_time import SampleBuffer
 from .components_tab import ComponentsTab
@@ -347,11 +348,11 @@ def _box_moment(rng: np.random.Generator) -> Question:
     body = Body(Shape.CUBOID, m, a / 1000, b / 1000, c / 1000)
     answer = float(body.inertia()[k, k])
     return Question(
-        f"A uniform {m:g} kg box, {a:g} × {b:g} × {c:g} mm along its x, y, z. What is its moment of inertia about "
+        f"A uniform {sig(m, 6)} kg box, {sig(a, 6)} × {sig(b, 6)} × {sig(c, 6)} mm along its x, y, z. What is its moment of inertia about "
         f"its {axis} axis, through its centre?",
         answer,
-        f"I<sub>{axis}{axis}</sub> = m(s₁² + s₂²)/12 with the two sides across that axis: {m:g} × ({others[0] / 1000:g}² + "
-        f"{others[1] / 1000:g}²)/12 = {number(answer)} kg·m².",
+        f"I<sub>{axis}{axis}</sub> = m(s₁² + s₂²)/12 with the two sides across that axis: {sig(m, 6)} × ({sig(others[0] / 1000, 6)}² + "
+        f"{sig(others[1] / 1000, 6)}²)/12 = {number(answer)} kg·m².",
         unit="kg·m²",
         setup=dict(mass=m, a=a / 1000, b=b / 1000, c=c / 1000, rate=0.0, nudge=0.0, tab=TAB_INERTIA),
     )
@@ -363,10 +364,10 @@ def _point_centre(rng: np.random.Generator) -> Question:
     x = pick(rng, (50.0, 80.0, 100.0, 120.0))
     G = Body(Shape.CUBOID, m, a / 1000, b / 1000, c / 1000, mp, (x / 1000, 0.0, 0.0)).centre()[0] * 1000
     return Question(
-        f"A {m:g} kg box carries a {mp:g} kg point mass {x:g} mm along x from its centre. How far from the box's "
+        f"A {sig(m, 6)} kg box carries a {sig(mp, 6)} kg point mass {sig(x, 6)} mm along x from its centre. How far from the box's "
         "centre is the centre of mass G?",
         G,
-        f"G is the masses' average place: {mp:g} × {x:g}/({m:g} + {mp:g}) = {number(G)} mm along x.",
+        f"G is the masses' average place: {sig(mp, 6)} × {sig(x, 6)}/({sig(m, 6)} + {sig(mp, 6)}) = {number(G)} mm along x.",
         unit="mm",
         setup=dict(
             mass=m,
@@ -390,12 +391,12 @@ def _point_product(rng: np.random.Generator) -> Question:
     answer = float(body.inertia()[0, 1]) * 1e4  # kg·cm²: a few, where kg·m² would be 10⁻⁴
     reduced = m * mp / (m + mp)
     return Question(
-        f"A {m:g} kg box carries a {mp:g} kg point mass at ({x:g}, {y:g}, 0) mm from its centre. How big is the "
+        f"A {sig(m, 6)} kg box carries a {sig(mp, 6)} kg point mass at ({sig(x, 6)}, {sig(y, 6)}, 0) mm from its centre. How big is the "
         "product of inertia I<sub>xy</sub> about the centre of mass, in the box's axes, in kg·cm²? (It is "
         "negative: give its size.)",
         -answer,
         f"I<sub>xy</sub> = −Σmxy about G. The box alone has none; moved to G and with the point mass it comes to "
-        f"−(m m<sub>p</sub>/(m + m<sub>p</sub>))xy = −{number(reduced)} × {x / 10:g} × {y / 10:g} = "
+        f"−(m m<sub>p</sub>/(m + m<sub>p</sub>))xy = −{number(reduced)} × {sig(x / 10, 6)} × {sig(y / 10, 6)} = "
         f"{number(answer)} kg·cm² (lengths in cm), of size {number(-answer)}.",
         unit="kg·cm²",
         setup=dict(
@@ -418,7 +419,7 @@ def _flip_predict(rng: np.random.Generator) -> Question:
     side = ("longest", "middle", "shortest")[k]
     flips, keeps = "It turns over and back, again and again", "It keeps spinning about that axis, wobbling a little"
     return Question(
-        f"A box {a:g} × {b:g} × {c:g} mm, free in space, is spun about the axis along its {side} side, a little off "
+        f"A box {sig(a, 6)} × {sig(b, 6)} × {sig(c, 6)} mm, free in space, is spun about the axis along its {side} side, a little off "
         "it. What does it do?",
         0,
         f"The moment about an axis is m(s₁² + s₂²)/12 over the two sides across it, so the {side} side's axis has the "
@@ -453,9 +454,9 @@ def _flip_rate(rng: np.random.Generator) -> Question:
     lam = rate * math.sqrt((I2 - I1) * (I3 - I2) / (I1 * I3))
     return Question(
         f"A box with principal moments {number(I1 * 1e3, 4)}, {number(I2 * 1e3, 4)} and {number(I3 * 1e3, 4)} "
-        f"×10⁻³ kg·m² is spun at {rate:g} rad/s about its middle axis. At what rate λ does a small nudge grow?",
+        f"×10⁻³ kg·m² is spun at {sig(rate, 6)} rad/s about its middle axis. At what rate λ does a small nudge grow?",
         lam,
-        f"λ = ω₀√((I₂ − I₁)(I₃ − I₂)/(I₁I₃)) = {rate:g} × √(({number(I2 * 1e3, 4)} − {number(I1 * 1e3, 4)})"
+        f"λ = ω₀√((I₂ − I₁)(I₃ − I₂)/(I₁I₃)) = {sig(rate, 6)} × √(({number(I2 * 1e3, 4)} − {number(I1 * 1e3, 4)})"
         f"({number(I3 * 1e3, 4)} − {number(I2 * 1e3, 4)})/({number(I1 * 1e3, 4)} × {number(I3 * 1e3, 4)})) = "
         f"{number(lam)} /s: it grows e-fold every {number(1 / lam)} s.",
         unit="1/s",
@@ -469,10 +470,10 @@ def _euler_rate(rng: np.random.Generator) -> Question:
     w1, w2 = pick(rng, (0.5, 1.0, 2.0)), pick(rng, (0.5, 1.0, 3.0))  # both > 0: φ̇ > 0
     answer = rotation.euler_rates(math.radians(theta), math.radians(psi), np.array([w1, w2, 0.0]))[0]
     return Question(
-        f"A body's Euler angles (z-x-z) are θ = {theta:g}° and ψ = {psi:g}°, and it turns at ω₁ = {w1:g}, ω₂ = "
-        f"{w2:g} rad/s in its own axes. How fast is φ changing?",
+        f"A body's Euler angles (z-x-z) are θ = {sig(theta, 6)}° and ψ = {sig(psi, 6)}°, and it turns at ω₁ = {sig(w1, 6)}, ω₂ = "
+        f"{sig(w2, 6)} rad/s in its own axes. How fast is φ changing?",
         answer,
-        f"φ̇ = (ω₁ sin ψ + ω₂ cos ψ)/sin θ = ({w1:g} sin {psi:g}° + {w2:g} cos {psi:g}°)/sin {theta:g}° = "
+        f"φ̇ = (ω₁ sin ψ + ω₂ cos ψ)/sin θ = ({sig(w1, 6)} sin {sig(psi, 6)}° + {sig(w2, 6)} cos {sig(psi, 6)}°)/sin {sig(theta, 6)}° = "
         f"{number(answer)} rad/s" + (": the smaller θ, the faster, whatever ω does." if theta <= 5 else "."),
         unit="rad/s",
     )
@@ -482,10 +483,10 @@ def _quaternion_angle(rng: np.random.Generator) -> Question:
     q0 = pick(rng, (0.966, 0.866, 0.707, 0.5, 0.259))
     answer = math.degrees(2.0 * math.acos(q0))
     return Question(
-        f"An orientation's unit quaternion has q₀ = {q0:g}. Through what angle χ does it turn the body, about its "
+        f"An orientation's unit quaternion has q₀ = {sig(q0, 6)}. Through what angle χ does it turn the body, about its "
         "axis?",
         answer,
-        f"q₀ = cos(χ/2), so χ = 2 cos⁻¹ {q0:g} = {number(answer)}°. The other three components are sin(χ/2) times "
+        f"q₀ = cos(χ/2), so χ = 2 cos⁻¹ {sig(q0, 6)} = {number(answer)}°. The other three components are sin(χ/2) times "
         "the axis.",
         unit="°",
     )
@@ -496,10 +497,10 @@ def _cylinder_length(rng: np.random.Generator) -> Question:
     m = pick(rng, (0.5, 1.0, 2.0))
     length = math.sqrt(3.0) * r
     return Question(
-        f"A uniform {m:g} kg cylinder is {r:g} mm in radius. How long must it be for its moment across (about a "
+        f"A uniform {sig(m, 6)} kg cylinder is {sig(r, 6)} mm in radius. How long must it be for its moment across (about a "
         "diameter, through its centre) to equal its moment along its axis, in mm?",
         length,
-        f"Across, m(3r² + L²)/12; along, ½mr². Equal when 3r² + L² = 6r², L = √3 r = 1.732 × {r:g} = "
+        f"Across, m(3r² + L²)/12; along, ½mr². Equal when 3r² + L² = 6r², L = √3 r = 1.732 × {sig(r, 6)} = "
         f"{number(length)} mm. Then every axis through G is principal, as for a sphere: no axis is the middle one.",
         unit="mm",
         setup=dict(
@@ -516,12 +517,12 @@ def _momentum_angle(rng: np.random.Generator) -> Question:
     angle = math.degrees(math.atan2(L2, L1) - math.atan2(w2, w1))
     return Question(
         f"A box with principal moments I₁ = {number(I1 * 1e3, 3)} and I₂ = {number(I2 * 1e3, 3)} ×10⁻³ kg·m² turns "
-        f"at ω = ({w1:g}, {w2:g}, 0) rad/s in its principal axes. By how many degrees does its angular momentum L "
+        f"at ω = ({sig(w1, 6)}, {sig(w2, 6)}, 0) rad/s in its principal axes. By how many degrees does its angular momentum L "
         "lean away from ω?",
         abs(angle),
         f"L = Iω = (I₁ω₁, I₂ω₂, 0) = ({number(L1 * 1e3, 3)}, {number(L2 * 1e3, 3)}, 0) ×10⁻³: at "
         f"atan({number(L2 * 1e3, 3)}/{number(L1 * 1e3, 3)}) = {number(math.degrees(math.atan2(L2, L1)))}° from "
-        f"axis 1, against ω's atan({w2:g}/{w1:g}) = {number(math.degrees(math.atan2(w2, w1)))}°: "
+        f"axis 1, against ω's atan({sig(w2, 6)}/{sig(w1, 6)}) = {number(math.degrees(math.atan2(w2, w1)))}°: "
         f"{number(abs(angle))}° apart. Only about a principal axis are L and ω parallel.",
         unit="°",
     )
@@ -542,13 +543,13 @@ def _slow_flip_spec(rng: np.random.Generator) -> Question:
             Requirement("A box", t.shape.value, t.shape is Shape.CUBOID),
             Requirement("Spun about the middle axis", "yes" if t.spin_axis == 1 else "no", t.spin_axis == 1),
             kept("The rate", t.rate, rate, "rad/s"),
-            Requirement("No point mass", f"{t.point:g} kg", t.point == 0.0),
+            Requirement("No point mass", f"{sig(t.point, 6)} kg", t.point == 0.0),
             at_most("The nudge's growth rate λ", _flip_rate_of(t), most, "1/s"),
         )
 
     return Question(
-        f"The box spins at {rate:g} rad/s about its middle axis, and a nudge flips it. Change its sides (no point "
-        f"mass, the same rate) until a nudge grows no faster than λ = {most:g} /s.",
+        f"The box spins at {sig(rate, 6)} rad/s about its middle axis, and a nudge flips it. Change its sides (no point "
+        f"mass, the same rate) until a nudge grows no faster than λ = {sig(most, 6)} /s.",
         0,
         "λ = ω₀√((I₂ − I₁)(I₃ − I₂)/(I₁I₃)) is small when the middle moment nearly equals one of the others: make "
         "two sides nearly equal. 300 × 200 × 198 mm gives λ = 0.373 /s at 6 rad/s; with two sides equal the body is "
@@ -1020,7 +1021,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.kick_button.clicked.connect(self.kick)
         push.row(self.kick_button)
         play = Form("Playback")
-        self.playback = combo([f"{p:g}×" for p in PLAYBACK], TIPS["playback"])
+        self.playback = combo([f"{sig(p, 6)}×" for p in PLAYBACK], TIPS["playback"])
         self.playback.setCurrentIndex(REAL_TIME)
         play.add("Playback:", self.playback, TIPS["playback"])
         self.pause_button = RunButton()
@@ -1086,7 +1087,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         drift = Form("Step it three ways (torque-free)")
         self.drift_step = combo([name for name, _ in DRIFT_STEPS], TIPS["drift_step"])
         drift.add("Step:", self.drift_step, TIPS["drift_step"])
-        self.drift_span = combo([f"{v:g} s" for v in DRIFT_SPANS], TIPS["drift_span"])
+        self.drift_span = combo([f"{sig(v, 6)} s" for v in DRIFT_SPANS], TIPS["drift_span"])
         self.drift_span.setCurrentIndex(1)
         drift.add("For:", self.drift_span, TIPS["drift_span"])
         self.drift_button = QtWidgets.QPushButton("Step them")
@@ -1243,7 +1244,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         nudged = s.rate != 0.0 and s.nudge != 0.0
         self.view.nudged = s.spin_axis if nudged else None
         self._nudge_note = (
-            f" ω started {s.nudge:g}° off principal axis {s.spin_axis + 1} (dashed), toward axis "
+            f" ω started {sig(s.nudge, 6)}° off principal axis {s.spin_axis + 1} (dashed), toward axis "
             f"{(s.spin_axis + 1) % 3 + 1}: the Nudge."
             if nudged
             else ""
@@ -1293,7 +1294,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.step(dt * PLAYBACK[self.playback.currentIndex()], FRAME_BUDGET)
 
     def frame_context(self) -> str:
-        return f"{self.shape.currentText()}, {self.spin_axis.currentText()}, {self.rate.value():g} rad/s"
+        return f"{self.shape.currentText()}, {self.spin_axis.currentText()}, {sig(self.rate.value(), 6)} rad/s"
 
     def step(self, duration: float, budget: float | None = None) -> None:
         """Run the body on by `duration` s of simulated time and redraw.
@@ -1361,7 +1362,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         Ln, wn = float(np.linalg.norm(L)), float(np.linalg.norm(w))
         apart = math.degrees(math.acos(max(-1.0, min(1.0, float(w @ L) / (wn * Ln))))) if wn * Ln > 0 else 0.0
         self.readout.setText(
-            f"t = {self.sim.t:.2f} s: |ω| = {wn:.3g} rad/s, |L| = {Ln:.4g} N·m·s, energy ½ω·L = {energy:.4g} J; "
+            f"t = {self.sim.t:.2f} s: |ω| = {sig(wn)} rad/s, |L| = {sig(Ln, 4)} N·m·s, energy ½ω·L = {sig(energy, 4)} J; "
             f"ω is {apart:.1f}° from L."
             + self._nudge_note
             + (
@@ -1523,7 +1524,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         def rate(v: float) -> str:
             if not math.isfinite(v):
                 return "∞"
-            return "0" if abs(v) < 1e-9 else f"{v:.3g}".replace("-", "−")
+            return "0" if abs(v) < 1e-9 else f"{sig(v)}".replace("-", "−")
 
         out = [
             f"<p><b>At t = {t:.3f} s</b>, the body's orientation four ways.</p>",
@@ -1545,7 +1546,7 @@ class RigidBodyPage(QtWidgets.QWidget):
             + "</p>",
             f"<p>Their rates from ω: φ̇ = (ω₁ sin ψ + ω₂ cos ψ)/sin θ = {rate(rates[0])}, θ̇ = {rate(rates[1])}, "
             f"ψ̇ = ω₃ − φ̇ cos θ = {rate(rates[2])} rad/s; 1/sin θ = "
-            + ("∞" if sin < rotation.LOCK else f"{1 / sin:.3g}")
+            + ("∞" if sin < rotation.LOCK else f"{sig(1 / sin)}")
             + ". Near θ = 0 or 180° φ̇ and ψ̇ grow without bound, whatever ω is: a simulation stepping the angles "
             "fails there.</p>",
             "<p><b>3. Quaternion</b> q = (q₀, q₁, q₂, q₃) = (cos χ/2, sin χ/2 n̂): Euler's rotation theorem says "
@@ -1649,14 +1650,14 @@ class RigidBodyPage(QtWidgets.QWidget):
         euler = (
             f"The Euler angles met the lock at t = {d.t[failed[0]]:.2f} s (a rate of 1/sin θ = ∞) and stop there."
             if failed.size
-            else f"The Euler angles end {d.euler[-1]:.2g}° off; their 1/sin θ reached {np.max(d.lock):.3g}, and the "
+            else f"The Euler angles end {sig(d.euler[-1], 2)}° off; their 1/sin θ reached {sig(np.max(d.lock))}, and the "
             "nearer the lock, the worse they step."
         )
         self.drift_note.setText(
-            f"At a step of {h * 1000:.3g} ms, after {d.t[-1]:.3g} s: the matrix is {d.matrix[-1]:.2g}° off and "
-            f"‖BᵀB − 1‖ = {d.orthogonality[-1]:.2g}, no longer quite a rotation (left alone, it keeps growing); "
-            f"the quaternion is {d.quaternion[-1]:.2g}° off and exactly a rotation (made unit each step; left alone "
-            f"its length would be out by {d.length[-1]:.2g}). {euler} RK4's error falls as the step's fourth power: "
+            f"At a step of {sig(h * 1000)} ms, after {sig(d.t[-1])} s: the matrix is {sig(d.matrix[-1], 2)}° off and "
+            f"‖BᵀB − 1‖ = {sig(d.orthogonality[-1], 2)}, no longer quite a rotation (left alone, it keeps growing); "
+            f"the quaternion is {sig(d.quaternion[-1], 2)}° off and exactly a rotation (made unit each step; left alone "
+            f"its length would be out by {sig(d.length[-1], 2)}). {euler} RK4's error falls as the step's fourth power: "
             "try the finer step."
         )
 
@@ -1690,7 +1691,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.momentum_item.setData(t[k], np.maximum(l_err[k], floor))
         torque = bool(np.abs(tau).max() > 0)
         self.check_note.setText(
-            f"Energy: {e_err.max():.1e} of its size at most; momentum: {l_err.max():.1e}. "
+            f"Energy: {sig(e_err.max(), 2)} of its size at most; momentum: {sig(l_err.max(), 2)}. "
             + (
                 "With a torque the energy changes by its work ∫τ·ω dt and L by its impulse ∫τ dt; what's plotted "
                 "is what's left after those (the work's estimate is good to the step's square, so it sits above "

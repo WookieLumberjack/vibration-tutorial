@@ -21,6 +21,7 @@ from PySide6 import QtWidgets
 from ..core.continuum import PRESETS, SCHEMES, Continuum, Kind, Scheme
 from ..core.continuum_waves import PLAYBACK, WaveRun, Waves, end_reflection, step_coefficients
 from ..view_models.text import fmt
+from ..view_models.text import number as sig
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import LiveLabel, RunButton, plot
@@ -240,20 +241,20 @@ class WavesView(QtWidgets.QWidget):
     def _show_info(self) -> None:
         c, w = self.continuum, self.waves()
         h = c.length / self.elements
-        parts = [f"{w.width * c.length / h:.3g} elements across the pulse."]
+        parts = [f"{sig(w.width * c.length / h)} elements across the pulse."]
         if c.kind is not Kind.BEAM:
             z = math.sqrt(c.rigidity * c.mass_per_length)
-            parts.append(f"Z = {z:.4g} N·s/m.")
+            parts.append(f"Z = {sig(z, 4)} N·s/m.")
             if w.step_at is not None:
                 r, t = step_coefficients(w.step_ratio)
                 parts.append(
-                    f"The step reflects {r:+.3g} and passes {t:.3g} of a wave from the left "
-                    f"(energy {r * r:.3g} : {t * t * w.step_ratio:.3g})."
+                    f"The step reflects {sig(r, plus=True)} and passes {sig(t)} of a wave from the left "
+                    f"(energy {sig(r * r)} : {sig(t * t * w.step_ratio)})."
                 )
             if w.dashpot is not None:
                 parts.append(
-                    f"The dashpot ({w.dashpot:.3g} Z = {w.dashpot * z:.4g} N·s/m) reflects "
-                    f"{end_reflection(c.right, w.dashpot):+.3g} of a wave."
+                    f"The dashpot ({sig(w.dashpot)} Z = {sig(w.dashpot * z, 4)} N·s/m) reflects "
+                    f"{sig(end_reflection(c.right, w.dashpot), plus=True)} of a wave."
                 )
         self.wave_info.setText(" ".join(parts))
 
@@ -316,7 +317,7 @@ class WavesView(QtWidgets.QWidget):
         crossings = run.t / run.transit
         self.wave_status.setText(
             f"t = {crossings:.2f} crossings ({_fmt_time(run.t)}; one crossing {_fmt_time(run.transit)}). "
-            f"The mesh ({run.waves.scheme.value.lower()}) keeps <b>{100 * run.energy_left:.3g} %</b> of its "
+            f"The mesh ({run.waves.scheme.value.lower()}) keeps <b>{sig(100 * run.energy_left)} %</b> of its "
             "energy."
         )
 
