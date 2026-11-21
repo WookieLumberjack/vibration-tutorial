@@ -40,6 +40,7 @@ from ..core.rotor_builder import (
     uniform,
 )
 from ..core.rotor_builder_sweep import sweep
+from ..view_models.text import number as sig
 from .links import page_link
 
 TAB_WHIRL, TAB_CAMPBELL, TAB_UNBALANCE, TAB_STABILITY, TAB_ASSEMBLY, TAB_ELEMENT, TAB_THEORY = range(7)
@@ -377,12 +378,12 @@ def _section_inertia(rng: np.random.Generator) -> Question:
     outer = pick(rng, (40.0, 50.0, 60.0, 80.0, 100.0))
     inner = round(pick(rng, (0.0, 0.25, 0.5, 0.6)) * outer)
     s = Section(1.0, outer / 1000, inner / 1000)
-    bore = f" with a {inner:g} mm bore" if inner else ", solid"
+    bore = f" with a {sig(inner, 6)} mm bore" if inner else ", solid"
     return Question(
-        f"A shaft section {outer:g} mm across{bore}. What is its diametral second moment of area I, the one in "
+        f"A shaft section {sig(outer, 6)} mm across{bore}. What is its diametral second moment of area I, the one in "
         "its bending stiffness EI, in cm⁴?",
         s.inertia * 1e8,
-        f"I = π(D⁴ − d⁴)/64 = π({outer / 10:g}⁴ − {inner / 10:g}⁴)/64 = {number(s.inertia * 1e8, 4)} cm⁴ (D and d "
+        f"I = π(D⁴ − d⁴)/64 = π({sig(outer / 10, 6)}⁴ − {sig(inner / 10, 6)}⁴)/64 = {number(s.inertia * 1e8, 4)} cm⁴ (D and d "
         "in cm). Its polar moment, about the spin axis, is twice that.",
         unit="cm⁴",
     )
@@ -393,7 +394,7 @@ def _disc_inertia(rng: np.random.Generator) -> Question:
     thickness = pick(rng, (20.0, 30.0, 40.0, 50.0))
     d = solid_disc(0.0, STEEL, diameter / 1000, thickness / 1000)
     return Question(
-        f"A solid steel disc (7850 kg/m³) {diameter:g} mm across and {thickness:g} mm thick. What is "
+        f"A solid steel disc (7850 kg/m³) {sig(diameter, 6)} mm across and {sig(thickness, 6)} mm thick. What is "
         "its polar moment of inertia I<sub>p</sub>, about the spin axis?",
         d.ip,
         f"m = ρπR²t = {number(d.mass, 4)} kg, and I<sub>p</sub> = mR²/2 = {number(d.ip, 4)} kg·m². Its diametral "
@@ -407,7 +408,7 @@ def _spin_split(rng: np.random.Generator) -> Question:
     rpm = pick(rng, (3000.0, 6000.0, 10000.0))
     return Question(
         f"The disc a quarter of the way along the pinned shaft (Things to try: <i>A disc off centre</i>) spins "
-        f"at {rpm:g} rpm. At rest each mode is a pair at one frequency. What does the spin do to the pair?",
+        f"at {sig(rpm, 6)} rpm. At rest each mode is a pair at one frequency. What does the spin do to the pair?",
         0,
         "The disc tilts as the shaft bends, and a tilting, spinning disc has a gyroscopic moment I<sub>p</sub>Ω "
         "× its tilt rate: it stiffens the forward whirl (its frequency rises) and softens the backward one (it "
@@ -442,8 +443,8 @@ def _hollow(rng: np.random.Generator) -> Question:
     f0, _ = first_mode(solid, 0.0)
     f1, _ = first_mode(hollow, 0.0)
     return Question(
-        f"A steel shaft 1 m long and {outer:g} mm across, pinned at its ends (Euler–Bernoulli beams), has its "
-        f"first mode at {number(f0, 4)} Hz. Bore it out to {inner:g} mm (d/D = {ratio:g}). Where is its "
+        f"A steel shaft 1 m long and {sig(outer, 6)} mm across, pinned at its ends (Euler–Bernoulli beams), has its "
+        f"first mode at {number(f0, 4)} Hz. Bore it out to {sig(inner, 6)} mm (d/D = {sig(ratio, 6)}). Where is its "
         "first mode now?",
         f1,
         f"f ∝ √(EI/ρA), and I/A = (D² + d²)/16: so f rises by √(1 + (d/D)²) = {number(f1 / f0, 4)}, to "
@@ -463,13 +464,13 @@ def _nutation(rng: np.random.Generator) -> Question:
     f = float(m.hz[0])
     ratio = 1.5 * (diameter / 1000) ** 2 / length**2
     return Question(
-        f"A free steel shaft (no bearings), {length:g} m long and {diameter:g} mm across, spins at "
-        f"{rpm:g} rpm. Its slowest mode is a slow forward whirl of the whole shaft, wobbling as a rigid "
+        f"A free steel shaft (no bearings), {sig(length, 6)} m long and {sig(diameter, 6)} mm across, spins at "
+        f"{sig(rpm, 6)} rpm. Its slowest mode is a slow forward whirl of the whole shaft, wobbling as a rigid "
         "body: its nutation. At what frequency?",
         f,
         f"A free rigid body's nutation is at I<sub>p</sub>Ω/I<sub>d</sub>. For a slender shaft I<sub>p</sub> = mD²/8 "
         f"and I<sub>d</sub> = mL²/12, so I<sub>p</sub>/I<sub>d</sub> = 1.5D²/L² = {number(ratio, 3)}: at "
-        f"{rpm / 60:g} rev/s that is {number(ratio * rpm / 60, 3)} Hz (the model, which bends a little "
+        f"{sig(rpm / 60, 6)} rev/s that is {number(ratio * rpm / 60, 3)} Hz (the model, which bends a little "
         f"too: {number(f, 4)} Hz).",
         unit="Hz",
         tolerance=0.03,
@@ -499,7 +500,7 @@ def _spec_stiffen(rng: np.random.Generator) -> Question:
     design = dataclasses.replace(start, sections=uniform(1.0, 0.06, 4, 3))
     return Question(
         f"The pinned shaft with a 300 mm disc a quarter along has its first mode at "
-        f"{number(first_mode(start, rpm)[0], 4)} Hz at {rpm:g} rpm. Raise it to {target:g} Hz or more "
+        f"{number(first_mode(start, rpm)[0], 4)} Hz at {sig(rpm, 6)} rpm. Raise it to {sig(target, 6)} Hz or more "
         "without changing the shaft's length or the disc (thicken the shaft: Select a section, then its "
         "diameter on the left).",
         0,
@@ -516,7 +517,7 @@ def _log_dec(rng: np.random.Generator) -> Question:
     z = zeta / 100
     delta = TWO_PI * z / math.sqrt(1 - z * z)
     return Question(
-        f"A rotor's least damped mode has ζ = {zeta:g} %. What is its logarithmic decrement δ, the ln of the ratio "
+        f"A rotor's least damped mode has ζ = {sig(zeta, 6)} %. What is its logarithmic decrement δ, the ln of the ratio "
         "of one swing's peak to the next, which API 684 asks to be 0.1 or more?",
         delta,
         f"δ = 2πζ/√(1 − ζ²) = {number(delta, 4)}, about 2πζ while ζ is small. δ = 0.1 is ζ = 1.6 %.",
@@ -533,7 +534,7 @@ def _critical_speed(rng: np.random.Generator) -> Question:
     top = 1.5 * 60 * f0
     first = next(c for c in sweep(a, top, n_speeds=25).criticals if c.forward)
     return Question(
-        f"A {diameter:g} mm steel shaft 1 m long, pinned at its ends, carries a "
+        f"A {sig(diameter, 6)} mm steel shaft 1 m long, pinned at its ends, carries a "
         f"{DISC_LIBRARY[kind].name.lower()} at midspan. At rest its first pair of modes is at {number(f0, 4)} Hz. "
         "At what speed is its first forward critical speed, where unbalance drives it?",
         first.rpm,
@@ -622,7 +623,7 @@ def _swirl_brake_spec(rng: np.random.Generator) -> Question:
     design = dataclasses.replace(start, seals=(dataclasses.replace(seal, swirl=0.1),))
     return Question(
         f"The rotor with a seal (Things to try: <i>A seal's swirl</i>) grows unstable at 6845 rpm, its fluid "
-        f"swirling at half the shaft's speed. Keep it stable to {target:g} rpm without changing the seal's "
+        f"swirling at half the shaft's speed. Keep it stable to {sig(target, 6)} rpm without changing the seal's "
         "stiffness or damping (select the seal; the Stability tab shows the onset).",
         0,
         "The seal drives the forward whirl through k<sub>xy</sub> = λΩc: cut the swirl and the drive goes with it. "

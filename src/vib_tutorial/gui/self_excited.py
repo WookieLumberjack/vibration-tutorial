@@ -32,6 +32,7 @@ from ..core.self_excited import (
     galloping_branches,
     settled_amplitude,
 )
+from ..view_models.text import number as sig
 from . import coalesce, self_excited_figures, settle_plots
 from .drag import DragDot
 from .lesson import (
@@ -305,11 +306,11 @@ def _vdp_amplitude(rng: np.random.Generator) -> Question:
     eps, xr = pick(rng, (0.05, 0.1, 0.2, 0.3, 0.5)), pick(rng, (0.002, 0.005, 0.01, 0.02))
     a = float(VanDerPol(1.0, eps, xr).theory_amplitude(eps))
     return Question(
-        f"A van der Pol oscillator, ẍ + ω<sub>n</sub>²x = ω<sub>n</sub>(ε − x²/x<sub>r</sub>²)ẋ, with ε = {eps:g} and x<sub>r</sub> = "
-        f"{1000 * xr:g} mm. How large is its limit cycle's amplitude?",
+        f"A van der Pol oscillator, ẍ + ω<sub>n</sub>²x = ω<sub>n</sub>(ε − x²/x<sub>r</sub>²)ẋ, with ε = {sig(eps, 6)} and x<sub>r</sub> = "
+        f"{sig(1000 * xr, 6)} mm. How large is its limit cycle's amplitude?",
         1000 * a,
         f"Averaging: over a cycle of x = a cos ωt the energy in, ε⟨ẋ²⟩, balances the energy out, ⟨x²ẋ²⟩/x<sub>r</sub>², "
-        f"at a²/4 = εx<sub>r</sub>²: a = 2x<sub>r</sub>√ε = 2 × {1000 * xr:g} × √{eps:g} = {number(1000 * a)} mm.",
+        f"at a²/4 = εx<sub>r</sub>²: a = 2x<sub>r</sub>√ε = 2 × {sig(1000 * xr, 6)} × √{sig(eps, 6)} = {number(1000 * a)} mm.",
         unit="mm",
         setup=dict(kind=Kind.VDP, values={"vdp_eps": eps, "vdp_ref": xr, "vdp_periods": 120.0}),
     )
@@ -320,7 +321,7 @@ def _vdp_growth(rng: np.random.Generator) -> Question:
     w = TWO_PI * f
     t = 2 * math.log(10) / (eps * w)
     return Question(
-        f"A van der Pol oscillator at {f:g} Hz with ε = {eps:g} starts from a tiny displacement. How long does its "
+        f"A van der Pol oscillator at {sig(f, 6)} Hz with ε = {sig(eps, 6)} starts from a tiny displacement. How long does its "
         "amplitude take to grow ten times, while it's still small?",
         t,
         f"Near rest it is ẍ − εω<sub>n</sub>ẋ + ω<sub>n</sub>²x = 0: poles σ ± iω<sub>d</sub> with σ = εω<sub>n</sub>/2 = {number(eps * w / 2)} /s. The "
@@ -343,11 +344,11 @@ def _galloping_onset(rng: np.random.Generator) -> Question:
     side, mass, fn, zeta = _galloping(rng)
     m = Galloping(side, mass, fn, zeta)
     return Question(
-        f"A square section {1000 * side:g} mm across, {mass:g} kg/m, on a spring at {fn:g} Hz with ζ = {zeta:g}, in "
-        f"air (ρ = 1.225 kg/m³). Taking Parkinson's A<sub>1</sub> = {A1:g}, at what wind speed does it start to gallop?",
+        f"A square section {sig(1000 * side, 6)} mm across, {sig(mass, 6)} kg/m, on a spring at {sig(fn, 6)} Hz with ζ = {sig(zeta, 6)}, in "
+        f"air (ρ = 1.225 kg/m³). Taking Parkinson's A<sub>1</sub> = {sig(A1, 6)}, at what wind speed does it start to gallop?",
         m.onset,
-        f"The wind's damping, −½ρUDA<sub>1</sub>, beats the structure's 2mζω<sub>n</sub> where U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) = 4 × {mass:g} × "
-        f"{zeta:g} × {number(m.omega)}/(1.225 × {side:g} × {A1:g}) = {number(m.onset)} m/s.",
+        f"The wind's damping, −½ρUDA<sub>1</sub>, beats the structure's 2mζω<sub>n</sub> where U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) = 4 × {sig(mass, 6)} × "
+        f"{sig(zeta, 6)} × {number(m.omega)}/(1.225 × {sig(side, 6)} × {sig(A1, 6)}) = {number(m.onset)} m/s.",
         unit="m/s",
         setup=dict(kind=Kind.GALLOP, values={"g_side": side, "g_mass": mass, "g_fn": fn, "g_zeta": zeta}),
     )
@@ -359,11 +360,11 @@ def _galloping_damping(rng: np.random.Generator) -> Question:
     U = pick(rng, (10, 15, 20, 30))
     zeta = U * 1.225 * side * A1 / (4 * mass * w)
     return Question(
-        f"A square section {1000 * side:g} mm across, {mass:g} kg/m, on a spring at {fn:g} Hz, must not gallop below "
-        f"{U:g} m/s (ρ = 1.225 kg/m³, A<sub>1</sub> = {A1:g}). What damping ratio does it need at least?",
+        f"A square section {sig(1000 * side, 6)} mm across, {sig(mass, 6)} kg/m, on a spring at {sig(fn, 6)} Hz, must not gallop below "
+        f"{sig(U, 6)} m/s (ρ = 1.225 kg/m³, A<sub>1</sub> = {sig(A1, 6)}). What damping ratio does it need at least?",
         100 * zeta,
-        f"U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) ≥ {U:g} m/s, so ζ ≥ ρDA<sub>1</sub>U/(4mω<sub>n</sub>) = 1.225 × {side:g} × {A1:g} × {U:g}/(4 × "
-        f"{mass:g} × {number(w)}) = {number(100 * zeta)} %.",
+        f"U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) ≥ {sig(U, 6)} m/s, so ζ ≥ ρDA<sub>1</sub>U/(4mω<sub>n</sub>) = 1.225 × {sig(side, 6)} × {sig(A1, 6)} × {sig(U, 6)}/(4 × "
+        f"{sig(mass, 6)} × {number(w)}) = {number(100 * zeta)} %.",
         unit="%",
         setup=dict(kind=Kind.GALLOP, values={"g_side": side, "g_mass": mass, "g_fn": fn, "g_speed": float(U)}),
     )
@@ -374,10 +375,10 @@ def _lock_in(rng: np.random.Generator) -> Question:
     m = Viv(d, freq_hz=fn)
     U = m.lock_in_at * fn * d
     return Question(
-        f"A cylinder {1000 * d:g} mm in diameter on a spring at {fn:g} Hz (in water) stands in a current. Taking a "
+        f"A cylinder {sig(1000 * d, 6)} mm in diameter on a spring at {sig(fn, 6)} Hz (in water) stands in a current. Taking a "
         "Strouhal number of 0.2, at what current speed does the shedding frequency meet its natural frequency?",
         U,
-        f"Vortices shed at St U/D; that is f<sub>n</sub> at U = f<sub>n</sub>D/St = {fn:g} × {d:g}/0.2 = {number(U)} "
+        f"Vortices shed at St U/D; that is f<sub>n</sub> at U = f<sub>n</sub>D/St = {sig(fn, 6)} × {sig(d, 6)}/0.2 = {number(U)} "
         "m/s, a reduced velocity U/f<sub>n</sub>D of 5. Lock-in spreads over a band of speeds round it.",
         unit="m/s",
         setup=dict(kind=Kind.VIV, values={"v_d": d, "v_fn": fn, "v_reduced": 5.0}),
@@ -392,12 +393,12 @@ def _divergence(rng: np.random.Generator) -> Question:
     kt = inertia * (TWO_PI * pitch) ** 2
     U = m.divergence_speed()
     return Question(
-        f"A wing section of semichord b = {b:g} m, {m.mass:g} kg per metre of span, radius of gyration {m.radius:g} b, "
-        f"pitches at {pitch:g} Hz. Its lift, ½ρU² × 2b × 2π per radian (ρ = 1.225), acts {e:g} b ahead of the elastic "
+        f"A wing section of semichord b = {sig(b, 6)} m, {sig(m.mass, 6)} kg per metre of span, radius of gyration {sig(m.radius, 6)} b, "
+        f"pitches at {sig(pitch, 6)} Hz. Its lift, ½ρU² × 2b × 2π per radian (ρ = 1.225), acts {sig(e, 6)} b ahead of the elastic "
         "axis. At what speed does it diverge?",
         U,
         f"I = m(rb)² = {number(inertia)} kg·m, so k<sub>θ</sub> = I(2πf)² = {number(kt)} N·m/rad. The lift's moment "
-        f"about the axis, ½ρU² × 2b × 2π × {e:g}b per radian, uses it up at U = √(k<sub>θ</sub>/(2πρb × {e:g}b)) = "
+        f"about the axis, ½ρU² × 2b × 2π × {sig(e, 6)}b per radian, uses it up at U = √(k<sub>θ</sub>/(2πρb × {sig(e, 6)}b)) = "
         f"{number(U)} m/s.",
         unit="m/s",
         setup=dict(kind=Kind.FLUTTER, values={"f_pitch": pitch, "f_e": e}),
@@ -533,13 +534,13 @@ def _scruton_spec(rng: np.random.Generator) -> Question:
 
     need = wind * 1.225 * side * A1 / (4 * TWO_PI * fn)
     return Question(
-        f"A square section {1000 * side:g} mm across on a spring at {fn:g} Hz gallops from {number(start.onset)} m/s at "
-        f"{m0:g} kg/m with ζ = {z0:g}. It must not gallop below {number(wind, 2)} m/s. Choose its mass, no more than "
+        f"A square section {sig(1000 * side, 6)} mm across on a spring at {sig(fn, 6)} Hz gallops from {number(start.onset)} m/s at "
+        f"{sig(m0, 6)} kg/m with ζ = {sig(z0, 6)}. It must not gallop below {number(wind, 2)} m/s. Choose its mass, no more than "
         f"{number(heaviest, 2)} kg/m, and its damping, ζ no more than {number(most, 2)}.",
         0,
-        f"U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>), so it needs mζ ≥ ρDA<sub>1</sub>U/(4ω<sub>n</sub>) = {number(need)} kg/m, about {times:g} times "
+        f"U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>), so it needs mζ ≥ ρDA<sub>1</sub>U/(4ω<sub>n</sub>) = {number(need)} kg/m, about {sig(times, 6)} times "
         f"what it has: more than either limit allows alone ({number(heaviest * z0)} or {number(m0 * most)}), so "
-        f"both have to rise; {design['g_mass']:g} kg/m with ζ = {design['g_zeta']:g} gives "
+        f"both have to rise; {sig(design['g_mass'], 6)} kg/m with ζ = {sig(design['g_zeta'], 6)} gives "
         f"{number(design['g_mass'] * design['g_zeta'])}.",
         setup=dict(kind=Kind.GALLOP, values={"g_side": side, "g_fn": fn, "g_mass": m0, "g_zeta": z0, "g_speed": wind}),
         goal=goal,
@@ -861,7 +862,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self.drive.blockSignals(True)
         self.drive.setValue(round(DRIVE_STEPS * min(max((value - lo) / (hi - lo), 0.0), 1.0)))
         self.drive.blockSignals(False)
-        self.drive_value.setText(f"{value:.3g}")
+        self.drive_value.setText(f"{sig(value)}")
         values = np.linspace(lo, hi, 61)
         locus = [p for x in values for p in self._poles(float(x))]
         re = np.array([p.real for p in locus] or [0.0])
@@ -900,7 +901,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
     def _on_drive(self, step: int) -> None:
         """The slider moved: the poles follow at once; the model is run again when it's let go (or by a key)."""
         value = self._drive_value()
-        self.drive_value.setText(f"{value:.3g}")
+        self.drive_value.setText(f"{sig(value)}")
         self._show_poles(value)
         if not self.drive.isSliderDown():
             self._commit_drive()
@@ -1017,16 +1018,16 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self._trace = (t, x)
         amp = float(settled_amplitude(x))
         self.info.setText(
-            f"Damping at rest ζ = {-m.eps / 2:.3g}; averaging's limit cycle: "
-            f"{float(m.theory_amplitude(m.eps)) * 1e3:.3g} mm."
+            f"Damping at rest ζ = {sig(-m.eps / 2)}; averaging's limit cycle: "
+            f"{sig(float(m.theory_amplitude(m.eps)) * 1e3)} mm."
         )
         period = 1.0 / float(dominant_hz(x, t[1] - t[0])) if amp > 1e-9 else float("nan")
         self.readout.setText(
-            f"Settled amplitude {amp * 1e3:.3g} mm (2x<sub>r</sub>√ε = "
-            f"{float(m.theory_amplitude(m.eps)) * 1e3:.3g} mm); period {period:.3g} s against "
-            f"{1 / m.freq_hz:.3g} s at small ε."
+            f"Settled amplitude {sig(amp * 1e3)} mm (2x<sub>r</sub>√ε = "
+            f"{sig(float(m.theory_amplitude(m.eps)) * 1e3)} mm); period {sig(period)} s against "
+            f"{sig(1 / m.freq_hz)} s at small ε."
             if m.eps > 0
-            else f"ε ≤ 0: the start dies away (amplitude at the end {abs(x[-1]) * 1e3:.3g} mm)."
+            else f"ε ≤ 0: the start dies away (amplitude at the end {sig(abs(x[-1]) * 1e3)} mm)."
         )
 
     def _draw_galloping(self) -> None:
@@ -1036,11 +1037,11 @@ class SelfExcitedPage(QtWidgets.QWidget):
         self._trace = (t, y / m.side)
         amp = float(settled_amplitude(y))
         self.info.setText(
-            f"Onset U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) = {m.onset:.3g} m/s; U/U<sub>g</sub> = {m.speed / m.onset:.3g}."
+            f"Onset U<sub>g</sub> = 4mζω<sub>n</sub>/(ρDA<sub>1</sub>) = {sig(m.onset)} m/s; U/U<sub>g</sub> = {sig(m.speed / m.onset)}."
         )
         self.readout.setText(
-            f"At {m.speed:.3g} m/s from {m.start * 1e3:.3g} mm: the last quarter swings "
-            f"{amp / m.side:.3g} D ({amp * 1e3:.3g} mm)."
+            f"At {sig(m.speed)} m/s from {sig(m.start * 1e3)} mm: the last quarter swings "
+            f"{sig(amp / m.side)} D ({sig(amp * 1e3)} mm)."
         )
 
     def _draw_viv(self) -> None:
@@ -1057,13 +1058,13 @@ class SelfExcitedPage(QtWidgets.QWidget):
         amp = float(settled_amplitude(y)) / m.diameter
         f = float(dominant_hz(y, t[1] - t[0])) / m.freq_hz
         self.info.setText(
-            f"Mass ratio m* = {m.mass_ratio:.3g}; shedding alone at St U/D = "
-            f"{m.strouhal * m.reduced:.3g} f<sub>n</sub>; lock-in expected near U<sub>r</sub> = "
-            f"{m.lock_in_at:.3g}."
+            f"Mass ratio m* = {sig(m.mass_ratio)}; shedding alone at St U/D = "
+            f"{sig(m.strouhal * m.reduced)} f<sub>n</sub>; lock-in expected near U<sub>r</sub> = "
+            f"{sig(m.lock_in_at)}."
         )
         self.readout.setText(
-            f"U<sub>r</sub> = {m.reduced:.3g}: settled amplitude {amp:.3g} D at {f:.3g} "
-            f"f<sub>n</sub> (the shedding alone would be at {m.strouhal * m.reduced:.3g} "
+            f"U<sub>r</sub> = {sig(m.reduced)}: settled amplitude {sig(amp)} D at {sig(f)} "
+            f"f<sub>n</sub> (the shedding alone would be at {sig(m.strouhal * m.reduced)} "
             "f<sub>n</sub>)."
         )
 
@@ -1095,13 +1096,13 @@ class SelfExcitedPage(QtWidgets.QWidget):
         lam = m.poles(self.v("f_speed"))
         up = lam[lam.imag > 0]
         self.info.setText(
-            f"Flutter at {Uf:.3g} m/s; the pitch spring alone diverges at {Ud:.3g} m/s."
+            f"Flutter at {sig(Uf)} m/s; the pitch spring alone diverges at {sig(Ud)} m/s."
             if np.isfinite(Uf)
-            else f"No flutter: the section only diverges, at {Ud:.3g} m/s, where the pitch spring gives out."
+            else f"No flutter: the section only diverges, at {sig(Ud)} m/s, where the pitch spring gives out."
         )
         self.readout.setText(
-            f"At {self.v('f_speed'):.3g} m/s: "
-            + ", ".join(f"{abs(p) / (2 * np.pi):.3g} Hz with ζ = {-p.real / abs(p):.3g}" for p in sorted(up, key=abs))
+            f"At {sig(self.v('f_speed'))} m/s: "
+            + ", ".join(f"{sig(abs(p) / (2 * np.pi))} Hz with ζ = {sig(-p.real / abs(p))}" for p in sorted(up, key=abs))
             + "."
         )
 
@@ -1119,7 +1120,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
             if lam.imag <= 0:
                 t = np.array([0.0, 1.0])
                 y = th = np.zeros(2)
-                self.motion_note.setText(f"At {speed:.3g} m/s neither mode oscillates.")
+                self.motion_note.setText(f"At {sig(speed)} m/s neither mode oscillates.")
             else:
                 w = lam.imag
                 t = np.linspace(0.0, FLUTTER_CYCLES * TWO_PI / w, FLUTTER_CYCLES * 48 + 1)
@@ -1130,12 +1131,12 @@ class SelfExcitedPage(QtWidgets.QWidget):
                 lead = math.degrees(math.atan2((-h).imag, (-h).real))
                 per = math.exp(TWO_PI * lam.real / w)
                 self.motion_note.setText(
-                    f"The least stable mode at {speed:.3g} m/s, {w / TWO_PI:.3g} Hz: the plunge (up) "
-                    f"{'leads' if lead >= 0 else 'lags'} the pitch (nose up) by {abs(lead):.3g}°, and the motion "
+                    f"The least stable mode at {sig(speed)} m/s, {sig(w / TWO_PI)} Hz: the plunge (up) "
+                    f"{'leads' if lead >= 0 else 'lags'} the pitch (nose up) by {sig(abs(lead))}°, and the motion "
                     + (
-                        f"grows {per:.3g}× a cycle (drawn until it reaches {FLUTTER_CAP:g} b)."
+                        f"grows {sig(per)}× a cycle (drawn until it reaches {sig(FLUTTER_CAP, 6)} b)."
                         if per > 1
-                        else f"decays to {per:.3g} of itself each cycle."
+                        else f"decays to {sig(per)} of itself each cycle."
                     )
                 )
             grows = bool(lam.real > 0)
@@ -1150,7 +1151,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
                 g = self.galloping()
                 grows = g.speed > g.onset
                 self.motion_note.setText(
-                    f"The square to scale, in a {g.speed:.3g} m/s wind from the left (the onset is {g.onset:.3g} m/s)."
+                    f"The square to scale, in a {sig(g.speed)} m/s wind from the left (the onset is {sig(g.onset)} m/s)."
                 )
             else:
                 grows = float(settled_amplitude(y)) > 0.05
@@ -1226,7 +1227,7 @@ class SelfExcitedPage(QtWidgets.QWidget):
             self.sweep_line.setValue(gallop.speed)
             self.sweep_note.setText(
                 f"Averaging (Parkinson's polynomial). Rest is stable below U<sub>g</sub> = "
-                f"{gallop.onset:.3g} m/s; above it the amplitude grows with U, on two stable branches "
+                f"{sig(gallop.onset)} m/s; above it the amplitude grows with U, on two stable branches "
                 "where they overlap."
             )
         elif self.current is Kind.VIV:

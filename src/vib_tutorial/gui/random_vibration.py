@@ -52,6 +52,7 @@ from ..core.random_vibration import (
     suggested_duration,
     welch,
 )
+from ..view_models.text import number as sig
 from ..view_models.text import plain
 from . import maths, random_figures, weak
 from .axes import log_axes
@@ -278,9 +279,9 @@ def _grms(rng: np.random.Generator) -> Question:
     lo, hi = pick(rng, (10, 20, 50)), pick(rng, (500, 1000, 2000))
     g = math.sqrt(level * (hi - lo))
     return Question(
-        f"A random shaker test is flat at {level:g} g²/Hz from {lo:g} to {hi:g} Hz. What is its RMS acceleration?",
+        f"A random shaker test is flat at {sig(level, 6)} g²/Hz from {sig(lo, 6)} to {sig(hi, 6)} Hz. What is its RMS acceleration?",
         g,
-        f"The mean square is the area under the PSD: {level:g} × ({hi:g} − {lo:g}) = {number(g * g)} g², so the RMS is "
+        f"The mean square is the area under the PSD: {sig(level, 6)} × ({sig(hi, 6)} − {sig(lo, 6)}) = {number(g * g)} g², so the RMS is "
         f"√{number(g * g)} = {number(g)} g (Grms).",
         unit="g",
         setup=dict(level=level, f_lo=float(lo), f_hi=float(hi)),
@@ -291,10 +292,10 @@ def _miles_base(rng: np.random.Generator) -> Question:
     fn, Q, level = pick(rng, (5, 10, 20, 50)), pick(rng, (5, 10, 20, 25)), pick(rng, (0.001, 0.01, 0.04))
     a = math.sqrt(0.5 * math.pi * fn * Q * level)
     return Question(
-        f"A single mass on a spring, its natural frequency {fn:g} Hz and Q = {Q:g}, sits on a base shaken flat at "
-        f"{level:g} g²/Hz across its resonance. What RMS acceleration does Miles' equation give it?",
+        f"A single mass on a spring, its natural frequency {sig(fn, 6)} Hz and Q = {sig(Q, 6)}, sits on a base shaken flat at "
+        f"{sig(level, 6)} g²/Hz across its resonance. What RMS acceleration does Miles' equation give it?",
         a,
-        f"a<sub>RMS</sub> = √((π/2) f<sub>n</sub> Q G) = √(1.571 × {fn:g} × {Q:g} × {level:g}) = {number(a)} g.",
+        f"a<sub>RMS</sub> = √((π/2) f<sub>n</sub> Q G) = √(1.571 × {sig(fn, 6)} × {sig(Q, 6)} × {sig(level, 6)}) = {number(a)} g.",
         unit="g",
         setup=dict(**_one_mass(fn, 0.5 / Q), level=level, f_hi=float(_nice(3 * fn)), tab=TAB_MILES),
     )
@@ -307,7 +308,7 @@ def _miles_force(rng: np.random.Generator) -> Question:
     x = math.sqrt(math.pi * fn * level / (4 * zeta)) / k
     c = 2 * zeta * math.sqrt(k * m)
     return Question(
-        f"A {m:g} kg mass on a {k:g} N/m spring, ζ = {zeta:g}, takes a random force flat at {level:g} N²/Hz across its "
+        f"A {sig(m, 6)} kg mass on a {sig(k, 6)} N/m spring, ζ = {sig(zeta, 6)}, takes a random force flat at {sig(level, 6)} N²/Hz across its "
         "resonance. What is the RMS of its displacement, by Miles' equation?",
         1000 * x,
         f"f<sub>n</sub> = √(k/m)/2π = {number(fn)} Hz. The resonant part of the force's mean square is "
@@ -332,10 +333,10 @@ def _crossings(rng: np.random.Generator) -> Question:
     nu0, k = pick(rng, (5, 10, 20, 50)), pick(rng, (2, 3, 4))
     rate = 60 * nu0 * math.exp(-0.5 * k * k)
     return Question(
-        f"A Gaussian response crosses zero upwards {nu0:g} times a second. How many times a minute, on average, does it "
-        f"cross {k:g}σ upwards?",
+        f"A Gaussian response crosses zero upwards {sig(nu0, 6)} times a second. How many times a minute, on average, does it "
+        f"cross {sig(k, 6)}σ upwards?",
         rate,
-        f"Rice: ν<sub>a</sub> = ν₀ e<sup>−a²/2σ²</sup> = {nu0:g} × e<sup>−{k * k / 2:g}</sup> = "
+        f"Rice: ν<sub>a</sub> = ν₀ e<sup>−a²/2σ²</sup> = {sig(nu0, 6)} × e<sup>−{sig(k * k / 2, 6)}</sup> = "
         f"{number(rate / 60)} a second, {number(rate)} a minute.",
         unit="per minute",
         tolerance=0.02,
@@ -348,10 +349,10 @@ def _davenport(rng: np.random.Generator) -> Question:
     r = math.sqrt(2 * math.log(cycles))
     factor = r + 0.5772 / r
     return Question(
-        f"A narrow-band response at {fn:g} Hz runs for {minutes:g} min. By Davenport, what is its expected largest "
+        f"A narrow-band response at {sig(fn, 6)} Hz runs for {sig(minutes, 6)} min. By Davenport, what is its expected largest "
         "peak, in multiples of σ?",
         factor,
-        f"ν₀T = {fn:g} × {60 * minutes:g} s = {number(cycles)} cycles; √(2 ln ν₀T) = {number(r)}, and the expected "
+        f"ν₀T = {sig(fn, 6)} × {sig(60 * minutes, 6)} s = {number(cycles)} cycles; √(2 ln ν₀T) = {number(r)}, and the expected "
         f"largest peak is that + 0.577/{number(r)} = {number(factor)}σ: well past 3σ.",
         unit="σ",
         tolerance=0.01,
@@ -364,7 +365,7 @@ def _lines(rng: np.random.Generator) -> Question:
     width = 2 * zeta * fn
     lines = width * block / fs
     return Question(
-        f"A mode at {fn:g} Hz with ζ = {zeta:g}, estimated by Welch's method from a record sampled at {fs:g} Hz in "
+        f"A mode at {sig(fn, 6)} Hz with ζ = {sig(zeta, 6)}, estimated by Welch's method from a record sampled at {sig(fs, 6)} Hz in "
         f"blocks of {block}. How many lines fall across its half-power width?",
         lines,
         f"The lines are f<sub>s</sub>/block = {number(fs / block)} Hz apart; the half-power width is 2ζf<sub>n</sub> "
@@ -498,10 +499,10 @@ def _welch_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A single mass, f<sub>n</sub> = {fn:g} Hz and ζ = {zeta:g}, on a base shaken flat to {hi:g} Hz (the record "
+        f"A single mass, f<sub>n</sub> = {sig(fn, 6)} Hz and ζ = {sig(zeta, 6)}, on a base shaken flat to {sig(hi, 6)} Hz (the record "
         f"sampled at {number(fs)} Hz). Choose Welch's block and the record's length so that four or more lines fall "
         f"across the mode's half-power width and the estimate averages at least {n} blocks, in no more than "
-        f"{longest:g} s.",
+        f"{sig(longest, 6)} s.",
         0,
         f"The half-power width is 2ζf<sub>n</sub> = {number(2 * zeta * fn)} Hz, so the lines must be "
         f"{number(zeta * fn / 2)} Hz apart or closer: a block of {number(4 * fs / (2 * zeta * fn))} samples or more, "
@@ -1076,19 +1077,19 @@ class RandomVibrationPage(QtWidgets.QWidget):
         scatter = rms_scatter(pred, rec.duration)
         self.readout.setText(
             f"<b>RMS</b>: exact {four(pred.rms, unit)}; the record {four(sim, unit)} "
-            f"({100 * (sim / pred.rms - 1):+.2g} %, expected scatter ±{100 * scatter:.2g} %); Miles "
-            f"{four(pred.miles_rms, unit)} ({100 * (pred.miles_rms / pred.rms - 1):+.2g} %)."
+            f"({sig(100 * (sim / pred.rms - 1), 2, plus=True)} %, expected scatter ±{sig(100 * scatter, 2)} %); Miles "
+            f"{four(pred.miles_rms, unit)} ({sig(100 * (pred.miles_rms / pred.rms - 1), 2, plus=True)} %)."
             if pred.rms > 0
             else "Nothing in the band reaches this response."
         )
         unit_in = "g" if inp.kind is Input.BASE else "N"
         self.input_info.setText(
-            f"The input's RMS: {inp.rms:.4g} {unit_in}" + (" on each mass." if inp.kind is Input.FORCE_ALL else ".")
+            f"The input's RMS: {sig(inp.rms, 4)} {unit_in}" + (" on each mass." if inp.kind is Input.FORCE_ALL else ".")
         )
         blocks = max(1, (y.size - block) // (block // 2) + 1) if y.size >= block else 1
         self.record_info.setText(
-            f"{y.size:,} samples at {rec.fs:.4g} Hz; {blocks} blocks averaged (half overlapping), lines "
-            f"{rec.fs / block:.3g} Hz apart."
+            f"{y.size:,} samples at {sig(rec.fs, 4)} Hz; {blocks} blocks averaged (half overlapping), lines "
+            f"{sig(rec.fs / block)} Hz apart."
         )
         self._fill_miles(pred, unit)
         self._draw_record(y, rec.fs, pred.rms, unit)
@@ -1149,12 +1150,12 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
         rows = [
             row("σ", four(r.sigma, unit), four(st.sigma, unit)),
-            row("Upward zero crossings", f"{r.nu0:.4g} /s", f"{st.nu0:.4g} /s"),
-            row("Peaks", f"{r.nu_peak:.4g} /s", f"{st.nu_peak:.4g} /s"),
+            row("Upward zero crossings", f"{sig(r.nu0, 4)} /s", f"{sig(st.nu0, 4)} /s"),
+            row("Peaks", f"{sig(r.nu_peak, 4)} /s", f"{sig(st.nu_peak, 4)} /s"),
             row("Irregularity α", f"{r.alpha:.3f}", f"{st.nu0 / st.nu_peak:.3f}" if st.nu_peak else "–"),
         ]
         rows += [
-            row(f"Beyond ±{k:g}σ", f"{100 * gaussian_exceedance(k):.3g} %", f"{100 * e:.3g} %")
+            row(f"Beyond ±{sig(k, 6)}σ", f"{sig(100 * gaussian_exceedance(k))} %", f"{sig(100 * e)} %")
             for k, e in zip(LEVELS, st.exceedance)
         ]
         rows += [row("Skewness", "0", f"{st.skewness:+.3f}"), row("Kurtosis", "3", f"{st.kurtosis:.3f}")]
@@ -1174,16 +1175,14 @@ class RandomVibrationPage(QtWidgets.QWidget):
         y = rec.output(self.output())
         maxima = segment_maxima(y, rec.fs, t)
         text = (
-            f"Over {t:g} s ({r.nu0 * t:.3g} cycles), the expected largest peak: Davenport {dav:.3g}σ = "
-            f"{four(dav * r.sigma, unit)}; Vanmarcke (δ = {r.delta:.2f}) {van:.3g}σ = {four(van * r.sigma, unit)}."
+            f"Over {sig(t, 6)} s ({sig(r.nu0 * t)} cycles), the expected largest peak: Davenport {sig(dav)}σ = "
+            f"{four(dav * r.sigma, unit)}; Vanmarcke (δ = {r.delta:.2f}) {sig(van)}σ = {four(van * r.sigma, unit)}."
         )
         if maxima.size >= 4:
             mean = float(np.mean(maxima)) / r.sigma
-            text += (
-                f" The record's {maxima.size} stretches of {t:g} s: their largest values average <b>{mean:.3g}σ</b>."
-            )
+            text += f" The record's {maxima.size} stretches of {sig(t, 6)} s: their largest values average <b>{sig(mean)}σ</b>."
         else:
-            text += f" (The record is too short for four stretches of {t:g} s to compare.)"
+            text += f" (The record is too short for four stretches of {sig(t, 6)} s to compare.)"
         self.largest_note.setText(text)
 
     def _fill_miles(self, pred: Prediction, unit: str) -> None:
@@ -1198,21 +1197,21 @@ class RandomVibrationPage(QtWidgets.QWidget):
             for c, text in enumerate(
                 (
                     f"{mode}",
-                    f"{fn:.4g}",
-                    f"{zeta:.3g}",
-                    f"{1 / (2 * zeta):.3g}",
-                    f"{sigma:.4g} ({100 * sigma**2 / total**2:.0f} %)" if total > 0 else "0",
+                    f"{sig(fn, 4)}",
+                    f"{sig(zeta)}",
+                    f"{sig(1 / (2 * zeta))}",
+                    f"{sig(sigma, 4)} ({100 * sigma**2 / total**2:.0f} %)" if total > 0 else "0",
                 )
             ):
                 item = QtWidgets.QTableWidgetItem(text)
                 item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
                 t.setItem(r, c, item)
-        item = QtWidgets.QTableWidgetItem(f"SRSS {total:.4g}")
+        item = QtWidgets.QTableWidgetItem(f"SRSS {sig(total, 4)}")
         item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
         t.setItem(len(rows), 4, item)
         t.resizeColumnsToContents()
         self.miles_note.setText(
-            f"Exact RMS {four(pred.rms, unit)}: Miles' estimate is {100 * (total / pred.rms - 1):+.2g} % off."
+            f"Exact RMS {four(pred.rms, unit)}: Miles' estimate is {sig(100 * (total / pred.rms - 1), 2, plus=True)} % off."
             if pred.rms > 0
             else ""
         )
@@ -1232,7 +1231,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         p.setXRange(0.0, n / fs, padding=0.0)
         p.setYRange(-4.0 * sigma, 4.0 * sigma, padding=0.02)
         self.record_note.setText(
-            f"The first {n / fs:.3g} s ({SHOWN_PERIODS} periods of mode 1); dashed ±σ, dotted ±3σ, σ the exact RMS."
+            f"The first {sig(n / fs)} s ({SHOWN_PERIODS} periods of mode 1); dashed ±σ, dotted ±3σ, σ the exact RMS."
         )
 
 

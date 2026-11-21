@@ -29,6 +29,7 @@ from ..core import (
     transfer,
 )
 from ..core.measurement import SINE_AMPLITUDE
+from ..view_models.text import number as sig
 from .axes import log_axes
 from .style import colors
 from .theming import add_legend
@@ -131,7 +132,7 @@ class SignalView(pg.GraphicsLayoutWidget):
                 curve.setData([], [])
             else:
                 curve.setData(est.t, window * float(np.abs(signal).max() or 1.0))
-        what = (f"{est.freqs[-1]:.3g} Hz" if stepped else f"Block {est.count}") + (
+        what = (f"{sig(est.freqs[-1])} Hz" if stepped else f"Block {est.count}") + (
             " (recording…)" if shown is not None else ""
         )
         self.force.setTitle(
@@ -351,7 +352,7 @@ class FrfView(pg.GraphicsLayoutWidget):
             described = from_receptance(fd, h, response)
             pen = pg.mkPen(colors.strong, width=1.5, style=QtCore.Qt.PenStyle.DashDotLine)
             self.mag.plot(
-                fd, np.abs(described), pen=pen, connect="finite", name=f"Describing function at {amplitude:.3g} N"
+                fd, np.abs(described), pen=pen, connect="finite", name=f"Describing function at {sig(amplitude)} N"
             )
             self.phase.plot(fd, phase_deg(described), pen=pen, connect="finite")
 

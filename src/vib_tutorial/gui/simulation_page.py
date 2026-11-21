@@ -37,6 +37,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
+from ..view_models.text import number as sig
 from . import theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
@@ -591,7 +592,7 @@ class SimulationPage(QtWidgets.QWidget):
             )
         notes.append("<a href='#background'>Why?</a>")
         if self.method is Method.CLASSICAL and self.modal.overdamped_roots:
-            roots = ", ".join(f"{r:.3g}" for r in self.modal.overdamped_roots)
+            roots = ", ".join(f"{sig(r)}" for r in self.modal.overdamped_roots)
             notes.append(f"Non-oscillatory (overdamped) roots λ = {roots} 1/s.")
         return " ".join(notes)
 
@@ -838,7 +839,7 @@ class SimulationPage(QtWidgets.QWidget):
         if self.scrub.t is not None:
             self.controls.time_label.setText(f"{self.scrub.t:8.3f} s   (looking back; paused at {self.sim.t:.3f} s)")
         else:
-            self.controls.time_label.setText(f"{self.sim.t:8.3f} s   (step {self.sim.step_size() * 1e3:.3g} ms)")
+            self.controls.time_label.setText(f"{self.sim.t:8.3f} s   (step {sig(self.sim.step_size() * 1e3)} ms)")
         if steps and self._started is None:
             self._start()  # last, so that its steps run while this frame paints
 

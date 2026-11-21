@@ -21,6 +21,7 @@ from ..core.fluid_bearing import GRAVITY, JournalBearing, attitude, rigid_thresh
 from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
 from ..view_models.text import fmt
+from ..view_models.text import number as sig
 from . import accessible
 from .layouts import plot_height
 from .live_label import LiveLabel
@@ -311,7 +312,7 @@ class BearingPanel(QtWidgets.QWidget):
         self._draw_coefficients()
         ratio = b.length / b.diameter
         self.note.setText(
-            f"L<sub>b</sub>/D<sub>b</sub> = {ratio:.2g}: past {SHORT_LIMIT:g} short-bearing theory underrates the film's load capacity, "
+            f"L<sub>b</sub>/D<sub>b</sub> = {sig(ratio, 2)}: past {sig(SHORT_LIMIT, 6)} short-bearing theory underrates the film's load capacity, "
             "and a finite-length solution is needed."
             if ratio > SHORT_LIMIT
             else "Short-bearing (Ocvirk) theory, the film cavitating where its pressure would go below zero "
@@ -504,7 +505,7 @@ class BearingPanel(QtWidgets.QWidget):
         self.readout.setText(
             f"<p><b>At {self.rpm:,.0f} rpm</b>: Sommerfeld number "
             + (
-                f"S = {b.sommerfeld(omega):.3g} (S(L<sub>b</sub>/D<sub>b</sub>)² = {_short_sommerfeld(b, omega):.3g}), "
+                f"S = {sig(b.sommerfeld(omega))} (S(L<sub>b</sub>/D<sub>b</sub>)² = {sig(_short_sommerfeld(b, omega))}), "
                 if b.load > 0.0
                 else "S = ∞ (no load: a vertical rotor), "
             )
@@ -531,7 +532,7 @@ class BearingPanel(QtWidgets.QWidget):
             )
         return (
             f"<p>The rotor running on it, its shaft flexible, goes unstable at <b>{self.onset.omega * RPM:,.0f} "
-            f"rpm</b>, whirling at {self.onset.freq_hz:.3g} Hz ({self.onset.order:.2f}×): oil whip, near "
+            f"rpm</b>, whirling at {sig(self.onset.freq_hz)} Hz ({self.onset.order:.2f}×): oil whip, near "
             "twice its first critical speed (the <i>Stability</i> tab).</p>"
         )
 
@@ -539,7 +540,7 @@ class BearingPanel(QtWidgets.QWidget):
         mass = b.load / GRAVITY
         if self._threshold is None:
             return (
-                f"<p>A rigid rotor whose weight is the load ({mass:.3g} kg per bearing) stays stable "
+                f"<p>A rigid rotor whose weight is the load ({sig(mass)} kg per bearing) stays stable "
                 f"up to {max(self.top_rpm, THRESHOLD_TOP):,.0f} rpm.</p>"
             )
         s = b.state(self._threshold)
@@ -547,7 +548,7 @@ class BearingPanel(QtWidgets.QWidget):
         ratio = math.sqrt(max(nu2, 0.0)) / self._threshold
         where = " (red on the locus)" if self._threshold * RPM < self.top_rpm else ", past the page's speed range"
         return (
-            f"<p>A rigid rotor whose weight is the load ({mass:.3g} kg per bearing) whirls unstably "
+            f"<p>A rigid rotor whose weight is the load ({sig(mass)} kg per bearing) whirls unstably "
             f"above <b>{self._threshold * RPM:,.0f} rpm</b>{where}, at {ratio:.2f}× the "
             f"speed: oil whirl. Past ε ≈ 0.76 it is stable at any speed.</p>"
         )

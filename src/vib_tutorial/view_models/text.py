@@ -22,6 +22,7 @@ is a call to `fmt` with its prefixes.
 from __future__ import annotations
 
 import math
+from typing import SupportsFloat
 
 PREFIXES = (("G", 1e9), ("M", 1e6), ("k", 1e3), ("", 1.0), ("m", 1e-3), ("µ", 1e-6), ("n", 1e-9), ("p", 1e-12))
 _NAMES = [p for p, _ in PREFIXES]
@@ -32,8 +33,13 @@ POWER_FROM, POWER_BELOW = 9, -5  # a power of ten past 10⁹ and below 10⁻⁵
 _SUPERSCRIPT = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
 
 
-def number(value: float, digits: int = 3, zeros: bool = False) -> str:
-    """`value` to `digits` significant figures; trailing zeros dropped unless `zeros` (see the module's docstring)."""
+def number(value: SupportsFloat | None, digits: int = 3, zeros: bool = False, plus: bool = False) -> str:
+    """`value` to `digits` significant figures; trailing zeros dropped unless `zeros` (see the module's docstring).
+    A NumPy scalar is taken as its float; None (a value not worked out) prints as "–", as NaN does. `plus` signs
+    a positive value (+2.5 %: a change)."""
+    if plus and value is not None and float(value) > 0:
+        return "+" + number(value, digits, zeros)
+    value = math.nan if value is None else float(value)
     if value == 0 or not math.isfinite(value):
         return "0" if value == 0 else ("∞" if value > 0 else "−∞" if value < 0 else "–")
     shown = float(f"{value:.{digits}g}")

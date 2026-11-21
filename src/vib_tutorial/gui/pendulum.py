@@ -33,6 +33,7 @@ from ..core.pendulum import (
     swing,
 )
 from ..core.practice import Placement, Prediction, Problem, Question, Requirement, kept, number, pick, rounded
+from ..view_models.text import number as sig
 from . import coalesce, pendulum_figures, settle_plots
 from .lesson import (
     Dot,
@@ -240,7 +241,7 @@ def _simple_period(rng: np.random.Generator) -> Question:
     length = pick(rng, (0.25, 0.5, 1, 2, 5, 10))
     p = Pendulum(Kind.SIMPLE, length=length)
     return Question(
-        f"A small bob hangs on a {length:g} m string (g = 9.81 m/s²). What is its period for small swings?",
+        f"A small bob hangs on a {sig(length, 6)} m string (g = 9.81 m/s²). What is its period for small swings?",
         p.period0,
         f"Gravity is the spring: k<sub>θ</sub> = mgL, J = mL², so ω<sub>n</sub> = √(g/L) = "
         f"{number(p.omega0)} rad/s and T = 2π/ω<sub>n</sub> = {number(p.period0)} s, whatever the bob weighs.",
@@ -254,7 +255,7 @@ def _rod_period(rng: np.random.Generator) -> Question:
     d = rounded(pick(rng, (0.1, 0.2, 0.3, 0.4, 0.5)) * length)
     p = Pendulum(Kind.ROD, length=length, pivot=d)
     return Question(
-        f"A uniform rod {length:g} m long swings about a pivot {number(d)} m from its centre. What is its period "
+        f"A uniform rod {sig(length, 6)} m long swings about a pivot {number(d)} m from its centre. What is its period "
         "for small swings?",
         p.period0,
         f"J = m(L²/12 + d²) about the pivot (parallel axes) and k<sub>θ</sub> = mgd: T = 2π√((L²/12 + d²)/gd) = "
@@ -271,7 +272,7 @@ def _large_swing(rng: np.random.Generator) -> Question:
     longer = 100.0 * (period(p, math.radians(degrees)) / p.period0 - 1.0)
     a = math.radians(degrees)
     return Question(
-        f"A simple pendulum is let go from {degrees:g}° instead of a small angle. By what percentage is its period "
+        f"A simple pendulum is let go from {sig(degrees, 6)}° instead of a small angle. By what percentage is its period "
         "longer?",
         longer,
         f"Exactly, T = T<sub>0</sub>(2/π)K(sin²(A/2)), the energy integral: {number(longer)} % longer. The "
@@ -287,11 +288,11 @@ def _inverted_spring(rng: np.random.Generator) -> Question:
     length = pick(rng, (0.2, 0.5, 1))
     least = m * 9.81 * length
     return Question(
-        f"A {m:g} kg mass on a light arm {length:g} m long stands upright on a pivot, held up by a torsion spring. "
+        f"A {sig(m, 6)} kg mass on a light arm {sig(length, 6)} m long stands upright on a pivot, held up by a torsion spring. "
         "How stiff must the spring be for upright to be stable?",
         least,
         f"Leaning by θ, the weight pushes it over with mgL sin θ ≈ mgLθ, so the stiffness is k<sub>t</sub> − mgL: "
-        f"stable only if k<sub>t</sub> &gt; mgL = {m:g} × 9.81 × {length:g} = {number(least)} N·m/rad. A weaker "
+        f"stable only if k<sub>t</sub> &gt; mgL = {sig(m, 6)} × 9.81 × {sig(length, 6)} = {number(least)} N·m/rad. A weaker "
         "spring lets it fall to a leaning balance, as a column buckles.",
         unit="N·m/rad",
         setup=dict(kind=Kind.INVERTED, mass=m, length=length, spring=rounded(1.2 * least)),
@@ -304,7 +305,7 @@ def _disc_on_wire(rng: np.random.Generator) -> Question:
     k = pick(rng, (0.5, 1, 2, 5))
     p = Pendulum(Kind.TORSION, mass=m, length=r, spring=k)
     return Question(
-        f"A {m:g} kg disc of radius {r:g} m hangs on a wire of torsional stiffness {k:g} N·m/rad. At what frequency "
+        f"A {sig(m, 6)} kg disc of radius {sig(r, 6)} m hangs on a wire of torsional stiffness {sig(k, 6)} N·m/rad. At what frequency "
         "does it twist back and forth?",
         p.natural_hz,
         f"J = mr²/2 = {number(p.inertia)} kg·m², so ω<sub>n</sub> = √(k<sub>t</sub>/J) = {number(p.omega0)} rad/s "
@@ -318,7 +319,7 @@ def _end_pivot(rng: np.random.Generator) -> Question:
     length = pick(rng, (0.3, 0.6, 0.9, 1.2, 1.5))
     p = Pendulum(Kind.ROD, length=length, pivot=length / 2)
     return Question(
-        f"A uniform rod {length:g} m long swings about one end. How long a simple pendulum has the same period?",
+        f"A uniform rod {sig(length, 6)} m long swings about one end. How long a simple pendulum has the same period?",
         p.equivalent_length,
         f"L<sub>eq</sub> = J/md with J = m(L²/12 + L²/4) = mL²/3 and d = L/2: L<sub>eq</sub> = 2L/3 = "
         f"{number(p.equivalent_length)} m.",
@@ -412,7 +413,7 @@ def _pivot_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A uniform rod {length:g} m long is to be a clock's pendulum with a period of {number(target)} s. Where "
+        f"A uniform rod {sig(length, 6)} m long is to be a clock's pendulum with a period of {number(target)} s. Where "
         "along it should the pivot go?",
         0,
         f"T = 2π√((L²/12 + d²)/gd) is least at d = L/√12 = {number(length / math.sqrt(12))} m and longer either "
@@ -667,14 +668,14 @@ class PendulumPage(QtWidgets.QWidget):
         if p.stable:
             extra = f", L<sub>eq</sub> = {fmt(p.equivalent_length, 'm')}" if kind in (Kind.SIMPLE, Kind.ROD) else ""
             self.info.setText(
-                f"J = {p.inertia:.4g} kg·m², k<sub>θ</sub> = {p.stiffness:.4g} N·m/rad: "
-                f"f<sub>n</sub> = {p.natural_hz:.4g} Hz, T₀ = {p.period0:.4g} s{extra}."
+                f"J = {sig(p.inertia, 4)} kg·m², k<sub>θ</sub> = {sig(p.stiffness, 4)} N·m/rad: "
+                f"f<sub>n</sub> = {sig(p.natural_hz, 4)} Hz, T₀ = {sig(p.period0, 4)} s{extra}."
             )
         elif p.stiffness == 0:
-            self.info.setText(f"J = {p.inertia:.4g} kg·m², k<sub>θ</sub> = 0: no restoring moment.")
+            self.info.setText(f"J = {sig(p.inertia, 4)} kg·m², k<sub>θ</sub> = 0: no restoring moment.")
         else:
             self.info.setText(
-                f"J = {p.inertia:.4g} kg·m², k<sub>θ</sub> = {p.stiffness:.4g} N·m/rad: negative, "
+                f"J = {sig(p.inertia, 4)} kg·m², k<sub>θ</sub> = {sig(p.stiffness, 4)} N·m/rad: negative, "
                 "so it can't stay at θ = 0."
             )
         self.redraw()
@@ -788,27 +789,27 @@ class PendulumPage(QtWidgets.QWidget):
         if p.stable:
             T = period(p, a) if p.zeta == 0 else math.nan
             measured = measured_period(t, th)
-            parts = [f"Small-swing period T₀ = {p.period0:.4g} s."]
+            parts = [f"Small-swing period T₀ = {sig(p.period0, 4)} s."]
             if math.isfinite(T):
                 duff = duffing_period(p, a) / p.period0 - 1
                 guess = (
-                    f" (Duffing's estimate {100 * duff:+.3g} %)"
+                    f" (Duffing's estimate {sig(100 * duff, plus=True)} %)"
                     if math.isfinite(duff)
                     else " (Duffing's estimate has no answer this far out)"
                 )
                 parts.append(
-                    f"From {self.angle.value():.3g}° the exact period is {T:.4g} s, "
-                    f"{100 * (T / p.period0 - 1):+.3g} %{guess}."
+                    f"From {sig(self.angle.value())}° the exact period is {sig(T, 4)} s, "
+                    f"{sig(100 * (T / p.period0 - 1), plus=True)} %{guess}."
                 )
             elif math.isfinite(measured):
                 parts.append(
-                    f"The swing's zero crossings come {measured:.4g} s apart (damped, and the swing shrinking)."
+                    f"The swing's zero crossings come {sig(measured, 4)} s apart (damped, and the swing shrinking)."
                 )
             self.readout.setText(" ".join(parts))
         elif p.leaning():
             self.readout.setText(
                 f"Unstable upright: it falls, and with damping settles leaning at "
-                f"±{math.degrees(p.leaning()):.3g}° (k<sub>t</sub> θ = mgd sin θ). The linearized "
+                f"±{sig(math.degrees(p.leaning()))}° (k<sub>t</sub> θ = mgd sin θ). The linearized "
                 "model just runs away."
             )
         else:
@@ -852,7 +853,7 @@ class PendulumPage(QtWidgets.QWidget):
             )
         else:
             sense = "softens: larger swings are slower" if p.cubic < 0 else "hardens: larger swings are faster"
-            self.period_note.setText(f"It {sense}. At {self.angle.value():.3g}°: T/T₀ = {now:.4g}.")
+            self.period_note.setText(f"It {sense}. At {sig(self.angle.value())}°: T/T₀ = {sig(now, 4)}.")
 
     def _draw_phase(self) -> None:
         p, a = self.pendulum, self.theta0
@@ -918,7 +919,7 @@ class PendulumPage(QtWidgets.QWidget):
         self.pivot_plot.setYRange(0.9 * float(rod_period(L, best, g)), min(float(T.max()), 2.0 * Th), padding=0)
         lead = "" if p.kind is Kind.ROD else f"(A uniform rod {fmt(L, 'm')} long, whatever the kind set.) "
         self.pivot_note.setText(
-            f"{lead}Pivoted {fmt(here, 'm')} from the centre: T = {Th:.4g} s. The fastest, "
-            f"{float(rod_period(L, best, g)):.4g} s, is at L/√12 = {fmt(best, 'm')} (grey); "
+            f"{lead}Pivoted {fmt(here, 'm')} from the centre: T = {sig(Th, 4)} s. The fastest, "
+            f"{sig(float(rod_period(L, best, g)), 4)} s, is at L/√12 = {fmt(best, 'm')} (grey); "
             f"the same period again at k<sub>G</sub>²/d = {fmt(twin, 'm')} (square)."
         )

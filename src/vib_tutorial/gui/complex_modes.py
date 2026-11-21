@@ -39,6 +39,7 @@ from ..core.modal import TWO_PI, ModalResult, modal_analysis
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, number, pick, rounded
 from ..core.presets import tuned_mass_damper
+from ..view_models.text import number as sig
 from . import coalesce, complex_figures, maths, weak
 from .axes import log_axes
 from .drag import DragDot
@@ -245,7 +246,7 @@ def _mpc(rng: np.random.Generator) -> Question:
     psi = np.array([1.0, complex(re_, im)])
     mpc = complexity(psi).mpc
     return Question(
-        f"A mode shape of two entries, ψ = (1, {re_:g} + {im:g}i). What is its MPC?",
+        f"A mode shape of two entries, ψ = (1, {sig(re_, 6)} + {sig(im, 6)}i). What is its MPC?",
         mpc,
         f"s<sub>xx</sub> = Σ(Re ψ)² = {number(1 + re_**2)}, s<sub>yy</sub> = Σ(Im ψ)² = {number(im**2)}, "
         f"s<sub>xy</sub> = Σ Re ψ Im ψ = {number(re_ * im)}; MPC = [(s<sub>xx</sub> − s<sub>yy</sub>)² + "
@@ -266,16 +267,16 @@ def _approx_zeta(rng: np.random.Generator) -> Question:
     stretch = phi[e - 1] - lower
     zeta = c * stretch**2 / (2 * w)
     ends = (
-        f"φ<sub>{e - 1}</sub> = {lower:g} and φ<sub>{e}</sub> = {phi[e - 1]:g}"
+        f"φ<sub>{e - 1}</sub> = {sig(lower, 6)} and φ<sub>{e}</sub> = {sig(phi[e - 1], 6)}"
         if e > 1
-        else f"φ<sub>1</sub> = {phi[0]:g} (the ground still)"
+        else f"φ<sub>1</sub> = {sig(phi[0], 6)} (the ground still)"
     )
     return (
         Question(
-            f"The default chain with a single damper, c = {c:g} N·s/m on element {e}. Its undamped mode {r} (mass-normalized) "
+            f"The default chain with a single damper, c = {sig(c, 6)} N·s/m on element {e}. Its undamped mode {r} (mass-normalized) "
             f"has {ends}, at ω = {number(w)} rad/s. What ζ does the proportional approximation give it?",
             zeta,
-            f"ζ ≈ φᵀCφ/2ω, and a single damper's φᵀCφ is c times its stretch squared: {c:g} × ({number(stretch)})² / "
+            f"ζ ≈ φᵀCφ/2ω, and a single damper's φᵀCφ is c times its stretch squared: {sig(c, 6)} × ({number(stretch)})² / "
             f"(2 × {number(w)}) = {number(zeta)}. Whether the exact mode agrees depends on how much the damper "
             "changes the shape.",
             tolerance=0.03,
@@ -292,11 +293,11 @@ def _drift_time(rng: np.random.Generator) -> Question:
     c1 = pick(rng, (1, 2, 5, 10))
     tau = n * m / c1
     return Question(
-        f"A chain of {n} masses of {m:g} kg has no spring to the ground, only a damper of {c1:g} N·s/m there. Pushed, "
+        f"A chain of {n} masses of {sig(m, 6)} kg has no spring to the ground, only a damper of {sig(c1, 6)} N·s/m there. Pushed, "
         "it slides to a new position as its velocity dies away. With what time constant?",
         tau,
         f"Moving together, the chain is its whole mass on the ground damper: m<sub>total</sub>v' = −c<sub>1</sub>v, a "
-        f"real root λ ≈ −c<sub>1</sub>/Σm, τ = Σm/c<sub>1</sub> = {number(n * m)}/{c1:g} = {number(tau)} s.",
+        f"real root λ ≈ −c<sub>1</sub>/Σm, τ = Σm/c<sub>1</sub> = {number(n * m)}/{sig(c1, 6)} = {number(tau)} s.",
         unit="s",
     )
 
@@ -308,7 +309,7 @@ def _mac(rng: np.random.Generator) -> Question:
     psi = np.array([1.0, complex(b, im)])
     mac = abs(phi @ psi) ** 2 / float(phi @ phi) / float(np.real(np.vdot(psi, psi)))
     return Question(
-        f"An undamped shape φ = (1, {b:g}) against an exact one ψ = (1, {b:g} + {im:g}i). What is their MAC?",
+        f"An undamped shape φ = (1, {sig(b, 6)}) against an exact one ψ = (1, {sig(b, 6)} + {sig(im, 6)}i). What is their MAC?",
         mac,
         f"MAC = |φᵀψ|²/(φᵀφ ψᴴψ): φᵀψ = {number(1 + b * b)} + {number(b * im)}i, |φᵀψ|² = "
         f"{number(abs(phi @ psi) ** 2)}; φᵀφ = {number(1 + b * b)}, ψᴴψ = {number(1 + b * b + im * im)}: "
@@ -400,7 +401,7 @@ def _best_damper_spec(rng: np.random.Generator) -> Question:
 
     return Question(
         f"The default chain with only one damper, at its base. Choose c<sub>1</sub> (on the Simulation page) so mode "
-        f"1's exact damping ratio is at least {least:g}.",
+        f"1's exact damping ratio is at least {sig(least, 6)}.",
         0,
         "Mode 1's ζ rises with c<sub>1</sub> to a peak of 0.147 at about 60 N·s/m, then falls as the damper locks m1 "
         "to the ground (the Sweep tab draws it); a stiffer damper is worse, not better. Anything near 60 N·s/m does.",
@@ -467,7 +468,7 @@ def _percent(approx: float, exact: float) -> str:
     if not (exact and np.isfinite(exact) and np.isfinite(approx)):
         return "–"
     error = 100 * (approx / exact - 1)
-    return "0 %" if abs(error) < 1e-9 else f"{error:+.3g} %"  # not round-off's ±1e-13 %
+    return "0 %" if abs(error) < 1e-9 else f"{sig(error, plus=True)} %"  # not round-off's ±1e-13 %
 
 
 class ComplexModesPage(QtWidgets.QWidget):
@@ -836,7 +837,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         k = self.damper_at.value()
         where = f"between m{k - 1} and m{k}" if k > 1 else "between the ground and m1"
         self.damper_info.setText(
-            f"All the damping ({float(c.sum()):.3g} N·s/m) in one damper, {where}"
+            f"All the damping ({sig(float(c.sum()))} N·s/m) in one damper, {where}"
             + ("." if lone.size == 1 else ": move the slider to gather it there.")
             if c.any()
             else "No dampers: the modes are real (standing)."
@@ -987,7 +988,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         text = ""
         if worst is not None and worst[1].mpd > 0.05:
             index, m = worst
-            text = f"The most complex: mode {index}, MPC {m.mpc:.2f}, MPD {m.mpd:.3g}°."
+            text = f"The most complex: mode {index}, MPC {m.mpc:.2f}, MPD {sig(m.mpd)}°."
         elif worst is not None:
             text = "Every mode is real: the approximation is exact."
         if over:
@@ -1009,15 +1010,15 @@ class ComplexModesPage(QtWidgets.QWidget):
         for i, c in enumerate(self.rows):
             cells = [f"{c.index}"]
             if c.exact is None:
-                cells += ["overdamped", f"{c.fn_hz:.4g}", "–", f"{c.zeta_approx:.3g}", "–", "–", "–", "–"]
+                cells += ["overdamped", f"{sig(c.fn_hz, 4)}", "–", f"{sig(c.zeta_approx)}", "–", "–", "–", "–"]
             else:
                 m = c.measures
                 assert m is not None, "an oscillating mode has its measures"
                 cells += [
-                    f"{c.fn_exact:.4g}",
-                    f"{c.fn_hz:.4g}",
-                    f"{c.zeta_exact:.3g}",
-                    f"{c.zeta_approx:.3g}",
+                    f"{sig(c.fn_exact, 4)}",
+                    f"{sig(c.fn_hz, 4)}",
+                    f"{sig(c.zeta_exact)}",
+                    f"{sig(c.zeta_approx)}",
                     _percent(c.zeta_approx, c.zeta_exact),
                     f"{c.mac:.3f}",
                     f"{m.mpc:.3f}",
@@ -1084,8 +1085,8 @@ class ComplexModesPage(QtWidgets.QWidget):
         s.setTitle("Half a cycle, 8 snapshots; bold: now, ◆ its nodes", size="9pt")
         self.swing.set_shape(xs, np.concatenate([[0.0], psi]), colour)
         self.mode_info.setText(
-            f"Exact: {c.fn_exact:.4g} Hz, ζ = {c.zeta_exact:.3g} (λ = {lam.real:.3g} ± {lam.imag:.4g}i). "
-            f"Approximation: {c.fn_hz:.4g} Hz, ζ = {c.zeta_approx:.3g}."
+            f"Exact: {sig(c.fn_exact, 4)} Hz, ζ = {sig(c.zeta_exact)} (λ = {sig(lam.real)} ± {sig(lam.imag, 4)}i). "
+            f"Approximation: {sig(c.fn_hz, 4)} Hz, ζ = {sig(c.zeta_approx)}."
         )
 
     def _draw_frf(self) -> None:
@@ -1114,7 +1115,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         p.setYRange(math.log10(peak) - 4, math.log10(peak) + 0.5, padding=0)
         err = np.abs(approx - exact) / np.max(np.abs(exact))
         self.frf_note.setText(
-            f"Largest difference: <b>{100 * err.max():.3g} %</b> of the exact FRF's peak, at {f[np.argmax(err)]:.3g} Hz."
+            f"Largest difference: <b>{sig(100 * err.max())} %</b> of the exact FRF's peak, at {sig(f[np.argmax(err)])} Hz."
             if err.max() > 1e-9
             else "The two are the same: the damping is proportional."
         )
@@ -1148,7 +1149,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         q.setYRange(-1.1 * top, 1.1 * top, padding=0)
         s = int(np.argmax(run.leak))
         self.decay_note.setText(
-            f"Released in mode {k + 1}'s undamped shape: <b>{100 * run.leak[s]:.3g} %</b> of it reaches mode {s + 1}."
+            f"Released in mode {k + 1}'s undamped shape: <b>{sig(100 * run.leak[s])} %</b> of it reaches mode {s + 1}."
             if run.leak[s] > 1e-9
             else f"Released in mode {k + 1}'s undamped shape, it stays there: no other mode moves."
         )
@@ -1222,7 +1223,7 @@ class ComplexModesPage(QtWidgets.QWidget):
             left = min(float(finite.real.min()), 0.0)
             p.setXRange(max(left, -8 * float(finite.imag.max())), 0.0, padding=0.03)
             p.setYRange(0.0, 1.05 * float(finite.imag.max()) / TWO_PI, padding=0)
-        p.setTitle(f"Root locus as {name} goes from {sw.values[0]:.3g} to {sw.values[-1]:.3g} {unit}", size="9pt")
+        p.setTitle(f"Root locus as {name} goes from {sig(sw.values[0])} to {sig(sw.values[-1])} {unit}", size="9pt")
 
         z, m = self.sweep_zeta, self.sweep_mpd
         z.clear()
@@ -1257,18 +1258,18 @@ class ComplexModesPage(QtWidgets.QWidget):
             for k in range(n):
                 value, zeta = sw.peak(k)
                 if np.isfinite(zeta):
-                    lines.append(f"mode {k + 1} ζ = {zeta:.3g} at {value:.3g}")
+                    lines.append(f"mode {k + 1} ζ = {sig(zeta)} at {sig(value)}")
             self.sweep_note.setText(
                 f"Each mode's damping peaks, then falls as {name} locks its joint: "
                 + "; ".join(lines)
-                + f" N·s/m. The chain's {name} is {own:.3g} N·s/m. The approximation (dashed) rises for ever."
+                + f" N·s/m. The chain's {name} is {sig(own)} N·s/m. The approximation (dashed) rises for ever."
             )
         else:
             mpd = np.where(np.isfinite(sw.mpd), sw.mpd, -1.0)
             v, worst = np.unravel_index(int(np.argmax(mpd)), mpd.shape)
             self.sweep_note.setText(
-                f"Mode {worst + 1} is most complex (MPD {mpd[v, worst]:.3g}°) at {name} = {sw.values[v]:.3g} N/m; "
-                f"the chain's {name} is {own:.3g} N/m. The springs move the modes; the dampers decide how much "
+                f"Mode {worst + 1} is most complex (MPD {sig(mpd[v, worst])}°) at {name} = {sig(sw.values[v])} N/m; "
+                f"the chain's {name} is {sig(own)} N/m. The springs move the modes; the dampers decide how much "
                 "they couple them."
             )
 
@@ -1332,7 +1333,7 @@ class ComplexModesPage(QtWidgets.QWidget):
 
 def _share(x: float) -> str:
     """A fraction as a percentage, round-off shown as 0."""
-    return f"{100 * x:.2g}" if x > 1e-8 else "0"
+    return f"{sig(100 * x, 2)}" if x > 1e-8 else "0"
 
 
 def _alpha(color: str, alpha: int):

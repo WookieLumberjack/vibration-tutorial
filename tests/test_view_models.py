@@ -251,6 +251,38 @@ def test_duffing_chart():
     assert bare.now.size == 0 and bare.note == duffing.NO_SPRING
 
 
+# Where a g or e format code is right: SVG and LaTeX numbers, CSV and the frame log, Qt's scale factor, the
+# formatter itself (#409 U-17).
+G_FORMAT_KEPT = (
+    "figures.py",
+    "plot_export.py",
+    "frame_stats.py",
+    "display_size.py",
+    "text.py",
+    "maths.py",
+    "notes_render.py",
+    "font_metrics.py",
+)
+G_FORMAT = re.compile(r"\{[^{}]*:[#+,]?\.?\d*[ge]\}|:\.\{\w+\}[ge]\}")
+
+
+def test_no_page_prints_with_a_g_or_e_format_code():
+    """Every number the pages show goes through `text.number` (`sig`, `fmt`, …), which never prints e-notation:
+    a `{x:.3g}` gives 1.23e+04 or 4.62e-07 once x is large or small enough (#409 U-17). A `float(f"{x:.3g}")`
+    rounds rather than prints, and stays."""
+    from pathlib import Path
+
+    root = Path(view_models.__file__).parent.parent
+    found = []
+    for path in sorted([*(root / "gui").glob("*.py"), *(root / "view_models").glob("*.py")]):
+        if path.name in G_FORMAT_KEPT or path.name.endswith("_figures.py"):
+            continue
+        for n, line in enumerate(path.read_text().splitlines(), 1):
+            if G_FORMAT.search(line) and 'float(f"' not in line:
+                found.append(f"{path.name}:{n}: {line.strip()}")
+    assert not found, "\n".join(found)
+
+
 def test_numbers_print_one_way():
     """`view_models/text.py` (#316 D8): figures with trailing zeros dropped unless asked, no −0, SI prefixes in
     a range, and the pages' own formatters are calls to it."""

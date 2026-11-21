@@ -39,6 +39,7 @@ from ..core.model_updating import (
     update,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
+from ..view_models.text import number as sig
 from . import updating_figures, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TAB_ROOM, TrialBox, trials_html
@@ -340,7 +341,7 @@ def _mac(rng: np.random.Generator) -> Question:
             break
     dot, pp, ff = float(psi @ phi), float(psi @ psi), float(phi @ phi)
     return Question(
-        f"A test shape ψ = (1, {a:g}, {b:g}) and a model shape φ = (1, {c:g}, {d:g}), at three sensors. What is their "
+        f"A test shape ψ = (1, {sig(a, 6)}, {sig(b, 6)}) and a model shape φ = (1, {sig(c, 6)}, {sig(d, 6)}), at three sensors. What is their "
         "MAC?",
         value,
         f"MAC = (ψᵀφ)²/(ψᵀψ φᵀφ) = {number(dot)}²/({number(pp)} × {number(ff)}) = {number(value)}.",
@@ -355,11 +356,11 @@ def _uniform_error(rng: np.random.Generator) -> Question:
     what = "spring" if springs else "mass"
     way = "high" if ratio > 1 else "low"
     return Question(
-        f"Every {what} of a model is {factor:g} times the structure's. By how many percent are all its frequencies "
+        f"Every {what} of a model is {sig(factor, 6)} times the structure's. By how many percent are all its frequencies "
         f"too {way}?",
         100 * abs(ratio - 1),
         f"f ∝ √(k/m), and scaling every {what} scales every mode's frequency alike: "
-        f"{'√' if springs else '1/√'}{factor:g} = {number(ratio, 4)}, {number(100 * abs(ratio - 1))} % {way}. The shapes "
+        f"{'√' if springs else '1/√'}{sig(factor, 6)} = {number(ratio, 4)}, {number(100 * abs(ratio - 1))} % {way}. The shapes "
         "don't change at all.",
         unit="%",
         tolerance=0.01,
@@ -376,11 +377,11 @@ def _spring_share(rng: np.random.Generator) -> Question:
     mode, spring = int(pick(rng, (1, 2, 3))), int(pick(rng, (1, 2, 3, 4)))
     rise = share / 100 / 2 * change
     return Question(
-        f"Spring k{spring} holds {share:g} % of mode {mode}'s strain energy. Made {change:g} % stiffer, by how many "
+        f"Spring k{spring} holds {sig(share, 6)} % of mode {mode}'s strain energy. Made {sig(change, 6)} % stiffer, by how many "
         f"percent does mode {mode}'s frequency rise, to first order?",
         rise,
-        f"∂ln f/∂ln k is half the spring's share of the strain energy: {share / 200:g}. So Δf/f ≈ {share / 200:g} × "
-        f"{change:g} % = {number(rise)} %.",
+        f"∂ln f/∂ln k is half the spring's share of the strain energy: {sig(share / 200, 6)}. So Δf/f ≈ {sig(share / 200, 6)} × "
+        f"{sig(change, 6)} % = {number(rise)} %.",
         unit="%",
         tolerance=0.01,
     )
@@ -391,11 +392,11 @@ def _mass_share(rng: np.random.Generator) -> Question:
     mode, mass_ = int(pick(rng, (1, 2, 3))), int(pick(rng, (1, 2, 3, 4)))
     fall = share / 100 / 2 * change
     return Question(
-        f"Mass m{mass_} carries {share:g} % of mode {mode}'s kinetic energy. Made {change:g} % heavier, by how many "
+        f"Mass m{mass_} carries {sig(share, 6)} % of mode {mode}'s kinetic energy. Made {sig(change, 6)} % heavier, by how many "
         f"percent does mode {mode}'s frequency fall, to first order?",
         fall,
-        f"∂ln f/∂ln m is minus half the mass's share of the kinetic energy: −{share / 200:g}. So Δf/f ≈ "
-        f"−{share / 200:g} × {change:g} % = −{number(fall)} %.",
+        f"∂ln f/∂ln m is minus half the mass's share of the kinetic energy: −{sig(share / 200, 6)}. So Δf/f ≈ "
+        f"−{sig(share / 200, 6)} × {sig(change, 6)} % = −{number(fall)} %.",
         unit="%",
         tolerance=0.01,
     )
@@ -411,11 +412,11 @@ def _gauss_newton(rng: np.random.Generator) -> Question:
     r, d = (number(v).replace("-", "−") for v in (residual, step))
     factor = math.exp(step)
     return Question(
-        f"A model's mode is at {f_model:g} Hz, the test's at {f_test:g} Hz, and ∂ln f/∂ln k = {S:g} for the one spring "
+        f"A model's mode is at {sig(f_model, 6)} Hz, the test's at {sig(f_test, 6)} Hz, and ∂ln f/∂ln k = {sig(S, 6)} for the one spring "
         "being updated. By what factor does one Gauss–Newton step on ln k multiply that spring?",
         factor,
-        f"The residual is ln(f<sub>test</sub>/f<sub>model</sub>) = ln({f_test:g}/{f_model:g}) = {r}; the step is that "
-        f"over the slope, Δln k = {r}/{S:g} = {d}, so k is multiplied by e<sup>{d}</sup> = {number(factor, 4)}.",
+        f"The residual is ln(f<sub>test</sub>/f<sub>model</sub>) = ln({sig(f_test, 6)}/{sig(f_model, 6)}) = {r}; the step is that "
+        f"over the slope, Δln k = {r}/{sig(S, 6)} = {d}, so k is multiplied by e<sup>{d}</sup> = {number(factor, 4)}.",
         tolerance=0.005,
     )
 
@@ -596,7 +597,7 @@ def _sensor_spec(rng: np.random.Generator) -> Question:
     names = ", ".join(f"m{i + 1}" for i in best)
     return Question(
         f"The uniform chain of {n} masses. Place no more than {count} sensors so that its first {count} modes all look "
-        f"distinct: no off-diagonal auto-MAC between them above {LOOK_ALIKE:g} (noise-free; the page's Auto-MAC tab "
+        f"distinct: no off-diagonal auto-MAC between them above {sig(LOOK_ALIKE, 6)} (noise-free; the page's Auto-MAC tab "
         "shows the test's, with its noise).",
         0,
         f"Bunched together, sensors see every low mode as nearly the same smooth curve. Spread out, and off the "
@@ -1192,7 +1193,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         t.setRowCount(len(c.test.modes))
         by_test = {p.test: p for p in c.pairs}
         for i, m in enumerate(c.test.modes):
-            cells = [_cell(f"T{i + 1}"), _cell(f"{m.fn_hz:.4g}"), _cell(f"{m.zeta:.3g}")]
+            cells = [_cell(f"T{i + 1}"), _cell(f"{sig(m.fn_hz, 4)}"), _cell(f"{sig(m.zeta)}")]
             p = by_test.get(i)
             if p is None:
                 cells += [_cell("unpaired", colors.poor)] + [_cell("") for _ in range(4)]
@@ -1203,8 +1204,8 @@ class ModelUpdatingPage(QtWidgets.QWidget):
                 mtext, mcolour = colored(1 - p.mac, 0.02, 0.1, f"{p.mac:.3f}")
                 cells += [
                     _cell(f"M{p.model + 1}", colors.mode[p.model % len(colors.mode)]),
-                    _cell(f"{p.f_model:.4g}"),
-                    _cell(f"{zeta:.3g}"),
+                    _cell(f"{sig(p.f_model, 4)}"),
+                    _cell(f"{sig(zeta)}"),
                     _cell(text, colour),
                     _cell(mtext, mcolour),
                 ]
@@ -1276,8 +1277,8 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         p.setYRange(-1.15, 1.15, padding=0)
         p.getAxis("bottom").setTicks([[(i + 1, f"m{i + 1}") for i in range(n)]])
         self.shape_note.setText(
-            f"Test mode {pr.test + 1} ({pr.f_test:.4g} Hz, dots at the sensors) against model mode {pr.model + 1} "
-            f"({pr.f_model:.4g} Hz, the line): MAC {pr.mac:.3f}."
+            f"Test mode {pr.test + 1} ({sig(pr.f_test, 4)} Hz, dots at the sensors) against model mode {pr.model + 1} "
+            f"({sig(pr.f_model, 4)} Hz, the line): MAC {pr.mac:.3f}."
         )
 
     def _draw_auto(self) -> None:
@@ -1388,7 +1389,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         moved = int(np.argmax(np.abs(np.log(final / start))))
         sv = u.history[1].singular if len(u.history) > 1 else np.zeros(0)
         text = (
-            f"{len(u.history) - 1} steps; ‖residual‖ {u.history[0].cost:.3g} → <b>{u.history[-1].cost:.3g}</b>. "
+            f"{len(u.history) - 1} steps; ‖residual‖ {sig(u.history[0].cost)} → <b>{sig(u.history[-1].cost)}</b>. "
             f"Largest change: {u.params[moved].name}, {start[moved]:.3f} → <b>{final[moved]:.3f}</b> of the "
             f"structure's. Furthest from the truth now: {u.params[worst].name} at {final[worst]:.3f}."
         )
@@ -1401,7 +1402,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
                 if unseen
                 else ""
             )
-            text += f" Singular values {sv.max():.3g} to {sv.min():.2g}.{rank_note}"
+            text += f" Singular values {sig(sv.max())} to {sig(sv.min(), 2)}.{rank_note}"
         self.update_note.setText(text)
 
 

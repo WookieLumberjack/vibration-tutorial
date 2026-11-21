@@ -15,6 +15,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.identification import Method, ModeMatch, Stability, Stabilization
+from ..view_models.text import number as sig
 from .layouts import FitColumns, form_layout, header_tip
 from .panels import spin
 from .style import colors, text_on
@@ -348,7 +349,7 @@ class ResultsView(QtWidgets.QWidget):
             ze: float | None
             if m.exact is not None:
                 fe, ze = abs(m.exact) / (2 * math.pi), -m.exact.real / abs(m.exact)
-                cells.append((f"{fe:.4g}", None))
+                cells.append((f"{sig(fe, 4)}", None))
             else:
                 fe = ze = None
                 cells.append(("—", None))
@@ -356,7 +357,7 @@ class ResultsView(QtWidgets.QWidget):
             if ident is None:
                 cells += [("missed", colors.poor), ("", None), (f"{ze:.4f}", None), ("", None), ("", None), ("", None)]
             else:
-                cells.append((f"{ident.fn_hz:.4g}", None))
+                cells.append((f"{sig(ident.fn_hz, 4)}", None))
                 cells.append(
                     colored(100 * (ident.fn_hz / fe - 1), 0.5, 2.0, f"{100 * (ident.fn_hz / fe - 1):+.2f}%")
                     if fe

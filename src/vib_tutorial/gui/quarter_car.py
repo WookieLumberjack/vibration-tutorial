@@ -27,6 +27,7 @@ from ..core.quarter_car import (
     response,
     tradeoff,
 )
+from ..view_models.text import number as sig
 from . import coalesce, quarter_figures, settle_plots
 from .challenge import ChallengeBox
 from .drag import DragDot, DragLine
@@ -188,12 +189,12 @@ def _road_psd(rng: np.random.Generator) -> Question:
     v = kmh / 3.6
     G = float(Road(grade, v).psd(np.array([f]))[0])
     return Question(
-        f"A class {grade} road (G<sub>d</sub>(n₀) = {gd0 * 1e6:g}×10⁻⁶ m³, n₀ = 0.1 cycles/m) driven at {kmh:g} km/h. "
-        f"What is its height's PSD in time at {f:g} Hz?",
+        f"A class {grade} road (G<sub>d</sub>(n₀) = {sig(gd0 * 1e6, 6)}×10⁻⁶ m³, n₀ = 0.1 cycles/m) driven at {sig(kmh, 6)} km/h. "
+        f"What is its height's PSD in time at {sig(f, 6)} Hz?",
         1e6 * G,
         f"G<sub>d</sub>(n) = G<sub>d</sub>(n₀)(n/n₀)<sup>−2</sup>, and at v = {number(v)} m/s a frequency f is n = f/v, "
-        f"so G<sub>z</sub>(f) = G<sub>d</sub>(f/v)/v = G<sub>d</sub>(n₀) n₀² v/f² = {gd0 * 1e6:g}×10⁻⁶ × 0.01 × "
-        f"{number(v)}/{f:g}² = {number(1e6 * G)} mm²/Hz.",
+        f"so G<sub>z</sub>(f) = G<sub>d</sub>(f/v)/v = G<sub>d</sub>(n₀) n₀² v/f² = {sig(gd0 * 1e6, 6)}×10⁻⁶ × 0.01 × "
+        f"{number(v)}/{sig(f, 6)}² = {number(1e6 * G)} mm²/Hz.",
         unit="mm²/Hz",
         setup=dict(grade=grade, speed_kmh=kmh),
     )
@@ -205,10 +206,10 @@ def _rougher_faster(rng: np.random.Generator) -> Question:
     grade = CLASS_NAMES[2 + steps]
     return Question(
         f"A car on a class C road goes onto a class {grade} road ({steps} class{'es' if steps > 1 else ''} rougher) "
-        f"at {times:g} times the speed. By what factor does its RMS body acceleration grow?",
+        f"at {sig(times, 6)} times the speed. By what factor does its RMS body acceleration grow?",
         factor,
-        f"Each class has four times the last's PSD, twice its RMS: × {2**steps:g}. The road's PSD in time grows as v "
-        f"(its velocity is white, of intensity ∝ v), so the RMS as √v: × √{times:g} = {number(math.sqrt(times))}. "
+        f"Each class has four times the last's PSD, twice its RMS: × {sig(2**steps, 6)}. The road's PSD in time grows as v "
+        f"(its velocity is white, of intensity ∝ v), so the RMS as √v: × √{sig(times, 6)} = {number(math.sqrt(times))}. "
         f"Together × {number(factor)}, the car's transfer unchanged.",
         unit="times",
         tolerance=0.01,
@@ -221,7 +222,7 @@ def _bounce(rng: np.random.Generator) -> Question:
     keff = ks * kt / (ks + kt) * 1e3
     f = math.sqrt(keff / ms) / TWO_PI
     return Question(
-        f"A quarter-car's body is {ms:g} kg on a {ks:g} kN/m spring, over a {kt:g} kN/m tyre. Roughly where does it "
+        f"A quarter-car's body is {sig(ms, 6)} kg on a {sig(ks, 6)} kN/m spring, over a {sig(kt, 6)} kN/m tyre. Roughly where does it "
         "bounce?",
         f,
         f"The wheel is light, so the body sits on the spring and the tyre in series: k = k<sub>s</sub>k<sub>t</sub>/"
@@ -235,11 +236,11 @@ def _wheel_hop(rng: np.random.Generator) -> Question:
     mu, ks, kt = pick(rng, (30, 40, 50, 60)), pick(rng, (15, 20, 30)), pick(rng, (150, 200, 250))
     f = math.sqrt((ks + kt) * 1e3 / mu) / TWO_PI
     return Question(
-        f"A {mu:g} kg wheel between a {ks:g} kN/m suspension spring and a {kt:g} kN/m tyre, under a heavy body. "
+        f"A {sig(mu, 6)} kg wheel between a {sig(ks, 6)} kN/m suspension spring and a {sig(kt, 6)} kN/m tyre, under a heavy body. "
         "Roughly where does it hop?",
         f,
         f"The body barely moves at that frequency, so the wheel bounces on both springs at once: "
-        f"f = √((k<sub>s</sub> + k<sub>t</sub>)/m<sub>u</sub>)/2π = √({number((ks + kt) * 1e3)}/{mu:g})/2π = "
+        f"f = √((k<sub>s</sub> + k<sub>t</sub>)/m<sub>u</sub>)/2π = √({number((ks + kt) * 1e3)}/{sig(mu, 6)})/2π = "
         f"{number(f)} Hz.",
         unit="Hz",
         setup=dict(unsprung=mu, spring=ks, tyre=kt),
@@ -250,10 +251,10 @@ def _body_zeta(rng: np.random.Generator) -> Question:
     ms, ks, c = pick(rng, (250, 300, 400)), pick(rng, (15, 20, 30)), pick(rng, (800, 1200, 1500, 2500))
     zeta = Car(sprung=ms, spring=ks * 1e3, damper=c).body_zeta()
     return Question(
-        f"A {ms:g} kg body on a {ks:g} kN/m spring and a {c:g} N·s/m damper. What is its damping ratio on the "
+        f"A {sig(ms, 6)} kg body on a {sig(ks, 6)} kN/m spring and a {sig(c, 6)} N·s/m damper. What is its damping ratio on the "
         "suspension (the wheel held)?",
         zeta,
-        f"ζ = c/(2√(k<sub>s</sub>m<sub>s</sub>)) = {c:g}/(2√({number(ks * 1e3)} × {ms:g})) = {number(zeta)}.",
+        f"ζ = c/(2√(k<sub>s</sub>m<sub>s</sub>)) = {sig(c, 6)}/(2√({number(ks * 1e3)} × {sig(ms, 6)})) = {number(zeta)}.",
         tolerance=0.01,
         setup=dict(sprung=ms, spring=ks, damper=c),
     )
@@ -263,9 +264,9 @@ def _sag(rng: np.random.Generator) -> Question:
     ms, ks = pick(rng, (250, 300, 400, 500)), pick(rng, (10, 15, 20, 30))
     sag = ms * 9.81 / (ks * 1e3)
     return Question(
-        f"A {ms:g} kg body sits on a {ks:g} kN/m suspension spring. How far does it sag under its weight?",
+        f"A {sig(ms, 6)} kg body sits on a {sig(ks, 6)} kN/m suspension spring. How far does it sag under its weight?",
         1000 * sag,
-        f"δ = m<sub>s</sub>g/k<sub>s</sub> = {ms:g} × 9.81/{number(ks * 1e3)} = {number(1000 * sag)} mm. A softer "
+        f"δ = m<sub>s</sub>g/k<sub>s</sub> = {sig(ms, 6)} × 9.81/{number(ks * 1e3)} = {number(1000 * sag)} mm. A softer "
         "spring is more comfortable but sags further.",
         unit="mm",
         tolerance=0.01,
@@ -276,7 +277,7 @@ def _lift(rng: np.random.Generator) -> Question:
     ratio = pick(rng, (0.3, 0.4, 0.5, 0.6))
     share = 100 * 0.5 * math.erfc(1 / (math.sqrt(2) * ratio))
     return Question(
-        f"A tyre's dynamic load is Gaussian, its RMS {100 * ratio:g} % of the static load. What percentage of the time "
+        f"A tyre's dynamic load is Gaussian, its RMS {sig(100 * ratio, 6)} % of the static load. What percentage of the time "
         "is the tyre off the road?",
         share,
         f"It leaves the road when the dynamic load falls below −W: W/σ = {number(1 / ratio)} standard deviations "
@@ -371,12 +372,12 @@ def _damper_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The family car (300 kg body, 40 kg wheel, 20 kN/m spring, 200 kN/m tyre) at {kmh:g} km/h on a class {grade} "
+        f"The family car (300 kg body, 40 kg wheel, 20 kN/m spring, 200 kN/m tyre) at {sig(kmh, 6)} km/h on a class {grade} "
         f"road. Choose its damper so that the body's RMS acceleration is at most {number(most_body)} m/s² and the "
         f"tyre's load swings by at most {number(most_tyre)} % of its static load, RMS.",
         0,
         f"A softer damper helps comfort and a firmer one grip, so the two limits leave a window between them. "
-        f"{cd:g} N·s/m gives {number(r.rms[Output.BODY])} m/s² and {number(100 * r.load_ratio)} %; the Damper tab "
+        f"{sig(cd, 6)} N·s/m gives {number(r.rms[Output.BODY])} m/s² and {number(100 * r.load_ratio)} %; the Damper tab "
         "shows how each moves either side of it.",
         setup=dict(grade=grade, speed_kmh=kmh, damper=300.0, tab=TAB_DAMPER),
         goal=goal,
@@ -457,7 +458,7 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.challenge = ChallengeBox(self, PROBLEMS)
 
         road = Form("Road")
-        self.grade = combo([f"{c}: G_d(n₀) = {CLASSES[c] * 1e6:g}×10⁻⁶ m³" for c in CLASS_NAMES], TIPS["grade"])
+        self.grade = combo([f"{c}: G_d(n₀) = {sig(CLASSES[c] * 1e6, 6)}×10⁻⁶ m³" for c in CLASS_NAMES], TIPS["grade"])
         self.grade.setCurrentIndex(CLASS_NAMES.index("C"))
         road.add("ISO 8608 class:", self.grade, TIPS["grade"])
         self.speed = road.number("Speed:", 5.0, 250.0, 72.0, 0, " km/h", TIPS["speed"])
@@ -497,7 +498,7 @@ class QuarterCarPage(QtWidgets.QWidget):
         self.trade_plot = plot("Tyre load RMS / static load", None, "Body acceleration RMS", "m/s²", height=200)
         self.trade_plot.setToolTip(TRADE_TIP)
         add_legend(self.trade_plot.getPlotItem(), offset=(-10, 10))
-        self.trade_items = [pg.PlotDataItem(name=f"spring × {s:g}") for s in SPRING_FACTORS]
+        self.trade_items = [pg.PlotDataItem(name=f"spring × {sig(s, 6)}") for s in SPRING_FACTORS]
         self.trade_now = DragDot(TRADE_DOT_TIP)
         self.trade_now.dragged.connect(self._on_damper_dragged)
         self.trade_best = (marker(10, "t"), marker(10, "s"))
@@ -633,7 +634,7 @@ class QuarterCarPage(QtWidgets.QWidget):
         car, road = self.car, self.road
         fb, fw = car.modes()
         self.car_info.setText(
-            f"Body bounce {fb:.3g} Hz, wheel hop {fw:.3g} Hz; the body's ζ on the suspension {car.body_zeta():.2g}."
+            f"Body bounce {sig(fb)} Hz, wheel hop {sig(fw)} Hz; the body's ζ on the suspension {sig(car.body_zeta(), 2)}."
         )
         self.result = r = response(car, road)
         self.body_item.setData(r.f, r.psd[Output.BODY])
@@ -647,11 +648,11 @@ class QuarterCarPage(QtWidgets.QWidget):
             p.setYRange(math.log10(top) - 5, math.log10(top) + 0.3, padding=0)
         lift = r.lift_probability
         self.readout.setText(
-            f"RMS: body acceleration <b>{r.rms[Output.BODY]:.3g} m/s²</b>, suspension travel "
+            f"RMS: body acceleration <b>{sig(r.rms[Output.BODY])} m/s²</b>, suspension travel "
             f"<b>{fmt(r.rms[Output.TRAVEL], 'm')}</b>, tyre load <b>{fmt(r.rms[Output.TYRE], 'N')}</b> "
-            f"({100 * r.load_ratio:.3g} % of the static {fmt(r.weight, 'N')}). The tyre leaves the road "
-            + (f"{100 * lift:.2g} % of the time." if lift > 1e-4 else "almost never.")
-            + f" Road: class {road.grade} at {road.speed * 3.6:.3g} km/h."
+            f"({sig(100 * r.load_ratio)} % of the static {fmt(r.weight, 'N')}). The tyre leaves the road "
+            + (f"{sig(100 * lift, 2)} % of the time." if lift > 1e-4 else "almost never.")
+            + f" Road: class {road.grade} at {sig(road.speed * 3.6)} km/h."
         )
         self._draw_tab()
         settle_plots(self)
@@ -707,8 +708,8 @@ class QuarterCarPage(QtWidgets.QWidget):
         jb, jt = int(np.argmin(values[Output.BODY])), int(np.argmin(values[Output.TYRE]))
         crit = 2 * math.sqrt(car.spring * car.sprung)
         self.damper_note.setText(
-            f"Comfort is best at {DAMPERS[jb]:.0f} N·s/m (ζ = {DAMPERS[jb] / crit:.2g}), grip at {DAMPERS[jt]:.0f} "
-            f"N·s/m (ζ = {DAMPERS[jt] / crit:.2g}); travel only falls as the damper firms. Dotted: this car's."
+            f"Comfort is best at {DAMPERS[jb]:.0f} N·s/m (ζ = {sig(DAMPERS[jb] / crit, 2)}), grip at {DAMPERS[jt]:.0f} "
+            f"N·s/m (ζ = {sig(DAMPERS[jt] / crit, 2)}); travel only falls as the damper firms. Dotted: this car's."
         )
 
     def _draw_drive(self) -> None:
@@ -726,7 +727,7 @@ class QuarterCarPage(QtWidgets.QWidget):
             Output.TRAVEL: float(np.std(d.travel[skip:])),
             Output.TYRE: float(np.std(d.tyre[skip:])),
         }
-        parts = [f"{o.value.lower()} {100 * (rms[o] / r.rms[o] - 1):+.2g} %" for o in Output]
+        parts = [f"{o.value.lower()} {sig(100 * (rms[o] / r.rms[o] - 1), 2, plus=True)} %" for o in Output]
         self.drive_note.setText(
             f"{DRIVE_S:.0f} s of road (the first {WINDOW_S:.0f} s drawn). The record's RMS "
             "against the PSDs': " + ", ".join(parts) + "."

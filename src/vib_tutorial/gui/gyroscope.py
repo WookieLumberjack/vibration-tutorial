@@ -48,6 +48,7 @@ from ..core.gyroscope import (
 )
 from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator, contact_torque
 from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
+from ..view_models.text import number as sig
 from . import coalesce, gyroscope_figures
 from .cms_time import SampleBuffer
 from .components_tab import ComponentsTab
@@ -294,7 +295,7 @@ class GyroscopePage(QtWidgets.QWidget):
         release.row(self.launch_info)
 
         play = Form("Run")
-        self.playback = combo([f"{p:g}×" for p in PLAYBACK], TIPS["playback"])
+        self.playback = combo([f"{sig(p, 6)}×" for p in PLAYBACK], TIPS["playback"])
         self.playback.setCurrentIndex(REAL_TIME)
         play.add("Playback:", self.playback, TIPS["playback"])
         self.pause_button = RunButton()
@@ -530,13 +531,13 @@ class GyroscopePage(QtWidgets.QWidget):
             return
         self.info.setText(
             (
-                f"I₁ = {top.transverse * 1e4:.4g} kg·cm², I₃ = {top.polar * 1e4:.4g} kg·cm², mgl = "
-                f"{fmt(top.weight_moment, 'N·m')}. It sleeps above {top.sleeping_spin / RPM:.4g} rpm."
+                f"I₁ = {sig(top.transverse * 1e4, 4)} kg·cm², I₃ = {sig(top.polar * 1e4, 4)} kg·cm², mgl = "
+                f"{fmt(top.weight_moment, 'N·m')}. It sleeps above {sig(top.sleeping_spin / RPM, 4)} rpm."
                 if top.weight_moment > 0
-                else f"I₁ = {top.transverse * 1e4:.4g} kg·cm², I₃ = {top.polar * 1e4:.4g} kg·cm²; no gravity: a free top."
+                else f"I₁ = {sig(top.transverse * 1e4, 4)} kg·cm², I₃ = {sig(top.polar * 1e4, 4)} kg·cm²; no gravity: a free top."
             )
             + (
-                f" A disc of radius s/√3 = {top.radius * 1000 / math.sqrt(3):.4g} mm would move the same."
+                f" A disc of radius s/√3 = {sig(top.radius * 1000 / math.sqrt(3), 4)} mm would move the same."
                 if top.shape is Shape.SQUARE
                 else ""
             )
@@ -547,12 +548,12 @@ class GyroscopePage(QtWidgets.QWidget):
         ):
             least = least_spin(top, self.motion.tilt) / RPM
             self.launch_info.setText(
-                f"No such steady precession at this tilt under {least:.4g} rpm: let go at rest instead."
+                f"No such steady precession at this tilt under {sig(least, 4)} rpm: let go at rest instead."
             )
         else:
-            rates = ", ".join(f"{r:.4g}" for r in (slow, fast) if math.isfinite(r))
+            rates = ", ".join(f"{sig(r, 4)}" for r in (slow, fast) if math.isfinite(r))
             self.launch_info.setText(
-                f"φ̇₀ = {self.motion.precession:.4g} rad/s. Steady rates at this tilt: "
+                f"φ̇₀ = {sig(self.motion.precession, 4)} rad/s. Steady rates at this tilt: "
                 + (f"{rates} rad/s." if rates else "none.")
             )
         self.restart()
@@ -616,11 +617,11 @@ class GyroscopePage(QtWidgets.QWidget):
         top = self.motion.top
         i1, i2, i3 = (v * 1e4 for v in top.moments)
         self.info.setText(
-            f"I₁ = {i1:.4g}, I₂ = {i2:.4g}, I₃ = {i3:.4g} kg·cm²"
+            f"I₁ = {sig(i1, 4)}, I₂ = {sig(i2, 4)}, I₃ = {sig(i3, 4)} kg·cm²"
             + (f", mgl = {fmt(top.weight_moment, 'N·m')}." if top.weight_moment > 0 else "; no gravity: a free top.")
         )
         self.launch_info.setText(
-            f"φ̇₀ = {self.motion.precession:.4g} rad/s. An asymmetric top has no steady precession to start at"
+            f"φ̇₀ = {sig(self.motion.precession, 4)} rad/s. An asymmetric top has no steady precession to start at"
             + (": let go at rest." if state.launch in (Launch.SLOW, Launch.FAST) else ".")
         )
 
@@ -629,11 +630,11 @@ class GyroscopePage(QtWidgets.QWidget):
         rt = self.round
         assert rt is not None  # only called on a table
         self.info.setText(
-            f"I₁ = {rt.central * 1e4:.4g} kg·cm² (about G), I₃ = {rt.polar * 1e4:.4g} kg·cm²; its centre of mass "
+            f"I₁ = {sig(rt.central * 1e4, 4)} kg·cm² (about G), I₃ = {sig(rt.polar * 1e4, 4)} kg·cm²; its centre of mass "
             + (
-                f"{rt.offset * 1000:.3g} mm above the round tip's centre."
+                f"{sig(rt.offset * 1000)} mm above the round tip's centre."
                 if rt.offset >= 0
-                else f"{-rt.offset * 1000:.3g} mm below the ball's centre: α = {rt.alpha:.3g}."
+                else f"{sig(-rt.offset * 1000)} mm below the ball's centre: α = {sig(rt.alpha)}."
             )
         )
 
@@ -715,7 +716,7 @@ class GyroscopePage(QtWidgets.QWidget):
 
     def frame_context(self) -> str:
         launch = self.launch.currentText() if self.round is None else self.setting.currentText()
-        return f"{self.spin.value():g} rpm, {self.tilt.value():g}°, {launch}"
+        return f"{sig(self.spin.value(), 6)} rpm, {sig(self.tilt.value(), 6)}°, {launch}"
 
     def step(self, duration: float) -> None:
         """Run the top on by `duration` s of simulated time and redraw."""
@@ -796,14 +797,14 @@ class GyroscopePage(QtWidgets.QWidget):
         hi, lo = (math.degrees(v) for v in m.turning())
         mean = m.mean_precession()
         if abs(mean) > 1e-9:
-            prec = f"precesses at {mean:.4g} rad/s on average, a turn in {2 * math.pi / abs(mean):.4g} s"
+            prec = f"precesses at {sig(mean, 4)} rad/s on average, a turn in {sig(2 * math.pi / abs(mean), 4)} s"
         else:
             prec = "doesn't precess on average"
         if m.steady:
-            nod = f"It holds at {hi:.4g}°: steady precession at {mean:.4g} rad/s."
+            nod = f"It holds at {sig(hi, 4)}°: steady precession at {sig(mean, 4)} rad/s."
         else:
             nod = (
-                f"It nods between {hi:.4g}° and {lo:.4g}°, {m.nutation_hz():.4g} times a second, and {prec}. "
+                f"It nods between {sig(hi, 4)}° and {sig(lo, 4)}°, {sig(m.nutation_hz(), 4)} times a second, and {prec}. "
                 f"Path: {m.path().value}."
             )
         self.readout.setText(nod)
@@ -828,9 +829,13 @@ class GyroscopePage(QtWidgets.QWidget):
             free = FreeSpin.of(top, self._launch_rates())
             parts.append(
                 "Without gravity Euler–Poinsot's solution holds: ω in the body goes as Jacobi's cn, sn and dn "
-                + (f"(k² = {free.k2:.4g})" if free.k2 < 0.999 else f"(1 − k² = {1 - free.k2:.2g})")
-                + f", back every {free.period:.4g} s"
-                + (f"; spun about its middle axis, it flips over every {0.5 * free.period:.4g} s." if middle else ".")
+                + (f"(k² = {sig(free.k2, 4)})" if free.k2 < 0.999 else f"(1 − k² = {sig(1 - free.k2, 2)})")
+                + f", back every {sig(free.period, 4)} s"
+                + (
+                    f"; spun about its middle axis, it flips over every {sig(0.5 * free.period, 4)} s."
+                    if middle
+                    else "."
+                )
             )
         elif middle:
             parts.append("Spun about its middle axis, with gravity, it tumbles: chaos (the Chaos tab).")
@@ -846,38 +851,38 @@ class GyroscopePage(QtWidgets.QWidget):
         J = rt.jellett(m.spin, m.tilt)
         least = math.degrees(rt.least_tilt(J))
         parts = [
-            f"Jellett's J = I₃ω₃(a + R cos θ₀) = {J * 1e4:.3g} kg·cm²/s stays put while friction takes energy out, so "
-            f"it heads for E<sub>J</sub>'s least, at {least:.3g}°."
+            f"Jellett's J = I₃ω₃(a + R cos θ₀) = {sig(J * 1e4)} kg·cm²/s stays put while friction takes energy out, so "
+            f"it heads for E<sub>J</sub>'s least, at {sig(least)}°."
         ]
         turn = rt.turning_spin()
         if rt.offset > 0:
             if math.isfinite(turn):
                 parts.append(
-                    f"Upright is least above {turn / RPM:.4g} rpm, where J would leave it sleeping at "
-                    f"{rt.end_spin(J) / RPM:.4g} rpm."
+                    f"Upright is least above {sig(turn / RPM, 4)} rpm, where J would leave it sleeping at "
+                    f"{sig(rt.end_spin(J) / RPM, 4)} rpm."
                 )
             roll = rt.rolling_tilt()
             if roll < 0.5 * math.pi:
                 parts.append(
-                    f"But its tip can roll instead of slide below about {math.degrees(roll):.3g}° (sin θ = "
+                    f"But its tip can roll instead of slide below about {sig(math.degrees(roll))}° (sin θ = "
                     "μI₃/maR), and it stops rising there."
                 )
             else:
                 parts.append("Its friction can make its tip roll at any tilt: it travels instead of rising.")
         elif rt.inverts:
             parts.append(
-                f"With 1 − α = {1 - rt.alpha:.3g} &lt; I₁/I₃ = {rt.ratio:.3g} &lt; 1 + α = {1 + rt.alpha:.3g}, "
-                f"turned over is least above {turn / RPM:.4g} rpm: it would end spinning at "
-                f"{rt.end_spin(J, upright=False) / RPM:.4g} rpm, the other way about its own axis."
+                f"With 1 − α = {sig(1 - rt.alpha)} &lt; I₁/I₃ = {sig(rt.ratio)} &lt; 1 + α = {sig(1 + rt.alpha)}, "
+                f"turned over is least above {sig(turn / RPM, 4)} rpm: it would end spinning at "
+                f"{sig(rt.end_spin(J, upright=False) / RPM, 4)} rpm, the other way about its own axis."
             )
         elif rt.offset < 0:
             parts.append(
-                f"I₁/I₃ = {rt.ratio:.3g} lies outside 1 ± α ({1 - rt.alpha:.3g} to {1 + rt.alpha:.3g}): turned over is "
+                f"I₁/I₃ = {sig(rt.ratio)} lies outside 1 ± α ({sig(1 - rt.alpha)} to {sig(1 + rt.alpha)}): turned over is "
                 "no minimum, so it doesn't turn over."
             )
         sim = self.sim
         if isinstance(sim, SlidingSimulator) and sim.event is not None:
-            parts.append(f"<b>Stopped at {sim.t:.3g} s: {sim.event.value}.</b>")
+            parts.append(f"<b>Stopped at {sig(sim.t)} s: {sim.event.value}.</b>")
         self.readout.setText(" ".join(parts))
         hi = 180.0 if self.view.ball else min(math.degrees(rt.rim_tilt()) + 2.0, 180.0)
         self.tilt_plot.setYRange(0.0, hi, padding=0)
@@ -1170,7 +1175,7 @@ class GyroscopePage(QtWidgets.QWidget):
         self.potential_plot.setYRange(base - pad, top + pad, padding=0)
         where = math.degrees(rt.least_tilt(J))
         self.potential_note.setText(
-            f"J = {J * 1e4:.3g} kg·cm²/s. E<sub>J</sub> is least at {where:.3g}°: upright it is {fmt(float(least[0]), 'J')}"
+            f"J = {sig(J * 1e4)} kg·cm²/s. E<sub>J</sub> is least at {sig(where)}°: upright it is {fmt(float(least[0]), 'J')}"
             + (f", turned over {fmt(float(least[-1]), 'J')}." if self.view.ball else ".")
             + f" Let go, it has {fmt(start, 'J')}."
         )
@@ -1188,7 +1193,7 @@ class GyroscopePage(QtWidgets.QWidget):
     def _draw_track(self) -> None:
         self._track_span = None
         self.path_note.setText(
-            f"From above, in mm, the last {TRACK_SPAN:g} s: where the tip has touched the table (solid) and where its "
+            f"From above, in mm, the last {sig(TRACK_SPAN, 6)} s: where the tip has touched the table (solid) and where its "
             "centre of mass has been (dotted). Sliding, the tip scrawls; rolling, it runs round smooth curves."
         )
         self._track_trace()
@@ -1230,21 +1235,21 @@ class GyroscopePage(QtWidgets.QWidget):
         spin = along / rt.polar
         above = L[2] / rt.central + (1 / rt.polar - 1 / rt.central) * along * axis[2]
         parts = [
-            f"h = {sim.h * 1e3:.3g} ms. Jellett's J held to {np.max(np.abs(drift)):.2g} of itself, and the energy "
-            f"with friction's work to {np.max(np.abs(ledger)):.2g}. Friction has taken {100 * s.work[-1] / start:.3g} % "
-            f"of it. The table pushed up with at least {s.normal.min() / rt.weight:.3g} mg.",
-            f"Now at {math.degrees(math.acos(min(1.0, max(-1.0, float(axis[2]))))):.3g}°, slipping at "
-            f"{1000 * s.slip[-1]:.3g} mm/s, spinning at {spin / RPM:.4g} rpm about its axis ({above / RPM:.4g} rpm "
+            f"h = {sig(sim.h * 1e3)} ms. Jellett's J held to {sig(np.max(np.abs(drift)), 2)} of itself, and the energy "
+            f"with friction's work to {sig(np.max(np.abs(ledger)), 2)}. Friction has taken {sig(100 * s.work[-1] / start)} % "
+            f"of it. The table pushed up with at least {sig(s.normal.min() / rt.weight)} mg.",
+            f"Now at {sig(math.degrees(math.acos(min(1.0, max(-1.0, float(axis[2]))))))}°, slipping at "
+            f"{sig(1000 * s.slip[-1])} mm/s, spinning at {sig(spin / RPM, 4)} rpm about its axis ({sig(above / RPM, 4)} rpm "
             "seen from above).",
-            f"Upright, J would leave it {rt.end_spin(J0) / RPM:.4g} rpm"
+            f"Upright, J would leave it {sig(rt.end_spin(J0) / RPM, 4)} rpm"
             + (
-                f"; turned over, {rt.end_spin(J0, upright=False) / RPM:.4g} rpm seen from above."
+                f"; turned over, {sig(rt.end_spin(J0, upright=False) / RPM, 4)} rpm seen from above."
                 if self.view.ball
                 else "."
             ),
         ]
         if sim.event is not None:
-            parts.append(f"Stopped at {sim.t:.3g} s: {sim.event.value}.")
+            parts.append(f"Stopped at {sig(sim.t)} s: {sim.event.value}.")
         self.check_note.setText(" ".join(parts))
 
     # ------------------------------------------------------------- in the cup
@@ -1274,7 +1279,7 @@ class GyroscopePage(QtWidgets.QWidget):
             sleeps = abs(m.spin) > top_.sleeping_spin
             self.potential_note.setText(
                 f"E' = {fmt(m.energy, 'J')}. Upright it {'sleeps' if sleeps else 'would fall'}: "
-                f"|ω₃| = {abs(m.spin) / RPM:.4g} rpm against the {top_.sleeping_spin / RPM:.4g} rpm that "
+                f"|ω₃| = {sig(abs(m.spin) / RPM, 4)} rpm against the {sig(top_.sleeping_spin / RPM, 4)} rpm that "
                 "I₃ω₃ &gt; 2√(I₁mgl) asks."
             )
         else:
@@ -1312,24 +1317,24 @@ class GyroscopePage(QtWidgets.QWidget):
         self.precession_plot.setLabel("bottom", "Spin |ω₃| (rpm)")
         if top.weight_moment <= 0:
             self.precession_note.setText(
-                f"No gravity: no slow precession, and the fast one, {abs(f):.4g} rad/s at {here:.4g} rpm, is the free "
+                f"No gravity: no slow precession, and the fast one, {sig(abs(f), 4)} rad/s at {sig(here, 4)} rpm, is the free "
                 "top's wobble."
                 if math.isfinite(f)
                 else "No gravity and lying flat: no steady precession but the spin."
             )
         elif least > 0 and here < least:
             self.precession_note.setText(
-                f"At {math.degrees(th):.4g}° it needs {least:.4g} rpm to precess steadily; at {here:.4g} rpm it "
+                f"At {sig(math.degrees(th), 4)}° it needs {sig(least, 4)} rpm to precess steadily; at {sig(here, 4)} rpm it "
                 "can only nod."
             )
         else:
-            fast_text = f" and {abs(f):.4g}" if math.isfinite(f) else ""
+            fast_text = f" and {sig(abs(f), 4)}" if math.isfinite(f) else ""
             self.precession_note.setText(
-                f"At {math.degrees(th):.4g}° and {here:.4g} rpm: {abs(s):.4g}{fast_text} rad/s (the estimates "
-                f"{top.weight_moment / (top.polar * abs(m.spin)):.4g}"
-                + (f" and {top.polar * abs(m.spin) / (top.transverse * c):.4g}" if c > 1e-9 else "")
+                f"At {sig(math.degrees(th), 4)}° and {sig(here, 4)} rpm: {sig(abs(s), 4)}{fast_text} rad/s (the estimates "
+                f"{sig(top.weight_moment / (top.polar * abs(m.spin)), 4)}"
+                + (f" and {sig(top.polar * abs(m.spin) / (top.transverse * c), 4)}" if c > 1e-9 else "")
                 + ")."
-                + (f" Under {least:.4g} rpm (dotted) it can't." if least > 0 else "")
+                + (f" Under {sig(least, 4)} rpm (dotted) it can't." if least > 0 else "")
             )
 
     def _draw_path(self) -> None:
@@ -1337,7 +1342,7 @@ class GyroscopePage(QtWidgets.QWidget):
             self.path_circles.setData([], [])
             self.path_plot.setRange(xRange=(-1.05, 1.05), yRange=(-1.05, 1.05), padding=0)
             self.path_note.setText(
-                f"From above, the last {SKEW_PATH:g} s. With no turning points to draw it against, the path no longer "
+                f"From above, the last {sig(SKEW_PATH, 6)} s. With no turning points to draw it against, the path no longer "
                 "keeps between two circles."
             )
             self._path_trace()
@@ -1385,15 +1390,15 @@ class GyroscopePage(QtWidgets.QWidget):
         top = m.top
         spin = np.sum(y[:, 7:10] * y[:, 0:3], axis=1) / top.polar / RPM
         parts = [
-            f"h = {self.sim.h * 1e3:.3g} ms. Largest energy error {np.max(np.abs(y[:, 6] - m.total_energy)) / scale_e:.2g}"
-            f"{' mgl' if top.weight_moment > 0 else ' of it'}, L·ẑ's {np.max(np.abs(y[:, 9] - m.vertical_momentum)) / scale_l:.2g} "
-            f"of I₃ω₃. ω₃ isn't kept: it has run between {spin.min():.4g} and {spin.max():.4g} rpm."
+            f"h = {sig(self.sim.h * 1e3)} ms. Largest energy error {sig(np.max(np.abs(y[:, 6] - m.total_energy)) / scale_e, 2)}"
+            f"{' mgl' if top.weight_moment > 0 else ' of it'}, L·ẑ's {sig(np.max(np.abs(y[:, 9] - m.vertical_momentum)) / scale_l, 2)} "
+            f"of I₃ω₃. ω₃ isn't kept: it has run between {sig(spin.min(), 4)} and {sig(spin.max(), 4)} rpm."
         ]
         if top.weight_moment == 0:
             omega = body_rates(y[:, 0:3], y[:, 3:6], y[:, 7:10], top)
             exact = FreeSpin.of(top, self._launch_rates()).omega(t)
             error = np.max(np.linalg.norm(omega - exact, axis=1)) / max(abs(m.spin), 1e-12)
-            parts.append(f"ω in the body against Euler–Poinsot's (Jacobi's cn, sn, dn): within {error:.2g} of ω₃.")
+            parts.append(f"ω in the body against Euler–Poinsot's (Jacobi's cn, sn, dn): within {sig(error, 2)} of ω₃.")
         self.check_note.setText(" ".join(parts))
 
     def _draw_chaos(self) -> None:
@@ -1416,7 +1421,7 @@ class GyroscopePage(QtWidgets.QWidget):
                 if symmetric
                 else "Closed curves: the motion is regular; a scatter that fills an area: chaos."
             )
-            + f" Below, a second top let go {TWIN:g} rad further over: {now:.2g} rad apart now. Regular motion "
+            + f" Below, a second top let go {sig(TWIN, 6)} rad further over: {sig(now, 2)} rad apart now. Regular motion "
             "drifts apart slowly, in proportion to the time; chaos doubles the gap over and over, a straight line on "
             "this log scale, until they're as far apart as two axes can be."
         )
@@ -1460,12 +1465,12 @@ class GyroscopePage(QtWidgets.QWidget):
             return
         theta, phi = tilt_and_azimuth(y[:, 0:3])
         parts = [
-            f"h = {self.sim.h * 1e3:.3g} ms. Largest energy error {np.max(np.abs(y[:, 6] - m.total_energy)) / scale_e:.2g} mgl."
+            f"h = {sig(self.sim.h * 1e3)} ms. Largest energy error {sig(np.max(np.abs(y[:, 6] - m.total_energy)) / scale_e, 2)} mgl."
         ]
         hi, lo = (math.degrees(v) for v in m.turning())
         parts.append(
-            f"Tilt run between {math.degrees(theta.min()):.4g}° and {math.degrees(theta.max()):.4g}° "
-            f"(closed form {hi:.4g}° and {lo:.4g}°)."
+            f"Tilt run between {sig(math.degrees(theta.min()), 4)}° and {sig(math.degrees(theta.max()), 4)}° "
+            f"(closed form {sig(hi, 4)}° and {sig(lo, 4)}°)."
         )
         T = m.nutation_period()
         if not m.steady and t[-1] - t[0] > 2 * T:
@@ -1473,7 +1478,7 @@ class GyroscopePage(QtWidgets.QWidget):
             i = min(int(np.searchsorted(t, t[0] + whole * T)), n - 1)
             rate = (phi[i] - phi[0]) / (t[i] - t[0])
             parts.append(
-                f"Over {whole} whole nods it precessed at {rate:.4g} rad/s on average (closed form "
-                f"{m.mean_precession():.4g})."
+                f"Over {whole} whole nods it precessed at {sig(rate, 4)} rad/s on average (closed form "
+                f"{sig(m.mean_precession(), 4)})."
             )
         self.check_note.setText(" ".join(parts))

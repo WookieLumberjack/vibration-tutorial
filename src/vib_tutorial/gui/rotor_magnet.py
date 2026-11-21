@@ -22,6 +22,7 @@ from ..core.rotor import RotorSystem
 from ..core.rotor_modes import whirl_modes
 from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
+from ..view_models.text import number as sig
 from . import accessible
 from .layouts import plot_height
 from .panels import spin
@@ -335,10 +336,10 @@ class MagnetPanel(QtWidgets.QWidget):
         f_lo, f_hi = m.damped_band()
         parts = [
             (
-                f"<p><b>Actuator</b>: Λ = μ<sub>0</sub>N<sub>c</sub>²A<sub>p</sub>/4 = {m.force_constant:.3g} N·m²/A²; negative stiffness "
+                f"<p><b>Actuator</b>: Λ = μ<sub>0</sub>N<sub>c</sub>²A<sub>p</sub>/4 = {sig(m.force_constant)} N·m²/A²; negative stiffness "
                 f"k<sub>m</sub> = 4Λi<sub>0</sub>²/h<sub>0</sub>³ = {_si(ks, 'N/m')}; current gain k<sub>i</sub> = "
-                f"4Λi<sub>0</sub>/h<sub>0</sub>² = {ki:.3g} N/A; load capacity k<sub>i</sub>i<sub>0</sub> = "
-                f"{m.capacity:.3g} N; backup bearing {_si(m.touchdown, 'm')} off centre.</p>"
+                f"4Λi<sub>0</sub>/h<sub>0</sub>² = {sig(ki)} N/A; load capacity k<sub>i</sub>i<sub>0</sub> = "
+                f"{sig(m.capacity)} N; backup bearing {_si(m.touchdown, 'm')} off centre.</p>"
             )
         ]
         if net <= 0.0:
@@ -353,11 +354,13 @@ class MagnetPanel(QtWidgets.QWidget):
                 f"<p><b>Controller</b>: k<sub>i</sub>k<sub>p</sub> − k<sub>m</sub> = {_si(net, 'N/m')} of "
                 "stiffness"
                 + (" (infinite at 0 Hz with the integral: a steady load cannot move the journal)" if m.integral else "")
-                + f", k<sub>i</sub>k<sub>d</sub> = {ki * m.kd:.3g} N·s/m of damping before the lags. "
+                + f", k<sub>i</sub>k<sub>d</sub> = {sig(ki * m.kd)} N·s/m of damping before the lags. "
             )
             if math.isfinite(f_lo):
                 parts[-1] += (
-                    f"It damps from {f_lo:.3g} to {f_hi:,.4g} Hz" if f_lo > 0.0 else f"It damps up to {f_hi:,.4g} Hz"
+                    f"It damps from {sig(f_lo)} to {sig(f_hi, 4)} Hz"
+                    if f_lo > 0.0
+                    else f"It damps up to {sig(f_hi, 4)} Hz"
                 ) + "; outside, it feeds a mode (shaded).</p>"
             else:
                 parts[-1] += "It damps nowhere: every mode is fed.</p>"
@@ -380,7 +383,7 @@ class MagnetPanel(QtWidgets.QWidget):
             share = max(abs(w) for w in loads) / m.capacity
             out += (
                 "<p>The weight takes a steady "
-                + " and ".join(f"{abs(w) / m.current_gain:.3g} A at {n}" for n, w in zip("AB", loads))
+                + " and ".join(f"{sig(abs(w) / m.current_gain)} A at {n}" for n, w in zip("AB", loads))
                 + f" of control current ({share:.0%} of the bias)"
                 + (
                     f": <span style='color:{colors.force}'>past the bias one magnet's current would run out, "
@@ -396,12 +399,12 @@ class MagnetPanel(QtWidgets.QWidget):
             return out + (
                 "<p>The rotor on it is unstable even at rest: its journals fall onto the magnets.</p>"
                 if self.onset.freq_hz == 0.0
-                else f"<p>The rotor on it is unstable even at rest, a whirl at {self.onset.freq_hz:,.4g} Hz "
+                else f"<p>The rotor on it is unstable even at rest, a whirl at {sig(self.onset.freq_hz, 4)} Hz "
                 "growing where the bearing's damping is negative.</p>"
             )
         whirl = "forward" if self.onset.whirl > 0 else "backward"
         return out + (
             f"<p>The rotor on it goes unstable at <b>{self.onset.omega * RPM:,.0f} rpm</b>, a {whirl} "
-            f"whirl at {self.onset.freq_hz:,.4g} Hz ({self.onset.order:.2f}×) reaching where the "
+            f"whirl at {sig(self.onset.freq_hz, 4)} Hz ({self.onset.order:.2f}×) reaching where the "
             "bearing's damping turns negative (the <i>Stability</i> tab).</p>"
         )

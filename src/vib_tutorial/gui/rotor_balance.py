@@ -34,6 +34,7 @@ from ..core.rotor import PlaneWeight
 from ..core.rotor_balance import PROBES, corrections, influence_matrix, weight, weight_parts
 from ..core.rotor_simulator import RPM
 from ..core.rotor_sweep import STATIONS, phase_degrees, probe, steady_vectors
+from ..view_models.text import number as sig
 from . import weak
 from .layouts import FlowLayout, form_layout, group, plot_height
 from .panels import spin
@@ -125,7 +126,7 @@ def _lead(v: complex) -> int:
 
 def _vec(v: complex) -> str:
     """A 1X reading as amplitude ∠ phase lead."""
-    return f"{abs(v) * 1e6:.3g} µm ∠ {_lead(v):.0f}°"
+    return f"{sig(abs(v) * 1e6)} µm ∠ {_lead(v):.0f}°"
 
 
 class BalancingPanel(QtWidgets.QWidget):
@@ -666,7 +667,7 @@ class BalancingPanel(QtWidgets.QWidget):
             else:
                 a = complex(alpha[0, 0])
                 out += (
-                    f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}° from the mark: influence coefficient "
+                    f"Trial {sig(mass * 1e3)} g at {math.degrees(angle):.0f}° from the mark: influence coefficient "
                     f"α = (V₁ − V₀)/T = {_per_weight(a)}<br>"
                 )
             w = self.correction_weights()
@@ -693,7 +694,7 @@ class BalancingPanel(QtWidgets.QWidget):
 
     def _matrix_html(self, alpha: np.ndarray, mass: float, angle: float) -> str:
         """The influence matrix, a column per plane, and how well it tells the planes apart."""
-        cells = [[f"{abs(a):.3g} ∠ {_lead(a):.0f}°" for a in row] for row in alpha]
+        cells = [[f"{sig(abs(a))} ∠ {_lead(a):.0f}°" for a in row] for row in alpha]
         cond = np.linalg.cond(alpha)
         note = (
             ": the planes are hard to tell apart, so the weights come out large and small errors in the "
@@ -702,9 +703,9 @@ class BalancingPanel(QtWidgets.QWidget):
             else ""
         )
         return (
-            f"Trial {mass * 1e3:.3g} g at {math.degrees(angle):.0f}° from the mark in each plane in turn. Influence "
+            f"Trial {sig(mass * 1e3)} g at {math.degrees(angle):.0f}° from the mark in each plane in turn. Influence "
             f"matrix α (µm per g·mm ∠ lead), column j = (V<sub>j</sub> − V₀)/T: "
-            f"[{cells[0][0]}, {cells[0][1]}; {cells[1][0]}, {cells[1][1]}], condition number {cond:.3g}{note}.<br>"
+            f"[{cells[0][0]}, {cells[0][1]}; {cells[1][0]}, {cells[1][1]}], condition number {sig(cond)}{note}.<br>"
         )
 
     def _draw_curves(self) -> None:
@@ -738,10 +739,10 @@ def v0_ok(v0: np.ndarray | None, runout) -> TypeGuard[np.ndarray]:
 
 def _per_weight(a: complex) -> str:
     """An influence coefficient, in µm per g·mm with its lag."""
-    return f"{abs(a):.3g} µm per g·mm ∠ {_lead(a):.0f}°"
+    return f"{sig(abs(a))} µm per g·mm ∠ {_lead(a):.0f}°"
 
 
 def _weight(w: complex, radius: float) -> str:
     """A weight as grams at the radius and an angle from the mark."""
     mass, angle = weight_parts(w, radius)
-    return f"{mass * 1e3:.3g} g at {radius * 1e3:.0f} mm, {round(math.degrees(angle)) % 360}°"
+    return f"{sig(mass * 1e3)} g at {radius * 1e3:.0f} mm, {round(math.degrees(angle)) % 360}°"

@@ -31,6 +31,7 @@ from ..core import (
     modal_analysis,
     transmissibility,
 )
+from ..view_models.text import number as sig
 from .axes import log_axes
 from .layouts import FitColumns, header_tip
 from .modes import Method, ModeEntry, time_constant_text
@@ -382,10 +383,10 @@ class ModalTable(QtWidgets.QTableWidget):
             rows.append(
                 [
                     str(mode.index),
-                    f"{mode.fn_hz:.4g}",
+                    f"{sig(mode.fn_hz, 4)}",
                     "rigid" if math.isnan(mode.zeta_modal) else f"{mode.zeta_modal:.4f}",
                     f"{d.zeta:.4f}" if d else "overdamped",
-                    f"{d.fd_hz:.4g}" if d else "—",
+                    f"{sig(d.fd_hz, 4)}" if d else "—",
                     "—" if friction_zeta is None or math.isnan(friction_zeta[r]) else f"{friction_zeta[r]:.4f}",
                 ]
             )
@@ -401,14 +402,14 @@ class ModalTable(QtWidgets.QTableWidget):
                 rows.append(
                     [
                         f"{m.index} = λ{m.conjugate}*" if conj else str(m.index),
-                        f"{lam.real:.4g} {'−' if lam.imag < 0 else '+'} {abs(lam.imag):.4g}i",
-                        f"{m.fn_hz:.4g}",
+                        f"{sig(lam.real, 4)} {'−' if lam.imag < 0 else '+'} {sig(abs(lam.imag), 4)}i",
+                        f"{sig(m.fn_hz, 4)}",
                         f"{m.zeta:.4f}",
-                        f"{m.fd_hz:.4g}",
+                        f"{sig(m.fd_hz, 4)}",
                     ]
                 )
             else:
-                rows.append([str(m.index), f"{lam.real:.4g}", "—", "real", time_constant_text(lam.real)])
+                rows.append([str(m.index), f"{sig(lam.real, 4)}", "—", "real", time_constant_text(lam.real)])
         return rows
 
 
@@ -753,7 +754,7 @@ class FrfPlot(pg.GraphicsLayoutWidget):
         with_friction = ""
         self._friction_args = None
         if friction_amplitude and system.friction.any():
-            amount = f"{1e3 * friction_amplitude:.3g} mm" if base else f"{friction_amplitude:.3g} N"
+            amount = f"{sig(1e3 * friction_amplitude)} mm" if base else f"{sig(friction_amplitude)} N"
             with_friction = f" · dash-dot: friction at {amount}"
             self._friction_args = (system, frequency_grid(result, FRICTION_POINTS), input_dof, base, friction_amplitude)
         self._friction_stale = True

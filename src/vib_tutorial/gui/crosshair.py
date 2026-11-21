@@ -22,6 +22,7 @@ import weakref
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..view_models.text import number as sig
 from . import plot_export
 from .style import colors
 
@@ -81,7 +82,7 @@ def _value(plot: pg.PlotItem, side: str, v: float) -> str:
     units = plot.getAxis(side).labelUnits or ""
     if not math.isfinite(x):
         return "–"
-    return pg.siFormat(x, precision=4, suffix=units) if units else f"{x:.4g}"
+    return pg.siFormat(x, precision=4, suffix=units) if units else f"{sig(x, 4)}"
 
 
 def _root(vb: pg.ViewBox) -> pg.ViewBox:

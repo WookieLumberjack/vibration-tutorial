@@ -25,6 +25,7 @@ from ..core.rotor import RotorSystem
 from ..core.rotor_simulator import RPM
 from ..core.rotor_sweep import STATIONS
 from ..core.rotor_waterfall import SpectrumBlock, Waterfall
+from ..view_models.text import number as sig
 from . import weak
 from .layouts import FlowLayout, group
 from .panels import spin
@@ -301,14 +302,14 @@ class WaterfallTab(QtWidgets.QWidget):
                     "Spectra taken at a steady speed are shown against time."
                 )
             else:
-                text = f"The first {wf.block:g} s block is being taken."
+                text = f"The first {sig(wf.block, 6)} s block is being taken."
             self.note.setText(text)
             return
         b = tallest.block
         at = f"{b.omega * RPM:,.0f} rpm" if against_speed(mode) else f"{b.t:.1f} s ({b.omega * RPM:,.0f} rpm)"
         order = f" ({tallest.freq / (b.omega / (2 * math.pi)):+.2f}×)" if b.omega > 0 else ""
         self.note.setText(
-            f"{len(blocks)} full spectra of {where}, each of a {wf.block:g} s block ({1 / wf.block:.2g} Hz "
+            f"{len(blocks)} full spectra of {where}, each of a {sig(wf.block, 6)} s block ({sig(1 / wf.block, 2)} Hz "
             f"resolution), overlapping by half. Tallest peak {fmt_len(tallest.amp)} at "
             f"{tallest.freq:+.1f} Hz{order}, at {at}"
             + (": heights are in decades above 1/1000 of it (60 dB)." if log else ".")

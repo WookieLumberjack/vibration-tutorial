@@ -18,6 +18,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.rotor import XD, YD, RotorSystem, Stator
 from ..view_models.text import fmt
+from ..view_models.text import number as sig
 from . import accessible
 from .layouts import plot_height
 from .lesson import LiveLabel
@@ -276,9 +277,9 @@ class RubPanel(QtWidgets.QWidget):
         if k > 0.0:
             f = math.sqrt((k + st.stiffness) / system.disc_mass) / (2.0 * math.pi)
             text += (
-                f" On the ring the disc's whirl is stiffened to about {f:.3g} Hz "
-                f"(free, {math.sqrt(k / system.disc_mass) / (2.0 * math.pi):.3g} Hz): a dry whirl's "
-                f"frequency. Disc radius R = {system.disc_radius * 1e3:.3g} mm."
+                f" On the ring the disc's whirl is stiffened to about {sig(f)} Hz "
+                f"(free, {sig(math.sqrt(k / system.disc_mass) / (2.0 * math.pi))} Hz): a dry whirl's "
+                f"frequency. Disc radius R = {sig(system.disc_radius * 1e3)} mm."
             )
         self.readout.setText(text)
 

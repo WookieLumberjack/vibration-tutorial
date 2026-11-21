@@ -28,6 +28,7 @@ from ..core.integration import (
     spectral_curves,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
+from ..view_models.text import number as sig
 from . import coalesce, integration_figures, settle_plots
 from .lesson import (
     Form,
@@ -202,7 +203,7 @@ def _central_limit(rng: np.random.Generator) -> Question:
     w = math.sqrt(k / m)
     dt = 2 / w
     return Question(
-        f"A {m:g} kg mass on a {k:g} N/m spring, undamped, stepped by central difference. What is the longest time "
+        f"A {sig(m, 6)} kg mass on a {sig(k, 6)} N/m spring, undamped, stepped by central difference. What is the longest time "
         "step that stays stable?",
         1000 * dt,
         f"Central difference is stable while ωΔt ≤ 2. ω = √(k/m) = {number(w)} rad/s, so Δt ≤ 2/ω = "
@@ -403,12 +404,12 @@ def _step_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The 1 kg, 400 N/m oscillator has a stiff {stiff:g} Hz mode hung from it. Choose the schemes and the step so "
-        f"that every scheme run is stable and gets the slow mode's period within {worst:g} %, with no more than "
+        f"The 1 kg, 400 N/m oscillator has a stiff {sig(stiff, 6)} Hz mode hung from it. Choose the schemes and the step so "
+        f"that every scheme run is stable and gets the slow mode's period within {sig(worst, 6)} %, with no more than "
         f"{most} steps a period (not the exact update: it's a stand-in for a nonlinear model).",
         0,
         f"An explicit scheme needs ωΔt ≤ 2 or so at the stiff mode, hundreds of steps a period, so it has to be "
-        f"implicit. Newmark's average acceleration's period error ≈ (ωΔt)²/12 is under {worst:g} % from "
+        f"implicit. Newmark's average acceleration's period error ≈ (ωΔt)²/12 is under {sig(worst, 6)} % from "
         f"{number(fewest)} steps a period; {most} steps with it alone meet the spec (HHT-α, a little longer, may too).",
         setup=dict(stiff_hz=stiff, per_period=50.0, periods=5.0, schemes=(Scheme.CENTRAL, Scheme.RK4)),
         goal=goal,
@@ -643,14 +644,14 @@ class IntegrationPage(QtWidgets.QWidget):
         self.T = 1.0 / f[0] if f[0] > 0 else 1.0
         self.h = self.T / self.per_period.value()
         self.osc_info.setText(
-            "Modes: " + ", ".join(f"{v:.4g} Hz" for v in f) + f"; T₁ = {fmt(self.T, 's')}, ζ = "
-            f"{self.model.damping / (2 * math.sqrt(self.model.stiffness * self.model.mass)):.3g}."
+            "Modes: " + ", ".join(f"{sig(v, 4)} Hz" for v in f) + f"; T₁ = {fmt(self.T, 's')}, ζ = "
+            f"{sig(self.model.damping / (2 * math.sqrt(self.model.stiffness * self.model.mass)))}."
         )
         self.step_info.setText(
             f"Δt = {fmt(self.h, 's')}: ωΔt = "
-            + ", ".join(f"{TWO_PI * v * self.h:.3g}" for v in f)
+            + ", ".join(f"{sig(TWO_PI * v * self.h)}" for v in f)
             + " (mode by mode); Δt/T = "
-            + ", ".join(f"{v * self.h:.3g}" for v in f)
+            + ", ".join(f"{sig(v * self.h)}" for v in f)
             + "."
         )
         self.redraw()
@@ -712,7 +713,7 @@ class IntegrationPage(QtWidgets.QWidget):
             good = ok & (e > 0)
             err.setData(t[good], e[good])
             if ok.all():
-                lines.append(f"{s.value}: largest error {100 * float(np.max(e)) / swing:.3g} % of the swing")
+                lines.append(f"{s.value}: largest error {sig(100 * float(np.max(e)) / swing)} % of the swing")
             else:
                 gone = t[np.argmin(ok)]
                 lines.append(f"{s.value}: <b>blew up</b> by t = {fmt(float(gone), 's')}")
@@ -771,7 +772,7 @@ class IntegrationPage(QtWidgets.QWidget):
             plot_.setYRange(-50.0, 100.0, padding=0)
         else:
             plot_.setYRange(-10.0, 20.0, padding=0)
-        limits = [f"{s.value} ωΔt ≤ {STABLE_LIMIT[s]:.3g}" for s in self._chosen() if 0 < STABLE_LIMIT[s] < math.inf]
+        limits = [f"{s.value} ωΔt ≤ {sig(STABLE_LIMIT[s])}" for s in self._chosen() if 0 < STABLE_LIMIT[s] < math.inf]
         self.curve_note.setText(
             "Undamped oscillator; dotted: this Δt for each mode. "
             + ("Stable while " + ", ".join(limits) + "." if limits else "")

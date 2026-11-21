@@ -11,6 +11,7 @@ import scipy.optimize
 
 from ..core.double_pendulum import Angles, DoublePendulum, matrices, mix, modes, newton, slipped
 from ..core.practice import Problem, Question, Requirement, at_most, kept, number, pick
+from ..view_models.text import number as sig
 from . import deriving_figures
 from .deriving_text import (
     PENDULUM,
@@ -65,8 +66,8 @@ def _coordinates(angles: Angles) -> str:
 def _shapes(p: DoublePendulum) -> str:
     slow, fast = modes(p)
     return (
-        f"<p>The slower mode swings the rods together, {TH2} = {slow.ratio:.3g} {TH1}; the faster against each "
-        f"other, {TH2} = {fast.ratio:.3g} {TH1}.</p>"
+        f"<p>The slower mode swings the rods together, {TH2} = {sig(slow.ratio)} {TH1}; the faster against each "
+        f"other, {TH2} = {sig(fast.ratio)} {TH1}.</p>"
     ).replace("-", "−")
 
 
@@ -156,8 +157,8 @@ def fbd_html(p: DoublePendulum, angles: Angles) -> str:
     right = [mode.frequency for mode in modes(p)]
     html.append(
         "<p><b>The usual slip</b> is to treat bob 2 as a pendulum hanging from a fixed elbow, leaving out "
-        f"{M2}{L1}{A1}, the elbow's own acceleration: the frequencies come out <b>{w[0]:.3g} and {w[1]:.3g} Hz</b> "
-        f"instead of {right[0]:.3g} and {right[1]:.3g}.</p>"
+        f"{M2}{L1}{A1}, the elbow's own acceleration: the frequencies come out <b>{sig(w[0])} and {sig(w[1])} Hz</b> "
+        f"instead of {sig(right[0])} and {sig(right[1])}.</p>"
     )
     html += [frequencies_html(matrices(p, angles)), _shapes(p)]
     return "".join(html)
@@ -237,11 +238,11 @@ def _equal_frequency(rng: np.random.Generator) -> Question:
     m, L = pick(rng, (0.5, 1, 2)), pick(rng, (0.25, 0.5, 1.0))
     slow = modes(DoublePendulum(m, m, L, L))[0].frequency
     return Question(
-        f"A double pendulum has two {m:g} kg bobs on light rods {L:g} m long. At what frequency is its slower "
+        f"A double pendulum has two {sig(m, 6)} kg bobs on light rods {sig(L, 6)} m long. At what frequency is its slower "
         "small-swing mode?",
         slow,
         f"M = mL²[[2, 1], [1, 1]] and K = mgL diag(2, 1), so det(K − ω²M) = 0 gives ω² = (2 ∓ √2)g/L. The slower: "
-        f"ω = √({number(2 - math.sqrt(2))} × 9.81/{L:g}) = {number(TWO_PI * slow)} rad/s, f = {number(slow)} Hz.",
+        f"ω = √({number(2 - math.sqrt(2))} × 9.81/{sig(L, 6)}) = {number(TWO_PI * slow)} rad/s, f = {number(slow)} Hz.",
         unit="Hz",
         setup=dict(system=PENDULUM, upper=m, lower=m, upper_length=L, lower_length=L),
     )
@@ -251,11 +252,11 @@ def _cross_mass(rng: np.random.Generator) -> Question:
     m2, a, b = pick(rng, (0.5, 1, 2, 3)), pick(rng, (0.3, 0.5, 0.8)), pick(rng, (0.2, 0.4, 0.6))
     entry = m2 * a * b
     return Question(
-        f"A double pendulum's lower bob is {m2:g} kg, its rods {a:g} m (upper) and {b:g} m (lower). In the rods' "
+        f"A double pendulum's lower bob is {sig(m2, 6)} kg, its rods {sig(a, 6)} m (upper) and {sig(b, 6)} m (lower). In the rods' "
         "angles from the vertical, what is M₁₂, the mass matrix's coupling term?",
         entry,
         f"T's cross term is m<sub>2</sub>L<sub>1</sub>L<sub>2</sub> cos(θ<sub>1</sub> − θ<sub>2</sub>) θ̇<sub>1</sub>"
-        f"θ̇<sub>2</sub>, cos → 1 at rest: M₁₂ = {m2:g} × {a:g} × {b:g} = {number(entry)} kg·m².",
+        f"θ̇<sub>2</sub>, cos → 1 at rest: M₁₂ = {sig(m2, 6)} × {sig(a, 6)} × {sig(b, 6)} = {number(entry)} kg·m².",
         unit="kg·m²",
         setup=dict(system=PENDULUM, lower=m2, upper_length=a, lower_length=b),
     )
@@ -267,7 +268,7 @@ def _shape(rng: np.random.Generator) -> Question:
     slow = modes(DoublePendulum(m1, m2, L, L))[0]
     mu = m2 / m1
     return Question(
-        f"A double pendulum with equal rods, {m1:g} kg above and {m2:g} kg below, swings in its slower mode. What "
+        f"A double pendulum with equal rods, {sig(m1, 6)} kg above and {sig(m2, 6)} kg below, swings in its slower mode. What "
         "is the ratio of the lower rod's angle to the upper's?",
         slow.ratio,
         f"With equal rods and μ = m<sub>2</sub>/m<sub>1</sub> = {number(mu)}, write λ = ω²L/g. The second row of "
@@ -352,10 +353,10 @@ def _close_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A double pendulum with a {m1:g} kg upper bob and two {L:g} m rods. Choose the lower bob so that its two "
-        f"modes' frequencies are within a factor of {limit:g} of each other.",
+        f"A double pendulum with a {sig(m1, 6)} kg upper bob and two {sig(L, 6)} m rods. Choose the lower bob so that its two "
+        f"modes' frequencies are within a factor of {sig(limit, 6)} of each other.",
         0,
-        f"A lighter lower bob brings the modes together (with equal bobs they're 2.41 apart). {m2:g} kg gives "
+        f"A lighter lower bob brings the modes together (with equal bobs they're 2.41 apart). {sig(m2, 6)} kg gives "
         f"{number(_ratio(DoublePendulum(m1, m2, L, L)))}.",
         setup=dict(system=PENDULUM, upper=m1, lower=m1, upper_length=L, lower_length=L, tab=TAB_PMODES),
         goal=goal,

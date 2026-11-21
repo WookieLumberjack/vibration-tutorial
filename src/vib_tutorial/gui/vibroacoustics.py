@@ -64,6 +64,7 @@ from ..core.sea import (
     oscillator_pair,
 )
 from ..view_models import vibroacoustics as view
+from ..view_models.text import number as sig
 from ..view_models.vibroacoustics import F_LOW, MAX_MODES
 from . import acoustics_figures, settle_plots
 from .layouts import ColumnScroll
@@ -341,7 +342,7 @@ def _critical(rng: np.random.Generator) -> Question:
     plate = Plate(0.6, 0.4, h / 1000, mat)
     fc = critical_frequency(plate)
     return Question(
-        f"A {name} panel ({text}) {h:g} mm thick, in air (c = 343 m/s). At what frequency do its bending waves "
+        f"A {name} panel ({text}) {sig(h, 6)} mm thick, in air (c = 343 m/s). At what frequency do its bending waves "
         "travel at the speed of sound?",
         fc,
         f"D = Eh³/12(1 − ν²) = {number(plate.rigidity)} N·m and ρh = {number(plate.surface_mass)} kg/m², so "
@@ -358,8 +359,8 @@ def _mass_law(rng: np.random.Generator) -> Question:
     tl = float(mass_law(plate, f))
     x = TWO_PI * f * plate.surface_mass / (2 * AIR.impedance)
     return Question(
-        f"A steel sheet {h:g} mm thick (ρ = 7850 kg/m³) between two rooms of air (ρc = {number(AIR.impedance)} "
-        f"rayl). By the mass law, what is its transmission loss at normal incidence at {f:g} Hz?",
+        f"A steel sheet {sig(h, 6)} mm thick (ρ = 7850 kg/m³) between two rooms of air (ρc = {number(AIR.impedance)} "
+        f"rayl). By the mass law, what is its transmission loss at normal incidence at {sig(f, 6)} Hz?",
         tl,
         f"m″ = ρh = {number(plate.surface_mass)} kg/m², ωm″/2ρc = {number(x)}, and TL = 10 log(1 + {number(x)}²) "
         f"= {number(tl)} dB.",
@@ -375,10 +376,10 @@ def _radiated(rng: np.random.Generator) -> Question:
     sigma = pick(rng, (0.01, 0.05, 0.2, 1))
     w = AIR.impedance * a * b * sigma * (v / 1000) ** 2
     return Question(
-        f"A panel {a:g} × {b:g} m vibrates at {v:g} mm/s rms, averaged over it, with a radiation efficiency of "
-        f"{sigma:g}. What sound power does it radiate into air (ρc = {number(AIR.impedance)} rayl)?",
+        f"A panel {sig(a, 6)} × {sig(b, 6)} m vibrates at {sig(v, 6)} mm/s rms, averaged over it, with a radiation efficiency of "
+        f"{sig(sigma, 6)}. What sound power does it radiate into air (ρc = {number(AIR.impedance)} rayl)?",
         w * 1e6,
-        f"W = ρc S σ ⟨v²⟩ = {number(AIR.impedance)} × {number(a * b)} × {sigma:g} × ({v:g} × 10⁻³)² = "
+        f"W = ρc S σ ⟨v²⟩ = {number(AIR.impedance)} × {number(a * b)} × {sig(sigma, 6)} × ({sig(v, 6)} × 10⁻³)² = "
         f"{number(w)} W, {number(w * 1e6)} µW.",
         unit="µW",
     )
@@ -392,11 +393,11 @@ def _corner(rng: np.random.Generator) -> Question:
     sigma = float(low_frequency_efficiency(plate, m, n, f))
     k = TWO_PI * f / AIR.c
     return Question(
-        f"A baffled steel panel {a:g} × {b:g} m, 10 mm thick, vibrates in its mode ({m}, {n}) at {f:g} Hz, well "
+        f"A baffled steel panel {sig(a, 6)} × {sig(b, 6)} m, 10 mm thick, vibrates in its mode ({m}, {n}) at {sig(f, 6)} Hz, well "
         "below the mode's own resonance. From the low-frequency limit for odd m and n, what is its radiation "
         "efficiency, in thousandths (σ × 1000)?",
         1000 * sigma,
-        f"k = ω/c = 2π × {f:g}/343 = {number(k)} rad/m, and σ<sub>mn</sub> ≈ 32k²ab/π⁵m²n² = 32 × {number(k * k)} × "
+        f"k = ω/c = 2π × {sig(f, 6)}/343 = {number(k)} rad/m, and σ<sub>mn</sub> ≈ 32k²ab/π⁵m²n² = 32 × {number(k * k)} × "
         f"{number(a * b)}/(π⁵ × {m * m * n * n}) = {number(sigma)}, {number(1000 * sigma)} thousandths: the panel "
         "pumps air like a small piston, and most of it sloshes round its edge.",
         unit="× 10⁻³",
@@ -478,16 +479,16 @@ def _window_spec(rng: np.random.Generator) -> Question:
             kept("Width a", t.a, 1.2, "m"),
             kept("Height b", t.b, 1.0, "m"),
             kept("Loss factor η", t.loss, 0.01),
-            at_least(f"TL at {f:g} Hz", float(transmission_loss(p, t.loss, f)[0]), need_tl, "dB"),
+            at_least(f"TL at {sig(f, 6)} Hz", float(transmission_loss(p, t.loss, f)[0]), need_tl, "dB"),
             at_least("Critical frequency", critical_frequency(p), need_fc, "Hz"),
         )
 
     return Question(
-        f"A window 1.2 × 1 m of single glass (η = 0.01) must give at least {number(need_tl, 2)} dB at {f:g} Hz "
+        f"A window 1.2 × 1 m of single glass (η = 0.01) must give at least {number(need_tl, 2)} dB at {sig(f, 6)} Hz "
         f"(field incidence), and keep its coincidence dip above {number(need_fc, 2)} Hz. Choose the thickness.",
         0,
         f"The TL below coincidence grows 6 dB per doubling of the thickness (the mass law), while f<sub>c</sub> "
-        f"falls in proportion to 1/h: a window between the two. {h:g} mm gives {number(tl)} dB and "
+        f"falls in proportion to 1/h: a window between the two. {sig(h, 6)} mm gives {number(tl)} dB and "
         f"f<sub>c</sub> = {number(fc)} Hz.",
         setup=dict(a=1.2, b=1.0, thickness=3.0, tab=TAB_TRANSMISSION, **GLASS),
         goal=goal,
@@ -504,11 +505,11 @@ def _clf(rng: np.random.Generator) -> Question:
     cg = rounded(float(group_speed(Plate(a, b, h / 1000, STEEL), f)), 3)
     eta = cg * length * tau / (math.pi * TWO_PI * f * a * b)
     return Question(
-        f"Bending waves on a steel plate {a:g} × {b:g} m carry energy at c<sub>g</sub> = {number(cg, 3)} m/s at "
-        f"{f:g} Hz. A corner {length:g} m long lets τ̄ = {tau:g} of the diffuse field's energy arriving at it "
+        f"Bending waves on a steel plate {sig(a, 6)} × {sig(b, 6)} m carry energy at c<sub>g</sub> = {number(cg, 3)} m/s at "
+        f"{sig(f, 6)} Hz. A corner {sig(length, 6)} m long lets τ̄ = {sig(tau, 6)} of the diffuse field's energy arriving at it "
         "through. What is the coupling loss factor across it, in thousandths?",
         1000 * eta,
-        f"η₁₂ = c<sub>g</sub>Lτ̄/πωS = {number(cg, 3)} × {length:g} × {tau:g} / (π × 2π × {f:g} × {number(a * b)}) "
+        f"η₁₂ = c<sub>g</sub>Lτ̄/πωS = {number(cg, 3)} × {sig(length, 6)} × {sig(tau, 6)} / (π × 2π × {sig(f, 6)} × {number(a * b)}) "
         f"= {number(eta)}, {number(1000 * eta)} thousandths.",
         unit="× 10⁻³",
         setup=dict(thickness=float(h), tab=TAB_SEA),
@@ -521,10 +522,10 @@ def _reciprocity(rng: np.random.Generator) -> Question:
     eta12 = pick(rng, (2, 5, 8)) / 1000
     eta21 = n1 * eta12 / n2
     return Question(
-        f"Subsystem 1 has {n1:g} modes per hertz, subsystem 2 {n2:g}, and the coupling loss factor from 1 to 2 is "
+        f"Subsystem 1 has {sig(n1, 6)} modes per hertz, subsystem 2 {sig(n2, 6)}, and the coupling loss factor from 1 to 2 is "
         f"η₁₂ = {number(eta12)}. What is η₂₁, in thousandths?",
         1000 * eta21,
-        f"Reciprocity, n₁η₁₂ = n₂η₂₁: η₂₁ = {n1:g} × {number(eta12)}/{n2:g} = {number(eta21)}, "
+        f"Reciprocity, n₁η₁₂ = n₂η₂₁: η₂₁ = {sig(n1, 6)} × {number(eta12)}/{sig(n2, 6)} = {number(eta21)}, "
         f"{number(1000 * eta21)} thousandths. The subsystem with fewer modes hands each of its energy on faster.",
         unit="× 10⁻³",
     )
@@ -986,7 +987,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         p = self.plate
         self.fc = critical_frequency(p)
         self.info.setText(
-            f"D = {p.rigidity:.4g} N·m, m″ = ρh = {p.surface_mass:.4g} kg/m²; f<sub>c</sub> = {fmt(self.fc, 'Hz')}."
+            f"D = {sig(p.rigidity, 4)} N·m, m″ = ρh = {sig(p.surface_mass, 4)} kg/m²; f<sub>c</sub> = {fmt(self.fc, 'Hz')}."
         )
         self.modes = None  # worked out when a tab wants them
         self.lazy.stale()
@@ -1159,8 +1160,8 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         self.wave_plot.setYRange(math.log10(k_lo), math.log10(k_hi), padding=0.05)
         sigma = float(modal_efficiency(p, np.array([m]), np.array([n]), fmn)[0, 0])
         self.readout.setText(
-            f"Mode ({m}, {n}) at {fmt(fmn, 'Hz')}: k<sub>x</sub> = {kx:.3g}, k<sub>y</sub> = {ky:.3g} rad/m against "
-            f"sound's k = {TWO_PI * fmn / AIR.c:.3g}; {classify(p, m, n, fmn)}, σ = {sigma:.3g}. "
+            f"Mode ({m}, {n}) at {fmt(fmn, 'Hz')}: k<sub>x</sub> = {sig(kx)}, k<sub>y</sub> = {sig(ky)} rad/m against "
+            f"sound's k = {sig(TWO_PI * fmn / AIR.c)}; {classify(p, m, n, fmn)}, σ = {sig(sigma)}. "
             f"Critical frequency f<sub>c</sub> = {fmt(self.fc, 'Hz')}."
         )
 
@@ -1212,7 +1213,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         mid = (modes.freq > 0.25 * self.fc) & (modes.freq < 0.5 * self.fc)
         between = (
             f"From f<sub>c</sub>/4 to f<sub>c</sub>/2 the {int(mid.sum())} modes' mean σ is "
-            f"{float(modes.sigma[mid].mean()):.3g}, Maidanik's {float(maidanik(p, 0.5**1.5 * self.fc)):.3g} at "
+            f"{sig(float(modes.sigma[mid].mean()))}, Maidanik's {sig(float(maidanik(p, 0.5**1.5 * self.fc)))} at "
             "the middle. "
             if mid.any()
             else ""
@@ -1257,12 +1258,12 @@ class VibroAcousticsPage(QtWidgets.QWidget):
             if at <= f[-1]:
                 rad = radiation_loss_factor(p, at)
                 parts.append(
-                    f"{rad:.2g} at {fmt(at, 'Hz')}, the sound {10 * math.log10(1 + eta / rad):.3g} dB below the input"
+                    f"{sig(rad, 2)} at {fmt(at, 'Hz')}, the sound {sig(10 * math.log10(1 + eta / rad))} dB below the input"
                 )
         cut = f" (to {fmt(f[-1], 'Hz')}: {MAX_MODES} modes)" if r.top < self.f_top else ""
         self.driven_note.setText(
             f"The infinite plate takes F²/16√(Dρh) = {fmt(d.infinite_input, 'W')} from 1 N. The radiation's own loss "
-            f"factor ρcσ/ωm″ (Maidanik's σ) against η = {eta:.3g}: "
+            f"factor ρcσ/ωm″ (Maidanik's σ) against η = {sig(eta)}: "
             + "; ".join(parts)
             + f". The modes' mutual radiation is left out{cut}."
         )
@@ -1281,9 +1282,9 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         f_dip, tl_dip = coincidence_dip(p, eta)
         at500 = float(transmission_loss(p, eta, 500.0)[0])
         self.tl_note.setText(
-            f"m″ = {p.surface_mass:.3g} kg/m². At 500 Hz: {at500:.3g} dB from every angle, "
-            f"{float(mass_law(p, 500.0)):.3g} dB at normal incidence. f<sub>c</sub> = {fmt(self.fc, 'Hz')}, and the "
-            f"coincidence dip's bottom {tl_dip:.3g} dB at {fmt(f_dip, 'Hz')}; above it the TL rises about 9 dB an "
+            f"m″ = {sig(p.surface_mass)} kg/m². At 500 Hz: {sig(at500)} dB from every angle, "
+            f"{sig(float(mass_law(p, 500.0)))} dB at normal incidence. f<sub>c</sub> = {fmt(self.fc, 'Hz')}, and the "
+            f"coincidence dip's bottom {sig(tl_dip)} dB at {fmt(f_dip, 'Hz')}; above it the TL rises about 9 dB an "
             "octave, more with more damping."
         )
         settle_plots(self)
@@ -1316,11 +1317,11 @@ class VibroAcousticsPage(QtWidgets.QWidget):
         d1, d2 = osc.deltas
         measured = now.flow / (now.E1 - now.E2) if now.E1 != now.E2 else beta
         self.osc_note.setText(
-            f"f₂ = {fmt(osc.f2, 'Hz')}. With P₂/P₁ = {ratio:.3g}: E₁ = {fmt(now.E1, 'J')}, E₂ = {fmt(now.E2, 'J')}, "
+            f"f₂ = {fmt(osc.f2, 'Hz')}. With P₂/P₁ = {sig(ratio)}: E₁ = {fmt(now.E1, 'J')}, E₂ = {fmt(now.E2, 'J')}, "
             f"and {fmt(abs(now.flow), 'W')} flows from oscillator {1 if now.flow >= 0 else 2} to "
-            f"{2 if now.flow >= 0 else 1}: P₁₂/(E₁ − E₂) = {measured:.5g}/s, Lyon's β = {beta:.5g}/s, the same for "
-            f"every drive. Against the damping rates Δ₁ = {d1:.3g}/s and Δ₂ = {d2:.3g}/s, β is "
-            f"{100 * beta / min(d1, d2):.3g} % of the smaller."
+            f"{2 if now.flow >= 0 else 1}: P₁₂/(E₁ − E₂) = {sig(measured, 5)}/s, Lyon's β = {sig(beta, 5)}/s, the same for "
+            f"every drive. Against the damping rates Δ₁ = {sig(d1)}/s and Δ₂ = {sig(d2)}/s, β is "
+            f"{sig(100 * beta / min(d1, d2))} % of the smaller."
         )
         settle_plots(self)
 
@@ -1354,7 +1355,7 @@ class VibroAcousticsPage(QtWidgets.QWidget):
 
 
 def _above(level: float) -> str:
-    return f"{abs(level):.2g} dB {'above' if level >= 0 else 'below'}"
+    return f"{sig(abs(level), 2)} dB {'above' if level >= 0 else 'below'}"
 
 
 def _retuned(osc: Oscillators, ratio: float) -> Oscillators:
@@ -1384,10 +1385,10 @@ def _sea_note(net: Network, r: NetworkResponse) -> str:
     width = band_edges(r.centres)[1] - band_edges(r.centres)[0]
     counts = r.density * width[:, None]
     return (
-        f"At {fmt(f, 'Hz')}: τ̄₁₂ = {tau:.3g} across the corner, so η₁₂ = {eta[0, 1]:.3g} and η₂₁ = {eta[1, 0]:.3g}, "
-        f"with n₁η₁₂ = n₂η₂₁ = {n[0] * eta[0, 1]:.3g} s (reciprocity). Plate 2's ⟨v²⟩ is "
-        f"{_above(10 * math.log10(v2[1] / v2[0]))} plate 1's, its energy per mode {share:.3g} of plate 1's. "
-        f"The room: {_spl(r.pressure)[i]:.3g} dB, {100 * flow[1, 2] / into_room:.3g} % of its sound by plate 2. "
+        f"At {fmt(f, 'Hz')}: τ̄₁₂ = {sig(tau)} across the corner, so η₁₂ = {sig(eta[0, 1])} and η₂₁ = {sig(eta[1, 0])}, "
+        f"with n₁η₁₂ = n₂η₂₁ = {sig(n[0] * eta[0, 1])} s (reciprocity). Plate 2's ⟨v²⟩ is "
+        f"{_above(10 * math.log10(v2[1] / v2[0]))} plate 1's, its energy per mode {sig(share)} of plate 1's. "
+        f"The room: {sig(_spl(r.pressure)[i])} dB, {sig(100 * flow[1, 2] / into_room)} % of its sound by plate 2. "
         f"Plate 1's 1 N puts in {fmt(r.input_power[i], 'W')}. SEA wants several modes in each band: three or more "
         f"from {_first_band(r.centres, counts[:, 0])} on plate 1, {_first_band(r.centres, counts[:, 1])} on plate 2."
     )

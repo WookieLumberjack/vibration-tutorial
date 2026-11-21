@@ -44,6 +44,7 @@ from ..core.duffing import (
 )
 from .plot import Curve
 from .text import fmt, number
+from .text import number as sig
 
 WINDOW = 20.0  # s of simulated time on the strip chart
 PLOT_POINTS = 1200  # the strip chart's buckets (min and max of each)
@@ -387,13 +388,13 @@ def chart_point(osc: Duffing, freq_hz: float) -> ChartPoint:
     r = freq_hz / osc.natural_hz
     rate = float(floquet_growth(osc.zeta, np.array([r]), np.array([osc.pump]), CHART_STEPS)[0, 0])
     verdict = (
-        f"rest is unstable: a swing grows as e<sup>{rate:.3g} ω<sub>n</sub> t</sup>"
+        f"rest is unstable: a swing grows as e<sup>{sig(rate)} ω<sub>n</sub> t</sup>"
         if rate > 0
-        else f"rest is stable: a swing dies away as e<sup>−{-rate:.3g} ω<sub>n</sub> t</sup>"
+        else f"rest is stable: a swing dies away as e<sup>−{sig(-rate)} ω<sub>n</sub> t</sup>"
     )
     return ChartPoint(
         np.array([[r, osc.pump]]),
-        f"ζ = {100 * osc.zeta:.2g} %. Pumping at Ω/ω<sub>n</sub> = {r:.3g} with μ = {osc.pump:.3g}, {verdict} "
+        f"ζ = {sig(100 * osc.zeta, 2)} %. Pumping at Ω/ω<sub>n</sub> = {sig(r)} with μ = {sig(osc.pump)}, {verdict} "
         "(on the linear spring). Click to pump elsewhere.",
     )
 
@@ -404,7 +405,7 @@ def chart_point(osc: Duffing, freq_hz: float) -> ChartPoint:
 def osc_info(osc: Duffing, curve: ResponseCurve | None) -> str:
     parts = []
     if osc.stiffness > 0:
-        parts.append(f"Small swings: f<sub>n</sub> = {osc.natural_hz:.3g} Hz, ζ = {100 * osc.zeta:.2g} %.")
+        parts.append(f"Small swings: f<sub>n</sub> = {sig(osc.natural_hz)} Hz, ζ = {sig(100 * osc.zeta, 2)} %.")
     else:
         parts.append("No linear spring: the frequency depends on the swing alone.")
     if osc.cubic < 0:
@@ -412,7 +413,7 @@ def osc_info(osc: Duffing, curve: ResponseCurve | None) -> str:
     elif osc.cubic > 0 and osc.stiffness > 0 and curve is not None and 0 < curve.tip < math.inf:
         ratio = 0.75 * osc.cubic * curve.tip**2 / osc.stiffness
         parts.append(
-            f"At the peak ({fmt_length(curve.tip)}) the cubic adds {100 * ratio:.3g} % to the spring's stiffness."
+            f"At the peak ({fmt_length(curve.tip)}) the cubic adds {sig(100 * ratio)} % to the spring's stiffness."
         )
     return " ".join(parts)
 
@@ -440,11 +441,11 @@ def branches(osc: Duffing, freq_hz: float) -> Branches:
     what = "swings at half the pump's frequency" if pumped_only(osc) else "steady amplitudes"
     f = freq_hz
     if a.size >= 2:
-        note = f"At {f:.3g} Hz, {what}: {listed}."
+        note = f"At {sig(f)} Hz, {what}: {listed}."
     elif a.size:
-        note = f"At {f:.3g} Hz there is one steady state, {listed}: hold inside the band for more."
+        note = f"At {sig(f)} Hz there is one steady state, {listed}: hold inside the band for more."
     else:
-        note = f"At {f:.3g} Hz there is no steady response below the escape amplitude."
+        note = f"At {sig(f)} Hz there is no steady response below the escape amplitude."
     return Branches((a.size > 0, a.size >= 3, a.size >= 2), note)
 
 
@@ -455,7 +456,7 @@ def _measured(cycles: list[Cycle], p_curve: ResponseCurve, half: bool) -> str | 
     for leg, word in (("up", "going up"), ("down", "going down")):
         f = measured_jump(cycles, leg, half=half, floor=floor)
         if f is not None:
-            measured.append(f"{f:.3g} Hz {word}")
+            measured.append(f"{sig(f)} Hz {word}")
     return "Measured: the jump at " + " and ".join(measured) + "." if measured else None
 
 
@@ -469,11 +470,11 @@ def readout(
         if len(folds) >= 2:
             lo, hi = folds[0], folds[-1]
             lines.append(
-                f"Harmonic balance: two stable amplitudes between {lo.freq_hz:.3g} and {hi.freq_hz:.3g} Hz. "
-                f"Sweeping up, the {'upper' if hi.down else 'lower'} branch ends at {hi.freq_hz:.3g} Hz "
+                f"Harmonic balance: two stable amplitudes between {sig(lo.freq_hz)} and {sig(hi.freq_hz)} Hz. "
+                f"Sweeping up, the {'upper' if hi.down else 'lower'} branch ends at {sig(hi.freq_hz)} Hz "
                 f"({fmt_length(hi.amplitude)}) and {'drops' if hi.down else 'jumps'} to "
                 f"{fmt_length(hi.lands_at)}; sweeping down, the {'upper' if lo.down else 'lower'} ends at "
-                f"{lo.freq_hz:.3g} Hz ({fmt_length(lo.amplitude)}) and "
+                f"{sig(lo.freq_hz)} Hz ({fmt_length(lo.amplitude)}) and "
                 f"{'drops' if lo.down else 'jumps'} to {fmt_length(lo.lands_at)}."
             )
             measured = _measured(cycles, p_curve, half=False)
@@ -482,11 +483,11 @@ def readout(
         elif folds:
             fold = folds[0]
             lines.append(
-                f"Harmonic balance: a branch ends at {fold.freq_hz:.3g} Hz ({fmt_length(fold.amplitude)}) and "
+                f"Harmonic balance: a branch ends at {sig(fold.freq_hz)} Hz ({fmt_length(fold.amplitude)}) and "
                 f"{'drops' if fold.down else 'jumps'} to {fmt_length(fold.lands_at)}; the other runs into the "
                 "escape amplitude."
                 if osc.cubic < 0
-                else f"Harmonic balance: a branch ends at {fold.freq_hz:.3g} Hz; the other runs off the top "
+                else f"Harmonic balance: a branch ends at {sig(fold.freq_hz)} Hz; the other runs off the top "
                 "(no damping to bound it)."
             )
         else:
@@ -498,13 +499,13 @@ def readout(
         if edges is None:
             lines.append("Pumped: the pump is too weak for the damping, so rest is stable at every frequency.")
         else:
-            text = f"Pumped: rest is unstable between {edges[0]:.3g} and {edges[1]:.3g} Hz (harmonic balance)"
+            text = f"Pumped: rest is unstable between {sig(edges[0])} and {sig(edges[1])} Hz (harmonic balance)"
             if osc.cubic == 0:
                 text += ", and there a swing at half the pump's frequency grows without bound."
             else:
                 jumps = [f for f in p_curve.folds if f.lands_at > f.amplitude]
                 text += ", where the swing at half its frequency settles on the branch" + (
-                    f"; sweeping down, rest turns unstable at {jumps[0].freq_hz:.3g} Hz and the swing "
+                    f"; sweeping down, rest turns unstable at {sig(jumps[0].freq_hz)} Hz and the swing "
                     f"jumps to {fmt_length(jumps[0].lands_at)}."
                     if jumps
                     else "."

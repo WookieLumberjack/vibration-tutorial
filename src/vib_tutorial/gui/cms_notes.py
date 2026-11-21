@@ -18,6 +18,7 @@ from ..core import (
 from ..core.modal import TWO_PI
 from ..core.practice import Prediction
 from ..view_models.text import entry
+from ..view_models.text import number as sig
 from . import cms_figures
 from .lesson import trials_html
 from .links import load_notes
@@ -373,7 +374,7 @@ def _fixed_steps(model: CMSModel) -> list[str]:
             )
             continue
         freqs = ", ".join(
-            (f"<b>{f:.4g}</b>" if r < sub.n_kept else f"<span style='color:{colors.grey}'>{f:.4g}</span>")
+            (f"<b>{sig(f, 4)}</b>" if r < sub.n_kept else f"<span style='color:{colors.grey}'>{sig(f, 4)}</span>")
             for r, f in enumerate(sub.omegas / TWO_PI)
         )
         parts.append(
@@ -484,7 +485,7 @@ def _free_steps(model: CMSModel) -> list[str]:
             )
             continue
         freqs = ", ".join(
-            (f"<b>{f:.4g}</b>" if r < sub.n_kept else f"<span style='color:{colors.grey}'>{f:.4g}</span>")
+            (f"<b>{sig(f, 4)}</b>" if r < sub.n_kept else f"<span style='color:{colors.grey}'>{sig(f, 4)}</span>")
             for r, f in enumerate(np.where(sub.omegas > 1e-9, sub.omegas, 0.0) / TWO_PI)
         )
         rigid = f" {sub.n_rigid} rigid-body mode{'s' if sub.n_rigid > 1 else ''} at 0 Hz." if sub.n_rigid else ""
@@ -667,7 +668,7 @@ def _assembly_steps(model: CMSModel, full: ModalResult | None) -> list[str]:
             "x<sub>b</sub> = −K̂<sub>bb</sub><sup>−1</sup>K̂<sub>bq</sub>q.</p>"
         )
     parts.append(matrix_html(model.T, labels, glabels, groups, ggroups, "T"))
-    freqs = ", ".join(f"{f:.4g}" for f in model.fn_hz)
+    freqs = ", ".join(f"{sig(f, 4)}" for f in model.fn_hz)
     parts.append(f"<p>Reduced-model natural frequencies: {freqs} Hz.</p>")
     parts.append(_damped_comparison(model, full))
     parts.append(_recovery_step(model))
@@ -782,7 +783,7 @@ def _damped_comparison(model: CMSModel, full: ModalResult | None) -> str:
             )
             cells += [
                 f"{c.zeta_red:.4f}",
-                "—" if err is None else f"<span style='color:{color}'>{100 * err:+.3g}%</span>",
+                "—" if err is None else f"<span style='color:{color}'>{sig(100 * err, plus=True)}%</span>",
             ]
         rows.append("<tr>" + "".join(f"<td align='right'>{x}</td>" for x in cells) + "</tr>")
     rows.append("</table>")

@@ -24,6 +24,7 @@ from ..core import force_id as fid
 from ..core import nonlinear_test as nl
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick
+from ..view_models.text import number as sig
 from . import coalesce, nonlinear_figures, settle_plots, weak
 from .layouts import FlowLayout
 from .lesson import (
@@ -234,10 +235,10 @@ def _cubic_stiffness(rng: np.random.Generator) -> Question:
     amp = pick(rng, (2.0, 5.0, 10.0))
     k = 0.75 * k3 * (amp / 1000) ** 2
     return Question(
-        f"A cubic spring k₃δ³ with k₃ = {k3:.0e} N/m³ swings at {amp:g} mm amplitude. What stiffness does it add "
+        f"A cubic spring k₃δ³ with k₃ = {sig(k3, 2)} N/m³ swings at {sig(amp, 6)} mm amplitude. What stiffness does it add "
         "to the first harmonic, in N/m?",
         k,
-        f"The first harmonic of k₃(A cos θ)³ is ¾k₃A³ cos θ: a stiffness ¾k₃A² = ¾ × {k3:.0e} × ({amp:g} × 10⁻³)² "
+        f"The first harmonic of k₃(A cos θ)³ is ¾k₃A³ cos θ: a stiffness ¾k₃A² = ¾ × {sig(k3, 2)} × ({sig(amp, 6)} × 10⁻³)² "
         f"= {number(k)} N/m. It grows with the amplitude's square: the peak leans further at each level.",
         unit="N/m",
     )
@@ -295,10 +296,10 @@ def _filter_factor(rng: np.random.Generator) -> Question:
     lam = s * ratio
     factor = s * s / (s * s + lam * lam)
     return Question(
-        f"Tikhonov regularization with λ = {lam:.1e}: by what factor does it keep the direction whose singular "
-        f"value is s = {s:.0e}?",
+        f"Tikhonov regularization with λ = {sig(lam, 2)}: by what factor does it keep the direction whose singular "
+        f"value is s = {sig(s, 2)}?",
         factor,
-        f"s²/(s² + λ²) = 1/(1 + (λ/s)²) = 1/(1 + {ratio:g}²) = {number(factor)}. Directions with s ≫ λ are kept "
+        f"s²/(s² + λ²) = 1/(1 + (λ/s)²) = 1/(1 + {sig(ratio, 6)}²) = {number(factor)}. Directions with s ≫ λ are kept "
         "whole, those with s ≪ λ dropped, with a smooth step between.",
     )
 
@@ -325,7 +326,7 @@ def _identify_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"Identify the impact on mass 3 within {target:g} % (the error's norm against the force's), with one "
+        f"Identify the impact on mass 3 within {sig(target, 6)} % (the error's norm against the force's), with one "
         "sensor and the noise left at 2 %.",
         0,
         "Measure the acceleration on mass 3 itself (it feels the force at once, so G is well conditioned) and "
@@ -346,11 +347,11 @@ def _gap_stiffness(rng: np.random.Generator) -> Question:
     r = gap / amp
     keq = float(nl.gap_stiffness(k, gap * 1e-3, np.array(amp * 1e-3)))
     return Question(
-        f"A spring of {k:g} N/m behind a {gap:g} mm gap (it pushes only once the stretch passes the gap) swings at "
-        f"{amp:g} mm amplitude. What stiffness does its first harmonic add, in N/m?",
+        f"A spring of {sig(k, 6)} N/m behind a {sig(gap, 6)} mm gap (it pushes only once the stretch passes the gap) swings at "
+        f"{sig(amp, 6)} mm amplitude. What stiffness does its first harmonic add, in N/m?",
         keq,
-        f"With r = g/A = {gap:g}/{amp:g} = {number(r)}, k<sub>eq</sub> = k(1 − (2/π)(arcsin r + r√(1 − r²))) = "
-        f"{k:g} × (1 − 0.6366 × ({number(math.asin(r))} + {number(r * math.sqrt(1 - r * r))})) = {number(keq)} N/m. "
+        f"With r = g/A = {sig(gap, 6)}/{sig(amp, 6)} = {number(r)}, k<sub>eq</sub> = k(1 − (2/π)(arcsin r + r√(1 − r²))) = "
+        f"{sig(k, 6)} × (1 − 0.6366 × ({number(math.asin(r))} + {number(r * math.sqrt(1 - r * r))})) = {number(keq)} N/m. "
         "It rises from 0 at the gap toward k far past it: a gap stiffens as the level grows.",
         unit="N/m",
     )
@@ -362,11 +363,11 @@ def _friction_damper(rng: np.random.Generator) -> Question:
     f = pick(rng, (2.0, 5.0, 10.0))
     c = 4 * F / (math.pi * 2 * math.pi * f * amp * 1e-3)
     return Question(
-        f"A mass slides against {F:g} N of friction, swinging at {amp:g} mm amplitude at {f:g} Hz. What viscous "
+        f"A mass slides against {sig(F, 6)} N of friction, swinging at {sig(amp, 6)} mm amplitude at {sig(f, 6)} Hz. What viscous "
         "damper takes out the same energy each cycle, in N·s/m?",
         c,
-        f"Friction's first harmonic is a damper c<sub>eq</sub> = 4F<sub>f</sub>/(πΩA) = 4 × {F:g} / (π × 2π × "
-        f"{f:g} × {amp:g} × 10⁻³) = {number(c)} N·s/m. Smaller swings get more of it: friction damps small "
+        f"Friction's first harmonic is a damper c<sub>eq</sub> = 4F<sub>f</sub>/(πΩA) = 4 × {sig(F, 6)} / (π × 2π × "
+        f"{sig(f, 6)} × {sig(amp, 6)} × 10⁻³) = {number(c)} N·s/m. Smaller swings get more of it: friction damps small "
         "motions hardest.",
         unit="N·s/m",
     )
@@ -377,10 +378,10 @@ def _third_harmonic(rng: np.random.Generator) -> Question:
     amp = pick(rng, (2.0, 5.0, 10.0))
     f3 = 0.25 * k3 * (amp / 1000) ** 3
     return Question(
-        f"A cubic spring k₃δ³ with k₃ = {k3:.0e} N/m³ swings at {amp:g} mm amplitude. How large is its force's third "
+        f"A cubic spring k₃δ³ with k₃ = {sig(k3, 2)} N/m³ swings at {sig(amp, 6)} mm amplitude. How large is its force's third "
         "harmonic (the 3X a spectrum shows), in N?",
         f3,
-        f"cos³θ = ¾cos θ + ¼cos 3θ, so k₃(A cos θ)³ has ¼k₃A³ at 3θ: ¼ × {k3:.0e} × ({amp:g} × 10⁻³)³ = "
+        f"cos³θ = ¾cos θ + ¼cos 3θ, so k₃(A cos θ)³ has ¼k₃A³ at 3θ: ¼ × {sig(k3, 2)} × ({sig(amp, 6)} × 10⁻³)³ = "
         f"{number(f3)} N, a third of its first harmonic. It grows as A³: distortion shows the nonlinearity at "
         "a single level.",
         unit="N",
@@ -815,7 +816,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         s = self.system
         f = s.friction
         self.chain_info.setText(
-            "Friction: " + ", ".join(f"{v:.3g} N on mass {i + 1}" for i, v in enumerate(f) if v > 0) + "."
+            "Friction: " + ", ".join(f"{sig(v)} N on mass {i + 1}" for i, v in enumerate(f) if v > 0) + "."
             if np.any(f > 0)
             else "No friction."
         )
@@ -948,11 +949,11 @@ class NonlinearForcesPage(QtWidgets.QWidget):
                 (down.hz[j], abs(down.X[j, out]) / F) for j in down.jumps
             ]
             self.jump_items[k].setData([p[0] for p in points], [p[1] for p in points])
-            self.frf_legend.addItem(self.up_items[k], f"{F:g} N")
+            self.frf_legend.addItem(self.up_items[k], f"{sig(F, 6)} N")
             if up.jumps or down.jumps:
                 jumps.append(
-                    f"{F:g} N: up at {', '.join(f'{up.hz[j]:.4g}' for j in up.jumps) or '—'} Hz, "
-                    f"down at {', '.join(f'{down.hz[j]:.4g}' for j in down.jumps) or '—'} Hz"
+                    f"{sig(F, 6)} N: up at {', '.join(f'{sig(up.hz[j], 4)}' for j in up.jumps) or '—'} Hz, "
+                    f"down at {', '.join(f'{sig(down.hz[j], 4)}' for j in down.jumps) or '—'} Hz"
                 )
         self.frf_plot.setXRange(f[0], f[-1], padding=0)
         self.dist_line.setPos(self.dist_hz.value())
@@ -965,9 +966,9 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         spread = 0.0 if spread < 1e-9 else spread  # round-off
         text = (
             f"Response of mass {out + 1} to a force on mass {force + 1}. The levels' FRFs differ by "
-            f"<b>{100 * spread:.3g} %</b> of the peak"
+            f"<b>{sig(100 * spread)} %</b> of the peak"
         )
-        text += "; up and down agree." if apart < 1e-3 * top else f"; up and down differ by {100 * apart / top:.3g} %."
+        text += "; up and down agree." if apart < 1e-3 * top else f"; up and down differ by {sig(100 * apart / top)} %."
         if jumps:
             text += " Jumps: " + "; ".join(jumps) + "."
         if spread < 1e-6:
@@ -996,15 +997,15 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         how = {
             fid.Method.INVERSE: "the plain inverse",
             fid.Method.TSVD: f"truncated SVD, k = {int(self.k.value())}",
-            fid.Method.TIKHONOV: f"Tikhonov, λ = {10 ** self.log_lam.value():.3g}",
+            fid.Method.TIKHONOV: f"Tikhonov, λ = {sig(10 ** self.log_lam.value())}",
         }[method]
         err = fid.error(self.estimate, self.truth)
         text = (
-            f"Identified by {how}: off by <b>{100 * err:.3g} %</b> (the error's norm against the force's). G's "
-            f"singular values span {math.log10(p.s[0] / max(p.s[-1], 1e-300)):.3g} decades."
+            f"Identified by {how}: off by <b>{sig(100 * err)} %</b> (the error's norm against the force's). G's "
+            f"singular values span {sig(math.log10(p.s[0] / max(p.s[-1], 1e-300)))} decades."
         )
         if big > 3 * top:
-            text += f" Its largest is {big / top:.3g} times the true force's (clipped here)."
+            text += f" Its largest is {sig(big / top)} times the true force's (clipped here)."
         self.force_readout.setText(text)
 
     @coalesce.coalesced
@@ -1045,10 +1046,10 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         self.harm_plot.setYRange(0, max(float(share.max()) * 1.15, 1e-3), padding=0)
         hb = nl.harmonic_balance(s, self._element(), force, level, hz)
         self.dist_note.setText(
-            f"Mass {out + 1}'s steady response to {level:g} N at {hz:.4g} Hz (solid), stepped in time until a "
+            f"Mass {out + 1}'s steady response to {sig(level, 6)} N at {sig(hz, 4)} Hz (solid), stepped in time until a "
             f"cycle repeats ({w.cycles} cycles), against a pure sine (dashed). Below, its harmonics against 1X: "
-            f"3X is {share[1]:.3g} %, 2X {share[0]:.2g} %. Harmonic balance's 1X is "
-            f"{100 * (abs(hb.X[out]) / one - 1):+.2g} % from the time response's."
+            f"3X is {sig(share[1])} %, 2X {sig(share[0], 2)} %. Harmonic balance's 1X is "
+            f"{sig(100 * (abs(hb.X[out]) / one - 1), 2, plus=True)} % from the time response's."
         )
 
     def _draw_lcurve(self) -> None:
@@ -1068,9 +1069,9 @@ class NonlinearForcesPage(QtWidgets.QWidget):
             self.l_now.setData([], [])
         self.l_note.setText(
             f"Each point a λ: the residual ‖Gf − y‖ against the force's size ‖f‖. The diamond is the corner, λ = "
-            f"{c.corner:.3g}; the dot is the solution now. Left of the corner, smaller λ buys almost no residual "
+            f"{sig(c.corner)}; the dot is the solution now. Left of the corner, smaller λ buys almost no residual "
             f"and a much larger force (noise); below it, larger λ smooths the force away. The noise's own norm is "
-            f"{p.noise:.3g}."
+            f"{sig(p.noise)}."
         )
 
     def _draw_picard(self) -> None:

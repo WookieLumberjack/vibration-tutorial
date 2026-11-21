@@ -28,6 +28,7 @@ from ..core.transient import (
     pulse_response,
     step_metrics,
 )
+from ..view_models.text import number as sig
 from . import coalesce, settle_plots, transient_figures
 from .layouts import ColumnScroll
 from .lesson import (
@@ -234,12 +235,12 @@ def _impulse_peak(rng: np.random.Generator) -> Question:
     wn = math.sqrt(k / m)
     x = impulse / (m * wn)
     return Question(
-        f"A {m:g} kg mass on a spring of {k:g} N/m, undamped and at rest, is struck a blow of {impulse:g} N·s. "
+        f"A {sig(m, 6)} kg mass on a spring of {sig(k, 6)} N/m, undamped and at rest, is struck a blow of {sig(impulse, 6)} N·s. "
         "How far does it swing?",
         1e3 * x,
         f"The blow leaves it at rest where it was with velocity v = I/m = {number(impulse / m)} m/s, and it "
         f"vibrates freely from there: x = (I/mω<sub>n</sub>) sin ω<sub>n</sub>t, with ω<sub>n</sub> = "
-        f"√({k:g}/{m:g}) = {number(wn)} rad/s. It swings ±{number(1e3 * x)} mm.",
+        f"√({sig(k, 6)}/{sig(m, 6)}) = {number(wn)} rad/s. It swings ±{number(1e3 * x)} mm.",
         unit="mm",
         setup=dict(kind=PulseKind.IMPULSE, amplitude=impulse, mass=m, stiffness=k, damping=0.0, at=0.1),
     )
@@ -254,7 +255,7 @@ def _step_peak(rng: np.random.Generator) -> Question:
     over = step_metrics(osc).overshoot
     peak = force / k * (1.0 + over)
     return Question(
-        f"m = {m:g} kg, k = {k:g} N/m and c = {number(c)} N·s/m, at rest. A force of {force:g} N is switched on "
+        f"m = {sig(m, 6)} kg, k = {sig(k, 6)} N/m and c = {number(c)} N·s/m, at rest. A force of {sig(force, 6)} N is switched on "
         "and left on. How far does the mass get at most?",
         1e3 * peak,
         f"ζ = c/2√(km) = {number(osc.zeta)}. It overshoots the static {number(1e3 * force / k)} mm by "
@@ -272,7 +273,7 @@ def _peak_time(rng: np.random.Generator) -> Question:
     osc = Oscillator(m, k, c)
     tp = math.pi / osc.omega_d
     return Question(
-        f"m = {m:g} kg, k = {k:g} N/m and c = {number(c)} N·s/m. A force is switched on and left on. How long "
+        f"m = {sig(m, 6)} kg, k = {sig(k, 6)} N/m and c = {number(c)} N·s/m. A force is switched on and left on. How long "
         "after does the mass reach its farthest?",
         tp,
         f"The step response peaks after half a damped period, π/ω<sub>d</sub>: ζ = {number(osc.zeta)}, "
@@ -296,10 +297,10 @@ def _rectangle_peak(rng: np.random.Generator) -> Question:
         else "Half a period or longer, it throws the mass to twice the static deflection, as a step would"
     )
     return Question(
-        f"A 1 kg mass on a spring of {k:g} N/m, undamped and at rest, is pushed with {force:g} N for {number(length)} "
+        f"A 1 kg mass on a spring of {sig(k, 6)} N/m, undamped and at rest, is pushed with {sig(force, 6)} N for {number(length)} "
         "s, then let go. How far does it swing at most?",
         1e3 * force / k * ratio,
-        f"T<sub>n</sub> = 2π/√{k:g} = {number(tn)} s, so the pulse lasts r = {number(r)} periods. {rule}: "
+        f"T<sub>n</sub> = 2π/√{sig(k, 6)} = {number(tn)} s, so the pulse lasts r = {number(r)} periods. {rule}: "
         f"{number(ratio)} × {number(1e3 * force / k)} mm = {number(1e3 * force / k * ratio)} mm.",
         unit="mm",
         setup=dict(kind=PulseKind.RECTANGLE, amplitude=force, duration=length, stiffness=k, damping=0.0),
@@ -313,10 +314,10 @@ def _ramp_overshoot(rng: np.random.Generator) -> Question:
     r = rise / tn
     over = abs(math.sin(math.pi * r)) / (math.pi * r)
     return Question(
-        f"A 1 kg mass on a spring of {k:g} N/m, undamped, has a load ramped onto it in a straight line over "
+        f"A 1 kg mass on a spring of {sig(k, 6)} N/m, undamped, has a load ramped onto it in a straight line over "
         f"{number(rise)} s, then held. By what percentage of the static deflection does it overshoot?",
         100.0 * over,
-        f"T<sub>n</sub> = 2π/√{k:g} = {number(tn)} s, so the ramp takes r = {number(r)} periods, and it "
+        f"T<sub>n</sub> = 2π/√{sig(k, 6)} = {number(tn)} s, so the ramp takes r = {number(r)} periods, and it "
         f"overshoots by |sin πr|/πr = {number(over)}: {number(100 * over)} %.",
         unit="%",
         tolerance=0.03,
@@ -412,20 +413,22 @@ def _ramp_spec(rng: np.random.Generator) -> Question:
             kept("The mass", t.mass, 1.0, "kg"),
             kept("The spring", t.stiffness, k, "N/m"),
             Requirement("No damper", f"{number(t.damping)} N·s/m", t.damping == 0),
-            Requirement(f"A ramp up to {force:g} N", t.kind.value, ramp and abs(t.amplitude - force) <= 0.005 * force),
+            Requirement(
+                f"A ramp up to {sig(force, 6)} N", t.kind.value, ramp and abs(t.amplitude - force) <= 0.005 * force
+            ),
             at_most("Its rise time", t.duration, longest, "s"),
             at_most("The overshoot", max(over, 0.0) if ramp else 100.0, most, "%"),
         )
 
     return Question(
-        f"A crane lowers {force:g} N onto a 1 kg mass on an undamped spring of {k:g} N/m (a stand-in for a "
+        f"A crane lowers {sig(force, 6)} N onto a 1 kg mass on an undamped spring of {sig(k, 6)} N/m (a stand-in for a "
         f"lightly damped structure), ramping the load on in a straight line. It must be on within {number(longest, 2)} "
-        f"s, and the structure mustn't swing more than {most:g} % past its static deflection. Choose the ramp's "
+        f"s, and the structure mustn't swing more than {sig(most, 6)} % past its static deflection. Choose the ramp's "
         "rise time.",
         0,
         f"The overshoot is |sin πr|/πr of the static, r the rise time in periods. Its envelope 1/πr would need "
         f"r ≥ {number(100 / (most * math.pi))}, far too slow; but it vanishes at every whole number of periods. "
-        f"T<sub>n</sub> = 2π/√{k:g} = {number(tn)} s: ramp over one, two or three periods ({number(design)} s for "
+        f"T<sub>n</sub> = 2π/√{sig(k, 6)} = {number(tn)} s: ramp over one, two or three periods ({number(design)} s for "
         f"two), to within about ±{number(2 * most / 100 * tn, 2)} s of it.",
         setup=dict(kind=PulseKind.RAMP, amplitude=force, duration=rounded(0.5 * tn, 4), stiffness=k, damping=0.0),
         goal=goal,
@@ -787,10 +790,10 @@ class TransientPage(QtWidgets.QWidget):
     def redraw(self) -> None:
         o, p = self.osc, self.pulse
         z = o.zeta
-        info = f"f<sub>n</sub> = {o.natural_hz:.4g} Hz (T<sub>n</sub> = {o.period:.4g} s), ζ = {z:.4g}"
-        info += f", 1/ζω<sub>n</sub> = {o.time_constant:.3g} s." if o.damping > 0 else ", undamped."
+        info = f"f<sub>n</sub> = {sig(o.natural_hz, 4)} Hz (T<sub>n</sub> = {sig(o.period, 4)} s), ζ = {sig(z, 4)}"
+        info += f", 1/ζω<sub>n</sub> = {sig(o.time_constant)} s." if o.damping > 0 else ", undamped."
         self.info.setText(info)
-        self.ratio_note.setText(f"T/T<sub>n</sub> = {p.duration / o.period:.3g}." if p.has_duration else "")
+        self.ratio_note.setText(f"T/T<sub>n</sub> = {sig(p.duration / o.period)}." if p.has_duration else "")
         self._draw_response()
         self._draw_convolution()
         self._draw_tab()
@@ -844,7 +847,7 @@ class TransientPage(QtWidgets.QWidget):
             self.cf_item.setData([0.0, 0.0], [0.0, 1.0])
             self.prod_item.setData([0.0, 0.0], [0.0, 0.0])
             self.prod_zero.setData([0.0, 0.0], [0.0, 0.0])
-            self.conv_note.setText(f"An impulse is one slice: x(t) = I h(t) = {fmt(xc, 'm')} at t = {at:.4g} s.")
+            self.conv_note.setText(f"An impulse is one slice: x(t) = I h(t) = {fmt(xc, 'm')} at t = {sig(at, 4)} s.")
         else:
             tt = np.linspace(0.0, span, 800)
             hh = impulse_response(o, at - tt)
@@ -858,7 +861,7 @@ class TransientPage(QtWidgets.QWidget):
             self.prod_item.setData(tau, y / scale_y)
             self.prod_zero.setData(tau, np.zeros_like(tau))
             self.conv_note.setText(
-                f"At t = {at:.4g} s the shaded area (∫f h dτ, by the trapezium rule) is {fmt(xc, 'm')}; "
+                f"At t = {sig(at, 4)} s the shaded area (∫f h dτ, by the trapezium rule) is {fmt(xc, 'm')}; "
                 f"the exact response is {fmt(x_exact, 'm')}."
             )
         self.conv_plot.setXRange(0, span, padding=0)
@@ -892,9 +895,9 @@ class TransientPage(QtWidgets.QWidget):
             else:
                 self.spec_now.setData([], [])
             self.spec_note.setText(
-                f"This {p.kind.value.lower()}: T/T<sub>n</sub> = {r:.3g}, peak "
-                f"{fmt(peak, 'm')}, {ratio:.3g} times the static {fmt(p.amplitude / o.stiffness, 'm')}"
-                f" (ζ = {o.zeta:.3g})."
+                f"This {p.kind.value.lower()}: T/T<sub>n</sub> = {sig(r)}, peak "
+                f"{fmt(peak, 'm')}, {sig(ratio)} times the static {fmt(p.amplitude / o.stiffness, 'm')}"
+                f" (ζ = {sig(o.zeta)})."
             )
         else:
             self.spec_now.setData([], [])
@@ -918,8 +921,8 @@ class TransientPage(QtWidgets.QWidget):
         if o.damping > 0:
             peak = 1.0 / (o.damping * o.omega_n)
             self.fourier_note.setText(
-                f"A ring of time constant {o.time_constant:.3g} s is a peak "
-                f"{2 * o.zeta * o.natural_hz:.3g} Hz wide (2ζf<sub>n</sub>), "
+                f"A ring of time constant {sig(o.time_constant)} s is a peak "
+                f"{sig(2 * o.zeta * o.natural_hz)} Hz wide (2ζf<sub>n</sub>), "
                 f"{fmt(peak, 'm/N')} high (1/cω<sub>n</sub>)."
             )
         else:
@@ -948,15 +951,15 @@ class TransientPage(QtWidgets.QWidget):
         self.step_plot.setXRange(0, span, padding=0)
         if o.zeta < 1:
             text = (
-                f"Overshoot e<sup>−ζπ/√(1 − ζ²)</sup> = {100 * m.overshoot:.3g} % at π/ω<sub>d</sub> = "
-                f"{m.peak_time:.3g} s. "
+                f"Overshoot e<sup>−ζπ/√(1 − ζ²)</sup> = {sig(100 * m.overshoot)} % at π/ω<sub>d</sub> = "
+                f"{sig(m.peak_time)} s. "
             )
         else:
             text = "No overshoot (ζ ≥ 1). "
         if math.isfinite(m.settling):
             text += (
-                f"Within 2 % from {m.settling:.3g} s (dashed); the rule 4/ζω<sub>n</sub> says "
-                f"{m.settling_estimate:.3g} s."
+                f"Within 2 % from {sig(m.settling)} s (dashed); the rule 4/ζω<sub>n</sub> says "
+                f"{sig(m.settling_estimate)} s."
             )
         else:
             text += "Undamped, it never settles: it swings between 0 and twice the static deflection."

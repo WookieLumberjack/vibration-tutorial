@@ -28,6 +28,7 @@ from ..core.practice import Placement, Prediction
 from ..core.sdof import TWO_PI
 from .plot import Curve
 from .text import db, fmt
+from .text import number as sig
 
 MOUNTS = list(Mount)
 FAMILY = (0.0, 0.1, 0.3, 0.7)  # the damping ratios drawn behind the isolator's own curve
@@ -219,8 +220,8 @@ class Chart:
 def mount_info(iso: Isolator) -> str:
     fn = iso.natural_hz
     return (
-        f"k = {fmt(iso.stiffness, 'N/m', 4)}, c = {fmt(iso.damping, 'N·s/m', 4)}, f<sub>n</sub> = {fn:.4g} Hz "
-        f"({60 * fn:.0f} rpm); running at r = {iso.speed_hz / fn:.3g}."
+        f"k = {fmt(iso.stiffness, 'N/m', 4)}, c = {fmt(iso.damping, 'N·s/m', 4)}, f<sub>n</sub> = {sig(fn, 4)} Hz "
+        f"({60 * fn:.0f} rpm); running at r = {sig(iso.speed_hz / fn)}."
     )
 
 
@@ -236,13 +237,13 @@ def transmissibility(iso: Isolator) -> Transmissibility:
     r = iso.speed_hz / fn
     F = float(iso.force_at(iso.speed_hz))
     verdict = (
-        f"isolation {100 * (1 - Tn):.3g} % ({db(Tn):.3g} dB)"
+        f"isolation {sig(100 * (1 - Tn))} % ({sig(db(Tn))} dB)"
         if Tn < 1
-        else f"amplified {Tn:.3g} times ({db(Tn):+.3g} dB)"
+        else f"amplified {sig(Tn)} times ({sig(db(Tn), plus=True)} dB)"
     )
     note = (
         f"At {iso.rpm:.0f} rpm the unbalance pulls with {fmt(F, 'N')}; {fmt(Ff, 'N')} reaches the floor: T = "
-        f"{Tn:.3g}, {verdict}. The machine moves ±{fmt(X, 'm')}."
+        f"{sig(Tn)}, {verdict}. The machine moves ±{fmt(X, 'm')}."
     )
     rpm = np.geomspace(max(iso.rpm / 50.0, 1.0), iso.rpm * 3.0, 800)
     fr = rpm / 60.0
@@ -269,8 +270,8 @@ def design_note(iso: Isolator, target: float) -> str:
     except ValueError:
         return ""
     return (
-        f"{100 * target:.4g} % at {iso.rpm:.0f} rpm needs f<sub>n</sub> ≤ {math.sqrt(G / d) / TWO_PI:.3g} Hz: a sag "
-        f"of {1e3 * d:.3g} mm or more (undamped, one stage)."
+        f"{sig(100 * target, 4)} % at {iso.rpm:.0f} rpm needs f<sub>n</sub> ≤ {sig(math.sqrt(G / d) / TWO_PI)} Hz: a sag "
+        f"of {sig(1e3 * d)} mm or more (undamped, one stage)."
     )
 
 
@@ -322,9 +323,9 @@ def let_go_view(iso: Isolator, x0: float) -> StartUp:
         note=(
             f"Pulled to {fmt(x0, 'm')} and let go, stopped: it rings on its mounts and dies away"
             + (
-                f", at f<sub>n</sub> = {fn:.3g} Hz (a period of {fmt(1.0 / fn, 's')})"
+                f", at f<sub>n</sub> = {sig(fn)} Hz (a period of {fmt(1.0 / fn, 's')})"
                 if iso.mount is Mount.VISCOUS
-                else f" (one stage of plain mounts would ring at f<sub>n</sub> = {fn:.3g} Hz)"
+                else f" (one stage of plain mounts would ring at f<sub>n</sub> = {sig(fn)} Hz)"
             )
             + f"; the floor force peaks at {fmt(peak_f, 'N')}. A trial, or any box, runs it up again."
         ),
@@ -344,8 +345,8 @@ def chart(iso: Isolator) -> Chart:
         now=Curve.point(iso.rpm, 1e3 * iso.deflection),
         rpm_range=(float(rpm[0]), float(rpm[-1])),
         note=(
-            f"This machine: {iso.rpm:.0f} rpm on {1e3 * iso.deflection:.3g} mm mounts, "
-            + (f"isolating {100 * (1 - T):.3g} %" if T < 1 else f"amplified {T:.3g} times")
+            f"This machine: {iso.rpm:.0f} rpm on {sig(1e3 * iso.deflection)} mm mounts, "
+            + (f"isolating {sig(100 * (1 - T))} %" if T < 1 else f"amplified {sig(T)} times")
             + " with its damping and kind. "
             "Above a line, better isolated than it."
         ),

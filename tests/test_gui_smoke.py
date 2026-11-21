@@ -3977,7 +3977,7 @@ def test_continuum_waves_tab(app):
     assert (
         p.waves_view.run.waves.dashpot == 1.0
         and p.waves_view.end_line.isVisible()
-        and "reflects +0 of a wave" in p.waves_view.wave_info.text()
+        and "reflects 0 of a wave" in p.waves_view.wave_info.text()
     )
     p.loop.timer.stop()
     p.waves_view.step(2 * FRAMES_PER_TRANSIT)
@@ -5566,6 +5566,69 @@ def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window
                     clipped.append((name, column.width(), column.minimumSizeHint().width()))
     assert not over
     assert not clipped
+
+
+def test_no_page_shows_e_notation(main_window):
+    """No text on any page's any tab, as it opens, prints a number as 1.23e+04 or 4.62e-07: labels, buttons,
+    tables, notes, and the plots' titles, axes and text (#409 U-17; `text.number`, and
+    `test_no_page_prints_with_a_g_or_e_format_code` for the texts a trial or a control brings)."""
+    import re
+
+    import pyqtgraph as pg
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import recompute
+    from vib_tutorial.gui.live_label import LiveLabel
+    from vib_tutorial.gui.main_window import PAGE_GROUPS
+
+    e_notation = re.compile(r"(?<![\w.])\d+(?:\.\d+)?[eE][+-]\d+")
+    tag = re.compile(r"<[^>]+>")
+    w = main_window
+    w.resize(1280, 800)
+    found: set[tuple[str, str, str]] = set()
+
+    def texts(page):
+        for label in page.findChildren(QtWidgets.QLabel):
+            yield tag.sub(" ", label.text())
+        for label in page.findChildren(LiveLabel):
+            yield tag.sub(" ", label.text())
+        for button in page.findChildren(QtWidgets.QAbstractButton):
+            yield button.text()
+        for table in page.findChildren(QtWidgets.QTableWidget):
+            for r in range(table.rowCount()):
+                for c in range(table.columnCount()):
+                    if (item := table.item(r, c)) is not None:
+                        yield item.text()
+        for browser in page.findChildren(QtWidgets.QTextBrowser):
+            yield browser.toPlainText()
+        for view in page.findChildren(pg.GraphicsView):
+            for item in view.scene().items() if view.scene() is not None else ():
+                if isinstance(item, pg.TextItem):
+                    yield item.toPlainText()
+                elif isinstance(item, pg.LabelItem):
+                    yield tag.sub(" ", item.text)
+                elif isinstance(item, pg.AxisItem):
+                    yield tag.sub(" ", item.labelString())
+
+    def check(name: str, tab: str) -> None:
+        for job in list(recompute._ALL):
+            job.wait()
+        QtWidgets.QApplication.processEvents()
+        for text in texts(w.pages.currentWidget()):
+            for match in e_notation.finditer(text):
+                found.add((name, tab, text[max(0, match.start() - 30) : match.end() + 10]))
+
+    for _, pages in PAGE_GROUPS:
+        for name, _ in pages:
+            w.show_page(name)
+            QtWidgets.QApplication.processEvents()
+            check(name, "")
+            for tabs in w.pages.currentWidget().findChildren(QtWidgets.QTabWidget):
+                for i in range(tabs.count()):
+                    if tabs.isVisible():
+                        tabs.setCurrentIndex(i)
+                        check(name, tabs.tabText(i))
+    assert not found, "\n".join(f"{n} / {t}: …{s}…" for n, t, s in sorted(found))
 
 
 def test_no_legend_hides_data(main_window):

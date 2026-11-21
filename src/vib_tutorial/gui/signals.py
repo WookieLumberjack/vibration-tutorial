@@ -36,6 +36,7 @@ from ..core.signals import (
     window,
     window_props,
 )
+from ..view_models.text import number as sig
 from . import coalesce, settle_plots, signals_figures
 from .layouts import ColumnScroll
 from .lesson import (
@@ -285,7 +286,7 @@ def _alias(rng: np.random.Generator) -> Question:
     f = rounded(fs * pick(rng, (0.6, 0.7, 0.85, 1.15, 1.3, 1.6, 2.2)), 3)
     shown = apparent(f, fs)
     return Question(
-        f"A {number(f)} Hz tone is sampled at {fs:g} Hz with no anti-alias filter. At what frequency does it show "
+        f"A {number(f)} Hz tone is sampled at {sig(fs, 6)} Hz with no anti-alias filter. At what frequency does it show "
         "in the spectrum?",
         shown,
         f"Nyquist is f<sub>s</sub>/2 = {number(fs / 2)} Hz, below the tone, so it folds back: the samples fit a "
@@ -299,7 +300,7 @@ def _line_spacing(rng: np.random.Generator) -> Question:
     fs = pick(rng, (512, 1000, 1024, 2048, 4096, 5000))
     n = int(pick(rng, BLOCKS[2:]))
     return Question(
-        f"An analyzer takes blocks of {n} samples at {fs:g} Hz. How far apart are the spectrum's lines?",
+        f"An analyzer takes blocks of {n} samples at {sig(fs, 6)} Hz. How far apart are the spectrum's lines?",
         fs / n,
         f"The block lasts T = N/f<sub>s</sub> = {number(n / fs)} s, and the lines are Δf = 1/T = "
         f"f<sub>s</sub>/N = {number(fs / n)} Hz apart.",
@@ -315,10 +316,10 @@ def _record_length(rng: np.random.Generator) -> Question:
     overlap = pick(rng, (0, 50, 75))
     samples = blocks_needed(n, averages, overlap / 100.0)
     return Question(
-        f"{averages} averages of {n}-sample blocks at {fs:g} Hz, overlapping by {overlap:g} %. How long a record "
+        f"{averages} averages of {n}-sample blocks at {sig(fs, 6)} Hz, overlapping by {sig(overlap, 6)} %. How long a record "
         "does that take?",
         samples / fs,
-        f"Each new block starts {100 - overlap:g} % of a block, {round(n * (1 - overlap / 100))} samples, "
+        f"Each new block starts {sig(100 - overlap, 6)} % of a block, {round(n * (1 - overlap / 100))} samples, "
         f"after the last: N + (n − 1) × {round(n * (1 - overlap / 100))} = {samples} samples, "
         f"{number(samples / fs)} s.",
         unit="s",
@@ -333,11 +334,11 @@ def _scalloping(rng: np.random.Generator) -> Question:
     reads = a * 10 ** (-loss / 20)
     name = "no window" if kind is Window.RECTANGULAR else f"a {kind.value} window"
     return Question(
-        f"A tone of amplitude {a:g} lies exactly half-way between two lines. With {name}, what amplitude does "
+        f"A tone of amplitude {sig(a, 6)} lies exactly half-way between two lines. With {name}, what amplitude does "
         "the largest line read?",
         reads,
         f"Half-way between lines is the worst place: the window's spectrum half a line from its centre, the "
-        f"scalloping loss, is {number(loss)} dB for {name}: {a:g} × 10<sup>−{number(loss)}/20</sup> = "
+        f"scalloping loss, is {number(loss)} dB for {name}: {sig(a, 6)} × 10<sup>−{number(loss)}/20</sup> = "
         f"{number(reads)}. (No window: 2/π, 3.92 dB; Hann 1.42 dB; a flat top, almost none: that's what it's for.)",
         setup=dict(f1=50.5, a1=a, a2=0.0, window=kind),
     )
@@ -348,7 +349,7 @@ def _accelerometer_band(rng: np.random.Generator) -> Question:
     zeta = 0.01
     r = usable_band(zeta)
     return Question(
-        f"A piezoelectric accelerometer resonates at {fn / 1000:g} kHz, almost undamped (ζ = 0.01). Up to what "
+        f"A piezoelectric accelerometer resonates at {sig(fn / 1000, 6)} kHz, almost undamped (ζ = 0.01). Up to what "
         "frequency does it read the acceleration within 5 %?",
         r * fn,
         f"It reads 1/|1 − r² + 2iζr| of the truth; with ζ small, 1/(1 − r²) = 1.05 at r = √(1 − 1/1.05) = "
@@ -364,11 +365,11 @@ def _mass_loading(rng: np.random.Generator) -> Question:
     ms = pick(rng, (0.005, 0.01, 0.03, 0.05))
     shift = f - mass_loaded(f, m, ms)
     return Question(
-        f"A {1000 * ms:g} g accelerometer is fixed where a {f:g} Hz mode's modal mass is {m:g} kg. How far does it "
+        f"A {sig(1000 * ms, 6)} g accelerometer is fixed where a {sig(f, 6)} Hz mode's modal mass is {sig(m, 6)} kg. How far does it "
         "lower the mode's frequency?",
         shift,
-        f"Its mass adds to the modal mass, the stiffness unchanged: f √(m/(m + m<sub>s</sub>)) = {f:g} × "
-        f"√({m:g}/{number(m + ms)}) = {number(f - shift, 5)} Hz, {number(shift)} Hz lower.",
+        f"Its mass adds to the modal mass, the stiffness unchanged: f √(m/(m + m<sub>s</sub>)) = {sig(f, 6)} × "
+        f"√({sig(m, 6)}/{number(m + ms)}) = {number(f - shift, 5)} Hz, {number(shift)} Hz lower.",
         unit="Hz",
         tolerance=0.03,
         setup=dict(tab=TAB_SENSORS),
@@ -464,11 +465,11 @@ def _acquisition_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"Two tones {gap:g} Hz apart near {top:g} Hz are to be measured with an anti-alias filter, at least 4 lines "
+        f"Two tones {sig(gap, 6)} Hz apart near {sig(top, 6)} Hz are to be measured with an anti-alias filter, at least 4 lines "
         f"apart (Δf ≤ {number(gap / 4)} Hz), averaged {averages} times, all from a record no longer than "
         f"{number(longest, 2)} s. Set up the acquisition.",
         0,
-        f"The filter keeps f<sub>s</sub>/2.56, so f<sub>s</sub> ≥ 2.56 × {top:g} = {number(2.56 * top, 4)} Hz; "
+        f"The filter keeps f<sub>s</sub>/2.56, so f<sub>s</sub> ≥ 2.56 × {sig(top, 6)} = {number(2.56 * top, 4)} Hz; "
         f"no higher than needed, since Δf = f<sub>s</sub>/N and the block's length T = 1/Δf ≥ {number(4 / gap)} s "
         f"is fixed by the resolution. With f<sub>s</sub> = {number(fs, 2)} Hz, N = {n} gives Δf = "
         f"{number(fs / n)} Hz. {averages} blocks end to end take {number(averages * n / fs)} s, too long; "
@@ -982,17 +983,17 @@ class SignalsPage(QtWidgets.QWidget):
             at, reads = nearest_line_reading(spec, shown)
             where = f"{fmt(f, 'Hz')}" + (f" shows at {fmt(shown, 'Hz')}" if abs(shown - f) > 1e-9 else "")
             if psd:
-                texts.append(f"{where}: its power {a * a / 2:.3g} (m/s²)² over {fmt(spec.df, 'Hz')} lines")
+                texts.append(f"{where}: its power {sig(a * a / 2)} (m/s²)² over {fmt(spec.df, 'Hz')} lines")
             else:
                 texts.append(
-                    f"{where} (amplitude {a:.4g}): reads {reads:.4g} at {fmt(at, 'Hz')} "
+                    f"{where} (amplitude {sig(a, 4)}): reads {sig(reads, 4)} at {fmt(at, 'Hz')} "
                     f"({round(db(reads / a), 2) + 0.0 if a > 0 else 0.0:+.2f} dB)"
                 )
         self.tone_items.setData([p[0] for p in lines], [p[1] for p in lines])
         self._legend(noise > 0, bool(lines))
         mean_square = float(np.mean(self.samples**2)) if self.samples.size else 0.0
         area = float(np.sum(spec.psd) * spec.df)
-        texts.append(f"the record's mean square {mean_square:.4g}, the PSD's area {area:.4g}")
+        texts.append(f"the record's mean square {sig(mean_square, 4)}, the PSD's area {sig(area, 4)}")
         text = "; ".join(texts)
         self.spec_note.setText(text[0].upper() + text[1:] + ".")
         top = max(float(np.max(values)) if values.size else 1.0, max((p[1] for p in lines), default=0.0))
@@ -1075,13 +1076,13 @@ class SignalsPage(QtWidgets.QWidget):
         fn = self.sensor_hz.value()
         up, down = usable_band(z), usable_band(z, accelerometer=False)
         self.sensor_note.setText(
-            f"Within ±5 %: as an accelerometer up to r = {up:.3g} ({fmt(up * fn, 'Hz')}); as a seismometer from "
-            f"r = {down:.3g} ({fmt(down * fn, 'Hz')}) up."
+            f"Within ±5 %: as an accelerometer up to r = {sig(up)} ({fmt(up * fn, 'Hz')}); as a seismometer from "
+            f"r = {sig(down)} ({fmt(down * fn, 'Hz')}) up."
         )
 
     def _show_loading(self) -> None:
         f = self.structure_hz.value()
         loaded = mass_loaded(f, self.modal_mass.value(), self.sensor_mass.value())
         self.loading_note.setText(
-            f"With the sensor on, the mode is at {loaded:.4g} Hz, {100 * (loaded / f - 1):+.2f} %."
+            f"With the sensor on, the mode is at {sig(loaded, 4)} Hz, {100 * (loaded / f - 1):+.2f} %."
         )

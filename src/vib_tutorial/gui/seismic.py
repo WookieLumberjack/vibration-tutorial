@@ -52,6 +52,7 @@ from ..core.seismic import (
     time_history,
     with_tank,
 )
+from ..view_models.text import number as sig
 from . import coalesce, seismic_figures, settle_plots
 from .challenge import ChallengeBox
 from .lesson import (
@@ -253,11 +254,11 @@ def _sa(rng: np.random.Generator) -> Question:
     else:
         branch = "past T<sub>D</sub>: 2.5η a<sub>g</sub>S T<sub>C</sub>T<sub>D</sub>/T²"
     return Question(
-        f"A design spectrum for a<sub>g</sub> = {pga:g} g on ground type {GROUNDS[ground]}: S = {S:g}, "
-        f"T<sub>B</sub> = {TB:g} s, T<sub>C</sub> = {TC:g} s, T<sub>D</sub> = {TD:g} s, ζ = 5 % (η = 1). What is "
-        f"S<sub>a</sub> at T = {T:g} s?",
+        f"A design spectrum for a<sub>g</sub> = {sig(pga, 6)} g on ground type {GROUNDS[ground]}: S = {sig(S, 6)}, "
+        f"T<sub>B</sub> = {sig(TB, 6)} s, T<sub>C</sub> = {sig(TC, 6)} s, T<sub>D</sub> = {sig(TD, 6)} s, ζ = 5 % (η = 1). What is "
+        f"S<sub>a</sub> at T = {sig(T, 6)} s?",
         sa,
-        f"{T:g} s is {branch} = {number(sa)} g.",
+        f"{sig(T, 6)} s is {branch} = {number(sa)} g.",
         unit="g",
         setup=dict(pga=pga, ground=ground),
     )
@@ -267,10 +268,10 @@ def _eta(rng: np.random.Generator) -> Question:
     zeta = pick(rng, (2, 3, 8, 10, 15, 20))
     eta = Design(zeta=zeta / 100).eta
     return Question(
-        f"Dampers bring every mode of a building to ζ = {zeta:g} %. By what factor η does that scale its design "
+        f"Dampers bring every mode of a building to ζ = {sig(zeta, 6)} %. By what factor η does that scale its design "
         "spectrum, against 5 %?",
         eta,
-        f"η = √(10/(5 + ζ%)) = √(10/{5 + zeta:g}) = {number(eta)}"
+        f"η = √(10/(5 + ζ%)) = √(10/{sig(5 + zeta, 6)}) = {number(eta)}"
         + (": the spectrum rises." if eta > 1 else f": every peak {number(100 * (1 - eta))} % lower."),
         setup=dict(zeta=float(zeta)),
     )
@@ -282,7 +283,7 @@ def _period(rng: np.random.Generator) -> Question:
     T = float(modal(building(n, 1000 * m, 1e6 * k), Design()).T[0])
     w = 2 * math.sqrt(k * 1e6 / (m * 1000)) * math.sin(math.pi / (2 * (2 * n + 1)))
     return Question(
-        f"A uniform shear building of {n} storeys: {m:g} t floors on {k:g} MN/m storeys. What is its first mode's "
+        f"A uniform shear building of {n} storeys: {sig(m, 6)} t floors on {sig(k, 6)} MN/m storeys. What is its first mode's "
         "period?",
         T,
         f"A uniform chain fixed at the ground and free at the top has ω<sub>r</sub> = 2√(k/m) sin((2r − 1)π/(2(2n + "
@@ -299,12 +300,12 @@ def _effective_mass(rng: np.random.Generator) -> Question:
     num, den = m1 + m2 * a, m1 + m2 * a * a
     meff = num * num / den
     return Question(
-        f"A two-storey building, {m1:g} t on the first floor and {m2:g} t on the second, has a mode shaped (1, {a:g}). "
+        f"A two-storey building, {sig(m1, 6)} t on the first floor and {sig(m2, 6)} t on the second, has a mode shaped (1, {sig(a, 6)}). "
         "What is that mode's effective mass?",
         meff,
-        f"M<sub>eff</sub> = (φᵀM1)²/φᵀMφ = ({m1:g} + {m2:g} × {a:g})²/({m1:g} + {m2:g} × {a:g}²) = "
+        f"M<sub>eff</sub> = (φᵀM1)²/φᵀMφ = ({sig(m1, 6)} + {sig(m2, 6)} × {sig(a, 6)})²/({sig(m1, 6)} + {sig(m2, 6)} × {sig(a, 6)}²) = "
         f"{number(num)}²/{number(den)} = {number(meff)} t, {number(100 * meff / (m1 + m2))} % of the "
-        f"{m1 + m2:g} t.",
+        f"{sig(m1 + m2, 6)} t.",
         unit="t",
     )
 
@@ -313,10 +314,10 @@ def _modal_shear(rng: np.random.Generator) -> Question:
     meff, sa = pick(rng, (30, 44, 60, 85, 120)), pick(rng, (0.2, 0.35, 0.5, 0.8))
     V = meff * sa * G
     return Question(
-        f"A mode with {meff:g} t of effective mass sits at S<sub>a</sub> = {sa:g} g on the design spectrum. What base "
+        f"A mode with {sig(meff, 6)} t of effective mass sits at S<sub>a</sub> = {sig(sa, 6)} g on the design spectrum. What base "
         "shear does it give?",
         V,
-        f"V = M<sub>eff</sub>S<sub>a</sub> = {meff:g} t × {sa:g} × 9.81 m/s² = {number(V)} kN.",
+        f"V = M<sub>eff</sub>S<sub>a</sub> = {sig(meff, 6)} t × {sig(sa, 6)} × 9.81 m/s² = {number(V)} kN.",
         unit="kN",
     )
 
@@ -325,10 +326,10 @@ def _srss(rng: np.random.Generator) -> Question:
     v = (pick(rng, (150, 200, 250)), pick(rng, (40, 60, 80)), pick(rng, (10, 20, 30)))
     srss = math.sqrt(sum(x * x for x in v))
     return Question(
-        f"Three well-separated modes give base shears of {v[0]:g}, {v[1]:g} and {v[2]:g} kN. What base shear does "
+        f"Three well-separated modes give base shears of {sig(v[0], 6)}, {sig(v[1], 6)} and {sig(v[2], 6)} kN. What base shear does "
         "SRSS combine them into?",
         srss,
-        f"√({v[0]:g}² + {v[1]:g}² + {v[2]:g}²) = {number(srss)} kN (ABS would say {sum(v):g} kN; CQC, with the modes "
+        f"√({sig(v[0], 6)}² + {sig(v[1], 6)}² + {sig(v[2], 6)}²) = {number(srss)} kN (ABS would say {sig(sum(v), 6)} kN; CQC, with the modes "
         "this far apart, about the same as SRSS).",
         unit="kN",
     )
@@ -338,10 +339,10 @@ def _rho(rng: np.random.Generator) -> Question:
     ratio, zeta = pick(rng, (1.05, 1.1, 1.2, 1.5, 3.0)), pick(rng, (0.02, 0.05, 0.1))
     rho = float(correlation(np.array([1.0, ratio]), zeta)[0, 1])
     return Question(
-        f"Two modes, ζ = {100 * zeta:g} % each, their frequencies {ratio:g} times apart. What is Der Kiureghian's "
+        f"Two modes, ζ = {sig(100 * zeta, 6)} % each, their frequencies {sig(ratio, 6)} times apart. What is Der Kiureghian's "
         "correlation ρ between them?",
         rho,
-        f"ρ = 8ζ²(1 + r)r<sup>3/2</sup> / ((1 − r²)² + 4ζ²r(1 + r)²) with r = {ratio:g}: {number(rho)}"
+        f"ρ = 8ζ²(1 + r)r<sup>3/2</sup> / ((1 − r²)² + 4ζ²r(1 + r)²) with r = {sig(ratio, 6)}: {number(rho)}"
         + (": well apart, SRSS will do." if rho < 0.1 else ": correlated, so CQC's cross term matters."),
         tolerance=0.02,
     )
@@ -458,12 +459,12 @@ def _damping_spec(rng: np.random.Generator) -> Question:
         lo, hi = (mid, hi) if _base_shear(trial) / 1000 > limit else (lo, mid)
     return Question(
         f"The uniform {n}-storey building (10 t floors, 5 MN/m storeys) on ground type {GROUNDS[ground]}, "
-        f"a<sub>g</sub> = {pga:g} g. Dampers can raise every mode's ζ, to {most:g} % at most. Choose ζ so that the "
+        f"a<sub>g</sub> = {sig(pga, 6)} g. Dampers can raise every mode's ζ, to {sig(most, 6)} % at most. Choose ζ so that the "
         f"base shear, combined by CQC, is {number(limit)} kN or less.",
         0,
         f"Every peak scales with η = √(10/(5 + ζ%)), down to 0.55: at 5 % the base shear is "
         f"{number(_base_shear(start) / 1000)} kN, so η must come down to {number(limit * 1000 / _base_shear(start))}, "
-        f"ζ ≥ about {number(hi)} % (ζ = {zd:g} % gives {number(_base_shear(design) / 1000)} kN).",
+        f"ζ ≥ about {number(hi)} % (ζ = {sig(zd, 6)} % gives {number(_base_shear(design) / 1000)} kN).",
         setup=dict(storeys=n, pga=pga, ground=ground),
         goal=goal,
         design=dict(storeys=n, pga=pga, ground=ground, zeta=float(zd)),
@@ -506,13 +507,13 @@ def _isolation_spec(rng: np.random.Generator) -> Question:
 
     return Question(
         f"The uniform {n}-storey building (10 t floors, 5 MN/m storeys) stands on a 10 t slab, on ground type "
-        f"{GROUNDS[ground]}, a<sub>g</sub> = {pga:g} g, ζ = 15 %. Choose the bearings under the slab (storey 1's "
+        f"{GROUNDS[ground]}, a<sub>g</sub> = {sig(pga, 6)} g, ζ = 15 %. Choose the bearings under the slab (storey 1's "
         f"k<sub>1</sub>) so that the storey above them carries {number(shear_limit)} kN or less, by CQC, while the "
         f"bearings move {number(move_limit)} mm or less.",
         0,
         f"The whole {number(sum(masses) / 1000)} t moves on the bearings at T<sub>b</sub> = 2π√(Σm/k<sub>1</sub>). "
         f"A longer period lowers the shear (S<sub>a</sub> falls), but the bearings move more, up to the spectrum's "
-        f"T<sub>D</sub>: a period of about {period:g} s, k<sub>1</sub> ≈ {number(kb)} N/m, meets both.",
+        f"T<sub>D</sub>: a period of about {sig(period, 6)} s, k<sub>1</sub> ≈ {number(kb)} N/m, meets both.",
         setup=start,
         goal=goal,
         design=design,
@@ -713,7 +714,7 @@ class SeismicPage(QtWidgets.QWidget):
         set_quietly(self.k1, float(system.stiffness[0]))
         T = rigid_period(system)
         self.k1_info.setText(
-            f"T = 2π√(Σm/k₁) = {T:.3g} s: the building rigid on storey 1."
+            f"T = 2π√(Σm/k₁) = {sig(T)} s: the building rigid on storey 1."
             if math.isfinite(T)
             else "k₁ = 0: nothing holds the building to the ground."
         )
@@ -833,8 +834,8 @@ class SeismicPage(QtWidgets.QWidget):
         d = self.design
         S, TB, TC, TD = d.corners
         self.spec_info.setText(
-            f"S = {S:g}, T<sub>B</sub> = {TB:g} s, T<sub>C</sub> = {TC:g} s, T<sub>D</sub> = "
-            f"{TD:g} s, η = {d.eta:.3g}: a plateau of {2.5 * d.eta * S * d.pga_g:.3g} g."
+            f"S = {sig(S, 6)}, T<sub>B</sub> = {sig(TB, 6)} s, T<sub>C</sub> = {sig(TC, 6)} s, T<sub>D</sub> = "
+            f"{sig(TD, 6)} s, η = {sig(d.eta)}: a plateau of {sig(2.5 * d.eta * S * d.pga_g)} g."
         )
         held = math.isfinite(rigid_period(self.system))
         self.tabs.setEnabled(held)  # every tab draws the building's response, and a free one has none
@@ -884,10 +885,10 @@ class SeismicPage(QtWidgets.QWidget):
         rule = RULES[self.rule.currentIndex()]
         cum = np.cumsum(m.mass_share)
         rows = "".join(
-            f"<tr><td>{r + 1}</td><td align='right'>{m.f[r]:.3g}</td><td align='right'>{m.T[r]:.3g}</td>"
-            f"<td align='right'>{m.gamma[r] * np.sign(m.phi[-1, r]):.3g}</td>"
-            f"<td align='right'>{100 * m.mass_share[r]:.3g} %</td><td align='right'>{100 * cum[r]:.3g} %</td>"
-            f"<td align='right'>{m.sa[r] / G:.3g}</td><td align='right'>{fmt(abs(m.base_shear[r]), 'N')}</td></tr>"
+            f"<tr><td>{r + 1}</td><td align='right'>{sig(m.f[r])}</td><td align='right'>{sig(m.T[r])}</td>"
+            f"<td align='right'>{sig(m.gamma[r] * np.sign(m.phi[-1, r]))}</td>"
+            f"<td align='right'>{sig(100 * m.mass_share[r])} %</td><td align='right'>{sig(100 * cum[r])} %</td>"
+            f"<td align='right'>{sig(m.sa[r] / G)}</td><td align='right'>{fmt(abs(m.base_shear[r]), 'N')}</td></tr>"
             for r in range(m.f.size)
         )
         totals = " · ".join(
@@ -900,7 +901,7 @@ class SeismicPage(QtWidgets.QWidget):
             "<table cellspacing='5'><tr><th>mode</th><th>f (Hz)</th><th>T (s)</th><th>Γ</th><th>M<sub>eff</sub></th>"
             f"<th>Σ M<sub>eff</sub></th><th>S<sub>a</sub> (g)</th><th>V<sub>base</sub></th></tr>{rows}</table>"
             f"Base shear: {totals}. {need} mode{'s' if need > 1 else ''} reach{'' if need > 1 else 'es'} 90 % of "
-            f"the mass ({m.total_mass / 1000:.4g} t)."
+            f"the mass ({sig(m.total_mass / 1000, 4)} t)."
         )
 
     def _draw_tab(self, now: bool = True) -> None:
@@ -950,9 +951,9 @@ class SeismicPage(QtWidgets.QWidget):
         mine = float(combine(m.shear, rule, rho)[0])
         top = float(combine(m.displacement, rule, rho)[-1])
         self.floor_note.setText(
-            f"Base shear by {rule.value} {fmt(mine, 'N')}, {100 * (mine / s.base_shear - 1):+.3g} % against the "
+            f"Base shear by {rule.value} {fmt(mine, 'N')}, {sig(100 * (mine / s.base_shear - 1), plus=True)} % against the "
             f"mean of {RECORDS} records ({fmt(s.base_shear, 'N')}); the top floor's displacement "
-            f"{fmt(top, 'm')}, {100 * (top / s.displacement[-1] - 1):+.3g} %."
+            f"{fmt(top, 'm')}, {sig(100 * (top / s.displacement[-1] - 1), plus=True)} %."
         )
 
     def _draw_building(self, recs: tuple[Accelerogram, ...]) -> None:
@@ -975,7 +976,7 @@ class SeismicPage(QtWidgets.QWidget):
         self.building_note.setText(
             f"Base shear {fmt(abs(float(h.base_shear[k])), 'N')} (its peak on this record "
             f"{fmt(h.peak_base_shear, 'N')}); storey {worst + 1} drifts most now, {fmt(float(drift[worst]), 'm')} "
-            f"(its peak {fmt(float(h.peak_drift[worst]), 'm')}). Sway drawn ×{self.building.exaggeration:.3g}, "
+            f"(its peak {fmt(float(h.peak_drift[worst]), 'm')}). Sway drawn ×{sig(self.building.exaggeration)}, "
             f"storeys as 3 m."
         )
 
@@ -992,15 +993,15 @@ class SeismicPage(QtWidgets.QWidget):
             )
             rows.append(f"<tr><th>{i + 1}</th>{cells}</tr>")
         self.rho_label.setText(
-            f"<p><b>ρ<sub>ij</sub></b> at ζ = {100 * self.design.zeta:.3g} %</p>"
+            f"<p><b>ρ<sub>ij</sub></b> at ζ = {sig(100 * self.design.zeta)} %</p>"
             f"<table cellspacing='6'>{head}{''.join(rows)}</table>"
         )
         off = rho - np.diag(np.diag(rho))
         i, j = (int(k) for k in np.unravel_index(int(np.argmax(off)), off.shape))
         f = self.modal.f
         self.rho_note.setText(
-            f"The most correlated pair: modes {i + 1} and {j + 1} ({f[i]:.3g} and {f[j]:.3g} Hz, "
-            f"ρ = {off[i, j]:.3g}). Above about 0.1 SRSS and CQC part; bold."
+            f"The most correlated pair: modes {i + 1} and {j + 1} ({sig(f[i])} and {sig(f[j])} Hz, "
+            f"ρ = {sig(off[i, j])}). Above about 0.1 SRSS and CQC part; bold."
         )
 
     def _draw_ground(self, recs: tuple[Accelerogram, ...]) -> None:
@@ -1024,6 +1025,6 @@ class SeismicPage(QtWidgets.QWidget):
         pga = np.mean([np.max(np.abs(rec.a)) for rec in recs]) / G
         self.ground_note.setText(
             f"{len(recs)} synthesized records (grey); their mean spectrum is within "
-            f"{100 * float(np.max(np.abs(err))):.2g} % of the design one. Their peak ground "
-            f"acceleration averages {pga:.2g} g."
+            f"{sig(100 * float(np.max(np.abs(err))), 2)} % of the design one. Their peak ground "
+            f"acceleration averages {sig(pga, 2)} g."
         )

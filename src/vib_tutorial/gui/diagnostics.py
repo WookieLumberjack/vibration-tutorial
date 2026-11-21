@@ -38,6 +38,7 @@ from ..core.diagnostics import (
     sidebands,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick
+from ..view_models.text import number as sig
 from . import diagnostics_figures, settle_plots
 from .drag import DragLine
 from .lesson import (
@@ -248,9 +249,9 @@ def _mesh(rng: np.random.Generator) -> Question:
     rpm, teeth = pick(rng, (900, 1200, 1500, 1797, 2400, 3000)), int(pick(rng, (17, 23, 27, 31, 41, 53)))
     f = teeth * rpm / 60
     return Question(
-        f"A {teeth}-tooth pinion turns at {rpm:g} rpm. What is its mesh frequency?",
+        f"A {teeth}-tooth pinion turns at {sig(rpm, 6)} rpm. What is its mesh frequency?",
         f,
-        f"The shaft turns at {rpm:g}/60 = {number(rpm / 60, 4)} Hz, and a tooth meets its mate {teeth} times a "
+        f"The shaft turns at {sig(rpm, 6)}/60 = {number(rpm / 60, 4)} Hz, and a tooth meets its mate {teeth} times a "
         f"turn: f<sub>m</sub> = {teeth} × {number(rpm / 60, 4)} = {number(f, 4)} Hz.",
         unit="Hz",
         tolerance=0.01,
@@ -264,7 +265,7 @@ def _sideband(rng: np.random.Generator) -> Question:
     shaft = rpm / 60
     f = teeth * shaft - k * shaft
     return Question(
-        f"An eccentric {teeth}-tooth pinion at {rpm:g} rpm modulates its mesh once a turn. At what frequency is the "
+        f"An eccentric {teeth}-tooth pinion at {sig(rpm, 6)} rpm modulates its mesh once a turn. At what frequency is the "
         f"{'first' if k == 1 else 'second'} sideband below the mesh?",
         f,
         f"The mesh is at {teeth} × {number(shaft, 4)} = {number(teeth * shaft, 4)} Hz, and the sidebands are spaced "
@@ -281,10 +282,10 @@ def _bpfo(rng: np.random.Generator) -> Question:
     rpm = pick(rng, (900, 1500, 1800, 3000))
     f = Bearing(n, d / 1e3, D / 1e3).frequencies(rpm / 60)["BPFO"]
     return Question(
-        f"A ball bearing has {n} balls {d:g} mm across on a {D:g} mm pitch circle, contact angle 0, its inner race "
-        f"on a shaft at {rpm:g} rpm. At what frequency does a ball strike a spall on its outer race (BPFO)?",
+        f"A ball bearing has {n} balls {sig(d, 6)} mm across on a {sig(D, 6)} mm pitch circle, contact angle 0, its inner race "
+        f"on a shaft at {sig(rpm, 6)} rpm. At what frequency does a ball strike a spall on its outer race (BPFO)?",
         f,
-        f"BPFO = (n f<sub>r</sub>/2)(1 − d/D) = ({n} × {number(rpm / 60, 4)}/2)(1 − {d:g}/{D:g}) = {number(f, 4)} Hz.",
+        f"BPFO = (n f<sub>r</sub>/2)(1 − d/D) = ({n} × {number(rpm / 60, 4)}/2)(1 − {sig(d, 6)}/{sig(D, 6)}) = {number(f, 4)} Hz.",
         unit="Hz",
         tolerance=0.01,
         setup=dict(
@@ -299,11 +300,11 @@ def _bpfi_sideband(rng: np.random.Generator) -> Question:
     shaft = rpm / 60
     bpfi = Bearing(n, d / 1e3, D / 1e3, angle).frequencies(shaft)["BPFI"]
     return Question(
-        f"A spall on the inner race of a bearing with {n} balls {d:g} mm across on a {D:g} mm pitch circle, contact "
-        f"angle {angle:g}°, on a shaft at {rpm:g} rpm. Its envelope spectrum has BPFI with a sideband below it. At "
+        f"A spall on the inner race of a bearing with {n} balls {sig(d, 6)} mm across on a {sig(D, 6)} mm pitch circle, contact "
+        f"angle {sig(angle, 6)}°, on a shaft at {sig(rpm, 6)} rpm. Its envelope spectrum has BPFI with a sideband below it. At "
         "what frequency is that sideband?",
         bpfi - shaft,
-        f"BPFI = (n f<sub>r</sub>/2)(1 + (d/D) cos α) = ({n} × {number(shaft, 4)}/2)(1 + {d:g}/{D:g} × "
+        f"BPFI = (n f<sub>r</sub>/2)(1 + (d/D) cos α) = ({n} × {number(shaft, 4)}/2)(1 + {sig(d, 6)}/{sig(D, 6)} × "
         f"{number(math.cos(math.radians(angle)), 4)}) = {number(bpfi, 4)} Hz. The defect turns with the shaft, "
         f"through the load zone once a turn, so the sidebands are ± 1X: {number(bpfi, 4)} − {number(shaft, 4)} = "
         f"{number(bpfi - shaft, 4)} Hz.",
@@ -326,7 +327,7 @@ def _quefrency(rng: np.random.Generator) -> Question:
     rpm = pick(rng, (600, 900, 1200, 1797, 2400, 3600))
     q = 60 / rpm * 1000
     return Question(
-        f"A cracked tooth on a pinion at {rpm:g} rpm gives a long family of sidebands round the mesh. At what "
+        f"A cracked tooth on a pinion at {sig(rpm, 6)} rpm gives a long family of sidebands round the mesh. At what "
         "quefrency is the cepstrum's peak?",
         q,
         f"The sidebands are spaced by the shaft's speed, {number(rpm / 60, 4)} Hz, and a family spaced Δf becomes a "
@@ -341,10 +342,10 @@ def _crossing(rng: np.random.Generator) -> Question:
     mode, order = pick(rng, (25, 30, 40, 50, 60)), int(pick(rng, (1, 2, 3)))
     rpm = 60 * mode / order
     return Question(
-        f"A run-up passes a casing mode at {mode:g} Hz. At what shaft speed does the {order}X order cross it?",
+        f"A run-up passes a casing mode at {sig(mode, 6)} Hz. At what shaft speed does the {order}X order cross it?",
         rpm,
-        f"The {order}X order is at {order} × the shaft's speed, so it meets {mode:g} Hz when the shaft turns at "
-        f"{mode:g}/{order} = {number(mode / order)} Hz, {number(rpm)} rpm.",
+        f"The {order}X order is at {order} × the shaft's speed, so it meets {sig(mode, 6)} Hz when the shaft turns at "
+        f"{sig(mode, 6)}/{order} = {number(mode / order)} Hz, {number(rpm)} rpm.",
         unit="rpm",
         tolerance=0.01,
         setup=dict(mode=float(mode), run_from=60.0, run_to=float(min(9000, 2 * rpm)), tab=TAB_RUNUP),
@@ -459,21 +460,21 @@ def _band_spec(rng: np.random.Generator) -> Question:
             at_most("The band's bottom", low, lo, "Hz"),
             at_least("The band's top", high, hi, "Hz"),
             Requirement(
-                f"No mesh harmonic within {CLEAR_HZ:g} Hz of the band",
+                f"No mesh harmonic within {sig(CLEAR_HZ, 6)} Hz of the band",
                 ", ".join(f"{number(m, 4)} Hz" for m in inside) or "none",
                 not inside,
             ),
         )
 
     return Question(
-        f"A {teeth}-tooth pinion at {rpm:g} rpm; the bearing's strikes ring a casing resonance at {fr:g} Hz. Choose "
-        f"the envelope's band so that it holds the resonance ± {100 * ENVELOPE_REACH:g} % and no mesh harmonic comes "
-        f"within {CLEAR_HZ:g} Hz of it.",
+        f"A {teeth}-tooth pinion at {sig(rpm, 6)} rpm; the bearing's strikes ring a casing resonance at {sig(fr, 6)} Hz. Choose "
+        f"the envelope's band so that it holds the resonance ± {sig(100 * ENVELOPE_REACH, 6)} % and no mesh harmonic comes "
+        f"within {sig(CLEAR_HZ, 6)} Hz of it.",
         0,
         f"The band needs {number(lo, 4)} to {number(hi, 4)} Hz. The mesh is at {number(mesh[0], 4)} Hz, its "
         f"harmonics at {number(mesh[1], 4)} and {number(mesh[2], 4)} Hz; the nearest, {number(near, 4)} Hz, sits "
         f"{'above' if near > fr else 'below'} the resonance, so the band can't stretch that way. "
-        f"{design[0]:g} to {design[1]:g} Hz does.",
+        f"{sig(design[0], 6)} to {sig(design[1], 6)} Hz does.",
         setup=dict(rpm=float(rpm), teeth=teeth, resonance=float(fr), bearing=BearingFault.OUTER, tab=TAB_ENVELOPE),
         goal=goal,
         design=dict(
@@ -874,8 +875,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.rec = rec = record(m)
         f = m.bearing.frequencies(m.speed)
         self.bearing_info.setText(
-            f"FTF {f['FTF']:.4g} Hz, BPFO {f['BPFO']:.4g} Hz, BPFI {f['BPFI']:.4g} Hz, BSF {f['BSF']:.4g} Hz "
-            f"({f['BPFO'] / m.speed:.4g}, {f['BPFI'] / m.speed:.4g} and {f['BSF'] / m.speed:.4g} × the shaft)."
+            f"FTF {sig(f['FTF'], 4)} Hz, BPFO {sig(f['BPFO'], 4)} Hz, BPFI {sig(f['BPFI'], 4)} Hz, BSF {sig(f['BSF'], 4)} Hz "
+            f"({sig(f['BPFO'] / m.speed, 4)}, {sig(f['BPFI'] / m.speed, 4)} and {sig(f['BSF'] / m.speed, 4)} × the shaft)."
         )
         n = int(SHOW_S * rec.fs)
         self.time_item.setData(rec.t[:n], rec.x[:n])
@@ -893,10 +894,10 @@ class DiagnosticsPage(QtWidgets.QWidget):
         self.spec_plot.setYRange(math.log10(top) - 3.5, math.log10(top) + 0.2, padding=0)
         low, high = self.band
         self.readout.setText(
-            f"Shaft {m.speed:.4g} Hz, mesh <b>{m.mesh_hz:.5g} Hz</b>. Kurtosis: the record "
+            f"Shaft {sig(m.speed, 4)} Hz, mesh <b>{sig(m.mesh_hz, 5)} Hz</b>. Kurtosis: the record "
             f"<b>{kurtosis(rec.x):.2f}</b>, the band {low:.0f}–{high:.0f} Hz "
             f"<b>{kurtosis(band_pass(rec.x, rec.fs, (low, high))):.2f}</b> (3 for Gaussian noise). RMS "
-            f"{float(np.std(rec.x)):.3g} m/s²."
+            f"{sig(float(np.std(rec.x)))} m/s²."
         )
         self._show_tab()
 
@@ -944,8 +945,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
             self.freq_map.setYRange(0.0, MAP_TOP_HZ, padding=0)
             self.order_map_plot.setYRange(0.0, MAP_TOP_ORDER, padding=0)
             self.map_note.setText(
-                f"{60 * run.start:.0f} to {60 * run.end:.0f} rpm in {run.duration:.3g} s; the casing's mode at "
-                f"{run.mode:.3g} Hz (dotted). Colour: dB below the peak (the bar beside each map)."
+                f"{60 * run.start:.0f} to {60 * run.end:.0f} rpm in {sig(run.duration)} s; the casing's mode at "
+                f"{sig(run.mode)} Hz (dotted). Colour: dB below the peak (the bar beside each map)."
             )
             return
         fine = np.linspace(run.start, run.end, 2000)
@@ -959,8 +960,8 @@ class DiagnosticsPage(QtWidgets.QWidget):
         j = int(np.argmax(s))
         k = int(np.argmax(tracks[1]))
         self.orders_note.setText(
-            f"The 1X peaks at <b>{tracks[0][i]:.3g} m/s²</b> at {rpm[i]:.0f} rpm; its steady state at "
-            f"{s[j]:.3g} m/s² at {60 * fine[j]:.0f} rpm. The 2X peaks at {rpm[k]:.0f} rpm. Order blocks of "
+            f"The 1X peaks at <b>{sig(tracks[0][i])} m/s²</b> at {rpm[i]:.0f} rpm; its steady state at "
+            f"{sig(s[j])} m/s² at {60 * fine[j]:.0f} rpm. The 2X peaks at {rpm[k]:.0f} rpm. Order blocks of "
             f"8 revolutions, half overlapping."
         )
 
@@ -975,10 +976,10 @@ class DiagnosticsPage(QtWidgets.QWidget):
         top = float(spec.amplitude[keep].max())
         self.side_plot.setYRange(math.log10(top) - 3.0, math.log10(top) + 0.2, padding=0)
         floor = float(np.median(spec.amplitude[keep]))
-        pairs = ", ".join(f"±{j}: {a[SIDEBANDS - j]:.2g}/{a[SIDEBANDS + j]:.2g}" for j in (1, 2, 3))
+        pairs = ", ".join(f"±{j}: {sig(a[SIDEBANDS - j], 2)}/{sig(a[SIDEBANDS + j], 2)}" for j in (1, 2, 3))
         self.side_note.setText(
-            f"The mesh at {m.mesh_hz:.5g} Hz reads {a[SIDEBANDS]:.3g} m/s²; its sidebands {m.speed:.4g} Hz apart "
-            f"(lower/upper, m/s²) {pairs}; the floor here is about {floor:.2g}."
+            f"The mesh at {sig(m.mesh_hz, 5)} Hz reads {sig(a[SIDEBANDS])} m/s²; its sidebands {sig(m.speed, 4)} Hz apart "
+            f"(lower/upper, m/s²) {pairs}; the floor here is about {sig(floor, 2)}."
         )
 
     def _draw_envelope(self) -> None:
@@ -1004,15 +1005,15 @@ class DiagnosticsPage(QtWidgets.QWidget):
         else:
             self.env_dots.setData([], [])
         if d > 0:
-            parts = [f"{line_amplitude(es.freqs, es.amplitude, h * d):.2g}" for h in (1, 2, 3)]
+            parts = [f"{sig(line_amplitude(es.freqs, es.amplitude, h * d), 2)}" for h in (1, 2, 3)]
             text = (
-                f"The strikes come at {d:.4g} Hz; the envelope spectrum reads "
+                f"The strikes come at {sig(d, 4)} Hz; the envelope spectrum reads "
                 + ", ".join(parts)
                 + f" m/s² at its first three harmonics, the plain spectrum "
-                f"{line_amplitude(self.spec.freqs, self.spec.amplitude, d):.2g} at the first."
+                f"{sig(line_amplitude(self.spec.freqs, self.spec.amplitude, d), 2)} at the first."
             )
             if fm > 0:
-                text += f" Sidebands (dots) at ± {fm:.3g} Hz."
+                text += f" Sidebands (dots) at ± {sig(fm)} Hz."
         else:
             text = "No bearing defect: the envelope is the band's noise, and the mesh harmonic's in the band."
         self.env_note.setText(text + f" Band {low:.0f}–{high:.0f} Hz.")
@@ -1029,7 +1030,7 @@ class DiagnosticsPage(QtWidgets.QWidget):
         i = round(rec.fs / m.speed)
         peak = float(c[max(i - 2, 0) : i + 3].max())
         self.cep_note.setText(
-            f"At 1/{m.speed:.4g} Hz = {1e3 / m.speed:.3g} ms the cepstrum reaches <b>{peak:.2g}</b>; the rest "
-            f"of the range is about {float(np.median(np.abs(c[keep]))):.1g}. The mesh's harmonics sit at "
-            f"{1e3 / m.mesh_hz:.3g} ms (dashed)."
+            f"At 1/{sig(m.speed, 4)} Hz = {sig(1e3 / m.speed)} ms the cepstrum reaches <b>{sig(peak, 2)}</b>; the rest "
+            f"of the range is about {sig(float(np.median(np.abs(c[keep]))), 1)}. The mesh's harmonics sit at "
+            f"{sig(1e3 / m.mesh_hz)} ms (dashed)."
         )

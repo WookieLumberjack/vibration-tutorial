@@ -36,6 +36,7 @@ from ..core.frame import (
 )
 from ..core.frame_response import Load, LoadKind, formulations, rayleigh
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, kept, number, pick
+from ..view_models.text import number as sig
 from .links import page_link
 
 TAB_ASSEMBLY, TAB_ELEMENT, TAB_RESPONSE, TAB_FORMULATIONS, TAB_THEORY = range(5)
@@ -327,8 +328,8 @@ def _bar_entry(rng: np.random.Generator) -> Question:
     part = assemble(frame).locals[0]
     k = float(part.stiffness()[2, 2]) / 1e6  # u2's diagonal
     return Question(
-        f"A steel bar (E = 210 GPa) of section {area:g} mm² and length {length:g} m runs from node 1 up at "
-        f"{angle:g}° to x. What does it add to K at row and column u<sub>2</sub>, in MN/m?",
+        f"A steel bar (E = 210 GPa) of section {sig(area, 6)} mm² and length {sig(length, 6)} m runs from node 1 up at "
+        f"{sig(angle, 6)}° to x. What does it add to K at row and column u<sub>2</sub>, in MN/m?",
         k,
         f"Its own k' is (EA/L)[[1, −1], [−1, 1]] on the stretch, EA/L = {number(210e9 * area * 1e-6 / length / 1e6)} "
         f"MN/m, and T takes u<sub>2</sub> into it as cos γ. So Tᵀk′T has (EA/L) cos²γ there: "
@@ -363,7 +364,7 @@ def _tip_mass(rng: np.random.Generator) -> Question:
     frame = cantilever(length, 4, sec)
     frame = frame.with_element(Element(Kind.MASS, len(frame.nodes) - 1, value=mass))
     return Question(
-        f"A steel cantilever (E = 210 GPa), {side:g} × {side:g} mm and {length:g} m long, carries a {mass:g} kg mass "
+        f"A steel cantilever (E = 210 GPa), {sig(side, 6)} × {sig(side, 6)} mm and {sig(length, 6)} m long, carries a {sig(mass, 6)} kg mass "
         "at its tip, much heavier than the beam. About what frequency does it bounce at, the beam's own mass "
         "left out?",
         f,
@@ -489,7 +490,7 @@ def _brace_spec(rng: np.random.Generator) -> Question:
 
     braced = start.with_element(Element(Kind.BAR, 0, 4))  # a base to the far top corner (2 members a side)
     return Question(
-        f"This portal frame ({span:g} m wide, {height:g} m high, 50 × 50 mm steel) stands on pins and sways at "
+        f"This portal frame ({sig(span, 6)} m wide, {sig(height, 6)} m high, 50 × 50 mm steel) stands on pins and sways at "
         f"{number(f0)} Hz. Without moving its nodes or changing its supports, raise its first frequency to at "
         f"least {number(target)} Hz.",
         0,
@@ -512,11 +513,11 @@ def _rayleigh(rng: np.random.Generator) -> Question:
     w3 = TWO_PI * f3
     z3 = 0.5 * (alpha / w3 + beta * w3)
     return Question(
-        f"A frame's Rayleigh damping C = αM + βK is set to ζ = {100 * zeta:g} % at its first two modes, {f1:g} and "
-        f"{f2:g} Hz. What is ζ at a mode at {f3:g} Hz, in %?",
+        f"A frame's Rayleigh damping C = αM + βK is set to ζ = {sig(100 * zeta, 6)} % at its first two modes, {sig(f1, 6)} and "
+        f"{sig(f2, 6)} Hz. What is ζ at a mode at {sig(f3, 6)} Hz, in %?",
         100 * z3,
         f"ζ = (α/ω + βω)/2, and α = 2ζω₁ω₂/(ω₁ + ω₂) = {number(alpha)} 1/s, β = 2ζ/(ω₁ + ω₂) = {number(beta)} s "
-        f"meet it at both. At ω = 2π × {f3:g}: ζ = {number(100 * z3)} %. Above mode 2 the βω term grows "
+        f"meet it at both. At ω = 2π × {sig(f3, 6)}: ζ = {number(100 * z3)} %. Above mode 2 the βω term grows "
         "without end: Rayleigh damping kills high modes.",
         unit="%",
     )
@@ -530,8 +531,8 @@ def _step(rng: np.random.Generator) -> Question:
     sec = Section(depth=side / 1000, width=side / 1000)
     frame = cantilever(length, 4, sec)
     return Question(
-        f"An undamped steel cantilever (E = 210 GPa), {side:g} × {side:g} mm and {length:g} m long, has a "
-        f"{force:g} N force put on its tip at once, and left there. How far does the tip go at most, in mm?",
+        f"An undamped steel cantilever (E = 210 GPa), {sig(side, 6)} × {sig(side, 6)} mm and {sig(length, 6)} m long, has a "
+        f"{sig(force, 6)} N force put on its tip at once, and left there. How far does the tip go at most, in mm?",
         2000 * static,
         f"Twice the static deflection FL³/3EI = {number(1000 * static)} mm (I = s⁴/12 = {number(I * 1e12)} mm⁴): "
         f"{number(2000 * static)} mm. A suddenly applied load does as much work on the way as the spring stores "
@@ -562,7 +563,7 @@ def _damper_spec(rng: np.random.Generator) -> Question:
 
     damped = start.with_element(Element(Kind.DAMPER, 6, None, value=1000.0, anchor=(-0.5, 2.0)))
     return Question(
-        f"Damp this two-storey frame's first mode to ζ ≥ {target:g} % with dampers (Rayleigh damping left at 0), "
+        f"Damp this two-storey frame's first mode to ζ ≥ {sig(target, 6)} % with dampers (Rayleigh damping left at 0), "
         "without moving its nodes, and keep the mode nearly real: MPC ≥ 0.95.",
         0,
         "Put a damper where the mode moves most: the top floor sways furthest in mode 1, so 1000 N·s/m from it "

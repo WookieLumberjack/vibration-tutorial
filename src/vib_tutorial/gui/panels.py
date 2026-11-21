@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core import ChainSystem, ForceController, ForceKind, ForceSettings
 from ..core.model import DEFAULT_DAMPING, DEFAULT_MASS, DEFAULT_STIFFNESS
 from ..core.presets import Preset, presets
+from ..view_models.text import number as sig
 from . import weak
 from .layouts import FlowLayout, form_layout, group
 from .live_label import LiveLabel
@@ -38,7 +39,7 @@ def fill_mode_combo(
     combo.addItem(placeholder)
     for e in entries:
         if e.listed:  # skip rigid / non-oscillatory modes and conjugate duplicates
-            combo.addItem(f"{e.key} ({e.freq_hz:.3g} Hz)", data(e))
+            combo.addItem(f"{e.key} ({sig(e.freq_hz)} Hz)", data(e))
 
 
 PRESET_TIP = (

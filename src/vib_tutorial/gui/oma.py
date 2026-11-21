@@ -54,6 +54,7 @@ from ..core.oma import (
     ssi_modes,
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
+from ..view_models.text import number as sig
 from . import oma_figures
 from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import TrialBox, trials_html
@@ -315,10 +316,10 @@ def _welch_blocks(samples: int, block: int) -> int:
 def _line_spacing(rng: np.random.Generator) -> Question:
     fs, block = pick(rng, (10, 19, 25, 50, 100)), int(pick(rng, BLOCKS[1:]))
     return Question(
-        f"Responses sampled at {fs:g} Hz are cut into Welch blocks of {block} samples. How far apart are the "
+        f"Responses sampled at {sig(fs, 6)} Hz are cut into Welch blocks of {block} samples. How far apart are the "
         "lines of their cross-spectral matrix?",
         1000 * fs / block,
-        f"Δf = f<sub>s</sub>/N<sub>b</sub> = {fs:g}/{block} = {number(fs / block)} Hz, {number(1000 * fs / block)} "
+        f"Δf = f<sub>s</sub>/N<sub>b</sub> = {sig(fs, 6)}/{block} = {number(fs / block)} Hz, {number(1000 * fs / block)} "
         "mHz: the record's block lasts N<sub>b</sub>/f<sub>s</sub>, and the lines are its reciprocal apart.",
         unit="mHz",
         setup=dict(**DEFAULT, fs=19.0, block=block),
@@ -331,7 +332,7 @@ def _blocks(rng: np.random.Generator) -> Question:
     samples = round(60 * minutes * fs)
     count = _welch_blocks(samples, block)
     return Question(
-        f"A {minutes:g}-minute record sampled at {fs:g} Hz, Welch's blocks {block} samples long, overlapping by "
+        f"A {sig(minutes, 6)}-minute record sampled at {sig(fs, 6)} Hz, Welch's blocks {block} samples long, overlapping by "
         "half. How many blocks does the estimate average?",
         count,
         f"{samples} samples; each block starts {block // 2} after the last, so (N − N<sub>b</sub>)/(N<sub>b</sub>/2) "
@@ -344,10 +345,10 @@ def _blocks(rng: np.random.Generator) -> Question:
 def _record_length(rng: np.random.Generator) -> Question:
     fn, periods = pick(rng, (0.2, 0.5, 1.1, 2, 4)), pick(rng, (1000, 2000))
     return Question(
-        f"A structure's slowest mode is at {fn:g} Hz. How many minutes of ambient record does OMA's rule of thumb, "
-        f"{periods:g} periods of the slowest mode, ask for?",
+        f"A structure's slowest mode is at {sig(fn, 6)} Hz. How many minutes of ambient record does OMA's rule of thumb, "
+        f"{sig(periods, 6)} periods of the slowest mode, ask for?",
         periods / fn / 60,
-        f"{periods:g} periods of {number(1 / fn)} s: {number(periods / fn)} s, {number(periods / fn / 60)} min. The "
+        f"{sig(periods, 6)} periods of {number(1 / fn)} s: {number(periods / fn)} s, {number(periods / fn / 60)} min. The "
         "input is random and unknown, so only many averages make the spectra smooth.",
         unit="min",
     )
@@ -357,11 +358,11 @@ def _line_error(rng: np.random.Generator) -> Question:
     fn, fs, block = pick(rng, (1.1, 2.5, 4.0, 7.5)), pick(rng, (19, 25, 50)), int(pick(rng, (512, 1024, 2048)))
     worst = 100 * fs / block / 2 / fn
     return Question(
-        f"FDD picks a mode at {fn:g} Hz to the nearest line, sampling at {fs:g} Hz with {block}-sample blocks. "
+        f"FDD picks a mode at {sig(fn, 6)} Hz to the nearest line, sampling at {sig(fs, 6)} Hz with {block}-sample blocks. "
         "What is the largest error in its frequency, as a percentage of it?",
         worst,
         f"The lines are {number(fs / block)} Hz apart, so the nearest is at most half that, {number(fs / block / 2)} "
-        f"Hz, off: {number(worst)} % of {fn:g} Hz. (EFDD's zero crossings refine it.)",
+        f"Hz, off: {number(worst)} % of {sig(fn, 6)} Hz. (EFDD's zero crossings refine it.)",
         unit="%",
     )
 
@@ -387,7 +388,7 @@ def _kurtosis(rng: np.random.Generator) -> Question:
     p = sine * sine / (noise * noise)
     k = (1.5 * p * p + 6 * p + 3) / (p + 1) ** 2
     return Question(
-        f"Filtered round a peak, the response is a sine of {sine:g} RMS plus independent Gaussian noise of {noise:g} "
+        f"Filtered round a peak, the response is a sine of {sig(sine, 6)} RMS plus independent Gaussian noise of {sig(noise, 6)} "
         "RMS. What is its kurtosis E[x⁴]/E[x²]²?",
         k,
         f"A sine's E[s⁴] is 1.5 σ<sub>s</sub>⁴ and a Gaussian's 3 σ<sub>g</sub>⁴; with the cross term 6 σ<sub>s</sub>²"
@@ -530,10 +531,10 @@ def _acquisition_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The uniform chain of {n} masses (1 kg, 400 N/m, {c:g} N·s/m each): its first mode is at "
-        f"{number(slow.fn_hz)} Hz with ζ = {number(100 * slow.zeta_modal)} %, sampled at {fs:g} Hz. Choose the "
+        f"The uniform chain of {n} masses (1 kg, 400 N/m, {sig(c, 6)} N·s/m each): its first mode is at "
+        f"{number(slow.fn_hz)} Hz with ζ = {number(100 * slow.zeta_modal)} %, sampled at {sig(fs, 6)} Hz. Choose the "
         f"block and the record's length so that four or more lines fall across that mode's half-power width, the "
-        f"record holds a thousand of its periods and {averages} or more Welch blocks, in no more than {longest:g} s.",
+        f"record holds a thousand of its periods and {averages} or more Welch blocks, in no more than {sig(longest, 6)} s.",
         0,
         f"The half-power width is 2ζf₁ = {number(width)} Hz, so the lines must be {number(width / 4)} Hz apart or "
         f"closer: a block of {number(4 * fs / width)} samples or more, {block} the shortest on offer. Half "
@@ -581,7 +582,7 @@ def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | No
 
 
 def _cell(fn: float, zeta: float) -> str:
-    return f"{fn:.4g} Hz\nζ {100 * zeta:.2g} %"
+    return f"{sig(fn, 4)} Hz\nζ {sig(100 * zeta, 2)} %"
 
 
 class OmaPage(QtWidgets.QWidget):
@@ -1176,13 +1177,13 @@ class OmaPage(QtWidgets.QWidget):
         self.daq_info.setText(
             f"{s.samples:,} samples a channel; {s.duration * slow:,.0f} periods of mode 1. "
             f"{spectra.blocks} blocks of {spectra.block} averaged (half overlapping), lines "
-            f"{spectra.resolution:.3g} Hz apart."
+            f"{sig(spectra.resolution)} Hz apart."
         )
 
     def _fill_mode_pick(self) -> None:
         self._loading = True
         self.mode_pick.clear()
-        self.mode_pick.addItems([f"{k + 1}: peak at {m.peak_hz:.4g} Hz" for k, m in enumerate(self.modes)])
+        self.mode_pick.addItems([f"{k + 1}: peak at {sig(m.peak_hz, 4)} Hz" for k, m in enumerate(self.modes)])
         self.selected = min(self.selected, len(self.modes) - 1) if self.modes else 0
         self.mode_pick.setCurrentIndex(self.selected if self.modes else -1)
         self._loading = False
@@ -1239,7 +1240,7 @@ class OmaPage(QtWidgets.QWidget):
                 )
                 right = f[m.line] > 0.6 * hi  # the label on the side with room
                 text = pg.TextItem(
-                    f"harmonic (kurtosis {self.kurt[k]:.2g})", color=colors.force, anchor=(1 if right else 0, 1)
+                    f"harmonic (kurtosis {sig(self.kurt[k], 2)})", color=colors.force, anchor=(1 if right else 0, 1)
                 )
                 text.setPos(f[m.line], math.log10(d.s[m.line, 0]))
                 p.addItem(text)
@@ -1292,7 +1293,9 @@ class OmaPage(QtWidgets.QWidget):
         if extra:
             notes.append(f"{extra} {'pole' if method == SSI else 'peak'}{'s' if extra > 1 else ''} matching no mode")
         if harmonics:
-            notes.append("left out as harmonics: " + ", ".join(f"{f:.4g} Hz (kurtosis {k:.2g})" for f, k in harmonics))
+            notes.append(
+                "left out as harmonics: " + ", ".join(f"{sig(f, 4)} Hz (kurtosis {sig(k, 2)})" for f, k in harmonics)
+            )
         failed = sum(1 for m in self.modes if not math.isfinite(m.zeta)) if method == FDD else 0
         if failed:
             notes.append(
@@ -1302,7 +1305,7 @@ class OmaPage(QtWidgets.QWidget):
         text = "; ".join(notes) + "."
         self.results.set_results(rows, macs, text)
         exact = [m for m in self.result.modes if m.damped is not None]
-        self.results.mac.set_matrix(macs, [f"{m.fn_hz:.3g} Hz" for m in modes], [str(m.index) for m in exact])
+        self.results.mac.set_matrix(macs, [f"{sig(m.fn_hz)} Hz" for m in modes], [str(m.index) for m in exact])
         self.readout.setText(self._readout(method, rows, harmonics))
 
     def _readout(self, method: str, rows, harmonics) -> str:
@@ -1314,8 +1317,8 @@ class OmaPage(QtWidgets.QWidget):
             ze = -r.exact.real / abs(r.exact)
             ident = r.identified
             parts.append(
-                f"mode {r.mode} {ident.fn_hz:.4g} Hz ({100 * (ident.fn_hz / fe - 1):+.1f} %), "
-                f"ζ {100 * ident.zeta:.2g} % (exact {100 * ze:.2g} %)"
+                f"mode {r.mode} {sig(ident.fn_hz, 4)} Hz ({100 * (ident.fn_hz / fe - 1):+.1f} %), "
+                f"ζ {sig(100 * ident.zeta, 2)} % (exact {sig(100 * ze, 2)} %)"
             )
         text = f"{method} found: " + "; ".join(parts) + "." if parts else f"{method} found no mode."
         if harmonics:
@@ -1323,7 +1326,7 @@ class OmaPage(QtWidgets.QWidget):
                 " <b>Harmonic"
                 + ("s" if len(harmonics) > 1 else "")
                 + "</b> at "
-                + ", ".join(f"{f:.4g} Hz (kurtosis {k:.2g}; a mode's is 3)" for f, k in harmonics)
+                + ", ".join(f"{sig(f, 4)} Hz (kurtosis {sig(k, 2)}; a mode's is 3)" for f, k in harmonics)
                 + "."
             )
         return text
@@ -1428,8 +1431,8 @@ class OmaPage(QtWidgets.QWidget):
             c.plot(t, -a * env, pen=pen)
             self.efdd_note.setText(
                 f"Bell of {int(m.bell.sum())} lines; {m.extremes.size} extremes and {m.crossings.size} zero "
-                f"crossings fitted: f<sub>n</sub> = {m.fn_hz:.4g} Hz, ζ = {100 * m.zeta:.3g} % (the peak's line: "
-                f"{m.peak_hz:.4g} Hz)."
+                f"crossings fitted: f<sub>n</sub> = {sig(m.fn_hz, 4)} Hz, ζ = {sig(100 * m.zeta)} % (the peak's line: "
+                f"{sig(m.peak_hz, 4)} Hz)."
             )
         else:
             self.efdd_note.setText(

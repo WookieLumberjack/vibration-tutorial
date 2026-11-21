@@ -38,6 +38,7 @@ from ..core.double_pendulum import modes as pendulum_modes
 from ..core.double_pendulum import sweep as pendulum_sweep
 from ..core.pendulum import measured_period
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick
+from ..view_models.text import number as sig
 from . import deriving_figures, settle_plots
 from . import deriving_pendulum as dp
 from .deriving_text import (
@@ -408,10 +409,12 @@ def coordinates_html(car: Car, coords: Coordinates, e: float) -> str:
     if coords is Coordinates.CENTRE:
         where = "q = (x<sub>G</sub>, θ): G's rise and the pitch, nose up."
     elif coords is Coordinates.POINT:
-        where = f"q = (x<sub>P</sub>, θ), P e = {e:.3g} m ahead of G: x<sub>G</sub> = x<sub>P</sub> − eθ (for small θ)."
+        where = (
+            f"q = (x<sub>P</sub>, θ), P e = {sig(e)} m ahead of G: x<sub>G</sub> = x<sub>P</sub> − eθ (for small θ)."
+        )
     else:
         where = (
-            f"q = (x<sub>f</sub>, x<sub>r</sub>), the body above each axle (L = {car.wheelbase:.3g} m): "
+            f"q = (x<sub>f</sub>, x<sub>r</sub>), the body above each axle (L = {sig(car.wheelbase)} m): "
             "x<sub>G</sub> = (b x<sub>f</sub> + a x<sub>r</sub>)/L, θ = (x<sub>f</sub> − x<sub>r</sub>)/L."
         )
     return (
@@ -475,8 +478,8 @@ def fbd_html(car: Car, coords: Coordinates, e: float) -> str:
                 "<p>Symmetric, and the same as Lagrange's. <b>The usual slip</b> is to write the moment balance "
                 "about P as J<sub>P</sub>θ̈ = ΣM<sub>P</sub>, J<sub>P</sub> = J + m e², leaving out −m e ẍ<sub>P</sub>: "
                 f"M's lower left becomes 0 instead of {num(-car.mass * e).replace('-', '−')}, the matrices stop "
-                f"being symmetric, and the frequencies come out <b>{w[0]:.3g} and {w[1]:.3g} Hz</b> instead of "
-                f"{right[0]:.3g} and {right[1]:.3g}. Moments about a point that isn't G need G's inertia force "
+                f"being symmetric, and the frequencies come out <b>{sig(w[0])} and {sig(w[1])} Hz</b> instead of "
+                f"{sig(right[0])} and {sig(right[1])}. Moments about a point that isn't G need G's inertia force "
                 "too.</p>"
             )
     else:
@@ -559,11 +562,11 @@ def _bounce(rng: np.random.Generator) -> Question:
     car = Car(mass=m, k_front=1e3 * kf, k_rear=1e3 * kr)
     f = car.uncoupled_frequencies()[0]
     return Question(
-        f"A {m:g} kg car body sits on {kf:g} kN/m at the front axle and {kr:g} kN/m at the rear. If it bounced "
+        f"A {sig(m, 6)} kg car body sits on {sig(kf, 6)} kN/m at the front axle and {sig(kr, 6)} kN/m at the rear. If it bounced "
         "without pitching, at what frequency would it?",
         f,
         f"Straight up and down both springs stretch alike: f = √((k<sub>f</sub> + k<sub>r</sub>)/m)/2π = "
-        f"√({number(1e3 * (kf + kr))}/{m:g})/2π = {number(f)} Hz. It only bounces purely if k<sub>f</sub>a = "
+        f"√({number(1e3 * (kf + kr))}/{sig(m, 6)})/2π = {number(f)} Hz. It only bounces purely if k<sub>f</sub>a = "
         "k<sub>r</sub>b.",
         unit="Hz",
         setup=dict(mass=m, k_front=kf, k_rear=kr, tab=TAB_MODES),
@@ -575,11 +578,11 @@ def _elastic_centre(rng: np.random.Generator) -> Question:
     kf, kr = pick(rng, (30, 35, 40)), pick(rng, (40, 45, 50))
     e = Car(front=a, rear=b, k_front=kf, k_rear=kr).elastic_centre()
     return Question(
-        f"A car's front axle is {a:g} m ahead of its centre of mass and the rear {b:g} m behind, on {kf:g} and "
-        f"{kr:g} kN/m. How far behind G is its elastic centre?",
+        f"A car's front axle is {sig(a, 6)} m ahead of its centre of mass and the rear {sig(b, 6)} m behind, on {sig(kf, 6)} and "
+        f"{sig(kr, 6)} kN/m. How far behind G is its elastic centre?",
         -e,
         f"Where a force pushes the body straight, the springs' moments about it cancel: e* = (k<sub>f</sub>a − "
-        f"k<sub>r</sub>b)/(k<sub>f</sub> + k<sub>r</sub>) = ({kf:g} × {a:g} − {kr:g} × {b:g})/{kf + kr:g} = "
+        f"k<sub>r</sub>b)/(k<sub>f</sub> + k<sub>r</sub>) = ({sig(kf, 6)} × {sig(a, 6)} − {sig(kr, 6)} × {sig(b, 6)})/{sig(kf + kr, 6)} = "
         f"{number(e)} m, behind G since the rear's k<sub>r</sub>b is the larger. In coordinates there, K is "
         "diagonal.",
         unit="m",
@@ -594,11 +597,11 @@ def _end_frequency(rng: np.random.Generator) -> Question:
     mf = m * b / (a + b)
     f = math.sqrt(1e3 * kf / mf) / TWO_PI
     return Question(
-        f"A {m:g} kg car has its centre of mass {a:g} m behind the front axle and {b:g} m ahead of the rear. "
-        f"The front springs give {kf:g} kN/m. What is the front's ride frequency, the front end bouncing on its "
+        f"A {sig(m, 6)} kg car has its centre of mass {sig(a, 6)} m behind the front axle and {sig(b, 6)} m ahead of the rear. "
+        f"The front springs give {sig(kf, 6)} kN/m. What is the front's ride frequency, the front end bouncing on its "
         "own spring?",
         f,
-        f"The front axle carries m b/L = {m:g} × {b:g}/{number(a + b)} = {number(mf)} kg, so f = √({number(1e3 * kf)}/"
+        f"The front axle carries m b/L = {sig(m, 6)} × {sig(b, 6)}/{number(a + b)} = {number(mf)} kg, so f = √({number(1e3 * kf)}/"
         f"{number(mf)})/2π = {number(f)} Hz. It's exactly a mode's frequency when the dynamic index k<sub>G</sub>²/(ab) is 1.",
         unit="Hz",
         setup=dict(mass=m, front=a, rear=b, k_front=kf, coords=Coordinates.ENDS, tab=TAB_MODES),
@@ -609,7 +612,7 @@ def _index_one(rng: np.random.Generator) -> Question:
     a, b = pick(rng, (1.0, 1.2, 1.4)), pick(rng, (1.3, 1.5, 1.7))
     r = math.sqrt(a * b)
     return Question(
-        f"A car's axles are {a:g} m ahead of and {b:g} m behind its centre of mass. What radius of gyration in "
+        f"A car's axles are {sig(a, 6)} m ahead of and {sig(b, 6)} m behind its centre of mass. What radius of gyration in "
         "pitch makes its ends bounce independently?",
         r,
         f"In the ends' coordinates M couples by (m a b − J)/L², nil when J = m k<sub>G</sub>² = m a b: k<sub>G</sub> = √(ab) = √({number(a * b)}) "
@@ -625,11 +628,11 @@ def _point_mass(rng: np.random.Generator) -> Question:
     J = m * r * r
     entry = J + m * e * e
     return Question(
-        f"A {m:g} kg body with a {r:g} m radius of gyration is described by x<sub>P</sub> and θ at a point P {e:g} m "
+        f"A {sig(m, 6)} kg body with a {sig(r, 6)} m radius of gyration is described by x<sub>P</sub> and θ at a point P {sig(e, 6)} m "
         "ahead of its centre of mass. What is M₂₂, the entry multiplying θ̈ in the moment equation?",
         entry,
         f"x<sub>G</sub> = x<sub>P</sub> − eθ, so T = ½m(ẋ<sub>P</sub> − eθ̇)² + ½Jθ̇² and M₂₂ = J + m e² = {number(J)} + "
-        f"{m:g} × {e:g}² = {number(entry)} kg·m² (the parallel-axis theorem). M₁₂ = −m e = {number(-m * e)} kg·m couples it.",
+        f"{sig(m, 6)} × {sig(e, 6)}² = {number(entry)} kg·m² (the parallel-axis theorem). M₁₂ = −m e = {number(-m * e)} kg·m couples it.",
         unit="kg·m²",
         setup=dict(mass=m, gyration=r, coords=Coordinates.POINT, offset=e),
     )
@@ -641,12 +644,12 @@ def _ends_mass(rng: np.random.Generator) -> Question:
     L = a + b
     entry = (m * a * b - m * r * r) / L**2
     return Question(
-        f"A {m:g} kg body (radius of gyration {r:g} m) with its axles {a:g} m ahead of and {b:g} m behind G, "
+        f"A {sig(m, 6)} kg body (radius of gyration {sig(r, 6)} m) with its axles {sig(a, 6)} m ahead of and {sig(b, 6)} m behind G, "
         "described by x<sub>f</sub> and x<sub>r</sub>, the body above each axle. What is M₁₂, its mass matrix's "
         "coupling term?",
         entry,
         f"x<sub>G</sub> = (b x<sub>f</sub> + a x<sub>r</sub>)/L and θ = (x<sub>f</sub> − x<sub>r</sub>)/L, so T's "
-        f"cross term gives M₁₂ = (m a b − J)/L² = ({m:g} × {a:g} × {b:g} − {m:g} × {r:g}²)/{number(L)}² = "
+        f"cross term gives M₁₂ = (m a b − J)/L² = ({sig(m, 6)} × {sig(a, 6)} × {sig(b, 6)} − {sig(m, 6)} × {sig(r, 6)}²)/{number(L)}² = "
         f"{number(entry)} kg.",
         unit="kg",
         setup=dict(mass=m, gyration=r, front=a, rear=b, coords=Coordinates.ENDS, tab=TAB_LAGRANGE),
@@ -720,11 +723,11 @@ def _uncouple_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The car with its axles {a:g} m ahead of and {b:g} m behind G and {kf:g} kN/m at the front. Choose the "
+        f"The car with its axles {sig(a, 6)} m ahead of and {sig(b, 6)} m behind G and {sig(kf, 6)} kN/m at the front. Choose the "
         "rear spring so that, in x<sub>G</sub> and θ, bounce and pitch are its modes: the elastic centre within "
         "5 mm of G.",
         0,
-        f"Static coupling goes when k<sub>f</sub>a = k<sub>r</sub>b: k<sub>r</sub> = {kf:g} × {a:g}/{b:g} = "
+        f"Static coupling goes when k<sub>f</sub>a = k<sub>r</sub>b: k<sub>r</sub> = {sig(kf, 6)} × {sig(a, 6)}/{sig(b, 6)} = "
         f"{number(kr)} kN/m.",
         setup=dict(front=a, rear=b, k_front=kf, k_rear=60.0, tab=TAB_LAGRANGE),
         goal=goal,
@@ -1333,7 +1336,7 @@ class DerivingPage(QtWidgets.QWidget):
         self.coords_form.form.setRowVisible(self.offset, coords is Coordinates.POINT)
         self.modes = modes(car, coords, e)
         self.body_info.setText(
-            f"J = {car.inertia:.4g} kg·m², L = {car.wheelbase:.3g} m, dynamic index k<sub>G</sub>²/(ab) = {car.dynamic_index:.3g}."
+            f"J = {sig(car.inertia, 4)} kg·m², L = {sig(car.wheelbase)} m, dynamic index k<sub>G</sub>²/(ab) = {sig(car.dynamic_index)}."
         )
         q1, q2 = q_names(coords)
         self.matrix_label.setText(
@@ -1348,17 +1351,17 @@ class DerivingPage(QtWidgets.QWidget):
             else:
                 side = "ahead of" if node >= 0 else "behind"
                 kind = "between the axles: mostly pitch" if m.inside(car) else "outside the wheelbase: mostly bounce"
-                where = f"node {abs(node):.3g} m {side} G, {kind}"
+                where = f"node {sig(abs(node))} m {side} G, {kind}"
                 if abs(node) < 1e-3:
                     where = "node at G: pure pitch"
-            parts.append(f"Mode {i + 1}: <b>{m.frequency:.3g} Hz</b>, {where}")
+            parts.append(f"Mode {i + 1}: <b>{sig(m.frequency)} Hz</b>, {where}")
         fb, fp = car.uncoupled_frequencies()
         ff, fr = car.end_frequencies()
         e_star = car.elastic_centre()
         self.readout.setText(
             ". ".join(parts)
-            + f". Uncoupled: bounce {fb:.3g} Hz, pitch {fp:.3g} Hz; each end alone: front {ff:.3g}, rear {fr:.3g} Hz. "
-            f"Elastic centre {abs(e_star):.3g} m {'ahead of' if e_star >= 0 else 'behind'} G."
+            + f". Uncoupled: bounce {sig(fb)} Hz, pitch {sig(fp)} Hz; each end alone: front {sig(ff)}, rear {sig(fr)} Hz. "
+            f"Elastic centre {sig(abs(e_star))} m {'ahead of' if e_star >= 0 else 'behind'} G."
         )
 
     def _readout_pendulum(self) -> None:
@@ -1370,12 +1373,12 @@ class DerivingPage(QtWidgets.QWidget):
             + matrices_html(pendulum_matrices(p, angles), per_row=3)
         )
         parts = [
-            f"Mode {i + 1}: <b>{m.frequency:.3g} Hz</b>, θ₂ = {m.ratio:.3g} θ₁ ".replace("-", "−")
+            f"Mode {i + 1}: <b>{sig(m.frequency)} Hz</b>, θ₂ = {sig(m.ratio)} θ₁ ".replace("-", "−")
             + ("(the rods together)" if m.in_phase else "(the rods against each other)")
             for i, m in enumerate(self.pmodes)
         ]
         fu, fl = p.separate_frequencies()
-        self.readout.setText(". ".join(parts) + f". Each rod alone: upper {fu:.3g} Hz, lower {fl:.3g} Hz.")
+        self.readout.setText(". ".join(parts) + f". Each rod alone: upper {sig(fu)} Hz, lower {sig(fl)} Hz.")
 
     def _draw_tab(self) -> None:
         i = self.tabs.currentIndex()
@@ -1434,7 +1437,7 @@ class DerivingPage(QtWidgets.QWidget):
         self.freq_plot.setYRange(0.0, 1.15 * float(np.nanmax(f)), padding=0)
         self.node_plot.setYRange(-reach, reach, padding=0)
         self.modes_note.setText(
-            f"At k<sub>r</sub>/k<sub>f</sub> = {balance:.3g} (k<sub>f</sub>a = k<sub>r</sub>b) the modes are pure "
+            f"At k<sub>r</sub>/k<sub>f</sub> = {sig(balance)} (k<sub>f</sub>a = k<sub>r</sub>b) the modes are pure "
             "bounce and pitch: one node runs off to infinity and the other sits on G. Elsewhere one node lies "
             "outside the wheelbase (a mostly bouncing mode) and one inside (mostly pitch). Dashed lines: the "
             "axles. With a dynamic index of 1 the modes are the ends' own, and their nodes sit on the axles."
@@ -1460,10 +1463,10 @@ class DerivingPage(QtWidgets.QWidget):
         peak, settled = np.degrees(np.abs(r.pitch).max()), np.degrees(np.abs(r.pitch[after]).max())
         lag = self.car.wheelbase / (self.speed.value() / 3.6)
         self.bump_note.setText(
-            f"The rear wheel meets the bump {lag:.2g} s after the front. The body pitches up to {peak:.3g}° in all, "
-            f"and <b>{settled:.3g}°</b> once both wheels are past it (dotted), where the car's own modes are left: "
-            f"the ends rise {1e3 * np.abs(r.ends).max(axis=0)[0]:.3g} mm at the front and "
-            f"{1e3 * np.abs(r.ends).max(axis=0)[1]:.3g} mm at the rear."
+            f"The rear wheel meets the bump {sig(lag, 2)} s after the front. The body pitches up to {sig(peak)}° in all, "
+            f"and <b>{sig(settled)}°</b> once both wheels are past it (dotted), where the car's own modes are left: "
+            f"the ends rise {sig(1e3 * np.abs(r.ends).max(axis=0)[0])} mm at the front and "
+            f"{sig(1e3 * np.abs(r.ends).max(axis=0)[1])} mm at the rear."
         )
 
     def _draw_pendulum_modes(self) -> None:
@@ -1483,7 +1486,7 @@ class DerivingPage(QtWidgets.QWidget):
         self.shape_plot.setYRange(-12.0, 12.0, padding=0)
         slow, fast = self.pmodes
         self.pmodes_note.setText(
-            f"This pendulum (red): {slow.frequency:.3g} and {fast.frequency:.3g} Hz, {fast.frequency / slow.frequency:.3g} "
+            f"This pendulum (red): {sig(slow.frequency)} and {sig(fast.frequency)} Hz, {sig(fast.frequency / slow.frequency)} "
             "apart. A light lower bob barely loads the upper rod: the modes close in on the rods' own frequencies, "
             "one swinging the lower rod far more than the upper. A heavy one makes the upper rod's mode stiff and "
             "fast, and the slower mode a single pendulum of length L₁ + L₂ (θ₂ → θ₁)."
@@ -1505,14 +1508,14 @@ class DerivingPage(QtWidgets.QWidget):
         whole, linear = measured_period(s.t, s.whole[:, 0]), measured_period(s.t, s.linear[:, 0])
         apart = np.degrees(np.abs(s.whole[:, 0] - s.linear[:, 0]).max())
         period = (
-            f"The upper rod's period is {whole:.4g} s, against the linear {linear:.4g} s "
-            f"({100 * (whole / linear - 1):+.2g} %). "
+            f"The upper rod's period is {sig(whole, 4)} s, against the linear {sig(linear, 4)} s "
+            f"({sig(100 * (whole / linear - 1), 2, plus=True)} %). "
             if math.isfinite(whole) and math.isfinite(linear)
             else ""
         )
         self.swing_note.setText(
-            period + f"Over {SWING_S:.0f} s the linear model strays up to {apart:.3g}° from the whole motion. The "
-            f"whole equations' energy holds to {s.drift:.1g} of the swing's."
+            period + f"Over {SWING_S:.0f} s the linear model strays up to {sig(apart)}° from the whole motion. The "
+            f"whole equations' energy holds to {sig(s.drift, 1)} of the swing's."
         )
 
     def _draw_chaos(self) -> None:
@@ -1526,9 +1529,9 @@ class DerivingPage(QtWidgets.QWidget):
         doubling = d.doubling_time()
         self.chaos_note.setText(
             f"A twin released 10⁻⁶ rad further over (the lower rod). After {CHAOS_S:.0f} s they're "
-            f"{d.apart[-1]:.2g} rad apart"
+            f"{sig(d.apart[-1], 2)} rad apart"
             + (
-                f": the difference doubles every <b>{doubling:.2g} s</b>, exponentially. That's chaos: the motion is "
+                f": the difference doubles every <b>{sig(doubling, 2)} s</b>, exponentially. That's chaos: the motion is "
                 "exact, but no measurement could be fine enough to predict it for long."
                 if math.isfinite(doubling)
                 else ": the difference grows, but slowly, not exponentially. The motion may look irregular, but "
@@ -1606,7 +1609,7 @@ class DerivingPage(QtWidgets.QWidget):
             self.view.draw(
                 car, RIDE_SCALE * xg, RIDE_SCALE * th, (xs, road), tuple(RIDE_SCALE * r.road[k]), points, None
             )
-            self.view.caption.setText(f"t = {r.t[k]:.2f} s, heights × {RIDE_SCALE:g}")
+            self.view.caption.setText(f"t = {r.t[k]:.2f} s, heights × {sig(RIDE_SCALE, 6)}")
             for line in self.time_lines:
                 line.setPos(r.t[k])
             return
@@ -1615,7 +1618,7 @@ class DerivingPage(QtWidgets.QWidget):
         swing_now = math.sin(self._phase)
         node = mode.node if math.isfinite(mode.node) else None
         self.view.draw(car, swing_now * xg, swing_now * th, None, (0.0, 0.0), points, node)
-        self.view.caption.setText(f"Mode {show + 1}, {mode.frequency:.3g} Hz (swung slowly)")
+        self.view.caption.setText(f"Mode {show + 1}, {sig(mode.frequency)} Hz (swung slowly)")
 
     def _draw_pendulum(self) -> None:
         p = self.pendulum
@@ -1635,4 +1638,4 @@ class DerivingPage(QtWidgets.QWidget):
         scale = math.radians(dp.SHOWN) / max(1.0, abs(mode.ratio))
         swing_now = math.sin(self._phase)
         self.pview.draw(p, scale * swing_now, scale * mode.ratio * swing_now, None)
-        self.pview.caption.setText(f"Mode {show + 1}, {mode.frequency:.3g} Hz (swung slowly)")
+        self.pview.caption.setText(f"Mode {show + 1}, {sig(mode.frequency)} Hz (swung slowly)")

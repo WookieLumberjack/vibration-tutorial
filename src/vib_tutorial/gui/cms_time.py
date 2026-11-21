@@ -14,6 +14,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core import CMSModel, ForceController, ForceKind, ForceSettings, ModalResult
 from ..core.cms_response import CMSResponse
 from ..view_models.text import fmt
+from ..view_models.text import number as sig
 from . import coalesce
 from .animation import ChainView
 from .frame_loop import FrameLoop
@@ -156,10 +157,10 @@ class CMSRunView(QtWidgets.QWidget):
         self.tune.addItem("Tune to…")
         for r, m in enumerate(full.modes if full is not None else []):
             if m.fn_hz > 0:
-                self.tune.addItem(f"Mode {r + 1} true ({m.fn_hz:.4g} Hz)", m.fn_hz)
+                self.tune.addItem(f"Mode {r + 1} true ({sig(m.fn_hz, 4)} Hz)", m.fn_hz)
         for r, f in enumerate(model.fn_hz):
             if f > 0:
-                self.tune.addItem(f"Mode {r + 1} {model.short_name} ({f:.4g} Hz)", float(f))
+                self.tune.addItem(f"Mode {r + 1} {model.short_name} ({sig(f, 4)} Hz)", float(f))
         self._draw()
         self.loop.start()
 
@@ -382,7 +383,7 @@ class CMSTimeView(CMSRunView):
             rms = float(np.sqrt(np.mean(xf[:, 0] ** 2)))
             rel = float(np.sqrt(np.mean(err[:, 0] ** 2))) / rms if rms > MIN_SPAN else 0.0
             self.error_note.setText(
-                f"Over the last {min(w, t[-1] - t[0]):.3g} s: tip error {100 * rel:.3g}% RMS of the full "
+                f"Over the last {sig(min(w, t[-1] - t[0]))} s: tip error {sig(100 * rel)}% RMS of the full "
                 f"model's tip motion; largest |error| {_fmt(float(np.abs(err[:, 0]).max()))} at the tip"
                 + (f", {_fmt(float(np.abs(err[:, 1:]).max()))} at the interface{'s' if k > 2 else ''}" if k > 1 else "")
                 + f".   t = {sim.t:.2f} s"

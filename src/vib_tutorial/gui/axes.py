@@ -16,6 +16,8 @@ import math
 import pyqtgraph as pg
 from PySide6 import QtGui
 
+from ..view_models.text import number as sig
+
 # Labelled mantissas, the first set that fits: every tick, then 1, 2 and 5, then only the decades.
 TIERS = (tuple(range(1, 10)), (1, 2, 5), (1,))
 SUPERSCRIPT = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
@@ -25,7 +27,7 @@ def log_label(value: float) -> str:
     """0.0001 ... 9999 as plain numbers; smaller or larger as m·10ⁿ."""
     e = math.floor(math.log10(value) + 1e-9)
     if -4 <= e <= 3:
-        return f"{value:.4g}"
+        return f"{sig(value, 4)}"
     m = round(value / 10.0**e)
     if m == 10:
         m, e = 1, e + 1

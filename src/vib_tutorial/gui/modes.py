@@ -13,6 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..core import ModalResult
+from ..view_models.text import number as sig
 from .style import colors
 
 
@@ -46,7 +47,7 @@ def mode_entries(result: ModalResult, method: Method) -> list[ModeEntry]:
                 spin=1,
                 freq_hz=m.fn_hz,
                 color=colors.mode[r % len(colors.mode)],
-                legend=f"Mode {m.index}: {m.fn_hz:.3g} Hz",
+                legend=f"Mode {m.index}: {sig(m.fn_hz)} Hz",
                 state0=np.concatenate([m.shape, np.zeros_like(m.shape)]),
             )
             for r, m in enumerate(result.modes)
@@ -59,7 +60,7 @@ def mode_entries(result: ModalResult, method: Method) -> list[ModeEntry]:
         if first:
             group += 1
         if m.is_oscillatory:
-            legend = f"λ{m.index},{m.conjugate}: {m.fd_hz:.3g} Hz" if first else None
+            legend = f"λ{m.index},{m.conjugate}: {sig(m.fd_hz)} Hz" if first else None
         else:
             legend = f"λ{m.index}: {time_constant_text(m.eigenvalue.real)}"
         entries.append(
@@ -80,4 +81,4 @@ def mode_entries(result: ModalResult, method: Method) -> list[ModeEntry]:
 
 def time_constant_text(root: float) -> str:
     """Describe a real eigenvalue by its decay time constant tau = -1/lambda."""
-    return "rigid (τ = ∞)" if abs(root) < 1e-9 else f"τ = {-1.0 / root:.3g} s"
+    return "rigid (τ = ∞)" if abs(root) < 1e-9 else f"τ = {sig(-1.0 / root)} s"

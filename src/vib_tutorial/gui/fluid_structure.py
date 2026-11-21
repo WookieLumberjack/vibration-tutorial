@@ -66,6 +66,7 @@ from ..core.sloshing import (
     slosh_mass,
     tank_flow,
 )
+from ..view_models.text import number as sig
 from . import coalesce, fluid_structure_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import (
@@ -383,9 +384,9 @@ def _sphere(rng: np.random.Generator) -> Question:
     rho = pick(rng, (1000, 1025, 850))
     body = Body(Shape.SPHERE, r / 1000, fluid=rho)
     return Question(
-        f"A sphere {r:g} mm in radius moves through a liquid of density {rho:g} kg/m³. What is its added mass?",
+        f"A sphere {sig(r, 6)} mm in radius moves through a liquid of density {sig(rho, 6)} kg/m³. What is its added mass?",
         body.added_mass,
-        f"m<sub>a</sub> = ½ρ<sub>f</sub>(4/3)πR³ = ½ × {rho:g} × (4/3)π × {r / 1000:g}³ = {number(body.added_mass)} "
+        f"m<sub>a</sub> = ½ρ<sub>f</sub>(4/3)πR³ = ½ × {sig(rho, 6)} × (4/3)π × {sig(r / 1000, 6)}³ = {number(body.added_mass)} "
         "kg: half the liquid it displaces.",
         unit="kg",
         setup=dict(shape=Shape.SPHERE, radius=r, fluid=rho),
@@ -399,11 +400,11 @@ def _cylinder(rng: np.random.Generator) -> Question:
     body = Body(Shape.CYLINDER, r / 1000, rho_s, WATER)
     wet = wet_frequency(f, body.mass, body.added_mass)
     return Question(
-        f"A solid cylinder {r:g} mm in radius, density {rho_s:g} kg/m³, vibrates across its axis on springs at "
-        f"{f:g} Hz in vacuum. What is its natural frequency in water (1000 kg/m³)?",
+        f"A solid cylinder {sig(r, 6)} mm in radius, density {sig(rho_s, 6)} kg/m³, vibrates across its axis on springs at "
+        f"{sig(f, 6)} Hz in vacuum. What is its natural frequency in water (1000 kg/m³)?",
         wet,
         f"Per metre, m<sub>s</sub> = ρ<sub>s</sub>πR² = {number(body.mass)} kg and m<sub>a</sub> = ρ<sub>f</sub>πR² = "
-        f"{number(body.added_mass)} kg, so f = {f:g} √(m<sub>s</sub>/(m<sub>s</sub> + m<sub>a</sub>)) = {f:g} √({rho_s:g}/{rho_s + 1000:g}) "
+        f"{number(body.added_mass)} kg, so f = {sig(f, 6)} √(m<sub>s</sub>/(m<sub>s</sub> + m<sub>a</sub>)) = {sig(f, 6)} √({sig(rho_s, 6)}/{sig(rho_s + 1000, 6)}) "
         f"= {number(wet)} Hz: only the densities matter.",
         unit="Hz",
         setup=dict(radius=r, density=rho_s, f_dry=f),
@@ -414,10 +415,10 @@ def _confined(rng: np.random.Generator) -> Question:
     r = pick(rng, (1.1, 1.2, 1.5, 2))
     c = Body(Shape.CYLINDER, 1.0, outer=r).coefficient
     return Question(
-        f"A cylinder vibrates inside a concentric pipe whose radius is {r:g} times its own, the gap full of "
+        f"A cylinder vibrates inside a concentric pipe whose radius is {sig(r, 6)} times its own, the gap full of "
         "water. What is its added-mass coefficient C<sub>a</sub> = m<sub>a</sub>/ρπR²?",
         c,
-        f"C<sub>a</sub> = (R<sub>o</sub>² + R²)/(R<sub>o</sub>² − R²) = ({r:g}² + 1)/({r:g}² − 1) = {number(c)}.",
+        f"C<sub>a</sub> = (R<sub>o</sub>² + R²)/(R<sub>o</sub>² − R²) = ({sig(r, 6)}² + 1)/({sig(r, 6)}² − 1) = {number(c)}.",
         setup=dict(walled=True, ratio=r),
     )
 
@@ -427,9 +428,9 @@ def _plate(rng: np.random.Generator) -> Question:
     beta = pick(rng, (0.5, 2, 4, 8.4))
     wet = f / math.sqrt(1 + beta)
     return Question(
-        f"A plate mode at {f:g} Hz in air has an AVMI factor β = {beta:g} in water. What is its frequency in water?",
+        f"A plate mode at {sig(f, 6)} Hz in air has an AVMI factor β = {sig(beta, 6)} in water. What is its frequency in water?",
         wet,
-        f"f<sub>wet</sub> = f<sub>dry</sub>/√(1 + β) = {f:g}/√{1 + beta:g} = {number(wet)} Hz.",
+        f"f<sub>wet</sub> = f<sub>dry</sub>/√(1 + β) = {sig(f, 6)}/√{sig(1 + beta, 6)} = {number(wet)} Hz.",
         unit="Hz",
         setup=dict(tab=TAB_PLATE),
     )
@@ -499,12 +500,12 @@ def _pipe_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"A steel rod 25 mm in radius runs inside a water-filled pipe, on supports that give it {f:g} Hz in "
+        f"A steel rod 25 mm in radius runs inside a water-filled pipe, on supports that give it {sig(f, 6)} Hz in "
         f"vacuum. Its natural frequency in the pipe must stay at or above {number(need, 3)} Hz. How small can the "
         "pipe be? Set its radius (R<sub>o</sub>/R).",
         0,
         f"The frequency rises as the gap opens and the added mass falls towards the open water's ρπR². With "
-        f"R<sub>o</sub>/R = {ratio:g}, C<sub>a</sub> = {number(body.coefficient)} and the rod runs at "
+        f"R<sub>o</sub>/R = {sig(ratio, 6)}, C<sub>a</sub> = {number(body.coefficient)} and the rod runs at "
         f"{number(wet)} Hz.",
         setup=dict(walled=True, ratio=1.05, f_dry=float(f)),
         goal=goal,
@@ -519,7 +520,7 @@ def _slosh(rng: np.random.Generator) -> Question:
     k = math.pi / L
     f = slosh_frequency(tank, 1)
     return Question(
-        f"A rectangular tank {L:g} m long is filled with water to {h:g} m. What is the frequency of its first "
+        f"A rectangular tank {sig(L, 6)} m long is filled with water to {sig(h, 6)} m. What is the frequency of its first "
         "sloshing mode, along its length?",
         f,
         f"κ = π/L = {number(k)} /m, ω² = gκ tanh(κd) = 9.81 × {number(k)} × tanh({number(k * h)}), so f = "
@@ -536,7 +537,7 @@ def _slosh_mass(rng: np.random.Generator) -> Question:
     tank = Tank(L, h, B)
     m1 = float(slosh_mass(tank, 1))
     return Question(
-        f"A tank {L:g} m long and {B:g} m wide is filled with water to {h:g} m. In the spring–mass analogue for "
+        f"A tank {sig(L, 6)} m long and {sig(B, 6)} m wide is filled with water to {sig(h, 6)} m. In the spring–mass analogue for "
         "a sideways motion along its length, what is the first sloshing mass?",
         m1,
         f"m<sub>L</sub> = ρLBd = {number(tank.liquid_mass)} kg, and m<sub>1</sub> = m<sub>L</sub> 8 tanh(πd/L)"
@@ -552,10 +553,10 @@ def _tuning(rng: np.random.Generator) -> Question:
     mu = pick(rng, (0.01, 0.02, 0.05, 0.1))
     fd = f / (1 + mu)
     return Question(
-        f"A structure's mode at {f:g} Hz gets a tuned liquid damper whose sloshing mass is μ = {mu:g} of the "
+        f"A structure's mode at {sig(f, 6)} Hz gets a tuned liquid damper whose sloshing mass is μ = {sig(mu, 6)} of the "
         "structure's. By Den Hartog's rule, what should the damper's sloshing frequency be?",
         fd,
-        f"f<sub>d</sub> = f<sub>s</sub>/(1 + μ) = {f:g}/{1 + mu:g} = {number(fd)} Hz, a little below the structure's.",
+        f"f<sub>d</sub> = f<sub>s</sub>/(1 + μ) = {sig(f, 6)}/{sig(1 + mu, 6)} = {number(fd)} Hz, a little below the structure's.",
         unit="Hz",
         setup=dict(length=2.0, depth=0.4, breadth=2.0, tab=TAB_DAMPER),
     )
@@ -634,7 +635,7 @@ def _damper_spec(rng: np.random.Generator) -> Question:
         "ζ<sub>d</sub>.",
         0,
         f"The peak falls as ζ<sub>d</sub> rises towards Den Hartog's optimum, about 13 % here. ζ<sub>d</sub> = "
-        f"{zeta:g} % gives {number(peak(*_damper_of(design)))}.",
+        f"{sig(zeta, 6)} % gives {number(peak(*_damper_of(design)))}.",
         setup=dict(length=2.0, depth=0.4, breadth=2.0, damper_zeta=0.5, tab=TAB_DAMPER),
         goal=goal,
         design=dict(length=2.0, depth=0.4, breadth=2.0, damper_zeta=zeta, tab=TAB_DAMPER),
@@ -737,12 +738,12 @@ TUNE_TIP = (
 
 def _kg(m: float) -> str:
     if m >= 1e4:
-        return f"{m / 1000:.3g} t"
-    return f"{m:.0f} kg" if m >= 100 else f"{m:.3g} kg"
+        return f"{sig(m / 1000)} t"
+    return f"{m:.0f} kg" if m >= 100 else f"{sig(m)} kg"
 
 
 def _hz(f: float) -> str:
-    return f"{f:.3g} Hz"
+    return f"{sig(f)} Hz"
 
 
 NOTES_HTML = load_notes("fluid_structure", figures=fluid_structure_figures.FIGURES, trials=trials_html(TRIALS))
@@ -1214,9 +1215,9 @@ class FluidStructurePage(QtWidgets.QWidget):
             f"m = {fmt(body.mass, 'kg')}{per}, the fluid it displaces {fmt(body.fluid * body.volume, 'kg')}{per}."
         )
         self.readout.setText(
-            f"C<sub>a</sub> = {body.coefficient:.4g}: added mass m<sub>a</sub> = {fmt(body.added_mass, 'kg')}{per} on the "
+            f"C<sub>a</sub> = {sig(body.coefficient, 4)}: added mass m<sub>a</sub> = {fmt(body.added_mass, 'kg')}{per} on the "
             f"body's {fmt(body.mass, 'kg')}. On its springs, {fmt(self.f_dry.value(), 'Hz')} in vacuum becomes "
-            f"{fmt(wet, 'Hz')} in the fluid ({wet / self.f_dry.value():.3g} of it)."
+            f"{fmt(wet, 'Hz')} in the fluid ({sig(wet / self.f_dry.value())} of it)."
         )
         settle_plots(self)
 
@@ -1236,15 +1237,15 @@ class FluidStructurePage(QtWidgets.QWidget):
         self.ratio_plot.setXRange(math.log10(DENSITIES[0]), math.log10(DENSITIES[-1]), padding=0.02)
         self.ratio_plot.setYRange(0.0, 1.02, padding=0)
         wall = (
-            f" The wall at {body.outer / body.radius:.3g} R raises it from the open fluid's "
-            f"{Body(body.shape).coefficient:g}."
+            f" The wall at {sig(body.outer / body.radius)} R raises it from the open fluid's "
+            f"{sig(Body(body.shape).coefficient, 6)}."
             if math.isfinite(body.outer)
             else ""
         )
         self.body_note.setText(
-            f"C<sub>a</sub> = {body.coefficient:.4g}.{wall} The body is {rho:.3g} times as dense as the fluid, so "
+            f"C<sub>a</sub> = {sig(body.coefficient, 4)}.{wall} The body is {sig(rho)} times as dense as the fluid, so "
             f"its frequency falls to 1/√(1 + C<sub>a</sub>ρ<sub>f</sub>/ρ<sub>s</sub>) = "
-            f"{1 / math.sqrt(1 + body.coefficient / rho):.3g} of the vacuum's."
+            f"{sig(1 / math.sqrt(1 + body.coefficient / rho))} of the vacuum's."
         )
         settle_plots(self)
 
@@ -1289,7 +1290,7 @@ class FluidStructurePage(QtWidgets.QWidget):
         self.plate_note.setText(
             f"Mode ({m}, {n}), {fmt(dry, 'Hz')} in air, with fluid on {side}: its added mass is "
             f"{fmt(added, 'kg')} against its modal mass ρ<sub>p</sub>hab/4 = {fmt(plate_modal_mass(p), 'kg')}, "
-            f"β = {beta:.3g}, and it falls to {fmt(wet, 'Hz')} ({wet / dry:.3g} of it). Dots: the first "
+            f"β = {sig(beta)}, and it falls to {fmt(wet, 'Hz')} ({sig(wet / dry)} of it). Dots: the first "
             f"{PLATE_MODES} modes, by the parity of m and n (odd–odd, mixed, even–even). The fluid's coupling "
             "between modes is left out."
         )
@@ -1320,7 +1321,7 @@ class FluidStructurePage(QtWidgets.QWidget):
         fn = slosh_frequency(tank, n)
         mL, m0, mn = tank.liquid_mass, rigid_mass(tank), float(slosh_mass(tank, n))
         excited = (
-            f"its analogue mass is {_kg(mn)}, {mn / mL:.3g} of the liquid's"
+            f"its analogue mass is {_kg(mn)}, {sig(mn / mL)} of the liquid's"
             if n % 2
             else "it's symmetric, so a sideways motion doesn't excite it (no analogue mass)"
         )
@@ -1387,9 +1388,9 @@ class FluidStructurePage(QtWidgets.QWidget):
         m1 = float(damper.masses[0])
         self.damper_note.setText(
             f"Of the {_kg(damper.liquid)} of liquid, the first sloshing mode's {_kg(m1)}, at "
-            f"{_hz(slosh_frequency(tank, 1))}, is a tuned mass damper with μ = {mu:.3g}; the rest moves with the "
-            f"structure and lowers it to {_hz(loaded)}. Peak: {here:.3g} times the static deflection (frozen, "
-            f"{frozen_peak:.3g}). Den Hartog's tuning for this μ: f<sub>d</sub> = {_hz(tuning * loaded)}, "
-            f"ζ<sub>d</sub> = {100 * zeta_opt:.3g} %, a peak of {dh_peak:.3g} (with no damping in the structure)."
+            f"{_hz(slosh_frequency(tank, 1))}, is a tuned mass damper with μ = {sig(mu)}; the rest moves with the "
+            f"structure and lowers it to {_hz(loaded)}. Peak: {sig(here)} times the static deflection (frozen, "
+            f"{sig(frozen_peak)}). Den Hartog's tuning for this μ: f<sub>d</sub> = {_hz(tuning * loaded)}, "
+            f"ζ<sub>d</sub> = {sig(100 * zeta_opt)} %, a peak of {sig(dh_peak)} (with no damping in the structure)."
         )
         settle_plots(self)
