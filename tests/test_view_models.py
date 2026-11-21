@@ -325,3 +325,25 @@ def test_numbers_print_one_way():
     assert _fmt_um(2.5e-5) == "25 µm" and _fmt_um(0.0012) == "1.2 mm" and cms_length(3e-9) == "3 nm"
     assert _fmt_len(1.5) == "1.5 m" and _fmt_len(0.02) == "20 mm" and _fmt_time(0.004) == "4 ms"
     assert fmt_hz(523.25) == "523.2 Hz" and fmt_hz(12_345.0) == "12.35 kHz"
+
+
+def test_record_buffers_keep_the_latest():
+    """`view_models/record.py` (#409 S-9): full, a buffer drops its oldest half and keeps the newest; the chain's
+    `History` numbers every sample it ever stored (`offset`), dropped ones too."""
+    from vib_tutorial.view_models.record import ENERGY_COLUMNS, History, SampleBuffer
+
+    b = SampleBuffer(2, capacity=10)
+    for start in range(0, 16, 4):
+        t = np.arange(start, start + 4, dtype=float)
+        b.extend(t, np.column_stack([t, -t]))
+    t, y = b.window(100.0)
+    assert t[-1] == 15.0 and list(y[-1]) == [15.0, -15.0] and b.size <= 10 and np.all(np.diff(t) == 1.0)
+    assert list(b.window(2.0)[0]) == [13.0, 14.0, 15.0]
+    h = History(1, capacity=8)
+    for start in range(0, 20, 5):
+        t = np.arange(start, start + 5, dtype=float)
+        z = np.zeros((5, 1))
+        h.extend(t, z, z, t, np.zeros((5, len(ENERGY_COLUMNS))), np.zeros((5, 2)))
+    assert h.t[h.size - 1] == 19.0 and h.offset + h.size == 20, "every sample numbered"
+    h.reset(2)
+    assert h.size == 0 and h.offset == 20 and h.x.shape[1] == 2

@@ -38,13 +38,13 @@ from ..core import (
 )
 from ..core.presets import Preset, without_absorber
 from ..core.stepping import Budget
+from ..view_models.record import History
 from ..view_models.text import number as sig
 from . import theming, weak
 from .animation import ChainView
 from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
 from .frame_loop import FrameLoop
-from .history import History
 from .layouts import ColumnScroll, FlowLayout, group, wrapped
 from .lesson import TrialBox
 from .modes import Method, mode_entries

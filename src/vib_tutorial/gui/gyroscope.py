@@ -48,9 +48,9 @@ from ..core.gyroscope import (
 )
 from ..core.sliding_top import COLUMNS, RoundTop, SlideSamples, SlidingSimulator, contact_torque
 from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
+from ..view_models.record import SampleBuffer
 from ..view_models.text import number as sig
 from . import coalesce, gyroscope_figures
-from .cms_time import SampleBuffer
 from .components_tab import ComponentsTab
 from .equations_snapshot import snapshot_html
 from .frame_loop import FrameLoop

@@ -36,9 +36,9 @@ from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbl
 from ..core.rotation import Turning
 from ..core.stepping import FRAME_BUDGET, Budget
 from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
+from ..view_models.record import SampleBuffer
 from ..view_models.text import number as sig
 from . import coalesce, rigid_body_figures
-from .cms_time import SampleBuffer
 from .components_tab import ComponentsTab
 from .equations_snapshot import bracket, equation, snapshot_html
 from .frame_loop import FrameLoop

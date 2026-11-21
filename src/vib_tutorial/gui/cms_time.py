@@ -13,6 +13,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core import CMSModel, ForceController, ForceKind, ForceSettings, ModalResult
 from ..core.cms_response import CMSResponse
+from ..view_models.record import SampleBuffer
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from . import coalesce
@@ -403,31 +404,3 @@ def _model_key(model: CMSModel) -> tuple:
 
 def _fmt(meters: float) -> str:
     return fmt(meters, "m", largest="m", smallest="n")
-
-
-class SampleBuffer:
-    """Recent samples (t, columns), dropping the oldest half when full: amortized O(1) per sample."""
-
-    def __init__(self, columns: int, capacity: int = 200_000) -> None:
-        self.t = np.empty(capacity)
-        self.y = np.empty((capacity, columns))
-        self.size = 0
-
-    def clear(self) -> None:
-        self.size = 0
-
-    def extend(self, ts: np.ndarray, ys: np.ndarray) -> None:
-        cap, k = self.t.size, min(ts.size, self.t.size)
-        if self.size + k > cap:
-            keep = min(self.size, cap // 2, cap - k)
-            self.t[:keep] = self.t[self.size - keep : self.size]
-            self.y[:keep] = self.y[self.size - keep : self.size]
-            self.size = keep
-        self.t[self.size : self.size + k] = ts[-k:] if k else ts[:0]
-        self.y[self.size : self.size + k] = ys[-k:] if k else ys[:0]
-        self.size += k
-
-    def window(self, seconds: float) -> tuple[np.ndarray, np.ndarray]:
-        t = self.t[: self.size]
-        i0 = int(np.searchsorted(t, t[-1] - seconds)) if self.size else 0
-        return t[i0:], self.y[i0 : self.size]

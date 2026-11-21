@@ -50,10 +50,10 @@ from ..core.rotor_sweep import (
     probe,
 )
 from ..core.stepping import FRAME_BUDGET, Budget
+from ..view_models.record import SampleBuffer
 from ..view_models.text import number as sig
 from . import rotor_practice, weak
 from .challenge import ChallengeBox
-from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, wrapped
 from .lesson import RunButton, TrialBox
