@@ -21,8 +21,8 @@ from typing import Protocol
 from PySide6 import QtCore, QtWidgets
 
 from ..core.model import ChainSystem
+from .layouts import wrapped
 from .style import MAX_DOF
-from .theming import mute
 
 DOF_TIP = "Same chain as the Simulation page; changing it here changes it there too."
 
@@ -55,9 +55,7 @@ def show_count(box: QtWidgets.QSpinBox, n: int) -> None:
 def edit_link(page: QtCore.QObject, text: str) -> QtWidgets.QLabel:
     """A muted line whose link (`<a href='#sim'>`) opens the Simulation page's elements (`page.edit_parameters`),
     wrapped: on one line it set its pane's minimum width, leaving the tabs too little on macOS."""
-    link = QtWidgets.QLabel(text)
-    mute(link)
-    link.setWordWrap(True)
+    link = wrapped(text, muted=True)
     link.linkActivated.connect(page.edit_parameters)  # type: ignore[attr-defined]
     return link
 

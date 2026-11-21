@@ -34,11 +34,12 @@ def plot(
     bottom_units: str | None,
     log_x: bool = False,
     log_y: bool = False,
-    height: int = 160,
+    height: int | None = 160,
     log_ready: bool = False,
 ) -> pg.PlotWidget:
     """A plot with a faint grid, no menu and no auto-range button; log axes if asked (`log_ready`: axes that
-    label a log scale well, for a plot switched to one later, and label only as many ticks as fit)."""
+    label a log scale well, for a plot switched to one later, and label only as many ticks as fit). `height`:
+    as short as it may be (`plot_height`), or None to leave it to the caller."""
     p = pg.PlotWidget(axisItems=log_axes() if (log_x or log_y or log_ready) else None)
     p.setMenuEnabled(False)
     p.hideButtons()
@@ -50,8 +51,18 @@ def plot(
             p.getAxis(side).enableAutoSIPrefix(False)
     if log_x or log_y:
         p.setLogMode(x=log_x, y=log_y)
-    plot_height(p, height)
+    if height is not None:
+        plot_height(p, height)
     return p
+
+
+def cell(text: str, colour: str | None = None) -> QtWidgets.QTableWidgetItem:
+    """A table's number, right-aligned, in `colour` if given."""
+    item = QtWidgets.QTableWidgetItem(text)
+    item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
+    if colour:
+        item.setForeground(pg.mkColor(colour))
+    return item
 
 
 class Dot(QtWidgets.QGraphicsEllipseItem):
@@ -81,9 +92,9 @@ def note_label(text: str = "") -> QtWidgets.QLabel:
     return label
 
 
-def readout_label() -> QtWidgets.QLabel:
+def readout_label(text: str = "") -> QtWidgets.QLabel:
     """A wrapping rich-text label for the numbers a plot shows (full contrast, not muted)."""
-    label = QtWidgets.QLabel()
+    label = QtWidgets.QLabel(text)
     label.setWordWrap(True)
     label.setTextFormat(QtCore.Qt.TextFormat.RichText)
     return label

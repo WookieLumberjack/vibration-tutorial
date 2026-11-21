@@ -27,12 +27,11 @@ from ..core.rotor_sweep import STATIONS
 from ..core.rotor_waterfall import SpectrumBlock, Waterfall
 from ..view_models.text import number as sig
 from . import weak
-from .layouts import FlowLayout, group
+from .layouts import FlowLayout, group, wrapped
 from .panels import spin
 from .rotor_readouts import fmt_len
 from .rotor_tips import BLOCK_TIP
 from .style import colors
-from .theming import mute
 
 DOT = QtCore.Qt.PenStyle.DotLine
 MAX_LINES = 120  # at most this many spectra are drawn; more are thinned evenly
@@ -244,9 +243,7 @@ class WaterfallTab(QtWidgets.QWidget):
         self.clear = QtWidgets.QPushButton("Clear")
         self.clear.setToolTip("Drop every spectrum taken so far")
         self.clear.clicked.connect(self._again)
-        self.note = QtWidgets.QLabel()
-        self.note.setWordWrap(True)
-        mute(self.note)
+        self.note = wrapped(muted=True)
         wt = QtWidgets.QVBoxLayout(self)
         row = FlowLayout()
         row.add(

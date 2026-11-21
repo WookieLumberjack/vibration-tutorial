@@ -24,12 +24,11 @@ from ..core.rotor_simulator import RPM
 from ..core.rotor_stability import Onset
 from ..view_models.text import number as sig
 from . import accessible
-from .layouts import plot_height
+from .layouts import plot_height, wrapped
 from .panels import spin
 from .rotor_bearing import _si
 from .style import colors
 from .tab_groups import Deferred
-from .theming import mute
 
 DASH = QtCore.Qt.PenStyle.DashLine
 POINTS = 400  # frequencies on the curves
@@ -125,8 +124,7 @@ class MagnetPanel(QtWidgets.QWidget):
         form.setColumnStretch(1, 1)
         form.setColumnStretch(3, 1)
 
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.readout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
@@ -156,9 +154,7 @@ class MagnetPanel(QtWidgets.QWidget):
             p.addItem(zero)
             self.zero_lines.append(zero)
         self.c_plot.setLabel("bottom", "Frequency (Hz)")
-        self.note = QtWidgets.QLabel()
-        self.note.setWordWrap(True)
-        mute(self.note)
+        self.note = wrapped(muted=True)
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.addLayout(form)

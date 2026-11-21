@@ -56,8 +56,8 @@ from ..core.oma import (
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..view_models.text import number as sig
 from . import chain_page, oma_figures
-from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import TrialBox, trials_html
+from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height, wrapped
+from .lesson import TrialBox, plot, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
@@ -66,7 +66,7 @@ from .panels import spin
 from .plots import decimate
 from .recompute import Recompute
 from .style import colors
-from .theming import add_legend, mute
+from .theming import add_legend
 
 BLOCKS = (256, 512, 1024, 2048, 4096, 8192, 16384)
 CYCLES = 2000  # the record's default length, in periods of the slowest mode
@@ -572,13 +572,8 @@ NOTES_HTML = load_notes(
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None) -> pg.PlotWidget:
-    p = pg.PlotWidget()
-    p.setMenuEnabled(False)
-    p.hideButtons()
-    p.showGrid(x=True, y=True, alpha=0.15)
-    p.setLabel("left", left, units=left_units)
-    p.setLabel("bottom", bottom, units=bottom_units)
-    return p
+    """`lesson.plot`, its height set by the caller."""
+    return plot(left, left_units, bottom, bottom_units, height=None)
 
 
 def _cell(fn: float, zeta: float) -> str:
@@ -651,9 +646,7 @@ class OmaPage(QtWidgets.QWidget):
         self.new_record = QtWidgets.QPushButton("New record")
         self.new_record.setToolTip(TIPS["new"])
         form.addRow(self.new_record)
-        self.daq_info = QtWidgets.QLabel()
-        self.daq_info.setWordWrap(True)
-        mute(self.daq_info)
+        self.daq_info = wrapped(muted=True)
         form.addRow(self.daq_info)
 
         proc = QtWidgets.QGroupBox("Processing")
@@ -705,8 +698,7 @@ class OmaPage(QtWidgets.QWidget):
         self.sv.scene().sigMouseClicked.connect(self._on_sv_click)
         plot_height(self.sv, 220)
         self.sv_legend = add_legend(self.sv.getPlotItem(), offset=(-10, 10))
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.records = _plot("Response", None, "Time", "s")
         self.records.setToolTip(
@@ -740,8 +732,7 @@ class OmaPage(QtWidgets.QWidget):
             "vector looks like the peak's (MAC above the threshold).</p>"
         )
         plot_height(self.bell_plot, 140)
-        self.efdd_note = QtWidgets.QLabel()
-        self.efdd_note.setWordWrap(True)
+        self.efdd_note = wrapped()
         self.efdd_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         efdd_tab = QtWidgets.QWidget()
         ev = QtWidgets.QVBoxLayout(efdd_tab)
@@ -767,8 +758,7 @@ class OmaPage(QtWidgets.QWidget):
             "<p>Each exact mode as each method finds it: f<sub>n</sub> and ζ, coloured by the "
             "damping's error; hover for the frequency's error and the MAC.</p>"
         )
-        self.methods_note = QtWidgets.QLabel()
-        self.methods_note.setWordWrap(True)
+        self.methods_note = wrapped()
         self.methods_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         methods_tab = QtWidgets.QWidget()
         mv = QtWidgets.QVBoxLayout(methods_tab)

@@ -49,10 +49,9 @@ from ..core.shock import (
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from . import chain_page, maths, shock_figures, weak
-from .axes import log_axes
 from .drag import DragLine
-from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import TrialBox
+from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height, wrapped
+from .lesson import TrialBox, cell, plot
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -60,7 +59,7 @@ from .plots import decimate
 from .recompute import Recompute
 from .style import colors
 from .tab_groups import LazyTabs
-from .theming import add_legend, mute
+from .theming import add_legend
 
 RECOMPUTE_MS = 150  # the parameters settle this long before the spectrum is worked out again
 
@@ -618,13 +617,8 @@ PROBLEMS = tuple(
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = False) -> pg.PlotWidget:
-    p = pg.PlotWidget(axisItems=log_axes()) if log else pg.PlotWidget()
-    p.setMenuEnabled(False)
-    p.hideButtons()
-    p.showGrid(x=True, y=True, alpha=0.15)
-    p.setLabel("left", left, units=left_units)
-    p.setLabel("bottom", bottom, units=bottom_units)
-    return p
+    """`lesson.plot`, its log axes ready for a log scale set later, its height set by the caller."""
+    return plot(left, left_units, bottom, bottom_units, log_ready=log, height=None)
 
 
 def duration_for(result: ModalResult) -> float:
@@ -692,9 +686,7 @@ class ShockPage(QtWidgets.QWidget):
         self.again = QtWidgets.QPushButton("New noise")
         self.again.setToolTip(TIPS["again"])
         form.addRow(self.again)
-        self.pulse_info = QtWidgets.QLabel()
-        self.pulse_info.setWordWrap(True)
-        mute(self.pulse_info)
+        self.pulse_info = wrapped(muted=True)
         form.addRow(self.pulse_info)
         link = chain_page.edit_link(
             self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
@@ -747,8 +739,7 @@ class ShockPage(QtWidgets.QWidget):
             log=True,
         )
         self.srs_plot.addItem(self.pick_line)
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         center = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(center)
@@ -766,8 +757,7 @@ class ShockPage(QtWidgets.QWidget):
         self.disp_plot.setToolTip(DISP_TIP)
         plot_height(self.disp_plot, 110)
         self.disp_plot.setXLink(self.osc_plot)
-        self.osc_note = QtWidgets.QLabel()
-        self.osc_note.setWordWrap(True)
+        self.osc_note = wrapped()
         self.osc_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         osc_tab = QtWidgets.QWidget()
         ov = QtWidgets.QVBoxLayout(osc_tab)
@@ -802,8 +792,7 @@ class ShockPage(QtWidgets.QWidget):
         self.chain_table.setHorizontalHeaderLabels(["Exact"] + [r.value for r in Rule])
         FitColumns(self.chain_table)
         self.chain_table.setMinimumHeight(90)
-        self.chain_note = QtWidgets.QLabel()
-        self.chain_note.setWordWrap(True)
+        self.chain_note = wrapped()
         self.chain_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.chain_tab = QtWidgets.QWidget()
         chv = QtWidgets.QVBoxLayout(self.chain_tab)
@@ -818,8 +807,7 @@ class ShockPage(QtWidgets.QWidget):
         self.tri_plot.getAxis("left").enableAutoSIPrefix(False)
         self.tri_plot.setToolTip(TRIPARTITE_TIP)
         plot_height(self.tri_plot, 240)
-        self.tri_note = QtWidgets.QLabel()
-        self.tri_note.setWordWrap(True)
+        self.tri_note = wrapped()
         self.tri_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.tri_tab = QtWidgets.QWidget()
         tv = QtWidgets.QVBoxLayout(self.tri_tab)
@@ -837,8 +825,7 @@ class ShockPage(QtWidgets.QWidget):
         self.compare_plot.setToolTip(SHAPES_TIP)
         plot_height(self.compare_plot, 200)
         self.compare_legend = add_legend(self.compare_plot.getPlotItem(), offset=(-10, -10))
-        self.shapes_note = QtWidgets.QLabel()
-        self.shapes_note.setWordWrap(True)
+        self.shapes_note = wrapped()
         self.shapes_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.shapes_tab = QtWidgets.QWidget()
         sv = QtWidgets.QVBoxLayout(self.shapes_tab)
@@ -1365,10 +1352,10 @@ class ShockPage(QtWidgets.QWidget):
         t.setRowCount(n)
         t.setVerticalHeaderLabels([f"{'m' if acc else 'k'}{i + 1}" for i in range(n)])
         for i in range(n):
-            t.setItem(i, 0, _cell(f"{sig(exact[i] * scale)}"))
+            t.setItem(i, 0, cell(f"{sig(exact[i] * scale)}"))
             for c, values in enumerate(rules.values(), start=1):
                 err = 100.0 * (values[i] / exact[i] - 1.0) if exact[i] > 0 else math.nan
-                t.setItem(i, c, _cell(_minus(f"{sig(values[i] * scale)} ({err:+.0f} %)")))
+                t.setItem(i, c, cell(_minus(f"{sig(values[i] * scale)} ({err:+.0f} %)")))
         modes = "; ".join(
             f"{r + 1}: {sig(cp.f[r])} Hz, ζ {sig(cp.zeta[r], 2)}, Γ {_minus(f'{sig(cp.gamma[r])}')}, "
             f"{100.0 * cp.effective[r]:.0f} % of the "
@@ -1519,12 +1506,6 @@ def shape_spectra(zeta: float, same_dv: bool) -> dict[Shape, tuple[float, np.nda
         scale = dv0 / dv if same_dv else 1.0
         out[shape] = (scale, f, scale * srs(rec, f, zeta).maximax)
     return out
-
-
-def _cell(text: str) -> QtWidgets.QTableWidgetItem:
-    item = QtWidgets.QTableWidgetItem(text)
-    item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
-    return item
 
 
 def _worst(rec: Record, sp: Spectrum) -> str:

@@ -33,7 +33,7 @@ from ..core import (
 from ..core.measurement import AA_CUTOFF, FORCE_RMS, IMPACT_PEAK, SINE_AMPLITUDE
 from ..view_models.text import number as sig
 from . import chain_page
-from .layouts import form_layout
+from .layouts import form_layout, wrapped
 from .panels import spin
 from .style import colors
 from .theming import mute
@@ -241,9 +241,7 @@ class TestSetup(QtWidgets.QWidget):
             "appears at |f − k·fs|, mixed in with the real response.</p>"
         )
         form.addRow(self.anti_alias)
-        self.daq_info = QtWidgets.QLabel()
-        self.daq_info.setWordWrap(True)
-        mute(self.daq_info)
+        self.daq_info = wrapped(muted=True)
         form.addRow(self.daq_info)
 
         # --- noise

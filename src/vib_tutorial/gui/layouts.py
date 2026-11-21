@@ -17,6 +17,7 @@ from PySide6 import QtCore, QtWidgets
 from shiboken6 import isValid
 
 from . import accessible
+from .theming import mute
 
 
 class FlowLayout(QtWidgets.QLayout):
@@ -262,3 +263,13 @@ def show_in_stack(stack: QtWidgets.QStackedWidget, page: int) -> None:
         policy = QtWidgets.QSizePolicy.Policy.Preferred if k == page else QtWidgets.QSizePolicy.Policy.Ignored
         widget.setSizePolicy(policy, policy)
     stack.setCurrentIndex(page)
+
+
+def wrapped(text: str = "", muted: bool = False) -> QtWidgets.QLabel:
+    """A label that wraps, muted if asked; its text rich or plain as Qt reads it (a plain one keeps its line
+    breaks, which `note_label`'s rich text would fold)."""
+    label = QtWidgets.QLabel(text)
+    label.setWordWrap(True)
+    if muted:
+        mute(label)
+    return label

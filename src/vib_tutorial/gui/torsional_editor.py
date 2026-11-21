@@ -15,10 +15,9 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.torsional import PRESETS, Disc, DriveTrain, Excitation, Mesh, Shaft
 from ..view_models.text import number as sig
-from .layouts import FlowLayout, form_layout, form_row, group, show_in_stack
+from .layouts import FlowLayout, form_layout, form_row, group, show_in_stack, wrapped
 from .lesson import connect_all
 from .panels import spin
-from .theming import mute
 
 MAX_DISCS = 12
 TIPS = {
@@ -127,9 +126,7 @@ class TrainEditor(QtWidgets.QGroupBox):
         self.remove_button.setToolTip("<p>Take the chosen disc off the train, with the link after it.</p>")
         row.add(self.add_button, self.remove_button)
         tv.addLayout(row)
-        self.train_info = QtWidgets.QLabel()
-        self.train_info.setWordWrap(True)
-        mute(self.train_info)
+        self.train_info = wrapped(muted=True)
         tv.addWidget(self.train_info)
 
         self.excitation_box = excite = QtWidgets.QGroupBox("Excitation")

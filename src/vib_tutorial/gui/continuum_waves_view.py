@@ -23,11 +23,11 @@ from ..core.continuum_waves import PLAYBACK, WaveRun, Waves, end_reflection, ste
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout, form_layout, form_row, group, plot_height
+from .layouts import FlowLayout, form_layout, form_row, group, plot_height, wrapped
 from .lesson import LiveLabel, RunButton, plot
 from .panels import spin
 from .style import colors
-from .theming import add_legend, mute
+from .theming import add_legend
 from .transport import speed_text
 
 NODES_DRAWN = 80  # the mesh's nodes are dotted up to this many elements
@@ -88,9 +88,7 @@ class WavesView(QtWidgets.QWidget):
         for box in (self.step_at, self.step_ratio):
             box.setToolTip(TIPS["step"])
         wf.addRow(group(self.step_on, self.step_at, self.step_ratio))
-        self.wave_info = QtWidgets.QLabel()
-        self.wave_info.setWordWrap(True)
-        mute(self.wave_info)
+        self.wave_info = wrapped(muted=True)
         wf.addRow(self.wave_info)
 
         # the pulse on the continuum and on the mesh

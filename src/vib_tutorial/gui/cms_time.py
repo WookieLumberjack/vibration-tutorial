@@ -18,7 +18,7 @@ from ..view_models.text import number as sig
 from . import coalesce
 from .animation import ChainView
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout, group
+from .layouts import FlowLayout, group, wrapped
 from .live_label import LiveLabel
 from .panels import spin
 from .plots import decimate
@@ -60,8 +60,7 @@ class CMSRunView(QtWidgets.QWidget):
         self.model: CMSModel | None = None
         self._key: tuple | None = None
 
-        self.header = QtWidgets.QLabel()
-        self.header.setWordWrap(True)
+        self.header = wrapped()
         self.header.setToolTip(self.tip)
 
         self.kind = QtWidgets.QComboBox()

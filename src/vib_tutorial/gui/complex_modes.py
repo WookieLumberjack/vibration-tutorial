@@ -41,10 +41,9 @@ from ..core.practice import Prediction, Problem, Question, Requirement, at_least
 from ..core.presets import tuned_mass_damper
 from ..view_models.text import number as sig
 from . import chain_page, coalesce, complex_figures, maths, weak
-from .axes import log_axes
 from .drag import DragDot
-from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TrialBox
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height, wrapped
+from .lesson import TrialBox, cell, plot
 from .links import load_notes, page_link
 from .mode_swing import ModeSwing
 from .notes_view import NotesBrowser
@@ -448,20 +447,8 @@ NOTES_HTML = load_notes(
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = False) -> pg.PlotWidget:
-    p = pg.PlotWidget(axisItems=log_axes()) if log else pg.PlotWidget()
-    p.setMenuEnabled(False)
-    p.hideButtons()
-    p.showGrid(x=True, y=True, alpha=0.15)
-    p.setLabel("left", left, units=left_units)
-    p.setLabel("bottom", bottom, units=bottom_units)
-    p.getAxis("left").enableAutoSIPrefix(False)
-    return p
-
-
-def _cell(text: str) -> QtWidgets.QTableWidgetItem:
-    item = QtWidgets.QTableWidgetItem(text)
-    item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
-    return item
+    """`lesson.plot`, its log axes ready for a log scale set later, its height set by the caller."""
+    return plot(left, left_units, bottom, bottom_units, log_ready=log, height=None)
 
 
 def _percent(approx: float, exact: float) -> str:
@@ -490,8 +477,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         form = form_layout(box)
         self.dof = chain_page.dof_box(self)
         form.addRow("Number of masses:", self.dof)
-        self.coupling = QtWidgets.QLabel()
-        self.coupling.setWordWrap(True)
+        self.coupling = wrapped()
         self.coupling.setToolTip(TIPS["coupling"])
         form.addRow(self.coupling)
         self.make_proportional = QtWidgets.QPushButton("Make it proportional")
@@ -507,9 +493,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         damper_label.setToolTip(TIPS["damper_at"])
         damper_label.setBuddy(self.damper_at)
         form.addRow(damper_label, self.damper_at)
-        self.damper_info = QtWidgets.QLabel()
-        self.damper_info.setWordWrap(True)
-        mute(self.damper_info)
+        self.damper_info = wrapped(muted=True)
         form.addRow(self.damper_info)
         link = chain_page.edit_link(
             self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
@@ -531,8 +515,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         label = QtWidgets.QLabel("Show:")
         label.setToolTip(TIPS["mode"])
         form.addRow(label, self.mode)
-        self.mode_info = QtWidgets.QLabel()
-        self.mode_info.setWordWrap(True)
+        self.mode_info = wrapped()
         self.mode_info.setTextFormat(QtCore.Qt.TextFormat.RichText)
         form.addRow(self.mode_info)
 
@@ -565,8 +548,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
         self.table.verticalHeader().setVisible(False)
         self.table.setToolTip(TABLE_TIP)
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         center = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(center)
@@ -592,8 +574,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.frf_phase.setToolTip(FRF_TIP)
         plot_height(self.frf_mag, 180)
         plot_height(self.frf_phase, 110)
-        self.frf_note = QtWidgets.QLabel()
-        self.frf_note.setWordWrap(True)
+        self.frf_note = wrapped()
         self.frf_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         frf_tab = QtWidgets.QWidget()
         fv = QtWidgets.QVBoxLayout(frf_tab)
@@ -613,8 +594,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.leak_plot.setXLink(self.decay_plot)
         plot_height(self.decay_plot, 150)
         plot_height(self.leak_plot, 150)
-        self.decay_note = QtWidgets.QLabel()
-        self.decay_note.setWordWrap(True)
+        self.decay_note = wrapped()
         self.decay_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         decay_tab = QtWidgets.QWidget()
         dv = QtWidgets.QVBoxLayout(decay_tab)
@@ -657,8 +637,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         plot_height(self.locus, 150)
         plot_height(self.sweep_zeta, 120)
         plot_height(self.sweep_mpd, 100)
-        self.sweep_note = QtWidgets.QLabel()
-        self.sweep_note.setWordWrap(True)
+        self.sweep_note = wrapped()
         self.sweep_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         sweep_tab = QtWidgets.QWidget()
         wv = QtWidgets.QVBoxLayout(sweep_tab)
@@ -690,8 +669,7 @@ class ComplexModesPage(QtWidgets.QWidget):
             "<p>Each mode's identified shape: its MAC with the exact complex shape ψ for both fits, the real "
             "fit's MAC with the undamped shape φ, and the complex fit's MPC against the exact one.</p>"
         )
-        self.ident_note = QtWidgets.QLabel()
-        self.ident_note.setWordWrap(True)
+        self.ident_note = wrapped()
         self.ident_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         ident_tab = QtWidgets.QWidget()
         iv = QtWidgets.QVBoxLayout(ident_tab)
@@ -1015,7 +993,7 @@ class ComplexModesPage(QtWidgets.QWidget):
                     f"{m.mpd:.2f}°",
                 ]
             for j, text in enumerate(cells):
-                item = _cell(text)
+                item = cell(text)
                 if j == 0:
                     item.setForeground(pg.mkColor(colors.mode[i % len(colors.mode)]))
                 t.setItem(i, j, item)
@@ -1304,7 +1282,7 @@ class ComplexModesPage(QtWidgets.QWidget):
                 f"{exact_mpc:.3f}",
             ]
             for j, text in enumerate(cells):
-                item = _cell(text)
+                item = cell(text)
                 if j == 0:
                     item.setForeground(pg.mkColor(colors.mode[k % len(colors.mode)]))
                 t.setItem(i, j, item)

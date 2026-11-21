@@ -29,6 +29,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.practice import Problem, Question
 from . import coalesce
+from .layouts import wrapped
 from .lesson import note_label
 
 POLL_MS = 250  # how often the box reads the page's settings while it shows
@@ -79,8 +80,7 @@ class ChallengeBox(QtWidgets.QGroupBox):
         )
         self.combo.currentIndexChanged.connect(self._on_pick)
         layout.addWidget(self.combo)
-        self.prompt = QtWidgets.QLabel()
-        self.prompt.setWordWrap(True)
+        self.prompt = wrapped()
         self.prompt.setTextFormat(QtCore.Qt.TextFormat.RichText)
         layout.addWidget(self.prompt)
         self.status = note_label()

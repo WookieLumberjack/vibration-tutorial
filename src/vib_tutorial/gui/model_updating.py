@@ -41,8 +41,8 @@ from ..core.model_updating import (
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from ..view_models.text import number as sig
 from . import chain_page, updating_figures, weak
-from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
-from .lesson import TAB_ROOM, TrialBox, trials_html
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height, wrapped
+from .lesson import TAB_ROOM, TrialBox, cell, plot, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .notes_view import NotesBrowser
@@ -639,24 +639,10 @@ NOTES_HTML = load_notes(
 
 
 def _plot(left: str, bottom: str) -> pg.PlotWidget:
-    p = pg.PlotWidget()
-    p.setMenuEnabled(False)
-    p.hideButtons()
-    p.showGrid(x=True, y=True, alpha=0.15)
-    p.setLabel("left", left)
-    p.setLabel("bottom", bottom)
-    p.getAxis("left").enableAutoSIPrefix(False)
-    p.getAxis("bottom").enableAutoSIPrefix(False)
+    """`lesson.plot` of pure numbers, held still (its height set by the caller)."""
+    p = plot(left, None, bottom, None, height=None)
     p.setMouseEnabled(x=False, y=False)
     return p
-
-
-def _cell(text: str, colour: str | None = None) -> QtWidgets.QTableWidgetItem:
-    item = QtWidgets.QTableWidgetItem(text)
-    item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
-    if colour:
-        item.setForeground(pg.mkColor(colour))
-    return item
 
 
 class ModelUpdatingPage(QtWidgets.QWidget):
@@ -705,9 +691,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.again = QtWidgets.QPushButton("Measure again")
         self.again.setToolTip(TIPS["again"])
         form.addRow(self.again)
-        self.test_info = QtWidgets.QLabel()
-        self.test_info.setWordWrap(True)
-        mute(self.test_info)
+        self.test_info = wrapped(muted=True)
         form.addRow(self.test_info)
         link = chain_page.edit_link(self, "The structure is the chain on the <a href='#sim'>Simulation page</a>.")
         form.addRow(link)
@@ -758,8 +742,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             "<p>Each test mode, the model mode it pairs with, their frequencies and damping ratios "
             "and the MAC between their shapes. Select one to see its shapes.</p>"
         )
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         center = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(center)
@@ -783,9 +766,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.shape_plot.setToolTip(SHAPE_TIP)
         self.shape_legend = add_legend(self.shape_plot.getPlotItem(), offset=(-10, 10))
         plot_height(self.shape_plot, 200)
-        self.shape_note = QtWidgets.QLabel()
-        self.shape_note.setWordWrap(True)
-        mute(self.shape_note)
+        self.shape_note = wrapped(muted=True)
         shape_tab = QtWidgets.QWidget()
         sv = QtWidgets.QVBoxLayout(shape_tab)
         sv.addWidget(self.shape_plot, 1)
@@ -797,8 +778,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.auto_plot.setTitle("Auto-MAC: the test's shapes against each other", size="9pt")
         self.auto_plot.setToolTip(AUTO_TIP)
         plot_height(self.auto_plot, 200)
-        self.auto_note = QtWidgets.QLabel()
-        self.auto_note.setWordWrap(True)
+        self.auto_note = wrapped()
         self.auto_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         auto_tab = QtWidgets.QWidget()
         av = QtWidgets.QVBoxLayout(auto_tab)
@@ -808,8 +788,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.comac_plot = _plot("COMAC", "Sensor")
         self.comac_plot.setToolTip(COMAC_TIP)
         plot_height(self.comac_plot, 200)
-        self.comac_note = QtWidgets.QLabel()
-        self.comac_note.setWordWrap(True)
+        self.comac_note = wrapped()
         self.comac_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         comac_tab = QtWidgets.QWidget()
         ov = QtWidgets.QVBoxLayout(comac_tab)
@@ -842,8 +821,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.cost_plot.setToolTip(UPDATE_TIP)
         plot_height(self.factor_plot, 170)
         plot_height(self.cost_plot, 90)
-        self.update_note = QtWidgets.QLabel()
-        self.update_note.setWordWrap(True)
+        self.update_note = wrapped()
         self.update_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         update_tab = QtWidgets.QWidget()
         uv = QtWidgets.QVBoxLayout(update_tab)
@@ -957,8 +935,8 @@ class ModelUpdatingPage(QtWidgets.QWidget):
                 factor.setToolTip(TIPS["errors"])
                 factor.setAccessibleName(f"Error on {what} {i + 1}")
                 factor.valueChanged.connect(self._on_errors)
-            for col, cell in enumerate((label, m, k, c)):
-                self.error_grid.addWidget(cell, i + 1, col)
+            for col, widget in enumerate((label, m, k, c)):
+                self.error_grid.addWidget(widget, i + 1, col)
             self.error_rows.append((label, m, k, c))
         self.errors = self._read_errors() if self.errors is not None else None
 
@@ -1183,21 +1161,21 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         t.setRowCount(len(c.test.modes))
         by_test = {p.test: p for p in c.pairs}
         for i, m in enumerate(c.test.modes):
-            cells = [_cell(f"T{i + 1}"), _cell(f"{sig(m.fn_hz, 4)}"), _cell(f"{sig(m.zeta)}")]
+            cells = [cell(f"T{i + 1}"), cell(f"{sig(m.fn_hz, 4)}"), cell(f"{sig(m.zeta)}")]
             p = by_test.get(i)
             if p is None:
-                cells += [_cell("unpaired", colors.poor)] + [_cell("") for _ in range(4)]
+                cells += [cell("unpaired", colors.poor)] + [cell("") for _ in range(4)]
             else:
                 mode = c.result.modes[p.model]
                 zeta = mode.damped.zeta if mode.damped is not None else float("nan")
                 text, colour = colored(100 * p.error, 1.0, 3.0, f"{100 * p.error:+.2f} %")
                 mtext, mcolour = colored(1 - p.mac, 0.02, 0.1, f"{p.mac:.3f}")
                 cells += [
-                    _cell(f"M{p.model + 1}", colors.mode[p.model % len(colors.mode)]),
-                    _cell(f"{sig(p.f_model, 4)}"),
-                    _cell(f"{sig(zeta)}"),
-                    _cell(text, colour),
-                    _cell(mtext, mcolour),
+                    cell(f"M{p.model + 1}", colors.mode[p.model % len(colors.mode)]),
+                    cell(f"{sig(p.f_model, 4)}"),
+                    cell(f"{sig(zeta)}"),
+                    cell(text, colour),
+                    cell(mtext, mcolour),
                 ]
             for j, item in enumerate(cells):
                 t.setItem(i, j, item)

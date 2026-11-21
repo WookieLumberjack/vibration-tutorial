@@ -52,14 +52,14 @@ from ..view_models.text import number as sig
 from . import continuum_figures
 from .continuum_waves_view import WavesView
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
-from .lesson import RunButton, TrialBox, fmt, plot, trials_html
+from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height, wrapped
+from .lesson import RunButton, TrialBox, cell, fmt, plot, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
 from .style import colors
 from .tab_groups import LazyTabs
-from .theming import add_legend, mute
+from .theming import add_legend
 from .transport import Transport
 
 CUSTOM = "Custom"
@@ -444,9 +444,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.left_end = QtWidgets.QComboBox()
         self.right_end = QtWidgets.QComboBox()
         form_row(mf, "Ends:", group(self.left_end, "–", self.right_end), TIPS["ends"])
-        self.medium_info = QtWidgets.QLabel()
-        self.medium_info.setWordWrap(True)
-        mute(self.medium_info)
+        self.medium_info = wrapped(muted=True)
         mf.addRow(self.medium_info)
 
         mesh = QtWidgets.QGroupBox("Mesh")
@@ -470,9 +468,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.mode.setRange(1, 1)
         self.mode.setKeyboardTracking(False)
         form_row(sf, "Mode:", self.mode, TIPS["mode"])
-        self.mesh_info = QtWidgets.QLabel()
-        self.mesh_info.setWordWrap(True)
-        mute(self.mesh_info)
+        self.mesh_info = wrapped(muted=True)
         sf.addRow(self.mesh_info)
 
         self.waves_view = WavesView()  # the Waves pane (its controls) and tab
@@ -491,8 +487,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.dispersion.setToolTip(DISPERSION_TIP)
         plot_height(self.dispersion, 260)
         self.dispersion_legend = add_legend(self.dispersion.getPlotItem(), offset=(10, 10))  # top left
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         dispersion_tab = QtWidgets.QWidget()
         dv = QtWidgets.QVBoxLayout(dispersion_tab)
@@ -509,8 +504,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.convergence.setToolTip(CONVERGENCE_TIP)
         plot_height(self.convergence, 180)
         self.convergence_legend = add_legend(self.convergence.getPlotItem(), offset=(-10, 10))  # top right
-        self.convergence_note = QtWidgets.QLabel()
-        self.convergence_note.setWordWrap(True)
+        self.convergence_note = wrapped()
         self.convergence_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         errors_tab = QtWidgets.QWidget()
         ev = QtWidgets.QVBoxLayout(errors_tab)
@@ -535,8 +529,7 @@ class ContinuumPage(QtWidgets.QWidget):
         self.shape.setToolTip(SHAPE_TIP)
         plot_height(self.shape, 200)
         self.shape_legend = add_legend(self.shape.getPlotItem(), offset=(10, 5), colCount=2)  # along the top
-        self.shape_note = QtWidgets.QLabel()
-        self.shape_note.setWordWrap(True)
+        self.shape_note = wrapped()
         self.shape_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         shape_tab = QtWidgets.QWidget()
         sv = QtWidgets.QVBoxLayout(shape_tab)
@@ -778,13 +771,13 @@ class ContinuumPage(QtWidgets.QWidget):
         self.table.setHorizontalHeaderLabels(["Mode", "Exact"] + [x for s in SCHEMES for x in (s.value, "error")])
         self.table.setRowCount(exact_count)
         for i in range(exact_count):
-            self.table.setItem(i, 0, _cell(f"{i + 1}"))
-            self.table.setItem(i, 1, _cell(fmt_hz(exact[i])))
+            self.table.setItem(i, 0, cell(f"{i + 1}"))
+            self.table.setItem(i, 1, cell(fmt_hz(exact[i])))
         for j, s in enumerate(SCHEMES):
             f = flexible_hz(self.models[s])
             for i, fi in enumerate(f):
-                self.table.setItem(i, 2 + 2 * j, _cell(fmt_hz(fi)))
-                self.table.setItem(i, 3 + 2 * j, _cell(f"{sig(100 * (fi / exact[i] - 1), plus=True)} %"))
+                self.table.setItem(i, 2 + 2 * j, cell(fmt_hz(fi)))
+                self.table.setItem(i, 3 + 2 * j, cell(f"{sig(100 * (fi / exact[i] - 1), plus=True)} %"))
         self.table.resizeColumnsToContents()
         self.table.blockSignals(False)
 
@@ -1008,12 +1001,6 @@ class ContinuumPage(QtWidgets.QWidget):
             if notes
             else f"Mode {n}: no mesh shown has it."
         )
-
-
-def _cell(text: str) -> QtWidgets.QTableWidgetItem:
-    item = QtWidgets.QTableWidgetItem(text)
-    item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
-    return item
 
 
 def _holder(layout: QtWidgets.QLayout) -> QtWidgets.QWidget:

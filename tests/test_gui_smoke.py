@@ -5569,6 +5569,24 @@ def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window
     assert not clipped
 
 
+def test_the_shared_label_cell_and_plot_helpers(app):
+    """`layouts.wrapped` (a plain text keeps its line breaks), `lesson.cell` and `lesson.plot(height=None)`, which
+    the pages built by hand (#409 S-10)."""
+    from PySide6 import QtCore
+
+    from vib_tutorial.gui.layouts import wrapped
+    from vib_tutorial.gui.lesson import cell, plot
+
+    plain, muted = wrapped("one\ntwo"), wrapped("<b>bold</b>", muted=True)
+    assert plain.wordWrap() and plain.textFormat() == QtCore.Qt.TextFormat.AutoText and muted.wordWrap()
+    item = cell("12.5", "#ff0000")
+    assert item.textAlignment() & QtCore.Qt.AlignmentFlag.AlignRight and item.foreground().color().name() == "#ff0000"
+    assert (
+        plot("y", None, "x", None, height=None).minimumHeight()
+        < plot("y", None, "x", None, height=90).minimumHeight() + 1
+    )
+
+
 def test_spin_boxes_show_numbers_as_the_pages_print_them(app):
     """`panels.spin`'s boxes (every page's) drop trailing zeros and separate thousands, and read what's typed,
     separators and all (#409 U-17: 1.0000 kg beside 2 kg)."""

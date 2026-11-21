@@ -16,7 +16,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.identification import Method, ModeMatch, Stability, Stabilization
 from ..view_models.text import number as sig
-from .layouts import FitColumns, form_layout, header_tip
+from .layouts import FitColumns, form_layout, header_tip, wrapped
 from .panels import spin
 from .style import colors, text_on
 from .theming import add_legend
@@ -330,8 +330,7 @@ class ResultsView(QtWidgets.QWidget):
         self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
         FitColumns(self.table)
-        self.notes = QtWidgets.QLabel()
-        self.notes.setWordWrap(True)
+        self.notes = wrapped()
         self.notes.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.mac = MacPlot()
         layout = QtWidgets.QVBoxLayout(self)

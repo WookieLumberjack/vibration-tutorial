@@ -55,7 +55,7 @@ from . import rotor_practice, weak
 from .challenge import ChallengeBox
 from .cms_time import SampleBuffer
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, FlowLayout, form_layout, group
+from .layouts import ColumnScroll, FlowLayout, form_layout, group, wrapped
 from .lesson import RunButton, TrialBox
 from .live_label import LiveLabel
 from .notes_view import NotesBrowser
@@ -186,8 +186,7 @@ class RotorPage(QtWidgets.QWidget):
         self.editor = RotorEditor(self.bearing_panel, self.magnet_panel, self.rub_panel)
         self.editor.changed.connect(self._on_params)
         lv.addWidget(self.editor)
-        self.crit_label = QtWidgets.QLabel()
-        self.crit_label.setWordWrap(True)
+        self.crit_label = wrapped()
         lv.addWidget(self.crit_label)
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
@@ -229,9 +228,7 @@ class RotorPage(QtWidgets.QWidget):
         # --- right
         self.campbell_plot = CampbellPlot()
         self.campbell_plot.speed_dragged.connect(self.set_target_rpm)
-        self.campbell_note = QtWidgets.QLabel()
-        self.campbell_note.setWordWrap(True)
-        mute(self.campbell_note)
+        self.campbell_note = wrapped(muted=True)
         self.top_speed = spin(1000.0, MAX_TOP_RPM, TOP_RPM, 0, " rpm")
         self.top_speed.setSingleStep(1000.0)
         self.top_speed.setToolTip(
@@ -255,8 +252,7 @@ class RotorPage(QtWidgets.QWidget):
         self.bode = BodePlots()
         self.polar = PolarPlot()
         self.sweep_plots = SweepPlots(self.bode, self.polar)
-        self.sweep_summary = QtWidgets.QLabel()
-        self.sweep_summary.setWordWrap(True)
+        self.sweep_summary = wrapped()
         self.sweep_summary.setTextFormat(QtCore.Qt.TextFormat.RichText)
         bode_tab = QtWidgets.QWidget()
         bt = QtWidgets.QVBoxLayout(bode_tab)
@@ -284,13 +280,10 @@ class RotorPage(QtWidgets.QWidget):
         )
         self.asymmetry_plot = AsymmetryPlot()
         self.measure.currentIndexChanged.connect(self._on_measure)
-        self.stability_note = QtWidgets.QLabel()
-        self.stability_note.setWordWrap(True)
+        self.stability_note = wrapped()
         self.stability_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.spectrum = FullSpectrum()
-        self.spectrum_note = QtWidgets.QLabel()
-        self.spectrum_note.setWordWrap(True)
-        mute(self.spectrum_note)
+        self.spectrum_note = wrapped(muted=True)
         stability_tab = QtWidgets.QWidget()
         st = QtWidgets.QVBoxLayout(stability_tab)
         measure_row = QtWidgets.QHBoxLayout()
@@ -500,9 +493,7 @@ class RotorPage(QtWidgets.QWidget):
         )
         self.show_peaks.toggled.connect(self._on_show_peaks)
         form.addRow(self.show_peaks)
-        self.sweep_status = QtWidgets.QLabel()
-        self.sweep_status.setWordWrap(True)
-        mute(self.sweep_status)
+        self.sweep_status = wrapped(muted=True)
         form.addRow(self.sweep_status)
         return box
 
