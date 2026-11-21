@@ -52,13 +52,13 @@ from .lesson import (
     plot,
     readout_label,
     set_quietly,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .playback import Playback
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 # ------------------------------------------------------------------ practice problems
 # The page's machine: 100 kg with a 0.01 kg·m unbalance (the trials and the problems keep it).

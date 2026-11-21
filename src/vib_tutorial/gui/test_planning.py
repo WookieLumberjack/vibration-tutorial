@@ -53,11 +53,11 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .style import MAX_DOF, colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_PLACEMENT, TAB_NOISE, TAB_ODS, TAB_THEORY = range(4)
 UNIFORM = (1.0,) * 8

@@ -11,7 +11,7 @@ from ..core.presets import Preset, presets
 from ..view_models.text import fixed
 from ..view_models.text import number as sig
 from . import weak
-from .layouts import FlowLayout, form_layout, group, wrapped
+from .layouts import FlowLayout, ResetButton, form_layout, group, wrapped
 from .live_label import LiveLabel
 from .modes import ModeEntry
 from .style import MAX_DOF, colors, text_on
@@ -568,7 +568,7 @@ class SimControls(QtWidgets.QGroupBox):
         self.run.setCheckable(True)
         self.run.setChecked(True)
         self.run.toggled.connect(self._on_run)
-        self.reset = QtWidgets.QPushButton("Reset")
+        self.reset = ResetButton()
         self.reset.setToolTip("Return all masses to rest, switch the force off and clear the plots")
         self.reset.clicked.connect(self.reset_clicked)
         buttons.addWidget(self.run)

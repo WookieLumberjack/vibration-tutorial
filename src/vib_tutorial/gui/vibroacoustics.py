@@ -84,13 +84,13 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .recompute import Recompute
 from .style import colors
 from .tab_groups import LazyTabs
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_RADIATION, TAB_DRIVEN, TAB_TRANSMISSION, TAB_OSCILLATORS, TAB_SEA = range(5)
 F_TOP = 20e3  # Hz, the plots' highest frequency (their lowest is the view model's F_LOW)

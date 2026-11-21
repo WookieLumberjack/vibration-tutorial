@@ -47,11 +47,11 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .style import MAX_DOF, colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_LOCUS, TAB_GAIN, TAB_SKYHOOK = range(3)
 GAINS = np.concatenate([[0.0], np.geomspace(0.05, 2000.0, 160)])  # N·s/m, for the locus and the damping plot

@@ -43,7 +43,7 @@ from ..view_models.text import fixed
 from ..view_models.text import number as sig
 from . import coalesce, mounts_figures
 from .frame_loop import SWING_MS, FrameLoop
-from .layouts import FitColumns, form_layout
+from .layouts import FitColumns, ResetButton, form_layout
 from .lesson import (
     Dot,
     Form,
@@ -60,13 +60,13 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .orbit_view import OrbitView
 from .style import colors
 from .theming import add_legend
 from .transport import Transport
+from .trials_text import trials_html
 
 TAB_SWEEP, TAB_CENTRE, TAB_RESPONSE, TAB_DRIVE = range(4)
 FORCED = 6  # the Show combo's item after the six modes: the steady response at the speed
@@ -888,7 +888,7 @@ class MountsPage(QtWidgets.QWidget):
         self.run_button.set_running(True)
         self.run_button.setToolTip(TIPS["animate"])
         self.run_button.toggled.connect(self._on_animate)
-        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button = ResetButton()
         self.reset_button.setToolTip("<p>Back to rest; the response waits for Start.</p>")
         self.reset_button.clicked.connect(self.reset)
         buttons = QtWidgets.QHBoxLayout()

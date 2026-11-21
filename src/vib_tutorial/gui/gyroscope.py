@@ -70,6 +70,7 @@ from .gyroscope_trials import (
 from .gyroscope_trials import PROBLEMS as PROBLEMS
 from .gyroscope_trials import TRIALS as TRIALS
 from .gyroscope_view import AXES_SHOWN, TopView
+from .layouts import ResetButton
 from .lesson import (
     TAB_ROOM,
     Dot,
@@ -91,7 +92,6 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes
 from .live_label import LiveLabel
@@ -99,6 +99,7 @@ from .plots import SteadyRange, decimate, thin
 from .style import colors
 from .theming import add_legend, mute
 from .transport import Transport
+from .trials_text import trials_html
 
 NODS = 6  # nutation periods the tilt plot spans
 TRAIL_POINTS = 1500  # at most, on the 3D view's trail
@@ -300,7 +301,7 @@ class GyroscopePage(QtWidgets.QWidget):
         play.add("Playback:", self.playback, TIPS["playback"])
         self.pause_button = RunButton()
         self.pause_button.toggled.connect(self._on_pause)
-        self.restart_button = QtWidgets.QPushButton("Reset")
+        self.restart_button = ResetButton()
         self.restart_button.setToolTip("<p>Back to the launch, held until started.</p>")
         self.restart_button.clicked.connect(self.reset)
         buttons = QtWidgets.QHBoxLayout()

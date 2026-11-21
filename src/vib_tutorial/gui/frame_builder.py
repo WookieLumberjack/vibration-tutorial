@@ -64,7 +64,7 @@ from .frame_builder_trials import (
 from .frame_builder_trials import PROBLEMS as PROBLEMS
 from .frame_builder_trials import TRIALS as TRIALS
 from .frame_loop import FRAME_MS, SWING_MS, FrameLoop
-from .layouts import FitColumns, FlowLayout, group
+from .layouts import FitColumns, FlowLayout, ResetButton, group
 from .lesson import (
     Form,
     RunButton,
@@ -78,12 +78,12 @@ from .lesson import (
     set_quietly,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes
 from .style import colors, rgb
 from .theming import add_legend, mute
 from .transport import Transport
+from .trials_text import trials_html
 
 SHOW_HZ = 0.6  # the animation's own pace: every mode swings at it
 SWING = 0.08  # the largest displacement drawn, as a fraction of the frame's size
@@ -455,7 +455,7 @@ class FramePage(QtWidgets.QWidget):
         self.run_button = RunButton()
         self.run_button.set_running(True)
         self.run_button.setToolTip(TIPS["animate"])
-        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button = ResetButton()
         self.reset_button.setToolTip("<p>Back to the start of the swing; the response waits for Start.</p>")
         buttons = QtWidgets.QHBoxLayout()
         buttons.addWidget(self.run_button)

@@ -27,7 +27,7 @@ from PySide6 import QtCore, QtWidgets
 from . import coalesce, plot_patches
 from .drag import DragLine
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout, group
+from .layouts import FlowLayout, ResetButton, group
 from .lesson import LiveLabel, RunButton, combo
 from .transport import speed_text
 
@@ -48,7 +48,7 @@ class Playback(QtCore.QObject):
         self.span = 1.0
         self.run = RunButton()
         self.run.toggled.connect(self._on_run)
-        self.reset = QtWidgets.QPushButton("Reset")
+        self.reset = ResetButton()
         self.reset.setToolTip("<p>Back to t = 0, at the start, waiting for Start.</p>")
         self.reset.clicked.connect(self.rewind)
         self.speed = combo([label for label, _ in SPEEDS], SPEED_TIP)

@@ -58,11 +58,11 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .style import MAX_DOF, colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 DRAWN = "Your own: drag its points"
 DRAWN_LIMIT = 1.5  # a drawn point's reach, of the largest the shapes are drawn at

@@ -42,7 +42,7 @@ from . import coalesce, rigid_body_figures
 from .components_tab import ComponentsTab
 from .equations_snapshot import bracket, equation, snapshot_html
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll
+from .layouts import ColumnScroll, ResetButton
 from .lesson import (
     Dot,
     Form,
@@ -58,7 +58,6 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .live_label import LiveLabel
@@ -66,6 +65,7 @@ from .orbit_view import OrbitView
 from .style import colors
 from .theming import add_legend
 from .transport import Transport
+from .trials_text import trials_html
 
 TAB_INERTIA, TAB_COMPONENTS, TAB_ORIENTATION, TAB_DRIFT, TAB_CHECK = range(5)
 PATHS = ("In space", "On the body", "Both", "None")  # where the view traces ω's direction
@@ -994,7 +994,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         play.add("Playback:", self.playback, TIPS["playback"])
         self.pause_button = RunButton()
         self.pause_button.toggled.connect(self._on_pause)
-        self.restart_button = QtWidgets.QPushButton("Reset")
+        self.restart_button = ResetButton()
         self.restart_button.setToolTip("<p>Back to the start, held until started.</p>")
         self.restart_button.clicked.connect(self.reset)
         buttons = QtWidgets.QHBoxLayout()

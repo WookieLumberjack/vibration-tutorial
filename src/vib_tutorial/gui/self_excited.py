@@ -51,7 +51,6 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .playback import Playback
@@ -59,6 +58,7 @@ from .plots import decimate
 from .self_excited_view import Body, SectionView
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 
 class Kind(enum.Enum):

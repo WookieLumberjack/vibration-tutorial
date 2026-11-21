@@ -61,7 +61,7 @@ from ..core.practice import Prediction, Problem, Question, Requirement, at_least
 from ..view_models.text import number as sig
 from . import chain_page, coalesce, frame_stats, modal_test_figures, settle_plots
 from .layouts import ColumnScroll, wrapped
-from .lesson import RunButton, TrialBox, trials_html
+from .lesson import RunButton, TrialBox
 from .links import load_notes, page_link
 from .modal_extraction import ExtractionControls, ResultsView, StabilizationPlot
 from .modal_test_setup import BLOCK_SIZES, TestSetup, setup_check, suggested_fs
@@ -69,6 +69,7 @@ from .modal_test_views import FrfView, SignalView
 from .notes_view import NotesBrowser
 from .theming import settings
 from .transport import Transport, speed_text
+from .trials_text import trials_html
 
 FRAME_MS = 30
 STEP_BUDGET_MS = 25  # measuring per frame, so the page stays responsive

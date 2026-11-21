@@ -39,7 +39,7 @@ from ..view_models.duffing import CHART_DEPTHS, CHART_RATIOS, GROWTH_TOP, LEGEND
 from ..view_models.text import number as sig
 from . import duffing_figures, plot_patches, weak
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height, wrapped
+from .layouts import ColumnScroll, FlowLayout, ResetButton, form_layout, form_row, plot_height, wrapped
 from .lesson import Dot, RunButton, StartHint, plot
 from .links import load_notes, page_link
 from .live_label import LiveLabel
@@ -504,7 +504,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.sim_speed.setToolTip("<p>Simulated seconds per second. A sweep of 120 s a leg takes 48 s at 5×.</p>")
         self.run_button = RunButton()
         self.run_button.toggled.connect(self._on_run)
-        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button = ResetButton()
         self.reset_button.setToolTip(
             "<p>Back to rest at t = 0, the measured points cleared; a sweep starts again from its start.</p>"
         )

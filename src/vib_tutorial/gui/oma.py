@@ -57,7 +57,7 @@ from ..core.practice import Prediction, Problem, Question, Requirement, at_least
 from ..view_models.text import number as sig
 from . import chain_page, oma_figures
 from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height, wrapped
-from .lesson import TrialBox, plot, trials_html
+from .lesson import TrialBox, plot
 from .links import load_notes, page_link
 from .modal_extraction import ResultsView, StabilizationPlot, colored
 from .modal_test import suggested_fs
@@ -67,6 +67,7 @@ from .plots import decimate
 from .recompute import Recompute
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 BLOCKS = (256, 512, 1024, 2048, 4096, 8192, 16384)
 CYCLES = 2000  # the record's default length, in periods of the slowest mode

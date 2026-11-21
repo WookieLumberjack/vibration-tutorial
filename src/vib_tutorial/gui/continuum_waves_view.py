@@ -23,7 +23,7 @@ from ..core.continuum_waves import PLAYBACK, WaveRun, Waves, end_reflection, ste
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout, form_layout, form_row, group, plot_height, wrapped
+from .layouts import FlowLayout, ResetButton, form_layout, form_row, group, plot_height, wrapped
 from .lesson import LiveLabel, RunButton, plot
 from .panels import spin
 from .style import colors
@@ -111,7 +111,7 @@ class WavesView(QtWidgets.QWidget):
         self.waves_legend.addItem(self.mesh_curve, "Mesh")
         self.apply_theme()
         self.play_button = RunButton()
-        self.restart_button = QtWidgets.QPushButton("Reset")
+        self.restart_button = ResetButton()
         self.restart_button.setToolTip("<p>The pulse back where it began, waiting for Start.</p>")
         self.playback = QtWidgets.QComboBox()
         for x in PLAYBACK:

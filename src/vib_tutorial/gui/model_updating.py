@@ -42,7 +42,7 @@ from ..core.practice import Prediction, Problem, Question, Requirement, at_most,
 from ..view_models.text import number as sig
 from . import chain_page, updating_figures, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height, wrapped
-from .lesson import TAB_ROOM, TrialBox, cell, plot, trials_html
+from .lesson import TAB_ROOM, TrialBox, cell, plot
 from .links import load_notes, page_link
 from .modal_extraction import MacPlot, colored
 from .notes_view import NotesBrowser
@@ -50,6 +50,7 @@ from .panels import spin
 from .recompute import Recompute
 from .style import colors
 from .theming import add_legend, mute
+from .trials_text import trials_html
 
 RECOMPUTE_MS = 150  # the model's errors settle this long before it is correlated again
 

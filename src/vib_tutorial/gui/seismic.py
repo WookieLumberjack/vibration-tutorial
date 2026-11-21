@@ -71,7 +71,6 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .playback import Playback
@@ -79,6 +78,7 @@ from .recompute import Recompute
 from .seismic_view import BuildingView
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_BUILDING, TAB_FLOORS, TAB_CORRELATION, TAB_GROUND = range(4)
 PERIODS = np.linspace(0.0, 4.0, 801)[1:]

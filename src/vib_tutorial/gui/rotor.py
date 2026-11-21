@@ -55,7 +55,7 @@ from ..view_models.text import number as sig
 from . import rotor_practice, weak
 from .challenge import ChallengeBox
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, FlowLayout, form_layout, group, wrapped
+from .layouts import ColumnScroll, FlowLayout, ResetButton, form_layout, group, wrapped
 from .lesson import RunButton, TrialBox
 from .live_label import LiveLabel
 from .notes_view import NotesBrowser
@@ -401,7 +401,7 @@ class RotorPage(QtWidgets.QWidget):
         self.run_button = RunButton()
         self.run_button.setToolTip("<p>Start, pause or resume (Space): from rest it ramps up to the target speed.</p>")
         self.run_button.toggled.connect(self._on_run)
-        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button = ResetButton()
         self.reset_button.setToolTip("Back to rest, not spinning, waiting for Start")
         self.reset_button.clicked.connect(self.reset)
         self.tap_button = QtWidgets.QPushButton("Tap disc")

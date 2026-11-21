@@ -13,10 +13,10 @@ from ..core.presets import presets
 from ..view_models.text import entry
 from ..view_models.text import number as sig
 from . import coupling_figures, links, notation
-from .lesson import trials_html
 from .links import load_notes
 from .matrix_table import matrix_html, side_by_side
 from .style import colors
+from .trials_text import trials_html
 
 
 @dataclass(frozen=True)
