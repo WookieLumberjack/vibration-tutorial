@@ -455,3 +455,43 @@ def test_a_sideways_drag_turns_the_near_side_with_the_cursor(app, where, pitch):
         assert float(view.project(near)[0]) > before + 0.05
     finally:
         gui.close_graphics(view)
+
+
+@pytest.mark.parametrize("page", ["pendulum_page", "damping_page", "isolation_page"])
+def test_a_pluckable_body_is_taken_pulled_and_let_go_with_the_mouse(main_window, app, page):
+    """`drag.Grabbable` (#409 S-11): a press on the body takes it (closed hand, `grabbed`), a move pulls it, the
+    release lets it go (`released`); a press off it is no grab."""
+    from PySide6.QtTest import QTest
+
+    from vib_tutorial.gui.damping_view import REST
+
+    w = main_window
+    w.resize(1280, 800)
+    w.show_page(page)
+    p = getattr(w, page)
+    view = p.view if page == "pendulum_page" else p.body
+    for _ in range(5):
+        app.processEvents()
+    if page == "pendulum_page":
+        on = QtCore.QPointF(*view._point(view.theta))
+    elif page == "damping_page":
+        model, row = next(iter(view._rows.items()))
+        on = QtCore.QPointF(REST + view.gain * view._x.get(model, 0.0), row)  # as `on_mass` places it
+    else:
+        on = view.machine.rect().center()
+    assert view.grab_at(on) is True
+
+    def pixel(at: QtCore.QPointF) -> QtCore.QPoint:
+        return view.mapFromScene(view.plotItem.vb.mapViewToScene(at))
+
+    seen: list[str] = []
+    view.grabbed.connect(lambda: seen.append("grabbed"))
+    view.released.connect(lambda: seen.append("released"))
+    left = QtCore.Qt.MouseButton.LeftButton
+    QTest.mousePress(view.viewport(), left, pos=pixel(on))
+    assert view.held is True and seen == ["grabbed"] and view.cursor().shape() == QtCore.Qt.CursorShape.ClosedHandCursor
+    QTest.mouseMove(view.viewport(), pixel(on + QtCore.QPointF(0.02, 0.02)))
+    QTest.mouseRelease(view.viewport(), left, pos=pixel(on + QtCore.QPointF(0.02, 0.02)))
+    assert view.held is False and seen == ["grabbed", "released"]
+    view.grabbed.disconnect()
+    view.released.disconnect()
