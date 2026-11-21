@@ -19,11 +19,6 @@ from vib_tutorial.gui import plot_export  # noqa: E402
 from vib_tutorial.gui.lesson import plot  # noqa: E402
 
 
-@pytest.fixture(scope="module")
-def app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
 @pytest.fixture(autouse=True)
 def _free_windows(app, free_windows):
     """Each test's windows torn down and freed after it (conftest's `free_windows`)."""

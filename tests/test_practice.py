@@ -19,11 +19,6 @@ SEEDS = range(50)
 ALL = [p for page in pages() for p in problems(page)]
 
 
-@pytest.fixture(scope="module")
-def app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
 @pytest.fixture(autouse=True)
 def _free_windows(app, free_windows):
     """Each test's windows torn down and freed after it (conftest's `free_windows`)."""

@@ -15,14 +15,6 @@ from vib_tutorial.gui import links, maths, notation, notes_render, references
 GUI = Path(links.__file__).parent
 
 
-@pytest.fixture(scope="module")
-def app():
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-    from PySide6 import QtWidgets
-
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
 ORDER = {page: i for i, (page, _, _) in enumerate(p for _, pages in links.COURSE for p in pages)}
 
 

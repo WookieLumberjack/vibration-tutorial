@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import os
 import time
 
 import numpy as np
-import pytest
 
 from vib_tutorial.gui import legend_place as lp
 
@@ -47,13 +45,6 @@ def test_best_goes_above_the_plot_only_where_no_spot_is_nearly_clear():
     assert pick != lp.OUTSIDE and lp.coverage(sliver, lp.spot_rect(pick, legend, plot, 5.0)) <= lp.SLIVER
     clear = np.zeros((25, 25), bool)
     assert lp.best(clear, legend, plot, 5.0, now=lp.OUTSIDE) == 0  # clear again: back in
-
-
-@pytest.fixture(scope="module")
-def app():
-    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-    QtWidgets = pytest.importorskip("PySide6.QtWidgets")
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
 
 def test_a_plots_legend_moves_off_its_curve_and_stays_where_dragged(app, free_windows):

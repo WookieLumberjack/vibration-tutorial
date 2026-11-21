@@ -16,11 +16,6 @@ from vib_tutorial.gui import frame_loop  # noqa: E402
 from vib_tutorial.gui.frame_loop import FrameLoop  # noqa: E402
 
 
-@pytest.fixture(scope="module")
-def app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
 @pytest.fixture(autouse=True)
 def _free_windows(app, free_windows):
     """Each test's windows torn down and freed after it (conftest's `free_windows`)."""

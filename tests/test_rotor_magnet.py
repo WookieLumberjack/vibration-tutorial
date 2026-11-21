@@ -5,6 +5,7 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
+from helpers import advance_for
 
 from vib_tutorial.core.magnetic_bearing import MagneticBearing
 from vib_tutorial.core.rotor import XA, XB, XD, YA, YB, YD, Bearing, RotorSystem
@@ -21,14 +22,7 @@ def on(magnet: MagneticBearing, **changes) -> RotorSystem:
 
 
 def run_for(sim, duration):
-    out = []
-    end = sim.t + duration
-    while sim.t < end - 1e-12:
-        r = sim.advance(end - sim.t)
-        if not r.t.size:
-            break
-        out.append(r)
-    return out
+    return advance_for(sim, duration)
 
 
 def test_actuator_gains_linearize_the_magnet_pair():

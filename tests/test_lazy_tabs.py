@@ -11,11 +11,6 @@ QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from vib_tutorial.gui.tab_groups import Deferred, LazyTabs  # noqa: E402
 
 
-@pytest.fixture(scope="module")
-def app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
 @pytest.mark.parametrize("shown", [True, False])
 def test_tabs_draw_only_while_they_show(app, shown):
     tabs = QtWidgets.QTabWidget()
