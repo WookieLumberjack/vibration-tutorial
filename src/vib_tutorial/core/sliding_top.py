@@ -60,6 +60,7 @@ import scipy.optimize
 
 from .gyroscope import G, Top
 from .ode import rk4_step_floats
+from .stepping import StepClock
 
 SMOOTHING = 0.005  # m/s: friction is smoothed below this slip, μN v/√(v² + ε²)
 BALL = 0.4  # a tippe top's I₃ over mR²: a uniform ball's
@@ -351,7 +352,7 @@ class SlidingSimulator:
         turning = max(abs(spin), abs(spin) * top.polar / top.central, 1.0)
         self.h = min(2 * math.pi / turning / per_period, FRICTION_STEP / max(top.contact_rate(), 1e-9), MAX_STEP)
         self.stride = max(1, round(RECORD_DT / self.h))
-        self._owed = 0.0  # s asked for but not yet stepped: less than a step, carried to the next advance
+        self._clock = StepClock()  # the part of a step asked for and not yet stepped, carried
         self._count = 0
         self._rim = top.rim_tilt()
 
@@ -361,12 +362,8 @@ class SlidingSimulator:
         return SlideSamples.of(np.array([_row(self.top, self.t, self.state, N, Fx, Fy)]))
 
     def _steps(self, duration: float) -> int:
-        """The whole steps `duration` makes with what's owed: a slow playback's frame is often under half a step,
-        which rounding each call on its own lost every time (the top stood still at 0.02×)."""
-        owed = self._owed + duration
-        n = min(int(owed / self.h + 1e-9), MAX_STEPS_PER_ADVANCE)  # a whole number of steps asked for stays whole
-        self._owed = owed - n * self.h if n < MAX_STEPS_PER_ADVANCE else 0.0
-        return n
+        """The whole steps `duration` makes with what's owed (`core/stepping.py`)."""
+        return self._clock.steps(duration, self.h, MAX_STEPS_PER_ADVANCE)
 
     def advance(self, duration: float) -> SlideSamples:
         """Step on by `duration` (whole steps, the part of one left over carried to the next call; at most MAX_STEPS_PER_ADVANCE), keeping every

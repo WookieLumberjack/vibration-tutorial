@@ -32,6 +32,7 @@ import numpy as np
 from .forcing import ForceController, ForceKind
 from .model import state_space
 from .simulator import MAX_STEP, MAX_STEPS_PER_ADVANCE, STEPS_PER_PERIOD, foh_input_step
+from .stepping import StepClock
 from .substructure import CMSModel
 
 
@@ -109,10 +110,12 @@ class CMSResponse:
         self._red = _Stepper(Ar, b, b_du)
         self.t = 0.0
         self._u = 0.0  # the force where the last step ended
+        self._clock = StepClock()  # the part of a step asked for and not yet stepped, carried
 
     def reset(self) -> None:
         self.t = 0.0
         self._u = 0.0
+        self._clock.reset()
         self.force.reset()
         self._full.z[:] = 0.0
         self._red.z[:] = 0.0
@@ -136,7 +139,7 @@ class CMSResponse:
         return 2.0 ** math.floor(math.log2(h))
 
     def advance(self, duration: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Advance by about `duration` s; per-step samples (t, x_full, x_reduced, F), shapes (k,), (k, n), (k, n), (k,)."""
+        """Advance by `duration` s (whole steps, the part of one left over carried to the next call); per-step samples (t, x_full, x_reduced, F), shapes (k,), (k, n), (k, n), (k,)."""
         ts, fs, zf, zr = self._run(duration)
         n = self.model.system.n
         nm = self._X.shape[1]
@@ -145,7 +148,7 @@ class CMSResponse:
     def _run(self, duration: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Step both models; per-step (t, F, full state, reduced state)."""
         h = self.step_size()
-        steps = min(MAX_STEPS_PER_ADVANCE, max(0, round(duration / h)))
+        steps = self._clock.steps(duration, h, MAX_STEPS_PER_ADVANCE)
         ts, fs = np.empty(steps), np.empty(steps)
         zf = np.empty((steps, self._full.z.size))
         zr = np.empty((steps, self._red.z.size))

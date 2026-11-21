@@ -57,6 +57,7 @@ import scipy.optimize
 
 from . import native
 from .foh import foh_discretize
+from .stepping import StepClock
 from .torsional import TWO_PI, DriveTrain, modes
 
 STEPS_PER_PERIOD = 40
@@ -253,6 +254,7 @@ class StartUpSimulator:
 
     def reset(self) -> None:
         self.t = 0.0
+        self._clock = StepClock()  # the part of a step asked for and not yet stepped, carried
         self.z = np.zeros(2 * self.train.n)
         self.field_on = False
         self.peaks[:] = 0.0
@@ -278,11 +280,13 @@ class StartUpSimulator:
         return 1.0 - self.z[self.train.n] / self.startup.motor.sync_speed
 
     def advance(self, duration: float) -> StartUpSamples:
-        """Step on by about `duration` s (whole steps, at most MAX_STEPS_PER_ADVANCE, never past the run's
-        end); every step's samples."""
+        """Step on by `duration` s (whole steps, the part of one left over carried to the next call; at most
+        MAX_STEPS_PER_ADVANCE, never past the run's end); every step's samples."""
         n = self.train.n
         h = self.h
-        steps = min(round(duration / h), MAX_STEPS_PER_ADVANCE, max(0, round((self.startup.duration - self.t) / h)))
+        steps = min(
+            self._clock.steps(duration, h, MAX_STEPS_PER_ADVANCE), max(0, round((self.startup.duration - self.t) / h))
+        )
         motor = self.startup.motor
         if self.t == 0.0:
             self._u = np.array([motor.torque(0.0, self.z[0], self.z[n], self.field_on)[0], self._load(self.z[-1])[0]])

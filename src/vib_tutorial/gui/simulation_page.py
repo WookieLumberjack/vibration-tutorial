@@ -37,6 +37,7 @@ from ..core import (
     potential_energy,
 )
 from ..core.presets import Preset, without_absorber
+from ..core.stepping import Budget
 from ..view_models.text import number as sig
 from . import theming, weak
 from .animation import ChainView
@@ -56,7 +57,6 @@ from .style import colors
 from .tab_groups import Deferred
 from .transport import Transport
 
-FRAME_BUDGET = 0.012  # s of computing per frame: past it (friction on a stiff chain) the simulation runs slower
 PROBE_STEPS = 200  # steps in a frame while the cost of a step isn't known yet (a new system)
 # The history keeps samples at least STORE_DT apart, or STORE_PER_PERIOD to the fastest mode's or the
 # forcing's period (the steps take 40-80) where that's shorter, or a tenth of a pulse: a fast step
@@ -398,7 +398,7 @@ class SimulationPage(QtWidgets.QWidget):
         self._clock.start()
         self._last_wall = 0.0
         self._sim_target = 0.0
-        self._step_cost = 0.0  # s of computing per simulator step (with the history it feeds); 0 = not known
+        self.budget = Budget()  # s of computing per simulator step (with the history it feeds)
         self._started: tuple[float, bool] | None = None  # (when, ground motion?) of the advance in flight
         self._carry = 0  # steps since the last sample stored in the history
         # Like the Substructuring tabs, the simulation runs only while its page shows: the loop stops on
@@ -447,7 +447,7 @@ class SimulationPage(QtWidgets.QWidget):
         self._collect()  # the steps in flight belong to the old system
         n_changed = system.n != self.sim.system.n
         self.sim.set_system(system)
-        self._step_cost = 0.0  # friction, or a new size, changes it: measure it afresh
+        self.budget.forget()  # friction, or a new size, changes the cost: measure it afresh
         # The modes first: a new size redraws the FRF (through the force panel), which needs this system's.
         modal = modal_analysis(system)
         self.modal = modal
@@ -850,7 +850,7 @@ class SimulationPage(QtWidgets.QWidget):
         self._sim_target = min(self._sim_target, self.sim.t + 0.25 * speed + 0.05)
         # And take no more steps than FRAME_BUDGET allows at the cost seen so far: a slow
         # simulation then falls behind real time (the overlay's sim speed) instead of stalling the frames.
-        steps = FRAME_BUDGET / self._step_cost if self._step_cost else PROBE_STEPS
+        steps = self.budget.allows(PROBE_STEPS)
         self._sim_target = min(self._sim_target, self.sim.t + max(1.0, steps) * self.sim.step_size())
         if self._sim_target - self.sim.t < 0.5 * self.sim.step_size():
             return  # not a step's worth yet
@@ -899,8 +899,7 @@ class SimulationPage(QtWidgets.QWidget):
         self.history.extend(ts, xs, vs, fs, energy, forces, np.column_stack([xg, vg]))
         if steps and not waits:  # a dearer step counts at once, a cheaper one gradually
             # This thread's work and the steps' (where they run beside it): the slower sets the pace.
-            cost = max(spent + time.perf_counter() - began, self.sim.steps_time) / steps
-            self._step_cost = cost if cost > self._step_cost else 0.8 * self._step_cost + 0.2 * cost
+            self.budget.spent(max(spent + time.perf_counter() - began, self.sim.steps_time), steps)
 
 
 def energy_curves(e: np.ndarray) -> np.ndarray:
