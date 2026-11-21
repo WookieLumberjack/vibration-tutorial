@@ -3,7 +3,6 @@
 <a href="page:sim_page#start-with-one-mass">Start with one mass</a>
 <a href="page:complex_page#state-space">The state-space form</a>
 <a href="page:complex_page#sweep">Sweeping a damper</a>
-<a href="page:duffing_page#harmonic-balance">Harmonic balance</a>
 </before>
 <goals page="rotor_page">
 <li trial="1" problem="critical">find a rotor's critical speed, and run it up through it;</li>
@@ -770,7 +769,12 @@ takes one trial per plane, so the two-trial method is for working by hand.</p>
 time-invariant, so its modes are exact. Each is seen from the bearings as a forward and a backward
 circle, at s ± <m>iΩ</m>, and is listed at the one with more kinetic energy. On anisotropic supports the modes
 come from Hill's method <cite>hill-1886</cite>: the Floquet exponents <cite>floquet</cite> of the periodic system, from its harmonics up to
-±3 × <m>2Ω</m>. The steady states (the unbalance's 1X, gravity's mean sag and 2X) come from harmonic balance.
+±3 × <m>2Ω</m>. The steady states (the unbalance's 1X, gravity's mean sag and 2X) come from harmonic balance:
+guess the response as a sum of the harmonics the forces and the turning stiffness make, each with an
+unknown amplitude, put it in the equations of motion, and match each harmonic's cosine and sine on the two
+sides. The rotor is linear, so that gives linear equations for the amplitudes, exact once the harmonics
+kept are enough. (The <a href="page:duffing_page#harmonic-balance">Duffing &amp; Mathieu page</a>, later,
+uses the same idea on a nonlinear spring, where it is an approximation.)
 The turning stiffness ties each harmonic <m>n</m> to <m>n</m> ± 2. That closes at once on isotropic supports (1X stays
 1X, and the sag gives a forward 2X), and is cut at ±6X otherwise. The time stepping splits each step:
 half a step of the rest (the exact update), the kick of the turning stiffness on the velocities at

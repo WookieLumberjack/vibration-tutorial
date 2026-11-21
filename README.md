@@ -78,25 +78,38 @@ The course runs through 11 groups of pages, in the order the app's tabs take the
 - [Complex modes](docs/modes.md#complex-modes): when damping makes the modes complex, and what the usual approximation misses
 - [Rigid body on mounts](docs/modes.md#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them
 
-**[Continua and models](docs/continua-and-models.md)**
+**[Building models](docs/building-models.md)**
 
-- [Continuous systems](docs/continua-and-models.md#continuous-systems): a string, a bar or a beam cut into a chain: which of its modes to trust
-- [Beams & plates](docs/continua-and-models.md#beams--plates): Timoshenko's thick beam, a plate's modes and nodal lines, and modal density
-- [Modal coupling](docs/continua-and-models.md#modal-coupling): two parts joined, one mode each: when their modes split
-- [Substructuring (CMS)](docs/continua-and-models.md#substructuring-component-mode-synthesis): a chain reduced to a few modes per part, and back
-- [Numerical integration](docs/continua-and-models.md#numerical-integration): central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping
-- [Frame builder](docs/continua-and-models.md#frame-builder): build a frame or truss from beams, bars and springs: assembly, supports, modes
+- [Modal coupling](docs/building-models.md#modal-coupling): two parts joined, one mode each: when their modes split
+- [Substructuring (CMS)](docs/building-models.md#substructuring-component-mode-synthesis): a chain reduced to a few modes per part, and back
+- [Numerical integration](docs/building-models.md#numerical-integration): central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping
+
+**[Continuous systems](docs/continuous-systems.md)**
+
+- [Continuous systems](docs/continuous-systems.md#continuous-systems): a string, a bar or a beam cut into a chain: which of its modes to trust
+- [Beams & plates](docs/continuous-systems.md#beams--plates): Timoshenko's thick beam, a plate's modes and nodal lines, and modal density
+- [Frame builder](docs/continuous-systems.md#frame-builder): build a frame or truss from beams, bars and springs: assembly, supports, modes
 
 **[Signals and random](docs/signals-and-random.md)**
 
 - [Signals & spectra](docs/signals-and-random.md#signals--spectra): sampling, aliasing, leakage, windows and averaging, and the transducers that make the signals
 - [Random vibration](docs/signals-and-random.md#random-vibration): a random force or base: the response's spectrum, RMS and peaks
 
+**[Rotating machines](docs/rotating-machines.md)**
+
+- [Gyroscope](docs/rotating-machines.md#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
+- [Torsional vibration](docs/rotating-machines.md#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
+- [Jeffcott rotor](docs/rotating-machines.md#jeffcott-rotor): a spinning shaft: critical speeds, balancing, bearings, stability, rub
+- [Rotor builder](docs/rotating-machines.md#rotor-builder): build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability
+- [Machinery diagnostics](docs/rotating-machines.md#machinery-diagnostics): order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum
+
 **[Testing](docs/testing.md)**
 
 - [Virtual modal test](docs/testing.md#virtual-modal-test): measuring the FRF from force and response signals, and fitting modes
 - [Model updating](docs/testing.md#model-updating): comparing a model with a test, and correcting it
 - [Operational modal analysis](docs/testing.md#operational-modal-analysis): the modes from the responses alone, the forces unknown
+- [Test planning](docs/testing.md#test-planning): where to put the sensors, and what the structure does as it runs
+- [Variability & localization](docs/testing.md#variability--localization): scatter in the chain's properties by Monte Carlo, and modes localized in a mistuned ring of blades
 
 **[Environments](docs/environments.md)**
 
@@ -108,16 +121,8 @@ The course runs through 11 groups of pages, in the order the app's tabs take the
 **[Nonlinear and flow](docs/nonlinear-and-flow.md)**
 
 - [Duffing & Mathieu](docs/nonlinear-and-flow.md#duffing--mathieu): a nonlinear spring: jumps, chaos, and parametric resonance
-- [Fluid–structure](docs/nonlinear-and-flow.md#fluidstructure): a body in water: added mass of spheres, cylinders, tubes in pipes and plates; sloshing in a tank and a tuned liquid damper
+- [Fluid–structure](docs/nonlinear-and-flow.md#fluidstructure): a body in water: added mass of spheres, cylinders, tubes in pipes and plates, wet against dry
 - [Self-excited vibration](docs/nonlinear-and-flow.md#self-excited-vibration): negative damping and limit cycles: van der Pol, galloping, vortex-induced vibration and flutter
-
-**[Rotating machines](docs/rotating-machines.md)**
-
-- [Gyroscope](docs/rotating-machines.md#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
-- [Torsional vibration](docs/rotating-machines.md#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
-- [Jeffcott rotor](docs/rotating-machines.md#jeffcott-rotor): a spinning shaft: critical speeds, balancing, bearings, stability, rub
-- [Rotor builder](docs/rotating-machines.md#rotor-builder): build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability
-- [Machinery diagnostics](docs/rotating-machines.md#machinery-diagnostics): order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum
 
 **[Control](docs/control.md)**
 
@@ -126,9 +131,7 @@ The course runs through 11 groups of pages, in the order the app's tabs take the
 **[Appendix](docs/appendix.md)**
 
 - [Seismic response](docs/appendix.md#seismic-response): the chain as a building: a design spectrum, effective modal mass, and ABS, SRSS and CQC against records
-- [Test planning](docs/appendix.md#test-planning): where to put the sensors, and what the structure does as it runs
 - [Nonlinearity & forces](docs/appendix.md#nonlinearity--forces): is the structure linear (levels, sweeps, harmonics), and which force made a response
-- [Variability & localization](docs/appendix.md#variability--localization): scatter in the chain's properties by Monte Carlo, and modes localized in a mistuned ring of blades
 
 **Reference**
 

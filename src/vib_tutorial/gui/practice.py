@@ -60,7 +60,7 @@ def _solved() -> set[str]:
 
 def progress() -> dict[str, tuple[int, int]]:
     """(solved, problems) of each page with a problem solved, for the course map: only those pages' modules are
-    imported (all forty take over half a second)."""
+    imported (all 41 take over half a second)."""
     keys: dict[str, set[str]] = {}
     for item in _solved():
         page, _, key = item.partition("/")

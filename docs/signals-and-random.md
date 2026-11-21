@@ -1,4 +1,4 @@
-← [Continua and models](continua-and-models.md) · [Contents](../README.md#contents) · [Testing](testing.md) →
+← [Continuous systems](continuous-systems.md) · [Contents](../README.md#contents) · [Rotating machines](rotating-machines.md) →
 
 # Signals and random
 
@@ -65,4 +65,4 @@ mode 1, a narrow band whose peaks come in clumps, and Vanmarcke's 2.84σ is clos
 
 ---
 
-← [Continua and models](continua-and-models.md) · [Contents](../README.md#contents) · [Testing](testing.md) →
+← [Continuous systems](continuous-systems.md) · [Contents](../README.md#contents) · [Rotating machines](rotating-machines.md) →

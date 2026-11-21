@@ -2,7 +2,6 @@
 <a href="page:sdof_page#equation">The equation of motion</a>
 <a href="page:sim_page#undamped-normal-modes-real">Undamped normal modes</a>
 <a href="page:sim_page#exact-damped-modes-are-complex">The state-space form</a>
-<a href="page:continuum_page#dispersion">A mesh's modes against the continuum's</a>
 </before>
 <goals page="integration_page">
 <li trial="1" problem="average-period">compare the schemes' period errors at ten steps a period;</li>
@@ -42,7 +41,9 @@ complex, both have <m>ρ = 1</m> (no numerical damping) and</p>
 angle: the roots are real, one outside the unit circle. So it is stable only for <b><m>ωΔt ≤ 2</m></b>, for the
 <i>highest</i> <m>ω</m> in the model: <m>Δt ≤ T<sub>min</sub>/π</m>. On a mesh this is the Courant condition
 <cite>cfl</cite> of explicit crash and blast codes: a fine mesh has a very fast highest mode, so the step has
-to be tiny however slow the motion of interest.</p>
+to be tiny however slow the motion of interest. (How fast a mesh's highest mode is, against the
+continuum's, is on the <a href="page:continuum_page#dispersion">Continuous systems page</a>, next in the
+course.)</p>
 
 <h3><a name="newmark"></a>Newmark and HHT-α</h3>
 <p>Newmark's scheme <cite>newmark</cite> assumes how the acceleration varies over a step, with two parameters

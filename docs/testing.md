@@ -1,14 +1,16 @@
-← [Signals and random](signals-and-random.md) · [Contents](../README.md#contents) · [Environments](environments.md) →
+← [Rotating machines](rotating-machines.md) · [Contents](../README.md#contents) · [Environments](environments.md) →
 
 # Testing
 
-Measuring a structure's modes, with and without the force, and correcting a model with them.
+Measuring a structure's modes, with and without the force, correcting a model with them, planning the test, and the scatter between structures built alike.
 
 The pages in the order the app's tabs take them.
 
 - [Virtual modal test](#virtual-modal-test): measuring the FRF from force and response signals, and fitting modes
 - [Model updating](#model-updating): comparing a model with a test, and correcting it
 - [Operational modal analysis](#operational-modal-analysis): the modes from the responses alone, the forces unknown
+- [Test planning](#test-planning): where to put the sensors, and what the structure does as it runs
+- [Variability & localization](#variability--localization): scatter in the chain's properties by Monte Carlo, and modes localized in a mistuned ring of blades
 
 ## Virtual modal test
 
@@ -166,6 +168,32 @@ finds.
 With a machine running just above mode 2, FDD's peak there is the sine's, and mode 2 is lost
 under it; SSI-cov fits mode 2 beside the sine, which the kurtosis test crosses out.
 
+## Test planning
+
+Before a test: where should the sensors go, and what does the structure do while it runs? For the chain's
+target modes, sensors are placed by **effective independence** (from every mass, drop one at a time the one
+with the smallest share of the Fisher information det(ΦᵀΦ)), by EfI weighted by the driving-point residue,
+evenly, or by hand. The *Placement* tab shows EfI's eliminations step by step; *Noise & aliasing* sets the
+placement beside the methods': the information, each mode's noise against a sensor on every mass, and the
+auto-MAC at the sensors, whose off-diagonal shows spatial aliasing (three sensors bunched at the ground make
+modes 1 and 2 look alike, MAC 0.976, and mode 1's noise 240 times larger). Below, the **operational
+deflection shape** at a running frequency under a force on one mass, beside the mode most like it: the mode
+itself at a lightly damped peak, a mix between peaks, and different when the force moves. The *ODS* tab
+splits it into each mode's share, and the readout warns when the reference sensor sits where the ODS hardly
+moves.
+
+![Test planning page: three sensors on the eight-mass chain placed by effective independence at masses 2, 5 and 8, on the first three modes; the ODS at 1.842 Hz under a force on mass 4, beside mode 1 (MAC 0.650); the ODS tab shows every mass's response and each mode's share of the ODS](images/test_planning.png)
+
+## Variability & localization
+
+Scatter in what is built. The chain with every mass, spring and damper scattered (lognormal) by Monte
+Carlo: the frequencies' histograms against the first-order estimate from each mode's energies, and the
+band the receptance falls in. Then a bladed disc, a ring of identical blades weakly coupled: tuned, its
+modes are waves round the ring; mistuned by about the coupling, they localize on a few blades, and an
+engine-order force drives the worst blade harder than any tuned one, up to Whitehead's bound.
+
+![Variability & localization page, a mistuned bladed disc: twelve blades coupled by 2 % springs, driven at engine order 3; this 1 % pattern's worst blade peaks 1.06 times the tuned ring, and over 12 patterns per level the worst reaches 1.42 at 2 % mistuning, under Whitehead's bound of 2.23](images/variability.png)
+
 ---
 
-← [Signals and random](signals-and-random.md) · [Contents](../README.md#contents) · [Environments](environments.md) →
+← [Rotating machines](rotating-machines.md) · [Contents](../README.md#contents) · [Environments](environments.md) →

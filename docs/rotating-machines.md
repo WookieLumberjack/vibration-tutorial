@@ -1,4 +1,4 @@
-← [Nonlinear and flow](nonlinear-and-flow.md) · [Contents](../README.md#contents) · [Control](control.md) →
+← [Signals and random](signals-and-random.md) · [Contents](../README.md#contents) · [Testing](testing.md) →
 
 # Rotating machines
 
@@ -438,4 +438,4 @@ a family of sidebands into one peak.
 
 ---
 
-← [Nonlinear and flow](nonlinear-and-flow.md) · [Contents](../README.md#contents) · [Control](control.md) →
+← [Signals and random](signals-and-random.md) · [Contents](../README.md#contents) · [Testing](testing.md) →

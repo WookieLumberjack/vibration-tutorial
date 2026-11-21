@@ -20,20 +20,21 @@ window of its own, with the pages and their sections listed, a *Glossary of symb
 box (Ctrl+F, ⌘F on a Mac, from the window or from a page) that finds a word or a symbol in every page's notes: it keeps its place as you move between pages,
 or follows them. Paused, a page that simulates as it runs (this one, Duffing & Mathieu, the torsional start-up and the Jeffcott rotor) shows a cursor on its time plots: drag it back to see the motion as it was then (the chain drawn, the state on the phase plane, the readings, each station's place on its orbit); Start carries on from where it was paused.
 
-The groups (each one's page here describes its pages): the first five are the course's spine, read in order;
+The groups (each one's page here describes its pages): the first six are the course's spine, read in order;
 the next five are branches into application areas; the Appendix holds pages that are to be folded into others.
 
 1. **[One oscillator](one-oscillator.md).** Single oscillator, Pendulums, Damping models, Vibration isolation, Transient response and Periodic forcing.
 2. **[Equations](equations.md).** Deriving the equations and 3D rigid body.
 3. **[Modes](modes.md).** *Simulation & modal analysis* (the chain above), Energy methods, FRF matrix, Complex modes and Rigid body on mounts.
-4. **[Continua and models](continua-and-models.md).** Continuous systems, Beams & plates, Modal coupling, Substructuring (CMS), Numerical integration and Frame builder.
-5. **[Signals and random](signals-and-random.md).** Signals & spectra and Random vibration.
-6. **[Testing](testing.md).** Virtual modal test, Model updating and Operational modal analysis.
-7. **[Environments](environments.md).** Shock spectrum, Quarter-car, Fatigue and Vibro-acoustics & SEA.
-8. **[Nonlinear and flow](nonlinear-and-flow.md).** Duffing & Mathieu, Fluid–structure and Self-excited vibration.
-9. **[Rotating machines](rotating-machines.md).** Gyroscope, Torsional vibration, Jeffcott rotor, Rotor builder and Machinery diagnostics.
-10. **[Control](control.md).** Active control.
-11. **[Appendix](appendix.md).** Seismic response, Test planning, Nonlinearity & forces and Variability & localization.
+4. **[Building models](building-models.md).** Modal coupling, Substructuring (CMS) and Numerical integration.
+5. **[Continuous systems](continuous-systems.md).** Continuous systems, Beams & plates and Frame builder.
+6. **[Signals and random](signals-and-random.md).** Signals & spectra and Random vibration.
+7. **[Rotating machines](rotating-machines.md).** Gyroscope, Torsional vibration, Jeffcott rotor, Rotor builder and Machinery diagnostics.
+8. **[Testing](testing.md).** Virtual modal test, Model updating, Operational modal analysis, Test planning and Variability & localization.
+9. **[Environments](environments.md).** Shock spectrum, Quarter-car, Fatigue and Vibro-acoustics & SEA.
+10. **[Nonlinear and flow](nonlinear-and-flow.md).** Duffing & Mathieu, Fluid–structure and Self-excited vibration.
+11. **[Control](control.md).** Active control.
+12. **[Appendix](appendix.md).** Seismic response and Nonlinearity & forces.
 
 Every page has a *Theory* tab (the *Theory* button or F1 opens it) that starts with what to read first,
 links to the sections it builds on, and ends with *Things to try*, *What to take away*, a table of the

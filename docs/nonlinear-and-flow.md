@@ -1,4 +1,4 @@
-← [Environments](environments.md) · [Contents](../README.md#contents) · [Rotating machines](rotating-machines.md) →
+← [Environments](environments.md) · [Contents](../README.md#contents) · [Control](control.md) →
 
 # Nonlinear and flow
 
@@ -105,4 +105,4 @@ a slider for what drives it that moves the poles as you drag.
 
 ---
 
-← [Environments](environments.md) · [Contents](../README.md#contents) · [Rotating machines](rotating-machines.md) →
+← [Environments](environments.md) · [Contents](../README.md#contents) · [Control](control.md) →
