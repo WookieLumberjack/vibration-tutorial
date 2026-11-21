@@ -38,7 +38,7 @@ from ..core.modal_coupling import (
 )
 from ..core.practice import Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..view_models.text import number as sig
-from . import coalesce, weak
+from . import chain_page, coalesce, weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
@@ -47,7 +47,7 @@ from .lesson import TrialBox
 from .links import page_link
 from .mode_swing import ModeSwing, SwingLoop
 from .notes_view import NotesBrowser
-from .style import MAX_DOF, colors, text_on
+from .style import colors, text_on
 from .substructuring import error_color, zeta_text
 from .theming import add_legend, mute
 
@@ -404,12 +404,6 @@ PROBLEMS = tuple(
         ("split-spec", "Spec: a split to order", "splitting", "The 2-DOF system and mode splitting", _split_spec),
     )
 )
-
-
-def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
-    return a.n == b.n and all(
-        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
-    )
 
 
 def sub_color(name: str) -> str:
@@ -930,10 +924,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
 
         box = QtWidgets.QGroupBox("Modal coupling")
         form = form_layout(box)
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         form.addRow("Number of masses:", self.dof)
         splits = QtWidgets.QWidget()
         splits.setToolTip(SPLIT_TIP)
@@ -972,9 +963,9 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.residual.setToolTip(RESIDUAL_TIP)
         self.residual.toggled.connect(self.refresh)
         form.addRow(self.residual)
-        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
-        mute(link)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         form.addRow(link)
 
         self.schematic = CouplingSchematic()
@@ -1109,9 +1100,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         trial = TRIALS[index]
         self.trials.show_note(trial.note)
         system = trial.system()
-        self.system_requested.emit(system)
-        if self.system is None or self.system.n != system.n or not np.allclose(self.system.masses, system.masses):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         self.a_mass.blockSignals(True)
         self.a_mass.setCurrentIndex(self.a_mass.findData(trial.a_mass))
         self.a_mass.blockSignals(False)
@@ -1129,9 +1118,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         t = CouplingSetup(**setup)
         self.trials.show_note("")
         system = t.system()
-        self.system_requested.emit(system)
-        if self.system is None or not _same_chain(self.system, system):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         self.a_mass.blockSignals(True)
         self.a_mass.setCurrentIndex(self.a_mass.findData(t.a_mass))
         self.a_mass.blockSignals(False)
@@ -1227,9 +1214,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self._dirty = False
         system = self.system
         n = system.n
-        self.dof.blockSignals(True)
-        self.dof.setValue(n)
-        self.dof.blockSignals(False)
+        chain_page.show_count(self.dof, n)
         self._sync_controls(n)
         full = self.full if self.full is not None else modal_analysis(system)
         self.full = full

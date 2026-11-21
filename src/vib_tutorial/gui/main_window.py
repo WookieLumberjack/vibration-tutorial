@@ -7,7 +7,6 @@ import time
 from dataclasses import fields
 from typing import TYPE_CHECKING, Any, Protocol, TypeGuard, runtime_checkable
 
-import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core import (
@@ -90,12 +89,6 @@ class SpecPage(Protocol):
     """A page with practice specs: `practice_state` reads its settings back, for the spec to check."""
 
     def practice_state(self) -> Any: ...
-
-
-def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
-    return a.n == b.n and all(
-        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
-    )
 
 
 APP_TITLE = "Vibration Tutorial"
@@ -469,7 +462,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if chain is not None:
                 params.set_system(chain.copy())
             page.load_setup(setup)
-            if chain is not None and not _same_chain(self.sim_page.sim.system, chain):
+            if chain is not None and not chain.same_as(self.sim_page.sim.system):
                 params.set_system(chain.copy())
         if any(run.isChecked() or run.started for run in page.findChildren(RunButton)):
             for button in page.findChildren(QtWidgets.QPushButton):

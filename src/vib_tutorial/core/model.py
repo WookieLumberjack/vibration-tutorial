@@ -20,6 +20,7 @@ All quantities are SI: kg, N/m, N*s/m, m, N.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -77,6 +78,23 @@ class ChainSystem:
     @property
     def n(self) -> int:
         return self.masses.size
+
+    def same_as(self, other: ChainSystem | None) -> bool:
+        """Whether `other` is this chain: the same masses, springs, dampers and friction (to rounding)."""
+        return (
+            other is not None
+            and other.n == self.n
+            and all(
+                np.allclose(a, b)
+                for a, b in (
+                    (self.masses, other.masses),
+                    (self.stiffness, other.stiffness),
+                    (self.damping, other.damping),
+                    (self.friction, other.friction),
+                )
+            )
+            and math.isclose(self.static_ratio, other.static_ratio)
+        )
 
     def copy(self) -> ChainSystem:
         return ChainSystem(self.masses, self.stiffness, self.damping, self.friction, self.static_ratio)

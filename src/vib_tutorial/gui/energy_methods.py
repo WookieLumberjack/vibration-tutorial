@@ -41,7 +41,7 @@ from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick, rounded
 from ..view_models.text import entry
 from ..view_models.text import number as sig
-from . import coalesce, energy_figures, settle_plots
+from . import chain_page, coalesce, energy_figures, settle_plots
 from .drag import DragLine, DragPoint
 from .lesson import (
     Form,
@@ -62,7 +62,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .style import MAX_DOF, colors
-from .theming import add_legend, mute
+from .theming import add_legend
 
 DRAWN = "Your own: drag its points"
 DRAWN_LIMIT = 1.5  # a drawn point's reach, of the largest the shapes are drawn at
@@ -483,15 +483,9 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.trials.picked.connect(self.load_trial)
 
         ch = Form("Chain")
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip(TIPS["dof"])
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self, TIPS["dof"])
         ch.add("Number of masses:", self.dof, TIPS["dof"])
-        link = QtWidgets.QLabel("Masses and springs are edited on the <a href='#sim'>Simulation page</a>.")
-        link.setWordWrap(True)
-        mute(link)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(self, "Masses and springs are edited on the <a href='#sim'>Simulation page</a>.")
         ch.row(link)
         self.chain_info = note_label()
         ch.row(self.chain_info)
@@ -644,13 +638,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
 
     def apply_trial(self, t: EnergyTrial) -> None:
         system = t.system()
-        self.system_requested.emit(system)
-        if (
-            self.system.n != system.n
-            or not np.allclose(self.system.masses, system.masses)
-            or not np.allclose(self.system.stiffness, system.stiffness)
-        ):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         self.drawn = np.array(t.drawn, dtype=float) if t.drawn else None
         self.lowest = math.inf
         for box, value in (

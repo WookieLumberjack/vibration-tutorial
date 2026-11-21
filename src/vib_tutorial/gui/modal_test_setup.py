@@ -32,9 +32,10 @@ from ..core import (
 )
 from ..core.measurement import AA_CUTOFF, FORCE_RMS, IMPACT_PEAK, SINE_AMPLITUDE
 from ..view_models.text import number as sig
+from . import chain_page
 from .layouts import form_layout
 from .panels import spin
-from .style import MAX_DOF, colors
+from .style import colors
 from .theming import mute
 
 BLOCK_SIZES = [256, 512, 1024, 2048, 4096, 8192]
@@ -124,10 +125,7 @@ class TestSetup(QtWidgets.QWidget):
         super().__init__(parent)
         setup = QtWidgets.QGroupBox("Test")
         form = form_layout(setup)
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         form.addRow("Number of masses:", self.dof)
         self.excitation = QtWidgets.QComboBox()
         for i, e in enumerate(Excitation):
@@ -191,10 +189,9 @@ class TestSetup(QtWidgets.QWidget):
         self.points_label = QtWidgets.QLabel("Frequencies:")
         form.addRow(self.points_label, self.points)
         self.points_label.setBuddy(self.points)
-        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
-        mute(link)
-        link.setWordWrap(True)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         form.addRow(link)
 
         # --- acquisition
@@ -359,9 +356,7 @@ class TestSetup(QtWidgets.QWidget):
 
     def follow(self, n: int, result: ModalResult) -> None:
         """A new test of a chain of `n` masses: its size shown, and fs from its modes if Auto."""
-        self.dof.blockSignals(True)
-        self.dof.setValue(n)
-        self.dof.blockSignals(False)
+        chain_page.show_count(self.dof, n)
         self.fs.setEnabled(not self.fs_auto.isChecked())
         if self.fs_auto.isChecked():
             self.fs.blockSignals(True)

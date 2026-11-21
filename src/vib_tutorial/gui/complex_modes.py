@@ -40,7 +40,7 @@ from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, number, pick, rounded
 from ..core.presets import tuned_mass_damper
 from ..view_models.text import number as sig
-from . import coalesce, complex_figures, maths, weak
+from . import chain_page, coalesce, complex_figures, maths, weak
 from .axes import log_axes
 from .drag import DragDot
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
@@ -488,10 +488,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         # --- left: the chain's damping, chains to try, the mode
         box = QtWidgets.QGroupBox("Damping")
         form = form_layout(box)
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         form.addRow("Number of masses:", self.dof)
         self.coupling = QtWidgets.QLabel()
         self.coupling.setWordWrap(True)
@@ -514,10 +511,9 @@ class ComplexModesPage(QtWidgets.QWidget):
         self.damper_info.setWordWrap(True)
         mute(self.damper_info)
         form.addRow(self.damper_info)
-        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
-        mute(link)
-        link.setWordWrap(True)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         form.addRow(link)
 
         self.trials = TrialBox(
@@ -758,9 +754,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         n_changed = self.system is None or system.n != self.system.n
         self.system = system
         self.result = result if result is not None else modal_analysis(system)
-        self.dof.blockSignals(True)
-        self.dof.setValue(system.n)
-        self.dof.blockSignals(False)
+        chain_page.show_count(self.dof, system.n)
         if n_changed:
             for box, default in (
                 (self.frf_in, system.n - 1),
@@ -806,9 +800,7 @@ class ComplexModesPage(QtWidgets.QWidget):
     def _load(self, t: ComplexSetup) -> None:
         system = t.system()
         self.trials.show_note(t.note)
-        self.system_requested.emit(system.copy())
-        if self.system is None or self.system.n != system.n or not np.allclose(self.system.damping, system.damping):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system.copy())
         if t.tab is not None:
             self.tabs.setCurrentIndex(t.tab)
 
@@ -851,14 +843,14 @@ class ComplexModesPage(QtWidgets.QWidget):
         c = np.zeros(s.n)
         c[k - 1] = float(s.damping.sum())
         self.trials.show_note("")
-        self.system_requested.emit(
-            ChainSystem(s.masses.copy(), s.stiffness.copy(), c, s.friction.copy(), s.static_ratio)
+        chain_page.hand_over(
+            self, ChainSystem(s.masses.copy(), s.stiffness.copy(), c, s.friction.copy(), s.static_ratio)
         )
 
     def _on_make_proportional(self) -> None:
         if self.system is not None:
             self.trials.show_note("")
-            self.system_requested.emit(made_proportional(self.system, self.result))
+            chain_page.hand_over(self, made_proportional(self.system, self.result))
 
     def _on_mode(self, index: int) -> None:
         if index < 0 or not self.rows:
@@ -925,9 +917,7 @@ class ComplexModesPage(QtWidgets.QWidget):
         (damping if sw.parameter is Parameter.DAMPER else stiffness)[sw.element] = value
         system = ChainSystem(np.array(s.masses, dtype=float), stiffness, damping, s.friction, s.static_ratio)
         self.trials.show_note("")
-        self.system_requested.emit(system.copy())
-        if not np.allclose(self.system.damping, damping) or not np.allclose(self.system.stiffness, stiffness):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system.copy())
 
     def _work_identification(self) -> None:
         if self.system is not None:

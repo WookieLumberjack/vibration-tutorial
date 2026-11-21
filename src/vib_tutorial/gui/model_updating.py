@@ -40,7 +40,7 @@ from ..core.model_updating import (
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from ..view_models.text import number as sig
-from . import updating_figures, weak
+from . import chain_page, updating_figures, weak
 from .layouts import ColumnScroll, FlowLayout, form_layout, group, plot_height
 from .lesson import TAB_ROOM, TrialBox, trials_html
 from .links import load_notes, page_link
@@ -48,7 +48,7 @@ from .modal_extraction import MacPlot, colored
 from .notes_view import NotesBrowser
 from .panels import spin
 from .recompute import Recompute
-from .style import MAX_DOF, colors
+from .style import colors
 from .theming import add_legend, mute
 
 RECOMPUTE_MS = 150  # the model's errors settle this long before it is correlated again
@@ -684,12 +684,9 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         # --- left: the structure, the test, the model's errors, errors to try
         box = QtWidgets.QGroupBox("Test")
         form = form_layout(box)
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip(
-            "Same chain as the Simulation page, the structure tested; changing it here changes it there too."
+        self.dof = chain_page.dof_box(
+            self, "Same chain as the Simulation page, the structure tested; changing it here changes it there too."
         )
-        self.dof.valueChanged.connect(self.dof_requested)
         form.addRow("Number of masses:", self.dof)
         self.source = QtWidgets.QComboBox()
         for s in Source:
@@ -712,10 +709,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.test_info.setWordWrap(True)
         mute(self.test_info)
         form.addRow(self.test_info)
-        link = QtWidgets.QLabel("The structure is the chain on the <a href='#sim'>Simulation page</a>.")
-        mute(link)
-        link.setWordWrap(True)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(self, "The structure is the chain on the <a href='#sim'>Simulation page</a>.")
         form.addRow(link)
 
         model_box = QtWidgets.QGroupBox("The model's errors")
@@ -929,9 +923,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             else result
         )
         self._loading = True
-        self.dof.blockSignals(True)
-        self.dof.setValue(system.n)
-        self.dof.blockSignals(False)
+        chain_page.show_count(self.dof, system.n)
         if n_changed:
             self._build_rows(system.n)
         self._loading = False
@@ -995,9 +987,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         t = UpdatingSetup(**setup)
         system = t.system()
         if system is not None:
-            self.system_requested.emit(system)
-            if self.system is None or not _same_chain(self.system, system):
-                self.set_system(system)  # nobody passed it back: show it here alone
+            chain_page.hand_over(self, system)
         self._load(t, measure=True)
 
     def _load(self, t: UpdatingSetup, measure: bool) -> None:
@@ -1404,9 +1394,3 @@ class ModelUpdatingPage(QtWidgets.QWidget):
             )
             text += f" Singular values {sig(sv.max())} to {sig(sv.min(), 2)}.{rank_note}"
         self.update_note.setText(text)
-
-
-def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
-    return a.n == b.n and all(
-        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
-    )

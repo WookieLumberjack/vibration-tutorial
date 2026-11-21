@@ -48,7 +48,7 @@ from ..core.shock import (
 )
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
-from . import maths, shock_figures, weak
+from . import chain_page, maths, shock_figures, weak
 from .axes import log_axes
 from .drag import DragLine
 from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height
@@ -58,7 +58,7 @@ from .notes_view import NotesBrowser
 from .panels import spin
 from .plots import decimate
 from .recompute import Recompute
-from .style import MAX_DOF, colors
+from .style import colors
 from .tab_groups import LazyTabs
 from .theming import add_legend, mute
 
@@ -640,12 +640,6 @@ def knee_for(result: ModalResult) -> float:
     return _nice(max((m.fn_hz for m in result.modes if m.fn_hz > 0), default=5.0))
 
 
-def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
-    return a.n == b.n and all(
-        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
-    )
-
-
 def _nice(x: float) -> float:
     e = 10.0 ** math.floor(math.log10(x))
     return min((m * e for m in (1, 2, 5, 10)), key=lambda v: abs(math.log(v / x)))
@@ -676,10 +670,7 @@ class ShockPage(QtWidgets.QWidget):
         # --- left: the pulse, the spectrum, things to try
         box = QtWidgets.QGroupBox("Pulse")
         form = form_layout(box)
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         form.addRow("Number of masses:", self.dof)
         self.shape = QtWidgets.QComboBox()
         for s in Shape:
@@ -705,10 +696,9 @@ class ShockPage(QtWidgets.QWidget):
         self.pulse_info.setWordWrap(True)
         mute(self.pulse_info)
         form.addRow(self.pulse_info)
-        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
-        mute(link)
-        link.setWordWrap(True)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         form.addRow(link)
 
         spec_box = QtWidgets.QGroupBox("Spectrum")
@@ -904,9 +894,7 @@ class ShockPage(QtWidgets.QWidget):
         self.system = linear(system)
         self.result = modal_analysis(self.system) if result is None or system.friction.any() else result
         self._loading = True
-        self.dof.blockSignals(True)
-        self.dof.setValue(system.n)
-        self.dof.blockSignals(False)
+        chain_page.show_count(self.dof, system.n)
         if n_changed:
             mass = self.mass.currentIndex()
             self.mass.clear()
@@ -929,9 +917,7 @@ class ShockPage(QtWidgets.QWidget):
         t = ShockSetup(**setup)
         system = t.system()
         if system is not None:
-            self.system_requested.emit(system)
-            if self.system is None or not _same_chain(self.system, system):
-                self.set_system(system)  # nobody passed it back: show it here alone
+            chain_page.hand_over(self, system)
         self._load(t)
 
     def _load(self, t: ShockSetup) -> None:

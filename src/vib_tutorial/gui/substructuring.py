@@ -38,7 +38,7 @@ from ..core import (
 from ..core.practice import Problem, Question, Requirement, at_most, number, pick
 from ..core.substructure import METHOD_SHORT, SUBSTRUCTURE_NAMES
 from ..view_models.text import number as sig
-from . import coalesce, weak
+from . import chain_page, coalesce, weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
@@ -1079,10 +1079,7 @@ class SubstructuringPage(QtWidgets.QWidget):
 
         box = QtWidgets.QGroupBox("Component mode synthesis")
         form = form_layout(box)
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         form.addRow("Number of masses:", self.dof)
         self.method = QtWidgets.QComboBox()
         for m, text in zip(
@@ -1132,10 +1129,9 @@ class SubstructuringPage(QtWidgets.QWidget):
         presets.addWidget(guyan)
         presets.addWidget(exact)
         form.addRow(presets)
-        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
-        link.setWordWrap(True)  # on one line it set the pane's minimum, leaving the tabs too little on macOS
-        mute(link)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         form.addRow(link)
 
         self.schematic = SubstructureSchematic()
@@ -1328,9 +1324,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         trial = TRIALS[index]
         self.trials.show_note(trial.note)
         system = trial.system()
-        self.system_requested.emit(system)
-        if self.system is None or self.system.n != system.n or not np.allclose(self.system.stiffness, system.stiffness):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         if self._dirty:
             self.refresh()
         self._kept_wanted = [trial.kept[min(s, len(trial.kept) - 1)] for s in range(len(SUB_NAMES))]
@@ -1364,9 +1358,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         t = CmsTrial("", "", **setup)
         system = t.system()
         self.trials.show_note("")
-        self.system_requested.emit(system)
-        if self.system is None or self.system.n != system.n or not np.allclose(self.system.stiffness, system.stiffness):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         self._kept_wanted = [t.kept[min(s, len(t.kept) - 1)] for s in range(len(SUB_NAMES))]
         self.method.blockSignals(True)
         self.method.setCurrentIndex(self.method.findData(t.method))
@@ -1474,9 +1466,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         n = self.system.n
         self._updating = True
         try:
-            self.dof.blockSignals(True)
-            self.dof.setValue(n)
-            self.dof.blockSignals(False)
+            chain_page.show_count(self.dof, n)
             self._sync_controls(n)
         finally:
             self._updating = False
