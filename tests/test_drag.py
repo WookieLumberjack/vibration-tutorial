@@ -495,3 +495,37 @@ def test_a_pluckable_body_is_taken_pulled_and_let_go_with_the_mouse(main_window,
     assert view.held is False and seen == ["grabbed", "released"]
     view.grabbed.disconnect()
     view.released.disconnect()
+
+
+@pytest.mark.parametrize("page", ["frame_page", "rotor_builder_page"])
+def test_a_builders_canvas_turns_mouse_and_keys_into_edits(main_window, app, page, monkeypatch):
+    """`edit_canvas.EditCanvas` (#409 S-12): a press, a drag and a release reach the canvas's `press`, `drag_to`
+    and `release` in view coordinates; Delete is `delete_selected`, Esc `cancel`; the wheel is left to the page."""
+    from PySide6.QtTest import QTest
+
+    from vib_tutorial.gui.edit_canvas import EditCanvas
+
+    w = main_window
+    w.resize(1280, 800)
+    w.show_page(page)
+    p = getattr(w, page)
+    canvas = next(c for c in p.findChildren(QtWidgets.QWidget) if isinstance(c, EditCanvas))
+    for _ in range(5):
+        app.processEvents()
+    calls: list[str] = []
+    monkeypatch.setattr(
+        canvas, "press", lambda point, right=False: calls.append(f"press {'right' if right else 'left'}")
+    )
+    monkeypatch.setattr(canvas, "drag_to", lambda point: calls.append("drag"))
+    monkeypatch.setattr(canvas, "release", lambda: calls.append("release"))
+    monkeypatch.setattr(canvas, "delete_selected", lambda: calls.append("delete"))
+    monkeypatch.setattr(canvas, "cancel", lambda: calls.append("cancel"))
+    middle = canvas.viewport().rect().center()
+    QTest.mousePress(canvas.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=middle)
+    QTest.mouseMove(canvas.viewport(), middle + QtCore.QPoint(10, 0))
+    QTest.mouseRelease(canvas.viewport(), QtCore.Qt.MouseButton.LeftButton, pos=middle + QtCore.QPoint(10, 0))
+    QTest.mousePress(canvas.viewport(), QtCore.Qt.MouseButton.RightButton, pos=middle)
+    QTest.keyClick(canvas, QtCore.Qt.Key.Key_Delete)
+    QTest.keyClick(canvas, QtCore.Qt.Key.Key_Escape)
+    assert calls[:3] == ["press left", "drag", "release"] and "press right" in calls
+    assert calls[-2:] == ["delete", "cancel"] and canvas.hasFocus()
