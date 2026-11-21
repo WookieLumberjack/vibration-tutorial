@@ -45,6 +45,7 @@ from ..core.frame import (
 )
 from ..core.frame_response import LOAD_KINDS, Formulations, Load, LoadKind, Responses, formulations, responses
 from ..core.practice import number
+from ..core.undo import UndoStack
 from ..view_models.text import number as sig
 from . import frame_figures, plot_patches, weak
 from .challenge import ChallengeBox
@@ -394,8 +395,7 @@ class FramePage(QtWidgets.QWidget):
         self.running = True  # a mode swings on its own; the response waits for Start (_on_swing)
         self._phase = math.pi / 2  # a mode starts at its full swing
         self._played = 0.0  # s into the response's record
-        self._history: list[Frame] = []
-        self._future: list[Frame] = []
+        self.edits: UndoStack[Frame] = UndoStack()  # the frames before, for Undo and Redo
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -639,8 +639,7 @@ class FramePage(QtWidgets.QWidget):
         self, frame: Frame, record: bool = True, selection: tuple[str, int] | None = None, fit: bool = True
     ) -> None:
         if record and frame != self.frame:
-            self._history.append(self.frame)
-            self._future.clear()
+            self.edits.record(self.frame)
         self.frame = frame
         set_quietly(self.lumped, int(frame.lumped))
         set_quietly(self.theory, THEORIES.index(frame.theory))
@@ -668,19 +667,17 @@ class FramePage(QtWidgets.QWidget):
         self._fill_readout()
         self._draw_tabs()
         self._show_mode()
-        self.undo_button.setEnabled(bool(self._history))
-        self.redo_button.setEnabled(bool(self._future))
+        self.undo_button.setEnabled(self.edits.can_undo)
+        self.redo_button.setEnabled(self.edits.can_redo)
         self.loop.start()
 
     def undo(self) -> None:
-        if self._history:
-            self._future.append(self.frame)
-            self._set_frame(self._history.pop(), record=False)
+        if (back := self.edits.undo(self.frame)) is not None:
+            self._set_frame(back, record=False)
 
     def redo(self) -> None:
-        if self._future:
-            self._history.append(self.frame)
-            self._set_frame(self._future.pop(), record=False)
+        if (forward := self.edits.redo(self.frame)) is not None:
+            self._set_frame(forward, record=False)
 
     def _on_edit(self, frame: Frame, selection) -> None:
         self._set_frame(frame, selection=selection)

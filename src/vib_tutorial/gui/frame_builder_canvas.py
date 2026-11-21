@@ -16,6 +16,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.frame import MAX_NODES, TWO_PI, Element, Frame, Kind, Support, member_curve
 from ..core.frame_response import Load
 from . import coalesce
+from .edit_canvas import EditCanvas
 from .style import colors
 
 NODE_PX, ELEMENT_PX = 10, 7  # how near a click has to be to pick a node or an element
@@ -200,7 +201,7 @@ def _segment_distance(p: np.ndarray, a: np.ndarray, b: np.ndarray) -> float:
 
 
 # ------------------------------------------------------------------ the canvas
-class FrameCanvas(pg.PlotWidget):
+class FrameCanvas(EditCanvas, pg.PlotWidget):
     """The frame on its grid; builds it with the tool picked. Emits `edited(frame, picked)` for every change and
     `picked(selection)` when the selection changes: ("node", i), ("element", k) or None."""
 
@@ -436,38 +437,10 @@ class FrameCanvas(pg.PlotWidget):
         self.pending = None
         self._commit(f, None)
 
-    def _view_point(self, event) -> np.ndarray:
-        scene = self.mapToScene(event.position().toPoint())
-        p = self.getPlotItem().getViewBox().mapSceneToView(scene)
-        return np.array([p.x(), p.y()])
-
-    def mousePressEvent(self, event) -> None:
-        self.setFocus()
-        self.press(self._view_point(event), right=event.button() == QtCore.Qt.MouseButton.RightButton)
-        event.accept()
-
-    def mouseMoveEvent(self, event) -> None:
-        self.drag_to(self._view_point(event))
-        event.accept()
-
-    def mouseReleaseEvent(self, event) -> None:
-        self.release()
-        event.accept()
-
-    def mouseDoubleClickEvent(self, event) -> None:
-        event.accept()
-
-    def wheelEvent(self, event) -> None:
-        event.ignore()  # the page scrolls; the view fits the frame
-
-    def keyPressEvent(self, event) -> None:
-        if event.key() == QtCore.Qt.Key.Key_Escape:
-            self.pending = None
-            self.draw()
-        elif event.key() in (QtCore.Qt.Key.Key_Delete, QtCore.Qt.Key.Key_Backspace):
-            self.delete_selected()
-        else:
-            super().keyPressEvent(event)
+    def cancel(self) -> None:
+        """Esc: drop the element half drawn."""
+        self.pending = None
+        self.draw()
 
     # --------------------------------------------------------- drawing
     @coalesce.coalesced(leaf=True)
