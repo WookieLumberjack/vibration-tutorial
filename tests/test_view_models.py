@@ -259,8 +259,8 @@ def test_numbers_print_one_way():
     from vib_tutorial.gui.continuum import fmt_hz
     from vib_tutorial.gui.continuum_waves_view import _fmt_time
     from vib_tutorial.gui.energy import fmt_energy
-    from vib_tutorial.gui.rotor_rub import _fmt_um
     from vib_tutorial.gui.rotor_readouts import fmt_len
+    from vib_tutorial.gui.rotor_rub import _fmt_um
     from vib_tutorial.gui.torsional_startup_view import fmt_torque
     from vib_tutorial.view_models.duffing import fmt_length, sig3
     from vib_tutorial.view_models.text import entry, fixed, fmt, number, plain
@@ -276,7 +276,12 @@ def test_numbers_print_one_way():
     # no e-notation (#409 U-17): separators from 10,000, a power of ten only past 10⁹ or below 10⁻⁵
     assert number(7363, 4) == "7363" and number(56_820, 4) == "56,820" and number(1.0343e5, 5) == "103,430"
     assert number(4.62e-7) == "4.62×10⁻⁷" and number(1.2e12) == "1.2×10¹²" and number(2.5e-5) == "0.000025"
-    assert entry(3e-12, scale=100.0) == "0" and entry(1.25e8) == "125,000,000" and entry(1.25e10) == "1.25×10¹⁰" and entry(-0.5) == "-0.5"
+    assert (
+        entry(3e-12, scale=100.0) == "0"
+        and entry(1.25e8) == "125,000,000"
+        and entry(1.25e10) == "1.25×10¹⁰"
+        and entry(-0.5) == "-0.5"
+    )
     assert fmt_energy(0.0) == "0 J" and fmt_energy(2e-12) == "2 pJ" and fmt_energy(3e-4) == "300 µJ"
     assert (
         plain(0.6612, "g", 4) == "0.6612 g"
