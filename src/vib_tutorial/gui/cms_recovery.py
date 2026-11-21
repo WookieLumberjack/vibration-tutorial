@@ -16,10 +16,11 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core import CMSModel
 from ..core.back_expansion import RECOVERIES, RECOVERY_NAMES, Recovery, RecoveryResponse
+from ..view_models.record import SampleBuffer
 from ..view_models.text import number as sig
 from . import coalesce
 from .animation import ChainView
-from .cms_time import MIN_SPAN, CMSRunView, SampleBuffer, _fmt
+from .cms_time import MIN_SPAN, CMSRunView, _fmt
 from .layouts import FlowLayout, group
 from .live_label import LiveLabel
 from .plots import decimate

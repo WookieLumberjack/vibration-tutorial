@@ -603,7 +603,7 @@ def test_decimator_picks_are_sorted_and_unique():
 def test_history_offset_numbers_samples():
     import numpy as np
 
-    from vib_tutorial.gui.history import ENERGY_COLUMNS, History
+    from vib_tutorial.view_models.record import ENERGY_COLUMNS, History
 
     h = History(1, capacity=100)
     count = 0
