@@ -5,10 +5,10 @@ from __future__ import annotations
 from PySide6 import QtWidgets
 
 from . import background_figures
-from .lesson import trials_html
 from .links import load_notes
 from .notes_view import NotesBrowser
 from .sim_trials import TRIALS
+from .trials_text import trials_html
 
 COUPLING_TIP = (
     "<p><b>Coupling index</b> = the largest off-diagonal term of the modal damping "

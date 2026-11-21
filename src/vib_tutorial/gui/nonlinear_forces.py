@@ -42,12 +42,12 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .recompute import Recompute
 from .style import MAX_DOF, colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_DISTORTION, TAB_LCURVE, TAB_PICARD, TAB_THEORY = range(4)
 BAND = (0.6, 1.6)  # the stepped sine's band, as multiples of the mode's frequency

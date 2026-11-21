@@ -19,7 +19,7 @@ from ..view_models.text import number as sig
 from . import coalesce
 from .animation import ChainView
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout, group, wrapped
+from .layouts import FlowLayout, ResetButton, group, wrapped
 from .live_label import LiveLabel
 from .panels import spin
 from .plots import decimate
@@ -74,7 +74,7 @@ class CMSRunView(QtWidgets.QWidget):
         self.duration = spin(1e-4, 10.0, 0.05, 4, " s")
         self.button = QtWidgets.QPushButton()
         self.button.setMinimumWidth(130)
-        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button = ResetButton()
         self.reset_button.setToolTip("Both models back to rest, force off")
         self.speed = QtWidgets.QComboBox()
         for s in SPEEDS:

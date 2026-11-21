@@ -45,11 +45,11 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_LINES, TAB_REST, TAB_CONVERGENCE = range(3)
 POINTS = 1200  # per period drawn

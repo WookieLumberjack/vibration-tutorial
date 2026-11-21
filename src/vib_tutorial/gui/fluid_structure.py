@@ -85,13 +85,13 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .recompute import Recompute
 from .style import colors
 from .tab_groups import LazyTabs, tucked_away
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_BODY, TAB_PLATE, TAB_SLOSH, TAB_DAMPER = range(4)
 GRID = 161  # points across the flow picture

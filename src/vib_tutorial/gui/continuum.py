@@ -53,7 +53,7 @@ from . import continuum_figures
 from .continuum_waves_view import WavesView
 from .frame_loop import FrameLoop
 from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height, wrapped
-from .lesson import RunButton, TrialBox, cell, fmt, plot, trials_html
+from .lesson import RunButton, TrialBox, cell, fmt, plot
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -61,6 +61,7 @@ from .style import colors
 from .tab_groups import LazyTabs
 from .theming import add_legend
 from .transport import Transport
+from .trials_text import trials_html
 
 CUSTOM = "Custom"
 ALL_PRESETS = (*PRESETS, *WAVE_PRESETS)

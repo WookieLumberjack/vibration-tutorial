@@ -51,12 +51,12 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 from .transport import Transport
+from .trials_text import trials_html
 
 TAB_RAINFLOW, TAB_RANGES, TAB_DAMAGE, TAB_SN = range(4)
 RF_SHOW = 20  # the record's first reversals, counted a step at a time

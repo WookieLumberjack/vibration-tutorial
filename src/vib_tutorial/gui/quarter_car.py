@@ -47,13 +47,13 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .playback import Playback
 from .quarter_car_view import QuarterCarView
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_TRADEOFF, TAB_DAMPER, TAB_DRIVE = range(3)
 DAMPERS = np.geomspace(150.0, 10e3, 48)  # N·s/m

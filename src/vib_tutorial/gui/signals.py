@@ -49,13 +49,13 @@ from .lesson import (
     plot,
     readout_label,
     set_quietly,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .plots import decimate
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 KINDS = list(Kind)
 BLOCKS = tuple(2**k for k in range(6, 15))  # 64 … 16384 samples

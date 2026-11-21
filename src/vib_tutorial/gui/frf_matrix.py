@@ -28,14 +28,15 @@ from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analys
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from ..view_models.text import number as sig
 from . import chain_page, coalesce, frf_figures, weak
-from .layouts import form_layout, wrapped
-from .lesson import RunButton, TrialBox, three_panes, trials_html
+from .layouts import ResetButton, form_layout, wrapped
+from .lesson import RunButton, TrialBox, three_panes
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .plots import frequency_grid
 from .style import colors
 from .theming import add_legend, mute
 from .transport import Transport
+from .trials_text import trials_html
 
 # Colours: the full solution in colors.strong; the sum of the modal terms, the
 # selected cells and the worst band in colors.force.
@@ -919,7 +920,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self.build_play = RunButton()
         self.build_play.setToolTip(BUILD_TIP)
         self.build_play.toggled.connect(self._on_build_play)
-        self.build_reset = QtWidgets.QPushButton("Reset")
+        self.build_reset = ResetButton()
         self.build_reset.setToolTip(BUILD_TIP)
         self.build_reset.clicked.connect(self._on_build_reset)
         build_run = QtWidgets.QHBoxLayout()

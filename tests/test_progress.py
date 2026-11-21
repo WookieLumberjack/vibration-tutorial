@@ -43,14 +43,14 @@ def test_a_goal_ticks_its_trial_and_problem_and_itself_once_both_are_done(record
 
 
 def test_an_answered_predictions_note_shows_in_the_theorys_list(record):
-    from vib_tutorial.gui import lesson
+    from vib_tutorial.gui import trials_text
 
     class Trial:
         name = "A trial"
         note = "Because of the damping."
         predict = Prediction("Which way?", ("up", "down"), 0, why=("", "Not down."))
 
-    html = lesson.trials_html([Trial()])
+    html = trials_text.trials_html([Trial()])
     assert "Because of the damping" not in record.marks(html) and "Pick it to answer" in record.marks(html)
     record.mark_answered("Which way?")
     shown = record.marks(html)

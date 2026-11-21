@@ -39,7 +39,7 @@ from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from . import weak
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout, form_layout, form_row, group, plot_height, show_in_stack, wrapped
+from .layouts import FlowLayout, ResetButton, form_layout, form_row, group, plot_height, show_in_stack, wrapped
 from .lesson import RunButton, connect_all, plot, set_quietly
 from .live_label import LiveLabel
 from .panels import spin
@@ -136,7 +136,7 @@ class StartUpView(QtWidgets.QWidget):
         form_row(stf, "Run for:", self.duration, TIPS["duration"])
         row = FlowLayout()
         self.pause_button = RunButton()
-        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button = ResetButton()
         self.reset_button.setToolTip("<p>The train back at rest, waiting for Start.</p>")
         self.playback = QtWidgets.QComboBox()
         self.playback.setAccessibleName("Playback speed")

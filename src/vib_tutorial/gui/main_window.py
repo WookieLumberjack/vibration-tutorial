@@ -31,6 +31,7 @@ from . import (
 from .challenge import ChallengeBox
 from .ink import InkOverlay
 from .ink import Mode as InkMode
+from .layouts import ResetButton
 from .lesson import RunButton, TabRoom, TrialBox, TrialCombo
 from .notes_view import NotesBrowser
 from .plot_export import install as install_plot_menus
@@ -465,9 +466,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if chain is not None and not chain.same_as(self.sim_page.sim.system):
                 params.set_system(chain.copy())
         if any(run.isChecked() or run.started for run in page.findChildren(RunButton)):
-            for button in page.findChildren(QtWidgets.QPushButton):
-                if button.text() == "Reset":  # beside its Start: back to t = 0, waiting for Start
-                    button.click()
+            for button in page.findChildren(ResetButton):  # beside its Start: back to t = 0, waiting for Start
+                button.click()
         for combo in page.findChildren(TrialCombo):
             combo.unpick()
         for box in page.findChildren(TrialBox):

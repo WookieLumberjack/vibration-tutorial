@@ -57,12 +57,12 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .recompute import Recompute
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_HISTOGRAM, TAB_MODES, TAB_FORCED = range(3)
 TWO_PI = 2.0 * math.pi

@@ -273,3 +273,10 @@ def wrapped(text: str = "", muted: bool = False) -> QtWidgets.QLabel:
     if muted:
         mute(label)
     return label
+
+
+class ResetButton(QtWidgets.QPushButton):
+    """A motion's Reset, back to t = 0 at rest: Defaults finds a page's by its type (#409 S-15), not its text."""
+
+    def __init__(self, text: str = "Reset", parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__(text, parent)

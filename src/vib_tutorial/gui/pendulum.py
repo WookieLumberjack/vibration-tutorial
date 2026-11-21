@@ -52,13 +52,13 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .pendulum_view import PendulumView
 from .playback import Playback
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 TAB_PERIOD, TAB_PHASE, TAB_PIVOT = range(3)
 SWINGS = 8  # linear periods drawn

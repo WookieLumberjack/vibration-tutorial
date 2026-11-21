@@ -45,7 +45,6 @@ from .lesson import (
     plot,
     readout_label,
     set_quietly,
-    trials_html,
 )
 from .links import course_map, keys_html, load_notes, page_link, paths_html
 from .notes_view import NotesBrowser
@@ -53,6 +52,7 @@ from .playback import Playback
 from .plots import decimate
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 POINTS = 3000  # samples on each time plot
 COMPARE_ZETAS = (0.1, 1.0, 2.0)  # the damping ratios drawn side by side

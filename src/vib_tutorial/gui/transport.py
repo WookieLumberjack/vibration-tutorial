@@ -24,6 +24,7 @@ from shiboken6 import isValid
 
 from ..view_models.text import number as sig
 from . import recompute, theming
+from .layouts import ResetButton
 
 POLL_MS = 150  # how often the bar reads the page's controls back
 
@@ -186,7 +187,7 @@ class TransportBar(QtWidgets.QFrame):
         self.run.setToolTip("<p>Start, pause or resume the page's motion (Space).</p>")
         self.run.setAccessibleName("Start or pause")
         self.run.clicked.connect(self._on_run)
-        self.reset = QtWidgets.QPushButton("Reset")
+        self.reset = ResetButton()
         self.reset.setToolTip("<p>Back to t = 0, at rest, waiting for Start.</p>")
         self.reset.clicked.connect(self._on_reset)
         self.speed_label = QtWidgets.QLabel("Speed:")

@@ -51,11 +51,11 @@ from .lesson import (
     set_quietly,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
+from .trials_text import trials_html
 
 BEAM, RECT, CIRCLE = range(3)
 STRUCTURES = ("Thick beam (simply supported)", "Rectangular plate (simply supported)", "Circular plate (clamped)")

@@ -1,7 +1,17 @@
-"""Pieces the One mass pages and the Signals & spectra page share: plots, the Things to try box, numbers.
+"""Pieces every lesson page builds from (#409 S-15: it began as the One mass pages' and grew to all of them).
 
-Each of those pages has its own small model (core/sdof.py and the modules built on it), works its plots
-out in closed form or by the exact step when a control changes, and has no frame loop of its own.
+- Plots and markers: `plot` (a faint grid, no menu, log axes if asked, `height`), `relabel`, `marker`/`mark`,
+  `Dot` (a marker moved every frame), `cell` (a table's number), `note_label`/`readout_label`, `StartHint`.
+- The Things to try: `TrialCombo`, `TrialSteps` (◂ ▸), `TrialBox` (the combo, its note and its prediction);
+  their Theory list is `trials_text.trials_html`, without Qt.
+- Controls: `Form` (a titled form whose boxes name themselves), `combo`, `set_quietly`, `connect_all`, and
+  `RunButton` (Start / Pause / Resume; a motion's Reset is `layouts.ResetButton`).
+- Layout: `three_panes` (the page's controls, plots and tabs, folded by Present mode), `column`, `stack`,
+  `TabRoom` (room for the right-hand tabs and the notes), `theory` (the Theory tab's `NotesBrowser`).
+- Re-exported for the pages: `fmt` and `db` (`view_models/text.py`), `LiveLabel`.
+
+Working on it: no module of its own; `tests/test_gui_smoke.py` (`test_lesson_pages_trials_and_tabs`, the
+TrialCombo and RunButton tests), `test_drag.py` and `test_plots.py` check its pieces through the pages.
 """
 
 from __future__ import annotations
@@ -499,22 +509,6 @@ class TrialBox(QtWidgets.QGroupBox):
         with coalesce.batch():  # the page's redraws once, with the whole trial loaded
             self.picked.emit(i)
         self._record(i, answered)
-
-
-def trials_html(trials) -> str:
-    """The trials as the Theory tab lists them: a trial with a prediction by its question alone, as its note
-    gives the answer away (#409 C-9), and the notes are where a page first opens (`MainWindow.introduce_pages`)."""
-
-    def item(t) -> str:
-        p = getattr(t, "predict", None)
-        if p is not None:  # its note once its prediction has been answered (progress.marks)
-            key = progress.prompt_key(p.prompt)
-            progress.NOTES[key] = markup(t.note)
-            ask = f"<i>Predict first: {markup(p.prompt)}</i>"
-            return f"<li><b>{t.name}.</b> {ask} Pick it to answer and see.{progress.ANSWER.format(key)}</li>"
-        return f"<li><b>{t.name}.</b> {markup(t.note)}</li>"
-
-    return "<ol>" + "".join(item(t) for t in trials) + "</ol>"
 
 
 class Form(QtWidgets.QGroupBox):

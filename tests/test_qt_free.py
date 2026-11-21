@@ -31,6 +31,12 @@ COURSE_DATA = [
         "rotor_practice",
         "rotor_tips",
         "deriving_text",
+        "trials_text",  # the Things to try as the Theory lists them (#409 S-3)
+        "matrix_table",  # the notes' matrices (#409 S-13)
+        "cms_notes",
+        "coupling_notes",
+        "rotor_notes",
+        "rotor_readouts",
         "equations_snapshot",
         "figures",  # the notes' figures as SVG (#316 D7), measured by font_metrics
         "font_metrics",

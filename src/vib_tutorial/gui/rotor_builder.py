@@ -61,7 +61,7 @@ from ..view_models.text import number as sig
 from . import rotor_builder_figures, settle_plots, weak
 from .frame_builder import matrix_html
 from .frame_loop import SWING_MS, FrameLoop
-from .layouts import FitColumns, FlowLayout, group
+from .layouts import FitColumns, FlowLayout, ResetButton, group
 from .lesson import (
     TAB_ROOM,
     Form,
@@ -76,7 +76,6 @@ from .lesson import (
     set_quietly,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes
 from .recompute import Recompute
@@ -100,6 +99,7 @@ from .rotor_builder_views import TOOL_HINTS, TOOLS, RotorCanvas, Tool, WhirlView
 from .style import colors
 from .theming import add_legend, mute
 from .transport import Transport
+from .trials_text import trials_html
 
 SWEEP_TABS = (TAB_CAMPBELL, TAB_UNBALANCE, TAB_STABILITY)
 RESPONSE_SPEEDS = 241  # the unbalance response's speeds, 0 to the top one
@@ -500,7 +500,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.run_button = RunButton()
         self.run_button.set_running(True)
         self.run_button.setToolTip(TIPS["animate"])
-        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button = ResetButton()
         self.reset_button.setToolTip("<p>Back to the start of the whirl.</p>")
         buttons = QtWidgets.QHBoxLayout()
         buttons.addWidget(self.run_button)

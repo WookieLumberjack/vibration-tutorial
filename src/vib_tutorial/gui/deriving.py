@@ -61,6 +61,7 @@ from .deriving_text import (
     num,
 )
 from .frame_loop import FrameLoop
+from .layouts import ResetButton
 from .lesson import (
     TAB_ROOM,
     Dot,
@@ -77,12 +78,12 @@ from .lesson import (
     stack,
     theory,
     three_panes,
-    trials_html,
 )
 from .links import load_notes, page_link
 from .style import colors
 from .theming import add_legend
 from .transport import Transport
+from .trials_text import trials_html
 
 SYSTEMS = ("A car in bounce and pitch", "A double pendulum")
 SYSTEM_TABS = {  # the tabs each system shows
@@ -1014,7 +1015,7 @@ class DerivingPage(QtWidgets.QWidget):
         show.add("Show:", self.show_box, TIPS["show"])
         self.run_button = RunButton()
         self.run_button.set_running(True)  # a mode swings on its own; the motion waits for Start (_on_show)
-        self.reset_button = QtWidgets.QPushButton("Reset")
+        self.reset_button = ResetButton()
         self.reset_button.setToolTip("<p>The motion back to t = 0, waiting for Start.</p>")
         buttons = QtWidgets.QHBoxLayout()
         buttons.addWidget(self.run_button)

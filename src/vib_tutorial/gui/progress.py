@@ -19,16 +19,16 @@ Working on it: `tests/test_progress.py`. Reset progress (the Practice window's) 
 from __future__ import annotations
 
 import re
-import zlib
 
 from .theming import settings
+from .trials_text import ANSWER as ANSWER  # re-exported: the trials' Theory list and `marks`
+from .trials_text import NOTES as NOTES
+from .trials_text import prompt_key as prompt_key
 
 SOLVED = "practice/solved"  # "page/key" of each problem solved
 TRIED = "progress/tried"  # "page#n" of each trial tried
 ANSWERED = "progress/answered"  # the prompt key of each prediction answered
 
-NOTES: dict[str, str] = {}  # a predicted trial's note (rich text), by its prompt's key: `lesson.trials_html` fills it
-ANSWER = "<!--ANSWER:{}-->"  # where a predicted trial's note goes in the Theory's list once it's answered
 _version = 0
 
 
@@ -68,10 +68,6 @@ def mark_solved(page: str, key: str) -> None:
 def mark_tried(page: str, number: int) -> None:
     """Trial `number` (from 1, as the page lists them) of page `page` tried."""
     _add(TRIED, f"{page}#{number}")
-
-
-def prompt_key(prompt: str) -> str:
-    return f"{zlib.crc32(prompt.encode('utf-8')):08x}"
 
 
 def mark_answered(prompt: str) -> None:
