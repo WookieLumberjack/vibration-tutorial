@@ -1217,8 +1217,8 @@ SYMBOLS = (
         "z, |z|<sub>max</sub>",
         "an oscillator's displacement relative to the base; its largest",
         "m",
-        "shock_page",
-        "srs",
+        "signals_page",
+        "transducers",
     ),
     Symbol(
         "pseudo",
@@ -1634,7 +1634,7 @@ SYMBOLS = (
         "complex_page",
         "how-complex",
     ),
-    Symbol("psd", "G, S", "power spectral density (one-sided G)", "unit²/Hz", "random_page"),
+    Symbol("psd", "G, S", "power spectral density (one-sided G)", "unit²/Hz", "signals_page", "scaling"),
     Symbol("sigma", "σ", "RMS (standard deviation) of a random response", "as the response", "random_page"),
     Symbol(
         "psd_io",
@@ -1689,8 +1689,8 @@ SYMBOLS = (
         "T, B",
         "a record's (or a stretch's) length; the response's bandwidth",
         "s, Hz",
-        "random_page",
-        "statistics",
+        "signals_page",
+        "dft-lines",
     ),
     Symbol(
         "n_avg",

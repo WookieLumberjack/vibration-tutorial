@@ -1,6 +1,6 @@
-[Contents](../README.md#contents) · [Foundations](foundations.md) →
+[Contents](../README.md#contents) · [Equations](equations.md) →
 
-# One mass
+# One oscillator
 
 The first group works on a single mass on a spring and a damper, each page with its own small model,
 worked out in closed form or by the same exact first-order-hold step as the chain, as soon as a control
@@ -10,10 +10,10 @@ The pages in the order the app's tabs take them.
 
 - [Single oscillator](#single-oscillator): one mass on a spring and a damper: free decay, damping, resonance, half-power, beats, poles
 - [Pendulums](#pendulums): gravity as the spring, large swings that soften, and the rotational form of every one-mass formula
-- [Transient response](#transient-response): an impulse, a step or a pulse: the impulse response, convolution, and how long a pulse has to be
-- [Periodic forcing](#periodic-forcing): a repeating force as a Fourier series: harmonics, Gibbs, resonance through a harmonic
 - [Damping models](#damping-models): viscous, hysteretic, friction and viscoelastic damping: their loops, losses and decays
 - [Vibration isolation](#vibration-isolation): a machine on mounts: transmissibility, static deflection, damping, two stages, start-up
+- [Transient response](#transient-response): an impulse, a step or a pulse: the impulse response, convolution, and how long a pulse has to be
+- [Periodic forcing](#periodic-forcing): a repeating force as a Fourier series: harmonics, Gibbs, resonance through a harmonic
 
 ## Single oscillator
 
@@ -38,27 +38,6 @@ buckles once gravity's negative stiffness beats the spring. The pendulum itself 
 beside the linearized swing's ghost; turn it and let go to start it from there.
 
 ![Pendulums page, large swings: a 1 m pendulum (T₀ = 2.006 s) let go from 90°, drawn 0.7 s in beside the linearized swing's ghost, swings with a period of 2.368 s, 18 % longer (Duffing's estimate +20.2 %), and the linearized swing drifts ahead of it](images/pendulums.png)
-
-## Transient response
-
-An impulse, a step, a ramp, a rectangular or a half-sine pulse on the oscillator. The response is the
-convolution of the force with the impulse response h(t), and the page draws the integral itself at any
-instant (the force, h flipped and slid, and their product, whose area is the response there). Its tabs
-set h(t) beside its Fourier transform, the receptance; measure a step's overshoot and settling time; and
-plot each pulse's peak response against its length over the natural period, the shock spectrum's
-single-oscillator form. The Theory brings in the Laplace transform: the transfer function, its poles, and
-partial fractions back to time.
-
-![Transient response page, a 0.2 s rectangular pulse of 1 N: at t = 0.3 s the area under f(τ) h(t − τ) is −2.58 mm, the exact response there; the peak, 4.64 mm, is 1.85 times static at T/T<sub>n</sub> = 0.637, on the pulse spectrum's rectangle curve](images/transient_response.png)
-
-## Periodic forcing
-
-A force that repeats (a square, sawtooth or triangle wave, a rectified sine, a pulse or impulse train) as
-its Fourier series, each harmonic through H(kω₀), against the exact steady state (one period stepped
-from the state that repeats). The harmonics' bars, the Gibbs overshoot, how fast smooth and sharp waves
-converge, and resonance through a harmonic: a slow drive whose third harmonic sits on f<sub>n</sub>.
-
-![Periodic forcing page: a square wave at f<sub>n</sub>/3 = 1.06 Hz on the 3.18 Hz oscillator; its third harmonic swings the mass 10.6 mm, 89.7 % of the response's power, three times the fundamental's 3.58 mm, and seven harmonics come within 0.67 % of the exact steady state](images/periodic_forcing.png)
 
 ## Damping models
 
@@ -86,6 +65,27 @@ stopped, it rings on its mounts.
 
 ![Vibration isolation page: a 100 kg machine with a 0.01 kg·m unbalance on mounts that sag 5 mm (f<sub>n</sub> = 7.05 Hz, 423 rpm), run up to 1500 rpm in 2 s, the machine drawn at its largest swing, 0.8 s in, as it passes resonance; there the floor force peaks at 111 N, and running, 22.6 N of the unbalance's 247 N reaches the floor, 90.8 % isolation](images/vibration_isolation.png)
 
+## Transient response
+
+An impulse, a step, a ramp, a rectangular or a half-sine pulse on the oscillator. The response is the
+convolution of the force with the impulse response h(t), and the page draws the integral itself at any
+instant (the force, h flipped and slid, and their product, whose area is the response there). Its tabs
+set h(t) beside its Fourier transform, the receptance; measure a step's overshoot and settling time; and
+plot each pulse's peak response against its length over the natural period, the shock spectrum's
+single-oscillator form. The Theory brings in the Laplace transform: the transfer function, its poles, and
+partial fractions back to time.
+
+![Transient response page, a 0.2 s rectangular pulse of 1 N: at t = 0.3 s the area under f(τ) h(t − τ) is −2.58 mm, the exact response there; the peak, 4.64 mm, is 1.85 times static at T/T<sub>n</sub> = 0.637, on the pulse spectrum's rectangle curve](images/transient_response.png)
+
+## Periodic forcing
+
+A force that repeats (a square, sawtooth or triangle wave, a rectified sine, a pulse or impulse train) as
+its Fourier series, each harmonic through H(kω₀), against the exact steady state (one period stepped
+from the state that repeats). The harmonics' bars, the Gibbs overshoot, how fast smooth and sharp waves
+converge, and resonance through a harmonic: a slow drive whose third harmonic sits on f<sub>n</sub>.
+
+![Periodic forcing page: a square wave at f<sub>n</sub>/3 = 1.06 Hz on the 3.18 Hz oscillator; its third harmonic swings the mass 10.6 mm, 89.7 % of the response's power, three times the fundamental's 3.58 mm, and seven harmonics come within 0.67 % of the exact steady state](images/periodic_forcing.png)
+
 ---
 
-[Contents](../README.md#contents) · [Foundations](foundations.md) →
+[Contents](../README.md#contents) · [Equations](equations.md) →

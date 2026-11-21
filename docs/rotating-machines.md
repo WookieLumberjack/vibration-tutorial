@@ -1,17 +1,49 @@
-← [Testing](testing.md) · [Contents](../README.md#contents)
+← [Nonlinear and flow](nonlinear-and-flow.md) · [Contents](../README.md#contents) · [Control](control.md) →
 
-# Beyond the chain
+# Rotating machines
+
+Spinning bodies: tops, drive trains, rotors on their bearings, and diagnosing a running machine.
 
 The pages in the order the app's tabs take them.
 
-- [Torsional vibration](#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
-- [Duffing & Mathieu](#duffing--mathieu): a nonlinear spring: jumps, chaos, and parametric resonance
-- [Fluid–structure](#fluidstructure): a body in water: added mass of spheres, cylinders, tubes in pipes and plates, wet against dry
-- [Self-excited vibration](#self-excited-vibration): negative damping and limit cycles: van der Pol, galloping, vortex-induced vibration and flutter
-- [Active control](#active-control): velocity feedback, collocation, spillover and actuator lag, against a tuned mass damper
 - [Gyroscope](#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
+- [Torsional vibration](#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
 - [Jeffcott rotor](#jeffcott-rotor): a spinning shaft: critical speeds, balancing, bearings, stability, rub
+- [Rotor builder](#rotor-builder): build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability
 - [Machinery diagnostics](#machinery-diagnostics): order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum
+
+## Gyroscope
+
+A spinning top with its tip held in a cup, from Euler's equations to the closed forms and a simulation.
+Lagrange's top keeps the spin and the angular momentum about the vertical, so the tilt moves on its own
+in an effective potential: steady precession at either root of I₁ cos θ φ'² − I₃ω₃φ' + mgl = 0, nutation
+between the turning points (the roots of a cubic, the period an elliptic integral), and the cusps, loops
+and waves the axis traces. Upright, the top sleeps above I₃ω₃ = 2√(I₁mgl). The 3D view steps the whole
+rigid body (a quaternion and L, split into gravity's moment and the free top, each exact), which doesn't
+mind the Euler angles' lock upright, and checks it against the closed forms. A square plate in place of
+the disc moves exactly as a disc of radius s/√3 does: its moment is the same about every line across its
+axis, so it is a symmetric top too. A rectangle isn't: with I₁ ≠ I₂ the spin isn't kept and every closed
+form goes. Without gravity Euler–Poinsot's solution in Jacobi's elliptic functions remains, and spun about its
+middle axis the plate flips over and back (the tennis-racket effect); with gravity there's none, and the
+*Chaos* tab's Poincaré section and two tops let go 10⁻⁸ rad apart show the motion turn chaotic. Its last section links the
+top's two precessions to the rotor's forward and backward whirl. The *Components* tab plots ω, L, τ and the inertia
+tensor as the top runs, in fixed axes, the body's or the axis frame (following the axis, not the spin): I is
+constant in the body's axes and turns in space, and L isn't along ω. Under the plot it writes out, at one
+instant, the rotation matrices that place the body, I in those axes, L = Iω and dL/dt + Ω × L = τ with the numbers;
+pause it and drag the line to pick the instant. The 3D view's *Axes* box draws the body's axes, the
+axis frame's or both on the top, so the two frames' difference, the spin about the axis, can be seen.
+
+Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant
+J = L·(a e₃ + R ẑ) survives it, so the energy sinks onto the least energy that J allows at each tilt:
+on a slippery table a disc on a round tip rises toward sleeping (until its tip starts to roll, at
+sin θ = μI₃/maR; on a rough one it rolls round a circle instead), and a tippe top turns over onto its
+top if 1 − α < I₁/I₃ < 1 + α, ending with its own spin reversed at the rate J gives.
+
+![Gyroscope page, a rectangular plate spun about its middle axis with gravity: it tumbles, the Poincaré section's dots scatter, and two tops let go 10⁻⁸ rad apart are a radian apart within 5 s](images/gyroscope_chaos.png)
+
+![Gyroscope page, a tippe top on a table: a 20 g ball weighted 4.5 mm below its centre, spun at 1200 rpm, has turned over in 2 s, its energy sunk onto the least that Jellett's constant allows, which is turned over](images/gyroscope_table.png)
+
+![Gyroscope page, let go at rest: a 0.5 kg disc 40 mm in radius, 30 mm up its stem, spun at 1500 rpm and let go at 30° nods between 30° and 31.48° 14.73 times a second while precessing at 2.392 rad/s, its axis tracing cusps](images/gyroscope.png)
 
 ## Torsional vibration
 
@@ -60,142 +92,6 @@ Started on a synchronous motor, the same compressor's poles pulse at 100 Hz at r
 runs up: they pass the 83.1 Hz mode at 254 rpm and the 38.9 Hz one at 916 rpm. The second rings the
 low-speed coupling up to 11.3 kN·m, 4.5× what it carries running, before the field pulls the motor
 into step at 1500 rpm.
-
-## Duffing & Mathieu
-
-The **Duffing & Mathieu** page drives one mass on a spring with a cubic term,
-m x″ + c x′ + k(1 + μ cos φ) x + k<sub>3</sub> x³ = F cos φ, that hardens (k<sub>3</sub> > 0) or
-softens (k<sub>3</sub> < 0) as it stretches, and sweeps the drive's frequency slowly up and down.
-The pump μ makes the stiffness itself pulse at that frequency (parametric excitation, the Mathieu
-equation), and a small random force gives an unstable rest something to grow from.
-
-- **Harmonic balance**: the first harmonic's steady amplitude against frequency, solid where
-  stable and dashed where not, with the backbone (the free oscillation's frequency at each
-  amplitude) and the linear spring's curve for comparison. Between the two folds there are three
-  amplitudes, the middle one unstable, and the arrows mark the jumps from each fold.
-- **Sweeps**: each drive cycle's measured first harmonic, coloured by the sweep's direction, on
-  top of the curve, with the measured jump frequencies beside the folds'. Hold the frequency
-  inside the band and *Start on a branch* puts the mass on the lower, middle or upper steady
-  state.
-- **Parametric resonance**: pumped, harmonic balance's half-harmonic response (rest, unstable
-  inside the tongue, and a cubic spring's swinging branches, in closed form), with each cycle's
-  measured ½X amplitude (both harmonics are taken over pairs of cycles, so a swing at Ω/2 doesn't
-  leak into the first).
-- **Ince–Strutt chart**: the pumped linear spring's growth rate against the pump's frequency and
-  depth at the page's damping, from the Floquet multipliers of every cell at once; the tongues
-  reach down to Ω = 2ω<sub>n</sub>/n, with harmonic balance's first tongue dashed over them.
-  Click to pump there.
-- **Phase plane**: the last few cycles' trajectory and, while the frequency is held, the
-  Poincaré section (the state once per drive cycle).
-- **Presets**: hardening and softening jumps, a linear spring for comparison, two stable states
-  at one frequency, a softening spring thrown over its potential's hilltop (the page pauses when
-  it escapes), parametric resonance on a linear spring (it grows until the page pauses) and on a
-  hardening one (it settles), a parametric sweep with its jump, and Ueda's chaotic oscillator.
-- **Notes**: harmonic balance, the backbone, the jump and its stability, sweep rate and
-  critical slowing down, superharmonics, subharmonics and chaos, parametric excitation,
-  Floquet theory and the Ince–Strutt chart.
-
-![Duffing & Mathieu page, hardening spring (k = 400 N/m, k3 = 10^5 N/m³, c = 1 N·s/m, F = 2 N) swept from 2 to 6 Hz and back at 120 s a leg: harmonic balance gives two stable amplitudes between the folds at 3.64 and 4.45 Hz; the sweep up rides the upper branch to 71 mm and drops at 4.62 Hz, the sweep down follows the lower branch and jumps up at 3.56 Hz](images/duffing_jump.png)
-
-A hardening spring's resonance leans toward higher frequencies, because a bigger swing is a
-stiffer one. Sweeping up, the mass rides the upper branch past the linear resonance (3.18 Hz) to
-its fold at 4.45 Hz, then drops to the lower branch. Sweeping down, it follows the lower branch to
-the other fold, at 3.64 Hz, and jumps up. Near a fold the steady state is barely stable, so a
-sweep overruns it before the mass leaves: here it drops at 4.62 Hz and jumps up at 3.56 Hz.
-
-![Parametric sweep on the hardening spring, no force, the stiffness pulsing ±30 %, swept down from 8 to 5 Hz from rest and back up at 180 s a leg: rest is unstable between 5.89 and 6.80 Hz; sweeping down it stays at rest to 6.57 Hz, then jumps up to the branch; back up it grows at 6.11 Hz and rides the branch to 62 mm at 8 Hz, far past the tongue. Beside it the Ince–Strutt chart at ζ = 2.5 %, its first tongue's tip lifted to μ = 0.1](images/mathieu_sweep.png)
-
-Pump the spring's stiffness instead of pushing the mass and rest itself turns unstable near twice
-the natural frequency: the mass swings at half the pump's frequency. On a linear spring the swing
-grows for ever (as e<sup>0.05ω<sub>n</sub>t</sup> with μ = 0.3 and ζ = 2.5 %, which the
-simulation and the Floquet multipliers agree on), and damping needs a pump deeper than 4ζ to
-start it. A hardening spring's swing detunes itself out of the tongue and settles, which makes a
-jump of its own: sweeping down from rest, nothing happens until rest turns unstable at the
-tongue's upper edge, and then the swing leaps up to a branch that the sweep back up rides far past
-the tongue.
-
-## Fluid–structure
-
-What water does to a vibrating body. A body accelerating in a fluid has to push some of the fluid about,
-and that flow's kinetic energy makes it behave as if it were heavier: its **added mass**. In open fluid a
-sphere carries half the fluid it displaces and a cylinder all of it; the centre shows the potential flow
-round the body, and how fast it falls off with distance. Inside a pipe, the fluid has to squeeze through
-the gap, and the added mass grows without bound as the gap closes. The fluid adds no stiffness, so on its
-springs the body's frequency falls by √(m/(m + m<sub>a</sub>)), set by the body's density against the
-fluid's.
-
-The *Plate* tab gives each mode of a baffled plate its own added mass, from the fluid's
-pressure for each wavenumber in the mode's shape, and its AVMI factor β: a 3 mm steel panel in water
-carries eight times its modal mass in its fundamental, and falls to a third of its frequency in air.
-Higher modes carry less, as the fluid sloshes between their cells.
-
-![Fluid–structure page: a 25 mm steel rod moving across its axis in water; centre, the potential flow round it (speed in colour, streamlines) and the fluid's speed ahead of it falling as R²/r²; right, the added-mass coefficient against a pipe's radius (1 in open water, growing as the gap closes) and the frequency's fall against the densities' ratio, 20 Hz to 18.8 Hz](images/fluid_structure.png)
-
-A liquid with a free surface has modes of its own. The *Sloshing* tab puts it in a rectangular tank
-(the centre then shows the tank: the surface at its extremes and the flow as it passes level). The
-modes' frequencies follow ω² = gk tanh(kh), so a shallow tank's first mode runs at √(gh)/2L and a deep
-one's stops depending on depth. Under a sideways motion the tank behaves as a **spring–mass analogue**:
-a rigid mass and a mass on a spring for each odd mode, the first by far the largest. The *Damper* tab
-uses that first mode as a **tuned liquid damper** on a structure. The water's depth tunes it, screens
-damp it, and the peak against depth shows where Den Hartog's tuning lies.
-
-![Fluid–structure page, a tuned liquid damper: a tank 2 m by 2 m filled to 0.4 m on a 20 t structure at 0.5 Hz; centre, the tank's first sloshing mode (0.466 Hz); right, the structure's response with the water sloshing (peak 5.58) and frozen (52.0), and the peak against the water's depth, lowest near 0.4 m](images/liquid_damper.png)
-
-## Self-excited vibration
-
-Motion that feeds itself, four ways: van der Pol's oscillator (negative damping that grows to a limit
-cycle, and relaxation oscillations), galloping of a square section in a wind (Den Hartog's criterion and
-the hysteresis between its branches), vortex-induced vibration with a wake oscillator (lock-in), and
-two-mode flutter of a wing section, its root locus crossing into instability as the airspeed rises (in steady
-lift by coalescence; in quasi-steady lift the pitch mode goes on its own). Drag a pole along the locus and
-the speed follows, so you can walk it across Re λ = 0. The *Motion* tab plays the body itself (the mass,
-the galloping square and the cylinder to scale, the wing plunging and pitching in its least stable mode), with
-a slider for what drives it that moves the poles as you drag.
-
-![Self-excited vibration page, flutter: a wing section with plunge at 3 Hz and pitch at 6 Hz; in steady lift; as the airspeed rises their frequencies close in and, nearly met, the plunge-like mode's damping crosses zero at 20.7 m/s, about half the 39 m/s divergence speed](images/self_excited.png)
-
-## Active control
-
-Velocity feedback on the Simulation page's chain: the closed loop's poles exactly, against the light
-feedback estimate; collocated control that damps every mode until too much gain pins the mass,
-non-collocated control that spills over into a mode it destabilizes, an actuator's lag, a comparison
-with a tuned mass damper of the same mass ratio, and skyhook isolation against a passive damper. On the
-root locus, drag a pole along its path and the gain follows.
-
-![Active control page, spillover: velocity from m1 fed back to m4 at g = 20 N·s/m damps mode 1 but drives mode 2 unstable (ζ = −0.10); non-collocated, the loop is unstable from g = 6.1 N·s/m](images/active_control.png)
-
-## Gyroscope
-
-A spinning top with its tip held in a cup, from Euler's equations to the closed forms and a simulation.
-Lagrange's top keeps the spin and the angular momentum about the vertical, so the tilt moves on its own
-in an effective potential: steady precession at either root of I₁ cos θ φ'² − I₃ω₃φ' + mgl = 0, nutation
-between the turning points (the roots of a cubic, the period an elliptic integral), and the cusps, loops
-and waves the axis traces. Upright, the top sleeps above I₃ω₃ = 2√(I₁mgl). The 3D view steps the whole
-rigid body (a quaternion and L, split into gravity's moment and the free top, each exact), which doesn't
-mind the Euler angles' lock upright, and checks it against the closed forms. A square plate in place of
-the disc moves exactly as a disc of radius s/√3 does: its moment is the same about every line across its
-axis, so it is a symmetric top too. A rectangle isn't: with I₁ ≠ I₂ the spin isn't kept and every closed
-form goes. Without gravity Euler–Poinsot's solution in Jacobi's elliptic functions remains, and spun about its
-middle axis the plate flips over and back (the tennis-racket effect); with gravity there's none, and the
-*Chaos* tab's Poincaré section and two tops let go 10⁻⁸ rad apart show the motion turn chaotic. Its last section links the
-top's two precessions to the rotor's forward and backward whirl. The *Components* tab plots ω, L, τ and the inertia
-tensor as the top runs, in fixed axes, the body's or the axis frame (following the axis, not the spin): I is
-constant in the body's axes and turns in space, and L isn't along ω. Under the plot it writes out, at one
-instant, the rotation matrices that place the body, I in those axes, L = Iω and dL/dt + Ω × L = τ with the numbers;
-pause it and drag the line to pick the instant. The 3D view's *Axes* box draws the body's axes, the
-axis frame's or both on the top, so the two frames' difference, the spin about the axis, can be seen.
-
-Out of the cup, a round tip slides on a table with Coulomb friction. Only Jellett's constant
-J = L·(a e₃ + R ẑ) survives it, so the energy sinks onto the least energy that J allows at each tilt:
-on a slippery table a disc on a round tip rises toward sleeping (until its tip starts to roll, at
-sin θ = μI₃/maR; on a rough one it rolls round a circle instead), and a tippe top turns over onto its
-top if 1 − α < I₁/I₃ < 1 + α, ending with its own spin reversed at the rate J gives.
-
-![Gyroscope page, a rectangular plate spun about its middle axis with gravity: it tumbles, the Poincaré section's dots scatter, and two tops let go 10⁻⁸ rad apart are a radian apart within 5 s](images/gyroscope_chaos.png)
-
-![Gyroscope page, a tippe top on a table: a 20 g ball weighted 4.5 mm below its centre, spun at 1200 rpm, has turned over in 2 s, its energy sunk onto the least that Jellett's constant allows, which is turned over](images/gyroscope_table.png)
-
-![Gyroscope page, let go at rest: a 0.5 kg disc 40 mm in radius, 30 mm up its stem, spun at 1500 rpm and let go at 30° nods between 30° and 31.48° 14.73 times a second while precessing at 2.392 rad/s, its axis tracing cusps](images/gyroscope.png)
 
 ## Jeffcott rotor
 
@@ -542,4 +438,4 @@ a family of sidebands into one peak.
 
 ---
 
-← [Testing](testing.md) · [Contents](../README.md#contents)
+← [Nonlinear and flow](nonlinear-and-flow.md) · [Contents](../README.md#contents) · [Control](control.md) →

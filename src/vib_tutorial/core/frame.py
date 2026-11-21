@@ -22,7 +22,7 @@ exactly, statically, before the eigenproblem K φ = ω² M φ (`modes`). A mecha
 
 Working on it
 -------------
-`core/frame.py` (the *Frame builder* page, `gui/frame_builder.py`, last in Building models; its own model, not
+`core/frame.py` (the *Frame builder* page, `gui/frame_builder.py`, in Continua and models; its own model, not
 the chain): a plane `Frame` of `Node`s (u, v, θ each, DOF 3i + d; a `Support` fixes some) and `Element`s (bar,
 Euler–Bernoulli or Timoshenko beam, spring/damper between nodes or to an `anchor`, torsion spring/damper,
 point mass), all frozen: editing returns a new frame (`with_node`, `divide`, `without_node` renumbers), so the

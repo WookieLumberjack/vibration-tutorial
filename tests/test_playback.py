@@ -450,7 +450,7 @@ def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
     plot_patches.size_pixmap_cache()
     assert QtGui.QPixmapCache.cacheLimit() == plot_patches.PIXMAP_CACHE_MB * 1024
     w = main_window
-    w.resize(1700, 1000)
+    w.resize(1700, 1030)  # 1000 px for the pages, below the buttons' row
     p = w.sdof_page
     w.pages.setCurrentWidget(p)
     QtWidgets.QApplication.processEvents()

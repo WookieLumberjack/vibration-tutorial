@@ -30,8 +30,8 @@ and lateral and roll decouple again: with u = tan β, h u² − t(1 − ρ)u + h
 
 Working on it
 -------------
-`core/rigid_mounts.py` (the *Rigid body on mounts* page, `gui/rigid_mounts.py`, in Responses after
-Quarter-car; its own model, not the chain): a uniform box (`Body`, principal axes along x, y, z) on `Mount`s,
+`core/rigid_mounts.py` (the *Rigid body on mounts* page, `gui/rigid_mounts.py`, in Modes after
+Energy methods; its own model, not the chain): a uniform box (`Body`, principal axes along x, y, z) on `Mount`s,
 each K_m = k_s I + (k_a − k_s) a aᵀ at r from the centre of mass, its end moving T q = u + θ × r: K = Σ Tᵀ K_m
 T, M = diag(m, m, m, I), `modes` by `eigh`, each mode's kinetic energy split among the six coordinates
 (`Modes.energy`, the decoupling figure). K's coupling block is linear in the reference point, so

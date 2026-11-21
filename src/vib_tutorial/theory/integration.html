@@ -85,7 +85,7 @@ step.</p>
 first-order hold), its part is exact too, two fixed matrices <m>Γ<sub>0</sub></m> and <m>Γ<sub>1</sub></m> worked
 out once:</p>
 <eq>z_{n+1} = \mathrm{e}^{A\Delta t} z_n + \Gamma_0 f_n + \Gamma_1 f_{n+1}</eq>
-<p>This <b>FOH update</b> is what the Simulation page and the One mass pages use. It is stable and exact in
+<p>This <b>FOH update</b> is what the Simulation page and the One oscillator pages use. It is stable and exact in
 period and amplitude at any <m>Δt</m>, for any stiffness (<m>ρ = e<sup>−ζωΔt</sup></m>, the oscillator's own).
 Its only error is in the force between samples, which is second order in <m>Δt</m>. It needs the matrix
 exponential, which is cheap for small models: big nonlinear codes, whose matrices change every step, still use

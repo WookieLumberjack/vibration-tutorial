@@ -7,10 +7,10 @@
 | **Left** | System parameters (m, k, c for each element and friction F<sub>f</sub> for each mass, 1 to 8 masses), the excitation (a force on a mass, or motion of the ground), and simulation controls (run/pause, speed, plot window, auto-scale) |
 | **Centre** | Animation of the chain (with a scale bar for the real displacement) and live energy bars, above time histories of the applied force and of the motion (in physical or modal coordinates), of the energy, or of the force in each spring and damper |
 | **Right** | Tabs: *Modal analysis* (table, mode shapes, release), *Frequency response*, and *Theory* (notes written for students) |
-| **Top** | The pages, in six groups, and the *Theory*, *Theory window*, *About*, *Theme* and *Size* controls |
+| **Top** | The pages, in 11 groups, and the *Theory*, *Theory window*, *About*, *Theme* and *Size* controls |
 
 The pages are grouped in the order they are meant to be read, each using only ideas from the pages
-before it (Ctrl+1 to Ctrl+6 jump to a group, Ctrl+PgDown and Ctrl+PgUp to the next or previous page, and
+before it (Ctrl+1 to Ctrl+9 jump to the first nine groups, Ctrl+PgDown and Ctrl+PgUp to the next or previous page, and
 every page's notes end with a link on to the next). Each page opens on its Theory tab the first time it's shown, where its goals
 (*On this page you'll*) link to its Things to try and its problems; after that it opens on the tab you left. So
 the first run opens on the first page, *Single oscillator*, at its Theory: *Start here*, the map of the course (which counts each page's practice problems solved), four shorter *paths*
@@ -20,47 +20,20 @@ window of its own, with the pages and their sections listed, a *Glossary of symb
 box (Ctrl+F, ⌘F on a Mac, from the window or from a page) that finds a word or a symbol in every page's notes: it keeps its place as you move between pages,
 or follows them. Paused, a page that simulates as it runs (this one, Duffing & Mathieu, the torsional start-up and the Jeffcott rotor) shows a cursor on its time plots: drag it back to see the motion as it was then (the chain drawn, the state on the phase plane, the readings, each station's place on its orbit); Start carries on from where it was paused.
 
-The groups:
+The groups (each one's page here describes its pages): the first five are the course's spine, read in order;
+the next five are branches into application areas; the Appendix holds pages that are to be folded into others.
 
-1. **One mass.** **Single oscillator** (free decay, damping, resonance, half-power bandwidth, beats and
-   poles, on one mass), **Pendulums** (gravity as the spring, and large swings), **Transient response**
-   (an impulse, a step or a pulse: the impulse response, Duhamel's integral, and how long a pulse has to
-   be), **Periodic forcing** (a repeating force as a Fourier series), **Damping models** (viscous, hysteretic, friction
-   and viscoelastic damping matched to one another: their loops, losses and decays) and **Vibration
-   isolation** (a machine on mounts: transmissibility, static deflection, damping, two stages, start-up).
-2. **Foundations.** **Deriving the equations** (a car's body in bounce and pitch, and a double pendulum,
-   by free-body diagrams and by Lagrange, in any coordinates), *Simulation & modal analysis* (the chain above), **Energy methods** (Rayleigh,
-   Dunkerley, Rayleigh–Ritz and Holzer), **FRF matrix** (every term of the receptance matrix and how the
-   modes build it up), **Complex modes** (when the damping makes the modes complex, and what the usual
-   approximation then misses), **Continuous systems** (the chain refined into a string, a bar or a beam,
-   to show which of its modes to trust), **Beams & plates** (thick beams and plates) and **Numerical
-   integration** (what the usual time-stepping schemes do to a vibration).
-3. **Responses.** **Random vibration** (a random force or base: the response's spectrum, RMS and peaks),
-   **Fatigue** (rainflow, Miner and the spectral estimates), **Quarter-car** (a suspension on a rough
-   road), **Rigid body on mounts** (a machine's six coupled modes on four mounts, and decoupling them),
-   **Shock spectrum** (a pulse on a bank of single oscillators, and on the chain) and **Seismic
-   response** (the chain as a building under a design spectrum).
-4. **Building models.** **Modal coupling** (two halves of the chain joined one mode each, to show when
-   their modes split), **Substructuring (CMS)** (the chain reduced by component mode synthesis:
-   Craig–Bampton, Rubin or MacNeal) and **Frame builder** (a plane frame or truss drawn on a grid from
-   beams, bars, springs and masses, its matrices assembled element by element, and its modes).
-5. **Testing.** **Signals & spectra** (sampling, aliasing, leakage, windows,
-   averaging, and the transducers that make the signals), **Virtual modal test** (the FRF measured from simulated force and response signals, as in
-   a lab), **Operational modal analysis** (the modes from the responses to unmeasured ambient forces
-   alone), **Model updating** (a model with errors in it correlated against a modal test of the chain,
-   and updated to find them), **Test planning** (where to put the sensors, by effective independence, and
-   the operational deflection shape at a running frequency), **Nonlinearity & forces** (is the chain linear:
-   levels, sweeps up and down, harmonics; and which force made a measured response) and **Variability &
-   localization** (scatter in the chain by Monte Carlo,
-   and a mistuned ring of blades).
-6. **Beyond the chain.** **Torsional vibration** (a drive train of discs, shafts and gear meshes, and its
-   start-up), **Duffing & Mathieu** (a single mass on a nonlinear spring, driven through its jump or pumped
-   into parametric resonance), **Self-excited vibration** (van der Pol, galloping, vortex shedding and
-   flutter), **Active control** (feedback on the chain against a tuned mass damper), the **Gyroscope** (a
-   spinning top: precession, nutation and the sleeping top, then on a table: the rising top and the tippe top), the
-   **Jeffcott rotor**
-   (a disc on a flexible shaft in flexible bearings) and **Machinery diagnostics** (orders, sidebands,
-   envelopes and the cepstrum).
+1. **[One oscillator](one-oscillator.md).** Single oscillator, Pendulums, Damping models, Vibration isolation, Transient response and Periodic forcing.
+2. **[Equations](equations.md).** Deriving the equations and 3D rigid body.
+3. **[Modes](modes.md).** *Simulation & modal analysis* (the chain above), Energy methods, FRF matrix, Complex modes and Rigid body on mounts.
+4. **[Continua and models](continua-and-models.md).** Continuous systems, Beams & plates, Modal coupling, Substructuring (CMS), Numerical integration and Frame builder.
+5. **[Signals and random](signals-and-random.md).** Signals & spectra and Random vibration.
+6. **[Testing](testing.md).** Virtual modal test, Model updating and Operational modal analysis.
+7. **[Environments](environments.md).** Shock spectrum, Quarter-car, Fatigue and Vibro-acoustics & SEA.
+8. **[Nonlinear and flow](nonlinear-and-flow.md).** Duffing & Mathieu, Fluid–structure and Self-excited vibration.
+9. **[Rotating machines](rotating-machines.md).** Gyroscope, Torsional vibration, Jeffcott rotor, Rotor builder and Machinery diagnostics.
+10. **[Control](control.md).** Active control.
+11. **[Appendix](appendix.md).** Seismic response, Test planning, Nonlinearity & forces and Variability & localization.
 
 Every page has a *Theory* tab (the *Theory* button or F1 opens it) that starts with what to read first,
 links to the sections it builds on, and ends with *Things to try*, *What to take away*, a table of the

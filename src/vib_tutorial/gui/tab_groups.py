@@ -143,7 +143,7 @@ class PageGroups(QtWidgets.QWidget):
     """The window's pages, in a row of group tabs, each group with its own row of pages.
 
     Fourteen pages in one row need ~1,800 px, more than most screens, so they are grouped
-    (Foundations, Responses, …). The pages are also numbered in one flat order, the order
+    (One oscillator, Equations, …). The pages are also numbered in one flat order, the order
     they are meant to be read in, and the methods below mirror QTabWidget's over that
     order, so a caller can count, find and show a page without knowing its group.
     """

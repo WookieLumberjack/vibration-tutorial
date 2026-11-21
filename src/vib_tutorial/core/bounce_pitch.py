@@ -32,7 +32,7 @@ update, the road linear between samples.
 
 Working on it
 -------------
-`core/bounce_pitch.py` (the *Deriving the equations* page, `gui/deriving.py`, first in Foundations; its own
+`core/bounce_pitch.py` (the *Deriving the equations* page, `gui/deriving.py`, first in Equations; its own
 model, not the chain): a car's body in bounce and pitch (m, J = m r², springs and dampers a ahead of G and b
 behind), in three sets of `Coordinates` (G, a point P e ahead of it, the two ends), each (x_G, θ) = T q.
 `matrices` is Lagrange's (TᵀMT, SᵀKS with δ = S q): tests check them against the Hessians of `energies`' T, V
