@@ -23,7 +23,7 @@ from ..core.rotor_stability import Onset
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from . import accessible
-from .layouts import plot_height
+from .layouts import plot_height, wrapped
 from .live_label import LiveLabel
 from .panels import spin
 from .style import colors
@@ -215,9 +215,7 @@ class BearingPanel(QtWidgets.QWidget):
         self.range_band = pg.LinearRegionItem(movable=False)  # the page's speeds, on the dimensionless chart
         self.range_band.setZValue(-10)
         self.k_plot.addItem(self.range_band)
-        self.note = QtWidgets.QLabel()
-        self.note.setWordWrap(True)
-        mute(self.note)
+        self.note = wrapped(muted=True)
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.addLayout(form)

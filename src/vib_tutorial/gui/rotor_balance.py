@@ -36,7 +36,7 @@ from ..core.rotor_simulator import RPM
 from ..core.rotor_sweep import STATIONS, phase_degrees, probe, steady_vectors
 from ..view_models.text import number as sig
 from . import weak
-from .layouts import FlowLayout, form_layout, group, plot_height
+from .layouts import FlowLayout, form_layout, group, plot_height, wrapped
 from .panels import spin
 from .polar_grid import PolarGrid
 from .style import colors
@@ -245,8 +245,7 @@ class BalancingPanel(QtWidgets.QWidget):
         self.status = QtWidgets.QLabel()
         mute(self.status)
 
-        self.convention = QtWidgets.QLabel(CONVENTION)
-        self.convention.setWordWrap(True)
+        self.convention = wrapped(CONVENTION)
         self.vector_plot = pg.PlotWidget()
         vp = self.vector_plot.getPlotItem()
         vp.setMenuEnabled(False)
@@ -299,8 +298,7 @@ class BalancingPanel(QtWidgets.QWidget):
             "keyphasor, as on the polar plot, so a lag is negative: it falls through −90° at a critical. The lines "
             "mark the balancing and slow-roll speeds.</p>"
         )
-        self.results = QtWidgets.QLabel()
-        self.results.setWordWrap(True)
+        self.results = wrapped()
         self.results.setTextFormat(QtCore.Qt.TextFormat.RichText)
 
         layout = QtWidgets.QVBoxLayout(self)

@@ -39,8 +39,8 @@ from ..view_models.duffing import CHART_DEPTHS, CHART_RATIOS, GROWTH_TOP, LEGEND
 from ..view_models.text import number as sig
 from . import duffing_figures, plot_patches, weak
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height
-from .lesson import Dot, RunButton, StartHint
+from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, plot_height, wrapped
+from .lesson import Dot, RunButton, StartHint, plot
 from .links import load_notes, page_link
 from .live_label import LiveLabel
 from .maths import markup
@@ -391,13 +391,8 @@ def _fit(steady: SteadyRange, values) -> None:
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None) -> pg.PlotWidget:
-    p = pg.PlotWidget()
-    p.setMenuEnabled(False)
-    p.hideButtons()
-    p.showGrid(x=True, y=True, alpha=0.15)
-    p.setLabel("left", left, units=left_units)
-    p.setLabel("bottom", bottom, units=bottom_units)
-    return p
+    """`lesson.plot`, its height set by the caller."""
+    return plot(left, left_units, bottom, bottom_units, height=None)
 
 
 class DuffingPage(QtWidgets.QWidget):
@@ -423,9 +418,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.preset.setAccessibleName("Preset")
         self.preset.addItems([p.name for p in PRESETS] + [CUSTOM])
         self.preset.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.preset_note = QtWidgets.QLabel()
-        self.preset_note.setWordWrap(True)
-        mute(self.preset_note)
+        self.preset_note = wrapped(muted=True)
 
         osc = QtWidgets.QGroupBox("Oscillator")
         form = form_layout(osc)
@@ -448,9 +441,7 @@ class DuffingPage(QtWidgets.QWidget):
         ):
             box.valueChanged.connect(self._on_params)
             form_row(form, text, box, TIPS[key])
-        self.osc_info = QtWidgets.QLabel()
-        self.osc_info.setWordWrap(True)
-        mute(self.osc_info)
+        self.osc_info = wrapped(muted=True)
         form.addRow(self.osc_info)
 
         drive = QtWidgets.QGroupBox("Drive")
@@ -575,8 +566,7 @@ class DuffingPage(QtWidgets.QWidget):
             self.response.addItem(item)
         plot_patches.hold_still(self.response)  # its dashed curves stay put while the dots move over them
         plot_height(self.response, 220)
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
 
         self.strip = _plot("Displacement x", "m", "Time", "s")
@@ -632,8 +622,7 @@ class DuffingPage(QtWidgets.QWidget):
         self.chart.setXRange(CHART_RATIOS[0], CHART_RATIOS[-1], padding=0)
         self.chart.setYRange(CHART_DEPTHS[0], CHART_DEPTHS[-1], padding=0)
         self.chart.scene().sigMouseClicked.connect(self._on_chart_click)
-        self.chart_note = QtWidgets.QLabel()
-        self.chart_note.setWordWrap(True)
+        self.chart_note = wrapped()
         self.chart_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         mute(self.chart_note)
         chart_tab = QtWidgets.QWidget()

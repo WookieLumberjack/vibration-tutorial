@@ -20,14 +20,13 @@ from ..core.rotor import XD, YD, RotorSystem, Stator
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from . import accessible
-from .layouts import plot_height
+from .layouts import plot_height, wrapped
 from .lesson import LiveLabel
 from .panels import spin
 from .plots import SteadyRange, decimate
 from .polar_grid import PolarGrid
 from .rotor_bearing import _si
 from .style import colors
-from .theming import mute
 
 NOTE = (
     "Once the disc's whirl reaches the ring, the ring pushes it back and its friction drags the disc's rim "
@@ -114,8 +113,7 @@ class RubPanel(QtWidgets.QWidget):
         form.setColumnStretch(3, 1)
         self.enabled.toggled.connect(self._on_params)
 
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
 
         self.plot = pg.PlotWidget()
@@ -148,12 +146,9 @@ class RubPanel(QtWidgets.QWidget):
         for item in (self.vector_curve, self.bow_curve, self.ends):
             self.spiral.addItem(item)
         plot_height(self.spiral, 200)
-        self.spiral_note = QtWidgets.QLabel()
-        self.spiral_note.setWordWrap(True)
+        self.spiral_note = wrapped()
         self.spiral_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        self.note = QtWidgets.QLabel(NOTE)
-        self.note.setWordWrap(True)
-        mute(self.note)
+        self.note = wrapped(NOTE, muted=True)
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.enabled)

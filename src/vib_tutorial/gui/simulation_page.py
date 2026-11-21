@@ -45,7 +45,7 @@ from .background import COUPLING_TIP, make_background_view
 from .energy import EnergyPanel, EnergyState
 from .frame_loop import FrameLoop
 from .history import History
-from .layouts import ColumnScroll, FlowLayout, group
+from .layouts import ColumnScroll, FlowLayout, group, wrapped
 from .lesson import TrialBox
 from .modes import Method, mode_entries
 from .panels import ForcePanel, ParameterPanel, SimControls, spin
@@ -300,8 +300,7 @@ class SimulationPage(QtWidgets.QWidget):
             "Arrows at other angles: the masses peak at different times.</p>"
         )
         self.phasor_plot.setMinimumWidth(180)
-        self.modal_note = QtWidgets.QLabel()
-        self.modal_note.setWordWrap(True)
+        self.modal_note = wrapped()
         self.modal_note.setToolTip(COUPLING_TIP)
         self.modal_note.linkActivated.connect(weak.slot(self, lambda self, _: self.tabs.setCurrentWidget(self.theory)))
         self.animate_modes = QtWidgets.QCheckBox("Animate mode shapes")

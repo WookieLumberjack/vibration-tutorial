@@ -55,10 +55,9 @@ from ..core.random_vibration import (
 from ..view_models.text import number as sig
 from ..view_models.text import plain
 from . import chain_page, maths, random_figures, weak
-from .axes import log_axes
 from .drag import DragLine
-from .layouts import ColumnScroll, form_layout, form_row, group, plot_height
-from .lesson import TrialBox
+from .layouts import ColumnScroll, form_layout, form_row, group, plot_height, wrapped
+from .lesson import TrialBox, plot
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .panels import spin
@@ -539,14 +538,8 @@ NOTES_HTML = load_notes(
 
 
 def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | None, log: bool = True) -> pg.PlotWidget:
-    p = pg.PlotWidget(axisItems=log_axes()) if log else pg.PlotWidget()
-    p.setMenuEnabled(False)
-    p.hideButtons()
-    p.showGrid(x=True, y=True, alpha=0.15)
-    p.setLabel("left", left, units=left_units)
-    p.setLabel("bottom", bottom, units=bottom_units)
-    p.getAxis("left").enableAutoSIPrefix(False)  # the unit is in the label: no "(x0.001)"
-    return p
+    """`lesson.plot`, its log axes ready for a log scale set later, its height set by the caller."""
+    return plot(left, left_units, bottom, bottom_units, log_ready=log, height=None)
 
 
 def four(value: float, unit: str) -> str:
@@ -590,9 +583,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.f_lo = spin(0.0, 1e5, 0.0, 2, " Hz")
         self.f_hi = spin(0.01, 1e5, 10.0, 2, " Hz")
         form_row(form, "Band:", group(self.f_lo, "to", self.f_hi), TIPS["band"])
-        self.input_info = QtWidgets.QLabel()
-        self.input_info.setWordWrap(True)
-        mute(self.input_info)
+        self.input_info = wrapped(muted=True)
         form.addRow(self.input_info)
         link = chain_page.edit_link(
             self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
@@ -618,9 +609,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.new_record = QtWidgets.QPushButton("New record")
         self.new_record.setToolTip(TIPS["new"])
         form.addRow(self.new_record)
-        self.record_info = QtWidgets.QLabel()
-        self.record_info.setWordWrap(True)
-        mute(self.record_info)
+        self.record_info = wrapped(muted=True)
         form.addRow(self.record_info)
 
         self.trials = TrialBox(
@@ -664,8 +653,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
             p.setXLink(self.input_plot)
         for p in (self.input_plot, self.psd_plot, self.cumulative):  # setLogMode turned it back on where linear
             p.getAxis("left").enableAutoSIPrefix(False)
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         center = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(center)
@@ -683,8 +671,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
             "at its frequency: its Q = 1/2ζ, and the RMS Miles' equation gives it. Their "
             "SRSS is the Miles estimate; the share is each mode's of its square.</p>"
         )
-        self.miles_note = QtWidgets.QLabel()
-        self.miles_note.setWordWrap(True)
+        self.miles_note = wrapped()
         self.miles_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         mute(self.miles_note)
         miles_tab = QtWidgets.QWidget()
@@ -699,9 +686,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         record_tab = QtWidgets.QWidget()
         rv = QtWidgets.QVBoxLayout(record_tab)
         rv.addWidget(self.record_plot, 1)
-        self.record_note = QtWidgets.QLabel()
-        self.record_note.setWordWrap(True)
-        mute(self.record_note)
+        self.record_note = wrapped(muted=True)
         rv.addWidget(self.record_note)
 
         self.amplitude_plot = _plot("Probability density", None, "Value / σ", None, log=False)
@@ -714,12 +699,10 @@ class RandomVibrationPage(QtWidgets.QWidget):
         self.peaks_legend = add_legend(self.peaks_plot.getPlotItem(), offset=(-10, 10))
         for p in (self.amplitude_plot, self.peaks_plot):
             p.setMouseEnabled(x=False, y=False)
-        self.stats_table = QtWidgets.QLabel()
-        self.stats_table.setWordWrap(True)
+        self.stats_table = wrapped()
         self.stats_table.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.largest_over = spin(0.1, 1e6, 60.0, 1, " s")
-        self.largest_note = QtWidgets.QLabel()
-        self.largest_note.setWordWrap(True)
+        self.largest_note = wrapped()
         self.largest_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         stats_tab = QtWidgets.QWidget()
         sv = QtWidgets.QVBoxLayout(stats_tab)

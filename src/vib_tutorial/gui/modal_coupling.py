@@ -42,14 +42,14 @@ from . import chain_page, coalesce, weak
 from .animation import MASS_WIDTH, spring_path
 from .axes import log_axes
 from .coupling_notes import THEORY_HTML, TRIALS, CouplingTrial, matrices_html
-from .layouts import ColumnScroll, FitColumns, form_layout, header_tip
+from .layouts import ColumnScroll, FitColumns, form_layout, header_tip, wrapped
 from .lesson import TrialBox
 from .links import page_link
 from .mode_swing import ModeSwing, SwingLoop
 from .notes_view import NotesBrowser
 from .style import colors, text_on
 from .substructuring import error_color, zeta_text
-from .theming import add_legend, mute
+from .theming import add_legend
 
 DASH = QtCore.Qt.PenStyle.DashLine
 DOT = QtCore.Qt.PenStyle.DotLine
@@ -633,9 +633,7 @@ class VeeringPlot(QtWidgets.QWidget):
         self.plot.setLabel("left", "Natural frequency", units="Hz")
         self.plot.setMouseEnabled(x=False, y=False)
         self.legend = add_legend(self.plot, offset=(5, 5))
-        self.note = QtWidgets.QLabel()
-        self.note.setWordWrap(True)
-        mute(self.note)
+        self.note = wrapped(muted=True)
         layout = QtWidgets.QVBoxLayout(self)
         layout.addLayout(top)
         layout.addWidget(self.plot, 1)
@@ -969,8 +967,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         form.addRow(link)
 
         self.schematic = CouplingSchematic()
-        self.summary = QtWidgets.QLabel()
-        self.summary.setWordWrap(True)
+        self.summary = wrapped()
         self.sub_title = QtWidgets.QLabel("<b>A and B on their own</b> (click a row to couple that mode)")
         self.sub_table = SubsystemTable()
         self.sub_table.cellClicked.connect(self._on_sub_row)
@@ -1005,9 +1002,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
                 "(Mode shapes tab). Low: the two modes are too far apart for this pairing to mean much.",
             ],
         )
-        self.result_note = QtWidgets.QLabel()
-        self.result_note.setWordWrap(True)
-        mute(self.result_note)
+        self.result_note = wrapped(muted=True)
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
         lv.addWidget(self.trials)

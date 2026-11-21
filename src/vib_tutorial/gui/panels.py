@@ -11,7 +11,7 @@ from ..core.presets import Preset, presets
 from ..view_models.text import fixed
 from ..view_models.text import number as sig
 from . import weak
-from .layouts import FlowLayout, form_layout, group
+from .layouts import FlowLayout, form_layout, group, wrapped
 from .live_label import LiveLabel
 from .modes import ModeEntry
 from .style import MAX_DOF, colors, text_on
@@ -166,8 +166,7 @@ class ParameterPanel(QtWidgets.QGroupBox):
         self.preset.activated.connect(self._on_preset)
         preset_row.addWidget(self.preset, 1)
         layout.addLayout(preset_row)
-        self.preset_note = QtWidgets.QLabel()
-        self.preset_note.setWordWrap(True)
+        self.preset_note = wrapped()
         self.preset_note.setVisible(False)
         mute(self.preset_note)
         layout.addWidget(self.preset_note)

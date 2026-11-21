@@ -28,7 +28,7 @@ from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analys
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from ..view_models.text import number as sig
 from . import chain_page, coalesce, frf_figures, weak
-from .layouts import form_layout
+from .layouts import form_layout, wrapped
 from .lesson import RunButton, TrialBox, three_panes, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
@@ -366,8 +366,7 @@ class FrfDetail(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.header = QtWidgets.QLabel()
-        self.header.setWordWrap(True)
+        self.header = wrapped()
         self.header.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.plots = pg.GraphicsLayoutWidget()
         self.top = self.plots.addPlot(row=0, col=0)
@@ -935,9 +934,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self.show_terms.setToolTip("The large plot always draws them. In the grid they can crowd the small plots.")
         self.show_terms.toggled.connect(self.redraw)
         mv.addWidget(self.show_terms)
-        self.mode_note = QtWidgets.QLabel()
-        self.mode_note.setWordWrap(True)
-        mute(self.mode_note)
+        self.mode_note = wrapped(muted=True)
         mv.addWidget(self.mode_note)
         self.mode_checks: list[QtWidgets.QCheckBox] = []
 
@@ -977,8 +974,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         # --- centre: the grid
         self.grid = FrfGrid()
         self.grid.cell_clicked.connect(self._on_cell)
-        self.grid_title = QtWidgets.QLabel()
-        self.grid_title.setWordWrap(True)
+        self.grid_title = wrapped()
         centre = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(centre)
         cv.setContentsMargins(0, 0, 0, 0)

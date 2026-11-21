@@ -60,7 +60,7 @@ from ..core.measurement import AA_CUTOFF
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick
 from ..view_models.text import number as sig
 from . import chain_page, coalesce, frame_stats, modal_test_figures, settle_plots
-from .layouts import ColumnScroll
+from .layouts import ColumnScroll, wrapped
 from .lesson import RunButton, TrialBox, trials_html
 from .links import load_notes, page_link
 from .modal_extraction import ExtractionControls, ResultsView, StabilizationPlot
@@ -554,8 +554,7 @@ class ModalTestPage(QtWidgets.QWidget):
             "time, and update the spectrum and FRF when it is complete, as an analyzer does.</p>"
             "<p>The waits for steady state, and for a hit to die away, are skipped.</p>"
         )
-        self.progress = QtWidgets.QLabel()
-        self.progress.setWordWrap(True)
+        self.progress = wrapped()
         run_row.addWidget(self.measure)
         run_row.addWidget(self.again)
         run_row.addWidget(self.progress, 1)

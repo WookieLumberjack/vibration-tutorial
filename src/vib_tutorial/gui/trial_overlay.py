@@ -18,6 +18,7 @@ from __future__ import annotations
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.practice import Placement
+from .layouts import wrapped
 from .lesson import TrialBox, TrialCombo
 
 SCALE = 1.5  # the text's size over the app's
@@ -45,8 +46,7 @@ class TrialOverlay(QtWidgets.QFrame):
         self.box: TrialBox | None = None
         layout = QtWidgets.QVBoxLayout(self)
         top = QtWidgets.QHBoxLayout()
-        self.title = QtWidgets.QLabel()
-        self.title.setWordWrap(True)
+        self.title = wrapped()
         self.close_button = QtWidgets.QToolButton()
         self.close_button.setText("×")
         self.close_button.setAutoRaise(True)
@@ -56,8 +56,7 @@ class TrialOverlay(QtWidgets.QFrame):
         top.addWidget(self.title, 1)
         top.addWidget(self.close_button, 0, QtCore.Qt.AlignmentFlag.AlignTop)
         layout.addLayout(top)
-        self.body = QtWidgets.QLabel()
-        self.body.setWordWrap(True)
+        self.body = wrapped()
         self.body.setTextFormat(QtCore.Qt.TextFormat.RichText)
         layout.addWidget(self.body)
         self.choices = QtWidgets.QHBoxLayout()

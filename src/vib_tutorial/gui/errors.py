@@ -32,6 +32,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from shiboken6 import isValid
 
 from . import theming
+from .layouts import wrapped
 
 LOG_NAME = "errors.log"
 LOG_LIMIT = 1_000_000  # bytes: past it the oldest half goes
@@ -94,8 +95,7 @@ class ErrorBanner(QtWidgets.QFrame):
         self.setForegroundRole(QtGui.QPalette.ColorRole.ToolTipText)
         row = QtWidgets.QHBoxLayout(self)
         row.setContentsMargins(8, 3, 4, 3)
-        self.label = QtWidgets.QLabel()
-        self.label.setWordWrap(True)
+        self.label = wrapped()
         self.label.setForegroundRole(QtGui.QPalette.ColorRole.ToolTipText)
         self.copy = QtWidgets.QToolButton()
         self.copy.setText("Copy details")

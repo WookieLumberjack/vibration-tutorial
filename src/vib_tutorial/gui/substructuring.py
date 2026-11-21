@@ -44,7 +44,7 @@ from .axes import log_axes
 from .cms_notes import THEORY_HTML, TRIALS, CmsTrial, matrices_html
 from .cms_recovery import BackExpansionView
 from .cms_time import CMSTimeView
-from .layouts import ColumnScroll, FitColumns, form_layout, header_tip
+from .layouts import ColumnScroll, FitColumns, form_layout, header_tip, wrapped
 from .lesson import TrialBox
 from .links import page_link
 from .notes_view import NotesBrowser
@@ -499,8 +499,7 @@ class BasisPlots(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.header = QtWidgets.QLabel()
-        self.header.setWordWrap(True)
+        self.header = wrapped()
         self.plots = pg.GraphicsLayoutWidget()
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.header)
@@ -632,8 +631,7 @@ class MethodComparison(QtWidgets.QWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.header = QtWidgets.QLabel()
-        self.header.setWordWrap(True)
+        self.header = wrapped()
         self.table = QtWidgets.QTableWidget(0, len(self.HEADERS))
         self.table.setHorizontalHeaderLabels(self.HEADERS)
         for col, m in enumerate(METHODS, start=2):
@@ -654,9 +652,7 @@ class MethodComparison(QtWidgets.QWidget):
         self.plot.setLabel("left", "|frequency error|  [%]")
         self.plot.setMouseEnabled(x=False, y=False)
         self.legend = add_legend(self.plot, offset=(-5, 5))
-        self.note = QtWidgets.QLabel()
-        self.note.setWordWrap(True)
-        mute(self.note)
+        self.note = wrapped(muted=True)
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self.header)
         layout.addWidget(self.table)
@@ -1136,16 +1132,12 @@ class SubstructuringPage(QtWidgets.QWidget):
 
         self.schematic = SubstructureSchematic()
         self.table = ComparisonTable()
-        self.component_title = QtWidgets.QLabel()
-        self.component_title.setWordWrap(True)
+        self.component_title = wrapped()
         self.component_table = ComponentTable()
-        self.component_note = QtWidgets.QLabel()
-        self.component_note.setWordWrap(True)
-        mute(self.component_note)
+        self.component_note = wrapped(muted=True)
         self.table.itemSelectionChanged.connect(self._on_row)
         self.component_table.itemSelectionChanged.connect(self._on_component_row)
-        self.summary = QtWidgets.QLabel()
-        self.summary.setWordWrap(True)
+        self.summary = wrapped()
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
         lv.addWidget(self.trials)

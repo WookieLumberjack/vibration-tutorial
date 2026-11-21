@@ -21,7 +21,7 @@ from ..core.fluid_bearing import JournalBearing
 from ..core.magnetic_bearing import MagneticBearing
 from ..core.rotor import CRACK_DEPTH_MAX, STEEL, Bearing, Crack, PlaneWeight, RotorSystem
 from . import accessible
-from .layouts import form_layout
+from .layouts import form_layout, wrapped
 from .panels import NumberBox, spin
 from .rotor_bearing import BearingPanel
 from .rotor_magnet import MagnetPanel
@@ -41,7 +41,6 @@ from .rotor_tips import (
     SKEW_TIP,
     SWIRL_TIP,
 )
-from .theming import mute
 
 SUPPORTS = ("Springs and dampers", "Oil-film journal bearings", "Magnetic bearings")
 SPRINGS, FILMS, MAGNETS = range(len(SUPPORTS))
@@ -204,9 +203,7 @@ class RotorEditor(QtWidgets.QWidget):
         self.gravity.setToolTip(GRAVITY_TIP)
         self.gravity.toggled.connect(self._emit)
         form.addRow("Gravity:", self.gravity)
-        self.shaft_note = QtWidgets.QLabel()
-        self.shaft_note.setWordWrap(True)
-        mute(self.shaft_note)
+        self.shaft_note = wrapped(muted=True)
         form.addRow(self.shaft_note)
         for box_ in (
             self.length,

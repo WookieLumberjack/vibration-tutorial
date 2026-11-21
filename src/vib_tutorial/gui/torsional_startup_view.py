@@ -39,7 +39,7 @@ from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from . import weak
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout, form_layout, form_row, group, plot_height, show_in_stack
+from .layouts import FlowLayout, form_layout, form_row, group, plot_height, show_in_stack, wrapped
 from .lesson import RunButton, connect_all, plot, set_quietly
 from .live_label import LiveLabel
 from .panels import spin
@@ -149,9 +149,7 @@ class StartUpView(QtWidgets.QWidget):
         )
         row.add(self.pause_button, self.reset_button, self.playback)
         stf.addRow(row)
-        self.startup_info = QtWidgets.QLabel()
-        self.startup_info.setWordWrap(True)
-        mute(self.startup_info)
+        self.startup_info = wrapped(muted=True)
         stf.addRow(self.startup_info)
 
         # the start-up: a link's torque and the motor's speed against time
@@ -183,8 +181,7 @@ class StartUpView(QtWidgets.QWidget):
         self.apply_theme()
         self.startup_status = LiveLabel(wrap=True)  # rewritten every frame (#409 P-2)
         mute(self.startup_status)
-        self.startup_note = QtWidgets.QLabel()
-        self.startup_note.setWordWrap(True)
+        self.startup_note = wrapped()
         self.startup_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         uv = QtWidgets.QVBoxLayout(self)
         row = FlowLayout()

@@ -57,7 +57,7 @@ from ..view_models.text import number as sig
 from . import torsional_figures
 from .drag import DragLine
 from .frame_loop import FrameLoop
-from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height
+from .layouts import ColumnScroll, FlowLayout, form_layout, form_row, group, plot_height, wrapped
 from .lesson import RunButton, TrialBox, plot
 from .links import load_notes, page_link
 from .maths import markup
@@ -443,8 +443,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self.speed_line.released.connect(self._on_speed_released)
         self._dragging = False
         self._interference_band: pg.LinearRegionItem | None = None
-        self.readout = QtWidgets.QLabel()
-        self.readout.setWordWrap(True)
+        self.readout = wrapped()
         self.readout.setTextFormat(QtCore.Qt.TextFormat.RichText)
         self.response_link = QtWidgets.QComboBox()
         self.response_link.setSizeAdjustPolicy(
@@ -457,8 +456,7 @@ class TorsionalPage(QtWidgets.QWidget):
         self.response.setToolTip(RESPONSE_TIP)
         plot_height(self.response, 180)
         self.response_legend = add_legend(self.response.getPlotItem(), offset=(-10, 10))  # top right
-        self.response_note = QtWidgets.QLabel()
-        self.response_note.setWordWrap(True)
+        self.response_note = wrapped()
         self.response_note.setTextFormat(QtCore.Qt.TextFormat.RichText)
         mute(self.response_note)
         center = QtWidgets.QWidget()
@@ -492,9 +490,7 @@ class TorsionalPage(QtWidgets.QWidget):
             "gear pairs, the far shaft stepped down. Click a disc or a link to edit it (the list above the editor "
             "names the links).</p>"
         )
-        self.drawing_note = QtWidgets.QLabel()
-        self.drawing_note.setWordWrap(True)
-        mute(self.drawing_note)
+        self.drawing_note = wrapped(muted=True)
         drawing_tab = QtWidgets.QWidget()
         dv = QtWidgets.QVBoxLayout(drawing_tab)
         dv.addWidget(self.drawing, 1)
@@ -508,11 +504,9 @@ class TorsionalPage(QtWidgets.QWidget):
             "crosses zero over holds a node, and twists.</p>"
         )
         self.shapes_legend = add_legend(self.shapes.getPlotItem(), offset=(10, 10))
-        self.mode_list = QtWidgets.QLabel()
-        self.mode_list.setWordWrap(True)
+        self.mode_list = wrapped()
         self.mode_list.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        self.check = QtWidgets.QLabel()
-        self.check.setWordWrap(True)
+        self.check = wrapped()
         self.check.setTextFormat(QtCore.Qt.TextFormat.RichText)
         mute(self.check)
         shapes_tab = QtWidgets.QWidget()

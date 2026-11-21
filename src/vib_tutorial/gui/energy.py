@@ -8,6 +8,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..view_models.text import fmt
+from .layouts import wrapped
 from .style import colors
 
 # Below this the motion has decayed to float noise, so shares are meaningless
@@ -222,8 +223,7 @@ class EnergyPanel(QtWidgets.QWidget):
         self.view.addItem("Energy: by mode", True)
         self.view.currentIndexChanged.connect(self._on_view)
         self.bars = EnergyBars()
-        self.legend = QtWidgets.QLabel()
-        self.legend.setWordWrap(True)
+        self.legend = wrapped()
         v = QtWidgets.QVBoxLayout(self)
         v.setContentsMargins(0, 0, 0, 0)
         v.addWidget(self.view)
