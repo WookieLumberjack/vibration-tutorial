@@ -17,8 +17,10 @@ UI refactor may need a matching change here: tests/test_scripts.py runs every sh
 the combo's items are numbered, so `setCurrentText` matches none and loads nothing.
 """
 
+import atexit
 import math
 import os
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -37,6 +39,8 @@ from vib_tutorial import gui
 from vib_tutorial.core import ForceKind
 from vib_tutorial.core.rotor import RotorSystem
 from vib_tutorial.gui.main_window import MainWindow
+
+atexit.register(shutil.rmtree, os.environ["XDG_CONFIG_HOME"], ignore_errors=True)  # the settings folder, on exit
 
 OUT = Path(__file__).resolve().parent.parent / "docs" / "images"
 COLOURS = 256  # a grab of the flat UI keeps its look in a palette this size, at about a third of the bytes

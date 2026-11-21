@@ -1,8 +1,10 @@
 """Test-wide setup, run before any test module imports NumPy."""
 
+import atexit
 import gc
 import os
 import re
+import shutil
 import sys
 import tempfile
 import traceback
@@ -17,11 +19,20 @@ from vib_tutorial import ONE_THREAD
 for name in ONE_THREAD:
     os.environ.setdefault(name, "1")
 
+
+def _temporary(prefix: str) -> str:
+    """A new temporary directory, removed when the process exits (left behind, each run's ~11 MB of typeset
+    equations piled up until they filled a tmpfs /tmp)."""
+    path = tempfile.mkdtemp(prefix=prefix)
+    atexit.register(shutil.rmtree, path, ignore_errors=True)
+    return path
+
+
 # The app's settings (theme, playback speed, solved problems) in a directory of this process's own, not the user's:
 # set in every process that imports this, so each xdist worker has its own (on Windows the app's native store is
 # the registry, which all the workers shared, and QSettings.setPath doesn't reach it).
-os.environ["VIB_SETTINGS"] = tempfile.mkdtemp(prefix="vib-settings-")
-os.environ["VIB_CACHE"] = tempfile.mkdtemp(prefix="vib-cache-")  # typeset equations (maths.cache_dir), not the user's
+os.environ["VIB_SETTINGS"] = _temporary("vib-settings-")
+os.environ["VIB_CACHE"] = _temporary("vib-cache-")  # typeset equations (maths.cache_dir), not the user's
 
 WARN_SHARE = 0.8  # warn when a worker's peak address space passes this share of `ulimit -v`
 
