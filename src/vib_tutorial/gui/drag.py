@@ -8,6 +8,10 @@ units on a log axis too (pyqtgraph's items sit in log10 coordinates there).
   they let go; `set_value` moves it without either (from the page's own box, a trial).
 - `DragDot`: a dot on a path given point by point, each with a parameter (the damper along a trade-off curve); a
   drag snaps it to the nearest point on screen and emits that point's parameter.
+- `Grabbable`: a mixin for a view whose body the reader takes hold of, pulls and lets go (the pendulum, the four
+  dampers' masses, the machine on its mounts, a chain's mass): the open and closed hand, and the press, move and
+  release handlers. The view says what's under the pointer (`grab_at`), and what taking it, pulling it and letting
+  it go do (`_take`, `_pull`, `_let_go`).
 - `DragPoint`: a dot free to go anywhere on the plot (a pole in the s-plane). A drag emits where the pointer is,
   `dragged(x, y)`, and leaves the dot to the page, which works out what that point means, clamps it and puts the
   dot where it ended up (`place`).
@@ -178,3 +182,65 @@ class DragPoint(DragDot):
         if ev.isFinish():
             self.moving = False
             self.released.emit()
+
+
+class Grabbable:
+    """The grab, pull and release handlers (see the module); a mixin before the view's `pg.PlotWidget`.
+
+    `held` is what's held, or `NOT_HELD` (False for a view with one body, None for the chain, whose held mass's
+    index may be 0)."""
+
+    NOT_HELD: object = False
+    held: object = False
+
+    def _view_pos(self, event) -> QtCore.QPointF:
+        return self.plotItem.vb.mapSceneToView(self.mapToScene(event.position().toPoint()))  # type: ignore[attr-defined]
+
+    def _holding(self) -> bool:
+        return self.held is not self.NOT_HELD and self.held is not None and self.held is not False
+
+    def grab_at(self, pos: QtCore.QPointF) -> object | None:
+        """What a press at `pos` (view coordinates) takes hold of, or None."""
+        raise NotImplementedError
+
+    def _take(self, what: object, pos: QtCore.QPointF) -> None:
+        """Taken hold of: the view's signal, then the first pull."""
+        self._pull(pos)
+
+    def _pull(self, pos: QtCore.QPointF) -> None:
+        raise NotImplementedError
+
+    def _let_go(self, what: object) -> None:
+        """Let go of: the view's signal."""
+
+    def mousePressEvent(self, event) -> None:
+        pos = self._view_pos(event)
+        what = self.grab_at(pos) if event.button() == QtCore.Qt.MouseButton.LeftButton else None
+        if what is None:
+            super().mousePressEvent(event)  # type: ignore[misc]
+            return
+        self.held = what
+        self.setCursor(QtCore.Qt.CursorShape.ClosedHandCursor)  # type: ignore[attr-defined]
+        self._take(what, pos)
+        event.accept()
+
+    def mouseMoveEvent(self, event) -> None:
+        pos = self._view_pos(event)
+        if self._holding():
+            self._pull(pos)
+            event.accept()
+            return
+        if self.grab_at(pos) is None:
+            self.unsetCursor()  # type: ignore[attr-defined]
+        else:
+            self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)  # type: ignore[attr-defined]
+        super().mouseMoveEvent(event)  # type: ignore[misc]
+
+    def mouseReleaseEvent(self, event) -> None:
+        if not self._holding():
+            super().mouseReleaseEvent(event)  # type: ignore[misc]
+            return
+        what, self.held = self.held, self.NOT_HELD
+        self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)  # type: ignore[attr-defined]
+        self._let_go(what)
+        event.accept()
