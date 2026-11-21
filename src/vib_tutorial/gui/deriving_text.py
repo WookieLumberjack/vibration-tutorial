@@ -7,6 +7,7 @@ import math
 import numpy as np
 
 from ..core.practice import number
+from ..view_models.text import entry
 
 TWO_PI = 2.0 * math.pi
 # The page's systems, tabs and Show items, shared by its modules (deriving.py, deriving_pendulum.py).
@@ -16,11 +17,8 @@ SHOW_MODE1, SHOW_MODE2, SHOW_MOTION = range(3)
 
 
 def num(value: float) -> str:
-    """A matrix entry: whole numbers past 100, four figures below."""
-    value = float(value)
-    if abs(value) < 1e-9:
-        return "0"
-    return f"{value:.0f}" if abs(value) >= 100 else f"{value:.4g}"
+    """A matrix entry, four figures (`text.entry`)."""
+    return entry(float(value))
 
 
 def matrix_html(name: str, A: np.ndarray) -> str:

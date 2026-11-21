@@ -20,6 +20,7 @@ from PySide6 import QtWidgets
 
 from ..core.continuum import PRESETS, SCHEMES, Continuum, Kind, Scheme
 from ..core.continuum_waves import PLAYBACK, WaveRun, Waves, end_reflection, step_coefficients
+from ..view_models.text import fmt
 from .frame_loop import FrameLoop
 from .layouts import FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import LiveLabel, RunButton, plot
@@ -336,4 +337,4 @@ class WavesView(QtWidgets.QWidget):
 
 
 def _fmt_time(t: float) -> str:
-    return f"{t * 1e3:.3g} ms" if t < 1.0 else f"{t:.3g} s"
+    return fmt(t, "s", largest="", smallest="µ")

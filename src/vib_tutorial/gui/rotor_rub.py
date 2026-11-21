@@ -17,6 +17,7 @@ import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
 from ..core.rotor import XD, YD, RotorSystem, Stator
+from ..view_models.text import fmt
 from . import accessible
 from .layouts import plot_height
 from .lesson import LiveLabel
@@ -335,4 +336,4 @@ class RubPanel(QtWidgets.QWidget):
 
 
 def _fmt_um(meters: float) -> str:
-    return f"{meters * 1e3:.3g} mm" if meters >= 1e-3 else f"{meters * 1e6:.3g} µm"
+    return fmt(meters, "m", largest="m", smallest="µ")

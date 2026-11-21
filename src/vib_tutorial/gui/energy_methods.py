@@ -39,6 +39,7 @@ from ..core.energy_methods import (
 )
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick, rounded
+from ..view_models.text import entry
 from . import coalesce, energy_figures, settle_plots
 from .drag import DragLine, DragPoint
 from .lesson import (
@@ -452,8 +453,10 @@ NOTES_HTML = load_notes("energy_methods", figures=energy_figures.FIGURES, trials
 
 
 def matrix_html(A: np.ndarray, digits: int = 4) -> str:
+    scale = float(np.abs(A).max()) if A.size else 1.0
     rows = "".join(
-        "<tr>" + "".join(f"<td align='right'>&nbsp;{v:.{digits}g}&nbsp;</td>" for v in row) + "</tr>" for row in A
+        "<tr>" + "".join(f"<td align='right'>&nbsp;{entry(v, scale, digits)}&nbsp;</td>" for v in row) + "</tr>"
+        for row in A
     )
     return f"<table cellspacing='0' cellpadding='1'>{rows}</table>"
 

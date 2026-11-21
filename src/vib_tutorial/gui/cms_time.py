@@ -13,6 +13,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core import CMSModel, ForceController, ForceKind, ForceSettings, ModalResult
 from ..core.cms_response import CMSResponse
+from ..view_models.text import fmt
 from . import coalesce
 from .animation import ChainView
 from .frame_loop import FrameLoop
@@ -401,11 +402,7 @@ def _model_key(model: CMSModel) -> tuple:
 
 
 def _fmt(meters: float) -> str:
-    if meters >= 1e-3:
-        return f"{meters * 1e3:.3g} mm"
-    if meters >= 1e-6:
-        return f"{meters * 1e6:.3g} µm"
-    return f"{meters * 1e9:.3g} nm"
+    return fmt(meters, "m", largest="m", smallest="n")
 
 
 class SampleBuffer:
