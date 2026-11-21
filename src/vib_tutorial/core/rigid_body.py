@@ -40,6 +40,7 @@ import numpy as np
 
 from . import rotation
 from .ode import rk4_step
+from .stepping import StepClock
 
 STEPS_PER_TURN = 400
 MAX_STEP = 5e-3  # s
@@ -151,7 +152,7 @@ class Tumbler:
     t: float = 0.0
     q: list[float] = field(default_factory=lambda: [1.0, 0.0, 0.0, 0.0])
     L: list[float] = field(default_factory=list)
-    _owed: float = 0.0
+    _clock: StepClock = field(default_factory=StepClock)
     _skipped: int = 0  # torque-free steps since the last one kept (`thin`)
     last_steps: int = 0  # the steps the last `advance` took
     dropped: float = 0.0  # s of the time asked for that it left out, at `max_steps`
@@ -211,11 +212,8 @@ class Tumbler:
         step (with `thin`, a sample every `store_stride` steps while no torque acts). At most `max_steps`: past
         them the rest of `duration` is dropped, not owed."""
         h = self.step_size()
-        owed = self._owed + duration
-        want = int(owed / h + 1e-9)
-        n = max(0, min(want, max_steps, MAX_STEPS_PER_ADVANCE))
-        self._owed = owed - n * h if n == want else 0.0
-        self.last_steps, self.dropped = n, 0.0 if n == want else owed - n * h
+        n = self._clock.steps(duration, h, min(max_steps, MAX_STEPS_PER_ADVANCE))
+        self.last_steps, self.dropped = n, self._clock.dropped
         if n == 0:
             return _empty()
         stride = self.store_stride(h) if thin else 1

@@ -49,6 +49,7 @@ from ..core.rotor_sweep import (
     phase_degrees,
     probe,
 )
+from ..core.stepping import FRAME_BUDGET, Budget
 from ..view_models.text import number as sig
 from . import rotor_practice, weak
 from .challenge import ChallengeBox
@@ -112,7 +113,6 @@ SAG_SPEEDS = 201  # speeds the static sag is worked out at, with internal dampin
 SPECTRUM_FRAMES = 6  # the full spectrum is recomputed every this many frames
 SPIRAL_DT = 0.05  # s of simulated time between the Newkirk spiral's points
 MEASURE_SPEED = 2.0  # × real time, at least, while a balancing measurement runs
-FRAME_BUDGET = 0.012  # s of computing per frame: past it (the films' whole force is slow) the page runs slower
 WATERFALL_FRAMES = 15  # new spectra are drawn at most every this many frames (each repaint fills every line)
 CHART_BUDGET = 0.012  # s per frame spent filling in the asymmetry chart while it shows
 CHART_DELTA = 0.5  # the asymmetry chart's top Δ (taller only for a rotor past it)
@@ -340,7 +340,7 @@ class RotorPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         # --- loop
-        self._cost = 1e-9  # s of computing per simulated s (see step)
+        self._budget = Budget()  # s of computing per simulated s (see step)
         self._target_t = 0.0
         self.loop = FrameLoop(self, "Jeffcott rotor", self._tick, self._runs, self._sim_t, self._catch_up)
         # Parameter edits are applied at once; the Campbell diagram and the steady states are worked out
@@ -1198,8 +1198,8 @@ class RotorPage(QtWidgets.QWidget):
         the page falls behind real time rather than stalling.
         """
         self._target_t = min(self._target_t + duration, self.sim.t + 0.1 + duration)
-        if budget is not None and self._target_t - self.sim.t > budget / self._cost:
-            self._target_t = self.sim.t + budget / self._cost
+        if budget is not None:
+            self._target_t = min(self._target_t, self.sim.t + self._budget.allows(math.inf, budget))
         if self.repeat_taps.isChecked() and self.measurement is None and self.sim.t >= self._next_tap:
             self.tap()
             self._next_tap = self.sim.t + self.tap_every.value()
@@ -1210,9 +1210,7 @@ class RotorPage(QtWidgets.QWidget):
             r = self._advance_measurement(self._target_t - self.sim.t)
         else:
             r = self.sim.advance(self._target_t - self.sim.t)
-        if self.sim.t > began:  # s of computing per simulated s, smoothed
-            cost = (time.perf_counter() - start) / (self.sim.t - began)
-            self._cost = 0.8 * self._cost + 0.2 * cost if self._cost > 1e-9 else cost
+        self._budget.spent(time.perf_counter() - start, self.sim.t - began)  # s of computing per simulated s
         if r.rub is not None and r.t.size:
             self._heat = float(r.rub[:, 3].mean())
         if r.t.size:

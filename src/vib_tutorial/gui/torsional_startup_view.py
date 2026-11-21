@@ -22,6 +22,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.stepping import Budget
 from ..core.torsional import PRESETS, DriveTrain, TorsionalMode
 from ..core.torsional_startup import (
     FAN_START,
@@ -215,7 +216,7 @@ class StartUpView(QtWidgets.QWidget):
         self.pause_button.toggled.connect(self._on_pause)
         self.startup_link.currentIndexChanged.connect(weak.slot(self, lambda self, _: self._draw_startup(full=True)))
 
-        self._cost = 1e-5  # s of computing per simulated s (see step)
+        self._budget = Budget()  # s of computing per simulated s (see step)
         self.loop = FrameLoop(self, "Torsional vibration", self._tick, self._runs, self._sim_t)
 
     def load(self, start: StartUpPreset | None) -> None:
@@ -420,10 +421,10 @@ class StartUpView(QtWidgets.QWidget):
         sim = self.sim
         if sim is None:
             return
-        ahead = duration if budget is None else min(duration, budget / self._cost)
-        if ahead >= 0.5 * sim.h and not sim.done:
+        ahead = duration if budget is None else min(duration, self._budget.allows(duration, budget))
+        if not sim.done:  # the simulator carries a step's part left over (`core/stepping.py`)
             start, began = time.perf_counter(), sim.t
-            while ahead >= 0.5 * sim.h and not sim.done:
+            while ahead > 0 and not sim.done:
                 s = sim.advance(ahead)
                 m = s.t.size
                 if not m:
@@ -435,8 +436,9 @@ class StartUpView(QtWidgets.QWidget):
                 self._links[:, k : k + m] = s.links
                 self._k += m
                 ahead -= m * sim.h
-            if sim.t > began:
-                self._cost = 0.8 * self._cost + 0.2 * (time.perf_counter() - start) / (sim.t - began)
+            if sim.t <= began:
+                return  # under a step so far: nothing new to draw
+            self._budget.spent(time.perf_counter() - start, sim.t - began)
             self._draw_startup()
             self._show_status()
             if sim.done:

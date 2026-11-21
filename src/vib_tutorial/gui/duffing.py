@@ -33,6 +33,7 @@ from ..core.duffing import (
     response_curve,
 )
 from ..core.practice import Problem, Question, Requirement, at_least, kept, number, pick, rounded
+from ..core.stepping import Budget
 from ..view_models import duffing as view
 from ..view_models.duffing import CHART_DEPTHS, CHART_RATIOS, GROWTH_TOP, LEGEND, LEGS, DuffingSetup
 from ..view_models.text import number as sig
@@ -662,7 +663,7 @@ class DuffingPage(QtWidgets.QWidget):
         layout.addWidget(splitter)
 
         # --- loop
-        self._cost = 1e-6  # s of computing per simulated s (see step)
+        self._budget = Budget()  # s of computing per simulated s (see step)
         self._target_t = 0.0
         self.loop = FrameLoop(self, "Duffing & Mathieu", self._tick, self._runs, self._sim_t, self._catch_up)
 
@@ -922,12 +923,12 @@ class DuffingPage(QtWidgets.QWidget):
         self._target_t = min(self._target_t + duration, self.sim.t + 0.1 + duration)
         ahead = self._target_t - self.sim.t
         if budget is not None:
-            ahead = min(ahead, budget / self._cost)
+            ahead = min(ahead, self._budget.allows(ahead, budget))
         if ahead > 0.5 * self.sim.step_size():
             start = time.perf_counter()
             s = self.sim.advance(ahead)
             if s.t.size:
-                self._cost = 0.8 * self._cost + 0.2 * (time.perf_counter() - start) / (s.t[-1] - s.t[0] + 1e-9)
+                self._budget.spent(time.perf_counter() - start, s.t[-1] - s.t[0] + 1e-9)
             if self.record.add(s):
                 self._draw_points()
                 self._show_readout()

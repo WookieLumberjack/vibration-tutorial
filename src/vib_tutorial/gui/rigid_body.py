@@ -34,6 +34,7 @@ from ..core import rotation
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
 from ..core.rigid_body import SHAPES, TORQUES, Body, Drift, Shape, Torque, Tumbler, compare
 from ..core.rotation import Turning
+from ..core.stepping import FRAME_BUDGET, Budget
 from ..view_models.components import SHOW_I, SHOW_L, SHOW_W, series
 from ..view_models.text import number as sig
 from . import coalesce, rigid_body_figures
@@ -74,7 +75,6 @@ DRIFT_SPANS = (5.0, 10.0, 20.0)  # s
 PLAYBACK = (0.02, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0)
 REAL_TIME = PLAYBACK.index(1.0)
 HISTORY = 200_000  # samples kept
-FRAME_BUDGET = 0.012  # s of stepping per frame: past it (a fast spin's tiny steps) the run plays slower than asked
 PROBE_STEPS = 200  # steps in a frame while the cost of a step isn't known yet
 CHECK_POINTS = 2000  # the plots' samples, at most
 TRAIL = 3.0  # s of ω's direction drawn
@@ -983,7 +983,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         self.running = False  # held at the start until started
         self._frames = 0
         self._snap_t: float | None = None  # the instant dragged to; None: the latest
-        self._step_cost = 0.0  # s of computing per step, measured; 0 = not known yet
+        self._budget = Budget()  # s of computing per step, measured
         self._pace = 1.0  # the share of the time asked for that the frames step, smoothed (below 1: slowed)
         self._nudge_note = ""  # the readout's word on the start's nudge (`restart`)
 
@@ -1305,15 +1305,12 @@ class RigidBodyPage(QtWidgets.QWidget):
         """
         if budget is None:
             steps = 10**9  # all of it (MAX_STEPS_PER_ADVANCE still caps a call)
-        elif self._step_cost:
-            steps = max(1, int(budget / self._step_cost))
         else:
-            steps = PROBE_STEPS
+            steps = max(1, int(self._budget.allows(PROBE_STEPS, budget)))
         began = time.perf_counter()
         s = self.sim.advance(duration, max_steps=steps, thin=True)
         if self.sim.last_steps:
-            cost = (time.perf_counter() - began) / self.sim.last_steps
-            self._step_cost = cost if cost > self._step_cost else 0.8 * self._step_cost + 0.2 * cost
+            self._budget.spent(time.perf_counter() - began, self.sim.last_steps)
         if duration > 0:  # the share of what was asked that ran, smoothed for the readout
             self._pace = 0.8 * self._pace + 0.2 * (1.0 - self.sim.dropped / duration)
         if s.t.size:

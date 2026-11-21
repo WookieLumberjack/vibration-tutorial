@@ -2867,7 +2867,7 @@ def test_rotor_on_oil_film_bearings(app):
     panel.set_bearing(JournalBearing())
     assert p.preset_name() == "Journal bearings (oil whip)"
     # A frame's budget caps how far a slow simulation advances: the page falls behind instead.
-    p._cost = 1.0  # s of computing per simulated s
+    p._budget.cost = 1.0  # s of computing per simulated s
     t0 = p.sim.t
     p.step(0.1, budget=0.004)
     assert 0.0 < p.sim.t - t0 <= 0.004 + 1e-3
@@ -3453,8 +3453,9 @@ def test_simulation_page_keeps_to_its_compute_budget(app, monkeypatch):
     frames. A new system is measured afresh, with PROBE_STEPS; a dearer step counts at once."""
     import time
 
+    from vib_tutorial.core.stepping import FRAME_BUDGET
     from vib_tutorial.gui.main_window import MainWindow
-    from vib_tutorial.gui.simulation_page import FRAME_BUDGET, PROBE_STEPS
+    from vib_tutorial.gui.simulation_page import PROBE_STEPS
 
     w = MainWindow()
     w.pages.setCurrentWidget(w.sim_page)
@@ -3468,9 +3469,9 @@ def test_simulation_page_keeps_to_its_compute_budget(app, monkeypatch):
         return round((w.sim_page.sim.t - before) / w.sim_page.sim.step_size())
 
     w.sim_page._on_system_changed(w.sim_page.sim.system)
-    assert w.sim_page._step_cost == 0.0
+    assert w.sim_page.budget.cost == 0.0
     assert tick() <= PROBE_STEPS
-    assert w.sim_page._step_cost > 0.0
+    assert w.sim_page.budget.cost > 0.0
 
     collect = w.sim_page.sim.collect
 
@@ -3481,12 +3482,12 @@ def test_simulation_page_keeps_to_its_compute_budget(app, monkeypatch):
 
     monkeypatch.setattr(w.sim_page.sim, "collect", slow)
     tick()
-    assert w.sim_page._step_cost >= 1e-3  # dearer: taken at once
+    assert w.sim_page.budget.cost >= 1e-3  # dearer: taken at once
     assert tick() <= FRAME_BUDGET / 1e-3 + 1
-    slow_cost = w.sim_page._step_cost  # ≥ 1 ms: more where sleeps overshoot (macOS runners)
+    slow_cost = w.sim_page.budget.cost  # ≥ 1 ms: more where sleeps overshoot (macOS runners)
     monkeypatch.setattr(w.sim_page.sim, "collect", collect)
     tick()
-    assert 0.0 < w.sim_page._step_cost < slow_cost  # cheaper: gradually
+    assert 0.0 < w.sim_page.budget.cost < slow_cost  # cheaper: gradually
     w.close()
 
 
