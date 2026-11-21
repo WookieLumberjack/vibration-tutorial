@@ -12,11 +12,27 @@ than owing it, so a slow machine falls behind instead of spiralling (#409 N-7).
 simulated seconds) fit, `spent(seconds, units)` after doing them. A dearer cost counts at once, a cheaper one
 gradually (0.2 a frame), so one quick frame doesn't let the next overrun. Pages share `FRAME_BUDGET`.
 
+`Stepper` is what every simulator is to a page (#409 S-16): a clock `t` and `advance(duration)`, which steps on
+and returns the samples of that stretch, of the simulator's own type. It is the shape a Rust kernel takes when a
+simulator moves there (as `native.LinearSteps` did for the chain's), and the trait a WebAssembly front end would
+drive:
+
+    pub trait Stepper {
+        type Samples;
+        fn t(&self) -> f64;
+        fn advance(&mut self, duration: f64) -> Self::Samples;  // whole steps, the rest carried (StepClock)
+    }
+
+The page keeps the frame loop and the `Budget`; the stepper only steps. Every simulator in `core/` is one
+(`tests/test_stepping.py` checks the eight).
+
 Working on it: `tests/test_stepping.py`; the simulators' own tests check their clocks, `test_frame_stats` the
 pages' pace.
 """
 
 from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
 
 FRAME_BUDGET = 0.012  # s of computing a frame may spend on its simulation: past it a page runs slower than asked
 EASE = 0.2  # a cheaper measured cost's weight a frame
@@ -64,3 +80,12 @@ class Budget:
     def forget(self) -> None:
         """The work changed (a new chain, friction): measure its cost afresh."""
         self.cost = 0.0
+
+
+@runtime_checkable
+class Stepper[S](Protocol):
+    """A simulator as a page drives it (see the module): its clock and `advance`, giving that stretch's samples."""
+
+    t: float
+
+    def advance(self, duration: float) -> S: ...

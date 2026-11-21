@@ -51,3 +51,37 @@ def test_a_slow_playback_moves_the_simulators_that_rounded_each_frame(simulator)
     for _ in range(30):
         sim.advance(h / 3)
     assert sim.t == pytest.approx(10 * h, abs=0.5 * h)
+
+
+def test_every_simulator_is_a_stepper():
+    """`stepping.Stepper` (#409 S-16): the clock and `advance` a page drives, the shape a Rust kernel or a
+    WebAssembly front end would take; every simulator in core/ has it."""
+    from vib_tutorial.core.duffing import Duffing, DuffingSimulator
+    from vib_tutorial.core.gyroscope import TopSimulator
+    from vib_tutorial.core.rigid_body import Body, Tumbler
+    from vib_tutorial.core.rotor import RotorSystem
+    from vib_tutorial.core.rotor_simulator import RotorSimulator
+    from vib_tutorial.core.simulator import Simulator
+    from vib_tutorial.core.sliding_top import SlidingSimulator
+    from vib_tutorial.core.stepping import Stepper
+
+    simulators = [
+        Simulator(ChainSystem.uniform(2), ForceController(ForceSettings())),
+        RotorSimulator(RotorSystem()),
+        DuffingSimulator(Duffing()),
+        StartUpSimulator(FAN, FAN_START),
+        Tumbler(Body(), (0.0, 6.0, 0.06)),
+        CMSResponse(component_mode_synthesis(ChainSystem.uniform(3), [1], [1, 1], "craig-bampton")),
+    ]
+    from vib_tutorial.core.gyroscope import Motion, Top
+    from vib_tutorial.core.sliding_top import RoundTop
+
+    simulators += [
+        TopSimulator(Motion(Top(), 60.0, 0.3)),
+        SlidingSimulator(RoundTop.tippe(0.02, 0.015, 0.0045, 0.8, 0.3), 60.0, 0.3),
+    ]
+    for sim in simulators:
+        assert isinstance(sim, Stepper), type(sim).__name__
+        t0 = sim.t
+        sim.advance(0.01)
+        assert sim.t > t0, type(sim).__name__
