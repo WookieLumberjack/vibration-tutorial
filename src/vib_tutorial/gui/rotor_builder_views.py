@@ -16,6 +16,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.rotation import project_y_up
 from ..core.rotor_builder import DISC_LIBRARY, TWO_PI, Bearing, BearingKind, Disc, Rotor, Seal, Selection, deflection
 from . import coalesce
+from .edit_canvas import EditCanvas
 from .rotor_builder_trials import EMPTY
 from .style import colors
 
@@ -82,7 +83,7 @@ def _ground(z: float, y: float, width: float) -> list:
     return out
 
 
-class RotorCanvas(pg.PlotWidget):
+class RotorCanvas(EditCanvas, pg.PlotWidget):
     """The rotor from the side; builds it with the tool picked. Emits `edited(rotor, selection)` for every change
     and `selected(selection)` when the selection changes."""
 
@@ -262,36 +263,6 @@ class RotorCanvas(pg.PlotWidget):
         else:
             rotor = self.rotor.without_part(kind, i)
         self._commit(rotor, None)
-
-    def _view_point(self, event) -> np.ndarray:
-        scene = self.mapToScene(event.position().toPoint())
-        p = self.getPlotItem().getViewBox().mapSceneToView(scene)
-        return np.array([p.x(), p.y()])
-
-    def mousePressEvent(self, event) -> None:
-        self.setFocus()
-        self.press(self._view_point(event), right=event.button() == QtCore.Qt.MouseButton.RightButton)
-        event.accept()
-
-    def mouseMoveEvent(self, event) -> None:
-        self.drag_to(self._view_point(event))
-        event.accept()
-
-    def mouseReleaseEvent(self, event) -> None:
-        self.release()
-        event.accept()
-
-    def mouseDoubleClickEvent(self, event) -> None:
-        event.accept()
-
-    def wheelEvent(self, event) -> None:
-        event.ignore()  # the page scrolls; the view fits the rotor
-
-    def keyPressEvent(self, event) -> None:
-        if event.key() in (QtCore.Qt.Key.Key_Delete, QtCore.Qt.Key.Key_Backspace):
-            self.delete_selected()
-        else:
-            super().keyPressEvent(event)
 
     # --------------------------------------------------------- drawing
     @coalesce.coalesced(leaf=True)

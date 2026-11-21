@@ -56,6 +56,7 @@ from ..core.rotor_builder import (
     modes,
 )
 from ..core.rotor_builder_sweep import N_BRANCHES, Sweep, lag, orbit, sweep, unbalance_response
+from ..core.undo import UndoStack
 from ..view_models.text import number as sig
 from . import rotor_builder_figures, settle_plots, weak
 from .frame_builder import matrix_html
@@ -443,8 +444,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self._steady: tuple[float, np.ndarray] | None = None  # (Ω, the unbalance response there)
         self.running = True  # a mode whirls on its own
         self._phase = 0.0
-        self._history: list[Rotor] = []
-        self._future: list[Rotor] = []
+        self.edits: UndoStack[Rotor] = UndoStack()  # the rotors before, for Undo and Redo
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -717,8 +717,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self, rotor: Rotor, record: bool = True, selection: Selection | None = None, fit: bool = True
     ) -> None:
         if record and rotor != self.rotor:
-            self._history.append(self.rotor)
-            self._future.clear()
+            self.edits.record(self.rotor)
         self.rotor = rotor
         set_quietly(self.theory, THEORIES.index(rotor.theory))
         set_quietly(self.gravity, 0 if rotor.gravity else 1)
@@ -744,8 +743,8 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.canvas.set_rotor(rotor, fit=fit)
         self._fill_props()
         self._work()
-        self.undo_button.setEnabled(bool(self._history))
-        self.redo_button.setEnabled(bool(self._future))
+        self.undo_button.setEnabled(self.edits.can_undo)
+        self.redo_button.setEnabled(self.edits.can_redo)
 
     def _work(self) -> None:
         """The modes at the speed, and everything drawn from them."""
@@ -764,14 +763,12 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.loop.start()
 
     def undo(self) -> None:
-        if self._history:
-            self._future.append(self.rotor)
-            self._set_rotor(self._history.pop(), record=False)
+        if (back := self.edits.undo(self.rotor)) is not None:
+            self._set_rotor(back, record=False)
 
     def redo(self) -> None:
-        if self._future:
-            self._history.append(self.rotor)
-            self._set_rotor(self._future.pop(), record=False)
+        if (forward := self.edits.redo(self.rotor)) is not None:
+            self._set_rotor(forward, record=False)
 
     def _on_edit(self, rotor: Rotor, selection) -> None:
         self._set_rotor(rotor, selection=selection, fit=rotor.length != self.rotor.length)
