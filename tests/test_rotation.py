@@ -3,6 +3,7 @@
 import math
 
 import numpy as np
+import pytest
 
 from vib_tutorial.core import rotation
 
@@ -92,3 +93,25 @@ def test_a_homogeneous_transform_moves_points_and_turns_directions():
     assert np.allclose(T @ np.append(p, 0.0), np.append(B @ p, 0.0))
     two = rotation.homogeneous(rotation.from_euler(-1.0, 0.2, 0.1), np.array([0.0, 1.0, 0.0]))
     assert np.allclose((two @ T)[:3, 3], two[:3, :3] @ t + two[:3, 3]), "composing is multiplying"
+
+
+def test_the_views_project_z_up_or_along_a_shaft():
+    """`project_z_up` (the top, the mounts, the rigid body) and `project_y_up` (the rotors), which each view had
+    a copy of (#409 S-5): at no turn they're plan and side views, and a yaw brings the far side round as N-4 set."""
+    import math
+
+    from vib_tutorial.core.rotation import project_y_up, project_z_up
+
+    p = np.array([[1.0, 2.0, 3.0]])
+    x, y = project_z_up(p, 0.0, 0.0)
+    assert x[0] == 1.0 and y[0] == 3.0  # z up, looking along y
+    x, y = project_z_up(p, math.pi / 2, 0.0)
+    assert x[0] == pytest.approx(-2.0) and y[0] == pytest.approx(3.0)
+    x, y = project_z_up(p, 0.0, math.pi / 2)
+    assert y[0] == pytest.approx(2.0), "from above: the depth shows as height"
+    x, y = project_y_up(p, 0.0, 0.0)
+    assert x[0] == 1.0 and y[0] == 2.0  # y up, the shaft (z) toward the viewer
+    x, y = project_y_up(p, math.pi / 2, 0.0)
+    assert x[0] == pytest.approx(3.0), "turned a quarter: the shaft runs across"
+    x, y = project_y_up(p, 0.0, math.pi / 2)
+    assert y[0] == pytest.approx(-3.0)

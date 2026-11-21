@@ -247,3 +247,22 @@ def snapshot(
         frame_rate=A.T @ spin,
         torque=A.T @ torque[k],
     )
+
+
+# ------------------------------------------------------------------ the 3D views' projection (#409 S-5)
+
+
+def project_z_up(p: np.ndarray, yaw: float, pitch: float) -> tuple[np.ndarray, np.ndarray]:
+    """Screen (x, y) of points p (..., 3), z up: turned by `yaw` about z, looked at from `pitch` above (the
+    top, the box on its mounts, the rigid body)."""
+    cy, sy = math.cos(yaw), math.sin(yaw)
+    x, y, z = p[..., 0], p[..., 1], p[..., 2]
+    return x * cy - y * sy, z * math.cos(pitch) + (x * sy + y * cy) * math.sin(pitch)
+
+
+def project_y_up(p: np.ndarray, yaw: float, pitch: float) -> tuple[np.ndarray, np.ndarray]:
+    """Screen (x, y) of points p (..., 3) = (lateral x, vertical y, axial z): turned by `yaw` about the vertical,
+    tipped by `pitch` toward the viewer (a shaft along z: the rotors)."""
+    cy, sy = math.cos(yaw), math.sin(yaw)
+    x, y, z = p[..., 0], p[..., 1], p[..., 2]
+    return x * cy + z * sy, y * math.cos(pitch) - (-x * sy + z * cy) * math.sin(pitch)

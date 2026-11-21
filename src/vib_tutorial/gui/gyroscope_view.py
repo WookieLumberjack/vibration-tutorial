@@ -14,6 +14,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core.gyroscope import Frame, Shape, Top, frame_axes
 from ..core.sliding_top import RoundTop
 from .lesson import Dot
+from .orbit_view import OrbitView
 from .style import colors
 
 BODY_AXES = 6  # the body's axes' colour, colors.mass[k], apart from the vectors', the trail's and the disc's in every
@@ -30,7 +31,7 @@ VIEW_TIP = (
 )
 
 
-class TopView(pg.PlotWidget):
+class TopView(OrbitView, pg.PlotWidget):
     """The top in 3D, orthographically projected; drag to turn it."""
 
     YAW, PITCH = math.radians(25.0), math.radians(20.0)
@@ -99,14 +100,6 @@ class TopView(pg.PlotWidget):
             plot.addItem(item)
         plot.addItem(self.end, ignoreBounds=True)
         self.apply_theme()
-
-    def project(self, p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Screen (x, y) of points p (..., 3), z up: turned by the yaw about z, looked at from the pitch above."""
-        cy, sy = math.cos(self.yaw), math.sin(self.yaw)
-        x, y, z = p[..., 0], p[..., 1], p[..., 2]
-        across = x * cy - y * sy
-        away = x * sy + y * cy
-        return across, z * math.cos(self.pitch) + away * math.sin(self.pitch)
 
     def set_top(self, top: Top, turning: tuple[float, ...], round_top: RoundTop | None = None) -> None:
         """A new top or launch: its size sets the view's, and its turning points the circles (none on a table,
@@ -339,30 +332,3 @@ class TopView(pg.PlotWidget):
             item.setPen(pg.mkPen(color, width=2, style=QtCore.Qt.PenStyle.SolidLine if k < 2 else dash))
             label.setColor(color)
         self.frame_labels[4].setColor(c.strong)
-
-    def mousePressEvent(self, event) -> None:
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            self._drag = event.position()
-            event.accept()
-        else:
-            super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event) -> None:
-        if self._drag is None:
-            super().mouseMoveEvent(event)
-            return
-        d = event.position() - self._drag
-        self._drag = event.position()
-        self.yaw = (self.yaw + 0.01 * d.x()) % (2 * math.pi)  # the side nearest you follows the cursor
-        self.pitch = float(np.clip(self.pitch + 0.01 * d.y(), -math.pi / 2, math.pi / 2))
-        self._place_static()
-        event.accept()
-
-    def mouseReleaseEvent(self, event) -> None:
-        self._drag = None
-        super().mouseReleaseEvent(event)
-
-    def mouseDoubleClickEvent(self, event) -> None:
-        self.yaw, self.pitch = self.YAW, self.PITCH
-        self._place_static()
-        event.accept()
