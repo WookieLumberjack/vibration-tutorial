@@ -54,66 +54,81 @@ uvx pre-commit install  # run ruff and mypy before each commit
 
 ## Contents
 
-The course runs through six groups of pages, in the order the app's tabs take them: each page uses only ideas from the pages before it.
+The course runs through 11 groups of pages, in the order the app's tabs take them: each page uses only ideas from the pages before it.
 
-**[One mass](docs/one-mass.md)**
+**[One oscillator](docs/one-oscillator.md)**
 
-- [Single oscillator](docs/one-mass.md#single-oscillator): one mass on a spring and a damper: free decay, damping, resonance, half-power, beats, poles
-- [Pendulums](docs/one-mass.md#pendulums): gravity as the spring, large swings that soften, and the rotational form of every one-mass formula
-- [Transient response](docs/one-mass.md#transient-response): an impulse, a step or a pulse: the impulse response, convolution, and how long a pulse has to be
-- [Periodic forcing](docs/one-mass.md#periodic-forcing): a repeating force as a Fourier series: harmonics, Gibbs, resonance through a harmonic
-- [Damping models](docs/one-mass.md#damping-models): viscous, hysteretic, friction and viscoelastic damping: their loops, losses and decays
-- [Vibration isolation](docs/one-mass.md#vibration-isolation): a machine on mounts: transmissibility, static deflection, damping, two stages, start-up
+- [Single oscillator](docs/one-oscillator.md#single-oscillator): one mass on a spring and a damper: free decay, damping, resonance, half-power, beats, poles
+- [Pendulums](docs/one-oscillator.md#pendulums): gravity as the spring, large swings that soften, and the rotational form of every one-mass formula
+- [Damping models](docs/one-oscillator.md#damping-models): viscous, hysteretic, friction and viscoelastic damping: their loops, losses and decays
+- [Vibration isolation](docs/one-oscillator.md#vibration-isolation): a machine on mounts: transmissibility, static deflection, damping, two stages, start-up
+- [Transient response](docs/one-oscillator.md#transient-response): an impulse, a step or a pulse: the impulse response, convolution, and how long a pulse has to be
+- [Periodic forcing](docs/one-oscillator.md#periodic-forcing): a repeating force as a Fourier series: harmonics, Gibbs, resonance through a harmonic
 
-**[Foundations](docs/foundations.md)**
+**[Equations](docs/equations.md)**
 
-- [Deriving the equations](docs/foundations.md#deriving-the-equations): free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum
-- [Simulation & modal analysis](docs/foundations.md#simulation--modal-analysis): one mass, then a chain of them: modes, damping, energy, forcing, absorbers, friction
-- [Energy methods](docs/foundations.md#energy-methods): Rayleigh, Dunkerley, Rayleigh–Ritz and Holzer: frequencies from the energies, and how good they are
-- [FRF matrix](docs/foundations.md#frf-matrix): every receptance H<sub>jk</sub>, and how the modes add up to it
-- [Complex modes](docs/foundations.md#complex-modes): when damping makes the modes complex, and what the usual approximation misses
-- [Continuous systems](docs/foundations.md#continuous-systems): a string, a bar or a beam cut into a chain: which of its modes to trust
-- [Beams & plates](docs/foundations.md#beams--plates): Timoshenko's thick beam, a plate's modes and nodal lines, and modal density
-- [Numerical integration](docs/foundations.md#numerical-integration): central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping
-- [3D rigid body](docs/foundations.md#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
+- [Deriving the equations](docs/equations.md#deriving-the-equations): free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum
+- [3D rigid body](docs/equations.md#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 
-**[Responses](docs/responses.md)**
+**[Modes](docs/modes.md)**
 
-- [Random vibration](docs/responses.md#random-vibration): a random force or base: the response's spectrum, RMS and peaks
-- [Fatigue](docs/responses.md#fatigue): a random stress counted by rainflow: S–N curves, Miner's rule, narrow-band and Dirlik estimates
-- [Quarter-car](docs/responses.md#quarter-car): a suspension on an ISO 8608 road: comfort, grip and travel from the road's PSD
-- [Rigid body on mounts](docs/responses.md#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them
-- [Shock spectrum](docs/responses.md#shock-spectrum): a short pulse on a bank of oscillators, and on the chain
-- [Seismic response](docs/responses.md#seismic-response): the chain as a building: a design spectrum, effective modal mass, and ABS, SRSS and CQC against records
-- [Vibro-acoustics & SEA](docs/responses.md#vibro-acoustics--sea): a panel's sound: radiation efficiency, coincidence, the mass law, and energy flow between parts
+- [Simulation & modal analysis](docs/modes.md#simulation--modal-analysis): one mass, then a chain of them: modes, damping, energy, forcing, absorbers, friction
+- [Energy methods](docs/modes.md#energy-methods): Rayleigh, Dunkerley, Rayleigh–Ritz and Holzer: frequencies from the energies, and how good they are
+- [FRF matrix](docs/modes.md#frf-matrix): every receptance H<sub>jk</sub>, and how the modes add up to it
+- [Complex modes](docs/modes.md#complex-modes): when damping makes the modes complex, and what the usual approximation misses
+- [Rigid body on mounts](docs/modes.md#rigid-body-on-mounts): a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them
 
-**[Building models](docs/building-models.md)**
+**[Continua and models](docs/continua-and-models.md)**
 
-- [Modal coupling](docs/building-models.md#modal-coupling): two parts joined, one mode each: when their modes split
-- [Substructuring (CMS)](docs/building-models.md#substructuring-component-mode-synthesis): a chain reduced to a few modes per part, and back
-- [Frame builder](docs/building-models.md#frame-builder): build a frame or truss from beams, bars and springs: assembly, supports, modes
+- [Continuous systems](docs/continua-and-models.md#continuous-systems): a string, a bar or a beam cut into a chain: which of its modes to trust
+- [Beams & plates](docs/continua-and-models.md#beams--plates): Timoshenko's thick beam, a plate's modes and nodal lines, and modal density
+- [Modal coupling](docs/continua-and-models.md#modal-coupling): two parts joined, one mode each: when their modes split
+- [Substructuring (CMS)](docs/continua-and-models.md#substructuring-component-mode-synthesis): a chain reduced to a few modes per part, and back
+- [Numerical integration](docs/continua-and-models.md#numerical-integration): central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping
+- [Frame builder](docs/continua-and-models.md#frame-builder): build a frame or truss from beams, bars and springs: assembly, supports, modes
+
+**[Signals and random](docs/signals-and-random.md)**
+
+- [Signals & spectra](docs/signals-and-random.md#signals--spectra): sampling, aliasing, leakage, windows and averaging, and the transducers that make the signals
+- [Random vibration](docs/signals-and-random.md#random-vibration): a random force or base: the response's spectrum, RMS and peaks
 
 **[Testing](docs/testing.md)**
 
-- [Signals & spectra](docs/testing.md#signals--spectra): sampling, aliasing, leakage, windows and averaging, and the transducers that make the signals
 - [Virtual modal test](docs/testing.md#virtual-modal-test): measuring the FRF from force and response signals, and fitting modes
-- [Operational modal analysis](docs/testing.md#operational-modal-analysis): the modes from the responses alone, the forces unknown
 - [Model updating](docs/testing.md#model-updating): comparing a model with a test, and correcting it
-- [Test planning](docs/testing.md#test-planning): where to put the sensors, and what the structure does as it runs
-- [Nonlinearity & forces](docs/testing.md#nonlinearity--forces): is the structure linear (levels, sweeps, harmonics), and which force made a response
-- [Variability & localization](docs/testing.md#variability--localization): scatter in the chain's properties by Monte Carlo, and modes localized in a mistuned ring of blades
+- [Operational modal analysis](docs/testing.md#operational-modal-analysis): the modes from the responses alone, the forces unknown
 
-**[Beyond the chain](docs/beyond-the-chain.md)**
+**[Environments](docs/environments.md)**
 
-- [Torsional vibration](docs/beyond-the-chain.md#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
-- [Duffing & Mathieu](docs/beyond-the-chain.md#duffing--mathieu): a nonlinear spring: jumps, chaos, and parametric resonance
-- [Fluid–structure](docs/beyond-the-chain.md#fluidstructure): a body in water: added mass of spheres, cylinders, tubes in pipes and plates; sloshing in a tank and a tuned liquid damper
-- [Self-excited vibration](docs/beyond-the-chain.md#self-excited-vibration): negative damping and limit cycles: van der Pol, galloping, vortex-induced vibration and flutter
-- [Active control](docs/beyond-the-chain.md#active-control): velocity feedback, collocation, spillover and actuator lag, against a tuned mass damper
-- [Gyroscope](docs/beyond-the-chain.md#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
-- [Jeffcott rotor](docs/beyond-the-chain.md#jeffcott-rotor): a spinning shaft: critical speeds, balancing, bearings, stability, rub
-- [Rotor builder](docs/beyond-the-chain.md#rotor-builder): build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability
-- [Machinery diagnostics](docs/beyond-the-chain.md#machinery-diagnostics): order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum
+- [Shock spectrum](docs/environments.md#shock-spectrum): a short pulse on a bank of oscillators, and on the chain
+- [Quarter-car](docs/environments.md#quarter-car): a suspension on an ISO 8608 road: comfort, grip and travel from the road's PSD
+- [Fatigue](docs/environments.md#fatigue): a random stress counted by rainflow: S–N curves, Miner's rule, narrow-band and Dirlik estimates
+- [Vibro-acoustics & SEA](docs/environments.md#vibro-acoustics--sea): a panel's sound: radiation efficiency, coincidence, the mass law, and energy flow between parts
+
+**[Nonlinear and flow](docs/nonlinear-and-flow.md)**
+
+- [Duffing & Mathieu](docs/nonlinear-and-flow.md#duffing--mathieu): a nonlinear spring: jumps, chaos, and parametric resonance
+- [Fluid–structure](docs/nonlinear-and-flow.md#fluidstructure): a body in water: added mass of spheres, cylinders, tubes in pipes and plates; sloshing in a tank and a tuned liquid damper
+- [Self-excited vibration](docs/nonlinear-and-flow.md#self-excited-vibration): negative damping and limit cycles: van der Pol, galloping, vortex-induced vibration and flutter
+
+**[Rotating machines](docs/rotating-machines.md)**
+
+- [Gyroscope](docs/rotating-machines.md#gyroscope): a spinning top: Euler's equations, steady precession, nutation and the sleeping top
+- [Torsional vibration](docs/rotating-machines.md#torsional-vibration): a drive train of discs, shafts and gears, and its start-up
+- [Jeffcott rotor](docs/rotating-machines.md#jeffcott-rotor): a spinning shaft: critical speeds, balancing, bearings, stability, rub
+- [Rotor builder](docs/rotating-machines.md#rotor-builder): build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability
+- [Machinery diagnostics](docs/rotating-machines.md#machinery-diagnostics): order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum
+
+**[Control](docs/control.md)**
+
+- [Active control](docs/control.md#active-control): velocity feedback, collocation, spillover and actuator lag, against a tuned mass damper
+
+**[Appendix](docs/appendix.md)**
+
+- [Seismic response](docs/appendix.md#seismic-response): the chain as a building: a design spectrum, effective modal mass, and ABS, SRSS and CQC against records
+- [Test planning](docs/appendix.md#test-planning): where to put the sensors, and what the structure does as it runs
+- [Nonlinearity & forces](docs/appendix.md#nonlinearity--forces): is the structure linear (levels, sweeps, harmonics), and which force made a response
+- [Variability & localization](docs/appendix.md#variability--localization): scatter in the chain's properties by Monte Carlo, and modes localized in a mistuned ring of blades
 
 **Reference**
 

@@ -75,18 +75,18 @@ def test_window_interactions(app):
 
 def test_secondary_pages_build_when_opened(app):
     from vib_tutorial.gui.main_window import LAZY_PAGES, MainWindow
-    from vib_tutorial.gui.modal_coupling import ModalCouplingPage
+    from vib_tutorial.gui.modal_test import ModalTestPage
 
     w = MainWindow()
     assert list(w._built) == ["sim_page"]  # startup builds only the Simulation page
     titles = [w.pages.tabText(i) for i in range(w.pages.count())]
     w.sim_page.params.dof.setValue(5)  # a page built later gets the current system
 
-    w.pages.groups.setCurrentIndex(3)  # as a click on the group's tab does: its first page shows
+    w.pages.groups.setCurrentIndex(5)  # as a click on the group's tab does: its first page shows
     page = w.pages.currentWidget()
-    assert isinstance(page, ModalCouplingPage) and page is w.coupling_page
-    assert list(w._built) == ["sim_page", "coupling_page"]
-    assert w.pages.group_title(w.pages.currentIndex()) == "Building models"
+    assert isinstance(page, ModalTestPage) and page is w.test_page
+    assert list(w._built) == ["sim_page", "test_page"]
+    assert w.pages.group_title(w.pages.currentIndex()) == "Testing"
     assert page.system.n == 5
     assert [w.pages.tabText(i) for i in range(w.pages.count())] == titles
 
@@ -139,12 +139,13 @@ def test_every_page_builds_in_its_tab_with_its_notes(app, main_window):
 def test_theory_button_f1_and_links_between_pages(app):
     from PySide6 import QtGui
 
+    from vib_tutorial.gui import links
     from vib_tutorial.gui.main_window import MainWindow
 
     w = MainWindow()
     w.show()
     browser = w.show_theory()
-    # the window opens on the Simulation page, which follows the One mass pages
+    # the window opens on the Simulation page, which follows the One oscillator pages
     assert browser.isVisibleTo(w) and "Before this page" in browser.toHtml()
     shortcuts = {s.key().toString(): s for s in w.findChildren(QtGui.QShortcut)}
     w.pages.setCurrentWidget(w.frf_page)
@@ -153,8 +154,8 @@ def test_theory_button_f1_and_links_between_pages(app):
     w.go_to("coupling_page", "effective-mass")  # as a page: link does
     assert w.pages.currentWidget() is w.coupling_page
     assert w.coupling_page.tabs.currentWidget() is w.coupling_page.theory
-    shortcuts["Ctrl+6"].activated.emit()
-    assert w.pages.group_title(w.pages.currentIndex()) == "Beyond the chain"
+    shortcuts["Ctrl+9"].activated.emit()
+    assert w.pages.group_title(w.pages.currentIndex()) == links.COURSE[8][0]
     w.close()
 
 
@@ -332,7 +333,7 @@ def test_a_pages_first_show_opens_its_theory(app):
     assert practice in text and practice in ABOUT_HTML.format(version="", keys=links.keys_html())
     listed = " ".join(keys for keys, _ in links.KEYS)
     shortcuts = {s.key().toString() for s in w.findChildren(QtGui.QShortcut) if s.parent() is w}
-    assert shortcuts and all(key in listed for key in shortcuts - {f"Ctrl+{i}" for i in range(2, 6)}), shortcuts
+    assert shortcuts and all(key in listed for key in shortcuts - {f"Ctrl+{i}" for i in range(2, 9)}), shortcuts
     mac = links.keys_html(mac=True)
     assert "⌘F2" in mac and "⌘[ / ⌘]" in mac and "Ctrl" not in mac and "Alt" not in mac
 
@@ -3098,7 +3099,7 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
         assert len(frames) >= 4
         assert all(float(r["paint_ms"]) > 0 for r in frames[1:])  # each frame's repaint was timed
         view = next(r for r in rows if r["kind"] == "view")
-        assert view["detail"].startswith("Foundations > Simulation & modal analysis > Modal analysis | ")
+        assert view["detail"].startswith("Modes > Simulation & modal analysis > Modal analysis | ")
 
         # What the user does is logged between the frames, with what the control is called.
         from PySide6.QtTest import QTest
@@ -3125,12 +3126,12 @@ def test_frame_stats_overlay_is_off_unless_asked_for(app, monkeypatch, tmp_path)
         rows = list(csv.DictReader(log.open(encoding="utf-8")))
         inputs = [r["detail"] for r in rows if r["kind"] == "input"]
         assert inputs[0].startswith("1 m [kg]: ") and inputs[1:] == [
-            "tab: Beyond the chain",
+            "tab: Rotating machines",
             "tab: Jeffcott rotor",
             "Gravity: on",
         ]
         views = [r for r in rows if r["kind"] == "view"]  # a frame can land after the last view on a slow box
-        assert views[-1]["detail"].startswith("Beyond the chain > Jeffcott rotor > [Custom] > ")
+        assert views[-1]["detail"].startswith("Rotating machines > Jeffcott rotor > [Custom] > ")
         # A combo alone in its group is named by its tooltip, not by a label outside the group;
         # scrolling a panel isn't an input.
         assert frame_stats.describe_input(page.editor.supports, "click") == (

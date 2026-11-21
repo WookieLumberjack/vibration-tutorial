@@ -137,7 +137,7 @@ PRACTICE_TIP = (
 )
 ABOUT_HTML = """<h3>Vibration Tutorial {version}</h3>
 <p>An interactive teaching tool for mechanical vibration: a chain of masses, springs and dampers, and the
-systems built from it. Start with the first page, <i>One mass → Single oscillator</i>, and read each page's
+systems built from it. Start with the first page, <i>One oscillator → Single oscillator</i>, and read each page's
 <i>Theory</i> tab (F1); the pages are in the order they are meant to be read. That page's notes say how a
 page works.</p>
 <p>The keys:</p>
@@ -241,7 +241,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cl.addWidget(self.size_combo)
         theme_label.setBuddy(self.theme_combo)  # their names for a screen reader
         size_label.setBuddy(self.size_combo)
-        self.pages.setCornerWidget(corner, QtCore.Qt.Corner.TopRightCorner)
+        cl.insertStretch(0)  # a row of its own, right-aligned: the groups' tabs need the window's width
         self.run_bar = TransportBar()  # the motion's controls, in one place on every page (#316 B13)
         self.run_bar.hold.clicked.connect(self.hold_curves)
         self.run_bar.unhold.clicked.connect(self.clear_held)
@@ -252,6 +252,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.error_banner = errors.ErrorBanner()  # what went wrong, once `gui.run()` installs the hook
         column.addWidget(self.error_banner)
         column.addWidget(self.pages, 1)
+        # above the pages, but parented after them: the pages come first in the focus chain, so Space isn't Defaults'
+        column.insertWidget(column.indexOf(self.pages), corner)
         column.addWidget(self.run_bar)
         self.setCentralWidget(central)
         self.resize(1700, 900)
@@ -284,7 +286,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.trial_overlay.shown.connect(self._on_ink_changed)
         self.pages.currentChanged.connect(self._clear_ink)
         notes_view.add_zoom_keys(self)  # the notes' text size
-        for i in range(len(PAGE_GROUPS)):  # Ctrl+1 … Ctrl+6: a group, at the page it last showed
+        for i in range(min(len(PAGE_GROUPS), 9)):  # Ctrl+1 … Ctrl+9: a group, at the page it last showed
             QtGui.QShortcut(
                 QtGui.QKeySequence(f"Ctrl+{i + 1}"),
                 self,
@@ -415,7 +417,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def open_first_page(self) -> None:
         """Show the course's first page, where the app first opens."""
         self.show_page(PAGE_GROUPS[0][1][0][0])
-        # The window was built showing the Simulation page: Foundations would open on it, not its first page.
+        # The window was built showing the Simulation page: its group would open on it, not its first page.
         self.pages.rewind()
 
     def open_start_page(self) -> None:
