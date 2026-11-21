@@ -59,7 +59,7 @@ from ..core.identification import (
 from ..core.measurement import AA_CUTOFF
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, number, pick
 from ..view_models.text import number as sig
-from . import coalesce, frame_stats, modal_test_figures, settle_plots
+from . import chain_page, coalesce, frame_stats, modal_test_figures, settle_plots
 from .layouts import ColumnScroll
 from .lesson import RunButton, TrialBox, trials_html
 from .links import load_notes, page_link
@@ -422,7 +422,7 @@ def _acquisition_spec(rng: np.random.Generator) -> Question:
             Requirement(
                 f"The uniform 4-mass chain, {sig(c, 6)} N·s/m dampers",
                 f"{len(t.masses)} masses",
-                _same_chain(t.system(), given),
+                t.system().same_as(given),
             ),
             Requirement("The anti-alias filter on", "on" if t.anti_alias else "off", t.anti_alias),
             at_least("The usable band (80 % of Nyquist)", band, f_top, "Hz"),
@@ -487,13 +487,6 @@ HOLD_TIP = (
     "<p>For a linear chain the two agree, apart from noise. If they differ, the structure is "
     "nonlinear; friction damps the response to a light force much more than to a strong one.</p>"
 )
-
-
-def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
-    return a.n == b.n and all(
-        np.allclose(x, y)
-        for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping), (a.friction, b.friction))
-    )
 
 
 class ModalTestPage(QtWidgets.QWidget):
@@ -839,9 +832,7 @@ class ModalTestPage(QtWidgets.QWidget):
         self.test_setup._show_rows()
         measured = self.acq
         system = trial.system()
-        self.system_requested.emit(system)
-        if self.system is None or not _same_chain(self.system, system):
-            self.set_system(system)  # nobody passed it back: test it here alone
+        chain_page.hand_over(self, system)
         if self.test_setup.input.currentIndex() != trial.input:  # the chain's size changed and reset it
             self.test_setup.input.blockSignals(True)
             self.test_setup.input.setCurrentIndex(trial.input)

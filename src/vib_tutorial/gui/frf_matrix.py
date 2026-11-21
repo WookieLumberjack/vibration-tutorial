@@ -27,13 +27,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core import ChainSystem, ModalResult, ModalTerm, frf_matrix, modal_analysis, modal_frf_terms
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, number, pick
 from ..view_models.text import number as sig
-from . import coalesce, frf_figures, weak
+from . import chain_page, coalesce, frf_figures, weak
 from .layouts import form_layout
 from .lesson import RunButton, TrialBox, three_panes, trials_html
 from .links import load_notes, page_link
 from .notes_view import NotesBrowser
 from .plots import frequency_grid
-from .style import MAX_DOF, colors
+from .style import colors
 from .theming import add_legend, mute
 from .transport import Transport
 
@@ -859,10 +859,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
 
         box = QtWidgets.QGroupBox("FRF matrix H(Ω) = (K − Ω²M + iΩC)⁻¹")
         form = form_layout(box)
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         form.addRow("Number of masses:", self.dof)
         self.quantity = QtWidgets.QComboBox()
         for q in Quantity:
@@ -888,10 +885,9 @@ class FrfMatrixPage(QtWidgets.QWidget):
         )
         self.expansion.currentIndexChanged.connect(self._recompute_terms)
         form.addRow("Modal terms:", self.expansion)
-        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
-        mute(link)
-        link.setWordWrap(True)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         form.addRow(link)
 
         self.mode_box = QtWidgets.QGroupBox("Modes included in the sum")
@@ -1049,9 +1045,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         self.trials.show_note(trial.note)
         self._unchecked = set()
         system = trial.system()
-        self.system_requested.emit(system)
-        if self.system is None or self.system.n != system.n or not np.allclose(self.system.damping, system.damping):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         if self._dirty:
             self.refresh()
         self._unchecked = {t.label for t in self.terms if t.mode in trial.unticked}
@@ -1171,9 +1165,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         n = system.n
         if self.result is None:
             self.result = modal_analysis(system)
-        self.dof.blockSignals(True)
-        self.dof.setValue(n)
-        self.dof.blockSignals(False)
+        chain_page.show_count(self.dof, n)
         if len(self.input_checks) != n:
             self._build_io(n)
         self.freqs = frequency_grid(self.result, FREQ_POINTS)

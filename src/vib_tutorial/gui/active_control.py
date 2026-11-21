@@ -30,7 +30,7 @@ from ..core.active_control import (
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, kept, number, pick
 from ..view_models.text import number as sig
-from . import active_control_figures, coalesce, settle_plots
+from . import active_control_figures, chain_page, coalesce, settle_plots
 from .challenge import ChallengeBox
 from .drag import DragDot
 from .lesson import (
@@ -51,7 +51,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .style import MAX_DOF, colors
-from .theming import add_legend, mute
+from .theming import add_legend
 
 TAB_LOCUS, TAB_GAIN, TAB_SKYHOOK = range(3)
 GAINS = np.concatenate([[0.0], np.geomspace(0.05, 2000.0, 160)])  # N·s/m, for the locus and the damping plot
@@ -410,7 +410,7 @@ def _gain_spec(rng: np.random.Generator) -> Question:
         least = _least_damped(system, ctrl)
         return (
             Requirement(
-                "The uniform four-mass chain", f"{n} masses", n == 4 and _same_chain(system, ChainSystem.uniform(4))
+                "The uniform four-mass chain", f"{n} masses", n == 4 and system.same_as(ChainSystem.uniform(4))
             ),
             kept("The sensor's mass", t.sensor, a),
             kept("The actuator's mass", t.actuator, a),
@@ -432,12 +432,6 @@ def _gain_spec(rng: np.random.Generator) -> Question:
         setup=dict(**UNIFORM, sensor=a, actuator=a, gain=0.5, lag_ms=float(lag), tab=TAB_GAIN),
         goal=goal,
         design=dict(**UNIFORM, sensor=a, actuator=a, gain=design, lag_ms=float(lag), tab=TAB_GAIN),
-    )
-
-
-def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
-    return a.n == b.n and all(
-        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
     )
 
 
@@ -514,14 +508,11 @@ class ActiveControlPage(QtWidgets.QWidget):
         self.challenge = ChallengeBox(self, PROBLEMS)
 
         ch = Form("Chain")
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         ch.add("Number of masses:", self.dof, TIPS["dof"])
-        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
-        link.setWordWrap(True)
-        mute(link)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         ch.row(link)
 
         loop = Form("Feedback loop")
@@ -670,9 +661,7 @@ class ActiveControlPage(QtWidgets.QWidget):
 
     def apply_trial(self, t: ControlTrial, draw: bool = True) -> None:
         system = t.system()
-        self.system_requested.emit(system)
-        if not _same_chain(self.system, system):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         for box, value in (
             (self.sensor, t.sensor),
             (self.actuator, t.actuator),

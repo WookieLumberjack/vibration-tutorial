@@ -42,7 +42,7 @@ from ..core.variability import (
     whitehead,
 )
 from ..view_models.text import number as sig
-from . import coalesce, settle_plots, variability_figures
+from . import chain_page, coalesce, settle_plots, variability_figures
 from .lesson import (
     Form,
     TrialBox,
@@ -61,8 +61,8 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .recompute import Recompute
-from .style import MAX_DOF, colors
-from .theming import add_legend, mute
+from .style import colors
+from .theming import add_legend
 
 TAB_HISTOGRAM, TAB_MODES, TAB_FORCED = range(3)
 TWO_PI = 2.0 * math.pi
@@ -491,16 +491,11 @@ class VariabilityPage(QtWidgets.QWidget):
         self.trials.picked.connect(self.load_trial)
 
         ch = Form("Chain")
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         ch.add("Number of masses:", self.dof, TIPS["dof"])
-        link = QtWidgets.QLabel(
-            "Its nominal masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        link = chain_page.edit_link(
+            self, "Its nominal masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
         )
-        link.setWordWrap(True)
-        mute(link)
-        link.linkActivated.connect(self.edit_parameters)
         ch.row(link)
 
         sc = Form("Scatter (CoV)")
@@ -635,13 +630,7 @@ class VariabilityPage(QtWidgets.QWidget):
     def apply_trial(self, t: VariabilityTrial) -> None:
         system = t.system()
         if system is not None:
-            self.system_requested.emit(system)
-            s = self.system
-            if s.n != system.n or not all(
-                np.allclose(a, b)
-                for a, b in ((s.masses, system.masses), (s.stiffness, system.stiffness), (s.damping, system.damping))
-            ):
-                self.set_system(system)  # nobody passed it back: show it here alone
+            chain_page.hand_over(self, system)
         for box, top in ((self.mode, int(t.blades)), (self.eo, int(t.blades) // 2)):
             box.blockSignals(True)  # their values are set below
             box.setMaximum(top)

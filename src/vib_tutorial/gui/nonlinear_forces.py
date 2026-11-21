@@ -25,7 +25,7 @@ from ..core import nonlinear_test as nl
 from ..core.model import ChainSystem
 from ..core.practice import Prediction, Problem, Question, Requirement, at_most, kept, number, pick
 from ..view_models.text import number as sig
-from . import coalesce, nonlinear_figures, settle_plots, weak
+from . import chain_page, coalesce, nonlinear_figures, settle_plots, weak
 from .layouts import FlowLayout
 from .lesson import (
     Form,
@@ -47,7 +47,7 @@ from .lesson import (
 from .links import load_notes, page_link
 from .recompute import Recompute
 from .style import MAX_DOF, colors
-from .theming import add_legend, mute
+from .theming import add_legend
 
 TAB_DISTORTION, TAB_LCURVE, TAB_PICARD, TAB_THEORY = range(4)
 BAND = (0.6, 1.6)  # the stepped sine's band, as multiples of the mode's frequency
@@ -476,15 +476,11 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         self.trials.picked.connect(self.load_trial)
 
         ch = Form("Chain")
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip(TIPS["dof"])
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self, TIPS["dof"])
         ch.add("Number of masses:", self.dof, TIPS["dof"])
-        link = QtWidgets.QLabel("Masses, springs and friction are edited on the <a href='#sim'>Simulation page</a>.")
-        link.setWordWrap(True)
-        mute(link)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and friction are edited on the <a href='#sim'>Simulation page</a>."
+        )
         ch.row(link)
         self.chain_info = note_label()
         ch.row(self.chain_info)
@@ -740,19 +736,7 @@ class NonlinearForcesPage(QtWidgets.QWidget):
         self.tabs.setCurrentIndex(t.tab)
         self.tabs.blockSignals(False)
         self._dirty = True
-        self.system_requested.emit(system)
-        s = self.system
-        same = s.n == system.n and all(
-            np.allclose(a, b)
-            for a, b in (
-                (s.masses, system.masses),
-                (s.stiffness, system.stiffness),
-                (s.damping, system.damping),
-                (s.friction, system.friction),
-            )
-        )
-        if not same:
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         if self._dirty:  # set_system didn't redraw (the page is hidden, or the chain came back unchanged)
             self.redraw()
 

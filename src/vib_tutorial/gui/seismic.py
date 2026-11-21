@@ -53,7 +53,7 @@ from ..core.seismic import (
     with_tank,
 )
 from ..view_models.text import number as sig
-from . import coalesce, seismic_figures, settle_plots
+from . import chain_page, coalesce, seismic_figures, settle_plots
 from .challenge import ChallengeBox
 from .lesson import (
     Form,
@@ -77,8 +77,8 @@ from .links import load_notes, page_link
 from .playback import Playback
 from .recompute import Recompute
 from .seismic_view import BuildingView
-from .style import MAX_DOF, colors
-from .theming import add_legend, mute
+from .style import colors
+from .theming import add_legend
 
 TAB_BUILDING, TAB_FLOORS, TAB_CORRELATION, TAB_GROUND = range(4)
 PERIODS = np.linspace(0.0, 4.0, 801)[1:]
@@ -563,15 +563,6 @@ GROUND_TIP = "<p>One of the records (top), and every record's spectrum against t
 NOTES_HTML = load_notes("seismic", figures=seismic_figures.FIGURES, trials=trials_html(TRIALS))
 
 
-def _same(a: ChainSystem, b: ChainSystem) -> bool:
-    return (
-        a.n == b.n
-        and np.allclose(a.masses, b.masses)
-        and np.allclose(a.stiffness, b.stiffness)
-        and np.allclose(a.damping, b.damping)
-    )
-
-
 class SeismicPage(QtWidgets.QWidget):
     """Controls on the left, the spectrum and the modes in the centre, the floors, correlation and records on the
     right."""
@@ -595,18 +586,15 @@ class SeismicPage(QtWidgets.QWidget):
         self.challenge = ChallengeBox(self, PROBLEMS)
 
         ch = Form("Building (the chain)")
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         ch.add("Floors:", self.dof, TIPS["dof"])
         self.k1 = ch.number("Storey 1 k₁:", 0.0, 1e9, 5e6, 0, " N/m", TIPS["k1"])  # 0: a free chain, not held
         self.k1.valueChanged.connect(self._on_k1)
         self.k1_info = note_label()
         ch.row(self.k1_info)
-        link = QtWidgets.QLabel("Masses and storey stiffnesses are edited on the <a href='#sim'>Simulation page</a>.")
-        link.setWordWrap(True)
-        mute(link)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses and storey stiffnesses are edited on the <a href='#sim'>Simulation page</a>."
+        )
         ch.row(link)
 
         spec = Form("Design spectrum")
@@ -752,9 +740,7 @@ class SeismicPage(QtWidgets.QWidget):
 
     def apply_trial(self, t: SeismicTrial) -> None:
         system = t.system()
-        self.system_requested.emit(system)
-        if not _same(self.system, system):
-            self.set_system(system)
+        chain_page.hand_over(self, system)
         for box, value in (
             (self.pga, t.pga),
             (self.ground, t.ground),
@@ -775,9 +761,7 @@ class SeismicPage(QtWidgets.QWidget):
         k = s.stiffness.copy()
         k[0] = value
         system = ChainSystem(s.masses.copy(), k, s.damping.copy(), s.friction.copy(), s.static_ratio)
-        self.system_requested.emit(system)
-        if not _same(self.system, system):  # no Simulation page (a test)
-            self.set_system(system)
+        chain_page.hand_over(self, system)
 
     @property
     def design(self) -> Design:

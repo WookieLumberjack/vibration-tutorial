@@ -36,7 +36,7 @@ from ..core.test_planning import (
     undamped_modes,
 )
 from ..view_models.text import number as sig
-from . import coalesce, planning_figures, settle_plots
+from . import chain_page, coalesce, planning_figures, settle_plots
 from .layouts import FlowLayout
 from .lesson import (
     Form,
@@ -57,7 +57,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .style import MAX_DOF, colors
-from .theming import add_legend, mute
+from .theming import add_legend
 
 TAB_PLACEMENT, TAB_NOISE, TAB_ODS, TAB_THEORY = range(4)
 UNIFORM = (1.0,) * 8
@@ -467,15 +467,9 @@ class TestPlanningPage(QtWidgets.QWidget):
         self.trials.picked.connect(self.load_trial)
 
         ch = Form("Chain")
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip(TIPS["dof"])
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self, TIPS["dof"])
         ch.add("Number of masses:", self.dof, TIPS["dof"])
-        link = QtWidgets.QLabel("Masses and springs are edited on the <a href='#sim'>Simulation page</a>.")
-        link.setWordWrap(True)
-        mute(link)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(self, "Masses and springs are edited on the <a href='#sim'>Simulation page</a>.")
         ch.row(link)
 
         sensors = Form("Sensors")
@@ -617,15 +611,7 @@ class TestPlanningPage(QtWidgets.QWidget):
 
     def apply_trial(self, t: PlanningTrial) -> None:
         system = t.system()
-        self.system_requested.emit(system)
-        s = self.system
-        if (
-            s.n != system.n
-            or not np.allclose(s.masses, system.masses)
-            or not np.allclose(s.stiffness, system.stiffness)
-            or not np.allclose(s.damping, system.damping)
-        ):
-            self.set_system(system)  # nobody passed it back: show it here alone
+        chain_page.hand_over(self, system)
         for box, value in (
             (self.targets, t.targets),
             (self.count, t.sensors),

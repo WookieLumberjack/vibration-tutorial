@@ -55,7 +55,7 @@ from ..core.oma import (
 )
 from ..core.practice import Prediction, Problem, Question, Requirement, at_least, at_most, kept, number, pick, rounded
 from ..view_models.text import number as sig
-from . import oma_figures
+from . import chain_page, oma_figures
 from .layouts import ColumnScroll, FitColumns, FlowLayout, form_layout, form_row, group, plot_height
 from .lesson import TrialBox, trials_html
 from .links import load_notes, page_link
@@ -65,7 +65,7 @@ from .notes_view import NotesBrowser
 from .panels import spin
 from .plots import decimate
 from .recompute import Recompute
-from .style import MAX_DOF, colors
+from .style import colors
 from .theming import add_legend, mute
 
 BLOCKS = (256, 512, 1024, 2048, 4096, 8192, 16384)
@@ -619,10 +619,7 @@ class OmaPage(QtWidgets.QWidget):
         # --- left: the test, the acquisition, the processing
         test = QtWidgets.QGroupBox("Test")
         form = form_layout(test)
-        self.dof = QtWidgets.QSpinBox()
-        self.dof.setRange(1, MAX_DOF)
-        self.dof.setToolTip("Same chain as the Simulation page; changing it here changes it there too.")
-        self.dof.valueChanged.connect(self.dof_requested)
+        self.dof = chain_page.dof_box(self)
         form.addRow("Number of masses:", self.dof)
         self.input = QtWidgets.QComboBox()
         form_row(form, "Ambient forces on:", self.input, TIPS["input"])
@@ -638,10 +635,9 @@ class OmaPage(QtWidgets.QWidget):
         self.machine_hz = spin(0.0, 1e4, 0.0, 3, " Hz")
         self.machine_force = spin(0.0, 1e6, 1.0, 2, " N")
         form_row(form, "Machine on m1:", group(self.machine_hz, "at", self.machine_force), TIPS["machine"])
-        link = QtWidgets.QLabel("Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>.")
-        mute(link)
-        link.setWordWrap(True)
-        link.linkActivated.connect(self.edit_parameters)
+        link = chain_page.edit_link(
+            self, "Masses, springs and dampers are edited on the <a href='#sim'>Simulation page</a>."
+        )
         form.addRow(link)
 
         daq = QtWidgets.QGroupBox("Acquisition")
@@ -826,9 +822,7 @@ class OmaPage(QtWidgets.QWidget):
         if n_changed:
             self.fdd = None  # the old chain's modes: nothing compares them with this one's until it's processed
         self._loading = True
-        self.dof.blockSignals(True)
-        self.dof.setValue(system.n)
-        self.dof.blockSignals(False)
+        chain_page.show_count(self.dof, system.n)
         if n_changed:
             current = self.input.currentIndex()
             self.input.clear()
@@ -866,9 +860,7 @@ class OmaPage(QtWidgets.QWidget):
         t = OmaSetup(**setup)
         system = t.system()
         if system is not None:
-            self.system_requested.emit(system)
-            if self.system is None or not _same_chain(self.system, system):
-                self.set_system(system)  # nobody passed it back: show it here alone
+            chain_page.hand_over(self, system)
         self._load(t)
 
     def _load(self, t: OmaSetup) -> None:
@@ -1440,9 +1432,3 @@ class OmaPage(QtWidgets.QWidget):
                 f"MAC threshold, or lengthen the blocks."
             )
         c.setXRange(0.0, float(m.lag[show][-1]), padding=0)
-
-
-def _same_chain(a: ChainSystem, b: ChainSystem) -> bool:
-    return a.n == b.n and all(
-        np.allclose(x, y) for x, y in ((a.masses, b.masses), (a.stiffness, b.stiffness), (a.damping, b.damping))
-    )
