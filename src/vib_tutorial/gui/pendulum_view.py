@@ -23,6 +23,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.pendulum import Kind, Pendulum
 from . import coalesce
+from .drag import Grabbable
 from .style import colors
 
 PLUCK_TIP = (
@@ -48,7 +49,7 @@ def _hatch(x0: float, x1: float, y: float, down: bool) -> tuple[np.ndarray, np.n
     return np.array(xs), np.array(ys)
 
 
-class PendulumView(pg.PlotWidget):
+class PendulumView(Grabbable, pg.PlotWidget):
     grabbed = QtCore.Signal()
     turned = QtCore.Signal(float)  # θ (rad), signed
     released = QtCore.Signal()
@@ -212,9 +213,6 @@ class PendulumView(pg.PlotWidget):
                 self.ghost_bob.setVisible(True)
 
     # ------------------------------------------------------------------ pluck
-    def _view_pos(self, event) -> QtCore.QPointF:
-        return self.plotItem.vb.mapSceneToView(self.mapToScene(event.position().toPoint()))
-
     def on_handle(self, pos: QtCore.QPointF) -> bool:
         """Whether a point (view coordinates) is on the body's handle: the bob, the rod's end, the disc's mark."""
         hx, hy = self._point(self.theta)
@@ -225,34 +223,15 @@ class PendulumView(pg.PlotWidget):
         self.set_angle(theta)
         self.turned.emit(theta)
 
-    def mousePressEvent(self, event) -> None:
-        pos = self._view_pos(event)
-        if event.button() != QtCore.Qt.MouseButton.LeftButton or not self.on_handle(pos):
-            super().mousePressEvent(event)
-            return
-        self.held = True
-        self.setCursor(QtCore.Qt.CursorShape.ClosedHandCursor)
+    def grab_at(self, pos: QtCore.QPointF) -> object | None:
+        return True if self.on_handle(pos) else None
+
+    def _take(self, what: object, pos: QtCore.QPointF) -> None:
         self.grabbed.emit()
         self._turn_to(pos)
-        event.accept()
 
-    def mouseMoveEvent(self, event) -> None:
-        pos = self._view_pos(event)
-        if self.held:
-            self._turn_to(pos)
-            event.accept()
-            return
-        if self.on_handle(pos):
-            self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
-        else:
-            self.unsetCursor()
-        super().mouseMoveEvent(event)
+    def _pull(self, pos: QtCore.QPointF) -> None:
+        self._turn_to(pos)
 
-    def mouseReleaseEvent(self, event) -> None:
-        if not self.held:
-            super().mouseReleaseEvent(event)
-            return
-        self.held = False
-        self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
+    def _let_go(self, what: object) -> None:
         self.released.emit()
-        event.accept()

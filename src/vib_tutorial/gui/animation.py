@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtWidgets
 
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
+from .drag import Grabbable
 from .style import colors, text_on
 
 SPACING = 1.0  # display units between mass centers at rest
@@ -88,7 +89,8 @@ def damper_path(x0: float, x1: float, y: float, rest_gap: float, h: float = 0.04
     return np.array(xs), np.array(ys)
 
 
-class ChainView(pg.PlotWidget):
+class ChainView(Grabbable, pg.PlotWidget):
+    NOT_HELD = None  # a mass's index, 0 too, while held
     mass_grabbed = QtCore.Signal(int)  # mass index
     mass_dragged = QtCore.Signal(int, float)  # mass index, displacement (m)
     mass_released = QtCore.Signal(int)
@@ -263,9 +265,6 @@ class ChainView(pg.PlotWidget):
                 item.setVisible(False)
 
     # ------------------------------------------------------------------ drag
-    def _view_pos(self, event) -> QtCore.QPointF:
-        return self.plotItem.vb.mapSceneToView(self.mapToScene(event.position().toPoint()))
-
     def mass_at(self, pos: QtCore.QPointF) -> int | None:
         """Index of the mass drawn under a point in view coordinates, if any."""
         for i, xc in enumerate(self._centers):
@@ -275,44 +274,26 @@ class ChainView(pg.PlotWidget):
 
     def _drag_to(self, pos: QtCore.QPointF) -> None:
         i = self.held
-        assert i is not None, "dragging only once a mass is held"
+        assert isinstance(i, int), "dragging only once a mass is held"
         offset = float(np.clip(pos.x() - (i + 1) * SPACING, -self.max_drag, self.max_drag))
         self.mass_dragged.emit(i, offset / self.gain)
 
-    def mousePressEvent(self, event) -> None:
-        left = event.button() == QtCore.Qt.MouseButton.LeftButton
-        i = self.mass_at(self._view_pos(event)) if left and self.draggable else None
-        if i is None:
-            super().mousePressEvent(event)
-            return
+    def grab_at(self, pos: QtCore.QPointF) -> object | None:
+        return self.mass_at(pos) if self.draggable else None
+
+    def _take(self, what: object, pos: QtCore.QPointF) -> None:
+        assert isinstance(what, int), "a mass's index"
         if self.auto_scale:
             self.gain = min(self.gain, DRAG_GAIN)
-        self.held = i
-        self.setCursor(QtCore.Qt.CursorShape.ClosedHandCursor)
-        self.mass_grabbed.emit(i)
-        self._drag_to(self._view_pos(event))
-        event.accept()
+        self.mass_grabbed.emit(what)
+        self._drag_to(pos)
 
-    def mouseMoveEvent(self, event) -> None:
-        pos = self._view_pos(event)
-        if self.held is not None:
-            self._drag_to(pos)
-            event.accept()
-            return
-        if not self.draggable or self.mass_at(pos) is None:
-            self.unsetCursor()
-        else:
-            self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
-        super().mouseMoveEvent(event)
+    def _pull(self, pos: QtCore.QPointF) -> None:
+        self._drag_to(pos)
 
-    def mouseReleaseEvent(self, event) -> None:
-        if self.held is None:
-            super().mouseReleaseEvent(event)
-            return
-        i, self.held = self.held, None
-        self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
-        self.mass_released.emit(i)
-        event.accept()
+    def _let_go(self, what: object) -> None:
+        assert isinstance(what, int), "a mass's index"
+        self.mass_released.emit(what)
 
 
 def _fmt_len(meters: float) -> str:

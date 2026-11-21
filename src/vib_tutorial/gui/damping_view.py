@@ -25,6 +25,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.damping_models import MODELS, Model
 from . import coalesce
 from .animation import damper_path, spring_path
+from .drag import Grabbable
 from .style import colors
 
 WALL = 0.0
@@ -44,7 +45,7 @@ TIP = (
 )
 
 
-class DampingView(pg.PlotWidget):
+class DampingView(Grabbable, pg.PlotWidget):
     grabbed = QtCore.Signal()
     pulled = QtCore.Signal(float)  # the displacement under the hand (m)
     released = QtCore.Signal()
@@ -175,9 +176,6 @@ class DampingView(pg.PlotWidget):
                 self._dampers[m].setData(*damper_path(WALL, left, y + DAMPER_Y, gap, h=0.08))
 
     # ------------------------------------------------------------------- pluck
-    def _view_pos(self, event) -> QtCore.QPointF:
-        return self.plotItem.vb.mapSceneToView(self.mapToScene(event.position().toPoint()))
-
     def on_mass(self, pos: QtCore.QPointF) -> bool:
         """Whether a point (view coordinates) is on one of the masses."""
         for m, y in self._rows.items():
@@ -190,34 +188,12 @@ class DampingView(pg.PlotWidget):
         offset = float(np.clip(pos.x() - REST, -MOST, MOST))
         self.pulled.emit(offset / self.gain)
 
-    def mousePressEvent(self, event) -> None:
-        pos = self._view_pos(event)
-        if event.button() != QtCore.Qt.MouseButton.LeftButton or not self.on_mass(pos):
-            super().mousePressEvent(event)
-            return
-        self.held = True
-        self.setCursor(QtCore.Qt.CursorShape.ClosedHandCursor)
+    def grab_at(self, pos: QtCore.QPointF) -> object | None:
+        return True if self.on_mass(pos) else None
+
+    def _take(self, what: object, pos: QtCore.QPointF) -> None:
         self.grabbed.emit()
         self._pull(pos)
-        event.accept()
 
-    def mouseMoveEvent(self, event) -> None:
-        pos = self._view_pos(event)
-        if self.held:
-            self._pull(pos)
-            event.accept()
-            return
-        if self.on_mass(pos):
-            self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
-        else:
-            self.unsetCursor()
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event) -> None:
-        if not self.held:
-            super().mouseReleaseEvent(event)
-            return
-        self.held = False
-        self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
+    def _let_go(self, what: object) -> None:
         self.released.emit()
-        event.accept()

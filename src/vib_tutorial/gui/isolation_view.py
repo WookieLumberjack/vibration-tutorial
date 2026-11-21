@@ -30,6 +30,7 @@ from PySide6 import QtCore, QtWidgets
 from ..core.isolation import Mount
 from . import coalesce
 from .animation import damper_path, spring_path
+from .drag import Grabbable
 from .style import colors
 
 FLOOR_HALF = 1.6
@@ -59,7 +60,7 @@ def _vertical(along: tuple[np.ndarray, np.ndarray]) -> tuple[np.ndarray, np.ndar
     return ys, xs
 
 
-class IsolationView(pg.PlotWidget):
+class IsolationView(Grabbable, pg.PlotWidget):
     grabbed = QtCore.Signal()
     pulled = QtCore.Signal(float)  # the machine's displacement under the hand (m)
     released = QtCore.Signal()
@@ -257,9 +258,6 @@ class IsolationView(pg.PlotWidget):
             self._draw()
 
     # ------------------------------------------------------------------- pull
-    def _view_pos(self, event) -> QtCore.QPointF:
-        return self.plotItem.vb.mapSceneToView(self.mapToScene(event.position().toPoint()))
-
     def on_machine(self, pos: QtCore.QPointF) -> bool:
         rect = self.machine.rect()
         return rect.adjusted(-0.05, -0.05, 0.05, 0.05).contains(pos)
@@ -271,35 +269,13 @@ class IsolationView(pg.PlotWidget):
         offset = float(np.clip(pos.y() - self._grip - self._rest_centre(), -MOST, MOST))
         self.pulled.emit(offset / self.gain)
 
-    def mousePressEvent(self, event) -> None:
-        pos = self._view_pos(event)
-        if event.button() != QtCore.Qt.MouseButton.LeftButton or not self.on_machine(pos):
-            super().mousePressEvent(event)
-            return
-        self.held = True
+    def grab_at(self, pos: QtCore.QPointF) -> object | None:
+        return True if self.on_machine(pos) else None
+
+    def _take(self, what: object, pos: QtCore.QPointF) -> None:
         self._grip = pos.y() - self.machine.rect().center().y()  # held where it was taken hold of
-        self.setCursor(QtCore.Qt.CursorShape.ClosedHandCursor)
         self.grabbed.emit()
         self._pull(pos)
-        event.accept()
 
-    def mouseMoveEvent(self, event) -> None:
-        pos = self._view_pos(event)
-        if self.held:
-            self._pull(pos)
-            event.accept()
-            return
-        if self.on_machine(pos):
-            self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
-        else:
-            self.unsetCursor()
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event) -> None:
-        if not self.held:
-            super().mouseReleaseEvent(event)
-            return
-        self.held = False
-        self.setCursor(QtCore.Qt.CursorShape.OpenHandCursor)
+    def _let_go(self, what: object) -> None:
         self.released.emit()
-        event.accept()
