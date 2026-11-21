@@ -8,6 +8,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from ..core import ChainSystem, ForceController, ForceKind, ForceSettings
 from ..core.model import DEFAULT_DAMPING, DEFAULT_MASS, DEFAULT_STIFFNESS
 from ..core.presets import Preset, presets
+from ..view_models.text import fixed
 from ..view_models.text import number as sig
 from . import weak
 from .layouts import FlowLayout, form_layout, group
@@ -18,8 +19,43 @@ from .theming import mute
 from .transport import space_to_focus, speed_text, watch_focus
 
 
+class NumberBox(QtWidgets.QDoubleSpinBox):
+    """A spin box that shows its value as the pages print numbers (#409 U-17): to its decimals with the trailing
+    zeros dropped (1 kg, 0.25 kg, not 1.0000 kg beside 0.2500), thousands separated from 10,000 (12,500 N/m);
+    typed, a separator or a − is taken as Qt's would not."""
+
+    def textFromValue(self, value: float) -> str:
+        text = fixed(value, self.decimals())
+        if abs(value) >= 1e4:
+            whole, _, part = text.partition(".")
+            text = f"{int(whole):,}" + (f".{part}" if part else "")
+        return text
+
+    def _number(self, text: str) -> float | None:
+        bare = text.removeprefix(self.prefix()).removesuffix(self.suffix()).strip()
+        try:
+            return float(bare.replace(",", "").replace("−", "-"))
+        except ValueError:
+            return None
+
+    def valueFromText(self, text: str) -> float:
+        value = self._number(text)
+        return self.value() if value is None else value
+
+    def validate(self, text: str, pos: int) -> tuple[QtGui.QValidator.State, str, int]:
+        bare = text.removeprefix(self.prefix()).removesuffix(self.suffix()).strip()
+        if bare in ("", "-", "−", ".", "-.", "−."):
+            return QtGui.QValidator.State.Intermediate, text, pos
+        value = self._number(text)
+        if value is None:
+            return QtGui.QValidator.State.Invalid, text, pos
+        if self.minimum() <= value <= self.maximum():
+            return QtGui.QValidator.State.Acceptable, text, pos
+        return QtGui.QValidator.State.Intermediate, text, pos
+
+
 def spin(lo: float, hi: float, value: float, decimals: int, suffix: str = "") -> QtWidgets.QDoubleSpinBox:
-    box = QtWidgets.QDoubleSpinBox()
+    box = NumberBox()
     box.setRange(lo, hi)
     box.setDecimals(decimals)
     box.setValue(value)

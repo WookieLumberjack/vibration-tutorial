@@ -22,7 +22,7 @@ from ..core.magnetic_bearing import MagneticBearing
 from ..core.rotor import CRACK_DEPTH_MAX, STEEL, Bearing, Crack, PlaneWeight, RotorSystem
 from . import accessible
 from .layouts import form_layout
-from .panels import spin
+from .panels import NumberBox, spin
 from .rotor_bearing import BearingPanel
 from .rotor_magnet import MagnetPanel
 from .rotor_rub import RubPanel
@@ -539,7 +539,7 @@ def _bearing(
     return Bearing(kx, ky, cx, cy, mass, kxy, swirl, film=film, magnet=magnet)
 
 
-class PositionBox(QtWidgets.QDoubleSpinBox):
+class PositionBox(NumberBox):
     """The disc's position a/L: between the bearings or overhung past either, stepping over the bearings."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
