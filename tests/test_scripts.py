@@ -31,11 +31,6 @@ def _shot_names() -> list[str]:
     return [elt.id for elt in shots.elts if isinstance(elt, ast.Name)]
 
 
-@pytest.fixture(scope="module")
-def app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
 @pytest.fixture(autouse=True)
 def _free_windows(app, free_windows):
     """Each test's windows torn down and freed after it (conftest's `free_windows`)."""

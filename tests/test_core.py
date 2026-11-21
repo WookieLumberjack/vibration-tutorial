@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import pytest
+from helpers import advance_for
 
 from vib_tutorial.core import (
     ChainSystem,
@@ -966,12 +967,7 @@ def test_back_expansion_of_a_reduced_model():
 
 def run_for(sim, duration):
     """Advance by `duration`, past MAX_STEPS_PER_ADVANCE; return the samples (t, x, v) stacked."""
-    end = sim.t + duration
-    out = []
-    while sim.t < end - 1e-12:
-        out.append(sim.advance(end - sim.t)[:3])
-        if not out[-1][0].size:  # under half a step left: advance rounds it to none
-            break
+    out = [r[:3] for r in advance_for(sim, duration)]
     return tuple(np.concatenate(a) for a in zip(*out))
 
 

@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from helpers import advance_for
 from notes_quoting import quoted
 
 import vib_tutorial.core.rotor_modes as rotor_modes
@@ -28,12 +29,7 @@ ANISO = Bearing(ky=8e4)
 
 def run(sim: RotorSimulator, duration: float) -> RotorSamples:
     """Advance by `duration` s, looping over the simulator's cap on steps per call."""
-    parts, end = [], sim.t + duration
-    while sim.t < end - 1e-12:
-        r = sim.advance(end - sim.t)
-        if not r.t.size:
-            break
-        parts.append(r)
+    parts = advance_for(sim, duration)
     return RotorSamples(*(np.concatenate([getattr(p, f) for p in parts]) for f in ("t", "q", "omega", "phase")))
 
 

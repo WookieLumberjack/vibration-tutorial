@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from helpers import advance_for
 
 from vib_tutorial.core.rotor import TX, TY, XA, XB, XD, YD, Bearing, RotorSystem
 from vib_tutorial.core.rotor_modes import campbell, synchronous_response, whirl_modes
@@ -15,11 +16,7 @@ UNDAMPED = Bearing(cx=0.0, cy=0.0)
 
 def run(sim: RotorSimulator, seconds: float) -> list:
     """Advance in pieces (advance caps its steps); return each piece's samples."""
-    out = []
-    end = sim.t + seconds
-    while sim.t < end - 1e-12:
-        out.append(sim.advance(min(0.25, end - sim.t)))
-    return out
+    return advance_for(sim, seconds, piece=0.25)
 
 
 def test_matrices_are_symmetric_and_gyroscopic_matrix_skew():

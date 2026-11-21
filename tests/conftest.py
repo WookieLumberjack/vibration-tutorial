@@ -26,6 +26,14 @@ os.environ["VIB_CACHE"] = tempfile.mkdtemp(prefix="vib-cache-")  # typeset equat
 WARN_SHARE = 0.8  # warn when a worker's peak address space passes this share of `ulimit -v`
 
 
+@pytest.fixture(scope="session")
+def app():
+    """The QApplication, offscreen (one for the whole run; a GUI module's tests ask for it by name)."""
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    QtWidgets = pytest.importorskip("PySide6.QtWidgets")
+    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+
+
 @pytest.fixture
 def main_window(request):
     """A main window, shown, its frame loop held still (`loop.enabled`), for the tests that only build, read or set up pages: each

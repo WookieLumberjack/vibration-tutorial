@@ -4,6 +4,7 @@ import math
 
 import numpy as np
 import pytest
+from helpers import advance_for
 
 from vib_tutorial.core.rotor import XB, XD, YA, YB, YD, Bearing, RotorSystem
 from vib_tutorial.core.rotor_balance import SteadyMeasurement
@@ -15,11 +16,7 @@ UNDAMPED = Bearing(cx=0.0, cy=0.0)
 
 
 def run(sim: RotorSimulator, seconds: float) -> list:
-    out = []
-    end = sim.t + seconds
-    while sim.t < end - 1e-12:
-        out.append(sim.advance(min(0.25, end - sim.t)))
-    return out
+    return advance_for(sim, seconds, piece=0.25)
 
 
 def test_the_static_sag_matches_the_beam_and_springs():

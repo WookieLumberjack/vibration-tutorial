@@ -17,11 +17,6 @@ from vib_tutorial.gui.main_window import LAZY_PAGES  # noqa: E402
 pytestmark = pytest.mark.slow  # builds every page
 
 
-@pytest.fixture(scope="module")
-def app():
-    return QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-
-
 @pytest.fixture(autouse=True)
 def _free_windows(app, free_windows):
     """Each test's windows torn down and freed after it (conftest's `free_windows`)."""
