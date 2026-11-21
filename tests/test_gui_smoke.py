@@ -5449,8 +5449,8 @@ def test_the_theory_tabs_room_goes_back_when_it_hides(main_window):
 
     w = main_window
     w.resize(1280, 800)
-    w.show_page("signals_page")
-    page = w.signals_page
+    w.show_page("frf_page")  # Signals', the page #409 U-13 met it on, has the room since U-17's narrower boxes
+    page = w.frf_page
     splitter = page.findChild(QtWidgets.QSplitter)
     settle()
     before = splitter.sizes()
@@ -5566,6 +5566,25 @@ def test_every_pages_tabs_fit_a_1280_px_window_without_scroll_arrows(main_window
                     clipped.append((name, column.width(), column.minimumSizeHint().width()))
     assert not over
     assert not clipped
+
+
+def test_spin_boxes_show_numbers_as_the_pages_print_them(app):
+    """`panels.spin`'s boxes (every page's) drop trailing zeros and separate thousands, and read what's typed,
+    separators and all (#409 U-17: 1.0000 kg beside 2 kg)."""
+    from PySide6 import QtGui
+
+    from vib_tutorial.gui.panels import spin
+
+    mass, spring = spin(0.0, 10.0, 1.0, 4, " kg"), spin(0.0, 1e7, 12_500.0, 2, " N/m")
+    assert mass.text() == "1 kg" and spring.text() == "12,500 N/m"
+    mass.setValue(0.25)
+    mass.stepBy(1)
+    assert mass.text() == "0.26 kg"
+    acceptable, invalid = QtGui.QValidator.State.Acceptable, QtGui.QValidator.State.Invalid
+    assert spring.validate("20,000 N/m", 3)[0] == acceptable and mass.validate("abc", 1)[0] == invalid
+    spring.lineEdit().setText("20,000.5 N/m")
+    spring.interpretText()
+    assert spring.value() == 20_000.5 and spring.text() == "20,000.5 N/m"
 
 
 def test_no_page_shows_e_notation(main_window):
