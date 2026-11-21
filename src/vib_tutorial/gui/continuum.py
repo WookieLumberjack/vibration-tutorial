@@ -375,7 +375,7 @@ NOTES_HTML = load_notes("continuum", figures=continuum_figures.FIGURES, trials=t
 
 
 def fmt_hz(f: float) -> str:
-    return f"{f / 1e3:.4g} kHz" if f >= 1e4 else f"{f:.4g} Hz"
+    return fmt(f, "Hz", 4, largest="k", smallest="")
 
 
 def scheme_color(scheme: Scheme) -> str:

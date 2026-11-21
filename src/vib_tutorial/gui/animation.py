@@ -6,6 +6,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..view_models.text import fmt
 from .style import colors, text_on
 
 SPACING = 1.0  # display units between mass centers at rest
@@ -314,8 +315,4 @@ class ChainView(pg.PlotWidget):
 
 
 def _fmt_len(meters: float) -> str:
-    if meters >= 1:
-        return f"{meters:.3g} m"
-    if meters >= 1e-3:
-        return f"{meters * 1e3:.3g} mm"
-    return f"{meters * 1e6:.3g} µm"
+    return fmt(meters, "m", largest="", smallest="µ")

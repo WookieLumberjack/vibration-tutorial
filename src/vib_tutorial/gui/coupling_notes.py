@@ -10,10 +10,11 @@ from ..core import ChainSystem, ModalResult
 from ..core.modal_coupling import CoupledModel
 from ..core.practice import Prediction
 from ..core.presets import presets
+from ..view_models.text import entry
 from . import coupling_figures, links, notation
-from .cms_notes import _side_by_side, fmt, matrix_html
 from .lesson import trials_html
 from .links import load_notes
+from .matrix_table import matrix_html, side_by_side
 from .style import colors
 
 
@@ -161,7 +162,7 @@ def _vec_table(
     ]
     for r, label in enumerate(rows):
         style = f" bgcolor='{colors.block_tints['b', 'q']}'" if r == bold_row else ""
-        cells = "".join(f"<td align='right'{style}>{fmt(c[r], s)}</td>" for c, s in zip(columns, scale))
+        cells = "".join(f"<td align='right'{style}>{entry(c[r], s)}</td>" for c, s in zip(columns, scale))
         out.append(f"<tr><th>{label}</th>{cells}</tr>")
     if total is not None:
         out.append("<tr><th>Σ</th>" + "".join(f"<td align='right'><b>{t}</b></td>" for t in total) + "</tr>")
@@ -206,7 +207,7 @@ def matrices_html(model: CoupledModel, full: ModalResult) -> str:
         "the off-diagonal (coupling) entries.</p>"
     )
     parts.append(
-        _side_by_side(*(matrix_html(X, labels, labels, groups, groups, t) for X, t in ((K, "K"), (C, "C"), (M, "M"))))
+        side_by_side(*(matrix_html(X, labels, labels, groups, groups, t) for X, t in ((K, "K"), (C, "C"), (M, "M"))))
     )
     parts.append(
         f"<p><b>A on its own</b> is the top-left block with k<sub>{j + 1}</sub> taken off its tip entry: "
@@ -218,7 +219,7 @@ def matrices_html(model: CoupledModel, full: ModalResult) -> str:
         "M<sub>A</sub> and M<sub>B</sub> are the diagonals of each side's own masses.</p>"
     )
     parts.append(
-        _side_by_side(
+        side_by_side(
             _mat(A.K, la, "i", "K<sub>A</sub>"),
             _mat(A.M, la, "i", "M<sub>A</sub>"),
             _mat(B.K, lb, "b", "K<sub>B</sub>"),
@@ -326,7 +327,7 @@ def matrices_html(model: CoupledModel, full: ModalResult) -> str:
     gamma = float(part_b.sum())
     parts.append("<h3>5. Participation: project the mode on the load</h3>")
     parts.append(
-        _side_by_side(
+        side_by_side(
             f"<p><b>A{ra + 1}</b>: φ<sup>T</sup><b>e</b><sub>tip</sub></p>"
             + _vec_table(
                 ["", "e<sub>tip,i</sub>", "φ<sub>i</sub>", "e<sub>tip,i</sub>φ<sub>i</sub>"],
@@ -432,7 +433,7 @@ def matrices_html(model: CoupledModel, full: ModalResult) -> str:
         "<p>ground — k<sub>a</sub>, c<sub>a</sub> — m<sub>a</sub> — k<sub>b</sub>, c<sub>b</sub> — "
         "m<sub>b</sub>, assembled like a 2-mass chain:</p>"
     )
-    parts.append(_side_by_side(_mat(model.K, l2, "q", "K"), _mat(model.C, l2, "q", "C"), _mat(model.M, l2, "q", "M")))
+    parts.append(side_by_side(_mat(model.K, l2, "q", "K"), _mat(model.C, l2, "q", "C"), _mat(model.M, l2, "q", "M")))
     zs = ", ".join("overdamped" if z is None else f"{z:.4f}" for z in model.zetas)
     parts.append(
         f"<p>K η = ω² M η gives <b>{_g(model.fn_hz[0])}</b> and <b>{_g(model.fn_hz[1])} Hz</b> (ζ = {zs}, exact, "
@@ -456,7 +457,7 @@ def matrices_html(model: CoupledModel, full: ModalResult) -> str:
     )
     TM, TK = T.T @ M @ T, T.T @ K @ T
     parts.append(
-        _side_by_side(
+        side_by_side(
             matrix_html(T, labels, l2, groups, ["q", "q"], "T"),
             _mat(TK, l2, "q", "T<sup>T</sup>KT"),
             _mat(TM, l2, "q", "T<sup>T</sup>MT"),

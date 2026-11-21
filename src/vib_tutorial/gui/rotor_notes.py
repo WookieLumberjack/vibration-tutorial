@@ -11,9 +11,10 @@ import numpy as np
 from ..core.rotor import DOF_NAMES, MODE_LIMIT, XD, YA, YB, YD, RotorSystem
 from ..core.rotor_modes import periodic_steady, whirl_modes
 from ..core.rotor_simulator import RPM
+from ..view_models.text import entry
 from . import rotor_figures, rotor_practice
-from .cms_notes import fmt
 from .links import load_notes
+from .matrix_table import matrix_html
 from .style import colors
 
 LABELS = [
@@ -50,34 +51,10 @@ def _legend() -> str:
     )
 
 
-def _num(v: float, scale: float) -> str:
-    """Four significant figures without exponents where they fit: 0.000625, 7363, 56,820."""
-    if abs(v) <= 1e-10 * scale:
-        return "0"
-    if abs(v) >= 1e7 or abs(v) < 1e-4:
-        return f"{v:.3e}"
-    if abs(v) >= 1e4:
-        return f"{float(f'{v:.4g}'):,.0f}"
-    return f"{v:.4g}"
-
-
 def _matrix(A: np.ndarray, labels: list[str], groups: list[str], title: str) -> str:
-    """An HTML table of A with labelled rows and columns, its cells tinted by block (see _legend)."""
-    scale = float(np.abs(A).max()) if A.size else 1.0
-    # Unwrapped: a wide matrix (a shaft with mass) scrolls sideways rather than breaking its numbers.
-    nowrap = "white-space:nowrap"
-    head = "".join(f"<th style='{nowrap}'>{c}</th>" for c in labels)
-    out = [f"<table border='1' cellspacing='0' cellpadding='3'><tr><th style='{nowrap}'>{title}</th>{head}</tr>"]
-    for r, (label, rg) in enumerate(zip(labels, groups)):
-        cells = []
-        for c, cg in enumerate(groups):
-            text = _num(A[r, c], scale)
-            style = nowrap + (f"; color:{colors.grey}" if text == "0" else "")
-            tint = colors.block_tints[tuple(sorted((rg, cg)))]
-            cells.append(f"<td align='right' style='{style}' bgcolor='{tint}'>{text}</td>")
-        out.append(f"<tr><th style='{nowrap}'>{label}</th>{''.join(cells)}</tr>")
-    out.append("</table>")
-    return "".join(out)
+    """An HTML table of A with labelled rows and columns, its cells tinted by block (see _legend), unwrapped: a
+    wide matrix (a shaft with mass) scrolls sideways rather than breaking its numbers."""
+    return matrix_html(A, labels, labels, groups, groups, title, nowrap=True)
 
 
 def _labels(system: RotorSystem) -> tuple[list[str], list[str]]:
@@ -96,7 +73,7 @@ def _coupling(s: RotorSystem) -> str:
         if b.film is not None
         else "none (a magnetic bearing) at " + n
         if b.magnet is not None
-        else f"{fmt(b.kxy, 1.0)} N/m at {n}"
+        else f"{entry(b.kxy)} N/m at {n}"
         for n, b in (("A", s.bearing_a), ("B", s.bearing_b))
     )
 
@@ -111,11 +88,11 @@ def _films_html(s: RotorSystem, omega: float) -> str:
             continue
         k, c = st.k, st.c
         parts.append(
-            f"at {name}, under {fmt(w, 1.0)} N, ε = {st.eccentricity:.3f} at {math.degrees(st.attitude):.1f}° from the "
-            f"load line: k<sub>xx</sub>, k<sub>xy</sub>, k<sub>yx</sub>, k<sub>yy</sub> = {fmt(k[0, 0], 1.0)}, "
-            f"{fmt(k[0, 1], 1.0)}, {fmt(k[1, 0], 1.0)}, {fmt(k[1, 1], 1.0)} N/m and c<sub>xx</sub>, "
-            f"c<sub>xy</sub> = c<sub>yx</sub>, c<sub>yy</sub> = {fmt(c[0, 0], 1.0)}, {fmt(c[0, 1], 1.0)}, "
-            f"{fmt(c[1, 1], 1.0)} N·s/m"
+            f"at {name}, under {entry(w)} N, ε = {st.eccentricity:.3f} at {math.degrees(st.attitude):.1f}° from the "
+            f"load line: k<sub>xx</sub>, k<sub>xy</sub>, k<sub>yx</sub>, k<sub>yy</sub> = {entry(k[0, 0])}, "
+            f"{entry(k[0, 1])}, {entry(k[1, 0])}, {entry(k[1, 1])} N/m and c<sub>xx</sub>, "
+            f"c<sub>xy</sub> = c<sub>yx</sub>, c<sub>yy</sub> = {entry(c[0, 0])}, {entry(c[0, 1])}, "
+            f"{entry(c[1, 1])} N·s/m"
         )
     held = max(
         abs(omega),
@@ -194,7 +171,7 @@ def _magnets_html(s: RotorSystem) -> str:
     return (
         "<h4>The magnetic bearings</h4><p>The journals float in active magnetic bearings (the <i>Magnetic "
         "bearing</i> tab) in place of the springs and dampers. On each axis a pair of magnets pulls the journal "
-        f"toward the nearer one with k<sub>m</sub>x, here (at {which}) k<sub>m</sub> = {fmt(m.negative_stiffness, 1.0)} "
+        f"toward the nearer one with k<sub>m</sub>x, here (at {which}) k<sub>m</sub> = {entry(m.negative_stiffness)} "
         "N/m: that is the −k<sub>m</sub> on the journals' diagonal in K below, a negative stiffness. The rest of "
         f"the push is the control current's, −k<sub>i</sub>i<sub>c</sub> (k<sub>i</sub> = {m.current_gain:.4g} N/A), set by a "
         f"PID behind the amplifier, i<sub>c</sub> = G<sub>c</sub>(s)x with G<sub>c</sub>(s) = (k<sub>p</sub> + k<sub>I</sub>/s + "
@@ -331,21 +308,21 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         swirl = (
             f" With fluid swirl the cross-coupling grows with the speed, k<sub>xy</sub> + λcΩ (c the mean of "
             f"c<sub>x</sub> and c<sub>y</sub>), and that part "
-            f"sits in ΩH (below): at this speed k<sub>xy</sub> is {fmt(kxy_a, 1.0)} N/m at A and "
-            f"{fmt(kxy_b, 1.0)} N/m at B in all."
+            f"sits in ΩH (below): at this speed k<sub>xy</sub> is {entry(kxy_a)} N/m at A and "
+            f"{entry(kxy_b)} N/m at B in all."
         )
     else:
         swirl = ""
     fb = ks @ s.bow_shape() * s.bow
-    bow_journals = f"{fmt(-fb[0], 1.0)} N at A and {fmt(-fb[3], 1.0)} N at B"
+    bow_journals = f"{entry(-fb[0])} N at A and {entry(-fb[3])} N at B"
     if s.gravity and s.periodic:
         qs, qk = (x[0] for x in periodic_steady(s, np.array([omega]), gravity=True, rotating=False, top=3))
         breathing = s.spacing == 1
         gravity = (
             f"<h4>Gravity</h4><p>On a horizontal rotor f also holds the weights, constant: "
             f"−m<sub>A</sub>g, −mg and −m<sub>B</sub>g on y<sub>A</sub>, y<sub>D</sub> and y<sub>B</sub> "
-            f"(here {fmt(s.disc_mass * s.gravity, 1.0)} N on the disc)"
-            + (f", and the shaft's own weight, {fmt(s.shaft_mass * s.gravity, 1.0)} N" if s.density else "")
+            f"(here {entry(s.disc_mass * s.gravity)} N on the disc)"
+            + (f", and the shaft's own weight, {entry(s.shaft_mass * s.gravity)} N" if s.density else "")
             + ". On the turning shaft a constant force meets a stiffness that turns, so the rotor never "
             "settles: its steady state is periodic, "
             + (
@@ -378,8 +355,8 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         gravity = (
             f"<h4>Gravity</h4><p>On a horizontal rotor f also holds the weights, constant: "
             f"−m<sub>A</sub>g, −mg and −m<sub>B</sub>g on y<sub>A</sub>, y<sub>D</sub> and y<sub>B</sub> "
-            f"(here {fmt(s.disc_mass * s.gravity, 1.0)} N on the disc)"
-            + (f", and the shaft's own weight, {fmt(s.shaft_mass * s.gravity, 1.0)} N" if s.density else "")
+            f"(here {entry(s.disc_mass * s.gravity)} N on the disc)"
+            + (f", and the shaft's own weight, {entry(s.shaft_mass * s.gravity)} N" if s.density else "")
             + ". They hold the rotor still where A Z + B f<sub>g</sub> = 0, the controllers' states included"
             + (
                 ": with the integral the magnets hold their journals at the centre, the current growing until "
@@ -396,9 +373,9 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         gravity = (
             f"<h4>Gravity</h4><p>On a horizontal rotor f also holds the weights, constant: "
             f"−m<sub>A</sub>g, −mg and −m<sub>B</sub>g on y<sub>A</sub>, y<sub>D</sub> and y<sub>B</sub> "
-            f"(here {fmt(s.disc_mass * s.gravity, 1.0)} N on the disc)"
+            f"(here {entry(s.disc_mass * s.gravity)} N on the disc)"
             + (
-                f", and the shaft's own weight, {fmt(s.shaft_mass * s.gravity, 1.0)} N, spread over the stations "
+                f", and the shaft's own weight, {entry(s.shaft_mass * s.gravity)} N, spread over the stations "
                 f"and its modes"
                 if s.density
                 else ""
@@ -434,7 +411,7 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
                 f", with {on_disc} balance weight{'s' if on_disc > 1 else ''}"
                 f" (net {abs(net) * 1e6:.4g} g·mm at {math.degrees(math.atan2(net.imag, net.real)):.0f}°),"
             )
-        force = fmt(abs(net) * omega**2, 1.0)
+        force = entry(abs(net) * omega**2)
     on_shaft = [p for p in s.plane_weights if not s.on_disc(p)]
     if on_shaft:
         listed = "; ".join(
@@ -455,7 +432,7 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         skew = (
             f"The disc's skew τ = {math.degrees(s.skew):.4g}° (toward {math.degrees(s.skew_angle):.0f}° from the mark)"
         )
-        moment = fmt(abs(s.couple_unbalance) * omega**2, 1.0) + " N·m"
+        moment = entry(abs(s.couple_unbalance) * omega**2) + " N·m"
     faces = (
         " A balance weight U<sub>w</sub> on one of the disc's faces, Δz from its centre plane, adds U<sub>w</sub>Δz to "
         "(I<sub>d</sub> − I<sub>p</sub>)τe<sup>iγ</sup>."
@@ -533,7 +510,7 @@ acceleration, while the speed changes.{shaft_weights}</p>
 <p>{skew} gives the same form on its slopes, M<sub>x</sub> + i M<sub>y</sub> =
 (I<sub>d</sub> − I<sub>p</sub>)τ(Ω² − iΩ̇)e<sup>i(φ+γ)</sup>: here {moment}.{faces} The shaft's bow δ<sub>b</sub> =
 {s.bow * 1e6:.4g} µm (toward {math.degrees(s.bow_angle):.0f}°) gives K<sub>shaft</sub>q<sub>bow</sub>
-turning with the shaft whatever the speed: {fmt(s.disc_stiffness * s.bow, 1.0)} N on the disc, and the
+turning with the shaft whatever the speed: {entry(s.disc_stiffness * s.bow)} N on the disc, and the
 bearings' share of it back on the journals, {bow_journals}.</p>
 {gravity}
 """

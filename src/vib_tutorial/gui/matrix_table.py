@@ -1,0 +1,53 @@
+"""A matrix as the notes show it: a rich-text table with labelled rows and columns, its cells tinted by block
+(#409 S-13: the CMS, coupling and rotor notes drew their own).
+
+A cell's tint is its pair of groups' (`colors.block_tints`, keyed by the sorted pair: interior "i", boundary "b",
+kept modes "q"); an entry is `text.entry` (four figures, 0 where it's negligible beside the matrix's largest),
+greyed when it's 0. `dim_cols` greys the columns from it on (discarded modes); `nowrap` keeps a wide matrix's
+numbers whole, so it scrolls sideways rather than breaking them (the rotor's). Qt-free: the course's data.
+
+Working on it: `tests/test_view_models.py` checks the entries; the CMS, coupling and rotor tests draw them.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+
+from ..view_models.text import entry
+from .style import colors
+
+
+def matrix_html(
+    A: np.ndarray,
+    rows: list[str],
+    cols: list[str],
+    row_groups: list[str],
+    col_groups: list[str],
+    title: str = "",
+    dim_cols: int | None = None,
+    nowrap: bool = False,
+) -> str:
+    """An HTML table of A with labelled rows and columns, its cells tinted by block (see the module's docstring)."""
+    scale = float(np.abs(A).max()) if A.size else 1.0
+    wrap = "white-space:nowrap" if nowrap else ""
+    th = f"<th style='{wrap}'>" if nowrap else "<th>"
+    head = "".join(f"{th}{c}</th>" for c in cols)
+    out = [f"<table border='1' cellspacing='0' cellpadding='3'><tr>{th}{title}</th>{head}</tr>"]
+    for r, (label, rg) in enumerate(zip(rows, row_groups)):
+        cells = []
+        for c, cg in enumerate(col_groups):
+            dim = dim_cols is not None and c >= dim_cols
+            tint = colors.dim_tint if dim else colors.block_tints[tuple(sorted((rg, cg)))]
+            text = entry(float(A[r, c]), scale)
+            styles = [s for s in (wrap, f"color:{colors.grey}" if text == "0" or dim else "") if s]
+            style = f" style='{'; '.join(styles)}'" if styles else ""
+            cells.append(f"<td align='right' bgcolor='{tint}'{style}>{text}</td>")
+        out.append(f"<tr>{th}{label}</th>{''.join(cells)}</tr>")
+    out.append("</table>")
+    return "".join(out)
+
+
+def side_by_side(*tables: str) -> str:
+    """Tables in a row, top-aligned."""
+    cells = "".join(f"<td valign='top' style='padding-right:14px'>{t}</td>" for t in tables)
+    return f"<table cellspacing='0' cellpadding='0'><tr>{cells}</tr></table>"

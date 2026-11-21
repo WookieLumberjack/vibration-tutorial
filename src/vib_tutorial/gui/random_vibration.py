@@ -548,7 +548,8 @@ def _plot(left: str, left_units: str | None, bottom: str, bottom_units: str | No
     return p
 
 
-def fmt(value: float, unit: str) -> str:
+def four(value: float, unit: str) -> str:
+    """Four figures, no prefix (the record's statistics beside their exact values)."""
     return plain(value, unit, 4)
 
 
@@ -1074,9 +1075,9 @@ class RandomVibrationPage(QtWidgets.QWidget):
 
         scatter = rms_scatter(pred, rec.duration)
         self.readout.setText(
-            f"<b>RMS</b>: exact {fmt(pred.rms, unit)}; the record {fmt(sim, unit)} "
+            f"<b>RMS</b>: exact {four(pred.rms, unit)}; the record {four(sim, unit)} "
             f"({100 * (sim / pred.rms - 1):+.2g} %, expected scatter ±{100 * scatter:.2g} %); Miles "
-            f"{fmt(pred.miles_rms, unit)} ({100 * (pred.miles_rms / pred.rms - 1):+.2g} %)."
+            f"{four(pred.miles_rms, unit)} ({100 * (pred.miles_rms / pred.rms - 1):+.2g} %)."
             if pred.rms > 0
             else "Nothing in the band reaches this response."
         )
@@ -1147,7 +1148,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
             return f"<tr><td>{name}</td><td align='right'>{exact}</td><td align='right'>{record}</td></tr>"
 
         rows = [
-            row("σ", fmt(r.sigma, unit), fmt(st.sigma, unit)),
+            row("σ", four(r.sigma, unit), four(st.sigma, unit)),
             row("Upward zero crossings", f"{r.nu0:.4g} /s", f"{st.nu0:.4g} /s"),
             row("Peaks", f"{r.nu_peak:.4g} /s", f"{st.nu_peak:.4g} /s"),
             row("Irregularity α", f"{r.alpha:.3f}", f"{st.nu0 / st.nu_peak:.3f}" if st.nu_peak else "–"),
@@ -1174,7 +1175,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         maxima = segment_maxima(y, rec.fs, t)
         text = (
             f"Over {t:g} s ({r.nu0 * t:.3g} cycles), the expected largest peak: Davenport {dav:.3g}σ = "
-            f"{fmt(dav * r.sigma, unit)}; Vanmarcke (δ = {r.delta:.2f}) {van:.3g}σ = {fmt(van * r.sigma, unit)}."
+            f"{four(dav * r.sigma, unit)}; Vanmarcke (δ = {r.delta:.2f}) {van:.3g}σ = {four(van * r.sigma, unit)}."
         )
         if maxima.size >= 4:
             mean = float(np.mean(maxima)) / r.sigma
@@ -1211,7 +1212,7 @@ class RandomVibrationPage(QtWidgets.QWidget):
         t.setItem(len(rows), 4, item)
         t.resizeColumnsToContents()
         self.miles_note.setText(
-            f"Exact RMS {fmt(pred.rms, unit)}: Miles' estimate is {100 * (total / pred.rms - 1):+.2g} % off."
+            f"Exact RMS {four(pred.rms, unit)}: Miles' estimate is {100 * (total / pred.rms - 1):+.2g} % off."
             if pred.rms > 0
             else ""
         )

@@ -17,10 +17,11 @@ from ..core import (
 )
 from ..core.modal import TWO_PI
 from ..core.practice import Prediction
-from ..view_models.text import number
+from ..view_models.text import entry
 from . import cms_figures
 from .lesson import trials_html
 from .links import load_notes
+from .matrix_table import matrix_html, side_by_side
 from .style import colors
 
 
@@ -259,42 +260,6 @@ def legend_html() -> str:
 THEORY_HTML = load_notes("cms_notes", figures=cms_figures.FIGURES, trials=trials_html(TRIALS))
 
 
-def fmt(v: float, scale: float) -> str:
-    """Four significant figures; entries negligible relative to the matrix are shown as 0."""
-    if abs(v) <= 1e-10 * scale:
-        return "0"
-    return number(v, 4)
-
-
-def matrix_html(
-    A: np.ndarray,
-    rows: list[str],
-    cols: list[str],
-    row_groups: list[str],
-    col_groups: list[str],
-    title: str = "",
-    dim_cols: int | None = None,
-) -> str:
-    """An HTML table with labeled rows/columns and cells tinted by partition block.
-
-    Columns from dim_cols on are greyed out (e.g. discarded modes).
-    """
-    scale = float(np.abs(A).max()) if A.size else 1.0
-    head = "".join(f"<th>{c}</th>" for c in cols)
-    out = [f"<table border='1' cellspacing='0' cellpadding='3'><tr><th>{title}</th>{head}</tr>"]
-    for r, (label, rg) in enumerate(zip(rows, row_groups)):
-        cells = []
-        for c, cg in enumerate(col_groups):
-            dim = dim_cols is not None and c >= dim_cols
-            tint = colors.dim_tint if dim else colors.block_tints[tuple(sorted((rg, cg)))]
-            text = fmt(A[r, c], scale)
-            color = f" style='color:{colors.grey}'" if text == "0" or dim else ""
-            cells.append(f"<td align='right' bgcolor='{tint}'{color}>{text}</td>")
-        out.append(f"<tr><th>{label}</th>{''.join(cells)}</tr>")
-    out.append("</table>")
-    return "".join(out)
-
-
 def _dof_labels(dofs: np.ndarray) -> list[str]:
     return [f"x{d + 1}" for d in dofs]
 
@@ -308,11 +273,6 @@ def _local(sub: Substructure, mat: np.ndarray, title: str) -> str:
 def _reduced_labels(sub: Substructure) -> tuple[list[str], list[str]]:
     labels = [f"q<sub>{sub.name}{k + 1}</sub>" for k in range(sub.n_kept)] + _dof_labels(sub.boundary)
     return labels, ["q"] * sub.n_kept + ["b"] * sub.nb
-
-
-def _side_by_side(*tables: str) -> str:
-    cells = "".join(f"<td valign='top' style='padding-right:14px'>{t}</td>" for t in tables)
-    return f"<table cellspacing='0' cellpadding='0'><tr>{cells}</tr></table>"
 
 
 def _join(items: list[str]) -> str:
@@ -344,7 +304,7 @@ def matrices_html(model: CMSModel, full: ModalResult | None = None) -> str:
         "springs, so it has the same tridiagonal pattern.</p>"
     )
     parts.append(
-        _side_by_side(
+        side_by_side(
             matrix_html(K, labels, labels, groups, groups, "K"),
             matrix_html(C, labels, labels, groups, groups, "C"),
             matrix_html(M, labels, labels, groups, groups, "M"),
@@ -360,7 +320,7 @@ def matrices_html(model: CMSModel, full: ModalResult | None = None) -> str:
             "Reordered [interior | boundary]:</p>"
         )
         parts.append(
-            _side_by_side(
+            side_by_side(
                 _local(sub, sub.K, f"K<sup>({sub.name})</sup>"),
                 _local(sub, sub.C, f"C<sup>({sub.name})</sup>"),
                 _local(sub, sub.M, f"M<sup>({sub.name})</sup>"),
@@ -371,13 +331,13 @@ def matrices_html(model: CMSModel, full: ModalResult | None = None) -> str:
         right = next(s for s in subs if j in s.boundary and s is not left)
         parts.append(
             f"<p>The interface entry of the full model, K<sub>{j + 1},{j + 1}</sub> = k<sub>{j + 1}</sub> + "
-            f"k<sub>{j + 2}</sub> = {fmt(K[j, j], 1)}, is split: {fmt(system.stiffness[j], 1)} goes to "
-            f"{left.name} and {fmt(system.stiffness[j + 1], 1)} to {right.name}. C<sub>{j + 1},{j + 1}</sub> "
-            f"= c<sub>{j + 1}</sub> + c<sub>{j + 2}</sub> = {fmt(C[j, j], 1)} splits the same way "
-            f"({fmt(system.damping[j], 1)} + {fmt(system.damping[j + 1], 1)}). The interface mass "
-            f"m<sub>{j + 1}</sub> = {fmt(system.masses[j], 1)} "
+            f"k<sub>{j + 2}</sub> = {entry(K[j, j])}, is split: {entry(system.stiffness[j])} goes to "
+            f"{left.name} and {entry(system.stiffness[j + 1])} to {right.name}. C<sub>{j + 1},{j + 1}</sub> "
+            f"= c<sub>{j + 1}</sub> + c<sub>{j + 2}</sub> = {entry(C[j, j])} splits the same way "
+            f"({entry(system.damping[j])} + {entry(system.damping[j + 1])}). The interface mass "
+            f"m<sub>{j + 1}</sub> = {entry(system.masses[j])} "
             + (
-                f"is split half and half, {fmt(system.masses[j] / 2, 1)} to each, so that both have mass "
+                f"is split half and half, {entry(system.masses[j] / 2)} to each, so that both have mass "
                 "at every DOF their free modes can move (any split works: assembly adds them back). "
                 if model.free
                 else f"goes to {left.name} (any split works: assembly adds them back). "
@@ -452,7 +412,7 @@ def _fixed_steps(model: CMSModel) -> list[str]:
                     f"Ψ<sup>({sub.name})</sup>",
                 )
             )
-    parts.append(_side_by_side(*tables) if tables else "<p>No interior DOFs.</p>")
+    parts.append(side_by_side(*tables) if tables else "<p>No interior DOFs.</p>")
 
     parts.append("<h3>5. Transformation</h3>")
     parts.append(
@@ -473,7 +433,7 @@ def _fixed_steps(model: CMSModel) -> list[str]:
                 f"T<sup>({sub.name})</sup>",
             )
         )
-    parts.append(_side_by_side(*tables))
+    parts.append(side_by_side(*tables))
 
     parts.append("<h3>6. Reduced substructure matrices</h3>")
     parts.append(
@@ -496,7 +456,7 @@ def _fixed_steps(model: CMSModel) -> list[str]:
     for sub in subs:
         red_labels, red_groups = _reduced_labels(sub)
         parts.append(
-            _side_by_side(
+            side_by_side(
                 matrix_html(sub.K_red, red_labels, red_labels, red_groups, red_groups, f"K̂<sup>({sub.name})</sup>"),
                 matrix_html(sub.C_red, red_labels, red_labels, red_groups, red_groups, f"Ĉ<sup>({sub.name})</sup>"),
                 matrix_html(sub.M_red, red_labels, red_labels, red_groups, red_groups, f"M̂<sup>({sub.name})</sup>"),
@@ -563,7 +523,7 @@ def _free_steps(model: CMSModel) -> list[str]:
         labels = _dof_labels(sub.dofs)
         assert sub.G is not None, "a free-interface reduction keeps G"
         parts.append(
-            _side_by_side(
+            side_by_side(
                 matrix_html(sub.G, labels, labels, groups, groups, f"G<sub>d</sub><sup>({sub.name})</sup>"),
                 matrix_html(
                     sub.Psi,
@@ -598,7 +558,7 @@ def _free_steps(model: CMSModel) -> list[str]:
                 f"T<sup>({sub.name})</sup>",
             )
         )
-    parts.append(_side_by_side(*tables))
+    parts.append(side_by_side(*tables))
 
     parts.append("<h3>6. Reduced substructure matrices</h3>")
     parts.append(
@@ -625,7 +585,7 @@ def _free_steps(model: CMSModel) -> list[str]:
     for sub in subs:
         red_labels, red_groups = _reduced_labels(sub)
         parts.append(
-            _side_by_side(
+            side_by_side(
                 matrix_html(sub.K_red, red_labels, red_labels, red_groups, red_groups, f"K̂<sup>({sub.name})</sup>"),
                 matrix_html(sub.C_red, red_labels, red_labels, red_groups, red_groups, f"Ĉ<sup>({sub.name})</sup>"),
                 matrix_html(sub.M_red, red_labels, red_labels, red_groups, red_groups, f"M̂<sup>({sub.name})</sup>"),
@@ -680,12 +640,12 @@ def _assembly_steps(model: CMSModel, full: ModalResult | None) -> list[str]:
             for sub in subs:
                 if j in sub.boundary:
                     loc = sub.n_kept + int(np.searchsorted(sub.boundary, j))
-                    terms.append(fmt(getattr(sub, attr)[loc, loc], 1) + f" ({sub.name})")
+                    terms.append(entry(getattr(sub, attr)[loc, loc]) + f" ({sub.name})")
             total = total_mat[g, g]
-            pieces.append(f"{sym}<sub>x{j + 1},x{j + 1}</sub> = {' + '.join(terms)} = {fmt(total, 1)}")
+            pieces.append(f"{sym}<sub>x{j + 1},x{j + 1}</sub> = {' + '.join(terms)} = {entry(total)}")
         parts.append(f"<p>At the interface: {'; '.join(pieces)}.</p>")
     parts.append(
-        _side_by_side(
+        side_by_side(
             matrix_html(model.K, glabels, glabels, ggroups, ggroups, "K̂"),
             matrix_html(model.C, glabels, glabels, ggroups, ggroups, "Ĉ"),
             matrix_html(model.M, glabels, glabels, ggroups, ggroups, "M̂"),
@@ -760,7 +720,7 @@ def _recovery_step(model: CMSModel) -> str:
                 )
             )
         out.append(text + "</p>")
-        out.append(_side_by_side(*tables))
+        out.append(side_by_side(*tables))
     return "".join(out)
 
 
