@@ -1,4 +1,4 @@
-← [Equations](equations.md) · [Contents](../README.md#contents) · [Continua and models](continua-and-models.md) →
+← [Equations](equations.md) · [Contents](../README.md#contents) · [Building models](building-models.md) →
 
 # Modes
 
@@ -311,4 +311,4 @@ are aimed at.
 
 ---
 
-← [Equations](equations.md) · [Contents](../README.md#contents) · [Continua and models](continua-and-models.md) →
+← [Equations](equations.md) · [Contents](../README.md#contents) · [Building models](building-models.md) →

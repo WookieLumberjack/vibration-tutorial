@@ -74,6 +74,7 @@ def test_window_interactions(app):
 
 
 def test_secondary_pages_build_when_opened(app):
+    from vib_tutorial.gui.links import COURSE
     from vib_tutorial.gui.main_window import LAZY_PAGES, MainWindow
     from vib_tutorial.gui.modal_test import ModalTestPage
 
@@ -82,7 +83,8 @@ def test_secondary_pages_build_when_opened(app):
     titles = [w.pages.tabText(i) for i in range(w.pages.count())]
     w.sim_page.params.dof.setValue(5)  # a page built later gets the current system
 
-    w.pages.groups.setCurrentIndex(5)  # as a click on the group's tab does: its first page shows
+    testing = [group for group, _ in COURSE].index("Testing")
+    w.pages.groups.setCurrentIndex(testing)  # as a click on the group's tab does: its first page shows
     page = w.pages.currentWidget()
     assert isinstance(page, ModalTestPage) and page is w.test_page
     assert list(w._built) == ["sim_page", "test_page"]

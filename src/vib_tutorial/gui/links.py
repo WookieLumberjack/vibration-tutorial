@@ -243,7 +243,19 @@ COURSE = (
         ),
     ),
     (
-        "Continua and models",
+        "Building models",
+        (
+            ("coupling_page", "Modal coupling", "two parts joined, one mode each: when their modes split"),
+            ("cms_page", "Substructuring (CMS)", "a chain reduced to a few modes per part, and back"),
+            (
+                "integration_page",
+                "Numerical integration",
+                "central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping",
+            ),
+        ),
+    ),
+    (
+        "Continuous systems",
         (
             (
                 "continuum_page",
@@ -254,13 +266,6 @@ COURSE = (
                 "beams_page",
                 "Beams && plates",
                 "Timoshenko's thick beam, a plate's modes and nodal lines, and modal density",
-            ),
-            ("coupling_page", "Modal coupling", "two parts joined, one mode each: when their modes split"),
-            ("cms_page", "Substructuring (CMS)", "a chain reduced to a few modes per part, and back"),
-            (
-                "integration_page",
-                "Numerical integration",
-                "central difference, Newmark, HHT-α and Runge–Kutta against the exact update: stability, period error, numerical damping",
             ),
             (
                 "frame_page",
@@ -281,11 +286,39 @@ COURSE = (
         ),
     ),
     (
+        "Rotating machines",
+        (
+            (
+                "gyroscope_page",
+                "Gyroscope",
+                "a spinning top: Euler's equations, steady precession, nutation and the sleeping top",
+            ),
+            ("torsional_page", "Torsional vibration", "a drive train of discs, shafts and gears, and its start-up"),
+            ("rotor_page", "Jeffcott rotor", "a spinning shaft: critical speeds, balancing, bearings, stability, rub"),
+            (
+                "rotor_builder_page",
+                "Rotor builder",
+                "build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability",
+            ),
+            (
+                "diagnostics_page",
+                "Machinery diagnostics",
+                "order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum",
+            ),
+        ),
+    ),
+    (
         "Testing",
         (
             ("test_page", "Virtual modal test", "measuring the FRF from force and response signals, and fitting modes"),
             ("updating_page", "Model updating", "comparing a model with a test, and correcting it"),
             ("oma_page", "Operational modal analysis", "the modes from the responses alone, the forces unknown"),
+            ("planning_page", "Test planning", "where to put the sensors, and what the structure does as it runs"),
+            (
+                "variability_page",
+                "Variability && localization",
+                "scatter in the chain's properties by Monte Carlo, and modes localized in a mistuned ring of blades",
+            ),
         ),
     ),
     (
@@ -326,28 +359,6 @@ COURSE = (
         ),
     ),
     (
-        "Rotating machines",
-        (
-            (
-                "gyroscope_page",
-                "Gyroscope",
-                "a spinning top: Euler's equations, steady precession, nutation and the sleeping top",
-            ),
-            ("torsional_page", "Torsional vibration", "a drive train of discs, shafts and gears, and its start-up"),
-            ("rotor_page", "Jeffcott rotor", "a spinning shaft: critical speeds, balancing, bearings, stability, rub"),
-            (
-                "rotor_builder_page",
-                "Rotor builder",
-                "build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability",
-            ),
-            (
-                "diagnostics_page",
-                "Machinery diagnostics",
-                "order tracking under a run-up, gear-mesh sidebands, bearing defects by the envelope, and the cepstrum",
-            ),
-        ),
-    ),
-    (
         "Control",
         (
             (
@@ -365,16 +376,10 @@ COURSE = (
                 "Seismic response",
                 "the chain as a building: a design spectrum, effective modal mass, and ABS, SRSS and CQC against records",
             ),
-            ("planning_page", "Test planning", "where to put the sensors, and what the structure does as it runs"),
             (
                 "nonlinear_page",
                 "Nonlinearity && forces",
                 "is the structure linear (levels, sweeps, harmonics), and which force made a response",
-            ),
-            (
-                "variability_page",
-                "Variability && localization",
-                "scatter in the chain's properties by Monte Carlo, and modes localized in a mistuned ring of blades",
             ),
         ),
     ),
@@ -480,13 +485,13 @@ PATHS = (
             "updating_page",
             "oma_page",
             "planning_page",
-            "nonlinear_page",
             "variability_page",
+            "nonlinear_page",
         ),
     ),
     (
         "Rotating machinery",
-        "drive trains, nonlinear springs, rotors on their bearings, and diagnosing a running machine",
+        "drive trains, rotors on their bearings, and diagnosing a running machine",
         (
             "sdof_page",
             "pendulum_page",
@@ -498,7 +503,6 @@ PATHS = (
             "complex_page",
             "signals_page",
             "random_page",
-            "duffing_page",
             "torsional_page",
             "rotor_page",
             "diagnostics_page",
@@ -602,17 +606,24 @@ PAGE_CLASSES = {
     "frf_page": "frf_matrix.FrfMatrixPage",
     "complex_page": "complex_modes.ComplexModesPage",
     "mounts_page": "rigid_mounts.MountsPage",
-    "continuum_page": "continuum.ContinuumPage",
-    "beams_page": "beams_plates.BeamsPlatesPage",
     "coupling_page": "modal_coupling.ModalCouplingPage",
     "cms_page": "substructuring.SubstructuringPage",
     "integration_page": "integration.IntegrationPage",
+    "continuum_page": "continuum.ContinuumPage",
+    "beams_page": "beams_plates.BeamsPlatesPage",
     "frame_page": "frame_builder.FramePage",
     "signals_page": "signals.SignalsPage",
     "random_page": "random_vibration.RandomVibrationPage",
+    "gyroscope_page": "gyroscope.GyroscopePage",
+    "torsional_page": "torsional.TorsionalPage",
+    "rotor_page": "rotor.RotorPage",
+    "rotor_builder_page": "rotor_builder.RotorBuilderPage",
+    "diagnostics_page": "diagnostics.DiagnosticsPage",
     "test_page": "modal_test.ModalTestPage",
     "updating_page": "model_updating.ModelUpdatingPage",
     "oma_page": "oma.OmaPage",
+    "planning_page": "test_planning.TestPlanningPage",
+    "variability_page": "variability.VariabilityPage",
     "shock_page": "shock.ShockPage",
     "quarter_car_page": "quarter_car.QuarterCarPage",
     "fatigue_page": "fatigue.FatiguePage",
@@ -620,16 +631,9 @@ PAGE_CLASSES = {
     "duffing_page": "duffing.DuffingPage",
     "fluid_page": "fluid_structure.FluidStructurePage",
     "self_excited_page": "self_excited.SelfExcitedPage",
-    "gyroscope_page": "gyroscope.GyroscopePage",
-    "torsional_page": "torsional.TorsionalPage",
-    "rotor_page": "rotor.RotorPage",
-    "rotor_builder_page": "rotor_builder.RotorBuilderPage",
-    "diagnostics_page": "diagnostics.DiagnosticsPage",
     "active_control_page": "active_control.ActiveControlPage",
     "seismic_page": "seismic.SeismicPage",
-    "planning_page": "test_planning.TestPlanningPage",
     "nonlinear_page": "nonlinear_forces.NonlinearForcesPage",
-    "variability_page": "variability.VariabilityPage",
 }
 
 

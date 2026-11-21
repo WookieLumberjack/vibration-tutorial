@@ -1,4 +1,4 @@
-← [Rotating machines](rotating-machines.md) · [Contents](../README.md#contents) · [Appendix](appendix.md) →
+← [Nonlinear and flow](nonlinear-and-flow.md) · [Contents](../README.md#contents) · [Appendix](appendix.md) →
 
 # Control
 
@@ -20,4 +20,4 @@ root locus, drag a pole along its path and the gain follows.
 
 ---
 
-← [Rotating machines](rotating-machines.md) · [Contents](../README.md#contents) · [Appendix](appendix.md) →
+← [Nonlinear and flow](nonlinear-and-flow.md) · [Contents](../README.md#contents) · [Appendix](appendix.md) →
