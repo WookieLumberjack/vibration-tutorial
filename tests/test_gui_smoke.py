@@ -1594,14 +1594,15 @@ def test_make_app_themes(app):
         theming.apply("Light")
 
 
-def test_switch_themes_live(app):
+def test_switch_themes_live(app, monkeypatch):
     import numpy as np
     import pyqtgraph as pg
 
-    from vib_tutorial.gui import theming
+    from vib_tutorial.gui import display_size, theming
     from vib_tutorial.gui.main_window import MainWindow
     from vib_tutorial.gui.style import THEMES, colors
 
+    monkeypatch.setattr(display_size, "projector_offer", lambda window, theme: None)  # its dialog, modal
     w = MainWindow()
     w.show()
     w.sim_page.force_panel.button.click()

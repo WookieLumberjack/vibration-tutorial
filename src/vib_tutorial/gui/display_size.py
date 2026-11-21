@@ -12,6 +12,10 @@ the new scale with its screen's, so a size the screen can't hold is refused when
 the screen it opens on can't hold (a projector unplugged) goes back to 100 % (`check_fits`). With the side
 panes folded away (`present`, F5) the window's minimum is smaller, so a larger size fits.
 
+The Projector theme draws lines twice as wide but leaves the text at its 12 px (its ticks, legends and
+readouts), so picking it at 100 % offers a larger Size once (`projector_offer`, #409 U-4): Size grows the text
+with everything else, where scaling only the plots' fonts would lay every page out again.
+
 Working on it: `tests/test_display_size.py` checks the setting, the environment and the fit.
 """
 
@@ -26,6 +30,9 @@ from . import theming
 
 SIZES = (1.0, 1.25, 1.5, 2.0)
 KEY = "display/scale"
+OFFERED_KEY = "display/projector_offered"  # the Projector theme's offer of a larger size, made once
+PROJECTOR = "Projector"
+PROJECTOR_SIZE = 1.25  # offered with it: the smallest step up, which most screens hold
 ENV = "QT_SCALE_FACTOR"
 
 _active = 1.0  # the scale this process's QApplication was created at
@@ -90,6 +97,19 @@ def fits(window: QtWidgets.QWidget, scale: float) -> bool:
 
 def screen_width_needed(window: QtWidgets.QWidget, scale: float) -> int:
     return round(_smallest(window).width() * scale)
+
+
+def projector_offer(window: QtWidgets.QWidget, theme: str) -> float | None:
+    """The size to offer the reader who has just picked `theme`: `PROJECTOR_SIZE` the first time they pick the
+    Projector theme at 100 % (the environment not setting the size) on a screen that holds the window at it;
+    None otherwise. Asking marks it offered, so it's asked once."""
+    if theme != PROJECTOR or _active != 1.0 or _from_env or saved() != 1.0:
+        return None
+    settings = theming.settings()
+    if str(settings.value(OFFERED_KEY, "false")).lower() == "true" or not fits(window, PROJECTOR_SIZE):
+        return None
+    settings.setValue(OFFERED_KEY, True)
+    return PROJECTOR_SIZE
 
 
 def restart() -> None:

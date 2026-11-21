@@ -672,6 +672,20 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_theme_picked(self, name: str) -> None:
         theming.save_name(name)
         self.set_theme(name)
+        scale = display_size.projector_offer(self, name)  # its lines grow, its text doesn't: Size grows both
+        if scale is None:
+            return
+        size = display_size.label(scale)
+        answer = QtWidgets.QMessageBox.question(
+            self,
+            "Size",
+            f"The Projector theme draws thicker lines, but its text stays small. Show everything at {size} too? "
+            f"The app restarts to change size. (Size, top right, sets it later.)",
+        )
+        if answer == QtWidgets.QMessageBox.StandardButton.Yes:
+            self.size_combo.setCurrentText(size)
+            display_size.save(scale)
+            display_size.restart()
 
     def _on_size_picked(self, index: int) -> None:
         """A new size: saved and, if the reader agrees, shown at once by a restart (see `display_size`)."""

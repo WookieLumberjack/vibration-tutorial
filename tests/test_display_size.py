@@ -126,3 +126,46 @@ def test_the_size_box(scale, app, monkeypatch):
     w.size_combo.activated.emit(1)
     assert scale.saved() == 1.25 and restarts == [True]
     w.close()
+
+
+def test_picking_the_projector_theme_offers_a_larger_size_once(scale, app, monkeypatch):
+    """Its lines grow and its text doesn't, so the first pick at 100 % offers Size 125 % (#409 U-4)."""
+    from vib_tutorial.gui import theming
+    from vib_tutorial.gui.main_window import MainWindow
+
+    restarts, asked = [], []
+    monkeypatch.setattr(scale, "restart", lambda: restarts.append(True))
+    answer = QtWidgets.QMessageBox.StandardButton.No
+
+    def question(*args):
+        asked.append(args[2])
+        return answer
+
+    monkeypatch.setattr(QtWidgets.QMessageBox, "question", question)
+    monkeypatch.setattr(scale, "fits", lambda window, s: True)
+    w = MainWindow()
+    start = theming.current_name()
+    try:
+        w.theme_combo.textActivated.emit("Dark")
+        assert not asked, "another theme asks nothing"
+        w.theme_combo.textActivated.emit("Projector")
+        assert len(asked) == 1 and "125 %" in asked[0] and not restarts and scale.saved() == 1.0, "declined"
+        w.theme_combo.textActivated.emit("Light")
+        w.theme_combo.textActivated.emit("Projector")
+        assert len(asked) == 1, "asked once"
+        scale.theming.settings().remove(scale.OFFERED_KEY)
+        monkeypatch.setattr(scale, "fits", lambda window, s: False)
+        w.theme_combo.textActivated.emit("Projector")
+        assert len(asked) == 1, "not on a screen too small for it"
+        monkeypatch.setattr(scale, "fits", lambda window, s: True)
+        answer = QtWidgets.QMessageBox.StandardButton.Yes
+        w.theme_combo.textActivated.emit("Projector")
+        assert len(asked) == 2 and restarts == [True] and scale.saved() == 1.25
+        assert w.size_combo.currentText() == "125 %"
+        scale.theming.settings().remove(scale.OFFERED_KEY)
+        monkeypatch.setattr(scale, "_active", 1.25)
+        w.theme_combo.textActivated.emit("Projector")
+        assert len(asked) == 2, "not when it's larger already"
+    finally:
+        w.set_theme(start)
+        w.close()
