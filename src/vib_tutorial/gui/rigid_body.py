@@ -62,6 +62,7 @@ from .lesson import (
 )
 from .links import load_notes, page_link
 from .live_label import LiveLabel
+from .orbit_view import OrbitView
 from .style import colors
 from .theming import add_legend
 from .transport import Transport
@@ -628,7 +629,7 @@ def frame_rows(frame: Axes, body_rows: np.ndarray, P: np.ndarray) -> np.ndarray:
     return np.einsum("ji,njk->nik", P, body_rows)
 
 
-class BodyView(pg.PlotWidget):
+class BodyView(OrbitView, pg.PlotWidget):
     """The body in 3D, orthographically projected about its centre of mass; drag to turn it."""
 
     YAW, PITCH = math.radians(30.0), math.radians(20.0)
@@ -698,12 +699,6 @@ class BodyView(pg.PlotWidget):
         plot.addItem(self.mass_dot, ignoreBounds=True)
         plot.addItem(self.centre, ignoreBounds=True)
         self.apply_theme()
-
-    def project(self, p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Screen (x, y) of points p (..., 3), Z up: turned by the yaw about Z, seen from the pitch above."""
-        cy, sy = math.cos(self.yaw), math.sin(self.yaw)
-        x, y, z = p[..., 0], p[..., 1], p[..., 2]
-        return x * cy - y * sy, z * math.cos(self.pitch) + (x * sy + y * cy) * math.sin(self.pitch)
 
     def set_body(self, body: Body) -> None:
         self.body = body
@@ -937,33 +932,6 @@ class BodyView(pg.PlotWidget):
         self.centre.setPen(pg.mkPen(None))
         if self._last is not None:
             self.draw(*self._last)
-
-    def mousePressEvent(self, event) -> None:
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            self._drag = event.position()
-            event.accept()
-        else:
-            super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event) -> None:
-        if self._drag is None:
-            super().mouseMoveEvent(event)
-            return
-        d = event.position() - self._drag
-        self._drag = event.position()
-        self.yaw = (self.yaw + 0.01 * d.x()) % (2 * math.pi)  # the side nearest you follows the cursor
-        self.pitch = float(np.clip(self.pitch + 0.01 * d.y(), -math.pi / 2, math.pi / 2))
-        self._place_static()
-        event.accept()
-
-    def mouseReleaseEvent(self, event) -> None:
-        self._drag = None
-        super().mouseReleaseEvent(event)
-
-    def mouseDoubleClickEvent(self, event) -> None:
-        self.yaw, self.pitch = self.YAW, self.PITCH
-        self._place_static()
-        event.accept()
 
 
 class RigidBodyPage(QtWidgets.QWidget):

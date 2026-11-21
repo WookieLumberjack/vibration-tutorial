@@ -63,6 +63,7 @@ from .lesson import (
     trials_html,
 )
 from .links import load_notes, page_link
+from .orbit_view import OrbitView
 from .style import colors
 from .theming import add_legend
 from .transport import Transport
@@ -658,7 +659,7 @@ def _rotate(points: np.ndarray, theta: np.ndarray) -> np.ndarray:
     return points * c + np.cross(k, points) * s + np.outer(points @ k, k) * (1 - c)
 
 
-class MountView(pg.PlotWidget):
+class MountView(OrbitView, pg.PlotWidget):
     """The box on its mounts in 3D, orthographically projected; drag to turn it."""
 
     YAW, PITCH = math.radians(35.0), math.radians(22.0)
@@ -702,14 +703,6 @@ class MountView(pg.PlotWidget):
             plot.addItem(item)
         plot.addItem(self.com, ignoreBounds=True)
         self.apply_theme()
-
-    def project(self, p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Screen (x, y) of points p (..., 3), z up: turned by the yaw about z, looked at from the pitch above."""
-        cy, sy = math.cos(self.yaw), math.sin(self.yaw)
-        x, y, z = p[..., 0], p[..., 1], p[..., 2]
-        across = x * cy - y * sy
-        away = x * sy + y * cy
-        return across, z * math.cos(self.pitch) + away * math.sin(self.pitch)
 
     def _corners(self) -> np.ndarray:
         b = self.layout_.body
@@ -814,33 +807,6 @@ class MountView(pg.PlotWidget):
         self.roll_axis.setPen(pg.mkPen(c.mass[2], width=2))
         self.com.setBrush(pg.mkBrush(c.strong))
         self.com.setPen(pg.mkPen(None))
-
-    def mousePressEvent(self, event) -> None:
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            self._drag = event.position()
-            event.accept()
-        else:
-            super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event) -> None:
-        if self._drag is None:
-            super().mouseMoveEvent(event)
-            return
-        d = event.position() - self._drag
-        self._drag = event.position()
-        self.yaw = (self.yaw + 0.01 * d.x()) % (2 * math.pi)  # the side nearest you follows the cursor
-        self.pitch = float(np.clip(self.pitch + 0.01 * d.y(), -math.pi / 2, math.pi / 2))
-        self._place_static()
-        event.accept()
-
-    def mouseReleaseEvent(self, event) -> None:
-        self._drag = None
-        super().mouseReleaseEvent(event)
-
-    def mouseDoubleClickEvent(self, event) -> None:
-        self.yaw, self.pitch = self.YAW, self.PITCH
-        self._place_static()
-        event.accept()
 
 
 def _coil(bottom: np.ndarray, top: np.ndarray, rest: np.ndarray) -> np.ndarray:

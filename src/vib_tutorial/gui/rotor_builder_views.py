@@ -13,6 +13,7 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.rotation import project_y_up
 from ..core.rotor_builder import DISC_LIBRARY, TWO_PI, Bearing, BearingKind, Disc, Rotor, Seal, Selection, deflection
 from . import coalesce
 from .rotor_builder_trials import EMPTY
@@ -440,13 +441,8 @@ class WhirlView(pg.PlotWidget):
         self.apply_theme()
 
     def project(self, p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Screen (x, y) of display points p (..., 3) = (lateral x, vertical y, axial)."""
-        cy, sy = math.cos(self.YAW), math.sin(self.YAW)
-        cp, sp = math.cos(self.PITCH), math.sin(self.PITCH)
-        x, y, z = p[..., 0], p[..., 1], p[..., 2]
-        xr = x * cy + z * sy
-        zr = -x * sy + z * cy
-        return xr, y * cp - zr * sp
+        """Screen (x, y) of display points p (..., 3) = (lateral x, vertical y, axial), at the fixed view."""
+        return project_y_up(p, self.YAW, self.PITCH)
 
     def _lines(self, parts: list[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
         gap = np.full((1, 3), np.nan)

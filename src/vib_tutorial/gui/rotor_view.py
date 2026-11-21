@@ -18,6 +18,7 @@ from ..core.rotor_sweep import (
 )
 from ..view_models.text import number as sig
 from .lesson import Dot
+from .orbit_view import OrbitView
 from .rotor_plots import MIN_PEAK
 from .style import colors
 
@@ -55,10 +56,11 @@ VIEW_TIP = (
 )
 
 
-class RotorView(pg.PlotWidget):
+class RotorView(OrbitView, pg.PlotWidget):
     """The rotor in 3D, orthographically projected; drag to turn it."""
 
     YAW, PITCH = math.radians(62.0), math.radians(18.0)
+    UP = "y"  # a shaft along z
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -133,15 +135,6 @@ class RotorView(pg.PlotWidget):
         self.scale_label.setPos(right, top)
 
     # ------------------------------------------------------------- geometry
-    def project(self, p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """Screen (x, y) of display points p (..., 3) = (lateral x, vertical y, axial z from midspan)."""
-        cy, sy = math.cos(self.yaw), math.sin(self.yaw)
-        cp, sp = math.cos(self.pitch), math.sin(self.pitch)
-        x, y, z = p[..., 0], p[..., 1], p[..., 2]
-        xr = x * cy + z * sy
-        zr = -x * sy + z * cy  # toward the viewer
-        return xr, y * cp - zr * sp
-
     @property
     def _metres(self) -> float:
         """Metres of shaft per display unit along it: the whole shaft, overhang too, spans AXIAL."""
@@ -373,32 +366,6 @@ class RotorView(pg.PlotWidget):
             self.stator_ring.setData([], [])
 
     # ------------------------------------------------------------- mouse
-    def mousePressEvent(self, event) -> None:
-        if event.button() == QtCore.Qt.MouseButton.LeftButton:
-            self._drag = event.position()
-            event.accept()
-        else:
-            super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event) -> None:
-        if self._drag is None:
-            super().mouseMoveEvent(event)
-            return
-        d = event.position() - self._drag
-        self._drag = event.position()
-        self.yaw = (self.yaw + 0.01 * d.x()) % (2 * math.pi)  # the side nearest you follows the cursor
-        self.pitch = float(np.clip(self.pitch + 0.01 * d.y(), -math.pi / 2, math.pi / 2))
-        self._place_static()
-        event.accept()
-
-    def mouseReleaseEvent(self, event) -> None:
-        self._drag = None
-        super().mouseReleaseEvent(event)
-
-    def mouseDoubleClickEvent(self, event) -> None:
-        self.yaw, self.pitch = self.YAW, self.PITCH
-        self._place_static()
-        event.accept()
 
 
 def _spring_and_damper(p0: np.ndarray, p1: np.ndarray) -> list[np.ndarray]:
@@ -423,5 +390,6 @@ def _spring_and_damper(p0: np.ndarray, p1: np.ndarray) -> list[np.ndarray]:
 
 def _round_gain(g: float) -> str:
     """A magnification for the label, to two significant figures: 0.52, 9.7, 970, 12,000."""
+
     g = float(f"{g:.2g}")
     return f"{g:,.0f}" if g >= 10 else f"{sig(g, 2)}"
