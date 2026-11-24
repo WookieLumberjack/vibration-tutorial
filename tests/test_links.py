@@ -178,7 +178,7 @@ def test_every_notes_file_is_loaded():
 
 
 def test_the_glossarys_links_land():
-    from vib_tutorial.gui.theory_window import page_html
+    from vib_tutorial.gui.notes_pages import page_html
 
     html = notes()
     anchors = {p: set(re.findall(r'<a name=["\']([^"\']+)["\']', h)) for p, h in html.items()}
@@ -242,7 +242,7 @@ def forward_links() -> list[str]:
     """The links in each page's notes (not its "Before this page") to a page later in the course whose sentence
     doesn't say it's later ("later", "ahead", "next")."""
     from vib_tutorial.gui.links import course_map, paths_html
-    from vib_tutorial.gui.theory_window import page_html
+    from vib_tutorial.gui.notes_pages import page_html
 
     order = [name for _, pages in COURSE for name, *_ in pages]
     found = []
@@ -272,7 +272,7 @@ def test_paths_hold_every_page_they_build_on():
     """Each path has, for each of its pages, every page that one's "Before this page" names (and theirs), once
     each and in the course's order, so it reads front to back like the course."""
     from vib_tutorial.gui.links import PATHS
-    from vib_tutorial.gui.theory_window import page_html
+    from vib_tutorial.gui.notes_pages import page_html
 
     order = [name for _, pages in COURSE for name, *_ in pages]
     needs = {}
@@ -287,7 +287,7 @@ def test_paths_hold_every_page_they_build_on():
 
 
 def test_headings_without_an_anchor_get_one_for_the_contents():
-    from vib_tutorial.gui.theory_window import anchored
+    from vib_tutorial.gui.notes_pages import anchored
 
     html = anchored('<h3>One</h3><p>text</p><h3><a name="two"></a>Two</h3><h3>Three</h3>')
     assert html == (
@@ -358,7 +358,7 @@ def test_every_page_closes_with_a_link_to_the_next_and_the_keys_step_through_the
     from PySide6 import QtGui
 
     from vib_tutorial.gui.links import next_html, order, title
-    from vib_tutorial.gui.theory_window import page_html
+    from vib_tutorial.gui.notes_pages import page_html
 
     pages = order()
     for name, after in itertools.pairwise(pages):

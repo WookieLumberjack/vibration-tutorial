@@ -124,7 +124,7 @@ def test_every_page_builds_in_its_tab_with_its_notes(app, main_window):
     from PySide6 import QtGui
 
     from vib_tutorial.gui.main_window import LAZY_PAGES
-    from vib_tutorial.gui.theory_window import page_html
+    from vib_tutorial.gui.notes_pages import page_html
 
     w = main_window
     for name, _ in LAZY_PAGES:  # reading one builds it, without switching to it
