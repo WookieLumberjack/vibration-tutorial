@@ -1029,7 +1029,20 @@ def transient_response():
 
 
 def damping_models():
-    lesson("damping_page", 0, "damping_models")  # four loops, one energy
+    """Four loops, one energy: the viscous mass driven to ±10 mm at f_n, its loop and every model's."""
+    from PySide6 import QtWidgets
+
+    w = window()
+    page = w.damping_page
+    w.pages.setCurrentWidget(page)
+    page.loop.enabled = False
+    page.load_trial(0)
+    page.step(12.0)
+    settle()
+    for label in page.findChildren(QtWidgets.QLabel):
+        if label.isVisible() and len(label.text()) > 40:
+            print(" ", label.text())
+    save(w, "damping_models")
 
 
 def vibration_isolation():

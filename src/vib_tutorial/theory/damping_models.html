@@ -14,11 +14,13 @@ linear and easy. Real structures lose energy in other ways: internal friction in
 joints and bolted connections, the shearing of rubber and polymers, the air around them. Each has its own
 force law, and they differ in how the loss depends on the <b>amplitude</b> and on the <b>frequency</b>. This
 page puts four of them on the same mass and spring, matched so that at <m>f<sub>n</sub></m> they all take the
-same energy per cycle as a viscous damper of ratio <m>ζ</m>.</p>
+same energy per cycle as a viscous damper of ratio <m>ζ</m>, and runs the one you pick live, beside a viscous
+<b>ghost</b> (dashed) plucked and driven as it is. Pick another model as it runs, and the motion carries on with
+the new damping, from where it is.</p>
 
 <h3><a name="hysteresis-loop"></a>The hysteresis loop</h3>
 <p>Cycle the oscillator's spring and damper through <m>x = X sin Ωt</m> and plot the force they carry against
-<m>x</m>. A spring alone traces the line <m>kx</m> out and back. Anything that loses energy traces a
+<m>x</m> (the <i>Loop &amp; loss</i> tab draws the run's own last cycle, and every model's beside it). A spring alone traces the line <m>kx</m> out and back. Anything that loses energy traces a
 <b>loop</b>, because the force is larger going one way than coming back, and the area inside it is the energy
 lost per cycle:</p>
 <eq>W_d = \oint F\,\mathrm{d}x</eq>
@@ -50,7 +52,10 @@ they differ: the hysteretic loss is the same at every frequency. Its frequency r
 motion (and in frequency-domain analysis, where it is standard: the <a href="page:mounts_page">Rigid body on
 mounts</a> page, later, puts it in its mounts), but it has no honest time-domain form: a constant
 <m>K″</m> at every frequency, negative ones included, would make the mass respond before it is struck
-(<cite>crandall</cite>). The free decay draws its viscous equivalent instead.</p>
+(<cite>crandall</cite>). So in time the page runs its <b>stand-in</b>: a viscous damper with the same loss at
+the frequency it runs at, <m>c = ηk/Ω</m>, the drive's while it drives (a change of the drive's frequency changes
+it, live) and <m>f<sub>n</sub></m>'s when it rings free. Swept, its points land on the hysteretic curve, as it is
+matched at each frequency in turn; what it can't do is respond to two frequencies at once with two losses.</p>
 
 <h3><a name="coulomb"></a>Coulomb friction</h3>
 <p>A dry contact pushes back with a force of fixed size against the sliding, <m>F<sub>f</sub> sgn ẋ</m>, the
@@ -131,15 +136,19 @@ straight line, has no single <m>δ</m>: that itself says the loss isn't viscous)
 this way.</p>
 
 <h3><a name="computing"></a>How this page computes it</h3>
-<p>The loops, the energies and the loss factors come from each model's complex stiffness (friction's true
-force for its loop, its describing function elsewhere). The frequency response is
-<m>1/(K*(Ω) − Ω²m)</m>, and friction's <m>√(F² − (4F<sub>f</sub>/π)²)/|k − Ω²m|</m>. The free decays are
-exact: the viscous one in closed form, friction's half cycle by half cycle, the Zener element's (three states:
-the position, the velocity and the dashpot's end) by the matrix exponential.</p>
+<p>The mass is stepped as it runs, exactly for each model: the viscous damper and the hysteretic stand-in by the
+matrix exponential, as the <a href="page:sdof_page#live-changes">Single oscillator</a>'s mass is; friction from
+one stick or slip to the next, each event found within its step; the Zener element with a third state, where
+its arm's spring meets its dashpot. Changing the model or <m>ζ</m> as it runs is a live change, by the same
+rules, and the Energy tab's books close through it. The run's loop is the force its spring and damping carry,
+<m>f − mẍ</m>, against <m>x</m> over its last cycle; the faint loops, the loss factors and the theory's
+frequency responses come from each model's complex stiffness (friction's true force for its loop, its describing
+function elsewhere: <m>√(F² − (4F<sub>f</sub>/π)²)/|k − Ω²m|</m>). The response's points are measured from the
+run, steady swing by steady swing, as the Single oscillator's are; the phasors are the driven steady state's.</p>
 
 <h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
-<p>The page opens on the Single oscillator's <m>m</m> = 1 kg and <m>k</m> = 400 N/m, with every model matched
-to <m>ζ</m> = 0.05 and cycled at <m>f<sub>n</sub></m> through <m>X</m> = 10 mm.</p>
+<p>The page opens on the Single oscillator's <m>m</m> = 1 kg and <m>k</m> = 400 N/m, at rest, with every model
+matched to <m>ζ</m> = 0.05 at <m>f<sub>n</sub></m> (friction at <m>X</m> = 10 mm).</p>
 <ol>
 <li><b>The oscillator.</b> <m>ω<sub>n</sub> = √(k/m)</m> = 20 rad/s, <m>f<sub>n</sub></m> = 3.18 Hz, and the
 viscous damper is <m>c = 2ζ√(km)</m> = 2 N·s/m. The peak stored energy is <m>U = ½kX²</m> =
@@ -150,7 +159,7 @@ viscous damper is <m>c = 2ζ√(km)</m> = 2 N·s/m. The peak stored energy is <m
 <li><b>Friction.</b> <m>4F<sub>f</sub>X</m> = 12.57 mJ gives <m>F<sub>f</sub></m> = 0.314 N. Released from
 10 mm it loses <m>4F<sub>f</sub>/k</m> = 3.14 mm a cycle, 1.57 mm a half cycle: its turns are at 8.43, 6.86,
 5.29, 3.72, 2.15 and 0.58 mm, the last inside <m>F<sub>f</sub>/k</m> = 0.785 mm, so it sticks after three
-cycles, 0.58 mm off centre (575 µm, carried exactly, as the readout under the decay gives it). The viscous swing instead keeps <m>e<sup>−δ</sup></m> = 0.730 of itself a cycle,
+cycles, 0.58 mm off centre (575 µm, carried exactly, as the readout under the time plot gives it). The viscous swing instead keeps <m>e<sup>−δ</sup></m> = 0.730 of itself a cycle,
 with <m>δ = 2πζ/√(1 − ζ²)</m> = 0.315.</li>
 <li><b>Driven by 1 N.</b> The hysteretic peak is <m>(F/k)/η</m> = 25.0 mm, the viscous one 25.03 mm. Friction's
 threshold is <m>4F<sub>f</sub>/π</m> = 0.4 N, so 1 N runs it away.</li>
@@ -159,15 +168,17 @@ threshold is <m>4F<sub>f</sub>/π</m> = 0.4 N, so 1 N runs it away.</li>
 <m>f<sub>n</sub></m> must be <m>k</m>, which sets <m>k<sub>0</sub></m> = 363.8 N/m and
 <m>k<sub>1</sub></m> = 80.4 N/m, and <m>Ωτ = 1/√1.221</m> at 20 rad/s gives <m>τ</m> = 45.2 ms.</li>
 </ol>
-<p>These are the numbers the readouts give: under the oscillator's controls (<m>F<sub>f</sub></m> = 0.3142 N, <m>τ</m> = 0.04525 s), under the loops (12.6 mJ each) and under the decay.</p>
+<p>These are the numbers the readouts give: under the Damping box (<m>F<sub>f</sub></m> = 314 mN, <m>τ</m> =
+45.2 ms), under the loop (the viscous damper's 12.6 mJ, driven to 10 mm at <m>f<sub>n</sub></m> by 0.4 N) and
+under the time plot (each peak 3.14 mm lower, stuck 575 µm off centre).</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the oscillator, the matching and the plots (Things to try, top left).</p>
+<p>Each of these sets up the oscillator, the matching and the plots (Things to try, under the controls).</p>
 <!--TRIALS-->
 <takeaways>
 <li>The area of the force–displacement loop is the energy lost per cycle; the loss factor <m>η = K″/K′ = W<sub>d</sub>/2πU</m> measures it, and at resonance <m>η = 2ζ</m>.</li>
 <li>Viscous damping loses energy in proportion to frequency, hysteretic damping not at all; they agree at resonance, which is why <m>η = 2ζ</m> swaps between them.</li>
-<li>Hysteretic damping is a frequency-domain model: it has no causal free decay.</li>
+<li>Hysteretic damping is a frequency-domain model: it has no causal free decay, and in time it runs as a stand-in, a viscous damper matched at the frequency it runs at.</li>
 <li>Friction loses <m>4F<sub>f</sub>X</m> per cycle: it decays in a straight line, stops off centre, and can't bound a resonance driven harder than <m>4F<sub>f</sub>/π</m>.</li>
 <li>A viscoelastic material stiffens across its relaxation frequency, where its loss peaks: viscous below, elastic above.</li>
 <li>Any loss can be stood in for by <m>c<sub>eq</sub> = W<sub>d</sub>/πΩX²</m>, at one amplitude; the loop, the decay and the bandwidth all measure <m>η</m>.</li>

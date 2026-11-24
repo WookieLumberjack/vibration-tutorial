@@ -10,7 +10,7 @@ view two to seven times, each with a state only partly loaded. Now:
   last call's arguments, after anything noted before it) and runs when the batch ends; outside one, at once.
   `@coalesced(covers=("_draw_tab",))` on a redraw that draws the tab itself: a trial that switches the tab
   (asking for `_draw_tab`) and then redraws runs `redraw` alone, `_draw_tab` once inside it.
-  `@coalesced(leaf=True)` on a view's own draw (`DampingView._draw`), which several of its page's setters ask
+  `@coalesced(leaf=True)` on a view's own draw (`PendulumView._draw`), which several of its page's setters ask
   for: it waits until the page's redraws have all run. While the batch's end runs them it stays open, so what
   they ask for merges with what's waiting.
 - `tab_groups.Deferred` (and so `LazyTabs`) catches up the same way: a tab shown mid-trial draws once, with the

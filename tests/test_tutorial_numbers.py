@@ -1557,8 +1557,8 @@ def test_damping_models_worked_example():
     # friction
     assert m.friction == pytest.approx(quoted("damping_models", "0.314"), abs=0.0005)
     assert 12.57 / 40 == pytest.approx(quoted("damping_models", "0.314"), abs=0.0005)
-    assert m.friction == pytest.approx(quoted("damping_models", "0.3142"), abs=0.00005)
-    assert m.zener()[2] == pytest.approx(quoted("damping_models", "0.04525"), abs=5e-6)
+    assert 1e3 * m.friction == pytest.approx(314, abs=0.5)  # the Damping box's readout, 314 mN
+    assert 1e3 * m.zener()[2] == pytest.approx(quoted("damping_models", "45.2"), abs=0.05)
     assert abs(coulomb_stop(m.stiffness, m.friction, m.amplitude)[1]) * 1e6 == pytest.approx(575, abs=0.5)
     assert 4 * m.friction / m.stiffness * 1e3 == pytest.approx(quoted("damping_models", "3.14"), abs=0.005)
     assert m.friction / m.stiffness * 1e3 == pytest.approx(quoted("damping_models", "0.785"), abs=0.0005)

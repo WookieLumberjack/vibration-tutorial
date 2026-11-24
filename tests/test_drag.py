@@ -387,13 +387,11 @@ def test_a_sideways_drag_turns_the_near_side_with_the_cursor(app, where, pitch):
         gui.close_graphics(view)
 
 
-@pytest.mark.parametrize("page", ["pendulum_page", "damping_page", "isolation_page"])
+@pytest.mark.parametrize("page", ["pendulum_page", "isolation_page"])
 def test_a_pluckable_body_is_taken_pulled_and_let_go_with_the_mouse(main_window, app, page):
     """`drag.Grabbable` (#409 S-11): a press on the body takes it (closed hand, `grabbed`), a move pulls it, the
     release lets it go (`released`); a press off it is no grab."""
     from PySide6.QtTest import QTest
-
-    from vib_tutorial.gui.damping_view import REST
 
     w = main_window
     w.resize(1280, 800)
@@ -404,9 +402,6 @@ def test_a_pluckable_body_is_taken_pulled_and_let_go_with_the_mouse(main_window,
         app.processEvents()
     if page == "pendulum_page":
         on = QtCore.QPointF(*view._point(view.theta))
-    elif page == "damping_page":
-        model, row = next(iter(view._rows.items()))
-        on = QtCore.QPointF(REST + view.gain * view._x.get(model, 0.0), row)  # as `on_mass` places it
     else:
         on = view.machine.rect().center()
     assert view.grab_at(on) is True

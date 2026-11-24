@@ -14,7 +14,7 @@ other than Qt (a Rust UI, WebAssembly) could take it over. A page joins by addin
 
 Isolation and Duffing & Mathieu, the view-model pilots, joined first, as they were: neither's notes are Qt-free
 yet, and Duffing's trials are presets, not its state (both are for their rebuilds). The Single oscillator, #478's
-pilot, joined whole: its notes are `sdof_trials`'s (`links.NOTES_MODULES`).
+pilot, joined whole: its notes are `sdof_trials`'s (`links.NOTES_MODULES`); Damping models, the second, the same.
 """
 
 from __future__ import annotations
@@ -129,7 +129,41 @@ def _sdof() -> Ready:
     )
 
 
-READY = {r.page: r for r in (_isolation(), _duffing(), _sdof())}
+def _damping_views(state):
+    import numpy as np
+
+    from vib_tutorial.view_models import damping as v
+    from vib_tutorial.view_models.recorder import Point
+
+    t = np.linspace(0.0, 1.0, 400)
+    x = 0.01 * np.sin(2 * np.pi * 3.0 * t)
+    measured = [Point(3.0, complex(1e-3, -5e-4), ())]
+    return (
+        v.info(state),
+        v.loop_view(state, t, x, np.gradient(x, t), 0.4 * np.cos(2 * np.pi * 3.0 * t), 1 / 3.0),
+        v.loss_view(state),
+        v.phasors(state, 0.3),
+        v.frf_view(state, measured, measured, True),
+        v.decay_readout(state, t, x, False),
+    )
+
+
+def _damping() -> Ready:
+    from vib_tutorial.gui import damping_trials
+    from vib_tutorial.view_models.damping import DampingTrial
+
+    return Ready(
+        "damping_page",
+        lambda: DampingTrial("", ""),
+        lambda setup: DampingTrial("", "", **setup),
+        _damping_views,
+        lambda: damping_trials.TRIALS,
+        lambda: damping_trials.PROBLEMS,
+        qt_free_notes=True,
+    )
+
+
+READY = {r.page: r for r in (_isolation(), _duffing(), _sdof(), _damping())}
 QT_FREE_NOTES = ["glossary", *(name for name, r in READY.items() if r.qt_free_notes)]
 
 

@@ -95,7 +95,7 @@ class ArmMass:
     @property
     def arm_force(self) -> float:
         """The arm's pull on the mass, −k₁(x − y) (N)."""
-        return -self.system.arm_stiffness * (self.state[0] - self.state[2])
+        return -self.system.arm_stiffness * float(self.state[0] - self.state[2])
 
     @property
     def stored_energy(self) -> float:
@@ -182,7 +182,9 @@ class ArmMass:
         dissipated = self.dissipated + np.cumsum(((w @ Wd) * w).sum(axis=1))
         work = self.work + np.cumsum(((w @ Ww) * w).sum(axis=1))
         self.dissipated, self.work = float(dissipated[-1]), float(work[-1])
-        self.ledger = np.column_stack([np.full(steps, self.energy_added), work, dissipated, np.zeros(steps)])
+        self.ledger = np.column_stack(
+            [np.full(steps, self.energy_added), work, dissipated, np.full(steps, self.friction_loss)]
+        )  # friction's loss carried over from a stepper before it (it has none of its own)
         self.arm_track = zs[:, 2].copy()
         self.state = zs[-1].copy()
         self._u = float(fs[-1])

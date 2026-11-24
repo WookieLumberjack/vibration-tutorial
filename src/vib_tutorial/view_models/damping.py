@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 
@@ -158,9 +158,11 @@ def loop_view(
     empty = LoopView(Curve.empty(), (), Curve.empty(), 0.0, "Pluck the mass or drive it: its loop is drawn here.")
     if period is None or t.size < 8 or t[-1] - t[0] < period:
         return empty
-    i0 = int(np.searchsorted(t, t[-1] - period))
-    tc, xc, vc, fc = t[i0:], x[i0:], v[i0:], f[i0:]
-    total = element_force(tc, vc, fc, trial.mass)
+    i0 = int(np.searchsorted(t, t[-2] - period))
+    total = element_force(t, v, f, trial.mass)[i0:-1]  # ẍ by central differences, so the window's ends left out:
+    xc = x[i0:-1]  # a whole period to the last sample but one
+    if np.ptp(xc) < 1e-9:
+        return replace(empty, note="It's still: no cycle, no loop.")
     damping = total - trial.stiffness * xc
     shown = damping if trial.damping_only else total
     enclosed = float(np.trapezoid(damping, xc))  # ∮F dx round the cycle: the work done against the damping
@@ -209,9 +211,13 @@ def loss_view(t: DampingTrial) -> LossView:
 @dataclass(frozen=True)
 class Phasor:
     name: str
-    start: complex  # N, head to tail: the spring's, then the damper's, then the mass's, ending at the drive's
-    end: complex
+    start: tuple[float, float]  # N, (real, imaginary), head to tail: the spring's, the damper's, the mass's
+    end: tuple[float, float]  # ending at the drive's
     role: str
+
+
+def _phasor(name: str, start: complex, end: complex, role: str) -> Phasor:
+    return Phasor(name, (start.real, start.imag), (end.real, end.imag), role)
 
 
 def phasors(t: DampingTrial, time: float) -> tuple[Phasor, ...]:
@@ -233,10 +239,10 @@ def phasors(t: DampingTrial, time: float) -> tuple[Phasor, ...]:
     loss = 1j * K.imag * X
     inertia = -omega * omega * t.mass * X
     return (
-        Phasor("spring", 0j, spring, "energy.potential"),
-        Phasor("damping", spring, spring + loss, "energy.dissipated"),
-        Phasor("mass", spring + loss, spring + loss + inertia, "energy.kinetic"),
-        Phasor("drive", 0j, spring + loss + inertia, "force"),
+        _phasor("spring", 0j, spring, "energy.potential"),
+        _phasor("damping", spring, spring + loss, "energy.dissipated"),
+        _phasor("mass", spring + loss, spring + loss + inertia, "energy.kinetic"),
+        _phasor("drive", 0j, spring + loss + inertia, "force"),
     )
 
 
@@ -275,3 +281,29 @@ def frf_view(t: DampingTrial, current: Sequence[Point], earlier: Sequence[Point]
     return FrfView(
         _amplification(t.stiffness, current), _amplification(t.stiffness, earlier), model, ghost, m.natural_hz, note
     )
+
+
+def decay_readout(t: DampingTrial, ts: np.ndarray, x: np.ndarray, still: bool) -> str:
+    """The readout under the time plot after a pluck (the samples since it): friction's swing falls by the same
+    amount each cycle and sticks; the others' by the same fraction (`live_mass.ring_down`)."""
+    from .live_mass import ring_down
+
+    if t.model is not Model.COULOMB:
+        decay = ring_down(ts, x)
+        return decay.text if decay is not None else ""
+    from ..core.sdof import peaks
+
+    _, heights = peaks(ts, x)
+    m = matched(t)
+    drop = 4.0 * m.friction / m.stiffness
+    if heights.size >= 2:
+        measured = float(np.mean(-np.diff(heights)))
+        text = (
+            f"Each peak is {fmt(measured, 'm', largest='')} lower than the one before: 4F<sub>f</sub>/k = "
+            f"{fmt(drop, 'm', largest='')}, the same amount each cycle."
+        )
+    else:
+        text = ""
+    if still and ts.size:
+        text += f" Stuck {fmt(abs(float(x[-1])), 'm', largest='')} off centre: the spring can't beat the friction."
+    return text.strip()
