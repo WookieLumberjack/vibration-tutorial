@@ -20,7 +20,7 @@ ORDER = {page: i for i, (page, _, _) in enumerate(p for _, pages in links.COURSE
 
 def all_notes() -> dict[str, str]:
     """Every page's notes as shown, and the glossary's: loading them fills `maths.EQUATIONS`."""
-    from vib_tutorial.gui.theory_window import GLOSSARY, page_html
+    from vib_tutorial.gui.notes_pages import GLOSSARY, page_html
 
     return {name: page_html(name) for name in [GLOSSARY, *ORDER]}
 

@@ -24,13 +24,11 @@ from dataclasses import dataclass
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from . import links, notes_view, weak
+from .notes_pages import ANCHOR, GLOSSARY, HEADING, page_html
 from .notes_view import NotesBrowser
 from .theming import settings
 
-HEADING = re.compile(r"<h3>(.*?)</h3>", re.S)
-ANCHOR = re.compile(r'<a name="([^"]+)"></a>')
 PAGE_ROLE = QtCore.Qt.ItemDataRole.UserRole  # (page attribute, anchor) of a tree item
-GLOSSARY = "glossary"  # the glossary's name where a page's would be
 GLOSSARY_TITLE = "Glossary of symbols"
 INLINE = re.compile(r"</?(?:sub|sup|b|i|a|span|font)\b[^>]*>", re.I)  # tags inside a word or a formula
 TAG = re.compile(r"<[^>]+>")
@@ -42,39 +40,6 @@ MAX_HITS = 200
 def title(name: str) -> str:
     """Page `name`'s title, or the glossary's."""
     return GLOSSARY_TITLE if name == GLOSSARY else links.PAGE_TITLES[name].removesuffix(" page")
-
-
-def page_html(name: str) -> str:
-    """Page `name`'s Theory notes (an attribute from links.COURSE), as its Theory tab shows them; or the glossary."""
-    if name == GLOSSARY:
-        from .notation import glossary_html
-
-        return anchored(links.load_notes("glossary", glossary=glossary_html()))
-    if name == "sim_page":
-        from .background import BACKGROUND_HTML
-
-        html = BACKGROUND_HTML
-    elif name == "sdof_page":
-        from .sdof import notes_html
-
-        html = notes_html()  # its course map with the problems solved
-    else:
-        module = links.page_module(name)
-        html = getattr(module, "NOTES_HTML", None) or module.THEORY_HTML
-    return anchored(html) + links.next_html(name)
-
-
-def anchored(html: str) -> str:
-    """`html` with an anchor on every <h3> that lacks one (section-1, section-2, …), so the contents reach it."""
-    count = 0
-
-    def add(match: re.Match) -> str:
-        nonlocal count
-        count += 1
-        inner = match.group(1)
-        return match.group(0) if ANCHOR.search(inner) else f'<h3><a name="section-{count}"></a>{inner}</h3>'
-
-    return HEADING.sub(add, html)
 
 
 def sections(html: str) -> list[tuple[str, str]]:

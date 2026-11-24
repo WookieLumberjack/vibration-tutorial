@@ -22,6 +22,8 @@ COURSE_DATA = [
     f"vib_tutorial.gui.{name}"
     for name in (
         "links",  # COURSE, PATHS, KEYS, load_notes, page_link
+        "notes_pages",  # page_html: a page's notes, gathered (#478 item 9)
+        "notes_export",  # the notes as static HTML and SVG
         "references",
         "style",  # the themes' colours
         "sim_trials",

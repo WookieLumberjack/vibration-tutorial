@@ -55,7 +55,7 @@ def register(found: dict[str, Callable[[], str]]) -> None:
 def all_figures() -> dict[str, Callable[[], str]]:
     """Every figure in the notes: loads every page's notes (which registers their figures) first."""
     from . import links
-    from .theory_window import page_html
+    from .notes_pages import page_html
 
     for _, pages in links.COURSE:
         for page, _, _ in pages:
