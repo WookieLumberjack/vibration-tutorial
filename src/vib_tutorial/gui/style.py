@@ -323,3 +323,15 @@ def contrast(a: str, b: str) -> float:
 def text_on(fill: str) -> str:
     """Black or white, whichever reads better on `fill` (e.g. a mass's label)."""
     return "#000000" if contrast(fill, "#000000") >= contrast(fill, "#ffffff") else "#ffffff"
+
+
+def role(name: str, theme: Theme | None = None) -> str:
+    """A colour by its theme role's name, as a view model gives it (#478 item 9): "force", "energy.kinetic" (a
+    dict's entry), "mass.0" (a tuple's). The current theme's unless `theme`."""
+    field_name, _, part = name.partition(".")
+    value = getattr(theme or current(), field_name)
+    if part:
+        value = value[int(part)] if isinstance(value, tuple) else value[part]
+    if not isinstance(value, str):
+        raise KeyError(f"{name!r} isn't a colour role")
+    return value
