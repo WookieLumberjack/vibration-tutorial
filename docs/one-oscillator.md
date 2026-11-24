@@ -18,7 +18,7 @@ The pages in the order the app's tabs take them.
 ## Single oscillator
 
 m ẍ + c ẋ + k x = f, running live: the first page rebuilt to #478's standard. The mass is worked out as it moves
-(the exact FOH step), with the forces on it drawn over it as a free-body diagram. Pluck it, or drag the handles on
+(the exact FOH step), with the forces on it drawn beside it as a free-body diagram, on the mass held still so it reads as it runs. Pluck it, or drag the handles on
 the mass, the spring and the damper to change m, k and c while it runs: the motion carries on by the physics (a
 captured mass keeps its momentum, a spring changed at a stretch costs ½Δk·x²), and the time plots keep what came
 before, with the change marked. The readout measures the log decrement from the peaks after a pluck. Drive it
@@ -28,7 +28,7 @@ The Energy tab keeps the books through every change; the Poles tab's poles drag 
 plane. Eight Things to try, after the controls, are setups to come back to; their predictions are asked once
 you've handled it.
 
-![Single oscillator page after a sweep: m = 1 kg, k = 400 N/m, c = 2 N·s/m (f<sub>n</sub> = 3.18 Hz, ζ = 0.05), 15 points measured from 1.06 to 9.55 Hz with the theory's curve over them, the half-power band 3.01–3.33 Hz giving ζ ≈ 0.0503, the lag through 90° at f<sub>n</sub> and the Nyquist circle; the mass still driven at 9.55 Hz, swinging ±312 µm and lagging by 178°, with the forces on it drawn above](images/single_oscillator.png)
+![Single oscillator page after a sweep: m = 1 kg, k = 400 N/m, c = 2 N·s/m (f<sub>n</sub> = 3.18 Hz, ζ = 0.05), 15 points measured from 1.06 to 9.55 Hz with the theory's curve over them, the half-power band 3.01–3.33 Hz giving ζ ≈ 0.0503, the lag through 90° at f<sub>n</sub> and the Nyquist circle; the mass still driven at 9.55 Hz, swinging ±312 µm and lagging by 178°, with the forces on it drawn beside it](images/single_oscillator.png)
 
 ## Pendulums
 

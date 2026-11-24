@@ -1,5 +1,5 @@
-"""The live mass drawn (#478 items 1, 2, 4): a mass on its spring and damper, its forces as a free-body diagram, and
-grips on the body that set m, k and c by dragging.
+"""The live mass drawn (#478 items 1, 4): a mass on its spring and damper, and grips on the body that set m, k and c
+by dragging. Its forces are drawn beside it, on a mass held still (`free_body_view.FreeBodyView`).
 
 `LiveMassView` only draws and forwards what the hand does; what a drag means is the view model's
 (`view_models/grips.py`'s `Grip`, `live_mass.LiveMass`'s `hold`/`let_go`):
@@ -8,8 +8,6 @@ grips on the body that set m, k and c by dragging.
 - **Grips:** the corner handle on the mass (drag up or right: heavier), the handle on the spring (up: stiffer) and
   the one on the damper (up: more damping): `grip_taken(name)`, `grip_moved(name, distance)` (display units since
   it was taken, + to grow), `grip_released(name)`. Each value is printed beside its grip.
-- **The free-body diagram** (`show`, a `free_body.FreeBody`): an arrow a force, stacked above the mass from its
-  centre, each in its theme role's colour and labelled with its size; the net force, m·ẍ, last and dashed.
 
 The motion is drawn magnified (the scale bar under it): the largest recent swing fills `SWING` display units. The
 scale holds still under the hand, so a pluck doesn't rescale as it's let go.
@@ -24,13 +22,12 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from ..view_models.free_body import Arrow, FreeBody
 from ..view_models.grips import body_size
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
 from .animation import damper_path, spring_path
 from .drag import Grabbable
-from .style import colors, role, text_on
+from .style import colors, text_on
 
 REST_X = 1.3  # the mass's centre at rest (display units; the wall at 0)
 SIDE = 0.42  # the reference mass's side
@@ -39,13 +36,11 @@ SWING = 0.35  # display units the largest recent swing is drawn across
 MAX_DRAG = 0.45  # farthest a pluck pulls the mass from rest (display units)
 PLUCK_GAIN = SWING / 0.02  # at rest, a pluck's full pull is about 20 mm
 MIN_PEAK = 1e-6  # m: never magnify motion smaller than this
-ROW = 0.15  # the free-body diagram's rows
-ARROW_ROOM = 0.95  # display units the largest arrow takes
 GRIP_R = 0.06  # a grip's radius, and how near a press must be
 GRIPS = ("mass", "stiffness", "damping")
 TIP = (
-    "<p>The mass on its spring and damper, moving as it runs (magnified: the bar underneath is to scale), with "
-    "the forces on it above.</p>"
+    "<p>The mass on its spring and damper, moving as it runs (magnified: the bar underneath is to scale). The "
+    "forces on it are beside it.</p>"
     "<p><b>Pluck it:</b> drag the mass sideways and let go. <b>Change it as it runs:</b> drag the handle on the "
     "mass's corner (heavier up or right), on the spring (stiffer up) or on the damper (more damping up). The "
     "motion carries on from where it is.</p>"
@@ -62,7 +57,7 @@ class LiveMassView(Grabbable, pg.PlotWidget):
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setAccessibleName("The mass on its spring and damper, moving, with the forces on it")
+        self.setAccessibleName("The mass on its spring and damper, moving")
         self.setToolTip(TIP)
         self.setMouseTracking(True)
         self.setMenuEnabled(False)
@@ -71,7 +66,7 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         self.hideAxis("left")
         self.hideAxis("bottom")
         self.setAspectLocked(True)
-        self.setRange(QtCore.QRectF(-0.25, -0.85, 2.95, 2.1), padding=0)  # the scale's text, descenders too
+        self.setRange(QtCore.QRectF(-0.25, -0.85, 2.95, 1.45), padding=0)  # the largest mass's grip; the scale's text
         self.gain = PLUCK_GAIN  # display units a metre
         self.held: object = False  # True while plucked, a grip's name while it's dragged
         self._grip_from: QtCore.QPointF | None = None
@@ -104,10 +99,6 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         self.scale_bar = add(pg.PlotDataItem([0.0, SWING], [-0.68, -0.68]))
         self.scale_text = add(pg.TextItem(anchor=(0, 0.5)))
         self.scale_text.setPos(SWING + 0.05, -0.68)
-        self.shafts: list[pg.PlotDataItem] = []
-        self.heads: list[pg.ArrowItem] = []
-        self.texts: list[pg.TextItem] = []
-        self._arrows: tuple[Arrow, ...] = ()
         self.apply_theme()
         self._place(0.0)
 
@@ -130,7 +121,6 @@ class LiveMassView(Grabbable, pg.PlotWidget):
             grip.setPen(pg.mkPen(colors.strong, width=2))
         self.scale_bar.setPen(pg.mkPen(colors.grey, width=2))
         self.scale_text.setColor(colors.muted)
-        self._arrows = ()  # recoloured at the next `show`
 
     def set_values(
         self, mass: float, stiffness: float, damping: float, reference: float = 1.0, damper: str | None = None
@@ -152,8 +142,8 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         target = SWING / max(peak, MIN_PEAK)
         self.gain = target if target < self.gain else self.gain + 0.03 * (target - self.gain)
 
-    def show(self, x: float, body: FreeBody | None = None, ghost: float | None = None) -> None:
-        """The mass at displacement x (m), with its forces; `ghost`, another mass's displacement, outlined."""
+    def show(self, x: float, ghost: float | None = None) -> None:
+        """The mass at displacement x (m); `ghost`, another mass's displacement, outlined."""
         self._place(self.gain * x)
         self.ghost.setVisible(ghost is not None)
         if ghost is not None:
@@ -161,8 +151,6 @@ class LiveMassView(Grabbable, pg.PlotWidget):
             g = REST_X + self.gain * ghost
             self.ghost.setRect(QtCore.QRectF(g - s / 2, -s / 2, s, s))
         self.scale_text.setText(f"= {fmt(SWING / self.gain, 'm', largest='', smallest='µ')}")
-        if body is not None:
-            self._draw_forces(body)
 
     def _place(self, offset: float) -> None:
         s = self._side
@@ -184,45 +172,6 @@ class LiveMassView(Grabbable, pg.PlotWidget):
             "stiffness": (0.5 * left, SPRING_Y),
             "damping": (0.3 * left, DAMPER_Y),
         }
-
-    def _draw_forces(self, body: FreeBody) -> None:
-        arrows = (*body.arrows, body.net)
-        if [a.name for a in arrows] != [a.name for a in self._arrows] or [a.role for a in arrows] != [
-            a.role for a in self._arrows
-        ]:
-            self._build_arrows(arrows)
-        top = self._side / 2 + 0.12
-        for i, (arrow, shaft, head, text) in enumerate(zip(arrows, self.shafts, self.heads, self.texts)):
-            y = top + i * ROW
-            length = float(body.length(arrow)) * ARROW_ROOM
-            tip = self._centre + length
-            shaft.setData([self._centre, tip], [y, y])
-            shown = abs(length) > 0.02
-            head.setVisible(shown)
-            if shown:
-                head.setPos(tip, y)
-                head.setStyle(angle=180 if length > 0 else 0)
-            text.setText(arrow.label)
-            text.setAnchor((0.0, 0.5) if length >= 0 else (1.0, 0.5))
-            text.setPos(tip + (0.04 if length >= 0 else -0.04), y)
-        self._arrows = arrows
-
-    def _build_arrows(self, arrows: tuple[Arrow, ...]) -> None:
-        for item in (*self.shafts, *self.heads, *self.texts):
-            self.removeItem(item)
-        self.shafts, self.heads, self.texts = [], [], []
-        for arrow in arrows:
-            colour = role(arrow.role)
-            dash = QtCore.Qt.PenStyle.DashLine if arrow.name == "net" else QtCore.Qt.PenStyle.SolidLine
-            shaft = pg.PlotDataItem(pen=pg.mkPen(colour, width=3, style=dash))
-            head = pg.ArrowItem(angle=180, headLen=12, tipAngle=40, pen=None, brush=colour)
-            text = pg.TextItem(color=colour)
-            for item in (shaft, head, text):
-                item.setZValue(7)
-                self.addItem(item)
-            self.shafts.append(shaft)
-            self.heads.append(head)
-            self.texts.append(text)
 
     # ------------------------------------------------------------- the hand
     def grip_at(self, pos: QtCore.QPointF) -> str | None:

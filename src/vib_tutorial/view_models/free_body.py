@@ -1,8 +1,8 @@
-"""A live free-body diagram (#478 item 2): the forces on a body, as arrows to draw on it, worked out each frame.
+"""A live free-body diagram (#478 item 2): the forces on a body, as arrows to draw, worked out each frame.
 
-`FreeBody` is what a page draws: each force an `Arrow` (its name, its label with its size, its value in newtons,
-+ along the body's positive direction, and its colour as a theme role's name), and the net force, which is the
-mass times its acceleration. A force of nought is still listed (its arrow drawn at no length), so the arrows
+`FreeBody` is what a page draws (`gui/free_body_view.py`, beside the moving body): each force an `Arrow` (its
+name, its label with its size, its symbol alone, its value in newtons, + along the body's positive direction, and
+its colour as a theme role's name), and the net force, which is the mass times its acceleration. A force of nought is still listed (its arrow drawn at no length), so the arrows
 keep their places while one comes and goes.
 
 `ArrowScale` keeps the arrows' scale steady while the forces change: it grows at once to fit the largest force
@@ -35,6 +35,7 @@ class Arrow:
     label: str  # what's printed by it, as plain text (no markup): its symbol and size
     value: float  # N, + along the body's positive direction
     role: str  # its colour, as a theme role's name (`style.role`)
+    symbol: str = ""  # its symbol alone, the label's first part
 
 
 @dataclass(frozen=True)
@@ -77,7 +78,7 @@ class ArrowScale:
 
 
 def _arrow(name: str, symbol: str, value: float, role: str) -> Arrow:
-    return Arrow(name, f"{symbol} = {fmt(abs(value), 'N')}", value, role)
+    return Arrow(name, f"{symbol} = {fmt(abs(value), 'N')}", value, role, symbol)
 
 
 def one_mass(

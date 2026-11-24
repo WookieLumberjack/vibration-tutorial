@@ -3,8 +3,8 @@
 The mass runs live (`view_models/live_mass.LiveMass`) with the damping picked (viscous, hysteretic by its stand-in
 in time, Coulomb friction, the Zener element), each matched at f<sub>n</sub> to ζ (`view_models/damping.py`), and
 the viscous ghost beside it, dashed, plucked and driven as it is. Left: the oscillator, the damping (pick it, or
-change ζ, as it runs), the drive, then the Things to try. Centre: the mass with its forces (`live_body`: pluck it,
-or drag the grips on the mass, the spring and the damper, which sets ζ), its run, and the time plots with the
+change ζ, as it runs), the drive, then the Things to try. Centre: the mass (`live_body`: pluck it, or drag
+the grips on the mass, the spring and the damper, which sets ζ) with its forces beside it (`free_body_view`), its run, and the time plots with the
 ghost's trace and the changes marked. Right: the hysteresis loop the run draws, beside each model's, and the loss
 factor against frequency; the Frequency response built by dwelling or sweeping, with the driven state's force
 phasors; the Energy balance; the Theory.
@@ -38,6 +38,7 @@ from . import coalesce
 from .bindings import Bindings
 from .damping_trials import NOTES_HTML, PROBLEMS, TIPS, TRIALS
 from .frame_loop import FrameLoop
+from .free_body_view import FreeBodyView
 from .layouts import FlowLayout
 from .lesson import Form, TrialBox, combo, note_label, plot, readout_label, set_quietly, three_panes
 from .live_body import LiveMassView
@@ -149,6 +150,7 @@ class DampingModelsPage(QtWidgets.QWidget):
         # --- centre
         self.body = LiveMassView()
         self.body.setMinimumHeight(200)
+        self.forces = FreeBodyView()
         self.body.grabbed.connect(self._on_grabbed)
         self.body.pulled.connect(self._on_pulled)
         self.body.let_go.connect(self._on_let_go)
@@ -182,7 +184,10 @@ class DampingModelsPage(QtWidgets.QWidget):
         centre = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(centre)
         cv.setContentsMargins(0, 0, 0, 0)
-        cv.addWidget(self.body, 3)
+        top = QtWidgets.QHBoxLayout()
+        top.addWidget(self.body, 3)
+        top.addWidget(self.forces, 2)
+        cv.addLayout(top, 3)
         cv.addLayout(row)
         cv.addWidget(self.strip, 2)
         cv.addWidget(self.force_plot, 1)
@@ -531,13 +536,15 @@ class DampingModelsPage(QtWidgets.QWidget):
         ts = r.t[: r.size]
         x, v, f = (float(np.interp(t, ts, r.y[: r.size, COL[c]])) for c in ("x", "v", "f"))
         p = self.live.params
-        self.body.show(x, one_mass(p.stiffness, p.damping, x, v, f, scale=self.arrows, t=t))
+        self.body.show(x)
+        self.forces.show(one_mass(p.stiffness, p.damping, x, v, f, scale=self.arrows, t=t))
         self.clock.setText(f"t = {sig(t, 4)} s (paused at {sig(self.live.t, 4)} s)")
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
         c = colors
         self.body.apply_theme()
+        self.forces.apply_theme()
         self.scrub.apply_theme()
         self.marks.apply_theme()
         self.energy.apply_theme()
@@ -621,7 +628,8 @@ class DampingModelsPage(QtWidgets.QWidget):
         body = one_mass(
             p.stiffness, p.damping, live.x, live.v, live.force_now, friction, hand, arm, scale=self.arrows, t=live.t
         )
-        self.body.show(live.x, body, self.ghost.x if self.ghost_on.isChecked() else None)
+        self.body.show(live.x, self.ghost.x if self.ghost_on.isChecked() else None)
+        self.forces.show(body)
 
     def _show_readout(self) -> None:
         live = self.live
