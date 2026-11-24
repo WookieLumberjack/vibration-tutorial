@@ -44,16 +44,17 @@ beside the linearized swing's ghost; turn it and let go to start it from there.
 
 ## Damping models
 
-Viscous, hysteretic (structural), Coulomb friction and viscoelastic (Zener) damping, each matched to the
-same oscillator so it loses the same energy per cycle at f<sub>n</sub>. The hysteresis loops (damping
-force alone, or with the spring as a test machine draws them), the energy per cycle, storage stiffness
-and loss factor against frequency, the forced response (friction's by its describing function, which
-can't bound a resonance) and the free decays (friction's a straight line that stops off centre). The Free decay tab draws the four
-masses side by side, each with its own damper (friction's on a floor, with the band it sticks in), moving
-with their decays: pull one and let go to release them all from there. Friction stays matched at X, so
-a smaller release sticks sooner.
+Viscous, hysteretic (structural), Coulomb friction and viscoelastic (Zener) damping, each matched to the same
+oscillator so it loses the same energy per cycle at f<sub>n</sub>, and the one picked runs live (#478's pilot,
+with the Single oscillator): pick another as it runs and the motion carries on with it. A viscous ghost, dashed,
+is plucked and driven beside it. Hysteretic damping runs as its stand-in in time, a viscous damper matched at
+the frequency it runs at; friction sticks and slips by its events; the Zener element relaxes through its arm.
+The Loop & loss tab draws the run's own hysteresis loop over its last cycle, with every model's beside it and
+the energy it encloses, and the loss factors against frequency; the Frequency response tab fills point by point
+(friction's resonance runs away past 4F<sub>f</sub>/π), with the driven state's force phasors; the Energy tab
+keeps the books through every change.
 
-![Damping models page: the four models matched to ζ = 0.05 at f<sub>n</sub> = 3.18 Hz; cycled through ±10 mm there each loop encloses 12.6 mJ, three ellipses and friction's ±0.31 N rectangle; the Zener element relaxes from 444 to 364 N/m with its loss peak of 0.1 at f<sub>n</sub>](images/damping_models.png)
+![Damping models page: the viscous mass matched to ζ = 0.05 and driven by 0.4 N at f<sub>n</sub> = 3.18 Hz, swinging ±10 mm; its own loop encloses about 12.5 mJ a cycle, beside the four models' loops at that cycle (three ellipses enclosing 12.6 mJ and friction's ±0.31 N rectangle); the loss factors meet at 0.1 at f<sub>n</sub>, where the Zener element's peaks](images/damping_models.png)
 
 ## Vibration isolation
 

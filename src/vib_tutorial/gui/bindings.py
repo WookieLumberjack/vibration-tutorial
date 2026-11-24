@@ -8,7 +8,8 @@ A page lists its bindings, `field → widget`, and gets from them:
 
 So Defaults round-trips by construction: `write(read(base))` leaves every control as it was, and a field added to
 the state and bound here is read, written and watched with nothing else to keep in step. A widget's value can be
-scaled into the field (`scale`: mm in the box, m in the state).
+scaled into the field (`scale`: mm in the box, m in the state), and a combo's index pick one of `choices` (an
+enum's members: Damping models' model).
 
 Working on it: `tests/test_bindings.py`; `tests/test_defaults.py` checks every page round-trips.
 """
@@ -28,6 +29,7 @@ class Binding:
     field: str
     widget: QtWidgets.QWidget
     scale: float = 1.0  # the field's value is the widget's times this
+    choices: tuple | None = None  # a combo's field is one of these (an enum's members), by its index
 
 
 def _get(w: QtWidgets.QWidget) -> Any:
@@ -78,13 +80,16 @@ class Bindings(QtCore.QObject):
         self._names = {f.name for f in fields(state_type)}
         self.bindings: list[Binding] = []
 
-    def bind(self, field: str, widget: QtWidgets.QWidget, scale: float = 1.0) -> QtWidgets.QWidget:
-        """Bind `field` to `widget` (whose value times `scale` is the field's): the widget, for chaining."""
+    def bind(
+        self, field: str, widget: QtWidgets.QWidget, scale: float = 1.0, choices: tuple | None = None
+    ) -> QtWidgets.QWidget:
+        """Bind `field` to `widget` (whose value times `scale` is the field's; a combo's index picks from `choices`,
+        an enum's members, where the field is one): the widget, for chaining."""
         if field not in self._names:
             raise KeyError(f"{self.state_type.__name__} has no field {field!r}")
         if any(b.field == field for b in self.bindings):
             raise KeyError(f"{field!r} is bound already")
-        self.bindings.append(Binding(field, widget, scale))
+        self.bindings.append(Binding(field, widget, scale, choices))
         _signal(widget).connect(weak.slot(self, lambda self, *_, f=field: self.changed.emit(f)))
         return widget
 
@@ -96,6 +101,8 @@ class Bindings(QtCore.QObject):
         values = {}
         for b in self.bindings:
             value = _get(b.widget)
+            if b.choices is not None:
+                value = b.choices[value]
             values[b.field] = value * b.scale if b.scale != 1.0 else value
         return replace(base, **values)
 
@@ -103,4 +110,6 @@ class Bindings(QtCore.QObject):
         """Every bound control set to `state`'s value, without its signal."""
         for b in self.bindings:
             value = getattr(state, b.field)
+            if b.choices is not None:
+                value = b.choices.index(value)
             _set(b.widget, value / b.scale if b.scale != 1.0 else value)

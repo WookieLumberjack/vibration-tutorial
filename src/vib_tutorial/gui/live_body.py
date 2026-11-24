@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..view_models.free_body import Arrow, FreeBody
 from ..view_models.grips import body_size
@@ -95,6 +95,8 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         self.spring = add(pg.PlotDataItem())
         self.damper = add(pg.PlotDataItem(connect="finite"))
         self.block = add(QtWidgets.QGraphicsRectItem(), 5)
+        self.ghost = add(QtWidgets.QGraphicsRectItem(), 4)  # another mass beside it, outlined (Damping models')
+        self.ghost.hide()
         self.mass_label = add(pg.TextItem(anchor=(0.5, 0.5)), 6)
         self.k_label = add(pg.TextItem(anchor=(0.5, 1.0)), 6)
         self.c_label = add(pg.TextItem(anchor=(0.5, 0.0)), 6)
@@ -118,6 +120,8 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         self.rest.setPen(pg.mkPen(colors.grey, width=1))
         self.block.setBrush(pg.mkBrush(colors.mass[0]))
         self.block.setPen(pg.mkPen(colors.structure, width=1.5))
+        self.ghost.setBrush(QtGui.QBrush(QtCore.Qt.BrushStyle.NoBrush))
+        self.ghost.setPen(pg.mkPen(colors.grey, width=2, style=QtCore.Qt.PenStyle.DashLine))
         self.mass_label.setColor(text_on(colors.mass[0]))
         for label in (self.k_label, self.c_label):
             label.setColor(colors.muted)
@@ -128,14 +132,17 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         self.scale_text.setColor(colors.muted)
         self._arrows = ()  # recoloured at the next `show`
 
-    def set_values(self, mass: float, stiffness: float, damping: float, reference: float = 1.0) -> None:
+    def set_values(
+        self, mass: float, stiffness: float, damping: float, reference: float = 1.0, damper: str | None = None
+    ) -> None:
         """The values the grips show, and the mass's size (its side as a block of one material, against
-        `reference`)."""
+        `reference`); `damper`, what the damper's label says in place of its c (a damping model's)."""
         self._values = {"mass": mass, "stiffness": stiffness, "damping": damping}
         self._side = SIDE * body_size(mass, reference)
         self.mass_label.setText(f"m = {sig(mass)} kg")
         self.k_label.setText(f"k = {fmt(stiffness, 'N/m', largest='M', smallest='m')}")
-        self.c_label.setText(f"c = {fmt(damping, 'N·s/m', largest='M', smallest='m')}")  # drawn at the next `show`
+        c = f"c = {fmt(damping, 'N·s/m', largest='M', smallest='m')}"
+        self.c_label.setText(c if damper is None else damper)  # drawn at the next `show`
 
     def fit(self, peak: float) -> None:
         """Magnify the motion so the largest recent swing, `peak` (m), fills SWING: at once if it grew, slowly as
@@ -145,9 +152,14 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         target = SWING / max(peak, MIN_PEAK)
         self.gain = target if target < self.gain else self.gain + 0.03 * (target - self.gain)
 
-    def show(self, x: float, body: FreeBody | None = None) -> None:
-        """The mass at displacement x (m), with its forces."""
+    def show(self, x: float, body: FreeBody | None = None, ghost: float | None = None) -> None:
+        """The mass at displacement x (m), with its forces; `ghost`, another mass's displacement, outlined."""
         self._place(self.gain * x)
+        self.ghost.setVisible(ghost is not None)
+        if ghost is not None:
+            s = self._side
+            g = REST_X + self.gain * ghost
+            self.ghost.setRect(QtCore.QRectF(g - s / 2, -s / 2, s, s))
         self.scale_text.setText(f"= {fmt(SWING / self.gain, 'm', largest='', smallest='µ')}")
         if body is not None:
             self._draw_forces(body)
@@ -182,7 +194,7 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         top = self._side / 2 + 0.12
         for i, (arrow, shaft, head, text) in enumerate(zip(arrows, self.shafts, self.heads, self.texts)):
             y = top + i * ROW
-            length = body.length(arrow) * ARROW_ROOM
+            length = float(body.length(arrow)) * ARROW_ROOM
             tip = self._centre + length
             shaft.setData([self._centre, tip], [y, y])
             shown = abs(length) > 0.02

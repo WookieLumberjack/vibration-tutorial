@@ -99,7 +99,8 @@ def test_a_change_mid_run_carries_the_motion_on_and_is_marked(page):
     assert page.live.t == t and page.live.x == x and page.live.v == pytest.approx(v / 4)
     assert page.live.edits == [t]
     page.step(0.5)
-    assert page.mark_lines and page.mark_lines[0].isVisible() and page.mark_lines[0].value() == t
+    lines = page.marks.lines
+    assert lines and lines[0].isVisible() and lines[0].value() == t
     xs = page.x_item.getData()[0]
     assert xs[0] < t < xs[-1]  # the trace keeps what came before
 
@@ -161,7 +162,7 @@ def test_the_energy_tab_books_a_capture(page):
     page.step(0.4)
     page.mass.setValue(2.0)
     page.step(0.4)
-    text = page.ledger.text()
+    text = page.energy.ledger.text()
     assert "Lost capturing mass" in text and "Put in by your hand" in text and "It closes to" in text
 
 

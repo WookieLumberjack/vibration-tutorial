@@ -296,8 +296,10 @@ def test_the_books_close_through_changes_to_and_from_a_zener_arm():
     assert live.arm_force != 0.0
     live.set_params(damping.params(_damping(Model.COULOMB)))  # and back, the arm's energy taken with it
     _run(live, 0.5)
+    live.set_params(damping.params(_damping(Model.ZENER)))  # friction's loss carried over to the arm's stepper
+    _run(live, 0.5)
     view = energy_view(live.record.t[: live.record.size], live.record.y[: live.record.size])
-    assert view is not None and len(live.edits) == 3
+    assert view is not None and len(live.edits) == 4
     gap = view.put_in + view.changes - view.taken_out - view.stored
     assert np.abs(gap).max() < 1e-9 * np.abs(view.put_in).max()
 
@@ -334,6 +336,6 @@ def test_the_phasors_add_up_to_the_drive():
     for model in (Model.VISCOUS, Model.HYSTERETIC, Model.ZENER):
         t = _damping(model, drive=True, freq_hz=2.5, force=2.0)
         spring, loss, mass, drive = damping.phasors(t, 0.37)
-        assert drive.end == pytest.approx(mass.end) and abs(drive.end) == pytest.approx(2.0)
+        assert drive.end == pytest.approx(mass.end) and math.hypot(*drive.end) == pytest.approx(2.0)
         assert spring.end == loss.start and loss.end == mass.start
     assert damping.phasors(_damping(Model.VISCOUS), 0.0) == ()

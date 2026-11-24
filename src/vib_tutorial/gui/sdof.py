@@ -30,7 +30,7 @@ from ..view_models import recorder as rec
 from ..view_models import sdof as view
 from ..view_models.free_body import ArrowScale, one_mass
 from ..view_models.grips import Grip
-from ..view_models.live_mass import COL, UNBALANCE, LiveMass, energy_view, ring_down
+from ..view_models.live_mass import COL, UNBALANCE, LiveMass, ring_down
 from ..view_models.sdof import SdofTrial
 from ..view_models.text import fmt
 from ..view_models.text import number as sig
@@ -38,24 +38,22 @@ from . import coalesce
 from .bindings import Bindings
 from .drag import DragPoint
 from .frame_loop import FrameLoop
-from .layouts import FlowLayout, ResetButton
-from .lesson import Dot, Form, LiveLabel, RunButton, TrialBox, note_label, plot, readout_label, set_quietly, three_panes
+from .layouts import FlowLayout
+from .lesson import Dot, Form, TrialBox, note_label, plot, readout_label, set_quietly, three_panes
 from .live_body import LiveMassView
+from .live_parts import ChangeMarks, EnergyTab, run_row
 from .notes_view import NotesBrowser
 from .plots import decimate
 from .scrub import Scrub
 from .sdof_trials import NOTES_HTML, PROBLEMS, TIPS, TRIALS
-from .style import colors, role
-from .theming import add_legend
-from .transport import Transport, speed_text
+from .style import colors
+from .transport import Transport
 
 __all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "SdofPage", "notes_html"]
 
-SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0, 5.0)
 STRIP_SECONDS = 10.0  # the time plots' window
 PHASE_SECONDS = 3.0  # the phase plane's trail
 PEAK_SECONDS = 3.0  # the body's scale fits the largest swing this recent
-ENERGY_SECONDS = 60.0  # the Energy tab's window (its ledger is the whole run's)
 MEASURE_EVERY = 0.2  # s of run between the recorder's looks
 PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
 GRIPS = {
@@ -117,7 +115,6 @@ class SdofPage(QtWidgets.QWidget):
         self._grip_start = 0.0
         self._measured_at = -1.0
         self._pole_held: complex | None = None  # the pole not being dragged, while one is
-        self._marks: list[float] = []
         self._budget = Budget()
         self.bindings = Bindings(SdofTrial, self)
 
@@ -167,20 +164,10 @@ class SdofPage(QtWidgets.QWidget):
         self.body.let_go.connect(self._on_let_go)
         self.body.grip_taken.connect(self._on_grip_taken)
         self.body.grip_moved.connect(self._on_grip_moved)
-        self.speed = QtWidgets.QComboBox()
-        self.speed.setAccessibleName("Playback speed")
-        for s in SPEEDS:
-            self.speed.addItem(speed_text(s), s)
-        self.speed.setCurrentIndex(SPEEDS.index(1.0))
-        self.speed.setToolTip("<p>Simulated seconds per second.</p>")
-        self.run_button = RunButton()
+        row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
         self.run_button.toggled.connect(self._on_run)
-        self.reset_button = ResetButton()
         self.reset_button.setToolTip("<p>Back to rest at t = 0; the measured points are kept.</p>")
         self.reset_button.clicked.connect(self.reset)
-        self.clock = LiveLabel("t = 0 s")
-        row = FlowLayout()
-        row.add(self.speed, self.run_button, self.reset_button, self.clock)
 
         self.strip = plot("Displacement x", "m", "Time", "s", height=150)
         self.strip.setToolTip(STRIP_TIP)
@@ -195,7 +182,7 @@ class SdofPage(QtWidgets.QWidget):
         self.f_item = pg.PlotDataItem()
         self.force_plot.addItem(self.f_item)
         decimate(self.strip, self.force_plot)
-        self.mark_lines: list[pg.InfiniteLine] = []
+        self.marks = ChangeMarks(self.strip, self.force_plot)
         self.scrub = Scrub(self.strip, self.force_plot)
         self.scrub.scrubbed.connect(self._on_scrubbed)
         self.readout = readout_label()
@@ -262,33 +249,7 @@ class SdofPage(QtWidgets.QWidget):
         self.frf_note = note_label()
         fv.addWidget(self.frf_note)
 
-        energy = QtWidgets.QWidget()
-        ev = QtWidgets.QVBoxLayout(energy)
-        self.energy_plot = plot("Energy", "J", "Time", "s", height=160)
-        self.energy_plot.setMouseEnabled(x=False, y=False)
-        self.energy_plot.setToolTip(
-            "<p>Where the energy went: what the drive and your hand put in, what the damper took out, what the "
-            "changes cost or added (changing the spring at a stretch, capturing or dropping mass), and what's "
-            "stored now. Put in, less taken out, with the changes, is what's stored, at every instant.</p>"
-        )
-        add_legend(self.energy_plot.getPlotItem(), offset=(-10, 10))
-        self.energy_items = {
-            name: pg.PlotDataItem(name=label)
-            for name, label in (
-                ("put_in", "put in"),
-                ("taken_out", "taken out"),
-                ("changes", "the changes"),
-                ("stored", "stored"),
-            )
-        }
-        for item in self.energy_items.values():
-            self.energy_plot.addItem(item)
-        decimate(self.energy_plot)
-        self.ledger = QtWidgets.QLabel()
-        self.ledger.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        self.ledger.setWordWrap(True)
-        ev.addWidget(self.energy_plot, 1)
-        ev.addWidget(self.ledger)
+        self.energy = EnergyTab()
 
         poles = QtWidgets.QWidget()
         sv = QtWidgets.QVBoxLayout(poles)
@@ -327,7 +288,7 @@ class SdofPage(QtWidgets.QWidget):
         self._notes_html = NOTES_HTML  # redrawn with the course map's progress as the notes show (_refresh_map)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(frf, "Frequency response")
-        self.tabs.addTab(energy, "Energy")
+        self.tabs.addTab(self.energy, "Energy")
         self.tabs.addTab(poles, "Poles && phase plane")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(self._on_tab)
@@ -624,8 +585,7 @@ class SdofPage(QtWidgets.QWidget):
         self.peak_item.setSymbolPen(None)
         self.peak_item.setSymbolBrush(pg.mkBrush(c.force))
         self.f_item.setPen(pg.mkPen(c.force, width=1.5))
-        for line in self.mark_lines:
-            line.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DashLine))
+        self.marks.apply_theme()
         for item in self.theory_items:
             item.setPen(pg.mkPen(c.strong, width=1.5))
         for item in self.earlier_items:
@@ -642,13 +602,7 @@ class SdofPage(QtWidgets.QWidget):
             line.setPen(pg.mkPen(c.fit, width=1))
         for line in self.fn_lines:
             line.setPen(pg.mkPen(c.muted, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        for name, colour in (
-            ("put_in", c.force),
-            ("taken_out", c.energy["dissipated"]),
-            ("changes", c.energy["added"]),
-            ("stored", c.energy["stored"]),
-        ):
-            self.energy_items[name].setPen(pg.mkPen(colour, width=2))
+        self.energy.apply_theme()
         self.plane_item.setPen(pg.mkPen(c.mass[0], width=1.5))
         self.plane_now.setPen(pg.mkPen(c.background, width=1.5))
         self.plane_now.setBrush(pg.mkBrush(c.mass[0]))
@@ -691,7 +645,7 @@ class SdofPage(QtWidgets.QWidget):
         self.x_item.setData(t, y[:, COL["x"]])
         self.f_item.setData(t, y[:, COL["f"]])
         self.strip.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
-        self._draw_marks(end)
+        self.marks.draw(self.live.edits, end - STRIP_SECONDS)
         recent = y[t >= end - PEAK_SECONDS, COL["x"]] if t.size else np.empty(0)
         peak = float(np.abs(recent).max()) if recent.size else 0.0
         if live.held is not None:
@@ -713,21 +667,6 @@ class SdofPage(QtWidgets.QWidget):
         hand = p.stiffness * live.held if live.held is not None else None
         body = one_mass(p.stiffness, p.damping, live.x, live.v, live.force_now, hand=hand, scale=self.arrows, t=live.t)
         self.body.show(live.x, body)
-
-    def _draw_marks(self, end: float) -> None:
-        marks = [t for t in self.live.edits if t > end - STRIP_SECONDS]
-        if marks == self._marks:
-            return
-        self._marks = marks
-        while len(self.mark_lines) < 2 * len(marks):
-            line = pg.InfiniteLine(angle=90, pen=pg.mkPen(colors.faint, width=1, style=QtCore.Qt.PenStyle.DashLine))
-            (self.strip if len(self.mark_lines) % 2 == 0 else self.force_plot).addItem(line, ignoreBounds=True)
-            self.mark_lines.append(line)
-        for i, line in enumerate(self.mark_lines):
-            on = i // 2 < len(marks)
-            line.setVisible(on)
-            if on:
-                line.setValue(marks[i // 2])
 
     def _show_readout(self) -> None:
         live = self.live
@@ -759,24 +698,8 @@ class SdofPage(QtWidgets.QWidget):
         self.readout.setText(decay.text)
 
     def _draw_energy(self) -> None:
-        if self.tabs.currentIndex() != view.TAB_ENERGY:
-            return
-        t, y = self.live.record.window(ENERGY_SECONDS)
-        e = energy_view(t, y)
-        if e is None:
-            for item in self.energy_items.values():
-                item.setData([], [])
-            self.ledger.setText("Start it, or pluck the mass, to see where the energy goes.")
-            return
-        for name in ("put_in", "taken_out", "changes", "stored"):
-            self.energy_items[name].setData(e.t, getattr(e, name))
-        rows = "".join(
-            f'<tr><td><span style="color:{role(r.role)}">■</span> {r.name}</td>'
-            f'<td align="right">&nbsp;{fmt(r.value, "J", smallest="n")}</td></tr>'
-            for r in e.rows
-            if r.value != 0 or r.name.startswith("Stored")
-        )
-        self.ledger.setText(f"<table>{rows}</table><p>{e.text}</p>")
+        if self.tabs.currentIndex() == view.TAB_ENERGY:
+            self.energy.draw(self.live)
 
     @coalesce.coalesced
     def _draw_frf(self, *_: object) -> None:

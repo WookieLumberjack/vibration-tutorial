@@ -32,7 +32,7 @@ ROOM = 0.8  # the largest force fills this much of the arrows' room
 @dataclass(frozen=True)
 class Arrow:
     name: str  # what pushes: "spring", "damper", "friction", "drive", "hand", "net"
-    label: str  # what's printed by it: its symbol and size
+    label: str  # what's printed by it, as plain text (no markup): its symbol and size
     value: float  # N, + along the body's positive direction
     role: str  # its colour, as a theme role's name (`style.role`)
 
@@ -96,12 +96,11 @@ def one_mass(
     """The forces on one mass at displacement x and velocity v: the spring's −k(x − x_g), the damper's −cv, the
     drive's, friction's (as the simulator found it: None, no friction), a Zener arm's (None: none) and a hand's
     holding it (None: let go)."""
-    arrows = [
-        _arrow("spring", "kx", -stiffness * (x - ground), "energy.potential"),
-        _arrow("damper", "cẋ", -damping * v, "energy.dissipated"),
-    ]
+    arrows = [_arrow("spring", "kx", -stiffness * (x - ground), "energy.potential")]
+    if damping > 0 or (friction is None and arm is None):  # a friction or Zener mass has no damper of its own
+        arrows.append(_arrow("damper", "cẋ", -damping * v, "energy.dissipated"))
     if friction is not None:
-        arrows.append(_arrow("friction", "F<sub>f</sub>", friction, "energy.friction"))
+        arrows.append(_arrow("friction", "friction", friction, "energy.friction"))
     if arm is not None:  # a Zener element's arm: its spring k₁ pulling, its dashpot relaxing behind it
         arrows.append(_arrow("arm", "k₁(x − y)", arm, "energy.added"))
     arrows.append(_arrow("drive", "f", drive, "force"))

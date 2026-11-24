@@ -639,7 +639,7 @@ PAGE_CLASSES = {
 
 # A page rebuilt to #478's standard keeps its notes (`NOTES_HTML`) in a Qt-free module, named here, so they gather
 # and export without Qt (`notes_pages.page_html`; `tests/test_readiness.py`'s `qt_free_notes`).
-NOTES_MODULES = {"sdof_page": "sdof_trials"}
+NOTES_MODULES = {"sdof_page": "sdof_trials", "damping_page": "damping_trials"}
 
 
 def page_module(attr: str):
