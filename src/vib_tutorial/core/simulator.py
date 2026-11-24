@@ -21,6 +21,32 @@ force, found with Van Loan's matrix exponential. So, to rounding error,
 where energy_added counts the jumps in stored energy when the state is set
 (a mode release) or the parameters are edited.
 
+Live parameter changes (`set_system` while it runs) take effect at the step
+boundary, and each is a physical event: the physics decides what carries over,
+never what looks smooth (#478). An instantaneous change can't keep both momentum
+and energy in general, so the energy it costs or adds is booked as its own term:
+
+- a spring (or the chain's size) changed: x and v carry on, no impulse, momentum
+  kept. The potential energy jumps by ½Δk·(stretch)², work done by whoever changed
+  the spring: ``spring_work``.
+- a damper or friction changed: x, v and the energy carry on; only the rate of
+  loss changes.
+- mass added: the added mass is a lump at rest, captured and stuck to the mass
+  (a plastic capture). It brings no momentum, so momentum is kept,
+  v' = m v / (m + Δm), and ½ m v² Δm / (m + Δm) is lost in the capture:
+  ``capture_loss``. Nothing at the end of a swing (v = 0), most at mid-swing.
+- mass removed: the piece leaves at the mass's speed, so v carries on and the piece
+  takes its momentum and kinetic energy, ½ |Δm| v², with it: ``carried_off`` (with
+  the masses a smaller chain drops).
+
+A drag that changes a mass by steps is a run of such captures or releases. So
+
+    energy_added = released + spring_work - capture_loss - carried_off
+
+where ``released`` is the jumps from setting the state (`set_state`, a ground
+that snaps back). `edits` keeps the times of the changes since the reset, for a
+page to mark them on its history.
+
 Coulomb friction on the masses (``ChainSystem.friction``) makes the chain
 nonlinear, but only piecewise: while every mass keeps sliding the same way or
 stays stuck, friction is a constant force on each sliding mass and a stuck
@@ -62,6 +88,9 @@ method only: the input's work from an integrator state q = ∫x_k, and the dampe
 (exactly 0 without dampers), instead of Van Loan's integrals, so an event costs one exponential, not three.
 Keep each kernel and its reference in step; `tests/test_native.py` compares them.
 
+The live-change rules are `set_system`'s; `tests/test_core.py` checks each (momentum across a capture, ½Δk·x²
+across a stiffness change, v across a release, the balance closing through every change, the clock running on).
+
 The Rust kernels release the GIL while they step. `Simulator.advance` is `start` then `collect`: with friction
 (`steps_aside`), `start` moves the force and the clock, hands the Rust steps to a worker thread and returns;
 `collect` waits for them and finishes the ledger. Anything that touches `state` (`set_state`, `set_system`, …)
@@ -84,7 +113,7 @@ import numpy as np
 import scipy.linalg
 
 from . import native
-from .energy import stored_energy
+from .energy import kinetic_energy, potential_energy, stored_energy
 from .forcing import ForceController, ForceKind
 from .model import ChainSystem, held, state_space
 
@@ -191,7 +220,12 @@ class Simulator:
         self.work = 0.0  # J, done by the applied force since reset
         self.dissipated = 0.0  # J, taken out by the dampers since reset
         self.friction_loss = 0.0  # J, taken out by friction since reset
-        self.energy_added = 0.0  # J, jumps in stored energy from set_state and parameter edits
+        self.energy_added = 0.0  # J, jumps in stored energy from set_state and parameter edits: the sum of
+        self.released = 0.0  # J, from setting the state (a mode released, a ground snapping back)
+        self.spring_work = 0.0  # J, done by changing the springs at their stretch
+        self.capture_loss = 0.0  # J, lost capturing added mass (a plastic capture)
+        self.carried_off = 0.0  # J, the kinetic energy of mass removed
+        self.edits: list[float] = []  # s, the times of the parameter changes since the reset
         # (added, work, dissipated, friction_loss) at each sample of the last advance
         self.ledger = np.empty((0, 4))
 
@@ -218,20 +252,28 @@ class Simulator:
 
     # ----------------------------------------------------------------- setup
     def set_system(self, system: ChainSystem) -> None:
-        """Swap in new parameters, keeping the current state (live editing).
-
-        The stored energy jumps (a stiffer spring holds more energy at the same
-        stretch); the jump is counted in ``energy_added``.
-        """
-        before = self.stored_energy
-        if system.n != self.system.n:
-            old = self.state
-            n_old, n = self.system.n, system.n
-            k = min(n_old, n)
-            self.state = np.zeros(2 * n)
-            self.state[:k] = old[:k]
-            self.state[n : n + k] = old[n_old : n_old + k]
+        """Swap in new parameters at this step boundary, carrying the state on by the live-change rules (see the
+        module): a heavier mass captures its extra at rest (momentum kept), a lighter one drops a piece at its
+        speed (v kept), springs and dampers keep x and v. Each jump in stored energy is booked as its kind."""
+        x_old, v_old = self.displacement.copy(), self.velocity.copy()
+        xg = self.ground
+        old = self.system
+        n_old, n = old.n, system.n
+        k = min(n_old, n)
+        m_old, m_new = old.masses[:k], system.masses[:k]
+        v_kept = v_old[:k]
+        heavier = m_new > m_old
+        v_new = np.zeros(n)
+        v_new[:k] = np.where(heavier, m_old * v_kept / m_new, v_kept)  # a capture keeps the momentum m v
+        capture = float((0.5 * m_old * v_kept**2 * (m_new - m_old) / m_new)[heavier].sum())
+        carried = float((0.5 * (m_old - m_new) * v_kept**2)[~heavier].sum())
+        carried += float(kinetic_energy(old, v_old)[k:].sum())  # the masses a smaller chain drops
+        x_new = np.zeros(n)
+        x_new[:k] = x_old[:k]  # a mass the chain gains starts at x = 0, at rest
+        spring = float(potential_energy(system, x_new - xg).sum() - potential_energy(old, x_old - xg).sum())
+        if n != n_old:
             self.force.settings.target = min(self.force.settings.target, n - 1)
+        self.state = np.concatenate([x_new, v_new])
         self.system = system
         self._A, self._B = state_space(system)
         self._fmax_natural = self._highest_natural_freq()
@@ -239,7 +281,11 @@ class Simulator:
         self._energy_cache.clear()
         self._linear_cache.clear()
         self._friction_cache.clear()
-        self.energy_added += self.stored_energy - before
+        self.spring_work += spring
+        self.capture_loss += capture
+        self.carried_off += carried
+        self.energy_added += spring - capture - carried
+        self.edits.append(self.t)
 
     def reset(self) -> None:
         self._settle()
@@ -249,6 +295,8 @@ class Simulator:
         self.force.reset()
         self._u = 0.0
         self.work = self.dissipated = self.friction_loss = self.energy_added = 0.0
+        self.released = self.spring_work = self.capture_loss = self.carried_off = 0.0
+        self.edits = []
 
     def set_displacement(self, x: np.ndarray) -> None:
         """Set the displacements (m) and zero the velocities, e.g. to release a mode shape."""
@@ -260,7 +308,9 @@ class Simulator:
         before = self.stored_energy
         self.state[:n] = x
         self.state[n:] = v
-        self.energy_added += self.stored_energy - before
+        jump = self.stored_energy - before
+        self.released += jump
+        self.energy_added += jump
 
     @property
     def displacement(self) -> np.ndarray:
@@ -627,7 +677,9 @@ class Simulator:
             # which changes spring 1's energy at once: book it like a set_state.
             before = self.stored_energy
             self._u, self._u_base = 0.0, base
-            self.energy_added += self.stored_energy - before
+            jump = self.stored_energy - before
+            self.released += jump
+            self.energy_added += jump
         if steps == 0:
             zs = np.empty((0, 2 * n))
             self.ledger, self.ground_velocity = np.empty((0, 4)), np.zeros(0)

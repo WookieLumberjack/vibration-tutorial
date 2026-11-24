@@ -1482,6 +1482,42 @@ def test_drag_a_mass_and_let_go(app):
     w.close()
 
 
+def test_a_live_change_carries_the_run_on_and_marks_the_strip_chart(app):
+
+    from vib_tutorial.gui.main_window import MainWindow
+
+    w = MainWindow()
+    w.show()
+    page = w.sim_page
+    page.force_panel.button.click()  # the force is the page's Start
+    for _ in range(3):
+        page._sim_target = page.sim.t + 0.1
+        page._tick()
+    t, samples = page.sim.t, page.history.size
+    m, v = page.sim.system.masses[1], page.sim.velocity[1]
+    assert t > 0 and samples > 0 and page.time_plot.marks == ()
+
+    _label, mass, spring, _c, _f = page.params.rows[1]
+    spring.setValue(spring.value() * 2)
+    assert page.sim.t == t and page.history.size == samples  # no reset: the trace keeps what came before
+    assert page.sim.spring_work != 0.0 and page.time_plot.marks == (t,)
+    mass.setValue(m * 2)
+    assert page.sim.velocity[1] == pytest.approx(v / 2)  # captured at rest: momentum kept
+    assert page.sim.capture_loss > 0 and page.time_plot.marks == (t, t)
+
+    page._sim_target = page.sim.t + 0.1
+    page._tick()
+    assert page.sim.t > t and page.history.size > samples
+    sim = page.sim
+    assert sim.energy_added + sim.work == pytest.approx(sim.stored_energy + sim.dissipated)
+    lines = [line for line in page.time_plot.mark_lines if line.isVisible()]
+    assert len(lines) == 4 and all(line.value() == t for line in lines)  # one each on both plots
+
+    page._reset()
+    assert page.time_plot.marks == () and not any(line.isVisible() for line in page.time_plot.mark_lines)
+    w.close()
+
+
 def test_dragging_with_friction_leaves_the_chain_where_friction_holds_it(app):
     import numpy as np
 

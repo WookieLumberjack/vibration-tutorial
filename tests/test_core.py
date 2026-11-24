@@ -604,6 +604,119 @@ def test_energy_balance_is_exact():
     assert sim.work == sim.dissipated == sim.energy_added == 0.0
 
 
+def _swinging(masses=(1.0, 2.0), springs=(400.0, 300.0), dampers=(0.0, 0.0)):
+    """A chain swinging freely, partway through a swing (both masses moving)."""
+    sim = Simulator(ChainSystem(list(masses), list(springs), list(dampers)))
+    sim.set_displacement(np.array([0.02, -0.01]))
+    advance_for(sim, 0.037)
+    assert np.all(np.abs(sim.velocity) > 1e-3)
+    return sim
+
+
+def _with(system, **changes):
+    arrays = {f: getattr(system, f).copy() for f in ("masses", "stiffness", "damping")}
+    for f, (i, value) in changes.items():
+        arrays[f][i] = value
+    return ChainSystem(arrays["masses"], arrays["stiffness"], arrays["damping"])
+
+
+def _change_terms(sim):
+    return sim.released + sim.spring_work - sim.capture_loss - sim.carried_off
+
+
+def test_a_stiffness_change_keeps_the_motion_and_books_half_dk_x_squared():
+    sim = _swinging()
+    t, x, v = sim.t, sim.displacement.copy(), sim.velocity.copy()
+    sim.set_system(_with(sim.system, stiffness=(0, 900.0)))
+    np.testing.assert_array_equal(sim.displacement, x)
+    np.testing.assert_array_equal(sim.velocity, v)
+    assert sim.t == t and sim.edits == [t]
+    assert sim.spring_work == pytest.approx(0.5 * (900.0 - 400.0) * x[0] ** 2, rel=1e-12)
+    assert sim.capture_loss == sim.carried_off == 0.0
+    assert abs(_balance(sim)) < 1e-12
+
+
+def test_a_damper_change_keeps_the_motion_and_the_energy():
+    sim = _swinging()
+    x, v, e = sim.displacement.copy(), sim.velocity.copy(), sim.stored_energy
+    added = sim.energy_added
+    sim.set_system(_with(sim.system, damping=(1, 5.0)))
+    np.testing.assert_array_equal(sim.displacement, x)
+    np.testing.assert_array_equal(sim.velocity, v)
+    assert sim.stored_energy == e and sim.energy_added == added
+
+
+def test_added_mass_is_captured_at_rest_keeping_the_momentum():
+    sim = _swinging()
+    m, v = sim.system.masses[1], sim.velocity[1]
+    T = 0.5 * m * v**2
+    sim.set_system(_with(sim.system, masses=(1, m + 3.0)))
+    assert (m + 3.0) * sim.velocity[1] == pytest.approx(m * v, rel=1e-12)  # momentum kept
+    assert sim.capture_loss == pytest.approx(T * 3.0 / (m + 3.0), rel=1e-12)
+    assert sim.spring_work == 0.0 and sim.carried_off == 0.0
+    assert abs(_balance(sim)) < 1e-12
+
+
+def test_a_capture_at_the_end_of_a_swing_costs_nothing():
+    sim = Simulator(ChainSystem([1.0], [400.0], [0.0]))
+    sim.set_displacement(np.array([0.05]))  # held still at the end of its swing
+    sim.set_system(_with(sim.system, masses=(0, 4.0)))
+    assert sim.capture_loss == 0.0 and sim.displacement[0] == 0.05
+
+
+def test_removed_mass_leaves_at_the_bodys_speed_with_its_energy():
+    sim = _swinging()
+    m, v = sim.system.masses[1], sim.velocity[1]
+    sim.set_system(_with(sim.system, masses=(1, m - 1.5)))
+    assert sim.velocity[1] == v  # the piece leaves at the body's speed
+    assert sim.carried_off == pytest.approx(0.5 * 1.5 * v**2, rel=1e-12)
+    assert sim.capture_loss == 0.0
+    assert abs(_balance(sim)) < 1e-12
+
+
+def test_a_mass_dragged_up_and_back_loses_energy_in_its_captures():
+    """A grip's drag is a run of small captures and releases: up and back to the same mass slows it."""
+    sim = Simulator(ChainSystem([1.0], [400.0], [0.0]))
+    sim.set_state(np.array([0.0]), np.array([1.0]))
+    system = sim.system
+    for m in [*np.linspace(1.1, 3.0, 20), *np.linspace(2.9, 1.0, 20)]:
+        system = _with(system, masses=(0, m))
+        sim.set_system(system)
+    assert 0 < sim.velocity[0] < 1.0  # each capture took momentum's share of the speed, a release gave none back
+    assert sim.capture_loss > 0 and sim.carried_off > 0
+    assert abs(_balance(sim)) < 1e-12
+
+
+def test_the_balance_closes_through_live_changes_while_it_runs():
+    s = ChainSystem([1.0, 2.0, 0.5], [400.0, 300.0, 500.0], [3.0, 2.0, 2.0])
+    force = ForceController(ForceSettings(target=2, kind=ForceKind.HARMONIC, amplitude=5.0, freq_hz=3.1))
+    sim = Simulator(s, force)
+    force.switch_on()
+    changes = [
+        dict(masses=(1, 3.5)),
+        dict(stiffness=(0, 900.0)),
+        dict(masses=(1, 0.8)),
+        dict(damping=(2, 9.0)),
+        dict(stiffness=(2, 150.0)),
+    ]
+    times = []
+    for change in changes:
+        advance_for(sim, 0.31)
+        t = sim.t
+        times.append(t)
+        sim.set_system(_with(sim.system, **change))
+        assert sim.t == t  # no reset: the clock runs on
+        assert abs(_balance(sim)) < 1e-10 * (abs(sim.energy_added) + sim.work)
+    sim.set_system(sim.system.resized(2))  # dropping a mass carries off its kinetic energy
+    advance_for(sim, 0.5)
+    assert sim.capture_loss > 0 and sim.carried_off > 0 and sim.spring_work != 0
+    assert sim.energy_added == pytest.approx(_change_terms(sim), abs=1e-14)
+    assert abs(_balance(sim)) < 1e-10 * (abs(sim.energy_added) + sim.work)
+    assert sim.edits[:-1] == times
+    sim.reset()
+    assert sim.edits == [] and sim.capture_loss == sim.carried_off == sim.spring_work == sim.released == 0.0
+
+
 def test_free_decay_dissipates_what_was_stored():
     s = ChainSystem([1.0], [400.0], [2.0])
     sim = Simulator(s)
