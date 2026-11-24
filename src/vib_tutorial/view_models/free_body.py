@@ -88,18 +88,22 @@ def one_mass(
     drive: float = 0.0,
     friction: float | None = None,
     hand: float | None = None,
+    arm: float | None = None,
     ground: float = 0.0,
     scale: ArrowScale | None = None,
     t: float = 0.0,
 ) -> FreeBody:
     """The forces on one mass at displacement x and velocity v: the spring's −k(x − x_g), the damper's −cv, the
-    drive's, friction's (as the simulator found it: None, no friction) and a hand's holding it (None: let go)."""
+    drive's, friction's (as the simulator found it: None, no friction), a Zener arm's (None: none) and a hand's
+    holding it (None: let go)."""
     arrows = [
         _arrow("spring", "kx", -stiffness * (x - ground), "energy.potential"),
         _arrow("damper", "cẋ", -damping * v, "energy.dissipated"),
     ]
     if friction is not None:
         arrows.append(_arrow("friction", "F<sub>f</sub>", friction, "energy.friction"))
+    if arm is not None:  # a Zener element's arm: its spring k₁ pulling, its dashpot relaxing behind it
+        arrows.append(_arrow("arm", "k₁(x − y)", arm, "energy.added"))
     arrows.append(_arrow("drive", "f", drive, "force"))
     if hand is not None:
         arrows.append(_arrow("hand", "hand", hand, "muted"))
