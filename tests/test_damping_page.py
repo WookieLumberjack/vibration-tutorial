@@ -97,7 +97,7 @@ def test_the_zener_info_and_its_live_decay(page):
     assert page.live.params.has_arm and not page.relax.isHidden()
     page.step(2.0)
     assert page.readout.text().startswith("Each peak is")
-    names = [a.name for a in page.body._arrows]
+    names = [a.name for a in page.forces._arrows]
     assert "arm" in names and "damper" not in names
 
 

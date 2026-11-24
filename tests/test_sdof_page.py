@@ -14,9 +14,10 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from PySide6 import QtCore, QtGui  # noqa: E402
 
-from vib_tutorial.gui import sdof  # noqa: E402
+from vib_tutorial.gui import free_body_view, sdof  # noqa: E402
 from vib_tutorial.view_models import sdof as view  # noqa: E402
 from vib_tutorial.view_models.live_mass import COL  # noqa: E402
+from vib_tutorial.view_models.text import fmt  # noqa: E402
 
 Left = QtCore.Qt.MouseButton.LeftButton
 NoButton = QtCore.Qt.MouseButton.NoButton
@@ -129,6 +130,25 @@ def test_a_pluck_on_the_body_holds_the_mass_then_lets_it_go(page, app):
     assert page.live.sim.released > 0  # the hand put the energy in
     page.step(0.2)
     assert page.live.t > 0
+
+
+def test_the_forces_are_drawn_beside_the_mass_their_words_staying_put_as_they_turn(page):
+    forces = page.forces
+    page.load_trial(trial("Ringing down"))
+    page.step(0.05)
+    assert [s for s, _ in forces.rows()] == ["kx", "cẋ", "f", "mẍ"]
+    places = [(s.pos(), z.pos()) for s, z in zip(forces.symbols, forces.sizes)]
+    directions = set()
+    for _ in range(12):  # through a swing: the spring's force turns round
+        page.step(0.03)
+        assert [(s.pos(), z.pos()) for s, z in zip(forces.symbols, forces.sizes)] == places
+        xs = forces.shafts[0].getData()[0]
+        directions.add(bool(xs[1] > xs[0]))
+        assert abs(xs[0]) == pytest.approx(free_body_view.HALF)  # out of the mass's side
+    assert directions == {True, False}
+    page.loop.enabled = False
+    forces._write_sizes()
+    assert forces.rows()[0][1] == fmt(abs(page.live.params.stiffness * page.live.x), "N")
 
 
 def test_a_sweep_builds_the_frequency_response_point_by_point(page):

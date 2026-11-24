@@ -3,9 +3,9 @@
 The mass is stepped as it runs (`view_models/live_mass.LiveMass`: the chain's exact FOH `Simulator` with one mass),
 not a response worked out in advance and played back. Left: the oscillator's m, k and c and the drive, then the
 Things to try (setups to go back to; their predictions are asked once the reader has handled the system). Centre:
-the mass on its spring and damper with the forces on it (`live_body.LiveMassView`: pluck it, or drag the grips on
-the mass, the spring and the damper to change m, k and c as it runs, the motion carrying on by
-`Simulator.set_system`'s rules), the run's controls, and the time plots, which keep what came before a change with
+the mass on its spring and damper (`live_body.LiveMassView`: pluck it, or drag the grips on the mass, the spring
+and the damper to change m, k and c as it runs, the motion carrying on by `Simulator.set_system`'s rules) with the
+forces on it beside it, on the mass held still (`free_body_view.FreeBodyView`), the run's controls, and the time plots, which keep what came before a change with
 the change marked. Right: the Frequency response the reader builds by dwelling or sweeping the drive
 (`view_models/recorder.py`), the Energy balance through every change, the Poles (drag them: k and c follow) with
 the phase plane, and the Theory.
@@ -38,6 +38,7 @@ from . import coalesce
 from .bindings import Bindings
 from .drag import DragPoint
 from .frame_loop import FrameLoop
+from .free_body_view import FreeBodyView
 from .layouts import FlowLayout
 from .lesson import Dot, Form, TrialBox, note_label, plot, readout_label, set_quietly, three_panes
 from .live_body import LiveMassView
@@ -159,6 +160,7 @@ class SdofPage(QtWidgets.QWidget):
         # --- centre: the mass, the run, the time plots
         self.body = LiveMassView()
         self.body.setMinimumHeight(200)
+        self.forces = FreeBodyView()
         self.body.grabbed.connect(self._on_grabbed)
         self.body.pulled.connect(self._on_pulled)
         self.body.let_go.connect(self._on_let_go)
@@ -190,7 +192,10 @@ class SdofPage(QtWidgets.QWidget):
         centre = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(centre)
         cv.setContentsMargins(0, 0, 0, 0)
-        cv.addWidget(self.body, 3)
+        top = QtWidgets.QHBoxLayout()
+        top.addWidget(self.body, 3)
+        top.addWidget(self.forces, 2)
+        cv.addLayout(top, 3)
         cv.addLayout(row)
         cv.addWidget(self.strip, 2)
         cv.addWidget(self.force_plot, 1)
@@ -572,7 +577,8 @@ class SdofPage(QtWidgets.QWidget):
         ts = r.t[: r.size]
         x, v, f = (float(np.interp(t, ts, r.y[: r.size, COL[c]])) for c in ("x", "v", "f"))
         p = self.live.params
-        self.body.show(x, one_mass(p.stiffness, p.damping, x, v, f, scale=self.arrows, t=t))
+        self.body.show(x)
+        self.forces.show(one_mass(p.stiffness, p.damping, x, v, f, scale=self.arrows, t=t))
         self.plane_now.setPos(x, v / p.oscillator().omega_n)
         self.clock.setText(f"t = {sig(t, 4)} s (paused at {sig(self.live.t, 4)} s)")
 
@@ -580,6 +586,7 @@ class SdofPage(QtWidgets.QWidget):
     def apply_theme(self) -> None:
         c = colors
         self.body.apply_theme()
+        self.forces.apply_theme()
         self.scrub.apply_theme()
         self.x_item.setPen(pg.mkPen(c.mass[0], width=2))
         self.peak_item.setSymbolPen(None)
@@ -666,7 +673,8 @@ class SdofPage(QtWidgets.QWidget):
         p = live.params
         hand = p.stiffness * live.held if live.held is not None else None
         body = one_mass(p.stiffness, p.damping, live.x, live.v, live.force_now, hand=hand, scale=self.arrows, t=live.t)
-        self.body.show(live.x, body)
+        self.body.show(live.x)
+        self.forces.show(body)
 
     def _show_readout(self) -> None:
         live = self.live
