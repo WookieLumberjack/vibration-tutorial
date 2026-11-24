@@ -237,6 +237,7 @@ class SimulationPage(QtWidgets.QWidget):
         self.chain = ChainView()
         self.energy = EnergyPanel()
         self.time_plot = TimeHistoryPlot()
+        self._marks_from = 0.0  # s: the history holds no trace before this, so no change before it is marked
         self.scrub = Scrub(self.time_plot.x_plot, self.time_plot.f_plot)  # paused: back through the record
         self.coords_combo = QtWidgets.QComboBox()
         self.coords_combo.addItem("Physical: mass displacements x", "physical")
@@ -454,7 +455,12 @@ class SimulationPage(QtWidgets.QWidget):
             self._apply_dof(system.n)
         else:
             self._chain_view.request()
+        self._mark_changes()
         self._refresh_modal(modal)
+
+    def _mark_changes(self) -> None:
+        """Mark the live changes on the strip chart, those the history still holds the trace either side of."""
+        self.time_plot.set_marks([t for t in self.sim.edits if t > self._marks_from])
 
     def _on_preset(self, preset: Preset) -> None:
         """The preset's system is loaded; set its excitation and start from rest."""
@@ -511,6 +517,7 @@ class SimulationPage(QtWidgets.QWidget):
 
     def _apply_dof(self, n: int) -> None:
         self.history.reset(n)
+        self._marks_from = self.sim.t  # a new size starts the trace afresh: no before to mark
         self._carry = 0
         self._sim_target = self.sim.t
         self._chain_view.request()
@@ -715,6 +722,8 @@ class SimulationPage(QtWidgets.QWidget):
         self.sim.reset()  # drops the steps in flight
         self._started = None
         self.history.reset(self.sim.system.n)
+        self._marks_from = 0.0
+        self.time_plot.set_marks([])
         self._carry = 0
         self._sim_target = 0.0
         self._ground_velocity = 0.0

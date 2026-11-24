@@ -16,7 +16,7 @@ axes and repaints the whole plot, so it moves only when the data outgrows it or 
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import numpy as np
 import pyqtgraph as pg
@@ -81,6 +81,9 @@ class TimeHistoryPlot(pg.GraphicsLayoutWidget):
             self.zero_lines.append(pg.InfiniteLine(pos=0, angle=0))
             p.addItem(self.zero_lines[-1])
         self.f_curve = self.f_plot.plot()
+        # A faint vertical line at each live parameter change, on both plots (`set_marks`).
+        self.marks: tuple[float, ...] = ()
+        self.mark_lines: list[pg.InfiniteLine] = []
         self.auto_range = True
         self.min_span = MIN_Y_SPAN
         self.x_curves: list[pg.PlotDataItem] = []
@@ -92,6 +95,31 @@ class TimeHistoryPlot(pg.GraphicsLayoutWidget):
         for line in self.zero_lines:
             line.setPen(pg.mkPen(colors.faint, width=1))
         self.f_curve.setPen(pg.mkPen(colors.force, width=1))
+        for line in self.mark_lines:
+            line.setPen(self._mark_pen())
+
+    @staticmethod
+    def _mark_pen():
+        return pg.mkPen(colors.faint, width=1, style=QtCore.Qt.PenStyle.DashLine)
+
+    def set_marks(self, times: Sequence[float]) -> None:
+        """Mark where the parameters were changed (s): the trace either side of a line is before and after it.
+        Lines are only touched when the marks change, so a steady run doesn't repaint the axes."""
+        marks = tuple(times)
+        if marks == self.marks:
+            return
+        self.marks = marks
+        per_plot = 2  # x_plot's line, then f_plot's
+        while len(self.mark_lines) < per_plot * len(marks):
+            for p in (self.x_plot, self.f_plot):
+                line = pg.InfiniteLine(angle=90, pen=self._mark_pen(), movable=False)
+                p.addItem(line)
+                self.mark_lines.append(line)
+        for i, line in enumerate(self.mark_lines):
+            shown = i // per_plot < len(marks)
+            if shown:
+                line.setPos(marks[i // per_plot])
+            line.setVisible(shown)
 
     def set_dof(self, n: int) -> None:
         """One curve per mass displacement."""
