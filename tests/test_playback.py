@@ -67,58 +67,6 @@ def test_playback_walks_the_span_pauses_at_its_end_and_scrubs(app):
     close_graphics(page)
 
 
-def test_the_sdof_mass_moves_with_the_response_and_a_pluck_sets_x0(main_window, app):
-    from vib_tutorial.core.sdof import free_response, harmonic_from_rest
-    from vib_tutorial.gui import sdof
-
-    w = main_window
-    w.resize(1280, 800)
-    p = w.sdof_page
-    w.pages.setCurrentWidget(p)
-    for _ in range(5):
-        app.processEvents()
-    pb = p.playback
-    pb.loop.enabled = False
-    assert not pb.running and pb.run.text() == "Start" and pb.t == 0.0  # at rest, waiting for Start
-    view = p.body
-    assert view._centers[0] - 1.0 == pytest.approx(view.gain * 0.010)  # drawn at x0 = 10 mm
-
-    # Played: the mass is where the free vibration is.
-    pb.run.click()
-    pb._tick(0.4)
-    t = pb.t
-    x, v = free_response(p.osc, 0.010, 0.0, np.array([t]))
-    assert view._centers[0] - 1.0 == pytest.approx(view.gain * x[0])
-    assert p.plane_now.pos().x() == pytest.approx(x[0]) and p.plane_now.pos().y() == pytest.approx(v[0] / p.osc.omega_n)
-    gain = view.gain
-    p.damping.setValue(4.0)  # a control keeps the run state and the time
-    assert pb.running and pb.t == t and view.gain == gain  # the same peak: no rescale
-
-    # Pluck: drag the mass right and let go. x0 is where it was let go, v0 = 0, and it runs from t = 0.
-    centre = view.plotItem.vb.mapViewToScene(QtCore.QPointF(view._centers[0], 0.0))
-    end = view.plotItem.vb.mapViewToScene(QtCore.QPointF(1.0 + 0.4, 0.0))  # 0.4 display units from rest
-    drag(view, centre, end, app)
-    assert view.held is None and pb.running and pb.t == 0.0
-    assert p.v0.value() == 0.0 and p.x0.value() == pytest.approx(1e3 * 0.4 / view.gain, rel=0.05)
-    assert view._centers[0] - 1.0 == pytest.approx(view.gain * 1e-3 * p.x0.value(), rel=1e-3)
-    assert p.follow.currentIndex() == sdof.BODY_FREE
-
-    # A driven trial: the mass follows the forced response, the force arrow on it, its plot's cursor shown.
-    p.load_trial(next(i for i, tr in enumerate(sdof.TRIALS) if tr.name.startswith("Resonance")))
-    assert p.follow.currentIndex() == sdof.BODY_DRIVEN and pb.running and pb.t == 0.0
-    assert p.cursors[1].isVisible() and not p.cursors[0].isVisible()
-    pb._tick(2.0)
-    f = p.freq.value()
-    x, _ = harmonic_from_rest(p.osc, 1.0, f, np.array([pb.t]))
-    assert view._centers[0] - 1.0 == pytest.approx(view.gain * x[0])
-    assert pb.span == pytest.approx(p.forced_plot.getPlotItem().getViewBox().viewRange()[0][1], rel=0.02)
-    assert view._force_text.toPlainText() == f"F = {np.cos(2 * np.pi * f * pb.t):+.3g} N"
-
-    # Defaults: back to the free vibration, at rest.
-    w.restore_defaults()
-    assert p.follow.currentIndex() == sdof.BODY_FREE and not pb.running and pb.run.text() == "Start" and pb.t == 0.0
-
-
 def test_the_pendulum_swings_with_its_curve_and_a_pluck_lets_it_go_from_there(main_window, app):
     import math
 
@@ -266,17 +214,17 @@ def test_the_machine_runs_up_on_its_mounts_and_a_pull_lets_it_ring(main_window, 
 
 
 def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
-    from vib_tutorial.gui import sdof
+    from vib_tutorial.gui import pendulum
 
     w = main_window
-    p = w.sdof_page
+    p = w.pendulum_page
     w.pages.setCurrentWidget(p)
     box = p.trials
-    i = next(k for k, t in enumerate(sdof.TRIALS) if t.name.startswith("Undamped, just off"))
-    prediction = sdof.TRIALS[i].predict
+    i = next(k for k, t in enumerate(pendulum.TRIALS) if t.name.startswith("Let go from 90"))
+    prediction = pendulum.TRIALS[i].predict
     assert prediction is not None
     before = p.practice_state()
-    box.combo.pick(sdof.TRIALS[i].name)
+    box.combo.pick(pendulum.TRIALS[i].name)
     assert box.asking == i and box.ask.isVisible() and "Predict first" in box.question.text()
     assert p.practice_state() == before and not p.playback.running  # nothing set up yet
     buttons = [box.choices.itemAt(k).widget() for k in range(box.choices.count())]
@@ -289,23 +237,23 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     assert box.asking is None and not box.ask.isVisible() and "Not quite" in box.verdict.text()
     assert prediction.choices[prediction.answer] in box.verdict.text()
     assert prediction.why[wrong] and prediction.why[wrong][:20] in box.verdict.text()  # why the one picked is wrong
-    assert p.damping.value() == 0.0 and p.playback.running  # it ran
-    assert box.note.isVisible() and "beats" in box.note.text()
+    assert p.practice_state() != before and p.playback.running  # it ran
+    assert box.note.isVisible() and box.note.text()
 
-    box.combo.pick(sdof.TRIALS[i].name)  # again: asked again
+    box.combo.pick(pendulum.TRIALS[i].name)  # again: asked again
     assert box.ask.isVisible() and not box.verdict.isVisible()
     box.answer(prediction.answer)
     assert "Right" in box.verdict.text()
 
-    box.combo.pick(sdof.TRIALS[i].name)
+    box.combo.pick(pendulum.TRIALS[i].name)
     box.skip.click()  # Just run it: no verdict
     assert not box.verdict.isVisible() and box.note.isVisible()
 
-    plain = next(k for k, t in enumerate(sdof.TRIALS) if t.predict is None)
-    box.combo.pick(sdof.TRIALS[plain].name)  # no prediction: runs at once
+    plain = next(k for k, t in enumerate(pendulum.TRIALS) if t.predict is None)
+    box.combo.pick(pendulum.TRIALS[plain].name)  # no prediction: runs at once
     assert not box.ask.isVisible() and box.note.text()
 
-    box.combo.pick(sdof.TRIALS[i].name)
+    box.combo.pick(pendulum.TRIALS[i].name)
     w.restore_defaults()  # put back as it opened: no question, no verdict
     assert not box.ask.isVisible() and not box.verdict.isVisible() and box.asking is None
 
@@ -314,28 +262,28 @@ def test_a_placement_is_guessed_on_its_plot(main_window, app):
     """A Placement (#409 I-6): the plot hides its curves and shows the span while the reader drags the line, the
     trial runs on the guess, which stays on the plot, dashed, with the verdict; Defaults takes it away."""
     from vib_tutorial.core.practice import Placement
-    from vib_tutorial.gui import sdof
+    from vib_tutorial.gui import pendulum
 
     w = main_window
-    p = w.sdof_page
+    p = w.pendulum_page
     w.pages.setCurrentWidget(p)
     box = p.trials
-    t = next(t for t in sdof.TRIALS if isinstance(t.predict, Placement))
+    t = next(t for t in pendulum.TRIALS if isinstance(t.predict, Placement))
     place = t.predict
     assert isinstance(place, Placement)
-    item = p.forced_plot.getPlotItem()
+    item = getattr(p, place.plot).getPlotItem()
     shown = [c for c in item.listDataItems() if c.isVisible()]
     assert shown
     box.combo.pick(t.name)
     assert box.place.isVisible() and box.line is not None and box.line in item.items
     assert not any(c.isVisible() for c in shown)  # the last trial's curves would give it away
-    assert item.getViewBox().viewRange()[1] == pytest.approx(list(place.span))
-    box.place_guess(0.010)  # well short of 25 mm
+    lo, hi = place.span
+    guess = lo + 0.05 * (hi - lo)  # well short
+    assert not place.judge(guess)[0]
+    box.place_guess(guess)
     assert box.line is None and all(c.isVisible() for c in shown) and p.playback.running
-    assert (
-        "Not quite" in box.verdict.text() and "10.0 mm" in box.verdict.text() and place.low[:20] in box.verdict.text()
-    )
-    assert box.guessed is not None and box.guessed in item.items and box.guessed.value() == pytest.approx(0.010)
+    assert "Not quite" in box.verdict.text() and place.low[:20] in box.verdict.text()
+    assert box.guessed is not None and box.guessed in item.items
     w.restore_defaults()
     assert box.guessed is None and not box.ask.isVisible()
 
@@ -438,7 +386,7 @@ def test_make_app_sizes_the_pixmap_cache_once_the_app_is_made():
 
 
 def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
-    """A held curve's pixmap lives in QPixmapCache: at 2× the Single oscillator's, in a 1700 px window, outgrew its
+    """A held curve's pixmap lives in QPixmapCache: at 2× the Pendulums' (the Single oscillator's, then), in a 1700 px window, outgrew its
     default 10 MB, so the cache dropped them every frame (20 ms a frame on the Mac, #409 N-2). The limit holds
     a few pages' worth."""
     import pyqtgraph as pg
@@ -451,7 +399,7 @@ def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
     assert QtGui.QPixmapCache.cacheLimit() == plot_patches.PIXMAP_CACHE_MB * 1024
     w = main_window
     w.resize(1700, 1030)  # 1000 px for the pages, below the buttons' row
-    p = w.sdof_page
+    p = w.pendulum_page
     w.pages.setCurrentWidget(p)
     QtWidgets.QApplication.processEvents()
     cached = QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache
@@ -463,7 +411,7 @@ def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
                 view = plot.mapFromScene(curve.mapRectToScene(curve.boundingRect())).boundingRect()
                 view = view.intersected(plot.viewport().rect())
                 retina += 4 * view.width() * view.height() * 4
-    assert retina > 10 * 2**20, "the case the default limit lost"
+    assert retina > 0  # the Single oscillator's 2× pixmaps (> 10 MB) went with its played-back plots (#478)
     assert 3 * retina < plot_patches.PIXMAP_CACHE_MB * 2**20
 
 
@@ -574,6 +522,8 @@ def test_every_pages_predictions_are_asked_before_its_trials_run(main_window, ap
         page = getattr(w, attr)
         w.pages.setCurrentWidget(page)
         box = page.trials
+        if box.after_play:  # a live page asks once the reader has handled it (`test_sdof_page`): here, at once
+            box.after_play, box.played = False, True
         before = page.practice_state()
         for i in asked:
             box.combo.pick(trials[i].name)

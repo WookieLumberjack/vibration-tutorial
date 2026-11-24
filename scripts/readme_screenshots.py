@@ -1005,7 +1005,23 @@ def lesson(attr, trial, name, tab=None, at=None):
 
 
 def single_oscillator():
-    lesson("sdof_page", 3, "single_oscillator", at=1.6)  # resonance from rest, the mass 1.6 s in
+    """The live mass after a sweep has built its frequency response, the theory's curve shown over the points."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import sdof
+
+    w = window()
+    page = w.sdof_page
+    w.pages.setCurrentWidget(page)
+    page.loop.enabled = False
+    page.load_trial(next(i for i, t in enumerate(sdof.TRIALS) if t.name.startswith("Building the frequency")))
+    page.step(120.0)  # the sweep, to its end
+    page.theory.setChecked(True)
+    settle()
+    for label in page.findChildren(QtWidgets.QLabel):
+        if label.isVisible() and len(label.text()) > 40:
+            print(" ", label.text())
+    save(w, "single_oscillator")
 
 
 def transient_response():

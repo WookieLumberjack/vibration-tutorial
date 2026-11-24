@@ -24,13 +24,18 @@ places in the full list.</p>
 <h3><a name="how-a-page-works"></a>How a page works</h3>
 <p>Every page is laid out the same way:</p>
 <ul>
-<li><b>Things to try</b>, top left: pick one and the page sets itself up for it, with a note below the box
-on what to look for. They're numbered in the order the Theory takes them, and its list has the same notes;
-◂ and ▸ beside the box step through them. Some ask you to predict what you'll see
-first: pick an answer, and the page sets itself up to show you.</li>
+<li><b>The system first.</b> A page rebuilt to run live (this one, and the others as their turn comes) opens on
+its system, running as you handle it: pluck the mass, drag the handles on its mass, spring and damper, or change
+the boxes, and it carries on from where it is, by the physics. Hover over the body for what it does.</li>
+<li><b>Things to try</b>: pick one and the page sets itself up for it, with a note below the box on what to look
+for. They're numbered in the order the Theory takes them, and its list has the same notes; ◂ and ▸ beside the
+box step through them. On a live page they come after its controls, as setups to come back to; elsewhere, top
+left. Some ask you to predict what you'll see first: pick an answer, and the page sets itself up to show you.
+On a live page they ask only once you've handled it, about a case you haven't tried, and <i>Just run it</i>
+skips the question.</li>
 <li><b>Challenges</b>, under Things to try on some pages: a target to reach by tuning the page's controls.
 Each requirement is ticked as you meet it, live, and meeting them all counts the problem solved.</li>
-<li><b>The controls</b> below them change the model, and the plots follow at once. Hover over a control for
+<li><b>The controls</b> change the model, and the plots follow at once. Hover over a control for
 what it does. A line or a dot with a grip on a plot can be dragged too: it moves its control with it.</li>
 <li><b>The run bar</b>, along the foot of the window: a page that simulates a response opens at rest and
 waits for Start (Space), then Pause and Resume, with its speed and clock; Reset goes back to t = 0 at rest.
@@ -84,6 +89,31 @@ fast it swings when nothing damps it. A stiffer spring is faster, a heavier mass
 <p>Dividing by <m>m</m> gives the form every later page uses:</p>
 <eq>\ddot{x} + 2\zeta\omega_n\dot{x} + \omega_n^2 x = \frac{f}{m}</eq>
 
+<h3><a name="live-changes"></a>Handling it: changes while it runs</h3>
+<p>The mass on this page is worked out as it runs, a step at a time (exactly, as
+<a href="page:integration_page">Numerical integration</a> later explains), not drawn from a formula. So you can
+change it while it moves, and each change is a physical event, decided by what really happens, not by what
+would look smooth:</p>
+<ul>
+<li><b>A stiffer or softer spring</b> (its handle, or the box): the mass is where it was, moving as it was. Only
+the spring's stored energy jumps, by <m>½Δk x²</m>: the work of whoever changed it at that stretch. Changed at
+the middle of a swing it costs nothing; at the end, the most.</li>
+<li><b>More or less damping</b>: nothing jumps. Only the rate the energy drains away changes.</li>
+<li><b>A heavier mass</b>: the extra is a lump at rest, caught and carried on (a plastic capture). It brings no
+momentum, so the momentum <m>mẋ</m> is kept and the mass slows,</li>
+</ul>
+<eq>\dot{x}' = \frac{m\,\dot{x}}{m + \Delta m}, \qquad \text{lost in the capture: } \frac{1}{2}m\dot{x}^2\,\frac{\Delta m}{m + \Delta m}</eq>
+<ul>
+<li><b>A lighter mass</b>: the piece leaves at the mass's speed, so the rest carries on at <m>ẋ</m>, and the piece
+takes its own kinetic energy, <m>½Δm ẋ²</m>, with it.</li>
+</ul>
+<p>The time plots keep what came before a change, with a dashed line where it happened, and the
+<i>Energy</i> tab keeps the books: what the drive and your hand put in, what the damper took out, and each
+change's own term, so that at every instant</p>
+<eq>T + V = W_\mathrm{in} - W_\mathrm{damper} + \text{the changes' terms}</eq>
+<p>with <m>T = ½mẋ²</m> and <m>V = ½kx²</m>. It closes to rounding through every change: a change that seems to
+make energy from nothing (a softer spring at full stretch) was paid for by whoever made it.</p>
+
 <h3><a name="where-from"></a>Where m, k and c come from</h3>
 <p>The model is three numbers, so the first job with a real part is to find them. The <b>mass</b> is
 whatever moves with the point that swings: weighed, or worked out from the drawing. The <b>stiffness</b> is
@@ -115,7 +145,7 @@ measured rather than worked out: the decay and the half-power width, below, are 
 mounts, and 20–40 % for a car's suspension, which is there to stop the body bouncing.</p>
 
 <h3><a name="free-vibration"></a>Free vibration</h3>
-<p>Pull the mass to <m>x<sub>0</sub></m> and let go. Below critical damping (<m>ζ &lt; 1</m>) it swings at
+<p>Pull the mass to <m>x<sub>0</sub></m> and let go (drag it on the page: that's a pluck). Below critical damping (<m>ζ &lt; 1</m>) it swings at
 the <b>damped natural frequency</b> <m>ω<sub>d</sub> = ω<sub>n</sub>√(1 − ζ²)</m>, inside an envelope that
 shrinks exponentially:</p>
 <eq>x(t) = \mathrm{e}^{-\zeta\omega_n t}\left(x_0\cos\omega_d t + \frac{v_0 + \zeta\omega_n x_0}{\omega_d}\sin\omega_d t\right)</eq>
@@ -124,7 +154,8 @@ damping of most structures <m>ω<sub>d</sub></m> is within 0.13 % of <m>ω<sub>n
 the ringing, hardly changes its pitch.</p>
 
 <h3><a name="damping-regimes"></a>Under, critical and over</h3>
-<p>Tick <i>Compare ζ = 0.1, 1 and 2</i> to see the three cases together:</p>
+<p>Pluck it with <m>c</m> = 4, 40 and 80 N·s/m (<m>ζ</m> = 0.1, 1 and 2), holding the curves (H) between, to see the
+three cases together:</p>
 <ul>
 <li><b>Underdamped</b> (<m>ζ &lt; 1</m>): it overshoots and rings down.</li>
 <li><b>Critically damped</b> (<m>ζ = 1</m>): it returns as
@@ -141,8 +172,8 @@ and instrument needles are made near it.</li>
 <b>logarithmic decrement</b></p>
 <eq>\delta = \ln\frac{x_k}{x_{k+1}} = \frac{2\pi\zeta}{\sqrt{1 - \zeta^2}} \approx 2\pi\zeta</eq>
 <p>So <m>ζ ≈ δ/2π</m>. Over <m>n</m> cycles, <m>δ = (1/n) ln(x<sub>0</sub>/x<sub>n</sub>)</m>, which
-averages out the noise of a real record. The readout under the decay does exactly this on the curve's
-peaks. The phase plane shows it too: each turn of the spiral is <m>e<sup>δ</sup></m> times smaller than the
+averages out the noise of a real record. The readout under the time plot does exactly this on the peaks since
+the last pluck or change, marked as they come. The phase plane shows it too: each turn of the spiral is <m>e<sup>δ</sup></m> times smaller than the
 last.</p>
 
 <h3><a name="poles"></a>The poles</h3>
@@ -165,11 +196,22 @@ Every mode of every later page is such a pair (the state-space method's eigenval
 <li>Well below resonance the spring carries the force: <m>X ≈ F/k</m>, in phase.</li>
 <li>Well above it the mass does: <m>X ≈ −F/mΩ²</m>, 180° behind, smaller the faster.</li>
 <li>At resonance (<m>r = 1</m>) the spring's force and the mass's cancel and only the damper resists:
-<m>|X| = (F/k)/2ζ</m>, lagging by exactly 90°.</li>
+<m>|X| = (F/k)/2ζ</m>, lagging by exactly 90°. The free-body diagram over the mass shows it: the damper's arrow
+alone balances the drive's.</li>
 </ul>
 <p>The ratio <m>|X|k/F</m> is the <b>dynamic amplification</b>; at resonance it is the <b>quality factor</b>
 <m>Q = 1/2ζ</m>. The displacement's own peak is a little lower, at <m>r = √(1 − 2ζ²)</m>, and there is none
 at all for <m>ζ ≥ 1/√2</m>.</p>
+
+<h3><a name="measuring"></a>Measuring the response, point by point</h3>
+<p>The <i>Frequency response</i> tab starts empty: its points are measured from the run, the way a stepped-sine
+test measures a structure. Drive the mass and wait. Once the start has died away, the swing is steady, and a point
+lands at the drive's frequency: the response's amplitude and lag over the force's, each found as the one
+Fourier coefficient at that frequency over the last three periods, and counted steady when the three before
+agree with it to 0.5 %. Change the frequency and wait again, or press <i>Sweep</i>, which steps through
+frequencies across the resonance and dwells at each until its point lands. A swing still growing, or beating,
+never lands one. Points from before a change of <m>m</m>, <m>k</m> or <m>c</m> stay, faded: the curve they
+belonged to has moved. <i>Show the theory</i> draws the curve the points lie on.</p>
 
 <h3><a name="half-power"></a>The half-power bandwidth</h3>
 <p>The power a damper takes is proportional to <m>|X|²</m>, so the points where <m>|X|</m> falls to
@@ -200,7 +242,8 @@ mass. Fans, pumps and washing machines start up through this peak (the
 <a href="page:isolation_page#start-up">Vibration isolation page</a>, later in this group, runs one).</p>
 
 <h3><a name="nyquist"></a>The Nyquist plot</h3>
-<p>Drawing <m>H</m> as a point in the complex plane at each frequency (<m>Im H</m> against <m>Re H</m>) turns
+<p>Drawing <m>H</m> as a point in the complex plane at each frequency (<m>Im H</m> against <m>Re H</m>, the
+Frequency response tab's lowest plot) turns
 the resonance into nearly a circle of diameter <m>1/cω<sub>n</sub></m>, which crosses the imaginary axis at
 <m>f<sub>n</sub></m>, where the points race round fastest. (The mobility, <m>iΩH</m>, makes an exact
 circle.) Modal testing fits circles like this to find each mode's frequency and damping.</p>
@@ -212,8 +255,9 @@ motion into a spiral, losing a fixed fraction of its radius each turn. Overdampe
 into the origin along the slow root's direction.</p>
 
 <h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
-<p>The page opens on <m>m</m> = 1 kg, <m>k</m> = 400 N/m and <m>c</m> = 2 N·s/m, released from 10 mm, and
-driven by 1 N at 3 Hz. Each step below can be checked on its plots.</p>
+<p>The page opens on <m>m</m> = 1 kg, <m>k</m> = 400 N/m and <m>c</m> = 2 N·s/m, at rest, with its drive set to
+1 N at 3 Hz and off. Each step below can be checked on the page: pluck it from 10 mm for the free decay, then
+switch the drive on.</p>
 <ol>
 <li><b>Natural frequency.</b> <m>ω<sub>n</sub> = √(400/1)</m> = 20 rad/s, so
 <m>f<sub>n</sub> = 20/2π</m> = 3.18 Hz.</li>
@@ -221,19 +265,19 @@ driven by 1 N at 3 Hz. Each step below can be checked on its plots.</p>
 <li><b>The free decay.</b> <m>ω<sub>d</sub> = 20√(1 − 0.05²)</m> = 19.97 rad/s, only 0.13 % below
 <m>ω<sub>n</sub></m>. The envelope's time constant is <m>τ = 1/(0.05 × 20)</m> = 1 s, and
 <m>δ = 2π × 0.05/√(1 − 0.05²) = 0.315</m>, so each peak is <m>e<sup>0.315</sup> = 1.37</m> times the next.
-The readout under the free decay measures the same from the curve's peaks.</li>
+The readout under the time plot measures the same from the peaks.</li>
 <li><b>Driven at 3 Hz.</b> <m>Ω = 2π × 3</m> = 18.85 rad/s and <m>r = 18.85/20 = 0.942</m>. Then
 <m>1 − r² = 0.1117</m> and <m>2ζr = 0.0942</m>, so</li>
 </ol>
 <eq>|X| = \frac{1/400}{\sqrt{0.1117^2 + 0.0942^2}} = \frac{2.5\ \mathrm{mm}}{0.1462} = 17.1\ \mathrm{mm}</eq>
 <eq>\varphi = \tan^{-1}\frac{0.0942}{0.1117} = 40.1^\circ</eq>
-<p>That is 6.84 times the static 2.5 mm, lagging the force by 40.1°, as the readout over the forced response
-says. At resonance, driven at 3.18 Hz, it would be <m>(F/k)/2ζ</m> = 2.5 mm/0.1 = 25 mm (<m>Q</m> = 10 times
+<p>That is 6.84 times the static 2.5 mm, lagging the force by 40.1°: once the swing is steady, the readout under
+the time plot says it swings ±17.1 mm, lagging by 40.1°, and the point lands on the Frequency response tab. At resonance, driven at 3.18 Hz, it would be <m>(F/k)/2ζ</m> = 2.5 mm/0.1 = 25 mm (<m>Q</m> = 10 times
 the static), lagging by 90°, with the half-power points 2<m>ζf<sub>n</sub></m> = 0.32 Hz apart, at 3.01 and
 3.33 Hz.</p>
 
 <h3><a name="try-it"></a>Things to try</h3>
-<p>Each of these sets up the oscillator and the plots (Things to try, top left).</p>
+<p>Each of these sets up the oscillator and the plots (Things to try, under the controls).</p>
 <!--TRIALS-->
 <takeaways>
 <li>One mass on a spring and a damper is set by <m>f<sub>n</sub> = √(k/m)/2π</m>, <m>ζ = c/2√(km)</m> and <m>1/k</m>.</li>
@@ -241,7 +285,8 @@ the static), lagging by 90°, with the half-power points 2<m>ζf<sub>n</sub></m>
 <li>The log decrement <m>δ ≈ 2πζ</m> and the half-power width <m>Δf ≈ 2ζf<sub>n</sub></m> both measure damping.</li>
 <li>Driven, it follows the force below resonance, opposes it above, and lags by 90° at resonance, where only damping limits it to <m>Q = 1/2ζ</m> times the static response.</li>
 <li>A switched-on force adds a free vibration that dies away; undamped, it beats instead.</li>
+<li>A change made while it runs is a physical event: a spring change costs <m>½Δk x²</m>, a captured mass keeps the momentum and loses energy, and the energy books close through each.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
-<notation>m x x0 f omega_n zeta c_c omega_d tau delta n_count Omega r H X phi Q half_power s unbalance g section b_h</notation>
+<notation>m x x0 f omega_n zeta c_c omega_d tau delta n_count Omega r H X phi Q half_power s unbalance g section b_h change T_V</notation>
 <reading>inman rao thomson den-hartog</reading>

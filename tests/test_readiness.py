@@ -13,7 +13,8 @@ other than Qt (a Rust UI, WebAssembly) could take it over. A page joins by addin
   when its rebuild moves its notes out. The static export itself is `test_notes_export`'s.
 
 Isolation and Duffing & Mathieu, the view-model pilots, joined first, as they were: neither's notes are Qt-free
-yet, and Duffing's trials are presets, not its state (both are for their rebuilds).
+yet, and Duffing's trials are presets, not its state (both are for their rebuilds). The Single oscillator, #478's
+pilot, joined whole: its notes are `sdof_trials`'s (`links.NOTES_MODULES`).
 """
 
 from __future__ import annotations
@@ -104,7 +105,31 @@ def _duffing() -> Ready:
     return Ready("duffing_page", DuffingSetup, lambda setup: DuffingSetup(**setup), _duffing_views, tuple, problems)
 
 
-READY = {r.page: r for r in (_isolation(), _duffing())}
+def _sdof_views(state):
+    from vib_tutorial.view_models import sdof as v
+    from vib_tutorial.view_models.recorder import Point
+
+    p, d = v.params(state), v.drive(state)
+    measured = [Point(d.freq_hz, complex(1e-3, -5e-4), p)]  # a point the recorder landed
+    return (v.info(p), v.frf_view(p, d, measured, measured, True), v.frf_view(p, d, [], [], False), v.poles_view(p))
+
+
+def _sdof() -> Ready:
+    from vib_tutorial.gui import sdof_trials
+    from vib_tutorial.view_models.sdof import SdofTrial
+
+    return Ready(
+        "sdof_page",
+        lambda: SdofTrial("", ""),
+        lambda setup: SdofTrial("", "", **setup),
+        _sdof_views,
+        lambda: sdof_trials.TRIALS,
+        lambda: sdof_trials.PROBLEMS,
+        qt_free_notes=True,
+    )
+
+
+READY = {r.page: r for r in (_isolation(), _duffing(), _sdof())}
 QT_FREE_NOTES = ["glossary", *(name for name, r in READY.items() if r.qt_free_notes)]
 
 

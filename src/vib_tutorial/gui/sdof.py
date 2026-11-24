@@ -1,612 +1,84 @@
-"""Single oscillator page: one mass on a spring and a damper, free and forced, worked out in closed form.
+"""Single oscillator page (#478's pilot): one mass on a spring and a damper, running live, changed as it runs.
 
-Left: the oscillator, its start and its drive. Centre: the mass itself on its spring and damper, moving with
-the free or the driven response (pluck it to start it from where you let go; a `Playback` walks the time,
-with a cursor on the time plot), then the free decay (with its envelope and peaks, or
-three dampings side by side) and the response to a harmonic force switched on from rest. Right: the
-frequency response with its half-power band, the Nyquist plot, the phase plane, the poles (drag
-them, `DragPoint`s, or click, to set k and c) and the Theory. The page has its own model (core/sdof.py), not the chain.
+The mass is stepped as it runs (`view_models/live_mass.LiveMass`: the chain's exact FOH `Simulator` with one mass),
+not a response worked out in advance and played back. Left: the oscillator's m, k and c and the drive, then the
+Things to try (setups to go back to; their predictions are asked once the reader has handled the system). Centre:
+the mass on its spring and damper with the forces on it (`live_body.LiveMassView`: pluck it, or drag the grips on
+the mass, the spring and the damper to change m, k and c as it runs, the motion carrying on by
+`Simulator.set_system`'s rules), the run's controls, and the time plots, which keep what came before a change with
+the change marked. Right: the Frequency response the reader builds by dwelling or sweeping the drive
+(`view_models/recorder.py`), the Energy balance through every change, the Poles (drag them: k and c follow) with
+the phase plane, and the Theory.
+
+What the page shows is `view_models/sdof.py`'s; its trials, problems, tips and notes are `sdof_trials.py`'s (no Qt).
+The controls are bound to the state (`SdofTrial`) by `bindings.Bindings`, so Defaults round-trips by construction.
+
+Working on it: `tests/test_sdof_page.py` (the page live: pluck, grips, a change mid-run, the recorder, the sweep,
+predictions after play, the drawn body's grips), `test_live_parts.py` (the Qt-free parts), `test_readiness.py`.
 """
 
 from __future__ import annotations
 
-import math
-from dataclasses import dataclass
+import time
 
 import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from ..core.modal import log_decrement
-from ..core.practice import Placement, Prediction, Problem, Question, Requirement, at_most, kept, number, pick, rounded
-from ..core.sdof import (
-    TWO_PI,
-    Oscillator,
-    free_response,
-    frequency_grid,
-    harmonic_from_rest,
-    measured_decrement,
-    peaks,
-    receptance,
-    settling_time,
-)
+from ..core.stepping import FRAME_BUDGET, Budget
+from ..view_models import recorder as rec
+from ..view_models import sdof as view
+from ..view_models.free_body import ArrowScale, one_mass
+from ..view_models.grips import Grip
+from ..view_models.live_mass import COL, UNBALANCE, LiveMass, energy_view, ring_down
+from ..view_models.sdof import SdofTrial
+from ..view_models.text import fmt
 from ..view_models.text import number as sig
-from . import sdof_figures, settle_plots
-from .animation import ChainView
-from .drag import DragLine, DragPoint
-from .layouts import ColumnScroll, group
-from .lesson import (
-    Dot,
-    Form,
-    TrialBox,
-    combo,
-    fmt,
-    note_label,
-    plot,
-    readout_label,
-    set_quietly,
-)
-from .links import course_map, keys_html, load_notes, page_link, paths_html
+from . import coalesce
+from .bindings import Bindings
+from .drag import DragPoint
+from .frame_loop import FrameLoop
+from .layouts import FlowLayout, ResetButton
+from .lesson import Dot, Form, LiveLabel, RunButton, TrialBox, note_label, plot, readout_label, set_quietly, three_panes
+from .live_body import LiveMassView
 from .notes_view import NotesBrowser
-from .playback import Playback
 from .plots import decimate
-from .style import colors
+from .scrub import Scrub
+from .sdof_trials import NOTES_HTML, PROBLEMS, TIPS, TRIALS
+from .style import colors, role
 from .theming import add_legend
-from .trials_text import trials_html
+from .transport import Transport, speed_text
 
-POINTS = 3000  # samples on each time plot
-COMPARE_ZETAS = (0.1, 1.0, 2.0)  # the damping ratios drawn side by side
-FORCE, UNBALANCE = 0, 1  # the drive's kinds, as the combo lists them
-TAB_FRF, TAB_NYQUIST, TAB_PHASE, TAB_POLES = range(4)
-BODY_FREE, BODY_DRIVEN = 0, 1  # what the mass moves with, as the combo lists them
-# The moving mass's scale (display units: the mass is 0.4 wide, 0.8 from the wall): the response's peak is drawn
-# SWING across, and kept to the SCALED band, so a pluck let go inside it doesn't rescale (the mass jumping).
-SWING, SCALED, DRAG = 0.5, (0.25, 0.65), 0.6
+__all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "SdofPage", "notes_html"]
 
-
-@dataclass(frozen=True)
-class SdofTrial:
-    name: str
-    note: str
-    mass: float = 1.0
-    stiffness: float = 400.0
-    damping: float = 2.0
-    x0_mm: float = 10.0
-    v0_mms: float = 0.0
-    compare: bool = False
-    kind: int = FORCE
-    amplitude: float = 1.0  # N, or the unbalance m_e e in kg·m
-    freq_hz: float = 3.0
-    tune: bool = False  # drive at f_n
-    tab: int = TAB_FRF
-    body: int = BODY_FREE  # the mass moves with the free vibration or the driven response
-    predict: Prediction | Placement | None = None  # asked before it runs (Things to try)
-
-
-TRIALS = (
-    SdofTrial(
-        "Ringing down: the log decrement",
-        "<m>m</m> = 1 kg, <m>k</m> = 400 N/m, <m>c</m> = 2 N·s/m: <m>f<sub>n</sub></m> = 3.18 Hz and <m>ζ = 0.05</m>. "
-        "Released from 10 mm, each "
-        "peak is 1.37 times the next: the log decrement <m>δ = ln 1.37 = 0.315</m>, and <m>ζ = δ/2π = 0.050</m>. "
-        "The readout "
-        "under the decay measures it from the curve's peaks. The dashed envelope falls by e in the time "
-        "constant <m>1/ζω<sub>n</sub></m> = 1 s.",
-        tab=TAB_PHASE,
-        predict=Prediction(
-            "Released from 10 mm with ζ = 0.05, how much smaller is each peak than the one before?",
-            ("5 % smaller", "About 27 % smaller", "Half the size"),
-            1,
-            ordered=True,
-            why=(
-                "ζ isn't the fraction lost a cycle: each peak is e<sup>−2πζ</sup> = 0.73 of the one before, so about 2π times as much goes.",
-                '',
-                'That would take ζ ≈ 0.11, twice this. At ζ = 0.05 each peak is e<sup>−2πζ</sup> = 0.73 of the one before.',
-            ),
-        ),
-    ),
-    SdofTrial(
-        "ζ = 1 against ζ = 2",
-        "<m>c</m> = 40 N·s/m, the critical damping <m>2√(km)</m>, with <m>ζ</m> = 0.1, 1 and 2 drawn beside it. "
-        "<m>ζ = 0.1</m> overshoots "
-        "and rings; <m>ζ = 1</m> comes back without crossing zero, the fastest that does; <m>ζ = 2</m> creeps back, "
-        "held up "
-        "by its slow root at <m>−0.27ω<sub>n</sub></m> (a time constant of 0.19 s against critical's 0.05 s).",
-        damping=40.0,
-        compare=True,
-        tab=TAB_POLES,
-        predict=Prediction(
-            "The same mass and spring, released from the same place: ζ = 1 or ζ = 2, which is back at rest sooner?",
-            ("ζ = 1", "ζ = 2", "They settle together"),
-            0,
-            why=(
-                '',
-                'More damping takes energy out faster, but it also holds the mass back: past critical, the slow root moves towards zero and the creep back takes longer.',
-                'Their slowest roots differ: −ω<sub>n</sub> for ζ = 1 and −0.27ω<sub>n</sub> for ζ = 2.',
-            ),
-        ),
-    ),
-    SdofTrial(
-        "Overdamped: two real poles",
-        "<m>c</m> = 80 N·s/m, <m>ζ = 2</m>. The poles have left the imaginary axis for two points on the real one, at "
-        "−5.4 and −74.6 s<sup>−1</sup>: two decays and no oscillation. Drag either along the real axis, "
-        "or off it, and the page works out the <m>k</m> and <m>c</m> that put them there.",
-        damping=80.0,
-        tab=TAB_POLES,
-    ),
-    SdofTrial(
-        "Resonance: a 90° lag",
-        "A 1 N force at <m>f<sub>n</sub></m> = 3.18 Hz. From rest the swing grows over a few time constants (1 s) to "
-        "<m>(F/k)/2ζ</m> = 25 mm, ten times the static 2.5 mm: the quality factor <m>Q = 1/2ζ = 10</m>. "
-        "The response lags "
-        "the force by 90°, where the phase plot crosses −90°.",
-        tune=True,
-        tab=TAB_FRF,
-        body=BODY_DRIVEN,
-        predict=Placement(
-            "1 N on a 400 N/m spring is 2.5 mm, pushed slowly. Driven at f<sub>n</sub> with ζ = 0.05, how big does the steady "
-            "swing grow? Put the line at its peak.",
-            plot="forced_plot",
-            answer=0.025,
-            span=(0.0, 0.05),
-            low="Short of 25 mm the force still puts in more each cycle than the damper takes out, so the swing "
-            "grows on, to (F/k)/2ζ: ten times static.",
-            high="The damper's loss grows as the swing squared, the force's input only as the swing: they balance at "
-            "(F/k)/2ζ = 25 mm.",
-            scale=1000.0,
-            unit="mm",
-        ),
-    ),
-    SdofTrial(
-        "Half-power bandwidth",
-        "The default oscillator's peak, with its half-power points marked: <m>|H|</m> falls to <m>1/√2</m> of the "
-        "peak at "
-        "3.01 and 3.33 Hz, 0.32 Hz apart, so <m>ζ ≈ Δf/2f<sub>n</sub> = 0.050</m>. Raise <m>c</m> and the band "
-        "widens in "
-        "proportion.",
-        freq_hz=3.0,
-        tab=TAB_FRF,
-    ),
-    SdofTrial(
-        "Undamped, just off resonance",
-        "<m>c = 0</m>, a 1 N force at 3.0 Hz, 0.18 Hz below <m>f<sub>n</sub></m>. The free vibration the start sets off never "
-        "dies, and it drifts in and out of step with the forced one: the swing beats at <m>|f − f<sub>n</sub>|</m> = "
-        "0.18 Hz, every 5.5 s, between zero and twice the steady 22 mm.",
-        damping=0.0,
-        freq_hz=3.0,
-        tab=TAB_FRF,
-        body=BODY_DRIVEN,
-        predict=Prediction(
-            "No damping, driven from rest 0.18 Hz below f<sub>n</sub>. What does the swing do?",
-            ("Grows for ever", "Settles to a steady swing", "Swells and fades, over and over"),
-            2,
-            why=(
-                'Only exactly at f<sub>n</sub>. 0.18 Hz off, the forced swing drifts out of step with the free one, and they cancel every 5.5 s.',
-                'Settling needs damping to kill the free vibration the start sets off. With none it rings on, beating against the forced swing.',
-                '',
-            ),
-        ),
-    ),
-    SdofTrial(
-        "Exactly at resonance, undamped",
-        "<m>c = 0</m> and the force at <m>f<sub>n</sub></m>. There is no steady state: the swing grows in a straight line, "
-        "<m>F/2mω<sub>n</sub></m> = 25 mm a second, for ever. Any damping at all bounds it.",
-        damping=0.0,
-        tune=True,
-        tab=TAB_FRF,
-        body=BODY_DRIVEN,
-        predict=Prediction(
-            "No damping, driven from rest exactly at f<sub>n</sub>. What does the swing do?",
-            ("Grows steadily, for ever", "Settles to a steady swing", "Swells and fades, over and over"),
-            0,
-            why=(
-                '',
-                'With no damping nothing takes out the energy the force puts in, and at resonance it puts some in every cycle.',
-                "Beating needs two frequencies apart. Here they're the same, so the free and forced swings never drift out of step.",
-            ),
-        ),
-    ),
-    SdofTrial(
-        "A rotating unbalance",
-        "An unbalance <m>m<sub>e</sub>e</m> = 1×10<sup>−4</sup> kg·m (10 g at 10 mm) on a 1 kg machine. Its force "
-        "grows as <m>Ω²</m>, so the response starts at zero, peaks at resonance at <m>(m<sub>e</sub>e/m)/2ζ</m> = 1 mm, "
-        "and "
-        "levels off far above it at <m>m<sub>e</sub>e/m</m> = 0.1 mm, 180° out of phase: the machine turns round "
-        "the shared centre of mass.",
-        kind=UNBALANCE,
-        amplitude=1e-4,
-        tune=True,
-        tab=TAB_FRF,
-        body=BODY_DRIVEN,
-        predict=Prediction(
-            "An unbalanced machine run faster and faster, far past its resonance: its swing…",
-            ("keeps growing, as the speed squared", "levels off", "falls back to nothing"),
-            1,
-            why=(
-                "The force does, but far above resonance the mass's inertia takes it all, x ≈ −F/mΩ²: the Ω² cancel, leaving m<sub>e</sub>e/m.",
-                '',
-                "That's a fixed force's response, falling as 1/Ω². The unbalance's force grows as Ω², and the two cancel: it levels off.",
-            ),
-        ),
-    ),
-    SdofTrial(
-        "The Nyquist circle",
-        "The receptance drawn as <m>Im H</m> against <m>Re H</m>. Near resonance it traces nearly a circle of diameter "
-        "<m>1/cω<sub>n</sub></m> = 25 mm/N, crossing the imaginary axis at <m>f<sub>n</sub></m>; the points (1 per "
-        "0.02 Hz) are furthest apart there, which is how modal tests find <m>f<sub>n</sub></m>.",
-        freq_hz=3.0,
-        tab=TAB_NYQUIST,
-    ),
-)
-
-
-# ------------------------------------------------------------------ practice problems
-# Each question's numbers are printed round (or to 3–4 figures), and its answer is worked from them as printed.
-
-
-def _natural_frequency(rng: np.random.Generator) -> Question:
-    m = pick(rng, (0.5, 1, 2, 4, 5, 10))
-    k = pick(rng, (50, 100, 200, 400, 800, 1000, 2500, 5000))
-    osc = Oscillator(m, k, 0.0)
-    return Question(
-        f"A {sig(m, 6)} kg mass sits on a spring of {sig(k, 6)} N/m. What is its natural frequency f<sub>n</sub>?",
-        osc.natural_hz,
-        f"ω<sub>n</sub> = √(k/m) = √({sig(k, 6)}/{sig(m, 6)}) = {number(osc.omega_n)} rad/s, and f<sub>n</sub> = "
-        f"ω<sub>n</sub>/2π = {number(osc.natural_hz)} Hz.",
-        unit="Hz",
-        setup=dict(mass=m, stiffness=k, damping=rounded(0.1 * math.sqrt(k * m)), tab=TAB_PHASE),
-    )
-
-
-def _critical_damping(rng: np.random.Generator) -> Question:
-    m = pick(rng, (0.5, 1, 2, 4, 5, 10))
-    k = pick(rng, (50, 100, 200, 400, 800, 1000, 2500, 5000))
-    cc = Oscillator(m, k, 0.0).critical
-    return Question(
-        f"A {sig(m, 6)} kg mass on a spring of {sig(k, 6)} N/m. What damping coefficient c makes it critically damped?",
-        cc,
-        f"c<sub>c</sub> = 2√(km) = 2√({sig(k, 6)} × {sig(m, 6)}) = {number(cc)} N·s/m (that is, 2mω<sub>n</sub>).",
-        unit="N·s/m",
-        setup=dict(mass=m, stiffness=k, damping=rounded(cc), compare=True, tab=TAB_POLES),
-    )
-
-
-def _log_decrement(rng: np.random.Generator) -> Question:
-    k = pick(rng, (100, 400, 900, 1600))
-    zeta = pick(rng, (0.01, 0.02, 0.03, 0.05, 0.08, 0.1))
-    n = int(pick(rng, (1, 2, 3, 5)))
-    x0 = pick(rng, (5, 10, 20))
-    delta = log_decrement(zeta)
-    xn = rounded(x0 * math.exp(-n * delta))
-    d = math.log(x0 / xn) / n  # from the printed peaks
-    answer = d / math.sqrt(TWO_PI**2 + d * d)
-    cycles = "the next peak" if n == 1 else f"the peak {n} cycles later"
-    return Question(
-        f"A mass released from rest rings down. One peak is {sig(x0, 6)} mm and {cycles} is {number(xn)} mm. What is "
-        "its damping ratio ζ?",
-        answer,
-        f"The log decrement is δ = (1/{n}) ln({sig(x0, 6)}/{number(xn)}) = {number(d)}, and ζ = δ/√(4π² + δ²) = "
-        f"{number(answer)} (δ/2π = {number(d / TWO_PI)} is near enough when ζ is small).",
-        tolerance=0.03,
-        setup=dict(mass=1.0, stiffness=k, damping=rounded(2.0 * zeta * math.sqrt(k)), x0_mm=x0, tab=TAB_PHASE),
-    )
-
-
-def _resonant_amplitude(rng: np.random.Generator) -> Question:
-    m = pick(rng, (1, 2, 5))
-    k = pick(rng, (200, 400, 800, 2000))
-    c = rounded(pick(rng, (0.02, 0.05, 0.1)) * 2.0 * math.sqrt(k * m))
-    force = pick(rng, (0.5, 1, 2, 5))
-    osc = Oscillator(m, k, c)
-    x = force / (c * osc.omega_n)
-    return Question(
-        f"m = {sig(m, 6)} kg, k = {sig(k, 6)} N/m and c = {number(c)} N·s/m, driven by {sig(force, 6)} N at exactly its natural "
-        "frequency. What is the steady amplitude?",
-        1e3 * x,
-        f"At ω<sub>n</sub> = {number(osc.omega_n)} rad/s the spring and the mass cancel, and only the damper "
-        f"holds the force: X = F/(cω<sub>n</sub>) = {sig(force, 6)}/({number(c)} × {number(osc.omega_n)}) = "
-        f"{number(1e3 * x)} mm. That's (F/k)/2ζ: Q = 1/2ζ = {number(1.0 / (2.0 * osc.zeta))} times the static "
-        f"{number(1e3 * force / k)} mm.",
-        unit="mm",
-        setup=dict(mass=m, stiffness=k, damping=c, amplitude=force, tune=True, tab=TAB_FRF),
-    )
-
-
-def _half_power(rng: np.random.Generator) -> Question:
-    k = pick(rng, (400, 1000, 2500, 10000))
-    zeta = pick(rng, (0.02, 0.03, 0.05, 0.08, 0.1))
-    osc = Oscillator(1.0, k, 2.0 * zeta * math.sqrt(k))
-    band = osc.half_power_hz()
-    assert band is not None, "ζ ≤ 0.1 has a peak"
-    lo, hi = (rounded(f, 4) for f in band)
-    estimate = (hi - lo) / (hi + lo)
-    return Question(
-        f"A receptance's peak has its half-power points at {number(lo, 4)} Hz and {number(hi, 4)} Hz. What is "
-        "the damping ratio ζ?",
-        zeta,
-        f"ζ ≈ Δf/2f<sub>n</sub>, with f<sub>n</sub> ≈ ({number(lo, 4)} + {number(hi, 4)})/2 = "
-        f"{number((lo + hi) / 2, 4)} Hz and Δf = {number(hi - lo)} Hz: ζ ≈ {number(estimate)}. (Exactly, "
-        f"ζ = {number(zeta)}.)",
-        tolerance=0.03,
-        setup=dict(
-            mass=1.0,
-            stiffness=k,
-            damping=rounded(2.0 * zeta * math.sqrt(k)),
-            freq_hz=rounded(osc.natural_hz),
-            tab=TAB_FRF,
-        ),
-    )
-
-
-def _more_damping(rng: np.random.Generator) -> Question:
-    n = int(pick(rng, (2, 3, 5)))
-    return Question(
-        f"An oscillator driven at its natural frequency has settled to its steady swing. Its damper is made {n} "
-        "times stronger. What happens to the steady amplitude?",
-        0,
-        f"At resonance the spring's and the mass's forces cancel, so only the damper holds the force: X = "
-        f"F/(cω<sub>n</sub>), and {n} times the c gives 1/{n} of the swing. (Off resonance damping matters far "
-        "less.)",
-        choices=(f"It falls to 1/{n}", f"It falls to 1/√{n}", "It stays the same", f"It grows {n} times"),
-        why=(
-            "",
-            "A square root comes in where the frequency depends on stiffness or mass; the amplitude at resonance "
-            "is inversely proportional to the damping itself.",
-            "That holds well away from resonance, where the spring or the mass carries the force; at resonance "
-            "they cancel, and the damper alone holds it.",
-            "Damping takes energy out every cycle: more of it can only lower the swing.",
-        ),
-        setup=dict(damping=2.0 * n, tune=True, tab=TAB_FRF),
-        predict=True,
-    )
-
-
-def _heavier(rng: np.random.Generator) -> Question:
-    n = int(pick(rng, (4, 9)))
-    root = math.isqrt(n)
-    return Question(
-        f"The mass on a spring is made {n} times heavier, the spring the same. What happens to its natural frequency?",
-        0,
-        f"f<sub>n</sub> = √(k/m)/2π: {n} times the mass gives 1/√{n} = 1/{root} of the frequency.",
-        choices=(f"It falls to 1/{root}", f"It falls to 1/{n}", "It stays the same", f"It rises {root} times"),
-        why=(
-            "",
-            "The frequency goes as the square root of k/m, not as k/m itself.",
-            "A pendulum's frequency doesn't depend on its mass, as gravity pulls the heavier bob harder in step; "
-            "a spring's force doesn't grow with the mass.",
-            "The heavier mass is slower to move: the same spring swings it less often, not more.",
-        ),
-        setup=dict(mass=float(n), tab=TAB_PHASE),
-        predict=True,
-    )
-
-
-def _quickest_return(rng: np.random.Generator) -> Question:
-    return Question(
-        "The same mass and spring, released from the same place, once critically damped (ζ = 1) and once with "
-        "twice that damping (ζ = 2). Which settles back to rest sooner?",
-        0,
-        "Critical damping. More damping slows the return: ζ = 2's slow root at −0.27ω<sub>n</sub> holds it back "
-        "(a time constant of 0.19 s here, against critical's 0.05 s).",
-        choices=("ζ = 1", "ζ = 2", "They settle together"),
-        why=(
-            "",
-            "More damping takes energy out faster, but it also holds the mass back: past critical, the slow root "
-            "moves towards zero and the creep back takes longer.",
-            "Their slowest roots differ: −ω<sub>n</sub> for ζ = 1 and −0.27ω<sub>n</sub> for ζ = 2.",
-        ),
-        setup=dict(damping=40.0, compare=True, tab=TAB_POLES),
-        predict=True,
-    )
-
-
-def _drive_force(t: SdofTrial) -> float:
-    """The drive's force amplitude at its frequency: F, or m_e e Ω² for the unbalance."""
-    return t.amplitude * (TWO_PI * t.freq_hz) ** 2 if t.kind == UNBALANCE else t.amplitude
-
-
-def _settle_spec(rng: np.random.Generator) -> Question:
-    m = pick(rng, (1, 2, 5))
-    k = pick(rng, (100, 400, 1000, 2500))
-    c = rounded(0.8 * 2.0 * math.sqrt(k * m))  # ζ = 0.8: an overshoot that lands just inside the band
-    best = settling_time(Oscillator(m, k, c))
-    most = rounded(best * pick(rng, (1.2, 1.5)), 2)
-
-    def goal(t: SdofTrial):
-        return (
-            kept("The mass", t.mass, m, "kg"),
-            kept("The spring", t.stiffness, k, "N/m"),
-            at_most("Time to settle within 2 %", settling_time(Oscillator(t.mass, t.stiffness, t.damping)), most, "s"),
-        )
-
-    return Question(
-        f"A {sig(m, 6)} kg mass on a spring of {sig(k, 6)} N/m is a pointer that must come to rest quickly when released. "
-        f"Choose the damper so that, released at rest from x<sub>0</sub>, it stays within 2 % of x<sub>0</sub> "
-        f"of its rest position after {number(most, 2)} s.",
-        0,
-        f"Too little damping rings on; too much creeps back on its slow root. The quickest into a ±2 % band is "
-        f"near ζ ≈ 0.8, which overshoots just inside the band: c = 2ζ√(km) = {number(c)} N·s/m settles in "
-        f"{number(best)} s. (Critically damped, c = {number(2 * math.sqrt(k * m))} N·s/m, it takes "
-        f"{number(settling_time(Oscillator(m, k, 2 * math.sqrt(k * m))))} s.)",
-        setup=dict(mass=m, stiffness=k, damping=rounded(0.1 * math.sqrt(k * m)), tab=TAB_POLES),
-        goal=goal,
-        design=dict(mass=m, stiffness=k, damping=c, tab=TAB_POLES),
-    )
-
-
-def _detune_spec(rng: np.random.Generator) -> Question:
-    m = pick(rng, (1, 2, 5))
-    k = pick(rng, (400, 1000, 2500))
-    c = rounded(2.0 * pick(rng, (0.02, 0.05)) * math.sqrt(k * m))
-    force = pick(rng, (1, 2, 5))
-    f = rounded(Oscillator(m, k, c).natural_hz)
-    w2 = m * (TWO_PI * f) ** 2
-    stiffer = rounded(pick(rng, (1.5, 2.0)) * k)
-    most = rounded(1.1 * 1e3 * force * abs(receptance(Oscillator(m, stiffer, c), np.array([f]))[0]), 2)
-
-    def goal(t: SdofTrial):
-        osc = Oscillator(t.mass, t.stiffness, t.damping)
-        x = _drive_force(t) * abs(receptance(osc, np.array([t.freq_hz]))[0])
-        return (
-            kept("The mass", t.mass, m, "kg"),
-            kept("The damper", t.damping, c, "N·s/m"),
-            Requirement(
-                f"The drive kept at {sig(force, 6)} N",
-                f"{number(_drive_force(t), 4)} N",
-                t.kind == FORCE and abs(t.amplitude - force) <= 0.005 * force,
-            ),
-            kept("Its frequency", t.freq_hz, f, "Hz"),
-            at_most("The steady amplitude", 1e3 * x, most, "mm"),
-        )
-
-    return Question(
-        f"A {sig(m, 6)} kg mass on a spring of {sig(k, 6)} N/m, with a {number(c)} N·s/m damper, is shaken by {sig(force, 6)} N at "
-        f"{number(f)} Hz: right on its resonance. The mass, the damper and the drive can't change. Change the "
-        f"spring so the steady amplitude is no more than {number(most, 2)} mm.",
-        0,
-        f"At resonance only the damper holds the force: X = F/(cω) = {number(1e3 * force / (c * TWO_PI * f))} mm. "
-        f"Move the resonance away from the drive: X ≈ F/|k − mω²| (the damper hardly matters off resonance), so "
-        f"|k − mω²| ≥ F/X = {number(force / (1e-3 * most))} N/m with mω² = {number(w2)} N/m: k ≥ "
-        f"{number(w2 + force / (1e-3 * most))} N/m, or k ≤ {number(w2 - force / (1e-3 * most))} N/m. A spring of "
-        f"{number(stiffer)} N/m does it.",
-        setup=dict(mass=m, stiffness=k, damping=c, amplitude=force, freq_hz=f, tab=TAB_FRF),
-        goal=goal,
-        design=dict(mass=m, stiffness=stiffer, damping=c, amplitude=force, freq_hz=f, tab=TAB_FRF),
-    )
-
-
-PROBLEMS = (
-    Problem(
-        "natural-frequency",
-        "Natural frequency",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}: ω<sub>n</sub> = √(k/m), in rad/s.",
-        _natural_frequency,
-        figure="fig:oscillator",
-    ),
-    Problem(
-        "critical-damping",
-        "Critical damping",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.",
-        _critical_damping,
-    ),
-    Problem(
-        "log-decrement",
-        "Damping from a decay",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'log-decrement', 'Measuring damping from a decay')}: over n cycles, "
-        "δ = (1/n) ln(x<sub>0</sub>/x<sub>n</sub>).",
-        _log_decrement,
-    ),
-    Problem(
-        "resonant-amplitude",
-        "Amplitude at resonance",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'forced-response', 'Forced response')}: what's left of k − ω²m + iωc "
-        "at ω<sub>n</sub>?",
-        _resonant_amplitude,
-    ),
-    Problem(
-        "half-power",
-        "Damping from the half-power points",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'half-power', 'The half-power bandwidth')}.",
-        _half_power,
-    ),
-    Problem(
-        "more-damping",
-        "Predict: more damping at resonance",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'forced-response', 'Forced response')}.",
-        _more_damping,
-    ),
-    Problem(
-        "heavier",
-        "Predict: a heavier mass",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'free-vibration', 'Free vibration')}.",
-        _heavier,
-    ),
-    Problem(
-        "quickest-return",
-        "Predict: the quickest return",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}.",
-        _quickest_return,
-    ),
-    Problem(
-        "settle-spec",
-        "Spec: come to rest quickly",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'damping-regimes', 'Under, critical and over')}: is critical damping "
-        "really the quickest into a band?",
-        _settle_spec,
-    ),
-    Problem(
-        "detune-spec",
-        "Spec: off the resonance",
-        "sdof_page",
-        f"See {page_link('sdof_page', 'forced-response', 'Forced response')}.",
-        _detune_spec,
-    ),
-)
-
-TIPS = {
-    "mass": "<p>The mass m.</p>",
-    "stiffness": "<p>The spring's stiffness k: the force per metre of stretch.</p>",
-    "damping": "<p>The viscous damper's coefficient c: the force per m/s of velocity. Its critical value "
-    "2√(km) is the least that stops the oscillator overshooting.</p>",
-    "x0": "<p>Where the mass starts the free vibration (the driven response starts from rest).</p>",
-    "v0": "<p>The velocity it starts with.</p>",
-    "compare": "<p>Draw the free vibration for ζ = 0.1, 1 and 2 as well, with the same mass and spring "
-    "(underdamped, critically damped, overdamped).</p>",
-    "kind": "<p><b>Force:</b> F cos Ωt on the mass.<br><b>Rotating unbalance:</b> a mass m<sub>e</sub> turning "
-    "at radius e inside the machine, whose force m<sub>e</sub>eΩ² cos Ωt grows with the speed.</p>",
-    "amplitude": "<p>The force's amplitude F, or the unbalance m<sub>e</sub>e.</p>",
-    "freq": "<p>The drive's frequency Ω/2π.</p>",
-    "body": "<p>What the mass above the plots moves with: the free vibration from x₀ and v₀, or the drive switched "
-    "on from rest. Its time cursor (on that plot) shows where it is.</p>",
+SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0, 5.0)
+STRIP_SECONDS = 10.0  # the time plots' window
+PHASE_SECONDS = 3.0  # the phase plane's trail
+PEAK_SECONDS = 3.0  # the body's scale fits the largest swing this recent
+ENERGY_SECONDS = 60.0  # the Energy tab's window (its ledger is the whole run's)
+MEASURE_EVERY = 0.2  # s of run between the recorder's looks
+PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
+GRIPS = {
+    "mass": Grip("mass", 0.01, 1e4, per=0.4),
+    "stiffness": Grip("stiffness", 0.01, 1e8, per=0.3),
+    "damping": Grip("damping", 0.01, 1e6, per=0.3, zero_below=0.02),
 }
-PLUCK_TIP = (
-    "<p>The mass on its spring and damper, moving with the response below it (drawn to the scale bar).</p>"
-    "<p><b>Pluck it:</b> drag the mass sideways and let go. While you hold it, the arrow is the force your hand "
-    "needs, kx; let go and it vibrates freely from there (x₀ is where you let it go, v₀ = 0).</p>"
-)
-DRIVE_LINE_TIP = (
-    "<p>The drive's frequency. Drag it to sweep the drive across the resonance: the circle, the time response and "
-    "the Drive box follow.</p>"
-)
-FRF_TIP = (
-    "<p>The steady amplitude over the static one, |X|k/F (the dynamic amplification), or for the unbalance "
-    "m|X|/m<sub>e</sub>e, against the drive's frequency, and the phase by which the response lags. The band "
-    "is the half-power width, the dotted line f<sub>n</sub>, the circle the drive; drag the drive's line (◀▶) to "
-    "sweep it.</p>"
-)
-NYQUIST_TIP = (
-    "<p>The receptance H = X/F in the complex plane, Im against Re, from low frequency (near 1/k on the real "
-    "axis) round to the origin. The dots are 0.02 Hz apart; the circle is the drive.</p>"
-)
-PHASE_TIP = (
-    "<p>The free vibration as a path in the phase plane: velocity over ω<sub>n</sub> against displacement. "
-    "Undamped it is a circle; damping winds it into a spiral, a turn per cycle.</p>"
-)
-POLE_SNAP = 0.02  # a pole dragged this close to the real axis (of the plot's height) lands on it
 POLES_TIP = (
     "<p>The roots of m s² + c s + k in the complex plane: −ζω<sub>n</sub> ± iω<sub>d</sub>. Their distance "
     "from the origin is ω<sub>n</sub>, the angle from the imaginary axis is sin⁻¹ζ. The rays are ζ = 0.05, "
     "0.2, 0.5 and 0.8, the arc the current ω<sub>n</sub>. Drag a pole (or click where it should go) and k and c "
-    "follow, the mass kept; the free and driven responses beside change as it moves. Drag one onto the real axis "
-    "for critical damping, then along it to split the pair.</p>"
+    "follow, the mass kept, while it runs. Drag one onto the real axis for critical damping, then along it to "
+    "split the pair.</p>"
 )
-
-NOTES_HTML = load_notes(
-    "sdof",
-    figures=sdof_figures.FIGURES,
-    course=course_map(),
-    paths=paths_html(),
-    keys=keys_html(),
-    trials=trials_html(TRIALS),
+FRF_TIP = (
+    "<p>The frequency response, built by hand: each point is a steady swing the run measured at the drive's "
+    "frequency (its amplitude over the static one, |X|k/F, or m|X|/m<sub>e</sub>e for the unbalance, and the "
+    "phase by which it lags). Points from before a change of m, k or c are faded. <i>Show the theory</i> draws "
+    "the curve they should lie on.</p>"
+)
+STRIP_TIP = (
+    "<p>The mass's displacement as it runs, the last 10 s. A dashed line marks where m, k or c changed: the "
+    "motion carries on through it. Paused, drag the line at the end back to see the mass then.</p>"
 )
 
 
@@ -614,6 +86,7 @@ def notes_html() -> str:
     """The notes with the course map's progress as it stands (the reader's problems solved, trials tried)."""
     from . import links
     from . import progress as record
+    from .links import course_map
     from .practice import progress
 
     solved = progress()
@@ -626,191 +99,204 @@ def notes_html() -> str:
 
 
 class SdofPage(QtWidgets.QWidget):
-    """Controls on the left, the free and forced responses in the centre, frequency views and theory on the right."""
+    """The oscillator's controls on the left, the live mass and its time plots in the centre, the tabs on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
+    def transport(self) -> Transport:
+        return Transport(self.run_button, self.reset_button, self.speed, self.clock)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.osc = Oscillator()
-        self._spans = [1.0, 1.0]  # the free and driven plots' spans (s), as last drawn
-        self._peaks = [0.0, 0.0]  # and their largest |x| (m)
+        self.live = LiveMass()
+        self.recorder = rec.Recorder()
+        self.sweep: rec.Sweep | None = None
+        self.running = False
+        self.arrows = ArrowScale(room=1.0)
+        self._handled_at: float | None = None  # the run's time at the reader's first change since the last setup
+        self._grip_start = 0.0
+        self._measured_at = -1.0
+        self._pole_held: complex | None = None  # the pole not being dragged, while one is
+        self._marks: list[float] = []
+        self._budget = Budget()
+        self.bindings = Bindings(SdofTrial, self)
 
-        # --- left
-        self.trials = TrialBox(
-            [t.name for t in TRIALS],
-            "<p>Each sets up the oscillator and the plots to show one idea from the Theory tab. Some ask you to "
-            "predict what you'll see first.</p>",
-            predictions=[t.predict for t in TRIALS],
-        )
-        self.trials.picked.connect(self.load_trial)
-
+        # --- left: the oscillator, the drive, then the Things to try
         box = Form("Oscillator")
         self.mass = box.number("Mass m:", 0.01, 1e4, 1.0, 3, " kg", TIPS["mass"])
         self.stiffness = box.number("Stiffness k:", 0.01, 1e8, 400.0, 2, " N/m", TIPS["stiffness"])
         self.damping = box.number("Damping c:", 0.0, 1e6, 2.0, 3, " N·s/m", TIPS["damping"])
         self.info = note_label()
         box.row(self.info)
-        box.changed.connect(self._on_oscillator)
-
-        start = Form("Free vibration")
-        self.x0 = start.number("Start x₀:", -1000.0, 1000.0, 10.0, 2, " mm", TIPS["x0"])
-        self.v0 = start.number("Velocity v₀:", -1e5, 1e5, 0.0, 1, " mm/s", TIPS["v0"])
-        self.compare = QtWidgets.QCheckBox("Compare ζ = 0.1, 1 and 2")
-        self.compare.setToolTip(TIPS["compare"])
-        start.row(self.compare)
-        start.changed.connect(self.redraw)
-        self.compare.toggled.connect(self.redraw)
 
         drive = Form("Drive")
+        self.drive_on = QtWidgets.QCheckBox("Drive the mass")
+        self.drive_on.setToolTip(TIPS["drive"])
+        drive.row(self.drive_on)
         self.kind = QtWidgets.QComboBox()
-        self.kind.addItems(["Force F cos Ωt", "Rotating unbalance"])
+        self.kind.addItems(["Force F sin Ωt", "Rotating unbalance"])
         drive.add("Input:", self.kind, TIPS["kind"])
         self.amplitude = drive.number("Force F:", 0.0, 1e6, 1.0, 4, " N", TIPS["amplitude"])
         self.amplitude_label = drive.label(self.amplitude)
-        self.freq = drive.number("Frequency:", 0.001, 1e4, 3.0, 3, " Hz", TIPS["freq"])
+        self.freq = drive.number("Frequency:", 0.01, 1e4, 3.0, 3, " Hz", TIPS["freq"])
         self.tune = QtWidgets.QPushButton("Tune to fₙ")
         self.tune.setToolTip("<p>Set the drive's frequency to the natural frequency.</p>")
         self.tune.clicked.connect(self.tune_to_natural)
         drive.row(self.tune)
-        drive.changed.connect(self.redraw)
-        self.kind.currentIndexChanged.connect(self._on_kind)
+
+        self.trials = TrialBox(
+            [t.name for t in TRIALS],
+            "<p>Setups to come back to, each showing one idea from the Theory tab. Once you've handled the "
+            "oscillator, some ask you to predict what you'll see first.</p>",
+            predictions=[t.predict for t in TRIALS],
+            ask_after_play=True,
+        )
+        self.trials.picked.connect(self.load_trial)
 
         left = QtWidgets.QWidget()
         lv = QtWidgets.QVBoxLayout(left)
-        for w in (self.trials, box, start, drive):
+        for w in (box, drive, self.trials):
             lv.addWidget(w)
         lv.addStretch(1)
 
-        # --- centre
-        self.free_plot = plot("Displacement x", "m", "Time", "s", height=170)
-        self.free_plot.setToolTip(
-            "<p>The free vibration from x₀ and v₀, its envelope ±e<sup>−ζω<sub>n</sub>t</sup>"
-            " (dashed) and its peaks.</p>"
-        )
-        self.free_legend = add_legend(self.free_plot.getPlotItem(), offset=(-10, 10))
-        self.free_item = pg.PlotDataItem(name="x")
-        self.envelope_items = [pg.PlotDataItem() for _ in range(2)]
-        self.peak_item = pg.ScatterPlotItem(size=6)
-        self.compare_items = [pg.PlotDataItem(name=f"ζ = {sig(z, 6)}") for z in COMPARE_ZETAS]
-        for item in (*self.envelope_items, *self.compare_items, self.free_item, self.peak_item):
-            self.free_plot.addItem(item)
-        self.free_note = readout_label()
+        # --- centre: the mass, the run, the time plots
+        self.body = LiveMassView()
+        self.body.setMinimumHeight(200)
+        self.body.grabbed.connect(self._on_grabbed)
+        self.body.pulled.connect(self._on_pulled)
+        self.body.let_go.connect(self._on_let_go)
+        self.body.grip_taken.connect(self._on_grip_taken)
+        self.body.grip_moved.connect(self._on_grip_moved)
+        self.speed = QtWidgets.QComboBox()
+        self.speed.setAccessibleName("Playback speed")
+        for s in SPEEDS:
+            self.speed.addItem(speed_text(s), s)
+        self.speed.setCurrentIndex(SPEEDS.index(1.0))
+        self.speed.setToolTip("<p>Simulated seconds per second.</p>")
+        self.run_button = RunButton()
+        self.run_button.toggled.connect(self._on_run)
+        self.reset_button = ResetButton()
+        self.reset_button.setToolTip("<p>Back to rest at t = 0; the measured points are kept.</p>")
+        self.reset_button.clicked.connect(self.reset)
+        self.clock = LiveLabel("t = 0 s")
+        row = FlowLayout()
+        row.add(self.speed, self.run_button, self.reset_button, self.clock)
 
-        self.forced_plot = plot("Displacement x", "m", "Time", "s", height=170)
-        self.forced_plot.setToolTip(
-            "<p>The drive switched on at t = 0 with the mass at rest: the whole response, "
-            "and dashed the steady response it settles into.</p>"
-        )
-        add_legend(self.forced_plot.getPlotItem(), offset=(-10, 10))
-        self.steady_item = pg.PlotDataItem(name="steady")
-        self.forced_item = pg.PlotDataItem(name="from rest")
-        self.forced_plot.addItem(self.steady_item)
-        self.forced_plot.addItem(self.forced_item)
-        # A long drive (16,000 samples at resonance) is each pixel column's extremes, and the steady line is dashed
-        # 1 px wide: at 1.5 Qt outlined every dash, 260 ms a paint (#409 P-18).
-        decimate(self.forced_plot)
-        self.forced_note = readout_label()
+        self.strip = plot("Displacement x", "m", "Time", "s", height=150)
+        self.strip.setToolTip(STRIP_TIP)
+        self.strip.setMouseEnabled(x=False, y=False)
+        self.x_item = pg.PlotDataItem(name="x")
+        self.peak_item = pg.PlotDataItem(pen=None, symbol="o", symbolSize=6)
+        self.strip.addItem(self.x_item)
+        self.strip.addItem(self.peak_item)
+        self.force_plot = plot("Drive f", "N", "Time", "s", height=90)
+        self.force_plot.setXLink(self.strip)
+        self.force_plot.setMouseEnabled(x=False, y=False)
+        self.f_item = pg.PlotDataItem()
+        self.force_plot.addItem(self.f_item)
+        decimate(self.strip, self.force_plot)
+        self.mark_lines: list[pg.InfiniteLine] = []
+        self.scrub = Scrub(self.strip, self.force_plot)
+        self.scrub.scrubbed.connect(self._on_scrubbed)
+        self.readout = readout_label()
 
-        center = QtWidgets.QWidget()
-        cv = QtWidgets.QVBoxLayout(center)
+        centre = QtWidgets.QWidget()
+        cv = QtWidgets.QVBoxLayout(centre)
         cv.setContentsMargins(0, 0, 0, 0)
-        # The mass itself, moving with one of the two responses, and the time walked along it.
-        self.body = ChainView()
-        self.body.set_masses(np.ones(1))
-        self.body.auto_scale = False  # the scale is the response's peak, so its decay shows
-        self.body.max_drag = DRAG
-        self.body.setToolTip(PLUCK_TIP)
-        self.body.setAccessibleName("The mass on its spring and damper, moving")
-        self.body.setFixedHeight(120)
-        self.body.mass_grabbed.connect(self._on_grabbed)
-        self.body.mass_dragged.connect(self._on_plucked)
-        self.body.mass_released.connect(self._on_let_go)
-        self.follow = combo(["Free vibration", "Driven from rest"], TIPS["body"])
-        self.follow.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self.follow.currentIndexChanged.connect(self._on_follow)
-        self.playback = Playback(self, "Single oscillator")
-        self.playback.moved.connect(self._place_body)
-        self.cursors = [self.playback.add_cursor(self.free_plot), self.playback.add_cursor(self.forced_plot)]
-        cv.addWidget(self.body)
-        cv.addWidget(self.playback.bar(group("Moves with:", self.follow)))
-        title = QtWidgets.QLabel("<b>Free vibration</b>")
-        cv.addWidget(title)
-        cv.addWidget(self.free_plot, 1)
-        cv.addWidget(self.free_note)
-        cv.addWidget(QtWidgets.QLabel("<b>Driven from rest, switched on at t = 0</b>"))
-        cv.addWidget(self.forced_plot, 1)
-        cv.addWidget(self.forced_note)
+        cv.addWidget(self.body, 3)
+        cv.addLayout(row)
+        cv.addWidget(self.strip, 2)
+        cv.addWidget(self.force_plot, 1)
+        cv.addWidget(self.readout)
 
-        # --- right
+        # --- right: Frequency response, Energy, Poles, Theory
         frf = QtWidgets.QWidget()
         fv = QtWidgets.QVBoxLayout(frf)
-        self.mag_plot = plot("Amplification |X|k/F", None, "Frequency", "Hz", log_x=True, log_y=True, height=150)
-        self.phase_plot = plot("Lag", "°", "Frequency", "Hz", log_x=True, height=110)
-        self.phase_plot.setXLink(self.mag_plot)
-        for p in (self.mag_plot, self.phase_plot):
+        self.mag_plot = plot("Amplification |X|k/F", None, "Frequency", "Hz", log_x=True, log_y=True, height=140)
+        self.lag_plot = plot("Lag", "°", "Frequency", "Hz", log_x=True, height=100)
+        self.lag_plot.setXLink(self.mag_plot)
+        self.nyq_plot = plot("Im H", "m/N", "Re H", "m/N", height=120)
+        self.nyq_plot.setAspectLocked(True)
+        for p in (self.mag_plot, self.lag_plot, self.nyq_plot):
             p.setToolTip(FRF_TIP)
             p.setMouseEnabled(x=False, y=False)
         self.band = pg.LinearRegionItem(movable=False)
-        self.mag_item = pg.PlotDataItem()
-        self.fn_lines = [pg.InfiniteLine(angle=90) for _ in range(2)]
-        # PlotDataItems, not ScatterPlotItems: only they follow the plots' log axes
-        self.half_item = pg.PlotDataItem(pen=None, symbol="o", symbolSize=7)
-        self.drive_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=11) for _ in range(2)]
-        self.lag_item = pg.PlotDataItem()
+        self.band.hide()
         self.mag_plot.addItem(self.band)
-        for item in (self.mag_item, self.fn_lines[0], self.half_item, self.drive_items[0]):
-            self.mag_plot.addItem(item)
-        for item in (self.lag_item, self.fn_lines[1], self.drive_items[1]):
-            self.phase_plot.addItem(item)
-        # The drive's frequency, dragged on either plot: the Drive box follows, and the other line.
-        self.drive_lines = [DragLine(DRIVE_LINE_TIP, log=True, bounds=(0.001, 1e4)) for _ in range(2)]
-        for line, p in zip(self.drive_lines, (self.mag_plot, self.phase_plot)):
-            p.addItem(line)
-            line.dragged.connect(self._on_drive_dragged)
-        self.phase_plot.setYRange(0, 180, padding=0.05)
-        self.phase_plot.getAxis("left").setTicks([[(v, f"{v}") for v in (0, 45, 90, 135, 180)]])
+        # PlotDataItems, not ScatterPlotItems: only they follow the plots' log axes
+        self.theory_items = [pg.PlotDataItem() for _ in range(3)]
+        self.earlier_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=6) for _ in range(2)]
+        self.point_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=8) for _ in range(3)]
+        self.drive_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=12) for _ in range(2)]
+        self.fn_lines = [pg.InfiniteLine(angle=90) for _ in range(2)]
+        for p, items in (
+            (self.mag_plot, (self.theory_items[0], self.fn_lines[0], self.earlier_items[0], self.point_items[0])),
+            (self.lag_plot, (self.theory_items[1], self.fn_lines[1], self.earlier_items[1], self.point_items[1])),
+            (self.nyq_plot, (self.theory_items[2], self.point_items[2])),
+        ):
+            for item in items:
+                p.addItem(item)
+        self.mag_plot.addItem(self.drive_items[0])
+        self.lag_plot.addItem(self.drive_items[1])
+        self.lag_plot.setYRange(0, 180, padding=0.05)
+        self.lag_plot.getAxis("left").setTicks([[(v, f"{v}") for v in (0, 45, 90, 135, 180)]])
+        self.sweep_button = QtWidgets.QPushButton("Sweep")
+        self.sweep_button.setCheckable(True)
+        self.sweep_button.setToolTip(
+            "<p>Step the drive through frequencies across the resonance, dwelling at each until its point lands. "
+            "Press again to stop.</p>"
+        )
+        self.sweep_button.toggled.connect(self._on_sweep)
+        self.clear_button = QtWidgets.QPushButton("Clear points")
+        self.clear_button.setToolTip("<p>Forget the measured points.</p>")
+        self.clear_button.clicked.connect(self.clear_points)
+        self.theory = QtWidgets.QCheckBox("Show the theory")
+        self.theory.setToolTip("<p>Draw the curves the points should lie on, and the half-power band.</p>")
+        self.theory.toggled.connect(self._draw_frf)
+        buttons = FlowLayout()
+        buttons.add(self.sweep_button, self.clear_button, self.theory)
+        fv.addLayout(buttons)
         fv.addWidget(self.mag_plot, 3)
-        fv.addWidget(self.phase_plot, 2)
+        fv.addWidget(self.lag_plot, 2)
+        fv.addWidget(self.nyq_plot, 2)
         self.frf_note = note_label()
         fv.addWidget(self.frf_note)
 
-        nyq = QtWidgets.QWidget()
-        nv = QtWidgets.QVBoxLayout(nyq)
-        self.nyq_plot = plot("Im H", "m/N", "Re H", "m/N", height=200)
-        self.nyq_plot.setAspectLocked(True)
-        self.nyq_plot.setToolTip(NYQUIST_TIP)
-        self.nyq_item = pg.PlotDataItem()
-        self.nyq_dots = pg.ScatterPlotItem(size=6)
-        self.nyq_fn = pg.ScatterPlotItem(size=9, symbol="d")
-        self.nyq_drive = pg.ScatterPlotItem(size=11)
-        for item in (self.nyq_item, self.nyq_dots, self.nyq_fn, self.nyq_drive):
-            self.nyq_plot.addItem(item)
-        nv.addWidget(self.nyq_plot, 1)
-        self.nyq_note = note_label()
-        nv.addWidget(self.nyq_note)
-
-        phase = QtWidgets.QWidget()
-        pv = QtWidgets.QVBoxLayout(phase)
-        self.plane = plot("Velocity / ωₙ", "m", "Displacement", "m", height=200)
-        self.plane.setAspectLocked(True)
-        self.plane.setToolTip(PHASE_TIP)
-        self.plane_item = pg.PlotDataItem()
-        self.plane_start = pg.ScatterPlotItem(size=9)
-        self.plane.addItem(self.plane_item)
-        self.plane.addItem(self.plane_start)
-        self.plane_now = Dot(10)  # where the moving mass is on the path
-        self.plane.addItem(self.plane_now, ignoreBounds=True)
-        pv.addWidget(self.plane, 1)
-        pv.addWidget(note_label("The free vibration's path: a circle undamped, a spiral damped. The dot is the start."))
+        energy = QtWidgets.QWidget()
+        ev = QtWidgets.QVBoxLayout(energy)
+        self.energy_plot = plot("Energy", "J", "Time", "s", height=160)
+        self.energy_plot.setMouseEnabled(x=False, y=False)
+        self.energy_plot.setToolTip(
+            "<p>Where the energy went: what the drive and your hand put in, what the damper took out, what the "
+            "changes cost or added (changing the spring at a stretch, capturing or dropping mass), and what's "
+            "stored now. Put in, less taken out, with the changes, is what's stored, at every instant.</p>"
+        )
+        add_legend(self.energy_plot.getPlotItem(), offset=(-10, 10))
+        self.energy_items = {
+            name: pg.PlotDataItem(name=label)
+            for name, label in (
+                ("put_in", "put in"),
+                ("taken_out", "taken out"),
+                ("changes", "the changes"),
+                ("stored", "stored"),
+            )
+        }
+        for item in self.energy_items.values():
+            self.energy_plot.addItem(item)
+        decimate(self.energy_plot)
+        self.ledger = QtWidgets.QLabel()
+        self.ledger.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        self.ledger.setWordWrap(True)
+        ev.addWidget(self.energy_plot, 1)
+        ev.addWidget(self.ledger)
 
         poles = QtWidgets.QWidget()
         sv = QtWidgets.QVBoxLayout(poles)
-        self.s_plot = plot("Imaginary part", "rad/s", "Real part", "1/s", height=200)
+        self.s_plot = plot("Imaginary part", "rad/s", "Real part", "1/s", height=150)
         self.s_plot.setAspectLocked(True)
         self.s_plot.setMouseEnabled(x=False, y=False)
         self.s_plot.setToolTip(POLES_TIP)
-        self.rays = [pg.PlotDataItem() for _ in range(4)]
+        self.rays = [pg.PlotDataItem() for _ in range(len(view.RAYS))]
         self.arc = pg.PlotDataItem()
         self.pole_dots = [DragPoint("<p>Drag the pole: k and c follow (the mass is kept).</p>") for _ in range(2)]
         self.pole_dots[0].dragged.connect(self._on_upper_dragged)
@@ -819,37 +305,369 @@ class SdofPage(QtWidgets.QWidget):
             self.s_plot.addItem(item)
         for dot in self.pole_dots:
             dot.released.connect(self._on_pole_released)
-        self._held: complex | None = None  # the pole not being dragged, while one is
         self.s_plot.scene().sigMouseClicked.connect(self._on_pole_click)
-        sv.addWidget(self.s_plot, 1)
         self.pole_note = note_label()
+        self.plane = plot("Velocity / ωₙ", "m", "Displacement", "m", height=150)
+        self.plane.setAspectLocked(True)
+        self.plane.setMouseEnabled(x=False, y=False)
+        self.plane.setToolTip(
+            "<p>The motion as a path in the phase plane, the last 3 s: velocity over ω<sub>n</sub> against "
+            "displacement. Undamped it is a circle; damping winds it into a spiral, a turn a cycle.</p>"
+        )
+        self.plane_item = pg.PlotDataItem()
+        self.plane.addItem(self.plane_item)
+        self.plane_now = Dot(10)
+        self.plane.addItem(self.plane_now, ignoreBounds=True)
+        sv.addWidget(self.s_plot, 1)
         sv.addWidget(self.pole_note)
+        sv.addWidget(self.plane, 1)
 
         self.notes = NotesBrowser()
         self.notes.setHtml(NOTES_HTML)
         self._notes_html = NOTES_HTML  # redrawn with the course map's progress as the notes show (_refresh_map)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(frf, "Frequency response")
-        self.tabs.addTab(nyq, "Nyquist")
-        self.tabs.addTab(phase, "Phase plane")
-        self.tabs.addTab(poles, "Poles")
+        self.tabs.addTab(energy, "Energy")
+        self.tabs.addTab(poles, "Poles && phase plane")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(self._refresh_map)
+        self.tabs.currentChanged.connect(self._on_tab)
 
-        splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
-        splitter.addWidget(ColumnScroll(left))
-        splitter.addWidget(center)
-        splitter.addWidget(self.tabs)
-        splitter.setSizes([320, 760, 560])
-        layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(splitter)
+        three_panes(self, left, centre, self.tabs, sizes=(320, 760, 560))
 
+        for field, widget in (
+            ("mass", self.mass),
+            ("stiffness", self.stiffness),
+            ("damping", self.damping),
+            ("drive", self.drive_on),
+            ("kind", self.kind),
+            ("amplitude", self.amplitude),
+            ("freq_hz", self.freq),
+            ("tab", self.tabs),
+        ):
+            self.bindings.bind(field, widget)
+        self.bindings.changed.connect(self._on_field)
+
+        self.loop = FrameLoop(self, "Single oscillator", self._tick, self._runs, self._sim_t)
         self.apply_theme()
+        self._on_kind()
+        self._push_params()
+        self._draw_live()
+
+    # ------------------------------------------------------------- the state
+    def practice_state(self) -> SdofTrial:
+        """The page's settings, as a trial: what a practice spec checks, and Defaults puts back."""
+        return self.bindings.read(SdofTrial("", ""))
+
+    def load_trial(self, index: int) -> None:
+        self.apply_trial(TRIALS[index])
+
+    def load_setup(self, setup: dict) -> None:
+        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
+        self.apply_trial(SdofTrial("", "", **setup))
+
+    def apply_trial(self, t: SdofTrial) -> None:
+        """A setup: the oscillator and the drive as it says, the run from rest, then plucked or driven (or swept)."""
+        self.bindings.write(t)
+        if t.tune:
+            set_quietly(self.freq, view.drive_freq(t))
+        self._on_kind()
+        self.recorder.clear()
+        self._stop_sweep()
+        state = self.practice_state()
+        self.live.set_params(view.params(state))
+        self.live.set_drive(view.drive(state))
+        self.reset()
+        self._handled_at = None
+        self.trials.show_note(t.note)
+        if t.x0_mm:
+            self.body.start_pluck(1e-3 * t.x0_mm)
+            self.live.hold(1e-3 * t.x0_mm)
+            self.live.let_go()
+        if t.sweep:
+            self.sweep_button.setChecked(True)  # starts the sweep (and the drive)
+        self._push_params()
+        if t.x0_mm or t.drive or t.sweep:
+            self._run(True)
+        self._draw_live()
+
+    # ------------------------------------------------------------- what the reader changes
+    def _on_field(self, field: str) -> None:
+        if field in ("mass", "stiffness", "damping"):
+            self._handled()
+            self._push_params()
+        elif field in ("drive", "kind", "amplitude", "freq_hz"):
+            self._handled()
+            if field == "kind":
+                self._on_kind()
+            if field == "freq_hz" and self.sweep is not None and not self._sweeping_now:
+                self.sweep_button.setChecked(False)  # the reader took the frequency over
+            self._push_drive()
+        elif field == "tab":
+            self._on_tab()
+
+    _sweeping_now = False  # the sweep, not the reader, is moving the frequency
+
+    def _handled(self) -> None:
+        if self._handled_at is None:
+            self._handled_at = self.live.t
+
+    def _on_kind(self) -> None:
+        unbalance = self.kind.currentIndex() == UNBALANCE
+        self.amplitude_label.setText("Unbalance mₑe:" if unbalance else "Force F:")
+        self.amplitude.setSuffix(" kg·m" if unbalance else " N")
+        self.amplitude.setDecimals(6 if unbalance else 4)
+
+    def _push_params(self) -> None:
+        state = self.practice_state()
+        p = view.params(state)
+        self.live.set_params(p)
+        self.body.set_values(p.mass, p.stiffness, p.damping)
+        self.info.setText(view.info(p))
+        self._push_drive()  # an unbalance's force depends on nothing here, but the tuned frequency may
+        self._draw_frf()
+        self._draw_poles()
+        if not self.running:
+            self._draw_live()
+
+    def _push_drive(self) -> None:
+        self.live.set_drive(view.drive(self.practice_state()))
+        self._draw_frf()
+
+    def tune_to_natural(self) -> None:
+        self.freq.setValue(round(self.live.params.oscillator().natural_hz, 6))
+
+    def _on_grabbed(self) -> None:
+        self.scrub.hide()
+        self._handled()
+        self.body.start_pluck(self.live.x)
+        self.live.hold(self.live.x)
+
+    def _on_pulled(self, x: float) -> None:
+        self.live.hold(x)
+        self._draw_body()
+
+    def _on_let_go(self) -> None:
+        self.live.let_go()
+        if not self.running:
+            self._run(True)  # a pluck sets it going
+
+    def _on_grip_taken(self, name: str) -> None:
+        self._grip_start = {"mass": self.mass, "stiffness": self.stiffness, "damping": self.damping}[name].value()
+
+    def _on_grip_moved(self, name: str, distance: float) -> None:
+        box = {"mass": self.mass, "stiffness": self.stiffness, "damping": self.damping}[name]
+        set_quietly(box, GRIPS[name].dragged(self._grip_start, distance))
+        self._handled()
+        self._push_params()
+
+    # ------------------------------------------------------------- the poles
+    def _set_k_c(self, k: float, c: float) -> None:
+        set_quietly(self.stiffness, k)
+        set_quietly(self.damping, c)
+        self._handled()
+        self._push_params()
+
+    def _on_pole_click(self, event) -> None:
+        vb = self.s_plot.getPlotItem().getViewBox()
+        if not vb.sceneBoundingRect().contains(event.scenePos()):
+            return
+        pos = vb.mapSceneToView(event.scenePos())
+        sigma, w = pos.x(), abs(pos.y())
+        if sigma >= 0 or w <= 0:
+            return
+        self._set_k_c(*view.pole_pair(self.live.params.mass, sigma, w))
+
+    def _on_upper_dragged(self, x: float, y: float) -> None:
+        self._drag_pole(0, x, y)
+
+    def _on_lower_dragged(self, x: float, y: float) -> None:
+        self._drag_pole(1, x, y)
+
+    def _drag_pole(self, i: int, x: float, y: float) -> None:
+        vb = self.s_plot.getPlotItem().getViewBox()
+        (x0, x1), (y0, y1) = vb.viewRange()
+        if self._pole_held is None:  # the other pole as the drag began (the dots swap as real poles pass)
+            self._pole_held = complex(self.live.params.oscillator().poles()[1 - i])
+        self._set_k_c(*view.pole_drag(self.live.params, x, y, self._pole_held, (x1 - x0, y1 - y0)))
+
+    def _on_pole_released(self) -> None:
+        self._pole_held = None
+        self._draw_poles()  # the range held while dragging, fitted again
+
+    # ------------------------------------------------------------- the run
+    def _on_run(self, on: bool) -> None:
+        self.running = on
+        if on:
+            self.scrub.hide()
+            self.loop.start()
+        else:
+            self._show_scrub()
+
+    def _run(self, on: bool) -> None:
+        self.run_button.set_running(on)
+        self._on_run(on)
+
+    def _runs(self) -> bool:
+        return self.running
+
+    def _sim_t(self) -> float:
+        return self.live.t
+
+    def reset(self) -> None:
+        """Back to rest at t = 0, waiting for Start; the measured points kept."""
+        self.live.reset()
+        self.arrows.reset()
+        self._measured_at = -1.0
+        self.scrub.hide()
+        self.running = False
+        self.run_button.rest()
+        if self.sweep is not None:
+            self.sweep = rec.Sweep(self.sweep.freqs)
+            self._set_sweep_freq()
+        self._draw_live()
+
+    def _tick(self, dt: float) -> None:
+        duration = dt * float(self.speed.currentData())
+        duration = min(duration, self._budget.allows(duration, FRAME_BUDGET))
+        start = time.perf_counter()
+        before = self.live.t
+        self.live.advance(duration)
+        if self.live.t > before:
+            self._budget.spent(time.perf_counter() - start, self.live.t - before)
+        self._measure()
+        if self._handled_at is not None and self.live.t - self._handled_at >= PLAYED_AFTER:
+            self.trials.set_played()
+        self._draw_live()
+
+    def step(self, duration: float) -> None:
+        """Run on by `duration` s of simulated time at once (tests), measuring and drawing as the frames would."""
+        end = self.live.t + duration
+        while self.live.t < end - 1e-9:
+            if self.live.held is not None:
+                break
+            self.live.advance(min(0.05, end - self.live.t) + 1e-12)
+            self._measure()
+        if self._handled_at is not None and self.live.t - self._handled_at >= PLAYED_AFTER:
+            self.trials.set_played()
+        self._draw_live()
+
+    # ------------------------------------------------------------- the recorder
+    def _measure(self) -> None:
+        """Land a point if the driven swing is steady (every MEASURE_EVERY s of run), and step a sweep on."""
+        live = self.live
+        if not live.drive.on or live.held is not None or live.t - self._measured_at < MEASURE_EVERY:
+            return
+        self._measured_at = live.t
+        t, y = live.record.window(2.5 * rec.PERIODS / live.drive.freq_hz)
+        m = rec.measure(t, y[:, COL["x"]], y[:, COL["f"]], live.drive.freq_hz, since=live.changed_at)
+        if m is None or self.recorder.land(m, live.params) is None:
+            return
+        self._draw_frf()
+        if self.sweep is not None:
+            if self.sweep.landed() is None:
+                self._stop_sweep()
+            else:
+                self._set_sweep_freq()
+
+    def _on_sweep(self, on: bool) -> None:
+        if not on:
+            self.sweep = None
+            return
+        o = self.live.params.oscillator()
+        self.sweep = rec.Sweep(rec.sweep_frequencies(o.natural_hz, o.zeta))
+        if not self.drive_on.isChecked():
+            set_quietly(self.drive_on, True)
+        self._set_sweep_freq()
+        if not self.running:
+            self._run(True)
+
+    def _set_sweep_freq(self) -> None:
+        assert self.sweep is not None, "a sweep sets the drive's frequency"
+        f = self.sweep.frequency
+        if f is None:
+            return
+        self._sweeping_now = True
+        set_quietly(self.freq, round(f, 3))
+        self._sweeping_now = False
+        self._push_drive()
+
+    def _stop_sweep(self) -> None:
+        self.sweep = None
+        set_quietly(self.sweep_button, False)
+
+    def clear_points(self) -> None:
+        self.recorder.clear()
+        self._draw_frf()
+
+    # ------------------------------------------------------------- scrubbing
+    def _show_scrub(self) -> None:
+        r = self.live.record
+        if r.size > 1:
+            end = float(r.t[r.size - 1])
+            self.scrub.show(end, max(float(r.t[0]), end - STRIP_SECONDS))
+
+    def _on_scrubbed(self, t: float) -> None:
+        r = self.live.record
+        ts = r.t[: r.size]
+        x, v, f = (float(np.interp(t, ts, r.y[: r.size, COL[c]])) for c in ("x", "v", "f"))
+        p = self.live.params
+        self.body.show(x, one_mass(p.stiffness, p.damping, x, v, f, scale=self.arrows, t=t))
+        self.plane_now.setPos(x, v / p.oscillator().omega_n)
+        self.clock.setText(f"t = {sig(t, 4)} s (paused at {sig(self.live.t, 4)} s)")
+
+    # ------------------------------------------------------------- drawing
+    def apply_theme(self) -> None:
+        c = colors
+        self.body.apply_theme()
+        self.scrub.apply_theme()
+        self.x_item.setPen(pg.mkPen(c.mass[0], width=2))
+        self.peak_item.setSymbolPen(None)
+        self.peak_item.setSymbolBrush(pg.mkBrush(c.force))
+        self.f_item.setPen(pg.mkPen(c.force, width=1.5))
+        for line in self.mark_lines:
+            line.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DashLine))
+        for item in self.theory_items:
+            item.setPen(pg.mkPen(c.strong, width=1.5))
+        for item in self.earlier_items:
+            item.setSymbolPen(pg.mkPen(c.grey, width=1))
+            item.setSymbolBrush(None)
+        for item in self.point_items:
+            item.setSymbolPen(None)
+            item.setSymbolBrush(pg.mkBrush(c.mass[0]))
+        for item in self.drive_items:
+            item.setSymbolPen(pg.mkPen(c.force, width=2))
+            item.setSymbolBrush(None)
+        self.band.setBrush(pg.mkBrush(*pg.mkColor(c.fit).getRgb()[:3], 45))
+        for line in self.band.lines:
+            line.setPen(pg.mkPen(c.fit, width=1))
+        for line in self.fn_lines:
+            line.setPen(pg.mkPen(c.muted, width=1, style=QtCore.Qt.PenStyle.DotLine))
+        for name, colour in (
+            ("put_in", c.force),
+            ("taken_out", c.energy["dissipated"]),
+            ("changes", c.energy["added"]),
+            ("stored", c.energy["stored"]),
+        ):
+            self.energy_items[name].setPen(pg.mkPen(colour, width=2))
+        self.plane_item.setPen(pg.mkPen(c.mass[0], width=1.5))
+        self.plane_now.setPen(pg.mkPen(c.background, width=1.5))
+        self.plane_now.setBrush(pg.mkBrush(c.mass[0]))
+        for ray in self.rays:
+            ray.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DashLine))
+        self.arc.setPen(pg.mkPen(c.faint, width=1))
+        for dot in self.pole_dots:
+            dot.apply_theme()
+        self._draw_frf()
+        self._draw_poles()
+        self._draw_live()
 
     def showEvent(self, event: QtGui.QShowEvent) -> None:
         super().showEvent(event)
         self._refresh_map()
+
+    def _on_tab(self, *_: object) -> None:
+        self._refresh_map()
+        self._draw_energy()
 
     def _refresh_map(self, *_: object) -> None:
         """The notes again if the course map's progress has changed, at the same place."""
@@ -863,486 +681,145 @@ class SdofPage(QtWidgets.QWidget):
             bar.setValue(at)
             self._notes_html = html
 
-    # ------------------------------------------------------------- inputs
-    def load_trial(self, index: int) -> None:
-        self.apply_trial(TRIALS[index])
+    @coalesce.coalesced
+    def _draw_live(self) -> None:
+        """What moves: the body and its forces, the time plots, the phase plane, the readout, the energy."""
+        live = self.live
+        r = live.record
+        t, y = r.window(STRIP_SECONDS)
+        end = live.t
+        self.x_item.setData(t, y[:, COL["x"]])
+        self.f_item.setData(t, y[:, COL["f"]])
+        self.strip.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
+        self._draw_marks(end)
+        recent = y[t >= end - PEAK_SECONDS, COL["x"]] if t.size else np.empty(0)
+        peak = float(np.abs(recent).max()) if recent.size else 0.0
+        if live.held is not None:
+            peak = max(peak, abs(live.held))
+        self.body.fit(peak)
+        self._draw_body()
+        o = live.params.oscillator()
+        _, yp = r.window(PHASE_SECONDS)
+        curve = view.phase_plane(yp[:, COL["x"]], yp[:, COL["v"]], o.omega_n)
+        self.plane_item.setData(curve.x, curve.y)
+        self.plane_now.setPos(live.x, live.v / o.omega_n)
+        self.clock.setText(f"t = {sig(end, 4)} s")
+        self._show_readout()
+        self._draw_energy()
 
-    def load_setup(self, setup: dict) -> None:
-        """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
-        self.apply_trial(SdofTrial("", "", **setup))
+    def _draw_body(self) -> None:
+        live = self.live
+        p = live.params
+        hand = p.stiffness * live.held if live.held is not None else None
+        body = one_mass(p.stiffness, p.damping, live.x, live.v, live.force_now, hand=hand, scale=self.arrows, t=live.t)
+        self.body.show(live.x, body)
 
-    def apply_trial(self, t: SdofTrial) -> None:
-        for box, value in (
-            (self.mass, t.mass),
-            (self.stiffness, t.stiffness),
-            (self.damping, t.damping),
-            (self.x0, t.x0_mm),
-            (self.v0, t.v0_mms),
-            (self.compare, t.compare),
-            (self.kind, t.kind),
-            (self.amplitude, t.amplitude),
-            (self.freq, t.freq_hz),
-        ):
-            set_quietly(box, value)
-        self._on_kind(redraw=False)
-        self.osc = Oscillator(t.mass, t.stiffness, t.damping)
-        if t.tune:
-            set_quietly(self.freq, round(self.osc.natural_hz, 6))
-        set_quietly(self.follow, t.body)
-        self.trials.show_note(t.note)
-        self.tabs.setCurrentIndex(t.tab)
-        self.redraw()
-        self.playback.play()  # a trial starts the motion
-
-    def practice_state(self) -> SdofTrial:
-        """The page's settings, as a trial: what a practice spec checks."""
-        return SdofTrial(
-            "",
-            "",
-            mass=self.mass.value(),
-            stiffness=self.stiffness.value(),
-            damping=self.damping.value(),
-            x0_mm=self.x0.value(),
-            v0_mms=self.v0.value(),
-            compare=self.compare.isChecked(),
-            kind=self.kind.currentIndex(),
-            amplitude=self.amplitude.value(),
-            freq_hz=self.freq.value(),
-            tab=self.tabs.currentIndex(),
-            body=self.follow.currentIndex(),
-        )
-
-    def _on_oscillator(self) -> None:
-        self.osc = Oscillator(self.mass.value(), self.stiffness.value(), self.damping.value())
-        self.redraw()
-
-    def _on_kind(self, *_, redraw: bool = True) -> None:
-        unbalance = self.kind.currentIndex() == UNBALANCE
-        self.amplitude_label.setText("Unbalance mₑe:" if unbalance else "Force F:")
-        self.amplitude.setSuffix(" kg·m" if unbalance else " N")
-        self.amplitude.setDecimals(6 if unbalance else 4)
-        if redraw:
-            self.redraw()
-
-    def tune_to_natural(self) -> None:
-        self.freq.setValue(round(self.osc.natural_hz, 6))
-
-    def _on_pole_click(self, event) -> None:
-        vb = self.s_plot.getPlotItem().getViewBox()
-        if not vb.sceneBoundingRect().contains(event.scenePos()):
+    def _draw_marks(self, end: float) -> None:
+        marks = [t for t in self.live.edits if t > end - STRIP_SECONDS]
+        if marks == self._marks:
             return
-        pos = vb.mapSceneToView(event.scenePos())
-        sigma, w = pos.x(), abs(pos.y())
-        if sigma >= 0 or w <= 0:
-            return
-        self._set_pair(sigma, w)
-
-    def _set_pair(self, sigma: float, w: float) -> None:
-        """k and c for the poles σ ± iw (or two real ones, `_set_real`), the mass kept."""
-        m = self.osc.mass
-        set_quietly(self.stiffness, m * (sigma * sigma + w * w))
-        set_quietly(self.damping, -2.0 * sigma * m)
-        self._on_oscillator()
-
-    def _on_pole_released(self) -> None:
-        self._held = None
-        self._draw_poles()  # the range held while dragging, fitted again
-
-    def _on_upper_dragged(self, x: float, y: float) -> None:
-        self._drag_pole(0, x, y)
-
-    def _on_lower_dragged(self, x: float, y: float) -> None:
-        self._drag_pole(1, x, y)
-
-    def _drag_pole(self, i: int, x: float, y: float) -> None:
-        """Pole `i` dragged to x + iy: off the real axis the pair goes there (its mirror image too); within a few
-        pixels of it, a real pole, the other staying where it is if it's on the axis too (or meeting it there,
-        from a complex pair: critical damping). Never into the right half plane, nor onto the origin (k = 0)."""
-        vb = self.s_plot.getPlotItem().getViewBox()
-        (x0, x1), (y0, y1) = vb.viewRange()
-        x = min(x, 0.0)
-        if abs(y) > POLE_SNAP * (y1 - y0):
-            self._set_pair(x, abs(y))
-            return
-        tiny = 1e-3 * (x1 - x0)
-        x = min(x, -tiny)
-        if self._held is None:  # the other pole as the drag began (the dots swap as real poles pass)
-            self._held = complex(self.osc.poles()[1 - i])
-        held = self._held  # stays where it is if it's on the axis (critical's rounding too)
-        other = held.real if abs(held.imag) <= POLE_SNAP * (y1 - y0) else x
-        other = min(other, -tiny)
-        m = self.osc.mass
-        set_quietly(self.stiffness, m * x * other)
-        set_quietly(self.damping, -m * (x + other))
-        self._on_oscillator()
-
-    def force_amplitude(self, freq_hz: float | np.ndarray) -> float | np.ndarray:
-        """The drive force's amplitude at a frequency: F, or m_e e Ω² for the unbalance."""
-        a = self.amplitude.value()
-        if self.kind.currentIndex() == UNBALANCE:
-            return a * (TWO_PI * np.asarray(freq_hz)) ** 2
-        return a + 0 * np.asarray(freq_hz)
-
-    # ------------------------------------------------------------- drawing
-    def apply_theme(self) -> None:
-        c = colors
-        self.free_item.setPen(pg.mkPen(c.mass[0], width=2))
-        for item in self.envelope_items:
-            item.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        self.peak_item.setPen(None)
-        self.peak_item.setBrush(pg.mkBrush(c.force))
-        for item, color in zip(self.compare_items, (c.mode[0], c.mode[1], c.mode[2])):
-            item.setPen(pg.mkPen(color, width=1.5))
-        self.forced_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.steady_item.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        self.mag_item.setPen(pg.mkPen(c.strong, width=2))
-        self.lag_item.setPen(pg.mkPen(c.strong, width=2))
-        self.band.setBrush(pg.mkBrush(*pg.mkColor(c.fit).getRgb()[:3], 45))
-        for line in self.band.lines:
-            line.setPen(pg.mkPen(c.fit, width=1))
-        for line in self.fn_lines:
-            line.setPen(pg.mkPen(c.muted, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        self.half_item.setSymbolPen(pg.mkPen(c.fit, width=1.5))
-        self.half_item.setSymbolBrush(pg.mkBrush(c.background))
-        for item in self.drive_items:
-            item.setSymbolPen(pg.mkPen(c.force, width=2))
-            item.setSymbolBrush(None)
-        self.nyq_drive.setPen(pg.mkPen(c.force, width=2))
-        self.nyq_drive.setBrush(None)
-        self.nyq_item.setPen(pg.mkPen(c.strong, width=1.5))
-        self.nyq_dots.setPen(None)
-        self.nyq_dots.setBrush(pg.mkBrush(c.mass[0]))
-        self.nyq_fn.setPen(None)
-        self.nyq_fn.setBrush(pg.mkBrush(c.fit))
-        self.plane_item.setPen(pg.mkPen(c.mass[0], width=1.5))
-        self.plane_start.setPen(None)
-        self.plane_start.setBrush(pg.mkBrush(c.force))
-        for ray in self.rays:
-            ray.setPen(pg.mkPen(c.faint, width=1, style=QtCore.Qt.PenStyle.DashLine))
-        self.arc.setPen(pg.mkPen(c.faint, width=1))
-        for dot in self.pole_dots:
-            dot.apply_theme()
-        self.plane_now.setPen(pg.mkPen(c.background, width=1.5))
-        self.plane_now.setBrush(pg.mkBrush(c.mass[0]))
-        self.body.apply_theme()
-        self.playback.apply_theme()
-        self.redraw()
-        for line in self.drive_lines:
-            line.apply_theme()
-
-    def _on_drive_dragged(self, hz: float) -> None:
-        self.freq.setValue(hz)  # redraws, the lines with it
-
-    def redraw(self) -> None:
-        self._show_info()
-        self._draw_free()
-        self._draw_forced()
-        self._draw_frf()
-        self._draw_poles()
-        self._on_follow()
-        settle_plots(self)
-
-    # ------------------------------------------------------------- the moving mass
-    @property
-    def driven(self) -> bool:
-        return self.follow.currentIndex() == BODY_DRIVEN
-
-    def _on_follow(self, *_: object) -> None:
-        """The mass follows the response picked: its plot's cursor shows, and its span is the playback's."""
-        for line, on in zip(self.cursors, (not self.driven, self.driven)):
+        self._marks = marks
+        while len(self.mark_lines) < 2 * len(marks):
+            line = pg.InfiniteLine(angle=90, pen=pg.mkPen(colors.faint, width=1, style=QtCore.Qt.PenStyle.DashLine))
+            (self.strip if len(self.mark_lines) % 2 == 0 else self.force_plot).addItem(line, ignoreBounds=True)
+            self.mark_lines.append(line)
+        for i, line in enumerate(self.mark_lines):
+            on = i // 2 < len(marks)
             line.setVisible(on)
-        self.playback.set_span(self._spans[BODY_DRIVEN if self.driven else BODY_FREE])  # places the mass
+            if on:
+                line.setValue(marks[i // 2])
 
-    def body_at(self, t: float) -> tuple[float, float, float]:
-        """The mass's displacement, velocity and the force on it at time t, in the response it follows."""
-        o = self.osc
-        ts = np.array([t])
-        if not self.driven:
-            x, v = free_response(o, 1e-3 * self.x0.value(), 1e-3 * self.v0.value(), ts)
-            return float(x[0]), float(v[0]), 0.0
-        f = self.freq.value()
-        F = float(self.force_amplitude(f))
-        h = 1e-6 * max(1.0, t)
-        x, _ = harmonic_from_rest(o, F, f, np.array([t, t + h]))
-        return float(x[0]), float((x[1] - x[0]) / h), F * math.cos(TWO_PI * f * t)
-
-    def _place_body(self, t: float) -> None:
-        x, v, force = self.body_at(t)
-        peak = self._peaks[BODY_DRIVEN if self.driven else BODY_FREE]
-        if self.body.held is None:  # under the hand the scale holds still
-            if not SCALED[0] <= peak * self.body.gain <= SCALED[1]:
-                self.body.gain = SWING / max(peak, 1e-9)
-        else:
-            force = self.osc.stiffness * x  # the hand holds the spring stretched
-        scale = float(self.force_amplitude(self.freq.value())) if self.driven else self.osc.stiffness * peak
-        self.body.update_state(np.array([x]), peak, force, 0, scale)
-        if self.driven:
-            self.plane_now.hide()
-        else:
-            self.plane_now.setData([x], [v / self.osc.omega_n])
-
-    def _on_grabbed(self, _: int) -> None:
-        """A pluck: the mass follows the free vibration, held at t = 0, and the scale gives room to pull."""
-        self.playback.pause()
-        set_quietly(self.follow, BODY_FREE)
-        self.playback.seek(0.0)
-        x0 = 1e-3 * abs(self.x0.value())
-        if x0 * self.body.gain > 0.7 * DRAG or self.body.gain * 0.005 > DRAG:  # room to pull it 5 mm or further
-            self.body.gain = 0.7 * DRAG / max(x0, 0.005)
-
-    def _on_plucked(self, _: int, x: float) -> None:
-        set_quietly(self.x0, round(1e3 * x, 2))
-        set_quietly(self.v0, 0.0)
-        self.redraw()
-
-    def _on_let_go(self, _: int) -> None:
-        self.playback.play()
-
-    def _show_info(self) -> None:
-        o = self.osc
-        z = o.zeta
-        parts = [
-            f"f<sub>n</sub> = {sig(o.natural_hz, 4)} Hz, ζ = {sig(z, 4)} (c<sub>c</sub> = {sig(o.critical, 4)} N·s/m)."
-        ]
-        if 0 < z < 1:
-            parts.append(
-                f"f<sub>d</sub> = {sig(o.damped_hz, 4)} Hz, τ = {sig(o.time_constant)} s, δ = {sig(o.log_decrement)},"
-                f" Q = {sig(1 / (2 * z))}."
-            )
-        elif z == 0:
-            parts.append("Undamped: it rings for ever.")
-        elif z >= 1:
-            what = "Critically damped" if abs(z - 1) < 1e-6 else "Overdamped"
-            parts.append(f"{what}: no oscillation; slowest time constant {sig(o.time_constant)} s.")
-        self.info.setText(" ".join(parts))
-
-    def _free_span(self) -> float:
-        o = self.osc
-        if o.zeta < 1 and o.damping > 0:
-            return min(max(5.0 * o.time_constant, 3.0 * o.period), 60.0 * o.period)
-        if o.damping == 0:
-            return 10.0 * o.period
-        return min(6.0 * o.time_constant, 60.0 * o.period)
-
-    def _draw_free(self) -> None:
-        o = self.osc
-        x0, v0 = 1e-3 * self.x0.value(), 1e-3 * self.v0.value()
-        span = self._free_span()
-        if self.compare.isChecked():
-            # A span that shows the slowest of the compared ones settling too.
-            span = max(
-                span,
-                min(
-                    6.0 * Oscillator(o.mass, o.stiffness, COMPARE_ZETAS[-1] * o.critical).time_constant, 60.0 * o.period
-                ),
-                5.0 / (COMPARE_ZETAS[0] * o.omega_n),
-            )
-        t = np.linspace(0.0, span, POINTS)
-        x, v = free_response(o, x0, v0, t)
-        self.free_item.setData(t, x)
-        self._spans[BODY_FREE], self._peaks[BODY_FREE] = span, float(np.max(np.abs(x)))
-        if 0 < o.zeta < 1:
-            amp = math.hypot(x0, (v0 + o.zeta * o.omega_n * x0) / o.omega_d)
-            env = amp * np.exp(-o.zeta * o.omega_n * t)
-            self.envelope_items[0].setData(t, env)
-            self.envelope_items[1].setData(t, -env)
-        else:
-            for item in self.envelope_items:
-                item.setData([], [])
-        pt, px = peaks(t, x)
-        self.peak_item.setData(pt[:40], px[:40])
-        self.free_legend.clear()
-        if self.compare.isChecked():
-            self.free_legend.addItem(self.free_item, f"ζ = {sig(o.zeta)}")
-            for item, z in zip(self.compare_items, COMPARE_ZETAS):
-                if abs(z - o.zeta) < 1e-3:  # it's the oscillator's own: drawn already
-                    item.setData([], [])
-                    continue
-                xc, _ = free_response(Oscillator(o.mass, o.stiffness, z * o.critical), x0, v0, t)
-                item.setData(t, xc)
-                self.free_legend.addItem(item, f"ζ = {sig(z, 6)}")
-        else:
-            for item in self.compare_items:
-                item.setData([], [])
-        self.free_plot.setXRange(0, span, padding=0)
-        lines = []
-        d = measured_decrement(t, x)
-        if d is not None and 0 < o.zeta < 1:
-            lines.append(
-                f"Measured from {min(len(px), 40)} peaks: δ = {sig(d, 4)}, so ζ = δ/√(4π² + δ²) = "
-                f"{sig(d / math.sqrt(4 * math.pi**2 + d * d), 4)} (the oscillator's ζ is {sig(o.zeta, 4)}). "
-                f"Each peak is {sig(math.exp(d), 4)} times the next."
-            )
-        elif o.zeta == 0:
-            lines.append(
-                f"No damping: it swings at {sig(o.natural_hz, 4)} Hz for ever, its energy "
-                f"½kx₀² + ½mv₀² = {fmt(0.5 * o.stiffness * x0**2 + 0.5 * o.mass * v0**2, 'J')} kept."
-            )
-        elif o.zeta >= 1:
-            s = o.poles().real
-            lines.append(f"No oscillation: the poles are real, s = {sig(s[0], 4)} and {sig(s[1], 4)} s⁻¹.")
-        self.free_note.setText(" ".join(lines))
-        # the phase plane
-        self.plane_item.setData(x, v / o.omega_n)
-        self.plane_start.setData([x0], [v0 / o.omega_n])
-
-    def _draw_forced(self) -> None:
-        o = self.osc
-        f = self.freq.value()
-        F = float(self.force_amplitude(f))
-        x0 = v0 = 0.0  # from rest
-        T = 1.0 / f
-        if o.damping > 0:
-            span = max(10.0 * T, min(6.0 * o.time_constant, 80.0 * T))
-            span = max(span, 4.0 * o.period)
-        else:
-            beat = abs(f - o.natural_hz)
-            span = 30.0 * T if beat < 1e-9 * f else min(max(2.2 / beat, 10.0 * T), 400.0 * T)
-        span = min(span, 600.0)
-        t = np.linspace(0.0, span, max(POINTS, int(40 * span * max(f, o.natural_hz))))
-        t = t if t.size <= 40000 else np.linspace(0.0, span, 40000)
-        x, steady = harmonic_from_rest(o, F, f, t, x0, v0)
-        self.forced_item.setData(t, x)
-        self._spans[BODY_DRIVEN], self._peaks[BODY_DRIVEN] = span, float(np.max(np.abs(x)))
-        self.steady_item.setData(t, steady, connect="finite")
-        self.forced_plot.setXRange(0, span, padding=0)
-        h = receptance(o, np.array([f]))[0]
-        r = f / o.natural_hz
-        if np.isfinite(h):
-            X = abs(F * h)
-            lag = -math.degrees(math.atan2(h.imag, h.real))
-            what = (
-                f"Unbalance force m<sub>e</sub>eΩ² = {fmt(F, 'N')}. " if self.kind.currentIndex() == UNBALANCE else ""
-            )
-            text = (
-                f"{what}Steady amplitude {fmt(X, 'm')} at r = f/f<sub>n</sub> = {sig(r)}, lagging the force by "
-                f"{lag:.1f}°: {sig(X * o.stiffness / F)} times the static {fmt(F / o.stiffness, 'm')}."
-                if F > 0
-                else "No force."
-            )
-            if o.damping == 0 and F > 0:
-                text += (
-                    f" Undamped, the start never dies away: it beats every {sig(1 / abs(f - o.natural_hz))} s, "
-                    f"at |f − f<sub>n</sub>| = {sig(abs(f - o.natural_hz))} Hz."
+    def _show_readout(self) -> None:
+        live = self.live
+        if live.held is not None:
+            self.readout.setText(f"Held at x = {fmt(live.held, 'm', largest='')}: let go to pluck it.")
+            self.peak_item.setData([], [])
+            return
+        if live.drive.on:
+            self.peak_item.setData([], [])
+            f = live.drive.freq_hz
+            points = [p for p in self.recorder.current(live.params) if abs(p.freq_hz - f) <= 1e-6 * f]
+            if points:
+                h = points[-1].response
+                x = abs(h) * live.drive.force
+                lag = (-np.degrees(np.angle(h))) % 360
+                self.readout.setText(
+                    f"Steady at {sig(f)} Hz: x swings ±{fmt(x, 'm', largest='')}, lagging the drive by {sig(lag)}°."
                 )
-        else:
-            text = (
-                f"At resonance with no damping there is no steady state: the swing grows by "
-                f"F/2mω<sub>n</sub> = {fmt(F / (2 * o.mass * o.omega_n), 'm')} every second."
-            )
-        self.forced_note.setText(text)
+            else:
+                self.readout.setText(f"Driven at {sig(f)} Hz: waiting for the swing to settle…")
+            return
+        t, y = live.since_change()
+        decay = ring_down(t, y[:, COL["x"]]) if t.size else None
+        if decay is None:
+            self.peak_item.setData([], [])
+            self.readout.setText("Pluck the mass: drag it sideways and let go." if t.size < 2 else "")
+            return
+        self.peak_item.setData(decay.times, decay.heights)
+        self.readout.setText(decay.text)
 
-    def _draw_frf(self) -> None:
-        o = self.osc
-        fr = frequency_grid(o)
-        H = receptance(o, fr)
-        unbalance = self.kind.currentIndex() == UNBALANCE
-        # what the plot shows: |X|k/F, or m|X|/m_e e (= m Ω² |H|)
-        norm = o.mass * (TWO_PI * fr) ** 2 if unbalance else o.stiffness + 0 * fr
-        amp = np.abs(H) * norm
-        self.mag_plot.setLabel("left", "m|X|/mₑe" if unbalance else "Amplification |X|k/F")
-        self.mag_item.setData(fr, amp)
-        lag = -np.degrees(np.angle(H))
-        lag = np.where(lag < -1e-9, lag + 360.0, lag)
-        self.lag_item.setData(fr, lag)
-        lf = math.log10(o.natural_hz)
-        for line in self.fn_lines:
-            line.setPos(lf)
-        top = float(np.nanmax(amp[np.isfinite(amp)])) if np.isfinite(amp).any() else 1.0
-        bottom = float(np.nanmin(amp[amp > 0]))
-        self.mag_plot.setXRange(math.log10(fr[0]), math.log10(fr[-1]), padding=0)
-        self.mag_plot.setYRange(math.log10(max(bottom, top * 1e-6)), math.log10(top * 2.0), padding=0)
-        half = o.half_power_hz()
-        if half is not None and not unbalance:
-            self.band.setRegion((math.log10(half[0]), math.log10(half[1])))
-            self.band.setVisible(True)
-            peak = abs(receptance(o, np.array([o.peak_hz()]))[0]) * o.stiffness
-            self.half_item.setData([half[0], half[1]], [peak / math.sqrt(2)] * 2)
-        else:
-            self.band.setVisible(False)
-            self.half_item.setData([], [])
-        f = self.freq.value()
-        for line in self.drive_lines:
-            line.set_value(f)
-        hd = receptance(o, np.array([f]))[0]
-        if np.isfinite(hd):
-            nd = o.mass * (TWO_PI * f) ** 2 if unbalance else o.stiffness
-            lg = -math.degrees(math.atan2(hd.imag, hd.real))
-            self.drive_items[0].setData([f], [abs(hd) * nd])
-            self.drive_items[1].setData([f], [lg + 360.0 if lg < -1e-9 else lg])
-        else:
-            for item in self.drive_items:
+    def _draw_energy(self) -> None:
+        if self.tabs.currentIndex() != view.TAB_ENERGY:
+            return
+        t, y = self.live.record.window(ENERGY_SECONDS)
+        e = energy_view(t, y)
+        if e is None:
+            for item in self.energy_items.values():
                 item.setData([], [])
-        if half is not None and not unbalance:
-            self.frf_note.setText(
-                f"Half-power points {sig(half[0], 4)} and {sig(half[1], 4)} Hz, {sig(half[1] - half[0])} Hz apart: "
-                f"Δf/2f<sub>n</sub> = {sig((half[1] - half[0]) / (2 * o.natural_hz), 4)} (ζ = {sig(o.zeta, 4)}). "
-                f"Peak {sig(top, 4)} times static, at {sig(o.peak_hz(), 4)} Hz."
-            )
-        elif unbalance:
-            self.frf_note.setText(
-                f"Far above resonance m|X|/m<sub>e</sub>e → 1: the machine swings by "
-                f"m<sub>e</sub>e/m = {fmt(self.amplitude.value() / o.mass, 'm')}."
-            )
-        elif o.damping == 0:
-            self.frf_note.setText(
-                "No damping: the peak is infinite, and the phase jumps from 0° to 180° at f<sub>n</sub>."
-            )
-        else:
-            self.frf_note.setText("ζ ≥ 1/√2: no resonant peak, so no half-power band.")
-        # Nyquist: a 0.02 Hz grid for the dots, the fine grid for the line
-        finite = np.isfinite(H)
-        self.nyq_item.setData(H.real[finite], H.imag[finite])
-        lo, hi = max(0.02, 0.3 * o.natural_hz), 2.0 * o.natural_hz
-        fd = np.arange(math.ceil(lo / 0.02) * 0.02, hi, 0.02)
-        Hd = receptance(o, fd)
-        ok = np.isfinite(Hd)
-        self.nyq_dots.setData(Hd.real[ok], Hd.imag[ok])
-        hn = receptance(o, np.array([o.natural_hz]))[0]
-        if np.isfinite(hn):
-            self.nyq_fn.setData([hn.real], [hn.imag])
-        else:
-            self.nyq_fn.setData([], [])
-        self.nyq_drive.setData([hd.real] if np.isfinite(hd) else [], [hd.imag] if np.isfinite(hd) else [])
-        if o.damping > 0:
-            d = 1.0 / (o.damping * o.omega_n)
-            self.nyq_plot.setRange(
-                xRange=(-0.65 * d, max(0.65 * d, 1.1 / o.stiffness)), yRange=(-1.1 * d, 0.1 * d), padding=0
-            )
-            self.nyq_note.setText(
-                f"Diameter of the circle ≈ 1/cω<sub>n</sub> = {fmt(d, 'm/N')}; the diamond is "
-                f"f<sub>n</sub>, where the dots (0.02 Hz apart) are furthest apart."
-            )
-        else:
-            self.nyq_plot.autoRange()
-            self.nyq_note.setText("No damping: H is real, running off to ±∞ at f<sub>n</sub>.")
+            self.ledger.setText("Start it, or pluck the mass, to see where the energy goes.")
+            return
+        for name in ("put_in", "taken_out", "changes", "stored"):
+            self.energy_items[name].setData(e.t, getattr(e, name))
+        rows = "".join(
+            f'<tr><td><span style="color:{role(r.role)}">■</span> {r.name}</td>'
+            f'<td align="right">&nbsp;{fmt(r.value, "J", smallest="n")}</td></tr>'
+            for r in e.rows
+            if r.value != 0 or r.name.startswith("Stored")
+        )
+        self.ledger.setText(f"<table>{rows}</table><p>{e.text}</p>")
 
-    def _draw_poles(self) -> None:
-        o = self.osc
-        s = o.poles()
-        for dot, p in zip(self.pole_dots, s):
-            dot.place(float(p.real), float(p.imag))
-        wn = o.omega_n
-        reach = max(1.3 * wn, 1.1 * float(np.max(np.abs(s.real))))
-        for ray, z in zip(self.rays, (0.05, 0.2, 0.5, 0.8)):
-            a = math.asin(z)
-            ray.setData(
-                [0.0, -reach * math.sin(a), 0.0, -reach * math.sin(a)],
-                [0.0, reach * math.cos(a), 0.0, -reach * math.cos(a)],
-                connect="pairs",
-            )
-        th = np.linspace(math.pi / 2, 3 * math.pi / 2, 200)
-        self.arc.setData(wn * np.cos(th), wn * np.sin(th))
-        if not any(dot.moving for dot in self.pole_dots):  # held still under the reader's drag
-            self.s_plot.setRange(xRange=(-reach, 0.15 * reach), yRange=(-1.2 * wn, 1.2 * wn), padding=0.02)
-        if o.zeta < 1:
-            self.pole_note.setText(
-                f"s = {sig(s[0].real, 4)} ± {sig(abs(s[0].imag), 4)}i s⁻¹: decay rate ζω<sub>n</sub> = "
-                f"{sig(-s[0].real, 4)} s⁻¹, frequency ω<sub>d</sub> = {sig(abs(s[0].imag), 4)} rad/s. "
-                f"|s| = ω<sub>n</sub> = {sig(wn, 4)} rad/s."
-            )
+    @coalesce.coalesced
+    def _draw_frf(self, *_: object) -> None:
+        live = self.live
+        key = live.params
+        v = view.frf_view(
+            key, live.drive, self.recorder.current(key), self.recorder.earlier(key), self.theory.isChecked()
+        )
+        self.mag_plot.setLabel("left", v.amplification)
+        self.point_items[0].setData(*v.points)
+        self.point_items[1].setData(*v.lags)
+        self.point_items[2].setData(*v.nyquist)
+        self.earlier_items[0].setData(*v.earlier)
+        self.earlier_items[1].setData(*v.earlier_lags)
+        self.theory_items[0].setData(*v.theory)
+        self.theory_items[1].setData(*v.theory_lag)
+        self.theory_items[2].setData(*v.nyquist_theory)
+        for item, curve in zip(self.drive_items, (v.drive, v.drive_lag)):
+            item.setData(*curve)
+        for line in self.fn_lines:
+            line.setValue(np.log10(v.natural_hz))
+        if v.band is not None:
+            self.band.setRegion([np.log10(v.band[0]), np.log10(v.band[1])])
+            self.band.show()
         else:
-            self.pole_note.setText(
-                f"Two real poles, {sig(s[0].real, 4)} and {sig(s[1].real, 4)} s⁻¹ (their product is "
-                f"ω<sub>n</sub>² = {sig(wn * wn, 4)})."
-            )
+            self.band.hide()
+        self.frf_note.setText(v.note)
+        o = key.oscillator()
+        lo, hi = o.natural_hz / 4, o.natural_hz * 4
+        if v.drive.x.size:
+            lo, hi = min(lo, float(v.drive.x[0]) / 1.5), max(hi, float(v.drive.x[0]) * 1.5)
+        self.mag_plot.setXRange(np.log10(lo), np.log10(hi), padding=0.02)
+
+    @coalesce.coalesced
+    def _draw_poles(self) -> None:
+        pv = view.poles_view(self.live.params)
+        for dot, x, y in zip(self.pole_dots, pv.poles.x, pv.poles.y):
+            dot.place(float(x), float(y))
+        for ray, curve in zip(self.rays, pv.rays):
+            ray.setData(*curve)
+        self.arc.setData(*pv.arc)
+        self.pole_note.setText(pv.note)
+        if self._pole_held is None:  # hold the range still under the hand
+            reach = 1.15 * float(max(np.abs(pv.poles.x).max(), np.abs(pv.poles.y).max(), 1e-6))
+            self.s_plot.setXRange(-reach, 0.1 * reach, padding=0)
+            self.s_plot.setYRange(-reach, reach, padding=0)

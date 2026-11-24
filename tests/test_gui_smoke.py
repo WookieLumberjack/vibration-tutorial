@@ -244,9 +244,9 @@ def test_the_chain_drawing_labels_one_mass_m_and_keeps_its_scale_in_view(main_wi
     w.show_page("sdof_page")
     for _ in range(5):
         QtWidgets.QApplication.processEvents()
-    view = w.sdof_page.body
-    assert [label.textItem.toPlainText() for label in view._labels] == ["m"]
-    scale = view._scale_text
+    view = w.sdof_page.body  # the live mass (#478): its label says what it is
+    assert view.mass_label.textItem.toPlainText() == "m = 1 kg"
+    scale = view.scale_text
     assert scale.textItem.toPlainText().startswith("= ")
     box = view.getPlotItem().vb.sceneBoundingRect()
     assert box.contains(scale.mapRectToScene(scale.boundingRect())), (box, scale.mapRectToScene(scale.boundingRect()))

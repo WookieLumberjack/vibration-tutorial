@@ -5,7 +5,9 @@ export's source): the page module's `NOTES_HTML` or `THEORY_HTML` (the Simulatio
 Single oscillator's `notes_html()`, with its course map), its headings anchored and its "Next: …" line after them;
 or the glossary's. A page's notes are read from its module, so a page whose module is a Qt widget's still brings Qt
 in with it; one rebuilt to #478's standard keeps its notes in a Qt-free module (`tests/test_readiness.py` checks
-the pages that have joined it).
+the pages that have joined it). A rebuilt page names that module in `links.NOTES_MODULES`; with Qt loaded (the app),
+the page's own module is read instead, as it may add what only Qt can give (the Single oscillator's course map
+with the reader's progress, kept in Qt's settings).
 
 Working on it: `tests/test_qt_free.py` imports this module without Qt; `test_links` and `test_notes_markup` read
 every page through it.
@@ -13,7 +15,9 @@ every page through it.
 
 from __future__ import annotations
 
+import importlib
 import re
+import sys
 
 from . import links
 
@@ -32,6 +36,8 @@ def page_html(name: str) -> str:
         from .background import BACKGROUND_HTML
 
         html = BACKGROUND_HTML
+    elif name in links.NOTES_MODULES and "PySide6" not in sys.modules:  # a rebuilt page's notes, without Qt
+        html = importlib.import_module(f"vib_tutorial.gui.{links.NOTES_MODULES[name]}").NOTES_HTML
     elif name == "sdof_page":
         from .sdof import notes_html
 

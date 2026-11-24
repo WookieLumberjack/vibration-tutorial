@@ -82,6 +82,22 @@ SYMBOLS = (
         "sdof_page",
         "free-vibration",
     ),
+    Symbol(
+        "change",
+        "Δk, Δm",
+        "a change made while it runs: to the stiffness, to the mass",
+        "N/m, kg",
+        "sdof_page",
+        "live-changes",
+    ),
+    Symbol(
+        "T_V",
+        "T, V, W",
+        "kinetic and potential energy, ½mẋ² and ½kx²; work, put in or taken out",
+        "J",
+        "sdof_page",
+        "live-changes",
+    ),
     Symbol("n_count", "n", "a number of cycles (a count, where a page says)", "–", "sdof_page", "log-decrement"),
     Symbol(
         "X",
