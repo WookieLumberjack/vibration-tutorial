@@ -20,7 +20,10 @@ Working on it:
   (`duffing.live`) takes views of the record and allocates only what it draws.
 - A page gets one when it's next worked on, not all at once: Isolation (`isolation.py`) and Duffing & Mathieu
   (`duffing.py`) so far, and the parts two pages share: the Components tab's (`components.py`, the Gyroscope and
-  the 3D rigid body) and Vibro-acoustics' slow tabs' work (`vibroacoustics.py`). `record.py` holds what a running
+  the 3D rigid body) and Vibro-acoustics' slow tabs' work (`vibroacoustics.py`). #478's live pages share
+  `live_mass.py` (one mass stepped and changed as it runs, its energy balance), `grips.py` (a drag on the body to
+  m, k, c), `free_body.py` (the forces on the body as arrows) and `recorder.py` (a frequency response built from
+  the live run); their colours are theme roles' names, `style.role`'s. `record.py` holds what a running
   page records (`SampleBuffer`, the chain's `History`); `plot.Curve` is a line's or a marker's points; `text`
   formats numbers as the pages do (`number`, `fmt`, `entry`: never e-notation).
 """
