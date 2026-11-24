@@ -24,7 +24,7 @@ drive:
     }
 
 The page keeps the frame loop and the `Budget`; the stepper only steps. Every simulator in `core/` is one
-(`tests/test_stepping.py` checks the eight).
+(`tests/test_stepping.py` checks them: the eight, and #478's `ArmMass` and live mass).
 
 Working on it: `tests/test_stepping.py`; the simulators' own tests check their clocks, `test_frame_stats` the
 pages' pace.

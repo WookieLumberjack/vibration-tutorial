@@ -36,6 +36,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..core.arm_mass import ArmMass, ArmSystem
 from ..core.forcing import ForceController, ForceKind, ForceSettings
 from ..core.model import ChainSystem
 from ..core.sdof import TWO_PI, Oscillator, peaks
@@ -72,8 +73,18 @@ class Params:
     damping: float = 2.0
     friction: float = 0.0
     static_ratio: float = 1.0
+    arm_stiffness: float = 0.0  # a Zener arm beside the spring: its spring k₁ (0: none) ...
+    arm_damping: float = 0.0  # ... in series with its dashpot c₁
 
-    def system(self) -> ChainSystem:
+    @property
+    def has_arm(self) -> bool:
+        return self.arm_stiffness > 0
+
+    def system(self) -> ChainSystem | ArmSystem:
+        if self.has_arm:
+            if self.friction > 0:
+                raise ValueError("a Zener arm and friction together aren't modelled")
+            return ArmSystem(self.mass, self.stiffness, self.damping, self.arm_stiffness, self.arm_damping)
         return ChainSystem(
             np.array([self.mass]),
             np.array([self.stiffness]),
@@ -83,8 +94,12 @@ class Params:
         )
 
     def oscillator(self) -> Oscillator:
-        """The linear oscillator (friction left out)."""
+        """The linear oscillator (friction and the arm left out)."""
         return Oscillator(self.mass, self.stiffness, self.damping)
+
+    def potential(self, x: float, y: float) -> float:
+        """The springs' energy at x, the arm's inner end at y."""
+        return 0.5 * self.stiffness * x * x + 0.5 * self.arm_stiffness * (x - y) ** 2
 
 
 @dataclass(frozen=True)
@@ -108,7 +123,7 @@ class LiveMass:
     def __init__(self, params: Params | None = None, drive: Drive | None = None, capacity: int = 200_000) -> None:
         self.params = params or Params()
         self.drive = drive or Drive()
-        self.sim = Simulator(self.params.system(), ForceController(ForceSettings(kind=ForceKind.HARMONIC)))
+        self.sim = self._make(self.params, ForceController(ForceSettings(kind=ForceKind.HARMONIC)))
         self.record = SampleBuffer(len(COLUMNS), capacity)
         self.held: float | None = None
         self.changed_at = 0.0
@@ -137,12 +152,64 @@ class LiveMass:
     def edits(self) -> list[float]:
         return self.sim.edits
 
+    @staticmethod
+    def _make(params: Params, force: ForceController) -> Simulator | ArmMass:
+        system = params.system()
+        return ArmMass(system, force) if isinstance(system, ArmSystem) else Simulator(system, force)
+
     def set_params(self, params: Params) -> None:
         if params == self.params:
             return
-        self.sim.set_system(params.system())
+        if params.has_arm == self.params.has_arm:
+            self.sim.set_system(params.system())  # type: ignore[arg-type]  # the same kind: its own live change
+        else:
+            self._swap(params)
         self.params = params
         self.changed_at = self.t
+
+    def _swap(self, params: Params) -> None:
+        """A change between a plain mass and one with a Zener arm: the same live change, made across two steppers.
+        x carries on, the mass by the capture rules, an arm added starts relaxed (y = x), and one taken away takes
+        its stretch's energy with it: the springs' change is booked as spring work, and the books carry over."""
+        old, new = self.sim, self._make(params, self.sim.force)
+        x, v = self.x, self.v
+        y_old = old.arm if isinstance(old, ArmMass) else x
+        m_old, m_new = self.params.mass, params.mass
+        if m_new > m_old:
+            v_new, capture, carried = m_old * v / m_new, 0.5 * m_old * v * v * (m_new - m_old) / m_new, 0.0
+        else:
+            v_new, capture, carried = v, 0.0, 0.5 * (m_old - m_new) * v * v
+        spring = params.potential(x, x) - self.params.potential(x, y_old)
+        new.t, new._u = old.t, old._u
+        for name in ("work", "dissipated", "friction_loss", "released", "spring_work", "capture_loss", "carried_off"):
+            setattr(new, name, getattr(old, name))
+        new.energy_added = old.energy_added
+        new.edits = list(old.edits)
+        new.state = np.array([x, v_new, x]) if isinstance(new, ArmMass) else np.array([x, v_new])
+        new.spring_work += spring
+        new.capture_loss += capture
+        new.carried_off += carried
+        new.energy_added += spring - capture - carried
+        new.edits.append(new.t)
+        self.sim = new
+
+    @property
+    def arm_force(self) -> float:
+        """The Zener arm's pull on the mass (N; 0 without one)."""
+        return self.sim.arm_force if isinstance(self.sim, ArmMass) else 0.0
+
+    @property
+    def friction_force(self) -> float:
+        """Friction's force on the mass now (N), as the free-body diagram draws it: against the motion while it
+        slides, and while it sticks what holds it, up to the static friction."""
+        p = self.params
+        if p.friction <= 0:
+            return 0.0
+        if abs(self.v) > 1e-9:
+            return -math.copysign(p.friction, self.v)
+        pull = -p.stiffness * self.x + self.force_now
+        hold = p.friction * p.static_ratio
+        return -min(max(pull, -hold), hold)
 
     def set_drive(self, drive: Drive) -> None:
         if drive == self.drive:
@@ -198,7 +265,10 @@ class LiveMass:
         rows[:, COL["v"]] = v
         rows[:, COL["f"]] = fs
         rows[:, COL["kinetic"]] = 0.5 * p.mass * v * v
-        rows[:, COL["potential"]] = 0.5 * p.stiffness * x * x
+        if isinstance(s, ArmMass):  # and the arm's stretch
+            rows[:, COL["potential"]] = 0.5 * p.stiffness * x * x + 0.5 * p.arm_stiffness * (x - s.arm_track) ** 2
+        else:
+            rows[:, COL["potential"]] = 0.5 * p.stiffness * x * x
         rows[:, COL["added"] : COL["friction"] + 1] = s.ledger
         rows[:, COL["spring_work"]] = s.spring_work
         rows[:, COL["capture_loss"]] = s.capture_loss
