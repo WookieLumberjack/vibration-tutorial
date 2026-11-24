@@ -12,9 +12,9 @@ def _settle(w) -> None:
 
 def test_the_bar_drives_a_playback_page(main_window):
     w = main_window
-    w.show_page("sdof_page")
+    w.show_page("pendulum_page")
     _settle(w)
-    bar, pb = w.run_bar, w.sdof_page.playback
+    bar, pb = w.run_bar, w.pendulum_page.playback
     assert bar.source is not None and bar.source.run is pb.run
     assert bar.run.isEnabled() and bar.run.text() == "Start" and not pb.run.running
     bar.run.click()
@@ -111,21 +111,23 @@ def test_space_goes_to_a_control_reached_by_the_keyboard(main_window):
     w.activateWindow()
     w.show_page("sdof_page")
     _settle(w)
-    page, pb = w.sdof_page, w.sdof_page.playback
-    box = page.compare
+    page = w.sdof_page
+    run = page.run_button
+    box = page.drive_on
     ticked = box.isChecked()
     box.setFocus(QtCore.Qt.FocusReason.TabFocusReason)
     _settle(w)
     QtTest.QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
     _settle(w)
-    assert box.isChecked() is not ticked and not pb.run.running
+    assert box.isChecked() is not ticked and not run.running
     box.clearFocus()
-    QtTest.QTest.mouseClick(box, QtCore.Qt.MouseButton.LeftButton)  # clicked: focused by the mouse
+    on_it = QtCore.QPoint(8, box.height() // 2)  # its box, not the empty end of a row-wide check box
+    QtTest.QTest.mouseClick(box, QtCore.Qt.MouseButton.LeftButton, pos=on_it)  # clicked: focused by the mouse
     _settle(w)
     assert box.hasFocus() and box.isChecked() is ticked
     QtTest.QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
     _settle(w)
-    assert box.isChecked() is ticked and pb.run.running
+    assert box.isChecked() is ticked and run.running
     w.show_page("sim_page")
     _settle(w)
     force = w.sim_page.force_panel.force
@@ -148,12 +150,12 @@ def test_the_pages_own_controls_hide_and_space_runs_through_the_bar(main_window)
     w.activateWindow()
     w.show_page("sdof_page")
     _settle(w)
-    pb = w.sdof_page.playback
-    assert all(x.isHidden() for x in (pb.run, pb.reset, pb.speed, pb.clock))
+    page = w.sdof_page
+    assert all(x.isHidden() for x in (page.run_button, page.reset_button, page.speed, page.clock))
     assert w.run_bar.space.isEnabled()
     QtTest.QTest.keyClick(w, QtCore.Qt.Key.Key_Space)
     _settle(w)
-    assert pb.run.running and w.run_bar.run.isChecked()
+    assert page.run_button.running and w.run_bar.run.isChecked()
     w.show_page("sim_page")
     _settle(w)
     assert w.sim_page.controls.run.isHidden() and not w.run_bar.space.isEnabled()  # Space stays the force's

@@ -282,6 +282,11 @@ class TrialBox(QtWidgets.QGroupBox):
     A `Placement` is asked on a plot instead: the page's plot it names (an attribute of a widget above the box)
     hides its curves, shows the span and a line to drag, and *That's my guess* runs the trial with the guess
     left on the plot, dashed, until the next pick or Defaults (`guessed`).
+
+    `ask_after_play` (#478 item 4, a page rebuilt to its standard): predictions come after play. Until the page
+    calls `set_played()` (the reader has handled the system), a pick runs at once; then a trial not yet tried asks
+    its prediction first (a case the reader hasn't seen), and a line invites the next such question. It's an
+    invitation, never a gate: *Just run it* is always there.
     """
 
     picked = QtCore.Signal(int)
@@ -293,13 +298,20 @@ class TrialBox(QtWidgets.QGroupBox):
         parent: QtWidgets.QWidget | None = None,
         predictions: Sequence[Prediction | Placement | None] = (),
         prompt: str | None = "Pick one…",
+        ask_after_play: bool = False,
     ) -> None:
         super().__init__("Things to try", parent)
         layout = QtWidgets.QVBoxLayout(self)
+        self.names = list(names)
         self.predictions = list(predictions) + [None] * (len(names) - len(predictions))
+        self.after_play = ask_after_play
+        self.played = not ask_after_play  # predictions are asked once the reader has handled the system
         self.combo = TrialCombo(names, tip, prompt)
         self.combo.picked.connect(self._on_pick)
         layout.addWidget(TrialSteps(self.combo))
+        self.invite = note_label()  # after play: the next question worth predicting
+        self.invite.setVisible(False)
+        layout.addWidget(self.invite)
         self.asking: int | None = None  # the trial whose prediction is being asked
         self.page_name = ""  # the page's attribute, given by MainWindow as it builds the page: what's tried is kept
         self.ask = QtWidgets.QWidget()  # the question, its choices and Just run it
@@ -364,6 +376,33 @@ class TrialBox(QtWidgets.QGroupBox):
         """The combo's ticks, from what's been tried (`progress`)."""
         if self.page_name:
             self.combo.show_tried(progress.tried_numbers(self.page_name))
+        self._show_invite()
+
+    def _tried(self) -> set[int]:
+        return progress.tried_numbers(self.page_name) if self.page_name else set()
+
+    def asks(self, i: int) -> bool:
+        """Whether picking trial `i` asks its prediction first (see the class)."""
+        if self.predictions[i] is None:
+            return False
+        return not self.after_play or (self.played and i + 1 not in self._tried())
+
+    def set_played(self, played: bool = True) -> None:
+        """The reader has handled the system (or, False, the page is back as it opened): predictions on (off)."""
+        if not self.after_play or played == self.played:
+            return
+        self.played = played
+        self._show_invite()
+
+    def _show_invite(self) -> None:
+        if not self.after_play:
+            return
+        nxt = next((i for i in range(len(self.names)) if self.asks(i)), None)
+        self.invite.setVisible(nxt is not None)
+        if nxt is not None:
+            self.invite.setText(
+                markup(f"<b>Now predict:</b> <i>{self.names[nxt]}</i> asks what you'll see before it runs.")
+            )
 
     def _record(self, i: int, prompt: str | None = None) -> None:
         """Trial `i` run, after its prediction (`prompt`) was answered if it had one: kept, and ticked."""
@@ -458,7 +497,7 @@ class TrialBox(QtWidgets.QGroupBox):
             self.guessed = None
 
     def _on_pick(self, i: int) -> None:
-        p = self.predictions[i] if i < len(self.predictions) else None
+        p = self.predictions[i] if i < len(self.predictions) and self.asks(i) else None
         self._stop_placing()
         self._clear_guess()
         self.verdict.setVisible(False)

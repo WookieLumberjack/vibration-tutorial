@@ -637,6 +637,11 @@ PAGE_CLASSES = {
 }
 
 
+# A page rebuilt to #478's standard keeps its notes (`NOTES_HTML`) in a Qt-free module, named here, so they gather
+# and export without Qt (`notes_pages.page_html`; `tests/test_readiness.py`'s `qt_free_notes`).
+NOTES_MODULES = {"sdof_page": "sdof_trials"}
+
+
 def page_module(attr: str):
     """The module of page `attr` (imported now if it isn't yet: it imports Qt)."""
     return importlib.import_module(f"vib_tutorial.gui.{PAGE_CLASSES[attr].split('.')[0]}")

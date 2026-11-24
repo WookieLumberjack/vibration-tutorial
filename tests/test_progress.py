@@ -85,6 +85,7 @@ def test_the_page_ticks_what_the_reader_tries_and_the_notes_follow(main_window, 
     w.show_theory()
     waiting = p.notes.toPlainText().count("Pick it to answer and see")
     p.tabs.setCurrentIndex(0)
+    box.set_played()  # a live page asks once the reader has handled it
     box.combo.pick(sdof.TRIALS[asked].name)
     assert record.tried_numbers("sdof_page") == {plain + 1}  # not until it's answered
     box.answer(prediction.answer)

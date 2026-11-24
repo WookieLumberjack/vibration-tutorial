@@ -17,15 +17,18 @@ The pages in the order the app's tabs take them.
 
 ## Single oscillator
 
-m ẍ + c ẋ + k x = f, from every side. The mass itself moves above the plots, with the free vibration or the
-driven response and a time cursor on its plot; drag it and let go to pluck it. The free vibration from any start, with its envelope, its peaks
-and the log decrement measured from them (or ζ = 0.1, 1 and 2 side by side); a harmonic force or a
-rotating unbalance switched on from rest, beside its steady state; and four views of the receptance:
-amplification and lag with the half-power band marked, the Nyquist circle, the phase plane, and the
-poles in the s-plane, which you drag (or click to place) while the page works out k and c and the
-responses beside follow. Nine trials include critical damping, beats, the undamped resonance's straight-line growth and the unbalance's 180° turn.
+m ẍ + c ẋ + k x = f, running live: the first page rebuilt to #478's standard. The mass is worked out as it moves
+(the exact FOH step), with the forces on it drawn over it as a free-body diagram. Pluck it, or drag the handles on
+the mass, the spring and the damper to change m, k and c while it runs: the motion carries on by the physics (a
+captured mass keeps its momentum, a spring changed at a stretch costs ½Δk·x²), and the time plots keep what came
+before, with the change marked. The readout measures the log decrement from the peaks after a pluck. Drive it
+with a force or a rotating unbalance, and the Frequency response tab fills point by point as each steady swing is
+measured: dwell, or press Sweep, then show the theory's curve, half-power band and Nyquist circle over the points.
+The Energy tab keeps the books through every change; the Poles tab's poles drag k and c live, beside the phase
+plane. Eight Things to try, after the controls, are setups to come back to; their predictions are asked once
+you've handled it.
 
-![Single oscillator page, resonance from rest: 1 N at f<sub>n</sub> = 3.18 Hz on m = 1 kg, k = 400 N/m, ζ = 0.05, the mass drawn above the plots 1.6 s in, with the force on it; the free decay's peaks give δ = 0.3146 (each 1.37 times the next), the forced swing grows over a few time constants to the steady 25 mm, ten times the static 2.5 mm, lagging 90°; the half-power points are 3.012 and 3.331 Hz](images/single_oscillator.png)
+![Single oscillator page after a sweep: m = 1 kg, k = 400 N/m, c = 2 N·s/m (f<sub>n</sub> = 3.18 Hz, ζ = 0.05), 15 points measured from 1.06 to 9.55 Hz with the theory's curve over them, the half-power band 3.01–3.33 Hz giving ζ ≈ 0.0503, the lag through 90° at f<sub>n</sub> and the Nyquist circle; the mass still driven at 9.55 Hz, swinging ±312 µm and lagging by 178°, with the forces on it drawn above](images/single_oscillator.png)
 
 ## Pendulums
 

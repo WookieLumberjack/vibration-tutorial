@@ -155,8 +155,8 @@ def test_h_holds_every_plot_the_page_shows(main_window, app):
     import pyqtgraph as pg
 
     w = main_window
-    w.show_page("sdof_page")
-    p = w.sdof_page
+    w.show_page("pendulum_page")
+    p = w.pendulum_page
     app.processEvents()
     views = [v for v in p.findChildren(pg.GraphicsView) if v.property(plot_export.MENU)]
     showing = [v for v in views if v.isVisible() and plot_export.curves(v)]

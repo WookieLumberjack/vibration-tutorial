@@ -139,18 +139,18 @@ def test_a_prediction_is_answered_from_the_large_note(window):
     """A step that asks a prediction shows its question and choices; a choice answers it and the note follows."""
     from PySide6 import QtWidgets
 
-    from vib_tutorial.gui import sdof
+    from vib_tutorial.gui import transient
 
     w = window
     w.show()
-    w.show_page("sdof_page")
+    w.show_page("transient_page")
     w.set_present(1)
     w.next_trial()  # the first trial asks first
-    overlay, box = w.trial_overlay, w.sdof_page.trials
+    overlay, box = w.trial_overlay, w.transient_page.trials
     assert box.asking == 0 and overlay.isVisible()
     assert overlay.body.text() == box.question.text()
     buttons = [overlay.choices.itemAt(k).widget() for k in range(overlay.choices.count())]
-    p = sdof.TRIALS[0].predict
+    p = transient.TRIALS[0].predict
     order = p.shown_order()  # as the box shows them
     assert [b.text() for b in buttons] == [*(p.choices[k] for k in order), "Just run it"]
     buttons[order.index(p.answer)].click()

@@ -27,6 +27,7 @@ COURSE_DATA = [
         "references",
         "style",  # the themes' colours
         "sim_trials",
+        "sdof_trials",  # the Single oscillator's trials, problems and notes (#478 Phase 3)
         "frame_builder_trials",
         "gyroscope_trials",
         "rotor_builder_trials",

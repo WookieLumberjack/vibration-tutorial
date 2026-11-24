@@ -186,6 +186,20 @@ def _playback(attribute: str, view: str | None = None, held: bool = True):
     return setup
 
 
+def _live_sdof(trial: str):
+    """The Single oscillator's trial `trial`, live (its frame loop steps the mass), at 1×."""
+
+    def setup(w):
+        from vib_tutorial.gui import sdof
+
+        page = w.sdof_page
+        w.pages.setCurrentWidget(page)
+        page.load_trial(next(i for i, t in enumerate(sdof.TRIALS) if t.name.startswith(trial)))
+        return page, 1.0
+
+    return setup
+
+
 def _waves(preset: str):
     """A wave preset on the Continuous systems page's Waves tab (it starts the pulse); its speed is the page's."""
 
@@ -283,11 +297,10 @@ SCENARIOS = (
         _startup("Geared compressor"),
         seconds=2.5,
     ),
-    Scenario("Single oscillator: played back", "a held plot under a moving cursor (#316 E)", _playback("sdof_page")),
     Scenario(
-        "Single oscillator: played back, not held",
-        "the same, its curves stroked every frame (#409 N-2)",
-        _playback("sdof_page", held=False),
+        "Single oscillator: live, a sweep building its FRF",
+        "the live mass, its free-body diagram and the recorder (#478)",
+        _live_sdof("Building the frequency response"),
     ),
     Scenario(
         "Quarter-car: driven over its road",
