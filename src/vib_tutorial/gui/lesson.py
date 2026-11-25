@@ -5,7 +5,8 @@
 - The Things to try: `TrialCombo`, `TrialSteps` (◂ ▸), `TrialBox` (the combo, its note and its prediction);
   their Theory list is `trials_text.trials_html`, without Qt.
 - Controls: `Form` (a titled form whose boxes name themselves), `combo`, `set_quietly`, `connect_all`, and
-  `RunButton` (Start / Pause / Resume; a motion's Reset is `layouts.ResetButton`).
+  `RunButton` (Start / Pause / Resume; a motion's Reset is `layouts.ResetButton`), `ActionToggle` (an action
+  that stays on, a drive or a sweep: lit in the force's colour while it is, as the Simulation page's force).
 - Layout: `three_panes` (the page's controls, plots and tabs, folded by Present mode), `column`, `stack`,
   `TabRoom` (room for the right-hand tabs and the notes), `theory` (the Theory tab's `NotesBrowser`).
 - Re-exported for the pages: `fmt` and `db` (`view_models/text.py`), `LiveLabel`.
@@ -33,7 +34,7 @@ from .live_label import LiveLabel as LiveLabel  # re-exported for the pages
 from .maths import markup
 from .notes_view import NotesBrowser
 from .panels import space_bar, spin
-from .style import colors
+from .style import colors, text_on
 from .theming import mute
 
 
@@ -198,6 +199,36 @@ class TrialCombo(QtWidgets.QComboBox):
             self._changed = False
         elif index >= self.first:
             self.picked.emit(index - self.first)
+
+
+class ActionToggle(QtWidgets.QPushButton):
+    """An action that stays on until pressed again (a drive, a sweep): `off` names it, and on it says so and
+    how to stop, filled in the force's colour, as the Simulation page's *Apply force*. Checkable, so it binds
+    as a checkbox does; `set_texts` when what it does changes (a force or an unbalance); `apply_theme` from the
+    page's."""
+
+    def __init__(self, off: str, on: str, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__(off, parent)
+        self.setCheckable(True)
+        self.setMinimumHeight(32)
+        self._texts = (off, on)
+
+    def checkStateSet(self) -> None:  # every change of state, a quiet one (`set_quietly`) too: not `toggled`
+        super().checkStateSet()
+        self._show(self.isChecked())
+
+    def set_texts(self, off: str, on: str) -> None:
+        self._texts = (off, on)
+        self._show(self.isChecked())
+
+    def apply_theme(self) -> None:
+        self._show(self.isChecked())
+
+    def _show(self, on: bool) -> None:
+        self.setText(self._texts[on])
+        self.setStyleSheet(
+            f"background-color: {colors.force}; color: {text_on(colors.force)}; font-weight: bold;" if on else ""
+        )
 
 
 class RunButton(QtWidgets.QPushButton):

@@ -502,7 +502,7 @@ TIPS = {
     "damping": "<p>The viscous damper's coefficient c: the force per m/s of velocity. Its critical value "
     "2√(km) is the least that stops the oscillator overshooting. Drag the handle on the damper to change it. "
     "Under another damping law, the law is matched to this c at f<sub>n</sub>: the same energy a cycle there.</p>",
-    "drive": "<p>Switch the drive on or off. It joins in at the frequency and phase it has, the mass carrying on "
+    "drive": "<p>Switch the drive on or off (press again to stop). It joins in at the frequency and phase it has, the mass carrying on "
     "from where it is.</p>",
     "kind": "<p><b>Force:</b> F sin Ωt on the mass.<br><b>Rotating unbalance:</b> a mass m<sub>e</sub> turning "
     "at radius e inside the machine, whose force m<sub>e</sub>eΩ² sin Ωt grows with the speed.</p>",
