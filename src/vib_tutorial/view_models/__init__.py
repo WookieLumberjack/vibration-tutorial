@@ -24,7 +24,7 @@ Working on it:
   `live_mass.py` (one mass stepped and changed as it runs, its energy balance), `grips.py` (a drag on the body to
   m, k, c), `free_body.py` (the forces on the body as arrows) and `recorder.py` (a frequency response built from
   the live run); their colours are theme roles' names, `style.role`'s. `sdof.py` is the Single oscillator's (its
-  damper's four laws matched and run live, a Zener arm by `core/arm_mass.py`), `damping.py` its laws' own panels. `record.py` holds what a running
+  damper's four laws matched and run live, a Zener arm by `core/arm_mass.py`), `damping.py` its laws' own panels. `pendulum.py` is Pendulums' (#478 Phase 4), stepping `live_pendulum.py` (a pendulum changed as it swings, Jθ' kept). `record.py` holds what a running
   page records (`SampleBuffer`, the chain's `History`); `plot.Curve` is a line's or a marker's points; `text`
   formats numbers as the pages do (`number`, `fmt`, `entry`: never e-notation).
 """

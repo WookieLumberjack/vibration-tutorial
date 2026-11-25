@@ -77,12 +77,14 @@ def test_every_simulator_is_a_stepper():
     from vib_tutorial.core.gyroscope import Motion, Top
     from vib_tutorial.core.sliding_top import RoundTop
     from vib_tutorial.view_models.live_mass import LiveMass
+    from vib_tutorial.view_models.live_pendulum import LivePendulum
 
     simulators += [
         TopSimulator(Motion(Top(), 60.0, 0.3)),
         SlidingSimulator(RoundTop.tippe(0.02, 0.015, 0.0045, 0.8, 0.3), 60.0, 0.3),
         ArmMass(ArmSystem(1.0, 300.0, 0.0, 100.0, 5.0)),
         LiveMass(),  # #478's live mass, which steps the chain's Simulator or an ArmMass
+        LivePendulum(),  # and its live pendulum
     ]
     for sim in simulators:
         assert isinstance(sim, Stepper), type(sim).__name__

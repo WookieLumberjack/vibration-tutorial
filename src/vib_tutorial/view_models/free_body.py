@@ -3,7 +3,9 @@
 `FreeBody` is what a page draws (`gui/free_body_view.py`, beside the moving body): each force an `Arrow` (its
 name, its label with its size, its symbol alone, its value in newtons, + along the body's positive direction, and
 its colour as a theme role's name), and the net force, which is the mass times its acceleration. A force of nought is still listed (its arrow drawn at no length), so the arrows
-keep their places while one comes and goes.
+keep their places while one comes and goes. A turning body's diagram is the same in moments about its pivot (N·m,
+the net J θ''), with `aside` rows that aren't in the sum (a pendulum's tension, through the pivot: no moment) on a
+scale of their own (`aside_scale`).
 
 `ArrowScale` sizes the arrows to the largest force of the last `SHRINK_AFTER` seconds: it grows at once to fit a
 larger force (an arrow never runs off its room), and a force leaves it that long after it passed, so a swing's
@@ -12,7 +14,7 @@ smaller motion (once the hand has let go, or the swing has died down) is redrawn
 
 `one_mass` is the forces on one mass on a spring and a damper, with friction, a drive and a hand holding it (the
 Single oscillator); a page with another body builds its own `FreeBody` from its forces the same
-way (Pendulums', Isolation's later).
+way (`view_models/pendulum.py`'s `free_body`, in moments; Isolation's later).
 
 Working on it: Qt-free (the package's docstring); `tests/test_live_parts.py` checks the forces add up to m·a, the
 roles name theme colours and the scale's growing and shrinking.
@@ -43,7 +45,9 @@ class Arrow:
 class FreeBody:
     arrows: tuple[Arrow, ...]
     net: Arrow  # the sum of the forces: the mass times its acceleration
-    scale: float  # display units a newton
+    scale: float  # display units a newton (a newton-metre, in moments)
+    aside: tuple[Arrow, ...] = ()  # rows drawn under the net, not in its sum (a pendulum's tension)
+    aside_scale: float = 0.0  # their display units a newton
 
     def length(self, arrow: Arrow) -> float:
         return arrow.value * self.scale
@@ -76,8 +80,8 @@ class ArrowScale:
         self._recent.clear()
 
 
-def _arrow(name: str, symbol: str, value: float, role: str, short: str | None = None) -> Arrow:
-    return Arrow(name, f"{symbol} = {fmt(abs(value), 'N')}", value, role, short or symbol)
+def arrow(name: str, symbol: str, value: float, role: str, short: str | None = None, unit: str = "N") -> Arrow:
+    return Arrow(name, f"{symbol} = {fmt(abs(value), unit)}", value, role, short or symbol)
 
 
 def one_mass(
@@ -96,18 +100,18 @@ def one_mass(
     """The forces on one mass at displacement x and velocity v: the spring's −k(x − x_g), the damper's −cv, the
     drive's, friction's (as the simulator found it: None, no friction), a Zener arm's (None: none) and a hand's
     holding it (None: let go)."""
-    arrows = [_arrow("spring", "kx", -stiffness * (x - ground), "energy.potential")]
+    arrows = [arrow("spring", "kx", -stiffness * (x - ground), "energy.potential")]
     if damping > 0 or (friction is None and arm is None):  # a friction or Zener mass has no damper of its own
-        arrows.append(_arrow("damper", "cẋ", -damping * v, "energy.dissipated"))
+        arrows.append(arrow("damper", "cẋ", -damping * v, "energy.dissipated"))
     if friction is not None:
-        arrows.append(_arrow("friction", "friction", friction, "energy.friction"))
+        arrows.append(arrow("friction", "friction", friction, "energy.friction"))
     if arm is not None:  # a Zener element's arm: its spring k₁ pulling, its dashpot relaxing behind it
-        arrows.append(_arrow("arm", "k₁(x − y)", arm, "energy.added", short="arm"))
-    arrows.append(_arrow("drive", "f", drive, "force"))
+        arrows.append(arrow("arm", "k₁(x − y)", arm, "energy.added", short="arm"))
+    arrows.append(arrow("drive", "f", drive, "force"))
     if hand is not None:
-        arrows.append(_arrow("hand", "hand", hand, "muted"))
+        arrows.append(arrow("hand", "hand", hand, "muted"))
     total = math.fsum(a.value for a in arrows)
-    net = _arrow("net", "mẍ", total, "strong")
+    net = arrow("net", "mẍ", total, "strong")
     largest = max(abs(a.value) for a in (*arrows, net))  # the net too: it can outgrow every force
     s = scale.update(t, largest) if scale is not None else (1.0 / largest if largest > 0 else 0.0)
     return FreeBody(tuple(arrows), net, s)
