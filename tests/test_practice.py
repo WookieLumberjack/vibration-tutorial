@@ -442,10 +442,10 @@ def test_the_placements_answers_are_the_pages_numbers():
     zeta = 0.05
     step = 2.5e-3 * (1 + math.exp(-zeta * math.pi / math.sqrt(1 - zeta**2)))
     assert placement(transient.TRIALS, "1 N switched").answer == pytest.approx(step, rel=2e-3)
-    assert placement(pendulum.TRIALS, "A 1 kg bob").answer == pytest.approx(2 * math.pi * math.sqrt(1 / 9.81), rel=2e-3)
-    assert placement(pendulum.TRIALS, "The 1 m pendulum").answer == pytest.approx(
-        2 * math.pi * math.sqrt(1 / 1.62), rel=2e-3
-    )
+    from vib_tutorial.core.pendulum import Pendulum, period
+
+    quarter = period(Pendulum(length=0.25), math.radians(10))  # its swings' periods, as they land
+    assert placement(pendulum.TRIALS, "The same bob").answer == pytest.approx(quarter, abs=5e-4)
     r = 25.0 / (math.sqrt(9.81 / 0.3e-3) / (2 * math.pi))  # 1500 rpm on mounts sagging 0.3 mm
     t = math.sqrt(1 + (2 * zeta * r) ** 2) / math.sqrt((1 - r * r) ** 2 + (2 * zeta * r) ** 2)
     assert placement(isolation.TRIALS, "The same machine").answer == pytest.approx(t, rel=0.01)

@@ -14,7 +14,8 @@ other than Qt (a Rust UI, WebAssembly) could take it over. A page joins by addin
 
 Isolation and Duffing & Mathieu, the view-model pilots, joined first, as they were: neither's notes are Qt-free
 yet, and Duffing's trials are presets, not its state (both are for their rebuilds). The Single oscillator, #478's
-pilot, joined whole: its notes are `sdof_trials`'s (`links.NOTES_MODULES`); Damping models, the second, the same.
+pilot, joined whole: its notes are `sdof_trials`'s (`links.NOTES_MODULES`); Damping models, the second, the same,
+and Pendulums, Phase 4's first (`pendulum_trials`).
 """
 
 from __future__ import annotations
@@ -143,7 +144,51 @@ def _sdof() -> Ready:
     )
 
 
-READY = {r.page: r for r in (_isolation(), _duffing(), _sdof())}
+def _pendulum_views(state):
+    import math
+
+    import numpy as np
+
+    from vib_tutorial.view_models import live_pendulum as lp
+    from vib_tutorial.view_models import pendulum as v
+
+    p = v.pendulum(state)
+    live = lp.LivePendulum(p)
+    live.hold(math.radians(30.0))
+    live.let_go()
+    live.advance(3.0)
+    t, y = live.since_change()
+    rec = v.PeriodRecorder()
+    rec.update(t, y[:, lp.COL["theta"]], live.changed_at, v.key(p))
+    th = y[:, lp.COL["theta"]]
+    return (
+        v.info(p),
+        v.free_body(p, live.theta, live.omega),
+        v.free_body(p, 0.3, 0.0, held=True),
+        v.period_view(p, rec.current(v.key(p)), rec.earlier(v.key(p)), True),
+        v.period_view(p, [], [], False),
+        v.phase_view(p, th, y[:, lp.COL["omega"]], v.phase_reach(p, float(np.abs(th).max()))),
+        v.moment_view(p, live.theta, 1.0),
+        lp.energy_view(t, y),
+    )
+
+
+def _pendulum() -> Ready:
+    from vib_tutorial.gui import pendulum_trials
+    from vib_tutorial.view_models.pendulum import PendulumTrial
+
+    return Ready(
+        "pendulum_page",
+        lambda: PendulumTrial("", ""),
+        lambda setup: PendulumTrial("", "", **setup),
+        _pendulum_views,
+        lambda: pendulum_trials.TRIALS,
+        lambda: pendulum_trials.PROBLEMS,
+        qt_free_notes=True,
+    )
+
+
+READY = {r.page: r for r in (_isolation(), _duffing(), _sdof(), _pendulum())}
 QT_FREE_NOTES = ["glossary", *(name for name, r in READY.items() if r.qt_free_notes)]
 
 

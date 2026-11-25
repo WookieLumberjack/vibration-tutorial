@@ -43,15 +43,19 @@ oscillator's eight and then the laws'; their predictions are asked once you've h
 
 ## Pendulums
 
-Gravity as the spring. A simple pendulum, a rod swinging about any pivot (with its centre of percussion
-and the pivot that swings fastest), a disc on a torsion wire, and an inverted pendulum held up by a
-spring, each linearized into the single oscillator's formula with J for m and the moment's stiffness for
-k. Kept whole, sin θ softens the hanging pendulum: the exact period by quadrature beside Duffing's
-estimate, the phase plane's orbits out to the separatrix, and an inverted pendulum that leans over and
-buckles once gravity's negative stiffness beats the spring. The pendulum itself swings above the plots
-beside the linearized swing's ghost; turn it and let go to start it from there.
+Gravity as the spring, the single oscillator turned, and live: the pendulum swings as it's stepped, and
+changes as it swings. A simple pendulum, a rod swinging about any pivot (with its centre of percussion and
+the pivot that swings fastest), a disc on a torsion wire, and an inverted pendulum held up by a spring, each
+linearized into the single oscillator's formula with J for m and the moment's stiffness for k. Pluck it by
+the bob, or drag the rings on it as it swings: shorter, heavier, stiffer, the rod's pivot moved, and it
+carries on with its angular momentum kept, so pulling the string in at the bottom and letting it out at the
+ends pumps the swing up, as on a playground swing. Beside it, the moments about the pivot, a row each, with
+the string's tension under them. The Period tab is built swing by swing: each whole swing lands its period
+at its amplitude, and the exact period by quadrature and Duffing's estimate can be drawn over the points.
+The Phase plane traces the swing over the orbits out to the separatrix, and the Energy tab books the hand's
+work and each change's; an inverted pendulum on too weak a spring leans over and buckles.
 
-![Pendulums page, large swings: a 1 m pendulum (T₀ = 2.006 s) let go from 90°, drawn 0.7 s in beside the linearized swing's ghost, swings with a period of 2.368 s, 18 % longer (Duffing's estimate +20.2 %), and the linearized swing drifts ahead of it](images/pendulums.png)
+![Pendulums page: a 1 m pendulum let go from 175° with a little damping (ζ = 0.003), 90 s in; each whole swing has landed its period on the Period tab as it died away, tracing the exact curve from ±150° (3.5 s) down to ±58.8° (2.147 s, +7.02 % on T₀ = 2.006 s), with Duffing's estimate climbing away from it above 90°; beside the pendulum, the moments about its pivot and the string's tension, and its linearized ghost drifting ahead of it](images/pendulums.png)
 
 ## Vibration isolation
 

@@ -51,7 +51,7 @@ class PendulumTrial:
     spring: float = 15.0  # k_t (N·m/rad): the wire's, or the inverted pendulum's at its foot
     gravity: float = 9.81
     zeta: float = 0.0  # the damper at the pivot, as the linearized oscillator's damping ratio
-    angle: float = 10.0  # plucked from here (°) and let go (0: hangs at rest)
+    angle: float = 0.0  # plucked from here (°) and let go (0: hangs at rest, as the page opens)
     theory: bool = False  # the Period tab's curves shown over its points
     tab: int = TAB_PERIOD
     predict: Prediction | Placement | None = None  # asked once the reader has played (Things to try)
@@ -103,11 +103,11 @@ def pull(p: Pendulum, theta: float, omega: float) -> tuple[str, str, float]:
     bob), the rod's pivot's pull, the inverted arm's push (negative) or the wire's, holding up the disc's weight."""
     m, g = p.mass, p.gravity
     if p.kind is Kind.TORSION:
-        return "wire", "T", m * g
+        return "wire", "Tₛ", m * g
     if p.kind is Kind.INVERTED:
         return "arm", "arm", -m * (g * math.cos(theta) - p.length * omega * omega)
     name = "string" if p.kind is Kind.SIMPLE else "pivot"
-    return name, "T" if p.kind is Kind.SIMPLE else "R", m * (g * math.cos(theta) + p.arm * omega * omega)
+    return name, "Tₛ" if p.kind is Kind.SIMPLE else "R", m * (g * math.cos(theta) + p.arm * omega * omega)
 
 
 def free_body(
@@ -243,6 +243,12 @@ class PeriodView:
 THEORY_DEGREES = np.linspace(0.5, 179.0, 180)
 
 
+def longer(measured: float, period0: float) -> str:
+    """How much longer a swing took than T₀, as a percentage to 3 figures (under 0.001 %: none)."""
+    pct = 100 * (measured / period0 - 1)
+    return f"{sig(pct if abs(pct) >= 1e-3 else 0.0, plus=True)} %"
+
+
 def _theory(p: Pendulum) -> tuple[np.ndarray, np.ndarray]:
     a = np.radians(THEORY_DEGREES)
     return periods(p, a), np.array([duffing_period(p, float(x)) for x in a])
@@ -285,7 +291,7 @@ def period_view(
         last = max(current, key=lambda q: q.t)
         note = (
             f"The last swing, ±{sig(math.degrees(last.amplitude))}°, took {sig(last.period, 4)} s: "
-            f"{sig(100 * (last.period / p.period0 - 1), plus=True)} % on the small swing's T₀ = {sig(p.period0, 4)} s."
+            f"{longer(last.period, p.period0)} on the small swing's T₀ = {sig(p.period0, 4)} s."
         )
         if p.cubic == 0:
             note += " Its moment is linear (no gravity in it): the same period at any swing."

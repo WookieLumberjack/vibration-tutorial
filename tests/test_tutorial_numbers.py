@@ -2261,7 +2261,19 @@ def test_pendulum_trials():
         T = period(p, math.radians(a))
         for guess in (duffing_period(p, math.radians(a)), p.period0 * (1 + math.radians(a) ** 2 / 16)):
             assert (100 * abs(guess / T - 1) < quoted("pendulum", "1 %")) == inside
-    assert period(p, math.radians(170)) / p.period0 == pytest.approx(2.44, abs=0.005)
+    quarter = Pendulum(length=0.25)  # A quarter of the string
+    assert (quarter.period0, period(quarter, math.radians(10))) == pytest.approx((1.003, 1.005), abs=5e-4)
+    from vib_tutorial.view_models import pendulum as view
+    from vib_tutorial.view_models.live_pendulum import COL, LivePendulum
+
+    live = LivePendulum(Pendulum(zeta=0.003))  # Nearly over the top, dying away: its first whole swing
+    live.hold(math.radians(175))
+    live.let_go()
+    live.advance(10.0)
+    t, y = live.since_change()
+    _, first, took = view.cycles(t, y[:, COL["theta"]])[0]
+    assert math.degrees(first) == pytest.approx(150, abs=1.5) and took == pytest.approx(3.5, abs=0.05)
+    assert took / p.period0 == pytest.approx(1.76, abs=0.005)
     rod = Pendulum(Kind.ROD)
     assert (rod.inertia, rod.equivalent_length, rod.period0) == pytest.approx((1 / 3, 0.667, 1.638), abs=5e-4)
     assert rod_period(1.0, 1 / math.sqrt(12)) == pytest.approx(1.524, abs=5e-4)
@@ -2270,6 +2282,8 @@ def test_pendulum_trials():
     disc = Pendulum(Kind.TORSION, length=0.1, spring=0.5)
     assert disc.natural_hz == pytest.approx(1.59, abs=0.005)
     assert period(disc, math.radians(170)) == pytest.approx(disc.period0, rel=1e-9)
+    assert disc.period0 == pytest.approx(0.628, abs=5e-4)
+    assert Pendulum(Kind.TORSION, length=0.2, spring=0.5).inertia == pytest.approx(4 * disc.inertia)  # twice r
     inv = Pendulum(Kind.INVERTED, spring=15.0)
     assert (inv.stiffness, inv.natural_hz) == pytest.approx((5.19, 0.363), abs=5e-4)
     assert 1 - period(inv, math.radians(60)) / inv.period0 == pytest.approx(0.10, abs=0.005)
@@ -2277,7 +2291,6 @@ def test_pendulum_trials():
     assert math.degrees(lean.leaning()) == pytest.approx(40.8, abs=0.05)
     _, th, _ = swing(lean, math.radians(1.0), 70.0)
     assert math.degrees(th[-1]) == pytest.approx(40.8, abs=0.1)
-    assert Pendulum(gravity=1.62).period0 == pytest.approx(4.94, abs=0.005)
 
 
 def test_pendulum_worked_example_and_inertia():
@@ -2314,7 +2327,6 @@ def test_pendulum_worked_example_and_inertia():
     exact = period(p, a)
     T = quoted("pendulum", "2.010")
     assert exact == pytest.approx(T, abs=5e-4) and T0 * 1.0019 == pytest.approx(T, abs=5e-4)
-    assert round(exact, 2) == quoted("pendulum", "2.01")  # the readout
     longer = quoted("pendulum", "0.191 %")  # the readout's +0.191 %
     assert 100 * (exact / p.period0 - 1) == pytest.approx(longer, abs=0.0005)
     assert 100 * (duffing_period(p, a) / p.period0 - 1) == pytest.approx(longer, abs=0.0005)
@@ -2323,6 +2335,18 @@ def test_pendulum_worked_example_and_inertia():
     )  # behind after the eight swings drawn
     _, whole, linear = swing(p, a, 8 * p.period0, 4000)
     assert np.max(np.abs(whole - linear)) < 0.1 * a  # too little to see
+    # Duffing's estimate keeps the period within 0.14 % up to 45°
+    off = 100 * (1 - p.period0 * (1 + math.radians(45) ** 2 / 16) / period(p, math.radians(45)))
+    assert off == pytest.approx(quoted("pendulum", "0.14 %"), abs=0.005)
+    # From 90°, the string pulls three times the bob's weight at the bottom
+    from vib_tutorial.view_models.live_pendulum import LivePendulum
+    from vib_tutorial.view_models.pendulum import pull
+
+    live = LivePendulum(p)
+    live.hold(math.pi / 2)
+    live.let_go()
+    live.advance(period(p, math.pi / 2) / 4)
+    assert pull(p, live.theta, live.omega)[2] == pytest.approx(3 * p.mass * p.gravity, rel=2e-3)
     # The series for large swings
     for deg in (30, 60, 90):
         A = math.radians(deg)

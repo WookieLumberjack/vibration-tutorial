@@ -1056,7 +1056,24 @@ def signals_spectra():
 
 
 def pendulums():
-    lesson("pendulum_page", 1, "pendulums", at=0.7)  # large swings are slower, the pendulum 0.7 s in
+    """The live pendulum let go from 175° with a little damping: each swing has landed its period as it died away,
+    tracing the curve, the theory's shown over the points."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import pendulum
+
+    w = window()
+    page = w.pendulum_page
+    w.pages.setCurrentWidget(page)
+    page.loop.enabled = False
+    page.load_trial(next(i for i, t in enumerate(pendulum.TRIALS) if t.name.startswith("Nearly over the top")))
+    page.step(90.0)
+    page.theory.setChecked(True)
+    settle()
+    for label in page.findChildren(QtWidgets.QLabel):
+        if label.isVisible() and len(label.text()) > 40:
+            print(" ", label.text())
+    save(w, "pendulums")
 
 
 def periodic_forcing():

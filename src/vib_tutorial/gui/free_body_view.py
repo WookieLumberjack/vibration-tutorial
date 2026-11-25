@@ -6,7 +6,8 @@ Each force keeps its row, and its words keep their places, in one column on the 
 each leaves the body's side at its row, towards where the force pushes, so only the arrows move: they turn round as
 a force changes direction, and their lengths follow the forces on `free_body.ArrowScale`'s scale (the recent peak
 fills the room either side). The net force, m·ẍ, is the last row, dashed, under a rule (what the forces above sum
-to). The sizes are rewritten at most `TEXT_EVERY` s apart, so they can be read while it runs (the last always
+to). A turning body's diagram is in moments about its pivot (Pendulums: the net Jθ̈), each size in its own unit,
+and its `aside` rows (the string's pull, which has no moment) go under a second rule, on their own scale. The sizes are rewritten at most `TEXT_EVERY` s apart, so they can be read while it runs (the last always
 shows within that).
 
 The check-in's findings shaped it: on the moving mass, the arrows' labels swapped sides as each force turned; in
@@ -46,10 +47,12 @@ TIP = (
 
 
 class FreeBodyView(pg.PlotWidget):
-    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(
+        self, parent: QtWidgets.QWidget | None = None, name: str = "The forces on the mass", tip: str = TIP
+    ) -> None:
         super().__init__(parent)
-        self.setAccessibleName("The forces on the mass")
-        self.setToolTip(TIP)
+        self.setAccessibleName(name)
+        self.setToolTip(tip)
         self.setMenuEnabled(False)
         self.setMouseEnabled(x=False, y=False)
         self.hideButtons()
@@ -62,6 +65,9 @@ class FreeBodyView(pg.PlotWidget):
         self.addItem(self.block)
         self.rule = pg.PlotDataItem()
         self.addItem(self.rule)
+        self.aside_rule = pg.PlotDataItem()
+        self.addItem(self.aside_rule)
+        self._aside = 0  # the aside rows, last
         self.shafts: list[pg.PlotDataItem] = []
         self.heads: list[pg.ArrowItem] = []
         self.symbols: list[pg.TextItem] = []
@@ -79,6 +85,7 @@ class FreeBodyView(pg.PlotWidget):
         self.block.setBrush(pg.mkBrush(fill))
         self.block.setPen(pg.mkPen(colors.mass[0], width=2))
         self.rule.setPen(pg.mkPen(colors.faint, width=1))
+        self.aside_rule.setPen(pg.mkPen(colors.faint, width=1))
         if self._arrows:
             self._build(self._arrows)
 
@@ -87,13 +94,15 @@ class FreeBodyView(pg.PlotWidget):
         return [(s.toPlainText(), z.toPlainText()) for s, z in zip(self.symbols, self.sizes)]
 
     def show(self, body: FreeBody) -> None:
-        arrows = (*body.arrows, body.net)
+        arrows = (*body.arrows, body.net, *body.aside)
         if [(a.name, a.role) for a in arrows] != [(a.name, a.role) for a in self._arrows]:
+            self._aside = len(body.aside)
             self._build(arrows)
         n = len(arrows)
         for i, (arrow, shaft, head) in enumerate(zip(arrows, self.shafts, self.heads)):
             y = self._row_y(i, n)
-            length = float(body.length(arrow)) * ROOM
+            aside = i >= n - self._aside
+            length = (arrow.value * body.aside_scale if aside else float(body.length(arrow))) * ROOM
             start = HALF if length >= 0 else -HALF
             tip = start + length
             shaft.setData([start, tip], [y, y])
@@ -112,12 +121,13 @@ class FreeBodyView(pg.PlotWidget):
     def _write_sizes(self) -> None:
         self._written = time.monotonic()
         for arrow, text in zip(self._arrows, self.sizes):
-            text.setText(fmt(abs(arrow.value), "N"))
+            text.setText(fmt(abs(arrow.value), arrow.unit))
 
-    @staticmethod
-    def _row_y(i: int, n: int) -> float:
-        """Row i of n from the top, the net's (the last) a half row further down, under the rule."""
-        return -GAP * (i + (0.5 if i == n - 1 and n > 1 else 0.0))
+    def _row_y(self, i: int, n: int) -> float:
+        """Row i of n from the top: the net's (the last but the aside rows) a half row further down, under the
+        rule, and the aside rows another half row down, under theirs."""
+        net = n - 1 - self._aside
+        return -GAP * (i + (0.5 if i >= net and net > 0 else 0.0) + (0.5 if i > net else 0.0))
 
     def _build(self, arrows: tuple[Arrow, ...]) -> None:
         for item in (*self.shafts, *self.heads, *self.symbols, *self.sizes):
@@ -132,7 +142,7 @@ class FreeBodyView(pg.PlotWidget):
             head = pg.ArrowItem(angle=180, headLen=12, tipAngle=40, pen=None, brush=colour)
             symbol = pg.TextItem(arrow.symbol, color=colour, anchor=(0.0, 0.5))
             symbol.setPos(LEFT, y)
-            size = pg.TextItem(fmt(abs(arrow.value), "N"), color=colour, anchor=(1.0, 0.5))
+            size = pg.TextItem(fmt(abs(arrow.value), arrow.unit), color=colour, anchor=(1.0, 0.5))
             size.setPos(SIZES, y)
             for item in (shaft, head, symbol, size):
                 item.setZValue(4)
@@ -142,8 +152,15 @@ class FreeBodyView(pg.PlotWidget):
             self.symbols.append(symbol)
             self.sizes.append(size)
         last = self._row_y(n - 1, n)
-        self.block.setRect(QtCore.QRectF(-HALF, last - 0.5 * GAP, 2 * HALF, GAP - last))
-        rule_y = 0.5 * (self._row_y(n - 2, n) + last) if n > 1 else last - GAP
+        net = n - 1 - self._aside
+        bottom = self._row_y(net, n)
+        self.block.setRect(QtCore.QRectF(-HALF, bottom - 0.5 * GAP, 2 * HALF, GAP - bottom))
+        rule_y = 0.5 * (self._row_y(net - 1, n) + bottom) if net > 0 else bottom - GAP
         self.rule.setData([LEFT, RIGHT], [rule_y, rule_y])
+        if self._aside:
+            y = 0.5 * (bottom + self._row_y(net + 1, n))
+            self.aside_rule.setData([LEFT, RIGHT], [y, y])
+        else:
+            self.aside_rule.setData([], [])
         self.setRange(QtCore.QRectF(LEFT - 0.05, last - GAP, RIGHT - LEFT + 0.1, 2 * GAP - last), padding=0)
         self._written = -1.0
