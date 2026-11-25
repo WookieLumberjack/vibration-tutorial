@@ -74,8 +74,10 @@ def test_every_simulator_is_a_stepper():
         CMSResponse(component_mode_synthesis(ChainSystem.uniform(3), [1], [1, 1], "craig-bampton")),
     ]
     from vib_tutorial.core.arm_mass import ArmMass, ArmSystem
+    from vib_tutorial.core.bases import Steps, TwoMass
     from vib_tutorial.core.gyroscope import Motion, Top
     from vib_tutorial.core.sliding_top import RoundTop
+    from vib_tutorial.view_models.live_bases import LiveBases
     from vib_tutorial.view_models.live_mass import LiveMass
     from vib_tutorial.view_models.live_pendulum import LivePendulum
 
@@ -85,6 +87,8 @@ def test_every_simulator_is_a_stepper():
         ArmMass(ArmSystem(1.0, 300.0, 0.0, 100.0, 5.0)),
         LiveMass(),  # #478's live mass, which steps the chain's Simulator or an ArmMass
         LivePendulum(),  # and its live pendulum
+        Steps(*TwoMass().matrices()),  # Coordinates & bases' two masses, and the page's live run of them
+        LiveBases(),
     ]
     for sim in simulators:
         assert isinstance(sim, Stepper), type(sim).__name__
