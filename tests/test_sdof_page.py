@@ -313,6 +313,19 @@ def test_four_loops_one_energy_and_the_readouts_the_worked_example_quotes(page):
     assert drawn == list(MODELS)
 
 
+def test_the_loops_arrowhead_rides_its_end_pointing_the_way_it_goes(page):
+    page.load_trial(trial("Four loops"))
+    page.step(6.0)
+    tab = page.loop_tab
+    x, y = tab.loop_item.getData()
+    head = tab.head
+    assert head.isVisible() and (head.pos().x(), head.pos().y()) == pytest.approx((x[-1], y[-1]))
+    turned = math.radians(head.opts["angle"] + 180.0)  # on screen, y down
+    k = max(1, len(x) // 40)
+    assert math.copysign(1, math.cos(turned)) == math.copysign(1, x[-1] - x[-1 - k])
+    assert math.copysign(1, -math.sin(turned)) == math.copysign(1, y[-1] - y[-1 - k])  # the screen's y is down
+
+
 def test_the_law_changes_as_it_runs_and_the_books_close(page):
     page.load_trial(trial("Four loops"))
     page.step(3.0)
