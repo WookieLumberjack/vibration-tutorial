@@ -1,20 +1,26 @@
 """Single oscillator page (#478's pilot): one mass on a spring and a damper, running live, changed as it runs.
 
 The mass is stepped as it runs (`view_models/live_mass.LiveMass`: the chain's exact FOH `Simulator` with one mass),
-not a response worked out in advance and played back. Left: the oscillator's m, k and c and the drive, then the
-Things to try (setups to go back to; their predictions are asked once the reader has handled the system). Centre:
-the mass on its spring and damper (`live_body.LiveMassView`: pluck it, or drag the grips on the mass, the spring
-and the damper to change m, k and c as it runs, the motion carrying on by `Simulator.set_system`'s rules) with the
-forces on it beside it, on the mass held still (`free_body_view.FreeBodyView`), the run's controls, and the time plots, which keep what came before a change with
-the change marked. Right: the Frequency response the reader builds by dwelling or sweeping the drive
-(`view_models/recorder.py`), the Energy balance through every change, the Poles (drag them: k and c follow) with
-the phase plane, and the Theory.
+not a response worked out in advance and played back. Its damper follows a law the reader picks as it runs:
+viscous, or hysteretic, Coulomb friction or the Zener element, each matched to c at f<sub>n</sub> (the Damping
+models page's, merged here: one example, one page), the viscous ghost beside it, dashed, plucked and driven as it
+is. Left: the oscillator's m, k, c and the damper's law, the drive, then the Things to try (setups to go back to;
+their predictions are asked once the reader has handled the system). Centre: the mass on its spring and damper
+(`live_body.LiveMassView`: pluck it, or drag the grips on the mass, the spring and the damper to change m, k and c
+as it runs, the motion carrying on by `Simulator.set_system`'s rules) with the forces on it beside it, on the mass
+held still (`free_body_view.FreeBodyView`), the run's controls, and the time plots, which keep what came before a
+change with the change marked. Right: the Frequency response the reader builds by dwelling or sweeping the drive
+(`view_models/recorder.py`) with the driven state's force phasors, the Energy balance through every change, the
+Loop & loss (the hysteresis loop the run draws, beside each law's, and their loss factors), the Poles (drag them:
+k and c follow) with the phase plane, and the Theory.
 
-What the page shows is `view_models/sdof.py`'s; its trials, problems, tips and notes are `sdof_trials.py`'s (no Qt).
-The controls are bound to the state (`SdofTrial`) by `bindings.Bindings`, so Defaults round-trips by construction.
+What the page shows is `view_models/sdof.py`'s and, for the laws' panels, `view_models/damping.py`'s; its trials,
+problems, tips and notes are `sdof_trials.py`'s and `damping_trials.py`'s (no Qt). The controls are bound to the
+state (`SdofTrial`) by `bindings.Bindings`, so Defaults round-trips by construction.
 
 Working on it: `tests/test_sdof_page.py` (the page live: pluck, grips, a change mid-run, the recorder, the sweep,
-predictions after play, the drawn body's grips), `test_live_parts.py` (the Qt-free parts), `test_readiness.py`.
+predictions after play, the drawn body's grips, a law changed mid-run, the ghost, the loop's energy, friction
+sticking), `test_live_parts.py` (the Qt-free parts, the laws' physics), `test_readiness.py`.
 """
 
 from __future__ import annotations
@@ -25,7 +31,9 @@ import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from ..core.damping_models import MODELS, Model
 from ..core.stepping import FRAME_BUDGET, Budget
+from ..view_models import damping as laws
 from ..view_models import recorder as rec
 from ..view_models import sdof as view
 from ..view_models.free_body import ArrowScale, one_mass
@@ -40,14 +48,14 @@ from .drag import DragPoint
 from .frame_loop import FrameLoop
 from .free_body_view import FreeBodyView
 from .layouts import FlowLayout
-from .lesson import Dot, Form, TrialBox, note_label, plot, readout_label, set_quietly, three_panes
+from .lesson import Dot, Form, TrialBox, combo, note_label, plot, readout_label, set_quietly, three_panes
 from .live_body import LiveMassView
-from .live_parts import ChangeMarks, EnergyTab, run_row
+from .live_parts import ChangeMarks, EnergyTab, LoopTab, run_row
 from .notes_view import NotesBrowser
 from .plots import decimate
 from .scrub import Scrub
 from .sdof_trials import NOTES_HTML, PROBLEMS, TIPS, TRIALS
-from .style import colors
+from .style import colors, role
 from .transport import Transport
 
 __all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "SdofPage", "notes_html"]
@@ -76,8 +84,14 @@ FRF_TIP = (
     "the curve they should lie on.</p>"
 )
 STRIP_TIP = (
-    "<p>The mass's displacement as it runs, the last 10 s. A dashed line marks where m, k or c changed: the "
-    "motion carries on through it. Paused, drag the line at the end back to see the mass then.</p>"
+    "<p>The mass's displacement as it runs, the last 10 s, and under another damping law the viscous ghost's, "
+    "grey and dashed. A dashed line marks where m, k, c or the law changed: the motion carries on through it. "
+    "Paused, drag the line at the end back to see the mass then.</p>"
+)
+PHASOR_TIP = (
+    "<p>The driven steady state's forces as phasors, turning at the drive's frequency: the spring's kX, the "
+    "damping's (a quarter turn ahead of the motion) and the mass's −Ω²mX, head to tail, add up to the drive F. "
+    "At resonance the spring's and the mass's cancel, and the damping's alone meets the drive.</p>"
 )
 
 
@@ -108,6 +122,7 @@ class SdofPage(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self.live = LiveMass()
+        self.ghost = LiveMass()  # the viscous mass, beside it under another law
         self.recorder = rec.Recorder()
         self.sweep: rec.Sweep | None = None
         self.running = False
@@ -124,8 +139,16 @@ class SdofPage(QtWidgets.QWidget):
         self.mass = box.number("Mass m:", 0.01, 1e4, 1.0, 3, " kg", TIPS["mass"])
         self.stiffness = box.number("Stiffness k:", 0.01, 1e8, 400.0, 2, " N/m", TIPS["stiffness"])
         self.damping = box.number("Damping c:", 0.0, 1e6, 2.0, 3, " N·s/m", TIPS["damping"])
+        self.model = combo([m.value for m in MODELS], TIPS["model"])
+        box.add("Damper:", self.model, TIPS["model"])
+        self.friction_mm = box.number("Friction at X:", 0.01, 1000.0, 10.0, 2, " mm", TIPS["friction_mm"])
+        self.relax = box.number("Zener peak at:", 0.01, 100.0, 1.0, 3, " × fₙ", TIPS["relax"])
+        self.ghost_on = QtWidgets.QCheckBox("Viscous ghost beside it (dashed)")
+        self.ghost_on.setToolTip(TIPS["ghost"])
+        box.row(self.ghost_on)
         self.info = note_label()
         box.row(self.info)
+        self.oscillator_box = box
 
         drive = Form("Drive")
         self.drive_on = QtWidgets.QCheckBox("Drive the mass")
@@ -175,7 +198,9 @@ class SdofPage(QtWidgets.QWidget):
         self.strip.setToolTip(STRIP_TIP)
         self.strip.setMouseEnabled(x=False, y=False)
         self.x_item = pg.PlotDataItem(name="x")
+        self.ghost_item = pg.PlotDataItem(name="viscous ghost")
         self.peak_item = pg.PlotDataItem(pen=None, symbol="o", symbolSize=6)
+        self.strip.addItem(self.ghost_item)
         self.strip.addItem(self.x_item)
         self.strip.addItem(self.peak_item)
         self.force_plot = plot("Drive f", "N", "Time", "s", height=90)
@@ -217,6 +242,7 @@ class SdofPage(QtWidgets.QWidget):
         self.mag_plot.addItem(self.band)
         # PlotDataItems, not ScatterPlotItems: only they follow the plots' log axes
         self.theory_items = [pg.PlotDataItem() for _ in range(3)]
+        self.frf_ghost = pg.PlotDataItem()  # the viscous ghost's, under another law
         self.earlier_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=6) for _ in range(2)]
         self.point_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=8) for _ in range(3)]
         self.drive_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=12) for _ in range(2)]
@@ -228,6 +254,7 @@ class SdofPage(QtWidgets.QWidget):
         ):
             for item in items:
                 p.addItem(item)
+        self.mag_plot.addItem(self.frf_ghost)
         self.mag_plot.addItem(self.drive_items[0])
         self.lag_plot.addItem(self.drive_items[1])
         self.lag_plot.setYRange(0, 180, padding=0.05)
@@ -248,13 +275,25 @@ class SdofPage(QtWidgets.QWidget):
         buttons = FlowLayout()
         buttons.add(self.sweep_button, self.clear_button, self.theory)
         fv.addLayout(buttons)
+        self.phasor_plot = plot("Imaginary", "N", "Real", "N", height=120)
+        self.phasor_plot.setAspectLocked(True)
+        self.phasor_plot.setMouseEnabled(x=False, y=False)
+        self.phasor_plot.setToolTip(PHASOR_TIP)
+        self.phasor_items = {name: pg.PlotDataItem() for name in ("spring", "damping", "mass", "drive")}
+        for item in self.phasor_items.values():
+            self.phasor_plot.addItem(item)
+        planes = QtWidgets.QHBoxLayout()
+        planes.addWidget(self.nyq_plot, 1)
+        planes.addWidget(self.phasor_plot, 1)
         fv.addWidget(self.mag_plot, 3)
         fv.addWidget(self.lag_plot, 2)
-        fv.addWidget(self.nyq_plot, 2)
+        fv.addLayout(planes, 2)
         self.frf_note = note_label()
         fv.addWidget(self.frf_note)
 
         self.energy = EnergyTab()
+        self.loop_tab = LoopTab(TIPS["damping_only"])
+        self.damping_only = self.loop_tab.damping_only
 
         poles = QtWidgets.QWidget()
         sv = QtWidgets.QVBoxLayout(poles)
@@ -294,23 +333,30 @@ class SdofPage(QtWidgets.QWidget):
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(frf, "Frequency response")
         self.tabs.addTab(self.energy, "Energy")
+        self.tabs.addTab(self.loop_tab, "Loop && loss")
         self.tabs.addTab(poles, "Poles && phase plane")
         self.tabs.addTab(self.notes, "Theory")
         self.tabs.currentChanged.connect(self._on_tab)
 
         three_panes(self, left, centre, self.tabs, sizes=(320, 760, 560))
 
+        self.bindings.bind("model", self.model, choices=MODELS)
         for field, widget in (
             ("mass", self.mass),
             ("stiffness", self.stiffness),
             ("damping", self.damping),
+            ("friction_mm", self.friction_mm),
+            ("relax", self.relax),
+            ("ghost", self.ghost_on),
             ("drive", self.drive_on),
             ("kind", self.kind),
             ("amplitude", self.amplitude),
             ("freq_hz", self.freq),
+            ("damping_only", self.damping_only),
             ("tab", self.tabs),
         ):
             self.bindings.bind(field, widget)
+        self.bindings.write(SdofTrial("", ""))
         self.bindings.changed.connect(self._on_field)
 
         self.loop = FrameLoop(self, "Single oscillator", self._tick, self._runs, self._sim_t)
@@ -339,28 +385,30 @@ class SdofPage(QtWidgets.QWidget):
         self._on_kind()
         self.recorder.clear()
         self._stop_sweep()
-        state = self.practice_state()
-        self.live.set_params(view.params(state))
-        self.live.set_drive(view.drive(state))
+        self._push_params()
         self.reset()
         self._handled_at = None
         self.trials.show_note(t.note)
         if t.x0_mm:
             self.body.start_pluck(1e-3 * t.x0_mm)
-            self.live.hold(1e-3 * t.x0_mm)
-            self.live.let_go()
+            for live in (self.live, self.ghost):
+                live.hold(1e-3 * t.x0_mm)
+                live.let_go()
         if t.sweep:
             self.sweep_button.setChecked(True)  # starts the sweep (and the drive)
-        self._push_params()
         if t.x0_mm or t.drive or t.sweep:
             self._run(True)
-        self._draw_live()
+        self._draw_tab()
 
     # ------------------------------------------------------------- what the reader changes
     def _on_field(self, field: str) -> None:
-        if field in ("mass", "stiffness", "damping"):
+        if field in ("mass", "stiffness", "damping", "model", "friction_mm", "relax"):
             self._handled()
             self._push_params()
+        elif field == "ghost":
+            self._draw_live()
+        elif field == "damping_only":
+            self._draw_tab()
         elif field in ("drive", "kind", "amplitude", "freq_hz"):
             self._handled()
             if field == "kind":
@@ -384,36 +432,58 @@ class SdofPage(QtWidgets.QWidget):
         self.amplitude.setDecimals(6 if unbalance else 4)
 
     def _push_params(self) -> None:
+        """The live mass (and the ghost) to the controls: a live change, and the drive."""
         state = self.practice_state()
-        p = view.params(state)
-        self.live.set_params(p)
-        self.body.set_values(p.mass, p.stiffness, p.damping)
-        self.info.setText(view.info(p))
-        self._push_drive()  # an unbalance's force depends on nothing here, but the tuned frequency may
-        self._draw_frf()
+        law = state.model is not Model.VISCOUS
+        for widget, shown in (
+            (self.friction_mm, state.model is Model.COULOMB),
+            (self.relax, state.model is Model.ZENER),
+            (self.ghost_on, law),
+        ):
+            widget.setVisible(shown)
+            label = self.oscillator_box.label(widget) if widget is not self.ghost_on else None
+            if label is not None:
+                label.setVisible(shown)
+        self.ghost.set_params(view.viscous(state))
+        self.body.set_values(
+            state.mass,
+            state.stiffness,
+            state.damping,
+            damper=f"{view.SHORT[state.model]}, c = {fmt(state.damping, 'N·s/m', smallest='m')}" if law else None,
+        )
+        self.info.setText(view.info(state))
+        self._push_drive()  # the drive, and the hysteretic stand-in's c with it
         self._draw_poles()
         if not self.running:
-            self._draw_live()
+            self._draw_tab()  # running, the next frame draws it
 
     def _push_drive(self) -> None:
-        self.live.set_drive(view.drive(self.practice_state()))
+        state = self.practice_state()
+        d = view.drive(state)
+        for live in (self.live, self.ghost):
+            live.set_drive(d)
+        self.live.set_params(view.params(state))  # the hysteretic stand-in's c follows the drive
         self._draw_frf()
 
     def tune_to_natural(self) -> None:
-        self.freq.setValue(round(self.live.params.oscillator().natural_hz, 6))
+        self.freq.setValue(round(view.oscillator(self.practice_state()).natural_hz, 6))
 
     def _on_grabbed(self) -> None:
         self.scrub.hide()
         self._handled()
         self.body.start_pluck(self.live.x)
-        self.live.hold(self.live.x)
+        x = self.live.x
+        for live in (self.live, self.ghost):
+            live.hold(x)
 
     def _on_pulled(self, x: float) -> None:
-        self.live.hold(x)
+        for live in (self.live, self.ghost):
+            live.hold(x)
         self._draw_body()
 
     def _on_let_go(self) -> None:
-        self.live.let_go()
+        for live in (self.live, self.ghost):
+            live.let_go()
         if not self.running:
             self._run(True)  # a pluck sets it going
 
@@ -441,7 +511,7 @@ class SdofPage(QtWidgets.QWidget):
         sigma, w = pos.x(), abs(pos.y())
         if sigma >= 0 or w <= 0:
             return
-        self._set_k_c(*view.pole_pair(self.live.params.mass, sigma, w))
+        self._set_k_c(*view.pole_pair(self.practice_state().mass, sigma, w))
 
     def _on_upper_dragged(self, x: float, y: float) -> None:
         self._drag_pole(0, x, y)
@@ -452,9 +522,10 @@ class SdofPage(QtWidgets.QWidget):
     def _drag_pole(self, i: int, x: float, y: float) -> None:
         vb = self.s_plot.getPlotItem().getViewBox()
         (x0, x1), (y0, y1) = vb.viewRange()
+        state = self.practice_state()
         if self._pole_held is None:  # the other pole as the drag began (the dots swap as real poles pass)
-            self._pole_held = complex(self.live.params.oscillator().poles()[1 - i])
-        self._set_k_c(*view.pole_drag(self.live.params, x, y, self._pole_held, (x1 - x0, y1 - y0)))
+            self._pole_held = complex(view.oscillator(state).poles()[1 - i])
+        self._set_k_c(*view.pole_drag(view.viscous(state), x, y, self._pole_held, (x1 - x0, y1 - y0)))
 
     def _on_pole_released(self) -> None:
         self._pole_held = None
@@ -481,7 +552,8 @@ class SdofPage(QtWidgets.QWidget):
 
     def reset(self) -> None:
         """Back to rest at t = 0, waiting for Start; the measured points kept."""
-        self.live.reset()
+        for live in (self.live, self.ghost):
+            live.reset()
         self.arrows.reset()
         self._measured_at = -1.0
         self.scrub.hide()
@@ -497,7 +569,7 @@ class SdofPage(QtWidgets.QWidget):
         duration = min(duration, self._budget.allows(duration, FRAME_BUDGET))
         start = time.perf_counter()
         before = self.live.t
-        self.live.advance(duration)
+        self._advance(duration)
         if self.live.t > before:
             self._budget.spent(time.perf_counter() - start, self.live.t - before)
         self._measure()
@@ -511,11 +583,17 @@ class SdofPage(QtWidgets.QWidget):
         while self.live.t < end - 1e-9:
             if self.live.held is not None:
                 break
-            self.live.advance(min(0.05, end - self.live.t) + 1e-12)
+            self._advance(min(0.05, end - self.live.t) + 1e-12)
             self._measure()
         if self._handled_at is not None and self.live.t - self._handled_at >= PLAYED_AFTER:
             self.trials.set_played()
         self._draw_live()
+
+    def _advance(self, duration: float) -> None:
+        """The mass on by `duration`, and the ghost to its time (it runs whatever the law: it's cheap, and so
+        it's in step when shown)."""
+        self.live.advance(duration)
+        self.ghost.advance(self.live.t - self.ghost.t)
 
     # ------------------------------------------------------------- the recorder
     def _measure(self) -> None:
@@ -526,7 +604,7 @@ class SdofPage(QtWidgets.QWidget):
         self._measured_at = live.t
         t, y = live.record.window(2.5 * rec.PERIODS / live.drive.freq_hz)
         m = rec.measure(t, y[:, COL["x"]], y[:, COL["f"]], live.drive.freq_hz, since=live.changed_at)
-        if m is None or self.recorder.land(m, live.params) is None:
+        if m is None or self.recorder.land(m, self._key()) is None:
             return
         self._draw_frf()
         if self.sweep is not None:
@@ -539,7 +617,7 @@ class SdofPage(QtWidgets.QWidget):
         if not on:
             self.sweep = None
             return
-        o = self.live.params.oscillator()
+        o = view.oscillator(self.practice_state())
         self.sweep = rec.Sweep(rec.sweep_frequencies(o.natural_hz, o.zeta))
         if not self.drive_on.isChecked():
             set_quietly(self.drive_on, True)
@@ -577,9 +655,11 @@ class SdofPage(QtWidgets.QWidget):
         ts = r.t[: r.size]
         x, v, f = (float(np.interp(t, ts, r.y[: r.size, COL[c]])) for c in ("x", "v", "f"))
         p = self.live.params
-        self.body.show(x)
+        g = self.ghost.record
+        ghost = float(np.interp(t, g.t[: g.size], g.y[: g.size, COL["x"]])) if self._ghosted() and g.size else None
+        self.body.show(x, ghost)
         self.forces.show(one_mass(p.stiffness, p.damping, x, v, f, scale=self.arrows, t=t))
-        self.plane_now.setPos(x, v / p.oscillator().omega_n)
+        self.plane_now.setPos(x, v / view.oscillator(self.practice_state()).omega_n)
         self.clock.setText(f"t = {sig(t, 4)} s (paused at {sig(self.live.t, 4)} s)")
 
     # ------------------------------------------------------------- drawing
@@ -589,6 +669,9 @@ class SdofPage(QtWidgets.QWidget):
         self.forces.apply_theme()
         self.scrub.apply_theme()
         self.x_item.setPen(pg.mkPen(c.mass[0], width=2))
+        self.ghost_item.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
+        self.frf_ghost.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
+        self.loop_tab.apply_theme()
         self.peak_item.setSymbolPen(None)
         self.peak_item.setSymbolBrush(pg.mkBrush(c.force))
         self.f_item.setPen(pg.mkPen(c.force, width=1.5))
@@ -620,7 +703,7 @@ class SdofPage(QtWidgets.QWidget):
             dot.apply_theme()
         self._draw_frf()
         self._draw_poles()
-        self._draw_live()
+        self._draw_tab()
 
     def showEvent(self, event: QtGui.QShowEvent) -> None:
         super().showEvent(event)
@@ -628,7 +711,21 @@ class SdofPage(QtWidgets.QWidget):
 
     def _on_tab(self, *_: object) -> None:
         self._refresh_map()
-        self._draw_energy()
+        self._draw_tab()
+
+    def _key(self) -> tuple:
+        """The system the recorder's points belong to (`view.key`)."""
+        return view.key(self.practice_state())
+
+    def _ghosted(self) -> bool:
+        return view.ghosted(self.practice_state())
+
+    @coalesce.coalesced(covers=("_draw_live",))
+    def _draw_tab(self, *_: object) -> None:
+        """The tab showing: the loss curves (they change only with the settings), then what moves on it."""
+        if self.tabs.currentIndex() == view.TAB_LOOP:
+            self.loop_tab.draw_loss(laws.loss_view(self.practice_state()))
+        self._draw_live()
 
     def _refresh_map(self, *_: object) -> None:
         """The notes again if the course map's progress has changed, at the same place."""
@@ -650,6 +747,11 @@ class SdofPage(QtWidgets.QWidget):
         t, y = r.window(STRIP_SECONDS)
         end = live.t
         self.x_item.setData(t, y[:, COL["x"]])
+        ghost = self._ghosted()
+        self.ghost_item.setVisible(ghost)
+        if ghost:
+            tg, yg = self.ghost.record.window(STRIP_SECONDS)
+            self.ghost_item.setData(tg, yg[:, COL["x"]])
         self.f_item.setData(t, y[:, COL["f"]])
         self.strip.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
         self.marks.draw(self.live.edits, end - STRIP_SECONDS)
@@ -659,21 +761,31 @@ class SdofPage(QtWidgets.QWidget):
             peak = max(peak, abs(live.held))
         self.body.fit(peak)
         self._draw_body()
-        o = live.params.oscillator()
+        o = view.oscillator(self.practice_state())
         _, yp = r.window(PHASE_SECONDS)
         curve = view.phase_plane(yp[:, COL["x"]], yp[:, COL["v"]], o.omega_n)
         self.plane_item.setData(curve.x, curve.y)
         self.plane_now.setPos(live.x, live.v / o.omega_n)
         self.clock.setText(f"t = {sig(end, 4)} s")
         self._show_readout()
-        self._draw_energy()
+        i = self.tabs.currentIndex()
+        if i == view.TAB_ENERGY:
+            self.energy.draw(live)
+        elif i == view.TAB_LOOP:
+            self._draw_loop()
+        elif i == view.TAB_FRF:
+            self._draw_phasors()
 
     def _draw_body(self) -> None:
         live = self.live
         p = live.params
         hand = p.stiffness * live.held if live.held is not None else None
-        body = one_mass(p.stiffness, p.damping, live.x, live.v, live.force_now, hand=hand, scale=self.arrows, t=live.t)
-        self.body.show(live.x)
+        friction = live.friction_force if p.friction > 0 else None
+        arm = live.arm_force if p.has_arm else None
+        body = one_mass(
+            p.stiffness, p.damping, live.x, live.v, live.force_now, friction, hand, arm, scale=self.arrows, t=live.t
+        )
+        self.body.show(live.x, self.ghost.x if self._ghosted() else None)
         self.forces.show(body)
 
     def _show_readout(self) -> None:
@@ -685,7 +797,7 @@ class SdofPage(QtWidgets.QWidget):
         if live.drive.on:
             self.peak_item.setData([], [])
             f = live.drive.freq_hz
-            points = [p for p in self.recorder.current(live.params) if abs(p.freq_hz - f) <= 1e-6 * f]
+            points = [p for p in self.recorder.current(self._key()) if abs(p.freq_hz - f) <= 1e-6 * f]
             if points:
                 h = points[-1].response
                 x = abs(h) * live.drive.force
@@ -697,6 +809,13 @@ class SdofPage(QtWidgets.QWidget):
                 self.readout.setText(f"Driven at {sig(f)} Hz: waiting for the swing to settle…")
             return
         t, y = live.since_change()
+        state = self.practice_state()
+        if state.model is Model.COULOMB and state.damping > 0:
+            self.peak_item.setData([], [])
+            still = t.size > 0 and live.v == 0.0 and live.params.friction > 0
+            text = laws.decay_readout(state, t, y[:, COL["x"]], still) if t.size else ""
+            self.readout.setText(text or ("Pluck the mass: drag it sideways and let go." if t.size < 2 else ""))
+            return
         decay = ring_down(t, y[:, COL["x"]]) if t.size else None
         if decay is None:
             self.peak_item.setData([], [])
@@ -705,17 +824,35 @@ class SdofPage(QtWidgets.QWidget):
         self.peak_item.setData(decay.times, decay.heights)
         self.readout.setText(decay.text)
 
-    def _draw_energy(self) -> None:
-        if self.tabs.currentIndex() == view.TAB_ENERGY:
-            self.energy.draw(self.live)
+    def _period(self) -> float | None:
+        live = self.live
+        if live.drive.on:
+            return 1.0 / live.drive.freq_hz
+        if live.record.size < 2:
+            return None
+        return 1.0 / view.oscillator(self.practice_state()).natural_hz
+
+    def _draw_loop(self) -> None:
+        period = self._period()
+        t, y = self.live.record.window(1.1 * period if period else 1.0)
+        state = self.practice_state()
+        self.loop_tab.draw_loop(laws.loop_view(state, t, y[:, COL["x"]], y[:, COL["v"]], y[:, COL["f"]], period))
+
+    def _draw_phasors(self) -> None:
+        drawn = {ph.name: ph for ph in laws.phasors(self.practice_state(), self.live.t)}
+        for name, item in self.phasor_items.items():
+            ph = drawn.get(name)
+            if ph is None or not all(np.isfinite((*ph.start, *ph.end))):
+                item.setData([], [])
+                continue
+            item.setData([ph.start[0], ph.end[0]], [ph.start[1], ph.end[1]])
+            item.setPen(pg.mkPen(role(ph.role), width=3))
 
     @coalesce.coalesced
     def _draw_frf(self, *_: object) -> None:
-        live = self.live
-        key = live.params
-        v = view.frf_view(
-            key, live.drive, self.recorder.current(key), self.recorder.earlier(key), self.theory.isChecked()
-        )
+        state = self.practice_state()
+        key = view.key(state)
+        v = view.frf_view(state, self.recorder.current(key), self.recorder.earlier(key), self.theory.isChecked())
         self.mag_plot.setLabel("left", v.amplification)
         self.point_items[0].setData(*v.points)
         self.point_items[1].setData(*v.lags)
@@ -725,6 +862,7 @@ class SdofPage(QtWidgets.QWidget):
         self.theory_items[0].setData(*v.theory)
         self.theory_items[1].setData(*v.theory_lag)
         self.theory_items[2].setData(*v.nyquist_theory)
+        self.frf_ghost.setData(*v.ghost)
         for item, curve in zip(self.drive_items, (v.drive, v.drive_lag)):
             item.setData(*curve)
         for line in self.fn_lines:
@@ -735,15 +873,15 @@ class SdofPage(QtWidgets.QWidget):
         else:
             self.band.hide()
         self.frf_note.setText(v.note)
-        o = key.oscillator()
-        lo, hi = o.natural_hz / 4, o.natural_hz * 4
+        lo, hi = v.natural_hz / 4, v.natural_hz * 4
         if v.drive.x.size:
             lo, hi = min(lo, float(v.drive.x[0]) / 1.5), max(hi, float(v.drive.x[0]) * 1.5)
         self.mag_plot.setXRange(np.log10(lo), np.log10(hi), padding=0.02)
 
     @coalesce.coalesced
     def _draw_poles(self) -> None:
-        pv = view.poles_view(self.live.params)
+        state = self.practice_state()
+        pv = view.poles_view(view.viscous(state), state.model)
         for dot, x, y in zip(self.pole_dots, pv.poles.x, pv.poles.y):
             dot.place(float(x), float(y))
         for ray, curve in zip(self.rays, pv.rays):

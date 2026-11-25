@@ -8,9 +8,8 @@ changes.
 
 The pages in the order the app's tabs take them.
 
-- [Single oscillator](#single-oscillator): one mass on a spring and a damper: free decay, damping, resonance, half-power, beats, poles
+- [Single oscillator](#single-oscillator): one mass on a spring and a damper: free decay, resonance, half-power, beats, poles, and the damper's law: viscous, hysteretic, friction, viscoelastic
 - [Pendulums](#pendulums): gravity as the spring, large swings that soften, and the rotational form of every one-mass formula
-- [Damping models](#damping-models): viscous, hysteretic, friction and viscoelastic damping: their loops, losses and decays
 - [Vibration isolation](#vibration-isolation): a machine on mounts: transmissibility, static deflection, damping, two stages, start-up
 - [Transient response](#transient-response): an impulse, a step or a pulse: the impulse response, convolution, and how long a pulse has to be
 - [Periodic forcing](#periodic-forcing): a repeating force as a Fourier series: harmonics, Gibbs, resonance through a harmonic
@@ -25,10 +24,22 @@ before, with the change marked. The readout measures the log decrement from the 
 with a force or a rotating unbalance, and the Frequency response tab fills point by point as each steady swing is
 measured: dwell, or press Sweep, then show the theory's curve, half-power band and Nyquist circle over the points.
 The Energy tab keeps the books through every change; the Poles tab's poles drag k and c live, beside the phase
-plane. Eight Things to try, after the controls, are setups to come back to; their predictions are asked once
-you've handled it.
+plane.
+
+The damper's law is picked under the oscillator's boxes, as it runs (the Damping models page's, merged here: the
+same mass and spring): viscous, hysteretic (structural), Coulomb friction or viscoelastic (Zener), each matched
+to c so it loses the same energy per cycle at f<sub>n</sub>, the motion carrying on with the new damping. A
+viscous ghost, dashed, is plucked and driven beside it. Hysteretic damping runs as its stand-in in time, a
+viscous damper matched at the frequency it runs at; friction sticks and slips by its events; the Zener element
+relaxes through its arm. The Loop & loss tab draws the run's own hysteresis loop over its last cycle, with every
+law's beside it and the energy it encloses, and the loss factors against frequency; the Frequency response tab
+draws the law's curve (friction's resonance runs away past 4F<sub>f</sub>/π) and the driven state's force
+phasors beside the Nyquist plot. Sixteen Things to try, after the controls, are setups to come back to, the
+oscillator's eight and then the laws'; their predictions are asked once you've handled it.
 
 ![Single oscillator page after a sweep: m = 1 kg, k = 400 N/m, c = 2 N·s/m (f<sub>n</sub> = 3.18 Hz, ζ = 0.05), 15 points measured from 1.06 to 9.55 Hz with the theory's curve over them, the half-power band 3.01–3.33 Hz giving ζ ≈ 0.0503, the lag through 90° at f<sub>n</sub> and the Nyquist circle; the mass still driven at 9.55 Hz, swinging ±312 µm and lagging by 178°, with the forces on it drawn beside it](images/single_oscillator.png)
+
+![Single oscillator page with the viscous damper driven by 0.4 N at f<sub>n</sub> = 3.18 Hz, swinging ±10 mm, on the Loop & loss tab: its own loop encloses about 12.5 mJ a cycle, beside the four laws' loops at that cycle (three ellipses enclosing 12.6 mJ and friction's ±0.31 N rectangle); the loss factors meet at 0.1 at f<sub>n</sub>, where the Zener element's peaks](images/single_oscillator_damping.png)
 
 ## Pendulums
 
@@ -41,20 +52,6 @@ buckles once gravity's negative stiffness beats the spring. The pendulum itself 
 beside the linearized swing's ghost; turn it and let go to start it from there.
 
 ![Pendulums page, large swings: a 1 m pendulum (T₀ = 2.006 s) let go from 90°, drawn 0.7 s in beside the linearized swing's ghost, swings with a period of 2.368 s, 18 % longer (Duffing's estimate +20.2 %), and the linearized swing drifts ahead of it](images/pendulums.png)
-
-## Damping models
-
-Viscous, hysteretic (structural), Coulomb friction and viscoelastic (Zener) damping, each matched to the same
-oscillator so it loses the same energy per cycle at f<sub>n</sub>, and the one picked runs live (#478's pilot,
-with the Single oscillator): pick another as it runs and the motion carries on with it. A viscous ghost, dashed,
-is plucked and driven beside it. Hysteretic damping runs as its stand-in in time, a viscous damper matched at
-the frequency it runs at; friction sticks and slips by its events; the Zener element relaxes through its arm.
-The Loop & loss tab draws the run's own hysteresis loop over its last cycle, with every model's beside it and
-the energy it encloses, and the loss factors against frequency; the Frequency response tab fills point by point
-(friction's resonance runs away past 4F<sub>f</sub>/π), with the driven state's force phasors; the Energy tab
-keeps the books through every change.
-
-![Damping models page: the viscous mass matched to ζ = 0.05 and driven by 0.4 N at f<sub>n</sub> = 3.18 Hz, swinging ±10 mm; its own loop encloses about 12.5 mJ a cycle, beside the four models' loops at that cycle (three ellipses enclosing 12.6 mJ and friction's ±0.31 N rectangle); the loss factors meet at 0.1 at f<sub>n</sub>, where the Zener element's peaks](images/damping_models.png)
 
 ## Vibration isolation
 

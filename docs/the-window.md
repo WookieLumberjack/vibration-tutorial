@@ -23,7 +23,7 @@ or follows them. Paused, a page that simulates as it runs (this one, Duffing & M
 The groups (each one's page here describes its pages): the first six are the course's spine, read in order;
 the next five are branches into application areas; the Appendix holds pages that are to be folded into others.
 
-1. **[One oscillator](one-oscillator.md).** Single oscillator, Pendulums, Damping models, Vibration isolation, Transient response and Periodic forcing.
+1. **[One oscillator](one-oscillator.md).** Single oscillator, Pendulums, Vibration isolation, Transient response and Periodic forcing.
 2. **[Equations](equations.md).** Deriving the equations and 3D rigid body.
 3. **[Modes](modes.md).** *Simulation & modal analysis* (the chain above), Energy methods, FRF matrix, Complex modes and Rigid body on mounts.
 4. **[Building models](building-models.md).** Modal coupling, Substructuring (CMS) and Numerical integration.
@@ -83,8 +83,7 @@ takes it back to t = 0, and the time cursor on the plot it follows can be dragge
 sideways and let go to pluck it: it vibrates freely from where you let go. Pendulums does the same with
 the pendulum (a bob, a rod, a disc on its wire seen from above, an inverted arm), swinging beside a faint
 ghost of the linearized swing: turn it about its pivot and let go to start it from that angle, either side.
-Damping models' *Free decay* tab draws its four masses side by side, each on its own damper, moving with
-their decays: pull one and let go, and all four start from there. Vibration isolation's *Start-up* tab draws
+Vibration isolation's *Start-up* tab draws
 the machine on its mounts, running up with its unbalance turning: pull it and let go and, stopped, it rings
 on its mounts.
 

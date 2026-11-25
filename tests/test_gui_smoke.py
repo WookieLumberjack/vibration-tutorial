@@ -4426,7 +4426,6 @@ def test_shock_page(app):
         "sdof_page",
         "transient_page",
         "periodic_page",
-        "damping_page",
         "isolation_page",
         "deriving_page",
         "rigid_body_page",

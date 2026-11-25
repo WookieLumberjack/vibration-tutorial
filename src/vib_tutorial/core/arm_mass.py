@@ -1,6 +1,6 @@
 """One mass on a spring, a damper and a relaxing arm, stepped live: the Zener (standard linear solid) element in time.
 
-The arm is a spring k₁ in series with a dashpot c₁, beside the spring k₀ and the damper c (Damping models' viscoelastic
+The arm is a spring k₁ in series with a dashpot c₁, beside the spring k₀ and the damper c (the Single oscillator's viscoelastic
 element; the chain's `Simulator` has no such arm, its elements being a spring and a damper side by side). The arm's
 inner end, between its spring and its dashpot, is at y, a state of its own with no mass:
 

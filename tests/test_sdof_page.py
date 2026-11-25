@@ -1,5 +1,7 @@
 """The Single oscillator, rebuilt live (#478 Phase 3's pilot): the mass runs as it's handled, the frequency
-response is built by hand, the energy balance closes through every change, and predictions come after play."""
+response is built by hand, the energy balance closes through every change, and predictions come after play; its
+damper's law is picked as it runs (the Damping models page's, merged here), the viscous ghost beside it, the loop
+the run draws, and the phasors."""
 
 from __future__ import annotations
 
@@ -14,6 +16,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from PySide6 import QtCore, QtGui  # noqa: E402
 
+from vib_tutorial.core.damping_models import MODELS, Model  # noqa: E402
 from vib_tutorial.gui import free_body_view, sdof  # noqa: E402
 from vib_tutorial.view_models import sdof as view  # noqa: E402
 from vib_tutorial.view_models.live_mass import COL  # noqa: E402
@@ -69,8 +72,9 @@ def test_it_opens_at_rest_on_its_system_with_things_to_try_after_the_controls(pa
     left = page.trials.parentWidget()
     boxes = [w for w in left.findChildren(QtWidgets.QGroupBox) if w.parentWidget() is left]
     assert [b.title() for b in boxes] == ["Oscillator", "Drive", "Things to try"]
-    assert page.tabs.count() == 4  # three tabs plus the Theory (#478 item 6)
+    assert page.tabs.count() == 5  # four tabs plus the Theory: one over #478 item 6's three, since the merge
     assert page.practice_state() == view.SdofTrial("", "")
+    assert page.friction_mm.isHidden() and page.relax.isHidden() and page.ghost_on.isHidden()  # the other laws'
 
 
 def test_a_pluck_rings_down_and_the_readout_measures_it(page):
@@ -86,7 +90,7 @@ def test_driven_off_resonance_the_readout_and_the_point_say_what_the_worked_exam
     page.drive_on.setChecked(True)  # 1 N at 3 Hz, from rest
     page.step(12.0)
     assert f"±{quoted('sdof', '17.1')} mm, lagging the drive by {quoted('sdof', '40.1')}°" in page.readout.text()
-    points = page.recorder.current(page.live.params)
+    points = page.recorder.current(page._key())
     assert len(points) == 1 and points[0].freq_hz == 3.0
     log_amplification = page.point_items[0].getData()[1][0]  # on the log axis, its log
     assert 10**log_amplification == pytest.approx(quoted("sdof", "6.84"), abs=0.005)
@@ -156,7 +160,7 @@ def test_a_sweep_builds_the_frequency_response_point_by_point(page):
     assert page.sweep is not None and page.drive_on.isChecked()
     freqs = page.sweep.freqs
     page.step(120.0)
-    points = page.recorder.current(page.live.params)
+    points = page.recorder.current(page._key())
     assert [round(p.freq_hz, 3) for p in points] == [round(f, 3) for f in freqs]
     assert page.sweep is None and not page.sweep_button.isChecked()  # done
     note = sdof.TRIALS[trial("Building the frequency response")].note
@@ -164,7 +168,7 @@ def test_a_sweep_builds_the_frequency_response_point_by_point(page):
     page.theory.setChecked(True)
     assert page.band.isVisible() and "Half-power band 3.01–3.33 Hz" in page.frf_note.text()
     page.mass.setValue(2.0)  # the points belong to the old oscillator now: faded
-    key = page.live.params
+    key = page._key()
     assert page.recorder.current(key) == [] and len(page.recorder.earlier(key)) == len(freqs)
     assert len(page.earlier_items[0].getData()[0]) == len(freqs)
 
@@ -231,8 +235,99 @@ def test_defaults_round_trips_through_the_bindings(page):
 def test_the_drive_lag_at_resonance_is_ninety_degrees_on_the_body_and_the_plot(page):
     page.load_trial(trial("Resonance"))
     page.step(15.0)
-    points = page.recorder.current(page.live.params)
+    points = page.recorder.current(page._key())
     assert points and -math.degrees(np.angle(points[-1].response)) == pytest.approx(90.0, abs=1.0)
     r = page.live.record
     x = r.y[: r.size, COL["x"]]
     assert np.abs(x[-500:]).max() == pytest.approx(0.025, rel=0.02)
+
+
+# ------------------------------------------------------------------ the damper's law (once Damping models)
+
+
+def test_four_loops_one_energy_and_the_readouts_the_worked_example_quotes(page):
+    page.load_trial(trial("Four loops"))
+    page.step(12.0)
+    assert "Steady at 3.18 Hz: x swings ±10 mm" in page.readout.text()
+    note = page.loop_tab.note.text()
+    assert f"a viscous damper's πcΩX² there is {quoted('sdof', '12.6')} mJ" in note
+    enclosed = float(note.split("encloses ")[1].split(" mJ")[0])
+    assert enclosed == pytest.approx(12.57, rel=0.01)  # the run's own loop
+    loops = page.loop_tab.theory_loops
+    drawn = [m for m, item in loops.items() if item.getData()[0] is not None and len(item.getData()[0])]
+    assert drawn == list(MODELS)
+
+
+def test_the_law_changes_as_it_runs_and_the_books_close(page):
+    page.load_trial(trial("Four loops"))
+    page.step(3.0)
+    t = page.live.t
+    for i, model in enumerate(MODELS[1:], 1):
+        page.model.setCurrentIndex(i)  # a live change: no restart
+        assert page.live.t == t and page.practice_state().model is model
+        page.step(1.0)
+        t = page.live.t
+    assert len(page.live.edits) == 3
+    from vib_tutorial.view_models.live_mass import energy_view
+
+    r = page.live.record
+    books = energy_view(r.t[: r.size], r.y[: r.size])
+    assert books is not None and abs(books.residual) < 1e-9 * max(abs(row.value) for row in books.rows)
+    page.tabs.setCurrentIndex(view.TAB_ENERGY)
+    assert "It closes to" in page.energy.ledger.text()
+
+
+def test_friction_sticks_off_centre_beside_the_ringing_ghost(page):
+    page.load_trial(trial("Released against friction"))
+    page.step(4.0)
+    text = page.readout.text()
+    assert f"Each peak is {quoted('sdof', '3.14')} mm lower" in text
+    assert "Stuck 575 µm off centre" in text  # the worked example's 575 µm
+    assert page.live.v == 0.0 and page.ghost.v != 0.0  # the viscous ghost rings on
+    assert page.ghost_item.isVisible() and len(page.ghost_item.getData()[0])
+    assert page.body.ghost.isVisible() and not page.ghost_on.isHidden()
+    assert "Friction F<sub>f</sub> = πcω<sub>n</sub>X/4 = 314 mN" in page.info.text()  # the worked example's
+    assert not page.friction_mm.isHidden()
+
+
+def test_the_zener_info_and_its_live_decay(page):
+    page.load_trial(trial("A viscoelastic loss peak"))
+    assert f"τ<sub>r</sub> = {quoted('sdof', '45.2')} ms" in page.info.text()
+    assert page.live.params.has_arm and not page.relax.isHidden()
+    page.step(2.0)
+    assert page.readout.text().startswith("Each peak is")
+    names = [a.name for a in page.forces._arrows]
+    assert "arm" in names and "damper" not in names
+
+
+def test_the_hysteretic_stand_in_swept_lands_on_its_curve(page):
+    page.load_trial(trial("Hysteretic damping's stand-in"))
+    page.step(120.0)
+    points = page.recorder.current(page._key())
+    assert len(points) >= 14 and page.sweep is None  # the sweep's 15 points, done
+    m = view.matched(page.practice_state())
+    for p in points:
+        h = complex(m.receptance(Model.HYSTERETIC, np.array([p.freq_hz]), 1.0)[0])
+        assert abs(p.response) == pytest.approx(abs(h), rel=0.02), p.freq_hz
+
+
+def test_the_phasors_close_on_the_drive(page):
+    page.load_trial(trial("Four loops"))
+    page.tabs.setCurrentIndex(view.TAB_FRF)
+    page.step(2.0)
+    xs, ys = page.phasor_items["drive"].getData()
+    assert np.hypot(xs[1], ys[1]) == pytest.approx(0.4)
+    mx, my = page.phasor_items["mass"].getData()
+    assert (mx[1], my[1]) == pytest.approx((xs[1], ys[1]))
+
+
+def test_a_law_trial_round_trips_and_back_to_viscous_the_ghost_goes(page):
+    page.load_trial(trial("Twice"))
+    state = page.practice_state()
+    page.load_setup({k: v for k, v in state.__dict__.items() if k not in ("name", "note")})
+    assert page.practice_state() == state
+    page.load_trial(trial("Released against friction"))
+    page.step(0.5)
+    page.model.setCurrentIndex(MODELS.index(Model.VISCOUS))
+    page.step(0.2)
+    assert not page.ghost_item.isVisible() and not page.body.ghost.isVisible() and page.ghost_on.isHidden()

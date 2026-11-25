@@ -180,10 +180,10 @@
   speed, and a time cursor on its plots), which moves the page's body: Pendulums' pendulum
   (`gui/pendulum_view.py`, each kind drawn and turned with the mouse) and Vibration isolation's machine on
   its mounts (`gui/isolation_view.py`). A page rebuilt to #478's standard runs its body live instead: the
-  Single oscillator's and Damping models' mass (`view_models/live_mass.py`, the chain's `Simulator` with one
+  Single oscillator's mass (`view_models/live_mass.py`, the chain's `Simulator` with one
   mass or `core/arm_mass.py`'s Zener arm), drawn with its grips (`gui/live_body.py`) and its forces beside it on the mass held still
   (`gui/free_body_view.py`), with the
-  parts they share (`gui/live_parts.py`: the energy tab, the change marks, the run's controls). A page's practice specs can sit on
+  parts they share (`gui/live_parts.py`: the energy tab, the damping laws' loop tab, the change marks, the run's controls). A page's practice specs can sit on
   the page as challenges, checked live as its controls move (`gui/challenge.py`'s `ChallengeBox`).
 - `view_models/`: what a page shows, worked out without Qt (its curves, markers, ranges and readout
   texts, from its settings), so its readouts are tested as printed and its plots could be drawn

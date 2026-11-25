@@ -1517,7 +1517,7 @@ def test_damping_models_trials():
     assert m.friction == pytest.approx(0.31, abs=0.005)
     assert m.energy_per_cycle(Model.VISCOUS, np.array([2 * wn]))[0] == pytest.approx(0.0251, abs=5e-5)
     assert m.energy_per_cycle(Model.ZENER, np.array([2 * wn]))[0] == pytest.approx(0.0107, abs=5e-5)
-    assert 4 * m.friction / np.pi == pytest.approx(quoted("damping_models", "0.4"), abs=0.005)
+    assert 4 * m.friction / np.pi == pytest.approx(quoted("sdof", "0.4"), abs=0.005)
     assert 4 * m.friction / m.stiffness == pytest.approx(0.0031, abs=5e-5)
     half_cycles, where = coulomb_stop(m.stiffness, m.friction, 0.01)
     assert half_cycles == 6 and abs(where) == pytest.approx(0.00058, abs=5e-6)
@@ -1526,103 +1526,99 @@ def test_damping_models_trials():
 
 
 def test_damping_models_worked_example():
-    """The figures Damping models' worked example quotes, on the page's defaults, from the rounded numbers it
+    """The figures the Single oscillator's damping laws' worked example quotes, on the page's defaults, from the rounded numbers it
     shows too; and its equivalent viscous damping and loss factor formulas."""
     from vib_tutorial.core.damping_models import Matched, Model, coulomb_decay, coulomb_stop
     from vib_tutorial.core.sdof import Oscillator
 
     m = Matched()
     assert (m.mass, m.stiffness, m.relax) == (1.0, 400.0, 1.0)
-    assert (m.zeta, m.amplitude) == (quoted("damping_models", "0.05"), quoted("damping_models", "0.01"))
+    assert (m.zeta, m.amplitude) == (quoted("sdof", "0.05"), quoted("sdof", "0.01"))
     wn = m.omega_n
     assert wn == pytest.approx(20.0)
-    assert m.natural_hz == pytest.approx(quoted("damping_models", "3.18"), abs=0.005)
+    assert m.natural_hz == pytest.approx(quoted("sdof", "3.18"), abs=0.005)
     assert m.c == pytest.approx(2.0)
     U = 0.5 * m.stiffness * m.amplitude**2
-    assert U == pytest.approx(0.020) and m.eta == pytest.approx(quoted("damping_models", "0.1"))
+    assert U == pytest.approx(0.020) and m.eta == pytest.approx(quoted("sdof", "0.1"))
     w = np.array([wn])
     for model in Model:
-        assert m.energy_per_cycle(model, w)[0] * 1e3 == pytest.approx(quoted("damping_models", "12.57"), abs=0.005)
+        assert m.energy_per_cycle(model, w)[0] * 1e3 == pytest.approx(quoted("sdof", "12.57"), abs=0.005)
         assert m.energy_per_cycle(model, w)[0] * 1e3 == pytest.approx(
-            quoted("damping_models", "12.6"), abs=0.05
+            quoted("sdof", "12.6"), abs=0.05
         )  # the loops' readout
         K = m.dynamic_stiffness(model, w)[0]
         assert m.energy_per_cycle(model, w)[0] / (2 * math.pi * 0.5 * K.real * m.amplitude**2) == pytest.approx(
             K.imag / K.real
         )  # η = W_d/2πU = K''/K'
-    assert 2 * math.pi * 0.1 * 20 == pytest.approx(
-        quoted("damping_models", "12.57"), abs=0.005
-    )  # mJ, from the rounded numbers
-    assert math.pi * 2 * 20 * 0.01**2 * 1e3 == pytest.approx(quoted("damping_models", "12.57"), abs=0.005)
+    assert 2 * math.pi * 0.1 * 20 == pytest.approx(quoted("sdof", "12.57"), abs=0.005)  # mJ, from the rounded numbers
+    assert math.pi * 2 * 20 * 0.01**2 * 1e3 == pytest.approx(quoted("sdof", "12.57"), abs=0.005)
     # friction
-    assert m.friction == pytest.approx(quoted("damping_models", "0.314"), abs=0.0005)
-    assert 12.57 / 40 == pytest.approx(quoted("damping_models", "0.314"), abs=0.0005)
+    assert m.friction == pytest.approx(quoted("sdof", "0.314"), abs=0.0005)
+    assert 12.57 / 40 == pytest.approx(quoted("sdof", "0.314"), abs=0.0005)
     assert 1e3 * m.friction == pytest.approx(314, abs=0.5)  # the Damping box's readout, 314 mN
-    assert 1e3 * m.zener()[2] == pytest.approx(quoted("damping_models", "45.2"), abs=0.05)
+    assert 1e3 * m.zener()[2] == pytest.approx(quoted("sdof", "45.2"), abs=0.05)
     assert abs(coulomb_stop(m.stiffness, m.friction, m.amplitude)[1]) * 1e6 == pytest.approx(575, abs=0.5)
-    assert 4 * m.friction / m.stiffness * 1e3 == pytest.approx(quoted("damping_models", "3.14"), abs=0.005)
-    assert m.friction / m.stiffness * 1e3 == pytest.approx(quoted("damping_models", "0.785"), abs=0.0005)
-    half_cycle = quoted("damping_models", "1.57")
+    assert 4 * m.friction / m.stiffness * 1e3 == pytest.approx(quoted("sdof", "3.14"), abs=0.005)
+    assert m.friction / m.stiffness * 1e3 == pytest.approx(quoted("sdof", "0.785"), abs=0.0005)
+    half_cycle = quoted("sdof", "1.57")
     assert 2 * m.friction / m.stiffness * 1e3 == pytest.approx(half_cycle, abs=0.005)
     turns = [10 - half_cycle * n for n in range(1, 7)]  # from the rounded 1.57 mm a half cycle
     assert turns == pytest.approx(
         [
-            quoted("damping_models", "8.43"),
-            quoted("damping_models", "6.86"),
-            quoted("damping_models", "5.29"),
-            quoted("damping_models", "3.72"),
-            quoted("damping_models", "2.15"),
-            quoted("damping_models", "0.58"),
+            quoted("sdof", "8.43"),
+            quoted("sdof", "6.86"),
+            quoted("sdof", "5.29"),
+            quoted("sdof", "3.72"),
+            quoted("sdof", "2.15"),
+            quoted("sdof", "0.58"),
         ],
         abs=0.005,
     )
     halves, stop = coulomb_stop(m.stiffness, m.friction, m.amplitude)
-    assert halves == 6 and abs(stop) * 1e3 == pytest.approx(quoted("damping_models", "0.58"), abs=0.005)
+    assert halves == 6 and abs(stop) * 1e3 == pytest.approx(quoted("sdof", "0.58"), abs=0.005)
     t = np.linspace(0, 2.5 * 2 * math.pi / wn, 50001)  # its turns, every half period: 8.43, 6.86, … mm
     x = coulomb_decay(m.mass, m.stiffness, m.friction, m.amplitude, t)
     half = np.searchsorted(t, [n * math.pi / wn for n in range(1, 5)])
     assert np.abs(x[half]) * 1e3 == pytest.approx(
         [
-            quoted("damping_models", "8.43"),
-            quoted("damping_models", "6.86"),
-            quoted("damping_models", "5.29"),
-            quoted("damping_models", "3.72"),
+            quoted("sdof", "8.43"),
+            quoted("sdof", "6.86"),
+            quoted("sdof", "5.29"),
+            quoted("sdof", "3.72"),
         ],
         abs=0.005,
     )
     delta = Oscillator(1, 400, 2).log_decrement
-    assert delta == pytest.approx(quoted("damping_models", "0.315"), abs=0.0005)
-    assert math.exp(-delta) == pytest.approx(quoted("damping_models", "0.730"), abs=0.0005)
-    assert math.exp(-0.315) == pytest.approx(quoted("damping_models", "0.730"), abs=0.0005)
+    assert delta == pytest.approx(quoted("sdof", "0.315"), abs=0.0005)
+    assert math.exp(-delta) == pytest.approx(quoted("sdof", "0.730"), abs=0.0005)
+    assert math.exp(-0.315) == pytest.approx(quoted("sdof", "0.730"), abs=0.0005)
     # driven by 1 N
     assert abs(m.receptance(Model.HYSTERETIC, np.array([m.natural_hz]), 1.0)[0]) * 1e3 == pytest.approx(
-        quoted("damping_models", "25.0")
+        quoted("sdof", "25.0")
     )
     f = np.linspace(3.0, 3.3, 300001)
-    assert np.abs(m.receptance(Model.VISCOUS, f, 1.0)).max() * 1e3 == pytest.approx(
-        quoted("damping_models", "25.03"), abs=0.005
-    )
-    assert 2.5 / (0.1 * math.sqrt(1 - 0.05**2)) == pytest.approx(quoted("damping_models", "25.03"), abs=0.005)
+    assert np.abs(m.receptance(Model.VISCOUS, f, 1.0)).max() * 1e3 == pytest.approx(quoted("sdof", "25.03"), abs=0.005)
+    assert 2.5 / (0.1 * math.sqrt(1 - 0.05**2)) == pytest.approx(quoted("sdof", "25.03"), abs=0.005)
     assert np.abs(m.receptance(Model.HYSTERETIC, f, 1.0)).max() == pytest.approx(0.025, rel=1e-6)
-    assert 4 * m.friction / math.pi == pytest.approx(quoted("damping_models", "0.4"))
+    assert 4 * m.friction / math.pi == pytest.approx(quoted("sdof", "0.4"))
     # the Zener element
     k0, k1, tau = m.zener()
     a = k1 / k0
-    assert a == pytest.approx(quoted("damping_models", "0.221"), abs=0.0005)
-    assert a / (2 * math.sqrt(1 + a)) == pytest.approx(quoted("damping_models", "0.1"))
-    assert 1 + a == pytest.approx(quoted("damping_models", "1.221"), abs=0.0005)
+    assert a == pytest.approx(quoted("sdof", "0.221"), abs=0.0005)
+    assert a / (2 * math.sqrt(1 + a)) == pytest.approx(quoted("sdof", "0.1"))
+    assert 1 + a == pytest.approx(quoted("sdof", "1.221"), abs=0.0005)
     assert 0.221 / (2 * math.sqrt(1.221)) == pytest.approx(
-        quoted("damping_models", "0.1"), abs=0.0005
+        quoted("sdof", "0.1"), abs=0.0005
     )  # η_max = k1/2√(k0(k0 + k1))
-    assert k1 / (2 * math.sqrt(k0 * (k0 + k1))) == pytest.approx(quoted("damping_models", "0.1"))
-    assert k0 == pytest.approx(quoted("damping_models", "363.8"), abs=0.05)
-    assert k1 == pytest.approx(quoted("damping_models", "80.4"), abs=0.05)
-    assert 400 / (1 + 0.221 / 2.221) == pytest.approx(quoted("damping_models", "363.8"), abs=0.05)
-    assert tau * 1e3 == pytest.approx(quoted("damping_models", "45.2"), abs=0.05)
-    assert 1e3 / (20 * math.sqrt(1.221)) == pytest.approx(quoted("damping_models", "45.2"), abs=0.05)
-    assert m.loss_factor(Model.ZENER, w)[0] == pytest.approx(quoted("damping_models", "0.1"))
+    assert k1 / (2 * math.sqrt(k0 * (k0 + k1))) == pytest.approx(quoted("sdof", "0.1"))
+    assert k0 == pytest.approx(quoted("sdof", "363.8"), abs=0.05)
+    assert k1 == pytest.approx(quoted("sdof", "80.4"), abs=0.05)
+    assert 400 / (1 + 0.221 / 2.221) == pytest.approx(quoted("sdof", "363.8"), abs=0.05)
+    assert tau * 1e3 == pytest.approx(quoted("sdof", "45.2"), abs=0.05)
+    assert 1e3 / (20 * math.sqrt(1.221)) == pytest.approx(quoted("sdof", "45.2"), abs=0.05)
+    assert m.loss_factor(Model.ZENER, w)[0] == pytest.approx(quoted("sdof", "0.1"))
     assert m.loss_factor(Model.ZENER, np.geomspace(0.1, 10, 2001) * wn).max() == pytest.approx(
-        quoted("damping_models", "0.1"), rel=1e-5
+        quoted("sdof", "0.1"), rel=1e-5
     )
     # equivalent viscous damping: velocity-squared drag a ẋ|ẋ| takes (8/3) a Ω² X³ a cycle
     drag, omega, X = 0.7, 13.0, 0.02

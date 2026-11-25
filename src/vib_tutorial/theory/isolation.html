@@ -1,7 +1,7 @@
 <before>
 <a href="page:sdof_page#forced-response">Forced response</a>
 <a href="page:sdof_page#unbalance">A rotating unbalance</a>
-<a href="page:damping_page#viscoelastic">The Zener element</a>
+<a href="page:sdof_page#viscoelastic">The Zener element</a>
 </before>
 <goals page="isolation_page">
 <li trial="1" problem="mount-frequency">set a mount's natural frequency from how far it sags, and see it isolate;</li>
@@ -51,8 +51,8 @@ through it. But above <m>√2 f<sub>n</sub></m> the damper passes force in propo
 <p>which is still <m>1/r²</m> while <m>2ζr ≪ 1</m>, but turns to <m>2ζ/r</m>, 20 dB a decade, once
 <m>r ≫ 1/2ζ</m>: at <m>ζ</m> = 0.05 from about 10 <m>f<sub>n</sub></m> up, at <m>ζ</m> = 0.3 from
 2 <m>f<sub>n</sub></m>. Mounts are a compromise: light damping, or damping that only works at resonance.</p>
-<p>A rubber mount's loss is closer to the Damping models page's
-<a href="page:damping_page#hysteretic">hysteretic damping</a>, <m>k(1 + iη)</m>. Then
+<p>A rubber mount's loss is closer to the Single oscillator's
+<a href="page:sdof_page#hysteretic">hysteretic damping</a>, <m>k(1 + iη)</m>. Then
 <m>T = √(1 + η²)/√((1 − r²)² + η²)</m>: the same peak as <m>ζ = η/2</m>, but it keeps falling as
 <m>1/r²</m>, since <m>|1 + iη|</m> doesn't grow with frequency as <m>|k + iΩc|</m> does.</p>
 
@@ -62,7 +62,7 @@ through it. But above <m>√2 f<sub>n</sub></m> the damper passes force in propo
 the damper and the damper works; at high frequency the damper hardly moves, so the mount is just <m>k</m> and
 <m>Nk</m> side by side and <m>T</m> falls as <m>1/r²</m> again, not <m>2ζ/r</m>. Near resonance it passes a
 little more than a plain mount of the same <m>ζ</m>; it pays off well above it. Its dynamic stiffness is that
-of the Damping models page's Zener element, with <m>k<sub>0</sub> = k</m>, <m>k<sub>1</sub> = Nk</m> and
+of the Single oscillator's Zener element, with <m>k<sub>0</sub> = k</m>, <m>k<sub>1</sub> = Nk</m> and
 <m>c<sub>1</sub> = c</m>.</p>
 <table width="100%"><tr><td align="center"><img src="fig:mounts" width="360" height="200"></td></tr></table>
 

@@ -253,34 +253,34 @@ def test_a_sweep_visits_its_frequencies_in_order_across_the_resonance():
     assert sweep.landed() is None and sweep.done
 
 
-# ------------------------------------------------------------------ the damping models, live (Damping models)
+# ------------------------------------------------------------------ the damping laws, live (the Single oscillator)
 
 
 def _damping(model, **kw):
-    from vib_tutorial.view_models import damping
+    from vib_tutorial.view_models import sdof
 
-    return damping.DampingTrial("", "", model=model, **kw)
+    return sdof.SdofTrial("", "", model=model, **kw)
 
 
 def test_the_zener_mass_rings_down_as_the_matched_closed_form_does():
     from vib_tutorial.core.damping_models import Model
-    from vib_tutorial.view_models import damping
+    from vib_tutorial.view_models import sdof
 
     t = _damping(Model.ZENER)
-    live = _plucked(0.01, damping.params(t))
+    live = _plucked(0.01, sdof.params(t))
     _run(live, 1.5)
     ts, y = live.since_change()
-    expected = damping.matched(t).free_decay(Model.ZENER, 0.01, np.concatenate([[0.0], ts - live.changed_at]))[1:]
+    expected = sdof.matched(t).free_decay(Model.ZENER, 0.01, np.concatenate([[0.0], ts - live.changed_at]))[1:]
     assert np.abs(y[:, COL["x"]] - expected).max() < 2e-6 * 0.01
 
 
 def test_friction_stops_where_the_closed_form_says():
     from vib_tutorial.core.damping_models import Model, coulomb_stop
-    from vib_tutorial.view_models import damping
+    from vib_tutorial.view_models import sdof
 
     t = _damping(Model.COULOMB)
-    m = damping.matched(t)
-    live = _plucked(0.01, damping.params(t))
+    m = sdof.matched(t)
+    live = _plucked(0.01, sdof.params(t))
     _run(live, 3.0)
     assert live.x == pytest.approx(coulomb_stop(m.stiffness, m.friction, 0.01)[1], abs=2e-6)
     assert live.v == 0.0
@@ -289,19 +289,19 @@ def test_friction_stops_where_the_closed_form_says():
 
 def test_the_books_close_through_changes_to_and_from_a_zener_arm():
     from vib_tutorial.core.damping_models import Model
-    from vib_tutorial.view_models import damping
+    from vib_tutorial.view_models import sdof
 
-    live = LiveMass(damping.params(_damping(Model.VISCOUS)), Drive(on=True, freq_hz=3.0))
+    live = LiveMass(sdof.params(_damping(Model.VISCOUS)), Drive(on=True, freq_hz=3.0))
     _run(live, 0.5)
-    live.set_params(damping.params(_damping(Model.ZENER)))  # a swap of steppers, the books carried over
+    live.set_params(sdof.params(_damping(Model.ZENER)))  # a swap of steppers, the books carried over
     _run(live, 0.5)
-    zener = damping.params(_damping(Model.ZENER, mass=2.0, stiffness=600.0))
+    zener = sdof.params(_damping(Model.ZENER, mass=2.0, stiffness=600.0))
     live.set_params(zener)  # a capture and a stiffer spring, the arm's stretch kept
     _run(live, 0.5)
     assert live.arm_force != 0.0
-    live.set_params(damping.params(_damping(Model.COULOMB)))  # and back, the arm's energy taken with it
+    live.set_params(sdof.params(_damping(Model.COULOMB)))  # and back, the arm's energy taken with it
     _run(live, 0.5)
-    live.set_params(damping.params(_damping(Model.ZENER)))  # friction's loss carried over to the arm's stepper
+    live.set_params(sdof.params(_damping(Model.ZENER)))  # friction's loss carried over to the arm's stepper
     _run(live, 0.5)
     view = energy_view(live.record.t[: live.record.size], live.record.y[: live.record.size])
     assert view is not None and len(live.edits) == 4
@@ -311,25 +311,25 @@ def test_the_books_close_through_changes_to_and_from_a_zener_arm():
 
 def test_the_hysteretic_stand_in_is_matched_at_the_frequency_it_runs_at():
     from vib_tutorial.core.damping_models import Model
-    from vib_tutorial.view_models import damping
+    from vib_tutorial.view_models import sdof
 
-    free = damping.params(_damping(Model.HYSTERETIC))
-    assert free.damping == pytest.approx(damping.params(_damping(Model.VISCOUS)).damping)  # at f_n, as viscous
-    driven = damping.params(_damping(Model.HYSTERETIC, drive=True, freq_hz=6.0))
-    assert driven.damping == pytest.approx(free.damping * damping.matched(_damping(Model.HYSTERETIC)).natural_hz / 6.0)
+    free = sdof.params(_damping(Model.HYSTERETIC))
+    assert free.damping == pytest.approx(sdof.params(_damping(Model.VISCOUS)).damping)  # at f_n, as viscous
+    driven = sdof.params(_damping(Model.HYSTERETIC, drive=True, freq_hz=6.0))
+    assert driven.damping == pytest.approx(free.damping * sdof.matched(_damping(Model.HYSTERETIC)).natural_hz / 6.0)
 
 
 def test_a_steady_viscous_loop_encloses_pi_c_omega_x_squared():
     from vib_tutorial.core.damping_models import Model
-    from vib_tutorial.view_models import damping
+    from vib_tutorial.view_models import damping, sdof
 
     t = _damping(Model.VISCOUS, drive=True, freq_hz=2.0)
-    live = LiveMass(damping.params(t), damping.drive(t))
+    live = LiveMass(sdof.params(t), sdof.drive(t))
     _run(live, 12.0)
     ts, y = live.record.window(2.0)
     loop = damping.loop_view(t, ts, y[:, COL["x"]], y[:, COL["v"]], y[:, COL["f"]], 0.5)
     amplitude = np.abs(loop.live.x).max()
-    expected = math.pi * damping.matched(t).c * TWO_PI * 2.0 * amplitude**2
+    expected = math.pi * sdof.matched(t).c * TWO_PI * 2.0 * amplitude**2
     assert loop.energy == pytest.approx(expected, rel=0.01)
     assert [model for model, _ in loop.theory] == list(Model)
 
@@ -339,7 +339,7 @@ def test_the_phasors_add_up_to_the_drive():
     from vib_tutorial.view_models import damping
 
     for model in (Model.VISCOUS, Model.HYSTERETIC, Model.ZENER):
-        t = _damping(model, drive=True, freq_hz=2.5, force=2.0)
+        t = _damping(model, drive=True, freq_hz=2.5, amplitude=2.0)
         spring, loss, mass, drive = damping.phasors(t, 0.37)
         assert drive.end == pytest.approx(mass.end) and math.hypot(*drive.end) == pytest.approx(2.0)
         assert spring.end == loss.start and loss.end == mass.start

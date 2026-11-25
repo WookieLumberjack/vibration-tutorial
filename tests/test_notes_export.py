@@ -21,7 +21,7 @@ def test_a_page_exports_with_its_equations_figures_and_links(tmp_path):
     assert "Try it" not in page and "Practise it" not in page  # a goal's links set up the running page
     pages = set(links.order())
     targets = re.findall(r'href="([a-z_]+)\.html(?:#[^"]*)?"', page)
-    assert "damping_page" in targets and set(targets) <= pages | {"index", "glossary"}
+    assert "sdof_page" in targets and set(targets) <= pages | {"index", "glossary"}
     index = (tmp_path / "index.html").read_text(encoding="utf-8")
     assert all(f'href="{p}.html"' in index for p in pages)
 
