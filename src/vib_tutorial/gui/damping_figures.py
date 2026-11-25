@@ -1,4 +1,4 @@
-"""The Damping models Theory's figures (see `figures`): a mass sliding on friction, and the Zener element."""
+"""The Single oscillator's damping laws' figures (see `figures`): a mass sliding on friction, and the Zener element."""
 
 from __future__ import annotations
 

@@ -247,7 +247,7 @@ TRIALS = (
     MountTrial(
         "Lossier rubber",
         "<m>η</m> = 0.3: at 955 rpm the floor gets 70.0 N (3.5 times the unbalance's), not 201; at 3000 rpm 23.2 N, "
-        "hardly more than <m>η</m> = 0.1's 22.4. Rubber's hysteretic damping (the Damping models page's) stiffens a mount "
+        "hardly more than <m>η</m> = 0.1's 22.4. Rubber's hysteretic damping (the Single oscillator's) stiffens a mount "
         "by <m>|1 + iη|</m> at every frequency, not more at high ones as a viscous damper's <m>iωc</m> does, so it costs little "
         "isolation.",
         rpm=955.0,

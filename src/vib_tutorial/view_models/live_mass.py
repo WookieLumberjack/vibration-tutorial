@@ -1,6 +1,6 @@
 """One live mass (#478 item 1): a mass on a spring and a damper (and friction), stepped as it runs, changed as it runs.
 
-The Single oscillator's and Damping models' body. It is the chain's `Simulator` with one mass, so it steps by the
+The Single oscillator's body. It is the chain's `Simulator` with one mass, so it steps by the
 exact FOH update (friction's stick–slip by its events), and a change of m, k, c or friction while it runs is a
 physical event by `Simulator.set_system`'s rules: a spring change books ½Δk·x², a heavier mass captures its extra
 at rest (momentum kept), a lighter one drops a piece at its speed. Nothing restarts, and the record keeps what came

@@ -18,7 +18,6 @@ def notes() -> dict[str, str]:
         complex_modes,
         continuum,
         coupling_notes,
-        damping_models,
         deriving,
         diagnostics,
         duffing,
@@ -57,7 +56,6 @@ def notes() -> dict[str, str]:
     return {
         "sdof_page": sdof.NOTES_HTML,
         "transient_page": transient.NOTES_HTML,
-        "damping_page": damping_models.NOTES_HTML,
         "isolation_page": isolation.NOTES_HTML,
         "deriving_page": deriving.NOTES_HTML,
         "sim_page": background.BACKGROUND_HTML,

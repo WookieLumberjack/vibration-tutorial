@@ -1,6 +1,6 @@
 """Four ways a structure loses energy, matched to one oscillator: viscous, hysteretic, Coulomb and Zener.
 
-The *Damping models* page. Each model is matched to the oscillator m, k at its natural frequency: the same
+The Single oscillator's damping laws. Each model is matched to the oscillator m, k at its natural frequency: the same
 energy per cycle as a viscous damper of ratio ζ there (at the amplitude X, for friction), and for the
 viscoelastic (Zener, standard linear solid) element the same stiffness at f_n too, so every model rings at
 nearly the same frequency. Then: the force over a harmonic cycle (the hysteresis loop) and the energy it
@@ -21,7 +21,6 @@ from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
-from scipy.optimize import brentq
 
 from .foh import respond
 from .sdof import TWO_PI, Oscillator, free_response
@@ -84,6 +83,8 @@ class Matched:
         η(ω) = aωτ/(1 + (1 + a)ω²τ²) with a = k1/k0 peaks at ωτ = 1/√(1 + a); that is put at relax × ω_n,
         a is chosen so η(ω_n) = 2ζ, and k0 so the storage stiffness at ω_n is k.
         """
+        from scipy.optimize import brentq  # here, not at the top: the first page needn't load scipy.optimize
+
         target = self.eta
 
         def eta_at_wn(a: float) -> float:

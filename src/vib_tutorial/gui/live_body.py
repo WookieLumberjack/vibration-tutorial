@@ -90,7 +90,7 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         self.spring = add(pg.PlotDataItem())
         self.damper = add(pg.PlotDataItem(connect="finite"))
         self.block = add(QtWidgets.QGraphicsRectItem(), 5)
-        self.ghost = add(QtWidgets.QGraphicsRectItem(), 4)  # another mass beside it, outlined (Damping models')
+        self.ghost = add(QtWidgets.QGraphicsRectItem(), 4)  # another mass beside it, outlined (the viscous ghost)
         self.ghost.hide()
         self.mass_label = add(pg.TextItem(anchor=(0.5, 0.5)), 6)
         self.k_label = add(pg.TextItem(anchor=(0.5, 1.0)), 6)

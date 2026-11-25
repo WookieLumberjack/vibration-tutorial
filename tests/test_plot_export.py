@@ -104,9 +104,7 @@ def test_holding_a_plots_curves_keeps_grey_copies_behind_them(app):
     assert not {a.text(): a.isEnabled() for a in plot_export.menu(p).actions()}["Clear held curves"]
 
 
-@pytest.mark.parametrize(
-    "name", ["isolation_page", "quarter_car_page", "damping_page", "signals_page", "continuum_page"]
-)
+@pytest.mark.parametrize("name", ["isolation_page", "quarter_car_page", "sdof_page", "signals_page", "continuum_page"])
 def test_held_curves_stay_as_the_page_redraws_and_defaults_clears_them(main_window, app, name):
     """The audit's pages (#316 B6): hold every plot after one trial, pick another, and the held curves are still
     there to compare against; Defaults takes them off."""

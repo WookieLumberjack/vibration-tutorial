@@ -1,5 +1,8 @@
 """The Single oscillator's Things to try, practice problems, tips and notes, without Qt (#478 item 7).
 
+Its damping laws' trials, problems and tips are `damping_trials`' (once the Damping models page's), put after the
+oscillator's own here, and its notes include theirs.
+
 Its state is `view_models/sdof.py`'s `SdofTrial`; `gui/sdof.py` binds the page's controls to it and runs it live.
 A trial is a setup to go back to: it sets the oscillator and the drive, plucks the mass from `x0_mm` or switches
 the drive on (or starts a sweep), and says what to look for. Its prediction is asked only once the reader has
@@ -20,11 +23,11 @@ from ..core.practice import Placement, Prediction, Problem, Question, Requiremen
 from ..core.sdof import TWO_PI, Oscillator, receptance, settling_time
 from ..view_models.sdof import FORCE, TAB_ENERGY, TAB_FRF, TAB_POLES, UNBALANCE, SdofTrial
 from ..view_models.text import number as sig
-from . import sdof_figures
+from . import damping_figures, damping_trials, sdof_figures
 from .links import course_map, keys_html, load_notes, page_link, paths_html
 from .trials_text import trials_html
 
-TRIALS = (
+OSCILLATOR_TRIALS = (
     SdofTrial(
         "Ringing down: the log decrement",
         "<m>m</m> = 1 kg, <m>k</m> = 400 N/m, <m>c</m> = 2 N·s/m: <m>f<sub>n</sub></m> = 3.18 Hz and <m>ζ = 0.05</m>. "
@@ -411,7 +414,7 @@ def _detune_spec(rng: np.random.Generator) -> Question:
     )
 
 
-PROBLEMS = (
+OSCILLATOR_PROBLEMS = (
     Problem(
         "natural-frequency",
         "Natural frequency",
@@ -488,13 +491,17 @@ PROBLEMS = (
     ),
 )
 
+TRIALS = (*OSCILLATOR_TRIALS, *damping_trials.TRIALS)
+PROBLEMS = (*OSCILLATOR_PROBLEMS, *damping_trials.PROBLEMS)
+
 TIPS = {
     "mass": "<p>The mass m. Drag the handle on the mass's corner to change it as it runs: added mass is "
     "caught at rest (the momentum kept), removed mass leaves at the mass's speed.</p>",
     "stiffness": "<p>The spring's stiffness k: the force per metre of stretch. Drag the handle on the spring "
     "(up: stiffer) to change it as it runs.</p>",
     "damping": "<p>The viscous damper's coefficient c: the force per m/s of velocity. Its critical value "
-    "2√(km) is the least that stops the oscillator overshooting. Drag the handle on the damper to change it.</p>",
+    "2√(km) is the least that stops the oscillator overshooting. Drag the handle on the damper to change it. "
+    "Under another damping law, the law is matched to this c at f<sub>n</sub>: the same energy a cycle there.</p>",
     "drive": "<p>Switch the drive on or off. It joins in at the frequency and phase it has, the mass carrying on "
     "from where it is.</p>",
     "kind": "<p><b>Force:</b> F sin Ωt on the mass.<br><b>Rotating unbalance:</b> a mass m<sub>e</sub> turning "
@@ -502,11 +509,12 @@ TIPS = {
     "amplitude": "<p>The force's amplitude F, or the unbalance m<sub>e</sub>e.</p>",
     "freq": "<p>The drive's frequency Ω/2π. A change joins on with no jump in the force; the swing then settles "
     "to its new steady state, and a point lands on the Frequency response tab once it has.</p>",
+    **damping_trials.TIPS,
 }
 
 NOTES_HTML = load_notes(
     "sdof",
-    figures=sdof_figures.FIGURES,
+    figures={**sdof_figures.FIGURES, **damping_figures.FIGURES},
     course=course_map(),
     paths=paths_html(),
     keys=keys_html(),

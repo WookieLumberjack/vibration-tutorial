@@ -106,12 +106,26 @@ def _duffing() -> Ready:
 
 
 def _sdof_views(state):
+    import numpy as np
+
+    from vib_tutorial.view_models import damping as laws
     from vib_tutorial.view_models import sdof as v
     from vib_tutorial.view_models.recorder import Point
 
-    p, d = v.params(state), v.drive(state)
-    measured = [Point(d.freq_hz, complex(1e-3, -5e-4), p)]  # a point the recorder landed
-    return (v.info(p), v.frf_view(p, d, measured, measured, True), v.frf_view(p, d, [], [], False), v.poles_view(p))
+    d = v.drive(state)
+    measured = [Point(d.freq_hz, complex(1e-3, -5e-4), v.key(state))]  # a point the recorder landed
+    t = np.linspace(0.0, 1.0, 400)
+    x = 0.01 * np.sin(2 * np.pi * 3.0 * t)
+    return (
+        v.info(state),
+        v.frf_view(state, measured, measured, True),
+        v.frf_view(state, [], [], False),
+        v.poles_view(v.viscous(state), state.model),
+        laws.loop_view(state, t, x, np.gradient(x, t), 0.4 * np.cos(2 * np.pi * 3.0 * t), 1 / 3.0),
+        laws.loss_view(state),
+        laws.phasors(state, 0.3),
+        laws.decay_readout(state, t, x, False),
+    )
 
 
 def _sdof() -> Ready:
@@ -129,41 +143,7 @@ def _sdof() -> Ready:
     )
 
 
-def _damping_views(state):
-    import numpy as np
-
-    from vib_tutorial.view_models import damping as v
-    from vib_tutorial.view_models.recorder import Point
-
-    t = np.linspace(0.0, 1.0, 400)
-    x = 0.01 * np.sin(2 * np.pi * 3.0 * t)
-    measured = [Point(3.0, complex(1e-3, -5e-4), ())]
-    return (
-        v.info(state),
-        v.loop_view(state, t, x, np.gradient(x, t), 0.4 * np.cos(2 * np.pi * 3.0 * t), 1 / 3.0),
-        v.loss_view(state),
-        v.phasors(state, 0.3),
-        v.frf_view(state, measured, measured, True),
-        v.decay_readout(state, t, x, False),
-    )
-
-
-def _damping() -> Ready:
-    from vib_tutorial.gui import damping_trials
-    from vib_tutorial.view_models.damping import DampingTrial
-
-    return Ready(
-        "damping_page",
-        lambda: DampingTrial("", ""),
-        lambda setup: DampingTrial("", "", **setup),
-        _damping_views,
-        lambda: damping_trials.TRIALS,
-        lambda: damping_trials.PROBLEMS,
-        qt_free_notes=True,
-    )
-
-
-READY = {r.page: r for r in (_isolation(), _duffing(), _sdof(), _damping())}
+READY = {r.page: r for r in (_isolation(), _duffing(), _sdof())}
 QT_FREE_NOTES = ["glossary", *(name for name, r in READY.items() if r.qt_free_notes)]
 
 

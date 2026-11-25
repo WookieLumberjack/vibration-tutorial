@@ -11,7 +11,7 @@ peak fills the room, its arrows grow and shrink through each cycle on a scale th
 smaller motion (once the hand has let go, or the swing has died down) is redrawn as large within seconds.
 
 `one_mass` is the forces on one mass on a spring and a damper, with friction, a drive and a hand holding it (the
-Single oscillator, Damping models); a page with another body builds its own `FreeBody` from its forces the same
+Single oscillator); a page with another body builds its own `FreeBody` from its forces the same
 way (Pendulums', Isolation's later).
 
 Working on it: Qt-free (the package's docstring); `tests/test_live_parts.py` checks the forces add up to m·a, the

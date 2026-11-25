@@ -1,8 +1,10 @@
-"""Damping models' Things to try, practice problems, tips and notes, without Qt (#478 item 7).
+"""The Single oscillator's damping laws: their Things to try, practice problems and tips, without Qt (#478 item 7).
 
-Its state is `view_models/damping.py`'s `DampingTrial`; `gui/damping_models.py` binds the page's controls to it and
-runs it live. A trial is a setup to go back to: it picks the damping model, plucks the mass from `x0_mm` or drives
-it (or sweeps), and says what to look for; its prediction is asked once the reader has handled the system.
+They were the Damping models page's, merged into the Single oscillator (one example, one page: the same mass and
+spring, its damper's law picked). Their state is the page's, `view_models/sdof.py`'s `SdofTrial`; `sdof_trials`
+puts them after the oscillator's own, and its notes hold theirs. A trial is a setup to go back to: it picks the
+law, plucks the mass from `x0_mm` or drives it (or sweeps), and says what to look for; its prediction is asked once
+the reader has handled the system.
 
 Working on it: `tests/test_tutorial_numbers.py` checks the trials' numbers, `tests/test_practice.py` the problems,
 `tests/test_qt_free.py` that this loads no Qt.
@@ -17,24 +19,23 @@ import numpy as np
 from ..core.damping_models import Matched, Model, coulomb_stop
 from ..core.practice import Prediction, Problem, Question, at_most, kept, number, pick, rounded
 from ..core.sdof import TWO_PI
-from ..view_models.damping import TAB_ENERGY, TAB_FRF, TAB_LOOP, DampingTrial, matched
+from ..view_models.sdof import TAB_ENERGY, TAB_FRF, TAB_LOOP, SdofTrial, matched
 from ..view_models.text import number as sig
-from . import damping_figures
-from .links import load_notes, page_link
-from .trials_text import trials_html
+from .links import page_link
 
 TRIALS = (
-    DampingTrial(
+    SdofTrial(
         "Four loops, one energy",
-        "<m>m</m> = 1 kg, <m>k</m> = 400 N/m (<m>f<sub>n</sub></m> = 3.18 Hz), each model matched to "
-        "<m>ζ</m> = 0.05 there. Driven at <m>f<sub>n</sub></m> by 0.4 N, the viscous mass settles to ±10 mm, and its "
+        "<m>m</m> = 1 kg, <m>k</m> = 400 N/m (<m>f<sub>n</sub></m> = 3.18 Hz), each damping law matched to the "
+        "damper <m>c</m> = 2 N·s/m (<m>ζ</m> = 0.05) there. Driven at <m>f<sub>n</sub></m> by 0.4 N, the viscous mass settles to ±10 mm, and its "
         "loop of damping force against <m>x</m> encloses <m>πcω<sub>n</sub>X²</m> = 12.6 mJ a cycle: the work the "
         "damper takes. Every model's loop at that cycle, drawn faint, encloses the same: that is what matched means. "
         "Viscous, hysteretic and Zener damping make ellipses, their force a quarter cycle ahead of the motion; "
-        "friction makes a rectangle, <m>±F<sub>f</sub></m> = ±0.31 N. Pick each model in turn, as it runs.",
+        "friction makes a rectangle, <m>±F<sub>f</sub></m> = ±0.31 N. Pick each law in the Damper box in turn, as it runs.",
         drive=True,
         tune=True,
-        force=0.4,
+        amplitude=0.4,
+        tab=TAB_LOOP,
         predict=Prediction(
             "Viscous, hysteretic, friction and Zener damping, matched at fₙ and cycled there through ±10 mm. Which takes out the most energy a cycle?",
             ("Viscous", "Friction", "All the same"),
@@ -46,14 +47,15 @@ TRIALS = (
             ),
         ),
     ),
-    DampingTrial(
+    SdofTrial(
         "Twice the frequency",
         "Driven at <m>2f<sub>n</sub></m> = 6.37 Hz by 12 N, the swing is about ±10 mm again. The viscous loop is twice "
         "as fat (25.1 mJ: its force grows with the velocity), the hysteretic and friction loops are unchanged "
         "(12.6 mJ), and the Zener element's, past its loss peak, is thinner (10.7 mJ).",
         drive=True,
         freq_hz=6.366,
-        force=12.0,
+        amplitude=12.0,
+        tab=TAB_LOOP,
         predict=Prediction(
             "The same cycle at twice fₙ. Which loops grow?",
             ("All of them", "Only the viscous one", "None of them"),
@@ -65,17 +67,18 @@ TRIALS = (
             ),
         ),
     ),
-    DampingTrial(
+    SdofTrial(
         "With the spring: what a test machine draws",
         "The whole force, spring and damping together, as a test machine measures it on a sample: the loop is the "
         "spring's line <m>kx</m> (dashed) opened out by the damping. The tilt is the stiffness (4 N at 10 mm), the "
         "width the loss (0.4 N): a lightly damped part draws a thin loop.",
         drive=True,
         tune=True,
-        force=0.4,
+        amplitude=0.4,
         damping_only=False,
+        tab=TAB_LOOP,
     ),
-    DampingTrial(
+    SdofTrial(
         "Friction at resonance",
         "Friction alone, driven by 1 N at <m>f<sub>n</sub></m>. Friction takes at most <m>4F<sub>f</sub>X</m> a cycle, "
         "which grows only as <m>X</m>, while the force puts in <m>πFX</m>: since <m>F</m> = 1 N &gt; "
@@ -96,13 +99,14 @@ TRIALS = (
             ),
         ),
     ),
-    DampingTrial(
+    SdofTrial(
         "Released against friction",
         "Plucked from 10 mm, beside the viscous ghost. The ghost's swing falls by the same fraction each cycle, "
         "<m>e<sup>−δ</sup></m> = 0.73, for ever. Friction's falls by the same amount, <m>4F<sub>f</sub>/k</m> = 3.1 mm, "
         "and stops dead after three cycles, 0.58 mm off centre, where the spring can no longer beat the friction.",
         model=Model.COULOMB,
         x0_mm=10.0,
+        tab=TAB_LOOP,
         predict=Prediction(
             "Released from 10 mm against friction. How does its swing die away?",
             (
@@ -118,7 +122,7 @@ TRIALS = (
             ),
         ),
     ),
-    DampingTrial(
+    SdofTrial(
         "A viscoelastic loss peak",
         "The Zener element: a spring <m>k<sub>0</sub></m> beside a spring <m>k<sub>1</sub></m> and a dashpot in series. "
         "Slowly the dashpot gives and only <m>k<sub>0</sub></m> = 364 N/m holds; fast it locks and "
@@ -128,6 +132,7 @@ TRIALS = (
         "polymers behave like this.",
         model=Model.ZENER,
         x0_mm=10.0,
+        tab=TAB_LOOP,
         predict=Prediction(
             "A spring beside a spring and dashpot in series (Zener). Where is its loss factor largest?",
             ("At low frequency", "At its relaxation frequency", "It grows for ever with frequency"),
@@ -139,7 +144,7 @@ TRIALS = (
             ),
         ),
     ),
-    DampingTrial(
+    SdofTrial(
         "Relaxing well above resonance",
         "The Zener element's peak moved to <m>10f<sub>n</sub></m>. Below it, its loss grows in proportion to "
         "frequency, as a viscous damper's does: through the oscillator's band it is a viscous damper. It needs a "
@@ -147,8 +152,9 @@ TRIALS = (
         model=Model.ZENER,
         relax=10.0,
         x0_mm=10.0,
+        tab=TAB_LOOP,
     ),
-    DampingTrial(
+    SdofTrial(
         "Hysteretic damping's stand-in, swept",
         "Hysteretic damping (<m>η</m> = 0.1) has no model in time that respects cause and effect, so the page runs "
         "its stand-in: a viscous damper with the same loss at the frequency it runs at, <m>c = ηk/Ω</m>, changed "
@@ -243,8 +249,8 @@ def _zener_peak(rng: np.random.Generator) -> Question:
         f"A rubber mount behaves as a Zener element: {sig(k0, 6)} N/m slowly (relaxed), {number(k0 + k1)} N/m fast "
         "(unrelaxed). What is its loss factor at its peak?",
         eta,
-        f"k<sub>1</sub> = {number(k1)} N/m, so a = k<sub>1</sub>/k<sub>0</sub> = {number(a)}. η(Ωτ) = "
-        f"aΩτ/(1 + (1 + a)Ω²τ²) peaks at Ωτ = 1/√(1 + a), where η = a/(2√(1 + a)) = {number(eta)}. The "
+        f"k<sub>1</sub> = {number(k1)} N/m, so a = k<sub>1</sub>/k<sub>0</sub> = {number(a)}. η(Ωτ<sub>r</sub>) = "
+        f"aΩτ<sub>r</sub>/(1 + (1 + a)Ω²τ<sub>r</sub>²) peaks at Ωτ<sub>r</sub> = 1/√(1 + a), where η = a/(2√(1 + a)) = {number(eta)}. The "
         "further apart the relaxed and unrelaxed stiffnesses, the more it can damp.",
         setup=dict(model=Model.ZENER, x0_mm=10.0, tab=TAB_LOOP),
     )
@@ -268,7 +274,7 @@ def _frequency_doubled(rng: np.random.Generator) -> Question:
             "Past its loss peak at f<sub>n</sub>, the Zener element's loss falls a little; the viscous damper's "
             "doubles.",
         ),
-        setup=dict(drive=True, freq_hz=6.366, force=12.0, tab=TAB_LOOP),
+        setup=dict(drive=True, freq_hz=6.366, amplitude=12.0, tab=TAB_LOOP),
         predict=True,
     )
 
@@ -288,7 +294,7 @@ def _amplitude_halved(rng: np.random.Generator) -> Question:
             "The force is the same, but it acts over half the distance: 4F<sub>f</sub>X halves with X.",
             "Less motion can't take more energy: the same friction force acts over half the stroke.",
         ),
-        setup=dict(model=Model.COULOMB, amplitude_mm=5.0, x0_mm=5.0, tab=TAB_LOOP),
+        setup=dict(model=Model.COULOMB, friction_mm=5.0, x0_mm=5.0, tab=TAB_LOOP),
         predict=True,
     )
 
@@ -309,7 +315,7 @@ def _friction_resonance(rng: np.random.Generator) -> Question:
             "It sticks only while the force can't beat the friction. This force is more than 4/π times it, so the "
             "mass slips and the swing builds.",
         ),
-        setup=dict(model=Model.COULOMB, drive=True, tune=True, force=1.0, tab=TAB_FRF),
+        setup=dict(model=Model.COULOMB, drive=True, tune=True, amplitude=1.0, tab=TAB_FRF),
         predict=True,
     )
 
@@ -320,43 +326,50 @@ def _friction_spec(rng: np.random.Generator) -> Question:
     swings = int(pick(rng, (3, 4, 5)))
     # friction that stops it after `swings` half cycles with room either side
     d = x0 / (2 * swings + 0.5)  # mm
-    z = rounded(2.0 * d / (math.pi * x0), 3)  # F_f = πcω_nX/4 = πζkX/2 on 1 kg
-    design = Matched(1.0, k, z, 1e-3 * x0)
+    wn = math.sqrt(k)  # on 1 kg
+    c = rounded(4.0 * k * d / (math.pi * wn * x0), 3)  # F_f/k = d (mm), F_f = πcω_nX/4
+    design = Matched(1.0, k, c / (2.0 * wn), 1e-3 * x0)
     n_d, end = coulomb_stop(k, design.friction, 1e-3 * x0)
     off = rounded(1.25 * 1e3 * abs(end), 2)
 
-    def goal(t: DampingTrial):
+    def goal(t: SdofTrial):
         m = matched(t)
-        n, stop = coulomb_stop(t.stiffness, m.friction, 1e-3 * t.amplitude_mm)
+        n, stop = coulomb_stop(t.stiffness, m.friction, 1e-3 * t.friction_mm)
         return (
             kept("The mass", t.mass, 1.0, "kg"),
             kept("The spring", t.stiffness, k, "N/m"),
-            kept("The release, X", t.amplitude_mm, float(x0), "mm"),
+            kept("The release, X", t.friction_mm, float(x0), "mm"),
             at_most("Swings before it sticks", n, swings),
             at_most("Where it sticks, off centre", 1e3 * abs(stop), off, "mm"),
         )
 
     return Question(
         f"A 1 kg mass on a spring of {sig(k, 6)} N/m, released from {sig(x0, 6)} mm, is to be stopped by friction alone (the "
-        f"Coulomb friction model, plucked from X). It must stick within {swings} swings (half cycles), no more than "
-        f"{number(off, 2)} mm off centre. The page sets the friction by matching it to ζ at the amplitude X: "
-        "choose ζ.",
+        f"Coulomb friction law, plucked from X). It must stick within {swings} swings (half cycles), no more than "
+        f"{number(off, 2)} mm off centre. The page sets the friction by matching it to the damper c at the "
+        "amplitude X: choose c.",
         0,
         f"More friction stops it sooner, but further off centre (anywhere within F<sub>f</sub>/k), and too much "
         f"never lets it move. Each swing takes 2F<sub>f</sub>/k off, so {swings} swings need about "
-        f"2F<sub>f</sub>/k ≈ {sig(x0, 6)}/{swings} mm. F<sub>f</sub> = πcω<sub>n</sub>X/4 = πζkX/2 (c = 2ζ√(km), m = 1 "
-        f"kg): ζ = "
-        f"{number(z)} gives F<sub>f</sub> = {number(design.friction)} N, {n_d} swings, stuck "
-        f"{number(1e3 * abs(end))} mm off centre. Much more friction does too: with F<sub>f</sub>/k just under X/2 "
-        "it makes one swing and sticks near the centre.",
-        setup=dict(model=Model.COULOMB, stiffness=k, amplitude_mm=float(x0), x0_mm=float(x0), zeta=0.005, tab=TAB_LOOP),
+        f"2F<sub>f</sub>/k ≈ {sig(x0, 6)}/{swings} mm. F<sub>f</sub> = πcω<sub>n</sub>X/4 with ω<sub>n</sub> = "
+        f"{number(wn)} rad/s: c = {number(c)} N·s/m gives F<sub>f</sub> = {number(design.friction)} N, {n_d} swings, "
+        f"stuck {number(1e3 * abs(end))} mm off centre. Much more friction does too: with F<sub>f</sub>/k just under "
+        "X/2 it makes one swing and sticks near the centre.",
+        setup=dict(
+            model=Model.COULOMB,
+            stiffness=k,
+            damping=rounded(0.01 * wn, 3),
+            friction_mm=float(x0),
+            x0_mm=float(x0),
+            tab=TAB_LOOP,
+        ),
         goal=goal,
-        design=dict(model=Model.COULOMB, stiffness=k, amplitude_mm=float(x0), x0_mm=float(x0), zeta=z, tab=TAB_LOOP),
+        design=dict(model=Model.COULOMB, stiffness=k, damping=c, friction_mm=float(x0), x0_mm=float(x0), tab=TAB_LOOP),
     )
 
 
 PROBLEMS = tuple(
-    Problem(key, title, "damping_page", f"See {page_link('damping_page', anchor, section)}{more}.", make)
+    Problem(key, title, "sdof_page", f"See {page_link('sdof_page', anchor, section)}{more}.", make)
     for key, title, anchor, section, more, make in (
         ("viscous-energy", "Energy per cycle", "viscous", "Viscous damping", "", _viscous_energy),
         ("friction-decay", "Friction from a decay", "coulomb", "Coulomb friction", "", _friction_from_decay),
@@ -399,18 +412,11 @@ PROBLEMS = tuple(
 )
 
 TIPS = {
-    "model": "<p>The damping the mass runs with, matched at f<sub>n</sub> to ζ: viscous; hysteretic (by its "
+    "model": "<p>The damper's law, matched at f<sub>n</sub> to the damper c: viscous, c itself; hysteretic (by its "
     "stand-in in time, c = ηk/Ω at the frequency it runs at); Coulomb friction (matched at the amplitude X); or "
     "the viscoelastic Zener element. Change it as it runs.</p>",
-    "zeta": "<p>The damping ratio every model is matched to at f<sub>n</sub>: the same energy per cycle there as "
-    "a viscous damper c = 2ζ√(km), and friction at the amplitude X. Drag the handle on the damper to change it.</p>",
-    "amplitude": "<p>The amplitude X where friction is matched: F<sub>f</sub> = πcω<sub>n</sub>X/4.</p>",
+    "friction_mm": "<p>The amplitude X where friction is matched to c: F<sub>f</sub> = πcω<sub>n</sub>X/4.</p>",
     "relax": "<p>Where the Zener element's loss factor peaks, as a multiple of f<sub>n</sub>.</p>",
-    "ghost": "<p>A viscous mass, matched the same, plucked and driven as this one is: drawn dashed beside it.</p>",
-    "drive": "<p>Switch the harmonic force on or off.</p>",
-    "force": "<p>The harmonic force's amplitude F.</p>",
-    "freq": "<p>The drive's frequency. A change joins on with no jump in the force.</p>",
+    "ghost": "<p>A viscous mass with the damper c, plucked and driven as this one is: drawn dashed beside it.</p>",
     "damping_only": "<p>Draw only the damping part of the force, without the spring's kx.</p>",
 }
-
-NOTES_HTML = load_notes("damping_models", figures=damping_figures.FIGURES, trials=trials_html(TRIALS))

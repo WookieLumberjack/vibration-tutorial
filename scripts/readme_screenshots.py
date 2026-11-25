@@ -1028,21 +1028,23 @@ def transient_response():
     lesson("transient_page", 3, "transient_response")  # the convolution
 
 
-def damping_models():
-    """Four loops, one energy: the viscous mass driven to ±10 mm at f_n, its loop and every model's."""
+def single_oscillator_damping():
+    """Four loops, one energy: the viscous mass driven to ±10 mm at f_n, its loop and every law's."""
     from PySide6 import QtWidgets
 
+    from vib_tutorial.gui import sdof
+
     w = window()
-    page = w.damping_page
+    page = w.sdof_page
     w.pages.setCurrentWidget(page)
     page.loop.enabled = False
-    page.load_trial(0)
+    page.load_trial(next(i for i, t in enumerate(sdof.TRIALS) if t.name.startswith("Four loops")))
     page.step(12.0)
     settle()
     for label in page.findChildren(QtWidgets.QLabel):
         if label.isVisible() and len(label.text()) > 40:
             print(" ", label.text())
-    save(w, "damping_models")
+    save(w, "single_oscillator_damping")
 
 
 def vibration_isolation():
@@ -1365,7 +1367,7 @@ SHOTS = [
     continuum_waves,
     single_oscillator,
     transient_response,
-    damping_models,
+    single_oscillator_damping,
     vibration_isolation,
     signals_spectra,
     pendulums,

@@ -303,17 +303,17 @@ SYMBOLS = (
         "W<sub>d</sub>",
         "the energy a damper takes out in one cycle: the area of its loop",
         "J",
-        "damping_page",
+        "sdof_page",
         "hysteresis-loop",
     ),
-    Symbol("U_peak", "U", "the peak energy a spring stores in a cycle, ½K′X²", "J", "damping_page", "hysteresis-loop"),
+    Symbol("U_peak", "U", "the peak energy a spring stores in a cycle, ½K′X²", "J", "sdof_page", "hysteresis-loop"),
     Symbol(
         "K_star",
         "K*, K′, K″",
         "complex (dynamic) stiffness, force over displacement in a harmonic cycle; its real part (storage) and "
         "imaginary part (loss)",
         "N/m",
-        "damping_page",
+        "sdof_page",
         "viscous",
     ),
     Symbol(
@@ -321,7 +321,7 @@ SYMBOLS = (
         "η",
         "loss factor, K″/K′ = W<sub>d</sub>/2πU: structural (hysteretic) damping's; ≈ 2ζ at resonance",
         "–",
-        "damping_page",
+        "sdof_page",
         "hysteretic",
     ),
     Symbol(
@@ -329,7 +329,7 @@ SYMBOLS = (
         "F<sub>f</sub>, c<sub>eq</sub>",
         "a dry friction force; the viscous damper that takes the same energy per cycle",
         "N, N·s/m",
-        "damping_page",
+        "sdof_page",
         "coulomb",
     ),
     Symbol(
@@ -337,21 +337,21 @@ SYMBOLS = (
         "k<sub>0</sub>, k<sub>1</sub>, c<sub>1</sub>",
         "a Zener element's springs, relaxed and in its Maxwell arm, and that arm's dashpot",
         "N/m, N/m, N·s/m",
-        "damping_page",
+        "sdof_page",
         "viscoelastic",
     ),
     Symbol(
         "tau_relax",
-        "τ",
-        "a viscoelastic element's relaxation time, c<sub>1</sub>/k<sub>1</sub> (τ is also a time constant, above)",
+        "τ<sub>r</sub>",
+        "a viscoelastic element's relaxation time, c<sub>1</sub>/k<sub>1</sub>",
         "s",
-        "damping_page",
+        "sdof_page",
         "viscoelastic",
     ),
     Symbol(
-        "drag", "a", "a velocity-squared drag's coefficient: F = aẋ|ẋ|", "N·s²/m²", "damping_page", "equivalent-viscous"
+        "drag", "a", "a velocity-squared drag's coefficient: F = aẋ|ẋ|", "N·s²/m²", "sdof_page", "equivalent-viscous"
     ),
-    Symbol("P_loss", "P", "the mean power a vibration loses, ΩηU", "W", "damping_page", "measuring"),
+    Symbol("P_loss", "P", "the mean power a vibration loses, ΩηU", "W", "sdof_page", "measuring-loss"),
     Symbol(
         "T_trans",
         "T",

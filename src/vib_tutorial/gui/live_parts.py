@@ -1,22 +1,27 @@
-"""The Qt parts #478's live pages share (the Single oscillator, Damping models): drawn from a `LiveMass`'s record.
+"""The Qt parts #478's live pages share (the Single oscillator): drawn from a `LiveMass`'s record.
 
 - `EnergyTab`: the energy balance over the last minute (put in, taken out, the live changes' terms, stored) and the
   ledger now, by `live_mass.energy_view`, its rows in their theme roles' colours.
+- `LoopTab`: the damping laws' Loop & loss tab: the hysteresis loop the run draws over its last cycle beside each
+  law's (`damping.loop_view`), and their loss factors against frequency (`damping.loss_view`).
 - `ChangeMarks`: the dashed lines on the time plots where m, k or c changed, touched only when they change.
 - `run_row`: the speed, Start/Pause, Reset and clock a live page gives the run bar (`transport.Transport`).
 
-Working on it: `tests/test_sdof_page.py` and `tests/test_damping_page.py` check them through their pages.
+Working on it: `tests/test_sdof_page.py` checks them through its page.
 """
 
 from __future__ import annotations
 
+import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
+from ..core.damping_models import MODELS
+from ..view_models.damping import ROLES, SHORT, LoopView, LossView
 from ..view_models.live_mass import LiveMass, energy_view
 from ..view_models.text import fmt
 from .layouts import FlowLayout, ResetButton
-from .lesson import LiveLabel, RunButton, plot
+from .lesson import LiveLabel, RunButton, note_label, plot
 from .plots import decimate
 from .style import colors, role
 from .theming import add_legend
@@ -81,6 +86,76 @@ class EnergyTab(QtWidgets.QWidget):
             if r.value != 0 or r.name.startswith("Stored")
         )
         self.ledger.setText(f"<table>{rows}</table><p>{e.text}</p>")
+
+
+LOOP_TIP = (
+    "<p>The loop the run draws: the damping force (f − mẍ − kx) against the displacement over its last cycle, the "
+    "mass's colour; and faint, each law's steady loop at that frequency and amplitude. The area inside a loop is "
+    "the energy it takes out a cycle.</p>"
+)
+LOSS_TIP = (
+    "<p>Each law's loss factor η = K″/K′ against the frequency over f<sub>n</sub>; they meet at f<sub>n</sub>, "
+    "where they're matched (2ζ). The line is the drive's frequency.</p>"
+)
+
+
+class LoopTab(QtWidgets.QWidget):
+    """The Loop & loss tab (see the module); the page binds `damping_only` and draws it from its view model."""
+
+    def __init__(self, tip: str, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__(parent)
+        layout = QtWidgets.QVBoxLayout(self)
+        self.damping_only = QtWidgets.QCheckBox("Damping force only")
+        self.damping_only.setToolTip(tip)
+        layout.addWidget(self.damping_only)
+        self.loop_plot = plot("Force", "N", "Displacement x", "m", height=170)
+        self.loop_plot.setMouseEnabled(x=False, y=False)
+        self.loop_plot.setToolTip(LOOP_TIP)
+        self.theory_loops = {m: pg.PlotDataItem() for m in MODELS}
+        self.spring_line = pg.PlotDataItem()
+        self.loop_item = pg.PlotDataItem()
+        for item in (*self.theory_loops.values(), self.spring_line, self.loop_item):
+            self.loop_plot.addItem(item)
+        self.note = note_label()
+        self.loss_plot = plot("Loss factor η", None, "Frequency / fₙ", None, log_x=True, log_y=True, height=120)
+        self.loss_plot.setMouseEnabled(x=False, y=False)
+        self.loss_plot.setToolTip(LOSS_TIP)
+        add_legend(self.loss_plot.getPlotItem(), offset=(-10, 10))
+        self.loss_items = {m: pg.PlotDataItem(name=SHORT[m]) for m in MODELS}
+        for item in self.loss_items.values():
+            self.loss_plot.addItem(item)
+        self.loss_now = pg.InfiniteLine(angle=90)
+        self.loss_plot.addItem(self.loss_now, ignoreBounds=True)
+        layout.addWidget(self.loop_plot, 3)
+        layout.addWidget(self.note)
+        layout.addWidget(self.loss_plot, 2)
+        self.apply_theme()
+
+    def apply_theme(self) -> None:
+        c = colors
+        for m, item in self.theory_loops.items():
+            item.setPen(pg.mkPen(role(ROLES[m]), width=1))
+        for m, item in self.loss_items.items():
+            item.setPen(pg.mkPen(role(ROLES[m]), width=2))
+        self.loss_now.setPen(pg.mkPen(c.force, width=1))
+        self.spring_line.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
+        self.loop_item.setPen(pg.mkPen(c.mass[0], width=2.5))
+
+    def draw_loss(self, view: LossView) -> None:
+        for m, curve in view.loss:
+            self.loss_items[m].setData(*curve)
+        self.loss_now.setVisible(view.now is not None)
+        if view.now is not None:
+            self.loss_now.setValue(np.log10(view.now))
+
+    def draw_loop(self, view: LoopView) -> None:
+        self.loop_item.setData(*view.live)
+        drawn = dict(view.theory)
+        for m, item in self.theory_loops.items():
+            curve = drawn.get(m)
+            item.setData(*(curve if curve is not None else ([], [])))
+        self.spring_line.setData(*view.spring)
+        self.note.setText(view.note)
 
 
 class ChangeMarks:

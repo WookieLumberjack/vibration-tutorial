@@ -28,7 +28,7 @@ COURSE_DATA = [
         "style",  # the themes' colours
         "sim_trials",
         "sdof_trials",  # the Single oscillator's trials, problems and notes (#478 Phase 3)
-        "damping_trials",  # Damping models' the same
+        "damping_trials",  # its damping laws' trials and problems
         "frame_builder_trials",
         "gyroscope_trials",
         "rotor_builder_trials",

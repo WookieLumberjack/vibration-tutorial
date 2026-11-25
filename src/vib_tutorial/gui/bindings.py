@@ -9,7 +9,7 @@ A page lists its bindings, `field → widget`, and gets from them:
 So Defaults round-trips by construction: `write(read(base))` leaves every control as it was, and a field added to
 the state and bound here is read, written and watched with nothing else to keep in step. A widget's value can be
 scaled into the field (`scale`: mm in the box, m in the state), and a combo's index pick one of `choices` (an
-enum's members: Damping models' model).
+enum's members: the Single oscillator's damping law).
 
 Working on it: `tests/test_bindings.py`; `tests/test_defaults.py` checks every page round-trips.
 """

@@ -172,17 +172,13 @@ COURSE = (
             (
                 "sdof_page",
                 "Single oscillator",
-                "one mass on a spring and a damper: free decay, damping, resonance, half-power, beats, poles",
+                "one mass on a spring and a damper: free decay, resonance, half-power, beats, poles, and the "
+                "damper's law: viscous, hysteretic, friction, viscoelastic",
             ),
             (
                 "pendulum_page",
                 "Pendulums",
                 "gravity as the spring, large swings that soften, and the rotational form of every one-mass formula",
-            ),
-            (
-                "damping_page",
-                "Damping models",
-                "viscous, hysteretic, friction and viscoelastic damping: their loops, losses and decays",
             ),
             (
                 "isolation_page",
@@ -456,7 +452,6 @@ PATHS = (
         (
             "sdof_page",
             "pendulum_page",
-            "damping_page",
             "isolation_page",
             "transient_page",
             "periodic_page",
@@ -474,7 +469,6 @@ PATHS = (
         (
             "sdof_page",
             "pendulum_page",
-            "damping_page",
             "transient_page",
             "deriving_page",
             "sim_page",
@@ -495,7 +489,6 @@ PATHS = (
         (
             "sdof_page",
             "pendulum_page",
-            "damping_page",
             "transient_page",
             "deriving_page",
             "sim_page",
@@ -514,7 +507,6 @@ PATHS = (
         (
             "sdof_page",
             "pendulum_page",
-            "damping_page",
             "isolation_page",
             "deriving_page",
             "sim_page",
@@ -548,7 +540,6 @@ def paths_html() -> str:
 PAGE_TITLES = {
     "sdof_page": "Single oscillator page",
     "pendulum_page": "Pendulums page",
-    "damping_page": "Damping models page",
     "isolation_page": "Vibration isolation page",
     "transient_page": "Transient response page",
     "periodic_page": "Periodic forcing page",
@@ -596,7 +587,6 @@ PAGE_TITLES = {
 PAGE_CLASSES = {
     "sdof_page": "sdof.SdofPage",
     "pendulum_page": "pendulum.PendulumPage",
-    "damping_page": "damping_models.DampingModelsPage",
     "isolation_page": "isolation.IsolationPage",
     "transient_page": "transient.TransientPage",
     "periodic_page": "periodic.PeriodicPage",
@@ -639,7 +629,7 @@ PAGE_CLASSES = {
 
 # A page rebuilt to #478's standard keeps its notes (`NOTES_HTML`) in a Qt-free module, named here, so they gather
 # and export without Qt (`notes_pages.page_html`; `tests/test_readiness.py`'s `qt_free_notes`).
-NOTES_MODULES = {"sdof_page": "sdof_trials", "damping_page": "damping_trials"}
+NOTES_MODULES = {"sdof_page": "sdof_trials"}
 
 
 def page_module(attr: str):
