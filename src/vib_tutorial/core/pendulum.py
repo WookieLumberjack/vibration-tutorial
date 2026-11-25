@@ -11,9 +11,16 @@ Duffing oscillator's with a negative cubic, γ = ∓ m g d / 6), and the inverte
 undamped period by quadrature of the energy, `duffing_period` the cubic's harmonic balance, and `swing` the free
 motion from rest at θ₀, the whole equation stepped by `solve_ivp` beside the linear one.
 
+`rk4` is the live page's step (#478, `view_models/live_pendulum.py`): the whole equation and its linearized ghost
+side by side, with the damper's work, a fixed step at a time (`step_size`: 300 a period of the fastest swing the
+moments allow, so the energy drifts by under a part in 10⁹ a period). The equation is nonlinear, so the chain's
+exact FOH update doesn't apply; the step is small for the stiffest pendulum the boxes allow, so it stays stable.
+It's Python (a few µs a step, ~400 steps a simulated second): a Rust kernel if it ever shows as hot.
+
 Working on it
 -------------
 The exact period is by quadrature with the drop factored out, the turning points found exactly.
+`tests/test_pendulum.py` checks `rk4` against `swing` and that it keeps the energy.
 """
 
 from __future__ import annotations
@@ -253,3 +260,51 @@ def rod_period(length: float, pivot: float | np.ndarray, gravity: float = G) -> 
 def conjugate_pivot(length: float, pivot: float) -> float:
     """The other distance on the same side with the same period (Kater): k_G² / d."""
     return length**2 / 12 / pivot
+
+
+STEPS_A_PERIOD = 300  # `rk4` steps in a period of the fastest swing
+MAX_STEP = 0.005  # s
+GHOST_LIMIT = 1e3  # rad: past this the linearized ghost has run away (unstable), and stops
+
+
+def step_size(p: Pendulum) -> float:
+    """`rk4`'s step for `p`: `STEPS_A_PERIOD` a period at the largest |moment| a radian the swing can meet."""
+    omega = math.sqrt((abs(p.torsion) + abs(p.weight_moment)) / p.inertia) if p.inertia > 0 else 0.0
+    return min(MAX_STEP, TWO_PI / omega / STEPS_A_PERIOD) if omega > 0 else MAX_STEP
+
+
+def rk4(p: Pendulum, state: tuple[float, float, float, float], h: float, n: int) -> np.ndarray:
+    """`n` steps of `h` from (θ, θ', θ_lin, θ'_lin): the whole equation and the linearized one by the classical
+    Runge–Kutta step. Each step's row is (θ, θ', θ_lin, θ'_lin, W), W the damper's work c∫θ'² dt over the steps.
+    A ghost that runs away (past `GHOST_LIMIT`) is NaN from there on."""
+    J, c, kt, w, k = p.inertia, p.damping, p.torsion, p.weight_moment, p.stiffness
+    sin = math.sin
+
+    def f(th: float, om: float) -> float:
+        return -(c * om + kt * th + w * sin(th)) / J
+
+    def g(th: float, om: float) -> float:
+        return -(c * om + k * th) / J
+
+    out = np.empty((n, 5))
+    th, om, tl, ol = state
+    work = 0.0
+    for i in range(n):
+        k1, a1 = om, f(th, om)
+        k2, a2 = om + 0.5 * h * a1, f(th + 0.5 * h * k1, om + 0.5 * h * a1)
+        k3, a3 = om + 0.5 * h * a2, f(th + 0.5 * h * k2, om + 0.5 * h * a2)
+        k4, a4 = om + h * a3, f(th + h * k3, om + h * a3)
+        work += c * h * (k1 * k1 + 2 * k2 * k2 + 2 * k3 * k3 + k4 * k4) / 6
+        th += h * (k1 + 2 * k2 + 2 * k3 + k4) / 6
+        om += h * (a1 + 2 * a2 + 2 * a3 + a4) / 6
+        if tl == tl:  # not yet run away (NaN)
+            m1, b1 = ol, g(tl, ol)
+            m2, b2 = ol + 0.5 * h * b1, g(tl + 0.5 * h * m1, ol + 0.5 * h * b1)
+            m3, b3 = ol + 0.5 * h * b2, g(tl + 0.5 * h * m2, ol + 0.5 * h * b2)
+            m4, b4 = ol + h * b3, g(tl + h * m3, ol + h * b3)
+            tl += h * (m1 + 2 * m2 + 2 * m3 + m4) / 6
+            ol += h * (b1 + 2 * b2 + 2 * b3 + b4) / 6
+            if abs(tl) > GHOST_LIMIT:
+                tl = ol = math.nan
+        out[i] = th, om, tl, ol, work
+    return out

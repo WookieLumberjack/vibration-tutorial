@@ -61,3 +61,36 @@ def test_orbits_keep_their_energy_and_close():
     energy = 0.5 * p.inertia * oy[keep] ** 2 + p.potential(ox[keep])
     assert np.allclose(energy, e)
     assert np.nanmax(np.abs(ox)) == pytest.approx(1.0) and np.nanmin(np.abs(oy)) == 0.0
+
+
+@pytest.mark.parametrize(
+    "pendulum", [Pendulum(zeta=0.05), Pendulum(Kind.ROD, pivot=0.2), Pendulum(Kind.INVERTED, spring=15.0, zeta=0.02)]
+)
+def test_the_live_step_follows_the_stepped_swing_and_its_ghost_the_linear_one(pendulum):
+    from vib_tutorial.core.pendulum import rk4, step_size
+
+    a = math.radians(60)
+    h = step_size(pendulum)
+    n = round(3.0 / h)
+    y = rk4(pendulum, (a, 0.0, a, 0.0), h, n)
+    _, whole, linear = swing(pendulum, a, n * h, n + 1)
+    assert np.allclose(y[:, 0], whole[1:], atol=1e-6) and np.allclose(y[:, 2], linear[1:], atol=1e-6)
+
+
+def test_the_live_step_keeps_an_undamped_swings_energy_and_counts_the_dampers_work():
+    from vib_tutorial.core.pendulum import rk4, step_size
+
+    for p in (Pendulum(), Pendulum(zeta=0.1)):
+        a, h = math.radians(170), step_size(Pendulum())
+        y = rk4(p, (a, 0.0, a, 0.0), h, int(20 / h))
+        stored = 0.5 * p.inertia * y[:, 1] ** 2 + p.potential(y[:, 0])
+        assert stored + y[:, 4] == pytest.approx(float(p.potential(a)), abs=1e-7)
+
+
+def test_an_unstable_pendulums_ghost_runs_away_and_stops():
+    from vib_tutorial.core.pendulum import rk4, step_size
+
+    p = Pendulum(Kind.INVERTED, spring=9.0, zeta=0.1)
+    h = step_size(p)
+    y = rk4(p, (0.02, 0.0, 0.02, 0.0), h, int(200 / h))
+    assert np.isnan(y[-1, 2]) and abs(y[-1, 0]) == pytest.approx(p.leaning(), abs=1e-3)
