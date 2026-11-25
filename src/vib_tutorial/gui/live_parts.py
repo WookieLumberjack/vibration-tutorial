@@ -21,10 +21,10 @@ from ..view_models.damping import ROLES, SHORT, LoopView, LossView
 from ..view_models.live_mass import LiveMass, energy_view
 from ..view_models.text import fmt
 from .layouts import FlowLayout, ResetButton
-from .lesson import LiveLabel, RunButton, note_label, plot
+from .lesson import LiveLabel, RunButton, plot
 from .plots import decimate
 from .style import colors, role
-from .theming import add_legend
+from .theming import add_legend, mute
 from .transport import speed_text
 
 ENERGY_SECONDS = 60.0  # the Energy tab's window (its ledger is the whole run's)
@@ -52,9 +52,7 @@ class EnergyTab(QtWidgets.QWidget):
         for item in self.items.values():
             self.plot.addItem(item)
         decimate(self.plot)
-        self.ledger = QtWidgets.QLabel()
-        self.ledger.setTextFormat(QtCore.Qt.TextFormat.RichText)
-        self.ledger.setWordWrap(True)
+        self.ledger = LiveLabel(wrap=True)  # rewritten each frame: a QLabel laid the page out again each time
         layout.addWidget(self.plot, 1)
         layout.addWidget(self.ledger)
         self.apply_theme()
@@ -116,7 +114,8 @@ class LoopTab(QtWidgets.QWidget):
         self.loop_item = pg.PlotDataItem()
         for item in (*self.theory_loops.values(), self.spring_line, self.loop_item):
             self.loop_plot.addItem(item)
-        self.note = note_label()
+        self.note = LiveLabel(wrap=True)  # rewritten each frame, as the ledger
+        mute(self.note)
         self.loss_plot = plot("Loss factor η", None, "Frequency / fₙ", None, log_x=True, log_y=True, height=120)
         self.loss_plot.setMouseEnabled(x=False, y=False)
         self.loss_plot.setToolTip(LOSS_TIP)
