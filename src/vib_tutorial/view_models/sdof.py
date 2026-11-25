@@ -46,7 +46,7 @@ from .recorder import Point
 from .text import fmt
 from .text import number as sig
 
-TAB_FRF, TAB_ENERGY, TAB_LOOP, TAB_POLES = range(4)
+TAB_ENERGY, TAB_FRF, TAB_LOOP, TAB_POLES = range(4)
 SHORT = {Model.VISCOUS: "Viscous", Model.HYSTERETIC: "Hysteretic", Model.COULOMB: "Coulomb", Model.ZENER: "Zener"}
 RAYS = (0.05, 0.2, 0.5, 0.8)  # the damping ratios' rays on the pole plot
 POLE_SNAP = 0.02  # a pole dragged this close to the real axis (of the plot's height) lands on it
@@ -71,7 +71,7 @@ class SdofTrial:
     tune: bool = False  # drive at f_n
     sweep: bool = False  # a stepped sweep, building the frequency response
     damping_only: bool = True  # the loop's force: the damping alone, or with the spring
-    tab: int = TAB_FRF
+    tab: int = TAB_ENERGY
     predict: Prediction | Placement | None = None  # asked once the reader has played (Things to try)
 
 
