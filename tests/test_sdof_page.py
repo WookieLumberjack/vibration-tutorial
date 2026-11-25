@@ -110,6 +110,20 @@ def test_a_change_mid_run_carries_the_motion_on_and_is_marked(page):
     assert xs[0] < t < xs[-1]  # the trace keeps what came before
 
 
+def test_the_drive_and_the_sweep_are_buttons_lit_while_on(page):
+    assert page.drive_on.text() == "Apply force" and not page.drive_on.styleSheet()
+    page.drive_on.click()
+    assert page.live.drive.on and page.drive_on.text() == "Force on: click to stop"
+    assert "background-color" in page.drive_on.styleSheet()  # lit, as the Simulation page's force
+    page.kind.setCurrentIndex(view.UNBALANCE)
+    assert page.drive_on.text() == "Unbalance spinning: click to stop"
+    page.drive_on.click()
+    assert not page.live.drive.on and page.drive_on.text() == "Spin the unbalance"
+    page.sweep_button.click()  # the sweep drives it too
+    assert page.sweep_button.text() == "Sweeping: click to stop"
+    assert page.drive_on.isChecked() and page.drive_on.text() == "Unbalance spinning: click to stop"  # set quietly
+
+
 def test_scrubbed_back_the_body_is_drawn_to_that_times_scale(page):
     page.load_trial(trial("Ringing down"))
     page.step(12.0)  # rung down to a few µm: the drawing magnified to match

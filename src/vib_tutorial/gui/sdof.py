@@ -48,7 +48,7 @@ from .drag import DragPoint
 from .frame_loop import FrameLoop
 from .free_body_view import FreeBodyView
 from .layouts import FlowLayout
-from .lesson import Dot, Form, LiveLabel, TrialBox, combo, note_label, plot, set_quietly, three_panes
+from .lesson import ActionToggle, Dot, Form, LiveLabel, TrialBox, combo, note_label, plot, set_quietly, three_panes
 from .live_body import LiveMassView
 from .live_parts import ChangeMarks, EnergyTab, LoopTab, run_row
 from .notes_view import NotesBrowser
@@ -62,6 +62,10 @@ __all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "SdofPage", "notes_html"]
 
 STRIP_SECONDS = 10.0  # the time plots' window
 PHASE_SECONDS = 3.0  # the phase plane's trail
+DRIVE_TEXTS = (  # the drive's button, off and on: a force, an unbalance
+    ("Apply force", "Force on: click to stop"),
+    ("Spin the unbalance", "Unbalance spinning: click to stop"),
+)
 PEAK_SECONDS = 3.0  # the body's scale fits the largest swing this recent
 MEASURE_EVERY = 0.2  # s of run between the recorder's looks
 PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
@@ -151,9 +155,6 @@ class SdofPage(QtWidgets.QWidget):
         self.oscillator_box = box
 
         drive = Form("Drive")
-        self.drive_on = QtWidgets.QCheckBox("Drive the mass")
-        self.drive_on.setToolTip(TIPS["drive"])
-        drive.row(self.drive_on)
         self.kind = QtWidgets.QComboBox()
         self.kind.addItems(["Force F sin Ωt", "Rotating unbalance"])
         drive.add("Input:", self.kind, TIPS["kind"])
@@ -164,6 +165,9 @@ class SdofPage(QtWidgets.QWidget):
         self.tune.setToolTip("<p>Set the drive's frequency to the natural frequency.</p>")
         self.tune.clicked.connect(self.tune_to_natural)
         drive.row(self.tune)
+        self.drive_on = ActionToggle(*DRIVE_TEXTS[0])  # set up first, then applied: as the Simulation page's
+        self.drive_on.setToolTip(TIPS["drive"])
+        drive.row(self.drive_on)
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
@@ -259,8 +263,7 @@ class SdofPage(QtWidgets.QWidget):
         self.lag_plot.addItem(self.drive_items[1])
         self.lag_plot.setYRange(0, 180, padding=0.05)
         self.lag_plot.getAxis("left").setTicks([[(v, f"{v}") for v in (0, 45, 90, 135, 180)]])
-        self.sweep_button = QtWidgets.QPushButton("Sweep")
-        self.sweep_button.setCheckable(True)
+        self.sweep_button = ActionToggle("Sweep", "Sweeping: click to stop")
         self.sweep_button.setToolTip(
             "<p>Step the drive through frequencies across the resonance, dwelling at each until its point lands. "
             "Press again to stop.</p>"
@@ -430,6 +433,7 @@ class SdofPage(QtWidgets.QWidget):
         self.amplitude_label.setText("Unbalance mₑe:" if unbalance else "Force F:")
         self.amplitude.setSuffix(" kg·m" if unbalance else " N")
         self.amplitude.setDecimals(6 if unbalance else 4)
+        self.drive_on.set_texts(*DRIVE_TEXTS[unbalance])
 
     def _push_params(self) -> None:
         """The live mass (and the ghost) to the controls: a live change, and the drive."""
@@ -669,6 +673,8 @@ class SdofPage(QtWidgets.QWidget):
         c = colors
         self.body.apply_theme()
         self.forces.apply_theme()
+        self.drive_on.apply_theme()
+        self.sweep_button.apply_theme()
         self.scrub.apply_theme()
         self.x_item.setPen(pg.mkPen(c.mass[0], width=2))
         self.ghost_item.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
