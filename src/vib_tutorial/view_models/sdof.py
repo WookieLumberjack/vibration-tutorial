@@ -34,6 +34,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
+from itertools import pairwise
 
 import numpy as np
 
@@ -203,6 +204,9 @@ class FrfView:
     amplification: str  # the left axis's name
     note: str
     ghost: Curve  # the viscous ghost's amplification, dashed, under another law (with the theory)
+    joined: Curve  # a smooth curve through the points, in frequency order (monotone between them: no peak made up)
+    joined_lag: Curve
+    joined_nyquist: Curve
     x_span: tuple[float, float]  # Hz: the sweep's range, and any point or the drive outside it
     y_span: tuple[float, float]  # the amplification axis: the viscous theory's over x_span and every point, so it
     # stays put when the theory is shown
@@ -227,6 +231,29 @@ def _curves(p: Params, kind: int, points: Sequence[Point]) -> tuple[Curve, Curve
     return Curve(f, _amplification(p, kind, f, h)), Curve(f, _lag(h))
 
 
+JOIN_STEPS = 24  # the smooth curve's points between two measured ones
+
+
+def _joined(points: Sequence[Point], p: Params, kind: int) -> tuple[Curve, Curve, Curve]:
+    """Smooth curves through the points in frequency order (amplification, lag, Nyquist), by a monotone cubic
+    (PCHIP) against log f, the amplification's on its log too: it never overshoots a point, so it shows the
+    points' shape without inventing a peak or a dip between them. Fewer than two frequencies: none."""
+    by_f = sorted(points, key=lambda q: q.freq_hz)
+    if len({q.freq_hz for q in by_f}) < 2 or len(by_f) != len({q.freq_hz for q in by_f}):
+        return Curve.empty(), Curve.empty(), Curve.empty()
+    from scipy.interpolate import PchipInterpolator  # here: the page opens without SciPy's interpolate
+
+    f = np.array([q.freq_hz for q in by_f])
+    h = np.array([q.response for q in by_f])
+    u = np.log(f)
+    fine_u = np.concatenate([*(np.linspace(a, b, JOIN_STEPS, endpoint=False) for a, b in pairwise(u)), u[-1:]])
+    fine_f = np.exp(fine_u)
+    amp = np.exp(PchipInterpolator(u, np.log(_amplification(p, kind, f, h)))(fine_u))
+    lag = PchipInterpolator(u, _lag(h))(fine_u)
+    re, im = PchipInterpolator(u, h.real)(fine_u), PchipInterpolator(u, h.imag)(fine_u)
+    return Curve(fine_f, amp), Curve(fine_f, lag), Curve(re, im)
+
+
 def _model_receptance(t: SdofTrial, freqs: np.ndarray) -> np.ndarray:
     """The law's H at `freqs` (friction's by its describing function, at the drive's force there: magnitude only)."""
     m = matched(t)
@@ -244,6 +271,7 @@ def frf_view(t: SdofTrial, current: Sequence[Point], earlier: Sequence[Point], t
     law = t.model is not Model.VISCOUS and t.damping > 0
     points, lags = _curves(p, d.kind, current)
     earlier_points, earlier_lags = _curves(p, d.kind, earlier)
+    joined, joined_lag, joined_nyquist = _joined(current, p, d.kind)
     h_now = np.array([q.response for q in current])
     nyquist = Curve(h_now.real, h_now.imag) if current else Curve.empty()
     ghost = Curve.empty()
@@ -310,6 +338,9 @@ def frf_view(t: SdofTrial, current: Sequence[Point], earlier: Sequence[Point], t
         name,
         note,
         ghost,
+        joined,
+        joined_lag,
+        joined_nyquist,
         (f_lo, f_hi),
         y_span,
     )

@@ -157,6 +157,21 @@ def test_the_sweep_takes_its_range_and_points_from_the_boxes_and_the_axes_keep_s
     assert lo < 0.5 * fn and hi > 2.0 * fn
 
 
+def test_a_smooth_curve_joins_the_points_without_making_up_a_peak(page):
+    page.tabs.setCurrentIndex(view.TAB_FRF)
+    page.sweep_points.setValue(6)
+    page.sweep_button.click()
+    page.step(40.0)
+    f, a = (np.asarray(v) for v in page.point_items[0].getData())
+    order = np.argsort(f)
+    f, a = 10 ** f[order], 10 ** a[order]  # the plot's log axes hold the logs
+    jf, ja = (10 ** np.asarray(v) for v in page.join_items[0].getData())
+    assert len(f) >= 3 and jf[0] == pytest.approx(f[0]) and jf[-1] == pytest.approx(f[-1])
+    for (f0, a0), (f1, a1) in zip(zip(f, a), zip(f[1:], a[1:])):
+        between = ja[(jf >= f0) & (jf <= f1)]
+        assert between.min() >= min(a0, a1) * (1 - 1e-9) and between.max() <= max(a0, a1) * (1 + 1e-9)
+
+
 def test_scrubbed_back_the_body_is_drawn_to_that_times_scale(page):
     page.load_trial(trial("Ringing down"))
     page.step(12.0)  # rung down to a few µm: the drawing magnified to match
