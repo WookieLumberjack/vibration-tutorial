@@ -87,13 +87,16 @@ class EnergyTab(QtWidgets.QWidget):
 
 
 LOOP_TIP = (
-    "<p>The loop the run draws: the damping force (f − mẍ − kx) against the displacement over its last cycle, the "
-    "mass's colour; and faint, each law's steady loop at that frequency and amplitude. The area inside a loop is "
-    "the energy it takes out a cycle.</p>"
+    "<p>The damper's force against the mass's position over the last swing. The damper pushes against the motion "
+    "both ways, so going out and coming back trace different paths and close into a loop: the area inside is the "
+    "energy the damper took out that swing. <b>This run</b> is the bold line; the faint ones are the loop each "
+    "damper type would draw at the same swing (viscous an ellipse, friction a rectangle).</p>"
 )
 LOSS_TIP = (
-    "<p>Each law's loss factor η = K″/K′ against the frequency over f<sub>n</sub>; they meet at f<sub>n</sub>, "
-    "where they're matched (2ζ). The line is the drive's frequency.</p>"
+    "<p>How much each damper type loses a swing, against how fast it swings: the loss factor η, the energy lost a "
+    "cycle over 2π times the most stored. They're matched to lose the same at f<sub>n</sub> (η = 2ζ), so they "
+    "cross there: viscous grows with frequency, hysteretic stays flat (friction, at the swing it's matched at, lies "
+    "on it), and Zener peaks where you set it. The vertical line is the drive's frequency.</p>"
 )
 
 
@@ -103,17 +106,19 @@ class LoopTab(QtWidgets.QWidget):
     def __init__(self, tip: str, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout(self)
-        self.damping_only = QtWidgets.QCheckBox("Damping force only")
+        self.damping_only = QtWidgets.QCheckBox("Damping force alone (untick to add the spring's kx)")
         self.damping_only.setToolTip(tip)
         layout.addWidget(self.damping_only)
         self.loop_plot = plot("Force", "N", "Displacement x", "m", height=170)
         self.loop_plot.setMouseEnabled(x=False, y=False)
         self.loop_plot.setToolTip(LOOP_TIP)
-        self.theory_loops = {m: pg.PlotDataItem() for m in MODELS}
-        self.spring_line = pg.PlotDataItem()
-        self.loop_item = pg.PlotDataItem()
+        self.legend = add_legend(self.loop_plot.getPlotItem(), offset=(-10, 10))
+        self.loop_item = pg.PlotDataItem(name="This run")
+        self.theory_loops = {m: pg.PlotDataItem(name=SHORT[m]) for m in MODELS}
+        self.spring_line = pg.PlotDataItem(name="Spring kx")
         for item in (*self.theory_loops.values(), self.spring_line, self.loop_item):
             self.loop_plot.addItem(item)
+        self.legend.removeItem(self.spring_line)  # in the legend only while it's drawn
         self.note = LiveLabel(wrap=True)  # rewritten each frame, as the ledger
         mute(self.note)
         self.loss_plot = plot("Loss factor η", None, "Frequency / fₙ", None, log_x=True, log_y=True, height=120)
@@ -125,6 +130,8 @@ class LoopTab(QtWidgets.QWidget):
             self.loss_plot.addItem(item)
         self.loss_now = pg.InfiniteLine(angle=90)
         self.loss_plot.addItem(self.loss_now, ignoreBounds=True)
+        self._spring_listed = False
+        self._axis = "Force"
         layout.addWidget(self.loop_plot, 3)
         layout.addWidget(self.note)
         layout.addWidget(self.loss_plot, 2)
@@ -153,7 +160,17 @@ class LoopTab(QtWidgets.QWidget):
         for m, item in self.theory_loops.items():
             curve = drawn.get(m)
             item.setData(*(curve if curve is not None else ([], [])))
+        spring = len(view.spring.x) > 0
+        if spring != self._spring_listed:  # touched only when it changes: a legend change repaints the plot
+            self._spring_listed = spring
+            if spring:
+                self.legend.addItem(self.spring_line, "Spring kx")
+            else:
+                self.legend.removeItem(self.spring_line)
         self.spring_line.setData(*view.spring)
+        if view.axis != self._axis:
+            self._axis = view.axis
+            self.loop_plot.setLabel("left", view.axis, units="N")
         self.note.setText(view.note)
 
 
