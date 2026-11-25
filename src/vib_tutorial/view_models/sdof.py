@@ -12,7 +12,7 @@ damper c = 2ζ√(km); friction's at the amplitude X; the Zener element's storag
 - **Coulomb friction**: F<sub>f</sub> = πcω<sub>n</sub>X/4, the chain's stick–slip.
 - **Zener**: k₀ and the arm k₁–c₁ (`core/arm_mass.py`).
 
-Under another law than viscous, a *ghost*, the viscous mass with the same start and drive, runs beside it, dashed
+Under another law than viscous, a *ghost*, the viscous mass with the same start and drive, runs beside it, in grey
 (`ghost_params`). Each panel has a function here (the damping laws' own panels are `damping.py`'s):
 
 - `info(state)`: the oscillator's f<sub>n</sub>, ζ and the rest, and its damping law's, under its boxes.

@@ -29,7 +29,7 @@ plane.
 The damper's law is picked under the oscillator's boxes, as it runs (the Damping models page's, merged here: the
 same mass and spring): viscous, hysteretic (structural), Coulomb friction or viscoelastic (Zener), each matched
 to c so it loses the same energy per cycle at f<sub>n</sub>, the motion carrying on with the new damping. A
-viscous ghost, dashed, is plucked and driven beside it. Hysteretic damping runs as its stand-in in time, a
+viscous ghost, in grey, is plucked and driven beside it. Hysteretic damping runs as its stand-in in time, a
 viscous damper matched at the frequency it runs at; friction sticks and slips by its events; the Zener element
 relaxes through its arm. The Loop & loss tab draws the run's own hysteresis loop over its last cycle, with every
 law's beside it and the energy it encloses, and the loss factors against frequency; the Frequency response tab
