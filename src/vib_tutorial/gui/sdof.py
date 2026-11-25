@@ -836,7 +836,7 @@ class SdofPage(QtWidgets.QWidget):
         self._show_readout()
         i = self.tabs.currentIndex()
         if i == view.TAB_ENERGY:
-            self.energy.draw(live, frame)
+            self.energy.draw(live.record, frame)
         elif i == view.TAB_LOOP:
             self._draw_loop()
         elif i == view.TAB_FRF:

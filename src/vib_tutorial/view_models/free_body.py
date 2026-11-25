@@ -39,6 +39,7 @@ class Arrow:
     value: float  # N, + along the body's positive direction
     role: str  # its colour, as a theme role's name (`style.role`)
     symbol: str = ""  # its symbol alone, short enough to write on the body ("arm" for the Zener arm's k₁(x − y))
+    unit: str = "N"  # its size's ("N·m" for a moment)
 
 
 @dataclass(frozen=True)
@@ -81,7 +82,7 @@ class ArrowScale:
 
 
 def arrow(name: str, symbol: str, value: float, role: str, short: str | None = None, unit: str = "N") -> Arrow:
-    return Arrow(name, f"{symbol} = {fmt(abs(value), unit)}", value, role, short or symbol)
+    return Arrow(name, f"{symbol} = {fmt(abs(value), unit)}", value, role, short or symbol, unit)
 
 
 def one_mass(

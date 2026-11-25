@@ -281,6 +281,23 @@ def _sdof_law(model: str, ghost: bool = True, tab: str = "TAB_ENERGY", trial: st
     return setup
 
 
+def _live_pendulum(trial: str, tab: str):
+    """Pendulums' trial `trial`, live (its frame loop steps the pendulum), on tab `tab` (a `view_models.pendulum`
+    TAB_ name), at 1× (#478 Phase 4)."""
+
+    def setup(w):
+        from vib_tutorial.gui import pendulum
+        from vib_tutorial.view_models import pendulum as view
+
+        page = w.pendulum_page
+        w.pages.setCurrentWidget(page)
+        page.load_trial(next(i for i, t in enumerate(pendulum.TRIALS) if t.name.startswith(trial)))
+        page.tabs.setCurrentIndex(getattr(view, tab))
+        return page, 1.0
+
+    return setup
+
+
 SCENARIOS = (
     Scenario("Simulation: 4 masses, resonance building up", "baseline: the first trial", _sim_trial),
     Scenario("Simulation: 8 masses at 1e8 N/m, 50 Hz", "#202 linear steps in Rust, #203 strip chart", _stiff(0.0)),
@@ -346,6 +363,14 @@ SCENARIOS = (
         "Single oscillator: driven sweep, hysteretic, Frequency response tab",
         "its c following the drive's frequency (#478)",
         _sdof_law("HYSTERETIC", tab="TAB_FRF", trial="Building the frequency response"),
+    ),
+    *(
+        Scenario(
+            f"Pendulums: nearly over the top, dying away, {name} tab",
+            "the live pendulum, its moments and the tab's live plot (#478 Phase 4)",
+            _live_pendulum("Nearly over the top", tab),
+        )
+        for name, tab in (("Period", "TAB_PERIOD"), ("Phase plane", "TAB_PHASE"), ("Energy", "TAB_ENERGY"))
     ),
     Scenario(
         "Quarter-car: driven over its road",

@@ -1,7 +1,7 @@
-"""The Qt parts #478's live pages share (the Single oscillator): drawn from a `LiveMass`'s record.
+"""The Qt parts #478's live pages share (the Single oscillator, Pendulums): drawn from a live run's record.
 
 - `EnergyTab`: the energy balance over the last minute (put in, taken out, the live changes' terms, stored) and the
-  ledger now, by `live_mass.energy_view`, its rows in their theme roles' colours; redrawn as the run goes at most
+  ledger now, by `live_mass.energy_view` (or the page's own, `live_pendulum.energy_view`), its rows in their theme roles' colours; redrawn as the run goes at most
   every `ENERGY_EVERY` s (its curves move about a pixel in that).
 - `LoopTab`: the damping laws' Loop & loss tab: the hysteresis loop the run draws over its last cycle beside each
   law's (`damping.loop_view`), an arrowhead at its moving end, and their loss factors against frequency (`damping.loss_view`).
@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 import time
+from collections.abc import Callable
 
 import numpy as np
 import pyqtgraph as pg
@@ -22,7 +23,8 @@ from PySide6 import QtCore, QtWidgets
 
 from ..core.damping_models import MODELS
 from ..view_models.damping import ROLES, SHORT, LoopView, LossView
-from ..view_models.live_mass import LiveMass, energy_view
+from ..view_models.live_mass import EnergyView, energy_view
+from ..view_models.record import SampleBuffer
 from ..view_models.text import fmt
 from .layouts import FlowLayout, ResetButton
 from .lesson import LiveLabel, RunButton, plot
@@ -47,12 +49,19 @@ class EnergyTab(QtWidgets.QWidget):
 
     CURVES = (("put_in", "put in"), ("taken_out", "taken out"), ("changes", "the changes"), ("stored", "stored"))
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(
+        self,
+        parent: QtWidgets.QWidget | None = None,
+        balance: Callable[[np.ndarray, np.ndarray], EnergyView | None] = energy_view,
+        tip: str = ENERGY_TIP,
+        empty: str = "Start it, or pluck the mass, to see where the energy goes.",
+    ) -> None:
         super().__init__(parent)
+        self.balance, self.empty = balance, empty  # the page's ledger over its record's columns
         layout = QtWidgets.QVBoxLayout(self)
         self.plot = plot("Energy", "J", "Time", "s", height=160)
         self.plot.setMouseEnabled(x=False, y=False)
-        self.plot.setToolTip(ENERGY_TIP)
+        self.plot.setToolTip(tip)
         add_legend(self.plot.getPlotItem(), offset=(-10, 10))
         self.items = {name: pg.PlotDataItem(name=label) for name, label in self.CURVES}
         for item in self.items.values():
@@ -74,18 +83,19 @@ class EnergyTab(QtWidgets.QWidget):
         ):
             self.items[name].setPen(pg.mkPen(colour, width=2))
 
-    def draw(self, live: LiveMass, frame: bool = False) -> None:
-        """The balance and the ledger now; as a `frame` of the run, at most every ENERGY_EVERY s."""
+    def draw(self, record: SampleBuffer, frame: bool = False) -> None:
+        """The balance and the ledger now, from the run's record; as a `frame` of the run, at most every
+        ENERGY_EVERY s."""
         now = time.perf_counter()
         if frame and now - self._drawn_at < ENERGY_EVERY:
             return
         self._drawn_at = now
-        t, y = live.record.window(ENERGY_SECONDS)
-        e = energy_view(t, y)
+        t, y = record.window(ENERGY_SECONDS)
+        e = self.balance(t, y)
         if e is None:
             for item in self.items.values():
                 item.setData([], [])
-            self.ledger.setText("Start it, or pluck the mass, to see where the energy goes.")
+            self.ledger.setText(self.empty)
             return
         for name, _ in self.CURVES:
             self.items[name].setData(e.t, getattr(e, name))

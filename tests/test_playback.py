@@ -67,55 +67,6 @@ def test_playback_walks_the_span_pauses_at_its_end_and_scrubs(app):
     close_graphics(page)
 
 
-def test_the_pendulum_swings_with_its_curve_and_a_pluck_lets_it_go_from_there(main_window, app):
-    import math
-
-    from vib_tutorial.core.pendulum import Kind
-    from vib_tutorial.gui import pendulum
-
-    w = main_window
-    w.resize(1280, 800)
-    p = w.pendulum_page
-    w.pages.setCurrentWidget(p)
-    for _ in range(5):
-        app.processEvents()
-    pb, view = p.playback, p.view
-    pb.loop.enabled = False
-    assert not pb.running and pb.run.text() == "Start" and view.theta == pytest.approx(math.radians(10.0))
-
-    # A trial plays it: the pendulum is where the whole swing is, the ghost where the linearized one is.
-    p.load_trial(next(i for i, tr in enumerate(pendulum.TRIALS) if tr.name.startswith("Let go from 90")))
-    assert pb.running and pb.t == 0.0
-    pb._tick(0.7)
-    t, th, _, tl = (np.asarray(a) for a in p._swing)
-    assert view.theta == pytest.approx(np.interp(pb.t, t, th)) and view.ghost.isVisible()
-    gx, gy = view.ghost.getData()
-    assert math.atan2(gx[1], -gy[1]) == pytest.approx(np.interp(pb.t, t, tl))
-    assert p.moment_now.pos().x() == pytest.approx(math.degrees(view.theta))
-    x, y = p.whole_item.getData()
-    assert np.allclose(np.degrees(np.interp(pb.t, t, th)), np.interp(pb.t, x, y))  # on the curve drawn
-
-    # Pluck it to the left, to 40°: the start box says 40°, the swing is mirrored and plays from t = 0.
-    for _ in range(5):
-        app.processEvents()
-    view.grab()  # laid out: the handle has its place on screen
-    pb.seek(0.0)
-    vb = view.plotItem.vb
-    hand = vb.mapViewToScene(QtCore.QPointF(*view._point(view.theta)))
-    to = vb.mapViewToScene(QtCore.QPointF(*view._point(-math.radians(40.0))))
-    drag(view, hand, to, app)
-    assert not view.held and pb.running and pb.t == 0.0 and p.side == -1.0
-    assert p.angle.value() == pytest.approx(40.0, abs=1.5)
-    x, y = p.whole_item.getData()
-    assert y[0] == pytest.approx(-p.angle.value()) and view.theta == pytest.approx(math.radians(y[0]))
-
-    # A kind drawn its own way: the disc twists about its wire, its mark at θ.
-    p.load_trial(next(i for i, tr in enumerate(pendulum.TRIALS) if tr.kind is Kind.TORSION))
-    assert p.side == 1.0 and view.disc.isVisible() and not view.bob.isVisible()
-    xs, ys = view.body.getData()
-    assert math.atan2(xs[1], ys[1]) == pytest.approx(math.radians(120.0))
-
-
 def test_the_machine_runs_up_on_its_mounts_and_a_pull_lets_it_ring(main_window, app):
     from vib_tutorial.gui.isolation_view import MOST, SWING
     from vib_tutorial.view_models.isolation import TAB_CHART, TAB_START, TRIALS
@@ -165,17 +116,19 @@ def test_the_machine_runs_up_on_its_mounts_and_a_pull_lets_it_ring(main_window, 
 
 
 def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
-    from vib_tutorial.gui import pendulum
+    """On a page that asks before it runs (Vibration isolation, played back; the live pages ask after play)."""
+    from vib_tutorial.core.practice import Prediction
+    from vib_tutorial.view_models.isolation import TRIALS
 
     w = main_window
-    p = w.pendulum_page
+    p = w.isolation_page
     w.pages.setCurrentWidget(p)
     box = p.trials
-    i = next(k for k, t in enumerate(pendulum.TRIALS) if t.name.startswith("Let go from 90"))
-    prediction = pendulum.TRIALS[i].predict
-    assert prediction is not None
+    i = next(k for k, t in enumerate(TRIALS) if isinstance(t.predict, Prediction))
+    prediction = TRIALS[i].predict
+    assert isinstance(prediction, Prediction)
     before = p.practice_state()
-    box.combo.pick(pendulum.TRIALS[i].name)
+    box.combo.pick(TRIALS[i].name)
     assert box.asking == i and box.ask.isVisible() and "Predict first" in box.question.text()
     assert p.practice_state() == before and not p.playback.running  # nothing set up yet
     buttons = [box.choices.itemAt(k).widget() for k in range(box.choices.count())]
@@ -188,23 +141,23 @@ def test_a_trial_with_a_prediction_asks_it_before_it_runs(main_window, app):
     assert box.asking is None and not box.ask.isVisible() and "Not quite" in box.verdict.text()
     assert prediction.choices[prediction.answer] in box.verdict.text()
     assert prediction.why[wrong] and prediction.why[wrong][:20] in box.verdict.text()  # why the one picked is wrong
-    assert p.practice_state() != before and p.playback.running  # it ran
+    assert p.playback.running  # it ran (its setup may be the page's opening one)
     assert box.note.isVisible() and box.note.text()
 
-    box.combo.pick(pendulum.TRIALS[i].name)  # again: asked again
+    box.combo.pick(TRIALS[i].name)  # again: asked again
     assert box.ask.isVisible() and not box.verdict.isVisible()
     box.answer(prediction.answer)
     assert "Right" in box.verdict.text()
 
-    box.combo.pick(pendulum.TRIALS[i].name)
+    box.combo.pick(TRIALS[i].name)
     box.skip.click()  # Just run it: no verdict
     assert not box.verdict.isVisible() and box.note.isVisible()
 
-    plain = next(k for k, t in enumerate(pendulum.TRIALS) if t.predict is None)
-    box.combo.pick(pendulum.TRIALS[plain].name)  # no prediction: runs at once
+    plain = next(k for k, t in enumerate(TRIALS) if t.predict is None)
+    box.combo.pick(TRIALS[plain].name)  # no prediction: runs at once
     assert not box.ask.isVisible() and box.note.text()
 
-    box.combo.pick(pendulum.TRIALS[i].name)
+    box.combo.pick(TRIALS[i].name)
     w.restore_defaults()  # put back as it opened: no question, no verdict
     assert not box.ask.isVisible() and not box.verdict.isVisible() and box.asking is None
 
@@ -213,13 +166,13 @@ def test_a_placement_is_guessed_on_its_plot(main_window, app):
     """A Placement (#409 I-6): the plot hides its curves and shows the span while the reader drags the line, the
     trial runs on the guess, which stays on the plot, dashed, with the verdict; Defaults takes it away."""
     from vib_tutorial.core.practice import Placement
-    from vib_tutorial.gui import pendulum
+    from vib_tutorial.view_models.isolation import TRIALS
 
     w = main_window
-    p = w.pendulum_page
+    p = w.isolation_page
     w.pages.setCurrentWidget(p)
     box = p.trials
-    t = next(t for t in pendulum.TRIALS if isinstance(t.predict, Placement))
+    t = next(t for t in TRIALS if isinstance(t.predict, Placement))
     place = t.predict
     assert isinstance(place, Placement)
     item = getattr(p, place.plot).getPlotItem()
@@ -280,14 +233,14 @@ def test_a_goals_links_set_up_its_trial_and_ask_its_problem(main_window, app):
     from PySide6 import QtCore as Core
 
     w = main_window
-    browser = w.pendulum_page.notes
-    w._wire_links(w.pendulum_page)
-    browser.anchorClicked.emit(Core.QUrl("trial:pendulum_page#2"))
-    p = w.pendulum_page
-    assert w.pages.currentWidget() is p and p.trials.asking == 1 and p.trials.ask.isVisible()
-    browser.anchorClicked.emit(Core.QUrl("practice:pendulum_page#large-swing"))
+    browser = w.isolation_page.notes
+    w._wire_links(w.isolation_page)
+    browser.anchorClicked.emit(Core.QUrl("trial:isolation_page#1"))
+    p = w.isolation_page
+    assert w.pages.currentWidget() is p and p.trials.asking == 0 and p.trials.ask.isVisible()
+    browser.anchorClicked.emit(Core.QUrl("practice:isolation_page#mount-frequency"))
     pw = w.practice_window
-    assert pw is not None and pw.problem is not None and pw.problem.key == "large-swing"
+    assert pw is not None and pw.problem is not None and pw.problem.key == "mount-frequency"
 
 
 def test_a_cursors_plot_draws_its_curves_from_pixmaps(app):
@@ -336,7 +289,8 @@ def test_make_app_sizes_the_pixmap_cache_once_the_app_is_made():
 
 
 def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
-    """A held curve's pixmap lives in QPixmapCache: at 2× the Pendulums' (the Single oscillator's, then), in a 1700 px window, outgrew its
+    """A held curve's pixmap lives in QPixmapCache: at 2× a played-back page's (the Single oscillator's, then
+    Pendulums', now Vibration isolation's), in a 1700 px window, outgrew its
     default 10 MB, so the cache dropped them every frame (20 ms a frame on the Mac, #409 N-2). The limit holds
     a few pages' worth."""
     import pyqtgraph as pg
@@ -349,7 +303,7 @@ def test_the_pixmap_cache_holds_a_large_retina_windows_held_curves(main_window):
     assert QtGui.QPixmapCache.cacheLimit() == plot_patches.PIXMAP_CACHE_MB * 1024
     w = main_window
     w.resize(1700, 1030)  # 1000 px for the pages, below the buttons' row
-    p = w.pendulum_page
+    p = w.isolation_page
     w.pages.setCurrentWidget(p)
     QtWidgets.QApplication.processEvents()
     cached = QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache

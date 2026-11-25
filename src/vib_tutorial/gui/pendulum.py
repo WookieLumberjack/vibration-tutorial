@@ -1,613 +1,287 @@
-"""Pendulums page: oscillators whose stiffness is gravity, and the rotational form of every one-mass formula.
+"""Pendulums page (#478 Phase 4): oscillators whose stiffness is gravity, swinging live, changed as they swing.
 
-Left: the pendulum (simple, a rod on a pivot, a disc on a wire, or inverted on a spring), its size, the spring,
-gravity and damping, and the angle it is let go from. Centre: the pendulum itself, swinging with the whole
-swing beside the linearized one's ghost (pluck it to let it go from another angle; a `Playback` walks the
-time, with a cursor on the swing), then the swing, whole and linearized, and the restoring
-moment against the angle. Right: the period against the amplitude (exact, Duffing's approximation and linear), the
-phase plane's energy curves, the rod's period against where it is pivoted, and the Theory. The page has its own
-model (core/pendulum.py).
+The single oscillator turned: J for m, moments for forces, and gravity's mgd sin θ for the spring. The pendulum is
+stepped as it swings (`view_models/live_pendulum.LivePendulum`: the whole equation and its linearized ghost),
+not a swing worked out in advance and played back. Left: the pendulum (a bob on a string, a rod on a pivot, a disc
+on a wire, or a mass upright on a spring), its size, the spring, gravity and damping, then the Things to try
+(setups to go back to; their predictions are asked once the reader has handled the pendulum). Centre: the pendulum
+(`pendulum_view.PendulumView`: pluck it, or drag its grips to change L, m, k<sub>t</sub> and the rod's pivot as it
+swings, the angular momentum kept) with the moments on it beside it (`free_body_view.FreeBodyView`, the string's
+pull under them), the run's controls, the swing against time beside its ghost, which keeps what came before a change
+with the change marked, and the restoring moment against the angle. Right: the Period the reader builds swing by
+swing (each whole swing lands its period at its amplitude, the theory's curves shown over them on request), the
+Phase plane traced live over the orbits of constant energy, the Energy balance through every change, and the Theory.
+
+What the page shows is `view_models/pendulum.py`'s; its trials, problems, tips and notes are `pendulum_trials.py`'s
+(no Qt). The controls are bound to the state (`PendulumTrial`) by `bindings.Bindings`, so Defaults round-trips by
+construction.
+
+Working on it: `tests/test_pendulum_page.py` (the page live: pluck, grips, a change mid-swing keeping Jθ̇, the
+period built by hand, the theory's axes, the moments, predictions after play), `test_live_pendulum.py` (the
+Qt-free parts), `test_readiness.py`.
 """
 
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+import time
+from dataclasses import replace
 
 import numpy as np
 import pyqtgraph as pg
 from PySide6 import QtCore, QtWidgets
 
-from ..core.pendulum import (
-    KINDS,
-    Kind,
-    Pendulum,
-    conjugate_pivot,
-    duffing_period,
-    measured_period,
-    orbit,
-    period,
-    periods,
-    phase_curve,
-    rod_period,
-    swing,
-)
-from ..core.practice import Placement, Prediction, Problem, Question, Requirement, kept, number, pick, rounded
+from ..core.pendulum import KINDS, Kind, Pendulum, period
+from ..core.stepping import FRAME_BUDGET, Budget
+from ..view_models import live_pendulum as lp
+from ..view_models import pendulum as view
+from ..view_models.free_body import ArrowScale
+from ..view_models.live_pendulum import COL, LivePendulum
+from ..view_models.pendulum import PendulumTrial
 from ..view_models.text import number as sig
-from . import coalesce, pendulum_figures, settle_plots
-from .lesson import (
-    Dot,
-    Form,
-    TrialBox,
-    column,
-    combo,
-    connect_all,
-    fmt,
-    mark,
-    marker,
-    note_label,
-    plot,
-    readout_label,
-    set_quietly,
-    stack,
-    theory,
-    three_panes,
-)
-from .links import load_notes, page_link
+from . import coalesce
+from .bindings import Bindings
+from .frame_loop import FrameLoop
+from .free_body_view import FreeBodyView
+from .layouts import FlowLayout
+from .lesson import Dot, Form, LiveLabel, TrialBox, combo, note_label, plot, theory, three_panes
+from .live_parts import ChangeMarks, EnergyTab, run_row
+from .pendulum_trials import NOTES_HTML, PROBLEMS, TIPS, TRIALS
 from .pendulum_view import PendulumView
-from .playback import Playback
+from .plots import decimate
+from .scrub import Scrub
 from .style import colors
 from .theming import add_legend
-from .trials_text import trials_html
+from .transport import Transport
 
-TAB_PERIOD, TAB_PHASE, TAB_PIVOT = range(3)
-SWINGS = 8  # linear periods drawn
+__all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "PendulumPage"]
 
-
-@dataclass(frozen=True)
-class PendulumTrial:
-    name: str
-    note: str
-    kind: Kind = Kind.SIMPLE
-    mass: float = 1.0
-    length: float = 1.0
-    pivot: float = 0.5
-    spring: float = 15.0
-    gravity: float = 9.81
-    zeta: float = 0.0
-    angle: float = 10.0  # degrees
-    tab: int = TAB_PERIOD
-    predict: Prediction | Placement | None = None  # asked before it runs (Things to try)
-
-
-TRIALS = (
-    PendulumTrial(
-        "Gravity is the spring",
-        "A 1 kg bob on a 1 m string, let go from 10°. Its restoring moment is <m>mgL sin θ ≈ mgLθ</m>, and its "
-        "moment of inertia <m>mL²</m>, so <m>ω<sub>n</sub> = √(g/L)</m>: 0.498 Hz, a period of 2.006 s, whatever "
-        "the mass (change it). At 10° the whole and the linearized swings can't be told apart.",
-        angle=10.0,
-        predict=Placement(
-            "A 1 kg bob on a 1 m string, let go from 10°. How long does one swing there and back take? Put the line "
-            "at the time it's back where it started.",
-            plot="swing_plot",
-            answer=2.006,
-            span=(0.0, 6.0),
-            axis="x",
-            low="That's nearer one way across. There and back is 2π√(L/g) = 2.0 s.",
-            high="2π√(L/g), with L = 1 m and g = 9.81 m/s², is 2.0 s: there and back.",
-            tolerance=0.15,
-            unit="s",
-        ),
-    ),
-    PendulumTrial(
-        "Let go from 90°",
-        "The same pendulum from 90°. <m>sin θ</m> falls below <m>θ</m>, so the spring softens as the swing grows: "
-        "the period is 2.368 s, 18 % longer than the small swing's, and the linearized swing drifts ahead "
-        "(Centre). The Period tab gives the exact period (an elliptic integral), and Duffing's first "
-        "approximation, <m>T ≈ T<sub>0</sub>(1 + A²/16)</m>, which holds to 1 % up to about 75°.",
-        angle=90.0,
-        predict=Prediction(
-            "The same pendulum let go from 90° instead of 10°. Its period is…",
-            ("shorter", "the same", "longer"),
-            2,
-            ordered=True,
-            why=(
-                'sin θ falls below θ as the swing grows: gravity pulls back less than the linear spring would, so the period lengthens.',
-                'Only while sin θ ≈ θ, up to about 10°. From 90° the period is 18 % longer.',
-                '',
-            ),
-        ),
-    ),
-    PendulumTrial(
-        "Nearly over the top",
-        "From 170°, the bob nearly balances upside down and lingers there: the period is 2.44 times the small "
-        "swing's, and it grows without bound as the start nears 180°. The Phase plane tab shows why: the orbit "
-        "runs close to the separatrix, the curve through the upside-down balance that divides swinging from "
-        "going round.",
-        angle=170.0,
-        tab=TAB_PHASE,
-    ),
-    PendulumTrial(
-        "A rod: where to pivot it",
-        "A 1 m uniform rod pivoted 0.5 m from its centre (at its end): <m>J = mL²/3</m>, the weight's arm "
-        "<m>d</m> = 0.5 m, so it swings as a simple pendulum <m>L<sub>eq</sub></m> = 0.667 m long (1.638 s). "
-        "Pivoted 0.289 m from the centre (<m>L/√12</m>, the radius of gyration) it swings fastest, 1.524 s; "
-        "pivoted 0.167 m from the centre (<m>k<sub>G</sub>²/d</m>) it swings at 1.638 s again: Kater's "
-        "reversible pendulum, which measured <m>g</m>.",
-        kind=Kind.ROD,
-        angle=10.0,
-        tab=TAB_PIVOT,
-        predict=Prediction(
-            "A 1 m rod swinging from one end, or a bob on a 1 m string: which swings faster?",
-            ("The rod", "The bob on the string", "Neither: the same"),
-            0,
-            why=(
-                '',
-                "The rod's mass is spread along it, some of it near the pivot: it swings as a pendulum 2L/3 = 0.667 m long, so faster.",
-                "Only a point mass at 1 m swings as a 1 m pendulum. The rod's mass is spread along it: it swings as one 0.667 m long.",
-            ),
-        ),
-    ),
-    PendulumTrial(
-        "A disc on a wire, twisted 120°",
-        "A 1 kg disc of radius 0.1 m on a wire of torsional stiffness <m>k<sub>t</sub></m> = 0.5 N·m/rad: "
-        "<m>J = mr²/2</m>, <m>f<sub>n</sub> = √(k<sub>t</sub>/J)/2π</m> = 1.59 Hz. The wire's twist is linear, "
-        "so the period is the same at 10° as at 170°: the softening above came from gravity's <m>sin θ</m>, not "
-        "from turning.",
-        kind=Kind.TORSION,
-        length=0.1,
-        spring=0.5,
-        angle=120.0,
-        predict=Prediction(
-            "The disc twisted 120° instead of 10° and let go. Its period is…",
-            ("longer", "the same", "shorter"),
-            1,
-            ordered=True,
-            why=(
-                "A pendulum softens because of gravity's sin θ. The wire's torque is k<sub>t</sub>θ at any twist, so nothing softens.",
-                '',
-                "Nothing hardens either: the wire's torque is k<sub>t</sub>θ at any twist, and a linear spring's period doesn't depend on the amplitude.",
-            ),
-        ),
-    ),
-    PendulumTrial(
-        "Inverted, let go from 60°",
-        "A 1 kg mass on a 1 m arm balanced upright on a 15 N·m/rad spring. Gravity now pushes it over: the "
-        "stiffness is <m>k<sub>θ</sub> = k<sub>t</sub> − mgL</m> = 5.19 N·m/rad, <m>f<sub>n</sub></m> = 0.363 Hz. "
-        "And it hardens: from 60° the period is 10 % shorter than the small swing's.",
-        kind=Kind.INVERTED,
-        spring=15.0,
-        angle=60.0,
-        predict=Prediction(
-            "Upright on its spring, let go from 60° rather than a few degrees. Its period is…",
-            ("longer, as a hanging pendulum's", "the same", "shorter"),
-            2,
-            ordered=True,
-            why=(
-                'Hanging, gravity pulls back and sin θ falling below θ softens it. Upright, gravity pushes over, and the same shortfall leaves the spring more to win by: it hardens.',
-                "Gravity's moment, mgL sin θ, isn't linear: at 60° it's 17 % short of mgLθ, so the spring wins by more and the swing is quicker.",
-                '',
-            ),
-        ),
-    ),
-    PendulumTrial(
-        "Inverted, on a weaker spring",
-        "The spring at 9 N·m/rad, under <m>mgL</m> = 9.81 N·m/rad: the stiffness is negative and upright is "
-        "unstable. Let go from 1° with a little damping, it falls over and settles leaning at 40.8°, where the "
-        "spring's <m>9θ</m> balances the weight's <m>9.81 sin θ</m>. A column under a load past its buckling "
-        "load does the same.",
-        kind=Kind.INVERTED,
-        spring=9.0,
-        angle=1.0,
-        zeta=0.1,
-        predict=Prediction(
-            "A spring of 9 N·m/rad under a weight's 9.81 N·m/rad, let go from 1° with a little damping. It…",
-            ("swings about upright", "falls over and settles leaning part-way", "falls flat, to 90°"),
-            1,
-            why=(
-                "Upright needs the spring to beat the weight, 9 against 9.81 N·m/rad. It doesn't, so upright is unstable.",
-                '',
-                "As it leans, the weight's moment, 9.81 sin θ, grows more slowly than the spring's 9θ: they balance at 40.8°, short of 90°.",
-            ),
-        ),
-    ),
-    PendulumTrial(
-        "On the Moon",
-        "The 1 m pendulum where <m>g</m> = 1.62 m/s²: <m>√(9.81/1.62)</m> = 2.46 times slower, a period of "
-        "4.94 s. A pendulum clock is a gravimeter.",
-        gravity=1.62,
-        angle=10.0,
-        predict=Placement(
-            "The 1 m pendulum on the Moon, where g is 1.62 m/s², a sixth of Earth's (there it takes 2.0 s). How "
-            "long does a swing there and back take? Put the line at the time it's back.",
-            plot="swing_plot",
-            answer=4.94,
-            span=(0.0, 15.0),
-            axis="x",
-            low="The period goes as 1/√g: a sixth of g makes it √6 = 2.46 times Earth's 2.0 s, 4.94 s.",
-            high="Not six times: the period goes as 1/√g, so √6 = 2.46 times Earth's 2.0 s, 4.94 s.",
-            tolerance=0.15,
-            unit="s",
-        ),
-    ),
+STRIP_SECONDS = 20.0  # the swing plot's window: ten swings of the 1 m pendulum
+PEAK_SECONDS = 4.0  # the drawing's half or whole plane, and the moment plot's reach, follow the swing this recent
+TRAIL_PERIODS = 1.5  # the phase plane's trail
+MEASURE_EVERY = 0.2  # s of run between the period recorder's looks
+PLAYED_AFTER = 2.0  # s of run after the reader's first change: they've handled it, predictions on
+REACH_STEP = math.radians(10.0)  # the phase plane's and moment plot's reach is redrawn in steps of this
+SWING_TIP = (
+    "<p>The angle as it swings, the last 20 s: the whole equation (colour) and the linearized one, sin θ ≈ θ "
+    "(grey), which drifts ahead on a large swing. A dashed line marks a change: the swing carries on through it. "
+    "Paused, drag the line at the end back to see the pendulum then.</p>"
 )
-
-# ------------------------------------------------------------------ practice problems
-# Each question's numbers are printed round, and its answer is worked from them as printed.
-
-
-def _simple_period(rng: np.random.Generator) -> Question:
-    length = pick(rng, (0.25, 0.5, 1, 2, 5, 10))
-    p = Pendulum(Kind.SIMPLE, length=length)
-    return Question(
-        f"A small bob hangs on a {sig(length, 6)} m string (g = 9.81 m/s²). What is its period for small swings?",
-        p.period0,
-        f"Gravity is the spring: k<sub>θ</sub> = mgL, J = mL², so ω<sub>n</sub> = √(g/L) = "
-        f"{number(p.omega0)} rad/s and T = 2π/ω<sub>n</sub> = {number(p.period0)} s, whatever the bob weighs.",
-        unit="s",
-        setup=dict(kind=Kind.SIMPLE, length=length, angle=5.0),
-    )
-
-
-def _rod_period(rng: np.random.Generator) -> Question:
-    length = pick(rng, (0.5, 1, 1.5, 2))
-    d = rounded(pick(rng, (0.1, 0.2, 0.3, 0.4, 0.5)) * length)
-    p = Pendulum(Kind.ROD, length=length, pivot=d)
-    return Question(
-        f"A uniform rod {sig(length, 6)} m long swings about a pivot {number(d)} m from its centre. What is its period "
-        "for small swings?",
-        p.period0,
-        f"J = m(L²/12 + d²) about the pivot (parallel axes) and k<sub>θ</sub> = mgd: T = 2π√((L²/12 + d²)/gd) = "
-        f"2π√(({number(length**2 / 12)} + {number(d * d)})/(9.81 × {number(d)})) = {number(p.period0)} s, the mass "
-        f"cancelling again. It swings like a simple pendulum {number(p.equivalent_length)} m long.",
-        unit="s",
-        setup=dict(kind=Kind.ROD, length=length, pivot=d, tab=TAB_PIVOT),
-    )
-
-
-def _large_swing(rng: np.random.Generator) -> Question:
-    degrees = pick(rng, (20, 30, 45, 60, 90, 120))
-    p = Pendulum(Kind.SIMPLE)
-    longer = 100.0 * (period(p, math.radians(degrees)) / p.period0 - 1.0)
-    a = math.radians(degrees)
-    return Question(
-        f"A simple pendulum is let go from {sig(degrees, 6)}° instead of a small angle. By what percentage is its period "
-        "longer?",
-        longer,
-        f"Exactly, T = T<sub>0</sub>(2/π)K(sin²(A/2)), the energy integral: {number(longer)} % longer. The "
-        f"Duffing estimate A²/16 = {number(100 * a * a / 16)} % is good to about 30°, and falls short beyond.",
-        unit="%",
-        tolerance=0.03,
-        setup=dict(kind=Kind.SIMPLE, angle=float(degrees), tab=TAB_PERIOD),
-    )
-
-
-def _inverted_spring(rng: np.random.Generator) -> Question:
-    m = pick(rng, (0.5, 1, 2, 5))
-    length = pick(rng, (0.2, 0.5, 1))
-    least = m * 9.81 * length
-    return Question(
-        f"A {sig(m, 6)} kg mass on a light arm {sig(length, 6)} m long stands upright on a pivot, held up by a torsion spring. "
-        "How stiff must the spring be for upright to be stable?",
-        least,
-        f"Leaning by θ, the weight pushes it over with mgL sin θ ≈ mgLθ, so the stiffness is k<sub>t</sub> − mgL: "
-        f"stable only if k<sub>t</sub> &gt; mgL = {sig(m, 6)} × 9.81 × {sig(length, 6)} = {number(least)} N·m/rad. A weaker "
-        "spring lets it fall to a leaning balance, as a column buckles.",
-        unit="N·m/rad",
-        setup=dict(kind=Kind.INVERTED, mass=m, length=length, spring=rounded(1.2 * least)),
-    )
-
-
-def _disc_on_wire(rng: np.random.Generator) -> Question:
-    m = pick(rng, (0.5, 1, 2, 5))
-    r = pick(rng, (0.05, 0.1, 0.2))
-    k = pick(rng, (0.5, 1, 2, 5))
-    p = Pendulum(Kind.TORSION, mass=m, length=r, spring=k)
-    return Question(
-        f"A {sig(m, 6)} kg disc of radius {sig(r, 6)} m hangs on a wire of torsional stiffness {sig(k, 6)} N·m/rad. At what frequency "
-        "does it twist back and forth?",
-        p.natural_hz,
-        f"J = mr²/2 = {number(p.inertia)} kg·m², so ω<sub>n</sub> = √(k<sub>t</sub>/J) = {number(p.omega0)} rad/s "
-        f"and f<sub>n</sub> = {number(p.natural_hz)} Hz: the single oscillator, turned.",
-        unit="Hz",
-        setup=dict(kind=Kind.TORSION, mass=m, length=r, spring=k),
-    )
-
-
-def _end_pivot(rng: np.random.Generator) -> Question:
-    length = pick(rng, (0.3, 0.6, 0.9, 1.2, 1.5))
-    p = Pendulum(Kind.ROD, length=length, pivot=length / 2)
-    return Question(
-        f"A uniform rod {sig(length, 6)} m long swings about one end. How long a simple pendulum has the same period?",
-        p.equivalent_length,
-        f"L<sub>eq</sub> = J/md with J = m(L²/12 + L²/4) = mL²/3 and d = L/2: L<sub>eq</sub> = 2L/3 = "
-        f"{number(p.equivalent_length)} m.",
-        unit="m",
-        setup=dict(kind=Kind.ROD, length=length, pivot=length / 2, tab=TAB_PIVOT),
-    )
-
-
-def _heavier_bob(rng: np.random.Generator) -> Question:
-    n = int(pick(rng, (2, 4, 10)))
-    return Question(
-        f"A simple pendulum's bob is swapped for one {n} times heavier, on the same string. What happens to its "
-        "period?",
-        0,
-        "Nothing: the restoring moment mgL and the inertia mL² grow together, so ω<sub>n</sub> = √(g/L) has no "
-        "mass in it.",
-        choices=("It stays the same", f"It grows √{n} times", f"It falls to 1/√{n}"),
-        why=(
-            "",
-            "That's a mass on a spring, whose spring stays the same as the mass grows. A pendulum's spring is the "
-            "bob's own weight, which grows with it.",
-            "The heavier bob is pulled back harder, but it is harder to move in the same proportion: the mass "
-            "cancels out of g/L.",
-        ),
-        setup=dict(kind=Kind.SIMPLE, mass=float(n)),
-        predict=True,
-    )
-
-
-def _on_the_moon(rng: np.random.Generator) -> Question:
-    return Question(
-        "A pendulum clock is taken to the Moon, where gravity is about a sixth of Earth's. What happens to its "
-        "pendulum's period?",
-        0,
-        "It grows √6 ≈ 2.4 times: gravity is the spring, ω<sub>n</sub> = √(g/L). (A disc on a torsion wire "
-        "wouldn't change: its spring isn't gravity.)",
-        choices=("It grows about 2.4 times", "It grows 6 times", "It stays the same", "It falls to a sixth"),
-        why=(
-            "",
-            "The period goes as 1/√g, not as 1/g: a sixth of the gravity gives √6 ≈ 2.4 times the period.",
-            "That holds for a mass on a spring or a disc on a wire, whose springs aren't gravity; a pendulum's "
-            "spring is gravity.",
-            "Weaker gravity pulls the bob back more gently, so it swings more slowly, not faster.",
-        ),
-        setup=dict(kind=Kind.SIMPLE, gravity=1.62),
-        predict=True,
-    )
-
-
-def _wire_large_twist(rng: np.random.Generator) -> Question:
-    return Question(
-        "A disc on a torsion wire is twisted to 90° and let go, instead of 10°. What happens to its period?",
-        0,
-        "Nothing: a wire's moment is k<sub>t</sub>θ at any twist, so it is linear and its period doesn't depend "
-        "on the swing. Only gravity's sin θ makes a pendulum's lengthen.",
-        choices=("It stays the same", "It lengthens, as a pendulum's does", "It shortens"),
-        why=(
-            "",
-            "A pendulum's lengthens because its restoring moment, mgL sin θ, grows more slowly than θ at a large "
-            "swing. A wire's, k<sub>t</sub>θ, keeps in proportion at any twist.",
-            "That would take a spring that stiffens as it's twisted; a wire's moment stays in proportion to the "
-            "twist (until it yields).",
-        ),
-        setup=dict(kind=Kind.TORSION, angle=90.0, tab=TAB_PERIOD),
-        predict=True,
-    )
-
-
-def _pivot_spec(rng: np.random.Generator) -> Question:
-    length = pick(rng, (0.5, 1, 1.5, 2))
-    d = rounded(pick(rng, (0.12, 0.18, 0.4, 0.45)) * length)
-    target = rounded(Pendulum(Kind.ROD, length=length, pivot=d).period0)
-    other = conjugate_pivot(length, d)
-
-    def goal(t: PendulumTrial):
-        now = Pendulum(t.kind, t.mass, t.length, max(1e-3, t.pivot), t.spring, t.zeta, t.gravity).period0
-        return (
-            Requirement("A rod on a pivot", t.kind.value, t.kind is Kind.ROD),
-            kept("Its length", t.length, length, "m"),
-            kept("Gravity", t.gravity, 9.81, "m/s²"),
-            Requirement(
-                f"Its period within ±0.5 % of {number(target)} s",
-                f"{number(now, 4)} s",
-                t.kind is Kind.ROD and abs(now / target - 1.0) <= 0.005,
-            ),
-            Requirement(
-                f"The pivot on the rod (≤ {number(length / 2)} m from its centre)",
-                f"{number(t.pivot)} m",
-                t.pivot <= length / 2,
-            ),
-        )
-
-    return Question(
-        f"A uniform rod {sig(length, 6)} m long is to be a clock's pendulum with a period of {number(target)} s. Where "
-        "along it should the pivot go?",
-        0,
-        f"T = 2π√((L²/12 + d²)/gd) is least at d = L/√12 = {number(length / math.sqrt(12))} m and longer either "
-        f"side, so a longer period is reached at two pivots, d and k<sub>G</sub>²/d: here {number(d)} m and "
-        f"{number(other)} m from the centre"
-        + ("" if other <= length / 2 else " (off the rod, so only the first)")
-        + ". That is Kater's reversible pendulum: the two pivots are L<sub>eq</sub> apart.",
-        setup=dict(kind=Kind.ROD, length=length, pivot=rounded(length / math.sqrt(12)), tab=TAB_PIVOT),
-        goal=goal,
-        design=dict(kind=Kind.ROD, length=length, pivot=d, tab=TAB_PIVOT),
-    )
-
-
-PROBLEMS = tuple(
-    Problem(key, title, "pendulum_page", f"See {page_link('pendulum_page', anchor, section)}{more}.", make)
-    for key, title, anchor, section, more, make in (
-        ("simple-period", "A simple pendulum", "gravity-stiffness", "Gravity as a spring", "", _simple_period),
-        ("rod-period", "A rod on a pivot", "gravity-stiffness", "Gravity as a spring", ": parallel axes", _rod_period),
-        ("large-swing", "A large swing", "large-swings", "Large swings", "", _large_swing),
-        ("inverted-spring", "Hold it upright", "gravity-stiffness", "Gravity as a spring", "", _inverted_spring),
-        ("disc-on-wire", "A disc on a wire", "rotation", "Turning instead of sliding", "", _disc_on_wire),
-        ("end-pivot", "Equivalent length", "gravity-stiffness", "Gravity as a spring", "", _end_pivot),
-        ("heavier-bob", "Predict: a heavier bob", "gravity-stiffness", "Gravity as a spring", "", _heavier_bob),
-        ("on-the-moon", "Predict: on the Moon", "gravity-stiffness", "Gravity as a spring", "", _on_the_moon),
-        ("wire-large-twist", "Predict: a large twist", "large-swings", "Large swings", "", _wire_large_twist),
-        (
-            "pivot-spec",
-            "Spec: a clock's pendulum",
-            "gravity-stiffness",
-            "Gravity as a spring",
-            ": where is T least?",
-            _pivot_spec,
-        ),
-    )
-)
-
-TIPS = {
-    "kind": "<p>Simple: a point mass on a massless string. Rod: a uniform rod on a pivot. Disc: a disc twisting on "
-    "a wire (no gravity in it). Inverted: a mass on an upright arm held by a torsion spring at its foot.</p>",
-    "mass": "<p>The bob's, the rod's or the disc's mass.</p>",
-    "length": "<p>The string's length, the rod's length, the disc's radius or the inverted arm.</p>",
-    "pivot": "<p>How far from the rod's centre the pivot is (0.5 L: at its end).</p>",
-    "spring": "<p>The torsion spring: the wire's twist stiffness, or the inverted pendulum's spring at its foot.</p>",
-    "gravity": "<p>g: 9.81 m/s² on Earth, 1.62 on the Moon.</p>",
-    "zeta": "<p>A viscous damper at the pivot, as the linearized oscillator's damping ratio.</p>",
-    "angle": "<p>The angle it is let go from, at rest.</p>",
-}
-SWING_TIP = "<p>The angle from release: the whole equation (solid) and the linearized one, sin θ ≈ θ (dashed).</p>"
 MOMENT_TIP = (
-    "<p>The restoring moment against the angle: the whole one (solid) and its tangent at 0, the "
-    "linearized stiffness (dashed). Dotted: the swing's range.</p>"
+    "<p>The restoring moment against the angle: the whole one (colour) and its tangent at 0, the linearized "
+    "stiffness (grey). The dot is where the pendulum is now. Gravity's sin θ bends a hanging pendulum's below its "
+    "tangent: a softening spring.</p>"
 )
 PERIOD_TIP = (
-    "<p>The undamped period over the small-swing one against the amplitude: exact (by quadrature), "
-    "Duffing's first harmonic balance, and linear (1).</p>"
+    "<p>The period, built by hand: each whole swing lands a point, the time it took against how far it swung. "
+    "Points from another pendulum (before a change of L, m, g or the spring) are faded. <i>Show the theory</i> "
+    "draws the curves they should lie on: exact (the energy integral), Duffing's first harmonic balance, and the "
+    "small swing's T₀.</p>"
 )
 PHASE_TIP = (
-    "<p>The undamped orbits (energy curves) in the (θ, θ̇) plane, the separatrix bold where there is one, "
-    "and the swing from the release (colour).</p>"
+    "<p>The swing as a path in the (θ, θ̇) plane, the last swing and a half, over the undamped orbits of constant "
+    "energy (grey), with the separatrix (bold) where there is one: the orbit through the upside-down balance, "
+    "dividing swinging from going round.</p>"
 )
-PIVOT_TIP = (
-    "<p>A uniform rod of this length: its period against the pivot's distance from its centre. The "
-    "fastest is at the radius of gyration; every other period is reached at two distances.</p>"
+MOMENTS_TIP = (
+    "<p>The moments about the pivot now, a row each, the single oscillator's forces turned: the weight's mgd sin θ "
+    "(the pendulum's spring), the torsion spring's, the damper's, your hand's while you hold it. The dashed row is "
+    "their sum, Jθ̈. Under it, the pull along the string (the rod's pivot, the arm, the wire): it passes through the "
+    "pivot, so it has no moment, but it's greatest at the bottom of a swing, where it also turns the bob.</p>"
 )
-
-NOTES_HTML = load_notes("pendulum", figures=pendulum_figures.FIGURES, trials=trials_html(TRIALS))
+ENERGY_TIP = (
+    "<p>Where the energy went: what your hand put in (a pluck), what the damper took out, what each change did "
+    "(shortening the string as it swings, a heavier bob caught, gravity changed), and what's stored now. Put in, "
+    "less taken out, with the changes, is what's stored, at every instant.</p>"
+)
 
 
 class PendulumPage(QtWidgets.QWidget):
-    """Controls on the left, the swing and the moment in the centre, period, phase plane and pivot on the
-    right."""
+    """The pendulum's controls on the left, the live pendulum and its plots in the centre, the tabs on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
+    def transport(self) -> Transport:
+        return Transport(self.run_button, self.reset_button, self.speed, self.clock)
+
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
-        self.pendulum = Pendulum()
+        self.live = LivePendulum()
+        self.recorder = view.PeriodRecorder()
+        self.running = False
+        self.arrows = ArrowScale(room=1.0)
+        self.pulls = ArrowScale(room=1.0)  # the string's pull, on a scale of its own
+        self._handled_at: float | None = None
+        self._grip_start = 0.0
+        self._measured_at = -1.0
+        self._budget = Budget()
+        self._reach_drawn: tuple | None = None  # what the moment curve was drawn for
+        self._phase_reach = math.pi  # the phase plane's half-width (rad)
+        self._orbits_for: tuple | None = None  # what its orbits were drawn for
+        self.bindings = Bindings(PendulumTrial, self)
+
+        # --- left: the pendulum, then the Things to try
+        box = Form("Pendulum")
+        self.kind = combo([k.value for k in KINDS], TIPS["kind"])
+        box.add("Kind:", self.kind, TIPS["kind"])
+        self.mass = box.number("Mass m:", 0.01, 1e4, 1.0, 3, " kg", TIPS["mass"])
+        self.length = box.number("Length L:", 0.05, 20.0, 1.0, 3, " m", TIPS["length"])
+        self.length_label = box.label(self.length)
+        self.pivot = box.number("Pivot from centre:", 0.001, 10.0, 0.5, 3, " m", TIPS["pivot"])
+        self.spring = box.number("Torsion spring:", 0.0, 1e5, 15.0, 3, " N·m/rad", TIPS["spring"])
+        self.gravity = box.number("Gravity g:", 0.0, 100.0, 9.81, 2, " m/s²", TIPS["gravity"])
+        self.zeta = box.number("Damping ζ:", 0.0, 2.0, 0.0, 3, "", TIPS["zeta"])
+        self.info = note_label()
+        box.row(self.info)
+        self.pendulum_box = box
 
         self.trials = TrialBox(
             [t.name for t in TRIALS],
-            "<p>Each sets up the pendulum to show one idea from the Theory tab. Some ask you to predict what you'll "
-            "see first.</p>",
+            "<p>Setups to come back to, each showing one idea from the Theory tab. Once you've handled the "
+            "pendulum, some ask you to predict what you'll see first.</p>",
             predictions=[t.predict for t in TRIALS],
+            ask_after_play=True,
         )
         self.trials.picked.connect(self.load_trial)
 
-        body = Form("Pendulum")
-        self.kind = combo([k.value for k in KINDS], TIPS["kind"])
-        body.add("Kind:", self.kind, TIPS["kind"])
-        self.mass = body.number("Mass m:", 0.001, 1e4, 1.0, 3, " kg", TIPS["mass"])
-        self.length = body.number("Length L:", 0.01, 100.0, 1.0, 3, " m", TIPS["length"])
-        self.pivot = body.number("Pivot from centre:", 0.001, 50.0, 0.5, 3, " m", TIPS["pivot"])
-        self.spring = body.number("Torsion spring:", 0.0, 1e6, 15.0, 3, " N·m/rad", TIPS["spring"])
-        self.gravity = body.number("Gravity g:", 0.0, 100.0, 9.81, 2, " m/s²", TIPS["gravity"])
-        self.zeta = body.number("Damping ζ:", 0.0, 2.0, 0.0, 3, "", TIPS["zeta"])
-        self.info = note_label()
-        body.row(self.info)
+        left = QtWidgets.QWidget()
+        lv = QtWidgets.QVBoxLayout(left)
+        lv.addWidget(box)
+        lv.addWidget(self.trials)
+        lv.addStretch(1)
 
-        release = Form("Release")
-        self.angle = release.number("Let go from:", 0.1, 179.0, 10.0, 1, "°", TIPS["angle"])
-
-        connect_all(
-            (self.kind, self.mass, self.length, self.pivot, self.spring, self.gravity, self.zeta, self.angle),
-            self._on_inputs,
-        )
-
-        # --- centre: the pendulum itself, swinging, and the time walked along the swing
-        self.side = 1.0  # +1 let go to the right, -1 to the left (a pluck): the swing is mirrored
-        self._swing = (np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1))  # t, θ, θ̇, θ linearized, as drawn
+        # --- centre: the pendulum and its moments, the run, the swing and the moment curve
         self.view = PendulumView()
-        self.view.setFixedHeight(200)
+        self.view.setMinimumHeight(200)
         self.view.grabbed.connect(self._on_grabbed)
         self.view.turned.connect(self._on_turned)
         self.view.released.connect(self._on_let_go)
-        self.playback = Playback(self, "Pendulums", speed=1.0)
-        self.playback.moved.connect(self._place)
-        self.swing_plot = plot("Angle θ", None, "Time", "s", height=150)
-        self.swing_plot.setToolTip(SWING_TIP)
-        add_legend(self.swing_plot.getPlotItem(), offset=(-10, 10))
-        self.whole_item = pg.PlotDataItem(name="whole (sin θ)")
-        self.linear_item = pg.PlotDataItem(name="linearized (θ)")
-        for item in (self.linear_item, self.whole_item):
-            self.swing_plot.addItem(item)
-        self.moment_plot = plot("Restoring moment", "N·m", "Angle θ", None, height=130)
-        self.moment_plot.setToolTip(MOMENT_TIP)
-        self.moment_item = pg.PlotDataItem()
-        self.tangent_item = pg.PlotDataItem()
-        self.range_lines = [pg.InfiniteLine(angle=90), pg.InfiniteLine(angle=90)]
-        for item in (*self.range_lines, self.tangent_item, self.moment_item):
-            self.moment_plot.addItem(item)
-        self.swing_cursor = self.playback.add_cursor(self.swing_plot)
-        self.moment_now = Dot(10)  # where the pendulum is on the moment curve
-        self.moment_plot.addItem(self.moment_now, ignoreBounds=True)
-        self.readout = readout_label()
+        self.view.grip_taken.connect(self._on_grip_taken)
+        self.view.grip_moved.connect(self._on_grip_moved)
+        self.forces = FreeBodyView(name="The moments on the pendulum", tip=MOMENTS_TIP)
+        row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
+        self.run_button.toggled.connect(self._on_run)
+        self.reset_button.setToolTip("<p>Back to rest at t = 0; the measured periods are kept.</p>")
+        self.reset_button.clicked.connect(self.reset)
 
-        # --- right
-        self.period_plot = plot("Period T / T₀", None, "Amplitude", None, height=200)
+        self.swing_plot = plot("Angle θ", "°", "Time", "s", height=150)
+        self.swing_plot.setToolTip(SWING_TIP)
+        self.swing_plot.setMouseEnabled(x=False, y=False)
+        add_legend(self.swing_plot.getPlotItem(), offset=(-10, 10))
+        self.ghost_item = pg.PlotDataItem(name="linearized (θ)")
+        self.theta_item = pg.PlotDataItem(name="whole (sin θ)")
+        self.swing_plot.addItem(self.ghost_item)
+        self.swing_plot.addItem(self.theta_item)
+        decimate(self.swing_plot)
+        self.marks = ChangeMarks(self.swing_plot)
+        self.scrub = Scrub(self.swing_plot)
+        self.scrub.scrubbed.connect(self._on_scrubbed)
+        self.moment_plot = plot("Moment", "N·m", "Angle θ", "°", height=110)
+        self.moment_plot.setToolTip(MOMENT_TIP)
+        self.moment_plot.setMouseEnabled(x=False, y=False)
+        self.tangent_item = pg.PlotDataItem()
+        self.moment_item = pg.PlotDataItem()
+        self.moment_plot.addItem(self.tangent_item)
+        self.moment_plot.addItem(self.moment_item)
+        self.moment_now = Dot(10)
+        self.moment_plot.addItem(self.moment_now, ignoreBounds=True)
+        self.readout = LiveLabel(wrap=True)  # rewritten as it swings: no layout pass each time
+
+        centre = QtWidgets.QWidget()
+        cv = QtWidgets.QVBoxLayout(centre)
+        cv.setContentsMargins(0, 0, 0, 0)
+        top = QtWidgets.QHBoxLayout()
+        top.addWidget(self.view, 3)
+        top.addWidget(self.forces, 2)
+        cv.addLayout(top, 3)
+        cv.addLayout(row)
+        cv.addWidget(self.swing_plot, 2)
+        cv.addWidget(self.moment_plot, 1)
+        cv.addWidget(self.readout)
+
+        # --- right: Period, Phase plane, Energy, Theory
+        periods = QtWidgets.QWidget()
+        pv = QtWidgets.QVBoxLayout(periods)
+        self.theory = QtWidgets.QCheckBox("Show the theory")
+        self.theory.setToolTip(TIPS["theory"])
+        self.clear_button = QtWidgets.QPushButton("Clear points")
+        self.clear_button.setToolTip("<p>Forget the measured periods.</p>")
+        self.clear_button.clicked.connect(self.clear_points)
+        buttons = FlowLayout()
+        buttons.add(self.theory, self.clear_button)
+        pv.addLayout(buttons)
+        self.period_plot = plot("Period", "s", "Amplitude", "°", height=200)
         self.period_plot.setToolTip(PERIOD_TIP)
+        self.period_plot.setMouseEnabled(x=False, y=False)
+        self.period_plot.enableAutoRange(x=False, y=False)  # set from the view: the same with the theory or not
         add_legend(self.period_plot.getPlotItem(), offset=(10, 10))
         self.exact_item = pg.PlotDataItem(name="exact")
         self.duffing_item = pg.PlotDataItem(name="Duffing: 1st harmonic")
-        self.unit_item = pg.PlotDataItem(name="linear")
-        self.period_now = marker(12)
-        for item in (self.unit_item, self.duffing_item, self.exact_item, self.period_now):
+        self.linear_item = pg.PlotDataItem(name="small swing T₀")
+        self.earlier_item = pg.PlotDataItem(pen=None, symbol="o", symbolSize=6)
+        self.points_item = pg.PlotDataItem(pen=None, symbol="o", symbolSize=8, name="measured")
+        for item in (self.linear_item, self.duffing_item, self.exact_item, self.earlier_item, self.points_item):
             self.period_plot.addItem(item)
         self.period_note = note_label()
+        pv.addWidget(self.period_plot, 1)
+        pv.addWidget(self.period_note)
 
-        self.phase_plot = plot("θ̇", None, "θ", None, height=200)
+        phase = QtWidgets.QWidget()
+        hv = QtWidgets.QVBoxLayout(phase)
+        self.phase_plot = plot("θ̇", "°/s", "θ", "°", height=200)
         self.phase_plot.setToolTip(PHASE_TIP)
-        self.orbit_items: list[pg.PlotDataItem] = []
-        self.separatrix = pg.PlotDataItem()
-        self.trace_item = pg.PlotDataItem()
-        self.start_dot = marker(10)
-        for item in (self.separatrix, self.trace_item, self.start_dot):
+        self.phase_plot.setMouseEnabled(x=False, y=False)
+        self.orbits_item = pg.PlotDataItem(connect="finite")
+        self.separatrix_item = pg.PlotDataItem()
+        self.path_item = pg.PlotDataItem()
+        for item in (self.orbits_item, self.separatrix_item, self.path_item):
             self.phase_plot.addItem(item)
         self.phase_now = Dot(10)
         self.phase_plot.addItem(self.phase_now, ignoreBounds=True)
         self.phase_note = note_label()
+        hv.addWidget(self.phase_plot, 1)
+        hv.addWidget(self.phase_note)
 
-        self.pivot_plot = plot("Period", "s", "Pivot from the centre", "m", height=200)
-        self.pivot_plot.setToolTip(PIVOT_TIP)
-        self.pivot_item = pg.PlotDataItem()
-        self.pivot_best = marker(10)
-        self.pivot_now = marker(12)
-        self.pivot_twin = marker(12, symbol="s")
-        self.pivot_level = pg.InfiniteLine(angle=0)
-        for item in (self.pivot_level, self.pivot_item, self.pivot_best, self.pivot_twin, self.pivot_now):
-            self.pivot_plot.addItem(item)
-        self.pivot_note = note_label()
-
+        self.energy = EnergyTab(
+            balance=lp.energy_view, tip=ENERGY_TIP, empty="Pluck the pendulum to see where the energy goes."
+        )
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
-        self.tabs.addTab(column(self.period_plot, self.period_note, stretch=False), "Period")
-        self.tabs.addTab(column(self.phase_plot, self.phase_note, stretch=False), "Phase plane")
-        self.tabs.addTab(column(self.pivot_plot, self.pivot_note, stretch=False), "Pivot")
+        self.tabs.addTab(periods, "Period")
+        self.tabs.addTab(phase, "Phase plane")
+        self.tabs.addTab(self.energy, "Energy")
         self.tabs.addTab(self.notes, "Theory")
-        self.tabs.currentChanged.connect(self._draw_tab)
 
-        three_panes(
-            self,
-            column(self.trials, body, release),
-            stack(
-                (self.view, 0),
-                (self.playback.bar(), 0),
-                (self.swing_plot, 3),
-                (self.moment_plot, 2),
-                (self.readout, 0),
-            ),
-            self.tabs,
-        )
-        self._on_inputs()
+        three_panes(self, left, centre, self.tabs, sizes=(320, 760, 560))
+
+        self.bindings.bind("kind", self.kind, choices=KINDS)
+        for field, widget in (
+            ("mass", self.mass),
+            ("length", self.length),
+            ("pivot", self.pivot),
+            ("spring", self.spring),
+            ("gravity", self.gravity),
+            ("zeta", self.zeta),
+            ("theory", self.theory),
+            ("tab", self.tabs),
+        ):
+            self.bindings.bind(field, widget)
+        self.bindings.write(PendulumTrial("", ""))
+        self.bindings.changed.connect(self._on_field)
+
+        self.loop = FrameLoop(self, "Pendulums", self._tick, self._runs, self._sim_t)
         self.apply_theme()
+        self._push_pendulum()
 
-    # ------------------------------------------------------------- inputs
+    # ------------------------------------------------------------- the state
+    def practice_state(self) -> PendulumTrial:
+        """The page's settings, as a trial: what a practice spec checks, and Defaults puts back."""
+        return self.bindings.read(PendulumTrial("", ""))
+
+    @property
+    def pendulum(self) -> Pendulum:
+        return self.live.pendulum
+
     def load_trial(self, index: int) -> None:
         self.apply_trial(TRIALS[index])
 
@@ -615,311 +289,329 @@ class PendulumPage(QtWidgets.QWidget):
         """Set the page up as a practice problem's `setup` says (a trial's fields, with no note)."""
         self.apply_trial(PendulumTrial("", "", **setup))
 
-    def practice_state(self) -> PendulumTrial:
-        """The page's settings, as a trial: what a practice spec checks."""
-        return PendulumTrial(
-            "",
-            "",
-            kind=KINDS[self.kind.currentIndex()],
-            mass=self.mass.value(),
-            length=self.length.value(),
-            pivot=self.pivot.value(),
-            spring=self.spring.value(),
-            gravity=self.gravity.value(),
-            zeta=self.zeta.value(),
-            angle=self.angle.value(),
-            tab=self.tabs.currentIndex(),
-        )
-
     def apply_trial(self, t: PendulumTrial) -> None:
-        for box, value in (
-            (self.kind, KINDS.index(t.kind)),
-            (self.mass, t.mass),
-            (self.length, t.length),
-            (self.pivot, t.pivot),
-            (self.spring, t.spring),
-            (self.gravity, t.gravity),
-            (self.zeta, t.zeta),
-            (self.angle, t.angle),
-        ):
-            set_quietly(box, value)
-        self.side = 1.0
+        """A setup: the pendulum as it says, the run from rest, then plucked from its angle."""
+        self.bindings.write(t)
+        self.recorder.clear()
+        self._push_pendulum()
+        self.reset()
+        self._handled_at = None
         self.trials.show_note(t.note)
-        self.tabs.setCurrentIndex(t.tab)
-        self._on_inputs()
-        self.playback.play()  # a trial starts the motion
+        if t.angle:
+            self.live.hold(math.radians(t.angle))
+            self.live.let_go()
+            self._run(True)
+        self._draw_tab()
 
-    def _on_inputs(self) -> None:
-        kind = KINDS[self.kind.currentIndex()]
-        self.pivot.setEnabled(kind is Kind.ROD)
-        self.spring.setEnabled(kind in (Kind.TORSION, Kind.INVERTED))
-        self.gravity.setEnabled(kind is not Kind.TORSION)
-        self.pendulum = Pendulum(
-            kind,
-            self.mass.value(),
-            self.length.value(),
-            max(1e-3, self.pivot.value()),
-            self.spring.value(),
-            self.zeta.value(),
-            self.gravity.value(),
-        )
-        p = self.pendulum
-        self.view.set_pendulum(p, self.theta0)
-        if p.stable:
-            extra = f", L<sub>eq</sub> = {fmt(p.equivalent_length, 'm')}" if kind in (Kind.SIMPLE, Kind.ROD) else ""
-            self.info.setText(
-                f"J = {sig(p.inertia, 4)} kg·m², k<sub>θ</sub> = {sig(p.stiffness, 4)} N·m/rad: "
-                f"f<sub>n</sub> = {sig(p.natural_hz, 4)} Hz, T₀ = {sig(p.period0, 4)} s{extra}."
-            )
-        elif p.stiffness == 0:
-            self.info.setText(f"J = {sig(p.inertia, 4)} kg·m², k<sub>θ</sub> = 0: no restoring moment.")
+    # ------------------------------------------------------------- what the reader changes
+    def _on_field(self, field: str) -> None:
+        if field == "theory":
+            self._draw_period()
+        elif field == "tab":
+            self._draw_tab()
         else:
-            self.info.setText(
-                f"J = {sig(p.inertia, 4)} kg·m², k<sub>θ</sub> = {sig(p.stiffness, 4)} N·m/rad: negative, "
-                "so it can't stay at θ = 0."
-            )
-        self.redraw()
+            self._handled()
+            self._push_pendulum()
+
+    def _handled(self) -> None:
+        if self._handled_at is None:
+            self._handled_at = self.live.t
+
+    def _push_pendulum(self) -> None:
+        """The live pendulum to the controls: a live change (its angular momentum kept)."""
+        state = self.practice_state()
+        p = view.pendulum(state)
+        for widget, shown in (
+            (self.pivot, p.kind is Kind.ROD),
+            (self.spring, p.kind in (Kind.TORSION, Kind.INVERTED)),
+            (self.gravity, p.kind is not Kind.TORSION),
+        ):
+            widget.setVisible(shown)
+            label = self.pendulum_box.label(widget)
+            if label is not None:
+                label.setVisible(shown)
+        if self.length_label is not None:
+            self.length_label.setText("Radius r:" if p.kind is Kind.TORSION else "Length L:")
+        self.live.set_pendulum(p)
+        self.view.set_pendulum(p)
+        self.info.setText(view.info(p))
+        self._draw_period()
+        if not self.running:
+            self._draw_live()  # running, the next frame draws it
+
+    def _box(self, name: str) -> QtWidgets.QDoubleSpinBox:
+        return {"length": self.length, "mass": self.mass, "spring": self.spring, "pivot": self.pivot}[name]
+
+    def _on_grip_taken(self, name: str) -> None:
+        self._grip_start = self._box(name).value()
+
+    def _on_grip_moved(self, name: str, value: float) -> None:
+        start = self._grip_start
+        if name == "length":
+            g = view.GRIPS["length"]
+            new = min(max(start * value, g.low), g.high)
+        elif name == "pivot":
+            new = view.pivot_dragged(self.length.value(), start, value)
+        else:
+            new = view.GRIPS[name].dragged(start, value)
+        box = self._box(name)
+        box.blockSignals(True)
+        box.setValue(new)
+        box.blockSignals(False)
+        self._handled()
+        self._push_pendulum()
+
+    def _on_grabbed(self) -> None:
+        self.scrub.hide()
+        self._handled()
+        self.live.hold(self.live.theta)
+
+    def _on_turned(self, theta: float) -> None:
+        self.live.hold(theta)
+        self._draw_body()
+
+    def _on_let_go(self) -> None:
+        self.live.let_go()
+        if not self.running:
+            self._run(True)  # a pluck sets it going
+
+    # ------------------------------------------------------------- the run
+    def _on_run(self, on: bool) -> None:
+        self.running = on
+        if on:
+            self.scrub.hide()
+            self.loop.start()
+        else:
+            self._show_scrub()
+
+    def _run(self, on: bool) -> None:
+        self.run_button.set_running(on)
+        self._on_run(on)
+
+    def _runs(self) -> bool:
+        return self.running
+
+    def _sim_t(self) -> float:
+        return self.live.t
+
+    def reset(self) -> None:
+        """Back to rest at t = 0, waiting for Start; the measured periods kept."""
+        self.live.reset()
+        self.arrows.reset()
+        self.pulls.reset()
+        self.recorder.restart()
+        self._measured_at = -1.0
+        self.scrub.hide()
+        self.running = False
+        self.run_button.rest()
+        self._draw_live()
+
+    def _tick(self, dt: float) -> None:
+        duration = dt * float(self.speed.currentData())
+        duration = min(duration, self._budget.allows(duration, FRAME_BUDGET))
+        start = time.perf_counter()
+        before = self.live.t
+        self.live.advance(duration)
+        if self.live.t > before:
+            self._budget.spent(time.perf_counter() - start, self.live.t - before)
+        self._measure()
+        if self._handled_at is not None and self.live.t - self._handled_at >= PLAYED_AFTER:
+            self.trials.set_played()
+        self._draw_live(frame=True)
+
+    def step(self, duration: float) -> None:
+        """Run on by `duration` s of simulated time at once (tests), measuring and drawing as the frames would."""
+        end = self.live.t + duration
+        while self.live.t < end - 1e-9 and self.live.held is None:
+            self.live.advance(min(0.1, end - self.live.t) + 1e-12)
+            self._measure()
+        if self._handled_at is not None and self.live.t - self._handled_at >= PLAYED_AFTER:
+            self.trials.set_played()
+        self._draw_live()
+
+    # ------------------------------------------------------------- the period, built by hand
+    def _measure(self) -> None:
+        """Land the whole swings made since the last look (every MEASURE_EVERY s of run)."""
+        live = self.live
+        if live.held is not None or live.t - self._measured_at < MEASURE_EVERY:
+            return
+        self._measured_at = live.t
+        t, y = live.since_change()
+        if self.recorder.update(t, y[:, COL["theta"]], live.changed_at, view.key(live.pendulum)):
+            self._draw_period()
+
+    def clear_points(self) -> None:
+        self.recorder.clear()
+        self._draw_period()
+
+    @coalesce.coalesced
+    def _draw_period(self, *_: object) -> None:
+        p, key = self.live.pendulum, view.key(self.live.pendulum)
+        v = view.period_view(p, self.recorder.current(key), self.recorder.earlier(key), self.theory.isChecked())
+        self.points_item.setData(*v.points)
+        self.earlier_item.setData(*v.earlier)
+        self.exact_item.setData(*v.exact, connect="finite")
+        self.duffing_item.setData(*v.duffing, connect="finite")
+        self.linear_item.setData(*v.linear)
+        self.period_plot.setXRange(*v.x_span, padding=0)
+        self.period_plot.setYRange(*v.y_span, padding=0)
+        self.period_note.setText(v.note)
+
+    # ------------------------------------------------------------- scrubbing
+    def _show_scrub(self) -> None:
+        r = self.live.record
+        if r.size > 1:
+            end = float(r.t[r.size - 1])
+            self.scrub.show(end, max(float(r.t[0]), end - STRIP_SECONDS))
+
+    def _on_scrubbed(self, t: float) -> None:
+        r = self.live.record
+        ts = r.t[: r.size]
+        theta, omega, ghost = (float(np.interp(t, ts, r.y[: r.size, COL[c]])) for c in ("theta", "omega", "ghost"))
+        p = self.live.pendulum
+        self.view.show(theta, lp.ghost_angle(ghost))
+        self.forces.show(view.free_body(p, theta, omega, scale=self.arrows, aside_scale=self.pulls, t=t))
+        self.moment_now.setPos(math.degrees(theta), float(p.moment(theta)))
+        self.phase_now.setPos(math.degrees(theta), math.degrees(omega))
+        self.clock.setText(f"t = {sig(t, 4)} s (paused at {sig(self.live.t, 4)} s)")
 
     # ------------------------------------------------------------- drawing
     def apply_theme(self) -> None:
         c = colors
-        self.whole_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.linear_item.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
+        self.view.apply_theme()
+        self.forces.apply_theme()
+        self.scrub.apply_theme()
+        self.marks.apply_theme()
+        self.energy.apply_theme()
+        self.theta_item.setPen(pg.mkPen(c.mass[0], width=2))
+        self.ghost_item.setPen(pg.mkPen(c.grey, width=1.5))  # solid: a dashed line restroked each frame is dear
         self.moment_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.tangent_item.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
-        for line in self.range_lines:
-            line.setPen(pg.mkPen(c.fit, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        self.exact_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.duffing_item.setPen(pg.mkPen(c.force, width=2, style=QtCore.Qt.PenStyle.DashLine))
-        self.unit_item.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        mark(self.period_now, c.strong, filled=True)
-        self.separatrix.setPen(pg.mkPen(c.strong, width=2))
-        self.trace_item.setPen(pg.mkPen(c.mass[0], width=2))
-        mark(self.start_dot, c.mass[0], filled=True)
-        for item in self.orbit_items:
-            item.setPen(pg.mkPen(c.grey, width=1))
-        self.pivot_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.pivot_level.setPen(pg.mkPen(c.fit, width=1, style=QtCore.Qt.PenStyle.DotLine))
-        mark(self.pivot_best, c.grey, filled=True)
-        mark(self.pivot_now, c.strong, filled=True)
-        mark(self.pivot_twin, c.force)
+        self.tangent_item.setPen(pg.mkPen(c.grey, width=1.5))
         for dot in (self.moment_now, self.phase_now):
             dot.setPen(pg.mkPen(c.background, width=1.5))
             dot.setBrush(pg.mkBrush(c.mass[0]))
-        self.view.apply_theme()
-        self.playback.apply_theme()
-        self.redraw()
-
-    def redraw(self) -> None:
-        self._draw_swing()
+        self.exact_item.setPen(pg.mkPen(c.strong, width=1.5))
+        self.duffing_item.setPen(pg.mkPen(c.force, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
+        self.linear_item.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DotLine))
+        self.points_item.setSymbolPen(None)
+        self.points_item.setSymbolBrush(pg.mkBrush(c.mass[0]))
+        self.earlier_item.setSymbolPen(pg.mkPen(c.grey, width=1))
+        self.earlier_item.setSymbolBrush(None)
+        self.orbits_item.setPen(pg.mkPen(c.faint, width=1))
+        self.separatrix_item.setPen(pg.mkPen(c.strong, width=2))
+        self.path_item.setPen(pg.mkPen(c.mass[0], width=2))
+        self._draw_period()
         self._draw_tab()
-        self.playback.set_span(self._duration())  # places the pendulum
-        settle_plots(self)
 
-    # ------------------------------------------------------------- the pendulum itself
-    def angle_at(self, t: float) -> tuple[float, float, float]:
-        """θ, θ̇ and the linearized θ (rad) at time t, from the swing as drawn (NaN where it ran away)."""
-        ts, th, dth, tl = self._swing
-        return float(np.interp(t, ts, th)), float(np.interp(t, ts, dth)), float(np.interp(t, ts, tl))
+    @coalesce.coalesced(covers=("_draw_live",))
+    def _draw_tab(self, *_: object) -> None:
+        self._draw_live()
 
-    def _place(self, t: float) -> None:
-        if self.view.held:  # the reader's hand has it
-            return
-        th, dth, tl = self.angle_at(t)
-        if not math.isfinite(th):
-            return
-        ghost = tl if math.isfinite(tl) and abs(tl) < 4 * math.pi else None
-        self.view.set_angle(th, ghost)
-        self.moment_now.setData([math.degrees(th)], [float(self.pendulum.moment(th))])
-        if math.isfinite(dth):
-            self.phase_now.setData([math.degrees(th)], [math.degrees(dth)])
-
-    def _on_grabbed(self) -> None:
-        self.playback.pause()
-
-    def _on_turned(self, theta: float) -> None:
-        """Held at θ: the start box follows (the swing is worked out when it's let go)."""
-        self.side = -1.0 if theta < 0 else 1.0
-        set_quietly(self.angle, min(max(abs(math.degrees(theta)), 0.1), 179.0))
-
-    def _on_let_go(self) -> None:
-        self._on_inputs()
-        self.playback.play()
-
-    @property
-    def theta0(self) -> float:
-        return math.radians(self.angle.value())
-
-    def _duration(self) -> float:
-        p = self.pendulum
-        if p.stable:
-            return SWINGS * p.period0
-        return 10.0 * math.tau / math.sqrt(abs(p.stiffness) / p.inertia) if p.stiffness else 10.0
-
-    def _draw_swing(self) -> None:
-        p, a = self.pendulum, self.theta0
-        duration = self._duration()
-        t, th, tl = swing(p, a, duration, 2400)
-        th, tl = self.side * th, self.side * tl  # let go to the left: the mirror image
-        self._swing = (t, th, np.gradient(th, t), tl)
-        lim = 4 * math.pi
-        self.whole_item.setData(t, np.degrees(np.clip(th, -lim, lim)))
-        self.linear_item.setData(t, np.degrees(np.clip(tl, -lim, lim)))
-        self.swing_plot.setXRange(0.0, duration, padding=0)
-        if p.stable:
-            top = float(np.nanmax(np.abs(np.degrees(np.clip(th, -lim, lim)))))
-            span = max(top, self.angle.value()) * 1.1
-            self.swing_plot.setYRange(-span, span, padding=0)
-        else:  # the linearized one runs away: range on the whole one
-            whole = np.degrees(th[np.isfinite(th)])
-            pad = 0.1 * max(float(np.ptp(whole)), 1.0)
-            self.swing_plot.setYRange(float(whole.min()) - pad, float(whole.max()) + pad, padding=0)
-        self.swing_plot.setLabel("left", "Angle θ (°)")
-
-        reach = max(a, abs(p.leaning())) * 1.3
-        reach = min(max(reach, 0.2), math.pi)
-        x = np.linspace(-reach, reach, 400)
-        self.moment_item.setData(np.degrees(x), p.moment(x))
-        self.tangent_item.setData(np.degrees(x), p.stiffness * x)
-        for line, v in zip(self.range_lines, (-a, a)):
-            line.setPos(math.degrees(v))
-        self.moment_plot.setXRange(-math.degrees(reach), math.degrees(reach), padding=0)
-        self.moment_plot.setLabel("bottom", "Angle θ (°)")
-
-        if p.stable:
-            T = period(p, a) if p.zeta == 0 else math.nan
-            measured = measured_period(t, th)
-            parts = [f"Small-swing period T₀ = {sig(p.period0, 4)} s."]
-            if math.isfinite(T):
-                duff = duffing_period(p, a) / p.period0 - 1
-                guess = (
-                    f" (Duffing's estimate {sig(100 * duff, plus=True)} %)"
-                    if math.isfinite(duff)
-                    else " (Duffing's estimate has no answer this far out)"
-                )
-                parts.append(
-                    f"From {sig(self.angle.value())}° the exact period is {sig(T, 4)} s, "
-                    f"{sig(100 * (T / p.period0 - 1), plus=True)} %{guess}."
-                )
-            elif math.isfinite(measured):
-                parts.append(
-                    f"The swing's zero crossings come {sig(measured, 4)} s apart (damped, and the swing shrinking)."
-                )
-            self.readout.setText(" ".join(parts))
-        elif p.leaning():
-            self.readout.setText(
-                f"Unstable upright: it falls, and with damping settles leaning at "
-                f"±{sig(math.degrees(p.leaning()))}° (k<sub>t</sub> θ = mgd sin θ). The linearized "
-                "model just runs away."
-            )
-        else:
-            self.readout.setText("No restoring moment at θ = 0: nothing to oscillate about.")
+    def _amplitude(self) -> float:
+        """The largest angle of the last PEAK_SECONDS (rad), or where the hand holds it."""
+        live = self.live
+        if live.held is not None:
+            return abs(live.held)
+        t, y = live.record.window(PEAK_SECONDS)
+        return float(np.abs(y[:, COL["theta"]]).max()) if t.size else abs(live.theta)
 
     @coalesce.coalesced
-    def _draw_tab(self) -> None:
+    def _draw_live(self, frame: bool = False) -> None:
+        """What moves: the pendulum and its moments, the swing, the moment curve, the readout, and the tab showing
+        (the energy as a `frame` of the run, at the Energy tab's own rate)."""
+        live = self.live
+        t, y = live.record.window(STRIP_SECONDS)
+        end = live.t
+        self.theta_item.setData(t, np.degrees(y[:, COL["theta"]]))
+        ghost = np.degrees(y[:, COL["ghost"]])
+        ghost[np.abs(ghost) > 720.0] = np.nan  # an unstable linearization runs away
+        self.ghost_item.setData(t, ghost, connect="finite")
+        self.swing_plot.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
+        self.marks.draw(live.edits, end - STRIP_SECONDS)
+        amplitude = self._amplitude()
+        self.view.frame(amplitude)
+        self._draw_body()
+        self._draw_reach(amplitude)
+        self.clock.setText(f"t = {sig(end, 4)} s")
+        self._show_readout()
         i = self.tabs.currentIndex()
-        if i == TAB_PERIOD:
-            self._draw_period()
-        elif i == TAB_PHASE:
+        if i == view.TAB_PHASE:
             self._draw_phase()
-        elif i == TAB_PIVOT:
-            self._draw_pivot()
+        elif i == view.TAB_ENERGY:
+            self.energy.draw(live.record, frame)
 
-    def _draw_period(self) -> None:
-        p = self.pendulum
-        if not p.stable:
-            for item in (self.exact_item, self.duffing_item, self.unit_item, self.period_now):
-                item.setData([], [])
-            self.period_note.setText("Upright is unstable: there is no swing about it to time.")
+    def _draw_body(self) -> None:
+        live, p = self.live, self.live.pendulum
+        theta = live.theta
+        self.view.show(theta, None if live.held is not None else lp.ghost_angle(live.ghost))
+        held = live.held is not None
+        self.forces.show(view.free_body(p, theta, live.omega, held, self.arrows, self.pulls, live.t))
+        self.moment_now.setPos(math.degrees(theta), float(p.moment(theta)))
+        self.phase_now.setPos(math.degrees(theta), math.degrees(live.omega))
+
+    def _draw_reach(self, amplitude: float) -> None:
+        """The moment curve and the phase plane's orbits over the swing's reach, redrawn only when the pendulum or
+        the reach (in steps of REACH_STEP) changes."""
+        p = self.live.pendulum
+        stepped = math.ceil(amplitude / REACH_STEP) * REACH_STEP
+        moment_reach = min(max(1.3 * stepped, 1.3 * abs(p.leaning()), 0.2), math.pi)
+        phase_reach = view.phase_reach(p, stepped)
+        drawn = (view.key(p), phase_reach, moment_reach)
+        if drawn == self._reach_drawn:
             return
-        deg = np.linspace(0.5, 179.0, 180)
-        a = np.radians(deg)
-        exact = periods(p, a) / p.period0
-        duff = np.array([duffing_period(p, float(x)) for x in a]) / p.period0
-        self.exact_item.setData(deg, exact, connect="finite")
-        self.duffing_item.setData(deg, duff, connect="finite")
-        self.unit_item.setData([0, 180], [1, 1])
-        now = period(p, self.theta0) / p.period0
-        self.period_now.setData([self.angle.value()], [now] if math.isfinite(now) else [np.nan])
-        finite = np.concatenate([exact[np.isfinite(exact)], duff[np.isfinite(duff)]])
-        hi = min(3.0, float(finite.max())) if finite.size else 1.5
-        lo = min(1.0, float(finite.min())) if finite.size else 0.5
-        self.period_plot.setXRange(0, 180, padding=0)
-        self.period_plot.setYRange(lo - 0.05, max(hi, 1.0) + 0.1, padding=0)
-        self.period_plot.setLabel("bottom", "Amplitude (°)")
-        if p.cubic == 0:
-            self.period_note.setText(
-                "No gravity in the restoring moment, so it is linear: the period is the same at any amplitude."
-            )
-        else:
-            sense = "softens: larger swings are slower" if p.cubic < 0 else "hardens: larger swings are faster"
-            self.period_note.setText(f"It {sense}. At {sig(self.angle.value())}°: T/T₀ = {sig(now, 4)}.")
+        self._reach_drawn = drawn
+        m = view.moment_view(p, self.live.theta, moment_reach)
+        self.moment_item.setData(*m.moment)
+        self.tangent_item.setData(*m.tangent)
+        self.moment_plot.setXRange(*m.x_span, padding=0)
+        self._phase_reach = phase_reach
 
     def _draw_phase(self) -> None:
-        p, a = self.pendulum, self.theta0
-        for item in self.orbit_items:
-            self.phase_plot.removeItem(item)
-        self.orbit_items = []
-        hanging = p.weight_moment > 0 and p.torsion == 0
-        reach = 1.05 * math.pi if hanging else max(1.3 * a, 1.3 * abs(p.leaning()), 0.3)
-        x = np.linspace(-reach, reach, 801)
-        V = p.potential(x)
-        top = float(p.potential(math.pi)) if hanging else float(np.max(V))
-        base = float(np.min(V))
-        pen = pg.mkPen(colors.grey, width=1)
-        for e in np.linspace(base, top, 8)[1:-1]:
-            ox, oy = orbit(p, float(e), x)
-            item = pg.PlotDataItem(np.degrees(ox), np.degrees(oy), pen=pen, connect="finite")
-            self.phase_plot.addItem(item, ignoreBounds=True)
-            self.orbit_items.append(item)
-        if hanging:  # the separatrix: the orbit through the upside-down balance
-            inside = np.linspace(-math.pi, math.pi, 801)
-            y = phase_curve(p, top, inside)
-            y[[0, -1]] = 0.0
-            self.separatrix.setData(
-                np.degrees(np.concatenate([inside, inside[::-1]])), np.degrees(np.concatenate([y, -y[::-1]]))
-            )
+        live, p = self.live, self.live.pendulum
+        period0 = p.period0 if p.stable else 2.0
+        t, y = live.record.window(TRAIL_PERIODS * period0)
+        if t.size:
+            keep = t >= live.changed_at  # the path since the last change, not across it
+            th, om = y[keep, COL["theta"]], y[keep, COL["omega"]]
         else:
-            self.separatrix.setData([], [])
-        t, th, _ = swing(p, a, self._duration(), 3000)
-        th = self.side * th
-        dth = np.gradient(th, t)
-        keep = np.isfinite(th) & (np.abs(th) < 2 * reach)
-        self.trace_item.setData(np.degrees(th[keep]), np.degrees(dth[keep]))
-        self.start_dot.setData([self.side * math.degrees(a)], [0.0])
-        self.phase_plot.setXRange(-math.degrees(reach), math.degrees(reach), padding=0.02)
-        self.phase_plot.setLabel("bottom", "θ (°)")
-        self.phase_plot.setLabel("left", "θ̇ (°/s)")
-        if p.weight_moment > 0 and p.torsion == 0:
-            self.phase_note.setText(
-                "Grey: undamped orbits of constant energy; bold: the separatrix through the "
-                "upside-down balance (±180°). Inside it the pendulum swings; outside it, it "
-                "goes round."
-            )
+            th = om = np.empty(0)
+        drawn = (view.key(p), self._phase_reach)
+        v = view.phase_view(p, th, om, self._phase_reach) if drawn != self._orbits_for else None
+        if v is not None:
+            self._orbits_for = drawn
+            self.orbits_item.setData(*v.orbits)
+            self.separatrix_item.setData(*v.separatrix)
+            self.phase_plot.setXRange(*v.x_span, padding=0.02)
+            self.phase_note.setText(v.note)
+            self.path_item.setData(*v.path)
         else:
-            self.phase_note.setText("Grey: undamped orbits of constant energy. Colour: the swing from release.")
+            self.path_item.setData(np.degrees(th), np.degrees(om))
 
-    def _draw_pivot(self) -> None:
-        p = self.pendulum
-        L, g = p.length, p.gravity if p.gravity > 0 else 9.81
-        d = np.linspace(0.02 * L, 0.6 * L, 400)
-        T = rod_period(L, d, g)
-        self.pivot_item.setData(d, T)
-        best = L / math.sqrt(12)
-        self.pivot_best.setData([best], [float(rod_period(L, best, g))])
-        here = min(max(p.pivot if p.kind is Kind.ROD else 0.5 * L, 0.02 * L), 0.6 * L)
-        Th = float(rod_period(L, here, g))
-        twin = conjugate_pivot(L, here)
-        self.pivot_now.setData([here], [Th])
-        self.pivot_twin.setData(
-            [twin] if 0.02 * L <= twin <= 0.6 * L else [], [Th] if 0.02 * L <= twin <= 0.6 * L else []
-        )
-        self.pivot_level.setPos(Th)
-        self.pivot_plot.setXRange(0.0, 0.6 * L, padding=0)
-        self.pivot_plot.setYRange(0.9 * float(rod_period(L, best, g)), min(float(T.max()), 2.0 * Th), padding=0)
-        lead = "" if p.kind is Kind.ROD else f"(A uniform rod {fmt(L, 'm')} long, whatever the kind set.) "
-        self.pivot_note.setText(
-            f"{lead}Pivoted {fmt(here, 'm')} from the centre: T = {sig(Th, 4)} s. The fastest, "
-            f"{sig(float(rod_period(L, best, g)), 4)} s, is at L/√12 = {fmt(best, 'm')} (grey); "
-            f"the same period again at k<sub>G</sub>²/d = {fmt(twin, 'm')} (square)."
+    def _show_readout(self) -> None:
+        live, p = self.live, self.live.pendulum
+        if live.held is not None:
+            self.readout.setText(f"Held at θ = {sig(math.degrees(live.held))}°: let go to pluck it.")
+            return
+        if not p.stable:
+            lean = p.leaning()
+            self.readout.setText(
+                f"Unstable upright: it falls, and with damping settles leaning at ±{sig(math.degrees(lean))}° "
+                "(kₜθ = mgd sin θ). The linearized ghost just runs away."
+                if lean
+                else "No restoring moment at θ = 0: nothing to oscillate about."
+            )
+            return
+        current = self.recorder.current(view.key(p))
+        if live.record.size < 2:
+            self.readout.setText("Pluck it: drag the bob round and let go.")
+            return
+        if not current:
+            self.readout.setText(f"Small-swing period T₀ = {sig(p.period0, 4)} s. Timing its first swing…")
+            return
+        last = max(current, key=lambda q: q.t)
+        exact = period(replace(p, zeta=0.0), last.amplitude)
+        self.readout.setText(
+            f"The last swing, ±{sig(math.degrees(last.amplitude))}°, took {sig(last.period, 4)} s "
+            f"({view.longer(last.period, p.period0)} on T₀ = {sig(p.period0, 4)} s; "
+            f"undamped, exactly {sig(exact, 4)} s)."
         )
