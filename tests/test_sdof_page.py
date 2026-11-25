@@ -17,7 +17,7 @@ QtWidgets = pytest.importorskip("PySide6.QtWidgets")
 from PySide6 import QtCore, QtGui  # noqa: E402
 
 from vib_tutorial.core.damping_models import MODELS, Model  # noqa: E402
-from vib_tutorial.gui import free_body_view, sdof  # noqa: E402
+from vib_tutorial.gui import free_body_view, live_body, sdof  # noqa: E402
 from vib_tutorial.view_models import sdof as view  # noqa: E402
 from vib_tutorial.view_models.live_mass import COL  # noqa: E402
 from vib_tutorial.view_models.text import fmt  # noqa: E402
@@ -108,6 +108,14 @@ def test_a_change_mid_run_carries_the_motion_on_and_is_marked(page):
     assert lines and lines[0].isVisible() and lines[0].value() == t
     xs = page.x_item.getData()[0]
     assert xs[0] < t < xs[-1]  # the trace keeps what came before
+
+
+def test_scrubbed_back_the_body_is_drawn_to_that_times_scale(page):
+    page.load_trial(trial("Ringing down"))
+    page.step(12.0)  # rung down to a few µm: the drawing magnified to match
+    page._on_run(False)
+    page._on_scrubbed(page.live.t - 11.5)  # back to a swing of millimetres
+    assert abs(page.body._centre - live_body.REST_X) <= live_body.SWING * 1.01  # on the page, not off it
 
 
 def test_the_grips_set_m_k_and_c_as_it_runs(page, app):

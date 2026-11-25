@@ -657,6 +657,8 @@ class SdofPage(QtWidgets.QWidget):
         p = self.live.params
         g = self.ghost.record
         ghost = float(np.interp(t, g.t[: g.size], g.y[: g.size, COL["x"]])) if self._ghosted() and g.size else None
+        recent = r.y[: r.size, COL["x"]][(ts >= t - PEAK_SECONDS) & (ts <= t)]  # the swing then, not at the pause
+        self.body.fit(max(float(np.abs(recent).max()) if recent.size else 0.0, abs(x)), at_once=True)
         self.body.show(x, ghost)
         self.forces.show(one_mass(p.stiffness, p.damping, x, v, f, scale=self.arrows, t=t))
         self.plane_now.setPos(x, v / view.oscillator(self.practice_state()).omega_n)
