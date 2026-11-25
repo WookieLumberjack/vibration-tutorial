@@ -80,13 +80,19 @@ def measure(
     return Measurement(freq_hz, now, bool(steady))
 
 
-def sweep_frequencies(natural_hz: float, damping_ratio: float, points: int = 15) -> tuple[float, ...]:
-    """Frequencies for a sweep across a resonance at `natural_hz`: spread from a third to three times it, with
-    more near it, within its half-power band (at least ±5 %)."""
-    wide = np.geomspace(natural_hz / 3.0, 3.0 * natural_hz, points - 4)
+def sweep_frequencies(
+    natural_hz: float, damping_ratio: float, points: int = 15, lo: float = 0.33, hi: float = 3.0
+) -> tuple[float, ...]:
+    """About `points` frequencies for a sweep from `lo` to `hi` × `natural_hz`, log-spaced; with 9 or more, five
+    of them packed round the resonance, within its half-power band (at least ±5 %), where they fall in the range."""
+    lo, hi = sorted((lo, hi))
+    if points < 9:
+        return tuple(float(f) for f in np.geomspace(lo * natural_hz, hi * natural_hz, max(points, 2)))
+    wide = np.geomspace(lo * natural_hz, hi * natural_hz, points - 4)
     band = max(damping_ratio, 0.05)
-    near = natural_hz * (1.0 + band * np.array([-1.0, -0.5, 0.5, 1.0]))
-    freqs = np.sort(np.concatenate([wide, near, [natural_hz]]))
+    near = natural_hz * (1.0 + band * np.array([-1.0, -0.5, 0.0, 0.5, 1.0]))
+    near = near[(near > wide[0]) & (near < wide[-1])]
+    freqs = np.sort(np.concatenate([wide, near]))
     keep = np.concatenate([[True], np.diff(freqs) > 0.02 * freqs[1:]])
     return tuple(float(f) for f in freqs[keep])
 

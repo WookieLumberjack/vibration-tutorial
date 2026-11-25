@@ -103,7 +103,7 @@ OSCILLATOR_TRIALS = (
     ),
     SdofTrial(
         "Building the frequency response: a sweep",
-        "The drive steps from 1.06 to 9.55 Hz, dwelling at each frequency until the swing is steady, and each "
+        "The drive steps from 1.05 to 9.55 Hz, dwelling at each frequency until the swing is steady, and each "
         "point lands as it's measured: the peak builds up near <m>f<sub>n</sub></m>, and the lag climbs through 90° "
         "there. Show the theory's curve over the points: <m>|H|</m> falls to <m>1/√2</m> of its peak at 3.01 and "
         "3.33 Hz, 0.32 Hz apart, so <m>ζ ≈ Δf/2f<sub>n</sub> = 0.050</m>. On the Nyquist plot below, the points near "

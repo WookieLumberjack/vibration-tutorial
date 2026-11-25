@@ -140,6 +140,23 @@ def test_the_energy_tab_redraws_at_its_own_rate_as_it_runs(page):
     assert page.energy.ledger.text() != drawn
 
 
+def test_the_sweep_takes_its_range_and_points_from_the_boxes_and_the_axes_keep_still(page):
+    page.tabs.setCurrentIndex(view.TAB_FRF)
+    page.sweep_from.setValue(0.5)
+    page.sweep_to.setValue(2.0)
+    page.sweep_points.setValue(5)
+    page.sweep_button.click()
+    fn = view.oscillator(page.practice_state()).natural_hz
+    assert page.sweep.freqs == pytest.approx(tuple(np.geomspace(0.5 * fn, 2.0 * fn, 5)))
+    page.step(30.0)
+    assert page.recorder.current(page._key())  # points landed
+    ranges = page.mag_plot.viewRange()
+    page.theory.setChecked(True)  # the theory's curve drawn: the axes stay where they were
+    assert np.allclose(page.mag_plot.viewRange(), ranges), (page.mag_plot.viewRange(), ranges)
+    lo, hi = (10**v for v in ranges[0])
+    assert lo < 0.5 * fn and hi > 2.0 * fn
+
+
 def test_scrubbed_back_the_body_is_drawn_to_that_times_scale(page):
     page.load_trial(trial("Ringing down"))
     page.step(12.0)  # rung down to a few µm: the drawing magnified to match

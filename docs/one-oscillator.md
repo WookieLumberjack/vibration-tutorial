@@ -37,7 +37,7 @@ draws the law's curve (friction's resonance runs away past 4F<sub>f</sub>/π) an
 phasors beside the Nyquist plot. Sixteen Things to try, after the controls, are setups to come back to, the
 oscillator's eight and then the laws'; their predictions are asked once you've handled it.
 
-![Single oscillator page after a sweep: m = 1 kg, k = 400 N/m, c = 2 N·s/m (f<sub>n</sub> = 3.18 Hz, ζ = 0.05), 15 points measured from 1.06 to 9.55 Hz with the theory's curve over them, the half-power band 3.01–3.33 Hz giving ζ ≈ 0.0503, the lag through 90° at f<sub>n</sub> and the Nyquist circle; the mass still driven at 9.55 Hz, swinging ±312 µm and lagging by 178°, with the forces on it drawn beside it](images/single_oscillator.png)
+![Single oscillator page after a sweep: m = 1 kg, k = 400 N/m, c = 2 N·s/m (f<sub>n</sub> = 3.18 Hz, ζ = 0.05), 15 points measured from 1.05 to 9.55 Hz with the theory's curve over them, the half-power band 3.01–3.33 Hz giving ζ ≈ 0.0503, the lag through 90° at f<sub>n</sub> and the Nyquist circle; the mass still driven at 9.55 Hz, swinging ±312 µm and lagging by 178°, with the forces on it drawn beside it](images/single_oscillator.png)
 
 ![Single oscillator page with the viscous damper driven by 0.4 N at f<sub>n</sub> = 3.18 Hz, swinging ±10 mm, on the Loop & loss tab: its own loop encloses about 12.5 mJ a cycle, beside the four laws' loops at that cycle (three ellipses enclosing 12.6 mJ and friction's ±0.31 N rectangle); the loss factors meet at 0.1 at f<sub>n</sub>, where the Zener element's peaks](images/single_oscillator_damping.png)
 

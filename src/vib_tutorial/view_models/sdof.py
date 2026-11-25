@@ -70,6 +70,9 @@ class SdofTrial:
     freq_hz: float = 3.0
     tune: bool = False  # drive at f_n
     sweep: bool = False  # a stepped sweep, building the frequency response
+    sweep_from: float = 0.33  # its range, × f_n (so it follows f_n as m and k change)
+    sweep_to: float = 3.0
+    sweep_points: int = 15  # about how many frequencies it dwells at
     damping_only: bool = True  # the loop's force: the damping alone, or with the spring
     tab: int = TAB_ENERGY
     predict: Prediction | Placement | None = None  # asked once the reader has played (Things to try)
@@ -200,6 +203,9 @@ class FrfView:
     amplification: str  # the left axis's name
     note: str
     ghost: Curve  # the viscous ghost's amplification, dashed, under another law (with the theory)
+    x_span: tuple[float, float]  # Hz: the sweep's range, and any point or the drive outside it
+    y_span: tuple[float, float]  # the amplification axis: the viscous theory's over x_span and every point, so it
+    # stays put when the theory is shown
 
 
 def _amplification(p: Params, kind: int, freqs: np.ndarray, h: np.ndarray) -> np.ndarray:
@@ -241,8 +247,15 @@ def frf_view(t: SdofTrial, current: Sequence[Point], earlier: Sequence[Point], t
     h_now = np.array([q.response for q in current])
     nyquist = Curve(h_now.real, h_now.imag) if current else Curve.empty()
     ghost = Curve.empty()
+    f_lo, f_hi = sorted((t.sweep_from * o.natural_hz, t.sweep_to * o.natural_hz))
+    seen = [q.freq_hz for q in (*current, *earlier)] + ([drive_freq(t)] if d.on else [])
+    f_lo, f_hi = min([f_lo, *seen]) / 1.15, max([f_hi, *seen]) * 1.15
+    span_f = frequency_grid(o, f_lo / o.natural_hz, f_hi / o.natural_hz)
+    y = [*_amplification(p, d.kind, span_f, receptance(o, span_f)), *points.y, *earlier_points.y]
+    y = [v for v in y if v > 0 and math.isfinite(v)]
+    y_span = (min(y) / 1.3, max(y) * 1.3)
     if theory:
-        freqs = frequency_grid(o)
+        freqs = span_f
         viscous_h = receptance(o, freqs)
         h = _model_receptance(t, freqs) if law else viscous_h
         curve = Curve(freqs, _amplification(p, d.kind, freqs, h))
@@ -297,6 +310,8 @@ def frf_view(t: SdofTrial, current: Sequence[Point], earlier: Sequence[Point], t
         name,
         note,
         ghost,
+        (f_lo, f_hi),
+        y_span,
     )
 
 

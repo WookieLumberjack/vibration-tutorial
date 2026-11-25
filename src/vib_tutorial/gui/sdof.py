@@ -47,11 +47,12 @@ from .bindings import Bindings
 from .drag import DragPoint
 from .frame_loop import FrameLoop
 from .free_body_view import FreeBodyView
-from .layouts import FlowLayout
+from .layouts import FlowLayout, group
 from .lesson import ActionToggle, Dot, Form, LiveLabel, TrialBox, combo, note_label, plot, set_quietly, three_panes
 from .live_body import LiveMassView
 from .live_parts import ChangeMarks, EnergyTab, LoopTab, run_row
 from .notes_view import NotesBrowser
+from .panels import spin
 from .plots import decimate
 from .scrub import Scrub
 from .sdof_trials import NOTES_HTML, PROBLEMS, TIPS, TRIALS
@@ -62,6 +63,12 @@ __all__ = ["NOTES_HTML", "PROBLEMS", "TRIALS", "SdofPage", "notes_html"]
 
 STRIP_SECONDS = 10.0  # the time plots' window
 PHASE_SECONDS = 3.0  # the phase plane's trail
+SWEEP_TIP = (
+    "<p>The sweep's range, as multiples of f<sub>n</sub> (so it follows f<sub>n</sub> as you change m or k), and "
+    "about how many frequencies it dwells at: log-spaced, and with 9 or more, five of them packed round the "
+    "resonance. Few points, or a range that misses f<sub>n</sub>, and the peak is missed too. Applies at the next "
+    "Sweep; the plots' frequency axis shows the range.</p>"
+)
 DRIVE_TEXTS = (  # the drive's button, off and on: a force, an unbalance
     ("Apply force", "Force on: click to stop"),
     ("Spin the unbalance", "Unbalance spinning: click to stop"),
@@ -236,6 +243,9 @@ class SdofPage(QtWidgets.QWidget):
         self.mag_plot = plot("Amplification |X|k/F", None, "Frequency", "Hz", log_x=True, log_y=True, height=140)
         self.lag_plot = plot("Lag", "°", "Frequency", "Hz", log_x=True, height=100)
         self.lag_plot.setXLink(self.mag_plot)
+        for p in (self.mag_plot, self.lag_plot):
+            p.enableAutoRange(x=False)  # the frequency axis is the sweep's range (`_draw_frf`), not the curves'
+        self.mag_plot.enableAutoRange(y=False)  # and the amplification's is set there too, theory or not
         self.nyq_plot = plot("Im H", "m/N", "Re H", "m/N", height=120)
         self.nyq_plot.setAspectLocked(True)
         for p in (self.mag_plot, self.lag_plot, self.nyq_plot):
@@ -275,8 +285,26 @@ class SdofPage(QtWidgets.QWidget):
         self.theory = QtWidgets.QCheckBox("Show the theory")
         self.theory.setToolTip("<p>Draw the curves the points should lie on, and the half-power band.</p>")
         self.theory.toggled.connect(self._draw_frf)
+        self.sweep_from = spin(0.01, 100.0, 0.33, 2, " × fₙ")
+        self.sweep_to = spin(0.01, 100.0, 3.0, 2, " × fₙ")
+        self.sweep_points = QtWidgets.QSpinBox()
+        self.sweep_points.setRange(3, 60)
+        self.sweep_points.setValue(15)
+        for spinner, name in (
+            (self.sweep_from, "Sweep from"),
+            (self.sweep_to, "Sweep to"),
+            (self.sweep_points, "Sweep points"),
+        ):
+            spinner.setToolTip(SWEEP_TIP)
+            spinner.setAccessibleName(name)
         buttons = FlowLayout()
-        buttons.add(self.sweep_button, self.clear_button, self.theory)
+        buttons.add(
+            self.sweep_button,
+            group("from", self.sweep_from, "to", self.sweep_to),
+            group(self.sweep_points, "points"),
+            self.clear_button,
+            self.theory,
+        )
         fv.addLayout(buttons)
         self.phasor_plot = plot("Imaginary", "N", "Real", "N", height=120)
         self.phasor_plot.setAspectLocked(True)
@@ -356,6 +384,9 @@ class SdofPage(QtWidgets.QWidget):
             ("amplitude", self.amplitude),
             ("freq_hz", self.freq),
             ("damping_only", self.damping_only),
+            ("sweep_from", self.sweep_from),
+            ("sweep_to", self.sweep_to),
+            ("sweep_points", self.sweep_points),
             ("tab", self.tabs),
         ):
             self.bindings.bind(field, widget)
@@ -412,6 +443,8 @@ class SdofPage(QtWidgets.QWidget):
             self._draw_live()
         elif field == "damping_only":
             self._draw_tab()
+        elif field in ("sweep_from", "sweep_to", "sweep_points"):
+            self._draw_frf()  # the axes follow the range; a sweep running keeps the one it started with
         elif field in ("drive", "kind", "amplitude", "freq_hz"):
             self._handled()
             if field == "kind":
@@ -622,7 +655,8 @@ class SdofPage(QtWidgets.QWidget):
             self.sweep = None
             return
         o = view.oscillator(self.practice_state())
-        self.sweep = rec.Sweep(rec.sweep_frequencies(o.natural_hz, o.zeta))
+        s = self.practice_state()
+        self.sweep = rec.Sweep(rec.sweep_frequencies(o.natural_hz, o.zeta, s.sweep_points, s.sweep_from, s.sweep_to))
         if not self.drive_on.isChecked():
             set_quietly(self.drive_on, True)
         self._set_sweep_freq()
@@ -884,10 +918,8 @@ class SdofPage(QtWidgets.QWidget):
         else:
             self.band.hide()
         self.frf_note.setText(v.note)
-        lo, hi = v.natural_hz / 4, v.natural_hz * 4
-        if v.drive.x.size:
-            lo, hi = min(lo, float(v.drive.x[0]) / 1.5), max(hi, float(v.drive.x[0]) * 1.5)
-        self.mag_plot.setXRange(np.log10(lo), np.log10(hi), padding=0.02)
+        self.mag_plot.setXRange(*np.log10(v.x_span), padding=0)  # the lag plot's is linked
+        self.mag_plot.setYRange(*np.log10(v.y_span), padding=0)  # the same with the theory shown or not
 
     @coalesce.coalesced
     def _draw_poles(self) -> None:
