@@ -1,18 +1,21 @@
-"""The live free-body diagram (#478 item 2) in a pane of its own, beside the moving mass: the mass held still, its
-forces as arrows out of it, a row each, so it reads while the body swings.
+"""The live free-body diagram (#478 item 2) in a pane of its own, beside the moving mass: the body held still, its
+forces as arrows out of it, a row each, so it reads while the mass swings.
 
-Each force keeps its row, and its row's words keep their places: the symbol in a column on the left (`kx`, `cẋ`,
-`f`, …), the size in a column on the right, and between them the mass, the arrow leaving the side the force pushes
-towards. Only the arrows move: they turn round as a force changes direction, and their lengths follow the forces
-on `free_body.ArrowScale`'s steady scale. The net force, m·ẍ, is the last row, dashed, under a rule (what the
-forces above sum to). The sizes are rewritten at most `TEXT_EVERY` s apart, so they can be read while it runs (the
-last always shows within that).
+Each force keeps its row, and its words keep their places, in one column on the left: its symbol (`kx`, `cẋ`, `f`,
+…, `arm` for a Zener element's k₁(x − y)) and its size. To their right the body, a slim outline, and its arrows:
+each leaves the body's side at its row, towards where the force pushes, so only the arrows move: they turn round as
+a force changes direction, and their lengths follow the forces on `free_body.ArrowScale`'s scale (the recent peak
+fills the room either side). The net force, m·ẍ, is the last row, dashed, under a rule (what the forces above sum
+to). The sizes are rewritten at most `TEXT_EVERY` s apart, so they can be read while it runs (the last always
+shows within that).
 
-Drawn on the body itself, the arrows and their labels moved with the mass and swapped sides as each force turned
-(the check-in's first finding): this pane replaced them.
+The check-in's findings shaped it: on the moving mass, the arrows' labels swapped sides as each force turned; in
+columns either side of the body, or written on a square mass, the words left the arrows too little room, and the
+square outgrew the moving mass beside it.
 
 Working on it: `tests/test_sdof_page.py` reads its rows. Colours are theme roles' (`style.role`), so `apply_theme`
-redraws them; the arrows' room is in the view's own units, the words' columns pinned to its edges.
+redraws them. The view's width is in its own units, so the column and the arrows' room keep their shares of the
+pane, the column wide enough for its words at the pane's narrowest (`setMinimumWidth`).
 """
 
 from __future__ import annotations
@@ -20,22 +23,25 @@ from __future__ import annotations
 import time
 
 import pyqtgraph as pg
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..view_models.free_body import Arrow, FreeBody
 from ..view_models.text import fmt
 from .style import colors, role
 
-HALF = 0.45  # the mass's half-width
-ROOM = 0.85  # the largest arrow's length, either side of the mass
-EDGE = HALF + ROOM + 0.08  # where the words' columns start
-SPAN = 2.5  # the view's half-width: the columns get SPAN − EDGE each
-GAP = 0.42  # between rows
+HALF = 0.1  # the body's half-width
+ROOM = 1.0  # the largest arrow's length, either side of the body
+RIGHT = HALF + ROOM + 0.1  # the view's right edge
+SIZES = -RIGHT  # the sizes' right edge, the column's
+COLUMN = 1.55  # the words' column's width
+LEFT = SIZES - COLUMN  # the view's left edge, the symbols'
+GAP = 0.32  # between rows
 TEXT_EVERY = 0.2  # s between rewrites of the sizes
 TIP = (
-    "<p>The forces on the mass now, a row each: the arrow leaves the side the force pushes it towards, its length "
-    "the force's size (the scale steady while they change). The dashed row is their sum, the mass times its "
-    "acceleration, m·ẍ.</p>"
+    "<p>The forces on the mass now, a row each, its size on the left: the arrow leaves the side the force pushes "
+    "the mass towards, its length the force's size (the largest of the last few seconds fills the room). The "
+    "dashed row is their sum, the mass times its acceleration, m·ẍ. <i>arm</i> is a Zener element's arm pulling, "
+    "k₁(x − y).</p>"
 )
 
 
@@ -50,7 +56,7 @@ class FreeBodyView(pg.PlotWidget):
         self.hideAxis("left")
         self.hideAxis("bottom")
         self.setAspectLocked(True)
-        self.setMinimumWidth(260)
+        self.setMinimumWidth(240)
         self.block = QtWidgets.QGraphicsRectItem()
         self.block.setZValue(2)
         self.addItem(self.block)
@@ -68,8 +74,10 @@ class FreeBodyView(pg.PlotWidget):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        self.block.setBrush(pg.mkBrush(colors.mass[0]))
-        self.block.setPen(pg.mkPen(colors.structure, width=1.5))
+        fill = QtGui.QColor(colors.mass[0])
+        fill.setAlphaF(0.25)
+        self.block.setBrush(pg.mkBrush(fill))
+        self.block.setPen(pg.mkPen(colors.mass[0], width=2))
         self.rule.setPen(pg.mkPen(colors.faint, width=1))
         if self._arrows:
             self._build(self._arrows)
@@ -109,7 +117,7 @@ class FreeBodyView(pg.PlotWidget):
     @staticmethod
     def _row_y(i: int, n: int) -> float:
         """Row i of n from the top, the net's (the last) a half row further down, under the rule."""
-        return -GAP * (i + (0.5 if i == n - 1 else 0.0))
+        return -GAP * (i + (0.5 if i == n - 1 and n > 1 else 0.0))
 
     def _build(self, arrows: tuple[Arrow, ...]) -> None:
         for item in (*self.shafts, *self.heads, *self.symbols, *self.sizes):
@@ -122,10 +130,10 @@ class FreeBodyView(pg.PlotWidget):
             y = self._row_y(i, n)
             shaft = pg.PlotDataItem(pen=pg.mkPen(colour, width=3, style=dash))
             head = pg.ArrowItem(angle=180, headLen=12, tipAngle=40, pen=None, brush=colour)
-            symbol = pg.TextItem(arrow.symbol, color=colour, anchor=(1.0, 0.5))
-            symbol.setPos(-EDGE, y)
-            size = pg.TextItem(fmt(abs(arrow.value), "N"), color=colour, anchor=(0.0, 0.5))
-            size.setPos(EDGE, y)
+            symbol = pg.TextItem(arrow.symbol, color=colour, anchor=(0.0, 0.5))
+            symbol.setPos(LEFT, y)
+            size = pg.TextItem(fmt(abs(arrow.value), "N"), color=colour, anchor=(1.0, 0.5))
+            size.setPos(SIZES, y)
             for item in (shaft, head, symbol, size):
                 item.setZValue(4)
                 self.addItem(item)
@@ -134,8 +142,8 @@ class FreeBodyView(pg.PlotWidget):
             self.symbols.append(symbol)
             self.sizes.append(size)
         last = self._row_y(n - 1, n)
-        self.block.setRect(QtCore.QRectF(-HALF, last - 0.3, 2 * HALF, 0.6 - last))
-        rule_y = 0.5 * (self._row_y(n - 2, n) + last) if n > 1 else last + GAP
-        self.rule.setData([-SPAN + 0.1, SPAN - 0.1], [rule_y, rule_y])
-        self.setRange(QtCore.QRectF(-SPAN, last - 0.5, 2 * SPAN, 1.0 - last), padding=0)
+        self.block.setRect(QtCore.QRectF(-HALF, last - 0.5 * GAP, 2 * HALF, GAP - last))
+        rule_y = 0.5 * (self._row_y(n - 2, n) + last) if n > 1 else last - GAP
+        self.rule.setData([LEFT, RIGHT], [rule_y, rule_y])
+        self.setRange(QtCore.QRectF(LEFT - 0.05, last - GAP, RIGHT - LEFT + 0.1, 2 * GAP - last), padding=0)
         self._written = -1.0

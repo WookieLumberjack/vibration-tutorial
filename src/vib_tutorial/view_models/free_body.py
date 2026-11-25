@@ -5,10 +5,10 @@ name, its label with its size, its symbol alone, its value in newtons, + along t
 its colour as a theme role's name), and the net force, which is the mass times its acceleration. A force of nought is still listed (its arrow drawn at no length), so the arrows
 keep their places while one comes and goes.
 
-`ArrowScale` keeps the arrows' scale steady while the forces change: it grows at once to fit the largest force
-(an arrow never runs off the body's space) and shrinks only when the largest has stayed under a quarter of the
-room for `SHRINK_AFTER` seconds, so a swing's arrows don't breathe with every cycle and a new, smaller motion is
-still drawn big enough to read.
+`ArrowScale` sizes the arrows to the largest force of the last `SHRINK_AFTER` seconds: it grows at once to fit a
+larger force (an arrow never runs off its room), and a force leaves it that long after it passed, so a swing's
+peak fills the room, its arrows grow and shrink through each cycle on a scale that holds still while it, and a
+smaller motion (once the hand has let go, or the swing has died down) is redrawn as large within seconds.
 
 `one_mass` is the forces on one mass on a spring and a damper, with friction, a drive and a hand holding it (the
 Single oscillator, Damping models); a page with another body builds its own `FreeBody` from its forces the same
@@ -21,11 +21,12 @@ roles name theme colours and the scale's growing and shrinking.
 from __future__ import annotations
 
 import math
+from collections import deque
 from dataclasses import dataclass
 
 from .text import fmt
 
-SHRINK_AFTER = 3.0  # s the forces must stay small before the scale shrinks to them
+SHRINK_AFTER = 2.0  # s a force stays in the scale after it passed
 ROOM = 0.8  # the largest force fills this much of the arrows' room
 
 
@@ -35,7 +36,7 @@ class Arrow:
     label: str  # what's printed by it, as plain text (no markup): its symbol and size
     value: float  # N, + along the body's positive direction
     role: str  # its colour, as a theme role's name (`style.role`)
-    symbol: str = ""  # its symbol alone, the label's first part
+    symbol: str = ""  # its symbol alone, short enough to write on the body ("arm" for the Zener arm's k₁(x − y))
 
 
 @dataclass(frozen=True)
@@ -49,36 +50,34 @@ class FreeBody:
 
 
 class ArrowScale:
-    """Newtons to display units, steady while the forces change (see the module)."""
+    """Newtons to display units: the largest force of the last `SHRINK_AFTER` s fills the room (see the module)."""
 
     def __init__(self, room: float) -> None:
         self.room = room  # display units the largest arrow may take
         self.largest = 0.0  # N the scale fits now
-        self._small_since: float | None = None
+        self._recent: deque[tuple[float, float]] = deque()  # (t, the largest force then), its peaks decreasing
 
     def update(self, t: float, forces: float) -> float:
         """The scale (display units a newton) at time t, the largest force now `forces` (N)."""
         forces = abs(forces)
-        if forces > self.largest:
-            self.largest = forces
-            self._small_since = None
-        elif forces < 0.25 * self.largest:
-            if self._small_since is None or t < self._small_since:
-                self._small_since = t
-            elif t - self._small_since >= SHRINK_AFTER and forces > 0:
-                self.largest = forces
-                self._small_since = None
-        else:
-            self._small_since = None
+        recent = self._recent
+        if recent and t < recent[-1][0]:  # back in time (scrubbed): start again from here
+            recent.clear()
+        while recent and recent[-1][1] <= forces:  # outdone: it can never be the largest again
+            recent.pop()
+        recent.append((t, forces))
+        while recent[0][0] < t - SHRINK_AFTER:
+            recent.popleft()
+        self.largest = recent[0][1]
         return ROOM * self.room / self.largest if self.largest > 0 else 0.0
 
     def reset(self) -> None:
         self.largest = 0.0
-        self._small_since = None
+        self._recent.clear()
 
 
-def _arrow(name: str, symbol: str, value: float, role: str) -> Arrow:
-    return Arrow(name, f"{symbol} = {fmt(abs(value), 'N')}", value, role, symbol)
+def _arrow(name: str, symbol: str, value: float, role: str, short: str | None = None) -> Arrow:
+    return Arrow(name, f"{symbol} = {fmt(abs(value), 'N')}", value, role, short or symbol)
 
 
 def one_mass(
@@ -103,12 +102,12 @@ def one_mass(
     if friction is not None:
         arrows.append(_arrow("friction", "friction", friction, "energy.friction"))
     if arm is not None:  # a Zener element's arm: its spring k₁ pulling, its dashpot relaxing behind it
-        arrows.append(_arrow("arm", "k₁(x − y)", arm, "energy.added"))
+        arrows.append(_arrow("arm", "k₁(x − y)", arm, "energy.added", short="arm"))
     arrows.append(_arrow("drive", "f", drive, "force"))
     if hand is not None:
         arrows.append(_arrow("hand", "hand", hand, "muted"))
     total = math.fsum(a.value for a in arrows)
     net = _arrow("net", "mẍ", total, "strong")
-    largest = max(abs(a.value) for a in arrows)
+    largest = max(abs(a.value) for a in (*arrows, net))  # the net too: it can outgrow every force
     s = scale.update(t, largest) if scale is not None else (1.0 / largest if largest > 0 else 0.0)
     return FreeBody(tuple(arrows), net, s)

@@ -183,14 +183,19 @@ def test_every_role_a_view_model_names_is_a_colour(theme):
         style.role("energy.nothing", theme)
 
 
-def test_the_arrow_scale_grows_at_once_and_shrinks_only_after_a_while():
+def test_the_arrow_scale_grows_at_once_and_follows_the_recent_peak_down():
     s = free_body.ArrowScale(room=1.0)
     assert s.update(0.0, 10.0) == pytest.approx(free_body.ROOM / 10.0)
     assert s.update(0.1, 20.0) == pytest.approx(free_body.ROOM / 20.0)  # at once
-    assert s.update(0.2, 1.0) == pytest.approx(free_body.ROOM / 20.0)  # small, but not for long
-    assert s.update(0.2 + free_body.SHRINK_AFTER - 0.1, 1.0) == pytest.approx(free_body.ROOM / 20.0)
-    assert s.update(0.2 + free_body.SHRINK_AFTER, 1.0) == pytest.approx(free_body.ROOM / 1.0)
-    assert s.update(10.0, 0.9) == pytest.approx(free_body.ROOM)  # within a quarter: kept
+    assert s.update(0.2, 1.0) == pytest.approx(free_body.ROOM / 20.0)  # small, but the peak is recent
+    assert s.update(0.1 + free_body.SHRINK_AFTER - 0.01, 1.0) == pytest.approx(free_body.ROOM / 20.0)
+    assert s.update(0.1 + free_body.SHRINK_AFTER + 0.01, 1.0) == pytest.approx(free_body.ROOM / 1.0)
+    for k in range(400):  # a steady swing of 5 N: its peak fills the room through every cycle
+        t = 10.0 + 0.01 * k
+        scale = s.update(t, abs(5.0 * math.sin(2 * math.pi * t)))
+        if t >= 10.25:  # its first peak
+            assert scale == pytest.approx(free_body.ROOM / 5.0)
+    assert s.update(1.0, 2.0) == pytest.approx(free_body.ROOM / 2.0)  # scrubbed back: from there
 
 
 # ------------------------------------------------------------------ the recorder
