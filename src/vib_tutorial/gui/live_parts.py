@@ -4,7 +4,7 @@
   ledger now, by `live_mass.energy_view`, its rows in their theme roles' colours; redrawn as the run goes at most
   every `ENERGY_EVERY` s (its curves move about a pixel in that).
 - `LoopTab`: the damping laws' Loop & loss tab: the hysteresis loop the run draws over its last cycle beside each
-  law's (`damping.loop_view`), and their loss factors against frequency (`damping.loss_view`).
+  law's (`damping.loop_view`), an arrowhead at its moving end, and their loss factors against frequency (`damping.loss_view`).
 - `ChangeMarks`: the dashed lines on the time plots where m, k or c changed, touched only when they change.
 - `run_row`: the speed, Start/Pause, Reset and clock a live page gives the run bar (`transport.Transport`).
 
@@ -130,6 +130,9 @@ class LoopTab(QtWidgets.QWidget):
         self.spring_line = pg.PlotDataItem(name="Spring kx")
         for item in (*self.theory_loops.values(), self.spring_line, self.loop_item):
             self.loop_plot.addItem(item)
+        self.head = pg.ArrowItem(headLen=16, tipAngle=40, tailLen=0)  # the run's end, now: which way it goes
+        self.head.setZValue(10)
+        self.loop_plot.addItem(self.head, ignoreBounds=True)
         self.legend.removeItem(self.spring_line)  # in the legend only while it's drawn
         self.note = LiveLabel(wrap=True)  # rewritten each frame, as the ledger
         mute(self.note)
@@ -158,6 +161,7 @@ class LoopTab(QtWidgets.QWidget):
         self.loss_now.setPen(pg.mkPen(c.force, width=1))
         self.spring_line.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.loop_item.setPen(pg.mkPen(c.mass[0], width=2.5))
+        self.head.setStyle(pen=pg.mkPen(c.mass[0], width=1), brush=pg.mkBrush(c.mass[0]))
 
     def draw_loss(self, view: LossView) -> None:
         for m, curve in view.loss:
@@ -168,6 +172,7 @@ class LoopTab(QtWidgets.QWidget):
 
     def draw_loop(self, view: LoopView) -> None:
         self.loop_item.setData(*view.live)
+        self._place_head(view.live.x, view.live.y)
         drawn = dict(view.theory)
         for m, item in self.theory_loops.items():
             curve = drawn.get(m)
@@ -184,6 +189,25 @@ class LoopTab(QtWidgets.QWidget):
             self._axis = view.axis
             self.loop_plot.setLabel("left", view.axis, units="N")
         self.note.setText(view.note)
+
+    def _place_head(self, x: np.ndarray, y: np.ndarray) -> None:
+        """The arrowhead at the loop's last point (where the run is now), along its last stretch on screen (the
+        axes' scales differ, so the direction is the screen's, not the data's)."""
+        n = len(x)
+        if n < 3:
+            self.head.setVisible(False)
+            return
+        back = max(1, n // 40)  # a fortieth of the cycle back: the way it's heading, not a sample's jitter
+        vb = self.loop_plot.getPlotItem().vb
+        tip = vb.mapViewToDevice(QtCore.QPointF(float(x[-1]), float(y[-1])))
+        tail = vb.mapViewToDevice(QtCore.QPointF(float(x[-1 - back]), float(y[-1 - back])))
+        if tip is None or tail is None or tip == tail:
+            self.head.setVisible(False)
+            return
+        heading = math.degrees(math.atan2(tip.y() - tail.y(), tip.x() - tail.x()))  # on screen, y down
+        self.head.setStyle(angle=heading - 180.0)  # an ArrowItem at 0° points left, turned clockwise
+        self.head.setPos(float(x[-1]), float(y[-1]))
+        self.head.setVisible(True)
 
 
 class ChangeMarks:
