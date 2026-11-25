@@ -111,7 +111,8 @@ def test_a_change_mid_run_carries_the_motion_on_and_is_marked(page):
 
 
 def test_the_drive_and_the_sweep_are_buttons_lit_while_on(page):
-    assert page.drive_on.text() == "Apply force" and not page.drive_on.styleSheet()
+    assert page.drive_on.text() == "Apply force" and "background" not in page.drive_on.styleSheet()
+    assert page.sweep_button.styleSheet() and not page.clear_button.styleSheet()  # set apart from a plain button
     page.drive_on.click()
     assert page.live.drive.on and page.drive_on.text() == "Force on: click to stop"
     assert "background-color" in page.drive_on.styleSheet()  # lit, as the Simulation page's force

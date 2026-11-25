@@ -202,8 +202,9 @@ class TrialCombo(QtWidgets.QComboBox):
 
 
 class ActionToggle(QtWidgets.QPushButton):
-    """An action that stays on until pressed again (a drive, a sweep): `off` names it, and on it says so and
-    how to stop, filled in the force's colour, as the Simulation page's *Apply force*. Checkable, so it binds
+    """An action that stays on until pressed again (a drive, a sweep): `off` names it, in bold in the force's
+    colour (set apart from a plain button: Clear points), and on it says so and how to stop, filled in the
+    force's colour, as the Simulation page's *Apply force*. Checkable, so it binds
     as a checkbox does; `set_texts` when what it does changes (a force or an unbalance); `apply_theme` from the
     page's."""
 
@@ -226,8 +227,10 @@ class ActionToggle(QtWidgets.QPushButton):
 
     def _show(self, on: bool) -> None:
         self.setText(self._texts[on])
-        self.setStyleSheet(
-            f"background-color: {colors.force}; color: {text_on(colors.force)}; font-weight: bold;" if on else ""
+        self.setStyleSheet(  # off, its text in the force's colour: an action to take, not a plain button
+            f"background-color: {colors.force}; color: {text_on(colors.force)}; font-weight: bold;"
+            if on
+            else f"color: {colors.force}; font-weight: bold;"
         )
 
 
