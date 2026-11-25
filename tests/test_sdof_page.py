@@ -124,6 +124,21 @@ def test_the_drive_and_the_sweep_are_buttons_lit_while_on(page):
     assert page.drive_on.isChecked() and page.drive_on.text() == "Unbalance spinning: click to stop"  # set quietly
 
 
+def test_the_energy_tab_redraws_at_its_own_rate_as_it_runs(page):
+    page.load_trial(trial("Ringing down"))
+    page.tabs.setCurrentIndex(view.TAB_ENERGY)
+    page.step(0.5)  # drawn, as anything but a frame is
+    drawn = page.energy.ledger.text()
+    assert "Stored now" in drawn
+    page.step(0.5)
+    drawn = page.energy.ledger.text()
+    page._advance(0.5)
+    page._draw_live(frame=True)  # the next frame, at once: the same picture, not redrawn
+    assert page.energy.ledger.text() == drawn
+    page._draw_live()  # anything but a frame (a trial, Reset, a tab, a scrub) draws it now
+    assert page.energy.ledger.text() != drawn
+
+
 def test_scrubbed_back_the_body_is_drawn_to_that_times_scale(page):
     page.load_trial(trial("Ringing down"))
     page.step(12.0)  # rung down to a few µm: the drawing magnified to match

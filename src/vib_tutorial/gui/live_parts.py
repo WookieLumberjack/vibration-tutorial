@@ -1,7 +1,8 @@
 """The Qt parts #478's live pages share (the Single oscillator): drawn from a `LiveMass`'s record.
 
 - `EnergyTab`: the energy balance over the last minute (put in, taken out, the live changes' terms, stored) and the
-  ledger now, by `live_mass.energy_view`, its rows in their theme roles' colours.
+  ledger now, by `live_mass.energy_view`, its rows in their theme roles' colours; redrawn as the run goes at most
+  every `ENERGY_EVERY` s (its curves move about a pixel in that).
 - `LoopTab`: the damping laws' Loop & loss tab: the hysteresis loop the run draws over its last cycle beside each
   law's (`damping.loop_view`), and their loss factors against frequency (`damping.loss_view`).
 - `ChangeMarks`: the dashed lines on the time plots where m, k or c changed, touched only when they change.
@@ -11,6 +12,9 @@ Working on it: `tests/test_sdof_page.py` checks them through its page.
 """
 
 from __future__ import annotations
+
+import math
+import time
 
 import numpy as np
 import pyqtgraph as pg
@@ -28,6 +32,8 @@ from .theming import add_legend, mute
 from .transport import speed_text
 
 ENERGY_SECONDS = 60.0  # the Energy tab's window (its ledger is the whole run's)
+ENERGY_EVERY = 1 / 12  # s between the tab's redraws as it runs: 60 s across the plot moves ~a pixel in 0.13 s,
+# so a redraw every frame repainted the same picture (~5 ms a frame on a Retina Mac, and the ledger ~5 more)
 SPEEDS = (0.1, 0.25, 0.5, 1.0, 2.0, 5.0)
 ENERGY_TIP = (
     "<p>Where the energy went: what the drive and your hand put in, what the damping took out, what the changes "
@@ -55,6 +61,7 @@ class EnergyTab(QtWidgets.QWidget):
         self.ledger = LiveLabel(wrap=True)  # rewritten each frame: a QLabel laid the page out again each time
         layout.addWidget(self.plot, 1)
         layout.addWidget(self.ledger)
+        self._drawn_at = -math.inf
         self.apply_theme()
 
     def apply_theme(self) -> None:
@@ -67,7 +74,12 @@ class EnergyTab(QtWidgets.QWidget):
         ):
             self.items[name].setPen(pg.mkPen(colour, width=2))
 
-    def draw(self, live: LiveMass) -> None:
+    def draw(self, live: LiveMass, frame: bool = False) -> None:
+        """The balance and the ledger now; as a `frame` of the run, at most every ENERGY_EVERY s."""
+        now = time.perf_counter()
+        if frame and now - self._drawn_at < ENERGY_EVERY:
+            return
+        self._drawn_at = now
         t, y = live.record.window(ENERGY_SECONDS)
         e = energy_view(t, y)
         if e is None:

@@ -579,7 +579,7 @@ class SdofPage(QtWidgets.QWidget):
         self._measure()
         if self._handled_at is not None and self.live.t - self._handled_at >= PLAYED_AFTER:
             self.trials.set_played()
-        self._draw_live()
+        self._draw_live(frame=True)
 
     def step(self, duration: float) -> None:
         """Run on by `duration` s of simulated time at once (tests), measuring and drawing as the frames would."""
@@ -750,8 +750,9 @@ class SdofPage(QtWidgets.QWidget):
             self._notes_html = html
 
     @coalesce.coalesced
-    def _draw_live(self) -> None:
-        """What moves: the body and its forces, the time plots, the phase plane, the readout, the energy."""
+    def _draw_live(self, frame: bool = False) -> None:
+        """What moves: the body and its forces, the time plots, the phase plane, the readout, the energy (as a
+        `frame` of the run, at the Energy tab's own rate)."""
         live = self.live
         r = live.record
         t, y = r.window(STRIP_SECONDS)
@@ -780,7 +781,7 @@ class SdofPage(QtWidgets.QWidget):
         self._show_readout()
         i = self.tabs.currentIndex()
         if i == view.TAB_ENERGY:
-            self.energy.draw(live)
+            self.energy.draw(live, frame)
         elif i == view.TAB_LOOP:
             self._draw_loop()
         elif i == view.TAB_FRF:
