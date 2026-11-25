@@ -246,7 +246,7 @@ def test_a_point_from_before_a_change_is_kept_as_earlier_and_a_new_one_replaces_
 
 def test_a_sweep_visits_its_frequencies_in_order_across_the_resonance():
     freqs = recorder.sweep_frequencies(3.18, 0.05)
-    assert freqs == tuple(sorted(freqs)) and freqs[0] == pytest.approx(3.18 / 3) and freqs[-1] == pytest.approx(9.54)
+    assert freqs == tuple(sorted(freqs)) and freqs[0] == pytest.approx(3.18 * 0.33) and freqs[-1] == pytest.approx(9.54)
     assert sum(abs(f / 3.18 - 1) <= 0.05 for f in freqs) >= 3  # the half-power band has its points
     sweep = recorder.Sweep(freqs[:3])
     assert sweep.frequency == freqs[0] and sweep.landed() == freqs[1] and sweep.landed() == freqs[2]
