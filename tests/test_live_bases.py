@@ -48,7 +48,7 @@ def test_a_heavier_mass_keeps_its_momentum_and_a_spring_books_its_work():
     live.set_system(replace(live.system, m2=0.5))  # a lighter m₂ drops a piece at its speed
     assert live.v[1] == pytest.approx(v[1]) and live.books["carried_off"] == pytest.approx(0.25 * v[1] ** 2)
     live.advance(1.0)
-    assert abs(balance(live)) < 1e-12 and live.edits == pytest.approx([live.edits[0]] * 3)
+    assert abs(balance(live)) < 1e-12 and len(live.edits) == 1  # three changes at once: one mark
 
 
 def test_on_a_rail_it_swings_at_rayleighs_frequency_and_keeps_umv_through_a_turn():

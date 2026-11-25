@@ -281,6 +281,23 @@ def _sdof_law(model: str, ghost: bool = True, tab: str = "TAB_ENERGY", trial: st
     return setup
 
 
+def _live_bases(trial: str, tab: str):
+    """Coordinates & bases' trial `trial`, live (its frame loop steps the masses), on tab `tab` (a
+    `view_models.bases` TAB_ name), at 1× (#478 Phase 4)."""
+
+    def setup(w):
+        from vib_tutorial.gui import bases
+        from vib_tutorial.view_models import bases as view
+
+        page = w.bases_page
+        w.pages.setCurrentWidget(page)
+        page.load_trial(next(i for i, t in enumerate(bases.TRIALS) if t.name.startswith(trial)))
+        page.tabs.setCurrentIndex(getattr(view, tab))
+        return page, 1.0
+
+    return setup
+
+
 def _live_pendulum(trial: str, tab: str):
     """Pendulums' trial `trial`, live (its frame loop steps the pendulum), on tab `tab` (a `view_models.pendulum`
     TAB_ name), at 1× (#478 Phase 4)."""
@@ -371,6 +388,16 @@ SCENARIOS = (
             _live_pendulum("Nearly over the top", tab),
         )
         for name, tab in (("Period", "TAB_PERIOD"), ("Phase plane", "TAB_PHASE"), ("Energy", "TAB_ENERGY"))
+    ),
+    Scenario(
+        "Coordinates & bases: one mass plucked, Coupling tab",
+        "the two masses, the plane's path and the coordinates redescribed every frame (#478 Phase 4)",
+        _live_bases("Pluck one mass", "TAB_COUPLING"),
+    ),
+    Scenario(
+        "Coordinates & bases: on a rail, Rail tab",
+        "the masses on a rail, its frequency measured as it runs (#478 Phase 4)",
+        _live_bases("On a rail", "TAB_RAIL"),
     ),
     Scenario(
         "Quarter-car: driven over its road",

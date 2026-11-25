@@ -2,11 +2,13 @@
 
 # Equations
 
-Where the equations come from: free-body diagrams and Lagrange's equations, then a rigid body in 3D.
+Where the equations come from: free-body diagrams and Lagrange's equations, the coordinates they're written in,
+then a rigid body in 3D.
 
 The pages in the order the app's tabs take them.
 
 - [Deriving the equations](#deriving-the-equations): free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum
+- [Coordinates & bases](#coordinates--bases): two masses whose motion is a point in a plane: any basis, the coupling it brings, the modes that remove it, and Rayleigh's quotient on a rail
 - [3D rigid body](#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 
 ## Deriving the equations
@@ -28,6 +30,21 @@ further over drifts away exponentially: chaos.
 ![Deriving the equations page, moments about the front axle: in x<sub>P</sub> and θ at P = 1.2 m ahead of G both M and K couple, the free-body diagram's moment balance about P keeps G's inertia force, and leaving it out (J<sub>P</sub>θ̈ = ΣM<sub>P</sub>) would give 0.932 and 1.38 Hz instead of 1.25 and 1.41](images/deriving_equations.png)
 
 ![Deriving the equations page, the double pendulum released at 120° and 120°: two releases 10⁻⁶ rad apart drift apart exponentially, the difference doubling every 0.49 s, until by 8 s they are radians apart; the lower bob's trail loops over the top](images/deriving_pendulum.png)
+
+## Coordinates & bases
+
+Two masses between two walls, tied to each other by a coupling spring, running live. Their configuration is one
+point in the (x₁, x₂) plane, which traces a Lissajous figure as they swing. Two arrows on the plane are a basis,
+x = q₁v₁ + q₂v₂: drag them while it runs and the matrices beside them, VᵀMV and VᵀKV, change, their off-diagonal
+coupling marked (static, dynamic, both or none), while the frequencies never do. The coordinates' traces below are
+described again in the new basis, the past too. Along the modes both matrices are diagonal and each coordinate is
+one clean sine; with unequal masses the modes aren't at right angles, only orthogonal through M. The Coupling tab
+splits the energy into each coordinate's own and the coupling's: plucking one mass, it beats across and back. Take
+one arrow away and the masses run on a rail, at Rayleigh's quotient: the Rail tab is built by hand, each rail's
+measured frequency landing at its angle, lowest along mode 1. Masses and springs change as it runs by their grips;
+the rail can be put on, turned and taken off, each change booked in the energy balance.
+
+![Coordinates & bases page, 1 and 2 kg masses described along their modes: both matrices diagonal, the modes 80.1° apart on the plane (69.6° and 169.5°), each coordinate one clean sine, and on the Coupling tab each keeps its own energy](images/coordinates_bases.png)
 
 ## 3D rigid body
 

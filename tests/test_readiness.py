@@ -188,7 +188,47 @@ def _pendulum() -> Ready:
     )
 
 
-READY = {r.page: r for r in (_isolation(), _duffing(), _sdof(), _pendulum())}
+def _bases_views(state):
+    import numpy as np
+
+    from vib_tutorial.view_models import bases as v
+    from vib_tutorial.view_models import live_bases as lb
+
+    s, V = v.system(state), v.basis(state)
+    live = lb.LiveBases(s)
+    live.hold(np.array([0.04, -0.01]))
+    live.let_go()
+    live.advance(1.0)
+    t, y = live.since_change()
+    x, xd = y[:, lb.COL["x1"] : lb.COL["x2"] + 1], y[:, lb.COL["v1"] : lb.COL["v2"] + 1]
+    rec = v.RailRecorder()
+    rec.update(30.0, 3.3, v.key(s), 1.0)
+    return (
+        v.plane_view(s, V, state.rail, True),
+        v.projection(V, False, x[-1]),
+        v.matrices_view(s, V, state.rail),
+        v.shares(s, V, state.rail, x, xd),
+        v.rail_view(s, rec.current(v.key(s)), rec.earlier(v.key(s)), True, 30.0),
+        lb.energy_view(t, y),
+    )
+
+
+def _bases() -> Ready:
+    from vib_tutorial.gui import bases_trials
+    from vib_tutorial.view_models.bases import BasesTrial
+
+    return Ready(
+        "bases_page",
+        lambda: BasesTrial("", ""),
+        lambda setup: BasesTrial("", "", **setup),
+        _bases_views,
+        lambda: bases_trials.TRIALS,
+        lambda: bases_trials.PROBLEMS,
+        qt_free_notes=True,
+    )
+
+
+READY = {r.page: r for r in (_isolation(), _duffing(), _sdof(), _pendulum(), _bases())}
 QT_FREE_NOTES = ["glossary", *(name for name, r in READY.items() if r.qt_free_notes)]
 
 

@@ -513,6 +513,40 @@ SYMBOLS = (
         "double-pendulum",
     ),
     Symbol(
+        "V_basis",
+        "V, v<sub>1</sub>, v<sub>2</sub>, m̃, k̃",
+        "a basis: its arrows v<sub>1</sub>, v<sub>2</sub> as the columns of V, so x = Vq; the matrices in it, "
+        "VᵀMV and VᵀKV",
+        "–, kg, N/m",
+        "bases_page",
+        "basis",
+    ),
+    Symbol(
+        "phi_mode",
+        "φ<sub>r</sub>, μ<sub>r</sub>, a<sub>r</sub>",
+        "mode r's arrow in the plane (any length); its generalized mass φ<sub>r</sub>ᵀMφ<sub>r</sub>; how much of "
+        "it a shape holds",
+        "–, kg, –",
+        "bases_page",
+        "rail",
+    ),
+    Symbol(
+        "R",
+        "R, v",
+        "Rayleigh's quotient vᵀKv/vᵀMv of a guessed shape v: an estimate of ω², never below ω<sub>1</sub>²",
+        "(rad/s)²",
+        "bases_page",
+        "rail",
+    ),
+    Symbol(
+        "energies_coord",
+        "E, E<sub>1</sub>, E<sub>2</sub>",
+        "the stored energy; the part of it each coordinate holds on its own (the rest is the coupling's)",
+        "J",
+        "bases_page",
+        "energy",
+    ),
+    Symbol(
         "chain_i",
         "m<sub>i</sub>, k<sub>i</sub>, c<sub>i</sub>, x<sub>i</sub>",
         "the chain's mass i; the spring and damper between it and the mass before (the first's, the wall); its "
@@ -596,14 +630,6 @@ SYMBOLS = (
         "N",
         "sim_page",
         "friction",
-    ),
-    Symbol(
-        "R",
-        "R, v",
-        "Rayleigh's quotient vᵀKv/vᵀMv of a guessed shape v: an estimate of ω², never below ω<sub>1</sub>²",
-        "(rad/s)²",
-        "sim_page",
-        "rayleigh-quotient",
     ),
     Symbol(
         "mu",

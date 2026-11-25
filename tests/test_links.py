@@ -13,6 +13,7 @@ def notes() -> dict[str, str]:
     from vib_tutorial.gui import (
         active_control,
         background,
+        bases,
         beams_plates,
         cms_notes,
         complex_modes,
@@ -58,6 +59,7 @@ def notes() -> dict[str, str]:
         "transient_page": transient.NOTES_HTML,
         "isolation_page": isolation.NOTES_HTML,
         "deriving_page": deriving.NOTES_HTML,
+        "bases_page": bases.NOTES_HTML,
         "sim_page": background.BACKGROUND_HTML,
         "frf_page": frf_matrix.THEORY_HTML,
         "complex_page": complex_modes.NOTES_HTML,
