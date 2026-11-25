@@ -3,6 +3,7 @@
     uv run python scripts/mac_timings.py                    # every scenario, ~3 minutes
     uv run python scripts/mac_timings.py --seconds 4 rotor  # just the scenarios whose label has "rotor"
     uv run python scripts/mac_timings.py rub                # the full rub, on its opening tabs and on the Rub tab
+    uv run python scripts/mac_timings.py "single oscillator" # the live mass, under each damping law
     uv run python scripts/mac_timings.py --app "dist/Vibration Tutorial.app/Contents/MacOS/vib-tutorial"
 
 It opens the window on the real display (not offscreen: the point is the display's own painting, which
@@ -260,6 +261,26 @@ def _gyroscope(tab: str):
     return setup
 
 
+def _sdof_law(model: str, ghost: bool = True, tab: str = "TAB_ENERGY", trial: str = "Ringing down"):
+    """The Single oscillator's `trial` under damping law `model` (a `Model` name), the viscous ghost on or off,
+    on tab `tab` (a `view_models.sdof` TAB_ name), at 1× (#478: hysteretic reported slow on the Mac)."""
+
+    def setup(w):
+        from vib_tutorial.core.damping_models import MODELS, Model
+        from vib_tutorial.gui import sdof
+        from vib_tutorial.view_models import sdof as view
+
+        page = w.sdof_page
+        w.pages.setCurrentWidget(page)
+        page.load_trial(next(i for i, t in enumerate(sdof.TRIALS) if t.name.startswith(trial)))
+        page.model.setCurrentIndex(MODELS.index(Model[model]))  # a live change: the run carries on
+        page.ghost_on.setChecked(ghost)
+        page.tabs.setCurrentIndex(getattr(view, tab))
+        return page, 1.0
+
+    return setup
+
+
 SCENARIOS = (
     Scenario("Simulation: 4 masses, resonance building up", "baseline: the first trial", _sim_trial),
     Scenario("Simulation: 8 masses at 1e8 N/m, 50 Hz", "#202 linear steps in Rust, #203 strip chart", _stiff(0.0)),
@@ -301,6 +322,30 @@ SCENARIOS = (
         "Single oscillator: live, a sweep building its FRF",
         "the live mass, its free-body diagram and the recorder (#478)",
         _live_sdof("Building the frequency response"),
+    ),
+    *(
+        Scenario(
+            f"Single oscillator: ringing down, {law.lower()}{'' if ghost else ', no ghost'}, Energy tab",
+            "a damping law's run beside its viscous ghost (#478: hysteretic reported slow on the Mac)",
+            _sdof_law(law, ghost),
+        )
+        for law, ghost in (
+            ("VISCOUS", True),
+            ("HYSTERETIC", True),
+            ("HYSTERETIC", False),
+            ("COULOMB", True),
+            ("ZENER", True),
+        )
+    ),
+    Scenario(
+        "Single oscillator: ringing down, hysteretic, Loop & loss tab",
+        "the loop redrawn each frame beside each law's (#478)",
+        _sdof_law("HYSTERETIC", tab="TAB_LOOP"),
+    ),
+    Scenario(
+        "Single oscillator: driven sweep, hysteretic, Frequency response tab",
+        "its c following the drive's frequency (#478)",
+        _sdof_law("HYSTERETIC", tab="TAB_FRF", trial="Building the frequency response"),
     ),
     Scenario(
         "Quarter-car: driven over its road",
