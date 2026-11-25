@@ -44,6 +44,7 @@ class LoopView:
     spring: Curve  # kx, dashed, when the spring's force is in
     energy: float  # J, the energy the live loop encloses
     note: str
+    axis: str = "Damping force"  # what the loops plot: the damping's force, or the spring's with it
 
 
 def element_force(t: np.ndarray, v: np.ndarray, f: np.ndarray, mass: float) -> np.ndarray:
@@ -58,7 +59,8 @@ def loop_view(
 ) -> LoopView:
     """The last cycle's loop (`period`: the drive's, or the ringing's; None: nothing to draw yet)."""
     m = matched(trial)
-    empty = LoopView(Curve.empty(), (), Curve.empty(), 0.0, "Pluck the mass or drive it: its loop is drawn here.")
+    axis = "Damping force" if trial.damping_only else "Spring + damping force"
+    empty = LoopView(Curve.empty(), (), Curve.empty(), 0.0, "Pluck the mass or drive it: its loop is drawn here.", axis)
     if period is None or t.size < 8 or t[-1] - t[0] < period:
         return empty
     i0 = int(np.searchsorted(t, t[-2] - period))
@@ -87,7 +89,9 @@ def loop_view(
         f"{fmt(abs(enclosed), 'J', smallest='µ')}: what the damping took out that cycle (a viscous damper's "
         f"πcΩX² there is {fmt(viscous, 'J', smallest='µ')})."
     )
-    return LoopView(Curve(xc, shown), tuple(theory), spring, enclosed, note)
+    if not trial.damping_only:
+        note += " With the spring's kx in, the loop leans along its dashed line: the lean is the stiffness, its width the damping."
+    return LoopView(Curve(xc, shown), tuple(theory), spring, enclosed, note, axis)
 
 
 # ------------------------------------------------------------------ stiffness and loss, the phasors, the FRF

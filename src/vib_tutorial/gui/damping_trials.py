@@ -418,5 +418,7 @@ TIPS = {
     "friction_mm": "<p>The amplitude X where friction is matched to c: F<sub>f</sub> = πcω<sub>n</sub>X/4.</p>",
     "relax": "<p>Where the Zener element's loss factor peaks, as a multiple of f<sub>n</sub>.</p>",
     "ghost": "<p>A viscous mass with the damper c, plucked and driven as this one is: drawn dashed beside it.</p>",
-    "damping_only": "<p>Draw only the damping part of the force, without the spring's kx.</p>",
+    "damping_only": "<p>Ticked, the loops are the damper's force alone. Untick it to add the spring's force kx, "
+    "as a test machine measures a part: the loop then leans along the spring's dashed line, the lean the "
+    "stiffness and the width the damping.</p>",
 }
