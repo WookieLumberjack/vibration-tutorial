@@ -226,7 +226,7 @@ class SdofPage(QtWidgets.QWidget):
         cv.addWidget(self.force_plot, 1)
         cv.addWidget(self.readout)
 
-        # --- right: Frequency response, Energy, Poles, Theory
+        # --- right: Energy, Frequency response, Loop & loss, Poles, Theory
         frf = QtWidgets.QWidget()
         fv = QtWidgets.QVBoxLayout(frf)
         self.mag_plot = plot("Amplification |X|k/F", None, "Frequency", "Hz", log_x=True, log_y=True, height=140)
@@ -331,8 +331,8 @@ class SdofPage(QtWidgets.QWidget):
         self.notes.setHtml(NOTES_HTML)
         self._notes_html = NOTES_HTML  # redrawn with the course map's progress as the notes show (_refresh_map)
         self.tabs = QtWidgets.QTabWidget()
-        self.tabs.addTab(frf, "Frequency response")
         self.tabs.addTab(self.energy, "Energy")
+        self.tabs.addTab(frf, "Frequency response")
         self.tabs.addTab(self.loop_tab, "Loop && loss")
         self.tabs.addTab(poles, "Poles && phase plane")
         self.tabs.addTab(self.notes, "Theory")
