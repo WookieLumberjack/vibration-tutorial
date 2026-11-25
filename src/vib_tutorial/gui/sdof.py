@@ -259,12 +259,31 @@ class SdofPage(QtWidgets.QWidget):
         self.frf_ghost = pg.PlotDataItem()  # the viscous ghost's, under another law
         self.earlier_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=6) for _ in range(2)]
         self.point_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=8) for _ in range(3)]
+        self.join_items = [pg.PlotDataItem() for _ in range(3)]  # a smooth curve through the points, under them
         self.drive_items = [pg.PlotDataItem(pen=None, symbol="o", symbolSize=12) for _ in range(2)]
         self.fn_lines = [pg.InfiniteLine(angle=90) for _ in range(2)]
         for p, items in (
-            (self.mag_plot, (self.theory_items[0], self.fn_lines[0], self.earlier_items[0], self.point_items[0])),
-            (self.lag_plot, (self.theory_items[1], self.fn_lines[1], self.earlier_items[1], self.point_items[1])),
-            (self.nyq_plot, (self.theory_items[2], self.point_items[2])),
+            (
+                self.mag_plot,
+                (
+                    self.theory_items[0],
+                    self.fn_lines[0],
+                    self.earlier_items[0],
+                    self.join_items[0],
+                    self.point_items[0],
+                ),
+            ),
+            (
+                self.lag_plot,
+                (
+                    self.theory_items[1],
+                    self.fn_lines[1],
+                    self.earlier_items[1],
+                    self.join_items[1],
+                    self.point_items[1],
+                ),
+            ),
+            (self.nyq_plot, (self.theory_items[2], self.join_items[2], self.point_items[2])),
         ):
             for item in items:
                 p.addItem(item)
@@ -728,6 +747,8 @@ class SdofPage(QtWidgets.QWidget):
         for item in self.point_items:
             item.setSymbolPen(None)
             item.setSymbolBrush(pg.mkBrush(c.mass[0]))
+        for item in self.join_items:
+            item.setPen(pg.mkPen(c.mass[0], width=1.5))
         for item in self.drive_items:
             item.setSymbolPen(pg.mkPen(c.force, width=2))
             item.setSymbolBrush(None)
@@ -902,6 +923,8 @@ class SdofPage(QtWidgets.QWidget):
         self.point_items[0].setData(*v.points)
         self.point_items[1].setData(*v.lags)
         self.point_items[2].setData(*v.nyquist)
+        for item, curve in zip(self.join_items, (v.joined, v.joined_lag, v.joined_nyquist)):
+            item.setData(*curve)
         self.earlier_items[0].setData(*v.earlier)
         self.earlier_items[1].setData(*v.earlier_lags)
         self.theory_items[0].setData(*v.theory)
