@@ -48,7 +48,7 @@ from .drag import DragPoint
 from .frame_loop import FrameLoop
 from .free_body_view import FreeBodyView
 from .layouts import FlowLayout
-from .lesson import Dot, Form, TrialBox, combo, note_label, plot, readout_label, set_quietly, three_panes
+from .lesson import Dot, Form, LiveLabel, TrialBox, combo, note_label, plot, set_quietly, three_panes
 from .live_body import LiveMassView
 from .live_parts import ChangeMarks, EnergyTab, LoopTab, run_row
 from .notes_view import NotesBrowser
@@ -212,7 +212,7 @@ class SdofPage(QtWidgets.QWidget):
         self.marks = ChangeMarks(self.strip, self.force_plot)
         self.scrub = Scrub(self.strip, self.force_plot)
         self.scrub.scrubbed.connect(self._on_scrubbed)
-        self.readout = readout_label()
+        self.readout = LiveLabel(wrap=True)  # rewritten each frame as the swing decays: no layout pass each time
 
         centre = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(centre)
