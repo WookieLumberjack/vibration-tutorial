@@ -134,13 +134,13 @@ class LiveMassView(Grabbable, pg.PlotWidget):
         c = f"c = {fmt(damping, 'N·s/m', largest='M', smallest='m')}"
         self.c_label.setText(c if damper is None else damper)  # drawn at the next `show`
 
-    def fit(self, peak: float) -> None:
-        """Magnify the motion so the largest recent swing, `peak` (m), fills SWING: at once if it grew, slowly as
-        it dies away; never under the hand."""
+    def fit(self, peak: float, at_once: bool = False) -> None:
+        """Magnify the motion so the largest recent swing, `peak` (m), fills SWING: at once if it grew (or
+        `at_once`: scrubbed to another time), slowly as it dies away; never under the hand."""
         if self.held is not False:
             return
         target = SWING / max(peak, MIN_PEAK)
-        self.gain = target if target < self.gain else self.gain + 0.03 * (target - self.gain)
+        self.gain = target if at_once or target < self.gain else self.gain + 0.03 * (target - self.gain)
 
     def show(self, x: float, ghost: float | None = None) -> None:
         """The mass at displacement x (m); `ghost`, another mass's displacement, outlined."""
