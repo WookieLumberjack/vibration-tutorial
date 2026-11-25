@@ -3,7 +3,7 @@
 The mass is stepped as it runs (`view_models/live_mass.LiveMass`: the chain's exact FOH `Simulator` with one mass),
 not a response worked out in advance and played back. Its damper follows a law the reader picks as it runs:
 viscous, or hysteretic, Coulomb friction or the Zener element, each matched to c at f<sub>n</sub> (the Damping
-models page's, merged here: one example, one page), the viscous ghost beside it, dashed, plucked and driven as it
+models page's, merged here: one example, one page), the viscous ghost beside it, in grey, plucked and driven as it
 is. Left: the oscillator's m, k, c and the damper's law, the drive, then the Things to try (setups to go back to;
 their predictions are asked once the reader has handled the system). Centre: the mass on its spring and damper
 (`live_body.LiveMassView`: pluck it, or drag the grips on the mass, the spring and the damper to change m, k and c
@@ -147,7 +147,7 @@ class SdofPage(QtWidgets.QWidget):
         box.add("Damper:", self.model, TIPS["model"])
         self.friction_mm = box.number("Friction at X:", 0.01, 1000.0, 10.0, 2, " mm", TIPS["friction_mm"])
         self.relax = box.number("Zener peak at:", 0.01, 100.0, 1.0, 3, " × fₙ", TIPS["relax"])
-        self.ghost_on = QtWidgets.QCheckBox("Viscous ghost beside it (dashed)")
+        self.ghost_on = QtWidgets.QCheckBox("Viscous ghost beside it (grey)")
         self.ghost_on.setToolTip(TIPS["ghost"])
         box.row(self.ghost_on)
         self.info = note_label()
@@ -677,7 +677,9 @@ class SdofPage(QtWidgets.QWidget):
         self.sweep_button.apply_theme()
         self.scrub.apply_theme()
         self.x_item.setPen(pg.mkPen(c.mass[0], width=2))
-        self.ghost_item.setPen(pg.mkPen(c.grey, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
+        self.ghost_item.setPen(
+            pg.mkPen(c.grey, width=1.5)
+        )  # solid: a long dashed line, restroked each frame, took 4-6 ms a frame on a Retina Mac
         self.frf_ghost.setPen(pg.mkPen(c.grey, width=1, style=QtCore.Qt.PenStyle.DashLine))
         self.loop_tab.apply_theme()
         self.peak_item.setSymbolPen(None)
