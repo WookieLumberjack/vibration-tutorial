@@ -18,7 +18,8 @@ booked as its own term:
   carried to the next (`Steps`' `StepClock`): it's a `stepping.Stepper`.
 
 `changed_at` is the time of the last change (the system, the rail, a let-go): the rail's frequency is measured only
-after it. `edits` keeps the changes' times, for the time plot's marks.
+after it. `edits` keeps the changes' times, for the time plot's marks: a drag's run of changes is one mark, at its
+last.
 
 The record (`COLUMNS`) keeps each sample's x and v, the energies with the parameters of the time, and the ledger,
 so `energy_view` shows the balance closing through every change.
@@ -51,6 +52,7 @@ COLUMNS = (
     "rail_work",
 )
 COL = {name: i for i, name in enumerate(COLUMNS)}
+MARK_GAP = 0.25  # s: changes closer than this (a grip's or the rail's drag) share one mark on the time plot
 BOOKS = ("released", "spring_work", "capture_loss", "carried_off", "rail_work")
 
 
@@ -111,8 +113,12 @@ class LiveBases:
         self.steps = self._stepper(np.concatenate([s, s_dot]), self.t, self.steps.dissipated)
 
     def _changed(self) -> None:
+        """A change now: measured from, and marked (a drag's run of changes, within MARK_GAP, as one mark)."""
         self.changed_at = self.t
-        self.edits.append(self.t)
+        if self.edits and self.t - self.edits[-1] < MARK_GAP:
+            self.edits[-1] = self.t
+        else:
+            self.edits.append(self.t)
 
     # ------------------------------------------------------------- what the reader does
     def set_system(self, system: TwoMass) -> None:

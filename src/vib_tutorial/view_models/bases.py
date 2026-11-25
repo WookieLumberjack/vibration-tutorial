@@ -133,7 +133,10 @@ class PlaneView:
     labels: tuple[str, ...]
     grid: tuple[np.ndarray, np.ndarray]  # the coordinates' lines (mm, NaN-broken)
     modes: tuple[tuple[np.ndarray, np.ndarray], ...]  # each mode's line through the origin (mm), if shown
-    mode_tips: tuple[tuple[float, float], ...]  # where each mode's label goes (mm)
+    mode_tips: tuple[
+        tuple[float, float], ...
+    ]  # where each mode's label goes (mm): its line's far end, from the arrows'
+
     rail: tuple[np.ndarray, np.ndarray]  # the rail (mm), or empty
     span: float  # the plane's half-width (mm)
     note: str
@@ -175,7 +178,7 @@ def plane_view(s: TwoMass, V: np.ndarray, rail: bool, show_modes: bool) -> Plane
     _, shapes = s.modes()
     modes = tuple(_line(shapes[:, i], REACH * 1.2) for i in range(2)) if show_modes else ()
     mode_tips = (
-        tuple((float(shapes[0, i] * 0.85 * REACH * MM), float(shapes[1, i] * 0.85 * REACH * MM)) for i in range(2))
+        tuple((float(-shapes[0, i] * 0.85 * REACH * MM), float(-shapes[1, i] * 0.85 * REACH * MM)) for i in range(2))
         if show_modes
         else ()
     )
@@ -239,9 +242,10 @@ def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
     if not rail and singular(V):
         return MatricesView((), (), "The arrows lie along one line: they don't make a basis.")
     Mt, Ct, Kt = (transformed(B, A) for A in (M, C, K))
-    shown = [_matrix("VᵀMV", "kg", Mt), _matrix("VᵀKV", "N/m", Kt)]
+    names = ("v₁ᵀMv₁", "v₁ᵀKv₁", "v₁ᵀCv₁") if rail else ("VᵀMV", "VᵀKV", "VᵀCV")
+    shown = [_matrix(names[0], "kg", Mt), _matrix(names[1], "N/m", Kt)]
     if s.c > 0:
-        shown.append(_matrix("VᵀCV", "N·s/m", Ct))
+        shown.append(_matrix(names[2], "N·s/m", Ct))
     if rail:
         f = rayleigh_hz(V[:, 0], M, K)
         note = (
@@ -391,4 +395,4 @@ def rail_view(
                 f" Rayleigh's quotient is never below f₁ = {sig(float(hz[0]), 4)} Hz nor above f₂ = "
                 f"{sig(float(hz[1]), 4)} Hz, and touches each along its mode."
             )
-    return RailView(pts, old, quotient, levels, modes, now, (0.0, 180.0), (0.0, y_top), note)
+    return RailView(pts, old, quotient, levels, modes, now, (-4.0, 184.0), (0.0, y_top), note)

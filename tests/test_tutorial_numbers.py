@@ -5243,3 +5243,71 @@ def test_rigid_body_drift_numbers():
 if __name__ == "__main__":
     UNCHECKED.write_text(listing(unchecked_numbers()), encoding="utf-8")
     print(f"wrote {UNCHECKED}", file=sys.stderr)
+
+
+def test_bases_worked_example():
+    """The figures Coordinates & bases' worked example quotes, on the page's defaults, and from the rounded figures
+    they show."""
+    import math
+
+    from vib_tutorial.core.bases import TWO_PI, TwoMass, direction, rayleigh_hz
+    from vib_tutorial.view_models.bases import BasesTrial, system
+
+    s = system(BasesTrial("", ""))
+    assert s == TwoMass(1.0, 1.0, 400.0, 100.0, 400.0, 0.0)
+    M, _, K = s.matrices()
+    assert K.tolist() == [[500.0, -100.0], [-100.0, 500.0]]
+    hz, _ = s.modes()
+    f1, f2 = quoted("bases", "3.183"), quoted("bases", "3.898")
+    assert hz == pytest.approx([f1, f2], abs=5e-4)
+    assert math.sqrt(400.0) / TWO_PI == pytest.approx(f1, abs=5e-4)
+    beat = quoted("bases", "1.398")
+    assert 1 / (f2 - f1) == pytest.approx(beat, abs=2e-3) and 1 / (hz[1] - hz[0]) == pytest.approx(beat, abs=5e-4)
+    assert beat / 2 == pytest.approx(quoted("bases", "0.699"), abs=5e-4)
+    assert rayleigh_hz(direction(0.0), M, K) == pytest.approx(quoted("bases", "3.559"), abs=5e-4)
+    assert rayleigh_hz(direction(45.0), M, K) == pytest.approx(f1, abs=5e-4)
+    _, U = TwoMass(m2=2.0).modes()
+    apart = math.degrees(math.acos(abs(float(U[:, 0] @ U[:, 1]))))
+    assert apart == pytest.approx(quoted("bases", "80.1"), abs=0.05)
+
+
+def test_bases_trials():
+    """The numbers Coordinates & bases' Things to try quote."""
+    import math
+
+    from vib_tutorial.core.bases import TwoMass, angle, direction, rayleigh_hz, transformed
+    from vib_tutorial.gui.bases_trials import TRIALS
+    from vib_tutorial.view_models.bases import basis, system
+
+    def note(name: str) -> str:
+        return next(t for t in TRIALS if t.name.startswith(name)).note
+
+    def says(name: str, *numbers: str) -> None:
+        for n in numbers:
+            assert n in note(name), (name, n)
+
+    says("Pluck one mass", "0.699 s", "1.398 s")
+    weak = TwoMass(k2=10.0).modes()[0]
+    assert f"{weak[1]:.3f}" == "3.262" and f"{1 / (weak[1] - weak[0]):.1f}" == "12.7"
+    t = next(t for t in TRIALS if t.name.startswith("The arrows along"))
+    M, _, K = system(t).matrices()
+    V = basis(t)
+    assert transformed(V, M) == pytest.approx(np.eye(2), abs=1e-6)
+    assert transformed(V, K) == pytest.approx(np.diag([400.0, 600.0]), abs=1e-4)
+    says("The arrows along", "3.183 Hz", "3.898 Hz", "400 and 600 N/m")
+    for name in ("Unequal masses", "A stiffer coupling"):
+        s = system(next(t for t in TRIALS if t.name.startswith(name)))
+        f, P = s.modes()
+        says(name, f"{f[0]:.3f}", f"{f[1]:.3f}", f"{angle(P[:, 0]):.1f}°")
+    _, P = TwoMass(m2=2.0).modes()
+    says("Unequal masses", f"{angle(P[:, 1]):.1f}°", f"{math.degrees(math.acos(abs(float(P[:, 0] @ P[:, 1])))):.1f}°")
+    t = next(t for t in TRIALS if t.name.startswith("Coupled through the masses"))
+    M, _, K = system(t).matrices()
+    V = basis(t)
+    assert transformed(V, K) == pytest.approx(np.diag([400.0, 600.0]), abs=1e-4)
+    assert transformed(V, M)[0, 1] == pytest.approx(-0.5, abs=1e-6)
+    says("Coupled through the masses", "69.6°", "169.5°", "−0.5 kg")
+    s = TwoMass()
+    M, _, K = s.matrices()
+    assert rayleigh_hz(direction(0.0), M, K) == pytest.approx(3.559, abs=5e-4)
+    says("On a rail", "500 N/m", "3.559 Hz")

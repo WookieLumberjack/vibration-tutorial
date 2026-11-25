@@ -1076,6 +1076,26 @@ def pendulums():
     save(w, "pendulums")
 
 
+def coordinates_bases():
+    """Two masses of 1 and 2 kg described along their modes: both matrices diagonal, the modes 80° apart, each
+    coordinate one sine."""
+    from PySide6 import QtWidgets
+
+    from vib_tutorial.gui import bases
+
+    w = window()
+    page = w.bases_page
+    w.pages.setCurrentWidget(page)
+    page.loop.enabled = False
+    page.load_trial(next(i for i, t in enumerate(bases.TRIALS) if t.name.startswith("Unequal masses")))
+    page.step(6.0)
+    settle()
+    for label in page.findChildren(QtWidgets.QLabel):
+        if label.isVisible() and len(label.text()) > 40:
+            print(" ", label.text())
+    save(w, "coordinates_bases")
+
+
 def periodic_forcing():
     lesson("periodic_page", 1, "periodic_forcing")  # resonance through the third harmonic
 
@@ -1391,6 +1411,7 @@ SHOTS = [
     periodic_forcing,
     deriving_equations,
     deriving_pendulum,
+    coordinates_bases,
     rigid_body,
     energy_methods,
     beams_plates,

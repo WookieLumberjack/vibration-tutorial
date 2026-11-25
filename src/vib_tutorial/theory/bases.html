@@ -1,0 +1,147 @@
+<before>
+<a href="page:deriving_page#coupling">Coordinates and coupling</a>
+<a href="page:deriving_page#lagrange">Lagrange's equations</a>
+</before>
+<goals page="bases_page">
+<li trial="1" problem="beat-time">see two coupled masses trade their energy back and forth, and time it;</li>
+<li trial="2" problem="coupling-kind">turn the basis until the coupling vanishes, and find the modes there;</li>
+<li trial="6" problem="rail-frequency">hold the motion to a line and see why Rayleigh's quotient is lowest along mode 1.</li>
+</goals>
+<p>This page builds on <a href="page:deriving_page#coupling">Deriving the equations</a>, where the car's coupling
+changed with the coordinates it was written in. Here the system is as small as coupling allows, two masses, and
+the coordinates are arrows you drag while it runs. Changing the basis this way is the move behind modal coordinates,
+Rayleigh–Ritz models and the reduced models of whole structures.</p>
+
+<h3><a name="plane"></a>Two masses, one point</h3>
+<p>Two masses sit between two walls, each tied to its wall by a spring and to the other by a third, the
+<b>coupling spring</b> <m>k<sub>2</sub></m>, with a damper beside each spring:</p>
+<p align="center"><img src="fig:two-masses"></p>
+<p>Each mass's free-body diagram (or Lagrange's equations) gives <m>Mẍ + Cẋ + Kx = 0</m> with</p>
+<eq>M = \begin{bmatrix} m_1 & 0 \\ 0 & m_2 \end{bmatrix}, \qquad
+K = \begin{bmatrix} k_1 + k_2 & -k_2 \\ -k_2 & k_2 + k_3 \end{bmatrix}</eq>
+<p>and <m>C</m> like <m>K</m>, with <m>c</m> for each spring. Its configuration, both displacements at once, is
+one <b>point</b> <m>x = (x<sub>1</sub>, x<sub>2</sub>)</m> in a plane, and the page draws it there as it
+moves. Pluck one mass and the point traces a curve that fills a box: the sum of two sines at frequencies
+that aren't in a whole-number ratio, a <b>Lissajous figure</b> <cite>lissajous</cite>.</p>
+
+<h3><a name="basis"></a>A basis: two arrows</h3>
+<p>The axes <m>x<sub>1</sub></m> and <m>x<sub>2</sub></m> are one way to say where the point is. Any two arrows
+<m>v<sub>1</sub></m> and <m>v<sub>2</sub></m> that don't lie along one line do as well: every point is some
+amount of each,</p>
+<p align="center"><img src="fig:basis"></p>
+<eq>x = q_1 v_1 + q_2 v_2 = V q, \qquad V = \begin{bmatrix} v_1 & v_2 \end{bmatrix}</eq>
+<p>and the numbers <m>q<sub>1</sub></m>, <m>q<sub>2</sub></m> are the point's <b>coordinates</b> in that
+basis. On the plane, the dashed parallelogram from the point to the two arrows' lines shows them. Put
+<m>x = Vq</m> into the equations and multiply by <m>Vᵀ</m> <cite>strang</cite>:</p>
+<eq>(V^\mathsf{T} M V)\,\ddot{q} + (V^\mathsf{T} C V)\,\dot{q} + (V^\mathsf{T} K V)\,q = 0</eq>
+<p>Why <m>Vᵀ</m>, and not <m>V<sup>−1</sup></m>? Because the energies say so: the kinetic energy
+<m>½ẋᵀMẋ = ½q̇ᵀ(VᵀMV)q̇</m> and the potential <m>½xᵀKx = ½qᵀ(VᵀKV)q</m>, so these are the matrices
+<a href="page:deriving_page#lagrange">Lagrange's equations</a> give in <m>q</m>. They stay symmetric, and
+each stays positive.</p>
+
+<h3><a name="coupling"></a>Coupling belongs to the description</h3>
+<p>The off-diagonal terms are the <b>coupling</b>: through <m>VᵀKV</m> a coordinate's displacement pushes
+on the other (static coupling), through <m>VᵀMV</m> its acceleration does (dynamic coupling). Turn the
+arrows, and the coupling changes. In the masses' own displacements (the arrows along the axes) the coupling is the spring
+between them, <m>−k<sub>2</sub></m>, and the masses' matrix is diagonal. With unequal masses and
+<m>k<sub>1</sub> = k<sub>3</sub></m>, the arrows along (1, 1) and (1, −1) make <m>VᵀKV</m> diagonal
+instead, and <m>VᵀMV</m> couples. Most arrows give both.</p>
+<p>But the motion doesn't change, and so neither do its frequencies:</p>
+<eq>\det(V^\mathsf{T} K V - \omega^2 V^\mathsf{T} M V) = (\det V)^2 \det(K - \omega^2 M)</eq>
+<p>The roots <m>ω<sub>r</sub></m> are the same in every basis. The page works them out from the matrices
+beside the plane, and they never move however the arrows turn. Only when the arrows lie along one line
+(<m>det V = 0</m>) does the description fail: then most points can't be reached, as the page says.</p>
+
+<h3><a name="modes"></a>The modes: the basis that uncouples</h3>
+<p>There is one pair of directions in which both matrices are diagonal at once. Along them the equations
+come apart into two single oscillators, and each coordinate moves on its own, a single sine. Those
+directions are the <b>modes</b>, the solutions of</p>
+<eq>K v = \omega^2 M v</eq>
+<p>For two modes <m>r ≠ s</m>, multiply <m>Kv<sub>r</sub> = ω<sub>r</sub>²Mv<sub>r</sub></m> by
+<m>v<sub>s</sub>ᵀ</m>, swap them, and subtract: since <m>K</m> and <m>M</m> are symmetric,
+<m>(ω<sub>r</sub>² − ω<sub>s</sub>²) v<sub>s</sub>ᵀMv<sub>r</sub> = 0</m>. So distinct modes are
+<b>orthogonal through M</b>, <m>v<sub>s</sub>ᵀMv<sub>r</sub> = 0</m>, and through <m>K</m> too. That
+is exactly the two off-diagonal terms vanishing <cite>thomson</cite>. It isn't the same as being at right
+angles in the plane: with <m>m<sub>1</sub> = m<sub>2</sub></m> the modes are perpendicular, but with
+<m>m<sub>2</sub> = 2m<sub>1</sub></m> they are 80.1° apart. Drag an arrow near a mode and it snaps onto
+it; snap both, and both matrices show nought off the diagonal.</p>
+<p>When the system is symmetric (<m>m<sub>1</sub> = m<sub>2</sub></m>, <m>k<sub>1</sub> = k<sub>3</sub></m>),
+symmetry fixes the modes at ±45° whatever the coupling spring: in phase, the coupling spring isn't
+stretched, <m>ω<sub>1</sub>² = k<sub>1</sub>/m</m>; opposed, it's stretched twice as much on each mass,
+<m>ω<sub>2</sub>² = (k<sub>1</sub> + 2k<sub>2</sub>)/m</m>. Unequal masses or walls turn the modes, and
+then the coupling spring turns them too: a stiffer one pulls mode 1 towards moving together.</p>
+
+<h3><a name="energy"></a>The energy in each coordinate</h3>
+<p>The stored energy, written in the coordinates, is each coordinate's own part, <m>E<sub>1</sub></m> and
+<m>E<sub>2</sub></m>, and the coupling's:</p>
+<eq>E = E_1 + E_2 + \tilde m_{12}\dot q_1 \dot q_2 + \tilde k_{12} q_1 q_2</eq>
+<eq>E_i = \tfrac12 \tilde m_{ii}\dot q_i^2 + \tfrac12 \tilde k_{ii} q_i^2</eq>
+<p>with <m>m̃ = VᵀMV</m> and <m>k̃ = VᵀKV</m>. The Coupling tab draws the three as it runs. Where the
+coordinates are coupled, energy passes between them through the last two terms: pluck one mass and its
+energy drains into the other and back, the <b>beat</b>. In the modes the coupling terms are nought, and each
+coordinate keeps its share for ever (less what its dampers take). Change the arrows and the tab redraws the
+past too, in the new coordinates: the same motion, described again.</p>
+
+<h3><a name="rail"></a>On a rail: Rayleigh's quotient</h3>
+<p>Take one arrow away and hold the motion to the line along the other, <m>x = q<sub>1</sub>v<sub>1</sub></m>,
+as if the point slid on a rail. Then there is one coordinate, and the matrices are numbers: the rail is a single
+oscillator with mass <m>v<sub>1</sub>ᵀMv<sub>1</sub></m> and stiffness <m>v<sub>1</sub>ᵀKv<sub>1</sub></m>,
+so it swings at</p>
+<eq>\omega^2 = R(v) = \frac{v^\mathsf{T} K v}{v^\mathsf{T} M v}</eq>
+<p><b>Rayleigh's quotient</b> <cite>rayleigh-sound</cite>. Write <m>v</m> in the modes,
+<m>v = a<sub>1</sub>φ<sub>1</sub> + a<sub>2</sub>φ<sub>2</sub></m>, with <m>φ<sub>r</sub></m> the
+modes' arrows: their orthogonality leaves</p>
+<eq>R = \frac{a_1^2 \mu_1 \omega_1^2 + a_2^2 \mu_2 \omega_2^2}{a_1^2 \mu_1 + a_2^2 \mu_2}, \qquad \mu_r = \varphi_r^\mathsf{T} M \varphi_r</eq>
+<p>a weighted average of <m>ω<sub>1</sub>²</m> and <m>ω<sub>2</sub>²</m>. So no rail is slower than mode 1
+or faster than mode 2, and a rail a little off mode 1, <m>a<sub>2</sub></m> small beside <m>a<sub>1</sub></m>,
+errs only by <m>(a<sub>2</sub>/a<sub>1</sub>)²</m>: the quotient is flat at its minimum. The Rail tab is built by hand: each rail you try lands its
+measured frequency at its angle, and <i>Show the theory</i> draws the quotient through them. Holding a system
+to fewer shapes than it has can only stiffen it, which is why a frequency from a guessed shape errs high.</p>
+<p>A rail can be put on, turned and taken off as it runs. Each is a physical event: the rail pushes only
+across itself, so the momentum along it, <m>vᵀMẋ</m>, is kept, and the point's motion across the rail is
+taken away. Put on, the point is moved to the nearest place on the rail; turned, it's carried round at the
+same distance from the middle. Each costs or adds energy, which the Energy tab books as your hand's work on
+the rail. Taken off, the masses run on free from where they were, with nothing lost.</p>
+
+<h3><a name="live"></a>Changing it as it runs</h3>
+<p>The grips on the masses and springs (and the boxes) change them while it runs, and the motion carries on by
+the physics, as on the Single oscillator: a spring changed at a stretch books <m>½xᵀΔKx</m>; a heavier mass
+catches its extra at rest and keeps its momentum; a lighter one drops a piece at its speed. A dashed line on the
+time plot marks each change. The page steps the motion exactly, by the matrix exponential, a hundred
+times a period of the faster mode, so a stiff spring can't make it unstable.</p>
+
+<h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
+<p>The page opens on two 1 kg masses, 400 N/m to each wall and 100 N/m between, undamped, at rest, the arrows
+along the axes. Drag the point to (50, 0) mm on the plane, so only <m>m<sub>1</sub></m> is moved, and let go.</p>
+<ol>
+<li><b>The matrices.</b> <m>K</m> has 500 N/m on its diagonal and −100 N/m off it, <m>M</m> is 1 kg on its
+diagonal: with the arrows along the axes these are <m>VᵀKV</m> and <m>VᵀMV</m>, coupled through the
+springs.</li>
+<li><b>The modes.</b> In phase, (1, 1): <m>ω<sub>1</sub>² = 400</m>, <m>f<sub>1</sub></m> = 3.183 Hz.
+Opposed, (1, −1): <m>ω<sub>2</sub>² = 600</m>, <m>f<sub>2</sub></m> = 3.898 Hz. These are the two
+frequencies under the matrices, whatever the arrows.</li>
+<li><b>The pluck in the modes.</b> (50, 0) mm is 25 mm of each mode, so
+<m>x<sub>1</sub> = 25(cos ω<sub>1</sub>t + cos ω<sub>2</sub>t)</m> mm and
+<m>x<sub>2</sub> = 25(cos ω<sub>1</sub>t − cos ω<sub>2</sub>t)</m> mm. The two drift in and out of step
+every <m>1/(f<sub>2</sub> − f<sub>1</sub>)</m> = 1.398 s: after 0.699 s, half of that, <m>m<sub>1</sub></m>
+has nearly stopped and <m>m<sub>2</sub></m> swings with the energy. The Coupling tab shows it pass across and
+back.</li>
+<li><b>On a rail along x₁.</b> <m>v = (1, 0)</m>: <m>R = 500/1</m>, so 3.559 Hz, between
+<m>f<sub>1</sub></m> and <m>f<sub>2</sub></m>. Turned to 45°, the rail lies on mode 1 and swings at 3.183 Hz,
+the least any rail can.</li>
+</ol>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Setups to come back to (Things to try, under the boxes). Once you've handled the masses, some ask you to
+predict what you'll see first.</p>
+<!--TRIALS-->
+<takeaways>
+<li>A two-mass system's configuration is a point in a plane; a basis is any two arrows there, <m>x = Vq</m>.</li>
+<li>In a basis the matrices are <m>VᵀMV</m> and <m>VᵀKV</m>; their off-diagonal terms, the coupling, depend on the basis, but the frequencies don't.</li>
+<li>Along the modes both matrices are diagonal: the modes are orthogonal through <m>M</m> and <m>K</m>, not always at right angles.</li>
+<li>Coupled coordinates trade energy (the beat); uncoupled ones keep theirs.</li>
+<li>Held to one line, the motion swings at Rayleigh's quotient <m>vᵀKv/vᵀMv</m>, never below <m>ω<sub>1</sub>²</m>: lowest, and flat, along mode 1.</li>
+</takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x matrices V_basis q omega_i phi_mode R energies_coord</notation>
+<reading>strang thomson inman rayleigh-sound lissajous</reading>

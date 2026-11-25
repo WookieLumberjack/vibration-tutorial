@@ -216,6 +216,19 @@ REFERENCES = (
         "the quotient and proportional damping, among much else",
     ),
     Reference(
+        "strang",
+        "Strang 2016",
+        "G. Strang, <i>Introduction to Linear Algebra</i>, 5th edition, Wellesley-Cambridge Press, 2016",
+        "bases, changes of basis and eigenvectors, with the pictures behind them",
+    ),
+    Reference(
+        "lissajous",
+        "Lissajous 1857",
+        "J. A. Lissajous, Mémoire sur l'étude optique des mouvements vibratoires, <i>Annales de chimie et de "
+        "physique</i>, 3rd series, 51, 147–231, 1857",
+        "the curves two vibrations at right angles trace, seen by a mirror on each",
+    ),
+    Reference(
         "ritz",
         "Ritz 1909",
         "W. Ritz, Über eine neue Methode zur Lösung gewisser Variationsprobleme der mathematischen Physik, "

@@ -206,6 +206,12 @@ COURSE = (
                 "free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum",
             ),
             (
+                "bases_page",
+                "Coordinates && bases",
+                "two masses whose motion is a point in a plane: any basis, the coupling it brings, the modes that "
+                "remove it, and Rayleigh's quotient on a rail",
+            ),
+            (
                 "rigid_body_page",
                 "3D rigid body",
                 "a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip",
@@ -544,6 +550,7 @@ PAGE_TITLES = {
     "transient_page": "Transient response page",
     "periodic_page": "Periodic forcing page",
     "deriving_page": "Deriving the equations page",
+    "bases_page": "Coordinates & bases page",
     "rigid_body_page": "3D rigid body page",
     "sim_page": "Simulation page",
     "energy_page": "Energy methods page",
@@ -591,6 +598,7 @@ PAGE_CLASSES = {
     "transient_page": "transient.TransientPage",
     "periodic_page": "periodic.PeriodicPage",
     "deriving_page": "deriving.DerivingPage",
+    "bases_page": "bases.BasesPage",
     "rigid_body_page": "rigid_body.RigidBodyPage",
     "energy_page": "energy_methods.EnergyMethodsPage",
     "frf_page": "frf_matrix.FrfMatrixPage",
@@ -629,7 +637,7 @@ PAGE_CLASSES = {
 
 # A page rebuilt to #478's standard keeps its notes (`NOTES_HTML`) in a Qt-free module, named here, so they gather
 # and export without Qt (`notes_pages.page_html`; `tests/test_readiness.py`'s `qt_free_notes`).
-NOTES_MODULES = {"sdof_page": "sdof_trials", "pendulum_page": "pendulum_trials"}
+NOTES_MODULES = {"sdof_page": "sdof_trials", "pendulum_page": "pendulum_trials", "bases_page": "bases_trials"}
 
 
 def page_module(attr: str):
