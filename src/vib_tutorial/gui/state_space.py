@@ -45,7 +45,7 @@ from .live_parts import ChangeMarks, run_row
 from .matrix_label import MatricesLabel, scrolling
 from .matrix_table import side_by_side, table_html
 from .scrub import Scrub
-from .state_planes import PairPlane, ShapePlane
+from .state_planes import PairPlane, PlaneRow, ShapePlane
 from .state_space_trials import NOTES_HTML, PROBLEMS, TIPS, TRIALS
 from .style import colors
 from .theming import add_legend, mute
@@ -159,7 +159,7 @@ class StateSpacePage(QtWidgets.QWidget):
         # --- center: the masses, the three planes, the run, the coordinates
         self.chain = ChainView()
         self.chain.setMinimumHeight(90)
-        self.chain.setMaximumHeight(130)
+        self.chain.setMaximumHeight(240)  # the planes are square: the height they leave is the masses'
         self.chain.grabbed.connect(self._on_mass_grabbed)
         self.chain.pulled.connect(self._on_mass_pulled)
         self.chain.released.connect(self._on_let_go)
@@ -174,10 +174,7 @@ class StateSpacePage(QtWidgets.QWidget):
             p.grabbed.connect(self._on_pair_grabbed)
             p.pulled.connect(self._on_pair_pulled)
             p.released.connect(self._on_let_go)
-        planes = QtWidgets.QHBoxLayout()
-        for p in (self.shape_plane, *self.pair_planes):
-            p.setMinimumSize(150, 150)
-            planes.addWidget(p, 1)
+        planes = PlaneRow([self.shape_plane, *self.pair_planes])
         self.plane_note = LiveLabel(wrap=True)
         mute(self.plane_note)
         row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
@@ -201,8 +198,8 @@ class StateSpacePage(QtWidgets.QWidget):
         centre = QtWidgets.QWidget()
         cv = QtWidgets.QVBoxLayout(centre)
         cv.setContentsMargins(0, 0, 0, 0)
-        cv.addWidget(self.chain, 1)
-        cv.addLayout(planes, 4)
+        cv.addWidget(self.chain, 2)
+        cv.addWidget(planes)
         cv.addWidget(self.plane_note)
         cv.addLayout(row)
         cv.addWidget(self.w_plot, 2)
