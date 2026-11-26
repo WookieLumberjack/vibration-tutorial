@@ -54,12 +54,16 @@ def test_it_opens_at_rest_along_the_axes_with_things_to_try_after_its_boxes(page
     boxes = [w for w in left.findChildren(QtWidgets.QGroupBox) if w.parentWidget() is left]
     assert [b.title() for b in boxes] == ["Two masses", "Basis", "Things to try"]
     assert [page.tabs.tabText(i) for i in range(page.tabs.count())] == [
+        "Matrices",
         "Coupling",
         "One arrow",
         "Energy",
         "Theory",
     ]
     assert page.practice_state() == view.BasesTrial("", "")
+    assert page.tabs.currentIndex() == view.TAB_MATRICES  # it opens on the steps, as labeled tables
+    html = page.matrices.text()
+    assert "<th style='white-space:nowrap'>q₂</th>" in html and "font-weight:bold" in html  # K's coupling, marked
     assert "static coupling" in page.plane_note.text() and "3.183 and 3.898 Hz" in page.matrices.text()
     assert 5 <= len(bases.TRIALS) <= 8
 
@@ -175,7 +179,8 @@ def test_a_running_drag_redraws_the_matrices_now_and_then_and_exactly_on_letting
     page.plane.held = False
     page._on_arrow_released(0)
     assert page.matrices.text() != before, "let go: drawn where it stopped"
-    assert page.matrices.text() == page._matrices_html(view.matrices_view(page.live.system, page.basis, False))
+    m = view.matrices_view(page.live.system, page.basis, False)
+    assert page.matrices.text() in (page._matrices_html(m, True), page._matrices_html(m, False))
 
 
 def test_the_page_fits_a_1280_by_800_window_with_every_step_showing(page, app):

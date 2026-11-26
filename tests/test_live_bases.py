@@ -244,7 +244,7 @@ def test_the_energy_triangles_close_on_the_whole_energy_and_are_right_angled_alo
 
 def test_c_is_in_the_steps_and_the_modes_uncouple_it_only_for_some_dampers():
     """C, CV and VᵀCV are in the matrices' steps, damped or not (at c = 0 the note suggests some). The modes
-    uncouple VᵀMV and VᵀKV always, but VᵀCV only when the dampers are spread like the masses and springs: the
+    uncouple VᵀMV and VᵀKV always, but VᵀCV only when the damping is proportional: the
     symmetric pair's are, and with a heavier m₂ the same dampers aren't."""
     still = view.matrices_view(TwoMass(), np.eye(2), False)
     assert [m.symbol for m in still.given] == ["M", "K", "C"]

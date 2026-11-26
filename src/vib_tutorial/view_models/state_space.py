@@ -277,10 +277,13 @@ def matrices_view(s: TwoMass, which: int) -> MatricesView:
         if coupled:
             note = (
                 "The modes of M and K: the springs no longer couple them, but the dampers still do (in red): "
-                "these dampers aren't spread like the masses and springs."
+                "the damping isn't proportional: the dampers' forces in one mode push on the other."
             )
         elif s.c > 0:
-            note = "The modes of M and K, and uncoupled: these dampers are spread like the masses and springs."
+            note = (
+                "The modes of M and K, and uncoupled: the damping is proportional, so the dampers' forces in one mode "
+                "don't push on the other."
+            )
         else:
             note = "The modes of M and K, and uncoupled: no dampers to couple them."
     else:
@@ -337,8 +340,7 @@ def sizes_note(s: TwoMass) -> str:
         "In the modes of M and K the dampers pass motion between the pairs: start one alone and the other's size "
         "climbs from nothing."
         if leaks
-        else "In the modes of M and K nothing passes between the pairs here: the dampers are spread like the masses "
-        "and springs."
+        else "In the modes of M and K nothing passes between the pairs here: the damping is proportional."
     )
     second = (
         f" In the state-space modes each pair shrinks on its own as e^(σt), a straight line on this log axis: {rates}."

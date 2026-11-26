@@ -27,7 +27,7 @@ import time
 
 import numpy as np
 import pyqtgraph as pg
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from ..core.bases import TwoMass
 from ..core.stepping import FRAME_BUDGET, Budget
@@ -42,6 +42,7 @@ from .frame_loop import FrameLoop
 from .layouts import FlowLayout
 from .lesson import Form, LiveLabel, TrialBox, plot, theory, three_panes
 from .live_parts import ChangeMarks, run_row
+from .matrix_label import MatricesLabel, scrolling
 from .matrix_table import side_by_side, table_html
 from .scrub import Scrub
 from .state_planes import PairPlane, ShapePlane
@@ -79,33 +80,6 @@ SHAPES_TIP = (
     "real shape, dashed. The angle between the masses' arrows is the phase between them: 0° or 180° when the shape "
     "is real, other angles when the dampers make it complex.</p>"
 )
-
-
-class MatricesLabel(LiveLabel):
-    """The matrices' steps, with T and T⁻¹AT side by side where they fit and one above the other where they don't
-    (the state-space basis's T at 1280 px): `set_variants(wide, tall)`, picked again as it's resized."""
-
-    def __init__(self) -> None:
-        super().__init__(wrap=True)
-        self._variants = ("", "")
-        self._measure = QtGui.QTextDocument(self)
-        self._measure.setDocumentMargin(0)
-
-    def set_variants(self, wide: str, tall: str) -> None:
-        self._variants = (wide, tall)
-        self._pick()
-
-    def _pick(self) -> None:
-        wide, tall = self._variants
-        self._measure.setDefaultFont(self.font())
-        self._measure.setHtml(wide)
-        text = wide if self._measure.idealWidth() <= self.width() else tall
-        if text != self.text():
-            self.setText(text)
-
-    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
-        super().resizeEvent(event)
-        self._pick()
 
 
 def _square(plot_: pg.PlotWidget) -> None:
@@ -298,12 +272,7 @@ class StateSpacePage(QtWidgets.QWidget):
 
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
-        scroll = QtWidgets.QScrollArea()  # up and down, never sideways: a tall step goes below, not off the edge
-        scroll.setWidget(matrices)
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.tabs.addTab(scroll, "Matrices")
+        self.tabs.addTab(scrolling(matrices), "Matrices")
         self.tabs.addTab(sizes, "Sizes")
         self.tabs.addTab(shapes, "Shapes")
         self.tabs.addTab(self.notes, "Theory")

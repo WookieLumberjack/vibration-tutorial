@@ -17,7 +17,7 @@ Three bases (`BASES`), each made by a function:
   couple the pairs.
 - `undamped_basis`: the modes of M and K (the last page's), V's unit columns φᵣ, each with its velocity:
   (qᵣ, q̇ᵣ/ωᵣ). M and K are diagonal in it, so only the dampers (VᵀCV) can still couple the pairs, and they do
-  unless C is spread like M and K (proportional damping).
+  unless the damping is proportional (C = αM + βK, say).
 - `state_basis`: A's own eigenvectors. They come in conjugate pairs, yᵣ = [ψᵣ; λᵣψᵣ] with λᵣ = σᵣ + iωᵣ, and the
   real basis takes each pair's real and imaginary parts as its two columns, Re yᵣ and Im yᵣ (`state_modes`). Then
 

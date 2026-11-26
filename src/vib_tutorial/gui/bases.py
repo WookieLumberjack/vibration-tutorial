@@ -4,9 +4,10 @@ any basis the reader drags.
 Left: the masses and springs, the basis's switches (one arrow, the modes drawn), then the Things to try (setups to go
 back to; their predictions are asked once the reader has handled the masses). Center: the two masses between their
 walls (`bases_view.ChainView`: pluck a mass, or drag its grips to change m and k as it runs), the (x₁, x₂) plane
-(`bases_plane.Plane`: the point and its path, the arrows v₁ and v₂ to drag, the parallelogram q₁v₁ + q₂v₂) with the
-matrices VᵀMV and VᵀKV beside it, their coupling marked, the run's controls, and the coordinates q against time,
-the past redescribed whenever the arrows move. Right: the energy along each arrow and the cross term, and their sum in bars (Coupling),
+(`bases_plane.Plane`: the point and its path, the arrows v₁ and v₂ to drag, the parallelogram q₁v₁ + q₂v₂), what
+the matrices say under it, the run's controls, and the coordinates q against time, the past redescribed whenever
+the arrows move. Right: the matrices' steps from M, K and C to VᵀMV, VᵀKV and VᵀCV as labeled tables, their
+coupling marked (Matrices, `matrix_label`), the energy along each arrow and the cross term, and their sum in bars (Coupling),
 one arrow's frequency against its angle, built by hand angle by angle (One arrow), the energy balance through every
 change (Energy), and the Theory.
 
@@ -44,6 +45,8 @@ from .frame_loop import FrameLoop
 from .layouts import FlowLayout
 from .lesson import Form, LiveLabel, TrialBox, plot, theory, three_panes
 from .live_parts import ChangeMarks, EnergyTab, run_row
+from .matrix_label import MatricesLabel, scrolling
+from .matrix_table import side_by_side, table_html
 from .plots import SteadyRange, decimate
 from .scrub import Scrub
 from .style import colors, role
@@ -189,9 +192,8 @@ class BasesPage(QtWidgets.QWidget):
         self.plane.arrow_moved.connect(self._on_arrow_moved)
         self.plane.arrow_released.connect(self._on_arrow_released)
         # redrawn at every step of an arrow's drag: a QLabel laid the whole page out again each time (10 ms a frame)
-        self.matrices = LiveLabel(wrap=True)
+        self.matrices = MatricesLabel()
         self.matrices.setToolTip(MATRICES_TIP)
-        self.matrices.setMinimumWidth(170)
         self.plane_note = LiveLabel(wrap=True)  # rewritten as it runs: a QLabel lays the page out each time
         mute(self.plane_note)
         row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
@@ -216,19 +218,17 @@ class BasesPage(QtWidgets.QWidget):
         cv = QtWidgets.QVBoxLayout(centre)
         cv.setContentsMargins(0, 0, 0, 0)
         cv.addWidget(self.chain, 1)
-        mid = QtWidgets.QHBoxLayout()
-        mid.addWidget(self.plane, 1)
-        side = QtWidgets.QVBoxLayout()
-        side.addWidget(self.matrices)
-        side.addStretch(1)
-        mid.addLayout(side, 1)  # the steps run three matrices across
-        cv.addLayout(mid, 4)
+        cv.addWidget(self.plane, 4)  # the whole width: the matrices have a tab of their own
         cv.addWidget(self.plane_note)
         cv.addLayout(row)
         cv.addWidget(self.q_plot, 2)
         cv.addWidget(self.readout)
 
-        # --- right: Coupling, Rail, Energy, Theory
+        # --- right: Matrices, Coupling, Rail, Energy, Theory
+        matrices = QtWidgets.QWidget()
+        mv = QtWidgets.QVBoxLayout(matrices)
+        mv.addWidget(self.matrices)
+        mv.addStretch(1)
         coupling = QtWidgets.QWidget()
         pv = QtWidgets.QVBoxLayout(coupling)
         self.shares_plot = plot("Energy", "J", "Time", "s", height=130)
@@ -325,6 +325,7 @@ class BasesPage(QtWidgets.QWidget):
         )
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
+        self.tabs.addTab(scrolling(matrices), "Matrices")
         self.tabs.addTab(coupling, "Coupling")
         self.tabs.addTab(rails, "One arrow")
         self.tabs.addTab(self.energy, "Energy")
@@ -629,8 +630,8 @@ class BasesPage(QtWidgets.QWidget):
             return
         self._matrices_at = now
         m = view.matrices_view(s, V, rail)
-        self.plane_note.setText(f"{m.note} {p.note}")  # under the plane, the whole width: the panel is full
-        self.matrices.setText(self._matrices_html(m))
+        self.plane_note.setText(f"{m.note} {p.note}")  # under the plane: what the Matrices tab says
+        self.matrices.set_variants(self._matrices_html(m, True), self._matrices_html(m, False))
 
     def _still_due_matrices(self, now: float) -> bool:
         """True while a running drag's matrices wait: drawn at most `MATRICES_EVERY` apart then (their rich text
@@ -643,39 +644,38 @@ class BasesPage(QtWidgets.QWidget):
         return False
 
     @staticmethod
-    def _matrices_html(m: view.MatricesView) -> str:
-        """The steps, a row each: M, K and C, then V and Vᵀ, then VᵀMV, VᵀKV and VᵀCV, then the frequencies."""
+    def _matrices_html(m: view.MatricesView, wide: bool = True) -> str:
+        """The steps: M, K and C, then V and Vᵀ, then VᵀMV, VᵀKV and VᵀCV, then the frequencies. Each matrix a table
+        as the Substructuring page's are (`matrix_table`): its rows and columns labeled, its diagonal and its
+        coupling tinted apart, a coupling term bold in color. A row's matrices side by side if `wide`, else as many
+        to a row as fit two (a narrow pane at 1280 px)."""
         c = colors
 
-        def one(mat: view.Matrix, square: bool) -> str:
-            rows = []
-            for i, row in enumerate(mat.entries):
-                tds = []
-                for j, e in enumerate(row):
-                    off = square and i != j
-                    colour = c.force if off and mat.coupled else (c.muted if off else c.foreground)
-                    weight = "bold" if off and mat.coupled else "normal"
-                    tds.append(f'<td align="right" style="color:{colour}; font-weight:{weight}">{e}</td>')
-                rows.append("<tr>" + "".join(tds) + "</tr>")
-            unit = f" ({mat.unit})" if mat.unit else ""
-            return f"<b>{mat.symbol}</b>{unit}<table cellspacing='2'>{''.join(rows)}</table>"
+        def one(mat: view.Matrix) -> str:
+            title = f"{mat.symbol}<br><span style='font-weight:normal'>{mat.unit}</span>" if mat.unit else mat.symbol
+            return table_html(
+                mat.entries, mat.rows, mat.cols, mat.row_groups, mat.col_groups, title, nowrap=True, marked=mat.marked
+            )
 
-        def pair(mats: Sequence[view.Matrix], square: bool) -> str:
-            tds = "".join(f"<td style='padding-right:10px' valign='top'>{one(x, square)}</td>" for x in mats)
-            return f"<tr>{tds}</tr>"
+        def row(mats: Sequence[view.Matrix]) -> str:
+            tables = [one(x) for x in mats]
+            if wide or len(tables) <= 2:
+                return side_by_side(*tables)
+            return side_by_side(*tables[:2]) + "<br>" + side_by_side(*tables[2:])
 
         def step(text: str) -> str:
-            return f"<tr><td colspan='2' style='color:{c.muted}; padding-top:4px'>{text}</td></tr>"
+            return f"<p style='color:{c.muted}; margin-top:8px; margin-bottom:2px'>{text}</p>"
 
         v = "v₁" if len(m.basis[0].entries[0]) == 1 else "V"
-        products = list(m.matrices)
-        rows = [step("1. The system, in x₁ and x₂"), pair(m.given, True)]
-        rows += [step(f"2. The arrows as columns: x = {v}q"), pair(m.basis, False)]
-        if products:  # MV, KV, CV between, shown once, took 65 px a window 800 px tall hadn't
-            rows += [step(f"3. Multiply by {v}, then by {v}ᵀ: the matrices in q"), pair(products, True)]
+        parts = [step("1. The system, in x₁ and x₂"), row(m.given)]
+        parts += [step(f"2. The arrows as columns: x = {v}q"), row(m.basis)]
+        if m.matrices:
+            parts += [step(f"3. Multiply by {v}, then by {v}ᵀ: the matrices in q"), row(m.matrices)]
         sums = "".join(f"<br>{line}" for line in m.sums)
-        last = f"<p>4. The frequencies{sums}</p>" if m.sums else ""
-        return f"<table cellspacing='2'>{''.join(rows)}</table>{last}"
+        if m.sums:
+            parts.append(f"<p>4. The frequencies{sums}</p>")
+        parts.append(f"<p style='color:{c.muted}'>{m.note}</p>")
+        return "".join(parts)
 
     @coalesce.coalesced(covers=("_draw_live",))
     def _draw_tab(self, *_: object) -> None:

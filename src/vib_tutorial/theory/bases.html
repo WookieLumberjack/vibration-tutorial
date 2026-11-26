@@ -48,8 +48,8 @@ between them, <m>−k<sub>2</sub></m>, and the masses' matrix is diagonal. With 
 instead, and <m>VᵀMV</m> couples. Most arrows give both.</p>
 <p>But the motion doesn't change, and so neither do its frequencies:</p>
 <eq>\det(V^\mathsf{T} K V - \omega^2 V^\mathsf{T} M V) = (\det V)^2 \det(K - \omega^2 M)</eq>
-<p>The roots <m>ω<sub>r</sub></m> are the same in every basis. The page works them out from the matrices
-beside the plane, and they never move however the arrows turn. Only when the arrows lie along one line
+<p>The roots <m>ω<sub>r</sub></m> are the same in every basis. The page works them out on the Matrices
+tab, and they never move however the arrows turn. Only when the arrows lie along one line
 (<m>det V = 0</m>) does the description fail: then most points can't be reached, as the page says.</p>
 
 <h3><a name="modes"></a>The modes: the basis that uncouples</h3>
@@ -72,10 +72,10 @@ stretched, <m>ω<sub>1</sub>² = k<sub>1</sub>/m</m>; opposed, it's stretched tw
 then the coupling spring turns them too: a stiffer one pulls mode 1 toward moving together.</p>
 <p><b>The dampers needn't follow.</b> The modes are the arrows that make <m>VᵀMV</m> and <m>VᵀKV</m>
 diagonal, and there are only two of them, so nothing is left to choose for <m>VᵀCV</m>. It comes out diagonal
-only when the dampers are spread like the masses and springs: for example when <m>C</m> is a mix of the two,
-<m>C = αM + βK</m>, called <b>proportional</b> damping. The symmetric pair's dampers are spread that way (the
-symmetry fixes all three matrices' directions at ±45°), but give <m>m<sub>2</sub></m> 2 kg, or the walls
-unequal springs, and the same dampers aren't: <m>VᵀCV</m> keeps a term off its diagonal along the modes, and
+only when the damping is <b>proportional</b>: when the dampers' forces in one mode don't push on the other mode's
+shape, as the inertia and spring forces never do. A mix of the two, <m>C = αM + βK</m>, is always proportional.
+The symmetric pair's dampers are (the symmetry fixes all three matrices' directions at ±45°), but give
+<m>m<sub>2</sub></m> 2 kg, or the walls unequal springs, and the same dampers aren't: <m>VᵀCV</m> keeps a term off its diagonal along the modes, and
 the dampers' forces pass energy between the modes as it dies away. A change of basis in <m>x</m> uncouples
 only some systems. The next page, <a href="page:state_page#state">State-space modes</a>, takes on the ones it can't,
 by doubling the coordinates to <m>x</m> and <m>ẋ</m> together.</p>
@@ -90,7 +90,7 @@ two vectors, <m>|a + b|² = |a|² + |b|² + 2a·b</m>: there is a <b>cross term<
 <eq>E = E_1 + E_2 + \tilde m_{12}\dot q_1 \dot q_2 + \tilde k_{12} q_1 q_2</eq>
 <eq>E_i = \tfrac12 \tilde m_{ii}\dot q_i^2 + \tfrac12 \tilde k_{ii} q_i^2</eq>
 <p>with <m>m̃ = VᵀMV</m> and <m>k̃ = VᵀKV</m>. The last two terms are the cross term, and they are made of
-exactly the off-diagonal terms of the matrices beside the plane: the coupling. The Coupling tab draws the three
+exactly the off-diagonal terms of the matrices on the Matrices tab: the coupling. The Coupling tab draws the three
 as they run (<m>E<sub>1</sub></m> as "along <m>v<sub>1</sub></m>", <m>E<sub>2</sub></m> as "along
 <m>v<sub>2</sub></m>"), and under them adds them up as bars, each stacked on the last, with the stored energy
 beside them. The stored energy stays put; the pieces don't. The cross term swings above and below zero, and
