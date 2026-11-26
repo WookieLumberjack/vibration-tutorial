@@ -78,6 +78,13 @@ SUM_TIP = (
     "As it runs the pieces trade energy through the cross term, but the total stays put (less what the dampers "
     "take). Along the modes the cross term is zero and the two pieces hold still.</p>"
 )
+TRIANGLE_TIP = (
+    "<p>The two pieces of the motion as vectors, scaled (by √M for the speeds, by √K for the stretches) so that "
+    "half a vector's length squared is its energy. <b>a</b>, the piece along v₁, from the middle; <b>b</b>, along "
+    "v₂, from a's tip; the dashed <b>a + b</b> is the whole motion. So, as |a + b|² = |a|² + |b|² + 2a·b, the "
+    "cross term is a·b: zero at a right angle. The angle between a and b is set by the arrows alone, and the "
+    "motion only stretches them. Turn the arrows onto the modes and both triangles are right-angled.</p>"
+)
 RAIL_TIP = (
     "<p>One arrow's frequency, built by hand: each angle you try lands its measured frequency here "
     "(0° along x₁, 90° along x₂). Points from other masses or springs are faded. <i>Show the theory</i> draws "
@@ -209,7 +216,7 @@ class BasesPage(QtWidgets.QWidget):
         # --- right: Coupling, Rail, Energy, Theory
         coupling = QtWidgets.QWidget()
         pv = QtWidgets.QVBoxLayout(coupling)
-        self.shares_plot = plot("Energy", "J", "Time", "s", height=200)
+        self.shares_plot = plot("Energy", "J", "Time", "s", height=130)
         self.shares_plot.setToolTip(COUPLING_TIP)
         self.shares_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.shares_plot.getPlotItem(), offset=(-10, 10))
@@ -220,7 +227,7 @@ class BasesPage(QtWidgets.QWidget):
         self.shares_note = LiveLabel(wrap=True)  # rewritten as it runs: a QLabel lays the page out each time
         mute(self.shares_note)
         # the energy now, added up: each piece stacked on the last, the stored energy beside them
-        self.sum_plot = plot("Energy now", "J", "", None, height=150)
+        self.sum_plot = plot("Energy now", "J", "", None, height=110)
         self.sum_plot.setAccessibleName("The energy now, added up: along each arrow, the cross term, stored")
         self.sum_plot.setToolTip(SUM_TIP)
         self.sum_plot.setMouseEnabled(x=False, y=False)
@@ -229,8 +236,41 @@ class BasesPage(QtWidgets.QWidget):
         self.sum_names: tuple[str, ...] = ()  # the bars' names, as the bottom axis's ticks
         self.sum_y = SteadyRange(self.sum_plot, "y")
         self.sum_plot.setXRange(-0.5, 3.5, padding=0)
+        # the energy triangles: the pieces as vectors whose length squared is twice their energy
+        self.tri_plots: list[pg.PlotWidget] = []
+        self.tri_items: list[list[pg.PlotDataItem]] = []  # the two lines, a, b, a + b in each
+        self.tri_notes: list[LiveLabel] = []
+        self.tri_span = [0.0, 0.0]  # each triangle's reach as shown
+        tri_row = QtWidgets.QHBoxLayout()
+        for title in ("Kinetic, through M", "Potential, through K"):
+            column = QtWidgets.QVBoxLayout()
+            tp = pg.PlotWidget()
+            tp.setAccessibleName(f"The energy triangle: {title.lower()}")
+            tp.setToolTip(TRIANGLE_TIP)
+            tp.setTitle(title)
+            tp.setMenuEnabled(False)
+            tp.setMouseEnabled(x=False, y=False)
+            tp.hideButtons()
+            tp.hideAxis("left")
+            tp.hideAxis("bottom")
+            tp.setAspectLocked(True)
+            tp.setMinimumSize(60, 110)  # two side by side mustn't widen the pane (the window fits 1280 px)
+            tp.setSizePolicy(QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Expanding)
+            # the scaled arrows' lines (faint, still), then a, b from a's tip, a + b
+            items = [pg.PlotDataItem() for _ in range(5)]
+            for item in items:
+                tp.addItem(item, ignoreBounds=True)
+            note = LiveLabel(wrap=True)
+            mute(note)
+            column.addWidget(tp, 1)
+            column.addWidget(note)
+            tri_row.addLayout(column, 1)
+            self.tri_plots.append(tp)
+            self.tri_items.append(items)
+            self.tri_notes.append(note)
         pv.addWidget(self.shares_plot, 2)
         pv.addWidget(self.sum_plot, 1)
+        pv.addLayout(tri_row, 2)
         pv.addWidget(self.shares_note)
 
         rails = QtWidgets.QWidget()
@@ -541,6 +581,12 @@ class BasesPage(QtWidgets.QWidget):
         for i, item in enumerate(self.share_items[:2]):
             item.setPen(pg.mkPen(c.mass[i], width=2))
         self.share_items[2].setPen(pg.mkPen(c.grey, width=1.5))
+        for line_a, line_b, one, two, whole in self.tri_items:
+            line_a.setPen(pg.mkPen(c.mass[0], width=1, style=QtCore.Qt.PenStyle.DotLine))
+            line_b.setPen(pg.mkPen(c.mass[1], width=1, style=QtCore.Qt.PenStyle.DotLine))
+            one.setPen(pg.mkPen(c.mass[0], width=3))
+            two.setPen(pg.mkPen(c.mass[1], width=3))
+            whole.setPen(pg.mkPen(c.strong, width=1.5, style=QtCore.Qt.PenStyle.DashLine))
         self.quotient_item.setPen(pg.mkPen(c.strong, width=1.5))
         self.points_item.setSymbolPen(None)
         self.points_item.setSymbolBrush(pg.mkBrush(c.mass[0]))
@@ -663,8 +709,33 @@ class BasesPage(QtWidgets.QWidget):
             self.shares_plot.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
             self.shares_note.setText(sh.note if t.size else "Pluck the masses to see the energy along each arrow.")
             self._draw_sum(view.energy_sum(sh))
+            self._draw_triangles(view.energy_triangles(live.system, V, rail, x, v))
         elif i == view.TAB_ENERGY:
             self.energy.draw(live.record, frame)
+
+    def _draw_triangles(self, triangles: tuple[view.Triangle, view.Triangle]) -> None:
+        """The energy triangles (`view.energy_triangles`): a, then b from its tip, and a + b closing them."""
+        for k, tri in enumerate(triangles):
+            (ax, ay), (bx, by) = tri.a, tri.b
+            line_a, line_b, one, two, whole = self.tri_items[k]
+            for line, d in zip((line_a, line_b), (*tri.lines, None, None)):
+                r = 10 * max(tri.span, self.tri_span[k])  # past the plot's edge either way
+                line.setData([-r * d[0], r * d[0]], [-r * d[1], r * d[1]]) if d else line.setData([], [])
+            one.setData([0.0, ax], [0.0, ay])
+            two.setData([ax, ax + bx], [ay, ay + by])
+            whole.setData([0.0, ax + bx], [0.0, ay + by])
+            shown = self.tri_span[k]
+            if not shown or tri.span > shown or tri.span < 0.5 * shown:  # steady: re-ranged only when it must
+                self.tri_span[k] = 1.15 * tri.span
+                r = self.tri_span[k]
+                self.tri_plots[k].setRange(QtCore.QRectF(-r, -r, 2 * r, 2 * r), padding=0)
+            if tri.apart is None:
+                text = "One arrow: one piece, no cross term."
+            elif abs(tri.apart - 90.0) < 0.05:
+                text = "a and b at 90°: no cross term."
+            else:
+                text = f"a and b {sig(tri.apart, 3)}° apart: a cross term."
+            self.tri_notes[k].setText(text)
 
     def _draw_sum(self, es: view.EnergySum) -> None:
         """The Coupling tab's bars (`view.energy_sum`): a stack of the pieces, and the stored energy beside it."""

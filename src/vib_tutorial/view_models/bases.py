@@ -14,7 +14,8 @@ code's word: the page calls it *one arrow*, a reduced basis), and what's shown. 
   same in every basis.
 - `coordinates(V, rail, x)`: the coordinates q against time, and `shares(...)`: the energy of the motion along
   each arrow and the cross term, the **Coupling** tab, with `energy_sum(shares)` its bars adding them up now:
-  the energy of a sum of two motions is each one's plus a cross term, as |a + b|² = |a|² + |b|² + 2a·b.
+  the energy of a sum of two motions is each one's plus a cross term, as |a + b|² = |a|² + |b|² + 2a·b; and
+  `energy_triangles(...)`, that identity drawn, the pieces scaled by √M and √K, right-angled along the modes.
 - The **Rail** tab is built by hand: each rail the reader tries lands its measured frequency at its angle
   (`RailRecorder`), with Rayleigh's quotient over them on request (`rail_view`).
 - The **Energy** tab is `live_bases.energy_view`'s.
@@ -386,6 +387,54 @@ def energy_sum(sh: Shares) -> EnergySum:
     pieces = sum(sh.own)
     peak = max(float(np.max(pieces)), float(np.max(pieces + sh.coupling)))
     return EnergySum(tuple(bars), 1.08 * max(peak, 1e-6))
+
+
+@dataclass(frozen=True)
+class Triangle:
+    """One of the Coupling tab's energy triangles (`energy_triangles`): the two pieces of the motion as vectors
+    scaled so that a vector's length squared is twice its energy, the first from the origin, the second from its
+    tip; their sum closes the triangle."""
+
+    title: str  # "Kinetic, through M"
+    a: tuple[float, float]  # the piece along v₁ (√J: ½|a|² is its energy)
+    b: tuple[float, float]  # along v₂, drawn from a's tip; (0, 0) with one arrow
+    apart: float | None  # the angle between the two scaled arrows (°), set by the arrows alone; None with one
+    cross: float  # J: a·b, this energy's cross term now
+    span: float  # √J: the furthest the triangle reaches in the window, max |a| and |a + b| (steady frame to frame)
+    lines: tuple[tuple[float, float], ...]  # the scaled arrows' directions (unit): a moves along the first, b along
+    # the second, at the angle `apart` whatever the motion
+
+
+def _sqrtm(A: np.ndarray) -> np.ndarray:
+    """A symmetric positive matrix's square root (M's, K's): the one whose square is A."""
+    w, U = np.linalg.eigh(A)
+    return (U * np.sqrt(np.maximum(w, 0.0))) @ U.T
+
+
+def energy_triangles(s: TwoMass, V: np.ndarray, rail: bool, x: np.ndarray, v: np.ndarray) -> tuple[Triangle, Triangle]:
+    """The kinetic and the potential energy's triangles for the samples' x and v (a row a sample), now being the
+    last: each piece q̇ᵢvᵢ scaled by √M, each qᵢvᵢ by √K, so ½|a|² is a piece's energy, a·b the cross term and
+    ½|a + b|² the whole. The angle between the scaled arrows doesn't move as it runs; along the modes it is 90°
+    in both: orthogonal through M and K, drawn."""
+    M, _, K = s.matrices()
+    B = V[:, :1] if rail else V
+    q, qd = coordinates(V, rail, x), coordinates(V, rail, v)
+    out = []
+    for title, root, c in (("Kinetic, through M", _sqrtm(M), qd), ("Potential, through K", _sqrtm(K), q)):
+        arrows = root @ B  # the scaled arrows, as columns
+        pa = c[:, :1] * arrows[:, 0]  # each sample's first piece (a row)
+        pb = c[:, 1:2] * arrows[:, 1] if B.shape[1] > 1 else np.zeros_like(pa)
+        reach = float(max(np.max(np.hypot(*pa.T)), np.max(np.hypot(*(pa + pb).T)))) if c.size else 0.0
+        lines = tuple((float(u[0] / np.hypot(*u)), float(u[1] / np.hypot(*u))) for u in arrows.T if np.hypot(*u) > 0)
+        apart = None
+        if B.shape[1] > 1:
+            u, w = arrows[:, 0], arrows[:, 1]
+            cos = float(u @ w / (np.linalg.norm(u) * np.linalg.norm(w)))
+            apart = math.degrees(math.acos(max(-1.0, min(1.0, cos))))
+        a = (float(pa[-1, 0]), float(pa[-1, 1])) if c.size else (0.0, 0.0)
+        b = (float(pb[-1, 0]), float(pb[-1, 1])) if c.size else (0.0, 0.0)
+        out.append(Triangle(title, a, b, apart, a[0] * b[0] + a[1] * b[1], max(reach, 1e-6), lines))
+    return out[0], out[1]
 
 
 # ------------------------------------------------------------------ the rail, built by hand
