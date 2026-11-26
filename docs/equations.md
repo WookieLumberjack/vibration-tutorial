@@ -35,7 +35,7 @@ further over drifts away exponentially: chaos.
 
 Two masses between two walls, tied to each other by a coupling spring, running live. Their configuration is one
 point in the (x₁, x₂) plane, which traces a Lissajous figure as they swing. Two arrows on the plane are a basis,
-x = q₁v₁ + q₂v₂: drag them while it runs and the matrices beside them, VᵀMV and VᵀKV, change, their off-diagonal
+x = q₁v₁ + q₂v₂: drag them while it runs and the matrices on the *Matrices* tab, VᵀMV and VᵀKV, change, their off-diagonal
 coupling marked (static, dynamic, both or none), while the frequencies never do. The coordinates' traces below are
 described again in the new basis, the past too. Along the modes both matrices are diagonal and each coordinate is
 one clean sine; with unequal masses the modes aren't at right angles, only orthogonal through M. The Coupling tab
@@ -44,15 +44,15 @@ one arrow away, a reduced basis, and the masses swing at Rayleigh's quotient: th
 measured frequency landing at its angle, lowest along mode 1. Masses and springs change as it runs by their grips;
 one arrow can be kept, turned and given back its partner, each change booked in the energy balance.
 
-![Coordinates & bases page, 1 and 2 kg masses described along their modes: both matrices diagonal, the modes 80.1° apart on the plane (69.6° and 169.5°), each coordinate one clean sine, and on the Coupling tab the energy in each mode stays there](images/coordinates_bases.png)
+![Coordinates & bases page, 1 and 2 kg masses described along their modes: the modes 80.1° apart on the plane (69.6° and 169.5°), each coordinate one clean sine, and on the Matrices tab VᵀMV and VᵀKV diagonal](images/coordinates_bases.png)
 
 ## State-space modes
 
 The same two masses, now with x and ẋ together: the state, four numbers, z = (x₁, x₂, ẋ₁, ẋ₂), with ż = Az. The
 page shows the state two numbers at a time, on two planes, in the basis picked: each mass's x and ẋ, the modes of
 M and K (the last page's), or A's own modes. The matrices panel steps from M, C and K to A and on to T⁻¹AT in that
-basis, its off-diagonal 2×2 blocks, the coupling between the pairs, marked in red. With a 2 kg m₂ the dampers aren't
-spread like the masses and springs, so the modes of M and K still leak: started in mode 2, mode 1's pair climbs from
+basis, its off-diagonal 2×2 blocks, the coupling between the pairs, marked in red. With a 2 kg m₂ the damping isn't
+proportional (the dampers' forces in one mode push on the other), so the modes of M and K still leak: started in mode 2, mode 1's pair climbs from
 zero (the *Sizes* tab, on a log axis). In A's own modes, the real and imaginary parts of each conjugate pair of
 eigenvectors, T⁻¹AT is block diagonal whatever the dampers: each pair spirals in on its own plane as e^(σt), a straight
 line on the Sizes tab. Their shapes are complex: the masses don't move in step, a mode alone traces an ellipse on the

@@ -86,7 +86,7 @@ TRIALS = (
     ),
     StateTrial(
         "A symmetric pair",
-        "Both masses 1 kg, with the same dampers. Now the dampers are spread like the masses and springs, and the "
+        "Both masses 1 kg, with the same dampers. Now the damping is proportional, <m>C = −3M + 0.01K</m>, and the "
         "modes of <m>M</m> and <m>K</m> uncouple them too: started in mode 2, mode 1's pair stays at zero on the Sizes "
         "tab, and <m>T<sup>−1</sup>AT</m> has no red. The shapes are real (the Shapes tab): the masses move exactly "
         "together or exactly opposed.",
@@ -171,15 +171,15 @@ def _proportional(rng: np.random.Generator) -> Question:
         setup = dict(m2=2.0)
         about, answer = "a 1 kg and a 2 kg mass, 400 N/m to each wall", 1
         working = (
-            "Unequal masses turn the modes of M and K away from ±45°, but the dampers are still spread like "
-            "[[2, −1], [−1, 2]]: VᵀCV keeps a term off its diagonal, and the dampers couple the modes."
+            "Unequal masses turn the modes of M and K away from ±45°, but the dampers are still "
+            "[[2, −1], [−1, 2]], no mix of M and K: the damping isn't proportional, and VᵀCV keeps a term off its diagonal, and the dampers couple the modes."
         )
     else:
         setup = dict(m2=1.0, k3=900.0)
         about, answer = "two 1 kg masses, 400 N/m to one wall and 900 N/m to the other", 1
         working = (
-            "Unequal walls turn the modes of M and K, and the dampers, spread like [[2, −1], [−1, 2]], don't follow: "
-            "VᵀCV isn't diagonal in them."
+            "Unequal walls turn the modes of M and K, and the dampers, [[2, −1], [−1, 2]], don't follow: "
+            "the damping isn't proportional, and VᵀCV isn't diagonal in them."
         )
     return Question(
         f"Dampers of {number(c)} N·s/m sit beside each of the three springs of {about}, 100 N/m between them. Do the "
@@ -190,12 +190,11 @@ def _proportional(rng: np.random.Generator) -> Question:
         why=(
             ""
             if answer == 0
-            else "Only dampers spread like the masses and springs (C = αM + βK, or a symmetry that fixes all three "
-            "matrices' directions) are uncoupled by the modes of M and K. Are these?",
+            else "Only proportional damping (C = αM + βK, say, or a symmetry that fixes all three matrices' "
+            "directions) is uncoupled by the modes of M and K. Is this?",
             ""
             if answer == 1
-            else "Here the dampers are spread like the masses and springs: the symmetry that fixes the modes fixes "
-            "C's directions too.",
+            else "Here the damping is proportional: the symmetry that fixes the modes fixes C's directions too.",
         ),
         setup=setup | dict(c=c, basis=UNDAMPED, start=UNDAMPED_TWO, tab=TAB_MATRICES),
     )
@@ -212,7 +211,7 @@ PROBLEMS = tuple(
 
 TIPS = {
     "m1": "<p>The left mass. Drag the ring on it up for a heavier one as it runs.</p>",
-    "m2": "<p>The right mass. At 2 kg, the page's start, the dampers aren't spread like the masses: the modes of M "
+    "m2": "<p>The right mass. At 2 kg, the page's start, the damping isn't proportional: the modes of M "
     "and K can't uncouple them.</p>",
     "k1": "<p>The spring from the left wall to m₁.</p>",
     "k2": "<p>The coupling spring between the masses.</p>",

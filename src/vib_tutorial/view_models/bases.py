@@ -39,7 +39,7 @@ from .grips import Grip
 from .text import fmt
 from .text import number as sig
 
-TAB_COUPLING, TAB_RAIL, TAB_ENERGY = range(3)
+TAB_MATRICES, TAB_COUPLING, TAB_RAIL, TAB_ENERGY = range(4)
 MM = 1e3  # the plane is drawn in mm
 ARROW = 0.04  # m: an arrow of length 1 is drawn this long
 LENGTHS = (0.25, 2.0)  # an arrow's shortest and longest, dragged
@@ -66,7 +66,7 @@ class BasesTrial:
     modes: bool = False  # the mode lines drawn on the plane
     theory: bool = False  # Rayleigh's quotient drawn on the One arrow tab
     pluck: tuple[float, float] = (0.0, 0.0)  # m: plucked from here and let go ((0, 0): at rest, as it opens)
-    tab: int = TAB_COUPLING
+    tab: int = TAB_MATRICES
     predict: Prediction | Placement | None = None  # asked once the reader has played (Things to try)
 
 
@@ -218,6 +218,17 @@ class Matrix:
     unit: str
     entries: tuple[tuple[str, ...], ...]
     coupled: bool  # its off-diagonal isn't zero
+    rows: tuple[str, ...] = ()  # what each row and column is (a coordinate's or an arrow's name)
+    cols: tuple[str, ...] = ()
+    row_groups: tuple[str, ...] = ()  # the block each row and column is in, for its tint (`matrix_table`'s groups)
+    col_groups: tuple[str, ...] = ()
+
+    @property
+    def marked(self) -> tuple[tuple[bool, ...], ...]:
+        """The coupling terms: off the diagonal, not zero, in a matrix that couples."""
+        return tuple(
+            tuple(self.coupled and i != j and e != "0" for j, e in enumerate(row)) for i, row in enumerate(self.entries)
+        )
 
 
 @dataclass(frozen=True)
@@ -238,25 +249,48 @@ def _coupled(A: np.ndarray) -> bool:
     return abs(float(A[0, 1])) > COUPLED * scale
 
 
-def _matrix(symbol: str, unit: str, A: np.ndarray, coupling: bool = True) -> Matrix:
-    """`coupling`: its off-diagonal terms are a coupling (VᵀMV's), not just numbers (V's)."""
+X_NAMES = ("x₁", "x₂")
+BY_ONE = ("i", "b")  # a block a mass, a coordinate: the off-diagonal tinted apart
+PLAIN = ("q", "q")  # V and Vᵀ: one tint, they're arrows, not a coupling
+
+
+def _matrix(
+    symbol: str,
+    unit: str,
+    A: np.ndarray,
+    rows: tuple[str, ...],
+    cols: tuple[str, ...],
+    coupling: bool = True,
+) -> Matrix:
+    """`coupling`: its off-diagonal terms are a coupling (VᵀMV's), not just numbers (V's), and it's tinted so."""
     scale = float(np.abs(A).max()) or 1.0
     entries = tuple(tuple("0" if abs(float(a)) < COUPLED * scale else sig(float(a), 3) for a in row) for row in A)
-    return Matrix(symbol, unit, entries, coupling and _coupled(A))
+    groups = BY_ONE if coupling else PLAIN
+    return Matrix(symbol, unit, entries, coupling and _coupled(A), rows, cols, groups[: len(rows)], groups[: len(cols)])
 
 
 def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
     """The matrices in the basis (see the module), and what they say."""
     M, C, K = s.matrices()
     B = V[:, :1] if rail else V
-    given = (_matrix("M", "kg", M), _matrix("K", "N/m", K), _matrix("C", "N·s/m", C))
+    X = X_NAMES
+    given = (_matrix("M", "kg", M, X, X), _matrix("K", "N/m", K, X, X), _matrix("C", "N·s/m", C, X, X))
     names_v = ("v₁", "v₁ᵀ") if rail else ("V", "Vᵀ")
-    basis = (_matrix(names_v[0], "", B, coupling=False), _matrix(names_v[1], "", B.T, coupling=False))
+    arrows = ("v₁",) if rail else ("v₁", "v₂")
+    q = ("q₁",) if rail else ("q₁", "q₂")
+    basis = (
+        _matrix(names_v[0], "", B, X, arrows, coupling=False),
+        _matrix(names_v[1], "", B.T, arrows, X, coupling=False),
+    )
     if not rail and singular(V):
         return MatricesView(given, basis, (), (), (), (), "The arrows lie along one line: they don't make a basis.")
     Mt, Ct, Kt = (transformed(B, A) for A in (M, C, K))
     names = ("v₁ᵀMv₁", "v₁ᵀKv₁", "v₁ᵀCv₁") if rail else ("VᵀMV", "VᵀKV", "VᵀCV")
-    shown = [_matrix(names[0], "kg", Mt), _matrix(names[1], "N/m", Kt), _matrix(names[2], "N·s/m", Ct)]
+    shown = [
+        _matrix(names[0], "kg", Mt, q, q),
+        _matrix(names[1], "N/m", Kt, q, q),
+        _matrix(names[2], "N·s/m", Ct, q, q),
+    ]
     alone = tuple(float(np.sqrt(Kt[i, i] / Mt[i, i]) / (2 * np.pi)) for i in range(B.shape[1]))
     if rail:
         f = alone[0]
@@ -307,8 +341,8 @@ def _damping_note(c: float, mk_coupled: bool, c_coupled: bool) -> str:
         return "VᵀCV is diagonal too." if not mk_coupled else "VᵀCV happens to be diagonal."
     if not mk_coupled:
         return (
-            "But VᵀCV isn't diagonal: the dampers still couple the coordinates. These dampers aren't spread "
-            "like the masses and springs, and no choice of arrows uncouples all three."
+            "But VᵀCV isn't diagonal: the dampers still couple the coordinates. The damping isn't proportional "
+            "(the dampers' forces in one mode push on the other), and no choice of arrows uncouples all three."
         )
     return "VᵀCV couples too."
 

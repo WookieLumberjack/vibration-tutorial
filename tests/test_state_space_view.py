@@ -36,7 +36,7 @@ def test_the_page_opens_on_dampers_the_undamped_modes_cant_uncouple():
 
 def test_proportional_dampers_leave_the_undamped_modes_uncoupled():
     m = v.matrices_view(SYMMETRIC, v.UNDAMPED)
-    assert not m.coupled and "spread like the masses and springs" in m.note
+    assert not m.coupled and "the damping is proportional" in m.note
     assert "nothing passes between" in v.sizes_note(SYMMETRIC)
     assert "no dampers" in v.matrices_view(TwoMass(m2=2.0), v.UNDAMPED).note
 

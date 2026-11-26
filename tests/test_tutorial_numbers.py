@@ -5371,6 +5371,10 @@ def test_state_space_worked_example():
     i = int(np.argmax(leak))
     assert leak[i] == pytest.approx(quoted("state_space", "1.48"), abs=5e-3)
     assert ts[i] == pytest.approx(0.41, abs=5e-3)
+    # The symmetric pair's dampers are proportional, C = −3M + 0.01K; the default's aren't, φ₂ᵀCφ₁ = −0.51.
+    Ms, Cs, Ks = TwoMass(c=1.0).matrices()
+    assert Cs == pytest.approx(-3 * Ms + quoted("state_space", "0.01") * Ks)
+    assert not np.allclose(C @ np.linalg.solve(M, K), K @ np.linalg.solve(M, C))  # Caughey and O'Kelly's test fails
     # Mode 2 overdamped past 18.8 N·s/m on each damper (m₂ = 2 kg).
     assert all(m.swings for m in state_modes(*TwoMass(m2=2.0, c=18.8).matrices()))
     assert not state_modes(*TwoMass(m2=2.0, c=18.9).matrices())[1].swings

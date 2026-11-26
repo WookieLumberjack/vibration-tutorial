@@ -3,7 +3,7 @@
 <a href="page:bases_page#coupling">Coupling belongs to the description</a>
 </before>
 <goals page="state_page">
-<li trial="2" problem="proportional">see the modes of <m>M</m> and <m>K</m> leak when the dampers aren't spread like the masses and springs;</li>
+<li trial="2" problem="proportional">see the modes of <m>M</m> and <m>K</m> leak when the damping isn't proportional;</li>
 <li trial="4" problem="halving">start the masses in one of <m>A</m>'s own modes and watch it spiral in alone, at its own rate;</li>
 <li trial="6" problem="damping-ratio">see why those modes' shapes are complex, and what that means for the masses.</li>
 </goals>
@@ -71,9 +71,16 @@ masses.</li>
 <li><b>The modes of M and K: q and q̇.</b> Each plane is one of the last page's modes, its <m>q</m> and
 <m>q̇/ω</m>. The springs no longer couple: each diagonal block is a harmonic oscillator, <m>ω</m> above and below
 its diagonal, less its own damping. What's left off the diagonal is one term in each velocity row, the dampers'
-<m>−c̃<sub>12</sub></m> scaled by the modes' masses and frequencies. It is zero only when the dampers are spread
-like the masses and springs, <b>proportional damping</b> such as <m>C = αM + βK</m> <cite>caughey</cite>. The
-symmetric pair's dampers are; with a 2 kg <m>m<sub>2</sub></m> they aren't.</li>
+<m>−c̃<sub>12</sub></m> scaled by the modes' masses and frequencies, where
+<m>c̃<sub>12</sub> = φ<sub>2</sub>ᵀCφ<sub>1</sub></m>: the part of the dampers' forces in mode 1 that pushes on
+mode 2's shape. The inertia and spring forces never do that, <m>φ<sub>2</sub>ᵀMφ<sub>1</sub> =
+φ<sub>2</sub>ᵀKφ<sub>1</sub> = 0</m>, and the dampers' don't either when the damping is <b>proportional</b>, as
+when <m>C = αM + βK</m>: then <m>φ<sub>2</sub>ᵀCφ<sub>1</sub> = αφ<sub>2</sub>ᵀMφ<sub>1</sub> +
+βφ<sub>2</sub>ᵀKφ<sub>1</sub> = 0</m>. (The general test is <m>CM<sup>−1</sup>K = KM<sup>−1</sup>C</m>
+<cite>caughey</cite>.) The symmetric pair's dampers are proportional: with <m>M = I</m>, <m>C = −3M + 0.01K</m>.
+With a 2 kg <m>m<sub>2</sub></m> no <m>α</m> and <m>β</m> fit, and <m>c̃<sub>12</sub></m> is −0.51 N·s/m: the
+heavier mass turned the modes, the springs' forces turned with them (the modes come from <m>M</m> and <m>K</m>),
+but the dampers stayed where they were.</li>
 <li><b>State-space modes.</b> <m>A</m>'s own pairs: block diagonal whatever <m>C</m> is, the blocks built from
 <m>σ</m> and <m>ω</m>. This is the basis that uncouples any damped linear system <cite>foss</cite>.</li>
 </ol>
@@ -94,7 +101,7 @@ plane of <m>x<sub>1</sub></m> and <m>x<sub>2</sub></m> it traces an ellipse span
 <p>The page draws both parts as arrows on that plane, with the ellipse, and the Shapes tab draws each mass's part of
 <m>ψ</m> as an arrow in the complex plane, a phasor, beside the undamped mode's real shape. The angle between the
 two phasors is the phase between the masses. It grows with the dampers, and with how far they are from being
-spread like the masses and springs.</p>
+proportional.</p>
 
 <h3><a name="overdamped"></a>An overdamped mode</h3>
 <p>Strong enough dampers stop a mode swinging. Its pair of eigenvalues then meet on the real axis and part along
