@@ -53,7 +53,12 @@ def test_it_opens_at_rest_along_the_axes_with_things_to_try_after_its_boxes(page
     left = page.trials.parentWidget()
     boxes = [w for w in left.findChildren(QtWidgets.QGroupBox) if w.parentWidget() is left]
     assert [b.title() for b in boxes] == ["Two masses", "Basis", "Things to try"]
-    assert [page.tabs.tabText(i) for i in range(page.tabs.count())] == ["Coupling", "Rail", "Energy", "Theory"]
+    assert [page.tabs.tabText(i) for i in range(page.tabs.count())] == [
+        "Coupling",
+        "Fixed direction",
+        "Energy",
+        "Theory",
+    ]
     assert page.practice_state() == view.BasesTrial("", "")
     assert "static coupling" in page.matrices.text() and "3.183 and 3.898 Hz" in page.matrices.text()
     assert 5 <= len(bases.TRIALS) <= 8
@@ -108,7 +113,7 @@ def test_the_grips_change_m_k_and_c_as_it_runs(page, app):
 
 
 def test_on_a_rail_each_angle_lands_its_frequency(page, app):
-    page.load_trial(trial("On a rail"))
+    page.load_trial(trial("Fixed along"))
     page.step(1.0)
     k = view.key(page.system)
     assert [p.angle for p in page.recorder.current(k)] == [0.0]
@@ -135,7 +140,7 @@ def test_predictions_come_after_play(page):
     page.k2.setValue(150.0)  # the reader handles it ...
     page.step(bases.PLAYED_AFTER + 0.1)  # ... and watches
     assert box.played
-    unasked = trial("On a rail")
+    unasked = trial("Fixed along")
     box.combo.pick(bases.TRIALS[unasked].name)
     assert box.asking == unasked and box.ask.isVisible()
     box._on_skip()

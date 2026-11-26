@@ -5310,4 +5310,4 @@ def test_bases_trials():
     s = TwoMass()
     M, _, K = s.matrices()
     assert rayleigh_hz(direction(0.0), M, K) == pytest.approx(3.559, abs=5e-4)
-    says("On a rail", "500 N/m", "3.559 Hz")
+    says("Fixed along x₁", "500 N/m", "3.559 Hz")

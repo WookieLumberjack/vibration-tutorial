@@ -1,8 +1,8 @@
 """Coordinates & bases' view model (#478 Phase 4): its state, and what each panel shows, without Qt.
 
 The page's state is a `BasesTrial` (its trials, `practice_state()` and `load_setup` all use one): the two masses
-(`system`), the basis's two arrows v₁, v₂ (`basis`: x = Vq), whether the masses run on a rail along v₁, and what's
-shown. The page runs a `live_bases.LiveBases` built from it, and each panel has a function here:
+(`system`), the basis's two arrows v₁, v₂ (`basis`: x = Vq), whether the masses run on a rail along v₁ (the
+code's word: the page says the motion is *fixed along v₁*, in a *fixed direction*), and what's shown. The page runs a `live_bases.LiveBases` built from it, and each panel has a function here:
 
 - `plane_view(V, rail, modes, shown)`: the (x₁, x₂) plane's still parts (the arrows, the grid of the coordinates
   they make, the mode lines, the rail), and `projection(V, x)` the point's parallelogram, x = q₁v₁ + q₂v₂, as it
@@ -60,7 +60,7 @@ class BasesTrial:
     v2: tuple[float, float] = (0.0, 1.0)
     rail: bool = False  # on a rail along v₁ (v₂ taken away)
     modes: bool = False  # the mode lines drawn on the plane
-    theory: bool = False  # Rayleigh's quotient drawn on the Rail tab
+    theory: bool = False  # Rayleigh's quotient drawn on the Fixed direction tab
     pluck: tuple[float, float] = (0.0, 0.0)  # m: plucked from here and let go ((0, 0): at rest, as it opens)
     tab: int = TAB_COUPLING
     predict: Prediction | Placement | None = None  # asked once the reader has played (Things to try)
@@ -185,7 +185,7 @@ def plane_view(s: TwoMass, V: np.ndarray, rail: bool, show_modes: bool) -> Plane
     )
     rail_line = _line(V[:, 0], REACH * 1.2) if rail else (np.empty(0), np.empty(0))
     if rail:
-        note = "On a rail along v₁: drag the arrow to turn it as it runs."
+        note = "The motion fixed along v₁: drag the arrow to turn it as it runs."
     elif singular(V):
         note = "The arrows lie along one line: they don't make a basis, and most motions can't be written in them."
     else:
@@ -250,7 +250,7 @@ def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
     if rail:
         f = rayleigh_hz(V[:, 0], M, K)
         note = (
-            f"On the rail, one coordinate: m̃ = v₁ᵀMv₁ = {sig(float(Mt[0, 0]), 4)} kg and k̃ = v₁ᵀKv₁ = "
+            f"Fixed along v₁, one coordinate: m̃ = v₁ᵀMv₁ = {sig(float(Mt[0, 0]), 4)} kg and k̃ = v₁ᵀKv₁ = "
             f"{sig(float(Kt[0, 0]), 4)} N/m, so it swings at √(k̃/m̃)/2π = {sig(f, 4)} Hz: Rayleigh's quotient."
         )
         return MatricesView(tuple(shown), (f,), note)
@@ -301,7 +301,9 @@ def shares(s: TwoMass, V: np.ndarray, rail: bool, x: np.ndarray, v: np.ndarray) 
     own = tuple(0.5 * Mt[i, i] * qd[:, i] ** 2 + 0.5 * Kt[i, i] * q[:, i] ** 2 for i in range(B.shape[1]))
     if B.shape[1] == 1:
         return Shares(
-            own, np.zeros(x.shape[0]), "On a rail the masses move along one line, and all the energy is in that motion."
+            own,
+            np.zeros(x.shape[0]),
+            "Fixed along v₁, the masses move along one line, and all the energy is in that motion.",
         )
     coupling = Mt[0, 1] * qd[:, 0] * qd[:, 1] + Kt[0, 1] * q[:, 0] * q[:, 1]
     if not (_coupled(Mt) or _coupled(Kt)):
@@ -323,7 +325,7 @@ class RailPoint:
 
 
 class RailRecorder:
-    """Each rail tried, its measured frequency at its angle: the Rail tab's points (see the module). A rail within
+    """Each rail tried, its measured frequency at its angle: the Fixed direction tab's points (see the module). A rail within
     half a degree of one already landed replaces it."""
 
     def __init__(self) -> None:
@@ -366,7 +368,7 @@ class RailView:
 def rail_view(
     s: TwoMass, current: Sequence[RailPoint], earlier: Sequence[RailPoint], theory: bool, now: float | None
 ) -> RailView:
-    """The Rail tab (see the module): its axes the same with the theory shown or not."""
+    """The Fixed direction tab (see the module): its axes the same with the theory shown or not."""
     M, _, K = s.matrices()
     hz, shapes = s.modes()
     pts = (np.array([p.angle for p in current]), np.array([p.hz for p in current]))
@@ -383,14 +385,14 @@ def rail_view(
         modes = (angle(shapes[:, 0]), angle(shapes[:, 1]))
     if not current:
         note = (
-            "Put the masses on a rail (One arrow), pluck them along it and turn the rail: each rail lands its "
-            "frequency here, at its angle."
+            "Fix the motion along v₁ (One arrow), pluck the masses along it and turn it: each direction lands "
+            "its frequency here, at its angle."
         )
     else:
         low = min(current, key=lambda p: p.hz)
         high = max(current, key=lambda p: p.hz)
         note = (
-            f"{len(current)} rail{'s' if len(current) > 1 else ''} so far: the slowest at {sig(low.angle, 3)}°, "
+            f"{len(current)} direction{'s' if len(current) > 1 else ''} so far: the slowest at {sig(low.angle, 3)}°, "
             f"{fmt(low.hz, 'Hz', 4)}; the fastest at {sig(high.angle, 3)}°, {fmt(high.hz, 'Hz', 4)}."
         )
         if theory:

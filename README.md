@@ -67,7 +67,7 @@ The course runs through 11 groups of pages, in the order the app's tabs take the
 **[Equations](docs/equations.md)**
 
 - [Deriving the equations](docs/equations.md#deriving-the-equations): free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum
-- [Coordinates & bases](docs/equations.md#coordinates--bases): two masses whose motion is a point in a plane: any basis, the coupling it brings, the modes that remove it, and Rayleigh's quotient on a rail
+- [Coordinates & bases](docs/equations.md#coordinates--bases): two masses whose motion is a point in a plane: any basis, the coupling it brings, the modes that remove it, and Rayleigh's quotient in a fixed direction
 - [3D rigid body](docs/equations.md#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 
 **[Modes](docs/modes.md)**

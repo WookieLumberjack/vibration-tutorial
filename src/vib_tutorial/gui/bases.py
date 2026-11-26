@@ -1,13 +1,13 @@
 """Coordinates & bases page (#478 Phase 4's new page): two masses live, their motion a point in a plane, described in
 any basis the reader drags.
 
-Left: the masses and springs, the basis's switches (a rail, the modes drawn), then the Things to try (setups to go
+Left: the masses and springs, the basis's switches (the motion fixed along one arrow, the modes drawn), then the Things to try (setups to go
 back to; their predictions are asked once the reader has handled the masses). Centre: the two masses between their
 walls (`bases_view.ChainView`: pluck a mass, or drag its grips to change m and k as it runs), the (x₁, x₂) plane
 (`bases_plane.Plane`: the point and its path, the arrows v₁ and v₂ to drag, the parallelogram q₁v₁ + q₂v₂) with the
 matrices VᵀMV and VᵀKV beside it, their coupling marked, the run's controls, and the coordinates q against time,
 the past redescribed whenever the arrows move. Right: the energy along each arrow and the coupled energy (Coupling),
-the frequency on a rail against its angle, built by hand rail by rail (Rail), the energy balance through every
+the frequency in a fixed direction against its angle, built by hand direction by direction (Fixed direction), the energy balance through every
 change (Energy), and the Theory.
 
 The masses are stepped as they run (`view_models/live_bases.LiveBases`, exactly); what the page shows is
@@ -60,7 +60,7 @@ COORDS_TIP = (
     "<p>The coordinates q₁ and q₂ in the basis the arrows make, the last 10 s: x = q₁v₁ + q₂v₂. With the arrows "
     "along the axes they are the masses' own displacements. Move an arrow and the whole trace is described again "
     "in the new basis: the motion didn't change. Along the modes each is one clean sine. A dashed line marks a "
-    "change of the masses, the springs or the rail. Paused, drag the line at the end back to see the masses "
+    "change of the masses, the springs or the fixed direction. Paused, drag the line at the end back to see the masses "
     "then.</p>"
 )
 COUPLING_TIP = (
@@ -71,7 +71,8 @@ COUPLING_TIP = (
     "along the other. Turn the arrows onto the modes and it is nought: the energy in each mode stays there.</p>"
 )
 RAIL_TIP = (
-    "<p>The frequency on a rail, built by hand: each rail you try lands its measured frequency at its angle "
+    "<p>The frequency in a fixed direction, built by hand: each direction you try lands its measured frequency at "
+    "its angle "
     "(0° along x₁, 90° along x₂). Points from other masses or springs are faded. <i>Show the theory</i> draws "
     "Rayleigh's quotient for every angle, the two natural frequencies and the modes' angles.</p>"
 )
@@ -81,7 +82,7 @@ MATRICES_TIP = (
     "det(VᵀKV − ω²VᵀMV) = 0, are the same in every basis.</p>"
 )
 ENERGY_TIP = (
-    "<p>Where the energy went: what your hand put in (a pluck), what moving the rail did, what each change cost or "
+    "<p>Where the energy went: what your hand put in (a pluck), what fixing or turning the direction did, what each change cost or "
     "added (a spring changed at a stretch, mass caught or dropped), what the dampers took out, and what's stored "
     "now. Put in, less taken out, with the changes, is what's stored, at every instant.</p>"
 )
@@ -119,7 +120,7 @@ class BasesPage(QtWidgets.QWidget):
         self.c = box.number("Each damper c:", 0.0, 100.0, 0.0, 3, " N·s/m", TIPS["c"])
         basis_box = QtWidgets.QGroupBox("Basis")
         bl = QtWidgets.QVBoxLayout(basis_box)
-        self.rail = QtWidgets.QCheckBox("One arrow: a rail along v₁")
+        self.rail = QtWidgets.QCheckBox("One arrow: the motion fixed along v₁")
         self.rail.setToolTip(TIPS["rail"])
         self.modes = QtWidgets.QCheckBox("Draw the modes")
         self.modes.setToolTip(TIPS["modes"])
@@ -167,7 +168,7 @@ class BasesPage(QtWidgets.QWidget):
         self.plane_note = note_label()
         row, self.speed, self.run_button, self.reset_button, self.clock = run_row(self)
         self.run_button.toggled.connect(self._on_run)
-        self.reset_button.setToolTip("<p>Back to rest at t = 0; the rails measured are kept.</p>")
+        self.reset_button.setToolTip("<p>Back to rest at t = 0; the directions measured are kept.</p>")
         self.reset_button.clicked.connect(self.reset)
 
         self.q_plot = plot("Coordinate q", "m", "Time", "s", height=130)
@@ -219,12 +220,12 @@ class BasesPage(QtWidgets.QWidget):
         self.theory = QtWidgets.QCheckBox("Show the theory")
         self.theory.setToolTip(TIPS["theory"])
         self.clear_button = QtWidgets.QPushButton("Clear points")
-        self.clear_button.setToolTip("<p>Forget the rails measured.</p>")
+        self.clear_button.setToolTip("<p>Forget the directions measured.</p>")
         self.clear_button.clicked.connect(self.clear_points)
         buttons = FlowLayout()
         buttons.add(self.theory, self.clear_button)
         rv.addLayout(buttons)
-        self.rail_plot = plot("Frequency", "Hz", "Rail's angle", "°", height=200)
+        self.rail_plot = plot("Frequency", "Hz", "The direction's angle", "°", height=200)
         self.rail_plot.setToolTip(RAIL_TIP)
         self.rail_plot.setMouseEnabled(x=False, y=False)
         self.rail_plot.enableAutoRange(x=False, y=False)  # set from the view: the same with the theory or not
@@ -249,7 +250,7 @@ class BasesPage(QtWidgets.QWidget):
         self.notes = theory(NOTES_HTML)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(coupling, "Coupling")
-        self.tabs.addTab(rails, "Rail")
+        self.tabs.addTab(rails, "Fixed direction")
         self.tabs.addTab(self.energy, "Energy")
         self.tabs.addTab(self.notes, "Theory")
 
@@ -608,7 +609,7 @@ class BasesPage(QtWidgets.QWidget):
             return
         if live.rail is not None:
             hz = self.rail_hz if live.t - live.changed_at > MEASURE_EVERY else None
-            where = f"On the rail at {sig(angle(live.rail), 3)}°"
+            where = f"Fixed at {sig(angle(live.rail), 3)}°"
             self.readout.setText(f"{where}: {sig(hz, 4)} Hz, measured." if hz else f"{where}: timing its swing…")
             return
         V = self.basis

@@ -395,9 +395,9 @@ SCENARIOS = (
         _live_bases("Pluck one mass", "TAB_COUPLING"),
     ),
     Scenario(
-        "Coordinates & bases: on a rail, Rail tab",
-        "the masses on a rail, its frequency measured as it runs (#478 Phase 4)",
-        _live_bases("On a rail", "TAB_RAIL"),
+        "Coordinates & bases: fixed along x₁, Fixed direction tab",
+        "the motion fixed in one direction, its frequency measured as it runs (#478 Phase 4)",
+        _live_bases("Fixed along", "TAB_RAIL"),
     ),
     Scenario(
         "Quarter-car: driven over its road",

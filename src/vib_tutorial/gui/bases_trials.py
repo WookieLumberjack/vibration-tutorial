@@ -117,24 +117,24 @@ TRIALS = (
         pluck=(0.05, 0.0),
     ),
     BasesTrial(
-        "On a rail along x₁",
+        "Fixed along x₁",
         "One arrow, along <m>x<sub>1</sub></m>, and the masses held to its line: only <m>m<sub>1</sub></m> "
         "moves, on a stiffness of 500 N/m, at 3.559 Hz. That is Rayleigh's quotient for <m>v</m> = (1, 0), and it "
-        "lands on the Rail tab. Turn the rail by dragging its arrow and let each new angle land its frequency.",
+        "lands on the Fixed direction tab. Turn the direction by dragging its arrow and let each new angle land its frequency.",
         rail=True,
         pluck=(0.05, 0.0),
         tab=TAB_RAIL,
         predict=Prediction(
-            "The rail turned from along x₁ to 45°, so both masses move together on it. It swings…",
+            "The fixed direction turned from along x₁ to 45°, so both masses move together. They swing…",
             ("slower", "at the same rate", "faster"),
             0,
             ordered=True,
             why=(
                 "",
-                "On the rail the stiffness is vᵀKv over the mass vᵀMv, and both change with the rail's angle: at "
+                "Held to a direction the stiffness is vᵀKv over the mass vᵀMv, and both change with its angle: at "
                 "45° the coupling spring isn't stretched.",
                 "Along x₁ the coupling spring is stretched by m₁ alone; at 45° the masses move together and it's "
-                "idle: less stiffness for the mass, so slower, 3.183 Hz, the slowest any rail can be.",
+                "idle: less stiffness for the mass, so slower, 3.183 Hz, the slowest any direction can be.",
             ),
         ),
     ),
@@ -269,7 +269,7 @@ PROBLEMS = tuple(
     for key, title, anchor, section, make in (
         ("symmetric-pair", "A symmetric pair", "modes", "The modes", _symmetric_pair),
         ("beat-time", "The energy passing across", "energy", "The energy along each arrow", _beat_time),
-        ("rail-frequency", "On a rail", "rail", "On a rail: Rayleigh's quotient", _rail_frequency),
+        ("rail-frequency", "A fixed direction", "rail", "In a fixed direction: Rayleigh's quotient", _rail_frequency),
         ("coupling-kind", "Which coupling?", "coupling", "Coupling belongs to the description", _coupling_kind),
     )
 )
@@ -282,11 +282,11 @@ TIPS = {
     "k2": "<p>The coupling spring between the masses: with none, each mass would swing on its own.</p>",
     "k3": "<p>The spring from m₂ to the right wall.</p>",
     "c": "<p>A viscous damper beside each of the three springs, each this strong.</p>",
-    "rail": "<p>Take v₂ away and hold the masses to the line along v₁, as if the point slid on a rail. Put on as it "
-    "runs, the point is moved to the nearest place on the rail; drag the arrow to turn the rail.</p>",
+    "rail": "<p>Take v₂ away and hold the masses to the line along v₁: the point may slide along it and nowhere "
+    "else. Fixed as it runs, the point is moved to the nearest place on the line; drag the arrow to turn it.</p>",
     "modes": "<p>Draw the two mode directions on the plane. Arrows dragged near a mode (or an axis) snap onto it "
     "either way.</p>",
-    "theory": "<p>Draw Rayleigh's quotient for every rail's angle over the points, with f₁ and f₂ and the modes' "
+    "theory": "<p>Draw Rayleigh's quotient for every direction's angle over the points, with f₁ and f₂ and the modes' "
     "angles.</p>",
 }
 

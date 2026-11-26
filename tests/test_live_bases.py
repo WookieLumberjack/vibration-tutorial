@@ -161,7 +161,7 @@ def test_the_coordinates_rebuild_x_and_the_parallelogram_closes():
     assert (xs[1], ys[1]) == pytest.approx(tuple(x[0] * view.MM))
 
 
-def test_the_rail_tab_lands_each_rail_and_keeps_its_axes_with_the_theory():
+def test_the_fixed_direction_tab_lands_each_direction_and_keeps_its_axes_with_the_theory():
     s = TwoMass()
     rec = view.RailRecorder()
     k = view.key(s)
@@ -173,7 +173,7 @@ def test_the_rail_tab_lands_each_rail_and_keeps_its_axes_with_the_theory():
     assert shown.mode_angles == pytest.approx((45.0, 135.0)) and shown.quotient[1].min() == pytest.approx(
         s.modes()[0][0], rel=1e-4
     )
-    assert "2 rails so far" in plain.note
+    assert "2 directions so far" in plain.note
 
 
 def test_a_trial_survives_json_and_the_views_are_plain():
