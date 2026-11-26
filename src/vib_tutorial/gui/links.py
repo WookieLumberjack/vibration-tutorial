@@ -212,6 +212,12 @@ COURSE = (
                 "remove it, and Rayleigh's quotient from one arrow",
             ),
             (
+                "state_page",
+                "State-space modes",
+                "the same two masses in x and ẋ together: a basis of the state that uncouples any dampers, its modes' "
+                "spirals and complex shapes",
+            ),
+            (
                 "rigid_body_page",
                 "3D rigid body",
                 "a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip",
@@ -551,6 +557,7 @@ PAGE_TITLES = {
     "periodic_page": "Periodic forcing page",
     "deriving_page": "Deriving the equations page",
     "bases_page": "Coordinates & bases page",
+    "state_page": "State-space modes page",
     "rigid_body_page": "3D rigid body page",
     "sim_page": "Simulation page",
     "energy_page": "Energy methods page",
@@ -599,6 +606,7 @@ PAGE_CLASSES = {
     "periodic_page": "periodic.PeriodicPage",
     "deriving_page": "deriving.DerivingPage",
     "bases_page": "bases.BasesPage",
+    "state_page": "state_space.StateSpacePage",
     "rigid_body_page": "rigid_body.RigidBodyPage",
     "energy_page": "energy_methods.EnergyMethodsPage",
     "frf_page": "frf_matrix.FrfMatrixPage",
@@ -637,7 +645,12 @@ PAGE_CLASSES = {
 
 # A page rebuilt to #478's standard keeps its notes (`NOTES_HTML`) in a Qt-free module, named here, so they gather
 # and export without Qt (`notes_pages.page_html`; `tests/test_readiness.py`'s `qt_free_notes`).
-NOTES_MODULES = {"sdof_page": "sdof_trials", "pendulum_page": "pendulum_trials", "bases_page": "bases_trials"}
+NOTES_MODULES = {
+    "sdof_page": "sdof_trials",
+    "pendulum_page": "pendulum_trials",
+    "bases_page": "bases_trials",
+    "state_page": "state_space_trials",
+}
 
 
 def page_module(attr: str):

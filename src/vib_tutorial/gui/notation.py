@@ -522,6 +522,24 @@ SYMBOLS = (
         "basis",
     ),
     Symbol(
+        "T_state",
+        "T, w",
+        "a basis of the state, its columns in pairs (a plane a pair), and the coordinates in it, z = Tw; A in it is "
+        "T<sup>−1</sup>AT",
+        "–, m",
+        "state_page",
+        "change",
+    ),
+    Symbol(
+        "omega_hat",
+        "ω̂<sub>i</sub>",
+        "mass i's frequency with the other masses held, √(K<sub>ii</sub>/M<sub>ii</sub>): the scale of its velocity "
+        "on its plane",
+        "rad/s",
+        "state_page",
+        "compare",
+    ),
+    Symbol(
         "phi_mode",
         "φ<sub>r</sub>, μ<sub>r</sub>, a<sub>r</sub>",
         "mode r's arrow in the plane (any length); its generalized mass φ<sub>r</sub>ᵀMφ<sub>r</sub>; how much of "
@@ -556,7 +574,7 @@ SYMBOLS = (
         "equations-of-motion",
     ),
     Symbol("N_dof", "N", "the number of masses in the chain (its degrees of freedom)", "–", "sim_page"),
-    Symbol("identity", "I", "the identity matrix", "–", "sim_page"),
+    Symbol("identity", "I", "the identity matrix", "–", "state_page", "state"),
     Symbol(
         "phi_i",
         "φ<sub>r</sub>, Φ",
@@ -641,9 +659,21 @@ SYMBOLS = (
         "vibration-absorbers-and-tuned-mass-dampers",
     ),
     Symbol(
-        "state", "A, B", "the state-space form ż = A z + B u, for the state z = [x, ẋ] of every mass", "–", "sim_page"
+        "state",
+        "A, B",
+        "the state-space form ż = A z (+ B u, with an input u), for the state z = [x, ẋ] of every mass",
+        "–",
+        "state_page",
+        "state",
     ),
-    Symbol("lambda", "λ", "eigenvalue of A, σ ± iω<sub>d</sub>: decay rate and damped frequency", "1/s", "sim_page"),
+    Symbol(
+        "lambda",
+        "λ",
+        "eigenvalue of A, σ ± iω<sub>d</sub>: decay rate and damped frequency",
+        "1/s",
+        "state_page",
+        "eigen",
+    ),
     Symbol(
         "foh",
         "Φ, Γ<sub>0</sub>, Γ<sub>1</sub>, h",
@@ -737,7 +767,7 @@ SYMBOLS = (
         "ψ<sub>r</sub>",
         "complex mode r's exact shape: the displacements of the state matrix's eigenvector [ψ; λψ]",
         "–",
-        "complex_page",
+        "state_page",
         "complex-shapes",
     ),
     Symbol(

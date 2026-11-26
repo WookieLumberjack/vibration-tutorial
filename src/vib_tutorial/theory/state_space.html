@@ -1,0 +1,153 @@
+<before>
+<a href="page:bases_page#modes">The modes: the basis that uncouples</a>
+<a href="page:bases_page#coupling">Coupling belongs to the description</a>
+</before>
+<goals page="state_page">
+<li trial="2" problem="proportional">see the modes of <m>M</m> and <m>K</m> leak when the dampers aren't spread like the masses and springs;</li>
+<li trial="4" problem="halving">start the masses in one of <m>A</m>'s own modes and watch it spiral in alone, at its own rate;</li>
+<li trial="6" problem="damping-ratio">see why those modes' shapes are complex, and what that means for the masses.</li>
+</goals>
+<p>This page builds on <a href="page:bases_page#modes">Coordinates &amp; bases</a>, with the same two masses. There,
+the modes made <m>M</m> and <m>K</m> diagonal, but not always the dampers' <m>C</m>: a change of basis in
+<m>x</m> uncouples only some systems. Here the coordinates are doubled to <m>x</m> and <m>ẋ</m> together, and
+in that bigger space there is always a basis that uncouples everything, dampers and all. Its modes are the ones the
+Simulation page's modal analysis and the Complex modes page work with later.</p>
+
+<h3><a name="state"></a>The state: four numbers</h3>
+<p>To know how the two masses will move, it isn't enough to know where they are; you need how fast they're going too.
+Those four numbers together are the <b>state</b>, <m>z = (x<sub>1</sub>, x<sub>2</sub>, ẋ<sub>1</sub>,
+ẋ<sub>2</sub>)</m>. Writing <m>Mẍ + Cẋ + Kx = 0</m> as "the velocity is the velocity, and the acceleration is
+what the forces make it" gives four first-order equations instead of two second-order ones:</p>
+<eq>\dot z = A z, \qquad A = \begin{bmatrix} 0 & I \\ -M^{-1}K & -M^{-1}C \end{bmatrix}</eq>
+<p>with <m>I</m> the identity. At the page's start, a 1 kg and a 2 kg mass, 400 N/m to each wall, 100 N/m between,
+and a 1 N·s/m damper beside each spring, the matrices panel shows <m>A</m> as the first of its steps. The motion is
+a point moving in a space of four dimensions, which no one plane can show. So the page shows it two numbers at a
+time, on two planes, and the question is which two numbers go together.</p>
+
+<h3><a name="eigen"></a>A's modes come in pairs</h3>
+<p>Try a motion that keeps its shape, <m>z = y e<sup>λt</sup></m>. Then <m>Ay = λy</m>: <m>y</m> is an
+eigenvector of <m>A</m>, and <m>λ</m> its eigenvalue. <m>A</m> is 4×4, so there are four. Since <m>A</m> is
+real, any complex ones come in conjugate pairs,</p>
+<eq>\lambda_r,\ \bar\lambda_r = \sigma_r \pm i\omega_r, \qquad y_r = \begin{bmatrix} \psi_r \\ \lambda_r \psi_r \end{bmatrix}</eq>
+<p>one pair a mode. The upper half, <m>ψ<sub>r</sub></m>, is the masses' displacements; the lower half is their
+velocities, <m>λ</m> times as much, since <m>ẋ = λx</m> for such a motion. Each pair is a mode that swings at
+<m>ω<sub>r</sub></m> and dies away at the rate <m>σ<sub>r</sub></m> (negative), just as the single oscillator's
+poles were <m>σ ± iω<sub>d</sub></m>. Its damping ratio is <m>ζ = −σ/|λ|</m>. None of this needs the damping to
+be proportional, or small.</p>
+
+<h3><a name="real-basis"></a>A real basis: one plane a mode</h3>
+<p>The complex <m>y<sub>r</sub></m> can be traded for two real vectors, its real and imaginary parts, as the
+columns of a real basis <m>T</m>. Because <m>A(Re y + i Im y) = (σ + iω)(Re y + i Im y)</m>, matching the real
+and imaginary parts gives</p>
+<eq>A \begin{bmatrix} \mathrm{Re}\,y & \mathrm{Im}\,y \end{bmatrix} = \begin{bmatrix} \mathrm{Re}\,y & \mathrm{Im}\,y \end{bmatrix} \begin{bmatrix} \sigma & \omega \\ -\omega & \sigma \end{bmatrix}</eq>
+<p>So in the coordinates <m>w</m> with <m>z = Tw</m>, the two belonging to mode <m>r</m> obey that 2×2 block and
+nothing else. Each pair turns at <m>ω</m> and shrinks as <m>e<sup>σt</sup></m>: on its own plane, its point
+spirals in, clockwise as a phase plane turns, whatever the other mode is doing. That is what the page's two planes
+show in <i>State-space modes</i>.</p>
+<p align="center"><img src="fig:pairs"></p>
+<p>Started in one mode alone, the other mode's point stays at the center forever. The size of a pair,
+<m>√(w<sub>1</sub>² + w<sub>2</sub>²)</m>, falls exactly as <m>e<sup>σt</sup></m>, a straight line on the
+Sizes tab's log axis. Its halving time is <m>ln 2/|σ|</m>.</p>
+
+<h3><a name="change"></a>Changing the state's basis</h3>
+<p>Any basis of the state is four columns in a matrix <m>T</m>, and the coordinates in it are
+<m>w = T<sup>−1</sup>z</m>. Then <m>ẇ = T<sup>−1</sup>ATw</m>: the matrix in the new basis is
+<m>T<sup>−1</sup>AT</m> <cite>strang</cite>. The last page used <m>VᵀMV</m> instead. That worked because the
+energies <m>½ẋᵀMẋ</m> and <m>½xᵀKx</m> are quadratic forms, and a quadratic form changes by the transpose on both
+sides. <m>A</m> isn't a quadratic form, and it isn't symmetric: it is a map from the state to its rate of change,
+and a map changes by <m>T<sup>−1</sup></m> on the left. Either way, the eigenvalues are the same in every basis:
+<m>det(T<sup>−1</sup>AT − λI) = det(A − λI)</m>. The page lists each mode's <m>λ</m>, frequency and damping ratio
+under the matrices, and they never move when the basis changes.</p>
+<p>The page keeps each basis's columns in pairs, one pair to a plane, so <m>T<sup>−1</sup>AT</m> splits into four
+2×2 blocks. The two on the diagonal are each pair's own motion; the two off it are the <b>coupling</b> between the
+pairs, drawn in red where they aren't zero.</p>
+
+<h3><a name="compare"></a>Three bases compared</h3>
+<ol>
+<li><b>Each mass: x and ẋ.</b> Each plane is one mass's displacement and velocity, the velocity scaled by
+<m>ω̂<sub>i</sub> = √(K<sub>ii</sub>/M<sub>ii</sub>)</m>, the mass's frequency with the other held, so its swing
+is round. Both off-diagonal blocks are red: the coupling spring and the dampers both pass motion between the
+masses.</li>
+<li><b>The modes of M and K: q and q̇.</b> Each plane is one of the last page's modes, its <m>q</m> and
+<m>q̇/ω</m>. The springs no longer couple: each diagonal block is a harmonic oscillator, <m>ω</m> above and below
+its diagonal, less its own damping. What's left off the diagonal is one term in each velocity row, the dampers'
+<m>−c̃<sub>12</sub></m> scaled by the modes' masses and frequencies. It is zero only when the dampers are spread
+like the masses and springs, <b>proportional damping</b> such as <m>C = αM + βK</m> <cite>caughey</cite>. The
+symmetric pair's dampers are; with a 2 kg <m>m<sub>2</sub></m> they aren't.</li>
+<li><b>State-space modes.</b> <m>A</m>'s own pairs: block diagonal whatever <m>C</m> is, the blocks built from
+<m>σ</m> and <m>ω</m>. This is the basis that uncouples any damped linear system <cite>foss</cite>.</li>
+</ol>
+<p>When the second basis leaks, the dampers pass motion from one mode of <m>M</m> and <m>K</m> to the other. Start
+the masses in mode 2 of <m>M</m> and <m>K</m>, with mode 1's pair at zero, and mode 1's pair climbs from nothing:
+the Sizes tab shows it beside the state-space modes, which only decay. With light damping the leak is small, which
+is why the modes of <m>M</m> and <m>K</m> serve so well in practice.</p>
+
+<h3><a name="complex-shapes"></a>Complex shapes</h3>
+<p>When the damping is proportional, <m>ψ<sub>r</sub></m> is the undamped mode's own shape, real: the masses move
+exactly in step, or exactly opposed, and pass through zero together. When it isn't, <m>ψ<sub>r</sub></m> is
+complex: each mass's part has its own phase, so the masses don't reach their peaks together. The page scales each
+<m>ψ</m> to unit length and turns it to be as real as it can be, so the imaginary part is only what can't be
+turned away. Alone, the mode moves the masses as <m>x(t) = e<sup>σt</sup>(Re ψ cos ωt − Im ψ sin ωt)</m>: on the
+plane of <m>x<sub>1</sub></m> and <m>x<sub>2</sub></m> it traces an ellipse spanned by <m>Re ψ</m> and
+<m>Im ψ</m>, not a line.</p>
+<p align="center"><img src="fig:complex-shape"></p>
+<p>The page draws both parts as arrows on that plane, with the ellipse, and the Shapes tab draws each mass's part of
+<m>ψ</m> as an arrow in the complex plane, a phasor, beside the undamped mode's real shape. The angle between the
+two phasors is the phase between the masses. It grows with the dampers, and with how far they are from being
+spread like the masses and springs.</p>
+
+<h3><a name="overdamped"></a>An overdamped mode</h3>
+<p>Strong enough dampers stop a mode swinging. Its pair of eigenvalues then meet on the real axis and part along
+it: two real decay rates, <m>λ<sub>a</sub></m> and <m>λ<sub>b</sub></m>, and two real eigenvectors. They still
+make a pair of columns, and the block is just <m>diag(λ<sub>a</sub>, λ<sub>b</sub>)</m>: the point slides into
+the center of its plane without turning. With a 2 kg <m>m<sub>2</sub></m>, mode 2 is overdamped from about
+18.8 N·s/m on each damper. At critical damping exactly, the two eigenvectors merge into one, and no basis
+diagonalizes <m>A</m>; the page's dampers pass through that point without stopping on it.</p>
+
+<h3><a name="cost"></a>What it costs</h3>
+<p>The state has twice as many coordinates as the masses, and its modes are complex, so the price of uncoupling
+any damping is a doubled, complex problem. For the light damping of most structures the modes of <m>M</m> and
+<m>K</m> leak only a little, and engineers use them with a damping ratio for each mode. How much that misses, and
+how complex a measured mode can be, is <a href="page:complex_page#how-complex">Complex modes</a>' subject later.</p>
+
+<h3><a name="live"></a>Changing it as it runs</h3>
+<p>The masses, springs and dampers change as it runs, by the grips on the drawing or the boxes, as on the last
+page, and the motion carries on by the physics. The basis can be switched as it runs too: the motion doesn't
+change, only its description, and the planes redraw the recent past in the new coordinates. Drag a point on a
+coordinate plane to set that pair, the other kept, and let go; drag on the plane of <m>x<sub>1</sub></m> and
+<m>x<sub>2</sub></m>, or a mass, to pluck the masses from rest.</p>
+
+<h3><a name="worked-example"></a>A worked example: the page as it opens</h3>
+<p>A 1 kg and a 2 kg mass, 400 N/m to each wall and 100 N/m between, a 1 N·s/m damper beside each spring.</p>
+<ol>
+<li><b>The matrices.</b> <m>M</m> = diag(1, 2) kg; <m>K</m> has 500 N/m on its diagonal and −100 N/m off it;
+<m>C</m> has 2 N·s/m on its diagonal and −1 N·s/m off it. So <m>A</m>'s lower rows are
+<m>−M<sup>−1</sup>K</m> = [−500, 100; 50, −250] and <m>−M<sup>−1</sup>C</m> = [−2, 1; 0.5, −1].</li>
+<li><b>Each mass.</b> <m>ω̂<sub>1</sub> = √500</m> = 22.4 rad/s and <m>ω̂<sub>2</sub> = √(500/2)</m> = 15.8 rad/s.
+Both off-diagonal blocks of <m>T<sup>−1</sup>AT</m> are red.</li>
+<li><b>The modes of M and K.</b> 2.421 Hz and 3.624 Hz. In them <m>VᵀCV</m> keeps −0.51 N·s/m off its diagonal, so
+<m>T<sup>−1</sup>AT</m> keeps two red terms, 0.41 and 0.333 /s: the dampers couple these coordinates.</li>
+<li><b>A's modes.</b> <m>λ<sub>1</sub></m> = −0.358 ± 15.21i /s, 2.421 Hz and <m>ζ</m> = 2.35 %;
+<m>λ<sub>2</sub></m> = −1.14 ± 22.74i /s, 3.619 Hz and <m>ζ</m> = 5.02 %, a little below the undamped
+3.624 Hz, as the single oscillator's damped frequency was. <m>T<sup>−1</sup>AT</m> is two blocks, nothing red.</li>
+<li><b>The shapes.</b> In mode 1, <m>m<sub>2</sub></m> lags <m>m<sub>1</sub></m> by 4.51°; in mode 2 by
+173.29°, 6.71° short of opposed. Light damping, nearly real shapes: the ellipses on the plane are thin.</li>
+<li><b>The leak.</b> Started 30 mm out in mode 2 of <m>M</m> and <m>K</m>, mode 1's pair climbs to 1.48 mm in
+0.41 s. In the state-space modes, mode 2's pair halves every <m>ln 2/1.142</m> = 0.607 s and mode 1's every
+1.94 s, each on its own.</li>
+</ol>
+
+<h3><a name="try-it"></a>Things to try</h3>
+<p>Setups to come back to (Things to try, under the boxes). Once you've handled the masses, some ask you to
+predict what you'll see first.</p>
+<!--TRIALS-->
+<takeaways>
+<li>The state <m>z = (x, ẋ)</m> turns <m>Mẍ + Cẋ + Kx = 0</m> into <m>ż = Az</m>, twice as many first-order equations.</li>
+<li><m>A</m>'s eigenvalues come in conjugate pairs <m>σ ± iω</m>, one pair a mode, and its eigenvectors' real and imaginary parts make a real basis in which <m>T<sup>−1</sup>AT</m> is block diagonal, whatever the damping.</li>
+<li>In that basis each mode's pair spirals in on its own plane, as <m>e<sup>σt</sup></m>; in the modes of <m>M</m> and <m>K</m> the dampers leak between the modes unless they're proportional.</li>
+<li>A basis of the state changes <m>A</m> to <m>T<sup>−1</sup>AT</m>, not <m>TᵀAT</m>: <m>A</m> isn't symmetric.</li>
+<li>With non-proportional damping the modes' shapes are complex: the masses don't move in step, and a mode alone traces an ellipse.</li>
+</takeaways>
+<h3><a name="notation"></a>Notation</h3>
+<notation>m x matrices identity state lambda zeta omega_i psi T_state omega_hat q V_basis</notation>
+<reading>strang foss caughey inman</reading>

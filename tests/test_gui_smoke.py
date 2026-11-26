@@ -4434,6 +4434,7 @@ def test_shock_page(app):
         "fatigue_page",
         "pendulum_page",
         "bases_page",
+        "state_page",
         "beams_page",
         "self_excited_page",
         "active_control_page",
