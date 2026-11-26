@@ -202,7 +202,7 @@ def coulomb_decay(mass: float, stiffness: float, friction: float, x0: float, t: 
         if abs(pos) <= d:  # stuck where it turned
             x[~done] = pos
             break
-        e = math.copysign(d, pos)  # it moves towards zero; friction pushes back to +e side
+        e = math.copysign(d, pos)  # it moves toward zero; friction pushes back to +e side
         inside = (~done) & (t <= start + half)
         x[inside] = (pos - e) * np.cos(wn * (t[inside] - start)) + e
         done |= inside

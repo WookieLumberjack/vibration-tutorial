@@ -78,7 +78,7 @@ def settle(ms=300):
 
 
 def write_png(grab: QtGui.QPixmap, path: Path) -> None:
-    """Save a grab as a COLOURS-colour PNG (the 55 images were 16 MB in full colour, 5.6 MB this way)."""
+    """Save a grab as a COLOURS-color PNG (the 55 images were 16 MB in full color, 5.6 MB this way)."""
     image = grab.toImage().convertToFormat(QtGui.QImage.Format.Format_RGB888)
     rgb = Image.frombuffer(
         "RGB", (image.width(), image.height()), bytes(image.constBits()), "raw", "RGB", image.bytesPerLine(), 1
@@ -485,7 +485,7 @@ def jeffcott_balancing():
     page.ramp.setValue(5000.0)
     b = page.balancing
     page.tabs.show_page(b)
-    b.station.setCurrentIndex(1)  # the disc
+    b.station.setCurrentIndex(1)  # the disk
     for button in b.step_buttons:
         button.click()
         while page.measurement is not None:
@@ -506,7 +506,7 @@ def jeffcott_two_plane():
     page.ramp.setValue(5000.0)
     b = page.balancing
     page.tabs.show_page(b)
-    b.mode.setCurrentIndex(1)  # the disc's faces, 40 mm apart; probes at A and B
+    b.mode.setCurrentIndex(1)  # the disk's faces, 40 mm apart; probes at A and B
     for button in b.step_buttons:
         button.click()
         while page.measurement is not None:
@@ -1231,7 +1231,7 @@ def rigid_mounts():
     w = window()
     page = w.mounts_page
     w.pages.setCurrentWidget(page)
-    page.load_trial(1)  # mounts below the centre of mass: sway and roll couple
+    page.load_trial(1)  # mounts below the center of mass: sway and roll couple
     page.loop.enabled = False
     page.running = False
     page._phase = 0.5 * math.pi
@@ -1267,7 +1267,7 @@ def vibroacoustics():
 
 
 def variability():
-    lesson("variability_page", 6, "variability")  # a mistuned disc's forced response
+    lesson("variability_page", 6, "variability")  # a mistuned disk's forced response
 
 
 def self_excited():

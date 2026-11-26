@@ -1,6 +1,6 @@
 """A plane frame or truss built element by element: the *Frame builder* page's model.
 
-Each node has three DOFs, (u, v, θ): x, y and a turn anticlockwise, numbered 3i, 3i + 1, 3i + 2. The elements
+Each node has three DOFs, (u, v, θ): x, y and a turn counterclockwise, numbered 3i, 3i + 1, 3i + 2. The elements
 (`Element`, SI throughout):
 
 * a **bar**: axial stiffness only, EA/L along it; mass ρAL, consistent ρAL/6 [[2, 1], [1, 2]] along it and across
@@ -134,7 +134,7 @@ class Material:
 
 
 STEEL = Material("Steel", 210e9, 0.3, 7850.0)
-ALUMINIUM = Material("Aluminium", 70e9, 0.33, 2700.0)
+ALUMINIUM = Material("Aluminum", 70e9, 0.33, 2700.0)
 TITANIUM = Material("Titanium", 114e9, 0.34, 4430.0)
 MATERIALS = (STEEL, ALUMINIUM, TITANIUM)
 
@@ -713,7 +713,7 @@ def storeys(
     floor_mass: float = 100.0,
     parts: int = 2,
 ) -> Frame:
-    """A frame `count` storeys high: clamped columns (each cut into `parts` members), a deep floor beam at each
+    """A frame `count` stories high: clamped columns (each cut into `parts` members), a deep floor beam at each
     level, and `floor_mass` on each floor, half at either end."""
     frame = Frame((Node(0.0, 0.0, Support.CLAMPED), Node(span, 0.0, Support.CLAMPED)))
     below = (0, 1)

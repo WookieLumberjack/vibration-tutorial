@@ -96,7 +96,7 @@ def test_a_disc_from_the_library():
 
 # ------------------------------------------------------------------ against the Jeffcott rotor page's model
 def _jeffcott(system: jeffcott.RotorSystem, bearing: Bearing) -> Rotor:
-    """The rotor page's rotor rebuilt: its journals' masses as discs, its shaft in Rayleigh beams."""
+    """The rotor page's rotor rebuilt: its journals' masses as disks, its shaft in Rayleigh beams."""
     mat = Material("steel", system.youngs, 0.3, jeffcott.STEEL)
     a = system.position * system.length
     sections = (
@@ -242,7 +242,7 @@ def test_editing_moves_the_parts_with_the_shaft():
     longer = rotor.replace_section(1, dataclasses.replace(rotor.sections[1], length=0.5))
     assert longer.length == pytest.approx(1.25)
     assert [b.z for b in longer.bearings] == pytest.approx([0.0, 1.25]) and longer.discs[0].z == pytest.approx(0.85)
-    shorter = rotor.without_section(2)  # the disc's (0.5 to 0.75): it goes too
+    shorter = rotor.without_section(2)  # the disk's (0.5 to 0.75): it goes too
     assert shorter.length == pytest.approx(0.75) and not shorter.discs
     assert [b.z for b in shorter.bearings] == pytest.approx([0.0, 0.75])
     assert len(rotor.without_section(3).bearings) == 1  # the far end's bearing goes with its section
@@ -296,7 +296,7 @@ def test_trials():
     assert euler == pytest.approx([812.4, 3250, 7312], abs=0.5)
     assert m.hz[4] / euler[2] == pytest.approx(0.75, abs=0.01)
 
-    name = "A disc off centre"
+    name = "A disk off center"
     assert by[name].rotor.discs[0].mass == pytest.approx(22.2, abs=0.05)
     _, m = at(name, 0.0)
     assert m.hz[0:6:2] == pytest.approx([62.28, 265.2, 501.4], abs=0.05)

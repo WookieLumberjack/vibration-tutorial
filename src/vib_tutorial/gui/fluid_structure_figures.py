@@ -1,6 +1,6 @@
 """The Fluid–structure page's Theory figures (see `figures`): a plate mode's cells, the fluid flowing from the
 ones pushing out to the ones pulling back, no further out than about a cell; and a sloshing tank beside its
-spring–mass analogue, the rigid mass m₀ fixed to the tank and the odd modes' masses on springs, drawn to the
+spring–mass analog, the rigid mass m₀ fixed to the tank and the odd modes' masses on springs, drawn to the
 default tank's masses (`sloshing.slosh_mass`)."""
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ TANK = Tank(1.0, 0.5, 1.0)  # the page's default: 1 m long, filled to 0.5 m
 
 def cells_svg() -> str:
     """A plate in section bending in three half waves, its rest line dashed; above it the fluid's flow, arcs from
-    each cell pushing out to its neighbours pulling back, reaching about a cell's width out."""
+    each cell pushing out to its neighbors pulling back, reaching about a cell's width out."""
     fg, muted, mass, force = colors.foreground, colors.muted, colors.mass[0], colors.force
     x0, w, y0, amp = 30.0, 250.0, 118.0, 14.0
     cells = 3
@@ -55,7 +55,7 @@ def cells_svg() -> str:
 
 def analogue_svg() -> str:
     """Left, the default tank (L = 1 m, d = 0.5 m) sloshing in its first mode, the surface tilted; right, the
-    analogue: m₀ fixed to the tank, m₁ and m₃ on springs to its walls, each block's area in proportion to its mass."""
+    analog: m₀ fixed to the tank, m₁ and m₃ on springs to its walls, each block's area in proportion to its mass."""
     fg, muted, mass, force = colors.foreground, colors.muted, colors.mass[0], colors.force
     water = colors.mass[1]
     # the tank
@@ -71,7 +71,7 @@ def analogue_svg() -> str:
         fig.math_label(x0 + L + 10, y0 - d / 2 + 5, "d", fg, "start"),
         fig.text(154, y0 - 46, "=", fg, size=20),
     ]
-    # the analogue
+    # the analog
     ax, w = 178.0, 116.0
     m0, m1, m3 = rigid_mass(TANK), float(slosh_mass(TANK, 1)), float(slosh_mass(TANK, 3))
     side = 34.0 / math.sqrt(max(m0, m1))  # px per √kg, so a block's area goes as its mass

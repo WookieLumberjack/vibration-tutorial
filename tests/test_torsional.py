@@ -32,7 +32,7 @@ PRESET = {p.name: p for p in PRESETS}
 def test_two_inertias_match_the_closed_form():
     (mode,) = modes(FAN)
     assert mode.freq_hz == pytest.approx(two_inertia_hz(2.0, 10.0, 1.8e5), rel=1e-12)
-    # the node nearer the heavier disc: the fan swings a fifth of the motor's, the other way
+    # the node nearer the heavier disk: the fan swings a fifth of the motor's, the other way
     assert mode.shape[1] / mode.shape[0] == pytest.approx(-2.0 / 10.0)
     assert mode.twist == pytest.approx([1.0])
     # zeta from phi'C phi: the coupling's damper and the fan's to ground
@@ -127,7 +127,7 @@ def test_editing_keeps_the_excitation_on_its_disc():
     fewer = t.removed(0)
     assert fewer.n == t.n - 1 and fewer.discs[fewer.excitation.disc].name == "Crank 3"
     assert t.removed(t.excitation.disc).excitation is None
-    assert t.removed(t.n - 1).links[-1].name == "Crank–flywheel"  # the last disc takes the link before it
+    assert t.removed(t.n - 1).links[-1].name == "Crank–flywheel"  # the last disk takes the link before it
     with pytest.raises(ValueError):
         FAN.removed(0)
     with pytest.raises(ValueError):

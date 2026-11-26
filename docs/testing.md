@@ -118,7 +118,7 @@ without any error in the model it is 0.92.
 ![Model updating page, the Updating tab: the springs updated against the hammer test's three frequencies and shapes. k3 falls from 1.30 of the structure's to 1.02 in a few steps while k1, k2 and k4 stay within 3.5 % of 1; the residual drops from 0.048 to 0.016 and stays there](images/model_updating_springs.png)
 
 Updated against the hammer test's three frequencies and shapes, the springs find the error: k3 falls from
-1.30 to 1.02 of the structure's in a few steps. What remains, a few per cent on each spring, is the test's
+1.30 to 1.02 of the structure's in a few steps. What remains, a few percent on each spring, is the test's
 error passed into the model. Update the masses as well and the fit gets better while the answer gets worse:
 every factor comes out 2 to 4 % high, because a model that is uniformly stiffer and heavier has exactly the
 same modes.
@@ -152,12 +152,12 @@ from those responses.
   shapes unscaled (no force, no modal mass). The *Methods* tab sets FDD + EFDD, SSI-cov and a
   hammer test (the virtual modal test's way, on m1) side by side.
 - **Things to try**: a short record, short blocks (leakage: too much damping), forces at a node
-  of a mode (it is missed), coloured forces, noisy sensors, SSI on the close damped modes, and a
+  of a mode (it is missed), colored forces, noisy sensors, SSI on the close damped modes, and a
   machine running between two modes or right by one.
 
 ![Operational modal analysis of the default chain: the first singular value of the responses' cross-spectral matrix peaks at all four modes, each with its shaded EFDD bell; mode 1 found at 1.106 Hz and 1.9 % damping against the exact 1.105 Hz and 1.7 %](images/oma.png)
 
-The default chain's two lower modes come out within a fraction of a per cent in frequency and a
+The default chain's two lower modes come out within a fraction of a percent in frequency and a
 tenth in damping. Modes 3 and 4 are close and heavily damped (7.7 and 9.4 %):
 their bells overlap and cut each other short, and EFDD's damping for them is poor. SSI-cov
 gets them within about 15 %; the hammer test, knowing the force, does better on the modes it
@@ -188,11 +188,11 @@ moves.
 
 Scatter in what is built. The chain with every mass, spring and damper scattered (lognormal) by Monte
 Carlo: the frequencies' histograms against the first-order estimate from each mode's energies, and the
-band the receptance falls in. Then a bladed disc, a ring of identical blades weakly coupled: tuned, its
+band the receptance falls in. Then a bladed disk, a ring of identical blades weakly coupled: tuned, its
 modes are waves round the ring; mistuned by about the coupling, they localize on a few blades, and an
 engine-order force drives the worst blade harder than any tuned one, up to Whitehead's bound.
 
-![Variability & localization page, a mistuned bladed disc: twelve blades coupled by 2 % springs, driven at engine order 3; this 1 % pattern's worst blade peaks 1.06 times the tuned ring, and over 12 patterns per level the worst reaches 1.42 at 2 % mistuning, under Whitehead's bound of 2.23](images/variability.png)
+![Variability & localization page, a mistuned bladed disk: twelve blades coupled by 2 % springs, driven at engine order 3; this 1 % pattern's worst blade peaks 1.06 times the tuned ring, and over 12 patterns per level the worst reaches 1.42 at 2 % mistuning, under Whitehead's bound of 2.23](images/variability.png)
 
 ---
 

@@ -43,7 +43,7 @@ LOW_SPEED = 0.02  # of the top speed: the speed plot's range is scaled to the cu
 SHORT_LIMIT = 0.5  # L_b/D_b past which short-bearing theory is stretched
 THRESHOLD_TOP = 60_000.0  # rpm: the rigid rotor's threshold is looked for up to this (the page's widest range)
 AGAINST = ("Speed", "Modified Sommerfeld number")
-# The coefficients drawn: (row, column) in K or C, label, colour index into colors.mode.
+# The coefficients drawn: (row, column) in K or C, label, color index into colors.mode.
 STIFFNESS = (
     ((0, 0), "k<sub>xx</sub>", 0),
     ((0, 1), "k<sub>xy</sub>", 1),
@@ -53,10 +53,10 @@ STIFFNESS = (
 DAMPING = (((0, 0), "c<sub>xx</sub>", 0), ((0, 1), "c<sub>xy</sub> = c<sub>yx</sub>", 1), ((1, 1), "c<sub>yy</sub>", 5))
 
 LOCUS_TIP = (
-    "<p>Where the journal's centre sits in its clearance circle (radius c<sub>r</sub>), seen from the B end: x to "
+    "<p>Where the journal's center sits in its clearance circle (radius c<sub>r</sub>), seen from the B end: x to "
     "the right, y up, spinning counterclockwise, the load straight down. At rest it lies on the bottom; "
     "as the speed rises the oil film lifts it and pushes it sideways, in the direction of spin, along "
-    "this path toward the centre. The solid part is the page's speed range; the dot is the speed now.</p>"
+    "this path toward the center. The solid part is the page's speed range; the dot is the speed now.</p>"
     "<p>The angle from the load line to the journal is the <i>attitude angle</i>: nearly 90° when "
     "lightly loaded. The film holds the load up by pushing the journal sideways, and that sideways push "
     "is the cross-coupled stiffness.</p><p>Short-bearing theory gives the same path for every bearing: "
@@ -77,7 +77,7 @@ INPUT_TIPS = {
     "diameter": "Journal diameter D<sub>b</sub>",
     "length": "<p>Bearing length L<sub>b</sub>. Short-bearing theory drops the pressure flow round the "
     "bearing and holds for L<sub>b</sub>/D<sub>b</sub> up to about 0.5; longer bearings carry more than it says.</p>",
-    "clearance": "<p>Radial clearance c<sub>r</sub>, the gap with the journal centred: typically 1/1000 to 2/1000 of "
+    "clearance": "<p>Radial clearance c<sub>r</sub>, the gap with the journal centered: typically 1/1000 to 2/1000 of "
     "the radius.</p>",
     "viscosity": "<p>The oil's dynamic viscosity η. ISO VG 32 turbine oil is about 30 mPa·s at 40 °C, "
     "and about 10 mPa·s at 70 °C.</p>",
@@ -379,7 +379,7 @@ class BearingPanel(QtWidgets.QWidget):
             self.unstable_path.setData(*_locus(run))
         else:
             self.unstable_path.setData([], [])
-        # Round speeds along the range, labelled where they are not crowded (near the centre they bunch up).
+        # Round speeds along the range, labeled where they are not crowded (near the center they bunch up).
         marks: list[float] = []
         pts: list[np.ndarray] = []
         for rpm in _round_speeds(self.top_rpm):

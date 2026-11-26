@@ -106,8 +106,8 @@ def test_the_grips_set_m_k_and_the_rods_pivot_as_it_swings(page, app):
     page.load_trial(trial("A rod"))
     page.step(0.2)
     before = page.pivot.value()
-    ux, uy = v._point(v.theta, 1.0 / v.reach)  # along the rod, a metre
-    drag(v, v.press_point("pivot"), QtCore.QPointF(-0.2 * ux, -0.2 * uy), app)  # 0.2 m towards its middle
+    ux, uy = v._point(v.theta, 1.0 / v.reach)  # along the rod, a meter
+    drag(v, v.press_point("pivot"), QtCore.QPointF(-0.2 * ux, -0.2 * uy), app)  # 0.2 m toward its middle
     assert page.pivot.value() == pytest.approx(before - 0.2, abs=0.01)
     assert page.running and len(page.live.edits) >= 1
 
@@ -127,7 +127,7 @@ def test_the_period_tabs_axes_keep_still_when_the_theory_is_shown(page):
 def test_the_moments_beside_it_and_the_strings_pull_under_them(page):
     rows = page.forces.rows()
     assert [s for s, _ in rows] == ["mg", "cθ̇", "Jθ̈", "Tₛ"]
-    page.load_trial(trial("A disc"))
+    page.load_trial(trial("A disk"))
     page.forces._write_sizes()
     assert [s for s, _ in page.forces.rows()] == ["kₜθ", "cθ̇", "Jθ̈", "Tₛ"]
     assert all(z.endswith("N·m") for _, z in page.forces.rows()[:3]) and page.forces.rows()[3][1].endswith("N")

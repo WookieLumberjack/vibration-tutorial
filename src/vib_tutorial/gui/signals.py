@@ -1,7 +1,7 @@
 """Signals & spectra page: sampling, aliasing, the DFT's lines, leakage, windows, averaging and transducers.
 
 Left: the signal (two tones, a chirp or a struck mode, plus noise) and how it is acquired (the sample rate,
-the anti-alias filter, the block, the window, the averages). Centre: the first block, the analog signal behind
+the anti-alias filter, the block, the window, the averages). Center: the first block, the analog signal behind
 its samples and the window over them, and the averaged spectrum, as a peak amplitude or a PSD, with each
 tone's true amplitude where it should show. Right: the windows compared, a spectrogram of the record, the
 transducers (a seismic mass in a case), and the Theory. The page has its own model (core/signals.py).
@@ -123,7 +123,7 @@ TRIALS = (
             why=(
                 'Only a tone exactly on a line falls on it. Half-way between, the nearest lines read 0.64, and the rest leaks across the spectrum.',
                 '',
-                "The amplitude doesn't share out evenly: each neighbouring line reads 0.64 (scalloping), and the rest leaks across every line.",
+                "The amplitude doesn't share out evenly: each neighboring line reads 0.64 (scalloping), and the rest leaks across every line.",
             ),
         ),
     ),
@@ -337,7 +337,7 @@ def _scalloping(rng: np.random.Generator) -> Question:
         f"A tone of amplitude {sig(a, 6)} lies exactly half-way between two lines. With {name}, what amplitude does "
         "the largest line read?",
         reads,
-        f"Half-way between lines is the worst place: the window's spectrum half a line from its centre, the "
+        f"Half-way between lines is the worst place: the window's spectrum half a line from its center, the "
         f"scalloping loss, is {number(loss)} dB for {name}: {sig(a, 6)} × 10<sup>−{number(loss)}/20</sup> = "
         f"{number(reads)}. (No window: 2/π, 3.92 dB; Hann 1.42 dB; a flat top, almost none: that's what it's for.)",
         setup=dict(f1=50.5, a1=a, a2=0.0, window=kind),
@@ -577,7 +577,7 @@ NOTES_HTML = load_notes(
 
 
 class SignalsPage(QtWidgets.QWidget):
-    """Controls on the left, the block and its spectrum in the centre, windows, spectrogram and sensors on the
+    """Controls on the left, the block and its spectrum in the center, windows, spectrogram and sensors on the
     right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
@@ -653,7 +653,7 @@ class SignalsPage(QtWidgets.QWidget):
             lv.addWidget(w)
         lv.addStretch(1)
 
-        # --- centre
+        # --- center
         self.time_plot = plot("Signal", "m/s²", "Time", "s", height=150)
         decimate(self.time_plot)  # up to 20,000 samples
         self.time_plot.setToolTip(TIME_TIP)
@@ -1061,7 +1061,7 @@ class SignalsPage(QtWidgets.QWidget):
         self.sgram_plot.setYRange(0.0, fs / 2, padding=0)
         self.sgram_note.setText(
             f"{t.size} blocks of {fmt(n / fs, 's')}, {fmt(dt, 's')} apart (75 % overlap), lines {fmt(fs / n, 'Hz')} "
-            "apart; the colour spans 60 dB below the strongest."
+            "apart; the color spans 60 dB below the strongest."
         )
 
     def _draw_sensors(self) -> None:

@@ -1,7 +1,7 @@
 """A quarter-car on a rough road: ride comfort, road holding and suspension travel from the road's PSD.
 
 The *Quarter-car* page. The body (sprung mass m_s) rides on the suspension (k_s, c_s) over the wheel (unsprung
-m_u), which rides on the tyre (k_t) over the road's height z_r(t). The road is an ISO 8608 class: a displacement
+m_u), which rides on the tire (k_t) over the road's height z_r(t). The road is an ISO 8608 class: a displacement
 PSD in space G_d(n) = G_d(n₀)(n/n₀)^−2 (n in cycles/m, n₀ = 0.1), so at speed v its height's PSD in time is
 G_d(f/v)/v and its vertical velocity is white. Each output's PSD is |H(f)|² G_z(f) (`response`) and its RMS the
 square root of the area, worked out on a grid packed round the two modes (body bounce and wheel hop). `tradeoff`
@@ -37,7 +37,7 @@ GRID = 3000
 class Output(enum.Enum):
     BODY = "Body acceleration"
     TRAVEL = "Suspension travel"
-    TYRE = "Dynamic tyre load"
+    TYRE = "Dynamic tire load"
 
 
 OUTPUTS = tuple(Output)
@@ -53,7 +53,7 @@ class Car:
 
     @property
     def weight(self) -> float:
-        """The tyre's static load (N)."""
+        """The tire's static load (N)."""
         return (self.sprung + self.unsprung) * G
 
     def matrices(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -91,7 +91,7 @@ class Road:
 
 def transfer(car: Car, f: np.ndarray) -> dict[Output, np.ndarray]:
     """Each output per unit road height, at f (Hz): body acceleration (m/s² per m), travel x_b − x_w (m/m), and
-    the tyre's dynamic load k_t (z_r − x_w) (N/m, positive pressing harder). The 2 × 2 solve in closed form."""
+    the tire's dynamic load k_t (z_r − x_w) (N/m, positive pressing harder). The 2 × 2 solve in closed form."""
     w = TWO_PI * np.asarray(f, dtype=float)
     a11 = car.spring - w * w * car.sprung + 1j * w * car.damper
     a12 = -car.spring - 1j * w * car.damper
@@ -119,12 +119,12 @@ class Response:
 
     @property
     def load_ratio(self) -> float:
-        """σ of the dynamic tyre load over the static load."""
+        """σ of the dynamic tire load over the static load."""
         return self.rms[Output.TYRE] / self.weight
 
     @property
     def lift_probability(self) -> float:
-        """P(dynamic load < −static load): the tyre leaving the road, Gaussian."""
+        """P(dynamic load < −static load): the tire leaving the road, Gaussian."""
         return 0.5 * float(scipy.special.erfc(1 / (math.sqrt(2) * self.load_ratio)))
 
 
@@ -139,7 +139,7 @@ def response(car: Car, road: Road) -> Response:
 
 @dataclass(frozen=True)
 class Tradeoff:
-    """For each spring (rows) and damper (columns): the RMS body acceleration, tyre load ratio and travel."""
+    """For each spring (rows) and damper (columns): the RMS body acceleration, tire load ratio and travel."""
 
     springs: np.ndarray
     dampers: np.ndarray

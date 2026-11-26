@@ -1,8 +1,8 @@
 """A top on a table: a round tip that slides with friction, the rising top and the tippe top.
 
 The *Gyroscope* page's *On a table* settings. A `RoundTop` is a symmetric body of mass m (moments I₃ along its
-axis e₃ and I₁ across it, both about its centre of mass G) whose underside is a sphere of radius R centred on
-the axis at C = G − a e₃: a > 0 puts G above the sphere's centre (a disc on a stem with a round tip, a = l − R),
+axis e₃ and I₁ across it, both about its center of mass G) whose underside is a sphere of radius R centered on
+the axis at C = G − a e₃: a > 0 puts G above the sphere's center (a disk on a stem with a round tip, a = l − R),
 a < 0 below it (a tippe top, a ball weighted low). It touches the table at P = C − R ẑ, so G stands at
 z = R + a cos θ, and P slips at v_P = v_G + ω × (P − G) (it is never off the table's plane). The table pushes
 up with N and drags with Coulomb's friction, F = −μN v_P/|v_P|, smoothed below `SMOOTHING` so that it is a
@@ -23,7 +23,7 @@ is (`least_energy`, L taken along I(a e₃ + R ẑ), nothing else moving)
 
 the curve the top's energy sinks onto: upright E_J(0) = J²/2I₃(a + R)² + mg(R + a), turned over
 E_J(π) = J²/2I₃(R − a)² + mg(R − a). Upright is the curve's minimum while J² D'(1) > 2mga D(1)² (D as a
-function of cos θ), so a disc on a round tip rises to sleep once it spins faster than `turning_spin`, and a
+function of cos θ), so a disk on a round tip rises to sleep once it spins faster than `turning_spin`, and a
 tippe top turns over once it spins faster than it, if 1 − α < I₁/I₃ < 1 + α (α = −a/R): then turned over is
 a minimum and upright isn't.
 
@@ -36,13 +36,13 @@ for the tests.
 
 Working on it
 -------------
-Its *Setting* also puts a top on a table (`core/sliding_top.py`, `RoundTop`: the disc on a round tip, or a
+Its *Setting* also puts a top on a table (`core/sliding_top.py`, `RoundTop`: the disk on a round tip, or a
 tippe top, a ball weighted low): the tip slides with smoothed Coulomb friction, N in closed form from G's
 height, and only Jellett's J = L·(a e₃ + R ẑ) is kept, so the energy sinks onto `least_energy` (E_J), whose
 least (`least_tilt`) is where the top goes, unless the tip starts to roll (`rolling_tilt`). Nothing splits off
 exactly, so `SlidingSimulator` is RK4 in plain floats (~6 µs a step), its step from the spin, the wobble about
 G and the smoothed friction's rate, keeping a sample every `RECORD_DT`; it stops at an `Event` (the table
-would have to pull: a hop; a disc's rim touches) rather than model it. On a table the page's Potential tab
+would have to pull: a hop; a disk's rim touches) rather than model it. On a table the page's Potential tab
 draws E_J, Path the tip's track, Check J and the energy with friction's work; Precession is disabled.
 `tests/test_sliding_top.py` checks J, the energy ledger, RK4's order against `reference` (`solve_ivp`), E_J,
 and the table trials' numbers.
@@ -74,26 +74,26 @@ COLUMNS = 22  # a sample's: see `_row`
 
 class Event(enum.Enum):
     HOPS = "it leaves the table, which this model can't follow: its tip stays on the table"
-    RIM = "its disc's rim touches the table: it falls over"
+    RIM = "its disk's rim touches the table: it falls over"
 
 
 @dataclass(frozen=True)
 class RoundTop:
-    """A symmetric body on a table, its underside a sphere of radius R whose centre is a below G on the axis."""
+    """A symmetric body on a table, its underside a sphere of radius R whose center is a below G on the axis."""
 
     mass: float
     polar: float  # I₃, about the axis
     central: float  # I₁, across the axis through G
-    offset: float  # a (m): G above the sphere's centre; negative below
+    offset: float  # a (m): G above the sphere's center; negative below
     radius: float  # R (m), the sphere's
     friction: float = 0.3  # μ
     gravity: float = G
-    rim: float = 0.0  # a disc's radius, to see when it touches the table (0: a ball)
+    rim: float = 0.0  # a disk's radius, to see when it touches the table (0: a ball)
 
     @classmethod
     def disc(cls, top: Top, tip_radius: float, friction: float) -> RoundTop:
-        """The cup's disc (or square) on a stem, its tip rounded to radius R (its end still l below the plate's
-        centre); a square's rim is its corner, which comes round to the bottom every quarter turn."""
+        """The cup's disk (or square) on a stem, its tip rounded to radius R (its end still l below the plate's
+        center); a square's rim is its corner, which comes round to the bottom every quarter turn."""
         return cls(
             top.mass, top.polar, top.plate, top.height - tip_radius, tip_radius, friction, top.gravity, top.corner
         )
@@ -102,7 +102,7 @@ class RoundTop:
     def tippe(
         cls, mass: float, radius: float, low: float, ratio: float, friction: float, gravity: float = G
     ) -> RoundTop:
-        """A tippe top: a ball of radius R, its weight `low` below its centre, I₃ = 0.4mR² and I₁ = ratio × I₃
+        """A tippe top: a ball of radius R, its weight `low` below its center, I₃ = 0.4mR² and I₁ = ratio × I₃
         (its stem left out)."""
         polar = BALL * mass * radius * radius
         return cls(mass, polar, ratio * polar, -low, radius, friction, gravity)
@@ -113,7 +113,7 @@ class RoundTop:
 
     @property
     def alpha(self) -> float:
-        """α = −a/R: how far below its centre a ball's weight sits, over its radius."""
+        """α = −a/R: how far below its center a ball's weight sits, over its radius."""
         return -self.offset / self.radius
 
     @property
@@ -131,7 +131,7 @@ class RoundTop:
         return self.radius + self.offset * math.cos(tilt)
 
     def rim_tilt(self) -> float:
-        """The tilt (rad) at which a disc's rim touches the table: R + a cos θ = r sin θ (π for a ball)."""
+        """The tilt (rad) at which a disk's rim touches the table: R + a cos θ = r sin θ (π for a ball)."""
         if self.rim <= 0:
             return math.pi
         a, R, r = self.offset, self.radius, self.rim
@@ -157,7 +157,7 @@ class RoundTop:
 
     def turning_spin(self) -> float:
         """The spin (rad/s, upright) at which upright stops or starts being E_J's minimum: J²D'(1) = 2mgaD(1)²,
-        Ω² = mga(a + R)²/R(I₃(a + R) − I₁R). A disc rises to sleep above it; a tippe top turns over above it.
+        Ω² = mga(a + R)²/R(I₃(a + R) − I₁R). A disk rises to sleep above it; a tippe top turns over above it.
         NaN where there is none (upright is a minimum, or isn't, whatever the spin)."""
         a, R = self.offset, self.radius
         lever = R * (self.polar * (a + R) - self.central * R)
@@ -179,7 +179,7 @@ class RoundTop:
         return float(theta[i])
 
     def rolling_tilt(self) -> float:
-        """A disc's tilt (rad) below which friction can make its tip roll instead of slide, for a fast top:
+        """A disk's tilt (rad) below which friction can make its tip roll instead of slide, for a fast top:
         rolling, G circles at ω₃R sin θ and the slow precession mga/I₃ω₃, which takes a force μmg at most, so
         sin θ = μI₃/maR (spin drops out). It rises while it slides, so it stalls about here. π/2 if it can roll at
         any tilt; NaN for a ball weighted low."""

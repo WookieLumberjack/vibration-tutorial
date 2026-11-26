@@ -10,7 +10,7 @@
 </goals>
 <h3><a name="road"></a>A road as a random input</h3>
 <p>A road's roughness is a random process in space: its height's PSD <m>G<sub>d</sub>(n)</m>, with the spatial
-frequency <m>n</m> in cycles per metre. ISO 8608 <cite>iso8608</cite> fits measured roads to</p>
+frequency <m>n</m> in cycles per meter. ISO 8608 <cite>iso8608</cite> fits measured roads to</p>
 <eq>G_d(n) = G_d(n_0)\,(n/n_0)^{-2}, \qquad n_0 = 0.1\ \text{cycles/m}</eq>
 <p>and grades them by <m>G<sub>d</sub>(n<sub>0</sub>)</m>: class A (a new motorway) 16 × 10⁻⁶ m³, then four times
 more per class, to H. Driven at speed <m>v</m>, a wavelength <m>1/n</m> passes at <m>f = vn</m>, and a band
@@ -22,19 +22,19 @@ proportion to the speed.</p>
 
 <h3><a name="quarter-car"></a>The quarter-car</h3>
 <p>One corner of a car: the body <m>m<sub>s</sub></m> on the suspension (<m>k<sub>s</sub></m>,
-<m>c<sub>s</sub></m>), on the wheel <m>m<sub>u</sub></m>, on the tyre <m>k<sub>t</sub></m>, on the road
+<m>c<sub>s</sub></m>), on the wheel <m>m<sub>u</sub></m>, on the tire <m>k<sub>t</sub></m>, on the road
 <m>z<sub>r</sub></m>.</p>
 <table width="100%"><tr><td align="center"><img src="fig:quarter" width="310" height="170"></td></tr></table>
-<p>It has two modes. In <b>body bounce</b> the wheel barely moves against the stiff tyre, so the body rides the
-suspension and tyre in series; in <b>wheel hop</b> the body barely moves, so the wheel bounces between the
-suspension and the tyre in parallel:</p>
+<p>It has two modes. In <b>body bounce</b> the wheel barely moves against the stiff tire, so the body rides the
+suspension and tire in series; in <b>wheel hop</b> the body barely moves, so the wheel bounces between the
+suspension and the tire in parallel:</p>
 <eq>f_{\text{bounce}} \approx \frac{1}{2\pi}\sqrt{\frac{k_s k_t}{(k_s + k_t)\,m_s}}, \qquad f_{\text{hop}} \approx \frac{1}{2\pi}\sqrt{\frac{k_s + k_t}{m_u}}</eq>
 <p>1 to 1.5 Hz and 10 to 15 Hz in a car. Each output's PSD is <m>|H(f)|<sup>2</sup>G<sub>z</sub>(f)</m>, its mean
 square the area under it: the Random vibration page's <m>HGHᴴ</m> with one input. Three outputs matter:</p>
 <ul>
 <li><b>Body acceleration</b>: ride comfort.</li>
-<li><b>Dynamic tyre load</b> <m>k<sub>t</sub>(z<sub>r</sub> − x<sub>u</sub>)</m> over the static load
-<m>W = (m<sub>s</sub> + m<sub>u</sub>)g</m>: road holding. A tyre can only push, so it leaves the road when the
+<li><b>Dynamic tire load</b> <m>k<sub>t</sub>(z<sub>r</sub> − x<sub>u</sub>)</m> over the static load
+<m>W = (m<sub>s</sub> + m<sub>u</sub>)g</m>: road holding. A tire can only push, so it leaves the road when the
 load swings below <m>−W</m>; for a Gaussian load of RMS <m>σ<sub>t</sub></m> that happens a fraction
 <m>Φ(−W/σ<sub>t</sub>)</m> of the time, <m>Φ</m> the standard normal distribution.</li>
 <li><b>Suspension travel</b> <m>x<sub>s</sub> − x<sub>u</sub></m>: the room the suspension needs (three times
@@ -50,7 +50,7 @@ oscillator on a base whose velocity is white, and the area under its relative di
 seated body by a filter <m>W<sub>k</sub></m> before taking its RMS, the <b>weighted acceleration</b>
 <m>a<sub>w</sub></m>: the weighting is largest round 4 to 8 Hz, where the body's own organs and spine resonate
 <cite>griffin</cite>, and falls away above and below. The car's body bounce, at about 1 Hz, is below that band and
-counts for less than its share of the plain RMS; the harshness the tyre and the damper pass through between 4
+counts for less than its share of the plain RMS; the harshness the tire and the damper pass through between 4
 and 15 Hz counts for more. So the plain RMS this page shows overstates what a soft suspension's bounce costs and
 understates a firm damper's harshness: with the weighting, the best damper for comfort tends to move softer. The
 standard also says how a weighted RMS reads (from not uncomfortable to extremely uncomfortable), and how to add
@@ -85,7 +85,7 @@ frequency below the rear's.</p>
 <p>The springs in series are 18.2 kN/m, so the body bounces near <m>√(18\,200/300)/2π</m> = 1.24 Hz, and the wheel
 hops near <m>√(220\,000/40)/2π</m> = 11.8 Hz; the body's damping ratio is <m>1500/2√(20\,000 × 300)</m> = 0.31.
 The travel estimate is <m>√(2.02 × 10⁻³ × 300/6000)</m> = 10.1 mm RMS, against the full model's 10.7 mm (the
-tyre's give adds the rest). The page's readout: body acceleration 1.48 m/s² RMS, travel 10.7 mm, and the tyre's
+tire's give adds the rest). The page's readout: body acceleration 1.48 m/s² RMS, travel 10.7 mm, and the tire's
 load swinging by 24 % of its static 3334 N.</p>
 <p>A wheelbase of 2.7 m at 20 m/s gives <m>τ</m> = 0.135 s: bounce isn't driven at 3.7 Hz, nor pitch at 7.4 Hz.</p>
 
@@ -97,7 +97,7 @@ load swinging by 24 % of its static 3334 N.</p>
 <li>A quarter-car has body bounce (about 1 Hz) and wheel hop (about 10 Hz); each output's PSD is <m>|H|<sup>2</sup>G<sub>z</sub></m>.</li>
 <li>The best damper for comfort is lighter than the best for grip: passive suspensions trade one for the other.</li>
 <li>Soft springs buy comfort with sag; travel goes as <m>√(m<sub>s</sub>/c<sub>s</sub>)</m>; unsprung mass costs grip.</li>
-<li>Comfort is weighted towards 4 to 8 Hz; the wheelbase filters bounce and pitch at speeds set by <m>L/v</m>.</li>
+<li>Comfort is weighted toward 4 to 8 Hz; the wheelbase filters bounce and pitch at speeds set by <m>L/v</m>.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
 <notation>road_gd G_zv car_q tyre_w phi_normal f_modes Omega H zeta a_w wheelbase</notation>

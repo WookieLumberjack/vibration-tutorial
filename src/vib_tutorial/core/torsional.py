@@ -1,8 +1,8 @@
-"""Torsional vibration of a drive train: discs on shafts, and gear meshes between them.
+"""Torsional vibration of a drive train: disks on shafts, and gear meshes between them.
 
-The train is a line of discs (inertia J, and an optional damper to ground: a fan's or
+The train is a line of disks (inertia J, and an optional damper to ground: a fan's or
 pump's load slope, windage), each joined to the next by a shaft (stiffness k, damping c)
-or by a gear mesh. Each disc's angle θ is measured in its own shaft's direction of
+or by a gear mesh. Each disk's angle θ is measured in its own shaft's direction of
 turning, so a mesh with z_in teeth on the motor's side and z_out on the far side turns
 the far shaft at s = z_in / z_out times the near one's speed, whichever way it turns.
 
@@ -66,7 +66,7 @@ class Disc:
 
 @dataclass(frozen=True)
 class Shaft:
-    """A shaft or coupling between two discs: torsional stiffness (N·m/rad) and damping (N·m·s/rad)."""
+    """A shaft or coupling between two disks: torsional stiffness (N·m/rad) and damping (N·m·s/rad)."""
 
     stiffness: float
     damping: float = 0.0
@@ -102,7 +102,7 @@ Link = Shaft | Mesh
 
 @dataclass(frozen=True)
 class Excitation:
-    """A pulsating torque on one disc: (order, amplitude in N·m) pairs, each order of that disc's own speed."""
+    """A pulsating torque on one disk: (order, amplitude in N·m) pairs, each order of that disk's own speed."""
 
     disc: int
     harmonics: tuple[tuple[float, float], ...]
@@ -111,7 +111,7 @@ class Excitation:
 
 @dataclass(frozen=True)
 class DriveTrain:
-    """Discs in order from the motor, a link between each pair, and the torque that drives it."""
+    """Disks in order from the motor, a link between each pair, and the torque that drives it."""
 
     discs: tuple[Disc, ...]
     links: tuple[Link, ...]
@@ -119,9 +119,9 @@ class DriveTrain:
 
     def __post_init__(self) -> None:
         if len(self.discs) < 2:
-            raise ValueError("a drive train needs two discs")
+            raise ValueError("a drive train needs two disks")
         if len(self.links) != len(self.discs) - 1:
-            raise ValueError("one link between each pair of discs")
+            raise ValueError("one link between each pair of disks")
         for d in self.discs:
             if not d.inertia > 0:
                 raise ValueError(f"{d.name}: inertia must be positive")
@@ -138,7 +138,7 @@ class DriveTrain:
                 if not link.base_radius > 0:
                     raise ValueError(f"{link.name}: base radius must be positive")
         if self.excitation is not None and not 0 <= self.excitation.disc < len(self.discs):
-            raise ValueError("the excitation's disc isn't on the train")
+            raise ValueError("the excitation's disk isn't on the train")
 
     def with_(self, **changes) -> DriveTrain:
         return dataclasses.replace(self, **changes)
@@ -151,7 +151,7 @@ class DriveTrain:
         return self.with_(links=self.links[:i] + (link,) + self.links[i + 1 :])
 
     def inserted(self, i: int) -> DriveTrain:
-        """A copy of disc i added after it, joined by a copy of the shaft on its far side (or near side)."""
+        """A copy of disk i added after it, joined by a copy of the shaft on its far side (or near side)."""
         shafts = [link for link in self.links if isinstance(link, Shaft)]
         near = self.links[i] if i < len(self.links) else self.links[i - 1]
         shaft = near if isinstance(near, Shaft) else (shafts[0] if shafts else Shaft(1e5))
@@ -166,7 +166,7 @@ class DriveTrain:
         )
 
     def removed(self, i: int) -> DriveTrain:
-        """Without disc i and the link on its far side (the last disc: the link on its near side)."""
+        """Without disk i and the link on its far side (the last disk: the link on its near side)."""
         j = min(i, len(self.links) - 1)
         exc = self.excitation
         if exc is not None:
@@ -180,7 +180,7 @@ class DriveTrain:
 
     @property
     def speeds(self) -> np.ndarray:
-        """Each disc's speed over the motor's (the first disc's)."""
+        """Each disk's speed over the motor's (the first disk's)."""
         s = np.ones(self.n)
         for i, link in enumerate(self.links):
             s[i + 1] = s[i] * (link.ratio if isinstance(link, Mesh) else 1.0)
@@ -194,7 +194,7 @@ class DriveTrain:
         return np.array([1.0, -1.0]), link.stiffness, link.damping
 
     def matrices(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """M, C, K on the discs' angles."""
+        """M, C, K on the disks' angles."""
         n = self.n
         m = np.diag([d.inertia for d in self.discs])
         c = np.diag([d.damping for d in self.discs])
@@ -294,7 +294,7 @@ class Source:
 
     label: str
     order: float  # of the motor's speed
-    disc: int | None = None  # a torque (N·m) on this disc...
+    disc: int | None = None  # a torque (N·m) on this disk...
     torque: float = 0.0
     mesh: int | None = None  # ... or this mesh's transmission error (m)
     error: float = 0.0
@@ -319,7 +319,7 @@ def sources(train: DriveTrain) -> list[Source]:
 
 def order_lines(train: DriveTrain) -> list[tuple[str, float]]:
     """Every order the interference diagram draws: the sources', then 1X and 2X of each shaft's speed
-    (each shaft named after the last disc on it, or with one shaft, the running speed's)."""
+    (each shaft named after the last disk on it, or with one shaft, the running speed's)."""
     out = [(src.label, src.order) for src in sources(train)]
     s = train.speeds
     shafts: dict[float, str] = {}
@@ -365,8 +365,8 @@ def separation(critical_rpm: float, operating_rpm: float) -> float:
 class ForcedResponse:
     rpm: np.ndarray
     sources: list[Source]
-    torque: np.ndarray  # (source, link, speed): each link's dynamic torque amplitude (N·m, on its near disc)
-    angle: np.ndarray  # (source, disc, speed): each disc's angle amplitude (rad)
+    torque: np.ndarray  # (source, link, speed): each link's dynamic torque amplitude (N·m, on its near disk)
+    angle: np.ndarray  # (source, disk, speed): each disk's angle amplitude (rad)
 
     def total(self) -> np.ndarray:
         """(link, speed): the amplitudes summed, the peak when every order's swing lines up."""
@@ -405,7 +405,7 @@ def forced_response(train: DriveTrain, rpm: np.ndarray) -> ForcedResponse:
 
 
 def two_inertia_hz(j1: float, j2: float, k: float) -> float:
-    """Two discs on one shaft: the textbook f = √(k (J1 + J2) / (J1 J2)) / 2π."""
+    """Two disks on one shaft: the textbook f = √(k (J1 + J2) / (J1 J2)) / 2π."""
     return math.sqrt(k * (j1 + j2) / (j1 * j2)) / TWO_PI
 
 

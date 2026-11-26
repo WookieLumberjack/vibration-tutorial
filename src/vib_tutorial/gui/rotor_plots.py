@@ -44,12 +44,12 @@ QWIDGETSIZE_MAX = (1 << 24) - 1  # Qt's "no maximum"
 
 
 ORBIT_TIP = (
-    "<p>The path of the shaft's centre at each station over the last few revolutions, looking from "
+    "<p>The path of the shaft's center at each station over the last few revolutions, looking from "
     "the B end toward A: x to the right, y up, and the shaft spinning counterclockwise (x toward y). "
     "Each plot has its own scale unless <i>Same scale</i> is ticked.</p>"
-    "<p>The small hollow circles are once-per-revolution marks (a keyphasor): where the centre was "
+    "<p>The small hollow circles are once-per-revolution marks (a keyphasor): where the center was "
     "each time the mark on the shaft passed +x (the heavy spot is at the mark unless you move it). On "
-    "the disc's orbit the red line points at the heavy spot now; the angle from the high spot (where the disc is) to the heavy spot is the phase lag, "
+    "the disk's orbit the red line points at the heavy spot now; the angle from the high spot (where the disk is) to the heavy spot is the phase lag, "
     "0° well below the critical speed, about 90° near it and 180° well above.</p>"
 )
 
@@ -66,7 +66,7 @@ def _clip_title(label: pg.LabelItem) -> None:
 
 
 class OrbitPlots(pg.GraphicsLayoutWidget):
-    """The orbit at each station, seen from the B end; the disc's with its heavy spot."""
+    """The orbit at each station, seen from the B end; the disk's with its heavy spot."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -103,7 +103,7 @@ class OrbitPlots(pg.GraphicsLayoutWidget):
             self.plots.append(p)
             self.ci.layout.setColumnStretchFactor(i, 1)  # equal shares, whatever the width
         self.heavy = self.plots[1].plot()
-        self.ring = self.plots[1].plot()  # a stator ring's clearance round the disc
+        self.ring = self.plots[1].plot()  # a stator ring's clearance round the disk
         self.apply_theme()
         self._fit_width()
 
@@ -123,11 +123,11 @@ class OrbitPlots(pg.GraphicsLayoutWidget):
 
     def _title(self, i: int) -> str:
         if i == 1 and not self.plots[2].isVisible():
-            return "Disc (midspan)"
+            return "Disk (midspan)"
         return STATIONS[i]
 
     def set_midspan_shown(self, shown: bool) -> None:
-        """Hide the midspan orbit when the disc is there."""
+        """Hide the midspan orbit when the disk is there."""
         if shown == self.plots[2].isVisible():
             return
         self.plots[2].setVisible(shown)
@@ -153,8 +153,8 @@ class OrbitPlots(pg.GraphicsLayoutWidget):
         ring: tuple[float, float, float] | None = None,
     ) -> None:
         """Each station's trail (k, 2), its keyphasor points, and the heavy spot's angle now, drawn from
-        `centre` on the disc's orbit (where it whirls about: its sag, if drawn), with a stator `ring`'s
-        clearance round the disc (centre x, y and radius)."""
+        `centre` on the disk's orbit (where it whirls about: its sag, if drawn), with a stator `ring`'s
+        clearance round the disk (center x, y and radius)."""
         peaks = [float(np.abs(xy).max()) if xy.size else 0.0 for xy in trails]
         if ring is not None:  # drawn, but not taken into the range: the orbit, not the ring, sets the scale
             t = np.linspace(0.0, 2.0 * math.pi, 97)
@@ -314,7 +314,7 @@ class CampbellPlot(pg.GraphicsLayoutWidget):
         # The same rotor with a massless shaft, when its shaft has mass: one curve per branch.
         self.reference: list[pg.PlotDataItem] = []
         self.reference_sample = pg.PlotDataItem(name="massless shaft (Jeffcott)")
-        # Other orders of the speed, drawn on request: lines but not in the legend, labelled at their ends.
+        # Other orders of the speed, drawn on request: lines but not in the legend, labeled at their ends.
         self.orders = {order: p.plot() for order in ORDERS}
         self.order_labels = {order: pg.TextItem(f"{name}", anchor=(1.1, 1.0)) for order, name in ORDERS.items()}
         for order in ORDERS:

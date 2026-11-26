@@ -76,7 +76,7 @@ def _diag(I: np.ndarray) -> str:
 
 
 def equation(*parts: str) -> str:
-    """Brackets and the words between them, side by side, centred on one line."""
+    """Brackets and the words between them, side by side, centered on one line."""
     cells = "".join(
         f"<td valign='middle'>{p}</td>" if p.startswith("<table") else f"<td valign='middle'>&nbsp;{p}&nbsp;</td>"
         for p in parts

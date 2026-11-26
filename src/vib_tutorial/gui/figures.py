@@ -1,6 +1,6 @@
-"""The notes' figures: SVG drawn from the theme's colours when the notes are laid out.
+"""The notes' figures: SVG drawn from the theme's colors when the notes are laid out.
 
-A notes file shows a figure with ``<img src="fig:<name>" width=… height=…>`` in a centred table cell, and a
+A notes file shows a figure with ``<img src="fig:<name>" width=… height=…>`` in a centered table cell, and a
 figure module builds it (``gui/<page>_figures.py``): a function returning SVG text from `colors` (so it follows
 the theme, as the plots do), named in that module's ``FIGURES`` dict. The page module passes that dict to the
 notes that show it, ``load_notes(<file>, figures=<page>_figures.FIGURES, …)``, which `register`s it, so a
@@ -14,8 +14,8 @@ The house style, so the figures read as one set:
   `floor`, `upright` to stand a spring or damper up, `curve` and `area` for a plotted line and the area under it,
   `svg` for the frame), in `colors.foreground` for what the figure is about, `colors.muted` for axes and
   guides, `colors.faint` for construction lines, and a `colors.mass[i]` or `colors.force` where the plots use
-  that colour for the same thing (the mass, the force).
-- Label symbols with `math_label` (`text(..., italic=True)`): set in the notes' maths font (`maths.FONT`), as
+  that color for the same thing (the mass, the force).
+- Label symbols with `math_label` (`text(..., italic=True)`): set in the notes' math font (`maths.FONT`), as
   ``<m>`` is; ``k<sub>1</sub>``, ``Ω<sup>2</sup>`` and `UPRIGHT` work in it (drawn as separate texts, since Qt's SVG
   ignores a tspan's shift: never ``baseline-shift`` or ``dy``). Words stay in the UI's font, named
   (``font_metrics.SANS_FAMILY``, the one their widths were measured in), not a generic ``sans-serif``: macOS has
@@ -222,7 +222,7 @@ def ground(x: float, y1: float, y2: float, color: str, side: int = -1) -> str:
 
 
 def math_label(x: float, y: float, s: str, color: str, anchor: str = "middle", size: int = FONT + 2) -> str:
-    """A symbol, in the maths font's italic, a little larger than the words (its x-height is smaller)."""
+    """A symbol, in the math font's italic, a little larger than the words (its x-height is smaller)."""
     return text(x, y, s, color, anchor, italic=True, size=size)
 
 

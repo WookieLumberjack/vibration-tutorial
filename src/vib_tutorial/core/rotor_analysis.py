@@ -82,7 +82,7 @@ def analyse(system: RotorSystem, top_rpm: float) -> Analysis:
 
 
 def _serve(conn) -> None:
-    """The worker process: analyse each (ticket, system, top_rpm) received, in turn, and send back the result.
+    """The worker process: analyze each (ticket, system, top_rpm) received, in turn, and send back the result.
 
     A thread takes the jobs in as they come, so the worker reads while it sends: a result (~1.6 MB) can wait
     in a full pipe until the page reads it, and a page that submits meanwhile mustn't then wait on the worker

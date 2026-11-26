@@ -15,7 +15,7 @@
 a payload on a launcher. <b>Dynamic substructuring</b> models each component on its own,
 reduces it to a handful of coordinates, and then joins the reduced components at their
 interfaces <cite>de-klerk</cite>. The assembled model is much smaller than the full one, and a
-component can be changed or re-analysed without touching the others. <b>Component mode
+component can be changed or re-analyzed without touching the others. <b>Component mode
 synthesis (CMS)</b> does the reduction with each component's own mode shapes.</p>
 <p>The page starts with the whole chain as <i>one</i> substructure, <b>A</b>, whose only
 boundary DOF is the loaded tip. That is the classic single-component reduction: learn the
@@ -186,7 +186,7 @@ the higher it is:</p>
 to the rail, and holding it can only stiffen it. The MAC is the cosine of the angle, squared: the
 MAC column of the page's comparison table measures exactly this, how close the true mode lies to what
 the reduced model can make. Adding a shape turns the line into a plane (here the whole plane, and the
-answer is exact); in general it enlarges the set, so the frequencies can only fall, towards the true
+answer is exact); in general it enlarges the set, so the frequencies can only fall, toward the true
 ones from above <cite>ritz</cite>. The <a href="#worked-example">worked example</a> shows it on the
 four-mass chain: 1.162, 1.108, 1.1057 Hz with 0, 1, 2 modes kept, and the exact 1.1055 Hz with all
 3.</p>
@@ -388,7 +388,7 @@ so a supplier can deliver them without knowing the rest of the structure.</p>
 <h4>Free modes alone converge badly</h4>
 <p>Solve <m>Kφ = ω<sup>2</sup>Mφ</m> for the whole substructure, boundary free, and describe its
 motion with the lowest few free modes (Hou's <cite>hou</cite> and Goldman's <cite>goldman</cite>
-methods). The trouble is at the interface. In the assembled structure the neighbour
+methods). The trouble is at the interface. In the assembled structure the neighbor
 <i>pushes</i> on the interface, and the local static deflection under that push is spread over
 <i>all</i> the free modes, mostly the high ones that were thrown away. A truncated set of free
 modes is therefore far too stiff at exactly the place the components meet.</p>
@@ -523,7 +523,7 @@ motion, against 2.3 %). In B, where nothing resonates, it is the other way round
 <p>The <i>Back expansion</i> tab's percentages (below) are of each mass's own motion, and here <m>x<sub>1</sub></m>'s
 own motion is only the start-up transient, dying away (it halves about every 20 s). So its
 percentages climb without bound as you watch: a relative error means little on a mass that, in
-truth, stands still. Read its <i>Error</i> plot, in metres, instead.</p>
+truth, stands still. Read its <i>Error</i> plot, in meters, instead.</p>
 <p>The <i>Back expansion</i> tab steps the full chain, the coupled reduced model and the enhanced
 recovery together in one exact update, and compares all three recoveries of one interior mass and
 one spring with the truth.</p>
@@ -557,8 +557,8 @@ the same tip force. All three methods here are exact <i>statically</i> for a loa
 DOF: the boundary columns of <m>T</m> (constraint modes, or residual attachment modes) are static
 solutions. So a slowly varying load is reproduced, and the error lives in the vibration: in the
 ringing after a step, and above all near a resonance. A resonant peak is only about
-<m>2ζf<sub>n</sub></m> wide, so a frequency error of a few per cent there is a response error of
-tens of per cent, in amplitude and in phase.</li>
+<m>2ζf<sub>n</sub></m> wide, so a frequency error of a few percent there is a response error of
+tens of percent, in amplitude and in phase.</li>
 <li><b>One substructure.</b> With no cut, Craig–Bampton keeps the chain's modes with the tip held
 plus one constraint mode, the static shape for a tip displacement. With no modes kept that is
 Guyan reduction to the tip alone: one DOF, one frequency. The free-interface methods are
@@ -568,7 +568,7 @@ ones (modal truncation with a static correction).</li>
 <li><b>More substructures.</b> Each extra cut adds one boundary DOF that stays in the model
 whatever is kept, in exchange for smaller components with fewer, lower modes each. For the same
 model size, fewer interfaces and more modes are usually more accurate; many interfaces pay off
-when components are analysed or changed separately, or when their own modes are cheap to
+when components are analyzed or changed separately, or when their own modes are cheap to
 find.</li>
 <li><b>Interface size.</b> Every boundary DOF stays in the model. On this chain an interface is
 one DOF; on a 3D finite-element model it can be thousands, which is why interface reduction

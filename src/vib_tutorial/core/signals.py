@@ -213,7 +213,7 @@ def spectrogram(
 
 
 def nearest_line_reading(spec: Spectrum, freq: float) -> tuple[float, float]:
-    """(the line nearest an apparent frequency, the amplitude the largest of it and its neighbours reads)."""
+    """(the line nearest an apparent frequency, the amplitude the largest of it and its neighbors reads)."""
     i = round(freq / spec.df)
     i = min(max(i, 0), spec.freqs.size - 1)
     lo, hi = max(i - 1, 0), min(i + 2, spec.freqs.size)

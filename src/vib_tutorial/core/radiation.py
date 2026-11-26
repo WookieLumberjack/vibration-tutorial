@@ -156,7 +156,7 @@ def classify(plate: Plate, m: int, n: int, f: float, fluid: Fluid = AIR) -> str:
 
 # --------------------------------------------------------------------------------------------- band averages
 def third_octaves(f_lo: float, f_hi: float) -> np.ndarray:
-    """The preferred third-octave centres (1000 · 10^(i/10)) from f_lo to f_hi."""
+    """The preferred third-octave centers (1000 · 10^(i/10)) from f_lo to f_hi."""
     lo = math.ceil(10 * math.log10(f_lo / 1000) - 1e-9)
     hi = math.floor(10 * math.log10(f_hi / 1000) + 1e-9)
     return 1000.0 * 10.0 ** (np.arange(lo, hi + 1) / 10.0)

@@ -176,5 +176,5 @@ def decay_readout(t: SdofTrial, ts: np.ndarray, x: np.ndarray, still: bool) -> s
     else:
         text = ""
     if still and ts.size:
-        text += f" Stuck {fmt(abs(float(x[-1])), 'm', largest='')} off centre: the spring can't beat the friction."
+        text += f" Stuck {fmt(abs(float(x[-1])), 'm', largest='')} off center: the spring can't beat the friction."
     return text.strip()

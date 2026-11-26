@@ -1,5 +1,5 @@
 """The Variability & localization page's Theory figures (see `figures`): the ring of blades (each on its spring to
-the disc, neighbours joined by weak springs, with three of them unrolled), and two blades sharing a mode, its
+the disk, neighbors joined by weak springs, with three of them unrolled), and two blades sharing a mode, its
 amplitudes cos θ and sin θ as the mistuning grows past the coupling."""
 
 from __future__ import annotations
@@ -22,8 +22,8 @@ def _along(x1: float, y1: float, x2: float, y2: float, color: str, coils: int, a
 
 
 def ring_svg() -> str:
-    """Left: twelve blades round a disc held still, each on a spring k to it, neighbours joined by springs k_c
-    (the ring closes). Right: three neighbours unrolled, blade j between j − 1 and j + 1."""
+    """Left: twelve blades round a disk held still, each on a spring k to it, neighbors joined by springs k_c
+    (the ring closes). Right: three neighbors unrolled, blade j between j − 1 and j + 1."""
     fg, muted, mass = colors.foreground, colors.muted, colors.mass[0]
     cx, cy, hub, rb, half, n = 78.0, 86.0, 18.0, 62.0, 6.0, 12
     parts = [fig.circle(cx, cy, hub, muted, colors.background, 1.5)]
@@ -48,7 +48,7 @@ def ring_svg() -> str:
     floor_y, top, w, h, gap = 136.0, 58.0, 20.0, 18.0, 19.0
     x = 162.0
     parts.append(fig.floor(x - 6, x + 3 * w + 4 * gap - 2, floor_y, muted))
-    parts.append(fig.text(x + 1.5 * w + 2 * gap - 8, floor_y + 22, "the disc, held", muted))
+    parts.append(fig.text(x + 1.5 * w + 2 * gap - 8, floor_y + 22, "the disk, held", muted))
     lefts = [x + gap + i * (w + gap) for i in range(3)]
     parts.append(_along(x, top + h / 2, lefts[0], top + h / 2, muted, 2, 3.0))
     for i, left in enumerate(lefts):

@@ -77,7 +77,7 @@ class RotorTrial:
     matrix: Matrix = Matrix.K
     grid: float = 0.05
     top_rpm: float = 12000.0  # the sweeps' (Campbell, unbalance, stability) top speed
-    probe: int | None = None  # the node the Unbalance tab plots (None: the first disc's)
+    probe: int | None = None  # the node the Unbalance tab plots (None: the first disk's)
     swing: Swing = Swing.MODE
     predict: Prediction | None = None  # asked before it runs (Things to try)
 
@@ -153,24 +153,24 @@ TRIALS = (
     ),
     RotorTrial(
         "A stubby shaft: Timoshenko",
-        "Half a metre long and 100 mm across (L/D = 5), pinned: Timoshenko's beams give 776.3, 2784 and 5506 Hz, "
+        "Half a meter long and 100 mm across (L/D = 5), pinned: Timoshenko's beams give 776.3, 2784 and 5506 Hz, "
         "Euler–Bernoulli's (with the rotary inertia) 802.5, 3099 and 6610, Euler's formula 812.4, 3250 and 7312. "
         "Shear softens the higher modes most: the third is a quarter below Euler's.",
         STUBBY,
     ),
     RotorTrial(
-        "A disc off centre",
-        "The pinned shaft with a steel disc 300 × 40 mm (22.2 kg) a quarter along, at 3000 rpm. At rest its pairs "
+        "A disk off center",
+        "The pinned shaft with a steel disk 300 × 40 mm (22.2 kg) a quarter along, at 3000 rpm. At rest its pairs "
         "are at 62.28, 265.2 and 501.4 Hz; spinning, each splits, backward below and forward above: 60.83 and "
-        "63.70, 261.2 and 268.6, 468.2 and 538.2 Hz. The disc tilts as the shaft bends, most in the third mode, "
+        "63.70, 261.2 and 268.6, 468.2 and 538.2 Hz. The disk tilts as the shaft bends, most in the third mode, "
         "which splits most. <m>G</m> (the Assembly tab) is where it comes from: <m>I<sub>p</sub></m> between the "
-        "disc's slopes.",
+        "disk's slopes.",
         QUARTER_DISC,
         rpm=3000.0,
         picked=("disc", 0),
         matrix=Matrix.G,
         predict=Prediction(
-            "A disc a quarter along the pinned shaft, spinning at 3000 rpm. At rest each mode is a pair at one "
+            "A disk a quarter along the pinned shaft, spinning at 3000 rpm. At rest each mode is a pair at one "
             "frequency. What does the spin do to each pair?",
             (
                 "Both fall",
@@ -191,7 +191,7 @@ TRIALS = (
         "An overhung fan",
         "A titanium fan 500 × 20 mm (17.4 kg) 200 mm past the right-hand bearing of a 60 mm steel shaft. At rest "
         "the first pair is at 79.06 Hz; at 3000 rpm it splits to 71.13 (backward) and 86.24 Hz (forward), at 6000 "
-        "rpm to 63.10 and 92.30. An overhung disc tilts as it whirls, and a thin one "
+        "rpm to 63.10 and 92.30. An overhung disk tilts as it whirls, and a thin one "
         "(<m>I<sub>p</sub> ≈ 2I<sub>d</sub></m>) stiffens its forward whirl strongly.",
         OVERHUNG,
         rpm=3000.0,
@@ -209,9 +209,9 @@ TRIALS = (
     ),
     RotorTrial(
         "Soft bearings, stiffer across",
-        "Bearings of 4 MN/m sideways and 1 MN/m up, and the 300 mm disc at 0.3 m. At rest the pairs part, each "
+        "Bearings of 4 MN/m sideways and 1 MN/m up, and the 300 mm disk at 0.3 m. At rest the pairs part, each "
         "into a straight line (whirl ratio 0): 30.58 Hz moving only up and down (the soft way), 45.44 Hz only "
-        "sideways. At 6000 rpm the disc's gyroscopic moment couples the two ways into ellipses: mode 3 (shown), "
+        "sideways. At 6000 rpm the disk's gyroscopic moment couples the two ways into ellipses: mode 3 (shown), "
         "82.29 Hz, whirls backward (−0.20), mode 4, 149.1 Hz, forward (+0.32).",
         ANISOTROPIC,
         rpm=6000.0,
@@ -220,7 +220,7 @@ TRIALS = (
     ),
     RotorTrial(
         "A stepped compressor rotor",
-        "Five sections, 60, 80 and 100 mm across, the middle one bored out to 40 mm, with two aluminium impellers "
+        "Five sections, 60, 80 and 100 mm across, the middle one bored out to 40 mm, with two aluminum impellers "
         "350 × 60 mm (15.6 kg each) between the bearings and a steel coupling hub (7.1 kg) overhung. At 6000 rpm: "
         "167.8 and 171.0 Hz, 199.3 and 207.4, 422.5 and 442.9. On the Assembly tab, <m>K</m> with the bored "
         "section's share tinted: each beam's 8 × 8 adds at its two nodes' [<m>x</m>, <m>θ<sub>x</sub></m>, <m>y</m>, "
@@ -249,7 +249,7 @@ TRIALS = (
         "<m>k<sub>m</sub></m> = 0.543 MN/m on <m>K</m>'s diagonal, which the PID beats (<m>k<sub>i</sub>k<sub>p</sub></m> = 2.71 MN/m). The first pair "
         "is at 37.85 Hz with <m>ζ</m> = 4.57 %, the second at 143.0 with 38.4 %: the derivative damps. The controllers' "
         "12 states join <m>q</m> and <m>q̇</m> in the state; four of their roots are real, at −12.7 /s, the integral action "
-        "pulling each journal back to the centre. Above about 1.2 kHz the controller's lag turns its damping "
+        "pulling each journal back to the center. Above about 1.2 kHz the controller's lag turns its damping "
         "negative: the shaft's own internal damping (<m>τ<sub>i</sub></m> = 1 µs) keeps its 2.4 kHz bending modes from "
         "growing. Set <m>τ<sub>i</sub></m> to 0 and they do (<m>ζ</m> = −0.61 %).",
         MAGNETS,
@@ -282,9 +282,9 @@ TRIALS = (
     RotorTrial(
         "The fan's unbalance",
         "The fan's unbalance, 174 g·mm (10 µm of its 17.4 kg). Its orbit peaks at the forward critical, 1003 µm "
-        "at 5480 rpm, lagging the heavy spot by 90°; at the backward criticals (4091 and 9507 rpm, grey) it is "
+        "at 5480 rpm, lagging the heavy spot by 90°; at the backward criticals (4091 and 9507 rpm, gray) it is "
         "12.5 and 13.7 µm, nothing to see. An unbalance turns forward with the shaft, and on round bearings it "
-        "can't drive a backward whirl. Past the critical the lag goes to 180°: the disc turns about its centre "
+        "can't drive a backward whirl. Past the critical the lag goes to 180°: the disk turns about its center "
         "of mass, its heavy spot inside the orbit.",
         OVERHUNG,
         rpm=5480.0,
@@ -333,7 +333,7 @@ TRIALS = (
     ),
     RotorTrial(
         "Internal damping",
-        "The 300 mm disc at midspan on bearings of 20 MN/m and 10 kN·s/m, and the shaft's internal damping <m>τ<sub>i</sub></m> = "
+        "The 300 mm disk at midspan on bearings of 20 MN/m and 10 kN·s/m, and the shaft's internal damping <m>τ<sub>i</sub></m> = "
         "100 µs. At rest it damps the first pair to 2.04 % (0.62 % without it). But it turns with the shaft, "
         "resisting the bending rate the shaft feels: at the forward critical, 2947 rpm, a synchronous whirl "
         "doesn't flex the turning shaft at all, and <m>ζ</m> is back to 0.62 %. Above it the shaft turns faster than it "
@@ -394,11 +394,11 @@ def _disc_inertia(rng: np.random.Generator) -> Question:
     thickness = pick(rng, (20.0, 30.0, 40.0, 50.0))
     d = solid_disc(0.0, STEEL, diameter / 1000, thickness / 1000)
     return Question(
-        f"A solid steel disc (7850 kg/m³) {sig(diameter, 6)} mm across and {sig(thickness, 6)} mm thick. What is "
+        f"A solid steel disk (7850 kg/m³) {sig(diameter, 6)} mm across and {sig(thickness, 6)} mm thick. What is "
         "its polar moment of inertia I<sub>p</sub>, about the spin axis?",
         d.ip,
         f"m = ρπR²t = {number(d.mass, 4)} kg, and I<sub>p</sub> = mR²/2 = {number(d.ip, 4)} kg·m². Its diametral "
-        f"I<sub>d</sub> = m(3R² + t²)/12 = {number(d.id, 4)} kg·m², about half: a thin disc has I<sub>p</sub> ≈ "
+        f"I<sub>d</sub> = m(3R² + t²)/12 = {number(d.id, 4)} kg·m², about half: a thin disk has I<sub>p</sub> ≈ "
         "2I<sub>d</sub>.",
         unit="kg·m²",
     )
@@ -407,12 +407,12 @@ def _disc_inertia(rng: np.random.Generator) -> Question:
 def _spin_split(rng: np.random.Generator) -> Question:
     rpm = pick(rng, (3000.0, 6000.0, 10000.0))
     return Question(
-        f"The disc a quarter of the way along the pinned shaft (Things to try: <i>A disc off centre</i>) spins "
+        f"The disk a quarter of the way along the pinned shaft (Things to try: <i>A disk off center</i>) spins "
         f"at {sig(rpm, 6)} rpm. At rest each mode is a pair at one frequency. What does the spin do to the pair?",
         0,
-        "The disc tilts as the shaft bends, and a tilting, spinning disc has a gyroscopic moment I<sub>p</sub>Ω "
+        "The disk tilts as the shaft bends, and a tilting, spinning disk has a gyroscopic moment I<sub>p</sub>Ω "
         "× its tilt rate: it stiffens the forward whirl (its frequency rises) and softens the backward one (it "
-        "falls). The higher modes, which tilt the disc more, split more.",
+        "falls). The higher modes, which tilt the disk more, split more.",
         choices=(
             "The forward whirl rises, the backward one falls",
             "Both rise",
@@ -448,7 +448,7 @@ def _hollow(rng: np.random.Generator) -> Question:
         "first mode now?",
         f1,
         f"f ∝ √(EI/ρA), and I/A = (D² + d²)/16: so f rises by √(1 + (d/D)²) = {number(f1 / f0, 4)}, to "
-        f"{number(f1, 4)} Hz. Boring out loses mass faster than stiffness: the material near the centre bends "
+        f"{number(f1, 4)} Hz. Boring out loses mass faster than stiffness: the material near the center bends "
         "little.",
         unit="Hz",
         setup=dict(rotor=hollow, picked=("section", 0)),
@@ -493,15 +493,15 @@ def _spec_stiffen(rng: np.random.Generator) -> Question:
         return (
             at_least("the first mode at 3000 rpm", f, target, "Hz"),
             kept("the shaft's length", t.rotor.length, start.length, "m"),
-            kept("the disc's mass", d.mass, disc.mass, "kg"),
+            kept("the disk's mass", d.mass, disc.mass, "kg"),
             kept("the speed", t.rpm, rpm, "rpm"),
         )
 
     design = dataclasses.replace(start, sections=uniform(1.0, 0.06, 4, 3))
     return Question(
-        f"The pinned shaft with a 300 mm disc a quarter along has its first mode at "
+        f"The pinned shaft with a 300 mm disk a quarter along has its first mode at "
         f"{number(first_mode(start, rpm)[0], 4)} Hz at {sig(rpm, 6)} rpm. Raise it to {sig(target, 6)} Hz or more "
-        "without changing the shaft's length or the disc (thicken the shaft: Select a section, then its "
+        "without changing the shaft's length or the disk (thicken the shaft: Select a section, then its "
         "diameter on the left).",
         0,
         "The frequency goes as √(k/m), and the shaft's k as D⁴ while its mass goes as D²: a 60 mm shaft gives "
@@ -538,7 +538,7 @@ def _critical_speed(rng: np.random.Generator) -> Question:
         f"{DISC_LIBRARY[kind].name.lower()} at midspan. At rest its first pair of modes is at {number(f0, 4)} Hz. "
         "At what speed is its first forward critical speed, where unbalance drives it?",
         first.rpm,
-        f"At a critical the whirl's frequency is the shaft's, the rpm over 60. A disc at midspan doesn't tilt in the "
+        f"At a critical the whirl's frequency is the shaft's, the rpm over 60. A disk at midspan doesn't tilt in the "
         f"first mode, so its gyroscopic moment hardly moves it: the critical ≈ 60 × {number(f0, 4)} = {number(60 * f0, 4)} rpm "
         f"(the Campbell diagram's crossing: {number(first.rpm, 4)} rpm, the shaft's own sections tilting a "
         "little).",
@@ -639,8 +639,8 @@ PROBLEMS = tuple(
     Problem(key, title, "rotor_builder_page", f"See {page_link('rotor_builder_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
         ("section-inertia", "A shaft section's I", "elements", "The shaft's elements", _section_inertia),
-        ("disc-inertia", "A disc's polar inertia", "discs", "Discs", _disc_inertia),
-        ("spin-split", "Predict: spin a disc", "gyroscopics", "Gyroscopic moments", _spin_split),
+        ("disc-inertia", "A disk's polar inertia", "discs", "Disks", _disc_inertia),
+        ("spin-split", "Predict: spin a disk", "gyroscopics", "Gyroscopic moments", _spin_split),
         ("hollow", "A hollow shaft", "elements", "The shaft's elements", _hollow),
         ("nutation", "A free shaft's nutation", "gyroscopics", "Gyroscopic moments", _nutation),
         ("stiffen-spec", "Spec: raise the first mode", "modes", "Modes at a speed", _spec_stiffen),

@@ -15,7 +15,7 @@ mode are proportional to its mode shape, R+_jr ~ psi_jr psi_kr.
   (at resonance H_j = A_j / (2 i zeta w_r^2)). Simple, but limited by the line
   spacing, and biased when modes are close or heavily damped.
 * Circle fit (Kennedy-Pancu): near a resonance the mobility iwH traces a circle.
-  The angle each point makes about the centre gives w_r and zeta together,
+  The angle each point makes about the center gives w_r and zeta together,
   between the frequency lines; each response's modal constant comes from a
   local fit with a constant for the other modes.
 * LSCF + LSFD: a common-denominator rational fraction fitted to every response
@@ -200,7 +200,7 @@ def peak_picking(freqs: np.ndarray, H: np.ndarray, band: tuple[float, float], ma
 
 # -------------------------------------------------------------- circle fit
 def fit_circle(z: np.ndarray) -> tuple[complex, float]:
-    """Least-squares (Kasa) circle through complex points: (centre, radius)."""
+    """Least-squares (Kasa) circle through complex points: (center, radius)."""
     x, y = z.real, z.imag
     A = np.column_stack([2 * x, 2 * y, np.ones_like(x)])
     (a, b, c), *_ = np.linalg.lstsq(A, x**2 + y**2, rcond=None)
@@ -238,9 +238,9 @@ def circle_fit(freqs: np.ndarray, H: np.ndarray, band: tuple[float, float], max_
 
 
 def _circle_parameters(w: np.ndarray, h: np.ndarray, wr0: float, zeta0: float) -> tuple[float, float]:
-    """(w_r, zeta) from the angles of the mobility points about the fitted circle's centre.
+    """(w_r, zeta) from the angles of the mobility points about the fitted circle's center.
 
-    For Y = iwH near an isolated mode, Y - centre turns by -2 atan(x) from the
+    For Y = iwH near an isolated mode, Y - center turns by -2 atan(x) from the
     resonance point, x = (w^2 - w_r^2) / (2 zeta w_r w). The resonance
     direction, w_r and zeta are fitted to the measured angles.
     """

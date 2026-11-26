@@ -1,7 +1,7 @@
 """Vibration isolation page: a machine with a rotating unbalance on mounts, and the force that reaches the floor.
 
 Left: the machine, the mounts (by their static deflection and damping, of three kinds), an inertia block,
-and a design target. Centre: the transmissibility against frequency (with a family of damping ratios
+and a design target. Center: the transmissibility against frequency (with a family of damping ratios
 behind it) and the force on the floor against the speed. Right: a run up to speed through the mounts'
 resonance, the design chart (static deflection against speed for each isolation), and the Theory. The page
 has its own model (core/isolation.py).
@@ -249,7 +249,7 @@ def _block_spec(rng: np.random.Generator) -> Question:
         f"too much for the pipes bolted to it: bring its motion down to ±{number(most, 2)} µm, keeping the mounts' "
         "sag (they're stiffened to suit whatever they carry).",
         0,
-        f"High above resonance the mounts hardly hold the machine: it swings about its centre of mass, X = "
+        f"High above resonance the mounts hardly hold the machine: it swings about its center of mass, X = "
         f"m<sub>e</sub>e r²/((M + B)(r² − 1)) with r² = {number(r2)} fixed by the sag. So it needs M + B ≥ "
         f"0.01 × {number(r2)}/({number(r2 - 1)} × {number(most, 2)}×10<sup>−6</sup>): an inertia block of at least "
         f"{number(max(least, 0.0), 2)} kg. A {sig(block, 6)} kg block gives ±{number(1e6 * iso.at_speed()[0])} µm.",
@@ -322,7 +322,7 @@ PROBLEMS = (
 TIPS = {
     "mass": "<p>The machine's mass M.</p>",
     "rpm": "<p>Its running speed.</p>",
-    "unbalance": "<p>Its unbalance m<sub>e</sub>e: an off-centre mass times its radius. Its force is "
+    "unbalance": "<p>Its unbalance m<sub>e</sub>e: an off-center mass times its radius. Its force is "
     "m<sub>e</sub>eΩ².</p>",
     "deflection": "<p>How far the mounts sag under the machine's weight. Since k = Mg/δ, the natural frequency "
     "is √(g/δ)/2π = 15.76/√δ<sub>mm</sub> Hz, whatever the mass: the softer the mount, the lower.</p>",
@@ -364,7 +364,7 @@ NOTES_HTML = load_notes("isolation", figures=isolation_figures.FIGURES, trials=t
 
 
 class IsolationPage(QtWidgets.QWidget):
-    """Controls on the left, transmissibility and floor force in the centre, start-up and design chart on the right."""
+    """Controls on the left, transmissibility and floor force in the center, start-up and design chart on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -422,7 +422,7 @@ class IsolationPage(QtWidgets.QWidget):
             lv.addWidget(w)
         lv.addStretch(1)
 
-        # --- centre
+        # --- center
         self.tr_plot = plot("Transmissibility T", None, "Frequency / fₙ", None, log_x=True, log_y=True, height=200)
         self.tr_plot.setToolTip(TR_TIP)
         self.tr_plot.setMouseEnabled(x=False, y=False)

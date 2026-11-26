@@ -1,6 +1,6 @@
 """Modal coupling of two subsystems, each reduced to one equivalent oscillator.
 
-The chain is split after mass j into two subsystems, each analysed on its own::
+The chain is split after mass j into two subsystems, each analyzed on its own::
 
     full:   ground --k1-- m1 --k2-- m2 --k3-- m3 --k4-- m4
     A:      ground --k1-- m1 --k2-- m2                         (tip m2 free)
@@ -361,7 +361,7 @@ def alone_frf(model: CoupledModel, freqs_hz: np.ndarray, side: str = "A") -> np.
     """Drive-point receptance of one side on its own at its tip, with every mode of it, complex.
 
     A: at its free tip (the interface), B removed. B: at its tip (the chain's
-    free end), A removed and B's base on the ground, as B is analysed here.
+    free end), A removed and B's base on the ground, as B is analyzed here.
     """
     if side not in ("A", "B"):
         raise ValueError("side must be 'A' or 'B'")

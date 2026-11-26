@@ -373,7 +373,7 @@ class Bar:
     name: str
     bottom: float  # J
     top: float  # J: below `bottom` for a negative cross term
-    role: str  # its colour, as a theme role's name
+    role: str  # its color, as a theme role's name
 
 
 @dataclass(frozen=True)

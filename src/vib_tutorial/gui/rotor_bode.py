@@ -3,7 +3,7 @@
 Both plots draw the steady-state 1X response (to the unbalance, skew and bow)
 at one station, in one direction, against speed, with a marker at the current
 speed, and over it the 1X vectors tracked once per revolution during run-ups
-and coast-downs. A sweep pair (its run-up and its coast-down) shares a colour:
+and coast-downs. A sweep pair (its run-up and its coast-down) shares a color:
 the run-up is drawn solid, the coast-down dashed. The page's summary table under the plot is
 their key, so the legend names only the steady state.
 
@@ -39,13 +39,13 @@ BODE_TIP = (
     "largest displacement over each revolution, free vibration included.</p>"
 )
 POLAR_TIP = (
-    "<p>The same 1X vector drawn as a point: its distance from the centre is the amplitude (the rings), and "
+    "<p>The same 1X vector drawn as a point: its distance from the center is the amplitude (the rings), and "
     "its angle the phase, counted as a <b>lead</b>: counter-clockwise from the keyphasor mark at 0°, the way "
-    "the shaft turns (the disc is seen from beyond bearing B). A lag turns it clockwise. As the speed passes a "
+    "the shaft turns (the disk is seen from beyond bearing B). A lag turns it clockwise. As the speed passes a "
     "critical, the steady-state vector traces a loop: very nearly a circle for a single lightly damped "
     "mode, though not exactly one (the mobility, velocity over force, would be). The phase is −90° (a lag "
     "of 90°) at the bottom of the loop, close to the critical speed.</p>"
-    "<p>The labelled dots on the steady-state curve mark the speed in rpm.</p>"
+    "<p>The labeled dots on the steady-state curve mark the speed in rpm.</p>"
 )
 
 
@@ -136,7 +136,7 @@ class BodePlots(pg.GraphicsLayoutWidget):
 
 
 class PolarPlot(pg.PlotWidget):
-    """The 1X vector as a point on a polar grid (`PolarGrid`): amplitude out from the centre, phase (a lead)
+    """The 1X vector as a point on a polar grid (`PolarGrid`): amplitude out from the center, phase (a lead)
     counter-clockwise from the keyphasor mark at +x."""
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
@@ -173,7 +173,7 @@ class PolarPlot(pg.PlotWidget):
         return np.real(values), np.imag(values)
 
     def set_steady(self, rpm: np.ndarray, values: np.ndarray, marks: np.ndarray) -> None:
-        """The steady-state curve over the speeds shown, and dots labelled at the speeds `marks` (rpm)."""
+        """The steady-state curve over the speeds shown, and dots labeled at the speeds `marks` (rpm)."""
         self.steady.setData(*self.xy(values))
         self._steady_r = float(np.abs(values).max()) if values.size else 0.0
         self.fit()

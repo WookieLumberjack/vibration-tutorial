@@ -35,7 +35,7 @@ from .drag import Grabbable
 from .style import colors, text_on
 
 WALL_L, WALL_R = 0.0, 3.6
-REST = (1.2, 2.4)  # the masses' centres at rest (display units)
+REST = (1.2, 2.4)  # the masses' centers at rest (display units)
 SIDE = 0.4  # the 1 kg mass's side
 GAIN = 6.0  # display units a meter: 50 mm is 0.3
 GRIP_R = 0.06

@@ -32,7 +32,7 @@ from vib_tutorial.core.frame_response import (
 
 
 def floor_damper(c: float = 2000.0):
-    """The two-storey frame with a damper from its first floor (node 3) to the ground."""
+    """The two-story frame with a damper from its first floor (node 3) to the ground."""
     return storeys().with_element(Element(Kind.DAMPER, 2, None, value=c, anchor=(-0.5, 1.0)))
 
 
@@ -207,7 +207,7 @@ def test_trials():
     assert [m.zeta_conventional for m in forms.modes[:3]] == pytest.approx([0.02, 0.02, 0.147], abs=5e-4)
     assert all(m.measures.mpc > 0.9995 for m in forms.modes if m.measures is not None)
 
-    t = by["A damper in the first storey"]
+    t = by["A damper in the first story"]
     forms = formulations(t.frame)
     one, two = forms.modes[:2]
     assert (one.hz, two.hz) == pytest.approx((3.44, 9.14), abs=0.005)

@@ -71,7 +71,7 @@ TRIALS = (
         "From 175°, with a little damping (<m>ζ</m> = 0.003). The bob nearly balances upside down and lingers "
         "there, and so near the top even a little damping takes a lot: its first whole swing is down to about 150° "
         "and takes 3.5 s, 1.76 times the small swing's 2.006 s. Then each swing lands its period on the Period tab "
-        "as it dies away, and the points trace the period's curve down towards <m>T<sub>0</sub></m> by themselves "
+        "as it dies away, and the points trace the period's curve down toward <m>T<sub>0</sub></m> by themselves "
         "(speed it up to see more). The Phase plane tab shows why it lingers: the path starts close to the "
         "separatrix, the orbit through the upside-down balance.",
         angle=175.0,
@@ -103,10 +103,10 @@ TRIALS = (
     ),
     PendulumTrial(
         "A rod: where to pivot it",
-        "A 1 m uniform rod pivoted at its end, 0.5 m from its centre: <m>J = mL²/3</m> and the weight's arm "
+        "A 1 m uniform rod pivoted at its end, 0.5 m from its center: <m>J = mL²/3</m> and the weight's arm "
         "<m>d</m> = 0.5 m, so it swings as a simple pendulum <m>L<sub>eq</sub></m> = 0.667 m long, in 1.638 s. "
-        "Slide the ring on its pivot towards the middle as it swings: 0.289 m from the centre (<m>L/√12</m>, the "
-        "radius of gyration) it swings fastest, 1.524 s; 0.167 m from the centre (<m>k<sub>G</sub>²/d</m>) it "
+        "Slide the ring on its pivot toward the middle as it swings: 0.289 m from the center (<m>L/√12</m>, the "
+        "radius of gyration) it swings fastest, 1.524 s; 0.167 m from the center (<m>k<sub>G</sub>²/d</m>) it "
         "swings at 1.638 s again. That's Kater's reversible pendulum, which measured <m>g</m>.",
         kind=Kind.ROD,
         angle=10.0,
@@ -125,8 +125,8 @@ TRIALS = (
         ),
     ),
     PendulumTrial(
-        "A disc on a wire, twisted 120°",
-        "A 1 kg disc of radius 0.1 m on a wire of torsional stiffness <m>k<sub>t</sub></m> = 0.5 N·m/rad: "
+        "A disk on a wire, twisted 120°",
+        "A 1 kg disk of radius 0.1 m on a wire of torsional stiffness <m>k<sub>t</sub></m> = 0.5 N·m/rad: "
         "<m>J = mr²/2</m>, <m>f<sub>n</sub> = √(k<sub>t</sub>/J)/2π</m> = 1.59 Hz. The wire's twist is linear, "
         "so its point on the Period tab lands at the small twist's 0.628 s even at 120°: the softening came from "
         "gravity's <m>sin θ</m>, not from turning. Slide the ring on its rim outwards as it turns, as a skater "
@@ -136,7 +136,7 @@ TRIALS = (
         spring=0.5,
         angle=120.0,
         predict=Prediction(
-            "The disc twisted 120° instead of 10° and let go. Its period is…",
+            "The disk twisted 120° instead of 10° and let go. Its period is…",
             ("longer", "the same", "shorter"),
             1,
             ordered=True,
@@ -220,12 +220,12 @@ def _rod_period(rng: np.random.Generator) -> Question:
     d = rounded(pick(rng, (0.1, 0.2, 0.3, 0.4, 0.5)) * length)
     p = Pendulum(Kind.ROD, length=length, pivot=d)
     return Question(
-        f"A uniform rod {sig(length, 6)} m long swings about a pivot {number(d)} m from its centre. What is its period "
+        f"A uniform rod {sig(length, 6)} m long swings about a pivot {number(d)} m from its center. What is its period "
         "for small swings?",
         p.period0,
         f"J = m(L²/12 + d²) about the pivot (parallel axes) and k<sub>θ</sub> = mgd: T = 2π√((L²/12 + d²)/gd) = "
         f"2π√(({number(length**2 / 12)} + {number(d * d)})/(9.81 × {number(d)})) = {number(p.period0)} s, the mass "
-        f"cancelling again. It swings like a simple pendulum {number(p.equivalent_length)} m long.",
+        f"canceling again. It swings like a simple pendulum {number(p.equivalent_length)} m long.",
         unit="s",
         setup=dict(kind=Kind.ROD, length=length, pivot=d, angle=10.0, tab=TAB_PERIOD),
     )
@@ -273,7 +273,7 @@ def _disc_on_wire(rng: np.random.Generator) -> Question:
     k = pick(rng, (0.5, 1, 2, 5))
     p = Pendulum(Kind.TORSION, mass=m, length=r, spring=k)
     return Question(
-        f"A {sig(m, 6)} kg disc of radius {sig(r, 6)} m hangs on a wire of torsional stiffness {sig(k, 6)} N·m/rad. At what "
+        f"A {sig(m, 6)} kg disk of radius {sig(r, 6)} m hangs on a wire of torsional stiffness {sig(k, 6)} N·m/rad. At what "
         "frequency does it twist back and forth?",
         p.natural_hz,
         f"J = mr²/2 = {number(p.inertia)} kg·m², so ω<sub>n</sub> = √(k<sub>t</sub>/J) = {number(p.omega0)} rad/s "
@@ -322,13 +322,13 @@ def _on_the_moon(rng: np.random.Generator) -> Question:
         "A pendulum clock is taken to the Moon, where gravity is about a sixth of Earth's. What happens to its "
         "pendulum's period?",
         0,
-        "It grows √6 ≈ 2.4 times: gravity is the spring, ω<sub>n</sub> = √(g/L). (A disc on a torsion wire "
+        "It grows √6 ≈ 2.4 times: gravity is the spring, ω<sub>n</sub> = √(g/L). (A disk on a torsion wire "
         "wouldn't change: its spring isn't gravity.)",
         choices=("It grows about 2.4 times", "It grows 6 times", "It stays the same", "It falls to a sixth"),
         why=(
             "",
             "The period goes as 1/√g, not as 1/g: a sixth of the gravity gives √6 ≈ 2.4 times the period.",
-            "That holds for a mass on a spring or a disc on a wire, whose springs aren't gravity; a pendulum's "
+            "That holds for a mass on a spring or a disk on a wire, whose springs aren't gravity; a pendulum's "
             "spring is gravity.",
             "Weaker gravity pulls the bob back more gently, so it swings more slowly, not faster.",
         ),
@@ -339,7 +339,7 @@ def _on_the_moon(rng: np.random.Generator) -> Question:
 
 def _wire_large_twist(rng: np.random.Generator) -> Question:
     return Question(
-        "A disc on a torsion wire is twisted to 90° and let go, instead of 10°. What happens to its period?",
+        "A disk on a torsion wire is twisted to 90° and let go, instead of 10°. What happens to its period?",
         0,
         "Nothing: a wire's moment is k<sub>t</sub>θ at any twist, so it is linear and its period doesn't depend "
         "on the swing. Only gravity's sin θ makes a pendulum's lengthen.",
@@ -374,7 +374,7 @@ def _pivot_spec(rng: np.random.Generator) -> Question:
                 t.kind is Kind.ROD and abs(now / target - 1.0) <= 0.005,
             ),
             Requirement(
-                f"The pivot on the rod (≤ {number(length / 2)} m from its centre)",
+                f"The pivot on the rod (≤ {number(length / 2)} m from its center)",
                 f"{number(t.pivot)} m",
                 t.pivot <= length / 2,
             ),
@@ -386,7 +386,7 @@ def _pivot_spec(rng: np.random.Generator) -> Question:
         0,
         f"T = 2π√((L²/12 + d²)/gd) is least at d = L/√12 = {number(length / math.sqrt(12))} m and longer either "
         f"side, so a longer period is reached at two pivots, d and k<sub>G</sub>²/d: here {number(d)} m and "
-        f"{number(other)} m from the centre"
+        f"{number(other)} m from the center"
         + ("" if other <= length / 2 else " (off the rod, so only the first)")
         + ". That is Kater's reversible pendulum: the two pivots are L<sub>eq</sub> apart.",
         setup=dict(kind=Kind.ROD, length=length, pivot=rounded(length / math.sqrt(12)), angle=10.0, tab=TAB_PERIOD),
@@ -402,7 +402,7 @@ PROBLEMS = tuple(
         ("rod-period", "A rod on a pivot", "gravity-stiffness", "Gravity as a spring", ": parallel axes", _rod_period),
         ("large-swing", "A large swing", "large-swings", "Large swings", "", _large_swing),
         ("inverted-spring", "Hold it upright", "gravity-stiffness", "Gravity as a spring", "", _inverted_spring),
-        ("disc-on-wire", "A disc on a wire", "rotation", "Turning instead of sliding", "", _disc_on_wire),
+        ("disc-on-wire", "A disk on a wire", "rotation", "Turning instead of sliding", "", _disc_on_wire),
         ("end-pivot", "Equivalent length", "gravity-stiffness", "Gravity as a spring", "", _end_pivot),
         ("heavier-bob", "Predict: a heavier bob", "gravity-stiffness", "Gravity as a spring", "", _heavier_bob),
         ("on-the-moon", "Predict: on the Moon", "gravity-stiffness", "Gravity as a spring", "", _on_the_moon),
@@ -419,15 +419,15 @@ PROBLEMS = tuple(
 )
 
 TIPS = {
-    "kind": "<p>Simple: a point mass on a massless string. Rod: a uniform rod on a pivot. Disc: a disc twisting on "
+    "kind": "<p>Simple: a point mass on a massless string. Rod: a uniform rod on a pivot. Disk: a disk twisting on "
     "a wire (no gravity in it). Inverted: a mass on an upright arm held by a torsion spring at its foot. Changed as "
     "it swings, the new body takes over at the same angle, its angular momentum kept.</p>",
-    "mass": "<p>The bob's, the rod's or the disc's mass. Drag the ring on the bob (the rod's middle, the disc's "
+    "mass": "<p>The bob's, the rod's or the disk's mass. Drag the ring on the bob (the rod's middle, the disk's "
     "rim) up for more, as it swings: the added mass is caught at rest, the angular momentum kept.</p>",
-    "length": "<p>The string's length, the rod's length, the disc's radius or the inverted arm. Slide the ring on "
-    "it (the disc's on its rim) to change it as it swings: the angular momentum Jθ̇ is kept, so a shorter one "
+    "length": "<p>The string's length, the rod's length, the disk's radius or the inverted arm. Slide the ring on "
+    "it (the disk's on its rim) to change it as it swings: the angular momentum Jθ̇ is kept, so a shorter one "
     "swings faster at once.</p>",
-    "pivot": "<p>How far from the rod's centre the pivot is (0.5 L: at its end). Slide the ring on the pivot "
+    "pivot": "<p>How far from the rod's center the pivot is (0.5 L: at its end). Slide the ring on the pivot "
     "along the rod to move it as it swings.</p>",
     "spring": "<p>The torsion spring: the wire's twist stiffness, or the inverted pendulum's spring at its foot. "
     "Drag the ring on it up for a stiffer one, as it swings.</p>",

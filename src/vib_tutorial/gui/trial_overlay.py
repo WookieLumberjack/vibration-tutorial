@@ -75,7 +75,7 @@ class TrialOverlay(QtWidgets.QFrame):
         return False
 
     def fit(self) -> None:
-        """At the top of the page, centred, as tall as its text."""
+        """At the top of the page, centered, as tall as its text."""
         parent = self.parentWidget()
         if parent is None:
             return

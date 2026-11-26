@@ -1,6 +1,6 @@
 """Transient response page: an impulse, a step, a ramp or a pulse on one oscillator, and the convolution behind it.
 
-Left: the oscillator and the input. Centre: the force, the response (exact) and, at a chosen instant, the
+Left: the oscillator and the input. Center: the force, the response (exact) and, at a chosen instant, the
 convolution (Duhamel's) integral drawn out: the force, the impulse response flipped and slid along, and
 their product, whose area is the response. Right: the pulse spectrum (the largest response against the
 pulse's length), the impulse response beside its Fourier transform, the step response's overshoot and
@@ -213,7 +213,7 @@ TRIALS = (
         tab=TAB_SPECTRUM,
         predict=Prediction(
             "1 N reached over 2.75 periods. How far past the static 2.5 mm does the mass overshoot?",
-            ("Twice it, as a step does", "A few per cent", "About half of it"),
+            ("Twice it, as a step does", "A few percent", "About half of it"),
             1,
             why=(
                 'A step jumps. Over 2.75 periods the mass has time to follow, which leaves only |sin πr|/πr = 8 %.',
@@ -528,7 +528,7 @@ NOTES_HTML = load_notes("transient", figures=transient_figures.FIGURES, trials=t
 
 
 class TransientPage(QtWidgets.QWidget):
-    """Controls on the left, force, response and convolution in the centre, spectra and theory on the right."""
+    """Controls on the left, force, response and convolution in the center, spectra and theory on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -585,7 +585,7 @@ class TransientPage(QtWidgets.QWidget):
             lv.addWidget(w)
         lv.addStretch(1)
 
-        # --- centre
+        # --- center
         self.force_plot = plot("Force F", "N", "Time", "s", height=90)
         self.force_item = pg.PlotDataItem()
         self.impulse_item = pg.PlotDataItem()  # an arrow-like stem for an impulse

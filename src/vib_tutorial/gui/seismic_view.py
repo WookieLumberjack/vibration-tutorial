@@ -1,16 +1,16 @@
-"""Seismic response's building drawn swaying under a record, each storey's columns coloured by its drift.
+"""Seismic response's building drawn swaying under a record, each story's columns colored by its drift.
 
 The ground at the bottom, then a slab per floor, and between each pair (the ground and floor 1 the first) a
-storey's two columns, bent in the double curve of a column fixed into both slabs: a storey's top sits its drift
+story's two columns, bent in the double curve of a column fixed into both slabs: a story's top sits its drift
 over from its bottom. The floors' displacements are relative to the ground (the ground is drawn still).
 
 - `set_history(displacement)`: the floors' displacements (time × floors, m) the motion will play; the sway is
-  drawn so the largest of them is `SWAY` of a bay's half-width, and each storey's colour runs from the
-  structure's to the force colour as its drift nears the largest any storey reaches on the record.
+  drawn so the largest of them is `SWAY` of a bay's half-width, and each story's color runs from the
+  structure's to the force color as its drift nears the largest any story reaches on the record.
 - `set_state(u)`: the floors' displacements at an instant (m).
-- `exaggeration`: how many times the sway is drawn larger than it would be with storeys `STOREY_M` tall.
+- `exaggeration`: how many times the sway is drawn larger than it would be with stories `STOREY_M` tall.
 
-Working on it: `tests/test_seismic.py` checks the building follows the playback and the drifting storey colours.
+Working on it: `tests/test_seismic.py` checks the building follows the playback and the drifting story colors.
 """
 
 from __future__ import annotations
@@ -25,18 +25,18 @@ from .style import colors
 BAY = 1.0  # a column's x, either side
 SLAB = 1.2  # a slab's half-length
 SWAY = 0.7  # the largest displacement, drawn as this much of BAY
-STOREY_M = 3.0  # a storey drawn one unit tall stands for this many metres
+STOREY_M = 3.0  # a story drawn one unit tall stands for this many meters
 SHAPE = np.linspace(0.0, 1.0, 13)
 BEND = 3 * SHAPE**2 - 2 * SHAPE**3  # a column fixed at both ends, its top moved over
 TIP = (
     "<p>The building on the first record, its sway exaggerated (the ground is drawn still: the floors move "
-    "relative to it). A storey's columns redden as its drift nears the largest any storey reaches on the "
+    "relative to it). A story's columns redden as its drift nears the largest any story reaches on the "
     "record.</p>"
 )
 
 
 def blend(a: QtGui.QColor, b: QtGui.QColor, s: float) -> QtGui.QColor:
-    """`s` of the way from colour `a` to `b`."""
+    """`s` of the way from color `a` to `b`."""
     s = min(max(s, 0.0), 1.0)
     return QtGui.QColor.fromRgbF(
         a.redF() + s * (b.redF() - a.redF()),
@@ -56,8 +56,8 @@ class BuildingView(pg.PlotWidget):
         self.hideAxis("left")
         self.hideAxis("bottom")
         self.n = 0
-        self.gain = 1.0  # display units per metre
-        self.peak_drift = 1.0  # m, the largest storey drift on the record
+        self.gain = 1.0  # display units per meter
+        self.peak_drift = 1.0  # m, the largest story drift on the record
         self.u = np.zeros(0)
         self.ground = pg.PlotDataItem()
         self.hatch = pg.PlotDataItem(connect="finite")
@@ -102,7 +102,7 @@ class BuildingView(pg.PlotWidget):
         self._draw()
 
     def drifts(self) -> np.ndarray:
-        """Each storey's drift as a share of the record's largest (what its colour shows)."""
+        """Each story's drift as a share of the record's largest (what its color shows)."""
         drift = np.abs(np.diff(self.u, prepend=0.0))
         return drift / self.peak_drift if self.peak_drift > 0 else drift
 

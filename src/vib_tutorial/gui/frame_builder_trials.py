@@ -160,7 +160,7 @@ TRIALS = (
             why=(
                 "At five depths long, shear and the sections' turning matter: −6 % for mode 1, more above.",
                 "Shear flexibility and rotary inertia both lower a frequency, and Timoshenko's beam adds both.",
-                'Shear and rotary inertia matter more as the half waves shorten towards the depth, so the higher modes fall most.',
+                'Shear and rotary inertia matter more as the half waves shorten toward the depth, so the higher modes fall most.',
                 '',
             ),
         ),
@@ -225,9 +225,9 @@ TRIALS = (
         ),
     ),
     FrameTrial(
-        "Two storeys: the chain again",
+        "Two stories: the chain again",
         "Columns 50 × 20 mm, 1 m high, clamped; floors 1.5 m long, 100 × 20 mm, with 100 kg on each. The two sway "
-        "modes are at 3.44 and 9.14 Hz. As a chain (the Simulation page's) each storey is <m>k = 2 × 12EI/ℓ<sup>3</sup></m> = 168 "
+        "modes are at 3.44 and 9.14 Hz. As a chain (the Simulation page's) each story is <m>k = 2 × 12EI/ℓ<sup>3</sup></m> = 168 "
         "kN/m (<m>ℓ</m> = 1 m, a column's height), and each floor 131.4 kg (its 100 kg, the 23.6 kg floor beam, and half the columns, 7.9 kg): "
         "3.52 and 9.21 Hz. The frame's are a little lower: its floors bend, so the columns' tops turn.",
         frame=storeys(),
@@ -235,7 +235,7 @@ TRIALS = (
     ),
     FrameTrial(
         "Rayleigh damping: one answer",
-        "The two-storey frame with Rayleigh damping, <m>C = αM + βK</m>, set to <m>ζ</m> = 2 % at its two sway modes (3.44 and "
+        "The two-story frame with Rayleigh damping, <m>C = αM + βK</m>, set to <m>ζ</m> = 2 % at its two sway modes (3.44 and "
         "9.14 Hz), and an impulse of 10 N·s across its top floor. The state space (solid) and the conventional "
         "real modes (dashed) lie on each other, FRF and time response alike: <m>C</m> is proportional, <m>Φ<sup>T</sup>CΦ</m> is diagonal, "
         "and the conventional model drops nothing. On the Formulations tab every MPC is 1.000. Beyond mode 2, "
@@ -246,7 +246,7 @@ TRIALS = (
         swing=Swing.RESPONSE,
     ),
     FrameTrial(
-        "A damper in the first storey",
+        "A damper in the first story",
         "The same frame, undamped, with a 5000 N·s/m damper from its first floor to the ground. The conventional "
         "model keeps <m>Φ<sup>T</sup>CΦ</m>'s diagonal: modes at 3.44 and 9.14 Hz with <m>ζ</m> = 23.9 and 23.2 %. The state space's are "
         "at 3.64 and 8.65 Hz, with <m>ζ</m> = 24.6 and 23.7 %, and complex: MPC 0.796 and 0.833 (the floors swing out of "
@@ -461,7 +461,7 @@ def _timoshenko(rng: np.random.Generator) -> Question:
         ),
         why=(
             "",
-            "Shear and rotary inertia matter more as the half waves shorten towards the depth, so the higher modes "
+            "Shear and rotary inertia matter more as the half waves shorten toward the depth, so the higher modes "
             "fall most.",
             "Shear flexibility and rotary inertia both lower a frequency, and Timoshenko's beam adds both.",
             "At five depths long, shear and the sections' turning matter: −6 % for mode 1, more above.",
@@ -563,7 +563,7 @@ def _damper_spec(rng: np.random.Generator) -> Question:
 
     damped = start.with_element(Element(Kind.DAMPER, 6, None, value=1000.0, anchor=(-0.5, 2.0)))
     return Question(
-        f"Damp this two-storey frame's first mode to ζ ≥ {sig(target, 6)} % with dampers (Rayleigh damping left at 0), "
+        f"Damp this two-story frame's first mode to ζ ≥ {sig(target, 6)} % with dampers (Rayleigh damping left at 0), "
         "without moving its nodes, and keep the mode nearly real: MPC ≥ 0.95.",
         0,
         "Put a damper where the mode moves most: the top floor sways furthest in mode 1, so 1000 N·s/m from it "
@@ -588,6 +588,6 @@ PROBLEMS = tuple(
         ("brace-spec", "Spec: brace a portal frame", "mechanisms", "Mechanisms", _brace_spec),
         ("rayleigh", "Rayleigh damping's ζ", "damping", "Damping", _rayleigh),
         ("step", "A step on a cantilever", "forced", "Loads and responses", _step),
-        ("damper-spec", "Spec: damp a two-storey frame", "complex", "Complex modes", _damper_spec),
+        ("damper-spec", "Spec: damp a two-story frame", "complex", "Complex modes", _damper_spec),
     )
 )

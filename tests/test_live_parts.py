@@ -140,7 +140,7 @@ def test_a_grip_scales_by_the_distance_dragged_within_its_range():
 def test_a_damper_grip_snaps_to_nought_and_grows_from_its_low_end():
     g = grips.Grip("damping", 0.01, 500.0, zero_below=0.02)
     assert g.dragged(2.0, -100.0) == 0.0
-    assert g.dragged(0.0, 0.1) == 0.0  # from nought, a short drag stays under the snap
+    assert g.dragged(0.0, 0.1) == 0.0  # from zero, a short drag stays under the snap
     assert g.dragged(0.0, 2.0) == pytest.approx(0.01 * math.exp(4.0))
 
 

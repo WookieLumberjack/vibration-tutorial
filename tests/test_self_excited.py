@@ -118,7 +118,7 @@ def test_steady_lift_flutters_by_coalescence_and_quasi_steady_without():
 
 
 def test_divergence_is_not_flutter():
-    """`flutter_speed` counts oscillating poles only, and only below divergence: with the centre of mass on the axis
+    """`flutter_speed` counts oscillating poles only, and only below divergence: with the center of mass on the axis
     the steady section only diverges (a real pole crosses at `divergence_speed`)."""
     f = Flutter(x_cg=0.0)
     assert math.isnan(f.flutter_speed())
@@ -143,7 +143,7 @@ def test_flutter_mode_solves_the_sections_equations():
 
 
 def test_the_motion_tab_plays_the_body_and_the_slider_moves_the_poles(main_window):
-    """The Motion tab plays the run the centre shows (the galloping square at y / D), or flutter's least stable
+    """The Motion tab plays the run the center shows (the galloping square at y / D), or flutter's least stable
     mode; dragging the slider moves the poles at once and sets the wind speed only when let go."""
     from PySide6 import QtWidgets
 

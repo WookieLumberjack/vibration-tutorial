@@ -1,7 +1,7 @@
 """Vibration isolation's machine drawn on its mounts, moving with the run-up, its unbalance turning, and pulled.
 
 Bottom to top: the floor, with two arrows under it: the force the mounts put on it (solid, in the force
-colour) and what a rigid mount would put there at that instant, the unbalance's own force (dashed, grey), to
+color) and what a rigid mount would put there at that instant, the unbalance's own force (dashed, gray), to
 the same scale. Then the mounts (a spring and a damper; the relaxation mount's damper on a spring of its own),
 an intermediate mass and a second set of mounts for two stages, an inertia block when there is one, and the
 machine, with its unbalance turning on a crank (up is φ = 0: its force along the mount is m_e e Ω² cos φ).
@@ -13,7 +13,7 @@ machine, with its unbalance turning on a crank (up is φ = 0: its force along th
 - Grab the machine and pull it up or down: `grabbed()`, `pulled(x)` with the displacement (m) under the hand,
   then `released()`.
 
-The axes aren't locked to one aspect (the view is wide and short), so the unbalance's disc is sized in
+The axes aren't locked to one aspect (the view is wide and short), so the unbalance's disk is sized in
 pixels, from the view's pixel size, to stay round.
 
 Working on it: `tests/test_playback.py` checks the machine follows the run-up and a pull lets it go.
@@ -34,8 +34,8 @@ from .drag import Grabbable
 from .style import colors
 
 FLOOR_HALF = 1.6
-MOUNT_X = 0.6  # the mounts' centres, either side
-LEG = 0.11  # a mount's spring and damper either side of its centre
+MOUNT_X = 0.6  # the mounts' centers, either side
+LEG = 0.11  # a mount's spring and damper either side of its center
 MACHINE_HALF, MACHINE_H = 0.8, 0.65
 BLOCK_HALF, BLOCK_H = 1.05, 0.25
 PLATE_HALF, PLATE_H = 0.95, 0.14
@@ -43,8 +43,8 @@ ONE_STAGE = 1.0  # the mounts' height, one stage
 LOWER, UPPER = 0.55, 0.55  # two stages: below and above the intermediate mass
 SWING = 0.22  # the largest displacement, drawn
 MOST = 0.3  # the farthest the machine can be pulled
-ARROW_Y, ARROW_LEN = -0.45, 0.32  # the force arrows' centre and largest half length
-DISC_PX, DOT_PX = 17.0, 5.0  # the unbalance's disc and mass (pixels)
+ARROW_Y, ARROW_LEN = -0.45, 0.32  # the force arrows' center and largest half length
+DISC_PX, DOT_PX = 17.0, 5.0  # the unbalance's disk and mass (pixels)
 Y_BOTTOM = -0.82  # under the force arrows; the top is fitted to the machine (`_fit`)
 X_RANGE = (-2.3, 2.3)
 TIP = (
@@ -75,7 +75,7 @@ class IsolationView(Grabbable, pg.PlotWidget):
         self.hideButtons()
         self.hideAxis("left")
         self.hideAxis("bottom")
-        self.gain = SWING / 1e-4  # display units per metre
+        self.gain = SWING / 1e-4  # display units per meter
         self.force_scale = 1.0
         self.held = False
         self._grip = 0.0
@@ -223,7 +223,7 @@ class IsolationView(Grabbable, pg.PlotWidget):
             bottom += BLOCK_H
         self.machine.setRect(QtCore.QRectF(-MACHINE_HALF, bottom, 2 * MACHINE_HALF, MACHINE_H))
 
-        # The unbalance: a disc and a mass on a crank, round in pixels.
+        # The unbalance: a disk and a mass on a crank, round in pixels.
         px, py = self._pixel()
         cy = bottom + MACHINE_H / 2
         self.disc.setRect(QtCore.QRectF(-DISC_PX * px, cy - DISC_PX * py, 2 * DISC_PX * px, 2 * DISC_PX * py))

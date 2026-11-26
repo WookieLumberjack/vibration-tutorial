@@ -8,7 +8,7 @@ and over each revolution a one-period DFT gives the 1X vector, as a tracking
 filter does. The largest displacement over the revolution is kept too. Both
 are of the vibration, about where gravity holds the rotor (an AC-coupled probe).
 
-Both are taken at four stations (the two bearings, the disc and midspan) and
+Both are taken at four stations (the two bearings, the disk and midspan) and
 read in one of three directions: a probe in x, a probe in y, or the orbit's
 major axis. A 1X vector V is complex: the probe reads Re(V e^{iφ}). |V| is
 the amplitude and arg V its phase, counted as a lead, in the direction of spin
@@ -50,7 +50,7 @@ from .rotor import RotorSystem
 from .rotor_modes import steady_harmonics, whirl_modes
 from .rotor_simulator import RPM, RotorSamples, RotorSimulator
 
-STATIONS = ("Bearing A", "Disc", "Midspan", "Bearing B")
+STATIONS = ("Bearing A", "Disk", "Midspan", "Bearing B")
 DIRECTIONS = ("x", "y", "orbit")  # probe directions; "orbit" is the major axis
 ORDERS = (1, 2, 3)  # the harmonics of the speed tracked: 1X, 2X and 3X
 SETTLE_MAX = 2.0  # s, the longest dwell at the starting speed before a sweep is recorded
@@ -61,7 +61,7 @@ TWO_PI = 2.0 * math.pi
 
 
 def station_positions(system: RotorSystem) -> np.ndarray:
-    """Axial positions (m) of the stations: bearing A, the disc, midspan, bearing B."""
+    """Axial positions (m) of the stations: bearing A, the disk, midspan, bearing B."""
     return np.array([0.0, system.a, 0.5 * system.length, system.length])
 
 
@@ -84,7 +84,7 @@ def vibration(system: RotorSystem, q: np.ndarray, omega: np.ndarray) -> np.ndarr
 
 
 def station_motion(system: RotorSystem, q: np.ndarray) -> np.ndarray:
-    """(x, y) of the shaft's centre at each station for displacements q (..., n_dof): shape (..., 4, 2)."""
+    """(x, y) of the shaft's center at each station for displacements q (..., n_dof): shape (..., 4, 2)."""
     return system.deflection(q, station_positions(system))
 
 

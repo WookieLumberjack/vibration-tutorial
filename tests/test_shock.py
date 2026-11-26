@@ -282,7 +282,7 @@ def test_the_trials_notes():
     assert rec.velocity_change == pytest.approx(0.51, abs=0.005) and rec.displacement()[-1] == pytest.approx(6, abs=0.1)
     assert top / G == pytest.approx(4.8, abs=0.05) and "only 4.8 g" in note["Damped sines to a spectrum"]
     rec, sp, top = run("Wavelets to a spectrum")
-    assert rec.synthesis.f.size == 28 and abs(rec.displacement()[-1]) < 1e-6  # within a micrometre
+    assert rec.synthesis.f.size == 28 and abs(rec.displacement()[-1]) < 1e-6  # within a micrometer
     assert (
         np.max(np.abs(rec.displacement())) == pytest.approx(0.54, abs=0.005)
         and "0.54 m" in note["Wavelets to a spectrum"]

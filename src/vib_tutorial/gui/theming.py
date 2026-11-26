@@ -1,6 +1,6 @@
 """Applying a Theme: Qt's palette, pyqtgraph's defaults, and the plots already on screen.
 
-The widgets' own colours (curves, masses, tables) are redrawn by each widget's
+The widgets' own colors (curves, masses, tables) are redrawn by each widget's
 apply_theme(); restyle() handles what they share: plot backgrounds, axes, titles
 and legends, and links in labels.
 """
@@ -60,7 +60,7 @@ def application() -> QtWidgets.QApplication:
 
 
 def system_theme() -> Theme:
-    """Dark if the desktop asks for a dark colour scheme, else Light."""
+    """Dark if the desktop asks for a dark color scheme, else Light."""
     scheme = application().styleHints().colorScheme()
     return style.DARK if scheme is QtCore.Qt.ColorScheme.Dark else style.LIGHT
 
@@ -86,7 +86,7 @@ def apply(name: str) -> Theme:
 
 def palette(theme: Theme) -> QtGui.QPalette:
     """The Qt palette for a theme. The Light theme keeps the platform's own but for its secondary text and links:
-    the platform's muted grey is fainter than 4.5:1 on its window on some (#767676 on #ececec, 3.8:1)."""
+    the platform's muted gray is fainter than 4.5:1 on its window on some (#767676 on #ececec, 3.8:1)."""
     c = QtGui.QColor
     if theme.window is None:
         pal = QtGui.QPalette()  # the platform's: the roles not set here resolve to it
@@ -131,7 +131,7 @@ def palette(theme: Theme) -> QtGui.QPalette:
 
 
 def add_legend(plot: pg.PlotItem, **kwargs) -> pg.LegendItem:
-    """plot.addLegend(**kwargs) with the theme's background and text colour from the start.
+    """plot.addLegend(**kwargs) with the theme's background and text color from the start.
 
     restyle() updates legends on a theme switch, but only those that exist then: one made
     later (a page built on first use, a plot rebuilt) would keep pyqtgraph's bare legend,
@@ -143,7 +143,7 @@ def add_legend(plot: pg.PlotItem, **kwargs) -> pg.LegendItem:
 
 
 def mute(widget: QtWidgets.QWidget) -> None:
-    """Draw a label's text in the palette's secondary-text colour, whatever the theme."""
+    """Draw a label's text in the palette's secondary-text color, whatever the theme."""
     widget.setForegroundRole(Role.PlaceholderText)
 
 
@@ -152,7 +152,7 @@ def restyle(root: QtWidgets.QWidget) -> None:
     for view in root.findChildren(pg.GraphicsView):
         view.setBackground(style.colors.background)
         restyle_items(view.scene().items())
-    # A link's colour is fixed when the text is set, from the palette of the time.
+    # A link's color is fixed when the text is set, from the palette of the time.
     for label in root.findChildren(QtWidgets.QLabel):
         text = label.text()
         if "<a " in text:

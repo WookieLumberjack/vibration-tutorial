@@ -21,7 +21,7 @@ summarizes a log that way):
   `REFRESH_S`, logged when it changes.
 - ``input``: what the user did: a button pressed or toggled, a choice in a
   list, a value typed or stepped, a tab picked, a click or drag on a plot, each
-  with what it's labelled and its new value.
+  with what it's labeled and its new value.
 """
 
 from __future__ import annotations
@@ -178,7 +178,7 @@ class Overlay(QtWidgets.QLabel):
         self._main = window  # its parent, whose corner it sits in
         self.stats = stats
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.setAutoFillBackground(True)  # the theme's window colour, so the text stays legible
+        self.setAutoFillBackground(True)  # the theme's window color, so the text stays legible
         self.setFrameShape(QtWidgets.QFrame.Shape.Box)
         self.setFont(QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.SystemFont.FixedFont))
         self.setMargin(6)
@@ -392,7 +392,7 @@ def describe_input(widget: QtWidgets.QWidget, how: str) -> tuple[str, str]:
 
 
 def _label(widget: QtWidgets.QWidget) -> str:
-    """What `widget` is labelled in the window: its form row's label, the label before it in a row of
+    """What `widget` is labeled in the window: its form row's label, the label before it in a row of
     controls, or its grid column's heading (and row's label); else its tooltip's start."""
     w = widget
     for _ in range(3):  # the control itself, or the box of controls it is in

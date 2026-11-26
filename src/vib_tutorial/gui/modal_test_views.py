@@ -385,7 +385,7 @@ class FrfView(pg.GraphicsLayoutWidget):
             )
             band.setZValue(-10)
             p.addItem(band)
-        # An accelerance falls as ω² towards 0 Hz: range it on the band, not on the first lines.
+        # An accelerance falls as ω² toward 0 Hz: range it on the band, not on the first lines.
         shown = np.isfinite(exact) & ((f >= 0.02 * nyq) if response is Response.ACCELERATION else True)
         finite = np.abs(exact[shown])
         if finite.size:
@@ -398,6 +398,6 @@ class FrfView(pg.GraphicsLayoutWidget):
         self.mag.setTitle(
             f"{name}<sub>{j + 1}{settings.input_dof + 1}</sub> = {response.symbol}{j + 1} / F "
             f"at m{settings.input_dof + 1} ({drive} {response.frf_name}) · dotted: f<sub>d</sub> of "
-            "each mode · grey: above the passband · green: fit band (drag it)",
+            "each mode · gray: above the passband · green: fit band (drag it)",
             size="9pt",
         )

@@ -1,4 +1,4 @@
-"""Sloshing: the free surface of a liquid in a tank, its modes, the spring–mass analogue and a tuned liquid damper.
+"""Sloshing: the free surface of a liquid in a tank, its modes, the spring–mass analog and a tuned liquid damper.
 
 The *Fluid–structure* page's last two tabs. A rectangular tank of length L (along the motion), breadth B, filled
 to depth h, in linear potential flow: φ = cosh(k(z + h)) cos(kx) satisfies Laplace's equation, the walls (x = 0,
@@ -8,7 +8,7 @@ L) and the bottom (z = −h) for k_n = nπ/L, and the free surface's condition �
 
 √(gh)k in shallow water (a long wave), √(gk) in deep. A sideways motion of the tank excites only the odd modes
 (the surface tilts one way and the other); the even ones are symmetric. The force on the walls is that of a
-spring–mass analogue: a rigid mass m₀ fixed to the tank and a mass m_n on a spring k_n = m_n ω_n² for each odd
+spring–mass analog: a rigid mass m₀ fixed to the tank and a mass m_n on a spring k_n = m_n ω_n² for each odd
 mode,
 
     m_n = m_L 8 tanh(k_n h) / (n³π³ h/L),  m₀ = m_L − Σ m_n,
@@ -72,7 +72,7 @@ def slosh_frequency(tank: Tank, n: int) -> float:
 
 
 def slosh_mass(tank: Tank, n: int | np.ndarray) -> np.ndarray:
-    """The analogue's mass for mode n: m_L 8 tanh(k_n h)/(n³π³ h/L) for odd n, 0 for even (not excited by a
+    """The analog's mass for mode n: m_L 8 tanh(k_n h)/(n³π³ h/L) for odd n, 0 for even (not excited by a
     sideways motion)."""
     n = np.asarray(n)
     k = wavenumber(tank, n)

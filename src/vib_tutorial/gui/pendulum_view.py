@@ -1,6 +1,6 @@
 """The live pendulum drawn (#478 Phase 4): the Pendulums page's body, plucked and changed by its grips as it swings.
 
-Each kind is drawn to scale in metres: a bob on a string, a rod on its pivot, a disc on a wire seen from above (θ its
+Each kind is drawn to scale in meters: a bob on a string, a rod on its pivot, a disk on a wire seen from above (θ its
 twist), or a mass upright on an arm with a torsion spring at its foot. A dashed line marks rest, and a faint ghost
 the linearized swing at the same moment. Its forces are drawn beside it, in moments about the pivot
 (`free_body_view.FreeBodyView`).
@@ -8,19 +8,19 @@ the linearized swing at the same moment. Its forces are drawn beside it, in mome
 `PendulumView` only draws and forwards what the hand does; what a drag means is the view model's
 (`view_models/pendulum.py`'s `GRIPS`, `pivot_dragged`; `live_pendulum.LivePendulum`'s `hold`/`let_go`):
 
-- **Pluck:** take the bob (the rod's far end, the disc's mark, the upright mass) and turn it about the pivot:
+- **Pluck:** take the bob (the rod's far end, the disk's mark, the upright mass) and turn it about the pivot:
   `grabbed()`, `turned(θ)` (rad, signed) while held, `released()`.
-- **Grips** (rings): on the string, rod or arm, slid along it to change its length (the disc's on its rim, its
+- **Grips** (rings): on the string, rod or arm, slid along it to change its length (the disk's on its rim, its
   radius); on the bob's edge (up or out: heavier); on the spring (up: stiffer); on the rod's pivot, slid along the
   rod. `grip_taken(name)`, `grip_moved(name, value)` (the length grip: the pointer's distance from the pivot over
-  where the grip was, so L follows the hand; the pivot's: metres slid toward the rod's far end; the others: reaches
+  where the grip was, so L follows the hand; the pivot's: meters slid toward the rod's far end; the others: reaches
   dragged, + to grow), `grip_released(name)`.
 
 The view fits the pendulum's reach, and only half the plane while a hanging (or upright) pendulum swings within
 about 80° (`frame`); it holds still while a grip is dragged, so the length is seen to change, and fits again after.
 
 Working on it: the drawing is `show(θ, ghost)` after `set_pendulum(p)`; the angle convention (θ from straight down
-for a hanging pendulum, from straight up for an inverted one, the disc's mark from its rest direction) is `_point`
+for a hanging pendulum, from straight up for an inverted one, the disk's mark from its rest direction) is `_point`
 and `_angle_at`, each the other's inverse. `tests/test_pendulum_page.py` plucks it and drags its grips.
 """
 
@@ -42,8 +42,8 @@ from .style import colors
 TIP = (
     "<p>The pendulum, swinging (drawn to scale). The faint ghost is the linearized swing, sin θ ≈ θ, at the same "
     "moment: watch it drift ahead on a large swing.</p>"
-    "<p><b>Pluck it:</b> drag the bob (the rod's end, the disc's mark) round its pivot and let go. <b>Change it as "
-    "it swings:</b> slide the ring on the string (rod, arm; the disc's rim) to change its length, drag the ring on "
+    "<p><b>Pluck it:</b> drag the bob (the rod's end, the disk's mark) round its pivot and let go. <b>Change it as "
+    "it swings:</b> slide the ring on the string (rod, arm; the disk's rim) to change its length, drag the ring on "
     "the bob up for a heavier one, the ring on the spring up for a stiffer one, or slide the rod's pivot along it. "
     "The swing carries on: a shorter string swings faster at once, its angular momentum kept.</p>"
 )
@@ -150,7 +150,7 @@ class PendulumView(Grabbable, pg.PlotWidget):
         self._draw()
 
     def _body_pen(self) -> None:
-        """A string or arm thin, a rod thick in the mass's colour, the disc's mark bold."""
+        """A string or arm thin, a rod thick in the mass's color, the disk's mark bold."""
         if self.kind is Kind.ROD:
             self.body.setPen(pg.mkPen(colors.mass[0], width=9))
         else:
@@ -179,7 +179,7 @@ class PendulumView(Grabbable, pg.PlotWidget):
             _circle(self.disc, 0.0, 0.0, R)
             self.support.setData([], [])
             self.rest.setData([0.0, 0.0], [0.0, 1.08 * R])
-            self.label.setText("Seen from above:\nthe wire at the centre")
+            self.label.setText("Seen from above:\nthe wire at the center")
         elif p.kind is Kind.INVERTED:
             self.support.setData(*_hatch(-0.25 * R, 0.25 * R, -0.06 * R, down=True))
             self.rest.setData([0.0, 0.0], [0.0, 1.1 * R])
@@ -193,7 +193,7 @@ class PendulumView(Grabbable, pg.PlotWidget):
             self.label.setText("")
         parts = [f"{'r' if torsion else 'L'} = {fmt(p.length, 'm')}", f"m = {sig(p.mass)} kg"]
         if p.kind is Kind.ROD:
-            parts.append(f"pivot {fmt(p.pivot, 'm')} from its centre")
+            parts.append(f"pivot {fmt(p.pivot, 'm')} from its center")
         if p.kind in (Kind.TORSION, Kind.INVERTED):
             parts.append(f"kₜ = {sig(p.spring)} N·m/rad")
         self.values.setText("\n".join(parts))
@@ -227,11 +227,11 @@ class PendulumView(Grabbable, pg.PlotWidget):
         self.values.setPos(rect.left() + 0.02 * s, rect.bottom() + rect.height() - 0.02 * s)
 
     def _point(self, theta: float, r: float = 1.0) -> tuple[float, float]:
-        """Where a point r reaches out along the body is, at angle θ (metres)."""
+        """Where a point r reaches out along the body is, at angle θ (meters)."""
         r *= self.reach
         if self.kind is Kind.SIMPLE or self.kind is Kind.ROD:
             return r * math.sin(theta), -r * math.cos(theta)
-        return r * math.sin(theta), r * math.cos(theta)  # up, or the disc's mark from its rest direction
+        return r * math.sin(theta), r * math.cos(theta)  # up, or the disk's mark from its rest direction
 
     def _angle_at(self, x: float, y: float) -> float:
         if self.kind is Kind.SIMPLE or self.kind is Kind.ROD:
@@ -244,7 +244,7 @@ class PendulumView(Grabbable, pg.PlotWidget):
         return (p.pivot - p.length / 2) / self.reach
 
     def _shape(self, theta: float) -> tuple[list[float], list[float], tuple[float, float] | None]:
-        """The body's lines at θ, and the centre of its bob (if it has one)."""
+        """The body's lines at θ, and the center of its bob (if it has one)."""
         if self.kind is Kind.ROD:
             (x0, y0), (x1, y1) = self._point(theta, self._near()), self._point(theta, 1.0)
             return [x0, x1], [y0, y1], None
@@ -257,13 +257,13 @@ class PendulumView(Grabbable, pg.PlotWidget):
         return BOB * self.reach * body_size(self.pendulum.mass, 1.0)
 
     def grip_spots(self) -> dict[str, tuple[float, float]]:
-        """Where each grip the kind has is now (metres)."""
+        """Where each grip the kind has is now (meters)."""
         p, th = self.pendulum, self.theta
         spots: dict[str, tuple[float, float]] = {}
         if p.kind is Kind.TORSION:
             spots["length"] = self._point(th + 0.5 * math.pi)  # on the rim, a quarter turn round from the mark
             spots["mass"] = self._point(th - 0.5 * math.pi)
-            spots["spring"] = (0.0, -0.25 * self.reach)  # by the wire, at the centre
+            spots["spring"] = (0.0, -0.25 * self.reach)  # by the wire, at the center
             return spots
         if p.kind is Kind.ROD:
             spots["length"] = self._point(th, 0.85)
@@ -318,7 +318,7 @@ class PendulumView(Grabbable, pg.PlotWidget):
         return None
 
     def on_handle(self, pos: QtCore.QPointF) -> bool:
-        """Whether a point is on the body's handle: the bob, the rod's end, the disc's mark."""
+        """Whether a point is on the body's handle: the bob, the rod's end, the disk's mark."""
         hx, hy = self._point(self.theta)
         return math.hypot(pos.x() - hx, pos.y() - hy) <= GRAB * self.reach
 
@@ -351,7 +351,7 @@ class PendulumView(Grabbable, pg.PlotWidget):
         if name == "length":  # L follows the hand: the pointer's distance from the pivot over the grip's
             return math.hypot(pos.x(), pos.y()) / max(math.hypot(start.x(), start.y()), 1e-9)
         dx, dy = pos.x() - start.x(), pos.y() - start.y()
-        if name == "pivot":  # metres along the rod toward its far end
+        if name == "pivot":  # meters along the rod toward its far end
             ux, uy = self._point(self.theta, 1.0 / self.reach)
             return dx * ux + dy * uy
         return ((dx + dy) if name == "mass" else dy) / self.reach
@@ -370,5 +370,5 @@ class PendulumView(Grabbable, pg.PlotWidget):
         return QtCore.QPointF(gx, gy)
 
     def handle_point(self) -> QtCore.QPointF:
-        """The pluck's handle: the bob, the rod's end, the disc's mark (tests take it)."""
+        """The pluck's handle: the bob, the rod's end, the disk's mark (tests take it)."""
         return QtCore.QPointF(*self._point(self.theta))

@@ -1,9 +1,9 @@
-"""A rigid body on resilient mounts: its six coupled modes, the elastic centre, and decoupling.
+"""A rigid body on resilient mounts: its six coupled modes, the elastic center, and decoupling.
 
-The *Rigid body on mounts* page. A `Body` is a uniform box of mass m whose centre of mass is the origin, its edges
+The *Rigid body on mounts* page. A `Body` is a uniform box of mass m whose center of mass is the origin, its edges
 along x (length), y (width) and z (height), so its principal moments are I_xx = m(w² + h²)/12 and so on. It
 moves as a rigid body: three translations u and three small rotations θ (roll about x, pitch about y, yaw about
-z), q = (u, θ). A `Mount` at r (from the centre of mass) is a spring with stiffness k_a along its own axis a and
+z), q = (u, θ). A `Mount` at r (from the center of mass) is a spring with stiffness k_a along its own axis a and
 k_s across it, K_m = k_s I + (k_a − k_s) a aᵀ. Its end moves u + θ × r = T q, T = [I, −[r]×], so
 
     K = Σ Tᵀ K_m T,   M = diag(m, m, m, I_xx, I_yy, I_zz),
@@ -13,31 +13,31 @@ M_ii φ_i² over the sum (`Modes.energy`): 100 % in one is a decoupled mode, the
 
 K's off-diagonal block K_tr = −Σ K_m [r]× couples translation to rotation. Taken about another point c, the
 mounts sit at r − c and the block changes linearly with c; the point that makes it vanish, where a force
-pushes the body straight and a moment only turns it, is the **elastic centre** (`elastic_centre`: in general
-no point quite does, so the least-squares one, with what's left; `plane_centres` gives each plane's). If it is the centre of mass, and the box's
+pushes the body straight and a moment only turns it, is the **elastic center** (`elastic_centre`: in general
+no point quite does, so the least-squares one, with what's left; `plane_centres` gives each plane's). If it is the center of mass, and the box's
 principal axes are the mounts' too, M and K are both block-diagonal and every mode is a pure translation or a
 pure rotation.
 
-`Layout` is the page's four mounts: at (±span − offset, ±track, −drop) from the centre of mass, each leaning
+`Layout` is the page's four mounts: at (±span − offset, ±track, −drop) from the center of mass, each leaning
 `tilt` toward the middle in the y–z plane (a V, "focalized"), with k_a and k_s = `shear_ratio` k_a. Below the
-centre of mass (drop > 0) the mounts' shear couples sideways motion to roll and fore-and-aft to pitch; off
-centre (offset ≠ 0), bounce couples to pitch. Tilting the mounts raises the roll plane's elastic centre to
+center of mass (drop > 0) the mounts' shear couples sideways motion to roll and fore-and-aft to pitch; off
+center (offset ≠ 0), bounce couples to pitch. Tilting the mounts raises the roll plane's elastic center to
 
     z_e = t(k_a − k_s) sin β cos β / (k_a sin²β + k_s cos²β)
 
-above them (t the track, β the tilt; `roll_centre`), so at the tilt `focus_tilt` it reaches the centre of mass
+above them (t the track, β the tilt; `roll_centre`), so at the tilt `focus_tilt` it reaches the center of mass
 and lateral and roll decouple again: with u = tan β, h u² − t(1 − ρ)u + hρ = 0 (ρ = k_s/k_a, h the drop).
 
 Working on it
 -------------
 `core/rigid_mounts.py` (the *Rigid body on mounts* page, `gui/rigid_mounts.py`, in Modes after
 Energy methods; its own model, not the chain): a uniform box (`Body`, principal axes along x, y, z) on `Mount`s,
-each K_m = k_s I + (k_a − k_s) a aᵀ at r from the centre of mass, its end moving T q = u + θ × r: K = Σ Tᵀ K_m
+each K_m = k_s I + (k_a − k_s) a aᵀ at r from the center of mass, its end moving T q = u + θ × r: K = Σ Tᵀ K_m
 T, M = diag(m, m, m, I), `modes` by `eigh`, each mode's kinetic energy split among the six coordinates
 (`Modes.energy`, the decoupling figure). K's coupling block is linear in the reference point, so
 `elastic_centre` is a least-squares solve (with what coupling is left) and `plane_centres` each plane's;
 `Layout` is the page's four mounts (span, track, drop, offset, a tilt toward the middle in y–z), with the roll
-plane's centre and the focal tilt in closed form (`roll_centre`, `focus_tilt`; tests check both against K).
+plane's center and the focal tilt in closed form (`roll_centre`, `focus_tilt`; tests check both against K).
 Driven (`Drive`: an unbalance turning round the crank axis, or a torque about it at an order of the speed; the
 crank in the x–z plane), the mounts are hysteretic, K(1 + iη) (`dynamic_stiffness`, `response`), each mount's
 force on the floor K_m(1 + iη) T q (`mount_forces`), and a force's size is its peak over a cycle (`amplitude`:
@@ -70,7 +70,7 @@ def cross_matrix(r) -> np.ndarray:
 
 @dataclass(frozen=True)
 class Body:
-    """A uniform box, its centre of mass at the origin."""
+    """A uniform box, its center of mass at the origin."""
 
     mass: float = 20.0  # kg
     length: float = 0.6  # m, along x
@@ -79,7 +79,7 @@ class Body:
 
     @property
     def inertia(self) -> tuple[float, float, float]:
-        """(I_xx, I_yy, I_zz) about the centre of mass (kg·m²)."""
+        """(I_xx, I_yy, I_zz) about the center of mass (kg·m²)."""
         m, a, b, c = self.mass, self.length, self.width, self.height
         return m * (b * b + c * c) / 12.0, m * (a * a + c * c) / 12.0, m * (a * a + b * b) / 12.0
 
@@ -89,7 +89,7 @@ class Body:
 
 @dataclass(frozen=True)
 class Mount:
-    """A spring at `position` (m, from the centre of mass): `axial` along its unit `axis`, `shear` across it."""
+    """A spring at `position` (m, from the center of mass): `axial` along its unit `axis`, `shear` across it."""
 
     position: tuple[float, float, float]
     axial: float  # N/m
@@ -151,7 +151,7 @@ def coupling(mounts, about=(0.0, 0.0, 0.0)) -> np.ndarray:
 
 def elastic_centre(mounts) -> tuple[np.ndarray, float]:
     """The point about which the coupling block vanishes (least squares, as it is linear in the point), and the
-    coupling left there over the coupling about the origin (0 where there is a true elastic centre)."""
+    coupling left there over the coupling about the origin (0 where there is a true elastic center)."""
     base = coupling(mounts)
     columns = [(coupling(mounts, e) - base).ravel() for e in np.eye(3)]
     A = np.stack(columns, axis=1)
@@ -162,7 +162,7 @@ def elastic_centre(mounts) -> tuple[np.ndarray, float]:
 
 
 def plane_centres(mounts) -> tuple[float, tuple[float, float]]:
-    """Each plane's elastic centre, where a force in the plane neither turns nor is turned by the body: the roll
+    """Each plane's elastic center, where a force in the plane neither turns nor is turned by the body: the roll
     plane's height z (K's y–roll entry vanishes about it) and the pitch plane's (x, z) (its x–pitch and z–pitch
     entries vanish). Each entry is linear in the point, so each is a small linear solve. NaN where a plane has
     none (no stiffness to couple)."""
@@ -188,9 +188,9 @@ def plane_centres(mounts) -> tuple[float, tuple[float, float]]:
 
 
 class Sweep(enum.Enum):
-    DROP = "Mounts' drop below the centre of mass"
+    DROP = "Mounts' drop below the center of mass"
     TILT = "Mounts' tilt"
-    OFFSET = "Centre of mass's offset"
+    OFFSET = "Center of mass's offset"
     SHEAR = "Shear over axial stiffness"
 
 
@@ -204,8 +204,8 @@ class Layout:
     body: Body = Body()
     span: float = 0.25  # m, half the mounts' spacing along x
     track: float = 0.12  # m, half the spacing along y
-    drop: float = 0.0  # m, how far below the centre of mass they sit
-    offset: float = 0.0  # m, how far the centre of mass sits ahead (+x) of the mounts' middle
+    drop: float = 0.0  # m, how far below the center of mass they sit
+    offset: float = 0.0  # m, how far the center of mass sits ahead (+x) of the mounts' middle
     tilt: float = 0.0  # rad, each mount's axis leaning toward the middle (a V seen from the front)
     stiffness: float = 50e3  # N/m, each mount's along its axis
     shear_ratio: float = 0.25  # k_s/k_a
@@ -229,16 +229,16 @@ class Layout:
         return modes(self.body, self.mounts())
 
     def roll_centre(self) -> float:
-        """The roll plane's elastic centre's height (m) above the mounts: t(k_a − k_s) sin β cos β /
+        """The roll plane's elastic center's height (m) above the mounts: t(k_a − k_s) sin β cos β /
         (k_a sin²β + k_s cos²β), where a sideways force through it doesn't roll the body."""
         s, c = math.sin(self.tilt), math.cos(self.tilt)
         ka, ks = self.stiffness, self.shear_ratio * self.stiffness
         return self.track * (ka - ks) * s * c / (ka * s * s + ks * c * c)
 
     def focus_tilt(self) -> float:
-        """The tilt (rad) that puts the roll plane's elastic centre at the centre of mass, decoupling lateral
+        """The tilt (rad) that puts the roll plane's elastic center at the center of mass, decoupling lateral
         from roll: the smaller root of h u² − t(1 − ρ)u + hρ = 0, u = tan β. NaN if there is none (the mounts too
-        far below, or too stiff in shear); 0 if they are level with the centre of mass already."""
+        far below, or too stiff in shear); 0 if they are level with the center of mass already."""
         h, t, rho = self.drop, self.track, self.shear_ratio
         if h <= 0:
             return 0.0
@@ -283,7 +283,7 @@ class Drive:
     kind: Excitation = Excitation.UNBALANCE
     rpm: float = 1500.0
     unbalance: float = 0.002  # kg·m, m_e e
-    at: tuple[float, float, float] = (0.1, 0.0, 0.1)  # m, where the unbalance turns, from the centre of mass
+    at: tuple[float, float, float] = (0.1, 0.0, 0.1)  # m, where the unbalance turns, from the center of mass
     torque: float = 10.0  # N·m
     order: int = 2
     crank: float = 0.0  # rad
@@ -298,7 +298,7 @@ class Drive:
         return speed if self.kind is Excitation.UNBALANCE else self.order * speed
 
     def load(self, rpm: float | None = None) -> np.ndarray:
-        """The generalized force Q (6, complex; the load is Re(Q e^{iωt})) about the centre of mass: the
+        """The generalized force Q (6, complex; the load is Re(Q e^{iωt})) about the center of mass: the
         unbalance's m_e eΩ²(u − i v), u and v across the crank axis, with its moment r × F; or the torque T n."""
         n = self.axis()
         if self.kind is Excitation.TORQUE:

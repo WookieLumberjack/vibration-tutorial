@@ -2,7 +2,7 @@
 and by Lagrange.
 
 Left: the system, then its controls (the car's body, suspension, coordinates and a bump; the pendulum's bobs,
-angles and release). Centre: the system, swinging in a mode or released, and its matrices in the coordinates
+angles and release). Center: the system, swinging in a mode or released, and its matrices in the coordinates
 chosen. Right: the two derivations step by step with the page's numbers in them, then the system's own tabs
 (the car's modes against the rear spring and its ride; the pendulum's modes against its lower bob, its swing
 against the linear one, and two releases drifting apart), and the Theory. The page has its own models
@@ -104,7 +104,7 @@ RIDE_SCALE = 3.0  # the ride's road and motion drawn this many times their size
 OVERHANG = 0.85  # m: the body past each axle
 WHEEL = 0.3  # m: a wheel's radius
 FLOOR, ROOF, CABIN = 0.85, 1.3, 1.75  # m: the body's underside, waist and roof at rest
-G_HEIGHT = 1.1  # m: the centre of mass's height
+G_HEIGHT = 1.1  # m: the center of mass's height
 VIEW_X = 3.6  # m either side of G
 
 
@@ -199,15 +199,15 @@ TRIALS = (
         ),
     ),
     DerivingTrial(
-        "Coordinates at the elastic centre",
-        "<m>x<sub>P</sub></m> and <m>θ</m> at the elastic centre, <m>e* = (k<sub>f</sub>a − k<sub>r</sub>b)/(k<sub>f</sub> + "
+        "Coordinates at the elastic center",
+        "<m>x<sub>P</sub></m> and <m>θ</m> at the elastic center, <m>e* = (k<sub>f</sub>a − k<sub>r</sub>b)/(k<sub>f</sub> + "
         "k<sub>r</sub>)</m> = −0.15 m (behind <m>G</m>): a force there pushes the body straight, so <m>K</m> is diagonal. "
         "The coupling has moved into <m>M</m> (<m>−me</m> = 180 kg·m): dynamic coupling. The frequencies are the same 1.25 and "
         "1.41 Hz: coupling belongs to the coordinates, not the car.",
         coords=Coordinates.POINT,
         offset=-0.15,
         predict=Prediction(
-            "The car's equations derived again in x<sub>P</sub> and θ at the elastic centre, instead of x<sub>G</sub>"
+            "The car's equations derived again in x<sub>P</sub> and θ at the elastic center, instead of x<sub>G</sub>"
             " and θ. M and K change: what happens to the natural frequencies?",
             (
                 "One rises and one falls",
@@ -579,8 +579,8 @@ def _elastic_centre(rng: np.random.Generator) -> Question:
     kf, kr = pick(rng, (30, 35, 40)), pick(rng, (40, 45, 50))
     e = Car(front=a, rear=b, k_front=kf, k_rear=kr).elastic_centre()
     return Question(
-        f"A car's front axle is {sig(a, 6)} m ahead of its centre of mass and the rear {sig(b, 6)} m behind, on {sig(kf, 6)} and "
-        f"{sig(kr, 6)} kN/m. How far behind G is its elastic centre?",
+        f"A car's front axle is {sig(a, 6)} m ahead of its center of mass and the rear {sig(b, 6)} m behind, on {sig(kf, 6)} and "
+        f"{sig(kr, 6)} kN/m. How far behind G is its elastic center?",
         -e,
         f"Where a force pushes the body straight, the springs' moments about it cancel: e* = (k<sub>f</sub>a − "
         f"k<sub>r</sub>b)/(k<sub>f</sub> + k<sub>r</sub>) = ({sig(kf, 6)} × {sig(a, 6)} − {sig(kr, 6)} × {sig(b, 6)})/{sig(kf + kr, 6)} = "
@@ -598,7 +598,7 @@ def _end_frequency(rng: np.random.Generator) -> Question:
     mf = m * b / (a + b)
     f = math.sqrt(1e3 * kf / mf) / TWO_PI
     return Question(
-        f"A {sig(m, 6)} kg car has its centre of mass {sig(a, 6)} m behind the front axle and {sig(b, 6)} m ahead of the rear. "
+        f"A {sig(m, 6)} kg car has its center of mass {sig(a, 6)} m behind the front axle and {sig(b, 6)} m ahead of the rear. "
         f"The front springs give {sig(kf, 6)} kN/m. What is the front's ride frequency, the front end bouncing on its "
         "own spring?",
         f,
@@ -613,7 +613,7 @@ def _index_one(rng: np.random.Generator) -> Question:
     a, b = pick(rng, (1.0, 1.2, 1.4)), pick(rng, (1.3, 1.5, 1.7))
     r = math.sqrt(a * b)
     return Question(
-        f"A car's axles are {sig(a, 6)} m ahead of and {sig(b, 6)} m behind its centre of mass. What radius of gyration in "
+        f"A car's axles are {sig(a, 6)} m ahead of and {sig(b, 6)} m behind its center of mass. What radius of gyration in "
         "pitch makes its ends bounce independently?",
         r,
         f"In the ends' coordinates M couples by (m a b − J)/L², nil when J = m k<sub>G</sub>² = m a b: k<sub>G</sub> = √(ab) = √({number(a * b)}) "
@@ -630,7 +630,7 @@ def _point_mass(rng: np.random.Generator) -> Question:
     entry = J + m * e * e
     return Question(
         f"A {sig(m, 6)} kg body with a {sig(r, 6)} m radius of gyration is described by x<sub>P</sub> and θ at a point P {sig(e, 6)} m "
-        "ahead of its centre of mass. What is M₂₂, the entry multiplying θ̈ in the moment equation?",
+        "ahead of its center of mass. What is M₂₂, the entry multiplying θ̈ in the moment equation?",
         entry,
         f"x<sub>G</sub> = x<sub>P</sub> − eθ, so T = ½m(ẋ<sub>P</sub> − eθ̇)² + ½Jθ̇² and M₂₂ = J + m e² = {number(J)} + "
         f"{sig(m, 6)} × {sig(e, 6)}² = {number(entry)} kg·m² (the parallel-axis theorem). M₁₂ = −m e = {number(-m * e)} kg·m couples it.",
@@ -720,12 +720,12 @@ def _uncouple_spec(rng: np.random.Generator) -> Question:
             kept("The mass", t.mass, base.mass, "kg"),
             kept("The radius of gyration", t.gyration, base.gyration, "m"),
             Requirement("The equations in x<sub>G</sub> and θ", t.coords.value, t.coords is Coordinates.CENTRE),
-            at_most("The elastic centre's distance from G", 100 * abs(car.elastic_centre()), 0.5, "cm"),
+            at_most("The elastic center's distance from G", 100 * abs(car.elastic_centre()), 0.5, "cm"),
         )
 
     return Question(
         f"The car with its axles {sig(a, 6)} m ahead of and {sig(b, 6)} m behind G and {sig(kf, 6)} kN/m at the front. Choose the "
-        "rear spring so that, in x<sub>G</sub> and θ, bounce and pitch are its modes: the elastic centre within "
+        "rear spring so that, in x<sub>G</sub> and θ, bounce and pitch are its modes: the elastic center within "
         "5 mm of G.",
         0,
         f"Static coupling goes when k<sub>f</sub>a = k<sub>r</sub>b: k<sub>r</sub> = {sig(kf, 6)} × {sig(a, 6)}/{sig(b, 6)} = "
@@ -741,7 +741,7 @@ PROBLEMS = (
         Problem(key, title, "deriving_page", f"See {page_link('deriving_page', anchor, section)}.", make)
         for key, title, anchor, section, make in (
             ("bounce", "Pure bounce", "bounce-pitch", "A car in bounce and pitch", _bounce),
-            ("elastic-centre", "The elastic centre", "coupling", "Coordinates and coupling", _elastic_centre),
+            ("elastic-centre", "The elastic center", "coupling", "Coordinates and coupling", _elastic_centre),
             ("end-frequency", "A ride frequency", "coupling", "Coordinates and coupling", _end_frequency),
             ("index-one", "Dynamic index 1", "coupling", "Coordinates and coupling", _index_one),
             ("point-mass", "M about a point", "lagrange", "Lagrange's equations", _point_mass),
@@ -795,13 +795,13 @@ TIPS = {
 }
 MODES_TIP = (
     "<p>The two modes as the rear spring changes (the front's held): their frequencies (top) and where each "
-    "turns the body (bottom), from G, forward. Grey: each end on its own spring. Red: this car's rear spring; grey "
+    "turns the body (bottom), from G, forward. Gray: each end on its own spring. Red: this car's rear spring; gray "
     "dotted: where k<sub>f</sub>a = k<sub>r</sub>b.</p>"
 )
 BUMP_TIP = "<p>The body above each axle, and its pitch, as the car rides over the bump.</p>"
 PMODES_TIP = (
     "<p>The pendulum's two small-swing modes as the lower bob changes (the upper held): their frequencies (top) "
-    "and shapes (bottom, the lower rod's angle over the upper's). Grey: each rod as a pendulum alone. Red: this "
+    "and shapes (bottom, the lower rod's angle over the upper's). Gray: each rod as a pendulum alone. Red: this "
     "pendulum.</p>"
 )
 SWING_TIP = "<p>Released from rest: the whole equations (solid) against the linear ones (dashed).</p>"
@@ -945,7 +945,7 @@ class CarView(pg.PlotWidget):
 
 
 class DerivingPage(QtWidgets.QWidget):
-    """Controls on the left, the system and its matrices in the centre, the derivations and the system's own
+    """Controls on the left, the system and its matrices in the center, the derivations and the system's own
     tabs on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
@@ -1052,7 +1052,7 @@ class DerivingPage(QtWidgets.QWidget):
         self.run_button.toggled.connect(self._on_run)
         self.reset_button.clicked.connect(self.reset)
 
-        # --- centre
+        # --- center
         self.view = CarView()
         self.pview = dp.PendulumView()
         self.views = QtWidgets.QStackedWidget()
@@ -1362,7 +1362,7 @@ class DerivingPage(QtWidgets.QWidget):
         self.readout.setText(
             ". ".join(parts)
             + f". Uncoupled: bounce {sig(fb)} Hz, pitch {sig(fp)} Hz; each end alone: front {sig(ff)}, rear {sig(fr)} Hz. "
-            f"Elastic centre {sig(abs(e_star))} m {'ahead of' if e_star >= 0 else 'behind'} G."
+            f"Elastic center {sig(abs(e_star))} m {'ahead of' if e_star >= 0 else 'behind'} G."
         )
 
     def _readout_pendulum(self) -> None:

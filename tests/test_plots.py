@@ -47,7 +47,7 @@ def test_a_steady_range_moves_only_when_it_has_to(app):
 
 def test_no_si_prefix_on_percent_degrees_or_decibels(app):
     """An axis in %, °, rpm or dB keeps its numbers: no "m%" or "k°" (`plot_patches._set_label`, #409 U-18).
-    Metres still take one, and an axis relabelled from % to metres takes one again."""
+    Meters still take one, and an axis relabelled from % to meters takes one again."""
     from vib_tutorial.gui import plot_patches
 
     plot_patches.install()  # as make_app does

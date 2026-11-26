@@ -1,7 +1,7 @@
 """Jeffcott rotor on flexible bearings: model, whirl analysis and exact time stepping.
 
 A massless, uniform Euler–Bernoulli shaft runs through two bearings, A at z = 0
-and B at z = L, and carries a rigid disc at z = a: between the bearings
+and B at z = L, and carries a rigid disk at z = a: between the bearings
 (0 < a < L), or overhung past one of them (a > L past B, a < 0 past A), the
 shaft then running on from the bearing to the disc. The shaft bends in
 two planes, x (horizontal) and y (vertical). Each plane has four degrees of
@@ -54,7 +54,7 @@ the stations first, as before, then the r modal coordinates of each plane. With
 a massless shaft r = 0 and the reduction is exactly the condensation above.
 
 The rotor spins at Ω (rad/s) about +z, turning x toward y. A tilted, spinning
-disc has angular momentum Ip Ω along its tilted axis; turning that axis takes a
+disk has angular momentum Ip Ω along its tilted axis; turning that axis takes a
 moment, the gyroscopic moment. It enters the equations of motion through the
 velocities:
 
@@ -85,32 +85,32 @@ Angles on the rotor are measured from a keyphasor mark on the shaft, at angle
 φ in fixed coordinates (φ' = Ω), in the direction of spin. Three sources turn
 with the shaft and drive it once per revolution (1X):
 
-- the disc's mass unbalance U = m e (kg·m): its centre of mass is a distance e
-  from the shaft's centre at angle φ + ψ (ψ = 0 by default: the heavy spot is at
-  the mark). Keeping the centre of mass on its path takes
+- the disk's mass unbalance U = m e (kg·m): its center of mass is a distance e
+  from the shaft's center at angle φ + ψ (ψ = 0 by default: the heavy spot is at
+  the mark). Keeping the center of mass on its path takes
 
       f_x = U (Ω² cos φ + Ω' sin φ),   f_y = U (Ω² sin φ - Ω' cos φ)
 
-  on the disc for ψ = 0, or in general f_x + i f_y = U e^{iψ} (Ω² - iΩ') e^{iφ}.
+  on the disk for ψ = 0, or in general f_x + i f_y = U e^{iψ} (Ω² - iΩ') e^{iφ}.
   Balance weights m_k r_k at angles θ_k add to U e^{iψ} the same way. A weight
-  at an axial offset h from the disc's centre plane adds a moment w h too; one
+  at an axial offset h from the disk's center plane adds a moment w h too; one
   on the shaft at z is a point force there (two-plane balancing).
-- the disc's skew τ (rad): its principal axis is tilted from the shaft's by τ,
-  toward angle φ + γ. The disc's inertia acts on its own axis, the shaft's slope
+- the disk's skew τ (rad): its principal axis is tilted from the shaft's by τ,
+  toward angle φ + γ. The disk's inertia acts on its own axis, the shaft's slope
   plus the skew, so the skew moves to the right side as a moment on the slopes,
   M_x + i M_y = (I_d - I_p) τ (Ω² - iΩ') e^{i(φ+γ)}: a couple unbalance. A thin
-  disc (I_p > I_d) is pushed flat, toward square to the spin axis.
-- the shaft's bow: a residual bend, δ at the disc toward angle φ + β, in the
-  shape a load at the disc gives with the bearings held (q_bow). The shaft's
+  disk (I_p > I_d) is pushed flat, toward square to the spin axis.
+- the shaft's bow: a residual bend, δ at the disk toward angle φ + β, in the
+  shape a load at the disk gives with the bearings held (q_bow). The shaft's
   elastic force is K_shaft (q - q_bow(φ)), so the bow is a force K_shaft q_bow
   turning with the shaft, constant in size. It loads only the shaft: its
-  forces on the disc and the journals balance, so at rest the shaft takes its
+  forces on the disk and the journals balance, so at rest the shaft takes its
   bent shape without loading the bearings.
 
 The internal damping acts on q - q_bow too, but the bow does not move in the
 shaft, so it adds nothing there: C_i q_bow' + Ω H q_bow = 0.
 
-On a horizontal rotor gravity pulls the disc and the journals down (-y), a
+On a horizontal rotor gravity pulls the disk and the journals down (-y), a
 constant force f_g. It moves the equilibrium to the static deflection
 q_s = (K + Ω H)^{-1} f_g, about which the rotor vibrates exactly as without it
 (the model is linear): the static sag, sideways too where K + ΩH is not
@@ -143,9 +143,9 @@ by harmonic balance over every harmonic. Its weight then drives 1X, 2X and 3X,
 the last two most near a half and a third of a critical speed. An open crack
 (not breathing, a notch) turns with the shaft as the asymmetric shaft does.
 
-A stator ring (`stator`, a seal or a casing) may sit round the disc, a clearance
-larger than it. Once the disc's centre moves past the clearance from the ring's
-centre, the ring pushes it back and its friction drags the disc's rim against
+A stator ring (`stator`, a seal or a casing) may sit round the disk, a clearance
+larger than it. Once the disk's center moves past the clearance from the ring's
+center, the ring pushes it back and its friction drags the disk's rim against
 its slip over the ring (stator_force). That is not linear in anything, so the
 ring is in the time response only; every analysis is the rotor's without it.
 
@@ -167,7 +167,7 @@ oil film's K_f(Ω); its damping too, C + C_f(Ω). K itself is not symmetric once
 `matrices()` alone (it leaves the films out). `core/rotor_stability.py` finds the onset speed by sweeping and
 bisecting the least damped mode's ζ.
 
-The disc may sit between the bearings or overhang one (`position` > 1 or < 0, never on a bearing). The shaft's
+The disk may sit between the bearings or overhang one (`position` > 1 or < 0, never on a bearing). The shaft's
 nodes come from `RotorSystem._mesh` in axial order, and the 3D view spans `system.extent`, so don't assume the
 disc is between 0 and L. Presets live in `core/rotor_presets.py`, and `tests/test_rotor_presets.py` checks the
 numbers in their notes.
@@ -180,10 +180,10 @@ reduced Craig–Bampton style to the stations plus the shaft's fixed-interface m
 (`mass_inverse`). With density 0 the model is exactly the massless Jeffcott one whatever `elements` is (a test
 checks); keep it so. Raising `MODE_LIMIT` costs time: the time step resolves the fastest mode kept.
 
-Everything that turns with the rotor (unbalance, balance weights, disc skew, shaft bow) goes through
+Everything that turns with the rotor (unbalance, balance weights, disk skew, shaft bow) goes through
 `RotorSystem.rotating_load(Ω, Ω')`, as f_x + i f_y = P e^{iφ} on [A, D, θ, B]; both the simulator's `force`
 and `synchronous_response` use it, so the steady state and the time response can't drift apart. A new 1X
-source belongs there. Two-plane balancing's `plane_weights` (`PlaneWeight`) go there too: on the disc they add
+source belongs there. Two-plane balancing's `plane_weights` (`PlaneWeight`) go there too: on the disk they add
 to `mass_unbalance` and `couple_unbalance` (a weight at axial offset h adds w·h to the couple); on the shaft
 each is a point force S(z)ᵀw. The Balancing tab keeps its readings at all four stations, and forgets its trial
 runs when the planes change, since the influence matrix belongs to them. φ is the keyphasor mark's angle, not
@@ -239,7 +239,7 @@ DOF_NAMES = ("x_A", "x_D", "θx", "x_B", "y_A", "y_D", "θy", "y_B")
 STEEL = 7850.0  # kg/m³
 MODE_LIMIT = 1000.0  # Hz: the shaft's fixed-interface modes are kept up to this frequency (the top speed: 60,000 rpm)
 MAX_MODES = 12  # and at most this many in each plane
-MIN_GAP = 1e-3  # of the span: the closest the disc may come to a bearing
+MIN_GAP = 1e-3  # of the span: the closest the disk may come to a bearing
 POISSON = 0.3  # the shaft's Poisson's ratio, for a crack's compliance
 CRACK_DEPTH_MAX = 0.5  # a / D: the strip model's crack compliance holds to half the shaft's diameter
 # Rub on a stator ring (RotorSystem.stator), see RotorSimulator._rub_steps:
@@ -313,7 +313,7 @@ class Crack:
     and across) overrides the one its depth gives.
     """
 
-    position: float = 0.5  # z / L, as the disc's position (past 0 or 1 on an overhang)
+    position: float = 0.5  # z / L, as the disk's position (past 0 or 1 on an overhang)
     depth: float = 0.3  # a / D, from the shaft's surface
     angle: float = 0.0  # rad, of the crack's mouth from the keyphasor mark, in the direction of spin
     breathing: bool = True
@@ -322,17 +322,17 @@ class Crack:
 
 @dataclass(frozen=True)
 class Stator:
-    """A rigid ring round the disc (a seal or a casing), which the disc's rim rubs once it reaches it.
+    """A rigid ring round the disk (a seal or a casing), which the disk's rim rubs once it reaches it.
 
-    The ring is `clearance` larger in radius than the disc, its centre `offset`
+    The ring is `clearance` larger in radius than the disk, its center `offset`
     from the bearings' line toward `offset_angle` (fixed axes, from +x toward +y;
-    -90°: down). Where the disc's centre is further than the clearance from the
-    ring's centre, by δ, the ring pushes it back with N = k δ + c δ' (never
+    -90°: down). Where the disk's center is further than the clearance from the
+    ring's center, by δ, the ring pushes it back with N = k δ + c δ' (never
     pulling), and drags its rim against the slip with μ N, the slip being the rim's
-    speed over the ring, R Ω plus the disc's whirl along the ring.
+    speed over the ring, R Ω plus the disk's whirl along the ring.
 
     The drag heats the shaft where it rubs, and a shaft hotter on one side bows
-    toward it (the Newkirk effect): with a `thermal_gain` β, the bow at the disc
+    toward it (the Newkirk effect): with a `thermal_gain` β, the bow at the disk
     settles to β times the rub's heat, in the direction of the hot spot on the
     shaft, lagging it by the `thermal_lag` τ (a first-order lag, τ b' = β H - b).
     """
@@ -341,25 +341,25 @@ class Stator:
     stiffness: float = 2e6  # N/m, the ring's contact stiffness
     damping: float = 100.0  # N·s/m, in contact
     friction: float = 0.1  # μ, the rim on the ring
-    offset: float = 0.0  # m, of the ring's centre from the bearings' line
+    offset: float = 0.0  # m, of the ring's center from the bearings' line
     offset_angle: float = -0.5 * math.pi  # rad, its direction in fixed axes
-    thermal_gain: float = 0.0  # m/W: the bow at the disc per watt of rub heat (0: no thermal bow)
+    thermal_gain: float = 0.0  # m/W: the bow at the disk per watt of rub heat (0: no thermal bow)
     thermal_lag: float = 10.0  # s, the bow's time constant
 
     @property
     def centre(self) -> tuple[float, float]:
-        """The ring's centre (x, y), m."""
+        """The ring's center (x, y), m."""
         return self.offset * math.cos(self.offset_angle), self.offset * math.sin(self.offset_angle)
 
 
 def stator_force(
     stator: Stator, radius: float, x: float, y: float, vx: float, vy: float, omega: float
 ) -> tuple[float, float, float, list[float]]:
-    """(f_x, f_y, N, J): the ring's force on the disc at (x, y) moving at (x', y'), the normal force N,
+    """(f_x, f_y, N, J): the ring's force on the disk at (x, y) moving at (x', y'), the normal force N,
     and the force's derivatives J = d(f_x, f_y)/d(x, y, x', y') (row by row, 8 numbers).
 
     The friction is Coulomb's smoothed over SLIP: μ N s/√(s² + SLIP²), s = R Ω + v_t,
-    the rim's slip along the ring (v_t the disc's velocity along it, in the direction of spin).
+    the rim's slip along the ring (v_t the disk's velocity along it, in the direction of spin).
     """
     cx, cy = stator.centre
     dx, dy = x - cx, y - cy
@@ -367,7 +367,7 @@ def stator_force(
     pen = rho - stator.clearance
     if pen <= 0.0 or rho == 0.0:
         return 0.0, 0.0, 0.0, [0.0] * 8
-    nx, ny = dx / rho, dy / rho  # out from the ring's centre
+    nx, ny = dx / rho, dy / rho  # out from the ring's center
     tx, ty = -ny, nx  # along the ring, in the direction of spin
     vn, vt = nx * vx + ny * vy, tx * vx + ty * vy
     normal = stator.stiffness * pen + stator.damping * vn
@@ -378,7 +378,7 @@ def stator_force(
     sat, dsat = s / root, SLIP * SLIP / root**3
     mu = stator.friction
     gx, gy = nx + mu * sat * tx, ny + mu * sat * ty  # f = -N g
-    # n and t turn as the disc moves round the ring: dn/dd = t tᵀ/ρ, dt/dd = -n tᵀ/ρ.
+    # n and t turn as the disk moves round the ring: dn/dd = t tᵀ/ρ, dt/dd = -n tᵀ/ρ.
     # dδ'/dd = vᵀ t tᵀ/ρ = (v_t/ρ) tᵀ, dv_t/dd = -(v_n/ρ) tᵀ.
     k, c = stator.stiffness, stator.damping
     dN = (k * nx + c * vt / rho * tx, k * ny + c * vt / rho * ty, c * nx, c * ny)  # dN/d(x, y, x', y')
@@ -457,8 +457,8 @@ class Bearing:
 class PlaneWeight(NamedTuple):
     """A balance weight in a plane at axial position z (m from bearing A): m r e^{iθ} (kg·m) from the mark.
 
-    On the disc (`disc`), it sits on the rigid disc at an axial offset z - a from its
-    centre plane, so it adds w to the disc's unbalance and w (z - a) to its couple.
+    On the disk (`disc`), it sits on the rigid disk at an axial offset z - a from its
+    center plane, so it adds w to the disk's unbalance and w (z - a) to its couple.
     On the shaft, it is a point force on the shaft at z.
     """
 
@@ -469,12 +469,12 @@ class PlaneWeight(NamedTuple):
 
 @dataclass(frozen=True)
 class RotorSystem:
-    """A Jeffcott rotor: shaft, disc, two bearings and the disc's unbalance. SI units."""
+    """A Jeffcott rotor: shaft, disk, two bearings and the disk's unbalance. SI units."""
 
     length: float = 0.5  # m, between the bearings
     diameter: float = 0.01  # m, of the shaft
     youngs: float = 200e9  # Pa
-    position: float = 0.5  # disc position a / L (0.5: midspan; > 1 overhung past B, < 0 past A)
+    position: float = 0.5  # disk position a / L (0.5: midspan; > 1 overhung past B, < 0 past A)
     disc_mass: float = 1.0  # kg
     ip: float = 1.25e-3  # kg·m², polar (about the spin axis)
     id: float = 6.25e-4  # kg·m², diametral (about a diameter)
@@ -482,12 +482,12 @@ class RotorSystem:
     bearing_b: Bearing = field(default_factory=Bearing)
     unbalance: float = 20e-6  # kg·m (20 g·mm)
     unbalance_angle: float = 0.0  # rad, ψ: the heavy spot's angle from the keyphasor mark
-    internal_damping: float = 0.0  # N·s/m, the shaft's rotating damping, as a damper at the disc
-    bow: float = 0.0  # m, the shaft's residual bow at the disc
+    internal_damping: float = 0.0  # N·s/m, the shaft's rotating damping, as a damper at the disk
+    bow: float = 0.0  # m, the shaft's residual bow at the disk
     bow_angle: float = 0.0  # rad, of the bow from the keyphasor mark (in the direction of spin)
-    skew: float = 0.0  # rad, the disc's principal axis's tilt from the shaft's
+    skew: float = 0.0  # rad, the disk's principal axis's tilt from the shaft's
     skew_angle: float = 0.0  # rad, of the skew's direction from the keyphasor mark
-    weights: tuple[complex, ...] = ()  # balance weights on the disc, each m r e^{iθ} (kg·m) from the mark
+    weights: tuple[complex, ...] = ()  # balance weights on the disk, each m r e^{iθ} (kg·m) from the mark
     plane_weights: tuple[PlaneWeight, ...] = ()  # weights in planes along the rotor (two-plane balancing)
     gravity: float = 0.0  # m/s², pulling in -y (9.81 for a horizontal rotor; 0 for a vertical one)
     density: float = 0.0  # kg/m³ of the shaft: 0 for the Jeffcott model's massless shaft (steel: STEEL)
@@ -497,11 +497,11 @@ class RotorSystem:
     asymmetry_angle: float = 0.0  # rad, α: the stiff axis's angle from the keyphasor mark
     crack: Crack | None = None  # a transverse crack in the shaft
     nonlinear_films: bool = False  # the time response takes the oil films' whole force, not their linearization
-    stator: Stator | None = None  # a ring round the disc that it rubs on (time response only)
+    stator: Stator | None = None  # a ring round the disk that it rubs on (time response only)
 
     def __post_init__(self) -> None:
         if min(abs(self.position), abs(self.position - 1.0)) < MIN_GAP:
-            raise ValueError("the disc cannot sit on a bearing (a/L = 0 or 1)")
+            raise ValueError("the disk cannot sit on a bearing (a/L = 0 or 1)")
         positive = (
             self.length,
             self.diameter,
@@ -526,7 +526,7 @@ class RotorSystem:
         if not 0.0 <= self.asymmetry < 1.0:
             raise ValueError("the asymmetry Δ is in [0, 1): EI(1 - Δ) about the soft axis must stay positive")
         if self.elements < 2:
-            raise ValueError("the shaft needs at least two elements, one each side of the disc")
+            raise ValueError("the shaft needs at least two elements, one each side of the disk")
         lo, hi = self.extent
         if any(not p.disc and not lo <= p.z <= hi for p in self.plane_weights):
             raise ValueError("balance weights go on the shaft, between its ends")
@@ -550,14 +550,14 @@ class RotorSystem:
         return replace(self, **changes)
 
     def on_disc(self, p: PlaneWeight) -> bool:
-        """True if the plane weight p is on the disc: put there, or on the shaft at the disc's centre plane."""
+        """True if the plane weight p is on the disk: put there, or on the shaft at the disk's center plane."""
         return p.disc or abs(p.z - self.a) <= 1e-9 * self.length
 
     @property
     def mass_unbalance(self) -> complex:
-        """The disc's net mass unbalance (kg·m), the unbalance and the weights: |·| m e, its angle the heavy spot's.
+        """The disk's net mass unbalance (kg·m), the unbalance and the weights: |·| m e, its angle the heavy spot's.
 
-        Plane weights on the disc count, whatever their axial offset.
+        Plane weights on the disk count, whatever their axial offset.
         """
         return (
             self.unbalance * complex(math.cos(self.unbalance_angle), math.sin(self.unbalance_angle))
@@ -567,9 +567,9 @@ class RotorSystem:
 
     @property
     def couple_unbalance(self) -> complex:
-        """The disc's net couple unbalance (kg·m²), turning with the shaft: the skew's and the plane weights'.
+        """The disk's net couple unbalance (kg·m²), turning with the shaft: the skew's and the plane weights'.
 
-        Its moment on the disc's slopes is this times (Ω² - iΩ') e^{iφ}.
+        Its moment on the disk's slopes is this times (Ω² - iΩ') e^{iφ}.
         """
         return (self.id - self.ip) * self.skew * np.exp(1j * self.skew_angle) + sum(
             (p.weight * (p.z - self.a) for p in self.plane_weights if self.on_disc(p)), 0j
@@ -583,32 +583,32 @@ class RotorSystem:
 
     @cached_property
     def bow_load(self) -> np.ndarray:
-        """One plane's load (4 + r,) of a unit bow at the disc on a round shaft, K_shaft q_bow per metre."""
+        """One plane's load (4 + r,) of a unit bow at the disk on a round shaft, K_shaft q_bow per meter."""
         return self.shaft_stiffness() @ self.bow_shape()
 
     @property
     def disc_radius(self) -> float:
-        """The disc's radius (m), a uniform thin disc's from its mass and I_p = m R²/2."""
+        """The disk's radius (m), a uniform thin disk's from its mass and I_p = m R²/2."""
         return math.sqrt(2.0 * self.ip / self.disc_mass)
 
     @property
     def a(self) -> float:
-        """Disc position from bearing A (m)."""
+        """Disk position from bearing A (m)."""
         return self.position * self.length
 
     @property
     def b(self) -> float:
-        """Disc position from bearing B (m), L - a: negative when the disc overhangs B."""
+        """Disk position from bearing B (m), L - a: negative when the disk overhangs B."""
         return self.length - self.a
 
     @property
     def overhung(self) -> bool:
-        """True if the disc sits outside the bearings rather than between them."""
+        """True if the disk sits outside the bearings rather than between them."""
         return not 0.0 < self.position < 1.0
 
     @property
     def overhang(self) -> float:
-        """The disc's distance past the nearer bearing (m), 0 between the bearings."""
+        """The disk's distance past the nearer bearing (m), 0 between the bearings."""
         return max(-self.a, self.a - self.length, 0.0)
 
     @property
@@ -624,7 +624,7 @@ class RotorSystem:
 
     @cached_property
     def _mesh(self) -> tuple[np.ndarray, tuple[int, int, int]]:
-        """The shaft's nodes' z (m) in axial order, and the nodes at bearing A, the disc and bearing B.
+        """The shaft's nodes' z (m) in axial order, and the nodes at bearing A, the disk and bearing B.
 
         Each stretch between the stations gets elements in proportion to its length, at
         least one. A crack has a node of its own, unless it is next to a station.
@@ -857,30 +857,30 @@ class RotorSystem:
         return self._reduced[1].copy()
 
     def plane_mass(self) -> np.ndarray:
-        """One plane's mass matrix on [stations, ξ]: the shaft's, the journals', the disc's m and I_d."""
+        """One plane's mass matrix on [stations, ξ]: the shaft's, the journals', the disk's m and I_d."""
         M = self._reduced[2].copy()
         M[[0, 1, 2, 3], [0, 1, 2, 3]] += [self.bearing_a.mass, self.disc_mass, self.id, self.bearing_b.mass]
         return M
 
     @property
     def disc_stiffness(self) -> float:
-        """The shaft's stiffness at the disc with the bearings held (N/m).
+        """The shaft's stiffness at the disk with the bearings held (N/m).
 
-        3EIL/(a²b²) between the bearings; 3EI/(c²(L + c)) for a disc overhung by c.
+        3EIL/(a²b²) between the bearings; 3EI/(c²(L + c)) for a disk overhung by c.
         """
         k = self.shaft_stiffness()[1:3, 1:3]
         return 1.0 / np.linalg.inv(k)[0, 0]
 
     @property
     def loss_time(self) -> float:
-        """η (s): the internal damping is η K_shaft, so that it is c_i on the disc's own stiffness."""
+        """η (s): the internal damping is η K_shaft, so that it is c_i on the disk's own stiffness."""
         return self.internal_damping / self.disc_stiffness
 
     def bow_shape(self) -> np.ndarray:
-        """One plane's bow (4 + r,) on [w_A, w_D, θ_D, w_B, ξ], per metre of bow at the disc.
+        """One plane's bow (4 + r,) on [w_A, w_D, θ_D, w_B, ξ], per meter of bow at the disk.
 
-        The shape a load at the disc gives with the bearings held: no moment at the
-        disc, so K_shaft times it is a force at the disc and the bearings' reactions.
+        The shape a load at the disk gives with the bearings held: no moment at the
+        disk, so K_shaft times it is a force at the disk and the bearings' reactions.
         It is a static shape, so the modal coordinates are zero.
         """
         k = self.shaft_stiffness()[1:3, 1:3]
@@ -892,7 +892,7 @@ class RotorSystem:
     def rotating_load(self, omega: float | np.ndarray, alpha: float | np.ndarray = 0.0) -> np.ndarray:
         """The 1X load on one plane's DOFs as f_x + i f_y = P e^{iφ}: P (..., 4 + r) complex.
 
-        The unbalance and the balance weights on the disc, its couple (the skew's and
+        The unbalance and the balance weights on the disk, its couple (the skew's and
         the weights' moment on its slopes), the weights on the shaft (each a point
         force, shared over the DOFs as S(z)^T) and the bow's force K_shaft q_bow, at
         speed Ω and acceleration Ω' = alpha.
@@ -927,12 +927,12 @@ class RotorSystem:
         return self.merge(P.real, P.imag)
 
     def gravity_load(self, omega: float = 0.0) -> np.ndarray:
-        """f_g (n_dof,): the weights of the journals, the disc and the shaft, in -y (N).
+        """f_g (n_dof,): the weights of the journals, the disk and the shaft, in -y (N).
 
         With oil films, also the constant load p(Ω) that holds each journal where its
         film settles it (see _film_terms), so it depends on the speed.
         """
-        # The stations moving together, the slope at the disc held, is a rigid shift (modal coordinates 0).
+        # The stations moving together, the slope at the disk held, is a rigid shift (modal coordinates 0).
         shift = np.zeros(4 + self.modes_kept)
         shift[[0, 1, 3]] = 1.0
         f = self.merge(np.zeros_like(shift), -self.gravity * self.plane_mass() @ shift)
@@ -942,7 +942,7 @@ class RotorSystem:
         """q_s = (K + ΩH)^{-1} f_g: where gravity holds the rotor, (n_dof,) or (len(omega), n_dof).
 
         On magnets, from the whole state (static_state): with integral action they hold
-        their journals at the centre.
+        their journals at the center.
 
         Unless the stiffness depends on the speed (speed_dependent), neither does this.
         With an asymmetric or cracked shaft the rotor never holds still under
@@ -1016,11 +1016,11 @@ class RotorSystem:
 
     @property
     def extent(self) -> tuple[float, float]:
-        """The shaft's ends (m): the bearings, or the disc where it overhangs one."""
+        """The shaft's ends (m): the bearings, or the disk where it overhangs one."""
         return min(0.0, self.a), max(self.length, self.a)
 
     def deflection(self, q: np.ndarray, z: np.ndarray) -> np.ndarray:
-        """Shaft centre (x, y) at axial positions z for displacements q (..., n_dof): shape (..., len(z), 2)."""
+        """Shaft center (x, y) at axial positions z for displacements q (..., n_dof): shape (..., len(z), 2)."""
         S = self.shape_matrix(z)
         q = np.asarray(q)
         ix, iy = self._planes
@@ -1110,7 +1110,7 @@ class RotorSystem:
     def bearing_loads(self) -> tuple[float, float]:
         """Each bearing's share of the rotor's weight (N), A then B: the support's upward push on its journal.
 
-        With the journals held, the shaft carries the disc's and its own weight to
+        With the journals held, the shaft carries the disk's and its own weight to
         them, and each journal's weight is its own. Negative where the support has
         to pull the journal down (the far bearing of an overhung rotor).
         """
@@ -1147,7 +1147,7 @@ class RotorSystem:
         """(K_f, C_f, p): the films' stiffness and damping at speed Ω, and the load that holds them there.
 
         A film is linearized about where its journal settles, q_J at its eccentricity
-        and attitude, not about the bearing's centre: f = W - K_f (q - q_J) - C_f q',
+        and attitude, not about the bearing's center: f = W - K_f (q - q_J) - C_f q',
         W its share of the weight held up. So it adds K_f to the stiffness and the
         constant p = W + K_f q_J to the load (with gravity, beside f_g): the rotor
         then rests with its journals on the film's locus.
@@ -1167,7 +1167,7 @@ class RotorSystem:
             d = slice(j, j + 5, 4)  # [x, y] of the journal
             Kf[d, d] = st.k
             Cf[d, d] = st.c
-            # An upward pull mirrors the journal through the centre; the coefficients stay the same.
+            # An upward pull mirrors the journal through the center; the coefficients stay the same.
             q_j = math.copysign(b.film.clearance, w) * np.array(st.position())
             p[d] = np.array([0.0, w]) + st.k @ q_j
         for a in (Kf, Cf, p):
@@ -1445,16 +1445,16 @@ class RotorSystem:
     def jeffcott_speed(self) -> float:
         """Critical speed (rad/s) of the textbook Jeffcott rotor with these parts.
 
-        The disc's mass on the shaft's midspan-equivalent stiffness in series with
+        The disk's mass on the shaft's midspan-equivalent stiffness in series with
         the two bearings in parallel, all massless and isotropic (x-direction
-        stiffnesses), the disc's tilt ignored: ω² = k_eq / m. Exact for a disc at
+        stiffnesses), the disk's tilt ignored: ω² = k_eq / m. Exact for a disk at
         midspan on identical bearings as the journal masses go to zero; poor for an
-        overhung disc, whose tilt (and so the gyroscopic moment) matters most.
+        overhung disk, whose tilt (and so the gyroscopic moment) matters most.
         """
         a, b, L = self.a, self.b, self.length
         k_shaft = self.disc_stiffness
         # The bearings carry b/L and a/L of the load (one of them negative for an
-        # overhung disc: the far bearing is pulled up); the disc moves by the weighted sum.
+        # overhung disk: the far bearing is pulled up); the disk moves by the weighted sum.
         flex_bearings = (b / L) ** 2 / self.bearing_a.kx + (a / L) ** 2 / self.bearing_b.kx
         return math.sqrt(1.0 / (1.0 / k_shaft + flex_bearings) / self.disc_mass)
 

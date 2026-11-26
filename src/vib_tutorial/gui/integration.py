@@ -1,7 +1,7 @@
 """Numerical integration page: what a time-stepping scheme does to a vibration, and why the app steps exactly.
 
 Left: the oscillator (optionally with a stiff second mode), the time step, the start and the force, and which
-schemes to run. Centre: the first mass's motion by each scheme against the closed form, and each one's error.
+schemes to run. Center: the first mass's motion by each scheme against the closed form, and each one's error.
 Right: each scheme's spectral radius, period error and numerical damping against Δt/T, with the step set marked
 for each mode. The page has its own model (core/integration.py).
 """
@@ -468,7 +468,7 @@ NOTES_HTML = load_notes("integration", figures=integration_figures.FIGURES, tria
 
 
 class IntegrationPage(QtWidgets.QWidget):
-    """Controls on the left, the motion and its error in the centre, the schemes' curves on the right."""
+    """Controls on the left, the motion and its error in the center, the schemes' curves on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -529,7 +529,7 @@ class IntegrationPage(QtWidgets.QWidget):
             self._on_inputs,
         )
 
-        # --- centre
+        # --- center
         self.time_plot = plot("Displacement x₁", "m", "Time", "s", height=150)
         self.time_plot.setToolTip(TIME_TIP)
         add_legend(self.time_plot.getPlotItem(), offset=(-10, 10))

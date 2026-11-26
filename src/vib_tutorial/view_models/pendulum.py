@@ -37,7 +37,7 @@ from .text import fmt
 from .text import number as sig
 
 TAB_PERIOD, TAB_PHASE, TAB_ENERGY = range(3)
-MIN_PIVOT = 0.02  # the rod's pivot at least this much of its length from its centre (at its centre it can't swing)
+MIN_PIVOT = 0.02  # the rod's pivot at least this much of its length from its center (at its center it can't swing)
 
 
 @dataclass(frozen=True)
@@ -46,8 +46,8 @@ class PendulumTrial:
     note: str
     kind: Kind = Kind.SIMPLE
     mass: float = 1.0
-    length: float = 1.0  # the string, the rod, the disc's radius or the inverted arm (m)
-    pivot: float = 0.5  # the rod's pivot from its centre (m)
+    length: float = 1.0  # the string, the rod, the disk's radius or the inverted arm (m)
+    pivot: float = 0.5  # the rod's pivot from its center (m)
     spring: float = 15.0  # k_t (N·m/rad): the wire's, or the inverted pendulum's at its foot
     gravity: float = 9.81
     zeta: float = 0.0  # the damper at the pivot, as the linearized oscillator's damping ratio
@@ -90,7 +90,7 @@ GRIPS = {
 
 
 def pivot_dragged(length: float, start: float, along: float) -> float:
-    """The rod's pivot (m from its centre) after its grip is slid `along` m toward the rod's end from `start`."""
+    """The rod's pivot (m from its center) after its grip is slid `along` m toward the rod's end from `start`."""
     return min(max(start + along, MIN_PIVOT * length), 0.5 * length)
 
 
@@ -100,7 +100,7 @@ def pivot_dragged(length: float, start: float, along: float) -> float:
 def pull(p: Pendulum, theta: float, omega: float) -> tuple[str, str, float]:
     """The pull along the string, rod or arm on the body (N, + toward the pivot): what holds it on its circle. Its
     name, symbol and size: a string's tension m(g cos θ + Lθ'²) (the most at the bottom, where it also turns the
-    bob), the rod's pivot's pull, the inverted arm's push (negative) or the wire's, holding up the disc's weight."""
+    bob), the rod's pivot's pull, the inverted arm's push (negative) or the wire's, holding up the disk's weight."""
     m, g = p.mass, p.gravity
     if p.kind is Kind.TORSION:
         return "wire", "Tₛ", m * g
@@ -119,8 +119,8 @@ def free_body(
     aside_scale: ArrowScale | None = None,
     t: float = 0.0,
 ) -> FreeBody:
-    """The moments about the pivot at θ, θ' (+ along θ), N·m: the weight's ∓mgd sin θ (none on the disc, whose
-    weight hangs on the wire), the spring's −k<sub>t</sub>θ (the disc and the inverted pendulum), the damper's −cθ',
+    """The moments about the pivot at θ, θ' (+ along θ), N·m: the weight's ∓mgd sin θ (none on the disk, whose
+    weight hangs on the wire), the spring's −k<sub>t</sub>θ (the disk and the inverted pendulum), the damper's −cθ',
     and while `held` the hand's, which balances them; the net Jθ''. Aside, the pull along the string (`pull`)."""
     rows: list[Arrow] = []
     if p.kind is not Kind.TORSION:
@@ -340,12 +340,12 @@ def phase_view(p: Pendulum, theta: np.ndarray, omega: np.ndarray, reach: float) 
         y[[0, -1]] = 0.0
         sep = Curve(np.degrees(np.concatenate([inside, inside[::-1]])), np.degrees(np.concatenate([y, -y[::-1]])))
         note = (
-            "Grey: the undamped orbits of constant energy; bold: the separatrix through the upside-down balance "
+            "Gray: the undamped orbits of constant energy; bold: the separatrix through the upside-down balance "
             "(±180°). Inside it the pendulum swings; outside it, it goes round."
         )
     else:
         sep = Curve.empty()
-        note = "Grey: the undamped orbits of constant energy. Colour: the swing as it runs."
+        note = "Gray: the undamped orbits of constant energy. Color: the swing as it runs."
     path = Curve(np.degrees(theta), np.degrees(omega))
     return PhaseView(orbits, sep, path, (-math.degrees(reach), math.degrees(reach)), note)
 

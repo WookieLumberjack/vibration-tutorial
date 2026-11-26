@@ -1,6 +1,6 @@
 """Waterfall and cascade plots of the Jeffcott rotor: full spectra taken block by block as it runs.
 
-A spectrum analyser on a machine takes the spectrum of a block of signal (here
+A spectrum analyzer on a machine takes the spectrum of a block of signal (here
 the full spectrum of the orbit x + iy at each station, see rotor_stability),
 then the next block, overlapping it, and so on. Stacked against time they make
 a waterfall plot; against the speed during a run-up or coast-down, a cascade.
@@ -9,7 +9,7 @@ the rotor ringing (a tap, the passage through a critical, an instability) shows
 at the free whirl frequencies, forward at +f and backward at −f. A cascade with
 taps all through a run-up is a measured Campbell diagram.
 
-The block length sets the trade-off every analyser has: the frequency
+The block length sets the trade-off every analyzer has: the frequency
 resolution is 1/T, but over a ramp the speed changes by αT while a block is
 taken, smearing the 1X line.
 

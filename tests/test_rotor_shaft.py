@@ -93,7 +93,7 @@ def test_the_shafts_weight_and_the_sag():
 
 
 def test_the_shafts_gyroscopic_moment_splits_its_own_modes():
-    # A shaft alone (a tiny disc with no polar inertia): its own sections' spin still splits the whirl.
+    # A shaft alone (a tiny disk with no polar inertia): its own sections' spin still splits the whirl.
     s = RotorSystem(
         density=STEEL,
         disc_mass=1e-3,

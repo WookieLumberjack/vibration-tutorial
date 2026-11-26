@@ -34,10 +34,10 @@ def test_a_goal_ticks_its_trial_and_problem_and_itself_once_both_are_done(record
     record.mark_tried("sdof_page", 1)
     assert record.version() > before and record.tried_numbers("sdof_page") == {1}
     once = record.marks(html)
-    assert "Try it</a> ✓" in once and "Practise it</a> ✓" not in once and "<li>✓" not in once
+    assert "Try it</a> ✓" in once and "Practice it</a> ✓" not in once and "<li>✓" not in once
     record.mark_solved("sdof_page", "log-decrement")
     both = record.marks(html)
-    assert "<li>✓ measure the damping;" in both and "Practise it</a> ✓" in both
+    assert "<li>✓ measure the damping;" in both and "Practice it</a> ✓" in both
     record.reset()
     assert record.marks(html) == html and not record.tried() and not record.solved()
 

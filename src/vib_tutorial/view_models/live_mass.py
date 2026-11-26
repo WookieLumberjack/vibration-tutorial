@@ -83,7 +83,7 @@ class Params:
     def system(self) -> ChainSystem | ArmSystem:
         if self.has_arm:
             if self.friction > 0:
-                raise ValueError("a Zener arm and friction together aren't modelled")
+                raise ValueError("a Zener arm and friction together aren't modeled")
             return ArmSystem(self.mass, self.stiffness, self.damping, self.arm_stiffness, self.arm_damping)
         return ChainSystem(
             np.array([self.mass]),
@@ -323,7 +323,7 @@ def ring_down(t: np.ndarray, x: np.ndarray) -> RingDown | None:
 class EnergyRow:
     name: str
     value: float  # J
-    role: str  # its colour, as a theme role's name
+    role: str  # its color, as a theme role's name
 
 
 @dataclass(frozen=True)

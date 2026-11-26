@@ -11,7 +11,7 @@ from .style import colors
 
 
 def _panel(x0: float, title: str, law, x_label: str) -> str:
-    """One force law: force up, stretch (or velocity) across, both through the panel's centre."""
+    """One force law: force up, stretch (or velocity) across, both through the panel's center."""
     fg, muted, force = colors.foreground, colors.muted, colors.force
     w, mid, half = 66.0, 78.0, 40.0
     cx = x0 + w / 2

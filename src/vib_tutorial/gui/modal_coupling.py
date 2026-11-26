@@ -1053,7 +1053,7 @@ class ModalCouplingPage(QtWidgets.QWidget):
         self.shapes.apply_theme()
         self.frf.apply_theme()
         scroll = self.theory.verticalScrollBar().value()
-        self.theory.setHtml(THEORY_HTML)  # its links, in the new link colour
+        self.theory.setHtml(THEORY_HTML)  # its links, in the new link color
         self.theory.verticalScrollBar().setValue(scroll)
         if self.system is not None:
             self._dirty = True

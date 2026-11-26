@@ -2,13 +2,13 @@
 
 Left: the body (a cuboid, a cylinder or a sphere, plus a point mass anywhere on it), how it is spun (about one
 of its principal axes, nudged off it), a torque (held in the body's axes or in space's, for a set time from the
-start or from a *Kick*), and the playback. Centre: the body in 3D (drag to turn it) with its own axes x, y, z,
+start or from a *Kick*), and the playback. Center: the body in 3D (drag to turn it) with its own axes x, y, z,
 optionally its principal axes, the vectors L, ω and τ and the trail of ω's direction, and a readout below.
 Right: the *Inertia* tab (the tensor about G in the body's axes, its principal moments and axes), *Components*
 (ω, L, τ or I against time in space's, the body's or the principal axes, with the equations at one instant
 written out below: `equations_snapshot`), *Orientation* (the start pose, and the orientation four ways), *Drift*
 (the start stepped torque-free as a matrix, as Euler angles and as a quaternion: `rigid_body.compare`), *Check* (the energy and L against what the torque put in) and the
-Theory. The model is core/rigid_body.py (shared maths in core/rotation.py), stepped on the page's frame loop.
+Theory. The model is core/rigid_body.py (shared math in core/rotation.py), stepped on the page's frame loop.
 
 Its `PROBLEMS` (the Practice window) ask for a box's moments, a point mass's shift of G and product of inertia,
 whether a spin flips and how fast, an Euler angle's rate and a quaternion's turn, set up through `load_setup`.
@@ -82,7 +82,7 @@ TRAIL = 3.0  # s of ω's direction drawn
 SNAPSHOT_FRAMES = 10  # while it runs the snapshot is rewritten every this many frames
 SPIN_AXES = ("Principal axis 1 (least I)", "Principal axis 2 (middle I)", "Principal axis 3 (greatest I)")
 STRIPS = 24  # a cylinder's side, in flat faces
-BODY_AXES = 6  # the body's axes' colour, colors.mass[k], as on the Gyroscope page
+BODY_AXES = 6  # the body's axes' color, colors.mass[k], as on the Gyroscope page
 
 
 class Axes(enum.Enum):
@@ -189,7 +189,7 @@ TRIALS = (
         frame=Axes.SPACE,
     ),
     RigidTrial(
-        "An off-centre mass tilts the principal axes",
+        "An off-center mass tilts the principal axes",
         "A 300 g point mass 10 cm along x and 8 cm along y: G moves toward it, the tensor in the box's own axes "
         "gets products of inertia, and the principal axes (dashed) turn away from x, y, z.",
         point=0.3,
@@ -305,7 +305,7 @@ TIPS = {
     "c": "<p>A box's side along z; a cylinder's length.</p>",
     "point": "<p>A point mass fixed to the body: 0 for none. Off the body's axes it adds products of inertia and "
     "tilts the principal axes.</p>",
-    "offset": "<p>Where the point mass sits from the shape's centre, along the body's x, y, z.</p>",
+    "offset": "<p>Where the point mass sits from the shape's center, along the body's x, y, z.</p>",
     "spin_axis": "<p>Which principal axis it spins about at the start: 1 has the least moment, 3 the greatest.</p>",
     "rate": "<p>How fast it spins at the start, rad/s.</p>",
     "nudge": "<p>How far ω starts off the axis, toward the next principal axis. 0 spins exactly about it.</p>",
@@ -350,7 +350,7 @@ def _box_moment(rng: np.random.Generator) -> Question:
     answer = float(body.inertia()[k, k])
     return Question(
         f"A uniform {sig(m, 6)} kg box, {sig(a, 6)} × {sig(b, 6)} × {sig(c, 6)} mm along its x, y, z. What is its moment of inertia about "
-        f"its {axis} axis, through its centre?",
+        f"its {axis} axis, through its center?",
         answer,
         f"I<sub>{axis}{axis}</sub> = m(s₁² + s₂²)/12 with the two sides across that axis: {sig(m, 6)} × ({sig(others[0] / 1000, 6)}² + "
         f"{sig(others[1] / 1000, 6)}²)/12 = {number(answer)} kg·m².",
@@ -365,8 +365,8 @@ def _point_centre(rng: np.random.Generator) -> Question:
     x = pick(rng, (50.0, 80.0, 100.0, 120.0))
     G = Body(Shape.CUBOID, m, a / 1000, b / 1000, c / 1000, mp, (x / 1000, 0.0, 0.0)).centre()[0] * 1000
     return Question(
-        f"A {sig(m, 6)} kg box carries a {sig(mp, 6)} kg point mass {sig(x, 6)} mm along x from its centre. How far from the box's "
-        "centre is the centre of mass G?",
+        f"A {sig(m, 6)} kg box carries a {sig(mp, 6)} kg point mass {sig(x, 6)} mm along x from its center. How far from the box's "
+        "center is the center of mass G?",
         G,
         f"G is the masses' average place: {sig(mp, 6)} × {sig(x, 6)}/({sig(m, 6)} + {sig(mp, 6)}) = {number(G)} mm along x.",
         unit="mm",
@@ -392,8 +392,8 @@ def _point_product(rng: np.random.Generator) -> Question:
     answer = float(body.inertia()[0, 1]) * 1e4  # kg·cm²: a few, where kg·m² would be 10⁻⁴
     reduced = m * mp / (m + mp)
     return Question(
-        f"A {sig(m, 6)} kg box carries a {sig(mp, 6)} kg point mass at ({sig(x, 6)}, {sig(y, 6)}, 0) mm from its centre. How big is the "
-        "product of inertia I<sub>xy</sub> about the centre of mass, in the box's axes, in kg·cm²? (It is "
+        f"A {sig(m, 6)} kg box carries a {sig(mp, 6)} kg point mass at ({sig(x, 6)}, {sig(y, 6)}, 0) mm from its center. How big is the "
+        "product of inertia I<sub>xy</sub> about the center of mass, in the box's axes, in kg·cm²? (It is "
         "negative: give its size.)",
         -answer,
         f"I<sub>xy</sub> = −Σmxy about G. The box alone has none; moved to G and with the point mass it comes to "
@@ -499,7 +499,7 @@ def _cylinder_length(rng: np.random.Generator) -> Question:
     length = math.sqrt(3.0) * r
     return Question(
         f"A uniform {sig(m, 6)} kg cylinder is {sig(r, 6)} mm in radius. How long must it be for its moment across (about a "
-        "diameter, through its centre) to equal its moment along its axis, in mm?",
+        "diameter, through its center) to equal its moment along its axis, in mm?",
         length,
         f"Across, m(3r² + L²)/12; along, ½mr². Equal when 3r² + L² = 6r², L = √3 r = 1.732 × {sig(r, 6)} = "
         f"{number(length)} mm. Then every axis through G is principal, as for a sphere: no axis is the middle one.",
@@ -578,7 +578,7 @@ PROBLEMS = tuple(
 )
 
 VIEW_TIP = (
-    "<p>The body in 3D, about its centre of mass G: drag to turn the view, double-click to reset it. The coloured "
+    "<p>The body in 3D, about its center of mass G: drag to turn the view, double-click to reset it. The colored "
     "lines are its own axes x, y, z (dashed: its principal axes 1, 2, 3, or the one it was spun about when the "
     "<i>Nudge</i> tipped ω off it); the dot, the point mass. With "
     "<i>Vectors</i> ticked: L, ω and the torque τ, each scaled to fit, and the thin line where ω has pointed.</p>"
@@ -630,7 +630,7 @@ def frame_rows(frame: Axes, body_rows: np.ndarray, P: np.ndarray) -> np.ndarray:
 
 
 class BodyView(OrbitView, pg.PlotWidget):
-    """The body in 3D, orthographically projected about its centre of mass; drag to turn it."""
+    """The body in 3D, orthographically projected about its center of mass; drag to turn it."""
 
     YAW, PITCH = math.radians(30.0), math.radians(20.0)
     RIM = 48
@@ -660,7 +660,7 @@ class BodyView(OrbitView, pg.PlotWidget):
         self.outline = pg.PlotCurveItem(connect="finite")  # lines on the body, its visible side only
         self.far = pg.PlotCurveItem(connect="finite")  # a sphere's screen outline
         self.faces = [QtWidgets.QGraphicsPathItem() for _ in range(STRIPS + 2)]  # those facing the viewer, shaded
-        self.ball = QtWidgets.QGraphicsPathItem()  # a sphere's disc, shaded by a gradient
+        self.ball = QtWidgets.QGraphicsPathItem()  # a sphere's disk, shaded by a gradient
         self.axes = [pg.PlotCurveItem() for _ in range(3)]
         self.axis_labels = [pg.TextItem(t, anchor=(0.5, 0.5)) for t in "xyz"]
         self.principal = [pg.PlotCurveItem() for _ in range(3)]
@@ -935,7 +935,7 @@ class BodyView(OrbitView, pg.PlotWidget):
 
 
 class RigidBodyPage(QtWidgets.QWidget):
-    """Controls on the left, the body in the centre, its inertia, components and check on the right."""
+    """Controls on the left, the body in the center, its inertia, components and check on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -1372,7 +1372,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         ]
         if body.point > 0:
             out.append(
-                f"<p>G is {1000 * G[0]:.1f}, {1000 * G[1]:.1f}, {1000 * G[2]:.1f} mm from the shape's centre: the "
+                f"<p>G is {1000 * G[0]:.1f}, {1000 * G[1]:.1f}, {1000 * G[2]:.1f} mm from the shape's center: the "
                 "shape's tensor moved there by parallel axes, plus the point mass's own m<sub>p</sub>(|p|²1 − "
                 "ppᵀ).</p>".replace("-", "−")
             )
@@ -1482,7 +1482,7 @@ class RigidBodyPage(QtWidgets.QWidget):
         rates = rotation.euler_rates(theta, psi, w_body)
         chi, axis = rotation.axis_angle(q)
         g = self.body.centre()
-        T = rotation.homogeneous(B, -B @ g)  # the shape's frame (origin at its centre) to space's (origin at G)
+        T = rotation.homogeneous(B, -B @ g)  # the shape's frame (origin at its center) to space's (origin at G)
         deg = math.degrees
         sin = math.sin(theta)
 
@@ -1519,9 +1519,9 @@ class RigidBodyPage(QtWidgets.QWidget):
             "same turn. q̇ = ½ q ⊗ (0, ω) has no singular place, which is why the page steps it.</p>",
             equation("q =", bracket(q), "n̂ =", bracket(axis)),
             f"<p>A turn of χ = {deg(chi):.1f}° about n̂.</p>",
-            "<p><b>4. Homogeneous transform</b> T, 4 × 4: B with the shape's centre's place in space as a fourth "
-            "column, Bd (d from G to the shape's centre, in the body's axes), so a point of the body p (from the "
-            "shape's centre, with a 1 as fourth component) is at T(p, 1) in space, and a direction (0) only "
+            "<p><b>4. Homogeneous transform</b> T, 4 × 4: B with the shape's center's place in space as a fourth "
+            "column, Bd (d from G to the shape's center, in the body's axes), so a point of the body p (from the "
+            "shape's center, with a 1 as fourth component) is at T(p, 1) in space, and a direction (0) only "
             "turns. A robot arm's links chain these, one per joint.</p>",
             equation("T =", bracket(T)),
         ]
@@ -1533,7 +1533,7 @@ class RigidBodyPage(QtWidgets.QWidget):
             ]
         else:
             out.append(
-                "<p>With no point mass G is the shape's centre, d = 0, and T's fourth column is (0, 0, 0, 1): add one "
+                "<p>With no point mass G is the shape's center, d = 0, and T's fourth column is (0, 0, 0, 1): add one "
                 "to see the translation.</p>"
             )
         self.orient_text.setText("".join(out))

@@ -5,7 +5,7 @@
 | Area | What it holds |
 |---|---|
 | **Left** | System parameters (m, k, c for each element and friction F<sub>f</sub> for each mass, 1 to 8 masses), the excitation (a force on a mass, or motion of the ground), and simulation controls (run/pause, speed, plot window, auto-scale) |
-| **Centre** | Animation of the chain (with a scale bar for the real displacement) and live energy bars, above time histories of the applied force and of the motion (in physical or modal coordinates), of the energy, or of the force in each spring and damper |
+| **Center** | Animation of the chain (with a scale bar for the real displacement) and live energy bars, above time histories of the applied force and of the motion (in physical or modal coordinates), of the energy, or of the force in each spring and damper |
 | **Right** | Tabs: *Modal analysis* (table, mode shapes, release), *Frequency response*, and *Theory* (notes written for students) |
 | **Top** | The pages, in 11 groups, and the *Theory*, *Theory window*, *About*, *Theme* and *Size* controls |
 
@@ -61,7 +61,7 @@ problems show a figure of the situation above the question.
 Right-click a plot for its menu: **Copy data as CSV** puts its curves on the clipboard, to paste into a
 spreadsheet; **Save data as CSV…** writes them to a file, an x and a y column for each curve, named after
 the plot's axes and the curve's legend; **Save image as PNG…** saves the plot as it shows; **Show all**
-fits the plot to its data again after a zoom. **Hold these curves** keeps a grey dashed copy of what the plot
+fits the plot to its data again after a zoom. **Hold these curves** keeps a gray dashed copy of what the plot
 shows behind it: change a control and compare the new curves with the held ones (hold again to add more).
 **Clear held curves** takes them off, as *Defaults* does. **Hold curves** on the run bar (H) holds every
 plot the page shows at once, and **Clear held** (Shift+H) takes them all off. (The frame and rotor builders' canvases keep their
@@ -81,7 +81,7 @@ The Single oscillator draws the mass itself above its time plots, moving with th
 driven response: **Start** plays it (Space; at ¼ speed to begin with, as a 3 Hz swing is a blur), **Reset**
 takes it back to t = 0, and the time cursor on the plot it follows can be dragged to scrub. Drag the mass
 sideways and let go to pluck it: it vibrates freely from where you let go. Pendulums does the same with
-the pendulum (a bob, a rod, a disc on its wire seen from above, an inverted arm), swinging beside a faint
+the pendulum (a bob, a rod, a disk on its wire seen from above, an inverted arm), swinging beside a faint
 ghost of the linearized swing: turn it about its pivot and let go to start it from that angle, either side.
 Vibration isolation's *Start-up* tab draws
 the machine on its mounts, running up with its unbalance turning: pull it and let go and, stopped, it rings
@@ -91,7 +91,7 @@ on its mounts.
 
 *Theme* (top right) switches the whole app between **Light**, **Dark**, **Solarized**,
 **Nord** and **Projector**, live, without resetting the simulation. **Projector** is Light with darker
-greys, every line twice as wide and every marker 40 % larger, which a projector's washed-out picture
+grays, every line twice as wide and every marker 40 % larger, which a projector's washed-out picture
 needs; its text stays at its usual size, so the first time it's picked the app offers to show everything
 at 125 % too (*Size*, below). **System** (the default) follows the
 desktop's light or dark setting, and changes with it. Each theme has its own palettes for
@@ -119,7 +119,7 @@ With the controls folded away, **Alt+PgDown** and **Alt+PgUp** still step throug
 and each step's note shows large over the top of the page, so the room can read it; a step that asks a
 prediction shows its question and choices there, to answer from the front. The × or **Esc** hides it.
 
-**F6** turns on a pointer, a large dot in the force colour that follows the mouse, for pointing at a curve
+**F6** turns on a pointer, a large dot in the force color that follows the mouse, for pointing at a curve
 across the room. **F7** is ink: drag to draw on the page (circle a peak, sketch the curve you expect before
 showing it); F7 again gives the mouse back to the page with the ink left on it. **Esc** clears the ink and
 turns both off, and changing page clears the ink.

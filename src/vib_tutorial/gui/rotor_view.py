@@ -1,4 +1,4 @@
-"""The rotor page's 3D view: the shaft, the disc and the bearings, whirling (magnified)."""
+"""The rotor page's 3D view: the shaft, the disk and the bearings, whirling (magnified)."""
 
 from __future__ import annotations
 
@@ -30,10 +30,10 @@ AXIAL = 4.0  # display length of the shaft in the 3D view
 SWING = 0.5  # display units: the largest whirl is magnified to this
 
 
-SHAFT_DOT = 0.1  # display units: how far off the shaft's centre line a weight on it is drawn
+SHAFT_DOT = 0.1  # display units: how far off the shaft's center line a weight on it is drawn
 
 
-CRACK_TICK = 0.22  # display units: the longest tick a crack is drawn as, from the shaft's centre line
+CRACK_TICK = 0.22  # display units: the longest tick a crack is drawn as, from the shaft's center line
 
 
 GROUND = 1.1  # display units from the shaft's axis to the supports
@@ -46,13 +46,13 @@ STATOR = 0.22  # display units: a magnetic bearing's stator ring, round the bear
 
 
 VIEW_TIP = (
-    "<p>The shaft's centre line, the disc and the bearings' springs and dampers, with the whirl "
+    "<p>The shaft's center line, the disk and the bearings' springs and dampers, with the whirl "
     "magnified (the scale is in the top corner). Drag to turn the view; double-click to reset it.</p>"
-    "<p>The red dot on the disc is the heavy spot, where its unbalance is: it turns with the shaft. The "
+    "<p>The red dot on the disk is the heavy spot, where its unbalance is: it turns with the shaft. The "
     "tick across the rim is the keyphasor mark that angles are measured from, and squares are balance "
-    "weights. An asymmetric shaft's stiff axis is the dashed diameter across the disc; a crack is the "
+    "weights. An asymmetric shaft's stiff axis is the dashed diameter across the disk; a crack is the "
     "dark tick on the shaft, pointing at its mouth and thick while it is open. "
-    "The thin lines are the orbits of the four stations (bearings, disc, midspan).</p>"
+    "The thin lines are the orbits of the four stations (bearings, disk, midspan).</p>"
 )
 
 
@@ -78,7 +78,7 @@ class RotorView(OrbitView, pg.PlotWidget):
         # (the page draws it only on its frames).
         self._state: tuple[np.ndarray, float, list[np.ndarray], float] | None = None
         self.system = RotorSystem()
-        self.gain = 1.0  # display units per metre of lateral motion
+        self.gain = 1.0  # display units per meter of lateral motion
         self.disc_radius = 0.4  # display units
 
         plot = self.getPlotItem()
@@ -90,12 +90,12 @@ class RotorView(OrbitView, pg.PlotWidget):
         self.disc = QtWidgets.QGraphicsPathItem()
         self.spoke = pg.PlotCurveItem()
         self.heavy = Dot(9)
-        self.weight_dots = pg.ScatterPlotItem(size=7, symbol="s")  # balance weights, on the disc or the shaft
-        self.mark = pg.PlotCurveItem()  # the keyphasor mark: a tick across the disc's rim
-        self.stiff_axis = pg.PlotCurveItem()  # an asymmetric shaft's stiff axis: a diameter across the disc
+        self.weight_dots = pg.ScatterPlotItem(size=7, symbol="s")  # balance weights, on the disk or the shaft
+        self.mark = pg.PlotCurveItem()  # the keyphasor mark: a tick across the disk's rim
+        self.stiff_axis = pg.PlotCurveItem()  # an asymmetric shaft's stiff axis: a diameter across the disk
         self.crack_mark = pg.PlotCurveItem()  # a crack: a tick on the shaft toward its mouth
-        self.stator_ring = pg.PlotCurveItem(connect="finite")  # a stator ring round the disc, on a pedestal
-        self.ring: tuple[float, float, float] | None = None  # its centre (x, y) and clearance (m), as drawn
+        self.stator_ring = pg.PlotCurveItem(connect="finite")  # a stator ring round the disk, on a pedestal
+        self.ring: tuple[float, float, float] | None = None  # its center (x, y) and clearance (m), as drawn
         self.show_heavy = True
         self.stations = pg.ScatterPlotItem(size=8)
         self.triad = pg.PlotCurveItem(connect="pairs")
@@ -137,12 +137,12 @@ class RotorView(OrbitView, pg.PlotWidget):
     # ------------------------------------------------------------- geometry
     @property
     def _metres(self) -> float:
-        """Metres of shaft per display unit along it: the whole shaft, overhang too, spans AXIAL."""
+        """Meters of shaft per display unit along it: the whole shaft, overhang too, spans AXIAL."""
         z0, z1 = self.system.extent
         return (z1 - z0) / AXIAL
 
     def _z(self, z_m: float | np.ndarray) -> np.ndarray:
-        """Display axial coordinate (from the shaft's middle) of an axial position in metres."""
+        """Display axial coordinate (from the shaft's middle) of an axial position in meters."""
         z0, z1 = self.system.extent
         return (np.asarray(z_m) - 0.5 * (z0 + z1)) / self._metres
 
@@ -231,7 +231,7 @@ class RotorView(OrbitView, pg.PlotWidget):
         """Draw displacements q (n_dof,) with the keyphasor mark at angle `phase`, and each station's recent (x, y)."""
         self._state = (q, phase, trails, peak)
         s = self.system
-        # The disc's own axis: the shaft's slope there plus the skew. Its rim's wobble counts as motion.
+        # The disk's own axis: the shaft's slope there plus the skew. Its rim's wobble counts as motion.
         axis = np.array([q[2], q[6]]) + s.skew * np.array(
             [math.cos(phase + s.skew_angle), math.sin(phase + s.skew_angle)]
         )
@@ -244,7 +244,7 @@ class RotorView(OrbitView, pg.PlotWidget):
         g = self.gain
         self.scale_label.setText(f"motion ×{_round_gain(g * self._metres)}")
 
-        # Shaft centre line.
+        # Shaft center line.
         z = np.union1d(np.linspace(*s.extent, 81), s.nodes)
         defl = s.deflection(q, z) * g
         line = np.column_stack([defl, self._z(z)])
@@ -253,7 +253,7 @@ class RotorView(OrbitView, pg.PlotWidget):
         # Stations and their orbits.
         zs = np.array([0.0, s.a, 0.5 * s.length, s.length])
         here = np.column_stack([s.deflection(q, zs) * g, self._z(zs)])
-        # The midspan is drawn only when the disc is not there.
+        # The midspan is drawn only when the disk is not there.
         shown = [i for i in range(len(STATIONS)) if i != 2 or abs(s.position - 0.5) > 1e-9]
         sx, sy = self.project(here[shown])
         self.stations.setData(sx, sy, brush=[pg.mkBrush(colors.mass[i]) for i in shown])
@@ -264,7 +264,7 @@ class RotorView(OrbitView, pg.PlotWidget):
             else:
                 curve.setData([], [])
 
-        # Disc: a circle square to its own (magnified) axis.
+        # Disk: a circle square to its own (magnified) axis.
         scale = g * self._metres  # display slope per radian of real slope
         n = np.array([axis[0] * scale, axis[1] * scale, 1.0])
         n /= np.linalg.norm(n)
@@ -293,9 +293,9 @@ class RotorView(OrbitView, pg.PlotWidget):
         dots = [on_disc(phase + cmath.phase(w), 0.92) for w in s.weights]
         unit = n / np.linalg.norm(n)
         for p in s.plane_weights:
-            if s.on_disc(p):  # on the disc, at its axial offset
+            if s.on_disc(p):  # on the disk, at its axial offset
                 dots.append(on_disc(phase + cmath.phase(p.weight), 0.92) + unit * (p.z - s.a) / self._metres)
-            else:  # on the shaft, just off its centre line
+            else:  # on the shaft, just off its center line
                 angle = phase + cmath.phase(p.weight)
                 centre = s.deflection(q, np.array([p.z]))[0] * g
                 dots.append(

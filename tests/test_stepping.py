@@ -30,7 +30,7 @@ def test_a_budget_counts_a_dearer_cost_at_once_and_a_cheaper_one_gradually():
     b.spent(0.0, 100)
     assert b.cost == pytest.approx(0.8 * 2.4e-4), "cheaper: a fifth of the way"
     assert b.allows(50, seconds=0.006) == pytest.approx(0.006 / b.cost)
-    b.spent(1.0, 0)  # nothing done: nothing learnt
+    b.spent(1.0, 0)  # nothing done: nothing learned
     b.forget()
     assert b.cost == 0.0
 

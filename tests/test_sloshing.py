@@ -1,5 +1,5 @@
 """Sloshing: the frequencies and the rigid mass against a finite-volume solution of the tank's potential flow, the
-analogue's masses, the damper's elimination against a full matrix solve, and Den Hartog's peak."""
+analog's masses, the damper's elimination against a full matrix solve, and Den Hartog's peak."""
 
 import math
 
@@ -30,7 +30,7 @@ from vib_tutorial.core.sloshing import (
 
 
 def _energy_matrix(L: float, h: float, nx: int, nz: int) -> sparse.csc_matrix:
-    """½∫|∇φ|² = ½ φᵀKφ on nx × nz cells (cell-centred finite volumes, row j of cells at index j·nx + i), with
+    """½∫|∇φ|² = ½ φᵀKφ on nx × nz cells (cell-centered finite volumes, row j of cells at index j·nx + i), with
     nx more unknowns for φ on the surface, half a cell above the top row."""
     dx, dz = L / nx, h / nz
     n = nx * nz

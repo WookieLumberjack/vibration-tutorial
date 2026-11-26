@@ -9,10 +9,10 @@ with data, in its plots' order; CSV has an x and a y column for each, named afte
 curve's legend name, as the curves needn't share their x.
 
 *Hold these curves* (or H, or the run bar's *Hold curves*, for every plot the page shows: `hold_showing`) copies
-every curve the view shows into a grey dashed one behind them (`hold`: a `Held`, a
+every curve the view shows into a gray dashed one behind them (`hold`: a `Held`, a
 plain `PlotDataItem` the page doesn't know of, so it stays as the page redraws its own), to compare a change
 against: hold, change a control, see both. Holding again adds another; *Clear held curves* (`clear_held`)
-takes them all off, as does *Defaults* (`MainWindow.restore_defaults`). Held curves take the theme's grey when it
+takes them all off, as does *Defaults* (`MainWindow.restore_defaults`). Held curves take the theme's gray when it
 changes (`restyle`, from `MainWindow._restyle`), go in the CSV named "held: …", and are never held again. A page
 whose redraw clears its plot (`PlotItem.clear`, the Continuum's) gets them back: holding gives that plot a
 `clear` that puts them back after (`KeepHeld`; its PlotWidget's too, which bound the plot's own when built).
@@ -54,7 +54,7 @@ def _axis(item: pg.PlotItem, side: str) -> str:
 
 
 class Held(pg.PlotDataItem):
-    """A curve held for comparison: a copy of one the page drew, in grey, behind the page's own."""
+    """A curve held for comparison: a copy of one the page drew, in gray, behind the page's own."""
 
     def __init__(self, x: np.ndarray, y: np.ndarray, name: str, line: bool) -> None:
         super().__init__(x, y)
@@ -150,7 +150,7 @@ def clear_all_held(root: QtWidgets.QWidget) -> None:
 
 
 def restyle(root: QtWidgets.QWidget) -> None:
-    """Held curves in the theme's grey (`MainWindow._restyle`)."""
+    """Held curves in the theme's gray (`MainWindow._restyle`)."""
     for view in root.findChildren(pg.GraphicsView):
         for curve in held(view):
             curve.apply_theme()

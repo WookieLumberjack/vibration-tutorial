@@ -283,7 +283,7 @@ def test_trials():
     assert by["A square of bars"].frame == SQUARE and m.mechanisms == 1 and m.hz.size == 4
     braced = SQUARE.with_element(Element(Kind.BAR, 0, 2))  # node 1 to node 3
     assert modes(braced).hz[0] == pytest.approx(276.9, abs=0.05)
-    two = by["Two storeys: the chain again"].frame
+    two = by["Two stories: the chain again"].frame
     assert two == storeys()
     assert modes(two).hz[:2] == pytest.approx([3.44, 9.14], abs=0.005)
     column, floor = Section(depth=0.02, width=0.05), Section(depth=0.1, width=0.02)

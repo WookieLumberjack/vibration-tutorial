@@ -18,7 +18,7 @@ from PySide6 import QtGui
 
 from ..view_models.text import number as sig
 
-# Labelled mantissas, the first set that fits: every tick, then 1, 2 and 5, then only the decades.
+# Labeled mantissas, the first set that fits: every tick, then 1, 2 and 5, then only the decades.
 TIERS = (tuple(range(1, 10)), (1, 2, 5), (1,))
 SUPERSCRIPT = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
 

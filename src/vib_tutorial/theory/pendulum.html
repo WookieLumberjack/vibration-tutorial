@@ -5,7 +5,7 @@
 <goals page="pendulum_page">
 <li trial="1" problem="simple-period">see gravity act as a spring, and set a pendulum's period whatever its mass;</li>
 <li trial="2" problem="large-swing">see a large swing slow a pendulum down, and work out by how much;</li>
-<li trial="5" problem="rod-period">turn a rod, a disc or an upright arm into the single oscillator's formula.</li>
+<li trial="5" problem="rod-period">turn a rod, a disk or an upright arm into the single oscillator's formula.</li>
 </goals>
 <p>This page builds on the <a href="page:sdof_page#equation">single oscillator</a>, turned: the same equation
 with a moment of inertia for the mass and gravity for the spring. Its pendulum swings live, as the single
@@ -26,9 +26,9 @@ The rotational form it sets up is what every turning body on later pages uses.</
 <eq>\omega_n = \sqrt{\frac{k_\theta}{J}}, \qquad \zeta = \frac{c_\theta}{2\sqrt{k_\theta J}}</eq>
 <p>and every formula of the Single oscillator page holds with these in place of <m>m</m>, <m>k</m> and
 <m>c</m>. A moment of inertia is the mass weighted by the square of its distance from the axis: <m>mL²</m>
-for a bob on a string <m>L</m> long, <m>mr²/2</m> for a disc of radius <m>r</m> about its own axis,
+for a bob on a string <m>L</m> long, <m>mr²/2</m> for a disk of radius <m>r</m> about its own axis,
 <m>mL²/12</m> for a uniform rod <m>L</m> long about its middle. About a pivot a distance <m>d</m> from the
-centre of mass <m>G</m> it is (parallel axes)</p>
+center of mass <m>G</m> it is (parallel axes)</p>
 <eq>J = J_G + md^2 = m\left(k_G^2 + d^2\right)</eq>
 <p>where <m>k<sub>G</sub> = √(J<sub>G</sub>/m)</m> is the <b>radius of gyration</b>: the distance from
 <m>G</m> at which the whole mass would have the same <m>J<sub>G</sub></m> (<m>L/√12</m> for the rod).</p>
@@ -57,11 +57,11 @@ gyration <m>L/√12</m>, and each longer period is reached at two distances from
 <table width="100%"><tr><td align="center"><img src="fig:kater" width="360" height="194"></td></tr></table>
 <p>That is <b>Kater's reversible pendulum</b> <cite>kater</cite>: a bar with two knife edges, adjusted until
 it swings with the same period on either one. Then <m>L<sub>eq</sub></m> is the distance between the edges,
-which can be measured far more precisely than the centre of mass can be found, and
+which can be measured far more precisely than the center of mass can be found, and
 <m>g = 4π²L<sub>eq</sub>/T²</m>. It measured gravity for a century. The second pivot is also the
-<b>centre of percussion</b> of the first: a blow there, square to the line from the pivot, leaves no jolt
+<b>center of percussion</b> of the first: a blow there, square to the line from the pivot, leaves no jolt
 at the pivot (a bat's sweet spot).</p>
-<p>The page's other two kinds turn on a torsion spring <m>k<sub>t</sub></m>: a disc of radius <m>r</m> on a
+<p>The page's other two kinds turn on a torsion spring <m>k<sub>t</sub></m>: a disk of radius <m>r</m> on a
 wire, and a mass on an upright arm with the spring at its foot:</p>
 <table width="100%"><tr><td align="center"><img src="fig:pendulum-kinds" width="360" height="199"></td></tr></table>
 <p>Upside down, the weight pushes the body over, so it takes away from the spring:</p>
@@ -69,13 +69,13 @@ wire, and a mass on an upright arm with the spring at its foot:</p>
 <p>If the spring is weaker than <m>mgd</m> it is negative: upright is unstable, and the body falls to a
 leaning balance, where <m>k<sub>t</sub>θ = mgd sin θ</m>, as a column buckles. Gravity (and any steady load)
 changes stiffness: this is the <b>geometric stiffness</b> a tension or compression adds to a string, a cable
-or a column. A disc on a wire has no gravity in its stiffness at all: <m>k<sub>θ</sub> = k<sub>t</sub></m>,
+or a column. A disk on a wire has no gravity in its stiffness at all: <m>k<sub>θ</sub> = k<sub>t</sub></m>,
 the wire's twist.</p>
 <p>The diagram beside the pendulum is the single oscillator's free-body diagram turned: a row for each moment
 about the pivot (the weight's <m>mgd sin θ</m>, the spring's <m>k<sub>t</sub>θ</m>, the damper's
 <m>c<sub>θ</sub>θ̇</m>), and their sum, <m>Jθ̈</m>. The string's pull passes through the pivot, so it has no
 moment and isn't in the sum; it is under them, in newtons. Along the string the bob's acceleration is
-<m>Lθ̇²</m>, towards the pivot, so</p>
+<m>Lθ̇²</m>, toward the pivot, so</p>
 <eq>T_s = m\left(g\cos\theta + L\dot{\theta}^2\right)</eq>
 <p>the most at the bottom, where the bob is fastest. Let go from 90°, the bob reaches the bottom with
 <m>½mL²θ̇² = mgL</m>, so <m>Lθ̇² = 2g</m> and the string pulls 3<m>mg</m>, three times the bob's weight: a
@@ -113,7 +113,7 @@ follows. From <m>T<sub>0</sub> = 2π√(J/mgd)</m>, with the mass and <m>d</m> m
 0.0834 kg·m², the formula's <m>mL²/12</m> = 0.0833 kg·m² to the rounding of <m>T<sub>0</sub></m>. It is a
 difference, so errors grow: here <m>J</m> is four times <m>J<sub>G</sub></m>, and 0.1 % in
 <m>T<sub>0</sub></m> (0.2 % in <m>J</m>) is 0.8 % in <m>J<sub>G</sub></m>. A part with no handy pivot
-hangs on a wire instead, a <b>torsion pendulum</b>: timed with it and then with a disc of known
+hangs on a wire instead, a <b>torsion pendulum</b>: timed with it and then with a disk of known
 <m>J</m> on the same wire, <m>J = J<sub>disc</sub>(T/T<sub>disc</sub>)²</m>, since
 <m>k<sub>t</sub></m> is the same. Large parts (an engine, a car body) hang on three wires, the trifilar
 pendulum, whose twist the weight resists as gravity resists a swing.</p>
@@ -133,7 +133,7 @@ Keeping one more term of the sine, <m>sin θ ≈ θ − θ³/6</m>, makes it a <
 <m>cos ωt</m> terms, since <m>cos³ = ¾cos + ¼cos 3</m>) gives</p>
 <eq>\omega^2 \approx \omega_n^2\left(1 + \frac{3k_3A^2}{4k_\theta}\right), \qquad T \approx T_0\left(1 + \frac{A^2}{16}\right)</eq>
 <p>It keeps the period itself within 0.14 % up to 45° and 1 % up to about 75°. The inverted pendulum's cubic
-has the other sign, so it hardens. A torsion wire is linear, so a disc on one keeps its period at any twist.</p>
+has the other sign, so it hardens. A torsion wire is linear, so a disk on one keeps its period at any twist.</p>
 <p>The <i>Period</i> tab measures it, swing by swing: each whole swing, from one end back to the same end,
 lands its period at its amplitude, half its swing from end to end. A swing let go from high up with a little
 damping lands a point a swing as it dies away, and the points trace the curve by themselves; <i>Show the
@@ -155,7 +155,7 @@ each step below can be checked against the readouts.</p>
 <m>f<sub>n</sub> = 3.132/2π</m> = 0.4985 Hz and <m>T<sub>0</sub> = 2π/3.132</m> = 2.006 s.</li>
 <li><b>How far from linear.</b> 10° is <m>A</m> = 0.1745 rad. The weight's moment there is
 <m>9.81 sin 10°</m> = 1.703 N·m, against the linear spring's <m>9.81 × 0.1745</m> = 1.712 N·m: 0.5 %
-less, so on the moment plot the curve still lies on its grey tangent. It's the weight's row in the diagram
+less, so on the moment plot the curve still lies on its gray tangent. It's the weight's row in the diagram
 beside the pendulum as it's let go.</li>
 <li><b>The period.</b> <m>A²/16</m> = 0.0019, so the swing is 0.19 % slower:
 <m>T ≈ 2.006 × 1.0019</m> = 2.010 s. Each swing lands on the Period tab at 2.010 s, and the readout under

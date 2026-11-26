@@ -7,7 +7,7 @@ diagonalize C too, ΦᵀCΦ diagonal: then each mode keeps its real shape with d
 passes through zero at the same instant, and the damped modes are the undamped ones with
 poles −ζ_r ω_r ± iω_r√(1 − ζ_r²). Otherwise the off-diagonal terms c_rs couple the modes, and
 the exact modes, the eigenvectors of the 2N × 2N state matrix, have complex shapes ψ: each mass
-has its own phase, so the masses peak one after another and the nodes move, a wave travelling
+has its own phase, so the masses peak one after another and the nodes move, a wave traveling
 along the chain rather than a standing one. To first order in the damping,
 
     ψ_r ≈ φ_r + Σ_s i ω_r c_sr / (ω_r² − ω_s²) φ_s,

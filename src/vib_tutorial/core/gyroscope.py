@@ -1,10 +1,10 @@
 """A spinning top with its tip held in a cup: Euler's equations, Lagrange's top, and its closed forms.
 
-The *Gyroscope* page. The `Top` is a disc of mass m and radius r on a light stem, its centre a height l up the
+The *Gyroscope* page. The `Top` is a disk of mass m and radius r on a light stem, its center a height l up the
 axis from the tip, which is held at the origin (it can turn there but not slide). About the tip its moments of
 inertia are I₁ = m(r²/4 + l²) across the axis and I₃ = mr²/2 along it. A square plate of side s
 (`Shape.SQUARE`) is the same kind of top: a quarter turn leaves it as it was, so its moment is the same about
-every line across its axis, ms²/12 (I₃ = ms²/6), and it moves as a disc of radius s/√3 does. In Euler angles (precession φ about the
+every line across its axis, ms²/12 (I₃ = ms²/6), and it moves as a disk of radius s/√3 does. In Euler angles (precession φ about the
 vertical, tilt θ from it, spin ψ about the axis) Lagrange's function is
 
     L = ½I₁(θ'² + φ'² sin²θ) + ½I₃(ψ' + φ' cos θ)² − mgl cos θ,
@@ -29,8 +29,8 @@ that falls as h². `euler_reference` is the Euler-angle equations by `solve_ivp`
 Working on it
 -------------
 `core/gyroscope.py` (the *Gyroscope* page, `gui/gyroscope.py`, its own model, not the chain): a symmetric top
-(a disc on a light stem, or a square plate, `Shape.SQUARE`: its moment is the same about every line across its
-axis, so it is a disc of radius s/√3; `Top.radius` holds its side, `Top.corner` its reach) with its tip held
+(a disk on a light stem, or a square plate, `Shape.SQUARE`: its moment is the same about every line across its
+axis, so it is a disk of radius s/√3; `Top.radius` holds its side, `Top.corner` its reach) with its tip held
 at the origin. The closed forms are Lagrange's: the spin and the vertical momentum conserved, the tilt in an
 effective potential, its turning points the roots of a cubic in cos θ (`Motion.roots`: cos θ₀ is one, divided
 out, the quadratic left solved exactly), the nutation period an elliptic integral, the mean precession by
@@ -78,7 +78,7 @@ _NODES, _WEIGHTS = np.polynomial.legendre.leggauss(64)
 
 
 class Shape(enum.Enum):
-    DISC = "Disc"
+    DISC = "Disk"
     SQUARE = "Square plate"
     RECTANGLE = "Rectangular plate"
 
@@ -88,12 +88,12 @@ SHAPES = tuple(Shape)
 
 @dataclass(frozen=True)
 class Top:
-    """A disc (or a square or rectangular plate) on a light stem, its tip held at the origin. A rectangle's side
+    """A disk (or a square or rectangular plate) on a light stem, its tip held at the origin. A rectangle's side
     `radius` lies along its mark (the body's x axis) and `breadth` across it (y)."""
 
     mass: float = 0.5  # kg
-    radius: float = 0.04  # m, the disc's radius r, or the square's side s, or the rectangle's a
-    height: float = 0.03  # m, from the tip to the plate's centre (l)
+    radius: float = 0.04  # m, the disk's radius r, or the square's side s, or the rectangle's a
+    height: float = 0.03  # m, from the tip to the plate's center (l)
     gravity: float = G
     shape: Shape = Shape.DISC
     breadth: float = 0.02  # m, a rectangle's other side b
@@ -112,7 +112,7 @@ class Top:
 
     @property
     def plate(self) -> float:
-        """The plate's moment about the body's x axis through its centre: I₃/2 for a disc or a square
+        """The plate's moment about the body's x axis through its center: I₃/2 for a disk or a square
         (perpendicular axes, and the same about every line across the axis, as a quarter turn leaves a square as
         it was), mb²/12 for a rectangle."""
         if self.shape is Shape.RECTANGLE:
@@ -346,7 +346,7 @@ class Motion:
 # ------------------------------------------------------------------ the simulation
 @dataclass
 class TopSamples:
-    """Each step's end: time, the axis e₃ and the disc's mark (the body's x axis) in space, and the energy (J)."""
+    """Each step's end: time, the axis e₃ and the disk's mark (the body's x axis) in space, and the energy (J)."""
 
     t: np.ndarray
     axis: np.ndarray  # (n, 3)

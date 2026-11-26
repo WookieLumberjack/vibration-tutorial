@@ -1,5 +1,5 @@
 """The Rotor builder page's views: `RotorCanvas`, the rotor from the side, which builds it with the tool picked
-(split the shaft, put a disc, bearing or seal on it, drag a part along it) and bends in the mode or the unbalance
+(split the shaft, put a disk, bearing or seal on it, drag a part along it) and bends in the mode or the unbalance
 response; and `WhirlView`, the mode whirling in 3D. The page passes them the rotor and each frame's shape.
 """
 
@@ -29,7 +29,7 @@ NAN2 = np.full(2, np.nan)
 class Tool(Enum):
     SELECT = "Select"
     SPLIT = "Split"
-    DISC = "Disc"
+    DISC = "Disk"
     BEARING = "Bearing"
     SEAL = "Seal"
 
@@ -38,18 +38,18 @@ TOOLS = tuple(Tool)
 TOOL_HINTS = {
     Tool.SELECT: "Click a section or a part to edit it on the left; drag a part along the shaft. Delete removes it.",
     Tool.SPLIT: "Click the shaft to cut its section in two there (each keeps its share of the elements).",
-    Tool.DISC: "Pick a disc from the library (or Custom), then click the shaft to put it there.",
+    Tool.DISC: "Pick a disk from the library (or Custom), then click the shaft to put it there.",
     Tool.BEARING: "Pick a kind of bearing, then click the shaft to put one there.",
     Tool.SEAL: "Click the shaft to put a seal there.",
 }
 PART_OF_TOOL = {Tool.DISC: "disc", Tool.BEARING: "bearing", Tool.SEAL: "seal"}
 CANVAS_TIP = (
-    "<p>The rotor from the side, its radii stretched to be seen: the shaft's sections, the discs, the bearings "
+    "<p>The rotor from the side, its radii stretched to be seen: the shaft's sections, the disks, the bearings "
     "below it (springs, an oil film's housing, a magnet's stator) and the seals' teeth. Pick a tool above. While "
     "it bends in the mode picked, the dotted line is its axis at rest.</p>"
 )
 WHIRL_TIP = (
-    "<p>The mode whirling in 3D (exaggerated): the shaft's centre line, each node's orbit and the discs. Forward "
+    "<p>The mode whirling in 3D (exaggerated): the shaft's center line, each node's orbit and the disks. Forward "
     "whirl goes round the way the shaft spins (x toward y); backward, against it.</p>"
 )
 
@@ -165,7 +165,7 @@ class RotorCanvas(EditCanvas, pg.PlotWidget):
         return sx, sy
 
     def part_near(self, p: np.ndarray) -> Selection | None:
-        """The part (disc, bearing or seal) whose z is nearest p's, within PICK_PX."""
+        """The part (disk, bearing or seal) whose z is nearest p's, within PICK_PX."""
         sx, _ = self._pixel()
         best, reach = None, PICK_PX * sx
         for kind in ("disc", "bearing", "seal"):
@@ -301,7 +301,7 @@ class RotorCanvas(EditCanvas, pg.PlotWidget):
         discs: list = []
         for d in r.discs:
             R, w = d.diameter / 2, d.thickness / 2
-            lean = 0.04 * max(r.length, 0.1) / R  # a big disc's tilt, drawn true, would leave the view
+            lean = 0.04 * max(r.length, 0.1) / R  # a big disk's tilt, drawn true, would leave the view
             c, t = centre(d.z), float(np.clip(tilt(d.z), -lean, lean))
             corners = [(-w, -R), (w, -R), (w, R), (-w, R), (-w, -R)]
             discs += [[d.z + dz - t * dy, c + dy] for dz, dy in corners] + [NAN2]
@@ -384,7 +384,7 @@ class RotorCanvas(EditCanvas, pg.PlotWidget):
 
 
 class WhirlView(pg.PlotWidget):
-    """The mode whirling in 3D, orthographically projected: the centre line, the orbits, the discs."""
+    """The mode whirling in 3D, orthographically projected: the center line, the orbits, the disks."""
 
     YAW, PITCH = math.radians(62.0), math.radians(18.0)
 
@@ -470,7 +470,7 @@ class WhirlView(pg.PlotWidget):
             j = rotor.node_at(d.z)
             R = self._radius(d.diameter / 2)
             c = np.array([q[4 * j], q[4 * j + 2], float(self._axial(rotor.nodes[j]))])
-            tx, ty = q[4 * j + 1], q[4 * j + 3]  # slopes: the disc's normal is (tx, ty, 1) in metres
+            tx, ty = q[4 * j + 1], q[4 * j + 3]  # slopes: the disk's normal is (tx, ty, 1) in meters
             scale = AXIAL / max(rotor.length, 1e-6)
             ring = np.column_stack([R * np.cos(t), R * np.sin(t), np.zeros_like(t)])
             ring[:, 2] = -(tx * ring[:, 0] + ty * ring[:, 1]) / scale  # square to the shaft's tangent

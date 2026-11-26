@@ -46,15 +46,15 @@ HOLD_SWEEPS_TIP = (
 
 
 TAP_TIP = (
-    "<p>Hit the disc downward (an impulse of 5 mN·s). The tap sets every mode ringing at its own "
-    "natural frequency: both the forward and the backward whirl of each mode. With the disc off "
-    "centre, at speed, the gyroscopic effect pulls their frequencies apart and the orbit becomes a "
+    "<p>Hit the disk downward (an impulse of 5 mN·s). The tap sets every mode ringing at its own "
+    "natural frequency: both the forward and the backward whirl of each mode. With the disk off "
+    "center, at speed, the gyroscopic effect pulls their frequencies apart and the orbit becomes a "
     "rosette (watch the Campbell diagram at the current speed).</p>"
 )
 
 
 REPEAT_TAP_TIP = (
-    "<p>Tap the disc again and again as it runs, as in an impact test at speed. On the <i>Waterfall</i> "
+    "<p>Tap the disk again and again as it runs, as in an impact test at speed. On the <i>Waterfall</i> "
     "tab each tap rings the free whirl frequencies at the speed it came at, so over a run-up the peaks "
     "trace the Campbell diagram's branches.</p>"
 )
@@ -69,7 +69,7 @@ BLOCK_TIP = (
 
 INTERNAL_TIP = (
     "<p>Damping inside the rotating shaft (material hysteresis, slip in shrink fits and couplings), as "
-    "the damping c<sub>i</sub> of a damper across the shaft at the disc. It resists the bending rate "
+    "the damping c<sub>i</sub> of a damper across the shaft at the disk. It resists the bending rate "
     "the spinning shaft sees, so below the critical speed it damps the forward whirl, and above it "
     "(the shaft then turns faster than it whirls) it drives it.</p>"
     "<p>Try 20 N·s/m: the rotor becomes unstable at 3,910 rpm and, above that, whirls at its first "
@@ -78,11 +78,11 @@ INTERNAL_TIP = (
 
 
 SHAFT_MASS_TIP = (
-    "<p>The Jeffcott model's shaft has no mass: it is a spring holding the disc. Tick this to give it "
+    "<p>The Jeffcott model's shaft has no mass: it is a spring holding the disk. Tick this to give it "
     "its mass (and its sections' rotary inertia and gyroscopic moment), spread along it: it then "
     "becomes a beam finite element model, and has bending modes of its own.</p>"
-    "<p>A shaft light beside its disc changes little: the first critical speed drops a little, as if "
-    "part of the shaft's mass sat on the disc. Make the shaft long and the disc light and the "
+    "<p>A shaft light beside its disk changes little: the first critical speed drops a little, as if "
+    "part of the shaft's mass sat on the disk. Make the shaft long and the disk light and the "
     "massless model fails: the shaft's own bending modes come down into the speed range.</p>"
 )
 
@@ -114,22 +114,22 @@ KXY_TIP = (
 
 BOW_TIP = (
     "<p>A shaft bent for good (by a thermal bow, a sag left after standing, or a bent repair), by δ<sub>b</sub> at "
-    "the disc, toward an angle measured from the keyphasor mark in the direction of spin. It turns with the "
+    "the disk, toward an angle measured from the keyphasor mark in the direction of spin. It turns with the "
     "shaft, so it drives the rotor once per revolution like an unbalance, but with a force kδ<sub>b</sub> that does "
     "not grow with speed.</p><p>Turning slowly, the probes read the bow itself (the <i>slow-roll "
     "runout</i>), and the polar plot starts from it rather than from the origin. Well above the critical "
-    "speed the disc stays on the bearings' axis and the shaft bends round it. Put the bow at 180° to the "
+    "speed the disk stays on the bearings' axis and the shaft bends round it. Put the bow at 180° to the "
     "heavy spot and the two cancel at one speed.</p>"
 )
 
 
 SKEW_TIP = (
-    "<p>The disc mounted out of square: its own axis tilted by τ from the shaft's, toward an angle "
-    "measured from the keyphasor mark in the direction of spin. Spinning, the tilted disc's inertia makes a "
+    "<p>The disk mounted out of square: its own axis tilted by τ from the shaft's, toward an angle "
+    "measured from the keyphasor mark in the direction of spin. Spinning, the tilted disk's inertia makes a "
     "moment (I<sub>d</sub> − I<sub>p</sub>) τ Ω² that turns with the shaft: a <i>couple unbalance</i>. "
-    "It drives the disc's tilt directly, and pushes a thin disc (I<sub>p</sub> &gt; I<sub>d</sub>) toward "
-    "square to the spin axis, bending the shaft at the disc by −τ at high speed.</p><p>At midspan on "
-    "identical bearings it only tilts the disc; move the disc off centre and it moves it too.</p>"
+    "It drives the disk's tilt directly, and pushes a thin disk (I<sub>p</sub> &gt; I<sub>d</sub>) toward "
+    "square to the spin axis, bending the shaft at the disk by −τ at high speed.</p><p>At midspan on "
+    "identical bearings it only tilts the disk; move the disk off center and it moves it too.</p>"
 )
 
 
@@ -156,13 +156,13 @@ CRACK_TIP = (
     "later. That stiffness changes with 1X, 2X and 3X in it, so the weight drives 2X and 3X whirls, "
     "largest near a half and a third of the critical speed, and changes the 1X. Unticked, it is held "
     "open (a notch): then it is an asymmetric shaft, softened.</p>"
-    "<p>The position is z/L from bearing A, as the disc's.</p>"
+    "<p>The position is z/L from bearing A, as the disk's.</p>"
 )
 
 
 GRAVITY_TIP = (
-    "<p>A horizontal rotor: gravity pulls the disc and the journals down. The shaft sags and the "
-    "supports give, so the rotor whirls about a point below the bearings' centre. The model is linear, "
+    "<p>A horizontal rotor: gravity pulls the disk and the journals down. The shaft sags and the "
+    "supports give, so the rotor whirls about a point below the bearings' center. The model is linear, "
     "so the vibration about that point is just as without gravity: on these supports gravity alone "
     "makes no whirl. With cross-coupled bearings or internal damping the sag also goes sideways.</p>"
     "<p>An asymmetric or cracked shaft is the exception: its stiffness turns under its weight, so "
@@ -173,7 +173,7 @@ GRAVITY_TIP = (
 
 SAG_TIP = (
     "<p>Draw the motion with the static sag, as a DC-coupled probe reads the shaft's position in its "
-    "bearing: the orbits sit below the centre. Untick to draw only the vibration about where gravity "
+    "bearing: the orbits sit below the center. Untick to draw only the vibration about where gravity "
     "holds the rotor, as an AC-coupled probe does. The tracking, the spectrum and the phase are always "
     "of the vibration.</p>"
 )
@@ -185,7 +185,7 @@ FILM_TIP = (
     "rotor's weight (none on a vertical rotor). Their stiffness and damping change with the speed as the "
     "film lifts the journal, and their cross-coupling, the oil swirling at half the speed, makes oil whirl "
     "and whip from the bearing itself rather than from λ.</p><p>Laid horizontal, the journals sit off "
-    "centre where the film holds them, and rise along the bearing's locus as the speed rises: tick "
+    "center where the film holds them, and rise along the bearing's locus as the speed rises: tick "
     "<i>Static sag</i> to see them move. Only the journal's mass is left to set.</p><p>Upright, unloaded, "
     "a plain bearing has no direct stiffness, only the swirl's cross-coupling: a vertical rotor in such "
     "bearings whirls at any speed.</p>"
@@ -198,14 +198,14 @@ MAGNET_TIP = (
     "and a PID controller that sets their current from the journal's position. The bearing's stiffness "
     "and damping come from the gains, and change with the frequency: the controller's lag makes the "
     "damping negative at high frequencies, and a mode that gets there grows.</p><p>With the integral, "
-    "gravity cannot move the journals: they stay centred, and the shaft alone sags. Only the journal's "
+    "gravity cannot move the journals: they stay centered, and the shaft alone sags. Only the journal's "
     "mass is left to set.</p>"
 )
 
 
 NONLINEAR_FILM_TIP = (
     "<p>Step the rotor with the films' whole force, not their linearization about where the journals rest. "
-    "Off centre the film stiffens and damps ever harder toward the wall, so the journals stay inside their "
+    "Off center the film stiffens and damps ever harder toward the wall, so the journals stay inside their "
     "clearance: through a critical speed, and in oil whirl, which settles to a limit cycle at half the "
     "speed. In oil whip the shaft's whirl still grows, the films holding the journals but not the shaft's "
     "bending, until it would rub.</p><p>Only the time response: the Campbell diagram, stability, Bode "

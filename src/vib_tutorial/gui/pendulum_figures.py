@@ -46,7 +46,7 @@ def span(x: float, y1: float, y2: float, color: str) -> str:
 
 
 def pendulum_svg() -> str:
-    """A simple pendulum (a bob m on a string L) and a body on a pivot O (its centre of mass G a distance d
+    """A simple pendulum (a bob m on a string L) and a body on a pivot O (its center of mass G a distance d
     below), each turned by θ, with the weight mg and its arm d sin θ."""
     fg, muted, faint = colors.foreground, colors.muted, colors.faint
     mass, force = colors.mass[0], colors.force
@@ -96,12 +96,12 @@ def pendulum_svg() -> str:
 
 
 def kinds_svg() -> str:
-    """A disc of radius r on a torsion wire k_t, twisted by θ; a mass m on an upright arm L, held by a torsion
+    """A disk of radius r on a torsion wire k_t, twisted by θ; a mass m on an upright arm L, held by a torsion
     spring k_t at its foot and leaning by θ."""
     fg, muted, faint = colors.foreground, colors.muted, colors.faint
     mass, force = colors.mass[0], colors.force
     parts = []
-    # a disc on a wire
+    # a disk on a wire
     cx, top, cy = 100.0, 26.0, 120.0
     parts += [
         ceiling(60, 140, top, muted),
@@ -116,7 +116,7 @@ def kinds_svg() -> str:
         f"stroke='{fg}' stroke-width='1.5'/>",
         fig.head(cx + 50, cy + 30, math.radians(-12), fg),
         fig.math_label(cx, cy + 46, "θ", fg),
-        fig.text(100, 196, "a disc on a wire", muted),
+        fig.text(100, 196, "a disk on a wire", muted),
     ]
     # inverted, on a spring
     px, py, L, theta = 285.0, 160.0, 110.0, 20.0
@@ -143,11 +143,11 @@ def kinds_svg() -> str:
 
 
 def kater_svg() -> str:
-    """A uniform rod pivoted a distance d above its centre G swings as a simple pendulum L_eq long; pivoted
+    """A uniform rod pivoted a distance d above its center G swings as a simple pendulum L_eq long; pivoted
     k_G²/d below G, on the other side, it swings with the same period: the two pivots are L_eq apart."""
     fg, muted, faint = colors.foreground, colors.muted, colors.faint
     mass = colors.mass[0]
-    scale, x = 150.0, 110.0  # px per metre, the rod's line
+    scale, x = 150.0, 110.0  # px per meter, the rod's line
     top, g = 20.0, 95.0  # the rod's ends are 75 px either side of G: L = 1 m
     d = 0.4
     other = (1 / 12) / d

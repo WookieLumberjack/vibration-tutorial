@@ -20,7 +20,7 @@ CLEARANCE = FILM.film.clearance
 
 
 def run(system, rpm, duration, kick=0.0):
-    """Start at speed on the static deflection, the disc kicked at `kick` m/s in x; (t, q) after `duration`."""
+    """Start at speed on the static deflection, the disk kicked at `kick` m/s in x; (t, q) after `duration`."""
     sim = RotorSimulator(system)
     sim.omega = sim.target = rpm / RPM
     n = system.n_dof
@@ -40,7 +40,7 @@ def eccentricity(q, x=XA, y=YA):
 
 
 def whirl_freq(t, q):
-    """The disc's strongest frequency (Hz), from a zero-padded spectrum."""
+    """The disk's strongest frequency (Hz), from a zero-padded spectrum."""
     x = q[:, XD] - q[:, XD].mean()
     n = 16 * x.size
     f = np.fft.rfftfreq(n, t[1] - t[0])
@@ -149,7 +149,7 @@ def test_vertical_rotor_whips_past_twice_its_natural_frequency():
 
 def test_whole_films_hold_the_journals_through_the_critical():
     # The Theory: run up through the critical at 500 rpm/s from the 1X steady state at 1200 rpm, the
-    # linearized films carry the journals within 1% of the wall, the whole ones to ε = 0.63. The disc's
+    # linearized films carry the journals within 1% of the wall, the whole ones to ε = 0.63. The disk's
     # peak is much the same.
     for whole, eps in ((False, quoted("rotor_notes", "0.99")), (True, quoted("rotor_notes", "0.63"))):
         s = WHIP.system.with_(nonlinear_films=whole)

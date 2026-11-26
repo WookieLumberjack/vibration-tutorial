@@ -1,6 +1,6 @@
 """FRF matrix page: every receptance H_jk, and how modes and inputs build it up.
 
-The centre is an N x N grid of small plots, one per term of the receptance
+The center is an N x N grid of small plots, one per term of the receptance
 matrix H(w) (row j = response x_j, column k = force at m_k). The controls
 choose which modal terms are summed, and which forces act together; the
 selected cell is drawn large on the right with its individual terms, their
@@ -38,7 +38,7 @@ from .theming import add_legend, mute
 from .transport import Transport
 from .trials_text import trials_html
 
-# Colours: the full solution in colors.strong; the sum of the modal terms, the
+# Colors: the full solution in colors.strong; the sum of the modal terms, the
 # selected cells and the worst band in colors.force.
 FREQ_POINTS = 600  # per curve; the grid draws up to N^2 (2 + modes) curves
 WORST_FRACTION = 0.5  # the shaded band is where the difference is at least this share of its largest
@@ -48,7 +48,7 @@ BUILD_MS = 900  # each step of the build-up
 BUILD_TIP = (
     "<p>Sum the modal terms from the first: the slider ticks the first ones and leaves the rest out, and "
     "<i>Start</i> on the run bar (Build H, Space) steps it from one term to all of them, so each mode's term can "
-    "be seen adding its peak, and the dips appearing where neighbouring terms cancel. Reset sums them all.</p>"
+    "be seen adding its peak, and the dips appearing where neighboring terms cancel. Reset sums them all.</p>"
 )
 
 
@@ -139,7 +139,7 @@ def set_phase_ticks(axis: pg.AxisItem, phase: bool) -> None:
 
 
 def log_ticks(lo: float, hi: float, mantissas: tuple[int, ...]) -> list[list[tuple[float, str]]]:
-    """Labelled ticks at mantissa x 10^e and unlabelled minor ticks, in log10 view units."""
+    """Labeled ticks at mantissa x 10^e and unlabelled minor ticks, in log10 view units."""
     major: list[tuple[float, str]] = []
     minor: list[tuple[float, str]] = []
     for e in range(math.floor(math.log10(lo)), math.ceil(math.log10(hi)) + 1):
@@ -296,7 +296,7 @@ class FrfGrid(pg.GraphicsLayoutWidget):
         self.terms[j].append([])
 
     def _set_term_count(self, n_terms: int) -> None:
-        """At least n_terms term curves in each cell: set_curves colours them and hides those past the terms."""
+        """At least n_terms term curves in each cell: set_curves colors them and hides those past the terms."""
         for row, terms_row in zip(self.cells, self.terms):
             for p, terms in zip(row, terms_row):
                 while len(terms) < n_terms:
@@ -485,7 +485,7 @@ TRIALS = (
         output=1,
         inputs=(1,),
         predict=Prediction(
-            "Force and response both at m2: a driving point. Undamped, between two neighbouring peaks of its FRF, "
+            "Force and response both at m2: a driving point. Undamped, between two neighboring peaks of its FRF, "
             "what is there? (The plot has the chain's dampers: compare it after.)",
             (
                 "Never a dip",
@@ -544,7 +544,7 @@ TRIALS = (
     FrfTrial(
         "Leave out mode 1 (H44)",
         "Only mode 1 unticked. Above 1.1 Hz the missing term is mass-like, <m>−φφᵀ/Ω²</m>, so the sum is off by "
-        "an amount that grows towards low frequency as <m>1/Ω²</m>: the residual mass. At <m>Ω = 0</m> the error is mode "
+        "an amount that grows toward low frequency as <m>1/Ω²</m>: the residual mass. At <m>Ω = 0</m> the error is mode "
         "1's 89% share of the static compliance.",
         output=3,
         inputs=(3,),
@@ -720,7 +720,7 @@ def _truncated_static(rng: np.random.Generator) -> Question:
 
 def _driving_point_dips(rng: np.random.Generator) -> Question:
     return Question(
-        "Between two neighbouring resonances of an undamped driving-point FRF, what is there?",
+        "Between two neighboring resonances of an undamped driving-point FRF, what is there?",
         0,
         "Always an antiresonance: both modes' constants φ<sub>jr</sub>² are positive, and between the peaks the "
         "lower is already mass-like and the upper still spring-like, so they cancel somewhere. (Damped, a dip "
@@ -729,7 +729,7 @@ def _driving_point_dips(rng: np.random.Generator) -> Question:
         why=(
             "",
             "That's a transfer FRF, whose modes' constants can have either sign. At a driving point they're all "
-            "positive, φ<sub>jr</sub>², so neighbouring modes always cancel between their peaks.",
+            "positive, φ<sub>jr</sub>², so neighboring modes always cancel between their peaks.",
             "Between two peaks the lower mode is mass-like and the upper spring-like, opposite in sign; with both "
             "constants positive they cancel somewhere.",
         ),
@@ -824,7 +824,7 @@ PROBLEMS = tuple(
 
 
 class FrfMatrixPage(QtWidgets.QWidget):
-    """Controls on the left, the N x N grid in the centre, the selected term and theory on the right."""
+    """Controls on the left, the N x N grid in the center, the selected term and theory on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     system_requested = QtCore.Signal(object)  # a trial's chain, for the Simulation page
@@ -972,7 +972,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         lv.addWidget(io_box)
         lv.addStretch(1)
 
-        # --- centre: the grid
+        # --- center: the grid
         self.grid = FrfGrid()
         self.grid.cell_clicked.connect(self._on_cell)
         self.grid_title = wrapped()
@@ -1315,7 +1315,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
                 f"({kind}): response of m{j + 1} to a force at m{k + 1}."
             )
             parts = (
-                f"Coloured: each ticked mode's term. <span style='color:{colors.force}'>Dashed red</span> = "
+                f"Colored: each ticked mode's term. <span style='color:{colors.force}'>Dashed red</span> = "
                 f"Σ over the ticked modes r of mode r's ({j + 1},{k + 1}) entry only; the other cells "
                 "are responses to other forces."
             )
@@ -1333,7 +1333,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
             title = f"<b>x<sub>{j + 1}</sub> for unit in-phase forces at {names}</b> = {terms}."
             cols = ", ".join(f"({j + 1},{k + 1})" for k in inputs)
             parts = (
-                "Coloured: each force's term (from the ticked modes). "
+                "Colored: each force's term (from the ticked modes). "
                 f"<span style='color:{colors.force}'>Dashed red</span> = Σ over these forces and the "
                 f"ticked modes r of mode r's entries {cols}: the sum along row {j + 1}."
             )
@@ -1381,7 +1381,7 @@ class FrfMatrixPage(QtWidgets.QWidget):
         return (
             f"<b>Static compliance</b> (Ω = 0): K<sup>−1</sup> gives {sig(full, 4)} m/N; the ticked "
             f"modes give {sig(partial, 4)} m/N, error <b style='color:{color}'>{amount}</b>. "
-            f"<span style='color:{colors.muted}'>Each mode's share (grey: not ticked):</span> {', '.join(shares)}."
+            f"<span style='color:{colors.muted}'>Each mode's share (gray: not ticked):</span> {', '.join(shares)}."
         )
 
 

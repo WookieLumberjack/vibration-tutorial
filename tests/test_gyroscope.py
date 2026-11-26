@@ -46,7 +46,7 @@ def test_moments_of_inertia():
 
 def test_a_square_is_a_symmetric_top():
     """Summed over a fine grid, a square plate's moment is ms²/12 about every line across its axis, at any angle,
-    and ms²/6 along it: a disc's of radius s/√3, so it moves exactly as that disc does."""
+    and ms²/6 along it: a disk's of radius s/√3, so it moves exactly as that disk does."""
     m, s, n = 0.5, 0.06, 400
     x, y = np.meshgrid((np.arange(n) + 0.5) / n - 0.5, (np.arange(n) + 0.5) / n - 0.5)
     x, y, dm = s * x.ravel(), s * y.ravel(), m / n**2
@@ -164,7 +164,7 @@ def test_trials():
     assert math.degrees(m.turning()[1]) == pytest.approx(31.5, abs=0.05)
     assert m.nutation_hz() == pytest.approx(14.7, abs=0.05) and m.mean_precession() == pytest.approx(2.39, abs=0.005)
     assert 2 * math.pi / m.mean_precession() == pytest.approx(2.63, abs=0.005) and m.path() is Path.CUSPS
-    m = by["A square top: just like a disc"].motion
+    m = by["A square top: just like a disk"].motion
     assert m.top.polar * 1e4 == pytest.approx(4.0, abs=5e-4) and m.top.radius / math.sqrt(3) == pytest.approx(
         0.04, abs=5e-6
     )

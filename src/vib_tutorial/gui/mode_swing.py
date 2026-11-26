@@ -1,7 +1,7 @@
 """A mode shape swinging on a plot: Re(ψ e^{iθ}) drawn as θ turns, its nodes marked as they move.
 
 A real mode is a standing wave: every point reaches its peak together and its nodes stay put. A complex mode
-(non-proportional damping, a gyroscopic term) is partly travelling: each point peaks at its own phase, so
+(non-proportional damping, a gyroscopic term) is partly traveling: each point peaks at its own phase, so
 the shape never passes through zero all at once and its nodes slide along the chain. `ModeSwing` shows which.
 
 - `ModeSwing(plot, name, host=None, loop=None)`: its items go on `plot` (`attach()` again after the page clears

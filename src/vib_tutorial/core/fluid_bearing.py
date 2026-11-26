@@ -4,7 +4,7 @@ A journal of radius R = D/2 turns at Ω in a bearing of length L with radial
 clearance c, the gap full of oil of viscosity μ, and carries a steady load W
 straight down (-y). x is horizontal, y up, and the journal spins from x toward
 y, as on the rotor page. The film is h = c - x cos θ - y sin θ round the bearing
-(θ from +x, in the direction of spin), for the journal's centre at (x, y).
+(θ from +x, in the direction of spin), for the journal's center at (x, y).
 
 Reynolds' equation for the film's pressure, with the bearing short beside its
 diameter (L/D up to about 1/2), keeps only the axial pressure flow:
@@ -26,7 +26,7 @@ number S_s = D Ω μ L³ / (8 W c²),
 and it sits off the load line by the attitude angle χ, turned in the direction
 of spin: tan χ = π √(1 - ε²) / (4 ε). Slow or heavily loaded, ε → 1 and χ → 0,
 the journal sinking to the bottom of its clearance; fast or lightly loaded,
-ε → 0 and χ → 90°, the journal going sideways to the centre. The film lifts the
+ε → 0 and χ → 90°, the journal going sideways to the center. The film lifts the
 load by pushing sideways: that sideways push is where the cross-coupled
 stiffness comes from.
 
@@ -46,8 +46,8 @@ The classical Sommerfeld number S = (μ N L D / W)(R / c)² (N in rev/s) is the
 one bearing charts use; S_s = π (L/D)² S.
 
 Away from equilibrium the film's whole force has a closed form too (`pi_film`).
-Turned to the line of centres (the journal at eccentricity ε, angle ψ), Ω ∂h/∂θ
-+ 2 ∂h/∂t = c (a sin φ + b cos φ) for φ from the line of centres, with a =
+Turned to the line of centers (the journal at eccentricity ε, angle ψ), Ω ∂h/∂θ
++ 2 ∂h/∂t = c (a sin φ + b cos φ) for φ from the line of centers, with a =
 ε(Ω - 2ψ') and b = -2ε'. The film carries pressure over the half where that is
 negative, φ from π - δ to 2π - δ (δ the angle of (a, b)): the cavitation
 boundary moves with the journal's velocity. The force is then k (a, b) times
@@ -124,7 +124,7 @@ class JournalBearing:
         """The bearing's equilibrium and coefficients at speed Ω (rad/s, > 0).
 
         An unloaded (or barely loaded) bearing is worked out as one with S_s =
-        1/LIGHTEST: its journal at the centre, its coefficients their limits as
+        1/LIGHTEST: its journal at the center, its coefficients their limits as
         the load goes to zero.
         """
         s = float(self.modified_sommerfeld(omega)) if self.load > 0.0 else math.inf
@@ -219,7 +219,7 @@ class BearingState:
     c: np.ndarray  # (2, 2) N·s/m
 
     def position(self) -> tuple[float, float]:
-        """The journal centre's (x, y) as fractions of the clearance."""
+        """The journal center's (x, y) as fractions of the clearance."""
         return self.eccentricity * math.sin(self.attitude), -self.eccentricity * math.cos(self.attitude)
 
 
@@ -280,7 +280,7 @@ def pi_film_reference(k: float, c: float, x: float, y: float, vx: float, vy: flo
     ECCENTRICITY_MAX the film is worked out as it is there.
     """
     e = math.hypot(x, y)
-    if e < 1e-9 * c:  # centred: the line of centres is any direction
+    if e < 1e-9 * c:  # centered: the line of centers is any direction
         cp, sp, e = 1.0, 0.0, 1e-9 * c
     else:
         cp, sp = x / e, y / e
@@ -312,7 +312,7 @@ def pi_film_reference(k: float, c: float, x: float, y: float, vx: float, vy: flo
     disc = -((c2u + eps) ** 3 - (c1 + eps) ** 3) / (s4 * s2)
     dicc = 3.0 * (ds - ds3 / 3.0 + 1.5 * eps * (du + dsc) + 3.0 * eps * eps * ds + eps**3 * du) / (s4 * s2 * s)
     diss = 3.0 * (ds3 / 3.0 + 0.5 * eps * (du - dsc)) / (s4 * s)
-    fr = k * (a * isc + b * icc)  # along the line of centres
+    fr = k * (a * isc + b * icc)  # along the line of centers
     ft = k * (a * iss + b * isc)  # across it, the way ψ turns
     psi = 0.25 * k * (a * a * iss + 2.0 * a * b * isc + b * b * icc)
     # Derivatives in e and in ψ (the latter turning the frame too); the arc's own motion adds
@@ -347,7 +347,7 @@ def full_film_damping_reference(k: float, c: float, x: float, y: float) -> tuple
     """(c_xx, c_xy, c_yy): the whole uncavitated film's damping at (x, y), more than the π-film's at any velocity.
 
     2k ∫ n nᵀ / (1 - ε cos φ)³ round the whole bearing: π(1 + 2ε²)/(1 - ε²)^{5/2}
-    along the line of centres, π/(1 - ε²)^{3/2} across it.
+    along the line of centers, π/(1 - ε²)^{3/2} across it.
     """
     e = math.hypot(x, y)
     cp, sp = (x / e, y / e) if e > 0.0 else (1.0, 0.0)

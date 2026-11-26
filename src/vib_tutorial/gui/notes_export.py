@@ -4,11 +4,11 @@
 glossary to `glossary.html` and the contents to `index.html`, with the bundled fonts in `<out>/fonts`. Each page
 is `notes_pages.page_html`'s, made to stand alone by `standalone`:
 
-- an `<eq>`'s image (`eq:` key) becomes its SVG, typeset by `maths.equation_svg` in the theme's text colour;
-- a figure (`fig:` name) becomes its SVG, drawn by its figure module in the theme's colours (`style.colors`);
-- a `page:` link becomes a link to that page's file, at the same anchor; a goal's *Try it · Practise it*, which
+- an `<eq>`'s image (`eq:` key) becomes its SVG, typeset by `maths.equation_svg` in the theme's text color;
+- a figure (`fig:` name) becomes its SVG, drawn by its figure module in the theme's colors (`style.colors`);
+- a `page:` link becomes a link to that page's file, at the same anchor; a goal's *Try it · Practice it*, which
   sets up the running page, goes, since there's no page to set up, and a recap's problem keeps its title as text;
-- inline maths keeps its STIX Two Text and the text its IBM Plex Sans, from the bundled fonts.
+- inline math keeps its STIX Two Text and the text its IBM Plex Sans, from the bundled fonts.
 
 None of that needs Qt: `maths`, `figures` and `style` are Qt-free, and a figure's labels are measured from
 `font_metrics`' tables. A page's notes still come from its module, which for a page not yet rebuilt is a Qt
@@ -35,7 +35,7 @@ TEXT_PX = 16  # the text's size in a browser; the equations are typeset to match
 EQ_IMG = re.compile(r'<img src="eq:([0-9a-f]+)"(?: alt="([^"]*)")?[^>]*>')
 FIG_IMG = re.compile(r'<img src="fig:([^"]+)"[^>]*>')
 PAGE_LINK = re.compile(r'href="page:([a-z_]+)(#[^"]*)?"')
-# A goal's "Try it · Practise it" (`links.goals`) sets up the running page: with no page, the pair goes.
+# A goal's "Try it · Practice it" (`links.goals`) sets up the running page: with no page, the pair goes.
 GOAL_ACTIONS = re.compile(r' <a href="trial:[^"]*">[^<]*</a> · <a href="practice:[^"]*">[^<]*</a>')
 ACTION_LINK = re.compile(r'<a href="(?:trial|practice):[^"]*">(.*?)</a>', re.S)  # a recap's problem: its title
 

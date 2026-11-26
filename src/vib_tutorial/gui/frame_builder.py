@@ -2,9 +2,9 @@
 
 Left: Things to try, the selected item's properties (a node's position, support, point mass and torsion spring;
 a member's kind, material and section; a spring's or damper's value), the model's settings (consistent or lumped
-mass, Euler–Bernoulli or Timoshenko beams) and what to show. Centre: the tools, the canvas (click to place nodes,
+mass, Euler–Bernoulli or Timoshenko beams) and what to show. Center: the tools, the canvas (click to place nodes,
 click two nodes to join them, drag a node to move it), swinging in the mode picked, and the modes' table. Right:
-the global matrix with the picked element's entries tinted and the struck-out rows and columns greyed, the
+the global matrix with the picked element's entries tinted and the struck-out rows and columns grayed, the
 element's own matrices and its transformation, and the Theory. The page has its own model (core/frame.py) and
 animates the mode on its own frame loop while it shows.
 
@@ -104,7 +104,7 @@ TIPS = {
     "torsion": "<p>A torsion spring from the node's turn to the ground (0: none), on its θ in K.</p>",
     "torsion_c": "<p>A torsion damper from the node's turn to the ground (0: none), on its θ in C.</p>",
     "kind": "<p>A beam bends and stretches (three DOFs a node); a bar only stretches: its ends are pinned.</p>",
-    "material": "<p>Steel (210 GPa, 7850 kg/m³), aluminium (70 GPa, 2700) or titanium (114 GPa, 4430).</p>",
+    "material": "<p>Steel (210 GPa, 7850 kg/m³), aluminum (70 GPa, 2700) or titanium (114 GPa, 4430).</p>",
     "shape": "<p>The section: a rectangle, or a round tube (solid when its wall is half its diameter).</p>",
     "depth": "<p>The section's depth in the frame's plane (a tube's outer diameter): I grows as its cube.</p>",
     "width": "<p>The rectangle's width, out of the plane.</p>",
@@ -140,7 +140,7 @@ FORMS_TIP = (
     "with it (|λ|/2π and −Re λ/|λ|), and how complex that is: MPC 1 for a real mode. Click a row to show it.</p>"
 )
 ASSEMBLY_TIP = (
-    "<p>The global matrix over every DOF: tinted, the picked element's share Tᵀk'T; greyed and struck out, the "
+    "<p>The global matrix over every DOF: tinted, the picked element's share Tᵀk'T; grayed and struck out, the "
     "DOFs a support holds or no element touches. A dot is an exact zero.</p>"
 )
 
@@ -149,7 +149,7 @@ NOTES_HTML = load_notes("frame_builder", figures=frame_figures.FIGURES, trials=t
 
 # ------------------------------------------------------------------ the matrices as tables
 def _blend(a: str, b: str, t: float) -> str:
-    """Colour a mixed with t of colour b, as #rrggbb (rich text has no alpha)."""
+    """Color a mixed with t of color b, as #rrggbb (rich text has no alpha)."""
     ra, rb = rgb(a), rgb(b)
     return "#" + "".join(f"{round((1 - t) * x + t * y):02x}" for x, y in zip(ra, rb))
 
@@ -179,7 +179,7 @@ def matrix_html(
     title: str = "",
 ) -> str:
     """A matrix as a rich-text table, its common power of ten in the corner; `tint` (bool, A's shape) tints
-    cells, struck rows and columns are greyed and struck out."""
+    cells, struck rows and columns are grayed and struck out."""
     scale = _scale(A)
     top = float(np.abs(A).max()) if A.size else 0.0
     lit, dim = _blend(colors.background, colors.force, 0.22), _blend(colors.background, colors.grey, 0.18)
@@ -371,7 +371,7 @@ def _reach(q: np.ndarray) -> float:
 
 
 class FramePage(QtWidgets.QWidget):
-    """Controls on the left, the canvas and its modes in the centre, the matrices on the right."""
+    """Controls on the left, the canvas and its modes in the center, the matrices on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -467,7 +467,7 @@ class FramePage(QtWidgets.QWidget):
         self.reset_button.clicked.connect(self.reset)
         self.swing.currentIndexChanged.connect(self._on_swing)
 
-        # --- centre: the tools, the canvas, the modes
+        # --- center: the tools, the canvas, the modes
         self.canvas: FrameCanvas = FrameCanvas()
         self.canvas.edited.connect(self._on_edit)
         self.canvas.selected.connect(self._on_selected)
@@ -1027,7 +1027,7 @@ class FramePage(QtWidgets.QWidget):
         unit = {Matrix.K: "N/m, N/rad and N·m/rad", Matrix.M: "kg and kg·m²", Matrix.C: "N·s/m and N·m·s/rad"}[matrix]
         self.assembly_note.setText(
             f"{matrix.value} over {'the free' if len(keep) < n else 'all ' + str(n)} DOFs ({unit}).{picked} "
-            "Greyed and struck: held by a support, or unused."
+            "Grayed and struck: held by a support, or unused."
         )
 
     def _draw_element(self) -> None:

@@ -30,7 +30,7 @@ def car_svg() -> str:
     pitches θ, nose (right) up; P is a point e ahead of G."""
     fg, muted, faint = colors.foreground, colors.muted, colors.faint
     mass = colors.mass[0]
-    scale = 70.0  # px per metre
+    scale = 70.0  # px per meter
     gx, top, bottom, road = 175.0, 55.0, 95.0, 160.0
     front, rear = gx + 1.2 * scale, gx - 1.5 * scale
     px = gx + 0.8 * scale

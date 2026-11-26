@@ -11,7 +11,7 @@ SWAY = (0.0, 0.34, 0.64, 0.87, 1.0)  # a first mode's shape, ground to roof
 
 
 def building_svg() -> str:
-    """Floors (m) on storeys (k) on moving ground: each floor sways u_j, a storey's drift Δ_j is the difference of
+    """Floors (m) on stories (k) on moving ground: each floor sways u_j, a story's drift Δ_j is the difference of
     the floors at its ends, and its shear V_j carries the floors above it."""
     fg, muted, slab = colors.foreground, colors.muted, colors.mass[0]
     x0, w, ground, h, amp = 66.0, 90.0, 162.0, 34.0, 50.0
@@ -36,12 +36,12 @@ def building_svg() -> str:
         # the roof's sway u
         fig.line(x0, ground - h * FLOORS - 3, left(FLOORS), ground - h * FLOORS - 3, fg, 1.0),
         fig.math_label(x0 - 6, ground - h * FLOORS + 2, "u<sub>4</sub>", fg, "end"),
-        # a storey's drift: floor 3 against floor 2
+        # a story's drift: floor 3 against floor 2
         fig.line(left(2) + w, ground - 2 * h, left(2) + w, ground - 3 * h - 14, muted, 1.0, dash="2,2"),
         fig.line(left(3) + w + 4, ground - 3 * h - 9, left(3) + w + 4, ground - 3 * h - 19, muted, 1.0),
         fig.line(left(2) + w, ground - 3 * h - 14, left(3) + w + 4, ground - 3 * h - 14, fg, 1.2),
         fig.math_label(left(3) + w + 10, ground - 3 * h - 9, "Δ<sub>3</sub>", fg, "start"),
-        # the storey shear on storey 1
+        # the story shear on story 1
         fig.arrow(x0 + w + 46, ground - h / 2, x0 + w + 12, ground - h / 2, colors.force, 1.5),
         fig.math_label(x0 + w + 50, ground - h / 2 + 5, "V<sub>1</sub>", fg, "start"),
         # the ground's motion

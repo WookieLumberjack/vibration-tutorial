@@ -333,7 +333,7 @@ viv_steps = native.kernel("viv_steps", viv_steps_reference)
 @dataclass(frozen=True)
 class Flutter:
     """A typical section: plunge h and pitch θ about an elastic axis `e` semichords behind the quarter chord,
-    the centre of mass `x_cg` semichords behind the elastic axis, radius of gyration `r` semichords; lift at the
+    the center of mass `x_cg` semichords behind the elastic axis, radius of gyration `r` semichords; lift at the
     quarter chord, steady L = ½ρU²(2b)2πθ or, `quasi_steady`, ½ρU²(2b)2π(θ + ḣ/U)."""
 
     semichord: float = 0.15

@@ -1,8 +1,8 @@
-"""Jeffcott rotor page: a disc on a flexible shaft in flexible bearings, spun up through its criticals.
+"""Jeffcott rotor page: a disk on a flexible shaft in flexible bearings, spun up through its criticals.
 
 Left: the speed controls, the run-up and coast-down sweep, and the rotor's
-parameters (`rotor_editor.RotorEditor`: its boxes, and the RotorSystem they describe). Centre: a 3D view of the whirling shaft (projected onto a 2D
-pyqtgraph scene, no OpenGL), the orbits at the bearings, the disc and midspan,
+parameters (`rotor_editor.RotorEditor`: its boxes, and the RotorSystem they describe). Center: a 3D view of the whirling shaft (projected onto a 2D
+pyqtgraph scene, no OpenGL), the orbits at the bearings, the disk and midspan,
 and a strip chart. Right: the Campbell diagram, the Bode and polar plots of the
 1X response (steady state and tracked sweeps), the waterfall (`rotor_waterfall.WaterfallTab`),
 the stability map and full spectrum, the matrices of the equations of motion at the current speed, and the
@@ -97,10 +97,10 @@ PRACTICE_SETUP = RotorSetup  # what a practice problem's setup and the page's pr
 CUSTOM = "Custom"  # the preset box's entry for a rotor that is none of the presets  # other orders of the speed the Campbell diagram can draw
 DIRECTION_NAMES = ("x (horizontal probe)", "y (vertical probe)", "Orbit (major axis)")
 # Columns of the history: (x, y) at each station, then the unbalance's angle φ, the speed Ω, and a stator
-# ring's push on the disc (the largest over the steps each sample stands for).
+# ring's push on the disk (the largest over the steps each sample stands for).
 PHASE, OMEGA, PUSH = 8, 9, 10
 STORE_DT = 2.5e-4  # s; samples kept for the plots are at least this far apart
-TAP_IMPULSE = 0.005  # N·s, downward on the disc
+TAP_IMPULSE = 0.005  # N·s, downward on the disk
 ORBIT_REVS = 3  # revolutions in each orbit trail
 ORBIT_MAX_TIME = 1.0  # s, the longest orbit trail (at low speed)
 DASH = QtCore.Qt.PenStyle.DashLine
@@ -120,7 +120,7 @@ ORDER_NAMES = ("1X", "2X", "3X")  # what the Bode and polar plots can track
 
 
 class RotorPage(QtWidgets.QWidget):
-    """Parameters and speed on the left; 3D view, orbits and time on the centre; Campbell, matrices, theory."""
+    """Parameters and speed on the left; 3D view, orbits and time on the center; Campbell, matrices, theory."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -144,7 +144,7 @@ class RotorPage(QtWidgets.QWidget):
         self._matrices_speed = -math.inf  # rpm the matrices were drawn at
         self.run_up: RunUpCoastDown | None = None  # the sweep running, if any
         self.sweeps: list[TrackedSweep] = []  # every leg on the plots, the running one's too
-        self._sweep_pairs = 0  # sweeps started since the plots were cleared (each pair's colour)
+        self._sweep_pairs = 0  # sweeps started since the plots were cleared (each pair's color)
         self._steady_rpm = np.empty(0)  # the steady-state curve: speeds (rpm)
         self._steady_vectors = np.empty((0, len(STATIONS), 2), dtype=complex)  # and 1X vectors there
         self._steady_orders = [self._steady_vectors] * len(ORDER_NAMES)  # and the 1X, 2X and 3X vectors
@@ -191,7 +191,7 @@ class RotorPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre
+        # --- center
         self.view = RotorView()
         self.orbits = OrbitPlots()
         self.time = TimePlots()
@@ -404,13 +404,13 @@ class RotorPage(QtWidgets.QWidget):
         self.reset_button = ResetButton()
         self.reset_button.setToolTip("Back to rest, not spinning, waiting for Start")
         self.reset_button.clicked.connect(self.reset)
-        self.tap_button = QtWidgets.QPushButton("Tap disc")
+        self.tap_button = QtWidgets.QPushButton("Tap disk")
         self.tap_button.setToolTip(TAP_TIP)
         self.tap_button.clicked.connect(self._on_tap)
         for b in (self.run_button, self.reset_button, self.tap_button):
             buttons.addWidget(b)
         form.addRow(buttons)
-        self.repeat_taps = QtWidgets.QCheckBox("Tap the disc every")
+        self.repeat_taps = QtWidgets.QCheckBox("Tap the disk every")
         self.repeat_taps.setToolTip(REPEAT_TAP_TIP)
         self.repeat_taps.toggled.connect(self._on_repeat_taps)
         self.tap_every = spin(0.1, 10.0, 0.5, 1, " s")
@@ -418,7 +418,7 @@ class RotorPage(QtWidgets.QWidget):
         self.tap_every.setToolTip(REPEAT_TAP_TIP)
         taps = QtWidgets.QHBoxLayout()
         taps.addWidget(self.repeat_taps)
-        self.tap_every.setAccessibleName("Tap the disc every")
+        self.tap_every.setAccessibleName("Tap the disk every")
         taps.addWidget(self.tap_every)
         taps.addWidget(QtWidgets.QLabel("of simulated time"))
         taps.addStretch(1)
@@ -552,12 +552,12 @@ class RotorPage(QtWidgets.QWidget):
             self.trials.show_note(self.presets[self._matched].note)
 
     def set_weights(self, weights: tuple[complex, ...], plane_weights: tuple[PlaneWeight, ...] = ()) -> None:
-        """Put these balance weights on the disc (kg·m each) and in these planes, in place of any there."""
+        """Put these balance weights on the disk (kg·m each) and in these planes, in place of any there."""
         self.editor.set_weights(weights, plane_weights)
         self._on_params()
 
     def hide_unbalance(self, unbalance: float, angle: float, skew: tuple[float, float] | None = None) -> None:
-        """Give the disc this unbalance (kg·m at `angle` rad) without showing it: a balancing exercise.
+        """Give the disk this unbalance (kg·m at `angle` rad) without showing it: a balancing exercise.
 
         With `skew` (τ, its angle in rad), hide a couple unbalance too; otherwise the skew stays as set.
         """
@@ -690,7 +690,7 @@ class RotorPage(QtWidgets.QWidget):
         )
         self.stability_note.setText(self._stability_note())
         self.campbell_note.setText(
-            "Each dot is a damped natural frequency at that speed, coloured by its whirl direction "
+            "Each dot is a damped natural frequency at that speed, colored by its whirl direction "
             f"(modes damped more than ζ = {sig(DAMPED, 6)}, here the journals bouncing on their supports, are "
             "hollow). A critical speed (circled) is where a lightly damped whirl frequency meets the 1X "
             "line: the unbalance, turning once per revolution, drives that mode at its natural "
@@ -975,7 +975,7 @@ class RotorPage(QtWidgets.QWidget):
         self._sync_target()
         self._sweep_pairs += 1
         self.sweep_button.setText("Stop sweep")
-        self.ramp.setEnabled(False)  # each sweep is labelled with its rate
+        self.ramp.setEnabled(False)  # each sweep is labeled with its rate
         if not self.running:
             self._run(True)
         if self.tabs.current_page() is not self.polar.parentWidget():
@@ -1236,7 +1236,7 @@ class RotorPage(QtWidgets.QWidget):
         self._refresh_matrices()
 
     def _journal_touched(self) -> tuple[str, float] | None:
-        """The journal ("A" or "B") that has moved its oil film's whole clearance off centre, or onto its
+        """The journal ("A" or "B") that has moved its oil film's whole clearance off center, or onto its
         magnetic bearing's backup bearing, and that clearance."""
         q, s = self.sim.q, self.sim.system
         for name, (jx, jy), b in (("A", (XA, YA), s.bearing_a), ("B", (XB, YB), s.bearing_b)):
@@ -1313,7 +1313,7 @@ class RotorPage(QtWidgets.QWidget):
             parts.append(f"Ω / first critical = {sim.omega / crits[0]:.2f}")
         disc = self._vibration(y)[:, 2:4]
         if disc.size:
-            text = f"disc whirling up to {fmt_len(float(np.hypot(disc[:, 0], disc[:, 1]).max()))}"
+            text = f"disk whirling up to {fmt_len(float(np.hypot(disc[:, 0], disc[:, 1]).max()))}"
             if sim.system.gravity:
                 text += " about its sag"
             if w > 0 and disc.shape[0] > 2:
@@ -1332,7 +1332,7 @@ class RotorPage(QtWidgets.QWidget):
             and sim.omega >= self.onset.omega
             and least_damped(sim.system, w)[0] < 0
         )
-        # (Not where a turning shaft's weight drives 2X: the disc's position then says little of the 1X.)
+        # (Not where a turning shaft's weight drives 2X: the disk's position then says little of the 1X.)
         if (
             heavy is not None
             and steady
@@ -1360,11 +1360,11 @@ class RotorPage(QtWidgets.QWidget):
         if self.rubbed:
             where = (
                 f"journal {self.touched[0]} landed on its backup bearing, {fmt_len(self.touched[1])} off "
-                "centre (half the magnets' air gap). A real machine drops onto these when its magnetic "
+                "center (half the magnets' air gap). A real machine drops onto these when its magnetic "
                 "bearings lose control; the model here is linear, and has no contact. "
                 if self.touched and sim.system.magnets
                 else f"journal {self.touched[0]} reached the wall of its bearing, a clearance of "
-                f"{fmt_len(self.touched[1])} off centre. "
+                f"{fmt_len(self.touched[1])} off center. "
                 "A real oil film stiffens sharply there and keeps the journal off the wall; the film here is "
                 "linearized (about where the journal rests), so it would let it through. Tick <i>Nonlinear "
                 "film</i> to step the film's whole force. "
@@ -1408,7 +1408,7 @@ class RotorPage(QtWidgets.QWidget):
         self._spiral_next = self.sim.t
 
     def _record_spiral(self) -> None:
-        """Add the Newkirk spiral's next point: the disc's 1X vector over the last revolution, and the thermal
+        """Add the Newkirk spiral's next point: the disk's 1X vector over the last revolution, and the thermal
         bow, both at the probe's direction."""
         _, y = self.history.window(2.0 * math.pi / abs(self.sim.omega))
         if y.shape[0] < 8:
@@ -1425,8 +1425,8 @@ class RotorPage(QtWidgets.QWidget):
             del vectors[1::2], bows[1::2]
 
     def _ring(self, q: np.ndarray) -> tuple[float, float, float] | None:
-        """The stator ring as drawn with the rotor at q (shown with its sag or without): its centre, pushed out
-        by the disc where it overlaps it, and its clearance (m)."""
+        """The stator ring as drawn with the rotor at q (shown with its sag or without): its center, pushed out
+        by the disk where it overlaps it, and its clearance (m)."""
         stator = self.sim.system.stator
         if stator is None:
             return None

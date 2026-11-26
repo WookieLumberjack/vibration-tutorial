@@ -244,7 +244,7 @@ class EnergyPanel(QtWidgets.QWidget):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        """The legend's swatches; the bars take the current colours when painted."""
+        """The legend's swatches; the bars take the current colors when painted."""
         e = colors.energy_colors
         self.legend.setText(
             " ".join(

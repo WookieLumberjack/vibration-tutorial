@@ -64,7 +64,7 @@ INTERFACE_TIP = (
 
 
 def sub_color(s: int | str) -> str:
-    """Colour of substructure s (an index or its letter); the palette repeats, never next to itself."""
+    """Color of substructure s (an index or its letter); the palette repeats, never next to itself."""
     if isinstance(s, str):
         s = SUB_NAMES.index(s)
     return colors.sub[s % len(colors.sub)]
@@ -117,7 +117,7 @@ class SubstructureSchematic(pg.PlotWidget):
                 # A's label above its left edge, B's below its right edge, so a narrow
                 # band's label runs across the other band instead of off the view.
                 kind = "free" if sub.free else "clamped"
-                if len(model.substructures) > 2:  # short, so neighbours on the same side do not collide
+                if len(model.substructures) > 2:  # short, so neighbors on the same side do not collide
                     text = f"{sub.name}: keep {sub.n_kept} of {sub.ni}"
                 else:
                     text = (
@@ -173,7 +173,7 @@ class ComparisonTable(QtWidgets.QTableWidget):
         "<p>(f<sub>{m}</sub> − f<sub>true</sub>) / f<sub>true</sub>. {bound}</p>",
         "Exact damping ratio of the full model (from its damped eigenvalue λ: −Re λ / |λ|)",
         "Exact damping ratio of the reduced model M̂η̈ + Ĉη̇ + K̂η = 0. "
-        "Coloured by its error relative to ζ true, which can have either sign. With stiffness-"
+        "Colored by its error relative to ζ true, which can have either sign. With stiffness-"
         "proportional damping it tracks the frequency error; with non-proportional damping it "
         "can be much worse.",
         "Modal assurance criterion between the true shape φ and the recovered {m} shape Tη: "
@@ -1188,7 +1188,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         self.time.apply_theme()
         self.recovery.apply_theme()
         scroll = self.theory.verticalScrollBar().value()
-        self.theory.setHtml(THEORY_HTML)  # its links, in the new link colour
+        self.theory.setHtml(THEORY_HTML)  # its links, in the new link color
         self.theory.verticalScrollBar().setValue(scroll)
         if self.system is not None:
             self._dirty = True
@@ -1233,7 +1233,7 @@ class SubstructuringPage(QtWidgets.QWidget):
         self.component_table.set_free(free)
 
     def _style_kept_rows(self) -> None:
-        """Each "Modes kept in X" label in its substructure's colour, and the spin boxes' tooltips."""
+        """Each "Modes kept in X" label in its substructure's color, and the spin boxes' tooltips."""
         free = self.method_key != "craig-bampton"
         for s, (label, spin) in enumerate(zip(self.kept_labels, self.kept)):
             name = SUB_NAMES[s]

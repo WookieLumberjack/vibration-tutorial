@@ -16,7 +16,7 @@ from .style import colors
 K = 400.0
 K3 = 2e4  # N/m³: the softening preset's |k₃|, so its escape amplitude is 141 mm
 SPRINGS = (Duffing(cubic=K3), Duffing(cubic=0.0), Duffing(cubic=-K3))
-PUMP_LAG = -math.pi / 4  # the growing swing's lag at the tongue's centre, x = a cos(Ωt/2 + π/4)
+PUMP_LAG = -math.pi / 4  # the growing swing's lag at the tongue's center, x = a cos(Ωt/2 + π/4)
 
 
 def springs_svg() -> str:

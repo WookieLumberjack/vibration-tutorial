@@ -98,7 +98,7 @@ def beam_omega(beam: Beam, k: float | np.ndarray, theory: Theory = Theory.TIMOSH
     b = rho * A * (E * I * k * k + S) + rho * I * S * k * k
     c = S * k * k * E * I * k * k
     disc = np.sqrt(b * b - 4 * a * c)
-    lower = 2 * c / (b + disc)  # stable form of (b − disc)/2a
+    lower = 2 * c / (b + disc)  # stable form of (b − disk)/2a
     upper = (b + disc) / (2 * a)
     return np.sqrt(upper if branch else lower)
 

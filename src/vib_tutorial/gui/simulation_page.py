@@ -295,7 +295,7 @@ class SimulationPage(QtWidgets.QWidget):
             "<p>The selected mode shape ψ in the complex plane: one arrow per mass "
             "(mass colors), length = amplitude, angle = phase.</p>"
             "<p>With <i>Animate mode shapes</i> on, the arrows rotate as ψe<sup>iω<sub>d</sub>t</sup> "
-            "(anticlockwise for Im λ &gt; 0, clockwise for its conjugate λ*). The circles on "
+            "(counterclockwise for Im λ &gt; 0, clockwise for its conjugate λ*). The circles on "
             "the real axis are the real parts, i.e. the masses' displacements.</p>"
             "<p>All arrows on one line (0° or 180° apart): a real mode, a standing wave. "
             "Arrows at other angles: the masses peak at different times.</p>"
@@ -418,7 +418,7 @@ class SimulationPage(QtWidgets.QWidget):
             w.apply_theme()
         self.scrub.apply_theme()
         self.force_panel.refresh()
-        self._refresh_modal_views()  # mode colours: table, shapes, time and FRF curves
+        self._refresh_modal_views()  # mode colors: table, shapes, time and FRF curves
 
     def transport(self) -> Transport:
         """The run bar drives the simulation's Pause/Resume, Reset and speed (its force, Space, is the Start)."""
@@ -852,7 +852,7 @@ class SimulationPage(QtWidgets.QWidget):
             self._start()  # last, so that its steps run while this frame paints
 
     def _start(self) -> None:
-        """Start the simulator's steps towards `_sim_target`; the next frame's `_collect` records them."""
+        """Start the simulator's steps toward `_sim_target`; the next frame's `_collect` records them."""
         speed = self.controls.speed_factor
         # If the simulator can't keep up (very stiff system), drop the backlog.
         self._sim_target = min(self._sim_target, self.sim.t + 0.25 * speed + 0.05)

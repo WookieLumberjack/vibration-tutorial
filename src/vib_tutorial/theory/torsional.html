@@ -9,13 +9,13 @@
 <li trial="3" problem="margin">check a running speed's margin to the criticals.</li>
 </goals>
 <h3><a name="torsion"></a>Torsional vibration</h3>
-<p>A drive train turns as a whole, but its discs also twist back and forth against each other on the shafts
-between them. Each disc <m>i</m> has an inertia <m>J<sub>i</sub></m> and an angle <m>θ<sub>i</sub></m> on top of
+<p>A drive train turns as a whole, but its disks also twist back and forth against each other on the shafts
+between them. Each disk <m>i</m> has an inertia <m>J<sub>i</sub></m> and an angle <m>θ<sub>i</sub></m> on top of
 the steady turning, each shaft a stiffness <m>k<sub>i</sub></m> and damping <m>c<sub>i</sub></m> across the pair
 it joins, and</p>
 <eq>M\ddot{\theta} + C\dot{\theta} + K\theta = T(t)</eq>
 <p>with <m>M</m> the inertias on the diagonal and <m>T</m> the pulsating torques. It is the chain of masses and
-springs again, turned on its side: a disc for a mass, a shaft for a spring. The train is free at both ends, so its
+springs again, turned on its side: a disk for a mass, a shaft for a spring. The train is free at both ends, so its
 first mode is the whole train turning (0 Hz: <m>K</m> has no stiffness against it), and the rest twist it. Each
 mode's <b>twist</b> says which links carry its strain energy: those are the shafts that see its torque.</p>
 <p>A shaft's stiffness comes from its material and shape. A solid round shaft of shear modulus <m>G</m>, diameter
@@ -24,19 +24,19 @@ mode's <b>twist</b> says which links carry its strain energy: those are the shaf
 <p>so it goes as <m>d</m>⁴: twice as thick is sixteen times as stiff. A coupling's stiffness is its maker's
 figure.</p>
 
-<h3><a name="two-discs"></a>Two discs on one shaft</h3>
-<p>Two discs on one shaft have one flexible mode. Nothing acts on the pair from outside, so their momenta
+<h3><a name="two-discs"></a>Two disks on one shaft</h3>
+<p>Two disks on one shaft have one flexible mode. Nothing acts on the pair from outside, so their momenta
 cancel, <m>J<sub>1</sub>θ̇<sub>1</sub></m> = −<m>J<sub>2</sub>θ̇<sub>2</sub></m>: they swing opposite, the lighter
-further. The shaft's twist is <m>θ<sub>1</sub></m> − <m>θ<sub>2</sub></m>, and either disc's equation gives</p>
+further. The shaft's twist is <m>θ<sub>1</sub></m> − <m>θ<sub>2</sub></m>, and either disk's equation gives</p>
 <eq>\omega^2 = k\,\frac{J_1 + J_2}{J_1 J_2}, \qquad \frac{\theta_2}{\theta_1} = -\frac{J_1}{J_2}</eq>
-<p>The shaft's own inertia neglected, its angle varies linearly between the discs, so it has a <b>node</b> (a point
+<p>The shaft's own inertia neglected, its angle varies linearly between the disks, so it has a <b>node</b> (a point
 that doesn't swing) a fraction <m>J<sub>2</sub></m>/(<m>J<sub>1</sub></m> + <m>J<sub>2</sub></m>) of the way from
-disc 1: nearer the heavier disc.</p>
+disk 1: nearer the heavier disk.</p>
 <p><img src="fig:node"></p>
 <p>Longer trains have no such formula. <b>Holzer's method</b> <cite>holzer</cite>, the classic hand calculation,
-guesses <m>ω</m>, swings the first disc by 1, and walks along the train: each disc adds
+guesses <m>ω</m>, swings the first disk by 1, and walks along the train: each disk adds
 <m>J<sub>i</sub>ω²θ<sub>i</sub></m> to the torque the next shaft carries, which twists it by that torque over
-<m>k<sub>i</sub></m>. At a natural frequency the torque left over past the last disc is zero. The page solves the
+<m>k<sub>i</sub></m>. At a natural frequency the torque left over past the last disk is zero. The page solves the
 eigenproblem <m>Kφ</m> = <m>ω²Mφ</m> instead, which is the same condition all at once.</p>
 
 <h3><a name="gears"></a>Gears</h3>
@@ -50,7 +50,7 @@ circles (radii <m>r<sub>in</sub></m>, <m>r<sub>out</sub></m>) that the contact m
 transmission error below, and the mesh stiffens the pair by</p>
 <eq>k_m \begin{bmatrix} r_{in}^2 & -r_{in} r_{out} \\ -r_{in} r_{out} & r_{out}^2 \end{bmatrix}</eq>
 <p><b>Referred</b> to the motor's shaft. Write each angle as <m>θ<sub>i</sub></m> = <m>n<sub>i</sub>ψ<sub>i</sub></m>,
-with <m>n<sub>i</sub></m> the product of the ratios on the way out to disc <m>i</m>. A disc's kinetic energy
+with <m>n<sub>i</sub></m> the product of the ratios on the way out to disk <m>i</m>. A disk's kinetic energy
 ½<m>J<sub>i</sub>θ̇<sub>i</sub>²</m> is then ½(<m>J<sub>i</sub>n<sub>i</sub>²</m>)<m>ψ̇<sub>i</sub>²</m> and a shaft's
 strain energy goes the same way, so every inertia and stiffness is multiplied by <m>n</m>². The mesh becomes a
 shaft of <m>k<sub>m</sub>(r<sub>in</sub>n<sub>in</sub>)²</m> (since <m>r<sub>out</sub>n<sub>out</sub></m> =
@@ -79,7 +79,7 @@ the cylinders' torques add, are the multiples of <m>N</m>/2: 3× and 6× for six
 <m>Ω</m> = 2π<m>f<sub>r</sub></m>/<m>n<sub>o</sub></m>: the order there drives the mode at its resonance.</p>
 <p>A design keeps every critical out of a band round the running speed. API 617 <cite>api-617</cite> asks for the
 train's torsional natural frequencies to be at least 10 % away from every excitation in the operating speed range.
-A start-up still passes the criticals below, briefly. Not every crossing matters: an order applied at a disc the
+A start-up still passes the criticals below, briefly. Not every crossing matters: an order applied at a disk the
 mode barely moves (near its node) hardly excites it, and the response tells which do.</p>
 
 <h3><a name="response"></a>The steady response</h3>
@@ -97,7 +97,7 @@ then: the sum of the amplitudes is the worst the torque can be.</p>
 1/2<m>ζ<sub>r</sub></m> times the share of the excitation that shaft carries quasi-statically.</p>
 
 <h3><a name="startup"></a>Starting up</h3>
-<p>The <i>Start-up</i> tab starts the train from rest with a motor on its first disc and a load on its last that
+<p>The <i>Start-up</i> tab starts the train from rest with a motor on its first disk and a load on its last that
 rises as its speed squared. The angles are then the whole turn, and the train's free turning (the 0 Hz mode)
 carries it up to speed while the shafts twist on top. The motor's torque depends on the motor's angle and speed,
 and the load's on its speed, so each step solves for them at its end by Newton, on the exact FOH update of the
@@ -140,7 +140,7 @@ along the coupling, by the fan.</li>
 <li><b>The damping.</b> <m>ζ</m> = 0.0183, so 1/2<m>ζ</m> = 27.3.</li>
 <li><b>The critical.</b> The 2× line meets 52.3 Hz at 60 × 52.3/2 = 1569 rpm, 6.0 % above the running speed:
 inside the 10 % band.</li>
-<li><b>The torque there.</b> Slowly, a torque on the fan accelerates both discs, and the coupling carries the
+<li><b>The torque there.</b> Slowly, a torque on the fan accelerates both disks, and the coupling carries the
 motor's share, 50 × 2/12 = 8.33 N·m. At the critical that is multiplied by 27.3: 227 N·m, against the response
 tab's peak of 228.</li>
 <li><b>At the running speed.</b> 2 × 1480/60 = 49.3 Hz is a frequency ratio of 0.943. One mode gives
@@ -153,7 +153,7 @@ slip), where the fan and its damper take 580 N·m.</li>
 </ol>
 <p><b>The gears.</b> The geared compressor's bull gear (3 kg·m², 120 teeth, base radius 0.3 m) drives a pinion
 (0.05 kg·m², 30 teeth, 0.075 m) through a 2 GN/m mesh. Referred to the pinion's shaft, the bull gear weighs
-3/4² = 0.1875 kg·m², and the mesh is a shaft of 2×10⁹ × 0.075² = 1.125×10⁷ N·m/rad. Two discs on it:
+3/4² = 0.1875 kg·m², and the mesh is a shaft of 2×10⁹ × 0.075² = 1.125×10⁷ N·m/rad. Two disks on it:
 <m>ω</m>² = 1.125×10⁷ × 0.2375/(0.05 × 0.1875) = 2.85×10⁸, so <m>f</m> = 2687 Hz, against the page's 2688 Hz
 (the couplings barely hold the gears). The tooth-pass, 120× the motor's speed, meets it at 60 × 2688/120 =
 1344 rpm.</p>

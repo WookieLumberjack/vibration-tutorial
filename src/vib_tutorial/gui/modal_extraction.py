@@ -29,7 +29,7 @@ METHOD_TIPS = {
     "a peak between lines looks lower and wider (too much damping). Close or heavily damped modes "
     "merge into one peak.</p>",
     Method.CIRCLE: "<p>Near a resonance the mobility iωH traces a circle in the complex plane. The "
-    "angle each measured point makes about the centre depends on ω<sub>n</sub> and ζ, so both are "
+    "angle each measured point makes about the center depends on ω<sub>n</sub> and ζ, so both are "
     "fitted to the angles, between the frequency lines. Each response's modal constant comes from a "
     "fit around the peak, with a constant for the other modes.</p>"
     "<p>More accurate than peak picking, but still one mode at a time: it needs a few lines across "
@@ -276,14 +276,14 @@ class MacPlot(pg.PlotWidget):
         self.apply_theme()
 
     def apply_theme(self) -> None:
-        """The colour map, from the background at MAC 0 to colors.mac_high at 1; labels follow in set_matrix."""
+        """The color map, from the background at MAC 0 to colors.mac_high at 1; labels follow in set_matrix."""
         self.cmap = pg.ColorMap([0.0, 1.0], [pg.mkColor(colors.background), pg.mkColor(colors.mac_high)])
         self.image.setLookupTable(self.cmap.getLookupTable(nPts=256))
 
     def set_matrix(
         self, macs: np.ndarray, rows: list[str], cols: list[str], text: np.ndarray | None = None, fmt: str = "{:.2f}"
     ) -> None:
-        """Colour by `macs` (0 to 1); label each cell with `text` (the MACs if None), formatted by `fmt`."""
+        """Color by `macs` (0 to 1); label each cell with `text` (the MACs if None), formatted by `fmt`."""
         for t in self.labels:
             self.removeItem(t)
         self.labels = []

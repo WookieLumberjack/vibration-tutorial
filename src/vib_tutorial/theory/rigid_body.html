@@ -12,7 +12,7 @@
 times the rate, one number times another. A body free to turn any way, a box tossed in the air, a satellite, a spinning top, a rotor
 on its bearings, needs more: its angular velocity <m>ω</m> and angular momentum <b>L</b> are vectors, and they
 needn't point the same way. This page builds the equations for that from Newton's, with no gravity and no
-support, so only the turning is left: the body is free in space, turning about its centre of mass <m>G</m>.</p>
+support, so only the turning is left: the body is free in space, turning about its center of mass <m>G</m>.</p>
 
 <h3><a name="inertia-tensor"></a>The inertia tensor</h3>
 <p><img src="fig:point"></p>
@@ -26,17 +26,17 @@ them up, with <m>a</m> × (<m>b</m> × <m>c</m>) = <m>b</m>(<m>a</m>·<m>c</m>) 
 <eq>I_{xx} = \sum m(y^2+z^2),\quad I_{xy} = -\sum m\,xy.</eq>
 <p>On its diagonal are the <b>moments of inertia</b> about each axis (mass times distance squared from it, as the
 pendulum's); off it the <b>products of inertia</b>, which are zero when the mass is spread evenly either
-side of each axis, as in a uniform box about its centre. The kinetic energy is
+side of each axis, as in a uniform box about its center. The kinetic energy is
 <m>E</m> = ½Σ<m>m</m>|<m>ω</m> × <m>r</m>|² = ½<m>ω</m>·<b>I</b><m>ω</m> = ½<m>ω</m>·<b>L</b>.</p>
-<p>For the page's shapes, about their centres: a box of sides <m>a</m>, <m>b</m>, <m>c</m> has
+<p>For the page's shapes, about their centers: a box of sides <m>a</m>, <m>b</m>, <m>c</m> has
 <m>I<sub>xx</sub></m> = <m>m</m>(<m>b</m>² + <m>c</m>²)/12 and so on round; a cylinder of radius <m>a</m> and
 length <m>c</m>, <m>ma</m>²/2 about its axis and <m>m</m>(3<m>a</m>² + <m>c</m>²)/12 across it; a sphere,
 2<m>ma</m>²/5 about every axis. The page's default box, 1 kg and 30 × 20 × 10 cm, has 4.167, 8.333 and 10.83
 ×10⁻³ kg·m².</p>
-<p>A <b>point mass</b> <m>m<sub>p</sub></m> at <m>p</m> from the shape's centre moves <m>G</m> toward it, to
+<p>A <b>point mass</b> <m>m<sub>p</sub></m> at <m>p</m> from the shape's center moves <m>G</m> toward it, to
 <m>m<sub>p</sub></m><m>p</m>/(<m>m</m> + <m>m<sub>p</sub></m>), and the tensor about the new <m>G</m> is the
 shape's own moved there by the <b>parallel-axis theorem</b>, <b>I</b> + <m>m</m>(|<m>d</m>|²<b>1</b> −
-<m>d</m><m>d</m>ᵀ) (<m>d</m> from <m>G</m> to the shape's centre), plus the point mass's own
+<m>d</m><m>d</m>ᵀ) (<m>d</m> from <m>G</m> to the shape's center), plus the point mass's own
 <m>m<sub>p</sub></m>(|<m>r</m>|²<b>1</b> − <m>r</m><m>r</m>ᵀ). Off the body's axes it brings products of
 inertia: the <i>Inertia</i> tab writes the tensor out.</p>
 
@@ -141,7 +141,7 @@ passing that close to the lock magnifies every rounding error.</p>
 <p><b>A homogeneous transform</b> adds a place to a turn: the 4 × 4 matrix</p>
 <eq>T = \begin{bmatrix} B & B\mathbf{d} \\ 0\;0\;0 & 1 \end{bmatrix}:</eq>
 <p>the turn, and in its fourth column where the frame's origin is in space. Here the frame is the shape's own,
-with its origin at the shape's centre, which sits at <m>B</m><m>d</m> from <m>G</m>. A point of the body
+with its origin at the shape's center, which sits at <m>B</m><m>d</m> from <m>G</m>. A point of the body
 <m>p</m>, written (<m>p</m>, 1), goes to (<m>B</m><m>p</m> + <m>B</m><m>d</m>, 1) in space, and a direction,
 written (<m>v</m>, 0), only turns. Frames chained one after another (a robot arm's links, a camera on a moving
 car) multiply. The tab carries the point mass through <m>T</m>.</p>
@@ -157,7 +157,7 @@ torque's end falls on a step's, so its impulse is exact.</p>
 <p>The page's defaults: a 1 kg box, 30 × 20 × 10 cm, spun at 6 rad/s about its middle axis and nudged 1° toward
 its greatest.</p>
 <ol>
-<li><b>The moments.</b> About its centre, <m>I<sub>xx</sub></m> = 1 × (0.2² + 0.1²)/12 = 4.167×10⁻³,
+<li><b>The moments.</b> About its center, <m>I<sub>xx</sub></m> = 1 × (0.2² + 0.1²)/12 = 4.167×10⁻³,
 <m>I<sub>yy</sub></m> = 1 × (0.3² + 0.1²)/12 = 8.333×10⁻³ and <m>I<sub>zz</sub></m> = 1 × (0.3² + 0.2²)/12 =
 10.83×10⁻³ kg·m², with no products: x, y, z are its principal axes 1, 2, 3.</li>
 <li><b>ω and L apart.</b> <m>ω</m> = 6(0, cos 1°, sin 1°) = (0, 5.999, 0.1047) rad/s, so
@@ -166,7 +166,7 @@ its greatest.</p>
 tan 1°) = 1.30°, so they are 0.30° apart, and the readout says so.</li>
 <li><b>The flip.</b> As in <a href="#intermediate-axis">The intermediate axis</a>, <m>λ</m> = 2.88 /s and the 1°
 grows to a radian in about 1.4 s; the <i>Components</i> tab's <m>ω₂</m> drops through zero soon after.</li>
-<li><b>An off-centre mass</b> (the fourth trial): 300 g at <m>p</m> = (100, 80, 0) mm. <m>G</m> moves
+<li><b>An off-center mass</b> (the fourth trial): 300 g at <m>p</m> = (100, 80, 0) mm. <m>G</m> moves
 0.3/1.3 of the way, to (23.1, 18.5, 0) mm. By parallel axes <m>I<sub>xx</sub></m> = 4.167×10⁻³ + 1 × 0.01846² +
 0.3 × (0.08 − 0.01846)² = 5.644×10⁻³ kg·m², and the product
 <m>I<sub>xy</sub></m> = −1 × 0.02308 × 0.01846 − 0.3 × (0.1 − 0.02308)(0.08 − 0.01846) = −1.846×10⁻³ kg·m², which is
@@ -179,7 +179,7 @@ grows to a radian in about 1.4 s; the <i>Components</i> tab's <m>ω₂</m> drops
 <p>Each of these sets the body up and lets it go (Things to try, top left).</p>
 <!--TRIALS-->
 <takeaways>
-<li>A body's angular momentum about its centre of mass is L = Iω, with I = Σm(|r|²1 − rrᵀ) a 3 × 3 tensor: moments on its diagonal, products of inertia off it.</li>
+<li>A body's angular momentum about its center of mass is L = Iω, with I = Σm(|r|²1 − rrᵀ) a 3 × 3 tensor: moments on its diagonal, products of inertia off it.</li>
 <li>Its eigenvectors are the principal axes, in which it is diagonal; spun about one, L is along ω, about any other it isn't.</li>
 <li>A vector's rate in fixed axes is its rate in turning axes plus Ω × it; in the body's axes, where I is constant, dL/dt = τ becomes Euler's equations, Iω̇ + ω × Iω = τ.</li>
 <li>Torque-free, L and the energy are kept; spun about its middle principal axis a body turns over and back, about the least or greatest it only wobbles.</li>

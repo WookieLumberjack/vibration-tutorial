@@ -113,7 +113,7 @@ def test_the_simulation_matches_h_s_hh(inp):
 
 
 def test_miles_per_mode():
-    """On a base, the chain's resonant responses come out within a few per cent of the exact RMS by Miles' equation
+    """On a base, the chain's resonant responses come out within a few percent of the exact RMS by Miles' equation
     mode by mode; the force's mass line it misses."""
     base = RandomInput(Input.BASE, 0.01, 0.0, 10.0)
     for out in (Output(Quantity.ACCELERATION, 3), Output(Quantity.DISPLACEMENT, 3), Output(Quantity.SPRING, 0)):
@@ -200,7 +200,7 @@ def test_the_records_statistics_match_rice(inp, out):
     h, edges = np.histogram(st.peaks * st.sigma / r.sigma, bins=32, range=(-4, 4), density=True)
     centres = 0.5 * (edges[1:] + edges[:-1])
     assert np.max(np.abs(h - peak_pdf(centres, r.alpha))) < 0.07
-    # the largest value in each 60 s: Vanmarcke within a few per cent, Davenport above it
+    # the largest value in each 60 s: Vanmarcke within a few percent, Davenport above it
     largest = np.mean(segment_maxima(y, rec.fs, 60.0)) / r.sigma
     assert r.clumped_peak_factor(60.0) == pytest.approx(largest, rel=0.04)
     assert r.peak_factor(60.0) > r.clumped_peak_factor(60.0)

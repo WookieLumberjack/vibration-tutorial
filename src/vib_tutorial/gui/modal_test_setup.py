@@ -276,7 +276,7 @@ class TestSetup(QtWidgets.QWidget):
             "<p>The exponential window's value at the end of the block; 100% = no exponential "
             "(force window only).</p><p>e<sup>−t/τ<sub>w</sub></sup> multiplies the response, so every "
             "pole moves 1/τ<sub>w</sub> to the left: each mode looks more damped by Δζ = 1/(τ<sub>w</sub>ω). The dashed "
-            "grey curve is the exact FRF with that extra damping.</p>"
+            "gray curve is the exact FRF with that extra damping.</p>"
         )
         self.exp_label = QtWidgets.QLabel("Exponential at block end:")
         form.addRow(self.exp_label, self.exp_end)

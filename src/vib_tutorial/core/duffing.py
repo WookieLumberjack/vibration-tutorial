@@ -219,7 +219,7 @@ class Fold:
 class ResponseCurve:
     """The harmonic-balance response: pieces of the curve, each all stable or all unstable, and its folds."""
 
-    pieces: list[tuple[np.ndarray, np.ndarray, bool]]  # (Hz, m, stable); neighbours share an end point
+    pieces: list[tuple[np.ndarray, np.ndarray, bool]]  # (Hz, m, stable); neighbors share an end point
     folds: list[Fold]
     tip: float  # the largest amplitude on the curve (m); inf if it runs off (no damping)
 
@@ -320,7 +320,7 @@ def response_curve(osc: Duffing, freq_max_hz: float, points: int = 1200) -> Resp
 
 
 def _fold_point(osc: Duffing, w0: float, a0: float, w1: float, a1: float) -> tuple[float, float]:
-    """The fold between two neighbouring points of the curve, where dG/ds = 0: (Hz, m).
+    """The fold between two neighboring points of the curve, where dG/ds = 0: (Hz, m).
 
     Found along the amplitude between them, each amplitude's frequency the root of the
     quadratic in Omega^2 nearer the line between the two points.

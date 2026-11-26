@@ -1,9 +1,9 @@
-"""Rotor builder page: build a rotor from shaft sections, discs, bearings and seals, and see it whirl.
+"""Rotor builder page: build a rotor from shaft sections, disks, bearings and seals, and see it whirl.
 
 Left: Things to try, the selected part's properties (a section's length, diameters, material and elements; a
-disc from the library or by its mass and inertias; a bearing's springs and dampers, oil film or magnet; a seal's
+disk from the library or by its mass and inertias; a bearing's springs and dampers, oil film or magnet; a seal's
 stiffness, damping and swirl), the model's settings (beam theory, horizontal or vertical, the speed) and what to
-show (the mode or the unbalance response, and the node the Unbalance tab plots). Centre: the tools, the side view
+show (the mode or the unbalance response, and the node the Unbalance tab plots). Center: the tools, the side view
 (click the shaft to split it or to put a part there, drag a part along it), bending in the mode picked, and the
 modes at the speed with their damping and whirl. Right: the mode whirling in 3D; the sweeps to the top speed
 (core/rotor_builder_sweep.py), worked out when their tab first shows after a change (on a `Recompute`'s worker
@@ -116,17 +116,17 @@ TIPS = {
     "length": "<p>The section's length along the shaft. Parts past it move with its end.</p>",
     "outer": "<p>The section's outside diameter: its I grows as D⁴, its mass as D².</p>",
     "inner": "<p>The section's bore (0: solid). A hollow shaft is stiffer for its mass.</p>",
-    "material": "<p>Steel (210 GPa, 7850 kg/m³), aluminium (70 GPa, 2700) or titanium (114 GPa, 4430).</p>",
+    "material": "<p>Steel (210 GPa, 7850 kg/m³), aluminum (70 GPa, 2700) or titanium (114 GPa, 4430).</p>",
     "elements": "<p>Beam elements in the section (more where a part cuts it): more find the higher modes better.</p>",
     "z": "<p>Where the part sits along the shaft, from its left end.</p>",
-    "library": "<p>A disc from the library, by material and size (its mass and inertias worked out from them), or "
+    "library": "<p>A disk from the library, by material and size (its mass and inertias worked out from them), or "
     "Custom, by its mass and inertias.</p>",
-    "disc_mass": "<p>The disc's mass, on its x and y.</p>",
+    "disc_mass": "<p>The disk's mass, on its x and y.</p>",
     "ip": "<p>The polar moment of inertia, about the spin axis: the gyroscopic moment I<sub>p</sub>Ω × the tilt "
     "rate.</p>",
     "id": "<p>The diametral moment of inertia, about a diameter: on the slopes θx and θy.</p>",
-    "diameter": "<p>The disc's diameter (drawn; from the library, it sets the inertias).</p>",
-    "thickness": "<p>The disc's thickness (drawn; from the library, it sets the inertias).</p>",
+    "diameter": "<p>The disk's diameter (drawn; from the library, it sets the inertias).</p>",
+    "thickness": "<p>The disk's thickness (drawn; from the library, it sets the inertias).</p>",
     "bearing_kind": "<p>Springs and dampers to the ground; a plain journal bearing's oil film, its stiffness and "
     "damping changing with the speed and its load; or an active magnetic bearing under PID control.</p>",
     "kxx": "<p>The bearing's stiffness along x (sideways).</p>",
@@ -140,7 +140,7 @@ TIPS = {
     "film_diameter": "<p>The journal's diameter D<sub>b</sub> (the shaft's, where it sits).</p>",
     "clearance": "<p>The radial clearance c<sub>r</sub> between the journal and its bearing.</p>",
     "viscosity": "<p>The oil's viscosity η.</p>",
-    "gap": "<p>Each magnet's air gap with the journal centred.</p>",
+    "gap": "<p>Each magnet's air gap with the journal centered.</p>",
     "bias": "<p>The bias current in every coil.</p>",
     "kp": "<p>The PID's proportional gain: k<sub>i</sub>k<sub>p</sub> has to beat the magnets' k<sub>m</sub>.</p>",
     "ki": "<p>The PID's integral gain (0: none).</p>",
@@ -154,12 +154,12 @@ TIPS = {
     "theory": "<p>Timoshenko's beams shear, and their sections' turning has inertia (and spins, with its "
     "gyroscopic moment); Euler–Bernoulli's here keep the turning inertia (a Rayleigh beam) but don't shear.</p>",
     "gravity": "<p>A horizontal rotor's weight loads its bearings (an oil film's stiffness depends on it); a "
-    "vertical one's doesn't, and its films run centred.</p>",
+    "vertical one's doesn't, and its films run centered.</p>",
     "rpm": "<p>The speed the modes are worked out at: the gyroscopic matrix, an oil film's coefficients and a "
     "seal's cross-coupling all change with it.</p>",
     "grid": "<p>The spacing parts and cuts snap to.</p>",
-    "unbalance": "<p>The disc's unbalance m e: its mass times how far its centre of mass is off the shaft's "
-    "(1 g·mm = 10⁻⁶ kg·m). A library disc's is 10 µm of its mass.</p>",
+    "unbalance": "<p>The disk's unbalance m e: its mass times how far its center of mass is off the shaft's "
+    "(1 g·mm = 10⁻⁶ kg·m). A library disk's is 10 µm of its mass.</p>",
     "heavy": "<p>Where the heavy spot is, as an angle from the shaft's keyphasor mark in the direction of spin.</p>",
     "internal": "<p>The shaft's internal damping, as its loss time τ<sub>i</sub> (its material's, or a shrink fit's "
     "slip): τ<sub>i</sub>K<sub>shaft</sub> on the "
@@ -168,7 +168,7 @@ TIPS = {
     "top_rpm": "<p>The top of the speed range the Campbell diagram, the unbalance response and the stability map "
     "sweep.</p>",
     "swing": "<p>What the side view and the Whirl tab show: the mode picked in the table, or the steady response "
-    "to the discs' unbalance at the speed.</p>",
+    "to the disks' unbalance at the speed.</p>",
     "probe": "<p>The node whose orbit the Unbalance tab plots against the speed.</p>",
     "matrix": "<p>The matrix the Assembly and Element tabs show, at the speed.</p>",
     "animate": "<p>Whirl the rotor in the mode picked (slowed to the same pace whatever its frequency, and "
@@ -259,7 +259,7 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
     elif kind == "disc":
         d = rotor.discs[i]
         lines.append(
-            f"<p><b>Disc {i + 1}</b> ({d.name}) at z = {fmt(d.z, 'm')}: m = {fmt(d.mass, 'kg')}, I<sub>p</sub> = "
+            f"<p><b>Disk {i + 1}</b> ({d.name}) at z = {fmt(d.z, 'm')}: m = {fmt(d.mass, 'kg')}, I<sub>p</sub> = "
             f"{sig(d.ip, 4)} kg·m², I<sub>d</sub> = {sig(d.id, 4)} kg·m² (I<sub>p</sub>/I<sub>d</sub> = "
             f"{sig(d.ip / d.id if d.id else math.inf)}). Rigid: it adds to M on its node, and I<sub>p</sub> to G "
             "between the slopes.</p>"
@@ -303,7 +303,7 @@ def part_html(rotor: Rotor, assembly: Assembly, selection: Selection, which: Mat
 
 # ------------------------------------------------------------------ the properties
 class Properties(QtWidgets.QGroupBox):
-    """The selected item's settings: a section's, a disc's, a bearing's or a seal's (or nothing)."""
+    """The selected item's settings: a section's, a disk's, a bearing's or a seal's (or nothing)."""
 
     def __init__(self) -> None:
         super().__init__("Selected")
@@ -423,7 +423,7 @@ def _percent(zeta: float) -> str:
 
 # ------------------------------------------------------------------ the page
 class RotorBuilderPage(QtWidgets.QWidget):
-    """Controls on the left, the side view and its modes in the centre, the 3D whirl and the matrices on the
+    """Controls on the left, the side view and its modes in the center, the 3D whirl and the matrices on the
     right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
@@ -510,7 +510,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.run_button.toggled.connect(self._on_animate)
         self.reset_button.clicked.connect(self.reset)
 
-        # --- centre: the tools, the side view, the modes
+        # --- center: the tools, the side view, the modes
         self.canvas: RotorCanvas = RotorCanvas()
         self.canvas.edited.connect(self._on_edit)
         self.canvas.selected.connect(self._on_selected)
@@ -819,7 +819,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self._draw_tabs()
 
     def _fit_probe(self) -> None:
-        """The probe's box sized to the nodes, on the node asked for (`_probe`), else the first disc's."""
+        """The probe's box sized to the nodes, on the node asked for (`_probe`), else the first disk's."""
         r = self.rotor
         nodes = max(r.nodes.size, 1)
         node = self._probe
@@ -1008,7 +1008,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
                 (p.heavy, math.degrees(d.unbalance_angle)),
             ):
                 set_quietly(box, value)
-            p.disc.setTitle(f"Disc {i + 1}")
+            p.disc.setTitle(f"Disk {i + 1}")
             p.show_form(p.disc)
         elif kind == "bearing":
             b = self.rotor.bearings[i]
@@ -1156,7 +1156,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
                 or (
                     "Nothing turns at 0 rpm: set a speed."
                     if self.omega == 0
-                    else "No disc has an unbalance: select one and give it some (Unbalance, on the left)."
+                    else "No disk has an unbalance: select one and give it some (Unbalance, on the left)."
                 )
             )
             return
@@ -1165,7 +1165,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         self.whirl.set_mode(self.rotor, Q / size[k])
         self.whirl.show_phase(self._phase)
         self.whirl_note.setText(
-            f"The steady response to the discs' unbalance at {sig(self.rpm.value(), 5)} rpm (once a revolution, so at "
+            f"The steady response to the disks' unbalance at {sig(self.rpm.value(), 5)} rpm (once a revolution, so at "
             f"{sig(self.rpm.value() / 60, 4)} Hz): the largest orbit is {fmt(size[k], 'm')} across its major semi-axis, "
             f"at node {k + 1} (z = {sig(self.rotor.nodes[k])} m)."
         )
@@ -1351,7 +1351,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
         size = orbit(Q[1:], node)
         if not size.any():
             self._clear("orbit", "lag")
-            self.unbalance_note.setText("No disc has an unbalance: select one and give it some (on the left).")
+            self.unbalance_note.setText("No disk has an unbalance: select one and give it some (on the left).")
             return
         self.curves["orbit"].setData(rpm, np.maximum(size * 1e6, 1e-6))
         self.curves["lag"].setData(rpm, lag(Q[1:], node, rotor))
@@ -1375,14 +1375,14 @@ class RotorBuilderPage(QtWidgets.QWidget):
         here = float(orbit(steady, node)) if steady is not None and self.omega > 0 else 0.0
         unbalanced = [d for d in rotor.discs if d.unbalance]
         listed = ", ".join(
-            f"disc {rotor.discs.index(d) + 1} {sig(d.unbalance * 1e6, 4)} g·mm at {math.degrees(d.unbalance_angle):.0f}°"
+            f"disk {rotor.discs.index(d) + 1} {sig(d.unbalance * 1e6, 4)} g·mm at {math.degrees(d.unbalance_angle):.0f}°"
             for d in unbalanced
         )
         self.unbalance_note.setText(
             f"The steady orbit at node {node + 1} (z = {sig(rotor.nodes[node])} m; its major semi-axis) against the "
-            f"speed, from the discs' unbalance ({listed}), and how far its x lags behind the heavy spot. It peaks at "
+            f"speed, from the disks' unbalance ({listed}), and how far its x lags behind the heavy spot. It peaks at "
             f"<b>{sig(size[k] * 1e6, 4)} µm at {rpm[k]:.0f} rpm</b>; at {self.rpm.value():.0f} rpm, {sig(here * 1e6)} µm. "
-            "The dotted lines are the critical speeds, red forward and grey backward: an unbalance turns forward, "
+            "The dotted lines are the critical speeds, red forward and gray backward: an unbalance turns forward, "
             "and through a forward critical the lag swings by about 180°."
         )
 
@@ -1490,7 +1490,7 @@ class RotorBuilderPage(QtWidgets.QWidget):
     def frame_context(self) -> str:
         r = self.rotor
         return (
-            f"{len(r.sections)} sections, {len(r.discs)} discs, {len(r.bearings)} bearings, {r.nodes.size} nodes, "
+            f"{len(r.sections)} sections, {len(r.discs)} disks, {len(r.bearings)} bearings, {r.nodes.size} nodes, "
             f"mode {self.mode + 1} at {sig(self.rpm.value(), 6)} rpm"
         )
 

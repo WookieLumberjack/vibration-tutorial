@@ -53,7 +53,7 @@ def test_the_record_matches_the_spectrum_and_one_mode_is_exact():
     g = accelerogram(d, 3)
     err = g.spectrum / design_sa(d, 1 / g.f) - 1
     assert np.median(np.abs(err)) < 0.05
-    one = building(1)  # one storey: its peak displacement is the record's spectral displacement at T
+    one = building(1)  # one story: its peak displacement is the record's spectral displacement at T
     h = time_history(one, d, g)
     m = modal(one, d)
     from vib_tutorial.core.shock import srs
@@ -63,8 +63,8 @@ def test_the_record_matches_the_spectrum_and_one_mode_is_exact():
 
 
 def test_the_building_sways_under_the_record_its_drifting_storey_reddened(main_window):
-    """The Building tab plays the first record: the floors placed from its history, the storey drifting most the
-    force colour; storey 1's box edits the chain (the Simulation page's too)."""
+    """The Building tab plays the first record: the floors placed from its history, the story drifting most the
+    force color; story 1's box edits the chain (the Simulation page's too)."""
     from PySide6 import QtGui, QtWidgets
 
     from vib_tutorial.gui.seismic import TAB_BUILDING, TRIALS
@@ -74,7 +74,7 @@ def test_the_building_sways_under_the_record_its_drifting_storey_reddened(main_w
     page = w.seismic_page
     w.pages.setCurrentWidget(page)
     QtWidgets.QApplication.processEvents()
-    for name, storey in (("A soft storey", 0), ("Base isolation", 0), ("A five-storey building", None)):
+    for name, storey in (("A soft story", 0), ("Base isolation", 0), ("A five-story building", None)):
         page.load_trial(next(i for i, t in enumerate(TRIALS) if t.name == name))
         page.tabs.setCurrentIndex(TAB_BUILDING)
         h = page.history
@@ -87,7 +87,7 @@ def test_the_building_sways_under_the_record_its_drifting_storey_reddened(main_w
         share = page.building.drifts()
         top = int(np.argmax(share))
         assert share[top] == pytest.approx(1.0)
-        if storey is not None:  # the soft storey and the bearings take the drift
+        if storey is not None:  # the soft story and the bearings take the drift
             assert top == storey
         pen = page.building.columns[top].opts["pen"].color()
         assert pen.name() == QtGui.QColor(colors.force).name()

@@ -44,7 +44,7 @@ def whirl_name(ratio: float) -> str:
 def _legend() -> str:
     tints = colors.block_tints
     return (
-        "<p><small>Cell colours: "
+        "<p><small>Cell colors: "
         f"<span style='background:{tints['i', 'i']}'>&nbsp;x plane (horizontal)&nbsp;</span> "
         f"<span style='background:{tints['b', 'b']}'>&nbsp;y plane (vertical)&nbsp;</span> "
         f"<span style='background:{tints['b', 'i']}'>&nbsp;coupling between the planes&nbsp;</span>"
@@ -53,7 +53,7 @@ def _legend() -> str:
 
 
 def _matrix(A: np.ndarray, labels: list[str], groups: list[str], title: str) -> str:
-    """An HTML table of A with labelled rows and columns, its cells tinted by block (see _legend), unwrapped: a
+    """An HTML table of A with labeled rows and columns, its cells tinted by block (see _legend), unwrapped: a
     wide matrix (a shaft with mass) scrolls sideways rather than breaking its numbers."""
     return matrix_html(A, labels, labels, groups, groups, title, nowrap=True)
 
@@ -258,13 +258,13 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         near, _far = ("B", "A") if s.a > s.length else ("A", "B")
         elements = (
             f"Two Euler–Bernoulli beam elements: the span between the bearings (L = {sig(s.length, 4)} m) and "
-            f"the overhang from bearing {near} to the disc (ℓ = {sig(s.overhang, 4)} m), with EI = {sig(s.ei, 4)} N·m². "
-            f"The disc sits at a = {sig(s.a, 4)} m from A, outside the bearings."
+            f"the overhang from bearing {near} to the disk (ℓ = {sig(s.overhang, 4)} m), with EI = {sig(s.ei, 4)} N·m². "
+            f"The disk sits at a = {sig(s.a, 4)} m from A, outside the bearings."
         )
-        disc_k = f"3EI/(ℓ²(L + ℓ)) = {s.disc_stiffness:,.0f} N/m for the overhung disc"
+        disc_k = f"3EI/(ℓ²(L + ℓ)) = {s.disc_stiffness:,.0f} N/m for the overhung disk"
     else:
         elements = (
-            f"Two Euler–Bernoulli beam elements, A to the disc (a = {sig(s.a, 4)} m) and the disc to B "
+            f"Two Euler–Bernoulli beam elements, A to the disk (a = {sig(s.a, 4)} m) and the disk to B "
             f"(b = {sig(s.b, 4)} m), with EI = {sig(s.ei, 4)} N·m²."
         )
         disc_k = f"3EIL/(a²b²) = {s.disc_stiffness:,.0f} N/m"
@@ -281,11 +281,11 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
             + elements.replace("Two Euler–Bernoulli beam elements", "Without the extra nodes, the stretches are")
         )
         mass_text = (
-            "M is no longer diagonal: the shaft's mass couples the stations and its modes. The disc's "
+            "M is no longer diagonal: the shaft's mass couples the stations and its modes. The disk's "
             "mass m and I<sub>d</sub>, and the journals', are added on their own DOFs."
         )
         gyro_text = (
-            f"G has ±I<sub>p</sub> = ±{sig(s.ip, 4)} kg·m² on the disc's slopes and the shaft's own sections' "
+            f"G has ±I<sub>p</sub> = ±{sig(s.ip, 4)} kg·m² on the disk's slopes and the shaft's own sections' "
             f"(twice their rotary inertia), joining each plane to the other."
         )
         condensed = (
@@ -294,11 +294,11 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         )
     else:
         mass_text = (
-            "M is diagonal: the journal masses, the disc's mass m on its displacements and its diametral "
+            "M is diagonal: the journal masses, the disk's mass m on its displacements and its diametral "
             "inertia I<sub>d</sub> on its slopes."
         )
         gyro_text = (
-            f"G has just two entries, ±I<sub>p</sub> = ±{sig(s.ip, 4)} kg·m², joining the disc's two slopes, "
+            f"G has just two entries, ±I<sub>p</sub> = ±{sig(s.ip, 4)} kg·m², joining the disk's two slopes, "
             f"one plane to the other."
         )
         condensed = (
@@ -322,7 +322,7 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         gravity = (
             f"<h4>Gravity</h4><p>On a horizontal rotor f also holds the weights, constant: "
             f"−m<sub>A</sub>g, −mg and −m<sub>B</sub>g on y<sub>A</sub>, y<sub>D</sub> and y<sub>B</sub> "
-            f"(here {entry(s.disc_mass * s.gravity)} N on the disc)"
+            f"(here {entry(s.disc_mass * s.gravity)} N on the disk)"
             + (f", and the shaft's own weight, {entry(s.shaft_mass * s.gravity)} N" if s.density else "")
             + ". On the turning shaft a constant force meets a stiffness that turns, so the rotor never "
             "settles: its steady state is periodic, "
@@ -336,8 +336,8 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
                 + ", found by harmonic balance (each "
                 "harmonic n of the response is tied to n ± 2 by ΔK)"
             )
-            + f". The mean sag Q<sub>0</sub> puts the disc at ({sig(qs[XD].real * 1e6, 4)}, {sig(qs[YD].real * 1e6, 4)}) "
-            "µm; about it the disc whirls at "
+            + f". The mean sag Q<sub>0</sub> puts the disk at ({sig(qs[XD].real * 1e6, 4)}, {sig(qs[YD].real * 1e6, 4)}) "
+            "µm; about it the disk whirls at "
             + (
                 ", ".join(
                     f"{k + 1}X {sig(abs(qk[k, XD]) * 1e6)} µm in x and {sig(abs(qk[k, YD]) * 1e6)} µm in y"
@@ -356,16 +356,16 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         gravity = (
             f"<h4>Gravity</h4><p>On a horizontal rotor f also holds the weights, constant: "
             f"−m<sub>A</sub>g, −mg and −m<sub>B</sub>g on y<sub>A</sub>, y<sub>D</sub> and y<sub>B</sub> "
-            f"(here {entry(s.disc_mass * s.gravity)} N on the disc)"
+            f"(here {entry(s.disc_mass * s.gravity)} N on the disk)"
             + (f", and the shaft's own weight, {entry(s.shaft_mass * s.gravity)} N" if s.density else "")
             + ". They hold the rotor still where A Z + B f<sub>g</sub> = 0, the controllers' states included"
             + (
-                ": with the integral the magnets hold their journals at the centre, the current growing until "
+                ": with the integral the magnets hold their journals at the center, the current growing until "
                 "they are back, so the shaft alone sags"
                 if any(b.magnet is not None and b.magnet.integral for b in (s.bearing_a, s.bearing_b))
                 else ""
             )
-            + f". Here the disc is at ({sig(qs[XD] * 1e6, 4)}, {sig(qs[YD] * 1e6, 4)}) µm and the journals at "
+            + f". Here the disk is at ({sig(qs[XD] * 1e6, 4)}, {sig(qs[YD] * 1e6, 4)}) µm and the journals at "
             f"({_um(qs[YA])}, {_um(qs[YB])}) µm vertically; the rotor vibrates about that as without "
             "gravity.</p>"
         )
@@ -374,7 +374,7 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
         gravity = (
             f"<h4>Gravity</h4><p>On a horizontal rotor f also holds the weights, constant: "
             f"−m<sub>A</sub>g, −mg and −m<sub>B</sub>g on y<sub>A</sub>, y<sub>D</sub> and y<sub>B</sub> "
-            f"(here {entry(s.disc_mass * s.gravity)} N on the disc)"
+            f"(here {entry(s.disc_mass * s.gravity)} N on the disk)"
             + (
                 f", and the shaft's own weight, {entry(s.shaft_mass * s.gravity)} N, spread over the stations "
                 f"and its modes"
@@ -387,7 +387,7 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
                 if s.films
                 else "deflection q<sub>s</sub> = (K + ΩH)<sup>−1</sup>f<sub>g</sub>, "
             )
-            + f"here the disc at "
+            + f"here the disk at "
             f"({sig(qs[XD] * 1e6, 4)}, {sig(qs[YD] * 1e6, 4)}) µm, about which it vibrates as without gravity.</p>"
         )
     else:
@@ -427,13 +427,13 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
     else:
         shaft_weights = ""
     if "skew" in hidden:
-        skew = "The disc's skew τ (hidden)"
+        skew = "The disk's skew τ (hidden)"
         moment = "hidden"
     else:
-        skew = f"The disc's skew τ = {sig(math.degrees(s.skew), 4)}° (toward {math.degrees(s.skew_angle):.0f}° from the mark)"
+        skew = f"The disk's skew τ = {sig(math.degrees(s.skew), 4)}° (toward {math.degrees(s.skew_angle):.0f}° from the mark)"
         moment = entry(abs(s.couple_unbalance) * omega**2) + " N·m"
     faces = (
-        " A balance weight U<sub>w</sub> on one of the disc's faces, Δz from its centre plane, adds U<sub>w</sub>Δz to "
+        " A balance weight U<sub>w</sub> on one of the disk's faces, Δz from its center plane, adds U<sub>w</sub>Δz to "
         "(I<sub>d</sub> − I<sub>p</sub>)τe<sup>iγ</sup>."
         if any(p.disc for p in s.plane_weights)
         else ""
@@ -442,8 +442,8 @@ def matrices_html(system: RotorSystem, omega: float, hidden: Collection[str] = (
 <h3>Equations of motion at {rpm:,.0f} rpm (Ω = {sig(omega, 4)} rad/s)</h3>
 <p style='font-size:large' align='center'>M q̈ + (C + Ω G) q̇ + (K + Ω H{" + ΔK(φ)" if s.periodic else ""}) q = f(t)</p>
 <p>q = [x<sub>A</sub>, x<sub>D</sub>, θ<sub>x</sub>, x<sub>B</sub> | y<sub>A</sub>, y<sub>D</sub>,
-θ<sub>y</sub>, y<sub>B</sub>]: the journals' displacements at A and B, the disc's displacement, and the
-shaft's slope at the disc (θ<sub>x</sub> = dx/dz, θ<sub>y</sub> = dy/dz), first in the horizontal x–z
+θ<sub>y</sub>, y<sub>B</sub>]: the journals' displacements at A and B, the disk's displacement, and the
+shaft's slope at the disk (θ<sub>x</sub> = dx/dz, θ<sub>y</sub> = dy/dz), first in the horizontal x–z
 plane, then in the vertical y–z plane{modal}. Units: m and rad; forces in N, moments in N·m.</p>
 {_legend()}
 
@@ -465,8 +465,8 @@ The supports hold it.</p>
 
 <h4>Damping C and the gyroscopic matrix Ω G</h4>
 <p>C has the support dampers, and the shaft's internal damping τ<sub>i</sub>K<sub>shaft</sub> in each plane
-(τ<sub>i</sub> = c<sub>i</sub>/k<sub>disc</sub> = {sig(s.loss_time, 4)} s, so that it is c<sub>i</sub> =
-{sig(s.internal_damping, 6)} N·s/m on the disc's own stiffness k<sub>disc</sub> = {disc_k}). {gyro_text}
+(τ<sub>i</sub> = c<sub>i</sub>/k<sub>disk</sub> = {sig(s.loss_time, 4)} s, so that it is c<sub>i</sub> =
+{sig(s.internal_damping, 6)} N·s/m on the disk's own stiffness k<sub>disk</sub> = {disc_k}). {gyro_text}
 It is <b>skew-symmetric</b> (G<sup>T</sup> = −G), so
 q̇<sup>T</sup>(ΩG)q̇ = 0: unlike C, it takes no power out. It only turns the motion from one plane into
 the other, and it grows with the speed.</p>
@@ -500,16 +500,16 @@ at this speed.{" For the turning shaft these are Floquet modes, e<sup>st</sup> t
 
 <h4>The 1X forces</h4>
 <p>{unbalance} turns with the shaft, the keyphasor mark at angle φ (φ̇ = Ω). For the heavy spot at the
-mark, keeping the disc's centre of mass on its path takes</p>
+mark, keeping the disk's center of mass on its path takes</p>
 <p align='center'>f<sub>x</sub> = U(Ω² cos φ + Ω̇ sin φ), &nbsp; f<sub>y</sub> = U(Ω² sin φ − Ω̇ cos φ)</p>
-<p>on the disc's x<sub>D</sub> and y<sub>D</sub>, or in general f<sub>x</sub> + i f<sub>y</sub> =
+<p>on the disk's x<sub>D</sub> and y<sub>D</sub>, or in general f<sub>x</sub> + i f<sub>y</sub> =
 Ue<sup>iψ</sup>(Ω² − iΩ̇)e<sup>iφ</sup>, with ψ the heavy spot's angle from the mark. Balance weights add
 to Ue<sup>iψ</sup>. Here the force is {force} N turning once per revolution. Ω̇ is the ramp's angular
 acceleration, while the speed changes.{shaft_weights}</p>
 <p>{skew} gives the same form on its slopes, M<sub>x</sub> + i M<sub>y</sub> =
 (I<sub>d</sub> − I<sub>p</sub>)τ(Ω² − iΩ̇)e<sup>i(φ+γ)</sup>: here {moment}.{faces} The shaft's bow δ<sub>b</sub> =
 {sig(s.bow * 1e6, 4)} µm (toward {math.degrees(s.bow_angle):.0f}°) gives K<sub>shaft</sub>q<sub>bow</sub>
-turning with the shaft whatever the speed: {entry(s.disc_stiffness * s.bow)} N on the disc, and the
+turning with the shaft whatever the speed: {entry(s.disc_stiffness * s.bow)} N on the disk, and the
 bearings' share of it back on the journals, {bow_journals}.</p>
 {gravity}
 """

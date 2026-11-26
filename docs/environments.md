@@ -71,12 +71,12 @@ short at m4, while NRL lands within 1 %.
 ## Quarter-car
 
 A suspension on an ISO 8608 road: the road's PSD in space becomes a PSD in time at the car's speed, and
-the body's acceleration (comfort), the tyre's dynamic load (grip) and the suspension's travel follow as
+the body's acceleration (comfort), the tire's dynamic load (grip) and the suspension's travel follow as
 |H|² G<sub>z</sub>. The conflict diagram over springs and dampers, each output against the damper, and a
 drive over a synthesized road stepped exactly, as the check, with the car drawn driving it (the wheel on its
-tyre, the body on its suspension) and played back against a time cursor.
+tire, the body on its suspension) and played back against a time cursor.
 
-![Quarter-car page: a quarter of a family car at 72 km/h on a class C road; body bounce at 1.24 Hz and wheel hop at 11.8 Hz, 1.48 m/s² RMS at the body, 10.7 mm of travel, the tyre's load swinging 24 % of its static 3.33 kN; on the trade-off, comfort is best at 819 N·s/m and grip at 2394](images/quarter_car.png)
+![Quarter-car page: a quarter of a family car at 72 km/h on a class C road; body bounce at 1.24 Hz and wheel hop at 11.8 Hz, 1.48 m/s² RMS at the body, 10.7 mm of travel, the tire's load swinging 24 % of its static 3.33 kN; on the trade-off, comfort is best at 819 N·s/m and grip at 2394](images/quarter_car.png)
 
 ## Fatigue
 
@@ -93,7 +93,7 @@ reversals (Step, Back, and Start on the run bar), the stack ringed and each cycl
 How a vibrating panel makes sound. The panel is Beams & plates' simply supported rectangle, set in a
 baffle with air on one side. Its bending waves are slower than sound at low frequency and faster at high:
 they meet at the **critical frequency** f<sub>c</sub> = (c²/2π)√(ρh/D), 3.99 kHz for 3 mm of steel. Below
-it, neighbouring half waves cancel each other's sound, and only a mode's corners or edges radiate. The
+it, neighboring half waves cancel each other's sound, and only a mode's corners or edges radiate. The
 *Radiation* tab gives each mode's **radiation efficiency** σ<sub>mn</sub> from Wallace's integral, and every
 mode's at its own resonance against their third-octave average and Maidanik's formula for it.
 
@@ -111,7 +111,7 @@ and a room they both radiate into: the corner's coupling loss factor from the be
 the plates' from their radiation, reciprocity n<sub>i</sub>η<sub>ij</sub> = n<sub>j</sub>η<sub>ji</sub>, and
 each band's energies from the power balance.
 
-![Vibro-acoustics & SEA page: a 3 mm steel panel's mode (1, 3), an edge mode at 435 Hz with σ = 0.059; centre, the bending wavenumber crosses sound's at the critical frequency, 3.99 kHz; right, every mode's radiation efficiency at its own resonance, in three bands by the parity of m and n, with their third-octave average following Maidanik's formula up to the coincidence peak](images/vibroacoustics.png)
+![Vibro-acoustics & SEA page: a 3 mm steel panel's mode (1, 3), an edge mode at 435 Hz with σ = 0.059; center, the bending wavenumber crosses sound's at the critical frequency, 3.99 kHz; right, every mode's radiation efficiency at its own resonance, in three bands by the parity of m and n, with their third-octave average following Maidanik's formula up to the coincidence peak](images/vibroacoustics.png)
 
 ![Vibro-acoustics & SEA page, SEA tab: the 3 mm panel meets a 2 mm plate at a corner, both radiating into a 50 m³ room; the coupling loss factors in each third octave, the two plates' mean-square velocities against the panel's alone, and the room's sound pressure level with each plate's share](images/vibroacoustics_sea.png)
 

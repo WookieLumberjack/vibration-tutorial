@@ -21,7 +21,7 @@ def test_shaft_note_says_how_the_stiffness_is_worked_out():
     assert "overhung by c = " in shaft_note(s.with_(position=1.2))
     heavy = s.with_(gravity=9.81, crack=Crack(depth=0.4), asymmetry=0.1)
     note = shaft_note(heavy)
-    assert "Static sag at rest: disc " in note and "Crack 40% deep" in note and "Asymmetric: EI = " in note
+    assert "Static sag at rest: disk " in note and "Crack 40% deep" in note and "Asymmetric: EI = " in note
 
 
 def test_what_could_make_it_unstable():

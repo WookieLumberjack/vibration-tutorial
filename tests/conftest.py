@@ -128,7 +128,7 @@ def _close_new(before) -> list[tuple[str, weakref.ref]]:
 
 # ------------------------------------------------------------------ core and GUI tests
 # A test that builds a QApplication is marked `gui`, by the fixtures that make one or by hand, so that
-# `-m "not gui"` is a quick loop (the maths, the notes, the trials' numbers) and `-m gui` the rest.
+# `-m "not gui"` is a quick loop (the math, the notes, the trials' numbers) and `-m gui` the rest.
 GUI_FIXTURES = {"app", "main_window", "free_windows"}
 _RAN_GUI = False  # once a GUI test has run in this process, its QApplication stays
 

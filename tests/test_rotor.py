@@ -24,7 +24,7 @@ def test_matrices_are_symmetric_and_gyroscopic_matrix_skew():
     for A in (M, C, K):
         np.testing.assert_allclose(A, A.T, atol=1e-9 * np.abs(A).max())
     np.testing.assert_array_equal(G, -G.T)
-    assert G[TX, TY] > 0 and np.count_nonzero(G) == 2  # it couples only the disc's two slopes
+    assert G[TX, TY] > 0 and np.count_nonzero(G) == 2  # it couples only the disk's two slopes
     assert np.linalg.eigvalsh(K).min() > 0  # held by the bearings
     # The shaft alone can move rigidly: two zero eigenvalues per plane.
     assert np.sum(np.abs(np.linalg.eigvalsh(RotorSystem().shaft_stiffness())) < 1e-6) == 2
@@ -34,7 +34,7 @@ def test_matrices_are_symmetric_and_gyroscopic_matrix_skew():
 def test_shaft_flexibility_matches_beam_formulas(position):
     s = RotorSystem(position=position)
     a, b, L, EI = s.a, s.b, s.length, s.ei
-    # Bearings held still: invert the disc's 2x2 stiffness (deflection, slope).
+    # Bearings held still: invert the disk's 2x2 stiffness (deflection, slope).
     flex = np.linalg.inv(s.shaft_stiffness()[1:3, 1:3])
     assert flex[0, 0] == pytest.approx(a * a * b * b / (3 * EI * L))
     assert flex[1, 1] == pytest.approx((a**3 + b**3) / (3 * EI * L * L))
@@ -45,13 +45,13 @@ def test_shape_matrix_reproduces_stations_and_a_rigid_tilt():
     s = RotorSystem(position=0.35)
     S = s.shape_matrix([0.0, s.a, s.length])
     np.testing.assert_allclose(S, [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]], atol=1e-12)
-    # A rigid tilt w = z: bearings at 0 and L, the disc at a with slope 1.
+    # A rigid tilt w = z: bearings at 0 and L, the disk at a with slope 1.
     z = np.linspace(0.0, s.length, 11)
     np.testing.assert_allclose(s.shape_matrix(z) @ [0.0, s.a, 1.0, s.length], z, atol=1e-12)
 
 
 def test_classic_jeffcott_critical_speed():
-    # Disc at midspan, identical isotropic bearings, light journals.
+    # Disk at midspan, identical isotropic bearings, light journals.
     light = Bearing(mass=1e-4, cx=0.0, cy=0.0)  # a damper on a light journal would stiffen it
     s = RotorSystem(bearing_a=light, bearing_b=light)
     assert s.jeffcott_speed() == pytest.approx(math.sqrt((1 / (1 / (48 * s.ei / s.length**3) + 1 / 1e5)) / 1.0))
@@ -82,7 +82,7 @@ def test_gyroscopic_effect_splits_forward_and_backward_whirl():
     fw = fast.freq_hz[fast.whirl > 0.5]
     bw = fast.freq_hz[fast.whirl < -0.5]
     assert fw[0] > still.freq_hz[0] > bw[0]
-    # The undamped conical mode: Id ω² ∓ Ip Ω ω - k_θ = 0 for a disc on rigid bearings at midspan.
+    # The undamped conical mode: Id ω² ∓ Ip Ω ω - k_θ = 0 for a disk on rigid bearings at midspan.
     rigid = RotorSystem(bearing_a=RIGID, bearing_b=RIGID)
     k_theta = 12 * rigid.ei / rigid.length
     W = 2000.0
@@ -165,7 +165,7 @@ def test_passing_the_critical_peaks_and_the_phase_lags_by_180():
     Q = synchronous_response(s, [0.3 * wc, wc, 3.0 * wc])
     amp = np.abs(Q[:, XD])
     assert amp[1] > 5 * amp[0] and amp[1] > 5 * amp[2]
-    # Far above the critical the disc spins about its centre of mass: |x| -> e.
+    # Far above the critical the disk spins about its center of mass: |x| -> e.
     e = s.unbalance / s.disc_mass
     assert amp[2] == pytest.approx(e, rel=0.2)
     lag = -np.degrees(np.angle(Q[:, XD]))  # the heavy spot leads the high spot by this
@@ -195,18 +195,18 @@ def test_the_bow_loads_only_the_shaft_and_shows_as_slow_roll():
     f = s.shaft_stiffness() @ s.bow_shape()
     assert f[0] + f[1] + f[3] == pytest.approx(0.0, abs=1e-9 * abs(f[1]))  # no net force
     assert s.a * f[1] + s.length * f[3] == pytest.approx(0.0, abs=1e-9 * abs(f[1]))  # nor moment
-    assert f[2] == pytest.approx(0.0, abs=1e-9 * abs(f[1]))  # a load at the disc, no moment
+    assert f[2] == pytest.approx(0.0, abs=1e-9 * abs(f[1]))  # a load at the disk, no moment
     # Turning slowly, the shaft just carries its bow round: the slow-roll runout.
     Q = synchronous_response(s, [0.1, 1e4])
     bow = s.bow * np.exp(1j * s.bow_angle)
     assert Q[0, XD] == pytest.approx(bow, rel=1e-4)
     assert abs(Q[0, XA]) < 1e-4 * s.bow and abs(Q[0, XB]) < 1e-4 * s.bow
-    # Far above the critical the disc stays on the bearings' axis and the shaft bends round it.
+    # Far above the critical the disk stays on the bearings' axis and the shaft bends round it.
     assert abs(Q[1, XD]) < 0.01 * s.bow
 
 
 def test_a_bow_against_the_unbalance_cancels_it_at_one_speed():
-    # Rigid bearings, disc at midspan: (k - mΩ²) X = UΩ² + k δ e^{iβ}, zero where UΩ² = k δ for β = 180°.
+    # Rigid bearings, disk at midspan: (k - mΩ²) X = UΩ² + k δ e^{iβ}, zero where UΩ² = k δ for β = 180°.
     s = RotorSystem(bearing_a=RIGID, bearing_b=RIGID, bow=10e-6, bow_angle=math.pi)
     k = s.disc_stiffness
     w0 = math.sqrt(k * s.bow / s.unbalance)
@@ -222,14 +222,14 @@ def test_a_skewed_disc_spins_flat_at_high_speed():
     gamma = math.radians(30.0)
     s = RotorSystem(unbalance=0.0, skew=1e-3, skew_angle=gamma)
     Q = synchronous_response(s, [1.0, 2e4])
-    # At rest nothing pushes it; fast, the disc's own axis lines up with the spin: θ -> -τ.
+    # At rest nothing pushes it; fast, the disk's own axis lines up with the spin: θ -> -τ.
     assert abs(Q[0, TX]) < 1e-6 * s.skew
     assert Q[1, TX] == pytest.approx(-s.skew * np.exp(1j * gamma), rel=1e-2)
-    # At midspan on identical bearings the tilt does not move the disc; off centre it does.
+    # At midspan on identical bearings the tilt does not move the disk; off center it does.
     assert abs(Q[1, XD]) < 1e-9
     off = synchronous_response(s.with_(position=0.3), [1584.0 / RPM])[0]
     assert abs(off[XD]) > 1e-6
-    # A disc with Ip = Id has no couple unbalance from its skew.
+    # A disk with Ip = Id has no couple unbalance from its skew.
     assert np.abs(synchronous_response(s.with_(ip=s.id), [300.0])).max() == 0.0
 
 
@@ -281,7 +281,7 @@ def test_the_disc_cannot_sit_on_a_bearing():
 
 
 def test_overhung_disc_separates_the_forward_and_backward_criticals():
-    # A big disc close past bearing B: its first mode tilts as much as it moves.
+    # A big disk close past bearing B: its first mode tilts as much as it moves.
     m, r = 3.0, 0.15
     stiff = Bearing(kx=2e5, ky=2e5, cx=400.0, cy=400.0)
     s = RotorSystem(position=1.2, disc_mass=m, ip=m * r * r / 2, id=m * r * r / 4, bearing_a=stiff, bearing_b=stiff)
@@ -297,7 +297,7 @@ def test_overhung_disc_separates_the_forward_and_backward_criticals():
 
 
 def test_the_ramps_gyroscopic_term_is_small():
-    # The Theory leaves out I_p Ω' θ: at 5000 rpm/s it is about 0.03% of the disc's tilt stiffness.
+    # The Theory leaves out I_p Ω' θ: at 5000 rpm/s it is about 0.03% of the disk's tilt stiffness.
     s = RotorSystem()
     tilt = s.stiffness(0.0)[TX, TX]
     assert s.ip * 5000.0 / RPM / tilt == pytest.approx(0.0003, abs=0.00005)

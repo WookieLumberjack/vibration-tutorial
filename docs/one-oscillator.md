@@ -29,7 +29,7 @@ plane.
 The damper's law is picked under the oscillator's boxes, as it runs (the Damping models page's, merged here: the
 same mass and spring): viscous, hysteretic (structural), Coulomb friction or viscoelastic (Zener), each matched
 to c so it loses the same energy per cycle at f<sub>n</sub>, the motion carrying on with the new damping. A
-viscous ghost, in grey, is plucked and driven beside it. Hysteretic damping runs as its stand-in in time, a
+viscous ghost, in gray, is plucked and driven beside it. Hysteretic damping runs as its stand-in in time, a
 viscous damper matched at the frequency it runs at; friction sticks and slips by its events; the Zener element
 relaxes through its arm. The Loop & loss tab draws the run's own hysteresis loop over its last cycle, with every
 law's beside it and the energy it encloses, and the loss factors against frequency; the Frequency response tab
@@ -44,8 +44,8 @@ oscillator's eight and then the laws'; their predictions are asked once you've h
 ## Pendulums
 
 Gravity as the spring, the single oscillator turned, and live: the pendulum swings as it's stepped, and
-changes as it swings. A simple pendulum, a rod swinging about any pivot (with its centre of percussion and
-the pivot that swings fastest), a disc on a torsion wire, and an inverted pendulum held up by a spring, each
+changes as it swings. A simple pendulum, a rod swinging about any pivot (with its center of percussion and
+the pivot that swings fastest), a disk on a torsion wire, and an inverted pendulum held up by a spring, each
 linearized into the single oscillator's formula with J for m and the moment's stiffness for k. Pluck it by
 the bob, or drag the rings on it as it swings: shorter, heavier, stiffer, the rod's pivot moved, and it
 carries on with its angular momentum kept, so pulling the string in at the bottom and letting it out at the

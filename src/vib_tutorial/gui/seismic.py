@@ -2,11 +2,11 @@
 peaks combined, against the building stepped on records that match the spectrum.
 
 Left: the trials, the challenges (`ChallengeBox`: the damping and base-isolation specs), the building (its floors,
-and storey 1's stiffness k₁, the bearings' when it stands on a slab, with the period of the whole building
+and story 1's stiffness k₁, the bearings' when it stands on a slab, with the period of the whole building
 rigid on it), the design spectrum (peak ground acceleration, ground type, damping) and the combination rule.
-Centre: the spectrum with each mode on it, and the modes' table (period, participation, effective mass, base
+Center: the spectrum with each mode on it, and the modes' table (period, participation, effective mass, base
 shear). Right: the building swaying under the first record (`seismic_view.BuildingView`, played by a `Playback`
-with a time cursor on the record; a trial starts it), each floor's peak displacement and each storey's shear by
+with a time cursor on the record; a trial starts it), each floor's peak displacement and each story's shear by
 every rule and by the records, the modes' correlation, the ground motions, and the Theory.
 
 The Building, Floors and Records tabs draw from the spectrum's synthesized records (`core.seismic.records`, kept
@@ -14,7 +14,7 @@ by ground type and ζ). A new pair takes 0.5–1 s to make, so a spectrum's cont
 worker and the tab drawn when they're in (the spectrum and the table at once); a trial, a new chain, a tab picked
 or the page showing make them now.
 
-Working on it: `tests/test_seismic.py` checks the building follows the playback with the drifting storey
+Working on it: `tests/test_seismic.py` checks the building follows the playback with the drifting story
 reddened, the k₁ box edits the chain, and a new spectrum's records are made off the GUI thread;
 `tests/test_challenge.py` the challenges.
 """
@@ -96,7 +96,7 @@ class SeismicTrial:
     rule: Rule = Rule.CQC
     tab: int = TAB_FLOORS
     mass: float = 1e4  # each floor's (kg)
-    stiffness: float = 5e6  # each storey's (N/m)
+    stiffness: float = 5e6  # each story's (N/m)
     masses: tuple[float, ...] = ()  # a chain element by element instead (a practice state's), its springs with it
     springs: tuple[float, ...] = ()
     predict: Prediction | None = None  # asked before it runs (Things to try)
@@ -114,8 +114,8 @@ class SeismicTrial:
 
 TRIALS = (
     SeismicTrial(
-        "A five-storey building",
-        "Five 10 t floors on 5 MN/m storeys: <m>T<sub>1</sub></m> = 0.99 s. Mode 1 carries 88 % of the mass and "
+        "A five-story building",
+        "Five 10 t floors on 5 MN/m stories: <m>T<sub>1</sub></m> = 0.99 s. Mode 1 carries 88 % of the mass and "
         "modes 1 and 2 together 97 % (codes want 90 %), so a few modes are enough. The spectrum gives mode 1 "
         "<m>S<sub>a</sub></m> = 0.52 g, and the modes together a base shear of 230 kN by CQC (229 by SRSS); stepped on "
         "seven records that match the spectrum, the building's base shear averages 235 kN.",
@@ -128,7 +128,7 @@ TRIALS = (
         "SRSS (229 kN) is right.",
         rule=Rule.ABS,
         predict=Prediction(
-            "The five-storey building's modes combined by ABS, adding their peaks. Against the mean of seven records,"
+            "The five-story building's modes combined by ABS, adding their peaks. Against the mean of seven records,"
             " what does ABS give?",
             (
                 "Too little",
@@ -176,7 +176,7 @@ TRIALS = (
         "357 kN: a site's soil matters as much as its seismicity.",
         ground=3,
         predict=Prediction(
-            "The five-storey building (T₁ = 0.99 s) moved from ground type C to D, the same a<sub>g</sub>. What does "
+            "The five-story building (T₁ = 0.99 s) moved from ground type C to D, the same a<sub>g</sub>. What does "
             "its base shear do?",
             (
                 "It falls",
@@ -196,9 +196,9 @@ TRIALS = (
     ),
     SeismicTrial(
         "A taller building",
-        "Eight storeys: <m>T<sub>1</sub></m> = 1.52 s, and mode 1 carries 86 % of the mass, under the 90 % codes "
+        "Eight stories: <m>T<sub>1</sub></m> = 1.52 s, and mode 1 carries 86 % of the mass, under the 90 % codes "
         "want, so mode 2 is needed too. Mode 1 now sits on the falling branch (0.34 g) and modes 2 to 4 on the "
-        "plateau (0.86 g): mode 1 alone gives 96 % of the base shear but only 74 % of the top storey's.",
+        "plateau (0.86 g): mode 1 alone gives 96 % of the base shear but only 74 % of the top story's.",
         storeys=8,
     ),
     SeismicTrial(
@@ -208,18 +208,18 @@ TRIALS = (
         zeta=10.0,
     ),
     SeismicTrial(
-        "A soft storey",
-        "The first storey a fifth as stiff, 1 MN/m (an open ground floor): <m>T<sub>1</sub></m> = 1.58 s, further "
-        "down the spectrum, so the base shear falls to 159 kN. But the first storey drifts 159 mm, against 46 mm, "
-        "70 % of the roof's 227 mm: the whole building's sway in one storey, which is where it yields and fails.",
+        "A soft story",
+        "The first story a fifth as stiff, 1 MN/m (an open ground floor): <m>T<sub>1</sub></m> = 1.58 s, further "
+        "down the spectrum, so the base shear falls to 159 kN. But the first story drifts 159 mm, against 46 mm, "
+        "70 % of the roof's 227 mm: the whole building's sway in one story, which is where it yields and fails.",
         masses=(1e4,) * 5,
         springs=(1e6,) + (5e6,) * 4,
         tab=TAB_BUILDING,
     ),
     SeismicTrial(
         "Base isolation",
-        "The five storeys on a 10 t slab on bearings of 300 kN/m, at 15 % damping: <m>T<sub>b</sub></m> = 2.94 s, "
-        "past <m>T<sub>D</sub></m>, with 99.8 % of the mass in that mode. The first storey above the bearings "
+        "The five stories on a 10 t slab on bearings of 300 kN/m, at 15 % damping: <m>T<sub>b</sub></m> = 2.94 s, "
+        "past <m>T<sub>D</sub></m>, with 99.8 % of the mass in that mode. The first story above the bearings "
         "carries 42 kN, against 230 kN fixed to the ground, and drifts 8 mm, against 46 mm; the bearings move "
         "166 mm. (The page gives every mode the bearings' damping; with 99.8 % of the mass in the first, that "
         "changes little.)",
@@ -283,7 +283,7 @@ def _period(rng: np.random.Generator) -> Question:
     T = float(modal(building(n, 1000 * m, 1e6 * k), Design()).T[0])
     w = 2 * math.sqrt(k * 1e6 / (m * 1000)) * math.sin(math.pi / (2 * (2 * n + 1)))
     return Question(
-        f"A uniform shear building of {n} storeys: {sig(m, 6)} t floors on {sig(k, 6)} MN/m storeys. What is its first mode's "
+        f"A uniform shear building of {n} stories: {sig(m, 6)} t floors on {sig(k, 6)} MN/m stories. What is its first mode's "
         "period?",
         T,
         f"A uniform chain fixed at the ground and free at the top has ω<sub>r</sub> = 2√(k/m) sin((2r − 1)π/(2(2n + "
@@ -300,7 +300,7 @@ def _effective_mass(rng: np.random.Generator) -> Question:
     num, den = m1 + m2 * a, m1 + m2 * a * a
     meff = num * num / den
     return Question(
-        f"A two-storey building, {sig(m1, 6)} t on the first floor and {sig(m2, 6)} t on the second, has a mode shaped (1, {sig(a, 6)}). "
+        f"A two-story building, {sig(m1, 6)} t on the first floor and {sig(m2, 6)} t on the second, has a mode shaped (1, {sig(a, 6)}). "
         "What is that mode's effective mass?",
         meff,
         f"M<sub>eff</sub> = (φᵀM1)²/φᵀMφ = ({sig(m1, 6)} + {sig(m2, 6)} × {sig(a, 6)})²/({sig(m1, 6)} + {sig(m2, 6)} × {sig(a, 6)}²) = "
@@ -350,7 +350,7 @@ def _rho(rng: np.random.Generator) -> Question:
 
 def _soft_soil(rng: np.random.Generator) -> Question:
     return Question(
-        "The five-storey building (T₁ = 0.99 s) is moved from ground type C to D, the same a<sub>g</sub>. What does "
+        "The five-story building (T₁ = 0.99 s) is moved from ground type C to D, the same a<sub>g</sub>. What does "
         "its base shear do?",
         0,
         "It rises by more than half, 229 to 357 kN: S goes from 1.15 to 1.35, and the plateau now runs to "
@@ -360,8 +360,8 @@ def _soft_soil(rng: np.random.Generator) -> Question:
             "",
             "The soil factor is only part of it: the plateau now runs to T<sub>C</sub> = 0.8 s, nearer mode 1's "
             "0.99 s, and S<sub>a</sub> rises from 0.52 to 0.82 g.",
-            "Softer ground raises both the soil factor and the plateau's end, T<sub>C</sub>, towards mode 1.",
-            "Softer ground amplifies the shaking (S from 1.15 to 1.35) and stretches the plateau towards mode 1: "
+            "Softer ground raises both the soil factor and the plateau's end, T<sub>C</sub>, toward mode 1.",
+            "Softer ground amplifies the shaking (S from 1.15 to 1.35) and stretches the plateau toward mode 1: "
             "the shear rises.",
         ),
         setup=dict(ground=3),
@@ -371,7 +371,7 @@ def _soft_soil(rng: np.random.Generator) -> Question:
 
 def _stiffer(rng: np.random.Generator) -> Question:
     return Question(
-        "Every storey of the five-storey building (T₁ = 0.99 s, past T<sub>C</sub> = 0.6 s on ground C) is made twice "
+        "Every story of the five-story building (T₁ = 0.99 s, past T<sub>C</sub> = 0.6 s on ground C) is made twice "
         "as stiff. What does its base shear do?",
         0,
         "It rises, 229 to 322 kN: T₁ falls by √2 to 0.70 s, still on the 1/T branch, so S<sub>a</sub> rises by √2. A "
@@ -408,7 +408,7 @@ def _tank_srss(rng: np.random.Generator) -> Question:
 
 def _abs(rng: np.random.Generator) -> Question:
     return Question(
-        "Combining the five-storey building's modes by ABS (adding their peaks), against the mean of the records. "
+        "Combining the five-story building's modes by ABS (adding their peaks), against the mean of the records. "
         "What does ABS give?",
         0,
         "Too much, 277 kN against the records' 235: ABS assumes every mode peaks at the same moment, and modes this "
@@ -444,7 +444,7 @@ def _damping_spec(rng: np.random.Generator) -> Question:
             and np.allclose(system.stiffness, given.stiffness)
         )
         return (
-            Requirement(f"The {n}-storey building as given", f"{system.n} floors", bool(same)),
+            Requirement(f"The {n}-story building as given", f"{system.n} floors", bool(same)),
             kept("a<sub>g</sub>", t.pga, pga, "g"),
             Requirement("Ground type", GROUNDS[t.ground], t.ground == ground),
             Requirement("Combined by CQC", t.rule.value, t.rule is Rule.CQC),
@@ -458,7 +458,7 @@ def _damping_spec(rng: np.random.Generator) -> Question:
         trial = SeismicTrial("", "", storeys=n, pga=pga, ground=ground, zeta=mid)
         lo, hi = (mid, hi) if _base_shear(trial) / 1000 > limit else (lo, mid)
     return Question(
-        f"The uniform {n}-storey building (10 t floors, 5 MN/m storeys) on ground type {GROUNDS[ground]}, "
+        f"The uniform {n}-story building (10 t floors, 5 MN/m stories) on ground type {GROUNDS[ground]}, "
         f"a<sub>g</sub> = {sig(pga, 6)} g. Dampers can raise every mode's ζ, to {sig(most, 6)} % at most. Choose ζ so that the "
         f"base shear, combined by CQC, is {number(limit)} kN or less.",
         0,
@@ -472,7 +472,7 @@ def _damping_spec(rng: np.random.Generator) -> Question:
 
 
 def _isolated(t: SeismicTrial) -> tuple[float, float]:
-    """The shear in the storey above the bearings and the bearings' own displacement, by CQC (N, m)."""
+    """The shear in the story above the bearings and the bearings' own displacement, by CQC (N, m)."""
     m = modal(t.system(), t.design)
     rho = correlation(m.f, t.design.zeta)
     return float(combine(m.shear, Rule.CQC, rho)[1]), float(combine(m.displacement, Rule.CQC, rho)[0])
@@ -486,7 +486,7 @@ def _isolation_spec(rng: np.random.Generator) -> Question:
     masses = (1e4,) * (n + 1)  # the floors on a slab of the same mass
     kb = rounded(sum(masses) * (2 * math.pi / period) ** 2)
     common: dict[str, Any] = dict(storeys=n + 1, pga=pga, ground=ground, zeta=15.0, tab=TAB_BUILDING, masses=masses)
-    start = dict(common, springs=(5e6,) * (n + 1))  # the slab fixed to the ground as a storey
+    start = dict(common, springs=(5e6,) * (n + 1))  # the slab fixed to the ground as a story
     design = dict(common, springs=(kb,) + (5e6,) * n)
     shear, drift = _isolated(SeismicTrial("", "", **design))
     shear_limit = rounded(1.15 * shear / 1000)  # kN
@@ -497,7 +497,7 @@ def _isolation_spec(rng: np.random.Generator) -> Question:
         same = system.n == n + 1 and np.allclose(system.masses, masses) and np.allclose(system.stiffness[1:], 5e6)
         above, move = _isolated(t)
         return (
-            Requirement(f"The {n} storeys on their slab as given", f"{system.n} masses", bool(same)),
+            Requirement(f"The {n} stories on their slab as given", f"{system.n} masses", bool(same)),
             kept("a<sub>g</sub>", t.pga, pga, "g"),
             Requirement("Ground type", GROUNDS[t.ground], t.ground == ground),
             kept("Damping ζ", t.zeta, 15.0, "%"),
@@ -506,9 +506,9 @@ def _isolation_spec(rng: np.random.Generator) -> Question:
         )
 
     return Question(
-        f"The uniform {n}-storey building (10 t floors, 5 MN/m storeys) stands on a 10 t slab, on ground type "
-        f"{GROUNDS[ground]}, a<sub>g</sub> = {sig(pga, 6)} g, ζ = 15 %. Choose the bearings under the slab (storey 1's "
-        f"k<sub>1</sub>) so that the storey above them carries {number(shear_limit)} kN or less, by CQC, while the "
+        f"The uniform {n}-story building (10 t floors, 5 MN/m stories) stands on a 10 t slab, on ground type "
+        f"{GROUNDS[ground]}, a<sub>g</sub> = {sig(pga, 6)} g, ζ = 15 %. Choose the bearings under the slab (story 1's "
+        f"k<sub>1</sub>) so that the story above them carries {number(shear_limit)} kN or less, by CQC, while the "
         f"bearings move {number(move_limit)} mm or less.",
         0,
         f"The whole {number(sum(masses) / 1000)} t moves on the bearings at T<sub>b</sub> = 2π√(Σm/k<sub>1</sub>). "
@@ -541,7 +541,7 @@ PROBLEMS = tuple(
 
 TIPS = {
     "dof": "<p>The number of floors: the Simulation page's chain is the building, m1 the first floor.</p>",
-    "k1": "<p>Storey 1's stiffness, the Simulation page's k1: soften it for an open ground floor, or put the "
+    "k1": "<p>Story 1's stiffness, the Simulation page's k1: soften it for an open ground floor, or put the "
     "building on a slab on bearings and it's the bearings' stiffness. T is the period of the whole building as "
     "a rigid block on it: the base isolation's.</p>",
     "pga": "<p>The design peak ground acceleration a<sub>g</sub> on rock, in g.</p>",
@@ -554,7 +554,7 @@ SPECTRUM_TIP = (
     "Dots: the building's modes.</p>"
 )
 FLOOR_TIP = (
-    "<p>Each floor's peak displacement relative to the ground (left) and each storey's peak shear "
+    "<p>Each floor's peak displacement relative to the ground (left) and each story's peak shear "
     "(right): by each combination rule, and the mean over the records (dots).</p>"
 )
 GROUND_TIP = "<p>One of the records (top), and every record's spectrum against the design spectrum (bottom).</p>"
@@ -564,7 +564,7 @@ NOTES_HTML = load_notes("seismic", figures=seismic_figures.FIGURES, trials=trial
 
 
 class SeismicPage(QtWidgets.QWidget):
-    """Controls on the left, the spectrum and the modes in the centre, the floors, correlation and records on the
+    """Controls on the left, the spectrum and the modes in the center, the floors, correlation and records on the
     right."""
 
     dof_requested = QtCore.Signal(int)
@@ -588,12 +588,12 @@ class SeismicPage(QtWidgets.QWidget):
         ch = Form("Building (the chain)")
         self.dof = chain_page.dof_box(self)
         ch.add("Floors:", self.dof, TIPS["dof"])
-        self.k1 = ch.number("Storey 1 k₁:", 0.0, 1e9, 5e6, 0, " N/m", TIPS["k1"])  # 0: a free chain, not held
+        self.k1 = ch.number("Story 1 k₁:", 0.0, 1e9, 5e6, 0, " N/m", TIPS["k1"])  # 0: a free chain, not held
         self.k1.valueChanged.connect(self._on_k1)
         self.k1_info = note_label()
         ch.row(self.k1_info)
         link = chain_page.edit_link(
-            self, "Masses and storey stiffnesses are edited on the <a href='#sim'>Simulation page</a>."
+            self, "Masses and story stiffnesses are edited on the <a href='#sim'>Simulation page</a>."
         )
         ch.row(link)
 
@@ -610,7 +610,7 @@ class SeismicPage(QtWidgets.QWidget):
         spec.row(self.spec_info)
         connect_all((self.pga, self.ground, self.zeta, self.rule), self._on_spec)
 
-        # --- centre
+        # --- center
         self.spectrum_plot = plot("S<sub>a</sub> (g)", None, "Period T", "s", height=150)
         self.spectrum_plot.setToolTip(SPECTRUM_TIP)
         self.spectrum_item = pg.PlotDataItem()
@@ -627,7 +627,7 @@ class SeismicPage(QtWidgets.QWidget):
         fl = QtWidgets.QHBoxLayout(floors)
         fl.setContentsMargins(0, 0, 0, 0)
         self.disp_plot = plot("Floor", None, "Peak displacement", "m", height=200)
-        self.shear_plot = plot("Storey", None, "Peak shear", "N", height=200)
+        self.shear_plot = plot("Story", None, "Peak shear", "N", height=200)
         self.rule_items: dict[Rule, tuple[pg.PlotDataItem, pg.PlotDataItem]] = {}
         add_legend(self.disp_plot.getPlotItem(), offset=(10, 10))
         for r in RULES:
@@ -702,7 +702,7 @@ class SeismicPage(QtWidgets.QWidget):
         set_quietly(self.k1, float(system.stiffness[0]))
         T = rigid_period(system)
         self.k1_info.setText(
-            f"T = 2π√(Σm/k₁) = {sig(T)} s: the building rigid on storey 1."
+            f"T = 2π√(Σm/k₁) = {sig(T)} s: the building rigid on story 1."
             if math.isfinite(T)
             else "k₁ = 0: nothing holds the building to the ground."
         )
@@ -756,7 +756,7 @@ class SeismicPage(QtWidgets.QWidget):
         self.playback.play()  # a trial starts the motion
 
     def _on_k1(self, value: float) -> None:
-        """Storey 1's stiffness typed: the chain changes, through the Simulation page."""
+        """Story 1's stiffness typed: the chain changes, through the Simulation page."""
         s = self.system
         k = s.stiffness.copy()
         k[0] = value
@@ -843,8 +843,8 @@ class SeismicPage(QtWidgets.QWidget):
             self.spectrum_plot.removeItem(label)
         self.mode_labels = []
         self.table.setText(
-            "This chain has no spring under storey 1, so nothing holds the building to the ground and the ground "
-            "can't shake it. Give storey 1 a stiffness (its k₁ box), or pick a trial."
+            "This chain has no spring under story 1, so nothing holds the building to the ground and the ground "
+            "can't shake it. Give story 1 a stiffness (its k₁ box), or pick a trial."
         )
 
     def _draw_spectrum(self) -> None:
@@ -959,9 +959,9 @@ class SeismicPage(QtWidgets.QWidget):
         worst = int(np.argmax(drift))
         self.building_note.setText(
             f"Base shear {fmt(abs(float(h.base_shear[k])), 'N')} (its peak on this record "
-            f"{fmt(h.peak_base_shear, 'N')}); storey {worst + 1} drifts most now, {fmt(float(drift[worst]), 'm')} "
+            f"{fmt(h.peak_base_shear, 'N')}); story {worst + 1} drifts most now, {fmt(float(drift[worst]), 'm')} "
             f"(its peak {fmt(float(h.peak_drift[worst]), 'm')}). Sway drawn ×{sig(self.building.exaggeration)}, "
-            f"storeys as 3 m."
+            f"stories as 3 m."
         )
 
     def _draw_correlation(self) -> None:
@@ -1008,7 +1008,7 @@ class SeismicPage(QtWidgets.QWidget):
         err = mean / design_sa(d, T) - 1
         pga = np.mean([np.max(np.abs(rec.a)) for rec in recs]) / G
         self.ground_note.setText(
-            f"{len(recs)} synthesized records (grey); their mean spectrum is within "
+            f"{len(recs)} synthesized records (gray); their mean spectrum is within "
             f"{sig(100 * float(np.max(np.abs(err))), 2)} % of the design one. Their peak ground "
             f"acceleration averages {sig(pga, 2)} g."
         )

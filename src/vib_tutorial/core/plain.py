@@ -9,8 +9,8 @@ draw. This module is how both are kept so:
   `X | Y | None` field (a trial's `Prediction | Placement | None`) takes the first dataclass whose fields the dict
   has. So `from_plain(type(s), json.loads(json.dumps(to_plain(s)))) == s` for a page's state `s`.
 - `impure(obj)` lists the paths in a view model's output that aren't plain data: numbers, strings, bools, None,
-  numeric arrays, enums, and tuples, lists, dicts and dataclasses of them. A colour is a theme role's name (a
-  string), never a Qt colour; nothing callable.
+  numeric arrays, enums, and tuples, lists, dicts and dataclasses of them. A color is a theme role's name (a
+  string), never a Qt color; nothing callable.
 
 A callable can't be data: a problem's `make` and a spec's `goal` are code, found again by the problem's key.
 

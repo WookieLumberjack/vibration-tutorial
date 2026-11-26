@@ -335,7 +335,7 @@ def test_a_parts_recap_links_its_problems_by_title():
     )
     assert html == (
         "<p><b>From this part</b></p><ul><li>One.</li><li>Two.</li></ul>"
-        '<p><i>Practise it:</i> <a href="practice:rotor_page#spin">A spin</a></p>'
+        '<p><i>Practice it:</i> <a href="practice:rotor_page#spin">A spin</a></p>'
     )
     assert links.recap(["Only."], []) == "<p><b>From this part</b></p><ul><li>Only.</li></ul>"
 
@@ -347,7 +347,7 @@ def test_goals_are_written_out_with_their_links():
     out = GOALS.sub(lambda m: goals(m.group(1), *GOAL.findall(m.group(2))), html)
     assert out == (
         '<h3><a name="goals"></a>On this page you\'ll</h3><ul><li>see it; '
-        '<a href="trial:sdof_page#2">Try it</a> · <a href="practice:sdof_page#quickest-return">Practise it</a>'
+        '<a href="trial:sdof_page#2">Try it</a> · <a href="practice:sdof_page#quickest-return">Practice it</a>'
         "</li></ul>"
     )
 

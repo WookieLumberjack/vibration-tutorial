@@ -1,10 +1,10 @@
 """A rotor built part by part: the *Rotor builder* page's model.
 
 The shaft runs along z from 0, a row of `Section`s, each a round tube (solid when its bore is 0) of a material
-from the library (`frame.MATERIALS`: steel, aluminium, titanium), cut into beam elements. On it sit, each at an
+from the library (`frame.MATERIALS`: steel, aluminum, titanium), cut into beam elements. On it sit, each at an
 axial position z:
 
-* **discs** (`Disc`): rigid, a mass m, a polar moment of inertia I_p about the spin axis and a diametral I_d
+* **disks** (`Disc`): rigid, a mass m, a polar moment of inertia I_p about the spin axis and a diametral I_d
   about a diameter, from the library (`DISC_LIBRARY`, by material and size: `solid_disc`) or given;
 * **bearings** (`Bearing`): springs and dampers from the shaft to the ground in x and y, which may differ and
   be cross-coupled, or a plain journal bearing's oil film (core/fluid_bearing.py, under the bearing's share of
@@ -22,7 +22,7 @@ Each shaft element is a rotating Timoshenko beam (Nelson's: shear through φ = 1
 tube, and the sections' rotary inertia), or a Rayleigh beam (Euler–Bernoulli with the rotary inertia: φ = 0),
 the matrices `frame.bending_matrices`' on [w1, θ1, w2, θ2] in each plane. A spinning section's angular
 momentum gives it a gyroscopic matrix too: its sections' polar inertia is twice their diametral one, so its
-share of G is twice its rotary inertia, coupling the x-plane slopes to the y-plane's. A disc adds m to x and y,
+share of G is twice its rotary inertia, coupling the x-plane slopes to the y-plane's. A disk adds m to x and y,
 I_d to θx and θy, and I_p to G. So (`Assembly`)
 
     M q'' + (C(Ω) + Ω G) q' + K(Ω) q = f,
@@ -33,7 +33,7 @@ damping βK_shaft in C and a skew βK_shaft between the planes in H, which feeds
 shaft), K_f and C_f the
 oil films' (each a full 2 × 2 with cross terms, linearized where its journal settles under its load). A film's
 load is its bearing's share of the rotor's weight, with every bearing held (`Assembly.loads`): on a vertical
-rotor (no gravity) it carries none and runs centred. A magnetic bearing puts -k_m in K and its controllers'
+rotor (no gravity) it carries none and runs centered. A magnetic bearing puts -k_m in K and its controllers'
 states after q and q' in the state z = [q, q', x_c], so the modes come from the state matrix A(Ω)
 (`state_matrix`), as the rotor page's do. Its eigenvalues λ = -ζω ± iω_d are the whirl modes at that speed
 (`modes`): each one's whirl ratio says whether it whirls with the spin (forward, +1) or against it (backward,
@@ -50,7 +50,7 @@ films' and the internal damping's terms, so use them, not `K` and `C`, wherever 
 table works in the full model; the sweeps (core/rotor_builder_sweep.py) in `Assembly.basis`'s Ritz basis, which
 `modes` and `state_matrix` take too (a test checks the two agree on every trial). The beam matrices are the Frame
 builder's (`frame.bending_matrices`): its tests check Timoshenko's against Euler–Bernoulli's at φ = 0, and
-`tests/test_rotor_builder.py` checks this model against the closed forms (a pinned shaft, a free one, a disc's
+`tests/test_rotor_builder.py` checks this model against the closed forms (a pinned shaft, a free one, a disk's
 gyroscopic split) and against `core/rotor.py` for a Jeffcott rotor with a massive shaft, and the trials' notes.
 """
 
@@ -84,7 +84,7 @@ OVERDAMPED = 0.05  # a root with |Im λ| below this times |Re λ| is taken as no
 REPEATED = 1e-7  # eigenvalues this close (relative) are a pair to make circular
 NEUTRAL = 1e-9  # a damping ratio smaller than this is round-off: an undamped rotor's is 0, not growing
 GAP = 1e-9  # m: two positions this close are the same node
-ECCENTRICITY = 10e-6  # m: a library disc's centre of mass off the shaft's (its unbalance m e; ISO G2.5 at ~2400 rpm)
+ECCENTRICITY = 10e-6  # m: a library disk's center of mass off the shaft's (its unbalance m e; ISO G2.5 at ~2400 rpm)
 REDUCED = 32  # DOFs: a sweep over the speed works on the lowest this many undamped modes (see `Basis`)
 
 
@@ -144,23 +144,23 @@ class Section:
 
 @dataclass(frozen=True)
 class Disc:
-    """A rigid disc at z: mass, polar and diametral inertia; `diameter` and `thickness` for drawing it."""
+    """A rigid disk at z: mass, polar and diametral inertia; `diameter` and `thickness` for drawing it."""
 
     z: float = 0.5  # m
     mass: float = 10.0  # kg
     ip: float = 0.05  # kg·m², about the spin axis
-    id: float = 0.025  # kg·m², about a diameter through its centre
+    id: float = 0.025  # kg·m², about a diameter through its center
     diameter: float = 0.2  # m
     thickness: float = 0.04  # m
     name: str = "Custom"  # the library's entry it came from
-    unbalance: float = 0.0  # kg·m, m e: its centre of mass off the shaft's by e
+    unbalance: float = 0.0  # kg·m, m e: its center of mass off the shaft's by e
     unbalance_angle: float = 0.0  # rad, the heavy spot's angle from the shaft's keyphasor mark
 
 
 def solid_disc(
     z: float, material: Material, diameter: float, thickness: float, bore: float = 0.0, name: str = "Custom"
 ) -> Disc:
-    """A disc cut from `material`: an annulus `diameter` across with a `bore`, `thickness` thick.
+    """A disk cut from `material`: an annulus `diameter` across with a `bore`, `thickness` thick.
 
     m = ρπ(D² - d²)t/4, I_p = m(R² + r²)/2, I_d = m(3(R² + r²) + t²)/12.
     """
@@ -176,17 +176,17 @@ class DiscType:
     material: Material
     diameter: float  # m
     thickness: float  # m
-    bore: float = 0.0  # m: 0 for a disc shrunk onto the shaft, the shaft's own mass where it sits counting
+    bore: float = 0.0  # m: 0 for a disk shrunk onto the shaft, the shaft's own mass where it sits counting
 
     def at(self, z: float) -> Disc:
         return solid_disc(z, self.material, self.diameter, self.thickness, self.bore, self.name)
 
 
 DISC_LIBRARY = (
-    DiscType("Steel disc Ø200 × 30 mm", STEEL, 0.2, 0.03),
-    DiscType("Steel disc Ø300 × 40 mm", STEEL, 0.3, 0.04),
+    DiscType("Steel disk Ø200 × 30 mm", STEEL, 0.2, 0.03),
+    DiscType("Steel disk Ø300 × 40 mm", STEEL, 0.3, 0.04),
     DiscType("Steel flywheel Ø400 × 80 mm", STEEL, 0.4, 0.08),
-    DiscType("Aluminium impeller Ø350 × 60 mm", MATERIALS[1], 0.35, 0.06),
+    DiscType("Aluminum impeller Ø350 × 60 mm", MATERIALS[1], 0.35, 0.06),
     DiscType("Titanium fan Ø500 × 20 mm", MATERIALS[2], 0.5, 0.02),
     DiscType("Steel coupling hub Ø120 × 80 mm", STEEL, 0.12, 0.08),
 )
@@ -422,7 +422,7 @@ def plane_dofs(n_nodes: int) -> tuple[np.ndarray, np.ndarray]:
 # ------------------------------------------------------------------ assembly
 @dataclass(frozen=True)
 class Part:
-    """One element's share of the matrices, on its `dofs`: a shaft element, a disc, a bearing or a seal."""
+    """One element's share of the matrices, on its `dofs`: a shaft element, a disk, a bearing or a seal."""
 
     owner: Selection
     label: str
@@ -601,7 +601,7 @@ def assemble(rotor: Rotor) -> Assembly:
         g = np.zeros((4, 4))
         g[1, 3], g[3, 1] = d.ip, -d.ip
         zero = np.zeros((4, 4))
-        parts.append(Part(("disc", i), f"Disc {i + 1}", tuple(dofs), m, zero, zero, g, zero))
+        parts.append(Part(("disc", i), f"Disk {i + 1}", tuple(dofs), m, zero, zero, g, zero))
     for i, s in enumerate(rotor.seals):
         j = rotor.node_at(s.z)
         dofs = [4 * j, 4 * j + 2]
@@ -754,7 +754,7 @@ def modes(assembly: Assembly, omega: float, basis: Basis | None = None) -> Whirl
 
 
 def deflection(rotor: Rotor, q: np.ndarray, points: int = 8) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """(z, x, y): the shaft's centre line drawn through q (real, n_dof) by each element's Hermite cubics."""
+    """(z, x, y): the shaft's center line drawn through q (real, n_dof) by each element's Hermite cubics."""
     z = rotor.nodes
     zs: list[np.ndarray] = []
     xs: list[np.ndarray] = []

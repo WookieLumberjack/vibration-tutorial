@@ -3,9 +3,9 @@
 The mass is stepped as it runs (`view_models/live_mass.LiveMass`: the chain's exact FOH `Simulator` with one mass),
 not a response worked out in advance and played back. Its damper follows a law the reader picks as it runs:
 viscous, or hysteretic, Coulomb friction or the Zener element, each matched to c at f<sub>n</sub> (the Damping
-models page's, merged here: one example, one page), the viscous ghost beside it, in grey, plucked and driven as it
+models page's, merged here: one example, one page), the viscous ghost beside it, in gray, plucked and driven as it
 is. Left: the oscillator's m, k, c and the damper's law, the drive, then the Things to try (setups to go back to;
-their predictions are asked once the reader has handled the system). Centre: the mass on its spring and damper
+their predictions are asked once the reader has handled the system). Center: the mass on its spring and damper
 (`live_body.LiveMassView`: pluck it, or drag the grips on the mass, the spring and the damper to change m, k and c
 as it runs, the motion carrying on by `Simulator.set_system`'s rules) with the forces on it beside it, on the mass
 held still (`free_body_view.FreeBodyView`), the run's controls, and the time plots, which keep what came before a
@@ -96,7 +96,7 @@ FRF_TIP = (
 )
 STRIP_TIP = (
     "<p>The mass's displacement as it runs, the last 10 s, and under another damping law the viscous ghost's, "
-    "grey and dashed. A dashed line marks where m, k, c or the law changed: the motion carries on through it. "
+    "gray and dashed. A dashed line marks where m, k, c or the law changed: the motion carries on through it. "
     "Paused, drag the line at the end back to see the mass then.</p>"
 )
 PHASOR_TIP = (
@@ -123,7 +123,7 @@ def notes_html() -> str:
 
 
 class SdofPage(QtWidgets.QWidget):
-    """The oscillator's controls on the left, the live mass and its time plots in the centre, the tabs on the right."""
+    """The oscillator's controls on the left, the live mass and its time plots in the center, the tabs on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
 
@@ -154,7 +154,7 @@ class SdofPage(QtWidgets.QWidget):
         box.add("Damper:", self.model, TIPS["model"])
         self.friction_mm = box.number("Friction at X:", 0.01, 1000.0, 10.0, 2, " mm", TIPS["friction_mm"])
         self.relax = box.number("Zener peak at:", 0.01, 100.0, 1.0, 3, " × fₙ", TIPS["relax"])
-        self.ghost_on = QtWidgets.QCheckBox("Viscous ghost beside it (grey)")
+        self.ghost_on = QtWidgets.QCheckBox("Viscous ghost beside it (gray)")
         self.ghost_on.setToolTip(TIPS["ghost"])
         box.row(self.ghost_on)
         self.info = note_label()
@@ -191,7 +191,7 @@ class SdofPage(QtWidgets.QWidget):
             lv.addWidget(w)
         lv.addStretch(1)
 
-        # --- centre: the mass, the run, the time plots
+        # --- center: the mass, the run, the time plots
         self.body = LiveMassView()
         self.body.setMinimumHeight(200)
         self.forces = FreeBodyView()

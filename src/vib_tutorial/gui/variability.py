@@ -1,7 +1,7 @@
 """Variability & localization page: the chain with scattered properties, and a mistuned ring of blades.
 
 Left: the scatter on the Simulation page's chain (each property's coefficient of variation, how many chains), and
-the ring (blades, coupling, mistuning, the engine order, the mode). Centre: the chain's receptance at its last mass,
+the ring (blades, coupling, mistuning, the engine order, the mode). Center: the chain's receptance at its last mass,
 nominal and the band the scattered chains span, and each mode's spread by Monte Carlo and to first order. Right:
 the frequencies' histograms, the ring's modes tuned and mistuned, its forced response and the amplification against
 mistuning, and the Theory.
@@ -136,8 +136,8 @@ TRIALS = (
         ),
     ),
     VariabilityTrial(
-        "A tuned bladed disc",
-        "Twelve identical blades, each on a spring to the disc, joined by springs of 5 % of theirs round the "
+        "A tuned bladed disk",
+        "Twelve identical blades, each on a spring to the disk, joined by springs of 5 % of theirs round the "
         "ring (Modes tab). Its modes are waves round the ring: 0 to 6 nodal diameters, all but the first and "
         "last in pairs, in a band from 15.9 to 17.4 Hz. Every mode moves 6 to 12 blades.",
         tab=TAB_MODES,
@@ -271,7 +271,7 @@ def _whitehead(rng: np.random.Generator) -> Question:
     n = int(pick(rng, (8, 12, 16, 24, 36, 48)))
     bound = (1 + math.sqrt(n)) / 2
     return Question(
-        f"A bladed disc has {n} blades, lightly damped, driven by one engine order. At most how many times the tuned "
+        f"A bladed disk has {n} blades, lightly damped, driven by one engine order. At most how many times the tuned "
         "response can its worst blade see once mistuned?",
         bound,
         f"Whitehead's bound: (1 + √N)/2 = (1 + √{n})/2 = {number(bound)}.",
@@ -285,11 +285,11 @@ def _band(rng: np.random.Generator) -> Question:
     fb = rounded(BLADE_HZ)
     top = fb * math.sqrt(1 + 4 * c / 100)
     return Question(
-        f"A tuned ring of blades, each alone at {number(fb)} Hz, joined to its neighbours by springs of {sig(c, 6)} % of "
+        f"A tuned ring of blades, each alone at {number(fb)} Hz, joined to its neighbors by springs of {sig(c, 6)} % of "
         "each blade's own. Where is the top of its band of modes?",
         top,
         f"The 0-nodal-diameter mode leaves the coupling springs unstretched, at the blade's {number(fb)} Hz; the "
-        f"highest, neighbours in opposition, stretches each by twice the motion: f√(1 + 4k<sub>c</sub>/k) = "
+        f"highest, neighbors in opposition, stretches each by twice the motion: f√(1 + 4k<sub>c</sub>/k) = "
         f"{number(fb)} × √{number(1 + 4 * c / 100)} = {number(top)} Hz.",
         unit="Hz",
         setup=dict(coupling=c, tab=TAB_MODES),
@@ -428,7 +428,7 @@ PROBLEMS = tuple(
         ("draws", "How many chains", "scatter", "No two structures are alike", _draws),
         ("band", "A ring's band of modes", "localization", "Mode localization", _band),
         ("participation", "A participation number", "localization", "Mode localization", _participation),
-        ("whitehead", "Whitehead's bound", "mistuning", "Forced response of a mistuned disc", _whitehead),
+        ("whitehead", "Whitehead's bound", "mistuning", "Forced response of a mistuned disk", _whitehead),
         ("damping-only", "Predict: damping scatter", "scatter", "No two structures are alike", _damping_only),
         ("weak-coupling", "Predict: weak coupling", "localization", "Mode localization", _weak_coupling),
         ("strong-coupling", "Predict: strong coupling", "localization", "Mode localization", _strong_coupling),
@@ -441,10 +441,10 @@ TIPS = {
     "cov": "<p>The coefficient of variation (σ over the mean) of each mass, spring or damper, drawn "
     "independently and lognormal.</p>",
     "count": "<p>How many scattered chains to draw.</p>",
-    "blades": "<p>The number of blades round the disc.</p>",
-    "coupling": "<p>The springs between neighbouring blades, as a share of each blade's own.</p>",
+    "blades": "<p>The number of blades round the disk.</p>",
+    "coupling": "<p>The springs between neighboring blades, as a share of each blade's own.</p>",
     "mistuning": "<p>The scatter (σ) of the blades' stiffnesses; the pattern is seeded, its mean removed.</p>",
-    "eo": "<p>The engine order E: the force on blade j has phase 2πEj/N, a wave E times round the disc (shown on the "
+    "eo": "<p>The engine order E: the force on blade j has phase 2πEj/N, a wave E times round the disk (shown on the "
     "Forced ring tab, which a change turns to).</p>",
     "mode": "<p>Which of the ring's modes to draw, from the lowest (on the Ring modes tab, which a change turns to).</p>",
 }
@@ -472,7 +472,7 @@ def _fields(t: VariabilityTrial) -> dict:
 
 
 class VariabilityPage(QtWidgets.QWidget):
-    """Controls on the left, the chain's band in the centre, histograms and the ring on the right."""
+    """Controls on the left, the chain's band in the center, histograms and the ring on the right."""
 
     dof_requested = QtCore.Signal(int)
     system_requested = QtCore.Signal(object)
@@ -516,7 +516,7 @@ class VariabilityPage(QtWidgets.QWidget):
         self.mode.valueChanged.connect(self._on_mode)
         self.eo.valueChanged.connect(self._on_engine_order)
 
-        # --- centre
+        # --- center
         self.frf_plot = plot("|Receptance|", "m/N", "Frequency", "Hz", log_x=True, log_y=True, height=200)
         self.frf_plot.setToolTip(FRF_TIP)
         add_legend(self.frf_plot.getPlotItem(), offset=(-10, 10))

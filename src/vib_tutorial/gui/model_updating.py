@@ -1,7 +1,7 @@
 """Model updating page: a model of the chain, with errors in it, correlated against a modal test of the chain.
 
 Left: the test (the virtual modal test, or the exact modes with noise; which masses have sensors),
-the model's errors (factors on each mass, spring and damper), and errors to try. Centre: the MAC
+the model's errors (factors on each mass, spring and damper), and errors to try. Center: the MAC
 of every test shape with every model shape, and the pairs it makes, with their frequency errors.
 Right: the frequencies against each other, a pair's shapes, the test's auto-MAC, the COMAC, notes.
 Follows the chain from the Simulation page, which is the structure tested.
@@ -105,7 +105,7 @@ UPDATE_TIP = (
 )
 FACTOR_TIP = (
     "<p>Each parameter's model value over the structure's, step by step: 1 is the truth, which only "
-    "this page can know. Springs solid, masses dashed, dampers dotted, in their mass's colour.</p>"
+    "this page can know. Springs solid, masses dashed, dampers dotted, in their mass's color.</p>"
 )
 SENSITIVITY_TIP = (
     "<p>∂ln f<sub>r</sub>/∂ln p: how much each model mode's frequency changes for a change in each parameter. A "
@@ -647,7 +647,7 @@ def _plot(left: str, bottom: str) -> pg.PlotWidget:
 
 
 class ModelUpdatingPage(QtWidgets.QWidget):
-    """The test and the model's errors on the left, the MAC and the pairs in the centre, the rest on the right."""
+    """The test and the model's errors on the left, the MAC and the pairs in the center, the rest on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     system_requested = QtCore.Signal(object)  # a practice problem's structure, for the Simulation page
@@ -726,7 +726,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         lv.addStretch(1)
         left_scroll = ColumnScroll(left)
 
-        # --- centre: the MAC matrix and the pairs
+        # --- center: the MAC matrix and the pairs
         self.mac_plot = MacPlot()
         self.mac_plot.setLabel("bottom", "Model mode")
         self.mac_plot.setLabel("left", "Test mode")
@@ -844,7 +844,7 @@ class ModelUpdatingPage(QtWidgets.QWidget):
         self.sens_plot.setToolTip(SENSITIVITY_TIP)
         plot_height(self.sens_plot, 200)
         self.sens_note = QtWidgets.QLabel(
-            "Colour: the size; the number: the value. A spring stiffens every mode it stretches in; a mass slows "
+            "Color: the size; the number: the value. A spring stiffens every mode it stretches in; a mass slows "
             "every mode it moves in."
         )
         self.sens_note.setWordWrap(True)

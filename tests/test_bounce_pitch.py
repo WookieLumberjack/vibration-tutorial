@@ -70,7 +70,7 @@ def test_the_closed_forms():
     ends = matrices(CAR, Coordinates.ENDS)
     np.testing.assert_allclose(ends.K, np.diag([kf, kr]), atol=1e-9)
     np.testing.assert_allclose(ends.M[0, 1], (m * a * b - J) / L**2)
-    # at the elastic centre K is diagonal; at a dynamic index of 1 the ends' M is
+    # at the elastic center K is diagonal; at a dynamic index of 1 the ends' M is
     assert abs(matrices(CAR, Coordinates.POINT, CAR.elastic_centre()).K[0, 1]) < 1e-9
     balanced = Car(gyration=math.sqrt(1.2 * 1.5))
     assert balanced.dynamic_index == pytest.approx(1.0)

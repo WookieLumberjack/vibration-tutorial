@@ -110,7 +110,7 @@ class Isolator:
         return float(-K[1, 0] * x / K[1, 1])
 
     def mount_stiffness(self, omega: np.ndarray) -> np.ndarray:
-        """A single stage's dynamic stiffness K*(ω): the force on the floor per metre of the machine's motion."""
+        """A single stage's dynamic stiffness K*(ω): the force on the floor per meter of the machine's motion."""
         w = np.asarray(omega, dtype=float)
         k, c = self.stiffness, self.damping
         if self.mount is Mount.RELAXATION:

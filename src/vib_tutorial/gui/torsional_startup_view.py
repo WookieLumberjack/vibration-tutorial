@@ -54,7 +54,7 @@ PLAYBACK = (0.05, 0.1, 0.25, 0.5, 1.0)  # × real time
 MOTORS = (None, MotorKind.INDUCTION, MotorKind.SYNCHRONOUS)  # the motor combo's items
 NO_MOTOR = "The engine drives this train: no motor starts it. Pick one to try anyway."
 TIPS = {
-    "motor": "<p>The motor on the first disc that starts the train from rest: an induction motor direct on "
+    "motor": "<p>The motor on the first disk that starts the train from rest: an induction motor direct on "
     "line, or a synchronous motor started on its damper cage. None: no start-up.</p>",
     "supply": "<p>The line frequency and the motor's pole pairs: it runs at (or, an induction motor, just "
     "below) 60 f / p rpm.</p>",
@@ -67,7 +67,7 @@ TIPS = {
     "sweeping through the modes below.</p>",
     "field": "<p>The field's pull-out torque (T<sub>f</sub> sin δ), switched on below the slip given, which "
     "pulls the rotor into step.</p>",
-    "load": "<p>The load on the last disc, rising as its speed squared (a fan's, a centrifugal "
+    "load": "<p>The load on the last disk, rising as its speed squared (a fan's, a centrifugal "
     "compressor's) to this, on its own shaft, with the motor at its synchronous speed.</p>",
     "duration": "<p>How long the start-up runs, in simulated time.</p>",
 }

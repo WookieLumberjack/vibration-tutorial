@@ -1702,7 +1702,7 @@ def test_load_presets(app):
     assert "Den Hartog" in w.sim_page.params.preset_note.text()
 
     # The building: ground motion, five masses.
-    w.sim_page.params.preset.activated.emit(names.index("TMD on a 4-storey building"))
+    w.sim_page.params.preset.activated.emit(names.index("TMD on a 4-story building"))
     assert w.sim_page.sim.system.n == 5 and w.sim_page.force.settings.base
     assert w.sim_page.force_panel.target.isHidden()  # no mass to pick for ground motion
     w.sim_page.force_panel.button.click()
@@ -2048,7 +2048,7 @@ def test_rotor_page(app):
     assert p.orbits.trails[1].getData()[0].size > 0
     assert "rpm" in p.readout.text()
     assert "1,584 rpm" in p.crit_label.text() and "forward" in p.crit_label.text()
-    assert not p.orbits.plots[2].isVisible()  # midspan is the disc
+    assert not p.orbits.plots[2].isVisible()  # midspan is the disk
 
     # A run-up and coast-down, tracked once per revolution onto the Bode and polar plots.
     p.ramp.setValue(5000.0)
@@ -2090,7 +2090,7 @@ def test_rotor_page(app):
     assert p.run_up is None and not p.sweeps and "sweep" not in p.sweep_status.text()
     p.ramp.setValue(500.0)
 
-    # Off centre, anisotropic, different bearings: the panels describe it and the analysis follows.
+    # Off center, anisotropic, different bearings: the panels describe it and the analysis follows.
     p.editor.position.setValue(0.3)
     p.editor.isotropic.setChecked(False)
     p.editor.bearing_rows[0][1].setValue(8e4)
@@ -2143,7 +2143,7 @@ def test_rotor_page(app):
     assert not p.show_sag.isEnabled()
     p.editor.gravity.setChecked(True)
     assert p.sim.system.gravity == pytest.approx(9.81) and p.show_sag.isEnabled()
-    assert "Static sag at rest: disc 378 µm" in p.editor.shaft_note.text()
+    assert "Static sag at rest: disk 378 µm" in p.editor.shaft_note.text()
     p.reset()
     sag = p.sim.system.static_deflection()
     np.testing.assert_allclose(p.sim.q, sag)
@@ -2152,7 +2152,7 @@ def test_rotor_page(app):
     for _ in range(30):
         p.step(0.05)
     disc = p.orbits.trails[1].getData()
-    assert np.mean(disc[1]) == pytest.approx(sag[5], rel=0.05)  # below the centre
+    assert np.mean(disc[1]) == pytest.approx(sag[5], rel=0.05)  # below the center
     p.show_sag.setChecked(False)
     disc = p.orbits.trails[1].getData()
     assert abs(np.mean(disc[1])) < 0.1 * abs(sag[5])
@@ -2160,7 +2160,7 @@ def test_rotor_page(app):
     p.editor.gravity.setChecked(False)
     assert not p.show_sag.isEnabled()
 
-    # Balancing: a hidden unbalance, found in four measured steps and cancelled by one weight.
+    # Balancing: a hidden unbalance, found in four measured steps and canceled by one weight.
     p.set_system(RotorSystem())
     b = p.balancing
     b._rng = np.random.default_rng(3)
@@ -2192,7 +2192,7 @@ def test_rotor_page(app):
     assert p.view.show_heavy and b.show_heavy.isChecked()
     b.remove_weights()
     assert p.sim.system.weights == () and b.reading("found") is None
-    # Two planes on the disc's faces: a hidden unbalance and skew, cancelled at every speed in five steps.
+    # Two planes on the disk's faces: a hidden unbalance and skew, canceled at every speed in five steps.
     p.set_system(RotorSystem(position=0.3))
     b.mode.setCurrentIndex(1)
     assert len(b.step_buttons) == 5 and b.station2.isVisible() == b.station.isVisible()
@@ -2296,7 +2296,7 @@ def test_rotor_presets_speed_range_and_overhung_disc(app):
         for _ in range(5):
             p.step(0.02)
 
-    # The overhung rotor: the disc past bearing B, drawn beyond it; one forward critical.
+    # The overhung rotor: the disk past bearing B, drawn beyond it; one forward critical.
     p.load_preset("Overhung rotor")
     p._refresh_analysis()
     assert p.sim.system.overhung and "3EI/(c²(L + c))" in p.editor.shaft_note.text()
@@ -2363,8 +2363,8 @@ def test_rotor_waterfall(app):
     blocks = p.waterfall_tab.waterfall.latest_ramp(up=True)
     shown = [line for line in plot.lines if line.isVisible()]
     assert len(blocks) >= 6 and len(shown) == len(blocks)
-    assert f"{len(blocks)} full spectra of the disc orbit" in p.waterfall_tab.note.text()
-    assert "Tap the disc every" not in p.waterfall_tab.note.text()  # already ticked
+    assert f"{len(blocks)} full spectra of the disk orbit" in p.waterfall_tab.note.text()
+    assert "Tap the disk every" not in p.waterfall_tab.note.text()  # already ticked
     speeds = [b.omega * RPM for b in blocks]
     assert speeds == sorted(speeds) and plot.plot.getAxis("left").labelText == "Spin speed"
     x, y = plot.sync.getData()
@@ -2954,7 +2954,7 @@ def test_rotor_on_magnetic_bearings(app):
     p.tabs.show_page(panel)
     assert "Choose <i>Magnetic bearings</i>" in panel.note.text()
     p.tabs.setCurrentIndex(0)  # hidden again while the preset loads
-    # The preset floats on the tab's bearing (its amplifier slowed), the journals held at the centre.
+    # The preset floats on the tab's bearing (its amplifier slowed), the journals held at the center.
     p.load_preset("Magnetic bearings")
     p._refresh_analysis()
     s = p.sim.system
@@ -2974,7 +2974,7 @@ def test_rotor_on_magnetic_bearings(app):
     assert sum(b.isVisible() for b in panel.bands) == 4  # below and above the band, on both plots
     assert "magnetic bearings" in p._stability_note()
     html = matrices_html(p.sim.system, p.sim.omega)
-    assert "The magnetic bearings" in html and "F<sub>c</sub>" in html and "journals at the centre" in html
+    assert "The magnetic bearings" in html and "F<sub>c</sub>" in html and "journals at the center" in html
     assert "the journals at (0, 0) µm vertically" in html
     # Changing the bearing on the tab changes the rotor's (and makes it the user's own rotor).
     panel.amplifier.setValue(1000.0)
@@ -3019,7 +3019,7 @@ def test_rotor_rub(app):
     p.loop.timer.stop()
     panel = p.rub_panel
     assert p.sim.system.stator is None and not panel.clearance.isEnabled()
-    # Ticking the ring puts it on the rotor (the user's own rotor), drawn round the disc.
+    # Ticking the ring puts it on the rotor (the user's own rotor), drawn round the disk.
     panel.enabled.setChecked(True)
     assert p.sim.system.stator == Stator() and p.preset_name() == CUSTOM
     assert "At rest it has 200 µm to the ring" in panel.readout.text() and "227 Hz" in panel.readout.text()
@@ -3324,7 +3324,7 @@ def test_rotor_checks_growth_only_against_its_own_onset(app, monkeypatch):
 
 
 def test_rotor_view_turns_the_rotor_with_the_ground_when_paused(app):
-    """Dragging the rotor's 3D view turns everything in it: the shaft, the disc and the stations as well as the
+    """Dragging the rotor's 3D view turns everything in it: the shaft, the disk and the stations as well as the
     supports and the axes, also while the rotor is paused or at rest and the page draws no frames."""
     from PySide6 import QtCore, QtGui
 
@@ -3647,8 +3647,8 @@ def test_mathieu_on_the_duffing_page(app):
 
 
 def test_torsional_page(app):
-    """The torsional page loads each preset's criticals and response, edits the train (a disc, a shaft made a
-    mesh and back, a disc added and removed, the excitation), picks elements by clicking the drawing, switches
+    """The torsional page loads each preset's criticals and response, edits the train (a disk, a shaft made a
+    mesh and back, a disk added and removed, the excitation), picks elements by clicking the drawing, switches
     log scales, and survives a theme switch."""
     from PySide6.QtCore import QPointF
 
@@ -4536,8 +4536,8 @@ def test_gyroscope_snapshot(main_window, app):
 
 
 def test_gyroscope_frame_axes_drawn(main_window, app):
-    """The 3D view's Axes box: none, the body's e₁ e₂, the axis frame's e₁′ e₂′, or both, each from the disc's
-    centre; the body's e₁ along the mark, the axis frame's e₁′ level, and e₃ named only with some drawn."""
+    """The 3D view's Axes box: none, the body's e₁ e₂, the axis frame's e₁′ e₂′, or both, each from the disk's
+    center; the body's e₁ along the mark, the axis frame's e₁′ level, and e₃ named only with some drawn."""
     import numpy as np
 
     from vib_tutorial.gui import gyroscope_view as g
@@ -4591,7 +4591,7 @@ def test_gyroscope_on_a_table(app):
         app.processEvents()
     page._draw_ledger()
     assert "Jellett's J held to" in page.check_note.text() and page.slides.size > 100
-    # a disc too slow to stand: its rim reaches the table, and the run stops there
+    # a disk too slow to stand: its rim reaches the table, and the run stops there
     page.load_setup(dict(setting=g.Setting.TABLE, height=0.02, tip_radius=0.01, spin_rpm=100.0, tilt=20.0))
     for _ in range(20):
         page.step(0.3)
@@ -4641,7 +4641,7 @@ def test_single_undamped_mass_draws_its_frf(app):
 
 def test_grid_is_opaque_and_under_the_data(app):
     """A grid's translucent lines cost ~35 ms a frame on a plot that rescales; gui.plot_patches draws them
-    opaque in the colour they'd have had over the background, and behind the ViewBox."""
+    opaque in the color they'd have had over the background, and behind the ViewBox."""
     import pyqtgraph as pg
 
     from vib_tutorial import gui
@@ -4800,7 +4800,7 @@ def test_rotor_builder_by_hand(app, main_window):
     assert [b.z for b in r.bearings] == [0.0, 1.0] and r.discs[0].name == DISC_LIBRARY[0].name
     assert page.result is not None and page.result.rigid == 0 and page.table.rowCount() > 0
     assert "section 2's share" in page.assembly_note.text()  # the split's new half
-    # a disc from the library, then dragged; undo puts it back
+    # a disk from the library, then dragged; undo puts it back
     use(rb.Tool.SELECT)
     c.press(at(0.5, 0.05))
     c.release()
@@ -4872,10 +4872,10 @@ def test_rotor_builder_by_hand(app, main_window):
     page.props.unbalance.setValue(0.0)
     page.props.unbalance.editingFinished.emit()
     page.responder.wait()
-    assert page.rotor.discs[0].unbalance == 0 and page.response is not None and "No disc" in page.unbalance_note.text()
+    assert page.rotor.discs[0].unbalance == 0 and page.response is not None and "No disk" in page.unbalance_note.text()
     page.swing.setCurrentIndex(rb.SWINGS.index(rb.Swing.UNBALANCE))
     page.tabs.setCurrentIndex(rb.TAB_WHIRL)
-    assert "No disc has an unbalance" in page.whirl_note.text()
+    assert "No disk has an unbalance" in page.whirl_note.text()
     page.undo()
     assert page.rotor.discs[0].unbalance > 0 and "steady response" in page.whirl_note.text()
     page.step(0.1)
@@ -4902,7 +4902,7 @@ def test_frame_builder_loads_and_formulations(app, main_window):
     w.pages.setCurrentWidget(page)
     page.canvas.release()  # (a press without its release, as the test before may leave, holds the swing still)
     names = [t.name for t in fb.TRIALS]
-    page.load_trial(names.index("A damper in the first storey"))
+    page.load_trial(names.index("A damper in the first story"))
     assert page.tabs.currentIndex() == fb.TAB_FORMULATIONS and page.forms is not None
     assert page.forms_table.rowCount() > 2 and "Not proportional" in page.forms_note.text()
     assert "MPC = 0.796" in page.argand_note.text()
@@ -5264,7 +5264,7 @@ def test_rigid_body_page(main_window, app):
     page.reset()
     page.tabs.setCurrentIndex(r.TAB_COMPONENTS)
     assert "Start it" in page.components.note.text() and page.snapshot_now() is None
-    page.apply_trial(r.TRIALS[3])  # the off-centre mass: products of inertia
+    page.apply_trial(r.TRIALS[3])  # the off-center mass: products of inertia
     page.tabs.setCurrentIndex(r.TAB_COMPONENTS)
     for _ in range(4):
         page.step(0.25)

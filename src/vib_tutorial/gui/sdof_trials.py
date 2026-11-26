@@ -64,7 +64,7 @@ OSCILLATOR_TRIALS = (
             0,
             why=(
                 "",
-                "More damping takes energy out faster, but it also holds the mass back: past critical, the slow root moves towards zero and the creep back takes longer.",
+                "More damping takes energy out faster, but it also holds the mass back: past critical, the slow root moves toward zero and the creep back takes longer.",
                 "Their slowest roots differ: −ω<sub>n</sub> for ζ = 1 and −0.27ω<sub>n</sub> for ζ = 2.",
             ),
         ),
@@ -158,7 +158,7 @@ OSCILLATOR_TRIALS = (
         "An unbalance <m>m<sub>e</sub>e</m> = 1×10<sup>−4</sup> kg·m (10 g at 10 mm) on a 1 kg machine. Its force "
         "grows as <m>Ω²</m>, so the response starts at zero, peaks at resonance at <m>(m<sub>e</sub>e/m)/2ζ</m> = 1 mm, "
         "and levels off far above it at <m>m<sub>e</sub>e/m</m> = 0.1 mm, 180° out of phase: the machine turns round "
-        "the shared centre of mass. Sweep it to see the curve build.",
+        "the shared center of mass. Sweep it to see the curve build.",
         drive=True,
         kind=UNBALANCE,
         amplitude=1e-4,
@@ -331,7 +331,7 @@ def _quickest_return(rng: np.random.Generator) -> Question:
         why=(
             "",
             "More damping takes energy out faster, but it also holds the mass back: past critical, the slow root "
-            "moves towards zero and the creep back takes longer.",
+            "moves toward zero and the creep back takes longer.",
             "Their slowest roots differ: −ω<sub>n</sub> for ζ = 1 and −0.27ω<sub>n</sub> for ζ = 2.",
         ),
         setup=dict(damping=40.0, x0_mm=10.0, tab=TAB_POLES),
@@ -497,7 +497,7 @@ PROBLEMS = (*OSCILLATOR_PROBLEMS, *damping_trials.PROBLEMS)
 TIPS = {
     "mass": "<p>The mass m. Drag the handle on the mass's corner to change it as it runs: added mass is "
     "caught at rest (the momentum kept), removed mass leaves at the mass's speed.</p>",
-    "stiffness": "<p>The spring's stiffness k: the force per metre of stretch. Drag the handle on the spring "
+    "stiffness": "<p>The spring's stiffness k: the force per meter of stretch. Drag the handle on the spring "
     "(up: stiffer) to change it as it runs.</p>",
     "damping": "<p>The viscous damper's coefficient c: the force per m/s of velocity. Its critical value "
     "2√(km) is the least that stops the oscillator overshooting. Drag the handle on the damper to change it. "

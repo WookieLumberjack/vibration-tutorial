@@ -1,6 +1,6 @@
 """A motor starting a drive train from rest: the shafts' torques on the way up.
 
-The train (core/torsional.py) starts at rest with a motor on its first disc and a load on
+The train (core/torsional.py) starts at rest with a motor on its first disk and a load on
 its last. The load is a fan's or a compressor's, rising as the square of its speed to
 `StartUp.load` at the motor's synchronous speed (referred through the gears). The motor is
 one of two kinds:
@@ -18,7 +18,7 @@ one of two kinds:
   synchronism, sweeping down through every mode below 2 f_e on the way. Below `field_slip`
   the field is switched on, adding T_f sin δ, which pulls the rotor into step.
 
-The discs' angles are the whole turn, not just the twist, so θ grows as the train runs up;
+The disks' angles are the whole turn, not just the twist, so θ grows as the train runs up;
 the rigid-body mode (K's null space) carries it. The linear part steps by the exact FOH
 update, as everywhere in the app, and the motor's and the load's torques are its input,
 linear over each step: their values at the step's end depend on the end's state, found by
@@ -35,9 +35,9 @@ yardstick the peaks are measured against.
 Working on it
 -------------
 Its start-up (`core/torsional_startup.py`, the page's *Start-up* tab) steps the whole turn, not just the
-twist, from rest: the exact FOH update of the train with the motor's torque (first disc; induction by Kloss
+twist, from rest: the exact FOH update of the train with the motor's torque (first disk; induction by Kloss
 plus the switch-on transient, or synchronous with its 2× slip pulsation and latched field) and the load's
-(last disc, ∝ speed²) as the input, their end values found by Newton on the two torques, as `DuffingSimulator`
+(last disk, ∝ speed²) as the input, their end values found by Newton on the two torques, as `DuffingSimulator`
 does; second order, checked against `solve_ivp`. The steps run in Rust where it's built (`native.NewtonSteps`
 with a `motor` and a `quadratic` law, the field latching in the kernel); `_steps_reference` is the Python, and
 `tests/test_native.py` compares them over both start-ups. The step resolves 2× the line frequency and the modes below
@@ -74,7 +74,7 @@ class MotorKind(Enum):
 
 @dataclass(frozen=True)
 class Motor:
-    """The motor on the train's first disc (see the module's notes). Torques in N·m."""
+    """The motor on the train's first disk (see the module's notes). Torques in N·m."""
 
     kind: MotorKind = MotorKind.INDUCTION
     line_hz: float = 50.0
@@ -133,7 +133,7 @@ class Motor:
 
 @dataclass(frozen=True)
 class StartUp:
-    """A motor on the first disc, a load on the last (N·m on its own shaft with the motor at its synchronous
+    """A motor on the first disk, a load on the last (N·m on its own shaft with the motor at its synchronous
     speed, ∝ speed²), and how long to run (s)."""
 
     motor: Motor
@@ -150,7 +150,7 @@ class StartUp:
 
 def drag(train: DriveTrain, startup: StartUp, speed: float) -> float:
     """The torque the train takes at the motor's shaft running steadily at `speed` (rad/s): the load and
-    the discs' dampers to ground, each referred by its speed ratio (power over speed)."""
+    the disks' dampers to ground, each referred by its speed ratio (power over speed)."""
     s = train.speeds
     ws = startup.motor.sync_speed
     total = startup.load * (speed / ws) ** 2 * s[-1]
@@ -176,8 +176,8 @@ def steady_speed(train: DriveTrain, startup: StartUp) -> float:
 
 
 def running_torques(train: DriveTrain, startup: StartUp, speed: float | None = None) -> np.ndarray:
-    """Each link's steady torque (N·m, at its near disc) running at the motor speed `speed` (rad/s; the
-    steady speed by default): what the discs beyond it take, by power over its speed."""
+    """Each link's steady torque (N·m, at its near disk) running at the motor speed `speed` (rad/s; the
+    steady speed by default): what the disks beyond it take, by power over its speed."""
     if speed is None:
         speed = steady_speed(train, startup)
     s = train.speeds
@@ -237,7 +237,7 @@ class StartUpSimulator:
         a[n:, :n] = -minv @ k
         a[n:, n:] = -minv @ c
         b = np.zeros((2 * n, 2))
-        b[n, 0] = 1.0 / m[0, 0]  # the motor's torque on the first disc
+        b[n, 0] = 1.0 / m[0, 0]  # the motor's torque on the first disk
         b[2 * n - 1, 1] = -1.0 / m[-1, -1]  # the load's against the last
         self.h = self.step_size() if h is None else h
         self._phi, self._g0, self._g1 = foh_discretize(a, b, self.h)

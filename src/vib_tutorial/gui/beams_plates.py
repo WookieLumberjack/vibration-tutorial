@@ -1,7 +1,7 @@
 """Beams & plates page: when a beam is too thick for Euler–Bernoulli, and the modes of a plate.
 
 Left: what to look at (a thick beam, a rectangular plate or a circular one), its size and material, and the mode.
-Centre: for the beam, each theory's frequencies against Euler–Bernoulli's and the bending wave's speed against its
+Center: for the beam, each theory's frequencies against Euler–Bernoulli's and the bending wave's speed against its
 wavelength; for a plate, the mode's shape with its nodal lines. Right: the frequencies, the number of modes
 below f against its asymptote, and the Theory. The page has its own model (core/beams_plates.py).
 """
@@ -119,7 +119,7 @@ TRIALS = (
         "Short waves stop speeding up",
         "Euler–Bernoulli's bending wave travels at <m>c = √ω (EI/ρA)<sup>1/4</sup></m>, faster without limit as the "
         "wavelength shortens: impossible. With shear and rotary inertia (Timoshenko) the speed levels off below "
-        "the shear wave's <m>c<sub>s</sub> = √(κ<sub>s</sub>G/ρ)</m> = 2.9 km/s (centre, bottom). Timoshenko's second branch, thickness shear, "
+        "the shear wave's <m>c<sub>s</sub> = √(κ<sub>s</sub>G/ρ)</m> = 2.9 km/s (center, bottom). Timoshenko's second branch, thickness shear, "
         "starts near 16 kHz on this beam (<m>√(κ<sub>s</sub>GA/ρI)/2π</m>: a cut-off, below which it doesn't propagate).",
         mode=20,
     ),
@@ -394,14 +394,14 @@ SPEED_TIP = (
     "<p>The bending wave's phase speed against its wavelength over the depth: Euler–Bernoulli's grows "
     "without bound as the wave shortens; Timoshenko's levels off. Dotted: c<sub>b</sub> = √(E/ρ) and c<sub>s</sub> = √(κ<sub>s</sub>G/ρ).</p>"
 )
-SHAPE_TIP = "<p>The mode's shape (colour: up and down) and its nodal lines, where it doesn't move.</p>"
+SHAPE_TIP = "<p>The mode's shape (color: up and down) and its nodal lines, where it doesn't move.</p>"
 DENSITY_TIP = "<p>The number of modes at or below f (steps) against its asymptote (dashed).</p>"
 
 NOTES_HTML = load_notes("beams_plates", figures=beams_figures.FIGURES, trials=trials_html(TRIALS))
 
 
 class BeamsPlatesPage(QtWidgets.QWidget):
-    """Controls on the left, the beam's corrections or the plate's mode in the centre, the frequencies and the
+    """Controls on the left, the beam's corrections or the plate's mode in the center, the frequencies and the
     modal density on the right."""
 
     follows_chain = False  # MainWindow: this page has its own model, not the chain
@@ -451,7 +451,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
             self._on_inputs,
         )
 
-        # --- centre: the beam
+        # --- center: the beam
         self.ratio_plot = plot("f / f<sub>Euler–Bernoulli</sub>", None, "Mode n", None, height=150)
         self.ratio_plot.setToolTip(RATIO_TIP)
         add_legend(self.ratio_plot.getPlotItem(), offset=(-10, 10))
@@ -473,7 +473,7 @@ class BeamsPlatesPage(QtWidgets.QWidget):
         assert beam_layout is not None, "column lays its widgets out"
         beam_layout.setContentsMargins(0, 0, 0, 0)
 
-        # --- centre: a plate
+        # --- center: a plate
         self.shape_plot = plot("y", "m", "x", "m", height=250)
         self.shape_plot.setToolTip(SHAPE_TIP)
         self.shape_plot.setAspectLocked(True)

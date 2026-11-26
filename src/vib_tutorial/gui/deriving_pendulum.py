@@ -140,7 +140,7 @@ def fbd_html(p: DoublePendulum, angles: Angles) -> str:
         f"{L2}{W2}² + {L1}{W1}² cos Δ + {L1}{A1} sin Δ). P<sub>1</sub> is left in bob 1's equation along rod 1, "
         "which isn't needed.</p>",
         "<h3>4. Small swings</h3>",
-        f"<p>P<sub>2</sub> ≈ {M2}g and sin Δ ≈ {TH1} − {TH2}, so the two rows (per metre: forces) are "
+        f"<p>P<sub>2</sub> ≈ {M2}g and sin Δ ≈ {TH1} − {TH2}, so the two rows (per meter: forces) are "
         f"{M1}{L1}{A1} + ({M1} + {M2})g{TH1} − {M2}g{TH2} = 0 and {M2}{L1}{A1} + {M2}{L2}{A2} + {M2}g{TH2} = 0"
         + (", with " + TH2 + " = " + TH1 + " + φ put in" if angles is Angles.RELATIVE else "")
         + ":</p>",

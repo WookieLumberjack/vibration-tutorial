@@ -7,10 +7,10 @@ vortex-shedding cylinder in their flow, and the flutter section plunging and pit
   the wing's semichord), so the view holds it.
 - `set_state(y, theta=0)`: the body's displacement (up, in its units) and, for the wing, its pitch (rad, nose
   up).
-- `unstable`: the body is filled in the force colour when rest is unstable (a pole right of Re λ = 0).
+- `unstable`: the body is filled in the force color when rest is unstable (a pole right of Re λ = 0).
 
 The bluff bodies and the wing are drawn to scale in their own units: a galloping square's swing of 2 D is two
-of its sides. The block, whose x is in metres, is drawn at the scale `set_range` gives.
+of its sides. The block, whose x is in meters, is drawn at the scale `set_range` gives.
 
 Working on it: `tests/test_self_excited.py` checks the body follows the playback.
 """
@@ -40,7 +40,7 @@ WING_T = 0.12  # the section's thickness, of its chord
 TIP = (
     "<p>The body moving as the plots show it. The square, the cylinder and the wing are drawn to scale in their "
     "own size (the flow comes from the left); the wing plunges and pitches about its elastic axis (the dot) in "
-    "its least stable mode. Filled in the force colour when rest is unstable: a pole right of Re λ = 0.</p>"
+    "its least stable mode. Filled in the force color when rest is unstable: a pole right of Re λ = 0.</p>"
 )
 
 

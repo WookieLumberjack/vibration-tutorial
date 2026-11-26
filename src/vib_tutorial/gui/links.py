@@ -12,7 +12,7 @@ to teach, an `<li trial="n" problem="key">` each, whose links set up its Thing t
 practice problem `key` (`trial:` and `practice:` links, `notes_view.ACTIONS`); `<recap problems="key …">`, a
 part's closing points (an `<li>` each) and links to its problems (`load_notes(..., problems=PROBLEMS)`); `<takeaways>`,
 one `<li>` each; `<eq>` (a
-display equation in LaTeX) and `<m>` (inline maths), see `maths`; `<notation>`, the page's table of
+display equation in LaTeX) and `<m>` (inline math), see `maths`; `<notation>`, the page's table of
 symbols, see `notation`; `<cite>` and `<reading>`, its Further reading, see `references`. Figures are
 `<img src="fig:…">`, see `figures`. Show the notes in a `notes_view.NotesBrowser`, which draws them.
 """
@@ -42,7 +42,7 @@ def goals(page: str, *items: tuple[str, str, str]) -> str:
     """A page's opening "On this page you'll" list: (trial number, problem key, text) each, with its links."""
     lines = "".join(
         f'<li>{text.strip()} <a href="trial:{page}#{trial}">Try it</a> · '
-        f'<a href="practice:{page}#{problem}">Practise it</a></li>'
+        f'<a href="practice:{page}#{problem}">Practice it</a></li>'
         for trial, problem, text in items
     )
     return f'<h3><a name="goals"></a>On this page you\'ll</h3><ul>{lines}</ul>'
@@ -60,7 +60,7 @@ def recap(points: list[str], problems: list[tuple[str, str, str]]) -> str:
     html = "<p><b>From this part</b></p><ul>" + "".join(f"<li>{p}</li>" for p in points) + "</ul>"
     if problems:
         links = " · ".join(f'<a href="practice:{page}#{key}">{title}</a>' for page, key, title in problems)
-        html += f"<p><i>Practise it:</i> {links}</p>"
+        html += f"<p><i>Practice it:</i> {links}</p>"
     return html
 
 
@@ -80,7 +80,7 @@ KEYS = (
     ("Space", "start, pause or resume the page's motion (on the Simulation page, its force)"),
     ("F1", "the page's Theory tab"),
     ("Ctrl+R", "the page's controls back as it opened (Defaults)"),
-    ("H / Shift+H", "hold the curves on the plots showing, in grey, to compare a change against / clear them"),
+    ("H / Shift+H", "hold the curves on the plots showing, in gray, to compare a change against / clear them"),
     ("F5", "Present: the controls folded away, then the right-hand tabs too (the plots the whole width), then back"),
     ("F6 / F7", "a pointer that follows the mouse / ink: drag to draw on the page (F7 again to use the page)"),
     ("Esc", "the ink cleared, the pointer and ink off, and a Thing to try's large note hidden"),
@@ -240,7 +240,7 @@ COURSE = (
             (
                 "mounts_page",
                 "Rigid body on mounts",
-                "a machine on four mounts in 3D: six coupled modes, the elastic centre, and decoupling by tilting them",
+                "a machine on four mounts in 3D: six coupled modes, the elastic center, and decoupling by tilting them",
             ),
         ),
     ),
@@ -295,12 +295,12 @@ COURSE = (
                 "Gyroscope",
                 "a spinning top: Euler's equations, steady precession, nutation and the sleeping top",
             ),
-            ("torsional_page", "Torsional vibration", "a drive train of discs, shafts and gears, and its start-up"),
+            ("torsional_page", "Torsional vibration", "a drive train of disks, shafts and gears, and its start-up"),
             ("rotor_page", "Jeffcott rotor", "a spinning shaft: critical speeds, balancing, bearings, stability, rub"),
             (
                 "rotor_builder_page",
                 "Rotor builder",
-                "build a rotor from shafts, discs, bearings and seals: its whirl modes, criticals and stability",
+                "build a rotor from shafts, disks, bearings and seals: its whirl modes, criticals and stability",
             ),
             (
                 "diagnostics_page",

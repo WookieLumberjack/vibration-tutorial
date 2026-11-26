@@ -622,7 +622,7 @@ REFERENCES = (
         "wong-vehicles",
         "Wong 2022",
         "J. Y. Wong, <i>Theory of Ground Vehicles</i>, 5th edition, Wiley, 2022",
-        "ride and handling from the tyre up: road spectra, quarter- and half-car models, suspension design",
+        "ride and handling from the tire up: road spectra, quarter- and half-car models, suspension design",
     ),
     Reference(
         "jeong-singh",
@@ -974,7 +974,7 @@ REFERENCES = (
         "parloo-scaling",
         "Parloo et al. 2002",
         "E. Parloo, P. Verboven, P. Guillaume and M. Van Overmeire, Sensitivity-based operational mode shape "
-        "normalisation, <i>Mechanical Systems and Signal Processing</i> 16, 757–767, 2002",
+        "normalization, <i>Mechanical Systems and Signal Processing</i> 16, 757–767, 2002",
         "",
     ),
     Reference(
@@ -1061,7 +1061,7 @@ REFERENCES = (
         "worden-tomlinson",
         "Worden and Tomlinson 2001",
         "K. Worden and G. R. Tomlinson, <i>Nonlinearity in Structural Dynamics: Detection, Identification and "
-        "Modelling</i>, Institute of Physics Publishing, 2001",
+        "Modeling</i>, Institute of Physics Publishing, 2001",
         "detecting nonlinearity in tests, and describing functions",
     ),
     Reference(
@@ -1090,7 +1090,7 @@ REFERENCES = (
         "Castanier and Pierre 2006",
         "M. P. Castanier and C. Pierre, “Modeling and analysis of mistuned bladed disk vibration: status and "
         "emerging directions”, <i>Journal of Propulsion and Power</i> 22(2), 384–396, 2006",
-        "mistuned bladed discs: localization, the amplification's statistics, reduced models and intentional mistuning",
+        "mistuned bladed disks: localization, the amplification's statistics, reduced models and intentional mistuning",
     ),
     Reference(
         "api-617",
@@ -1103,7 +1103,7 @@ REFERENCES = (
         "walker",
         "Walker 2004",
         "D. N. Walker, <i>Torsional Vibration of Turbomachinery</i>, McGraw-Hill, 2004",
-        "torsional analysis of turbomachinery trains: modelling, excitation, motor start-ups, testing and standards",
+        "torsional analysis of turbomachinery trains: modeling, excitation, motor start-ups, testing and standards",
     ),
     Reference(
         "nestorides",
@@ -1164,7 +1164,7 @@ REFERENCES = (
         "kovacic-brennan",
         "Kovacic and Brennan 2011",
         "I. Kovacic and M. J. Brennan (eds.), <i>The Duffing Equation: Nonlinear Oscillators and their "
-        "Behaviour</i>, Wiley, 2011",
+        "Behavior</i>, Wiley, 2011",
         "a whole book on this page's oscillator: its history, jumps, super- and subharmonics, chaos",
     ),
     Reference(
@@ -1206,13 +1206,13 @@ REFERENCES = (
         "abramson",
         "Abramson 1966",
         "H. N. Abramson (ed.), <i>The Dynamic Behavior of Liquids in Moving Containers</i>, NASA SP-106, 1966",
-        "the classic survey of sloshing: tanks of every shape, their analogues and damping",
+        "the classic survey of sloshing: tanks of every shape, their analogs and damping",
     ),
     Reference(
         "ibrahim",
         "Ibrahim 2005",
         "R. A. Ibrahim, <i>Liquid Sloshing Dynamics: Theory and Applications</i>, Cambridge University Press, 2005",
-        "sloshing in depth: linear and nonlinear theory, analogues, liquid dampers",
+        "sloshing in depth: linear and nonlinear theory, analogs, liquid dampers",
     ),
     Reference(
         "van-der-pol-1926",
@@ -1379,7 +1379,7 @@ REFERENCES = (
     Reference(
         "jeffcott-1919",
         "Jeffcott 1919",
-        "H. H. Jeffcott, The lateral vibration of loaded shafts in the neighbourhood of a whirling speed: the effect of want of balance, <i>Philosophical Magazine</i> (6) 37, 304–314, 1919",
+        "H. H. Jeffcott, The lateral vibration of loaded shafts in the neighborhood of a whirling speed: the effect of want of balance, <i>Philosophical Magazine</i> (6) 37, 304–314, 1919",
         "",
     ),
     Reference(
@@ -1548,7 +1548,7 @@ REFERENCES = (
     Reference(
         "antoni-2006",
         "Antoni 2006",
-        "J. Antoni, The spectral kurtosis: a useful tool for characterising non-stationary signals, <i>Mechanical Systems and Signal Processing</i> 20(2), 282–307, 2006",
+        "J. Antoni, The spectral kurtosis: a useful tool for characterizing non-stationary signals, <i>Mechanical Systems and Signal Processing</i> 20(2), 282–307, 2006",
         "",
     ),
     Reference(

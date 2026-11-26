@@ -22,7 +22,7 @@ def run(sim: RotorSimulator, seconds: float) -> list:
 def test_the_static_sag_matches_the_beam_and_springs():
     s = RotorSystem(gravity=G)
     q = s.static_deflection()
-    # Each bearing carries half the weight on its spring; the shaft bends under the disc's weight.
+    # Each bearing carries half the weight on its spring; the shaft bends under the disk's weight.
     w_journal = (s.disc_mass / 2 + s.bearing_a.mass) * G / s.bearing_a.ky
     assert q[YA] == pytest.approx(-w_journal) and q[YB] == pytest.approx(-w_journal)
     assert q[YD] == pytest.approx(-w_journal - s.disc_mass * G / s.disc_stiffness)

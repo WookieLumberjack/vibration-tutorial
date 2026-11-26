@@ -6,9 +6,9 @@ Keep it holding no Python reference to the window, filtering no events of the wi
 overriding none for it: each was called into, or torn down, as `gc` freed a window half gone, and segfaulted
 the tests (two windows built in a row).
 
-- **F6**, the pointer: a large dot in the force colour follows the mouse (read from the cursor's position each
+- **F6**, the pointer: a large dot in the force color follows the mouse (read from the cursor's position each
   tick, so the overlay lets every click through to the page under it).
-- **F7**, ink: the overlay takes the mouse, and dragging draws (each stroke in the force colour, `INK_WIDTH`
+- **F7**, ink: the overlay takes the mouse, and dragging draws (each stroke in the force color, `INK_WIDTH`
   px). F7 again gives the mouse back to the page, the ink staying on the screen.
 - **Esc** clears the ink and turns both off. A page change clears the ink too: it was drawn on the old page.
 

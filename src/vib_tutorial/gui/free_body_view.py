@@ -3,7 +3,7 @@ forces as arrows out of it, a row each, so it reads while the mass swings.
 
 Each force keeps its row, and its words keep their places, in one column on the left: its symbol (`kx`, `cẋ`, `f`,
 …, `arm` for a Zener element's k₁(x − y)) and its size. To their right the body, a slim outline, and its arrows:
-each leaves the body's side at its row, towards where the force pushes, so only the arrows move: they turn round as
+each leaves the body's side at its row, toward where the force pushes, so only the arrows move: they turn round as
 a force changes direction, and their lengths follow the forces on `free_body.ArrowScale`'s scale (the recent peak
 fills the room either side). The net force, m·ẍ, is the last row, dashed, under a rule (what the forces above sum
 to). A turning body's diagram is in moments about its pivot (Pendulums: the net Jθ̈), each size in its own unit,
@@ -14,7 +14,7 @@ The check-in's findings shaped it: on the moving mass, the arrows' labels swappe
 columns either side of the body, or written on a square mass, the words left the arrows too little room, and the
 square outgrew the moving mass beside it.
 
-Working on it: `tests/test_sdof_page.py` reads its rows. Colours are theme roles' (`style.role`), so `apply_theme`
+Working on it: `tests/test_sdof_page.py` reads its rows. Colors are theme roles' (`style.role`), so `apply_theme`
 redraws them. The view's width is in its own units, so the column and the arrows' room keep their shares of the
 pane, the column wide enough for its words at the pane's narrowest (`setMinimumWidth`).
 """
@@ -40,7 +40,7 @@ GAP = 0.32  # between rows
 TEXT_EVERY = 0.2  # s between rewrites of the sizes
 TIP = (
     "<p>The forces on the mass now, a row each, its size on the left: the arrow leaves the side the force pushes "
-    "the mass towards, its length the force's size (the largest of the last few seconds fills the room). The "
+    "the mass toward, its length the force's size (the largest of the last few seconds fills the room). The "
     "dashed row is their sum, the mass times its acceleration, m·ẍ. <i>arm</i> is a Zener element's arm pulling, "
     "k₁(x − y).</p>"
 )

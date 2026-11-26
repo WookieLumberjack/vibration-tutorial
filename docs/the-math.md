@@ -9,7 +9,7 @@ The *Theory* tab in the app explains this in more depth; this is the outline.
 $$M\ddot{x} + C\dot{x} + Kx = f(t)$$
 
 where $M$ is diagonal (the masses) and $C$, $K$ are tridiagonal, assembled element by
-element: each spring or damper between two neighbours adds $\begin{bmatrix}v & -v\\ -v & v\end{bmatrix}$
+element: each spring or damper between two neighbors adds $\begin{bmatrix}v & -v\\ -v & v\end{bmatrix}$
 to their rows and columns (element 1 connects to ground). Everything is SI.
 
 **Classical modal analysis.** Ignoring damping, $x = \phi\cos\omega t$ gives the symmetric

@@ -52,7 +52,7 @@ class GyroTrial:
     setting: Setting = Setting.CUP
     tip_radius: float = 0.01  # m, on a table
     friction: float = 0.3  # μ, on a table
-    low: float = 0.0045  # m, a tippe top's weight below its centre
+    low: float = 0.0045  # m, a tippe top's weight below its center
     ratio: float = 0.8  # a tippe top's I₁/I₃
     shape: Shape = Shape.DISC  # radius is a square's side, or a rectangle's w
     breadth: float = 0.04  # m, a rectangle's other side b
@@ -60,7 +60,7 @@ class GyroTrial:
 
     @property
     def top(self) -> Top:
-        """The disc on its stem (a tippe top's ball: its mass and radius)."""
+        """The disk on its stem (a tippe top's ball: its mass and radius)."""
         return Top(self.mass, self.radius, self.height, self.gravity, self.shape, self.breadth)
 
     @property
@@ -83,7 +83,7 @@ class GyroTrial:
 TRIALS = (
     GyroTrial(
         "Let go at rest",
-        "A 0.5 kg disc 40 mm in radius, 30 mm up its stem, spun at 1500 rpm and let go at 30° without pushing it "
+        "A 0.5 kg disk 40 mm in radius, 30 mm up its stem, spun at 1500 rpm and let go at 30° without pushing it "
         "round. It doesn't fall: it drops only to 31.5° and comes back, nodding 14.7 times a second, while the "
         "whole top precesses round at 2.39 rad/s (a turn in 2.63 s). Each nod starts from rest, so the axis's "
         "path (the Path tab) has a cusp at the top of each.",
@@ -227,10 +227,10 @@ TRIALS = (
         tab=TAB_PATH,
     ),
     GyroTrial(
-        "A square top: just like a disc",
-        "A 0.5 kg square plate 69.28 mm on a side in place of the disc: <m>I₃</m> = <m>ms</m>²/6 = 4 kg·cm², the first trial's "
-        "disc's <m>mr</m>²/2 (<m>r</m> = <m>s</m>/√3 = 40 mm), and about every line across its axis <m>ms</m>²/12, that disc's <m>mr</m>²/4. So it "
-        "does just what the disc did: drops to 31.5°, nods 14.7 times a second and precesses at 2.39 rad/s. Its "
+        "A square top: just like a disk",
+        "A 0.5 kg square plate 69.28 mm on a side in place of the disk: <m>I₃</m> = <m>ms</m>²/6 = 4 kg·cm², the first trial's "
+        "disk's <m>mr</m>²/2 (<m>r</m> = <m>s</m>/√3 = 40 mm), and about every line across its axis <m>ms</m>²/12, that disk's <m>mr</m>²/4. So it "
+        "does just what the disk did: drops to 31.5°, nods 14.7 times a second and precesses at 2.39 rad/s. Its "
         "corners make no difference; only its moments do.",
         shape=Shape.SQUARE,
         radius=0.06928,
@@ -297,7 +297,7 @@ TRIALS = (
     ),
     GyroTrial(
         "On a slippery table: it rises",
-        "Out of the cup: a disc 20 mm up a stem whose tip is rounded to 10 mm, let go at 20° spinning at 1500 rpm "
+        "Out of the cup: a disk 20 mm up a stem whose tip is rounded to 10 mm, let go at 20° spinning at 1500 rpm "
         "on a table with <m>μ</m> = 0.01. Its tip slides, and friction raises it: under 10° in 12 s, 5° in 19 s. Jellett's "
         "<m>J</m> = <m>I₃ω₃</m>(<m>a</m> + <m>R</m> cos <m>θ</m>) stays put as friction takes energy out, and the least energy J allows (the Potential "
         "tab) is upright. Below 4.6° (sin <m>θ</m> = <m>μI₃</m>/<m>maR</m>) friction can make its tip roll instead, and the rise stalls "
@@ -322,11 +322,11 @@ TRIALS = (
     ),
     GyroTrial(
         "A tippe top spun fast",
-        "A 20 g ball 15 mm in radius, weighted 4.5 mm below its centre (<m>α</m> = 0.3), with <m>I₁</m>/<m>I₃</m> = 0.8, spun at "
+        "A 20 g ball 15 mm in radius, weighted 4.5 mm below its center (<m>α</m> = 0.3), with <m>I₁</m>/<m>I₃</m> = 0.8, spun at "
         "1200 rpm on its bottom, 5° off upright. 1 − <m>α</m> &lt; <m>I₁</m>/<m>I₃</m> &lt; 1 + <m>α</m> and it spins faster than 468 rpm, so "
         "turned over is the least energy Jellett's <m>J</m> allows: friction turns it over, past 90° in 1.8 s, and it ends "
         "on its top spinning at <m>J</m>/<m>I₃</m>(<m>R</m> − <m>a</m>) = 643 rpm, the same way seen from above but the other way about its "
-        "own axis. Its centre of mass rises 9 mm, and half its energy goes in the friction.",
+        "own axis. Its center of mass rises 9 mm, and half its energy goes in the friction.",
         setting=Setting.TIPPE,
         mass=0.02,
         radius=0.015,
@@ -335,7 +335,7 @@ TRIALS = (
         playback=PLAYBACK.index(0.25),
         tab=TAB_POTENTIAL,
         predict=Prediction(
-            "A ball weighted below its centre, spun at 1200 rpm on its bottom, 5° off upright, on a table. What does it do?",
+            "A ball weighted below its center, spun at 1200 rpm on its bottom, 5° off upright, on a table. What does it do?",
             (
                 "It stays upright, its weight low",
                 "It turns over onto its top, the weight up",
@@ -390,10 +390,10 @@ def _square_moments(rng: np.random.Generator) -> Question:
     side = pick(rng, (0.05, 0.06, 0.08, 0.1))
     top = Top(m, side, l, shape=Shape.SQUARE)
     return Question(
-        f"A top is a {sig(m, 6)} kg square plate {sig(side * 1000, 6)} mm on a side on a light stem, its centre {sig(l * 1000, 6)} mm "
+        f"A top is a {sig(m, 6)} kg square plate {sig(side * 1000, 6)} mm on a side on a light stem, its center {sig(l * 1000, 6)} mm "
         "above the tip. What is its moment of inertia I₁ about a line across the axis through the tip, in kg·cm²?",
         top.transverse * 1e4,
-        f"About a line through its centre parallel to a side a square plate has ms²/12, and a quarter turn leaves it "
+        f"About a line through its center parallel to a side a square plate has ms²/12, and a quarter turn leaves it "
         f"as it was, so it has that about every line across its axis; moved l up the axis it gains ml²: "
         f"I₁ = m(s²/12 + l²) = {sig(m, 6)} × ({number(side * side / 12)} + {number(l * l)}) m² = "
         f"{number(top.transverse * 1e4)} kg·cm². (Along the axis, I₃ = ms²/6 = {number(top.polar * 1e4)} kg·cm².)",
@@ -404,11 +404,11 @@ def _square_moments(rng: np.random.Generator) -> Question:
 
 def _square_swap(rng: np.random.Generator) -> Question:
     return Question(
-        "A spinning top's 40 mm disc is swapped for a square plate of the same mass, 69.3 mm on a side, at the same "
+        "A spinning top's 40 mm disk is swapped for a square plate of the same mass, 69.3 mm on a side, at the same "
         "height, spun and let go the same way. How does its motion change?",
         0,
         "Not at all: the square's moments are ms²/6 along its axis and ms²/12 across it, about every line across it, "
-        "which for s = √3 × 40 mm are the disc's mr²/2 and mr²/4. The motion depends only on the moments.",
+        "which for s = √3 × 40 mm are the disk's mr²/2 and mr²/4. The motion depends only on the moments.",
         choices=(
             "Not at all",
             "It wobbles four times a turn, at its corners",
@@ -418,9 +418,9 @@ def _square_swap(rng: np.random.Generator) -> Question:
         why=(
             "",
             "A top's motion depends only on its moments of inertia, and the square's, ms²/6 and ms²/12, equal the "
-            "disc's: the corners don't show.",
-            "The precession depends on the moments I₃ and I₁, and the square's equal the disc's.",
-            "The nod depends on the moments too, and with s = √3 × 40 mm the square's are the disc's.",
+            "disk's: the corners don't show.",
+            "The precession depends on the moments I₃ and I₁, and the square's equal the disk's.",
+            "The nod depends on the moments too, and with s = √3 × 40 mm the square's are the disk's.",
         ),
         setup=dict(shape=Shape.SQUARE, radius=0.06928, tab=TAB_PATH),
         predict=True,
@@ -432,11 +432,11 @@ def _rectangle_moments(rng: np.random.Generator) -> Question:
     a, b = pick(rng, (0.08, 0.1, 0.12)), pick(rng, (0.02, 0.03, 0.04))
     top = Top(m, a, l, shape=Shape.RECTANGLE, breadth=b)
     return Question(
-        f"A top is a {sig(m, 6)} kg rectangular plate {sig(a * 1000, 6)} × {sig(b * 1000, 6)} mm on a light stem, its centre "
+        f"A top is a {sig(m, 6)} kg rectangular plate {sig(a * 1000, 6)} × {sig(b * 1000, 6)} mm on a light stem, its center "
         f"{sig(l * 1000, 6)} mm above the tip. What is its moment of inertia about the line through the tip parallel to "
         f"its {sig(b * 1000, 6)} mm sides, in kg·cm²?",
         top.second * 1e4,
-        f"About a line through its centre parallel to the {sig(b * 1000, 6)} mm sides the plate has mw²/12, w = "
+        f"About a line through its center parallel to the {sig(b * 1000, 6)} mm sides the plate has mw²/12, w = "
         f"{sig(a * 1000, 6)} mm being how far it reaches across that line; moved l up the axis it gains ml²: I₂ = m(w²/12 + l²) = "
         f"{number(top.second * 1e4)} kg·cm². (Parallel to the other sides, I₁ = m(b²/12 + l²) = "
         f"{number(top.transverse * 1e4)} kg·cm²: unequal, an asymmetric top.)",
@@ -452,7 +452,7 @@ def _racket(rng: np.random.Generator) -> Question:
     middle = min(i1, i2) < i3 < max(i1, i2)
     flips, keeps = "It flips over and back, again and again", "It keeps spinning steadily about its axis"
     return Question(
-        f"A plate 100 × 20 mm on a stem, its centre {sig(l * 1000, 6)} mm above the tip, is spun about its stem with no "
+        f"A plate 100 × 20 mm on a stem, its center {sig(l * 1000, 6)} mm above the tip, is spun about its stem with no "
         "gravity, a little off the axis. What does it do?",
         0,
         f"I₁ = m(b²/12 + l²) = {number(i1 * 1e4)}, I₂ = m(w²/12 + l²) = {number(i2 * 1e4)} and I₃ = m(w² + b²)/12 = "
@@ -491,10 +491,10 @@ def _moments(rng: np.random.Generator) -> Question:
     m, r, l = _disc(rng)
     top = Top(m, r, l)
     return Question(
-        f"A top is a {sig(m, 6)} kg disc of radius {sig(r * 1000, 6)} mm on a light stem, its centre {sig(l * 1000, 6)} mm above the "
+        f"A top is a {sig(m, 6)} kg disk of radius {sig(r * 1000, 6)} mm on a light stem, its center {sig(l * 1000, 6)} mm above the "
         "tip. What is its moment of inertia I₁ about a line across the axis through the tip, in kg·cm²?",
         top.transverse * 1e4,
-        f"About its own diameter a disc has mr²/4; moved l up the axis it gains ml² (parallel axes): "
+        f"About its own diameter a disk has mr²/4; moved l up the axis it gains ml² (parallel axes): "
         f"I₁ = m(r²/4 + l²) = {sig(m, 6)} × ({number(r * r / 4)} + {number(l * l)}) m² = {number(top.transverse)} kg·m² "
         f"= {number(top.transverse * 1e4)} kg·cm². (Along the axis, I₃ = mr²/2 = {number(top.polar * 1e4)} kg·cm².)",
         unit="kg·cm²",
@@ -508,7 +508,7 @@ def _flat_precession(rng: np.random.Generator) -> Question:
     top = Top(m, r, l)
     rate = top.weight_moment / (top.polar * rpm * RPM)
     return Question(
-        f"A {sig(m, 6)} kg disc of radius {sig(r * 1000, 6)} mm spins at {sig(rpm, 6)} rpm on a light axle, its centre "
+        f"A {sig(m, 6)} kg disk of radius {sig(r * 1000, 6)} mm spins at {sig(rpm, 6)} rpm on a light axle, its center "
         f"{sig(l * 1000, 6)} mm from the end of the axle, which rests on a pivot with the axle horizontal. How long does "
         "it take to precess once round the pivot?",
         2 * math.pi / rate,
@@ -665,7 +665,7 @@ def _reverse(rng: np.random.Generator) -> Question:
         choices=("The other way", "The same way", "It doesn't precess"),
         why=(
             "",
-            "Precession turns L towards gravity's moment; with L reversed, it has to turn the other way to get there.",
+            "Precession turns L toward gravity's moment; with L reversed, it has to turn the other way to get there.",
             "Gravity's moment is still there, and turns the reversed L: it precesses, the other way.",
         ),
         setup=dict(spin_rpm=-1500.0, tilt=30.0, launch=Launch.SLOW),
@@ -716,7 +716,7 @@ def _period_spec(rng: np.random.Generator) -> Question:
 def _sleep_spec(rng: np.random.Generator) -> Question:
     m, r = pick(rng, (0.2, 0.5, 1.0)), pick(rng, (0.03, 0.04, 0.05))
     rpm = pick(rng, (600, 800, 1000))
-    # the highest centre that still sleeps with 20 % to spare (I₃ω₃/1.2 = 2√(I₁ mgl)), down to a tenth of a mm
+    # the highest center that still sleeps with 20 % to spare (I₃ω₃/1.2 = 2√(I₁ mgl)), down to a tenth of a mm
     highest = scipy.optimize.brentq(lambda h: Top(m, r, h).sleeping_spin - rpm * RPM / 1.2, 1e-4, 1.0)
     best = math.floor(highest * 1e4) / 1e4
 
@@ -732,17 +732,17 @@ def _sleep_spec(rng: np.random.Generator) -> Question:
                 now.sleeping_spin / RPM <= rpm / 1.2,
             ),
             Requirement(
-                f"The disc at least {number(best * 1000 * 0.9)} mm up the stem",
+                f"The disk at least {number(best * 1000 * 0.9)} mm up the stem",
                 f"{number(t.height * 1000)} mm",
                 t.height >= 0.9 * best,
             ),
         )
 
     return Question(
-        f"A {sig(m, 6)} kg disc of radius {sig(r * 1000, 6)} mm will spin at {sig(rpm, 6)} rpm. Set how far up its stem it sits so it "
+        f"A {sig(m, 6)} kg disk of radius {sig(r * 1000, 6)} mm will spin at {sig(rpm, 6)} rpm. Set how far up its stem it sits so it "
         "sleeps with 20 % to spare in spin, as high as that allows (within 10 %).",
         0,
-        f"It sleeps if I₃ω₃ &gt; 2√(I₁mgl), with I₁ = m(r²/4 + l²): raising the disc raises both I₁ and mgl, so it "
+        f"It sleeps if I₃ω₃ &gt; 2√(I₁mgl), with I₁ = m(r²/4 + l²): raising the disk raises both I₁ and mgl, so it "
         f"needs more spin. With 20 % to spare, I₃ω₃/1.2 = 2√(I₁mgl) at about l = {number(best * 1000)} mm.",
         setup=dict(mass=m, radius=r, height=0.1, spin_rpm=rpm, tilt=2.0, tab=TAB_POTENTIAL),
         goal=goal,
@@ -759,11 +759,11 @@ def _rising_end(rng: np.random.Generator) -> Question:
     a = l - R
     end = rpm * (a + R * math.cos(math.radians(tilt))) / (a + R)
     return Question(
-        f"A disc spins at {sig(rpm, 6)} rpm on a stem whose tip is rounded to a radius of {sig(R * 1000, 6)} mm, the disc's centre "
+        f"A disk spins at {sig(rpm, 6)} rpm on a stem whose tip is rounded to a radius of {sig(R * 1000, 6)} mm, the disk's center "
         f"{sig(l * 1000, 6)} mm above the end of the stem. Let go at {sig(tilt, 6)}° on a slippery table, it rises. If it rose "
         "all the way upright, how fast would it spin?",
         end,
-        f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = l − R = {number(a * 1000)} mm the disc's centre "
+        f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = l − R = {number(a * 1000)} mm the disk's center "
         f"above the tip's. Upright cos θ = 1: ω₃ = {sig(rpm, 6)} × ({number(a * 1000)} + {sig(R * 1000, 6)} cos {sig(tilt, 6)}°)/"
         f"({number(a * 1000)} + {sig(R * 1000, 6)}) = {number(end)} rpm, a little slower.",
         unit="rpm",
@@ -786,11 +786,11 @@ def _tippe_end(rng: np.random.Generator) -> Question:
     rpm, tilt = pick(rng, (800, 1000, 1200, 1500)), pick(rng, (5, 10))
     end = rpm * (R * math.cos(math.radians(tilt)) - low) / (R + low)
     return Question(
-        f"A tippe top is a ball {sig(R * 1000, 6)} mm in radius, its centre of mass {sig(low * 1000, 6)} mm below the ball's "
-        f"centre. Spun at {sig(rpm, 6)} rpm on its bottom, {sig(tilt, 6)}° off upright, it turns over. How fast does it spin on "
+        f"A tippe top is a ball {sig(R * 1000, 6)} mm in radius, its center of mass {sig(low * 1000, 6)} mm below the ball's "
+        f"center. Spun at {sig(rpm, 6)} rpm on its bottom, {sig(tilt, 6)}° off upright, it turns over. How fast does it spin on "
         "its top, seen from above?",
         end,
-        f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = −{sig(low * 1000, 6)} mm (the weight below the centre). "
+        f"Friction keeps Jellett's J = I₃ω₃(a + R cos θ), with a = −{sig(low * 1000, 6)} mm (the weight below the center). "
         f"Turned over J = I₃Ω(R − a), so Ω = {sig(rpm, 6)} × ({sig(R * 1000, 6)} cos {sig(tilt, 6)}° − {sig(low * 1000, 6)})/"
         f"({sig(R * 1000, 6)} + {sig(low * 1000, 6)}) = {number(end)} rpm. About its own axis it now spins the other way.",
         unit="rpm",
@@ -836,8 +836,8 @@ def _tippe_turns(rng: np.random.Generator) -> Question:
         else f"It ends on its side only for I₁/I₃ over 1 + α = 1.3; here it's {sig(ratio, 6)}.",
     }
     return Question(
-        f"A tippe top's weight sits 0.3 of its radius below the ball's centre (α = 0.3), and I₁/I₃ = {sig(ratio, 6)} about "
-        "its centre of mass. Spun fast (1200 rpm) on its bottom on a table, what does it do?",
+        f"A tippe top's weight sits 0.3 of its radius below the ball's center (α = 0.3), and I₁/I₃ = {sig(ratio, 6)} about "
+        "its center of mass. Spun fast (1200 rpm) on its bottom on a table, what does it do?",
         0,
         f"1 − α = 0.7 and 1 + α = 1.3; I₁/I₃ = {sig(ratio, 6)} is {why}",
         choices=choices,
@@ -860,9 +860,9 @@ def _tippe_turns(rng: np.random.Generator) -> Question:
 PROBLEMS = tuple(
     Problem(key, title, "gyroscope_page", f"See {page_link('gyroscope_page', anchor, section)}.", make)
     for key, title, anchor, section, make in (
-        ("moments", "A disc on a stem", "rigid-body", "A rigid body turning", _moments),
+        ("moments", "A disk on a stem", "rigid-body", "A rigid body turning", _moments),
         ("square-moments", "A square on a stem", "square", "A rigid body turning", _square_moments),
-        ("square-swap", "Predict: a square for the disc", "square", "A rigid body turning", _square_swap),
+        ("square-swap", "Predict: a square for the disk", "square", "A rigid body turning", _square_swap),
         ("rectangle-moments", "A rectangle on a stem", "asymmetric", "The asymmetric top", _rectangle_moments),
         ("racket", "Predict: the tennis-racket flip", "asymmetric", "The asymmetric top", _racket),
         ("flat-precession", "A wheel on a pivot", "precession", "Steady precession", _flat_precession),

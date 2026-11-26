@@ -28,8 +28,8 @@ def test_every_preset_is_a_valid_rotor_with_its_target_in_range():
 
 def test_classic_and_off_centre():
     assert criticals("Classic Jeffcott rotor", forward=True) == [1584]
-    assert criticals("Off-centre disc") == [1731, 1737]
-    s = PRESETS["Off-centre disc"].system
+    assert criticals("Off-center disk") == [1731, 1737]
+    s = PRESETS["Off-center disk"].system
     assert round(whirl_modes(s, 0.0).freq_hz[-1], -1) == 360
     assert [round(f) for f in whirl_modes(s, 6000.0 / RPM).freq_hz[-2:]] == [289, 465]
 
@@ -112,7 +112,7 @@ def test_magnetic_bearings():
     s, m = p.system, p.system.bearing_a.magnet
     assert m is not None and s.bearing_b.magnet == m and s.position == 1.15 and s.gravity > 0
     q = s.static_deflection(0.0)
-    assert np.abs(q[[XA, YA, XB, YB]]).max() < 1e-15  # the integral holds the journals at the centre
+    assert np.abs(q[[XA, YA, XB, YB]]).max() < 1e-15  # the integral holds the journals at the center
     assert abs(s.bearing_loads[1]) / m.capacity < 1.0  # inside the linearized magnets' reach
     assert criticals("Magnetic bearings", forward=True) == [1542]
     assert [round(z, 3) for w, r, z in campbell(s, p.top_rpm / RPM, n_modes=8).criticals if r > 0.1 and z < 0.3] == [

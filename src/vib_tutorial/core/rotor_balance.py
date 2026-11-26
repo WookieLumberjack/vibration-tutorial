@@ -1,7 +1,7 @@
 """Single- and two-plane balancing of the Jeffcott rotor by influence coefficients.
 
 As on a real machine: run at the balancing speed and measure the 1X vector at
-a probe (V0, "as found"); stop, add a known trial weight T on the disc, run
+a probe (V0, "as found"); stop, add a known trial weight T on the disk, run
 again and measure V1. The rotor is linear, so the weight's effect is V1 - V0,
 and per unit of weight the influence coefficient is
 
@@ -16,7 +16,7 @@ runout: a bowed shaft, or on a real machine a scratch or a magnetic spot on the
 probe's track. It does not come from unbalance, so it is subtracted first:
 W = -(V0 - Vs) / α. A bow does respond to speed, though, so a bowed rotor
 balanced at one speed is left out of balance at others; and a weight in one
-plane cannot cancel a couple unbalance (a skewed disc) at every speed either.
+plane cannot cancel a couple unbalance (a skewed disk) at every speed either.
 
 Two planes and two probes (two-plane balancing) work the same way with
 vectors: a trial run for each plane in turn gives a column of the influence
@@ -24,8 +24,8 @@ matrix,
 
     α[:, j] = (V_j - V0) / T_j,
 
-and the weights W = -α⁻¹ (V0 - Vs) cancel both readings. A disc's unbalance is
-a force and a couple, so two weights in planes on the disc can cancel both,
+and the weights W = -α⁻¹ (V0 - Vs) cancel both readings. A disk's unbalance is
+a force and a couple, so two weights in planes on the disk can cancel both,
 and then the rotor is balanced at every speed. Planes elsewhere on a flexible
 shaft cancel the readings only at the balancing speed. Planes close together
 make α nearly singular: the weights grow large and small reading errors

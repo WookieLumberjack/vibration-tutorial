@@ -1,6 +1,6 @@
 """The Gyroscope page's Theory figures (see `figures`): the top in its cup with its Euler angles (the tilt θ from
 the vertical, the precession φ about it, the spin ψ about the axis) and its sizes r and l; and a top on a table,
-its round tip's sphere of radius R, the centre of mass G a above the sphere's centre, the contact P and the slip
+its round tip's sphere of radius R, the center of mass G a above the sphere's center, the contact P and the slip
 there."""
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ def _ellipse(cx: float, cy: float, rx: float, ry: float, angle: float, stroke: s
 
 
 def top_svg() -> str:
-    """The disc tilted θ = 30° from the vertical on its stem, its centre l up from the tip in the cup; the
+    """The disk tilted θ = 30° from the vertical on its stem, its center l up from the tip in the cup; the
     precession φ round the vertical, the spin ψ round the axis."""
     fg, muted, mass, strong, force = colors.foreground, colors.muted, colors.mass[0], colors.strong, colors.force
     tx, ty = 150.0, 150.0  # the tip
@@ -43,7 +43,7 @@ def top_svg() -> str:
         fig.math_label(tx + 0.5 * l_px * ux + 12, ty + 0.5 * l_px * uy + 8, "l", fg, "start"),
         fig.line(cx, cy, cx + r_px * math.cos(theta), cy + r_px * math.sin(theta), fg, 1.0),
         fig.math_label(cx + 0.5 * r_px * math.cos(theta) + 2, cy + 0.5 * r_px * math.sin(theta) + 16, "r", fg),
-        # the spin ψ round the axis, beyond the disc
+        # the spin ψ round the axis, beyond the disk
         _ellipse(tx + 1.2 * l_px * ux, ty + 1.2 * l_px * uy, 12.0, 4.0, math.degrees(theta), strong, "none", 0.0),
         fig.math_label(tx + 1.2 * l_px * ux + 14, ty + 1.2 * l_px * uy - 4, "ψ", strong, "start"),
         # the precession φ round the vertical, near the top
@@ -55,7 +55,7 @@ def top_svg() -> str:
 
 
 def tip_svg() -> str:
-    """A top tilted on a table: its tip a sphere of radius R round the centre C, the centre of mass G a further up
+    """A top tilted on a table: its tip a sphere of radius R round the center C, the center of mass G a further up
     the axis, the contact P under C, and the slip v_P there."""
     fg, muted, mass, force, strong = colors.foreground, colors.muted, colors.mass[0], colors.force, colors.strong
     floor_y = 140.0
@@ -63,7 +63,7 @@ def tip_svg() -> str:
     a_px = 56.0
     theta = math.radians(28.0)
     ux, uy = math.sin(theta), -math.cos(theta)
-    cx, cy = 130.0, floor_y - R  # the sphere's centre, R above the table
+    cx, cy = 130.0, floor_y - R  # the sphere's center, R above the table
     gx, gy = cx + a_px * ux, cy + a_px * uy
     px, py = cx, floor_y
     parts = [
@@ -90,8 +90,8 @@ def tip_svg() -> str:
 
 
 def frames_svg() -> str:
-    """The two frames on the tilted disc, in 3D: the axis frame's e₁′ (horizontal, the line of nodes) and e₂′ (in
-    the disc, up the slope), and the body's e₁ (the mark) and e₂, turned ψ from them about the shared e₃."""
+    """The two frames on the tilted disk, in 3D: the axis frame's e₁′ (horizontal, the line of nodes) and e₂′ (in
+    the disk, up the slope), and the body's e₁ (the mark) and e₂, turned ψ from them about the shared e₃."""
     fg, muted, mass = colors.foreground, colors.muted, colors.mass[0]
     held, turned = colors.strong, colors.mass[6]  # the axis frame's, the body's: as the page's 3D view draws them
     theta, phi, psi = math.radians(35.0), math.radians(25.0), math.radians(55.0)
@@ -140,7 +140,7 @@ def frames_svg() -> str:
         parts.append(fig.arrow(gx, gy, *end, color, 1.8, dash))
         lx, ly = at(plus(G, vector, 1.08))
         parts.append(fig.math_label(lx, ly + 5, name, color))
-    # ψ: from e₁′ to e₁ in the disc's plane
+    # ψ: from e₁′ to e₁ in the disk's plane
     arc = [
         at(plus(G, tuple(math.cos(a) * u + math.sin(a) * v for u, v in zip(n, e2a)), 0.42))
         for a in (psi * k / 16 for k in range(17))

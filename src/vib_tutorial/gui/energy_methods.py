@@ -2,7 +2,7 @@
 on the Simulation page's chain.
 
 Left: the trial shape for Rayleigh's quotient (with some of mode 2 mixed in, and passes of inverse iteration),
-and the shapes Rayleigh–Ritz keeps. Centre: the trial shape against mode 1's (its points `DragPoint`s: dragging
+and the shapes Rayleigh–Ritz keeps. Center: the trial shape against mode 1's (its points `DragPoint`s: dragging
 one makes the shape the reader's own, `drawn`, and the readout tracks the lowest it reaches), and every estimate of f₁ on one
 axis. Right: Rayleigh's error against the shape's, Rayleigh–Ritz's estimates as shapes are added, Holzer's
 residual, the energies Lagrange's equations start from, and the Theory.
@@ -116,7 +116,7 @@ TRIALS = (
             ),
             2,
             why=(
-                "Rayleigh's quotient is never below ω<sub>1</sub>² for any shape: the lowest mode minimises it.",
+                "Rayleigh's quotient is never below ω<sub>1</sub>² for any shape: the lowest mode minimizes it.",
                 "Any shape that isn't mode 1 mixes in higher modes, which only raise the quotient: it errs high.",
                 '',
             ),
@@ -463,7 +463,7 @@ def matrix_html(A: np.ndarray, digits: int = 4) -> str:
 
 
 class EnergyMethodsPage(QtWidgets.QWidget):
-    """Controls on the left, the shapes and estimates in the centre, the methods' own plots on the right."""
+    """Controls on the left, the shapes and estimates in the center, the methods' own plots on the right."""
 
     dof_requested = QtCore.Signal(int)  # the user changed N here; the main window owns the system
     system_requested = QtCore.Signal(object)  # a trial's chain, for the Simulation page
@@ -504,7 +504,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
 
         connect_all((self.shape, self.eps, self.iterations, self.basis, self.r), self.redraw)
 
-        # --- centre
+        # --- center
         self.shape_plot = plot("Displacement (largest 1)", None, "Mass", None, height=150)
         self.shape_plot.setToolTip(SHAPE_TIP)
         self.shape_plot.setMouseEnabled(x=False, y=False)
@@ -682,7 +682,7 @@ class EnergyMethodsPage(QtWidgets.QWidget):
         self.holzer_curve.setPen(pg.mkPen(c.mass[0], width=2))
         self.holzer_zero.setPen(pg.mkPen(c.grey, width=1))
         self.holzer_trial.apply_theme()
-        self._ritz_built = -1  # rebuild the per-mode items in the new colours
+        self._ritz_built = -1  # rebuild the per-mode items in the new colors
         self._dirty = True
         if self.isVisible():
             self.redraw()

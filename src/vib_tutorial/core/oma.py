@@ -8,7 +8,7 @@ their shape from the structure, not from the input.
 Ambient record
 --------------
 Independent Gaussian forces drive every mass (or one), white at the analog rate fs_sim =
-R fs, optionally coloured by a second-order low-pass. The chain's response comes from the
+R fs, optionally colored by a second-order low-pass. The chain's response comes from the
 same exact first-order-hold update as everywhere in the app, diagonalized into one
 first-order recursive filter per eigenvalue (`foh.FohSteps`, here with an input at every
 mass), run for the slowest transient's settling time before the record
@@ -132,7 +132,7 @@ class AmbientSettings:
     duration: float  # s, the record's length
     input_dof: int | None = None  # the mass the ambient forces act on; None: every mass
     colour: Colour = Colour.WHITE
-    corner_hz: float = 5.0  # the low-pass's corner, if coloured
+    corner_hz: float = 5.0  # the low-pass's corner, if colored
     response: Response = Response.ACCELERATION
     harmonic_hz: float = 0.0  # a machine running: a sine force on the first mass (0: none)
     harmonic_force: float = 0.0  # its amplitude, N (the random forces' RMS is 1 N at each analog sample)

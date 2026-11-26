@@ -38,9 +38,9 @@ WAVES_TIP = (
     "and the step in closed form (a string or bar), or the sum of its exact modes (a beam).</p>"
 )
 TIPS = {
-    "pulse": "<p>The pulse: a raised cosine, its full width and its centre as fractions of the length. The fewer "
+    "pulse": "<p>The pulse: a raised cosine, its full width and its center as fractions of the length. The fewer "
     "elements across it, the more of it is short waves the mesh gets wrong.</p>",
-    "moving": "<p>Start the pulse travelling right (d'Alembert's right-going wave alone), or at rest, when it "
+    "moving": "<p>Start the pulse traveling right (d'Alembert's right-going wave alone), or at rest, when it "
     "splits into two halves going opposite ways. A beam's starts at rest.</p>",
     "wave_scheme": "<p>How the mesh the pulse runs on shares out its mass.</p>",
     "dashpot": "<p>Put a dashpot on the far end in place of the medium's own end, as a multiple of the "
@@ -68,7 +68,7 @@ class WavesView(QtWidgets.QWidget):
         self.pulse_width = spin(1.0, 100.0, 12.5, 1, " %")
         self.pulse_at = spin(0.0, 100.0, 25.0, 1, " %")
         form_row(wf, "Pulse:", group(self.pulse_width, "wide at", self.pulse_at), TIPS["pulse"])
-        self.moving = QtWidgets.QCheckBox("Travelling right")
+        self.moving = QtWidgets.QCheckBox("Traveling right")
         self.moving.setChecked(True)
         self.moving.setToolTip(TIPS["moving"])
         wf.addRow(self.moving)
