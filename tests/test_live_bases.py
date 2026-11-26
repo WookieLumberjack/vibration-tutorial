@@ -121,7 +121,7 @@ def test_the_matrices_say_how_the_coordinates_are_coupled():
     cases["dynamic coupling"] = E
     notes = {name: view.matrices_view(a if name == "dynamic coupling" else s, V, False) for name, V in cases.items()}
     assert "(static coupling)" in notes["static coupling"].note
-    assert notes["uncoupled"].note.startswith("Both diagonal")
+    assert notes["uncoupled"].note.startswith("VᵀMV and VᵀKV diagonal")
     assert not any(m.coupled for m in notes["uncoupled"].matrices)
     assert "(dynamic coupling)" in notes["dynamic coupling"].note
     assert notes["both"].note.startswith("Both couple")
@@ -131,7 +131,7 @@ def test_the_matrices_say_how_the_coordinates_are_coupled():
     flat = view.matrices_view(s, np.array([[1.0, 2.0], [1.0, 2.0]]), False)
     assert not flat.matrices and "one line" in flat.note
     rail = view.matrices_view(s, np.eye(2), True)
-    assert rail.hz == pytest.approx((math.sqrt(500.0) / TWO_PI,)) and "one pure sine" in rail.note
+    assert rail.hz == pytest.approx((math.sqrt(500.0) / TWO_PI,)) and "one sine" in rail.note
 
 
 def test_in_the_modes_each_coordinate_keeps_its_energy_and_in_x_it_passes_between_them():
@@ -240,3 +240,25 @@ def test_the_energy_triangles_close_on_the_whole_energy_and_are_right_angled_alo
     assert [t.apart for t in modes] == pytest.approx([90.0, 90.0])
     one = view.energy_triangles(s, np.eye(2), True, x, v)
     assert one[0].apart is None and one[0].b == (0.0, 0.0) and one[0].cross == 0.0
+
+
+def test_c_is_in_the_steps_and_the_modes_uncouple_it_only_for_some_dampers():
+    """C, CV and VᵀCV are in the matrices' steps, damped or not (at c = 0 the note suggests some). The modes
+    uncouple VᵀMV and VᵀKV always, but VᵀCV only when the dampers are spread like the masses and springs: the
+    symmetric pair's are, and with a heavier m₂ the same dampers aren't."""
+    still = view.matrices_view(TwoMass(), np.eye(2), False)
+    assert [m.symbol for m in still.given] == ["M", "K", "C"]
+    assert [m.symbol for m in still.matrices] == ["VᵀMV", "VᵀKV", "VᵀCV"]
+    assert "add some" in still.note
+    even = TwoMass(c=1.0)
+    along = view.matrices_view(even, even.modes()[1], False)
+    assert not any(m.coupled for m in along.matrices) and "VᵀCV is diagonal too" in along.note
+    heavy = TwoMass(m2=2.0, c=1.0)
+    along = view.matrices_view(heavy, heavy.modes()[1], False)
+    assert [m.coupled for m in along.matrices] == [False, False, True]
+    assert "VᵀCV isn't diagonal" in along.note
+    live = plucked(system=heavy)
+    live.advance(0.5)
+    _, y = live.record.window(10.0)
+    x, v = y[:, COL["x1"] : COL["x2"] + 1], y[:, COL["v1"] : COL["v2"] + 1]
+    assert "the dampers' forces still pass energy" in view.shares(heavy, heavy.modes()[1], False, x, v).note

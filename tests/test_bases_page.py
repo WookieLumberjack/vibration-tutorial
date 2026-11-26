@@ -90,7 +90,7 @@ def test_an_arrow_snaps_onto_a_mode_and_the_coordinates_uncouple(page, app):
     drag(v, v.press_point(0), QtCore.QPointF(*(view.ARROW * 1e3 * direction(47.0))), app)
     drag(v, v.press_point(1), QtCore.QPointF(*(view.ARROW * 1e3 * direction(133.0))), app)
     assert angle(np.array(page.v1)) == pytest.approx(45.0) and angle(np.array(page.v2)) == pytest.approx(135.0)
-    assert page.plane_note.text().count("Both diagonal") == 1
+    assert page.plane_note.text().count("VᵀMV and VᵀKV diagonal") == 1
     page.step(0.5)
     # The past redescribed: q is the modes' coordinates over the whole window, each one sine.
     _, q1 = page.q_items[0].getData()
@@ -176,3 +176,14 @@ def test_a_running_drag_redraws_the_matrices_now_and_then_and_exactly_on_letting
     page._on_arrow_released(0)
     assert page.matrices.text() != before, "let go: drawn where it stopped"
     assert page.matrices.text() == page._matrices_html(view.matrices_view(page.live.system, page.basis, False))
+
+
+def test_the_page_fits_a_1280_by_800_window_with_every_step_showing(page, app):
+    """The matrices' steps (M, K, C; V, Vᵀ; the products; the frequencies) and the notes wrap to their width, which
+    the window's minimum size hint doesn't see: in a 1280 × 800 window, damped and coupled, it stays 800 tall."""
+    page.load_trial(trial("Coupled through"))
+    page.c.setValue(2.0)
+    page.step(0.5)
+    for _ in range(3):
+        app.processEvents()
+    assert page.window().height() <= 800

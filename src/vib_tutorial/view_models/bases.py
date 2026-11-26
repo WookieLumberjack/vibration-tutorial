@@ -8,7 +8,7 @@ code's word: the page calls it *one arrow*, a reduced basis), and what's shown. 
 - `plane_view(V, rail, modes, shown)`: the (x₁, x₂) plane's still parts (the arrows, the grid of the coordinates
   they make, the mode lines, the rail), and `projection(V, x)` the point's parallelogram, x = q₁v₁ + q₂v₂, as it
   moves. All in mm.
-- `matrices_view(system, V, rail)`: the steps, M and K, then V and Vᵀ, then VᵀMV, VᵀKV (and VᵀCV with dampers)
+- `matrices_view(system, V, rail)`: the steps, M, K and C, then V and Vᵀ, then VᵀMV, VᵀKV and VᵀCV
   with their off-diagonal coupling marked, each arrow's frequency kept alone (Rayleigh's quotient of it),
   and what they say: coupled statically, dynamically, both, or not at all (the modes), and the frequencies, the
   same in every basis.
@@ -224,7 +224,6 @@ class Matrix:
 class MatricesView:
     given: tuple[Matrix, ...]  # M and K in the masses' own displacements, the steps' start
     basis: tuple[Matrix, ...]  # V (the arrows as its columns) and Vᵀ; one column on one arrow
-    halfway: tuple[Matrix, ...]  # MV and KV: the first multiplication
     matrices: tuple[Matrix, ...]  # VᵀMV, VᵀKV (and VᵀCV with dampers): the products
     hz: tuple[float, ...]  # the frequencies the matrices give (Hz): one on one arrow
     alone: tuple[float, ...]  # each arrow kept alone, √(k̃ᵢᵢ/m̃ᵢᵢ)/2π (Hz): Rayleigh's quotient of its arrow
@@ -242,7 +241,7 @@ def _coupled(A: np.ndarray) -> bool:
 def _matrix(symbol: str, unit: str, A: np.ndarray, coupling: bool = True) -> Matrix:
     """`coupling`: its off-diagonal terms are a coupling (VᵀMV's), not just numbers (V's)."""
     scale = float(np.abs(A).max()) or 1.0
-    entries = tuple(tuple("0" if abs(float(a)) < COUPLED * scale else sig(float(a), 4) for a in row) for row in A)
+    entries = tuple(tuple("0" if abs(float(a)) < COUPLED * scale else sig(float(a), 3) for a in row) for row in A)
     return Matrix(symbol, unit, entries, coupling and _coupled(A))
 
 
@@ -250,20 +249,14 @@ def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
     """The matrices in the basis (see the module), and what they say."""
     M, C, K = s.matrices()
     B = V[:, :1] if rail else V
-    given = (_matrix("M", "kg", M), _matrix("K", "N/m", K))
+    given = (_matrix("M", "kg", M), _matrix("K", "N/m", K), _matrix("C", "N·s/m", C))
     names_v = ("v₁", "v₁ᵀ") if rail else ("V", "Vᵀ")
     basis = (_matrix(names_v[0], "", B, coupling=False), _matrix(names_v[1], "", B.T, coupling=False))
-    v = "v₁" if rail else "V"
-    halfway = (_matrix(f"M{v}", "kg", M @ B, coupling=False), _matrix(f"K{v}", "N/m", K @ B, coupling=False))
     if not rail and singular(V):
-        return MatricesView(
-            given, basis, halfway, (), (), (), (), "The arrows lie along one line: they don't make a basis."
-        )
+        return MatricesView(given, basis, (), (), (), (), "The arrows lie along one line: they don't make a basis.")
     Mt, Ct, Kt = (transformed(B, A) for A in (M, C, K))
     names = ("v₁ᵀMv₁", "v₁ᵀKv₁", "v₁ᵀCv₁") if rail else ("VᵀMV", "VᵀKV", "VᵀCV")
-    shown = [_matrix(names[0], "kg", Mt), _matrix(names[1], "N/m", Kt)]
-    if s.c > 0:
-        shown.append(_matrix(names[2], "N·s/m", Ct))
+    shown = [_matrix(names[0], "kg", Mt), _matrix(names[1], "N/m", Kt), _matrix(names[2], "N·s/m", Ct)]
     alone = tuple(float(np.sqrt(Kt[i, i] / Mt[i, i]) / (2 * np.pi)) for i in range(B.shape[1]))
     if rail:
         f = alone[0]
@@ -274,10 +267,11 @@ def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
             f"f = √{sig(k / m, 4)} / 2π = {sig(f, 4)} Hz",
         )
         note = (
-            f"One coordinate, one oscillator, one pure sine: {_above(f, low)} the system's lowest, "
+            f"One coordinate, one oscillator, one sine{' dying away' if s.c > 0 else ''}: {_above(f, low)} the "
+            "system's lowest, "
             f"{sig(low, 4)} Hz. One arrow never comes in below it."
         )
-        return MatricesView(given, basis, halfway, tuple(shown), (f,), alone, sums, note)
+        return MatricesView(given, basis, tuple(shown), (f,), alone, sums, note)
     hz = frequencies(Mt, Kt)
     both = " and ".join(f"{sig(float(f), 4)}" for f in hz)
     sums = (
@@ -289,7 +283,7 @@ def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
     )
     m_c, k_c = _coupled(Mt), _coupled(Kt)
     if not (m_c or k_c):
-        what = "Both diagonal: uncoupled. These arrows lie along the modes, each coordinate one pure sine."
+        what = "VᵀMV and VᵀKV diagonal: these arrows lie along the modes."
     elif k_c and not m_c:
         what = "Only VᵀKV couples: through the springs (static coupling)."
     elif m_c and not k_c:
@@ -301,8 +295,22 @@ def matrices_view(s: TwoMass, V: np.ndarray, rail: bool) -> MatricesView:
         if not (m_c or k_c)
         else "An arrow alone leaves the coupling out, and misses."
     )
-    note = f"{what} {kept}"
-    return MatricesView(given, basis, halfway, tuple(shown), tuple(float(f) for f in hz), alone, sums, note)
+    note = f"{what} {kept} {_damping_note(s.c, m_c or k_c, _coupled(Ct))}"
+    return MatricesView(given, basis, tuple(shown), tuple(float(f) for f in hz), alone, sums, note)
+
+
+def _damping_note(c: float, mk_coupled: bool, c_coupled: bool) -> str:
+    """What C adds to the note: a hint while there's none; whether the arrows uncouple it too."""
+    if c == 0:
+        return "No dampers yet, so C is zero: add some (Each damper c) and see whether VᵀCV uncouples too."
+    if not c_coupled:
+        return "VᵀCV is diagonal too." if not mk_coupled else "VᵀCV happens to be diagonal."
+    if not mk_coupled:
+        return (
+            "But VᵀCV isn't diagonal: the dampers still couple the coordinates. These dampers aren't spread "
+            "like the masses and springs, and no choice of arrows uncouples all three."
+        )
+    return "VᵀCV couples too."
 
 
 def _above(f: float, low: float) -> str:
@@ -333,7 +341,7 @@ class Shares:
 
 def shares(s: TwoMass, V: np.ndarray, rail: bool, x: np.ndarray, v: np.ndarray) -> Shares:
     """The energy of the motion along each arrow and the cross term (see the module), for the samples' x and v."""
-    M, _, K = s.matrices()
+    M, C, K = s.matrices()
     B = V[:, :1] if rail else V
     q, qd = coordinates(V, rail, x), coordinates(V, rail, v)
     Mt, Kt = transformed(B, M), transformed(B, K)
@@ -345,7 +353,12 @@ def shares(s: TwoMass, V: np.ndarray, rail: bool, x: np.ndarray, v: np.ndarray) 
             "With one arrow the masses move along one line, and all the energy is in that motion.",
         )
     coupling = Mt[0, 1] * qd[:, 0] * qd[:, 1] + Kt[0, 1] * q[:, 0] * q[:, 1]
-    if not (_coupled(Mt) or _coupled(Kt)):
+    if not (_coupled(Mt) or _coupled(Kt)) and s.c > 0 and _coupled(transformed(B, C)):
+        note = (
+            "No cross term in the stored energy, but VᵀCV couples: the dampers' forces still pass energy between "
+            "the motion along v₁ and along v₂ as it dies away."
+        )
+    elif not (_coupled(Mt) or _coupled(Kt)):
         note = "Uncoupled: the energy in the motion along each arrow stays there, and none passes across."
     else:
         note = (
