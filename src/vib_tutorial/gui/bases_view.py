@@ -12,7 +12,7 @@
 Each spring has its damper beneath it (`SPRING_Y`, `DAMPER_Y`: close enough to the middle that both meet the
 lightest mass drawn), the dashpot's piston following the two ends as the Single oscillator's does.
 
-The motion is drawn magnified, `GAIN` display units a metre, the same as the plane's reach always: the plane beside
+The motion is drawn magnified, `GAIN` display units a meter, the same as the plane's reach always: the plane beside
 it is in mm and never rescales, so neither does this.
 
 Working on it: `tests/test_bases_page.py` drags the grips and plucks with synthetic mouse events.
@@ -37,7 +37,7 @@ from .style import colors, text_on
 WALL_L, WALL_R = 0.0, 3.6
 REST = (1.2, 2.4)  # the masses' centres at rest (display units)
 SIDE = 0.4  # the 1 kg mass's side
-GAIN = 6.0  # display units a metre: 50 mm is 0.3
+GAIN = 6.0  # display units a meter: 50 mm is 0.3
 GRIP_R = 0.06
 SPRING_Y, DAMPER_Y = 0.07, -0.07  # the lightest mass drawn is 0.16 tall: both meet it
 LABEL_GAP = 0.07

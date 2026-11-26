@@ -2,11 +2,11 @@
 any basis the reader drags.
 
 Left: the masses and springs, the basis's switches (one arrow, the modes drawn), then the Things to try (setups to go
-back to; their predictions are asked once the reader has handled the masses). Centre: the two masses between their
+back to; their predictions are asked once the reader has handled the masses). Center: the two masses between their
 walls (`bases_view.ChainView`: pluck a mass, or drag its grips to change m and k as it runs), the (x₁, x₂) plane
 (`bases_plane.Plane`: the point and its path, the arrows v₁ and v₂ to drag, the parallelogram q₁v₁ + q₂v₂) with the
 matrices VᵀMV and VᵀKV beside it, their coupling marked, the run's controls, and the coordinates q against time,
-the past redescribed whenever the arrows move. Right: the energy along each arrow and the coupled energy (Coupling),
+the past redescribed whenever the arrows move. Right: the energy along each arrow and the cross term, and their sum in bars (Coupling),
 one arrow's frequency against its angle, built by hand angle by angle (One arrow), the energy balance through every
 change (Energy), and the Theory.
 
@@ -44,9 +44,9 @@ from .frame_loop import FrameLoop
 from .layouts import FlowLayout
 from .lesson import Form, LiveLabel, TrialBox, plot, theory, three_panes
 from .live_parts import ChangeMarks, EnergyTab, run_row
-from .plots import decimate
+from .plots import SteadyRange, decimate
 from .scrub import Scrub
-from .style import colors
+from .style import colors, role
 from .theming import add_legend, mute
 from .transport import Transport
 
@@ -66,11 +66,17 @@ COORDS_TIP = (
     "then.</p>"
 )
 COUPLING_TIP = (
-    "<p>The stored energy, split by the arrows. q₁ and q₂ are how far the point goes along v₁ and v₂ "
-    "(x = q₁v₁ + q₂v₂: the dashed parallelogram on the plane). <b>Along v₁</b> is the energy the motion along v₁ "
-    "would store with q₂ held at nought, and the same for v₂. The <b>coupled energy</b> is the rest, from VᵀMV's "
-    "and VᵀKV's off-diagonal terms: through it energy passes from the motion along one arrow to the motion "
-    "along the other. Turn the arrows onto the modes and it is nought: the energy in each mode stays there.</p>"
+    "<p>The arrows split the motion into two pieces, one along v₁ and one along v₂ (x = q₁v₁ + q₂v₂: the dashed "
+    "parallelogram on the plane). <b>Along v₁</b> is the energy of the first piece alone, <b>along v₂</b> the "
+    "second's. The energy of the two together is those two plus a <b>cross term</b>, as "
+    "|a + b|² = |a|² + |b|² + 2a·b. The cross term can be negative: as it swings, energy passes between the "
+    "pieces. Along the modes it is zero, and each piece keeps its energy.</p>"
+)
+SUM_TIP = (
+    "<p>The energy now, added up. Each bar starts where the last ended: along v₁, then along v₂, then the cross "
+    "term, up when it's positive and down when it's negative. Where they end is the stored energy, the last bar. "
+    "As it runs the pieces trade energy through the cross term, but the total stays put (less what the dampers "
+    "take). Along the modes the cross term is zero and the two pieces hold still.</p>"
 )
 RAIL_TIP = (
     "<p>One arrow's frequency, built by hand: each angle you try lands its measured frequency here "
@@ -79,7 +85,7 @@ RAIL_TIP = (
 )
 MATRICES_TIP = (
     "<p>The mass and stiffness matrices in the basis the arrows make, VᵀMV and VᵀKV. Their off-diagonal terms are "
-    "the coupling between the coordinates (in colour while they aren't nought). Their frequencies, the roots of "
+    "the coupling between the coordinates (in color while they aren't zero). Their frequencies, the roots of "
     "det(VᵀKV − ω²VᵀMV) = 0, are the same in every basis.</p>"
 )
 ENERGY_TIP = (
@@ -207,13 +213,24 @@ class BasesPage(QtWidgets.QWidget):
         self.shares_plot.setToolTip(COUPLING_TIP)
         self.shares_plot.setMouseEnabled(x=False, y=False)
         add_legend(self.shares_plot.getPlotItem(), offset=(-10, 10))
-        self.share_items = [pg.PlotDataItem(name=n) for n in ("along v₁", "along v₂", "coupled energy")]
+        self.share_items = [pg.PlotDataItem(name=n) for n in ("along v₁", "along v₂", "cross term")]
         for item in self.share_items:
             self.shares_plot.addItem(item)
         decimate(self.shares_plot)
         self.shares_note = LiveLabel(wrap=True)  # rewritten as it runs: a QLabel lays the page out each time
         mute(self.shares_note)
-        pv.addWidget(self.shares_plot, 1)
+        # the energy now, added up: each piece stacked on the last, the stored energy beside them
+        self.sum_plot = plot("Energy now", "J", "", None, height=150)
+        self.sum_plot.setAccessibleName("The energy now, added up: along each arrow, the cross term, stored")
+        self.sum_plot.setToolTip(SUM_TIP)
+        self.sum_plot.setMouseEnabled(x=False, y=False)
+        self.sum_bars = pg.BarGraphItem(x=[], height=[], width=0.6)
+        self.sum_plot.addItem(self.sum_bars)
+        self.sum_names: tuple[str, ...] = ()  # the bars' names, as the bottom axis's ticks
+        self.sum_y = SteadyRange(self.sum_plot, "y")
+        self.sum_plot.setXRange(-0.5, 3.5, padding=0)
+        pv.addWidget(self.shares_plot, 2)
+        pv.addWidget(self.sum_plot, 1)
         pv.addWidget(self.shares_note)
 
         rails = QtWidgets.QWidget()
@@ -645,8 +662,27 @@ class BasesPage(QtWidgets.QWidget):
                     item.setData([], [])
             self.shares_plot.setXRange(max(0.0, end - STRIP_SECONDS), max(end, STRIP_SECONDS), padding=0)
             self.shares_note.setText(sh.note if t.size else "Pluck the masses to see the energy along each arrow.")
+            self._draw_sum(view.energy_sum(sh))
         elif i == view.TAB_ENERGY:
             self.energy.draw(live.record, frame)
+
+    def _draw_sum(self, es: view.EnergySum) -> None:
+        """The Coupling tab's bars (`view.energy_sum`): a stack of the pieces, and the stored energy beside it."""
+        bars = es.bars
+        n = len(bars)
+        self.sum_bars.setOpts(
+            x=list(range(n)),
+            y0=[min(b.bottom, b.top) for b in bars],
+            height=[abs(b.top - b.bottom) for b in bars],
+            brushes=[pg.mkBrush(role(b.role)) for b in bars],
+            pen=pg.mkPen(colors.background, width=1),  # a pen a bar trips pyqtgraph 0.14's BarGraphItem
+        )
+        names = tuple(b.name for b in bars)
+        if names != self.sum_names:  # only when the bars change (one arrow or two): ticks re-lay the axis out
+            self.sum_names = names
+            self.sum_plot.getAxis("bottom").setTicks([list(enumerate(names))])
+            self.sum_plot.setXRange(-0.5, max(n, 2) - 0.5, padding=0)
+        self.sum_y.fit(0.0, es.y_top)
 
     def _draw_body(self) -> None:
         x = self.live.x

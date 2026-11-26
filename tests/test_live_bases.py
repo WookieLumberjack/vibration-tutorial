@@ -191,3 +191,26 @@ def test_a_trial_survives_json_and_the_views_are_plain():
         view.shares(s, V, True, np.zeros((3, 2)), np.zeros((3, 2))),
     ):
         assert impure(out) == [], type(out).__name__
+
+
+def test_the_bars_add_the_pieces_and_the_cross_term_up_to_the_stored_energy():
+    """`energy_sum`: along v₁, along v₂ and the cross term stacked, each from where the last ended, to the stored
+    energy beside them; along the modes the cross term is zero."""
+    s = TwoMass()
+    live = plucked(system=s)
+    live.advance(0.37)
+    _, y = live.record.window(10.0)
+    x, v = y[:, COL["x1"] : COL["x2"] + 1], y[:, COL["v1"] : COL["v2"] + 1]
+    sh = view.shares(s, np.eye(2), False, x, v)
+    es = view.energy_sum(sh)
+    one, two, cross, stored = es.bars
+    assert [b.name for b in es.bars] == ["along v₁", "along v₂", "cross term", "stored"]
+    assert (one.bottom, two.bottom, cross.bottom) == (0.0, one.top, two.top)
+    assert cross.top == pytest.approx(stored.top) and stored.bottom == 0.0
+    assert stored.top == pytest.approx(live.stored(), rel=1e-9)
+    assert es.y_top >= stored.top and es.y_top >= two.top
+    E = np.array([[1.0, -1.0], [1.0, 1.0]]) / math.sqrt(2.0)  # the modes
+    modal = view.energy_sum(view.shares(s, E, False, x, v))
+    assert modal.bars[2].top == pytest.approx(modal.bars[2].bottom, abs=1e-12 + 1e-9 * stored.top)
+    rail = view.energy_sum(view.shares(s, np.eye(2), True, x, v))
+    assert [b.name for b in rail.bars] == ["along v₁", "stored"]

@@ -39,7 +39,7 @@ x = q₁v₁ + q₂v₂: drag them while it runs and the matrices beside them, V
 coupling marked (static, dynamic, both or none), while the frequencies never do. The coordinates' traces below are
 described again in the new basis, the past too. Along the modes both matrices are diagonal and each coordinate is
 one clean sine; with unequal masses the modes aren't at right angles, only orthogonal through M. The Coupling tab
-splits the energy into the motion along each arrow and the coupled energy: plucking one mass, it beats across and back. Take
+splits the energy into the motion along each arrow and a cross term, and adds them up in bars: plucking one mass, it beats across and back. Take
 one arrow away, a reduced basis, and the masses swing at Rayleigh's quotient: the One arrow tab is built by hand, each angle's
 measured frequency landing at its angle, lowest along mode 1. Masses and springs change as it runs by their grips;
 one arrow can be kept, turned and given back its partner, each change booked in the energy balance.

@@ -13,7 +13,8 @@ code's word: the page calls it *one arrow*, a reduced basis), and what's shown. 
   and what they say: coupled statically, dynamically, both, or not at all (the modes), and the frequencies, the
   same in every basis.
 - `coordinates(V, rail, x)`: the coordinates q against time, and `shares(...)`: the energy of the motion along
-  each arrow and the coupled energy, the **Coupling** tab.
+  each arrow and the cross term, the **Coupling** tab, with `energy_sum(shares)` its bars adding them up now:
+  the energy of a sum of two motions is each one's plus a cross term, as |a + b|² = |a|² + |b|² + 2a·b.
 - The **Rail** tab is built by hand: each rail the reader tries lands its measured frequency at its angle
   (`RailRecorder`), with Rayleigh's quotient over them on request (`rail_view`).
 - The **Energy** tab is `live_bases.energy_view`'s.
@@ -45,7 +46,7 @@ SNAP = 3.0  # ° from a mode or an axis, an arrow dragged snaps onto it
 REACH = 0.06  # m: the plane's half-width
 PLUCK = 0.05  # m: the farthest a pluck pulls either mass
 GRID = 0.02  # m: the coordinates' grid lines are this far apart in q
-COUPLED = 1e-3  # an off-diagonal under this of its diagonal's geometric mean is nought
+COUPLED = 1e-3  # an off-diagonal under this of its diagonal's geometric mean is zero
 
 
 @dataclass(frozen=True)
@@ -96,7 +97,7 @@ GRIPS = {
     "k1": Grip("k1", 1.0, 1e5, per=0.3),
     "k2": Grip("k2", 1.0, 1e5, per=0.3),
     "k3": Grip("k3", 1.0, 1e5, per=0.3),
-    "c": Grip("c", 0.2, 100.0, per=0.2, zero_below=0.3),  # the three dampers' one c; nought below 0.3 N·s/m
+    "c": Grip("c", 0.2, 100.0, per=0.2, zero_below=0.3),  # the three dampers' one c; zero below 0.3 N·s/m
 }
 
 
@@ -215,7 +216,7 @@ class Matrix:
     symbol: str  # "VᵀMV"
     unit: str
     entries: tuple[tuple[str, ...], ...]
-    coupled: bool  # its off-diagonal isn't nought
+    coupled: bool  # its off-diagonal isn't zero
 
 
 @dataclass(frozen=True)
@@ -325,12 +326,12 @@ def coordinates(V: np.ndarray, rail: bool, x: np.ndarray) -> np.ndarray:
 @dataclass(frozen=True)
 class Shares:
     own: tuple[np.ndarray, ...]  # J: the motion along each arrow's, ½m̃ᵢᵢq̇ᵢ² + ½k̃ᵢᵢqᵢ²
-    coupling: np.ndarray  # J: m̃₁₂q̇₁q̇₂ + k̃₁₂q₁q₂, the rest of the stored energy
+    coupling: np.ndarray  # J: the cross term m̃₁₂q̇₁q̇₂ + k̃₁₂q₁q₂, the rest of the stored energy
     note: str
 
 
 def shares(s: TwoMass, V: np.ndarray, rail: bool, x: np.ndarray, v: np.ndarray) -> Shares:
-    """The energy of the motion along each arrow and the coupled energy (see the module), for the samples' x and v."""
+    """The energy of the motion along each arrow and the cross term (see the module), for the samples' x and v."""
     M, _, K = s.matrices()
     B = V[:, :1] if rail else V
     q, qd = coordinates(V, rail, x), coordinates(V, rail, v)
@@ -346,8 +347,45 @@ def shares(s: TwoMass, V: np.ndarray, rail: bool, x: np.ndarray, v: np.ndarray) 
     if not (_coupled(Mt) or _coupled(Kt)):
         note = "Uncoupled: the energy in the motion along each arrow stays there, and none passes across."
     else:
-        note = "Coupled: energy passes back and forth between the motion along v₁ and along v₂, through the coupled energy."
+        note = (
+            "Coupled: the cross term swings above and below zero, and with it energy passes back and forth "
+            "between the motion along v₁ and along v₂."
+        )
     return Shares(own, coupling, note)
+
+
+@dataclass(frozen=True)
+class Bar:
+    name: str
+    bottom: float  # J
+    top: float  # J: below `bottom` for a negative cross term
+    role: str  # its colour, as a theme role's name
+
+
+@dataclass(frozen=True)
+class EnergySum:
+    bars: tuple[Bar, ...]  # along v₁, along v₂, the cross term, stacked on each other; then the stored energy
+    y_top: float  # J: the axis's top, the window's largest sum (so it stays put frame to frame)
+
+
+def energy_sum(sh: Shares) -> EnergySum:
+    """The Coupling tab's bars, now (the window's last sample): each piece stacked on the last, so the cross term
+    plainly adds or takes away, and the stored energy beside them, the same height (see the module)."""
+    if not sh.own or sh.own[0].size == 0:
+        return EnergySum((), 1e-3)
+    own = [float(e[-1]) for e in sh.own]
+    bars, level = [], 0.0
+    for i, e in enumerate(own):
+        bars.append(Bar(f"along v{'₁₂'[i]}", level, level + e, f"mass.{i}"))
+        level += e
+    if len(own) > 1:
+        cross = float(sh.coupling[-1])
+        bars.append(Bar("cross term", level, level + cross, "grey"))
+        level += cross
+    bars.append(Bar("stored", 0.0, level, "strong"))
+    pieces = sum(sh.own)
+    peak = max(float(np.max(pieces)), float(np.max(pieces + sh.coupling)))
+    return EnergySum(tuple(bars), 1.08 * max(peak, 1e-6))
 
 
 # ------------------------------------------------------------------ the rail, built by hand

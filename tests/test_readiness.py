@@ -208,6 +208,7 @@ def _bases_views(state):
         v.projection(V, False, x[-1]),
         v.matrices_view(s, V, state.rail),
         v.shares(s, V, state.rail, x, xd),
+        v.energy_sum(v.shares(s, V, state.rail, x, xd)),
         v.rail_view(s, rec.current(v.key(s)), rec.earlier(v.key(s)), True, 30.0),
         lb.energy_view(t, y),
     )
