@@ -8,7 +8,7 @@ then a rigid body in 3D.
 The pages in the order the app's tabs take them.
 
 - [Deriving the equations](#deriving-the-equations): free-body diagrams against Lagrange's equations: a car in bounce and pitch, and a double pendulum
-- [Coordinates & bases](#coordinates--bases): two masses whose motion is a point in a plane: any basis, the coupling it brings, the modes that remove it, and Rayleigh's quotient in a fixed direction
+- [Coordinates & bases](#coordinates--bases): two masses whose motion is a point in a plane: any basis, the coupling it brings, the modes that remove it, and Rayleigh's quotient from one arrow
 - [3D rigid body](#3d-rigid-body): a body tumbling in space: its inertia tensor, principal axes, Euler's equations and the intermediate-axis flip
 
 ## Deriving the equations
@@ -40,9 +40,9 @@ coupling marked (static, dynamic, both or none), while the frequencies never do.
 described again in the new basis, the past too. Along the modes both matrices are diagonal and each coordinate is
 one clean sine; with unequal masses the modes aren't at right angles, only orthogonal through M. The Coupling tab
 splits the energy into the motion along each arrow and the coupled energy: plucking one mass, it beats across and back. Take
-one arrow away and the masses move in a fixed direction, at Rayleigh's quotient: the Fixed direction tab is built by hand, each direction's
+one arrow away, a reduced basis, and the masses swing at Rayleigh's quotient: the One arrow tab is built by hand, each angle's
 measured frequency landing at its angle, lowest along mode 1. Masses and springs change as it runs by their grips;
-the direction can be fixed, turned and freed, each change booked in the energy balance.
+one arrow can be kept, turned and given back its partner, each change booked in the energy balance.
 
 ![Coordinates & bases page, 1 and 2 kg masses described along their modes: both matrices diagonal, the modes 80.1° apart on the plane (69.6° and 169.5°), each coordinate one clean sine, and on the Coupling tab the energy in each mode stays there](images/coordinates_bases.png)
 

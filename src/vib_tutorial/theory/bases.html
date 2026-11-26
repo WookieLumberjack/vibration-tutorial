@@ -5,7 +5,7 @@
 <goals page="bases_page">
 <li trial="1" problem="beat-time">see two coupled masses trade their energy back and forth, and time it;</li>
 <li trial="2" problem="coupling-kind">turn the basis until the coupling vanishes, and find the modes there;</li>
-<li trial="6" problem="rail-frequency">hold the motion to a line and see why Rayleigh's quotient is lowest along mode 1.</li>
+<li trial="6" problem="rail-frequency">keep one arrow, a reduced basis, and see why its frequency is never too low, and nearly right near a mode.</li>
 </goals>
 <p>This page builds on <a href="page:deriving_page#coupling">Deriving the equations</a>, where the car's coupling
 changed with the coordinates it was written in. Here the system is as small as coupling allows, two masses, and
@@ -85,26 +85,53 @@ the last two terms: pluck one mass and the energy drains from its motion into th
 what the dampers take). Change the arrows and the tab redraws the
 past too, in the new coordinates: the same motion, described again.</p>
 
-<h3><a name="rail"></a>In a fixed direction: Rayleigh's quotient</h3>
-<p>Take one arrow away and hold the motion to the line along the other, <m>x = q<sub>1</sub>v<sub>1</sub></m>,
-a <b>fixed direction</b>: the point may slide along that line and nowhere else. Then there is one coordinate,
-and the matrices are numbers: held so, the masses are a single oscillator with mass <m>v<sub>1</sub>ᵀMv<sub>1</sub></m> and stiffness <m>v<sub>1</sub>ᵀKv<sub>1</sub></m>,
-so it swings at</p>
+<h3><a name="rail"></a>One arrow: a reduced basis, and Rayleigh's quotient</h3>
+<p>A model of a real structure has thousands of coordinates, and nobody solves it in all of them. Instead one
+picks a few arrows, shapes the structure is expected to move in, and keeps only those: <m>x = Vq</m> with
+<m>V</m> taller than it is wide. That is a <b>reduced basis</b>, and the frequencies it gives are only
+approximate. How far off, and which way? With two masses the only reduced basis is a single arrow, so the page
+lets you try it: tick <i>One arrow</i> and <m>v<sub>2</sub></m> goes. Now <m>x = q<sub>1</sub>v<sub>1</sub></m>,
+the point can only slide along <m>v<sub>1</sub></m>'s line, and the matrices are single numbers. The masses
+are one oscillator, with mass <m>v<sub>1</sub>ᵀMv<sub>1</sub></m> and stiffness
+<m>v<sub>1</sub>ᵀKv<sub>1</sub></m>, so they swing at</p>
 <eq>\omega^2 = R(v) = \frac{v^\mathsf{T} K v}{v^\mathsf{T} M v}</eq>
-<p><b>Rayleigh's quotient</b> <cite>rayleigh-sound</cite>. Write <m>v</m> in the modes,
-<m>v = a<sub>1</sub>φ<sub>1</sub> + a<sub>2</sub>φ<sub>2</sub></m>, with <m>φ<sub>r</sub></m> the
-modes' arrows: their orthogonality leaves</p>
+<p><b>Rayleigh's quotient</b> <cite>rayleigh-sound</cite> of the arrow. Held to one arrow, the motion is
+always <b>one pure sine</b>, whatever the arrow: one coordinate can only swing at one frequency. That is the
+approximation, and the contrast to watch for. Untick <i>One arrow</i> and pluck along the same line: unless it
+is a mode, the point leaves the line, and the coordinates' traces beat. So one arrow forces a shape on the
+motion, and Rayleigh's quotient is the frequency that forced shape swings at. Only a mode swings in one shape,
+as one pure sine, without being held to it.</p>
+<p>You have met the quotient already: with two
+arrows, each pair of diagonal terms of <m>VᵀKV</m> and <m>VᵀMV</m> is one arrow's <m>vᵀKv</m> and
+<m>vᵀMv</m>, so <m>R(v<sub>i</sub>)</m> is what coordinate <m>i</m> would do if it were kept alone, and the
+page prints it under the matrices. In a coupled basis it isn't one of the system's frequencies, because
+keeping one arrow leaves the coupling out. Along a mode nothing is left out, and it is.</p>
+<p>So how wrong is one arrow? Try directions on the One arrow tab, each landing its measured frequency at its
+angle, and three things show:</p>
+<ol>
+<li><b>It never comes in low.</b> No direction swings slower than mode 1, nor faster than mode 2.</li>
+<li><b>The lowest is mode 1 itself,</b> where the answer is exact.</li>
+<li><b>Near mode 1 it hardly matters.</b> The curve is flat at its bottom: an arrow several degrees off
+mode 1 gives a frequency a fraction of a percent high.</li>
+</ol>
+<p>Why: write <m>v</m> in the modes, <m>v = a<sub>1</sub>φ<sub>1</sub> + a<sub>2</sub>φ<sub>2</sub></m>,
+with <m>φ<sub>r</sub></m> the modes' arrows. Their orthogonality leaves</p>
 <eq>R = \frac{a_1^2 \mu_1 \omega_1^2 + a_2^2 \mu_2 \omega_2^2}{a_1^2 \mu_1 + a_2^2 \mu_2}, \qquad \mu_r = \varphi_r^\mathsf{T} M \varphi_r</eq>
-<p>a weighted average of <m>ω<sub>1</sub>²</m> and <m>ω<sub>2</sub>²</m>. So no direction is slower than mode 1
-or faster than mode 2, and a direction a little off mode 1, <m>a<sub>2</sub></m> small beside <m>a<sub>1</sub></m>,
-errs only by <m>(a<sub>2</sub>/a<sub>1</sub>)²</m>: the quotient is flat at its minimum. The Fixed direction tab is built by hand: each direction you try lands its
-measured frequency at its angle, and <i>Show the theory</i> draws the quotient through them. Holding a system
-to fewer shapes than it has can only stiffen it, which is why a frequency from a guessed shape errs high.</p>
-<p>The direction can be fixed, turned and freed as it runs. Each is a physical event: what holds the masses to
-the line pushes only across it, so the momentum along it, <m>vᵀMẋ</m>, is kept, and the point's motion across
-the line is taken away. Fixed, the point is moved to the nearest place on the line; turned, it's carried round at
-the same distance from the middle. Each costs or adds energy, which the Energy tab books as your hand's work on
-the masses. Freed, they run on from where they were, with nothing lost.</p>
+<p>a weighted average of <m>ω<sub>1</sub>²</m> and <m>ω<sub>2</sub>²</m>, so it lies between them (1), equals
+<m>ω<sub>1</sub>²</m> only when <m>a<sub>2</sub> = 0</m> (2), and an arrow a little off mode 1,
+<m>a<sub>2</sub></m> small beside <m>a<sub>1</sub></m>, errs only by <m>(a<sub>2</sub>/a<sub>1</sub>)²</m>
+(3). <i>Show the theory</i> draws <m>R</m> through your points.</p>
+<p><b>The conclusion</b>, and the reason it's on this page: a reduced basis holds the system to fewer shapes than
+it has, which can only stiffen it, so <b>its lowest frequency is never below the true one</b>, and a
+reasonable guess at the shape gives a frequency very nearly right. More arrows can only bring it down towards
+the truth. This is the <b>Rayleigh–Ritz method</b>, and it's how large models are solved: in a few good
+shapes, not in all their coordinates. The modes are the basis where it's exact. Later pages (energy methods,
+modal coupling, substructuring) build their reduced models this way.</p>
+<p>The arrow can be kept, turned and given back its partner as it runs. Each is a physical event: what holds
+the masses to the line pushes only across it, so the momentum along it, <m>vᵀMẋ</m>, is kept, and the point's
+motion across the line is taken away. Ticked, the point is moved to the nearest place on the line; turned, it's
+carried round at the same distance from the middle. Each costs or adds energy, which the Energy tab books as
+your hand's work on the masses. Unticked, they run on free from where they were, with nothing lost.</p>
 
 <h3><a name="live"></a>Changing it as it runs</h3>
 <p>The grips on the masses and springs (and the boxes) change them while it runs, and the motion carries on by
@@ -129,9 +156,11 @@ frequencies under the matrices, whatever the arrows.</li>
 every <m>1/(f<sub>2</sub> − f<sub>1</sub>)</m> = 1.398 s: after 0.699 s, half of that, <m>m<sub>1</sub></m>
 has nearly stopped and <m>m<sub>2</sub></m> swings with the energy. The Coupling tab shows it pass across and
 back.</li>
-<li><b>Fixed along x₁.</b> <m>v = (1, 0)</m>: <m>R = 500/1</m>, so 3.559 Hz, between
-<m>f<sub>1</sub></m> and <m>f<sub>2</sub></m>. Turned to 45°, the direction lies on mode 1 and the masses swing at
-3.183 Hz, the least any direction can give.</li>
+<li><b>One arrow along x₁.</b> <m>v = (1, 0)</m>: <m>vᵀKv</m> = 500 N/m and <m>vᵀMv</m> = 1 kg, so
+<m>R</m> = 500 and 3.559 Hz, 11.8 % above <m>f<sub>1</sub></m>. These are the matrices' top-left terms in step
+1: <m>q<sub>1</sub></m> kept alone. Turn it to 38.7°, <m>v = (1, 0.8)</m>: <m>vᵀKv</m> = 500 − 160 + 320 =
+660 N/m and <m>vᵀMv</m> = 1.64 kg, so <m>R</m> = 402.4 and 3.193 Hz. That's 6.3° off mode 1 and only 0.3 %
+high. At 45° it's mode 1, 3.183 Hz, the least one arrow can give.</li>
 </ol>
 
 <h3><a name="try-it"></a>Things to try</h3>
@@ -143,7 +172,7 @@ predict what you'll see first.</p>
 <li>In a basis the matrices are <m>VᵀMV</m> and <m>VᵀKV</m>; their off-diagonal terms, the coupling, depend on the basis, but the frequencies don't.</li>
 <li>Along the modes both matrices are diagonal: the modes are orthogonal through <m>M</m> and <m>K</m>, not always at right angles.</li>
 <li>Coupled coordinates trade energy (the beat); uncoupled ones keep theirs.</li>
-<li>Held to one line, the motion swings at Rayleigh's quotient <m>vᵀKv/vᵀMv</m>, never below <m>ω<sub>1</sub>²</m>: lowest, and flat, along mode 1.</li>
+<li>With fewer arrows than masses, a reduced basis, the frequency is Rayleigh's quotient <m>vᵀKv/vᵀMv</m>: never below <m>ω<sub>1</sub>²</m>, exact along mode 1, and nearly right near it. That's why reduced models (Rayleigh–Ritz) work, and why their frequencies err high.</li>
 </takeaways>
 <h3><a name="notation"></a>Notation</h3>
 <notation>m x matrices V_basis q omega_i phi_mode R energies_coord</notation>

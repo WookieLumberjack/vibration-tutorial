@@ -298,6 +298,32 @@ def _live_bases(trial: str, tab: str):
     return setup
 
 
+def _turning_arrows(trial: str, tab: str):
+    """`_live_bases`, with v₁ turned the whole time as a drag turns it (the page's own `_on_arrow_moved`, about
+    once a frame), so the matrices and the coordinates' whole window are described again each step."""
+    base = _live_bases(trial, tab)
+
+    def setup(w):
+        from PySide6 import QtCore
+
+        from vib_tutorial.view_models.bases import ARROW
+
+        page, speed = base(w)
+        timer = QtCore.QTimer(page)  # the page's: it stops with the window
+        turn = {"deg": 0.0}
+
+        def step() -> None:
+            turn["deg"] = (turn["deg"] + 0.5) % 90.0  # 0° to 90° and round again, clear of v₂ at 135°
+            a = math.radians(turn["deg"])
+            page._on_arrow_moved(0, ARROW * math.cos(a), ARROW * math.sin(a))
+
+        timer.timeout.connect(step)
+        timer.start(16)
+        return page, speed
+
+    return setup
+
+
 def _live_pendulum(trial: str, tab: str):
     """Pendulums' trial `trial`, live (its frame loop steps the pendulum), on tab `tab` (a `view_models.pendulum`
     TAB_ name), at 1× (#478 Phase 4)."""
@@ -395,9 +421,14 @@ SCENARIOS = (
         _live_bases("Pluck one mass", "TAB_COUPLING"),
     ),
     Scenario(
-        "Coordinates & bases: fixed along x₁, Fixed direction tab",
-        "the motion fixed in one direction, its frequency measured as it runs (#478 Phase 4)",
-        _live_bases("Fixed along", "TAB_RAIL"),
+        "Coordinates & bases: one mass plucked, v₁ turning, Coupling tab",
+        "an arrow dragged as it runs: the matrices' steps and the whole window redescribed each step (#478 Phase 4)",
+        _turning_arrows("Pluck one mass", "TAB_COUPLING"),
+    ),
+    Scenario(
+        "Coordinates & bases: one arrow along x₁, One arrow tab",
+        "one arrow, a reduced basis, its frequency measured as it runs (#478 Phase 4)",
+        _live_bases("One arrow along", "TAB_RAIL"),
     ),
     Scenario(
         "Quarter-car: driven over its road",
